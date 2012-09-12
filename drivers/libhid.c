@@ -56,6 +56,9 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
+/* Tweak flag for APC Back-UPS ES */
+int max_report_size = 0;
+
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
 
@@ -148,7 +151,9 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, rbuf->data[id], rbuf->len[id]);
+	r = comm_driver->get_report(udev, id, rbuf->data[id],
+		max_report_size ? (int)sizeof(rbuf->data[id]):rbuf->len[id]);
+
 	if (r <= 0) {
 		return -1;
 	}

@@ -36,7 +36,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.31"
+#define MGE_HID_VERSION		"MGE HID 1.32"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -266,6 +266,12 @@ static const char *mge_battery_capacity_fun(double value)
 
 static info_lkp_t mge_battery_capacity[] = {
 	{ 0, NULL, mge_battery_capacity_fun }
+};
+
+info_lkp_t eaton_enable_disable_info[] = {
+	{ 0, "disabled", NULL },
+	{ 1, "enabled", NULL },
+	{ 0, NULL, NULL }
 };
 
 static info_lkp_t mge_upstype_conversion[] = {
@@ -893,6 +899,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "ups.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, eaton_enable_disable_info },
 #ifdef HAVE_STRPTIME
 	{ "ups.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_date_conversion },
 	{ "ups.time", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_time_conversion },
@@ -1167,8 +1174,7 @@ static const char *mge_format_serial(HIDDevice_t *hd) {
 static int mge_claim(HIDDevice_t *hd) {
 
 #ifndef SHUT_MODE
-	int status = is_usb_device_supported(mge_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
 

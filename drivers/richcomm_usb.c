@@ -65,7 +65,7 @@ static unsigned int	comm_failures = 0;
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
-	switch (is_usb_device_supported(richcomm_usb_id, device->VendorID, device->ProductID))
+	switch (is_usb_device_supported(richcomm_usb_id, device))
 	{
 	case SUPPORTED:
 		return 1;
