@@ -795,7 +795,7 @@ static void start_daemon(HANDLE lockfd)
 	}
 	memset(&sinfo,0,sizeof(sinfo));
 	if(!CreateProcess(module, NULL, NULL,NULL,FALSE,0,NULL,NULL,&sinfo,&pinfo)) {
-		fatal_with_errno(EXIT_FAILURE, "Can'tcreate child process");
+		fatal_with_errno(EXIT_FAILURE, "Can't create child process");
 	}
 	pipefd = open_sock();
 
@@ -1110,8 +1110,8 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		}
 
 #else
-		ret = WriteFile(pipefd,buf,strlen(buf),&bytesWritten,NULL);
-		if (ret == 0 || bytesWritten != strlen(buf)) {
+		ret = WriteFile(pipefd,enc,strlen(enc),&bytesWritten,NULL);
+		if (ret == 0 || bytesWritten != strlen(enc)) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			CloseHandle(pipefd);
 			continue;
@@ -1136,6 +1136,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		if (ret == WAIT_TIMEOUT || ret == WAIT_FAILED) {
 			upslogx(LOG_ERR, "read confirmation failed, trying again");
+			CloseHandle(pipefd);
 			continue;
 		}
 #endif
