@@ -458,11 +458,9 @@ int sendsignalfn(const char *pidfn, int sig)
 
 int sendsignalfn(const char *pidfn, const char * sig)
 {
-	char	buf[SMALLBUF];
 	BOOL	ret;
 
-	snprintf(buf, sizeof(buf), "\\\\.\\pipe\\%s", pidfn);
-	ret = send_to_named_pipe(buf, sig);
+	ret = send_to_named_pipe(pidfn, sig);
 
 	if (ret != 0) {
 		return -1;

@@ -213,6 +213,7 @@ char * filter_path(const char * source)
    of chars containing the message to display (no terminal 0 required here) */
 void syslog(int priority, const char *fmt, ...)
 {
+	char pipe_name[] = "\\\\.\\pipe\\"EVENTLOG_PIPE_NAME;
 	char buf1[LARGEBUF+sizeof(DWORD)];
 	char buf2[LARGEBUF];
 	va_list ap;
@@ -239,7 +240,7 @@ void syslog(int priority, const char *fmt, ...)
 	memcpy(buf1+sizeof(DWORD),buf2,sizeof(buf2));
 
 	pipe = CreateFile(
-			EVENTLOG_PIPE_NAME,	/* pipe name */
+			pipe_name,	/* pipe name */
 			GENERIC_WRITE,
 			0,			/* no sharing */
 			NULL,			/* default security attributes FIXME */
@@ -410,6 +411,9 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	HANDLE pipe;
 	BOOL result = FALSE;
 	DWORD bytesWritten = 0;
+	char buf[SMALLBUF];
+
+	snprintf(buf, sizeof(buf), "\\\\.\\pipe\\%s", pipe_name);
 
 	pipe = CreateFile(
 			pipe_name,
