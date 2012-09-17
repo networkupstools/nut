@@ -1,3 +1,4 @@
+- September 17, 2012: link:download.html#_binary_packages[Beta NUT 2.6.5-2 package for Windows released]
 - August 9, 2012: link:download.html#_binary_packages[Beta NUT 2.6.5-1 package for Windows released]
 - August 8, 2012: 2.6.5 released
 - June 27, 2012: link:download.html#_virtualization_packages[VMware NUT client for ESXI 5.0]
