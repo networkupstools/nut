@@ -30,7 +30,7 @@ After installling libusb-win32, run libUSB's Inf Wizard and choose your device.<
                 <Control Id="Description3" Type="Text" X="26" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
                     <Text>Click Next to continue [Wizard].</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
                 <Control Type="CheckBox" Id="LibUSBDlgCheckBox" Width="118" Height="17" X="26" Y="86" Property="LIBUSBINSTALL" Text="Install libUSB driver." CheckBoxValue="yes">
                 </Control>
                 <Control Type="Text" Id="Description" Width="310" Height="20" X="26" Y="56">
@@ -58,7 +58,7 @@ After installling libusb-win32, run libUSB's Inf Wizard and choose your device.<
                 <Control Id="Description3" Type="Text" X="20" Y="202" Width="270" Height="14" Transparent="yes" NoPrefix="yes">
                     <Text>Click Next to continue [Wizard].</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
                 <Control Id="DllLink1" Type="Text" X="20" Y="80" Width="330" Height="20" Transparent="yes" NoPrefix="yes">
                     <Text>1. msys-1.0.dll - http://sourceforge.net/projects/mingw/files/MSYS/BaseSystem/msys-core/msys-1.0.16-1/</Text>
                 </Control>
@@ -144,7 +144,7 @@ After installling libusb-win32, run libUSB's Inf Wizard and choose your device.<
                     <Subscribe Event="SetProgress" Attribute="Progress" />
                 </Control>
                 <Control Id="StatusLabel" Type="Text" X="35" Y="131" Width="35" Height="10" Text="Status:" />
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Text="Netowrk UPS Tools Installer (WiX)" Disabled="yes" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Text="Network UPS Tools Installer (WiX)" Disabled="yes" />
             </Dialog>
             <Dialog Id="UserExit" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
                 <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="[ButtonText_Finish]">
@@ -193,7 +193,7 @@ After installling libusb-win32, run libUSB's Inf Wizard and choose your device.<
                 <Control Id="Title" Type="Text" X="25" Y="50" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Change current destination folder</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Text="Netowrk UPS Tools Installer (WiX)" Disabled="yes">
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Text="Network UPS Tools Installer (WiX)" Disabled="yes">
                 </Control>
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="[ButtonText_Back]">
                     <Publish Event="NewDialog" Value="LicenseAgreementDlg"><![CDATA[1]]></Publish>
@@ -635,7 +635,7 @@ Public License instead of this License.
 			</Text>
                 </Control>
                 <Control Id="BottomLine" Type="Line" X="130" Y="234" Width="374" Height="2" />
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
             </Dialog>
             <Dialog Id="MaintenanceTypeDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
                 <Control Id="RepairLabel" Type="Text" X="105" Y="112" Width="100" Height="10" TabSkip="no">
@@ -678,7 +678,7 @@ Public License instead of this License.
                 <Control Id="RepairText" Type="Text" X="105" Y="125" Width="230" Height="30">
                     <Text>Repairs errors in the most recent installation state - fixes missing or corrupt files, shortcuts and registry entries.</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
             </Dialog>
             <Dialog Id="MaintenanceWelcomeDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
                 <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Next]">
@@ -740,7 +740,7 @@ Public License instead of this License.
                 <Control Id="Title" Type="Text" X="30" Y="75" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Ready to Install</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
             </Dialog>
             <Dialog Id="VerifyRemoveDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes" TrackDiskSpace="yes">
                 <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Back]">
@@ -767,7 +767,7 @@ Public License instead of this License.
                 <Control Id="Title" Type="Text" X="30" Y="75" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Remove [ProductName]</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
             </Dialog>
             <Dialog Id="VerifyRepairDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes" TrackDiskSpace="yes">
                 <Control Id="Repair" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Repair]">
@@ -795,7 +795,7 @@ Public License instead of this License.
                 <Control Id="Title" Type="Text" X="30" Y="75" Width="200" Height="15" Transparent="yes" NoPrefix="yes">
                     <Text>[DlgTitleFont]Repair [ProductName]</Text>
                 </Control>
-                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Netowrk UPS Tools Installer (WiX)" />
+                <Control Type="Text" Id="LblNUT" Width="128" Height="17" X="4" Y="229" Disabled="yes" Text="Network UPS Tools Installer (WiX)" />
             </Dialog>
             <Dialog Id="WelcomeDlg" Width="370" Height="270" Title="[ProductName] [Setup]" NoMinimize="yes">
                 <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="[ButtonText_Next]">
