@@ -416,7 +416,7 @@ int send_to_named_pipe(const char * pipe_name, const char * data)
 	snprintf(buf, sizeof(buf), "\\\\.\\pipe\\%s", pipe_name);
 
 	pipe = CreateFile(
-			pipe_name,
+			buf,
 			GENERIC_WRITE,
 			0,			/* no sharing */
 			NULL,			/* default security attributes FIXME */
