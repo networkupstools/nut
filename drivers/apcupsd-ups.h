@@ -115,7 +115,8 @@ static apcuspd_info_t nut_data[] =
 	{ "LINEV", "input.voltage", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "MAXLINEV", "input.voltage.maximum", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "MINLINEV", "input.voltage.minimum", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
-	{ "NOMOUTV", "input.voltage.nominal", ST_FLAG_RW, 1, "%.0f", DU_FLAG_NONE, NULL },
+	{ "NOMINV", "input.voltage.nominal", 0, 1, "%.0f", DU_FLAG_NONE, NULL },
+	{ "NOMOUTV", "output.voltage.nominal", 0, 1, "%.0f", DU_FLAG_NONE, NULL },
 	{ "LASTXFER", "input.transfer.reason", ST_FLAG_STRING | ST_FLAG_RW, 32, NULL, DU_FLAG_NONE, NULL },
 	{ "LOTRANS", "input.transfer.low", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "HITRANS", "input.transfer.high", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
@@ -125,9 +126,12 @@ static apcuspd_info_t nut_data[] =
 	{ "LINEFREQ", "output.frequency", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "BCHARGE", "battery.charge", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "MBATTCHG", "battery.charge.low", ST_FLAG_RW, 1, "%.0f", DU_FLAG_NONE, NULL },
-	{ "BATTV", "battery.voltage", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "BATTDATE", "battery.date", ST_FLAG_STRING /* | ST_FLAG_RW */, 16, NULL, DU_FLAG_DATE, NULL },
+	{ "BATTV", "battery.voltage", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "NOMBATTV", "battery.voltage.nominal", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "TIMELEFT", "battery.runtime", ST_FLAG_RW, 60, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "MINTIMEL", "battery.runtime.low", ST_FLAG_RW, 60, "%.0f", DU_FLAG_NONE, NULL },
 	{ "RETPCT", "battery.charge.restart", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "NOMPOWER", "ups.realpower.nominal", 0, 1, "%1.1f", DU_FLAG_INIT, NULL },
 	{ NULL, NULL, 0, 0, NULL, DU_FLAG_NONE, NULL }
 };
