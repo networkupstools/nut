@@ -100,7 +100,7 @@ static apcuspd_info_t nut_data[] =
 	{ "MODEL", "ups.model", ST_FLAG_STRING | ST_FLAG_RW, 32, "Unknown UPS", DU_FLAG_INIT, NULL },
 	{ "STATUS", "ups.status", ST_FLAG_STRING | ST_FLAG_RW, 32, "OFF", DU_FLAG_INIT|DU_FLAG_STATUS, NULL },
 	{ "SERIALNO", "ups.serial", ST_FLAG_STRING | ST_FLAG_RW, 32, NULL, DU_FLAG_NONE, NULL },
-	{ "LOADPCT", "ups.load", ST_FLAG_RW, 32, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "LOADPCT", "ups.load", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "DATE", "ups.time", ST_FLAG_STRING | ST_FLAG_RW, 16, NULL, DU_FLAG_TIME, NULL },
 	{ "DATE", "ups.date", ST_FLAG_STRING | ST_FLAG_RW, 16, NULL, DU_FLAG_DATE, NULL },
 	{ "MANDATE", "ups.mfr.date", ST_FLAG_STRING | ST_FLAG_RW, 16, NULL, DU_FLAG_NONE, NULL },
