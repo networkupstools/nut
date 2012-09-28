@@ -13,10 +13,10 @@ linkman:nutupsdrv[8].
 
 DESCRIPTION
 -----------
-This program is a apcupsd client driver.
+This driver is a client to apcupsd.
 
-*apcupsd-ups* acts as an apcupsd client, simply forwarding data.
-This can be useful in cases where both protocols are required in a network
+*apcupsd-ups* acts as an *apcupsd* client, simply forwarding data.
+This can be useful in cases where both protocols are required in a network,
 or in case apcupsd has a required UPS access mode missing from NUT.
 
 Port Variable:
@@ -39,7 +39,7 @@ This driver was written in one evening to allow interworking with apcupsd.
 
 BUGS
 ----
-Access to apcupsd is strictly read only, no commands can be issued.
+Access to apcupsd is strictly read only: no commands can be issued.
 
 AUTHOR
 ------
@@ -48,11 +48,10 @@ Andreas Steinmetz
 SEE ALSO
 --------
 
-linkman:upscmd[1],
-linkman:upsrw[1],
 linkman:ups.conf[5],
 linkman:nutupsdrv[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+The apcupsd home page: http://www.apcupsd.org/

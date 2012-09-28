@@ -1,15 +1,19 @@
-/*
-	anything commented is optional
-	anything else is mandatory
-	 
-	for more information, refer to:
-	* docs/developers.txt
-	* docs/new-drivers.txt
-	* docs/new-names.txt
-	
-	and possibly also to:
-	* docs/hid-subdrivers.txt for USB/HID devices
-	* or docs/snmp-subdrivers.txt for SNMP devices
+/* apcupsd-ups.c - client for apcupsd
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
 */
 
 #include <sys/socket.h>
@@ -171,6 +175,7 @@ static int getdata(void)
 	x=write(p.fd,&n,2);
 	x=write(p.fd,"status",6);
 
+	/* TODO: double-check for poll() in configure script */
 	while(poll(&p,1,15000)==1)
 	{
 		if(read(p.fd,&n,2)!=2)
@@ -273,6 +278,7 @@ void upsdrv_initups(void)
 	if(!(h=gethostbyname(device_path)))port=0;
 	else memcpy(&host.sin_addr,h->h_addr,4);
 
+	/* TODO: add IPv6 support */
 	host.sin_family=AF_INET;
 	host.sin_port=htons(port);
 }
