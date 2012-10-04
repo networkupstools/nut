@@ -29,6 +29,11 @@
 
 #define NUT_IPMI_DRV_NAME	"nut-ipmipsu"
 
+/* IPMI defines */
+/* 5 seconds for establishing an IPMI connection */
+#define IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT			5000
+#define IPMI_RETRANSMISSION_TIMEOUT_LENGTH_DEFAULT	250
+
 /* dynamic link library stuff */
 static char * libname = "libfreeipmi";
 static lt_dlhandle dl_handle = NULL;
@@ -88,10 +93,23 @@ static int (*nut_ipmi_ctx_find_inband) (ipmi_ctx_t ctx,
                           const char *driver_device,
                           unsigned int workaround_flags,
                           unsigned int flags);
+static int (*nut_ipmi_ctx_open_outofband) (ipmi_ctx_t ctx,
+                             const char *hostname,
+                             const char *username,
+                             const char *password,
+                             uint8_t authentication_type,
+                             uint8_t privilege_level,
+                             unsigned int session_timeout,
+                             unsigned int retransmission_timeout,
+                             unsigned int workaround_flags,
+                             unsigned int flags);
+static int (*nut_ipmi_ctx_errnum) (ipmi_ctx_t ctx);
 static char * (*nut_ipmi_ctx_errormsg) (ipmi_ctx_t ctx);
 static int (*nut_ipmi_ctx_close) (ipmi_ctx_t ctx);
 static void (*nut_ipmi_ctx_destroy) (ipmi_ctx_t ctx);
 
+/* Internal functions */
+static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * sec);
 
 /* Return 0 on error */
 int nutscan_load_ipmi_library()
@@ -189,6 +207,16 @@ int nutscan_load_ipmi_library()
 			goto err;
 	}
 
+	*(void **) (&nut_ipmi_ctx_open_outofband) = lt_dlsym(dl_handle, "ipmi_ctx_open_outofband");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+	*(void **) (&nut_ipmi_ctx_errnum) = lt_dlsym(dl_handle, "ipmi_ctx_errnum");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
 	*(void **) (&nut_ipmi_ctx_errormsg) = lt_dlsym(dl_handle, "ipmi_ctx_errormsg");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
@@ -265,10 +293,10 @@ int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 	/* Parse FRU information */
 	if (!(fru_parse_ctx = (*nut_ipmi_fru_ctx_create) (ipmi_ctx)))
 	{
-		fprintf(stderr, "ipmi_fru_parse_ctx_create()\n");
+		fprintf(stderr, "Error with %s(): %s\n", IPMI_FRU_CTX_CREATE, (*nut_ipmi_ctx_errormsg)(ipmi_ctx));
 		return 0;
 	}
-fprintf(stdout, "There.1\n");
+
 	/* lots of motherboards calculate checksums incorrectly */
 	if ((*nut_ipmi_fru_ctx_set_flags) (fru_parse_ctx, IPMI_FRU_FLAGS_SKIP_CHECKSUM_CHECKS) < 0)
 	{
@@ -279,7 +307,7 @@ fprintf(stdout, "There.1\n");
 #endif /* HAVE_FREEIPMI_11X_12X */
 		return 0;
 	}
-fprintf(stdout, "There.2\n");
+
 	if ((*nut_ipmi_fru_open_device_id) (fru_parse_ctx, ipmi_id) < 0)
 	{
 #ifdef HAVE_FREEIPMI_11X_12X
@@ -292,7 +320,6 @@ fprintf(stdout, "There.2\n");
 
 	do
 	{
-fprintf(stdout, "There.3\n");
 		/* clear fields */
 		area_type = 0;
 		area_length = 0;
@@ -337,20 +364,21 @@ fprintf(stdout, "There.3\n");
 	return 0;
 }
 
-/* return NULL on error */
-nutscan_device_t *  nutscan_scan_ipmi()
+/* Check for IPMI support on a specific (local or remote) system
+ * Return NULL on error, or a valid nutscan_device_t otherwise */
+nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * ipmi_sec)
 {
 	ipmi_ctx_t ipmi_ctx = NULL;
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 	int ret = -1;
 	int ipmi_id = 0;
-	char port_id[10];
+	char port_id[64];
 
 	if( !nutscan_avail_ipmi ) {
 		return NULL;
 	}
-fprintf(stdout, "There1\n");
+
 	/* Initialize the FreeIPMI library. */
 	if (!(ipmi_ctx = (*nut_ipmi_ctx_create) ()))
 	{
@@ -359,34 +387,138 @@ fprintf(stdout, "There1\n");
 		return NULL;
 	}
 
-fprintf(stdout, "There2\n");
-	if ((ret = (*nut_ipmi_ctx_find_inband) (ipmi_ctx,
-				NULL,
-				0, /* don't disable auto-probe */
-				0,
-				0,
-				NULL,
-				0, /* workaround flags, none by default */
-				IPMI_FLAGS_NONBLOCKING  /* flags */
-				)) < 0)
+	/* Are we scanning locally, or over the network? */
+	if (IPaddr == NULL) 
 	{
-		fprintf(stderr, "ipmi_ctx_find_inband: %s\n",
-			(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
-		return NULL;
+		/* FIXME: we need root right to access local IPMI!
+		if (!ipmi_is_root ()) {
+			fprintf(stderr, "IPMI scan: %s\n", ipmi_ctx_strerror (IPMI_ERR_PERMISSION));
+		} */
+
+		if ((ret = (*nut_ipmi_ctx_find_inband) (ipmi_ctx,
+					NULL,
+					0, /* don't disable auto-probe */
+					0,
+					0,
+					NULL,
+					0, /* workaround flags, none by default */
+					0  /* flags */
+					)) < 0)
+		{
+			fprintf(stderr, "ipmi_ctx_find_inband: %s\n",
+				(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
+			return NULL;
+		}
+		if (!ret)
+		{
+			/* No local IPMI device detected */
+			return NULL;
+		}
 	}
-	if (!ret)
-	{
-		/* No local IPMI device detected */
-		return NULL;
+	else {
+
+#if 0
+		if (ipmi_sec->ipmi_version == IPMI_2_0) {
+
+			/* FIXME: need processing?!
+			 * int parse_kg (void *out, unsigned int outlen, const char *in)
+			 * if ((rv = parse_kg (common_cmd_args_config->k_g, IPMI_MAX_K_G_LENGTH + 1, data->string)) < 0)
+			 * {
+			 * 	fprintf (stderr, "Config File Error: k_g input formatted incorrectly\n");
+			 * 	exit (EXIT_FAILURE);
+			 * }*/
+			if ((ret = (*nut_ipmi_ctx_open_outofband_2_0) (ipmi_ctx,
+															IPaddr,
+															ipmi_sec->username,
+															ipmi_sec->password,
+															ipmi_sec->K_g_BMC_key,
+???															(ipmi_sec->K_g_BMC_key) ? config->k_g_len : 0,
+															ipmi_sec->privilege_level,
+															ipmi_sec->cipher_suite_id,
+															IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,
+															IPMI_RETRANSMISSION_TIMEOUT_LENGTH_DEFAULT,
+															ipmi_dev->workaround_flags,
+															flags) < 0)
+			{
+				IPMI_MONITORING_DEBUG (("ipmi_ctx_open_outofband_2_0: %s", ipmi_ctx_errormsg (c->ipmi_ctx)));
+				if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_USERNAME_INVALID)
+					c->errnum = IPMI_MONITORING_ERR_USERNAME_INVALID;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PASSWORD_INVALID)
+					c->errnum = IPMI_MONITORING_ERR_PASSWORD_INVALID;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PRIVILEGE_LEVEL_INSUFFICIENT)
+					c->errnum = IPMI_MONITORING_ERR_PRIVILEGE_LEVEL_INSUFFICIENT;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PRIVILEGE_LEVEL_CANNOT_BE_OBTAINED)
+					c->errnum = IPMI_MONITORING_ERR_PRIVILEGEL_LEVEL_CANNOT_BE_OBTAINED;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_K_G_INVALID)
+					c->errnum = IPMI_MONITORING_ERR_K_G_INVALID;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_CIPHER_SUITE_ID_UNAVAILABLE)
+					c->errnum = IPMI_MONITORING_ERR_CIPHER_SUITE_ID_UNAVAILABLE;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PASSWORD_VERIFICATION_TIMEOUT)
+					c->errnum = IPMI_MONITORING_ERR_PASSWORD_VERIFICATION_TIMEOUT;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_IPMI_2_0_UNAVAILABLE)
+					c->errnum = IPMI_MONITORING_ERR_IPMI_2_0_UNAVAILABLE;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_CONNECTION_TIMEOUT)
+					c->errnum = IPMI_MONITORING_ERR_CONNECTION_TIMEOUT;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_SESSION_TIMEOUT)
+					c->errnum = IPMI_MONITORING_ERR_SESSION_TIMEOUT;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_BAD_COMPLETION_CODE
+					   || ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_IPMI_ERROR)
+					c->errnum = IPMI_MONITORING_ERR_IPMI_ERROR;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_BMC_BUSY)
+					c->errnum = IPMI_MONITORING_ERR_BMC_BUSY;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_OUT_OF_MEMORY)
+					c->errnum = IPMI_MONITORING_ERR_OUT_OF_MEMORY;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_HOSTNAME_INVALID)
+					c->errnum = IPMI_MONITORING_ERR_HOSTNAME_INVALID;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_PARAMETERS)
+					c->errnum = IPMI_MONITORING_ERR_PARAMETERS;
+				else if (ipmi_ctx_errnum (c->ipmi_ctx) == IPMI_ERR_SYSTEM_ERROR)
+					c->errnum = IPMI_MONITORING_ERR_SYSTEM_ERROR;
+				else
+					c->errnum = IPMI_MONITORING_ERR_INTERNAL_ERROR;
+				return (-1);
+			}
+		}
+		else { /* Not IPMI 2.0 */
+
+#endif /* 0 */
+
+		/* Fall back to IPMI 1.5 */
+		if ((ret = (*nut_ipmi_ctx_open_outofband) (ipmi_ctx,
+						IPaddr,
+						ipmi_sec->username,
+						ipmi_sec->password,
+						ipmi_sec->authentication_type,
+						ipmi_sec->privilege_level,
+						IPMI_SESSION_TIMEOUT_LENGTH_DEFAULT,
+						IPMI_RETRANSMISSION_TIMEOUT_LENGTH_DEFAULT,
+						ipmi_sec->workaround_flags,
+						IPMI_FLAGS_DEFAULT
+						)) < 0)
+		{
+			/* No IPMI device detected on this host!
+			if ((*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_USERNAME_INVALID
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PASSWORD_INVALID
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PRIVILEGE_LEVEL_INSUFFICIENT
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PRIVILEGE_LEVEL_CANNOT_BE_OBTAINED
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_AUTHENTICATION_TYPE_UNAVAILABLE
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_PASSWORD_VERIFICATION_TIMEOUT
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_HOSTNAME_INVALID
+			  || (*nut_ipmi_ctx_errnum) (ipmi_ctx) == IPMI_ERR_CONNECTION_TIMEOUT) { */
+
+				/* FIXME: don't log timeout errors */
+				fprintf(stderr, "nut_ipmi_ctx_open_outofband: %s\n",
+					(*nut_ipmi_ctx_errormsg) (ipmi_ctx));
+				return NULL;
+			/*}*/
+		}
 	}
-fprintf(stdout, "There3 (ret = %i)\n", ret);
 
 	/* Loop through all possible components */
 	for (ipmi_id = 0 ; ipmi_id <= IPMI_FRU_DEVICE_ID_MAX ; ipmi_id++) {
-fprintf(stdout, "There4\n");
+
 		if (is_ipmi_device_supported(ipmi_ctx, ipmi_id)) {
 
-fprintf(stdout, "There4.%i\n", ipmi_id);
 			if ( (nut_dev = nutscan_new_device()) == NULL ) {
 				fprintf(stderr,"Memory allocation error\n");
 				nutscan_free_device(current_nut_dev);
@@ -396,9 +528,17 @@ fprintf(stdout, "There4.%i\n", ipmi_id);
 			/* Fill the device structure (sufficient with driver and port) */
 			nut_dev->type = TYPE_IPMI;
 			nut_dev->driver = strdup(NUT_IPMI_DRV_NAME);
-			sprintf(port_id, "id%x", ipmi_id);
+			if (IPaddr == NULL) {
+				sprintf(port_id, "id%x", ipmi_id);
+			}
+			else {
+				/* FIXME: also check against "localhost" and its IPv{4,6} */
+				sprintf(port_id, "id%x@%s", ipmi_id, IPaddr);
+			}
 			nut_dev->port = strdup(port_id);
-
+			/* FIXME: also dump device.serial?
+			 * using drivers/libfreeipmi_get_board_info() */
+			
 			current_nut_dev = nutscan_add_device_to_device(
 							current_nut_dev,
 							nut_dev);
@@ -415,9 +555,50 @@ fprintf(stdout, "There4.%i\n", ipmi_id);
 
 	return current_nut_dev;
 }
+
+/* General IPMI scan entry point: scan 1 to n devices, local or remote,
+ * for IPMI support
+ * Return NULL on error, or a valid nutscan_device_t otherwise */
+nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip, nutscan_ipmi_t * sec)
+{
+	nutscan_ip_iter_t ip;
+	char * ip_str = NULL;
+	nutscan_ipmi_t * tmp_sec;
+	nutscan_device_t * nut_dev = NULL;
+	nutscan_device_t * current_nut_dev = NULL;
+
+	if( !nutscan_avail_ipmi ) {
+		return NULL;
+	}
+
+
+	/* Are we scanning locally, or through the network? */
+	if (start_ip == NULL) 
+	{
+		/* Local PSU scan */
+		current_nut_dev = nutscan_scan_ipmi_device(NULL, NULL);
+	}
+	else {
+		ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
+
+		while(ip_str != NULL) {
+			tmp_sec = malloc(sizeof(nutscan_ipmi_t));
+			memcpy(tmp_sec, sec, sizeof(nutscan_ipmi_t));
+
+			if ((current_nut_dev = nutscan_scan_ipmi_device(ip_str, tmp_sec)) != NULL) {
+				/* Store the positive result */
+				current_nut_dev = nutscan_add_device_to_device(current_nut_dev, nut_dev);
+			}
+			/* Prepare the next iteration */
+			ip_str = nutscan_ip_iter_inc(&ip);
+		};
+	}
+
+	return current_nut_dev;
+}
 #else /* WITH_IPMI */
 /* stub function */
-nutscan_device_t *  nutscan_scan_ipmi()
+nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec)
 {
 	return NULL;
 }

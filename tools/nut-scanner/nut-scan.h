@@ -1,6 +1,8 @@
 /* nut-scan.h: detect NUT services
  * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+ *  Copyright (C)
+ *    2011 - Frederic Bohe <fredericbohe@eaton.com>
+ *    2012 - Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,12 +18,17 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
 #ifndef NUT_SCAN_H
 #define NUT_SCAN_H
 
 #include <nutscan-init.h>
 #include <nutscan-device.h>
 #include <nutscan-ip.h>
+
+#ifdef WITH_IPMI
+#include <freeipmi/freeipmi.h>
+#endif
 
 /* SNMP structure */
 typedef struct nutscan_snmp {
@@ -36,8 +43,34 @@ typedef struct nutscan_snmp {
 	void * handle;
 } nutscan_snmp_t;
 
+/* IPMI structure */
+/* Settings for OutofBand (remote) connection */
+typedef struct nutscan_ipmi {
+	char*			username;            /* IPMI 1.5 and 2.0 */
+	char*			password;            /* IPMI 1.5 and 2.0 */
+	int				authentication_type; /* IPMI 1.5 */
+	int				cipher_suite_id;     /* IPMI 2.0 */
+	char*			K_g_BMC_key;         /* IPMI 2.0, optional key for 2 key auth. */
+	int				privilege_level;     /* for both */
+	unsigned int	workaround_flags;    /* for both */
+	int				ipmi_version;        /* IPMI 1.5 or 2.0? */
+} nutscan_ipmi_t;
+
+/* IPMI auth defines, simply using FreeIPMI defines */
+#ifndef IPMI_AUTHENTICATION_TYPE_NONE
+  #define IPMI_AUTHENTICATION_TYPE_NONE                  0x00
+  #define IPMI_AUTHENTICATION_TYPE_MD2                   0x01
+  #define IPMI_AUTHENTICATION_TYPE_MD5                   0x02
+  #define IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY 0x04
+  #define IPMI_AUTHENTICATION_TYPE_OEM_PROP              0x05
+  #define IPMI_AUTHENTICATION_TYPE_RMCPPLUS              0x06
+#endif /* IPMI_AUTHENTICATION_TYPE_NONE */
+
+#define IPMI_1_5		1
+#define IPMI_2_0		0
+
 /* Scanning */
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip,const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec);
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec);
 
 nutscan_device_t * nutscan_scan_usb();
 
@@ -47,7 +80,7 @@ nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, c
 
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
 
-nutscan_device_t *  nutscan_scan_ipmi(void);
+nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
 
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
