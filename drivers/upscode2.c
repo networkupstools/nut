@@ -41,6 +41,7 @@
 #include "serial.h"
 #include "timehead.h"
 #include "nut_stdint.h"
+#include "clock.h"
 
 #include <math.h>
 
@@ -137,8 +138,8 @@ static int
 static uint32_t
 	status = UPSC_STAT_NOTINIT;
 
-static time_t
-	last_full = 0;
+static nut_time_t
+	last_full;
 
 static float
 	batt_volt_low = 0,
@@ -561,6 +562,8 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
+
+	nut_clock_mintimestamp(&last_full);
 }
 
 
@@ -707,7 +710,7 @@ static float calc_upsload(void) {
 
 void upsdrv_updateinfo(void)
 {
-	time_t now;
+	nut_time_t now;
 	int ok;
 	float load;
 
@@ -723,9 +726,9 @@ void upsdrv_updateinfo(void)
 
 	ok = upsc_getparams("UPDS", simple);
 
-	time(&now);
-	if (ok && now - last_full > full_update_timer) {
-		last_full = now;
+	nut_clock_timestamp(&now);
+	if (ok && nut_clock_difftime(&now, &last_full) > full_update_timer) {
+		nut_clock_copytime(&last_full, &now);
 		ok = upsc_getparams("UPDV", nominal);
 		if (ok && can_upbs)
 			ok = upsc_getparams("UPBS", battery);
@@ -733,7 +736,7 @@ void upsdrv_updateinfo(void)
 
 	if (!ok) {
 		dstate_datastale();
-		last_full = 0;
+		nut_clock_mintimestamp(&last_full);
 		return;
 	}
 

@@ -26,6 +26,7 @@
 
 #include "netcmds.h"
 #include "upsconf.h"
+#include "clock.h"
 
 #include <sys/un.h>
 #include <sys/socket.h>
@@ -335,7 +336,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);
-		client->last_heard = 0;
+		nut_clock_mintimestamp(&client->last_heard);
 		return 0;	/* failed */
 	}
 
@@ -473,7 +474,7 @@ static void client_connect(stype_t *server)
 
 	client->sock_fd = fd;
 
-	time(&client->last_heard);
+	nut_clock_timestamp(&client->last_heard);
 
 	client->addr = xstrdup(inet_ntopW(&csock));
 
@@ -528,7 +529,7 @@ static void client_readline(nut_ctype_t *client)
 		switch (pconf_char(&client->ctx, buf[i]))
 		{
 		case 1:
-			time(&client->last_heard);	/* command received */
+			nut_clock_timestamp(&client->last_heard);	/* command received */
 			parse_net(client);
 			continue;
 
@@ -672,9 +673,6 @@ static void mainloop(void)
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
 	stype_t		*server;
-	time_t	now;
-
-	time(&now);
 
 	if (reload_flag) {
 		conf_reload();
@@ -712,7 +710,7 @@ static void mainloop(void)
 
 		cnext = client->next;
 
-		if (difftime(now, client->last_heard) > 60) {
+		if (nut_clock_sec_since(&client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
 			client_disconnect(client);
 			continue;

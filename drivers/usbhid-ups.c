@@ -108,7 +108,7 @@ bool_t use_interrupt_pipe = TRUE;
 #else
 bool_t use_interrupt_pipe = FALSE;
 #endif
-static time_t lastpoll; /* Timestamp the last polling */
+static nut_time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev;
 
 /* support functions */
@@ -755,23 +755,25 @@ void upsdrv_updateinfo(void)
 	HIDData_t	*event[MAX_EVENT_NUM];
 	int		i, evtCount;
 	double		value;
-	time_t		now;
+	nut_time_t	now;
+	double		poll_time_diff;
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
-	time(&now);
+	nut_clock_timestamp(&now);
+	poll_time_diff = nut_clock_difftime(&now, &lastpoll);
 
 	/* check for device availability to set datastale! */
 	if (hd == NULL) {
 		/* don't flood reconnection attempts */
-		if (now < (int)(lastpoll + poll_interval)) {
+		if (poll_time_diff < poll_interval) {
 			return;
 		}
 
 		upsdebugx(1, "Got to reconnect!\n");
 
 		if (!reconnect_ups()) {
-			lastpoll = now;
+			nut_clock_copytime(&lastpoll, &now);
 			dstate_datastale();
 			return;
 		}
@@ -824,7 +826,7 @@ void upsdrv_updateinfo(void)
 	status_init();
 
 	/* Do a full update (polling) every pollfreq or upon data change (ie setvar/instcmd) */
-	if ((now > (lastpoll + pollfreq)) || (data_has_changed == TRUE)) {
+	if ((poll_time_diff > pollfreq) || (data_has_changed == TRUE)) {
 		upsdebugx(1, "Full update...");
 
 		alarm_init();
@@ -832,7 +834,7 @@ void upsdrv_updateinfo(void)
 		if (hid_ups_walk(HU_WALKMODE_FULL_UPDATE) == FALSE)
 			return;
 
-		lastpoll = now;
+		nut_clock_copytime(&lastpoll, &now);
 		data_has_changed = FALSE;
 
 		ups_alarm_set();
@@ -875,7 +877,7 @@ void upsdrv_initinfo(void)
 		use_interrupt_pipe = FALSE;
 	}
 
-	time(&lastpoll);
+	nut_clock_timestamp(&lastpoll);
 
 	/* install handlers */
 	upsh.setvar = setvar;

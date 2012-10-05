@@ -25,6 +25,7 @@
 
 #include "main.h"
 #include "blazer.h"
+#include "clock.h"
 
 #include <math.h>
 
@@ -59,7 +60,7 @@ static struct {
 	double	eff;	/* effective load */
 } load = { 0, 0.1, 1 };
 
-static time_t	lastpoll = 0;
+static nut_time_t	lastpoll;
 
 /*
  * This little structure defines the various flavors of the Megatec protocol.
@@ -556,7 +557,7 @@ static void blazer_initbattery(void)
 	if (val) {
 		double	rh, lh, rl, ll;
 
-		time(&lastpoll);
+		nut_clock_timestamp(&lastpoll);
 
 		if (sscanf(val, "%lf,%lf,%lf,%lf", &rh, &lh, &rl, &ll) < 4) {
 			fatalx(EXIT_FAILURE, "Insufficient parameters for runtimecal");
@@ -628,6 +629,8 @@ void blazer_initinfo(void)
 {
 	const char	*protocol = getval("protocol");
 	int	retry;
+
+	nut_clock_mintimestamp(&lastpoll);
 
 	for (proto = 0; command[proto].status; proto++) {
 
@@ -725,6 +728,8 @@ void blazer_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	static int	retry = 0;
+	nut_time_t	now;
+
 
 	if (blazer_status(command[proto].status)) {
 
@@ -742,17 +747,15 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (getval("runtimecal")) {
-		time_t	now;
-
-		time(&now);
+		nut_clock_timestamp(&now);
 
 		if (online) {	/* OL */
-			batt.runt.est += batt.runt.nom * difftime(now, lastpoll) / batt.chrg.time;
+			batt.runt.est += batt.runt.nom * nut_clock_difftime(&now, &lastpoll) / batt.chrg.time;
 			if (batt.runt.est > batt.runt.nom) {
 				batt.runt.est = batt.runt.nom;
 			}
 		} else {	/* OB */
-			batt.runt.est -= load.eff * difftime(now, lastpoll);
+			batt.runt.est -= load.eff * nut_clock_difftime(&now, &lastpoll);
 			if (batt.runt.est < 0) {
 				batt.runt.est = 0;
 			}
@@ -761,7 +764,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.charge", "%.0f", 100 * batt.runt.est / batt.runt.nom);
 		dstate_setinfo("battery.runtime", "%.0f", batt.runt.est / load.eff);
 
-		lastpoll = now;
+		nut_clock_copytime(&lastpoll, &now);
 	}
 
 	if (retry > MAXTRIES) {

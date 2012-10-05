@@ -21,6 +21,7 @@
 
 #include "main.h"
 #include "serial.h"
+#include "clock.h"
 #include "apcsmart-old.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
@@ -33,6 +34,12 @@ static upsdrv_info_t table_info = {
 	0,
 	{ NULL }
 };
+
+
+/* Stored timestamps */
+static	nut_time_t	instcmd_chktime_last;
+static	nut_time_t	updateinfo_last;
+
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1343,14 +1350,13 @@ static int do_cmd(apc_cmdtab_t *ct)
 /* some commands must be repeated in a window to execute */
 static int instcmd_chktime(apc_cmdtab_t *ct)
 {
-	double	elapsed;
-	time_t	now;
-	static	time_t	last = 0;
+	double		elapsed;
+	nut_time_t	now;
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
-	elapsed = difftime(now, last);
-	last = now;
+	elapsed = nut_clock_difftime(&now, &instcmd_chktime_last);
+	nut_clock_copytime(&instcmd_chktime_last, &now);
 
 	/* you have to hit this in a small window or it fails */
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
@@ -1458,19 +1464,21 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "Detected %s [%s] on %s", pmod, pser, device_path);
 
 	setuphandlers();
+
+	nut_clock_mintimestamp(&instcmd_chktime_last);
+	nut_clock_mintimestamp(&updateinfo_last);
 }
 
 void upsdrv_updateinfo(void)
 {
-	static	time_t	last_full = 0;
-	time_t	now;
+	nut_time_t	now;
 
 	/* try to wake up a dead ups once in awhile */
 	if ((dstate_is_stale()) && (!smartmode())) {
 		ser_comm_fail("Communications with UPS lost - check cabling");
 
 		/* reset this so a full update runs when the UPS returns */
-		last_full = 0;
+		nut_clock_mintimestamp(&updateinfo_last);
 		return;
 	}
 
@@ -1479,12 +1487,12 @@ void upsdrv_updateinfo(void)
 	if (!update_status())
 		return;
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
 	/* refresh all variables hourly */
 	/* does not catch measure-ups II insertion/removal */
-	if (difftime(now, last_full) > 3600) {
-		last_full = now;
+	if (nut_clock_difftime(&now, &updateinfo_last) > 3600) {
+		nut_clock_copytime(&updateinfo_last, &now);
 		update_info_all();
 		return;
 	}

@@ -23,6 +23,7 @@
 #define UPSTYPE_H_SEEN 1
 
 #include "parseconf.h"
+#include "clock.h"
 
 /* structure for the linked list of each UPS that we track */
 typedef struct upstype_s {
@@ -34,9 +35,9 @@ typedef struct upstype_s {
 	int			stale;
 	int			dumpdone;
 	int			data_ok;
-	time_t			last_heard;
-	time_t			last_ping;
-	time_t			last_connfail;
+	nut_time_t		last_heard;
+	nut_time_t		last_ping;
+	nut_time_t		last_connfail;
 	PCONF_CTX_t		sock_ctx;
 	struct st_tree_s	*inforoot;
 	struct cmdlist_s	*cmdlist;

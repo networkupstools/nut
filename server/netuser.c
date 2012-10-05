@@ -18,6 +18,7 @@
 */
 
 #include "common.h"
+#include "clock.h"
 
 #include "upsd.h"
 #include "sstate.h"
@@ -79,7 +80,7 @@ void net_logout(nut_ctype_t *client, int numarg, const char **arg)
 
 	sendback(client, "OK Goodbye\n");
 
-	client->last_heard = 0;
+	nut_clock_mintimestamp(&client->last_heard);
 }
 
 /* MASTER <upsname> */

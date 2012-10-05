@@ -38,6 +38,7 @@
 #include "parseconf.h"
 #include "upsclient.h"
 #include "dummy-ups.h"
+#include "clock.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
 #define DRIVER_VERSION	"0.13"
@@ -57,11 +58,12 @@ upsdrv_info_t upsdrv_info =
 #define MODE_REPEATER	2 /* use libupsclient to repeat an UPS */
 #define MODE_META		3 /* consolidate data from several UPSs (TBS) */
 
-int mode=MODE_NONE;
+int mode = MODE_NONE;
 
 /* parseconf context, for dummy mode using a file */
 PCONF_CTX_t	*ctx=NULL;
-time_t		next_update = -1;
+nut_time_t	last_update;
+int		update_delay = 0;
 
 #define MAX_STRING_SIZE	128
 
@@ -147,6 +149,8 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 
 	dstate_addcmd("load.off");
+
+	nut_clock_mintimestamp(&last_update);
 }
 
 void upsdrv_updateinfo(void)
@@ -422,14 +426,12 @@ static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr, var_value[MAX_STRING_SIZE];
-	int		value_args = 0, counter;
-	time_t	now;
-
-	time(&now);
+	int	value_args = 0, counter;
+	int	pending_action = 0;
 
 	upsdebugx(1, "entering parse_data_file()");
 
-	if (now < next_update)
+	if (nut_clock_sec_since(&last_update) < update_delay)
 	{
 		upsdebugx(1, "leaving (paused)...");
 		return 1;
@@ -452,10 +454,6 @@ static int parse_data_file(int upsfd)
 				fn, ctx->errmsg);
 	}
 
-	/* Reset the next call time, so that we can loop back on the file
-	 * if there is no blocking action (ie TIMER) until the end of the file */
-	next_update = -1;
-
 	/* Now start or continue parsing... */
 	while (pconf_file_next(ctx))
 	{
@@ -475,10 +473,10 @@ static int parse_data_file(int upsfd)
 		{
 			/* TIMER <seconds> will wait "seconds" before
 			 * continuing the parsing */
-			int delay = atoi (ctx->arglist[1]);
-			time(&next_update);
-			next_update += delay;
-			upsdebugx(1, "suspending execution for %i seconds...", delay);
+			update_delay = atoi(ctx->arglist[1]);
+			nut_clock_timestamp(&last_update);
+			upsdebugx(1, "suspending execution for %i seconds...", update_delay);
+			pending_action = 1;
 			break;
 		}
 
@@ -533,7 +531,7 @@ static int parse_data_file(int upsfd)
 	}
 
 	/* Cleanup parseconf if there is no pending action */
-	if (next_update == -1)
+	if (!pending_action)
 	{
 		pconf_finish(ctx);
 		free(ctx);

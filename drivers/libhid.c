@@ -36,6 +36,7 @@
 #include "libhid.h"
 #include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
+#include "clock.h"
 
 /* Communication layers and drivers (USB and MGE SHUT) */
 #ifdef SHUT_MODE
@@ -90,18 +91,24 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 {
 	HIDData_t	*pData;
 	reportbuf_t	*rbuf;
-	int		i, id;
+	int		id;
+	unsigned int	i;
 
 	if (!pDesc)
 		return NULL;
 
-	rbuf = calloc(1, sizeof(*rbuf));
+	rbuf = (reportbuf_t *)calloc(1, sizeof(*rbuf));
 	if (!rbuf) {
 		return NULL;
 	}
 
+	/* initialise timestamps */
+        for (i = 0; i < sizeof(rbuf->ts) / sizeof(rbuf->ts[0]); ++i) {
+		nut_clock_mintimestamp(&rbuf->ts[i]);
+	}
+
 	/* now go through all items that are part of this report */
-	for (i=0; i<pDesc->nitems; i++) {
+	for (i = 0; i<pDesc->nitems; i++) {
 
 		pData = &pDesc->item[i];
 
@@ -145,7 +152,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	int	id = pData->ReportID;
 	int	r;
 
-	if (rbuf->ts[id] + age > time(NULL)) {
+	if (nut_clock_sec_since(&rbuf->ts[id]) < age) {
 		/* buffered report is still good; nothing to do */
 		upsdebug_hex(3, "Report[buf]", rbuf->data[id], rbuf->len[id]);
 		return 0;
@@ -166,7 +173,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	}
 
 	/* have (valid) report */
-	time(&rbuf->ts[id]);
+	nut_clock_timestamp(&rbuf->ts[id]);
 
 	return 0;
 }
@@ -208,7 +215,7 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 	upsdebug_hex(3, "Report[set]", rbuf->data[id], rbuf->len[id]);
 
 	/* expire report */
-	rbuf->ts[id] = 0;
+	nut_clock_mintimestamp(&rbuf->ts[id]);
 
 	return 0;
 }
@@ -232,7 +239,7 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 	}
 
 	/* have (valid) report */
-	time(&rbuf->ts[id]);
+	nut_clock_timestamp(&rbuf->ts[id]);
 
 	return 0;
 }
@@ -450,7 +457,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 	/* flush the report buffer (data may have changed) */
 	for (i=0; i<256; i++) {
-		reportbuf->ts[i] = 0;
+		nut_clock_mintimestamp(&reportbuf->ts[i]);
 	}
 	
 	upsdebugx(4, "Set report succeeded");

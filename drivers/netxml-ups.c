@@ -21,6 +21,7 @@
 #include "main.h"
 #include "netxml-ups.h"
 #include "mge-xml.h"
+#include "clock.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +56,7 @@ upsdrv_info_t	upsdrv_info = {
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
-static time_t		lastheard = 0;
+static nut_time_t	lastheard;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
@@ -83,7 +84,9 @@ void upsdrv_initinfo(void)
 {
 	char	*page, *last = NULL;
 	char	buf[SMALLBUF];
-	
+
+	nut_clock_mintimestamp(&lastheard);
+
 	snprintf(buf, sizeof(buf), "%s", subdriver->initinfo);
 
 	for (page = strtok_r(buf, " ", &last); page != NULL; page = strtok_r(NULL, " ", &last)) {
@@ -96,7 +99,7 @@ void upsdrv_initinfo(void)
 
 		if (testvar("subscribe") && (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK)) {
 			extrafd = ne_sock_fd(sock);
-			time(&lastheard);
+			nut_clock_timestamp(&lastheard);
 		}
 
 		return;
@@ -127,9 +130,9 @@ void upsdrv_updateinfo(void)
 			ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 			ne_xml_parse(parser, buf, strlen(buf));
 			ne_xml_destroy(parser);
-			time(&lastheard);
+			nut_clock_timestamp(&lastheard);
 
-		} else if ((ret == NE_SOCK_TIMEOUT) && (difftime(time(NULL), lastheard) < 180)) {
+		} else if ((ret == NE_SOCK_TIMEOUT) && (nut_clock_sec_since(&lastheard) < 180)) {
 			/* timed out */
 
 			upsdebugx(2, "%s: ne_sock_read(timeout)", __func__);
@@ -144,7 +147,7 @@ void upsdrv_updateinfo(void)
 
 			if (netxml_alarm_subscribe(subdriver->subscribe) == NE_OK) {
 				extrafd = ne_sock_fd(sock);
-				time(&lastheard);
+				nut_clock_timestamp(&lastheard);
 				return;
 			}
 

@@ -33,6 +33,7 @@
 #include "main.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
+#include "clock.h"
 
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
@@ -109,7 +110,8 @@ upsdrv_info_t	upsdrv_info = {
 };
 /* FIXME: integrate MIBs info? do the same as for usbhid-ups! */
 
-time_t lastpoll = 0;
+/* last poll timestamp */
+nut_time_t lastpoll;
 
 /* outlet OID index start with 0 or 1,
  * automatically guessed at the first pass */
@@ -156,15 +158,21 @@ void upsdrv_initinfo(void)
 	/* setup handlers for instcmd and setvar functions */
 	upsh.setvar = su_setvar;
 	upsh.instcmd = su_instcmd;
+
+	nut_clock_mintimestamp(&lastpoll);
 }
 
 void upsdrv_updateinfo(void)
 {
+	nut_time_t now;
+
 	upsdebugx(1,"SNMP UPS driver : entering upsdrv_updateinfo()");
 
 	/* only update every pollfreq */
 	/* FIXME: only update status (SU_STATUS_*), à la usbhid-ups, in between */
-	if (time(NULL) > (lastpoll + pollfreq)) {
+	nut_clock_timestamp(&now);
+
+	if (nut_clock_difftime(&now, &lastpoll) > pollfreq) {
 
 		status_init();
 
@@ -177,7 +185,7 @@ void upsdrv_updateinfo(void)
 		status_commit();
 
 		/* store timestamp */
-		lastpoll = time(NULL);
+		nut_clock_copytime(&lastpoll, &now);
 	}
 }
 

@@ -28,6 +28,7 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
+#include "clock.h"
 
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"
@@ -44,6 +45,11 @@ upsdrv_info_t upsdrv_info = {
 };
 
 static int ups_status = 0;
+
+/* Stored timestamps */
+static nut_time_t instcmd_chktime_last;
+static nut_time_t updateinfo_last;
+
 
 /*
  * Aix compatible names
@@ -2018,14 +2024,13 @@ static int do_cmd(const apc_cmdtab_t *ct)
 /* some commands must be repeated in a window to execute */
 static int instcmd_chktime(apc_cmdtab_t *ct, const char *ext)
 {
-	double	elapsed;
-	time_t	now;
-	static	time_t	last = 0;
+	nut_time_t	now;
+	double		elapsed;
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
-	elapsed = difftime(now, last);
-	last = now;
+	elapsed = nut_clock_difftime(&now, &instcmd_chktime_last);
+	nut_clock_copytime(&instcmd_chktime_last, &now);
 
 	/* you have to hit this in a small window or it fails */
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
@@ -2201,13 +2206,15 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "detected %s [%s] on %s", pmod, pser, device_path);
 
 	setuphandlers();
+
+	nut_clock_mintimestamp(&instcmd_chktime_last);
+	nut_clock_mintimestamp(&updateinfo_last);
 }
 
 void upsdrv_updateinfo(void)
 {
 	static int last_worked = 0;
-	static time_t last_full = 0;
-	time_t now;
+	nut_time_t now;
 
 	/* try to wake up a dead ups once in awhile */
 	if (dstate_is_stale()) {
@@ -2215,7 +2222,7 @@ void upsdrv_updateinfo(void)
 			upsdebugx(LOG_DEBUG, "upsdrv_updateinfo: comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
-		last_full = 0;
+		nut_clock_mintimestamp(&updateinfo_last);
 
 		if (++last_worked < 10)
 			return;
@@ -2231,12 +2238,12 @@ void upsdrv_updateinfo(void)
 	if (!update_status())
 		return;
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
 	/* refresh all variables hourly */
 	/* does not catch measure-ups II insertion/removal */
-	if (difftime(now, last_full) > 3600) {
-		last_full = now;
+	if (nut_clock_difftime(&now, &updateinfo_last) > 3600) {
+		nut_clock_copytime(&updateinfo_last, &now);
 		update_info_all();
 		return;
 	}

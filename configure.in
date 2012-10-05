@@ -183,7 +183,10 @@ AC_CHECK_DECLS(__func__, [], [
 		AC_DEFINE(__func__, __LINE__, [Replace missing  __func__ declaration])
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
-	      
+
+dnl x86-64 needs librt for for clock_gettime
+AC_SEARCH_LIBS(clock_gettime, rt)
+
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)

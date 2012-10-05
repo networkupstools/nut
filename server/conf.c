@@ -23,6 +23,7 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include "clock.h"
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
@@ -53,7 +54,10 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
-	time(&temp->last_heard);
+	nut_clock_timestamp(&temp->last_heard);
+
+	nut_clock_mintimestamp(&temp->last_ping);
+	nut_clock_mintimestamp(&temp->last_connfail);
 
 	temp->next = firstups;
 	firstups = temp;

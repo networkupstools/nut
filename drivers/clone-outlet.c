@@ -20,6 +20,7 @@
 
 #include "main.h"
 #include "parseconf.h"
+#include "clock.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -64,7 +65,7 @@ static struct {
 static int	dumpdone = 0;
 
 static PCONF_CTX_t	sock_ctx;
-static time_t	last_heard = 0, last_ping = 0, last_connfail = 0;
+static nut_time_t	last_heard, last_ping, last_connfail;
 
 static int parse_args(int numargs, char **arg)
 {
@@ -145,6 +146,8 @@ static int sstate_connect(void)
 	int	ret, fd;
 	const char	*dumpcmd = "DUMPALL\n";
 	struct sockaddr_un	sa;
+	nut_time_t	now;
+
 
 	memset(&sa, '\0', sizeof(sa));
 	sa.sun_family = AF_UNIX;
@@ -160,18 +163,16 @@ static int sstate_connect(void)
 	ret = connect(fd, (struct sockaddr *) &sa, sizeof(sa));
 
 	if (ret < 0) {
-		time_t	now;
-
 		close(fd);
 
 		/* rate-limit complaints - don't spam the syslog */
-		time(&now);
+		nut_clock_timestamp(&now);
 
-		if (difftime(now, last_connfail) < 60) {
+		if (nut_clock_difftime(&now, &last_connfail) < 60) {
 			return -1;
 		}
 
-		last_connfail = now;
+		nut_clock_copytime(&last_connfail, &now);
 
 		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s]", device_path);
 		return -1;
@@ -204,7 +205,7 @@ static int sstate_connect(void)
 
 	pconf_init(&sock_ctx, NULL);
 
-	time(&last_heard);
+	nut_clock_timestamp(&last_heard);
 
 	dumpdone = 0;
 
@@ -278,7 +279,7 @@ static int sstate_readline(void)
 		{
 		case 1:
 			if (parse_args(sock_ctx.numargs, sock_ctx.arglist)) {
-				time(&last_heard);
+				nut_clock_timestamp(&last_heard);
 			}
 			continue;
 
@@ -298,8 +299,8 @@ static int sstate_readline(void)
 
 static int sstate_dead(int maxage)
 {
-	time_t	now;
-	double	elapsed;
+	nut_time_t	now;
+	double		elapsed;
 
 	/* an unconnected ups is always dead */
 	if (upsfd < 0) {
@@ -307,7 +308,7 @@ static int sstate_dead(int maxage)
 		return -1;	/* dead */
 	}
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
 	/* ignore DATAOK/DATASTALE unless the dump is done */
 	if (dumpdone && dstate_is_stale()) {
@@ -315,13 +316,13 @@ static int sstate_dead(int maxage)
 		return -1;	/* dead */
 	}
 
-	elapsed = difftime(now, last_heard);
+	elapsed = nut_clock_difftime(&now, &last_heard);
 
 	/* somewhere beyond a third of the maximum time - prod it to make it talk */
-	if ((elapsed > (maxage / 3)) && (difftime(now, last_ping) > (maxage / 3))) {
+	if ((elapsed > (maxage / 3)) && (nut_clock_difftime(&now, &last_ping) > (maxage / 3))) {
 		upsdebugx(3, "Send PING to UPS");
 		sstate_sendline("PING\n");
-		last_ping = now;
+		nut_clock_copytime(&last_ping, &now);
 	}
 
 	if (elapsed > maxage) {
@@ -336,6 +337,9 @@ static int sstate_dead(int maxage)
 
 void upsdrv_initinfo(void)
 {
+	nut_clock_mintimestamp(&last_heard);
+	nut_clock_mintimestamp(&last_ping);
+	nut_clock_mintimestamp(&last_connfail);
 }
 
 

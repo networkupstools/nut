@@ -29,15 +29,16 @@
 #endif
 
 #include "parseconf.h"
+#include "clock.h"
 
 /* client structure */
 typedef struct nut_ctype_s {
-	char	*addr;
-	int	sock_fd;
-	time_t	last_heard;
-	char	*loginups;
-	char	*password;
-	char	*username;
+	char		*addr;
+	int		sock_fd;
+	nut_time_t	last_heard;
+	char		*loginups;
+	char		*password;
+	char		*username;
 
 #ifdef	HAVE_SSL
 	SSL	*ssl;

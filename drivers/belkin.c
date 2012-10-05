@@ -26,9 +26,12 @@
 #include "main.h"
 #include "serial.h"
 #include "belkin.h"
+#include "clock.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
 #define DRIVER_VERSION	"0.24"
+
+static nut_time_t lastcmd;
 
 static int init_communication(void);
 static int get_belkin_reply(char *buf);
@@ -393,15 +396,16 @@ static void do_beeper_off(void) {
 /* handle the "load.off" with some paranoia */
 static void do_off(void)
 {
-	static	time_t lastcmd = 0;
-	time_t	now, elapsed;
 #ifdef CONFIRM_DANGEROUS_COMMANDS
-	time(&now);
-	elapsed = now - lastcmd;
+	nut_time_t	now;
+	double		elapsed;
+
+	nut_clock_timestamp(&now);
+	elapsed = nut_clock_difftime(&now, &lastcmd);
 
 	/* reset the timer every call - this means if you call it too      *
 	 * early, then you have to wait MINCMDTIME again before sending #2 */
-	lastcmd = now;
+	nut_clock_copytime(&lastcmd, &now);
 
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
 
@@ -533,6 +537,8 @@ void upsdrv_initinfo(void)
 	dstate_addcmd("test.battery.stop");
 
 	upsh.instcmd = instcmd;
+
+	nut_clock_mintimestamp(&lastcmd);
 }
 
 void upsdrv_cleanup(void)

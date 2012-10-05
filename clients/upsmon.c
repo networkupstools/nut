@@ -29,6 +29,7 @@
 #include "upsmon.h"
 #include "parseconf.h"
 #include "timehead.h"
+#include "clock.h"
 
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
@@ -80,6 +81,8 @@ static int 	opt_af = AF_UNSPEC;
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
+
+static	nut_time_t	check_parent_lastwarn;
 
 static void setflag(int *val, int flag)
 {
@@ -310,10 +313,7 @@ static int do_upsd_auth(utype_t *ups)
 /* set flags and make announcements when a UPS has been checked successfully */
 static void ups_is_alive(utype_t *ups)
 {
-	time_t	now;
-
-	time(&now);
-	ups->lastpoll = now;
+	nut_clock_timestamp(&ups->lastpoll);
 
 	if (ups->commstate == 1)		/* already known */
 		return;
@@ -328,7 +328,7 @@ static void ups_is_alive(utype_t *ups)
 /* handle all the notifications for a missing UPS in one place */
 static void ups_is_gone(utype_t *ups)
 {
-	time_t	now;
+	nut_time_t	now;
 
 	/* first time: clear the flag and throw the first notifier */
 	if (ups->commstate != 0) {
@@ -339,18 +339,18 @@ static void ups_is_gone(utype_t *ups)
 		return;
 	}
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
 	/* first only act if we're <nocommtime> seconds past the last poll */
-	if ((now - ups->lastpoll) < nocommwarntime)
+	if (nut_clock_difftime(&now, &ups->lastpoll) < nocommwarntime)
 		return;
 
 	/* now only complain if we haven't lately */
-	if ((now - ups->lastncwarn) > nocommwarntime) {
+	if (nut_clock_difftime(&now, &ups->lastncwarn) > nocommwarntime) {
 
 		/* NOCOMM indicates a persistent condition */
 		do_notify(ups, NOTIFY_NOCOMM);
-		ups->lastncwarn = now;
+		nut_clock_copytime(&ups->lastncwarn, &now);
 	}
 }
 
@@ -566,12 +566,12 @@ static int get_var(utype_t *ups, const char *var, char *buf, size_t bufsize)
 
 static void slavesync(void)
 {
-	utype_t	*ups;
-	char	temp[SMALLBUF];
-	time_t	start, now;
-	int	maxlogins, logins;
+	utype_t		*ups;
+	char		temp[SMALLBUF];
+	nut_time_t	start;
+	int		maxlogins, logins;
 
-	time(&start);
+	nut_clock_timestamp(&start);
 
 	for (;;) {
 		maxlogins = 0;
@@ -599,9 +599,7 @@ static void slavesync(void)
 			return;
 
 		/* after HOSTSYNC seconds, assume slaves are stuck and bail */
-		time(&now);
-
-		if ((now - start) > hostsync) {
+		if (nut_clock_sec_since(&start) > hostsync) {
 			upslogx(LOG_INFO, "Host sync timer expired, forcing shutdown");
 			return;
 		}
@@ -640,8 +638,6 @@ static void forceshutdown(void)
 
 static int is_ups_critical(utype_t *ups)
 {
-	time_t	now;
-
 	/* FSD = the master is forcing a shutdown */
 	if (flag_isset(ups->status, ST_FSD))
 		return 1;
@@ -661,10 +657,8 @@ static int is_ups_critical(utype_t *ups)
 
 	/* FSD isn't set, so the master hasn't seen it yet */
 
-	time(&now);
-
 	/* give the master up to HOSTSYNC seconds before shutting down */
-	if ((now - ups->lastnoncrit) > hostsync) {
+	if (nut_clock_sec_since(&ups->lastnoncrit) > hostsync) {
 		upslogx(LOG_WARNING, "Giving up on the master for UPS [%s]",
 			ups->sys);
 		return 1;
@@ -677,15 +671,16 @@ static int is_ups_critical(utype_t *ups)
 /* recalculate the online power value and see if things are still OK */
 static void recalc(void)
 {
-	utype_t	*ups;
-	int	val_ol = 0;
-	time_t	now;
+	utype_t		*ups;
+	int		val_ol = 0;
+	nut_time_t	now;
 
-	time(&now);
+	nut_clock_timestamp(&now);
+
 	ups = firstups;
 	while (ups != NULL) {
 		/* promote dead UPSes that were last known OB to OB+LB */
-		if ((now - ups->lastpoll) > deadtime)
+		if (nut_clock_difftime(&now, &ups->lastpoll) > deadtime)
 			if (flag_isset(ups->status, ST_ONBATT)) {
 				upsdebugx(1, "Promoting dead UPS: %s", ups->sys);
 				setflag(&ups->status, ST_LOWBATT);
@@ -729,13 +724,13 @@ static void ups_low_batt(utype_t *ups)
 
 static void upsreplbatt(utype_t *ups)
 {
-	time_t	now;
+	nut_time_t	now;
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
-	if ((now - ups->lastrbwarn) > rbwarntime) {
+	if (nut_clock_difftime(&now, &ups->lastrbwarn) > rbwarntime) {
 		do_notify(ups, NOTIFY_REPLBATT);
-		ups->lastrbwarn = now;
+		nut_clock_copytime(&ups->lastrbwarn, &now);
 	}
 }
 
@@ -925,10 +920,10 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	tmp->commstate = -1;
 	tmp->linestate = -1;
 
-	tmp->lastpoll = 0;
-	tmp->lastnoncrit = 0;
-	tmp->lastrbwarn = 0;
-	tmp->lastncwarn = 0;
+	nut_clock_mintimestamp(&tmp->lastpoll);
+	nut_clock_mintimestamp(&tmp->lastnoncrit);
+	nut_clock_mintimestamp(&tmp->lastrbwarn);
+	nut_clock_mintimestamp(&tmp->lastncwarn);
 
 	if (!strcasecmp(master, "master"))
 		setflag(&tmp->status, ST_MASTER);
@@ -1355,7 +1350,7 @@ static void update_crittimer(utype_t *ups)
 	if ((!flag_isset(ups->status, ST_ONBATT)) || 
 		(!flag_isset(ups->status, ST_LOWBATT))) {
 
-		time(&ups->lastnoncrit);
+		nut_clock_timestamp(&ups->lastnoncrit);
 		return;
 	}
 
@@ -1841,8 +1836,8 @@ static void check_parent(void)
 	int	ret;
 	fd_set	rfds;
 	struct	timeval	tv;
-	time_t	now;
-	static	time_t	lastwarn = 0;
+
+	nut_time_t	now;
 
 	FD_ZERO(&rfds);
 	FD_SET(pipefd[1], &rfds);
@@ -1857,13 +1852,13 @@ static void check_parent(void)
 
 	/* this should never happen, but we MUST KNOW if it ever does */
 
-	time(&now);
+	nut_clock_timestamp(&now);
 
 	/* complain every 2 minutes */
-	if ((now - lastwarn) < 120) 
+	if (nut_clock_difftime(&now, &check_parent_lastwarn) < 120)
 		return;
 
-	lastwarn = now;
+	nut_clock_copytime(&check_parent_lastwarn, &now);
 	do_notify(NULL, NOTIFY_NOPARENT);
 
 	/* also do this in case the notifier isn't being effective */
@@ -1874,6 +1869,8 @@ int main(int argc, char *argv[])
 {
 	const char	*prog = xbasename(argv[0]);
 	int	i, cmd = 0, checking_flag = 0;
+
+	nut_clock_mintimestamp(&check_parent_lastwarn);
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 

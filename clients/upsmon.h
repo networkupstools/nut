@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "clock.h"
+
+
 /* flags for ups->status */
 
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
@@ -31,8 +34,9 @@
 #define SDMAGIC "upsmon-shutdown-file"  
 
 /* UPS tracking structure */
+typedef struct utype utype_t;
 
-typedef struct {
+struct utype {
 	UPSCONN_t	conn;			/* upsclient state descriptor	*/
 
 	char	*sys;			/* raw system name from .conf	*/
@@ -50,12 +54,13 @@ typedef struct {
 	int	commstate;		/* these start at -1, and only	*/
 	int	linestate;		/* fire on a 0->1 transition	*/
 
-	time_t	lastpoll;		/* time of last successful poll	*/
-	time_t  lastnoncrit;		/* time of last non-crit poll	*/
-	time_t	lastrbwarn;		/* time of last REPLBATT warning*/
-	time_t	lastncwarn;		/* time of last NOCOMM warning	*/
-	void	*next;
-}	utype_t;
+	nut_time_t	lastpoll;	/* time of last successful poll	*/
+	nut_time_t	lastnoncrit;	/* time of last non-crit poll	*/
+	nut_time_t	lastrbwarn;	/* time of last REPLBATT warning*/
+	nut_time_t	lastncwarn;	/* time of last NOCOMM warning	*/
+
+	utype_t	*next;			/* Next linked list item	*/
+};  /* end of struct utype */
 
 /* notify identifiers */
 

@@ -49,10 +49,12 @@
 
 #include "upssched.h"
 #include "timehead.h"
+#include "clock.h"
 
 typedef struct ttype_s {
-	char	*name;
-	time_t	etime;
+	char		*name;
+	nut_time_t	stime;
+	long int	offset;
 	struct ttype_s	*next;
 } ttype_t;
 
@@ -129,7 +131,6 @@ static void removetimer(ttype_t *tfind)
 static void checktimers(void)
 {
 	ttype_t	*tmp, *tmpnext;
-	time_t	now;
 	static	int	emptyctr = 0;
 
 	/* if the queue is empty we might be ready to exit */
@@ -158,11 +159,10 @@ static void checktimers(void)
 	/* flip through LL, look for activity */
 	tmp = thead;
 
-	time(&now);
 	while (tmp) {
 		tmpnext = tmp->next;
 
-		if (now >= tmp->etime) {
+		if (nut_clock_sec_since(&tmp->stime) >= tmp->offset) {
 			if (verbose)
 				upslogx(LOG_INFO, "Event: %s ", tmp->name);
 
@@ -178,12 +178,8 @@ static void checktimers(void)
 
 static void start_timer(const char *name, const char *ofsstr)
 {
-	time_t	now;
-	int	ofs;
-	ttype_t	*tmp, *last;
-
-	/* get the time */
-	time(&now);
+	long int	ofs;
+	ttype_t		*tmp, *last;
 
 	/* add an event for <now> + <time> */
 	ofs = strtol(ofsstr, (char **) NULL, 10);
@@ -206,7 +202,8 @@ static void start_timer(const char *name, const char *ofsstr)
 
 	tmp = xmalloc(sizeof(ttype_t));
 	tmp->name = xstrdup(name);
-	tmp->etime = now + ofs;
+	nut_clock_timestamp(&tmp->stime);
+	tmp->offset = ofs;
 	tmp->next = NULL;
 
 	if (last)

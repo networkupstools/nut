@@ -58,6 +58,7 @@
 #include "main.h"
 #include "serial.h"
 #include "mge-utalk.h"
+#include "clock.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
@@ -102,7 +103,7 @@ upsdrv_info_t upsdrv_info = {
 #define SD_STAYOFF	1
 
 int sdtype = SD_RETURN;
-static time_t lastpoll; /* Timestamp the last polling */
+static nut_time_t lastpoll; /* Timestamp the last polling */
 
 /* --------------------------------------------------------------- */
 /*             Structure with information about UPS                */
@@ -377,7 +378,7 @@ void upsdrv_initinfo(void)
 	} /* for item */
 
 	/* store timestamp */
-	lastpoll = time(NULL);
+	nut_clock_timestamp(&lastpoll);
 
 	/* commands ----------------------------------------------- */
 	/* FIXME: check if available before adding! */
@@ -425,7 +426,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* Don't overload old units (at startup) */
-	if ( (unsigned int)time(NULL) <= (unsigned int)(lastpoll + poll_interval) )
+	if (nut_clock_sec_since(&lastpoll) <= poll_interval)
 		return;
 
 	/* update all other ok variables */
@@ -454,7 +455,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	/* store timestamp */
-	lastpoll = time(NULL);
+	nut_clock_timestamp(&lastpoll);
 }
 
 /* --------------------------------------------------------------- */
@@ -462,7 +463,6 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	char buf[BUFFLEN];
-	/*  static time_t lastcmd = 0; */
 	memset(buf, 0, sizeof(buf));
 
 	if (sdtype == SD_RETURN) {

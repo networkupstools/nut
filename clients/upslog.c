@@ -32,6 +32,7 @@
  */
 
 #include "common.h"
+#include "clock.h"
 #include "upsclient.h"
 
 #include "config.h"
@@ -370,13 +371,16 @@ int main(int argc, char **argv)
 {
 	int	interval = 30, i;
 	const char	*prog = xbasename(argv[0]);
-	time_t	now, nextpoll = 0;
+	nut_time_t	lastpoll;
+	double		time_diff;
 	const char	*user = NULL;
 	struct passwd	*new_uid = NULL;
 	const char	*pidfilebase = prog;
 
 	logformat = DEFAULT_LOGFORMAT;
 	user = RUN_AS_USER;
+
+	nut_clock_mintimestamp(&lastpoll);
 
 	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
@@ -488,16 +492,17 @@ int main(int argc, char **argv)
 	compile_format();
 
 	while (exit_flag == 0) {
-		time(&now);
+		time_diff = nut_clock_sec_since(&lastpoll);
 
-		if (nextpoll > now) {
+		/* note that we're cutting possible non-integral part off */
+		/* so that repeated sleep(0) is not done */
+		if ((int)time_diff < interval) {
 			/* there is still time left, so sleep it off */
-			sleep(difftime(nextpoll, now));
-			nextpoll += interval;
-		} else {
-			/* we spent more time in polling than the interval allows */
-			nextpoll = now + interval;
+			sleep(interval - (int)time_diff);
 		}
+
+		/* polling now */
+		nut_clock_timestamp(&lastpoll);
 
 		if (reopen_flag) {
 			upslogx(LOG_INFO, "Signal %d: reopening log file", 

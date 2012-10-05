@@ -35,6 +35,7 @@
 #include "hidtypes.h"
 
 #include "timehead.h"
+#include "clock.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	typedef SHUTDevice_t			HIDDevice_t;
@@ -82,9 +83,9 @@ extern HIDDesc_t	*pDesc;	/* parsed Report Descriptor */
 /* report buffer structure: holds data about most recent report for
    each given report id */
 typedef struct reportbuf_s {
-       time_t	ts[256];			/* timestamp when report was retrieved */
-       int	len[256];			/* size of report data */
-       unsigned char	*data[256];		/* report data (allocated) */
+       nut_time_t	ts[256];	/* timestamp when report was retrieved */
+       int		len[256];	/* size of report data */
+       unsigned char	*data[256];	/* report data (allocated) */
 } reportbuf_t;
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
