@@ -91,8 +91,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 {
 	HIDData_t	*pData;
 	reportbuf_t	*rbuf;
-	int		id;
-	unsigned int	i;
+	int		i, id;
 
 	if (!pDesc)
 		return NULL;
@@ -103,12 +102,12 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 	}
 
 	/* initialise timestamps */
-        for (i = 0; i < sizeof(rbuf->ts) / sizeof(rbuf->ts[0]); ++i) {
+        for (i = 0; i < (int)(sizeof(rbuf->ts) / sizeof(rbuf->ts[0])); ++i) {
 		nut_clock_mintimestamp(&rbuf->ts[i]);
 	}
 
 	/* now go through all items that are part of this report */
-	for (i = 0; i<pDesc->nitems; i++) {
+	for (i = 0; i < pDesc->nitems; i++) {
 
 		pData = &pDesc->item[i];
 

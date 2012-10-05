@@ -19,27 +19,46 @@
 #include "common.h"
 
 #include <assert.h>
+#include <errno.h>
 
 
 /* POSIX clock available */
 #if (defined USE_POSIX_CLOCK)
-	/* Raw monotonic clock is preferred */
-	#if (defined USE_LINUX_RAW_MONOTONIC_CLOCK)
+	/* Prefere raw monotonic clock if available (recent Linux) */
+	#if (defined _POSIX_MONOTONIC_CLOCK && defined CLOCK_MONOTONIC_RAW)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_RAW
 
-	/* Standard monotonic clock is available */
-	#elif (defined USE_POSIX_MONOTONIC_CLOCK)
+	/*
+	 * Note that apparently, on HPUX _POSIX_MONOTONIC_CLOCK is defined
+	 * but CLOCK_MONOTONIC is NOT
+	 * Shame...
+	 */
+
+	/* Use POSIX monotonic clock */
+	#elif (defined _POSIX_MONOTONIC_CLOCK && defined CLOCK_MONOTONIC)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC
-	#endif
-#endif
+	#endif  /* end of #ifdef CLOCK_MONOTONIC_RAW */
+
+/* ADD OTHER IMPLEMENTATION-SPECIFIC CHECKS & DEFINITIONS, HERE */
+/* #elif () ... */
+
+/* Good old C89 time_t fallback */
+#elif (defined USE_TIME_T_CLOCK)
+	/* Nothing more to do */
+
+#else  /* Implementation undecided, code broken */
+	#error "Compile-time error: Clock implementation is undecided"
+#endif  /* end of impl-specific checks & definitions */
 
 
 int nut_clock_gettime(nut_clock_mode_t mode, nut_time_t *tm) {
 	assert(NULL != tm);
 
-#if defined USE_POSIX_CLOCK
+#if (defined USE_POSIX_CLOCK)
 	int posix_clk_st;
+	#if (defined POSIX_CLOCK_MONOTONIC_IMPL)
 	int err_no;
+	#endif
 
 	switch (mode) {
 	#if (defined POSIX_CLOCK_MONOTONIC_IMPL)
@@ -83,7 +102,7 @@ int nut_clock_gettime(nut_clock_mode_t mode, nut_time_t *tm) {
 			return errno;
 	}
 
-#elif defined USE_TIME_T_CLOCK
+#elif (defined USE_TIME_T_CLOCK)
 	/* time_t doesn't support monotonic clock */
 	if (MONOTONIC == mode)
 		return EINVAL;
@@ -91,8 +110,8 @@ int nut_clock_gettime(nut_clock_mode_t mode, nut_time_t *tm) {
 	time(&tm->impl);
 	mode = RTC;
 
-#else  /* Implementation undecided, code broken */
-	#error "Compile-time error: Clock implementation is undecided"
+#else
+	#error "Compile-time error: nut_clock_gettime: platform-specific implementation missing"
 #endif
 
 	/* Keep mode flag for safety reasons */
@@ -112,7 +131,7 @@ void nut_clock_gettimex(nut_clock_mode_t mode, nut_time_t *tm) {
 int nut_clock_mintime(nut_clock_mode_t mode, nut_time_t *tm) {
 	assert(NULL != tm);
 
-#if defined USE_POSIX_CLOCK
+#if (defined USE_POSIX_CLOCK)
 	#if (defined POSIX_CLOCK_MONOTONIC_IMPL)
 	if (MONOTONIC_PREF == mode)
 		mode = MONOTONIC;
@@ -120,19 +139,21 @@ int nut_clock_mintime(nut_clock_mode_t mode, nut_time_t *tm) {
 	if (MONOTONIC == mode)
 		return EINVAL;
 
-	if (MONOTONIC_PREF == mode)
-		mode = RTC;
+	mode = RTC;
 	#endif
 
 	tm->impl.tv_sec  = 0;
 	tm->impl.tv_nsec = 0;
 
-#elif defined USE_TIME_T_CLOCK
+#elif (defined USE_TIME_T_CLOCK)
+	if (MONOTONIC == mode)
+		return EINVAL;
+
 	mode = RTC;
 	tm->impl = 0;
 
-#else  /* Implementation undecided, code broken */
-	#error "Compile-time error: Clock implementation is undecided"
+#else
+	#error "Compile-time error: nut_clock_mintime: platform-specific implementation missing"
 #endif
 
 	/* Keep mode flag for safety reasons */
@@ -171,18 +192,18 @@ double nut_clock_difftime(const nut_time_t *tm1, const nut_time_t *tm2) {
 	assert(NULL != tm2);
 	assert(tm1->mode == tm2->mode);
 
-#if defined USE_POSIX_CLOCK
+#if (defined USE_POSIX_CLOCK)
 	/* Seconds diff */
 	diff = difftime(tm1->impl.tv_sec, tm2->impl.tv_sec);
 
 	/* Nanoseconds diff */
 	diff += (double)(tm1->impl.tv_nsec - tm2->impl.tv_nsec) / 1000000000.0;
 
-#elif defined USE_TIME_T_CLOCK
+#elif (defined USE_TIME_T_CLOCK)
 	diff = difftime(tm1->impl, tm2->impl);
 
-#else  /* Implementation undecided, code broken */
-	#error "Compile-time error: Clock implementation is undecided"
+#else
+	#error "Compile-time error: nut_clock_difftime: platform-specific implementation missing"
 #endif
 
 	return diff;
@@ -195,15 +216,15 @@ void nut_clock_copytime(nut_time_t *copy, const nut_time_t *orig) {
 
 	copy->mode = orig->mode;
 
-#if defined USE_POSIX_CLOCK
+#if (defined USE_POSIX_CLOCK)
 	copy->impl.tv_sec  = orig->impl.tv_sec;
 	copy->impl.tv_nsec = orig->impl.tv_nsec;
 
-#elif defined USE_TIME_T_CLOCK
+#elif (defined USE_TIME_T_CLOCK)
 	copy->impl = orig->impl;
 
-#else  /* Implementation undecided, code broken */
-	#error "Compile-time error: Clock implementation is undecided"
+#else
+	#error "Compile-time error: nut_clock_copytime: platform-specific implementation missing"
 #endif
 }
 

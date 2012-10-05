@@ -25,34 +25,20 @@
 #if (defined _POSIX_TIMERS && 0 < _POSIX_TIMERS)
 	#define USE_POSIX_CLOCK
 
-	/* RTC must be always available for POSIX clock implementation */
-	#define USE_POSIX_REALTIME_CLOCK
-
-	/* Use raw monotonic clock if available (recent Linux) */
-	#if (defined CLOCK_MONOTONIC_RAW)
-		#define USE_LINUX_RAW_MONOTONIC_CLOCK
-
-	/* Use POSIX monotonic clock */
-	#elif (defined _POSIX_MONOTONIC_CLOCK)
-		#define USE_POSIX_MONOTONIC_CLOCK
-	#endif  /* end of #ifdef CLOCK_MONOTONIC_RAW */
-
 /* ADD OTHER IMPLEMENTATION-SPECIFIC CHECKS & DEFINITIONS, HERE */
 /* #elif () ... */
 
 /* Good old C89 time_t fallback */
 #else
 	#define USE_TIME_T_CLOCK
-	#define USE_TIME_T_REALTIME_CLOCK
-	#define USE_TIME_T_MONOTONIC_CLOCK
-#endif  /* end of impl-specific checks & definitions */
+#endif  /* end of clock implementation selection */
 
 
 /** Clock mode */
 typedef enum {
-	RTC,		/** Real-time clock (best implementation available) */
-	MONOTONIC_PREF,	/** Monotonic clock (preferred, RTC fallback accepted) */
-	MONOTONIC,	/** Monotonic clock (enforced) */
+	RTC,		/**< Real-time clock (best implementation available)    */
+	MONOTONIC_PREF,	/**< Monotonic clock (preferred, RTC fallback accepted) */
+	MONOTONIC,	/**< Monotonic clock (enforced)                         */
 } nut_clock_mode_t;  /* end of typedef enum */
 
 
@@ -60,13 +46,13 @@ typedef struct nut_time nut_time_t;	/** Time specification */
 
 /** Implementation of time specification */
 struct nut_time {
-	nut_clock_mode_t	mode;	/** Clock mode */
+	nut_clock_mode_t	mode;	/**< Clock mode              */
 #if defined USE_POSIX_CLOCK
-	struct timespec	impl;	/** POSIX implementation */
+	struct timespec		impl;	/**< POSIX implementation    */
 #elif defined USE_TIME_T_CLOCK
-	time_t	impl;	/** Fallback implementation */
+	time_t			impl;	/**< Fallback implementation */
 #endif
-};  /* end of struct time */
+};  /* end of struct nut_time */
 
 
 /**

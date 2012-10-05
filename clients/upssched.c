@@ -190,7 +190,7 @@ static void start_timer(const char *name, const char *ofsstr)
 	}
 
 	if (verbose)
-		upslogx(LOG_INFO, "New timer: %s (%d seconds)", name, ofs);
+		upslogx(LOG_INFO, "New timer: %s (%ld seconds)", name, ofs);
 
 	/* now add to the queue */
 	tmp = last = thead;
