@@ -1054,6 +1054,10 @@ AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
 AC_PATH_PROGS([A2X], [a2x], [none])
 
+dnl check for spell checking deps
+AC_PATH_PROGS([ASPELL], [aspell], [none])
+AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"

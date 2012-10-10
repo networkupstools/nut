@@ -10,14 +10,26 @@ NQA is present in many aspects and areas of NUT.
 Documentation
 -------------
 
-The documentation toolchain now use link:http://www.methods.co.nz/asciidoc/[AsciiDoc]
-to output both HTML pages and manual pages (troff).
+The documentation toolchain now use
+link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
+manual pages (troff). This single point of control permitted to fill many gaps,
+to suppress many redundancies and to optimize documentation management in
+general.
  
 - the NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
-compliance 
+compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
+icons, at the bottom of each page.
 
-- the manual pages conformance is tested with link:http://catb.org/~esr/doclifter/index.html[doclifter]
+- the manual pages conformance is tested with
+link:http://catb.org/~esr/doclifter/index.html[doclifter] (outdated)
 
+- Documentation source files are spell checked, using
+link:http://aspell.net[Aspell], both interactively (using
+'make spellcheck-interactive') and automatically in Buildbot (using
+'make spellcheck').
+
+NOTE: A NUT dictionnary is also available (docs/nut.dict), providing a glossary
+of terms related to power devices and management.
 
 Source code
 -----------
