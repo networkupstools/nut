@@ -121,16 +121,16 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 
 if HAVE_ASPELL
 # FIXME: also check ../{NEWS,README,UPGRADING}+other dirs
+# Non-interactively spell check all documentation source files.
+# This is useful for Buildbot and automated QA processing
+# FIXME: how to present output (std{out,err}, single file or per target)?
 spellcheck: 
-    # Non-interactively spell check all documentation source files.
-    # This is useful for Buildbot and automated QA processing
-    # FIXME: how to present output (std{out,err}, single file or per target)?
 	@for docsrc in $(ALL_TXT_SRC); do \
 		echo "Spell checking on $$docsrc"; \
 		LANG=C $(ASPELL) -a -t -p $(NUT_SPELL_DICT) < $$docsrc | grep [^*]; \
 	done
+# Interactively spell check all documentation source files
 spellcheck-interactive: 
-    # Interactively spell check all documentation source files
 	@for docsrc in $(ALL_TXT_SRC); do\
 		echo "Spell checking on $$docsrc"; \
 		LANG=C $(ASPELL) check -p $(NUT_SPELL_DICT) $$docsrc; \
