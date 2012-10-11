@@ -26,7 +26,7 @@
 
 #include "netcmds.h"
 #include "upsconf.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include <sys/un.h>
 #include <sys/socket.h>

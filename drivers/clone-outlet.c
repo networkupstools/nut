@@ -20,7 +20,7 @@
 
 #include "main.h"
 #include "parseconf.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

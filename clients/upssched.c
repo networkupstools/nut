@@ -49,7 +49,7 @@
 
 #include "upssched.h"
 #include "timehead.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 typedef struct ttype_s {
 	char		*name;

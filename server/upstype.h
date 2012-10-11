@@ -23,7 +23,7 @@
 #define UPSTYPE_H_SEEN 1
 
 #include "parseconf.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 /* structure for the linked list of each UPS that we track */
 typedef struct upstype_s {

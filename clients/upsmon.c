@@ -29,7 +29,7 @@
 #include "upsmon.h"
 #include "parseconf.h"
 #include "timehead.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>

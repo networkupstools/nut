@@ -136,11 +136,14 @@ then
 fi
 
 case ${target_os} in
-   hpux11* )
-      dnl It seems like the thread safe string functions will not be included
-      dnl on 64 bit HP-UX unless we define _REENTRANT
-      CFLAGS="${CFLAGS} -D_REENTRANT"
-      ;;
+	hpux11* )
+		dnl It seems like the thread safe string functions will not be included
+		dnl on 64 bit HP-UX unless we define _REENTRANT
+		CFLAGS="${CFLAGS} -D_REENTRANT"
+
+		dnl We'd like to use gethrtime as monotonic clock on HP-UX if available
+		AC_CHECK_FUNCS(gethrtime)
+		;;
 esac
 
 dnl optind handling:

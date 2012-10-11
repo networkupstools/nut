@@ -25,6 +25,20 @@
 #if (defined _POSIX_TIMERS && 0 < _POSIX_TIMERS)
 	#define USE_POSIX_CLOCK
 
+/* Apple Mac OS X: Mach ukernel clock services */
+#elif (defined __APPLE__ && defined __MACH__)
+	#include <mach/mach.h>
+	#include <mach/clock.h>
+
+	#define USE_APPLE_MACH_CLOCK
+	#warn "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Mach ukernel clock services"
+
+/* Microsoft Windows */
+#elif (defined _WIN32)
+	#include <Windows.h>
+
+	#define USE_WINDOWS_CLOCK
+
 /* ADD OTHER IMPLEMENTATION-SPECIFIC CHECKS & DEFINITIONS, HERE */
 /* #elif () ... */
 
@@ -32,6 +46,17 @@
 #else
 	#define USE_TIME_T_CLOCK
 #endif  /* end of clock implementation selection */
+
+/* HP-UX gethrtime monotonic clock iface is available */
+/* This is an exceptional case; HP-UX is a bit inconsistent in API:
+ * it uses POSIX RTC but non-POSIX monotonic clock.  Nice. */
+#if (	(defined __hpux || defined hpux)	&& \
+	(defined __SVR4 || defined __svr4__)	&& \
+	(defined HAVE_GETHRTIME)	)
+	#include <sys/time.h>
+
+	#define USE_HPUX_GETHRTIME
+#endif  /* end of HP-UX specific monotonic clock exception */
 
 
 /** Clock mode */
@@ -46,11 +71,15 @@ typedef struct nut_time nut_time_t;	/** Time specification */
 
 /** Implementation of time specification */
 struct nut_time {
-	nut_clock_mode_t	mode;	/**< Clock mode              */
-#if defined USE_POSIX_CLOCK
-	struct timespec		impl;	/**< POSIX implementation    */
-#elif defined USE_TIME_T_CLOCK
-	time_t			impl;	/**< Fallback implementation */
+	nut_clock_mode_t	mode;	/**< Clock mode                */
+#if (defined USE_POSIX_CLOCK)
+	struct timespec		impl;	/**< POSIX implementation      */
+#elif (defined USE_APPLE_MACH_CLOCK)
+	mach_timespec_t		impl;
+#elif (defined USE_WINDOWS_CLOCK)
+	FILETIME		impl;	/**< MS Windows implementation */
+#elif (defined USE_TIME_T_CLOCK)
+	time_t			impl;	/**< Fallback implementation   */
 #endif
 };  /* end of struct nut_time */
 

@@ -21,7 +21,7 @@
 #include "main.h"
 #include "netxml-ups.h"
 #include "mge-xml.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include <stdio.h>
 #include <stdlib.h>

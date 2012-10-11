@@ -28,7 +28,7 @@
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include "apcsmart.h"
 #include "apcsmart_tabs.h"

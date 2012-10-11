@@ -41,7 +41,7 @@
 #include "serial.h"
 #include "timehead.h"
 #include "nut_stdint.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include <math.h>
 

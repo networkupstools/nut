@@ -38,7 +38,7 @@
 #include "parseconf.h"
 #include "upsclient.h"
 #include "dummy-ups.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
 #define DRIVER_VERSION	"0.13"

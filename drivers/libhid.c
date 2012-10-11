@@ -36,7 +36,7 @@
 #include "libhid.h"
 #include "hidparser.h"
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
-#include "clock.h"
+#include "nut_clock.h"
 
 /* Communication layers and drivers (USB and MGE SHUT) */
 #ifdef SHUT_MODE

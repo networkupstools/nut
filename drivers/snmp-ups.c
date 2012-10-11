@@ -33,7 +33,7 @@
 #include "main.h"
 #include "snmp-ups.h"
 #include "parseconf.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"

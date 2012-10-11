@@ -23,7 +23,7 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;

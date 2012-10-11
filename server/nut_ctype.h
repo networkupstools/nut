@@ -29,7 +29,7 @@
 #endif
 
 #include "parseconf.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 /* client structure */
 typedef struct nut_ctype_s {

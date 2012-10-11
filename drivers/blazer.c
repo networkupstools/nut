@@ -25,7 +25,7 @@
 
 #include "main.h"
 #include "blazer.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include <math.h>
 

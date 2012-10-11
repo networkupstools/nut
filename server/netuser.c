@@ -18,7 +18,7 @@
 */
 
 #include "common.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 #include "upsd.h"
 #include "sstate.h"

@@ -21,7 +21,7 @@
 
 #include "main.h"
 #include "serial.h"
-#include "clock.h"
+#include "nut_clock.h"
 #include "apcsmart-old.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"

@@ -58,7 +58,7 @@
 #include "main.h"
 #include "serial.h"
 #include "mge-utalk.h"
-#include "clock.h"
+#include "nut_clock.h"
 
 /* --------------------------------------------------------------- */
 /*                  Define "technical" constants                   */
