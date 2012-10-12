@@ -31,7 +31,6 @@
 	#include <mach/clock.h>
 
 	#define USE_APPLE_MACH_CLOCK
-	#warn "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Mach ukernel clock services"
 
 /* Microsoft Windows */
 #elif (defined _WIN32)

@@ -27,16 +27,17 @@
 	/* Prefere raw monotonic clock on Linux */
 	#if (defined CLOCK_MONOTONIC_RAW)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_RAW
+		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Linux-specific monot. clock"
 
 	/* BSD-specific monotonic clock */
 	#elif (defined CLOCK_MONOTONIC_PRECISE)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_PRECISE
-		#warn "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using BSD-specific monot. clock"
+		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using BSD-specific monot. clock"
 
 	/* Solaris-specific monotonic clock */
 	#elif (defined CLOCK_HIGHRES)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_HIGHRES
-		#warn "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Solaris-specific monot. clock"
+		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Solaris-specific monot. clock"
 
 	/* Use POSIX monotonic clock */
 	#elif (defined CLOCK_MONOTONIC)
@@ -50,7 +51,7 @@
 	#if (defined CALENDAR_CLOCK && defined SYSTEM_CLOCK)
 		#define MACH_CLOCK_REALTIME_IMPL  CALENDAR_CLOCK
 		#define MACH_CLOCK_MONOTONIC_IMPL SYSTEM_CLOCK
-		#warn "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using OSX-specific Mach clock services"
+		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using OSX-specific Mach clock services"
 	#else
 		#error "Compile-time error: Apple Mac OS X / Mach clocks unavailable"
 	#endif  /* end of Apple Mac OS X Mach ukernel specific clocks selection */
@@ -77,7 +78,7 @@
 #if (defined USE_HPUX_GETHRTIME)
 	#if (defined USE_POSIX_CLOCK)
 		#define USE_HPUX_POSIX_RTC_AND_GETHRTIME_MONOTONIC_CLOCK
-		#warn "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using HP-UX combined clocks"
+		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using HP-UX combined clocks"
 
 	/* No POSIX RTC on HP-UX */
 	#else
