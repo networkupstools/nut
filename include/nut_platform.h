@@ -101,7 +101,7 @@
 		#elif (defined __FreeBSD__)
 			/** FreeBSD (implies \ref NUT_PLATFORM_UNIX, \ref NUT_PLATFORM_BSD) */
 			#define NUT_PLATFORM_FREEBSD
-		#elif (deifned __OpenBSD__)
+		#elif (defined __OpenBSD__)
 			/** OpenBSD (implies \ref NUT_PLATFORM_UNIX, \ref NUT_PLATFORM_BSD) */
 			#define NUT_PLATFORM_OPENBSD
 		#elif (defined __NetBSD__)
@@ -111,4 +111,4 @@
 	#endif
 #endif
 
-#endif  /* end of #ifdned nut_platform_h */
+#endif  /* end of #ifndef nut_platform_h */
