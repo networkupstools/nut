@@ -1,5 +1,5 @@
 EXTRA_DIST = attribute.h common.h extstate.h parseconf.h proto.h	\
- state.h timehead.h upsconf.h nut_stdint.h nut_clock.h
+ state.h timehead.h upsconf.h nut_stdint.h nut_platform.h nut_clock.h
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h

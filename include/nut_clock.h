@@ -17,23 +17,28 @@
  *  \date    2012/10/02
  */
 
-#include <unistd.h>
+#include "nut_platform.h"
+
+#if (defined NUT_PLATFORM_UNIX)
+	#include <unistd.h>
+#endif
+
 #include <time.h>
 
 
 /* POSIX clock (clock_*time functions) available */
-#if (defined _POSIX_TIMERS && 0 < _POSIX_TIMERS)
+#if (defined NUT_PLATFORM_POSIX && defined _POSIX_TIMERS && 0 < _POSIX_TIMERS)
 	#define USE_POSIX_CLOCK
 
 /* Apple Mac OS X: Mach ukernel clock services */
-#elif (defined __APPLE__ && defined __MACH__)
+#elif (defined NUT_PLATFORM_APPLE_MACH)
 	#include <mach/mach.h>
 	#include <mach/clock.h>
 
 	#define USE_APPLE_MACH_CLOCK
 
 /* Microsoft Windows */
-#elif (defined _WIN32)
+#elif (defined NUT_PLATFORM_MS_WINDOWS)
 	#include <Windows.h>
 
 	#define USE_WINDOWS_CLOCK
@@ -49,9 +54,7 @@
 /* HP-UX gethrtime monotonic clock iface is available */
 /* This is an exceptional case; HP-UX is a bit inconsistent in API:
  * it uses POSIX RTC but non-POSIX monotonic clock.  Nice. */
-#if (	(defined __hpux || defined hpux)	&& \
-	(defined __SVR4 || defined __svr4__)	&& \
-	(defined HAVE_GETHRTIME)	)
+#if (defined NUT_PLATFORM_HPUX && defined HAVE_GETHRTIME)
 	#include <sys/time.h>
 
 	#define USE_HPUX_GETHRTIME

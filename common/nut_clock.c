@@ -25,17 +25,17 @@
 /* POSIX clock available */
 #if (defined USE_POSIX_CLOCK)
 	/* Prefere raw monotonic clock on Linux */
-	#if (defined CLOCK_MONOTONIC_RAW)
+	#if (defined NUT_PLATFORM_LINUX && defined CLOCK_MONOTONIC_RAW)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_RAW
 		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Linux-specific monot. clock"
 
 	/* BSD-specific monotonic clock */
-	#elif (defined CLOCK_MONOTONIC_PRECISE)
+	#elif (defined NUT_PLATFORM_BSD && defined CLOCK_MONOTONIC_PRECISE)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_PRECISE
 		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using BSD-specific monot. clock"
 
 	/* Solaris-specific monotonic clock */
-	#elif (defined CLOCK_HIGHRES)
+	#elif (defined NUT_PLATFORM_SOLARIS && defined CLOCK_HIGHRES)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_HIGHRES
 		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Solaris-specific monot. clock"
 
@@ -59,7 +59,7 @@
 /* MS Windows FILETIME-based clock */
 #elif (defined USE_WINDOWS_CLOCK)
 	/* Windows 8, Windows Server 2012 and later */
-	#if (defined NTDDI_WIN8 && NTDDI_VERSION >= NTDDI_WIN8)
+	#if (defined NUT_PLATFORM_MS_WINDOWS8)
 		#define USE_WIN8_CLOCK
 	#endif
 
