@@ -1,0 +1,48 @@
+UPSCLI_INIT(3)
+==============
+
+NAME
+----
+
+upscli_init - Initialize upsclient module specifying security properties.
+
+SYNOPSIS
+--------
+
+ #include <upsclient.h>
+
+ int upscli_init(int certverify, const char *certpath,
+			const char *certname, const char *certpasswd);
+
+DESCRIPTION
+-----------
+The *upscli_init()* function initialize upsclient module and set many
+SSL-related properties: 'certverify' to 1 makes certificate verification
+required for all SSL connections and 'certpath' is the location of
+certificate database.
+
+If compiled with OpenSSL, certpath refers to a .pem file containing
+certificates and if compiled with NSS, certpath refers to a directory
+containing database files.
+
+If compiled with NSS and using SSL, you can specify 'certname' the name
+of the certificate to send to upsd and 'certpasswd' the password used
+to decrypt certificate private key.
+
+You can call linkman:upscli_add_host_cert[3] to register specific host
+security policy before initialize connections to them.
+
+You must call linkman:upscli_cleanup[3] when exiting application.
+
+RETURN VALUE
+------------
+
+The *upscli_init()* function returns 1 on success, or -1 if an error occurs.
+
+SEE ALSO
+--------
+linkman:upscli_add_host_cert[3], linkman:upscli_cleanup[3],
+linkman:upscli_disconnect[3], linkman:upscli_fd[3], 
+linkman:upscli_splitaddr[3], linkman:upscli_splitname[3], 
+linkman:upscli_ssl[3], linkman:upscli_strerror[3], 
+linkman:upscli_upserror[3]

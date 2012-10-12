@@ -119,10 +119,13 @@ HTML_CGI_MANS = \
 # Development (--with-dev) related manpages
 SRC_DEV_PAGES = \
 	upsclient.txt \
+	upscli_add_host_cert.txt \
+	upscli_cleanup.txt \
 	upscli_connect.txt \
 	upscli_disconnect.txt \
 	upscli_fd.txt \
 	upscli_get.txt \
+	upscli_init.txt \
 	upscli_list_next.txt \
 	upscli_list_start.txt \
 	upscli_readline.txt \
@@ -152,10 +155,13 @@ SRC_DEV_PAGES = \
 
 MAN3_DEV_PAGES = \
 	upsclient.3 \
+	upscli_add_host_cert.3 \
+	upscli_cleanup.3 \
 	upscli_connect.3 \
 	upscli_disconnect.3 \
 	upscli_fd.3 \
 	upscli_get.3 \
+	upscli_init.3 \
 	upscli_list_next.3 \
 	upscli_list_start.3 \
 	upscli_readline.3 \
@@ -195,10 +201,13 @@ endif
 
 HTML_DEV_MANS = \
 	upsclient.html \
+	upscli_add_host_cert.html \
+	upscli_cleanup.html \
 	upscli_connect.html \
 	upscli_disconnect.html \
 	upscli_fd.html \
 	upscli_get.html \
+	upscli_init.html \
 	upscli_list_next.html \
 	upscli_list_start.html \
 	upscli_readline.html \

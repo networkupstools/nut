@@ -449,26 +449,51 @@ NUT_REPORT_FEATURE([build Mac OS X meta-driver],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-ssl
+dnl Check for with-ssl, and --with-nss or --with-openssl
+dnl Only one can be enabled at a time, with a preference for OpenSSL
+dnl if both are available
 
-NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
+nut_ssl_lib=""
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
+NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
+NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
+NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
 if test "${nut_with_ssl}" != "no"; then
-   dnl check for libssl compiler flags
-   NUT_CHECK_LIBSSL
+   dnl check if either NSS or OpenSSL was explicitly requested
+   if test "${nut_with_nss}" = "yes"; then
+      NUT_CHECK_LIBNSS
+      if test "${nut_have_libnss}" != "yes"; then
+         AC_MSG_ERROR(["Mozilla NSS not found, required for SSL support"])
+      fi
+   elif test "${nut_with_openssl}" = "yes"; then
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
+      fi
+   else
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
+            nut_with_ssl="no"
+            AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+         else
+            nut_with_nss="${nut_have_libnss}"
+         fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
+      fi
+   fi
 fi
 
-if test "${nut_with_ssl}" = "yes" -a "${nut_have_libssl}" != "yes"; then
-   AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
-fi
+AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
+AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
 
-if test "${nut_with_ssl}" != "no"; then
-   nut_with_ssl="${nut_have_libssl}"
-fi
-
-NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}], [],
-					[WITH_SSL], [Define to enable SSL development code])
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap

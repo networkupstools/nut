@@ -1,0 +1,29 @@
+UPSCLI_CLEANUP(3)
+=================
+
+NAME
+----
+
+upscli_cleanup - Clean-up upsclient module after usage.
+
+SYNOPSIS
+--------
+
+ #include <upsclient.h>
+
+ int upscli_cleanup();
+
+DESCRIPTION
+-----------
+The *upscli_cleanup()* function flushes SSL caches and frees memory
+used internally in upsclient module.
+
+RETURN VALUE
+------------
+
+The *upscli_cleanup()* function returns 1 on success, or -1 if an error occurs.
+
+SEE ALSO
+--------
+linkman:upscli_init[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]

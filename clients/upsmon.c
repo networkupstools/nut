@@ -68,6 +68,8 @@ static	char	*run_as_user = NULL;
 
 	/* SSL details - where to find certs, whether to use them */
 static	char	*certpath = NULL;
+static	char	*certname = NULL;
+static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
@@ -1178,9 +1180,24 @@ static int parse_conf_arg(int numargs, char **arg)
 		return 1;
 	}	
 
+	/* CERTIDENT <name> <passwd> */
+	if (!strcmp(arg[0], "CERTIDENT")) {
+		free(certname);
+		certname = xstrdup(arg[1]);
+		free(certpasswd);
+		certpasswd = xstrdup(arg[2]);
+		return 1;
+	}
+	
 	/* using up to arg[4] below */
 	if (numargs < 5)
 		return 0;
+
+	/* CERTHOST <hostname> <certname> (0|1) (0|1) */
+	if (!strcmp(arg[0], "CERTHOST")) {
+		upscli_add_host_cert(arg[1], arg[2], atoi(arg[3]), atoi(arg[4]));
+		return 1;
+	}
 
 	if (!strcmp(arg[0], "MONITOR")) {
 
@@ -1300,6 +1317,8 @@ static void upsmon_cleanup(void)
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
 	}
+
+	upscli_cleanup();
 }
 
 static void user_fsd(int sig)
@@ -1362,51 +1381,6 @@ static void update_crittimer(utype_t *ups)
 	/* fallthrough: let the timer age */
 }
 
-static int try_ssl(utype_t *ups)
-{
-	int	ret;
-
-	/* if not doing SSL, we're done */
-	if (!upscli_ssl(&ups->conn))
-		return 1;
-
-	if (!certpath) {
-		if (certverify == 1) {
-			upslogx(LOG_ERR, "Configuration error: "
-				"CERTVERIFY is set, but CERTPATH isn't");
-			upslogx(LOG_ERR, "UPS [%s]: Connection impossible, "
-				"dropping link", ups->sys);
-
-			ups_is_gone(ups);
-			drop_connection(ups);
-
-			return 0;	/* failed */
-		}
-
-		/* certverify is 0, so just warn them and return */
-		upslogx(LOG_WARNING, "Certificate verification is disabled");
-		return 1;
-	}
-
-	/* you REALLY should set CERTVERIFY to 1 if using SSL... */
-	if (certverify == 0)
-		upslogx(LOG_WARNING, "Certificate verification is disabled");
-
-	ret = upscli_sslcert(&ups->conn, NULL, certpath, certverify);
-
-	if (ret < 0) {
-		upslogx(LOG_ERR, "UPS [%s]: SSL certificate set failed: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-
-		ups_is_gone(ups);
-		drop_connection(ups);
-
-		return 0;
-	}
-
-	return 1;
-}
-
 /* handle connecting to upsd, plus get SSL going too if possible */
 static int try_connect(utype_t *ups)
 {
@@ -1428,20 +1402,32 @@ static int try_connect(utype_t *ups)
 	if (opt_af == AF_INET6)
 		flags |= UPSCLI_CONN_INET6;
 
+	if (!certpath) {
+		if (certverify == 1) {
+			upslogx(LOG_ERR, "Configuration error: "
+				"CERTVERIFY is set, but CERTPATH isn't");
+			upslogx(LOG_ERR, "UPS [%s]: Connection impossible, "
+				"dropping link", ups->sys);
+
+			ups_is_gone(ups);
+			drop_connection(ups);
+
+			return 0;	/* failed */
+		}
+	}
+
+	if (certverify == 1) {
+		flags |= UPSCLI_CONN_CERTVERIF;
+	}
+
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
 	if (ret < 0) {
 		upslogx(LOG_ERR, "UPS [%s]: connect failed: %s",
 			ups->sys, upscli_strerror(&ups->conn));
-
 		ups_is_gone(ups);
 		return 0;
 	}
-
-	ret = try_ssl(ups);
-
-	if (ret == 0)
-		return 0;	/* something broke while trying SSL */
 
 	/* we're definitely connected now */
 	setflag(&ups->status, ST_CONNECTED);
@@ -1998,7 +1984,11 @@ int main(int argc, char *argv[])
 		
 		writepid(prog);
 	}
-
+	
+	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
+		exit(EXIT_FAILURE);
+	}
+	
 	/* prep our signal handlers */
 	setup_signals();
 
