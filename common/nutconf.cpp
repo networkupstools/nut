@@ -636,5 +636,46 @@ void NutConfigParser::parseConfig()
     onParseEnd();
 }
 
+//
+// DefaultConfigParser
+//
+
+DefaultConfigParser::DefaultConfigParser(const char* buffer):
+NutConfigParser(buffer)
+{
+}
+
+DefaultConfigParser::DefaultConfigParser(const std::string& buffer):
+NutConfigParser(buffer)
+{
+}
+
+
+void DefaultConfigParser::onParseBegin()
+{
+    // TODO
+}
+
+void DefaultConfigParser::onParseComment(const std::string& comment)
+{
+    // TODO
+}
+
+void DefaultConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
+{
+    // TODO
+}
+
+void DefaultConfigParser::onParseDirective(const std::string& directiveName, char sep, const std::list<std::string>& values, const std::string& comment)
+{
+    // TODO
+}
+
+void DefaultConfigParser::onParseEnd()
+{
+    // TODO
+}
+
+
 
 } /* namespace nut */
