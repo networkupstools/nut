@@ -29,22 +29,22 @@ namespace nut
 {
 
 //
-// NutConfigParser
+// NutParser
 //
 
-NutConfigParser::NutConfigParser(const char* buffer):
+NutParser::NutParser(const char* buffer):
 _buffer(buffer),
 _pos(0)
 {
 }
 
-NutConfigParser::NutConfigParser(const std::string& buffer):
+NutParser::NutParser(const std::string& buffer):
 _buffer(buffer),
 _pos(0)
 {
 }
 
-char NutConfigParser::get()
+char NutParser::get()
 {
     if(_pos>=_buffer.size())
         return 0;
@@ -52,44 +52,44 @@ char NutConfigParser::get()
         return _buffer[_pos++];
 }
 
-char NutConfigParser::peek()
+char NutParser::peek()
 {
     return _buffer[_pos];
 }
 
-size_t NutConfigParser::getPos()const
+size_t NutParser::getPos()const
 {
     return _pos;
 }
 
-void NutConfigParser::setPos(size_t pos)
+void NutParser::setPos(size_t pos)
 {
     _pos = pos;
 }
 
-char NutConfigParser::charAt(size_t pos)const
+char NutParser::charAt(size_t pos)const
 {
     return _buffer[pos];
 }
 
-void NutConfigParser::pushPos()
+void NutParser::pushPos()
 {
     _stack.push_back(_pos);
 }
 
-size_t NutConfigParser::popPos()
+size_t NutParser::popPos()
 {
     size_t pos = _stack.back();
     _stack.pop_back();
     return pos;
 }
 
-void NutConfigParser::rewind()
+void NutParser::rewind()
 {
     _pos = popPos();
 }
 
-void NutConfigParser::back()
+void NutParser::back()
 {
     if(_pos>0)
         --_pos;
@@ -102,7 +102,7 @@ void NutConfigParser::back()
  *             | '\\' ( __SPACES__ | '\\' | '\"' | '#' )
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
-std::string NutConfigParser::parseCHARS()
+std::string NutParser::parseCHARS()
 {
 	bool escaped = false; // Is char escaped ?
     std::string res;      // Stored string
@@ -153,7 +153,7 @@ std::string NutConfigParser::parseCHARS()
  *             | '\\' ( '\\' | '\"' )
  * TODO: accept "\t", "\s", "\r", "\n" ??
  */
-std::string NutConfigParser::parseSTRCHARS()
+std::string NutParser::parseSTRCHARS()
 {
 	bool escaped = false; // Is char escaped ?
     std::string str;      // Stored string
@@ -201,7 +201,7 @@ std::string NutConfigParser::parseSTRCHARS()
 /** Parse a string source for getting the next token, ignoring spaces.
  * \return Token type.
  */
-NutConfigParser::Token NutConfigParser::parseToken()
+NutParser::Token NutParser::parseToken()
 {
     /** Lexical parsing machine state enumeration.*/
     typedef enum {
@@ -394,381 +394,247 @@ NutConfigParser::Token NutConfigParser::parseToken()
 }
 
 
-std::list<NutConfigParser::Token> NutConfigParser::parseLine()
+std::list<NutParser::Token> NutParser::parseLine()
 {
-    std::list<NutConfigParser::Token> res;
+    std::list<NutParser::Token> res;
 
     while(true)
     {
-        NutConfigParser::Token token = parseToken();
+        NutParser::Token token = parseToken();
         
         switch(token.type)
         {
-            
+        case Token::TOKEN_STRING:
+        case Token::TOKEN_QUOTED_STRING:
+        case Token::TOKEN_BRACKET_OPEN:
+        case Token::TOKEN_BRACKET_CLOSE:
+        case Token::TOKEN_EQUAL:
+        case Token::TOKEN_COLON:
+            res.push_back(token);
+            break;
+        case Token::TOKEN_COMMENT:
+            res.push_back(token);
+            // Do not break, should return (EOL)Token::TOKEN_COMMENT:
+        case Token::TOKEN_UNKNOWN:
+        case Token::TOKEN_NONE:
+        case Token::TOKEN_EOL:
+            return res;
+        }
+    }
+}
+
+//
+// NutConfigParser
+//
+
+NutConfigParser::NutConfigParser(const char* buffer):
+NutParser(buffer)
+{
+}
+
+NutConfigParser::NutConfigParser(const std::string& buffer):
+NutParser(buffer)
+{
+}
+
+
+void NutConfigParser::parseConfig()
+{
+    onParseBegin();
+
+    enum ConfigParserState {
+        CPS_DEFAULT,
+        CPS_SECTION_OPENED,
+        CPS_SECTION_HAVE_NAME,
+        CPS_SECTION_CLOSED,
+        CPS_DIRECTIVE_HAVE_NAME,
+        CPS_DIRECTIVE_VALUES
+    }state = CPS_DEFAULT;
+
+    Token tok;
+    std::string name;
+    std::list<std::string> values;
+    char sep;
+    while(tok = parseToken())
+    {
+        switch(state)
+        {
+        case CPS_DEFAULT:
+            switch(tok.type)
+            {
+            case Token::TOKEN_COMMENT:
+                onParseComment(tok.str);
+                /* Clean and return to default */
+                break;
+            case Token::TOKEN_BRACKET_OPEN:
+                state = CPS_SECTION_OPENED;
+                break;
+            case Token::TOKEN_STRING:
+            case Token::TOKEN_QUOTED_STRING:
+                name = tok.str;
+                state = CPS_DIRECTIVE_HAVE_NAME;
+                break;
+            default:
+                /* WTF ? */
+                break;
+            }
+            break;
+        case CPS_SECTION_OPENED:
+            switch(tok.type)
+            {
+            case Token::TOKEN_STRING:
+            case Token::TOKEN_QUOTED_STRING:
+                /* Should occur ! */
+                name = tok.str;
+                state = CPS_SECTION_HAVE_NAME;
+                break;
+            case Token::TOKEN_BRACKET_CLOSE:
+                /* Empty section name */
+                state = CPS_SECTION_CLOSED;
+                break;
+            case Token::TOKEN_COMMENT:
+                /* Lack of closing bracket !!! */
+                onParseSectionName(name, tok.str);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_EOL:
+            case Token::TOKEN_NONE:
+                /* Lack of closing bracket !!! */
+                onParseSectionName(name);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            default:
+                /* WTF ? */
+                break;
+            }
+            break;
+        case CPS_SECTION_HAVE_NAME:
+            switch(tok.type)
+            {
+            case Token::TOKEN_BRACKET_CLOSE:
+                /* Must occur ! */
+                state = CPS_SECTION_CLOSED;
+                break;
+            case Token::TOKEN_COMMENT:
+                /* Lack of closing bracket !!! */
+                onParseSectionName(name, tok.str);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_EOL:
+            case Token::TOKEN_NONE:
+                /* Lack of closing bracket !!! */
+                onParseSectionName(name);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            default:
+                /* WTF ? */
+                break;
+            }
+            break;
+        case CPS_SECTION_CLOSED:
+            switch(tok.type)
+            {
+            case Token::TOKEN_COMMENT:
+                /* Could occur ! */
+                onParseSectionName(name, tok.str);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_EOL:
+            case Token::TOKEN_NONE:
+                /* Could occur ! */
+                onParseSectionName(name);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            default:
+                /* WTF ? */
+                break;
+            }
+            break;
+        case CPS_DIRECTIVE_HAVE_NAME:
+            switch(tok.type)
+            {
+            case Token::TOKEN_COMMENT:
+                /* Could occur ! */
+                onParseDirective(name, 0, std::list<std::string>(), tok.str);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_EOL:
+            case Token::TOKEN_NONE:
+                /* Could occur ! */
+                onParseDirective(name);
+                /* Clean and return to default */
+                name.clear();
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_COLON:
+            case Token::TOKEN_EQUAL:
+                /* Could occur ! */
+                sep = tok.str[0];
+                state = CPS_DIRECTIVE_VALUES;
+                break;
+            case Token::TOKEN_STRING:
+            case Token::TOKEN_QUOTED_STRING:
+                /* Could occur ! */
+                values.push_back(tok.str);
+                state = CPS_DIRECTIVE_VALUES;
+                break;
+            default:
+                /* WTF ? */
+                break;
+            }
+            break;
+        case CPS_DIRECTIVE_VALUES:
+            switch(tok.type)
+            {
+            case Token::TOKEN_COMMENT:
+                /* Could occur ! */
+                onParseDirective(name, sep, values, tok.str);
+                /* Clean and return to default */
+                name.clear();
+                values.clear();
+                sep = 0;
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_EOL:
+            case Token::TOKEN_NONE:
+                /* Could occur ! */
+                onParseDirective(name, sep, values);
+                /* Clean and return to default */
+                name.clear();
+                values.clear();
+                sep = 0;
+                state = CPS_DEFAULT;
+                break;
+            case Token::TOKEN_STRING:
+            case Token::TOKEN_QUOTED_STRING:
+                /* Could occur ! */
+                values.push_back(tok.str);
+                state = CPS_DIRECTIVE_VALUES;
+                break;
+            default:
+                /* WTF ? */
+                break;
+            }
+            break;
         }
     }
 
-    return res;
+    onParseEnd();
 }
+
 
 } /* namespace nut */
-
-
-
-
-
-
-
-#if 0
-
-/** Parse a string source for a line.
- * \param src Begin of text source to parse.
- * \param len Size of text source to parse in byte.
- * \param[out] rend Pointer where store end of line (address of byte following
- * the last character of the line, so the size of line is end-src).
- * \param[out] parsed_line Parsed line result.
- * TODO Handle end-of-file
- */
-void nutconf_parse_line(const char* src, unsigned int len,
-	const char** rend, SYNLINE_t* parsed_line)
-{
-	PARSING_TOKEN_e    directive_separator = TOKEN_NONE;
-    SYNPARSING_STATE_e state = SYNPARSING_STATE_INIT;
-    SYNPARSING_LINETYPE_e line_type = SYNPARSING_LINETYPE_UNKNWON;
-
-	LEXTOKEN_t current;
-
-/* Little macros (state-machine sub-functions) to reuse in this function: */
-
-/* Add current token to arg list.*/
-#define nutconf_parse_line__PUSH_ARG() \
-{\
-    if (parsed_line->arg_count < parsed_line->nb_args-1)\
-    {\
-        LEXTOKEN_copy(&parsed_line->args[parsed_line->arg_count], &current);\
-        parsed_line->arg_count++;\
-    }\
-    /* TODO Add args overflow handling. */\
-}
-/* Set comment and end state machine: */
-#define nutconf_parse_line__SET_COMMENT_AND_END_STM() \
-{\
-    LEXTOKEN_copy(&parsed_line->comment, &current);\
-    state = SYNPARSING_STATE_FINISHED;\
-}
-
-	if (parsed_line == NULL)
-	{
-		return; /* TODO add error code. */
-	}
-	/* Init returned values */
-	parsed_line->line_type = SYNPARSING_LINETYPE_UNKNWON;
-	parsed_line->directive_separator = TOKEN_NONE;
-	parsed_line->arg_count = 0;
-	LEXTOKEN_set(&parsed_line->comment, NULL, NULL, TOKEN_NONE);
-
-	/* Lets parse */
-    while (TRUE)
-    {
-        nutconf_parse_token(src, len, &current);
-        switch (state)
-        {
-        case SYNPARSING_STATE_INIT:
-            switch (current.type)
-            {
-            case TOKEN_COMMENT: /* Line with only a comment. */
-                line_type = SYNPARSING_LINETYPE_COMMENT;
-                nutconf_parse_line__SET_COMMENT_AND_END_STM();
-                break;
-            case TOKEN_BRACKET_OPEN: /* Begin of a section. */
-                state = SYNPARSING_STATE_SECTION_BEGIN;
-                break;
-            case TOKEN_STRING:  /* Begin of a directive line. */
-            case TOKEN_QUOTED_STRING:
-                nutconf_parse_line__PUSH_ARG();
-                state = SYNPARSING_STATE_DIRECTIVE_BEGIN;
-                break;
-            default:
-                /* Must not occur. */
-                /* TODO WTF ? .*/
-                break;
-            }
-            break;
-        case SYNPARSING_STATE_SECTION_BEGIN:
-            switch (current.type)
-            {
-            case TOKEN_BRACKET_CLOSE: /* Empty section. */
-                state = SYNPARSING_STATE_SECTION_END;
-                break;
-            case TOKEN_STRING:  /* Section name. */
-            case TOKEN_QUOTED_STRING:
-                nutconf_parse_line__PUSH_ARG();
-                state = SYNPARSING_STATE_SECTION_NAME;
-                break;
-            default:
-                /* Must not occur. */
-                /* TODO WTF ? .*/
-                break;            
-            }
-            break;
-        case SYNPARSING_STATE_SECTION_NAME:
-            switch (current.type)
-            {
-            case TOKEN_BRACKET_CLOSE: /* End of named section. */
-                state = SYNPARSING_STATE_SECTION_END;
-                break;
-            default:
-                /* Must not occur. */
-                /* TODO WTF ? .*/
-                break;            
-            }
-            break;
-        case SYNPARSING_STATE_SECTION_END:
-            switch (current.type)
-            {
-            case TOKEN_COMMENT:
-                line_type = SYNPARSING_LINETYPE_SECTION;
-                nutconf_parse_line__SET_COMMENT_AND_END_STM();
-                break;
-            case TOKEN_EOL:
-                line_type = SYNPARSING_LINETYPE_SECTION;
-                state = SYNPARSING_STATE_FINISHED;
-                break;
-            default:
-                /* Must not occur. */
-                /* TODO WTF ? .*/
-                break;            
-            }
-            break;
-        case SYNPARSING_STATE_DIRECTIVE_BEGIN:
-            switch (current.type)
-            {
-            case TOKEN_COLON:   /* Directive with ':'.*/
-            case TOKEN_EQUAL:   /* Directive with '='.*/
-                directive_separator = current.type;
-                state = SYNPARSING_STATE_DIRECTIVE_ARGUMENT;
-                break;
-            case TOKEN_STRING:  /* Directive direct argument, no separator. */
-            case TOKEN_QUOTED_STRING:
-                nutconf_parse_line__PUSH_ARG();
-                state = SYNPARSING_STATE_DIRECTIVE_ARGUMENT;
-                break;
-            case TOKEN_COMMENT:
-                line_type = SYNPARSING_LINETYPE_DIRECTIVE_NOSEP;
-                nutconf_parse_line__SET_COMMENT_AND_END_STM();
-                break;
-            case TOKEN_EOL:
-                line_type = SYNPARSING_LINETYPE_DIRECTIVE_NOSEP;
-                state = SYNPARSING_STATE_FINISHED;
-                break;
-            default:
-                /* Must not occur. */
-                /* TODO WTF ? .*/
-                break;            
-            }
-            break;
-        case SYNPARSING_STATE_DIRECTIVE_ARGUMENT:
-            switch (current.type)
-            {
-            case TOKEN_STRING:  /* Directive argument. */
-            case TOKEN_QUOTED_STRING:
-                nutconf_parse_line__PUSH_ARG();
-                /* Keep here, in SYNPARSING_STATE_DIRECTIVE_ARGUMENT state.*/
-                break;
-            case TOKEN_COMMENT:
-                /* TODO signal directive with comment */
-                nutconf_parse_line__SET_COMMENT_AND_END_STM();
-                break;
-            case TOKEN_EOL:
-                line_type = SYNPARSING_LINETYPE_DIRECTIVE_NOSEP;
-                state = SYNPARSING_STATE_FINISHED;
-                break;
-            default:
-                /* Must not occur. */
-                /* TODO WTF ? .*/
-                break;
-            }
-            break;
-        default:
-            /* Must not occur. */
-            /* TODO WTF ? .*/
-            break;
-        }
-
-		src = *rend = current.end; 
-        if (state == SYNPARSING_STATE_FINISHED)
-            break; /* Go out infinite while loop. */
-    }
-
-    if (line_type == SYNPARSING_LINETYPE_DIRECTIVE_NOSEP)
-    {
-        if (directive_separator == TOKEN_COLON)
-        {
-            line_type = SYNPARSING_LINETYPE_DIRECTIVE_COLON;
-        }
-        else if (directive_separator == TOKEN_EQUAL)
-        {
-            line_type = SYNPARSING_LINETYPE_DIRECTIVE_EQUAL;
-        }
-    }
-
-    /* End of process : save data for returning */
-	parsed_line->line_type = line_type;
-	parsed_line->directive_separator = directive_separator;
-
-#undef nutconf_parse_line__PUSH_ARG
-#undef nutconf_parse_line__SET_COMMENT_AND_END_STM
-}
-
-
-/* Parse a string source, memory mapping of a conf file.
- * End the parsing at the end of file (ie null-char, specified size
- * or error).
- */
-void nutconf_parse_memory(const char* src, int len,
-	nutconf_parse_line_callback cb, void* user_data)
-{
-	const char* rend = src;
-	SYNLINE_t    parsed_line;
-	LEXTOKEN_t   tokens[16];
-
-	parsed_line.args = tokens;
-	parsed_line.nb_args = 16;
-
-	while (len > 0)
-	{
-		nutconf_parse_line(src, len, &rend, &parsed_line);
-
-		cb(&parsed_line, user_data);
-
-		len -= rend - src;
-		src = rend;
-	}
-}
-
-
-
-
-typedef struct {
-	NUTCONF_t* conf;
-	NUTCONF_SECTION_t* current_section;
-	NUTCONF_ARG_t* current_arg;
-}NUTCONF_CONF_PARSE_t;
-
-static void nutconf_conf_parse_callback(SYNLINE_t* line, void* user_data)
-{
-	NUTCONF_CONF_PARSE_t* parse = (NUTCONF_CONF_PARSE_t*)user_data;
-	int num;
-
-	/* Verify parameters */
-	if (parse==NULL)
-	{
-		return;
-	}
-
-	/* Parsing state treatment */
-	switch (line->line_type)
-	{
-	case SYNPARSING_LINETYPE_SECTION:
-		if (parse->current_section == NULL)
-		{
-			/* No current section - begin of the parsing.*/
-			/* Use conf as section .*/
-			parse->current_section = parse->conf;
-		}
-		else
-		{
-			/* Already have a section, add new one to chain. */
-			parse->current_section->next = malloc(sizeof(NUTCONF_SECTION_t));
-			parse->current_section = parse->current_section->next;
-			memset(parse->current_section, 0, sizeof(NUTCONF_SECTION_t));
-			parse->current_arg = NULL;
-		}
-		/* Set the section name. */
-		if (line->arg_count > 0)
-		{
-			parse->current_section->name = LEXTOKEN_chralloc(&line->args[0]);
-		}
-		break;
-	case SYNPARSING_LINETYPE_DIRECTIVE_COLON:
-	case SYNPARSING_LINETYPE_DIRECTIVE_EQUAL:
-	case SYNPARSING_LINETYPE_DIRECTIVE_NOSEP:
-		if (line->arg_count < 1)
-		{
-			/* No directive if no argument. */
-			break;
-		}
-
-		if (parse->current_section == NULL)
-		{
-			/* No current section - begin of the parsing.*/
-			/* Use conf as section .*/
-			parse->current_section = parse->conf;
-		}
-
-		/* Add a new argument. */
-		if (parse->current_arg != NULL)
-		{
-			parse->current_arg->next = malloc(sizeof(NUTCONF_ARG_t));
-			parse->current_arg = parse->current_arg->next;
-		}
-		else
-		{
-			parse->current_arg = malloc(sizeof(NUTCONF_ARG_t));
-		}
-		memset(parse->current_arg, 0, sizeof(NUTCONF_ARG_t));
-
-		/* Set directive name. */
-		parse->current_arg->name = LEXTOKEN_chralloc(&line->args[0]);
-		
-		/* Set directive type. */
-		switch(line->line_type)
-		{
-		case SYNPARSING_LINETYPE_DIRECTIVE_COLON:
-			parse->current_arg->type = NUTCONF_ARG_COLON;
-			break;
-		case SYNPARSING_LINETYPE_DIRECTIVE_EQUAL:
-			parse->current_arg->type = NUTCONF_ARG_EQUAL;
-			break;
-		default:
-			parse->current_arg->type = NUTCONF_ARG_NONE;
-			break;
-		}
-
-		/* TODO Add directive values.*/
-		for(num=1; num<line->arg_count; num++)
-		{
-			/* ... */
-		}
-
-		break;
-	default:
-		/* Do nothing (unknown or comment. */
-		break;
-	}
-}
-
-NUTCONF_t* nutconf_conf_parse(const char* src, int len)
-{
-	NUTCONF_CONF_PARSE_t parse;
-	
-	/* Validate parameters */
-	if (src==NULL || len <=0)
-	{
-		return NULL;
-	}
-
-	/* Initialize working structures */
-	memset(&parse.conf, 0, sizeof(NUTCONF_CONF_PARSE_t));
-	parse.conf = malloc(sizeof(NUTCONF_t));
-	memset(parse.conf, 0, sizeof(NUTCONF_t));
-	
-	/* Do the parsing. */
-	nutconf_parse_memory(src, len, nutconf_conf_parse_callback, &parse);
-
-	/* TODO Test for successfull parsing. */
-	return parse.conf;
-}
-
-
-#endif /* 0 */
