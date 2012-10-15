@@ -195,7 +195,7 @@ char * filter_path(const char * source)
 		return NULL;
 	}
 
-	res = xmalloc(strlen(source));
+	res = xmalloc(strlen(source)+1);
 	for(i=0,j=0;i<=strlen(source);i++) {
 		if(source[i] != '"') {
 			res[j] = source[i];
