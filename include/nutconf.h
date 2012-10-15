@@ -118,7 +118,19 @@ protected:
     virtual void onParseEnd()=0;
 };
 
+class DefaultConfigParser : public NutConfigParser
+{
+public:
+    DefaultConfigParser(const char* buffer = NULL);
+    DefaultConfigParser(const std::string& buffer);
 
+protected:
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const std::list<std::string>& values = std::list<std::string>(), const std::string& comment = "");
+    virtual void onParseEnd();
+};
 
 } /* namespace nut */
 #endif /* __cplusplus */
