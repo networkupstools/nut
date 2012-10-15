@@ -62,24 +62,24 @@ void NutConfTest::tearDown()
 void NutConfTest::testParseCHARS()
 {
     {
-        NutConfigParser parse("Bonjour monde!");
+        NutParser parse("Bonjour monde!");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find first string 'Bonjour'", string("Bonjour"), parse.parseCHARS());
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot get a character ''", ' ', parse.get());
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find second string 'monde!'", string("monde!"), parse.parseCHARS());
     }
 
     {
-        NutConfigParser parse("To\\ to");
+        NutParser parse("To\\ to");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find escaped string 'To to'", string("To to"), parse.parseCHARS());
     }
 
     {
-        NutConfigParser parse("To\"to");
+        NutParser parse("To\"to");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find escaped string 'To'", string("To"), parse.parseCHARS());
     }
 
     {
-        NutConfigParser parse("To\\\"to");
+        NutParser parse("To\\\"to");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find escaped string 'To\"to'", string("To\"to"), parse.parseCHARS());
     }
 
@@ -89,19 +89,19 @@ void NutConfTest::testParseCHARS()
 void NutConfTest::testParseSTRCHARS()
 {
     {
-        NutConfigParser parse("Bonjour\"monde!\"");
+        NutParser parse("Bonjour\"monde!\"");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find first string 'Bonjour'", string("Bonjour"), parse.parseSTRCHARS());
         parse.get();
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find second string 'monde!'", string("monde!"), parse.parseSTRCHARS());
     }
 
     {
-        NutConfigParser parse("To to");
+        NutParser parse("To to");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find spaced string 'To tue de l’appareil qui se serait malencontreuo'", string("To to"), parse.parseSTRCHARS());
     }
 
     {
-        NutConfigParser parse("To\\\"to");
+        NutParser parse("To\\\"to");
         CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find quoted-escaped string 'To\"to'", string("To\"to"), parse.parseSTRCHARS());
     }
 }
@@ -113,20 +113,20 @@ void NutConfTest::testPasreToken()
         "[ceci]# Plouf\n"
         "\n"
         "titi = \"tata toto\"";
-    NutConfigParser parse(src);
+    NutParser parse(src);
 
 //    NutConfigParser::Token tok = parse.parseToken();
 //    std::cout << "token = " << tok.type << " - " << tok.str << std::endl;
 
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 1st token 'Bonjour'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_STRING, "Bonjour"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 2nd token 'monde'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_STRING, "monde"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 3rd token '['", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_BRACKET_OPEN, "["));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 4th token 'ceci'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_STRING, "ceci"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 5th token ']'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_BRACKET_CLOSE, "]"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 6th token ' Plouf'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_COMMENT, " Plouf"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 7th token '\n'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_EOL, "\n"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 8th token 'titi'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_STRING, "titi"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 9th token '='", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_EQUAL, "="));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 10th token 'tata toto'", parse.parseToken() == NutConfigParser::Token(NutConfigParser::Token::TOKEN_QUOTED_STRING, "tata toto"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 1st token 'Bonjour'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "Bonjour"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 2nd token 'monde'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "monde"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 3rd token '['", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_OPEN, "["));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 4th token 'ceci'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "ceci"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 5th token ']'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_CLOSE, "]"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 6th token ' Plouf'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_COMMENT, " Plouf"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 7th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 8th token 'titi'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "titi"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 9th token '='", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EQUAL, "="));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 10th token 'tata toto'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_QUOTED_STRING, "tata toto"));
 
 }
