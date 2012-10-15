@@ -478,8 +478,13 @@ if test "${nut_with_ssl}" != "no"; then
       if test "${nut_have_openssl}" != "yes"; then
          NUT_CHECK_LIBNSS
          if test "${nut_have_libnss}" != "yes"; then
+            dnl Only abort if SSL has been explicitly requested by the user
+            if test "${nut_with_ssl}" = "yes"; then
+               AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, but are needed for the requested SSL support"])
+            else
+               AC_MSG_WARN(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+            fi
             nut_with_ssl="no"
-            AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
          else
             nut_with_nss="${nut_have_libnss}"
          fi
