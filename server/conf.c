@@ -49,15 +49,17 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 		temp->desc = xstrdup(desc);
 	}
 
+	/* Initialise timestamps */
+	nut_clock_mintimestamp(&temp->last_heard);
+	nut_clock_mintimestamp(&temp->last_ping);
+	nut_clock_mintimestamp(&temp->last_connfail);
+
 	temp->stale = 1;
 	temp->retain = 1;
 	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
 	nut_clock_timestamp(&temp->last_heard);
-
-	nut_clock_mintimestamp(&temp->last_ping);
-	nut_clock_mintimestamp(&temp->last_connfail);
 
 	temp->next = firstups;
 	firstups = temp;

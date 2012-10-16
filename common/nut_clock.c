@@ -24,6 +24,8 @@
 
 /* POSIX clock available */
 #if (defined USE_POSIX_CLOCK)
+	#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using POSIX clock"
+
 	/* Prefere raw monotonic clock on Linux */
 	#if (defined NUT_PLATFORM_LINUX && defined CLOCK_MONOTONIC_RAW)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_RAW
@@ -42,6 +44,7 @@
 	/* Use POSIX monotonic clock */
 	#elif (defined CLOCK_MONOTONIC)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC
+		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using POSIX monot. clock"
 
 	#endif  /* end of platform-specific monotonic clocks selection */
 
@@ -68,6 +71,7 @@
 
 /* Good old C89 time_t fallback */
 #elif (defined USE_TIME_T_CLOCK)
+	#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using time_t fallback"
 	/* Nothing more to do */
 
 #else  /* Implementation undecided, code broken */
@@ -168,13 +172,11 @@ int nut_clock_gettime(nut_clock_mode_t mode, nut_time_t *tm) {
 
 #elif (defined USE_APPLE_MACH_CLOCK)
 	kern_return_t mach_st;
-	clock_id_t    clock_id;
+	clock_id_t    clock_id = MACH_CLOCK_REALTIME_IMPL;
 	clock_serv_t  clock;
 
 	switch (mode) {
 		case RTC:
-			clock_id = MACH_CLOCK_REALTIME_IMPL;
-
 			break;
 
 		case MONOTONIC_PREF:

@@ -18,6 +18,7 @@
 */
 
 #include "common.h"
+#include "nut_clock.h"
 
 #include <ctype.h>
 #include <syslog.h>
@@ -329,21 +330,18 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
 
 	if (nut_debug_level > 0) {
-		static struct timeval	start = { 0 };
-		struct timeval		now;
+		static int		start_init = 0;
+		static nut_time_t	start;
+		nut_time_t		now;
 	
-		gettimeofday(&now, NULL);
+		nut_clock_timestamp(&now);
 	
-		if (start.tv_sec == 0) {
-			start = now;
+		if (!start_init) {
+			nut_clock_copytime(&start, &now);
+			start_init = 1;
 		}
 	
-		if (start.tv_usec > now.tv_usec) {
-			now.tv_usec += 1000000;
-			now.tv_sec -= 1;
-		}
-	
-		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
+		fprintf(stderr, "%4.6f\t", nut_clock_difftime(&now, &start));
 	}
 
 	if (xbit_test(upslog_flags, UPSLOG_STDERR))

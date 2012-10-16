@@ -34,6 +34,7 @@
 #include "usbhid-ups.h"
 #include "hidparser.h"
 #include "hidtypes.h"
+#include "nut_clock.h"
 
 /* include all known subdrivers */
 #include "mge-hid.h"
@@ -123,9 +124,6 @@ static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen);
-#ifdef DEBUG
-static double interval(void);
-#endif
 
 /* global variables */
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
@@ -757,6 +755,9 @@ void upsdrv_updateinfo(void)
 	double		value;
 	nut_time_t	now;
 	double		poll_time_diff;
+#ifdef DEBUG
+	nut_time_t	dbg_measure_ts;
+#endif
 
 	upsdebugx(1, "upsdrv_updateinfo...");
 
@@ -786,7 +787,7 @@ void upsdrv_updateinfo(void)
 		}
 	}
 #ifdef DEBUG
-	interval();
+	nut_clock_timestamp(&dbg_measure_ts);
 #endif
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
@@ -820,7 +821,8 @@ void upsdrv_updateinfo(void)
 		ups_infoval_set(item, value);
 	}
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());
+	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", nut_clock_sec_since(&dbg_measure_ts));
+	nut_clock_timestamp(&dbg_measure_ts);
 #endif
 	/* clear status buffer before begining */
 	status_init();
@@ -852,7 +854,8 @@ void upsdrv_updateinfo(void)
 
 	dstate_dataok();
 #ifdef DEBUG
-	upsdebugx(1, "took %.3f seconds handling feature reports...\n", interval());
+	upsdebugx(1, "took %.3f seconds handling feature reports...\n", nut_clock_sec_since(&dbg_measure_ts));
+	nut_clock_timestamp(&dbg_measure_ts);
 #endif
 }
 
@@ -1135,22 +1138,6 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 
 	return 1;
 }
-
-#ifdef DEBUG
-static double interval(void)
-{
-	struct timeval		now;
-	static struct timeval	last;
-	double	ret;
-
-	gettimeofday(&now, NULL);
-
-	ret = now.tv_sec - last.tv_sec	+ ((double)(now.tv_usec - last.tv_usec)) / 1000000;
-	last = now;
-
-	return ret;
-}
-#endif
 
 /* walk ups variables and set elements of the info array. */
 static bool_t hid_ups_walk(walkmode_t mode)

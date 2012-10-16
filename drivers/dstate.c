@@ -32,6 +32,7 @@
 #include "dstate.h"
 #include "state.h"
 #include "parseconf.h"
+#include "nut_clock.h"
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
@@ -520,12 +521,13 @@ void dstate_init(const char *prog, const char *devname)
 }
 
 /* returns 1 if timeout expired or data is available on UPS fd, 0 otherwise */
-int dstate_poll_fds(struct timeval timeout, int extrafd)
+int dstate_poll_fds(double *timeout, int extrafd)
 {
 	int	ret, maxfd, overrun = 0;
 	fd_set	rfds;
-	struct timeval	now;
 	conn_t	*conn, *cnext;
+	struct timeval	select_timeout;
+	nut_time_t	data_process_start;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -548,29 +550,19 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 		}
 	}
 
-	gettimeofday(&now, NULL);
-
-	/* number of microseconds should always be positive */
-	if (timeout.tv_usec < now.tv_usec) {
-		timeout.tv_sec -= 1;
-		timeout.tv_usec += 1000000;
+	/* Timed out already */
+	if (0.0 >= *timeout) {
+		*timeout = 0.0;
+		overrun  = 1;
 	}
 
-	if (timeout.tv_sec < now.tv_sec) {
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 0;
-		overrun = 1;	/* no time left */
-	} else {
-		timeout.tv_sec -= now.tv_sec;
-		timeout.tv_usec -= now.tv_usec;
-	}
-	
-	ret = select(maxfd + 1, &rfds, NULL, NULL, &timeout);
+	/* Set timeout for select */
+	select_timeout.tv_sec  = (size_t)(*timeout);
+	select_timeout.tv_usec = (suseconds_t)((*timeout - select_timeout.tv_sec) * 1000000.0);
 
-	if (ret == 0) {
-		return 1;	/* timer expired */
-	}
+	ret = select(maxfd + 1, &rfds, NULL, NULL, &select_timeout);
 
+	/* Error */
 	if (ret < 0) {
 		switch (errno)
 		{
@@ -586,6 +578,16 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 		return overrun;
 	}
 
+	/* Timed out */
+	if (ret == 0) {
+		*timeout = 0.0;
+
+		return 1;
+	}
+
+	nut_clock_timestamp(&data_process_start);
+
+	/* Data on FD */
 	if (FD_ISSET(sockfd, &rfds)) {
 		sock_connect(sockfd);
 	}
@@ -597,6 +599,11 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 			sock_read(conn);
 		}
 	}
+
+	/* Update timeout */
+	*timeout  = (double)select_timeout.tv_sec;
+	*timeout += (double)select_timeout.tv_usec / 1000000.0;
+	*timeout -= nut_clock_sec_since(&data_process_start);
 
 	/* tell the caller if that fd woke up */
 	if ((extrafd != -1) && (FD_ISSET(extrafd, &rfds))) {

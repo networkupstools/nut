@@ -18,6 +18,7 @@
  */
 
 #include "nut_platform.h"
+#include "config.h"
 
 #if (defined NUT_PLATFORM_UNIX)
 	#include <unistd.h>

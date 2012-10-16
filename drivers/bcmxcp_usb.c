@@ -5,6 +5,7 @@
 #include "usb-common.h"
 #include "timehead.h"
 #include "nut_stdint.h" /* for uint16_t */
+#include "nut_clock.h"
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -132,9 +133,9 @@ void send_write_command(unsigned char *command, int command_length)
 int get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char buf[1024], *my_buf = buf;
-	int length, end_length, res, endblock, bytes_read, ellapsed_time;
+	int length, end_length, res, endblock, bytes_read, elapsed_ms;
 	unsigned char block_number, sequence, seq_num;
-	struct timeval start_time, now;
+	nut_time_t start_time;
 
 	if (upsdev == NULL)
 		return -1;
@@ -144,27 +145,25 @@ int get_answer(unsigned char *data, unsigned char command)
 	endblock = 0;		/* signal the last sequence in the block */
 	bytes_read = 0;		/* total length of data read, including XCP header */
 	res = 0;
-	ellapsed_time = 0;
+	elapsed_ms = 0;
 	seq_num = 1;		/* current theoric sequence */
 
 	upsdebugx(1, "entering get_answer(%x)", command);
 
 	/* Store current time */
-	gettimeofday(&start_time, NULL);
+	nut_clock_timestamp(&start_time);
 
-	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
+	while ( (!endblock) && ((XCP_USB_TIMEOUT - elapsed_ms)  > 0) ) {
 
 		/* Get (more) data if needed */
 		if ((length - (bytes_read - 5)) > 0) {
 			res = usb_interrupt_read(upsdev, 0x81,
 				(char *)&buf[bytes_read],
 				(PW_ANSWER_MAX_SIZE - bytes_read),
-				(XCP_USB_TIMEOUT - ellapsed_time));
+				(XCP_USB_TIMEOUT - elapsed_ms));
 
 			/* Update time */
-			gettimeofday(&now, NULL);
-			ellapsed_time = (now.tv_sec - start_time.tv_sec)*1000 +
-					(now.tv_usec - start_time.tv_usec)/1000;
+			elapsed_ms = (int)(nut_clock_sec_since(&start_time) * 1000.0);
 
 			/* Check libusb return value */
 			if (res < 0)

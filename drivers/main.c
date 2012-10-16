@@ -674,17 +674,16 @@ int main(int argc, char **argv)
 	}
 
 	while (!exit_flag) {
-
-		struct timeval	timeout;
-
-		gettimeofday(&timeout, NULL);
-		timeout.tv_sec += poll_interval;
+		double		timeout = poll_interval;
+		int		force_update;
 
 		upsdrv_updateinfo();
 
-		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
+		do {
 			/* repeat until time is up or extrafd has data */
-		}
+			force_update = dstate_poll_fds(&timeout, extrafd);
+
+		} while (!(force_update || exit_flag));
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
