@@ -49,6 +49,16 @@
 	#endif
 #endif
 
+/*
+ * GCC AIX issue: __unix__ nor __unix are not defined in older GCC
+ * Addressed in GCC 4.7.0, see
+ * http://gcc.gnu.org/bugzilla/show_bug.cgi?id=39950
+ * Remove if no longer necessary
+ */
+#if (defined _AIX && !defined __unix__)
+	#define __unix__
+#endif
+
 /* Microsoft Windows */
 #if (defined _WIN32 || defined _WIN64)
 	/** Windows */

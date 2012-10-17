@@ -17,8 +17,8 @@
  *  \date    2012/10/02
  */
 
-#include "nut_platform.h"
 #include "config.h"
+#include "nut_platform.h"
 
 #if (defined NUT_PLATFORM_UNIX)
 	#include <unistd.h>
