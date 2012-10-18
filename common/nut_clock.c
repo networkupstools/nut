@@ -24,27 +24,21 @@
 
 /* POSIX clock available */
 #if (defined USE_POSIX_CLOCK)
-	#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using POSIX clock"
-
 	/* Prefere raw monotonic clock on Linux */
 	#if (defined NUT_PLATFORM_LINUX && defined CLOCK_MONOTONIC_RAW)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_RAW
-		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Linux-specific monot. clock"
 
 	/* BSD-specific monotonic clock */
 	#elif (defined NUT_PLATFORM_BSD && defined CLOCK_MONOTONIC_PRECISE)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC_PRECISE
-		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using BSD-specific monot. clock"
 
 	/* Solaris-specific monotonic clock */
 	#elif (defined NUT_PLATFORM_SOLARIS && defined CLOCK_HIGHRES)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_HIGHRES
-		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using Solaris-specific monot. clock"
 
 	/* Use POSIX monotonic clock */
 	#elif (defined CLOCK_MONOTONIC)
 		#define POSIX_CLOCK_MONOTONIC_IMPL CLOCK_MONOTONIC
-		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using POSIX monot. clock"
 
 	#endif  /* end of platform-specific monotonic clocks selection */
 
@@ -54,7 +48,6 @@
 	#if (defined CALENDAR_CLOCK && defined SYSTEM_CLOCK)
 		#define MACH_CLOCK_REALTIME_IMPL  CALENDAR_CLOCK
 		#define MACH_CLOCK_MONOTONIC_IMPL SYSTEM_CLOCK
-		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using OSX-specific Mach clock services"
 	#else
 		#error "Compile-time error: Apple Mac OS X / Mach clocks unavailable"
 	#endif  /* end of Apple Mac OS X Mach ukernel specific clocks selection */
@@ -71,7 +64,6 @@
 
 /* Good old C89 time_t fallback */
 #elif (defined USE_TIME_T_CLOCK)
-	#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using time_t fallback"
 	/* Nothing more to do */
 
 #else  /* Implementation undecided, code broken */
@@ -82,7 +74,6 @@
 #if (defined USE_HPUX_GETHRTIME)
 	#if (defined USE_POSIX_CLOCK)
 		#define USE_HPUX_POSIX_RTC_AND_GETHRTIME_MONOTONIC_CLOCK
-		#warning "(TODO: REMOVE ME AS SOON AS DEBUGGED) Using HP-UX combined clocks"
 
 	/* No POSIX RTC on HP-UX */
 	#else
