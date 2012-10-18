@@ -19,9 +19,9 @@
 
 #include "nut_net_snmp.h"
 #include "common.h"
-#include "nut-scan.h"
 
 #ifdef WITH_SNMP
+#include "nut-scan.h"
 
 #include <sys/socket.h>
 #include <stdio.h>
