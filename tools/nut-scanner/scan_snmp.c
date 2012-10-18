@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "nut_net_snmp.h"
 #include "common.h"
 #include "nut-scan.h"
 
@@ -27,30 +28,6 @@
 #include <string.h>
 #include <ltdl.h>
 
-/* workaround for buggy Net-SNMP config
- * from drivers/snmp-ups.h */
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif

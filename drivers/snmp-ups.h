@@ -46,34 +46,7 @@ for each OID request we made), instead of sending many small packets
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
-/* FIXME: still needed?
- * workaround for buggy Net-SNMP config */
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef HAVE_DMALLOC_H
-#undef HAVE_DMALLOC_H
-#endif
-
-#include <net-snmp/net-snmp-config.h>
-#include <net-snmp/net-snmp-includes.h>
+#include "nut_net_snmp.h"
 
 /* Force numeric OIDs by disabling MIB loading */
 #define DISABLE_MIB_LOADING 1
