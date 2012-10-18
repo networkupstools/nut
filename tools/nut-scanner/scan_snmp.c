@@ -17,11 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "nut_net_snmp.h"
 #include "common.h"
+#include "nut-scan.h"
 
 #ifdef WITH_SNMP
-#include "nut-scan.h"
+#include "nut_net_snmp.h"
 
 #include <sys/socket.h>
 #include <stdio.h>

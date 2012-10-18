@@ -30,8 +30,8 @@
  */
 
 /* NUT SNMP common functions */
-#include "main.h"
 #include "snmp-ups.h"
+#include "main.h"
 #include "parseconf.h"
 #include "nut_clock.h"
 
