@@ -76,6 +76,7 @@
 
 "Apollo"	"ups"	"1"	"1000A"	""	"genericups upstype=4"
 "Apollo"	"ups"	"1"	"1000F"	""	"genericups upstype=4"
+"Apollo"	"ups"	"2"	"850VA"	""	"blazer_usb"
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 
