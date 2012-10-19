@@ -35,6 +35,13 @@
 namespace nut
 {
 
+class NutParser;
+class NutConfigParser;
+class DefaultConfigParser;
+class GenericConfigParser;
+
+
+
 /**
  * NUT config parser.
  */
@@ -157,7 +164,12 @@ protected:
 };
 
 
-typedef std::map<std::string, GenericConfigSection> GenericConfiguration;
+class BaseConfiguration
+{
+	friend class GenericConfigParser;
+protected:
+	virtual void setGenericConfigSection(const GenericConfigSection& section) = 0;
+};
 
 class GenericConfigParser : public DefaultConfigParser
 {
@@ -165,13 +177,29 @@ public:
     GenericConfigParser(const char* buffer = NULL);
     GenericConfigParser(const std::string& buffer);
 
-	virtual void parseGenericConfig(GenericConfiguration* config);
+	virtual void parseConfig(BaseConfiguration* config);
 
 protected:
 	virtual void onParseSection(const GenericConfigSection& section);
 
-	GenericConfiguration* _config;
+	BaseConfiguration* _config;
 };
+
+
+class GenericConfiguration : public BaseConfiguration
+{
+public:
+	GenericConfiguration(){}
+
+	// FIXME Let me public or set it as protected with public accessors ?
+	std::map<std::string, GenericConfigSection> sections;
+
+protected:
+	virtual void setGenericConfigSection(const GenericConfigSection& section);
+};
+
+
+
 
 
 } /* namespace nut */
