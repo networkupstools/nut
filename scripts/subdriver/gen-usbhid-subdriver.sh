@@ -5,7 +5,7 @@
 #
 # drivers/usbhid-ups -DD -u root -x generic -x vendorid=XXXX auto
 #
-# Usage: cat debuginfo | path-to-subdriver.sh
+# Usage: cat debuginfo | gen-usbhid-subdriver.sh
 #
 # See also: docs/hid-subdrivers.txt
 

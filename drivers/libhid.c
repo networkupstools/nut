@@ -261,7 +261,7 @@ static struct {
 
 /* CAUTION: be careful when modifying the output format of this function,
  * since it's used to produce sub-drivers "stub" using
- * scripts/subdriver/path-to-subdriver.sh
+ * scripts/subdriver/gen-usbhid-subdriver.sh
  */
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {
