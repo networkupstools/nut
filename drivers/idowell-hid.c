@@ -6,7 +6,7 @@
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
- *  path-to-subdriver script. It must be customized.
+ *  gen-usbhid-subdriver script. It must be customized.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

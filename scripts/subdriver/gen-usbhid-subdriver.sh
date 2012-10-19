@@ -58,7 +58,7 @@ if [ -z "$KEEP" ]; then
     trap cleanup EXIT
 fi
 
-NAME=path-to-subdriver
+NAME=gen-usbhid-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
 DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
 UTABLE=`mktemp "$TMPDIR/$NAME-UTABLE.XXXXXX"`
@@ -163,12 +163,12 @@ cat > "$CFILE" <<EOF
 /* ${CFILE} - subdriver to monitor ${DRIVER} USB/HID devices with NUT
  *
  *  Copyright (C)
- *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
- *  path-to-subdriver script. It must be customized.
+ *  gen-usbhid-subdriver script. It must be customized.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
