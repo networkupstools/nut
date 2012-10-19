@@ -666,7 +666,7 @@ void DefaultConfigParser::onParseSectionName(const std::string& sectionName, con
     // TODO
 }
 
-void DefaultConfigParser::onParseDirective(const std::string& directiveName, char sep, const std::list<std::string>& values, const std::string& comment)
+void DefaultConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
 {
     // TODO
 }
