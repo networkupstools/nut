@@ -630,10 +630,18 @@ void GenericConfigParser::onParseSection(const GenericConfigSection& section)
 //
 // GenericConfiguration
 //
+
 void GenericConfiguration::setGenericConfigSection(const GenericConfigSection& section)
 {
 	sections[section.name] = section;
 }
+
+void GenericConfiguration::parseFromString(const std::string& str)
+{
+	GenericConfigParser parser(str);
+	parser.parseConfig(this);
+}
+
 
 
 } /* namespace nut */
