@@ -157,6 +157,22 @@ protected:
 };
 
 
+typedef std::map<std::string, GenericConfigSection> GenericConfiguration;
+
+class GenericConfigParser : public DefaultConfigParser
+{
+public:
+    GenericConfigParser(const char* buffer = NULL);
+    GenericConfigParser(const std::string& buffer);
+
+	virtual void parseGenericConfig(GenericConfiguration* config);
+
+protected:
+	virtual void onParseSection(const GenericConfigSection& section);
+
+	GenericConfiguration* _config;
+};
+
 
 } /* namespace nut */
 #endif /* __cplusplus */
