@@ -590,6 +590,39 @@ void DefaultConfigParser::onParseEnd() {
     }
 }
 
+//
+// GenericConfigParser
+//
+
+GenericConfigParser::GenericConfigParser(const char* buffer):
+DefaultConfigParser(buffer),
+_config(NULL)
+{
+}
+
+GenericConfigParser::GenericConfigParser(const std::string& buffer):
+DefaultConfigParser(buffer),
+_config(NULL)
+{
+}
+
+void GenericConfigParser::onParseSection(const GenericConfigSection& section)
+{
+	if(_config!=NULL)
+	{
+		(*_config)[section.name] = section;
+	}
+}
+
+void GenericConfigParser::parseGenericConfig(GenericConfiguration* config)
+{
+	if(config!=NULL)
+	{
+		_config = config;
+		parseConfig();
+		_config = NULL;
+	}
+}
 
 
 } /* namespace nut */
