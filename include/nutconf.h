@@ -191,6 +191,10 @@ class GenericConfiguration : public BaseConfiguration
 public:
 	GenericConfiguration(){}
 
+	void parseFromString(const std::string& str);
+
+	// TODO Add functions to write to string or files (Vasek ?)
+
 	// FIXME Let me public or set it as protected with public accessors ?
 	std::map<std::string, GenericConfigSection> sections;
 
