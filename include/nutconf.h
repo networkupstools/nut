@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <map>
 
 #ifdef __cplusplus
 
@@ -120,6 +121,22 @@ protected:
     virtual void onParseEnd()=0;
 };
 
+struct GenericConfigSectionEntry
+{
+	std::string     name;
+	ConfigParamList values;
+	// std::string  comment;
+};
+
+struct GenericConfigSection
+{
+	std::string name;
+	// std::string comment;
+	std::map<std::string, GenericConfigSectionEntry> entries;
+
+	bool empty()const;
+	void clear();
+};
 
 class DefaultConfigParser : public NutConfigParser
 {
@@ -128,12 +145,15 @@ public:
     DefaultConfigParser(const std::string& buffer);
 
 protected:
+	virtual void onParseSection(const GenericConfigSection& section)=0;
 
     virtual void onParseBegin();
     virtual void onParseComment(const std::string& comment);
     virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
     virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
     virtual void onParseEnd();
+
+	GenericConfigSection _section; ///> Currently parsed section
 };
 
 
