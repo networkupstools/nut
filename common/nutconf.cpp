@@ -524,18 +524,6 @@ void NutConfigParser::parseConfig() {
 }
 
 
-//
-// GenericConfigSection
-//
-
-bool GenericConfigSection::empty()const {
-    return name.empty() && entries.empty();
-}
-
-void GenericConfigSection::clear() {
-    name.clear();
-    entries.clear();
-}
 
 //
 // DefaultConfigParser
@@ -590,6 +578,20 @@ void DefaultConfigParser::onParseEnd() {
     }
 }
 
+
+//
+// GenericConfigSection
+//
+
+bool GenericConfigSection::empty()const {
+    return name.empty() && entries.empty();
+}
+
+void GenericConfigSection::clear() {
+    name.clear();
+    entries.clear();
+}
+
 //
 // GenericConfigParser
 //
@@ -606,22 +608,31 @@ _config(NULL)
 {
 }
 
-void GenericConfigParser::onParseSection(const GenericConfigSection& section)
-{
-	if(_config!=NULL)
-	{
-		(*_config)[section.name] = section;
-	}
-}
-
-void GenericConfigParser::parseGenericConfig(GenericConfiguration* config)
+void GenericConfigParser::parseConfig(BaseConfiguration* config)
 {
 	if(config!=NULL)
 	{
 		_config = config;
-		parseConfig();
+		NutConfigParser::parseConfig();
 		_config = NULL;
 	}
+}
+
+
+void GenericConfigParser::onParseSection(const GenericConfigSection& section)
+{
+	if(_config!=NULL)
+	{
+		_config->setGenericConfigSection(section);
+	}
+}
+
+//
+// GenericConfiguration
+//
+void GenericConfiguration::setGenericConfigSection(const GenericConfigSection& section)
+{
+	sections[section.name] = section;
 }
 
 
