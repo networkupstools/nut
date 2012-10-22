@@ -133,6 +133,7 @@ struct GenericConfigSectionEntry
 	std::string     name;
 	ConfigParamList values;
 	// std::string  comment;
+
 };
 
 struct GenericConfigSection
@@ -140,6 +141,9 @@ struct GenericConfigSection
 	std::string name;
 	// std::string comment;
 	std::map<std::string, GenericConfigSectionEntry> entries;
+
+	const GenericConfigSectionEntry& operator [] (const std::string& varname)const{return entries.find(varname)->second;}
+	GenericConfigSectionEntry& operator [] (const std::string& varname){return entries[varname];}
 
 	bool empty()const;
 	void clear();
@@ -195,8 +199,13 @@ public:
 
 	// TODO Add functions to write to string or files (Vasek ?)
 
+
 	// FIXME Let me public or set it as protected with public accessors ?
 	std::map<std::string, GenericConfigSection> sections;
+
+	const GenericConfigSection& operator[](const std::string& secname)const{return sections.find(secname)->second;}
+	GenericConfigSection& operator[](const std::string& secname){return sections[secname];}
+
 
 protected:
 	virtual void setGenericConfigSection(const GenericConfigSection& section);

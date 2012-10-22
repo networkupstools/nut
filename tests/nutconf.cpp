@@ -34,6 +34,7 @@ class NutConfTest : public CppUnit::TestFixture
     CPPUNIT_TEST( testParseCHARS );
     CPPUNIT_TEST( testParseSTRCHARS );
     CPPUNIT_TEST( testPasreToken );
+	CPPUNIT_TEST( testGenericConfigParser );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -43,6 +44,8 @@ public:
   void testParseCHARS();
   void testParseSTRCHARS();
   void testPasreToken();
+
+  void testGenericConfigParser();
 };
 
 // Registers the fixture into the 'registry'
@@ -120,13 +123,49 @@ void NutConfTest::testPasreToken()
 
     CPPUNIT_ASSERT_MESSAGE("Cannot find 1st token 'Bonjour'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "Bonjour"));
     CPPUNIT_ASSERT_MESSAGE("Cannot find 2nd token 'monde'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "monde"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 3rd token '['", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_OPEN, "["));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 4th token 'ceci'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "ceci"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 5th token ']'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_CLOSE, "]"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 6th token ' Plouf'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_COMMENT, " Plouf"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 7th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 8th token 'titi'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "titi"));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 9th token '='", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EQUAL, "="));
-    CPPUNIT_ASSERT_MESSAGE("Cannot find 10th token 'tata toto'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_QUOTED_STRING, "tata toto"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 3th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 4rd token '['", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_OPEN, "["));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 5th token 'ceci'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "ceci"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 6th token ']'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_CLOSE, "]"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 7th token ' Plouf'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_COMMENT, " Plouf"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 8th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 9th token 'titi'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "titi"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 10th token '='", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EQUAL, "="));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 11th token 'tata toto'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_QUOTED_STRING, "tata toto"));
 
 }
+
+void NutConfTest::testGenericConfigParser()
+{
+	static const char* src =
+		"glovar1 = toto\n"
+		"glovar2 = \"truc bidule\"\n"
+		"\n"
+		"[section1] # One section\n"
+		"var1 = \"one value\"\n"
+		" \n"
+		"var2\n"
+		"\n"
+		"[section2]\n"
+		"var1 = other value\n"
+		"var toto";
+
+	GenericConfiguration conf;
+	conf.parseFromString(src);
+
+	CPPUNIT_ASSERT_MESSAGE("Cannot find a global section", conf.sections.find("") != conf.sections.end() );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find global section's glovar1 variable", conf.sections[""]["glovar1"].values.front() == "toto" );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find global section's glovar2 variable", conf.sections[""]["glovar2"].values.front() == "truc bidule" );
+
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section1", conf.sections.find("section1") != conf.sections.end() );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section1's var1 variable", conf.sections["section1"]["var1"].values.front() == "one value" );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section1's var2 variable", conf.sections["section1"]["var2"].values.size() == 0 );
+
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section2", conf.sections.find("section2") != conf.sections.end() );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section2's var1 variable", conf.sections["section2"]["var1"].values.front() == "other" );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section2's var1 variable", *(++(conf.sections["section2"]["var1"].values.begin())) == "value" );
+	CPPUNIT_ASSERT_MESSAGE("Cannot find section2's var variable", conf.sections["section2"]["var"].values.front() == "toto" );
+
+}
+
+
