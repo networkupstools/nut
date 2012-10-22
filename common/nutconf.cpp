@@ -242,7 +242,12 @@ NutParser::Token NutParser::parseToken() {
                     }
                 } else if (c == ' ' || c == '\t' || isgraph(c)) {
                     token.str += c;
-                } else if (c == 0) /* EOL */ {
+                } else if (c == '\r' || c == '\n') /* EOL */{
+					/* WTF ? consider it as correct ? */
+					back();
+                    popPos();
+                    return token;					
+                } else if (c == 0) /* EOF */ {
                     popPos();
                     return token;
                 } else /* Bad character ?? */ {
@@ -269,8 +274,14 @@ NutParser::Token NutParser::parseToken() {
                     } else {
                         escaped = true;
                     }
-                }                        /* else if (c == '\r' || c == '\n') */
-                else if (isgraph(c)) {
+                } else if (c == '\r' || c == '\n') /* EOL */{
+					back();
+                    popPos();
+                    return token;					
+                } else if (c == 0) /* EOF */ {
+                    popPos();
+                    return token;
+                }else if (isgraph(c)) {
                     token.str += c;
                 } else /* Bad character ?? */ {
                     /* WTF ? Keep, Ignore ? */
@@ -391,7 +402,6 @@ void NutConfigParser::parseConfig() {
                         state = CPS_DEFAULT;
                         break;
                     case Token::TOKEN_EOL:
-                    case Token::TOKEN_NONE:
                         /* Lack of closing bracket !!! */
                         onParseSectionName(name);
                         /* Clean and return to default */
@@ -417,7 +427,6 @@ void NutConfigParser::parseConfig() {
                         state = CPS_DEFAULT;
                         break;
                     case Token::TOKEN_EOL:
-                    case Token::TOKEN_NONE:
                         /* Lack of closing bracket !!! */
                         onParseSectionName(name);
                         /* Clean and return to default */
@@ -439,7 +448,6 @@ void NutConfigParser::parseConfig() {
                         state = CPS_DEFAULT;
                         break;
                     case Token::TOKEN_EOL:
-                    case Token::TOKEN_NONE:
                         /* Could occur ! */
                         onParseSectionName(name);
                         /* Clean and return to default */
@@ -461,7 +469,6 @@ void NutConfigParser::parseConfig() {
                         state = CPS_DEFAULT;
                         break;
                     case Token::TOKEN_EOL:
-                    case Token::TOKEN_NONE:
                         /* Could occur ! */
                         onParseDirective(name);
                         /* Clean and return to default */
@@ -497,7 +504,6 @@ void NutConfigParser::parseConfig() {
                         state = CPS_DEFAULT;
                         break;
                     case Token::TOKEN_EOL:
-                    case Token::TOKEN_NONE:
                         /* Could occur ! */
                         onParseDirective(name, sep, values);
                         /* Clean and return to default */
@@ -519,6 +525,27 @@ void NutConfigParser::parseConfig() {
                 break;
         }
     }
+
+	switch(state)
+	{
+	case CPS_SECTION_OPENED:
+    case CPS_SECTION_HAVE_NAME:
+        /* Lack of closing bracket !!! */
+        onParseSectionName(name);
+		break;
+    case CPS_SECTION_CLOSED:
+        /* Could occur ! */
+        onParseSectionName(name);
+		break;
+    case CPS_DIRECTIVE_HAVE_NAME:
+        /* Could occur ! */
+        onParseDirective(name);
+		break;
+    case CPS_DIRECTIVE_VALUES:
+        /* Could occur ! */
+        onParseDirective(name, sep, values);
+		break;
+	}
 
     onParseEnd();
 }
