@@ -214,6 +214,71 @@ protected:
 
 
 
+class UpsmonConfiguration
+{
+public:
+    UpsmonConfiguration();
+    void parseFromString(const std::string& str);
+
+    std::string runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
+    unsigned int minSupplies, poolFreq, poolFreqAlert, hotSync;
+    unsigned int deadTime, rbWarnTime, noCommWarnTime, finalDelay;
+
+    enum NotifyFlag {
+        NOTIFY_IGNORE = 0,
+        NOTIFY_SYSLOG = 1,
+        NOTIFY_WALL = 1 << 1,
+        NOTIFY_EXEC = 1 << 2
+    };
+
+    enum NotifyType {
+        NOTIFY_ONLINE,
+        NOTIFY_ONBATT,
+        NOTIFY_LOWBATT,
+        NOTIFY_FSD,
+        NOTIFY_COMMOK,
+        NOTIFY_COMMBAD,
+        NOTIFY_SHUTDOWN,
+        NOTIFY_REPLBATT,
+        NOTIFY_NOCOMM,
+        NOTIFY_NOPARENT,
+        NOTIFY_TYPE_MAX
+    };
+
+    unsigned short notifyFlags[NOTIFY_TYPE_MAX];
+
+    struct Monitor {
+        std::string upsname, hostname;
+        unsigned short port;
+        unsigned int powerValue;
+        std::string username, password;
+        bool isMaster;
+    };
+
+    std::list<Monitor> monitors;
+
+};
+
+
+
+class UpsmonConfigParser : public NutConfigParser
+{
+public:
+    UpsmonConfigParser(const char* buffer = NULL);
+    UpsmonConfigParser(const std::string& buffer);
+
+    void parseUpsmonConfig(UpsmonConfiguration* config);
+protected:
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+    UpsmonConfiguration* _config;
+};
+
+
 
 } /* namespace nut */
 #endif /* __cplusplus */

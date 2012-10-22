@@ -669,6 +669,74 @@ void GenericConfiguration::parseFromString(const std::string& str)
 	parser.parseConfig(this);
 }
 
+//
+// UpsmonConfiguration
+//
+
+UpsmonConfiguration::UpsmonConfiguration():
+minSupplies(0), poolFreq(0), poolFreqAlert(0), hotSync(0),
+deadTime(0), rbWarnTime(0), noCommWarnTime(0), finalDelay(0)
+{
+}
+
+void UpsmonConfiguration::parseFromString(const std::string& str)
+{
+    UpsmonConfigParser parser(str);
+    parser.parseUpsmonConfig(this);
+}
+
+//
+// UpsmonConfigParser
+//
+
+UpsmonConfigParser::UpsmonConfigParser(const char* buffer):
+NutConfigParser(buffer)
+{
+}
+
+UpsmonConfigParser::UpsmonConfigParser(const std::string& buffer):
+NutConfigParser(buffer)
+{
+}
+
+void UpsmonConfigParser::parseUpsmonConfig(UpsmonConfiguration* config)
+{
+	if(config!=NULL)
+	{
+		_config = config;
+		NutConfigParser::parseConfig();
+		_config = NULL;
+	}
+}
+
+void UpsmonConfigParser::onParseBegin()
+{
+    // Do nothing
+}
+
+void UpsmonConfigParser::onParseComment(const std::string& comment)
+{
+    // Comment are ignored for now
+}
+
+void UpsmonConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
+{
+    // There must not have sections in upsm.conf.
+    // Ignore it
+    // TODO Add error reporting ?
+}
+
+void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
+{
+    // TODO
+}
+
+void UpsmonConfigParser::onParseEnd()
+{
+    // Do nothing
+}
+
+
 
 
 } /* namespace nut */
