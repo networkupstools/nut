@@ -35,6 +35,7 @@ class NutConfTest : public CppUnit::TestFixture
     CPPUNIT_TEST( testParseSTRCHARS );
     CPPUNIT_TEST( testPasreToken );
 	CPPUNIT_TEST( testGenericConfigParser );
+	CPPUNIT_TEST( testUpsmonConfigParser );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -46,6 +47,7 @@ public:
   void testPasreToken();
 
   void testGenericConfigParser();
+  void testUpsmonConfigParser();
 };
 
 // Registers the fixture into the 'registry'
@@ -115,7 +117,9 @@ void NutConfTest::testPasreToken()
         "Bonjour monde\n"
         "[ceci]# Plouf\n"
         "\n"
-        "titi = \"tata toto\"";
+        "titi = \"tata toto\"\n"
+		"NOTIFYFLAG LOWBATT SYSLOG+WALL"
+		;
     NutParser parse(src);
 
 //    NutConfigParser::Token tok = parse.parseToken();
@@ -132,6 +136,10 @@ void NutConfTest::testPasreToken()
     CPPUNIT_ASSERT_MESSAGE("Cannot find 9th token 'titi'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "titi"));
     CPPUNIT_ASSERT_MESSAGE("Cannot find 10th token '='", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EQUAL, "="));
     CPPUNIT_ASSERT_MESSAGE("Cannot find 11th token 'tata toto'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_QUOTED_STRING, "tata toto"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 12th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 13th token 'NOTIFYFLAG'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "NOTIFYFLAG"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 14th token 'LOWBATT'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "LOWBATT"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 15th token 'SYSLOG+WALL'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "SYSLOG+WALL"));
 
 }
 
@@ -167,5 +175,63 @@ void NutConfTest::testGenericConfigParser()
 	CPPUNIT_ASSERT_MESSAGE("Cannot find section2's var variable", conf.sections["section2"]["var"].values.front() == "toto" );
 
 }
+
+void NutConfTest::testUpsmonConfigParser()
+{
+	static const char* src =
+		"RUN_AS_USER nutmon\n"
+		"MONITOR myups@bigserver 1 monmaster blah master\n"
+		"MONITOR su700@server.example.com 1 upsmon secretpass slave\n"
+		"MONITOR myups@localhost 1 upsmon pass master\n"
+		"MINSUPPLIES 1\n"
+		"\n"
+		"# MINSUPPLIES 25\n"
+		"SHUTDOWNCMD \"/sbin/shutdown -h +0\"\n"
+		"NOTIFYCMD /usr/local/ups/bin/notifyme\n"
+		"POLLFREQ 30\n"
+		"POLLFREQALERT 5\n"
+		"HOSTSYNC 15\n"
+		"DEADTIME 15\n"
+		"POWERDOWNFLAG /etc/killpower\n"
+		"NOTIFYMSG ONLINE \"UPS %s on line power\"\n"
+		"NOTIFYFLAG LOWBATT SYSLOG+WALL\n"
+		"RBWARNTIME 43200\n"
+		"NOCOMMWARNTIME 300\n"
+		"FINALDELAY 5"
+		;
+
+	UpsmonConfiguration conf;
+	conf.parseFromString(src);
+
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find RUN_AS_USER 'nutmon'", string("nutmon"), *conf.runAsUser);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find MINSUPPLIES 1", 1u, *conf.minSupplies);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find SHUTDOWNCMD '/sbin/shutdown -h +0'", string("/sbin/shutdown -h +0"), *conf.shutdownCmd);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find NOTIFYCMD '/usr/local/ups/bin/notifyme'", string("/usr/local/ups/bin/notifyme"), *conf.notifyCmd);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POWERDOWNFLAG '/etc/killpower'", string("/etc/killpower"), *conf.powerDownFlag);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POLLFREQ 30", 30u, *conf.poolFreq);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find POLLFREQALERT 5", 5u, *conf.poolFreqAlert);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find HOSTSYNC 15", 15u, *conf.hotSync);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find DEADTIME 15", 15u, *conf.deadTime);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find RBWARNTIME 43200", 43200u, *conf.rbWarnTime);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find NOCOMMWARNTIME 300", 300u, *conf.noCommWarnTime);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find FINALDELAY 5", 5u, *conf.finalDelay);
+
+	CPPUNIT_ASSERT_MESSAGE("Find a NOTIFYFLAG ONLINE", !conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_ONLINE].set());
+	CPPUNIT_ASSERT_MESSAGE("Cannot find a NOTIFYFLAG LOWBATT", conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_LOWBATT].set());
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a NOTIFYFLAG LOWBATT SYSLOG+WALL", 3u, (unsigned int)conf.notifyFlags[nut::UpsmonConfiguration::NOTIFY_LOWBATT]);
+
+
+	CPPUNIT_ASSERT_MESSAGE("Find a NOTIFYMSG LOWBATT", !conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_LOWBATT].set());
+	CPPUNIT_ASSERT_MESSAGE("Cannot find a NOTIFYMSG ONLINE", conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_ONLINE].set());
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a NOTIFYMSG ONLINE \"UPS %s on line power\"", string("UPS %s on line power"), *conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_ONLINE]);
+
+
+}
+
+
+
+
+
+
 
 

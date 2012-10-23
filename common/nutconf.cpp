@@ -22,10 +22,38 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <sstream>
+#include <iostream>
+
 #include "nutconf.h"
 
 
 namespace nut {
+
+//
+// Tool functions
+//
+
+/**
+ * Parse a specified type from a string and set it as Settable if success.
+ */
+template <typename T>
+Settable<T> StringToSettableNumber(const std::string & src)
+{
+	std::stringstream ss(src);
+	T result;
+	if(ss >> result)
+	{
+		return Settable<T>(result);
+	}
+	else
+	{
+		return Settable<T>();
+	}
+}
+
+
+
 
 //
 // NutParser
@@ -673,9 +701,7 @@ void GenericConfiguration::parseFromString(const std::string& str)
 // UpsmonConfiguration
 //
 
-UpsmonConfiguration::UpsmonConfiguration():
-minSupplies(0), poolFreq(0), poolFreqAlert(0), hotSync(0),
-deadTime(0), rbWarnTime(0), noCommWarnTime(0), finalDelay(0)
+UpsmonConfiguration::UpsmonConfiguration()
 {
 }
 
@@ -683,6 +709,46 @@ void UpsmonConfiguration::parseFromString(const std::string& str)
 {
     UpsmonConfigParser parser(str);
     parser.parseUpsmonConfig(this);
+}
+
+UpsmonConfiguration::NotifyFlag UpsmonConfiguration::NotifyFlagFromString(const std::string& str)
+{
+	if(str=="SYSLOG")
+		return NOTIFY_SYSLOG;
+	else if(str=="WALL")
+		return NOTIFY_WALL;
+	else if(str=="EXEC")
+		return NOTIFY_EXEC;
+	else if(str=="IGNORE")
+		return NOTIFY_IGNORE;
+	else
+		return NOTIFY_IGNORE;
+}
+
+UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const std::string& str)
+{
+	if(str=="ONLINE")
+		return NOTIFY_ONLINE;
+	else if(str=="ONBATT")
+		return NOTIFY_ONBATT;
+	else if(str=="LOWBATT")
+		return NOTIFY_LOWBATT;
+	else if(str=="FSD")
+		return NOTIFY_FSD;
+	else if(str=="COMMOK")
+		return NOTIFY_COMMOK;
+	else if(str=="COMMBAD")
+		return NOTIFY_COMMBAD;
+	else if(str=="SHUTDOWN")
+		return NOTIFY_SHUTDOWN;
+	else if(str=="REPLBATT")
+		return NOTIFY_REPLBATT;
+	else if(str=="NOCOMM")
+		return NOTIFY_NOCOMM;
+	else if(str=="NOPARENT")
+		return NOTIFY_NOPARENT;
+	else
+		return NOTIFY_TYPE_MAX;
 }
 
 //
@@ -714,29 +780,167 @@ void UpsmonConfigParser::onParseBegin()
     // Do nothing
 }
 
-void UpsmonConfigParser::onParseComment(const std::string& comment)
+void UpsmonConfigParser::onParseComment(const std::string& /*comment*/)
 {
     // Comment are ignored for now
 }
 
-void UpsmonConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
+void UpsmonConfigParser::onParseSectionName(const std::string& /*sectionName*/, const std::string& /*comment*/)
 {
     // There must not have sections in upsm.conf.
     // Ignore it
     // TODO Add error reporting ?
 }
 
-void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
+
+void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/)
 {
-    // TODO
+	// NOTE: separators are always ignored
+
+	if(_config)
+		{
+		if(directiveName == "RUN_AS_USER")
+		{
+			if(values.size()>0)
+			{
+				_config->runAsUser = values.front();
+			}
+		}
+		else if(directiveName == "MONITOR")
+		{
+			if(values.size()==5)
+			{
+				UpsmonConfiguration::Monitor monitor;
+				ConfigParamList::const_iterator it = values.begin();
+				std::stringstream system(*it++);
+				std::string word;
+				monitor.upsname = (getline(system, word, '@'), word);
+				monitor.hostname = (getline(system, word, ':'), word);
+				monitor.port = (getline(system, word) ? *StringToSettableNumber<unsigned int>(word) : 0u);
+				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
+				monitor.username = *it++;
+				monitor.password = *it++;
+				monitor.isMaster = (*it) == "master";
+				_config->monitors.push_back(monitor);
+			}
+		}
+		else if(directiveName == "MINSUPPLIES")
+		{
+			if(values.size()>0)
+			{
+				_config->minSupplies = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "SHUTDOWNCMD")
+		{
+			if(values.size()>0)
+			{
+				_config->shutdownCmd = values.front();
+			}
+		}
+		else if(directiveName == "NOTIFYCMD")
+		{
+			if(values.size()>0)
+			{
+				_config->notifyCmd = values.front();
+			}
+		}
+		else if(directiveName == "POLLFREQ")
+		{
+			if(values.size()>0)
+			{
+				_config->poolFreq = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "POLLFREQALERT")
+		{
+			if(values.size()>0)
+			{
+				_config->poolFreqAlert = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "HOSTSYNC")
+		{
+			if(values.size()>0)
+			{
+				_config->hotSync = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "DEADTIME")
+		{
+			if(values.size()>0)
+			{
+				_config->deadTime = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "POWERDOWNFLAG")
+		{
+			if(values.size()>0)
+			{
+				_config->powerDownFlag = values.front();
+			}
+		}
+		else if(directiveName == "NOTIFYMSG")
+		{
+			if(values.size()==2)
+			{
+				UpsmonConfiguration::NotifyType type = UpsmonConfiguration::NotifyTypeFromString(values.front());
+				if(type!=UpsmonConfiguration::NOTIFY_TYPE_MAX)
+				{
+					_config->notifyMessages[(unsigned int)type] = *(++values.begin());
+				}
+			}
+		}
+		else if(directiveName == "NOTIFYFLAG")
+		{
+			if(values.size()==2)
+			{
+				UpsmonConfiguration::NotifyType type = UpsmonConfiguration::NotifyTypeFromString(values.front());
+				if(type!=UpsmonConfiguration::NOTIFY_TYPE_MAX)
+				{
+					unsigned int flags = 0;
+					std::string word;
+					std::stringstream stream(*(++values.begin()));
+					while( getline(stream, word, '+') )
+					{
+						flags |= UpsmonConfiguration::NotifyFlagFromString(word);
+					}
+					_config->notifyFlags[(unsigned int)type] = flags;
+				}
+			}
+		}
+		else if(directiveName == "RBWARNTIME")
+		{
+			if(values.size()>0)
+			{
+				_config->rbWarnTime = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "NOCOMMWARNTIME")
+		{
+			if(values.size()>0)
+			{
+				_config->noCommWarnTime = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "FINALDELAY")
+		{
+			if(values.size()>0)
+			{
+				_config->finalDelay = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else
+		{
+			// TODO WTF with unknown commands ?
+		}
+	}
 }
 
 void UpsmonConfigParser::onParseEnd()
 {
     // Do nothing
 }
-
-
 
 
 } /* namespace nut */
