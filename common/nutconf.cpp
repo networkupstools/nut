@@ -1035,4 +1035,119 @@ void NutConfConfigParser::onParseEnd()
 }
 
 
+//
+// UpsdConfiguration
+//
+
+UpsdConfiguration::UpsdConfiguration()
+{
+}
+
+void UpsdConfiguration::parseFromString(const std::string& str)
+{
+    UpsdConfigParser parser(str);
+    parser.parseUpsdConfig(this);
+}
+
+//
+// UpsdConfigParser
+//
+
+UpsdConfigParser::UpsdConfigParser(const char* buffer):
+NutConfigParser(buffer)
+{
+}
+
+UpsdConfigParser::UpsdConfigParser(const std::string& buffer):
+NutConfigParser(buffer)
+{
+}
+
+void UpsdConfigParser::parseUpsdConfig(UpsdConfiguration* config)
+{
+	if(config!=NULL)
+	{
+		_config = config;
+		NutConfigParser::parseConfig();
+		_config = NULL;
+	}
+}
+
+void UpsdConfigParser::onParseBegin()
+{
+    // Do nothing
+}
+
+void UpsdConfigParser::onParseComment(const std::string& comment)
+{
+    // Comment are ignored for now
+}
+
+void UpsdConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
+{
+    // There must not have sections in upsm.conf.
+    // Ignore it
+    // TODO Add error reporting ?
+}
+
+void UpsdConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
+{
+	// NOTE: separators are always ignored
+
+	if(_config)
+	{
+		if(directiveName == "MAXAGE")
+		{
+			if(values.size()>0)
+			{
+				_config->maxAge = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "STATEPATH")
+		{
+			if(values.size()>0)
+			{
+				_config->statePath = values.front();
+			}
+		}
+		else if(directiveName == "MAXCONN")
+		{
+			if(values.size()>0)
+			{
+				_config->maxConn = StringToSettableNumber<unsigned int>(values.front());
+			}
+		}
+		else if(directiveName == "CERTFILE")
+		{
+			if(values.size()>0)
+			{
+				_config->certFile = values.front();
+			}
+		}
+		else if(directiveName == "LISTEN")
+		{
+			if(values.size()==1 || values.size()==2)
+			{
+				UpsdConfiguration::Listen listen;
+				listen.address = values.front();
+				if(values.size()==2)
+				{
+					listen.port = StringToSettableNumber<unsigned short>(*(++values.begin()));
+				}
+				_config->listens.push_back(listen);
+			}
+		}
+		else
+		{
+			// TODO WTF with unknown commands ?
+		}
+	}
+}
+
+void UpsdConfigParser::onParseEnd()
+{
+    // Do nothing
+}
+
+
 } /* namespace nut */
