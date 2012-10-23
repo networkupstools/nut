@@ -347,6 +347,41 @@ protected:
 };
 
 
+class UpsdConfiguration
+{
+public:
+	UpsdConfiguration();
+    void parseFromString(const std::string& str);
+
+    Settable<unsigned int> maxAge, maxConn;
+    Settable<std::string>  statePath, certFile;
+
+	struct Listen
+	{
+		std::string address;
+		Settable<unsigned short> port;
+	};
+	std::list<Listen> listens;
+};
+
+
+class UpsdConfigParser : public NutConfigParser
+{
+public:
+    UpsdConfigParser(const char* buffer = NULL);
+    UpsdConfigParser(const std::string& buffer);
+
+    void parseUpsdConfig(UpsdConfiguration* config);
+protected:
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+    UpsdConfiguration* _config;
+};
+
 } /* namespace nut */
 #endif /* __cplusplus */
 #endif	/* NUTCONF_H_SEEN */
