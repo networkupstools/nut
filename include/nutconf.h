@@ -246,6 +246,7 @@ public:
     };
 
     unsigned short notifyFlags[NOTIFY_TYPE_MAX];
+	std::string notifyMessages[NOTIFY_TYPE_MAX];
 
     struct Monitor {
         std::string upsname, hostname;
