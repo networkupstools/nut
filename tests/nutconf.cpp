@@ -36,6 +36,7 @@ class NutConfTest : public CppUnit::TestFixture
     CPPUNIT_TEST( testPasreToken );
 	CPPUNIT_TEST( testGenericConfigParser );
 	CPPUNIT_TEST( testUpsmonConfigParser );
+	CPPUNIT_TEST( testNutConfConfigParser );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -48,6 +49,7 @@ public:
 
   void testGenericConfigParser();
   void testUpsmonConfigParser();
+  void testNutConfConfigParser();
 };
 
 // Registers the fixture into the 'registry'
@@ -224,11 +226,21 @@ void NutConfTest::testUpsmonConfigParser()
 	CPPUNIT_ASSERT_MESSAGE("Find a NOTIFYMSG LOWBATT", !conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_LOWBATT].set());
 	CPPUNIT_ASSERT_MESSAGE("Cannot find a NOTIFYMSG ONLINE", conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_ONLINE].set());
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a NOTIFYMSG ONLINE \"UPS %s on line power\"", string("UPS %s on line power"), *conf.notifyMessages[nut::UpsmonConfiguration::NOTIFY_ONLINE]);
-
-
 }
 
 
+void NutConfTest::testNutConfConfigParser()
+{
+	static const char* src =
+		"\n\nMODE=standalone\n";
+
+	NutConfiguration conf;
+	conf.parseFromString(src);
+
+	CPPUNIT_ASSERT_MESSAGE("Cannot find a MODE", conf.mode.set());
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find a MODE=standalone", nut::NutConfiguration::MODE_STANDALONE, *conf.mode);
+	
+}
 
 
 
