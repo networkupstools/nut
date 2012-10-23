@@ -41,6 +41,33 @@ class DefaultConfigParser;
 class GenericConfigParser;
 
 
+/**
+ * Helper to specify if a configuration variable is set or not.
+ * In addition of its value.
+ */
+template<typename Type>
+class Settable
+{
+protected:
+	Type _value;
+	bool _set;
+public:
+	Settable():_set(false){}
+	Settable(const Settable<Type>& val):_value(val._value), _set(val._set){}
+	Settable(const Type& val):_value(val), _set(true){}
+
+	bool set()const{return _set;}
+	void clear(){_set = false;}
+
+	operator const Type&()const{return _value;}
+	operator Type&(){return _value;}
+
+	const Type& operator *()const{return _value;}
+	Type& operator *(){return _value;}
+
+	Settable<Type>& operator=(const Type& val){_value = val; _set = true;}
+};
+
 
 /**
  * NUT config parser.
@@ -213,16 +240,15 @@ protected:
 
 
 
-
 class UpsmonConfiguration
 {
 public:
     UpsmonConfiguration();
     void parseFromString(const std::string& str);
 
-    std::string runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
-    unsigned int minSupplies, poolFreq, poolFreqAlert, hotSync;
-    unsigned int deadTime, rbWarnTime, noCommWarnTime, finalDelay;
+    Settable<std::string>  runAsUser, shutdownCmd, notifyCmd, powerDownFlag;
+    Settable<unsigned int> minSupplies, poolFreq, poolFreqAlert, hotSync;
+    Settable<unsigned int> deadTime, rbWarnTime, noCommWarnTime, finalDelay;
 
     enum NotifyFlag {
         NOTIFY_IGNORE = 0,
