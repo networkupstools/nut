@@ -798,7 +798,7 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 	// NOTE: separators are always ignored
 
 	if(_config)
-		{
+	{
 		if(directiveName == "RUN_AS_USER")
 		{
 			if(values.size()>0)
@@ -938,6 +938,98 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 }
 
 void UpsmonConfigParser::onParseEnd()
+{
+    // Do nothing
+}
+
+//
+// NutConfiguration
+//
+
+NutConfiguration::NutConfiguration()
+{
+}
+
+void NutConfiguration::parseFromString(const std::string& str)
+{
+    NutConfConfigParser parser(str);
+    parser.parseNutConfConfig(this);
+}
+
+NutConfiguration::NutMode NutConfiguration::NutModeFromString(const std::string& str)
+{
+	if(str == "none")
+		return MODE_NONE;
+	else if(str == "standalone")
+		return MODE_STANDALONE;
+	else if(str == "netserver")
+		return MODE_NETSERVER;
+	else if(str == "netclient")
+		return MODE_NETCLIENT;
+	else
+		return MODE_UNKNOWN;
+}
+
+
+//
+// NutConfConfigParser
+//
+
+NutConfConfigParser::NutConfConfigParser(const char* buffer):
+NutConfigParser(buffer)
+{
+}
+
+NutConfConfigParser::NutConfConfigParser(const std::string& buffer):
+NutConfigParser(buffer)
+{
+}
+
+void NutConfConfigParser::parseNutConfConfig(NutConfiguration* config)
+{
+	if(config!=NULL)
+	{
+		_config = config;
+		NutConfigParser::parseConfig();
+		_config = NULL;
+	}
+}
+
+void NutConfConfigParser::onParseBegin()
+{
+    // Do nothing
+}
+
+void NutConfConfigParser::onParseComment(const std::string& /*comment*/)
+{
+    // Comment are ignored for now
+}
+
+void NutConfConfigParser::onParseSectionName(const std::string& /*sectionName*/, const std::string& /*comment*/)
+{
+    // There must not have sections in upsm.conf.
+    // Ignore it
+    // TODO Add error reporting ?
+}
+
+void NutConfConfigParser::onParseDirective(const std::string& directiveName, char /*sep*/, const ConfigParamList& values, const std::string& /*comment*/)
+{
+    // Comment are ignored for now
+	// NOTE: although sep must be '=', sep is not verified.
+	if(_config && directiveName=="MODE" && values.size()==1)
+	{
+		std::string val = values.front();
+		NutConfiguration::NutMode mode = NutConfiguration::NutModeFromString(val);
+		if(mode != NutConfiguration::MODE_UNKNOWN)
+			_config->mode = mode;
+	}
+	else
+	{
+		// TODO WTF with errors ?
+	}
+}
+
+void NutConfConfigParser::onParseEnd()
 {
     // Do nothing
 }

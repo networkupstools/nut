@@ -309,6 +309,43 @@ protected:
 };
 
 
+class NutConfiguration
+{
+public:
+    NutConfiguration();
+    void parseFromString(const std::string& str);
+
+    enum NutMode {
+		MODE_UNKNOWN = -1,
+        MODE_NONE = 0,
+		MODE_STANDALONE,
+		MODE_NETSERVER,
+		MODE_NETCLIENT
+    };
+
+	Settable<NutMode> mode;
+
+	static NutMode NutModeFromString(const std::string& str);
+};
+
+
+class NutConfConfigParser : public NutConfigParser
+{
+public:
+    NutConfConfigParser(const char* buffer = NULL);
+    NutConfConfigParser(const std::string& buffer);
+
+    void parseNutConfConfig(NutConfiguration* config);
+protected:
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+    NutConfiguration* _config;
+};
+
 
 } /* namespace nut */
 #endif /* __cplusplus */
