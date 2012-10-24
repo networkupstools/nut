@@ -66,6 +66,23 @@ public:
 	Type& operator *(){return _value;}
 
 	Settable<Type>& operator=(const Type& val){_value = val; _set = true;}
+
+	bool operator==(const Settable<Type>& val)const
+	{
+		if(!set() && !val.set())
+			return false;
+		else 
+			return (set() && val.set() && _value==val._value);
+	}
+
+	bool operator==(const Type& val)const
+	{
+		if(!set())
+			return false;
+		else
+			return _value == val;
+	}
+
 };
 
 
@@ -360,9 +377,16 @@ public:
 	{
 		std::string address;
 		Settable<unsigned short> port;
+
+		inline bool operator==(const Listen& listen)const
+		{
+			return address == listen.address && port == listen.port;
+		}
 	};
 	std::list<Listen> listens;
 };
+
+
 
 
 class UpsdConfigParser : public NutConfigParser
