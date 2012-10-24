@@ -53,20 +53,32 @@ Settable<T> StringToSettableNumber(const std::string & src)
 }
 
 
-
-
 //
 // NutParser
 //
 
-NutParser::NutParser(const char* buffer) :
+NutParser::NutParser(const char* buffer, unsigned int options) :
+_options(options),
 _buffer(buffer),
 _pos(0) {
 }
 
-NutParser::NutParser(const std::string& buffer) :
+NutParser::NutParser(const std::string& buffer, unsigned int options) :
+_options(options),
 _buffer(buffer),
 _pos(0) {
+}
+
+void NutParser::setOptions(unsigned int options, bool set)
+{
+	if(set)
+	{
+		_options |= options;
+	}
+	else
+	{
+		_options &= ~options;
+	}
 }
 
 char NutParser::get() {
@@ -216,7 +228,7 @@ NutParser::Token NutParser::parseToken() {
                     token = Token(Token::TOKEN_BRACKET_CLOSE, c);
                     popPos();
                     return token;
-                } else if (c == ':') {
+                } else if (c == ':' && !hasOptions(OPTION_IGNORE_COLON)) {
                     token = Token(Token::TOKEN_COLON, c);
                     popPos();
                     return token;
@@ -286,7 +298,9 @@ NutParser::Token NutParser::parseToken() {
             }
             case LEXPARSING_STATE_STRING:
             {
-                if (c == ' ' || c == '"' || c == '#' || c == '[' || c == ']' || c == ':' || c == '=') {
+                if (c == ' ' || c == '"' || c == '#' || c == '[' || c == ']' || 
+					(c == ':' && !hasOptions(OPTION_IGNORE_COLON)) || 
+					c == '=') {
                     if (escaped) {
                         escaped = false;
                         token.str += c;
@@ -365,12 +379,12 @@ std::list<NutParser::Token> NutParser::parseLine() {
 // NutConfigParser
 //
 
-NutConfigParser::NutConfigParser(const char* buffer) :
-NutParser(buffer) {
+NutConfigParser::NutConfigParser(const char* buffer, unsigned int options) :
+NutParser(buffer, options) {
 }
 
-NutConfigParser::NutConfigParser(const std::string& buffer) :
-NutParser(buffer) {
+NutConfigParser::NutConfigParser(const std::string& buffer, unsigned int options) :
+NutParser(buffer, options) {
 }
 
 void NutConfigParser::parseConfig() {
@@ -1054,12 +1068,12 @@ void UpsdConfiguration::parseFromString(const std::string& str)
 //
 
 UpsdConfigParser::UpsdConfigParser(const char* buffer):
-NutConfigParser(buffer)
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
 {
 }
 
 UpsdConfigParser::UpsdConfigParser(const std::string& buffer):
-NutConfigParser(buffer)
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
 {
 }
 

@@ -92,44 +92,61 @@ public:
 class NutParser
 {
 public:
-  NutParser(const char* buffer = NULL);
-  NutParser(const std::string& buffer);
+	enum ParsingOption
+	{
+		OPTION_DEFAULT = 0,
+		/** Colon character is considered as string character and not as specific token.
+			Usefull for IPv6 addresses */
+		OPTION_IGNORE_COLON = 1
+	};
 
-  struct Token
-  {
-      enum TokenType {
-	TOKEN_UNKNOWN = -1,
-	TOKEN_NONE    = 0,
-	TOKEN_STRING  = 1,
-	TOKEN_QUOTED_STRING,
-	TOKEN_COMMENT,
-	TOKEN_BRACKET_OPEN,
-	TOKEN_BRACKET_CLOSE,
-	TOKEN_EQUAL,
-	TOKEN_COLON,
-	TOKEN_EOL
-      }type;
-      std::string str;
+	NutParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
+	NutParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
 
-      Token():type(TOKEN_NONE),str(){}
-      Token(TokenType type, const std::string& str=""):type(type),str(str){}
-      Token(TokenType type, char c):type(type),str(1, c){}
-      Token(const Token& tok):type(tok.type),str(tok.str){}
+	/** Parsing configuration functions
+	 * \{ */
+	void setOptions(unsigned int options){_options = options;}
+	unsigned int getOptions()const{return _options;}
+	void setOptions(unsigned int options, bool set = true);
+	void unsetOptions(unsigned int options){setOptions(options, false);}
+	bool hasOptions(unsigned int options)const{return (_options&options) == options;}
+	/** \} */
 
-      bool is(TokenType type)const{return this->type==type;}
+	struct Token
+	{
+		enum TokenType {
+			TOKEN_UNKNOWN = -1,
+			TOKEN_NONE    = 0,
+			TOKEN_STRING  = 1,
+			TOKEN_QUOTED_STRING,
+			TOKEN_COMMENT,
+			TOKEN_BRACKET_OPEN,
+			TOKEN_BRACKET_CLOSE,
+			TOKEN_EQUAL,
+			TOKEN_COLON,
+			TOKEN_EOL
+		}type;
+		std::string str;
 
-      bool operator==(const Token& tok)const{return tok.type==type && tok.str==str;}
+		Token():type(TOKEN_NONE),str(){}
+		Token(TokenType type, const std::string& str=""):type(type),str(str){}
+		Token(TokenType type, char c):type(type),str(1, c){}
+		Token(const Token& tok):type(tok.type),str(tok.str){}
 
-      operator bool()const{return type!=TOKEN_UNKNOWN && type!=TOKEN_NONE;}
-  };
+		bool is(TokenType type)const{return this->type==type;}
 
-  /** Parsing functions
-   * \{ */
-  std::string parseCHARS();
-  std::string parseSTRCHARS();
-  Token parseToken();
-  std::list<Token> parseLine();
-  /** \} */
+		bool operator==(const Token& tok)const{return tok.type==type && tok.str==str;}
+
+		operator bool()const{return type!=TOKEN_UNKNOWN && type!=TOKEN_NONE;}
+	};
+
+	/** Parsing functions
+	* \{ */
+	std::string parseCHARS();
+	std::string parseSTRCHARS();
+	Token parseToken();
+	std::list<Token> parseLine();
+	/** \} */
 
 #ifndef UNITEST_MODE
 protected:
@@ -148,6 +165,8 @@ protected:
     char peek();
 
 private:
+	unsigned int _options;
+
     std::string _buffer;
     size_t _pos;
     std::vector<size_t> _stack;
@@ -162,8 +181,8 @@ public:
     virtual void parseConfig();
 
 protected:
-    NutConfigParser(const char* buffer = NULL);
-    NutConfigParser(const std::string& buffer);
+    NutConfigParser(const char* buffer = NULL, unsigned int options = OPTION_DEFAULT);
+    NutConfigParser(const std::string& buffer, unsigned int options = OPTION_DEFAULT);
 
     virtual void onParseBegin()=0;
     virtual void onParseComment(const std::string& comment)=0;

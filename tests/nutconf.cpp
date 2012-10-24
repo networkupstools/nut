@@ -32,9 +32,11 @@ using namespace std;
 class NutConfTest : public CppUnit::TestFixture
 {
   CPPUNIT_TEST_SUITE( NutConfTest );
+    CPPUNIT_TEST( testOptions );
     CPPUNIT_TEST( testParseCHARS );
     CPPUNIT_TEST( testParseSTRCHARS );
     CPPUNIT_TEST( testPasreToken );
+    CPPUNIT_TEST( testPasreTokenWithoutColon );
 	CPPUNIT_TEST( testGenericConfigParser );
 	CPPUNIT_TEST( testUpsmonConfigParser );
 	CPPUNIT_TEST( testNutConfConfigParser );
@@ -45,9 +47,11 @@ public:
   void setUp();
   void tearDown();
 
+  void testOptions();
   void testParseCHARS();
   void testParseSTRCHARS();
   void testPasreToken();
+  void testPasreTokenWithoutColon();
 
   void testGenericConfigParser();
   void testUpsmonConfigParser();
@@ -68,6 +72,21 @@ void NutConfTest::tearDown()
 {
 }
 
+void NutConfTest::testOptions()
+{
+    {
+        NutParser parse("Bonjour monde!", NutParser::OPTION_DEFAULT);
+		CPPUNIT_ASSERT_EQUAL_MESSAGE("Has parsing options", 0u, parse.getOptions());
+		CPPUNIT_ASSERT_MESSAGE("Has OPTION_IGNORE_COLON parsing option", !parse.hasOptions(NutParser::OPTION_IGNORE_COLON));
+    }
+
+    {
+        NutParser parse("Bonjour monde!", NutParser::OPTION_IGNORE_COLON);
+		CPPUNIT_ASSERT_EQUAL_MESSAGE("Has bad parsing options", (unsigned int)NutParser::OPTION_IGNORE_COLON, parse.getOptions());
+		CPPUNIT_ASSERT_MESSAGE("Has not OPTION_IGNORE_COLON parsing option", parse.hasOptions(NutParser::OPTION_IGNORE_COLON));
+    }
+
+}
 
 void NutConfTest::testParseCHARS()
 {
@@ -123,7 +142,8 @@ void NutConfTest::testPasreToken()
         "[ceci]# Plouf\n"
         "\n"
         "titi = \"tata toto\"\n"
-		"NOTIFYFLAG LOWBATT SYSLOG+WALL"
+		"NOTIFYFLAG LOWBATT SYSLOG+WALL\n"
+		"::1"
 		;
     NutParser parse(src);
 
@@ -145,6 +165,45 @@ void NutConfTest::testPasreToken()
     CPPUNIT_ASSERT_MESSAGE("Cannot find 13th token 'NOTIFYFLAG'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "NOTIFYFLAG"));
     CPPUNIT_ASSERT_MESSAGE("Cannot find 14th token 'LOWBATT'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "LOWBATT"));
     CPPUNIT_ASSERT_MESSAGE("Cannot find 15th token 'SYSLOG+WALL'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "SYSLOG+WALL"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 16th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 17th token ':'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_COLON, ":"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 18th token ':'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_COLON, ":"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 19th token '1'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "1"));
+
+}
+
+void NutConfTest::testPasreTokenWithoutColon()
+{
+    static const char* src =
+        "Bonjour monde\n"
+        "[ceci]# Plouf\n"
+        "\n"
+        "titi = \"tata toto\"\n"
+		"NOTIFYFLAG LOWBATT SYSLOG+WALL\n"
+		"::1"
+		;
+    NutParser parse(src, NutParser::OPTION_IGNORE_COLON);
+
+//    NutConfigParser::Token tok = parse.parseToken();
+//    std::cout << "token = " << tok.type << " - " << tok.str << std::endl;
+
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 1st token 'Bonjour'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "Bonjour"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 2nd token 'monde'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "monde"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 3th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 4rd token '['", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_OPEN, "["));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 5th token 'ceci'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "ceci"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 6th token ']'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_BRACKET_CLOSE, "]"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 7th token ' Plouf'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_COMMENT, " Plouf"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 8th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 9th token 'titi'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "titi"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 10th token '='", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EQUAL, "="));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 11th token 'tata toto'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_QUOTED_STRING, "tata toto"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 12th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 13th token 'NOTIFYFLAG'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "NOTIFYFLAG"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 14th token 'LOWBATT'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "LOWBATT"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 15th token 'SYSLOG+WALL'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "SYSLOG+WALL"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 16th token '\n'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_EOL, "\n"));
+    CPPUNIT_ASSERT_MESSAGE("Cannot find 17th token '::1'", parse.parseToken() == NutParser::Token(NutParser::Token::TOKEN_STRING, "::1"));
 
 }
 
@@ -251,6 +310,7 @@ void NutConfTest::testUpsdConfigParser()
 		"MAXAGE 15\n"
 		"STATEPATH /var/run/nut\n"
 		"LISTEN 127.0.0.1 3493\n"
+		"LISTEN ::1 3493\n"
 		"MAXCONN 1024\n"
 		"CERTFILE /home/toto/cert.file"
 		;
@@ -264,10 +324,21 @@ void NutConfTest::testUpsdConfigParser()
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find CERTFILE /home/toto/cert.file", string("/home/toto/cert.file"), *conf.certFile);
 
 	// Find Listen 127.0.0.1 3493
-	typedef std::list<UpsdConfiguration::Listen> ListenList;
-	UpsdConfiguration::Listen listen = {"127.0.0.1", 3493};
-	ListenList::const_iterator it = find(conf.listens.begin(), conf.listens.end(), listen);
-	CPPUNIT_ASSERT_MESSAGE("LISTEN 127.0.0.1 3493", it != conf.listens.end());
+	{
+		typedef std::list<UpsdConfiguration::Listen> ListenList;
+		UpsdConfiguration::Listen listen = {"127.0.0.1", 3493};
+		ListenList::const_iterator it = find(conf.listens.begin(), conf.listens.end(), listen);
+		CPPUNIT_ASSERT_MESSAGE("LISTEN 127.0.0.1 3493", it != conf.listens.end());
+	}
+
+	// Find Listen ::1 3493
+	{
+		typedef std::list<UpsdConfiguration::Listen> ListenList;
+		UpsdConfiguration::Listen listen = {"::1", 3493};
+		ListenList::const_iterator it = find(conf.listens.begin(), conf.listens.end(), listen);
+		CPPUNIT_ASSERT_MESSAGE("LISTEN ::1 3493", it != conf.listens.end());
+	}
+
 }
 
 
