@@ -26,6 +26,7 @@
 using namespace nut;
 
 #include <string>
+#include <algorithm>
 using namespace std;
 
 class NutConfTest : public CppUnit::TestFixture
@@ -37,6 +38,7 @@ class NutConfTest : public CppUnit::TestFixture
 	CPPUNIT_TEST( testGenericConfigParser );
 	CPPUNIT_TEST( testUpsmonConfigParser );
 	CPPUNIT_TEST( testNutConfConfigParser );
+	CPPUNIT_TEST( testUpsdConfigParser );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -50,6 +52,7 @@ public:
   void testGenericConfigParser();
   void testUpsmonConfigParser();
   void testNutConfConfigParser();
+  void testUpsdConfigParser();
 };
 
 // Registers the fixture into the 'registry'
@@ -242,7 +245,30 @@ void NutConfTest::testNutConfConfigParser()
 	
 }
 
+void NutConfTest::testUpsdConfigParser()
+{
+	static const char* src =
+		"MAXAGE 15\n"
+		"STATEPATH /var/run/nut\n"
+		"LISTEN 127.0.0.1 3493\n"
+		"MAXCONN 1024\n"
+		"CERTFILE /home/toto/cert.file"
+		;
 
+	UpsdConfiguration conf;
+	conf.parseFromString(src);
+
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find MAXAGE 15", 15u, *conf.maxAge);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find MAXCONN 1024", 1024u, *conf.maxConn);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find STATEPATH /var/run/nut", string("/var/run/nut"), *conf.statePath);
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("Cannot find CERTFILE /home/toto/cert.file", string("/home/toto/cert.file"), *conf.certFile);
+
+	// Find Listen 127.0.0.1 3493
+	typedef std::list<UpsdConfiguration::Listen> ListenList;
+	UpsdConfiguration::Listen listen = {"127.0.0.1", 3493};
+	ListenList::const_iterator it = find(conf.listens.begin(), conf.listens.end(), listen);
+	CPPUNIT_ASSERT_MESSAGE("LISTEN 127.0.0.1 3493", it != conf.listens.end());
+}
 
 
 
