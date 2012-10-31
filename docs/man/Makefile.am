@@ -507,7 +507,10 @@ if HAVE_ASCIIDOC
 
 ### The --destination-dir flag doesn't seem to affect the intermediate .xml file.
 ### Hence, the copying dance below.
-A2X_MANPAGE_OPTS = -f manpage --attribute nutversion="@PACKAGE_VERSION@"
+A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+	--attribute mansource="Network UPS Tools" \
+	--attribute manversion="@PACKAGE_VERSION@" \
+	--attribute manmanual="NUT Manual"
 
 .txt.1:
 	test -f `basename $<` || cp -p $< .
