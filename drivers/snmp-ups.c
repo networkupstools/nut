@@ -93,7 +93,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.68"
+#define DRIVER_VERSION		"0.69"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1276,50 +1276,56 @@ bool_t snmp_ups_walk(int mode)
 				outlet_count = atoi(dstate_getinfo("outlet.count"));
 			}
 
-			/* general init of data using the template */
-			instantiate_info(su_info_p, &cur_info_p);
+			/* Only instantiate outlets if needed! */
+			if (outlet_count > 0) {
+				/* general init of data using the template */
+				instantiate_info(su_info_p, &cur_info_p);
 
-			for (cur_outlet_number = base_snmp_outlet_index(su_info_p->OID) ;
-					cur_outlet_number < (outlet_count + base_snmp_outlet_index(su_info_p->OID)) ;
-					cur_outlet_number++)
-			{
-				cur_nut_index = cur_outlet_number + base_nut_outlet_offset();
-				sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
-						cur_nut_index);
+				for (cur_outlet_number = base_snmp_outlet_index(su_info_p->OID) ;
+						cur_outlet_number < (outlet_count + base_snmp_outlet_index(su_info_p->OID)) ;
+						cur_outlet_number++)
+				{
+					cur_nut_index = cur_outlet_number + base_nut_outlet_offset();
+					sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
+							cur_nut_index);
 
-				/* check if default value is also a template */
-				if ((cur_info_p.dfl != NULL) &&
-					(strstr(su_info_p->dfl, "%i") != NULL)) {
-					cur_info_p.dfl = (char *)xmalloc(SU_INFOSIZE);
-					sprintf((char *)cur_info_p.dfl, su_info_p->dfl, cur_nut_index);
-				}
-
-				if (cur_info_p.OID != NULL) {
-					sprintf((char *)cur_info_p.OID, su_info_p->OID, cur_outlet_number);
-
-					/* add outlet instant commands to the info database. */
-					if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
-						/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
-						if (mode == SU_WALKMODE_INIT)
-							dstate_addcmd(cur_info_p.info_type);
+					/* check if default value is also a template */
+					if ((cur_info_p.dfl != NULL) &&
+						(strstr(su_info_p->dfl, "%i") != NULL)) {
+						cur_info_p.dfl = (char *)xmalloc(SU_INFOSIZE);
+						sprintf((char *)cur_info_p.dfl, su_info_p->dfl, cur_nut_index);
 					}
-					else /* get and process this data */
-						status = get_and_process_data(mode, &cur_info_p);
-				} else {
-					/* server side (ABSENT) data */
-					su_setinfo(&cur_info_p, NULL);
-				}
-				/* set back the flag */
-				su_info_p->flags = cur_info_p.flags;
-			}
-			free((char*)cur_info_p.info_type);
-			if (cur_info_p.OID != NULL)
-				free((char*)cur_info_p.OID);
-			if ((cur_info_p.dfl != NULL) &&
-				(strstr(su_info_p->dfl, "%i") != NULL))
-				free((char*)cur_info_p.dfl);
 
-		} else {
+					if (cur_info_p.OID != NULL) {
+						sprintf((char *)cur_info_p.OID, su_info_p->OID, cur_outlet_number);
+
+						/* add outlet instant commands to the info database. */
+						if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
+							/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
+							if (mode == SU_WALKMODE_INIT)
+								dstate_addcmd(cur_info_p.info_type);
+						}
+						else /* get and process this data */
+							status = get_and_process_data(mode, &cur_info_p);
+					} else {
+						/* server side (ABSENT) data */
+						su_setinfo(&cur_info_p, NULL);
+					}
+					/* set back the flag */
+					su_info_p->flags = cur_info_p.flags;
+				}
+				free((char*)cur_info_p.info_type);
+				if (cur_info_p.OID != NULL)
+					free((char*)cur_info_p.OID);
+				if ((cur_info_p.dfl != NULL) &&
+					(strstr(su_info_p->dfl, "%i") != NULL))
+					free((char*)cur_info_p.dfl);
+			}
+			else {
+				upsdebugx(1, "No outlet present, discarding template definition...");
+			}
+		}
+		else {
 			/* get and process this data */
 			status = get_and_process_data(mode, su_info_p);
 		}
