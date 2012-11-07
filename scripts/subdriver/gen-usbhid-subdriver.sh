@@ -86,8 +86,8 @@ natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 done
 
 # try to determine product and vendor id
-VENDORID=`cat "$FILE" | sed -n 's/[> ]*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
-PRODUCTID=`cat "$FILE" | sed -n 's/[> ]*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+VENDORID=`cat "$FILE" | sed -n 's/.*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+PRODUCTID=`cat "$FILE" | sed -n 's/.*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
 
 # prompt for productid, vendorid if necessary
 if [ -z "$VENDORID" ]; then
@@ -103,7 +103,7 @@ CFILE="$LDRIVER-hid.c"
 HFILE="$LDRIVER-hid.h"
 
 # extract Usage Table
-cat "$FILE" | sed -n 's/[> ]*Path: \([^,][^,]*\), Type:.*/\1/p' > "$UTABLE"
+cat "$FILE" | sed -n 's/.*Path: \([^,][^,]*\), Type:.*/\1/p' > "$UTABLE"
 
 # extract Usage codes
 cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
