@@ -717,9 +717,8 @@ void upsdrv_makevartable(void)
 
 	upsdebugx(1, "upsdrv_makevartable...");
 
-        snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
-        addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
-
+	snprintf(temp, sizeof(temp), "Set low battery level, in %% (default=%s).", DEFAULT_LOWBATT);
+	addvar (VAR_VALUE, HU_VAR_LOWBATT, temp);
 
 	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, HU_VAR_OFFDELAY, temp);
@@ -742,6 +741,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
+	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
 #else
 	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
@@ -904,6 +904,11 @@ void upsdrv_initups(void)
 	/* enforce use of the "vendorid" option if "explore" is given */
 	if (testvar("explore") && getval("vendorid")==NULL) {
 		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
+	}
+
+	/* Activate maxreport tweak */
+	if (testvar("maxreport")) {
+		max_report_size = 1;
 	}
 
 	/* process the UPS selection options */
