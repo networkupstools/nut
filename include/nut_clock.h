@@ -145,6 +145,17 @@ struct nut_time {
 
 
 /**
+ *  \brief  Get number of seconds since the Epoch
+ *
+ *  The macro expands to \ref nut_clock_sec_since_epoch_till
+ *  with \c NULL argument.
+ *
+ *  \return Number of seconds since the Epoch
+ */
+#define nut_clock_sec_since_epoch() nut_clock_sec_since_epoch_till(NULL)
+
+
+/**
  *  \brief  Get current time stamp
  *
  *  Note that the provided time stamp resolution depends on the actually
@@ -306,5 +317,21 @@ int nut_clock_cmptime_sigma(const nut_time_t *tm1, const nut_time_t *tm2, double
  *  \retval  1 if \c tm1 >  \c tm2
  */
 int nut_clock_cmptime(const nut_time_t *tm1, const nut_time_t *tm2);
+
+
+/**
+ *  \brief  Get date (seconds since Epoch)
+ *
+ *  The function transforms the specified timestamp to number
+ *  of seconds elapsed since the Epoch, 1970-01-01 00:00:00 +0000 (UTC).
+ *  If \c NULL is specified as the argument, current RTC timestamp
+ *  is used, instead.
+ *
+ *  \param  rt  Timestamp (must have been created using RTC clock), optional
+ *
+ *  \return Seconds f real time elapsed between the Epoch and the timestamp
+ */
+double nut_clock_sec_since_epoch_till(const nut_time_t *rt);
+
 
 #endif  /* end of #ifndef nut_common_clock_h */

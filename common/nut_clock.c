@@ -404,3 +404,41 @@ int nut_clock_cmptime_sigma(const nut_time_t *tm1, const nut_time_t *tm2, double
 int nut_clock_cmptime(const nut_time_t *tm1, const nut_time_t *tm2) {
 	return nut_clock_cmptime_sigma(tm1, tm2, 0.0);
 }
+
+
+double nut_clock_sec_since_epoch_till(const nut_time_t *rt) {
+	const nut_time_t *ts;
+	nut_time_t        now;
+	double            sec;
+
+	if (NULL != rt) {
+		assert(RTC == rt->mode);
+
+		ts = rt;
+	}
+	else {
+		nut_clock_gettimex(RTC, &now);
+
+		ts = &now;
+	}
+
+#if (defined USE_POSIX_CLOCK)
+	sec = (double)ts->impl.tv_sec + (double)ts->impl.tv_nsec / 1000000000.0;
+
+#elif (defined USE_APPLE_MACH_CLOCK)
+	sec = (double)ts->impl.tv_sec + (double)ts->impl.tv_nsec / 1000000000.0;
+
+#elif (defined USE_WINDOWS_CLOCK)
+	/* Apparently, result of the following is hecto-nanoseconds clock resolution */
+	sec = ((ULONGLONG)ts->impl.dwHighDateTime << 32) | (ULONGLONG)ts->impl.dwLowDateTime;
+	sec /= 10000000.0;
+
+#elif (defined USE_TIME_T_CLOCK)
+	sec = ts->impl;
+
+#else
+	#error "Compile-time error: nut_clock_since_epoch_till: platform-specific implementation missing"
+#endif
+
+	return sec;
+}
