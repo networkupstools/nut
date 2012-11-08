@@ -56,7 +56,7 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
-/* Tweak flag for APC Back-UPS ES */
+/* Tweak flag for APC Back-UPS */
 int max_report_size = 0;
 
 /* ---------------------------------------------------------------------- */
@@ -140,6 +140,9 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
    seconds, then the report is freshly read from the USB
    device. Otherwise, it is unchanged.
    Return 0 on success, -1 on error with errno set. */
+/* because buggy firmwares from APC return wrong report size, we either
+   ask the report with the found report size or with the whole buffer size
+   depending on the max_report_size flag */
 static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
 {
 	int	id = pData->ReportID;
