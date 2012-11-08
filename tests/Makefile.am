@@ -17,6 +17,6 @@ cppunittest_LDADD   = ../common/libcommon.la
 
 else !HAVE_CPPUNIT
 
-EXTRA_DIST = example.cpp cpputest.cpp nut_clock_up.cpp
+EXTRA_DIST = example.cpp cpputest.cpp nut_clock_ut.cpp
 
 endif !HAVE_CPPUNIT
