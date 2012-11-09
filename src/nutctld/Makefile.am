@@ -9,5 +9,6 @@ LDADD = ../../common/libcommon.la ../../common/libnutconf.la $(NETLIBS)
 
 sbin_PROGRAMS = nutctld
 
-nutctld_SOURCES = nutctld.cpp
+nutctld_SOURCES = nutctld.cpp \
+	configuration.hpp configuration.cpp
 

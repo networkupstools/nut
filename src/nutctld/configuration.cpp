@@ -1,4 +1,4 @@
-/* nutctld.cpp - Nut controller deamon
+/* configuration.cpp - Nut controller deamon - configuration module
 
    Copyright (C)
 	2012	Emilien Kia <emilien.kia@gmail.com>
@@ -18,14 +18,28 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-
-#include <iostream>
-using namespace std;
-
 #include "configuration.hpp"
 
-int main(int argc, char** argv)
+namespace nut {
+namespace ctl {
+
+
+Configuration Configuration::_instance;
+
+Configuration& Configuration::get()
 {
-	cout << "nutctld" << endl;
-	return 0;
+	return _instance;
 }
+
+Configuration::Configuration()
+{
+}
+
+GenericConfiguration& Configuration::devices()
+{
+	return _devices;
+}
+
+
+}} // Namespace nut::ctld
+

@@ -1,4 +1,4 @@
-/* nutctld.cpp - Nut controller deamon
+/* configuration.hpp - Nut controller deamon - configuration module
 
    Copyright (C)
 	2012	Emilien Kia <emilien.kia@gmail.com>
@@ -18,14 +18,40 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef CONFIGURATION_HPP_SEEN
+#define CONFIGURATION_HPP_SEEN
 
-#include <iostream>
-using namespace std;
+#include "nutconf.h"
 
-#include "configuration.hpp"
+namespace nut {
+namespace ctl {
 
-int main(int argc, char** argv)
+
+
+
+/**
+ * Global configuration module.
+ */
+class Configuration
 {
-	cout << "nutctld" << endl;
-	return 0;
-}
+protected:
+	static Configuration _instance;
+	Configuration();
+
+
+	GenericConfiguration _devices;
+
+public:
+	/**
+	 * Retrieve the Configuration singleton instance.
+	 */
+	static Configuration& get();
+
+	GenericConfiguration& devices();
+};
+
+
+
+}} // Namespace nut::ctld
+
+#endif // CONFIGURATION_HPP_SEEN
