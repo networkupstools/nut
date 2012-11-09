@@ -1235,6 +1235,8 @@ AC_OUTPUT([
  scripts/ufw/nut.ufw.profile
  scripts/Makefile
  server/Makefile
+ src/Makefile
+ src/nutctld/Makefile
  tools/Makefile
  tools/nut-scanner/Makefile
  tools/nutconf/Makefile
