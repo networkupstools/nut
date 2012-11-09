@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 extern "C" {
-#include "nut_platform.h"
+#include "config.h"
 #include "nut_clock.h"
 
 #include <sys/select.h>
@@ -332,10 +332,12 @@ unsigned NUTClockUnitTest::perl_print_time() {
 double NUTClockUnitTest::realtimeDiff() {
 	double diff;
 
-#if (defined NUT_PLATFORM_SOLARIS)
-	diff = (double)perl_print_time();
-#else
+#if (defined HAVE_DATE_S)
+	// date +%s gives us seconds since Epoch
 	diff = (double)date();
+#else
+	// date +%s doesn't work on the platform
+	diff = (double)perl_print_time();
 #endif
 
 	diff -= nut_clock_sec_since_epoch();

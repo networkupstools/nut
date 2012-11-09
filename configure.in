@@ -128,6 +128,19 @@ fi
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 
 dnl
+dnl Check date %s format support
+dnl (e.g. Solaris lacks it unless GNU version is installed)
+AC_MSG_CHECKING(if date supports +%s)
+date_s_test="`date +%s`"
+if test ${date_s_test} != "%s"; then
+	have_date_s=yes
+	AC_DEFINE(HAVE_DATE_S, 1, [Define if date supports '%s' format])
+else
+	have_date_s=no
+fi
+AC_MSG_RESULT(${have_date_s})
+
+dnl
 dnl Only use these when compiling with gcc
 dnl
 if ( test "${GCC}" = "yes" )
