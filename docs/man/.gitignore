@@ -246,3 +246,13 @@ strarr_free.3
 upscli_add_host_cert.3
 upscli_cleanup.3
 upscli_init.3
+libnutclient.html
+libnutclient_commands.html
+libnutclient_devices.html
+libnutclient_general.html
+libnutclient_misc.html
+libnutclient_tcp.html
+libnutclient_variables.html
+upscli_add_host_cert.html
+upscli_cleanup.html
+upscli_init.html
