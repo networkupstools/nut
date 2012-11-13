@@ -1,0 +1,45 @@
+LIBNUTCLIENT_GENERAL(3)
+=======================
+
+NAME
+----
+
+nutclient_destroy, strarr_alloc, strarr_free -
+General and utility functions in Network UPS Tools high-level client access library
+
+SYNOPSIS
+--------
+
+	#include <nutclient.h>
+
+	typedef void* NUTCLIENT_t;
+
+	void nutclient_destroy(NUTCLIENT_t client);
+
+	typedef char** strarr;
+
+	strarr strarr_alloc(unsigned short count);
+	void strarr_free(strarr arr);
+
+DESCRIPTION
+-----------
+
+The *nutclient_destroy()* function destroy a 'NUTCLIENT_t' or derivated
+(like 'NUTCLIENT_TCP_t') connexion object and free allocated memory.
+
+The *strarr* type represent an array of C strings (array of char pointer).
+The array must always be terminated by a NULL pointer.
+Pointed strings must be allocated by (x)calloc or (x)strdup.
+
+The *strarr_alloc()* function allocate a 'strarr' array with the specified
+number of (non-initialized) string pointers.
+Another additionnal pointer set to 0 is added at the end of the array.
+
+The *strarr_free* function free a 'strarr' array.
+It also frees all pointed strings.
+
+'dev' is the device name.
+
+SEE ALSO
+--------
+linkman:libnutclient[3]
