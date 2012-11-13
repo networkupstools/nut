@@ -1,10 +1,10 @@
-LIBNUTCLIENT_TCP(3)
-===================
+LIBNUTCLIENT_DEVICES(3)
+=======================
 
 NAME
 ----
 
-nutclient_get_devices, nutclient_has_device, nutclient_get_device_description -
+libnutclient_devices, nutclient_get_devices, nutclient_has_device, nutclient_get_device_description -
 Device related functions in Network UPS Tools high-level client access library
 
 SYNOPSIS

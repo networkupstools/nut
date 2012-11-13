@@ -4,7 +4,7 @@ LIBNUTCLIENT_MISC(3)
 NAME
 ----
 
-nutclient_authenticate, nutclient_logout, 
+libnutclient_misc, nutclient_authenticate, nutclient_logout, 
 nutclient_device_login, nutclient_get_device_num_logins, 
 nutclient_device_master, nutclient_device_forced_shutdown -
 Miscelaneous functions in Network UPS Tools high-level client access library

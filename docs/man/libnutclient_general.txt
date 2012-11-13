@@ -4,7 +4,7 @@ LIBNUTCLIENT_GENERAL(3)
 NAME
 ----
 
-nutclient_destroy, strarr_alloc, strarr_free -
+libnutclient_general, nutclient_destroy, strarr_alloc, strarr_free -
 General and utility functions in Network UPS Tools high-level client access library
 
 SYNOPSIS

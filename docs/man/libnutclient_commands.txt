@@ -4,7 +4,7 @@ LIBNUTCLIENT_COMMANDS(3)
 NAME
 ----
 
-nutclient_get_device_commands, nutclient_has_device_command,
+libnutclient_commands, nutclient_get_device_commands, nutclient_has_device_command,
 nutclient_get_device_command_description, nutclient_execute_device_command -
 Instant command related functions in Network UPS Tools high-level client access library
 

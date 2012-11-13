@@ -4,10 +4,10 @@ LIBNUTCLIENT_VARIABLES(3)
 NAME
 ----
 
-nutclient_get_device_variables, nutclient_get_device_rw_variables, 
-nutclient_has_device_variable, nutclient_get_device_variable_description, 
-nutclient_get_device_variable_values, nutclient_set_device_variable_value, 
-nutclient_set_device_variable_values -
+libnutclient_variables, nutclient_get_device_variables,
+nutclient_get_device_rw_variables, nutclient_has_device_variable,
+nutclient_get_device_variable_description, nutclient_get_device_variable_values,
+nutclient_set_device_variable_value, nutclient_set_device_variable_values -
 Variable related functions in Network UPS Tools high-level client access library
 
 SYNOPSIS

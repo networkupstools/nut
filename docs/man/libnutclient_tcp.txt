@@ -4,7 +4,7 @@ LIBNUTCLIENT_TCP(3)
 NAME
 ----
 
-nutclient_tcp_create_client, nutclient_tcp_is_connected,
+libnutclient_tcp, nutclient_tcp_create_client, nutclient_tcp_is_connected,
 nutclient_tcp_disconnect, nutclient_tcp_reconnect,
 nutclient_tcp_set_timeout, nutclient_tcp_get_timeout -
 TCP protocol related function for Network UPS Tools high-level client access library
