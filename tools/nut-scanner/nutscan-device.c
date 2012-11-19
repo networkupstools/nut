@@ -95,7 +95,7 @@ void nutscan_free_device(nutscan_device_t * device)
 		deep_free_device(device->next);
 	}
 
-	free(device);
+	deep_free_device(device);
 }
 
 void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value)
