@@ -98,6 +98,8 @@
 
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
 
+"Aviem Systems"	"ups"	"2"	"Aviem Power RT 1000-3000VA"	""	"blazer_ser"
+
 "Baytech"	"pdu"	"1"	"RPC3"	"8 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"pdu"	"1"	"RPC3-20NC"	"8 outlets"	"powerman-pdu (experimental)"
 "Baytech"	"pdu"	"1"	"RPC28-30NC"	"20 outlets"	"powerman-pdu (experimental)"
