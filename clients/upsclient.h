@@ -24,7 +24,7 @@
     #include <openssl/err.h>
     #include <openssl/ssl.h>
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	#include <nss/nss.h>
+	#include <nss.h>
 	#include <ssl.h>
 #endif  /* WITH_OPENSSL | WITH_NSS */
 

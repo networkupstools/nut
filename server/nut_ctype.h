@@ -25,7 +25,7 @@
 
 /* Mozilla NSS */
 #ifdef WITH_NSS
-	#include <nss/nss.h>
+	#include <nss.h>
 	#include <ssl.h>
 #endif
 
