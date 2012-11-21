@@ -99,6 +99,10 @@ link:http://www.microdowell.com/fra/download.html[Linux / Unix].
 link:ups-protocols.html[extensive information] on its USB/HID devices, along
 with development units.
 
+- link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
+provided link:ups-protocols.html[all protocols information]. Elio Parisi has
+also created riello_ser and riello_usb to support these protocols.
+
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
