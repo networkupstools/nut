@@ -256,3 +256,5 @@ libnutclient_variables.html
 upscli_add_host_cert.html
 upscli_cleanup.html
 upscli_init.html
+riello_ser.8
+riello_usb.8

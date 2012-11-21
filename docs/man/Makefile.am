@@ -325,6 +325,7 @@ SRC_SERIAL_PAGES = \
 	powercom.txt 	\
 	powerpanel.txt	\
 	rhino.txt		\
+	riello_ser.txt	\
 	safenet.txt	\
 	solis.txt		\
 	tripplite.txt	\
@@ -365,6 +366,7 @@ MAN_SERIAL_PAGES = \
 	powercom.8 	\
 	powerpanel.8	\
 	rhino.8		\
+	riello_ser.8	\
 	safenet.8	\
 	solis.8		\
 	tripplite.8	\
@@ -407,6 +409,7 @@ HTML_SERIAL_MANS = \
 	powercom.html 	\
 	powerpanel.html	\
 	rhino.html		\
+	riello_ser.html	\
 	safenet.html	\
 	solis.html		\
 	tripplite.html	\
@@ -428,6 +431,7 @@ HTML_SNMP_MANS = snmp-ups.html
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
 	richcomm_usb.txt \
+	riello_usb.txt	\
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
@@ -436,6 +440,7 @@ MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
 	richcomm_usb.8 \
+	riello_usb.8	\
 	tripplite_usb.8 \
 	usbhid-ups.8
 
@@ -446,6 +451,7 @@ endif
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	richcomm_usb.html \
+	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
 
