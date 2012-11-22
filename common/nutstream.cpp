@@ -21,6 +21,7 @@
 #include "nutstream.h"
 
 #include <iomanip>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <cassert>
@@ -31,6 +32,7 @@ extern "C" {
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 }
 
 
@@ -71,6 +73,27 @@ NutStream::status_t NutMemory::putString(const std::string & str) {
 
 NutStream::status_t NutMemory::putData(const std::string & data) {
 	return putString(data);
+}
+
+
+const std::string NutFile::m_tmp_dir("/var/tmp");
+
+
+NutFile::NutFile(anonymous_t):
+	m_impl(NULL),
+	m_current_ch('\0'),
+	m_current_ch_valid(false)
+{
+	m_impl = ::tmpfile();
+
+	if (NULL == m_impl) {
+		int err_code = errno;
+
+		std::stringstream e("Failed to create temporary file: ");
+		e << err_code << ": " << ::strerror(err_code);
+
+		throw std::runtime_error(e.str());
+	}
 }
 
 
@@ -136,6 +159,31 @@ bool NutFile::close(int & err_code, std::string & err_msg) throw() {
 
 NutFile::NutFile(const std::string & name, access_t mode):
 	m_name(name),
+	m_impl(NULL),
+	m_current_ch('\0'),
+	m_current_ch_valid(false)
+{
+	openx(mode);
+}
+
+
+std::string NutFile::tmpName() throw(std::runtime_error) {
+	char *tmp_name = ::tempnam(m_tmp_dir.c_str(), NULL);
+
+	if (NULL == tmp_name)
+		throw std::runtime_error(
+			"Failed to create temporary file name");
+
+	std::string tmp_name_str(tmp_name);
+
+	::free(tmp_name);
+
+	return tmp_name_str;
+}
+
+
+NutFile::NutFile(access_t mode):
+	m_name(tmpName()),
 	m_impl(NULL),
 	m_current_ch('\0'),
 	m_current_ch_valid(false)
@@ -229,7 +277,10 @@ NutFile::~NutFile() {
 
 
 void NutSocket::Address::init_unix(Address & addr, const std::string & path) {
-	struct sockaddr_un * un_addr = new struct sockaddr_un;
+	struct sockaddr_un * un_addr = (struct sockaddr_un *)::malloc(sizeof(struct sockaddr_un));
+
+	if (NULL == un_addr)
+		throw std::bad_alloc();
 
 	un_addr->sun_family = AF_UNIX;
 
@@ -250,7 +301,10 @@ void NutSocket::Address::init_ipv4(Address & addr, const std::vector<unsigned ch
 
 	uint32_t packed_qb = 0;
 
-	struct sockaddr_in * in4_addr = new struct sockaddr_in;
+	struct sockaddr_in * in4_addr = (struct sockaddr_in *)::malloc(sizeof(struct sockaddr_in));
+
+	if (NULL == in4_addr)
+		throw std::bad_alloc();
 
 	packed_qb  = static_cast<uint32_t>(qb.at(0));
 	packed_qb |= static_cast<uint32_t>(qb.at(1)) <<  8;
@@ -258,7 +312,7 @@ void NutSocket::Address::init_ipv4(Address & addr, const std::vector<unsigned ch
 	packed_qb |= static_cast<uint32_t>(qb.at(3)) << 24;
 
 	in4_addr->sin_family      = AF_INET;
-	in4_addr->sin_port        = static_cast<in_port_t>(port);
+	in4_addr->sin_port        = htons(port);
 	in4_addr->sin_addr.s_addr = packed_qb;
 
 	addr.m_sock_addr = reinterpret_cast<struct sockaddr *>(in4_addr);
@@ -269,10 +323,13 @@ void NutSocket::Address::init_ipv4(Address & addr, const std::vector<unsigned ch
 void NutSocket::Address::init_ipv6(Address & addr, const std::vector<unsigned char> & hb, uint16_t port) {
 	assert(16 == hb.size());
 
-	struct sockaddr_in6 * in6_addr = new struct sockaddr_in6;
+	struct sockaddr_in6 * in6_addr = (struct sockaddr_in6 *)::malloc(sizeof(struct sockaddr_in6));
+
+	if (NULL == in6_addr)
+		throw std::bad_alloc();
 
 	in6_addr->sin6_family   = AF_INET6;
-	in6_addr->sin6_port     = static_cast<in_port_t>(port);
+	in6_addr->sin6_port     = htons(port);
 	in6_addr->sin6_flowinfo = 0;  // TODO: check that
 	in6_addr->sin6_scope_id = 0;  // TODO: check that
 
@@ -320,6 +377,18 @@ NutSocket::Address::Address(const std::vector<unsigned char> & bytes, uint16_t p
 			throw std::logic_error(e.str());
 		}
 	}
+}
+
+
+NutSocket::Address::Address(const Address & orig): m_sock_addr(NULL), m_length(orig.m_length) {
+	void * copy = ::malloc(m_length);
+
+	if (NULL == copy)
+		throw std::bad_alloc();
+
+	::memcpy(copy, orig.m_sock_addr, m_length);
+
+	m_sock_addr = reinterpret_cast<struct sockaddr *>(copy);
 }
 
 
@@ -446,7 +515,7 @@ std::string NutSocket::Address::str() const {
 
 
 NutSocket::Address::~Address() {
-	delete m_sock_addr;
+	::free(m_sock_addr);
 }
 
 
@@ -546,6 +615,28 @@ bool NutSocket::connect(const Address & addr, int & err_code, std::string & err_
 	err_msg  = std::string(::strerror(err_code));
 
 	return false;
+}
+
+
+bool NutSocket::close(int & err_code, std::string & err_msg) throw() {
+	err_code = ::close(m_impl);
+
+	if (0 == err_code) {
+		m_impl = -1;
+
+		return true;
+	}
+
+	err_code = errno;
+	err_msg  = std::string(::strerror(err_code));
+
+	return false;
+}
+
+
+NutSocket::~NutSocket() {
+	if (-1 != m_impl)
+		closex();
 }
 
 
