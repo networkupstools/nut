@@ -123,7 +123,8 @@ class NutStream {
 	 */
 	virtual status_t putData(const std::string & data) = 0;
 
-	virtual ~NutStream() {}  // private destructor for an iface
+	/** Formal destructor */
+	virtual ~NutStream() {}
 
 };  // end of class NutStream
 
@@ -185,7 +186,15 @@ class NutFile: public NutStream {
 		APPEND_ONLY,
 	} access_t;
 
+	/** Unnamed temp. file constructor flag */
+	typedef enum {
+		ANONYMOUS,  /** Anonymous temp. file flag */
+	} anonymous_t;
+
 	private:
+
+	/** Temporary files directory */
+	static const std::string m_tmp_dir;
 
 	/** File name */
 	const std::string m_name;
@@ -199,6 +208,15 @@ class NutFile: public NutStream {
 	/** Current character cache status */
 	bool m_current_ch_valid;
 
+	/**
+	 *  \brief  Generate temporary file name
+	 *
+	 *  Throws an exception on file name generation error.
+	 *
+	 *  \return Temporary file name
+	 */
+	std::string tmpName() throw(std::runtime_error);
+
 	public:
 
 	/** Constructor
@@ -210,6 +228,22 @@ class NutFile: public NutStream {
 		m_impl(NULL),
 		m_current_ch('\0'),
 		m_current_ch_valid(false) {}
+
+	/**
+	 *  \brief  Temporary file constructor (with open)
+	 *
+	 *  Anonymous temp. file (with automatic destruction) will be created.
+	 */
+	NutFile(anonymous_t);
+
+	/**
+	 *  \brief  File name getter
+	 *
+	 *  \return File name
+	 */
+	inline const std::string & name() const {
+		return m_name;
+	}
 
 	/**
 	 *  \brief  Open file
@@ -307,6 +341,19 @@ class NutFile: public NutStream {
 	 */
 	NutFile(const std::string & name, access_t mode);
 
+	/**
+	 *  \brief  Temporary file constructor (with open)
+	 *
+	 *  Opens file in \ref m_tmp_dir.
+	 *  Throws exception on open error.
+	 *  Note that for temporary files, non-creation modes
+	 *  don't make sense (and will result in throwing an exception).
+	 *
+	 *  \param[in]  name  File name
+	 *  \param[in]  mode  File open mode (r/w by default)
+	 */
+	NutFile(access_t mode = READ_WRITE_CLEAR);
+
 	// NutStream interface implementation
 	status_t getChar(char & ch)			throw();
 	void     readChar()				throw();
@@ -354,7 +401,7 @@ class NutSocket: public NutStream {
 	/** Socket domain */
 	typedef enum {
 		NUTSOCKD_UNIX   = AF_UNIX,	/** Unix */
-		NUTSOCKD_INET4  = AF_INET,	/** IPv4 */
+		NUTSOCKD_INETv4 = AF_INET,	/** IPv4 */
 		NUTSOCKD_INETv6 = AF_INET6,	/** IPv6 */
 	} domain_t;
 
@@ -463,6 +510,13 @@ class NutSocket: public NutStream {
 		Address(const std::vector<unsigned char> & bytes, uint16_t port) throw(std::logic_error);
 
 		/**
+		 *  \brief  Copy constructor
+		 *
+		 *  \param  orig  Original address
+		 */
+		Address(const Address & orig);
+
+		/**
 		 *  \brief  Stringifisation
 		 *
 		 *  \return String representation of the address
@@ -494,18 +548,6 @@ class NutSocket: public NutStream {
 
 	/** Current character cache status */
 	bool m_current_ch_valid;
-
-	/**
-	 *  \brief  Constructor for an uninitialised socket
-	 *
-	 *  Uninitialised socket is used with client connection
-	 *  socket constructor if the listen socket is closed.
-	 */
-	NutSocket():
-		m_impl(-1),
-		m_current_ch('\0'),
-		m_current_ch_valid(false)
-	{}
 
 	/**
 	 *  \brief  Accept client connection on a listen socket
@@ -585,7 +627,7 @@ class NutSocket: public NutStream {
 	 *  \param  proto  Socket protocol
 	 */
 	NutSocket(
-		domain_t dom   = NUTSOCKD_INET4,
+		domain_t dom   = NUTSOCKD_INETv4,
 		type_t   type  = NUTSOCKT_STREAM,
 		proto_t  proto = NUTSOCKP_IMPLICIT);
 
@@ -755,6 +797,44 @@ class NutSocket: public NutStream {
 
 		std::stringstream e("Failed to connect socket: ");
 		e << ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
+	 *  \brief  Close socket
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err-msg   Error message
+	 *
+	 *  \retval true  if close succeeded
+	 *  \retval false if close failed
+	 */
+	bool close(int & err_code, std::string & err_msg) throw();
+
+	/**
+	 *  \brief  Close socket
+	 *
+	 *  \retval true  if close succeeded
+	 *  \retval false if close failed
+	 */
+	inline bool close() throw() {
+		int ec;
+		std::string em;
+
+		return close(ec, em);
+	}
+
+	/** Close socket (or throw exception) */
+	inline void closex() throw(std::runtime_error) {
+		int ec;
+		std::string em;
+
+		if (close(ec, em))
+			return;
+
+		std::stringstream e("Failed to close socket ");
+		e << m_impl << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
