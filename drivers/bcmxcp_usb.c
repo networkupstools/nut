@@ -12,7 +12,7 @@
 #include <usb.h>
 
 #define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.21"
+#define SUBDRIVER_VERSION	"0.22"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -155,7 +155,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
 
 		/* Get (more) data if needed */
-		if ((length - bytes_read) > 0) {
+		if ((length - (bytes_read - 5)) > 0) {
 			res = usb_interrupt_read(upsdev, 0x81,
 				(char *)&buf[bytes_read],
 				(PW_ANSWER_MAX_SIZE - bytes_read),
@@ -335,7 +335,10 @@ void upsdrv_cleanup(void)
 
 void upsdrv_reconnect(void)
 {
-	upslogx(LOG_WARNING, "RECONNECT USB DEVICE\n");
+	upsdebugx(4, "==================================================");
+	upsdebugx(4, "= device has been disconnected, try to reconnect =");
+	upsdebugx(4, "==================================================");
+
 	nutusb_close(upsdev, "USB");
 	upsdev = NULL;
 	upsdrv_initups();
@@ -504,6 +507,7 @@ void nutusb_comm_fail(const char *fmt, ...)
 	if ((comm_failures > USB_ERR_LIMIT) &&
 		((comm_failures % USB_ERR_LIMIT) != 0)) {
 		/* Try reconnection */
+		upsdebugx(1, "Got to reconnect!\n");
 		upsdrv_reconnect();
 		return;
 	}

@@ -21,13 +21,22 @@ Active members
 
 - Arnaud Quette: project leader (since 2005), Debian packager and jack of all trades
 - Charles Lepple: senior lieutenant
+- Frederic Bohe: senior developer
+- Emilien Kia: senior developer
+- Václav Krpec: junior developer
 - Kjell Claesson: senior developer
 - Alexander Gordeev: junior developer
+- Michal Soltys: junior developer
 - David Goncalves: Python developer
+- Jean Perriault: web consultant
 - Eric S. Raymond: Documentation consultant
 - Oden Eriksson: Mandriva packager
 - Stanislav Brabec: Novell / Suse packager
 - Michal Hlavinka: Redhat packager
+- Antoine Colombier: trainee
+
+For an up to date list of NUT developers, refer to
+link:https://alioth.debian.org/project/memberlist.php?group_id=30602[Alioth].
 
 Retired members
 ~~~~~~~~~~~~~~~
@@ -61,7 +70,7 @@ This support includes the following actions:
 
 - providing extensive technical documents (Eaton protocols library),
 - providing units to developers of NUT and related projects,
-- hosting the networkupstools.org webserver,
+- hosting the networkupstools.org webserver (from 2005 to August 2012),
 - providing artwork,
 - promoting NUT in general.
 

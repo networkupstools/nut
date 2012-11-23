@@ -37,7 +37,15 @@
 #define APC_VENDORID 0x051d
 
 /* Tweaks */
-#define TWEAK_BACK_UPS_ES "Back-UPS ES"
+char * tweak_max_report[] = {
+	/* Back-UPS ES 700 does NOT overflow. */
+	/* Back-UPS ES 725 does NOT overflow. */
+	/* Back-UPS ES 525 overflows on ReportID 0x0c
+		 (UPS.PowerSummary.RemainingCapacity).*/
+	"Back-UPS ES 525",
+	/* Back-UPS CS 650 overflows on ReportID 0x46 */
+	"Back-UPS CS",
+	NULL};
 
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
 static void *disable_interrupt_pipe(USBDevice_t *device)
@@ -52,13 +60,19 @@ static void *disable_interrupt_pipe(USBDevice_t *device)
 /* Some models need special tweaks */
 static void *general_apc_check(USBDevice_t *device)
 {
-	/* "Back-UPS ES" overflows on ReportID 0x0c, which
-	 * contains UPS.PowerSummary.RemainingCapacity. This results
-	 * in battery.charge not being exposed, and IO error on Windows,
-	 * causing endless reconnection or driver's failure */
-	if (!strncmp(device->Product, TWEAK_BACK_UPS_ES,
-			strlen(TWEAK_BACK_UPS_ES))) {
-		max_report_size = 1;
+	int i = 0;
+
+	/* Some models of Back-UPS overflow on some ReportID.
+	 * This results in some data not being exposed and IO errors on
+	 * WIN32, causing endless reconnection or driver's failure */
+
+	while( tweak_max_report[i] != NULL ) {
+		if(!strncmp(device->Product, tweak_max_report[i],
+			strlen(tweak_max_report[i]))) {
+			max_report_size = 1;
+			return NULL;
+		}
+		i++;
 	}
 	return NULL;
 }

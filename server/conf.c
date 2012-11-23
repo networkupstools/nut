@@ -162,13 +162,29 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 
+#ifdef WITH_OPENSSL
 	/* CERTFILE <dir> */
 	if (!strcmp(arg[0], "CERTFILE")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-
+#elif (defined WITH_NSS) /* WITH_OPENSSL */
+	/* CERTPATH <dir> */
+	if (!strcmp(arg[0], "CERTPATH")) {
+		free(certfile);
+		certfile = xstrdup(arg[1]);
+		return 1;
+	}
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	/* CERTREQUEST (0 | 1 | 2) */
+	if (!strcmp(arg[0], "CERTREQUEST")) {
+		certrequest = atoi(arg[1]);
+		return 1;
+	}
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+#endif /* WITH_OPENSSL | WITH_NSS */
+	
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
 		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
@@ -199,6 +215,17 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
+	
+#ifdef WITH_NSS
+	/* CERTIDENT <name> <passwd> */
+	if (!strcmp(arg[0], "CERTIDENT")) {
+		free(certname);
+		certname = xstrdup(arg[1]);
+		free(certpasswd);
+		certpasswd = xstrdup(arg[2]);
+		return 1;
+	}
+#endif /* WITH_NSS */
 
 	/* not recognized */
 	return 0;

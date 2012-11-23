@@ -51,6 +51,7 @@
 "APC"	"ups"	"1"	"Back-UPS Pro"	""	"apcsmart"
 "APC"	"ups"	"1"	"Matrix-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
+"APC"	"ups"	"1"	"Smart-UPS SMT/SMX/SURTD"	"Microlink models with RJ45 socket - they *require* AP9620 SmartSlot expansion card and smart cable"	"apcsmart"
 "APC"	"ups"	"2"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
@@ -75,6 +76,7 @@
 
 "Apollo"	"ups"	"1"	"1000A"	""	"genericups upstype=4"
 "Apollo"	"ups"	"1"	"1000F"	""	"genericups upstype=4"
+"Apollo"	"ups"	"2"	"850VA"	""	"blazer_usb"
 
 "Appro"	"pdu"	"1"	"SWPDU"	"48 outlets"	"powerman-pdu (experimental)"
 

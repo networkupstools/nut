@@ -54,11 +54,18 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 # not LDADD.
 if HAVE_WINDOWS_SOCKETS
   libupsclient_la_SOURCES = upsclient.c upsclient.h ../common/wincompat.c ../common/common.c
+libupsclient_la_LIBADD = ../common/libparseconf.la -lws2_32
+# libupsclient version information
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+libupsclient_la_LDFLAGS = -version-info 3:1:0 -no-undefined
 else !HAVE_WINDOWS_SOCKETS
   libupsclient_la_SOURCES = upsclient.c upsclient.h
-endif !HAVE_WINDOWS_SOCKETS
 libupsclient_la_LIBADD = ../common/libparseconf.la
+# libupsclient version information
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+libupsclient_la_LDFLAGS = -version-info 3:1:0
+endif !HAVE_WINDOWS_SOCKETS
+
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
-libupsclient_la_LDFLAGS = -version-info 2:0:1 -no-undefined

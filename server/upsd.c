@@ -367,9 +367,12 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
+#ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
-	} else {
+	} else 
+#endif /* WITH_SSL */
+	{
 		res = write(client->sock_fd, ans, len);
 	}
 
@@ -554,9 +557,12 @@ static void client_readline(nut_ctype_t *client)
 	char	buf[SMALLBUF];
 	int	i, ret;
 
+#ifdef WITH_SSL
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
-	} else {
+	} else 
+#endif /* WITH_SSL */
+	{
 		ret = read(client->sock_fd, buf, sizeof(buf));
 	}
 
@@ -701,6 +707,8 @@ static void upsd_cleanup(void)
 	free(statepath);
 	free(datapath);
 	free(certfile);
+	free(certname);
+	free(certpasswd);
 
 	free(fds);
 	free(handler);
@@ -1291,6 +1299,8 @@ int main(int argc, char **argv)
 	while (!exit_flag) {
 		mainloop();
 	}
+
+	ssl_cleanup();
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	return EXIT_SUCCESS;

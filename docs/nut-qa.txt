@@ -10,14 +10,26 @@ NQA is present in many aspects and areas of NUT.
 Documentation
 -------------
 
-The documentation toolchain now use link:http://www.methods.co.nz/asciidoc/[AsciiDoc]
-to output both HTML pages and manual pages (troff).
+The documentation toolchain now use
+link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
+manual pages (troff). This single point of control permitted to fill many gaps,
+to suppress many redundancies and to optimize documentation management in
+general.
  
 - the NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
-compliance 
+compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
+icons, at the bottom of each page.
 
-- the manual pages conformance is tested with link:http://catb.org/~esr/doclifter/index.html[doclifter]
+- the manual pages conformance is tested with
+link:http://catb.org/~esr/doclifter/index.html[doclifter] (outdated)
 
+- Documentation source files are spell checked, using
+link:http://aspell.net[Aspell], both interactively (using
+'make spellcheck-interactive') and automatically in Buildbot (using
+'make spellcheck').
+
+NOTE: A NUT dictionnary is also available (docs/nut.dict), providing a glossary
+of terms related to power devices and management.
 
 Source code
 -----------
@@ -75,7 +87,7 @@ FIXME (POST):
 
 - a runtime testing suite, which automates the inter layer communication testing
 (driver - upsd - upsmon / clients), that is part of Ubuntu.
-link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/annotate/257?file_id=testnut.py-20080227144343-m47lrqbrwv3xm20b-1[The NUT testing script]
+link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
 is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
 It installs nut, configure with for the dummy-ups driver, changes a few data and
 check that these are well propagated with upsc.

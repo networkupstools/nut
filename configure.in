@@ -462,26 +462,56 @@ NUT_REPORT_FEATURE([build Mac OS X meta-driver],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-ssl
+dnl Check for with-ssl, and --with-nss or --with-openssl
+dnl Only one can be enabled at a time, with a preference for OpenSSL
+dnl if both are available
 
-NUT_ARG_WITH([ssl], [enable SSL development code], [auto])
+nut_ssl_lib=""
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
+NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
+NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
+NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
+
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
 if test "${nut_with_ssl}" != "no"; then
-   dnl check for libssl compiler flags
-   NUT_CHECK_LIBSSL
+   dnl check if either NSS or OpenSSL was explicitly requested
+   if test "${nut_with_nss}" = "yes"; then
+      NUT_CHECK_LIBNSS
+      if test "${nut_have_libnss}" != "yes"; then
+         AC_MSG_ERROR(["Mozilla NSS not found, required for SSL support"])
+      fi
+   elif test "${nut_with_openssl}" = "yes"; then
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
+      fi
+   else
+      dnl Prefer OpenSSL over NSS otherwise
+      NUT_CHECK_LIBOPENSSL
+      if test "${nut_have_openssl}" != "yes"; then
+         NUT_CHECK_LIBNSS
+         if test "${nut_have_libnss}" != "yes"; then
+            dnl Only abort if SSL has been explicitly requested by the user
+            if test "${nut_with_ssl}" = "yes"; then
+               AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, but are needed for the requested SSL support"])
+            else
+               AC_MSG_WARN(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+            fi
+            nut_with_ssl="no"
+         else
+            nut_with_nss="${nut_have_libnss}"
+         fi
+      else
+         nut_with_openssl="${nut_have_openssl}"
+      fi
+   fi
 fi
 
-if test "${nut_with_ssl}" = "yes" -a "${nut_have_libssl}" != "yes"; then
-   AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
-fi
+AM_CONDITIONAL(WITH_NSS, test "${nut_with_nss}" = "yes")
+AM_CONDITIONAL(WITH_OPENSSL, test "${nut_with_openssl}" = "yes")
 
-if test "${nut_with_ssl}" != "no"; then
-   nut_with_ssl="${nut_have_libssl}"
-fi
-
-NUT_REPORT_FEATURE([enable SSL development code], [${nut_with_ssl}], [],
-					[WITH_SSL], [Define to enable SSL development code])
+NUT_REPORT_FEATURE([enable SSL support], [${nut_with_ssl}], [${nut_ssl_lib}],
+					[WITH_SSL], [Define to enable SSL])
 
 dnl ----------------------------------------------------------------------
 dnl Check for --with-wrap
@@ -1081,6 +1111,10 @@ AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
 AC_PATH_PROGS([A2X], [a2x], [none])
 
+dnl check for spell checking deps
+AC_PATH_PROGS([ASPELL], [aspell], [none])
+AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
@@ -1148,6 +1182,7 @@ AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
+AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
 AC_SUBST(RUN_AS_USER)

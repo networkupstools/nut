@@ -6,32 +6,24 @@
 # The MODE determines which part of the NUT is to be started, and which
 # configuration files must be modified.
 #
-# This file attempts to standardize the various files being found
-# in different installations, like /etc/default/nut on Debian based
-# systems and /etc/sysconfig/ups on RedHat based systems.
-#
-# Distribution's init script should source this file in order to
-# determine which components have to be started.
+# This file try to standardize the various files being found in the field, like
+# /etc/default/nut on Debian based systems, /etc/sysconfig/ups on RedHat based
+# systems, ... Distribution's init script should source this file to see which
+# component(s) has to be started.
 #
 # The values of MODE can be:
-# - none: Indicates that NUT should not get started automatically,
-#   possibly because it is not configured or that an Integrated Power
-#   Management or some external system, is used to startup the NUT
-#   components.
-#
-# - standalone: Addresses a local only configuration, with 1 UPS
-#   protecting the local system.  This implies to start the 3 NUT
-#   layers (driver, upsd and upsmon), with the related configuration
-#   files.  This mode can also address UPS redundancy.
-#
-# - netserver: Like the standalone configuration, but also possibly
-#   need one or more specific LISTEN directive(s) in upsd.conf.
-#   Since this MODE is open to the network, a special care should be
-#   applied to security concerns.
-#
-# - netclient: When only upsmon is required, possibly because
-#   there are other hosts that are more closely attached to the UPS,
-#   the MODE should be set to netclient.
+# - none: NUT is not configured, or use the Integrated Power Management, or use
+#   some external system to startup NUT components. So nothing is to be started.
+# - standalone: This mode address a local only configuration, with 1 UPS 
+#   protecting the local system. This implies to start the 3 NUT layers (driver,
+#   upsd and upsmon) and the matching configuration files. This mode can also
+#   address UPS redundancy.
+# - netserver: same as for the standalone configuration, but also need
+#   some more network access controls (firewall, tcp-wrappers) and possibly a
+#   specific LISTEN directive in upsd.conf.
+#   Since this MODE is opened to the network, a special care should be applied
+#   to security concerns.
+# - netclient: this mode only requires upsmon.
 #
 # IMPORTANT NOTE:
 #  This file is intended to be sourced by shell scripts.

@@ -34,9 +34,12 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
  images/cables/mge-db9-rj12.jpg images/cables/mge-db9-rj45.jpg \
  images/cables/SOLA-330.png
 
-EXTRA_DIST = $(SHARED_DEPS) $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt \
- $(IMAGE_FILES) $(CABLES_IMAGES) docinfo.xml
+ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
+ $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt
+
+NUT_SPELL_DICT = nut.dict
+EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
+ $(CABLES_IMAGES) docinfo.xml $(NUT_SPELL_DICT)
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
@@ -74,7 +77,7 @@ website:
 endif !HAVE_ASCIIDOC
 
 clean-local:
-	rm -rf *.pdf *.html *.chunked docbook-xsl.css
+	rm -rf *.pdf *.html *.chunked docbook-xsl.css *.bak
 
 # Static HCL is generated automatically
 # This is more of a harness, since this file should have already been
@@ -115,5 +118,28 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 
 .txt.pdf: docinfo.xml
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
+
+if HAVE_ASPELL
+# FIXME: also check ../{NEWS,README,UPGRADING}+other dirs
+# Non-interactively spell check all documentation source files.
+# This is useful for Buildbot and automated QA processing
+# FIXME: how to present output (std{out,err}, single file or per target)?
+spellcheck: 
+	@for docsrc in $(ALL_TXT_SRC); do \
+		echo "Spell checking on $$docsrc"; \
+		LANG=C $(ASPELL) -a -t -p $(NUT_SPELL_DICT) < $$docsrc | grep [^*]; \
+	done
+# Interactively spell check all documentation source files
+spellcheck-interactive: 
+	@for docsrc in $(ALL_TXT_SRC); do\
+		echo "Spell checking on $$docsrc"; \
+		LANG=C $(ASPELL) check -p $(NUT_SPELL_DICT) $$docsrc; \
+	done
+else !HAVE_ASPELL
+spellcheck:
+	@echo "Documentation spell check not available since 'aspell' was not found."
+spellcheck-interactive:
+	@echo "Documentation spell check not available since 'aspell' was not found."
+endif !HAVE_ASPELL
 
 .PHONY: html html-single pdf website

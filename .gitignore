@@ -21,3 +21,4 @@ depcomp
 install-sh
 missing
 .deps
+*.bak

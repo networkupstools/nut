@@ -5,7 +5,7 @@
 #
 # drivers/usbhid-ups -DD -u root -x generic -x vendorid=XXXX auto
 #
-# Usage: cat debuginfo | path-to-subdriver.sh
+# Usage: cat debuginfo | gen-usbhid-subdriver.sh
 #
 # See also: docs/hid-subdrivers.txt
 
@@ -58,7 +58,7 @@ if [ -z "$KEEP" ]; then
     trap cleanup EXIT
 fi
 
-NAME=path-to-subdriver
+NAME=gen-usbhid-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
 DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
 UTABLE=`mktemp "$TMPDIR/$NAME-UTABLE.XXXXXX"`
@@ -86,8 +86,8 @@ natural (upper- and lowercase) capitalization, e.g., 'Belkin', 'APC'."
 done
 
 # try to determine product and vendor id
-VENDORID=`cat "$FILE" | sed -n 's/[> ]*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
-PRODUCTID=`cat "$FILE" | sed -n 's/[> ]*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+VENDORID=`cat "$FILE" | sed -n 's/.*- VendorID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
+PRODUCTID=`cat "$FILE" | sed -n 's/.*- ProductID: \([0-9a-fA-F]*\).*/\1/p' | tail -1`
 
 # prompt for productid, vendorid if necessary
 if [ -z "$VENDORID" ]; then
@@ -103,7 +103,7 @@ CFILE="$LDRIVER-hid.c"
 HFILE="$LDRIVER-hid.h"
 
 # extract Usage Table
-cat "$FILE" | sed -n 's/[> ]*Path: \([^,][^,]*\), Type:.*/\1/p' > "$UTABLE"
+cat "$FILE" | sed -n 's/.*Path: \([^,][^,]*\), Type:.*/\1/p' > "$UTABLE"
 
 # extract Usage codes
 cat "$UTABLE" | tr '.' $'\n' | sort -u > "$USAGES"
@@ -163,12 +163,12 @@ cat > "$CFILE" <<EOF
 /* ${CFILE} - subdriver to monitor ${DRIVER} USB/HID devices with NUT
  *
  *  Copyright (C)
- *  2003 - 2009	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
- *  path-to-subdriver script. It must be customized.
+ *  gen-usbhid-subdriver script. It must be customized.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

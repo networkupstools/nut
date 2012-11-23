@@ -1380,29 +1380,56 @@ Public License instead of this License.
                     <Component Id="victronups.exe" DiskId="1" Guid="8C12FEA5-5950-4A5F-9BA5-D2E62C20004C">
                         <File Id="victronups.exe" Name="victronups.exe" Source="..\..\..\drivers\.libs\victronups.exe" />
                     </Component>
-                    <Component Id="msys_1.0.dll" DiskId="1" Guid="F5EDE598-7DCD-46D8-BAA5-BF640787F470">
-                        <File Id="msys_1.0.dll" Name="msys-1.0.dll" Source="ImageFiles\others\msys-1.0.dll" />
-                    </Component>
-                    <Component Id="msys_crypto_1.0.0.dll" DiskId="1" Guid="3DC7E566-82EA-48D3-9B54-BA6B5AB32DB2">
-                        <File Id="msys_crypto_1.0.0.dll" Name="msys-crypto-1.0.0.dll" Source="ImageFiles\others\msys-crypto-1.0.0.dll" />
-                    </Component>
-                    <Component Id="msys_ssl_1.0.0.dll" DiskId="1" Guid="C267BD52-3D05-4D2F-A761-DDD795694EAB">
-                        <File Id="msys_ssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\others\msys-ssl-1.0.0.dll" />
-                    </Component>
-                    <Component Id="libusb.dll" DiskId="1" Guid="00C5789F-7ED4-43C0-8483-29F674F47CC1">
-                        <File Id="libusb.dll" Name="libusb.dll" Source="ImageFiles\others\libusb.dll" />
-                    </Component>
-                    <Component Id="libneon.dll" DiskId="1" Guid="1C240775-B7F3-414D-A18E-AD2B0AFBE3B2">
-                        <File Id="libneon.dll" Name="libneon.dll" Source="ImageFiles\others\libneon.dll" />
-                    </Component>
-                    <Component Id="libnetsnmp.dll" DiskId="1" Guid="EF5DF7CF-B7EE-4760-8CB9-3971838F1B17">
-                        <File Id="libnetsnmp.dll" Name="libnetsnmp.dll" Source="ImageFiles\others\libnetsnmp.dll" />
-                    </Component>
                     <Component Id="nut_scanner.exe" DiskId="1" Guid="A8072D78-5F56-4965-AACC-9DE300445080">
                         <File Id="nut_scanner.exe" Name="nut-scanner.exe" Source="..\..\..\tools\nut-scanner\.libs\nut-scanner.exe" />
                     </Component>
                     <Component Id="libupsclient_1_1.dll" DiskId="1" Guid="CF7C834D-FE42-4698-9065-68B67165101D">
-                        <File Id="libupsclient_1_1.dll" Name="libupsclient-1.dll" Source="..\..\..\clients\.libs\libupsclient-1.dll" />
+                        <File Id="LIBUPSCLIENT_3.DLL_1" Name="libupsclient-3.dll" Source="..\..\..\clients\.libs\libupsclient-3.dll" />
+                    </Component>
+                    <Component Id="freebl3.dll" Guid="2CF1616D-784C-41EA-89D8-EC250AC48BFD" DiskId="1">
+                        <File Id="FREEBL3.DLL" Name="freebl3.dll" Source="ImageFiles\Others\freebl3.dll" />
+                    </Component>
+                    <Component Id="libeay32.dll" Guid="1BA7077D-3AD3-412B-9937-489D25BB7117" DiskId="1">
+                        <File Id="LIBEAY32.DLL" Name="libeay32.dll" Source="ImageFiles\Others\libeay32.dll" />
+                    </Component>
+                    <Component Id="mozglue.dll" Guid="98F249A7-7350-484B-A206-6D13D622AE1F" DiskId="1">
+                        <File Id="MOZGLUE.DLL" Name="mozglue.dll" Source="ImageFiles\Others\mozglue.dll" />
+                    </Component>
+                    <Component Id="mozsqlite3.dll" Guid="B2833E9A-7F0B-4313-A82C-554269A3E658" DiskId="1">
+                        <File Id="MOZSQLITE3.DLL" Name="mozsqlite3.dll" Source="ImageFiles\Others\mozsqlite3.dll" />
+                    </Component>
+                    <Component Id="msvcr80.dll" Guid="E2C71D67-6B60-4E43-B142-6C58CE0FE4AA" DiskId="1">
+                        <File Id="MSVCR80.DLL" Name="msvcr80.dll" Source="ImageFiles\Others\msvcr80.dll" />
+                    </Component>
+                    <Component Id="nspr4.dll" Guid="70A983B0-937C-49FF-8573-ECC8DCD3F6CD" DiskId="1">
+                        <File Id="NSPR4.DLL" Name="nspr4.dll" Source="ImageFiles\Others\nspr4.dll" />
+                    </Component>
+                    <Component Id="nss3.dll" Guid="8809BBBD-A5AA-4FB2-AC9A-85C42F491C70" DiskId="1">
+                        <File Id="NSS3.DLL" Name="nss3.dll" Source="ImageFiles\Others\nss3.dll" />
+                    </Component>
+                    <Component Id="nssdbm3.dll" Guid="041A6F90-9889-4802-A383-6A20EF4A9393" DiskId="1">
+                        <File Id="NSSDBM3.DLL" Name="nssdbm3.dll" Source="ImageFiles\Others\nssdbm3.dll" />
+                    </Component>
+                    <Component Id="nssutil3.dll" Guid="74BC687D-CEA4-4643-A199-116EA71A6BC8" DiskId="1">
+                        <File Id="NSSUTIL3.DLL" Name="nssutil3.dll" Source="ImageFiles\Others\nssutil3.dll" />
+                    </Component>
+                    <Component Id="plc4.dll" Guid="1AEB3578-3017-4C24-8C34-AC7EC39D89ED" DiskId="1">
+                        <File Id="PLC4.DLL" Name="plc4.dll" Source="ImageFiles\Others\plc4.dll" />
+                    </Component>
+                    <Component Id="plds4.dll" Guid="C049BE57-4D45-439F-9FB6-10657FB64243" DiskId="1">
+                        <File Id="PLDS4.DLL" Name="plds4.dll" Source="ImageFiles\Others\plds4.dll" />
+                    </Component>
+                    <Component Id="smime3.dll" Guid="FC1C57D9-5915-491B-955C-6C20FB835AE1" DiskId="1">
+                        <File Id="SMIME3.DLL" Name="smime3.dll" Source="ImageFiles\Others\smime3.dll" />
+                    </Component>
+                    <Component Id="softokn3.dll" Guid="C0F50B5C-2165-4380-B789-DDDC7217935B" DiskId="1">
+                        <File Id="SOFTOKN3.DLL" Name="softokn3.dll" Source="ImageFiles\Others\softokn3.dll" />
+                    </Component>
+                    <Component Id="ssl3.dll" Guid="607A5084-04A1-4F4B-BB2A-C8EA53F12ACD" DiskId="1">
+                        <File Id="SSL3.DLL" Name="ssl3.dll" Source="ImageFiles\Others\ssl3.dll" />
+                    </Component>
+                    <Component Id="ssleay32.dll" Guid="A98E934D-0FD4-44E0-8210-8AD48A372189" DiskId="1">
+                        <File Id="SSLEAY32.DLL" Name="ssleay32.dll" Source="ImageFiles\Others\ssleay32.dll" />
                     </Component>
                 </Directory>
                 <Directory Id="etc" Name="etc">
@@ -1444,19 +1471,55 @@ Public License instead of this License.
                         <File Id="message.exe" Name="message.exe" Source="..\..\..\clients\.libs\message.exe" />
                     </Component>
                     <Component Id="libupsclient_1_2.dll" DiskId="1" Guid="9F297F2A-6A54-40B0-90D8-AAB5D8354D69">
-                        <File Id="libupsclient_1_2.dll" Name="libupsclient-1.dll" Source="..\..\..\clients\.libs\libupsclient-1.dll" />
+                        <File Id="LIBUPSCLIENT_3.DLL" Name="libupsclient-3.dll" Source="..\..\..\clients\.libs\libupsclient-3.dll" />
                     </Component>
                     <Component Id="upssched.exe" DiskId="1" Guid="142F2FB6-1DEA-42E8-A9DF-C8088C49A63E">
                         <File Id="upssched.exe" Name="upssched.exe" Source="..\..\..\clients\.libs\upssched.exe" />
                     </Component>
-                    <Component Id="msys1.0.dll" DiskId="1" Guid="8545D6E5-4E32-42BB-A5B1-78D6267F52BD">
-                        <File Id="msys1.0.dll" Name="msys-1.0.dll" Source="ImageFiles\others\msys-1.0.dll" />
+                    <Component Id="_freebl3.dll" Guid="27EE7A65-6788-4921-889F-51A7107B8BE8" DiskId="1">
+                        <File Id="FREEBL3.DLL_1" Name="freebl3.dll" Source="ImageFiles\Others\freebl3.dll" />
                     </Component>
-                    <Component Id="msyscrypto_1.0.0.dll" DiskId="1" Guid="CA38C7F7-E73F-4695-B560-81F2DACB6BC1">
-                        <File Id="msyscrypto_1.0.0.dll" Name="msys-crypto-1.0.0.dll" Source="ImageFiles\others\msys-crypto-1.0.0.dll" />
+                    <Component Id="_libeay32.dll" Guid="1C8BF989-F7D1-4DF8-8DD6-84686973FE1D" DiskId="1">
+                        <File Id="LIBEAY32.DLL_1" Name="libeay32.dll" Source="ImageFiles\Others\libeay32.dll" />
                     </Component>
-                    <Component Id="msysssl_1.0.0.dll" DiskId="1" Guid="044433C6-2D0A-468F-8764-7D1AE5196440">
-                        <File Id="msysssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\others\msys-ssl-1.0.0.dll" />
+                    <Component Id="_mozglue.dll" Guid="21BDE808-8470-4310-B18F-01566A61EB52" DiskId="1">
+                        <File Id="MOZGLUE.DLL_1" Name="mozglue.dll" Source="ImageFiles\Others\mozglue.dll" />
+                    </Component>
+                    <Component Id="_mozsqlite3.dll" Guid="B1C15C83-0DFB-415F-BE3D-2D8038FE3CBD" DiskId="1">
+                        <File Id="MOZSQLITE3.DLL_1" Name="mozsqlite3.dll" Source="ImageFiles\Others\mozsqlite3.dll" />
+                    </Component>
+                    <Component Id="_msvcr80.dll" Guid="428FD5DC-5B0B-4E5A-B4E0-3E0CCDBAAE8A" DiskId="1">
+                        <File Id="MSVCR80.DLL_1" Name="msvcr80.dll" Source="ImageFiles\Others\msvcr80.dll" />
+                    </Component>
+                    <Component Id="_nspr4.dll" Guid="7C141373-59C3-433F-B7C5-39C539CF1251" DiskId="1">
+                        <File Id="NSPR4.DLL_1" Name="nspr4.dll" Source="ImageFiles\Others\nspr4.dll" />
+                    </Component>
+                    <Component Id="_nss3.dll" Guid="C8C41ED2-8CA6-4D6F-A073-9BFB2B4BCF13" DiskId="1">
+                        <File Id="NSS3.DLL_1" Name="nss3.dll" Source="ImageFiles\Others\nss3.dll" />
+                    </Component>
+                    <Component Id="_nssdbm3.dll" Guid="36B4B825-17C6-4129-91A4-B65A68130633" DiskId="1">
+                        <File Id="NSSDBM3.DLL_1" Name="nssdbm3.dll" Source="ImageFiles\Others\nssdbm3.dll" />
+                    </Component>
+                    <Component Id="_nssutil3.dll" Guid="824B509C-12C0-40D6-824F-7DC8128931B3" DiskId="1">
+                        <File Id="NSSUTIL3.DLL_1" Name="nssutil3.dll" Source="ImageFiles\Others\nssutil3.dll" />
+                    </Component>
+                    <Component Id="_plc4.dll" Guid="7E705880-54BB-423B-B8DF-92901009BFC3" DiskId="1">
+                        <File Id="PLC4.DLL_1" Name="plc4.dll" Source="ImageFiles\Others\plc4.dll" />
+                    </Component>
+                    <Component Id="_plds4.dll" Guid="FE970B55-FAC3-4A72-9108-79622BDC3812" DiskId="1">
+                        <File Id="PLDS4.DLL_1" Name="plds4.dll" Source="ImageFiles\Others\plds4.dll" />
+                    </Component>
+                    <Component Id="_smime3.dll" Guid="C41113AB-2E60-41D5-B2D6-0C6730BF02D4" DiskId="1">
+                        <File Id="SMIME3.DLL_1" Name="smime3.dll" Source="ImageFiles\Others\smime3.dll" />
+                    </Component>
+                    <Component Id="_softokn3.dll" Guid="F738331E-2685-4AFD-930E-3AF6DF7F5A7A" DiskId="1">
+                        <File Id="SOFTOKN3.DLL_1" Name="softokn3.dll" Source="ImageFiles\Others\softokn3.dll" />
+                    </Component>
+                    <Component Id="_ssl3.dll" Guid="F50A5527-0E25-4387-8155-BD926463BE69" DiskId="1">
+                        <File Id="SSL3.DLL_1" Name="ssl3.dll" Source="ImageFiles\Others\ssl3.dll" />
+                    </Component>
+                    <Component Id="_ssleay32.dll" Guid="75DA1E8B-5F46-475A-9C49-DE437D1598C2" DiskId="1">
+                        <File Id="SSLEAY32.DLL_1" Name="ssleay32.dll" Source="ImageFiles\Others\ssleay32.dll" />
                     </Component>
                 </Directory>
                 <Directory Id="share" Name="share">
@@ -1896,14 +1959,23 @@ Public License instead of this License.
                 <ComponentRef Id="upsdrvctl.exe" />
                 <ComponentRef Id="oldmge_shut.exe" />
                 <ComponentRef Id="ups.conf.sample" />
-                <ComponentRef Id="msys_1.0.dll" />
-                <ComponentRef Id="msys_crypto_1.0.0.dll" />
-                <ComponentRef Id="msys_ssl_1.0.0.dll" />
-                <ComponentRef Id="libusb.dll" />
-                <ComponentRef Id="libneon.dll" />
-                <ComponentRef Id="libnetsnmp.dll" />
                 <ComponentRef Id="nut_scanner.exe" />
                 <ComponentRef Id="libupsclient_1_1.dll" />
+                <ComponentRef Id="freebl3.dll" />
+                <ComponentRef Id="libeay32.dll" />
+                <ComponentRef Id="mozglue.dll" />
+                <ComponentRef Id="mozsqlite3.dll" />
+                <ComponentRef Id="msvcr80.dll" />
+                <ComponentRef Id="nspr4.dll" />
+                <ComponentRef Id="nss3.dll" />
+                <ComponentRef Id="nssdbm3.dll" />
+                <ComponentRef Id="nssutil3.dll" />
+                <ComponentRef Id="plc4.dll" />
+                <ComponentRef Id="plds4.dll" />
+                <ComponentRef Id="smime3.dll" />
+                <ComponentRef Id="softokn3.dll" />
+                <ComponentRef Id="ssl3.dll" />
+                <ComponentRef Id="ssleay32.dll" />
             </Feature>
             <Feature Id="etc" Level="1" Title="NUT etc files for Windows">
                 <ComponentRef Id="nut.conf.sample" />
@@ -1923,9 +1995,21 @@ Public License instead of this License.
                 <ComponentRef Id="message.exe" />
                 <ComponentRef Id="libupsclient_1_2.dll" />
                 <ComponentRef Id="upssched.exe" />
-                <ComponentRef Id="msys1.0.dll" />
-                <ComponentRef Id="msyscrypto_1.0.0.dll" />
-                <ComponentRef Id="msysssl_1.0.0.dll" />
+                <ComponentRef Id="_freebl3.dll" />
+                <ComponentRef Id="_libeay32.dll" />
+                <ComponentRef Id="_mozglue.dll" />
+                <ComponentRef Id="_mozsqlite3.dll" />
+                <ComponentRef Id="_msvcr80.dll" />
+                <ComponentRef Id="_nspr4.dll" />
+                <ComponentRef Id="_nss3.dll" />
+                <ComponentRef Id="_nssdbm3.dll" />
+                <ComponentRef Id="_nssutil3.dll" />
+                <ComponentRef Id="_plc4.dll" />
+                <ComponentRef Id="_plds4.dll" />
+                <ComponentRef Id="_smime3.dll" />
+                <ComponentRef Id="_softokn3.dll" />
+                <ComponentRef Id="_ssl3.dll" />
+                <ComponentRef Id="_ssleay32.dll" />
             </Feature>
             <Feature Id="StopService.bat" Level="1" Title="Stop NUT Service">
                 <ComponentRef Id="StopService.bat" />

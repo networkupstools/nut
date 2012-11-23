@@ -44,7 +44,17 @@
 #endif 
 
 #include "upsclient.h"
+#include "common.h"
 #include "timehead.h"
+
+#ifdef WITH_NSS
+	#include <prerror.h>
+	#include <prinit.h>
+	#include <pk11func.h>
+	#include <prtypes.h>
+	#include <ssl.h>
+	#include <private/pprio.h>
+#endif /* WITH_NSS */
 
 #define UPSCLIENT_MAGIC 0x19980308
 
@@ -106,9 +116,354 @@ struct {
 	{ 0, "Protocol error",			},	/* 42: UPSCLI_ERR_PROTOCOL */
 };
 
+
+typedef struct HOST_CERT_s {
+	const char	*host;
+	const char	*certname;
+	int			certverify;
+	int			forcessl;
+	
+	struct HOST_CERT_s	*next;
+}	HOST_CERT_t;
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname);
+
+
+static int upscli_initialized = 0;
+
+#ifdef WITH_OPENSSL
+static SSL_CTX	*ssl_ctx;
+#elif defined(WITH_NSS) /* WITH_OPENSLL */
+static int verify_certificate = 1;
+static HOST_CERT_t *first_host_cert = NULL;
+static char* nsscertname = NULL;
+static char* nsscertpasswd = NULL;
+#endif /* WITH_OPENSSL | WITH_NSS */
+
+
+#ifdef WITH_OPENSSL
+
+static void ssl_debug(void)
+{
+	int	e;
+	char	errmsg[SMALLBUF];
+
+	while ((e = ERR_get_error()) != 0) {
+		ERR_error_string_n(e, errmsg, sizeof(errmsg));
+		upsdebugx(2, "ssl_debug: %s", errmsg);
+	}
+}
+
+static int ssl_error(SSL *ssl, int ret)
+{
+	int	e;
+
+	e = SSL_get_error(ssl, ret);
+
+	switch (e)
+	{
+	case SSL_ERROR_WANT_READ:
+		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_WANT_READ", ret);
+		break;
+
+	case SSL_ERROR_WANT_WRITE:
+		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_WANT_WRITE", ret);
+		break;
+
+	case SSL_ERROR_SYSCALL:
+		if (ret == 0 && ERR_peek_error() == 0) {
+			upslogx(LOG_ERR, "ssl_error() EOF from client");
+		} else {
+			upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR_SYSCALL", ret);
+		}
+		break;
+
+	default:
+		upslogx(LOG_ERR, "ssl_error() ret=%d SSL_ERROR %d", ret, e);
+		ssl_debug();
+	}
+
+	return -1;
+}
+
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+
+static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry, 
+		void *arg)
+{
+	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
+		PK11_GetSlotName(slot), PK11_GetTokenName(slot), nsscertpasswd?"":"not ");
+	return nsscertpasswd ? PL_strdup(nsscertpasswd) : NULL;
+}
+
+static void nss_error(const char* funcname)
+{
+	char buffer[SMALLBUF];
+	PRInt32 length = PR_GetErrorText(buffer);
+	if (length > 0 && length < SMALLBUF) {
+		upsdebugx(1, "nss_error %ld in %s : %s", (long)PR_GetError(), funcname, buffer);
+	}else{
+		upsdebugx(1, "nss_error %ld in %s", (long)PR_GetError(), funcname);
+	}
+}
+
+static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
+	PRBool checksig, PRBool isServer)
+{
+	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	SECStatus status = SSL_AuthCertificate(arg, fd, checksig, isServer);
+	upslogx(LOG_INFO, "Intend to authenticate server %s : %s",
+		ups?ups->host:"<unnamed>",
+		status==SECSuccess?"SUCCESS":"FAILED");
+	if (status != SECSuccess) {
+		nss_error("SSL_AuthCertificate");
+	}
+	return status;
+}
+
+static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd,
+	PRBool checksig, PRBool isServer)
+{
+	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	upslogx(LOG_INFO, "Do not intend to authenticate server %s",
+		ups?ups->host:"<unnamed>");
+	return SECSuccess;
+}
+
+static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
+{
+	HOST_CERT_t* cert;
+	upslogx(LOG_WARNING, "Certificate validation failed for %s",
+		(arg&&arg->host)?arg->host:"<unnamed>");
+	/* BadCertHandler is called when the NSS certificate validation is failed.
+	 * If the certificate verification (user conf) is mandatory, reject authentication
+	 * else accept it.
+	 */
+	cert = upscli_find_host_cert(arg->host);
+	if (cert != NULL) {
+		return cert->certverify==0 ?  SECSuccess : SECFailure;
+	} else {
+		return verify_certificate==0 ? SECSuccess : SECFailure;
+	}
+}
+
+static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
+	CERTDistNames *caNames, CERTCertificate **pRetCert, SECKEYPrivateKey **pRetKey)
+{
+	CERTCertificate *cert;
+	SECKEYPrivateKey *privKey;
+	SECStatus status = NSS_GetClientAuthData(arg, fd, caNames, pRetCert, pRetKey);
+	if (status == SECFailure) {
+		if (nsscertname != NULL) {
+			cert = PK11_FindCertFromNickname(nsscertname, NULL);
+			if(cert==NULL)	{
+				upslogx(LOG_ERR, "Can not find self-certificate");
+				nss_error("GetClientAuthData / PK11_FindCertFromNickname");
+			}else{
+				privKey = PK11_FindKeyByAnyCert(cert, NULL);
+				if(privKey==NULL){
+					upslogx(LOG_ERR, "Can not find private key related to self-certificate");
+					nss_error("GetClientAuthData / PK11_FindKeyByAnyCert");
+				}else{
+					*pRetCert = cert;
+					*pRetKey = privKey;
+					status = SECSuccess;
+				}
+			}
+		} else {
+			upslogx(LOG_ERR, "Self-certificate name not configured");
+		}
+	}
+
+	return status;
+}
+
+static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
+{
+	upslogx(LOG_INFO, "SSL handshake done successfully with server %s",
+		client_data->host);
+}
+
+#endif /* WITH_OPENSSL | WITH_NSS */
+
+int upscli_init(int certverify, const char *certpath, 
+					const char *certname, const char *certpasswd)
+{
+#ifdef WITH_OPENSSL
+	int ret, ssl_mode = SSL_VERIFY_NONE;
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+	const SSL_METHOD	*ssl_method;
+#else
+	SSL_METHOD	*ssl_method;
+#endif
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	SECStatus	status;
+#endif /* WITH_OPENSSL | WITH_NSS */
+
+
+	if (upscli_initialized == 1) {
+		upslogx(LOG_WARNING, "upscli already initialized");
+		return -1;
+	}
+	
+#ifdef WITH_OPENSSL
+	
+	SSL_library_init();
+	SSL_load_error_strings();
+
+	ssl_method = TLSv1_client_method();
+
+	if (!ssl_method) {
+		return 0;
+	}
+
+	ssl_ctx = SSL_CTX_new(ssl_method);
+	if (!ssl_ctx) {
+		upslogx(LOG_ERR, "Can not initialize SSL context");
+		return -1;
+	}
+	
+	if (!certpath) {
+		if (certverify == 1) {
+			upslogx(LOG_ERR, "Can not verify certificate if any is specified");
+			return -1;	/* Failed : cert is mandatory but no certfile */
+		}
+	} else {
+		switch(certverify) {
+
+		case 0:
+			ssl_mode = SSL_VERIFY_NONE;
+			break;
+		default:
+			ssl_mode = SSL_VERIFY_PEER;
+			break;
+		}
+
+		ret = SSL_CTX_load_verify_locations(ssl_ctx, NULL, certpath);
+		if (ret != 1) {
+			upslogx(LOG_ERR, "Failed to load certificate from pemfile %s", certpath);
+			return -1;
+		}
+
+		SSL_CTX_set_verify(ssl_ctx, ssl_mode, NULL);		
+	}
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 0);
+	
+	PK11_SetPasswordFunc(nss_password_callback);
+	
+	if (certpath) {
+		upslogx(LOG_INFO, "Init SSL with cerificate database located at %s", certpath);
+		status = NSS_Init(certpath);
+	} else {
+		upslogx(LOG_NOTICE, "Init SSL without certificate database");
+		status = NSS_NoDB_Init(NULL);
+	}
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not initialize SSL context");
+		nss_error("upscli_init / NSS_[NoDB]_Init");
+		return -1;
+	}
+	
+	status = NSS_SetDomesticPolicy();
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not initialize SSL policy");
+		nss_error("upscli_init / NSS_SetDomesticPolicy");
+		return -1;
+	}
+	
+	SSL_ClearSessionCache();
+	
+	status = SSL_OptionSetDefault(SSL_ENABLE_SSL3, PR_TRUE);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not enable SSLv3");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_SSL3)");
+		return -1;
+	}
+	status = SSL_OptionSetDefault(SSL_ENABLE_TLS, PR_TRUE);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not enable TLSv1");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_ENABLE_TLS)");
+		return -1;
+	}
+	status = SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO, PR_FALSE);
+	if (status != SECSuccess) {
+		upslogx(LOG_ERR, "Can not disable SSLv2 hello compatibility");
+		nss_error("upscli_init / SSL_OptionSetDefault(SSL_V2_COMPATIBLE_HELLO)");
+		return -1;
+	}
+	if (certname) {
+		nsscertname = xstrdup(certname);
+	}
+	if (certpasswd) {
+		nsscertpasswd = xstrdup(certpasswd);
+	}
+	verify_certificate = certverify;
+#endif /* WITH_OPENSSL | WITH_NSS */
+	
+	upscli_initialized = 1;
+	return 1;
+}
+
+void upscli_add_host_cert(const char* hostname, const char* certname, int certverify, int forcessl)
+{
+#ifdef WITH_NSS
+	HOST_CERT_t* cert = xmalloc(sizeof(HOST_CERT_t));
+	cert->next = first_host_cert;
+	cert->host = xstrdup(hostname);
+	cert->certname = xstrdup(certname);
+	cert->certverify = certverify;
+	cert->forcessl = forcessl;
+	first_host_cert = cert;
+#endif /* WITH_NSS */
+}
+
+static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
+{
+#ifdef WITH_NSS
+	HOST_CERT_t* cert = first_host_cert;
+	if (hostname != NULL) {
+		while (cert != NULL) {
+			if (cert->host != NULL && strcmp(cert->host, hostname)==0 ) {
+				return cert;
+			}
+			cert = cert->next;
+		}
+	}
+#endif /* WITH_NSS */
+	return NULL;
+}
+
+int upscli_cleanup()
+{
+#ifdef WITH_OPENSSL
+	if (ssl_ctx) {
+		SSL_CTX_free(ssl_ctx);
+		ssl_ctx = NULL;
+	}
+
+#endif /* WITH_OPENSSL */
+
+#ifdef WITH_NSS	
+	/* Called to force cache clearing to prevent NSS shutdown failures.
+	 * http://www.mozilla.org/projects/security/pki/nss/ref/ssl/sslfnc.html#1138601
+	 */
+	SSL_ClearSessionCache();
+	NSS_Shutdown();
+	PR_Cleanup();
+	/* Called to release memory arena used by NSS/NSPR.
+	 * Prevent to show all PL_ArenaAllocate mem alloc as leaks.
+	 * https://developer.mozilla.org/en/NSS_Memory_allocation
+	 */
+	PL_ArenaFinish();
+#endif /* WITH_NSS */
+	
+	upscli_initialized = 0;
+	return 1;
+}
+
 const char *upscli_strerror(UPSCONN_t *ups)
 {
-#ifdef HAVE_SSL
+#ifdef WITH_OPENSSL
 	unsigned long	err;
 	char	sslbuf[UPSCLI_ERRBUF_LEN];
 #endif
@@ -137,7 +492,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 		return ups->errbuf;
 
 	case 2:		/* SSL error */
-#ifdef HAVE_SSL
+#ifdef WITH_OPENSSL
 		err = ERR_get_error();
 		if (err) {
 			ERR_error_string(err, sslbuf);
@@ -149,10 +504,18 @@ const char *upscli_strerror(UPSCONN_t *ups)
 				upscli_errlist[ups->upserror].str,
 				"peer disconnected");
 		}
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+		if (PR_GetErrorTextLength() < UPSCLI_ERRBUF_LEN) {
+			PR_GetErrorText(ups->errbuf);
+		} else {
+			snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN, 
+				"SSL error #%ld, message too long to be displayed",
+				(long)PR_GetError());
+		}
 #else
 		snprintf(ups->errbuf, UPSCLI_ERRBUF_LEN, 
 			"SSL error, but SSL wasn't enabled at compile-time");
-#endif	/* HAVE_SSL */
+#endif	/* WITH_OPENSSL | WITH_NSS */
 		return ups->errbuf;
 
 	case 3:		/* parsing (parseconf) error */
@@ -173,7 +536,7 @@ const char *upscli_strerror(UPSCONN_t *ups)
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int _select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static int upscli_select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -199,9 +562,13 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
+#ifdef WITH_OPENSSL
 		ret = SSL_read(ups->ssl, buf, buflen);
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+		ret = PR_Read(ups->ssl, buf, buflen);
+#endif	/* WITH_OPENSSL | WITH_NSS*/
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
@@ -211,7 +578,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 #endif
 
-	ret = _select_read(ups->fd, buf, buflen, 5, 0);
+	ret = upscli_select_read(ups->fd, buf, buflen, 5, 0);
 
 	/* error reading data, server disconnected? */
 	if (ret < 0) {
@@ -230,7 +597,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 /* Write up to buflen bytes to fd and return the number of bytes
    written. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
-static int _select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
+static int upscli_select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec)
 {
 	int		ret;
 	fd_set		fds;
@@ -256,9 +623,13 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
 	int	ret;
 
-#ifdef HAVE_SSL
+#ifdef WITH_SSL
 	if (ups->ssl) {
+#ifdef WITH_OPENSSL
 		ret = SSL_write(ups->ssl, buf, buflen);
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+		ret = PR_Write(ups->ssl, buf, buflen);
+#endif /* WITH_OPENSSL | WITH_NSS */
 
 		if (ret < 1) {
 			ups->upserror = UPSCLI_ERR_SSLERR;
@@ -268,7 +639,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 	}
 #endif
 
-	ret = _select_write(ups->fd, buf, buflen, 0, 0);
+	ret = upscli_select_write(ups->fd, buf, buflen, 0, 0);
 
 	/* error writing data, server disconnected? */
 	if (ret < 0) {
@@ -284,39 +655,34 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 	return ret;
 }
 
-/* stub first */
-#ifndef HAVE_SSL
-static int upscli_sslinit(UPSCONN_t *ups)
+
+#ifdef WITH_SSL
+
+/*
+ * 1 : OK
+ * -1 : ERROR
+ * 0 : SSL NOT SUPPORTED 
+ */
+static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 {
-	return 0;	/* not supported */
-}
-
-int upscli_sslcert(UPSCONN_t *ups, const char *dir, const char *file, int verify)
-{
-	if (!ups) {
-		return -1;
-	}
-
-	/* if forcing the verification, this fails since we have no SSL */
-	if (verify == 1) {
-		ups->upserror = UPSCLI_ERR_SSLFAIL;
-		return -1;
-	}
-		
-	return 0;		/* not supported */
-}
-
-#else
-
-static int upscli_sslinit(UPSCONN_t *ups)
-{
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-	const SSL_METHOD	*ssl_method;
-#else
-	SSL_METHOD	*ssl_method;
-#endif
+#ifdef WITH_OPENSSL
+	int res;
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	SECStatus	status;
+	PRFileDesc	*socket;
+	HOST_CERT_t *cert; 
+#endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
+	/* Intend to initilize upscli with no ssl db if not already done.
+	 * Compatibility stuff for old clients which do not initialize them.
+	 */
+	if (upscli_initialized==0) {
+		upslogx(LOG_WARNING, "upscli not initialized, "
+			"force initialisation without SSL configuration");
+		upscli_init(0, NULL, NULL, NULL);
+	}
+	
 	/* see if upsd even talks SSL/TLS */
 	snprintf(buf, sizeof(buf), "STARTTLS\n");
 
@@ -333,84 +699,150 @@ static int upscli_sslinit(UPSCONN_t *ups)
 	}
 
 	/* upsd is happy, so let's crank up the client */
+	
+#ifdef WITH_OPENSSL
 
-	SSL_load_error_strings();
-	SSL_library_init();
-
-	ssl_method = TLSv1_client_method();
-
-	if (!ssl_method) {
+	if (!ssl_ctx) {
+		upsdebugx(3, "SSL context is not available");
 		return 0;
 	}
 
-	ups->ssl_ctx = SSL_CTX_new(ssl_method);
-
-	if (!ups->ssl_ctx) {
-		return 0;
-	}
-
-	ups->ssl = SSL_new(ups->ssl_ctx);
-
+	ups->ssl = SSL_new(ssl_ctx);
 	if (!ups->ssl) {
+		upsdebugx(3, "Can not create SSL socket");
 		return 0;
 	}
 
 	if (SSL_set_fd(ups->ssl, ups->fd) != 1) {
+		upsdebugx(3, "Can not bind file descriptor to SSL socket");
 		return -1;
 	}
 
-	SSL_set_connect_state(ups->ssl);
-
-	return 1;	/* OK */
-}
-
-/* set the paths for the certs to verify the server */
-int upscli_sslcert(UPSCONN_t *ups, const char *file, const char *path, int verify)
-{
-	int	ret, ssl_mode = SSL_VERIFY_NONE;
-
-	if (!ups) {
-		return -1;
+	if (verifycert != 0) {
+		SSL_set_verify(ups->ssl, SSL_VERIFY_PEER, NULL);
+	} else {
+		SSL_set_verify(ups->ssl, SSL_VERIFY_NONE, NULL);
 	}
 
-	if (!ups->ssl_ctx) {
-		ups->upserror = UPSCLI_ERR_INVALIDARG;
-		return -1;
-	}
-
-	switch(verify) {
-
-	case 0:
-		ssl_mode = SSL_VERIFY_NONE;
-		break;
+	res = SSL_connect(ups->ssl);
+	switch(res)
+	{
 	case 1:
-		ssl_mode = SSL_VERIFY_PEER;
+		upsdebugx(3, "SSL connected");
 		break;
+	case 0:
+		upslog_with_errno(1, "SSL_connect do not accept handshake.");
+		ssl_error(ups->ssl, res);
+		return -1;
 	default:
-		ups->upserror = UPSCLI_ERR_INVALIDARG;
+		upslog_with_errno(1, "Unknown return value from SSL_connect %d", res);
+		ssl_error(ups->ssl, res);
 		return -1;
-	}
-
-	ret = SSL_CTX_load_verify_locations(ups->ssl_ctx, file, path);
-
-	if (ret != 1) {
-		ups->upserror = UPSCLI_ERR_SSLERR;
-		return -1;
-	}
-
-	SSL_set_verify(ups->ssl, ssl_mode, NULL);
+	}	
 
 	return 1;
+
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+
+	socket = PR_ImportTCPSocket(ups->fd);
+	if (socket == NULL){
+		nss_error("upscli_sslinit / PR_ImportTCPSocket");
+		return -1;
+	}
+
+	ups->ssl = SSL_ImportFD(NULL, socket);
+	if (ups->ssl == NULL){
+		nss_error("upscli_sslinit / SSL_ImportFD");
+		return -1;
+	}
+	
+	if (SSL_SetPKCS11PinArg(ups->ssl, ups) == -1){
+		nss_error("upscli_sslinit / SSL_SetPKCS11PinArg");
+		return -1;
+	}
+	
+	if (verifycert) {
+		status = SSL_AuthCertificateHook(ups->ssl,
+			(SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
+	} else {
+		status = SSL_AuthCertificateHook(ups->ssl,
+			(SSLAuthCertificate)AuthCertificateDontVerify, CERT_GetDefaultCertDB());
+	}
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_AuthCertificateHook");
+		return -1;
+	}
+	
+	status = SSL_BadCertHook(ups->ssl, (SSLBadCertHandler)BadCertHandler, ups);
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_BadCertHook");
+		return -1;
+	}
+	
+	status = SSL_GetClientAuthDataHook(ups->ssl, (SSLGetClientAuthData)GetClientAuthData, ups);
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_GetClientAuthDataHook");
+		return -1;
+	}
+	
+	status = SSL_HandshakeCallback(ups->ssl, (SSLHandshakeCallback)HandshakeCallback, ups);
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_HandshakeCallback");
+		return -1;
+	}
+
+	cert = upscli_find_host_cert(ups->host);
+	if (cert != NULL && cert->certname != NULL) {
+		upslogx(LOG_INFO, "Connecting in SSL to '%s' and look at certificate called '%s'",
+			ups->host, cert->certname);
+		status = SSL_SetURL(ups->ssl, cert->certname);
+	} else {
+		upslogx(LOG_NOTICE, "Connecting in SSL to '%s' (no certificate name specified)", ups->host);
+		status = SSL_SetURL(ups->ssl, ups->host);
+	}
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_SetURL");
+		return -1;
+	}
+
+	status = SSL_ResetHandshake(ups->ssl, PR_FALSE);
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_ResetHandshake");
+		ups->ssl = NULL;
+		/* EKI wtf unimport or free the socket ? */
+		return -1;
+	}
+
+	status = SSL_ForceHandshake(ups->ssl);
+	if (status != SECSuccess) {
+		nss_error("upscli_sslinit / SSL_ForceHandshake");
+		ups->ssl = NULL;
+		/* EKI wtf unimport or free the socket ? */
+		/* TODO : Close the connexion. */
+		return -1;
+	}
+	
+	return 1;
+	
+#endif /* WITH_OPENSSL | WITH_NSS */
 }
 
-#endif	/* HAVE_SSL */
+#else /* WITH_SSL */
+
+static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
+{
+	return 0;	/* not supported */
+}
+
+#endif /* WITH_SSL */
 
 int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,struct timeval * timeout)
 {
-	int	sock_fd = 0;
+	int				sock_fd = 0;
 	struct addrinfo	hints, *res, *ai;
 	char			sport[NI_MAXSERV];
-	int			v;
+	int				v, certverify, tryssl, forcessl, ret;
+	HOST_CERT_t*	hostcert;
 	fd_set 			wfds;
 	int			error;
 	socklen_t	error_size;
@@ -592,22 +1024,46 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 
 	ups->port = port;
 
-	if (flags & UPSCLI_CONN_TRYSSL) {
-		upscli_sslinit(ups);
-
-		/* see if something made us die inside sslinit */
-		if (ups->upserror != 0) {
+	hostcert = upscli_find_host_cert(host);
+	
+	if (hostcert != NULL) {
+		/* An host security rule is specified. */
+		certverify	= hostcert->certverify;
+		forcessl	= hostcert->forcessl;
+	} else {
+		certverify	= (flags & UPSCLI_CONN_CERTVERIF) != 0 ? 1 : 0;
+		forcessl	= (flags & UPSCLI_CONN_REQSSL) != 0 ? 1 : 0;
+	}
+	tryssl = (flags & UPSCLI_CONN_TRYSSL) != 0 ? 1 : 0;
+	
+	if (tryssl || forcessl) {
+		ret = upscli_sslinit(ups, certverify);
+		if (forcessl && ret != 1) {
+			upslogx(LOG_ERR, "Can not connect to %s in SSL, disconnect", ups->host);
+			ups->upserror = UPSCLI_ERR_SSLFAIL;
 			upscli_disconnect(ups);
 			return -1;
+		} else if (tryssl && ret == -1) {
+			upslogx(LOG_NOTICE, "Error while connecting to %s, disconnect", ups->host);
+			upscli_disconnect(ups);
+			return -1;
+		} else if (tryssl && ret == 0) {
+			if (certverify != 0) {
+				upslogx(LOG_NOTICE, "Can not connect to %s in SSL and "
+				"certificate is needed, disconnect", ups->host);
+				upscli_disconnect(ups);
+				return -1;
+			}
+			upslogx(LOG_NOTICE, "Can not connect to %s in SSL, continue uncrypted", ups->host);
+		} else {
+			upslogx(LOG_INFO, "Connected to %s in SSL", ups->host);
+			if (certverify == 0) {
+				/* you REALLY should set CERTVERIFY to 1 if using SSL... */
+				upslogx(LOG_WARNING, "Certificate verification is disabled");
+			}
 		}
 	}
-
-	if ((flags & UPSCLI_CONN_REQSSL) && (upscli_sslinit(ups) != 1)) {
-		ups->upserror = UPSCLI_ERR_SSLFAIL;
-		upscli_disconnect(ups);
-		return -1;
-	}
-		
+	
 	return 0;
 }
 
@@ -1084,18 +1540,19 @@ int upscli_disconnect(UPSCONN_t *ups)
 
 	net_write(ups, "LOGOUT\n", 7);
 
-#ifdef HAVE_SSL
+#ifdef WITH_OPENSSL
 	if (ups->ssl) {
 		SSL_shutdown(ups->ssl);
 		SSL_free(ups->ssl);
 		ups->ssl = NULL;
 	}
-
-	if (ups->ssl_ctx) {
-		SSL_CTX_free(ups->ssl_ctx);
-		ups->ssl_ctx = NULL;
+#elif defined(WITH_NSS) /* WITH_OPENSSL */
+	if (ups->ssl) {
+		PR_Shutdown(ups->ssl, PR_SHUTDOWN_BOTH);
+		PR_Close(ups->ssl);
+		ups->ssl = NULL;
 	}
-#endif
+#endif /* WITH_OPENSSL | WITH_NSS */
 
 	shutdown(ups->fd, shutdown_how);
 
@@ -1141,9 +1598,11 @@ int upscli_ssl(UPSCONN_t *ups)
 		return -1;
 	}
 
+#ifdef WITH_SSL
 	if (ups->ssl) {
 		return 1;
 	}
+#endif /* WITH_SSL */
 
 	return 0;
 }
