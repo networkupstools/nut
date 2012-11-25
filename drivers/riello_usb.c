@@ -51,10 +51,10 @@ BYTE input_monophase;
 BYTE output_monophase;
 
 extern BYTE commbyte;
-extern int cakaj_data;
-extern int bolo_nak;
-extern int bolo_badcrc;
-extern int buf_ptr_spracuj_port;
+extern int wait_packet;
+extern int foundnak;
+extern int foundbadcrc;
+extern int buf_ptr_length;
 extern BYTE requestSENTR;
 
 TRielloData DevData;
@@ -232,7 +232,7 @@ static int cypress_command(BYTE *buffer, BYTE *buf, WORD length, WORD buflen)
 
 	memset(buf, 0, buflen);
 
-	while ((buf_ptr_spracuj_port < 128) && cakaj_data) {
+	while ((buf_ptr_length < 128) && wait_packet) {
 
 		memset(USB_buff, 0, sizeof(USB_buff));
 		ret = Get_USB_Packet(USB_buff);
@@ -248,13 +248,13 @@ static int cypress_command(BYTE *buffer, BYTE *buf, WORD length, WORD buflen)
 
 		for (i = 0; i < ret; i++ ) {
 			commbyte = USB_buff[i];
-			riello_spracuj_port(DEV_RIELLOGPSER, buf, gpser_error_control);
+			riello_parse_serialport(DEV_RIELLOGPSER, buf, gpser_error_control);
 		}
 	}
 
-	upsdebugx(3, "in read: %u", buf_ptr_spracuj_port);
+	upsdebugx(3, "in read: %u", buf_ptr_length);
 
-	return buf_ptr_spracuj_port;
+	return buf_ptr_length;
 }
 
 static void *cypress_subdriver(USBDevice_t *device)
@@ -371,12 +371,12 @@ int get_ups_nominal()
 
 	recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_GN);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get nominal Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get nominal Ko: command not supported");
 		return 1;
 	}
@@ -403,12 +403,12 @@ int get_ups_status()
 
 	recv = riello_command(&bufOut[0], &bufIn[0], length, numread);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get status Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get status Ko: command not supported");
 		return 1;
 	}
@@ -428,12 +428,12 @@ int get_ups_extended()
 
 	recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_RE);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get extended Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get extended Ko: command not supported");
 		return 1;
 	}
@@ -453,12 +453,12 @@ int get_ups_statuscode()
 
 	recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_RC);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get statuscode Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get statuscode Ko: command not supported");
 		return 1;
 	}
@@ -474,6 +474,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 {
 	BYTE length, recv;
 	WORD delay;
+	const char	*delay_char;
 
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
 
@@ -482,12 +483,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 			if (recv > 0) {
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.off Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.off Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -499,16 +500,18 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
-			delay = (int) dstate_getinfo("ups.delay.shutdown");
+			delay_char = dstate_getinfo("ups.delay.shutdown");		
+			delay = atoi(delay_char);
+
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 			if (recv > 0) {
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.off.delay Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.off.delay Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -524,12 +527,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 			if (recv > 0) {
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.on Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.on Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -541,16 +544,18 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
-			delay = (int) dstate_getinfo("ups.delay.reboot");
+			delay_char = dstate_getinfo("ups.delay.reboot");		
+			delay = atoi(delay_char);
+
 			length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 			if (recv > 0) {
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.on.delay Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.on.delay Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -563,16 +568,18 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
-			delay = (int) dstate_getinfo("ups.delay.shutdown");
+			delay_char = dstate_getinfo("ups.delay.shutdown");		
+			delay = atoi(delay_char);
+
 			length = riello_prepare_cs(bufOut, gpser_error_control, delay);
 			recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 			if (recv > 0) {
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command shutdown.return Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command shutdown.return Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -588,12 +595,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		length = riello_prepare_cd(bufOut, gpser_error_control);
 		recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 		if (recv > 0) {
-			if (!cakaj_data && bolo_badcrc) {
+			if (!wait_packet && foundbadcrc) {
 				upsdebugx (3, "Command shutdown.stop Ko: bad CRC or Checksum");
 				return STAT_INSTCMD_FAILED;
 			}
 
-			if (!cakaj_data && bolo_nak) {
+			if (!wait_packet && foundnak) {
 				upsdebugx (3, "Command shutdown.stop Ko: command not supported");
 				return STAT_INSTCMD_FAILED;
 			}
@@ -608,12 +615,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		length = riello_prepare_tp(bufOut, gpser_error_control);
 		recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 		if (recv > 0) {
-			if (!cakaj_data && bolo_badcrc) {
+			if (!wait_packet && foundbadcrc) {
 				upsdebugx (3, "Command test.panel.start Ko: bad CRC or Checksum");
 				return STAT_INSTCMD_FAILED;
 			}
 
-			if (!cakaj_data && bolo_nak) {
+			if (!wait_packet && foundnak) {
 				upsdebugx (3, "Command test.panel.start Ko: command not supported");
 				return STAT_INSTCMD_FAILED;
 			}
@@ -628,12 +635,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		length = riello_prepare_tb(bufOut, gpser_error_control);
 		recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_DEF);
 		if (recv > 0) {
-			if (!cakaj_data && bolo_badcrc) {
+			if (!wait_packet && foundbadcrc) {
 				upsdebugx (3, "Command test.battery.start Ko: bad CRC or Checksum");
 				return STAT_INSTCMD_FAILED;
 			}
 
-			if (!cakaj_data && bolo_nak) {
+			if (!wait_packet && foundnak) {
 				upsdebugx (3, "Command test.battery.start Ko: command not supported");
 				return STAT_INSTCMD_FAILED;
 			}
@@ -661,12 +668,12 @@ int start_ups_comm()
 
 	recv = riello_command(&bufOut[0], &bufIn[0], length, LENGTH_GI);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get identif Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get identif Ko: command not supported");
 		return 1;
 	}

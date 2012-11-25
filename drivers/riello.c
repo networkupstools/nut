@@ -31,12 +31,12 @@
 #include "main.h"
 #include "riello.h"
 
-int zapisuj=0;
-int buf_ptr_spracuj_port;
+int foundheader=0;
+int buf_ptr_length;
 
-int cakaj_data = 0;
-int bolo_nak = 0;
-int bolo_badcrc = 0;
+int wait_packet = 0;
+int foundnak = 0;
+int foundbadcrc = 0;
 
 BYTE commbyte;
 BYTE requestSENTR;
@@ -84,7 +84,7 @@ WORD riello_calc_CRC(BYTE type, BYTE *buff, WORD size, BYTE checksum)
 	return(CRC_Word);
 }
 
-void riello_vytvor_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum) 
+void riello_create_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum) 
 {
 	WORD CRC_Word;
 
@@ -155,7 +155,7 @@ BYTE riello_prepare_gi(BYTE* buffer)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, 0);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, 0);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -176,7 +176,7 @@ BYTE riello_prepare_gn(BYTE* buffer, BYTE gpser_error_control)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -197,7 +197,7 @@ BYTE riello_prepare_rs(BYTE* buffer, BYTE gpser_error_control)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -218,7 +218,7 @@ BYTE riello_prepare_re(BYTE* buffer, BYTE gpser_error_control)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -239,7 +239,7 @@ BYTE riello_prepare_rc(BYTE* buffer, BYTE gpser_error_control)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -264,7 +264,7 @@ BYTE riello_prepare_cs(BYTE* buffer, BYTE gpser_error_control, WORD delay)
 	buffer[10] = (BYTE) ((((delay%4096)%256)%16)+0x30);
 
 	buf_ptr = 11;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -293,7 +293,7 @@ BYTE riello_prepare_cr(BYTE* buffer, BYTE gpser_error_control, WORD delay)
 	buffer[14] = (BYTE) ((((delay%4096)%256)%16)+0x30);
 
 	buf_ptr = 15;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -314,7 +314,7 @@ BYTE riello_prepare_cd(BYTE* buffer, BYTE gpser_error_control)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -335,7 +335,7 @@ BYTE riello_prepare_tp(BYTE* buffer, BYTE gpser_error_control)
 	buffer[6] = '0';
 
 	buf_ptr = 7;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -359,7 +359,7 @@ BYTE riello_prepare_tb(BYTE* buffer, BYTE gpser_error_control)
 	buffer[9] = '5';
 
 	buf_ptr = 10;
-	riello_vytvor_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
+	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
 	buf_ptr = buf_ptr+4;
 
 	buffer[buf_ptr++] = 0x3;
@@ -904,10 +904,10 @@ void riello_parse_sentr(BYTE* buffer, TRielloData* data)
 
 void riello_init_serial()
 {
-	cakaj_data = 1;
-	buf_ptr_spracuj_port = 0;
-	bolo_badcrc = 0;
-	bolo_nak = 0;
+	wait_packet = 1;
+	buf_ptr_length = 0;
+	foundbadcrc = 0;
+	foundnak = 0;
 }
 
 int riello_header(BYTE type, int a, int* length) 
@@ -928,14 +928,14 @@ int riello_header(BYTE type, int a, int* length)
 			}
 			break;
 		case DEV_RIELLOGPSER:
-			if ((buf_ptr_spracuj_port==0) && (LAST_DATA[5]>0x20) && (LAST_DATA[4]==0x2))
+			if ((buf_ptr_length==0) && (LAST_DATA[5]>0x20) && (LAST_DATA[4]==0x2))
 				return(1);
 			break;
 	}
 	return(0);
 }
 
-int riello_koniec(BYTE type, int length)
+int riello_tail(BYTE type, int length)
 {
 	int number;
 
@@ -943,7 +943,7 @@ int riello_koniec(BYTE type, int length)
 		case DEV_RIELLOSENTRY:
 			number = length; 
 
-			if (buf_ptr_spracuj_port >= number)
+			if (buf_ptr_length >= number)
 				return(1);
 			break;
 		case DEV_RIELLOGPSER:
@@ -954,7 +954,7 @@ int riello_koniec(BYTE type, int length)
 	return(0);
 }
 
-int riello_prislo_nak(BYTE type, BYTE* buffer)
+int riello_test_nak(BYTE type, BYTE* buffer)
 {
 	switch (type) {
 		case DEV_RIELLOGPSER:
@@ -965,49 +965,49 @@ int riello_prislo_nak(BYTE type, BYTE* buffer)
 	return(0);
 }
 
-void riello_spracuj_port(BYTE typedev, BYTE* buffer, BYTE checksum)
+void riello_parse_serialport(BYTE typedev, BYTE* buffer, BYTE checksum)
 {
-	static int int_znak, int_i;
+	static int actual_char, int_i;
 	static int length;
 
-	int_znak = commbyte; 
+	actual_char = commbyte; 
 
-	if ((riello_header(typedev, int_znak, &length)) && (!zapisuj)) { 
+	if ((riello_header(typedev, actual_char, &length)) && (!foundheader)) { 
 		upsdebugx(5,"Header detected: LAST_DATA:%X,%X,%X,%X,%X,%X  buf_ptr:%i  \n\r",
 					LAST_DATA[0], LAST_DATA[1], LAST_DATA[2],
-					LAST_DATA[3], LAST_DATA[4], LAST_DATA[5], buf_ptr_spracuj_port);
+					LAST_DATA[3], LAST_DATA[4], LAST_DATA[5], buf_ptr_length);
 
-		zapisuj = 1;
-		buf_ptr_spracuj_port = 1;  
+		foundheader = 1;
+		buf_ptr_length = 1;  
 		memset(buffer, 0, sizeof(buffer));
 		buffer[0] = LAST_DATA[4];
 	}
 
-	if ((zapisuj) && (buf_ptr_spracuj_port < 192))
-		buffer[buf_ptr_spracuj_port++] = int_znak;
+	if ((foundheader) && (buf_ptr_length < 192))
+		buffer[buf_ptr_length++] = actual_char;
 
-	if ((zapisuj) && (riello_koniec(typedev, length))) {
+	if ((foundheader) && (riello_tail(typedev, length))) {
 		upsdebugx(5,"\n\rEnd detected: LAST_DATA:%X,%X,%X,%X,%X,%X  buf_ptr:%i  \n\r",
 					LAST_DATA[0], LAST_DATA[1], LAST_DATA[2],
-					LAST_DATA[3], LAST_DATA[4], LAST_DATA[5], buf_ptr_spracuj_port);
+					LAST_DATA[3], LAST_DATA[4], LAST_DATA[5], buf_ptr_length);
 
-		zapisuj = 0;
+		foundheader = 0;
 
 		for (int_i=0; int_i<6; int_i++)
 			LAST_DATA[int_i] = 0;
 
-		if (riello_prislo_nak(typedev, buffer)) {
-			cakaj_data = 0;
-			bolo_nak = 1;  
+		if (riello_test_nak(typedev, buffer)) {
+			wait_packet = 0;
+			foundnak = 1;  
 		}
 
-		if (riello_test_crc(typedev, buffer, buf_ptr_spracuj_port, checksum)) {
-			cakaj_data = 0;
-			bolo_badcrc = 1;
+		if (riello_test_crc(typedev, buffer, buf_ptr_length, checksum)) {
+			wait_packet = 0;
+			foundbadcrc = 1;
 		} 
 		else {
-			cakaj_data = 0;
-			bolo_badcrc = 0;
+			wait_packet = 0;
+			foundbadcrc = 0;
 		}
 	}
 }

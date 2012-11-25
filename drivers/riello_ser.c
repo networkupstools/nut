@@ -57,10 +57,10 @@ BYTE input_monophase;
 BYTE output_monophase;
 
 extern BYTE commbyte;
-extern int cakaj_data;
-extern int bolo_nak;
-extern int bolo_badcrc;
-extern int buf_ptr_spracuj_port;
+extern int wait_packet;
+extern int foundnak;
+extern int foundbadcrc;
+extern int buf_ptr_length;
 extern BYTE requestSENTR;
 
 TRielloData DevData;
@@ -159,13 +159,12 @@ void riello_serialcomm(BYTE* bufIn, BYTE typedev)
 	BYTE commb = 0;
 
 	realt = time(NULL);
-	while ((commb >= 0) && cakaj_data) {
+	while (wait_packet) {
 		serial_read(1000, &commb);
 		nowt = time(NULL);
-		if (commb >= 0) {
-			commbyte = (BYTE) commb;
-			riello_spracuj_port(typedev, bufIn, gpser_error_control);
-		}
+		commbyte = (BYTE) commb;
+		riello_parse_serialport(typedev, bufIn, gpser_error_control);
+
 		if ((nowt - realt) > 4)
 			break;
 	}
@@ -186,17 +185,17 @@ int get_ups_nominal()
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get nominal Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get nominal Ko: command not supported");
 		return 1;
 	}
 
-	upsdebugx (3, "Get nominal Ok: received byte %u", buf_ptr_spracuj_port);
+	upsdebugx (3, "Get nominal Ok: received byte %u", buf_ptr_length);
 
 	riello_parse_gn(&bufIn[0], &DevData);
 
@@ -225,17 +224,17 @@ int get_ups_status()
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get status Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get status Ko: command not supported");
 		return 1;
 	}
 
-	upsdebugx (3, "Get status Ok: received byte %u", buf_ptr_spracuj_port);
+	upsdebugx (3, "Get status Ok: received byte %u", buf_ptr_length);
 
 	riello_parse_rs(&bufIn[0], &DevData, numread);
 
@@ -257,17 +256,17 @@ int get_ups_extended()
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get extended Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get extended Ko: command not supported");
 		return 1;
 	}
 
-	upsdebugx (3, "Get extended Ok: received byte %u", buf_ptr_spracuj_port);
+	upsdebugx (3, "Get extended Ok: received byte %u", buf_ptr_length);
 
 	riello_parse_re(&bufIn[0], &DevData);
 
@@ -289,17 +288,17 @@ int get_ups_statuscode()
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get statuscode Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get statuscode Ko: command not supported");
 		return 1;
 	}
 
-	upsdebugx (3, "Get statuscode Ok: received byte %u", buf_ptr_spracuj_port);
+	upsdebugx (3, "Get statuscode Ok: received byte %u", buf_ptr_length);
 
 	riello_parse_rc(&bufIn[0], &DevData);
 
@@ -331,17 +330,17 @@ int get_ups_sentr()
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOSENTRY);
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get sentry Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get sentry Ko: command not supported");
 		return 1;
 	}
 
-	upsdebugx (3, "Get sentry Ok: received byte %u", buf_ptr_spracuj_port);
+	upsdebugx (3, "Get sentry Ok: received byte %u", buf_ptr_length);
 
 	riello_parse_sentr(&bufIn[0], &DevData);
 
@@ -352,6 +351,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 {
 	BYTE length;
 	WORD delay;
+	const char	*delay_char;
 
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
 		if (!strcasecmp(cmdname, "load.off")) {
@@ -367,12 +367,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				return STAT_INSTCMD_FAILED;
 			else {
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.off Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.off Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -382,7 +382,8 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.off.delay")) {
-			delay = (int) dstate_getinfo("ups.delay.shutdown");
+			delay_char = dstate_getinfo("ups.delay.shutdown");		
+			delay = atoi(delay_char);
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER) 		
@@ -394,12 +395,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				return STAT_INSTCMD_FAILED;
 			else {
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.off.delay Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.off.delay Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -421,12 +422,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 					return STAT_INSTCMD_FAILED;
 
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.on Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.on Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -438,12 +439,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				return STAT_INSTCMD_FAILED;
 			else {
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.on Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.on Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -453,7 +454,8 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		}
 
 		if (!strcasecmp(cmdname, "load.on.delay")) {
-			delay = (int) dstate_getinfo("ups.delay.reboot");
+			delay_char = dstate_getinfo("ups.delay.reboot");		
+			delay = atoi(delay_char);
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER) 		
@@ -464,12 +466,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 					return STAT_INSTCMD_FAILED;
 
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.on Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.on Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -481,12 +483,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				return STAT_INSTCMD_FAILED;
 			else {
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command load.on.delay Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command load.on.delay Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -497,7 +499,8 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	}
 	else {
 		if (!strcasecmp(cmdname, "shutdown.return")) {
-			delay = (int) dstate_getinfo("ups.delay.shutdown");
+			delay_char = dstate_getinfo("ups.delay.shutdown");		
+			delay = atoi(delay_char);
 			riello_init_serial();
 
 			if (typeRielloProtocol == DEV_RIELLOGPSER) 		
@@ -509,12 +512,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				return STAT_INSTCMD_FAILED;
 			else {
 				riello_serialcomm(&bufIn[0], typeRielloProtocol);
-				if (!cakaj_data && bolo_badcrc) {
+				if (!wait_packet && foundbadcrc) {
 					upsdebugx (3, "Command shutdown.return Ko: bad CRC or Checksum");
 					return STAT_INSTCMD_FAILED;
 				}
 
-				if (!cakaj_data && bolo_nak) {
+				if (!wait_packet && foundnak) {
 					upsdebugx (3, "Command shutdown.return Ko: command not supported");
 					return STAT_INSTCMD_FAILED;
 				}
@@ -536,12 +539,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		else {
 			riello_serialcomm(&bufIn[0], typeRielloProtocol);
-			if (!cakaj_data && bolo_badcrc) {
+			if (!wait_packet && foundbadcrc) {
 				upsdebugx (3, "Command shutdown.stop Ko: bad CRC or Checksum");
 				return STAT_INSTCMD_FAILED;
 			}
 
-			if (!cakaj_data && bolo_nak) {
+			if (!wait_packet && foundnak) {
 				upsdebugx (3, "Command shutdown.stop Ko: command not supported");
 				return STAT_INSTCMD_FAILED;
 			}
@@ -557,12 +560,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		else {
 			riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
-			if (!cakaj_data && bolo_badcrc) {
+			if (!wait_packet && foundbadcrc) {
 				upsdebugx (3, "Command panel.start Ko: bad CRC or Checksum");
 				return STAT_INSTCMD_FAILED;
 			}
 
-			if (!cakaj_data && bolo_nak) {
+			if (!wait_packet && foundnak) {
 				upsdebugx (3, "Command panel.start Ko: command not supported");
 				return STAT_INSTCMD_FAILED;
 			}
@@ -583,12 +586,12 @@ int riello_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		else {
 			riello_serialcomm(&bufIn[0], typeRielloProtocol);
-			if (!cakaj_data && bolo_badcrc) {
+			if (!wait_packet && foundbadcrc) {
 				upsdebugx (3, "Command battery.start Ko: bad CRC or Checksum");
 				return STAT_INSTCMD_FAILED;
 			}
 
-			if (!cakaj_data && bolo_nak) {
+			if (!wait_packet && foundnak) {
 				upsdebugx (3, "Command battery.start Ko: command not supported");
 				return STAT_INSTCMD_FAILED;
 			}
@@ -631,17 +634,17 @@ int start_ups_comm()
 		riello_serialcomm(&bufIn[0], DEV_RIELLOSENTRY);
 	}
 
-	if (!cakaj_data && bolo_badcrc) {
+	if (!wait_packet && foundbadcrc) {
 		upsdebugx (3, "Get identif Ko: bad CRC or Checksum");
 		return 1;
 	}
 
-	if (!cakaj_data && bolo_nak) {
+	if (!wait_packet && foundnak) {
 		upsdebugx (3, "Get identif Ko: command not supported");
 		return 1;
 	}
 
-	upsdebugx (3, "Get identif Ok: received byte %u", buf_ptr_spracuj_port);
+	upsdebugx (3, "Get identif Ok: received byte %u", buf_ptr_length);
 	return 0;
 
 }
@@ -1038,7 +1041,7 @@ void riello_comm_setup(const char *port)
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOSENTRY);
 
-	if (buf_ptr_spracuj_port == 103) {
+	if (buf_ptr_length == 103) {
 		typeRielloProtocol = DEV_RIELLOSENTRY;
 		upslogx(LOG_INFO, "Connected to UPS SENTR on %s with baudrate %d", port, 9600);
 		return;
@@ -1052,7 +1055,7 @@ void riello_comm_setup(const char *port)
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
 
-	if (!cakaj_data && !bolo_badcrc && !bolo_nak) {
+	if (!wait_packet && !foundbadcrc && !foundnak) {
 		typeRielloProtocol = DEV_RIELLOGPSER;
 		upslogx(LOG_INFO, "Connected to UPS GPSER on %s with baudrate %d", port, 9600);
 		return;
@@ -1068,7 +1071,7 @@ void riello_comm_setup(const char *port)
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOSENTRY);
 
-	if (buf_ptr_spracuj_port == 103) {
+	if (buf_ptr_length == 103) {
 		typeRielloProtocol = DEV_RIELLOSENTRY;
 		upslogx(LOG_INFO, "Connected to UPS SENTR on %s with baudrate %d", port, 1200);
 		return;
@@ -1082,7 +1085,7 @@ void riello_comm_setup(const char *port)
 
 	riello_serialcomm(&bufIn[0], DEV_RIELLOGPSER);
 
-	if (!cakaj_data && !bolo_badcrc && !bolo_nak) {
+	if (!wait_packet && !foundbadcrc && !foundnak) {
 		typeRielloProtocol = DEV_RIELLOGPSER;
 		upslogx(LOG_INFO, "Connected to UPS GPSER on %s with baudrate %d", port, 1200);
 		return;

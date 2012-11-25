@@ -161,7 +161,7 @@ typedef struct {
 
 /* CRC and Checksum functions */
 WORD riello_calc_CRC(BYTE type, BYTE *buff, WORD size, BYTE checksum);
-void riello_vytvor_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum);
+void riello_create_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum);
 BYTE riello_test_crc(BYTE type, BYTE *buff, WORD size, BYTE chacksum);
 BYTE riello_test_bit(BYTE *basic_address, BYTE bit);
 
@@ -197,9 +197,9 @@ void riello_parse_sentr(BYTE* buffer, TRielloData* data);
 /* communication functions */
 void riello_init_serial();
 int riello_header(BYTE type, int a, int* length);
-int riello_koniec(BYTE type, int length);
-int riello_prislo_nak(BYTE type, BYTE* buffer);
-void riello_spracuj_port(BYTE typedev, BYTE* buffer, BYTE checksum);
+int riello_tail(BYTE type, int length);
+int riello_test_nak(BYTE type, BYTE* buffer);
+void riello_parse_serialport(BYTE typedev, BYTE* buffer, BYTE checksum);
 void riello_comm_setup(const char *port);
 
 #endif 
