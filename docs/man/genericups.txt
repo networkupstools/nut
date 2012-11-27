@@ -151,7 +151,8 @@ UPS TYPES
 
 7 = CyberPower Power99 
     Also Upsonic Power Guardian PG-500, Belkin Belkin Home Office,
-    F6H350-SER, F6H500-SER, F6H650-SER
+    F6H350-SER, F6H500-SER, F6H650-SER, Eaton Management Card Contact - Config3
+    with cable 66033 (shutdown does not work)
 
     [CP=RTS] [OL=CTS] [LB=-DCD] [SD=DTR]
 
