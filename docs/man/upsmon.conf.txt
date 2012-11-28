@@ -165,7 +165,7 @@ Note that this is only called for NOTIFY events that have EXEC set with
 NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 +
 Making this some sort of shell script might not be a bad idea.  For
-more information and ideas, see pager.txt in the docs directory.
+more information and ideas, see docs/scheduling.txt
 +
 Remember, this command also needs to be one element in the configuration file,
 so if your command has spaces, then wrap it in quotes.

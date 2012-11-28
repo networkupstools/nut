@@ -123,7 +123,7 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 # NOTIFYFLAG.  See NOTIFYFLAG below for more details.
 #
 # Making this some sort of shell script might not be a bad idea.  For more
-# information and ideas, see pager.txt in the docs directory.
+# information and ideas, see docs/scheduling.txt
 #
 # Example:
 # NOTIFYCMD /usr/local/ups/bin/notifyme
