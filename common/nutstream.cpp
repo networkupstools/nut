@@ -1,4 +1,4 @@
-/* nutdata.cpp - NUT stream
+/* nutstream.cpp - NUT stream
 
    Copyright (C)
         2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
