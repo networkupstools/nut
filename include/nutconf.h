@@ -201,9 +201,12 @@ struct GenericConfigSectionEntry
 
 struct GenericConfigSection
 {
+	/** Section entries map */
+	typedef std::map<std::string, GenericConfigSectionEntry> EntryMap;
+
 	std::string name;
 	// std::string comment;
-	std::map<std::string, GenericConfigSectionEntry> entries;
+	EntryMap entries;
 
 	const GenericConfigSectionEntry& operator [] (const std::string& varname)const{return entries.find(varname)->second;}
 	GenericConfigSectionEntry& operator [] (const std::string& varname){return entries[varname];}
@@ -256,6 +259,9 @@ protected:
 class GenericConfiguration : public BaseConfiguration
 {
 public:
+	/** Sections map */
+	typedef std::map<std::string, GenericConfigSection> SectionMap;
+
 	GenericConfiguration(){}
 
 	void parseFromString(const std::string& str);
@@ -264,7 +270,7 @@ public:
 
 
 	// FIXME Let me public or set it as protected with public accessors ?
-	std::map<std::string, GenericConfigSection> sections;
+	SectionMap sections;
 
 	const GenericConfigSection& operator[](const std::string& secname)const{return sections.find(secname)->second;}
 	GenericConfigSection& operator[](const std::string& secname){return sections[secname];}

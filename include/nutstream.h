@@ -1,4 +1,4 @@
-/* nutdata.h - NUT stream
+/* nutstream.h - NUT stream
 
    Copyright (C)
 	2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
