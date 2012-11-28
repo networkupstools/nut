@@ -15,6 +15,7 @@ ENV{DEVTYPE}=="usb_interface", GOTO="up_hid_end"
 ATTRS{idVendor}=="03f0", ENV{UPOWER_VENDOR}="Hewlett Packard"
 ATTRS{idVendor}=="0463", ENV{UPOWER_VENDOR}="Eaton"
 ATTRS{idVendor}=="047c", ENV{UPOWER_VENDOR}="Dell"
+ATTRS{idVendor}=="04d8", ENV{UPOWER_VENDOR}="Minibox"
 ATTRS{idVendor}=="050d", ENV{UPOWER_VENDOR}="Belkin"
 ATTRS{idVendor}=="051d", ENV{UPOWER_VENDOR}="APC"
 ATTRS{idVendor}=="0592", ENV{UPOWER_VENDOR}="Powerware"
@@ -46,6 +47,9 @@ ATTRS{idVendor}=="0463", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # Dell
 ATTRS{idVendor}=="047c", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups"
+
+# Minibox
+ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="d004", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Belkin
 ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0375", ENV{UPOWER_BATTERY_TYPE}="ups"

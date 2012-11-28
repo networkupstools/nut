@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.37"
+#define DRIVER_VERSION		"0.38"
 
 #include "main.h"
 #include "libhid.h"
@@ -37,6 +37,7 @@
 
 /* include all known subdrivers */
 #include "mge-hid.h"
+
 #ifndef SHUT_MODE
 	#include "explore-hid.h"
 	#include "apc-hid.h"
@@ -46,6 +47,7 @@
 	#include "powercom-hid.h"
 	#include "tripplite-hid.h"
 	#include "idowell-hid.h"
+	#include "openups-hid.h"
 #endif
 
 /* master list of avaiable subdrivers */
@@ -62,6 +64,7 @@ static subdriver_t *subdriver_list[] = {
 	&powercom_subdriver,
 	&tripplite_subdriver,
 	&idowell_subdriver,
+	&openups_subdriver,
 #endif
 	NULL
 };

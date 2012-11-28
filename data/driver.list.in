@@ -645,6 +645,8 @@
 "Microsol"	"ups"	"5"	"Rhino 10.0"	"10000VA"	"rhino"
 "Microsol"	"ups"	"5"	"Rhino 20.0"	"20000VA"	"rhino"
 
+"Minibox"	"ups"	"5"	"openUPS Intelligent UPS"	"USB port"	"usbhid-ups"
+
 "Mustek"	"ups"	"2"	"Powermust"	"400VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"600VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"800VA Pro"	"blazer_ser"
