@@ -721,6 +721,8 @@ void riello_parse_sentr(BYTE* buffer, TRielloData* data)
 	else
 		data->NomPowerKW = ((data->NomPowerKVA * 1000) * 8 / 10) / 1000;
 
+	data->NomPowerKVA *= 1000;
+	data->NomPowerKW *= 1000;
 	if (data->Model < 3000)
 		data->Identif_bytes[0] = '3';
 	else

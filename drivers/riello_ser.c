@@ -683,12 +683,12 @@ void upsdrv_initinfo(void)
 		dstate_setinfo("output.phases", "%u", 3); 
 	}
 
-	dstate_setinfo("device.mfr", "R.P.S. S.p.a."); 
+	dstate_setinfo("device.mfr", "RPS S.p.a."); 
 	dstate_setinfo("device.model", "%s", (unsigned char*) DevData.ModelStr); 
 	dstate_setinfo("device.serial", "%s", (unsigned char*) DevData.Identification); 
 	dstate_setinfo("device.type", "ups"); 
 
-	dstate_setinfo("ups.mfr", "R.P.S. S.p.a."); 
+	dstate_setinfo("ups.mfr", "RPS S.p.a."); 
 	dstate_setinfo("ups.model", "%s", (unsigned char*) DevData.ModelStr); 
 	dstate_setinfo("ups.serial", "%s", (unsigned char*) DevData.Identification); 
 	dstate_setinfo("ups.firmware", "%s", (unsigned char*) DevData.Version); 
@@ -754,8 +754,8 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.capacity", "%u", 0); 
 	}
 	else {
-		dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW*1000); 
-		dstate_setinfo("ups.upspower.nominal", "%u", DevData.NomPowerKVA*1000); 
+		dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW); 
+		dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA); 
 		dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout); 
 		dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0); 
 		dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat); 
