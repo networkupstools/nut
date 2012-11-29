@@ -1175,6 +1175,7 @@ AC_OUTPUT([
  clients/Makefile
  common/Makefile
  conf/Makefile
+ conf/upsmon.conf.sample
  conf/upssched.conf.sample
  data/html/header.html
  data/html/Makefile

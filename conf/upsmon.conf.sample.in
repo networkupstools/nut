@@ -27,7 +27,7 @@
 #
 # This user should not have write access to upsmon.conf.
 #
-# RUN_AS_USER nutmon
+# RUN_AS_USER @RUN_AS_USER@
 
 # --------------------------------------------------------------------------
 # MONITOR <system> <powervalue> <username> <password> ("master"|"slave")
@@ -126,7 +126,7 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 # information and ideas, see docs/scheduling.txt
 #
 # Example:
-# NOTIFYCMD /usr/local/ups/bin/notifyme
+# NOTIFYCMD @BINDIR@/notifyme
 
 # --------------------------------------------------------------------------
 # POLLFREQ <n> 
@@ -196,7 +196,7 @@ DEADTIME 15
 #
 # See the shutdown.txt file in the docs subdirectory for more information.
 
-POWERDOWNFLAG /etc/killpower
+POWERDOWNFLAG @CONFPATH@/killpower
 
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur
@@ -307,7 +307,7 @@ FINALDELAY 5
 # Certificates are stored in a dedicated database (splitted in 3 files).
 # Specify the path of the database directory.
 # 
-# CERTPATH /usr/local/ups/etc/cert/upsmon
+# CERTPATH @CONFPATH@/cert/upsmon
 #
 # With OpenSSL:
 # Directory containing CA certificates in PEM format, used to verify
