@@ -22,6 +22,43 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <sstream>
+#include <list>
+#include <map>
+#include <cassert>
+
+
+/**
+ *  \brief  NUT configuration directive generator
+ *
+ *  The macro is used to simplify generation of
+ *  NUT config. directives.
+ *
+ *  IMPORTANT NOTE:
+ *  In case of writing error, the macro causes immediate
+ *  return from the calling function (propagating the writing status).
+ *
+ *  \param  name       Directive name
+ *  \param  arg_t      Directive argument implementation type
+ *  \param  arg        Directive argument
+ *  \param  quote_arg  Boolean flag; check to quote the argument
+ */
+#define CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg) \
+	do { \
+		if ((arg).set()) { \
+			const arg_t & arg_val = (arg); \
+			std::stringstream ss(name); \
+			ss << ' '; \
+			if (quote_arg) \
+				ss << '"'; \
+			ss << arg_val; \
+			if (quote_arg) \
+				ss << '"'; \
+			status_t status = writeDirective(ss.str()); \
+			if (NUTW_OK != status) \
+				return status; \
+		} \
+	} while (0)
 
 
 namespace nut {
@@ -92,23 +129,384 @@ NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string 
 
 
 NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & config) {
-	// TODO
+	status_t status;
 
-	throw std::logic_error("FIXME: Not implemented, yet");
+	// Mode
+	// TBD: How should I serialise an unknown mode?
+	if (config.mode.set()) {
+		std::string mode_str;
+
+		NutConfiguration::NutMode mode = config.mode;
+
+		switch (mode) {
+			case NutConfiguration::MODE_UNKNOWN:
+				// BEWARE!  Intentional fall-through to MODE_NONE branch
+
+			case NutConfiguration::MODE_NONE:
+				mode_str = "none";
+				break;
+
+			case NutConfiguration::MODE_STANDALONE:
+				mode_str = "standalone";
+				break;
+
+			case NutConfiguration::MODE_NETSERVER:
+				mode_str = "netserver";
+				break;
+
+			case NutConfiguration::MODE_NETCLIENT:
+				mode_str = "netclient";
+				break;
+		}
+
+		status = writeDirective("MODE=" + mode_str);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	return NUTW_OK;
+}
+
+
+/** Notify types & flags strings */
+struct NotifyFlagsStrings {
+	// TBD: Shouldn't this mapping be shared with the parser?
+	// This is an obvious redundancy...
+
+	/** Notify type strings list */
+	typedef const char * TypeStrings[UpsmonConfiguration::NOTIFY_TYPE_MAX];
+
+	/** Notify flag strings map */
+	typedef std::map<UpsmonConfiguration::NotifyFlag, const char *> FlagStrings;
+
+	/** Notify type strings */
+	static const TypeStrings type_str;
+
+	/** Notify flag strings */
+	static const FlagStrings flag_str;
+
+	/**
+	 *  \brief  Initialise notify flag strings
+	 *
+	 *  \return Notify flag strings map
+	 */
+	static FlagStrings initFlagStrings() {
+		FlagStrings str;
+
+		str[UpsmonConfiguration::NOTIFY_IGNORE] = "IGNORE";
+		str[UpsmonConfiguration::NOTIFY_SYSLOG] = "SYSLOG";
+		str[UpsmonConfiguration::NOTIFY_WALL]   = "WALL";
+		str[UpsmonConfiguration::NOTIFY_EXEC]   = "EXEC";
+
+		return str;
+	}
+
+};  // end of struct NotifyFlagsStrings
+
+
+const NotifyFlagsStrings::TypeStrings NotifyFlagsStrings::type_str = {
+	"ONLINE",	// NOTIFY_ONLINE
+	"ONBATT",	// NOTIFY_ONBATT
+	"LOWBATT",	// NOTIFY_LOWBATT
+	"FSD\t",	// NOTIFY_FSD (including padding)
+	"COMMOK",	// NOTIFY_COMMOK
+	"COMMBAD",	// NOTIFY_COMMBAD
+	"SHUTDOWN",	// NOTIFY_SHUTDOWN
+	"REPLBATT",	// NOTIFY_REPLBATT
+	"NOCOMM",	// NOTIFY_NOCOMM
+	"NOPARENT",	// NOTIFY_NOPARENT
+};
+
+
+const NotifyFlagsStrings::FlagStrings NotifyFlagsStrings::flag_str =
+	NotifyFlagsStrings::initFlagStrings();
+
+
+/**
+ *  \brief  upsmon notify flags serialiser
+ *
+ *  \param  type   Notification type
+ *  \param  flags  Notification flags
+ *
+ *  \return NOTIFYFLAG directive string
+ */
+static std::string serialiseNotifyFlags(UpsmonConfiguration::NotifyType type, unsigned short flags) {
+	static const std::string ignore_str(
+		NotifyFlagsStrings::flag_str.at(UpsmonConfiguration::NOTIFY_IGNORE));
+
+	assert(type < UpsmonConfiguration::NOTIFY_TYPE_MAX);
+
+	std::string directive("NOTIFYFLAG ");
+
+	directive += NotifyFlagsStrings::type_str[type];
+
+	char separator = '\t';
+
+	// The IGNORE flag is actually no-flag case
+	if (UpsmonConfiguration::NOTIFY_IGNORE == flags) {
+		directive += separator;
+		directive += ignore_str;
+
+		return directive;
+	}
+
+	NotifyFlagsStrings::FlagStrings::const_iterator fl_iter =
+		NotifyFlagsStrings::flag_str.begin();
+
+	for (; fl_iter != NotifyFlagsStrings::flag_str.end(); ++fl_iter) {
+		if (fl_iter->first & flags) {
+			directive += separator;
+			directive += fl_iter->second;
+
+			separator = '+';
+		}
+	}
+
+	return directive;
+}
+
+
+/**
+ *  \brief  upsmon notify messages serialiser
+ *
+ *  \param  type   Notification type
+ *  \param  msg    Notification message
+ *
+ *  \return NOTIFYMSG directive string
+ */
+static std::string serialiseNotifyMessage(UpsmonConfiguration::NotifyType type, const std::string & msg) {
+	assert(type < UpsmonConfiguration::NOTIFY_TYPE_MAX);
+
+	std::string directive("NOTIFYMSG ");
+
+	directive += NotifyFlagsStrings::type_str[type];
+	directive += '\t';
+	directive += '"' + msg + '"';
+
+	return directive;
+}
+
+
+/**
+ *  \brief  Get notify type successor
+ *
+ *  TBD: Should be in nutconf.h
+ *
+ *  \param  type  Notify type
+ *
+ *  \return Notify type successor
+ */
+inline static UpsmonConfiguration::NotifyType nextNotifyType(UpsmonConfiguration::NotifyType type) {
+	assert(type < UpsmonConfiguration::NOTIFY_TYPE_MAX);
+
+	int type_ord = static_cast<int>(type);
+
+	return static_cast<UpsmonConfiguration::NotifyType>(type_ord + 1);
+}
+
+
+/**
+ *  \brief  Notify type pre-incrementation
+ *
+ *  TBD: Should be in nutconf.h
+ *
+ *  \param[in,out]  type  Notify type
+ *
+ *  \return \c type successor
+ */
+inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::NotifyType & type) {
+	return type = nextNotifyType(type);
+}
+
+
+/**
+ *  \brief  Notify type post-incrementation
+ *
+ *  TBD: Should be in nutconf.h
+ *
+ *  \param[in,out]  type  Notify type
+ *
+ *  \return \c type
+ */
+inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::NotifyType & type, int) {
+	UpsmonConfiguration::NotifyType type_copy = type;
+
+	type = nextNotifyType(type);
+
+	return type_copy;
+}
+
+
+/**
+ *  \brief  UPS monitor definition serialiser
+ *
+ *  \param  monitor  Monitor
+ *
+ *  \return Monitor config. directive
+ */
+static std::string serialiseMonitor(const UpsmonConfiguration::Monitor & monitor) {
+	std::stringstream directive("MONITOR ");
+
+	// System
+	directive << monitor.upsname << '@' << monitor.hostname;
+
+	if (monitor.port)
+		directive << ':' << monitor.port;
+
+	directive << ' ';
+
+	// Power value
+	directive << monitor.powerValue << ' ';
+
+	// Username & password
+	directive << monitor.username << ' ' << monitor.password << ' ';
+
+	// Master/slave
+	directive << (monitor.isMaster ? "master" : "slave");
+
+	return directive.str();
 }
 
 
 NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & config) {
-	// TODO
+	/**
+	 *  \brief  upsmon directive generator
+	 *
+	 *  The macro is locally used to simplify generation of
+	 *  upsmon config. directives (except those with enumerated
+	 *  arguments).
+	 *
+	 *  NOTE that the macro may cause return from the function
+	 *  (upon writing error).
+	 *  See \ref CONFIG_DIRECTIVEX for more information.
+	 *
+	 *  \param  name       Directive name
+	 *  \param  arg_t      Directive argument implementation type
+	 *  \param  arg        Directive argument
+	 *  \param  quote_arg  Boolean flag; check to quote the argument
+	 */
+	#define UPSMON_DIRECTIVEX(name, arg_t, arg, quote_arg) \
+		CONFIG_DIRECTIVEX(name, arg_t, arg, quote_arg)
 
-	throw std::logic_error("FIXME: Not implemented, yet");
+	UPSMON_DIRECTIVEX("RUN_AS_USER",    std::string,  config.runAsUser,      false);
+	UPSMON_DIRECTIVEX("SHUTDOWNCMD",    std::string,  config.shutdownCmd,    true);
+	UPSMON_DIRECTIVEX("NOTIFYCMD",      std::string,  config.notifyCmd,      true);
+	UPSMON_DIRECTIVEX("POWERDOWNFLAG",  std::string,  config.powerDownFlag,  false);
+	UPSMON_DIRECTIVEX("MINSUPPLIES",    unsigned int, config.minSupplies,    false);
+	UPSMON_DIRECTIVEX("POLLFREQ",       unsigned int, config.poolFreq,       false);
+	UPSMON_DIRECTIVEX("POLLFREQALERT",  unsigned int, config.poolFreqAlert,  false);
+	UPSMON_DIRECTIVEX("HOSTSYNC",       unsigned int, config.hotSync,        false);
+	UPSMON_DIRECTIVEX("DEADTIME",       unsigned int, config.deadTime,       false);
+	UPSMON_DIRECTIVEX("RBWARNTIME",     unsigned int, config.rbWarnTime,     false);
+	UPSMON_DIRECTIVEX("NOCOMMWARNTIME", unsigned int, config.noCommWarnTime, false);
+	UPSMON_DIRECTIVEX("FINALDELAY",     unsigned int, config.finalDelay,     false);
+
+	#undef UPSMON_DIRECTIVEX
+
+	UpsmonConfiguration::NotifyType type;
+
+	// Notify flags
+	type = UpsmonConfiguration::NOTIFY_ONLINE;
+
+	for (; type < UpsmonConfiguration::NOTIFY_TYPE_MAX; ++type) {
+		if (config.notifyFlags[type].set()) {
+			std::string directive = serialiseNotifyFlags(type, config.notifyFlags[type]);
+
+			status_t status = writeDirective(directive);
+
+			if (NUTW_OK != status)
+				return status;
+		}
+	}
+
+	// Notify messages
+	type = UpsmonConfiguration::NOTIFY_ONLINE;
+
+	for (; type < UpsmonConfiguration::NOTIFY_TYPE_MAX; ++type) {
+		if (config.notifyMessages[type].set()) {
+			std::string directive = serialiseNotifyMessage(type, config.notifyMessages[type]);
+
+			status_t status = writeDirective(directive);
+
+			if (NUTW_OK != status)
+				return status;
+		}
+	}
+
+	// Monitors
+	std::list<UpsmonConfiguration::Monitor>::const_iterator mon_iter = config.monitors.begin();
+
+	for (; mon_iter != config.monitors.end(); ++mon_iter) {
+		std::string directive = serialiseMonitor(*mon_iter);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	return NUTW_OK;
+}
+
+
+/**
+ *  \brief  upsd listen address serialiser
+ *
+ *  \param  address  Listen address
+ *
+ *  \return Serialised listen address
+ */
+static std::string serialiseUpsdListenAddress(const UpsdConfiguration::Listen & address) {
+	std::stringstream directive("LISTEN ");
+
+	directive << address.address;
+
+	if (address.port.set())
+		directive << ' ' << static_cast<unsigned short>(address.port);
+
+	return directive.str();
 }
 
 
 NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & config) {
-	// TODO
+	/**
+	 *  \brief  upsd directive generator
+	 *
+	 *  The macro is locally used to simplify generation of
+	 *  upsd config. directives (except the listen addresses).
+	 *
+	 *  NOTE that the macro may cause return from the function
+	 *  (upon writing error).
+	 *  See \ref CONFIG_DIRECTIVEX for more information.
+	 *
+	 *  \param  name       Directive name
+	 *  \param  arg_t      Directive argument implementation type
+	 *  \param  arg        Directive argument
+	 */
+	#define UPSD_DIRECTIVEX(name, arg_t, arg) \
+		CONFIG_DIRECTIVEX(name, arg_t, arg, false)
 
-	throw std::logic_error("FIXME: Not implemented, yet");
+	UPSD_DIRECTIVEX("MAXAGE",    unsigned int, config.maxAge);
+	UPSD_DIRECTIVEX("MAXCONN",   unsigned int, config.maxConn);
+	UPSD_DIRECTIVEX("STATEPATH", std::string,  config.statePath);
+	UPSD_DIRECTIVEX("CERTFILE",  std::string,  config.certFile);
+
+	#undef UPSD_DIRECTIVEX
+
+	// Listen addresses
+	std::list<UpsdConfiguration::Listen>::const_iterator la_iter = config.listens.begin();
+
+	for (; la_iter != config.listens.end(); ++la_iter) {
+		std::string directive = serialiseUpsdListenAddress(*la_iter);
+
+		status_t status = writeDirective(directive);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	return NUTW_OK;
 }
 
 

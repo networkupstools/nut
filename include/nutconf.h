@@ -359,7 +359,7 @@ public:
 
     enum NutMode {
 		MODE_UNKNOWN = -1,
-        MODE_NONE = 0,
+		MODE_NONE = 0,
 		MODE_STANDALONE,
 		MODE_NETSERVER,
 		MODE_NETCLIENT
