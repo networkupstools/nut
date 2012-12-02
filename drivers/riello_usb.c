@@ -81,7 +81,6 @@ void ussleep(long usec)
 static int cypress_setfeatures()
 {
 	int ret;
-	size_t i;
 
 	bufOut[0] = 0xB0;
 	bufOut[1] = 0x4;
@@ -101,7 +100,7 @@ static int cypress_setfeatures()
 	}
 
 	upsdebugx(3, "send: features report ok");
-	return i;
+	return ret;
 }
 
 BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
