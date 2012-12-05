@@ -705,11 +705,182 @@ void GenericConfiguration::setGenericConfigSection(const GenericConfigSection& s
 	sections[section.name] = section;
 }
 
+
 void GenericConfiguration::parseFromString(const std::string& str)
 {
 	GenericConfigParser parser(str);
 	parser.parseConfig(this);
 }
+
+
+bool GenericConfiguration::get(const std::string & section, const std::string & entry, ConfigParamList & params) const
+{
+	// Get section
+	SectionMap::const_iterator section_iter = sections.find(section);
+	if (section_iter == sections.end())
+		return false;
+
+	// Get entry
+	const GenericConfigSection::EntryMap & entries = section_iter->second.entries;
+
+	GenericConfigSection::EntryMap::const_iterator entry_iter = entries.find(entry);
+	if (entry_iter == entries.end())
+		return false;
+
+	// Provide parameters values
+	params = entry_iter->second.values;
+
+	return true;
+}
+
+
+void GenericConfiguration::set(const std::string & section, const std::string & entry, const ConfigParamList & params)
+{
+	// Get section
+	SectionMap::iterator section_iter = sections.lower_bound(section);
+	if (sections.end() == section_iter || section_iter->first != section) {
+		section_iter = sections.insert(section_iter,
+				std::pair<const std::string, GenericConfigSection>(section, GenericConfigSection()));
+
+		section_iter->second.name = section;
+	}
+
+	// Get entry
+	GenericConfigSection::EntryMap & entries = section_iter->second.entries;
+
+	GenericConfigSection::EntryMap::iterator entry_iter = entries.lower_bound(entry);
+	if (entries.end() == entry_iter || entry_iter->first != entry) {
+		entry_iter = entries.insert(entry_iter,
+				std::pair<const std::string, GenericConfigSectionEntry>(entry, GenericConfigSectionEntry()));
+
+		entry_iter->second.name = entry;
+	}
+
+	// Set parameters values
+	entry_iter->second.values = params;
+}
+
+
+void GenericConfiguration::remove(const std::string & section, const std::string & entry)
+{
+	// Get section
+	SectionMap::iterator section_iter = sections.find(section);
+	if (sections.end() == section_iter)
+		return;
+
+	// Get entry
+	GenericConfigSection::EntryMap & entries = section_iter->second.entries;
+
+	GenericConfigSection::EntryMap::iterator entry_iter = entries.find(entry);
+	if (entries.end() == entry_iter)
+		return;
+
+	entries.erase(entry_iter);
+}
+
+
+void GenericConfiguration::removeSection(const std::string & section)
+{
+	// Get section
+	SectionMap::iterator section_iter = sections.find(section);
+	if (sections.end() == section_iter)
+		return;
+
+	sections.erase(section_iter);
+}
+
+
+std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry, bool quoted) const
+{
+	std::string str;
+
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return str;
+
+	if (params.empty())
+		return str;
+
+	str = params.front();
+
+	// Remove quotes
+	// TBD: what if they are not there?
+	if (quoted) {
+		if ('"' == str[0])
+			str.erase(0, 1);
+
+		if ('"' == str[str.size() - 1])
+			str.erase(str.size() - 1);
+	}
+
+	return str;
+}
+
+
+void GenericConfiguration::setStr(
+		const std::string & section,
+		const std::string & entry,
+		const std::string & value,
+		bool                quoted)
+{
+	ConfigParamList param;
+
+	// Add quotes if required
+	param.push_back(quoted ? '"' + value + '"' : value);
+
+	set(section, entry, param);
+}
+
+
+long long int GenericConfiguration::getInt(const std::string & section, const std::string & entry, long long int val) const
+{
+	ConfigParamList params;
+
+	if (!get(section, entry, params))
+		return val;
+
+	if (params.empty())
+		return val;
+
+	// TBD: What if there are multiple values?
+	std::stringstream val_str(params.front());
+
+	val_str >> val;
+
+	return val;
+}
+
+
+void GenericConfiguration::setInt(const std::string & section, const std::string & entry, long long int val)
+{
+	std::stringstream val_str;
+	val_str << val;
+
+	set(section, entry, ConfigParamList(1, val_str.str()));
+}
+
+
+bool GenericConfiguration::str2bool(const std::string & str)
+{
+	if ("true" == str) return true;
+	if ("on"   == str) return true;
+	if ("1"    == str) return true;
+	if ("yes"  == str) return true;
+	if ("ok"   == str) return true;
+
+	return false;
+}
+
+
+const std::string & GenericConfiguration::bool2str(bool val)
+{
+	static const std::string b0("off");
+	static const std::string b1("on");
+
+	return val ? b1 : b0;
+}
+
 
 //
 // UpsmonConfiguration
@@ -1162,6 +1333,5 @@ void UpsdConfigParser::onParseEnd()
 {
     // Do nothing
 }
-
 
 } /* namespace nut */
