@@ -600,5 +600,4 @@ NutWriter::status_t GenericConfigWriter::writeConfig(const GenericConfiguration 
 	return NUTW_OK;
 }
 
-
 }  // end of namespace nut
