@@ -98,8 +98,8 @@ class NutWriter {
 		NutStream::status_t status = m_output_stream.putString(str);
 
 		if (NutStream::NUTS_OK != status) {
-			std::stringstream e("Failed to write to output stream: ");
-			e << status;
+			std::stringstream e;
+			e << "Failed to write to output stream: " << status;
 
 			throw std::runtime_error(e.str());
 		}
