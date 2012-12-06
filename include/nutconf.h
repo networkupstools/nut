@@ -332,6 +332,32 @@ protected:
 	}
 
 	/**
+	 *  \brief  Add configuration parameters
+	 *
+	 *  The section and entry are created unless they already exist.
+	 *  Current parameters are kept, the provided are added to the list end.
+	 *
+	 *  \param[in]  section  Section name
+	 *  \param[in]  entry    Entry name
+	 *  \param[in]  params   Configuration parameters
+	 */
+	void add(const std::string & section, const std::string & entry, const ConfigParamList & params);
+
+	/**
+	 *  \brief  Add global scope configuration parameters
+	 *
+	 *  The entry is created unless they already exists.
+	 *  Current parameters are kept, the provided are added to the list end.
+	 *
+	 *  \param[in]  entry    Entry name
+	 *  \param[in]  params   Configuration parameters
+	 */
+	inline void add(const std::string & entry, const ConfigParamList & params)
+	{
+		add("", entry, params);
+	}
+
+	/**
 	 *  \brief  Configuration parameters removal
 	 *
 	 *  Removes the entry, only.
@@ -950,6 +976,41 @@ public:
 	/** \} */
 
 };  // end of class UpsConfiguration
+
+
+/** upsd users configuration */
+class UpsdUsersConfiguration : public GenericConfiguration
+{
+public:
+	/** User-specific configuration attributes getters and setters \{ */
+
+	inline std::string getPassword(const std::string & user) const { return getStr(user, "password", false); }
+
+	inline ConfigParamList getActions(const std::string & user) const
+	{
+		ConfigParamList actions;
+		get(user, "actions", actions);
+		return actions;
+	}
+
+	inline ConfigParamList getInstantCommands(const std::string & user) const
+	{
+		ConfigParamList cmds;
+		get(user, "instcmds", cmds);
+		return cmds;
+	}
+
+	inline void setPassword(const std::string & user, const std::string & passwd) { setStr(user, "password", passwd, false); }
+
+	inline void setActions(const std::string & user, const ConfigParamList & actions)      { set(user, "actions",  actions); }
+	inline void setInstantCommands(const std::string & user, const ConfigParamList & cmds) { set(user, "instcmds", cmds); }
+
+	inline void addActions(const std::string & user, const ConfigParamList & actions)      { add(user, "actions",  actions); }
+	inline void addInstantCommands(const std::string & user, const ConfigParamList & cmds) { add(user, "instcmds", cmds); }
+
+	/** \} */
+
+};  // end of class UpsdUsersConfiguration
 
 } /* namespace nut */
 #endif /* __cplusplus */

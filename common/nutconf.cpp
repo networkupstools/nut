@@ -761,6 +761,27 @@ void GenericConfiguration::set(const std::string & section, const std::string & 
 }
 
 
+void GenericConfiguration::add(const std::string & section, const std::string & entry, const ConfigParamList & params)
+{
+	// No job is another job well done
+	if (params.empty())
+		return;
+
+	// Note that the implementation is quite naive and inefficient.
+	// However, efficiency isn't our aim at the moment.
+
+	// Get current parameters
+	ConfigParamList current_params;
+
+	get(section, entry, current_params);
+
+	// Add the provided parameters
+	current_params.insert(current_params.end(), params.begin(), params.end());
+
+	set(section, entry, current_params);
+}
+
+
 void GenericConfiguration::remove(const std::string & section, const std::string & entry)
 {
 	// Get section
