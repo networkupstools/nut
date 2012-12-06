@@ -89,8 +89,8 @@ NutFile::NutFile(anonymous_t):
 	if (NULL == m_impl) {
 		int err_code = errno;
 
-		std::stringstream e("Failed to create temporary file: ");
-		e << err_code << ": " << ::strerror(err_code);
+		std::stringstream e;
+		e << "Failed to create temporary file: " << err_code << ": " << ::strerror(err_code);
 
 		throw std::runtime_error(e.str());
 	}
@@ -371,8 +371,8 @@ NutSocket::Address::Address(const std::vector<unsigned char> & bytes, uint16_t p
 			break;
 
 		default: {
-			std::stringstream e("Unsupported IP address size: ");
-			e << bytes.size();
+			std::stringstream e;
+			e << "Unsupported IP address size: " << bytes.size();
 
 			throw std::logic_error(e.str());
 		}
@@ -472,8 +472,8 @@ std::string NutSocket::Address::str() const {
 
 	sa_family_t family = m_sock_addr->sa_family;
 
-	std::stringstream ss("nut::NutSocket::Address(family: ");
-	ss << family;
+	std::stringstream ss;
+	ss << "nut::NutSocket::Address(family: " << family;
 
 	switch (family) {
 		case AF_UNIX: {
@@ -501,8 +501,8 @@ std::string NutSocket::Address::str() const {
 		}
 
 		default: {
-			std::stringstream e("NOT IMPLEMENTED: ");
-			e << "Socket address family " << family << " unsupported";
+			std::stringstream e;
+			e << "NOT IMPLEMENTED: Socket address family " << family << " unsupported";
 
 			throw std::logic_error(e.str());
 		}
@@ -549,8 +549,8 @@ bool NutSocket::accept(
 			return false;
 	}
 
-	std::stringstream e("Failed to accept connection: ");
-	e << err_code << ": " << err_msg;
+	std::stringstream e;
+	e << "Failed to accept connection: " << err_code << ": " << err_msg;
 
 	throw std::logic_error(e.str());
 }
@@ -570,7 +570,8 @@ NutSocket::NutSocket(domain_t dom, type_t type, proto_t proto):
 	if (-1 == m_impl) {
 		int erno = errno;
 
-		std::stringstream e("Failed to create socket domain: ");
+		std::stringstream e;
+		e << "Failed to create socket domain: ";
 		e << cdom << ", type: " << ctype << ", proto: " << cproto;
 		e << ": " << erno << ": " << ::strerror(erno);
 

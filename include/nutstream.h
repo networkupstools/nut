@@ -287,8 +287,8 @@ class NutFile: public NutStream {
 		if (open(mode, ec, em))
 			return;
 
-		std::stringstream e("Failed to open file ");
-		e << m_name << ": " << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to open file " << m_name << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -325,8 +325,8 @@ class NutFile: public NutStream {
 		if (close(ec, em))
 			return;
 
-		std::stringstream e("Failed to close file ");
-		e << m_name << ": " << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to close file " << m_name << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -601,8 +601,8 @@ class NutSocket: public NutStream {
 		if (accept(sock, listen_sock, ec, em))
 			return;
 
-		std::stringstream e("Failed to accept connection: ");
-		e << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to accept connection: " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -703,8 +703,8 @@ class NutSocket: public NutStream {
 		if (bind(addr, ec, em))
 			return;
 
-		std::stringstream e("Failed to bind socket to address ");
-		e << addr.str() << ": " << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to bind socket to address " << addr.str() << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -750,8 +750,8 @@ class NutSocket: public NutStream {
 		if (listen(backlog, ec, em))
 			return;
 
-		std::stringstream e("Failed to listen on socket: ");
-		e << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to listen on socket: " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -795,8 +795,8 @@ class NutSocket: public NutStream {
 		if (connect(addr, ec, em))
 			return;
 
-		std::stringstream e("Failed to connect socket: ");
-		e << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to connect socket: " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}
@@ -833,8 +833,8 @@ class NutSocket: public NutStream {
 		if (close(ec, em))
 			return;
 
-		std::stringstream e("Failed to close socket ");
-		e << m_impl << ": " << ec << ": " << em;
+		std::stringstream e;
+		e << "Failed to close socket " << m_impl << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}

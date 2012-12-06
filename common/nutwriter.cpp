@@ -47,8 +47,8 @@
 	do { \
 		if ((arg).set()) { \
 			const arg_t & arg_val = (arg); \
-			std::stringstream ss(name); \
-			ss << ' '; \
+			std::stringstream ss; \
+			ss << name << ' '; \
 			if (quote_arg) \
 				ss << '"'; \
 			ss << arg_val; \
@@ -346,7 +346,9 @@ inline static UpsmonConfiguration::NotifyType operator ++(UpsmonConfiguration::N
  *  \return Monitor config. directive
  */
 static std::string serialiseMonitor(const UpsmonConfiguration::Monitor & monitor) {
-	std::stringstream directive("MONITOR ");
+	std::stringstream directive;
+
+	directive << "MONITOR ";
 
 	// System
 	directive << monitor.upsname << '@' << monitor.hostname;
@@ -458,9 +460,9 @@ NutWriter::status_t UpsmonConfigWriter::writeConfig(const UpsmonConfiguration & 
  *  \return Serialised listen address
  */
 static std::string serialiseUpsdListenAddress(const UpsdConfiguration::Listen & address) {
-	std::stringstream directive("LISTEN ");
+	std::stringstream directive;
 
-	directive << address.address;
+	directive << "LISTEN " << address.address;
 
 	if (address.port.set())
 		directive << ' ' << static_cast<unsigned short>(address.port);
