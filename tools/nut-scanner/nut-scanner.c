@@ -497,7 +497,7 @@ display_help:
 			nutscan_avail_ipmi = 0;
 		}
 #else
-		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,timeout,&ipmi_sec);
+		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,&ipmi_sec);
 #endif /* HAVE_PTHREAD */
 	}
 
