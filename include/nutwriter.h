@@ -287,6 +287,29 @@ class DefaultConfigWriter: public NutConfigWriter {
  *  and adds \c writeConfig routine for configuration file serialisation.
  */
 class GenericConfigWriter: public DefaultConfigWriter {
+	protected:
+
+	/** Default indentation of the key/ value pair in section entry */
+	static const std::string s_default_section_entry_indent;
+
+	/** Default separator of the key/ value pair in section entry */
+	static const std::string s_default_section_entry_separator;
+
+	/**
+	 *  \brief  Section entry serialiser
+	 *
+	 *  \param  entry   Section entry
+	 *  \param  indent  Indentation
+	 *  \param  kv_sep  Key/ value separator
+	 *
+	 *  \retval NUTW_OK    on success
+	 *  \retval NUTW_ERROR otherwise
+	 */
+	status_t writeSectionEntry(
+		const GenericConfigSectionEntry & entry,
+		const std::string & indent = s_default_section_entry_indent,
+		const std::string & kv_sep = s_default_section_entry_separator);
+
 	public:
 
 	// Section serialiser implementation
@@ -304,6 +327,21 @@ class GenericConfigWriter: public DefaultConfigWriter {
 
 };  // end of class GenericConfigWriter
 
+
+/**
+ *  \brief  NUT upsd.users configuration file writer
+ *
+ *  upsd.users configuration file serialiser.
+ *  Overloads the generic section serialiser because of the upsmon section,
+ *  which contains anomal upsmon (master|slave) directive.
+ */
+class UpsdUsersConfigWriter: public GenericConfigWriter {
+	public:
+
+	// Section serialiser overload
+	status_t writeSection(const GenericConfigSection & section);
+
+};  // end of class UpsdUsersConfigWriter
 
 }  // end of namespace nut
 

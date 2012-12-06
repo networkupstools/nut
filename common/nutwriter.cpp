@@ -528,11 +528,25 @@ NutWriter::status_t DefaultConfigWriter::writeDirective(const std::string & str)
 }
 
 
-NutWriter::status_t GenericConfigWriter::writeSection(const GenericConfigSection & section) {
-	// TBD: Shouldn't this be somewhere else?
-	// The parser has to use this, either...
-	static const std::string value_separator(", ");
+NutWriter::status_t GenericConfigWriter::writeSectionEntry(
+	const GenericConfigSectionEntry & entry,
+	const std::string & indent,
+	const std::string & kv_sep)
+{
+	ConfigParamList::const_iterator value_iter = entry.values.begin();
 
+	for (; value_iter != entry.values.end(); ++value_iter) {
+		status_t status = writeDirective(indent + entry.name + kv_sep + *value_iter);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	return NUTW_OK;
+}
+
+
+NutWriter::status_t GenericConfigWriter::writeSection(const GenericConfigSection & section) {
 	status_t status;
 
 	// Note that global scope definitions are in section
@@ -554,21 +568,7 @@ NutWriter::status_t GenericConfigWriter::writeSection(const GenericConfigSection
 	GenericConfigSection::EntryMap::const_iterator entry_iter = section.entries.begin();
 
 	for (; entry_iter != section.entries.end(); ++entry_iter) {
-		std::string assign(indent);
-		assign += entry_iter->second.name + " = ";
-
-		const ConfigParamList & values(entry_iter->second.values);
-
-		ConfigParamList::const_iterator value_iter = values.begin();
-
-		for (; value_iter != values.end(); ++value_iter) {
-			if (value_iter != values.begin())
-				assign += value_separator;
-
-			assign += *value_iter;
-		}
-
-		status = writeDirective(assign);
+		status = writeSectionEntry(entry_iter->second, indent);
 
 		if (NUTW_OK != status)
 			return status;
@@ -592,6 +592,44 @@ NutWriter::status_t GenericConfigWriter::writeConfig(const GenericConfiguration 
 
 		// TBD: Write one empty line as section separator
 		status = write(eol);
+
+		if (NUTW_OK != status)
+			return status;
+	}
+
+	return NUTW_OK;
+}
+
+
+NutWriter::status_t UpsdUsersConfigWriter::writeSection(const GenericConfigSection & section) {
+	static const std::string upsmon_entry_separator(" ");
+
+	status_t status;
+
+	// upsmon section requires special handling because of the upsmon (master|slave) directive
+	if ("upsmon" != section.name)
+		return GenericConfigWriter::writeSection(section);
+
+	status = writeSectionName(section.name);
+
+	if (NUTW_OK != status)
+		return status;
+
+	// Write section name/value pairs
+	GenericConfigSection::EntryMap::const_iterator entry_iter = section.entries.begin();
+
+	for (; entry_iter != section.entries.end(); ++entry_iter) {
+		// Special case of upsmon parameter
+		if ("upsmon" == entry_iter->second.name) {
+			status = writeSectionEntry(entry_iter->second,
+					s_default_section_entry_indent,
+					upsmon_entry_separator);
+		}
+
+		// Standard entry serialisation
+		else {
+			status = writeSectionEntry(entry_iter->second);
+		}
 
 		if (NUTW_OK != status)
 			return status;
