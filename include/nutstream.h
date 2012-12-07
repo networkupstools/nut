@@ -90,6 +90,18 @@ class NutStream {
 	virtual void readChar() = 0;
 
 	/**
+	 *  \brief  Read characters from the stream till EoF
+	 *
+	 *  The method may be used to synchronously read
+	 *  whole (rest of) stream.
+	 *  Note that implementation may block flow.
+	 *
+	 *  \retval NUTS_OK    on success,
+	 *  \retval NUTS_ERROR on read error
+	 */
+	virtual status_t getString(std::string & str) = 0;
+
+	/**
 	 *  \brief  Put one character to the stream end
 	 *
 	 *  \param[in]  ch  Character
@@ -154,6 +166,7 @@ class NutMemory: public NutStream {
 	// NutStream interface implementation
 	status_t getChar(char & ch);
 	void     readChar();
+	status_t getString(std::string & str);
 	status_t putChar(char ch);
 	status_t putString(const std::string & str);
 	status_t putData(const std::string & data);
@@ -357,6 +370,7 @@ class NutFile: public NutStream {
 	// NutStream interface implementation
 	status_t getChar(char & ch)			throw();
 	void     readChar()				throw();
+	status_t getString(std::string & str)		throw();
 	status_t putChar(char ch)			throw();
 	status_t putString(const std::string & str)	throw();
 	status_t putData(const std::string & data)	throw();
@@ -842,6 +856,7 @@ class NutSocket: public NutStream {
 	// NutStream interface implementation
 	status_t getChar(char & ch)			throw();
 	void     readChar()				throw();
+	status_t getString(std::string & str)		throw();
 	status_t putChar(char ch)			throw();
 	status_t putString(const std::string & str)	throw();
 	inline status_t putData(const std::string & data) {
