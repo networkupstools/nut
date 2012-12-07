@@ -21,6 +21,8 @@
 #ifndef NUTCONF_H_SEEN
 #define NUTCONF_H_SEEN 1
 
+#include "nutstream.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -86,6 +88,47 @@ public:
 	}
 
 };
+
+
+/**
+ *  \brief  Serialisable interface
+ *
+ *  Classes that implement this iface provide way to serialise
+ *  and deserialise instances to/from streams.
+ */
+class Serialisable
+{
+protected:
+
+	/** Formal constructor */
+	Serialisable() {}
+
+public:
+
+	/**
+	 *  \brief  Deserialiser
+	 *
+	 *  \param  istream  Input stream
+	 *
+	 *  \retval true  in case of success
+	 *  \retval false in case of read error
+	 */
+	virtual bool parseFrom(NutStream & istream) = 0;
+
+	/**
+	 *  \brief  Serialiser
+	 *
+	 *  \param  ostream  Output stream
+	 *
+	 *  \retval true  in case of success
+	 *  \retval false in case of write error
+	 */
+	virtual bool writeTo(NutStream & ostream) = 0;
+
+	/** Destructor */
+	virtual ~Serialisable() {}
+
+};  // end of class Serialisable
 
 
 /**
@@ -258,7 +301,7 @@ protected:
 };
 
 
-class GenericConfiguration : public BaseConfiguration
+class GenericConfiguration : public BaseConfiguration, public Serialisable
 {
 public:
 	/** Sections map */
@@ -268,8 +311,10 @@ public:
 
 	void parseFromString(const std::string& str);
 
-	// TODO Add functions to write to string or files (Vasek ?)
-
+	/** Serialisable interface implementation \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream);
+	/** \} */
 
 	// FIXME Let me public or set it as protected with public accessors ?
 	SectionMap sections;
@@ -564,7 +609,7 @@ protected:
 
 
 
-class UpsmonConfiguration
+class UpsmonConfiguration : public Serialisable
 {
 public:
     UpsmonConfiguration();
@@ -611,7 +656,12 @@ public:
 
     std::list<Monitor> monitors;
 
-};
+	/** Serialisable interface implementation \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream);
+	/** \} */
+
+};  // end of class UpsmonConfiguration
 
 
 
@@ -650,6 +700,11 @@ public:
 	Settable<NutMode> mode;
 
 	static NutMode NutModeFromString(const std::string& str);
+
+	/** Serialisable interface implementation \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream);
+	/** \} */
 };
 
 
@@ -671,7 +726,7 @@ protected:
 };
 
 
-class UpsdConfiguration
+class UpsdConfiguration : public Serialisable
 {
 public:
 	UpsdConfiguration();
@@ -691,6 +746,11 @@ public:
 		}
 	};
 	std::list<Listen> listens;
+
+	/** Serialisable interface implementation \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream);
+	/** \} */
 };
 
 
@@ -1008,6 +1068,11 @@ public:
 	inline void addActions(const std::string & user, const ConfigParamList & actions)      { add(user, "actions",  actions); }
 	inline void addInstantCommands(const std::string & user, const ConfigParamList & cmds) { add(user, "instcmds", cmds); }
 
+	/** \} */
+
+	/** Serialisable interface implementation overload \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream);
 	/** \} */
 
 };  // end of class UpsdUsersConfiguration

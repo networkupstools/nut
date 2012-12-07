@@ -80,6 +80,9 @@ static const std::string CR("\r");
 
 const std::string & NutWriter::eol(LF);
 
+const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
+const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
+
 
 NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std::string & pref) {
 	for (size_t pos = 0; pos < str.size(); ) {

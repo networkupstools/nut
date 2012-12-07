@@ -57,6 +57,15 @@ void NutMemory::readChar() {
 }
 
 
+NutStream::status_t NutMemory::getString(std::string & str) {
+	str = m_impl.substr(m_pos);
+
+	m_pos = m_impl.size();
+
+	return NUTS_OK;
+}
+
+
 NutStream::status_t NutMemory::putChar(char ch) {
 	m_impl += ch;
 
@@ -192,9 +201,37 @@ NutFile::NutFile(access_t mode):
 }
 
 
-NutStream::status_t NutFile::getChar(char & ch) throw() {
-	int c;
+/**
+ *  \brief  C fgetc wrapper
+ *
+ *  \param[in]   file  File
+ *  \param[out]  ch    Character
+ *
+ *  \retval NUTS_OK    on success
+ *  \retval NUTS_EOF   on end-of-file
+ *  \retval NUTS_ERROR on read error
+ */
+inline static NutStream::status_t fgetcWrapper(FILE * file, char & ch) {
+	assert(NULL != file);
 
+	errno = 0;
+
+	int c = ::fgetc(file);
+
+	if (EOF == c) {
+		if (0 == errno)
+			return NutStream::NUTS_EOF;
+
+		return NutStream::NUTS_ERROR;
+	}
+
+	ch = static_cast<char>(c);
+
+	return NutStream::NUTS_OK;
+}
+
+
+NutStream::status_t NutFile::getChar(char & ch) throw() {
 	if (m_current_ch_valid) {
 		ch = m_current_ch;
 
@@ -204,20 +241,10 @@ NutStream::status_t NutFile::getChar(char & ch) throw() {
 	if (NULL == m_impl)
 		return NUTS_ERROR;
 
-	errno = 0;
+	status_t status = fgetcWrapper(m_impl, ch);
 
-	c = ::fgetc(m_impl);
-
-	if (EOF == c) {
-		int erno = errno;
-
-		if (0 == erno)
-			return NUTS_EOF;
-
-		return NUTS_ERROR;
-	}
-
-	ch = static_cast<char>(c);
+	if (NUTS_OK != status)
+		return status;
 
 	// Cache the character for future reference
 	m_current_ch       = ch;
@@ -229,6 +256,33 @@ NutStream::status_t NutFile::getChar(char & ch) throw() {
 
 void NutFile::readChar() throw() {
 	m_current_ch_valid = false;
+}
+
+
+NutStream::status_t NutFile::getString(std::string & str) throw() {
+	if (m_current_ch_valid)
+		str += m_current_ch;
+
+	m_current_ch_valid = false;
+
+	if (NULL == m_impl)
+		return NUTS_ERROR;
+
+	// Note that ::fgetc is used instead of ::fgets
+	// That's because of \0 char. support
+	for (;;) {
+		char ch;
+
+		status_t status = fgetcWrapper(m_impl, ch);
+
+		if (NUTS_ERROR == status)
+			return status;
+
+		if (NUTS_EOF == status)
+			return NUTS_OK;
+
+		str += ch;
+	}
 }
 
 
@@ -675,6 +729,28 @@ NutStream::status_t NutSocket::getChar(char & ch) throw() {
 
 void NutSocket::readChar() throw() {
 	m_current_ch_valid = false;
+}
+
+
+NutStream::status_t NutSocket::getString(std::string & str) throw() {
+	if (m_current_ch_valid)
+		str += m_current_ch;
+
+	m_current_ch_valid = false;
+
+	char buffer[512];
+
+	for (;;) {
+		ssize_t read_cnt = ::read(m_impl, buffer, sizeof(buffer) / sizeof(buffer[0]));
+
+		if (-1 == read_cnt)
+			return NUTS_ERROR;
+
+		if (0 == read_cnt)
+			return NUTS_OK;
+
+		str.append(buffer, read_cnt);
+	}
 }
 
 

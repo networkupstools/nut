@@ -18,14 +18,15 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "nutconf.h"
+#include "nutwriter.h"
+
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 
 #include <sstream>
 #include <iostream>
-
-#include "nutconf.h"
 
 
 namespace nut {
@@ -713,6 +714,28 @@ void GenericConfiguration::parseFromString(const std::string& str)
 }
 
 
+bool GenericConfiguration::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+
+bool GenericConfiguration::writeTo(NutStream & ostream)
+{
+	GenericConfigWriter writer(ostream);
+
+	return NutWriter::NUTW_OK == writer.writeConfig(*this);
+}
+
+
 bool GenericConfiguration::get(const std::string & section, const std::string & entry, ConfigParamList & params) const
 {
 	// Get section
@@ -957,6 +980,29 @@ UpsmonConfiguration::NotifyType UpsmonConfiguration::NotifyTypeFromString(const 
 		return NOTIFY_TYPE_MAX;
 }
 
+
+bool UpsmonConfiguration::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+
+bool UpsmonConfiguration::writeTo(NutStream & ostream)
+{
+	UpsmonConfigWriter writer(ostream);
+
+	return NutWriter::NUTW_OK == writer.writeConfig(*this);
+}
+
+
 //
 // UpsmonConfigParser
 //
@@ -1177,6 +1223,28 @@ NutConfiguration::NutMode NutConfiguration::NutModeFromString(const std::string&
 }
 
 
+bool NutConfiguration::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+
+bool NutConfiguration::writeTo(NutStream & ostream)
+{
+	NutConfConfigWriter writer(ostream);
+
+	return NutWriter::NUTW_OK == writer.writeConfig(*this);
+}
+
+
 //
 // NutConfConfigParser
 //
@@ -1254,6 +1322,29 @@ void UpsdConfiguration::parseFromString(const std::string& str)
     UpsdConfigParser parser(str);
     parser.parseUpsdConfig(this);
 }
+
+
+bool UpsdConfiguration::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+
+bool UpsdConfiguration::writeTo(NutStream & ostream)
+{
+	UpsdConfigWriter writer(ostream);
+
+	return NutWriter::NUTW_OK == writer.writeConfig(*this);
+}
+
 
 //
 // UpsdConfigParser
@@ -1353,6 +1444,32 @@ void UpsdConfigParser::onParseDirective(const std::string& directiveName, char s
 void UpsdConfigParser::onParseEnd()
 {
     // Do nothing
+}
+
+
+//
+// UpsdUsersConfiguration
+//
+
+bool UpsdUsersConfiguration::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+
+bool UpsdUsersConfiguration::writeTo(NutStream & ostream)
+{
+	UpsdUsersConfigWriter writer(ostream);
+
+	return NutWriter::NUTW_OK == writer.writeConfig(*this);
 }
 
 } /* namespace nut */

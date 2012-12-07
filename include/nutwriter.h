@@ -178,6 +178,15 @@ class NutConfigWriter: public NutWriter {
  *  configuration files.
  */
 class SectionlessConfigWriter: public NutConfigWriter {
+	protected:
+
+	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	SectionlessConfigWriter(NutStream & ostream): NutConfigWriter(ostream) {}
+
 	public:
 
 	// Partial \ref NutConfigWriter interface implementation
@@ -199,6 +208,13 @@ class NutConfConfigWriter: public SectionlessConfigWriter {
 	public:
 
 	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	NutConfConfigWriter(NutStream & ostream): SectionlessConfigWriter(ostream) {}
+
+	/**
 	 *  \brief  Serialise configuration container
 	 *
 	 *  \param  config  Configuration
@@ -218,6 +234,13 @@ class UpsmonConfigWriter: public SectionlessConfigWriter {
 	public:
 
 	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	UpsmonConfigWriter(NutStream & ostream): SectionlessConfigWriter(ostream) {}
+
+	/**
 	 *  \brief  Serialise configuration container
 	 *
 	 *  \param  config  Configuration
@@ -235,6 +258,13 @@ class UpsmonConfigWriter: public SectionlessConfigWriter {
  */
 class UpsdConfigWriter: public SectionlessConfigWriter {
 	public:
+
+	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	UpsdConfigWriter(NutStream & ostream): SectionlessConfigWriter(ostream) {}
 
 	/**
 	 *  \brief  Serialise configuration container
@@ -257,6 +287,15 @@ class UpsdConfigWriter: public SectionlessConfigWriter {
  *  by descendants.
  */
 class DefaultConfigWriter: public NutConfigWriter {
+	protected:
+
+	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	DefaultConfigWriter(NutStream & ostream): NutConfigWriter(ostream) {}
+
 	public:
 
 	// \ref NutConfigWriter interface implementation
@@ -312,6 +351,13 @@ class GenericConfigWriter: public DefaultConfigWriter {
 
 	public:
 
+	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	GenericConfigWriter(NutStream & ostream): DefaultConfigWriter(ostream) {}
+
 	// Section serialiser implementation
 	status_t writeSection(const GenericConfigSection & section);
 
@@ -337,6 +383,13 @@ class GenericConfigWriter: public DefaultConfigWriter {
  */
 class UpsdUsersConfigWriter: public GenericConfigWriter {
 	public:
+
+	/**
+	 *  \brief  Constructor
+	 *
+	 *  \param  ostream  Output stream
+	 */
+	UpsdUsersConfigWriter(NutStream & ostream): GenericConfigWriter(ostream) {}
 
 	// Section serialiser overload
 	status_t writeSection(const GenericConfigSection & section);
