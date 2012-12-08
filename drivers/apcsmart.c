@@ -91,6 +91,15 @@ static apc_vartab_t *vartab_lookup_char(char cmdchar)
 	return NULL;
 }
 
+/*
+ * APC_DEPR:
+ *
+ * when we're looking by nut's generic name, we want only one answer /and/ the
+ * correct one
+ *
+ * vartab_lookup_name() is run after setup and in case of multiple apc:single
+ * nut variable mappings we have to check for APC_DEPR
+ */
 static apc_vartab_t *vartab_lookup_name(const char *var)
 {
 	int	i;
@@ -755,6 +764,53 @@ static int valid_cmd(char cmd, const char *val)
 }
 
 /*
+ * two informative functions, to not redo the same thing in few places
+ */
+
+static void confirm_cv(unsigned char cmd, const char *tag, const char *name)
+{
+	const char *fmt;
+	char info[256];
+
+	if (isprint(cmd))
+		fmt = "[%c]";
+	else
+		fmt = "[0x%02x]";
+
+	snprintf(info, sizeof info, "%s%s%s",
+			"APC ",
+			fmt,
+			" : NUT [%s] - %s supported"
+		);
+	upsdebugx(1, info, cmd, name, tag);
+}
+
+static void warn_cv(unsigned char cmd, const char *tag, const char *name)
+{
+	const char *fmt;
+	char info[256];
+
+	if (isprint(cmd))
+		fmt = "[%c]";
+	else
+		fmt = "[0x%02x]";
+
+	if (tag && name) {
+		snprintf(info, sizeof info, "%s%s%s",
+				"APC ",
+				fmt,
+				" : NUT [%s] - %s invalid or unreadable"
+			);
+		upsdebugx(1, info, cmd, name, tag);
+	} else {
+		snprintf(info, sizeof info, "%s%s%s",
+				"APC cmd/var ", fmt, " unrecognized"
+			);
+		upsdebugx(1, info, cmd);
+	}
+}
+
+/*
  * query_ups() is called before any APC_PRESENT flags are determined;
  * only for the variable provided
  */
@@ -779,9 +835,10 @@ static int query_ups(const char *var)
 		if (!temp || !valid_cmd(vt->cmd, temp)) {
 			if (vt->flags & APC_MULTI) {
 				vt->flags |= APC_DEPR;
+				vt->flags &= ~APC_PRESENT;
 				continue;
 			}
-			upsdebugx(1, "query_ups: unknown variable %s", var);
+			warn_cv(vt->cmd, "variable", vt->name);
 			break;
 		}
 
@@ -799,6 +856,7 @@ static int query_ups(const char *var)
 				vtn->flags &= ~APC_PRESENT;
 			}
 
+		confirm_cv(vt->cmd, "variable", vt->name);
 		return 1; /* success */
 	}
 
@@ -833,9 +891,10 @@ static void deprecate_vars(void)
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
 		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			upslogx(LOG_ERR, "deprecate_vars: [%s] is unreadable or invalid, deprecating", vt->name);
 			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
+
+			warn_cv(vt->cmd, "variable", vt->name);
 			continue;
 		}
 
@@ -850,6 +909,8 @@ static void deprecate_vars(void)
 
 		dstate_setinfo(vt->name, "%s", temp);
 		dstate_dataok();
+
+		confirm_cv(vt->cmd, "variable", vt->name);
 	}
 }
 
@@ -1033,60 +1094,45 @@ static void oldapcsetup(void)
 static void protocol_verify(unsigned char cmd)
 {
 	int i, found;
-	const char *fmt, *temp;
-	char info[256];
+	const char *temp;
+	apc_vartab_t *vt;
+	apc_cmdtab_t *ct;
 
 	/* don't bother with cmd/var we don't care about */
 	if (strchr(APC_UNR_CMDS, cmd))
 		return;
-
-	if (isprint(cmd))
-		fmt = "[%c]";
-	else
-		fmt = "[0x%02x]";
 
 	/*
 	 * see if it's a variable
 	 * note: some nut variables map onto multiple APC ones (firmware)
 	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if (apc_vartab[i].cmd == cmd) {
-			if (apc_vartab[i].flags & APC_MULTI) {
+		vt = &apc_vartab[i];
+		if (vt->cmd == cmd) {
+			if (vt->flags & APC_MULTI) {
 				/* APC_MULTI are handled by deprecate_vars() */
-				apc_vartab[i].flags |= APC_PRESENT;
+				vt->flags |= APC_PRESENT;
 				return;
 			}
 
 			temp = preread_data(&apc_vartab[i]);
 			if (!temp || !valid_cmd(cmd, temp)) {
-				snprintf(info, sizeof(info), "%s%s%s",
-					"UPS variable [%s] - APC: ",
-					fmt,
-					" invalid or unreadable"
-				);
-				upsdebugx(3, info, apc_vartab[i].name, cmd);
+				warn_cv(cmd, "variable", vt->name);
 				return;
 			}
 
-			apc_vartab[i].flags |= APC_PRESENT;
-
-			snprintf(info, sizeof(info), "%s%s",
-				"UPS supports variable [%s] - APC: ",
-				fmt
-			);
-			upsdebugx(3, info, apc_vartab[i].name, cmd);
-
-			dstate_setinfo(apc_vartab[i].name, "%s", temp);
+			vt->flags |= APC_PRESENT;
+			dstate_setinfo(vt->name, "%s", temp);
 			dstate_dataok();
 
 			/* handle special data for our two strings */
-			if (apc_vartab[i].flags & APC_STRING) {
-				dstate_setflags(apc_vartab[i].name,
-					ST_FLAG_RW | ST_FLAG_STRING);
-				dstate_setaux(apc_vartab[i].name, APC_STRLEN);
-
-				apc_vartab[i].flags |= APC_RW;
+			if (vt->flags & APC_STRING) {
+				dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
+				dstate_setaux(vt->name, APC_STRLEN);
+				vt->flags |= APC_RW;
 			}
+
+			confirm_cv(cmd, "variable", vt->name);
 			return;
 		}
 	}
@@ -1097,30 +1143,24 @@ static void protocol_verify(unsigned char cmd)
 	 */
 	found = 0;
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
-		if (apc_cmdtab[i].cmd == cmd) {
-
-			snprintf(info, sizeof(info), "%s%s",
-				"UPS supports command [%s] - APC: ",
-				fmt
-			);
-			upsdebugx(3, info, apc_cmdtab[i].name, cmd);
-
-			dstate_addcmd(apc_cmdtab[i].name);
-
-			apc_cmdtab[i].flags |= APC_PRESENT;
+		ct = &apc_cmdtab[i];
+		if (ct->cmd == cmd) {
+			ct->flags |= APC_PRESENT;
+			dstate_addcmd(ct->name);
 			found = 1;
+
+			confirm_cv(cmd, "command", ct->name);
 		}
 	}
 
 	if (found)
 		return;
 
-	snprintf(info, sizeof(info), "%s%s%s",
-		"protocol_verify - APC: ",
-		fmt,
-		" unrecognized"
-	);
-	upsdebugx(1, info, cmd);
+	/*
+	 * epilogue - unrecognized command / variable not included
+	 * in APC_UNR_CMDS
+	 */
+	warn_cv(cmd, NULL, NULL);
 }
 
 /* some hardware is a special case - hotwire the list of cmdchars */
