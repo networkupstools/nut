@@ -56,68 +56,6 @@ static int ups_status = 0;
 #define VDISCARD VDISCRD
 #endif /* VDISCRD && !VDISCARD */
 
-#ifndef CTRL
-#define CONTROL(x) (x&037)
-#else
-#define CONTROL CTRL
-#endif
-
-/*
- * Allow use of system default characters if defined and reasonable.
- * These are based on the BSD ttydefaults.h
- */
-#ifndef CDISCARD
-#define CDISCARD CONTROL('O')
-#endif
-#ifndef CDSUSP
-#define CDSUSP	 CONTROL('Y')
-#endif
-#ifndef CEOF
-#define CEOF	 CONTROL('D')
-#endif
-#ifndef CEOL
-#define CEOL	 0xff		/* was 0 */
-#endif
-#ifndef CERASE
-#define CERASE	 0177
-#endif
-#ifndef CINTR
-#define CINTR	 CONTROL('C')
-#endif
-#ifndef CKILL
-#define CKILL	 CONTROL('U')	/* was '@' */
-#endif
-#ifndef CLNEXT
-#define CLNEXT	 CONTROL('V')
-#endif
-#ifndef CMIN
-#define CMIN	 CEOF
-#endif
-#ifndef CQUIT
-#define CQUIT	 CONTROL('\\')
-#endif
-#ifndef CRPRNT
-#define CRPRNT	 CONTROL('R')
-#endif
-#ifndef CREPRINT
-#define CREPRINT CRPRNT
-#endif
-#ifndef CSTART
-#define CSTART	 CONTROL('Q')
-#endif
-#ifndef CSTOP
-#define CSTOP	 CONTROL('S')
-#endif
-#ifndef CSUSP
-#define CSUSP	 CONTROL('Z')
-#endif
-#ifndef CTIME
-#define CTIME	 CEOL
-#endif
-#ifndef CWERASE
-#define CWERASE  CONTROL('W')
-#endif
-
 /* some forwards */
 
 static int sdcmd_S(const void *);
@@ -247,38 +185,37 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	struct termios *tio[] = { tioset, tioget };
 	struct cchar {
 		const char *name;
-		int sub;
-		u_char def;
+		unsigned int sub;
 	};
 	const struct cchar cchars1[] = {
 #ifdef VDISCARD
-		{ "discard",	VDISCARD,	CDISCARD },
+		{ "discard",	VDISCARD	},
 #endif
 #ifdef VDSUSP
-		{ "dsusp",	VDSUSP,		CDSUSP },
+		{ "dsusp",	VDSUSP		},
 #endif
-		{ "eof",	VEOF,		CEOF },
-		{ "eol",	VEOL,		CEOL },
-		{ "eol2",	VEOL2,		CEOL },
-		{ "erase",	VERASE,		CERASE },
+		{ "eof",	VEOF		},
+		{ "eol",	VEOL		},
+		{ "eol2",	VEOL2		},
+		{ "erase",	VERASE		},
 #ifdef VINTR
-		{ "intr",	VINTR,		CINTR },
+		{ "intr",	VINTR		},
 #endif
-		{ "kill",	VKILL,		CKILL },
-		{ "lnext",	VLNEXT,		CLNEXT },
-		{ "min",	VMIN,		CMIN },
-		{ "quit",	VQUIT,		CQUIT },
+		{ "kill",	VKILL		},
+		{ "lnext",	VLNEXT		},
+		{ "min",	VMIN		},
+		{ "quit",	VQUIT		},
 #ifdef VREPRINT
-		{ "reprint",	VREPRINT,	CREPRINT },
+		{ "reprint",	VREPRINT	},
 #endif
-		{ "start",	VSTART,		CSTART },
+		{ "start",	VSTART		},
 #ifdef VSTATUS
-		{ "status",	VSTATUS,	CSTATUS },
+		{ "status",	VSTATUS		},
 #endif
-		{ "stop",	VSTOP,		CSTOP },
-		{ "susp",	VSUSP,		CSUSP },
-		{ "time",	VTIME,		CTIME },
-		{ "werase",	VWERASE,	CWERASE },
+		{ "stop",	VSTOP		},
+		{ "susp",	VSUSP		},
+		{ "time",	VTIME		},
+		{ "werase",	VWERASE		},
 		{ NULL },
 	}, *cp;
 
