@@ -2060,9 +2060,6 @@ void upsdrv_initups(void)
 	size_t i, len;
 	char *val;
 
-	upsfd = extrafd = ser_open(device_path);
-	apc_ser_set();
-
 	/* sanitize awd (additional waekup delay of '@' command) */
 	if ((val = getval("awd")) && rexhlp(APC_AWDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
@@ -2085,11 +2082,17 @@ void upsdrv_initups(void)
 			}
 		}
 	}
+
+	upsfd = extrafd = ser_open(device_path);
+	apc_ser_set();
 }
 
 void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
+
+	if (upsfd == -1)
+		return;
 
 	apc_flush(0);
 	/* try to bring the UPS out of smart mode */
