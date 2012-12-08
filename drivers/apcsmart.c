@@ -533,12 +533,27 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	ser_comm_good();
 	return count;
 }
+
 static int apc_write(unsigned char code)
 {
+	int ret;
 	errno = 0;
+
 	if (upsfd == -1)
 		return 0;
-	return ser_send_char(upsfd, code);
+
+	ret = ser_send_char(upsfd, code);
+	/*
+	 * Formally any write() sould never return 0, if the count != 0. For
+	 * the sake of handling any obscure nonsense, we consider such return
+	 * as a failure - thus <= condition
+	 */
+	if (ret <= 0)
+		ser_comm_fail("%s", strerror(errno));
+	else
+		ser_comm_good();
+
+	return ret;
 }
 
 /*
@@ -558,12 +573,8 @@ static int apc_write_long(const char *code)
 {
 	char temp[APC_LBUF];
 	int ret;
-	errno = 0;
 
-	if (upsfd == -1)
-		return 0;
-
-	ret = ser_send_char(upsfd, *code);
+	ret = apc_write(*code);
 	if (ret != 1)
 		return ret;
 	/* peek for the answer - anything at this point is failure */
@@ -574,19 +585,22 @@ static int apc_write_long(const char *code)
 	}
 
 	ret = ser_send_pace(upsfd, 50000, "%s", code + 1);
-	return ret < 0 ? ret : ret + 1;
+	if (ret >= 0)
+		ret++;
+	/* see remark in plain apc_write() */
+	if (ret != (int)strlen(code))
+		ser_comm_fail("%s", strerror(errno));
+	else
+		ser_comm_good();
+	return ret;
 }
 
 static int apc_write_rep(unsigned char code)
 {
 	char temp[APC_LBUF];
 	int ret;
-	errno = 0;
 
-	if (upsfd == -1)
-		return 0;
-
-	ret = ser_send_char(upsfd, code);
+	ret = apc_write(code);
 	if (ret != 1)
 		return ret;
 	/* peek for the answer - anything at this point is failure */
@@ -595,12 +609,12 @@ static int apc_write_rep(unsigned char code)
 		errno = ECANCELED;
 		return -1;
 	}
-
 	usleep(1300000);
-	ret = ser_send_char(upsfd, code);
-	if (ret != 1)
-		return ret;
-	return 2;
+
+	ret = apc_write(code);
+	if (ret >= 0)
+		ret++;
+	return ret;
 }
 
 /* all flags other than SER_AA are ignored */
@@ -610,7 +624,7 @@ static void apc_flush(int flags)
 
 	if (flags & SER_AA) {
 		tcflush(upsfd, TCOFLUSH);
-		while(apc_read(temp, sizeof(temp), SER_D0|SER_TO|SER_AA));
+		while(apc_read(temp, sizeof(temp), SER_D0|SER_TO|SER_AA) > 0);
 	} else {
 		tcflush(upsfd, TCIOFLUSH);
 		/* tcflush(upsfd, TCIFLUSH); */
@@ -1423,7 +1437,7 @@ static int sdcmd_S(const void *foo)
 	apc_flush(0);
 	upsdebugx(1, "issuing soft hibernate");
 	ret = apc_write(APC_CMD_SOFTDOWN);
-	if (ret < 0) {
+	if (ret != 1) {
 		upslog_with_errno(LOG_ERR, "sdcmd_S: issuing 'S' failed");
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1442,7 +1456,7 @@ static int sdcmd_CS(const void *foo)
 		apc_flush(0);
 		upsdebugx(1, "status OL - forcing OB temporarily");
 		ret = apc_write(APC_CMD_SIMPWF);
-		if (ret < 0) {
+		if (ret != 1) {
 			upslog_with_errno(LOG_ERR, "sdcmd_CS: issuing 'U' failed");
 			return STAT_INSTCMD_FAILED;
 		}
@@ -1453,6 +1467,7 @@ static int sdcmd_CS(const void *foo)
 			return STAT_INSTCMD_FAILED;
 		}
 	}
+	/* continue with regular soft hibernate */
 	return sdcmd_S(0);
 }
 
@@ -1484,7 +1499,7 @@ static int sdcmd_AT(const void *str)
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
-	if (ret < 0) {
+	if (ret != padto + 1) {
 		upslog_with_errno(LOG_ERR, "sdcmd_AT: issuing '@' with %d digits failed", padto);
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1516,7 +1531,7 @@ static int sdcmd_K(const void *foo)
 
 	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_SHUTDOWN);
-	if (ret < 0) {
+	if (ret != 2) {
 		upslog_with_errno(LOG_ERR, "sdcmd_K: issuing 'K' failed");
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1533,7 +1548,7 @@ static int sdcmd_Z(const void *foo)
 
 	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_OFF);
-	if (ret < 0) {
+	if (ret != 2) {
 		upslog_with_errno(LOG_ERR, "sdcmd_Z: issuing 'Z' failed");
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1887,7 +1902,7 @@ static int do_loadon(void)
 	upsdebugx(1, "issuing load-on command");
 
 	ret = apc_write_rep(APC_CMD_ON);
-	if (ret < 0) {
+	if (ret != 2) {
 		upslog_with_errno(LOG_ERR, "do_loadon: apc_write_rep failed");
 		return STAT_INSTCMD_FAILED;
 	}
@@ -1905,7 +1920,7 @@ static int do_loadon(void)
 /* actually send the instcmd's char to the ups */
 static int do_cmd(const apc_cmdtab_t *ct)
 {
-	int ret;
+	int ret, c;
 	char temp[APC_LBUF];
 	const char *strerr;
 
@@ -1914,12 +1929,14 @@ static int do_cmd(const apc_cmdtab_t *ct)
 	if (ct->flags & APC_REPEAT) {
 		ret = apc_write_rep(ct->cmd);
 		strerr = "apc_write_rep";
+		c = 2;
 	} else {
 		ret = apc_write(ct->cmd);
 		strerr = "apc_write";
+		c = 1;
 	}
 
-	if (ret < 1) {
+	if (ret != c) {
 		upslog_with_errno(LOG_ERR, "do_cmd: %s failed", strerr);
 		return STAT_INSTCMD_FAILED;
 	}
