@@ -1008,6 +1008,37 @@ static int update_status(void)
 	return 1;
 }
 
+static int var_verify(apc_vartab_t *vt)
+{
+	const char *temp;
+
+	if (vt->flags & APC_MULTI) {
+		/* APC_MULTI are handled by deprecate_vars() */
+		vt->flags |= APC_PRESENT;
+		return -1;
+	}
+
+	temp = preread_data(vt);
+	if (!temp || !valid_cmd(vt->cmd, temp)) {
+		warn_cv(vt->cmd, "variable", vt->name);
+		return 0;
+	}
+
+	vt->flags |= APC_PRESENT;
+	dstate_setinfo(vt->name, "%s", temp);
+	/* handle special data for our two strings */
+	if (vt->flags & APC_STRING) {
+		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux(vt->name, APC_STRLEN);
+		vt->flags |= APC_RW;
+	}
+	dstate_dataok();
+
+	confirm_cv(vt->cmd, "variable", vt->name);
+
+	return 1;
+}
+
 static void query_ups(const char *var)
 {
 	int i;
