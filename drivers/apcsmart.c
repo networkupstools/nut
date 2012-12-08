@@ -46,17 +46,6 @@ upsdrv_info_t upsdrv_info = {
 
 static int ups_status = 0;
 
-/*
- * Aix compatible names
- */
-#if defined(VWERSE) && !defined(VWERASE)
-#define VWERASE VWERSE
-#endif /* VWERSE && !VWERASE */
-
-#if defined(VDISCRD) && !defined(VDISCARD)
-#define VDISCARD VDISCRD
-#endif /* VDISCRD && !VDISCARD */
-
 /* some forwards */
 
 static int sdcmd_S(const void *);
@@ -188,6 +177,18 @@ static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 }
 
 /* report differences if tcsetattr != tcgetattr, return otherwise */
+
+/*
+ * Aix compatible names
+ */
+#if defined(VWERSE) && !defined(VWERASE)
+#define VWERASE VWERSE
+#endif /* VWERSE && !VWERASE */
+
+#if defined(VDISCRD) && !defined(VDISCARD)
+#define VDISCARD VDISCRD
+#endif /* VDISCRD && !VDISCARD */
+
 static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 {
 	size_t i;
@@ -702,6 +703,37 @@ static int poll_data(apc_vartab_t *vt)
 	return 1;
 }
 
+static int update_status(void)
+{
+	int	ret;
+	char	buf[APC_LBUF];
+
+	upsdebugx(4, "update_status");
+
+	apc_flush(SER_AA);
+	ret = apc_write(APC_STATUS);
+
+	if (ret != 1) {
+		upslog_with_errno(LOG_ERR, "update_status: apc_write failed");
+		dstate_datastale();
+		return 0;
+	}
+
+	ret = apc_read(buf, sizeof(buf), SER_AA);
+
+	if ((ret < 1) || (!strcmp(buf, "NA"))) {
+		dstate_datastale();
+		return 0;
+	}
+
+	ups_status = strtol(buf, 0, 16) & 0xff;
+	ups_status_set();
+
+	dstate_dataok();
+
+	return 1;
+}
+
 static int dfa_fwnew(const char *val)
 {
 	int ret;
@@ -810,12 +842,43 @@ static void warn_cv(unsigned char cmd, const char *tag, const char *name)
 	}
 }
 
+static int var_verify(apc_vartab_t *vt)
+{
+	const char *temp;
+
+	if (vt->flags & APC_MULTI) {
+		/* APC_MULTI are handled by deprecate_vars() */
+		vt->flags |= APC_PRESENT;
+		return -1;
+	}
+
+	temp = preread_data(vt);
+	if (!temp || !valid_cmd(vt->cmd, temp)) {
+		warn_cv(vt->cmd, "variable", vt->name);
+		return 0;
+	}
+
+	vt->flags |= APC_PRESENT;
+	dstate_setinfo(vt->name, "%s", temp);
+	/* handle special data for our two strings */
+	if (vt->flags & APC_STRING) {
+		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux(vt->name, APC_STRLEN);
+		vt->flags |= APC_RW;
+	}
+	dstate_dataok();
+
+	confirm_cv(vt->cmd, "variable", vt->name);
+
+	return 1;
+}
+
 /*
  * This function iterates over vartab, deprecating nut:apc 1:n variables. We
  * prefer earliest present variable. All the other ones must be marked as
- * deprecated and as not present.
- * This is intended to call after verifying the presence of variables.
- * Otherwise it would take a while to execute due to preread_data()
+ * deprecated and not present.
+ * This pass is requried after completion of all protocol_verify() and/or
+ * legacy_verify() calls.
  */
 static void deprecate_vars(void)
 {
@@ -825,13 +888,11 @@ static void deprecate_vars(void)
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		vt = &apc_vartab[i];
-		if (vt->flags & APC_DEPR)
-			/* already handled */
-			continue;
-
-		if (!(vt->flags & APC_MULTI))
+		if (!(vt->flags & APC_MULTI) || vt->flags & APC_DEPR)
+			/* not interesting or already handled */
 			continue;
 		if (!(vt->flags & APC_PRESENT)) {
+			/* multi vars must be marked earlier as present */
 			vt->flags |= APC_DEPR;
 			continue;
 		}
@@ -977,69 +1038,7 @@ static void do_capabilities(int qco)
 	}
 }
 
-static int update_status(void)
-{
-	int	ret;
-	char	buf[APC_LBUF];
-
-	upsdebugx(4, "update_status");
-
-	apc_flush(SER_AA);
-	ret = apc_write(APC_STATUS);
-
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "update_status: apc_write failed");
-		dstate_datastale();
-		return 0;
-	}
-
-	ret = apc_read(buf, sizeof(buf), SER_AA);
-
-	if ((ret < 1) || (!strcmp(buf, "NA"))) {
-		dstate_datastale();
-		return 0;
-	}
-
-	ups_status = strtol(buf, 0, 16) & 0xff;
-	ups_status_set();
-
-	dstate_dataok();
-
-	return 1;
-}
-
-static int var_verify(apc_vartab_t *vt)
-{
-	const char *temp;
-
-	if (vt->flags & APC_MULTI) {
-		/* APC_MULTI are handled by deprecate_vars() */
-		vt->flags |= APC_PRESENT;
-		return -1;
-	}
-
-	temp = preread_data(vt);
-	if (!temp || !valid_cmd(vt->cmd, temp)) {
-		warn_cv(vt->cmd, "variable", vt->name);
-		return 0;
-	}
-
-	vt->flags |= APC_PRESENT;
-	dstate_setinfo(vt->name, "%s", temp);
-	/* handle special data for our two strings */
-	if (vt->flags & APC_STRING) {
-		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
-		dstate_setaux(vt->name, APC_STRLEN);
-		vt->flags |= APC_RW;
-	}
-	dstate_dataok();
-
-	confirm_cv(vt->cmd, "variable", vt->name);
-
-	return 1;
-}
-
-static void query_ups(const char *var)
+static void legacy_verify(const char *var)
 {
 	int i;
 	/*
@@ -1099,23 +1098,22 @@ static void oldapcsetup(void)
 	apc_vartab_t *vt;
 
 	/*
-	 * really old models ignore REQ_MODEL, so find them first
 	 * note: battery.date and ups.id make little sense here, as
 	 * that would imply writability and this is an *old* apc psu
 	 */
-	query_ups("ups.model");
-	query_ups("ups.serial");
-	query_ups("ups.firmware");
-	query_ups("ups.temperature");
-	query_ups("ups.load");
-	query_ups("input.voltage");
-	query_ups("output.voltage");
-	query_ups("output.current");
-	query_ups("battery.charge");
-	query_ups("battery.voltage");
+	legacy_verify("ups.model");
+	legacy_verify("ups.serial");
+	legacy_verify("ups.firmware");
+	legacy_verify("ups.temperature");
+	legacy_verify("ups.load");
+	legacy_verify("input.voltage");
+	legacy_verify("output.voltage");
+	legacy_verify("output.current");
+	legacy_verify("battery.charge");
+	legacy_verify("battery.voltage");
 	deprecate_vars();
 
-	/* really old models ignore REQ_MODEL, so find them first */
+	/* really old models don't support ups.model (apc: 0x01) */
 	vt = vartab_lookup_name("ups.model");
 	if (!(vt->flags & APC_PRESENT))
 		/* force the model name */
@@ -2066,7 +2064,7 @@ static void setuphandlers(void)
 	upsh.instcmd = instcmd;
 }
 
-/* functions that interface with main.c */
+/* ---- functions that interface with main.c ------------------------------- */
 
 void upsdrv_makevartable(void)
 {
@@ -2074,6 +2072,15 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
 	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0 - " APC_SDMAX ")");
 	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
+}
+
+void upsdrv_help(void)
+{
+	printf(
+		"\nFor detailed information, please refer to:\n"
+		  " - apcsmart(8)\n"
+		  " - http://www.networkupstools.org/docs/man/apcsmart.html\n"
+	      );
 }
 
 void upsdrv_initups(void)
@@ -2117,10 +2124,6 @@ void upsdrv_cleanup(void)
 	apc_write(APC_GODUMB);
 	apc_read(temp, sizeof(temp), SER_TO);
 	ser_close(upsfd, device_path);
-}
-
-void upsdrv_help(void)
-{
 }
 
 void upsdrv_initinfo(void)
