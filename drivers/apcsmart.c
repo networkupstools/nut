@@ -687,12 +687,10 @@ static int poll_data(apc_vartab_t *vt)
 
 	if (ret != 1) {
 		upslogx(LOG_ERR, "poll_data: apc_write failed");
-		dstate_datastale();
 		return 0;
 	}
 
 	if (apc_read(temp, sizeof(temp), SER_AA) < 1) {
-		dstate_datastale();
 		return 0;
 	}
 
@@ -701,7 +699,6 @@ static int poll_data(apc_vartab_t *vt)
 		remove_var("poll_data", vt);
 
 	dstate_setinfo(vt->name, "%s", convert_data(vt, temp));
-	dstate_dataok();
 
 	return 1;
 }
@@ -718,21 +715,17 @@ static int update_status(void)
 
 	if (ret != 1) {
 		upslog_with_errno(LOG_ERR, "update_status: apc_write failed");
-		dstate_datastale();
 		return 0;
 	}
 
 	ret = apc_read(buf, sizeof(buf), SER_AA);
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
-		dstate_datastale();
 		return 0;
 	}
 
 	ups_status = strtol(buf, 0, 16) & 0xff;
 	ups_status_set();
-
-	dstate_dataok();
 
 	return 1;
 }
@@ -846,7 +839,6 @@ static int var_verify(apc_vartab_t *vt)
 	vt->flags |= APC_PRESENT;
 	dstate_setinfo(vt->name, "%s", temp);
 	var_string_setup(vt);
-	dstate_dataok();
 
 	confirm_cv(vt->cmd, "variable", vt->name);
 
@@ -897,7 +889,6 @@ static void deprecate_vars(void)
 
 		dstate_setinfo(vt->name, "%s", temp);
 		var_string_setup(vt);
-		dstate_dataok();
 
 		confirm_cv(vt->cmd, "variable", vt->name);
 	}
@@ -1104,8 +1095,6 @@ static void oldapcsetup(void)
 	vt = vartab_lookup_name("output.current");
 	if (vt->flags & APC_PRESENT)
 		dstate_setinfo("ups.model", "Matrix-UPS");
-
-	update_status(); /* implies dstate_dataok() */
 
 	/*
 	 * If we have come down this path then we dont do capabilities and
@@ -1661,9 +1650,9 @@ void upsdrv_shutdown(void)
 		upsdrv_shutdown_simple();
 }
 
-static void update_info_normal(void)
+static int update_info_normal(void)
 {
-	int	i;
+	int i;
 
 	upsdebugx(3, "update_info_normal: starting");
 
@@ -1674,16 +1663,17 @@ static void update_info_normal(void)
 		if (!poll_data(&apc_vartab[i])) {
 			upsdebugx(3, "update_info_normal: poll_data (%s) failed - "
 				"aborting scan", apc_vartab[i].name);
-			return;
+			return 0;
 		}
 	}
 
 	upsdebugx(3, "update_info_normal: done");
+	return 1;
 }
 
-static void update_info_all(void)
+static int update_info_all(void)
 {
-	int	i;
+	int i;
 
 	upsdebugx(3, "update_info_all: starting");
 
@@ -1691,11 +1681,12 @@ static void update_info_all(void)
 		if (!poll_data(&apc_vartab[i])) {
 			upsdebugx(3, "update_info_all: poll_data (%s) failed - "
 				"aborting scan", apc_vartab[i].name);
-			return;
+			return 0;
 		}
 	}
 
 	upsdebugx(3, "update_info_all: done");
+	return 1;
 }
 
 static int setvar_enum(apc_vartab_t *vt, const char *val)
@@ -2135,12 +2126,18 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "detected %s [%s] on %s", pmod, pser, device_path);
 
 	setuphandlers();
+	/*
+	 * seems to be ok so far, it must be set so initial call of
+	 * upsdrv_updateinfo() doesn't begin with stale condition
+	 */
+	dstate_dataok();
 }
 
 void upsdrv_updateinfo(void)
 {
 	static int last_worked = 0;
 	static time_t last_full = 0;
+	int (*upd)(void);
 	time_t now;
 
 	/* try to wake up a dead ups once in awhile */
@@ -2162,8 +2159,10 @@ void upsdrv_updateinfo(void)
 		last_worked = 0;
 	}
 
-	if (!update_status())
+	if (!update_status()) {
+		dstate_datastale();
 		return;
+	}
 
 	time(&now);
 
@@ -2171,9 +2170,13 @@ void upsdrv_updateinfo(void)
 	/* does not catch measure-ups II insertion/removal */
 	if (difftime(now, last_full) > 3600) {
 		last_full = now;
-		update_info_all();
-		return;
-	}
+		upd = update_info_all;
+	} else
+		upd = update_info_normal;
 
-	update_info_normal();
+	if (upd()) {
+		dstate_dataok();
+	} else {
+		dstate_datastale();
+	}
 }
