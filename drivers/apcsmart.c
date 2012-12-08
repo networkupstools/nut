@@ -1184,7 +1184,7 @@ static int firmware_table_lookup(void)
 	return 0;
 }
 
-static void getbaseinfo(void)
+static int getbaseinfo(void)
 {
 	unsigned int	i;
 	int	ret, qco;
@@ -1197,7 +1197,7 @@ static void getbaseinfo(void)
 	qco = firmware_table_lookup();
 	if (qco == 1)
 		/* found compat */
-		return;
+		return 1;
 
 	upsdebugx(2, "firmware not found in compatibility table - trying normal method");
 	upsdebugx(1, "APC - attempting to find command set");
@@ -1212,7 +1212,11 @@ static void getbaseinfo(void)
 
 	if (ret != 1) {
 		upslog_with_errno(LOG_ERR, "getbaseinfo: apc_write failed");
-		return;
+		/*
+		 * this really shouldn't happen, as we're after successful Y
+		 * at this point; either way, report it to the caller
+		 */
+		return 0;
 	}
 
 	ret = apc_read(temp, sizeof(temp), SER_CS|SER_TO);
@@ -1221,7 +1225,7 @@ static void getbaseinfo(void)
 		/* We have an old dumb UPS - go to specific code for old stuff */
 		upsdebugx(1, "APC - trying to handle unknown model");
 		oldapcsetup();
-		return;
+		return 1;
 	}
 
 	upsdebugx(1, "APC - Parsing out supported cmds and vars");
@@ -1239,6 +1243,7 @@ static void getbaseinfo(void)
 		do_capabilities(qco);
 		upsdebugx(1, "APC - UPS capabilities determined");
 	}
+	return 1;
 }
 
 /* check for calibration status and either start or stop */
@@ -2113,10 +2118,14 @@ void upsdrv_initinfo(void)
 			);
 	}
 
+	if (!getbaseinfo()) {
+		fatalx(EXIT_FAILURE,
+			"Problems with communicating APC UPS on port %s\n", device_path
+			);
+	}
+
 	/* manufacturer ID - hardcoded in this particular module */
 	dstate_setinfo("ups.mfr", "APC");
-
-	getbaseinfo();
 
 	if (!(pmod = dstate_getinfo("ups.model")))
 		pmod = "\"unknown model\"";
