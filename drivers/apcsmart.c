@@ -810,57 +810,35 @@ static void warn_cv(unsigned char cmd, const char *tag, const char *name)
 	}
 }
 
-/*
- * query_ups() is called before any APC_PRESENT flags are determined;
- * only for the variable provided
- */
-static int query_ups(const char *var)
+static void query_ups(const char *var)
 {
-	int i, j;
+	int i;
 	const char *temp;
-	apc_vartab_t *vt, *vtn;
+	apc_vartab_t *vt;
 
-	/*
-	 * at first run we know nothing about variable; we have to handle
-	 * APC_MULTI gracefully as well
-	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		vt = &apc_vartab[i];
-		if (strcmp(vt->name, var) || vt->flags & APC_DEPR)
+		if (strcmp(vt->name, var))
 			continue;
 
-		/* found, [try to] get it */
+		if (vt->flags & APC_MULTI) {
+			/* APC_MULTI are handled by deprecate_vars() */
+			vt->flags |= APC_PRESENT;
+			continue;
+		}
 
 		temp = preread_data(vt);
 		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			if (vt->flags & APC_MULTI) {
-				vt->flags |= APC_DEPR;
-				vt->flags &= ~APC_PRESENT;
-				continue;
-			}
 			warn_cv(vt->cmd, "variable", vt->name);
-			break;
+			return;
 		}
 
 		vt->flags |= APC_PRESENT;
 		dstate_setinfo(vt->name, "%s", temp);
 		dstate_dataok();
 
-		/* supported, deprecate all the remaining ones */
-		if (vt->flags & APC_MULTI)
-			for (j = i + 1; apc_vartab[j].name != NULL; j++) {
-				vtn = &apc_vartab[j];
-				if (strcmp(vtn->name, vt->name))
-					continue;
-				vtn->flags |= APC_DEPR;
-				vtn->flags &= ~APC_PRESENT;
-			}
-
 		confirm_cv(vt->cmd, "variable", vt->name);
-		return 1; /* success */
 	}
-
-	return 0;
 }
 
 /*
@@ -1063,16 +1041,11 @@ static int update_status(void)
 
 static void oldapcsetup(void)
 {
+	apc_vartab_t *vt;
+
 	/* really old models ignore REQ_MODEL, so find them first */
-	if (!query_ups("ups.model")) {
-		/* force the model name */
-		dstate_setinfo("ups.model", "Smart-UPS");
-	}
-
-	/* see if this might be an old Matrix-UPS instead */
-	if (query_ups("output.current"))
-		dstate_setinfo("ups.model", "Matrix-UPS");
-
+	query_ups("ups.model");
+	query_ups("output.current");
 	query_ups("ups.firmware");
 	query_ups("ups.serial");
 	query_ups("input.voltage");
@@ -1082,8 +1055,20 @@ static void oldapcsetup(void)
 	query_ups("output.voltage");
 	query_ups("ups.temperature");
 	query_ups("ups.load");
+	deprecate_vars();
 
-	update_status();
+	/* really old models ignore REQ_MODEL, so find them first */
+	vt = vartab_lookup_name("ups.model");
+	if (!(vt->flags & APC_PRESENT))
+		/* force the model name */
+		dstate_setinfo("ups.model", "Smart-UPS");
+
+	/* see if this might be an old Matrix-UPS instead */
+	vt = vartab_lookup_name("output.current");
+	if (vt->flags & APC_PRESENT)
+		dstate_setinfo("ups.model", "Matrix-UPS");
+
+	update_status(); /* implies dstate_dataok() */
 
 	/*
 	 * If we have come down this path then we dont do capabilities and
@@ -1815,7 +1800,6 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 			/* refresh data from the hardware */
 			poll_data(vt);
-			/* query_ups(vt->name, 0); */
 
 			return STAT_SET_HANDLED;	/* FUTURE: success */
 		}
@@ -1834,7 +1818,6 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	/* refresh data from the hardware */
 	poll_data(vt);
-	/* query_ups(vt->name, 0); */
 
 	return STAT_SET_HANDLED;
 }
@@ -1901,7 +1884,6 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* refresh data from the hardware */
 	poll_data(vt);
-	/* query_ups(vt->name, 0); */
 
 	upslogx(LOG_INFO, "SET %s='%s'", vt->name, val);
 
