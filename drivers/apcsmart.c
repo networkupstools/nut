@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
- *           (C) 2011  Michal Soltys <soltys@ziu.info>
+ *           (C) 2011+ Michal Soltys <soltys@ziu.info>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <sys/file.h>
 #include <regex.h>
 #include <ctype.h>
+#include <strings.h> /* strcasecmp() */
 
 #include "main.h"
 #include "serial.h"
@@ -117,20 +118,20 @@ static int rexhlp(const char *rex, const char *val)
 
 /* convert APC formatting to NUT formatting */
 /* TODO: handle errors better */
-static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
+static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 {
 	static char temp[APC_LBUF];
 	int tval;
 
 	/* this should never happen */
 	if (strlen(upsval) >= sizeof(temp)) {
-		upslogx(LOG_CRIT, "length of [%s] too long", cmd_entry->name);
-		strncpy(temp, upsval, sizeof(temp) - 1);
+		upslogx(LOG_CRIT, "The length of [%s] is too big", vt->name);
+		memcpy(temp, upsval, sizeof(temp) - 1);
 		temp[sizeof(temp) - 1] = '\0';
 		return temp;
 	}
 
-	switch(cmd_entry->flags & APC_F_MASK) {
+	switch (vt->flags & APC_F_MASK) {
 		case APC_F_PERCENT:
 		case APC_F_VOLT:
 		case APC_F_AMP:
@@ -172,7 +173,7 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 			}
 	}
 
-	upslogx(LOG_NOTICE, "Unable to handle conversion of [%s]", cmd_entry->name);
+	upslogx(LOG_NOTICE, "Unable to handle conversion of [%s]", vt->name);
 	strcpy(temp, upsval);
 	return temp;
 }
@@ -630,7 +631,7 @@ static const char *preread_data(apc_vartab_t *vt)
 	return convert_data(vt, temp);
 }
 
-static void remove_var(const char *cal, apc_vartab_t *vt)
+static void remove_var(const char *tag, apc_vartab_t *vt)
 {
 	const char *fmt;
 	char info[256];
@@ -645,14 +646,14 @@ static void remove_var(const char *cal, apc_vartab_t *vt)
 		fmt,
 		") returned NA"
 	);
-	upsdebugx(1, info, cal, vt->name, vt->cmd);
+	upsdebugx(1, info, tag, vt->name, vt->cmd);
 
 	snprintf(info, sizeof(info), "%s%s%s",
 		"%s: removing [%s] (APC: ",
 		fmt,
 		")"
 	);
-	upsdebugx(1, info, cal, vt->name, vt->cmd);
+	upsdebugx(1, info, tag, vt->name, vt->cmd);
 
 	vt->flags &= ~APC_PRESENT;
 	dstate_delinfo(vt->name);

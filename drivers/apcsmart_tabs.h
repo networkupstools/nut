@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
- *           (C) 2011  Michal Soltys <soltys@ziu.info>
+ *           (C) 2011+ Michal Soltys <soltys@ziu.info>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
 /* variables' format */
 
 #define APC_F_MASK	0xFF000000	/* Mask for apc data formats		*/
+#define APC_F_LEAVE	0x00000000	/* Just pass this through		*/
 #define APC_F_PERCENT	0x01000000	/* Data in a percent format		*/
 #define APC_F_VOLT	0x02000000	/* Data in a voltage format		*/
 #define APC_F_AMP	0x03000000	/* Data in a current/amp format		*/
@@ -57,8 +58,7 @@
 #define APC_F_SECONDS	0x07000000	/* Time in seconds			*/
 #define APC_F_MINUTES	0x08000000	/* Time in minutes			*/
 #define APC_F_HOURS	0x09000000	/* Time in hours			*/
-#define APC_F_REASON	0x10000000	/* Reason of transfer			*/
-#define APC_F_LEAVE	0x00000000	/* Just pass this through		*/
+#define APC_F_REASON	0x0A000000	/* Reason of transfer			*/
 
 /* instant commands */
 
