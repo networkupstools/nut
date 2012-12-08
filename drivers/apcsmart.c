@@ -1042,38 +1042,19 @@ static int var_verify(apc_vartab_t *vt)
 static void query_ups(const char *var)
 {
 	int i;
-	const char *temp;
-	apc_vartab_t *vt;
-
+	/*
+	 * note: some NUT variables map onto multiple APC ones (firmware) -
+	 * that's why we keep the loop, as it's over NUT names
+	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		vt = &apc_vartab[i];
-		if (strcmp(vt->name, var))
+		if (strcmp(apc_vartab[i].name, var) || var_verify(&apc_vartab[i]) < 0)
 			continue;
-
-		if (vt->flags & APC_MULTI) {
-			/* APC_MULTI are handled by deprecate_vars() */
-			vt->flags |= APC_PRESENT;
-			continue;
-		}
-
-		temp = preread_data(vt);
-		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			warn_cv(vt->cmd, "variable", vt->name);
-			return;
-		}
-
-		vt->flags |= APC_PRESENT;
-		dstate_setinfo(vt->name, "%s", temp);
-		dstate_dataok();
-
-		confirm_cv(vt->cmd, "variable", vt->name);
 	}
 }
 
 static void protocol_verify(unsigned char cmd)
 {
 	int i, found;
-	const char *temp;
 	apc_vartab_t *vt;
 	apc_cmdtab_t *ct;
 
@@ -1081,55 +1062,26 @@ static void protocol_verify(unsigned char cmd)
 	if (strchr(APC_UNR_CMDS, cmd))
 		return;
 
-	/*
-	 * see if it's a variable
-	 * note: some nut variables map onto multiple APC ones (firmware)
-	 */
-	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		vt = &apc_vartab[i];
-		if (vt->cmd == cmd) {
-			if (vt->flags & APC_MULTI) {
-				/* APC_MULTI are handled by deprecate_vars() */
-				vt->flags |= APC_PRESENT;
-				return;
-			}
-
-			temp = preread_data(&apc_vartab[i]);
-			if (!temp || !valid_cmd(cmd, temp)) {
-				warn_cv(cmd, "variable", vt->name);
-				return;
-			}
-
-			vt->flags |= APC_PRESENT;
-			dstate_setinfo(vt->name, "%s", temp);
-			dstate_dataok();
-
-			/* handle special data for our two strings */
-			if (vt->flags & APC_STRING) {
-				dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
-				dstate_setaux(vt->name, APC_STRLEN);
-				vt->flags |= APC_RW;
-			}
-
-			confirm_cv(cmd, "variable", vt->name);
-			return;
-		}
+	/* lookup variable and verify if applicable */
+	if ((vt = vartab_lookup_char(cmd))) {
+		var_verify(vt);
+		return;
 	}
 
 	/*
-	 * check the command list
-	 * some APC commands map onto multiple nut ones (start and stop)
+	 * see if it's a command
+	 * note: some APC commands map onto multiple NUT ones (start and stop)
 	 */
 	found = 0;
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
 		ct = &apc_cmdtab[i];
-		if (ct->cmd == cmd) {
-			ct->flags |= APC_PRESENT;
-			dstate_addcmd(ct->name);
-			found = 1;
+		if (ct->cmd != cmd)
+			continue;
+		ct->flags |= APC_PRESENT;
+		dstate_addcmd(ct->name);
+		found = 1;
 
-			confirm_cv(cmd, "command", ct->name);
-		}
+		confirm_cv(cmd, "command", ct->name);
 	}
 
 	if (found)
@@ -1146,18 +1098,21 @@ static void oldapcsetup(void)
 {
 	apc_vartab_t *vt;
 
-	/* really old models ignore REQ_MODEL, so find them first */
+	/*
+	 * really old models ignore REQ_MODEL, so find them first
+	 * note: battery.date and ups.id make little sense here, as
+	 * that would imply writability and this is an *old* apc psu
+	 */
 	query_ups("ups.model");
-	query_ups("output.current");
-	query_ups("ups.firmware");
 	query_ups("ups.serial");
-	query_ups("input.voltage");
-	query_ups("battery.charge");
-	query_ups("battery.voltage");
-	query_ups("input.voltage");
-	query_ups("output.voltage");
+	query_ups("ups.firmware");
 	query_ups("ups.temperature");
 	query_ups("ups.load");
+	query_ups("input.voltage");
+	query_ups("output.voltage");
+	query_ups("output.current");
+	query_ups("battery.charge");
+	query_ups("battery.voltage");
 	deprecate_vars();
 
 	/* really old models ignore REQ_MODEL, so find them first */
