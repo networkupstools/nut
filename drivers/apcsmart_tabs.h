@@ -62,8 +62,9 @@
 
 /* instant commands */
 
+#define APC_CMD_CUSTOM		0	/* command uses separate function */
 #define APC_CMD_OFF		'Z'
-#define APC_CMD_ON		'\016'		/* ^N */
+#define APC_CMD_ON		'\016'	/* ^N */
 #define APC_CMD_FPTEST		'A'
 #define APC_CMD_SIMPWF		'U'
 #define APC_CMD_BTESTTOGGLE	'W'

@@ -132,10 +132,12 @@
 #define APC_GOSMART	'Y'
 #define APC_GODUMB	'R'
 #define APC_CMDSET	'a'
+#define APC_CMDSET_FMT	"^[0-9]\\.[^.]*\\.[^.]+$"
 #define APC_CAPS	'\032'	/* ^Z */
 #define APC_NEXTVAL	'-'
 #define APC_FW_OLD	'V'
 #define APC_FW_NEW	'b'
+#define APC_FW_NEW_FMT	"^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$"
 
 #define APC_LBUF	512
 #define APC_SBUF	32

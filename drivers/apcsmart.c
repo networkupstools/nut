@@ -101,13 +101,16 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 	return NULL;
 }
 
-/* FUTURE: change to use function pointers */
-
 static int rexhlp(const char *rex, const char *val)
 {
+	static const char *empty = "";
 	int ret;
 	regex_t mbuf;
 
+	if (!rex || !*rex)
+		return 0;
+	if (!val)
+		val = empty;
 	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
 	ret = regexec(&mbuf, val, 0,0,0);
 	regfree(&mbuf);
@@ -734,34 +737,6 @@ static int update_status(void)
 	return 1;
 }
 
-static int dfa_fwnew(const char *val)
-{
-	int ret;
-	regex_t mbuf;
-	/* must be xx.yy.zz */
-	const char rex[] = "^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$";
-
-	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
-	ret = regexec(&mbuf, val, 0,0,0);
-	regfree(&mbuf);
-	return ret;
-}
-
-static int dfa_cmdset(const char *val)
-{
-	int ret;
-	regex_t mbuf;
-	/*
-	 * must be #.alerts.commands ; we'll be a bit lax here
-	 */
-	const char rex[] = "^[0-9]\\.[^.]*\\.[^.]+$";
-
-	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
-	ret = regexec(&mbuf, val, 0,0,0);
-	regfree(&mbuf);
-	return ret;
-}
-
 static int valid_cmd(char cmd, const char *val)
 {
 	char info[256], *fmt;
@@ -769,10 +744,10 @@ static int valid_cmd(char cmd, const char *val)
 
 	switch (cmd) {
 		case APC_FW_NEW:
-			ret = dfa_fwnew(val);
+			ret = rexhlp(APC_FW_NEW_FMT, val);
 			break;
 		case APC_CMDSET:
-			ret = dfa_cmdset(val);
+			ret = rexhlp(APC_CMDSET_FMT, val);
 			break;
 		default:
 			return 1;
@@ -1993,22 +1968,18 @@ static int instcmd(const char *cmd, const char *ext)
 	apc_cmdtab_t *ct = NULL;
 
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
-		/* main command must match */
+		/* cmd must match */
 		if (strcasecmp(apc_cmdtab[i].name, cmd))
 			continue;
-		/* extra was provided - check it */
-		if (ext && *ext) {
-			if (!apc_cmdtab[i].ext)
+		/* if cmd specifies regex, ext must match */
+		if (apc_cmdtab[i].ext) {
+			if (rexhlp(apc_cmdtab[i].ext, ext))
 				continue;
-			if (strlen(apc_cmdtab[i].ext) > 2) {
-				if (rexhlp(apc_cmdtab[i].ext, ext))
-					continue;
-			} else {
-				if (strcasecmp(apc_cmdtab[i].ext, ext))
-					continue;
-			}
-		} else if (apc_cmdtab[i].ext)
-			continue;
+		/* if cmd doesn't specify regex, ext must be NULL */
+		} else {
+			if (ext)
+				continue;
+		}
 		ct = &apc_cmdtab[i];
 		break;
 	}
@@ -2051,11 +2022,10 @@ static int instcmd(const char *cmd, const char *ext)
 		if (!ext || !*ext)
 			return sdcmd_S(0);
 
-		/* ext length is guaranteed by regex match above */
-		if (!strncasecmp(ext, "at", 2))
+		if (toupper(*ext) == 'A')
 			return sdcmd_AT(ext + 3);
 
-		if (!strncasecmp(ext, "cs", 2))
+		if (toupper(*ext) == 'C')
 			return sdcmd_CS(0);
 	}
 

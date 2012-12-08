@@ -81,25 +81,25 @@ apc_vartab_t apc_vartab[] = {
 };
 
 /*
- * apc commands mapped to nut's instant commands extra values are either
- * exactly 2-char prefix, or longer than 2-char extended regex
+ * APC commands mapped to NUT's instant commands
+ * the format of extra values is matched by extended posix regex
+ * APC_CMD_CUSTOM means that the instant command is handled by separate
+ * function, thus the actual APC cmd in the table is ignored
  */
 apc_cmdtab_t apc_cmdtab[] = {
+	{ "shutdown.return",	"^([Aa][Tt]:[0-9]{1,3}|[Cc][Ss]|)$",
+					APC_CMD_CUSTOM,		APC_NASTY },
+	{ "shutdown.stayoff",	0,	APC_CMD_CUSTOM,		APC_NASTY|APC_REPEAT },
+	{ "load.off",		0,	APC_CMD_CUSTOM,		APC_NASTY|APC_REPEAT },
+	{ "load.on",		0,	APC_CMD_CUSTOM,		APC_REPEAT },
+	{ "calibrate.start",	0,	APC_CMD_CUSTOM,		0 },
+	{ "calibrate.stop",	0,	APC_CMD_CUSTOM,		0 },
 	{ "test.panel.start",	0,	APC_CMD_FPTEST,		0 },
 	{ "test.failure.start",	0,	APC_CMD_SIMPWF,		0 },
 	{ "test.battery.start",	0,	APC_CMD_BTESTTOGGLE,	0 },
 	{ "test.battery.stop",	0,	APC_CMD_BTESTTOGGLE,	0 },
-	{ "shutdown.return",	"^at:[0-9]{1,3}$",
-				APC_CMD_GRACEDOWN,	APC_NASTY },
-	{ "shutdown.return",	"cs",	APC_CMD_SOFTDOWN,	APC_NASTY },
-	{ "shutdown.return",	0,	APC_CMD_SOFTDOWN,	APC_NASTY },
-	{ "shutdown.stayoff",	0,	APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
-	{ "load.off",		0,	APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
-	{ "load.on",		0,	APC_CMD_ON,		APC_REPEAT },
 	{ "bypass.start",	0,	APC_CMD_BYPTOGGLE,	0 },
 	{ "bypass.stop",	0,	APC_CMD_BYPTOGGLE,	0 },
-	{ "calibrate.start",	0,	APC_CMD_CALTOGGLE,	0 },
-	{ "calibrate.stop",	0,	APC_CMD_CALTOGGLE,	0 },
 
 	{ 0, 0, 0, 0 }
 };
