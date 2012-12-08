@@ -3,7 +3,7 @@
  *  Copyright (C) 2002 - 2005
  *     Arnaud Quette <arnaud.quette@gmail.com>
  *     Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>
- *     Martin Loyer <martin@ouifi.net>
+ *     Martin Loyer <martin@degraaf.fr>
  *     Patrick Agrain <patrick.agrain@alcatel.fr>
  *     Nicholas Reilly <nreilly@magma.ca>
  *     Dave Abbott <d.abbott@dcs.shef.ac.uk>
@@ -73,7 +73,7 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_VERSION,
 	"Arnaud Quette <ArnaudQuette@gmail.com>\n" \
 	"Hans Ekkehard Plesser <hans.plesser@itf.nlh.no>\n" \
-	"Martin Loyer <martin@ouifi.net>\n" \
+	"Martin Loyer <martin@degraaf.fr>\n" \
 	"Patrick Agrain <patrick.agrain@alcatel.fr>\n" \
 	"Nicholas Reilly <nreilly@magma.ca>\n" \
 	"Dave Abbott <d.abbott@dcs.shef.ac.uk>\n" \
