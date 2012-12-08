@@ -842,6 +842,16 @@ static void warn_cv(unsigned char cmd, const char *tag, const char *name)
 	}
 }
 
+static void var_string_setup(apc_vartab_t *vt)
+{
+	/* handle special data for our two strings */
+	if (vt->flags & APC_STRING) {
+		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux(vt->name, APC_STRLEN);
+		vt->flags |= APC_RW;
+	}
+}
+
 static int var_verify(apc_vartab_t *vt)
 {
 	const char *temp;
@@ -860,12 +870,7 @@ static int var_verify(apc_vartab_t *vt)
 
 	vt->flags |= APC_PRESENT;
 	dstate_setinfo(vt->name, "%s", temp);
-	/* handle special data for our two strings */
-	if (vt->flags & APC_STRING) {
-		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
-		dstate_setaux(vt->name, APC_STRLEN);
-		vt->flags |= APC_RW;
-	}
+	var_string_setup(vt);
 	dstate_dataok();
 
 	confirm_cv(vt->cmd, "variable", vt->name);
@@ -916,6 +921,7 @@ static void deprecate_vars(void)
 		}
 
 		dstate_setinfo(vt->name, "%s", temp);
+		var_string_setup(vt);
 		dstate_dataok();
 
 		confirm_cv(vt->cmd, "variable", vt->name);
