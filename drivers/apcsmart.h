@@ -143,11 +143,12 @@
 #define APC_SBUF	32
 
 /* default a.w.d. value / regex format for command '@' */
-#define APC_AWDDEF	"000"
 #define APC_AWDFMT	"^[0-9]{1,3}$"
 
-/* maximum number of supported sdtype methods + regex format*/
-#define APC_SDMAX	"5"
+/* sdtype method regex format*/
 #define APC_SDFMT	"^[0-5]$"
+
+/* advorder method regex format*/
+#define APC_ADVFMT	"^([0-4]{1,5}|[Nn][Oo])$"
 
 #endif

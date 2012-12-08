@@ -54,6 +54,15 @@ static int sdcmd_K(const void *);
 static int sdcmd_Z(const void *);
 static int sdcmd_CS(const void *);
 
+/*
+ * following table *must* match order defined in the man page, namely:
+ * 0:: soft hibernate (*S*)
+ * 1:: hard hibernate (*@*)
+ * 2:: delayed poweroff (*K*)
+ * 3:: instant poweroff (*Z*)
+ * 4:: "force OB hack" (*CS*)
+ */
+
 static int (*sdlist[])(const void *) = {
 	sdcmd_S,
 	sdcmd_AT,
@@ -62,12 +71,7 @@ static int (*sdlist[])(const void *) = {
 	sdcmd_CS,
 };
 
-#define SDIDX_S		0
 #define SDIDX_AT	1
-#define SDIDX_K		2
-#define SDIDX_Z		3
-#define SDIDX_CS	4
-#define SDCNT		((int)(sizeof(sdlist)/sizeof(sdlist[0])))
 
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
@@ -1644,7 +1648,7 @@ void upsdrv_shutdown(void)
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
+	if (testvar("advorder") && toupper(*getval("advorder")) == 'N')
 		upsdrv_shutdown_advanced();
 	else
 		upsdrv_shutdown_simple();
@@ -2042,7 +2046,7 @@ void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
-	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0 - " APC_SDMAX ")");
+	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method");
 	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
 }
 
@@ -2057,7 +2061,6 @@ void upsdrv_help(void)
 
 void upsdrv_initups(void)
 {
-	size_t i, len;
 	char *val;
 
 	/* sanitize awd (additional waekup delay of '@' command) */
@@ -2071,16 +2074,8 @@ void upsdrv_initups(void)
 	}
 
 	/* sanitize advorder */
-	if ((val = getval("advorder")) && strcasecmp(val, "no")) {
-		len = strlen(val);
-
-		if (!len || len > SDCNT)
-			fatalx(EXIT_FAILURE, "invalid length of 'advorder' option (%s)", val);
-		for (i = 0; i < len; i++) {
-			if (val[i] < '0' || val[i] >= '0' + SDCNT) {
-				fatalx(EXIT_FAILURE, "invalid characters in 'advorder' option (%s)", val);
-			}
-		}
+	if ((val = getval("advorder")) && rexhlp(APC_ADVFMT, val)) {
+			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'advorder'", val);
 	}
 
 	upsfd = extrafd = ser_open(device_path);
