@@ -58,9 +58,15 @@ char * filter_path(const char * source);
 #define connect(h,n,l) sktconnect(h,n,l)
 #endif
 
+#ifndef strcasecmp
 #define strcasecmp(a,b) _stricmp(a,b)
+#endif
+#ifndef snprintf
 #define snprintf _snprintf
+#endif
+#ifndef vsnprintf
 #define vsnprintf _vsnprintf
+#endif
 
 int sktconnect(int fh, struct sockaddr * name, int len);
 int sktread(int fh, char *buf, int size);
