@@ -1,0 +1,102 @@
+NUT and MS Windows
+==================
+
+Introduction
+------------
+
+NUT is now also available for the Microsoft Windows platform.
+
+Cross compiling from Linux
+--------------------------
+
+Fortunately, you are not forced to have a real Windows system to compile NUT.
+The following chapters will guide you through setting up up a 
+link:http://mingw-w64.sourceforge.net[MinGW-w64] build environment and
+compiling NUT.
+
+MinGW-w64 build environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You will first need to setup a MinGW-w64 build environment.
+
+On Debian systems, use:
+
+	# apt-get mingw-w64
+
+On Redhat systems, use:
+
+	# ???
+
+You will also need pthread and mingw regex libraries.
+
+[NOTE]
+================================================================================
+
+When using the compilation approach, use the following HOST_FLAG, BUILD_FLAG
+and CC, CFLAGS, LDFLAGS and PREFIX:
+
+- prefer to export ARCH="x86_64-w64-mingw32" or ARCH="i686-w64-mingw32"
+- HOST_FLAG="--host=$ARCH"
+- PREFIX=/usr/$ARCH
+
+- BUILD_FLAG="--build=`dpkg-architecture -qDEB_BUILD_GNU_TYPE`"
+Note that this is very Debian specific!
+
+- also export the following compilation flags:
+
+	export CFLAGS+="-D_POSIX=1 -I/usr/$ARCH/include/"
+	export LDFLAGS+="-L/usr/$ARCH/lib/"
+
+================================================================================
+
+
+pthread library
+^^^^^^^^^^^^^^^
+
+On Debian, you can use the following packages repository:
+
+	link:https://launchpad.net/~mingw-packages/+archive/ppa[MinGW PPA]
+
+On Redhat: FIXME
+
+////////////////////////////////////////////////////////////////////////////////
+http://fedoraproject.org/wiki/MinGW/CrossCompilerFramework
+https://fedoraproject.org/wiki/Packaging:MinGW?rd=Packaging:MinGW_Future
+https://fedoraproject.org/wiki/Packaging:MinGW_Old
+////////////////////////////////////////////////////////////////////////////////
+
+You can also compile it using:
+
+	$ wget http://mirrors.kernel.org/sources.redhat.com/pthreads-win32/pthreads-w32-2-8-0-release.tar.gz
+	$ make -f GNUmakefile "CROSS=i686-w64-mingw32-" $BUILD_FLAG GC-inlined
+	$ cp *.dll /usr/i686-w64-mingw32/pthreads/lib/
+	$ cp *.a /usr/i686-w64-mingw32/lib/
+	$ cp pthread.h sched.h semaphore.h /usr/i686-w64-mingw32/pthreads/include
+
+
+MinGW regex library
+^^^^^^^^^^^^^^^^^^^
+
+You can compile it  using:
+ 
+	$ wget http://netcologne.dl.sourceforge.net/project/mingw/Other/UserContributed/regex/mingw-regex-2.5.1/mingw-libgnurx-2.5.1-src.tar.gz
+	$ tar -zxf mingw-libgnurx-2.5.1-src.tar.gz
+	$ cd mingw-libgnurx-2.5.1
+	$ ./configure --prefix=/usr/i686-w64-mingw32/ --host=i686-w64-mingw32
+	$ make
+	$ make install
+
+Other requirements
+^^^^^^^^^^^^^^^^^^
+
+libusb, Net SNMP, ...
+
+Building NUT
+~~~~~~~~~~~~
+
+Use the following to compile NUT:
+
+	$ cd scripts/Windows/
+	$ ./build-mingw-nut.sh
+
+If everything goes fine, you will find a NUT installation tree in 'nut_install'.
