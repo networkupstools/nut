@@ -5,6 +5,8 @@ AM_CFLAGS = -I$(top_srcdir)/include
 ../include/nut_version.h: FORCE
 	(cd ../include/ && $(MAKE) $(AM_MAKEFLAGS) nut_version.h)
 
+EXTRA_DIST = winevent.mc build-mingw-nut.sh README
+
 FORCE:
 
 if HAVE_MINGW_RESGEN
@@ -24,7 +26,6 @@ nut_LDADD = ../../common/libcommon.la winevent.o
 
 halt_SOURCES = halt.c
 
-EXTRA_DIST = winevent.mc
 CLEANFILES = winevent.rc winevent.o winevent.h
 
 endif HAVE_MINGW_RESGEN
