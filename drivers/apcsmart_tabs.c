@@ -87,13 +87,15 @@ apc_vartab_t apc_vartab[] = {
  * function, thus the actual APC cmd in the table is ignored
  */
 apc_cmdtab_t apc_cmdtab[] = {
-	{ "shutdown.return",	"^([Aa][Tt]:[0-9]{1,3}|[Cc][Ss]|)$",
-					APC_CMD_CUSTOM,		APC_NASTY },
-	{ "shutdown.stayoff",	0,	APC_CMD_CUSTOM,		APC_NASTY|APC_REPEAT },
-	{ "load.off",		0,	APC_CMD_CUSTOM,		APC_NASTY|APC_REPEAT },
-	{ "load.on",		0,	APC_CMD_CUSTOM,		APC_REPEAT },
-	{ "calibrate.start",	0,	APC_CMD_CUSTOM,		0 },
-	{ "calibrate.stop",	0,	APC_CMD_CUSTOM,		0 },
+	{ "shutdown.return",	"^[Aa][Tt]:[0-9]{1,3}$",
+					APC_CMD_GRACEDOWN,	APC_NASTY },
+	{ "shutdown.return",	"^([Cc][Ss]|)$",
+					APC_CMD_SOFTDOWN,	APC_NASTY },
+	{ "shutdown.stayoff",	0,	APC_CMD_SHUTDOWN,	APC_NASTY|APC_REPEAT },
+	{ "load.off",		0,	APC_CMD_OFF,		APC_NASTY|APC_REPEAT },
+	{ "load.on",		0,	APC_CMD_ON,		APC_REPEAT },
+	{ "calibrate.start",	0,	APC_CMD_CALTOGGLE,	0 },
+	{ "calibrate.stop",	0,	APC_CMD_CALTOGGLE,	0 },
 	{ "test.panel.start",	0,	APC_CMD_FPTEST,		0 },
 	{ "test.failure.start",	0,	APC_CMD_SIMPWF,		0 },
 	{ "test.battery.start",	0,	APC_CMD_BTESTTOGGLE,	0 },
