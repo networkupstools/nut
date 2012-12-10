@@ -105,6 +105,20 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 	return NULL;
 }
 
+static const char *prtchr(char x)
+{
+	const char *fmt;
+	static char info[8];
+
+	if (isprint(x))
+		fmt = "%c";
+	else
+		fmt = "0x%02x";
+	sprintf(info, fmt, x);
+
+	return info;
+}
+
 static int rexhlp(const char *rex, const char *val)
 {
 	static const char *empty = "";
@@ -664,27 +678,8 @@ static const char *preread_data(apc_vartab_t *vt)
 
 static void remove_var(const char *tag, apc_vartab_t *vt)
 {
-	const char *fmt;
-	char info[256];
-
-	if (isprint(vt->cmd))
-		fmt = "[%c]";
-	else
-		fmt = "[0x%02x]";
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"%s: verified variable [%s] (APC: ",
-		fmt,
-		") returned NA"
-	);
-	upsdebugx(1, info, tag, vt->name, vt->cmd);
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"%s: removing [%s] (APC: ",
-		fmt,
-		")"
-	);
-	upsdebugx(1, info, tag, vt->name, vt->cmd);
+	upsdebugx(1, "%s: verified variable [%s] (APC: [%s]) returned NA", tag, vt->name, prtchr(vt->cmd));
+	upsdebugx(1, "%s: removing [%s] (APC: [%s])", tag, vt->name, prtchr(vt->cmd));
 
 	vt->flags &= ~APC_PRESENT;
 	dstate_delinfo(vt->name);
@@ -750,7 +745,6 @@ static int update_status(void)
 
 static int valid_cmd(char cmd, const char *val)
 {
-	char info[256], *fmt;
 	int ret;
 
 	switch (cmd) {
@@ -764,19 +758,8 @@ static int valid_cmd(char cmd, const char *val)
 			return 1;
 	}
 
-	if (ret) {
-		if (isprint(cmd))
-			fmt = "[%c]";
-		else
-			fmt = "[0x%02x]";
-
-		snprintf(info, sizeof(info), "%s%s%s",
-			"valid_cmd: cmd ",
-			fmt,
-			" failed regex match"
-		);
-		upslogx(LOG_WARNING, info, cmd);
-	}
+	if (ret)
+		upslogx(LOG_WARNING, "APC cmd: [%s] failed regex match", prtchr(cmd));
 
 	return !ret;
 }
@@ -785,47 +768,17 @@ static int valid_cmd(char cmd, const char *val)
  * two informative functions, to not redo the same thing in few places
  */
 
-static void confirm_cv(unsigned char cmd, const char *tag, const char *name)
+static inline void confirm_cv(unsigned char cmd, const char *tag, const char *name)
 {
-	const char *fmt;
-	char info[256];
-
-	if (isprint(cmd))
-		fmt = "[%c]";
-	else
-		fmt = "[0x%02x]";
-
-	snprintf(info, sizeof info, "%s%s%s",
-			"APC ",
-			fmt,
-			" : NUT [%s] - %s supported"
-		);
-	upsdebugx(1, info, cmd, name, tag);
+	upsdebugx(1, "APC [%s] : NUT [%s] - %s supported", prtchr(cmd), name, tag);
 }
 
-static void warn_cv(unsigned char cmd, const char *tag, const char *name)
+static inline void warn_cv(unsigned char cmd, const char *tag, const char *name)
 {
-	const char *fmt;
-	char info[256];
-
-	if (isprint(cmd))
-		fmt = "[%c]";
+	if (tag && name)
+		upsdebugx(1, "APC [%s] : NUT [%s] - %s invalid or unreadable", prtchr(cmd), name, tag);
 	else
-		fmt = "[0x%02x]";
-
-	if (tag && name) {
-		snprintf(info, sizeof info, "%s%s%s",
-				"APC ",
-				fmt,
-				" : NUT [%s] - %s invalid or unreadable"
-			);
-		upsdebugx(1, info, cmd, name, tag);
-	} else {
-		snprintf(info, sizeof info, "%s%s%s",
-				"APC cmd/var ", fmt, " unrecognized"
-			);
-		upsdebugx(1, info, cmd);
-	}
+		upsdebugx(1, "APC cmd/var [%s] unrecognized", prtchr(cmd));
 }
 
 static void var_string_setup(apc_vartab_t *vt)
