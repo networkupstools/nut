@@ -27,6 +27,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <cassert>
 
 
 namespace nut {
@@ -728,7 +729,7 @@ bool GenericConfiguration::parseFrom(NutStream & istream)
 }
 
 
-bool GenericConfiguration::writeTo(NutStream & ostream)
+bool GenericConfiguration::writeTo(NutStream & ostream) const
 {
 	GenericConfigWriter writer(ostream);
 
@@ -995,7 +996,7 @@ bool UpsmonConfiguration::parseFrom(NutStream & istream)
 }
 
 
-bool UpsmonConfiguration::writeTo(NutStream & ostream)
+bool UpsmonConfiguration::writeTo(NutStream & ostream) const
 {
 	UpsmonConfigWriter writer(ostream);
 
@@ -1237,7 +1238,7 @@ bool NutConfiguration::parseFrom(NutStream & istream)
 }
 
 
-bool NutConfiguration::writeTo(NutStream & ostream)
+bool NutConfiguration::writeTo(NutStream & ostream) const
 {
 	NutConfConfigWriter writer(ostream);
 
@@ -1338,7 +1339,7 @@ bool UpsdConfiguration::parseFrom(NutStream & istream)
 }
 
 
-bool UpsdConfiguration::writeTo(NutStream & ostream)
+bool UpsdConfiguration::writeTo(NutStream & ostream) const
 {
 	UpsdConfigWriter writer(ostream);
 
@@ -1451,6 +1452,28 @@ void UpsdConfigParser::onParseEnd()
 // UpsdUsersConfiguration
 //
 
+UpsdUsersConfiguration::upsmon_mode_t UpsdUsersConfiguration::getUpsmonMode() const
+{
+	std::string mode_str = getStr("upsmon", "upsmon", false);
+
+	if ("master" == mode_str)
+		return UPSMON_MASTER;
+
+	if ("slave" == mode_str)
+		return UPSMON_SLAVE;
+
+	return UPSMON_UNDEF;
+}
+
+
+void UpsdUsersConfiguration::setUpsmonMode(upsmon_mode_t mode)
+{
+	assert(UPSMON_UNDEF != mode);
+
+	setStr("upsmon", "upsmon", (UPSMON_MASTER == mode ? "master" : "slave"), false);
+}
+
+
 bool UpsdUsersConfiguration::parseFrom(NutStream & istream)
 {
 	// TODO: The parser is highly inefficient, it should use NutStream, directly
@@ -1465,7 +1488,7 @@ bool UpsdUsersConfiguration::parseFrom(NutStream & istream)
 }
 
 
-bool UpsdUsersConfiguration::writeTo(NutStream & ostream)
+bool UpsdUsersConfiguration::writeTo(NutStream & ostream) const
 {
 	UpsdUsersConfigWriter writer(ostream);
 
