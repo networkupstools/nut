@@ -123,7 +123,7 @@ public:
 	 *  \retval true  in case of success
 	 *  \retval false in case of write error
 	 */
-	virtual bool writeTo(NutStream & ostream) = 0;
+	virtual bool writeTo(NutStream & ostream) const = 0;
 
 	/** Destructor */
 	virtual ~Serialisable() {}
@@ -313,7 +313,7 @@ public:
 
 	/** Serialisable interface implementation \{ */
 	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream);
+	bool writeTo(NutStream & ostream) const;
 	/** \} */
 
 	// FIXME Let me public or set it as protected with public accessors ?
@@ -658,7 +658,7 @@ public:
 
 	/** Serialisable interface implementation \{ */
 	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream);
+	bool writeTo(NutStream & ostream) const;
 	/** \} */
 
 };  // end of class UpsmonConfiguration
@@ -683,7 +683,7 @@ protected:
 };
 
 
-class NutConfiguration
+class NutConfiguration: public Serialisable
 {
 public:
     NutConfiguration();
@@ -703,7 +703,7 @@ public:
 
 	/** Serialisable interface implementation \{ */
 	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream);
+	bool writeTo(NutStream & ostream) const;
 	/** \} */
 };
 
@@ -749,7 +749,7 @@ public:
 
 	/** Serialisable interface implementation \{ */
 	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream);
+	bool writeTo(NutStream & ostream) const;
 	/** \} */
 };
 
@@ -825,6 +825,7 @@ public:
 	inline std::string getNotification(const std::string & ups)        const { return getStr(ups, "notification",        false); }  // CHECKME
 	inline std::string getOldMAC(const std::string & ups)              const { return getStr(ups, "oldmac",              false); }  // CHECKME
 	inline std::string getPassword(const std::string & ups)            const { return getStr(ups, "password",            false); }  // CHECKME
+	inline std::string getPort(const std::string & ups)                const { return getStr(ups, "port",                false); }
 	inline std::string getPrefix(const std::string & ups)              const { return getStr(ups, "prefix",              true); }   // CHECKME
 	inline std::string getPrivPassword(const std::string & ups)        const { return getStr(ups, "privPassword",        false); }  // CHECKME
 	inline std::string getPrivProtocol(const std::string & ups)        const { return getStr(ups, "privProtocol",        false); }  // CHECKME
@@ -851,7 +852,6 @@ public:
 	inline std::string getWUGrace(const std::string & ups)             const { return getStr(ups, "wugrace",             false); }  // CHECKME
 
 
-	inline uint16_t      getPort(const std::string & ups) const { return range_cast<uint16_t>(getInt(ups, "port"), 0, 65535); }  // TBD:  Any default?
 	inline long long int getSDOrder(const std::string & ups)           const { return getInt(ups, "sdorder"); }             // TODO: Is that a number?
 	inline long long int getMaxStartDelay(const std::string & ups)     const { return getInt(ups, "maxstartdelay"); }
 	inline long long int getAdvOrder(const std::string & ups)          const { return getInt(ups, "advorder"); }            // CHECKME
@@ -942,6 +942,7 @@ public:
 	inline void setNotification(const std::string & ups, const std::string & notification)    { setStr(ups, "notification",        notification, false); }  // CHECKME
 	inline void setOldMAC(const std::string & ups, const std::string & oldmac)                { setStr(ups, "oldmac",              oldmac,       false); }  // CHECKME
 	inline void setPassword(const std::string & ups, const std::string & password)            { setStr(ups, "password",            password,     false); }  // CHECKME
+	inline void setPort(const std::string & ups, const std::string & port)                    { setStr(ups, "port",                port,         false); }
 	inline void setPrefix(const std::string & ups, const std::string & prefix)                { setStr(ups, "prefix",              prefix,       false); }  // CHECKME
 	inline void setPrivPassword(const std::string & ups, const std::string & priv_passwd)     { setStr(ups, "privPassword",        priv_passwd,  false); }  // CHECKME
 	inline void setPrivProtocol(const std::string & ups, const std::string & priv_proto)      { setStr(ups, "privProtocol",        priv_proto,   false); }  // CHECKME
@@ -967,7 +968,6 @@ public:
 	inline void setVendorID(const std::string & ups, const std::string & vendorid)            { setStr(ups, "vendorid",            vendorid,     false); }  // CHECKME
 	inline void setWUGrace(const std::string & ups, const std::string & wugrace)              { setStr(ups, "wugrace",             wugrace,      false); }  // CHECKME
 
-	inline void setPort(const std::string & ups, uint16_t port)                    { setInt(ups, "port",               port); }
 	inline void setSDOrder(const std::string & ups, long long int ord)             { setInt(ups, "sdorder",            ord); }
 	inline void setMaxStartDelay(const std::string & ups, long long int delay)     { setInt(ups, "maxstartdelay",      delay); }
 	inline void setADVorder(const std::string & ups, long long int advorder)       { setInt(ups, "advorder",           advorder); }     // CHECKME
@@ -1042,6 +1042,13 @@ public:
 class UpsdUsersConfiguration : public GenericConfiguration
 {
 public:
+	/** upsmon mode */
+	typedef enum {
+		UPSMON_UNDEF = 0,  /**< Unknown mode */
+		UPSMON_MASTER,     /**< Master  mode */
+		UPSMON_SLAVE,      /**< Slave   mode */
+	} upsmon_mode_t;
+
 	/** User-specific configuration attributes getters and setters \{ */
 
 	inline std::string getPassword(const std::string & user) const { return getStr(user, "password", false); }
@@ -1060,6 +1067,8 @@ public:
 		return cmds;
 	}
 
+	upsmon_mode_t getUpsmonMode() const;
+
 	inline void setPassword(const std::string & user, const std::string & passwd) { setStr(user, "password", passwd, false); }
 
 	inline void setActions(const std::string & user, const ConfigParamList & actions)      { set(user, "actions",  actions); }
@@ -1068,11 +1077,21 @@ public:
 	inline void addActions(const std::string & user, const ConfigParamList & actions)      { add(user, "actions",  actions); }
 	inline void addInstantCommands(const std::string & user, const ConfigParamList & cmds) { add(user, "instcmds", cmds); }
 
+	/**
+	 *  \brief  upsmon mode setter
+	 *
+	 *  Note that the UPSMON_UNDEF mode isn't allowed as parameter
+	 *  (logically, if you set something, it shall be defined...)
+	 *
+	 *  \param  mode  Mode
+	 */
+	void setUpsmonMode(upsmon_mode_t mode);
+
 	/** \} */
 
 	/** Serialisable interface implementation overload \{ */
 	bool parseFrom(NutStream & istream);
-	bool writeTo(NutStream & ostream);
+	bool writeTo(NutStream & ostream) const;
 	/** \} */
 
 };  // end of class UpsdUsersConfiguration

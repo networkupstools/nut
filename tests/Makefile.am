@@ -11,12 +11,12 @@ cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = ../common/libnutconf.la
 
 # List of src files for CppUnit tests
-CPPUNITTESTSRC = example.cpp nutconf.cpp nutstream_ut.cpp
+CPPUNITTESTSRC = example.cpp nutconf.cpp nutstream_ut.cpp nutconf_ut.cpp
 
 cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 
 else !HAVE_CPPUNIT
 
-EXTRA_DIST = example.cpp nutconf.cpp cpputest.cpp nutstream_ut.cpp
+EXTRA_DIST = example.cpp nutconf.cpp cpputest.cpp nutstream_ut.cpp nutconf_ut.cpp
 
 endif !HAVE_CPPUNIT
