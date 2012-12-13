@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.8"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.81"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -95,6 +95,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3014), battery_scale_1dot0 },
 	/* e.g. ? */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
+	/* e.g. TrippLite Smart1500LCD (newer unit) */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
