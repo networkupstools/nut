@@ -22,10 +22,94 @@
 #include <iostream>
 using namespace std;
 
-#include "configuration.hpp"
+#include "control.hpp"
+using namespace nut::ctl;
+
+#include "nutctl_adaptor.hpp"
+
+
+#define DBUS_NUTCTL_PATH "/org/networkupstools/NutCtl"
+#define DBUS_NUTCTL_NAME "org.networkupstools.NutCtl"
+
+class DBusNutCtl : public org::networkupstools::NutCtl_adaptor,
+				public DBus::IntrospectableAdaptor,
+				public DBus::ObjectAdaptor
+{
+public:
+	DBusNutCtl(DBus::Connection &connection):
+		DBus::ObjectAdaptor(connection, DBUS_NUTCTL_PATH)
+	{
+	}
+
+    virtual std::vector< std::string > GetDeviceNames();
+    virtual std::map< std::string, std::string > GetDevice(const std::string& name);
+	virtual void RemoveDevice(const std::string& name);
+    virtual std::vector< std::string > ScanUSB();
+};
+
+
+std::vector<std::string> DBusNutCtl::GetDeviceNames()
+{
+	std::vector<std::string> res;
+
+	for(Controller::const_iterator it=Controller::get().begin();
+		it!=Controller::get().end(); ++it)
+	{
+		res.push_back((*it)->getName());
+	}
+
+	return res;
+}
+
+
+std::map< std::string, std::string > DBusNutCtl::GetDevice(const std::string& name)
+{
+	std::map< std::string, std::string > res;
+
+	const Device* dev = Controller::get().getDevice(name);
+	if(dev)
+	{
+		res = dev->getOptions();
+/*		for(Node::option_iterator it=node->option_begin(); it!=node->option_end(); ++it)
+		{
+			res[it->first] = it->second;
+		}*/
+	}
+
+	return res;
+}
+
+void DBusNutCtl::RemoveDevice(const std::string& name)
+{
+	Controller::get().removeDevice(name);
+}
+
+std::vector< std::string > DBusNutCtl::ScanUSB()
+{
+	std::list<std::string> scan = Controller::get().scanUSB();
+	return std::vector< std::string >(scan.begin(), scan.end());
+}
+
+
+DBus::BusDispatcher dispatcher;
+
 
 int main(int argc, char** argv)
 {
 	cout << "nutctld" << endl;
+
+	Controller::get().load();
+
+
+	DBus::default_dispatcher = &dispatcher;
+    DBus::Connection bus = DBus::Connection::SessionBus();
+//    DBus::Connection bus = DBus::Connection::SystemBus();
+
+	bus.request_name(DBUS_NUTCTL_NAME);
+
+	DBusNutCtl ctl(bus);
+
+	dispatcher.enter();
+
 	return 0;
 }

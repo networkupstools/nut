@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<node name="/org/networkupstools/nutctl">
+
+  <interface name="org.networkupstools.NutCtl">
+
+    <method name="GetDeviceNames">
+      <arg type="as" name="names" direction="out" />
+    </method>
+
+    <method name="GetDevice">
+		<arg type="s" name="name" direction="in" />
+		<arg type="a{ss}" name="properties" direction="out" />
+    </method>
+
+	<method name="RemoveDevice">
+		<arg type="s" name="name" direction="in" />
+    </method>
+
+	<method name="ScanUSB">
+		<arg type="as" name="names" direction="out" />
+	</method>
+
+  </interface>
+</node>
