@@ -144,9 +144,15 @@ public:
 
 
 
-
+	/**
+	 * Load devices from ups.conf
+	 */
 	void loadUpsConf();
 
+	/**
+	 * Scan USB devices.
+	 * \return List of scanned USB devices.
+	 */
 	std::list<std::string> scanUSB();
 
 	

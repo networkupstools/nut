@@ -59,6 +59,11 @@ int main(int argc, char** argv)
 	for(size_t n=0; n<res.size(); n++)
 	{
 		cout << " - " << res[n] << endl;
+		std::map< std::string, std::string > vars = ctl.GetDevice(res[n]);
+		for(std::map< std::string, std::string >::iterator it=vars.begin(); it!=vars.end(); ++it)
+		{
+			cout << "    - " << it->first << " : " << it->second << std::endl;
+		}
 	}
 
 	return 0;

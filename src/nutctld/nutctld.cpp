@@ -43,6 +43,8 @@ public:
 
     virtual std::vector< std::string > GetDeviceNames();
     virtual std::map< std::string, std::string > GetDevice(const std::string& name);
+    virtual std::string GetDeviceVariable(const std::string& device, const std::string& variable);
+    virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
 	virtual void RemoveDevice(const std::string& name);
     virtual std::vector< std::string > ScanUSB();
 };
@@ -70,13 +72,36 @@ std::map< std::string, std::string > DBusNutCtl::GetDevice(const std::string& na
 	if(dev)
 	{
 		res = dev->getOptions();
-/*		for(Node::option_iterator it=node->option_begin(); it!=node->option_end(); ++it)
+		for(Device::option_iterator it=dev->option_begin(); it!=dev->option_end(); ++it)
 		{
 			res[it->first] = it->second;
-		}*/
+		}
 	}
 
 	return res;
+}
+
+std::string DBusNutCtl::GetDeviceVariable(const std::string& device, const std::string& variable)
+{
+	const Device* dev = Controller::get().getDevice(device);
+	if(dev)
+	{
+		if(dev->hasOption(variable))
+			return dev->getOption(variable);
+	}
+	else
+	{
+		return "";	
+	}
+}
+
+void DBusNutCtl::SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value)
+{
+	Device* dev = Controller::get().getDevice(device);
+	if(dev)
+	{
+		dev->setOption(variable, value);
+	}
 }
 
 void DBusNutCtl::RemoveDevice(const std::string& name)

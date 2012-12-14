@@ -20,6 +20,11 @@
 
 #include "control.hpp"
 
+#include "config.h"
+
+#include "nutstream.h"
+
+
 extern "C" {
 void rewind_list(nutscan_device_t** dev)
 {
@@ -105,7 +110,6 @@ std::string Device::getPort()const
 {
 	return getOption("port");
 }
-
 
 bool Device::hasOption(const std::string& optName)const
 {
@@ -217,7 +221,13 @@ void Controller::loadUpsConf()
 {
 	// Load ups.conf file
 	// TODO Test from a string, change it with loading from real conf file
-	_ups_conf.parseFromString(_ups_conf_src);
+//	_ups_conf.parseFromString(_ups_conf_src);
+
+std::cout << "Controller::loadUpsConf() : parse file '" << CONFPATH "/ups.conf" << "'" << std::endl;
+
+	NutFile file(CONFPATH "/ups.conf");
+	file.open();
+	_ups_conf.parseFrom(file);
 
 	// Traverse ups.conf file to create devices.
 	for(std::map<std::string, nut::GenericConfigSection>::iterator 
@@ -239,7 +249,7 @@ std::list<std::string> Controller::scanUSB()
 	while(iter)
 	{
 		Device* device = new Device(iter);
-		// TODO add name
+		// TODO add a generated name if needed
 		res.push_back(device->getName());
 		addDevice(device);
 

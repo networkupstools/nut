@@ -12,6 +12,19 @@
 		<arg type="a{ss}" name="properties" direction="out" />
     </method>
 
+	<method name="GetDeviceVariable">
+		<arg type="s" name="device" direction="in" />
+		<arg type="s" name="variable" direction="in" />
+		<arg type="s" name="value" direction="out" />
+    </method>
+		
+	<method name="SetDeviceVariable">
+		<arg type="s" name="device" direction="in" />
+		<arg type="s" name="variable" direction="in" />
+		<arg type="s" name="value" direction="in" />
+    </method>
+	
+
 	<method name="RemoveDevice">
 		<arg type="s" name="name" direction="in" />
     </method>
