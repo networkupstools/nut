@@ -5,7 +5,7 @@ AM_CFLAGS = -I$(top_srcdir)/include
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libnutconf.la
 libparseconf_la_SOURCES = parseconf.c
 
-libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp
+libnutconf_la_SOURCES = nutconf.cpp nutstream.cpp nutwriter.cpp nutipc.cpp
 
 # do not hard depend on '../include/nut_version.h', since it blocks
 # 'dist', and is only required for actual build, in which case
