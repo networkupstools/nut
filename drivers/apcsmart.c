@@ -710,8 +710,8 @@ static int poll_data(apc_vartab_t *vt)
 	/* automagically no longer supported by the hardware somehow */
 	if (!strcmp(temp, "NA"))
 		remove_var("poll_data", vt);
-
-	dstate_setinfo(vt->name, "%s", convert_data(vt, temp));
+	else
+		dstate_setinfo(vt->name, "%s", convert_data(vt, temp));
 
 	return 1;
 }
@@ -1616,7 +1616,7 @@ void upsdrv_shutdown(void)
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("advorder") && toupper(*getval("advorder")) == 'N')
+	if (testvar("advorder") && toupper(*getval("advorder")) != 'N')
 		upsdrv_shutdown_advanced();
 	else
 		upsdrv_shutdown_simple();
