@@ -840,6 +840,7 @@
 "Socomec Sicon"	"ups"	"2"	"NeTYS-PE 600VA"	""	"blazer_ser"
 "Socomec Sicon"	"ups"	"1"	"Egys"	"420 VA"	"powercom"
 "Socomec Sicon"	"ups"	"3"	"MASTERYS 3/3 SYSTEM 60 kVA"	"Net Vision v5.05 SNMP card"	"snmp-ups (experimental)"
+"Socomec Sicon"	"ups"	"3"	"NETYS RT 1/1"	"Net Vision SNMP card"	"snmp-ups (experimental)"
 "Socomec Sicon"	"ups"	"3"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)"
 
 "Soltec"	"ups"	"1"	"Winmate 525/625/800/1000"	""	"safenet"

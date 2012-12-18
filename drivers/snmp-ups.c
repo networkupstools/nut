@@ -45,6 +45,7 @@
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
 #include "cyberpower-mib.h"
+#include "delta_ups-mib.h"
 #include "ietf-mib.h"
 
 /* Address API change */
@@ -67,6 +68,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&compaq,
 	&bestpower,
 	&cyberpower,
+	&delta_ups,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
