@@ -1622,42 +1622,24 @@ void upsdrv_shutdown(void)
 		upsdrv_shutdown_simple();
 }
 
-static int update_info_normal(void)
+static int update_info(int all)
 {
 	int i;
 
-	upsdebugx(3, "update_info_normal: starting");
+	upsdebugx(3, "update_info: starting");
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if ((apc_vartab[i].flags & APC_POLL) == 0)
+		if (!all && (apc_vartab[i].flags & APC_POLL) == 0)
 			continue;
 
 		if (!poll_data(&apc_vartab[i])) {
-			upsdebugx(3, "update_info_normal: poll_data (%s) failed - "
+			upsdebugx(3, "update_info: poll_data (%s) failed - "
 				"aborting scan", apc_vartab[i].name);
 			return 0;
 		}
 	}
 
-	upsdebugx(3, "update_info_normal: done");
-	return 1;
-}
-
-static int update_info_all(void)
-{
-	int i;
-
-	upsdebugx(3, "update_info_all: starting");
-
-	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if (!poll_data(&apc_vartab[i])) {
-			upsdebugx(3, "update_info_all: poll_data (%s) failed - "
-				"aborting scan", apc_vartab[i].name);
-			return 0;
-		}
-	}
-
-	upsdebugx(3, "update_info_all: done");
+	upsdebugx(3, "update_info: done");
 	return 1;
 }
 
@@ -2105,7 +2087,7 @@ void upsdrv_updateinfo(void)
 {
 	static int last_worked = 0;
 	static time_t last_full = 0;
-	int (*upd)(void);
+	int all;
 	time_t now;
 
 	/* try to wake up a dead ups once in awhile */
@@ -2138,11 +2120,11 @@ void upsdrv_updateinfo(void)
 	/* does not catch measure-ups II insertion/removal */
 	if (difftime(now, last_full) > 3600) {
 		last_full = now;
-		upd = update_info_all;
+		all = 1;
 	} else
-		upd = update_info_normal;
+		all = 0;
 
-	if (upd()) {
+	if (update_info(all)) {
 		dstate_dataok();
 	} else {
 		dstate_datastale();
