@@ -25,7 +25,7 @@
 
 #include "delta_ups-mib.h"
 
-#define DELTA_UPS_MIB_VERSION  "0.1"
+#define DELTA_UPS_MIB_VERSION  "0.2"
 
 #define DELTA_UPS_SYSOID       ".1.3.6.1.4.1.2254.2.4"
 
@@ -91,7 +91,7 @@ static snmp_info_t delta_ups_mib[] = {
 	/* dupsIdentManufacturer.0 = STRING: "Socomec" */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.1.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsIdentModel.0 = STRING: "NETYS RT 1/1 UPS" */
-	{ "unps.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.2.0", NULL, SU_FLAG_OK, NULL },
+	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.2.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsIdentAgentSoftwareVersion.0 = STRING: "2.0h " */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2254.2.4.1.4.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsIdentUPSSoftwareVersion.0 = STRING: "1.1" */
@@ -109,7 +109,7 @@ static snmp_info_t delta_ups_mib[] = {
 	/* dupsRatingOutputFrequency.0 = INTEGER: 50 */
 	{ "output.frequency.nominal", 0, 1, ".1.3.6.1.4.1.2254.2.4.1.9.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsOutputCurrent1.0 = INTEGER: 23 */
-	{ "output.current", 0, 1, ".1.3.6.1.4.1.2254.2.4.5.5.0", NULL, SU_FLAG_OK, NULL },
+	{ "output.current", 0, 0.1, ".1.3.6.1.4.1.2254.2.4.5.5.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsRatingInputVoltage.0 = INTEGER: 230 */
 	{ "input.voltage.nominal", 0, 1, ".1.3.6.1.4.1.2254.2.4.1.10.0", NULL, SU_FLAG_OK, NULL },
 	/* dupsInputVoltage1.0 = INTEGER: 2280 */
