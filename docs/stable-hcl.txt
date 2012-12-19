@@ -135,7 +135,8 @@ replacing Manufacturer, Device and driver by your specific values,
   - Device manufacturer and name,
   - upsc output (upsrw and upscmd outputs are also welcome),
   - link:docs/user-manual.chunked/ar01s06.html#Shutdown_design[shutdown sequence]
-testing results,
+testing results: a statement that you have actually tested it successfully is
+enough for now,
   - a link to an online description is also appreciated.
 
 
