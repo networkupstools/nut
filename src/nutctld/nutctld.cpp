@@ -18,6 +18,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "config.h"
 
 #include <iostream>
 using namespace std;
@@ -26,6 +27,11 @@ using namespace std;
 using namespace nut::ctl;
 
 #include "nutctl_adaptor.hpp"
+
+
+Controller controller(CONFPATH "/ups.conf");
+
+
 
 
 #define DBUS_NUTCTL_PATH "/org/networkupstools/NutCtl"
@@ -47,6 +53,11 @@ public:
     virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
 	virtual void RemoveDevice(const std::string& name);
     virtual std::vector< std::string > ScanUSB();
+    virtual std::vector< std::string > ScanAvahi(const int32_t& usecTimeout);
+    virtual std::vector< std::string > ScanXMLHTTP(const int32_t& usecTimeout);
+    virtual std::vector< std::string > ScanNut(const std::string& startIP, const std::string& stopIP, const uint16_t& port, const int32_t& usecTimeout);
+    virtual std::vector< std::string > ScanSNMPv1(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& communityName);
+	virtual std::vector< std::string > ScanSNMPv3(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& userName, const int32_t& securityLevel, const std::string& authMethod, const std::string& authPassword, const std::string& privMethod, const std::string& privPassword);
 };
 
 
@@ -54,8 +65,7 @@ std::vector<std::string> DBusNutCtl::GetDeviceNames()
 {
 	std::vector<std::string> res;
 
-	for(Controller::const_iterator it=Controller::get().begin();
-		it!=Controller::get().end(); ++it)
+	for(Controller::const_iterator it=controller.begin(); it!=controller.end(); ++it)
 	{
 		res.push_back((*it)->getName());
 	}
@@ -68,11 +78,11 @@ std::map< std::string, std::string > DBusNutCtl::GetDevice(const std::string& na
 {
 	std::map< std::string, std::string > res;
 
-	const Device* dev = Controller::get().getDevice(name);
+	const Device* dev = controller.getDevice(name);
 	if(dev)
 	{
-		res = dev->getOptions();
-		for(Device::option_iterator it=dev->option_begin(); it!=dev->option_end(); ++it)
+		res = dev->getProperties();
+		for(Device::property_iterator it=dev->property_begin(); it!=dev->property_end(); ++it)
 		{
 			res[it->first] = it->second;
 		}
@@ -83,11 +93,11 @@ std::map< std::string, std::string > DBusNutCtl::GetDevice(const std::string& na
 
 std::string DBusNutCtl::GetDeviceVariable(const std::string& device, const std::string& variable)
 {
-	const Device* dev = Controller::get().getDevice(device);
+	const Device* dev = controller.getDevice(device);
 	if(dev)
 	{
-		if(dev->hasOption(variable))
-			return dev->getOption(variable);
+		if(dev->hasProperty(variable))
+			return dev->getProperty(variable);
 	}
 	else
 	{
@@ -97,22 +107,46 @@ std::string DBusNutCtl::GetDeviceVariable(const std::string& device, const std::
 
 void DBusNutCtl::SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value)
 {
-	Device* dev = Controller::get().getDevice(device);
+	Device* dev = controller.getDevice(device);
 	if(dev)
 	{
-		dev->setOption(variable, value);
+		dev->setProperty(variable, value);
 	}
 }
 
 void DBusNutCtl::RemoveDevice(const std::string& name)
 {
-	Controller::get().removeDevice(name);
+	controller.removeDevice(name);
 }
 
 std::vector< std::string > DBusNutCtl::ScanUSB()
 {
-	std::list<std::string> scan = Controller::get().scanUSB();
-	return std::vector< std::string >(scan.begin(), scan.end());
+	return controller.scanUSB();
+}
+
+std::vector< std::string > DBusNutCtl::ScanAvahi(const int32_t& usecTimeout)
+{
+	return controller.scanAvahi(usecTimeout);
+}
+
+std::vector< std::string > DBusNutCtl::ScanXMLHTTP(const int32_t& usecTimeout)
+{
+	return controller.scanXMLHTTP(usecTimeout);
+}
+
+std::vector< std::string > DBusNutCtl::ScanNut(const std::string& startIP, const std::string& stopIP, const uint16_t& port, const int32_t& usecTimeout)
+{
+	return controller.scanNut(startIP, stopIP, port, usecTimeout);
+}
+
+std::vector< std::string > DBusNutCtl::ScanSNMPv1(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& communityName)
+{
+	return controller.scanSNMPv1(startIP, stopIP, usecTimeout, communityName);
+}
+
+std::vector< std::string > DBusNutCtl::ScanSNMPv3(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& userName, const int32_t& securityLevel, const std::string& authMethod, const std::string& authPassword, const std::string& privMethod, const std::string& privPassword)
+{
+	return controller.scanSNMPv3(startIP, stopIP, usecTimeout, userName, securityLevel, authMethod, authPassword, privMethod, privPassword);
 }
 
 
@@ -123,8 +157,7 @@ int main(int argc, char** argv)
 {
 	cout << "nutctld" << endl;
 
-	Controller::get().load();
-
+	controller.loadUpsConf();
 
 	DBus::default_dispatcher = &dispatcher;
     DBus::Connection bus = DBus::Connection::SessionBus();

@@ -20,9 +20,10 @@
 
 #include "control.hpp"
 
-#include "config.h"
-
 #include "nutstream.h"
+
+#include <sstream>
+#include <iomanip>
 
 
 extern "C" {
@@ -101,55 +102,60 @@ std::string Device::getName()const
 	return _name;
 }
 
+void Device::setName(const std::string& name)
+{
+	_name = name;
+}
+
 std::string Device::getDriver()const
 {
-	return getOption("driver");
+	return getProperty("driver");
 }
 
 std::string Device::getPort()const
 {
-	return getOption("port");
+	return getProperty("port");
 }
 
-bool Device::hasOption(const std::string& optName)const
+bool Device::hasProperty(const std::string& name)const
 {
-	return _options.find(optName) != _options.end();
+	return _properties.find(name) != _properties.end();
 }
 
-std::string Device::getOption(const std::string& optName)const
+std::string Device::getProperty(const std::string& name)const
 {
-	return _options.find(optName)->second;
+	return _properties.find(name)->second;
 }
 
-const std::map<std::string, std::string>& Device::getOptions()const
+const Device::PropertyMap& Device::getProperties()const
 {
-	return _options;
+	return _properties;
 }
 
-Device::option_iterator Device::option_begin()const
+Device::property_iterator Device::property_begin()const
 {
-	return _options.begin();
+	return _properties.begin();
 }
 
-Device::option_iterator Device::option_end()const
+Device::property_iterator Device::property_end()const
 {
-	return _options.end();
+	return _properties.end();
 }
 
 
 void Device::setDriver(const std::string& driver)
 {
-	_options["driver"] = driver;
+	_properties["driver"] = driver;
 }
 
 void Device::setPort(const std::string& port)
 {
-	_options["port"] = port;
+	_properties["port"] = port;
 }
 
-void Device::setOption(const std::string& name, const std::string& value)
+void Device::setProperty(const std::string& name, const std::string& value)
 {
-	_options[name] = value;
+	_properties[name] = value;
 }
 
 void Device::initFromGenericSection(const nut::GenericConfigSection& section)
@@ -159,7 +165,7 @@ void Device::initFromGenericSection(const nut::GenericConfigSection& section)
 	for(std::map<std::string, nut::GenericConfigSectionEntry>::const_iterator
 		it = section.entries.begin(); it != section.entries.end(); ++it)
 	{
-		setOption(it->first, it->second.values.size()>0 ? it->second.values.front() : "");
+		setProperty(it->first, it->second.values.size()>0 ? it->second.values.front() : "");
 	}
 }
 
@@ -175,7 +181,7 @@ void Device::initFromScanner(nutscan_device_t* dev)
 		{
 			if(opt->option!=NULL)
 			{
-				setOption(opt->option, opt->value);
+				setProperty(opt->option, opt->value);
 			}
 			opt = opt->next;
 		}
@@ -188,82 +194,38 @@ void Device::initFromScanner(nutscan_device_t* dev)
 // Controller
 //
 
-Controller Controller::_instance;
-
-Controller& Controller::get()
-{
-	return _instance;
-}
-
 Controller::Controller()
 {
+	nutscan_init();
 }
 
-void Controller::load()
+Controller::Controller(const std::string& ups_conf_path):
+_ups_conf_path(ups_conf_path)
 {
-	loadUpsConf();
-}
-
-
-static std::string _ups_conf_src = 
-	"[ups1]\n"
-	"driver = dummy-ups\n"
-	"port = /here/you/are\n"
-	"desc = \"this is a first dummy UPS\"\n"
-	"\n"
-	"[ups2]\n"
-	"driver = dummy-ups\n"
-	"port = /use/the/force/Luke\n"
-	"desc = \"this is another dummy UPS\"\n"
-;
-
-void Controller::loadUpsConf()
-{
-	// Load ups.conf file
-	// TODO Test from a string, change it with loading from real conf file
-//	_ups_conf.parseFromString(_ups_conf_src);
-
-std::cout << "Controller::loadUpsConf() : parse file '" << CONFPATH "/ups.conf" << "'" << std::endl;
-
-	NutFile file(CONFPATH "/ups.conf");
-	file.open();
-	_ups_conf.parseFrom(file);
-
-	// Traverse ups.conf file to create devices.
-	for(std::map<std::string, nut::GenericConfigSection>::iterator 
-		it = _ups_conf.sections.begin();
-		it != _ups_conf.sections.end(); ++it)
-	{
-		addDevice(new Device(it->second));
-	}
-}
-
-
-std::list<std::string> Controller::scanUSB()
-{
-	std::list<std::string> res;
-
-	nutscan_device_t *scan = nutscan_scan_usb(), *iter;
-	rewind_list(&scan);
-	iter = scan;
-	while(iter)
-	{
-		Device* device = new Device(iter);
-		// TODO add a generated name if needed
-		res.push_back(device->getName());
-		addDevice(device);
-
-		iter = iter->next;
-	}
-	nutscan_free_device(scan);
-
-	return res;
+	nutscan_init();
 }
 
 bool Controller::addDevice(Device* device)
 {
 	// TODO Add data merging instead of adding.
+
+	static unsigned int count = 0;
+
+	std::string name = device->getName();
+
+	if(name.empty() || getDevice(name))
+	{
+		do
+		{
+			std::ostringstream stm;
+			stm << "dev" << std::setfill('0') << std::setw(4) << count++;
+			stm.flush();
+			name = stm.str();
+		}while(getDevice(name));
+		device->setName(name);
+	}
 	push_back(device);
+
 	return true;
 }
 
@@ -274,6 +236,7 @@ const Device* Controller::getDevice(const std::string& name)const
 		if((*it)->getName()==name)
 			return *it;
 	}
+	return NULL;
 }
 
 Device* Controller::getDevice(const std::string& name)
@@ -283,6 +246,7 @@ Device* Controller::getDevice(const std::string& name)
 		if((*it)->getName()==name)
 			return *it;
 	}
+	return NULL;
 }
 
 void Controller::removeDevice(const std::string& name)
@@ -310,6 +274,245 @@ void Controller::removeDevice(Device* device)
 	}
 }
 
+std::vector<Device*> Controller::getDevices(const std::vector<std::string>& devices)const
+{
+	std::vector<Device*> res;
+	res.reserve(devices.size());
+	for(std::vector<std::string>::const_iterator it=devices.begin(); it!=devices.end(); ++it)
+		res.push_back(const_cast<Device*>(getDevice(*it)));
+	return res;
+}
+
+std::vector<std::string> Controller::loadUpsConf(const std::string& path)
+{
+	std::vector<std::string> res;
+
+	NutFile file(path);
+	file.open();
+	_ups_conf.parseFrom(file);
+
+	// Traverse ups.conf file to create devices.
+	for(std::map<std::string, nut::GenericConfigSection>::iterator 
+		it = _ups_conf.sections.begin();
+		it != _ups_conf.sections.end(); ++it)
+	{
+		Device* device = new Device(it->second);
+		addDevice(device);
+		res.push_back(device->getName());
+	}
+
+	return res;
+}
+
+std::vector<std::string> Controller::loadUpsConf()
+{
+	if(!_ups_conf_path.empty())
+		return loadUpsConf(_ups_conf_path);
+	else
+		return std::vector<std::string>();
+}
+
+
+std::vector<std::string> Controller::scanUSB()
+{
+	std::vector<std::string> res;
+
+std::clog << "Controller::scanUSB()" << std::endl;
+
+	nutscan_device_t *scan = nutscan_scan_usb(), *iter;
+	rewind_list(&scan);
+	iter = scan;
+	while(iter)
+	{
+		Device* device = new Device(iter);
+		addDevice(device);
+		res.push_back(device->getName());
+		iter = iter->next;
+	}
+	nutscan_free_device(scan);
+
+	return res;
+}
+
+std::vector<std::string> Controller::scanAvahi(long usecTimeout)
+{
+	std::vector<std::string> res;
+
+std::clog << "Controller::scanAvahi(" << usecTimeout << ")" << std::endl;
+
+	nutscan_device_t *scan = nutscan_scan_avahi(usecTimeout), *iter;
+	rewind_list(&scan);
+	iter = scan;
+	while(iter)
+	{
+		Device* device = new Device(iter);
+		addDevice(device);
+		res.push_back(device->getName());
+		iter = iter->next;
+	}
+	nutscan_free_device(scan);
+
+	return res;		
+}
+
+std::vector<std::string> Controller::scanXMLHTTP(long usecTimeout)
+{
+	std::vector<std::string> res;
+
+std::clog << "Controller::scanXMLHTTP(" << usecTimeout << ")" << std::endl;
+
+	nutscan_device_t *scan = nutscan_scan_xml_http(usecTimeout), *iter;
+	rewind_list(&scan);
+	iter = scan;
+	while(iter)
+	{
+		Device* device = new Device(iter);
+		addDevice(device);
+		res.push_back(device->getName());
+		iter = iter->next;
+	}
+	nutscan_free_device(scan);
+
+	return res;		
+}
+
+
+std::vector<std::string> Controller::scanNut(const std::string& startIP, const std::string& stopIP, unsigned short port, long usecTimeout)
+{
+	std::vector<std::string> res;
+
+	std::ostringstream oss;
+	oss << port;
+
+std::clog << "Controller::scanNut(" << startIP << ", " << stopIP << ", " << port << ", " << usecTimeout << ")" << std::endl;
+
+	nutscan_device_t *scan = nutscan_scan_nut(startIP.c_str(), stopIP.c_str(), oss.str().c_str(), usecTimeout), *iter;
+	rewind_list(&scan);
+	iter = scan;
+	while(iter)
+	{
+		Device* device = new Device(iter);
+		addDevice(device);
+		res.push_back(device->getName());
+		iter = iter->next;
+	}
+	nutscan_free_device(scan);
+
+	return res;
+}
+
+std::vector<std::string> Controller::scanSNMPv1(const std::string& startIP, const std::string& stopIP, long usecTimeout, const std::string& communityName)
+{
+	std::vector<std::string> res;
+
+std::clog << "Controller::scanSNMPv1(" << startIP << ", " << stopIP << ", " << usecTimeout << ", " << communityName << ")" << std::endl;
+
+	nutscan_snmp snmp;
+	memset(&snmp, 0, sizeof(nutscan_snmp));
+	snmp.community = strdup(communityName.c_str());
+
+	nutscan_device_t *scan = nutscan_scan_snmp(startIP.c_str(), stopIP.c_str(), usecTimeout, &snmp), *iter;
+	rewind_list(&scan);
+	iter = scan;
+	while(iter)
+	{
+		Device* device = new Device(iter);
+		addDevice(device);
+		res.push_back(device->getName());
+		iter = iter->next;
+	}
+	nutscan_free_device(scan);
+
+	return res;
+}
+
+std::vector<std::string> Controller::scanSNMPv3(const std::string& startIP, const std::string& stopIP, long usecTimeout,
+		const std::string& username, unsigned int securityLevel,
+		const std::string& authMethod, const std::string& authPassword, 
+		const std::string& privMethod, const std::string& privPassword)
+{
+	static const char* secLevelNames[] = {"noAuthNoPriv", "authNoPriv", "authPriv"};
+	std::vector<std::string> res;
+
+std::clog << "Controller::scanSNMPv3(" << startIP << ", " << stopIP << ", " << usecTimeout
+										 << ", " << username  << ", " << securityLevel
+										 << ", " << authMethod  << ", " << authPassword
+										 << ", " << privMethod  << ", " << privPassword
+									     << ")" << std::endl;
+
+std::clog << "Controller::scanSNMPv3() ignored as a bug is pending." << std::endl;
+
+	if(securityLevel>2)
+		return res;
+
+	nutscan_snmp snmp;
+	memset(&snmp, 0, sizeof(nutscan_snmp));
+	snmp.secName      = strdup(username.c_str());
+	snmp.secLevel     = strdup(secLevelNames[securityLevel]);
+	if(securityLevel>0)
+	{
+		snmp.authProtocol = strdup(authMethod.c_str());
+		snmp.authPassword = strdup(authPassword.c_str());
+	}
+	if(securityLevel==2)
+	{
+		snmp.privProtocol = strdup(privMethod.c_str());
+		snmp.privPassword = strdup(privPassword.c_str());
+	}
+	nutscan_device_t *scan = nutscan_scan_snmp(startIP.c_str(), stopIP.c_str(), usecTimeout, &snmp), *iter;
+	rewind_list(&scan);
+	iter = scan;
+	while(iter)
+	{
+		Device* device = new Device(iter);
+		addDevice(device);
+		res.push_back(device->getName());
+		iter = iter->next;
+	}
+	nutscan_free_device(scan);
+
+	return res;
+}
+
+void Controller::monitorDevices(const std::vector<Device*>& devices)
+{
+	for(std::vector<Device*>::const_iterator it=devices.begin(); it!=devices.end(); ++it)
+	{
+		Device* dev = const_cast<Device*>(*it);
+		if(dev)
+		{
+			if(!dev->isMonitored())
+			{
+				// Add ups.conf section for device
+				GenericConfigSection& section = _ups_conf.sections[dev->getName()];
+				section.name = dev->getName();
+				for(Device::property_iterator prit=dev->property_begin(); prit!=dev->property_end(); ++prit)
+				{
+					GenericConfigSectionEntry& entry = section.entries[prit->first];
+					entry.name = prit->first;
+					entry.values.push_back(prit->second);
+				}
+
+				// Change status to "monitored"
+				dev->setSubStatus(Device::DEVICE_MONITORED);
+			}
+		}
+	}
+	onUpsConfChanged();
+}
+
+void Controller::unmonitorDevices(const std::vector<Device*>& devices)
+{
+	// TODO
+	onUpsConfChanged();
+}
+
+void Controller::onUpsConfChanged()
+{
+	// TODO Flush _ups_conf to file
+	// TODO Run drivers in consequences
+	// TODO Signal upsd that ups.conf has been changed
+}
 
 
 }} // Namespace nut::ctld

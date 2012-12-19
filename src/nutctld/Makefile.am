@@ -25,7 +25,7 @@ nutctld_SOURCES = nutctld.cpp \
 
 lib_LTLIBRARIES = libnutctl.la
 
-libnutctl_la_SOURCES = libnutctl.cpp \
+libnutctl_la_SOURCES = libnutctl.cpp libnutctl.hpp \
 	nutctl_proxy.hpp
 
 nutctl_adaptor.hpp: nutctl.xml
@@ -35,7 +35,7 @@ nutctl_proxy.hpp: nutctl.xml
 	dbusxx-xml2cpp nutctl.xml --proxy=nutctl_proxy.hpp
 
 
-noinst_PROGRAMS = nutctlclient
+bin_PROGRAMS = nutctlclient
 
 nutctlclient_SOURCES = client.cpp
 nutctlclient_LDADD = libnutctl.la

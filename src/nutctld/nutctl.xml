@@ -33,5 +33,45 @@
 		<arg type="as" name="names" direction="out" />
 	</method>
 
+	<method name="ScanAvahi">
+		<arg type="i" name="usecTimeout" direction="in" />
+		<arg type="as" name="names" direction="out" />
+	</method>
+
+	<method name="ScanXMLHTTP">
+		<arg type="i" name="usecTimeout" direction="in" />
+		<arg type="as" name="names" direction="out" />
+	</method>
+
+	<method name="ScanNut">
+		<arg type="s" name="startIP" direction="in" />
+		<arg type="s" name="stopIP" direction="in" />
+		<arg type="q" name="port" direction="in" />
+		<arg type="i" name="usecTimeout" direction="in" />
+		<arg type="as" name="names" direction="out" />
+	</method>
+
+	<method name="ScanSNMPv1">
+		<arg type="s" name="startIP" direction="in" />
+		<arg type="s" name="stopIP" direction="in" />
+		<arg type="i" name="usecTimeout" direction="in" />
+		<arg type="s" name="communityName" direction="in" />
+		<arg type="as" name="names" direction="out" />
+	</method>
+
+	<method name="ScanSNMPv3">
+		<arg type="s" name="startIP" direction="in" />
+		<arg type="s" name="stopIP" direction="in" />
+		<arg type="i" name="usecTimeout" direction="in" />
+		<arg type="s" name="userName" direction="in" />
+		<arg type="i" name="securityLevel" direction="in" />
+		<arg type="s" name="authMethod" direction="in" />
+		<arg type="s" name="authPassword" direction="in" />
+		<arg type="s" name="privMethod" direction="in" />
+		<arg type="s" name="privPassword" direction="in" />
+
+		<arg type="as" name="names" direction="out" />
+	</method>
+
   </interface>
 </node>

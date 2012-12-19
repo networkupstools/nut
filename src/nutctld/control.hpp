@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "nutconf.h"
 
@@ -54,17 +55,20 @@ public:
 	std::string getDriver()const;
 	std::string getPort()const;
 
-	bool hasOption(const std::string& optName)const;
-	std::string getOption(const std::string& optName)const;
-
+	void setName(const std::string& name);
 	void setDriver(const std::string& driver);
 	void setPort(const std::string& port);
-	void setOption(const std::string& name, const std::string& value);
 
-	const std::map<std::string, std::string>& getOptions()const;
-	typedef std::map<std::string, std::string>::const_iterator option_iterator;
-	option_iterator option_begin()const;
-	option_iterator option_end()const;
+
+	bool hasProperty(const std::string& name)const;
+	std::string getProperty(const std::string& name)const;
+	void setProperty(const std::string& name, const std::string& value);
+
+	typedef std::map<std::string, std::string> PropertyMap;
+	const PropertyMap& getProperties()const;
+	typedef PropertyMap::const_iterator property_iterator;
+	property_iterator property_begin()const;
+	property_iterator property_end()const;
 
 	typedef unsigned int Status;
 	enum DeviceStatus {
@@ -74,7 +78,7 @@ public:
 	Status getStatus()const;
 	void setStatus(Status status);
 	bool hasStatus(Status status)const;
-	void setSubStatus(Status status, bool state);
+	void setSubStatus(Status status, bool state = true);
 
 	bool isMonitored()const{return hasStatus(DEVICE_MONITORED);}
 
@@ -88,7 +92,7 @@ protected:
 	void initFromGenericSection(const nut::GenericConfigSection& section);
 
 	std::string _name;
-	std::map<std::string, std::string> _options;
+	PropertyMap _properties;
 	Status _status;
 };
 
@@ -101,13 +105,22 @@ protected:
  */
 class Controller : public std::list<Device*>
 {
-protected:
-	static Controller _instance;
+public:
+	/**
+	 * Default constructor.
+	 */
 	Controller();
 
-	GenericConfiguration _ups_conf;
+	/**
+	 * Constructor specifying parameters.
+	 * \param ups_conf_path Default path of ups.conf file.
+	 */
+	Controller(const std::string& ups_conf_path);
 
-public:
+	void init();
+
+	/** Device manipulation
+	 * \{ */
 
 	/**
      * Add device to the known device list.
@@ -131,6 +144,13 @@ public:
 	Device* getDevice(const std::string& name);
 
 	/**
+	 * Retrieve a list of devices from their names.
+	 * \param Device name list.
+	 * \return Device list. Device can be NULL if not found.
+	 */
+	std::vector<Device*> getDevices(const std::vector<std::string>& devices)const;
+
+	/**
 	 * Remove a device from the list.
 	 * \param name Name of device to remove.
 	 */
@@ -142,28 +162,110 @@ public:
 	 */
 	void removeDevice(Device* device);
 
+	/** \} */
 
+	/** Device monitoring.
+	 * \{ */
+
+	/**
+	 * Monitor some devices.
+	 * \param devices List of device names to monitor.
+	 */
+	void monitorDevices(const std::vector<Device*>& devices);
+
+	/**
+	 * Monitor some devices.
+	 * \param devices List of device names to monitor.
+	 */
+	void monitorDevices(const std::vector<std::string>& devices)
+		{monitorDevices(getDevices(devices));}
+
+	/**
+	 * Unmonitor some devices.
+	 * \param devices List of device names to unmonitor.
+	 */
+	void unmonitorDevices(const std::vector<Device*>& devices);
+
+	/**
+	 * Unmonitor some devices.
+	 * \param devices List of device names to unmonitor.
+	 */
+	void unmonitorDevices(const std::vector<std::string>& devices)
+		{unmonitorDevices(getDevices(devices));}
+
+	/** \} */
+	
+
+	/** Device loading and scanning
+	 * \{ */
 
 	/**
 	 * Load devices from ups.conf
+	 * \param path ups.conf file path
+	 * \return List of read devices.
 	 */
-	void loadUpsConf();
+	std::vector<std::string> loadUpsConf(const std::string& path);
+
+	/**
+	 * Load devices from ups.conf file at default path.
+	 * \return List of read devices.
+	 */
+	std::vector<std::string> loadUpsConf();
 
 	/**
 	 * Scan USB devices.
-	 * \return List of scanned USB devices.
+	 * \return List of scanned devices.
 	 */
-	std::list<std::string> scanUSB();
-
-	
-
+	std::vector<std::string> scanUSB();
 
 	/**
-	 * Retrieve the controller singleton instance.
+	 * Scan network devices with avahi.
+	 * \return List of scanned devices.
 	 */
-	static Controller& get();
+	std::vector<std::string> scanAvahi(long usecTimeout);
 
-	void load();
+	/**
+	 * Scan network devices with XML-HTTP.
+	 * \return List of scanned devices.
+	 */
+	std::vector<std::string> scanXMLHTTP(long usecTimeout);
+	
+	/**
+	 * Scan network devices with nut classic.
+	 * \return List of scanned devices.
+	 */
+	std::vector<std::string> scanNut(const std::string& startIP, const std::string& stopIP, unsigned short port, long usecTimeout);
+
+	/**
+	 * Scan network SNMPv1 devices.
+	 * \return List of scanned devices.
+	 */
+	std::vector<std::string> scanSNMPv1(const std::string& startIP, const std::string& stopIP, long usecTimeout, const std::string& communityName);
+
+	/**
+	 * Scan network SNMPv3 devices.
+	 * \return List of scanned devices.
+	 */
+	std::vector<std::string> scanSNMPv3(const std::string& startIP, const std::string& stopIP, long usecTimeout,
+		const std::string& username, unsigned int securityLevel,
+		const std::string& authMethod, const std::string& authPassword,
+		const std::string& privMethod, const std::string& privPassword);
+
+	/** \} */
+protected:
+
+	/**
+	 * Do all needed job when ups_conf have been changed.
+	 * Typically:
+     *  - Flush _ups_conf to file
+	 *  - Run drivers in consequences
+	 *  - Signal upsd that ups.conf has been changed
+	 */
+	virtual void onUpsConfChanged();
+
+	std::string _ups_conf_path;
+
+	GenericConfiguration _ups_conf;
 
 };
 

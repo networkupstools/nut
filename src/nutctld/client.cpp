@@ -22,44 +22,30 @@
 #include <iostream>
 using namespace std;
 
-//#include "configuration.hpp"
-//using namespace nut::ctl;
-
-#include "nutctl_proxy.hpp"
-
-#define DBUS_NUTCTL_PATH "/org/networkupstools/NutCtl"
-#define DBUS_NUTCTL_NAME "org.networkupstools.NutCtl"
-
-class DBusNutCtl : public org::networkupstools::NutCtl_proxy,
-				public DBus::IntrospectableProxy,
-				public DBus::ObjectProxy
-{
-public:
-	DBusNutCtl(DBus::Connection &connection):
-	DBus::ObjectProxy(connection, DBUS_NUTCTL_PATH, DBUS_NUTCTL_NAME)
-	{
-	}
-};
+#include "libnutctl.hpp"
+using namespace org::networkupstools;
 
 
-DBus::BusDispatcher dispatcher;
-
+NutController* ctl = NULL;
 
 int main(int argc, char** argv)
 {
 	cout << "nutctl client" << endl;
 
-	DBus::default_dispatcher = &dispatcher;
-    DBus::Connection bus = DBus::Connection::SessionBus();
-//    DBus::Connection bus = DBus::Connection::SystemBus();
+	ctl = NutController::getController();
 
-	DBusNutCtl ctl(bus);
+	ctl->ScanUSB();
+	ctl->ScanAvahi(1000000);
+	ctl->ScanNut("166.99.224.1", "166.99.224.254", 3493, 1000000);
+	ctl->ScanSNMPv1("166.99.224.1", "166.99.224.254", 1000000, "public");
+//	ctl->ScanSNMPv3("166.99.224.1", "166.99.224.254", 1000000, "readuser", 1, "MD5", "readuser", "toto", "toto");
+	ctl->ScanXMLHTTP(1000000);
 
-	std::vector< std::string > res = ctl.GetDeviceNames();
+	std::vector< std::string > res = ctl->GetDeviceNames();
 	for(size_t n=0; n<res.size(); n++)
 	{
 		cout << " - " << res[n] << endl;
-		std::map< std::string, std::string > vars = ctl.GetDevice(res[n]);
+		std::map< std::string, std::string > vars = ctl->GetDevice(res[n]);
 		for(std::map< std::string, std::string >::iterator it=vars.begin(); it!=vars.end(); ++it)
 		{
 			cout << "    - " << it->first << " : " << it->second << std::endl;
