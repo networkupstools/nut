@@ -441,6 +441,8 @@
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
+"Lyonn"	"ups"	"2"	"CTB-1200"	""	"blazer_usb"
+
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
 
 "Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"blazer_ser"
