@@ -27,6 +27,9 @@
 
 
 extern "C" {
+
+#include "common.h"
+
 void rewind_list(nutscan_device_t** dev)
 {
 	if(*dev!=NULL)
@@ -509,9 +512,19 @@ void Controller::unmonitorDevices(const std::vector<Device*>& devices)
 
 void Controller::onUpsConfChanged()
 {
-	// TODO Flush _ups_conf to file
-	// TODO Run drivers in consequences
+	if(_ups_conf_path.empty())
+		return;
+
+	// Flush _ups_conf to ups.conf file
+	NutFile file(_ups_conf_path);
+	file.open(NutFile::WRITE_ONLY);
+	_ups_conf.writeTo(file);
+	
+	// Run drivers in consequences
+
+
 	// TODO Signal upsd that ups.conf has been changed
+	sendsignal("upsd", SIGHUP);
 }
 
 
