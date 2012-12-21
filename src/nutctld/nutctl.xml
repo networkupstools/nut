@@ -23,9 +23,16 @@
 		<arg type="s" name="variable" direction="in" />
 		<arg type="s" name="value" direction="in" />
     </method>
-	
 
 	<method name="RemoveDevice">
+		<arg type="s" name="name" direction="in" />
+    </method>
+
+	<method name="MonitorDevice">
+		<arg type="s" name="name" direction="in" />
+    </method>
+
+	<method name="UnmonitorDevice">
 		<arg type="s" name="name" direction="in" />
     </method>
 

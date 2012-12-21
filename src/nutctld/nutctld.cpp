@@ -31,7 +31,7 @@ using namespace nut::ctl;
 
 Controller controller(CONFPATH "/ups.conf");
 
-
+// DRVPATH
 
 
 #define DBUS_NUTCTL_PATH "/org/networkupstools/NutCtl"
@@ -52,6 +52,10 @@ public:
     virtual std::string GetDeviceVariable(const std::string& device, const std::string& variable);
     virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
 	virtual void RemoveDevice(const std::string& name);
+
+    virtual void MonitorDevice(const std::string& name);
+    virtual void UnmonitorDevice(const std::string& name);
+
     virtual std::vector< std::string > ScanUSB();
     virtual std::vector< std::string > ScanAvahi(const int32_t& usecTimeout);
     virtual std::vector< std::string > ScanXMLHTTP(const int32_t& usecTimeout);
@@ -119,6 +123,20 @@ void DBusNutCtl::RemoveDevice(const std::string& name)
 	controller.removeDevice(name);
 }
 
+void DBusNutCtl::MonitorDevice(const std::string& name)
+{
+	std::vector<std::string> names;
+	names.push_back(name);
+	controller.monitorDevices(names);
+}
+
+void DBusNutCtl::UnmonitorDevice(const std::string& name)
+{
+	std::vector<std::string> names;
+	names.push_back(name);
+	controller.unmonitorDevices(names);
+}
+
 std::vector< std::string > DBusNutCtl::ScanUSB()
 {
 	return controller.scanUSB();
@@ -146,7 +164,9 @@ std::vector< std::string > DBusNutCtl::ScanSNMPv1(const std::string& startIP, co
 
 std::vector< std::string > DBusNutCtl::ScanSNMPv3(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& userName, const int32_t& securityLevel, const std::string& authMethod, const std::string& authPassword, const std::string& privMethod, const std::string& privPassword)
 {
-	return controller.scanSNMPv3(startIP, stopIP, usecTimeout, userName, securityLevel, authMethod, authPassword, privMethod, privPassword);
+cerr << "SNMPv3 scanning is disabled due to a pending bug." << endl;
+	return std::vector< std::string >();
+//	return controller.scanSNMPv3(startIP, stopIP, usecTimeout, userName, securityLevel, authMethod, authPassword, privMethod, privPassword);
 }
 
 
@@ -160,8 +180,8 @@ int main(int argc, char** argv)
 	controller.loadUpsConf();
 
 	DBus::default_dispatcher = &dispatcher;
-    DBus::Connection bus = DBus::Connection::SessionBus();
-//    DBus::Connection bus = DBus::Connection::SystemBus();
+//    DBus::Connection bus = DBus::Connection::SessionBus();
+    DBus::Connection bus = DBus::Connection::SystemBus();
 
 	bus.request_name(DBUS_NUTCTL_NAME);
 

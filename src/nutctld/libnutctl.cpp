@@ -47,6 +47,10 @@ public:
 	virtual std::map< std::string, std::string > GetDevice(const std::string& name);
 	virtual std::string GetDeviceVariable(const std::string& device, const std::string& variable);
 	virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
+
+	virtual void MonitorDevice(const std::string& device);
+	virtual void UnmonitorDevice(const std::string& device);
+
 	virtual std::vector< std::string > ScanUSB();
 	virtual std::vector< std::string > ScanAvahi(long usecTimeout);
 	virtual std::vector< std::string > ScanXMLHTTP(long usecTimeout);
@@ -82,8 +86,8 @@ DBusNutController::DBusNutController()
 {
 	DBus::default_dispatcher = &dispatcher;
 
-	_dbus_cnx = new DBus::Connection(DBus::Connection::SessionBus());
-//	_dbus_cnx = DBus::Connection::SystemBus();
+//	_dbus_cnx = new DBus::Connection(DBus::Connection::SessionBus());
+	_dbus_cnx = new DBus::Connection(DBus::Connection::SystemBus());
 
 	_dbus_ctl = new DBusNutCtl(*_dbus_cnx);
 }
@@ -115,6 +119,16 @@ std::string DBusNutController::GetDeviceVariable(const std::string& device, cons
 void DBusNutController::SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value)
 {
 	_dbus_ctl->SetDeviceVariable(device, variable, value);
+}
+
+void DBusNutController::MonitorDevice(const std::string& device)
+{
+	_dbus_ctl->MonitorDevice(device);
+}
+
+void DBusNutController::UnmonitorDevice(const std::string& device)
+{
+	_dbus_ctl->UnmonitorDevice(device);
 }
 
 std::vector< std::string > DBusNutController::ScanUSB()

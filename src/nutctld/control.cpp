@@ -21,6 +21,7 @@
 #include "control.hpp"
 
 #include "nutstream.h"
+#include "nutipc.hpp"
 
 #include <sstream>
 #include <iomanip>
@@ -501,30 +502,52 @@ void Controller::monitorDevices(const std::vector<Device*>& devices)
 			}
 		}
 	}
-	onUpsConfChanged();
+
+	flushUpsConfToFile();
+
+	// Run drivers in consequences
+	for(std::vector<Device*>::const_iterator it=devices.begin(); it!=devices.end(); ++it)
+	{
+		const Device* dev = *it;
+		if(dev)
+		{
+			std::string name = dev->getName();
+			std::list<std::string> params;
+			params.push_back("start");
+			params.push_back(name);
+			try
+			{
+// TODO Wait that Vasek finish to implement Executor or try other way.
+//				nut::Process::Execution exec(DRVPATH "/upsdrvctl", params);
+//				exec();
+
+			}
+			catch(std::runtime_error& ex)
+			{
+				std::cerr << "Runtime error while intending to execute upsdrvctl:" << std::endl
+					 << ex.what() << std::endl;
+			}
+		}
+	}	
+
+	// Signal upsd that ups.conf has been changed
+	sendsignal("upsd", SIGHUP);
 }
 
 void Controller::unmonitorDevices(const std::vector<Device*>& devices)
 {
 	// TODO
-	onUpsConfChanged();
 }
 
-void Controller::onUpsConfChanged()
+void Controller::flushUpsConfToFile()
 {
-	if(_ups_conf_path.empty())
-		return;
-
-	// Flush _ups_conf to ups.conf file
-	NutFile file(_ups_conf_path);
-	file.open(NutFile::WRITE_ONLY);
-	_ups_conf.writeTo(file);
-	
-	// Run drivers in consequences
-
-
-	// TODO Signal upsd that ups.conf has been changed
-	sendsignal("upsd", SIGHUP);
+	if(!_ups_conf_path.empty())
+	{
+		// Flush _ups_conf to ups.conf file
+		NutFile file(_ups_conf_path);
+		file.open(NutFile::WRITE_ONLY);
+		_ups_conf.writeTo(file);
+	}
 }
 
 

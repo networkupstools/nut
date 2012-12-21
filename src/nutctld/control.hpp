@@ -255,13 +255,11 @@ public:
 protected:
 
 	/**
-	 * Do all needed job when ups_conf have been changed.
-	 * Typically:
-     *  - Flush _ups_conf to file
-	 *  - Run drivers in consequences
-	 *  - Signal upsd that ups.conf has been changed
+	 * Flush _ups_conf to system ups.conf file.
 	 */
-	virtual void onUpsConfChanged();
+	void flushUpsConfToFile();
+
+
 
 	std::string _ups_conf_path;
 

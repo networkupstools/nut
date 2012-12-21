@@ -38,5 +38,5 @@ nutctl_proxy.hpp: nutctl.xml
 bin_PROGRAMS = nutctlclient
 
 nutctlclient_SOURCES = client.cpp
-nutctlclient_LDADD = libnutctl.la
+nutctlclient_LDADD = libnutctl.la ../../tools/nut-scanner/libnutscan.la
 

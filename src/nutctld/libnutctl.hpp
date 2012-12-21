@@ -41,6 +41,10 @@ public:
 
 	virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value) =0;
 
+	virtual void MonitorDevice(const std::string& device) =0;
+
+	virtual void UnmonitorDevice(const std::string& device) =0;
+
 	virtual std::vector< std::string > ScanUSB() =0;
 
 	virtual std::vector< std::string > ScanAvahi(long usecTimeout) =0;
