@@ -257,6 +257,11 @@ NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
 NUT_CHECK_LIBAVAHI
 
+dnl Check for dbus and libdbus-c++
+dnl NOTE that it is an experimental support for now.
+dnl Arnaud: could you review it, please.
+NUT_CHECK_DBUS
+
 dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
 
@@ -1155,6 +1160,9 @@ AC_SUBST(HAL_FDI_PATH)
 AC_SUBST(HAL_CALLOUTS_PATH)
 AC_SUBST(LIBHAL_CFLAGS)
 AC_SUBST(LIBHAL_LIBS)
+AC_SUBST(DBUS_SYSBUS_CONF_PATH)
+AC_SUBST(LIBDBUSCPP_CFLAGS)
+AC_SUBST(LIBDBUSCPP_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)

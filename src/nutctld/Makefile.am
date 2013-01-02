@@ -40,3 +40,7 @@ bin_PROGRAMS = nutctlclient
 nutctlclient_SOURCES = client.cpp
 nutctlclient_LDADD = libnutctl.la ../../tools/nut-scanner/libnutscan.la
 
+# System bus configuration
+dbussysconfdir = $(DBUS_SYSBUS_CONF_PATH)
+dbussysconf_DATA = org.networkupstools.conf
+
