@@ -66,4 +66,6 @@ void NutIPCUnitTest::testExec() {
 	nut::Process::Execution child(bin, bin_args);
 
 	CPPUNIT_ASSERT(123 == child.wait());
+
+	CPPUNIT_ASSERT(0 == nut::Process::execute("test 'Hello world' == 'Hello world'"));
 }
