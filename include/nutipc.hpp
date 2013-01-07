@@ -144,8 +144,8 @@ class Process {
 
 		private:
 
-		const std::string m_bin;
-		const Arguments   m_args;
+		std::string m_bin;
+		Arguments   m_args;
 
 		public:
 
@@ -218,6 +218,33 @@ class Process {
 		Execution(const std::string & command): Child<Executor>(Executor(command)) {}
 
 	};  // end of class Execution
+
+	/**
+	 *  \brief  Execute command and wait for exit code
+	 *
+	 *  \param  binary     Binary to be executed
+	 *  \param  arguments  Command-line arguments to the binary
+	 *
+	 *  \return Exit code
+	 */
+	static inline int execute(const std::string & binary, const Executor::Arguments & arguments) {
+		Execution child(binary, arguments);
+
+		return child.wait();
+	}
+
+	/**
+	 *  \brief  Execute command and wait for exit code
+	 *
+	 *  \param  command  Command to be executed
+	 *
+	 *  \return Exit code
+	 */
+	static inline int execute(const std::string & command) {
+		Execution child(command);
+
+		return child.wait();
+	}
 
 };  // end of class Process
 

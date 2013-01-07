@@ -21,6 +21,8 @@
 
 #include "nutipc.hpp"
 
+#include <iostream>
+
 
 namespace nut {
 
@@ -34,9 +36,97 @@ pid_t Process::getPPID() throw() {
 }
 
 
+/**
+ *  \brief  Command line segmentation
+ *
+ *  The function parses the \c command and chops off (and return)
+ *  the first command line word (i.e. does segmentation based
+ *  on white spaces, unless quoted).
+ *  White spaces are removed from the returned words.
+ *
+ *  \param[in,out]  command  Command line
+ *
+ *  \return Command line word
+ */
+static std::string getCmdLineWord(std::string & command) {
+	size_t len = 0;
+
+	// Remove initial whitespace
+	while (len < command.size()) {
+		if (' ' != command[len] && '\t' != command[len])
+			break;
+
+		++len;
+	}
+
+	command.erase(0, len);
+
+	// Seek word end
+	bool bslsh = false;
+	char quote = 0;
+
+	for (len = 0; len < command.size(); ++len) {
+		char ch = command[len];
+
+		// White space (may be inside quotes)
+		if (' ' == ch || '\t' == ch) {
+			if (!quote)
+				break;
+		}
+
+		// Backspace (second one cancels the first)
+		else if ('\\' == ch) {
+			bslsh = bslsh ? false : true;
+		}
+
+		// Double quote (may be escaped or nested)
+		else if ('"' == ch) {
+			if (!bslsh) {
+				if (!quote)
+					quote = '"';
+
+				// Final double quote
+				else if ('"' == quote)
+					quote = 0;
+			}
+		}
+
+		// Single quote (can't be escaped)
+		else if ('\'' == ch) {
+			if (!quote)
+				quote = '\'';
+
+			else if ('\'' == quote)
+				quote = 0;
+		}
+
+		// Cancel backslash
+		if ('\\' != ch)
+			bslsh = false;
+	}
+
+	// Extract the word
+	std::string word = command.substr(0, len);
+
+	command.erase(0, len);
+
+	return word;
+}
+
+
 Process::Executor::Executor(const std::string & command) {
-	//m_bin m_args
-	throw std::runtime_error("TODO: Not implemented, yet");
+	std::string cmd(command);
+
+	m_bin = getCmdLineWord(cmd);
+
+	for (;;) {
+		std::string arg = getCmdLineWord(cmd);
+
+		if (arg.empty())
+			break;
+
+		m_args.push_back(arg);
+	}
 }
 
 
