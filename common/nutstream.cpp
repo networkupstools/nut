@@ -18,7 +18,7 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "nutstream.h"
+#include "nutstream.hpp"
 
 #include <iomanip>
 #include <cstdlib>
@@ -152,7 +152,7 @@ bool NutFile::open(access_t mode, int & err_code, std::string & err_msg) throw()
 
 
 bool NutFile::close(int & err_code, std::string & err_msg) throw() {
-	err_code = fclose(m_impl);
+	err_code = ::fclose(m_impl);
 
 	if (0 != err_code) {
 		err_msg = std::string(::strerror(err_code));
@@ -161,6 +161,21 @@ bool NutFile::close(int & err_code, std::string & err_msg) throw() {
 	}
 
 	m_impl = NULL;
+
+	return true;
+}
+
+
+bool NutFile::remove(int & err_code, std::string & err_msg) throw() {
+	err_code = ::unlink(m_name.c_str());
+
+	if (0 != err_code) {
+		err_code = errno;
+
+		err_msg = std::string(::strerror(err_code));
+
+		return false;
+	}
 
 	return true;
 }

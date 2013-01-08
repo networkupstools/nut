@@ -1,4 +1,4 @@
-/* nutwriter.h - NUT writer
+/* nutwriter.hpp - NUT writer
 
    Copyright (C)
 	2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
@@ -23,7 +23,7 @@
 
 #ifdef __cplusplus
 
-#include "nutstream.h"
+#include "nutstream.hpp"
 #include "nutconf.h"
 
 #include <stdexcept>

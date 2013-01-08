@@ -1,6 +1,6 @@
 
 #include "nutconf.h"
-#include "nutstream.h"
+#include "nutstream.hpp"
 using namespace nut;
 
 #include <iostream>
