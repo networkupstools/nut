@@ -21,7 +21,7 @@
 #ifndef NUTCONF_H_SEEN
 #define NUTCONF_H_SEEN 1
 
-#include "nutstream.h"
+#include "nutstream.hpp"
 
 #include <stdio.h>
 #include <string.h>

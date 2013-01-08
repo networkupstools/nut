@@ -20,9 +20,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
 
-#include "nutstream.h"
+#include "nutstream.hpp"
 #include "nutconf.h"
-#include "nutwriter.h"
+#include "nutwriter.hpp"
 
 #include <cppunit/extensions/HelperMacros.h>
 

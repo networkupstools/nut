@@ -100,6 +100,9 @@ class Process {
 		 */
 		Child(M main) throw(std::runtime_error);
 
+		/** Child PID */
+		inline pid_t getPID() const { return m_pid; }
+
 		/**
 		 *  \brief  Wait for child process to exit
 		 *
@@ -469,6 +472,21 @@ class Signal {
 	 */
 	static int send(enum_t signame, pid_t pid) throw(std::logic_error);
 
+	/**
+	 *  \brief  Send signal to a process identified via PID file
+	 *
+	 *  An exception is thrown if the signal isn't implemented
+	 *  or PID file read fails.
+	 *
+	 *  \param  signame   Signal name
+	 *  \param  pid_file  File containing process PID
+	 *
+	 *  \retval 0     in case of success
+	 *  \retval EPERM if the process doesn't have permission to send the signal
+	 *  \retval ESRCH if the process (group) identified doesn't exist
+	 */
+	static int send(enum_t signame, const std::string & pid_file);
+
 };  // end of class Signal
 
 
@@ -689,6 +707,31 @@ Signal::HandlerThread<H>::~HandlerThread() throw(std::runtime_error) {
 	if (-1 != s_comm_pipe[1])
 		quit();
 }
+
+
+/** NUT-specific signal handling */
+class NutSignal: public Signal {
+	public:
+
+	/**
+	 *  \brief  Send signal to a NUT process
+	 *
+	 *  The function assembles process-specific PID file name and path
+	 *  and calls \ref Signal::send.
+	 *
+	 *  An exception is thrown if the signal isn't implemented
+	 *  or PID file read fails.
+	 *
+	 *  \param  signame  Signal name
+	 *  \param  process  File containing process PID
+	 *
+	 *  \retval 0     in case of success
+	 *  \retval EPERM if the process doesn't have permission to send the signal
+	 *  \retval ESRCH if the process (group) identified doesn't exist
+	 */
+	static int send(enum_t signame, const std::string & process);
+
+};  // end of class NutSignal
 
 }  // end of namespace nut
 

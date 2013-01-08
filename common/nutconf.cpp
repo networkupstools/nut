@@ -19,7 +19,7 @@
  */
 
 #include "nutconf.h"
-#include "nutwriter.h"
+#include "nutwriter.hpp"
 
 #include <ctype.h>
 #include <string.h>

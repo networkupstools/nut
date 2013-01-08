@@ -1,4 +1,4 @@
-/* nutstream.h - NUT stream
+/* nutstream.hpp - NUT stream
 
    Copyright (C)
 	2012	Vaclav Krpec  <VaclavKrpec@Eaton.com>
@@ -340,6 +340,44 @@ class NutFile: public NutStream {
 
 		std::stringstream e;
 		e << "Failed to close file " << m_name << ": " << ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
+	 *  \brief  Remove file
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err-msg   Error message
+	 *
+	 *  \retval true  if \c unlink succeeded
+	 *  \retval false if \c unlink failed
+	 */
+	bool remove(int & err_code, std::string & err_msg) throw();
+
+	/**
+	 *  \brief  Remove file
+	 *
+	 *  \retval true  if \c unlink succeeded
+	 *  \retval false if \c unlink failed
+	 */
+	inline bool remove() throw() {
+		int ec;
+		std::string em;
+
+		return remove(ec, em);
+	}
+
+	/** Remove file (or throw exception) */
+	inline void removex() throw(std::runtime_error) {
+		int ec;
+		std::string em;
+
+		if (remove(ec, em))
+			return;
+
+		std::stringstream e;
+		e << "Failed to remove file " << m_name << ": " << ec << ": " << em;
 
 		throw std::runtime_error(e.str());
 	}

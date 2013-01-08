@@ -20,6 +20,8 @@
  */
 
 #include "nutipc.hpp"
+#include "nutstream.hpp"
+#include "config.h"
 
 #include <iostream>
 
@@ -196,6 +198,50 @@ int Signal::send(Signal::enum_t signame, pid_t pid) throw(std::logic_error) {
 	e << "Can't send invalid signal " << sig;
 
 	throw std::logic_error(e.str());
+}
+
+
+int Signal::send(Signal::enum_t signame, const std::string & pid_file) {
+	NutFile file(pid_file, NutFile::READ_ONLY);
+
+	std::string pid_str;
+
+	NutStream::status_t read_st = file.getString(pid_str);
+
+	if (NutStream::NUTS_OK != read_st) {
+		std::stringstream e;
+
+		e << "Failed to read PID from " << pid_file << ": " << read_st;
+
+		throw std::runtime_error(e.str());
+	}
+
+	std::stringstream pid_conv(pid_str);
+
+	pid_t pid;
+
+	if (!(pid_conv >> pid)) {
+		std::stringstream e;
+
+		e << "Failed to convert contents of " << pid_file << " to PID";
+
+		throw std::runtime_error(e.str());
+	}
+
+	return send(signame, pid);
+}
+
+
+int NutSignal::send(NutSignal::enum_t signame, const std::string & process) {
+	std::string pid_file;
+
+	// TBD: What's ALTPIDPATH and shouldn't we also consider it?
+	pid_file += PIDPATH;
+	pid_file += '/';
+	pid_file += process;
+	pid_file += ".pid";
+
+	return Signal::send(signame, pid_file);
 }
 
 }  // end of namespace nut
