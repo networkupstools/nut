@@ -533,6 +533,51 @@ NutWriter::status_t DefaultConfigWriter::writeDirective(const std::string & str)
 }
 
 
+/**
+ *  \brief  Value quoting and escaping
+ *
+ *  The function checks whether the value string contains
+ *  any spaces and/or '=' characters.
+ *  If so, the result is double-quoted and all inner double
+ *  quotes shall be escaped using backslash.
+ *
+ *  \param  val  Value string
+ *
+ *  \return Value string ready for serialisation
+ */
+static std::string encodeValue(const std::string & val) {
+	// Check the string for spaces and '='
+	bool quote = false;
+
+	for (size_t i = 0; i < val.size() && !quote; ++i) {
+		char ch = val[i];
+
+		quote = ' ' == ch || '=' == ch;
+	}
+
+	if (!quote)
+		return val;
+
+	// Quote value and escape inner quotes
+	std::string qval;
+
+	qval += '"';
+
+	for (size_t i = 0; i < val.size(); ++i) {
+		char ch = val[i];
+
+		if ('"' == ch)
+			qval += '\\';
+
+		qval += ch;
+	}
+
+	qval += '"';
+
+	return qval;
+}
+
+
 NutWriter::status_t GenericConfigWriter::writeSectionEntry(
 	const GenericConfigSectionEntry & entry,
 	const std::string & indent,
@@ -541,7 +586,9 @@ NutWriter::status_t GenericConfigWriter::writeSectionEntry(
 	ConfigParamList::const_iterator value_iter = entry.values.begin();
 
 	for (; value_iter != entry.values.end(); ++value_iter) {
-		status_t status = writeDirective(indent + entry.name + kv_sep + *value_iter);
+		std::string value = encodeValue(*value_iter);
+
+		status_t status = writeDirective(indent + entry.name + kv_sep + value);
 
 		if (NUTW_OK != status)
 			return status;

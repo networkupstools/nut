@@ -448,28 +448,25 @@ protected:
 	 *
 	 *  \param  section  Section name
 	 *  \param  entry    Entry name
-	 *  \param  quoted   \c true iff the value is quoted
 	 *
 	 *  \return Configuration parameter as string
 	 */
 	std::string getStr(
 		const std::string & section,
-		const std::string & entry,
-		bool                quoted = false) const;
+		const std::string & entry) const;
 
 	/**
 	 *  \brief  Global scope configuration string getter
 	 *
 	 *  Empty string is returned if the entry doesn't exist.
 	 *
-	 *  \param  entry    Entry name
-	 *  \param  quoted   \c true iff the value is quoted
+	 *  \param  entry  Entry name
 	 *
 	 *  \return Configuration parameter as string
 	 */
-	inline std::string getStr(const std::string & entry, bool quoted = false) const
+	inline std::string getStr(const std::string & entry) const
 	{
-		return getStr("", entry, quoted);
+		return getStr("", entry);
 	}
 
 	/**
@@ -478,27 +475,23 @@ protected:
 	 *  \param  section  Section name
 	 *  \param  entry    Entry name
 	 *  \param  value    Parameter value
-	 *  \param  quoted   \c true iff the value is quoted
 	 */
 	void setStr(
 		const std::string & section,
 		const std::string & entry,
-		const std::string & value,
-		bool                quoted = false);
+		const std::string & value);
 
 	/**
 	 *  \brief  Global scope configuration string setter
 	 *
 	 *  \param  entry    Entry name
 	 *  \param  value    Parameter value
-	 *  \param  quoted   \c true iff the value is quoted
 	 */
 	inline void setStr(
 		const std::string & entry,
-		const std::string & value,
-		bool                quoted = false)
+		const std::string & value)
 	{
-		setStr("", entry, value, quoted);
+		setStr("", entry, value);
 	}
 
 	/**
@@ -780,16 +773,16 @@ class UpsConfiguration : public GenericConfiguration
 public:
 	/** Global configuration attributes getters and setters \{ */
 
-	inline std::string getChroot()     const { return getStr("chroot",     true); }
-	inline std::string getDriverPath() const { return getStr("driverpath", true); }
-	inline std::string getUser()       const { return getStr("user",       false); }
+	inline std::string getChroot()     const { return getStr("chroot"); }
+	inline std::string getDriverPath() const { return getStr("driverpath"); }
+	inline std::string getUser()       const { return getStr("user"); }
 
 	inline long long int getMaxStartDelay() const { return getInt("maxstartdelay"); }
 	inline long long int getPollInterval() const  { return getInt("pollinterval", 5); }  // TODO: check the default
 
-	inline void setChroot(const std::string & path)     { setStr("chroot",     path, true); }
-	inline void setDriverPath(const std::string & path) { setStr("driverpath", path, true); }
-	inline void setUser(const std::string & user)       { setStr("user",       user, false); }
+	inline void setChroot(const std::string & path)     { setStr("chroot",     path); }
+	inline void setDriverPath(const std::string & path) { setStr("driverpath", path); }
+	inline void setUser(const std::string & user)       { setStr("user",       user); }
 
 	inline void setMaxStartDelay(long long int delay)   { setInt("maxstartdelay", delay); }
 	inline void setPollInterval(long long int interval) { setInt("pollinterval",  interval); }
@@ -797,59 +790,59 @@ public:
 	/** \} */
 
 	/** UPS-specific configuration attributes getters and setters \{ */
-	inline std::string getDriver(const std::string & ups)              const { return getStr(ups, "driver",              false); }
-	inline std::string getDescription(const std::string & ups)         const { return getStr(ups, "desc",                true); }
-	inline std::string getCP(const std::string & ups)                  const { return getStr(ups, "CP",                  false); }
-	inline std::string getCS(const std::string & ups)                  const { return getStr(ups, "CS",                  false); }
-	inline std::string getID(const std::string & ups)                  const { return getStr(ups, "ID",                  false); }
-	inline std::string getLB(const std::string & ups)                  const { return getStr(ups, "LB",                  false); }
-	inline std::string getLowBatt(const std::string & ups)             const { return getStr(ups, "LowBatt",             false); }  // CHECKME
-	inline std::string getOL(const std::string & ups)                  const { return getStr(ups, "OL",                  false); }  // CHECKME
-	inline std::string getSD(const std::string & ups)                  const { return getStr(ups, "SD",                  false); }  // CHECKME
-	inline std::string getAuthPassword(const std::string & ups)        const { return getStr(ups, "authPassword",        false); }  // CHECKME
-	inline std::string getAuthProtocol(const std::string & ups)        const { return getStr(ups, "authProtocol",        false); }  // CHECKME
-	inline std::string getAuthType(const std::string & ups)            const { return getStr(ups, "authtype",            false); }  // CHECKME
-	inline std::string getAWD(const std::string & ups)                 const { return getStr(ups, "awd",                 false); }  // CHECKME
-	inline std::string getBatText(const std::string & ups)             const { return getStr(ups, "battext",             true); }   // CHECKME
-	inline std::string getBus(const std::string & ups)                 const { return getStr(ups, "bus",                 false); }  // CHECKME
-	inline std::string getCommunity(const std::string & ups)           const { return getStr(ups, "community",           false); }  // CHECKME
-	inline std::string getFRUID(const std::string & ups)               const { return getStr(ups, "fruid",               false); }  // CHECKME
-	inline std::string getLoadStatus(const std::string & ups)          const { return getStr(ups, "load.status",         false); }  // CHECKME
-	inline std::string getLogin(const std::string & ups)               const { return getStr(ups, "login",               false); }  // CHECKME
-	inline std::string getLowbatt(const std::string & ups)             const { return getStr(ups, "lowbatt",             false); }  // CHECKME
-	inline std::string getManufacturer(const std::string & ups)        const { return getStr(ups, "manufacturer",        true); }   // CHECKME
-	inline std::string getMethodOfFlowControl(const std::string & ups) const { return getStr(ups, "methodOfFlowControl", false); }  // CHECKME
-	inline std::string getMIBs(const std::string & ups)                const { return getStr(ups, "mibs",                false); }  // CHECKME
-	inline std::string getModel(const std::string & ups)               const { return getStr(ups, "model",               true); }   // CHECKME
-	inline std::string getModelName(const std::string & ups)           const { return getStr(ups, "modelname",           true); }   // CHECKME
-	inline std::string getNotification(const std::string & ups)        const { return getStr(ups, "notification",        false); }  // CHECKME
-	inline std::string getOldMAC(const std::string & ups)              const { return getStr(ups, "oldmac",              false); }  // CHECKME
-	inline std::string getPassword(const std::string & ups)            const { return getStr(ups, "password",            false); }  // CHECKME
-	inline std::string getPort(const std::string & ups)                const { return getStr(ups, "port",                false); }
-	inline std::string getPrefix(const std::string & ups)              const { return getStr(ups, "prefix",              true); }   // CHECKME
-	inline std::string getPrivPassword(const std::string & ups)        const { return getStr(ups, "privPassword",        false); }  // CHECKME
-	inline std::string getPrivProtocol(const std::string & ups)        const { return getStr(ups, "privProtocol",        false); }  // CHECKME
-	inline std::string getProduct(const std::string & ups)             const { return getStr(ups, "product",             true); }   // CHECKME
-	inline std::string getProductID(const std::string & ups)           const { return getStr(ups, "productid",           false); }  // CHECKME
-	inline std::string getProtocol(const std::string & ups)            const { return getStr(ups, "protocol",            false); }  // CHECKME
-	inline std::string getRuntimeCal(const std::string & ups)          const { return getStr(ups, "runtimecal",          false); }  // CHECKME
-	inline std::string getSDType(const std::string & ups)              const { return getStr(ups, "sdtype",              false); }  // CHECKME
-	inline std::string getSecLevel(const std::string & ups)            const { return getStr(ups, "secLevel",            false); }  // CHECKME
-	inline std::string getSecName(const std::string & ups)             const { return getStr(ups, "secName",             true); }   // CHECKME
-	inline std::string getSensorID(const std::string & ups)            const { return getStr(ups, "sensorid",            false); }  // CHECKME
-	inline std::string getSerial(const std::string & ups)              const { return getStr(ups, "serial",              false); }  // CHECKME
-	inline std::string getSerialNumber(const std::string & ups)        const { return getStr(ups, "serialnumber",        false); }  // CHECKME
-	inline std::string getShutdownArguments(const std::string & ups)   const { return getStr(ups, "shutdownArguments",   false); }  // CHECKME
-	inline std::string getSNMPversion(const std::string & ups)         const { return getStr(ups, "snmp_version",        false); }  // CHECKME
-	inline std::string getSubdriver(const std::string & ups)           const { return getStr(ups, "subdriver",           false); }  // CHECKME
-	inline std::string getType(const std::string & ups)                const { return getStr(ups, "type",                false); }  // CHECKME
-	inline std::string getUPStype(const std::string & ups)             const { return getStr(ups, "upstype",             false); }  // CHECKME
-	inline std::string getUSD(const std::string & ups)                 const { return getStr(ups, "usd",                 false); }  // CHECKME
-	inline std::string getUsername(const std::string & ups)            const { return getStr(ups, "username",            false); }  // CHECKME
-	inline std::string getValidationSequence(const std::string & ups)  const { return getStr(ups, "validationSequence",  false); }  // CHECKME
-	inline std::string getVendor(const std::string & ups)              const { return getStr(ups, "vendor",              true); }   // CHECKME
-	inline std::string getVendorID(const std::string & ups)            const { return getStr(ups, "vendorid",            false); }  // CHECKME
-	inline std::string getWUGrace(const std::string & ups)             const { return getStr(ups, "wugrace",             false); }  // CHECKME
+	inline std::string getDriver(const std::string & ups)              const { return getStr(ups, "driver"); }
+	inline std::string getDescription(const std::string & ups)         const { return getStr(ups, "desc"); }
+	inline std::string getCP(const std::string & ups)                  const { return getStr(ups, "CP"); }
+	inline std::string getCS(const std::string & ups)                  const { return getStr(ups, "CS"); }
+	inline std::string getID(const std::string & ups)                  const { return getStr(ups, "ID"); }
+	inline std::string getLB(const std::string & ups)                  const { return getStr(ups, "LB"); }
+	inline std::string getLowBatt(const std::string & ups)             const { return getStr(ups, "LowBatt"); }
+	inline std::string getOL(const std::string & ups)                  const { return getStr(ups, "OL"); }
+	inline std::string getSD(const std::string & ups)                  const { return getStr(ups, "SD"); }
+	inline std::string getAuthPassword(const std::string & ups)        const { return getStr(ups, "authPassword"); }
+	inline std::string getAuthProtocol(const std::string & ups)        const { return getStr(ups, "authProtocol"); }
+	inline std::string getAuthType(const std::string & ups)            const { return getStr(ups, "authtype"); }
+	inline std::string getAWD(const std::string & ups)                 const { return getStr(ups, "awd"); }
+	inline std::string getBatText(const std::string & ups)             const { return getStr(ups, "battext"); }
+	inline std::string getBus(const std::string & ups)                 const { return getStr(ups, "bus"); }
+	inline std::string getCommunity(const std::string & ups)           const { return getStr(ups, "community"); }
+	inline std::string getFRUID(const std::string & ups)               const { return getStr(ups, "fruid"); }
+	inline std::string getLoadStatus(const std::string & ups)          const { return getStr(ups, "load.status"); }
+	inline std::string getLogin(const std::string & ups)               const { return getStr(ups, "login"); }
+	inline std::string getLowbatt(const std::string & ups)             const { return getStr(ups, "lowbatt"); }
+	inline std::string getManufacturer(const std::string & ups)        const { return getStr(ups, "manufacturer"); }
+	inline std::string getMethodOfFlowControl(const std::string & ups) const { return getStr(ups, "methodOfFlowControl"); }
+	inline std::string getMIBs(const std::string & ups)                const { return getStr(ups, "mibs"); }
+	inline std::string getModel(const std::string & ups)               const { return getStr(ups, "model"); }
+	inline std::string getModelName(const std::string & ups)           const { return getStr(ups, "modelname"); }
+	inline std::string getNotification(const std::string & ups)        const { return getStr(ups, "notification"); }
+	inline std::string getOldMAC(const std::string & ups)              const { return getStr(ups, "oldmac"); }
+	inline std::string getPassword(const std::string & ups)            const { return getStr(ups, "password"); }
+	inline std::string getPort(const std::string & ups)                const { return getStr(ups, "port"); }
+	inline std::string getPrefix(const std::string & ups)              const { return getStr(ups, "prefix"); }
+	inline std::string getPrivPassword(const std::string & ups)        const { return getStr(ups, "privPassword"); }
+	inline std::string getPrivProtocol(const std::string & ups)        const { return getStr(ups, "privProtocol"); }
+	inline std::string getProduct(const std::string & ups)             const { return getStr(ups, "product"); }
+	inline std::string getProductID(const std::string & ups)           const { return getStr(ups, "productid"); }
+	inline std::string getProtocol(const std::string & ups)            const { return getStr(ups, "protocol"); }
+	inline std::string getRuntimeCal(const std::string & ups)          const { return getStr(ups, "runtimecal"); }
+	inline std::string getSDType(const std::string & ups)              const { return getStr(ups, "sdtype"); }
+	inline std::string getSecLevel(const std::string & ups)            const { return getStr(ups, "secLevel"); }
+	inline std::string getSecName(const std::string & ups)             const { return getStr(ups, "secName"); }
+	inline std::string getSensorID(const std::string & ups)            const { return getStr(ups, "sensorid"); }
+	inline std::string getSerial(const std::string & ups)              const { return getStr(ups, "serial"); }
+	inline std::string getSerialNumber(const std::string & ups)        const { return getStr(ups, "serialnumber"); }
+	inline std::string getShutdownArguments(const std::string & ups)   const { return getStr(ups, "shutdownArguments"); }
+	inline std::string getSNMPversion(const std::string & ups)         const { return getStr(ups, "snmp_version"); }
+	inline std::string getSubdriver(const std::string & ups)           const { return getStr(ups, "subdriver"); }
+	inline std::string getType(const std::string & ups)                const { return getStr(ups, "type"); }
+	inline std::string getUPStype(const std::string & ups)             const { return getStr(ups, "upstype"); }
+	inline std::string getUSD(const std::string & ups)                 const { return getStr(ups, "usd"); }
+	inline std::string getUsername(const std::string & ups)            const { return getStr(ups, "username"); }
+	inline std::string getValidationSequence(const std::string & ups)  const { return getStr(ups, "validationSequence"); }
+	inline std::string getVendor(const std::string & ups)              const { return getStr(ups, "vendor"); }
+	inline std::string getVendorID(const std::string & ups)            const { return getStr(ups, "vendorid"); }
+	inline std::string getWUGrace(const std::string & ups)             const { return getStr(ups, "wugrace"); }
 
 
 	inline long long int getSDOrder(const std::string & ups)           const { return getInt(ups, "sdorder"); }             // TODO: Is that a number?
@@ -895,78 +888,78 @@ public:
 	inline long long int getVoltage(const std::string & ups)           const { return getInt(ups, "voltage"); }             // CHECKME
 	inline long long int getWait(const std::string & ups)              const { return getInt(ups, "wait"); }                // CHECKME
 
-	inline bool getNolock(const std::string & ups)         const { return str2bool(getStr(ups, "nolock",         false)); }  // TODO: check whether it's indeed boolean
-	inline bool getCable(const std::string & ups)          const { return str2bool(getStr(ups, "cable",          false)); }  // CHECKME
-	inline bool getDumbTerm(const std::string & ups)       const { return str2bool(getStr(ups, "dumbterm",       false)); }  // CHECKME
-	inline bool getExplore(const std::string & ups)        const { return str2bool(getStr(ups, "explore",        false)); }  // CHECKME
-	inline bool getFakeLowBatt(const std::string & ups)    const { return str2bool(getStr(ups, "fake_lowbatt",   false)); }  // CHECKME
-	inline bool getFlash(const std::string & ups)          const { return str2bool(getStr(ups, "flash",          false)); }  // CHECKME
-	inline bool getFullUpdate(const std::string & ups)     const { return str2bool(getStr(ups, "full_update",    false)); }  // CHECKME
-	inline bool getLangIDfix(const std::string & ups)      const { return str2bool(getStr(ups, "langid_fix",     false)); }  // CHECKME
-	inline bool getLoadOff(const std::string & ups)        const { return str2bool(getStr(ups, "load.off",       false)); }  // CHECKME
-	inline bool getLoadOn(const std::string & ups)         const { return str2bool(getStr(ups, "load.on",        false)); }  // CHECKME
-	inline bool getNoHang(const std::string & ups)         const { return str2bool(getStr(ups, "nohang",         false)); }  // CHECKME
-	inline bool getNoRating(const std::string & ups)       const { return str2bool(getStr(ups, "norating",       false)); }  // CHECKME
-	inline bool getNoTransferOIDs(const std::string & ups) const { return str2bool(getStr(ups, "notransferoids", false)); }  // CHECKME
-	inline bool getNoVendor(const std::string & ups)       const { return str2bool(getStr(ups, "novendor",       false)); }  // CHECKME
-	inline bool getNoWarnNoImp(const std::string & ups)    const { return str2bool(getStr(ups, "nowarn_noimp",   false)); }  // CHECKME
-	inline bool getPollOnly(const std::string & ups)       const { return str2bool(getStr(ups, "pollonly",       false)); }  // CHECKME
-	inline bool getSilent(const std::string & ups)         const { return str2bool(getStr(ups, "silent",         false)); }  // CHECKME
-	inline bool getStatusOnly(const std::string & ups)     const { return str2bool(getStr(ups, "status_only",    false)); }  // CHECKME
-	inline bool getSubscribe(const std::string & ups)      const { return str2bool(getStr(ups, "subscribe",      false)); }  // CHECKME
-	inline bool getUseCRLF(const std::string & ups)        const { return str2bool(getStr(ups, "use_crlf",       false)); }  // CHECKME
-	inline bool getUsePreLF(const std::string & ups)       const { return str2bool(getStr(ups, "use_pre_lf",     false)); }  // CHECKME
+	inline bool getNolock(const std::string & ups)         const { return str2bool(getStr(ups, "nolock")); }
+	inline bool getCable(const std::string & ups)          const { return str2bool(getStr(ups, "cable")); }
+	inline bool getDumbTerm(const std::string & ups)       const { return str2bool(getStr(ups, "dumbterm")); }
+	inline bool getExplore(const std::string & ups)        const { return str2bool(getStr(ups, "explore")); }
+	inline bool getFakeLowBatt(const std::string & ups)    const { return str2bool(getStr(ups, "fake_lowbatt")); }
+	inline bool getFlash(const std::string & ups)          const { return str2bool(getStr(ups, "flash")); }
+	inline bool getFullUpdate(const std::string & ups)     const { return str2bool(getStr(ups, "full_update")); }
+	inline bool getLangIDfix(const std::string & ups)      const { return str2bool(getStr(ups, "langid_fix")); }
+	inline bool getLoadOff(const std::string & ups)        const { return str2bool(getStr(ups, "load.off")); }
+	inline bool getLoadOn(const std::string & ups)         const { return str2bool(getStr(ups, "load.on")); }
+	inline bool getNoHang(const std::string & ups)         const { return str2bool(getStr(ups, "nohang")); }
+	inline bool getNoRating(const std::string & ups)       const { return str2bool(getStr(ups, "norating")); }
+	inline bool getNoTransferOIDs(const std::string & ups) const { return str2bool(getStr(ups, "notransferoids")); }
+	inline bool getNoVendor(const std::string & ups)       const { return str2bool(getStr(ups, "novendor")); }
+	inline bool getNoWarnNoImp(const std::string & ups)    const { return str2bool(getStr(ups, "nowarn_noimp")); }
+	inline bool getPollOnly(const std::string & ups)       const { return str2bool(getStr(ups, "pollonly")); }
+	inline bool getSilent(const std::string & ups)         const { return str2bool(getStr(ups, "silent")); }
+	inline bool getStatusOnly(const std::string & ups)     const { return str2bool(getStr(ups, "status_only")); }
+	inline bool getSubscribe(const std::string & ups)      const { return str2bool(getStr(ups, "subscribe")); }
+	inline bool getUseCRLF(const std::string & ups)        const { return str2bool(getStr(ups, "use_crlf")); }
+	inline bool getUsePreLF(const std::string & ups)       const { return str2bool(getStr(ups, "use_pre_lf")); }
 
 
-	inline void setDriver(const std::string & ups, const std::string & driver)                { setStr(ups, "driver",              driver,       false); }
-	inline void setDescription(const std::string & ups, const std::string & desc)             { setStr(ups, "desc",                desc,         true); }
-	inline void setLowBatt(const std::string & ups, const std::string & lowbatt)              { setStr(ups, "LowBatt",             lowbatt,      false); }  // CHECKME
-	inline void setOL(const std::string & ups, const std::string & ol)                        { setStr(ups, "OL",                  ol,           false); }  // CHECKME
-	inline void setSD(const std::string & ups, const std::string & sd)                        { setStr(ups, "SD",                  sd,           false); }  // CHECKME
-	inline void setAuthPassword(const std::string & ups, const std::string & auth_passwd)     { setStr(ups, "authPassword",        auth_passwd,  false); }  // CHECKME
-	inline void setAuthProtocol(const std::string & ups, const std::string & auth_proto)      { setStr(ups, "authProtocol",        auth_proto,   false); }  // CHECKME
-	inline void setAuthType(const std::string & ups, const std::string & authtype)            { setStr(ups, "authtype",            authtype,     false); }  // CHECKME
-	inline void setAWD(const std::string & ups, const std::string & awd)                      { setStr(ups, "awd",                 awd,          false); }  // CHECKME
-	inline void setBatText(const std::string & ups, const std::string & battext)              { setStr(ups, "battext",             battext,      false); }  // CHECKME
-	inline void setBus(const std::string & ups, const std::string & bus)                      { setStr(ups, "bus",                 bus,          false); }  // CHECKME
-	inline void setCommunity(const std::string & ups, const std::string & community)          { setStr(ups, "community",           community,    false); }  // CHECKME
-	inline void setFRUID(const std::string & ups, const std::string & fruid)                  { setStr(ups, "fruid",               fruid,        false); }  // CHECKME
-	inline void setLoadStatus(const std::string & ups, const std::string & load_status)       { setStr(ups, "load.status",         load_status,  false); }  // CHECKME
-	inline void setLogin(const std::string & ups, const std::string & login)                  { setStr(ups, "login",               login,        false); }  // CHECKME
-	inline void setLowbatt(const std::string & ups, const std::string & lowbatt)              { setStr(ups, "lowbatt",             lowbatt,      false); }  // CHECKME
-	inline void setManufacturer(const std::string & ups, const std::string & manufacturer)    { setStr(ups, "manufacturer",        manufacturer, false); }  // CHECKME
-	inline void setMethodOfFlowControl(const std::string & ups, const std::string & method)   { setStr(ups, "methodOfFlowControl", method,       false); }  // CHECKME
-	inline void setMIBs(const std::string & ups, const std::string & mibs)                    { setStr(ups, "mibs",                mibs,         false); }  // CHECKME
-	inline void setModel(const std::string & ups, const std::string & model)                  { setStr(ups, "model",               model,        false); }  // CHECKME
-	inline void setModelName(const std::string & ups, const std::string & modelname)          { setStr(ups, "modelname",           modelname,    false); }  // CHECKME
-	inline void setNotification(const std::string & ups, const std::string & notification)    { setStr(ups, "notification",        notification, false); }  // CHECKME
-	inline void setOldMAC(const std::string & ups, const std::string & oldmac)                { setStr(ups, "oldmac",              oldmac,       false); }  // CHECKME
-	inline void setPassword(const std::string & ups, const std::string & password)            { setStr(ups, "password",            password,     false); }  // CHECKME
-	inline void setPort(const std::string & ups, const std::string & port)                    { setStr(ups, "port",                port,         false); }
-	inline void setPrefix(const std::string & ups, const std::string & prefix)                { setStr(ups, "prefix",              prefix,       false); }  // CHECKME
-	inline void setPrivPassword(const std::string & ups, const std::string & priv_passwd)     { setStr(ups, "privPassword",        priv_passwd,  false); }  // CHECKME
-	inline void setPrivProtocol(const std::string & ups, const std::string & priv_proto)      { setStr(ups, "privProtocol",        priv_proto,   false); }  // CHECKME
-	inline void setProduct(const std::string & ups, const std::string & product)              { setStr(ups, "product",             product,      false); }  // CHECKME
-	inline void setProductID(const std::string & ups, const std::string & productid)          { setStr(ups, "productid",           productid,    false); }  // CHECKME
-	inline void setProtocol(const std::string & ups, const std::string & protocol)            { setStr(ups, "protocol",            protocol,     false); }  // CHECKME
-	inline void setRuntimeCal(const std::string & ups, const std::string & runtimecal)        { setStr(ups, "runtimecal",          runtimecal,   false); }  // CHECKME
-	inline void setSDtype(const std::string & ups, const std::string & sdtype)                { setStr(ups, "sdtype",              sdtype,       false); }  // CHECKME
-	inline void setSecLevel(const std::string & ups, const std::string & sec_level)           { setStr(ups, "secLevel",            sec_level,    false); }  // CHECKME
-	inline void setSecName(const std::string & ups, const std::string & sec_name)             { setStr(ups, "secName",             sec_name,     false); }  // CHECKME
-	inline void setSensorID(const std::string & ups, const std::string & sensorid)            { setStr(ups, "sensorid",            sensorid,     false); }  // CHECKME
-	inline void setSerial(const std::string & ups, const std::string & serial)                { setStr(ups, "serial",              serial,       false); }  // CHECKME
-	inline void setSerialNumber(const std::string & ups, const std::string & serialnumber)    { setStr(ups, "serialnumber",        serialnumber, false); }  // CHECKME
-	inline void setShutdownArguments(const std::string & ups, const std::string & sd_args)    { setStr(ups, "shutdownArguments",   sd_args,      false); }  // CHECKME
-	inline void setSNMPversion(const std::string & ups, const std::string & snmp_version)     { setStr(ups, "snmp_version",        snmp_version, false); }  // CHECKME
-	inline void setSubdriver(const std::string & ups, const std::string & subdriver)          { setStr(ups, "subdriver",           subdriver,    false); }  // CHECKME
-	inline void setType(const std::string & ups, const std::string & type)                    { setStr(ups, "type",                type,         false); }  // CHECKME
-	inline void setUPStype(const std::string & ups, const std::string & upstype)              { setStr(ups, "upstype",             upstype,      false); }  // CHECKME
-	inline void setUSD(const std::string & ups, const std::string & usd)                      { setStr(ups, "usd",                 usd,          false); }  // CHECKME
-	inline void setUsername(const std::string & ups, const std::string & username)            { setStr(ups, "username",            username,     false); }  // CHECKME
-	inline void setValidationSequence(const std::string & ups, const std::string & valid_seq) { setStr(ups, "validationSequence",  valid_seq,    false); }  // CHECKME
-	inline void setVendor(const std::string & ups, const std::string & vendor)                { setStr(ups, "vendor",              vendor,       false); }  // CHECKME
-	inline void setVendorID(const std::string & ups, const std::string & vendorid)            { setStr(ups, "vendorid",            vendorid,     false); }  // CHECKME
-	inline void setWUGrace(const std::string & ups, const std::string & wugrace)              { setStr(ups, "wugrace",             wugrace,      false); }  // CHECKME
+	inline void setDriver(const std::string & ups, const std::string & driver)                { setStr(ups, "driver",              driver); }
+	inline void setDescription(const std::string & ups, const std::string & desc)             { setStr(ups, "desc",                desc); }
+	inline void setLowBatt(const std::string & ups, const std::string & lowbatt)              { setStr(ups, "LowBatt",             lowbatt); }
+	inline void setOL(const std::string & ups, const std::string & ol)                        { setStr(ups, "OL",                  ol); }
+	inline void setSD(const std::string & ups, const std::string & sd)                        { setStr(ups, "SD",                  sd); }
+	inline void setAuthPassword(const std::string & ups, const std::string & auth_passwd)     { setStr(ups, "authPassword",        auth_passwd); }
+	inline void setAuthProtocol(const std::string & ups, const std::string & auth_proto)      { setStr(ups, "authProtocol",        auth_proto); }
+	inline void setAuthType(const std::string & ups, const std::string & authtype)            { setStr(ups, "authtype",            authtype); }
+	inline void setAWD(const std::string & ups, const std::string & awd)                      { setStr(ups, "awd",                 awd); }
+	inline void setBatText(const std::string & ups, const std::string & battext)              { setStr(ups, "battext",             battext); }
+	inline void setBus(const std::string & ups, const std::string & bus)                      { setStr(ups, "bus",                 bus); }
+	inline void setCommunity(const std::string & ups, const std::string & community)          { setStr(ups, "community",           community); }
+	inline void setFRUID(const std::string & ups, const std::string & fruid)                  { setStr(ups, "fruid",               fruid); }
+	inline void setLoadStatus(const std::string & ups, const std::string & load_status)       { setStr(ups, "load.status",         load_status); }
+	inline void setLogin(const std::string & ups, const std::string & login)                  { setStr(ups, "login",               login); }
+	inline void setLowbatt(const std::string & ups, const std::string & lowbatt)              { setStr(ups, "lowbatt",             lowbatt); }
+	inline void setManufacturer(const std::string & ups, const std::string & manufacturer)    { setStr(ups, "manufacturer",        manufacturer); }
+	inline void setMethodOfFlowControl(const std::string & ups, const std::string & method)   { setStr(ups, "methodOfFlowControl", method); }
+	inline void setMIBs(const std::string & ups, const std::string & mibs)                    { setStr(ups, "mibs",                mibs); }
+	inline void setModel(const std::string & ups, const std::string & model)                  { setStr(ups, "model",               model); }
+	inline void setModelName(const std::string & ups, const std::string & modelname)          { setStr(ups, "modelname",           modelname); }
+	inline void setNotification(const std::string & ups, const std::string & notification)    { setStr(ups, "notification",        notification); }
+	inline void setOldMAC(const std::string & ups, const std::string & oldmac)                { setStr(ups, "oldmac",              oldmac); }
+	inline void setPassword(const std::string & ups, const std::string & password)            { setStr(ups, "password",            password); }
+	inline void setPort(const std::string & ups, const std::string & port)                    { setStr(ups, "port",                port); }
+	inline void setPrefix(const std::string & ups, const std::string & prefix)                { setStr(ups, "prefix",              prefix); }
+	inline void setPrivPassword(const std::string & ups, const std::string & priv_passwd)     { setStr(ups, "privPassword",        priv_passwd); }
+	inline void setPrivProtocol(const std::string & ups, const std::string & priv_proto)      { setStr(ups, "privProtocol",        priv_proto); }
+	inline void setProduct(const std::string & ups, const std::string & product)              { setStr(ups, "product",             product); }
+	inline void setProductID(const std::string & ups, const std::string & productid)          { setStr(ups, "productid",           productid); }
+	inline void setProtocol(const std::string & ups, const std::string & protocol)            { setStr(ups, "protocol",            protocol); }
+	inline void setRuntimeCal(const std::string & ups, const std::string & runtimecal)        { setStr(ups, "runtimecal",          runtimecal); }
+	inline void setSDtype(const std::string & ups, const std::string & sdtype)                { setStr(ups, "sdtype",              sdtype); }
+	inline void setSecLevel(const std::string & ups, const std::string & sec_level)           { setStr(ups, "secLevel",            sec_level); }
+	inline void setSecName(const std::string & ups, const std::string & sec_name)             { setStr(ups, "secName",             sec_name); }
+	inline void setSensorID(const std::string & ups, const std::string & sensorid)            { setStr(ups, "sensorid",            sensorid); }
+	inline void setSerial(const std::string & ups, const std::string & serial)                { setStr(ups, "serial",              serial); }
+	inline void setSerialNumber(const std::string & ups, const std::string & serialnumber)    { setStr(ups, "serialnumber",        serialnumber); }
+	inline void setShutdownArguments(const std::string & ups, const std::string & sd_args)    { setStr(ups, "shutdownArguments",   sd_args); }
+	inline void setSNMPversion(const std::string & ups, const std::string & snmp_version)     { setStr(ups, "snmp_version",        snmp_version); }
+	inline void setSubdriver(const std::string & ups, const std::string & subdriver)          { setStr(ups, "subdriver",           subdriver); }
+	inline void setType(const std::string & ups, const std::string & type)                    { setStr(ups, "type",                type); }
+	inline void setUPStype(const std::string & ups, const std::string & upstype)              { setStr(ups, "upstype",             upstype); }
+	inline void setUSD(const std::string & ups, const std::string & usd)                      { setStr(ups, "usd",                 usd); }
+	inline void setUsername(const std::string & ups, const std::string & username)            { setStr(ups, "username",            username); }
+	inline void setValidationSequence(const std::string & ups, const std::string & valid_seq) { setStr(ups, "validationSequence",  valid_seq); }
+	inline void setVendor(const std::string & ups, const std::string & vendor)                { setStr(ups, "vendor",              vendor); }
+	inline void setVendorID(const std::string & ups, const std::string & vendorid)            { setStr(ups, "vendorid",            vendorid); }
+	inline void setWUGrace(const std::string & ups, const std::string & wugrace)              { setStr(ups, "wugrace",             wugrace); }
 
 	inline void setSDOrder(const std::string & ups, long long int ord)             { setInt(ups, "sdorder",            ord); }
 	inline void setMaxStartDelay(const std::string & ups, long long int delay)     { setInt(ups, "maxstartdelay",      delay); }
@@ -1011,27 +1004,27 @@ public:
 	inline void setVoltage(const std::string & ups, long long int voltage)         { setInt(ups, "voltage",            voltage); }      // CHECKME
 	inline void setWait(const std::string & ups, long long int wait)               { setInt(ups, "wait",               wait); }         // CHECKME
 
-	inline void setNolock(const std::string & ups, bool set = true)         { setStr(ups, "nolock",         bool2str(set), false); }
-	inline void setCable(const std::string & ups, bool set = true)          { setStr(ups, "cable",          bool2str(set), false); }  // CHECKME
-	inline void setDumbTerm(const std::string & ups, bool set = true)       { setStr(ups, "dumbterm",       bool2str(set), false); }  // CHECKME
-	inline void setExplore(const std::string & ups, bool set = true)        { setStr(ups, "explore",        bool2str(set), false); }  // CHECKME
-	inline void setFakeLowBatt(const std::string & ups, bool set = true)    { setStr(ups, "fake_lowbatt",   bool2str(set), false); }  // CHECKME
-	inline void setFlash(const std::string & ups, bool set = true)          { setStr(ups, "flash",          bool2str(set), false); }  // CHECKME
-	inline void setFullUpdate(const std::string & ups, bool set = true)     { setStr(ups, "full_update",    bool2str(set), false); }  // CHECKME
-	inline void setLangIDfix(const std::string & ups, bool set = true)      { setStr(ups, "langid_fix",     bool2str(set), false); }  // CHECKME
-	inline void setLoadOff(const std::string & ups, bool set = true)        { setStr(ups, "load.off",       bool2str(set), false); }  // CHECKME
-	inline void setLoadOn(const std::string & ups, bool set = true)         { setStr(ups, "load.on",        bool2str(set), false); }  // CHECKME
-	inline void setNoHang(const std::string & ups, bool set = true)         { setStr(ups, "nohang",         bool2str(set), false); }  // CHECKME
-	inline void setNoRating(const std::string & ups, bool set = true)       { setStr(ups, "norating",       bool2str(set), false); }  // CHECKME
-	inline void setNoTransferOIDs(const std::string & ups, bool set = true) { setStr(ups, "notransferoids", bool2str(set), false); }  // CHECKME
-	inline void setNoVendor(const std::string & ups, bool set = true)       { setStr(ups, "novendor",       bool2str(set), false); }  // CHECKME
-	inline void setNoWarnNoImp(const std::string & ups, bool set = true)    { setStr(ups, "nowarn_noimp",   bool2str(set), false); }  // CHECKME
-	inline void setPollOnly(const std::string & ups, bool set = true)       { setStr(ups, "pollonly",       bool2str(set), false); }  // CHECKME
-	inline void setSilent(const std::string & ups, bool set = true)         { setStr(ups, "silent",         bool2str(set), false); }  // CHECKME
-	inline void setStatusOnly(const std::string & ups, bool set = true)     { setStr(ups, "status_only",    bool2str(set), false); }  // CHECKME
-	inline void setSubscribe(const std::string & ups, bool set = true)      { setStr(ups, "subscribe",      bool2str(set), false); }  // CHECKME
-	inline void setUseCRLF(const std::string & ups, bool set = true)        { setStr(ups, "use_crlf",       bool2str(set), false); }  // CHECKME
-	inline void setUsePreLF(const std::string & ups, bool set = true)       { setStr(ups, "use_pre_lf",     bool2str(set), false); }  // CHECKME
+	inline void setNolock(const std::string & ups, bool set = true)         { setStr(ups, "nolock",         bool2str(set)); }
+	inline void setCable(const std::string & ups, bool set = true)          { setStr(ups, "cable",          bool2str(set)); }
+	inline void setDumbTerm(const std::string & ups, bool set = true)       { setStr(ups, "dumbterm",       bool2str(set)); }
+	inline void setExplore(const std::string & ups, bool set = true)        { setStr(ups, "explore",        bool2str(set)); }
+	inline void setFakeLowBatt(const std::string & ups, bool set = true)    { setStr(ups, "fake_lowbatt",   bool2str(set)); }
+	inline void setFlash(const std::string & ups, bool set = true)          { setStr(ups, "flash",          bool2str(set)); }
+	inline void setFullUpdate(const std::string & ups, bool set = true)     { setStr(ups, "full_update",    bool2str(set)); }
+	inline void setLangIDfix(const std::string & ups, bool set = true)      { setStr(ups, "langid_fix",     bool2str(set)); }
+	inline void setLoadOff(const std::string & ups, bool set = true)        { setStr(ups, "load.off",       bool2str(set)); }
+	inline void setLoadOn(const std::string & ups, bool set = true)         { setStr(ups, "load.on",        bool2str(set)); }
+	inline void setNoHang(const std::string & ups, bool set = true)         { setStr(ups, "nohang",         bool2str(set)); }
+	inline void setNoRating(const std::string & ups, bool set = true)       { setStr(ups, "norating",       bool2str(set)); }
+	inline void setNoTransferOIDs(const std::string & ups, bool set = true) { setStr(ups, "notransferoids", bool2str(set)); }
+	inline void setNoVendor(const std::string & ups, bool set = true)       { setStr(ups, "novendor",       bool2str(set)); }
+	inline void setNoWarnNoImp(const std::string & ups, bool set = true)    { setStr(ups, "nowarn_noimp",   bool2str(set)); }
+	inline void setPollOnly(const std::string & ups, bool set = true)       { setStr(ups, "pollonly",       bool2str(set)); }
+	inline void setSilent(const std::string & ups, bool set = true)         { setStr(ups, "silent",         bool2str(set)); }
+	inline void setStatusOnly(const std::string & ups, bool set = true)     { setStr(ups, "status_only",    bool2str(set)); }
+	inline void setSubscribe(const std::string & ups, bool set = true)      { setStr(ups, "subscribe",      bool2str(set)); }
+	inline void setUseCRLF(const std::string & ups, bool set = true)        { setStr(ups, "use_crlf",       bool2str(set)); }
+	inline void setUsePreLF(const std::string & ups, bool set = true)       { setStr(ups, "use_pre_lf",     bool2str(set)); }
 
 	/** \} */
 
@@ -1051,7 +1044,7 @@ public:
 
 	/** User-specific configuration attributes getters and setters \{ */
 
-	inline std::string getPassword(const std::string & user) const { return getStr(user, "password", false); }
+	inline std::string getPassword(const std::string & user) const { return getStr(user, "password"); }
 
 	inline ConfigParamList getActions(const std::string & user) const
 	{
@@ -1069,7 +1062,7 @@ public:
 
 	upsmon_mode_t getUpsmonMode() const;
 
-	inline void setPassword(const std::string & user, const std::string & passwd) { setStr(user, "password", passwd, false); }
+	inline void setPassword(const std::string & user, const std::string & passwd) { setStr(user, "password", passwd); }
 
 	inline void setActions(const std::string & user, const ConfigParamList & actions)      { set(user, "actions",  actions); }
 	inline void setInstantCommands(const std::string & user, const ConfigParamList & cmds) { set(user, "instcmds", cmds); }
