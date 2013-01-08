@@ -213,7 +213,7 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 	config.setPassword("upsmon", "ytrewq");
 	config.setUpsmonMode(nut::UpsdUsersConfiguration::UPSMON_MASTER);
 
-	config.setPassword("admin", "qwerty");
+	config.setPassword("admin", "qwerty=ui");
 	config.setActions("admin", nut::ConfigParamList(1, "SET"));
 	config.setInstantCommands("admin", nut::ConfigParamList(1, "ALL"));
 
@@ -221,7 +221,7 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 		"[admin]\n"
 		"\tactions = SET\n"
 		"\tinstcmds = ALL\n"
-		"\tpassword = qwerty\n"
+		"\tpassword = \"qwerty=ui\"\n"
 		"\n"
 		"[upsmon]\n"
 		"\tpassword = ytrewq\n"

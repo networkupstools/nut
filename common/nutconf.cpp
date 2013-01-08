@@ -835,7 +835,7 @@ void GenericConfiguration::removeSection(const std::string & section)
 }
 
 
-std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry, bool quoted) const
+std::string GenericConfiguration::getStr(const std::string & section, const std::string & entry) const
 {
 	std::string str;
 
@@ -847,32 +847,18 @@ std::string GenericConfiguration::getStr(const std::string & section, const std:
 	if (params.empty())
 		return str;
 
-	str = params.front();
-
-	// Remove quotes
-	// TBD: what if they are not there?
-	if (quoted) {
-		if ('"' == str[0])
-			str.erase(0, 1);
-
-		if ('"' == str[str.size() - 1])
-			str.erase(str.size() - 1);
-	}
-
-	return str;
+	return params.front();
 }
 
 
 void GenericConfiguration::setStr(
 		const std::string & section,
 		const std::string & entry,
-		const std::string & value,
-		bool                quoted)
+		const std::string & value)
 {
 	ConfigParamList param;
 
-	// Add quotes if required
-	param.push_back(quoted ? '"' + value + '"' : value);
+	param.push_back(value);
 
 	set(section, entry, param);
 }
@@ -1454,7 +1440,7 @@ void UpsdConfigParser::onParseEnd()
 
 UpsdUsersConfiguration::upsmon_mode_t UpsdUsersConfiguration::getUpsmonMode() const
 {
-	std::string mode_str = getStr("upsmon", "upsmon", false);
+	std::string mode_str = getStr("upsmon", "upsmon");
 
 	if ("master" == mode_str)
 		return UPSMON_MASTER;
@@ -1470,7 +1456,7 @@ void UpsdUsersConfiguration::setUpsmonMode(upsmon_mode_t mode)
 {
 	assert(UPSMON_UNDEF != mode);
 
-	setStr("upsmon", "upsmon", (UPSMON_MASTER == mode ? "master" : "slave"), false);
+	setStr("upsmon", "upsmon", (UPSMON_MASTER == mode ? "master" : "slave"));
 }
 
 
