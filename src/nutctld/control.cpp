@@ -518,8 +518,8 @@ void Controller::monitorDevices(const std::vector<Device*>& devices)
 			try
 			{
 // TODO Wait that Vasek finish to implement Executor or try other way.
-//				nut::Process::Execution exec(DRVPATH "/upsdrvctl", params);
-//				exec();
+				nut::Process::Execution exec(DRVPATH "/upsdrvctl", params);
+				exec.wait();
 
 			}
 			catch(std::runtime_error& ex)
