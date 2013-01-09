@@ -164,11 +164,11 @@ int Process::Executor::operator () () throw(std::runtime_error) {
 }
 
 
-int writeCommand(int fh, void * cmd, size_t cmd_size) throw(std::runtime_error) {
+int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size) throw(std::runtime_error) {
 	char * cmd_bytes = reinterpret_cast<char *>(cmd);
 
 	do {
-		ssize_t written = write(fh, cmd_bytes, cmd_size);
+		ssize_t written = ::write(fh, cmd_bytes, cmd_size);
 
 		if (-1 == written)
 			return errno;

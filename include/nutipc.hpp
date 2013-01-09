@@ -314,7 +314,7 @@ class Signal {
 		ALARM  = SIGALRM,    /** Alarm                             */
 		TERM   = SIGTERM,    /** Termination                       */
 		USER1  = SIGUSR1,    /** User-defined signal 1             */
-		USER2  = SIGUSR1,    /** User-defined signal 2             */
+		USER2  = SIGUSR2,    /** User-defined signal 2             */
 		CHILD  = SIGCHLD,    /** Child stopped or terminated       */
 		CONT   = SIGCONT,    /** Continue if stopped               */
 		STOP   = SIGSTOP,    /** Stop process (unmaskable)         */
@@ -380,6 +380,9 @@ class Signal {
 		/** Communication pipe */
 		static int s_comm_pipe[2];
 
+		/** POSIX thread */
+		pthread_t m_impl;
+
 		/**
 		 *  \brief  Signal handler thread main routine
 		 *
@@ -416,11 +419,11 @@ class Signal {
 		 */
 		static void signalNotifier(int signal);
 
+		public:
+
 		/**
 		 *  \brief  Constructor
 		 *
-		 *  The threads are only created by the (friend) Signal class
-		 *  functions.
 		 *  At most one thread per handler instance may be created.
 		 *  This limitation is both due sanity reasons (it wouldn't
 		 *  make much sense to handle the same signal by multiple threads)
@@ -437,8 +440,6 @@ class Signal {
 		 *  \param  siglist  List of signals that shall be handled by the thread
 		 */
 		HandlerThread(const Signal::List & siglist) throw(std::logic_error, std::runtime_error);
-
-		public:
 
 		/**
 		 *  \brief  Terminate the thread
@@ -510,7 +511,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 		// Note that direct blocking read could be also used;
 		// however, select allows timeout specification
 		// which might come handy...
-		int fdno = ::select(1, &rfds, NULL, NULL, NULL);
+		int fdno = ::select(FD_SETSIZE, &rfds, NULL, NULL, NULL);
 
 		// TBD: Die or recover on error?
 		if (-1 == fdno) {
@@ -542,10 +543,14 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 		assert(sizeof(word) == read_out);
 
-		command_t command = reinterpret_cast<command_t>(word);
+		command_t command = (command_t)word;
 
 		switch (command) {
 			case QUIT:
+				// Close comm. pipe read end
+				::close(rfd);
+
+				// Terminate thread
 				pthread_exit(NULL);
 
 			case SIGNAL:
@@ -564,7 +569,7 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
 
 				assert(sizeof(word) == read_out);
 
-				Signal::enum_t sig = reinterpret_cast<Signal::enum_t>(word);
+				Signal::enum_t sig = (Signal::enum_t)word;
 
 				// Handle signal
 				handler(sig);
@@ -586,13 +591,13 @@ void * Signal::HandlerThread<H>::main(void * comm_pipe_read_end) {
  *  \retval 0     on success
  *  \retval errno on error
  */
-int writeCommand(int fh, void * cmd, size_t cmd_size) throw(std::runtime_error);
+int sigPipeWriteCmd(int fh, void * cmd, size_t cmd_size) throw(std::runtime_error);
 
 
 template <class H>
 void Signal::HandlerThread<H>::signalNotifier(int signal) {
 	int sig[2] = {
-		reinterpret_cast<int>(Signal::HandlerThread<H>::SIGNAL),
+		(int)Signal::HandlerThread<H>::SIGNAL,
 	};
 
 	sig[1] = signal;
@@ -600,23 +605,16 @@ void Signal::HandlerThread<H>::signalNotifier(int signal) {
 	// TBD: The return value is silently ignored.
 	// Either the write should've succeeded or the handling
 	// thread is already comming down...
-	writeCommand(s_comm_pipe[1], sig, sizeof(sig));
+	sigPipeWriteCmd(s_comm_pipe[1], sig, sizeof(sig));
 }
 
 
 template <class H>
 Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist) throw(std::logic_error, std::runtime_error) {
-	/*
-	 *  IMPLEMENTATION NOTES:
-	 *  0/ Check whether comm. pipe is valid; throw std::logic_error if so
-	 *  1/ Comm. pipe creation (or an exception)
-	 *  2/ Start the thread: pthread_create(m_impl, <a static function>, <handlers copy (!)>)
-	 *  3/ Register the signals: sigaction( <signal handler using write to wake & inform the thread about a signal> )
-	 */
-	throw std::runtime_error("TODO: Signal handler thread is not implemented, yet");
-
+	// At most one instance per process allowed
 	if (-1 != s_comm_pipe[1])
-		throw std::logic_error("Attempt to start a duplicate of signal handling thread detected");
+		throw std::logic_error(
+			"Attempt to start a duplicate of signal handling thread detected");
 
 	// Create communication pipe
 	if (::pipe(s_comm_pipe)) {
@@ -627,10 +625,8 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist) throw(std:
 		throw std::runtime_error(e.str());
 	}
 
-	// TODO:
-#if (0)
 	// Start the thread
-	int status = ::pthread_create(&m_impl, NULL, main, s_comm_pipe);
+	int status = ::pthread_create(&m_impl, NULL, &main, s_comm_pipe);
 
 	if (status) {
 		std::stringstream e;
@@ -646,11 +642,10 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist) throw(std:
 	for (; sig != siglist.end(); ++sig) {
 		struct sigaction action;
 
-		action.sa_handler   = signalNotifier;
-		action.sa_sigaction = NULL;  // guess we don't need signal info
-		action.sa_mask      = 0;     // shouldn't we mask signals while handling them?
-		action.sa_flags     = 0;     // any flags?
-		action.sa_restorer  = NULL;  // obsolete
+		::memset(&action, 0, sizeof(action));
+		::sigemptyset(&action.sa_mask);
+
+		action.sa_handler = &signalNotifier;
 
 		int signo = static_cast<int>(*sig);
 
@@ -666,19 +661,16 @@ Signal::HandlerThread<H>::HandlerThread(const Signal::List & siglist) throw(std:
 			throw std::runtime_error(e.str());
 		}
 	}
-#endif
 }
 
 
 template <class H>
 void Signal::HandlerThread<H>::quit() throw(std::runtime_error) {
-	static int quit = reinterpret_cast<int>(Signal::HandlerThread<H>::QUIT);
+	static int quit = (int)Signal::HandlerThread<H>::QUIT;
 
-	writeCommand(s_comm_pipe[1], quit, sizeof(quit));
+	sigPipeWriteCmd(s_comm_pipe[1], &quit, sizeof(quit));
 
-	// TODO:
-#if (0)
-	int status = ::pthread_join(m_impl);
+	int status = ::pthread_join(m_impl, NULL);
 
 	if (status) {
 		std::stringstream e;
@@ -697,7 +689,6 @@ void Signal::HandlerThread<H>::quit() throw(std::runtime_error) {
 	}
 
 	s_comm_pipe[1] = -1;
-#endif
 }
 
 
