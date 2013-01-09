@@ -59,6 +59,9 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	/** Signal sending test */
 	void testSignalSend();
 
+	/** Signal receiving test */
+	void testSignalRecv();
+
 	public:
 
 	inline void setUp() {}
@@ -67,6 +70,7 @@ class NutIPCUnitTest: public CppUnit::TestFixture {
 	inline void test() {
 		testExec();
 		testSignalSend();
+		testSignalRecv();
 	}
 
 };  // end of class NutIPCUnitTest
@@ -98,7 +102,6 @@ static int signal_caught = 0;
 void NutIPCUnitTest::testSignalHandler(int signal) {
 	signal_caught = signal;
 }
-
 
 void NutIPCUnitTest::testSignalSend() {
 	struct sigaction action;
@@ -141,4 +144,49 @@ void NutIPCUnitTest::testSignalSend() {
 	pid_file.removex();
 
 	signal_caught = 0;
+}
+
+
+/** Caught signal list */
+static nut::Signal::List caught_signals;
+
+/** Signal handler routine */
+class TestSignalHandler: public nut::Signal::Handler {
+	public:
+
+	void operator () (nut::Signal::enum_t signal) {
+		caught_signals.push_back(signal);
+	}
+
+};  // end of class TestSignalHandler
+
+void NutIPCUnitTest::testSignalRecv() {
+	// Create signal handler thread
+	nut::Signal::List signals;
+
+	signals.push_back(nut::Signal::USER1);
+	signals.push_back(nut::Signal::USER2);
+
+	nut::Signal::HandlerThread<TestSignalHandler> sig_handler(signals);
+
+	pid_t my_pid = nut::Process::getPID();
+
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER2, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+	CPPUNIT_ASSERT(0 == nut::Signal::send(nut::Signal::USER1, my_pid));
+
+	// Let the sig. handler thread finish...
+	::sleep(1);
+
+	CPPUNIT_ASSERT(caught_signals.size() == 3);
+
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER2);
+
+	caught_signals.pop_front();
+
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
+
+	caught_signals.pop_front();
+
+	CPPUNIT_ASSERT(caught_signals.front() == nut::Signal::USER1);
 }
