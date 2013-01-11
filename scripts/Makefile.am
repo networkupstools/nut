@@ -1,6 +1,5 @@
 EXTRA_DIST = README \
 avahi/nut.service.in \
-HP-UX/Makefile \
 HP-UX/nut-drvctl \
 HP-UX/nut-drvctl.sh \
 HP-UX/nut-upsd \
@@ -25,4 +24,4 @@ upower/95-upower-hid.rules \
 Windows/halt.c \
 Windows/Makefile
 
-SUBDIRS = augeas hal hotplug java python systemd udev
+SUBDIRS = augeas hal hotplug java python systemd udev Solaris

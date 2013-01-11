@@ -1,0 +1,20 @@
+#!/bin/sh
+
+#Postinstall script
+
+NUT_DIR="@prefix@"
+
+# Put init script in /etc/init.d
+
+cp $NUT_DIR/nut /etc/init.d
+
+ln -s /etc/init.d/nut /etc/rc3.d/S100nut
+ln -s /etc/init.d/nut /etc/rc3.d/K100nut
+
+# Start nut services
+
+#echo "Starting nut services"
+#$NUT_DIR/bin/upsdrvctl start #> /dev/null 2>&1
+#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
+#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
+

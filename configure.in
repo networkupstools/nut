@@ -1213,6 +1213,11 @@ AC_OUTPUT([
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nutshutdown
+ scripts/Solaris/Makefile
+ scripts/Solaris/pkginfo
+ scripts/Solaris/postinstall
+ scripts/Solaris/preremove
+ scripts/Solaris/nut 
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules

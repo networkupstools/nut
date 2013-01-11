@@ -110,3 +110,19 @@ snmp build-snmp install-snmp install-snmp-mgr install-snmp-man:
 setver:
 	@echo "Error: 'make setver' no longer exists."
 	@echo "Edit configure.in to set version number."
+package:
+	if test `uname -s` = "HP-UX"; then \
+		cd scripts/HP-UX; \
+		make package; \
+		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
+	else \
+		if test `uname -s` = "SunOS"; then \
+			make; \
+			rm -rf @prefix@; \
+			make install; \
+			cd scripts/Solaris; \
+			make package; \
+			make uninstall; \
+			rm -rf @prefix@; \
+		fi; \
+	fi;

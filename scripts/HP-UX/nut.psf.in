@@ -1,4 +1,4 @@
-# PSF file for Network UPS Tools /usr/local/ups				  11/2/2011
+# PSF file for Network UPS Tools 				  11/2/2011
 # 
 # Useful commands:
 #
@@ -51,218 +51,28 @@ product
 		title 		"nut-server"
 		revision	@PACKAGE_VERSION@
 
-#Including "conf" files under "/usr/local/ups/etc/nut".
-		file -u 644 -g bin -o bin ../../conf/ups.conf.sample		/usr/local/ups/etc/ups.conf
-		file -u 644 -g bin -o bin ../../conf/upsd.conf.sample     	/usr/local/ups/etc/upsd.conf
-		file -u 644 -g bin -o bin ../../conf/upsd.users.sample    	/usr/local/ups/etc/upsd.users
+#Including "conf" files under "/usr/local/ups/etc/".
+		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/ups.conf.sample	@prefix@/etc/ups.conf.sample
+		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/upsd.conf.sample  	@prefix@/etc/upsd.conf.sample
+		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/upsd.users.sample	@prefix@/etc/upsd.users.sample
 
 #Including "server" files under "/usr/local/ups/sbin".		
-		file -u 755 -g bin -o bin ../../server/upsd 				/usr/local/ups/sbin/upsd
-		file -u 755 -g bin -o bin ../../drivers/upsdrvctl 			/usr/local/ups/sbin/upsdrvctl
+		file -u 755 -g bin -o bin ./nut_install@prefix@/sbin/upsd	 	@prefix@/sbin/upsd
 
 #Including "share" files under "/usr/local/ups/share".
-		file -u 644 -g bin -o bin ../../data/cmdvartab		/usr/local/ups/share/cmdvartab
-		file -u 644 -g bin -o bin ../../data/driver.list	/usr/local/ups/share/driver.list
+		file -u 644 -g bin -o bin ./nut_install@prefix@/share/cmdvartab	@prefix@/share/cmdvartab
+		file -u 644 -g bin -o bin ./nut_install@prefix@/share/driver.list	@prefix@/share/driver.list
 
 #Including required "libupsclient1" under "/usr/local/ups/lib"
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so.1		/usr/local/ups/lib/libupsclient.so.1
-		file -u 555 -g bin -o bin ../../clients/.libs/libupsclient.so.1.0	/usr/local/ups/lib/libupsclient.so.1.0			
+		file -u 755 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl.3		@prefix@/lib/libupsclient.sl.3
+		file -u 555 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl.3.1	@prefix@/lib/libupsclient.sl.3.1			
 		
 #Including required UPS drivers files under "/usr/local/ups/bin/".
 #such as "nut-snmp", "nut-xml or netxml-ups"
-		directory 	../../drivers=/usr/local/ups/bin/
+		directory 	./nut_install@prefix@/bin=@prefix@/bin/
 		#file_permissions -u 755 -g bin -o bin
 		file *
 	
-# Exclude the files from "drivers" folder that are not required in the package.
-		exclude 	 Makefile
-		exclude 	 Makefile.am
-		exclude 	 Makefile.in
-		exclude 	 apc-hid.c
-		exclude      apc-hid.h
-		exclude      apc-mib.c
-		exclude      apc-mib.h
-		exclude      apcsmart.c
-		exclude      apcsmart.h
-		exclude      apcsmart.o
-		exclude      baytech-mib.c
-		exclude      baytech-mib.h
-		exclude      bcmxcp.c
-		exclude      bcmxcp.h
-		exclude      bcmxcp.o
-		exclude      bcmxcp_io.h
-		exclude      bcmxcp_ser.c
-		exclude      bcmxcp_ser.o
-		exclude      bcmxcp_usb.c
-		exclude      belkin-hid.c
-		exclude      belkin-hid.h
-		exclude      belkin.c
-		exclude      belkin.h
-		exclude      belkin.o
-		exclude      belkinunv.c
-		exclude      belkinunv.o
-		exclude      bestfcom.c
-		exclude      bestfcom.o
-		exclude      bestfortress.c
-		exclude      bestfortress.o
-		exclude      bestpower-mib.c
-		exclude		 bestpower-mib.h
-		exclude		 bestuferrups.c
-		exclude      bestuferrups.o
-		exclude      bestups.c
-		exclude      bestups.o
-		exclude      blazer.c
-		exclude      blazer.h
-		exclude		 blazer.o
-		exclude      blazer_ser.c
-		exclude      blazer_ser.o
-		exclude      blazer_usb.c
-		exclude		 clone-outlet.c
-		exclude      clone-outlet.o
-		exclude      clone.c
-		exclude		 clone.o
-		exclude		 compaq-mib.c
-		exclude		 compaq-mib.h
-		exclude		 cps-hid.c
-		exclude		 cps-hid.h
-		exclude		 dstate-hal.c
-		exclude		 dstate-hal.h
-		exclude		 dstate.c
-		exclude		 dstate.h
-		exclude		 dstate.o
-		exclude		 dummy-ups.c
-		exclude 	 dummy-ups.h
-		exclude      dummy_ups-dummy-ups.o
-		exclude      eaton-mib.c
-		exclude      eaton-mib.h
-		exclude      etapro.c
-		exclude      etapro.o
-		exclude      everups.c
-		exclude      everups.o
-		exclude      explore-hid.c
-		exclude      explore-hid.h
-		exclude      gamatronic.c
-		exclude      gamatronic.h
-		exclude      gamatronic.o
-		exclude      genericups.c
-		exclude      genericups.h
-		exclude      genericups.o
-		exclude      hidparser.c
-		exclude      hidparser.h
-		exclude      hidparser.o
-		exclude      hidtypes.h
-		exclude      ietf-mib.c
-		exclude      ietf-mib.h
-		exclude      isbmex.c
-		exclude      isbmex.o
-		exclude      ivtscd.c
-		exclude      ivtscd.o
-		exclude      libhid.c
-		exclude      libhid.h
-		exclude		 libshut.c
-		exclude		 libshut.h
-		exclude      libusb.c
-		exclude      libusb.h
-		exclude      liebert-esp2.c
-		exclude      liebert-esp2.o
-		exclude      liebert-hid.c
-		exclude		 liebert-hid.h
-		exclude      liebert.c
-		exclude      liebert.o
-		exclude      main-hal.c
-		exclude		 main-hal.h
-		exclude      main.c
-		exclude      main.h
-		exclude		 main.o
-		exclude		 masterguard.c
-		exclude		 masterguard.o
-		exclude		 metasys.c
-		exclude		 metasys.o
-		exclude		 mge-hid.c
-		exclude		 mge-hid.h
-		exclude		 mge-mib.c
-		exclude		 mge-mib.h
-		exclude		 mge-shut.c
-		exclude		 mge-shut.h
-		exclude 	 mge-shut.o
-		exclude      mge-utalk.c
-		exclude      mge-utalk.h
-		exclude      mge-utalk.o
-		exclude      mge-xml.c
-		exclude      mge-xml.h
-		exclude      microdowell.c
-		exclude      microdowell.h
-		exclude      microdowell.o
-		exclude      netvision-mib.c
-		exclude      netvision-mib.h
-		exclude      netxml-ups.c
-		exclude      netxml-ups.h
-		exclude      newmge_shut-hidparser.o
-		exclude      newmge_shut-libhid.o
-		exclude      newmge_shut-libshut.o
-		exclude      newmge_shut-mge-hid.o
-		exclude      newmge_shut-usbhid-ups.o
-		exclude      oneac.c
-		exclude      oneac.h
-		exclude      oneac.o
-		exclude      optiups
-		exclude      optiups.c
-		exclude      optiups.o
-		exclude      powercom-hid.c
-		exclude      powercom-hid.h
-		exclude      powercom.c
-		exclude      powercom.h
-		exclude		 powercom.o
-		exclude		 powerman-pdu.c
-		exclude      powerp-bin.c
-		exclude      powerp-bin.h
-		exclude      powerp-bin.o
-		exclude      powerp-txt.c
-		exclude      powerp-txt.h
-		exclude		 powerp-txt.o
-		exclude      powerpanel.c
-		exclude      powerpanel.h
-		exclude      powerpanel.o
-		exclude		 powerware-mib.c
-		exclude      powerware-mib.h
-		exclude      raritan-pdu-mib.c
-		exclude		 raritan-pdu-mib.h
-		exclude		 rhino.c
-		exclude		 rhino.o
-		exclude		 richcomm_usb.c
-		exclude		 safenet.c
-		exclude		 safenet.h
-		exclude		 safenet.o
-		exclude		 serial.c
-		exclude		 serial.h
-		exclude		 serial.o
-		exclude		 skel.c
-		exclude 	 skel.o
-		exclude      snmp-ups.c
-		exclude      snmp-ups.h
-		exclude      solis.c
-		exclude      solis.h
-		exclude      solis.o
-		exclude      tripplite-hid.c
-		exclude      tripplite-hid.h
-		exclude      tripplite.c
-		exclude      tripplite.h
-		exclude      tripplite.o
-		exclude      tripplite_usb.c
-		exclude      tripplitesu.c
-		exclude      tripplitesu.o
-		exclude      upscode2.c
-		exclude      upscode2.o
-		exclude      upsdrvctl.c
-		exclude      upsdrvctl.o
-		exclude      upshandler.h
-		exclude      usb-common.c
-		exclude      usb-common.h
-		exclude      usbhid-ups.c
-		exclude      usbhid-ups.h
-		exclude      victronups.c
-		exclude      victronups.o		
-
 #TBD files to be added under "/usr/share/doc/nut-server/*.gz"
 #TBD files to be added under "/usr/share/man/man5/*.gz"
 #TBD files to be added under "/usr/share/man/man8/*.gz"
@@ -275,21 +85,21 @@ product
 		title 		"nut-client"
 		revision	@PACKAGE_VERSION@
 
-		file -u 755 -g bin -o bin ../../clients/upsc		/usr/local/ups/bin/upsc
-		file -u 755 -g bin -o bin ../../clients/upscmd		/usr/local/ups/bin/upscmd
-		file -u 755 -g bin -o bin ../../clients/upslog		/usr/local/ups/bin/upslog
-		file -u 755 -g bin -o bin ../../clients/upsrw		/usr/local/ups/bin/upsrw
-		file -u 755 -g bin -o bin ../../clients/upsmon 		/usr/local/ups/sbin/upsmon
-		file -u 755 -g bin -o bin ../../clients/upssched 	/usr/local/ups/sbin/upssched
+		file -u 755 -g bin -o bin ./nut_install@prefix@/bin/upsc	@prefix@/bin/upsc
+		file -u 755 -g bin -o bin ./nut_install@prefix@/bin/upscmd	@prefix@/bin/upscmd
+		file -u 755 -g bin -o bin ./nut_install@prefix@/bin/upslog	@prefix@/bin/upslog
+		file -u 755 -g bin -o bin ./nut_install@prefix@/bin/upsrw	@prefix@/bin/upsrw
+		file -u 755 -g bin -o bin ./nut_install@prefix@/sbin/upsmon 	@prefix@/sbin/upsmon
+		file -u 755 -g bin -o bin ./nut_install@prefix@/sbin/upssched 	@prefix@/sbin/upssched
 
 #Including "conf" files under "/usr/local/ups/etc".	
-		file -u 644 -g bin -o bin ../../conf/nut.conf.sample   		/usr/local/ups/etc/nut.conf
-		file -u 644 -g bin -o bin ../../conf/upsmon.conf.sample   	/usr/local/ups/etc/upsmon.conf
-		file -u 644 -g bin -o bin ../../conf/upssched.conf.sample	/usr/local/ups/etc/upssched.conf
+		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/nut.conf.sample	 	@prefix@/etc/nut.conf.sample
+		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/upsmon.conf.sample   	@prefix@/etc/upsmon.conf.sample
+		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/upssched.conf.sample	@prefix@/etc/upssched.conf.sample
 
 #Need to check if "libupsclient1" required for Client again.
-		#file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so.1		/usr/local/ups/lib/libupsclient.so.1
-		#file -u 555 -g bin -o bin ../../clients/.libs/libupsclient.so.1.0		/usr/local/ups/lib/libupsclient.so.1.0	
+		#file -u 755 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl.3		@prefix@/lib/libupsclient.sl.3
+		#file -u 555 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl.3.1	@prefix@/lib/libupsclient.sl.3.1	
 	end
 # ----------------------------------------
 #Including "libupsclient1-dev" files.
@@ -298,74 +108,24 @@ product
 		title 		"libupsclient1-dev"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.a	/usr/local/ups/lib/libupsclient.a
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.la	/usr/local/ups/lib/libupsclient.la
-		file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so	/usr/local/ups/lib/libupsclient.so
-		file -u 644 -g bin -o bin ../../include/parseconf.h				/usr/include/parseconf.h
-		file -u 644 -g bin -o bin ../../clients/upsclient.h				/usr/include/upsclient.h
-		#file -u 755 -g bin -o bin ../../clients/.libs/libupsclient.so	/usr/lib/libupsclient.so
-		file -u 755 -g bin -o bin ../../lib/libupsclient.pc				/usr/lib/pkgconfig/libupsclient.pc
+		file -u 755 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.a	@prefix@/lib/libupsclient.a
+		file -u 755 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.la	@prefix@/lib/libupsclient.la
+		file -u 755 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl	@prefix@/lib/libupsclient.sl
+		file -u 644 -g bin -o bin @top_srcdir@/include/parseconf.h		@prefix@/include/parseconf.h
+		file -u 644 -g bin -o bin @top_srcdir@/clients/upsclient.h		@prefix@/include/upsclient.h
+		file -u 755 -g bin -o bin ./nut_install@prefix@/lib/pkgconfig/libupsclient.pc		@prefix@/lib/pkgconfig/libupsclient.pc
 	end
 # ----------------------------------------
 
-#Including "nut-cgi " files.
-	fileset
-		tag 		cgi
-		title 		"nut-cgi"
-		revision	@PACKAGE_VERSION@
-		
-		file -u 644 -g bin -o bin ../../conf/hosts.conf.sample				/etc/nut/hosts.conf
-		file -u 644 -g bin -o bin ../../conf/upsset.conf.sample				/etc/nut/upsset.conf
-		#file -u 644 -g bin -o bin ../../conf/upsstats-single.html.sample	/etc/nut/upsstats-single.html
-		#file -u 644 -g bin -o bin ../../conf/upsstats.html.sample			/etc/nut/upsstats.html
-
-		#file -u 644 -g bin -o bin ../../data/html/bottom.html			/usr/share/nut/www/bottom.html
-		#file -u 644 -g bin -o bin ../../data/html/header.html			/usr/share/nut/www/header.html
-		#file -u 644 -g bin -o bin ../../data/html/index.html			/usr/share/nut/www/index.html
-		#file -u 644 -g bin -o bin ../../data/html/nut-banner.png		/usr/share/nut/www/nut-banner.png
-	end
-# ----------------------------------------
-
-#Including "nut-doc" files.
-	#TBD
-	#fileset
-	#	tag 		doc
-	#	title 		"nut-doc"
-	#	revision	@PACKAGE_VERSION@
-		
-	#Need to check from the following location for the required files	
-	#	/usr/local/share/doc/libxml2-2.7.7/html/tutorial/
-	#end
-# ----------------------------------------
-	
 #Including "libups-nut-perl" files.
 	fileset
-		tag			libups-nut-perl
+		tag		libups-nut-perl
 		title		"libups-nut-perl"
 		revision	@PACKAGE_VERSION@
 		
-		file -u 644 -g bin -o bin ../../scripts/perl/Nut.pm				/usr/share/perl5/UPS/Nut.pm
+		file -u 644 -g bin -o bin @top_srcdir@/scripts/perl/Nut.pm	@prefix@/share/perl5/UPS/Nut.pm
 	end
 # ----------------------------------------	
 
-#Including "nut-monitor" files
-	fileset
-		tag			nut-monitor
-		title		"nut-monitor"
-		revision	@PACKAGE_VERSION@
-		
-		file -u 644 -g bin -o bin ../../scripts/python/app/NUT-Monitor								/usr/bin/NUT-Monitor
-		file -u 644 -g bin -o bin ../../scripts/python/app/nut-monitor.desktop						/usr/share/applications/nut-monitor.desktop
-		file -u 644 -g bin -o bin ../../scripts/python/app/locale/fr/LC_MESSAGES/NUT-Monitor.mo		/usr/share/locale/fr/LC_MESSAGES/NUT-Monitor.mo
-		file -u 644 -g bin -o bin ../../scripts/python/app/gui-1.3.glade							/usr/share/nut-monitor/gui-1.3.glade
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/on_battery.png					/usr/share/nut-monitor/pixmaps/on_battery.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/on_line.png						/usr/share/nut-monitor/pixmaps/on_line.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/var-ro.png						/usr/share/nut-monitor/pixmaps/var-ro.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/var-rw.png						/usr/share/nut-monitor/pixmaps/var-rw.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/pixmaps/warning.png						/usr/share/nut-monitor/pixmaps/warning.png
-		file -u 644 -g bin -o bin ../../scripts/python/app/nut-monitor.png							/usr/share/pixmaps/nut-monitor.png
-	end
-	
-# ----------------------------------------
 end	#End product
 
