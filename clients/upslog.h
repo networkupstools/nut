@@ -1,5 +1,11 @@
 /* upslog.h - table of functions for handling various logging functions */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* function list */
 typedef struct flist_s {
 	void	(*fptr)(const char *arg);
@@ -27,3 +33,10 @@ struct {
 	{ "ETIME",	do_etime		},
 	{ NULL,		(void(*)())(NULL)	}
 };
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+

@@ -17,6 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* other programs that link to this should provide parsearg() ... */
 void parsearg(char *var, char *value);
 
@@ -28,4 +34,10 @@ void extractpostargs(void);
 
 /* see if a host is allowed per the hosts.conf */
 int checkhost(const char *host, char **desc);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 

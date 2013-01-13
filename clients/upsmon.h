@@ -30,6 +30,12 @@
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"  
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* UPS tracking structure */
 
 typedef struct {
@@ -110,3 +116,9 @@ struct {
 /* various constants */
 
 #define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif

@@ -17,6 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 typedef struct {
 	char	*cmd;
 	void	*next;
@@ -34,3 +40,10 @@ typedef struct {
 	actionlist_t  *firstaction;
 	void	*next;
 } ulist_t;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+

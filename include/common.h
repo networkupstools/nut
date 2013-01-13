@@ -44,6 +44,12 @@
 #include "attribute.h"
 #include "proto.h"
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 extern const char *UPS_VERSION;
 
 /* get the syslog ready for us */
@@ -142,6 +148,12 @@ extern int optind;
 #ifndef HAVE_SETEUID
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
 #endif
 
 #endif /* NUT_COMMON_H */

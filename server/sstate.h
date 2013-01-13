@@ -29,6 +29,12 @@
 #define SS_CONNFAIL_INT 300	/* complain about a dead driver every 5 mins */
 #define SS_MAX_READ 256		/* don't let drivers tie us up in read()     */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 int sstate_connect(upstype_t *ups);
 void sstate_disconnect(upstype_t *ups);
 void sstate_readline(upstype_t *ups);
@@ -46,5 +52,11 @@ void sstate_infofree(upstype_t *ups);
 void sstate_cmdfree(upstype_t *ups);
 int sstate_sendline(upstype_t *ups, const char *buf);
 const st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif /* SSTATE_H_SEEN */

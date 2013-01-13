@@ -17,6 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 void user_load(void);
 
 int user_checkinstcmd(const char *un, const char *pw, const char *cmd);
@@ -26,3 +32,10 @@ void user_flush(void);
 
 /* cheat - we don't want the full upsd.h included here */
 void check_perms(const char *fn);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+

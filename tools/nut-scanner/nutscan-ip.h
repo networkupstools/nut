@@ -22,6 +22,12 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 enum network_type {
         IPv4,
         IPv6
@@ -38,4 +44,11 @@ typedef struct nutscan_ip_iter {
 char * nutscan_ip_iter_init(nutscan_ip_iter_t *, const char * startIP, const char * stopIP);
 char * nutscan_ip_iter_inc(nutscan_ip_iter_t *);
 int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+
 #endif
