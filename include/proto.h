@@ -33,6 +33,12 @@
 # endif
 #endif
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 #if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
 int snprintf (char *str, size_t count, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
@@ -77,6 +83,12 @@ static inline int setenv(const char *name, const char *value, int overwrite) {
 int seteuid(uid_t);
 int vprintf(const char *, va_list);
 int putenv(char *);
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
 #endif
 
 #endif /* PROTO_H */

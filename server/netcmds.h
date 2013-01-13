@@ -29,6 +29,12 @@
 
 #define FLAG_USER	0x0001		/* username and password must be set */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 struct {
 	const	char	*name;
 	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
@@ -56,3 +62,10 @@ struct {
 
 	{ NULL,		(void(*)())(NULL), 0		}
 };
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+
