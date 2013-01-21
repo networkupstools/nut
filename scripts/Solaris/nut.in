@@ -1,17 +1,17 @@
 #!/sbin/sh
 
-#Postinstall script to start nut services
+#init.d script to start nut services
 
 NUT_DIR="@prefix@"
 
 ups_stop () {
-
+	pkill -n upsmon
+	pkill -n upsd
 	${NUT_DIR}/bin/upsdrvctl stop > /dev/null 2>&1
 }
 
 ups_start () {
 	echo "in ups start function"
-	/usr/local/bin/python nut_config.py	
 	$NUT_DIR/bin/upsdrvctl start #> /dev/null 2>&1
 	$NUT_DIR/sbin/upsd #> /dev/null 2>&1
 	$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
@@ -19,9 +19,7 @@ ups_start () {
 
 case $1 in
 'start')
-	echo "before ups start"	
 	ups_start
-	echo "after ups start"	
 	;;
 
 'stop')
