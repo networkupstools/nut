@@ -286,14 +286,19 @@ Serial port handling
 Drivers which use serial port functions should include serial.h and use
 these functions whenever possible:
 
-- int ser_open(const char *port)
+	- int ser_open(const char *port)
 
 This opens the port and locks it if possible, using one of fcntl, lockf,
 or uu_lock depending on what may be available.  If something fails, it
 calls fatal for you.  If it succeeds, it always returns the fd that was
 opened.
 
-- int ser_set_speed(int fd, const char *port, speed_t speed)
+	- int ser_open_nf(const char *port)
+
+This is a non-fatal version of ser_open(), that does not call fatal if
+something fails.
+
+	- int ser_set_speed(int fd, const char *port, speed_t speed)
 
 This sets the speed of the port and also does some basic configuring
 with tcgetattr and tcsetattr.  If you have a special serial
@@ -303,6 +308,11 @@ The port name is provided again here so failures in tcgetattr() provide
 a useful error message.  This is the only place that will generate a
 message if someone passes a non-serial port /dev entry to your driver,
 so it needs the extra detail.
+
+	- int ser_set_speed_nf(int fd, const char *port, speed_t speed)
+
+This is a non-fatal version of ser_set_speed(), that does not call fatal
+if something fails.
 
 	- int ser_set_dtr(int fd, int state)
 	- int ser_set_rts(int fd, int state)

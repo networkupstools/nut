@@ -123,26 +123,42 @@ static void lock_set(int fd, const char *port)
 #endif
 }
 
-int ser_open(const char *port)
+/* Non fatal version of ser_open */
+int ser_open_nf(const char *port)
+
 {
 	int	fd;
 
 	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
-	if (fd < 0)
-		ser_open_error(port);
+	if (fd < 0) {
+		return -1;
+	}
 
 	lock_set(fd, port);
 
 	return fd;
 }
 
-int ser_set_speed(int fd, const char *port, speed_t speed)
+int ser_open(const char *port)
+{
+	int res;
+
+	res = ser_open_nf(port);
+	if(res == -1) {
+		ser_open_error(port);
+	}
+
+	return res;
+}
+
+int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
 
-	if (tcgetattr(fd, &tio) != 0)
-		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
+	if (tcgetattr(fd, &tio) != 0) {
+		return -1;
+	}
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
@@ -160,6 +176,18 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 
 	tcflush(fd, TCIFLUSH);
 	tcsetattr(fd, TCSANOW, &tio);
+
+	return 0;
+}
+
+int ser_set_speed(int fd, const char *port, speed_t speed)
+{
+	int res;
+
+	res = ser_set_speed_nf(fd,port,speed);
+	if(res == -1) {
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
+	}
 
 	return 0;
 }
