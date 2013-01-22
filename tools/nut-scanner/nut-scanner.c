@@ -35,13 +35,14 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-const char optstring[] = "?ht:s:e:c:l:u:W:X:w:x:p:b:B:d:D:CUSMOAm:NPqIVa";
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:D:CUSMOAm:NPqIVa";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
 	{ "end_ip",required_argument,NULL,'e' },
+	{ "eaton_serial",required_argument,NULL,'E' },
 	{ "mask_cidr",required_argument,NULL,'m' },
 	{ "community",required_argument,NULL,'c' },
 	{ "secLevel",required_argument,NULL,'l' },
@@ -79,6 +80,7 @@ static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
 static char *	start_ip = NULL;
 static char *	end_ip = NULL;
 static char * port = NULL;
+static char * serial_ports = NULL;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
@@ -119,8 +121,15 @@ static void * run_ipmi(void * arg)
 	dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,sec);
 	return NULL;
 }
+
+static void * run_eaton_serial(void * arg)
+{
+	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
+	return NULL;
+}
+
 #endif /* HAVE_PTHREAD */
-static int printq(int quiet,const char *fmt, ...)
+int printq(int quiet,const char *fmt, ...)
 {
 	va_list ap;
 	int ret;
@@ -149,6 +158,7 @@ int main(int argc, char *argv[])
 	int allow_oldnut = 0;
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
+	int allow_eaton_serial = 0; /* MUST be requested explicitely! */
 	int quiet = 0;
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
@@ -181,6 +191,10 @@ int main(int argc, char *argv[])
 				break;
 			case 'e':
 				end_ip = strdup(optarg);
+				break;
+			case 'E':
+				serial_ports = strdup(optarg);
+				allow_eaton_serial = 1;
 				break;
 			case 'm':
 				cidr = strdup(optarg);
@@ -272,6 +286,7 @@ int main(int argc, char *argv[])
 				ipmi_sec.cipher_suite_id = atoi(optarg);
 				/* Force IPMI 2.0! */
 				ipmi_sec.ipmi_version = IPMI_2_0;
+				break;
 			case 'p':
 				port = strdup(optarg);
 				break;
@@ -332,8 +347,9 @@ int main(int argc, char *argv[])
 					printf("AVAHI\n");
 				}
 				if(nutscan_avail_ipmi) {
-					printf("IPMI\n");	
+					printf("IPMI\n");
 				}
+				printf("EATON_SERIAL\n");
 				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
@@ -359,6 +375,8 @@ display_help:
 				if( nutscan_avail_ipmi ) {
 					printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
 				}
+
+				printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
 				printf("\nNetwork specific options:\n");
 				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
@@ -410,7 +428,7 @@ display_help:
 	}
 
 	if( !allow_usb && !allow_snmp && !allow_xml && !allow_oldnut &&
-		!allow_avahi && !allow_ipmi ) {
+		!allow_avahi && !allow_ipmi && !allow_eaton_serial) {
 		allow_all = 1;
 	}
 
@@ -421,6 +439,7 @@ display_help:
 		allow_oldnut = 1;
 		allow_avahi = 1;
 		allow_ipmi = 1;
+		/* BEWARE: allow_all does not include allow_eaton_serial! */
 	}
 
 	if( allow_usb && nutscan_avail_usb ) {
@@ -501,6 +520,17 @@ display_help:
 #endif /* HAVE_PTHREAD */
 	}
 
+	/* Eaton serial scan */
+	if (allow_eaton_serial) {
+		printq(quiet,"Scanning serial bus for Eaton devices.\n");
+#ifdef HAVE_PTHREAD
+		pthread_create(&thread[TYPE_EATON_SERIAL], NULL, run_eaton_serial, serial_ports);
+		/* FIXME: check return code */
+#else
+		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
+#endif /* HAVE_PTHREAD */
+	}
+
 #ifdef HAVE_PTHREAD
 	if( allow_usb && nutscan_avail_usb ) {
 		pthread_join(thread[TYPE_USB],NULL);
@@ -519,6 +549,9 @@ display_help:
 	}
 	if( allow_ipmi && nutscan_avail_ipmi ) {
 		pthread_join(thread[TYPE_IPMI],NULL);
+	}
+	if (allow_eaton_serial) {
+		pthread_join(thread[TYPE_EATON_SERIAL],NULL);
 	}
 #endif /* HAVE_PTHREAD */
 
@@ -539,6 +572,9 @@ display_help:
 
 	display_func(dev[TYPE_IPMI]);
 	nutscan_free_device(dev[TYPE_IPMI]);
+
+	display_func(dev[TYPE_EATON_SERIAL]);
+	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
 	nutscan_free();
 

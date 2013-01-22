@@ -33,6 +33,7 @@ typedef enum nutscan_device_type {
 	TYPE_NUT,
 	TYPE_IPMI,
 	TYPE_AVAHI,
+	TYPE_EATON_SERIAL,
 	TYPE_END
 } nutscan_device_type_t;
 
