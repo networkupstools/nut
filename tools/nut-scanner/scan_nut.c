@@ -164,7 +164,7 @@ static void * list_nut_devices(void * arg)
 			dev = nutscan_new_device();
 			dev->type = TYPE_NUT;
 			dev->driver = strdup("nutclient");
-			/* +1+1 is for '@' character and terminnating 0 */
+			/* +1+1 is for '@' character and terminating 0 */
 			buf_size = strlen(answer[1])+strlen(hostname)+1+1;
 			dev->port = malloc(buf_size);
 			if( dev->port ) {

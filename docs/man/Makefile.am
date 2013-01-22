@@ -139,6 +139,7 @@ SRC_DEV_PAGES = \
 	nutscan_scan_nut.txt \
 	nutscan_scan_avahi.txt \
 	nutscan_scan_ipmi.txt \
+	nutscan_scan_eaton_serial.txt \
 	nutscan_display_ups_conf.txt \
 	nutscan_display_parsable.txt \
 	nutscan_cidr_to_ip.txt \
@@ -147,6 +148,8 @@ SRC_DEV_PAGES = \
 	nutscan_add_option_to_device.txt \
 	nutscan_add_device_to_device.txt \
 	nutscan_init.txt \
+	nutscan_scan_eaton_serial.txt \
+	nutscan_get_serial_ports_list.txt \
 	libupsclient-config.txt \
 	skel.txt
 
@@ -172,6 +175,7 @@ MAN3_DEV_PAGES = \
 	nutscan_scan_nut.3 \
 	nutscan_scan_avahi.3 \
 	nutscan_scan_ipmi.3 \
+	nutscan_scan_eaton_serial.3 \
 	nutscan_display_ups_conf.3 \
 	nutscan_display_parsable.3 \
 	nutscan_cidr_to_ip.3 \
@@ -179,6 +183,8 @@ MAN3_DEV_PAGES = \
 	nutscan_free_device.3 \
 	nutscan_add_option_to_device.3 \
 	nutscan_add_device_to_device.3 \
+	nutscan_scan_eaton_serial.3 \
+	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
 MAN1_DEV_PAGES = \
@@ -215,6 +221,7 @@ HTML_DEV_MANS = \
 	nutscan_scan_nut.html \
 	nutscan_scan_avahi.html \
 	nutscan_scan_ipmi.html \
+	nutscan_scan_eaton_serial.html \
 	nutscan_display_ups_conf.html \
 	nutscan_display_parsable.html \
 	nutscan_cidr_to_ip.html \
@@ -222,6 +229,8 @@ HTML_DEV_MANS = \
 	nutscan_free_device.html \
 	nutscan_add_option_to_device.html \
 	nutscan_add_device_to_device.html \
+	nutscan_scan_eaton_serial.html \
+	nutscan_get_serial_ports_list.html \
 	nutscan_init.html \
 	libupsclient-config.html \
 	skel.html
