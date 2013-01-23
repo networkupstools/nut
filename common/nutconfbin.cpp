@@ -1,9 +1,11 @@
+#include "config.h"
 #include "nutconf.h"
 #include "nutstream.hpp"
 
 #include <iostream>
 #include <list>
 #include <map>
+#include <stdexcept>
 
 
 class Usage {
@@ -26,6 +28,7 @@ class Usage {
 const char * Usage::s_text[] = {
 	"    --help                    Display this help and exit",
 	"    --autoconfigure           Perform autoconfiguration",
+	"    --is-configured           Checks whether NUT is configured",
 };
 
 
@@ -265,7 +268,7 @@ void Options::add(Options::type_t type, const std::string & opt, const Arguments
 	switch (type) {
 		case binaryArgument:
 
-			break;;
+			break;
 
 		case singleDash:
 			arguments = &m_single[opt];
@@ -371,27 +374,34 @@ class NutConfOptions: public Options {
 
 	public:
 
+	/** Options are valid */
+	bool valid;
+
 	/** --autoconfigure */
 	bool autoconfigure;
 
+	/** --is-configured */
+	bool is_configured;
+
+	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
 
-	inline bool valid() const {
-		// We don't accept any direct arguments
-		if (!get().empty())
-			return false;
-
-		return m_unknown.empty();
-	}
-
-	void reportInvalid() const;
+	/**
+	 *  \brief  Report invalid options to STDERR
+	 *
+	 *  BEWARE: throws an exception if options are valid.
+	 *  Check that using the \ref valid flag.
+	 */
+	void reportInvalid() const throw(std::logic_error);
 
 };  // end of class NutConfOptions
 
 
 NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	Options(argv, argc),
-	autoconfigure(false)
+	valid(true),
+	autoconfigure(false),
+	is_configured(false)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -411,18 +421,26 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 		if ("autoconfigure" == *opt) {
 			autoconfigure = true;
 		}
-
-		// TODO
+		else if ("is-configured" == *opt) {
+			is_configured = true;
+		}
 
 		// Unknown option
 		else {
 			m_unknown.push_back(dDash + *opt);
 		}
 	}
+
+	// Options are valid iff we know all of them
+	// and there are no direct binary arguments
+	valid = m_unknown.empty() && get().empty();
 }
 
 
-void NutConfOptions::reportInvalid() const {
+void NutConfOptions::reportInvalid() const throw(std::logic_error) {
+	if (valid)
+		throw std::logic_error("No invalid options to report");
+
 	List::const_iterator unknown_opt = m_unknown.begin();
 
 	for (; unknown_opt != m_unknown.end(); ++unknown_opt) {
@@ -440,6 +458,30 @@ void NutConfOptions::reportInvalid() const {
 }
 
 
+/**
+ *  \brief  Check whether NUT was configured
+ *
+ *  \param  etc  Configuration directory
+ *
+ *  \retval true  iff nut.conf exists and MODE != none
+ *  \retval false otherwise
+ */
+bool isConfigured(const std::string & etc) {
+	nut::NutFile nut_conf_file(etc + "/nut.conf");
+
+	if (!nut_conf_file.existsx())
+		return false;
+
+	nut_conf_file.openx();
+
+	nut::NutConfiguration nut_conf;
+
+	nut_conf.parseFrom(nut_conf_file);
+
+	return nut::NutConfiguration::MODE_NONE != nut_conf.mode;
+}
+
+
 int main(int argc, char * const argv[]) {
 	// Get options
 	NutConfOptions options(argv, argc);
@@ -452,12 +494,23 @@ int main(int argc, char * const argv[]) {
 	}
 
 	// Check that command-line options validity
-	if (!options.valid()) {
+	if (!options.valid) {
 		options.reportInvalid();
 
 		Usage::print(argv[0]);
 
 		::exit(1);
+	}
+
+	// --is-configured query
+	if (options.is_configured) {
+		std::string etc(CONFPATH);
+
+		bool is_configured = isConfigured(etc);
+
+		std::cout << (is_configured ? "true" : "false") << std::endl;
+
+		return 0;
 	}
 
 	return 0;

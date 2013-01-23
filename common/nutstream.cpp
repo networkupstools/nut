@@ -31,6 +31,8 @@ extern "C" {
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 }
@@ -103,6 +105,21 @@ NutFile::NutFile(anonymous_t):
 
 		throw std::runtime_error(e.str());
 	}
+}
+
+
+bool NutFile::exists(int & err_code, std::string & err_msg) const throw() {
+	struct stat info;
+
+	int status = ::stat(m_name.c_str(), &info);
+
+	if (!status)
+		return true;
+
+	err_code = errno;
+	err_msg  = std::string(::strerror(err_code));
+
+	return false;
 }
 
 

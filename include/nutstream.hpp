@@ -30,6 +30,7 @@
 #include <cstdio>
 
 extern "C" {
+#include <errno.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -259,6 +260,52 @@ class NutFile: public NutStream {
 	}
 
 	/**
+	 *  \brief  Check whether file exists
+	 *
+	 *  \param[out]  err_code  Error code
+	 *  \param[out]  err_msg   Error message
+	 *
+	 *  \retval true  iff the file exists
+	 *  \retval false otherwise
+	 */
+	bool exists(int & err_code, std::string & err_msg) const throw();
+
+	/**
+	 *  \brief  Check whether file exists
+	 *
+	 *  \retval true  iff the file exists
+	 *  \retval false otherwise
+	 */
+	inline bool exists() const throw() {
+		int ec;
+		std::string em;
+
+		return exists(ec, em);
+	}
+
+	/**
+	 *  \brief  Check whether file exists (or throw exception)
+	 *
+	 *  \retval true  iff the file exists
+	 *  \retval false otherwise
+	 */
+	inline bool existsx() const throw(std::runtime_error) {
+		int ec;
+		std::string em;
+
+		if (exists(ec, em))
+			return true;
+
+		if (ENOENT == ec || ENOTDIR == ec)
+			return false;
+
+		std::stringstream e;
+		e << "Failed to check file " << m_name << " existence: " << ec << ": " << em;
+
+		throw std::runtime_error(e.str());
+	}
+
+	/**
 	 *  \brief  Open file
 	 *
 	 *  \param[in]   mode      File open mode
@@ -310,7 +357,7 @@ class NutFile: public NutStream {
 	 *  \brief  Close file
 	 *
 	 *  \param[out]  err_code  Error code
-	 *  \param[out]  err-msg   Error message
+	 *  \param[out]  err_msg   Error message
 	 *
 	 *  \retval true  if close succeeded
 	 *  \retval false if close failed
