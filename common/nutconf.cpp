@@ -1047,15 +1047,15 @@ void UpsmonConfigParser::onParseDirective(const std::string& directiveName, char
 		}
 		else if(directiveName == "MONITOR")
 		{
-			if(values.size()==5)
+			if (values.size() == 5 || values.size() == 6)
 			{
 				UpsmonConfiguration::Monitor monitor;
 				ConfigParamList::const_iterator it = values.begin();
 				std::stringstream system(*it++);
 				std::string word;
 				monitor.upsname = (getline(system, word, '@'), word);
-				monitor.hostname = (getline(system, word, ':'), word);
-				monitor.port = (getline(system, word) ? *StringToSettableNumber<unsigned int>(word) : 0u);
+				monitor.hostname = (getline(system, word), word);
+				monitor.port = (values.size() == 6 ? *StringToSettableNumber<unsigned int>(*it++) : 0u);
 				monitor.powerValue = StringToSettableNumber<unsigned int>(*it++);
 				monitor.username = *it++;
 				monitor.password = *it++;
