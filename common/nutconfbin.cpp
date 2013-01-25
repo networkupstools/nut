@@ -44,10 +44,17 @@ const char * Usage::s_text[] = {
 "                                  specified multiple times to set multiple entries",
 "    --add-listen <addr> [<port>]  Same as --set-listen, but keeps existing entries",
 "                                  The two options are mutually exclusive",
+"    --set-device <spec>           Configures one UPS device (see below)",
+"                                  All existing devices are removed; however, it may be",
+"                                  specified multiple times to set multiple devices",
+"    --add-device <spec>           Same as --set-device, but keeps existing devices",
+"                                  The two options are mutually exclusive",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
 "    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"master\"|\"slave\")",
+"UPS device is specified by the following sequence:",
+"    <ups_ID> <driver> <port> [<description>]",
 "",
 };
 
@@ -467,6 +474,14 @@ class NutConfOptions: public Options {
 	/** Listen address specification */
 	typedef std::pair<std::string, std::string> ListenAddrSpec;
 
+	/** Device specification */
+	struct DeviceSpec {
+		std::string id;      /**< Device ID          */
+		std::string driver;  /**< Device driver      */
+		std::string port;    /**< Device port        */
+		std::string desc;    /**< Device description */
+	};  // end of struct DeviceSpec
+
 	private:
 
 	/** Unknown options */
@@ -542,6 +557,15 @@ class NutConfOptions: public Options {
 
 	/** Added listen address options count */
 	size_t add_listen_cnt;
+
+	/** Device specifications */
+	std::vector<DeviceSpec> devices;
+
+	/** Set devices options count */
+	size_t set_device_cnt;
+
+	/** Added devices options count */
+	size_t add_device_cnt;
 
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
@@ -625,7 +649,9 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	set_monitor_cnt(0),
 	add_monitor_cnt(0),
 	set_listen_cnt(0),
-	add_listen_cnt(0)
+	add_listen_cnt(0),
+	set_device_cnt(0),
+	add_device_cnt(0)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -693,44 +719,33 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			else
 				mode = args.front();
 		}
-		else if ("set-monitor" == *opt) {
+		else if ("set-monitor" == *opt || "add-monitor" == *opt) {
+			size_t * cnt = ('s' == (*opt)[0] ? &set_monitor_cnt : &add_monitor_cnt);
+
 			Arguments args;
 
-			if (NutConfOptions::SETTER != optMode("set-monitor", args, set_monitor_cnt))
-				m_errors.push_back("--set-monitor option requires arguments");
+			if (NutConfOptions::SETTER != optMode(*opt, args, *cnt))
+				m_errors.push_back("--" + *opt + " option requires arguments");
 
 			else if (args.size() != 6)
-				m_errors.push_back("--set-monitor option requires exactly 6 arguments");
+				m_errors.push_back("--" + *opt + " option requires exactly 6 arguments");
 
 			else
 				for (Arguments::const_iterator arg = args.begin(); arg != args.end(); ++arg)
 					monitors.push_back(*arg);
 
-			++set_monitor_cnt;
+			++*cnt;
 		}
-		else if ("add-monitor" == *opt) {
+		else if ("set-listen" == *opt || "add-listen" == *opt) {
+			size_t * cnt = ('s' == (*opt)[0] ? &set_listen_cnt : &add_listen_cnt);
+
 			Arguments args;
 
-			if (NutConfOptions::SETTER != optMode("add-monitor", args, add_monitor_cnt))
-				m_errors.push_back("--add-monitor option requires arguments");
-
-			else if (args.size() != 6)
-				m_errors.push_back("--add-monitor option requires exactly 6 arguments");
-
-			else
-				for (Arguments::const_iterator arg = args.begin(); arg != args.end(); ++arg)
-					monitors.push_back(*arg);
-
-			++add_monitor_cnt;
-		}
-		else if ("set-listen" == *opt) {
-			Arguments args;
-
-			if (NutConfOptions::SETTER != optMode("set-listen", args, set_listen_cnt))
-				m_errors.push_back("--set-listen option requires arguments");
+			if (NutConfOptions::SETTER != optMode(*opt, args, *cnt))
+				m_errors.push_back("--" + *opt + " option requires arguments");
 
 			else if (args.size() < 1 || args.size() > 2)
-				m_errors.push_back("--set-listen option requires 1 or 2 arguments");
+				m_errors.push_back("--" + *opt + " option requires 1 or 2 arguments");
 
 			else {
 				ListenAddrSpec addr_port(args.front(), args.size() > 1 ? args.back() : "");
@@ -738,24 +753,42 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 				listen_addrs.push_back(addr_port);
 			}
 
-			++set_listen_cnt;
+			++*cnt;
 		}
-		else if ("add-listen" == *opt) {
+		else if ("set-device" == *opt || "add-device" == *opt) {
+			size_t * cnt = ('s' == (*opt)[0] ? &set_device_cnt : &add_device_cnt);
+
 			Arguments args;
 
-			if (NutConfOptions::SETTER != optMode("add-listen", args, add_listen_cnt))
-				m_errors.push_back("--add-listen option requires arguments");
+			if (NutConfOptions::SETTER != optMode(*opt, args, *cnt))
+				m_errors.push_back("--" + *opt + " option requires arguments");
 
-			else if (args.size() < 1 || args.size() > 2)
-				m_errors.push_back("--add-listen option requires 1 or 2 arguments");
+			else if (args.size() < 3)
+				m_errors.push_back("--" + *opt + " option requires at least 3 arguments");
 
-			else {
-				ListenAddrSpec addr_port(args.front(), args.size() > 1 ? args.back() : "");
-
-				listen_addrs.push_back(addr_port);
+			else if (args.size() > 4) {
+				m_errors.push_back("--" + *opt + " option takes at most 4 arguments");
+				m_errors.push_back("    (perhaps you need to quote description?)");
 			}
 
-			++add_listen_cnt;
+			else {
+				DeviceSpec dev;
+
+				Arguments::const_iterator arg = args.begin();
+
+				assert(args.size() >= 3);
+
+				dev.id     = *arg++;
+				dev.driver = *arg++;
+				dev.port   = *arg++;
+
+				if (arg != args.end())
+					dev.desc = *arg;
+
+				devices.push_back(dev);
+			}
+
+			++*cnt;
 		}
 
 		// Unknown option
@@ -769,15 +802,22 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	valid = m_unknown.empty() && m_errors.empty() && get().empty();
 
 	// --set-monitor and --add-monitor are mutually exclusive
-	if (existsDouble("set-monitor") && existsDouble("add-monitor")) {
+	if (set_monitor_cnt > 0 && add_monitor_cnt > 0) {
 		m_errors.push_back("--set-monitor and --add-monitor options can't both be specified");
 
 		valid = false;
 	}
 
 	// --set-listen and --add-listen are mutually exclusive
-	if (existsDouble("set-listen") && existsDouble("add-listen")) {
+	if (set_listen_cnt > 0 && add_listen_cnt > 0) {
 		m_errors.push_back("--set-listen and --add-listen options can't both be specified");
+
+		valid = false;
+	}
+
+	// --set-device and --add-device are mutually exclusive
+	if (set_device_cnt > 0 && add_device_cnt > 0) {
+		m_errors.push_back("--set-device and --add-device options can't both be specified");
 
 		valid = false;
 	}
@@ -1105,6 +1145,57 @@ void setListenAddrs(
 
 
 /**
+ *  \brief  Set devices in ups.conf
+ *
+ *  \param  devices  Device list
+ *  \param  etc      Configuration directory
+ *  \param  keep_ex  Keep existing entries (discard by default)
+ */
+void setDevices(
+	const std::vector<NutConfOptions::DeviceSpec> & devices,
+	const std::string & etc, bool keep_ex = false)
+{
+	std::string ups_conf_file(etc + "/ups.conf");
+
+	nut::UpsConfiguration ups_conf;
+
+	// Source previous configuration (if any)
+	source(&ups_conf, ups_conf_file);
+
+	// Remove existing devices (unless we want to keep them)
+	if (!keep_ex) {
+		nut::UpsConfiguration::SectionMap::iterator
+			ups = ups_conf.sections.begin();
+
+		for (; ups != ups_conf.sections.end(); ++ups) {
+			// Keep global section
+			if (ups->first.empty())
+				continue;
+
+			ups_conf.sections.erase(ups);
+		}
+	}
+
+	// Add devices to the current ones (if any)
+	std::vector<NutConfOptions::DeviceSpec>::const_iterator
+		dev = devices.begin();
+
+	for (; dev != devices.end(); ++dev) {
+		const std::string & id = (*dev).id;
+
+		ups_conf.setDriver(id, (*dev).driver);
+		ups_conf.setPort(id, (*dev).port);
+
+		if (!(*dev).desc.empty())
+			ups_conf.setDescription(id, (*dev).desc);
+	}
+
+	// Store configuration
+	store(&ups_conf, ups_conf_file);
+}
+
+
+/**
  *  \brief  Main routine (exceptions unsafe)
  *
  *  \param  argc  Argument count
@@ -1165,7 +1256,7 @@ int mainx(int argc, char * const argv[]) {
 			monitors.push_back(monitor(i, options));
 		}
 
-		setMonitors(monitors, etc, options.existsDouble("add-monitor"));
+		setMonitors(monitors, etc, options.add_monitor_cnt > 0);
 	}
 
 	// Listen addresses were set
@@ -1176,7 +1267,12 @@ int mainx(int argc, char * const argv[]) {
 			listen_addrs.push_back(listenAddr(i, options));
 		}
 
-		setListenAddrs(listen_addrs, etc, options.existsDouble("add-listen"));
+		setListenAddrs(listen_addrs, etc, options.add_listen_cnt > 0);
+	}
+
+	// Devices were set
+	if (!options.devices.empty()) {
+		setDevices(options.devices, etc, options.add_device_cnt > 0);
 	}
 
 	return 0;
