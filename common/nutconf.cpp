@@ -1185,7 +1185,8 @@ void UpsmonConfigParser::onParseEnd()
 // NutConfiguration
 //
 
-NutConfiguration::NutConfiguration()
+NutConfiguration::NutConfiguration():
+	mode(MODE_UNKNOWN)
 {
 }
 
