@@ -28,14 +28,22 @@ class Usage {
 
 
 const char * Usage::s_text[] = {
-"    --help                    Display this help and exit",
-"    --autoconfigure           Perform autoconfiguration",
-"    --is-configured           Checks whether NUT is configured",
-"    --local <directory>       Sets configuration directory",
-"    --system                  Sets configuration directory to " CONFPATH,
-"    --mode <NUT mode>         Sets NUT mode (see below)",
-"    --set-monitor <spec>      Configures one monitor (see below)",
-"                              May be used multiple times",
+"    --help                        Display this help and exit",
+"    --autoconfigure               Perform autoconfiguration",
+"    --is-configured               Checks whether NUT is configured",
+"    --local <directory>           Sets configuration directory",
+"    --system                      Sets configuration directory to " CONFPATH " (default)",
+"    --mode <NUT mode>             Sets NUT mode (see below)",
+"    --set-monitor <spec>          Configures one monitor (see below)",
+"                                  All existing entries are removed; however, it may be",
+"                                  specified multiple times to set multiple entries",
+"    --add-monitor <spec>          Same as --set-monitor, but keeps existing entries",
+"                                  The two options are mutually exclusive",
+"    --set-listen <addr> [<port>]  Configures one listen address for the NUT daemon",
+"                                  All existing entries are removed; however, it may be",
+"                                  specified multiple times to set multiple entries",
+"    --add-listen <addr> [<port>]  Same as --set-listen, but keeps existing entries",
+"                                  The two options are mutually exclusive",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -144,6 +152,13 @@ class Options {
 	 *  \return List of options
 	 */
 	void strings(const Map & map, List & list) const;
+
+	/**
+	 *  \brief  Dump options (for debugging reasons)
+	 *
+	 *  \param  stream  Output stream
+	 */
+	void dump(std::ostream & stream) const;
 
 	public:
 
@@ -357,6 +372,40 @@ void Options::strings(const Map & map, List & list) const {
 }
 
 
+void Options::dump(std::ostream & stream) const {
+	stream << "----- Options dump begin -----" << std::endl;
+
+	Map::const_iterator opt;
+
+	Arguments::const_iterator arg;
+
+	for (opt = m_single.begin(); opt != m_single.end(); ++opt) {
+		stream << '-' << opt->first << ' ';
+
+		for (arg = opt->second.begin(); arg != opt->second.end(); ++arg)
+			stream << *arg << ' ';
+
+		stream << std::endl;
+	}
+
+	for (opt = m_double.begin(); opt != m_double.end(); ++opt) {
+		stream << "--" << opt->first << ' ';
+
+		for (arg = opt->second.begin(); arg != opt->second.end(); ++arg)
+			stream << *arg << ' ';
+
+		stream << std::endl;
+	}
+
+	stream << "-- ";
+
+	for (arg = m_args.begin(); arg != m_args.end(); ++arg)
+		stream << *arg;
+
+	stream << std::endl << "----- Options dump end -----" << std::endl;
+}
+
+
 Options::Options(char * const argv[], int argc): m_last(NULL) {
 	for (int i = 1; i < argc; ++i) {
 		const std::string arg(argv[i]);
@@ -383,6 +432,9 @@ Options::Options(char * const argv[], int argc): m_last(NULL) {
 		else
 			addArg(arg);
 	}
+
+	// Options debugging
+	//dump(std::cerr);
 }
 
 
@@ -411,6 +463,9 @@ class NutConfOptions: public Options {
 		GETTER,         /**< Option is a getter                   */
 		SETTER,         /**< Option is a setter                   */
 	} mode_t;
+
+	/** Listen address specification */
+	typedef std::pair<std::string, std::string> ListenAddrSpec;
 
 	private:
 
@@ -470,11 +525,23 @@ class NutConfOptions: public Options {
 	/** --mode argument */
 	std::string mode;
 
-	/** --set-monitor arguments (all the monitors) */
+	/** --{add|set}-monitor arguments (all the monitors) */
 	std::vector<std::string> monitors;
 
-	/** Monitors count */
-	size_t monitor_cnt;
+	/** Set monitor options count */
+	size_t set_monitor_cnt;
+
+	/** Added monitor options count */
+	size_t add_monitor_cnt;
+
+	/** --{add|set}-listen arguments (all the addresses) */
+	std::vector<ListenAddrSpec> listen_addrs;
+
+	/** Set listen address options count */
+	size_t set_listen_cnt;
+
+	/** Added listen address options count */
+	size_t add_listen_cnt;
 
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
@@ -555,7 +622,10 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	autoconfigure(false),
 	is_configured(false),
 	system(false),
-	monitor_cnt(0)
+	set_monitor_cnt(0),
+	add_monitor_cnt(0),
+	set_listen_cnt(0),
+	add_listen_cnt(0)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -626,7 +696,7 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 		else if ("set-monitor" == *opt) {
 			Arguments args;
 
-			if (NutConfOptions::SETTER != optMode("set-monitor", args, monitor_cnt))
+			if (NutConfOptions::SETTER != optMode("set-monitor", args, set_monitor_cnt))
 				m_errors.push_back("--set-monitor option requires arguments");
 
 			else if (args.size() != 6)
@@ -636,7 +706,56 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 				for (Arguments::const_iterator arg = args.begin(); arg != args.end(); ++arg)
 					monitors.push_back(*arg);
 
-			++monitor_cnt;
+			++set_monitor_cnt;
+		}
+		else if ("add-monitor" == *opt) {
+			Arguments args;
+
+			if (NutConfOptions::SETTER != optMode("add-monitor", args, add_monitor_cnt))
+				m_errors.push_back("--add-monitor option requires arguments");
+
+			else if (args.size() != 6)
+				m_errors.push_back("--add-monitor option requires exactly 6 arguments");
+
+			else
+				for (Arguments::const_iterator arg = args.begin(); arg != args.end(); ++arg)
+					monitors.push_back(*arg);
+
+			++add_monitor_cnt;
+		}
+		else if ("set-listen" == *opt) {
+			Arguments args;
+
+			if (NutConfOptions::SETTER != optMode("set-listen", args, set_listen_cnt))
+				m_errors.push_back("--set-listen option requires arguments");
+
+			else if (args.size() < 1 || args.size() > 2)
+				m_errors.push_back("--set-listen option requires 1 or 2 arguments");
+
+			else {
+				ListenAddrSpec addr_port(args.front(), args.size() > 1 ? args.back() : "");
+
+				listen_addrs.push_back(addr_port);
+			}
+
+			++set_listen_cnt;
+		}
+		else if ("add-listen" == *opt) {
+			Arguments args;
+
+			if (NutConfOptions::SETTER != optMode("add-listen", args, add_listen_cnt))
+				m_errors.push_back("--add-listen option requires arguments");
+
+			else if (args.size() < 1 || args.size() > 2)
+				m_errors.push_back("--add-listen option requires 1 or 2 arguments");
+
+			else {
+				ListenAddrSpec addr_port(args.front(), args.size() > 1 ? args.back() : "");
+
+				listen_addrs.push_back(addr_port);
+			}
+
+			++add_listen_cnt;
 		}
 
 		// Unknown option
@@ -648,6 +767,20 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	// Options are valid iff we know all of them
 	// and there are no direct binary arguments
 	valid = m_unknown.empty() && m_errors.empty() && get().empty();
+
+	// --set-monitor and --add-monitor are mutually exclusive
+	if (existsDouble("set-monitor") && existsDouble("add-monitor")) {
+		m_errors.push_back("--set-monitor and --add-monitor options can't both be specified");
+
+		valid = false;
+	}
+
+	// --set-listen and --add-listen are mutually exclusive
+	if (existsDouble("set-listen") && existsDouble("add-listen")) {
+		m_errors.push_back("--set-listen and --add-listen options can't both be specified");
+
+		valid = false;
+	}
 }
 
 
@@ -699,7 +832,7 @@ void NutConfOptions::getMonitor(
 	std::string & mode,
 	size_t        which) const throw(std::range_error)
 {
-	if (which >= monitor_cnt)
+	if (which >= monitors.size() / 6)
 		throw std::range_error("INTERNAL ERROR: monitors index overflow");
 
 	size_t base_idx = 6 * which;
@@ -712,6 +845,65 @@ void NutConfOptions::getMonitor(
 	user      = monitors[base_idx + 3];
 	passwd    = monitors[base_idx + 4];
 	mode      = monitors[base_idx + 5];
+}
+
+
+/**
+ *  \brief  Sources configuration object from file (if exists)
+ *
+ *  If the file doesn't exist, the conf. object is unchanged
+ *  (and the result is indicated by the return value).
+ *  If the file exists, but can't be parsed, an error is reported
+ *  and the execution is terminated.
+ *
+ *  \param  config     Configuration object
+ *  \param  file_name  File name
+ *
+ *  \retval true  if the configuration file was sourced
+ *  \retval false if the file doesn't exist
+ */
+bool source(nut::Serialisable * config, const std::string & file_name) {
+	nut::NutFile file(file_name);
+
+	if (!file.exists())
+		return false;
+
+	file.openx();
+
+	bool parsed_ok = config->parseFrom(file);
+
+	file.closex();
+
+	if (parsed_ok)
+		return true;
+
+	std::cerr << "Error: Failed to parse " << file_name << std::endl;
+
+	::exit(1);
+}
+
+
+/**
+ *  \brief  Store configuration object to file
+ *
+ *  If the file exists, it's rewritten.
+ *
+ *  \param  config     Configuration object
+ *  \param  file_name  File name
+ */
+void store(nut::Serialisable * config, const std::string & file_name) {
+	nut::NutFile file(file_name, nut::NutFile::WRITE_ONLY);
+
+	bool written_ok = config->writeTo(file);
+
+	file.closex();
+
+	if (written_ok)
+		return;
+
+	std::cerr << "Error: Failed to write " << file_name << std::endl;
+
+	::exit(1);
 }
 
 
@@ -735,20 +927,24 @@ bool isConfigured(const std::string & etc) {
 
 	nut_conf.parseFrom(nut_conf_file);
 
-	return nut::NutConfiguration::MODE_NONE != nut_conf.mode;
+	return
+		nut::NutConfiguration::MODE_UNKNOWN != nut_conf.mode &&
+		nut::NutConfiguration::MODE_NONE    != nut_conf.mode;
 }
 
 
 /**
- *  \brief  Transform monitor specification from cmd. line to monitor configuration
+ *  \brief  Transform monitor specification
+ *
+ *  Transform monitor specification from cmd. line to monitor configuration.
  *
  *  \param  i        Monitor index
  *  \param  options  nutconf options
  *
  *  \return Monitor configuration
  */
-nut::UpsmonConfiguration::Monitor getMonitor(
-	size_t                   i,
+nut::UpsmonConfiguration::Monitor monitor(
+	size_t                 i,
 	const NutConfOptions & options)
 {
 	nut::UpsmonConfiguration::Monitor monitor;
@@ -804,31 +1000,22 @@ nut::UpsmonConfiguration::Monitor getMonitor(
  *
  *  \param  monitors  Monitor list
  *  \param  etc       Configuration directory
+ *  \param  keep_ex   Keep existing entries (discard by default)
  */
 void setMonitors(
 	const std::list<nut::UpsmonConfiguration::Monitor> & monitors,
-	const std::string & etc)
+	const std::string & etc, bool keep_ex = false)
 {
-	nut::NutFile upsmon_conf_file(etc + "/upsmon.conf");
+	std::string upsmon_conf_file(etc + "/upsmon.conf");
 
 	nut::UpsmonConfiguration upsmon_conf;
 
 	// Source previous configuration (if any)
-	if (upsmon_conf_file.exists()) {
-		upsmon_conf_file.openx();
+	source(&upsmon_conf, upsmon_conf_file);
 
-		bool parsed_ok = upsmon_conf.parseFrom(upsmon_conf_file);
-
-		upsmon_conf_file.closex();
-
-		if (!parsed_ok) {
-			std::cerr
-				<< "Error: Failed to parse existing "
-				<< upsmon_conf_file.name() << std::endl;
-
-			::exit(1);
-		}
-	}
+	// Remove existing monitors (unless we want to keep them)
+	if (!keep_ex)
+		upsmon_conf.monitors.clear();
 
 	// Add monitors to the current ones (if any)
 	std::list<nut::UpsmonConfiguration::Monitor>::const_iterator
@@ -838,19 +1025,82 @@ void setMonitors(
 		upsmon_conf.monitors.push_back(*monitor);
 
 	// Store configuration
-	upsmon_conf_file.openx(nut::NutFile::WRITE_ONLY);
+	store(&upsmon_conf, upsmon_conf_file);
+}
 
-	bool written_ok = upsmon_conf.writeTo(upsmon_conf_file);
 
-	upsmon_conf_file.closex();
+/**
+ *  \brief  Transform listen address specification
+ *
+ *  Transform listen address specification from cmd. line to listen address configuration.
+ *
+ *  \param  i        Listen address index
+ *  \param  options  nutconf options
+ *
+ *  \return Listen address configuration
+ */
+nut::UpsdConfiguration::Listen listenAddr(
+	size_t                 i,
+	const NutConfOptions & options)
+{
+	nut::UpsdConfiguration::Listen listen_addr;
 
-	if (!written_ok) {
-		std::cerr
-			<< "Error: Failed to write "
-			<< upsmon_conf_file.name() << std::endl;
+	const NutConfOptions::ListenAddrSpec & addr_spec = options.listen_addrs[i];
 
-		::exit(1);
+	listen_addr.address = addr_spec.first;
+
+	// Parse port
+	if (!addr_spec.second.empty()) {
+		unsigned short port = 0;
+
+		std::stringstream ss(addr_spec.second);
+
+		if ((ss >> port).fail()) {
+			std::cerr
+				<< "Error: failed to parse port specification \""
+				<< addr_spec.second << '"' << std::endl;
+
+			::exit(1);
+		}
+
+		listen_addr.port = port;
 	}
+
+	return listen_addr;
+}
+
+
+/**
+ *  \brief  Set listen addresses in upsd.conf
+ *
+ *  \param  listen_addrs  Address list
+ *  \param  etc           Configuration directory
+ *  \param  keep_ex       Keep existing entries (discard by default)
+ */
+void setListenAddrs(
+	const std::list<nut::UpsdConfiguration::Listen> & listen_addrs,
+	const std::string & etc, bool keep_ex = false)
+{
+	std::string upsd_conf_file(etc + "/upsd.conf");
+
+	nut::UpsdConfiguration upsd_conf;
+
+	// Source previous configuration (if any)
+	source(&upsd_conf, upsd_conf_file);
+
+	// Remove existing listen addresses (unless we want to keep them)
+	if (!keep_ex)
+		upsd_conf.listens.clear();
+
+	// Add listen addresses to the current ones (if any)
+	std::list<nut::UpsdConfiguration::Listen>::const_iterator
+		listen = listen_addrs.begin();
+
+	for (; listen != listen_addrs.end(); ++listen)
+		upsd_conf.listens.push_back(*listen);
+
+	// Store configuration
+	store(&upsd_conf, upsd_conf_file);
 }
 
 
@@ -883,19 +1133,9 @@ int mainx(int argc, char * const argv[]) {
 	}
 
 	// Set configuration directory
-	std::string etc;
+	std::string etc(CONFPATH);
 
-	if (options.system) {
-		etc = CONFPATH;
-	}
-	else if (options.local.empty()) {
-		std::cerr << "Error: Configuration directory wasn't specified" << std::endl;
-
-		Usage::print(argv[0]);
-
-		::exit(1);
-	}
-	else {
+	if (!options.local.empty()) {
 		etc = options.local;
 	}
 
@@ -917,15 +1157,26 @@ int mainx(int argc, char * const argv[]) {
 		::exit(is_configured ? 0 : 1);
 	}
 
-	// Monitors were set by --set-monitor
-	if (options.monitor_cnt) {
+	// Monitors were set
+	if (!options.monitors.empty()) {
 		std::list<nut::UpsmonConfiguration::Monitor> monitors;
 
-		for (size_t i = 0; i < options.monitor_cnt; ++i) {
-			monitors.push_back(getMonitor(i, options));
+		for (size_t n = options.monitors.size() / 6, i = 0; i < n; ++i) {
+			monitors.push_back(monitor(i, options));
 		}
 
-		setMonitors(monitors, etc);
+		setMonitors(monitors, etc, options.existsDouble("add-monitor"));
+	}
+
+	// Listen addresses were set
+	if (!options.listen_addrs.empty()) {
+		std::list<nut::UpsdConfiguration::Listen> listen_addrs;
+
+		for (size_t i = 0; i < options.listen_addrs.size(); ++i) {
+			listen_addrs.push_back(listenAddr(i, options));
+		}
+
+		setListenAddrs(listen_addrs, etc, options.existsDouble("add-listen"));
 	}
 
 	return 0;
@@ -945,7 +1196,14 @@ int main(int argc, char * const argv[]) {
 		return mainx(argc, argv);
 	}
 	catch (const std::exception & e) {
-		std::cerr << "Error: " << e.what() << std::endl;
+		std::cerr
+			<< "Error: " << e.what() << std::endl;
+	}
+	catch (...) {
+		std::cerr
+			<< "INTERNAL ERROR: exception of unknown origin caught" << std::endl
+			<< "Please issue a bugreport to nut-upsdev@lists.alioth.debian.org"
+			<< std::endl;
 	}
 
 	::exit(128);
