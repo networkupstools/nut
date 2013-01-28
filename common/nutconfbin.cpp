@@ -28,27 +28,30 @@ class Usage {
 
 
 const char * Usage::s_text[] = {
-"    --help                        Display this help and exit",
-"    --autoconfigure               Perform autoconfiguration",
-"    --is-configured               Checks whether NUT is configured",
-"    --local <directory>           Sets configuration directory",
-"    --system                      Sets configuration directory to " CONFPATH " (default)",
-"    --mode <NUT mode>             Sets NUT mode (see below)",
-"    --set-monitor <spec>          Configures one monitor (see below)",
-"                                  All existing entries are removed; however, it may be",
-"                                  specified multiple times to set multiple entries",
-"    --add-monitor <spec>          Same as --set-monitor, but keeps existing entries",
-"                                  The two options are mutually exclusive",
-"    --set-listen <addr> [<port>]  Configures one listen address for the NUT daemon",
-"                                  All existing entries are removed; however, it may be",
-"                                  specified multiple times to set multiple entries",
-"    --add-listen <addr> [<port>]  Same as --set-listen, but keeps existing entries",
-"                                  The two options are mutually exclusive",
-"    --set-device <spec>           Configures one UPS device (see below)",
-"                                  All existing devices are removed; however, it may be",
-"                                  specified multiple times to set multiple devices",
-"    --add-device <spec>           Same as --set-device, but keeps existing devices",
-"                                  The two options are mutually exclusive",
+"    --help                              Display this help and exit",
+"    --autoconfigure                     Perform autoconfiguration",
+"    --is-configured                     Checks whether NUT is configured",
+"    --local <directory>                 Sets configuration directory",
+"    --system                            Sets configuration directory to " CONFPATH " (default)",
+"    --mode <NUT mode>                   Sets NUT mode (see below)",
+"    --set-monitor <spec>                Configures one monitor (see below)",
+"                                        All existing entries are removed; however, it may be",
+"                                        specified multiple times to set multiple entries",
+"    --add-monitor <spec>                Same as --set-monitor, but keeps existing entries",
+"                                        The two options are mutually exclusive",
+"    --set-listen <addr> [<port>]        Configures one listen address for the NUT daemon",
+"                                        All existing entries are removed; however, it may be",
+"                                        specified multiple times to set multiple entries",
+"    --add-listen <addr> [<port>]        Same as --set-listen, but keeps existing entries",
+"                                        The two options are mutually exclusive",
+"    --set-device <spec>                 Configures one UPS device (see below)",
+"                                        All existing devices are removed; however, it may be",
+"                                        specified multiple times to set multiple devices",
+"    --add-device <spec>                 Same as --set-device, but keeps existing devices",
+"                                        The two options are mutually exclusive",
+"    --set-notifyflags <type> <flag>+    Configures notify flags for notification type",
+"                                        Existing flags are replaced",
+"    --add-notifyflags <type> <flag>+    Same as --set-notifyflags, but keeps existing flags",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -482,6 +485,12 @@ class NutConfOptions: public Options {
 		std::string desc;    /**< Device description */
 	};  // end of struct DeviceSpec
 
+	/** Notify flags specification */
+	typedef std::pair<bool, std::list<std::string> > NotifyFlagsSpec;
+
+	/** Notify flags specifications */
+	typedef std::map<std::string, NotifyFlagsSpec> NotifyFlagsSpecs;
+
 	private:
 
 	/** Unknown options */
@@ -567,6 +576,15 @@ class NutConfOptions: public Options {
 	/** Added devices options count */
 	size_t add_device_cnt;
 
+	/** Notify flags specifications */
+	NotifyFlagsSpecs notify_flags;
+
+	/** Set notify flags options count */
+	size_t set_notify_flags_cnt;
+
+	/** Added notify flags options count */
+	size_t add_notify_flags_cnt;
+
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
 
@@ -651,7 +669,9 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	set_listen_cnt(0),
 	add_listen_cnt(0),
 	set_device_cnt(0),
-	add_device_cnt(0)
+	add_device_cnt(0),
+	set_notify_flags_cnt(0),
+	add_notify_flags_cnt(0)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -786,6 +806,43 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 					dev.desc = *arg;
 
 				devices.push_back(dev);
+			}
+
+			++*cnt;
+		}
+		else if ("set-notifyflags" == *opt || "add-notifyflags" == *opt) {
+			bool     set = 's' == (*opt)[0];
+			size_t * cnt = (set ? &set_notify_flags_cnt : &add_notify_flags_cnt);
+
+			Arguments args;
+
+			if (NutConfOptions::SETTER != optMode(*opt, args, *cnt))
+				m_errors.push_back("--" + *opt + " option requires arguments");
+
+			else if (args.size() < 2)
+				m_errors.push_back("--" + *opt + " option requires at least 2 arguments");
+
+			else {
+				Arguments::const_iterator arg = args.begin();
+
+				const std::string & type = *arg++;
+
+				NotifyFlagsSpecs::iterator flags = notify_flags.lower_bound(type);
+
+				if (flags != notify_flags.end() && flags->first == type)
+					m_errors.push_back(
+						"--" + *opt + " option: conflicting specifications " +
+						"for notification type " + type);
+
+				else {
+					flags = notify_flags.insert(flags,
+							NotifyFlagsSpecs::value_type(
+								type,
+								NotifyFlagsSpec(set, std::list<std::string>())));
+
+					for (; arg != args.end(); ++arg)
+						flags->second.second.push_back(*arg);
+				}
 			}
 
 			++*cnt;
@@ -1196,6 +1253,61 @@ void setDevices(
 
 
 /**
+ *  \brief  Set notify flags in upsmon.conf
+ *
+ *  \param  flags  Notify flags specifications
+ *  \param  etc    Configuration directory
+ */
+void setNotifyFlags(
+	const NutConfOptions::NotifyFlagsSpecs & flags,
+	const std::string & etc)
+{
+	std::string upsmon_conf_file(etc + "/upsmon.conf");
+
+	nut::UpsmonConfiguration upsmon_conf;
+
+	// Source previous configuration (if any)
+	source(&upsmon_conf, upsmon_conf_file);
+
+	NutConfOptions::NotifyFlagsSpecs::const_iterator specs = flags.begin();
+
+	for (; specs != flags.end(); ++specs) {
+		// Resolve notification type
+		nut::UpsmonConfiguration::NotifyType type =
+			nut::UpsmonConfiguration::NotifyTypeFromString(specs->first);
+
+		if (nut::UpsmonConfiguration::NOTIFY_TYPE_MAX == type) {
+			std::cerr
+				<< "Error: failed to parse notification type specification \""
+				<< specs->first << '"' << std::endl;
+
+			::exit(1);
+		}
+
+		nut::Settable<unsigned short> & sum =
+			upsmon_conf.notifyFlags[type];
+
+		// Clear current flags (unless we want to keep them)
+		if (specs->second.first || !sum.set())
+			sum = nut::UpsmonConfiguration::NOTIFY_IGNORE;
+
+		// Assemble flags
+		std::list<std::string>::const_iterator spec = specs->second.second.begin();
+
+		for (; spec != specs->second.second.end(); ++spec) {
+			nut::UpsmonConfiguration::NotifyFlag flag =
+				nut::UpsmonConfiguration::NotifyFlagFromString(*spec);
+
+			sum |= (unsigned short)flag;
+		}
+	}
+
+	// Store configuration
+	store(&upsmon_conf, upsmon_conf_file);
+}
+
+
+/**
  *  \brief  Main routine (exceptions unsafe)
  *
  *  \param  argc  Argument count
@@ -1273,6 +1385,11 @@ int mainx(int argc, char * const argv[]) {
 	// Devices were set
 	if (!options.devices.empty()) {
 		setDevices(options.devices, etc, options.add_device_cnt > 0);
+	}
+
+	// Notify flags were set
+	if (!options.notify_flags.empty()) {
+		setNotifyFlags(options.notify_flags, etc);
 	}
 
 	return 0;
