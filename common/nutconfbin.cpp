@@ -50,14 +50,20 @@ const char * Usage::s_text[] = {
 "    --add-device <spec>                 Same as --set-device, but keeps existing devices",
 "                                        The two options are mutually exclusive",
 "    --set-notifyflags <type> <flag>+    Configures notify flags for notification type",
+"                                        See below for the types and supported flags",
 "                                        Existing flags are replaced",
 "    --add-notifyflags <type> <flag>+    Same as --set-notifyflags, but keeps existing flags",
+"    --set-notifymsg <type> <message>    Configures notification message for the type",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
 "    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"master\"|\"slave\")",
 "UPS device is specified by the following sequence:",
 "    <ups_ID> <driver> <port> [<description>]",
+"Notification types:",
+"    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT",
+"Notification flags:",
+"    SYSLOG, WALL, EXEC, IGNORE",
 "",
 };
 
@@ -491,6 +497,9 @@ class NutConfOptions: public Options {
 	/** Notify flags specifications */
 	typedef std::map<std::string, NotifyFlagsSpec> NotifyFlagsSpecs;
 
+	/** Notify messages specifications */
+	typedef std::map<std::string, std::string> NotifyMsgSpecs;
+
 	private:
 
 	/** Unknown options */
@@ -585,6 +594,12 @@ class NutConfOptions: public Options {
 	/** Added notify flags options count */
 	size_t add_notify_flags_cnt;
 
+	/** Notify messages specifications */
+	NotifyMsgSpecs notify_msgs;
+
+	/** Set notify message options count */
+	size_t set_notify_msg_cnt;
+
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
 
@@ -671,7 +686,8 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	set_device_cnt(0),
 	add_device_cnt(0),
 	set_notify_flags_cnt(0),
-	add_notify_flags_cnt(0)
+	add_notify_flags_cnt(0),
+	set_notify_msg_cnt(0)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -846,6 +862,23 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			}
 
 			++*cnt;
+		}
+		else if ("set-notifymsg" == *opt) {
+			Arguments args;
+
+			if (NutConfOptions::SETTER != optMode(*opt, args, set_notify_msg_cnt))
+				m_errors.push_back("--" + *opt + " option requires arguments");
+
+			else if (args.size() != 2) {
+				m_errors.push_back("--" + *opt + " option requires 2 arguments");
+				m_errors.push_back("    (perhaps you need to quote the message?)");
+			}
+
+			else {
+				notify_msgs[args.front()] = args.back();
+			}
+
+			++set_notify_msg_cnt;
 		}
 
 		// Unknown option
@@ -1308,6 +1341,47 @@ void setNotifyFlags(
 
 
 /**
+ *  \brief  Set notify messages in upsmon.conf
+ *
+ *  \param  msgs  Notify messages specifications
+ *  \param  etc   Configuration directory
+ */
+void setNotifyMsgs(
+	const NutConfOptions::NotifyMsgSpecs & msgs,
+	const std::string & etc)
+{
+	std::string upsmon_conf_file(etc + "/upsmon.conf");
+
+	nut::UpsmonConfiguration upsmon_conf;
+
+	// Source previous configuration (if any)
+	source(&upsmon_conf, upsmon_conf_file);
+
+	NutConfOptions::NotifyMsgSpecs::const_iterator spec = msgs.begin();
+
+	for (; spec != msgs.end(); ++spec) {
+		// Resolve notification type
+		nut::UpsmonConfiguration::NotifyType type =
+			nut::UpsmonConfiguration::NotifyTypeFromString(spec->first);
+
+		if (nut::UpsmonConfiguration::NOTIFY_TYPE_MAX == type) {
+			std::cerr
+				<< "Error: failed to parse notification type specification \""
+				<< spec->first << '"' << std::endl;
+
+			::exit(1);
+		}
+
+		// Set message
+		upsmon_conf.notifyMessages[type] = spec->second;
+	}
+
+	// Store configuration
+	store(&upsmon_conf, upsmon_conf_file);
+}
+
+
+/**
  *  \brief  Main routine (exceptions unsafe)
  *
  *  \param  argc  Argument count
@@ -1390,6 +1464,11 @@ int mainx(int argc, char * const argv[]) {
 	// Notify flags were set
 	if (!options.notify_flags.empty()) {
 		setNotifyFlags(options.notify_flags, etc);
+	}
+
+	// Notify messages were set
+	if (!options.notify_msgs.empty()) {
+		setNotifyMsgs(options.notify_msgs, etc);
 	}
 
 	return 0;
