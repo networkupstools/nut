@@ -54,6 +54,7 @@ const char * Usage::s_text[] = {
 "                                        Existing flags are replaced",
 "    --add-notifyflags <type> <flag>+    Same as --set-notifyflags, but keeps existing flags",
 "    --set-notifymsg <type> <message>    Configures notification message for the type",
+"    --set-shutdowncmd <command>         Configures shutdown command",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -600,6 +601,9 @@ class NutConfOptions: public Options {
 	/** Set notify message options count */
 	size_t set_notify_msg_cnt;
 
+	/** Shutdown command */
+	std::string shutdown_cmd;
+
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
 
@@ -879,6 +883,23 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			}
 
 			++set_notify_msg_cnt;
+		}
+		else if ("set-shutdowncmd" == *opt) {
+			Arguments args;
+
+			if (!shutdown_cmd.empty())
+				m_errors.push_back("--set-shutdowncmd option specified more than once");
+
+			else if (NutConfOptions::SETTER != optMode("set-shutdowncmd", args))
+				m_errors.push_back("--set-shutdowncmd option requires an argument");
+
+			else if (args.size() > 1) {
+				m_errors.push_back("Too many arguments for the --set-shutdowncmd option");
+				m_errors.push_back("    (perhaps you need to quote the command?)");
+			}
+
+			else
+				shutdown_cmd = args.front();
 		}
 
 		// Unknown option
@@ -1382,6 +1403,28 @@ void setNotifyMsgs(
 
 
 /**
+ *  \brief  Set shutdown command in upsmon.conf
+ *
+ *  \param  cmd  Shutdown command
+ *  \param  etc  Configuration directory
+ */
+void setShutdownCmd(const std::string & cmd, const std::string & etc)
+{
+	std::string upsmon_conf_file(etc + "/upsmon.conf");
+
+	nut::UpsmonConfiguration upsmon_conf;
+
+	// Source previous configuration (if any)
+	source(&upsmon_conf, upsmon_conf_file);
+
+	upsmon_conf.shutdownCmd = cmd;
+
+	// Store configuration
+	store(&upsmon_conf, upsmon_conf_file);
+}
+
+
+/**
  *  \brief  Main routine (exceptions unsafe)
  *
  *  \param  argc  Argument count
@@ -1469,6 +1512,11 @@ int mainx(int argc, char * const argv[]) {
 	// Notify messages were set
 	if (!options.notify_msgs.empty()) {
 		setNotifyMsgs(options.notify_msgs, etc);
+	}
+
+	// Shutdown command was set
+	if (!options.shutdown_cmd.empty()) {
+		setShutdownCmd(options.shutdown_cmd, etc);
 	}
 
 	return 0;
