@@ -300,7 +300,7 @@ NutParser::Token NutParser::parseToken() {
             }
             case LEXPARSING_STATE_STRING:
             {
-                if (c == ' ' || c == '"' || c == '#' || c == '[' || c == ']' || 
+                if (c == ' ' || c == '\t' || c == '"' || c == '#' || c == '[' || c == ']' ||
 					(c == ':' && !hasOptions(OPTION_IGNORE_COLON)) || 
 					c == '=') {
                     if (escaped) {
