@@ -18,32 +18,32 @@ elif [ -z "$res" ]; then
 fi
 
 # make sure that conffiles are secured and have the correct ownerships
-if [ -d /etc/nut/ ] ; then
-	chown root:nut /etc/nut/
+if [ -d @CONFPATH@ ] ; then
+	chown root:nut @CONFPATH@
 fi
 for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf; do
-	if [ -f /etc/nut/$file ] ; then
-		chown root:nut /etc/nut/$file
-		chmod 640 /etc/nut/$file
+	if [ -f @CONFPATH@/$file ] ; then
+		chown root:nut @CONFPATH@/$file
+		chmod 640 @CONFPATH@/$file
 	fi
 done
 
 # make sure that /var/run/nut exists and has the correct ownerships
-if [ ! -d /var/run/nut ] ; then
-	mkdir -p /var/run/nut
+if [ ! -d @PIDPATH@/nut ] ; then
+	mkdir -p @PIDPATH@/nut
 fi
-if [ -d /var/run/nut ] ; then
-	chown root:nut /var/run/nut
-	chmod 770 /var/run/nut
+if [ -d @PIDPATH@/nut ] ; then
+	chown root:nut @PIDPATH@/nut
+	chmod 770 @PIDPATH@/nut
 fi
 
 # make sure that /var/state/ups exists and has the correct ownerships
-if [ ! -d /var/state/ups ] ; then
-	mkdir -p /var/state/ups
+if [ ! -d @STATEPATH@ ] ; then
+	mkdir -p @STATEPATH@
 fi
-if [ -d /var/state/ups ] ; then
-	chown root:nut /var/state/ups
-	chmod 770 /var/state/ups
+if [ -d @STATEPATH@ ] ; then
+	chown root:nut @STATEPATH@
+	chmod 770 @STATEPATH@
 fi
 
 # Put init script in /etc/init.d
