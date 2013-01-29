@@ -107,16 +107,13 @@ static apc_vartab_t *vartab_lookup_name(const char *var)
 
 static const char *prtchr(char x)
 {
-	const char *fmt;
-	static char info[8];
+	static size_t curr = 24;
+	static char info[32];
 
-	if (isprint(x))
-		fmt = "%c";
-	else
-		fmt = "0x%02x";
-	sprintf(info, fmt, x);
+	curr = (curr + 8) & 0x1F;
+	snprintf(info + curr, 8, isprint(x) ? "%c" : "0x%02x", x);
 
-	return info;
+	return info + curr;
 }
 
 static int rexhlp(const char *rex, const char *val)
