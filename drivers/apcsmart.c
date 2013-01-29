@@ -667,19 +667,95 @@ static void apc_flush(int flags)
 	}
 }
 
+/* apc specific wrappers around set/del info - to handle "packed" variables */
+void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
+{
+	char name[vt->nlen0], *nidx;
+	int c;
+
+	/* standard not packed var */
+	if (!(vt->flags & APC_PACK)) {
+		dstate_delinfo(vt->name);
+		return;
+	}
+
+	strcpy(name, vt->name);
+	nidx = strstr(name,".0.") + 1;
+
+	for (c = skip; c < vt->cnt; c++) {
+		*nidx = (char)('1' + c);
+		dstate_delinfo(name);
+	}
+
+	vt->cnt = 0;
+}
+
+void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
+{
+	char name[vt->nlen0], *nidx;
+	char temp[strlen(upsval) + 1], *vidx[APC_PACK_MAX], *com, *curr;
+	int c;
+
+	/* standard not packed var */
+	if (!(vt->flags & APC_PACK)) {
+		dstate_setinfo(vt->name, "%s", convert_data(vt, upsval));
+		return;
+	}
+
+	/* we have to set proper name for dstate_setinfo() calls */
+	strcpy(name, vt->name);
+	nidx = strstr(name,".0.") + 1;
+
+	/* split the value string */
+	strcpy(temp, upsval);
+	curr = temp;
+	c = 0;
+	do {
+		vidx[c] = curr;
+		com = strchr(curr, ',');
+		if (com) {
+			curr = com + 1;
+			*com = '\0';
+		}
+	} while(++c < APC_PACK_MAX && com);
+
+	/*
+	 * unlikely, but keep things tidy - remove leftover values, if
+	 * subsequent read returns less
+	 */
+	if (vt->cnt > c)
+		apc_dstate_delinfo(vt, c);
+
+	/* unlikely - warn user if we have more than APC_PACK_MAX fields */
+	if (c == APC_PACK_MAX && com)
+		upslogx(LOG_WARNING,
+				"packed variable %s [%s] longer than %d fields,\n"
+				"ignoring remaining fields",
+				vt->name, prtchr(vt->cmd), c);
+
+	vt->cnt = c;
+
+	while (c-- > 0) {
+		*nidx = (char)('1' + c);
+		if (*vidx[c])
+			dstate_setinfo(name, "%s", convert_data(vt, vidx[c]));
+		else
+			dstate_setinfo(name, "N/A");
+	}
+}
+
 static const char *preread_data(apc_vartab_t *vt)
 {
 	int ret;
-	char temp[APC_LBUF];
+	static char temp[APC_LBUF];
 
 	debx(1, "%s [%s]", vt->name, prtchr(vt->cmd));
 
 	apc_flush(0);
 	ret = apc_write(vt->cmd);
 
-	if (ret != 1) {
+	if (ret != 1)
 		return 0;
-	}
 
 	ret = apc_read(temp, sizeof(temp), SER_TO);
 
@@ -689,12 +765,12 @@ static const char *preread_data(apc_vartab_t *vt)
 		return 0;
 	}
 
-	return convert_data(vt, temp);
+	return temp;
 }
 
 static int poll_data(apc_vartab_t *vt)
 {
-	char	temp[APC_LBUF];
+	char temp[APC_LBUF];
 
 	if (!(vt->flags & APC_PRESENT))
 		return 1;
@@ -711,9 +787,9 @@ static int poll_data(apc_vartab_t *vt)
 	if (!strcmp(temp, "NA")) {
 		logx(LOG_WARNING, "verified variable %s [%s] returned NA, removing", vt->name, prtchr(vt->cmd));
 		vt->flags &= ~APC_PRESENT;
-		dstate_delinfo(vt->name);
+		apc_dstate_delinfo(vt, 0);
 	} else
-		dstate_setinfo(vt->name, "%s", convert_data(vt, temp));
+		apc_dstate_setinfo(vt, temp);
 
 	return 1;
 }
@@ -782,7 +858,10 @@ static inline void warn_cv(unsigned char cmd, const char *tag, const char *name)
 
 static void var_string_setup(apc_vartab_t *vt)
 {
-	/* handle special data for our two strings */
+	/*
+	 * handle special data for our two strings; note - STRING variables
+	 * cannot be PACK at the same time
+	 */
 	if (vt->flags & APC_STRING) {
 		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
 		dstate_setaux(vt->name, APC_STRLEN);
@@ -801,13 +880,14 @@ static int var_verify(apc_vartab_t *vt)
 	}
 
 	temp = preread_data(vt);
+	/* no conversion here, validator should operate on raw values */
 	if (!temp || !valid_cmd(vt->cmd, temp)) {
 		warn_cv(vt->cmd, "variable", vt->name);
 		return 0;
 	}
 
 	vt->flags |= APC_PRESENT;
-	dstate_setinfo(vt->name, "%s", temp);
+	apc_dstate_setinfo(vt, temp);
 	var_string_setup(vt);
 
 	confirm_cv(vt->cmd, "variable", vt->name);
@@ -840,6 +920,7 @@ static void deprecate_vars(void)
 		}
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
+		/* no conversion here, validator should operate on raw values */
 		if (!temp || !valid_cmd(vt->cmd, temp)) {
 			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
@@ -857,7 +938,7 @@ static void deprecate_vars(void)
 			vtn->flags &= ~APC_PRESENT;
 		}
 
-		dstate_setinfo(vt->name, "%s", temp);
+		apc_dstate_setinfo(vt, temp);
 		var_string_setup(vt);
 
 		confirm_cv(vt->cmd, "variable", vt->name);
@@ -946,7 +1027,7 @@ static void apc_getcaps(int qco)
 		entptr = &ptr[4];
 
 		vt = vartab_lookup_char(cmd);
-		valid = vt && ((loc == upsloc) || (loc == '4'));
+		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);
 
 		/* mark this as writable */
 		if (valid) {
@@ -956,7 +1037,18 @@ static void apc_getcaps(int qco)
 
 			/* make sure setvar knows what this is */
 			vt->flags |= APC_RW | APC_ENUM;
-		}
+		} else if (vt->flags & APC_PACK)
+			/*
+			 * Currently we assume - basing on the following
+			 * feedback:
+			 * http://www.mail-archive.com/nut-upsdev@lists.alioth.debian.org/msg03398.html
+			 * - that "packed" variables are not enumerable; if at
+			 * some point in the future it turns out to be false,
+			 * the handling will have to be a bit more complex
+			 */
+			upslogx(LOG_WARNING,
+					"WARN: packed APC variable %s [%s] reported as enumerable,\n"
+					"please report it on the mailing list", vt->name, prtchr(cmd));
 
 		for (i = 0; i < nument; i++) {
 			if (valid) {
@@ -1927,6 +2019,7 @@ void upsdrv_help(void)
 void upsdrv_initups(void)
 {
 	char *val;
+	apc_vartab_t *ptr;
 
 	/* sanitize awd (additional waekup delay of '@' command) */
 	if ((val = getval("awd")) && rexhlp(APC_AWDFMT, val)) {
@@ -1945,6 +2038,10 @@ void upsdrv_initups(void)
 
 	upsfd = extrafd = ser_open(device_path);
 	apc_ser_set();
+
+	/* fill length values */
+	for (ptr = apc_vartab; ptr->name; ptr++)
+		ptr->nlen0 = strlen(ptr->name) + 1;
 }
 
 void upsdrv_cleanup(void)

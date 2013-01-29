@@ -25,7 +25,7 @@
 
 #include "main.h"
 
-#define APC_TABLE_VERSION	"version 3.0"
+#define APC_TABLE_VERSION	"version 3.1"
 
 /* common flags */
 
@@ -44,6 +44,9 @@
 #define APC_STRING	0x00000800	/* string variable			*/
 #define APC_MULTI	0x00001000	/* there're other vars like that	*/
 #define APC_DEPR	0x00002000	/* deprecated variable			*/
+#define APC_PACK	0x00004000	/* packed variable			*/
+
+#define APC_PACK_MAX	4		/* max count of subfields in packed var	*/
 
 /* variables' format */
 
@@ -79,6 +82,8 @@ typedef struct {
 	const char	*name;		/* the variable name	*/
 	char		cmd;		/* variable character	*/
 	unsigned int	flags;	 	/* various flags	*/
+	size_t		nlen0;		/* var name + null len	*/
+	int		cnt;		/* curr. count of subs	*/
 } apc_vartab_t;
 
 typedef struct {

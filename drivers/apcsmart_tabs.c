@@ -46,11 +46,13 @@ apc_vartab_t apc_vartab[] = {
 	{ "output.voltage",		'O',	APC_POLL|APC_F_VOLT },
 	{ "output.voltage.nominal",	'o',	APC_F_VOLT },
 	{ "ambient.humidity",		'h',	APC_POLL|APC_F_PERCENT },
-	{ "ambient.humidity.high",	'{',	APC_F_PERCENT },
-	{ "ambient.humidity.low",	'}',	APC_F_PERCENT },
+	{ "ambient.0.humidity",		'H',	APC_POLL|APC_PACK|APC_F_PERCENT },
+	{ "ambient.0.humidity.high",	'{',	APC_POLL|APC_PACK|APC_F_PERCENT },
+	{ "ambient.0.humidity.low",	'}',	APC_POLL|APC_PACK|APC_F_PERCENT },
 	{ "ambient.temperature",	't',	APC_POLL|APC_F_CELSIUS },
-	{ "ambient.temperature.high",	'[',	APC_F_CELSIUS },
-	{ "ambient.temperature.low",	']',	APC_F_CELSIUS },
+	{ "ambient.0.temperature",	'T',	APC_POLL|APC_PACK|APC_F_CELSIUS },
+	{ "ambient.0.temperature.high",	'[',	APC_POLL|APC_PACK|APC_F_CELSIUS },
+	{ "ambient.0.temperature.low",	']',	APC_POLL|APC_PACK|APC_F_CELSIUS },
 	{ "battery.date",		'x',	APC_STRING },
 	{ "battery.charge",		'f',	APC_POLL|APC_F_PERCENT },
 	{ "battery.charge.restart",	'e',	APC_F_PERCENT },
@@ -68,7 +70,7 @@ apc_vartab_t apc_vartab[] = {
 	{ "ups.firmware",		'b',	APC_MULTI },
 	{ "ups.firmware",		'V',	APC_MULTI },
 
-	{ 0, 0, 0 }
+	{ NULL }
 	/* todo:
 
 	   I = alarm enable (hex field) - split into alarm.n.enable
@@ -103,7 +105,7 @@ apc_cmdtab_t apc_cmdtab[] = {
 	{ "bypass.start",	0,	APC_CMD_BYPTOGGLE,	0 },
 	{ "bypass.stop",	0,	APC_CMD_BYPTOGGLE,	0 },
 
-	{ 0, 0, 0, 0 }
+	{ NULL }
 };
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
@@ -144,14 +146,11 @@ apc_compattab_t apc_compattab[] = {
 	{  "D5",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 	{  "D4",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
 
-	{ 0, 0, 0 }
+	{ NULL }
 };
 
 upsdrv_info_t apc_tab_info = {
 	"APC command table",
-	APC_TABLE_VERSION,
-	0,
-	0,
-	{ 0 }
+	APC_TABLE_VERSION
 };
 
