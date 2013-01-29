@@ -151,4 +151,12 @@
 /* advorder method regex format*/
 #define APC_ADVFMT	"^([0-4]{1,5}|[Nn][Oo])$"
 
+/* error logging/debug related macros */
+
+#define fatx(fmt, ...) fatalx(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)
+#define fate(fmt, ...) fatal_with_errno(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)
+
+#define logx(lev, fmt, ...) upslogx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
+#define debx(lev, fmt, ...) upsdebugx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
+
 #endif
