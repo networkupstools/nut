@@ -55,6 +55,11 @@ const char * Usage::s_text[] = {
 "    --add-notifyflags <type> <flag>+    Same as --set-notifyflags, but keeps existing flags",
 "    --set-notifymsg <type> <message>    Configures notification message for the type",
 "    --set-shutdowncmd <command>         Configures shutdown command",
+"    --set-user <spec>                   Configures one user (see below)",
+"                                        All existing users are removed; however, it may be",
+"                                        specified multiple times to set multiple users",
+"    --add-user <spec>                   Same as --set-user, but keeps existing users",
+"                                        The two options are mutually exclusive",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -65,6 +70,13 @@ const char * Usage::s_text[] = {
 "    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT",
 "Notification flags:",
 "    SYSLOG, WALL, EXEC, IGNORE",
+"User specification:",
+"The very 1st argument is the username (but see the upsmon exception, below).",
+"Next arguments use scheme of key/value pairs in form <key>=<value>",
+"Known keys are:",
+"    password, actions (from {SET,FSD}), instcmds (accepted multiple times)",
+"Specially, for the upsmon user, the 1st argument takes form of",
+"    upsmon={master|slave}",
 "",
 };
 
@@ -501,6 +513,22 @@ class NutConfOptions: public Options {
 	/** Notify messages specifications */
 	typedef std::map<std::string, std::string> NotifyMsgSpecs;
 
+	/** User specification */
+	struct UserSpec {
+		std::string            name;      /**< Username         */
+		std::string            passwd;    /**< Password         */
+		std::list<std::string> actions;   /**< Actions          */
+		std::list<std::string> instcmds;  /**< Instant commands */
+	};  // end of struct UserSpec
+
+	/** upsmon user specification */
+	struct UpsmonUserSpec: public UserSpec {
+		std::string mode;  /**< upsmon mode (master/slave) */
+	};  // end of struct UpsmonUserSpec
+
+	/** User specification list */
+	typedef std::list<UserSpec *> UserSpecs;
+
 	private:
 
 	/** Unknown options */
@@ -565,7 +593,7 @@ class NutConfOptions: public Options {
 	/** Set monitor options count */
 	size_t set_monitor_cnt;
 
-	/** Added monitor options count */
+	/** Add monitor options count */
 	size_t add_monitor_cnt;
 
 	/** --{add|set}-listen arguments (all the addresses) */
@@ -574,7 +602,7 @@ class NutConfOptions: public Options {
 	/** Set listen address options count */
 	size_t set_listen_cnt;
 
-	/** Added listen address options count */
+	/** Add listen address options count */
 	size_t add_listen_cnt;
 
 	/** Device specifications */
@@ -583,7 +611,7 @@ class NutConfOptions: public Options {
 	/** Set devices options count */
 	size_t set_device_cnt;
 
-	/** Added devices options count */
+	/** Add devices options count */
 	size_t add_device_cnt;
 
 	/** Notify flags specifications */
@@ -592,7 +620,7 @@ class NutConfOptions: public Options {
 	/** Set notify flags options count */
 	size_t set_notify_flags_cnt;
 
-	/** Added notify flags options count */
+	/** Add notify flags options count */
 	size_t add_notify_flags_cnt;
 
 	/** Notify messages specifications */
@@ -604,8 +632,20 @@ class NutConfOptions: public Options {
 	/** Shutdown command */
 	std::string shutdown_cmd;
 
+	/** Users specifications */
+	UserSpecs users;
+
+	/** Set user options count */
+	size_t set_user_cnt;
+
+	/** Add user options count */
+	size_t add_user_cnt;
+
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
+
+	/** Destructor */
+	~NutConfOptions();
 
 	/**
 	 *  \brief  Report invalid options to STDERR
@@ -663,6 +703,16 @@ class NutConfOptions: public Options {
 	 */
 	static bool checkMode(const std::string & mode);
 
+	/**
+	 *  \brief  Add another user specification
+	 *
+	 *  The method is responsible for parsing --{set|add}-user option arguments
+	 *  and storing the user specification in \ref users list.
+	 *
+	 *  \param  args  User specification (raw)
+	 */
+	void addUser(const Arguments & args);
+
 };  // end of class NutConfOptions
 
 
@@ -691,7 +741,9 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	add_device_cnt(0),
 	set_notify_flags_cnt(0),
 	add_notify_flags_cnt(0),
-	set_notify_msg_cnt(0)
+	set_notify_msg_cnt(0),
+	set_user_cnt(0),
+	add_user_cnt(0)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -901,6 +953,19 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			else
 				shutdown_cmd = args.front();
 		}
+		else if ("set-user" == *opt || "add-user" == *opt) {
+			size_t * cnt = ('s' == (*opt)[0] ? &set_user_cnt : &add_user_cnt);
+
+			Arguments args;
+
+			if (NutConfOptions::SETTER != optMode(*opt, args, *cnt))
+				m_errors.push_back("--" + *opt + " option requires arguments");
+
+			else
+				addUser(args);
+
+			++*cnt;
+		}
 
 		// Unknown option
 		else {
@@ -931,6 +996,23 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 		m_errors.push_back("--set-device and --add-device options can't both be specified");
 
 		valid = false;
+	}
+
+	// --set-user and --add-user are mutually exclusive
+	if (set_user_cnt > 0 && add_user_cnt > 0) {
+		m_errors.push_back("--set-user and --add-user options can't both be specified");
+
+		valid = false;
+	}
+}
+
+
+NutConfOptions::~NutConfOptions() {
+	UserSpecs::iterator user = users.begin();
+
+	for (; user != users.end(); ++user) {
+		delete *user;
+		*user = NULL;
 	}
 }
 
@@ -971,6 +1053,158 @@ bool NutConfOptions::checkMode(const std::string & mode) {
 	if ("none"       == mode) return true;
 
 	return false;
+}
+
+
+/**
+ *  \brief  Automatically destroyed dynamic object pointer
+ *
+ *  The template class is useful in situation where you need to
+ *  create a dynamic object, process its attributes and automatically
+ *  destroy it in case of error simply by leaving the scope
+ *  (i.e. not having to warry about calling \c delete by hand).
+ */
+template <typename T>
+class autodelete_ptr {
+	private:
+
+	T * m_impl;
+
+	/** Cleanup */
+	inline void cleanup() {
+		if (NULL != m_impl)
+			delete m_impl;
+
+		m_impl = NULL;
+	}
+
+	public:
+
+	/** Constructor (unset) */
+	autodelete_ptr(): m_impl(NULL) {}
+
+	/** Constructor */
+	autodelete_ptr(T * ptr): m_impl(ptr) {}
+
+	/** Setter */
+	inline autodelete_ptr & operator = (T * ptr) {
+		cleanup();
+
+		m_impl = ptr;
+	}
+
+	/** Pointer accessor */
+	inline operator T * () const { return m_impl; }
+
+	/** Pointer accessor */
+	inline T * operator -> () const { return m_impl; }
+
+	/** Pointer overtake (invalidates the object) */
+	inline T * give() {
+		T * ptr = m_impl;
+
+		m_impl = NULL;
+
+		return ptr;
+	}
+
+	/** Destructor */
+	~autodelete_ptr() {
+		cleanup();
+	}
+
+	private:
+
+	/** Copying is forbidden */
+	autodelete_ptr(const autodelete_ptr & orig) {}
+
+	/** Assignment is forbidden */
+	autodelete_ptr & operator = (const autodelete_ptr & orig) {}
+
+};  // end of template class autodelete_ptr
+
+
+void NutConfOptions::addUser(const Options::Arguments & args) {
+	assert(args.size() > 0);
+
+	Arguments::const_iterator arg_iter = args.begin();
+
+	// Create new user specification
+	autodelete_ptr<UserSpec> user;
+
+	const std::string & name = *arg_iter;
+
+	// upsmon user (apparently)
+	// Note that we use pragmatic do ... while (0) loop to enable break
+	do if (6 <= name.size() && name.substr(0, 6) == "upsmon") {
+		if (6 == name.size()) {
+			m_errors.push_back("upsmon user specification requires monitor mode");
+
+			return;
+		}
+
+		// Fall-through to ordinary user specification
+		if ('=' != name[6])
+			break;
+
+		UpsmonUserSpec * upsmon_user = new UpsmonUserSpec;
+
+		upsmon_user->name = "upsmon";
+		upsmon_user->mode = name.substr(7);
+
+		user = upsmon_user;
+
+	} while (0);  // end of pragmatic do ... while (0) loop
+
+	// Ordinary user
+	if (NULL == user) {
+		user = new UserSpec;
+
+		user->name = name;
+	}
+
+	assert(NULL != user);
+
+	// Set user attributes
+	bool errors = false;
+
+	for (++arg_iter; arg_iter != args.end(); ++arg_iter) {
+		const std::string & arg = *arg_iter;
+
+		size_t eq_pos = arg.find('=');
+
+		if (std::string::npos == eq_pos) {
+			m_errors.push_back("Illegal user attribute specification: \"" + arg + '"');
+
+			errors = true;
+
+			continue;
+		}
+
+		const std::string attr = arg.substr(0, eq_pos);
+		const std::string val  = arg.substr(eq_pos + 1);
+
+		if ("password" == attr)
+			user->passwd = val;
+
+		else if ("actions" == attr)
+			user->actions.push_back(val);
+
+		else if ("instcmds" == attr)
+			user->instcmds.push_back(val);
+
+		else {
+			m_errors.push_back("Unknown user attribute: \"" + attr + '"');
+
+			errors = true;
+		}
+	}
+
+	if (errors)
+		return;
+
+	// Store user specification
+	users.push_back(user.give());
 }
 
 
@@ -1425,6 +1659,95 @@ void setShutdownCmd(const std::string & cmd, const std::string & etc)
 
 
 /**
+ *  \brief  Set users in upsd.users
+ *
+ *  \param  users    User list
+ *  \param  etc      Configuration directory
+ *  \param  keep_ex  Keep existing entries (discard by default)
+ */
+void setUsers(
+	const NutConfOptions::UserSpecs & users,
+	const std::string & etc, bool keep_ex = false)
+{
+	std::string upsd_users_file(etc + "/upsd.users");
+
+	nut::UpsdUsersConfiguration upsd_users;
+
+	// Source previous configuration (if any)
+	source(&upsd_users, upsd_users_file);
+
+	// Remove existing users (unless we want to keep them)
+	if (!keep_ex) {
+		nut::UpsdUsersConfiguration::SectionMap::iterator
+			user = upsd_users.sections.begin();
+
+		for (; user != upsd_users.sections.end(); ++user) {
+			// Keep global section
+			if (user->first.empty())
+				continue;
+
+			upsd_users.sections.erase(user);
+		}
+	}
+
+	// Set/add users and/or their attributes
+	NutConfOptions::UserSpecs::const_iterator
+		user_iter = users.begin();
+
+	for (; user_iter != users.end(); ++user_iter) {
+		const NutConfOptions::UserSpec * user = *user_iter;
+
+		const std::string & username = user->name;
+
+		// Set password
+		if (!user->passwd.empty())
+			upsd_users.setPassword(username, user->passwd);
+
+		// Set actions
+		std::list<std::string>::const_iterator action = user->actions.begin();
+
+		for (; action != user->actions.end(); ++action)
+			upsd_users.addActions(username, nut::ConfigParamList(1, *action));
+
+		// Set instant commands
+		std::list<std::string>::const_iterator cmd = user->instcmds.begin();
+
+		for (; cmd != user->instcmds.end(); ++cmd)
+			upsd_users.addInstantCommands(username, nut::ConfigParamList(1, *cmd));
+
+		// upsmon user-specific settings
+		if ("upsmon" == username) {
+			const NutConfOptions::UpsmonUserSpec * upsmon_user =
+				static_cast<const NutConfOptions::UpsmonUserSpec *>(user);
+
+			// Set upsmon mode
+			nut::UpsdUsersConfiguration::upsmon_mode_t mode =
+				nut::UpsdUsersConfiguration::UPSMON_UNDEF;
+
+			if ("master" == upsmon_user->mode)
+				mode = nut::UpsdUsersConfiguration::UPSMON_MASTER;
+
+			else if ("slave" == upsmon_user->mode)
+				mode = nut::UpsdUsersConfiguration::UPSMON_SLAVE;
+
+			else {
+				std::cerr
+					<< "Error: Invalid upsmon mode specification: \""
+					<< upsmon_user->mode << '"' << std::endl;
+
+				::exit(1);
+			}
+
+			upsd_users.setUpsmonMode(mode);
+		}
+	}
+
+	// Store configuration
+	store(&upsd_users, upsd_users_file);
+}
+
+
+/**
  *  \brief  Main routine (exceptions unsafe)
  *
  *  \param  argc  Argument count
@@ -1517,6 +1840,11 @@ int mainx(int argc, char * const argv[]) {
 	// Shutdown command was set
 	if (!options.shutdown_cmd.empty()) {
 		setShutdownCmd(options.shutdown_cmd, etc);
+	}
+
+	// Users were set
+	if (!options.users.empty()) {
+		setUsers(options.users, etc, options.add_user_cnt > 0);
 	}
 
 	return 0;
