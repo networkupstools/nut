@@ -1327,7 +1327,8 @@ static int smartmode(int cnt)
 			upslog_with_errno(LOG_ERR, "smartmode: issuing 'Y' failed");
 			return 0;
 		}
-		ret = apc_read(temp, sizeof(temp), SER_D1);
+		/* timeout here is intented */
+		ret = apc_read(temp, sizeof(temp), SER_TO|SER_D1);
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
 		if (ret < 0) {
