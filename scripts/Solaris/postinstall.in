@@ -4,13 +4,55 @@
 
 NUT_DIR="@prefix@"
 
+# make sure the nut user exists and has correct memberships
+res=`getent group nut`
+if [ -z "$res" ]; then
+	addgroup --quiet --system nut
+fi
+res=`getent passwd nut`
+if [ -z "$res" ]; then
+	adduser --quiet --system --ingroup nut --home ${NUT_DIR}/bin --no-create-home nut
+res=`groups nut | grep -w nut`
+elif [ -z "$res" ]; then
+	adduser nut nut
+fi
+
+# make sure that conffiles are secured and have the correct ownerships
+if [ -d /etc/nut/ ] ; then
+	chown root:nut /etc/nut/
+fi
+for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf; do
+	if [ -f /etc/nut/$file ] ; then
+		chown root:nut /etc/nut/$file
+		chmod 640 /etc/nut/$file
+	fi
+done
+
+# make sure that /var/run/nut exists and has the correct ownerships
+if [ ! -d /var/run/nut ] ; then
+	mkdir -p /var/run/nut
+fi
+if [ -d /var/run/nut ] ; then
+	chown root:nut /var/run/nut
+	chmod 770 /var/run/nut
+fi
+
+# make sure that /var/state/ups exists and has the correct ownerships
+if [ ! -d /var/state/ups ] ; then
+	mkdir -p /var/state/ups
+fi
+if [ -d /var/state/ups ] ; then
+	chown root:nut /var/state/ups
+	chmod 770 /var/state/ups
+fi
+
 # Put init script in /etc/init.d
 
 cp $NUT_DIR/nut /etc/init.d
 chmod 744 /etc/init.d/nut
 
-ln -s /etc/init.d/nut /etc/rc3.d/S100nut
-ln -s /etc/init.d/nut /etc/rc3.d/K100nut
+ln -s /etc/init.d/nut /etc/rc3.d/S100nut > /dev/null 2>&1
+ln -s /etc/init.d/nut /etc/rc3.d/K100nut > /dev/null 2>&1
 
 # Start nut services
 
