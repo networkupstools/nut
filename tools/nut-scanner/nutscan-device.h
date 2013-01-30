@@ -25,6 +25,16 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+/**
+ *  \brief  Device type string getter
+ *
+ *  \param  type  Device type
+ *
+ *  \return Type string
+ */
+#define nutscan_device_type_string(type) \
+	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
+
 typedef enum nutscan_device_type {
 	TYPE_NONE=0,
 	TYPE_USB,
@@ -36,6 +46,9 @@ typedef enum nutscan_device_type {
 	TYPE_EATON_SERIAL,
 	TYPE_END
 } nutscan_device_type_t;
+
+/** Device type -> string mapping */
+extern const char * nutscan_device_type_strings[TYPE_END];
 
 typedef struct nutscan_options {
 	char *		option;
