@@ -14,7 +14,7 @@
 # Anyway, for the time being, we force build in ./ before nut-scanner,
 # to have nutscan-{usb,snmp}.h built before going into the nut-scanner
 # sub-directory
-SUBDIRS = . nut-scanner
+SUBDIRS = . nut-scanner nutconf
 
 EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py nut-recorder.sh svn2cl.authors nut-snmpinfo.py
 

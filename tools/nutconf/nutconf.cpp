@@ -2,6 +2,12 @@
 #include "nutconf.h"
 #include "nutstream.hpp"
 
+extern "C" {
+#include "nut-scan.h"
+#include "nutscan-init.h"
+#include "nutscan-device.h"
+}
+
 #include <iostream>
 #include <list>
 #include <vector>
@@ -60,6 +66,15 @@ const char * Usage::s_text[] = {
 "                                        specified multiple times to set multiple users",
 "    --add-user <spec>                   Same as --set-user, but keeps existing users",
 "                                        The two options are mutually exclusive",
+"    -v",
+"    --verbose                           Increase verbosity of output one level",
+"                                        May be specified multiple times",
+"    --scan-usb                          Scan USB devices",
+"    --scan-xml-http [<timeout>]         Scan XML/HTTP devices (optional timeout in us)",
+"    --scan-nut <spec>                   Scan NUT devices (see below for the specs)",
+"                                        May be specified multiple times",
+"    --scan-avahi [<timeout>]            Scan Avahi devices (optional timeout in us)",
+"    --scan-ipmi                         Scan IPMI devices",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -77,6 +92,8 @@ const char * Usage::s_text[] = {
 "    password, actions (from {SET,FSD}), instcmds (accepted multiple times)",
 "Specially, for the upsmon user, the 1st argument takes form of",
 "    upsmon={master|slave}",
+"NUT device scan specification:",
+"    <start IP> <stop IP> <port> [<us_timeout>]",
 "",
 };
 
@@ -100,6 +117,14 @@ class Options {
 	/** Options list */
 	typedef std::list<std::string> List;
 
+	/** Option arguments list */
+	typedef std::list<std::string> Arguments;
+
+	protected:
+
+	/** Options map */
+	typedef std::multimap<std::string, Arguments> Map;
+
 	private:
 
 	/** Option type */
@@ -107,16 +132,6 @@ class Options {
 		singleDash,  /**< Single-dash prefixed option */
 		doubleDash,  /**< Double-dash prefixed option */
 	} type_t;
-
-	protected:
-
-	/** Option arguments list */
-	typedef std::list<std::string> Arguments;
-
-	/** Options map */
-	typedef std::multimap<std::string, Arguments> Map;
-
-	private:
 
 	/** Arguments of the last option processed (\c NULL means bin. args) */
 	Arguments * m_last;
@@ -476,6 +491,203 @@ Options::List Options::strings() const {
 }
 
 
+/** NUT scanner wrapper */
+class NutScanner {
+	public:
+
+	/** Device info */
+	class Device {
+		friend class NutScanner;
+
+		public:
+
+		/** Device type */
+		typedef nutscan_device_type_t type_t;
+
+		/** Device options */
+		typedef std::map<std::string, const std::string> options_t;
+
+		public:
+
+		const std::string type;     /**< Type    */
+		const std::string driver;   /**< Driver  */
+		const std::string port;     /**< Port    */
+		const options_t   options;  /**< Options */
+
+		private:
+
+		static options_t createOptions(nutscan_device_t * dev);
+
+		/** Constructor */
+		Device(nutscan_device_t * dev);
+
+	};  // end of class Device
+
+	/** Device list */
+	typedef std::list<Device> devices_t;
+
+	private:
+
+	/** NUT scanner initialisation/finalisation */
+	struct InitFinal {
+		/** Initialisation */
+		InitFinal() { nutscan_init(); }
+
+		/** Finalisation */
+		~InitFinal() { nutscan_free(); }
+
+	};  // end of struct InitFinal
+
+	/** Initialiser / finaliser */
+	static InitFinal s_init_final;
+
+	/**
+	 *  \brief  Transform nut-scan provided devices into list of device info
+	 *
+	 *  The nut-scan provided device list is destroyed.
+	 *
+	 *  \param  dev_list  nut-scan provided device list
+	 *
+	 *  \return Dvice info list
+	 */
+	static devices_t dev2list(nutscan_device_t * dev_list);
+
+	/** Instantiation forbidden */
+	NutScanner() {}
+
+	public:
+
+	/**
+	 *  \brief  Scan for SNMP devices
+	 *
+	 *  \param  start_ip    Address range left border
+	 *  \param  stop_ip     Address range right border
+	 *  \param  us_timeout  Device scan timeout
+	 *  \param  attrs       SNMP attributes
+	 *
+	 *  TODO
+	 */
+#if (0)
+	devices_t devicesSNMP(
+		const std::string & start_ip,
+		const std::string & stop_ip,
+		long                us_timeout,
+		SNMPAttributes &    attrs);
+#endif
+
+	/**
+	 *  \brief  Scan for USB devices
+	 *
+	 *  \return Device list
+	 */
+	inline static devices_t devicesUSB() {
+		nutscan_device_t * dev = nutscan_scan_usb();
+
+		return dev2list(dev);
+	}
+
+	/**
+	 *  \brief  Scan for XML/HTTP devices
+	 *
+	 *  \param  us_timeout  Scan timeout
+	 *
+	 *  \return Device list
+	 */
+	inline static devices_t devicesXMLHTTP(long us_timeout) {
+		nutscan_device_t * dev = nutscan_scan_xml_http(us_timeout);
+
+		return dev2list(dev);
+	}
+
+	/**
+	 *  \brief  Scan for NUT (pseudo-)devices
+	 *
+	 *  \param  start_ip    Address range left border
+	 *  \param  stop_ip     Address range right border
+	 *  \param  port        Port
+	 *  \param  us_timeout  Device scan timeout
+	 *
+	 *  \return Device list
+	 */
+	inline static devices_t devicesNUT(
+		const std::string & start_ip,
+		const std::string & stop_ip,
+		const std::string & port,
+		long                us_timeout)
+	{
+		nutscan_device_t * dev = nutscan_scan_nut(
+			start_ip.c_str(), stop_ip.c_str(), port.c_str(), us_timeout);
+
+		return dev2list(dev);
+	}
+
+	/**
+	 *  \brief  Scan for Avahi devices
+	 *
+	 *  \param  us_timeout  Scan timeout
+	 *
+	 *  \return Device list
+	 */
+	inline static devices_t devicesAvahi(long us_timeout) {
+		nutscan_device_t * dev = nutscan_scan_avahi(us_timeout);
+
+		return dev2list(dev);
+	}
+
+	/**
+	 *  \brief  Scan for IPMI devices
+	 *
+	 *  \return Device list
+	 */
+	inline static devices_t devicesIPMI() {
+		nutscan_device_t * dev = nutscan_scan_ipmi();
+
+		return dev2list(dev);
+	}
+
+};  // end of class NutScanner
+
+
+NutScanner::InitFinal NutScanner::s_init_final;
+
+
+NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_device_t * dev) {
+	assert(NULL != dev);
+
+	options_t options;
+
+	// Create options
+	nutscan_options_t * opt = &dev->opt;
+
+	for (; NULL != opt; opt = opt->next)
+		options.insert(options_t::value_type(opt->option, opt->value));
+
+	return options;
+}
+
+
+NutScanner::Device::Device(nutscan_device_t * dev):
+	type(nutscan_device_type_string(dev->type)),
+	driver(dev->driver),
+	port(dev->port),
+	options(createOptions(dev))
+{}
+
+
+NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
+	devices_t list;
+
+	nutscan_device_t * dev = dev_list;
+
+	for (; dev != NULL; dev = dev->next)
+		list.push_back(Device(dev));
+
+	nutscan_free_device(dev);
+
+	return list;
+}
+
+
 /** nutconf tool specific options */
 class NutConfOptions: public Options {
 	public:
@@ -641,6 +853,24 @@ class NutConfOptions: public Options {
 	/** Add user options count */
 	size_t add_user_cnt;
 
+	/** Verbosity level */
+	unsigned int verbose;
+
+	/** Scan NUT devices */
+	size_t scan_nut_cnt;
+
+	/** Scan USB devices */
+	bool scan_usb;
+
+	/** Scan xml_http_devices */
+	bool scan_xml_http;
+
+	/** Scan Avahi devices */
+	bool scan_avahi;
+
+	/** Scan IPMI devices */
+	bool scan_ipmi;
+
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
 
@@ -743,16 +973,30 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	add_notify_flags_cnt(0),
 	set_notify_msg_cnt(0),
 	set_user_cnt(0),
-	add_user_cnt(0)
+	add_user_cnt(0),
+	verbose(0),
+	scan_nut_cnt(0),
+	scan_usb(false),
+	scan_xml_http(false),
+	scan_avahi(false),
+	scan_ipmi(false)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
 
-	// No single-dashed options used
+	// Specificate single-dashed options
 	List list = stringsSingle();
 
 	for (List::const_iterator opt = list.begin(); opt != list.end(); ++opt) {
-		m_unknown.push_back(sDash + *opt);
+		// Known options
+		if ("v" == *opt) {
+			++verbose;
+		}
+
+		// Unknown option
+		else {
+			m_unknown.push_back(sDash + *opt);
+		}
 	}
 
 	// Specificate double-dashed options
@@ -966,6 +1210,62 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 
 			++*cnt;
 		}
+		else if ("verbose" == *opt) {
+			++verbose;
+		}
+		else if ("scan-usb" == *opt) {
+			if (scan_usb)
+				m_errors.push_back("--scan-usb option specified more than once");
+			else
+				scan_usb = true;
+		}
+		else if ("scan-nut" == *opt) {
+			Arguments args;
+
+			getDouble(*opt, args, scan_nut_cnt);
+
+			if (args.size() < 3)
+				m_errors.push_back("--scan-nut option requires at least 3 arguments");
+
+			else if (args.size() > 4)
+				m_errors.push_back("--scan-nut option requires at most 4 arguments");
+
+			++scan_nut_cnt;
+		}
+		else if ("scan-xml-http" == *opt) {
+			if (scan_xml_http)
+				m_errors.push_back("--scan-xml-http option specified more than once");
+			else {
+				Arguments args;
+
+				getDouble(*opt, args);
+
+				if (args.size() > 1)
+					m_errors.push_back("--scan-xml-http option accepts only one argument");
+
+				scan_xml_http = true;
+			}
+		}
+		else if ("scan-avahi" == *opt) {
+			if (scan_avahi)
+				m_errors.push_back("--scan-avahi option specified more than once");
+			else {
+				Arguments args;
+
+				getDouble(*opt, args);
+
+				if (args.size() > 1)
+					m_errors.push_back("--scan-avahi option accepts only one argument");
+
+				scan_avahi = true;
+			}
+		}
+		else if ("scan-ipmi" == *opt) {
+			if (scan_ipmi)
+				m_errors.push_back("--scan-ipmi option specified more than once");
+			else
+				scan_ipmi = true;
+		}
 
 		// Unknown option
 		else {
@@ -1136,7 +1436,7 @@ void NutConfOptions::addUser(const Options::Arguments & args) {
 
 	// upsmon user (apparently)
 	// Note that we use pragmatic do ... while (0) loop to enable break
-	do if (6 <= name.size() && name.substr(0, 6) == "upsmon") {
+	do if (name.size() >= 6 && name.substr(0, 6) == "upsmon") {
 		if (6 == name.size()) {
 			m_errors.push_back("upsmon user specification requires monitor mode");
 
@@ -1748,6 +2048,169 @@ void setUsers(
 
 
 /**
+ *  \brief  Print devices info
+ *
+ *  \param  devices  Device list
+ *  \param  verbose  Verbosity level
+ */
+void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbose = 0) {
+	NutScanner::devices_t::const_iterator dev_iter = devices.begin();
+
+	unsigned int dev_no = 1;
+
+	for (; dev_iter != devices.end(); ++dev_iter, ++dev_no) {
+		const NutScanner::Device & dev = *dev_iter;
+
+		// Print just plain list
+		if (verbose == 0)
+			std::cout
+			<< dev.type << ' '
+			<< dev.driver << ' '
+			<< dev.port << std::endl;
+
+		// Print full info
+		else {
+			std::cout
+			<< "[device_type_" << dev.type
+			<< "_no_" << dev_no << ']' << std::endl
+			<< "\tdriver = " << dev.driver << std::endl
+			<< "\tport = " << dev.port   << std::endl;
+
+			NutScanner::Device::options_t::const_iterator
+				opt = dev.options.begin();
+
+			for (; opt != dev.options.end(); ++opt)
+				std::cout
+				<< '\t'  << opt->first
+				<< " = " << opt->second
+				<< std::endl;
+
+			std::cout << std::endl;
+		}
+	}
+}
+
+
+/**
+ *  \brief  Scan for USB devices
+ *
+ *  \param  options  Options
+ */
+void scanUSBdevices(const NutConfOptions & options) {
+	NutScanner::devices_t devices = NutScanner::devicesUSB();
+
+	printDevicesInfo(devices, options.verbose);
+}
+
+
+/**
+ *  \brief  Scan for NUT devices
+ *
+ *  \param  options  Options
+ */
+void scanNUTdevices(const NutConfOptions & options) {
+	for (size_t i = 0; ; ++i) {
+		NutConfOptions::Arguments args;
+
+		bool ok = options.getDouble("scan-nut", args, i);
+
+		if (!ok) break;
+
+		// Sanity checks
+		assert(args.size() >= 3);
+
+		NutConfOptions::Arguments::const_iterator arg = args.begin();
+
+		const std::string & start_ip = *arg++;
+		const std::string & stop_ip  = *arg++;
+		const std::string & port     = *arg++;
+
+		// TBD: where should we get the default?
+		long us_timeout = 1000000;
+
+		if (arg != args.end()) {
+			std::stringstream ss(*arg);
+
+			ss >> us_timeout;
+		}
+
+		NutScanner::devices_t devices = NutScanner::devicesNUT(
+			start_ip, stop_ip, port, us_timeout);
+
+		printDevicesInfo(devices, options.verbose);
+	}
+}
+
+
+/**
+ *  \brief  Scan for XML/HTTP devices
+ *
+ *  \param  options  Options
+ */
+void scanXMLHTTPdevices(const NutConfOptions & options) {
+	NutConfOptions::Arguments args;
+
+	bool ok = options.getDouble("scan-xml-http", args);
+
+	// Sanity checks
+	assert(ok);
+
+	// TBD: where should we get the default?
+	long us_timeout = 1000000;
+
+	if (!args.empty()) {
+		std::stringstream ss(args.front());
+
+		ss >> us_timeout;
+	}
+
+	NutScanner::devices_t devices = NutScanner::devicesXMLHTTP(us_timeout);
+
+	printDevicesInfo(devices, options.verbose);
+}
+
+
+/**
+ *  \brief  Scan for Avahi devices
+ *
+ *  \param  options  Options
+ */
+void scanAvahiDevices(const NutConfOptions & options) {
+	NutConfOptions::Arguments args;
+
+	bool ok = options.getDouble("scan-avahi", args);
+
+	// Sanity checks
+	assert(ok);
+
+	// TBD: where should we get the default?
+	long us_timeout = 1000000;
+
+	if (!args.empty()) {
+		std::stringstream ss(args.front());
+
+		ss >> us_timeout;
+	}
+
+	NutScanner::devices_t devices = NutScanner::devicesAvahi(us_timeout);
+
+	printDevicesInfo(devices, options.verbose);
+}
+
+
+/**
+ *  \brief  Scan for IPMI devices
+ *
+ *  \param  options  Options
+ */
+void scanIPMIdevices(const NutConfOptions & options) {
+	NutScanner::devices_t devices = NutScanner::devicesIPMI();
+
+	printDevicesInfo(devices, options.verbose);
+}
+
+
+/**
  *  \brief  Main routine (exceptions unsafe)
  *
  *  \param  argc  Argument count
@@ -1845,6 +2308,31 @@ int mainx(int argc, char * const argv[]) {
 	// Users were set
 	if (!options.users.empty()) {
 		setUsers(options.users, etc, options.add_user_cnt > 0);
+	}
+
+	// USB devices scan
+	if (options.scan_usb) {
+		scanUSBdevices(options);
+	}
+
+	// NUT devices scan
+	if (options.scan_nut_cnt) {
+		scanNUTdevices(options);
+	}
+
+	// XML/HTTP devices scan
+	if (options.scan_xml_http) {
+		scanXMLHTTPdevices(options);
+	}
+
+	// Avahi devices scan
+	if (options.scan_avahi) {
+		scanAvahiDevices(options);
+	}
+
+	// IPMI devices scan
+	if (options.scan_ipmi) {
+		scanIPMIdevices(options);
 	}
 
 	return 0;
