@@ -14,6 +14,7 @@ extern "C" {
 #include <map>
 #include <stdexcept>
 #include <cassert>
+#include <cstring>
 
 
 class Usage {
@@ -69,6 +70,8 @@ const char * Usage::s_text[] = {
 "    -v",
 "    --verbose                           Increase verbosity of output one level",
 "                                        May be specified multiple times",
+"    --scan-snmp <spec>                  Scan SNMP devices (see below)",
+"                                        May be specified multiple times",
 "    --scan-usb                          Scan USB devices",
 "    --scan-xml-http [<timeout>]         Scan XML/HTTP devices (optional timeout in us)",
 "    --scan-nut <spec>                   Scan NUT devices (see below for the specs)",
@@ -92,6 +95,11 @@ const char * Usage::s_text[] = {
 "    password, actions (from {SET,FSD}), instcmds (accepted multiple times)",
 "Specially, for the upsmon user, the 1st argument takes form of",
 "    upsmon={master|slave}",
+"SNMP device scan specification:",
+"    <start IP> <stop IP> [<attr>=<val>]*",
+"Known attributes are:",
+"    timeout (in us), community, sec-level, sec-name, auth-password, priv-password,",
+"    auth-protocol, priv-protocol, peer-name",
 "NUT device scan specification:",
 "    <start IP> <stop IP> <port> [<us_timeout>]",
 "",
@@ -526,6 +534,18 @@ class NutScanner {
 	/** Device list */
 	typedef std::list<Device> devices_t;
 
+	/** SNMP attributes */
+	struct SNMPAttributes {
+		std::string community;
+		std::string sec_level;
+		std::string sec_name;
+		std::string auth_passwd;
+		std::string priv_passwd;
+		std::string auth_proto;
+		std::string priv_proto;
+		std::string peer_name;
+	};  // end of class SNMPAttributes
+
 	private:
 
 	/** NUT scanner initialisation/finalisation */
@@ -565,15 +585,13 @@ class NutScanner {
 	 *  \param  us_timeout  Device scan timeout
 	 *  \param  attrs       SNMP attributes
 	 *
-	 *  TODO
+	 *  \return Device list
 	 */
-#if (0)
-	devices_t devicesSNMP(
-		const std::string & start_ip,
-		const std::string & stop_ip,
-		long                us_timeout,
-		SNMPAttributes &    attrs);
-#endif
+	static devices_t devicesSNMP(
+		const std::string &    start_ip,
+		const std::string &    stop_ip,
+		long                   us_timeout,
+		const SNMPAttributes & attrs);
 
 	/**
 	 *  \brief  Scan for USB devices
@@ -679,12 +697,56 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 
 	nutscan_device_t * dev = dev_list;
 
-	for (; dev != NULL; dev = dev->next)
+	for (; dev != NULL; dev = dev->prev)
 		list.push_back(Device(dev));
 
 	nutscan_free_device(dev);
 
 	return list;
+}
+
+
+NutScanner::devices_t NutScanner::devicesSNMP(
+	const std::string &    start_ip,
+	const std::string &    stop_ip,
+	long                   us_timeout,
+	const SNMPAttributes & attrs)
+{
+	nutscan_snmp_t snmp_attrs;
+
+	::memset(&snmp_attrs, 0, sizeof(snmp_attrs));
+
+	// TBD: const casting is necessery
+	// Shouldn't the nutscan_snmp_t items be constant?
+
+	if (!attrs.community.empty())
+		snmp_attrs.community = const_cast<char *>(attrs.community.c_str());
+
+	if (!attrs.sec_level.empty())
+		snmp_attrs.secLevel = const_cast<char *>(attrs.sec_level.c_str());
+
+	if (!attrs.sec_name.empty())
+		snmp_attrs.secName = const_cast<char *>(attrs.sec_name.c_str());
+
+	if (!attrs.auth_passwd.empty())
+		snmp_attrs.authPassword = const_cast<char *>(attrs.auth_passwd.c_str());
+
+	if (!attrs.priv_passwd.empty())
+		snmp_attrs.privPassword = const_cast<char *>(attrs.priv_passwd.c_str());
+
+	if (!attrs.auth_proto.empty())
+		snmp_attrs.authProtocol = const_cast<char *>(attrs.auth_proto.c_str());
+
+	if (!attrs.priv_proto.empty())
+		snmp_attrs.privProtocol = const_cast<char *>(attrs.priv_proto.c_str());
+
+	if (!attrs.peer_name.empty())
+		snmp_attrs.peername = const_cast<char *>(attrs.peer_name.c_str());
+
+	nutscan_device_t * dev = nutscan_scan_snmp(
+		start_ip.c_str(), stop_ip.c_str(), us_timeout, &snmp_attrs);
+
+	return dev2list(dev);
 }
 
 
@@ -856,7 +918,7 @@ class NutConfOptions: public Options {
 	/** Verbosity level */
 	unsigned int verbose;
 
-	/** Scan NUT devices */
+	/** Scan NUT devices options count */
 	size_t scan_nut_cnt;
 
 	/** Scan USB devices */
@@ -870,6 +932,9 @@ class NutConfOptions: public Options {
 
 	/** Scan IPMI devices */
 	bool scan_ipmi;
+
+	/** Scan SNMP devices options count */
+	size_t scan_snmp_cnt;
 
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
@@ -979,7 +1044,8 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	scan_usb(false),
 	scan_xml_http(false),
 	scan_avahi(false),
-	scan_ipmi(false)
+	scan_ipmi(false),
+	scan_snmp_cnt(0)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -1265,6 +1331,16 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 				m_errors.push_back("--scan-ipmi option specified more than once");
 			else
 				scan_ipmi = true;
+		}
+		else if ("scan-snmp" == *opt) {
+			Arguments args;
+
+			getDouble(*opt, args, scan_nut_cnt);
+
+			if (args.size() < 2)
+				m_errors.push_back("--scan-nut option requires at least 2 arguments");
+
+			++scan_snmp_cnt;
 		}
 
 		// Unknown option
@@ -2092,6 +2168,108 @@ void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbos
 
 
 /**
+ *  \brief  Scan for SNMP devices
+ *
+ *  \param  options  Options
+ */
+void scanSNMPdevices(const NutConfOptions & options) {
+	for (size_t i = 0; ; ++i) {
+		NutConfOptions::Arguments args;
+
+		bool ok = options.getDouble("scan-snmp", args, i);
+
+		if (!ok) break;
+
+		// Sanity checks
+		assert(args.size() >= 2);
+
+		NutConfOptions::Arguments::const_iterator arg = args.begin();
+
+		const std::string & start_ip = *arg++;
+		const std::string & stop_ip  = *arg++;
+
+		// TBD: where should we get the default?
+		long us_timeout = 1000000;
+
+		NutScanner::SNMPAttributes attrs;
+
+		// Parse <attr>=<val> pairs
+		bool errors = false;
+
+		for (; arg != args.end(); ++arg) {
+			size_t eq_pos = (*arg).find('=');
+
+			if (std::string::npos == eq_pos) {
+				std::cerr
+				<< "Error: Invalid SNMP attribute specification: \""
+				<< *arg << '"' << std::endl;
+
+				errors = true;
+
+				continue;
+			}
+
+			std::string attr = (*arg).substr(0, eq_pos);
+			std::string val  = (*arg).substr(eq_pos + 1);
+
+			if ("timeout" == attr) {
+				std::stringstream ss(val);
+
+				if ((ss >> us_timeout).fail()) {
+					std::cerr
+					<< "Error: Invalid timeout specification: \""
+					<< val << '"' << std::endl;
+
+					errors = true;
+
+					continue;
+				}
+			}
+			else if ("community" == attr) {
+				attrs.community = val;
+			}
+			else if ("sec-level" == attr) {
+				attrs.sec_level = val;
+			}
+			else if ("sec-name" == attr) {
+				attrs.sec_name = val;
+			}
+			else if ("auth-password" == attr) {
+				attrs.auth_passwd = val;
+			}
+			else if ("priv-password" == attr) {
+				attrs.priv_passwd = val;
+			}
+			else if ("auth-protocol" == attr) {
+				attrs.auth_proto = val;
+			}
+			else if ("priv-protocol" == attr) {
+				attrs.priv_proto = val;
+			}
+			else if ("peer-name" == attr) {
+				attrs.peer_name = val;
+			}
+
+			else {
+				std::cerr
+				<< "Error: Unknown SNMP attribute: \""
+				<< attr << '"' << std::endl;
+
+				errors = true;
+			}
+		}
+
+		if (errors) continue;
+
+		NutScanner::devices_t devices = NutScanner::devicesSNMP(
+			start_ip, stop_ip, us_timeout, attrs);
+
+		printDevicesInfo(devices, options.verbose);
+	}
+}
+
+
+/**
  *  \brief  Scan for USB devices
  *
  *  \param  options  Options
@@ -2308,6 +2486,11 @@ int mainx(int argc, char * const argv[]) {
 	// Users were set
 	if (!options.users.empty()) {
 		setUsers(options.users, etc, options.add_user_cnt > 0);
+	}
+
+	// SNMP devices scan
+	if (options.scan_snmp_cnt) {
+		scanSNMPdevices(options);
 	}
 
 	// USB devices scan
