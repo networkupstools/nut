@@ -74,9 +74,9 @@ HTML_CLIENT_MANS = \
 	upsrw.html \
 	upssched.html
 
-SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt
+SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt nutconf.txt
 
-MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8
+MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8 nutconf.8
 
 man8_MANS += $(MAN_TOOL_PAGES)
 
