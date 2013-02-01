@@ -35,6 +35,7 @@ class Usage {
 
 
 const char * Usage::s_text[] = {
+"    -h  -help",
 "    --help                              Display this help and exit",
 "    --autoconfigure                     Perform autoconfiguration",
 "    --is-configured                     Checks whether NUT is configured",
@@ -77,7 +78,9 @@ const char * Usage::s_text[] = {
 "    --scan-nut <spec>                   Scan NUT devices (see below for the specs)",
 "                                        May be specified multiple times",
 "    --scan-avahi [<timeout>]            Scan Avahi devices (optional timeout in us)",
-"    --scan-ipmi                         Scan IPMI devices",
+"    --scan-ipmi <spec>                  Scan IPMI devices (see below)",
+"                                        May be specified multiple times",
+"    --scan-serial <port>*               Scan for serial devices on specified ports",
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -102,6 +105,11 @@ const char * Usage::s_text[] = {
 "    auth-protocol, priv-protocol, peer-name",
 "NUT device scan specification:",
 "    <start IP> <stop IP> <port> [<us_timeout>]",
+"IMPI device scan specification:",
+"    <start IP> <stop IP> [<attr>=<val>]*",
+"Known attributes are:",
+"    username, password, auth-type, cipher-suite-id, K-g-BMC-key, priv-level,",
+"    workaround-flags, version",
 "",
 };
 
@@ -536,15 +544,37 @@ class NutScanner {
 
 	/** SNMP attributes */
 	struct SNMPAttributes {
-		std::string community;
-		std::string sec_level;
-		std::string sec_name;
-		std::string auth_passwd;
-		std::string priv_passwd;
-		std::string auth_proto;
-		std::string priv_proto;
-		std::string peer_name;
+		std::string community;    /**< Community               */
+		std::string sec_level;    /**< Sec. level              */
+		std::string sec_name;     /**< Sec. name               */
+		std::string auth_passwd;  /**< Authentication password */
+		std::string priv_passwd;  /**< Priv. password          */
+		std::string auth_proto;   /**< Authentication protocol */
+		std::string priv_proto;   /**< Priv. protocol          */
+		std::string peer_name;    /**< Peer name               */
 	};  // end of class SNMPAttributes
+
+	/** IMPI attributes */
+	struct IPMIAttributes {
+		std::string username;         /**< Username              */
+		std::string passwd;           /**< Password              */
+		int         auth_type;        /**< Authentication type   */
+		int         cipher_suite_id;  /**< Cipher suite ID       */
+		std::string K_g_BMC_key;      /**< Optional 2nd key      */
+		int         priv_level;       /**< Priviledge level      */
+		unsigned    wa_flags;         /**< Workaround flags      */
+		int         version;          /**< IPMI protocol version */
+
+		/** Constructor */
+		IPMIAttributes():
+			auth_type(IPMI_AUTHENTICATION_TYPE_MD5),
+			cipher_suite_id(3),
+			priv_level(IPMI_PRIVILEGE_LEVEL_ADMIN),
+			wa_flags(0),
+			version(IPMI_1_5)
+		{}
+
+	};  // end of struct IMPIAttributes
 
 	private:
 
@@ -657,11 +687,19 @@ class NutScanner {
 	 *
 	 *  \return Device list
 	 */
-	inline static devices_t devicesIPMI() {
-		nutscan_device_t * dev = nutscan_scan_ipmi();
+	static devices_t devicesIPMI(
+		const std::string &    start_ip,
+		const std::string &    stop_ip,
+		const IPMIAttributes & attrs);
 
-		return dev2list(dev);
-	}
+	/**
+	 *  \brief  Scan for Eaton serial devices
+	 *
+	 *  \param  ports  List of serial ports
+	 *
+	 *  \return Device list
+	 */
+	static devices_t devicesEatonSerial(const std::list<std::string> & ports);
 
 };  // end of class NutScanner
 
@@ -745,6 +783,57 @@ NutScanner::devices_t NutScanner::devicesSNMP(
 
 	nutscan_device_t * dev = nutscan_scan_snmp(
 		start_ip.c_str(), stop_ip.c_str(), us_timeout, &snmp_attrs);
+
+	return dev2list(dev);
+}
+
+
+NutScanner::devices_t NutScanner::devicesIPMI(
+	const std::string &    start_ip,
+	const std::string &    stop_ip,
+	const IPMIAttributes & attrs)
+{
+	nutscan_ipmi_t ipmi_attrs;
+
+	::memset(&ipmi_attrs, 0, sizeof(ipmi_attrs));
+
+	// TBD: const casting is necessery
+	// Shouldn't the nutscan_ipmi_t C-string items be constant?
+
+	if (!attrs.username.empty())
+		ipmi_attrs.username = const_cast<char *>(attrs.username.c_str());
+
+	if (!attrs.passwd.empty())
+		ipmi_attrs.password = const_cast<char *>(attrs.passwd.c_str());
+
+	ipmi_attrs.authentication_type = attrs.auth_type;
+	ipmi_attrs.cipher_suite_id     = attrs.cipher_suite_id;
+
+	if (!attrs.K_g_BMC_key.empty())
+		ipmi_attrs.K_g_BMC_key = const_cast<char *>(attrs.K_g_BMC_key.c_str());
+
+	ipmi_attrs.privilege_level  = attrs.priv_level;
+	ipmi_attrs.workaround_flags = attrs.wa_flags;
+	ipmi_attrs.ipmi_version     = attrs.version;
+
+	nutscan_device_t * dev = nutscan_scan_ipmi(
+		start_ip.c_str(), stop_ip.c_str(), &ipmi_attrs);
+
+	return dev2list(dev);
+}
+
+
+NutScanner::devices_t NutScanner::devicesEatonSerial(const std::list<std::string> & ports) {
+	std::string port_list;
+
+	std::list<std::string>::const_iterator port = ports.begin();
+
+	for (; port != ports.end(); ++port) {
+		port_list += *port;
+		port_list += ' ';
+	}
+
+	nutscan_device_t * dev = nutscan_scan_eaton_serial(port_list.c_str());
 
 	return dev2list(dev);
 }
@@ -931,10 +1020,13 @@ class NutConfOptions: public Options {
 	bool scan_avahi;
 
 	/** Scan IPMI devices */
-	bool scan_ipmi;
+	size_t scan_ipmi_cnt;
 
 	/** Scan SNMP devices options count */
 	size_t scan_snmp_cnt;
+
+	/** Scan Eaton serial devices */
+	bool scan_serial;
 
 	/** Constructor */
 	NutConfOptions(char * const argv[], int argc);
@@ -1044,8 +1136,9 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	scan_usb(false),
 	scan_xml_http(false),
 	scan_avahi(false),
-	scan_ipmi(false),
-	scan_snmp_cnt(0)
+	scan_ipmi_cnt(0),
+	scan_snmp_cnt(0),
+	scan_serial(false)
 {
 	static const std::string sDash("-");
 	static const std::string dDash("--");
@@ -1327,20 +1420,30 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			}
 		}
 		else if ("scan-ipmi" == *opt) {
-			if (scan_ipmi)
-				m_errors.push_back("--scan-ipmi option specified more than once");
-			else
-				scan_ipmi = true;
+			Arguments args;
+
+			getDouble(*opt, args, scan_ipmi_cnt);
+
+			if (args.size() < 2)
+				m_errors.push_back("--scan-ipmi option requires at least 2 arguments");
+
+			++scan_ipmi_cnt;
 		}
 		else if ("scan-snmp" == *opt) {
 			Arguments args;
 
-			getDouble(*opt, args, scan_nut_cnt);
+			getDouble(*opt, args, scan_snmp_cnt);
 
 			if (args.size() < 2)
-				m_errors.push_back("--scan-nut option requires at least 2 arguments");
+				m_errors.push_back("--scan-snmp option requires at least 2 arguments");
 
 			++scan_snmp_cnt;
+		}
+		else if ("scan-serial" == *opt) {
+			if (scan_serial)
+				m_errors.push_back("--scan-serial option specified more than once");
+			else
+				scan_serial = true;
 		}
 
 		// Unknown option
@@ -2217,7 +2320,7 @@ void scanSNMPdevices(const NutConfOptions & options) {
 
 				if ((ss >> us_timeout).fail()) {
 					std::cerr
-					<< "Error: Invalid timeout specification: \""
+					<< "Error: Invalid SNMP timeout specification: \""
 					<< val << '"' << std::endl;
 
 					errors = true;
@@ -2382,7 +2485,163 @@ void scanAvahiDevices(const NutConfOptions & options) {
  *  \param  options  Options
  */
 void scanIPMIdevices(const NutConfOptions & options) {
-	NutScanner::devices_t devices = NutScanner::devicesIPMI();
+	for (size_t i = 0; ; ++i) {
+		NutConfOptions::Arguments args;
+
+		bool ok = options.getDouble("scan-ipmi", args, i);
+
+		if (!ok) break;
+
+		// Sanity checks
+		assert(args.size() >= 2);
+
+		NutConfOptions::Arguments::const_iterator arg = args.begin();
+
+		const std::string & start_ip = *arg++;
+		const std::string & stop_ip  = *arg++;
+
+		NutScanner::IPMIAttributes attrs;
+
+		// Parse <attr>=<val> pairs
+		bool errors = false;
+
+		for (; arg != args.end(); ++arg) {
+			size_t eq_pos = (*arg).find('=');
+
+			if (std::string::npos == eq_pos) {
+				std::cerr
+				<< "Error: Invalid IPMI attribute specification: \""
+				<< *arg << '"' << std::endl;
+
+				errors = true;
+
+				continue;
+			}
+
+			std::string attr = (*arg).substr(0, eq_pos);
+			std::string val  = (*arg).substr(eq_pos + 1);
+
+			if ("username" == attr) {
+				attrs.username = val;
+			}
+			else if ("password" == attr) {
+				attrs.passwd = val;
+			}
+			else if ("auth-type" == attr) {
+				if ("none" == val)
+					attrs.auth_type = IPMI_AUTHENTICATION_TYPE_NONE;
+				else if ("MD2" == val)
+					attrs.auth_type = IPMI_AUTHENTICATION_TYPE_MD2;
+				else if ("MD5" == val)
+					attrs.auth_type = IPMI_AUTHENTICATION_TYPE_MD5;
+				else if ("plain-password" == val)
+					attrs.auth_type = IPMI_AUTHENTICATION_TYPE_STRAIGHT_PASSWORD_KEY;
+				else if ("OEM" == val)
+					attrs.auth_type = IPMI_AUTHENTICATION_TYPE_OEM_PROP;
+				else if ("RMCPplus" == val)
+					attrs.auth_type = IPMI_AUTHENTICATION_TYPE_RMCPPLUS;
+				else {
+					std::cerr
+					<< "Error: Invalid IPMI auth. type: \""
+					<< val << '"' << std::endl;
+
+					errors = true;
+
+					continue;
+				}
+			}
+			else if ("cipher-suite-id" == attr) {
+				std::stringstream ss(val);
+
+				if ((ss >> attrs.cipher_suite_id).fail()) {
+					std::cerr
+					<< "Error: Invalid IPMI cipher suite ID: \""
+					<< val << '"' << std::endl;
+
+					errors = true;
+
+					continue;
+				}
+			}
+			else if ("K-g-BMC-key" == attr) {
+				attrs.K_g_BMC_key = val;
+			}
+			else if ("priv-level" == attr) {
+				std::stringstream ss(val);
+
+				if ((ss >> attrs.priv_level).fail()) {
+					std::cerr
+					<< "Error: Invalid IPMI priv. level: \""
+					<< val << '"' << std::endl;
+
+					errors = true;
+
+					continue;
+				}
+			}
+			else if ("workaround-flags" == attr) {
+				std::stringstream ss(val);
+
+				if ((ss >> attrs.wa_flags).fail()) {
+					std::cerr
+					<< "Error: Invalid IPMI workaround flags: \""
+					<< val << '"' << std::endl;
+
+					errors = true;
+
+					continue;
+				}
+			}
+
+			else if ("version" == attr) {
+				if ("1.5" == val)
+					attrs.version = IPMI_1_5;
+				else if ("2.0" == val)
+					attrs.version = IPMI_2_0;
+				else {
+					std::cerr
+					<< "Error: Unsupported IPMI version "
+					<< val << std::endl;
+
+					errors = true;
+
+					continue;
+				}
+			}
+
+			else {
+				std::cerr
+				<< "Error: Unknown IPMI attribute: \""
+				<< attr << '"' << std::endl;
+
+				errors = true;
+			}
+		}
+
+		if (errors) continue;
+
+		NutScanner::devices_t devices = NutScanner::devicesIPMI(
+			start_ip, stop_ip, attrs);
+
+		printDevicesInfo(devices, options.verbose);
+	}
+}
+
+
+/**
+ *  \brief  Scan for serial devices devices
+ *
+ *  \param  options  Options
+ */
+void scanSerialDevices(const NutConfOptions & options) {
+	NutConfOptions::Arguments args;
+
+	bool ok = options.getDouble("scan-serial", args);
+
+	// Sanity checks
+	assert(ok);
+
+	NutScanner::devices_t devices = NutScanner::devicesEatonSerial(args);
 
 	printDevicesInfo(devices, options.verbose);
 }
@@ -2401,7 +2660,7 @@ int mainx(int argc, char * const argv[]) {
 	NutConfOptions options(argv, argc);
 
 	// Usage
-	if (options.exists("help")) {
+	if (options.exists("help") || options.existsSingle("h")) {
 		Usage::print(argv[0]);
 
 		::exit(0);
@@ -2514,8 +2773,13 @@ int mainx(int argc, char * const argv[]) {
 	}
 
 	// IPMI devices scan
-	if (options.scan_ipmi) {
+	if (options.scan_ipmi_cnt) {
 		scanIPMIdevices(options);
+	}
+
+	// Serial devices scan
+	if (options.scan_serial) {
+		scanSerialDevices(options);
 	}
 
 	return 0;
