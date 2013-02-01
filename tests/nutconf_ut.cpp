@@ -134,12 +134,13 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 	load(static_cast<nut::Serialisable *>(&config), "../conf/upsmon.conf.sample");
 
 	config.shutdownCmd   = "/sbin/shutdown -h +2 'System shutdown in 2 minutes!'";
+	config.powerDownFlag = "/run/nut/killpower";
 	config.poolFreqAlert = 10;
 	config.deadTime      = 30;
 
 	check(static_cast<nut::Serialisable *>(&config),
 		"SHUTDOWNCMD \"/sbin/shutdown -h +2 'System shutdown in 2 minutes!'\"\n"
-		"POWERDOWNFLAG /etc/killpower\n"
+		"POWERDOWNFLAG /run/nut/killpower\n"
 		"MINSUPPLIES 1\n"
 		"POLLFREQ 5\n"
 		"POLLFREQALERT 10\n"
