@@ -1,0 +1,219 @@
+NUTCONF(8)
+==========
+
+
+NAME
+----
+nutconf - NUT configuration tool
+
+SYNOPSIS
+--------
+*nutconf* --help
+
+*nutconf* ['OPTIONS']
+
+DESCRIPTION
+-----------
+
+*nutconf* tool is used to create and manipulate NUT configuration files.
+It also supports device scanning (to suggest configuration of devices).
+
+INSTALLATION
+------------
+
+The scanning feature depends on the very same compile time and run time
+dependencies as the *nut-scanner*.
+
+OPTIONS
+-------
+
+*-h* | *-help* | *--help*::
+Display the help text.
+
+*-v* | *--verbose*::
+Increase output verbosity (may be used multiple times).
+
+*--is-configured*::
+Checks whether NUT was configured, before.
+
+*--system*::
+System configuration directory shall be used.
+
+*--local* 'directory'::
+Sets alternative configuration directory.
+
+*--mode* 'mode'::
+Sets NUT configuration mode.
+
+ ::
+Known modes are:
+
+- standalone
+- netserver
+- netclient
+- controlled
+- manual
+- none
+
+CONFIGURATION ENTRY SET/ADD OPTIONS
+-----------------------------------
+
+These options mostly have 2 forms: '--set-...' or '--add-...'.
+
+The difference is that the set options discard previous settings
+while the add options keep them.
+
+Note that such options may be specified multiple times for one run
+(to enable setting multiple entries at once).
+
+*--set-monitor* | *--add-monitor* '<arguments>'::
+Sets/adds a NUT monitor.
+
+Arguments:
+'<ups_ID>' '<host>[:<port>]' '<power_value>' '<user>' '<passwd>' '(\"master\"|\"slave\")'
+
+*--set-listen* | *--add-listen* '<address>' '[<port>]'::
+Sets/adds 'nutd' daemon listen address
+
+*--set-device* | *--add-device* '<arguments>'::
+Sets/adds a device (typically a UPS).
+
+Arguments:
+'<ups_ID>' '<driver>' '<port>' '[<description>]'
+
+*--set-notifyflags* | *--add-notifyflags* '<type>' '<flag>+'::
+Sets/adds notification flags for the notification type.
+
+ ::
+Notification types are:
+'TODO': check the semantics.
+
+- 'ONLINE' (mains is present)
+- 'ONBATT' (mains is gone)
+- 'LOWBATT' (battery is getting empty)
+- 'FSD' (shutdown was forced)
+- 'COMMOK' (regained communication with device)
+- 'COMMBAD' (lost communication with device)
+- 'SHUTDOWN' (system is going down)
+- 'REPLBATT' (UPS battery is failing)
+- 'NOCOMM' (have no communication with a device)
+- 'NOPARENT' (???)
+
+ ::
+Notification flags:
+
+- 'SYSLOG' (use syslogd to log the notification)
+- 'WALL' (push a message to usres' terminals)
+- 'EXEC' (execute a command)
+- 'IGNORE' (don't act)
+
+*--set-notifymsg* '<type>' '<message>'::
+Sets message for the specified notification type.
+
+*--set-shutdowncmd* '<command>'::
+Sets command used to shut the system down.
+
+*--set-user* | *--add-user* '<arguments>'::
+Sets/adds NUT user.
+
+ ::
+Arguments:
+
+- '<username>' (specifies user name).
+For 'upsmon' user, it has a special form of
+'upsmon=(master|slave)' which specifies the moniutoring mode.
+- 'password=<passwd>' sets password for the user
+- 'actions=<actions>' sets actions ('SET', 'FSD' are supported)
+- 'instcmds=<command>' sets instan commands allowed for the user
+(may be used multiple times)
+
+SCANNING OPTIONS
+----------------
+
+All timeouts are in microseconds.
+
+*--scan-snmp* '<start IP>' '<stop IP>' '[<attribute>=<value>]*'::
+Scans for SNMP devices on IP addresses from the specified range.
+
+ ::
+Known attributes are:
+'TODO' check these:
+
+- 'timeout' device scan timeout
+- 'community' SNMP community
+- 'sec-level' sec. level
+- 'sec-name' sec. name
+- 'auth-password' authentication password
+- 'priv-password' priv. password
+- 'auth-protocol' authentication protocol
+- 'priv-protocol' priv. protocol
+- 'peer-name' peer name
+
+*--scan-usb*::
+Scans the USB bus for known devices
+
+*--scan-xml-http* '[<timeout>]'::
+Scans for XML/HTTP devices on the network.
+
+*--scan-nut* '<start IP>' '<stop IP>' '<port>' '[<timeout>]'::
+Scans for NUT (pseudo-)devices on the network.
+
+*--scan-avahi* '[<timeout>]'::
+Scans for Avahi devices.
+
+*--scan-ipmi* '<start IP>' '<stop IP>' '[<attribute>=<value>]'*::
+Scans for IPMI devices on IP addresses from the specified range.
+
+ ::
+Known attributes are:
+'TODO' check these:
+
+- 'username' username
+- 'password' user password
+- 'auth-type' authentication type (see below)
+- 'cipher-suite-id' cipher suite ID
+- 'K-g-BMC-key' optional second key (???)
+- 'priv-level' priv. level
+- 'workaround-flags' (???)
+- 'version' (1.5 or 2.0)
+
+ ::
+Authentication types:
+'TODO" check these:
+
+- 'none' (authentication is disabled)
+- 'MD2'
+- 'MD5'
+- 'plain-password' (no ciphering used for password sending)
+- 'OEM' (???)
+- 'RMCPplus' (???)
+
+*--scan-serial* '<port>'*::
+Scans for serial devices (of supported types) on the specified
+serial ports.
+
+EXAMPLES
+--------
+
+To set alternative directory for configuration files:
+
+*nutconf --local ~/test/nut/etc*
+
+To add another user (keeping the existing ones):
+
+*nutconf --add-user bart password=qwerty*
+
+To scan USB devices and serial devices (on the 1st two ports):
+
+*nutconf --scan-usb --scan-serial /dev/ttyS1 /dev/ttyS2*
+
+SEE ALSO
+--------
+
+linkman:ups.conf[5]
+linkman:nut-scanner[8]
+
+INTERNET RESOURCES
+------------------
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
