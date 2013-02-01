@@ -1,3 +1,4 @@
+B/
 # PSF file for Network UPS Tools 				  11/2/2011
 # 
 # Useful commands:
@@ -50,6 +51,7 @@ product
 		tag 		Server
 		title 		"nut-server"
 		revision	@PACKAGE_VERSION@
+		postinstall     ./postinstall
 
 #Including "conf" files under "/usr/local/ups/etc/".
 		file -u 644 -g bin -o bin ./nut_install@prefix@/etc/ups.conf.sample	@prefix@/etc/ups.conf.sample
@@ -66,7 +68,15 @@ product
 #Including required "libupsclient1" under "/usr/local/ups/lib"
 		file -u 755 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl.3		@prefix@/lib/libupsclient.sl.3
 		file -u 555 -g bin -o bin ./nut_install@prefix@/lib/libupsclient.sl.3.1	@prefix@/lib/libupsclient.sl.3.1			
-		
+
+#Including nut service script to "usr/local/ups/script"
+		file -u 744 -g bin -o bin @top_srcdir@/scripts/HP-UX/nut-upsd.sh		@prefix@/script/nut-upsd.sh
+		file -u 744 -g bin -o bin @top_srcdir@/scripts/HP-UX/nut-drvctl.sh		@prefix@/script/nut-drvctl.sh
+		file -u 744 -g bin -o bin @top_srcdir@/scripts/HP-UX/nut-upsmon.sh		@prefix@/script/nut-upsmon.sh
+		file -u 444 -g bin -o bin @top_srcdir@/scripts/HP-UX/nut-upsd			@prefix@/script/nut-upsd
+		file -u 444 -g bin -o bin @top_srcdir@/scripts/HP-UX/nut-drvctl			@prefix@/script/nut-drvctl
+		file -u 444 -g bin -o bin @top_srcdir@/scripts/HP-UX/nut-upsmon			@prefix@/script/nut-upsmon
+
 #Including required UPS drivers files under "/usr/local/ups/bin/".
 #such as "nut-snmp", "nut-xml or netxml-ups"
 		directory 	./nut_install@prefix@/bin=@prefix@/bin/

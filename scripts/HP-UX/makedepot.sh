@@ -4,10 +4,12 @@ set -x
 
 CUR_DIR=$(pwd)
 TOP_DIR=$CUR_DIR/../..
-INSTALL_DIR=/usr/local
+INSTALL_DIR=/usr/local/ups
 DEST_DIR=$CUR_DIR/nut_install
 
 rm -rf $DEST_DIR
+rm -rf $CUR_DIR/nut.depot
+rm -rf $CUR_DIR/nut.depot.tar.gz
 
 cd $TOP_DIR
 ./configure --prefix=$INSTALL_DIR --with-dev
@@ -22,5 +24,7 @@ make uninstall
 
 cd $CUR_DIR
 swpackage -s nut.psf -d $CUR_DIR/nut.depot; \
+#tar cvf nut.depot.tar nut.depot
+#gzip nut.depot.tar
 echo "Execution completed" 
 
