@@ -6,7 +6,7 @@ TESTS = cppunittest
 
 check_PROGRAMS = $(TESTS)
 
-cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) -I$(top_srcdir)/include
+cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) -I$(top_srcdir)/include -DTOP_SRCDIR="\"$(top_srcdir)\""
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = ../common/libnutconf.la
 

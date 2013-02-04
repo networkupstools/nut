@@ -3,9 +3,11 @@
 #include "nutstream.hpp"
 
 extern "C" {
+#if (defined WITH_NUTSCANNER)
 #include "nut-scan.h"
 #include "nutscan-init.h"
 #include "nutscan-device.h"
+#endif  // defined WITH_NUTSCANNER
 }
 
 #include <iostream>
@@ -71,16 +73,28 @@ const char * Usage::s_text[] = {
 "    -v",
 "    --verbose                           Increase verbosity of output one level",
 "                                        May be specified multiple times",
+#if (defined WITH_NUTSCANNER)
+#if (defined WITH_SNMP)
 "    --scan-snmp <spec>                  Scan SNMP devices (see below)",
 "                                        May be specified multiple times",
+#endif  // defined WITH_SNMP
+#if (defined WITH_USB)
 "    --scan-usb                          Scan USB devices",
+#endif  // defined WITH_USB
+#if (defined WITH_NEON)
 "    --scan-xml-http [<timeout>]         Scan XML/HTTP devices (optional timeout in us)",
+#endif  // defined WITH_NEON
 "    --scan-nut <spec>                   Scan NUT devices (see below for the specs)",
 "                                        May be specified multiple times",
+#if (defined WITH_AVAHI)
 "    --scan-avahi [<timeout>]            Scan Avahi devices (optional timeout in us)",
+#endif  // defined WITH_AVAHI
+#if (defined WITH_IPMI)
 "    --scan-ipmi <spec>                  Scan IPMI devices (see below)",
 "                                        May be specified multiple times",
+#endif  // defined WITH_IPMI
 "    --scan-serial <port>*               Scan for serial devices on specified ports",
+#endif  // defined WITH_NUTSCANNER
 "",
 "NUT modes: standalone, netserver, netclient, controlled, manual, none",
 "Monitor is specified by the following sequence:",
@@ -98,18 +112,24 @@ const char * Usage::s_text[] = {
 "    password, actions (from {SET,FSD}), instcmds (accepted multiple times)",
 "Specially, for the upsmon user, the 1st argument takes form of",
 "    upsmon={master|slave}",
+#if (defined WITH_NUTSCANNER)
+#if (defined WITH_SNMP)
 "SNMP device scan specification:",
 "    <start IP> <stop IP> [<attr>=<val>]*",
 "Known attributes are:",
 "    timeout (in us), community, sec-level, sec-name, auth-password, priv-password,",
 "    auth-protocol, priv-protocol, peer-name",
+#endif  // defined WITH_SNMP
 "NUT device scan specification:",
 "    <start IP> <stop IP> <port> [<us_timeout>]",
+#if (defined WITH_IPMI)
 "IMPI device scan specification:",
 "    <start IP> <stop IP> [<attr>=<val>]*",
 "Known attributes are:",
 "    username, password, auth-type, cipher-suite-id, K-g-BMC-key, priv-level,",
 "    workaround-flags, version",
+#endif  // defined WITH_IPMI
+#endif  // defined WITH_NUTSCANNER
 "",
 };
 
@@ -507,6 +527,8 @@ Options::List Options::strings() const {
 }
 
 
+#if (defined WITH_NUTSCANNER)
+
 /** NUT scanner wrapper */
 class NutScanner {
 	public:
@@ -837,6 +859,8 @@ NutScanner::devices_t NutScanner::devicesEatonSerial(const std::list<std::string
 
 	return dev2list(dev);
 }
+
+#endif // defined WITH_NUTSCANNER
 
 
 /** nutconf tool specific options */
@@ -1372,12 +1396,17 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 		else if ("verbose" == *opt) {
 			++verbose;
 		}
+
+#if (defined WITH_NUTSCANNER)
+
+#if (defined WITH_USB)
 		else if ("scan-usb" == *opt) {
 			if (scan_usb)
 				m_errors.push_back("--scan-usb option specified more than once");
 			else
 				scan_usb = true;
 		}
+#endif  // defined WITH_USB
 		else if ("scan-nut" == *opt) {
 			Arguments args;
 
@@ -1391,6 +1420,7 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 
 			++scan_nut_cnt;
 		}
+#if (defined WITH_NEON)
 		else if ("scan-xml-http" == *opt) {
 			if (scan_xml_http)
 				m_errors.push_back("--scan-xml-http option specified more than once");
@@ -1405,6 +1435,8 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 				scan_xml_http = true;
 			}
 		}
+#endif  // defined WITH_NEON
+#if (defined WITH_AVAHI)
 		else if ("scan-avahi" == *opt) {
 			if (scan_avahi)
 				m_errors.push_back("--scan-avahi option specified more than once");
@@ -1419,6 +1451,8 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 				scan_avahi = true;
 			}
 		}
+#endif  // defined WITH_AVAHI
+#if (defined WITH_IPMI)
 		else if ("scan-ipmi" == *opt) {
 			Arguments args;
 
@@ -1429,6 +1463,8 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 
 			++scan_ipmi_cnt;
 		}
+#endif  // defined WITH_IPMI
+#if (defined WITH_SNMP)
 		else if ("scan-snmp" == *opt) {
 			Arguments args;
 
@@ -1439,12 +1475,15 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 
 			++scan_snmp_cnt;
 		}
+#endif  // defined WITH_SNMP
 		else if ("scan-serial" == *opt) {
 			if (scan_serial)
 				m_errors.push_back("--scan-serial option specified more than once");
 			else
 				scan_serial = true;
 		}
+
+#endif  // defined WITH_NUTSCANNER)
 
 		// Unknown option
 		else {
@@ -2226,6 +2265,8 @@ void setUsers(
 }
 
 
+#if (defined WITH_NUTSCANNER)
+
 /**
  *  \brief  Print devices info
  *
@@ -2646,6 +2687,8 @@ void scanSerialDevices(const NutConfOptions & options) {
 	printDevicesInfo(devices, options.verbose);
 }
 
+#endif  // defined WITH_NUTSCANNER
+
 
 /**
  *  \brief  Main routine (exceptions unsafe)
@@ -2747,6 +2790,8 @@ int mainx(int argc, char * const argv[]) {
 		setUsers(options.users, etc, options.add_user_cnt > 0);
 	}
 
+#if (defined WITH_NUTSCANNER)
+
 	// SNMP devices scan
 	if (options.scan_snmp_cnt) {
 		scanSNMPdevices(options);
@@ -2781,6 +2826,8 @@ int mainx(int argc, char * const argv[]) {
 	if (options.scan_serial) {
 		scanSerialDevices(options);
 	}
+
+#endif  // defined WITH_NUTSCANNER
 
 	return 0;
 }
