@@ -3,6 +3,12 @@
 
 #include "attribute.h"
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 #if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
 
 /* Define this as a fall through, HAVE_STDARG_H is probably already set */
@@ -31,12 +37,6 @@
 # else
 /*XX ** NO VARARGS ** XX*/
 # endif
-#endif
-
-#ifdef __cplusplus
-/* *INDENT-OFF* */
-extern "C" {
-/* *INDENT-ON* */
 #endif
 
 #if !defined (HAVE_SNPRINTF) || defined (__Lynx__)
