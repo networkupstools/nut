@@ -118,7 +118,7 @@ void NutConfigUnitTest::check(const nut::Serialisable * config, const std::strin
 void NutConfigUnitTest::testNutConfiguration() {
 	nut::NutConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), "../conf/nut.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/nut.conf.sample");
 
 	config.mode = nut::NutConfiguration::MODE_STANDALONE;
 
@@ -131,7 +131,7 @@ void NutConfigUnitTest::testNutConfiguration() {
 void NutConfigUnitTest::testUpsmonConfiguration() {
 	nut::UpsmonConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), "../conf/upsmon.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsmon.conf.sample");
 
 	config.shutdownCmd   = "/sbin/shutdown -h +2 'System shutdown in 2 minutes!'";
 	config.powerDownFlag = "/run/nut/killpower";
@@ -156,7 +156,7 @@ void NutConfigUnitTest::testUpsmonConfiguration() {
 void NutConfigUnitTest::testUpsdConfiguration() {
 	nut::UpsdConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), "../conf/upsd.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsd.conf.sample");
 
 	config.maxAge    = 15;
 	config.statePath = "/var/run/nut";
@@ -188,7 +188,7 @@ void NutConfigUnitTest::testUpsdConfiguration() {
 void NutConfigUnitTest::testUpsConfiguration() {
 	nut::UpsConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), "../conf/ups.conf.sample");
+	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/ups.conf.sample");
 
 	static const std::string my_ups("powerpal");
 
@@ -209,7 +209,7 @@ void NutConfigUnitTest::testUpsConfiguration() {
 void NutConfigUnitTest::testUpsdUsersConfiguration() {
 	nut::UpsdUsersConfiguration config;
 
-	load(static_cast<nut::Serialisable *>(&config), "../conf/upsd.users.sample");
+	load(static_cast<nut::Serialisable *>(&config), TOP_SRCDIR "/conf/upsd.users.sample");
 
 	config.setPassword("upsmon", "ytrewq");
 	config.setUpsmonMode(nut::UpsdUsersConfiguration::UPSMON_MASTER);
