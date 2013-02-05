@@ -160,6 +160,14 @@ NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & co
 			case NutConfiguration::MODE_NETCLIENT:
 				mode_str = "netclient";
 				break;
+
+			case NutConfiguration::MODE_CONTROLLED:
+				mode_str = "controlled";
+				break;
+
+			case NutConfiguration::MODE_MANUAL:
+				mode_str = "manual";
+				break;
 		}
 
 		status = writeDirective("MODE=" + mode_str);

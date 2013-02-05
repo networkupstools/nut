@@ -60,7 +60,7 @@ typedef struct nutscan_device {
 	nutscan_device_type_t	type;
 	char *		driver;
 	char *		port;
-	nutscan_options_t	opt;
+	nutscan_options_t     * opt;
 	struct nutscan_device * prev;
 	struct nutscan_device * next;
 } nutscan_device_t;
@@ -69,6 +69,15 @@ nutscan_device_t * nutscan_new_device();
 void nutscan_free_device(nutscan_device_t * device);
 void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
+
+/**
+ *  \brief  Rewind device list
+ *
+ *  \param  device  Device list item
+ *
+ *  \return Device list head
+ */
+nutscan_device_t * nutscan_rewind_device(nutscan_device_t * device);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

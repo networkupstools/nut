@@ -1206,6 +1206,10 @@ NutConfiguration::NutMode NutConfiguration::NutModeFromString(const std::string&
 		return MODE_NETSERVER;
 	else if(str == "netclient")
 		return MODE_NETCLIENT;
+	else if(str == "controlled")
+		return MODE_CONTROLLED;
+	else if(str == "manual")
+		return MODE_MANUAL;
 	else
 		return MODE_UNKNOWN;
 }

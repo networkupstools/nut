@@ -506,7 +506,7 @@ fail:
 	if (simple_poll)
 		(*nut_avahi_simple_poll_free)(simple_poll);
 
-	return dev_ret;
+	return nutscan_rewind_device(dev_ret);
 }
 #else  /* WITH_AVAHI */
 /* stub function */
