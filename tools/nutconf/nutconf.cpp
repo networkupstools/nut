@@ -737,6 +737,15 @@ NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_device_t
 	// Create options
 	nutscan_options_t * opt = &dev->opt;
 
+	assert(NULL != opt);
+
+	// TBD: Why does the device always have the 1st option?
+	// Why isn't it just a pointer?
+	// The fact that the head of the option list isn't dynamic
+	// like the other items unnecessarily complicates things... :-(
+	if (NULL == opt->option)
+		return options;
+
 	for (; NULL != opt; opt = opt->next) {
 		assert(NULL != opt->option);
 
@@ -765,7 +774,7 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 	for (; dev != NULL; dev = dev->prev)
 		list.push_back(Device(dev));
 
-	nutscan_free_device(dev);
+	nutscan_free_device(dev_list);
 
 	return list;
 }
