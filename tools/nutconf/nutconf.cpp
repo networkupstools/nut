@@ -737,8 +737,13 @@ NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_device_t
 	// Create options
 	nutscan_options_t * opt = &dev->opt;
 
-	for (; NULL != opt; opt = opt->next)
-		options.insert(options_t::value_type(opt->option, opt->value));
+	for (; NULL != opt; opt = opt->next) {
+		assert(NULL != opt->option);
+
+		options.insert(
+			options_t::value_type(opt->option,
+				NULL != opt->value ? opt->value : ""));
+	}
 
 	return options;
 }
@@ -746,8 +751,8 @@ NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_device_t
 
 NutScanner::Device::Device(nutscan_device_t * dev):
 	type(nutscan_device_type_string(dev->type)),
-	driver(dev->driver),
-	port(dev->port),
+	driver(NULL != dev->driver ? dev->driver : ""),
+	port(NULL != dev->port ? dev->port : ""),
 	options(createOptions(dev))
 {}
 
