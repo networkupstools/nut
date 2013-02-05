@@ -20,7 +20,7 @@
 
 #include "control.hpp"
 
-#include "nutstream.h"
+#include "nutstream.hpp"
 #include "nutipc.hpp"
 
 #include <sstream>
