@@ -697,7 +697,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	free(thread_array);
 #endif
 
-	return dev_ret;
+	return nutscan_rewind_device(dev_ret);
 }
 #else /* WITH_SNMP */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)

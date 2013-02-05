@@ -269,5 +269,5 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 		signal(SIGPIPE,SIG_DFL);
 	}
 
-	return dev_ret;
+	return nutscan_rewind_device(dev_ret);
 }

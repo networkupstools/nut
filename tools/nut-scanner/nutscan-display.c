@@ -52,9 +52,9 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 				nutdev_num, current_dev->driver,
 				current_dev->port);
 
-		opt = &(current_dev->opt);
+		opt = current_dev->opt;
 
-		do {
+		while (NULL != opt) {
 			if( opt->option != NULL ) {
 				printf("\t%s",opt->option);
 				if( opt->value != NULL ) {
@@ -63,7 +63,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 				printf("\n");
 			}
 			opt = opt->next;
-		} while( opt != NULL );
+		}
 
 		nutdev_num++;
 
@@ -93,9 +93,9 @@ void nutscan_display_parsable(nutscan_device_t * device)
 			current_dev->driver,
 			current_dev->port);
 
-		opt = &(current_dev->opt);
+		opt = current_dev->opt;
 
-		do {
+		while (NULL != opt) {
 			if( opt->option != NULL ) {
 				printf(",%s",opt->option);
 				if( opt->value != NULL ) {
@@ -103,7 +103,8 @@ void nutscan_display_parsable(nutscan_device_t * device)
 				}
 			}
 			opt = opt->next;
-		} while( opt != NULL );
+		}
+
 		printf("\n");
 
 		current_dev = current_dev->next;

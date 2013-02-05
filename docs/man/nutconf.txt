@@ -42,7 +42,10 @@ System configuration directory shall be used.
 *--local* 'directory'::
 Sets alternative configuration directory.
 
-*--mode* 'mode'::
+*--get-mode*::
+Prints current NUT configuration mode
+
+*--set-mode* 'mode'::
 Sets NUT configuration mode.
 
  ::

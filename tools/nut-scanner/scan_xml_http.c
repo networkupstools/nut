@@ -231,7 +231,7 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 	}
 
 
-	return current_nut_dev;
+	return nutscan_rewind_device(current_nut_dev);
 }
 #else /* WITH_NEON */
 nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)

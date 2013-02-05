@@ -687,7 +687,9 @@ public:
 		MODE_NONE = 0,
 		MODE_STANDALONE,
 		MODE_NETSERVER,
-		MODE_NETCLIENT
+		MODE_NETCLIENT,
+		MODE_CONTROLLED,
+		MODE_MANUAL,
     };
 
 	Settable<NutMode> mode;

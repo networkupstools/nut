@@ -594,7 +594,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 		};
 	}
 
-	return current_nut_dev;
+	return nutscan_rewind_device(current_nut_dev);
 }
 #else /* WITH_IPMI */
 /* stub function */

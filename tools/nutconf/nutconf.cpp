@@ -43,7 +43,8 @@ const char * Usage::s_text[] = {
 "    --is-configured                     Checks whether NUT is configured",
 "    --local <directory>                 Sets configuration directory",
 "    --system                            Sets configuration directory to " CONFPATH " (default)",
-"    --mode <NUT mode>                   Sets NUT mode (see below)",
+"    --get-mode                          Gets NUT mode (see below)",
+"    --set-mode <NUT mode>               Sets NUT mode (see below)",
 "    --set-monitor <spec>                Configures one monitor (see below)",
 "                                        All existing entries are removed; however, it may be",
 "                                        specified multiple times to set multiple entries",
@@ -554,7 +555,14 @@ class NutScanner {
 
 		private:
 
-		static options_t createOptions(nutscan_device_t * dev);
+		/**
+		 *  \brief  Create options
+		 *
+		 *  \param  opt  libnutscan device options
+		 *
+		 *  \return Device option list
+		 */
+		static options_t createOptions(nutscan_options_t * opt);
 
 		/** Constructor */
 		Device(nutscan_device_t * dev);
@@ -729,23 +737,10 @@ class NutScanner {
 NutScanner::InitFinal NutScanner::s_init_final;
 
 
-NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_device_t * dev) {
-	assert(NULL != dev);
-
+NutScanner::Device::options_t NutScanner::Device::createOptions(nutscan_options_t * opt) {
 	options_t options;
 
 	// Create options
-	nutscan_options_t * opt = &dev->opt;
-
-	assert(NULL != opt);
-
-	// TBD: Why does the device always have the 1st option?
-	// Why isn't it just a pointer?
-	// The fact that the head of the option list isn't dynamic
-	// like the other items unnecessarily complicates things... :-(
-	if (NULL == opt->option)
-		return options;
-
 	for (; NULL != opt; opt = opt->next) {
 		assert(NULL != opt->option);
 
@@ -762,7 +757,7 @@ NutScanner::Device::Device(nutscan_device_t * dev):
 	type(nutscan_device_type_string(dev->type)),
 	driver(NULL != dev->driver ? dev->driver : ""),
 	port(NULL != dev->port ? dev->port : ""),
-	options(createOptions(dev))
+	options(createOptions(dev->opt))
 {}
 
 
@@ -771,7 +766,7 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 
 	nutscan_device_t * dev = dev_list;
 
-	for (; dev != NULL; dev = dev->prev)
+	for (; dev != NULL; dev = dev->next)
 		list.push_back(Device(dev));
 
 	nutscan_free_device(dev_list);
@@ -985,7 +980,10 @@ class NutConfOptions: public Options {
 	/** --system */
 	bool system;
 
-	/** --mode argument */
+	/** --get-mode */
+	bool get_mode;
+
+	/** --set-mode argument */
 	std::string mode;
 
 	/** --{add|set}-monitor arguments (all the monitors) */
@@ -1158,6 +1156,7 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 	autoconfigure(false),
 	is_configured(false),
 	system(false),
+	get_mode(false),
 	set_monitor_cnt(0),
 	add_monitor_cnt(0),
 	set_listen_cnt(0),
@@ -1234,17 +1233,23 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			else
 				system = true;
 		}
-		else if ("mode" == *opt) {
+		else if ("get-mode" == *opt) {
+			if (get_mode)
+				m_errors.push_back("--get-mode option specified more than once");
+			else
+				get_mode = true;
+		}
+		else if ("set-mode" == *opt) {
 			Arguments args;
 
 			if (!mode.empty())
-				m_errors.push_back("--mode option specified more than once");
+				m_errors.push_back("--set-mode option specified more than once");
 
-			else if (NutConfOptions::SETTER != optMode("mode", args))
-				m_errors.push_back("--mode option requires an argument");
+			else if (NutConfOptions::SETTER != optMode(*opt, args))
+				m_errors.push_back("--set-mode option requires an argument");
 
 			else if (args.size() > 1)
-				m_errors.push_back("Only one argument allowed for the --mode option");
+				m_errors.push_back("Only one argument allowed for the --set-mode option");
 
 			else if (args.size() == 1 && !checkMode(args.front()))
 				m_errors.push_back("Unknown NUT mode: \"" + args.front() + "\"");
@@ -1913,6 +1918,63 @@ nut::UpsmonConfiguration::Monitor monitor(
 
 
 /**
+ *  \brief  NUT mode getter
+ *
+ *  \param  etc   Configuration directory
+ *
+ *  \return NUT mode (as string)
+ */
+std::string getMode(const std::string & etc) {
+	std::string nut_conf_file(etc + "/nut.conf");
+
+	nut::NutConfiguration nut_conf;
+
+	// Source previous configuration
+	source(&nut_conf, nut_conf_file);
+
+	nut::NutConfiguration::NutMode mode = nut_conf.mode;
+
+	switch (mode) {
+		case nut::NutConfiguration::MODE_UNKNOWN:    return "unknown";
+		case nut::NutConfiguration::MODE_NONE:       return "none";
+		case nut::NutConfiguration::MODE_STANDALONE: return "standalone";
+		case nut::NutConfiguration::MODE_NETSERVER:  return "netserver";
+		case nut::NutConfiguration::MODE_NETCLIENT:  return "netclient";
+		case nut::NutConfiguration::MODE_CONTROLLED: return "controlled";
+		case nut::NutConfiguration::MODE_MANUAL:     return "manual";
+	}
+
+	std::stringstream e;
+
+	e << "INTERNAL ERROR: Unknown NUT mode: " << mode;
+
+	throw std::logic_error(e.str());
+}
+
+
+/**
+ *  \brief  NUT mode setter
+ *
+ *  \param  mode  Mode
+ *  \param  etc   Configuration directory
+ */
+void setMode(const std::string & mode, const std::string & etc) {
+	std::string nut_conf_file(etc + "/nut.conf");
+
+	nut::NutConfiguration nut_conf;
+
+	// Source previous configuration (if any)
+	source(&nut_conf, nut_conf_file);
+
+	// Set mode
+	nut_conf.mode = nut::NutConfiguration::NutModeFromString(mode);
+
+	// Store configuration
+	store(&nut_conf, nut_conf_file);
+}
+
+
+/**
  *  \brief  Set monitors in upsmon.conf
  *
  *  \param  monitors  Monitor list
@@ -2308,7 +2370,12 @@ void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbos
 		else {
 			std::stringstream name;
 
-			name << "device_type_" << dev.type << "_no_" << dev_no;
+			name << "device_type_" << dev.type << "_no_";
+
+			name.width(3);
+			name.fill('0');
+
+			name << dev_no;
 
 			nut::GenericConfigSection & device_conf = devices_conf[name.str()];
 
@@ -2784,6 +2851,16 @@ int mainx(int argc, char * const argv[]) {
 		std::cout << (is_configured ? "true" : "false") << std::endl;
 
 		::exit(is_configured ? 0 : 1);
+	}
+
+	// --get-mode
+	if (options.get_mode) {
+		std::cout << getMode(etc) << std::endl;
+	}
+
+	// --set-mode
+	if (!options.mode.empty()) {
+		setMode(options.mode, etc);
 	}
 
 	// Monitors were set
