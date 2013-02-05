@@ -2290,6 +2290,8 @@ void setUsers(
 void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbose = 0) {
 	NutScanner::devices_t::const_iterator dev_iter = devices.begin();
 
+	nut::GenericConfiguration devices_conf;
+
 	unsigned int dev_no = 1;
 
 	for (; dev_iter != devices.end(); ++dev_iter, ++dev_no) {
@@ -2302,25 +2304,52 @@ void printDevicesInfo(const NutScanner::devices_t & devices, unsigned int verbos
 			<< dev.driver << ' '
 			<< dev.port << std::endl;
 
-		// Print full info
+		// Assemble full info
 		else {
-			std::cout
-			<< "[device_type_" << dev.type
-			<< "_no_" << dev_no << ']' << std::endl
-			<< "\tdriver = " << dev.driver << std::endl
-			<< "\tport = " << dev.port   << std::endl;
+			std::stringstream name;
 
+			name << "device_type_" << dev.type << "_no_" << dev_no;
+
+			nut::GenericConfigSection & device_conf = devices_conf[name.str()];
+
+			device_conf.name = name.str();
+
+			// Set driver
+			nut::GenericConfigSectionEntry & driver = device_conf["driver"];
+
+			driver.name = "driver";
+			driver.values.push_back(dev.driver);
+
+			// Set port
+			nut::GenericConfigSectionEntry & port = device_conf["port"];
+
+			port.name = "port";
+			port.values.push_back(dev.port);
+
+			// Set options
 			NutScanner::Device::options_t::const_iterator
 				opt = dev.options.begin();
 
-			for (; opt != dev.options.end(); ++opt)
-				std::cout
-				<< '\t'  << opt->first
-				<< " = " << opt->second
-				<< std::endl;
+			for (; opt != dev.options.end(); ++opt) {
+				nut::GenericConfigSectionEntry & option = device_conf[opt->first];
 
-			std::cout << std::endl;
+				option.name = opt->first;
+				option.values.push_back(opt->second);
+			}
 		}
+	}
+
+	// Print full info
+	if (0 != verbose) {
+		nut::NutMemory info;
+
+		devices_conf.writeTo(info);
+
+		std::string info_str;
+
+		assert(nut::NutStream::NUTS_OK == info.getString(info_str));
+
+		std::cout << info_str;
 	}
 }
 
