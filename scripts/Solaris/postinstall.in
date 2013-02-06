@@ -7,14 +7,16 @@ NUT_DIR="@prefix@"
 # make sure the nut user exists and has correct memberships
 res=`getent group nut`
 if [ -z "$res" ]; then
-	addgroup --quiet --system nut
+	groupadd nut
 fi
 res=`getent passwd nut`
 if [ -z "$res" ]; then
-	adduser --quiet --system --ingroup nut --home ${NUT_DIR}/bin --no-create-home nut
+	useradd -g nut -G root -d ${NUT_DIR}/bin nut
+fi
+
 res=`groups nut | grep -w nut`
-elif [ -z "$res" ]; then
-	adduser nut nut
+if [ -z "$res" ]; then
+	usermod -g nut -G root nut
 fi
 
 # make sure that conffiles are secured and have the correct ownerships
