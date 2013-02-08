@@ -766,8 +766,15 @@ NutScanner::devices_t NutScanner::dev2list(nutscan_device_t * dev_list) {
 
 	nutscan_device_t * dev = dev_list;
 
-	for (; dev != NULL; dev = dev->next)
+	for (; dev != NULL; dev = dev->next) {
+		// Skip devices of type NONE
+		// TBD: This happens with the serial scan on an invalid device
+		// Should be fixed in libnutscan I think
+		if (TYPE_NONE == dev->type)
+			continue;
+
 		list.push_back(Device(dev));
+	}
 
 	nutscan_free_device(dev_list);
 
@@ -859,8 +866,14 @@ NutScanner::devices_t NutScanner::devicesEatonSerial(const std::list<std::string
 
 	std::list<std::string>::const_iterator port = ports.begin();
 
-	for (; port != ports.end(); ++port) {
+	while (port != ports.end()) {
 		port_list += *port;
+
+		++port;
+
+		if (port == ports.end())
+			break;
+
 		port_list += ' ';
 	}
 
