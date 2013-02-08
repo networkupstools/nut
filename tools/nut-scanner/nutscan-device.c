@@ -21,7 +21,7 @@
 #include <string.h>
 #include <assert.h>
 
-const char * nutscan_device_type_strings[TYPE_END] = {
+const char * nutscan_device_type_strings[TYPE_END - 1] = {
 	"USB",
 	"SNMP",
 	"XML",
