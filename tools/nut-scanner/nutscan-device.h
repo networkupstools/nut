@@ -48,7 +48,7 @@ typedef enum nutscan_device_type {
 } nutscan_device_type_t;
 
 /** Device type -> string mapping */
-extern const char * nutscan_device_type_strings[TYPE_END];
+extern const char * nutscan_device_type_strings[TYPE_END - 1];
 
 typedef struct nutscan_options {
 	char *		option;
