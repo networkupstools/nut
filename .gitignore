@@ -22,3 +22,5 @@ install-sh
 missing
 .deps
 *.bak
+*.[oa]
+*~
