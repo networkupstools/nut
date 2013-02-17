@@ -2,7 +2,7 @@ Information for developers
 ==========================
 
 This document is intended to explain some of the more useful things
-within the tree and provide a standard for working on the code.
+within the tree, and provide a standard for working on the code.
 
 General stuff - common subdirectory
 -----------------------------------
@@ -10,16 +10,16 @@ General stuff - common subdirectory
 String handling
 ~~~~~~~~~~~~~~~
 
-Use snprintf.  It's even provided with a compatibility module if the
-target host doesn't have it natively.  
+Use snprintf().  It's even provided with a compatibility module if the
+target system doesn't have it natively.
 
-If you use snprintf to load some value into a buffer, make sure you
+If you use snprintf() to load some value into a buffer, make sure you
 provide the format string.  Don't use user-provided format strings,
 since that's an easy way to open yourself up to an exploit.
 
-Don't use strcat.  We have a neat wrapper for snprintf called snprintfcat
+Don't use strcat().  We have a neat wrapper for snprintf() called snprintfcat()
 that allows you to append to char * with a format string and all the usual
-string length checking of snprintf.
+string length checking of snprintf().
 
 Error reporting
 ~~~~~~~~~~~~~~~
@@ -39,8 +39,8 @@ Debugging information
 ~~~~~~~~~~~~~~~~~~~~~
 
 upsdebug_with_errno(), upsdebugx() and upsdebug_hex() use the
-global nut_debug_level so you don't have to mess around with
-printfs yourself.  Use them.
+global `nut_debug_level` so you don't have to mess around with
+printf()s yourself.  Use them.
 
 Memory allocation
 ~~~~~~~~~~~~~~~~~
@@ -312,20 +312,19 @@ and many people have put a lot of time and energy to improve it.
 Submitting patches
 ------------------
 
-Patches that arrive in unified format (diff -u) as plain text attachments with
-no HTML and a brief summary at the top are the easiest to handle.
+Small patches that arrive in unified format (diff -u) as plain text attachments
+with no HTML and a brief summary at the top are the easiest to handle.
 
 If a patch is sent to the nut-upsdev mailing list, it stands a better chance of
 being seen immediately. However, it is likely to be dropped if any issues
 cannot be resolved quickly. If your code might not work for others, or if it is
-a large change, your best bet is to submit a
-link:https://alioth.debian.org/tracker/?atid=411544&group_id=30602&func=browse[ticket on Alioth].
+a large change, your best bet is to submit a pull request or create an
+link:https://github.com/networkupstools/nut/issues[issue on GitHub].
 
-This allows us to track the patches over a longer period of time, and it is
-less likely that a patch will fall through the cracks. Posting a reminder to
-the developers (via the nut-upsdev list) about a patch on the tracker is fair
-game.
-
+The issue tracker allows us to track the patches over a longer period of time,
+and it is less likely that a patch will fall through the cracks. Posting a
+reminder to the developers (via the nut-upsdev list) about a patch on GitHub is
+fair game.
 
 Patch cohesion
 --------------
@@ -343,8 +342,8 @@ instead of just dropping it.
 If you have to make big changes in lots of places, send multiple
 patches - one per item.
 
-The completion touch: manual pages and device entry in HCL
-----------------------------------------------------------
+The finishing touches: manual pages and device entry in HCL
+-----------------------------------------------------------
 
 If you change something that involves an argument to a program or
 configuration file parsing, the man page is probably now out of date.
@@ -363,96 +362,181 @@ HTML and dynamic searchable HTML for the website.
 Source code management
 ----------------------
 
-We currently use a Subversion (SVN) repository hosted at Alioth to track
-changes to the NUT source code. To obtain permission to commit to the SVN
-repository, you must be prepared to spend a fair amount of time contributing to
-the NUT codebase. For occasional contributions over time, you may wish to
-investigate one of the <<_distributed_scm_systems,distributed SCM tools>>
-listed below.
+We currently use a Git repository hosted at GitHub (with a mirror at Alioth) to track
+changes to the NUT source code. This allows you to clone the repository (or
+fork, in GitHub parlance), make changes, and post them online for review prior
+to integration.
 
-Anonymous SVN checkouts are possible:
+To obtain permission to commit directly to the master NUT repository, you must
+be prepared to spend a fair amount of time contributing to the NUT codebase.
+Most developers will be well served by committing to their own Git repository,
+and having the NUT team merge their changes.
 
-	svn co svn://svn.debian.org/nut/trunk nut-svn-readonly
+Git offers a little more flexibility than the +svn update+ command. You may
+fetch other developers' changes from SVN into your repository, but hold off on
+actually combining them with your branch until you have compared the two
+branches (for instance, with `gitk --all`). Git also allows you to accumulate
+more than one commit worth of changes before pushing to another repository.
 
-If you change a file in the SVN working copy, you can use `svn diff` to
-generate a patch to send to the nut-upsdev mailing list.
+For a quick change to a file in the Git working copy, you can use `git diff` to
+generate a patch to send to the nut-upsdev mailing list.  If you have more
+extensive changes, you can use `git format-patch` on a complete commit or
+branch, and send the resulting series of patches to the list.
+
+The link:https://git.wiki.kernel.org/index.php/GitSvnCrashCourse[GitSvnCrashCourse]
+wiki page has some useful information for long-time users of Subversion.
+
+Git access
+~~~~~~~~~~
+
+Anonymous Git checkouts are possible:
+
+	git clone git://github.com/networkupstools/nut.git
+
+or
+
+	git clone https://github.com/networkupstools/nut.git
+
+if it is necessary to get around a pesky firewall that blocks the native Git
+protocol.
+
+For a quicker checkout (when you don't need the entire repository history),
+you can limit the depth of the clone:
+
+	git clone --depth 1 git://github.com/networkupstools/nut.git
+
+In case the GitHub repository is temporarily unavailable for any reason, we
+also plan to push to Alioth's
+link:https://alioth.debian.org/scm/?group_id=30602[Git server] as well. You can
+add a remote reference to your local repository:
+
+	cd path/to/nut
+	git remote add -f alioth git://anonscm.debian.org/nut/nut.git
+
+Mercurial (hg) access
+~~~~~~~~~~~~~~~~~~~~~
+
+There are those who prefer the simplicity and self-consistency of the Mercurial
+SCM client over the hodgepodge of unique commands which make up Git. Rather
+than debate the merits of each system, we will gently guide you towards the
+link:http://hg-git.github.com/[hg-git project] which would theoretically be a
+transparent bridge between the central Git repository, and your local Mercurial
+working copy.
+
+Other tools for hg/git interoperability are sure to exist. We would welcome any
+feedback about this process on the nut-upsdev mailing list.
+
+Subversion (SVN) access
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If you prefer to check out the NUT source code using an SVN client, GitHub
+has a link:https://github.com/blog/966-improved-subversion-client-support[SVN
+interface to Git repositories] hosted on their servers. You can fork a copy of
+the NUT repository and commit to your fork with SVN.
+
+Be aware that the examples in the GitHub blog post might result in a checkout
+that includes all of the current branches, as well as the trunk. You are most
+likely interested in a command line similar to the following:
+
+	svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
+
+Ignoring generated files
+------------------------
+
+The NUT repository generally only holds files which are not generated from
+other files. This prevents spurious differences from being recorded in the
+repository history.
+
+If you add a driver, it is recommended that you add the driver executable name
+to the .gitignore file in that directory. Similarly, files generated from *.in
+and *.am sources should be ignored as well. We try to include a number of
+generated files in the tarball releases with `make dist` hooks in order to
+minimize the number of dependencies for end users, but the assumption is that
+a developer can install the packages needed to regenerate those files.
+
+Commit message formatting
+-------------------------
+
+From the `git commit` man page:
+
+[quote]
+Though not required, it’s a good idea to begin the commit message with a single
+short (less than 50 character) line summarizing the change, followed by a blank
+line and then a more thorough description. The text up to the first blank line
+in a commit message is treated as the commit title, and that title is used
+throughout git.
+
+If your commit is just a change to one component, such as the HCL, upsd or a
+specific driver, prefix your commit message in a way that matches similar
+commits. This helps when searching the repository or tracking down a
+regression.
+
+Referring to previous commits can be tricky. If you are referring to the
+immediate parent of a given commit, it suffices to say "the previous commit".
+(Are you correcting a typo in the previous commit? If you haven't pushed yet,
+consider using the `git commit --amend` command instead of creating a new
+commit.) For other commits, even though tools like gitk and GitHub's
+repository viewers recognize Git hashes and create links automatically, it is
+best to add some context such as the commit title or a date.
+
+You may notice that some older commits have `[[SVN:####]]` tags and Fossil-ID
+footers. These were lifted from the old SVN commit messages using reposurgeon,
+and should not be used as a guide for future commits.
 
 Repository etiquette and quality assurance
 ------------------------------------------
 
-Please keep the SVN trunk in working condition at all times. The trunk
-may be used to generate daily tarballs, and should not contain broken
-code if possible. If you need to commit incremental changes that leave
-the system in a broken state, please do so in a separate branch and
-merge the changes back to the trunk once they are complete.
+Please keep the Git master branch in working condition at all times. The
+master branch may be used to generate daily tarballs, and should not contain
+broken code. If you need to commit incremental changes that leave the system
+in a broken state, please do so in a separate branch and merge the changes
+back into master once they are complete.
 
-Before committing, please remember to run "make distcheck-light". This checks
-that the Makefiles are not broken, that all the relevant files are distributed,
-and that there are no compilation or installation errors.
+You are encouraged to use `git rebase -i` on your private Git branches to
+separate your changes into <<_patch_cohesion,logical changes>>.
 
-Running "make distcheck-light" is especially important if you have added or
+From there, you can generate patches for the issue tracker, or the nut-upsdev list.
+
+Note that once you rebase a branch, anyone else who has a copy of this branch
+will need to rebase on top of your rebased branch. Obviously, this hinders
+collaboration. In this case, we recommend that you rebase only in your private
+repository, and push when things are ready for discussion. Merging instead of
+rebasing will help with collaboration, but please do not turn the repository
+history into a pile of spaghetti by merging unnecessarily. Be sure that your
+commit messages are descriptive when merging.
+
+Before pushing your commits upstream, please remember to run +make
+distcheck-light+. This checks that the Makefiles are not broken, that all the
+relevant files are distributed, and that there are no compilation or
+installation errors.
+
+Running +make distcheck-light+ is especially important if you have added or
 removed files, or updated configure.in or some Makefile.am.  Remember: simply
-adding a file to SVN does not mean it will be distributed. To distribute a
+adding a file to Git does not mean it will be distributed. To distribute a
 file, you must update the corresponding Makefile.am.
 
-There is also "make distcheck", which runs an even stricter set of
-tests, but will not work unless you have all the optional libraries
-and features installed.
-
-Distributed SCM systems
------------------------
-
-Git and Mercurial (Hg) are two popular distributed SCM tools which provide a
-bridge to a SVN repository. This makes it possible for a new developer to stay
-synchronized with the latest changes to NUT, while keeping a local version
-history of their changes before they are merged by the core NUT developers.
-
-A complete introduction to either Git or Mercurial is beyond the scope of this
-document, but many others have written excellent tutorials on both the DSCM
-tools, and their SVN interfaces.
-
-Git and SVN
-~~~~~~~~~~~
-
-The `git svn` tool synchronizes a Git repository with a
-link:http://www.kernel.org/pub/software/scm/git/docs/git-svn.html[SVN repository].
-
-In many cases, NUT developers will not need access to the entire repository
-history - a snapshot starting at the most recent revision will work nicely:
-
-	git svn clone --revision HEAD svn://svn.debian.org/nut/trunk nut-git
-
-From the resulting nut-git directory, you may use all of the Git commands to
-record your changes, and even create new branches for working on different
-aspects of the code.
-
-Git offers a little more flexibility than the `svn update` command. You may
-fetch other developers' changes from SVN into your repository, but hold off on
-actually combining them with your branch until you have compared the two
-branches (for instance, with `gitk --all`).
-
-To import the new SVN revisions, simply run the following command from any
-directory under your Git checkout (`nut-git` in the example above). Note that
-this only changes the history stored in your repository - it does not touch
-your checked-out files.
-
-	git svn fetch
-
-Initially, the Git `master` branch tracks the SVN `trunk`. The `git svn`
-command updates the `remotes/trunk` reference every time you run `git svn
-fetch`, but it does not adjust the `master` branch automatically. To update
-your master branch with new SVN revisions, you can run the following commands:
-
-	git checkout master
-	git svn fetch   # (optional; this gets commits other than on your current branch)
-	git svn rebase
+There is also +make distcheck+, which runs an even stricter set of
+tests than +make distcheck-light+, but will not work unless you have all the
+optional libraries and features installed.
 
 You may create as many branches as you like in your local Git repository. When
-using `git svn`, the preferred way to combine your changes with SVN changes is
-to use `git rebase` on your local branch. This re-applies your branch's changes
-to the new SVN changes, much as though your branch were a series of patches.
+using Git, our preferred way to combine small changes with the upstream
+upstream repository is to use `git rebase` on your local branch. This is
+equivalent to treating your branch as a series of patches, and re-applying your
+patches on top of the upstream changes.
+
+If you haven't created a commit out of your local changes yet, and you want to
+fetch the latest code, you can also use +git stash+ before pulling, then +git
+stash pop+ to apply your saved changes.
+
+Here is an example workflow:
 
 --------------------------------------------------------------------------------
+	git clone -o central git://github.com/networkupstools/nut.git
+
+	cd nut
+	git remote add -f username git://github.com/username/nut.git
+
 	git checkout master
 	git branch my-new-feature
 	git checkout my-new-feature
@@ -462,27 +546,21 @@ to the new SVN changes, much as though your branch were a series of patches.
 	git add changed-file.c
 	git commit
 
-	# Someone committed something to SVN. Fetch it.
+	# Fix a typo in a file or commit message:
 
-	git svn fetch
-	git rebase remotes/trunk
+	git commit -a --amend
+
+	# Someone committed something to the central repository. Fetch it.
+
+	git fetch central
+	git rebase central/master
+
+	# Publish your branch to your GitHub repository:
+
+	git push username my-new-feature
 --------------------------------------------------------------------------------
-
-You are encouraged to use `git rebase -i` on your private Git branches to
-separate your changes into <<_patch_cohesion,logical changes>>.
-
-From there, you can generate patches for the Tracker, or the nut-upsdev list.
 
 If you are new to Git, but are familiar with SVN, the
 link:http://git-scm.com/course/svn.html[following link] may be of use.
 
 
-Mercurial and SVN
-~~~~~~~~~~~~~~~~~
-
-Synchronizing a Mercurial repository against the NUT SVN repository should be
-similar in spirit to the Git method discussed above.
-link:http://mercurial.selenic.com/wiki/WorkingWithSubversion[This wiki page]
-discusses your options.
-
-We would welcome any feedback about this process on the nut-upsdev mailing list.
