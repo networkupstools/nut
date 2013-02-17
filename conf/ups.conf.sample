@@ -44,10 +44,15 @@
 # These directives are common to all drivers that support ups.conf:
 #
 #  driver: REQUIRED.  Specify the program to run to talk to this UPS.  
-#          apcsmart, bestups, and sec are some examples.
+#          apcsmart, bestups, and usbhid-ups are some examples.
 #
 #    port: REQUIRED.  The serial port where your UPS is connected.  
 #          /dev/ttyS0 is usually the first port on Linux boxes, for example.
+#          For many USB drivers, the value here is ignored. We typically use
+#          "auto". See the driver documentation for more details on how to
+#          specify the USB device.  For serial UPSes on Windows systems, use
+#          something like COM1: or COM2 (colon is optional). You can find the
+#          exact port in the properties page for your UPS in Device Manager.
 #
 # sdorder: optional.  When you have multiple UPSes on your system, you
 #          usually need to turn them off in a certain order.  upsdrvctl
