@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+nut
+pkginfo
+postinstall
+preremove

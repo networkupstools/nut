@@ -260,3 +260,7 @@ riello_ser.8
 riello_usb.8
 riello_ser.html
 riello_usb.html
+nutscan_get_serial_ports_list.3
+nutscan_scan_eaton_serial.3
+nutscan_get_serial_ports_list.html
+nutscan_scan_eaton_serial.html

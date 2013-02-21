@@ -30,6 +30,12 @@
 #include <freeipmi/freeipmi.h>
 #endif
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* SNMP structure */
 typedef struct nutscan_snmp {
 	char * community;
@@ -85,8 +91,16 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
 
 nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
 
+nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
 void nutscan_display_parsable(nutscan_device_t * device);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif

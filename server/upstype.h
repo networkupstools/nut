@@ -24,6 +24,12 @@
 
 #include "parseconf.h"
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* structure for the linked list of each UPS that we track */
 typedef struct upstype_s {
 	char			*name;
@@ -51,5 +57,11 @@ typedef struct upstype_s {
 } upstype_t;
 
 extern upstype_t	*firstups;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif	/* UPSTYPE_H_SEEN */

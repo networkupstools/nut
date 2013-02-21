@@ -17,6 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 struct {
 	char	*name;
 	int	val;		/* hex digits, ala HTML */
@@ -58,3 +64,10 @@ typedef struct {
 } imgvar_t;
 
 extern imgvar_t imgvar[];
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+

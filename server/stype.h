@@ -31,11 +31,23 @@
 #define NI_MAXSERV      32
 #endif
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 typedef struct stype_s {
 	char	*addr;
 	char	*port;
 	int	sock_fd;
 	struct stype_s	*next;
 } stype_t;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif	/* STYPE_H_SEEN */

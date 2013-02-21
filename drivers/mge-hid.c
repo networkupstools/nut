@@ -1106,7 +1106,13 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 
 	/* Search for device type and formatting rules */
 	for (model = mge_model_names; model->iProduct; model++) {
-		upsdebugx(2, "comparing with: %s", model->name);
+		if(model->name) {
+			upsdebugx(2, "comparing with: %s", model->name);
+		}
+		else {
+			upsdebugx(2, "comparing with: %s %s", model->iProduct,
+					model->iModel);
+		}
 
 		if (strcmp(iProduct, model->iProduct)) {
 			continue;

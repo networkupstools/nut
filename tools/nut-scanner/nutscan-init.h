@@ -19,6 +19,12 @@
 #ifndef SCAN_INIT
 #define SCAN_INIT
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 extern int nutscan_avail_avahi;
 extern int nutscan_avail_ipmi;
 extern int nutscan_avail_nut;
@@ -28,4 +34,11 @@ extern int nutscan_avail_xml_http;
 
 void nutscan_init(void);
 void nutscan_free(void);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+
 #endif

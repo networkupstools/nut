@@ -3,6 +3,12 @@
 #ifndef EXTSTATE_H_SEEN
 #define EXTSTATE_H_SEEN 1
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* this could be made dynamic if someone really needs more than this... */
 #define ST_MAX_VALUE_LEN 256
 
@@ -29,5 +35,11 @@ typedef struct cmdlist_s {
         char    *name;
         struct cmdlist_s	*next;
 } cmdlist_t;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif	/* EXTSTATE_H_SEEN */

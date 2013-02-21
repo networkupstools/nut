@@ -19,6 +19,12 @@
 #ifndef SCAN_DEVICE
 #define SCAN_DEVICE
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 typedef enum nutscan_device_type {
 	TYPE_NONE=0,
 	TYPE_USB,
@@ -27,6 +33,7 @@ typedef enum nutscan_device_type {
 	TYPE_NUT,
 	TYPE_IPMI,
 	TYPE_AVAHI,
+	TYPE_EATON_SERIAL,
 	TYPE_END
 } nutscan_device_type_t;
 
@@ -49,4 +56,11 @@ nutscan_device_t * nutscan_new_device();
 void nutscan_free_device(nutscan_device_t * device);
 void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+
 #endif

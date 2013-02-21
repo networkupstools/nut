@@ -181,6 +181,7 @@
 "Cyber Power Systems"	"ups"	"1"	"1500AVR-HO"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"PR2200"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"2"	"PR3000E"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"2"	"OL3000RMXL2U"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"2"	"685AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"800AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"AE550"	"USB"	"usbhid-ups"
@@ -439,6 +440,8 @@
 "Liebert"	"ups"	"2"	"PowerSure PSA"	"USB"	"usbhid-ups"
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
+
+"Lyonn"	"ups"	"2"	"CTB-1200"	""	"blazer_usb"
 
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
 
@@ -839,6 +842,7 @@
 "Socomec Sicon"	"ups"	"2"	"NeTYS-PE 600VA"	""	"blazer_ser"
 "Socomec Sicon"	"ups"	"1"	"Egys"	"420 VA"	"powercom"
 "Socomec Sicon"	"ups"	"3"	"MASTERYS 3/3 SYSTEM 60 kVA"	"Net Vision v5.05 SNMP card"	"snmp-ups (experimental)"
+"Socomec Sicon"	"ups"	"3"	"NETYS RT 1/1"	"Net Vision SNMP card"	"snmp-ups (experimental)"
 "Socomec Sicon"	"ups"	"3"	"Netvision"	"UPS equipped with Netvision WEB/SNMP card/external box"	"snmp-ups (experimental)"
 
 "Soltec"	"ups"	"1"	"Winmate 525/625/800/1000"	""	"safenet"

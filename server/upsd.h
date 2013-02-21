@@ -45,6 +45,12 @@
 
 #define NUT_NET_ANSWER_MAX SMALLBUF
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* prototypes from upsd.c */
 
 upstype_t *get_ups_ptr(const char *upsname);
@@ -83,6 +89,12 @@ extern nut_ctype_t	*firstclient;
 #define shutdown_how SHUT_RDWR
 #else
 #define shutdown_how 2
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
 #endif
 
 #endif	/* UPSD_H_SEEN */

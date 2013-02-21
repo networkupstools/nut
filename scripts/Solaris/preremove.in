@@ -1,0 +1,8 @@
+#!bin/sh
+
+# Stop all nut services
+
+NUT_DIR="@prefix@"
+
+#$NUT_DIR/bin/upsdrvctl stop
+

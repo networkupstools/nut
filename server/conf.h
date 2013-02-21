@@ -19,6 +19,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* read upsd.conf */
 void load_upsdconf(int reloading);
 
@@ -40,4 +46,11 @@ typedef struct ups_s {
 void delete_acls(void);
 void delete_access(void);
 
-	extern	int	num_ups;
+extern	int	num_ups;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+
