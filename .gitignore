@@ -21,6 +21,8 @@ depcomp
 install-sh
 missing
 .deps
+.libs
 *.bak
 *.[oa]
+*.l[oa]
 *~
