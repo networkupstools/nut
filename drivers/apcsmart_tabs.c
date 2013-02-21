@@ -127,10 +127,13 @@ apc_compattab_t apc_compattab[] = {
 	{ "7TD",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "7TI",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* SmartUPS 900I */
-	{ "7II",	"@79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	{ "7II",	"@79ABCEFGKLMNOPQRSUVWXYZcfg", 0 },
 	/* SmartUPS 2000I */
-	{ "9II",	"@79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
-	{ "9GI",	"@79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
+	{ "9II",	"@79ABCEFGKLMNOPQRSUVWXYZcfg", 0 },
+	{ "9GI",	"@79ABCEFGKLMNOPQRSUVWXYZcfg", 0 },
+	/* SmartUPS 1250I */
+	{ "8II",	"@79ABCEFGKLMNOPQRSUVWXYZcfg", 0 },
+	{ "8GI",	"@79ABCEFGKLMNOPQRSUVWXYZfg", 0 },
 	/* SmartUPS 1250 */
 	{ "8QD",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "8QI",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
