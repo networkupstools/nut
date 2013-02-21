@@ -1071,8 +1071,12 @@ static void legacy_verify(const char *var)
 	 * that's why we keep the loop, as it's over NUT names
 	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if (strcmp(apc_vartab[i].name, var) || var_verify(&apc_vartab[i]) < 0)
+		if (strcmp(apc_vartab[i].name, var))
 			continue;
+		/* don't bother with cmd/var we don't care about */
+		if (strchr(APC_UNR_CMDS, apc_vartab[i].cmd))
+			continue;
+		var_verify(&apc_vartab[i]);
 	}
 }
 
@@ -1126,28 +1130,32 @@ static void oldapcsetup(void)
 	 * note: battery.date and ups.id make little sense here, as
 	 * that would imply writability and this is an *old* apc psu
 	 */
-	legacy_verify("ups.model");
-	legacy_verify("ups.serial");
-	legacy_verify("ups.firmware");
 	legacy_verify("ups.temperature");
 	legacy_verify("ups.load");
 	legacy_verify("input.voltage");
 	legacy_verify("output.voltage");
-	legacy_verify("output.current");
 	legacy_verify("battery.charge");
 	legacy_verify("battery.voltage");
-	deprecate_vars();
 
-	/* really old models don't support ups.model (apc: 0x01) */
-	vt = vartab_lookup_name("ups.model");
-	if (!(vt->flags & APC_PRESENT))
-		/* force the model name */
-		dstate_setinfo("ups.model", "Smart-UPS");
+	/* these will usually timeout */
+	legacy_verify("ups.model");
+	legacy_verify("ups.serial");
+	legacy_verify("ups.firmware");
+	legacy_verify("output.current");
+
+	deprecate_vars();
 
 	/* see if this might be an old Matrix-UPS instead */
 	vt = vartab_lookup_name("output.current");
 	if (vt->flags & APC_PRESENT)
 		dstate_setinfo("ups.model", "Matrix-UPS");
+	else {
+		/* really old models don't support ups.model (apc: 0x01) */
+		vt = vartab_lookup_name("ups.model");
+		if (!(vt->flags & APC_PRESENT))
+			/* force the model name */
+			dstate_setinfo("ups.model", "Smart-UPS");
+	}
 
 	/*
 	 * If we have come down this path then we dont do capabilities and
