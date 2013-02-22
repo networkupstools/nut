@@ -84,6 +84,11 @@ void setDeviceVariable(const std::string& device, const std::string& variable, c
 	ctl->SetDeviceVariable(device, variable, value);
 }
 
+void removeDevice(const std::string& device)
+{
+	ctl->RemoveDevice(device);
+}
+
 void monitorDevice(const std::string& device)
 {
 	ctl->MonitorDevice(device);
@@ -161,6 +166,7 @@ void displayHelp()
 		<< "  -d, --details <devname>    Display details of device 'devname'" << endl
 		<< "  --get <devname> <varname>  Display value of a variable for the specified device" << endl
 		<< "  --set <devname> <varname> <value>    Set value for the specified variable of a device" << endl
+		<< "  --rm <devname>             Remove a device (unmonitor it if any)" << endl
 		<< "  --monitor <devname>        Monitor a device" << endl
 		<< "  --unmonitor <devname>      Unmonitor a device" << endl
 		<< endl
@@ -206,6 +212,7 @@ int main(int argc, char** argv)
 		DEVICE_DETAILS,
 		GET,
 		SET,
+		REM,
 		MONITOR,
 		UNMONITOR,
 		SCAN_COMPLETE,
@@ -241,6 +248,10 @@ int main(int argc, char** argv)
 		else if(str=="--set")
 		{
 			action = SET;
+		}
+		else if(str=="--rm" || str=="--rem")
+		{
+			action = REM;
 		}
 		else if(str=="--monitor")
 		{
@@ -394,6 +405,12 @@ int main(int argc, char** argv)
 		else
 			displayHelp();
 		break;
+  case REM:
+		if(params.size() == 1)
+			removeDevice(params[0]);
+		else
+			displayHelp();			
+    break;    
 	case MONITOR:
 		if(params.size() == 1)
 			monitorDevice(params[0]);

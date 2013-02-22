@@ -48,6 +48,7 @@ public:
 	virtual std::string GetDeviceVariable(const std::string& device, const std::string& variable);
 	virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
 
+	virtual void RemoveDevice(const std::string& device);
 	virtual void MonitorDevice(const std::string& device);
 	virtual void UnmonitorDevice(const std::string& device);
 
@@ -119,6 +120,11 @@ std::string DBusNutController::GetDeviceVariable(const std::string& device, cons
 void DBusNutController::SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value)
 {
 	_dbus_ctl->SetDeviceVariable(device, variable, value);
+}
+
+void DBusNutController::RemoveDevice(const std::string& device)
+{
+	_dbus_ctl->RemoveDevice(device);
 }
 
 void DBusNutController::MonitorDevice(const std::string& device)
