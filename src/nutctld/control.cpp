@@ -268,7 +268,10 @@ void Controller::removeDevice(Device* device)
 		iterator it = std::find(begin(), end(), device);
 		if(it != end())
 		{
-			// TODO Test if device is (at-least) monitored and de-monitor it.
+			// Unmonitor device if any.
+			std::vector<Device*> devs;
+			devs.push_back(device);
+			unmonitorDevices(devs);
 
 			// Delete device object
 			delete device;
