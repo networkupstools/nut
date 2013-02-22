@@ -47,20 +47,20 @@ public:
 	{
 	}
 
-    virtual std::vector< std::string > GetDeviceNames();
-    virtual std::map< std::string, std::string > GetDevice(const std::string& name);
-    virtual std::string GetDeviceVariable(const std::string& device, const std::string& variable);
-    virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
-	virtual void RemoveDevice(const std::string& name);
+  virtual std::vector< std::string > GetDeviceNames();
+  virtual std::map< std::string, std::string > GetDevice(const std::string& name);
+  virtual std::string GetDeviceVariable(const std::string& device, const std::string& variable);
+  virtual void SetDeviceVariable(const std::string& device, const std::string& variable, const std::string& value);
+  virtual void RemoveDevice(const std::string& name);
 
-    virtual void MonitorDevice(const std::string& name);
-    virtual void UnmonitorDevice(const std::string& name);
+  virtual void MonitorDevice(const std::string& name);
+  virtual void UnmonitorDevice(const std::string& name);
 
-    virtual std::vector< std::string > ScanUSB();
-    virtual std::vector< std::string > ScanAvahi(const int32_t& usecTimeout);
-    virtual std::vector< std::string > ScanXMLHTTP(const int32_t& usecTimeout);
-    virtual std::vector< std::string > ScanNut(const std::string& startIP, const std::string& stopIP, const uint16_t& port, const int32_t& usecTimeout);
-    virtual std::vector< std::string > ScanSNMPv1(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& communityName);
+  virtual std::vector< std::string > ScanUSB();
+  virtual std::vector< std::string > ScanAvahi(const int32_t& usecTimeout);
+  virtual std::vector< std::string > ScanXMLHTTP(const int32_t& usecTimeout);
+  virtual std::vector< std::string > ScanNut(const std::string& startIP, const std::string& stopIP, const uint16_t& port, const int32_t& usecTimeout);
+  virtual std::vector< std::string > ScanSNMPv1(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& communityName);
 	virtual std::vector< std::string > ScanSNMPv3(const std::string& startIP, const std::string& stopIP, const int32_t& usecTimeout, const std::string& userName, const int32_t& securityLevel, const std::string& authMethod, const std::string& authPassword, const std::string& privMethod, const std::string& privPassword);
 };
 

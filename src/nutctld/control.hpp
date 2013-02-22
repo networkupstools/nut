@@ -123,7 +123,7 @@ public:
 	 * \{ */
 
 	/**
-     * Add device to the known device list.
+   * Add device to the known device list.
 	 * \return True if device was really added and
 	 * false if the device is redundant with another device and destroyed.
 	 */
@@ -195,6 +195,19 @@ public:
 
 	/** \} */
 	
+	/** Driver managerment
+   * \{ */
+  /**
+   * Start a driver instance from the device name.
+   * \param name Driver device name.
+   */
+  void startDriver(const std::string& name);
+  /**
+   * Stop a driver instance from the device name.
+   * \param name Driver device name.
+   */
+  void stopDriver(const std::string& name);
+  /** \} */	 
 
 	/** Device loading and scanning
 	 * \{ */

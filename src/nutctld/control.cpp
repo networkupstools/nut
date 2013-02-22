@@ -170,7 +170,7 @@ void Device::initFromGenericSection(const nut::GenericConfigSection& section)
 		it = section.entries.begin(); it != section.entries.end(); ++it)
 	{
 		setProperty(it->first, it->second.values.size()>0 ? it->second.values.front() : "");
-	}
+	}	
 }
 
 void Device::initFromScanner(nutscan_device_t* dev)
@@ -301,6 +301,8 @@ std::vector<std::string> Controller::loadUpsConf(const std::string& path)
 		it != _ups_conf.sections.end(); ++it)
 	{
 		Device* device = new Device(it->second);
+		// A device loaded from ups.conf is - by definition - monitored
+		device->setSubStatus(Device::DEVICE_MONITORED);
 		addDevice(device);
 		res.push_back(device->getName());
 	}
@@ -478,6 +480,42 @@ std::clog << "Controller::scanSNMPv3() ignored as a bug is pending." << std::end
 	return res;
 }
 
+void Controller::startDriver(const std::string& name)
+{
+	std::list<std::string> params;
+	params.push_back("start");
+	params.push_back(name);
+	try
+	{
+		nut::Process::Execution exec(DRVPATH "/upsdrvctl", params);
+		exec.wait();
+
+	}
+	catch(std::runtime_error& ex)
+	{
+		std::cerr << "Runtime error while intending to execute upsdrvctl:" << std::endl
+			 << ex.what() << std::endl;
+	}
+}
+
+void Controller::stopDriver(const std::string& name)
+{
+	std::list<std::string> params;
+	params.push_back("stop");
+	params.push_back(name);
+	try
+	{
+		nut::Process::Execution exec(DRVPATH "/upsdrvctl", params);
+		exec.wait();
+
+	}
+	catch(std::runtime_error& ex)
+	{
+		std::cerr << "Runtime error while intending to execute upsdrvctl:" << std::endl
+			 << ex.what() << std::endl;
+	}
+}
+
 void Controller::monitorDevices(const std::vector<Device*>& devices)
 {
 	for(std::vector<Device*>::const_iterator it=devices.begin(); it!=devices.end(); ++it)
@@ -511,22 +549,7 @@ void Controller::monitorDevices(const std::vector<Device*>& devices)
 		const Device* dev = *it;
 		if(dev)
 		{
-			std::string name = dev->getName();
-			std::list<std::string> params;
-			params.push_back("start");
-			params.push_back(name);
-			try
-			{
-// TODO Wait that Vasek finish to implement Executor or try other way.
-				nut::Process::Execution exec(DRVPATH "/upsdrvctl", params);
-				exec.wait();
-
-			}
-			catch(std::runtime_error& ex)
-			{
-				std::cerr << "Runtime error while intending to execute upsdrvctl:" << std::endl
-					 << ex.what() << std::endl;
-			}
+  		startDriver(dev->getName());
 		}
 	}	
 
@@ -536,7 +559,39 @@ void Controller::monitorDevices(const std::vector<Device*>& devices)
 
 void Controller::unmonitorDevices(const std::vector<Device*>& devices)
 {
-	// TODO
+	for(std::vector<Device*>::const_iterator it=devices.begin(); it!=devices.end(); ++it)
+	{
+		Device* dev = const_cast<Device*>(*it);
+		if(dev)
+		{
+
+			if(dev->isMonitored())
+			{
+				// Remove "monitored" status
+				dev->setSubStatus(Device::DEVICE_MONITORED, false);
+
+				// Remove device section from ups.conf
+				_ups_conf.sections.erase(dev->getName());
+
+			}
+
+		}
+	}
+
+	flushUpsConfToFile();
+
+	// Stop drivers in consequences
+	for(std::vector<Device*>::const_iterator it=devices.begin(); it!=devices.end(); ++it)
+	{
+		const Device* dev = *it;
+		if(dev)
+		{
+  		stopDriver(dev->getName());
+		}
+	}	
+
+	// Signal upsd that ups.conf has been changed
+	sendsignal("upsd", SIGHUP);
 }
 
 void Controller::flushUpsConfToFile()
