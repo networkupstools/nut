@@ -627,7 +627,6 @@ void init_command_map(int size)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int res, iIndex = 0, ncounter, NumComms = 0;
-	char pTmp[PW_ANSWER_MAX_SIZE] ;
 
 	upsdebugx(1, "entering init_command_map(%i)", size);
 
