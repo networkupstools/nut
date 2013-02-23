@@ -7,8 +7,6 @@
  *    This model is based on PowerCom (www.powercom.com) models.
  *  -Socomec Sicon Egys 420
  *
- * $Id$
- *
  * Copyrights:
  * (C) 2002 Simon Rozman <simon@rozman.net>
  * (C) 1999  Peter Bieringer <pb@bieringer.de>
@@ -51,6 +49,15 @@
  * - strange battery level on BNT1200AP in online mode( & may be on other models)
  * - i don't know how connect to IMP|IMD USB
  * - i havn't specs for BNT 100-120V models. Add BNT-other type for it
+ *
+ * rev 0.13: Keven Ates <atescomp@gmail.com>
+ * - Modified functions to work for BNT-other 100-120V models.
+ * - Modified BNT-other type defaults to work for the BNT 1500A 120VA model.
+ * - Documented the type[] values purpose in a condensed format.
+ * - BNT-other can be used to perform a complete user override of values for all PowerCom models, detected or not.
+ *
+ * Tested on: BNT-1500A
+ *
  */ 
 
 #include "main.h"
@@ -59,7 +66,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -92,7 +99,28 @@ static unsigned int type = 0;
 static void dtr0rts1 (void);
 static void no_flow_control (void);
 
-/* struct defining types */
+/* struct defining types
+ * ---------------------
+ * See powercom.h for detailed information and functions.
+ *
+ * The following type defaults use this definition:
+ *
+ *	"TypeID",
+ *	ByteCount,
+ *	{ "FlowControlString", FlowControlFuncPtr },
+ *	{ { ValidationIndex, ValidationValue },
+ *	  { ValidationIndex, ValidationValue },
+ *	  { ValidationIndex, ValidationValue } },
+ *	{ { DelayShutdownMinutes, DelayShutdownSeconds },
+ *	  UseMinutesChar'y''n' },
+ *	{ FrequencyFactor, FrequencyConstant },
+ *	{ OfflineLoadFactor, OfflineLoadConstant,
+ *	  OnlineLoadFactor, OnlineLoadConstant },
+ *	{ OfflineBatteryFactor, OfflineLoad%Factor, OfflineBatteryConstant,
+ *	  OnlineBatteryFactor, OnlineBatteryConstant },
+ *	{ 240VoltageFactor, 240VoltageConstant,
+ *	  120VoltageFactor, 120VoltageConstant },
+ */
 static struct type types[] = {
         {
                 "Trust",
@@ -166,10 +194,10 @@ static struct type types[] = {
 				{  "no_flow_control", no_flow_control },
                 { { 8U, 0U }, { 8U, 0U }, { 8U, 0U } },
                 { { 1U, 30U }, 'y' },
-                {  0.00020803, 0.0 },
-                {  1.4474,     0.0,   0.8594,  0.0 },
-                {  5.0000,  0.3268,  -825.00,  0.46511, 0 },
-                {  1.9216, -0.0977,  0.82857,  0.0000 },
+                {  0.00027778, 0.0000 },
+                {  1.0000,  0.0000,  1.0000,  0.0000 },
+                {  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
+                {  2.0000,  0.0000,  2.0000,  0.0000 },
         },
 };
 
@@ -217,10 +245,10 @@ enum status {
 	OFF           = 128U
 };
 
-unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240};
-unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000};
-unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000};
-unsigned int IMPmodels[]={0,425,525,625,825,1025,1200,1500,2000};
+unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240,0,0,0,0,0};
+unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000,0,0,0,0,0,0};
+unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000,0};
+unsigned int IMPmodels[]={0,425,525,625,825,1025,1200,1500,2000,0,0,0,0,0,0,0};
 
 /*
  * local used functions
@@ -338,6 +366,7 @@ static int ups_getinfo(void)
 
 	/* optional dump of raw data */
 	if (nut_debug_level > 4) {
+		/* FIXME: use upsdebug_hex() ? */
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
 	 		printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
@@ -475,7 +504,7 @@ static float output_voltage(void)
 
 static float input_freq(void)
 {
-	if ( !strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN"))
+	if ( !strcmp(types[type].name, "BNT") || !strcmp(types[type].name, "KIN"))
 		return 4807.0/raw_data[INPUT_FREQUENCY];
 	else if ( !strcmp(types[type].name, "IMP"))
 		return raw_data[INPUT_FREQUENCY];
@@ -487,7 +516,7 @@ static float input_freq(void)
 
 static float output_freq(void)
 {
-	if ( !strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN"))
+	if ( !strcmp(types[type].name, "BNT") || !strcmp(types[type].name, "KIN"))
 		return 4807.0/raw_data[OUTPUT_FREQUENCY];
 	else if ( !strcmp(types[type].name, "IMP"))
 		return raw_data[OUTPUT_FREQUENCY];
@@ -574,7 +603,7 @@ static float batt_level(void)
 	int bat0,bat29,bat100,model;
 	float battval;
 	
-	if ( !strncmp(types[type].name, "BNT",3) ) {
+	if ( !strcmp(types[type].name, "BNT") ) {
 		bat0=157;
 		bat29=165;
 		bat100=193;
@@ -617,11 +646,13 @@ static float batt_level(void)
 	}
 	if ( !strcmp(types[type].name, "IMP"))
 		return raw_data[BATTERY_CHARGE];
-	return raw_data[STATUS_A] & ONLINE ?
+	return raw_data[STATUS_A] & ONLINE ? /* Are we on battery power? */
+		/* Yes */
 		types[type].battpct[0] * raw_data[BATTERY_CHARGE] +
 			types[type].battpct[1] * load_level() + types[type].battpct[2] :
+		/* No */
 		types[type].battpct[3] * raw_data[BATTERY_CHARGE] +
-											types[type].battpct[4];
+			types[type].battpct[4];
 }
 
 /*
@@ -852,27 +883,31 @@ void upsdrv_initups(void)
 	
 	/* setup flow control */
 	types[type].flowControl.setup_flow_control();
+
+	/* Setup Model and LineVoltage */
 	if (!strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN") || !strcmp(types[type].name, "IMP")){
 		if (!ups_getinfo()) return;
-		if (raw_data[UPSVERSION]==0xFF){
+		/* Give "BNT-other" a chance! */
+		if (raw_data[MODELNAME]==0x42 || raw_data[MODELNAME]==0x4B){
+			model=BNTmodels[raw_data[MODELNUMBER]/16];
+			if (!strcmp(types[type].name, "BNT-other"))
+				types[type].name="BNT-other";
+			else if (raw_data[MODELNAME]==0x42)
+				types[type].name="BNT";
+			else if (raw_data[MODELNAME]==0x4B){
+				types[type].name="KIN";
+				model=KINmodels[raw_data[MODELNUMBER]/16];
+			}
+		}
+		else if (raw_data[UPSVERSION]==0xFF){
 			types[type].name="IMP";
 			model=IMPmodels[raw_data[MODELNUMBER]/16];
 		}
-		if (raw_data[MODELNAME]==0x42){
-			if (!strcmp(types[type].name, "BNT-other"))
-				types[type].name="BNT-other";
-			else
-				types[type].name="BNT";
-			model=BNTmodels[raw_data[MODELNUMBER]/16];
-		}
-		if (raw_data[MODELNAME]==0x4B){
-			types[type].name="KIN";
-			model=KINmodels[raw_data[MODELNUMBER]/16];
-		}
 		linevoltage=voltages[raw_data[MODELNUMBER]%16];
 		snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
-		modelname=buf;
-		upsdebugx(1,"Detected: %s , %dV",modelname,linevoltage);
+		if (!strcmp(modelname, "Unknown"))
+			modelname=buf;
+		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
 		if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
 			upslogx(LOG_NOTICE, "writing error");
 			dstate_datastale();
@@ -922,23 +957,65 @@ void upsdrv_initups(void)
 /* display help */
 void upsdrv_help(void)
 {
-	printf("You must specify type in ups.conf\n");
-	printf("Type of UPS like 'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN' or 'BNT' or 'BNT-other' (default: 'Trust')\n");
-	printf("BNT-other - it's a special type for BNT 100-120V models \n");
-	printf("You can additional cpecify next variables:\n");
-	printf(" shutdownArguments:   The number of delay arguments and their values for the shutdown operation\n");
-	printf("Also, you can specify next variables (not work for 'IMP', 'KIN' or 'BNT', because detected automatically or known\n");
-	printf(" manufacturer:        Specify manufacturer name (default: 'PowerCom')\n");
-	printf(" modelname:           Specify model name, because it cannot detect automagically (default: Unknown)\n");
-	printf(" serialnumber:        Specify serial number, because it cannot detect automatically (default: Unknown)\n");
-	printf(" linevoltage:         Specify line voltage (110-120 or 220-240 V), if it cannot detect automatically (default: 230 V)\n");
-	printf(" numOfBytesFromUPS:   The number of bytes in a UPS frame\n");
-	printf(" methodOfFlowControl: The flow control method engaged by the UPS\n");
-	printf(" validationSequence:  3 pairs to be used for validating the UPS\n");
-	printf(" voltage:             A quad to convert the raw data to human readable voltage\n");
-	printf(" frequency:           A pair to convert the raw data to human readable freqency\n");
-	printf(" batteryPercentage:   A 5 tuple to convert the raw data to human readable battery percentage\n");
-	printf(" loadPercentage:      A quad to convert the raw data to human readable load percentage\n");
+	//               1         2         3         4         5         6         7         8
+	//      12345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+	printf("\n");
+	printf("Specify UPS information in the ups.conf file.\n");
+	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
+	printf("                 'BNT-other' (default: 'Trust')\n");
+	printf("                'BNT-other' is a special type intended for BNT 100-120V models,\n");
+	printf("                 but can be used to override ALL models.\n");
+	printf("You can additional specify these variables:\n");
+	printf(" manufacturer:  Manufacturer name (default: 'PowerCom')\n");
+	printf(" modelname:     Model name (default: 'Unknown' or autodetected)\n");
+	printf(" serialnumber:  Serial number (default: Unknown)\n");
+	printf(" shutdownArguments: 3 delay arguments for the shutdown operation:\n");
+	printf("                 {{Minutes,Seconds},UseMinutes?}\n");
+	printf("                where Minutes and Seconds are integer, UseMinutes? is either\n");
+	printf("                 'y' or 'n'.\n");
+	printf("You can specify these variables if not automagically detected for types\n");
+	printf("                'IMP','KIN','BNT'\n");
+	printf(" linevoltage:   Line voltage: 110-120 or 220-240 (default: 230)\n");
+	printf(" numOfBytesFromUPS: Number of bytes in a UPS frame: 16 is common, 11 for 'Trust'\n");
+	printf(" methodOfFlowControl: Flow control method for UPS:\n");
+	printf("                'dtr0rts1', 'dtr1' or 'no_flow_control'\n");
+	printf(" validationSequence: 3 pairs of validation values: {{I,V},{I,V},{I,V}}\n");
+	printf("                where I is the index into BytesFromUPS (see numOfBytesFromUPS)\n");
+	printf("                  and V is the value for the ByteIndex to match.\n");
+	printf(" frequency:     Input & Output Frequency conversion values: {A, B}\n");
+	printf("                 used in function: 1/(A*x+B)\n");
+	printf("                If the raw value x IS the frequency, then A=1/(x^2), B=0\n");
+	printf(" loadPercentage: Load conversion values for Battery and Line load: {BA,BB,LA,LB}\n");
+	printf("                 used in function: A*x+B\n");
+	printf("                If the raw value x IS the Load Percent, then A=1, B=0\n");
+	printf(" batteryPercentage: Battery conversion values for Battery and Line power:\n");
+	printf("                 {A,B,C,D,E}\n");
+	printf("                 used in functions: (Battery) A*x+B*y+C, (Line) D*x+E\n");
+	printf("                If the raw value x IS the Battery Percent, then\n");
+	printf("                 A=1, B=0, C=0, D=1, E=0\n");
+	printf(" voltage:       Voltage conversion values for 240 and 120 voltage:\n");
+	printf("                 {240A,240B,120A,120B}\n");
+	printf("                 used in function: A*x+B\n");
+	printf("                If the raw value x IS HALF the Voltage, then A=2, B=0\n\n");
+
+	printf("Example for BNT1500AP in ups.conf:\n");
+	printf("[BNT1500AP]\n");
+	printf("    driver = powercom\n");
+	printf("    port = /dev/ttyS0\n");
+	printf("    desc = \"PowerCom BNT 1500 AP\"\n");
+	printf("    manufacturer = PowerCom\n");
+	printf("    modelname = BNT1500AP\n");
+	printf("    serialnumber = 13245678900\n");
+	printf("    type = BNT-other\n");
+	printf("#   linevoltage = 120\n");
+	printf("#   numOfBytesFromUPS = 16\n");
+	printf("#   methodOfFlowControl = no_flow_control\n");
+	printf("#   validationSequence = {{8,0},{8,0},{8,0}}\n");
+	printf("#   shutdownArguments = {{1,30},y}\n");
+	printf("#   frequency = {0.00027778,0.0000}\n");
+	printf("#   loadPercentage = {1.0000,0.0,1.0000,0.0}\n");
+	printf("#   batteryPercentage = {1.0000,0.0000,0.0000,1.0000,0.0000}\n");
+	printf("#   voltage = {2.0000,0.0000,2.0000,0.0000}\n");
 	return;
 }
 
@@ -962,20 +1039,36 @@ void upsdrv_initinfo(void)
 /* define possible arguments */
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "manufacturer",  "Specify manufacturer name (default: 'PowerCom')");
-	addvar(VAR_VALUE, "linevoltage",   "Specify line voltage (110-120 or 220-240 V), if it cannot detect automatically (default: 230 V)");
-	addvar(VAR_VALUE, "modelname",     "Specify model name, because it cannot detect automagically (default: Unknown)");
-	addvar(VAR_VALUE, "serialnumber",  "Specify serial number, because it cannot detect automatically (default: Unknown)");
-	addvar(VAR_VALUE, "type",       "Type of UPS like 'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN' or 'BNT' or 'BNT-other' (default: 'Trust')");
-	addvar(VAR_VALUE, "numOfBytesFromUPS",  "The number of bytes in a UPS frame");
-	addvar(VAR_VALUE, "methodOfFlowControl",  "The flow control method engaged by the UPS");
-	addvar(VAR_VALUE, "shutdownArguments",  "The number of delay arguments and their values for the shutdown operation");
-	addvar(VAR_VALUE, "validationSequence",  "3 pairs to be used for validating the UPS");
+		//        1         2         3         4         5         6         7         8
+		//2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
+	addvar(VAR_VALUE, "type",
+		"Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other'\n"
+		" (default: 'Trust')");
+	addvar(VAR_VALUE, "manufacturer",
+		"Manufacturer name (default: 'PowerCom')");
+	addvar(VAR_VALUE, "modelname",
+		"Model name [cannot be detected] (default: Unknown)");
+	addvar(VAR_VALUE, "serialnumber",
+		"Serial number [cannot be detected] (default: Unknown)");
+	addvar(VAR_VALUE, "shutdownArguments",
+		"Delay values for shutdown: Minutes, Seconds, UseMinutes?'y'or'n'");
+	addvar(VAR_VALUE, "linevoltage",
+		"Line voltage 110-120 or 220-240 V (default: 230)");
+	addvar(VAR_VALUE, "numOfBytesFromUPS",
+		"The number of bytes in a UPS frame");
+	addvar(VAR_VALUE, "methodOfFlowControl",
+		"Flow control method for UPS: 'dtr0rts1' or 'no_flow_control'");
+	addvar(VAR_VALUE, "validationSequence",
+		"Validation values: ByteIndex, ByteValue x 3");
 	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
-		addvar(VAR_VALUE, "voltage",  "A quad to convert the raw data to human readable voltage");
-		addvar(VAR_VALUE, "frequency",  "A pair to convert the raw data to human readable freqency");
-		addvar(VAR_VALUE, "batteryPercentage",  "A 5 tuple to convert the raw data to human readable battery percentage");
-		addvar(VAR_VALUE, "loadPercentage",  "A quad to convert the raw data to human readable load percentage");
+		addvar(VAR_VALUE, "frequency",
+			"Frequency conversion values: FreqFactor, FreqConst");
+		addvar(VAR_VALUE, "loadPercentage",
+			"Load conversion values: OffFactor, OffConst, OnFactor, OnConst");
+		addvar(VAR_VALUE, "batteryPercentage",
+			"Battery conversion values: OffFactor, LoadFactor, OffConst, OnFactor, OnConst");
+		addvar(VAR_VALUE, "voltage",
+			"Voltage conversion values: 240VFactor, 240VConst, 120VFactor, 120VConst");
 	}
 }
 

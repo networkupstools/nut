@@ -1,6 +1,6 @@
-/*  mge-hid.c - data to monitor MGE UPS SYSTEMS HID (USB and serial) devices
+/*  mge-hid.c - data to monitor Eaton / MGE HID (USB and serial) devices
  *
- *  Copyright (C) 2003 - 2009
+ *  Copyright (C) 2003 - 2012
  *  			Arnaud Quette <arnaud.quette@free.fr>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
@@ -22,11 +22,21 @@
  *
  */
 
+/* TODO list:
+ * - better processing of FW info:
+ *   * some models (HP R5000) include firmware.aux (00.01.0021;00.01.00)
+ *   * other (9130) need more processing (0128 => 1.28)
+ *   ...
+ * - better handling of input.transfer.* (need dstate_addrange)
+ * - outlet management logic (Ie, for outlet.X.load.{on,off}.delay
+ * 		=> use outlet.X.delay.{start,stop}
+ */
+
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.18"
+#define MGE_HID_VERSION		"MGE HID 1.32"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -34,6 +44,12 @@
 
 /* Dell */
 #define DELL_VENDORID		0x047c
+
+/* Powerware */
+#define POWERWARE_VENDORID	0x0592
+
+/* Hewlett Packard */
+#define HP_VENDORID 0x03f0
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -47,14 +63,29 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(DELL_VENDORID, 0xffff), NULL },
 
+	/* PW 9140 */
+	{ USB_DEVICE(POWERWARE_VENDORID, 0x0004), NULL },
+
+	/* R/T3000 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe5), NULL },
+	/* R/T3000 */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe6), NULL },
+	/* various models */
+	{ USB_DEVICE(HP_VENDORID, 0x1fe7), NULL },
+	{ USB_DEVICE(HP_VENDORID, 0x1fe8), NULL },
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
 #endif
 
 typedef enum {
-	MGE_DEFAULT = 0,
-	MGE_EVOLUTION = 0x100,		/* MGE Evolution series */
+	MGE_DEFAULT_OFFLINE = 0,
+	MGE_PEGASUS = 0x100,
+	MGE_3S = 0x110,
+	/* All offline models have type value < 200! */
+	MGE_DEFAULT = 0x200,	/* for line-interactive and online models */
+	MGE_EVOLUTION = 0x300,		/* MGE Evolution series */
 		MGE_EVOLUTION_650,
 		MGE_EVOLUTION_850,
 		MGE_EVOLUTION_1150,
@@ -64,20 +95,35 @@ typedef enum {
 		MGE_EVOLUTION_2000,
 		MGE_EVOLUTION_S_2500,
 		MGE_EVOLUTION_S_3000,
-	MGE_PULSAR_M = 0x200,		/* MGE Pulsar M series */
+	MGE_PULSAR_M = 0x400,		/* MGE Pulsar M series */
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
-		MGE_PULSAR_M_3000_XL,
-	MGE_PEGASUS = 0x400
+		MGE_PULSAR_M_3000_XL
 } models_type_t;
 
+/* Default to line-interactive or online (ie, not offline).
+ * This is then overriden for offline, through mge_model_names */
 static models_type_t	mge_type = MGE_DEFAULT;
+
+/* Countries definition, for region specific settings and features */
+typedef enum {
+	COUNTRY_UNKNOWN = -1,
+	COUNTRY_EUROPE = 0,
+	COUNTRY_US,
+	/* Special European models, which also supports 200 / 208 V */
+	COUNTRY_EUROPE_208,
+	COUNTRY_WORLDWIDE,
+	COUNTRY_AUSTRALIA,
+} country_code_t;
+
+static int		country_code = COUNTRY_UNKNOWN;
+
 static char		mge_scratch_buf[20];
 
 /* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
  * seconds since 1970-01-01 00:00:00. This has to be split between ups.date and
  * ups.time */
-static char *mge_date_conversion_fun(double value)
+static const char *mge_date_conversion_fun(double value)
 {
 	time_t	sec = value;
 
@@ -89,7 +135,7 @@ static char *mge_date_conversion_fun(double value)
 	return NULL;
 }
 
-static char *mge_time_conversion_fun(double value)
+static const char *mge_time_conversion_fun(double value)
 {
 	time_t sec = value;
 
@@ -111,8 +157,6 @@ static double mge_date_conversion_nuf(const char *value)
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", value, dstate_getinfo("ups.time"));
 
 	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
-		/* Ignore DST offset */
-		mge_tm.tm_isdst = 0;
 		return mktime(&mge_tm);
 	}
 
@@ -129,8 +173,6 @@ static double mge_time_conversion_nuf(const char *value)
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s %s", dstate_getinfo("ups.date"), value);
 
 	if (strptime(mge_scratch_buf, "%Y/%m/%d %H:%M:%S", &mge_tm) != NULL) {
-		/* Ignore DST offset */
-		mge_tm.tm_isdst = 0;
 		return mktime(&mge_tm);
 	}
 
@@ -158,7 +200,7 @@ static info_lkp_t mge_time_conversion[] = {
 /* The HID path 'UPS.PowerSummary.ConfigVoltage' only reports
    'battery.voltage.nominal' for specific UPS series. Ignore
    the value for other series (default behavior). */
-static char *mge_battery_voltage_nominal_fun(double value)
+static const char *mge_battery_voltage_nominal_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
@@ -186,7 +228,7 @@ static info_lkp_t mge_battery_voltage_nominal[] = {
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
    'battery.voltage' for specific UPS series. Ignore the
    value for other series (default behavior). */
-static char *mge_battery_voltage_fun(double value)
+static const char *mge_battery_voltage_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
@@ -206,7 +248,7 @@ static info_lkp_t mge_battery_voltage[] = {
 	{ 0, NULL, mge_battery_voltage_fun }
 };
 
-static char *mge_powerfactor_conversion_fun(double value)
+static const char *mge_powerfactor_conversion_fun(double value)
 {
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 100);
 	return mge_scratch_buf;
@@ -216,7 +258,7 @@ static info_lkp_t mge_powerfactor_conversion[] = {
 	{ 0, NULL, mge_powerfactor_conversion_fun }
 };
 
-static char *mge_battery_capacity_fun(double value)
+static const char *mge_battery_capacity_fun(double value)
 {
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.2f", value / 3600);
 	return mge_scratch_buf;
@@ -224,6 +266,12 @@ static char *mge_battery_capacity_fun(double value)
 
 static info_lkp_t mge_battery_capacity[] = {
 	{ 0, NULL, mge_battery_capacity_fun }
+};
+
+info_lkp_t eaton_enable_disable_info[] = {
+	{ 0, "disabled", NULL },
+	{ 1, "enabled", NULL },
+	{ 0, NULL, NULL }
 };
 
 static info_lkp_t mge_upstype_conversion[] = {
@@ -277,14 +325,19 @@ info_lkp_t mge_onbatt_info[] = {
 	{ 0, "online", NULL },
 	{ 0, NULL, NULL }
 };
-/* allow limiting to ups.model ~= Protection Station */
-static char *eaton_check_pegasus_fun(double value)
+
+/* allow limiting to ups.model = Protection Station, Ellipse Eco
+ * and 3S (US 750 and AUS 700 only!) */
+static const char *eaton_check_pegasus_fun(double value)
 {
 	switch (mge_type & 0xFF00)	/* Ignore model byte */
 	{
 	case MGE_PEGASUS:
 		break;
-
+	case MGE_3S:
+		/* Only consider non European models */
+		if (country_code != COUNTRY_EUROPE)
+			break;
 	default:
 		return NULL;
 	}
@@ -300,8 +353,71 @@ static info_lkp_t pegasus_threshold_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* allow limiting standard yes/no info (here, to enable ECO mode) to
+ * ups.model = Protection Station, Ellipse Eco and 3S (US 750 and AUS 700 only!)
+ * this allows to enable special flags used in hid_info_t entries (Ie RW) */
+static const char *pegasus_yes_no_info_fun(double value)
+{
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_PEGASUS:
+		break;
+	case MGE_3S:
+		/* Only consider non European models */
+		if (country_code != COUNTRY_EUROPE)
+			break;
+	default:
+		return NULL;
+	}
+
+	return (value == 0) ? "no" : "yes";
+}
+
+/* Conversion back of yes/no info */
+static double pegasus_yes_no_info_nuf(const char *value)
+{
+	switch (mge_type & 0xFF00)	/* Ignore model byte */
+	{
+	case MGE_PEGASUS:
+		break;
+	case MGE_3S:
+		/* Only consider non European models */
+		if (country_code != COUNTRY_EUROPE)
+			break;
+	default:
+		return 0;
+	}
+
+	if (!strncmp(value, "yes", 3))
+		return 1;
+	else
+		return 0;
+}
+
+info_lkp_t pegasus_yes_no_info[] = {
+	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
+	{ 0, NULL, NULL }
+};
+
+/* Determine country using UPS.PowerSummary.Country.
+ * If not present:
+ * 		if PowerConverter.Output.Voltage >= 200 => "Europe"
+ * 		else default to "US" */
+static const char *eaton_check_country_fun(double value)
+{
+	country_code = value;
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_check_country_info[] = {
+	{ 0, "dummy", eaton_check_country_fun },
+	{ 0, NULL, NULL }
+};
+
 /* Limit nominal output voltage according to HV or LV models */
-static char *nominal_output_voltage_fun(double value)
+static const char *nominal_output_voltage_fun(double value)
 {
 	static long	nominal = -1;
 
@@ -328,6 +444,7 @@ static char *nominal_output_voltage_fun(double value)
 		}
 		break;
 
+	/* line-interactive and online support 200/208 and 220/230/240*/
 	/* HV models */
 	/* 208V */
 	case 200:
@@ -337,6 +454,12 @@ static char *nominal_output_voltage_fun(double value)
 		case 200:
 		case 208:
 			break;
+		/* 230V */
+		case 220:
+		case 230:
+		case 240:
+			if ((mge_type & 0xFF00) >= MGE_DEFAULT)
+				break;
 		default:
 			return NULL;
 		}
@@ -349,6 +472,16 @@ static char *nominal_output_voltage_fun(double value)
 	case 240:
 		switch ((long)value)
 		{
+		case 200:
+		case 208:
+			/* line-interactive and online also support 200 / 208 V
+			 * So break on offline models */
+			if ((mge_type & 0xFF00) < MGE_DEFAULT)
+				return NULL;
+			/* FIXME: Some European models ("5130 RT 3000") also
+			 * support both HV values */
+			if (country_code == COUNTRY_EUROPE_208)
+				break;
 		case 220:
 		case 230:
 		case 240:
@@ -367,6 +500,7 @@ static char *nominal_output_voltage_fun(double value)
 }
 
 static info_lkp_t nominal_output_voltage_info[] = {
+	/* line-interactive, starting with Evolution, support both HV values */
 	/* HV models */
 	/* 208V */
 	{ 200, "200", nominal_output_voltage_fun },
@@ -388,7 +522,7 @@ static info_lkp_t nominal_output_voltage_info[] = {
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
-/* MGE UPS SYSTEMS usage table */
+/* Eaton / MGE HID usage table */
 static usage_lkp_t mge_usage_lkp[] = {
 	{ "Undefined",				0xffff0000 },
 	{ "STS",				0xffff0001 },
@@ -414,7 +548,7 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "EventID",				0xffff001f },
 	{ "CircuitBreaker",			0xffff0020 },
 	{ "TransferForbidden",			0xffff0021 },
-	{ "OverallAlarm",			0xffff0022 },
+	{ "OverallAlarm",			0xffff0022 }, /* renamed to Alarm in Eaton SW! */
 	{ "Dephasing",				0xffff0023 },
 	{ "BypassBreaker",			0xffff0024 },
 	{ "PowerModule",			0xffff0025 },
@@ -426,8 +560,9 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "NotificationStatus",			0xffff002b },
 	{ "ProtectionLost",			0xffff002c },
 	{ "ConfigurationFailure",			0xffff002d },
+	{ "CompatibilityFailure",			0xffff002e },
 	/* 0xffff002e-0xffff003f	=>	Reserved */
-	{ "SwitchType",				0xffff0040 },
+	{ "SwitchType",				0xffff0040 }, /* renamed to Type in Eaton SW! */
 	{ "ConverterType",			0xffff0041 },
 	{ "FrequencyConverterMode",		0xffff0042 },
 	{ "AutomaticRestart",			0xffff0043 },
@@ -496,7 +631,12 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "HighHumidity",			0xffff0082 },
 	{ "LowTemperature",			0xffff0083 },
 	{ "HighTemperature",			0xffff0084 },
-	/* 0xffff0085-0xffff008f	=>	Reserved */
+	{ "ECOControl",			0xffff0085 },
+	{ "Efficiency",			0xffff0086 },
+	{ "ABMEnable",			0xffff0087 },
+	{ "NegativeCurrent",	0xffff0088 },
+	{ "AutomaticStart",		0xffff0089 },
+	/* 0xffff008a-0xffff008f	=>	Reserved */
 	{ "Count",				0xffff0090 },
 	{ "Timer",				0xffff0091 },
 	{ "Interval",				0xffff0092 },
@@ -508,16 +648,26 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "Code",				0xffff0098 },
 	{ "DataValid",				0xffff0099 },
 	{ "ToggleTimer",				0xffff009a },
-	/* 0xffff009b-0xffff009f	=>	Reserved */
-	{ "PDU",				0xffff00a0 },
+	{ "BypassTransferDelay",		0xffff009b },
+	{ "HysteresysVoltageTransfer",	0xffff009c },
+	{ "SlewRate",					0xffff009d },
+	/* 0xffff009e-0xffff009f	=>	Reserved */
+	{ "PDU",					0xffff00a0 },
 	{ "Breaker",				0xffff00a1 },
 	{ "BreakerID",				0xffff00a2 },
-	{ "OverVoltage",				0xffff00a3 },
+	{ "OverVoltage",			0xffff00a3 },
 	{ "Tripped",				0xffff00a4 },
 	{ "OverEnergy",				0xffff00a5 },
-	{ "OverHumidity",				0xffff00a6 },
-	{ "LCDControl",				0xffff00a6 },
-	/* 0xffff00a8-0xffff00df	=>	Reserved */
+	{ "OverHumidity",			0xffff00a6 },
+	{ "ConfigurationReset",		0xffff00a7 }, /* renamed from LCDControl in Eaton SW! */
+	{ "Level",			0xffff00a8 },
+	{ "PDUType",			0xffff00a9 },
+	{ "ReactivePower",			0xffff00aa },
+	{ "Pole",			0xffff00ab },
+	{ "PoleID",			0xffff00ac },
+	{ "Reset",			0xffff00ad },
+	{ "WatchdogReset",			0xffff00ae },
+	/* 0xffff00af-0xffff00df	=>	Reserved */
 	{ "COPIBridge",				0xffff00e0 },
 	/* 0xffff00e1-0xffff00ef	=>	Reserved */
 	{ "iModel",				0xffff00f0 },
@@ -525,7 +675,8 @@ static usage_lkp_t mge_usage_lkp[] = {
 	{ "iTechnicalLevel",		0xffff00f2 },
 	{ "iPartNumber",			0xffff00f3 },
 	{ "iReferenceNumber",		0xffff00f4 },
-	/* 0xffff00f5-0xffff00ff	=>	Reserved */
+	{ "iGang",					0xffff00f5 },
+	/* 0xffff00f6-0xffff00ff	=>	Reserved */
 
 	/* end of table */
 	{ NULL, 0 }
@@ -557,39 +708,51 @@ typedef struct {
 static models_name_t mge_model_names [] =
 {
 	/* Ellipse models */
-	{ "ELLIPSE", "300", MGE_DEFAULT, "ellipse 300" },
-	{ "ELLIPSE", "500", MGE_DEFAULT, "ellipse 500" },
-	{ "ELLIPSE", "650", MGE_DEFAULT, "ellipse 650" },
-	{ "ELLIPSE", "800", MGE_DEFAULT, "ellipse 800" },
-	{ "ELLIPSE", "1200", MGE_DEFAULT, "ellipse 1200" },
+	{ "ELLIPSE", "300", MGE_DEFAULT_OFFLINE, "ellipse 300" },
+	{ "ELLIPSE", "500", MGE_DEFAULT_OFFLINE, "ellipse 500" },
+	{ "ELLIPSE", "650", MGE_DEFAULT_OFFLINE, "ellipse 650" },
+	{ "ELLIPSE", "800", MGE_DEFAULT_OFFLINE, "ellipse 800" },
+	{ "ELLIPSE", "1200", MGE_DEFAULT_OFFLINE, "ellipse 1200" },
 
 	/* Ellipse Premium models */
-	{ "ellipse", "PR500", MGE_DEFAULT, "ellipse premium 500" },
-	{ "ellipse", "PR650", MGE_DEFAULT, "ellipse premium 650" },
-	{ "ellipse", "PR800", MGE_DEFAULT, "ellipse premium 800" },
-	{ "ellipse", "PR1200", MGE_DEFAULT, "ellipse premium 1200" },
+	{ "ellipse", "PR500", MGE_DEFAULT_OFFLINE, "ellipse premium 500" },
+	{ "ellipse", "PR650", MGE_DEFAULT_OFFLINE, "ellipse premium 650" },
+	{ "ellipse", "PR800", MGE_DEFAULT_OFFLINE, "ellipse premium 800" },
+	{ "ellipse", "PR1200", MGE_DEFAULT_OFFLINE, "ellipse premium 1200" },
 
 	/* Ellipse "Pro" */
-	{ "ELLIPSE", "600", MGE_DEFAULT, "Ellipse 600" },
-	{ "ELLIPSE", "750", MGE_DEFAULT, "Ellipse 750" },
-	{ "ELLIPSE", "1000", MGE_DEFAULT, "Ellipse 1000" },
-	{ "ELLIPSE", "1500", MGE_DEFAULT, "Ellipse 1500" },
+	{ "ELLIPSE", "600", MGE_DEFAULT_OFFLINE, "Ellipse 600" },
+	{ "ELLIPSE", "750", MGE_DEFAULT_OFFLINE, "Ellipse 750" },
+	{ "ELLIPSE", "1000", MGE_DEFAULT_OFFLINE, "Ellipse 1000" },
+	{ "ELLIPSE", "1500", MGE_DEFAULT_OFFLINE, "Ellipse 1500" },
 
-	/* Ellipse "MAX" (TBR) */
-/*	{ "Ellipse MAX", "600", MGE_DEFAULT, NULL }, */
-/*	{ "Ellipse MAX", "850", MGE_DEFAULT, NULL }, */
-/*	{ "Ellipse MAX", "1100", MGE_DEFAULT, NULL }, */
-/*	{ "Ellipse MAX", "1500", MGE_DEFAULT, NULL }, */
+	/* Ellipse MAX */
+	{ "Ellipse MAX", "600", MGE_DEFAULT_OFFLINE, NULL },
+	{ "Ellipse MAX", "850", MGE_DEFAULT_OFFLINE, NULL },
+	{ "Ellipse MAX", "1100", MGE_DEFAULT_OFFLINE, NULL },
+	{ "Ellipse MAX", "1500", MGE_DEFAULT_OFFLINE, NULL },
 
 	/* Protection Center */
-	{ "PROTECTIONCENTER", "420", MGE_DEFAULT, "Protection Center 420" },
-	{ "PROTECTIONCENTER", "500", MGE_DEFAULT, "Protection Center 500" },
-	{ "PROTECTIONCENTER", "675", MGE_DEFAULT, "Protection Center 675" },
+	{ "PROTECTIONCENTER", "420", MGE_DEFAULT_OFFLINE, "Protection Center 420" },
+	{ "PROTECTIONCENTER", "500", MGE_DEFAULT_OFFLINE, "Protection Center 500" },
+	{ "PROTECTIONCENTER", "675", MGE_DEFAULT_OFFLINE, "Protection Center 675" },
 
-	/* Protection Station */
+	/* Protection Station, supports Eco control */
 	{ "Protection Station", "500", MGE_PEGASUS, NULL },
 	{ "Protection Station", "650", MGE_PEGASUS, NULL },
 	{ "Protection Station", "800", MGE_PEGASUS, NULL },
+
+	/* Ellipse ECO, also supports Eco control */
+	{ "Ellipse ECO", "650", MGE_PEGASUS, NULL },
+	{ "Ellipse ECO", "800", MGE_PEGASUS, NULL },
+	{ "Ellipse ECO", "1200", MGE_PEGASUS, NULL },
+	{ "Ellipse ECO", "1600", MGE_PEGASUS, NULL },
+
+	/* 3S, also supports Eco control on some models (AUS 700 and US 750)*/
+	{ "3S", "450", MGE_DEFAULT_OFFLINE, NULL }, /* US only */
+	{ "3S", "550", MGE_DEFAULT_OFFLINE, NULL }, /* US 120V + EU 230V + AUS 240V */
+	{ "3S", "700", MGE_3S, NULL }, /* EU 230V + AUS 240V (w/ eco control) */
+	{ "3S", "750", MGE_3S, NULL }, /* US 120V (w/ eco control) */
 
 	/* Evolution models */
 	{ "Evolution", "500", MGE_DEFAULT, "Pulsar Evolution 500" },
@@ -686,6 +849,10 @@ static models_name_t mge_model_names [] =
 
 static hid_info_t mge_hid2nut[] =
 {
+	/* Device collection */
+	/* Just declared to call *hid2info */
+	{ "device.country", ST_FLAG_STRING, 20, "UPS.PowerSummary.Country", NULL, "Europe", HU_FLAG_STATIC, eaton_check_country_info },
+
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
 	{ "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerSummary.RemainingCapacityLimitSetting", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -693,8 +860,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.PowerSummary.RestartLevel", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", NULL, "%s", HU_FLAG_STATIC, mge_battery_capacity },	/* conversion needed from As to Ah */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+	{ "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", 0, NULL },
 	{ "battery.runtime.elapsed", 0, 0, "UPS.StatisticSystem.Input.[1].Statistic.[1].Time", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
-	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", NULL, "%.1f", 0, NULL },
+	{ "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", 0, NULL },
+	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	{ "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 	{ "battery.voltage", 0, 0, "UPS.BatterySystem.Voltage", NULL, "%.1f", 0, NULL },
 	{ "battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, mge_battery_voltage },
@@ -704,6 +873,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.energysave", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].EnergySaving", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 
 	/* UPS page */
+	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
 	{ "ups.firmware", 0, 0, "UPS.PowerSummary.iVersion", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
 	{ "ups.load.high", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.Flow.[4].ConfigPercentLoad", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
@@ -712,10 +882,10 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", HU_FLAG_SEMI_STATIC, test_read_info },
+	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
 	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
-	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%.1f", 0, NULL },
+	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.L1.power", 0, 0, "UPS.PowerConverter.Output.Phase.[1].ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.L2.power", 0, 0, "UPS.PowerConverter.Output.Phase.[2].ApparentPower", NULL, "%.0f", 0, NULL },
@@ -729,6 +899,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[1].AutomaticRestart", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.battery", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].StartOnBattery", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "ups.start.reboot", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.ForcedReboot", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "ups.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, eaton_enable_disable_info },
 #ifdef HAVE_STRPTIME
 	{ "ups.date", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_date_conversion },
 	{ "ups.time", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.Time", NULL, "%s", 0, mge_time_conversion },
@@ -754,6 +925,7 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, 0, overload_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Battery.Test = 3 " */
+	{ "BOOL", 0, 0, "UPS.LCMSystem.LCMAlarm.[2].PresentStatus.TimerExpired", NULL, NULL, 0, replacebatt_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Buck", NULL, NULL, 0, trim_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Boost", NULL, NULL, 0, boost_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
@@ -771,7 +943,7 @@ static hid_info_t mge_hid2nut[] =
 	/* Battery DC voltage too high! */
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Battery.PresentStatus.VoltageTooHigh", NULL, NULL, 0, battvolthi_info },
 	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageTooLow", NULL, NULL, 0, battvoltlo_info },
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageTooLow", NULL, NULL, 0, mge_onbatt_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, 0, commfault_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
@@ -856,23 +1028,43 @@ static hid_info_t mge_hid2nut[] =
 	 * on the master outlet used to automatically power off the slave outlets.
 	 * Values: 10, 25 (default) or 60 VA. */
 	{ "outlet.power", ST_FLAG_RW | ST_FLAG_STRING, 6, "UPS.OutletSystem.Outlet.[1].ConfigApparentPower", NULL, "%s", HU_FLAG_SEMI_STATIC | HU_FLAG_ENUM, pegasus_threshold_info },
+
+	{ "outlet.power", 0, 0, "UPS.OutletSystem.Outlet.[1].ApparentPower", NULL, "%.0f", 0, NULL },
+	{ "outlet.realpower", 0, 0, "UPS.OutletSystem.Outlet.[1].ActivePower", NULL, "%.0f", 0, NULL },
+	{ "outlet.current", 0, 0, "UPS.OutletSystem.Outlet.[1].Current", NULL, "%.2f", 0, NULL },
+	{ "outlet.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[1].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+
+	/* First outlet */
 	{ "outlet.1.id", 0, 0, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.1.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[2].OutletID", NULL, "PowerShare Outlet 1", HU_FLAG_ABSENT, NULL },
 	{ "outlet.1.switchable", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.Switchable", NULL, "%s", HU_FLAG_STATIC, yes_no_info },
 	{ "outlet.1.status", 0, 0, "UPS.OutletSystem.Outlet.[2].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	/* For low end models, with 1 non backup'ed outlet */
 	{ "outlet.1.status", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, "%s", 0, on_off_info },
+	/* FIXME: change to outlet.1.battery.charge.low, as in mge-xml.c?! */
 	{ "outlet.1.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[2].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.1.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[2].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.1.power", 0, 0, "UPS.OutletSystem.Outlet.[2].ApparentPower", NULL, "%.0f", 0, NULL },
+	{ "outlet.1.realpower", 0, 0, "UPS.OutletSystem.Outlet.[2].ActivePower", NULL, "%.0f", 0, NULL },
+	{ "outlet.1.current", 0, 0, "UPS.OutletSystem.Outlet.[2].Current", NULL, "%.2f", 0, NULL },
+	{ "outlet.1.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[2].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
+	/* Second outlet */
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "outlet.2.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, "UPS.OutletSystem.Outlet.[3].OutletID", NULL, "PowerShare Outlet 2", HU_FLAG_ABSENT, NULL },
-	/* needed for Pegasus to enable master/slave mode */
-	{ "outlet.2.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	/* needed for Pegasus to enable master/slave mode:
+	 * FIXME: rename to something more suitable (outlet.?) */
+	{ "outlet.2.switchable", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", HU_FLAG_SEMI_STATIC, pegasus_yes_no_info },
+	/* Generic version (RO) for other models */
+	{ "outlet.2.switchable", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.Switchable", NULL, "%s", 0, yes_no_info },
 	{ "outlet.2.status", 0, 0, "UPS.OutletSystem.Outlet.[3].PresentStatus.SwitchOn/Off", NULL, "%s", 0, on_off_info },
 	{ "outlet.2.autoswitch.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.OutletSystem.Outlet.[3].RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "outlet.2.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.OutletSystem.Outlet.[3].StartupTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "outlet.2.power", 0, 0, "UPS.OutletSystem.Outlet.[3].ApparentPower", NULL, "%.0f", 0, NULL },
+	{ "outlet.2.realpower", 0, 0, "UPS.OutletSystem.Outlet.[3].ActivePower", NULL, "%.0f", 0, NULL },
+	{ "outlet.2.current", 0, 0, "UPS.OutletSystem.Outlet.[3].Current", NULL, "%.2f", 0, NULL },
+	{ "outlet.2.powerfactor", 0, 0, "UPS.OutletSystem.Outlet.[3].PowerFactor", NULL, "%.2f", 0, NULL }, /* "%s", 0, mge_powerfactor_conversion }, */
 
 	/* instant commands. */
 	/* splited into subset while waiting for extradata support
@@ -914,7 +1106,13 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 
 	/* Search for device type and formatting rules */
 	for (model = mge_model_names; model->iProduct; model++) {
-		upsdebugx(2, "comparing with: %s", model->name);
+		if(model->name) {
+			upsdebugx(2, "comparing with: %s", model->name);
+		}
+		else {
+			upsdebugx(2, "comparing with: %s %s", model->iProduct,
+					model->iModel);
+		}
 
 		if (strcmp(iProduct, model->iProduct)) {
 			continue;
@@ -941,7 +1139,7 @@ static char *get_model_name(const char *iProduct, const char *iModel)
 	return strdup(model->name);
 }
 
-static char *mge_format_model(HIDDevice_t *hd) {
+static const char *mge_format_model(HIDDevice_t *hd) {
 	char	product[SMALLBUF];
 	char	model[SMALLBUF];
 	double	value;
@@ -969,11 +1167,11 @@ static char *mge_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *mge_format_mfr(HIDDevice_t *hd) {
+static const char *mge_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "Eaton";
 }
 
-static char *mge_format_serial(HIDDevice_t *hd) {
+static const char *mge_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
@@ -982,25 +1180,41 @@ static char *mge_format_serial(HIDDevice_t *hd) {
 static int mge_claim(HIDDevice_t *hd) {
 
 #ifndef SHUT_MODE
-	int status = is_usb_device_supported(mge_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(mge_usb_device_table, hd);
 
 	switch (status) {
 
-		case POSSIBLY_SUPPORTED:
-			/* by default, reject, unless the productid option is given */
-			if (getval("productid")) {
-				return 1;
-			}
-			possibly_supported("Eaton / MGE", hd);
-			return 0;
+	case POSSIBLY_SUPPORTED:
 
-		case SUPPORTED:
-			return 1;
+		switch (hd->VendorID)
+		{
+			case HP_VENDORID:
+			case DELL_VENDORID:
+				/* by default, reject, unless the productid option is given */
+				if (getval("productid")) {
+					return 1;
+				}
 
-		case NOT_SUPPORTED:
-		default:
-			return 0;
+				/*
+				 * this vendor makes lots of USB devices that are
+				 * not a UPS, so don't use possibly_supported here
+				 */
+				return 0;
+			default: /* Valid for Eaton */
+				/* by default, reject, unless the productid option is given */
+				if (getval("productid")) {
+					return 1;
+				}
+				possibly_supported("Eaton / MGE", hd);
+				return 0;
+		}
+
+	case SUPPORTED:
+		return 1;
+
+	case NOT_SUPPORTED:
+	default:
+		return 0;
 	}
 #else
 			return 1;

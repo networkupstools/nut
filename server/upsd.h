@@ -40,22 +40,28 @@
 #include <sys/file.h>
 
 #include "parseconf.h"
-#include "ctype.h"
+#include "nut_ctype.h"
 #include "upstype.h"
 
 #define NUT_NET_ANSWER_MAX SMALLBUF
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* prototypes from upsd.c */
 
 upstype_t *get_ups_ptr(const char *upsname);
-int ups_available(const upstype_t *ups, ctype_t *client);
+int ups_available(const upstype_t *ups, nut_ctype_t *client);
 
 void listen_add(const char *addr, const char *port);
 
 void kick_login_clients(const char *upsname);
-int sendback(ctype_t *client, const char *fmt, ...)
+int sendback(nut_ctype_t *client, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-int send_err(ctype_t *client, const char *errtype);
+int send_err(nut_ctype_t *client, const char *errtype);
 
 void server_load(void);
 void server_free(void);
@@ -67,6 +73,7 @@ void check_perms(const char *fn);
 extern int		maxage, maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
+extern nut_ctype_t	*firstclient;
 
 /* map commands onto signals */
 
@@ -82,6 +89,12 @@ extern upstype_t	*firstups;
 #define shutdown_how SHUT_RDWR
 #else
 #define shutdown_how 2
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
 #endif
 
 #endif	/* UPSD_H_SEEN */

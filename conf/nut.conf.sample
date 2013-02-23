@@ -24,5 +24,9 @@
 #   Since this MODE is opened to the network, a special care should be applied
 #   to security concerns.
 # - netclient: this mode only requires upsmon.
+#
+# IMPORTANT NOTE:
+#  This file is intended to be sourced by shell scripts.
+#  You MUST NOT use spaces around the equal sign!
 
-MODE = none
+MODE=none

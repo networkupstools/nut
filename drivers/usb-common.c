@@ -20,27 +20,27 @@
 #include "common.h"
 #include "usb-common.h"
 
-int is_usb_device_supported(usb_device_id_t *usb_device_id_list, int dev_VendorID, int dev_ProductID)
+int is_usb_device_supported(usb_device_id_t *usb_device_id_list, USBDevice_t *device)
 {
 	int retval = NOT_SUPPORTED;
 	usb_device_id_t *usbdev;
 
 	for (usbdev = usb_device_id_list; usbdev->vendorID != -1; usbdev++) {
 
-		if (usbdev->vendorID != dev_VendorID) {
+		if (usbdev->vendorID != device->VendorID) {
 			continue;
 		}
 
 		/* flag as possibly supported if we see a known vendor */
 		retval = POSSIBLY_SUPPORTED;
 
-		if (usbdev->productID != dev_ProductID) {
+		if (usbdev->productID != device->ProductID) {
 			continue;
 		}
 
 		/* call the specific handler, if it exists */
 		if (usbdev->fun != NULL) {
-			(*usbdev->fun)();
+			(*usbdev->fun)(device);
 		}
 
 		return SUPPORTED;
@@ -116,7 +116,7 @@ int USBNewExactMatcher(USBDeviceMatcher_t **matcher, USBDevice_t *hd)
 	USBDevice_t		*data;
 
 	m = malloc(sizeof(*m));
-	if (!matcher) {
+	if (!m) {
 		return -1;
 	}
 
@@ -210,7 +210,7 @@ static int compile_regex(regex_t **compiled, char *regex, int cflags)
 static int match_regex(regex_t *preg, char *str)
 {
 	int	r;
-	size_t	len;
+	size_t	len = 0;
 	char	*string;
 	regmatch_t	match;
 
@@ -219,31 +219,28 @@ static int match_regex(regex_t *preg, char *str)
 	}
 
 	if (!str) {
-		str = "";
-	}
+		string = xstrdup("");
+	} else {
+		/* skip leading whitespace */
+		for (len = 0; len < strlen(str); len++) {
 
-	/* skip leading whitespace */
-	for (len = 0; len < strlen(str); len++) {
-
-		if (!strchr(" \t\n", str[len])) {
-			break;
+			if (!strchr(" \t\n", str[len])) {
+				break;
+			}
 		}
-	}
 
-	string = strdup(str+len);
-	if (!string) {
-		return -1;
-	}
+		string = xstrdup(str+len);
 
-	/* skip trailing whitespace */
-	for (len = strlen(string); len > 0; len--) {
+		/* skip trailing whitespace */
+		for (len = strlen(string); len > 0; len--) {
 
-		if (!strchr(" \t\n", string[len-1])) {
-			break;
+			if (!strchr(" \t\n", string[len-1])) {
+				break;
+			}
 		}
-	}
 
-	string[len] = '\0';
+		string[len] = '\0';
+	}
 
 	/* test the regular expression */
 	r = regexec(preg, string, 1, &match, 0);

@@ -130,7 +130,7 @@ static ezfill_t _initv[] = {
 /* All serial reads of the OPTI-UPS go through here.  We always expect a CR/LF terminated
  *   response.  Unknown/Unimplemented commands return ^U (0x15).  Actions that complete
  *   successfully return ^F (0x06). */
-static inline int optireadline()
+static inline int optireadline(void)
 {
 	int r;
 	usleep(150000);

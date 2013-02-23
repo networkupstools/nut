@@ -1,0 +1,342 @@
+BELKINUNV(8)
+============
+
+NAME
+----
+
+belkinunv - Driver for Belkin "Universal UPS" and compatible
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+belkin driver.  For information about the core driver, see  
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+The belkinunv driver is known to work with the Belkin Universal UPS
+models F6C800-UNV and F6C120-UNV, and is expected to work with other
+Belkin Universal UPS models. The driver only supports serial
+communication, not USB.
+
+The Trust UPS and older Belkin units are not supported by this driver,
+and neither are the Belkin Home Office models (F6H500-SER and so
+forth). However, some Belkin models, such as the Regulator Pro, are
+supported by the linkman:belkin[8] driver, and the Home Office models
+are supported using the linkman:genericups[8] driver with
+`upstype=7`.
+
+SOFT SHUTDOWN WORKAROUND
+------------------------
+One problem with the Belkin Universal UPS is that it cannot enter a
+soft shutdown (shut down the load until AC power returns) unless the
+batteries are completely depleted. Thus, one cannot just shut off the
+UPS after operating system shutdown; it will not come back on when the
+power comes back on. Therefore, the belkinunv driver should never be
+used with the *-k* option. Instead, the *-x wait* option is
+provided as a workaround.
+
+When called with the *-x wait* option, *belkinunv* behaves as
+a standalone program (i.e., it does not fork into the background). It
+performs one simple task: it connects to the UPS, waits for AC power
+to return, and then exits with status 0.
+
+This is meant to be used in a shutdown script as follows: during a
+shutdown, after all filesystems have been remounted read-only, and
+just before the system would normally be halted: check /etc/killpower
+(or similar) to see if this shutdown was caused by linkman:upsmon[8],
+and if yes, call *belkinunv -x wait*. If AC power comes back on,
+*belkinunv* exits, and things should be arranged so that the
+system reboots in this case. If AC power does not come back on, the
+UPS will eventually run out of batteries, kill the computer's power
+supply, and go into soft shutdown mode, which means everything will
+reboot properly when the power returns. In either case, a deadlock is
+avoided. 
+
+In addition, if an optional integer argument is given to the *-x wait*
+option, this causes *belkinunv* to wait not only for AC power to be present,
+but also for the battery charge to reach the given level. I use this as part of
+my startup scripts, to ensure that the batteries are sufficiently charged
+before the computer continues booting. This should be put very early in the
+startup script, before any filesystems are mounted read/write, and before any
+filesystem checks are performed.
+
+Several other *-x* options are provided to fine-tune this
+behavior. See the <<_options,options>> below for detailed descriptions.  See the
+<<_examples,examples>>
+below for examples of how to use *belkinunv* in shutdown and
+startup scripts.
+
+OPTIONS
+-------
+See also linkman:nutupsdrv[8] for generic options. Never use the
+*-k* option with this driver; it does not work properly.
+
+*-x wait*[='level']::
+When this option is used, *belkinunv* does not fork into the
+background, but behaves as a standalone program. It connects to the UPS and
+waits until AC power is present. If 'level' is specified, it also
+waits until the battery charge reaches at least the given level in
+percent. Then, and only then, *belkinunv* exits. In addition,
+while *belkinunv* runs in this mode, it displays a status line
+with information on the UPS status and battery level. This is intended
+for use in the computer's shutdown and startup scripts, as described
+under <<_soft_shutdown_workaround,Soft Shutdown Workaround>> above.
+
+*-x nohang*::
+This option only has an effect when used in conjunction with the *-x wait*
+option. It causes *belkinunv* to exit if a connection with
+the UPS cannot be established or is lost, instead of retrying forever,
+which is the default behavior. The *-x nohang* option should be
+used in a startup
+script, to ensure the computer remains bootable even if the UPS has
+been disconnected during the power failure (for instance, you attached
+your computer to a generator, carried it to a neighbor's house, or
+whatever). 
+
+*-x flash*::
+This option only has an effect when used in conjunction with the *-x wait*
+option. It causes the UPS load to be shut off for a short time
+("flashed") just after the AC power has returned and the requested
+battery level (if any) has been attained. This is useful if slaves are
+attached to this UPS; the flash will cause all of them to reboot. Note
+that, due to the design of the Belkin UPS hardware, the load shutdown lasts
+ca. 1--2 minutes; a shorter flash cannot be performed reliably.  Also,
+the computers will reboot at the scheduled time, on battery power if
+necessary, even if AC power fails again in the meantime. This should
+not be a problem, as your startup scripts can catch this situation.
+
+*-x silent*::
+This option only has an effect when used in conjunction with the *-x wait*
+option. It suppresses the status line which *belkinunv*
+would normally print.
+
+*-x dumbterm*::
+This option only has an effect when used in conjunction with the *-x wait*
+option. It changes the way in which *belkinunv* prints its
+status line. Normally, terminal control sequences are used to
+overwrite the same line with new status information, each time the
+status is updated. This may not work on all terminals. If the *-x dumbterm*
+option is given, each status update is written on a new
+line.
+
+VARIABLES
+---------
+*battery.charge*::
+
+*battery.runtime*::
+not supported by all hardware.
+
+*battery.voltage*::
+
+*battery.voltage.nominal*::
+
+*input.frequency*::
+
+*input.frequency.nominal*::
+e.g. 60 for 60Hz
+
+*input.sensitivity*::
+writable: normal/medium/low
+
+*input.transfer.high*::
+writable: high transfer voltage point in V
+
+*input.transfer.low*::
+writable: low transfer voltage point in V
+
+*input.voltage*::
+
+*input.voltage.maximum*::
+
+*input.voltage.minimum*::
+
+*input.voltage.nominal*::
+
+*output.frequency*::
+
+*output.voltage*::
+
+*ups.beeper.status*::
+writable. Values: enabled/disabled/muted. This variable controls the
+state of the panel beeper. Enabled means sound when the alarm is
+present, disabled means never sound, and muted means the sound is
+temporarily disabled until the alarm would normally stop sounding. In
+the muted state, the beeper is automatically turned back on at the
+next event (AC failure, battery test, etc). Also, the beeper can't be
+turned off during a critical event (low battery). Note that not all
+UPS models support the "disabled" state.
+
+*ups.firmware*::
+
+*ups.load*::
+
+*ups.model*::
+
+*ups.power.nominal*::
+e.g. 800 for an 800VA system
+
+*ups.status*::
+a list of flags; see the <<_status_flags,status flags>> below.
+
+*ups.temperature*::
+not supported by all hardware.
+
+*ups.test.result*::
+
+*ups.delay.restart*::
+time to restart (read only)
+
+*ups.delay.shutdown*::
+time to shutdown (read only). This is always a multiple of 60 seconds.
+
+*ups.type*::
+ONLINE/OFFLINE/LINEINT. This describes the basic layout of this UPS
+(for GUI clients which want to draw an animated picture of power
+flow). An offline UPS has a direct connection from AC input to AC
+output, and also a connection from AC input to the battery, and from
+the battery to AC output. An online UPS lacks the direct connection
+from AC input to AC output, whereas a line interactive UPS lacks the
+connection from AC input to the battery.
+
+
+COMMANDS
+--------
+
+*beeper.enable, beeper.disable, beeper.mute*::
+Enable, disable or mute the panel beeper. Note that if the beeper is
+muted, it is automatically turned back on at the next event (AC failure,
+battery test, etc). Also, the beeper can't be turned muted during a
+critical event (low battery).
+
+*reset.input.minmax*::
+Reset the variables *input.voltage.minimum* and
+*input.voltage.maximum*.
+
+*shutdown.reboot*::
+Shut down load immediately for about 1--2 minutes.
+
+*shutdown.reboot.graceful*::
+After 40 second delay, shut down load for about 1--2 minutes.
+
+*shutdown.stayoff*::
+Shut down load immediately and stay off. The only way it can be turned
+back on is by manually pressing the front panel button.
+
+*test.battery.start, test.battery.stop*::
+Start/stop 10 second battery test.
+
+*test.failure.start, test.failure.stop*::
+Start/stop "deep" battery test.
+
+
+STATUS FLAGS
+------------
+
+*OB*::
+load is on battery, including during tests
+
+*OFF*::
+load is off
+
+*OL*::
+load is online
+
+*ACFAIL*::
+AC failure. Note that this refers to the AC input, and thus it is not
+the same as "OB". An AC failure can occur at any time, for instance,
+during a battery test, or when the UPS load is off. 
+
+*OVER*::
+overload
+
+*OVERHEAT*::
+overheat
+
+*COMMFAULT*::
+UPS fault
+
+*LB*::
+low battery
+
+*CHRG*::
+charging
+
+*DEPLETED*::
+the battery is depleted. When the UPS raises this flag, it
+simultaneously switches off the load. 
+
+*RB*::
+replace battery
+
+EXAMPLES
+--------
+
+Here is an example for how *belkinunv* should be used in a
+computer's shutdown script. These commands should go in the very last
+part of the shutdown script, after all file systems have been mounted
+read-only, and just before the computer halts. Note that
+*belkinunv* must be installed in a directory which is still
+readable at that point.
+
+
+ # NEAR END OF SHUTDOWN SCRIPT:
+ # if shutdown was caused by UPS, perform Belkin UPS workaround.
+ if [ -f /etc/killpower ] ; then
+    echo "Waiting for AC power, or for UPS batteries to run out..."
+    /usr/bin/belkinunv -x wait /dev/ttyS1
+
+    # we get here if the power came back on. Reboot.
+    echo "Power is back. Rebooting..."
+    reboot
+ fi
+
+And here is an example of how to use *belkinunv* in the startup
+script. These commands should go near the beginning of the startup
+script, before any file systems are mounted read/write, and before any
+file system integrity checks are done.
+
+
+ # NEAR BEGINNING OF STARTUP SCRIPT:
+ # if we are recovering from a power failure, wait for the UPS to
+ # charge to a comfortable level before writing anything to disk
+ if [ -f /etc/killpower ] ; then
+    echo "Waiting for UPS battery charge to reach 60%..."
+    /usr/bin/belkinunv -x wait=60 -x nohang /dev/ttyS1
+ fi
+
+EXIT STATUS
+-----------
+
+When used normally, *belkinunv* forks into the background and its
+diagnostics are the same as for all NUT drivers, see
+linkman:nutupsdrv[8].
+
+When used with the *-x wait* option, the exit status is normally
+*0*. If the *-x nohang* option has also been specified, an exit
+status of *1* indicates that communication with the UPS was lost. If the
+*-x flash* option has been specified, an exit status of *2*
+indicates that the timed shutdown has failed.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver does not support any extra settings in linkman:ups.conf[5].
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+ - The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+ - The documentation for the protocol used by this UPS:
+link:http://www.mscs.dal.ca/~selinger/ups/belkin-universal-ups.html[belkin-universal-ups.html]
+
+AUTHOR
+------
+
+Peter Selinger <selinger@users.sourceforge.net>

@@ -5,6 +5,7 @@
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
  *	2007-2008   Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2012        Timothy Pearson <kb9vqf@pearsoncomputing.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,13 +34,21 @@
 #include "powerp-txt.h"
 
 typedef struct {
-	float		i_volt;
-	float		o_volt;
-	int		o_load;
-	int		b_chrg;
-	int		u_temp;
-	float		i_freq;
-	unsigned char	flags[2];
+	float          i_volt;
+	float          o_volt;
+	int            o_load;
+	int            b_chrg;
+	int            u_temp;
+	float          i_freq;
+	unsigned char  flags[2];
+	unsigned char  has_b_volt;
+	float          b_volt;
+	unsigned char  has_o_freq;
+	float          o_freq;
+	unsigned char  has_runtime;
+	int            runtime;
+	int            c_unknwn;
+	float          q_unknwn;
 } status_t;
 
 static int	ondelay = 1;	/* minutes */
@@ -47,10 +56,10 @@ static int	offdelay = 60;	/* seconds */
 
 static char	powpan_answer[SMALLBUF];
 
-static const struct {
-	char	*var;
-	char	*get;
-	char	*set;
+static struct {
+	const char	*var;
+	const char	*get;
+	const char	*set;
 } vartab[] = {
 	{ "input.transfer.high", "P6\r", "C2:%03d\r" },
 	{ "input.transfer.low", "P7\r", "C3:%03d\r" },
@@ -58,9 +67,9 @@ static const struct {
 	{ NULL }
 };
 
-static const struct {
-	char	*cmd;
-	char	*command;
+static struct {
+	const char	*cmd;
+	const char	*command;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\r" },
 	{ "test.battery.stop", "CT\r" },
@@ -208,7 +217,7 @@ static int powpan_setvar(const char *varname, const char *val)
 	return STAT_SET_UNKNOWN;
 }
 
-static void powpan_initinfo()
+static void powpan_initinfo(void)
 {
 	int	i;
 	char	*s;
@@ -402,6 +411,40 @@ static int powpan_status(status_t *status)
 		&status->b_chrg, &status->u_temp, &status->i_freq,
 		status->flags);
 
+	if (ret >= 7) {
+		status->has_b_volt = 0;
+		status->has_o_freq = 0;
+		status->has_runtime = 0;
+	}
+	else {
+		ret = ser_get_buf_len(upsfd, powpan_answer+35, 23, SER_WAIT_SEC, SER_WAIT_USEC);
+
+		if (ret < 0) {
+			upsdebug_with_errno(3, "read");
+			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
+			return -1;
+		}
+		
+		if (ret == 0) {
+			upsdebugx(3, "read: timeout");
+			upsdebug_hex(4, "  \\_", powpan_answer+35, 23);
+			return -1;
+		}
+		
+		upsdebug_hex(3, "read", powpan_answer, ret);
+
+		ret = sscanf(powpan_answer, "#I%fO%fL%dB%dV%fT%dF%fH%fR%dC%dQ%fS%2c\r",
+		&status->i_volt, &status->o_volt, &status->o_load,
+		&status->b_chrg, &status->b_volt, &status->u_temp,
+		&status->i_freq, &status->o_freq, &status->runtime,
+		&status->c_unknwn, &status->q_unknwn, status->flags);
+		status->has_b_volt = 1;
+		status->has_o_freq = 1;
+		status->has_runtime = 1;
+		dstate_setinfo("battery.voltage.nominal", "%g", 72.0);
+		dstate_setinfo("output.voltage.nominal", "%g", 120.0);
+	}
+
 	if (ret < 7) {
 		upsdebugx(4, "Parsing status string failed");
 		return -1;
@@ -410,7 +453,7 @@ static int powpan_status(status_t *status)
 	return 0;
 }
 
-static int powpan_updateinfo()
+static int powpan_updateinfo(void)
 {
 	status_t	status;
 
@@ -424,6 +467,15 @@ static int powpan_updateinfo()
 	dstate_setinfo("input.frequency", "%.1f", status.i_freq);
 	dstate_setinfo("ups.temperature", "%d", status.u_temp);
 	dstate_setinfo("battery.charge", "%d", status.b_chrg);
+	if (status.has_b_volt) {
+		dstate_setinfo("battery.voltage", "%.1f", status.b_volt);
+	}
+	if (status.has_o_freq) {
+		dstate_setinfo("output.frequency", "%.1f", status.o_freq);
+	}
+	if (status.has_runtime) {
+		dstate_setinfo("battery.runtime", "%d", status.runtime*60);
+	}
 
 	status_init();
 
@@ -466,7 +518,7 @@ static int powpan_updateinfo()
 	return (status.flags[0] & 0x40) ? 1 : 0;
 }
 
-static int powpan_initups()
+static int powpan_initups(void)
 {
 	int	ret, i;
 

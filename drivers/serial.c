@@ -123,26 +123,42 @@ static void lock_set(int fd, const char *port)
 #endif
 }
 
-int ser_open(const char *port)
+/* Non fatal version of ser_open */
+int ser_open_nf(const char *port)
+
 {
 	int	fd;
 
 	fd = open(port, O_RDWR | O_NOCTTY | O_EXCL | O_NONBLOCK);
 
-	if (fd < 0)
-		ser_open_error(port);
+	if (fd < 0) {
+		return -1;
+	}
 
 	lock_set(fd, port);
 
 	return fd;
 }
 
-int ser_set_speed(int fd, const char *port, speed_t speed)
+int ser_open(const char *port)
+{
+	int res;
+
+	res = ser_open_nf(port);
+	if(res == -1) {
+		ser_open_error(port);
+	}
+
+	return res;
+}
+
+int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
 
-	if (tcgetattr(fd, &tio) != 0)
-		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
+	if (tcgetattr(fd, &tio) != 0) {
+		return -1;
+	}
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
 	tio.c_iflag = IGNPAR;
@@ -160,6 +176,18 @@ int ser_set_speed(int fd, const char *port, speed_t speed)
 
 	tcflush(fd, TCIFLUSH);
 	tcsetattr(fd, TCSANOW, &tio);
+
+	return 0;
+}
+
+int ser_set_speed(int fd, const char *port, speed_t speed)
+{
+	int res;
+
+	res = ser_set_speed_nf(fd,port,speed);
+	if(res == -1) {
+		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
+	}
 
 	return 0;
 }
@@ -289,10 +317,11 @@ int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf,
 {
 	int	ret;
 	size_t	sent;
+	const char	*data = buf;
 
 	for (sent = 0; sent < buflen; sent += ret) {
 
-		ret = write(fd, &((char *)buf)[sent], (d_usec == 0) ? (buflen - sent) : 1);
+		ret = write(fd, &data[sent], (d_usec == 0) ? (buflen - sent) : 1);
 
 		if (ret < 1) {
 			return ret;
@@ -321,12 +350,13 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 {
 	int	ret;
 	size_t	recv;
+	char	*data = buf;
 
 	memset(buf, '\0', buflen);
 
 	for (recv = 0; recv < buflen; recv += ret) {
 
-		ret = select_read(fd, &((char *)buf)[recv], buflen - recv, d_sec, d_usec);
+		ret = select_read(fd, &data[recv], buflen - recv, d_sec, d_usec);
 
 		if (ret < 1) {
 			return ret;
@@ -344,6 +374,7 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 {
 	int	i, ret;
 	char	tmp[64];
+	char	*data = buf;
 	size_t	count = 0, maxcount;
 
 	memset(buf, '\0', buflen);
@@ -373,7 +404,7 @@ int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 				continue;
 			}
 
-			((char *)buf)[count++] = tmp[i];
+			data[count++] = tmp[i];
 		}
 	}
 

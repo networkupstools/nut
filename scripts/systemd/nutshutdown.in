@@ -1,0 +1,2 @@
+#!/bin/sh
+@SBINDIR@/upsmon -K >/dev/null 2>&1 && @driverexecdir@/upsdrvctl shutdown

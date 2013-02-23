@@ -1,8 +1,9 @@
 /* upsd.c - watches ups state files and answers queries 
 
    Copyright (C)
-	1999	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	1999		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,9 +33,9 @@
 #include <poll.h>
 
 #include "user.h"
-#include "ctype.h"
+#include "nut_ctype.h"
 #include "stype.h"
-#include "ssl.h"
+#include "netssl.h"
 #include "sstate.h"
 #include "desc.h"
 #include "neterr.h"
@@ -64,15 +65,13 @@ int	deny_severity = LOG_WARNING;
 	/* everything else */
 	const char	*progname;
 
-static ctype_t	*firstclient = NULL;
-/* static ctype_t	*lastclient = NULL; */
+nut_ctype_t	*firstclient = NULL;
+/* static nut_ctype_t	*lastclient = NULL; */
 
 	/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
 
-#ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
-#endif
 
 typedef enum {
 	DRIVER = 1,
@@ -95,7 +94,6 @@ static char	pidfn[SMALLBUF];
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
 
-#ifdef	HAVE_IPV6
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
 	static char str[40];
@@ -111,7 +109,6 @@ static const char *inet_ntopW (struct sockaddr_storage *s)
 		return NULL;
 	}
 }
-#endif
 
 /* return a pointer to the named ups if possible */
 upstype_t *get_ups_ptr(const char *name)
@@ -181,59 +178,6 @@ void listen_add(const char *addr, const char *port)
 /* create a listening socket for tcp connections */
 static void setuptcp(stype_t *server)
 {
-#ifndef	HAVE_IPV6
-	struct hostent		*host;
-	struct sockaddr_in	sockin;
-	int	res, one = 1;
-
-	host = gethostbyname(server->addr);
-
-	if (!host) {
-		struct  in_addr	listenaddr;
-
-		if (!inet_aton(server->addr, &listenaddr)) {
-			fatal_with_errno(EXIT_FAILURE, "inet_aton");
-		}
-
-		host = gethostbyaddr(&listenaddr, sizeof(listenaddr), AF_INET);
-
-		if (!host) {
-			fatal_with_errno(EXIT_FAILURE, "gethostbyaddr");
-		}
-	}
-
-	if ((server->sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		fatal_with_errno(EXIT_FAILURE, "socket");
-	}
-
-	res = setsockopt(server->sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one, sizeof(one));
-
-	if (res != 0) {
-		fatal_with_errno(EXIT_FAILURE, "setsockopt(SO_REUSEADDR)");
-	}
-
-	memset(&sockin, '\0', sizeof(sockin));
-	sockin.sin_family = AF_INET;
-	sockin.sin_port = htons(atoi(server->port));
-
-	memcpy(&sockin.sin_addr, host->h_addr, host->h_length);
-
-	if (bind(server->sock_fd, (struct sockaddr *) &sockin, sizeof(sockin)) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "Can't bind TCP port %s", server->port);
-	}
-
-	if ((res = fcntl(server->sock_fd, F_GETFL, 0)) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "fcntl(get)");
-	}
-
-	if (fcntl(server->sock_fd, F_SETFL, res | O_NDELAY) == -1) {
-		fatal_with_errno(EXIT_FAILURE, "fcntl(set)");
-	}
-
-	if (listen(server->sock_fd, 16)) {
-		fatal_with_errno(EXIT_FAILURE, "listen");
-	}
-#else
 	struct addrinfo		hints, *res, *ai;
 	int	v = 0, one = 1;
 
@@ -290,11 +234,11 @@ static void setuptcp(stype_t *server)
 	}
 
 	freeaddrinfo(res);
-#endif
 
-	/* don't fail silently */
+	/* leave up to the caller, server_load(), to fail silently if there is
+	 * no other valid LISTEN interface */
 	if (server->sock_fd < 0) {
-		fatalx(EXIT_FAILURE, "not listening on %s port %s", server->addr, server->port);
+		upslogx(LOG_ERR, "not listening on %s port %s", server->addr, server->port);
 	} else {
 		upslogx(LOG_INFO, "listening on %s port %s", server->addr, server->port);
 	}
@@ -322,7 +266,7 @@ static void declogins(const char *upsname)
 }
 
 /* disconnect a client connection and free all related memory */
-static void client_disconnect(ctype_t *client)
+static void client_disconnect(nut_ctype_t *client)
 {
 	if (!client) {
 		return;
@@ -365,7 +309,7 @@ static void client_disconnect(ctype_t *client)
 }
 
 /* send the buffer <sendbuf> of length <sendlen> to host <dest> */
-int sendback(ctype_t *client, const char *fmt, ...)
+int sendback(nut_ctype_t *client, const char *fmt, ...)
 {
 	int	res, len;
 	char ans[NUT_NET_ANSWER_MAX+1];
@@ -381,9 +325,12 @@ int sendback(ctype_t *client, const char *fmt, ...)
 
 	len = strlen(ans);
 
+#ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
-	} else {
+	} else 
+#endif /* WITH_SSL */
+	{
 		res = write(client->sock_fd, ans, len);
 	}
 
@@ -399,7 +346,7 @@ int sendback(ctype_t *client, const char *fmt, ...)
 }
 
 /* just a simple wrapper for now */
-int send_err(ctype_t *client, const char *errtype)
+int send_err(nut_ctype_t *client, const char *errtype)
 {
 	if (!client) {
 		return -1;
@@ -413,7 +360,7 @@ int send_err(ctype_t *client, const char *errtype)
 /* disconnect anyone logged into this UPS */
 void kick_login_clients(const char *upsname)
 {
-	ctype_t	*client, *cnext;
+	nut_ctype_t	*client, *cnext;
 
 	for (client = firstclient; client; client = cnext) {
 
@@ -432,7 +379,7 @@ void kick_login_clients(const char *upsname)
 }
 
 /* make sure a UPS is sane - connected, with fresh data */
-int ups_available(const upstype_t *ups, ctype_t *client)
+int ups_available(const upstype_t *ups, nut_ctype_t *client)
 {
 	if (ups->sock_fd < 0) {
 		send_err(client, NUT_ERR_DRIVER_NOT_CONNECTED);
@@ -449,7 +396,7 @@ int ups_available(const upstype_t *ups, ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, ctype_t *client, int numarg, 
+static void check_command(int cmdnum, nut_ctype_t *client, int numarg, 
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -468,7 +415,8 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 		}
 
 #ifdef HAVE_WRAP
-		request_init(&req, RQ_DAEMON, progname, RQ_CLIENT_ADDR, client->addr, RQ_USER, client->username, 0);
+		request_init(&req, RQ_DAEMON, progname, RQ_FILE, client->sock_fd, RQ_USER, client->username, 0);
+		fromhost(&req);
 
 		if (!hosts_access(&req)) {
 			/* tcp-wrappers says access should be denied */
@@ -483,7 +431,7 @@ static void check_command(int cmdnum, ctype_t *client, int numarg,
 }
 
 /* parse requests from the network */
-static void parse_net(ctype_t *client)
+static void parse_net(nut_ctype_t *client)
 {
 	int	i;
 
@@ -508,14 +456,14 @@ static void parse_net(ctype_t *client)
 /* answer incoming tcp connections */
 static void client_connect(stype_t *server)
 {
-#ifndef	HAVE_IPV6
-	struct	sockaddr_in csock;
-#else
 	struct	sockaddr_storage csock;
-#endif
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int	clen;
+#else
 	socklen_t	clen;
+#endif
 	int		fd;
-	ctype_t		*client;
+	nut_ctype_t		*client;
 
 	clen = sizeof(csock);
 	fd = accept(server->sock_fd, (struct sockaddr *) &csock, &clen);
@@ -530,11 +478,7 @@ static void client_connect(stype_t *server)
 
 	time(&client->last_heard);
 
-#ifndef	HAVE_IPV6
-	client->addr = xstrdup(inet_ntoa(csock.sin_addr));
-#else
 	client->addr = xstrdup(inet_ntopW(&csock));
-#endif
 
 	pconf_init(&client->ctx, NULL);
 
@@ -557,14 +501,17 @@ static void client_connect(stype_t *server)
 }
 
 /* read tcp messages and handle them */
-static void client_readline(ctype_t *client)
+static void client_readline(nut_ctype_t *client)
 {
 	char	buf[SMALLBUF];
 	int	i, ret;
 
+#ifdef WITH_SSL
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
-	} else {
+	} else 
+#endif /* WITH_SSL */
+	{
 		ret = read(client->sock_fd, buf, sizeof(buf));
 	}
 
@@ -610,7 +557,6 @@ void server_load(void)
 
 	/* default behaviour if no LISTEN addres has been specified */
 	if (!firstaddr) {
-#ifdef	HAVE_IPV6
 		if (opt_af != AF_INET) {
 			listen_add("::1", string_const(PORT));
 		}
@@ -618,13 +564,15 @@ void server_load(void)
 		if (opt_af != AF_INET6) {
 			listen_add("127.0.0.1", string_const(PORT));
 		}
-#else
-		listen_add("127.0.0.1", string_const(PORT));
-#endif
 	}
 
 	for (server = firstaddr; server; server = server->next) {
 		setuptcp(server);
+	}
+	
+	/* check if we have at least 1 valid LISTEN interface */
+	if (firstaddr->sock_fd < 0) {
+		fatalx(EXIT_FAILURE, "no listening interface available");
 	}
 }
 
@@ -650,7 +598,7 @@ void server_free(void)
 
 static void client_free(void)
 {
-	ctype_t		*client, *cnext;
+	nut_ctype_t		*client, *cnext;
 
 	/* cleanup client fds */
 	for (client = firstclient; client; client = cnext) {
@@ -700,6 +648,8 @@ static void upsd_cleanup(void)
 	free(statepath);
 	free(datapath);
 	free(certfile);
+	free(certname);
+	free(certpasswd);
 
 	free(fds);
 	free(handler);
@@ -728,7 +678,7 @@ static void mainloop(void)
 	int	i, ret, nfds = 0;
 
 	upstype_t	*ups;
-	ctype_t		*client, *cnext;
+	nut_ctype_t		*client, *cnext;
 	stype_t		*server;
 	time_t	now;
 
@@ -830,7 +780,7 @@ static void mainloop(void)
 				sstate_disconnect((upstype_t *)handler[i].data);
 				break;
 			case CLIENT:
-				client_disconnect((ctype_t *)handler[i].data);
+				client_disconnect((nut_ctype_t *)handler[i].data);
 				break;
 			case SERVER:
 				upsdebugx(2, "%s: server disconnected", __func__);
@@ -851,7 +801,7 @@ static void mainloop(void)
 				sstate_readline((upstype_t *)handler[i].data);
 				break;
 			case CLIENT:
-				client_readline((ctype_t *)handler[i].data);
+				client_readline((nut_ctype_t *)handler[i].data);
 				break;
 			case SERVER:
 				client_connect((stype_t *)handler[i].data);
@@ -879,12 +829,11 @@ static void help(const char *progname)
 	printf("  -D		raise debugging level\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
+	printf("  -q		raise log level threshold\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
 	printf("  -V		display the version of this software\n");
-#ifdef	HAVE_IPV6
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
-#endif
 
 	exit(EXIT_SUCCESS);
 }
@@ -943,24 +892,21 @@ int main(int argc, char **argv)
 {
 	int	i, cmd = 0;
 	char	*chroot_path = NULL;
-	const char	*user = NULL;
+	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
 
 	progname = xbasename(argv[0]);
-
-	/* pick up a default from configure --with-user */
-	user = RUN_AS_USER;
 
 	/* yes, xstrdup - the conf handlers call free on this later */
 	statepath = xstrdup(dflt_statepath());
 	datapath = xstrdup(DATADIR);
 
 	/* set up some things for later */
-	snprintf(pidfn, sizeof(pidfn), "%s/upsd.pid", altpidpath());
+	snprintf(pidfn, sizeof(pidfn), "%s/%s.pid", altpidpath(), progname);
 
-	printf("Network UPS Tools upsd %s\n", UPS_VERSION);
+	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:r:i:fu:Vc:D")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -970,6 +916,9 @@ int main(int argc, char **argv)
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
+			case 'q':
+				nut_log_level++;
+				break;
 			case 'r':
 				chroot_path = optarg;
 				break;
@@ -977,7 +926,6 @@ int main(int argc, char **argv)
 				user = optarg;
 				break;
 			case 'V':
-
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
 
@@ -996,15 +944,13 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 
-#ifdef	HAVE_IPV6
-		  case '4':
+			case '4':
 				opt_af = AF_INET;
 				break;
 
-		  case '6':
+			case '6':
 				opt_af = AF_INET6;
 				break;
-#endif
 
 			default:
 				help(progname);
@@ -1015,6 +961,15 @@ int main(int argc, char **argv)
 	if (cmd) {
 		sendsignalfn(pidfn, cmd);
 		exit(EXIT_SUCCESS);
+	}
+
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+	if (sendsignalfn(pidfn, 0) == 0) {
+		printf("Fatal error: A previous upsd instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	argc -= optind;
@@ -1028,7 +983,7 @@ int main(int argc, char **argv)
 
 	setup_signals();
 
-	open_syslog("upsd");
+	open_syslog(progname);
 
 	/* send logging to the syslog pre-background for later use */
 	syslogbit_set();
@@ -1049,6 +1004,9 @@ int main(int argc, char **argv)
 	/* start server */
 	server_load();
 
+	/* initialize SSL before we drop privileges (we may not be able to read the keyfile as non-root) */
+	ssl_init();
+
 	become_user(new_uid);
 
 	if (chdir(statepath)) {
@@ -1067,8 +1025,6 @@ int main(int argc, char **argv)
 		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
 	}
 
-	ssl_init();
-
 	/* try to bring in the var/cmd descriptions */
 	desc_load();
 
@@ -1086,6 +1042,9 @@ int main(int argc, char **argv)
 		mainloop();
 	}
 
+	ssl_cleanup();
+
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 	return EXIT_SUCCESS;
 }
+

@@ -31,7 +31,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.21"
+#define MGE_XML_VERSION		"MGEXML/0.22"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
@@ -507,6 +507,8 @@ static const char *mge_test_result_info(const char *val)
 		return "in progress";
 	case 6:
 		return "no test initiated";
+	case 7:
+		return "test scheduled";
 	}
 	return NULL;
 }
@@ -516,7 +518,7 @@ static const char *mge_ambient_info(const char *val)
 	switch (mge_ambient_value)
 	{
 	case 1:
-		return (char *)val;
+		return val;
 	default:
 		return NULL;
 	}

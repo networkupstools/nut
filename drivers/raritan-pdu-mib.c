@@ -28,8 +28,10 @@
 #define RARITAN_MIB_VERSION	"0.4"
 
 /* Raritan MIB
- * this one uses the Revelation MIB, with a different entry point */
+ * this one uses the same MIB as Eaton Revelation,
+ * but with a different entry point */
 #define	RARITAN_BASE_OID					".1.3.6.1.4.1.13742"
+#define RARITAN_SYSOID						RARITAN_BASE_OID
 #define RARITAN_OID_MODEL_NAME				".1.3.6.1.4.1.13742.1.1.12.0"
 
 #define DO_OFF		0
@@ -119,4 +121,4 @@ static snmp_info_t raritan_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
 
-mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, "", RARITAN_OID_MODEL_NAME, raritan_mib };
+mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, "", RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID };

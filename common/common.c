@@ -33,16 +33,17 @@
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
+	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
 
 static void xbit_set(int *val, int flag)
 {
-	*val = (*val |= flag);
+	*val |= flag;
 }
 
 static void xbit_clear(int *val, int flag)
 {
-	*val = (*val ^= (*val & flag));
+	*val ^= (*val & flag);
 }
 
 static int xbit_test(int val, int flag)
@@ -70,6 +71,44 @@ void open_syslog(const char *progname)
 #endif
 
 	openlog(progname, opt, LOG_FACILITY);
+
+	switch (nut_log_level)
+	{
+#if HAVE_SETLOGMASK && HAVE_DECL_LOG_UPTO
+	case 7:
+		setlogmask(LOG_UPTO(LOG_EMERG));	/* system is unusable */
+		break;
+	case 6:
+		setlogmask(LOG_UPTO(LOG_ALERT));	/* action must be taken immediately */
+		break;
+	case 5:
+		setlogmask(LOG_UPTO(LOG_CRIT));		/* critical conditions */
+		break;
+	case 4:
+		setlogmask(LOG_UPTO(LOG_ERR));		/* error conditions */
+		break;
+	case 3:
+		setlogmask(LOG_UPTO(LOG_WARNING));	/* warning conditions */
+		break;
+	case 2:
+		setlogmask(LOG_UPTO(LOG_NOTICE));	/* normal but significant condition */
+		break;
+	case 1:
+		setlogmask(LOG_UPTO(LOG_INFO));		/* informational */
+		break;
+	case 0:
+		setlogmask(LOG_UPTO(LOG_DEBUG));	/* debug-level messages */
+		break;
+	default:
+                fatalx(EXIT_FAILURE, "Invalid log level threshold");
+#else
+	case 0:
+		break;
+	default:
+		upslogx(LOG_INFO, "Changing log level threshold not possible");
+		break;
+#endif
+	}
 }
 
 /* close ttys and become a daemon */
@@ -205,6 +244,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (fgets(buf, sizeof(buf), pidf) == NULL) {
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
+		fclose(pidf);
 		return -1;
 	}	
 
@@ -212,6 +252,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (pid < 2) {
 		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
+		fclose(pidf);
 		return -1;
 	}
 
@@ -220,6 +261,7 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
+		fclose(pidf);
 		return -1;
 	}
 
@@ -228,9 +270,11 @@ int sendsignalfn(const char *pidfn, int sig)
 
 	if (ret < 0) {
 		perror("kill");
+		fclose(pidf);
 		return -1;
 	}
 
+	fclose(pidf);
 	return 0;
 }
 
@@ -483,11 +527,28 @@ char *rtrim(char *in, const char sep)
 {
 	char	*p;
 
-	p = &in[strlen(in) - 1];
+	if (in) {
+		p = &in[strlen(in) - 1];
 
-	while ((p >= in) && (*p == sep))
-		*p-- = '\0';
-	
+		while ((p >= in) && (*p == sep))
+			*p-- = '\0';
+	}
+	return in;
+}
+
+/* modify in - strip all leading instances of <sep> */
+char* ltrim(char *in, const char sep)
+{
+	char *p;
+
+	if (in) {
+		p = in;
+
+		while ((*p != '\0') && (*p == sep))
+			*p++ = *in++;
+
+		p = '\0';
+	}
 	return in;
 }
 

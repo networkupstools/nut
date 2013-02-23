@@ -1,6 +1,8 @@
 /* netlist.c - LIST handlers for upsd
 
-   Copyright (C) 2003  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+    2003  Russell Kroll <rkroll@exploits.org>
+	2012  Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,9 +28,10 @@
 
 #include "netlist.h"
 
-	extern	upstype_t	*firstups;	/* for list_ups */
+extern	upstype_t	*firstups;	/* for list_ups */
+extern	nut_ctype_t *firstclient;	/* for list_clients */
 
-static int tree_dump(struct st_tree_t *node, ctype_t *client, const char *ups, 
+static int tree_dump(st_tree_t *node, nut_ctype_t *client, const char *ups,
 	int rw, int fsd)
 {
 	int	ret;
@@ -78,7 +81,7 @@ static int tree_dump(struct st_tree_t *node, ctype_t *client, const char *ups,
 	return 1;
 }
 
-static void list_rw(ctype_t *client, const char *upsname)
+static void list_rw(nut_ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
 
@@ -101,7 +104,7 @@ static void list_rw(ctype_t *client, const char *upsname)
 	sendback(client, "END LIST RW %s\n", upsname);
 }
 
-static void list_var(ctype_t *client, const char *upsname)
+static void list_var(nut_ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
 
@@ -124,10 +127,10 @@ static void list_var(ctype_t *client, const char *upsname)
 	sendback(client, "END LIST VAR %s\n", upsname);
 }
 
-static void list_cmd(ctype_t *client, const char *upsname)
+static void list_cmd(nut_ctype_t *client, const char *upsname)
 {
 	const   upstype_t *ups;
-	struct	cmdlist_t	*ctmp;
+	cmdlist_t	*ctmp;
 
 	ups = get_ups_ptr(upsname);
 
@@ -150,11 +153,11 @@ static void list_cmd(ctype_t *client, const char *upsname)
 	sendback(client, "END LIST CMD %s\n", upsname);
 }
 
-static void list_enum(ctype_t *client, const char *upsname, const char *var)
+static void list_enum(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	const   upstype_t *ups;
-	const	struct	st_tree_t	*node;
-	const	struct	enum_t	*etmp;
+	const	st_tree_t	*node;
+	const	enum_t	*etmp;
 
 	ups = get_ups_ptr(upsname);
 
@@ -185,7 +188,42 @@ static void list_enum(ctype_t *client, const char *upsname, const char *var)
 	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
 }
 
-static void list_ups(ctype_t *client)
+static void list_range(nut_ctype_t *client, const char *upsname, const char *var)
+{
+	const   upstype_t *ups;
+	const	st_tree_t	*node;
+	const	range_t	*rtmp;
+
+	ups = get_ups_ptr(upsname);
+
+	if (!ups) {
+		send_err(client, NUT_ERR_UNKNOWN_UPS);
+		return;
+	}
+
+	if (!ups_available(ups, client))
+		return;
+
+	node = sstate_getnode(ups, var);
+
+	if (!node) {
+		send_err(client, NUT_ERR_VAR_NOT_SUPPORTED);
+		return;
+	}
+
+	if (!sendback(client, "BEGIN LIST RANGE %s %s\n", upsname, var))
+		return;
+
+	for (rtmp = node->range_list; rtmp != NULL; rtmp = rtmp->next) {
+		if (!sendback(client, "RANGE %s %s \"%i\" \"%i\"\n",
+			upsname, var, rtmp->min, rtmp->max))
+			return;
+	}
+
+	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
+}
+
+static void list_ups(nut_ctype_t *client)
 {
 	upstype_t	*utmp;
 	char	esc[SMALLBUF];
@@ -204,7 +242,7 @@ static void list_ups(ctype_t *client)
 				utmp->name, esc);
 		
 		} else {
-			ret = sendback(client, "UPS %s \"Unavailable\"\n",
+			ret = sendback(client, "UPS %s \"Description unavailable\"\n",
 				 utmp->name);
 		}
 
@@ -217,7 +255,37 @@ static void list_ups(ctype_t *client)
 	sendback(client, "END LIST UPS\n");
 }	
 
-void net_list(ctype_t *client, int numarg, const char **arg)
+static void list_clients(nut_ctype_t *client, const char *upsname)
+{
+	const upstype_t *ups;
+	nut_ctype_t		*c, *cnext;
+
+	ups = get_ups_ptr(upsname);
+
+	if (!ups) {
+		send_err(client, NUT_ERR_UNKNOWN_UPS);
+		return;
+	}
+
+	if (!sendback(client, "BEGIN LIST CLIENT %s\n", upsname))
+		return;
+
+	if (firstclient) {
+		int	ret;
+		/* show connected clients */
+		for (c = firstclient; c; c = cnext) {
+			if (c->loginups && (!ups || !strcasecmp(c->loginups, ups->name))) {
+				ret = sendback(client, "CLIENT %s %s\n", c->loginups, c->addr);
+				if (!ret)
+					return;
+			}
+			cnext = c->next;
+		}
+	}
+	sendback(client, "END LIST CLIENT %s\n", upsname);
+}
+
+void net_list(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 1) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -253,6 +321,12 @@ void net_list(ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
+	/* LIST CLIENT UPS */
+	if (!strcasecmp(arg[0], "CLIENT")) {
+		list_clients(client, arg[1]);
+		return;
+	}
+
 	if (numarg < 3) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
@@ -261,6 +335,12 @@ void net_list(ctype_t *client, int numarg, const char **arg)
 	/* LIST ENUM UPS VARNAME */
 	if (!strcasecmp(arg[0], "ENUM")) {
 		list_enum(client, arg[1], arg[2]);
+		return;
+	}
+
+	/* LIST RANGE UPS VARNAME */
+	if (!strcasecmp(arg[0], "RANGE")) {
+		list_range(client, arg[1], arg[2]);
 		return;
 	}
 

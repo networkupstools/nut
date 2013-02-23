@@ -1,0 +1,168 @@
+snmp-ups(8)
+===========
+
+NAME
+----
+
+snmp-ups - Multi-MIB Driver for SNMP UPS equipment
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+snmp-ups driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS:
+*ietf*::
+UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps others (default)
+
+*mge*::
+MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
+
+*apcc*::
+APC AP9605, AP9606, AP9617, and AP9618 APC network management cards, as well as any others supporting the APC POWERNET MIB
+
+*netvision*::
+Socomec Sicon UPS with Netvision Web/SNMP management card/external box
+
+*pw*::
+Powerware devices with ConnectUPS SNMP cards
+
+*aphel_genesisII*::
+Eaton Powerware ePDU Monitored
+
+*aphel_revelation*::
+Eaton Powerware ePDU Managed
+
+*raritan*::
+Various Raritan PDUs
+
+*baytech*::
+Various BayTech PDUs
+
+*cpqpower*::
+HP/Compaq AF401A management card, perhaps others
+
+*cyberpower*::
+Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202 and RMCARD301
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5]:
+
+*mibs*='name'::
+Set MIB compliance (default=auto, allowed entries: refer to the above SUPPORTED HARDWARE).
+With "auto", the driver will try a select set of SNMP objects until it finds
+one that the device responds to.  Note that, since NUT 2.6.2, snmp-ups has a new
+method that uses sysObjectID, which is a pointer to the prefered MIB of the
+device, to detect supported devices.  This renders void the use of 'mib' option.
+   
+*community*='name'::
+Set community name (default = public).
+Note that you require a RW community name to change UPS settings (as for a powerdown).
+
+*snmp_version*='version'::
+Set SNMP version (default = v1, allowed: v2c, v3)
+
+*pollfreq*='value'::
+Set polling frequency in seconds, to reduce network flow (default=30)
+
+*notransferoids*::
+Disable the monitoring of the low and high voltage transfer OIDs in
+the hardware.  This will remove input.transfer.low and input.transfer.high
+from the list of variables.  This should only be used on APCC Symmetra
+equipment which has strangeness in the three-phase power reporting.
+
+*secLevel*='value'::
+Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv,
+allowed: authNoPriv,authPriv)
+
+*secName*='value'::
+Set the securityName used for authenticated SNMPv3 messages (no default)
+
+*authPassword*='value'::
+Set the authentication pass phrase used for authenticated SNMPv3 messages
+(no default)
+
+*privPassword*='value'::
+Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)
+
+*authProtocol*='value'::
+Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3
+messages (default=MD5)
+
+*privProtocol*='value'::
+Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages
+(default=DES)
+
+REQUIREMENTS
+------------
+You will need to install the Net-SNMP package from
+http://www.net-snmp.org/ before building this driver.
+
+SNMP v3 also requires OpenSSL support from http://www.openssl.org.
+
+LIMITATION
+----------
+Shutdown
+~~~~~~~~
+
+This driver does not provide a proper upsdrv_shutdown() function. There probably
+never will be one, since at the time this script should run (near the end of
+the system halt script), there will be no network capabilities anymore.
+Probably the only way to shutdown an SNMP UPS is by sending it a shutdown
+with delay command through linkman:upscmd[8] and hope for the best that the
+system will have finished shutting down before the power is cut.
+
+INSTALLATION
+------------
+This driver is only built if the Net-SNMP development files are present on the system.
+You can also force it to be built by using "configure --with-snmp=yes" before calling make.
+
+IMPLEMENTATION
+--------------
+The hostname of the UPS is specified with the "port" value in
+`ups.conf`, i.e.:
+
+	[snmpv1]
+		driver = snmp-ups
+		port = snmp-ups.example.com
+		community = public
+		snmp_version = v1
+		pollfreq = 15
+		desc = "Example SNMP v1 device"
+
+	[snmpv3]
+		driver = snmp-ups
+		port = 166.99.224.132
+		snmp_version = v3
+		secLevel = authPriv
+		secName = mysecurityname
+		authPassword = myauthenticationpassphrase
+		privPassword = myprivatepassphrase
+		desc = "Example SNMP v3 device, with the highest security level"
+
+AUTHORS
+-------
+Arnaud Quette, Dmitry Frolov
+
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+NUT SNMP Protocols Library
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Available at: http://www.networkupstools.org/protocols/snmp/
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

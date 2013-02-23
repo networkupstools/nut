@@ -3,10 +3,9 @@
 #include "bcmxcp_io.h"
 #include "serial.h"
 
-#define PW_MAX_BAUD 5
 
 #define SUBDRIVER_NAME	"RS-232 communication subdriver"
-#define SUBDRIVER_VERSION	"0.17"
+#define SUBDRIVER_VERSION	"0.20"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -17,15 +16,19 @@ upsdrv_info_t comm_upsdrv_info = {
 	{ NULL }
 };
 
+#define PW_MAX_BAUD 5
+
 struct pw_baud_rate {
 	int rate;
 	int name;
 } pw_baud_rates[] = {
-	{ B1200,  1200 },
-	{ B2400,  2400 },
-	{ B4800,  4800 },
-	{ B9600,  9600 },
 	{ B19200, 19200 },
+	{ B9600,  9600 },
+	{ B4800,  4800 },
+	{ B2400,  2400 },
+	{ B1200,  1200 },
+	/* end of structure. */
+	{ 0,  0 }
 };
 
 unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5};		/* Autorisation	command	*/
@@ -45,10 +48,14 @@ static void send_command(unsigned char *command, int command_length)
 	sbuf[command_length] = calc_checksum(sbuf);
 	command_length += 1;
 
+	upsdebug_hex (3, "send_command", sbuf, command_length);
+
 	while (retry++ < PW_MAX_TRY) {
 
-		if (retry == PW_MAX_TRY)
+		if (retry == PW_MAX_TRY) {
 			ser_send_char(upsfd, 0x1d);	/* last retry is preceded by a ESC.*/
+			usleep(250000);
+		}
 
 		sent = ser_send_buf(upsfd, sbuf, command_length);
 
@@ -82,7 +89,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			res = ser_get_char(upsfd, my_buf, 1, 0);
 
 			if (res != 1) {
-				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d!!!\n", res);
+				upsdebugx(1,"Receive error (PW_COMMAND_START_BYTE): %d, cmd=%x!!!\n", res, command);
 				return -1;
 			}
 
@@ -187,6 +194,7 @@ int get_answer(unsigned char *data, unsigned char command)
 
 	}
 
+	upsdebug_hex (5, "get_answer", data, end_length);
 	ser_comm_good();
 
 	return end_length;
@@ -195,7 +203,7 @@ int get_answer(unsigned char *data, unsigned char command)
 static int command_sequence(unsigned char *command, int command_length, unsigned char *answer)
 {
 	int	bytes_read, retry = 0;
-	
+
 	while (retry++ < PW_MAX_TRY) {
 
 		if (retry == PW_MAX_TRY) {
@@ -250,6 +258,7 @@ void upsdrv_comm_good()
 void pw_comm_setup(const char *port)
 {
 	unsigned char	command = PW_SET_REQ_ONLY_MODE;
+	unsigned char	id_command = PW_ID_BLOCK_REQ;
 	unsigned char	answer[256];
 	int		i = 0, baud, mybaud = 0, ret = -1;
 
@@ -274,6 +283,10 @@ void pw_comm_setup(const char *port)
 		send_write_command(AUT, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
+		if (ret <= 0) {
+			usleep(500000);
+			ret = command_sequence(&id_command, 1, answer);
+		}
 
 		if (ret > 0) {
 			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, baud);
@@ -293,6 +306,10 @@ void pw_comm_setup(const char *port)
 		send_write_command(AUT, 4);
 		usleep(500000);
 		ret = command_sequence(&command, 1, answer);
+		if (ret <= 0) {
+			usleep(500000);
+			ret = command_sequence(&id_command, 1, answer);
+		}
 
 		if (ret > 0) {
 			upslogx(LOG_INFO, "Connected to UPS on %s with baudrate %d", port, pw_baud_rates[i].name);

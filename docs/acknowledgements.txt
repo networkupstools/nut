@@ -1,0 +1,163 @@
+ifndef::external_title[]
+Acknowledgements
+================
+endif::external_title[]
+
+This project is the result of years of work by many individuals and companies.
+
+Many people have written or tweaked the software; the drivers, clients, server
+and documentation have all received valuable attention from numerous sources.
+
+Many of them are listed within the source code, AUTHORS file, release notes, and
+mailing list archives, but some prefer to be anonymous.
+This software would not be possible without their help.
+
+
+The NUT Team
+------------
+
+Active members
+~~~~~~~~~~~~~~
+
+- Arnaud Quette: project leader (since 2005), Debian packager and jack of all trades
+- Charles Lepple: senior lieutenant
+- Frederic Bohe: senior developer
+- Emilien Kia: senior developer
+- Václav Krpec: junior developer
+- Kjell Claesson: senior developer
+- Alexander Gordeev: junior developer
+- Michal Soltys: junior developer
+- David Goncalves: Python developer
+- Jean Perriault: web consultant
+- Eric S. Raymond: Documentation consultant
+- Oden Eriksson: Mandriva packager
+- Stanislav Brabec: Novell / Suse packager
+- Michal Hlavinka: Redhat packager
+- Antoine Colombier: trainee
+
+For an up to date list of NUT developers, refer to
+link:https://alioth.debian.org/project/memberlist.php?group_id=30602[Alioth].
+
+Retired members
+~~~~~~~~~~~~~~~
+
+- Russell Kroll: Founder, and project leader from 1996 to 2005
+- Arjen de Korte: senior lieutenant
+- Peter Selinger: senior lieutenant
+- Carlos Rodrigues: author of the "megatec" drivers, removing the numerous
+drivers for Megatec / Q1 protocol. These drivers have now been replaced by
+blazer_ser and blazer_usb
+- Niels Baggesen: ported and heavily extended upscode2 to NUT 2.0 driver model
+- Niklas Edmundsson: has worked on 3-phase support, and upscode2 updates
+- Martin Loyer: has worked a bit on mge-utalk
+- Jonathan Dion: MGE internship (summer 2006), who has worked on configuration
+- Doug Reynolds: has worked on CyberPower support (powerpanel driver)
+- Jon Gough: has worked on porting the megatec driver to USB (megatec_usb) 
+- Dominique Lallement: Consultant (chairman of the USB/HID PDC Forum)
+- Julius Malkiewicz: junior developer
+- Tomas Smetana: former Redhat packager (2007-2008)
+
+[[Eaton]]
+Our main supporter: Eaton
+-------------------------
+
+Through the acquisition of MGE Office Protection Systems (a carve out of
+the MGE UPS SYSTEMS small systems, up to 10 KVA), Eaton has been supporting
+NUT, and more generally the Free/Libre Opensource Software Community
+since around 2002.
+
+This support includes the following actions:
+
+- providing extensive technical documents (Eaton protocols library),
+- providing units to developers of NUT and related projects,
+- hosting the networkupstools.org webserver (from 2005 to August 2012),
+- providing artwork,
+- promoting NUT in general.
+
+For more detailed information on Eaton's Opensource commitment, please refer to
+link:http://opensource.eaton.com[Eaton Opensource website].
+
+Supporting manufacturers
+------------------------
+
+UPS manufacturers
+~~~~~~~~~~~~~~~~~
+
+- link:http://powerquality.eaton.com[Eaton], our main supporter, as presented in
+the <<Eaton,above section>>.
+
+- link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
+revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
+UPSs with alarm interface.
+
+- link:http://www.microdowell.com[Microdowell], through Elio Corbolante, has
+created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial devices.
+They also proposes NUT as an alternative to its software for
+link:http://www.microdowell.com/fra/download.html[Linux / Unix].
+
+- link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
+link:ups-protocols.html[extensive information] on its USB/HID devices, along
+with development units.
+
+- link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
+provided link:ups-protocols.html[all protocols information]. Elio Parisi has
+also created riello_ser and riello_usb to support these protocols.
+
+Appliances manufacturers
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- link:http://www.opengear.com[OpenGear] has worked with NUT's leader to
+successfully develop and integrate PDU support. Opengear, through Scott Burns,
+and Robert Waldie, has submitted several patches.
+
+Other contributors
+------------------
+
+- Pavel Korensky's original apcd provided the inspiration for pursuing APC's
+smart protocol in 1996
+- Eric Lawson provided scans of the OneAC protocol
+- John Marley used OCR software to transform the SEC protocol scans into a HTML
+document
+- Chris McKinnon scanned and converted the Fortress protocol documentation
+- Tank provided documentation on the Belkin/Delta protocol
+- Potrans provided a Fenton PowerPal 600 (P series) for development of the
+safenet driver.
+
+Older entries (before 2005)
+---------------------------
+
+- MGE UPS SYSTEMS was the previous NUT sponsor. They provided protocols
+information, many units for development of NUT-related projects.
+Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and usbhid-ups
+are the result of this collaboration, in addition to the WMNut, MGE HID Parser
+the libhid projects, ... through Arnaud.
+All the MGE supporters have now gone with Eaton (through MGE Office
+Protection Systems), which is the new NUT sponsor.
+
+- Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
+stance and quick responses to technical inquiries were appreciated for 
+making the development of the fentonups driver possible.
+Fenton has since been acquired by link:http://www.metapo.com[Metapo]. 
+
+- Bo Kersey of link:http://www.vircio.com[VirCIO] provided a Best Power Fortress
+750 to facilitate the bestups driver.  
+
+- Invensys Energy Systems provided the SOLA/Best "Phoenixtec" protocol
+document. SOLA has since been acquired by Eaton.
+
+- PowerKinetics technical support provided documentation on their MiniCOL
+protocol, which is archived in the NUT protocol library.
+PowerKinetics was acquired by the link:http://www.jst.cc[JST Group] in June 2003.
+
+- link:http://www.cyberpowersystems.com[Cyber Power Systems] contributed a
+700AVR model for testing and development of the cyberpower driver.
+
+- link:http://www.liebert.com[Liebert Corporation] supplied serial test boxes
+and a UPStation GXT2 with the Web/SNMP card for development of the liebert
+driver and expansion of the existing snmp-ups driver.
+Liebert has since been acquired by link:http://www.emerson.com[Emerson].
+
+NOTE: If a company or individual isn't listed here, then we probably don't have
+enough information about the situation. Developers are requested to report vendor
+contributions to the NUT team so this list may reflect their help.
+If we have left you out, send us some mail.

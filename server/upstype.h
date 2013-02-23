@@ -24,6 +24,12 @@
 
 #include "parseconf.h"
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* structure for the linked list of each UPS that we track */
 typedef struct upstype_s {
 	char			*name;
@@ -38,8 +44,8 @@ typedef struct upstype_s {
 	time_t			last_ping;
 	time_t			last_connfail;
 	PCONF_CTX_t		sock_ctx;
-	struct st_tree_t	*inforoot;
-	struct cmdlist_t	*cmdlist;
+	struct st_tree_s	*inforoot;
+	struct cmdlist_s	*cmdlist;
 
 	int	numlogins;
 	int	fsd;		/* forced shutdown in effect? */
@@ -51,5 +57,11 @@ typedef struct upstype_s {
 } upstype_t;
 
 extern upstype_t	*firstups;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif	/* UPSTYPE_H_SEEN */

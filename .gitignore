@@ -1,3 +1,4 @@
+ChangeLog
 configure
 Makefile.in
 nut-*.tar.gz
@@ -16,9 +17,12 @@ Makefile.in
 config.guess
 config.sub
 ltmain.sh
-
 depcomp
-
 install-sh
-
 missing
+.deps
+.libs
+*.bak
+*.[oa]
+*.l[oa]
+*~

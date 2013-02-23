@@ -17,9 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include "ctype.h"
+#include "nut_ctype.h"
 
-#include "ssl.h"
+#include "netssl.h"
 #include "netget.h"
 #include "netset.h"
 #include "netlist.h"
@@ -29,15 +29,19 @@
 
 #define FLAG_USER	0x0001		/* username and password must be set */
 
-struct netcmds_t {
-	const	char	*name;
-	void	(*func)(ctype_t *client, int numargs, const char **arg);
-	int	flags;
-};
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
 
-struct netcmds_t netcmds[] =
-{
+struct {
+	const	char	*name;
+	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
+	int	flags;
+} netcmds[] = {
 	{ "VER",	net_ver,	0		},
+	{ "NETVER",	net_netver,	0		},
 	{ "HELP",	net_help,	0		},
 	{ "STARTTLS",	net_starttls,	0		},
 
@@ -58,3 +62,10 @@ struct netcmds_t netcmds[] =
 
 	{ NULL,		(void(*)())(NULL), 0		}
 };
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+

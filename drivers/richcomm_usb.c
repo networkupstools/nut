@@ -65,7 +65,7 @@ static unsigned int	comm_failures = 0;
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
-	switch (is_usb_device_supported(richcomm_usb_id, device->VendorID, device->ProductID))
+	switch (is_usb_device_supported(richcomm_usb_id, device))
 	{
 	case SUPPORTED:
 		return 1;
@@ -157,7 +157,7 @@ static void usb_comm_fail(const char *fmt, ...)
 	upslogx(LOG_WARNING, "Communications with UPS lost: %s", why);
 }
 
-static void usb_comm_good()
+static void usb_comm_good(void)
 {
 	if (comm_failures == 0) {
 		return;

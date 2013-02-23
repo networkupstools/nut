@@ -1,0 +1,43 @@
+RIELLO_SER(8) 
+===========
+
+NAME
+----
+
+riello_ser - Driver for Riello UPS Protocol UPS equipment
+
+SYNOPSIS
+--------
+
+*riello_ser* -h
+
+*riello_ser* -a 'UPS_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+riello_ser driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+riello_ser supports all recent Riello UPS, Aros UPS models which use the Riello
+UPS GPSER and SENTR protocols.
+
+Older Riello UPS products are not supported.
+
+
+AUTHOR
+------
+
+Massimo Zampieri
+
+SEE ALSO
+--------
+
+The core driver
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources
+~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

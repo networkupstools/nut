@@ -213,7 +213,6 @@ upsdrv_initinfo(void)
 void
 upsdrv_updateinfo(void)
 {
-	char status[256];
 	int x, flags;
 	double utility, outvolt, battvolt, loadpct;
 
@@ -292,7 +291,6 @@ upsdrv_updateinfo(void)
 
 	status_init();
 
-	status[0] = '\0';
 	if (!(flags & 0x02))
 		status_set("OFF");
 	else if (flags & 0x01)

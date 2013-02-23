@@ -4,7 +4,7 @@
  *	2003 - 2009	Arnaud Quette <arnaud.quette@free.fr>
  *	2005		John Stamp <kinsayder@hotmail.com>
  *	2005		Peter Selinger <selinger@users.sourceforge.net>
- *	2009		Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *   and Eaton <http://www.eaton.com>
@@ -36,10 +36,53 @@
 /* APC */
 #define APC_VENDORID 0x051d
 
+/* Tweaks */
+char * tweak_max_report[] = {
+	/* Back-UPS ES 700 does NOT overflow. */
+	/* Back-UPS ES 725 does NOT overflow. */
+	/* Back-UPS ES 525 overflows on ReportID 0x0c
+		 (UPS.PowerSummary.RemainingCapacity).*/
+	"Back-UPS ES 525",
+	/* Back-UPS CS 650 overflows on ReportID 0x46 */
+	"Back-UPS CS",
+	NULL};
+
+/* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
+static void *disable_interrupt_pipe(USBDevice_t *device)
+{
+	if (use_interrupt_pipe == TRUE) {
+		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
+		use_interrupt_pipe= FALSE;
+	}
+	return NULL;
+}
+
+/* Some models need special tweaks */
+static void *general_apc_check(USBDevice_t *device)
+{
+	int i = 0;
+
+	/* Some models of Back-UPS overflow on some ReportID.
+	 * This results in some data not being exposed and IO errors on
+	 * WIN32, causing endless reconnection or driver's failure */
+
+	while( tweak_max_report[i] != NULL ) {
+		if(!strncmp(device->Product, tweak_max_report[i],
+			strlen(tweak_max_report[i]))) {
+			max_report_size = 1;
+			return NULL;
+		}
+		i++;
+	}
+	return NULL;
+}
+
 /* USB IDs device table */
 static usb_device_id_t apc_usb_device_table[] = {
 	/* various models */
-	{ USB_DEVICE(APC_VENDORID, 0x0002), NULL },
+	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
+	/* various 5G models */
+	{ USB_DEVICE(APC_VENDORID, 0x0003), disable_interrupt_pipe },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -47,7 +90,7 @@ static usb_device_id_t apc_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *apc_date_conversion_fun(double value)
+static const char *apc_date_conversion_fun(double value)
 {
 	static char buf[20];
 	int year, month, day;
@@ -134,16 +177,38 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCProbe1",			0xff860007 },
 	{ "APCProbe2",			0xff860008 },
 	{ "APCBattReplaceDate",		0xff860016 },
+	/* usage seen in dumps but unknown:
+	 * - ff860018
+	 * Path: UPS.Battery.ff860018, Type: Feature, ReportID: 0x48, Offset: 0, Size: 32, Value: 0
+	 */
 	{ "APCBattCapBeforeStartup",	0xff860019 }, /* FIXME: exploit */
+	/* usage seen in dumps but unknown:
+	 * - ff86001a
+	 * Path: UPS.Battery.ff86001a, Type: Input, ReportID: 0x1b, Offset: 0, Size: 8, Value: 3
+	 * Path: UPS.Battery.ff86001a, Type: Feature, ReportID: 0x1b, Offset: 0, Size: 8, Value: 3
+	 * - ff86001b
+	 * Path: UPS.Battery.ff86001b, Type: Input, ReportID: 0x1c, Offset: 0, Size: 8, Value: 0
+	 * Path: UPS.Battery.ff86001b, Type: Feature, ReportID: 0x1c, Offset: 0, Size: 8, Value: 0
+	 * - ff860023
+	 * Path: UPS.ff860001.ff860023, Type: Feature, ReportID: 0x60, Offset: 0, Size: 16, Value: 0
+	 * - ff860024
+	 * Path: UPS.Battery.ff860024, Type: Feature, ReportID: 0x47, Offset: 0, Size: 8, Value: 245
+	 * Path: UPS.PowerConverter.ff860024, Type: Feature, ReportID: 0x51, Offset: 0, Size: 8, Value: 145
+	 * - ff860025
+	 * Path: UPS.ff860001.ff860025, Type: Feature, ReportID: 0x62, Offset: 0, Size: 32, Value: 0
+	 * - ff860026
+	 * Path: UPS.ff860001.ff860026, Type: Feature, ReportID: 0x61, Offset: 0, Size: 8, Value: 10
+	 * - ff860027
+	 * Path: UPS.ff860027, Type: Feature, ReportID: 0x3e, Offset: 0, Size: 32, Value: 0
+	 * - ff860028
+	 * Path: UPS.ff860028, Type: Feature, ReportID: 0x3f, Offset: 0, Size: 32, Value: 0
+	 * - ff860030
+	 * Path: UPS.Output.ff860030, Type: Feature, ReportID: 0x42, Offset: 0, Size: 16, Value: 5.8
+	 */
 	{ "APC_UPS_FirmwareRevision",	0xff860042 },
 	{ "APCLineFailCause",	0xff860052 },
 	{ "APCStatusFlag",		0xff860060 },
 	{ "APCSensitivity",		0xff860061 },
-	/* usage seen in dumps but unknown:
-	 * - ff860027, ff860028
-	 * Path: UPS.ff860027, Type: Feature, ReportID: 0x3e, Offset: 0,
-	 * 	Size: 32, Value:0.000000
-	 */
 	{ "APCPanelTest",		0xff860072 }, /* FIXME: exploit */
 	{ "APCShutdownAfterDelay",	0xff860076 }, /* FIXME: exploit */
 	{ "APC_USB_FirmwareRevision",	0xff860079 }, /* FIXME: exploit */
@@ -152,14 +217,24 @@ static usage_lkp_t apc_usage_lkp[] = {
 	{ "APCDelayBeforeStartup",	0xff86007e }, /* FIXME: exploit */
 	/* usage seen in dumps but unknown:
 	 * - ff860080
-	 * Path: UPS.PresentStatus.ff860080, Type: Input, ReportID: 0x33,
-	 * 	Offset: 12, Size: 1, Value: 0.000000
-	 * - ff86001a
-	 * Path: UPS.Battery.ff86001a, Type: Input, ReportID: 0x1b,
-	 * 	Offset: 0, Size: 8, Value: 3.000000
-	 * - ff86001b
-	 * Path: UPS.Battery.ff86001b, Type: Input, ReportID: 0x1c,
-	 * 	Offset: 0, Size: 8, Value: 0.000000
+	 * Path: UPS.PresentStatus.ff860080, Type: Input, ReportID: 0x33, Offset: 12, Size: 1, Value: 0
+	 * Path: UPS.PresentStatus.ff860080, Type: Feature, ReportID: 0x33, Offset: 12, Size: 1, Value: 0
+	 * Path: UPS.PowerSummary.PresentStatus.ff860080, Type: Input, ReportID: 0x07, Offset: 12, Size: 1, Value: 0
+	 * Path: UPS.PowerSummary.PresentStatus.ff860080, Type: Feature, ReportID: 0x07, Offset: 12, Size: 1, Value: 0
+	 * - ff860090, ff860091
+	 * Path: UPS.ff860090.ff860091, Type: Feature, ReportID: 0x8c, Offset: 0, Size: 8, Value: 1.000000
+	 * - ff860092
+	 * Path: UPS.ff860090.ff860092, Type: Feature, ReportID: 0x8d, Offset: 0, Size: 8, Value: 25.000000
+	 * - ff860093
+	 * Path: UPS.ff860090.ff860093, Type: Feature, ReportID: 0x8e, Offset: 0, Size: 8, Value: 83.000000
+	 * - ff860094
+	 * Path: UPS.ff860090.ff860094, Type: Feature, ReportID: 0x8f, Offset: 0, Size: 8, Value: 0.000000
+	 * - ff860095
+	 * Path: UPS.ff860090.ff860095, Type: Feature, ReportID: 0x90, Offset: 0, Size: 8, Value: 1.000000
+	 * - ff860096
+	 * Path: UPS.ff860090.ff860096, Type: Feature, ReportID: 0x91, Offset: 0, Size: 16, Value: 4.000000
+	 * - ff860097
+	 * Path: UPS.ff860090.ff860097, Type: Feature, ReportID: 0x92, Offset: 0, Size: 16, Value: 4.000000
 	 */
 
 	/* Note (Arnaud): BUP stands for BackUPS Pro
@@ -222,8 +297,11 @@ static hid_info_t apc_hid2nut[] = {
   { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
   { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
+  { "battery.runtime", 0, 0, "UPS.Battery.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
+  { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Battery.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "battery.voltage",  0, 0, "UPS.Battery.Voltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage",  0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.Battery.ConfigVoltage", NULL, "%.1f", 0, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.1f", 0, NULL }, /* Back-UPS 500 */
@@ -236,21 +314,30 @@ static hid_info_t apc_hid2nut[] = {
   /* UPS page */
   { "ups.load", 0, 0, "UPS.Output.PercentLoad", NULL, "%.1f", 0, NULL },
   { "ups.load", 0, 0, "UPS.PowerConverter.PercentLoad", NULL, "%.0f", 0, NULL },
+  /* USB HID PDC defaults */
   { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
-  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL}, /* APC */
   { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
-  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL}, /* APC */
   { "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-  { "ups.timer.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL}, /* APC */
   { "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-  { "ups.timer.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL}, /* APC */
   { "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
-  { "ups.timer.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL}, /* APC */
+  /* used by APC SmartUPS RM */
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.timer.start", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.shutdown", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  /* used by APC BackUPS ES */
+  { "ups.delay.start", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL},
+  { "ups.timer.start", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.shutdown", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
+  { "ups.timer.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
   { "ups.test.result", 0, 0, "UPS.Battery.Test", NULL, "%s", 0, test_read_info },
   { "ups.beeper.status", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", 0, beeper_info },
   { "ups.mfr.date", 0, 0, "UPS.ManufacturerDate", NULL, "%s", 0, date_conversion },
   { "ups.mfr.date", 0, 0, "UPS.PowerSummary.ManufacturerDate", NULL, "%s", 0, date_conversion }, /* Back-UPS 500 */
-
+  { "ups.realpower.nominal", 0, 0, "UPS.PowerConverter.ConfigActivePower", NULL, "%.0f", 0, NULL },
+  { "ups.realpower.nominal", 0, 0, "UPS.Output.ConfigActivePower", NULL, "%.0f", 0, NULL },
 
   /* the below one need to be discussed as we might need to complete
    * the ups.test sub collection
@@ -282,13 +369,18 @@ static hid_info_t apc_hid2nut[] = {
   /* Input page */
   { "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
   { "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", 0, NULL },
+  { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Output.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+  /* used by APC BackUPS RS */
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
-
+  
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", 0, NULL },
+  { "output.current", 0, 0, "UPS.Output.Current", NULL, "%.2f", 0, NULL },
+  { "output.frequency", 0, 0, "UPS.Output.Frequency", NULL, "%.1f", 0, NULL },
 
   /* Environmental page */
   { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe1.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
@@ -313,16 +405,24 @@ static hid_info_t apc_hid2nut[] = {
   { "test.panel.start", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "1", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
   { "test.panel.stop", 0, 0, "UPS.PowerSummary.APCPanelTest", NULL, "0", HU_TYPE_CMD, NULL }, /* Back-UPS 500 */
 
+  /* USB HID PDC defaults */
   { "load.off.delay", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
   { "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-  /* APC Backups ES */
+  /* used by APC SmartUPS RM */
+  { "load.off.delay", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
+  { "load.on.delay", 0, 0, "UPS.Output.DelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
+  { "shutdown.stop", 0, 0, "UPS.Output.DelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
+  { "shutdown.reboot", 0, 0, "UPS.Output.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
+  /* used by APC BackUPS ES */
   { "load.off.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_TYPE_CMD, NULL },
   { "load.on.delay", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeStartup", NULL, DEFAULT_ONDELAY, HU_TYPE_CMD, NULL },
   { "shutdown.stop", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeShutdown", NULL, "-1", HU_TYPE_CMD, NULL },
   { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
-
+  /* used by APC BackUPS CS */
+  { "shutdown.return", 0, 0, "UPS.Output.APCDelayBeforeReboot", NULL, "1", HU_TYPE_CMD, NULL },
+  
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
   { "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
@@ -333,7 +433,7 @@ static hid_info_t apc_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *apc_format_model(HIDDevice_t *hd) {
+static const char *apc_format_model(HIDDevice_t *hd) {
 	static char model[64];
 	char *ptr1, *ptr2;
 
@@ -356,11 +456,11 @@ static char *apc_format_model(HIDDevice_t *hd) {
 	return model;
 }
 
-static char *apc_format_mfr(HIDDevice_t *hd) {
+static const char *apc_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "APC";
 }
 
-static char *apc_format_serial(HIDDevice_t *hd) {
+static const char *apc_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
@@ -368,8 +468,7 @@ static char *apc_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int apc_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(apc_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(apc_usb_device_table, hd);
 
 	switch (status) {
 

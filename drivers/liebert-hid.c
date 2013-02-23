@@ -29,8 +29,8 @@
 #define LIEBERT_HID_VERSION     "Liebert HID 0.3"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
-/* Liebert */
-#define LIEBERT_VENDORID 0x06da
+/* Phoenixtec Power Co., Ltd */
+#define LIEBERT_VENDORID	0x06da
 
 /* USB IDs device table */
 static usb_device_id_t liebert_usb_device_table[] = {
@@ -92,15 +92,15 @@ static hid_info_t liebert_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *liebert_format_model(HIDDevice_t *hd) {
+static const char *liebert_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *liebert_format_mfr(HIDDevice_t *hd) {
+static const char *liebert_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "Liebert";
 }
 
-static char *liebert_format_serial(HIDDevice_t *hd) {
+static const char *liebert_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
@@ -108,8 +108,7 @@ static char *liebert_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int liebert_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(liebert_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(liebert_usb_device_table, hd);
 
 	switch (status) {
 

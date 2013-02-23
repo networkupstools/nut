@@ -1,0 +1,216 @@
+NUT-SCANNER(8)
+==============
+
+
+NAME
+----
+nut-scanner - scan communication buses for NUT devices
+
+SYNOPSIS
+--------
+*nut-scanner* -h
+
+*nut-scanner* ['OPTIONS']
+
+DESCRIPTION
+-----------
+
+*nut-scanner* scans available communication buses and displays any
+NUT-compatible devices it has found.
+
+INSTALLATION
+------------
+
+*nut-scanner* is only built if libltdl (part of libtool development suite)
+is available. Available options (USB, SNMP, IPMI, ...) will vary according
+to the available compile time and runtime dependencies. For example, if
+Net-SNMP is installed, thus providing libsnmp (.so or .dll) and headers,
+both during compilation and runtime, then SNMP discovery will be available.
+
+OPTIONS
+-------
+*-h*::
+Display the help text.
+
+DISPLAY OPTIONS
+---------------
+
+*-N* | *--disp_nut_conf*::
+Display result in the 'ups.conf' format.
+
+*-P* | *--disp_parsable*::
+Display result in a parsable format.
+
+BUS OPTIONS
+-----------
+
+*-C* | *--complete_scan*::
+Scan all available communication buses (default behavior)
+
+*-U* | *--usb_scan*::
+List all NUT-compatible USB devices currently plugged in.
+
+*-S* | *--snmp_scan*::
+Scan SNMP devices. Requires at least a 'start IP', and optionally, an 'end IP'. See specific SNMP OPTIONS for community and security settings.
+
+*-M* | *--xml_scan*::
+Scan XML/HTTP devices. Broadcast a network message on the current network interfaces to retrieve XML/HTTP capable devices. No IP required. 
+
+*-O* | *--oldnut_scan*::
+Scan NUT devices (i.e. upsd daemon) on IP ranging from 'start IP' to 'end IP'.
+
+*-A* | *--avahi_scan*::
+Scan NUT servers using Avahi request on the current network interfaces. No IP required.
+
+*-I* | *--ipmi_scan*::
+Scan NUT compatible power supplies available via IPMI on the current host, or over the network.
+
+*-E* | *--eaton_serial* 'serial ports'::
+Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
+This option must be requested explicitely, even for a complete scan.
+'serial ports' can be expressed in various forms:
+
+- 'auto' to scan all serial ports.
+- a single charcater indicating a port number ('0' (zero) for /dev/ttyS0 and
+/dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
+- a range of N characters, hyphen separated, describing the range of
+ports using 'X-Y', where X and Y are characters refering to the port number.
+- a single port name.
+- a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
+
+
+NETWORK OPTIONS
+---------------
+
+*-t* | *--timeout* 'timeout'::
+Set the network timeout in seconds. Default timeout is 5 seconds.
+
+*-s* | *--start_ip* 'start IP'::
+Set the first IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut).
+
+*-e* | *--end_ip* 'end IP'::
+Set the last IP (IPv4 or IPv6) when a range of IP is required (SNMP, old_nut). If this parameter is omitted, only the 'start IP' is scanned. If 'end IP' is less than 'start IP', both parameters are internally permuted.
+
+*-m* | *--mask_cidr* 'IP address/mask'::
+Set a range of IP using CIDR notation.
+
+NUT DEVICE OPTION
+-----------------
+
+*-p* | *--port* 'port number'::
+Set the port number of scanned NUT devices (default 3493).
+
+SNMP V1 OPTION
+--------------
+
+*-c* | *--community* 'community'::
+Set SNMP v1 community name (default = public).
+
+SNMP V3 OPTIONS
+---------------
+
+*-l* | *--secLevel* 'security level'::
+Set the 'security level' used for SNMPv3 messages. Allowed values are: noAuthNoPriv, authNoPriv and authPriv.
+
+*-u* | *--secName* 'security name'::
+Set the 'security name' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level'.
+
+*-w* | *--authProtocol* 'authentication protocol'::
+Set the 'authentication protocol' used for authenticated SNMPv3 messages. Allowed values are MD5 or SHA. Default value is MD5.
+
+*-W* | *--authPassword* 'authentication pass phrase'::
+Set the 'authentication pass phrase' used for authenticated SNMPv3 messages. This parameter is mandatory if you set 'security level' to authNoPriv or authPriv.
+
+*-x* | *--privProtocol* 'privacy protocol'::
+Set the 'privacy protocol' used for encrypted SNMPv3 messages. Allowed values are DES or AES. Default value is DES.
+
+*-X* | *--privPassword* 'privacy pass phrase'::
+Set the 'privacy pass phrase' used for encrypted SNMPv3 messages. This parameter is mandatory if you set 'security level' to authPriv.
+
+IPMI OPTIONS
+------------
+
+*-b* | *--username* 'username'::
+Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default).
+
+*-B* | *--password* 'password'::
+Specify the password to use when authenticationg with the remote host (mandatory for IPMI over LAN. No default).
+
+*-d* | *--authType* 'authentication type'::
+Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5).
+This forces connection through the 'lan' IPMI interface , thus in IPMI 1.5 mode.
+
+*-D* | *--cipher_suite_id* 'cipher suite identifier'::
+Specify the IPMI 2.0 cipher suite ID to use. The Cipher Suite ID identifies a set of authentication, integrity, and
+confidentiality algorithms to use for IPMI 2.0  communication. The authentication algorithm identifies the algorithm
+to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the
+confidentiality algorithm identifies the algorithm to use for payload encryption (default=3).
++
+The following cipher suite ids are currently supported (Authentication; Integrity; Confidentiality):
+
+- *0*: None; None; None
+- *1*: HMAC-SHA1; None; None
+- *2*: HMAC-SHA1; HMAC-SHA1-96; None
+- *3*: HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128
+- *6*: HMAC-MD5; None; None
+- *7*: HMAC-MD5; HMAC-MD5-128; None
+- *8*: HMAC-MD5; HMAC-MD5-128; AES-CBC-128
+- *11*: HMAC-MD5; MD5-128; None
+- *12*: HMAC-MD5; MD5-128; AES-CBC-128
+- *15*: HMAC-SHA256; None; None
+- *16*: HMAC-SHA256; HMAC_SHA256_128; None
+- *17*: HMAC-SHA256; HMAC_SHA256_128; AES-CBC-128
+
+MISCELLANEOUS OPTIONS
+---------------------
+
+*-V* | *--version*::
+Display NUT version.
+
+*-a* | *--available*::
+Display available bus that can be scanned , depending on how the binary has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+
+*-q* | *--quiet*::
+Display only scan result. No information on currently scanned bus is displayed.
+
+EXAMPLES
+--------
+
+To scan USB devices only:
+
+*nut-scanner -U*
+
+To scan SNMP v1 device with public community on address range 192.168.0.0 to 192.168.0.255:
+
+*nut-scanner -S -s 192.168.0.0 -e 192.168.0.255*
+
+The same using CIDR notation:
+
+*nut-scanner -S -m 192.168.0.0/24*
+
+To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0 to 192.168.0.128 using CIDR notation:
+
+*nut-scanner -O -t 10 -m 192.168.0.0/25*
+
+To scan for power supplies, through IPMI (1.5 mode) over the network, on address range 192.168.0.0 to 192.168.0.255:
+
+*nut-scanner -I -m 192.168.0.0/24 -b username -B password*
+
+To scan for Eaton serial devices on ports 0 and 1 (/dev/ttyS0,
+/dev/ttyUSB0, /dev/ttyS1 and /dev/ttyUSB1 on Linux):
+
+*nut-scanner --eaton_serial 0-1*
+
+To scan for Eaton serial devices on ports 1 and 2 (COM1 and COM2 on Windows):
+
+*nut-scanner --eaton_serial 1-2*
+
+SEE ALSO
+--------
+
+linkman:ups.conf[5]
+
+INTERNET RESOURCES
+------------------
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

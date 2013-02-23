@@ -36,7 +36,6 @@
    battery.runtime
    battery.voltage
    battery.voltage.nominal
-   driver.version.internal
    input.frequency
    input.frequency.nominal      e.g. 60 for 60Hz
    input.sensitivity            (RW) normal/medium/low
@@ -1239,13 +1238,13 @@ int instcmd(const char *cmdname, const char *extra)
 /* set a variable */
 static int setvar(const char *varname, const char *val)
 {
-	int i, r;
+	int i;
 
 	if (!strcasecmp(varname, "input.sensitivity")) {
 		for (i=0; i<asize(voltsens); i++) {
 			if (!strcasecmp(val, voltsens[i])) {
-				r = belkin_nut_write_int(REG_VOLTSENS, i);
-				return STAT_SET_HANDLED;  /* Future: failure if r==-1 */
+				belkin_nut_write_int(REG_VOLTSENS, i);
+				return STAT_SET_HANDLED;  /* Future: failure if result==-1 */
 			}
 		}
 		return STAT_SET_HANDLED;  /* Future: failure */
@@ -1261,14 +1260,14 @@ static int setvar(const char *varname, const char *val)
 		} else {
 			i=atoi(val);
 		}
-		r = belkin_nut_write_int(REG_ALARMSTATUS, i);
-		return STAT_SET_HANDLED;  /* Future: failure if r==-1 */
+		belkin_nut_write_int(REG_ALARMSTATUS, i);
+		return STAT_SET_HANDLED;  /* Future: failure if result==-1 */
 	} else if (!strcasecmp(varname, "input.transfer.low")) {
-		r = belkin_nut_write_int(REG_XFER_LO, atoi(val));
-		return STAT_SET_HANDLED;  /* Future: failure if r==-1 */
+		belkin_nut_write_int(REG_XFER_LO, atoi(val));
+		return STAT_SET_HANDLED;  /* Future: failure if result==-1 */
 	} else if (!strcasecmp(varname, "input.transfer.high")) {
-		r = belkin_nut_write_int(REG_XFER_HI, atoi(val));
-		return STAT_SET_HANDLED;  /* Future: failure if r==-1 */
+		belkin_nut_write_int(REG_XFER_HI, atoi(val));
+		return STAT_SET_HANDLED;  /* Future: failure if result==-1 */
 	}
 
 	upslogx(LOG_NOTICE, "setvar: unknown var [%s]", varname);

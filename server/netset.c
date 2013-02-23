@@ -27,12 +27,13 @@
 
 #include "netset.h"
 
-static void set_var(ctype_t *client, const char *upsname, const char *var,
+static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	const char *newval)
 {
 	upstype_t	*ups;
 	const	char	*val;
-	const	struct  enum_t  *etmp;
+	const	enum_t  *etmp;
+	const	range_t  *rtmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
 
 	ups = get_ups_ptr(upsname);
@@ -108,6 +109,29 @@ static void set_var(ctype_t *client, const char *upsname, const char *var,
 		}
 	}
 
+	/* or if it's within a range */
+
+	rtmp = sstate_getrangelist(ups, var);
+
+	if (rtmp) {
+		int	found = 0;
+		int inewval = atoi(newval);
+
+		while (rtmp) {
+			if ((inewval >= rtmp->min) && (inewval <= rtmp->max)) {
+				found = 1;
+				break;
+			}
+
+			rtmp = rtmp->next;
+		}
+
+		if (!found) {
+			send_err(client, NUT_ERR_INVALID_VALUE);
+			return;
+		}
+	}
+
 	/* must be OK now */
 
 	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s",
@@ -125,7 +149,7 @@ static void set_var(ctype_t *client, const char *upsname, const char *var,
 	sendback(client, "OK\n");
 }
 
-void net_set(ctype_t *client, int numarg, const char **arg)
+void net_set(nut_ctype_t *client, int numarg, const char **arg)
 {
 	if (numarg < 4) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);

@@ -1,9 +1,9 @@
 # Network UPS Tools: clients
 
 # by default, link programs in this directory with libcommon.a
-LDADD = ../common/libcommon.a libupsclient.la $(NETLIBS)
+LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
 if WITH_SSL
-  LDADD += $(LIBSSL_LDFLAGS)
+  LDADD += $(LIBSSL_LIBS)
 endif
 
 # Avoid per-target CFLAGS, because this will prevent re-use of object
@@ -20,9 +20,9 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
-lib_LTLIBRARIES = libupsclient.la
+lib_LTLIBRARIES = libupsclient.la libnutclient.la
 if WITH_DEV
- include_HEADERS = upsclient.h ../include/parseconf.h
+ include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi
@@ -35,7 +35,7 @@ upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 
 upssched_SOURCES = upssched.c upssched.h
-upssched_LDADD = ../common/libcommon.a ../common/libparseconf.la $(NETLIBS)
+upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
 
 upsimage_cgi_SOURCES = upsimage.c upsclient.h upsimagearg.h cgilib.c cgilib.h
 upsimage_cgi_LDADD = $(LDADD) $(LIBGD_LDFLAGS)
@@ -48,6 +48,12 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 libupsclient_la_SOURCES = upsclient.c upsclient.h
 libupsclient_la_LIBADD = ../common/libparseconf.la
 if WITH_SSL
-  libupsclient_la_LIBADD += $(LIBSSL_LDFLAGS)
+  libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
-libupsclient_la_LDFLAGS = -version-info 1:0:0
+
+# libupsclient version information
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+libupsclient_la_LDFLAGS = -version-info 3:1:0
+
+libnutclient_la_SOURCES = nutclient.h nutclient.cpp
+

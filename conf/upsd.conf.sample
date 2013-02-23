@@ -3,6 +3,8 @@
 # This file contains access control data, you should keep it secure.
 #
 # It should only be readable by the user that upsd becomes.  See the FAQ.
+#
+# Each entry below provides usage and default value.
 
 # =======================================================================
 # MAXAGE <seconds>
@@ -18,11 +20,21 @@
 # for notifications from upsd about staleness.
 
 # =======================================================================
+# STATEPATH <path>
+# STATEPATH /var/run/nut
+#
+# Tell upsd to look for the driver state sockets in 'path' rather
+# than the default that was compiled into the program.
+
+# =======================================================================
 # LISTEN <address> [<port>]
 # LISTEN 127.0.0.1 3493
+# LISTEN ::1 3493
 #
-# This defaults to the localhost listening address and port 3493.  You
-# may specify each interface you want upsd to listen on for connections,
+# This defaults to the localhost listening addresses and port 3493.
+# In case of IP v4 or v6 disabled kernel, only the available one will be used.
+#
+# You may specify each interface you want upsd to listen on for connections,
 # optionally with a port number.
 #
 # You may need this if you have multiple interfaces on your machine and
@@ -34,8 +46,64 @@
 
 # =======================================================================
 # MAXCONN <connections>
+# MAXCONN 1024
 #
 # This defaults to maximum number allowed on your system.  Each UPS, each
 # LISTEN address and each client count as one connection.  If the server
 # runs out of connections, it will no longer accept new incoming client
 # connections.  Only set this if you know exactly what you're doing.
+
+# =======================================================================
+# CERTFILE <certificate file>
+# CERTFILE /usr/local/ups/etc/upsd.pem
+#
+# When compiled with SSL support with OpenSSL backend,
+# you can enter the certificate file here.
+# The certificates must be in PEM format and must be sorted starting with
+# the subject's certificate (server certificate), followed by intermediate
+# CA certificates (if applicable_ and the highest level (root) CA. It should
+# end with the server key. See 'docs/security.txt' or the Security chapter of
+# NUT user manual for more information on the SSL support in NUT.
+#
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTPATH <certificate file or directory>
+# CERTPATH /usr/local/ups/etc/cert/upsd
+#
+# When compiled with SSL support with NSS backend,
+# you can enter the certificate path here.
+# Certificates are stored in a dedicated database (splitted in 3 files).
+# Specify the path of the database directory.
+# 
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTIDENT <certificate name> <database password>
+# CERTIDENT "my nut server" "MyPasSw0rD"
+#
+# When compiled with SSL support with NSS backend,
+# you can specify the certificate name to retrieve from database to
+# authenticate itself and the password
+# required to access certificate related private key.
+# 
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+
+# =======================================================================
+# CERTREQUEST <certificate request level>
+# CERTREQUEST REQUIRE
+#
+# When compiled with SSL support with NSS backend and client certificate
+# validation (disabled by default, see 'docs/security.txt'),
+# you can specify if upsd requests or requires client's' certificates.
+# Possible values are :
+#  - 0 to not request to clients to provide any certificate
+#  - 1 to require to all clients a certificate
+#  - 2 to require to all clients a valid certificate
+# 
+# See 'docs/security.txt' or the Security chapter of NUT user manual
+# for more information on the SSL support in NUT.
+

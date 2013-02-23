@@ -1,0 +1,124 @@
+NUT Quality Assurance
+=====================
+
+Recognizing the critical nature of NUT, the NUT Quality Assurance (NQA) effort
+has been established to improve NUT where necessary, and to maintain software
+quality as high as it should be.
+
+NQA is present in many aspects and areas of NUT.
+
+Documentation
+-------------
+
+The documentation toolchain now use
+link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
+manual pages (troff). This single point of control permitted to fill many gaps,
+to suppress many redundancies and to optimize documentation management in
+general.
+ 
+- the NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
+compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
+icons, at the bottom of each page.
+
+- the manual pages conformance is tested with
+link:http://catb.org/~esr/doclifter/index.html[doclifter] (outdated)
+
+- Documentation source files are spell checked, using
+link:http://aspell.net[Aspell], both interactively (using
+'make spellcheck-interactive') and automatically in Buildbot (using
+'make spellcheck').
+
+NOTE: A NUT dictionnary is also available (docs/nut.dict), providing a glossary
+of terms related to power devices and management.
+
+Source code
+-----------
+
+Use of standards
+~~~~~~~~~~~~~~~~
+
+NUT promotes and uses many standards, like:
+
+- the variable names standard used in NUT,
+- the coding rules and best practices for developers,
+- the use of a software architecture limiting developments to the very minimum,
+- the use of standard Free and OpenSource Software components, like:
+  * the USB library,
+  * the Net SNMP project,
+  * the Neon library,
+  * the OpenSSL library (to be replaced by NSS, which is more license compliant
+    with NUT and is FIPS 140 certified),
+  * the TCP Wrappers library.
+
+QA tools and metrics
+~~~~~~~~~~~~~~~~~~~~
+
+NUT's quality is constently monitored using many tools, like:
+
+- a Revision Control System (link:http://svn.debian.org/wsvn/nut[Subversion]) to
+track development and ease regression fixes. Any modification on the NUT source
+trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
+mailing list.
+- link:http://buildbot.networkupstools.org/public/nut/[Buildbot] to automate the compile/test
+cycle. Any build failure is caught early, reported through the
+link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
+mailing list, and fixed quickly.
+- a project portal with trackers for bugs, feature request, patchs
+and tasks
+
+NUT QA also relies on external tools, like:
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME (POST):
+- integrate static code analysis
+	- consider splint, Frama-C, BLAST and Clang, and choose one.
+	- integrate link:http://scan.coverity.com[Coverity Scan] program.
+	Note: request made by Arnaud to scan-admin@coverity.com on Sep 24 2009
+- point other distro BTS (use Launchpad as an aggregator?!)
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+- the Debian QA tools, available through the link:http://packages.qa.debian.org/n/nut.html[NUT Package Tracking System]:
+
+   * Lintian general QA checks,
+   * link:http://piuparts.debian.org/sid/source/n/nut.html[piuparts] automates
+     the installation, upgrade and removal testing processes.
+
+- a runtime testing suite, which automates the inter layer communication testing
+(driver - upsd - upsmon / clients), that is part of Ubuntu.
+link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
+is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
+It installs nut, configure with for the dummy-ups driver, changes a few data and
+check that these are well propagated with upsc.
+
+
+Runtime quality
+~~~~~~~~~~~~~~~
+
+- NUT provides many link:user-manual.html#NUT_Security[security features] to
+ensure a maximum runtime security level.
+
+- Packages use several link:http://wiki.debian.org/Hardening[Hardening methods]
+to protect NUT binaries.
+
+////////////////////////////////////////////////////////////////////////////////
+FIXME (POST):
+
+- write a code conformance checker (nut-lint)
+- write a § on driver maintainance status
+- consider using [http://forge.novell.com/modules/xfmod/project/?opensuse OpenSUSE Build Service tools]
+- provide software metrics and evolution over the time
+
+  * [http://www.flossmetrics.org/ FlossMetrics]
+  * [http://en.wikipedia.org/wiki/Software_metric Wikipedia]
+  * [http://cccc.sourceforge.net/ CCCC - C and C++ Code Counter]
+  * [http://open.ncsu.edu/se/tutorials/metrics/ Metrics with Eclipse]
+
+- Code documentation, for the core architecture (client and drivers are already
+documented)
+
+  * [http://doxygen.org/ Doxygen]
+  * [http://naturaldocs.org/ NaturalDocs]
+
+////////////////////////////////////////////////////////////////////////////////

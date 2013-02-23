@@ -5,7 +5,7 @@
  *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
- *  path-to-subdriver script. It must be customized.
+ *  gen-usbhid-subdriver script. It must be customized.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
  */
 static double	battery_scale = 1;
 
-static void *cps_battery_scale(void)
+static void *cps_battery_scale(USBDevice_t *device)
 {
 	battery_scale = 0.667;
 	return NULL;
@@ -52,7 +52,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 	{ USB_DEVICE(CPS_VENDORID, 0x0005), NULL },
 	/* Dynex DX-800U? */
 	{ USB_DEVICE(CPS_VENDORID, 0x0501), &cps_battery_scale },
-	/* OR2200LCDRM2U */
+	/* OR2200LCDRM2U, OR700LCDRM1U, PR6000LCDRTXL5U */
 	{ USB_DEVICE(CPS_VENDORID, 0x0601), NULL },
 
 	/* Terminating entry */
@@ -61,7 +61,7 @@ static usb_device_id_t cps_usb_device_table[] = {
 
 /* returns statically allocated string - must not use it again before
    done with result! */
-static char *cps_battvolt_fun(double value)
+static const char *cps_battvolt_fun(double value)
 {
 	static char	buf[8];
 
@@ -72,6 +72,22 @@ static char *cps_battvolt_fun(double value)
 
 static info_lkp_t cps_battvolt[] = {
 	{ 0, NULL, &cps_battvolt_fun }
+};
+
+/* returns statically allocated string - must not use it again before
+   done with result! */
+static const char *cps_battcharge_fun(double value)
+{
+	static char	buf[8];
+
+	/* clamp battery charge to 100% */
+	snprintf(buf, sizeof(buf), "%.0f", value < 100.0 ? value : 100.0);
+
+	return buf;
+}
+
+static info_lkp_t cps_battcharge[] = {
+	{ 0, NULL, &cps_battcharge_fun }
 };
 
 /* --------------------------------------------------------------- */
@@ -106,7 +122,7 @@ static hid_info_t cps_hid2nut[] = {
   { "battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion },
   { "battery.charge.warning", 0, 0, "UPS.PowerSummary.WarningCapacityLimit", NULL, "%.0f", 0, NULL },
   { "battery.charge.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingCapacityLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
-  { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
+  { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%s", 0, cps_battcharge },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%.0f", 0, NULL },
@@ -161,15 +177,15 @@ static hid_info_t cps_hid2nut[] = {
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *cps_format_model(HIDDevice_t *hd) {
+static const char *cps_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *cps_format_mfr(HIDDevice_t *hd) {
+static const char *cps_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "CPS";
 }
 
-static char *cps_format_serial(HIDDevice_t *hd) {
+static const char *cps_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
@@ -177,8 +193,7 @@ static char *cps_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int cps_claim(HIDDevice_t *hd) {
 
-	int status = is_usb_device_supported(cps_usb_device_table, hd->VendorID,
-								 hd->ProductID);
+	int status = is_usb_device_supported(cps_usb_device_table, hd);
 
 	switch (status) {
 

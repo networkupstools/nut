@@ -25,7 +25,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.2"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.3"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -43,6 +43,8 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a5), NULL },
 	/* PowerCOM BNT - Black Knight Pro */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a6), NULL },
+	/* PowerCOM Vanguard and BNT-xxxAP */
+	{ USB_DEVICE(POWERCOM_VENDORID, 0x0004), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -50,7 +52,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 
 static char powercom_scratch_buf[32];
 
-static char *powercom_startup_fun(double value)
+static const char *powercom_startup_fun(double value)
 {
 	uint16_t	i = value;
 
@@ -76,7 +78,7 @@ static info_lkp_t powercom_startup_info[] = {
 	{ 0, NULL, powercom_startup_fun, powercom_startup_nuf }
 };
 
-static char *powercom_shutdown_fun(double value)
+static const char *powercom_shutdown_fun(double value)
 {
 	uint16_t	i = value;
 
@@ -258,15 +260,15 @@ static hid_info_t powercom_hid2nut[] = {
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
 
-static char *powercom_format_model(HIDDevice_t *hd) {
+static const char *powercom_format_model(HIDDevice_t *hd) {
 	return hd->Product;
 }
 
-static char *powercom_format_mfr(HIDDevice_t *hd) {
+static const char *powercom_format_mfr(HIDDevice_t *hd) {
 	return hd->Vendor ? hd->Vendor : "PowerCOM";
 }
 
-static char *powercom_format_serial(HIDDevice_t *hd) {
+static const char *powercom_format_serial(HIDDevice_t *hd) {
 	return hd->Serial;
 }
 
@@ -274,11 +276,17 @@ static char *powercom_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int powercom_claim(HIDDevice_t *hd)
 {
-	int status = is_usb_device_supported(powercom_usb_device_table, hd->VendorID, hd->ProductID);
+	int status = is_usb_device_supported(powercom_usb_device_table, hd);
 
 	switch (status)
 	{
 	case POSSIBLY_SUPPORTED:
+		if (hd->ProductID == 0x0002) {
+			upsdebugx(0,
+				"This Powercom device (%04x/%04x) is not supported by usbhid-ups.\n"
+				"Please use the 'powercom' driver instead.\n", hd->VendorID, hd->ProductID);
+			return 0;
+		}
 		/* by default, reject, unless the productid option is given */
 		if (getval("productid")) {
 			return 1;

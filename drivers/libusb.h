@@ -43,8 +43,8 @@ extern upsdrv_info_t comm_upsdrv_info;
  * @name: can be either "shut" for Serial HID UPS Transfer (from MGE) or "usb"
  */
 typedef struct usb_communication_subdriver_s {
-	char *name;				/* name of this subdriver		*/
-	char *version;				/* version of this subdriver		*/
+	const char *name;				/* name of this subdriver		*/
+	const char *version;				/* version of this subdriver		*/
 	int (*open)(usb_dev_handle **sdevp,	/* try to open the next available	*/
 		USBDevice_t *curDevice,		/* device matching USBDeviceMatcher_t	*/
 		USBDeviceMatcher_t *matcher,

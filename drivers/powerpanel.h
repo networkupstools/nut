@@ -33,7 +33,7 @@
 #define SER_WAIT_USEC	250000
 
 typedef struct {
-	char	*version;
+	const char	*version;
 	int	(*instcmd)(const char *cmdname, const char *extra);
 	int	(*setvar)(const char *varname, const char *val);
 	int	(*initups)(void);

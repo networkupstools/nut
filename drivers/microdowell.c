@@ -90,7 +90,7 @@ static int CheckDataChecksum(unsigned char *Buff, int Len)
 }
 
 
-static char *ErrMessages[] = {
+static const char *ErrMessages[] = {
 /*  0 */   "errorcode NOT DEFINED",   /* default error message */
 /*  1 */   "I2C bus busy (e2prom)",
 /*  2 */   "Command received: checksum not valid",
@@ -189,24 +189,23 @@ int CheckErrCode(unsigned char * Buff)
 
 void SendCmdToSerial(unsigned char *Buff, int Len)
 {
-   int i, ret ;
-   unsigned char Tmp[20], Xor ;
+	int i;
+	unsigned char Tmp[20], Xor ;
 
-   Tmp[0] = STX_CHAR ;
-   Xor = Tmp[1] = (unsigned char) (Len & 0x1f) ;
-   for (i=0 ; i < Tmp[1] ; i++)
-      {
-      Tmp[i+2] = Buff[i] ;
-      Xor ^= Buff[i] ;
-      }
-   Tmp[Len+2] = Xor ;
+	Tmp[0] = STX_CHAR ;
+	Xor = Tmp[1] = (unsigned char) (Len & 0x1f) ;
+	for (i=0 ; i < Tmp[1] ; i++)
+	{
+		Tmp[i+2] = Buff[i] ;
+		Xor ^= Buff[i] ;
+	}
+	Tmp[Len+2] = Xor ;
 
 	upsdebug_hex(4, "->UPS", Tmp, Len+3) ;
 
 	/* flush serial port */
-	ret = ser_flush_in(upsfd, "", 0) ; /* empty input buffer */
-
-	ret = ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
+	ser_flush_in(upsfd, "", 0) ; /* empty input buffer */
+	ser_send_buf(upsfd, Tmp, Len+3) ; /* send data to the UPS */
 }
 
 
@@ -221,13 +220,13 @@ unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetB
    unsigned char *p ;
 	int BuffLen ;
 
-	// The default error code (no received character)
+	/* The default error code (no received character) */
 	ErrCode = ERR_COM_NO_CHARS ;
 
    SendCmdToSerial(OutBuffer, Len) ;
-	usleep(10000) ; // small delay (1/100 s))
+	usleep(10000) ; /* small delay (1/100 s) */
 
-	// get chars until timeout
+	/* get chars until timeout */
 	BuffLen = 0 ;
 	while (ser_get_char(upsfd, TmpBuff, 0, 10000) == 1)
 		{
@@ -848,8 +847,6 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("ups.mfr", "Microdowell") ;
 	dstate_setinfo("ups.mfr.date", "%04d/%02d/%02d", ups.YearOfProd, ups.MonthOfProd, ups.DayOfProd) ;
 	dstate_setinfo("battery.packs", "%d", ups.BatteryNumber) ;
-
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION) ;
 
 	/* Register the available variables. */
 	dstate_setinfo("ups.delay.start", "%d", ups.WakeUpDelay);

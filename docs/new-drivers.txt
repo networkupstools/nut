@@ -1,32 +1,38 @@
-Desc: How to make a new driver to support another UPS
-File: new-drivers.txt
-Date: 14 March 2004
-Auth: Russell Kroll <rkroll@exploits.org>
-      Arnaud Quette <arnaud.quette@gmail.com>
+Creating a new driver to support another device
+===============================================
+
+This chapter will present the process to create a new driver to support
+another device.
+
+Since NUT already supports all major power devices protocols, through
+several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_*, ...),
+creation of new drivers has become rare.
+
+So most of the time, it will be limited to completing one of these
+generic driver.
 
 Smart vs. Contact-closure
-=========================
+-------------------------
 
 If your UPS only does contact closure readings, then go straight to the
-contact-closure.txt document for information on adding support.  It's a
-lot easier to add a few lines to a header file than it is to create a
-whole new driver.
+<<contact-closure, Contact closure hardware>> chapter for information on
+adding support.  It's a lot easier to add a few lines to a header file
+than it is to create a whole new driver.
 
 Serial vs. USB vs. SNMP and more
-================================
+--------------------------------
 
 If your UPS connects to your computer via a USB port, then go straight
-to the document hid-subdrivers.txt. You can probably add support for
-your device by writing a new subdriver to the existing usbhid-ups
-driver, which is easier than writing an entire new driver.
+to the <<hid-subdrivers, HID subdrivers>> chapter. You can probably add
+support for your device by writing a new subdriver to the existing
+usbhid-ups driver, which is easier than writing an entire new driver.
 
 Similarly, if your UPS connects to your computer via an SNMP network
 card, you can probably add support for your device by writing a new
-subdriver to the existing snmp-ups driver, which is easier than writing
-an entire new driver.
+subdriver to the existing snmp-ups driver.
 
 Overall concept
-===============
+---------------
 
 The basic design of drivers is simple.  main.c handles most of the work
 for you.  You don't have to worry about arguments, config files, or
@@ -34,51 +40,51 @@ anything else like that.  Your only concern is talking to the hardware
 and providing data to the outside world.
 
 Skeleton driver
-===============
+---------------
 
 Familiarize yourself with the design of skel.c in the drivers directory.
 It shows a few examples of the functions that main will call to obtain
 updated information from the hardware.
 
 Essential structure
-===================
+-------------------
 
 upsdrv_info_t
--------------
+~~~~~~~~~~~~~
 
 This structure tracks several description information about the driver:
 
- * name: the driver full name, for banner printing.
- * version: the driver's own version. For sub driver information, refer below
-            to sub_upsdrv_info. This value has the form "X.YZ", and is
-            published by main as "driver.version.internal".
- * authors: the driver's author(s) name. If multiple authors are listed, separate
-            them with '\n' so that it can be broken up by author if needed.
- * status: the driver development status. The following values are allowed:
-           - DRV_BROKEN: setting this value will cause main to print an error
-             and exit. This is only used during conversions of the driver core
-             to keep users from using drivers which have not been converted.
-             Drivers in this state will be removed from the tree after some
-             period if they are not fixed.
-           - DRV_EXPERIMENTAL: set this value if your driver is potentially
-             broken. This will trigger a warning when it starts so the user
-             doesn't take it for granted.
-           - DRV_BETA: this value means that the driver is more stable and
-             complete. But it is still not recommended for production systems.
-           - DRV_STABLE: the driver is suitable for production systems, but not
-             100 % feature complete.
-           - DRV_COMPLETE: this is the gold level! It implies that 100 % of the
-             protocol is implemented, and a full QA pass.
- * subdrv_info: array of upsdrv_info_t for sub driver(s) information. This
-                is used for example by usbhid-ups and megatec.
+ * *name*:    the driver full name, for banner printing and "driver.name" variable.
+ * *version*: the driver's own version. For sub driver information, refer below
+              to sub_upsdrv_info. This value has the form "X.YZ", and is
+              published by main as "driver.version.internal".
+ * *authors*: the driver's author(s) name. If multiple authors are listed, separate
+              them with a newline character so that it can be broken up by author if needed.
+ * *status*:  the driver development status. The following values are allowed:
+              - DRV_BROKEN: setting this value will cause main to print an error
+              and exit. This is only used during conversions of the driver core
+              to keep users from using drivers which have not been converted.
+              Drivers in this state will be removed from the tree after some
+              period if they are not fixed.
+              - DRV_EXPERIMENTAL: set this value if your driver is potentially
+              broken. This will trigger a warning when it starts so the user
+              doesn't take it for granted.
+              - DRV_BETA: this value means that the driver is more stable and
+              complete. But it is still not recommended for production systems.
+              - DRV_STABLE: the driver is suitable for production systems, but not
+              100 % feature complete.
+              - DRV_COMPLETE: this is the gold level! It implies that 100 % of the
+              protocol is implemented, and a full QA pass.
+ * *subdrv_info*: array of upsdrv_info_t for sub driver(s) information. For
+   example, this is used by usbhid-ups.
 
-These information are currently used for the startup banner printing and tests.
+This information is currently used for the startup banner printing and tests.
 
 Essential functions
-===================
+-------------------
 
 upsdrv_initups
---------------
+~~~~~~~~~~~~~~
 
 Open the port (device_path) and do any low-level things that it may need
 to start using that port.  If you have to set DTR or RTS on a serial
@@ -88,7 +94,7 @@ Don't do any sort of hardware detection here, since you may be going
 into upsdrv_shutdown next.
 
 upsdrv_initinfo
----------------
+~~~~~~~~~~~~~~~
 
 Try to detect what kind of UPS is out there, if any, assuming that's
 possible for your hardware.  If there is a way to detect that hardware
@@ -99,7 +105,7 @@ This is usually a good place to create variables like ups.mfr,
 ups.model, ups.serial, and other "one time only" items.
 
 upsdrv_updateinfo
------------------
+~~~~~~~~~~~~~~~~~
 
 Poll the hardware, and update any variables that you care about
 monitoring.  Use dstate_setinfo() to store the new values.
@@ -122,7 +128,7 @@ running. Calling exit() or any of the fatal*() functions is specifically
 not allowed anymore.
 
 upsdrv_shutdown
----------------
+~~~~~~~~~~~~~~~
 
 Do whatever you can to make the UPS power off the load but also return
 after the power comes back on.  You may use a different command that
@@ -135,7 +141,7 @@ vulnerable to a race if the power comes back on during the shutdown
 process.
 
 Data types
-==========
+----------
 
 To be of any use, you must supply data in ups.status.  That is the
 minimum needed to let upsmon do its job.  Whenever possible, you should
@@ -149,7 +155,7 @@ needs to support many similar hardware models but can't probe to see
 what is actually attached.
 
 Manipulating the data
-=====================
+---------------------
 
 All status data lives in structures that are managed by the dstate
 functions.  All access and modifications must happen through those
@@ -157,7 +163,7 @@ functions.  Any other changes are forbidden, as they will not pushed out
 as updates to things like upsd.
 
 Adding variables
-----------------
+~~~~~~~~~~~~~~~~
 
 	dstate_setinfo("ups.model", "Mega-Zapper 1500");
 
@@ -167,7 +173,7 @@ values right there:
 	dstate_setinfo("ups.model", "Mega-Zapper %d", rating);
 
 Setting flags
--------------
+~~~~~~~~~~~~~
 
 Some variables have special properties.  They can be writable, and some
 are strings.  The ST_FLAG_* values can be used to tell upsd more about
@@ -176,44 +182,54 @@ what it can do.
 	dstate_setflags("input.transfer.high", ST_FLAG_RW);
 
 Status data
-===========
+~~~~~~~~~~~
 
 UPS status flags like on line (OL) and on battery (OB) live in
 ups.status.  Don't manipulate this by hand.  There are functions which
 will do this for you.
 
-        status_init() - before doing anything else
+	status_init() - before doing anything else
 
-        status_set(val) - add a status word (OB, OL, etc)
+	status_set(val) - add a status word (OB, OL, etc)
 
-        status_commit() - push out the update
+	status_commit() - push out the update
 
 Possible values for status_set:
 
- OL      - On line (mains is present)
- OB      - On battery (mains is not present)
- LB      - Low battery
- RB      - The battery needs to be replaced
- CHRG    - The battery is charging
- DISCHRG - The battery is discharging (inverter is providing load power)
- BYPASS  - UPS bypass circuit is active - no battery protection is available
- CAL     - UPS is currently performing runtime calibration (on battery)
- OFF     - UPS is offline and is not supplying power to the load
- OVER    - UPS is overloaded
- TRIM    - UPS is trimming incoming voltage (called "buck" in some hardware)
- BOOST   - UPS is boosting incoming voltage
+	OL      - On line (mains is present)
+	OB      - On battery (mains is not present)
+	LB      - Low battery
+	RB      - The battery needs to be replaced
+	CHRG    - The battery is charging
+	DISCHRG - The battery is discharging (inverter is providing load power)
+	BYPASS  - UPS bypass circuit is active - no battery protection is available
+	CAL     - UPS is currently performing runtime calibration (on battery)
+	OFF     - UPS is offline and is not supplying power to the load
+	OVER    - UPS is overloaded
+	TRIM    - UPS is trimming incoming voltage (called "buck" in some hardware)
+	BOOST   - UPS is boosting incoming voltage
+	FSD     - Forced Shutdown (restricted use, see the note below)
 
 Anything else will not be recognized by the usual clients.  Coordinate
-with me before creating something new, since there will be duplication
-and ugliness otherwise.
+with the nut-upsdev list before creating something new, since there will be
+duplication and ugliness otherwise.
 
-Note: upsd injects "FSD" by itself following that command by a master
-upsmon process.  Drivers must not set that value.
+[NOTE]
+================================================================================
 
-Note: the OL and OB flags are an indication of the input line status only.
+- upsd injects "FSD" by itself following that command by a master upsmon
+process.  Drivers must not set that value, apart from specific cases (see
+below).
+
+- As an exception, drivers may set "FSD" when an imminent shutdown has been
+detected. In this case, the "on battery + low battery" condition should not be
+met. Otherwise, setting status to "OB LB" should be prefered.
+
+- the OL and OB flags are an indication of the input line status only.
+================================================================================
 
 UPS alarms
-==========
+----------
 
 These work like ups.status, and have three special functions which you
 must use to manage them.
@@ -224,7 +240,7 @@ must use to manage them.
 
 	alarm_commit() - push the value into ups.alarm
 
-Note: the ALARM flag in ups.status is automatically set whenever you use
+NOTE: the ALARM flag in ups.status is automatically set whenever you use
 alarm_set.  To remove that flag from ups.status, call alarm_init and
 alarm_commit without calling alarm_set in the middle.
 
@@ -238,7 +254,7 @@ There is no official list of alarm words as of this writing, so don't
 use these functions until you check with the upsdev list.
 
 Staleness control
-=================
+-----------------
 
 If you're not talking to a polled UPS, then you must ensure that it
 is still out there and is alive before calling dstate_dataok().  Even
@@ -247,15 +263,15 @@ else to ensure that it is really available.  If the attempts to
 contact the UPS fail, you must call dstate_datastale() to inform the
 server and clients.
 
- - dstate_dataok() 
+- dstate_dataok() 
++
+You must call this if polls are succeeding.  A good place to call this
+is the bottom of upsdrv_updateinfo().
 
-   You must call this if polls are succeeding.  A good place to call this
-   is the bottom of upsdrv_updateinfo().
-
- - dstate_datastale()
-
-   You must call this if your status is unusable.  A good technique is
-   to call this before exiting prematurely from upsdrv_updateinfo().
+- dstate_datastale()
++
+You must call this if your status is unusable.  A good technique is
+to call this before exiting prematurely from upsdrv_updateinfo().
 
 Don't hide calls to these functions deep inside helper functions.  It is
 very hard to find the origin of staleness warnings, if you call these from
@@ -265,21 +281,24 @@ either of these regularly as was stated in previous versions of this
 document (that requirement has long gone).
 
 Serial port handling
-====================
+--------------------
 
 Drivers which use serial port functions should include serial.h and use
 these functions whenever possible:
 
-
- - int ser_open(const char *port)
+	- int ser_open(const char *port)
 
 This opens the port and locks it if possible, using one of fcntl, lockf,
 or uu_lock depending on what may be available.  If something fails, it
 calls fatal for you.  If it succeeds, it always returns the fd that was
 opened.
 
+	- int ser_open_nf(const char *port)
 
- - int ser_set_speed(int fd, const char *port, speed_t speed)
+This is a non-fatal version of ser_open(), that does not call fatal if
+something fails.
+
+	- int ser_set_speed(int fd, const char *port, speed_t speed)
 
 This sets the speed of the port and also does some basic configuring
 with tcgetattr and tcsetattr.  If you have a special serial
@@ -290,39 +309,38 @@ a useful error message.  This is the only place that will generate a
 message if someone passes a non-serial port /dev entry to your driver,
 so it needs the extra detail.
 
+	- int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 
- - int ser_set_dtr(int fd, int state)
- - int ser_set_rts(int fd, int state)
+This is a non-fatal version of ser_set_speed(), that does not call fatal
+if something fails.
+
+	- int ser_set_dtr(int fd, int state)
+	- int ser_set_rts(int fd, int state)
 
 These functions can be used to set the modem control lines to provide
 cable power on the RS232 interface. Use state = 0 to set the line to 0
 and any other value to set it to 1.
 
-
- - int set_get_dsr(int fd)
- - int ser_get_cts(int fd)
- - int set_get_dcd(int fd)
+	- int ser_get_dsr(int fd)
+	- int ser_get_cts(int fd)
+	- int ser_get_dcd(int fd)
 
 These functions read the state of the modem control lines. They will
 return 0 if the line is logic 0 and a non-zero value if the line is
 logic 1.
 
-
- - int ser_close(int fd, const char *port)
+	- int ser_close(int fd, const char *port)
 
 This function unlocks the port if possible and closes the fd.  You
 should call this in your upsdrv_cleanup handler.
 
-
- - int ser_send_char(int fd, char ch)
+	- int ser_send_char(int fd, char ch)
 
 This attempts to write one character and returns the return value from
 write.  You could call write directly, but using this function allows
 for future error handling in one place.
 
-
- - int ser_send_pace(int fd, unsigned long d_usec, 
-	const char *fmt, ...)
+	- int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 
 If you need to send a formatted buffer with an intercharacter delay, use
 this function.  There are a number of UPS controllers which can't take
@@ -333,39 +351,32 @@ one.
 The return value is the number of characters that was sent to the port,
 or -1 if something failed.
 
-
- - int ser_send(int fd, const char *fmt, ...)
+	- int ser_send(int fd, const char *fmt, ...)
 
 Like ser_send_pace, but without a delay.  Only use this if you're sure
 that your UPS can handle characters at the full line rate.
 
-
- - int ser_send_buf(int fd, const char *buf, size_t buflen)
+	- int ser_send_buf(int fd, const char *buf, size_t buflen)
 
 This sends a raw buffer to the fd.  It is typically used for binary
 transmissions.  It returns the results of the call to write.
 
-
- - int ser_send_buf_pace(int fd, unsigned long d_usec, const char *buf, 
-	size_t buflen)
+	- int ser_send_buf_pace(int fd, unsigned long d_usec, const char *buf, size_t buflen)
 
 This is just ser_send_buf with an intercharacter delay.
 
-
- - int ser_get_char(int fd, char *ch, long d_sec, long d_usec)
+	- int ser_get_char(int fd, char *ch, long d_sec, long d_usec)
 
 This will wait up to d_sec seconds + d_usec microseconds for one
 character to arrive, storing it at ch.  It returns 1 on success, -1
 if something fails and 0 on a timeout.
 
-Note: the delay value must not be too large, or your driver will not get
+NOTE: the delay value must not be too large, or your driver will not get
 back to the usual idle loop in main in time to answer the PINGs from
 upsd.  That will cause an oscillation between staleness and normal
 behavior.
 
-
- - int ser_get_buf(int fd, char *buf, size_t buflen, long d_sec,
-	long d_usec)
+	- int ser_get_buf(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
 
 Like ser_get_char, but this one reads up to buflen bytes storing all of
 them in buf.  The buffer is zeroed regardless of success or failure.  It
@@ -373,9 +384,7 @@ returns the number of bytes read, -1 on failure and 0 on a timeout.
 
 This is essentially a single read() function with a timeout.
 
-
- - int ser_get_buf_len(int fd, char *buf, size_t buflen, long d_sec,
-	long d_usec)
+	- int ser_get_buf_len(int fd, char *buf, size_t buflen, long d_sec, long d_usec)
 
 Like ser_get_buf, but this one waits for buflen bytes to arrive,
 storing all of them in buf.  The buffer is zeroed regardless of success
@@ -385,9 +394,8 @@ and 0 on a timeout.
 This should only be used for binary reads.  See ser_get_line for
 protocols that are terminated by characters like CR or LF.
 
-
- - int ser_get_line(int fd, char *buf, size_t buflen, char endchar,
-	const char *ignset, long d_sec, long d_usec)
+	- int ser_get_line(int fd, char *buf, size_t buflen, char endchar,
+		const char *ignset, long d_sec, long d_usec)
 
 This is the reading function you should use if your UPS tends to send
 responses like "OK\r" or "1234\n".  It reads up to buflen bytes and
@@ -404,7 +412,7 @@ an empty string - "".
 The buffer is always cleared and is always null-terminated.  It does
 this by reading at most (buflen - 1) bytes.
 
-Note: any other data which is read after the endchar in the serial
+NOTE: any other data which is read after the endchar in the serial
 buffer will be lost forever.  As a result, you should not use this 
 unless your UPS uses a polled protocol.
 
@@ -416,9 +424,9 @@ This also means that you should not "pipeline" commands to the UPS.
 Send a query, then read the response, then send the next query.
 
 
- - int ser_get_line_alert(int fd, char *buf, size_t buflen, 
-	char endchar, const char *ignset, const char *alertset, 
-	void handler(char ch), long d_sec, long d_usec)
+	- int ser_get_line_alert(int fd, char *buf, size_t buflen, 
+		char endchar, const char *ignset, const char *alertset, 
+		void handler(char ch), long d_sec, long d_usec)
 
 This is just like ser_get_line, but it allows you to specify a set of
 alert characters which may be received at any time.  They are not added
@@ -429,8 +437,7 @@ Implementation note: this function actually does all of the work, and
 ser_get_line is just a wrapper that sets an empty alertset and a NULL
 handler.
 
-
- - int ser_flush_in(int fd, const char *ignset, int verbose)
+	- int ser_flush_in(int fd, const char *ignset, int verbose)
 
 This function will drain the input buffer.  If verbose is set to a
 positive number, then it will announce the characters which have been
@@ -441,14 +448,12 @@ This function returns the number of characters which were read, so you
 can check for extra bytes by looking for a nonzero return value.  Zero
 will also be returned if the read fails for some reason.
 
-
- - int set_flush_io(int fd)
+	- int set_flush_io(int fd)
 
 This function drains both the in- and output buffers. Return zero on
 success.
 
-
- - void ser_comm_fail(const char *fmt, ...)
+	- void ser_comm_fail(const char *fmt, ...)
 
 Call this whenever your serial communications fail for some reason.  It
 takes a format string, so you can use variables and other things to
@@ -468,10 +473,9 @@ If your UPS frequently fails to acknowledge polls and this is a known
 situation, you should make a couple of attempts before calling this
 function.
 
-Note: this does not call dstate_datastale.  You still need to do that.
+NOTE: this does not call dstate_datastale.  You still need to do that.
 
-
- - void ser_comm_good(void)
+	- void ser_comm_good(void)
 
 This will clear the error counter and write a "re-established" message
 to the syslog after communications have been lost.  Your driver should
@@ -479,32 +483,38 @@ call this whenever it has successfully contacted the UPS.  A good place
 for most drivers is where it calls dstate_dataok.
 
 USB port handling
-=================
+-----------------
 
 Drivers which use USB functions should include usb-common.h and use these:
 
- * structure and macro:
+Structure and macro
+~~~~~~~~~~~~~~~~~~~
  
-   You should us the usb_device_id structure, and the USB_DEVICE macro to
-   declare the supported devices. This allows the automatic extraction of
-   USB information, to generate the HAL, Hotplug and udev support files.
+You should us the usb_device_id structure, and the USB_DEVICE macro to
+declare the supported devices. This allows the automatic extraction of
+USB information, to generate the HAL, Hotplug, udev and DeviceKit-power
+support files.
 
-   For example:
-   /* SomeVendor name */
-   #define SOMEVENDOR_VENDORID		0xXXXX
+For example:
 
-   /* USB IDs device table */
-   static usb_device_id sv_usb_device_table [] = {
-	 /* some models 1 */
-	 { USB_DEVICE(SOMEVENDOR_VENDORID, 0xYYYY), NULL },
-	 /* various models */
-	 { USB_DEVICE(SOMEVENDOR_VENDORID, 0xZZZZ), NULL },
-	 { USB_DEVICE(SOMEVENDOR_VENDORID, 0xAAAA), NULL },
-	 /* Terminating entry */
-	 { -1, -1, NULL }
-   };
+--------------------------------------------------------------------------------
+/* SomeVendor name */
+#define SOMEVENDOR_VENDORID		0xXXXX
 
- * function:
+/* USB IDs device table */
+static usb_device_id sv_usb_device_table [] = {
+	/* some models 1 */
+	{ USB_DEVICE(SOMEVENDOR_VENDORID, 0xYYYY), NULL },
+	/* various models */
+	{ USB_DEVICE(SOMEVENDOR_VENDORID, 0xZZZZ), NULL },
+	{ USB_DEVICE(SOMEVENDOR_VENDORID, 0xAAAA), NULL },
+	/* Terminating entry */
+	{ -1, -1, NULL }
+};
+--------------------------------------------------------------------------------
+
+Function
+~~~~~~~~
 
  - is_usb_device_supported(usb_device_id **usb_device_id_list, 
 							int dev_VendorID, int dev_ProductID)
@@ -513,18 +523,18 @@ Call this in your device opening / matching function. Pass your usb_device_id
 structure, and a set of VendorID / DeviceID.
 
 This function returns one of the following value: 
-NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) 
-POSSIBLY_SUPPORTED is returned when the VendorID is matched, but the DeviceID
-is unknown.
+
+- NOT_SUPPORTED (0),
+- POSSIBLY_SUPPORTED (1,  returned when the VendorID is matched, but the DeviceID is unknown),
+- or SUPPORTED (2).
 
 For implementation examples, refer to the various USB drivers, and search for
 the above patterns.
 
-
-This set of USB helpers is due to expand is the near future...
+NOTE: This set of USB helpers is due to expand is the near future...
 
 Variable names
-==============
+--------------
 
 PLEASE don't make up new variables and commands just because you can.
 The new dstate functions give us the power to create just about
@@ -532,18 +542,77 @@ anything, but that is a privilege and not a right.  Imagine the mess
 that would happen if every developer decided on their own way to
 represent a common status element.
 
-Check new-names.txt first to find the closest fit.  If nothing matches,
-contact the upsdev list or mail me directly, and we'll figure it out.
+Check the <<nut-names,NUT command and variable naming scheme>> section first to
+find the closest fit. If nothing matches, contact the upsdev list, and we'll
+figure it out.
 
 Patches which introduce unlisted names may be modified or dropped.
 
+[[commands]]
 Message passing support
-=======================
+-----------------------
 
-See commands.txt.
+upsd can call drivers to store values in read/write variables and to kick
+off instant commands.  This is how you register handlers for those events.
+
+The driver core (drivers/main.c) has a structure called upsh.  You
+should populate it with function pointers in your upsdrv_initinfo()
+function.  Right now, there are only two possibilities:
+
+- setvar  = setting UPS variables (SET VAR protocol command)
+- instcmd = instant UPS commands (INSTCMD protocol command)
+
+SET
+~~~
+
+If your driver's function for handling variable set events is called 
+my_ups_set(), then you'd do this to add the pointer:
+
+	upsh.setvar = my_ups_set;
+
+my_ups_set() will receive two parameters:
+
+	const char * - the variable being changed
+	const char * - the new value
+
+You should return either STAT_SET_HANDLED if your driver recognizes the
+command, or STAT_SET_UNKNOWN if it doesn't.  Other possibilities will be
+added at some point in the future.
+
+INSTCMD
+~~~~~~~
+
+This works just like the set process, with slightly different values
+arriving from the server.
+
+	upsh.instcmd = my_ups_cmd;
+
+Your function will receive two args:
+
+	const char * - the command name
+	const char * - (reserved)
+
+You should return either STAT_INSTCMD_HANDLED or STAT_INSTCMD_UNKNOWN
+depending on whether your driver can handle the requested command.
+
+Notes
+~~~~~
+
+Use strcasecmp.  The command names arriving from upsd should be treated
+without regards to case.
+
+Responses
+~~~~~~~~~
+
+Drivers will eventually be expected to send responses to commands.
+Right now, there is no channel to get these back through upsd to
+the client, so this is not implemented.
+
+This will probably be implemented with a polling scheme in the clients.
+
 
 Enumerated types
-================
+----------------
 
 If you have a variable that can have several specific values, it is
 enumerated.  You should add each one to make it available to the client:
@@ -553,11 +622,20 @@ enumerated.  You should add each one to make it available to the client:
 	dstate_addenum("input.transfer.low", "99");
 	dstate_addenum("input.transfer.low", "105");
 
+Range values
+------------
+
+If you have a variable that support values comprised in one or more ranges,
+you should add each one to make it available to the client:
+
+	dstate_addrange("input.transfer.low", 90, 95);
+	dstate_addrange("input.transfer.low", 100, 105);
+
 Writable strings
-================
+----------------
 
 Strings that may be changed by the client should have the ST_FLAG_STRING
-flag set, and a maximum length byte set in the auxdata.
+flag set, and a maximum length (in bytes) set in the auxdata.
 
 	dstate_setinfo("ups.id", "Big UPS");
 	dstate_setflags("ups.id", ST_FLAG_STRING | ST_FLAG_RW);
@@ -567,21 +645,21 @@ If the variable is not writable, don't bother with the flags or the
 auxiliary data.  It won't be used.
 
 Instant commands
-================
+----------------
 
 If your hardware and driver can support a command, register it.
 
 	dstate_addcmd("load.on");
 
 Delays and ser_* functions
-==========================
+--------------------------
 
 The new ser_* functions may perform reads faster than the UPS is able to
 respond in some cases.  This means that your driver will call select()
 and read() numerous times if your UPS responds in bursts.  This also
 depends on how fast your system is.
 
-You should check your driver with strace or its equivalent on your
+You should check your driver with `strace` or its equivalent on your
 system.  If the driver is calling read() multiple times, consider adding
 a call to usleep before going into the ser_read_* call.  That will give
 it a chance to accumulate so you get the whole thing with one call to
@@ -600,9 +678,9 @@ The select returns almost instantly, and read gets a tiny chunk of the
 data.  Add the delay and you get a nice four-line status poll.
 
 Canonical input mode processing
-===============================
+-------------------------------
 
-If your UPS uses '\n' and/or '\r' as endchar, consider the use of
+If your UPS uses "\n" and/or "\r" as endchar, consider the use of
 Canonical Input Mode Processing instead of the ser_get_line* functions.
 
 Using a serial port in this mode means that select() will wait until
@@ -613,8 +691,23 @@ that you no longer have to worry about the case that your UPS sends
 and "abcd\n" on consecutive reads, without risk of losing data (which
 is an often forgotten side effect of the ser_get_line* functions).
 
-Currently an example how this works can be found in the safenet and
-upscode2 drivers. The first uses a single '\r' as endchar, while the
-latter accepts either '\n', "\n\r" or "\r\n" as line termination. You
+Currently, an example how this works can be found in the safenet and
+upscode2 drivers. The first uses a single "\r" as endchar, while the
+latter accepts either "\n", "\n\r" or "\r\n" as line termination. You
 can define other termination characters as well, but can't undefine
-'\r' and '\n' (so if you need these as data, this is not for you).
+"\r" and "\n" (so if you need these as data, this is not for you).
+
+
+[[contact-closure]]
+
+include::contact-closure.txt[]
+
+
+[[hid-subdrivers]]
+
+include::hid-subdrivers.txt[]
+
+
+[[snmp-subdrivers]]
+
+include::snmp-subdrivers.txt[]

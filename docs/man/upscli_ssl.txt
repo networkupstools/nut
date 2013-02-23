@@ -1,0 +1,36 @@
+UPSCLI_SSL(3)
+=============
+
+NAME
+----
+
+upscli_ssl - Check SSL mode for current connection
+
+SYNOPSIS
+--------
+
+ #include <upsclient.h>
+
+ int upscli_ssl(UPSCONN_t *ups);
+
+DESCRIPTION
+-----------
+
+The *upscli_ssl*() function takes the pointer 'ups' to a
+`UPSCONN_t` state structure.  It only returns 1 if SSL support has been
+compiled into the linkman:upsclient[3] library, and if it was successfully
+enabled for this connection.
+
+
+RETURN VALUE
+------------
+
+The *upscli_ssl*() function returns 1 if SSL is running, and 0 if
+not.  It returns -1 in the event of an error.
+
+SEE ALSO
+--------
+
+linkman:upscli_fd[3], linkman:upscli_get[3],
+linkman:upscli_readline[3], linkman:upscli_sendline[3],
+linkman:upscli_strerror[3], linkman:upscli_upserror[3]

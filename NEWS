@@ -3,6 +3,404 @@ If you're upgrading from an earlier version, see the UPGRADING file.
 For a complete list of changes, please refer to the ChangeLog file.
 
 ---------------------------------------------------------------------------
+Release notes for NUT 2.6.5 - what's new since 2.6.4:
+
+ - This release Fix an important regression in upssched:
+   any upssched.conf command that takes a second argument resulted in
+   a defective frame sent to the parent process. Thus, the command was
+   not executed (report and patch from Oliver Schonefeld)
+
+ - Website hosting: free NUT from Eaton website hosting
+   NUT website (http://www.networkupstools.org) is no more hosted by Eaton.
+   Arnaud Quette (NUT project leader) has taken over NUT hosting on his own,
+   to give NUT back some independance.
+   This effort is also part of a logic to stop crediting Eaton for
+   contributions from others (especially Arnaud Quette, as an individual).
+   The new hosting service is located, as for Arnaud's blog
+   (http://arnaud.quette.fr) on Gandi servers, using PaaS. This will allow
+   more flexibility and automation of the release process
+
+ - macosx-ups: new OS X Power Sources meta-driver
+   Mac OS X provides UPS status information in a format similar to
+   what is shown for laptop batteries. This driver will convert that
+   information into a format compatible with NUT (Charles Lepple).
+
+ - support for new devices:
+   Eaton ePDU Switched
+   Online Zinto A (USB ID 0x06da:0x0601)
+   REDi Blazer 400VA / 600VA / 800VA
+   UNITEK Alpha650ipF and Alpha650ipE (USB ID 0x0f03:0x0001)
+
+ - mge-shut driver has been replaced by a new implementation (newmge-shut).
+   In case of issue with this new version, users can revert to oldmge-shut.
+
+ - First NUT virtualization package: NUT now supports integration with
+   VMware ESXI 5.0, through a native VIB package. This is, for the time
+   being, an external effort from René Garcia (refer to the Download section
+   on NUT website). But work is underway to improve this integration, and
+   include it in the NUT source tree  
+
+ - IPMI support (nut-ipmipsu driver and nut-scanner): prepare for supporting
+   API changes in upcoming FreeIPMI versions 1.1.x and 1.2.x.
+
+ - snmp-ups now supports high precision values for APC, and more variables
+
+ - the NUT variables and commands namespace has been fixed and
+   completed, with the known and used variables that were missing.
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation.
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.6.4 - what's new since 2.6.3:
+
+ - This release Fix an important vulnerability in upsd
+   (CVE-2012-2944: upsd can be remotely crashed)
+
+   NUT server (upsd), from versions 2.4.0 to 2.6.3, are exposed to
+   crashes when receiving random data from the network.
+   This issue is related to the way NUT parses characters,
+   especially from the network. Non printable characters were missed
+   from strings operation (such as strlen), but still copied to the
+   buffer, causing an overflow.
+   Thus, fix NUT parser, to only allow the subset Ascii charset from
+   Space to ~
+   (Reported by Sebastian Pohle, Alioth bug #313636, CVE-2012-2944)
+
+   A separate patch, which applies to any faulty version, is also available:
+   http://trac.networkupstools.org/projects/nut/changeset/3633
+
+   For more information, refer to the Common Vulnerabilities and Exposures:
+   http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2012-2944
+
+ - A static source code analysis has been done by Michal Hlavinka from RedHat,
+   using Coverity (12 issues fixed).
+
+ - Add new "LIST CLIENTS" and "NETVER" commands to NUT network protocol.
+   "NETVER" allows to retrieve the Network protocol version, while
+   "LIST CLIENTS" provides the list of clients connected to a device.
+   Refer to the developer guide, "Network protocol information" section for
+   more information.
+
+ - Support of ranges of values for writable variables has been added, to
+   complete the existing enumerated values mechanism. This will start to
+   appear in some drivers soon, beginning with Eaton. Refer to the developer
+   guide, "Creating a new driver..." section for more information.
+
+ - PyNUT.py has been updated to version 1.2.2, adding support for
+   LIST CLIENTS, FSD, HELP and VER (Rene Martín Rodríguez)
+
+ - support for new devices:
+   AEG Power Solutions PROTECT HOME
+   more APC SNMP cards
+   ATEK Defensor range
+   all Borri models
+   all COVER ENERGY SA
+   CyberPower OR700LCDRM1U, PR6000LCDRTXL5U and CP1000PFCLCD
+   Dell UPS Network Management Card
+   Dynamix 1000VA USB
+   Eaton Management Card Contact (ref 66104)
+   EVER POWERLINE RT / 11 / 31 and DUO II Pro
+   GE Digital Energy GT Series 1000-3000 VA
+   Gtec models
+   all recent HP serial / USB UPS (G2, G3 and R/T models, ) and HP UPS
+    Management Module
+   Ippon INNOVA RT
+   KOLFF BLACK NOVA
+   Lexis X-power Tigra 1kVA
+   Microline C-Lion Innova
+   Online Yunto YQ450
+   PowerShield Defender 1200VA
+   PowerWalker Online VFI LCD, Line-Interactive VI LCD and Line-Interactive VI
+   Riello Netman Plus 102 SNMP Card
+   Tripp-Lite OMNISMART500 
+
+ - apcsmart has received some fixes to work better on Mac OS X, and in general
+
+ - bcmxcp has improved support for battery status, and better supports
+   PW9120 units
+
+ - bestfortress has improved Best Fortress LI675VA support
+
+ - blazer_ser and blazer_usb now try to automatically estimate high and low
+   voltages, to be able to calculate battery charge ; support for online
+   Innova UPS (T, RT and 3/1 T) has been added ; Best UPS support has been
+   improved, to prepare for superseeding bestups driver
+
+ - bestups has also received some care, though users are encouraged to switch
+   to blazer_ser, since bestups will soon be deprecated.
+
+ - newmge-shut has been heavilly improved.  However, replacement of the
+   current mge-shut has been postponed to the next release, due to the CVE
+   issue.
+
+ - oneac 0.80 improves support for all families of Oneac (EG, ON, OZ and OB),
+   including more data and instant commands (Bill Elliot).
+
+ - usbhid-ups: for Eaton devices, ups.start.auto is now automatically adjusted
+   for shutdown.{return,stayoff} to behave as expected ; Liebert firmwares with
+   incorrect exponents have also been addressed.
+
+ - snmp-ups now provides support for UPS shutdown, based on usbhid-ups
+   mechanisms (composite commands and fallback). Composite commands are also
+   supported now. This means, for example, that if 'shutdown.return' is not
+   supported, a combination of 'load.off' + 'load.on' may be used ;
+   Actual validity of instant commands is now tested before commands addition ;
+   Eaton/MGE MIB has been cleaned and completed ; 3-phases support has been
+   added to Socomec Netvision MIB ; HP/Compaq MIB has been completed, with
+   thresholds, nominal values and more commands.
+
+ - nut-scanner now also has libupsclient has a weak runtime dependency ; more
+   docs and bugfixes have also happened.
+
+ - Provide an Uncomplicated Firewall (UFW) profile (nut.ufw.profile)
+
+ - Riello protocols have been officially published in NUT protocols library:
+   http://www.networkupstools.org/ups-protocols.html#_riello
+ 
+ - Duplicate instances of upsd / upsmon are now detected upon startup
+
+ - NUT variables namespace has been completed with missing variables and
+   commands that are already known and standard
+
+ - upslog now comes with a companion file, for logrotate configuration 
+
+ - more devices embed NUT for power protection, now including Thecus NAS range
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation, with a good bunch from Greg A. Woods.
+ 
+---------------------------------------------------------------------------
+Release notes for NUT 2.6.3 - what's new since 2.6.2:
+
+ - nut-scanner is now more portable, and provides more coherent option names.
+   IPMI support has also been added, to discover local power supplies.
+   This version brings weak runtime dependencies in libnutscan, which allows to
+   compile nut-scanner with all options and to run according to the available
+   dependencies (USB, SNMP, IPMI, ...).
+
+ - libnutscan now provides pkg-config support and the needed header files are
+   distributed. Some documentation is also available in the developer guide and
+   manual pages have been updated and completed.
+
+ - support for new devices: Cyber Power Systems with SNMP RMCARD (100, 201,
+   202 and 301) ; Dynamix 650VA USB ; LDLC UPS-1200D ; Tecnoware UPS ERA LCD
+   0.65 ; Powercom BNT-xxxAP (USB ID 0d9f:0004) ; Various USB devices using
+   UPSilon 2000 software.
+
+ - apcsmart has received minor correction.
+
+ - bcmxcp_usb now handles disconnection issues and reconnection mechanism.
+
+ - blazer_usb enables again inclusion of buggy USB Device and Vendor IDs in
+   udev rules file ; language ID support has been added for USB units from
+   LDLC, Dynamix and other no names.
+
+ - nut-ipmipsu has also received some improvements.
+
+ - snmp-ups has fixed outlets reported current in aphel_genesisII MIB ;
+   MGE 3 phases handles better low battery condition ; support for Cyber Power
+   Systems with SNMP RMCARD has been added ; support of the newer Eaton ePDUs
+   has been improved.
+
+ - upsd doesn't anymore fail to start if at least one of the listening
+   interface is available. This is needed on systems where either IPv4 or IPv6
+   is disabled, and no explicit LISTEN directive has been specified.
+
+ - Avahi support is now automatically enabled, upon detection
+
+ - jNut (NUT Java interface) adds device discovery support, through a
+   nut-scanner wrapper ; jNutWebAPI, a HTTP/JSON web service interface, has
+   also been added to interact with upsd and nut-scanner.
+
+ - Base files for HPUX packaging have been added. This is still a work in
+   progress.
+
+ - Compilation on IBM Aix has been fixed (namespace conflict with ctypes).
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation.
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.6.2 - what's new since 2.6.1:
+
+ - NUT can now monitor power supply units (PSU) in servers, through IPMI, using
+   the new experimental 'nut-ipmipsu' driver. Users are encouraged to test it,
+   and send feedback and debug output to the development mailing list.
+   This requires GNU FreeIPMI (0.8.5 or higher) development package or files.
+   Thanks goes to Al Chu, FreeIPMI project leader, for his help during this
+   development.
+
+ - NUT now provides a tool, called 'nut-scanner', to discover supported devices,
+   both local and remote. nut-scanner will help to ease the configuration step,
+   and power infrastructure discovery.
+   This development, sponsored by Eaton, supports the following methods:
+   * USB,
+   * SNMP,
+   * XML/HTTP (from Eaton),
+   * NUT servers, using the classic connect or Avahi / mDNS methods.
+   
+   IPMI support will be added in the next release.
+   A separate library, called 'libnutscan', is also available to provide these
+   feature. Future NUT releases will provides binding for the supported
+   languages (Perl, Python and Java).
+
+ - NUT now provides a Java interface called 'jNut'.
+   This development, sponsored by Eaton, is currently limited to the client
+   interface. But it will be broaden to device discovery and configuration in
+   the future.
+   For more info, refer to nut/scripts/java/README, or the developer guide
+   (chapter 'Creating new client'). Javadoc documentation is also provided,
+   along with Java archives (.jar) in the Download section. 
+
+ - support for new devices: Eaton 3S ; Cyber Power Systems CP1000AVRLCD ; 
+   various APC models equiped with APC AP9618 management card, including APC
+   Smart-UPS RT XL ;  Orvaldi 750 / 900SP ; POWEREX VI 1000 LED ; PowerWalker
+   VI 850 LCD ; SVEN Power Pro+ series (USB ID ffff:0000).
+
+ - A regression has been fixed in udev rules file. This previously caused
+   permission issues to owners of some USB devices.
+
+ - Avahi support has been added, for NUT mDNS publication, through a static
+   service file (nut/scripts/avahi/nut.service).
+
+ - usbhid-ups has had Eaton completion: some features have been improved, such
+   as 'output.voltage.nominal' ; 3S Eco control support has been added, along
+   with battery.runtime.low and end of battery life (life cycle monitoring)
+   support ; new measurements for 5 PX are also supported now (outlet power
+   factor, power, real power and current).
+
+ - apcsmart has been updated to support more variables and features ; the
+   previous driver is however still available as 'apcsmart-old', in case of
+   issues.
+
+ - bcmxcp now supports per outlet startup and shutdown delays setting ; shutdown
+   delay is also used, when available, for outlet.n.shutdown.return instead of
+   the default 3 seconds.
+
+ - snmp-ups.c has a new initialization method, that uses sysObjectID, which is
+   a pointer to the prefered MIB of the device, to detect supported devices.
+   This speeds up even more init stage and should render void the use of 'mib'
+   option. SNMP v3 session initialisation has also been fixed, and Eaton PDU
+   support has been completed.
+
+ - Initial support has been added for systemd, the System and Service Manager
+   from RedHat.
+
+ - The chapter 'NUT configuration management with Augeas' of the developer guide
+   has received some completion: a complete Python Augeas example code is now
+   provided.
+
+ - Finally, after years of dedication to NUT, Arjen de Korte is now retired.
+   Sincere thanks to you Arjen from us all.
+ 
+---------------------------------------------------------------------------
+Release notes for NUT 2.6.1 - what's new since 2.6.0:
+
+ - the various recent USB regressions have been definitely fixed.
+
+ - NUT now propose a variable to expose UPS efficiency (ups.efficiency).
+   Eaton 5 PX already uses it.
+
+ - the Perl module from Gabor Kiss (rewritten from Kit Peters') is now
+   distributed with NUT source code.
+
+ - support for new devices: Eaton Ellipse ECO, Powerware 9140, Eaton 5 PX, and
+   ambient sensor on Eaton ePDU managed ; GE EP series ; Inform Sinus SS 210 ;
+   IPAR Mini Energy ME 800 ; Mustek Yukai PowerMust 1000 USB ; Numeric 3000 SW ;
+   SVEN Power Pro+ series (recent models) ; Vivaldi EA200 LED.
+
+ - liebert-esp2: Improved Liebert ESP II support, including UPS shutdown
+   (poweroff), 1 and 3-phase input and output variables, and most
+   input / output / bypass / nominal variables. There is also a fix for the
+   USB to serial cable (Farkas Levente and Spiros Ioannou).
+
+ - powercom has improved PowerCom BNT 1500A and BNT-other support, along with
+   driver documentation and code conformance to the NUT rules (Keven L. Ates).
+
+ - apcsmart has more improved UPS poweroff support and options (Michal Soltys).
+
+ - blazer has also seen some improvements.
+
+ - usbhid-ups has completed a bit supported variables for APC and Eaton / MGE.
+
+ - on the quality assurance side, Eaton has worked on fixing a few non
+   conformances, like C++ style comments and warnings, using a newly developed
+   verification tool (Prachi Gandhi).
+
+ - fix remaining references to LIBSSL_LDFLAGS, instead of LIBSSL_LIBS,
+   which cause unresolved symbol on libupsclient users (Fabrice Coutadeur).
+
+ - the website has now a better support for Internet Explorer 6.
+
+ - graphic illustrations, used for the Features page on the website Features
+   and chapter of the user manual, have been refreshed (courtesy of Eaton).
+
+ - more bugfixes, cleanup and improvements, on both source code and
+   documentation.
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.6.0 - what's new since 2.4.3:
+
+ - the main focus of this release is the complete documentation revamping,
+   using AsciiDoc. This includes a new website, user manual, developer guide,
+   packager guide and manual pages, available in various formats (single and
+   multiple pages HTML, and PDF at the moment).
+   Be sure to check the --with-doc configure option help, and
+   docs/configure.txt for more information.
+
+ - Add Augeas support, to provide easy NUT configuration management, through
+   tools and development APIs. For more information, refer to the developer
+   guide, or scripts/augeas/README in the source directory.
+
+ - support for new devices: APC 5G; Eaton PowerWare 5119 RM (smart mode using
+   upscode2 driver), Eaton Best Ferrups (using older ConnectUPS card),
+   Eaton 9395 (serial interface), Eaton ConnectUPS X / BD / E Slot;
+   HP T1000 INTL, HP T1500 INTL, HP T750 G2, HP R1500 G2 INTL; iDowell iBox UPS;
+   Tripp Lite SmartOnline SU1000XLA, Tripp Lite Smart1000LCD, and some
+   more USB/HID devices IDs; CyberPower CP1500AVRLCD and CP1350AVRLCD;
+   PowerWalker Line-Interactive VI 1400 ; Rocketfish RF-1000VA / RF-1025VA.
+
+ - usbhid-ups has better support for shutting down APC SmartUPS RM series,
+   and finally fix the "buffer size" issue, which was breaking some
+   devices data retrieval, or truncating some data on others.
+
+ - snmp-ups now support SNMP v3 and its security parameters. IETF MIB support
+   has also been extended.
+
+ - fix dummy-ups simulation driver status handling bug, and add the
+   capability to remove exposed variables on the fly.
+
+ - the belkin driver now support control commands and status reporting
+   for beeper and battery test.
+
+ - the powerpanel driver supports more older CyberPower units.
+
+ - mge-utalk, upscode2, blazer and liebert-esp2 have also received some
+   care, and been improved.
+
+ - NUT-Monitor and the PyNUT client module have been updated to 1.3,
+   adding more features like automatic connection to the first local device
+   and i18n support.
+
+ - improve configure time dependencies checking and processing.
+
+ - improve older Unix systems support (HP-UX, Aix, ...) for missing functions.
+
+ - refresh and improve USB helper files (udev and UPower).
+
+ - more generation automation: the ChangeLog file is now generated
+   automatically at distribution time, along with the files needed for
+   the website hardware compatibility list.
+
+ - SSL support has also received some improvements.
+
+ - tcp-wrapper now allows hostnames in /etc/hosts.allow too (not only IPv4
+   and/or IPv6 addresses).
+
+ - many bugfixes, cleanup and improvements.
+
+---------------------------------------------------------------------------
 Release notes for NUT 2.4.3 - what's new since 2.4.2:
 
  - this is a bugfix release that only solves the regression on IPv6 activation.

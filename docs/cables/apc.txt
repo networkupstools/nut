@@ -1,9 +1,36 @@
 Desc: APC UPS cables
 File: apc.txt
-Date: 12 Februari 2010
+Date: 12 February 2010
 Auth: Arjen de Korte <adkorte-guest@alioth.debian.org
 
 http://lists.alioth.debian.org/pipermail/nut-upsuser/2005-August/000118.html
+
+Note that APC UPS serial cable part numbers follow a numbering scheme
+where the "940-" prefix identifies them as cables.
+
+       940-1000        straight through cable
+       940-0103        null modem cable
+       940-0020        Basic Signaling Cable (OB and kill power)
+       940-0023        Simple Signaling Cable (OB only)
+       940-LL24        Smart Signaling Cable
+       940-0095        PnP Cable (see Apcupsd manual for diagram)
+       940-0119        Simple Signaling Cable (OB and kill power)
+       940-0127        RJ45-10P10C to USB Cable
+       940-0128        Simple Signaling Cable for Back-UPS CS
+
+"LL" represents the length:
+
+       00      six feet
+       NN      NN feet
+
+The suffix letter represents a minor revision in physical design, or a
+change of OEM, _not_ a change of wiring or pin-out, and all cables
+differing only in this suffix letter are electrically interchangeable.
+Note though the following quote from the APC Discussion Forums:  "At one
+point there were a small number of revision D cables [940-0024D] that
+had some shielding issues from the manufacturer that could maybe cause
+[...] [spontaneous] self-tests)."
+
 
 +-----------------------------------------------------------------+
 |                                                                 |
@@ -183,6 +210,7 @@ http://lists.alioth.debian.org/pipermail/nut-upsuser/2005-August/000118.html
 
 +-----------------------------------------------------------------+
 |                                                                 |
+|  APC 940-1000 Straight Through cable                            |
 |  Universal APC serial extension cable for use in conjunction    |
 |  with an APC UPS cable. This cable is verified to work.         |
 |                                                                 |

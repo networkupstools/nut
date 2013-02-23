@@ -50,14 +50,14 @@
 #include "upssched.h"
 #include "timehead.h"
 
-typedef struct {
+typedef struct ttype_s {
 	char	*name;
 	time_t	etime;
-	void	*next;
-}	ttype_t;
+	struct ttype_s	*next;
+} ttype_t;
 
 	ttype_t	*thead = NULL;
-	static	struct	conn_t	*connhead = NULL;
+	static	conn_t	*connhead = NULL;
 	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
 	int	verbose = 0;		/* use for debugging */
 
@@ -300,9 +300,9 @@ static int open_sock(void)
 	return fd;
 }
 
-static void conn_del(struct conn_t *target)
+static void conn_del(conn_t *target)
 {
-	struct	conn_t	*tmp, *last = NULL;
+	conn_t	*tmp, *last = NULL;
 
 	tmp = connhead;
 
@@ -327,7 +327,7 @@ static void conn_del(struct conn_t *target)
 	upslogx(LOG_ERR, "Tried to delete a bogus state connection");
 }
 
-static int send_to_one(struct conn_t *conn, const char *fmt, ...)
+static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
 	int	ret;
 	va_list	ap;
@@ -354,9 +354,13 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 static void conn_add(int sockfd)
 {
 	int	acc, ret;
-	struct	conn_t	*tmp, *last;
+	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int			salen;
+#else
 	socklen_t	salen;
+#endif
 
 	salen = sizeof(saddr);
 	acc = accept(sockfd, (struct sockaddr *) &saddr, &salen);
@@ -391,7 +395,7 @@ static void conn_add(int sockfd)
 		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(struct conn_t));
+	tmp = xmalloc(sizeof(conn_t));
 	tmp->fd = acc;
 	tmp->next = NULL;
 
@@ -405,7 +409,7 @@ static void conn_add(int sockfd)
 	pconf_init(&tmp->ctx, NULL);
 }
 
-static int sock_arg(struct conn_t *conn)
+static int sock_arg(conn_t *conn)
 {
 	if (conn->ctx.numargs < 1)
 		return 0;
@@ -446,7 +450,7 @@ static void log_unknown(int numarg, char **arg)
 		upslogx(LOG_INFO, "arg %d: %s", i, arg[i]);
 }
 
-static int sock_read(struct conn_t *conn)
+static int sock_read(conn_t *conn)
 {
 	int	i, ret;
 	char	ch;
@@ -494,10 +498,7 @@ static void start_daemon(int lockfd)
 	int	maxfd, pid, pipefd, ret;
 	struct	timeval	tv;
 	fd_set	rfds;
-	struct	conn_t	*tmp, *tmpnext;
-	socklen_t	fromlen;
-
-	fromlen = sizeof(struct sockaddr);
+	conn_t	*tmp, *tmpnext;
 
 	us_serialize(SERIALIZE_INIT);
 
@@ -693,7 +694,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		snprintfcat(buf, sizeof(buf), " \"%s\"",
 			pconf_encode(arg2, enc, sizeof(enc)));
 
-	snprintfcat(buf, sizeof(buf), "\n");
+	snprintf(enc, sizeof(enc), "%s\n", buf);
 
 	/* see if the parent needs to be started (and maybe start it) */
 
@@ -714,10 +715,10 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		/* we're connected now */
 
-		ret = write(pipefd, buf, strlen(buf));
+		ret = write(pipefd, enc, strlen(enc));
 
 		/* if we can't send the whole thing, loop back and try again */
-		if ((ret < 1) || (ret != (int) strlen(buf))) {
+		if ((ret < 1) || (ret != (int) strlen(enc))) {
 			upslogx(LOG_ERR, "write failed, trying again");
 			close(pipefd);
 			continue;
@@ -899,10 +900,12 @@ static void checkconf(void)
 
 int main(int argc, char **argv)
 {
+	const char	*prog = xbasename(argv[0]);
+
 	verbose = 1;		/* TODO: remove when done testing */
 
 	/* normally we don't have stderr, so get this going to syslog early */
-	openlog("upssched", LOG_PID, LOG_DAEMON);
+	open_syslog(prog);
 	syslogbit_set();
 
 	upsname = getenv("UPSNAME");

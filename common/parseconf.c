@@ -129,7 +129,7 @@ static void add_arg_word(PCONF_CTX_t *ctx)
 			pconf_fatal(ctx, "realloc arglist failed");
 
 		ctx->argsize = realloc(ctx->argsize, 
-			sizeof(int *) * ctx->numargs);
+			sizeof(size_t) * ctx->numargs);
 
 		if (!ctx->argsize)
 			pconf_fatal(ctx, "realloc argsize failed");
@@ -170,6 +170,13 @@ static void addchar(PCONF_CTX_t *ctx)
 	size_t	wbuflen;
 
 	wbuflen = strlen(ctx->wordbuf);
+
+	/* CVE-2012-2944: only allow the subset Ascii charset from Space to ~ */
+	if ((ctx->ch < 0x20) || (ctx->ch > 0x7f)) {
+		fprintf(stderr, "addchar: discarding invalid character (0x%02x)!\n",
+				ctx->ch);
+		return;
+	}
 
 	if (ctx->wordlen_limit != 0) {
 		if (wbuflen >= ctx->wordlen_limit) {
@@ -240,6 +247,13 @@ static int findwordstart(PCONF_CTX_t *ctx)
 
 	/* at this point the word just started */
 	addchar(ctx);
+
+	/* if the first character is a '=' this is considered a whole word */
+	if (ctx->ch == '=') {
+		endofword(ctx);
+		return STATE_FINDWORDSTART;
+	}
+
 	return STATE_COLLECT;
 }	
 
@@ -322,6 +336,14 @@ static int collect(PCONF_CTX_t *ctx)
 	/* space means the word is done */
 	if (isspace(ctx->ch)) {
 		endofword(ctx);
+
+		return STATE_FINDWORDSTART;
+	}
+
+	/* '=' means the word is done and the = is a single char word*/
+	if (ctx->ch == '=') {
+		endofword(ctx);
+		findwordstart(ctx);
 
 		return STATE_FINDWORDSTART;
 	}

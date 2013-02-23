@@ -122,7 +122,7 @@ static int safenet_command(const char *command)
 	return 0;
 }
 
-static void safenet_update()
+static void safenet_update(void)
 {
 	status_init();
 
@@ -297,8 +297,6 @@ void upsdrv_initinfo(void)
 	int	retry = 3;
 	char	*v;
 
-	dstate_setinfo("driver.version.internal", "%s", DRIVER_VERSION);
-	
 	usleep(100000);
 
 	/*

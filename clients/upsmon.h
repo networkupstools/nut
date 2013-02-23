@@ -19,18 +19,22 @@
 
 /* flags for ups->status */
 
-#define ST_ONLINE	0x001	/* UPS is on line (OL)			*/
-#define ST_ONBATT	0x002	/* UPS is on battery (OB)		*/
-#define ST_LOWBATT	0x004  	/* UPS has a low battery (LB)		*/
-#define ST_FSD		0x008	/* master has set forced shutdown flag	*/
-#define ST_MASTER	0x010	/* we are the master on this UPS	*/
-/* was ST_ALIVE 0x020 */
-#define ST_LOGIN	0x040  	/* we are logged into this UPS		*/
-/* was ST_FIRST 0x080 */
-#define ST_CONNECTED	0x100	/* upscli_connect returned OK		*/
+#define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
+#define ST_ONBATT      (1 << 1)       /* UPS is on battery (OB)               */
+#define ST_LOWBATT     (1 << 2)       /* UPS has a low battery (LB)           */
+#define ST_FSD         (1 << 3)       /* master has set forced shutdown flag  */
+#define ST_MASTER      (1 << 4)       /* we are the master on this UPS        */
+#define ST_LOGIN       (1 << 5)       /* we are logged into this UPS          */
+#define ST_CONNECTED   (1 << 6)       /* upscli_connect returned OK           */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"  
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
 
 /* UPS tracking structure */
 
@@ -74,10 +78,10 @@ typedef struct {
 
 /* notify flag values */
 
-#define NOTIFY_IGNORE	1		/* don't do anything		    */
-#define NOTIFY_SYSLOG	2		/* send the msg to the syslog	    */
-#define NOTIFY_WALL	4		/* send the msg to all users	    */
-#define NOTIFY_EXEC	8		/* send the msg to NOTIFYCMD script */
+#define NOTIFY_IGNORE  (1 << 0)        /* don't do anything                */
+#define NOTIFY_SYSLOG  (1 << 1)        /* send the msg to the syslog       */
+#define NOTIFY_WALL    (1 << 2)        /* send the msg to all users        */
+#define NOTIFY_EXEC    (1 << 3)        /* send the msg to NOTIFYCMD script */
 
 /* flags are set to NOTIFY_SYSLOG | NOTIFY_WALL at program init	*/
 /* the user can override with NOTIFYFLAGS in the upsmon.conf	*/
@@ -112,3 +116,9 @@ struct {
 /* various constants */
 
 #define NET_TIMEOUT 10		/* wait 10 seconds max for upsd to respond */
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif

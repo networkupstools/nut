@@ -21,38 +21,55 @@ if test -z "${nut_have_libgd_seen}"; then
 
 	AC_MSG_CHECKING(for gd version via gdlib-config)
 	GD_VERSION=`gdlib-config --version 2>/dev/null`
-	if test "$?" = "0"; then
-		AC_MSG_RESULT(${GD_VERSION})
-	else
-		AC_MSG_RESULT(not found)
-		GD_VERSION="unknown"
+	if test "$?" != "0" -o -z "${GD_VERSION}"; then
+		GD_VERSION="none"
 	fi
+	AC_MSG_RESULT(${GD_VERSION} found)
 
 	case "${GD_VERSION}" in
-	unknown)
+	none)
 		;;
 	2.0.5 | 2.0.6 | 2.0.7)
 		AC_MSG_WARN([[gd ${GD_VERSION} detected, unable to use gdlib-config script]])
 		AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-includes and --with-gd-libs]])
 		;;
 	*)
-		CFLAGS="`gdlib-config --includes`"
-		LDFLAGS="`gdlib-config --ldflags`"
-		LIBS="`gdlib-config --libs`"
+		CFLAGS="`gdlib-config --includes 2>/dev/null`"
+		LDFLAGS="`gdlib-config --ldflags 2>/dev/null`"
+		LIBS="`gdlib-config --libs 2>/dev/null`"
 		;;
 	esac
 
 	dnl Now allow overriding gd settings if the user knows best
 	AC_MSG_CHECKING(for gd include flags)
-	AC_ARG_WITH(gd-includes, [
-		AC_HELP_STRING([--with-gd-includes=CFLAGS], [include flags for the gd library])
-	], [CFLAGS="${withval}"], [])
+	AC_ARG_WITH(gd-includes,
+		AS_HELP_STRING([@<:@--with-gd-includes=CFLAGS@:>@], [include flags for the gd library]),
+	[
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-gd-includes - see docs/configure.txt)
+			;;
+		*)
+			CFLAGS="${withval}"
+			;;
+		esac
+	], [])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for gd library flags)
-	AC_ARG_WITH(gd-libs, [
-		AC_HELP_STRING([--with-gd-libs=LDFLAGS], [linker flags for the gd library])
-	], [LDFLAGS="${withval}" LIBS=""], [])
+	AC_ARG_WITH(gd-libs,
+		AS_HELP_STRING([@<:@--with-gd-libs=LDFLAGS@:>@], [linker flags for the gd library]),
+	[
+		case "${withval}" in
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-gd-libs - see docs/configure.txt)
+			;;
+		*)
+			LDFLAGS="${withval}"
+			LIBS=""
+			;;
+		esac
+	], [])
 	AC_MSG_RESULT([${LDFLAGS} ${LIBS}])
 
 	dnl check if gd is usable

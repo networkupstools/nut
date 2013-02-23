@@ -3,6 +3,12 @@
 #ifndef EXTSTATE_H_SEEN
 #define EXTSTATE_H_SEEN 1
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* this could be made dynamic if someone really needs more than this... */
 #define ST_MAX_VALUE_LEN 256
 
@@ -12,15 +18,28 @@
 #define ST_FLAG_IMMUTABLE	0x0004
 
 /* list of possible ENUM values */
-struct enum_t {
+typedef struct enum_s {
 	char    *val;
-	struct  enum_t  *next;
-};
+	struct enum_s	*next;
+} enum_t;
+
+/* RANGE boundaries */
+typedef struct range_s {
+	int min;
+	int max;
+	struct range_s	*next;
+} range_t;
 
 /* list of instant commands */
-struct cmdlist_t {
+typedef struct cmdlist_s {
         char    *name;
-        struct  cmdlist_t       *next;
-};
+        struct cmdlist_s	*next;
+} cmdlist_t;
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif	/* EXTSTATE_H_SEEN */

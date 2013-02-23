@@ -14,4 +14,4 @@ else
 endif
 
 dist_sysconf_DATA = $(SECFILES) $(PUBFILES) $(CGI_INSTALL)
-nodist_sysconf_DATA = upssched.conf.sample
+nodist_sysconf_DATA = upssched.conf.sample upsmon.conf.sample

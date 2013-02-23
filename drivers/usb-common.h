@@ -77,7 +77,7 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher);
 typedef struct {
 	int	vendorID;
 	int	productID;
-	void	*(*fun)(void);				/* handler for specific processing */
+	void	*(*fun)(USBDevice_t *);		/* handler for specific processing */
 } usb_device_id_t;
 
 #define NOT_SUPPORTED		0
@@ -88,6 +88,6 @@ typedef struct {
  * supported devices. Return values:
  * NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) */
 int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
-							int dev_VendorID, int dev_ProductID);
+							USBDevice_t *device);
 
 #endif /* NUT_USB_COMMON_H */

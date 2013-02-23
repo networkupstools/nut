@@ -17,6 +17,12 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 struct {
 	char	*name;
 	int	val;		/* hex digits, ala HTML */
@@ -44,7 +50,7 @@ struct {
 	{ NULL,				0, 0, 0 }
 };
 
-struct imgvar_t {
+typedef struct {
 	char	*name;		/* name of the UPS variable                 */
 	char	*minimum;	/* name of minimum value UPS variable
 				   or variable in imgarg table              */
@@ -55,6 +61,13 @@ struct imgvar_t {
 
 				/* pointer to drawing function              */
 	void	(*drawfunc)(double, int, int, int, int, const char*);	
-};
+} imgvar_t;
 
-extern struct imgvar_t imgvar[];
+extern imgvar_t imgvar[];
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
+

@@ -125,193 +125,6 @@
  * :S     -- enables remote reboot/remote power on
  */
 
-/*
-
-POD ("Plain Old Documentation") - run through pod2html or perldoc. See
-perlpod(1) for more information.
-
-pod2man --name='TRIPPLITE_USB' --section=8 --release='$Rev$' --center='Network UPS Tools (NUT)' tripplite_usb.c
-
-=head1 NAME
-
-tripplite_usb - Driver for older Tripp Lite USB UPSes (not PDC HID)
-
-=head1 NOTE
-
-This man page only documents the hardware-specific features of the
-tripplite_usb driver.  For information about the core driver, see
-nutupsdrv(8).
-
-=head1 SUPPORTED HARDWARE
-
-This driver should work with older Tripp Lite UPSes which are detected as USB
-HID-class devices, but are not true HID Power-Device Class devices.  So far,
-the devices supported by tripplite_usb have product ID 0001, and the newer
-units (such as those with "LCD" in the model name) with product ID 2001 require
-the usbhid-ups driver instead.  Please report success or failure to
-the nut-upsuser mailing list.  A key piece of information is the protocol
-number, returned in ups.debug.0.  Also, be sure to turn on debugging (C<-DDD>)
-for more informative log messages.  If your Tripp Lite UPS uses a serial port,
-you may wish to investigate the tripplite(8) or tripplite_su(8) driver.
-
-This driver has been tested with the following models:
-
-=over
-
-=item * INTERNETOFFICE700
-
-=item * OMNISV1000
-
-=item * OMNISV1500XL (some warnings)
-
-=item * SMART700USB
-
-=item * SMART1500RM2U
-
-=item * SMART2200RMXL2U
-
-=item * SMART3000RM2U
-
-=back
-
-If you have used Tripp Lite's PowerAlert software to connect to your UPS, there
-is a good chance that tripplite_usb(8) will work if it uses one of the
-following protocols:
-
-=over 
-
-=item * Protocol 0004
-
-=item * Protocol 1001
-
-=item * Protocol 2001
-
-=item * Protocol 3003
-
-=back
-
-=head1 EXTRA ARGUMENTS
-
-This driver supports the following optional setting in the ups.conf(5) file
-(or with C<-x> on the command line):
-
-=over
-
-=item offdelay
-
-This setting controls the delay between receiving the "kill" command (C<-k>)
-and actually cutting power to the computer.
-
-=item bus
-
-This regular expression is used to match the USB bus (as seen in
-C</proc/bus/usb/devices> or lsusb(8); including leading zeroes).
-
-=item product
-
-A regular expression to match the product string for the UPS.  This would be
-useful if you have two different Tripp Lite UPS models connected to the
-system, and you want to be sure that you shut them down in the correct order.
-
-Note that this regex is matched against the full USB product string as seen in
-lsusb(8). The C<ups.model> in the C<upsc> output only lists the name after
-"TRIPP LITE", so to match a SMART2200RMXL2U, you could use the regex
-".*SMART2200.*".
-
-=item productid
-
-The productid is a regular expression which matches the UPS PID as four
-hexadecimal digits.  So far, the only devices that work with this driver have
-PID C<0001>.
-
-=item serial
-
-It does not appear that these particular Tripp Lite UPSes use the iSerial
-descriptor field to return a serial number.  However, in case your unit does,
-you may specify it here.
-
-=back
-
-For more information on regular expressions, see regex(7)
-
-=head1 RUNTIME VARIABLES
-
-=over
-
-=item ups.delay.shutdown
-
-This variable is the same as the C<offdelay> setting, but it can be changed at
-runtime by upsrw(8).
-
-=item ups.id
-
-Some SMARTPRO models feature an ID that can be set and retrieved. If your UPS
-supports this feature, this variable will be listed in the output of upsrw(8).
-
-=item outlet.1.switch
-
-Some Tripp Lite units have a switchable outlet (usually outlet #1) which can be
-turned on and off by writing C<1> or C<0>, respectively, to C<outlet.1.switch>.
-If your unit has multiple switchable outlets, substitute the outlet number for
-"1" in the variable name. Be sure to test this first - there is no other way to
-be certain that the number used by the driver matches the label on the unit.
-
-=back
-
-=head1 KNOWN ISSUES AND BUGS
-
-The driver was not developed with any official documentation from Tripp Lite,
-so certain events may confuse the driver. If you observe any strange behavior,
-please re-run the driver with C<-DDD> to increase the verbosity.
-
-So far, the Tripp Lite UPSes do not seem to have any serial number or other
-unique identifier accessible through USB. Thus, when monitoring several Tripp
-Lite USB UPSes, you should use either the C<bus> or C<product> configuration
-options to uniquely specify which UPS a given driver instance should control.
-
-For instance, you can easily monitor an OMNIVS1000 and a SMART1500RM2U at the
-same time, since they have different USB Product ID strings. If you have two
-SMART1500RM2U units, you would have to find which USB bus number each unit is
-on (via C<lsusb>), which may result in ambiguities if the available USB ports
-are on the same bus.
-
-Some of the SMART*2U models have an ID number, but because this ID is not
-exposed as a USB string descriptor, there is no easy way to use this ID to
-distinguish between multiple UPS units on a single machine.
-
-=head1 AUTHORS
-
-Charles Lepple E<lt>clepple+nut@gmail.com<gt>, based on the tripplite driver by
-Rickard E. (Rik) Faith E<lt>faith@alephnull.comE<gt> and Nicholas Kain
-E<lt>nicholas@kain.usE<gt>. Please do not email the authors directly - use the
-nut-upsdev mailing list.
-
-A Tripp Lite OMNIVS1000 was graciously donated to the NUT project by:
-
-=over
-
-Relevant Evidence, LLC.
-
-http://www.relevantevidence.com
-
-Email: info@relevantevidence.com
-
-=back
-
-=head1 SEE ALSO
-
-=head2 The core driver:
-
-nutupsdrv(8), regex(7), usbhid-ups(8)
-
-=head2 Internet resources:
-
-The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
-=cut
-
-*/
-
 #include "main.h"
 #include "libusb.h"
 #include <math.h>
@@ -348,7 +161,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 static int subdriver_match_func(USBDevice_t *hd, void *privdata)
 {
-	switch (is_usb_device_supported(tripplite_usb_device_table, hd->VendorID, hd->ProductID))
+	switch (is_usb_device_supported(tripplite_usb_device_table, hd))
 	{
 	case SUPPORTED:
 		return 1;
@@ -489,7 +302,7 @@ static int hex2d(const unsigned char *start, unsigned int len)
 	unsigned char buf[32];
 	buf[31] = '\0';
 
-	strncpy((char *)buf, (char *)start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
+	strncpy((char *)buf, (const char *)start, (len < (sizeof buf) ? len : (sizeof buf - 1)));
 	if(len < sizeof(buf)) buf[len] = '\0';
 	return strtol((char *)buf, NULL, 16);
 }
@@ -504,24 +317,30 @@ static int hex2d(const unsigned char *start, unsigned int len)
 static const char *hexascdump(unsigned char *msg, size_t len)
 {
 	size_t i;
-	static unsigned char buf[256], *bufp;
+	static unsigned char buf[256];
+	unsigned char *bufp, *end;
 
 	bufp = buf;
+	end = bufp + sizeof(buf);
 	buf[0] = 0;
 
 	/* Dump each byte in hex: */
-	for(i=0; i<len; i++) {
+	for(i=0; i<len && end-bufp>=3; i++) {
 		bufp += sprintf((char *)bufp, "%02x ", msg[i]);
 	}
 
 	/* Dump single-quoted string with printable version of each byte: */
-	*bufp++ = '\'';
-	for(i=0; i<len; i++) {
+	if (end-bufp > 0) *bufp++ = '\'';
+
+	for(i=0; i<len && end-bufp>0; i++) {
 		*bufp++ = toprint(msg[i]);
 	}
-	*bufp++ = '\'';
+	if (end-bufp > 0) *bufp++ = '\'';
 
-	*bufp++ = '\0';
+	if (end-bufp > 0)
+		*bufp = '\0';
+	else
+		*--end='\0';
 
 	return (char *)buf;
 }
@@ -722,7 +541,7 @@ void debug_message(const char *msg, int len)
 
 	snprintf(var_name, sizeof(var_name), "ups.debug.%c", *msg);
 
-	ret = send_cmd((unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
+	ret = send_cmd((const unsigned char *)msg, len, tmp_value, sizeof(tmp_value));
 	if(ret <= 0) {
 		sprintf(err_msg, "Error reading '%c' value", *msg);
 		usb_comm_fail(ret, err_msg);
@@ -847,12 +666,12 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
-			send_cmd((unsigned char *)"A", 2, buf, sizeof buf);
+			send_cmd((const unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
 		}
 
 		if(!strcasecmp(cmdname, "reset.input.minmax")) {
-			return (send_cmd((unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
+			return (send_cmd((const unsigned char *)"Z", 2, buf, sizeof buf) == 2) ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_UNKNOWN;
 		}
 	}
 

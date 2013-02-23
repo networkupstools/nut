@@ -1,9 +1,0 @@
-When creating files in here, use the following 4 headers:
-
-Desc: A brief description of the document
-File: The filename (this is for tracking which one is the original)
-Date: The date of last modification
-Auth: The author, i.e. "First Last <foo@example.com>".
-
-Note: anything in the form <.*@.*> will be removed when converted to HTML
-to reduce the number of e-mail addresses harvested from the web servers.

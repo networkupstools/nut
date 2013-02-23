@@ -1,373 +1,229 @@
-This file lists changes that affect users who installed older versions
+ifdef::txt[]
+Upgrading notes
+===============
+endif::txt[]
+
+This file lists changes that affect users who installed older versions 
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
----------------------------------------------------------------------------
-Changes from 2.4.2 to 2.4.3:
-
- - nothing that affects upgraded systems.
-
----------------------------------------------------------------------------
-Changes from 2.4.1 to 2.4.2:
-
- - The default subdriver for the blazer_usb driver USB id 06da:0003 has
-   changed. If you use such a device and it is no longer working with this
-   driver, override the 'subdriver' default in 'ups.conf' (see man 8 blazer).
- - NUT ACL and the allowfrom mechanism has been replaced in 2.4.0 by the LISTEN
-   directive and tcp-wrappers respectively. This information was missing
-   below, so a double note has been added.
-
----------------------------------------------------------------------------
-Changes from 2.4.0 to 2.4.1:
-
- - nothing that affects upgraded systems.
-
----------------------------------------------------------------------------
-Changes from 2.2.2 to 2.4.0:
-
- - The nut.conf file has been introduced to standardize startup configuration
-   across the various systems.
- - The cpsups and nitram drivers have been replaced by the powerpanel driver,
-   and removed from the tree. The cyberpower driver may suffer the same in the
-   future.
- - The al175 and energizerups drivers have been removed from the tree, since
-   these were tagged broken for a long time.
- - Developers of external client application using libupsclient must rename
-   their "UPSCONN" client structure to "UPSCONN_t".
- - The upsd server will now disconnect clients that remain silent for more than
-   60 seconds.
- - The files under scripts/python/client are distributed under GPL 3+, whereas
-   the rest of the files are distributed under GPL 2+. Refer to COPYING for more
-   information.
- - The generated udev rules file has been renamed with dash only, no underscore
-   anymore (ie 52-nut-usbups.rules instead of 52_nut-usbups.rules)
- - (Note: this has been missed at release time): The NUT internal network access
-   control (ACL using ACCEPT / REJECT in upsd.conf) has been replaced by
-   the LISTEN directive. This can also be complemented by tcp-wrappers.
-   Refer to upsd and upsd.conf manual pages for more information.
-
----------------------------------------------------------------------------
-Changes from 2.2.1 to 2.2.2:
-
- - The configure option "--with-lib" has been replaced by "--with-dev".
-   This enable the additional build and distribution of the static
-   version of libupsclient, along with the pkg-config helper and manual
-   pages. The default configure option is to distribute only the shared
-   version of libupsclient. This can be overriden by using the
-   "--disable-shared" configure option (distribute static only binaries).
- - The UPS poweroff handling of the usbhid-ups driver has been reworked.
-   Though regression is not expected, users of this driver are
-   encouraged to test this feature by calling "upsmon -c fsd" and
-   report any issue on the NUT mailing lists.
-
----------------------------------------------------------------------------
-Changes from 2.2.0 to 2.2.1:
-
- - nothing that affects upgraded systems.
-   (The below message is repetead due to previous omission)
- - Developers of external client application using libupsclient are
-   encouraged to rename their "UPSCONN" client structure to "UPSCONN_t"
-   since the former will disappear by the release of NUT 2.4.
-
----------------------------------------------------------------------------
-Changes from 2.0.5 to 2.2.0:
-
- - users of the newhidups driver are advised that the driver name has changed
-   to usbhid-ups.
- - users of the hidups driver must switch to usbhid-ups.
- - users of the following drivers (powermust, blazer, fentonups, mustek,
-   esupssmart, ippon, sms) must switch to megatec, which replaces
-   all these drivers.  Please refer to doc/megatec.txt for details.
- - users of the mge-shut driver are encouraged to test newmge-shut, which
-   is an alternate driver scheduled to replace mge-shut,
- - users of the cpsups driver are encouraged to switch to powerpanel which
-   is  scheduled to replace cpsups,
- - packagers will have to rework the whole nut packaging due to the
-   major changes in the build system (completely modified, and now using
-   automake). Refer to packaging/debian/ for an example of migration.
- - specifying '-a <id>' is now mandatory when starting a driver manually,
-   ie not using upsdrvctl.
- - Developers of external client application using libupsclient are
-   encouraged to rename the "UPSCONN" client structure to "UPSCONN_t"
-   since the former will disapear by the release of NUT 2.4.
-
----------------------------------------------------------------------------
-Changes from 2.0.4 to 2.0.5:
-
- - users of the newhidups driver: the driver is now more strict about
-   refusing to connect to unknown devices. If your device was
-   previously supported, but fails to be recognized now, add
-   'productid=XXXX' to ups.conf. Please report the device to the NUT
-   developer's mailing list.
-
----------------------------------------------------------------------------
-Changes from 2.0.3 to 2.0.4:
-
- - nothing that affects upgraded systems.
- - users of the following drivers (powermust, blazer, fentonups, mustek,
-   esupssmart, ippon, sms, masterguard) are encouraged to switch to megatec,
-   which should replace all these drivers by nut 2.2. For more information,
-   please refer to doc/megatec.txt
-
----------------------------------------------------------------------------
-Changes from 2.0.2 to 2.0.3:
-
- - nothing that affects upgraded systems.
- - hidups users are encouraged to switch to newhidups, as hidups will be
-   removed by nut 2.2.
-
----------------------------------------------------------------------------
-Changes from 2.0.1 to 2.0.2:
-
- - The newhidups driver, which is the long run USB support approach,
-   needs hotplug files installed to setup the right permissions on
-   device file to operate. Check newhidups manual page for more information.
-
----------------------------------------------------------------------------
-Changes from 2.0.0 to 2.0.1:
-
- - The cyberpower1100 driver is now called cpsups since it supports
-   more than just one model.  If you use this driver, be sure to remove
-   the old binary and update your ups.conf 'driver=' setting with the
-   new name.
-
- - The upsstats.html template page has been changed slightly to reflect
-   better HTML compliance, so you may want to update your installed copy
-   accordingly.  If you've customized your file, don't just copy the new
-   one over it, or your changes will be lost!
-
----------------------------------------------------------------------------
-Changes from 1.4.0 to 2.0.0:
-
- - The sample config files are no longer installed by default.  If you
-   want to install them, use 'make install-conf' for the main programs,
-   and 'make install-cgi-conf' for the CGI programs.
-
- - ACCESS is no longer supported in upsd.conf.  Use ACCEPT and REJECT.
-
-   Old way:
-
-        ACCESS grant all adminbox
-        ACCESS grant all webserver
-        ACCESS deny all all
-
-   New way:
-
-        ACCEPT adminbox
-        ACCEPT webserver
-        REJECT all
-
-   Note that ACCEPT and REJECT can take multiple arguments, so this
-   will also work:
-
-        ACCEPT adminbox webserver
-        REJECT all
-
- - The drivers no longer support sddelay in ups.conf or -d on the
-   command line.  If you need a delay after calling 'upsdrvctl
-   shutdown', add a call to sleep in your shutdown script.
-
- - The templates used by upsstats have changed considerably to reflect
-   the new variable names.  If you use upsstats, you will need to
-   install new copies or edit your existing files to use the new names.
-
- - Nobody needed UDP mode, so it has been removed.  The only users
-   seemed to be a few people like me with ancient asapm-ups binaries.
-   If you really want to run asapm-ups again, bug me for the new patch
-   which makes it work with upsclient.
-
- - 'make install-misc' is now 'make install-lib'.  The misc directory
-   has been gone for a long time, and the target was ambiguous.
-
- - The newapc driver has been renamed to apcsmart.  If you previously
-   used newapc, make sure you delete the old binary and fix your
-   ups.conf.  Otherwise, you may run the old driver from 1.4.
-
----------------------------------------------------------------------------
-
-Changes from 1.2.2 to 1.4.0:
-
- - The clients no longer support the notion of a "default UPS" when
-   communicating with newer versions of upsd.  If you leave off a UPS
-   name, they will fall back on compatibility mode and will use the
-   old variable and command names.
-
-   That is, "upsc localhost" will give you things like STATUS, and you
-   have to do "upsc myups@localhost" to get the new ones like
-   ups.status.
-
-   The old variable names and default UPS mode will be supported
-   throughout the 1.4 series to allow users to convert to the new
-   style.  This support will be formally dropped in 2.0.
-
- - upsmon is part of the "no default upsname" change.  You must change
-   the MONITOR directives in your upsmon.conf if you were using this
-   technique before.
-
-   Old way:
-
-   MONITOR bigserver 1 monuser password master
-
-   New way:
-
-   MONITOR myups@bigserver 1 monuser password master
-
-   Just look at the top of ups.conf on 'bigserver' to figure out what
-   the first UPS is called, and stick it and a @ on that MONITOR line.
-
- - upsrw's appearance has changed to avoid wrapping when displaying
-   the new longer variable names and descriptions.  It still displays
-   the old format when talking to an older upsd.
-
-   To see the difference, try "upsrw localhost" and then compare it to
-   "upsrw myups@localhost", assuming a new version of upsd is running
-   on localhost.
-
- - upslog now uses the new variable names in the default format
-   string.  It will still monitor the old variable names for backwards
-   compatibility, but you will have to specify the format string
-   explicitly.
-
- - 'make install' no longer creates the state path.  Instructions for
-   creating it properly have been added to the INSTALL file.
-
-   Technically, this only affects packagers, since this is the
-   UPGRADING file and normal users should already have a state path.
-   If you are a packager, you will need to add the right mkdir + chown +
-   chmod magic to your install process to keep things working.
-
-   This also means that you no longer need any special permissions to
-   bundle this software into a package.  The installer no longer
-   requires root now that the chown is gone.
-
- - configure --with-group no longer does anything useful.  The programs
-   which will drop permissions support "-u <user>", and will pick up
-   the group id based on the values in /etc/passwd for that user name.
-
-   configure --with-user still works as before, and provides the default
-   value if you don't specify another one with -u.
-
- - The "DROP" action in upsd.conf now behaves a little differently.
-
-   It still causes new TCP connections to be closed without reading
-   from the socket, and still causes UDP datagrams to be ignored.
-
-   The only difference is that commands that are denied after the
-   remote host connects will now generate an error message.  Previously,
-   upsd would just ignore them, and the clients could get out of sync.
-
-   DENY also has been changed slightly to silently ignore UDP packets.
-
-   Essentially, DROP and DENY are now the same thing.  If you use DROP
-   anywhere, you should change to DENY before it goes away in the future.
-
- - upsmon now requires a username on the MONITOR lines.  If you have an
-   older installation from the 1.x era or earlier, you probably need
-   to convert them.
-
-   Old way: MONITOR ups@mybox 1 mypass master
-   New way: MONITOR ups@mybox 1 username mypass master
-
-   You will also have to add a [username] section to the upsd.users
-   with a matching password, an allowfrom value, and "upsmon master" or
-   "upsmon slave".
-
-   If upsmon says the login failed due to "username required" or fails to
-   start, saying "Unable to use old-style MONITOR line without a username",
-   then you're still using the old method.
-
----------------------------------------------------------------------------
-
-Changes from 1.2.1 to 1.2.2:
-
- - upssched.conf now requires the LOCKFN directive to prevent races when
-   handling two events that happen at nearly the same time.
-
-   If you use upssched, you must add this to your upssched.conf or it
-   will fail to run.
-
----------------------------------------------------------------------------
-
-Changes from 1.0.0 to 1.2.0:
-
- - upsct is gone.  upsc now uses the new upsclient library which is
-   TCP only, so there is no need for a separate client for TCP polling.
-
- - upsct2 has been renamed to upsrw since the name was already
-   ambiguous and it looked even more out of place with upsct gone.
-
- - The multimon.cgi behavior has been absorbed into upsstats.cgi.
-
- - Calling upsstats.cgi with no arguments will make it render
-   the template file called upsstats.html in your confpath.  The default
-   version of this file looks a lot like multimon, but is flexible.
-   You will have to copy this file from upsstats.html.sample to
-   upsstats.html the first time you install this version.
-
- - Calling upsstats.cgi with host= set will still render a single status
-   page as before, but the markup for that page now comes from
-   upsstats-single.html.  This is also a template and may be
-   reconfigured to suit your needs.  It must also be copied over from
-   the .sample filename the first time.
-
- - upsmon can now send a username when authenticating to upsd.  It is
-   recommended that you change to this mode, as the old host-based
-   authentication is clunky and eventually will be removed.
-
-   Old way:
-
-	MONITOR myups@bigserver 1 blah master
-
-   New way:
-
-	MONITOR myups@bigserver 1 monmaster blah master
-
-   Note that the username has been inserted between the power value and
-   the password.  When switching to this method, be sure to add a user
-   to upsd.users, i.e.:
-
-	[monmaster]
-		password  = blah
-		allowfrom = localhost
-		upsmon master
-
-   You still need to give the upsmon host(s) at least "monitor" access,
-   so don't delete those old ACCESS lines in your upsd.conf.  Just
-   lower the access level and remove the password.
-
-   Old way:
-
-	ACCESS grant master localhost blah
-
-   New way:
-
-	ACCESS grant monitor localhost
-
- - The old upsfetch "library" (used loosely) has been replaced by
-   upsclient.  This will be installed if you do "make install-misc",
-   but it goes into $(prefix)/lib and $(prefix)/include by default.
-
-   The upsclient interface is not compatible with upsfetch.  Old
-   accessory programs which linked to upsfetch will have to be updated
-   to work with upsclient instead.
-
-   Existing binaries that were linked against upsfetch will still work
-   since the network protocol used by upsd has not changed.
-
- - SET and INSTCMD no longer work via host-level authentication.  This
-   is only a meaningful change if you are using very old versions of
-   upscmd/upsct2/upsset.cgi, or if you're talking to upsd directly.
-
-   You must now set a USERNAME first, and authentication will occur
-   through upsd.users as a result.
-
-   This means that the "manager" level in upsd.conf ACCESS directives
-   is no longer meaningful, and you should remove them.
-
- - INSTALLROOT is no longer available for redirecting 'make install' -
-   use DESTDIR instead.
-
- - Makefile targets have been reworked to allow fine-grained control
-   over what happens at install-time.  'make install' and 'make
-   install-cgi' still do everything, but you can call subsets instead
-   if necessary.  See ChangeLog.
+Changes from 2.6.4 to 2.6.5
+---------------------------
+
+- users are encouraged to update to NUT 2.6.5, to fix a regression in
+upssched.
+- mge-shut driver has been replaced by a new implementation (newmge-shut).
+In case of issue with this new version, users can revert to oldmge-shut.
+
+Changes from 2.6.3 to 2.6.4
+---------------------------
+
+- users are encouraged to update to NUT 2.6.4, to fix upsd vulnerability
+(CVE-2012-2944: upsd can be remotely crashed).
+- users of the bestups driver are encouraged to switch to blazer_ser,
+since bestups will soon be deprecated.
+
+Changes from 2.6.2 to 2.6.3
+---------------------------
+
+- nothing that affects upgraded systems.
+
+Changes from 2.6.1 to 2.6.2
+---------------------------
+
+- apcsmart driver has been replaced by a new implementation. In case of issue
+with this new version, users can revert to apcsmart-old.
+
+Changes from 2.6.0 to 2.6.1
+---------------------------
+
+- nothing that affects upgraded systems.
+
+Changes from 2.4.3 to 2.6.0
+---------------------------
+
+- users of the megatec and megatec_usb drivers must respectively switch to
+blazer_ser and blazer_usb.
+- users of the liebertgxt2 driver are advised that the driver name has changed
+to liebert-esp2.
+
+Changes from 2.4.2 to 2.4.3
+---------------------------
+
+- nothing that affects upgraded systems.
+
+Changes from 2.4.1 to 2.4.2
+---------------------------
+
+- The default subdriver for the blazer_usb driver USB id 06da:0003 has changed.
+If you use such a device and it is no longer working with this driver, override
+the 'subdriver' default in 'ups.conf' (see man 8 blazer).
+- NUT ACL and the allowfrom mechanism has been replaced in 2.4.0 by the LISTEN
+directive and tcp-wrappers respectively. This information was missing below, so
+a double note has been added.
+
+Changes from 2.4.0 to 2.4.1
+---------------------------
+
+- nothing that affects upgraded systems.
+
+Changes from 2.2.2 to 2.4.0
+---------------------------
+
+- The nut.conf file has been introduced to standardize startup configuration
+across the various systems.
+- The cpsups and nitram drivers have been replaced by the powerpanel driver,
+and removed from the tree. The cyberpower driver may suffer the same in the
+future.
+- The al175 and energizerups drivers have been removed from the tree, since
+these were tagged broken for a long time.
+- Developers of external client application using libupsclient must rename
+their "UPSCONN" client structure to "UPSCONN_t".
+- The upsd server will now disconnect clients that remain silent for more than
+60 seconds.
+- The files under scripts/python/client are distributed under GPL 3+, whereas
+the rest of the files are distributed under GPL 2+. Refer to COPYING for more
+information.
+- The generated udev rules file has been renamed with dash only, no underscore
+anymore (ie 52-nut-usbups.rules instead of 52_nut-usbups.rules)
+
+Changes from 2.2.1 to 2.2.2
+---------------------------
+
+- The configure option "--with-lib" has been replaced by "--with-dev".
+This enable the additional build and distribution of the static
+version of libupsclient, along with the pkg-config helper and manual
+pages. The default configure option is to distribute only the shared
+version of libupsclient. This can be overriden by using the
+"--disable-shared" configure option (distribute static only binaries).
+- The UPS poweroff handling of the usbhid-ups driver has been reworked.
+Though regression is not expected, users of this driver are
+encouraged to test this feature by calling "upsmon -c fsd" and
+report any issue on the NUT mailing lists.
+
+Changes from 2.2.0 to 2.2.1
+---------------------------
+
+- nothing that affects upgraded systems.
+(The below message is repetead due to previous omission)
+- Developers of external client application using libupsclient are
+encouraged to rename their "UPSCONN" client structure to "UPSCONN_t"
+since the former will disappear by the release of NUT 2.4.
+
+Changes from 2.0.5 to 2.2.0
+---------------------------
+
+- users of the newhidups driver are advised that the driver name has changed
+to usbhid-ups.
+- users of the hidups driver must switch to usbhid-ups.
+- users of the following drivers (powermust, blazer, fentonups, mustek,
+esupssmart, ippon, sms) must switch to megatec, which replaces
+all these drivers.  Please refer to doc/megatec.txt for details.
+- users of the mge-shut driver are encouraged to test newmge-shut, which
+is an alternate driver scheduled to replace mge-shut,
+- users of the cpsups driver are encouraged to switch to powerpanel which
+is  scheduled to replace cpsups,
+- packagers will have to rework the whole nut packaging due to the
+major changes in the build system (completely modified, and now using
+automake). Refer to packaging/debian/ for an example of migration.
+- specifying '-a <id>' is now mandatory when starting a driver manually,
+ie not using upsdrvctl.
+- Developers of external client application using libupsclient are
+encouraged to rename the "UPSCONN" client structure to "UPSCONN_t"
+since the former will disapear by the release of NUT 2.4.
+
+Changes from 2.0.4 to 2.0.5
+---------------------------
+
+- users of the newhidups driver: the driver is now more strict about
+refusing to connect to unknown devices. If your device was
+previously supported, but fails to be recognized now, add
+'productid=XXXX' to ups.conf. Please report the device to the NUT
+developer's mailing list.
+
+Changes from 2.0.3 to 2.0.4
+---------------------------
+
+- nothing that affects upgraded systems.
+- users of the following drivers (powermust, blazer, fentonups, mustek,
+esupssmart, ippon, sms, masterguard) are encouraged to switch to megatec,
+which should replace all these drivers by nut 2.2. For more information,
+please refer to doc/megatec.txt
+
+Changes from 2.0.2 to 2.0.3
+---------------------------
+
+- nothing that affects upgraded systems.
+- hidups users are encouraged to switch to newhidups, as hidups will be
+removed by nut 2.2.
+
+Changes from 2.0.1 to 2.0.2
+---------------------------
+
+- The newhidups driver, which is the long run USB support approach,
+needs hotplug files installed to setup the right permissions on
+device file to operate. Check newhidups manual page for more information.
+
+Changes from 2.0.0 to 2.0.1
+---------------------------
+
+- The cyberpower1100 driver is now called cpsups since it supports
+more than just one model.  If you use this driver, be sure to remove
+the old binary and update your ups.conf 'driver=' setting with the
+new name.
+
+- The upsstats.html template page has been changed slightly to reflect
+better HTML compliance, so you may want to update your installed copy
+accordingly.  If you've customized your file, don't just copy the new
+one over it, or your changes will be lost!
+
+Changes from 1.4.0 to 2.0.0
+---------------------------
+
+- The sample config files are no longer installed by default.  If you
+want to install them, use 'make install-conf' for the main programs,
+and 'make install-cgi-conf' for the CGI programs.
+
+- ACCESS is no longer supported in upsd.conf.  Use ACCEPT and REJECT.
+Old way:
+
+	ACCESS grant all adminbox
+	ACCESS grant all webserver
+	ACCESS deny all all
+
+New way:
+
+	ACCEPT adminbox
+	ACCEPT webserver
+	REJECT all
+
+Note that ACCEPT and REJECT can take multiple arguments, so this
+will also work:
+
+	ACCEPT adminbox webserver
+	REJECT all
+
+- The drivers no longer support sddelay in ups.conf or -d on the
+command line.  If you need a delay after calling 'upsdrvctl
+shutdown', add a call to sleep in your shutdown script.
+
+- The templates used by upsstats have changed considerably to reflect
+the new variable names.  If you use upsstats, you will need to
+install new copies or edit your existing files to use the new names.
+
+- Nobody needed UDP mode, so it has been removed.  The only users
+seemed to be a few people like me with ancient asapm-ups binaries.
+If you really want to run asapm-ups again, bug me for the new patch
+which makes it work with upsclient.
+
+- 'make install-misc' is now 'make install-lib'.  The misc directory
+has been gone for a long time, and the target was ambiguous.
+
+- The newapc driver has been renamed to apcsmart.  If you previously
+used newapc, make sure you delete the old binary and fix your 
+ups.conf.  Otherwise, you may run the old driver from 1.4.
+
+
+*** File trimmed here on changes from 1.2.2 to 1.4.0 ***
+
+For information before this point, start with version 2.4.1 and work back.

@@ -1,8 +1,9 @@
 /*  ietf-mib.c - data to monitor SNMP UPS (RFC 1628 compliant) with NUT
  *
  *  Copyright (C) 2002-2006
- *  			Arnaud Quette <arnaud.quette@free.fr>
- *  			Niels Baggesen <niels@baggesen.net>
+ *	2002-2012	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002-2006	Niels Baggesen <niels@baggesen.net>
+ *	2002-2006	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -25,234 +26,252 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.3"
+#define IETF_MIB_VERSION	"1.4"
 
 /* SNMP OIDs set */
-#define IETF_OID_UPS_MIB          "1.3.6.1.2.1.33"
-#define IETF_OID_MFR_NAME         "1.3.6.1.2.1.33.1.1.1.0"	/* UPS-MIB::upsIdentManufacturer.0 */
-#define IETF_OID_MODEL_NAME       "1.3.6.1.2.1.33.1.1.2.0"	/* UPS-MIB::upsIdentModel.0 */
-#define IETF_OID_FIRMREV          "1.3.6.1.2.1.33.1.1.3.0"	/* UPS-MIB::upsIdentUPSSoftwareVersion.0 */
-#define IETF_OID_AGENTREV         "1.3.6.1.2.1.33.1.1.4.0"	/* UPS-MIB::upsIdentAgentSoftwareVersion.0 */
-#define IETF_OID_IDENT            "1.3.6.1.2.1.33.1.1.5.0"	/* UPS-MIB::upsIdentName.0 */
+#define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
+#define IETF_SYSOID			".1.3.6.1.2.1.33"
 
-#define IETF_OID_BATT_STATUS      "1.3.6.1.2.1.33.1.2.1.0"	/* UPS-MIB::upsBatteryStatus.0 */
-#define IETF_OID_BATT_RUNTIME     "1.3.6.1.2.1.33.1.2.3.0"	/* UPS-MIB::upsEstimatedMinutesRemaining.0 */
-#define IETF_OID_BATT_CHARGE      "1.3.6.1.2.1.33.1.2.4.0"	/* UPS-MIB::upsEstimatedChargeRemaining.0 */
-#define IETF_OID_BATT_VOLTAGE     "1.3.6.1.2.1.33.1.2.5.0"	/* UPS-MIB::upsBatteryVoltage.0 */
-#define IETF_OID_BATT_CURRENT     "1.3.6.1.2.1.33.1.2.6.0"	/* UPS-MIB::upsBatteryCurrent.0 */
-#define IETF_OID_BATT_TEMP        "1.3.6.1.2.1.33.1.2.7.0"	/* UPS-MIB::upsBatteryTemperature.0 */
+/* #define DEBUG */
 
-#define IETF_OID_IN_LINEBADS      "1.3.6.1.2.1.33.1.3.1.0"	/* UPS-MIB::upsInputLineBads.0 */
-#define IETF_OID_IN_LINES         "1.3.6.1.2.1.33.1.3.2.0"	/* UPS-MIB::upsInputNumLines.0 */
-
-#define IETF_OID_IN_FREQ          "1.3.6.1.2.1.33.1.3.3.1.2"	/* UPS-MIB::upsInputFrequency */
-#define IETF_OID_IN_VOLTAGE       "1.3.6.1.2.1.33.1.3.3.1.3"	/* UPS-MIB::upsInputVoltage */
-#define IETF_OID_IN_CURRENT       "1.3.6.1.2.1.33.1.3.3.1.4"	/* UPS-MIB::upsInputCurrent */
-#define IETF_OID_IN_POWER         "1.3.6.1.2.1.33.1.3.3.1.5"	/* UPS-MIB::upsInputTruePower */
-
-#define IETF_OID_POWER_STATUS     "1.3.6.1.2.1.33.1.4.1.0"	/* UPS-MIB::upsOutputSource.0 */
-#define IETF_OID_OUT_FREQUENCY    "1.3.6.1.2.1.33.1.4.2.0"	/* UPS-MIB::upsOutputFrequency.0 */
-#define IETF_OID_OUT_LINES        "1.3.6.1.2.1.33.1.4.3.0"	/* UPS-MIB::upsOutputNumLines.0 */
-
-#define IETF_OID_OUT_VOLTAGE      "1.3.6.1.2.1.33.1.4.4.1.2"	/* UPS-MIB::upsOutputVoltage */
-#define IETF_OID_OUT_CURRENT      "1.3.6.1.2.1.33.1.4.4.1.3"	/* UPS-MIB::upsOutputCurrent */
-#define IETF_OID_OUT_POWER        "1.3.6.1.2.1.33.1.4.4.1.4"	/* UPS-MIB::upsOutputPower */
-#define IETF_OID_LOAD_LEVEL       "1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
-
-#define IETF_OID_UPS_TEST_ID      "1.3.6.1.2.1.33.1.7.1"        /* UPS-MIB::upsTestID */
-#define IETF_OID_UPS_TEST_RES     "1.3.6.1.2.1.33.1.7.3"        /* UPS-MIB::upsTestResultsSummary */
-#define IETF_OID_UPS_TEST_RESDET  "1.3.6.1.2.1.33.1.7.4"        /* UPS-MIB::upsTestResultsDetail */
-#define IETF_OID_UPS_TEST_NOTEST  "1.3.6.1.2.1.33.1.7.7.1"      /* UPS-MIB::upsTestNoTestInitiated */
-#define IETF_OID_UPS_TEST_ABORT   "1.3.6.1.2.1.33.1.7.7.2"      /* UPS-MIB::upsTestAbortTestInProgress */
-#define IETF_OID_UPS_TEST_GSTEST  "1.3.6.1.2.1.33.1.7.7.3"      /* UPS-MIB::upsTestGeneralSystemsTest */
-#define IETF_OID_UPS_TEST_QBATT   "1.3.6.1.2.1.33.1.7.7.4"      /* UPS-MIB::upsTestQuickBatteryTest */
-#define IETF_OID_UPS_TEST_DBATT   "1.3.6.1.2.1.33.1.7.7.5"      /* UPS-MIB::upsTestDeepBatteryCalibration */
-
-#define IETF_OID_CONF_VOLTAGE     "1.3.6.1.2.1.33.1.9.3.0"      /* UPS-MIB::upsConfigOutputVoltage.0 */
-#define IETF_OID_CONF_OUT_VA      "1.3.6.1.2.1.33.1.9.5.0"      /* UPS-MIB::upsConfigOutputVA.0 */
-#define IETF_OID_CONF_RUNTIME_LOW "1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
-
-/* Defines for IETF_OID_POWER_STATUS (1) */
-static info_lkp_t ietf_pwr_info[] = {
-	{ 1, ""       /* other */ },
-	{ 2, "OFF"    /* none */ },
-	{ 3, "OL"     /* normal */ },
-	{ 4, "OL BYPASS" /* bypass */ },
-	{ 5, "OB"     /* battery */ },
-	{ 6, "OL BOOST"  /* booster */ },
-	{ 7, "OL TRIM"   /* reducer */ },
-	{ 0, "NULL" }
-} ;
-
-/* Defines for IETF_OID_BATT_STATUS (2) */
-static info_lkp_t ietf_batt_info[] = {
+static info_lkp_t ietf_battery_info[] = {
 	{ 1, ""   /* unknown */ },
 	{ 2, ""   /* batteryNormal */},
 	{ 3, "LB" /* batteryLow */ },
 	{ 4, "LB" /* batteryDepleted */ },
-	{ 5, ""   /* unknown */ },
-	{ 6, "RB"   /* batteryError */},
 	{ 0, "NULL" }
-} ;
+};
 
-/* Defines for IETF_OID_TEST_RES */
-static info_lkp_t ietf_test_res_info[] = {
-	{ 1, "Done and passed" },
-	{ 2, "Done and warning" },
-	{ 3, "Done and error" },
-	{ 4, "Aborted" },
-	{ 5, "In progress" },
-	{ 6, "No test initiated" },
+static info_lkp_t ietf_power_source_info[] = {
+	{ 1, "" /* other */ },
+	{ 2, "OFF" /* none */ },
+	{ 3, "OL" /* normal */ },
+	{ 4, "OL BYPASS" /* bypass */ },
+	{ 5, "OB" /* battery */ },
+	{ 6, "OL BOOST" /* booster */ },
+	{ 7, "OL TRIM" /* reducer */ },
 	{ 0, "NULL" }
-} ;
+};
 
-#define IETF_OID_SD_AFTER_DELAY	 "1.3.6.1.2.1.33.1.8.2"	/* UPS-MIB::upsShutdownAfterDelay */
-#define IETF_OFF_DO		0
-
-#define IETF_OID_ALARM_OB "1.3.6.1.2.1.33.1.6.3.2"	/* UPS-MIB::upsAlarmOnBattery */
-#define IETF_OID_ALARM_LB "1.3.6.1.2.1.33.1.6.3.3"	/* UPS-MIB::upsAlarmLowBattery */
-
-static info_lkp_t ietf_alarm_ob[] = {
-	{ 1, "OB" },
+static info_lkp_t ietf_overload_info[] = {
+	{ 1, "OVER" },	/* output overload */
 	{ 0, "NULL" }
-} ;
+};
 
-static info_lkp_t ietf_alarm_lb[] = {
-	{ 1, "LB" },
+static info_lkp_t ietf_test_active_info[] = {
+	{ 1, "" },	/* upsTestNoTestsInitiated */
+	{ 2, "" },	/* upsTestAbortTestInProgress */
+	{ 3, "TEST" },	/* upsTestGeneralSystemsTest */
+	{ 4, "TEST" },	/* upsTestQuickBatteryTest */
+	{ 5, "CAL" },	/* upsTestDeepBatteryCalibration */
 	{ 0, "NULL" }
-} ;
+};
 
-/* Missing data
-   CAL   - UPS is performing calibration
-   OVER  - UPS is overloaded
-   FSD   - UPS is in forced shutdown state (slaves take note)
-*/
+static info_lkp_t ietf_test_result_info[] = {
+	{ 1, "done and passed" },
+	{ 2, "done and warning" },
+	{ 3, "done and error" },
+	{ 4, "aborted" },
+	{ 5, "in progress" },
+	{ 6, "no test initiated" },
+	{ 0, "NULL" }
+};
 
-/* Snmp2NUT lookup table */
+#ifdef DEBUG
+static info_lkp_t ietf_shutdown_type_info[] = {
+	{ 1, "output" },
+	{ 2, "system" },
+	{ 0, "NULL" }
+};
+#endif
 
+static info_lkp_t ietf_yes_no_info[] = {
+	{ 1, "yes" },
+	{ 2, "no" },
+	{ 0, "NULL" }
+};
+
+static info_lkp_t ietf_beeper_status_info[] = {
+	{ 1, "disabled" },
+	{ 2, "enabled" },
+	{ 3, "muted" },
+	{ 0, "NULL" }
+};
+
+/* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 static snmp_info_t ietf_mib[] = {
-	/* UPS page */
-	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_MFR_NAME, "Generic",
-		SU_FLAG_STATIC, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_MODEL_NAME, "Generic SNMP UPS",
-		SU_FLAG_STATIC, NULL },
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_FIRMREV, "",
-		SU_FLAG_STATIC, NULL },
-	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "",
-		SU_FLAG_STATIC, NULL },
-	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_IDENT, "",
-		SU_FLAG_STATIC, NULL },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_POWER_STATUS, "OFF",
-		SU_STATUS_PWR, &ietf_pwr_info[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
-		SU_STATUS_BATT, &ietf_alarm_ob[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
-		SU_STATUS_BATT, &ietf_alarm_lb[0] },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "",
-		SU_STATUS_BATT, &ietf_batt_info[0] },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_TEST_RESDET, "",
-		0, NULL },
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_TEST_RES, "",
-		0, ietf_test_res_info },
+	/* The Device Identification group */
+	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.1.0", "Generic", SU_FLAG_STATIC, NULL }, /* upsIdentManufacturer */
+	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.2.0", "Generic SNMP UPS", SU_FLAG_STATIC, NULL }, /* upsIdentModel */
+	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.3.0", "", SU_FLAG_STATIC, NULL }, /* upsIdentUPSSoftwareVersion */
+	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.4.0", "", SU_FLAG_STATIC, NULL }, /* upsIdentAgentSoftwareVersion */
+#ifdef DEBUG
+	{ "debug.upsIdentName", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.5.0", "", 0, NULL }, /* upsIdentName */
+	{ "debug.upsIdentAttachedDevices", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "1.6.0", "", 0, NULL }, /* upsIdentAttachedDevices */
+#endif
+	/* Battery Group */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "2.1.0", "", SU_STATUS_BATT, ietf_battery_info }, /* upsBatteryStatus */
+#ifdef DEBUG
+	{ "debug.upsSecondsOnBattery", 0, 1.0, IETF_OID_UPS_MIB "2.2.0", "", 0, NULL }, /* upsSecondsOnBattery */
+#endif
+	{ "battery.runtime", 0, 60.0, IETF_OID_UPS_MIB "2.3.0", "", 0, NULL }, /* upsEstimatedMinutesRemaining */
+	{ "battery.charge", 0, 1, IETF_OID_UPS_MIB "2.4.0", "", 0, NULL }, /* upsEstimatedChargeRemaining */
+	{ "battery.voltage", 0, 0.1, IETF_OID_UPS_MIB "2.5.0", "", 0, NULL }, /* upsBatteryVoltage */
+	{ "battery.current", 0, 0.1, IETF_OID_UPS_MIB "2.6.0", "", 0, NULL }, /* upsBatteryCurrent */
+	{ "battery.temperature", 0, 1.0, IETF_OID_UPS_MIB "2.7.0", "", 0, NULL }, /* upsBatteryTemperature */
 
-	/* Battery page */
-	{ "battery.charge", 0, 1.0, IETF_OID_BATT_CHARGE, "",
-		0, NULL },
-	{ "battery.runtime", 0, 60.0, IETF_OID_BATT_RUNTIME, "",
-		0, NULL },
-	{ "battery.runtime.low", ST_FLAG_RW, 1, IETF_OID_CONF_RUNTIME_LOW, "",
-		0, NULL },
-	{ "battery.voltage", 0, 0.1, IETF_OID_BATT_VOLTAGE, "",
-		0, NULL },
-	{ "battery.current", 0, 0.1, IETF_OID_BATT_CURRENT, "",
-		0, NULL },
-	{ "battery.temperature", 0, 1.0, IETF_OID_BATT_TEMP, "",
-		0, NULL },
+	/* Input Group */
+#ifdef DEBUG
+	{ "debug.upsInputLineBads", 0, 1.0, IETF_OID_UPS_MIB "3.1.0", "", 0, NULL }, /* upsInputLineBads */
+#endif
+	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", SU_FLAG_SETINT, NULL, &input_phases }, /* upsInputNumLines */
+#ifdef DEBUG
+	{ "debug.upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_1, NULL }, /* upsInputLineIndex */
+	{ "debug.[1].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_3, NULL },
+	{ "debug.[2].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.2", "", SU_INPUT_3, NULL },
+	{ "debug.[3].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.3", "", SU_INPUT_3, NULL },
+#endif
+	{ "input.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.1", "", SU_INPUT_1, NULL }, /* upsInputFrequency */
+	{ "input.L1.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.1", "", SU_INPUT_3, NULL },
+	{ "input.L2.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.2", "", SU_INPUT_3, NULL },
+	{ "input.L3.frequency", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.2.3", "", SU_INPUT_3, NULL },
+	{ "input.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.1", "", SU_INPUT_1, NULL }, /* upsInputVoltage */
+	{ "input.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.1", "", SU_INPUT_3, NULL },
+	{ "input.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.2", "", SU_INPUT_3, NULL },
+	{ "input.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.3.3", "", SU_INPUT_3, NULL },
+	{ "input.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_1, NULL }, /* upsInputCurrent */
+	{ "input.L1.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.1", "", SU_INPUT_3, NULL },
+	{ "input.L2.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.2", "", SU_INPUT_3, NULL },
+	{ "input.L3.current", 0, 0.1, IETF_OID_UPS_MIB "3.3.1.4.3", "", SU_INPUT_3, NULL },
+	{ "input.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_1, NULL }, /* upsInputTruePower */
+	{ "input.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.1", "", SU_INPUT_3, NULL },
+	{ "input.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.2", "", SU_INPUT_3, NULL },
+	{ "input.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.5.3", "", SU_INPUT_3, NULL },
 
-	/* Output page */
-	{ "output.phases", 0, 1.0, IETF_OID_OUT_LINES, "",
-		SU_FLAG_SETINT, NULL, &output_phases },
-	{ "output.frequency", 0, 0.1, IETF_OID_OUT_FREQUENCY, "",
-		0, NULL },
-	{ "output.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".1", "",
-		SU_OUTPUT_1, NULL },
-	{ "output.L1-N.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".1", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L2-N.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".2", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L3-N.voltage", 0, 1.0, IETF_OID_OUT_VOLTAGE ".3", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.current", 0, 0.1, IETF_OID_OUT_CURRENT ".1", "",
-		SU_OUTPUT_1, NULL },
-	{ "output.L1.current", 0, 0.1, IETF_OID_OUT_CURRENT ".1", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L2.current", 0, 0.1, IETF_OID_OUT_CURRENT ".2", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L3.current", 0, 0.1, IETF_OID_OUT_CURRENT ".3", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.power", 0, 1.0, IETF_OID_OUT_POWER ".1", "",
-		SU_OUTPUT_1, NULL },
-	{ "output.L1.power", 0, 1.0, IETF_OID_OUT_POWER ".1", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L2.power", 0, 1.0, IETF_OID_OUT_POWER ".2", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L3.power", 0, 1.0, IETF_OID_OUT_POWER ".3", "",
-		SU_OUTPUT_3, NULL },
-	{ "ups.load", 0, 1.0, IETF_OID_LOAD_LEVEL ".1", "",
-		SU_OUTPUT_1, NULL },
-	{ "output.L1.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".1", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L2.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".2", "",
-		SU_OUTPUT_3, NULL },
-	{ "output.L3.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".3", "",
-		SU_OUTPUT_3, NULL },
+	/* Output Group */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "4.1.0", "", SU_STATUS_PWR, ietf_power_source_info }, /* upsOutputSource */
+	{ "output.frequency", 0, 0.1, IETF_OID_UPS_MIB "4.2.0", "", 0, NULL }, /* upsOutputFrequency */
+	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", SU_FLAG_SETINT, NULL, &output_phases }, /* upsOutputNumLines */
+#ifdef DEBUG
+	{ "debug.upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_1, NULL }, /* upsOutputLineIndex */
+	{ "debug.[1].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_3, NULL },
+	{ "debug.[2].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.2", "", SU_OUTPUT_3, NULL },
+	{ "debug.[3].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.3", "", SU_OUTPUT_3, NULL },
+#endif
+	{ "output.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.1", "", SU_OUTPUT_1, NULL }, /* upsOutputVoltage */
+	{ "output.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.1", "", SU_OUTPUT_3, NULL },
+	{ "output.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.2", "", SU_OUTPUT_3, NULL },
+	{ "output.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.2.3", "", SU_OUTPUT_3, NULL },
+	{ "output.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_1, NULL }, /* upsOutputCurrent */
+	{ "output.L1.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.1", "", SU_OUTPUT_3, NULL },
+	{ "output.L2.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.2", "", SU_OUTPUT_3, NULL },
+	{ "output.L3.current", 0, 0.1, IETF_OID_UPS_MIB "4.4.1.3.3", "", SU_OUTPUT_3, NULL },
+	{ "output.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_1, NULL }, /* upsOutputPower */
+	{ "output.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.1", "", SU_OUTPUT_3, NULL },
+	{ "output.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.2", "", SU_OUTPUT_3, NULL },
+	{ "output.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.4.3", "", SU_OUTPUT_3, NULL },
+	{ "ups.load", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.1", "", SU_OUTPUT_1, NULL }, /* upsOutputPercentLoad */
+	{ "output.L1.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.1", "", SU_OUTPUT_3, NULL },
+	{ "output.L2.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.2", "", SU_OUTPUT_3, NULL },
+	{ "output.L3.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.3", "", SU_OUTPUT_3, NULL },
 
-	/* Input page */
-	{ "input.phases", 0, 1.0, IETF_OID_IN_LINES, "",
-		SU_FLAG_SETINT, NULL, &input_phases },
-	{ "input.frequency", 0, 0.1, IETF_OID_IN_FREQ ".1", "",
-		SU_INPUT_1, NULL },
-	{ "input.voltage", 0, 1.0, IETF_OID_IN_VOLTAGE ".1", "",
-		SU_INPUT_1, NULL },
-	{ "input.L1-N.voltage", 0, 1.0, IETF_OID_IN_VOLTAGE ".1", "",
-		SU_INPUT_3, NULL },
-	{ "input.L2-N.voltage", 0, 1.0, IETF_OID_IN_VOLTAGE ".2", "",
-		SU_INPUT_3, NULL },
-	{ "input.L3-N.voltage", 0, 1.0, IETF_OID_IN_VOLTAGE ".3", "",
-		SU_INPUT_3, NULL },
-	{ "input.current", 0, 0.1, IETF_OID_IN_CURRENT ".1", "",
-		SU_INPUT_1, NULL },
-	{ "input.L1.current", 0, 0.1, IETF_OID_IN_CURRENT ".1", "",
-		SU_INPUT_3, NULL },
-	{ "input.L2.current", 0, 0.1, IETF_OID_IN_CURRENT ".2", "",
-		SU_INPUT_3, NULL },
-	{ "input.L3.current", 0, 0.1, IETF_OID_IN_CURRENT ".3", "",
-		SU_INPUT_3, NULL },
-	{ "input.realpower", 0, 0.1, IETF_OID_IN_POWER ".1", "",
-		SU_INPUT_1, NULL },
-	{ "input.L1.realpower", 0, 0.1, IETF_OID_IN_POWER ".1", "",
-		SU_INPUT_3, NULL },
-	{ "input.L2.realpower", 0, 0.1, IETF_OID_IN_POWER ".2", "",
-		SU_INPUT_3, NULL },
-	{ "input.L3.realpower", 0, 0.1, IETF_OID_IN_POWER ".3", "",
-		SU_INPUT_3, NULL },
-	{ "input.quality", 0, 1.0, IETF_OID_IN_LINEBADS, "",
-		0, NULL },
+	/* Bypass Group */
+	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", SU_FLAG_SETINT, NULL, &bypass_phases }, /* upsBypassNumLines */
+	{ "input.bypass.frequency", 0, 0.1, IETF_OID_UPS_MIB "5.1.0", "", SU_BYPASS_1 | SU_BYPASS_3, NULL }, /* upsBypassFrequency */
+#ifdef DEBUG
+	{ "debug.upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_1, NULL }, /* upsBypassLineIndex */
+	{ "debug.[1].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_3, NULL },
+	{ "debug.[2].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.2", "", SU_BYPASS_3, NULL },
+	{ "debug.[3].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.3", "", SU_BYPASS_3, NULL },
+#endif
+	{ "input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_1, NULL }, /* upsBypassVoltage */
+	{ "input.bypass.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.2", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.3", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_1, NULL }, /* upsBypassCurrent */
+	{ "input.bypass.L1.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L2.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.2", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L3.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.3", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.1", "", SU_BYPASS_1, NULL }, /* upsBypassPower */
+	{ "input.bypass.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.1", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.2", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.3", "", SU_BYPASS_3, NULL },
 
-	/* instant commands. */
-	{ "load.off", 0, IETF_OFF_DO, IETF_OID_SD_AFTER_DELAY, "",
-		SU_TYPE_CMD, NULL },
-	/* write the OID of the battery test into the test initiator OID */
-	{ "test.battery.start.quick", 0, SU_INFOSIZE, IETF_OID_UPS_TEST_ID, IETF_OID_UPS_TEST_QBATT,
-		SU_TYPE_CMD, NULL },
-	 /* write the OID of the battery test into the test initiator OID */
-	{ "test.battery.start.deep", 0, SU_INFOSIZE, IETF_OID_UPS_TEST_ID, IETF_OID_UPS_TEST_DBATT,
-		SU_TYPE_CMD, NULL },
-/*	{ CMD_SHUTDOWN, 0, IETF_OFF_GRACEFUL, IETF_OID_OFF, "", 0, NULL }, */
+	/* Alarm Group */
+#ifdef DEBUG
+	{ "debug.upsAlarmsPresent", 0, 1.0, IETF_OID_UPS_MIB "6.1.0", "", 0, NULL }, /* upsAlarmsPresent */
+	{ "debug.upsAlarmBatteryBad", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.1", "", 0, NULL }, /* upsAlarmBatteryBad */
+	{ "debug.upsAlarmOnBattery", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.2", "", 0, NULL }, /* upsAlarmOnBattery */
+	{ "debug.upsAlarmLowBattery", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.3", "", 0, NULL }, /* upsAlarmLowBattery */
+	{ "debug.upsAlarmDepletedBattery", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.4", "", 0, NULL }, /* upsAlarmDepletedBattery */
+	{ "debug.upsAlarmTempBad", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.5", "", 0, NULL }, /* upsAlarmTempBad */
+	{ "debug.upsAlarmInputBad", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.6", "", 0, NULL }, /* upsAlarmInputBad */
+	{ "debug.upsAlarmOutputBad", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.7", "", 0, NULL }, /* upsAlarmOutputBad */
+#endif
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.8", "", 0, ietf_overload_info }, /* upsAlarmOutputOverload */
+#ifdef DEBUG
+	{ "debug.upsAlarmOnBypass", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.9", "", 0, NULL }, /* upsAlarmOnBypass */
+	{ "debug.upsAlarmBypassBad", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.10", "", 0, NULL }, /* upsAlarmBypassBad */
+	{ "debug.upsAlarmOutputOffAsRequested", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.11", "", 0, NULL }, /* upsAlarmOutputOffAsRequested */
+	{ "debug.upsAlarmUpsOffAsRequested", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.12", "", 0, NULL }, /* upsAlarmUpsOffAsRequested */
+	{ "debug.upsAlarmChargerFailed", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.13", "", 0, NULL }, /* upsAlarmChargerFailed */
+	{ "debug.upsAlarmUpsOutputOff", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.14", "", 0, NULL }, /* upsAlarmUpsOutputOff */
+	{ "debug.upsAlarmUpsSystemOff", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.15", "", 0, NULL }, /* upsAlarmUpsSystemOff */
+	{ "debug.upsAlarmFanFailure", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.16", "", 0, NULL }, /* upsAlarmFanFailure */
+	{ "debug.upsAlarmFuseFailure", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.17", "", 0, NULL }, /* upsAlarmFuseFailure */
+	{ "debug.upsAlarmGeneralFault", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.18", "", 0, NULL }, /* upsAlarmGeneralFault */
+	{ "debug.upsAlarmDiagnosticTestFailed", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.19", "", 0, NULL }, /* upsAlarmDiagnosticTestFailed */
+	{ "debug.upsAlarmCommunicationsLost", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.20", "", 0, NULL }, /* upsAlarmCommunicationsLost */
+	{ "debug.upsAlarmAwaitingPower", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.21", "", 0, NULL }, /* upsAlarmAwaitingPower */
+	{ "debug.upsAlarmShutdownPending", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.22", "", 0, NULL }, /* upsAlarmShutdownPending */
+	{ "debug.upsAlarmShutdownImminent", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.23", "", 0, NULL }, /* upsAlarmShutdownImminent */
+	{ "debug.upsAlarmTestInProgress", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "6.3.24", "", 0, NULL }, /* upsAlarmTestInProgress */
+#endif
+
+	/* Test Group */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "7.1.0", "", 0, ietf_test_active_info }, /* upsTestId */
+	{ "test.battery.stop", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.2", SU_TYPE_CMD, NULL }, /* upsTestAbortTestInProgress */
+	{ "test.battery.start", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.3", SU_TYPE_CMD, NULL }, /* upsTestGeneralSystemsTest */
+	{ "test.battery.start.quick", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.4", SU_TYPE_CMD, NULL }, /* upsTestQuickBatteryTest */
+	{ "test.battery.start.deep", 0, 0, IETF_OID_UPS_MIB "7.1.0", IETF_OID_UPS_MIB "7.7.5", SU_TYPE_CMD, NULL }, /* upsTestDeepBatteryCalibration */
+#ifdef DEBUG
+	{ "debug.upsTestSpinLock", 0, 1.0, IETF_OID_UPS_MIB "7.2.0", "", 0, NULL }, /* upsTestSpinLock */
+#endif
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "7.3.0", "", 0, ietf_test_result_info }, /* upsTestResultsSummary */
+#ifdef DEBUG
+	{ "debug.upsTestResultsDetail", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "7.4.0", "", 0, NULL }, /* upsTestResultsDetail */
+	{ "debug.upsTestStartTime", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "7.5.0", "", 0, NULL }, /* upsTestStartTime */
+	{ "debug.upsTestElapsedTime", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "7.6.0", "", 0, NULL }, /* upsTestElapsedTime */
+#endif
+
+	/* Control Group */
+#ifdef DEBUG
+	{ "debug.upsShutdownType", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.1.0", "", 0, ietf_shutdown_type_info }, /* upsShutdownType */
+#endif
+	{ "ups.timer.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 8, IETF_OID_UPS_MIB "8.2.0", "", 0, NULL }, /* upsShutdownAfterDelay*/
+	{ "load.off", 0, 0, IETF_OID_UPS_MIB "8.2.0", "", SU_TYPE_CMD, NULL },
+	{ "ups.timer.start", ST_FLAG_STRING | ST_FLAG_RW, 8, IETF_OID_UPS_MIB "8.3.0", "", 0, NULL }, /* upsStartupAfterDelay */
+	{ "load.on", 0, 0, IETF_OID_UPS_MIB "8.3.0", "", SU_TYPE_CMD, NULL },
+	{ "ups.timer.reboot", ST_FLAG_STRING | ST_FLAG_RW, 8, IETF_OID_UPS_MIB "8.4.0", "", 0, NULL }, /* upsRebootWithDuration */
+	{ "ups.start.auto", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "8.5.0", "", 0, ietf_yes_no_info }, /* upsAutoRestart */
+
+	/* Configuration Group */
+	{ "input.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.1.0", "", 0, NULL }, /* upsConfigInputVoltage */
+	{ "input.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.2.0", "", 0, NULL }, /* upsConfigInputFreq */
+	{ "output.voltage.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.3.0", "", 0, NULL }, /* upsConfigOutputVoltage */
+	{ "output.frequency.nominal", 0, 0.1, IETF_OID_UPS_MIB "9.4.0", "", 0, NULL }, /* upsConfigOutputFreq */
+	{ "output.power.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.5.0", "", 0, NULL }, /* upsConfigOutputVA */
+	{ "output.realpower.nominal", 0, 1.0, IETF_OID_UPS_MIB "9.6.0", "", 0, NULL }, /* upsConfigOutputPower */
+	{ "battery.runtime.low", 0, 60.0, IETF_OID_UPS_MIB "9.7.0", "", 0, NULL }, /* upsConfigLowBattTime */
+	{ "ups.beeper.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "9.8.0", "", 0, ietf_beeper_status_info }, /* upsConfigAudibleStatus */
+	{ "beeper.disable", 0, 1, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 2, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
+	{ "beeper.mute", 0, 3, IETF_OID_UPS_MIB "9.8.0", "", SU_TYPE_CMD, NULL },
+	{ "input.transfer.low", 0, 1.0, IETF_OID_UPS_MIB "9.9.0", "", 0, NULL }, /* upsConfigLowVoltageTransferPoint */
+	{ "input.transfer.high", 0, 1.0, IETF_OID_UPS_MIB "9.10.0", "", 0, NULL }, /* upsConfigHighVoltageTransferPoint */
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_POWER_STATUS, IETF_OID_MFR_NAME, ietf_mib };
+mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };

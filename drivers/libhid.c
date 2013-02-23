@@ -56,6 +56,9 @@ static int path_to_string(char *string, size_t size, const HIDPath_t *path, usag
 static int8_t get_unit_expo(const HIDData_t *hiddata);
 static double exponent(double a, int8_t b);
 
+/* Tweak flag for APC Back-UPS */
+int max_report_size = 0;
+
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
 
@@ -137,11 +140,13 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
    seconds, then the report is freshly read from the USB
    device. Otherwise, it is unchanged.
    Return 0 on success, -1 on error with errno set. */
+/* because buggy firmwares from APC return wrong report size, we either
+   ask the report with the found report size or with the whole buffer size
+   depending on the max_report_size flag */
 static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
 {
 	int	id = pData->ReportID;
 	int	r;
-	unsigned char	buf[SMALLBUF];
 
 	if (rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
@@ -149,17 +154,16 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 		return 0;
 	}
 
-	r = comm_driver->get_report(udev, id, buf, sizeof(buf));
+	r = comm_driver->get_report(udev, id, rbuf->data[id],
+		max_report_size ? (int)sizeof(rbuf->data[id]):rbuf->len[id]);
+
 	if (r <= 0) {
 		return -1;
 	}
 
-	/* broken report descriptors are common, so store whatever we can */
-	memcpy(rbuf->data[id], buf, rbuf->len[id]);
-
 	if (rbuf->len[id] != r) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
-		upsdebug_hex(3, "Report[err]", buf, r);
+		upsdebug_hex(3, "Report[err]", rbuf->data[id], r);
 	} else {
 		upsdebug_hex(3, "Report[get]", rbuf->data[id], rbuf->len[id]);
 	}
@@ -221,7 +225,7 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 	int id = buf[0];
 
 	/* broken report descriptors are common, so store whatever we can */
-	memcpy(rbuf->data[id], buf, rbuf->len[id]);
+	memcpy(rbuf->data[id], buf, (buflen < rbuf->len[id]) ? buflen : rbuf->len[id]);
 
 	if (rbuf->len[id] != buflen) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], buflen);
@@ -260,7 +264,7 @@ static struct {
 
 /* CAUTION: be careful when modifying the output format of this function,
  * since it's used to produce sub-drivers "stub" using
- * scripts/subdriver/path-to-subdriver.sh
+ * scripts/subdriver/gen-usbhid-subdriver.sh
  */
 void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 {
@@ -299,7 +303,7 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 
 		/* Get data value */
 		if (HIDGetDataValue(udev, pData, &value, MAX_TS) == 1) {
-			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %f",
+			upsdebugx(1, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
 				HIDGetDataItem(pData, utab), HIDDataType(pData), pData->ReportID, pData->Offset, pData->Size, value);
 			continue;
 		}
@@ -399,7 +403,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
 		buf[0] = '\0';
 
-	return buf;
+	return rtrim(buf, '\n');
 }
 
 /* Return pointer to indexed string from HID path (empty if not found)

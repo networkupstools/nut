@@ -178,7 +178,7 @@ static int send_cmd(const char *str, char *buf, size_t len)
 	return i;
 }
 
-static void get_letter_cmd(char *str, char *buf, size_t len)
+static void get_letter_cmd(const char *str, char *buf, size_t len)
 {
 	int tries, ret;
 

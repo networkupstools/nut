@@ -1,6 +1,8 @@
 /* upsmon - monitor power status over the 'net (talks to upsd via TCP)
 
-   Copyright (C) 1998  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1998  Russell Kroll <rkroll@exploits.org>
+     2012  Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -66,6 +68,8 @@ static	char	*run_as_user = NULL;
 
 	/* SSL details - where to find certs, whether to use them */
 static	char	*certpath = NULL;
+static	char	*certname = NULL;
+static	char	*certpasswd = NULL;
 static	int	certverify = 0;		/* don't verify by default */
 static	int	forcessl = 0;		/* don't require ssl by default */
 
@@ -73,28 +77,20 @@ static	int	userfsd = 0, use_pipe = 1, pipefd[2];
 
 static	utype_t	*firstups = NULL;
 
-#ifdef	HAVE_IPV6
 static int 	opt_af = AF_UNSPEC;
-#endif
 
 	/* signal handling things */
 static	struct sigaction sa;
 static	sigset_t nut_upsmon_sigmask;
 
-#ifdef SHUT_RDWR
-#define	shutdown_how SHUT_RDWR
-#else
-#define	shutdown_how 2
-#endif
-
 static void setflag(int *val, int flag)
 {
-	*val = (*val |= flag);
+	*val |= flag;
 }
 
 static void clearflag(int *val, int flag)  
 {
-	*val = (*val ^= (*val & flag));
+	*val ^= (*val & flag);
 }
 
 static int flag_isset(int num, int flag)
@@ -698,7 +694,7 @@ static void recalc(void)
 			}
 
 		/* note: we assume that a UPS that isn't critical must be OK *
-		 *							     *
+		 *                                                           *
 		 * this means a UPS we've never heard from is assumed OL     *
 		 * whether this is really the best thing to do is undecided  */
 
@@ -711,12 +707,12 @@ static void recalc(void)
 		ups = ups->next;
 	}
 
-	/* upsdebugx(3, "Current power value: %d", val_ol);
-	upsdebugx(3, "Minimum power value: %d", minsupplies); */
+	upsdebugx(3, "Current power value: %d", val_ol);
+	upsdebugx(3, "Minimum power value: %d", minsupplies);
 
 	if (val_ol < minsupplies)
 		forceshutdown();
-}		
+}
 
 static void ups_low_batt(utype_t *ups)
 {
@@ -794,10 +790,7 @@ static void redefine_ups(utype_t *ups, int pv, const char *un,
 
 			free(ups->un);
 
-			if (un)
-				ups->un = xstrdup(un);
-			else
-				ups->un = NULL;
+			ups->un = xstrdup(un);
 
 			/* 
 			 * if not logged in force a reconnection since this
@@ -956,7 +949,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	else
 		upslogx(LOG_INFO, "UPS: %s (monitoring only)", tmp->sys);
 
-	tmp->upsname = tmp->hostname = NULL;	
+	tmp->upsname = tmp->hostname = NULL;
 
 	if (upscli_splitname(tmp->sys, &tmp->upsname, &tmp->hostname, 
 		&tmp->port) != 0) {
@@ -1187,9 +1180,24 @@ static int parse_conf_arg(int numargs, char **arg)
 		return 1;
 	}	
 
+	/* CERTIDENT <name> <passwd> */
+	if (!strcmp(arg[0], "CERTIDENT")) {
+		free(certname);
+		certname = xstrdup(arg[1]);
+		free(certpasswd);
+		certpasswd = xstrdup(arg[2]);
+		return 1;
+	}
+	
 	/* using up to arg[4] below */
 	if (numargs < 5)
 		return 0;
+
+	/* CERTHOST <hostname> <certname> (0|1) (0|1) */
+	if (!strcmp(arg[0], "CERTHOST")) {
+		upscli_add_host_cert(arg[1], arg[2], atoi(arg[3]), atoi(arg[4]));
+		return 1;
+	}
 
 	if (!strcmp(arg[0], "MONITOR")) {
 
@@ -1309,6 +1317,8 @@ static void upsmon_cleanup(void)
 	for (i = 0; notifylist[i].name != NULL; i++) {
 		free(notifylist[i].msg);
 	}
+
+	upscli_cleanup();
 }
 
 static void user_fsd(int sig)
@@ -1371,51 +1381,6 @@ static void update_crittimer(utype_t *ups)
 	/* fallthrough: let the timer age */
 }
 
-static int try_ssl(utype_t *ups)
-{
-	int	ret;
-
-	/* if not doing SSL, we're done */
-	if (!upscli_ssl(&ups->conn))
-		return 1;
-
-	if (!certpath) {
-		if (certverify == 1) {
-			upslogx(LOG_ERR, "Configuration error: "
-				"CERTVERIFY is set, but CERTPATH isn't");
-			upslogx(LOG_ERR, "UPS [%s]: Connection impossible, "
-				"dropping link", ups->sys);
-
-			ups_is_gone(ups);
-			drop_connection(ups);
-
-			return 0;	/* failed */
-		}
-
-		/* certverify is 0, so just warn them and return */
-		upslogx(LOG_WARNING, "Certificate verification is disabled");
-		return 1;
-	}
-
-	/* you REALLY should set CERTVERIFY to 1 if using SSL... */
-	if (certverify == 0)
-		upslogx(LOG_WARNING, "Certificate verification is disabled");
-
-	ret = upscli_sslcert(&ups->conn, NULL, certpath, certverify);
-
-	if (ret < 0) {
-		upslogx(LOG_ERR, "UPS [%s]: SSL certificate set failed: %s",
-			ups->sys, upscli_strerror(&ups->conn));
-
-		ups_is_gone(ups);
-		drop_connection(ups);
-
-		return 0;
-	}
-
-	return 1;
-}
-
 /* handle connecting to upsd, plus get SSL going too if possible */
 static int try_connect(utype_t *ups)
 {
@@ -1431,28 +1396,38 @@ static int try_connect(utype_t *ups)
 	else
 		flags |= UPSCLI_CONN_TRYSSL;
 
-#ifdef	HAVE_IPV6
 	if (opt_af == AF_INET)
 		flags |= UPSCLI_CONN_INET;
 
 	if (opt_af == AF_INET6)
 		flags |= UPSCLI_CONN_INET6;
-#endif
+
+	if (!certpath) {
+		if (certverify == 1) {
+			upslogx(LOG_ERR, "Configuration error: "
+				"CERTVERIFY is set, but CERTPATH isn't");
+			upslogx(LOG_ERR, "UPS [%s]: Connection impossible, "
+				"dropping link", ups->sys);
+
+			ups_is_gone(ups);
+			drop_connection(ups);
+
+			return 0;	/* failed */
+		}
+	}
+
+	if (certverify == 1) {
+		flags |= UPSCLI_CONN_CERTVERIF;
+	}
 
 	ret = upscli_connect(&ups->conn, ups->hostname, ups->port, flags);
 
 	if (ret < 0) {
 		upslogx(LOG_ERR, "UPS [%s]: connect failed: %s",
 			ups->sys, upscli_strerror(&ups->conn));
-
 		ups_is_gone(ups);
 		return 0;
 	}
-
-	ret = try_ssl(ups);
-
-	if (ret == 0)
-		return 0;	/* something broke while trying SSL */
 
 	/* we're definitely connected now */
 	setflag(&ups->status, ST_CONNECTED);
@@ -1674,10 +1649,8 @@ static void help(const char *progname)
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
-#ifdef	HAVE_IPV6
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
-#endif
 
 	exit(EXIT_SUCCESS);
 }
@@ -1718,16 +1691,9 @@ static void runparent(int fd)
 }
 
 /* fire up the split parent/child scheme */
-static void start_pipe(const char *user)
+static void start_pipe(void)
 {
 	int	ret;
-	struct	passwd	*new_uid = NULL;
-
-	/* default user = the --with-user value from configure */
-	if (user)
-		new_uid = get_user_pwent(user);
-	else
-		new_uid = get_user_pwent(RUN_AS_USER);
 
 	ret = pipe(pipefd);
 
@@ -1748,11 +1714,6 @@ static void start_pipe(const char *user)
 	}
 
 	close(pipefd[0]);
-
-	/* write the pid file now, as we will soon lose root */
-	writepid("upsmon");
-
-	become_user(new_uid);
 }
 
 static void delete_ups(utype_t *target)
@@ -1897,11 +1858,17 @@ static void check_parent(void)
 
 int main(int argc, char *argv[])  
 {
-	int	i, cmd, checking_flag = 0;
+	const char	*prog = xbasename(argv[0]);
+	int	i, cmd = 0, checking_flag = 0;
 
-	cmd = 0;
+	printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
 
-	printf("Network UPS Tools upsmon %s\n", UPS_VERSION);
+	/* if no configuration file is specified on the command line, use default */
+	configfile = xmalloc(SMALLBUF);
+	snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
+	configfile = xrealloc(configfile, strlen(configfile) + 1);
+
+	run_as_user = xstrdup(RUN_AS_USER);
 
 	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
 		switch (i) {
@@ -1921,6 +1888,7 @@ int main(int argc, char *argv[])
 				nut_debug_level++;
 				break;
 			case 'f':
+				free(configfile);
 				configfile = xstrdup(optarg);
 				break;
 			case 'h':
@@ -1933,19 +1901,18 @@ int main(int argc, char *argv[])
 				use_pipe = 0;
 				break;
 			case 'u':
+				free(run_as_user);
 				run_as_user = xstrdup(optarg);
 				break;
 			case 'V':
 				/* just show the banner */
 				exit(EXIT_SUCCESS);
-#ifdef	HAVE_IPV6
 			case '4':
 				opt_af = AF_INET;
 				break;
 			case '6':
 				opt_af = AF_INET6;
 				break;
-#endif
 			default:
 				help(argv[0]);
 				break;
@@ -1953,21 +1920,23 @@ int main(int argc, char *argv[])
 	}
 
 	if (cmd) {
-		sendsignal("upsmon", cmd);
+		sendsignal(prog, cmd);
 		exit(EXIT_SUCCESS);
+	}
+
+	/* otherwise, we are being asked to start.
+	 * so check if a previous instance is running by sending signal '0'
+	 * (Ie 'kill <pid> 0') */
+	if (sendsignal(prog, 0) == 0) {
+		printf("Fatal error: A previous upsmon instance is already running!\n");
+		printf("Either stop the previous instance first, or use the 'reload' command.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	argc -= optind;
 	argv += optind;
 
-	openlog("upsmon", LOG_PID, LOG_FACILITY);
-
-	/* if no configuration file was specified on the command line, use default */
-	if (!configfile) {
-		configfile = xmalloc(SMALLBUF);
-		snprintf(configfile, SMALLBUF, "%s/upsmon.conf", confpath());
-		configfile = xrealloc(configfile, strlen(configfile) + 1);
-	}
+	open_syslog(prog);
 
 	loadconfig();
 
@@ -1980,6 +1949,8 @@ int main(int argc, char *argv[])
 	/* we may need to get rid of a flag from a previous shutdown */
 	if (powerdownflag != NULL)
 		clear_pdflag();
+	/* FIXME (else): POWERDOWNFLAG is not defined!!
+	 * => fallback to a default value */
 
 	if (totalpv < minsupplies) {
 		printf("\nFatal error: insufficient power configured!\n\n");
@@ -1997,22 +1968,33 @@ int main(int argc, char *argv[])
 		upsdebugx(1, "debug level is '%d'", nut_debug_level);
 	}
 	
-	/* === root parent and unprivileged child split here === */
-
 	/* only do the pipe stuff if the user hasn't disabled it */
-	if (use_pipe)
-		start_pipe(run_as_user);
-	else {
-		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
-		writepid("upsmon");
-	}
+	if (use_pipe) {
+		struct passwd	*new_uid = get_user_pwent(run_as_user);
 
+		/* === root parent and unprivileged child split here === */
+		start_pipe();
+
+		/* write the pid file now, as we will soon lose root */
+		writepid(prog);
+
+		become_user(new_uid);
+	} else {
+		upslogx(LOG_INFO, "Warning: running as one big root process by request (upsmon -p)");
+		
+		writepid(prog);
+	}
+	
+	if (upscli_init(certverify, certpath, certname, certpasswd) < 0) {
+		exit(EXIT_FAILURE);
+	}
+	
 	/* prep our signal handlers */
 	setup_signals();
 
 	/* reopen the log for the child process */
 	closelog();
-	openlog("upsmon", LOG_PID, LOG_FACILITY);
+	open_syslog(prog);
 
 	while (exit_flag == 0) {
 		utype_t	*ups;

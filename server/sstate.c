@@ -3,6 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -19,6 +20,13 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
+
+#include "timehead.h"
+
+#include "sstate.h"
+#include "upstype.h"
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -26,14 +34,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h> 
-
-#include "common.h"
-
-#include "timehead.h"
-
-#include "upstype.h"
-#include "sstate.h"
-#include "state.h"
 
 static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
@@ -64,6 +64,7 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 	if (numargs < 2)
 		return 0;
 
+	/* FIXME: all these should return their state_...() value! */
 	/* ADDCMD <cmdname> */
 	if (!strcasecmp(arg[0], "ADDCMD")) {
 		state_addcmd(&ups->cmdlist, arg[1]);
@@ -89,7 +90,7 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 	if (!strcasecmp(arg[0], "SETFLAGS")) {
 		state_setflags(ups->inforoot, arg[1], numargs - 2, &arg[2]);
 		return 1;
-	}		
+	}
 
 	/* SETINFO <varname> <value> */
 	if (!strcasecmp(arg[0], "SETINFO")) {
@@ -103,9 +104,21 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 		return 1;
 	}
 
+	/* ADDRANGE <varname> <minvalue> <maxvalue> */
+	if (!strcasecmp(arg[0], "ADDRANGE")) {
+		state_addrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
+		return 1;
+	}
+
 	/* DELENUM <varname> <enumval> */
 	if (!strcasecmp(arg[0], "DELENUM")) {
 		state_delenum(ups->inforoot, arg[1], arg[2]);
+		return 1;
+	}
+
+	/* DELRANGE <varname> <minvalue> <maxvalue> */
+	if (!strcasecmp(arg[0], "DELRANGE")) {
+		state_delrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
 		return 1;
 	}
 
@@ -297,12 +310,17 @@ int sstate_getaux(const upstype_t *ups, const char *var)
 	return state_getaux(ups->inforoot, var);
 }	
 
-const struct enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
+const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
 {
 	return state_getenumlist(ups->inforoot, var);
 }
 
-const struct cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
+const range_t *sstate_getrangelist(const upstype_t *ups, const char *var)
+{
+	return state_getrangelist(ups->inforoot, var);
+}
+
+const cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 {
 	return ups->cmdlist;
 }
@@ -376,7 +394,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	return 0;	/* failed */
 }
 
-const struct st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname)
+const st_tree_t *sstate_getnode(const upstype_t *ups, const char *varname)
 {
 	return state_tree_find(ups->inforoot, varname);
 }

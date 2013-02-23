@@ -44,6 +44,12 @@
 #include "attribute.h"
 #include "proto.h"
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 extern const char *UPS_VERSION;
 
 /* get the syslog ready for us */
@@ -104,6 +110,7 @@ void fatalx(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
 
 extern int nut_debug_level;
+extern int nut_log_level;
 
 void *xmalloc(size_t size);
 void *xcalloc(size_t number, size_t size);
@@ -111,6 +118,7 @@ void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
 char *rtrim(char *in, const char sep);
+char* ltrim(char *in, const char sep);
 
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
@@ -140,6 +148,12 @@ extern int optind;
 #ifndef HAVE_SETEUID
 #	define seteuid(x) setresuid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
+#endif
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
 #endif
 
 #endif /* NUT_COMMON_H */

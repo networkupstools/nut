@@ -49,7 +49,7 @@ static struct {
 	float	temperature;
 } battery;
 
-static int ivt_status()
+static int ivt_status(void)
 {
 	char	reply[SMALLBUF];
 	int	ret, i, j = 0;

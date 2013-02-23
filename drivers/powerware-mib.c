@@ -26,6 +26,17 @@
 
 #define PW_MIB_VERSION "0.6.1"
 
+/* TODO: more sysOID and MIBs support:
+ * 
+ * Powerware UPS (Ingrasys X-SLOT and BD-SLOT): ".1.3.6.1.4.1.534.1"
+ * Powerware PXGX cards: ".1.3.6.1.4.1.534.2.12"
+ *		PXGX 2000 cards (UPS): Get xupsIdentModel (".1.3.6.1.4.1.534.1.1.2.0")
+ * 		PXGX 1000 cards (PDU/RPP/RPM): Get pduNumPanels ".1.3.6.1.4.1.534.6.6.4.1.1.1.4.0"
+ */
+
+/* Powerware UPS (Ingrasys X-SLOT and BD-SLOT) */
+#define POWERWARE_SYSOID	".1.3.6.1.4.1.534.1"
+
 /* SNMP OIDs set */
 #define PW_OID_MFR_NAME		"1.3.6.1.4.1.534.1.1.1.0"	/* XUPS-MIB::xupsIdentManufacturer.0 */
 #define PW_OID_MODEL_NAME	"1.3.6.1.4.1.534.1.1.2.0"	/* XUPS-MIB::xupsIdentModel.0 */
@@ -201,7 +212,7 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "battery.current", 0, 0.1, PW_OID_BATT_CURRENT, "",
 		0, NULL },
-	{ "battery.runtime.low", ST_FLAG_RW, 1.0, IETF_OID_CONF_RUNTIME_LOW, "",
+	{ "battery.runtime.low", 0, 60.0, IETF_OID_CONF_RUNTIME_LOW, "",
 		0, NULL },
 
 	/* Output page */
@@ -313,4 +324,4 @@ static snmp_info_t pw_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 } ;
 
-mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib };
+mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID };

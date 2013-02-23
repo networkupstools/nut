@@ -1,6 +1,6 @@
-#!/usr/bin/perl
-#   Current Version : 1.0
-#   Copyright (C) 2008
+#!/usr/bin/env perl
+#   Current Version : 1.2
+#   Copyright (C) 2008 - 2012
 #            Arnaud Quette <arnaud.quette@gmail.com>
 #            dloic (loic.dardant AT gmail DOT com)
 #
@@ -20,7 +20,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-   
+
+# TODO list:
+# - rewrite using glob, as in other helper scripts
+# - manage deps in Makefile.am
+
 use File::Find;
 use strict;
 
@@ -36,12 +40,32 @@ my $outputHotplug="../scripts/hotplug/libhid.usermap";
 # udev output file
 my $outputUdev="../scripts/udev/nut-usbups.rules.in";
 
-# DeviceKit-power output file
-my $outputDKp="../scripts/dkp/95-devkit-power-hid.rules";
-# tmp output, to allow generating the ENV{DKP_VENDOR} header list
-my $tmpOutputDKp;
+# UPower output file
+my $outputUPower="../scripts/upower/95-upower-hid.rules";
+# tmp output, to allow generating the ENV{UPOWER_VENDOR} header list
+my $tmpOutputUPower;
 # mfr header flag
-my $dkpMfrHeaderDone = 0;
+my $upowerMfrHeaderDone = 0;
+
+# NUT device scanner - C header
+my $outputDevScanner = "./nut-scanner/nutscan-usb.h";
+
+my $GPL_header = "\
+ *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette\@free.fr>\
+ *\
+ *  This program is free software; you can redistribute it and/or modify\
+ *  it under the terms of the GNU General Public License as published by\
+ *  the Free Software Foundation; either version 2 of the License, or\
+ *  (at your option) any later version.\
+ *\
+ *  This program is distributed in the hope that it will be useful,\
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of\
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\
+ *  GNU General Public License for more details.\
+ *\
+ *  You should have received a copy of the GNU General Public License\
+ *  along with this program; if not, write to the Free Software\
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA";
 
 # array of products indexed by vendorID 
 my %vendor;
@@ -79,20 +103,30 @@ sub gen_usb_files
 	# Udev file header
 	open my $outUdev, ">$outputUdev" || die "error $outputUdev : $!";
 	print $outUdev '# This file is generated and installed by the Network UPS Tools package.'."\n\n";
-	print $outUdev 'ACTION!="add", GOTO="nut-usbups_rules_end"'."\n";
+	print $outUdev 'ACTION!="add|change", GOTO="nut-usbups_rules_end"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb_device", GOTO="nut-usbups_rules_real"'."\n";
 	print $outUdev 'SUBSYSTEM=="usb", GOTO="nut-usbups_rules_real"'."\n";
-	print $outUdev 'BUS!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
+	print $outUdev 'SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
 	print $outUdev 'LABEL="nut-usbups_rules_real"'."\n";
 
-	# DeviceKit-power file header
-	open my $outputDKp, ">$outputDKp" || die "error $outputDKp : $!";
-	print $outputDKp '##############################################################################################################'."\n";
-	print $outputDKp '# Uninterruptible Power Supplies with USB HID interfaces'."\n#\n";
-	print $outputDKp '# to keep up to date, monitor: http://svn.debian.org/wsvn/nut/trunk/scripts/dkp/95-devkit-power-hid.rules'."\n\n";
-	print $outputDKp '# only support USB, else ignore'."\n".'SUBSYSTEM!="usb", GOTO="dkp_hid_end"'."\n\n";
-	print $outputDKp '# if usbraw device, ignore'."\n".'KERNEL!="hiddev*", GOTO="dkp_hid_end"'."\n\n";
-	print $outputDKp '# if an interface, ignore'."\n".'ENV{DEVTYPE}=="usb_interface", GOTO="dkp_hid_end"'."\n\n";
+	# UPower file header
+	open my $outputUPower, ">$outputUPower" || die "error $outputUPower : $!";
+	print $outputUPower '##############################################################################################################'."\n";
+	print $outputUPower '# Uninterruptible Power Supplies with USB HID interfaces'."\n#\n";
+	print $outputUPower '# to keep up to date, monitor: http://svn.debian.org/wsvn/nut/trunk/scripts/upower/95-upower-hid.rules'."\n\n";
+	print $outputUPower '# only support USB, else ignore'."\n".'SUBSYSTEM!="usb", GOTO="up_hid_end"'."\n\n";
+	print $outputUPower '# if usbraw device, ignore'."\n".'KERNEL!="hiddev*", GOTO="up_hid_end"'."\n\n";
+	print $outputUPower '# if an interface, ignore'."\n".'ENV{DEVTYPE}=="usb_interface", GOTO="up_hid_end"'."\n\n";
+
+	# Device scanner header
+	open my $outputDevScanner, ">$outputDevScanner" || die "error $outputDevScanner : $!";
+	print $outputDevScanner '/* nutscan-usb'.$GPL_header."\n */\n\n";
+	print $outputDevScanner "#ifndef DEVSCAN_USB_H\n#define DEVSCAN_USB_H\n\n";
+	print $outputDevScanner "#include <usb.h>\n";
+	print $outputDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t */\n\n";
+	# vid, pid, driver
+	print $outputDevScanner "typedef struct {\n\tuint16_t\tvendorID;\n\tuint16_t\tproductID;\n\tchar*\tdriver_name;\n} usb_device_id_t;\n\n";
+	print $outputDevScanner "/* USB IDs device table */\nstatic usb_device_id_t usb_device_table[] = {\n\n";
 
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
@@ -113,8 +147,8 @@ sub gen_usb_files
 			print $outUdev "\n# ".$vendorName{$vendorId}."\n";
 		}
 
-		# DeviceKit-power vendor header flag
-		$dkpMfrHeaderDone = 0;
+		# UPower vendor header flag
+		$upowerMfrHeaderDone = 0;
 
 		foreach my $productId (sort { lc $a cmp lc $b } keys %{$vendor{$vendorId}})
 		{
@@ -138,22 +172,25 @@ sub gen_usb_files
 			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 			
-			# DeviceKit-power device entry (only for USB/HID devices!)
+			# UPower device entry (only for USB/HID devices!)
 			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups")
 			{
-				if ($dkpMfrHeaderDone == 0)
+				if ($upowerMfrHeaderDone == 0)
 				{
-					# DeviceKit-power vendor header
+					# UPower vendor header
 					if ($vendorName{$vendorId}) {
-						$tmpOutputDKp = $tmpOutputDKp."\n# ".$vendorName{$vendorId}."\n";
+						$tmpOutputUPower = $tmpOutputUPower."\n# ".$vendorName{$vendorId}."\n";
 					}
-					print $outputDKp "ATTRS{idVendor}==\"".removeHexPrefix($vendorId)."\", ENV{DKP_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
-					$dkpMfrHeaderDone = 1;
+					print $outputUPower "ATTRS{idVendor}==\"".removeHexPrefix($vendorId)."\", ENV{UPOWER_VENDOR}=\"".$vendorName{$vendorId}."\"\n";
+					$upowerMfrHeaderDone = 1;
 				}
-				$tmpOutputDKp = $tmpOutputDKp."ATTRS{idVendor}==\"".removeHexPrefix($vendorId);
-				$tmpOutputDKp = $tmpOutputDKp."\", ATTRS{idProduct}==\"".removeHexPrefix($productId)."\",";
-				$tmpOutputDKp = $tmpOutputDKp.' ENV{DKP_BATTERY_TYPE}="ups"'."\n";
+				$tmpOutputUPower = $tmpOutputUPower."ATTRS{idVendor}==\"".removeHexPrefix($vendorId);
+				$tmpOutputUPower = $tmpOutputUPower."\", ATTRS{idProduct}==\"".removeHexPrefix($productId)."\",";
+				$tmpOutputUPower = $tmpOutputUPower.' ENV{UPOWER_BATTERY_TYPE}="ups"'."\n";
 			}
+
+			# Device scanner entry
+			print $outputDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },\n";
 		}
 		# HAL vendor footer
 		print $outHAL "      </match>\n";
@@ -166,16 +203,20 @@ sub gen_usb_files
 	# Udev footer
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
 
-	# DeviceKit-power...
+	# UPower...
 	# ...flush device table
-	print $outputDKp $tmpOutputDKp;
+	print $outputUPower $tmpOutputUPower;
 	# ...and print footer
-	print $outputDKp "\n".'LABEL="dkp_hid_end"'."\n";
+	print $outputUPower "\n".'LABEL="up_hid_end"'."\n";
+
+	# Device scanner footer
+	print $outputDevScanner "\t/* Terminating entry */\n\t{ -1, -1, NULL }\n};\n#endif /* DEVSCAN_USB_H */\n\n";
 }
 
 sub find_usbdevs
 {
-	return $File::Find::prune = 1 if $_ eq '.svn';
+	# maybe there's an option to turn off all .* files, but anyway this is stupid
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/);
 
 	my $nameFile=$_;
 	my $lastComment="";
@@ -196,7 +237,9 @@ sub find_usbdevs
 			my $VendorName="";
 
 			# special thing for backward declaration using #DEFINE
-			# Format: #define VENDORID 0x???? /* vendor name */
+			# Format:
+			# /* vendor name */
+			# #define VENDORID 0x????
 			if(!($VendorID=~/\dx(\d|\w)+/))
 			{
 				open my $fh,$nameFile or die "error open file $nameFile";
@@ -228,9 +271,13 @@ sub find_usbdevs
 					die "In file $nameFile, for product $ProductID, can't find the declaration of the constant";
 				}
 			}
-			
+
 			# store date (to be optimized)
-			$vendorName{$VendorID}=trim($VendorName);
+			# and don't overwritte actual vendor names with empty values
+			if( (!$vendorName{$VendorID}) or (($vendorName{$VendorID} eq "") and ($VendorName ne "")) )
+			{
+				$vendorName{$VendorID}=trim($VendorName);
+			}
 			$vendor{$VendorID}{$ProductID}{"comment"}=$lastComment;
 			# process the driver name
 			my $driver=$nameFile;
@@ -244,14 +291,14 @@ sub find_usbdevs
 			elsif ($nameFile eq "tripplite_usb.c") {
 				$driver="tripplite_usb";
 			}
-			elsif ($nameFile eq "megatec_usb.c") {
-				$driver="megatec_usb";
-			}
 			elsif ($nameFile eq "blazer_usb.c") {
 				$driver="blazer_usb";
 			}
 			elsif ($nameFile eq "richcomm_usb.c") {
 				$driver="richcomm_usb";
+			}
+			elsif ($nameFile eq "riello_usb.c") {
+				$driver="riello_usb";
 			}
 			else {
 				die "Unknown driver type: $nameFile";

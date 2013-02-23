@@ -1,0 +1,121 @@
+SKEL(8)
+=======
+
+NAME
+----
+skel - skeleton driver man page
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+*skel* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+//////////////////////////////////////////
+The following lines are comments.
+
+When copying this man page for your new driver, be sure to replace all
+occurrances of "skel" and "SKEL" by your actual driver name.
+
+If you have AsciiDoc installed, you can test the formatting of your man page by
+running:
+  asciidoc --backend=xhtml11 -o skel.html skel.txt
+
+After writing a man page, be sure to add it to the appropriate variable in
+Makefile.am in this directory.
+
+In the "NAME" section, you must follow the format above, including separating
+the driver name from its description by "-". This is to ensure that the
+apropos(8) database is properly rebuilt.
+//////////////////////////////////////////
+
+SUPPORTED HARDWARE
+------------------
+*skel* supports ...
+
+//////////////////////////////////////////
+If the driver only works with certain cables, this is a good place to
+mention it:
+
+CABLING
+-------
+
+//////////////////////////////////////////
+
+EXTRA ARGUMENTS
+---------------
+This driver also supports the following optional settings:
+
+*option1*='num'::
+Set the value of ... to 'num'. Contrast with *option2*.
+ 
+*option2*='string'::
+Some other option.
+
+//////////////////////////////////////////
+Optional: list supported instant commands here:
+
+INSTANT COMMANDS
+----------------
+
+*instcmd1*::
+Command 1.
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+Optional: use INSTALLATION if you need special parameters to the configure
+script, or additional libraries as prerequisites.
+
+INSTALLATION
+------------
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+Optional: use DIAGNOSTICS to describe troubleshooting techniques that are
+longer than what can be conveniently described in the driver error messages.
+
+DIAGNOSTICS
+-----------
+
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+You may leave this as "none known at this time", or describe any trouble
+encountered when implementing the protocol for your UPS.
+
+KNOWN ISSUES AND BUGS
+---------------------
+*Got "EPERM: Operation not permitted" upon driver startup*::
+
+You have forgotten to install the udev files, as explained
+in the INSTALLATION section above. Don't forget to restart
+udev so that it applies these changes.
+//////////////////////////////////////////
+
+//////////////////////////////////////////
+An email address is not strictly necessary, but you may wish to provide
+some form of contact information so that users can report bugs.
+//////////////////////////////////////////
+
+AUTHORS
+-------
+J Random User <user@example.org>
+
+//////////////////////////////////////////
+If this driver is ever made obsolete by another driver, mention the
+replacement driver in the "SEE ALSO" section. You may also wish to point
+the user to other drivers which may better support their hardware, if there
+is ambiguity based on the driver name.
+//////////////////////////////////////////
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

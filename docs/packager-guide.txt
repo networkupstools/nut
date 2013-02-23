@@ -1,0 +1,378 @@
+NUT Packager and Integrators Guide
+==================================
+Arnaud Quette <arnaud.quette@free.fr>
+
+WARNING: this is a Work In Progress document.
+
+Abstract
+--------
+
+The aim of this document is to describe the best way to package the
+Network UPS Tools, and the best practices across the various packaging
+implementation of NUT.
+
+So as to these can be spread on all supported platforms as a standard,
+and as a foundation block to build upon.
+
+///////////////////////////////////////////////////////////////////////
+*sandbox*
+that have been done to help those improving, and give advice on what's
+the best way to package NUT for the remaining "not yet packaged"
+platform (Sun, Aix, Mac, ...). The ultimate aim is to have NUT
+well packaged (all NUT features available) on all supported
+platforms.
+///////////////////////////////////////////////////////////////////////
+
+Introduction
+------------
+Packaging is a final aim for software. It eases and completes the
+software integration into an OS, and allows users to have an easy
+software installation and support out of the box.
+
+NOTE: making NUT packaging more uniform should help its documentation,
+support and maintenance accross the supported OSes.
+
+------------------------------------------------------------------------
+*sandbox*
+This document assumes that you have read the other NUT document such
+as INSTALL, FAQ, shutdown.txt, ...
+
+Facts about NUT packaging
+=========================
+
+NUT has so much evolved those two last years (with USB and SNMP
+support, the premices of libraries, ...) that the simple
+"1, 2 or 3  package(s)" approach is no more suitable.
+
+This fact has reached a high level since NUT 1.4. Actually,
+doing this would result in either being forced to install hosts
+of unneeded dependencies (net-snmp, gd, ... as seen on SuSE),
+to have a partially broken package [1] or not being able to
+use all NUT features [2].
+
+Let's now have an overview on how NUT is currently packaged:
+
+	1) Debian:
+	http://packages.qa.debian.org/n/nut.html
+		nut, nut-dev, nut-usb, nut-snmp, nut-xml, nut-cgi, nut-doc [, nut-hal-drivers]
+
+	2) Mandriva
+	http://cvs.mandriva.com/cgi-bin/cvsweb.cgi/SPECS/nut/
+		nut-server
+		nut
+		nut-cgi
+
+	3) SuSE / Novell
+		nut
+
+	4) RedHat
+
+	5) PLD
+	http://cvs.pld-linux.org/cgi-bin/cvsweb/SPECS/nut.spec
+
+	... (FreeBSD, Gentoo Linux, IRIX, NetBSD, OpenBSD)
+
+This shows how much the packages name split is now scattered.
+The result is:
+- that a user of several systems will be lost, and will
+waste time
+- there is a big waste of energy
+- this makes things hard to create standard configuration
+wizards
+
+[1] NUT build on Debian GNU/Linux m68k and Hurd was once
+broken due to hiddev dependencies, and usb support still
+included in the core package.
+
+[2] 
+- snmp-ups driver is not available under Mandrake GNU/Linux,
+but its man is present. See
+http://rpms.mandrakeclub.com/rpms/mandrake/9.1/i586/Mandrake/RPMS/nut-server-1.2.1-4mdk.i586.html
+- secured ssh network mode not available (due to deps and/or non free)
+- some systems don't provide libupsclient lib/header/.pc so as to
+client application (such as wmnut) can't be built
+- the logger function is not (well) used, same goes for the syslog (triple
+redundancy in Mandriva)
+- the solution is partial in every system: lost of tests
+case / feedback could be shared
+...
+
+------------------------------------------------------------------------
+
+
+Packagers involved
+------------------
+
+The following packagers are working on this subject:
+
+- Debian (and derivatives): Arnaud Quette <aquette@debian.org>
+- SuSE/Novell:	Stanislav Brabec <sbrabec@suse.cz>
+
+NOTE: the people below should be contacted to (re)launch discussions!
+ 
+The following packagers should be interested in working on this subject:
+
+- FreeBSD: Thierry Thomas? <>
+- Mandriva: Oden Erikson? <>
+- RedHat / Fedora Core: <>
+- Gentoo: <>
+- NetBSD: <>
+- OpenBSD: <>
+- PLD: Andrzej Zawadzki <zawadaa@wp.pl>
+- E-Smith: Charlie Brady <charlieb-nut-upsdev@e-smith.com>
+- openSolaris: <> 
+
+- Windows: check with WinNUT author?!
+- MacOS: <> => Charles Lepple? <>
+- HP-UX: <>
+- IBM AIX: <>
+
+
+
+Possible use cases
+------------------
+- standalone (1 system + 1-n UPS)
+- network server (same as standalone, but serving data to network clients)
+- network monitoring client
+- network supervision client
+
+TO BE COMPLETED...
+
+Optimised packaging proposal
+----------------------------
+
+NOTE: The below proposed packages split is subject to discussion.
+
+The aim of this is to:
+
+- rationalise split according to the above use cases,
+- share ressources (descriptions, i18n, ...)
+- find the best compromise between available features and dependencies,
+- standardize nut packages name,
+- create the foundation for the upcoming and underway improvements,
+- improve nut integration
+- ease and improve user experience.
+
+
+This standard was created by:
+
+- capitalizing the experience of existing packages,
+- using and improving the use of all nut features
+- considering upcoming nut changes and improvements
+- working closely with packagers.
+
+Overview of the package tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+FIXME: make a dependency graph
+
+- <<pkg-nut,nut>>
+- <<pkg-libupsclient1,libupsclient1>>
+- <<pkg-libupsclient1-dev,libupsclient1-dev>>
+- <<pkg-nut-cgi,nut-cgi>>
+- <<pkg-nut-hal-drivers,nut-hal-drivers>>
+- <<pkg-nut-powerman-pdu,nut-powerman-pdu>>
+- <<pkg-nut-snmp,nut-snmp>>
+- <<pkg-nut-xml,nut-xml>>
+
+- <<pkg-nut-clients,nut-clients>>
+- <<pkg-python-pynut,python-pynut>>
+- <<pkg-python-nut-gui,python-nut-gui>> (or nut-control-center or Ultimate NUT Tool...)
+- <<pkg-nut-doc,nut-doc>>
+
+Detailed view of the package tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[NOTE]
+========================================================================
+- The *Desc* field represent the package's description, as exposed by
+the packaging system. Each package's description is composed of a
+paragraph common to all NUT packages, and a part that is specific to the
+package. The common part (further referenced by *COMMON DESC*) is:
+________________________________________________________________________
+ Network UPS Tools (NUT) is a client/server monitoring system that allows computers to share
+ uninterruptible power supply (UPS) and power distribution unit (PDU)
+ hardware. Clients access the hardware through the server, and are notified
+ whenever the power status changes.
+________________________________________________________________________
+- The *Files* field lists the content of the package.
+- The mentioned *Size* is a rough estimation of packaged and installed
+size. This may varies across the systems and architecture, and is based
+upon the Debian x86 packages.
+- The *Deps* field lists the dependencies of the packages. The exact
+name may vary across the various systems.
+- The *Comment* field is used to place comment for points subject to
+discussion.
+========================================================================
+
+[[pkg-nut]]
+nut
+^^^
+- Desc:
+- Files: dummy/serial/USB drivers + upsd + upslog
+- Size: 
+- Deps: 
+
+[[pkg-libupsclient1]]
+libupsclient1
+^^^^^^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-libupsclient1-dev]]
+libupsclient1-dev
+^^^^^^^^^^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+NOTE: the "-dev" suffix is to be replaced by "-devel" on RPM based platforms.
+
+[[pkg-nut-cgi]]
+nut-cgi
+^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-nut-hal-drivers]]
+nut-hal-drivers
+^^^^^^^^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-nut-powerman-pdu]]
+nut-powerman-pdu
+^^^^^^^^^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-nut-snmp]]
+nut-snmp
+^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-nut-xml]]
+nut-xml
+^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-nut-clients]]
+nut-clients
+^^^^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-python-pynut]]
+python-pynut
+^^^^^^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-python-nut-gui]]
+python-nut-gui
+^^^^^^^^^^^^^^
+(or nut-control-center or Ultimate NUT Tool...)
+
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+[[pkg-nut-doc]]
+nut-doc
+^^^^^^^
+- Desc:
+- Files:
+- Size: 
+- Deps:
+
+
+------------------------------------------------------------------------
+*sandbox*
+nut-server
+^^^^^^^^^^
+			Desc:
+			Files: dummy/serial/USB drivers + upsd + upslog
+			Size: 
+			Deps: nut-client, libusb, libc/ld
+
+		B) nut-snmp
+
+			Desc:
+			Files: SNMP driver [/ manager ]
+			Deps: nut-server, net-snmp, libc/ld
+
+		C) nut-client
+
+			Desc: don't force to have the server part/deps if not needed
+			Files: upsmon, upsc, upscmd, upsrw + driver.list [+nut-dev (lib, .h, .pc, man]
+			Deps: libc/ld
+
+		E) nut-cgi
+			
+			Deps:
+			Files: snmp-ups and powernet + manpages
+
+		F) nut-doc:
+
+			Deps:
+			Files: dummycons + manpage
+
+		G) nut-dev:
+
+			Deps:
+			Files: upsmon, upsc, upscmd, upsrw
+
+
+
+Note: "nut" can be a meta package
+
+This kind of tree obviously need modification on the conf/make
+files of NUT to allow build/install in a separate way.
+
+
+...
+TO BE CONTINUED
+...
+
+Configuration option
+^^^^^^^^^^^^^^^^^^^^
+name= "ups" or "nut"
+./configure \
+            --prefix=/ \
+            --sysconfdir=/etc/$name \
+            --mandir=/usr/share/man \
+            --libdir=/usr/lib \
+            --includedir=/usr/include \
+            --datadir=/usr/share/$name \
+            --with-statepath=/var/run/nut \
+            --with-altpidpath=/var/run/nut \
+            --with-drvpath=/lib/nut \
+            --with-cgipath=/usr/lib/cgi-bin/$name \
+html-path
+            --with-pidpath=/var/run/$name \
+            --with-user=$name \
+            --with-cgi \
+            --without-ssl
+...
+
+------------------------------------------------------------------------
+

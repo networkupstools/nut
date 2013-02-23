@@ -117,7 +117,7 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
     return ret;
 }
 
-void addquery(char *cmd, int field, int varnum, int pollflag)
+void addquery(const char *cmd, int field, int varnum, int pollflag)
 {
     int q;
 
@@ -247,8 +247,7 @@ void sec_poll ( int pollflag ) {
 
 void upsdrv_initinfo(void)
 {
-
-    int msglen, e, v;
+    int msglen, v;
     char *a,*p,avail_list[300];
  
     /* find out which variables/commands this UPS supports */
@@ -264,7 +263,6 @@ void upsdrv_initinfo(void)
     if (strlen(avail_list) == 0){
      fatalx(EXIT_FAILURE, "No available variables found!");}
     a = avail_list;
-    e = 0;
    while ((p = strtok(a, ",")) != NULL) {  
     a = NULL;
     v = atoi(p);
@@ -297,17 +295,20 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
+	int msg_len;
+	char msgbuf[SMALLBUF];
 
-  int msg_len;
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "-1");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
 
-   msg_len = 2;
-   sec_cmd (SEC_SETCMD,SEC_SHUTDOWN,"-1",&msg_len);
-   msg_len = 1 ;
-   sec_cmd (SEC_SETCMD,SEC_AUTORESTART,"1",&msg_len);    
-   msg_len = 1;
-   sec_cmd (SEC_SETCMD, SEC_SHUTTYPE,"2",&msg_len);
-   msg_len = 1;
-   sec_cmd (SEC_SETCMD,SEC_SHUTDOWN,"5",&msg_len);
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "1");
+	sec_cmd(SEC_SETCMD, SEC_AUTORESTART, msgbuf, &msg_len);
+
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "2");
+	sec_cmd(SEC_SETCMD, SEC_SHUTTYPE,msgbuf, &msg_len);
+
+	msg_len = snprintf(msgbuf, sizeof(msgbuf), "5");
+	sec_cmd(SEC_SETCMD, SEC_SHUTDOWN, msgbuf, &msg_len);
 }
 
 /*

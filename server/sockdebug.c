@@ -118,10 +118,11 @@ static void read_sock(int fd)
 
 int main(int argc, char **argv)
 {
+	const char	*prog = xbasename(argv[0]);
 	int	ret, sockfd;
 
 	if (argc != 2) {
-		fprintf(stderr, "usage: %s <socket name>\n", argv[0]);
+		fprintf(stderr, "usage: %s <socket name>\n", prog);
 		fprintf(stderr, "       %s /var/state/ups/apcsmart-ttyS1.newsock\n",
 			argv[0]);
 		exit(EXIT_SUCCESS);

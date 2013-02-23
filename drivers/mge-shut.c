@@ -1,6 +1,6 @@
 /*  mge-shut.c - monitor MGE UPS for NUT with SHUT protocol
  *
- *  Copyright (C) 2002 - 2008
+ *  Copyright (C) 2002 - 2012
  *     Arnaud Quette <arnaud.quette@gmail.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -37,7 +37,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"Eaton / SHUT driver"
-#define DRIVER_VERSION	"0.69"
+#define DRIVER_VERSION	"0.70"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -91,7 +91,7 @@ u_char 			raw_buf[4096];
 
 float expo(int a, int b);
 extern long FormatValue(long Value, u_char Size);
-static char *hu_find_infoval(info_lkp_t *hid2info, long value);
+static const char *hu_find_infoval(info_lkp_t *hid2info, long value);
 
 /* --------------------------------------------------------------- */
 /*                    UPS Driver Functions                         */
@@ -184,7 +184,7 @@ void upsdrv_initinfo (void)
 void upsdrv_updateinfo (void)
 {
 	mge_info_item_t *item;
-	char *nutvalue;
+	const char *nutvalue;
 
 	upsdebugx(2, "entering upsdrv_updateinfo()");
 
@@ -442,7 +442,7 @@ int shut_identify_ups ()
 {
 	char string[MAX_STRING];
 	char model[MAX_STRING];
-	char *finalname = NULL;
+	const char *finalname = NULL;
 	int retcode, tries=MAX_TRY;
 
 	if (commstatus == 0)
@@ -524,7 +524,7 @@ int shut_wait_ack (void)
 		upsdebugx (2, "shut_wait_ack(): NACK received");
 		return -2;
 	}
-	else if ((c[0] & SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY) {
+	else if ((c[0] & 0x0f) == SHUT_TYPE_NOTIFY) {
 		upsdebugx (2, "shut_wait_ack(): NOTIFY received");
 		return -3;
 	}
@@ -796,7 +796,6 @@ int shut_packet_recv (u_char *Buf, int datalen)
 	u_short  Pos=0;
 	u_char   Retry=0;
 	int recv;
-	shut_data_t   sdata;
 
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
 
@@ -804,7 +803,6 @@ int shut_packet_recv (u_char *Buf, int datalen)
 	{
 		if(serial_read (DEFAULT_TIMEOUT, &Start[0]) >= 0)
 		{
-			sdata.shut_pkt.bType = Start[0];
 			if(Start[0]==SHUT_SYNC)
 			{
 				upsdebugx (4, "received SYNC token");
@@ -819,7 +817,6 @@ int shut_packet_recv (u_char *Buf, int datalen)
 				{
 					upsdebug_hex(3, "Receive", Start, 2);
 					Size=Start[1]&0x0F;
-					sdata.shut_pkt.bLength = Size;
 					for(recv=0;recv<Size;recv++)
 						if(serial_read (DEFAULT_TIMEOUT, &Frame[recv]) < 0)
 							break;
@@ -838,8 +835,11 @@ int shut_packet_recv (u_char *Buf, int datalen)
 
 						shut_token_send(SHUT_OK);
 
-						if(Start[0]&SHUT_PKT_LAST) {
-							if ((Start[0]&SHUT_PKT_LAST) == SHUT_TYPE_NOTIFY) {
+
+						/* Check if there are more data to receive */
+						if((Start[0] & 0xf0) == SHUT_PKT_LAST) {
+							/* Check if it's a notification */
+							if ((Start[0] & 0x0f) == SHUT_TYPE_NOTIFY) {
 							/* TODO: process notification (dropped for now) */
 								upsdebugx (4, "=> notification");
 								datalen+=Pos;
@@ -1308,7 +1308,7 @@ float expo(int a, int b)
 }
 
 /*  Format model names */
-char *get_model_name(char *iProduct, char *iModel)
+const char *get_model_name(char *iProduct, char *iModel)
 {
   models_name_t *model = NULL;
 
@@ -1434,7 +1434,7 @@ mge_info_item_t *shut_find_info(const char *varname)
 }
 
 /* find the NUT value matching that HID Item value */
-static char *hu_find_infoval(info_lkp_t *hid2info, long value)
+static const char *hu_find_infoval(info_lkp_t *hid2info, long value)
 {
   info_lkp_t *info_lkp;
 

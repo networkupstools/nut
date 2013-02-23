@@ -23,8 +23,8 @@ AC_DEFUN_ONCE([NUT_OS_FUNCTIONS],
 		case "${host_cpu}-${host_os}" in
 			*-aix*)						echo 'aix'	;;
 			*-freebsd*)					echo 'freebsd'	;;
-			*-darwin*)					echo 'darwin'	;;
-			*solaris*)					echo 'solaris'	;;
+			*-darwin*)					echo 'darwin'	;;	
+			*solaris*)					echo 'esyscmd(uname -sp)'	;;
 			*-hpux*)					echo 'hpux'	;;
 		esac
     esac
@@ -44,6 +44,7 @@ AC_DEFUN_ONCE([NUT_OS_FUNCTIONS],
 
 AC_DEFUN([NUT_CHECK_OS],
 [
+    m4_pattern_allow([^PKG_TARGET$])
     # Look for all possible source of OS name resolution
     # 1) we look for a LSB release info file
 	eval "dist_search_path=\"

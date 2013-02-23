@@ -3,7 +3,7 @@
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *   2002-2008  Arnaud Quette <arnaud.quette@free.fr>
+ *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
   *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
@@ -35,19 +35,19 @@ for each OID request we made), instead of sending many small packets
 - add support for registration and traps (manager mode),
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
-- ... and use Net-SNMP lookup mecanism for OIDs (use string path, not numeric)
 - adjust information logging.
 
-- move to numeric OIDs
+- move numeric OIDs into th mib2nut tables and remove defines
 - move mib2nut into c files (à la usbhid-ups)?
-- add a claim function and move to usbhid-ups style
+- add a claim function and move to usbhid-ups style for specific processing
 - rework the flagging system
 */
 
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
-/* workaround for buggy Net-SNMP config */
+/* FIXME: still needed?
+ * workaround for buggy Net-SNMP config */
 #ifdef PACKAGE_BUGREPORT
 #undef PACKAGE_BUGREPORT
 #endif
@@ -75,6 +75,10 @@ for each OID request we made), instead of sending many small packets
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+/* Force numeric OIDs by disabling MIB loading */
+#define DISABLE_MIB_LOADING 1
+
+/* Parameters default values */
 #define DEFAULT_POLLFREQ	30		/* in seconds */
 
 /* use explicit booleans */
@@ -128,13 +132,18 @@ typedef struct {
 						 				 * disable the other providers */
 #define SU_FLAG_SETINT		(1 << 6)	/* save value */
 #define SU_OUTLET			(1 << 7)	/* outlet template definition */
+#define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
+ * Otherwise, the driver will try to determine it by itself...
  * - the first outlet template MUST NOT be a server side variable (ie MUST have
  *   a valid OID) in order to detect the base SNMP index (0 or 1)
  */
 
-/* status string components */
+/* status string components
+ * FIXME: these should be removed, since there is no added value.
+ * Ie, this can be guessed from info->type! */
+ 
 #define SU_STATUS_PWR		(0 << 8)	/* indicates power status element */
 #define SU_STATUS_BATT		(1 << 8)	/* indicates battery status element */
 #define SU_STATUS_CAL		(2 << 8)	/* indicates calibration status element */
@@ -143,28 +152,38 @@ typedef struct {
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
 /* Phase specific data */
-#define SU_PHASES		(0xF << 12)
+#define SU_PHASES		(0x3F << 12)
 #define SU_INPHASES		(0x3 << 12)
 #define SU_INPUT_1		(1 << 12)	/* only if 1 input phase */
 #define SU_INPUT_3		(1 << 13)	/* only if 3 input phases */
 #define SU_OUTPHASES	(0x3 << 14)
 #define SU_OUTPUT_1		(1 << 14)	/* only if 1 output phase */
 #define SU_OUTPUT_3		(1 << 15)	/* only if 3 output phases */
+#define SU_BYPPHASES	(0x3 << 16)
+#define SU_BYPASS_1		(1 << 16)	/* only if 1 bypass phase */
+#define SU_BYPASS_3		(1 << 17)	/* only if 3 bypass phases */
 /* FIXME: use input.phases and output.phases to replace this */
 
 
 /* hints for su_ups_set, applicable only to rw vars */
-#define SU_TYPE_INT			(0 << 16)	/* cast to int when setting value */
-#define SU_TYPE_STRING		(1 << 16)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
-#define SU_TYPE_TIME		(2 << 16)	/* cast to int */
-#define SU_TYPE_CMD			(3 << 16)	/* instant command */
-#define SU_TYPE(t)			((t)->flags & (7 << 16))
+#define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
+#define SU_TYPE_STRING		(1 << 18)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
+#define SU_TYPE_TIME		(2 << 18)	/* cast to int */
+#define SU_TYPE_CMD			(3 << 18)	/* instant command */
+#define SU_TYPE(t)			((t)->flags & (7 << 18))
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_MIBS			"mibs"
-#define SU_VAR_SDTYPE		"sdtype"
 #define SU_VAR_POLLFREQ		"pollfreq"
+/* SNMP v3 related parameters */
+#define SU_VAR_SECLEVEL		"secLevel"
+#define SU_VAR_SECNAME		"secName"
+#define SU_VAR_AUTHPASSWD	"authPassword"
+#define SU_VAR_PRIVPASSWD	"privPassword"
+#define SU_VAR_AUTHPROT		"authProtocol"
+#define SU_VAR_PRIVPROT		"privProtocol"
+
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
@@ -182,17 +201,18 @@ typedef struct {
 #define SU_ERR_RATE 100	/* only print every nth error once limiting starts */
 
 typedef struct {
-	const char *mib_name;
-	const char *mib_version;
-	const char *oid_pwr_status;
-	const char *oid_auto_check;
-	snmp_info_t *snmp_info; /* pointer to the good Snmp2Nut lookup data */
+	const char	*mib_name;
+	const char	*mib_version;
+	const char	*oid_pwr_status;
+	const char	*oid_auto_check;	/* FIXME: rename to SysOID */
+	snmp_info_t	*snmp_info;			/* pointer to the good Snmp2Nut lookup data */
+	const char	*sysOID;			/* OID to match against sysOID, aka MIB
+									 * main entry point */
 
 } mib2nut_info_t;
 
 /* Common SNMP functions */
-void nut_snmp_init(const char *type, const char *host, const char *version,
-		const char *community);
+void nut_snmp_init(const char *type, const char *hostname);
 void nut_snmp_cleanup(void);
 struct snmp_pdu *nut_snmp_get(const char *OID);
 bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len,
@@ -218,7 +238,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 bool_t load_mib2nut(const char *mib);
 
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
-long su_find_valinfo(info_lkp_t *oid2info, char* value);
+long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 
 int su_setvar(const char *varname, const char *val);
 int su_instcmd(const char *cmdname, const char *extradata);
@@ -226,11 +246,11 @@ void su_shutdown_ups(void);
 
 void read_mibconf(char *mib);
 
-struct snmp_session g_snmp_sess, *g_snmp_sess_p;
-const char *OID_pwr_status;
-int g_pwr_battery;
-int pollfreq; /* polling frequency */
-int input_phases, output_phases;
+extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
+extern const char *OID_pwr_status;
+extern int g_pwr_battery;
+extern int pollfreq; /* polling frequency */
+extern int input_phases, output_phases, bypass_phases;
 
 #endif /* SNMP_UPS_H */
 

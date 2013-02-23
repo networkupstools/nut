@@ -1,0 +1,7 @@
+.deps
+Makefile.in
+Makefile
+nut-driver.service
+nut-monitor.service
+nut-server.service
+nutshutdown

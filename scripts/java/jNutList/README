@@ -1,0 +1,30 @@
+jNutList example application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This directory contains source files for the jNutList application.
+It allows to connect to an UPSD then retrieve devices and their variables.
+It is a little example application to show how to use jNut.
+
+jNutList building
+^^^^^^^^^^^^^^^^^
+
+As jNut, jNutList is a maven project so a maven environment must be set.
+Please reffer to jNut building notes.
+
+jNutList running
+^^^^^^^^^^^^^^^^
+
+jNutList can be run launching it in a console:
+
+	java -jar jNutList-x.x-xxx-jar-with-dependencies.jar
+
+Some parameters can be passed :
+
+	java -jar jNutList-x.x-jar-with-dependencies.jar host port login password
+
+For example:
+
+	java -jar jNutList-x.x-jar-with-dependencies.jar localhost 3493 admin passwd
+
+By default, host is localhost, port is 3493 and login and password are not
+specified.

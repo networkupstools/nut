@@ -22,7 +22,7 @@
 #include "upsconf.h"
 #include "sstate.h"
 #include "user.h"
-#include "ssl.h"
+#include "netssl.h"
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
@@ -30,59 +30,33 @@
 /* add another UPS for monitoring from ups.conf */
 static void ups_create(const char *fn, const char *name, const char *desc)
 {
-	upstype_t	*temp, *last;
+	upstype_t	*temp;
 
-	temp = last = firstups;
-
-	/* find end of linked list */
-	while (temp != NULL) {
-		last = temp;
-
+	for (temp = firstups; temp != NULL; temp = temp->next) {
 		if (!strcasecmp(temp->name, name)) {
-			upslogx(LOG_ERR, "UPS name [%s] is already in use!", 
-				name);
+			upslogx(LOG_ERR, "UPS name [%s] is already in use!", name);
 			return;
 		}
-
-		temp = temp->next;
 	}
 
 	/* grab some memory and add the info */
-	temp = xmalloc(sizeof(upstype_t));
-
-	temp->name = xstrdup(name);
+	temp = xcalloc(1, sizeof(*temp));
 	temp->fn = xstrdup(fn);
+	temp->name = xstrdup(name);
 
-	if (desc)
+	if (desc) {
 		temp->desc = xstrdup(desc);
-	else
-		temp->desc = NULL;
+	}
 
 	temp->stale = 1;
-
-	temp->numlogins = 0;
-	temp->fsd = 0;
 	temp->retain = 1;
-	temp->next = NULL;
-
-	temp->dumpdone = 0;
-	temp->data_ok = 0;
+	temp->sock_fd = sstate_connect(temp);
 
 	/* preload this to the current time to avoid false staleness */
 	time(&temp->last_heard);
 
-	temp->last_ping = 0;
-	temp->last_connfail = 0;
-	temp->inforoot = NULL;
-	temp->cmdlist = NULL;
-
-	if (last == NULL)
-		firstups = temp;
-	else
-		last->next = temp;
-
-	temp->sock_fd = sstate_connect(temp);
-
+	temp->next = firstups;
+	firstups = temp;
 	num_ups++;
 }
 
@@ -171,13 +145,29 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 
+#ifdef WITH_OPENSSL
 	/* CERTFILE <dir> */
 	if (!strcmp(arg[0], "CERTFILE")) {
 		free(certfile);
 		certfile = xstrdup(arg[1]);
 		return 1;
 	}
-
+#elif (defined WITH_NSS) /* WITH_OPENSSL */
+	/* CERTPATH <dir> */
+	if (!strcmp(arg[0], "CERTPATH")) {
+		free(certfile);
+		certfile = xstrdup(arg[1]);
+		return 1;
+	}
+#ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
+	/* CERTREQUEST (0 | 1 | 2) */
+	if (!strcmp(arg[0], "CERTREQUEST")) {
+		certrequest = atoi(arg[1]);
+		return 1;
+	}
+#endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
+#endif /* WITH_OPENSSL | WITH_NSS */
+	
 	/* ACCEPT <aclname> [<aclname>...] */
 	if (!strcmp(arg[0], "ACCEPT")) {
 		upslogx(LOG_WARNING, "ACCEPT in upsd.conf is no longer supported - switch to LISTEN");
@@ -208,6 +198,17 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		upslogx(LOG_WARNING, "ACL in upsd.conf is no longer supported - switch to LISTEN");
 		return 1;
 	}
+	
+#ifdef WITH_NSS
+	/* CERTIDENT <name> <passwd> */
+	if (!strcmp(arg[0], "CERTIDENT")) {
+		free(certname);
+		certname = xstrdup(arg[1]);
+		free(certpasswd);
+		certpasswd = xstrdup(arg[2]);
+		return 1;
+	}
+#endif /* WITH_NSS */
 
 	/* not recognized */
 	return 0;
@@ -272,48 +273,38 @@ void load_upsdconf(int reloading)
 /* callback during parsing of ups.conf */
 void do_upsconf_args(char *upsname, char *var, char *val)
 {
-	ups_t	*tmp, *last;
+	ups_t	*temp;
 
 	/* no "global" stuff for us */
-	if (!upsname)
+	if (!upsname) {
 		return;
-
-	last = tmp = upstable;
-
-	while (tmp) {
-		last = tmp;
-
-		if (!strcmp(tmp->upsname, upsname)) {
-			if (!strcmp(var, "driver")) 
-				tmp->driver = xstrdup(val);
-			if (!strcmp(var, "port")) 
-				tmp->port = xstrdup(val);
-			if (!strcmp(var, "desc"))
-				tmp->desc = xstrdup(val);
-			return;
-		}
-
-		tmp = tmp->next;
 	}
 
-	tmp = xmalloc(sizeof(ups_t));
-	tmp->upsname = xstrdup(upsname);
-	tmp->driver = NULL;
-	tmp->port = NULL;
-	tmp->desc = NULL;
-	tmp->next = NULL;
+	/* check if UPS is already listed */
+	for (temp = upstable; temp != NULL; temp = temp->next) {
+		if (!strcmp(temp->upsname, upsname)) {
+			break;
+		}
+	}
 
-	if (!strcmp(var, "driver"))
-		tmp->driver = xstrdup(val);
-	if (!strcmp(var, "port"))
-		tmp->port = xstrdup(val);
-	if (!strcmp(var, "desc"))
-		tmp->desc = xstrdup(val);
+	/* if not listed, create a new entry and prepend it to the list */
+	if (temp == NULL) {
+		temp = xcalloc(1, sizeof(*temp));
+		temp->upsname = xstrdup(upsname);
+		temp->next = upstable;
+		upstable = temp;
+	}
 
-	if (last)
-		last->next = tmp;
-	else
-		upstable = tmp;
+	if (!strcmp(var, "driver")) {
+		free(temp->driver);
+		temp->driver = xstrdup(val);
+	} else if (!strcmp(var, "port")) {
+		free(temp->port);
+		temp->port = xstrdup(val);
+	} else if (!strcmp(var, "desc")) {
+		free(temp->desc);
+		temp->desc = xstrdup(val);
+	}
 }
 
 /* add valid UPSes from ups.conf to the internal structures */

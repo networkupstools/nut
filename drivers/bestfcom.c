@@ -260,12 +260,9 @@ void upsdrv_updateinfo(void)
 		double ampsout=0.0, vbatt=0.0, battpercent=0.0, loadpercent=0.0,
 			upstemp=0.0, acfreq=0.0;
 
-		char date[9], time[9], tmp[32];
+		char tmp[32];
 
 		upsdebugx(3, "f response: %d %s", (int)strlen(fstring), fstring);
-
-		date[0]='\0';
-		time[0]='\0';
 
 		/* Inverter status.	 0=off 1=on */
 		inverter = bcd2i(&fstring[16], 2);
@@ -528,7 +525,7 @@ Version:  8.07
 Released: 08/01/1995
 */
 
-void upsdrv_init_nofc()
+void upsdrv_init_nofc(void)
 {
 	char tmp[256], rstring[1024];
 
@@ -734,7 +731,7 @@ void upsdrv_init_fc(const char *fcstring)
 	fc.valid = 1;
 }
 
-void upsdrv_initups ()
+void upsdrv_initups(void)
 {
 	char rstring[256];
 

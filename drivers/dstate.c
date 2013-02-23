@@ -3,6 +3,7 @@
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
 	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,12 +33,12 @@
 #include "state.h"
 #include "parseconf.h"
 
-	static int	sockfd = -1, stale = 1, alarm_active = 0;
+	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
-	static struct st_tree_t	*dtree_root = NULL;
-	static struct conn_t	*connhead = NULL;
-	static struct cmdlist_t *cmdhead = NULL;
+	static st_tree_t	*dtree_root = NULL;
+	static conn_t	*connhead = NULL;
+	static cmdlist_t *cmdhead = NULL;
 
 	struct ups_handler	upsh;
 
@@ -139,7 +140,7 @@ static int sock_open(const char *fn)
 	return fd;
 }
 
-static void sock_disconnect(struct conn_t *conn)
+static void sock_disconnect(conn_t *conn)
 {
 	close(conn->fd);
 
@@ -165,7 +166,7 @@ static void send_to_all(const char *fmt, ...)
 	int	ret;
 	char	buf[ST_SOCK_BUF_LEN];
 	va_list	ap;
-	struct conn_t	*conn, *cnext;
+	conn_t	*conn, *cnext;
 
 	va_start(ap, fmt);
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
@@ -190,7 +191,7 @@ static void send_to_all(const char *fmt, ...)
 	}
 }
 
-static int send_to_one(struct conn_t *conn, const char *fmt, ...)
+static int send_to_one(conn_t *conn, const char *fmt, ...)
 {
 	int	ret;
 	va_list	ap;
@@ -221,10 +222,13 @@ static int send_to_one(struct conn_t *conn, const char *fmt, ...)
 static void sock_connect(int sock)
 {
 	int	fd, ret;
-	struct conn_t	*conn;
+	conn_t	*conn;
 	struct sockaddr_un sa;
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+	int	salen;
+#else
 	socklen_t	salen;
-
+#endif
 	salen = sizeof(sa);
 	fd = accept(sock, (struct sockaddr *) &sa, &salen);
 
@@ -266,10 +270,11 @@ static void sock_connect(int sock)
 	upsdebugx(3, "new connection on fd %d", fd);
 }
 
-static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
+static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 {
 	int	ret;
-	struct enum_t	*etmp;
+	enum_t	*etmp;
+	range_t	*rtmp;
 
 	if (!node) {
 		return 1;	/* not an error */
@@ -290,6 +295,13 @@ static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
 	/* send any enums */
 	for (etmp = node->enum_list; etmp; etmp = etmp->next) {
 		if (!send_to_one(conn, "ADDENUM %s \"%s\"\n", node->var, etmp->val)) {
+			return 0;
+		}
+	}
+
+	/* send any ranges */
+	for (rtmp = node->range_list; rtmp; rtmp = rtmp->next) {
+		if (!send_to_one(conn, "ADDRANGE %s %i %i\n", node->var, rtmp->min, rtmp->max)) {
 			return 0;
 		}
 	}
@@ -315,7 +327,9 @@ static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
 			snprintfcat(flist, sizeof(flist), " STRING");
 		}
 
-		send_to_one(conn, "SETFLAGS %s\n", flist);
+		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
+			return 0;
+		}
 	}
 
 	if (node->right) {
@@ -325,9 +339,9 @@ static int st_tree_dump_conn(struct st_tree_t *node, struct conn_t *conn)
 	return 1;	/* everything's OK here ... */
 }
 
-static int cmd_dump_conn(struct conn_t *conn)
+static int cmd_dump_conn(conn_t *conn)
 {
-	struct cmdlist_t	*cmd;
+	cmdlist_t	*cmd;
 
 	for (cmd = cmdhead; cmd; cmd = cmd->next) {
 		if (!send_to_one(conn, "ADDCMD %s\n", cmd->name)) {
@@ -338,7 +352,7 @@ static int cmd_dump_conn(struct conn_t *conn)
 	return 1;
 }
 
-static int sock_arg(struct conn_t *conn, int numarg, char **arg)
+static int sock_arg(conn_t *conn, int numarg, char **arg)
 {
 	if (numarg < 1) {
 		return 0;
@@ -415,7 +429,7 @@ static int sock_arg(struct conn_t *conn, int numarg, char **arg)
 	return 0;
 }
 
-static void sock_read(struct conn_t *conn)
+static void sock_read(conn_t *conn)
 {
 	int	i, ret;
 	char	buf[SMALLBUF];
@@ -463,7 +477,7 @@ static void sock_read(struct conn_t *conn)
 
 static void sock_close(void)
 {
-	struct conn_t	*conn, *cnext;
+	conn_t	*conn, *cnext;
 
 	if (sockfd != -1) {
 		close(sockfd);
@@ -487,15 +501,15 @@ static void sock_close(void)
 
 /* interface */
 
-void dstate_init(const char *prog, const char *port)
+void dstate_init(const char *prog, const char *devname)
 {
 	char	sockname[SMALLBUF];
 
 	/* do this here for now */
 	signal(SIGPIPE, SIG_IGN);
 
-	if (port) {
-		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, port);
+	if (devname) {
+		snprintf(sockname, sizeof(sockname), "%s/%s-%s", dflt_statepath(), prog, devname);
 	} else {
 		snprintf(sockname, sizeof(sockname), "%s/%s", dflt_statepath(), prog);
 	}
@@ -511,7 +525,7 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 	int	ret, maxfd, overrun = 0;
 	fd_set	rfds;
 	struct timeval	now;
-	struct conn_t	*conn, *cnext;
+	conn_t	*conn, *cnext;
 
 	FD_ZERO(&rfds);
 	FD_SET(sockfd, &rfds);
@@ -630,16 +644,34 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	return ret;
 }
 
+int dstate_addrange(const char *var, const int min, const int max)
+{
+	int	ret;
+
+	ret = state_addrange(dtree_root, var, min, max);
+
+	if (ret == 1) {
+		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+	}
+
+	return ret;
+}
+
 void dstate_setflags(const char *var, int flags)
 {
-	struct st_tree_t	*sttmp;
+	st_tree_t	*sttmp;
 	char	flist[SMALLBUF];
 
 	/* find the dtree node for var */
 	sttmp = state_tree_find(dtree_root, var);
 
 	if (!sttmp) {
-		upslogx(LOG_ERR, "dstate_setflags: base variable (%s) does not exist", var);
+		upslogx(LOG_ERR, "%s: base variable (%s) does not exist", __func__, var);
+		return;
+	}
+
+	if (sttmp->flags & ST_FLAG_IMMUTABLE) {
+		upslogx(LOG_WARNING, "%s: base variable (%s) is immutable", __func__, var);
 		return;
 	}
 
@@ -666,7 +698,7 @@ void dstate_setflags(const char *var, int flags)
 
 void dstate_setaux(const char *var, int aux)
 {
-	struct st_tree_t	*sttmp;
+	st_tree_t	*sttmp;
 
 	/* find the dtree node for var */
 	sttmp = state_tree_find(dtree_root, var);
@@ -731,6 +763,20 @@ int dstate_delenum(const char *var, const char *val)
 	return ret;
 }
 
+int dstate_delrange(const char *var, const int min, const int max)
+{
+	int	ret;
+
+	ret = state_delrange(dtree_root, var, min, max);
+
+	/* update listeners */
+	if (ret == 1) {
+		send_to_all("DELRANGE %s \"%i %i\"\n", var, min, max);
+	}
+
+	return ret;
+}
+
 int dstate_delcmd(const char *cmd)
 {
 	int	ret;
@@ -756,12 +802,12 @@ void dstate_free(void)
 	sock_close();
 }
 
-const struct st_tree_t *dstate_getroot(void)
+const st_tree_t *dstate_getroot(void)
 {
 	return dtree_root;
 }
 
-const struct cmdlist_t *dstate_getcmdlist(void)
+const cmdlist_t *dstate_getcmdlist(void)
 {
 	return cmdhead;
 }
@@ -792,12 +838,21 @@ int dstate_is_stale(void)
 /* clean out the temp space for a new pass */
 void status_init(void)
 {
+	if (dstate_getinfo("driver.flag.ignorelb")) {
+		ignorelb = 1;
+	}
+
 	memset(status_buf, 0, sizeof(status_buf));
 }
 
 /* add a status element */
 void status_set(const char *buf)
 {
+	if (ignorelb && !strcasecmp(buf, "LB")) {
+		upsdebugx(2, "%s: ignoring LB flag from device", __func__);
+		return;
+	}
+
 	/* separate with a space if multiple elements are present */
 	if (strlen(status_buf) > 0) {
 		snprintfcat(status_buf, sizeof(status_buf), " %s", buf);
@@ -809,6 +864,31 @@ void status_set(const char *buf)
 /* write the status_buf into the externally visible dstate storage */
 void status_commit(void)
 {
+	while (ignorelb) {
+		const char	*val, *low;
+
+		val = dstate_getinfo("battery.charge");
+		low = dstate_getinfo("battery.charge.low");
+
+		if (val && low && (strtol(val, NULL, 10) < strtol(low, NULL, 10))) {
+			snprintfcat(status_buf, sizeof(status_buf), " LB");
+			upsdebugx(2, "%s: appending LB flag [charge '%s' below '%s']", __func__, val, low);
+			break;
+		}
+
+		val = dstate_getinfo("battery.runtime");
+		low = dstate_getinfo("battery.runtime.low");
+
+		if (val && low && (strtol(val, NULL, 10) < strtol(low, NULL, 10))) {
+			snprintfcat(status_buf, sizeof(status_buf), " LB");
+			upsdebugx(2, "%s: appending LB flag [runtime '%s' below '%s']", __func__, val, low);
+			break;
+		}
+
+		/* LB condition not detected */
+		break;
+	}
+
 	if (alarm_active) {
 		dstate_setinfo("ups.status", "ALARM %s", status_buf);
 	} else {

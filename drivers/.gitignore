@@ -24,13 +24,11 @@ everups
 fentonups
 gamatronic
 genericups
-hald-addon-bcmxcp_usb
-hald-addon-usbhid-ups
-hald-addon-tripplite_usb
 ippon
 isbmex
-lakeview_usb
 liebert
+liebert-esp2
+macosx-ups
 masterguard
 megatec
 megatec_usb
@@ -71,3 +69,9 @@ ivtscd
 clone-outlet
 liebertgxt2
 eaton-aphel-mib.h.new
+hald-addon-blazer_usb
+nut-ipmipsu
+apcsmart-old
+oldmge-shut
+riello_ser
+riello_usb

@@ -330,7 +330,7 @@ int main(int argc, char **argv)
 	}
 
 	/* add a timer for data update */
-#ifdef HAVE_GLIB_2_14
+#ifdef HAVE_G_TIMEOUT_ADD_SECONDS
 	g_timeout_add_seconds (poll_interval,
 #else
 	g_timeout_add (1000 * poll_interval,				/* seconds */

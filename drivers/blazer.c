@@ -2,9 +2,11 @@
  * blazer.c: driver core for Megatec/Q1 protocol based UPSes
  *
  * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * found online at http://www.networkupstools.org/ups-protocols/megatec.html
  *
- * Copyright (C) 2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ * Copyright (C)
+ *   2008,2009 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2012 - Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,6 +77,7 @@ static const struct {
 	{ "megatec", "Q1\r", "F\r", "I\r" },
 	{ "mustek", "QS\r", "F\r", "I\r" },
 	{ "megatec/old", "D\r", "F\r", "I\r" },
+	{ "zinto", "Q1\r", "F\r", "FW?\r" },
 	{ NULL }
 };
 
@@ -186,7 +189,7 @@ static int blazer_status(const char *cmd)
 	 *    01234567890123456789012345678901234567890123456
 	 *    0         1         2         3         4
 	 */
-	if (blazer_command(cmd, buf, sizeof(buf)) < 47) {
+	if (blazer_command(cmd, buf, sizeof(buf)) < 46) {
 		upsdebugx(2, "%s: short reply", __func__);
 		return -1;
 	}
@@ -211,15 +214,20 @@ static int blazer_status(const char *cmd)
 		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
 	}
 
+	if (!val) {
+		upsdebugx(2, "%s: parsing failed", __func__);
+		return -1;
+	}
+
 	if (strspn(val, "01") != 8) {
 		upsdebugx(2, "Invalid status [%s]", val);
 		return -1;
 	}
 
 	if (val[7] == '1') {	/* Beeper On */
-		dstate_setinfo("beeper.status", "enabled");
+		dstate_setinfo("ups.beeper.status", "enabled");
 	} else {
-		dstate_setinfo("beeper.status", "disabled");
+		dstate_setinfo("ups.beeper.status", "disabled");
 	}
 
 	if (val[4] == '1') {	/* UPS Type is Standby (0 is On_line) */
@@ -274,6 +282,7 @@ static int blazer_status(const char *cmd)
 
 	if (val[6] == '1') {	/* Shutdown Active */
 		alarm_set("Shutdown imminent!");
+		status_set("FSD");
 	}
 
 	alarm_commit();
@@ -419,6 +428,13 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+		/*
+		 * Note: "S01R0001" and "S01R0002" may not work on early (GE)
+		 * firmware versions.  The failure mode is that the UPS turns
+		 * off and never returns.  The fix is to push the return value
+		 * up by 2, i.e. S01R0003, and it will return online properly.
+		 * (thus the default of ondelay=3 mins)
+		 */
 		if (offdelay < 60) {
 			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
 		} else {
@@ -444,11 +460,14 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	/*
-	 * If a command is invalid, it will be echoed back
+	 * If a command is invalid, it will be echoed back.
+	 * As an exception, Best UPS units will report "ACK" in case of success!
 	 */
 	if (blazer_command(buf, buf, sizeof(buf)) > 0) {
-		upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
-		return STAT_INSTCMD_FAILED;
+		if (strncmp(buf, "ACK", 3)) {
+			upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+			return STAT_INSTCMD_FAILED;
+		}
 	}
 
 	upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);
@@ -467,6 +486,8 @@ void blazer_makevartable(void)
 
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
+
+	addvar(VAR_FLAG, "protocol", "Preselect communication protocol (skip autodetection)");
 }
 
 
@@ -515,13 +536,29 @@ static void blazer_initbattery(void)
 {
 	const char	*val;
 
+	/* If no values were provided by the user in ups.conf, try to guesstimate
+	 * battery.charge, but announce it! */
+	if ((batt.volt.nom != 1) && (batt.volt.high == -1) && (batt.volt.high == -1)) {
+		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
+
+		/* Basic formula, which should cover most cases */
+		batt.volt.low = 104 * batt.volt.nom / 120;
+		batt.volt.high = 130 * batt.volt.nom / 120;
+
+		/* Publish these data too */
+		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
+		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
+		
+		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
+	}
+
 	val = getval("runtimecal");
 	if (val) {
-		int	rh, lh, rl, ll;
+		double	rh, lh, rl, ll;
 
 		time(&lastpoll);
 
-		if (sscanf(val, "%d,%d,%d,%d", &rh, &lh, &rl, &ll) < 4) {
+		if (sscanf(val, "%lf,%lf,%lf,%lf", &rh, &lh, &rl, &ll) < 4) {
 			fatalx(EXIT_FAILURE, "Insufficient parameters for runtimecal");
 		}
 
@@ -533,10 +570,10 @@ static void blazer_initbattery(void)
 			fatalx(EXIT_FAILURE, "Parameter out of range (load)");
 		}
 
-		batt.runt.exp = log((double)rl / rh) / log((double)lh / ll);
+		batt.runt.exp = log(rl / rh) / log(lh / ll);
 		upsdebugx(2, "battery runtime exponent : %.3f", batt.runt.exp);
 
-		batt.runt.nom = rh * pow(lh/100, batt.runt.exp);
+		batt.runt.nom = rh * pow(lh / 100, batt.runt.exp);
 		upsdebugx(2, "battery runtime nominal  : %.1f", batt.runt.nom);
 
 	} else {
@@ -589,11 +626,17 @@ static void blazer_initbattery(void)
 
 void blazer_initinfo(void)
 {
+	const char	*protocol = getval("protocol");
 	int	retry;
 
 	for (proto = 0; command[proto].status; proto++) {
 
 		int	ret;
+
+		if (protocol && strcasecmp(protocol, command[proto].name)) {
+			upsdebugx(2, "Skipping %s protocol...", command[proto].name);
+			continue;
+		}
 
 		upsdebugx(2, "Trying %s protocol...", command[proto].name);
 
@@ -686,6 +729,9 @@ void upsdrv_updateinfo(void)
 	if (blazer_status(command[proto].status)) {
 
 		if (retry < MAXTRIES) {
+			upsdebugx(1, "Communications with UPS lost: status read failed!");
+			retry++;
+		} else if (retry == MAXTRIES) {
 			upslogx(LOG_WARNING, "Communications with UPS lost: status read failed!");
 			retry++;
 		} else {
@@ -718,7 +764,7 @@ void upsdrv_updateinfo(void)
 		lastpoll = now;
 	}
 
-	if (retry) {
+	if (retry > MAXTRIES) {
 		upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	}
 
