@@ -3,6 +3,7 @@
 #   Copyright (C) 2008 - 2012
 #            Arnaud Quette <arnaud.quette@gmail.com>
 #            dloic (loic.dardant AT gmail DOT com)
+#   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
 #
 #	Based on the usbdevice.pl script, made for the Ubuntu Media Center
 #   for the final use of the LIRC project.
@@ -40,8 +41,12 @@ my $outputHotplug="../scripts/hotplug/libhid.usermap";
 # udev output file
 my $outputUdev="../scripts/udev/nut-usbups.rules.in";
 
+# BSD devd output file
+my $output_devd="../scripts/devd/nut-usb.conf.in";
+
 # UPower output file
 my $outputUPower="../scripts/upower/95-upower-hid.rules";
+
 # tmp output, to allow generating the ENV{UPOWER_VENDOR} header list
 my $tmpOutputUPower;
 # mfr header flag
@@ -109,6 +114,10 @@ sub gen_usb_files
 	print $outUdev 'SUBSYSTEM!="usb", GOTO="nut-usbups_rules_end"'."\n\n";
 	print $outUdev 'LABEL="nut-usbups_rules_real"'."\n";
 
+	open my $out_devd, ">$output_devd" || die "error $output_devd : $!";
+	print $out_devd '# This file is generated and installed by the Network UPS Tools package.'."\n";
+	print $out_devd "# Homepage: http://www.networkupstools.org/\n\n";
+
 	# UPower file header
 	open my $outputUPower, ">$outputUPower" || die "error $outputUPower : $!";
 	print $outputUPower '##############################################################################################################'."\n";
@@ -147,6 +156,12 @@ sub gen_usb_files
 			print $outUdev "\n# ".$vendorName{$vendorId}."\n";
 		}
 
+		# devd vendor header
+		if ($vendorName{$vendorId}) {
+			print $out_devd "\n# ".$vendorName{$vendorId}."\n";
+		}
+
+
 		# UPower vendor header flag
 		$upowerMfrHeaderDone = 0;
 
@@ -172,6 +187,17 @@ sub gen_usb_files
 			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
 			
+			# devd device entry
+			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
+			print $out_devd "notify 100 {\n\tmatch \"system\"\t\t\"USB\";\n";
+			print $out_devd "\tmatch \"subsystem\"\t\"DEVICE\";\n";
+			print $out_devd "\tmatch \"type\"\t\t\"ATTACH\";\n";
+			print $out_devd "\tmatch \"vendor\"\t\t\"$vendorId\";\n";
+			#
+			print $out_devd "\tmatch \"product\"\t\t\"$productId\";\n";
+			print $out_devd "\taction \"chgrp \@RUN_AS_GROUP\@ /dev/\$device-name*; chmod g+rw /dev/\$device-name*\";\n";
+			print $out_devd "};\n";
+
 			# UPower device entry (only for USB/HID devices!)
 			if ($vendor{$vendorId}{$productId}{"driver"} eq "usbhid-ups")
 			{

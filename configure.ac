@@ -76,6 +76,14 @@ if test ! -d "${udevdir}"; then
    fi
 fi
 
+devddir='/usr/local/etc/devd'
+if test ! -d "${devddir}"; then
+   devddir='/etc/devd'
+   if test ! -d "${devddir}"; then
+      devddir=''
+   fi
+fi
+
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 PIDPATH="/var/run"
@@ -1091,6 +1099,38 @@ else
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
+dnl FreeBSD devd support:
+
+AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
+AC_ARG_WITH(devd-dir,
+	AS_HELP_STRING([--with-devd-dir=PATH], [where to install devd.conf file (/usr/local/etc/devd or /etc/devd)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${devddir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["devd directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		devddir=""
+		;;
+	*)
+		devddir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${devddir}"; then
+	AC_MSG_RESULT(using ${devddir})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
+
+dnl
+
 AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
 AC_PATH_PROGS([A2X], [a2x], [none])
@@ -1174,6 +1214,7 @@ AC_SUBST(RUN_AS_GROUP)
 AC_SUBST(SUN_LIBUSB)
 AC_SUBST(WORDS_BIGENDIAN)
 AC_SUBST(cgiexecdir)
+AC_SUBST(devddir)
 AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
@@ -1212,6 +1253,8 @@ AC_OUTPUT([
  scripts/augeas/nuthostsconf.aug
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
+ scripts/devd/Makefile
+ scripts/devd/nut-usb.conf
  scripts/hal/Makefile
  scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile

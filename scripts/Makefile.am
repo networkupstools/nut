@@ -24,4 +24,4 @@ upower/95-upower-hid.rules \
 Windows/halt.c \
 Windows/Makefile
 
-SUBDIRS = augeas hal hotplug python systemd udev Solaris
+SUBDIRS = augeas devd hal hotplug python systemd udev Solaris
