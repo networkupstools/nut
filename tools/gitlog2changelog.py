@@ -1,11 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright 2008 Marcus D. Hanwell <marcus@cryos.org>
+# Minor changes for NUT by Charles Lepple
 # Distributed under the terms of the GNU General Public License v2 or later
 
 import string, re, os
+from textwrap import TextWrapper
 
 # Execute git log with the desired command line options.
-fin = os.popen('git log --summary --stat --no-merges --date=short', 'r')
+fin = os.popen('git log --summary --stat --no-merges --date=short v2.6.2..HEAD', 'r')
 # Create a ChangeLog file in the current directory.
 fout = open('ChangeLog', 'w')
 
@@ -18,6 +20,8 @@ message = ""
 messageNL = False
 files = ""
 prevAuthorLine = ""
+
+wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ")
 
 # The main part of the loop
 for line in fin:
@@ -44,8 +48,11 @@ for line in fin:
         date = dateList[1]
         date = date[0:len(date)-1]
         dateFound = True
+    # The Fossil-IDs are ignored:
+    elif line.startswith('    Fossil-ID:') or line.startswith('    [[SVN:'):
+        continue
     # The svn-id lines are ignored
-    elif re.match('    git-svn-id:', line) >= 0:
+    elif '    git-svn-id:' in line:
         continue
     # The sign off line is ignored too
     elif re.search('Signed-off-by', line) >= 0:
@@ -83,31 +90,18 @@ for line in fin:
         # author on this day
         authorLine = date + "  " + author
         if len(prevAuthorLine) == 0:
-            fout.write(authorLine + "\n")
+            fout.write(authorLine + "\n\n")
         elif authorLine == prevAuthorLine:
             pass
         else:
-            fout.write("\n" + authorLine + "\n")
+            fout.write("\n" + authorLine + "\n\n")
 
         # Assemble the actual commit message line(s) and limit the line length
         # to 80 characters.
         commitLine = "* " + files + ": " + message
-        i = 0
-        commit = ""
-        while i < len(commitLine):
-            if len(commitLine) < i + 78:
-                commit = commit + "\n  " + commitLine[i:len(commitLine)]
-                break
-            index = commitLine.rfind(' ', i, i+78)
-            if index > i:
-                commit = commit + "\n  " + commitLine[i:index]
-                i = index+1
-            else:
-                commit = commit + "\n  " + commitLine[i:78]
-                i = i+79
 
         # Write out the commit line
-        fout.write(commit + "\n")
+        fout.write(wrapper.fill(commitLine) + "\n")
 
         #Now reset all the variables ready for a new commit block.
         authorFound = False
