@@ -447,6 +447,10 @@ public:
 	 * Test if the two devices are sames (same name ad same client attached to).
 	 */
 	bool operator==(const Device& dev)const;
+  /**
+   * Comparison operator.
+   */
+  bool operator<(const Device& dev)const;
 
 	/**
 	 * Retrieve the description of the devce if specified.
@@ -590,7 +594,6 @@ public:
 	 * Test if the two variables are sames (same name ad same device attached to).
 	 */
 	bool operator==(const Variable& var)const;
-
 	/**
 	 * Less-than operator (based on variable name) to allow variable sorting.
 	 */

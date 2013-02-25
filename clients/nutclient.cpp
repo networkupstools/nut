@@ -944,6 +944,11 @@ bool Device::operator==(const Device& dev)const
 	return dev._client==_client && dev._name==_name;
 }
 
+bool Device::operator<(const Device& dev)const
+{
+  return getName()<dev.getName();
+}
+
 std::string Device::getDescription()throw(NutException)
 {
 	return getClient()->getDeviceDescription(getName());
