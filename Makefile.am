@@ -35,7 +35,7 @@ distcheck-light:
 distcleancheck:
 	@:
 
-# Automatically generate the ChangeLog from SVN logs:
+# Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
 # Force ChangeLog regeneration upon make dist (due to inexistant 'dummy-stamp'),
 # in case it has already been generated previously
