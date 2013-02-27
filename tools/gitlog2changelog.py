@@ -37,13 +37,13 @@ for line in fin:
         files = ""
         continue
     # Match the author line and extract the part we want
-    elif re.match('Author:', line) >=0:
+    elif 'Author:' in line:
         authorList = re.split(': ', line, 1)
         author = authorList[1]
         author = author[0:len(author)-1]
         authorFound = True
     # Match the date line
-    elif re.match('Date:', line) >= 0:
+    elif 'Date:' in line:
         dateList = re.split(':   ', line, 1)
         date = dateList[1]
         date = date[0:len(date)-1]
@@ -55,7 +55,7 @@ for line in fin:
     elif '    git-svn-id:' in line:
         continue
     # The sign off line is ignored too
-    elif re.search('Signed-off-by', line) >= 0:
+    elif 'Signed-off-by' in line:
         continue
     # Extract the actual commit message for this commit
     elif authorFound & dateFound & messageFound == False:
