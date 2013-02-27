@@ -122,6 +122,9 @@ apc_compattab_t apc_compattab[] = {
 	{ "7QI",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "7TD",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	{ "7TI",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
+	/* SmartUPS 600I */
+	/* add 'T' here when/if we allow multiple nut vars to correspond to single apc var */
+	{ "6JI",	"@789ABCFGKLMNOPQSUVWXYZfg", 0 },
 	/* SmartUPS 900I */
 	{ "7II",	"@79ABCEFGKLMNOPQSUVWXYZcfg", 0 },
 	/* SmartUPS 2000I */
