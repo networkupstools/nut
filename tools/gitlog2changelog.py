@@ -26,7 +26,7 @@ wrapper = TextWrapper(initial_indent="\t", subsequent_indent="\t  ")
 # The main part of the loop
 for line in fin:
     # The commit line marks the start of a new commit object.
-    if string.find(line, 'commit') >= 0:
+    if line.startswith('commit'):
         # Start all over again...
         authorFound = False
         dateFound = False
