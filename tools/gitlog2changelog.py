@@ -5,9 +5,16 @@
 
 import string, re, os
 from textwrap import TextWrapper
+import sys
+
+rev_range = ''
+
+if len(sys.argv) > 1:
+    base = sys.argv[1]
+    rev_range = '%s..HEAD' % base
 
 # Execute git log with the desired command line options.
-fin = os.popen('git log --summary --stat --no-merges --date=short v2.6.2..HEAD', 'r')
+fin = os.popen('git log --summary --stat --no-merges --date=short %s' % rev_range, 'r')
 # Create a ChangeLog file in the current directory.
 fout = open('ChangeLog', 'w')
 

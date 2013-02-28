@@ -37,11 +37,11 @@ distcleancheck:
 
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
-# Force ChangeLog regeneration upon make dist (due to inexistant 'dummy-stamp'),
+# Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	tools/gitlog2changelog.py || \
+	tools/gitlog2changelog.py v2.6.0 || \
 		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
 if HAVE_ASCIIDOC
