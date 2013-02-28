@@ -306,6 +306,33 @@ This replaces the old "ENUM" command.
 NOTE: this does not support the old "SELECTED" notation.  You must
 request the current value separately.
 
+POWERCHAIN
+~~~~~~~~~~
+
+Form:
+
+	LIST POWERCHAIN
+
+Response:
+
+	BEGIN LIST POWERCHAIN
+	POWERCHAIN <device name> ; ... ; <device name>
+	...
+	END LIST POWERCHAIN
+
+	BEGIN LIST POWERCHAIN
+	POWERCHAIN psu1 ; outlet.1:pdu1 ; ups1
+	POWERCHAIN psu2 ; outlet.1:pdu2 ; ups2
+	END LIST POWERCHAIN
+
+'<device name>' are names from ups.conf.
+
+This can be used to determine whether PowerChain is supported
+or not on this host.  This is also the way to obtain the list of all
+powerchains for the given host.
+
+Clients which perform a PowerChain discovery process may find this useful.
+
 RANGE
 ~~~~~
 

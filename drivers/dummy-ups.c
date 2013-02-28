@@ -39,7 +39,7 @@
 #include "upsclient.h"
 #include "dummy-ups.h"
 
-#define DRIVER_NAME	"Device simulation and repeater driver"
+#define DRIVER_NAME	"Device simulation and repetition driver"
 #define DRIVER_VERSION	"0.13"
 
 /* driver description structure */

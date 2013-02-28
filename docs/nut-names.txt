@@ -38,6 +38,8 @@ during a transition period. The ups.* data will then be removed.
 | device.location     | Device physical location (opaque string)   | 1rst floor
 | device.part         | Device part number (opaque string)         | 123456789
 | device.macaddr      | Physical network address of the device     | 68:b5:99:f5:89:27 
+| device.parent       | Reference to the parent link in the
+                        PowerChain (NUT host format)               | ups1@localhost
 |=====================================================================================
 
 ups: General unit information

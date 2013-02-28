@@ -1,0 +1,92 @@
+PowerChain
+==========
+
+NUT provides a feature that allows to track all links that are part of a power
+distribution chain.
+
+This chapter presents this feature, called *Powerchain*.
+
+
+Introduction
+------------
+
+Powerchain provides a way to store and retrieve the power distribution chain(s)
+that feeds a server.
+
+The aims are:
+
+- tracking the whole power infrastructure, which can help managing datacenters
+for example,
+- providing means to smartly monitor power, for protection purpose.
+
+
+Power infrastructure tracking
+-----------------------------
+
+Powerchain implementation is very simple:
+
+- each device can point its parent, by defining a configuration option in
+ups.conf. This option is named 'parent', and is published as 'device.parent'
+part of the driver data. The default is 'Main', when not specified.
+
+- NUT data server ('upsd') can then serve these data, to clients such as upsc.
+
+As an example, consider the following server with two power supplies and two
+UPS, feeding separately each power supply:
+
+image:images/bigbox.png[]
+
+
+The NUT configuration, in ups.conf, would be:
+
+	[psu1]
+		driver = nut-ipmipsu
+		port = psu1
+		parent = ups1
+	[ups1]
+		driver = usbhid-ups
+		port = auto
+	[psu2]
+		driver = nut-ipmipsu
+		port = psu2
+		parent = ups2
+	[ups2]
+		driver = usbhid-ups
+		port = auto
+
+To list all Powerchains for localhost:
+
+    $ upsc -P
+    Main ; ups2 ; psu2 ; localhost-name
+    Main ; ups1 ; psu1 ; localhost-name
+
+To get only the Powerchain to which 'ups2' belongs:
+
+    $ upsc -p ups2
+    Main ; ups2 ; psu2 ; localhost-name
+
+
+Reference: linkman:upsmon[8]
+
+
+Smart power monitoring
+----------------------
+
+WARNING: this feature is not yet available in upsmon (work in progress)!
+
+Consider the below schema:
+
+image:images/bigbox.png[]
+
+In traditional UPS monitoring system, you would only monitor UPSs.
+
+Now imagine that PSU#1 is defective and UPS #2 reaches low battery.
+With traditional systems, you would consider the remaining UPS (that is online)
+and sudenly crash your server!
+
+With NUT Smart power monitoring, you will be able to monitor the power supplies
+of your server, along with the UPSs and PDUs. Powerchains will enable an
+advanced visibility, and permit smart actions execution.
+
+
+Reference: linkman:upsmon[8]

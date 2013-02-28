@@ -2,7 +2,7 @@
 
    Copyright (C)
     2003  Russell Kroll <rkroll@exploits.org>
-	2012  Arnaud Quette <arnaud.quette@free.fr>
+	2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include "neterr.h"
 
 #include "netlist.h"
+#include "powerchain.h"
 
 extern	upstype_t	*firstups;	/* for list_ups */
 extern	nut_ctype_t *firstclient;	/* for list_clients */
@@ -253,7 +254,50 @@ static void list_ups(nut_ctype_t *client)
 	}
 
 	sendback(client, "END LIST UPS\n");
-}	
+}
+
+static void list_powerchain(nut_ctype_t *client)
+{
+	powerchain_t	*ptmp;
+	powerlink_t		*plink;
+	char			pstr[SMALLBUF];
+
+	if (!sendback(client, "BEGIN LIST POWERCHAIN\n"))
+		return;
+
+	/* Loop on Powerchains list */
+	ptmp = powerchains;
+
+	while (ptmp) {
+		int	ret;
+
+		plink = ptmp->nodes;
+		memset(pstr, '\0', SMALLBUF);
+
+		/* Loop on Powerlinks */
+		while (plink) {
+
+			upsdebugx(1, "plink->name = %s (%s)", plink->name, pstr);
+
+			snprintfcat(pstr, SMALLBUF, "%s", plink->name);
+			plink = plink->child;
+			
+			if (plink)
+				snprintfcat(pstr, SMALLBUF, " ; ");
+		}
+
+		/* Now send the Powerchain */
+		ret = sendback(client, "POWERCHAIN %s\n", pstr);
+
+		if (!ret)
+			return;
+
+		/* Switch to the next Powerchain */
+		ptmp = ptmp->next;
+	}
+
+	sendback(client, "END LIST POWERCHAIN\n");
+}
 
 static void list_clients(nut_ctype_t *client, const char *upsname)
 {
@@ -295,6 +339,12 @@ void net_list(nut_ctype_t *client, int numarg, const char **arg)
 	/* LIST UPS */
 	if (!strcasecmp(arg[0], "UPS")) {
 		list_ups(client);
+		return;
+	}
+
+	/* LIST POWERCHAIN */
+	if (!strcasecmp(arg[0], "POWERCHAIN")) {
+		list_powerchain(client);
 		return;
 	}
 

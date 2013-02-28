@@ -1,7 +1,8 @@
 /* upsc - simple "client" to test communications 
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
-   Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
+   Copyright (C)
+     1999  Russell Kroll <rkroll@exploits.org>
+     2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,25 +30,38 @@
 static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 
+
+typedef struct device {
+	char *		name;
+	char *		desc;
+	struct device *parent;
+} device_t;
+
+
 static void usage(const char *prog)
 {
 	printf("Network UPS Tools upsc %s\n\n", UPS_VERSION);
 
-	printf("usage: %s -l | -L [<hostname>[:port]]\n", prog);
+	printf("usage: %s -l | -L | -P [<hostname>[:port]]\n", prog);
 	printf("       %s <ups> [<variable>]\n", prog);
+	printf("       %s -p <device> [<hostname>[:port]]\n", prog);
 	printf("       %s -c <ups>\n", prog);
 
 	printf("\nDemo program to display UPS variables.\n\n");
 
 	printf("First form (lists UPSes):\n");
-	printf("  -l         - lists each UPS on <hostname>, one per line.\n");
-	printf("  -L         - lists each UPS followed by its description (from ups.conf).\n");
-	printf("               Default hostname: localhost\n");
+	printf("  -l          - lists each UPS on <hostname>, one per line.\n");
+	printf("  -L          - lists each UPS followed by its description (from ups.conf).\n");
+	printf("  -P          - lists PowerChain information.\n");
+	printf("                Default hostname: localhost.\n");
 
 	printf("\nSecond form (lists variables and values):\n");
-	printf("  <ups>      - upsd server, <upsname>[@<hostname>[:<port>]] form\n");
-	printf("  <variable> - optional, display this variable only.\n");
-	printf("               Default: list all variables for <host>\n");
+	printf("  <ups>       - upsd server, <upsname>[@<hostname>[:<port>]] form.\n");
+	printf("  <variable>  - optional, display this variable only.\n");
+	printf("                Default: list all variables for <host>.\n");
+
+	printf("\Third form (return Powerchain(s) that includes this device):\n");
+	printf("  -p <device> - upsd server, <upsname>[@<hostname>[:<port>]] form.\n");
 
 	printf("\nThird form (lists clients connected to a device):\n");
 	printf("  -c         - lists each client connected on <ups>, one per line.\n");
@@ -136,11 +150,11 @@ static void list_upses(int verbose)
 	numq = 1;
 
 	ret = upscli_list_start(ups, numq, query);
-	
+
 	if (ret < 0) {
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
-			fatalx(EXIT_FAILURE, "Error: upsd is too old to support this query");
+			fatalx(EXIT_FAILURE, "Error: upsd does not support this query");
 		}
 
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
@@ -158,6 +172,51 @@ static void list_upses(int verbose)
 		} else {
 			printf("%s\n", answer[1]);
 		}
+	}
+}
+
+static void list_powerchains(const char* powerlink_name)
+{
+	int				ret;
+	unsigned int	numq, numa, i;
+	const char		*query[4];
+	char			**answer;
+	char			pstr[SMALLBUF];
+
+	query[0] = "POWERCHAIN";
+	numq = 1;
+
+	ret = upscli_list_start(ups, numq, query);
+
+	if (ret < 0) {
+		/* check for an old upsd */
+		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {
+			fatalx(EXIT_FAILURE, "Error: upsd does not support this query");
+		}
+
+		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	}
+
+	while (upscli_list_next(ups, numq, query, &numa, &answer) == 1) {
+
+		memset(pstr, '\0', SMALLBUF);
+
+		/* POWERCHAIN <root link> [ ; <link> ; ... ; <link>] */
+		if (numa < 2) {
+			fatalx(EXIT_FAILURE, "Error: insufficient data (got %d args, need at least 3)", numa);
+		}
+
+		/* FIXME: format output */
+		for (i = 1 ; i < numa ; i++) {
+			snprintfcat(pstr, SMALLBUF, "%s ", answer[i]);
+		}
+		if (powerlink_name) {
+			/* FIXME: full word matching */
+			if (strstr(pstr, powerlink_name))
+				printf("%s\n", pstr);
+		}
+		else
+			printf("%s\n", pstr);
 	}
 }
 
@@ -208,10 +267,11 @@ static void clean_exit(void)
 int main(int argc, char **argv)
 {
 	int	i, port;
-	int	varlist = 0, clientlist = 0, verbose = 0;
+	int	varlist = 0, clientlist = 0, verbose = 0, powerchainlist = 0;
 	const char	*prog = xbasename(argv[0]);
+	const char	*powerlink_name = NULL;
 
-	while ((i = getopt(argc, argv, "+hlLcV")) != -1) {
+	while ((i = getopt(argc, argv, "+hlLPcVp:")) != -1) {
 
 		switch (i)
 		{
@@ -219,6 +279,15 @@ int main(int argc, char **argv)
 			verbose = 1;
 		case 'l':
 			varlist = 1;
+			break;
+		case 'p':
+			varlist = 1;
+			powerchainlist = 1;
+			powerlink_name = optarg;
+			break;
+		case 'P':
+			varlist = 1;
+			powerchainlist = 1;
 			break;
 		case 'c':
 			clientlist = 1;
@@ -254,6 +323,11 @@ int main(int argc, char **argv)
 
 	if (upscli_connect(ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0) {
 		fatalx(EXIT_FAILURE, "Error: %s", upscli_strerror(ups));
+	}
+
+	if (powerchainlist) {
+		list_powerchains(powerlink_name);
+		exit(EXIT_SUCCESS);
 	}
 
 	if (varlist) {

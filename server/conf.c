@@ -1,6 +1,8 @@
 /* conf.c - configuration handlers for upsd
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     2001  Russell Kroll <rkroll@exploits.org>
+     2011  Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,6 +25,7 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include "powerchain.h"
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
@@ -304,6 +307,9 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 	} else if (!strcmp(var, "desc")) {
 		free(temp->desc);
 		temp->desc = xstrdup(val);
+	} else if (!strcmp(var, "parent")) {
+		free(temp->parent);
+		temp->parent = xstrdup(val);
 	}
 }
 
@@ -342,6 +348,9 @@ void upsconf_add(int reloading)
 				ups_update(statefn, tmp->upsname, tmp->desc);
 			else
 				ups_create(statefn, tmp->upsname, tmp->desc);
+				
+			/* Now process powerchain information */
+			powerchain_add(tmp->upsname, tmp->parent);
 		}
 
 		/* free tmp's resources */
@@ -350,6 +359,7 @@ void upsconf_add(int reloading)
 		free(tmp->port);
 		free(tmp->desc);
 		free(tmp->upsname);
+		free(tmp->parent);
 		free(tmp);
 
 		tmp = next;

@@ -39,6 +39,7 @@ typedef struct ups_s {
 	char	*driver;
 	char	*port;
 	char	*desc;
+	char	*parent;
 	struct ups_s	*next;
 } ups_t;
 

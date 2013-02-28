@@ -104,6 +104,11 @@ include::outlets.txt[]
 include::security.txt[]
 
 
+[[powerchain]]
+
+include::powerchain.txt[]
+
+
 Appendix A: Glossary
 ====================
 

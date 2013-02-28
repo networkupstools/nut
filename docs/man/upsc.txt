@@ -4,13 +4,15 @@ UPSC(8)
 
 NAME
 ----
-upsc - example lightweight UPS client
+upsc - example lightweight NUT client
 
 SYNOPSIS
 --------
-*upsc* -l | -L ['host']
+*upsc* -l | -L | -P ['host']
 
 *upsc* 'ups' ['variable']
+
+*upsc* -p 'device' ['host']
 
 *upsc* -c 'ups'
 
@@ -34,6 +36,18 @@ OPTIONS
   provided by the remote upsd(8) from ups.conf(5). The hostname defaults to
   "localhost".  You may optionally add a colon and a port number to override the
   default port.
+
+*-P* 'host'::
+
+  List PowerChain information, that is the power distribution chains that feeds
+  power to the system. For more information, refer to the 'Powerchain' chapter
+  of the NUT user manual.
+
+*-p* 'device'::
+
+  List PowerChain(s) to which 'device' belongs to. There may be '0' or several,
+  depending on 'device'. For more information, refer to the 'Powerchain' chapter
+  of the NUT user manual.
 
 *-c* 'ups'::
 
@@ -74,6 +88,17 @@ syntax:
     $ for UPS in `upsc -l mybox:1234`; do
         upsc $UPS ups.status
     done
+
+To list all Powerchains for localhost:
+
+    $ upsc -P
+    Main ; ups2 ; pdu2 ; psu2 ; localhost-name
+    Main ; ups1 ; pdu1 ; psu1 ; localhost-name
+
+To get only the Powerchain to which 'ups2' belongs:
+
+    $ upsc -p ups2
+    Main ; ups2 ; pdu2 ; psu2 ; localhost-name
 
 To list clients connected on "myups":
 

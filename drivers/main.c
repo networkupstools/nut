@@ -153,6 +153,11 @@ static void storeval(const char *var, char *val)
 		return;
 	}
 
+	if (!strncasecmp(var, "parent", 6)) {
+		dstate_setinfo("device.parent", "%s", val);
+		return;
+	}
+
 	tmp = last = vartab_h;
 
 	while (tmp) {

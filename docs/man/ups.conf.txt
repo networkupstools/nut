@@ -161,6 +161,17 @@ from the UPS.  Used for overriding values from the UPS that are clearly wrong
 Use with caution!  This will only change the appearance of the variable to
 the outside world, internally in the UPS the original value is used.
 
+*parent*::
+
+Optional.  Set the Powerchain link for this device with its parent device.
+For example, a PSU that is powered by UPS1 would have the following entry in
+ups.conf:
+
+	parent = UPS1
+
+For more information on NUT Powerchain feature, refer to the 
+link:http://www.networkupstools.org/docs/user-manual.chunked/index.html[NUT user manual]. 
+
 All other fields are passed through to the hardware-specific part of the
 driver.  See those manuals for the list of what is allowed.
 
