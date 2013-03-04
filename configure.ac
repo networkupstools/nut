@@ -1209,6 +1209,7 @@ AC_OUTPUT([
  lib/libnutclient.pc
  lib/libnutscan.pc
  lib/Makefile
+ scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsconf.aug

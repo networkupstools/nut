@@ -113,14 +113,16 @@ package:
 		cd scripts/HP-UX; \
 		make package; \
 		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
-	else \
-		if test `uname -s` = "SunOS"; then \
-			make; \
-			rm -rf @prefix@; \
-			make install; \
-			cd scripts/Solaris; \
-			make package; \
-			make uninstall; \
-			rm -rf @prefix@; \
-		fi; \
+	elif test `uname -s` = "SunOS"; then \
+		make; \
+		rm -rf @prefix@; \
+		make install; \
+		cd scripts/Solaris; \
+		make package; \
+		make uninstall; \
+		rm -rf @prefix@; \
+	elif test `uname -s` = "AIX"; then \
+		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \
+		cp scripts/Aix/nut.init nut-*.tar.gz /usr/src/packages/SOURCES; \
+		rpm -ba /usr/src/packages/SPECS/nut-aix.spec; \
 	fi;
