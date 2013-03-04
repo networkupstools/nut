@@ -1,4 +1,6 @@
 EXTRA_DIST = README \
+Aix/nut.init \
+Aix/nut-aix.spec.in \
 avahi/nut.service.in \
 HP-UX/nut-drvctl \
 HP-UX/nut-drvctl.sh \
