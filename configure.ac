@@ -1112,6 +1112,9 @@ dnl check for spell checking deps
 AC_PATH_PROGS([ASPELL], [aspell], [none])
 AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
 
+dnl processor type
+AC_DEFINE_UNQUOTED(CPU_TYPE, `uname -p 2>/dev/null || echo unknown`, [Define processor type])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
