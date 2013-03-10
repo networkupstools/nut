@@ -17,6 +17,6 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 
 else !HAVE_CPPUNIT
 
-EXTRA_DIST = example.cpp nutconf.cpp cpputest.cpp nutstream_ut.cpp nutconf_ut.cpp mnutipc_ut.cpp
+EXTRA_DIST = example.cpp nutconf.cpp cpputest.cpp nutstream_ut.cpp nutconf_ut.cpp nutipc_ut.cpp
 
 endif !HAVE_CPPUNIT
