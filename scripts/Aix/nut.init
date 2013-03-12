@@ -166,7 +166,7 @@ case "$1" in
 
 		if test -e /var/run/nut/upsmon.pid; then
 			echo "upsmon is running with PID" `cat /var/run/nut/upsmon.pid`
-		elif rpm -q nut-client >/dev/null 2>/dev/null; then
+		elif rpm -q nut-client >/dev/null 2>&1; then
 			echo "upsmon isn't running"
 		fi
 		;;

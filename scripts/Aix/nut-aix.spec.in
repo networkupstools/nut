@@ -154,6 +154,7 @@ exit 0
 %{initdir}/ups stop
 if [ "$1" = "0" ]; then
     rm -f %{rcdir}/rc2.d/[SK]ups
+    rm -rf %{piddir}
     ls -A %{_libdir}/ups | \
     sed -e s!^!%{_libdir}/ups/! | \
     xargs rm -f
@@ -183,20 +184,31 @@ exit 0
 
 %preun client
 %{initdir}/ups stop
-if [ "$1" = "0" ]; then
+remove="no"
+if rpm -q nut >/dev/null 2>&1; then
+    remove="no"
+elif [ "$1" = "0" ]; then
+    remove="yes"
+fi
+if [ "$remove" = "yes" ]; then
     rm -f %{rcdir}/rc2.d/[SK]ups
-    /sbin/service ups stop > /dev/null 2>&1
-    /sbin/chkconfig --del ups
     rm -rf %{piddir}
 fi
-/sbin/ldconfig
 exit 0
 
 %postun client
-if [ "$1" -ge "1" ]; then
-    /sbin/service ups condrestart > /dev/null 2>&1
+remove="no"
+if rpm -q nut >/dev/null 2>&1; then
+    remove="no"
+elif [ "$1" = "0" ]; then
+    remove="yes"
 fi
-/sbin/ldconfig
+if [ "$remove" = "yes" ]; then
+    grep -qc %{name} /etc/passwd && \
+    /usr/sbin/userdel %{name}
+else
+    %{initdir}/ups start
+fi
 exit 0
 
 %clean
@@ -211,7 +223,7 @@ rm -rf %{buildroot}
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsd.conf.sample
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsd.users.sample
 %dir %attr(750,nut,%nut_group) %{_libdir}/ups
-%ghost %{piddir}
+#%ghost %{piddir}
 %{_sbindir}/*
 %{_bindir}/upslog
 %{_bindir}/nutconf
@@ -275,7 +287,7 @@ rm -rf %{buildroot}
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsmon.conf.sample
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upssched.conf.sample
 %dir %attr(750,nut,%nut_group) %{_libdir}/ups
-%ghost %{piddir}
+#%ghost %{piddir}
 %{_bindir}/upsc
 %{_bindir}/upscmd
 %{_bindir}/upsrw
