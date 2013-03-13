@@ -538,6 +538,24 @@ renamed to usbhid-ups.
 usbhid-ups is built automatically if possible (libusb development files
 need to be installed) and installed by the "make install" command.
 
+== My USB UPS is supported but doesn't work!
+
+On Linux, udev rules are provided to set the correct permissions on device file.
+This allows the NUT driver to communicate with the UPS, through this device file.
+
+However, the driver may still failed to start and support the device, with a
+message like:
+
+	failed to claim USB device: could not claim interface 0: Operation not permitted
+
+*Operation not permitted* is a message pointing a privilege issue.
+The most frequent issue is that udev has not actually applied the rule:
+
+- if NUT has been freshly installed,
+- and if the device USB cord was already plugged when installing nut.
+
+In this case, just unplug and plug back the USB cord, then restart nut.
+
 == Why doesn't my package work?
 
 Or a variation like...
