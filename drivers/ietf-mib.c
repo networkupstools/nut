@@ -184,18 +184,18 @@ static snmp_info_t ietf_mib[] = {
 	{ "debug.[2].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.2", "", SU_BYPASS_3, NULL },
 	{ "debug.[3].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.3", "", SU_BYPASS_3, NULL },
 #endif
-	{ "input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_1, NULL }, /* upsBypassVoltage */
-	{ "input.bypass.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.2", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.3", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_1, NULL }, /* upsBypassCurrent */
-	{ "input.bypass.L1.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.L2.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.2", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.L3.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.4.3", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.1", "", SU_BYPASS_1, NULL }, /* upsBypassPower */
-	{ "input.bypass.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.1", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.2", "", SU_BYPASS_3, NULL },
-	{ "input.bypass.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.5.3", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.1", "", SU_BYPASS_1, NULL }, /* upsBypassVoltage */
+	{ "input.bypass.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.1", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.2", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.3", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_1, NULL }, /* upsBypassCurrent */
+	{ "input.bypass.L1.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L2.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.2", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L3.current", 0, 0.1, IETF_OID_UPS_MIB "5.3.1.3.3", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_1, NULL }, /* upsBypassPower */
+	{ "input.bypass.L1.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.1", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L2.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.2", "", SU_BYPASS_3, NULL },
+	{ "input.bypass.L3.realpower", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.4.3", "", SU_BYPASS_3, NULL },
 
 	/* Alarm Group */
 #ifdef DEBUG
