@@ -184,7 +184,7 @@ static snmp_info_t ietf_mib[] = {
 	{ "debug.[2].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.2", "", SU_BYPASS_3, NULL },
 	{ "debug.[3].upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.3", "", SU_BYPASS_3, NULL },
 #endif
-	{ "input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.3.1", "", SU_BYPASS_1, NULL }, /* upsBypassVoltage */
+	{ "input.bypass.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.1", "", SU_BYPASS_1, NULL }, /* upsBypassVoltage */
 	{ "input.bypass.L1-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.1", "", SU_BYPASS_3, NULL },
 	{ "input.bypass.L2-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.2", "", SU_BYPASS_3, NULL },
 	{ "input.bypass.L3-N.voltage", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.2.3", "", SU_BYPASS_3, NULL },
