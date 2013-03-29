@@ -104,7 +104,7 @@ const char * Usage::s_text[] = {
 "Monitor is specified by the following sequence:",
 "    <ups_ID> <host>[:<port>] <power_value> <user> <passwd> (\"master\"|\"slave\")",
 "UPS device is specified by the following sequence:",
-"    <ups_ID> <driver> <port> [<description>]",
+"    <ups_ID> <driver> <port> [<key>=<value>]*",
 "Notification types:",
 "    ONLINE, ONBATT, LOWBATT, FSD, COMMOK, COMMBAD, SHUTDOWN, REPLBATT, NOCOMM, NOPARENT",
 "Notification flags:",
@@ -910,10 +910,11 @@ class NutConfOptions: public Options {
 
 	/** Device specification */
 	struct DeviceSpec {
-		std::string id;      /**< Device ID          */
-		std::string driver;  /**< Device driver      */
-		std::string port;    /**< Device port        */
-		std::string desc;    /**< Device description */
+		/** Device settings map */
+		typedef std::map<std::string, std::string> Map;
+
+		std::string id;        /**< Device identifier */
+		Map         settings;  /**< Device settings   */
 	};  // end of struct DeviceSpec
 
 	/** Notify flags specification */
@@ -1329,11 +1330,6 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 			else if (args.size() < 3)
 				m_errors.push_back("--" + *opt + " option requires at least 3 arguments");
 
-			else if (args.size() > 4) {
-				m_errors.push_back("--" + *opt + " option takes at most 4 arguments");
-				m_errors.push_back("    (perhaps you need to quote description?)");
-			}
-
 			else {
 				DeviceSpec dev;
 
@@ -1341,12 +1337,23 @@ NutConfOptions::NutConfOptions(char * const argv[], int argc):
 
 				assert(args.size() >= 3);
 
-				dev.id     = *arg++;
-				dev.driver = *arg++;
-				dev.port   = *arg++;
+				dev.id = *arg++;
 
-				if (arg != args.end())
-					dev.desc = *arg;
+				dev.settings["driver"] = *arg++;
+				dev.settings["port"]   = *arg++;
+
+				for (; arg != args.end(); ++arg) {
+					size_t eq_pos = (*arg).find('=');
+
+					if (std::string::npos == eq_pos)
+						m_errors.push_back("--" + *opt +
+							" option extra argument '" +
+							*arg + "' is illegal");
+
+					else
+						dev.settings[(*arg).substr(0, eq_pos)] =
+							(*arg).substr(eq_pos + 1);
+				}
 
 				devices.push_back(dev);
 			}
@@ -2196,11 +2203,11 @@ void setDevices(
 	for (; dev != devices.end(); ++dev) {
 		const std::string & id = (*dev).id;
 
-		ups_conf.setDriver(id, (*dev).driver);
-		ups_conf.setPort(id, (*dev).port);
+		NutConfOptions::DeviceSpec::Map::const_iterator
+			setting = (*dev).settings.begin();
 
-		if (!(*dev).desc.empty())
-			ups_conf.setDescription(id, (*dev).desc);
+		for (; setting != (*dev).settings.end(); ++setting)
+			ups_conf.setKey(id, setting->first, setting->second);
 	}
 
 	// Store configuration
