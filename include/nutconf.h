@@ -791,6 +791,14 @@ public:
 
 	/** \} */
 
+	/** Generic <key>=<value> getter */
+	inline std::string getKey(const std::string & ups, const std::string & key) const { return getStr(ups, key); }
+
+	/** Generic <key>=<value> setter */
+	inline void setKey(const std::string & ups, const std::string & key, const std::string & val) {
+		setStr(ups, key, val);
+	}
+
 	/** UPS-specific configuration attributes getters and setters \{ */
 	inline std::string getDriver(const std::string & ups)              const { return getStr(ups, "driver"); }
 	inline std::string getDescription(const std::string & ups)         const { return getStr(ups, "desc"); }
