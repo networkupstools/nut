@@ -151,10 +151,6 @@ multiple UPS units).
 Java
 ----
 
-This chapter presents the new Java support for NUT, called jNut.
+The NUT java support have been externalized.
+It is available at https://github.com/networkupstools/jnut
 
-include::../scripts/java/README[]
-
-include::../scripts/java/jNut/README[]
-
-include::../scripts/java/jNutList/README[]

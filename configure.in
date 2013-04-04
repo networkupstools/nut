@@ -1210,7 +1210,6 @@ AC_OUTPUT([
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
- scripts/java/Makefile
  scripts/python/Makefile
  scripts/systemd/Makefile
  scripts/systemd/nut-driver.service
