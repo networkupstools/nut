@@ -25,6 +25,8 @@
  * Reference of the derivative work: blazer driver   
  */
 
+#include <stdint.h>
+ 
 #include "main.h"
 #include "libusb.h"
 #include "usb-common.h"
@@ -42,20 +44,20 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-BYTE bufOut[128];
-BYTE bufIn[192];
+uint8_t bufOut[BUFFER_SIZE];
+uint8_t bufIn[BUFFER_SIZE];
 
-BYTE gpser_error_control;
+uint8_t gpser_error_control;
 
-BYTE input_monophase;
-BYTE output_monophase;
+uint8_t input_monophase;
+uint8_t output_monophase;
 
-extern BYTE commbyte;
-extern int wait_packet;
-extern int foundnak;
-extern int foundbadcrc;
-extern int buf_ptr_length;
-extern BYTE requestSENTR;
+extern uint8_t commbyte;
+extern uint8_t wait_packet;
+extern uint8_t foundnak;
+extern uint8_t foundbadcrc;
+extern uint8_t buf_ptr_length;
+extern uint8_t requestSENTR;
 
 TRielloData DevData;
 
@@ -65,7 +67,7 @@ static USBDevice_t usbdevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 
-static int (*subdriver_command)(BYTE *cmd, BYTE *buf, WORD length, WORD buflen) = NULL;
+static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
 void ussleep(long usec)
 {
@@ -103,9 +105,9 @@ static int cypress_setfeatures()
 	return ret;
 }
 
-BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
+uint8_t Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
-	BYTE USB_buff_pom[10];
+	uint8_t USB_buff_pom[10];
 	int i, err, size, errno;
 
 	/* is input correct ? */
@@ -172,7 +174,7 @@ BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
 	return (0);
 }
 
-BYTE Get_USB_Packet(BYTE *buffer)
+uint8_t Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
 	int err, size, errno, ep;
@@ -210,10 +212,10 @@ BYTE Get_USB_Packet(BYTE *buffer)
 	return(size);
 }
 
-static int cypress_command(BYTE *buffer, BYTE *buf, WORD length, WORD buflen)
+static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int	ret, i = 0;
-	BYTE USB_buff[128];
+	uint8_t USB_buff[BUFFER_SIZE];
 
 	/* read to flush buffer */
 /*	ret = Get_USB_Packet(buf+i);*/
@@ -231,7 +233,7 @@ static int cypress_command(BYTE *buffer, BYTE *buf, WORD length, WORD buflen)
 
 	memset(buf, 0, buflen);
 
-	while ((buf_ptr_length < 128) && wait_packet) {
+	while ((buf_ptr_length < BUFFER_SIZE) && wait_packet) {
 
 		memset(USB_buff, 0, sizeof(USB_buff));
 		ret = Get_USB_Packet(USB_buff);
@@ -305,7 +307,7 @@ static USBDeviceMatcher_t device_matcher = {
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int riello_command(BYTE *cmd, BYTE *buf, WORD length, WORD buflen)
+int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int ret;
 
@@ -364,7 +366,7 @@ int riello_command(BYTE *cmd, BYTE *buf, WORD length, WORD buflen)
 int get_ups_nominal() 
 {
 
-	BYTE recv, length;
+	uint8_t recv, length;
 
 	length = riello_prepare_gn(&bufOut[0], gpser_error_control);
 
@@ -389,7 +391,7 @@ int get_ups_nominal()
 
 int get_ups_status() 
 {
-	BYTE recv, numread, length;
+	uint8_t recv, numread, length;
 
 	length = riello_prepare_rs(&bufOut[0], gpser_error_control);
 
@@ -421,7 +423,7 @@ int get_ups_status()
 
 int get_ups_extended() 
 {
-	BYTE recv, length;
+	uint8_t recv, length;
 
 	length = riello_prepare_re(&bufOut[0], gpser_error_control);
 
@@ -446,7 +448,7 @@ int get_ups_extended()
 
 int get_ups_statuscode() 
 {
-	BYTE recv, length;
+	uint8_t recv, length;
 
 	length = riello_prepare_rc(&bufOut[0], gpser_error_control);
 
@@ -471,8 +473,8 @@ int get_ups_statuscode()
 
 int riello_instcmd(const char *cmdname, const char *extra)
 {
-	BYTE length, recv;
-	WORD delay;
+	uint8_t length, recv;
+	uint16_t delay;
 	const char	*delay_char;
 
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
@@ -656,7 +658,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 
 int start_ups_comm() 
 {
-	WORD length;
+	uint16_t length;
 	int recv;
 
 	upsdebugx (2, "entering start_ups_comm()\n");
@@ -698,7 +700,7 @@ void upsdrv_initups(void)
 {
 	const struct {
 		const char	*name;
-		int		(*command)(BYTE *cmd, BYTE *buf, WORD length, WORD buflen);
+		int		(*command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen);
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
 		{ NULL }
@@ -879,9 +881,9 @@ void upsdrv_shutdown(void)
 
 void upsdrv_updateinfo(void)
 {
-	BYTE getnominalOK;
-	BYTE getstatusOK;
-	BYTE getextendedOK;
+	uint8_t getnominalOK;
+	uint8_t getstatusOK;
+	uint8_t getextendedOK;
 
 	if (get_ups_nominal() > 0) 
 		getnominalOK = 1;
@@ -900,7 +902,7 @@ void upsdrv_updateinfo(void)
 
 	if (getnominalOK) {
 		dstate_setinfo("ups.realpower.nominal", "%u", 0); 
-		dstate_setinfo("ups.upspower.nominal", "%u", 0); 
+		dstate_setinfo("ups.power.nominal", "%u", 0); 
 		dstate_setinfo("output.voltage.nominal", "%u", 0); 
 		dstate_setinfo("output.frequency.nominal", "%.1f", 0.0); 
 		dstate_setinfo("battery.voltage.nominal", "%u", 0); 
@@ -1047,12 +1049,12 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("output.L3.current", "%u", 0); 			
 	}
 	else {
-		dstate_setinfo("output.L1.power", "%lu", DevData.Pout1VA); 		
-		dstate_setinfo("output.L2.power", "%lu", DevData.Pout2VA); 		
-		dstate_setinfo("output.L3.power", "%lu", DevData.Pout3VA); 		
-		dstate_setinfo("output.L1.realpower", "%lu", DevData.Pout1W); 		
-		dstate_setinfo("output.L2.realpower", "%lu", DevData.Pout2W); 		
-		dstate_setinfo("output.L3.realpower", "%lu", DevData.Pout3W); 		
+		dstate_setinfo("output.L1.power", "%ul", DevData.Pout1VA); 		
+		dstate_setinfo("output.L2.power", "%ul", DevData.Pout2VA); 		
+		dstate_setinfo("output.L3.power", "%ul", DevData.Pout3VA); 		
+		dstate_setinfo("output.L1.realpower", "%ul", DevData.Pout1W); 		
+		dstate_setinfo("output.L2.realpower", "%ul", DevData.Pout2W); 		
+		dstate_setinfo("output.L3.realpower", "%ul", DevData.Pout3W); 		
 		dstate_setinfo("output.L1.current", "%u", DevData.Iout1); 		
 		dstate_setinfo("output.L2.current", "%u", DevData.Iout2); 	
 		dstate_setinfo("output.L3.current", "%u", DevData.Iout3); 			

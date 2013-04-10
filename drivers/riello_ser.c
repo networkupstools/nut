@@ -25,6 +25,7 @@
  */
 
 #include <string.h>
+#include <stdint.h>
 
 #include "config.h"
 #include "main.h"
@@ -47,21 +48,21 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-BYTE bufOut[128];
-BYTE bufIn[192];
+uint8_t bufOut[BUFFER_SIZE];
+uint8_t bufIn[BUFFER_SIZE];
 
-BYTE gpser_error_control;
-BYTE typeRielloProtocol;
+uint8_t gpser_error_control;
+uint8_t typeRielloProtocol;
 
-BYTE input_monophase;
-BYTE output_monophase;
+uint8_t input_monophase;
+uint8_t output_monophase;
 
-extern BYTE commbyte;
-extern int wait_packet;
-extern int foundnak;
-extern int foundbadcrc;
-extern int buf_ptr_length;
-extern BYTE requestSENTR;
+extern uint8_t commbyte;
+extern uint8_t wait_packet;
+extern uint8_t foundnak;
+extern uint8_t foundbadcrc;
+extern uint8_t buf_ptr_length;
+extern uint8_t requestSENTR;
 
 TRielloData DevData;
 
@@ -153,16 +154,16 @@ int serial_read (int read_timeout, u_char *readbuf)
 	return -1;
 }
 
-void riello_serialcomm(BYTE* bufIn, BYTE typedev)
+void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
 {
 	time_t realt, nowt;
-	BYTE commb = 0;
+	uint8_t commb = 0;
 
 	realt = time(NULL);
 	while (wait_packet) {
 		serial_read(1000, &commb);
 		nowt = time(NULL);
-		commbyte = (BYTE) commb;
+		commbyte = (uint8_t) commb;
 		riello_parse_serialport(typedev, bufIn, gpser_error_control);
 
 		if ((nowt - realt) > 4)
@@ -172,7 +173,7 @@ void riello_serialcomm(BYTE* bufIn, BYTE typedev)
 
 int get_ups_nominal() 
 {
-	BYTE length;
+	uint8_t length;
 
 	riello_init_serial();
 
@@ -204,7 +205,7 @@ int get_ups_nominal()
 
 int get_ups_status() 
 {
-	BYTE numread, length;
+	uint8_t numread, length;
 
 	riello_init_serial();
 
@@ -243,7 +244,7 @@ int get_ups_status()
 
 int get_ups_extended() 
 {
-	BYTE length;
+	uint8_t length;
 
 	riello_init_serial();
 
@@ -275,7 +276,7 @@ int get_ups_extended()
 
 int get_ups_statuscode() 
 {
-	BYTE length;
+	uint8_t length;
 
 	riello_init_serial();
 
@@ -307,7 +308,7 @@ int get_ups_statuscode()
 
 int get_ups_sentr() 
 {
-	BYTE length;
+	uint8_t length;
 
 	riello_init_serial();
 
@@ -349,8 +350,8 @@ int get_ups_sentr()
 
 int riello_instcmd(const char *cmdname, const char *extra)
 {
-	BYTE length;
-	WORD delay;
+	uint8_t length;
+	uint16_t delay;
 	const char	*delay_char;
 
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
@@ -606,7 +607,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 
 int start_ups_comm() 
 {
-	BYTE length;
+	uint8_t length;
 
 	upsdebugx (2, "entering start_ups_comm()\n");
 
@@ -712,9 +713,9 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	BYTE getnominalOK;
-	BYTE getstatusOK;
-	BYTE getextendedOK;
+	uint8_t getnominalOK;
+	uint8_t getstatusOK;
+	uint8_t getextendedOK;
 
 	if (typeRielloProtocol == DEV_RIELLOGPSER) {	
 		if (get_ups_nominal() > 0) 
@@ -747,7 +748,7 @@ void upsdrv_updateinfo(void)
 
 	if (getnominalOK) {
 		dstate_setinfo("ups.realpower.nominal", "%u", 0); 
-		dstate_setinfo("ups.upspower.nominal", "%u", 0); 
+		dstate_setinfo("ups.power.nominal", "%u", 0); 
 		dstate_setinfo("output.voltage.nominal", "%u", 0); 
 		dstate_setinfo("output.frequency.nominal", "%.1f", 0.0); 
 		dstate_setinfo("battery.voltage.nominal", "%u", 0); 
@@ -894,12 +895,12 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("output.L3.current", "%u", 0);
 	}
 	else {
-		dstate_setinfo("output.L1.power", "%lu", DevData.Pout1VA);
-		dstate_setinfo("output.L2.power", "%lu", DevData.Pout2VA);
-		dstate_setinfo("output.L3.power", "%lu", DevData.Pout3VA);
-		dstate_setinfo("output.L1.realpower", "%lu", DevData.Pout1W);
-		dstate_setinfo("output.L2.realpower", "%lu", DevData.Pout2W);
-		dstate_setinfo("output.L3.realpower", "%lu", DevData.Pout3W);
+		dstate_setinfo("output.L1.power", "%ul", DevData.Pout1VA);
+		dstate_setinfo("output.L2.power", "%ul", DevData.Pout2VA);
+		dstate_setinfo("output.L3.power", "%ul", DevData.Pout3VA);
+		dstate_setinfo("output.L1.realpower", "%ul", DevData.Pout1W);
+		dstate_setinfo("output.L2.realpower", "%ul", DevData.Pout2W);
+		dstate_setinfo("output.L3.realpower", "%ul", DevData.Pout3W);
 		dstate_setinfo("output.L1.current", "%u", DevData.Iout1);
 		dstate_setinfo("output.L2.current", "%u", DevData.Iout2);
 		dstate_setinfo("output.L3.current", "%u", DevData.Iout3);
@@ -1029,7 +1030,7 @@ void upsdrv_cleanup(void)
 
 void riello_comm_setup(const char *port)
 {
-	BYTE length;
+	uint8_t length;
 
 	upsdebugx(2, "set baudrate 9600");
 	ser_set_speed(upsfd, device_path, B9600); 
