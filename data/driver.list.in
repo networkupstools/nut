@@ -97,6 +97,10 @@
 "ATEK"	"ups"	"2"	"Defensor 10K Tower / Rack"	"USB"	"blazer_usb"
 
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
+"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"voltronic_ser"
+"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"voltronic_usb"
+"Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
+"Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
 "Aviem Systems"	"ups"	"2"	"Aviem Power RT 1000-3000VA"	""	"blazer_ser"
 
@@ -935,6 +939,11 @@
 "Viewsonic"	"ups"	"1"	"PowerES"	"420E"	"optiups"
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
+
+"Voltronic"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
+"Voltronic"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
+"Voltronic"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
+"Voltronic"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 
