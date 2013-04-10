@@ -122,7 +122,7 @@ static int device_match_func(USBDevice_t *hd, void *privdata)
 		return 1;
 	}
 
-	switch (is_usb_device_supported(voltronic_usb_id, hd->VendorID, hd->ProductID))
+	switch (is_usb_device_supported(voltronic_usb_id, hd))
 	{
 	case SUPPORTED:
 		return 1;
