@@ -33,12 +33,11 @@
 #include "usb-common.h"
 #include "libusb.h"
 
-/* USB standard state 5000, but we've decreased it to
- * improve reactivity */
-#define USB_TIMEOUT 4000
+/* USB standard timeout */
+#define USB_TIMEOUT 5000
 
 #define USB_DRIVER_NAME		"USB communication driver"
-#define USB_DRIVER_VERSION	"0.31"
+#define USB_DRIVER_VERSION	"0.32"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
