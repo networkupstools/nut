@@ -72,6 +72,7 @@ Note that such options may be specified multiple times for one run
 *--set-monitor* | *--add-monitor* '<arguments>'::
 Sets/adds a NUT monitor.
 
+ ::
 Arguments:
 '<ups_ID>' '<host>[:<port>]' '<power_value>' '<user>' '<passwd>' '(\"master\"|\"slave\")'
 
@@ -81,8 +82,14 @@ Sets/adds 'nutd' daemon listen address
 *--set-device* | *--add-device* '<arguments>'::
 Sets/adds a device (typically a UPS).
 
+ ::
 Arguments:
-'<ups_ID>' '<driver>' '<port>' '[<description>]'
+'<ups_ID>' '<driver>' '<port>' '[<attribute>=<value>]*'
+
+ ::
+The attribute/value pairs follow device configuration syntax.
+Devices may have very different configuration attributes depending on the driver.
+Exhaustive description of them is beyond this man page and may be found in NUT documentation.
 
 *--set-notifyflags* | *--add-notifyflags* '<type>' '<flag>+'::
 Sets/adds notification flags for the notification type.
