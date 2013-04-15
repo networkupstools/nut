@@ -141,13 +141,12 @@ apc_compattab_t apc_compattab[] = {
 	{ "8TI",	"@79ABCDEFGKLMNOPQRSUVWXYZcefgjklmnopqrsuxz", 0 },
 	/* CS 350 */
 	{ "5.4.D",	"@\1ABPQRSUYbdfgjmnx9",	0 },
-	/* Smart-UPS 600 */
-	{  "D9",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{  "D8",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{  "D7",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{  "D6",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{  "D5",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
-	{  "D4",	"@789ABCEFGKLMNOPQRSUVWXYZ", 0 },
+	/*
+	 * certain set of UPSes returning voltage > 255V through 'b'; "set\1"
+	 * is matched explicitly (fake key); among the UPS models - some old
+	 * APC 600 ones
+	 */
+	{  "set\1",	"@789ABCFGKLMNOPQRSUVWXYZ", 0 },
 
 	{ NULL }
 };

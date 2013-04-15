@@ -1143,9 +1143,9 @@ static void oldapcsetup(void)
 /* some hardware is a special case - hotwire the list of cmdchars */
 static int firmware_table_lookup(void)
 {
-	int	ret;
-	unsigned int	i, j;
-	char	buf[APC_LBUF];
+	int ret;
+	unsigned int i, j;
+	char buf[APC_LBUF];
 
 	upsdebugx(1, "attempting firmware lookup using [%s]", prtchr(APC_FW_OLD));
 
@@ -1175,6 +1175,15 @@ static int firmware_table_lookup(void)
 		/* quirk_capability_overflow */
 		upsdebugx(1, "WARN: quirky firmware !");
 		return 2;
+	}
+
+	if (rexhlp("^[a-fA-F0-9]{2}$", buf)) {
+		/*
+		 * certain old set of UPSes that return voltage above 255V
+		 * through 'b'; see:
+		 * http://article.gmane.org/gmane.comp.monitoring.nut.user/7762
+		 */
+		strcpy(buf, "set\1");
 	}
 
 	for (i = 0; apc_compattab[i].firmware != NULL; i++) {
