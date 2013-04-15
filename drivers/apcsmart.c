@@ -123,13 +123,13 @@ static int rexhlp(const char *rex, const char *val)
 	regex_t mbuf;
 
 	if (!rex || !*rex)
-		return 0;
+		return 1;
 	if (!val)
 		val = empty;
 	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
-	ret = regexec(&mbuf, val, 0,0,0);
+	ret = regexec(&mbuf, val, 0, 0, 0);
 	regfree(&mbuf);
-	return ret;
+	return !ret;
 }
 
 /* convert APC formatting to NUT formatting */
@@ -818,27 +818,6 @@ static int update_status(void)
 	return 1;
 }
 
-static int valid_cmd(char cmd, const char *val)
-{
-	int ret;
-
-	switch (cmd) {
-		case APC_FW_NEW:
-			ret = rexhlp(APC_FW_NEW_FMT, val);
-			break;
-		case APC_CMDSET:
-			ret = rexhlp(APC_CMDSET_FMT, val);
-			break;
-		default:
-			return 1;
-	}
-
-	if (ret)
-		upslogx(LOG_WARNING, "[%s] failed regex match", prtchr(cmd));
-
-	return !ret;
-}
-
 /*
  * two informative functions, to not redo the same thing in few places
  */
@@ -881,7 +860,7 @@ static int var_verify(apc_vartab_t *vt)
 
 	temp = preread_data(vt);
 	/* no conversion here, validator should operate on raw values */
-	if (!temp || !valid_cmd(vt->cmd, temp)) {
+	if (!temp || !rexhlp(vt->regex, temp)) {
 		warn_cv(vt->cmd, "variable", vt->name);
 		return 0;
 	}
@@ -921,7 +900,7 @@ static void deprecate_vars(void)
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
 		/* no conversion here, validator should operate on raw values */
-		if (!temp || !valid_cmd(vt->cmd, temp)) {
+		if (!temp || !rexhlp(vt->regex, temp)) {
 			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
 
@@ -1253,7 +1232,7 @@ static int getbaseinfo(void)
 	if ((ret = apc_read(temp, sizeof(temp), SER_CS|SER_TO)) < 0)
 		return 0;
 
-	if (!ret || !strcmp(temp, "NA") || !valid_cmd(APC_CMDSET, temp)) {
+	if (!ret || !strcmp(temp, "NA") || !rexhlp(APC_CMDSET_FMT, temp)) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
 		upslogx(LOG_NOTICE, "very old or unknown APC model, support will be limited");
 		oldapcsetup();
@@ -1938,7 +1917,7 @@ static int instcmd(const char *cmd, const char *ext)
 			continue;
 		/* if cmd specifies regex, ext must match */
 		if (apc_cmdtab[i].ext) {
-			if (rexhlp(apc_cmdtab[i].ext, ext))
+			if (!rexhlp(apc_cmdtab[i].ext, ext))
 				continue;
 		/* if cmd doesn't specify regex, ext must be NULL */
 		} else {
@@ -2030,17 +2009,17 @@ void upsdrv_initups(void)
 	apc_vartab_t *ptr;
 
 	/* sanitize awd (additional waekup delay of '@' command) */
-	if ((val = getval("awd")) && rexhlp(APC_AWDFMT, val)) {
+	if ((val = getval("awd")) && !rexhlp(APC_AWDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
 	}
 
 	/* sanitize sdtype */
-	if ((val = getval("sdtype")) && rexhlp(APC_SDFMT, val)) {
+	if ((val = getval("sdtype")) && !rexhlp(APC_SDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'sdtype'", val);
 	}
 
 	/* sanitize advorder */
-	if ((val = getval("advorder")) && rexhlp(APC_ADVFMT, val)) {
+	if ((val = getval("advorder")) && !rexhlp(APC_ADVFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'advorder'", val);
 	}
 

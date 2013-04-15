@@ -82,6 +82,7 @@ typedef struct {
 	const char	*name;		/* the variable name	*/
 	char		cmd;		/* variable character	*/
 	unsigned int	flags;	 	/* various flags	*/
+	const char	*regex;		/* variable must match this regex */
 	size_t		nlen0;		/* var name + null len	*/
 	int		cnt;		/* curr. count of subs	*/
 } apc_vartab_t;

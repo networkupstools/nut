@@ -137,7 +137,6 @@
 #define APC_NEXTVAL	'-'
 #define APC_FW_OLD	'V'
 #define APC_FW_NEW	'b'
-#define APC_FW_NEW_FMT	"^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$"
 
 #define APC_LBUF	512
 #define APC_SBUF	32
