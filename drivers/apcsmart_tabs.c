@@ -50,7 +50,7 @@ apc_vartab_t apc_vartab[] = {
 	{ "ambient.0.humidity.high",	'{',	APC_POLL|APC_PACK|APC_F_PERCENT },
 	{ "ambient.0.humidity.low",	'}',	APC_POLL|APC_PACK|APC_F_PERCENT },
 	{ "ambient.temperature",	't',	APC_POLL|APC_F_CELSIUS },
-	{ "ambient.0.temperature",	'T',	APC_POLL|APC_PACK|APC_F_CELSIUS },
+	{ "ambient.0.temperature",	'T',	APC_POLL|APC_PACK|APC_F_CELSIUS, "^[0-9]{2}\\.[0-9]{2}$" },
 	{ "ambient.0.temperature.high",	'[',	APC_POLL|APC_PACK|APC_F_CELSIUS },
 	{ "ambient.0.temperature.low",	']',	APC_POLL|APC_PACK|APC_F_CELSIUS },
 	{ "battery.date",		'x',	APC_STRING },
