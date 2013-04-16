@@ -1046,14 +1046,12 @@ static void legacy_verify(const char *var)
 {
 	int i;
 	/*
-	 * note: some NUT variables map onto multiple APC ones (firmware) -
-	 * that's why we keep the loop, as it's over NUT names
+	 * note: some NUT variables map onto multiple APC ones, e.g. firmware:
+	 * V,b -> ups.firmware; that's why we keep the loop, as it's over NUT
+	 * names
 	 */
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		if (strcmp(apc_vartab[i].name, var))
-			continue;
-		/* don't bother with cmd/var we don't care about */
-		if (strchr(APC_UNR_CMDS, apc_vartab[i].cmd))
 			continue;
 		var_verify(&apc_vartab[i]);
 	}
