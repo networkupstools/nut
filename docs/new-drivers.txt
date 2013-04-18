@@ -29,7 +29,8 @@ usbhid-ups driver, which is easier than writing an entire new driver.
 
 Similarly, if your UPS connects to your computer via an SNMP network
 card, you can probably add support for your device by writing a new
-subdriver to the existing snmp-ups driver.
+subdriver to the existing snmp-ups driver. Instructions are provided
+in the <<snmp-subdrivers, SNMP subdrivers>> chapter.
 
 Overall concept
 ---------------
