@@ -73,26 +73,23 @@ static int (*sdlist[])(const void *) = {
 
 #define SDIDX_AT	1
 
+/*
+ * APC_DEPR:
+ *
+ * lookup functions must look for APC_DEPR to give single valid answer
+ */
 static apc_vartab_t *vartab_lookup_char(char cmdchar)
 {
 	int	i;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if (apc_vartab[i].cmd == cmdchar)
+		if (!(apc_vartab[i].flags & APC_DEPR) &&
+		    apc_vartab[i].cmd == cmdchar)
 			return &apc_vartab[i];
 
 	return NULL;
 }
 
-/*
- * APC_DEPR:
- *
- * when we're looking by nut's generic name, we want only one answer /and/ the
- * correct one
- *
- * vartab_lookup_name() is run after setup and in case of multiple apc:single
- * nut variable mappings we have to check for APC_DEPR
- */
 static apc_vartab_t *vartab_lookup_name(const char *var)
 {
 	int	i;
@@ -830,7 +827,7 @@ static inline void confirm_cv(unsigned char cmd, const char *tag, const char *na
 static inline void warn_cv(unsigned char cmd, const char *tag, const char *name)
 {
 	if (tag && name)
-		upslogx(LOG_WARNING, "%s [%s] - %s invalid or unreadable", name, prtchr(cmd), tag);
+		upslogx(LOG_WARNING, "%s [%s] - %s invalid", name, prtchr(cmd), tag);
 	else
 		upslogx(LOG_WARNING, "[%s] unrecognized", prtchr(cmd));
 }
@@ -875,9 +872,9 @@ static int var_verify(apc_vartab_t *vt)
 }
 
 /*
- * This function iterates over vartab, deprecating nut:apc 1:n variables. We
- * prefer earliest present variable. All the other ones must be marked as
- * deprecated and not present.
+ * This function iterates over vartab, deprecating nut<->apc 1:n and n:1
+ * variables. We prefer earliest present variable. All the other ones must be
+ * marked as deprecated and not present.
  * This pass is requried after completion of all protocol_verify() and/or
  * legacy_verify() calls.
  */
@@ -904,14 +901,14 @@ static void deprecate_vars(void)
 			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
 
-			warn_cv(vt->cmd, "variable", vt->name);
+			warn_cv(vt->cmd, "variable combination", vt->name);
 			continue;
 		}
 
 		/* multi & present, deprecate all the remaining ones */
 		for (j = i + 1; apc_vartab[j].name != NULL; j++) {
 			vtn = &apc_vartab[j];
-			if (strcmp(vtn->name, vt->name))
+			if (strcmp(vtn->name, vt->name) && vtn->cmd != vt->cmd)
 				continue;
 			vtn->flags |= APC_DEPR;
 			vtn->flags &= ~APC_PRESENT;
@@ -920,7 +917,7 @@ static void deprecate_vars(void)
 		apc_dstate_setinfo(vt, temp);
 		var_string_setup(vt);
 
-		confirm_cv(vt->cmd, "variable", vt->name);
+		confirm_cv(vt->cmd, "variable combination", vt->name);
 	}
 }
 
@@ -1067,15 +1064,25 @@ static void protocol_verify(unsigned char cmd)
 	if (strchr(APC_UNR_CMDS, cmd))
 		return;
 
-	/* lookup variable and verify if applicable */
-	if ((vt = vartab_lookup_char(cmd))) {
+	/*
+	 * loop necessary for apc:nut 1:n cases (e.g. T -> device.uptime,
+	 * ambient.0.temperature)
+	 */
+	found = 0;
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		vt = &apc_vartab[i];
+		if (vt->cmd != cmd)
+			continue;
 		var_verify(vt);
-		return;
+		found = 1;
 	}
+	if (found)
+		return;
 
 	/*
 	 * see if it's a command
-	 * note: some APC commands map onto multiple NUT ones (start and stop)
+	 * loop necessary for apc:nut 1:n cases (e.g. D -> calibrate.start,
+	 * calibrate.stop)
 	 */
 	found = 0;
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
@@ -1084,9 +1091,8 @@ static void protocol_verify(unsigned char cmd)
 			continue;
 		ct->flags |= APC_PRESENT;
 		dstate_addcmd(ct->name);
-		found = 1;
-
 		confirm_cv(cmd, "command", ct->name);
+		found = 1;
 	}
 
 	if (found)
