@@ -46,7 +46,11 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
 
 # not LDADD.
 libupsclient_la_SOURCES = upsclient.c upsclient.h
+if SYSTEM_AIX
+libupsclient_la_LIBADD = ../common/libcommon.la ../common/libparseconf.la
+else
 libupsclient_la_LIBADD = ../common/libparseconf.la
+endif
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
