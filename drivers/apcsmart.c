@@ -74,28 +74,29 @@ static int (*sdlist[])(const void *) = {
 #define SDIDX_AT	1
 
 /*
- * APC_DEPR:
- *
- * lookup functions must look for APC_DEPR to give single valid answer
+ * note: both lookup functions MUST be used after variable detection is
+ * completed - that is after deprecate_vars() call; the general reason for this
+ * is 1:n and n:1 nut <-> apc mappings, which are not determined prior to the
+ * detection
  */
-static apc_vartab_t *vartab_lookup_char(char cmdchar)
+static apc_vartab_t *vt_lookup_char(char cmdchar)
 {
 	int	i;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if (!(apc_vartab[i].flags & APC_DEPR) &&
+		if ((apc_vartab[i].flags & APC_PRESENT) &&
 		    apc_vartab[i].cmd == cmdchar)
 			return &apc_vartab[i];
 
 	return NULL;
 }
 
-static apc_vartab_t *vartab_lookup_name(const char *var)
+static apc_vartab_t *vt_lookup_name(const char *var)
 {
 	int	i;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if (!(apc_vartab[i].flags & APC_DEPR) &&
+		if ((apc_vartab[i].flags & APC_PRESENT) &&
 		    !strcasecmp(apc_vartab[i].name, var))
 			return &apc_vartab[i];
 
@@ -874,7 +875,7 @@ static int var_verify(apc_vartab_t *vt)
 /*
  * This function iterates over vartab, deprecating nut<->apc 1:n and n:1
  * variables. We prefer earliest present variable. All the other ones must be
- * marked as deprecated and not present.
+ * marked as not present (which implies deprecation).
  * This pass is requried after completion of all protocol_verify() and/or
  * legacy_verify() calls.
  */
@@ -886,19 +887,17 @@ static void deprecate_vars(void)
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		vt = &apc_vartab[i];
-		if (!(vt->flags & APC_MULTI) || vt->flags & APC_DEPR)
-			/* not interesting or already handled */
-			continue;
-		if (!(vt->flags & APC_PRESENT)) {
-			/* multi vars must be marked earlier as present */
-			vt->flags |= APC_DEPR;
+		if (!(vt->flags & APC_MULTI) || !(vt->flags & APC_PRESENT)) {
+			/*
+			 * a) not interesting, or
+			 * b) not marked as present earlier, or already handled
+			 */
 			continue;
 		}
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
 		/* no conversion here, validator should operate on raw values */
 		if (!temp || !rexhlp(vt->regex, temp)) {
-			vt->flags |= APC_DEPR;
 			vt->flags &= ~APC_PRESENT;
 
 			warn_cv(vt->cmd, "variable combination", vt->name);
@@ -910,7 +909,6 @@ static void deprecate_vars(void)
 			vtn = &apc_vartab[j];
 			if (strcmp(vtn->name, vt->name) && vtn->cmd != vt->cmd)
 				continue;
-			vtn->flags |= APC_DEPR;
 			vtn->flags &= ~APC_PRESENT;
 		}
 
@@ -1002,7 +1000,7 @@ static void apc_getcaps(int qco)
 		entlen = ptr[3] - 48;
 		entptr = &ptr[4];
 
-		vt = vartab_lookup_char(cmd);
+		vt = vt_lookup_char(cmd);
 		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);
 
 		/* mark this as writable */
@@ -1107,8 +1105,6 @@ static void protocol_verify(unsigned char cmd)
 
 static void oldapcsetup(void)
 {
-	apc_vartab_t *vt;
-
 	/*
 	 * note: battery.date and ups.id make little sense here, as
 	 * that would imply writability and this is an *old* apc psu
@@ -1129,13 +1125,11 @@ static void oldapcsetup(void)
 	deprecate_vars();
 
 	/* see if this might be an old Matrix-UPS instead */
-	vt = vartab_lookup_name("output.current");
-	if (vt->flags & APC_PRESENT)
+	if (vt_lookup_name("output.current"))
 		dstate_setinfo("ups.model", "Matrix-UPS");
 	else {
 		/* really old models don't support ups.model (apc: 0x01) */
-		vt = vartab_lookup_name("ups.model");
-		if (!(vt->flags & APC_PRESENT))
+		if (!vt_lookup_name("ups.model"))
 			/* force the model name */
 			dstate_setinfo("ups.model", "Smart-UPS");
 	}
@@ -1822,7 +1816,7 @@ static int setvar(const char *varname, const char *val)
 {
 	apc_vartab_t	*vt;
 
-	vt = vartab_lookup_name(varname);
+	vt = vt_lookup_name(varname);
 
 	if (!vt)
 		return STAT_SET_UNKNOWN;

@@ -43,8 +43,7 @@
 #define APC_ENUM	0x00000400	/* enumerated type variable		*/
 #define APC_STRING	0x00000800	/* string variable			*/
 #define APC_MULTI	0x00001000	/* there're other vars like that	*/
-#define APC_DEPR	0x00002000	/* deprecated variable			*/
-#define APC_PACK	0x00004000	/* packed variable			*/
+#define APC_PACK	0x00002000	/* packed variable			*/
 
 #define APC_PACK_MAX	4		/* max count of subfields in packed var	*/
 
