@@ -94,6 +94,7 @@ static double powercom_shutdown_nuf(const char *value)
 	uint16_t	val, command;
 
 	val = atoi(value ? value : s);
+	val = val ? val : 1;    /* 0 sets the maximum delay */
 	command = ((val % 60) << 8) + (val / 60);
 	command |= 0x4000;	/* AC RESTART NORMAL ENABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
@@ -111,6 +112,7 @@ static double powercom_stayoff_nuf(const char *value)
 	uint16_t	val, command;
 
 	val = atoi(value ? value : s);
+	val = val ? val : 1;    /* 0 sets the maximum delay */
 	command = ((val % 60) << 8) + (val / 60);
 	command |= 0x8000;	/* AC RESTART NORMAL DISABLE */
 	upsdebugx(3, "%s: value = %s, command = %04X", __func__, value, command);
@@ -137,6 +139,8 @@ static usage_lkp_t powercom_usage_lkp[] = {
 	{ "POWERCOM1",	0x0084002f },
 	{ "POWERCOM2",	0xff860060 },
 	{ "POWERCOM3",	0xff860080 },
+	{ "PCMDelayBeforeStartup",	0x00ff0056 },
+	{ "PCMDelayBeforeShutdown",	0x00ff0057 },
 	{  NULL, 0 }
 };
 
@@ -235,6 +239,8 @@ static hid_info_t powercom_hid2nut[] = {
  */
 	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerSummary.DelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
 	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, powercom_shutdown_info },
+	{ "ups.delay.shutdown", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, DEFAULT_OFFDELAY, HU_FLAG_ABSENT, NULL },
+	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, powercom_shutdown_info },
 
 	{ "input.voltage", 0, 0, "UPS.Input.Voltage", NULL, "%.1f", 0, NULL },
 	{ "input.voltage.nominal", 0, 0, "UPS.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
@@ -251,10 +257,16 @@ static hid_info_t powercom_hid2nut[] = {
 
 	/* instcmds */
 	{ "beeper.toggle", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "0", HU_TYPE_CMD, NULL },
 	{ "test.battery.start.quick", 0, 0, "UPS.Battery.Test", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "load.on.delay", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", NULL, NULL, HU_TYPE_CMD, powercom_startup_info },
 	{ "shutdown.return", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_shutdown_info },
 	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_stayoff_info },
+	{ "load.on", 0, 0, "UPS.PowerSummary.PCMDelayBeforeStartup", NULL, "0", HU_TYPE_CMD, powercom_startup_info },
+	{ "load.off", 0, 0, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, powercom_stayoff_info },
+	{ "shutdown.return", 0, 0, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_shutdown_info },
+	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_stayoff_info },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
