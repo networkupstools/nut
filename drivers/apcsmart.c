@@ -285,13 +285,29 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 static void apc_ser_set(void)
 {
 	struct termios tio, tio_chk;
-	char *cable;
+	char *val;
 
 	/*
 	 * this must be called before the rest, as ser_set_speed() performs
 	 * early initialization of the port, apart from changing speed
 	 */
 	ser_set_speed(upsfd, device_path, B2400);
+
+	val = getval("cable");
+	if (val && !strcasecmp(val, ALT_CABLE_1)) {
+		if (ser_set_dtr(upsfd, 1) == -1)
+			fatx("ser_set_dtr(%s) failed", device_path);
+		if (ser_set_rts(upsfd, 0) == -1)
+			fatx("ser_set_rts(%s) failed", device_path);
+	}
+
+	/*
+	 * that's all if we want simple non canonical mode; this is meant as a
+	 * compatibility measure for windows systems and perhaps some
+	 * problematic serial cards/converters
+	 */
+	if ((val = getval("ttymode")) && !strcmp(val, "simple"))
+		return;
 
 	memset(&tio, 0, sizeof(tio));
 	errno = 0;
@@ -313,18 +329,11 @@ static void apc_ser_set(void)
 	tio.c_iflag &= ~(IXON | IXOFF);
 
 	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
-
 #ifdef _POSIX_VDISABLE
 	tio.c_cc[VERASE] = _POSIX_VDISABLE;
 	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
 	tio.c_cc[VEOF] = _POSIX_VDISABLE;
 	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
-#endif
-
-#if 0
-	/* unused in canonical mode: */
-	tio.c_cc[VMIN] = 1;
-	tio.c_cc[VTIME] = 0;
 #endif
 
 	if (tcflush(upsfd, TCIOFLUSH))
@@ -344,14 +353,6 @@ static void apc_ser_set(void)
 		fate("tcgetattr(%s)", device_path);
 
 	apc_ser_diff(&tio, &tio_chk);
-
-	cable = getval("cable");
-	if (cable && !strcasecmp(cable, ALT_CABLE_1)) {
-		if (ser_set_dtr(upsfd, 1) == -1)
-			fatx("ser_set_dtr(%s) failed", device_path);
-		if (ser_set_rts(upsfd, 0) == -1)
-			fatx("ser_set_rts(%s) failed", device_path);
-	}
 }
 
 static void ups_status_set(void)
@@ -475,18 +476,11 @@ static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsig
 		errno = 0;
 		ret = select_read(upsfd, temp, sizeof(temp), sec, usec);
 
-#if 0
-/* this cannot really happen in canonical mode */
-		/* partial timeout */
+		/* partial timeout (non-canon only paranoid check) */
 		if (ret == 0 && count) {
-			/*
-			 * obscure check, shouldn't ever happen if all is
-			 * functioning properly (even more so in canonical mode)
-			 */
 			ser_comm_fail("serial port partial timeout:%u(%s)", ln, fn);
 			return -1;
 		}
-#endif
 		/* error or no timeout allowed */
 		if (ret < 0 || (ret == 0 && !(flags & SER_TO))) {
 			if (ret)
@@ -1995,6 +1989,7 @@ static void setuphandlers(void)
 
 void upsdrv_makevartable(void)
 {
+	addvar(VAR_VALUE, "ttymode", "allow tty discipline selection");
 	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
 	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method");

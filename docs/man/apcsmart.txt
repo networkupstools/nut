@@ -89,6 +89,20 @@ Alternatively, you can also provide it on the command line using:
 
 -x *cable*=940-0095B
 
+TTY MODES
+---------
+
+By default the driver works in canonical mode, but it showed to be a problem in
+windows systems. Furthermore there's a possibility of some obscure serial cards
+or serial-usb convertes that could cause problems as well. You can use
+\'ttymode=' option to force non-canonical discipline in linkman:ups.conf[5]:
+
+*ttymode*=simple
+
+Alternatively, you can also provide it on the command line using:
+
+-x *ttymode*=simple
+
 EXPLANATION OF SHUTDOWN METHODS SUPPORTED BY APC UPSES
 ------------------------------------------------------
 
