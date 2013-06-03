@@ -25,4 +25,37 @@
 
 extern subdriver_t	mge_xml_subdriver;
 
+/**
+ *  \brief  Convert NUT variable name to MGE XML
+ *
+ *  \param  name  NUT variable name
+ *
+ *  \return MGE XML variable name
+ */
+const char *vname_nut2mge_xml(const char *name);
+
+/**
+ *  \brief  Convert MGE XML variable name to NUT
+ *
+ *  \param  name  MGE XML variable name
+ *
+ *  \return NUT variable name
+ */
+const char * vname_mge_xml2nut(const char *name);
+
+/**
+ *  \brief  Convert MGE XML variable value to NUT value
+ *
+ *  \param  name   NUT variable name
+ *  \param  value  MGE XML variable value
+ *
+ *  \return NUT variable value
+ */
+const char *vvalue_mge_xml2nut(const char *name, const char *value);
+
+/**
+ *  \brief  Register set of R/W variables
+ */
+void vname_register_rw(void);
+
 #endif /* MGE_XML_H */
