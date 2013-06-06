@@ -1404,15 +1404,15 @@ static int set_object_raw_resp_cdata(
 		return state;
 
 	if (OBJECT_OK == handle->status) {
-		const char *value;
+		char *value;
 
 		/* Set last object value */
 		assert(NULL != handle->tail);
 		assert(NULL != handle->tail->payld.resp.name);
 
-		value = vvalue_mge_xml2nut(handle->tail->payld.resp.name, cdata);
+		value = vvalue_mge_xml2nut(handle->tail->payld.resp.name, cdata, len);
 
-		handle->tail->payld.resp.value = strndup(value, len);
+		handle->tail->payld.resp.value = value;
 
 		if (NULL == handle->tail->payld.resp.value)
 			handle->status = OBJECT_ERROR;

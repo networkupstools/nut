@@ -46,12 +46,16 @@ const char * vname_mge_xml2nut(const char *name);
 /**
  *  \brief  Convert MGE XML variable value to NUT value
  *
+ *  The function produces a newly created C-string that should
+ *  be destroyed using \c free.
+ *
  *  \param  name   NUT variable name
  *  \param  value  MGE XML variable value
+ *  \param  len    MGE XML variable value length (in characters)
  *
  *  \return NUT variable value
  */
-const char *vvalue_mge_xml2nut(const char *name, const char *value);
+char *vvalue_mge_xml2nut(const char *name, const char *value, size_t len);
 
 /**
  *  \brief  Register set of R/W variables

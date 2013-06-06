@@ -539,27 +539,11 @@ static const char *mge_timer_shutdown(const char *val)
 
 static xml_info_t mge_xml2nut[] = {
 	/* NMC configuration (mapped 1:1 for now) */
-	{ "System.Network.HostName", ST_FLAG_RW, 0, "System.Network.HostName", 0, 0, NULL },
-	{ "System.Network.IPAddress", ST_FLAG_RW, 0, "System.Network.IPAddress", 0, 0, NULL },
-	{ "System.Network.IPMask", ST_FLAG_RW, 0, "System.Network.IPMask", 0, 0, NULL },
-	{ "System.Network.IPGateway", ST_FLAG_RW, 0, "System.Network.IPGateway", 0, 0, NULL },
-	{ "System.Network.DomainName", ST_FLAG_RW, 0, "System.Network.DomainName", 0, 0, NULL },
-	{ "System.Network.DHCP", ST_FLAG_RW, 0, "System.Network.DHCP", 0, 0, NULL },
-	{ "System.Network.PrimaryDNS", ST_FLAG_RW, 0, "System.Network.PrimaryDNS", 0, 0, NULL },
-	{ "System.Network.SecondaryDNS", ST_FLAG_RW, 0, "System.Network.SecondaryDNS", 0, 0, NULL },
-	{ "System.Network.IPv6Enable", ST_FLAG_RW, 0, "System.Network.IPv6Enable", 0, 0, NULL },
-	{ "System.Network.IPv6AutoConfig", ST_FLAG_RW, 0, "System.Network.IPv6AutoConfig", 0, 0, NULL },
-	{ "System.Network.IPv6Address1", ST_FLAG_RW, 0, "System.Network.IPv6Address1", 0, 0, NULL },
-	{ "System.Network.PrefixLength", ST_FLAG_RW, 0, "System.Network.PrefixLength", 0, 0, NULL },
-	{ "System.Network.IPv6DefaultGateway", ST_FLAG_RW, 0, "System.Network.IPv6DefaultGateway", 0, 0, NULL },
-	{ "System.Network.SmtpServer.HostName", ST_FLAG_RW, 0, "System.Network.SmtpServer.HostName", 0, 0, NULL },
-	{ "System.Network.SmtpServer.Authentication", ST_FLAG_RW, 0, "System.Network.SmtpServer.Authentication", 0, 0, NULL },
-	{ "System.Network.SmtpServer.Login", ST_FLAG_RW, 0, "System.Network.SmtpServer.Login", 0, 0, NULL },
-	{ "System.Network.SmtpServer.Password", ST_FLAG_RW, 0, "System.Network.SmtpServer.Password", 0, 0, NULL },
-	{ "System.Contact", ST_FLAG_RW, 0, "System.Contact", 0, 0, NULL },
-	{ "System.Location", ST_FLAG_RW, 0, "System.Location", 0, 0, NULL },
-	{ "System.Language", ST_FLAG_RW, 0, "System.Language", 0, 0, NULL },
+	{ "device.contact", ST_FLAG_RW, 0, "System.Contact", 0, 0, NULL },
+	{ "device.location", ST_FLAG_RW, 0, "System.Location", 0, 0, NULL },
+	/* Not used for now; might however be used in future for history & stats collection
 	{ "System.History.Log.Interval", ST_FLAG_RW, 0, "System.History.Log.Interval", 0, 0, NULL },
+	*/
 	{ "System.Environment.Log.Interval", ST_FLAG_RW, 0, "System.Environment.Log.Interval", 0, 0, NULL },
 	{ "System.Outlet[1].iName", ST_FLAG_RW, 0, "System.Outlet[1].iName", 0, 0, NULL },
 	/* Mapped as ups.delay.shutdown
@@ -1441,7 +1425,7 @@ const char *vname_mge_xml2nut(const char *name) {
 	return NULL;
 }
 
-const char *vvalue_mge_xml2nut(const char *name, const char *value) {
+char *vvalue_mge_xml2nut(const char *name, const char *value, size_t len) {
 	assert(NULL != name);
 
 	size_t i = 0;
@@ -1451,10 +1435,25 @@ const char *vvalue_mge_xml2nut(const char *name, const char *value) {
 
 		if (NULL != info->nutname)
 			if (0 == strcasecmp(name, info->nutname)) {
-				if (NULL != info->convert)
-					return info->convert(value);
+				/* Copy value */
+				char *vcpy = (char *)malloc((len + 1) * sizeof(char));
+
+				if (NULL == vcpy)
+					return vcpy;
+
+				memcpy(vcpy, value, len * sizeof(char));
+				vcpy[len] = '\0';
+
+				/* Convert */
+				if (NULL != info->convert) {
+					char *vconv = info->convert(vcpy);
+
+					free(vcpy);
+
+					return vconv;
+				}
 				else
-					return value;
+					return vcpy;
 			}
 	}
 
