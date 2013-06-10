@@ -3,6 +3,7 @@
 #include "nutstream.hpp"
 
 extern "C" {
+#include "nut_platform.h"
 #if (defined WITH_NUTSCANNER)
 #include "nut-scan.h"
 #include "nutscan-init.h"
@@ -3150,3 +3151,19 @@ int main(int argc, char * const argv[]) {
 
 	::exit(128);
 }
+
+
+/* Formal do_upsconf_args implementation to satisfy linker on AIX */
+#if (defined NUT_PLATFORM_AIX)
+static void do_upsconf_args_impl(char *upsname, char *var, char *val) {
+       std::cerr << "INTERNAL ERROR: formal do_upsconf_args called" << std::endl;
+
+       ::exit(128);
+}
+
+extern "C" {
+void do_upsconf_args(char *upsname, char *var, char *val) {
+       do_upsconf_args_impl(upsname, var, val);
+}
+}
+#endif  /* end of #if (defined NUT_PLATFORM_AIX) */
