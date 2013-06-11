@@ -82,7 +82,6 @@ rm configure.in
     --with-all \
     --without-hal \
     --without-powerman \
-    --without-neon \
     --without-avahi \
     --without-usb \
     --without-ipmi \
