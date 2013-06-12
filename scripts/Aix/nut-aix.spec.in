@@ -1,7 +1,6 @@
 # FIXME: TBC
-%define nut_uid 57
-%define nut_gid 57
-%define nut_group uucp
+%define nut_id ipp
+%define nut_group ipp
 
 %define _prefix /usr/local/ups
 %define _docdir %{_datadir}/doc
@@ -76,7 +75,7 @@ necessary to develop NUT client applications.
 %setup -q
 
 %build
-rm configure.in
+/usr/bin/rm configure.in
 
 %configure \
     --with-all \
@@ -87,7 +86,7 @@ rm configure.in
     --without-ipmi \
     --without-cgi \
     --datadir=%{_datadir}/%{name} \
-    --with-user=%{name} \
+    --with-user=%{nut_id} \
     --with-group=%{nut_group} \
     --with-statepath=%{piddir} \
     --with-pidpath=%{piddir} \
@@ -111,9 +110,9 @@ rm configure.in
 make %{?_smp_mflags}
 
 %install
-rm -rf %{buildroot}
+/usr/bin/rm -rf %{buildroot}
 
-mkdir -p %{buildroot}%{_sbindir} \
+/usr/bin/mkdir -p %{buildroot}%{_sbindir} \
          %{buildroot}%{piddir} \
          %{buildroot}%{_libdir}/ups \
          %{buildroot}%{initdir} \
@@ -123,7 +122,7 @@ make install DESTDIR=%{buildroot}
 
 install -m 755 %{SOURCE1} %{buildroot}%{initdir}/ups
 
-rm -f %{buildroot}%{_libdir}/*.la
+/usr/bin/rm -f %{buildroot}%{_libdir}/*.la
 
 # Remove ".sample" suffix from the config filenames
 #pushd conf; 
@@ -135,83 +134,96 @@ rm -f %{buildroot}%{_libdir}/*.la
 #popd
 
 %pre
-mkdir -p %{_libdir}/ups
-grep -qc %{name} /etc/passwd || \
-/usr/sbin/useradd -c "Network UPS Tools" -u %{nut_uid}  \
-        -g %{nut_group} -d %{_libdir}/ups %{name}
+/usr/bin/test -L %{_libdir}/ups || \
+/usr/bin/mkdir -p %{_libdir}/ups
+/usr/bin/grep -qc %{nut_group} /etc/group || \
+/usr/bin/mkgroup %{nut_group}
+/usr/bin/grep -qc %{nut_id} /etc/passwd || \
+/usr/sbin/useradd -c "Network UPS Tools" \
+        -g %{nut_group} -d %{_libdir}/ups %{nut_id}
+/usr/bin/test -L %{piddir} || \
+/usr/bin/mkdir -p %{piddir}; \
+/usr/bin/chown %{nut_id}:%{nut_group} %{piddir}
 
 %post
-install -d -m 0750 -o nut -g %{nut_group} %{piddir}
-test -L %{rcdir}/rc2.d/Sups || \
-ln -s %{initdir}/ups %{rcdir}/rc2.d/Sups
-test -L %{rcdir}/rc2.d/Kups || \
-ln -s %{initdir}/ups %{rcdir}/rc2.d/Kups
-%{initdir}/ups start
+/usr/bin/test -L %{rcdir}/rc2.d/Sups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Sups
+/usr/bin/test -L %{rcdir}/rc2.d/Kups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Kups
 exit 0
 
 %preun
 %{initdir}/ups stop
 if [ "$1" = "0" ]; then
-    rm -f %{rcdir}/rc2.d/[SK]ups
-    rm -rf %{piddir}
-    ls -A %{_libdir}/ups | \
-    sed -e s!^!%{_libdir}/ups/! | \
-    xargs rm -f
+    /usr/bin/rm -f %{rcdir}/rc2.d/[SK]ups
 fi
 exit 0
 
 %postun
 if [ "$1" = "0" ]; then
-    grep -qc %{name} /etc/passwd && \
-    /usr/sbin/userdel %{name}
+    /usr/bin/grep -qc %{nut_id} /etc/passwd && \
+    /usr/sbin/userdel %{nut_id}
+    /usr/bin/grep -qc %{nut_group}: /etc/group && \
+    /usr/sbin/rmgroup %{nut_group}
+    /usr/bin/test -L %{piddir}  && \
+    /usr/bin/rm -rf %{piddir}
+    /usr/bin/test -L %{_libdir}/ups && \
+    /usr/bin/rm -rf %{_libdir}/ups
 fi
 exit 0
 
 %pre client
-grep -qc %{name} /etc/passwd || \
-/usr/sbin/useradd -c "Network UPS Tools" -u %{nut_uid} \
-        -g %{nut_group} -d %{_libdir}/ups %{name}
+/usr/bin/grep -qc %{nut_group}: /etc/group || \
+/usr/bin/mkgroup %{nut_group}
+/usr/bin/grep -qc %{nut_id} /etc/passwd || \
+/usr/sbin/useradd -c "Network UPS Tools" \
+        -g %{nut_group} -d %{_libdir}/ups %{nut_id}
+/usr/bin/test -L %{piddir} || \
+/usr/bin/mkdir -p %{piddir}; \
+/usr/bin/chown %{nut_id}:%{nut_group} %{piddir}
 
 %post client
-install -d -m 0750 -o nut -g %{nut_group} %{piddir}
-test -L %{rcdir}/rc2.d/Sups || \
-ln -s %{initdir}/ups %{rcdir}/rc2.d/Sups
-test -L %{rcdir}/rc2.d/Kups || \
-ln -s %{initdir}/ups %{rcdir}/rc2.d/Kups
-%{initdir}/ups start
+/usr/bin/test -L %{rcdir}/rc2.d/Sups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Sups
+/usr/bin/test -L %{rcdir}/rc2.d/Kups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Kups
+#%{initdir}/ups start
 exit 0
 
 %preun client
 %{initdir}/ups stop
 remove="no"
-if rpm -q nut >/dev/null 2>&1; then
+if /usr/bin/rpm -q nut >/dev/null 2>&1; then
     remove="no"
 elif [ "$1" = "0" ]; then
     remove="yes"
 fi
 if [ "$remove" = "yes" ]; then
-    rm -f %{rcdir}/rc2.d/[SK]ups
-    rm -rf %{piddir}
+    /usr/bin/rm -f %{rcdir}/rc2.d/[SK]ups
+    /usr/bin/test -L %{piddir}  && \
+    /usr/bin/rm -rf %{piddir}
 fi
 exit 0
 
 %postun client
 remove="no"
-if rpm -q nut >/dev/null 2>&1; then
+if /usr/bin/rpm -q nut >/dev/null 2>&1; then
     remove="no"
 elif [ "$1" = "0" ]; then
     remove="yes"
 fi
 if [ "$remove" = "yes" ]; then
-    grep -qc %{name} /etc/passwd && \
-    /usr/sbin/userdel %{name}
-else
-    %{initdir}/ups start
+    /usr/bin/grep -qc %{nut_id} /etc/passwd && \
+    /usr/sbin/userdel %{nut_id}
+    /usr/bin/grep -qc %{nut_group}: /etc/group && \
+    /usr/sbin/rmgroup %{nut_group}
+#else
+#    %{initdir}/ups start
 fi
 exit 0
 
 %clean
-rm -rf %{buildroot}
+/usr/bin/rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
@@ -221,7 +233,7 @@ rm -rf %{buildroot}
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/ups.conf.sample
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsd.conf.sample
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsd.users.sample
-%dir %attr(750,nut,%nut_group) %{_libdir}/ups
+%dir %attr(750,%nut_id,%nut_group) %{_libdir}/ups
 #%ghost %{piddir}
 %{_sbindir}/*
 %{_bindir}/upslog
@@ -285,7 +297,7 @@ rm -rf %{buildroot}
 %dir %{confdir}
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsmon.conf.sample
 %config(noreplace) %attr(640,root,%nut_group) %{confdir}/upssched.conf.sample
-%dir %attr(750,nut,%nut_group) %{_libdir}/ups
+%dir %attr(750,%nut_id,%nut_group) %{_libdir}/ups
 #%ghost %{piddir}
 %{_bindir}/upsc
 %{_bindir}/upscmd
