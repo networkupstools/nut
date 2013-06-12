@@ -61,7 +61,7 @@ if [ -f /usr/local/ups/etc/nut.conf ]; then
 			;;
 	esac
 
-	rpm -q nut-config >/dev/null 2>&1 && CLIENT="yes"
+	rpm -q nut-client >/dev/null 2>&1 && CLIENT="yes"
 fi
 
 do_start() {
