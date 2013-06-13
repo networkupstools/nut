@@ -1467,7 +1467,7 @@ void vname_register_rw(void) {
 		xml_info_t *info = mge_xml2nut + i;
 
 		if (NULL != info->nutname && info->nutflags & ST_FLAG_RW) {
-			dstate_setinfo(info->nutname, NULL);
+			dstate_setinfo(info->nutname, "");
 			dstate_setflags(info->nutname, ST_FLAG_RW);
 		}
 	}
