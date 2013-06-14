@@ -27,27 +27,6 @@ failure() {
 	echo FAILED
 }
 
-daemon() {
-	(
-	# Handle std. fds
-	test -t 0 && exec  </dev/null
-	test -t 1 && exec  >/dev/null
-	test -t 2 && exec 2>/dev/null
-
-	# Chdir to root (so that we don't possibly block umount)
-	cd /
-
-	# Close all non-std fds
-	#i=3; while test $i -lt 256; do exec $i>&-; i=`expr $i + 1`; done
-
-	$* & pid=$!
-
-	disown -h $pid
-
-	echo $pid
-	)
-}
-
 # Resolve what processes should run
 SERVER="no"
 CLIENT="no"
@@ -67,11 +46,11 @@ fi
 do_start() {
 	if [ "$SERVER" = "yes" ]; then
 		echo "Starting UPS driver controller: \c"
-		daemon /usr/local/ups/sbin/upsdrvctl start >/dev/null 2>&1 && success || failure
+		/usr/local/ups/sbin/upsdrvctl start >/dev/null 2>&1 && success || failure
 		RETVAL=$?
 
 		echo "Starting upsd: \c"
-		daemon /usr/local/ups/sbin/upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || failure
+		/usr/local/ups/sbin/upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || failure
 		if [ "$RETVAL" = 0 ]; then
 			RETVAL=$?
 		fi
@@ -79,7 +58,7 @@ do_start() {
 
 	if [ "$CLIENT" = "yes" ]; then
 		echo "Starting UPS monitor: \c"
-		daemon /usr/local/ups/sbin/upsmon >/var/run/nut/upsmon.pid 2>&1 && success || failure
+		/usr/local/ups/sbin/upsmon >/dev/null 2>&1 && success || failure
 		if [ "$RETVAL" = 0 ]; then
 			RETVAL=$?
 		fi
@@ -90,14 +69,19 @@ do_start() {
 
 do_stop() {
 	if test -e /var/run/nut/upsmon.pid; then
-		echo "Stopping UPS monitor"
-		cat /var/run/nut/upsmon.pid | xargs kill
+		echo "Stopping UPS monitor: \c"
+		PID=`cat /var/run/nut/upsmon.pid`
+		kill $PID && success || failure
 		rm /var/run/nut/upsmon.pid
 	fi
 
 	if [ "$SERVER" = "yes" ]; then
-		echo "Stopping upsd: \c"
-		killall upsd > /dev/null 2>&1 && success || failure
+		if test -e /var/run/nut/upsd.pid; then
+			echo "Stopping upsd: \c"
+			PID=`cat /var/run/nut/upsd.pid`
+			kill -9 $PID && success || failure
+			rm /var/run/nut/upsd.pid
+		fi
 		RETVAL=$?
 
 		echo "Shutting down UPS driver controller: \c"
@@ -160,7 +144,7 @@ case "$1" in
 	status)
 		if [ "$SERVER" = "yes" ]; then
 			if test -f /var/locks/ups; then
-				echo "upsd is running"
+				echo "upsd is running with PID" `cat /var/run/nut/upsd.pid`
 			fi
 		fi
 

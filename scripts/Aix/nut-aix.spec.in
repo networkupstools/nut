@@ -142,7 +142,8 @@ install -m 755 %{SOURCE1} %{buildroot}%{initdir}/ups
 /usr/sbin/useradd -c "Network UPS Tools" \
         -g %{nut_group} -d %{_libdir}/ups %{nut_id}
 /usr/bin/test -L %{piddir} || \
-/usr/bin/mkdir -p %{piddir}; \
+/usr/bin/mkdir -p %{piddir}
+/usr/bin/chmod 750 %{piddir}
 /usr/bin/chown %{nut_id}:%{nut_group} %{piddir}
 
 %post
@@ -179,7 +180,8 @@ exit 0
 /usr/sbin/useradd -c "Network UPS Tools" \
         -g %{nut_group} -d %{_libdir}/ups %{nut_id}
 /usr/bin/test -L %{piddir} || \
-/usr/bin/mkdir -p %{piddir}; \
+/usr/bin/mkdir -p %{piddir}
+/usr/bin/chmod 750 %{piddir}
 /usr/bin/chown %{nut_id}:%{nut_group} %{piddir}
 
 %post client
