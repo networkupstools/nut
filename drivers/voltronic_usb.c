@@ -110,7 +110,7 @@ static void *cypress_subdriver(void)
 
 
 static usb_device_id_t voltronic_usb_id[] = {
-	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },
+	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Voltronic Power UPSes */
 	/* end of list */
 	{-1, -1, NULL}
 };
