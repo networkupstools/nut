@@ -232,10 +232,10 @@ Turn on the load immediately.
 *load.off*::
 Turn off the load immediately.
 
-*shutdown.return* ['value']::
+*shutdown.return*::
 Turn off the load and return when power is back. Uses the timers defined by *ondelay* and *offdelay*.
 
-*shutdown.stayoff* ['value']::
+*shutdown.stayoff*::
 Turn off the load and remain off. Uses the timer defined by *offdelay*.
 
 *shutdown.stop*::
