@@ -102,7 +102,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
-static void *cypress_subdriver(void)
+static void *cypress_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &cypress_command;
 	return NULL;
