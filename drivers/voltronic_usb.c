@@ -345,7 +345,7 @@ int voltronic_command(const char *cmd, char *buf, size_t buflen)
 
 void upsdrv_help(void)
 {
-	printf("Read The Fine Manual ('man 8 voltronic')\n");
+	printf("Read The Fine Manual ('man 8 voltronic_usb')\n");
 }
 
 
@@ -433,7 +433,7 @@ void upsdrv_initups(void)
 			"and make sure you have an up-to-date version of NUT. If this does not help,\n"
 			"try running the driver with at least 'subdriver', 'vendorid' and 'productid'\n"
 			"options specified. Please refer to the man page for details about these options\n"
-			"(man 8 voltronic).\n");
+			"(man 8 voltronic_usb).\n");
 	}
 
 	if (!subdriver_command) {

@@ -219,7 +219,7 @@ int voltronic_command(const char *cmd, char *buf, size_t buflen)
 
 void upsdrv_help(void)
 {
-	printf("Read The Fine Manual ('man 8 voltronic')\n");
+	printf("Read The Fine Manual ('man 8 voltronic_ser')\n");
 }
 
 
