@@ -3638,11 +3638,21 @@ void upsdrv_shutdown(void)
 {
 	int	retry;
 
+	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
 
 		if (voltronic_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
+
+	}
+
+	if (retry > MAXTRIES) {
+		upslogx(LOG_NOTICE, "No shutdown pending");
+	}
+
+	/* Shutdown */
+	for (retry = 1; retry <= MAXTRIES; retry++) {
 
 		if (testvar("stayoff")) {	/* If you set stayoff in ups.conf when FSD arises the UPS will shutdown after *offdelay* seconds and won't return.. */
 			if (voltronic_instcmd("shutdown.stayoff", NULL) != STAT_INSTCMD_HANDLED) {
