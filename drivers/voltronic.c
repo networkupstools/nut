@@ -315,18 +315,18 @@ static int voltronic_warning(void)
 		return -1;
 	}
 
-	if (strspn(buf+1, "01") != (strlen(buf)-2)) {
+	if (strspn(buf+1, "01") != (strcspn(buf, "\r\n")-1)) {
 		upsdebugx(2, "%s: invalid reply from UPS [%s]", __func__, strtok(buf+1, "\r\n"));
 		return -1;
 	}
 
-	if (strspn(buf+1, "0") == (strlen(buf)-2)) {	/* No warnings */
+	if (strspn(buf+1, "0") == (strcspn(buf, "\r\n")-1)) {	/* No warnings */
 		return 0;
 	}
 
 	snprintfcat(alarm_buf, sizeof(alarm_buf), " UPS warnings:");
 
-	for (i = 1; i <= ((int)strlen(buf) - 2); i++) {
+	for (i = 1; i <= ((int)strcspn(buf, "\r\n") - 1); i++) {
 	char	*status = NULL;
 	int	u = 0;
 
