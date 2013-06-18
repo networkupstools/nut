@@ -331,6 +331,11 @@
 "Fiskars"	"ups"	"4"	"PowerServer 30"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"9200"	"UPS Information Unit"	"upscode2"
 
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"Serial"	"voltronic_ser"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"USB"	"voltronic_usb"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
+
 "Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"blazer_usb"
 
 "FSP"	"ups"	"2"	"EP650"	"USB"	"blazer_usb"
@@ -942,6 +947,8 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"voltronic_ser"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"voltronic_usb"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
 "Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
