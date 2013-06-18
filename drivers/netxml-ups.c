@@ -654,6 +654,10 @@ static int netxml_alarm_subscribe(const char *page)
 	ne_request	*request;
 	ne_sock_addr	*addr;
 	const ne_inet_addr	*ai;
+	char	resp_buf[LARGEBUF];
+
+	/* Clear response buffer */
+	memset(resp_buf, 0, sizeof(resp_buf));
 
 	upsdebugx(2, "%s: %s", __func__, page);
 
@@ -672,19 +676,19 @@ static int netxml_alarm_subscribe(const char *page)
 
 	netxml_get_page(subdriver->configure);
 
-	snprintf(buf, sizeof(buf),	"<?xml version=\"1.0\">\n");
-	snprintfcat(buf, sizeof(buf),	"<Subscribe>\n");
-	snprintfcat(buf, sizeof(buf),		"<Class>%s v%s</Class>\n", progname, DRIVER_VERSION);
-	snprintfcat(buf, sizeof(buf),		"<Type>connected socket</Type>\n");
-	snprintfcat(buf, sizeof(buf),		"<HostName>%s</HostName>\n", dstate_getinfo("driver.hostname"));
-	snprintfcat(buf, sizeof(buf),		"<XMLClientParameters>\n");
-	snprintfcat(buf, sizeof(buf),			"<ShutdownDuration>%s</ShutdownDuration>\n", dstate_getinfo("driver.delay.shutdown"));
-	snprintfcat(buf, sizeof(buf),			"<ShutdownTimer>%s</ShutdownTimer>\n", dstate_getinfo("driver.timer.shutdown"));
-	snprintfcat(buf, sizeof(buf),			"<AutoConfig>CENTRALIZED</AutoConfig>\n");
-	snprintfcat(buf, sizeof(buf),			"<OutletGroup>1</OutletGroup>\n");
-	snprintfcat(buf, sizeof(buf),		"</XMLClientParameters>\n");
-/*	snprintfcat(buf, sizeof(buf),		"<Warning>NUT driver</Warning>\n"); */
-	snprintfcat(buf, sizeof(buf),	"</Subscribe>\n");
+	snprintf(buf, sizeof(buf),	"<?xml version=\"1.0\">\r\n");
+	snprintfcat(buf, sizeof(buf),	"<Subscribe>\r\n");
+	snprintfcat(buf, sizeof(buf),		"<Class>%s v%s</Class>\r\n", progname, DRIVER_VERSION);
+	snprintfcat(buf, sizeof(buf),		"<Type>connected socket</Type>\r\n");
+	snprintfcat(buf, sizeof(buf),		"<HostName>%s</HostName>\r\n", dstate_getinfo("driver.hostname"));
+	snprintfcat(buf, sizeof(buf),		"<XMLClientParameters>\r\n");
+	snprintfcat(buf, sizeof(buf),			"<ShutdownDuration>%s</ShutdownDuration>\r\n", dstate_getinfo("driver.delay.shutdown"));
+	snprintfcat(buf, sizeof(buf),			"<ShutdownTimer>%s</ShutdownTimer>\r\n", dstate_getinfo("driver.timer.shutdown"));
+	snprintfcat(buf, sizeof(buf),			"<AutoConfig>CENTRALIZED</AutoConfig>\r\n");
+	snprintfcat(buf, sizeof(buf),			"<OutletGroup>1</OutletGroup>\r\n");
+	snprintfcat(buf, sizeof(buf),		"</XMLClientParameters>\r\n");
+/*	snprintfcat(buf, sizeof(buf),		"<Warning>NUT driver</Warning>\r\n"); */
+	snprintfcat(buf, sizeof(buf),	"</Subscribe>\r\n");
 
 	/* now send subscription message setting all the proper flags */
 	request = ne_request_create(session, "POST", page);
@@ -704,7 +708,7 @@ static int netxml_alarm_subscribe(const char *page)
 			break;
 		}
 
-		ret = ne_read_response_block(request, buf, sizeof buf);
+		ret = ne_read_response_block(request, resp_buf, sizeof(resp_buf));
 
 		if (ret == NE_OK) {
 			ret = ne_end_request(request);
@@ -716,7 +720,7 @@ static int netxml_alarm_subscribe(const char *page)
 
 	/* due to different formats used by the various NMCs, we need to\
 	   break up the reply in lines and parse each one separately */
-	for (s = strtok(buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
+	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
 		upsdebugx(2, "%s: parsing %s", __func__, s);
 
 		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%u", &port) != 1)) {
@@ -771,7 +775,7 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\n", secret);
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\r\n", secret);
 	ret = ne_sock_fullwrite(sock, buf, strlen(buf));
 
 	if (ret != NE_OK) {
