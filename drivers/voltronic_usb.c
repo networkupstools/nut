@@ -31,7 +31,7 @@
 #include "voltronic.h"
 
 #define DRIVER_NAME	"Voltronic Power USB driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* For testing purposes */
 /*#define TESTING*/

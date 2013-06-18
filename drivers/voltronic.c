@@ -3020,7 +3020,11 @@ static int voltronic_instcmd(const char *cmdname, const char *extra)
 		 * Accepted Values for ondelay: 0001 -> 9999
 		 */
 		if (ondelay == 0) {
-			snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+			if (offdelay < 60) {
+				snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+			} else {
+				snprintf(buf, sizeof(buf), "S%02d\r", offdelay / 60);
+			}
 		} else if (offdelay < 60) {
 			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
 		} else {
