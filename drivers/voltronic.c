@@ -869,6 +869,10 @@ static int voltronic_capability(void)
 	} else if (strchr(disabled, 'w')) {
 		limited_runtime_on_battery = "disabled";
 	}
+/*	if (strchr(enabled, 'm')) { 	unknown/unused
+	} else if (strchr(disabled, 'm')) { }		*/
+/*	if (strchr(enabled, 'z')) { 	unknown/unused
+	} else if (strchr(disabled, 'z')) { }		*/
 
 	return 0;
 }
@@ -902,6 +906,8 @@ static int voltronic_check(void)	/* This function returns 0 on success, rtn if p
 		{ "advanced_eco_mode", "N", advanced_eco_mode },
 		{ "constant_phase_angle", "Q", constant_phase_angle },
 		{ "limited_runtime_on_battery", "W", limited_runtime_on_battery },
+/*		{ "unknown", "M", unknown },	unknown/unused	*/
+/*		{ "unknown", "Z", unknown },	unknown/unused	*/
 		{ NULL }
 	};
 
