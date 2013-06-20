@@ -775,7 +775,7 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\r\n", secret);
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\n", secret);
 	ret = ne_sock_fullwrite(sock, buf, strlen(buf));
 
 	if (ret != NE_OK) {
