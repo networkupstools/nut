@@ -687,7 +687,7 @@ static int netxml_alarm_subscribe(const char *page)
 	snprintfcat(buf, sizeof(buf),			"<AutoConfig>CENTRALIZED</AutoConfig>\r\n");
 	snprintfcat(buf, sizeof(buf),			"<OutletGroup>1</OutletGroup>\r\n");
 	snprintfcat(buf, sizeof(buf),		"</XMLClientParameters>\r\n");
-/*	snprintfcat(buf, sizeof(buf),		"<Warning>NUT driver</Warning>\r\n"); */
+	snprintfcat(buf, sizeof(buf),		"<Warning></Warning>\r\n");
 	snprintfcat(buf, sizeof(buf),	"</Subscribe>\r\n");
 
 	/* now send subscription message setting all the proper flags */
@@ -775,8 +775,8 @@ static int netxml_alarm_subscribe(const char *page)
 		return NE_RETRY;
 	}
 
-	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>\n", secret);
-	ret = ne_sock_fullwrite(sock, buf, strlen(buf));
+	snprintf(buf, sizeof(buf), "<Subscription Identification=\"%u\"></Subscription>", secret);
+	ret = ne_sock_fullwrite(sock, buf, strlen(buf) + 1);
 
 	if (ret != NE_OK) {
 		upsdebugx(2, "%s: send failed: %s", __func__, ne_sock_error(sock));
