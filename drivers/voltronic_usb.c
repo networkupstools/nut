@@ -31,7 +31,7 @@
 #include "voltronic.h"
 
 #define DRIVER_NAME	"Voltronic Power USB driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.05"
 
 /* For testing purposes */
 /*#define TESTING*/
@@ -102,7 +102,7 @@ static int cypress_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
-static void *cypress_subdriver(void)
+static void *cypress_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &cypress_command;
 	return NULL;
@@ -110,7 +110,7 @@ static void *cypress_subdriver(void)
 
 
 static usb_device_id_t voltronic_usb_id[] = {
-	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },
+	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Voltronic Power UPSes */
 	/* end of list */
 	{-1, -1, NULL}
 };
@@ -345,7 +345,7 @@ int voltronic_command(const char *cmd, char *buf, size_t buflen)
 
 void upsdrv_help(void)
 {
-	printf("Read The Fine Manual ('man 8 voltronic')\n");
+	printf("Read The Fine Manual ('man 8 voltronic_usb')\n");
 }
 
 
@@ -433,7 +433,7 @@ void upsdrv_initups(void)
 			"and make sure you have an up-to-date version of NUT. If this does not help,\n"
 			"try running the driver with at least 'subdriver', 'vendorid' and 'productid'\n"
 			"options specified. Please refer to the man page for details about these options\n"
-			"(man 8 voltronic).\n");
+			"(man 8 voltronic_usb).\n");
 	}
 
 	if (!subdriver_command) {

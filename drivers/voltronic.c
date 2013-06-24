@@ -315,18 +315,18 @@ static int voltronic_warning(void)
 		return -1;
 	}
 
-	if (strspn(buf+1, "01") != (strlen(buf)-2)) {
+	if (strspn(buf+1, "01") != (strcspn(buf, "\r\n")-1)) {
 		upsdebugx(2, "%s: invalid reply from UPS [%s]", __func__, strtok(buf+1, "\r\n"));
 		return -1;
 	}
 
-	if (strspn(buf+1, "0") == (strlen(buf)-2)) {	/* No warnings */
+	if (strspn(buf+1, "0") == (strcspn(buf, "\r\n")-1)) {	/* No warnings */
 		return 0;
 	}
 
 	snprintfcat(alarm_buf, sizeof(alarm_buf), " UPS warnings:");
 
-	for (i = 1; i <= ((int)strlen(buf) - 2); i++) {
+	for (i = 1; i <= ((int)strcspn(buf, "\r\n") - 1); i++) {
 	char	*status = NULL;
 	int	u = 0;
 
@@ -869,6 +869,10 @@ static int voltronic_capability(void)
 	} else if (strchr(disabled, 'w')) {
 		limited_runtime_on_battery = "disabled";
 	}
+/*	if (strchr(enabled, 'm')) { 	unknown/unused
+	} else if (strchr(disabled, 'm')) { }		*/
+/*	if (strchr(enabled, 'z')) { 	unknown/unused
+	} else if (strchr(disabled, 'z')) { }		*/
 
 	return 0;
 }
@@ -902,6 +906,8 @@ static int voltronic_check(void)	/* This function returns 0 on success, rtn if p
 		{ "advanced_eco_mode", "N", advanced_eco_mode },
 		{ "constant_phase_angle", "Q", constant_phase_angle },
 		{ "limited_runtime_on_battery", "W", limited_runtime_on_battery },
+/*		{ "unknown", "M", unknown },	unknown/unused	*/
+/*		{ "unknown", "Z", unknown },	unknown/unused	*/
 		{ NULL }
 	};
 
@@ -3020,7 +3026,11 @@ static int voltronic_instcmd(const char *cmdname, const char *extra)
 		 * Accepted Values for ondelay: 0001 -> 9999
 		 */
 		if (ondelay == 0) {
-			snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+			if (offdelay < 60) {
+				snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+			} else {
+				snprintf(buf, sizeof(buf), "S%02d\r", offdelay / 60);
+			}
 		} else if (offdelay < 60) {
 			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
 		} else {
@@ -3638,11 +3648,21 @@ void upsdrv_shutdown(void)
 {
 	int	retry;
 
+	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
 
 		if (voltronic_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
+
+	}
+
+	if (retry > MAXTRIES) {
+		upslogx(LOG_NOTICE, "No shutdown pending");
+	}
+
+	/* Shutdown */
+	for (retry = 1; retry <= MAXTRIES; retry++) {
 
 		if (testvar("stayoff")) {	/* If you set stayoff in ups.conf when FSD arises the UPS will shutdown after *offdelay* seconds and won't return.. */
 			if (voltronic_instcmd("shutdown.stayoff", NULL) != STAT_INSTCMD_HANDLED) {

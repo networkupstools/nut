@@ -331,6 +331,11 @@
 "Fiskars"	"ups"	"4"	"PowerServer 30"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"9200"	"UPS Information Unit"	"upscode2"
 
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"Serial"	"voltronic_ser"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"USB"	"voltronic_usb"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
+
 "Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"blazer_usb"
 
 "FSP"	"ups"	"2"	"EP650"	"USB"	"blazer_usb"
@@ -927,6 +932,8 @@
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
 "Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
+"Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"voltronic_ser"
+"Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"voltronic_usb"
 "Various"	"ups"	"2"	"(Various serial)"	"WinPower software"	"blazer_ser"
 "Various"	"ups"	"2"	"(Various USB)"	"WinPower software"	"blazer_usb"
 "Various"	"ups"	"2"	"Various Innova T"	"(USB ID 06da:0201)"	"blazer_ser or blazer_usb"
@@ -940,10 +947,12 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
-"Voltronic"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
-"Voltronic"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
-"Voltronic"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Voltronic"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"voltronic_ser"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
+"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
+"Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 
