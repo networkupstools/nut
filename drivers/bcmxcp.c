@@ -1961,6 +1961,6 @@ static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value)
 		}
 	}
 
-	upsdebugx(3, "hu_find_infoval: no matching INFO_* value for this XCP value (%g)", value);
+	upsdebugx(3, "nut_find_infoval: no matching INFO_* value for this XCP value (%g)", value);
 	return NULL;
 }
