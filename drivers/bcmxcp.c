@@ -126,7 +126,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.27"
+#define DRIVER_VERSION	"0.28"
 
 #define MAX_NUT_NAME_LENGTH		128
 #define NUT_OUTLET_POSITION		7
@@ -333,6 +333,7 @@ void init_meter_map()
 
 if (nphases == 1) {
 	bcmxcp_meter_map[18].nut_entity = "input.current";
+	bcmxcp_meter_map[47].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
 	bcmxcp_meter_map[56].nut_entity = "input.voltage";
 	bcmxcp_meter_map[65].nut_entity = "output.current";
 	bcmxcp_meter_map[68].nut_entity = "output.current.nominal";
@@ -352,6 +353,7 @@ if (nphases == 1) {
 	bcmxcp_meter_map[33].nut_entity = "battery.voltage";
 	bcmxcp_meter_map[34].nut_entity = "battery.charge";
 	bcmxcp_meter_map[35].nut_entity = "battery.runtime";
+	bcmxcp_meter_map[41].nut_entity = "battery.voltage.low";
 	bcmxcp_meter_map[43].nut_entity = "battery.charge.low";
 	bcmxcp_meter_map[57].nut_entity = "input.L2-N.voltage";
 	bcmxcp_meter_map[58].nut_entity = "input.L3-N.voltage";
