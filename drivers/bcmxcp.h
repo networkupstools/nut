@@ -32,9 +32,9 @@
 #define PW_COMMAND_LIST_REQ	(unsigned char)0x40 /* Available commands. length 1 */
 #define PW_OUT_MON_BLOCK_REQ	(unsigned char)0x41 /* Outlet monitor request length 1 */
 #define PW_COM_CAP_REQ		(unsigned char)0x42 /* Request communication capabilities. length 2	*/
-#define PW_UPS_TOP_DATA_REQ	(unsigned char)0x43 /* Requsest ups topology data requset. length 1	*/
+#define PW_UPS_TOP_DATA_REQ	(unsigned char)0x43 /* Request ups topology data requset. length 1	*/
 
-/* Need autorisation before this commands */
+/* Need autorisation before these commands */
 #define PW_UPS_ON		(unsigned char)0x89 /* UPS on command. length 1-2 */
 #define PW_LOAD_OFF_RESTART	(unsigned char)0x8A /* Delayed LoadPowerOff & Restart command. length 2-4 */
 #define PW_UPS_OFF		(unsigned char)0x8B /* UPS off command. length 1-2 */
@@ -416,6 +416,13 @@ typedef struct {
 	const char	*(*fun)(double xcp_value);	/* optional XCP to NUT mapping */
 	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
 } info_lkp_t;
+
+/* use explicit booleans */
+#ifndef FALSE
+typedef enum ebool { FALSE, TRUE } bool_t;
+#else
+typedef int bool_t;
+#endif
 
 #endif /*_POWERWARE_H */
 

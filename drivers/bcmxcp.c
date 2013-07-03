@@ -150,7 +150,7 @@ static long int get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
 static void init_meter_map(void);
 static void init_alarm_map(void);
-static void init_command_map(int size);
+static bool_t init_command_map(int size);
 static void init_config(void);
 static void init_limit(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
@@ -625,7 +625,7 @@ void init_alarm_map()
 }
 
 /* Get information on UPS commands */
-void init_command_map(int size)
+bool_t init_command_map(int size)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int res, iIndex = 0, ncounter, NumComms = 0;
@@ -634,7 +634,10 @@ void init_command_map(int size)
 
 	res = command_read_sequence(PW_COMMAND_LIST_REQ, answer);
 	if (res <= 0)
+	{
 		upsdebugx(2, "No command list block.");
+		return FALSE;
+	}
 	else
 	{
 		upsdebugx(2, "Command list block supported.");
@@ -656,17 +659,28 @@ void init_command_map(int size)
 
 				if (answer[iIndex] == PW_INIT_BAT_TEST)
 				{
-					dstate_addcmd("test.battery.start");					
+					dstate_addcmd("test.battery.start");
 				}
 				else if (answer[iIndex] == PW_INIT_SYS_TEST)
 				{
-					dstate_addcmd("test.system.start");					
-				}				
+					dstate_addcmd("test.system.start");
+				}
+				else if (answer[iIndex] == PW_LOAD_OFF_RESTART)
+				{
+					dstate_addcmd("shutdown.return");
+				}
+				else if (answer[iIndex] == PW_UPS_OFF)
+				{
+					dstate_addcmd("shutdown.stayoff");
+				}
 				iIndex++;
 			}
+			return TRUE;
 		}
-		else
+		else {
 			upsdebugx(1, "Invalid response received from Command List block");
+			return FALSE;
+		}
 	}
 }
 
@@ -1141,6 +1155,7 @@ void upsdrv_initinfo(void)
 	int iRating = 0, iIndex = 0, res, len;
 	int ncpu = 0, buf;
 	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
+	bool_t got_cmd_list = FALSE;
 
 	/* Init BCM/XCP alarm descriptions */
 	init_alarm_map();
@@ -1299,11 +1314,13 @@ void upsdrv_initinfo(void)
 
 	/* Get information on UPS commands */
 	if (cmd_list_len)
-		init_command_map(cmd_list_len);
-
-	dstate_addcmd("shutdown.return");
-	dstate_addcmd("shutdown.stayoff");
-	dstate_addcmd("test.battery.start");
+		got_cmd_list = init_command_map(cmd_list_len);
+	/* Add default commands if we were not able to query UPS for support */
+	if(got_cmd_list == FALSE) {
+		dstate_addcmd("shutdown.return");
+		dstate_addcmd("shutdown.stayoff");
+		dstate_addcmd("test.battery.start");
+	}
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
