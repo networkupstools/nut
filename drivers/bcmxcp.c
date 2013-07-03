@@ -158,7 +158,7 @@ static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
 static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
-static int setvar (const char *varname, const char *val);
+static int setvar(const char *varname, const char *val);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
@@ -641,7 +641,7 @@ void init_command_map(int size)
 
 		res = answer[iIndex];
 		NumComms = (int)res; /* Number of commands implemented in this UPS */
-		upsdebugx(3, "comms %d", res);
+		upsdebugx(3, "Number of commands implemented in ups %d", res);
 		iIndex++;
 		res = answer[iIndex]; /* Entry length - bytes reported for each command */
 		iIndex++;
@@ -656,11 +656,11 @@ void init_command_map(int size)
 
 				if (answer[iIndex] == PW_INIT_BAT_TEST)
 				{
-					dstate_addcmd ("test.battery.start");					
+					dstate_addcmd("test.battery.start");					
 				}
 				else if (answer[iIndex] == PW_INIT_SYS_TEST)
 				{
-					dstate_addcmd ("test.system.start");					
+					dstate_addcmd("test.system.start");					
 				}				
 				iIndex++;
 			}
@@ -1036,11 +1036,8 @@ void init_config(void)
 		dstate_setinfo("output.frequency.nominal", "%d", frequency);
 		
 	/*UPS Part Number*/
-	
 	snprintf(sPartNumber, sizeof(sPartNumber) , "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
-
 	dstate_setinfo("device.part", "%s", sPartNumber);
-
 }
 
 void init_limit(void)
@@ -1310,8 +1307,6 @@ void upsdrv_initinfo(void)
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
-
-	return;
 }
 
 void upsdrv_updateinfo(void)
@@ -1568,7 +1563,6 @@ void upsdrv_shutdown(void)
 	0x37 Accepted with parameter adjusted
 	*/
 	switch ((unsigned char) answer[0]) {
-
 		case BCMXCP_RETURN_ACCEPTED: {
 			upsdrv_comm_good();
 			upslogx(LOG_NOTICE,"Going down in %d sec", sec);
@@ -1631,7 +1625,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
 
 		switch ((unsigned char) answer[0]) {
-
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 				return STAT_INSTCMD_HANDLED;
@@ -1676,7 +1669,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
 
 		switch ((unsigned char) answer[0]) {
-
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
 				return STAT_INSTCMD_HANDLED;
@@ -1714,7 +1706,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		switch ((unsigned char) answer[0]) {
-
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Going down NOW", cmdname);
 				return STAT_INSTCMD_HANDLED;
@@ -1760,7 +1751,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		switch ((unsigned char) answer[0]) {
-
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);
 				return STAT_INSTCMD_HANDLED;
@@ -1792,11 +1782,11 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.system.start")) {
 		send_write_command(AUTHOR, 4);
 		
-		sleep(1);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
-		cbuf[1] = 0x01;			/* Initiate General system Test */
-								/* 0x02 = Schedule Battery Commissioning Test*/
+		cbuf[1] = 0x01;         /* 0x01 = Initiate General system Test */
+								/* 0x02 = Schedule Battery Commissioning Test */
 								/* 0x03 = Test Alternate AC Input */
 								/* 0x04 = Flash the Lights Test */
 								/* 0xFF = Report Systems Test Capabilities */
@@ -1808,7 +1798,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		switch ((unsigned char) answer[0]) {
-
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);				
 				return STAT_INSTCMD_HANDLED;
@@ -1905,7 +1894,6 @@ int setvar (const char *varname, const char *val)
 	}
 
 	switch ((unsigned char) answer[0]) {
-
 		case 0x31: {
 			upslogx(LOG_NOTICE,"Outlet %d %s delay set to %d sec",
 				outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
