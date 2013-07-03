@@ -331,22 +331,22 @@ void init_meter_map()
 	bcmxcp_meter_map[20].nut_entity = "input.L3.current";
 	bcmxcp_meter_map[23].nut_entity = "ups.power";
 
-if (nphases == 1) {
-	bcmxcp_meter_map[18].nut_entity = "input.current";
-	bcmxcp_meter_map[47].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
-	bcmxcp_meter_map[56].nut_entity = "input.voltage";
-	bcmxcp_meter_map[65].nut_entity = "output.current";
-	bcmxcp_meter_map[68].nut_entity = "output.current.nominal";
-	bcmxcp_meter_map[78].nut_entity = "output.voltage";
-	bcmxcp_meter_map[82].nut_entity = "ups.realpower";
-}else{
-	bcmxcp_meter_map[18].nut_entity = "input.L1.current";
-	bcmxcp_meter_map[56].nut_entity = "input.L1-N.voltage";
-	bcmxcp_meter_map[65].nut_entity = "output.L1.current";
-	bcmxcp_meter_map[68].nut_entity = "output.L1.current.nominal";
-	bcmxcp_meter_map[78].nut_entity = "output.L1-N.voltage";
-	bcmxcp_meter_map[82].nut_entity = "ups.L1-N.realpower";
-}
+	if (nphases == 1) {
+		bcmxcp_meter_map[18].nut_entity = "input.current";
+		bcmxcp_meter_map[47].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
+		bcmxcp_meter_map[56].nut_entity = "input.voltage";
+		bcmxcp_meter_map[65].nut_entity = "output.current";
+		bcmxcp_meter_map[68].nut_entity = "output.current.nominal";
+		bcmxcp_meter_map[78].nut_entity = "output.voltage";
+		bcmxcp_meter_map[82].nut_entity = "ups.realpower";
+	} else {
+		bcmxcp_meter_map[18].nut_entity = "input.L1.current";
+		bcmxcp_meter_map[56].nut_entity = "input.L1-N.voltage";
+		bcmxcp_meter_map[65].nut_entity = "output.L1.current";
+		bcmxcp_meter_map[68].nut_entity = "output.L1.current.nominal";
+		bcmxcp_meter_map[78].nut_entity = "output.L1-N.voltage";
+		bcmxcp_meter_map[82].nut_entity = "ups.L1-N.realpower";
+	}
 	bcmxcp_meter_map[27].nut_entity = "output.frequency";
 	bcmxcp_meter_map[28].nut_entity = "input.frequency";
 	bcmxcp_meter_map[32].nut_entity = "battery.current";
@@ -638,7 +638,7 @@ void init_command_map(int size)
 	else
 	{
 		upsdebugx(2, "Command list block supported.");
-			
+
 		res = answer[iIndex];
 		NumComms = (int)res; /* Number of commands implemented in this UPS */
 		upsdebugx(3, "comms %d", res);
@@ -646,14 +646,14 @@ void init_command_map(int size)
 		res = answer[iIndex]; /* Entry length - bytes reported for each command */
 		iIndex++;
 		upsdebugx(3, "bytes %d", res);
-		
+
 		/* Get command bytes if size of command block matches with size from standard ID block */
 		if (NumComms + 2 == size)
 		{
 			for (ncounter = 0; ncounter < NumComms; ncounter++)
 			{
 				upsdebugx(3, "%d - %02x ", ncounter, answer[iIndex]);						
-				
+
 				if (answer[iIndex] == PW_INIT_BAT_TEST)
 				{
 					dstate_addcmd ("test.battery.start");					
@@ -980,20 +980,19 @@ int init_outlet(unsigned char len)
 		upsdebugx(2, "Auto delay off: %d\n", auto_dly_off);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.shutdown", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_off);
-        dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
-        dstate_setaux(outlet_name, 5);
+		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux(outlet_name, 5);
 
 		auto_dly_on = get_word(answer+iIndex);
 		iIndex += 2;
 		upsdebugx(2, "Auto delay on: %d\n", auto_dly_on);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.start", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_on);
-        dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
-        dstate_setaux(outlet_name, 5);
+		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux(outlet_name, 5);
 	}
 
 	return num_outlet;
-
 }
 
 void init_config(void)
