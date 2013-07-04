@@ -47,6 +47,13 @@
 #define PW_INIT_BAT_TEST	(unsigned char)0xB1 /* Initiate battery test command. length 3 */
 #define PW_INIT_SYS_TEST	(unsigned char)0xB2 /* Initiate general system test command. length 2 */
 
+/* Define the XCP system test */
+#define PW_SYS_TEST_GENERAL                     (unsigned char)0x01 /* Initiate General system Test */
+#define PW_SYS_TEST_SCHEDULE_BATTERY_COMMISSION (unsigned char)0x02 /* Schedule Battery Commissioning Test */
+#define PW_SYS_TEST_ALTERNATE_AC_INPUT          (unsigned char)0x03 /* Test Alternate AC Input */
+#define PW_SYS_TEST_FLASH_LIGHTS                (unsigned char)0x04 /* Flash the Lights Test */
+#define PW_SYS_TEST_REPORT_CAPABILITIES         (unsigned char)0xFF /* Report Systems Test Capabilities */
+
 /* Define the XCP ACK block responses */
 #define XCPRESP_ACK        0x31     /* Accepted and executed */
 #define XCPRESP_NOT_IMPL   0x32     /* Recognized, but not implemented */

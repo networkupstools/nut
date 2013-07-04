@@ -159,6 +159,7 @@ static void decode_meter_map_entry(const unsigned char *entry, const unsigned ch
 static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
+static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
@@ -664,6 +665,11 @@ bool_t init_command_map(int size)
 				else if (answer[iIndex] == PW_INIT_SYS_TEST)
 				{
 					dstate_addcmd("test.system.start");
+					/* TODO: we should issue a system test call PW_SYS_TEST_REPORT_CAPABILITIES
+					   to the UPS to get back which types of system tests it supports. Here we
+					   we just add the panel test without knowing if the UPS will support it
+					 */
+					dstate_addcmd("test.panel.start");			
 				}
 				else if (answer[iIndex] == PW_LOAD_OFF_RESTART)
 				{
@@ -1539,65 +1545,21 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	unsigned char answer[5], cbuf[3];
+	upsdebugx(1, "upsdrv_shutdown...");
 
-	int res, sec;
-
-	/* Get vars from ups.conf */
-	if (getval("shutdown_delay") != NULL)
-		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
-	else
-		bcmxcp_status.shutdowndelay = 120;
-
-	/* maybe try to detect the UPS here, but try a shutdown	even if
-		 it doesn't respond at first if possible */
-	send_write_command(AUTHOR, 4);
-
-	sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
-
-	cbuf[0] = PW_LOAD_OFF_RESTART;
-	cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
-	cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* hige byte sec. From ups.conf. */
-
-	res = command_write_sequence(cbuf, 3, answer);
-	if (res <= 0) {
-		upslogx(LOG_ERR, "Short read from UPS");
-		dstate_datastale();
+	/* Try to shutdown with delay */
+	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
 		return;
 	}
 
-	sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-
-	/* NOTE: get the response, and return info code located as first data byte after 4 header bytes.
-		Is implemented in answers to command packet's.
-	0x31 Accepted
-	0x32 not implemented
-	0x33 Busy
-	0x34 Unrecognized
-	0x35 Parameter out of range
-	0x36 Parameter invalid
-	0x37 Accepted with parameter adjusted
-	*/
-	switch ((unsigned char) answer[0]) {
-		case BCMXCP_RETURN_ACCEPTED: {
-			upsdrv_comm_good();
-			upslogx(LOG_NOTICE,"Going down in %d sec", sec);
-			break;
-			}
-		case BCMXCP_RETURN_BUSY: {
-			fatalx(EXIT_FAILURE, "shutdown disabled by front panel");
-			break;
-			}
-		case BCMXCP_RETURN_INVALID_PARAMETER: {
-			fatalx(EXIT_FAILURE, "Invalid parameter");
-			break;
-			}
-		default: {
-			fatalx(EXIT_FAILURE, "shutdown not supported");
-			break;
-			}
+	/* If the above doesn't work, try shutdown.stayoff */
+	if (instcmd("shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
 	}
+
+	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
 
@@ -1629,44 +1591,17 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = sddelay & 0xff;
 		cbuf[2] = sddelay >> 8;		/* high byte of the 2 byte time argument */
-		cbuf[3] = ( '1' == cmdname[7] ? 0x01 : 0x02); /* which outlet load segment?  Assumes '1' or '2' at position 8 of the command string. */
+		cbuf[3] = cmdname[7] - '0'; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
-		/* ojw00000 the following copied from command "shutdown.return" below 2007Apr5 */
 		res = command_write_sequence(cbuf, 4, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return -1;
-		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+		char success_msg[40];
+		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-		}
-
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
 	} /* ojw0000 end outlet power cycle */
 
-	/* FIXME: call upsdrv_shutdown() or use the present one! */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 
@@ -1677,37 +1612,12 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* high byte sec. From ups.conf. */
 
 		res = command_write_sequence(cbuf, 3, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return -1;
-		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+		char success_msg[40];
+		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-		}
-
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
@@ -1716,36 +1626,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		res = command_read_sequence(PW_UPS_OFF, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return -1;
-		}
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"[%s] Going down NOW", cmdname);
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported (code %c)",
-					cmdname, (unsigned char) answer[0]);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-		}
-
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Going down NOW");
 	}
 
 	/* Note: test result will be parsed from Battery status block,
@@ -1761,34 +1643,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = 0x1E;			/* 30 sec test duration.*/
 
 		res = command_write_sequence(cbuf, 3, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return -1;
-		}
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-		}
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing battery now");
 		/* Get test info from UPS ?
 			 Should we wait for 50 sec and get the
 			 answer from the test.
@@ -1802,46 +1658,62 @@ static int instcmd(const char *cmdname, const char *extra)
 		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
-		cbuf[1] = 0x01;         /* 0x01 = Initiate General system Test */
-								/* 0x02 = Schedule Battery Commissioning Test */
-								/* 0x03 = Test Alternate AC Input */
-								/* 0x04 = Flash the Lights Test */
-								/* 0xFF = Report Systems Test Capabilities */
+		cbuf[1] = PW_SYS_TEST_GENERAL;
 		res = command_write_sequence(cbuf, 2, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return -1;
-		}
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);				
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
-				break;
-				}
-		}	
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing system now");
+	}
+
+	if (!strcasecmp(cmdname, "test.panel.start")) {
+		send_write_command(AUTHOR, 4);
+		
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+		cbuf[0] = PW_INIT_SYS_TEST;
+		cbuf[1] = PW_SYS_TEST_FLASH_LIGHTS;
+		cbuf[2] = 0x0A; /* Flash and beep 10 times */
+		res = command_write_sequence(cbuf, 3, answer);
+
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing panel now");
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
+static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
+{
+	if (res <= 0) {
+		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		dstate_datastale();
+		return STAT_INSTCMD_FAILED;
+	}
+
+	/* Decode the status code from command execution */
+	switch (exec_status) {
+		case BCMXCP_RETURN_ACCEPTED: {
+			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
+			upsdrv_comm_good();
+			return STAT_INSTCMD_HANDLED;
+			break;
+			}
+		case BCMXCP_RETURN_BUSY: {
+			upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+			return STAT_INSTCMD_FAILED;
+			break;
+			}
+		case BCMXCP_RETURN_INVALID_PARAMETER: {
+		upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			return STAT_INSTCMD_INVALID;
+			break;
+			}
+		default: {
+			upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+			return STAT_INSTCMD_INVALID;
+			break;
+			}
+	}
+}
 
 void upsdrv_help(void)
 {
