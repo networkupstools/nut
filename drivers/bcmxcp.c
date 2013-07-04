@@ -1585,7 +1585,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = sddelay & 0xff;
 		cbuf[2] = sddelay >> 8;		/* high byte of the 2 byte time argument */
-		cbuf[3] = ( '1' == cmdname[7] ? 0x01 : 0x02); /* which outlet load segment?  Assumes '1' or '2' at position 8 of the command string. */
+		cbuf[3] = cmdname[7] - '0'; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
 		/* ojw00000 the following copied from command "shutdown.return" below 2007Apr5 */
 		res = command_write_sequence(cbuf, 4, answer);
