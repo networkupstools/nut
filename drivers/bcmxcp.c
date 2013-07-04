@@ -1758,11 +1758,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
-		cbuf[1] = 0x01;         /* 0x01 = Initiate General system Test */
-								/* 0x02 = Schedule Battery Commissioning Test */
-								/* 0x03 = Test Alternate AC Input */
-								/* 0x04 = Flash the Lights Test */
-								/* 0xFF = Report Systems Test Capabilities */
+		cbuf[1] = PW_SYS_TEST_GENERAL;
 		res = command_write_sequence(cbuf, 2, answer);
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
