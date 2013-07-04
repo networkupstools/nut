@@ -665,6 +665,11 @@ bool_t init_command_map(int size)
 				else if (answer[iIndex] == PW_INIT_SYS_TEST)
 				{
 					dstate_addcmd("test.system.start");
+					/* TODO: we should issue a system test call PW_SYS_TEST_REPORT_CAPABILITIES
+					   to the UPS to get back which types of system tests it supports. Here we
+					   we just add the panel test without knowing if the UPS will support it
+					 */
+					dstate_addcmd("test.panel.start");			
 				}
 				else if (answer[iIndex] == PW_LOAD_OFF_RESTART)
 				{
@@ -1683,6 +1688,24 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing now");
+	}
+
+	if (!strcasecmp(cmdname, "test.panel.start")) {
+		send_write_command(AUTHOR, 4);
+		
+		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+		cbuf[0] = PW_INIT_SYS_TEST;
+		cbuf[1] = PW_SYS_TEST_FLASH_LIGHTS;
+		cbuf[2] = 0x0A; /* Flash and beep ten times */
+		res = command_write_sequence(cbuf, 3, answer);
+		if (res <= 0) {
+			upslogx(LOG_ERR, "Short read from UPS");
+			dstate_datastale();
+			return STAT_INSTCMD_FAILED;
+		}
+
+		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing panel now");
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
