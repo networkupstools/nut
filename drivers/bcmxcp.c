@@ -159,6 +159,7 @@ static void decode_meter_map_entry(const unsigned char *entry, const unsigned ch
 static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
+static int decode_instcmd_exec(const unsigned char exec_status, const char *cmdname, const char *success_msg);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
@@ -1596,30 +1597,10 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+		char success_msg[40];
+		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
-				upsdrv_comm_good();
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
-				return STAT_INSTCMD_FAILED;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-		}
+		return decode_instcmd_exec((unsigned char)answer[0], cmdname, success_msg);
 	} /* ojw0000 end outlet power cycle */
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
@@ -1639,30 +1620,10 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+		char success_msg[40];
+		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
-				upsdrv_comm_good();
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_FAILED;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-		}
+		return decode_instcmd_exec((unsigned char)answer[0], cmdname, success_msg);
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
@@ -1677,30 +1638,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		}
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"[%s] Going down NOW", cmdname);
-				upsdrv_comm_good();
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_FAILED;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported (code %c)",
-					cmdname, (unsigned char) answer[0]);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-		}
+		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Going down NOW");
 	}
 
 	/* Note: test result will be parsed from Battery status block,
@@ -1722,29 +1660,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		}
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);
-				upsdrv_comm_good();
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_FAILED;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-		}
+		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing now");
 		/* Get test info from UPS ?
 			 Should we wait for 50 sec and get the
 			 answer from the test.
@@ -1766,35 +1682,40 @@ static int instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_FAILED;
 		}
 
-		switch ((unsigned char) answer[0]) {
-			case BCMXCP_RETURN_ACCEPTED: {
-				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);				
-				upsdrv_comm_good();
-				return STAT_INSTCMD_HANDLED;
-				break;
-				}
-			case BCMXCP_RETURN_BUSY: {
-				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_FAILED;
-				break;
-				}
-			case BCMXCP_RETURN_INVALID_PARAMETER: {
-				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_INVALID;
-				break;
-				}
-		}	
+		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing now");
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
+static int decode_instcmd_exec(const unsigned char exec_status, const char *cmdname, const char *success_msg)
+{
+	/* Decode the status code from command execution */
+	switch (exec_status) {
+		case BCMXCP_RETURN_ACCEPTED: {
+			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
+			upsdrv_comm_good();
+			return STAT_INSTCMD_HANDLED;
+			break;
+			}
+		case BCMXCP_RETURN_BUSY: {
+			upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+			return STAT_INSTCMD_FAILED;
+			break;
+			}
+		case BCMXCP_RETURN_INVALID_PARAMETER: {
+		upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			return STAT_INSTCMD_INVALID;
+			break;
+			}
+		default: {
+			upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+			return STAT_INSTCMD_INVALID;
+			break;
+			}
+	}
+}
 
 void upsdrv_help(void)
 {
