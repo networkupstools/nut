@@ -159,7 +159,7 @@ static void decode_meter_map_entry(const unsigned char *entry, const unsigned ch
 static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
-static int decode_instcmd_exec(const unsigned char exec_status, const char *cmdname, const char *success_msg);
+static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
@@ -1593,19 +1593,13 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = sddelay >> 8;		/* high byte of the 2 byte time argument */
 		cbuf[3] = cmdname[7] - '0'; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
-		/* ojw00000 the following copied from command "shutdown.return" below 2007Apr5 */
 		res = command_write_sequence(cbuf, 4, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return STAT_INSTCMD_FAILED;
-		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
 		char success_msg[40];
 		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
-		return decode_instcmd_exec((unsigned char)answer[0], cmdname, success_msg);
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
 	} /* ojw0000 end outlet power cycle */
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
@@ -1618,17 +1612,12 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* high byte sec. From ups.conf. */
 
 		res = command_write_sequence(cbuf, 3, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return STAT_INSTCMD_FAILED;
-		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
 		char success_msg[40];
 		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
-		return decode_instcmd_exec((unsigned char)answer[0], cmdname, success_msg);
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
@@ -1637,13 +1626,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		res = command_read_sequence(PW_UPS_OFF, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return STAT_INSTCMD_FAILED;
-		}
 
-		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Going down NOW");
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Going down NOW");
 	}
 
 	/* Note: test result will be parsed from Battery status block,
@@ -1659,13 +1643,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[2] = 0x1E;			/* 30 sec test duration.*/
 
 		res = command_write_sequence(cbuf, 3, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return STAT_INSTCMD_FAILED;
-		}
 
-		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing now");
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing battery now");
 		/* Get test info from UPS ?
 			 Should we wait for 50 sec and get the
 			 answer from the test.
@@ -1681,13 +1660,8 @@ static int instcmd(const char *cmdname, const char *extra)
 		cbuf[0] = PW_INIT_SYS_TEST;
 		cbuf[1] = PW_SYS_TEST_GENERAL;
 		res = command_write_sequence(cbuf, 2, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return STAT_INSTCMD_FAILED;
-		}
 
-		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing now");
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing system now");
 	}
 
 	if (!strcasecmp(cmdname, "test.panel.start")) {
@@ -1697,23 +1671,24 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		cbuf[0] = PW_INIT_SYS_TEST;
 		cbuf[1] = PW_SYS_TEST_FLASH_LIGHTS;
-		cbuf[2] = 0x0A; /* Flash and beep ten times */
+		cbuf[2] = 0x0A; /* Flash and beep 10 times */
 		res = command_write_sequence(cbuf, 3, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return STAT_INSTCMD_FAILED;
-		}
 
-		return decode_instcmd_exec((unsigned char)answer[0], cmdname, "Testing panel now");
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing panel now");
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-static int decode_instcmd_exec(const unsigned char exec_status, const char *cmdname, const char *success_msg)
+static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
 {
+	if (res <= 0) {
+		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		dstate_datastale();
+		return STAT_INSTCMD_FAILED;
+	}
+
 	/* Decode the status code from command execution */
 	switch (exec_status) {
 		case BCMXCP_RETURN_ACCEPTED: {
