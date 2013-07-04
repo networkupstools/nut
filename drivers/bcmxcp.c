@@ -1644,6 +1644,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		switch ((unsigned char) answer[0]) {
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
+				upsdrv_comm_good();
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
@@ -1687,6 +1688,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		switch ((unsigned char) answer[0]) {
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"Going down in %d sec", sec);
+				upsdrv_comm_good();
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
@@ -1723,6 +1725,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		switch ((unsigned char) answer[0]) {
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Going down NOW", cmdname);
+				upsdrv_comm_good();
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
@@ -1767,6 +1770,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		switch ((unsigned char) answer[0]) {
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);
+				upsdrv_comm_good();
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
@@ -1814,6 +1818,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		switch ((unsigned char) answer[0]) {
 			case BCMXCP_RETURN_ACCEPTED: {
 				upslogx(LOG_NOTICE,"[%s] Testing now", cmdname);				
+				upsdrv_comm_good();
 				return STAT_INSTCMD_HANDLED;
 				break;
 				}
