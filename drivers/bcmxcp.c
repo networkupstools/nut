@@ -1636,7 +1636,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
-			return -1;
+			return STAT_INSTCMD_FAILED;
 		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
@@ -1649,21 +1649,20 @@ static int instcmd(const char *cmdname, const char *extra)
 				}
 			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_FAILED;
 				break;
 				}
 			case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 			default: {
 				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 		}
-
 	} /* ojw0000 end outlet power cycle */
 
 	/* FIXME: call upsdrv_shutdown() or use the present one! */
@@ -1680,7 +1679,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
-			return -1;
+			return STAT_INSTCMD_FAILED;
 		}
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
@@ -1693,21 +1692,20 @@ static int instcmd(const char *cmdname, const char *extra)
 				}
 			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_FAILED;
 				break;
 				}
 			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 			default: {
 				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 		}
-
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
@@ -1719,7 +1717,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
-			return -1;
+			return STAT_INSTCMD_FAILED;
 		}
 
 		switch ((unsigned char) answer[0]) {
@@ -1730,22 +1728,21 @@ static int instcmd(const char *cmdname, const char *extra)
 				}
 			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_FAILED;
 				break;
 				}
 			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 			default: {
 				upslogx(LOG_NOTICE, "[%s] not supported (code %c)",
 					cmdname, (unsigned char) answer[0]);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 		}
-
 	}
 
 	/* Note: test result will be parsed from Battery status block,
@@ -1764,7 +1761,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
-			return -1;
+			return STAT_INSTCMD_FAILED;
 		}
 
 		switch ((unsigned char) answer[0]) {
@@ -1775,17 +1772,17 @@ static int instcmd(const char *cmdname, const char *extra)
 				}
 			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_FAILED;
 				break;
 				}
 			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 			default: {
 				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 		}
@@ -1811,7 +1808,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		if (res <= 0) {
 			upslogx(LOG_ERR, "Short read from UPS");
 			dstate_datastale();
-			return -1;
+			return STAT_INSTCMD_FAILED;
 		}
 
 		switch ((unsigned char) answer[0]) {
@@ -1822,17 +1819,17 @@ static int instcmd(const char *cmdname, const char *extra)
 				}
 			case BCMXCP_RETURN_BUSY: {
 				upslogx(LOG_NOTICE, "[%s] disabled by front panel", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_FAILED;
 				break;
 				}
 			case BCMXCP_RETURN_INVALID_PARAMETER: {
 				upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 			default: {
 				upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
-				return STAT_INSTCMD_UNKNOWN;
+				return STAT_INSTCMD_INVALID;
 				break;
 				}
 		}	
