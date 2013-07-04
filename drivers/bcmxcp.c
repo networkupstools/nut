@@ -1539,65 +1539,21 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_shutdown(void)
 {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	unsigned char answer[5], cbuf[3];
+	upsdebugx(1, "upsdrv_shutdown...");
 
-	int res, sec;
-
-	/* Get vars from ups.conf */
-	if (getval("shutdown_delay") != NULL)
-		bcmxcp_status.shutdowndelay = atoi(getval("shutdown_delay"));
-	else
-		bcmxcp_status.shutdowndelay = 120;
-
-	/* maybe try to detect the UPS here, but try a shutdown	even if
-		 it doesn't respond at first if possible */
-	send_write_command(AUTHOR, 4);
-
-	sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
-
-	cbuf[0] = PW_LOAD_OFF_RESTART;
-	cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
-	cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* hige byte sec. From ups.conf. */
-
-	res = command_write_sequence(cbuf, 3, answer);
-	if (res <= 0) {
-		upslogx(LOG_ERR, "Short read from UPS");
-		dstate_datastale();
+	/* Try to shutdown with delay */
+	if (instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
 		return;
 	}
 
-	sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-
-	/* NOTE: get the response, and return info code located as first data byte after 4 header bytes.
-		Is implemented in answers to command packet's.
-	0x31 Accepted
-	0x32 not implemented
-	0x33 Busy
-	0x34 Unrecognized
-	0x35 Parameter out of range
-	0x36 Parameter invalid
-	0x37 Accepted with parameter adjusted
-	*/
-	switch ((unsigned char) answer[0]) {
-		case BCMXCP_RETURN_ACCEPTED: {
-			upsdrv_comm_good();
-			upslogx(LOG_NOTICE,"Going down in %d sec", sec);
-			break;
-			}
-		case BCMXCP_RETURN_BUSY: {
-			fatalx(EXIT_FAILURE, "shutdown disabled by front panel");
-			break;
-			}
-		case BCMXCP_RETURN_INVALID_PARAMETER: {
-			fatalx(EXIT_FAILURE, "Invalid parameter");
-			break;
-			}
-		default: {
-			fatalx(EXIT_FAILURE, "shutdown not supported");
-			break;
-			}
+	/* If the above doesn't work, try shutdown.stayoff */
+	if (instcmd("shutdown.stayoff", NULL) == STAT_INSTCMD_HANDLED) {
+		/* Shutdown successful */
+		return;
 	}
+
+	fatalx(EXIT_FAILURE, "Shutdown failed!");
 }
 
 
@@ -1666,7 +1622,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		}
 	} /* ojw0000 end outlet power cycle */
 
-	/* FIXME: call upsdrv_shutdown() or use the present one! */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 
