@@ -322,54 +322,54 @@ void init_meter_map()
 	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY_t) * BCMXCP_METER_MAP_MAX);
 
 	/* Set all corresponding mappings NUT <-> BCM/XCP */
-	bcmxcp_meter_map[0].nut_entity = "output.L1-L2.voltage";
-	bcmxcp_meter_map[1].nut_entity = "output.L2-L3.voltage";
-	bcmxcp_meter_map[2].nut_entity = "output.L3-L1.voltage";
-	bcmxcp_meter_map[3].nut_entity = "input.L1-L2.voltage";
-	bcmxcp_meter_map[4].nut_entity = "input.L2-L3.voltage";
-	bcmxcp_meter_map[5].nut_entity = "input.L3-L1.voltage";
-	bcmxcp_meter_map[19].nut_entity = "input.L2.current";
-	bcmxcp_meter_map[20].nut_entity = "input.L3.current";
-	bcmxcp_meter_map[23].nut_entity = "ups.power";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_AB].nut_entity = "output.L1-L2.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_BC].nut_entity = "output.L2-L3.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_CA].nut_entity = "output.L3-L1.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_AB].nut_entity = "input.L1-L2.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_BC].nut_entity = "input.L2-L3.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_CA].nut_entity = "input.L3-L1.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_B].nut_entity = "input.L2.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_C].nut_entity = "input.L3.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].nut_entity = "ups.power";
 
 	if (nphases == 1) {
-		bcmxcp_meter_map[18].nut_entity = "input.current";
-		bcmxcp_meter_map[47].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
-		bcmxcp_meter_map[56].nut_entity = "input.voltage";
-		bcmxcp_meter_map[65].nut_entity = "output.current";
-		bcmxcp_meter_map[68].nut_entity = "output.current.nominal";
-		bcmxcp_meter_map[78].nut_entity = "output.voltage";
-		bcmxcp_meter_map[82].nut_entity = "ups.realpower";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A].nut_entity = "input.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.current.nominal";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_A].nut_entity = "output.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.realpower";
 	} else {
-		bcmxcp_meter_map[18].nut_entity = "input.L1.current";
-		bcmxcp_meter_map[56].nut_entity = "input.L1-N.voltage";
-		bcmxcp_meter_map[65].nut_entity = "output.L1.current";
-		bcmxcp_meter_map[68].nut_entity = "output.L1.current.nominal";
-		bcmxcp_meter_map[78].nut_entity = "output.L1-N.voltage";
-		bcmxcp_meter_map[82].nut_entity = "ups.L1-N.realpower";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A].nut_entity = "input.L1.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.L1-N.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.L1.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.L1.current.nominal";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_A].nut_entity = "output.L1-N.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.L1-N.realpower";
 	}
-	bcmxcp_meter_map[27].nut_entity = "output.frequency";
-	bcmxcp_meter_map[28].nut_entity = "input.frequency";
-	bcmxcp_meter_map[32].nut_entity = "battery.current";
-	bcmxcp_meter_map[33].nut_entity = "battery.voltage";
-	bcmxcp_meter_map[34].nut_entity = "battery.charge";
-	bcmxcp_meter_map[35].nut_entity = "battery.runtime";
-	bcmxcp_meter_map[41].nut_entity = "battery.voltage.low";
-	bcmxcp_meter_map[43].nut_entity = "battery.charge.low";
-	bcmxcp_meter_map[57].nut_entity = "input.L2-N.voltage";
-	bcmxcp_meter_map[58].nut_entity = "input.L3-N.voltage";
-	bcmxcp_meter_map[62].nut_entity = "ambient.temperature";
-	bcmxcp_meter_map[63].nut_entity = "ups.temperature";
-	bcmxcp_meter_map[66].nut_entity = "output.L2.current";
-	bcmxcp_meter_map[67].nut_entity = "output.L3.current";
-	bcmxcp_meter_map[69].nut_entity = "output.L2.current.nominal";
-	bcmxcp_meter_map[70].nut_entity = "output.L3.current.nominal";
-	bcmxcp_meter_map[77].nut_entity = "battery.temperature";
-	bcmxcp_meter_map[79].nut_entity = "output.L2-N.voltage";
-	bcmxcp_meter_map[80].nut_entity = "output.L3-N.voltage";
-	bcmxcp_meter_map[83].nut_entity = "ups.L2-N.realpower";
-	bcmxcp_meter_map[84].nut_entity = "ups.L3-N.realpower";
-	bcmxcp_meter_map[85].nut_entity = "ups.realpower.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_FREQUENCY].nut_entity = "output.frequency";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_FREQUENCY].nut_entity = "input.frequency";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_CURRENT].nut_entity = "battery.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_VOLTAGE].nut_entity = "battery.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_BATTERY_LEFT].nut_entity = "battery.charge";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_TIME_REMAINING].nut_entity = "battery.runtime";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_DCUV_BAR_CHART].nut_entity = "battery.voltage.low";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOW_BATTERY_WARNING_V_BAR_CHART].nut_entity = "battery.charge.low";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_B].nut_entity = "input.L2-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_C].nut_entity = "input.L3-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_AMBIENT_TEMPERATURE].nut_entity = "ambient.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_HEATSINK_TEMPERATURE].nut_entity = "ups.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B].nut_entity = "output.L2.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C].nut_entity = "output.L3.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B_BAR_CHART].nut_entity = "output.L2.current.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C_BAR_CHART].nut_entity = "output.L3.current.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_TEMPERATURE].nut_entity = "battery.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_B].nut_entity = "output.L2-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_C].nut_entity = "output.L3-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_B].nut_entity = "ups.L2-N.realpower";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_C].nut_entity = "ups.L3-N.realpower";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A_B_C_BAR_CHART].nut_entity = "ups.realpower.nominal";
 }
 
 void init_alarm_map()
@@ -1377,14 +1377,14 @@ void upsdrv_updateinfo(void)
 			fValue = 100 * (output / max_output);
 		dstate_setinfo("ups.load", "%5.1f", fValue);
 	}
-	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A].format != 0 && /* Output A */
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
+	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 && /* Output A */
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
 	{
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A].format, sValue);
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
 		output = atof(sValue);
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].format, sValue);
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format, sValue);
 		max_output = atof(sValue);
 
 		fValue = 0.0;
