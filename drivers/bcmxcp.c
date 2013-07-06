@@ -330,6 +330,7 @@ void init_meter_map()
 	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_CA].nut_entity = "input.L3-L1.voltage";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_B].nut_entity = "input.L2.current";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_C].nut_entity = "input.L3.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_WATTS].nut_entity = "input.realpower";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].nut_entity = "ups.power";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VA].nut_entity = "input.power";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_POWER_FACTOR].nut_entity = "output.powerfactor";
