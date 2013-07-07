@@ -490,7 +490,6 @@
 #define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST 0x37 /* Accepted, with parameter adjusted to nearest good value */
 //#define BCMXCP_RETURN_READONLY                0x38 /* Parameter is Read-only - cannot be written (at this privilege level) (this is not listed in spec document */
 
-
 /* UPS status */
 #define BCMXCP_STATUS_ONLINE	0x50
 #define BCMXCP_STATUS_ONBATTERY	0xf0
@@ -500,6 +499,29 @@
 #define BCMXCP_STATUS_BOOST2	0x62
 #define BCMXCP_STATUS_BYPASS	0x60
 #define BCMXCP_STATUS_OFF		0x10
+
+/* UPS topology block info */
+#define BCMXCP_TOPOLOGY_NONE                        0x0000 /* None; use the Table of Elements */
+#define BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P         0x0010 /* Off-line switcher, Single Phase */
+#define BCMXCP_TOPOLOGY_LINEINT_UPS_1P              0x0020 /* Line-Interactive UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_LINEINT_UPS_2P              0x0021 /* Line-Interactive UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_LINEINT_UPS_3P              0x0022 /* Line-Interactive UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P       0x0030 /* Dual AC Input, On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P       0x0031 /* Dual AC Input, On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P       0x0032 /* Dual AC Input, On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_ONLINE_UPS_1P               0x0040 /* On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_ONLINE_UPS_2P               0x0041 /* On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_ONLINE_UPS_3P               0x0042 /* On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P   0x0050 /* Parallel Redundant On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P   0x0051 /* Parallel Redundant On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P   0x0052 /* Parallel Redundant On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P 0x0060 /* Parallel for Capacity On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P 0x0061 /* Parallel for Capacity On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P 0x0062 /* Parallel for Capacity On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P     0x0102 /* System Bypass Module, Three Phase */
+#define BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P          0x0122 /* Hot-Tie Cabinet, Three Phase */
+#define BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P        0x0200 /* Outlet Controller, Single Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P    0x0222 /* Dual AC Input Static Switch Module, 3 Phase */
 
 typedef struct { /* Entry in BCM/XCP - UPS - NUT mapping table */
 	const char *nut_entity;				/* The NUT variable name */
