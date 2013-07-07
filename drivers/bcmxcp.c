@@ -1814,25 +1814,34 @@ int setvar (const char *varname, const char *val)
 	}
 
 	switch ((unsigned char) answer[0]) {
-		case 0x31: {
+		case BCMXCP_RETURN_ACCEPTED: {
 			upslogx(LOG_NOTICE,"Outlet %d %s delay set to %d sec",
 				outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
 			dstate_setinfo(varname, "%d", sec);
+			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
 			break;
 			}
-		case 0x33: {
+		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
+			upslogx(LOG_NOTICE,"Outlet %d %s delay set, but UPS adjusted parameter %d sec",
+				outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
+			dstate_setinfo(varname, "%d", sec);
+			upsdrv_comm_good();
+			return STAT_SET_HANDLED;
+			break;
+			}
+		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "Set [%s] failed due to UPS busy", varname);
 			/* TODO: we should probably retry... */
 			return STAT_SET_UNKNOWN;
 			break;
 			}
-		case 0x35: {
+		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "Set [%s %s] failed due to parameter out of range", varname, val);
 			return STAT_SET_UNKNOWN;
 			break;
 			}
-		case 0x36: {
+		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "Set [%s %s] failed due to invalid parameter", varname, val);
 			return STAT_SET_UNKNOWN;
 			break;
