@@ -140,7 +140,8 @@ upsdrv_info_t upsdrv_info = {
 	"Tore Ørpetveit <tore@orpetveit.net>\n" \
 	"Wolfgang Ocker <weo@weo1.de>\n" \
 	"Oliver Wilcock\n" \
-	"Prachi Gandhi <prachisgandhi@eaton.com>",
+	"Prachi Gandhi <prachisgandhi@eaton.com>\n" \
+	"Alf Høgemark <alf@i100>",
 	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
 };
@@ -682,7 +683,7 @@ bool_t init_command_map(int size)
 					dstate_addcmd("test.system.start");
 					/* TODO: we should issue a system test call PW_SYS_TEST_REPORT_CAPABILITIES
 					   to the UPS to get back which types of system tests it supports. Here we
-					   we just add the panel test without knowing if the UPS will support it
+					   just add the panel test without knowing if the UPS will support it
 					 */
 					dstate_addcmd("test.panel.start");			
 				}
