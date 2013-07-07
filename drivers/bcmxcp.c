@@ -386,6 +386,7 @@ void init_meter_map()
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_B].nut_entity = "ups.L2-N.realpower";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_C].nut_entity = "ups.L3-N.realpower";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A_B_C_BAR_CHART].nut_entity = "ups.realpower.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LINE_EVENT_COUNTER].nut_entity = "input.quality";
 }
 
 void init_alarm_map()
