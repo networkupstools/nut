@@ -61,10 +61,6 @@ TODO List:
 		See if it have any alarm history block and enable
 		command to dump it.
 
-		Size of Topology Block: (Medium priority)
-		Check if the topology block exist. Parse it for
-		some additional info. Type of ups input phases etc.
-
 		Maximum Supported Command Length: ( Med. to High priority)
 		Give info about the ups receive buffer size.
 
@@ -154,6 +150,7 @@ static void init_alarm_map(void);
 static bool_t init_command_map(int size);
 static void init_config(void);
 static void init_limit(void);
+static void init_topology(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
@@ -1169,6 +1166,86 @@ void init_limit(void)
 	}
 }
 
+void init_topology(void)
+{
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
+	int res, value;
+
+	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
+	if (res <= 0)
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+
+	/* Long integer */
+	value = get_word(answer);
+	switch (value) {
+		case BCMXCP_TOPOLOGY_NONE:			
+			break;
+		case BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P:
+			dstate_setinfo("ups.description", "Off-line switcher, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_LINEINT_UPS_1P:
+			dstate_setinfo("ups.description", "Line-Interactive UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_LINEINT_UPS_2P:
+			dstate_setinfo("ups.description", "Line-Interactive UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_LINEINT_UPS_3P:
+			dstate_setinfo("ups.description", "Line-Interactive UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P:
+			dstate_setinfo("ups.description", "System Bypass Module, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P:
+			dstate_setinfo("ups.description", "Hot-Tie Cabinet, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P:
+			dstate_setinfo("ups.description", "Outlet Controller, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P:
+			dstate_setinfo("ups.description", "Dual AC Input Static Switch Module, 3 Phase");
+			break;
+		default: /* Unknown */
+			upsdebugx(3, "Unknown topology block value: %d\n", value);
+			break;
+	}
+}
+
 void upsdrv_initinfo(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
@@ -1177,7 +1254,7 @@ void upsdrv_initinfo(void)
 	char power_rating[10];
 	int iRating = 0, iIndex = 0, res, len;
 	int ncpu = 0, buf;
-	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
+	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0, topology_block_len = 0;
 	bool_t got_cmd_list = FALSE;
 
 	/* Init BCM/XCP alarm descriptions */
@@ -1296,8 +1373,8 @@ void upsdrv_initinfo(void)
 	iIndex += 2;
 
 	/* Size of topology block */
-	len = get_word(answer+iIndex);
-	upsdebugx(2, "Length of topology block: %d\n", len);
+	topology_block_len = get_word(answer+iIndex);
+	upsdebugx(2, "Length of topology block: %d\n", topology_block_len);
 	iIndex += 2;
 
 	/* Maximum supported command length */
@@ -1349,6 +1426,9 @@ void upsdrv_initinfo(void)
 		dstate_addcmd("shutdown.stayoff");
 		dstate_addcmd("test.battery.start");
 	}
+	/* Get information on UPS topology */
+	if (topology_block_len)
+		init_topology();
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
