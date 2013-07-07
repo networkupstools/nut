@@ -61,10 +61,6 @@ TODO List:
 		See if it have any alarm history block and enable
 		command to dump it.
 
-		Size of Topology Block: (Medium priority)
-		Check if the topology block exist. Parse it for
-		some additional info. Type of ups input phases etc.
-
 		Maximum Supported Command Length: ( Med. to High priority)
 		Give info about the ups receive buffer size.
 
@@ -140,7 +136,8 @@ upsdrv_info_t upsdrv_info = {
 	"Tore Ørpetveit <tore@orpetveit.net>\n" \
 	"Wolfgang Ocker <weo@weo1.de>\n" \
 	"Oliver Wilcock\n" \
-	"Prachi Gandhi <prachisgandhi@eaton.com>",
+	"Prachi Gandhi <prachisgandhi@eaton.com>\n" \
+	"Alf Høgemark <alf@i100>",
 	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
 };
@@ -153,6 +150,7 @@ static void init_alarm_map(void);
 static bool_t init_command_map(int size);
 static void init_config(void);
 static void init_limit(void);
+static void init_topology(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
@@ -160,6 +158,7 @@ static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
+static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
@@ -322,54 +321,69 @@ void init_meter_map()
 	memset(&bcmxcp_meter_map, 0, sizeof(BCMXCP_METER_MAP_ENTRY_t) * BCMXCP_METER_MAP_MAX);
 
 	/* Set all corresponding mappings NUT <-> BCM/XCP */
-	bcmxcp_meter_map[0].nut_entity = "output.L1-L2.voltage";
-	bcmxcp_meter_map[1].nut_entity = "output.L2-L3.voltage";
-	bcmxcp_meter_map[2].nut_entity = "output.L3-L1.voltage";
-	bcmxcp_meter_map[3].nut_entity = "input.L1-L2.voltage";
-	bcmxcp_meter_map[4].nut_entity = "input.L2-L3.voltage";
-	bcmxcp_meter_map[5].nut_entity = "input.L3-L1.voltage";
-	bcmxcp_meter_map[19].nut_entity = "input.L2.current";
-	bcmxcp_meter_map[20].nut_entity = "input.L3.current";
-	bcmxcp_meter_map[23].nut_entity = "ups.power";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_AB].nut_entity = "output.L1-L2.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_BC].nut_entity = "output.L2-L3.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_CA].nut_entity = "output.L3-L1.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_AB].nut_entity = "input.L1-L2.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_BC].nut_entity = "input.L2-L3.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_CA].nut_entity = "input.L3-L1.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_B].nut_entity = "input.L2.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_C].nut_entity = "input.L3.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_WATTS].nut_entity = "input.realpower";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].nut_entity = "ups.power";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VA].nut_entity = "input.power";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_POWER_FACTOR].nut_entity = "output.powerfactor";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_POWER_FACTOR].nut_entity = "input.powerfactor";
 
 	if (nphases == 1) {
-		bcmxcp_meter_map[18].nut_entity = "input.current";
-		bcmxcp_meter_map[47].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
-		bcmxcp_meter_map[56].nut_entity = "input.voltage";
-		bcmxcp_meter_map[65].nut_entity = "output.current";
-		bcmxcp_meter_map[68].nut_entity = "output.current.nominal";
-		bcmxcp_meter_map[78].nut_entity = "output.voltage";
-		bcmxcp_meter_map[82].nut_entity = "ups.realpower";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A].nut_entity = "input.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.current.nominal";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_A].nut_entity = "output.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.realpower";
 	} else {
-		bcmxcp_meter_map[18].nut_entity = "input.L1.current";
-		bcmxcp_meter_map[56].nut_entity = "input.L1-N.voltage";
-		bcmxcp_meter_map[65].nut_entity = "output.L1.current";
-		bcmxcp_meter_map[68].nut_entity = "output.L1.current.nominal";
-		bcmxcp_meter_map[78].nut_entity = "output.L1-N.voltage";
-		bcmxcp_meter_map[82].nut_entity = "ups.L1-N.realpower";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A].nut_entity = "input.L1.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A].nut_entity = "output.L1.power.percent";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_B].nut_entity = "output.L2.power.percent";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_C].nut_entity = "output.L3.power.percent";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_A].nut_entity = "output.L1.power";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_B].nut_entity = "output.L2.power";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_C].nut_entity = "output.L3.power";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.L1-N.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.L1.current";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.L1.current.nominal";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_A].nut_entity = "output.L1-N.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.L1-N.realpower";
 	}
-	bcmxcp_meter_map[27].nut_entity = "output.frequency";
-	bcmxcp_meter_map[28].nut_entity = "input.frequency";
-	bcmxcp_meter_map[32].nut_entity = "battery.current";
-	bcmxcp_meter_map[33].nut_entity = "battery.voltage";
-	bcmxcp_meter_map[34].nut_entity = "battery.charge";
-	bcmxcp_meter_map[35].nut_entity = "battery.runtime";
-	bcmxcp_meter_map[41].nut_entity = "battery.voltage.low";
-	bcmxcp_meter_map[43].nut_entity = "battery.charge.low";
-	bcmxcp_meter_map[57].nut_entity = "input.L2-N.voltage";
-	bcmxcp_meter_map[58].nut_entity = "input.L3-N.voltage";
-	bcmxcp_meter_map[62].nut_entity = "ambient.temperature";
-	bcmxcp_meter_map[63].nut_entity = "ups.temperature";
-	bcmxcp_meter_map[66].nut_entity = "output.L2.current";
-	bcmxcp_meter_map[67].nut_entity = "output.L3.current";
-	bcmxcp_meter_map[69].nut_entity = "output.L2.current.nominal";
-	bcmxcp_meter_map[70].nut_entity = "output.L3.current.nominal";
-	bcmxcp_meter_map[77].nut_entity = "battery.temperature";
-	bcmxcp_meter_map[79].nut_entity = "output.L2-N.voltage";
-	bcmxcp_meter_map[80].nut_entity = "output.L3-N.voltage";
-	bcmxcp_meter_map[83].nut_entity = "ups.L2-N.realpower";
-	bcmxcp_meter_map[84].nut_entity = "ups.L3-N.realpower";
-	bcmxcp_meter_map[85].nut_entity = "ups.realpower.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_FREQUENCY].nut_entity = "output.frequency";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_FREQUENCY].nut_entity = "input.frequency";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_CURRENT].nut_entity = "battery.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_VOLTAGE].nut_entity = "battery.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_BATTERY_LEFT].nut_entity = "battery.charge";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_TIME_REMAINING].nut_entity = "battery.runtime";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_DCUV_BAR_CHART].nut_entity = "battery.voltage.low";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOW_BATTERY_WARNING_V_BAR_CHART].nut_entity = "battery.charge.low";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_DISCHARGING_CURRENT_BAR_CHART].nut_entity = "battery.current.total";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_B].nut_entity = "input.L2-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_C].nut_entity = "input.L3-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_AMBIENT_TEMPERATURE].nut_entity = "ambient.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_HEATSINK_TEMPERATURE].nut_entity = "ups.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_POWER_SUPPLY_TEMPERATURE].nut_entity = "ambient.1.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B].nut_entity = "output.L2.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C].nut_entity = "output.L3.current";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B_BAR_CHART].nut_entity = "output.L2.current.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C_BAR_CHART].nut_entity = "output.L3.current.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_DATE].nut_entity = "ups.date";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_TIME].nut_entity = "ups.time";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_TEMPERATURE].nut_entity = "battery.temperature";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_B].nut_entity = "output.L2-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_C].nut_entity = "output.L3-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_B].nut_entity = "ups.L2-N.realpower";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_C].nut_entity = "ups.L3-N.realpower";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A_B_C_BAR_CHART].nut_entity = "ups.realpower.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_LINE_EVENT_COUNTER].nut_entity = "input.quality";
 }
 
 void init_alarm_map()
@@ -667,7 +681,7 @@ bool_t init_command_map(int size)
 					dstate_addcmd("test.system.start");
 					/* TODO: we should issue a system test call PW_SYS_TEST_REPORT_CAPABILITIES
 					   to the UPS to get back which types of system tests it supports. Here we
-					   we just add the panel test without knowing if the UPS will support it
+					   just add the panel test without knowing if the UPS will support it
 					 */
 					dstate_addcmd("test.panel.start");			
 				}
@@ -1152,6 +1166,86 @@ void init_limit(void)
 	}
 }
 
+void init_topology(void)
+{
+	unsigned char answer[PW_ANSWER_MAX_SIZE];
+	int res, value;
+
+	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
+	if (res <= 0)
+		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
+
+	/* Long integer */
+	value = get_word(answer);
+	switch (value) {
+		case BCMXCP_TOPOLOGY_NONE:			
+			break;
+		case BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P:
+			dstate_setinfo("ups.description", "Off-line switcher, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_LINEINT_UPS_1P:
+			dstate_setinfo("ups.description", "Line-Interactive UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_LINEINT_UPS_2P:
+			dstate_setinfo("ups.description", "Line-Interactive UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_LINEINT_UPS_3P:
+			dstate_setinfo("ups.description", "Line-Interactive UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P:
+			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P:
+			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Two Phase");
+			break;
+		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P:
+			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P:
+			dstate_setinfo("ups.description", "System Bypass Module, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P:
+			dstate_setinfo("ups.description", "Hot-Tie Cabinet, Three Phase");
+			break;
+		case BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P:
+			dstate_setinfo("ups.description", "Outlet Controller, Single Phase");
+			break;
+		case BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P:
+			dstate_setinfo("ups.description", "Dual AC Input Static Switch Module, 3 Phase");
+			break;
+		default: /* Unknown */
+			upsdebugx(3, "Unknown topology block value: %d\n", value);
+			break;
+	}
+}
+
 void upsdrv_initinfo(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
@@ -1160,7 +1254,7 @@ void upsdrv_initinfo(void)
 	char power_rating[10];
 	int iRating = 0, iIndex = 0, res, len;
 	int ncpu = 0, buf;
-	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0;
+	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0, topology_block_len = 0;
 	bool_t got_cmd_list = FALSE;
 
 	/* Init BCM/XCP alarm descriptions */
@@ -1271,16 +1365,21 @@ void upsdrv_initinfo(void)
 	iIndex += len;
 
 	/* Size of the alarm history log */
+	len = get_word(answer+iIndex);
+	upsdebugx(2, "Length of alarm history log: %d\n", len);
 	iIndex += 2;
 
-	/* Size of custom event log */
+	/* Size of custom event log, always 0 according to spec */
 	iIndex += 2;
 
 	/* Size of topology block */
+	topology_block_len = get_word(answer+iIndex);
+	upsdebugx(2, "Length of topology block: %d\n", topology_block_len);
 	iIndex += 2;
 
 	/* Maximum supported command length */
-	iIndex += 1;
+	len = answer[iIndex++];
+	upsdebugx(2, "Length of max supported command length: %d\n", len);
 
 	/* Size of command list block */
 	if (iIndex < res)
@@ -1327,6 +1426,9 @@ void upsdrv_initinfo(void)
 		dstate_addcmd("shutdown.stayoff");
 		dstate_addcmd("test.battery.start");
 	}
+	/* Get information on UPS topology */
+	if (topology_block_len)
+		init_topology();
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
@@ -1337,7 +1439,7 @@ void upsdrv_updateinfo(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	char sValue[128];
 	int iIndex, res;
-	float output, max_output, fValue = 0.0f;
+	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
 	const char	*nutvalue;
 
@@ -1358,39 +1460,20 @@ void upsdrv_updateinfo(void)
 
 			/* Set result */
 			dstate_setinfo(bcmxcp_meter_map[iIndex].nut_entity, "%s", sValue);
+
+			/* Check if we read ups.load */
+			if(has_ups_load == FALSE && !strcasecmp(bcmxcp_meter_map[iIndex].nut_entity, "ups.load")) {
+				has_ups_load = TRUE;
+			}
 		}
 	}
 
-	/* Set max load, if possible (must be calculated) */
-	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 && 			/* Output VA */
-			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0)	/* Max output VA */
-	{
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
-		output = atof(sValue);
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
-		max_output = atof(sValue);
-
-		fValue = 0.0;
-		if (max_output > 0.0)
-			fValue = 100 * (output / max_output);
-		dstate_setinfo("ups.load", "%5.1f", fValue);
-	}
-	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A].format != 0 && /* Output A */
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
-	{
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A].format, sValue);
-		output = atof(sValue);
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART].format, sValue);
-		max_output = atof(sValue);
-
-		fValue = 0.0;
-		if (max_output > 0.0)
-			fValue = 100 * (output / max_output);
-		dstate_setinfo("ups.load", "%5.1f", fValue);
+	/* Calculate ups.load if UPS does not report it directly */
+	if(has_ups_load == FALSE) {
+		float calculated_load = calculate_ups_load(answer);
+		if(calculated_load >= 0.0f) {
+			dstate_setinfo("ups.load", "%5.1f", calculated_load);
+		}
 	}
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
@@ -1541,6 +1624,37 @@ void upsdrv_updateinfo(void)
 	}
 
 	dstate_dataok();
+}
+
+float calculate_ups_load(const unsigned char *answer)
+{
+	char sValue[128];
+	float output = 0, max_output = -FLT_MAX, fValue = -FLT_MAX;
+
+	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 && 			/* Output VA */
+			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0)	/* Max output VA */
+	{
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
+		output = atof(sValue);
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
+		max_output = atof(sValue);
+	}
+	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 && /* Output A */
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
+	{
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
+		output = atof(sValue);
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format, sValue);
+		max_output = atof(sValue);
+	}
+	if (max_output > 0.0)
+		fValue = 100 * (output / max_output);
+
+	return fValue;
 }
 
 void upsdrv_shutdown(void)
@@ -1697,18 +1811,35 @@ static int decode_instcmd_exec(const int res, const unsigned char exec_status, c
 			return STAT_INSTCMD_HANDLED;
 			break;
 			}
+		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
+			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
+			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
+			upsdrv_comm_good();
+			return STAT_INSTCMD_HANDLED;
+			break;
+			}
 		case BCMXCP_RETURN_BUSY: {
-			upslogx(LOG_NOTICE, "[%s] disbled by front panel", cmdname);
+			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
+			return STAT_INSTCMD_FAILED;
+			break;
+			}
+		case BCMXCP_RETURN_UNRECOGNISED: {
+			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
 			return STAT_INSTCMD_FAILED;
 			break;
 			}
 		case BCMXCP_RETURN_INVALID_PARAMETER: {
-		upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			return STAT_INSTCMD_INVALID;
+			break;
+			}
+		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
+			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
 			return STAT_INSTCMD_INVALID;
 			break;
 			}
 		default: {
-			upslogx(LOG_NOTICE, "[%s] not supported", cmdname);
+			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
 			return STAT_INSTCMD_INVALID;
 			break;
 			}
@@ -1783,25 +1914,34 @@ int setvar (const char *varname, const char *val)
 	}
 
 	switch ((unsigned char) answer[0]) {
-		case 0x31: {
+		case BCMXCP_RETURN_ACCEPTED: {
 			upslogx(LOG_NOTICE,"Outlet %d %s delay set to %d sec",
 				outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
 			dstate_setinfo(varname, "%d", sec);
+			upsdrv_comm_good();
 			return STAT_SET_HANDLED;
 			break;
 			}
-		case 0x33: {
+		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
+			upslogx(LOG_NOTICE,"Outlet %d %s delay set, but UPS adjusted parameter %d sec",
+				outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
+			dstate_setinfo(varname, "%d", sec);
+			upsdrv_comm_good();
+			return STAT_SET_HANDLED;
+			break;
+			}
+		case BCMXCP_RETURN_BUSY: {
 			upslogx(LOG_NOTICE, "Set [%s] failed due to UPS busy", varname);
 			/* TODO: we should probably retry... */
 			return STAT_SET_UNKNOWN;
 			break;
 			}
-		case 0x35: {
+		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
 			upslogx(LOG_NOTICE, "Set [%s %s] failed due to parameter out of range", varname, val);
 			return STAT_SET_UNKNOWN;
 			break;
 			}
-		case 0x36: {
+		case BCMXCP_RETURN_INVALID_PARAMETER: {
 			upslogx(LOG_NOTICE, "Set [%s %s] failed due to invalid parameter", varname, val);
 			return STAT_SET_UNKNOWN;
 			break;
