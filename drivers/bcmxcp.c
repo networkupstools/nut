@@ -1288,16 +1288,21 @@ void upsdrv_initinfo(void)
 	iIndex += len;
 
 	/* Size of the alarm history log */
+	len = get_word(answer+iIndex);
+	upsdebugx(2, "Length of alarm history log: %d\n", len);
 	iIndex += 2;
 
-	/* Size of custom event log */
+	/* Size of custom event log, always 0 according to spec */
 	iIndex += 2;
 
 	/* Size of topology block */
+	len = get_word(answer+iIndex);
+	upsdebugx(2, "Length of topology block: %d\n", len);
 	iIndex += 2;
 
 	/* Maximum supported command length */
-	iIndex += 1;
+	len = answer[iIndex++];
+	upsdebugx(2, "Length of max supported command length: %d\n", len);
 
 	/* Size of command list block */
 	if (iIndex < res)
