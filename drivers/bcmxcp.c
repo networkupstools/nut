@@ -349,6 +349,9 @@ void init_meter_map()
 		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A].nut_entity = "output.L1.power.percent";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_B].nut_entity = "output.L2.power.percent";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_C].nut_entity = "output.L3.power.percent";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_A].nut_entity = "output.L1.power";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_B].nut_entity = "output.L2.power";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_C].nut_entity = "output.L3.power";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.L1-N.voltage";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.L1.current";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.L1.current.nominal";
