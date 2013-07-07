@@ -54,16 +54,6 @@
 #define PW_SYS_TEST_FLASH_LIGHTS                (unsigned char)0x04 /* Flash the Lights Test */
 #define PW_SYS_TEST_REPORT_CAPABILITIES         (unsigned char)0xFF /* Report Systems Test Capabilities */
 
-/* Define the XCP ACK block responses */
-#define XCPRESP_ACK        0x31     /* Accepted and executed */
-#define XCPRESP_NOT_IMPL   0x32     /* Recognized, but not implemented */
-#define XCPRESP_BUSY       0x33     /* Recognized, but Busy and not executed */
-#define XCPRESP_UNRECOGN   0x34     /* Unrecognized cmd */
-#define XCPRESP_OUT_RANGE  0x35     /* Parameter was out of range; not executed */
-#define XCPRESP_PRM_INVLD  0x36     /* Parameter invalid; not executed */
-#define XCPRESP_PRM_ADJST  0x37     /* Parameter adjusted to nearest good value */
-#define XCPRESP_PRM_RDONLY 0x38     /* Parameter is Read-only - cannot be written (at this privilege level) */
-
 /* Outlet operations */
 #define PW_ALL_OUTLETS			0
 #define PW_AUTO_OFF_DELAY		1
@@ -490,14 +480,16 @@
 #define BCMXCP_METER_MAP_MAX 136 /* Max no of entries in BCM/XCP meter map (adjusted upwards to nearest multi of 8) */
 #define BCMXCP_ALARM_MAP_MAX 264 /* Max no of entries in BCM/XCP alarm map (adjusted upwards to nearest multi of 8) */
 
-/* Return codes */
-#define BCMXCP_RETURN_ACCEPTED					0x31
-#define BCMXCP_RETURN_NOT_IMPLEMENTED			0x32
-#define BCMXCP_RETURN_BUSY						0x33
-#define BCMXCP_RETURN_UNRECOGNISED				0x34
-#define BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE	0x35
-#define BCMXCP_RETURN_INVALID_PARAMETER			0x36
-#define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST	0x37
+/* Return codes for XCP ACK block responses */
+#define BCMXCP_RETURN_ACCEPTED                  0x31 /* Accepted and executed (or execution in progress) */
+#define BCMXCP_RETURN_NOT_IMPLEMENTED           0x32 /* Recognized but not implemented */
+#define BCMXCP_RETURN_BUSY                      0x33 /* Recognized but not currently able to execute (busy) */
+#define BCMXCP_RETURN_UNRECOGNISED              0x34 /* Unrecognized -- e.g., command byte not in valid range, or command has been corrupted (bad checksum) */
+#define BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE    0x35 /* Command recognized, but its Parameter value is out of range */
+#define BCMXCP_RETURN_INVALID_PARAMETER         0x36 /* Command recognized, but its Parameter is invalid (e.g., no such parameter, bad Outlet number) */
+#define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST 0x37 /* Accepted, with parameter adjusted to nearest good value */
+//#define BCMXCP_RETURN_READONLY                0x38 /* Parameter is Read-only - cannot be written (at this privilege level) (this is not listed in spec document */
+
 
 /* UPS status */
 #define BCMXCP_STATUS_ONLINE	0x50
