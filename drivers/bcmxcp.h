@@ -54,16 +54,6 @@
 #define PW_SYS_TEST_FLASH_LIGHTS                (unsigned char)0x04 /* Flash the Lights Test */
 #define PW_SYS_TEST_REPORT_CAPABILITIES         (unsigned char)0xFF /* Report Systems Test Capabilities */
 
-/* Define the XCP ACK block responses */
-#define XCPRESP_ACK        0x31     /* Accepted and executed */
-#define XCPRESP_NOT_IMPL   0x32     /* Recognized, but not implemented */
-#define XCPRESP_BUSY       0x33     /* Recognized, but Busy and not executed */
-#define XCPRESP_UNRECOGN   0x34     /* Unrecognized cmd */
-#define XCPRESP_OUT_RANGE  0x35     /* Parameter was out of range; not executed */
-#define XCPRESP_PRM_INVLD  0x36     /* Parameter invalid; not executed */
-#define XCPRESP_PRM_ADJST  0x37     /* Parameter adjusted to nearest good value */
-#define XCPRESP_PRM_RDONLY 0x38     /* Parameter is Read-only - cannot be written (at this privilege level) */
-
 /* Outlet operations */
 #define PW_ALL_OUTLETS			0
 #define PW_AUTO_OFF_DELAY		1
@@ -110,11 +100,136 @@
 #define BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_LOW	25
 #define BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE	26
 
-/* Meter map offsets used	*/
-#define BCMXCP_METER_MAP_OUTPUT_VA			23
-#define BCMXCP_METER_MAP_LOAD_CURR_PHASE_A		65
-#define BCMXCP_METER_MAP_LOAD_CURR_PHASE_A_BAR_CHART	68
-#define BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART		71
+/* Indexes for meter map */
+#define BCMXCP_METER_MAP_OUTPUT_VOLTS_AB 0 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VOLTS_BC 1 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VOLTS_CA 2 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_VOLTS_AB 3 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_VOLTS_BC 4 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_VOLTS_CA 5 /* mapped */
+#define BCMXCP_METER_MAP_INVERTER_VOLTS_AB 6
+#define BCMXCP_METER_MAP_INVERTER_VOLTS_BC 7
+#define BCMXCP_METER_MAP_INVERTER_VOLTS_CA 8
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_AB 9
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_BC 10
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_CA 11
+#define BCMXCP_METER_MAP_MAIN_LOGIC_POWER 12
+#define BCMXCP_METER_MAP_SECONDARY_V_PLUS_POWER 13
+#define BCMXCP_METER_MAP_SECONDARY_V_MINUS_POWER 14
+#define BCMXCP_METER_MAP_INVERTER_AVG_CURRENT_PHASE_A 15
+#define BCMXCP_METER_MAP_INVERTER_AVG_CURRENT_PHASE_B 16
+#define BCMXCP_METER_MAP_INVERTER_AVG_CURRENT_PHASE_C 17
+#define BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A 18 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_B 19 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_C 20 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_WATTS 21
+#define BCMXCP_METER_MAP_INPUT_WATTS 22 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VA 23 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_VA 24 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_POWER_FACTOR 25 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_POWER_FACTOR 26 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_FREQUENCY 27 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_FREQUENCY 28 /* mapped */
+#define BCMXCP_METER_MAP_INVERTER_FREQUENCY 29
+#define BCMXCP_METER_MAP_BYPASS_FREQUENCY 30
+#define BCMXCP_METER_MAP_DC_LINK_VOLTS_DC 31
+#define BCMXCP_METER_MAP_BATTERY_CURRENT 32 /* mapped */
+#define BCMXCP_METER_MAP_BATTERY_VOLTAGE 33 /* mapped */
+#define BCMXCP_METER_MAP_PERCENT_BATTERY_LEFT 34 /* mapped */
+#define BCMXCP_METER_MAP_BATTERY_TIME_REMAINING 35 /* mapped */
+#define BCMXCP_METER_MAP_BATTERY_CHARGE_TIME 36
+#define BCMXCP_METER_MAP_PEAK_INVERTER_CURRENT_PHASE_A 37
+#define BCMXCP_METER_MAP_PEAK_INVERTER_CURRENT_PHASE_B 38
+#define BCMXCP_METER_MAP_PEAK_INVERTER_CURRENT_PHASE_C 39
+#define BCMXCP_METER_MAP_AVG_INPUT_CURRENT_3_PHASE_SUM 40
+#define BCMXCP_METER_MAP_BATTERY_DCUV_BAR_CHART 41 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_CURRENT_BAR_CHART 42
+#define BCMXCP_METER_MAP_LOW_BATTERY_WARNING_V_BAR_CHART 43 /* mapped */
+#define BCMXCP_METER_MAP_DC_VOLTS_BAR_CHART 44
+#define BCMXCP_METER_MAP_BATTERY_CHARGING_CURRENT_BAR_CHART 45
+#define BCMXCP_METER_MAP_BATTERY_DISCHARGING_CURRENT_BAR_CHART 46 /* mapped */
+#define BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A 47 /* mapped */
+#define BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_B 48 /* mapped */
+#define BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_C 49 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VA_PHASE_A 50 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VA_PHASE_B 51 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VA_PHASE_C 52 /* mapped */
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_A 53
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_B 54
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_C 55
+#define BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A 56 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_B 57 /* mapped */
+#define BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_C 58 /* mapped */
+#define BCMXCP_METER_MAP_INVERTER_VOLTS_PHASE_A 59
+#define BCMXCP_METER_MAP_INVERTER_VOLTS_PHASE_B 60
+#define BCMXCP_METER_MAP_INVERTER_VOLTS_PHASE_C 61
+#define BCMXCP_METER_MAP_AMBIENT_TEMPERATURE 62 /* mapped */
+#define BCMXCP_METER_MAP_HEATSINK_TEMPERATURE 63 /* mapped */
+#define BCMXCP_METER_MAP_POWER_SUPPLY_TEMPERATURE 64 /* mapped */
+#define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A 65 /* mapped */
+#define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B 66 /* mapped */
+#define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C 67 /* mapped */
+#define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART 68 /* mapped */
+#define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B_BAR_CHART 69 /* mapped */
+#define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C_BAR_CHART 70 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART 71 /* used, but not mapped */
+#define BCMXCP_METER_MAP_DATE 72 /* mapped */
+#define BCMXCP_METER_MAP_TIME 73 /* mapped */
+#define BCMXCP_METER_MAP_POSITIVE_DC_LINK_RAIL_VOLTAGE 74
+#define BCMXCP_METER_MAP_NEGATIVE_DC_LINK_RAIL_VOLTAGE 75
+#define BCMXCP_METER_MAP_AUTO_BALANCE_VOLTAGE_DC 76
+#define BCMXCP_METER_MAP_BATTERY_TEMPERATURE 77 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VOLTS_A 78 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VOLTS_B 79 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VOLTS_C 80 /* mapped */
+#define BCMXCP_METER_MAP_NEUTRAL_CURRENT 81
+#define BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A 82 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_B 83 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_C 84 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A_B_C_BAR_CHART 85 /* mapped */
+#define BCMXCP_METER_MAP_RECTIFIER_DC_CURRENT 86
+#define BCMXCP_METER_MAP_POSITIVE_BATTERY_VOLTAGE 87
+#define BCMXCP_METER_MAP_NEGATIVE_BATTERY_VOLTAGE 88
+#define BCMXCP_METER_MAP_POSITIVE_BATTERY_CURRENT 89
+#define BCMXCP_METER_MAP_NEGATIVE_BATTERY_CURRENT 90
+#define BCMXCP_METER_MAP_LINE_EVENT_COUNTER 91 /* mapped */
+#define BCMXCP_METER_MAP_OUTPUT_V1_PERCENT 92
+#define BCMXCP_METER_MAP_OUTPUT_V2_PERCENT 93
+#define BCMXCP_METER_MAP_OUTPUT_V3_PERCENT 94
+#define BCMXCP_METER_MAP_OUTPUT_I1_PERCENT 95
+#define BCMXCP_METER_MAP_OUTPUT_I2_PERCENT 96
+#define BCMXCP_METER_MAP_OUTPUT_I3_PERCENT 97
+#define BCMXCP_METER_MAP_INPUT_V1_PERCENT 98
+#define BCMXCP_METER_MAP_INPUT_V2_PERCENT 99
+#define BCMXCP_METER_MAP_INPUT_V3_PERCENT 100
+#define BCMXCP_METER_MAP_INPUT_I1_PERCENT 101
+#define BCMXCP_METER_MAP_INPUT_I2_PERCENT 102
+#define BCMXCP_METER_MAP_INPUT_I3_PERCENT 103
+#define BCMXCP_METER_MAP_GROUND_CURRENT 104
+#define BCMXCP_METER_MAP_OUTPUT_CREST_FACTOR_L1 105
+#define BCMXCP_METER_MAP_OUTPUT_CREST_FACTOR_L2 106
+#define BCMXCP_METER_MAP_OUTPUT_CREST_FACTOR_L3 107
+#define BCMXCP_METER_MAP_OUTPUT_KW_HOUR 108
+#define BCMXCP_METER_MAP_INPUT_VOLTAGE_THD_LINE1 109
+#define BCMXCP_METER_MAP_INPUT_VOLTAGE_THD_LINE2 110
+#define BCMXCP_METER_MAP_INPUT_VOLTAGE_THD_LINE3 111
+#define BCMXCP_METER_MAP_INPUT_CURRENT_THD_LINE1 112
+#define BCMXCP_METER_MAP_INPUT_CURRENT_THD_LINE2 113
+#define BCMXCP_METER_MAP_INPUT_CURRENT_THD_LINE3 114
+#define BCMXCP_METER_MAP_OUTPUT_VOLTAGE_THD_LINE1 115
+#define BCMXCP_METER_MAP_OUTPUT_VOLTAGE_THD_LINE2 116
+#define BCMXCP_METER_MAP_OUTPUT_VOLTAGE_THD_LINE3 117
+#define BCMXCP_METER_MAP_OUTPUT_CURRENT_THD_LINE1 118
+#define BCMXCP_METER_MAP_OUTPUT_CURRENT_THD_LINE2 119
+#define BCMXCP_METER_MAP_OUTPUT_CURRENT_THD_LINE3 120
+#define BCMXCP_METER_MAP_INPUT_CREST_FACTOR_L1 121
+#define BCMXCP_METER_MAP_INPUT_CREST_FACTOR_L2 122
+#define BCMXCP_METER_MAP_INPUT_CREST_FACTOR_L3 123
+#define BCMXCP_METER_MAP_INPUT_KW_HOUR 124
+#define BCMXCP_METER_MAP_BATTERY_LIFE_REMAINING 125
+#define BCMXCP_METER_MAP_SECONDARY_NEUTRAL_CURRENT 126
+#define BCMXCP_METER_MAP_SECONDARY_GROUND_CURRENT 127
+#define BCMXCP_METER_MAP_HOURS_OF_OPERATION 128
 
 /* Indexes for alarm map */
 #define BCMXCP_ALARM_INVERTER_AC_OVER_VOLTAGE		0
@@ -362,17 +477,18 @@
 #define BCMXCP_ALARM_SYSTEM_TEST_INPROGRESS		257
 #define BCMXCP_ALARM_BATTERY_TEST_ABORTED		258
 
-#define BCMXCP_METER_MAP_MAX 91 /* Max no of entries in BCM/XCP meter map */
-#define	BCMXCP_ALARM_MAP_MAX 260 /* Max no of entries in BCM/XCP alarm map (adjusted upwards to nearest multi of 8 */
+#define BCMXCP_METER_MAP_MAX 136 /* Max no of entries in BCM/XCP meter map (adjusted upwards to nearest multi of 8) */
+#define BCMXCP_ALARM_MAP_MAX 264 /* Max no of entries in BCM/XCP alarm map (adjusted upwards to nearest multi of 8) */
 
-/* Return codes */
-#define BCMXCP_RETURN_ACCEPTED					0x31
-#define BCMXCP_RETURN_NOT_IMPLEMENTED			0x32
-#define BCMXCP_RETURN_BUSY						0x33
-#define BCMXCP_RETURN_UNRECOGNISED				0x34
-#define BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE	0x35
-#define BCMXCP_RETURN_INVALID_PARAMETER			0x36
-#define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST	0x37
+/* Return codes for XCP ACK block responses */
+#define BCMXCP_RETURN_ACCEPTED                  0x31 /* Accepted and executed (or execution in progress) */
+#define BCMXCP_RETURN_NOT_IMPLEMENTED           0x32 /* Recognized but not implemented */
+#define BCMXCP_RETURN_BUSY                      0x33 /* Recognized but not currently able to execute (busy) */
+#define BCMXCP_RETURN_UNRECOGNISED              0x34 /* Unrecognized -- e.g., command byte not in valid range, or command has been corrupted (bad checksum) */
+#define BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE    0x35 /* Command recognized, but its Parameter value is out of range */
+#define BCMXCP_RETURN_INVALID_PARAMETER         0x36 /* Command recognized, but its Parameter is invalid (e.g., no such parameter, bad Outlet number) */
+#define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST 0x37 /* Accepted, with parameter adjusted to nearest good value */
+//#define BCMXCP_RETURN_READONLY                0x38 /* Parameter is Read-only - cannot be written (at this privilege level) (this is not listed in spec document */
 
 /* UPS status */
 #define BCMXCP_STATUS_ONLINE	0x50
@@ -383,6 +499,29 @@
 #define BCMXCP_STATUS_BOOST2	0x62
 #define BCMXCP_STATUS_BYPASS	0x60
 #define BCMXCP_STATUS_OFF		0x10
+
+/* UPS topology block info */
+#define BCMXCP_TOPOLOGY_NONE                        0x0000 /* None; use the Table of Elements */
+#define BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P         0x0010 /* Off-line switcher, Single Phase */
+#define BCMXCP_TOPOLOGY_LINEINT_UPS_1P              0x0020 /* Line-Interactive UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_LINEINT_UPS_2P              0x0021 /* Line-Interactive UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_LINEINT_UPS_3P              0x0022 /* Line-Interactive UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P       0x0030 /* Dual AC Input, On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P       0x0031 /* Dual AC Input, On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P       0x0032 /* Dual AC Input, On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_ONLINE_UPS_1P               0x0040 /* On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_ONLINE_UPS_2P               0x0041 /* On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_ONLINE_UPS_3P               0x0042 /* On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P   0x0050 /* Parallel Redundant On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P   0x0051 /* Parallel Redundant On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P   0x0052 /* Parallel Redundant On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P 0x0060 /* Parallel for Capacity On-Line UPS, Single Phase */
+#define BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P 0x0061 /* Parallel for Capacity On-Line UPS, Two Phase */
+#define BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P 0x0062 /* Parallel for Capacity On-Line UPS, Three Phase */
+#define BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P     0x0102 /* System Bypass Module, Three Phase */
+#define BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P          0x0122 /* Hot-Tie Cabinet, Three Phase */
+#define BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P        0x0200 /* Outlet Controller, Single Phase */
+#define BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P    0x0222 /* Dual AC Input Static Switch Module, 3 Phase */
 
 typedef struct { /* Entry in BCM/XCP - UPS - NUT mapping table */
 	const char *nut_entity;				/* The NUT variable name */
