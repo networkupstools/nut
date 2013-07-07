@@ -160,6 +160,7 @@ static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
+static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
 
@@ -1351,7 +1352,7 @@ void upsdrv_updateinfo(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	char sValue[128];
 	int iIndex, res;
-	float output, max_output, fValue = 0.0f;
+	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
 	const char	*nutvalue;
 
@@ -1372,39 +1373,20 @@ void upsdrv_updateinfo(void)
 
 			/* Set result */
 			dstate_setinfo(bcmxcp_meter_map[iIndex].nut_entity, "%s", sValue);
+
+			/* Check if we read ups.load */
+			if(has_ups_load == FALSE && !strcasecmp(bcmxcp_meter_map[iIndex].nut_entity, "ups.load")) {
+				has_ups_load = TRUE;
+			}
 		}
 	}
 
-	/* Set max load, if possible (must be calculated) */
-	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 && 			/* Output VA */
-			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0)	/* Max output VA */
-	{
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
-		output = atof(sValue);
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
-		max_output = atof(sValue);
-
-		fValue = 0.0;
-		if (max_output > 0.0)
-			fValue = 100 * (output / max_output);
-		dstate_setinfo("ups.load", "%5.1f", fValue);
-	}
-	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 && /* Output A */
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
-	{
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
-		output = atof(sValue);
-		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].meter_block_index,
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format, sValue);
-		max_output = atof(sValue);
-
-		fValue = 0.0;
-		if (max_output > 0.0)
-			fValue = 100 * (output / max_output);
-		dstate_setinfo("ups.load", "%5.1f", fValue);
+	/* Calculate ups.load if UPS does not report it directly */
+	if(has_ups_load == FALSE) {
+		float calculated_load = calculate_ups_load(answer);
+		if(calculated_load >= 0.0f) {
+			dstate_setinfo("ups.load", "%5.1f", calculated_load);
+		}
 	}
 
 	/* Due to a bug in PW5115 firmware, we need to use blocklength > 8.
@@ -1555,6 +1537,37 @@ void upsdrv_updateinfo(void)
 	}
 
 	dstate_dataok();
+}
+
+float calculate_ups_load(const unsigned char *answer)
+{
+	char sValue[128];
+	float output, max_output, fValue = -FLT_MAX;
+
+	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 && 			/* Output VA */
+			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0)	/* Max output VA */
+	{
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
+		output = atof(sValue);
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
+		max_output = atof(sValue);
+	}
+	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 && /* Output A */
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
+	{
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
+		output = atof(sValue);
+		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].meter_block_index,
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format, sValue);
+		max_output = atof(sValue);
+	}
+	if (max_output > 0.0)
+		fValue = 100 * (output / max_output);
+
+	return fValue;
 }
 
 void upsdrv_shutdown(void)
