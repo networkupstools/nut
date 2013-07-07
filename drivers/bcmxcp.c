@@ -1549,7 +1549,7 @@ void upsdrv_updateinfo(void)
 float calculate_ups_load(const unsigned char *answer)
 {
 	char sValue[128];
-	float output, max_output, fValue = -FLT_MAX;
+	float output = 0, max_output = -FLT_MAX, fValue = -FLT_MAX;
 
 	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 && 			/* Output VA */
 			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0)	/* Max output VA */
