@@ -852,12 +852,12 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 
 	if (getextendedOK) {
-		dstate_setinfo("output.L1.power", "%lu", DevData.Pout1VA);
-		dstate_setinfo("output.L2.power", "%lu", DevData.Pout2VA);
-		dstate_setinfo("output.L3.power", "%lu", DevData.Pout3VA);
-		dstate_setinfo("output.L1.realpower", "%lu", DevData.Pout1W);
-		dstate_setinfo("output.L2.realpower", "%lu", DevData.Pout2W);
-		dstate_setinfo("output.L3.realpower", "%lu", DevData.Pout3W);
+		dstate_setinfo("output.L1.power", "%u", DevData.Pout1VA);
+		dstate_setinfo("output.L2.power", "%u", DevData.Pout2VA);
+		dstate_setinfo("output.L3.power", "%u", DevData.Pout3VA);
+		dstate_setinfo("output.L1.realpower", "%u", DevData.Pout1W);
+		dstate_setinfo("output.L2.realpower", "%u", DevData.Pout2W);
+		dstate_setinfo("output.L3.realpower", "%u", DevData.Pout3W);
 		dstate_setinfo("output.L1.current", "%u", DevData.Iout1);
 		dstate_setinfo("output.L2.current", "%u", DevData.Iout2);
 		dstate_setinfo("output.L3.current", "%u", DevData.Iout3);
