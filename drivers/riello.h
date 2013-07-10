@@ -22,14 +22,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * 
- * Reference of the derivative work: blazer driver   
+ *
+ * Reference of the derivative work: blazer driver
  */
 
 #ifndef dev_dataH
 #define dev_dataH
 
-#include <stdint.h> 
+#include <stdint.h>
 
 #define CTRL_RETRIES 50
 #define CTRL_TIMEOUT 100
@@ -37,11 +37,12 @@
 #define USB_ENDPOINT_IN 0x80
 #define USB_ENDPOINT_OUT 0x00
 
-#define MAX_READ_WRITE (16 * 1024) 
+#define MAX_READ_WRITE (16 * 1024)
 
 #define USB_WRITE_DELAY 200
 
 #define MAXTRIES 3
+#define COUNTLOST 10
 
 #define DEV_RIELLOSENTRY 14
 #define DEV_RIELLOGPSER 21
@@ -175,4 +176,4 @@ uint8_t riello_test_nak(uint8_t type, uint8_t* buffer);
 void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum);
 void riello_comm_setup(const char *port);
 
-#endif 
+#endif
