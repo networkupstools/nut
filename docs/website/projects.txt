@@ -29,6 +29,11 @@ a NUT server. This application is written in Python and PyGTK, and uses the
 NOTE: NUT-Monitor is part of NUT since version NUT 2.4.1.
 It will further evolve toward the NUT Control Center.
 
+link:https://github.com/zykh/walNUT[walNUT] 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A Gnome Shell extension that uses upsc/upscmd to monitor devices and invoke instant commands.
+
 link:http://download.mgeops.com/explore/eng/ptp/ptp_sol.htm?sol=PSP[Eaton - Personal Solution Pac]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
