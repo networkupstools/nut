@@ -1,8 +1,11 @@
 /*
  * riello.h: defines/macros for Riello protocol based UPSes
  *
- * A document describing the protocol implemented by this driver can be
- * found online at "http://www.networkupstools.org/protocols/megatec.html".
+ * Documents describing the protocol implemented by this driver can be
+ * found online at:
+ *
+ *   http://www.networkupstools.org/ups-protocols/riello/PSGPSER-0104.pdf
+ *   http://www.networkupstools.org/ups-protocols/riello/PSSENTR-0100.pdf
  *
  * Copyright (C) 2012 - Elio Parisi <e.parisi@riello-ups.com>
  *
@@ -19,46 +22,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * 
- * Reference of the derivative work: blazer driver   
+ *
+ * Reference of the derivative work: blazer driver
  */
 
 #ifndef dev_dataH
 #define dev_dataH
 
-#ifdef UNIX
-
-#ifndef DWORD
-#define DWORD unsigned int
-#endif
-#ifndef ulong1
-#define ulong1 unsigned int
-#endif
-
-#else
-
-#ifndef DWORD
-#define DWORD unsigned long
-#endif
-#ifndef ulong1
-#define ulong1 unsigned long
-#endif
-
-#endif
-
-#ifndef BYTE
-#define BYTE unsigned char
-#endif
-
-#ifndef WORD
-#define WORD unsigned short int
-#endif
-
-#ifndef WIN32
-#ifndef INT1
-#define INT1 signed short int
-#endif
-#endif
+#include <stdint.h>
 
 #define CTRL_RETRIES 50
 #define CTRL_TIMEOUT 100
@@ -66,11 +37,12 @@
 #define USB_ENDPOINT_IN 0x80
 #define USB_ENDPOINT_OUT 0x00
 
-#define MAX_READ_WRITE (16 * 1024) 
+#define MAX_READ_WRITE (16 * 1024)
 
 #define USB_WRITE_DELAY 200
 
 #define MAXTRIES 3
+#define COUNTLOST 10
 
 #define DEV_RIELLOSENTRY 14
 #define DEV_RIELLOGPSER 21
@@ -88,118 +60,120 @@
 #define SENTR_ALSO240 240
 #define SENTR_ONLY192 192
 
+#define BUFFER_SIZE 220
+
 typedef struct {
-	WORD SWversion;
-	WORD Model;
-	WORD Uinp1;
-	WORD Uinp2;
-	WORD Uinp3;
-	WORD Iinp1;
-	WORD Iinp2;
-	WORD Iinp3;
-	WORD Finp;
+	uint16_t SWversion;
+	uint16_t Model;
+	uint16_t Uinp1;
+	uint16_t Uinp2;
+	uint16_t Uinp3;
+	uint16_t Iinp1;
+	uint16_t Iinp2;
+	uint16_t Iinp3;
+	uint16_t Finp;
 
-	WORD Uout1;
-	WORD Uout2;
-	WORD Uout3;
-	WORD Iout1;
-	WORD Iout2;
-	WORD Iout3;
-	WORD Pout1;
-	WORD Pout2;
-	WORD Pout3;
-	WORD Ipout1;
-	WORD Ipout2;
-	WORD Ipout3;
-	WORD Fout;
+	uint16_t Uout1;
+	uint16_t Uout2;
+	uint16_t Uout3;
+	uint16_t Iout1;
+	uint16_t Iout2;
+	uint16_t Iout3;
+	uint16_t Pout1;
+	uint16_t Pout2;
+	uint16_t Pout3;
+	uint16_t Ipout1;
+	uint16_t Ipout2;
+	uint16_t Ipout3;
+	uint16_t Fout;
 
-	WORD BatTime;
-	WORD BatCap;
-	WORD Ubat;
-	WORD Ibat;
+	uint16_t BatTime;
+	uint16_t BatCap;
+	uint16_t Ubat;
+	uint16_t Ibat;
 
-	WORD Tsystem;
-	WORD NomBatCap;
+	uint16_t Tsystem;
+	uint16_t NomBatCap;
 
-	WORD Ubypass1;
-	WORD Ubypass2;
-	WORD Ubypass3;
-	WORD Fbypass;
-	WORD LockUPS;
+	uint16_t Ubypass1;
+	uint16_t Ubypass2;
+	uint16_t Ubypass3;
+	uint16_t Fbypass;
+	uint16_t LockUPS;
 
-	BYTE AlarmCode[4];
+	uint8_t AlarmCode[4];
 	char AlarmCodeT[12];
-	BYTE StatusCode[12];
+	uint8_t StatusCode[12];
 	char StatusCodeT[42];
 
 	char Identification[18];
 	char ModelStr[18];
 	char Version[14];
 
-	WORD NomPowerKVA;
-	WORD NomPowerKW;
-	WORD NomUbat;
-	WORD NumBat;
+	uint16_t NomPowerKVA;
+	uint16_t NomPowerKW;
+	uint16_t NomUbat;
+	uint16_t NumBat;
 
-	WORD UbatPerc;
+	uint16_t UbatPerc;
 
-	WORD NominalUout;
+	uint16_t NominalUout;
 
-	WORD Boost;
-	WORD Buck;
+	uint16_t Boost;
+	uint16_t Buck;
 
-	BYTE Identif_bytes[12];
-	WORD NomFout;
+	uint8_t Identif_bytes[12];
+	uint16_t NomFout;
 
-	DWORD Pout1VA;
-	DWORD Pout2VA;
-	DWORD Pout3VA;
-	DWORD Pout1W;
-	DWORD Pout2W;
-	DWORD Pout3W;
+	uint32_t Pout1VA;
+	uint32_t Pout2VA;
+	uint32_t Pout3VA;
+	uint32_t Pout1W;
+	uint32_t Pout2W;
+	uint32_t Pout3W;
 } TRielloData;
 
 /* CRC and Checksum functions */
-WORD riello_calc_CRC(BYTE type, BYTE *buff, WORD size, BYTE checksum);
-void riello_create_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum);
-BYTE riello_test_crc(BYTE type, BYTE *buff, WORD size, BYTE chacksum);
-BYTE riello_test_bit(BYTE *basic_address, BYTE bit);
+uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum);
+void riello_create_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum);
+uint8_t riello_test_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t chacksum);
+uint8_t riello_test_bit(uint8_t *basic_address, uint8_t bit);
 
 /* send GPSER command functions */
-BYTE riello_prepare_gi(BYTE* buffer);
-BYTE riello_prepare_gn(BYTE* buffer, BYTE gpser_error_control);
-BYTE riello_prepare_rs(BYTE* buffer, BYTE gpser_error_control);
-BYTE riello_prepare_re(BYTE* buffer, BYTE gpser_error_control);
-BYTE riello_prepare_rc(BYTE* buffer, BYTE gpser_error_control);
-BYTE riello_prepare_cs(BYTE* buffer, BYTE gpser_error_control, WORD delay);
-BYTE riello_prepare_cr(BYTE* buffer, BYTE gpser_error_control, WORD delay);
-BYTE riello_prepare_cd(BYTE* buffer, BYTE gpser_error_control);
-BYTE riello_prepare_tp(BYTE* buffer, BYTE gpser_error_control);
-BYTE riello_prepare_tb(BYTE* buffer, BYTE gpser_error_control);
+uint8_t riello_prepare_gi(uint8_t* buffer);
+uint8_t riello_prepare_gn(uint8_t* buffer, uint8_t gpser_error_control);
+uint8_t riello_prepare_rs(uint8_t* buffer, uint8_t gpser_error_control);
+uint8_t riello_prepare_re(uint8_t* buffer, uint8_t gpser_error_control);
+uint8_t riello_prepare_rc(uint8_t* buffer, uint8_t gpser_error_control);
+uint8_t riello_prepare_cs(uint8_t* buffer, uint8_t gpser_error_control, uint16_t delay);
+uint8_t riello_prepare_cr(uint8_t* buffer, uint8_t gpser_error_control, uint16_t delay);
+uint8_t riello_prepare_cd(uint8_t* buffer, uint8_t gpser_error_control);
+uint8_t riello_prepare_tp(uint8_t* buffer, uint8_t gpser_error_control);
+uint8_t riello_prepare_tb(uint8_t* buffer, uint8_t gpser_error_control);
 
 /* send SENTR command functions */
-BYTE riello_prepare_shutsentr(BYTE* buffer, WORD delay);
-BYTE riello_prepare_cancelsentr(BYTE* buffer);
-BYTE riello_prepare_setrebsentr(BYTE* buffer, WORD delay);
-BYTE riello_prepare_rebsentr(BYTE* buffer, WORD delay);
-BYTE riello_prepare_tbsentr(BYTE* buffer);
+uint8_t riello_prepare_shutsentr(uint8_t* buffer, uint16_t delay);
+uint8_t riello_prepare_cancelsentr(uint8_t* buffer);
+uint8_t riello_prepare_setrebsentr(uint8_t* buffer, uint16_t delay);
+uint8_t riello_prepare_rebsentr(uint8_t* buffer, uint16_t delay);
+uint8_t riello_prepare_tbsentr(uint8_t* buffer);
 
 /* parse GPSER ups responses */
-void riello_parse_gi(BYTE* buffer, TRielloData* data);
-void riello_parse_gn(BYTE* buffer, TRielloData* data);
-void riello_parse_rs(BYTE* buffer, TRielloData* data, BYTE numread);
-void riello_parse_re(BYTE* buffer, TRielloData* data);
-void riello_parse_rc(BYTE* buffer, TRielloData* data);
+void riello_parse_gi(uint8_t* buffer, TRielloData* data);
+void riello_parse_gn(uint8_t* buffer, TRielloData* data);
+void riello_parse_rs(uint8_t* buffer, TRielloData* data, uint8_t numread);
+void riello_parse_re(uint8_t* buffer, TRielloData* data);
+void riello_parse_rc(uint8_t* buffer, TRielloData* data);
 
 /* parse SENTR ups responses */
-void riello_parse_sentr(BYTE* buffer, TRielloData* data);
+void riello_parse_sentr(uint8_t* buffer, TRielloData* data);
 
 /* communication functions */
 void riello_init_serial();
-int riello_header(BYTE type, int a, int* length);
-int riello_tail(BYTE type, int length);
-int riello_test_nak(BYTE type, BYTE* buffer);
-void riello_parse_serialport(BYTE typedev, BYTE* buffer, BYTE checksum);
+uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length);
+uint8_t riello_tail(uint8_t type, uint8_t length);
+uint8_t riello_test_nak(uint8_t type, uint8_t* buffer);
+void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum);
 void riello_comm_setup(const char *port);
 
-#endif 
+#endif

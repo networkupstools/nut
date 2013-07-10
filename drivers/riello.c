@@ -27,26 +27,27 @@
  */
 
 #include <string.h>
+#include <stdint.h>
 
 #include "main.h"
 #include "riello.h"
 
-int foundheader=0;
-int buf_ptr_length;
+uint8_t foundheader=0;
+uint16_t buf_ptr_length;
 
-int wait_packet = 0;
-int foundnak = 0;
-int foundbadcrc = 0;
+uint8_t wait_packet = 0;
+uint8_t foundnak = 0;
+uint8_t foundbadcrc = 0;
 
-BYTE commbyte;
-BYTE requestSENTR;
+uint8_t commbyte;
+uint8_t requestSENTR;
 
 unsigned char LAST_DATA[6];
 
-WORD riello_calc_CRC(BYTE type, BYTE *buff, WORD size, BYTE checksum)
+uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
-	int i;
-	WORD pom, CRC_Word;
+	uint8_t i;
+	uint16_t pom, CRC_Word;
 
 	CRC_Word = 0;
 	switch (type) {
@@ -84,23 +85,23 @@ WORD riello_calc_CRC(BYTE type, BYTE *buff, WORD size, BYTE checksum)
 	return(CRC_Word);
 }
 
-void riello_create_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum) 
+void riello_create_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum) 
 {
-	WORD CRC_Word;
+	uint16_t CRC_Word;
 
 	CRC_Word = riello_calc_CRC(type, buff, size, checksum);
 
 	if (type == DEV_RIELLOGPSER) {
-		buff[size++] = (BYTE) ((CRC_Word/4096)+0x30);
-		buff[size++] = (BYTE) (((CRC_Word%4096)/256)+0x30);
-		buff[size++] = (BYTE) ((((CRC_Word%4096)%256)/16)+0x30);
-		buff[size] = (BYTE) ((((CRC_Word%4096)%256)%16)+0x30);
+		buff[size++] = (uint8_t) ((CRC_Word/4096)+0x30);
+		buff[size++] = (uint8_t) (((CRC_Word%4096)/256)+0x30);
+		buff[size++] = (uint8_t) ((((CRC_Word%4096)%256)/16)+0x30);
+		buff[size] = (uint8_t) ((((CRC_Word%4096)%256)%16)+0x30);
 	}
 }
 
-BYTE riello_test_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum)
+uint8_t riello_test_crc(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
-	WORD suma, CRC_Word;
+	uint16_t suma, CRC_Word;
 
 	switch (type) {
 		case DEV_RIELLOSENTRY:
@@ -124,10 +125,10 @@ BYTE riello_test_crc(BYTE type, BYTE *buff, WORD size, BYTE checksum)
 	return(0);
 }
 
-BYTE riello_test_bit(BYTE *basic_address, BYTE bit)
+uint8_t riello_test_bit(uint8_t *basic_address, uint8_t bit)
 {
-	int posuv, offset;
-	BYTE var, value;
+	uint8_t posuv, offset;
+	uint8_t var, value;
 
 	if (basic_address == NULL) 
 		return(0);
@@ -142,9 +143,9 @@ BYTE riello_test_bit(BYTE *basic_address, BYTE bit)
 	return(value);
 }
 
-BYTE riello_prepare_gi(BYTE* buffer)
+uint8_t riello_prepare_gi(uint8_t* buffer)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -163,9 +164,9 @@ BYTE riello_prepare_gi(BYTE* buffer)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_gn(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_gn(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -184,9 +185,9 @@ BYTE riello_prepare_gn(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_rs(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_rs(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -205,9 +206,9 @@ BYTE riello_prepare_rs(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_re(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_re(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -226,9 +227,9 @@ BYTE riello_prepare_re(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_rc(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_rc(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -247,9 +248,9 @@ BYTE riello_prepare_rc(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_cs(BYTE* buffer, BYTE gpser_error_control, WORD delay)
+uint8_t riello_prepare_cs(uint8_t* buffer, uint8_t gpser_error_control, uint16_t delay)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -258,10 +259,10 @@ BYTE riello_prepare_cs(BYTE* buffer, BYTE gpser_error_control, WORD delay)
 	buffer[4] = 'S';
 	buffer[5] = '0';
 	buffer[6] = '4';
-	buffer[7] = (BYTE) ((delay/4096)+0x30);
-	buffer[8] = (BYTE) (((delay%4096)/256)+0x30);
-	buffer[9] = (BYTE) ((((delay%4096)%256)/16)+0x30);
-	buffer[10] = (BYTE) ((((delay%4096)%256)%16)+0x30);
+	buffer[7] = (uint8_t) ((delay/4096)+0x30);
+	buffer[8] = (uint8_t) (((delay%4096)/256)+0x30);
+	buffer[9] = (uint8_t) ((((delay%4096)%256)/16)+0x30);
+	buffer[10] = (uint8_t) ((((delay%4096)%256)%16)+0x30);
 
 	buf_ptr = 11;
 	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
@@ -272,9 +273,9 @@ BYTE riello_prepare_cs(BYTE* buffer, BYTE gpser_error_control, WORD delay)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_cr(BYTE* buffer, BYTE gpser_error_control, WORD delay)
+uint8_t riello_prepare_cr(uint8_t* buffer, uint8_t gpser_error_control, uint16_t delay)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -287,10 +288,10 @@ BYTE riello_prepare_cr(BYTE* buffer, BYTE gpser_error_control, WORD delay)
 	buffer[8] = '0';
 	buffer[9] = '0';
 	buffer[10] = '0';
-	buffer[11] = (BYTE) ((delay/4096)+0x30);
-	buffer[12] = (BYTE) (((delay%4096)/256)+0x30);
-	buffer[13] = (BYTE) ((((delay%4096)%256)/16)+0x30);
-	buffer[14] = (BYTE) ((((delay%4096)%256)%16)+0x30);
+	buffer[11] = (uint8_t) ((delay/4096)+0x30);
+	buffer[12] = (uint8_t) (((delay%4096)/256)+0x30);
+	buffer[13] = (uint8_t) ((((delay%4096)%256)/16)+0x30);
+	buffer[14] = (uint8_t) ((((delay%4096)%256)%16)+0x30);
 
 	buf_ptr = 15;
 	riello_create_crc(DEV_RIELLOGPSER, buffer, buf_ptr, gpser_error_control);
@@ -301,9 +302,9 @@ BYTE riello_prepare_cr(BYTE* buffer, BYTE gpser_error_control, WORD delay)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_cd(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_cd(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -322,9 +323,9 @@ BYTE riello_prepare_cd(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_tp(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_tp(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -343,9 +344,9 @@ BYTE riello_prepare_tp(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_tb(BYTE* buffer, BYTE gpser_error_control)
+uint8_t riello_prepare_tb(uint8_t* buffer, uint8_t gpser_error_control)
 {
-	BYTE buf_ptr;
+	uint8_t buf_ptr;
 
 	buffer[0] = 0x2;
 	buffer[1] = 0x20;
@@ -367,7 +368,7 @@ BYTE riello_prepare_tb(BYTE* buffer, BYTE gpser_error_control)
 	return buf_ptr;
 }
 
-BYTE riello_prepare_shutsentr(BYTE* buffer, WORD delay)
+uint8_t riello_prepare_shutsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 6;
@@ -378,7 +379,7 @@ BYTE riello_prepare_shutsentr(BYTE* buffer, WORD delay)
 	return 5;
 }
 
-BYTE riello_prepare_cancelsentr(BYTE* buffer)
+uint8_t riello_prepare_cancelsentr(uint8_t* buffer)
 {
 	buffer[0] = 176;
 	buffer[1] = 5;
@@ -389,7 +390,7 @@ BYTE riello_prepare_cancelsentr(BYTE* buffer)
 	return 5;
 }
 
-BYTE riello_prepare_setrebsentr(BYTE* buffer, WORD delay)
+uint8_t riello_prepare_setrebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 2;
@@ -400,7 +401,7 @@ BYTE riello_prepare_setrebsentr(BYTE* buffer, WORD delay)
 	return 5;
 }
 
-BYTE riello_prepare_rebsentr(BYTE* buffer, WORD delay)
+uint8_t riello_prepare_rebsentr(uint8_t* buffer, uint16_t delay)
 {
 	buffer[0] = 176;
 	buffer[1] = 1;
@@ -411,7 +412,7 @@ BYTE riello_prepare_rebsentr(BYTE* buffer, WORD delay)
 	return 5;
 }
 
-BYTE riello_prepare_tbsentr(BYTE* buffer)
+uint8_t riello_prepare_tbsentr(uint8_t* buffer)
 {
 	buffer[0] = 176;
 	buffer[1] = 4;
@@ -422,7 +423,7 @@ BYTE riello_prepare_tbsentr(BYTE* buffer)
 	return 5;
 }
 
-void riello_parse_gi(BYTE* buffer, TRielloData* data)
+void riello_parse_gi(uint8_t* buffer, TRielloData* data)
 {
 	memcpy(data->Identification, &buffer[7], 16);
 	data->Identification[16] = 0;
@@ -436,11 +437,11 @@ void riello_parse_gi(BYTE* buffer, TRielloData* data)
 	data->NumBat = data->Identif_bytes[7] - 0x30;
 }
 
-void riello_parse_gn(BYTE* buffer, TRielloData* data)
+void riello_parse_gn(uint8_t* buffer, TRielloData* data)
 {
-	WORD pom_word;
-	long pom_long;
-	BYTE j;
+	uint16_t pom_word;
+	uint32_t pom_long;
+	uint8_t j;
 
 	j = 7;
 	pom_long = (buffer[j++]-0x30)*65536;
@@ -484,10 +485,10 @@ void riello_parse_gn(BYTE* buffer, TRielloData* data)
 	data->NomFout = pom_word;
 }
 
-void riello_parse_rs(BYTE* buffer, TRielloData* data, BYTE numread)
+void riello_parse_rs(uint8_t* buffer, TRielloData* data, uint8_t numread)
 {
-	WORD pom_word;
-	BYTE j;
+	uint16_t pom_word;
+	uint8_t j;
 
 	j = 7;
 	memcpy(data->StatusCode, &buffer[j], 5);
@@ -603,11 +604,11 @@ void riello_parse_rs(BYTE* buffer, TRielloData* data, BYTE numread)
 	}
 }
 
-void riello_parse_re(BYTE* buffer, TRielloData* data)
+void riello_parse_re(uint8_t* buffer, TRielloData* data)
 {
-	WORD pom_word;
-	long pom_long;
-	BYTE j;
+	uint16_t pom_word;
+	uint32_t pom_long;
+	uint8_t j;
 
 	j = 23;
 	data->Iinp1 = 0xFFFF;
@@ -675,9 +676,9 @@ void riello_parse_re(BYTE* buffer, TRielloData* data)
 	data->Pout3VA = pom_word;
 }
 
-void riello_parse_rc(BYTE* buffer, TRielloData* data)
+void riello_parse_rc(uint8_t* buffer, TRielloData* data)
 {
-	BYTE j, i;
+	uint8_t j, i;
 
 	j = 7;
 	for (i = 0; i < 22; i++, j+=2) {
@@ -688,9 +689,9 @@ void riello_parse_rc(BYTE* buffer, TRielloData* data)
 	data->StatusCodeT[24] = 0;
 }
 
-void riello_parse_sentr(BYTE* buffer, TRielloData* data)
+void riello_parse_sentr(uint8_t* buffer, TRielloData* data)
 {
-	DWORD pom;
+	uint32_t pom;
 
 	data->Model = buffer[2]+256*buffer[3];
 	if (data->Model < 3000) {
@@ -732,11 +733,11 @@ void riello_parse_sentr(BYTE* buffer, TRielloData* data)
 
 	data->SWversion = buffer[4]+256*buffer[5];
 
-	data->Version[0] = (BYTE)(48 + ((data->SWversion / 1000) % 10));
-	data->Version[1] = (BYTE)(48 + ((data->SWversion / 100) % 10));
+	data->Version[0] = (uint8_t)(48 + ((data->SWversion / 1000) % 10));
+	data->Version[1] = (uint8_t)(48 + ((data->SWversion / 100) % 10));
 	data->Version[2] = '.';
-	data->Version[3] = (BYTE)(48 + ((data->SWversion / 10) % 10));
-	data->Version[4] = (BYTE)(48 + (data->SWversion % 10));
+	data->Version[3] = (uint8_t)(48 + ((data->SWversion / 10) % 10));
+	data->Version[4] = (uint8_t)(48 + (data->SWversion % 10));
 
 	if (data->Model < 3000)
 		pom = data->Model*100;
@@ -912,14 +913,14 @@ void riello_init_serial()
 	foundnak = 0;
 }
 
-int riello_header(BYTE type, int a, int* length) 
+uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length) 
 {
 	LAST_DATA[0] = LAST_DATA[1];
 	LAST_DATA[1] = LAST_DATA[2];
 	LAST_DATA[2] = LAST_DATA[3];
 	LAST_DATA[3] = LAST_DATA[4];
 	LAST_DATA[4] = LAST_DATA[5];
-	LAST_DATA[5] = (BYTE) a;
+	LAST_DATA[5] = (uint8_t) a;
 
 	switch (type) {
 		case DEV_RIELLOSENTRY:
@@ -937,9 +938,9 @@ int riello_header(BYTE type, int a, int* length)
 	return(0);
 }
 
-int riello_tail(BYTE type, int length)
+uint8_t riello_tail(uint8_t type, uint8_t length)
 {
-	int number;
+	uint8_t number;
 
 	switch (type) {
 		case DEV_RIELLOSENTRY:
@@ -956,7 +957,7 @@ int riello_tail(BYTE type, int length)
 	return(0);
 }
 
-int riello_test_nak(BYTE type, BYTE* buffer)
+uint8_t riello_test_nak(uint8_t type, uint8_t* buffer)
 {
 	switch (type) {
 		case DEV_RIELLOGPSER:
@@ -967,10 +968,10 @@ int riello_test_nak(BYTE type, BYTE* buffer)
 	return(0);
 }
 
-void riello_parse_serialport(BYTE typedev, BYTE* buffer, BYTE checksum)
+void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum)
 {
-	static int actual_char, int_i;
-	static int length;
+	static uint8_t actual_char, int_i;
+	static uint8_t length;
 
 	actual_char = commbyte; 
 
@@ -981,11 +982,11 @@ void riello_parse_serialport(BYTE typedev, BYTE* buffer, BYTE checksum)
 
 		foundheader = 1;
 		buf_ptr_length = 1;  
-		memset(buffer, 0, sizeof(buffer));
+		memset(buffer, 0, BUFFER_SIZE);
 		buffer[0] = LAST_DATA[4];
 	}
 
-	if ((foundheader) && (buf_ptr_length < 192))
+	if ((foundheader) && (buf_ptr_length < BUFFER_SIZE))
 		buffer[buf_ptr_length++] = actual_char;
 
 	if ((foundheader) && (riello_tail(typedev, length))) {

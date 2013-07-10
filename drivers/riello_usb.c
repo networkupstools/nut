@@ -21,9 +21,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * 
- * Reference of the derivative work: blazer driver   
+ *
+ * Reference of the derivative work: blazer driver
  */
+
+#include <stdint.h>
 
 #include "main.h"
 #include "libusb.h"
@@ -31,7 +33,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -42,20 +44,20 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-BYTE bufOut[128];
-BYTE bufIn[192];
+uint8_t bufOut[BUFFER_SIZE];
+uint8_t bufIn[BUFFER_SIZE];
 
-BYTE gpser_error_control;
+uint8_t gpser_error_control;
 
-BYTE input_monophase;
-BYTE output_monophase;
+uint8_t input_monophase;
+uint8_t output_monophase;
 
-extern BYTE commbyte;
-extern int wait_packet;
-extern int foundnak;
-extern int foundbadcrc;
-extern int buf_ptr_length;
-extern BYTE requestSENTR;
+extern uint8_t commbyte;
+extern uint8_t wait_packet;
+extern uint8_t foundnak;
+extern uint8_t foundbadcrc;
+extern uint8_t buf_ptr_length;
+extern uint8_t requestSENTR;
 
 TRielloData DevData;
 
@@ -65,7 +67,7 @@ static USBDevice_t usbdevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
 
-static int (*subdriver_command)(BYTE *cmd, BYTE *buf, WORD length, WORD buflen) = NULL;
+static int (*subdriver_command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen) = NULL;
 
 void ussleep(long usec)
 {
@@ -103,13 +105,13 @@ static int cypress_setfeatures()
 	return ret;
 }
 
-BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
+uint8_t Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
-	BYTE USB_buff_pom[10];
+	uint8_t USB_buff_pom[10];
 	int i, err, size, errno;
 
 	/* is input correct ? */
-	if ((!send_str) || (!numbytes)) 
+	if ((!send_str) || (!numbytes))
 		return 1;
 
 	size = 7;
@@ -128,9 +130,9 @@ BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
 		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
-			if (err==-13 || errno==19) 
+			if (err==-13 || errno==19)
 				upsdebugx(3, "USB device disconnected !");
-			else 
+			else
 				upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %08x %s ", err, strerror(errno));
 			return 2;
 		}
@@ -158,12 +160,12 @@ BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000); 
+		err = usb_bulk_write(udev, 0x2, (char*) USB_buff_pom, 8, 1000);
 
 		if (err < 0) {
-			if (err==-13 || errno==19) 
+			if (err==-13 || errno==19)
 				upsdebugx(3, "USB device disconnected !");
-			else 
+			else
 				upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %08x %s ", err, strerror(errno));
 			return 2;
 		}
@@ -172,7 +174,7 @@ BYTE Send_USB_Packet(BYTE *send_str, WORD numbytes)
 	return (0);
 }
 
-BYTE Get_USB_Packet(BYTE *buffer)
+uint8_t Get_USB_Packet(uint8_t *buffer)
 {
 	char inBuf[10];
 	int err, size, errno, ep;
@@ -186,7 +188,7 @@ BYTE Get_USB_Packet(BYTE *buffer)
 	upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
 
 	if (err == 0) {
-		if (err==-13 || err==-19 || errno==19) 
+		if (err==-13 || err==-19 || errno==19)
 			upsdebugx(3, "USB device disconnected !");
 		else {
 			switch (errno) {
@@ -194,7 +196,7 @@ BYTE Get_USB_Packet(BYTE *buffer)
 				case 16:		/* device busy  */
 					/* ignore it  */
 					break;
-				default: 
+				default:
 					upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %08x %s ", err, strerror(errno));
 					break;
 			}
@@ -204,16 +206,16 @@ BYTE Get_USB_Packet(BYTE *buffer)
 
 	/* copy to buffer */
 	size = inBuf[0] & 0x07;
-	if (size) 
+	if (size)
 		memcpy(buffer, &inBuf[1], size);
 
 	return(size);
 }
 
-static int cypress_command(BYTE *buffer, BYTE *buf, WORD length, WORD buflen)
+static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int	ret, i = 0;
-	BYTE USB_buff[128];
+	uint8_t USB_buff[BUFFER_SIZE];
 
 	/* read to flush buffer */
 /*	ret = Get_USB_Packet(buf+i);*/
@@ -231,7 +233,7 @@ static int cypress_command(BYTE *buffer, BYTE *buf, WORD length, WORD buflen)
 
 	memset(buf, 0, buflen);
 
-	while ((buf_ptr_length < 128) && wait_packet) {
+	while ((buf_ptr_length < BUFFER_SIZE) && wait_packet) {
 
 		memset(USB_buff, 0, sizeof(USB_buff));
 		ret = Get_USB_Packet(USB_buff);
@@ -305,7 +307,7 @@ static USBDeviceMatcher_t device_matcher = {
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
  */
-int riello_command(BYTE *cmd, BYTE *buf, WORD length, WORD buflen)
+int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 {
 	int ret;
 
@@ -361,10 +363,10 @@ int riello_command(BYTE *cmd, BYTE *buf, WORD length, WORD buflen)
 	return ret;
 }
 
-int get_ups_nominal() 
+int get_ups_nominal()
 {
 
-	BYTE recv, length;
+	uint8_t recv, length;
 
 	length = riello_prepare_gn(&bufOut[0], gpser_error_control);
 
@@ -387,9 +389,9 @@ int get_ups_nominal()
 	return 0;
 }
 
-int get_ups_status() 
+int get_ups_status()
 {
-	BYTE recv, numread, length;
+	uint8_t recv, numread, length;
 
 	length = riello_prepare_rs(&bufOut[0], gpser_error_control);
 
@@ -419,9 +421,9 @@ int get_ups_status()
 	return 0;
 }
 
-int get_ups_extended() 
+int get_ups_extended()
 {
-	BYTE recv, length;
+	uint8_t recv, length;
 
 	length = riello_prepare_re(&bufOut[0], gpser_error_control);
 
@@ -444,9 +446,9 @@ int get_ups_extended()
 	return 0;
 }
 
-int get_ups_statuscode() 
+int get_ups_statuscode()
 {
-	BYTE recv, length;
+	uint8_t recv, length;
 
 	length = riello_prepare_rc(&bufOut[0], gpser_error_control);
 
@@ -471,8 +473,8 @@ int get_ups_statuscode()
 
 int riello_instcmd(const char *cmdname, const char *extra)
 {
-	BYTE length, recv;
-	WORD delay;
+	uint8_t length, recv;
+	uint16_t delay;
 	const char	*delay_char;
 
 	if (!riello_test_bit(&DevData.StatusCode[0], 1)) {
@@ -654,9 +656,9 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	return STAT_INSTCMD_UNKNOWN;
 }
 
-int start_ups_comm() 
+int start_ups_comm()
 {
-	WORD length;
+	uint16_t length;
 	int recv;
 
 	upsdebugx (2, "entering start_ups_comm()\n");
@@ -698,7 +700,7 @@ void upsdrv_initups(void)
 {
 	const struct {
 		const char	*name;
-		int		(*command)(BYTE *cmd, BYTE *buf, WORD length, WORD buflen);
+		int		(*command)(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen);
 	} subdriver[] = {
 		{ "cypress", &cypress_command },
 		{ NULL }
@@ -798,11 +800,11 @@ void upsdrv_initinfo(void)
 	riello_parse_gi(&bufIn[0], &DevData);
 
 	gpser_error_control = DevData.Identif_bytes[4]-0x30;
-	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '2')) 
+	if ((DevData.Identif_bytes[0] == '1') || (DevData.Identif_bytes[0] == '2'))
 		input_monophase = 1;
 	else {
 		input_monophase = 0;
-		dstate_setinfo("input.phases", "%u", 3); 
+		dstate_setinfo("input.phases", "%u", 3);
 		dstate_setinfo("input.phases", "%u", 3);
 		dstate_setinfo("input.bypass.phases", "%u", 3);
 	}
@@ -810,18 +812,27 @@ void upsdrv_initinfo(void)
 		output_monophase = 1;
 	else {
 		output_monophase = 0;
-		dstate_setinfo("output.phases", "%u", 3); 
+		dstate_setinfo("output.phases", "%u", 3);
 	}
 
-	dstate_setinfo("device.mfr", "RPS S.p.a."); 
-	dstate_setinfo("device.model", "%s", (unsigned char*) DevData.ModelStr); 
-	dstate_setinfo("device.serial", "%s", (unsigned char*) DevData.Identification); 
-	dstate_setinfo("device.type", "ups"); 
+	dstate_setinfo("device.mfr", "RPS S.p.a.");
+	dstate_setinfo("device.model", "%s", (unsigned char*) DevData.ModelStr);
+	dstate_setinfo("device.serial", "%s", (unsigned char*) DevData.Identification);
+	dstate_setinfo("device.type", "ups");
 
-	dstate_setinfo("ups.mfr", "RPS S.p.a."); 
-	dstate_setinfo("ups.model", "%s", (unsigned char*) DevData.ModelStr); 
-	dstate_setinfo("ups.serial", "%s", (unsigned char*) DevData.Identification); 
-	dstate_setinfo("ups.firmware", "%s", (unsigned char*) DevData.Version); 
+	dstate_setinfo("ups.mfr", "RPS S.p.a.");
+	dstate_setinfo("ups.model", "%s", (unsigned char*) DevData.ModelStr);
+	dstate_setinfo("ups.serial", "%s", (unsigned char*) DevData.Identification);
+	dstate_setinfo("ups.firmware", "%s", (unsigned char*) DevData.Version);
+
+	if (get_ups_nominal() == 0) {
+		dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW);
+		dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA);
+		dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout);
+		dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0);
+		dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat);
+		dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap);
+	}
 
 	/* commands ----------------------------------------------- */
 	dstate_addcmd("load.off");
@@ -879,193 +890,132 @@ void upsdrv_shutdown(void)
 
 void upsdrv_updateinfo(void)
 {
-	BYTE getnominalOK;
-	BYTE getstatusOK;
-	BYTE getextendedOK;
+	uint8_t getextendedOK;
+	static int countlost = 0;
 
-	if (get_ups_nominal() > 0) 
-		getnominalOK = 1;
+	if (countlost < COUNTLOST)
+		upsdebugx(1, "Communication with UPS is lost: status read failed!");
+	else if (countlost == COUNTLOST)
+		upslogx(LOG_WARNING, "Communication with UPS is lost: status read failed!");
 	else
-		getnominalOK = 0;
+		dstate_datastale();
 
-	if (get_ups_status() > 0) 
-		getstatusOK = 1;
-	else
-		getstatusOK = 0;
+	if (get_ups_status() != 0) {
+		if (countlost <= COUNTLOST)
+			countlost++;
+		return;
+	}
 
-	if (get_ups_extended() > 0) 
+	if (get_ups_extended() == 0)
 		getextendedOK = 1;
 	else
 		getextendedOK = 0;
 
-	if (getnominalOK) {
-		dstate_setinfo("ups.realpower.nominal", "%u", 0); 
-		dstate_setinfo("ups.upspower.nominal", "%u", 0); 
-		dstate_setinfo("output.voltage.nominal", "%u", 0); 
-		dstate_setinfo("output.frequency.nominal", "%.1f", 0.0); 
-		dstate_setinfo("battery.voltage.nominal", "%u", 0); 
-		dstate_setinfo("battery.capacity", "%u", 0); 
+	if (countlost > COUNTLOST)
+		upslogx(LOG_NOTICE, "Communication with UPS is re-established!");
+
+	dstate_setinfo("input.frequency", "%.2f", DevData.Finp/10.0);
+	dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0);
+	dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0);
+	dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0);
+	dstate_setinfo("battery.charge", "%u", DevData.BatCap);
+	dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60);
+	dstate_setinfo("ups.temperature", "%u", DevData.Tsystem);
+
+	if (input_monophase) {
+		dstate_setinfo("input.voltage", "%u", DevData.Uinp1);
+		dstate_setinfo("input.bypass.voltage", "%u", DevData.Ubypass1);
 	}
 	else {
-		dstate_setinfo("ups.realpower.nominal", "%u", DevData.NomPowerKW); 
-		dstate_setinfo("ups.power.nominal", "%u", DevData.NomPowerKVA); 
-		dstate_setinfo("output.voltage.nominal", "%u", DevData.NominalUout); 
-		dstate_setinfo("output.frequency.nominal", "%.1f", DevData.NomFout/10.0); 
-		dstate_setinfo("battery.voltage.nominal", "%u", DevData.NomUbat); 
-		dstate_setinfo("battery.capacity", "%u", DevData.NomBatCap); 
+		dstate_setinfo("input.L1-N.voltage", "%u", DevData.Uinp1);
+		dstate_setinfo("input.L2-N.voltage", "%u", DevData.Uinp2);
+		dstate_setinfo("input.L3-N.voltage", "%u", DevData.Uinp3);
+		dstate_setinfo("input.bypass.L1-N.voltage", "%u", DevData.Ubypass1);
+		dstate_setinfo("input.bypass.L2-N.voltage", "%u", DevData.Ubypass2);
+		dstate_setinfo("input.bypass.L3-N.voltage", "%u", DevData.Ubypass3);
 	}
 
-	if (getstatusOK) {
-		dstate_setinfo("input.frequency", "%.2f", 0.00); 
-		dstate_setinfo("input.bypass.frequency", "%.2f", 0.00); 
-		dstate_setinfo("output.frequency", "%.2f", 0.00); 
-		dstate_setinfo("battery.voltage", "%.1f", 0.0); 
-		dstate_setinfo("battery.charge", "%u", 0); 
-		dstate_setinfo("battery.runtime", "%u", 0); 
-		dstate_setinfo("ups.temperature", "%u", 0); 
-
-		if (input_monophase) {
-			dstate_setinfo("input.voltage", "%u", 0); 
-			dstate_setinfo("input.bypass.voltage", "%u", 0); 
-		}
-		else {
-			dstate_setinfo("input.L1-N.voltage", "%u", 0); 
-			dstate_setinfo("input.L2-N.voltage", "%u", 0); 
-			dstate_setinfo("input.L3-N.voltage", "%u", 0); 
-			dstate_setinfo("input.bypass.L1-N.voltage", "%u", 0); 
-			dstate_setinfo("input.bypass.L2-N.voltage", "%u", 0); 
-			dstate_setinfo("input.bypass.L3-N.voltage", "%u", 0); 
-		}
-
-		if (output_monophase) {
-			dstate_setinfo("output.voltage", "%u", 0); 
-			dstate_setinfo("output.power.percent", "%u", 0); 
-			dstate_setinfo("ups.load", "%u", 0); 
-		}
-		else {
-			dstate_setinfo("output.L1-N.voltage", "%u", 0); 
-			dstate_setinfo("output.L2-N.voltage", "%u", 0); 
-			dstate_setinfo("output.L3-N.voltage", "%u", 0); 
-			dstate_setinfo("output.L1.power.percent", "%u", 0); 
-			dstate_setinfo("output.L2.power.percent", "%u", 0); 
-			dstate_setinfo("output.L3.power.percent", "%u", 0); 
-			dstate_setinfo("ups.load", "%u", 0); 
-		}
+	if (output_monophase) {
+		dstate_setinfo("output.voltage", "%u", DevData.Uout1);
+		dstate_setinfo("output.power.percent", "%u", DevData.Pout1);
+		dstate_setinfo("ups.load", "%u", DevData.Pout1);
 	}
 	else {
-		dstate_setinfo("input.frequency", "%.2f", DevData.Finp/10.0); 
-		dstate_setinfo("input.bypass.frequency", "%.2f", DevData.Fbypass/10.0); 
-		dstate_setinfo("output.frequency", "%.2f", DevData.Fout/10.0); 
-		dstate_setinfo("battery.voltage", "%.1f", DevData.Ubat/10.0); 
-		dstate_setinfo("battery.charge", "%u", DevData.BatCap); 
-		dstate_setinfo("battery.runtime", "%u", DevData.BatTime*60); 
-		dstate_setinfo("ups.temperature", "%u", DevData.Tsystem); 
-
-		if (input_monophase) {
-			dstate_setinfo("input.voltage", "%u", DevData.Uinp1); 
-			dstate_setinfo("input.bypass.voltage", "%u", DevData.Ubypass1); 
-		}
-		else {
-			dstate_setinfo("input.L1-N.voltage", "%u", DevData.Uinp1); 
-			dstate_setinfo("input.L2-N.voltage", "%u", DevData.Uinp2); 
-			dstate_setinfo("input.L3-N.voltage", "%u", DevData.Uinp3); 
-			dstate_setinfo("input.bypass.L1-N.voltage", "%u", DevData.Ubypass1); 
-			dstate_setinfo("input.bypass.L2-N.voltage", "%u", DevData.Ubypass2); 
-			dstate_setinfo("input.bypass.L3-N.voltage", "%u", DevData.Ubypass3); 
-		}
-
-		if (output_monophase) {
-			dstate_setinfo("output.voltage", "%u", DevData.Uout1); 
-			dstate_setinfo("output.power.percent", "%u", DevData.Pout1); 
-			dstate_setinfo("ups.load", "%u", DevData.Pout1); 
-		}
-		else {
-			dstate_setinfo("output.L1-N.voltage", "%u", DevData.Uout1); 
-			dstate_setinfo("output.L2-N.voltage", "%u", DevData.Uout2); 
-			dstate_setinfo("output.L3-N.voltage", "%u", DevData.Uout3); 
-			dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1); 
-			dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2); 
-			dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3); 
-			dstate_setinfo("ups.load", "%u", (DevData.Pout1+DevData.Pout2+DevData.Pout3)/3); 
-		}
-
-		status_init();
-
-		/* AC Fail */
-		if (riello_test_bit(&DevData.StatusCode[0], 1)) 
-			status_set("OB");
-		else
-			status_set("OL");
-
-		/* LowBatt */
-		if ((riello_test_bit(&DevData.StatusCode[0], 1)) && 
-			(riello_test_bit(&DevData.StatusCode[0], 0))) 
-			status_set("LB");	
-
-		/* Standby */
-		if (!riello_test_bit(&DevData.StatusCode[0], 3))
-			status_set("OFF");	
-
-		/* On Bypass */
-		if (riello_test_bit(&DevData.StatusCode[1], 3)) 
-			status_set("BYPASS");	
-
-		/* Overload */
-		if (riello_test_bit(&DevData.StatusCode[4], 2)) 
-			status_set("OVER");	
-
-		/* Buck */
-		if (riello_test_bit(&DevData.StatusCode[1], 0)) 
-			status_set("TRIM");	
-
-		/* Boost */
-		if (riello_test_bit(&DevData.StatusCode[1], 1)) 
-			status_set("BOOST");	
-
-		/* Replace battery */
-		if (riello_test_bit(&DevData.StatusCode[2], 0)) 
-			status_set("RB");	
-
-		/* Charging battery */
-		if (riello_test_bit(&DevData.StatusCode[2], 2)) 
-			status_set("CHRG");	
-
-		status_commit();
-
-		dstate_dataok();
+		dstate_setinfo("output.L1-N.voltage", "%u", DevData.Uout1);
+		dstate_setinfo("output.L2-N.voltage", "%u", DevData.Uout2);
+		dstate_setinfo("output.L3-N.voltage", "%u", DevData.Uout3);
+		dstate_setinfo("output.L1.power.percent", "%u", DevData.Pout1);
+		dstate_setinfo("output.L2.power.percent", "%u", DevData.Pout2);
+		dstate_setinfo("output.L3.power.percent", "%u", DevData.Pout3);
+		dstate_setinfo("ups.load", "%u", (DevData.Pout1+DevData.Pout2+DevData.Pout3)/3);
 	}
+
+	status_init();
+
+	/* AC Fail */
+	if (riello_test_bit(&DevData.StatusCode[0], 1))
+		status_set("OB");
+	else
+		status_set("OL");
+
+	/* LowBatt */
+	if ((riello_test_bit(&DevData.StatusCode[0], 1)) &&
+		(riello_test_bit(&DevData.StatusCode[0], 0)))
+		status_set("LB");	
+
+	/* Standby */
+	if (!riello_test_bit(&DevData.StatusCode[0], 3))
+		status_set("OFF");	
+
+	/* On Bypass */
+	if (riello_test_bit(&DevData.StatusCode[1], 3))
+		status_set("BYPASS");	
+
+	/* Overload */
+	if (riello_test_bit(&DevData.StatusCode[4], 2))
+		status_set("OVER");	
+
+	/* Buck */
+	if (riello_test_bit(&DevData.StatusCode[1], 0))
+		status_set("TRIM");	
+
+	/* Boost */
+	if (riello_test_bit(&DevData.StatusCode[1], 1))
+		status_set("BOOST");	
+
+	/* Replace battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 0))
+		status_set("RB");	
+
+	/* Charging battery */
+	if (riello_test_bit(&DevData.StatusCode[2], 2))
+		status_set("CHRG");	
+
+	status_commit();
+
+	dstate_dataok();
 
 	if (getextendedOK) {
-		dstate_setinfo("output.L1.power", "%u", 0); 		
-		dstate_setinfo("output.L2.power", "%u", 0); 		
-		dstate_setinfo("output.L3.power", "%u", 0); 		
-		dstate_setinfo("output.L1.realpower", "%u", 0); 		
-		dstate_setinfo("output.L2.realpower", "%u", 0); 		
-		dstate_setinfo("output.L3.realpower", "%u", 0); 		
-		dstate_setinfo("output.L1.current", "%u", 0); 		
-		dstate_setinfo("output.L2.current", "%u", 0); 	
-		dstate_setinfo("output.L3.current", "%u", 0); 			
-	}
-	else {
-		dstate_setinfo("output.L1.power", "%lu", DevData.Pout1VA); 		
-		dstate_setinfo("output.L2.power", "%lu", DevData.Pout2VA); 		
-		dstate_setinfo("output.L3.power", "%lu", DevData.Pout3VA); 		
-		dstate_setinfo("output.L1.realpower", "%lu", DevData.Pout1W); 		
-		dstate_setinfo("output.L2.realpower", "%lu", DevData.Pout2W); 		
-		dstate_setinfo("output.L3.realpower", "%lu", DevData.Pout3W); 		
-		dstate_setinfo("output.L1.current", "%u", DevData.Iout1); 		
-		dstate_setinfo("output.L2.current", "%u", DevData.Iout2); 	
-		dstate_setinfo("output.L3.current", "%u", DevData.Iout3); 			
+		dstate_setinfo("output.L1.power", "%u", DevData.Pout1VA);
+		dstate_setinfo("output.L2.power", "%u", DevData.Pout2VA);
+		dstate_setinfo("output.L3.power", "%u", DevData.Pout3VA);
+		dstate_setinfo("output.L1.realpower", "%u", DevData.Pout1W);
+		dstate_setinfo("output.L2.realpower", "%u", DevData.Pout2W);
+		dstate_setinfo("output.L3.realpower", "%u", DevData.Pout3W);
+		dstate_setinfo("output.L1.current", "%u", DevData.Iout1);
+		dstate_setinfo("output.L2.current", "%u", DevData.Iout2);
+		dstate_setinfo("output.L3.current", "%u", DevData.Iout3);
 	}
 
 	poll_interval = 2;
 
+	countlost = 0;	
 /*	if (get_ups_statuscode() != 0)
 		upsdebugx(2, "Communication is lost");
 	else {
 	}*/
 
-	/* 
+	/*
 	 * ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS);
 	 *
 	 * if (ret < STATUS_LEN) {
