@@ -1,0 +1,12 @@
+--- ../../../nut/trunk/tools/nut-scanner/scan_xml_http.c        2012-05-04 09:36:43.965684350 +0200
++++ ./tools/nut-scanner/scan_xml_http.c 2013-04-10 13:22:35.297476318 +0200
+@@ -231,7 +231,7 @@
+        }
+
+
+-       return current_nut_dev;
++       return nutscan_rewind_device(current_nut_dev);
+ }
+ #else /* WITH_NEON */
+ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
+

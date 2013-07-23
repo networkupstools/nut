@@ -435,5 +435,5 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		i++;
 	}
 	free( serial_ports_list);
-	return dev_ret;
+	return nutscan_rewind_device(dev_ret);
 }
