@@ -19,6 +19,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+/* this include is needed on AIX to have errno stored in thread local storage */
+#include <pthread.h>
+
 #include "config.h"	/* safe because it doesn't contain prototypes */
 
 #include <errno.h>
