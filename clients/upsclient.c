@@ -999,24 +999,24 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 	if (tryssl || forcessl) {
 		ret = upscli_sslinit(ups, certverify);
 		if (forcessl && ret != 1) {
-			upslogx(LOG_ERR, "Can not connect to %s in SSL, disconnect", ups->host);
+			upslogx(LOG_ERR, "Can not connect to %s in SSL, disconnect", host);
 			ups->upserror = UPSCLI_ERR_SSLFAIL;
 			upscli_disconnect(ups);
 			return -1;
 		} else if (tryssl && ret == -1) {
-			upslogx(LOG_NOTICE, "Error while connecting to %s, disconnect", ups->host);
+			upslogx(LOG_NOTICE, "Error while connecting to %s, disconnect", host);
 			upscli_disconnect(ups);
 			return -1;
 		} else if (tryssl && ret == 0) {
 			if (certverify != 0) {
 				upslogx(LOG_NOTICE, "Can not connect to %s in SSL and "
-				"certificate is needed, disconnect", ups->host);
+				"certificate is needed, disconnect", host);
 				upscli_disconnect(ups);
 				return -1;
 			}
-			upslogx(LOG_NOTICE, "Can not connect to %s in SSL, continue uncrypted", ups->host);
+			upslogx(LOG_NOTICE, "Can not connect to %s in SSL, continue uncrypted", host);
 		} else {
-			upslogx(LOG_INFO, "Connected to %s in SSL", ups->host);
+			upslogx(LOG_INFO, "Connected to %s in SSL", host);
 			if (certverify == 0) {
 				/* you REALLY should set CERTVERIFY to 1 if using SSL... */
 				upslogx(LOG_WARNING, "Certificate verification is disabled");
