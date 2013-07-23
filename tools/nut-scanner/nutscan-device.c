@@ -181,3 +181,14 @@ nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutsca
 
 	return dev2;
 }
+
+nutscan_device_t * nutscan_rewind_device(nutscan_device_t * device)
+{
+	if (NULL == device)
+		return NULL;
+
+	while (NULL != device->prev)
+		device = device->prev;
+
+	return device;
+}
