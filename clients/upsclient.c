@@ -21,6 +21,11 @@
 
 #include "config.h"	/* safe because it doesn't contain prototypes */
 
+#ifdef HAVE_PTHREAD
+/* this include is needed on AIX to have errno stored in thread local storage */
+#include <pthread.h>
+#endif 
+
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
