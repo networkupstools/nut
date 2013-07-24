@@ -136,6 +136,10 @@ then
 fi
 
 case ${target_os} in
+   solaris2.1* )
+      dnl On Solaris 10/11 this allow errno to use thread local storage
+      CFLAGS="${CFLAGS} -D_REENTRANT"
+      ;;
    hpux11* )
       dnl It seems like the thread safe string functions will not be included
       dnl on 64 bit HP-UX unless we define _REENTRANT
