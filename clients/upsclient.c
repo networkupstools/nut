@@ -668,11 +668,11 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 #endif /* WITH_OPENSSL | WITH_NSS */
 	char	buf[UPSCLI_NETBUF_LEN];
 
-	/* Intend to initilize upscli with no ssl db if not already done.
+	/* Intend to initialize upscli with no ssl db if not already done.
 	 * Compatibility stuff for old clients which do not initialize them.
 	 */
 	if (upscli_initialized==0) {
-		upslogx(LOG_WARNING, "upscli not initialized, "
+		upsdebugx(3, "upscli not initialized, "
 			"force initialisation without SSL configuration");
 		upscli_init(0, NULL, NULL, NULL);
 	}
@@ -1019,7 +1019,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 				upscli_disconnect(ups);
 				return -1;
 			}
-			upslogx(LOG_NOTICE, "Can not connect to %s in SSL, continue uncrypted", host);
+			upsdebugx(3, "Can not connect to %s in SSL, continue uncrypted", host);
 		} else {
 			upslogx(LOG_INFO, "Connected to %s in SSL", host);
 			if (certverify == 0) {
