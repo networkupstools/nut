@@ -84,6 +84,14 @@ To list clients connected on "myups":
 
 
 
+SCRIPTED MODE
+-------------
+
+If you run this program inside a shell script or similar to get the list of
+devices and variables, you should only consider using output from stdout,
+not stderr.
+
+
 DIAGNOSTICS
 -----------
 
