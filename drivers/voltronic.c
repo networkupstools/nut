@@ -514,10 +514,10 @@ static int voltronic_status(void)
 		{ "output.frequency", "%.1f", strtod },
 		{ "output.current", "%.1f", strtod },
 		{ "ups.load", "%.0f", strtod },
-		{ "god.knows", "%.1f", strtod },	/* unknown - maybe DC Bus Voltage (for non programmable outlets?) */
-		{ "god.knows.twice", "%.1f", strtod },	/* unknown - maybe DC Bus Voltage (for programmable outlets?) */
+		{ "unknown.1", "%.1f", strtod },	/* unknown - maybe DC Bus Voltage (for non programmable outlets?) */
+		{ "unknown.2", "%.1f", strtod },	/* unknown - maybe DC Bus Voltage (for programmable outlets?) */
 		{ "battery.voltage", "%.2f", strtod },
-		{ "god.knows.three.times", "%.1f", strtod },	/* unknown */
+		{ "unknown.3", "%.1f", strtod },	/* unknown */
 		{ "ups.temperature", "%.1f", strtod },
 		{ NULL }
 	};
