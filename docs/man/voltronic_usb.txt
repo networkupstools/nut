@@ -13,16 +13,25 @@ This man page only documents the hardware-specific features of the voltronic dri
 SUPPORTED HARDWARE
 ------------------
 
-The voltronic driver should work with various UPSes manufactured by Voltronic Power and rebranded by Atlantis Land, Cablematic, EAST Power, Emerson Network Power, EPC/European Power Convertion, EQ Power, FSP, Integra Tech, iTek, Metartec, Mustek, Neuropower, Nilox, NEW-SAI, Opti-UPS, PowerMatic, PowerWalker, Salicru, Seltec, Shandy/SHT Power, Start Power, Sweex, Tecnoware, Tuncmatik, Unitek and many others.
-Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver.
-The NUT compatibility table lists all the known supported models. Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
+The voltronic driver should work with various UPSes manufactured by Voltronic
+Power and rebranded by Atlantis Land, Cablematic, EAST Power, Emerson Network
+Power, EPC/European Power Convertion, EQ Power, FSP, Integra Tech, iTek,
+Metartec, Mustek, Neuropower, Nilox, NEW-SAI, Opti-UPS, PowerMatic,
+PowerWalker, Salicru, Seltec, Shandy/SHT Power, Start Power, Sweex, Tecnoware,
+Tuncmatik, Unitek and many others.  Long story short: if your UPS came with a
+software called 'Viewpower', chances are high that it works with this driver.
 
-Devices with a serial interface (use the *voltronic_ser* driver) and with a USB interface (use the *voltronic_usb* driver) are supported.
+The NUT compatibility table lists all the known supported models. Keep in mind,
+however, that other models not listed there may also be supported, but haven't
+been tested.
+
+Devices with a serial interface (use the *voltronic_ser* driver) and with a USB
+interface (use the *voltronic_usb* driver) are supported.
 
 EXTRA ARGUMENTS
 ---------------
 
-You may want to change some options that rule the way the UPS behave (see linkman:ups.conf[5]):
+You may want to change some options that control the way the UPS behaves (see linkman:ups.conf[5]):
 
 *ondelay =* 'value'::
 Time to wait before switching on the UPS (minutes). It defaults to 0 minutes. [Acceptable range: 0..9999]
@@ -68,7 +77,7 @@ Enable or disable alarm (BEEP!) at Battery Mode [enabled/disabled] (Not availabl
 
 *auto_reboot =* 'string'::
 Enable or disable auto reboot [enabled/disabled] (Not available on some hardware.)
-If enabled, the UPS will auto recover when AC is recovering.
+If enabled, the UPS will auto recover when AC power returns.
 
 *bypass_when_off =* 'string'::
 Enable or disable bypass when UPS is Off [enabled/disabled] (Not available on some hardware.)
@@ -88,7 +97,7 @@ When input frequency is within 40 Hz to 70 Hz, the UPS can be set at a constant 
 *eco_mode =* 'string'::
 Enable or disable ECO Mode [enabled/disabled] (Not available on some hardware.)
 When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving. PFC and INVERTER are still active at this mode.
-Setable also 'on the fly' with *bypass.start* and *bypass.stop* instant commands.
+Settable also 'on the fly' with *bypass.start* and *bypass.stop* instant commands.
 
 *advanced_eco_mode =* 'string'::
 Enable or disable Advanced ECO Mode [enabled/disabled] (Not available on some hardware.)
@@ -260,22 +269,22 @@ Turn off outlet 1 load immediately. (Not available on some hardware.)
 Turn on outlet 1 load immediately. (Not available on some hardware.)
 
 *outlet.2.load.off*::
-Turn off outlet 1 load immediately. (Not available on some hardware.)
+Turn off outlet 2 load immediately. (Not available on some hardware.)
 
 *outlet.2.load.on*::
-Turn on outlet 1 load immediately. (Not available on some hardware.)
+Turn on outlet 2 load immediately. (Not available on some hardware.)
 
 *outlet.3.load.off*::
-Turn off outlet 1 load immediately. (Not available on some hardware.)
+Turn off outlet 3 load immediately. (Not available on some hardware.)
 
 *outlet.3.load.on*::
-Turn on outlet 1 load immediately. (Not available on some hardware.)
+Turn on outlet 3 load immediately. (Not available on some hardware.)
 
 *outlet.4.load.off*::
-Turn off outlet 1 load immediately. (Not available on some hardware.)
+Turn off outlet 4 load immediately. (Not available on some hardware.)
 
 *outlet.4.load.on*::
-Turn on outlet 1 load immediately. (Not available on some hardware.)
+Turn on outlet 4 load immediately. (Not available on some hardware.)
 
 *bypass.start*::
 Put the UPS in ECO Mode. (Not available on some hardware.)
@@ -363,10 +372,11 @@ Daniele Pezzini <hyouko@gmail.com> (Based on linkman:blazer[8] driver by Arjen d
 SEE ALSO
 --------
 
-linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
+linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8], linkman:blazer[8], linkman:voltronic_ser[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
 The NUT HCL: http://www.networkupstools.org/stable-hcl.html
