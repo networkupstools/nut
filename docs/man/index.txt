@@ -96,6 +96,8 @@ Drivers
 - linkman:usbhid-ups[8]
 - linkman:upscode2[8]
 - linkman:victronups[8]
+- linkman:voltronic_ser[8]
+- linkman:voltronic_usb[8]
 
 [[Developer_man]]
 Developer manual pages

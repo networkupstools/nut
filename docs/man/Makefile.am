@@ -337,7 +337,8 @@ SRC_SERIAL_PAGES = \
 	tripplite.txt	\
 	tripplitesu.txt	\
 	upscode2.txt	\
-	victronups.txt
+	victronups.txt	\
+	voltronic_ser.txt
 
 # NOTE: blazer_ser.8 has no source counterpart (blazer.txt)
 MAN_SERIAL_PAGES = \
@@ -378,7 +379,8 @@ MAN_SERIAL_PAGES = \
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
-	victronups.8
+	victronups.8	\
+	voltronic_ser.8
 
 if WITH_SERIAL
   man8_MANS +=  $(MAN_SERIAL_PAGES)
@@ -421,7 +423,8 @@ HTML_SERIAL_MANS = \
 	tripplite.html	\
 	tripplitesu.html	\
 	upscode2.html	\
-	victronups.html
+	victronups.html	\
+	voltronic_ser.html
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
@@ -439,7 +442,8 @@ SRC_USB_LIBUSB_PAGES = \
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
-	usbhid-ups.txt
+	usbhid-ups.txt	\
+	voltronic_usb.txt
 
 # NOTE: blazer_usb.8 has no source counterpart (blazer.txt)
 MAN_USB_LIBUSB_PAGES = \
@@ -448,7 +452,8 @@ MAN_USB_LIBUSB_PAGES = \
 	richcomm_usb.8 \
 	riello_usb.8	\
 	tripplite_usb.8 \
-	usbhid-ups.8
+	usbhid-ups.8	\
+	voltronic_usb.8
 
 if WITH_USB
  man8_MANS += $(MAN_USB_LIBUSB_PAGES)
@@ -459,7 +464,8 @@ HTML_USB_LIBUSB_MANS = \
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
-	usbhid-ups.html
+	usbhid-ups.html	\
+	voltronic_usb.html
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt

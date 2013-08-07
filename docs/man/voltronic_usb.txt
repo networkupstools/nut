@@ -1,0 +1,382 @@
+VOLTRONIC_USB(8)
+================
+
+NAME
+----
+
+voltronic_usb - Driver for Voltronic Power USB UPS equipment
+
+NOTE
+----
+This man page only documents the hardware-specific features of the voltronic driver. For information about the core driver, see linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+The voltronic driver should work with various UPSes manufactured by Voltronic
+Power and rebranded by Atlantis Land, Cablematic, EAST Power, Emerson Network
+Power, EPC/European Power Convertion, EQ Power, FSP, Integra Tech, iTek,
+Metartec, Mustek, Neuropower, Nilox, NEW-SAI, Opti-UPS, PowerMatic,
+PowerWalker, Salicru, Seltec, Shandy/SHT Power, Start Power, Sweex, Tecnoware,
+Tuncmatik, Unitek and many others.  Long story short: if your UPS came with a
+software called 'Viewpower', chances are high that it works with this driver.
+
+The NUT compatibility table lists all the known supported models. Keep in mind,
+however, that other models not listed there may also be supported, but haven't
+been tested.
+
+Devices with a serial interface (use the *voltronic_ser* driver) and with a USB
+interface (use the *voltronic_usb* driver) are supported.
+
+EXTRA ARGUMENTS
+---------------
+
+You may want to change some options that control the way the UPS behaves (see linkman:ups.conf[5]):
+
+*ondelay =* 'value'::
+Time to wait before switching on the UPS (minutes). It defaults to 0 minutes. [Acceptable range: 0..9999]
+
+*offdelay =* 'value'::
+Time to wait before shutting down the UPS (seconds). This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds). Defaults to 30 seconds. [Acceptable range: 12..5940]
+
+*stayoff*::
+If you set stayoff in ups.conf when FSD arises the UPS will shutdown after *offdelay* seconds and won't return, otherwise (standard behaviour) the UPS will shutdown after *offdelay* seconds and then turn on after *ondelay* minutes (if mains meanwhile returned).
+
+*battpacks =* 'value'::
+Set number of battery packs in parallel to n [1..99] (Not available on some hardware.)
+This setting will change the runtime estimation reported by the UPS.
+
+*battnumb =* 'value'::
+Set number of batteries to n [1..9] (Not available on some hardware.)
+This setting will change the runtime estimation reported by the UPS.
+
+*battlow =* 'value'::
+Set minimum battery voltage just before the UPS automatically shuts down. (Not available on some hardware.)
+
+*output_phase_angle =* 'value'::
+Changes output phase angle to the provided value [000, 120, 180, 240]° (Not available on some hardware.)
+
+
+UPS CAPABILITY SETTINGS
+~~~~~~~~~~~~~~~~~~~~~~~
+
+*reset_to_default*::
+Reset capability options and their voltage and frequency limits to safe default values. (*Doable only when the UPS is in Standby Mode*) (Not available on some hardware.)
+
+These UPSes can be fine-tuned to suit your needs enabling or disabling the following options (the driver should tell you which one the UPS is capable of on startup):
+
+*alarm_control =* 'string'::
+Enable or disable alarm (BEEP!) [enabled/disabled] (Not available on some hardware.)
+Setable also `on the fly' with *beeper.enable* and *beeper.disable* instant commands.
+
+*bypass_alarm =* 'string'::
+Enable or disable alarm (BEEP!) at Bypass Mode [enabled/disabled] (Not available on some hardware.)
+
+*battery_alarm =* 'string'::
+Enable or disable alarm (BEEP!) at Battery Mode [enabled/disabled] (Not available on some hardware.)
+
+*auto_reboot =* 'string'::
+Enable or disable auto reboot [enabled/disabled] (Not available on some hardware.)
+If enabled, the UPS will auto recover when AC power returns.
+
+*bypass_when_off =* 'string'::
+Enable or disable bypass when UPS is Off [enabled/disabled] (Not available on some hardware.)
+If enabled, AC will directly provide power to connected devices when the UPS is off.
+
+*bypass_forbidding =* 'string'::
+Enable or disable Bypass Forbidding [enabled/disabled] (Not available on some hardware.)
+If enabled, the UPS will not transfer to bypass mode under any conditions.
+
+*battery_protection =* 'string'::
+Enable or disable battery deep discharge protection [enabled/disabled] (Not available on some hardware.)
+
+*converter_mode =* 'string'::
+Enable or disable Converter Mode [enabled/disabled] (Not available on some hardware.)
+When input frequency is within 40 Hz to 70 Hz, the UPS can be set at a constant output frequency, 50 Hz or 60 Hz. The UPS will still charge battery under this mode.
+
+*eco_mode =* 'string'::
+Enable or disable ECO Mode [enabled/disabled] (Not available on some hardware.)
+When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving. PFC and INVERTER are still active at this mode.
+Settable also 'on the fly' with *bypass.start* and *bypass.stop* instant commands.
+
+*advanced_eco_mode =* 'string'::
+Enable or disable Advanced ECO Mode [enabled/disabled] (Not available on some hardware.)
+When input voltage/frequency are within acceptable range, the UPS will bypass voltage to output for energy saving. PFC and INVERTER are off at this mode.
+
+*energy_saving =* 'string'::
+Enable or disable Green power function [enabled/disabled] (Not available on some hardware.)
+If enabled, for energy saving, the UPS will auto off when there is no load.
+
+*battery_open_status_check =* 'string'::
+Enable or disable Battery Open Status Check [enabled/disabled] (Not available on some hardware.)
+If enabled, when the UPS is turned on, it will check if the battery is connected or not.
+
+*cold_start =* 'string'::
+Enable or disable Cold Start [enabled/disabled] (Not available on some hardware.)
+If enabled, the UPS can be turned on also if AC is not connected to the UPS.
+
+*outlet_control =* 'string'::
+Enable or disable programmable outlets control at battery mode [enabled/disabled] (Not available on some hardware.)
+If enabled, the UPS will cut off programmable outlets after backup setting time arrive. If disabled, the UPS will provide continuous power to programmable outlets until the battery is running out.
+
+*site_fault_detection =* 'string'::
+Enable or disable site fault detection [enabled/disabled] (Not available on some hardware.)
+If enabled, the UPS will beep when the input neutral and hot wires are reversed.
+
+*costant_phase_angle =* 'string'::
+Enable or disable Constant Phase Angle Function (output and input phase angles are not equal) [enabled/disabled] (Not available on some hardware.)
+
+*limited_runtime_on_battery =* 'string'::
+Enable or disable limited runtime on battery mode [enabled/disabled] (Not available on some hardware.)
+
+ECO AND BYPASS MODE VOLTAGE/FREQUENCY LIMITS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Variables to fine-tune voltage and frequency limits for ECO Mode and Bypass mode. These limits are reset to safe default values by *reset_to_default*.
+If AC voltage and frequency are within acceptable range, ECO or Bypass mode will be used (If the UPS is capable of and they're enabled)
+
+*max_eco_volt =* 'value'::
+Maximum voltage for ECO Mode (V)
+
+*min_eco_volt =* 'value'::
+Minimum voltage for ECO Mode (V)
+
+*max_eco_freq =* 'value'::
+Maximum frequency for ECO Mode (Hz)
+
+*min_eco_freq =* 'value'::
+Minimum frequency for ECO Mode (Hz)
+
+*max_bypass_volt =* 'value'::
+Maxmimum voltage for Bypass Mode (V)
+
+*min_bypass_volt =* 'value'::
+Minimum voltage for Bypass Mode (V)
+
+*max_bypass_freq =* 'value'::
+Maximum frequency for Bypass Mode (Hz)
+
+*min_bypass_freq =* 'value'::
+Minimum frequency for Bypass Mode (Hz)
+
+PROGRMMABLE OUTLET CONTROL
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These variables set delay time for programmable outlets (Not available on some hardware.)
+
+*outlet1_delay =* 'value'::
+Delay time before programmable outlet 1 shuts down the load when on battery mode [0..999] (minutes)
+
+*outlet2_delay =* 'value'::
+Delay time before programmable outlet 2 shuts down the load when on battery mode [0..999] (minutes)
+
+*outlet3_delay =* 'value'::
+Delay time before programmable outlet 3 shuts down the load when on battery mode [0..999] (minutes)
+
+*outlet4_delay =* 'value'::
+Delay time before programmable outlet 4 shuts down the load when on battery mode [0..999] (minutes)
+
+OPTIONS SPECIFIC FOR P31 UPSES
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following options are available only on P31 UPSes.
+
+*batt_type =* 'string'::
+Battery type for P31 UPSes [Li/Flooded/AGM]
+
+*work_range_type =* 'string'::
+Device grid working range for P31 UPSes [Appliance/UPS]
+
+TESTING
+~~~~~~~
+
+This driver comes with a couple of functions that are not enabled by default because of the lack of knowledge of some part of the communication protocol used by these UPSes by your friendly neighborhood developer.
+Since these functions are supposed to be queries to UPS for some kind of informations, they _should_ not make your UPS go boom. So if you are brave enough to risk your UPS and attached devices' life to help the developers, this will be very appreciated.. *Do it at your own risk*.
+
+*testing*::
+If invoked the driver will exec also commands that still need testing
+
+USB INTERFACE ONLY
+------------------
+
+*vendorid =* 'regex'::
+*productid =* 'regex'::
+*vendor =* 'regex'::
+*product =* 'regex'::
+*serial =* 'regex'::
+
+Select a specific UPS, in case there is more than one connected via USB. Each option specifies an extended regular expression (see *regex(7)*) that must match the UPS's entire vendor/product/serial string (minus any surrounding whitespace), or the whole 4-digit hexadecimal code for vendorid and productid. Try *-DD* for finding out the strings to match.
+
+.USB Configuration Example:
+====
+    -x vendor="Foo.Corporation.*"
+    -x vendorid=051d    # (APC)
+    -x product=".*(Smart|Back)-?UPS.*"
+====
+
+*bus =* 'regex'::
+Select a UPS on a specific USB bus or group of busses. The argument is a regular expression that must match the bus name where the UPS is connected (e.g. bus="002", bus="00[2-3]").
+
+*subdriver =* 'string'::
+Select a serial-over-USB subdriver to use. So far the only available choice is *cypress*.
+When using this option, it is mandatory to also specify the *vendorid* and *productid*.
+
+UPS COMMANDS
+------------
+
+This driver supports some instant commands (see linkman:upscmd[8]):
+
+*beeper.toggle*::
+Toggle the UPS beeper. (Not available on some hardware.)
+
+*beeper.enable*::
+Enable the UPS beeper. (Not available on some hardware.)
+
+*beeper.disable*::
+Disable the UPS beeper. (Not available on some hardware.)
+
+*load.on*::
+Turn on the load immediately.
+
+*load.off*::
+Turn off the load immediately.
+
+*shutdown.return*::
+Turn off the load and return when power is back. Uses the timers defined by *ondelay* and *offdelay*.
+
+*shutdown.stayoff*::
+Turn off the load and remain off. Uses the timer defined by *offdelay*.
+
+*shutdown.stop*::
+Stop a shutdown in progress.
+
+*test.battery.start.deep*::
+Perform a long battery test.
+
+*test.battery.start.quick*::
+Perform a (10 second) battery test.
+
+*test.battery.start* 'value'::
+Perform a battery test for the duration of 'value' seconds [12..5940]. This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
+
+*test.battery.stop*::
+Stop a running battery test.
+
+*outlet.1.load.off*::
+Turn off outlet 1 load immediately. (Not available on some hardware.)
+
+*outlet.1.load.on*::
+Turn on outlet 1 load immediately. (Not available on some hardware.)
+
+*outlet.2.load.off*::
+Turn off outlet 2 load immediately. (Not available on some hardware.)
+
+*outlet.2.load.on*::
+Turn on outlet 2 load immediately. (Not available on some hardware.)
+
+*outlet.3.load.off*::
+Turn off outlet 3 load immediately. (Not available on some hardware.)
+
+*outlet.3.load.on*::
+Turn on outlet 3 load immediately. (Not available on some hardware.)
+
+*outlet.4.load.off*::
+Turn off outlet 4 load immediately. (Not available on some hardware.)
+
+*outlet.4.load.on*::
+Turn on outlet 4 load immediately. (Not available on some hardware.)
+
+*bypass.start*::
+Put the UPS in ECO Mode. (Not available on some hardware.)
+
+*bypass.stop*::
+Take the UPS out of ECO Mode. (Not available on some hardware.)
+
+UPS WARNINGS
+------------
+
+These UPSes report warnings through a 64bit flag (bit1bit2...bit63bit64) where 1 means that a warning arose, while 0 means no warning.
+Since more than one warning at a time can be signaled, and because of the limited space in the ups.alarm variable, if the length of the warnings exceed that of ups.alarms variable, they will be reported as bits.
+If you want to know the explanation of that bit you can either watch the log or see the next table (unlisted bits equal to unknown warnings).
+
+.UPS Warnings
+[cols="5>,95",options="autowidth,header",frame="topbot",align="center"]
+|====
+|# |Corresponding Warning
+|1 |Battery disconnected
+|2 |Neutral not connected
+|3 |Site fault
+|4 |Phase sequence incorrect
+|5 |Phase sequence incorrect in bypass
+|6 |Input frequency unstable in bypass
+|7 |Battery overcharged
+|8 |Low battery
+|9 |Overload alarm
+|10 |Fan alarm
+|11 |EPO enabled
+|12 |Unable to turn on UPS
+|13 |Over temperature alarm
+|14 |Charger alarm
+|15 |Remote auto shutdown
+|16 |L1 input fuse not working
+|17 |L2 input fuse not working
+|18 |L3 input fuse not working
+|19 |Positive PFC abnormal in L1
+|20 |Negative PFC abnormal in L1
+|21 |Positive PFC abnormal in L2
+|22 |Negative PFC abnormal in L2
+|23 |Positive PFC abnormal in L3
+|24 |Negative PFC abnormal in L3
+|25 |Abnormal in CAN-bus communication
+|26 |Abnormal in synchronous signal circuit
+|27 |Abnormal in synchronous pulse signal circuit
+|28 |Abnormal in host signal circuit
+|29 |Male connector of parallel cable not connected well
+|30 |Female connector of parallel cable not connected well
+|31 |Parallel cable not connected well
+|32 |Battery connection not consistent in parallel systems
+|33 |AC connection not consistent in parallel systems
+|34 |Bypass connection not consistent in parallel systems
+|35 |UPS model types not consistent in parallel systems
+|36 |Capacity of UPSs not consistent in parallel systems
+|37 |Auto restart setting not consistent in parallel systems
+|38 |Battery cell over charge
+|39 |Battery protection setting not consistent in parallel systems
+|40 |Battery detection setting not consistent in parallel systems
+|41 |Bypass not allowed setting not consistent in parallel systems
+|42 |Converter setting not consistent in parallel systems
+|43 |High loss point for frequency in bypass mode not consistent in parallel systems
+|44 |Low loss point for frequency in bypass mode not consistent in parallel systems
+|45 |High loss point for voltage in bypass mode not consistent in parallel systems
+|46 |Low loss point for voltage in bypass mode not consistent in parallel systems
+|47 |High loss point for frequency in AC mode not consistent in parallel systems
+|48 |Low loss point for frequency in AC mode not consistent in parallel systems
+|49 |High loss point for voltage in AC mode not consistent in parallel systems
+|50 |Low loss point for voltage in AC mode not consistent in parallel systems
+|51 |Warning for locking in bypass mode after 3 consecutive overloads within 30 min
+|52 |Warning for three-phase AC input current unbalance
+|53 |Warning for a three-phase input current unbalance detected in battery mode
+|54 |Warning for Inverter inter-current unbalance
+|55 |Programmable outlets cut off pre-alarm
+|56 |Warning for Battery replace
+|57 |Abnormal warning on input phase angle
+|58 |Warning!! Cover of maintain switch is open
+|62 |EEPROM operation error
+|====
+
+AUTHOR
+-------
+
+Daniele Pezzini <hyouko@gmail.com> (Based on linkman:blazer[8] driver by Arjen de Korte <adkorte-guest@alioth.debian.org>, Alexander Gordeev <lasaine@lvk.cs.msu.su>)
+
+SEE ALSO
+--------
+
+linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8], linkman:blazer[8], linkman:voltronic_ser[8]
+
+Internet Resources:
+~~~~~~~~~~~~~~~~~~~
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The NUT HCL: http://www.networkupstools.org/stable-hcl.html
