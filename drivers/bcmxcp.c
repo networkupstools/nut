@@ -187,6 +187,30 @@ info_lkp_t batt_test_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* Battery test results */
+info_lkp_t topology_info[] = {
+	{ BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P, "Off-line switcher, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_LINEINT_UPS_1P, "Line-Interactive UPS, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_LINEINT_UPS_2P, "Line-Interactive UPS, Two Phase", NULL },
+	{ BCMXCP_TOPOLOGY_LINEINT_UPS_3P, "Line-Interactive UPS, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P, "Dual AC Input, On-Line UPS, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P, "Dual AC Input, On-Line UPS, Two Phase", NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P, "Dual AC Input, On-Line UPS, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_ONLINE_UPS_1P, "On-Line UPS, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_ONLINE_UPS_2P, "On-Line UPS, Two Phase", NULL },
+	{ BCMXCP_TOPOLOGY_ONLINE_UPS_3P, "On-Line UPS, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P, "Parallel Redundant On-Line UPS, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P, "Parallel Redundant On-Line UPS, Two Phase", NULL },
+	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P, "Parallel Redundant On-Line UPS, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P, "Parallel for Capacity On-Line UPS, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P, "Parallel for Capacity On-Line UPS, Two Phase", NULL },
+	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P, "Parallel for Capacity On-Line UPS, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P, "System Bypass Module, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P, "Hot-Tie Cabinet, Three Phase", NULL },
+	{ BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P, "Outlet Controller, Single Phase", NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P, "Dual AC Input Static Switch Module, 3 Phase", NULL },
+	{ 0, NULL, NULL }
+};
 
 /* allocate storage for shared variables (extern in bcmxcp.h) */
 BCMXCP_METER_MAP_ENTRY_t
@@ -1047,74 +1071,11 @@ void init_topology(void)
 	if (res <= 0)
 		fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 
-	/* Long integer */
 	value = get_word(answer);
-	switch (value) {
-		case BCMXCP_TOPOLOGY_NONE:			
-			break;
-		case BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P:
-			dstate_setinfo("ups.description", "Off-line switcher, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_LINEINT_UPS_1P:
-			dstate_setinfo("ups.description", "Line-Interactive UPS, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_LINEINT_UPS_2P:
-			dstate_setinfo("ups.description", "Line-Interactive UPS, Two Phase");
-			break;
-		case BCMXCP_TOPOLOGY_LINEINT_UPS_3P:
-			dstate_setinfo("ups.description", "Line-Interactive UPS, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P:
-			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P:
-			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Two Phase");
-			break;
-		case BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P:
-			dstate_setinfo("ups.description", "Dual AC Input, On-Line UPS, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_ONLINE_UPS_1P:
-			dstate_setinfo("ups.description", "On-Line UPS, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_ONLINE_UPS_2P:
-			dstate_setinfo("ups.description", "On-Line UPS, Two Phase");
-			break;
-		case BCMXCP_TOPOLOGY_ONLINE_UPS_3P:
-			dstate_setinfo("ups.description", "On-Line UPS, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P:
-			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P:
-			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Two Phase");
-			break;
-		case BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P:
-			dstate_setinfo("ups.description", "Parallel Redundant On-Line UPS, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P:
-			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P:
-			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Two Phase");
-			break;
-		case BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P:
-			dstate_setinfo("ups.description", "Parallel for Capacity On-Line UPS, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P:
-			dstate_setinfo("ups.description", "System Bypass Module, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P:
-			dstate_setinfo("ups.description", "Hot-Tie Cabinet, Three Phase");
-			break;
-		case BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P:
-			dstate_setinfo("ups.description", "Outlet Controller, Single Phase");
-			break;
-		case BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P:
-			dstate_setinfo("ups.description", "Dual AC Input Static Switch Module, 3 Phase");
-			break;
-		default: /* Unknown */
-			upsdebugx(3, "Unknown topology block value: %d\n", value);
-			break;
+
+	const char* nutvalue;
+	if ((nutvalue = nut_find_infoval(topology_info, value)) != NULL) {
+		dstate_setinfo("ups.description", "%s", nutvalue);
 	}
 }
 
