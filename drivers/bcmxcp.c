@@ -153,6 +153,7 @@ static void init_limit(void);
 static void init_topology(void);
 static void init_ups_meter_map(const unsigned char *map, unsigned char len);
 static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
+static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
 static int init_outlet(unsigned char len);
 static int instcmd(const char *cmdname, const char *extra);
@@ -805,7 +806,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 
 void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 {
-	unsigned int iIndex = 0, iOffset = 0;
+	unsigned int iIndex = 0;
 	int alarm = 0;
 
 	/* In case of debug - make explanation of values */
@@ -815,166 +816,57 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 	for (iIndex = 0; iIndex < len && iIndex < BCMXCP_ALARM_MAP_MAX / 8; iIndex++)
 	{
 		/* Bit 0 */
-		iOffset = iIndex * 8;
-		if (map[iIndex] & 0x01)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x01, iIndex * 8, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 1 */
-		iOffset = iIndex*8 + 1;
-		if (map[iIndex] & 0x02)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x02, iIndex * 8 + 1, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 2 */
-		iOffset = iIndex*8 + 2;
-		if (map[iIndex] & 0x04)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x04, iIndex * 8 + 2, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 3 */
-		iOffset = iIndex*8 + 3;
-		if (map[iIndex] & 0x08)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x08, iIndex * 8 + 3, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 4 */
-		iOffset = iIndex*8 + 4;
-		if (map[iIndex] & 0x10)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x10, iIndex * 8 + 4, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 5 */
-		iOffset = iIndex*8 + 5;
-		if (map[iIndex] & 0x20)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x20, iIndex * 8 + 5, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 6 */
-		iOffset = iIndex*8 + 6;
-		if (map[iIndex] & 0x40)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x40, iIndex * 8 + 6, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
-
 		/* Bit 7 */
-		iOffset = iIndex*8 + 7;
-		if (map[iIndex] & 0x80)
-		{
-			/* Set alarm active */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = alarm;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tYes", alarm, bcmxcp_alarm_map[iOffset].alarm_desc);
+		if(set_alarm_support_in_alarm_map(map, iIndex, 0x80, iIndex * 8 + 7, alarm) == TRUE)
 			alarm++;
-		}
-		else
-		{
-			/* Set alarm inactive */
-			bcmxcp_alarm_map[iOffset].alarm_block_index = -1;
-
-			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", -1, bcmxcp_alarm_map[iOffset].alarm_desc);
-		}
 	}
 	upsdebugx(2, "\n");
+}
+
+bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex) {
+		// Check what the alarm block tells about the support for the alarm
+		if (map[mapIndex] & bitmask)
+		{
+			/* Set alarm active */
+			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = alarmBlockIndex;
+		}
+		else
+		{
+			/* Set alarm inactive */
+			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = -1;
+		}
+
+		// Return if the alarm was supported or not
+		if(bcmxcp_alarm_map[alarmMapIndex].alarm_block_index >= 0) {
+			/* Debug info */
+			upsdebugx(2, "%04d\t%s\tYes", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+			return TRUE;
+		}
+		else {
+			/* Debug info */
+			upsdebugx(2, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+			return FALSE;
+		}
 }
 
 int init_outlet(unsigned char len)
