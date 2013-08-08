@@ -728,7 +728,6 @@ void init_ups_meter_map(const unsigned char *map, unsigned char len)
 			iOffset += 4;
 		}
 	}
-
 	upsdebugx(2, "\n");
 }
 
@@ -969,14 +968,12 @@ void init_limit(void)
 
 	/* Nominal input voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_VOLTAGE));
-
 	if (value != 0) {
 		dstate_setinfo("input.voltage.nominal", "%d", value);
 	}
 
 	/* Nominal input frequency */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ));
-
 	if (value != 0) {
 		int	fnom = value;
 		dstate_setinfo("input.frequency.nominal", "%d", value);
@@ -993,14 +990,12 @@ void init_limit(void)
 
 	/* Bypass Voltage Low Deviation Limit / Transfer to Boost Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_LOW_DEV_LIMIT));
-
 	if (value != 0) {
 		dstate_setinfo("input.transfer.boost.high", "%d", value);
 	}
 
 	/* Bypass Voltage High Deviation Limit / Transfer to Buck Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_VOLTAGE_HIGE_DEV_LIMIT));
-
 	if (value != 0) {
 		dstate_setinfo("input.transfer.trim.low", "%d", value);
 	}
@@ -1014,35 +1009,30 @@ void init_limit(void)
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
-
 	if (value >= 0 && value <= 2) {
 		dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 	}
 
 	/* Minimum Supported Input Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MIN_INPUT_VOLTAGE));
-
 	if (value != 0) {
 		dstate_setinfo("input.transfer.low", "%d", value);
 	}
 
 	/* Maximum Supported Input Voltage */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_MAX_INPUT_VOLTAGE));
-
 	if (value != 0) {
 		dstate_setinfo("input.transfer.high", "%d", value);
 	}
 
 	/* Ambient Temperature Lower Alarm Limit  */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_LOW];
-
 	if (value != 0) {
 		dstate_setinfo("ambient.temperature.low", "%d", value);
 	}
 
-	/* AAmbient Temperature Upper Alarm Limit  */
+	/* Ambient Temperature Upper Alarm Limit  */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_AMBIENT_TEMP_HIGE];
-
 	if (value != 0) {
 		dstate_setinfo("ambient.temperature.high", "%d", value);
 	}
@@ -1202,7 +1192,7 @@ void upsdrv_initinfo(void)
 	/* Skip	UPS' phase angle, as NUT do not care */
 	iIndex += 1;
 
-	/* set manufacturer name */
+	/* Set manufacturer name */
 	dstate_setinfo("ups.mfr", "Eaton");
 
 	/* Get length of UPS description */
