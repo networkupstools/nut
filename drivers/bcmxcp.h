@@ -21,47 +21,47 @@
 #define PW_ANSWER_MAX_SIZE	256
 
 /* No	Autorisation required	*/ 
-#define PW_ID_BLOCK_REQ 	(unsigned char)0x31 /* Model name, ... length 1 */
-#define PW_EVENT_HISTORY_LOG_REQ	(unsigned char)0x32 /* List alarms that have occured. length 1 */
-#define PW_STATUS_REQ 		(unsigned char)0x33 /* On Line, On Bypass, ...  length 1-2 */
-#define PW_METER_BLOCK_REQ	(unsigned char)0x34 /* Current UPS status (Load, utility,...) length 1 */
-#define PW_CUR_ALARM_REQ	(unsigned char)0x35 /* Current alarm and event request.	length 1 */
-#define PW_CONFIG_BLOCK_REQ	(unsigned char)0x36 /* Model serial#, ... length 1 */
-#define PW_UTILITY_STATISTICS_BLOCK_REQ (unsigned char)0x38 /* List utility power quality. length 1 */
+#define PW_ID_BLOCK_REQ 				(unsigned char)0x31 /* Model name, ... length 1 */
+#define PW_EVENT_HISTORY_LOG_REQ		(unsigned char)0x32 /* List alarms that have occured. length 1 */
+#define PW_STATUS_REQ 					(unsigned char)0x33 /* On Line, On Bypass, ...  length 1-2 */
+#define PW_METER_BLOCK_REQ				(unsigned char)0x34 /* Current UPS status (Load, utility,...) length 1 */
+#define PW_CUR_ALARM_REQ				(unsigned char)0x35 /* Current alarm and event request.	length 1 */
+#define PW_CONFIG_BLOCK_REQ				(unsigned char)0x36 /* Model serial#, ... length 1 */
+#define PW_UTILITY_STATISTICS_BLOCK_REQ	(unsigned char)0x38 /* List utility power quality. length 1 */
 #define PW_WAVEFORM_BLOCK_REQ           (unsigned char)0x3A /* Sampled waveform data. length 7 */
-#define PW_BATTERY_REQ		(unsigned char)0x3B /* Charging, floating, ... length 1 */
-#define PW_LIMIT_BLOCK_REQ	(unsigned char)0x3C /* Configuration (Bypass thresholds,...).	length 1 */
-#define PW_TEST_RESULT_REQ	(unsigned char)0x3F /* Get the results for a system test. length 1 */
-#define PW_COMMAND_LIST_REQ	(unsigned char)0x40 /* Available commands. length 1 */
-#define PW_OUT_MON_BLOCK_REQ	(unsigned char)0x41 /* Outlet monitor request length 1 */
-#define PW_COM_CAP_REQ		(unsigned char)0x42 /* Request communication capabilities. length 2	*/
-#define PW_UPS_TOP_DATA_REQ	(unsigned char)0x43 /* Request ups topology data requset. length 1	*/
-#define PW_COM_PORT_LIST_BLOCK_REQ (unsigned char)0x44 /* Request communication port list. length 1 */
-#define PW_REQUEST_SCRATCHPAD_DATA_REQ (unsigned char)0x45 /* Request data from scratchpad. length 2*/
+#define PW_BATTERY_REQ					(unsigned char)0x3B /* Charging, floating, ... length 1 */
+#define PW_LIMIT_BLOCK_REQ				(unsigned char)0x3C /* Configuration (Bypass thresholds,...).	length 1 */
+#define PW_TEST_RESULT_REQ				(unsigned char)0x3F /* Get the results for a system test. length 1 */
+#define PW_COMMAND_LIST_REQ				(unsigned char)0x40 /* Available commands. length 1 */
+#define PW_OUT_MON_BLOCK_REQ			(unsigned char)0x41 /* Outlet monitor request length 1 */
+#define PW_COM_CAP_REQ					(unsigned char)0x42 /* Request communication capabilities. length 2	*/
+#define PW_UPS_TOP_DATA_REQ				(unsigned char)0x43 /* Request ups topology data requset. length 1	*/
+#define PW_COM_PORT_LIST_BLOCK_REQ 		(unsigned char)0x44 /* Request communication port list. length 1 */
+#define PW_REQUEST_SCRATCHPAD_DATA_REQ	(unsigned char)0x45 /* Request data from scratchpad. length 2*/
 
 /* Need autorisation before these commands */
-#define PW_GO_TO_BYPASS (unsigned char)0x88 /* Transfer load from inverter to bypass. length 1 or 3 */
-#define PW_UPS_ON		(unsigned char)0x89 /* UPS on command. length 1-2 */
-#define PW_LOAD_OFF_RESTART	(unsigned char)0x8A /* Delayed LoadPowerOff & Restart command. length 2-4 */
-#define PW_UPS_OFF		(unsigned char)0x8B /* UPS off command. length 1-2 */
-#define PW_DECREMENT_OUTPUT_VOLTAGE (unsigned char)0x8C /* Decrease output voltage. length 1 */
-#define PW_INCREMENT_OUTPUT_VOLTAGE (unsigned char)0x8D /* Increase output voltage. length 1 */
-#define PW_UPS_ON_TIME		(unsigned char)0x91 /* Scheduled UPS on in n minutes. length 3-4 */
-#define PW_UPS_ON_AT_TIME (unsigned char)0x92 /* Schedule UPS on at specified date and time. length 7-8 */
-#define PW_UPS_OFF_TIME		(unsigned char)0x93 /* Scheduled UPS off in n minutes. length 3-4 */
-#define PW_UPS_OFF_AT_TIME (unsigned char)0x94 /* Schedule UPS off at specified date and time. length 7-8 */
-#define PW_SET_CONF_COMMAND	(unsigned char)0x95 /* Set configuration command. length 4 */
-#define PW_SET_OUTLET_COMMAND	(unsigned char)0x97 /* Set outlet parameter command length 5. not in 5115 */
-#define PW_SET_COM_COMMAND	(unsigned char)0x98 /* Set communication parameter command. length 5 */
-#define PW_SET_SCRATHPAD_SECTOR (unsigned char)0x99 /* Write data to scratchpad. length 3 or 18 */
-#define PW_SET_POWER_STRATEGY (unsigned char)0x9A /* Set the power strategy. length 2 */
-#define PW_SET_REQ_ONLY_MODE	(unsigned char)0xA0 /* Set request only mode command. length 1 */
-#define PW_SET_UNREQUESTED_MODE (unsigned char)0xA1 /* Set unrequested mode command. length 1 */
-#define PW_INIT_BAT_TEST	(unsigned char)0xB1 /* Initiate battery test command. length 3 */
-#define PW_INIT_SYS_TEST	(unsigned char)0xB2 /* Initiate general system test command. length 2 */
+#define PW_GO_TO_BYPASS					(unsigned char)0x88 /* Transfer load from inverter to bypass. length 1 or 3 */
+#define PW_UPS_ON						(unsigned char)0x89 /* UPS on command. length 1-2 */
+#define PW_LOAD_OFF_RESTART				(unsigned char)0x8A /* Delayed LoadPowerOff & Restart command. length 2-4 */
+#define PW_UPS_OFF						(unsigned char)0x8B /* UPS off command. length 1-2 */
+#define PW_DECREMENT_OUTPUT_VOLTAGE 	(unsigned char)0x8C /* Decrease output voltage. length 1 */
+#define PW_INCREMENT_OUTPUT_VOLTAGE 	(unsigned char)0x8D /* Increase output voltage. length 1 */
+#define PW_UPS_ON_TIME					(unsigned char)0x91 /* Scheduled UPS on in n minutes. length 3-4 */
+#define PW_UPS_ON_AT_TIME 				(unsigned char)0x92 /* Schedule UPS on at specified date and time. length 7-8 */
+#define PW_UPS_OFF_TIME					(unsigned char)0x93 /* Scheduled UPS off in n minutes. length 3-4 */
+#define PW_UPS_OFF_AT_TIME				(unsigned char)0x94 /* Schedule UPS off at specified date and time. length 7-8 */
+#define PW_SET_CONF_COMMAND				(unsigned char)0x95 /* Set configuration command. length 4 */
+#define PW_SET_OUTLET_COMMAND			(unsigned char)0x97 /* Set outlet parameter command length 5. not in 5115 */
+#define PW_SET_COM_COMMAND				(unsigned char)0x98 /* Set communication parameter command. length 5 */
+#define PW_SET_SCRATHPAD_SECTOR			(unsigned char)0x99 /* Write data to scratchpad. length 3 or 18 */
+#define PW_SET_POWER_STRATEGY			(unsigned char)0x9A /* Set the power strategy. length 2 */
+#define PW_SET_REQ_ONLY_MODE			(unsigned char)0xA0 /* Set request only mode command. length 1 */
+#define PW_SET_UNREQUESTED_MODE			(unsigned char)0xA1 /* Set unrequested mode command. length 1 */
+#define PW_INIT_BAT_TEST				(unsigned char)0xB1 /* Initiate battery test command. length 3 */
+#define PW_INIT_SYS_TEST				(unsigned char)0xB2 /* Initiate general system test command. length 2 */
 #define PW_UPDATE_POWER_SOURCE_STATUS_COMMAND (unsigned char)0xB3 /*  length 4-19 */
-#define PW_SELECT_SUBMODULE (unsigned char)0xCE /* Select a sub module. length 2-7 */
-#define PW_AUTHORIZATION_CODE (unsigned char)0xCF /* Authorization code. length 4 or 7 */
+#define PW_SELECT_SUBMODULE				(unsigned char)0xCE /* Select a sub module. length 2-7 */
+#define PW_AUTHORIZATION_CODE			(unsigned char)0xCF /* Authorization code. length 4 or 7 */
 
 /* Define the XCP system test */
 #define PW_SYS_TEST_GENERAL                     (unsigned char)0x01 /* Initiate General system Test */
