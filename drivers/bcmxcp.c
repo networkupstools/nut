@@ -1032,7 +1032,7 @@ int init_outlet(unsigned char len)
 void init_config(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int voltage = 0, frequency = 0, res, len;
+	int voltage = 0, frequency = 0, res;
 	char sValue[17];
 	char sPartNumber[17];
 
@@ -1045,33 +1045,23 @@ void init_config(void)
 
 	/* Nominal output voltage of ups */
 	voltage = get_word((answer + BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_VOLTAGE));
-
 	if (voltage != 0)
 		dstate_setinfo("output.voltage.nominal", "%d", voltage);
-
-	/* UPS serial number */
-	sValue[16] = 0;
-
-	snprintf(sValue, 16, "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
-	len = 0;
-
-	for (len = 0; len < 16; len++) {
-		if (sValue[len] == 0x20) {
-			sValue[len] = 0;
-			break;
-		}
-	}
-
-	dstate_setinfo("ups.serial", "%s", sValue);
 
 	/* Nominal Output Frequency */
 	frequency = get_word((answer+BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
 	if (frequency != 0)
 		dstate_setinfo("output.frequency.nominal", "%d", frequency);
+
+	/* UPS serial number */
+	snprintf(sValue, sizeof(sValue), "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
+	if(sValue[0] != '\0')
+		dstate_setinfo("ups.serial", "%s", sValue);
 		
-	/*UPS Part Number*/
-	snprintf(sPartNumber, sizeof(sPartNumber) , "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
-	dstate_setinfo("device.part", "%s", sPartNumber);
+	/* UPS Part Number*/
+	snprintf(sPartNumber, sizeof(sPartNumber), "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
+	if(sPartNumber[0] != '\0')
+		dstate_setinfo("device.part", "%s", sPartNumber);
 }
 
 void init_limit(void)
@@ -1981,3 +1971,4 @@ static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value)
 	upsdebugx(3, "nut_find_infoval: no matching INFO_* value for this XCP value (%g)", value);
 	return NULL;
 }
+
