@@ -710,7 +710,7 @@ void init_ups_meter_map(const unsigned char *map, unsigned char len)
 	unsigned int iIndex, iOffset = 0;
 
 	/* In case of debug - make explanation of values */
-	upsdebugx(2, "Index\tOffset\tFormat\tNUT\n");
+	upsdebugx(2, "Index\tOffset\tFormat\tNUT");
 
 	/* Loop thru map */
 	for (iIndex = 0; iIndex < len && iIndex < BCMXCP_METER_MAP_MAX; iIndex++)
@@ -810,7 +810,7 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 	int alarm = 0;
 
 	/* In case of debug - make explanation of values */
-	upsdebugx(2, "Index\tAlarm\tSupported\n");
+	upsdebugx(2, "Index\tAlarm\tSupported");
 
 	/* Loop thru map */
 	for (iIndex = 0; iIndex < len && iIndex < BCMXCP_ALARM_MAP_MAX / 8; iIndex++)
@@ -864,7 +864,7 @@ bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapInd
 		}
 		else {
 			/* Debug info */
-			upsdebugx(2, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
+			upsdebugx(3, "%04d\t%s\tNo", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
 			return FALSE;
 		}
 }
