@@ -45,8 +45,7 @@ TODO List:
 		Config Block Length: (High priority)
 		Give information if config block is
 		present, and how long it is, if it exist.
-		If config block exist, read the config block and setup
-		the possible config commands, and parse the
+		If config block exist, read the config block and parse the
 		'Length of the Extended Limits Configuration Block' for
 		extended configuration commands
 
@@ -63,10 +62,6 @@ TODO List:
 
 		Maximum Supported Command Length: ( Med. to High priority)
 		Give info about the ups receive buffer size.
-
-		Size of Command List Block: ( Med. to High priority)
-		Tell me if the command block exist. Can use this to ask
-		for command list and set up the commands accepted by the ups.
 
 		Size of Alarm Block: ( Med. to High priority)
 		Make a smarter handling of the Active alarm's if we know the length
@@ -145,9 +140,10 @@ upsdrv_info_t upsdrv_info = {
 static int get_word(const unsigned char*);
 static long int get_long(const unsigned char*);
 static float get_float(const unsigned char *data);
+static void init_command_map(void);
 static void init_meter_map(void);
 static void init_alarm_map(void);
-static bool_t init_command_map(int size);
+static bool_t init_command(int size);
 static void init_config(void);
 static void init_limit(void);
 static void init_topology(void);
@@ -187,7 +183,7 @@ info_lkp_t batt_test_info[] = {
 	{ 0, NULL, NULL }
 };
 
-/* Battery test results */
+/* Topology map results */
 info_lkp_t topology_info[] = {
 	{ BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P, "Off-line switcher, Single Phase", NULL },
 	{ BCMXCP_TOPOLOGY_LINEINT_UPS_1P, "Line-Interactive UPS, Single Phase", NULL },
@@ -212,7 +208,18 @@ info_lkp_t topology_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* Command map results */
+info_lkp_t command_map_info[] = {
+	{ PW_INIT_BAT_TEST, "test.battery.start", NULL },
+	{ PW_INIT_SYS_TEST, "test.system.start", NULL },
+	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL },
+	{ PW_UPS_OFF, "shutdown.stayoff", NULL },
+	{ 0, NULL, NULL }
+};
+
 /* allocate storage for shared variables (extern in bcmxcp.h) */
+BCMXCP_COMMAND_MAP_ENTRY_t
+	bcmxcp_command_map[BCMXCP_COMMAND_MAP_MAX];
 BCMXCP_METER_MAP_ENTRY_t
 	bcmxcp_meter_map[BCMXCP_METER_MAP_MAX];
 BCMXCP_ALARM_MAP_ENTRY_t
@@ -338,6 +345,58 @@ unsigned char calc_checksum(const unsigned char *buf)
 		c -= buf[i];
 
 	return c;
+}
+
+void init_command_map()
+{
+	/* Clean entire map */
+	memset(&bcmxcp_command_map, 0, sizeof(BCMXCP_COMMAND_MAP_ENTRY_t) * BCMXCP_COMMAND_MAP_MAX);
+
+	/* Set all command descriptions	*/
+	bcmxcp_command_map[PW_ID_BLOCK_REQ].command_desc = "PW_ID_BLOCK_REQ";
+	bcmxcp_command_map[PW_EVENT_HISTORY_LOG_REQ].command_desc = "PW_EVENT_HISTORY_LOG_REQ";
+	bcmxcp_command_map[PW_STATUS_REQ].command_desc = "PW_STATUS_REQ";
+	bcmxcp_command_map[PW_METER_BLOCK_REQ].command_desc = "PW_METER_BLOCK_REQ";
+	bcmxcp_command_map[PW_CUR_ALARM_REQ].command_desc = "PW_CUR_ALARM_REQ";
+	bcmxcp_command_map[PW_CONFIG_BLOCK_REQ].command_desc = "PW_CONFIG_BLOCK_REQ";
+	bcmxcp_command_map[PW_UTILITY_STATISTICS_BLOCK_REQ].command_desc = "PW_UTILITY_STATISTICS_BLOCK_REQ";
+	bcmxcp_command_map[PW_WAVEFORM_BLOCK_REQ].command_desc = "PW_WAVEFORM_BLOCK_REQ";
+	bcmxcp_command_map[PW_BATTERY_REQ].command_desc = "PW_BATTERY_REQ";
+	bcmxcp_command_map[PW_LIMIT_BLOCK_REQ].command_desc = "PW_LIMIT_BLOCK_REQ";
+	bcmxcp_command_map[PW_TEST_RESULT_REQ].command_desc = "PW_TEST_RESULT_REQ";
+	bcmxcp_command_map[PW_COMMAND_LIST_REQ].command_desc = "PW_COMMAND_LIST_REQ";
+	bcmxcp_command_map[PW_OUT_MON_BLOCK_REQ].command_desc = "PW_OUT_MON_BLOCK_REQ";
+	bcmxcp_command_map[PW_COM_CAP_REQ].command_desc = "PW_COM_CAP_REQ";
+	bcmxcp_command_map[PW_UPS_TOP_DATA_REQ].command_desc = "PW_UPS_TOP_DATA_REQ";
+	bcmxcp_command_map[PW_COM_PORT_LIST_BLOCK_REQ].command_desc = "PW_COM_PORT_LIST_BLOCK_REQ";
+	bcmxcp_command_map[PW_REQUEST_SCRATCHPAD_DATA_REQ].command_desc = "PW_REQUEST_SCRATCHPAD_DATA_REQ";
+	bcmxcp_command_map[PW_GO_TO_BYPASS].command_desc = "PW_GO_TO_BYPASS";
+	bcmxcp_command_map[PW_UPS_ON].command_desc = "PW_UPS_ON";
+	bcmxcp_command_map[PW_LOAD_OFF_RESTART].command_desc = "PW_LOAD_OFF_RESTART";
+	bcmxcp_command_map[PW_UPS_OFF].command_desc = "PW_UPS_OFF";
+	bcmxcp_command_map[PW_DECREMENT_OUTPUT_VOLTAGE].command_desc = "PW_DECREMENT_OUTPUT_VOLTAGE";
+	bcmxcp_command_map[PW_INCREMENT_OUTPUT_VOLTAGE].command_desc = "PW_INCREMENT_OUTPUT_VOLTAGE";
+	bcmxcp_command_map[PW_UPS_ON_TIME].command_desc = "PW_UPS_ON_TIME";
+	bcmxcp_command_map[PW_UPS_ON_AT_TIME].command_desc = "PW_UPS_ON_AT_TIME";
+	bcmxcp_command_map[PW_UPS_OFF_TIME].command_desc = "PW_UPS_OFF_TIME";
+	bcmxcp_command_map[PW_UPS_OFF_AT_TIME].command_desc = "PW_UPS_OFF_AT_TIME";
+	bcmxcp_command_map[PW_SET_CONF_COMMAND].command_desc = "PW_SET_CONF_COMMAND";
+	bcmxcp_command_map[PW_SET_OUTLET_COMMAND].command_desc = "PW_SET_OUTLET_COMMAND";
+	bcmxcp_command_map[PW_SET_COM_COMMAND].command_desc = "PW_SET_COM_COMMAND";
+	bcmxcp_command_map[PW_SET_SCRATHPAD_SECTOR].command_desc = "PW_SET_SCRATHPAD_SECTOR";
+	bcmxcp_command_map[PW_SET_POWER_STRATEGY].command_desc = "PW_SET_POWER_STRATEGY";
+	bcmxcp_command_map[PW_SET_REQ_ONLY_MODE].command_desc = "PW_SET_REQ_ONLY_MODE";
+	bcmxcp_command_map[PW_SET_UNREQUESTED_MODE].command_desc = "PW_SET_UNREQUESTED_MODE";
+	bcmxcp_command_map[PW_INIT_BAT_TEST].command_desc = "PW_INIT_BAT_TEST";
+	bcmxcp_command_map[PW_INIT_SYS_TEST].command_desc = "PW_INIT_SYS_TEST";
+	bcmxcp_command_map[PW_UPDATE_POWER_SOURCE_STATUS_COMMAND].command_desc = "PW_UPDATE_POWER_SOURCE_STATUS_COMMAND";
+	bcmxcp_command_map[PW_SELECT_SUBMODULE].command_desc = "PW_SELECT_SUBMODULE";
+	bcmxcp_command_map[PW_AUTHORIZATION_CODE].command_desc = "PW_AUTHORIZATION_CODE";
+
+	int i = 0;
+	for(i = 0; i < BCMXCP_COMMAND_MAP_MAX; i++) {
+		bcmxcp_command_map[i].command_byte = 0;
+	}
 }
 
 void init_meter_map()
@@ -661,16 +720,15 @@ void init_alarm_map()
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TEST_INPROGRESS].alarm_desc = "BATTERY_TEST_INPROGRESS";
 	bcmxcp_alarm_map[BCMXCP_ALARM_SYSTEM_TEST_INPROGRESS].alarm_desc = "SYSTEM_TEST_INPROGRESS";
 	bcmxcp_alarm_map[BCMXCP_ALARM_BATTERY_TEST_ABORTED].alarm_desc = "BATTERY_TEST_ABORTED";
-
 }
 
 /* Get information on UPS commands */
-bool_t init_command_map(int size)
+bool_t init_command(int size)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	int res, iIndex = 0, ncounter, NumComms = 0;
 
-	upsdebugx(1, "entering init_command_map(%i)", size);
+	upsdebugx(1, "entering init_command(%i)", size);
 
 	res = command_read_sequence(PW_COMMAND_LIST_REQ, answer);
 	if (res <= 0)
@@ -688,38 +746,42 @@ bool_t init_command_map(int size)
 		iIndex++;
 		res = answer[iIndex]; /* Entry length - bytes reported for each command */
 		iIndex++;
-		upsdebugx(3, "bytes %d", res);
+		upsdebugx(5, "bytes per command %d", res);
+
+		/* In case of debug - make explanation of values */
+		upsdebugx(2, "Index\tCmd byte\tDescription");
 
 		/* Get command bytes if size of command block matches with size from standard ID block */
 		if (NumComms + 2 == size)
 		{
 			for (ncounter = 0; ncounter < NumComms; ncounter++)
 			{
-				upsdebugx(3, "%d - %02x ", ncounter, answer[iIndex]);						
+				unsigned char commandByte = answer[iIndex];
+				if(commandByte >= 0 && commandByte < BCMXCP_COMMAND_MAP_MAX) {
+					upsdebugx(2, "%03d\t%02x\t%s", ncounter, commandByte, bcmxcp_command_map[commandByte].command_desc);
+					bcmxcp_command_map[commandByte].command_byte = commandByte;
+				}
+				else {
+					upsdebugx(2, "%03d\t%02x\t%s", ncounter, commandByte, "Unknown command, the commandByte is not mapped");
+				}
 
-				if (answer[iIndex] == PW_INIT_BAT_TEST)
-				{
-					dstate_addcmd("test.battery.start");
-				}
-				else if (answer[iIndex] == PW_INIT_SYS_TEST)
-				{
-					dstate_addcmd("test.system.start");
-					/* TODO: we should issue a system test call PW_SYS_TEST_REPORT_CAPABILITIES
-					   to the UPS to get back which types of system tests it supports. Here we
-					   just add the panel test without knowing if the UPS will support it
-					 */
-					dstate_addcmd("test.panel.start");			
-				}
-				else if (answer[iIndex] == PW_LOAD_OFF_RESTART)
-				{
-					dstate_addcmd("shutdown.return");
-				}
-				else if (answer[iIndex] == PW_UPS_OFF)
-				{
-					dstate_addcmd("shutdown.stayoff");
-				}
 				iIndex++;
 			}
+
+			/* Map supported commands to instcmd */
+			int i = 0;
+			for(i = 0; i < BCMXCP_COMMAND_MAP_MAX; i++) {
+				if(bcmxcp_command_map[i].command_desc != NULL) {
+					if(bcmxcp_command_map[i].command_byte > 0) {
+						const char* nutvalue;
+						if ((nutvalue = nut_find_infoval(command_map_info, bcmxcp_command_map[i].command_byte)) != NULL) {
+							dstate_addcmd(nutvalue);
+							upsdebugx(2, "Added support for instcmd %s", nutvalue);
+						}
+					}
+				}
+			}
+
 			return TRUE;
 		}
 		else {
@@ -1090,6 +1152,9 @@ void upsdrv_initinfo(void)
 	int conf_block_len = 0, alarm_block_len = 0, cmd_list_len = 0, topology_block_len = 0;
 	bool_t got_cmd_list = FALSE;
 
+	/* Init BCM/XCP command descriptions */
+	init_command_map();
+
 	/* Init BCM/XCP alarm descriptions */
 	init_alarm_map();
 
@@ -1252,7 +1317,7 @@ void upsdrv_initinfo(void)
 
 	/* Get information on UPS commands */
 	if (cmd_list_len)
-		got_cmd_list = init_command_map(cmd_list_len);
+		got_cmd_list = init_command(cmd_list_len);
 	/* Add default commands if we were not able to query UPS for support */
 	if(got_cmd_list == FALSE) {
 		dstate_addcmd("shutdown.return");
