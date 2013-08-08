@@ -389,7 +389,6 @@ void init_command_map()
 	bcmxcp_command_map[PW_SET_UNREQUESTED_MODE].command_desc = "PW_SET_UNREQUESTED_MODE";
 	bcmxcp_command_map[PW_INIT_BAT_TEST].command_desc = "PW_INIT_BAT_TEST";
 	bcmxcp_command_map[PW_INIT_SYS_TEST].command_desc = "PW_INIT_SYS_TEST";
-	bcmxcp_command_map[PW_UPDATE_POWER_SOURCE_STATUS_COMMAND].command_desc = "PW_UPDATE_POWER_SOURCE_STATUS_COMMAND";
 	bcmxcp_command_map[PW_SELECT_SUBMODULE].command_desc = "PW_SELECT_SUBMODULE";
 	bcmxcp_command_map[PW_AUTHORIZATION_CODE].command_desc = "PW_AUTHORIZATION_CODE";
 

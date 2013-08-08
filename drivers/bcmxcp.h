@@ -59,7 +59,6 @@
 #define PW_SET_UNREQUESTED_MODE			(unsigned char)0xA1 /* Set unrequested mode command. length 1 */
 #define PW_INIT_BAT_TEST				(unsigned char)0xB1 /* Initiate battery test command. length 3 */
 #define PW_INIT_SYS_TEST				(unsigned char)0xB2 /* Initiate general system test command. length 2 */
-#define PW_UPDATE_POWER_SOURCE_STATUS_COMMAND (unsigned char)0xB3 /*  length 4-19 */
 #define PW_SELECT_SUBMODULE				(unsigned char)0xCE /* Select a sub module. length 2-7 */
 #define PW_AUTHORIZATION_CODE			(unsigned char)0xCF /* Authorization code. length 4 or 7 */
 
