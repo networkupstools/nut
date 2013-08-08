@@ -157,7 +157,7 @@ static int setvar(const char *varname, const char *val);
 static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
 static float calculate_ups_load(const unsigned char *data);
 
-static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value);
+static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
 
 const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 const char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
@@ -773,7 +773,7 @@ bool_t init_command(int size)
 				if(bcmxcp_command_map[i].command_desc != NULL) {
 					if(bcmxcp_command_map[i].command_byte > 0) {
 						const char* nutvalue;
-						if ((nutvalue = nut_find_infoval(command_map_info, bcmxcp_command_map[i].command_byte)) != NULL) {
+						if ((nutvalue = nut_find_infoval(command_map_info, bcmxcp_command_map[i].command_byte, FALSE)) != NULL) {
 							dstate_addcmd(nutvalue);
 							upsdebugx(2, "Added support for instcmd %s", nutvalue);
 						}
@@ -1135,7 +1135,7 @@ void init_topology(void)
 	value = get_word(answer);
 
 	const char* nutvalue;
-	if ((nutvalue = nut_find_infoval(topology_info, value)) != NULL) {
+	if ((nutvalue = nut_find_infoval(topology_info, value, TRUE)) != NULL) {
 		dstate_setinfo("ups.description", "%s", nutvalue);
 	}
 }
@@ -1511,7 +1511,7 @@ void upsdrv_updateinfo(void)
 		upsdebug_hex(2, "Battery Status", answer, res);
 		batt_status = answer[0];
 
-		if ((nutvalue = nut_find_infoval(batt_test_info, batt_status)) != NULL) {
+		if ((nutvalue = nut_find_infoval(batt_test_info, batt_status, TRUE)) != NULL) {
 			dstate_setinfo("ups.test.result", "%s", nutvalue);
 			upsdebugx(2, "Battery Status = %s (%i)", nutvalue, batt_status);
 		}
@@ -1858,7 +1858,7 @@ int setvar (const char *varname, const char *val)
  *******************************/
 
 /* find the NUT value matching that XCP Item value */
-static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value)
+static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting)
 {
 	info_lkp_t	*info_lkp;
 
@@ -1874,8 +1874,9 @@ static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value)
 			return info_lkp->nut_value;
 		}
 	}
-
-	upsdebugx(3, "nut_find_infoval: no matching INFO_* value for this XCP value (%g)", value);
+	if(debug_output_nonexisting == TRUE) {
+		upsdebugx(3, "nut_find_infoval: no matching INFO_* value for this XCP value (%g)", value);
+	}
 	return NULL;
 }
 
