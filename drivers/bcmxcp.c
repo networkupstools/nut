@@ -349,6 +349,8 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 void init_command_map()
 {
+	int i = 0;
+
 	/* Clean entire map */
 	memset(&bcmxcp_command_map, 0, sizeof(BCMXCP_COMMAND_MAP_ENTRY_t) * BCMXCP_COMMAND_MAP_MAX);
 
@@ -392,7 +394,6 @@ void init_command_map()
 	bcmxcp_command_map[PW_SELECT_SUBMODULE].command_desc = "PW_SELECT_SUBMODULE";
 	bcmxcp_command_map[PW_AUTHORIZATION_CODE].command_desc = "PW_AUTHORIZATION_CODE";
 
-	int i = 0;
 	for(i = 0; i < BCMXCP_COMMAND_MAP_MAX; i++) {
 		bcmxcp_command_map[i].command_byte = 0;
 	}
@@ -725,7 +726,9 @@ void init_alarm_map()
 bool_t init_command(int size)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int res, iIndex = 0, ncounter, NumComms = 0;
+	unsigned char commandByte;
+	const char* nutvalue;
+	int res, iIndex = 0, ncounter, NumComms = 0, i;
 
 	upsdebugx(1, "entering init_command(%i)", size);
 
@@ -755,7 +758,7 @@ bool_t init_command(int size)
 		{
 			for (ncounter = 0; ncounter < NumComms; ncounter++)
 			{
-				unsigned char commandByte = answer[iIndex];
+				commandByte = answer[iIndex];
 				if(commandByte >= 0 && commandByte < BCMXCP_COMMAND_MAP_MAX) {
 					upsdebugx(2, "%03d\t%02x\t%s", ncounter, commandByte, bcmxcp_command_map[commandByte].command_desc);
 					bcmxcp_command_map[commandByte].command_byte = commandByte;
@@ -768,11 +771,9 @@ bool_t init_command(int size)
 			}
 
 			/* Map supported commands to instcmd */
-			int i = 0;
 			for(i = 0; i < BCMXCP_COMMAND_MAP_MAX; i++) {
 				if(bcmxcp_command_map[i].command_desc != NULL) {
 					if(bcmxcp_command_map[i].command_byte > 0) {
-						const char* nutvalue;
 						if ((nutvalue = nut_find_infoval(command_map_info, bcmxcp_command_map[i].command_byte, FALSE)) != NULL) {
 							dstate_addcmd(nutvalue);
 							upsdebugx(2, "Added support for instcmd %s", nutvalue);
@@ -821,6 +822,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 	long lValue = 0;
 	char sFormat[32];
 	float fValue;
+	unsigned char dd, mm, yy, cc, hh, ss;
 
 	/* Paranoid input sanity checks */
 	if (value == NULL)
@@ -853,10 +855,9 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 	}
 	else if (format == 0xe0) {
 		/* Date */
-		unsigned char
-		dd = entry[0],
-		mm = entry[1],
-		yy = entry[2],
+		dd = entry[0];
+		mm = entry[1];
+		yy = entry[2];
 		cc = entry[3];
 
 		/* Check format type */
@@ -871,10 +872,9 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 	}
 	else if (format == 0xe1) {
 		/* Time */
-		unsigned char
-		cc = entry[0],
-		ss = entry[1],
-		mm = entry[2],
+		cc = entry[0];
+		ss = entry[1];
+		mm = entry[2];
 		hh = entry[3];
 
 		snprintf(value, 127, "%2d:%2d:%2d.%2d", hh, mm, ss, cc);
@@ -928,7 +928,7 @@ void init_ups_alarm_map(const unsigned char *map, unsigned char len)
 }
 
 bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex) {
-		// Check what the alarm block tells about the support for the alarm
+		/* Check what the alarm block tells about the support for the alarm */
 		if (map[mapIndex] & bitmask)
 		{
 			/* Set alarm active */
@@ -940,7 +940,7 @@ bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapInd
 			bcmxcp_alarm_map[alarmMapIndex].alarm_block_index = -1;
 		}
 
-		// Return if the alarm was supported or not
+		/* Return if the alarm was supported or not */
 		if(bcmxcp_alarm_map[alarmMapIndex].alarm_block_index >= 0) {
 			/* Debug info */
 			upsdebugx(2, "%04d\t%s\tYes", bcmxcp_alarm_map[alarmMapIndex].alarm_block_index, bcmxcp_alarm_map[alarmMapIndex].alarm_desc);
@@ -1126,6 +1126,7 @@ void init_limit(void)
 void init_topology(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
+	const char* nutvalue;
 	int res, value;
 
 	res = command_read_sequence(PW_UPS_TOP_DATA_REQ, answer);
@@ -1134,7 +1135,6 @@ void init_topology(void)
 
 	value = get_word(answer);
 
-	const char* nutvalue;
 	if ((nutvalue = nut_find_infoval(topology_info, value, TRUE)) != NULL) {
 		dstate_setinfo("ups.description", "%s", nutvalue);
 	}
@@ -1334,11 +1334,13 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
+	unsigned char status, topology;
 	char sValue[128];
 	int iIndex, res;
 	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
 	const char *nutvalue;
+	float calculated_load;
 
 	/* Get info from UPS */
 	res = command_read_sequence(PW_METER_BLOCK_REQ, answer);
@@ -1367,7 +1369,7 @@ void upsdrv_updateinfo(void)
 
 	/* Calculate ups.load if UPS does not report it directly */
 	if(has_ups_load == FALSE) {
-		float calculated_load = calculate_ups_load(answer);
+		calculated_load = calculate_ups_load(answer);
 		if(calculated_load >= 0.0f) {
 			dstate_setinfo("ups.load", "%5.1f", calculated_load);
 		}
@@ -1431,7 +1433,6 @@ void upsdrv_updateinfo(void)
 	}
 	else
 	{
-		unsigned char status, topology;
 
 		/* Get overall status */
 		memcpy(&status, answer, sizeof(status));
@@ -1574,6 +1575,7 @@ void upsdrv_shutdown(void)
 static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char answer[128], cbuf[6];
+	char success_msg[40];
 	char varname[32];
 	const char *varvalue = NULL;
 	int res, sec;
@@ -1604,7 +1606,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		res = command_write_sequence(cbuf, 4, answer);
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-		char success_msg[40];
 		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
@@ -1622,7 +1623,6 @@ static int instcmd(const char *cmdname, const char *extra)
 		res = command_write_sequence(cbuf, 3, answer);
 
 		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-		char success_msg[40];
 		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);

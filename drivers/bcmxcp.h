@@ -503,7 +503,7 @@
 #define BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE    0x35 /* Command recognized, but its Parameter value is out of range */
 #define BCMXCP_RETURN_INVALID_PARAMETER         0x36 /* Command recognized, but its Parameter is invalid (e.g., no such parameter, bad Outlet number) */
 #define BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST 0x37 /* Accepted, with parameter adjusted to nearest good value */
-//#define BCMXCP_RETURN_READONLY                0x38 /* Parameter is Read-only - cannot be written (at this privilege level) (this is not listed in spec document */
+/*#define BCMXCP_RETURN_READONLY                0x38 */ /* Parameter is Read-only - cannot be written (at this privilege level) (this is not listed in spec document */
 
 /* UPS status */
 #define BCMXCP_STATUS_ONLINE    0x50
