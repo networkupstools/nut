@@ -110,17 +110,17 @@ TODO List:
 
 
 #include "main.h"
-#include <math.h>		/* For ldexp() */
-#include <float.h> 		/*for FLT_MAX */
+#include <math.h>       /* For ldexp() */
+#include <float.h>      /*for FLT_MAX */
 #include "nut_stdint.h" /* for uint8_t, uint16_t, uint32_t, ... */
 #include "bcmxcp_io.h"
 #include "bcmxcp.h"
 
-#define DRIVER_NAME	"BCMXCP UPS driver"
-#define DRIVER_VERSION	"0.28"
+#define DRIVER_NAME    "BCMXCP UPS driver"
+#define DRIVER_VERSION "0.28"
 
-#define MAX_NUT_NAME_LENGTH		128
-#define NUT_OUTLET_POSITION		7
+#define MAX_NUT_NAME_LENGTH 128
+#define NUT_OUTLET_POSITION   7
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -161,7 +161,7 @@ static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, co
 
 const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
 const char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
-/* Standard Authorization Block	*/
+/* Standard Authorization Block */
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 int nphases = 0;
 int outlet_block_len = 0;
@@ -229,7 +229,7 @@ BCMXCP_STATUS_t
 
 
 /* get_word function from nut driver metasys.c */
-int get_word(const unsigned char *buffer)	/* return an integer reading a word in the supplied buffer */
+int get_word(const unsigned char *buffer) /* return an integer reading a word in the supplied buffer */
 {
 	unsigned char a, b;
 	int result;
@@ -242,7 +242,7 @@ int get_word(const unsigned char *buffer)	/* return an integer reading a word in
 }
 
 /* get_long function from nut driver metasys.c for meter readings*/
-long int get_long(const unsigned char *buffer)	/* return a long integer reading 4 bytes in the supplied buffer.*/
+long int get_long(const unsigned char *buffer) /* return a long integer reading 4 bytes in the supplied buffer.*/
 {
 	unsigned char a, b, c, d;
 	long int result;
@@ -352,7 +352,7 @@ void init_command_map()
 	/* Clean entire map */
 	memset(&bcmxcp_command_map, 0, sizeof(BCMXCP_COMMAND_MAP_ENTRY_t) * BCMXCP_COMMAND_MAP_MAX);
 
-	/* Set all command descriptions	*/
+	/* Set all command descriptions */
 	bcmxcp_command_map[PW_ID_BLOCK_REQ].command_desc = "PW_ID_BLOCK_REQ";
 	bcmxcp_command_map[PW_EVENT_HISTORY_LOG_REQ].command_desc = "PW_EVENT_HISTORY_LOG_REQ";
 	bcmxcp_command_map[PW_STATUS_REQ].command_desc = "PW_STATUS_REQ";
@@ -474,7 +474,7 @@ void init_alarm_map()
 	/* Clean entire map */
 	memset(&bcmxcp_alarm_map, 0, sizeof(BCMXCP_ALARM_MAP_ENTRY_t) * BCMXCP_ALARM_MAP_MAX);
 
-	/* Set all alarm descriptions	*/
+	/* Set all alarm descriptions */
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_OVER_VOLTAGE].alarm_desc = "INVERTER_AC_OVER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_AC_UNDER_VOLTAGE].alarm_desc = "INVERTER_AC_UNDER_VOLTAGE";
 	bcmxcp_alarm_map[BCMXCP_ALARM_INVERTER_OVER_OR_UNDER_FREQ].alarm_desc = "INVERTER_OVER_OR_UNDER_FREQ";
@@ -865,7 +865,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 			snprintf(value, 127, "%2d%2d:%3d", (cc & 0x7f), yy, (mm * 0x100)+dd);
 		}
 		else {
-			/* Month:Day format	*/
+			/* Month:Day format */
 			snprintf(value, 127, "%2d/%2d/%2d%2d", dd, mm, (cc & 0x7f), yy);
 		}
 	}
@@ -1060,7 +1060,7 @@ void init_limit(void)
 	/* Nominal input frequency */
 	value = get_word((answer + BCMXCP_EXT_LIMITS_BLOCK_NOMINAL_INPUT_FREQ));
 	if (value != 0) {
-		int	fnom = value;
+		int fnom = value;
 		dstate_setinfo("input.frequency.nominal", "%d", value);
 
 		/* Input frequency deviation */
@@ -1214,7 +1214,7 @@ void upsdrv_initinfo(void)
 	/* Init BCM/XCP <-> NUT meter map */
 	init_meter_map();
 
-	/* Skip	UPS' phase angle, as NUT do not care */
+	/* Skip UPS' phase angle, as NUT do not care */
 	iIndex += 1;
 
 	/* Set manufacturer name */
@@ -1338,7 +1338,7 @@ void upsdrv_updateinfo(void)
 	int iIndex, res;
 	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
-	const char	*nutvalue;
+	const char *nutvalue;
 
 	/* Get info from UPS */
 	res = command_read_sequence(PW_METER_BLOCK_REQ, answer);
@@ -1392,13 +1392,13 @@ void upsdrv_updateinfo(void)
 		bcmxcp_status.alarm_on_battery = 0;
 		bcmxcp_status.alarm_low_battery = 0;
 
-		/* Set alarms	*/
+		/* Set alarms */
 		alarm_init();
 
 		/* Loop thru alarm map, get all alarms UPS is willing to offer */
 		for (iIndex = 0; iIndex < BCMXCP_ALARM_MAP_MAX; iIndex++){
 			if (bcmxcp_alarm_map[iIndex].alarm_block_index >= 0 && bcmxcp_alarm_map[iIndex].alarm_desc != NULL) {
-				if (answer[bcmxcp_alarm_map[iIndex].alarm_block_index]	> 0) {
+				if (answer[bcmxcp_alarm_map[iIndex].alarm_block_index] > 0) {
 					alarm_set(bcmxcp_alarm_map[iIndex].alarm_desc);
 
 					if (iIndex == BCMXCP_ALARM_UPS_ON_BATTERY) {
@@ -1417,7 +1417,7 @@ void upsdrv_updateinfo(void)
 			}
 		}
 
-		/* Confirm alarms	*/
+		/* Confirm alarms */
 		alarm_commit();
 	}
 
@@ -1525,8 +1525,8 @@ float calculate_ups_load(const unsigned char *answer)
 	char sValue[128];
 	float output = 0, max_output = -FLT_MAX, fValue = -FLT_MAX;
 
-	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 && 			/* Output VA */
-			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0)	/* Max output VA */
+	if (bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format != 0 &&             /* Output VA */
+			bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format != 0) /* Max output VA */
 	{
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].meter_block_index,
 					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA].format, sValue);
@@ -1535,8 +1535,8 @@ float calculate_ups_load(const unsigned char *answer)
 					 bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].format, sValue);
 		max_output = atof(sValue);
 	}
-	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 && /* Output A */
-					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0)	/* Max output A */
+	else if (bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format != 0 &&                 /* Output A */
+					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].format != 0) /* Max output A */
 	{
 		decode_meter_map_entry(answer + bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].meter_block_index,
 					 bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].format, sValue);
@@ -1577,7 +1577,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	char varname[32];
 	const char *varvalue = NULL;
 	int res, sec;
-	int sddelay = 0x03;	/* outlet off in 3 seconds, by default */
+	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
 	upsdebugx(1, "entering instcmd(%s)", cmdname);
 
@@ -1588,7 +1588,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	    ) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		/* Get the shutdown delay, if any */
 		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
@@ -1598,7 +1598,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		cbuf[0] = PW_LOAD_OFF_RESTART;
 		cbuf[1] = sddelay & 0xff;
-		cbuf[2] = sddelay >> 8;		/* high byte of the 2 byte time argument */
+		cbuf[2] = sddelay >> 8;     /* high byte of the 2 byte time argument */
 		cbuf[3] = cmdname[7] - '0'; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
 
 		res = command_write_sequence(cbuf, 4, answer);
@@ -1613,11 +1613,11 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_LOAD_OFF_RESTART;
-		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff);	/* "delay" sec delay for shutdown, */
-		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);		/* high byte sec. From ups.conf. */
+		cbuf[1] = (unsigned char)(bcmxcp_status.shutdowndelay & 0x00ff); /* "delay" sec delay for shutdown, */
+		cbuf[2] = (unsigned char)(bcmxcp_status.shutdowndelay >> 8);     /* high byte sec. From ups.conf. */
 
 		res = command_write_sequence(cbuf, 3, answer);
 
@@ -1631,7 +1631,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		res = command_read_sequence(PW_UPS_OFF, answer);
 
@@ -1644,11 +1644,11 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 		send_write_command(AUTHOR, 4);
 
-		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_BAT_TEST;
-		cbuf[1] = 0x0A;			/* 10 sec start delay for test.*/
-		cbuf[2] = 0x1E;			/* 30 sec test duration.*/
+		cbuf[1] = 0x0A; /* 10 sec start delay for test.*/
+		cbuf[2] = 0x1E; /* 30 sec test duration.*/
 
 		res = command_write_sequence(cbuf, 3, answer);
 
@@ -1663,7 +1663,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.system.start")) {
 		send_write_command(AUTHOR, 4);
 		
-		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
 		cbuf[1] = PW_SYS_TEST_GENERAL;
@@ -1675,7 +1675,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.panel.start")) {
 		send_write_command(AUTHOR, 4);
 		
-		sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
 		cbuf[1] = PW_SYS_TEST_FLASH_LIGHTS;
@@ -1777,7 +1777,7 @@ int setvar (const char *varname, const char *val)
 	}
 
 	send_write_command(AUTHOR, 4);
-	sleep(PW_SLEEP);	/* Need to. Have to wait at least 0,25 sec max 16 sec */
+	sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	outlet_num = varname[NUT_OUTLET_POSITION] - '0';
 	if (outlet_num < 1 || outlet_num > 9) {
@@ -1786,19 +1786,19 @@ int setvar (const char *varname, const char *val)
 
 	sec = atoi(val);
 	/* Check value:
-	 *	0-32767 are valid values
-	 *	-1 means no Automatic off or restart
+	 *  0-32767 are valid values
+	 *  -1 means no Automatic off or restart
 	 * for Auto Off Delay:
-	 *	0-30 are valid but ill-advised */
+	 *  0-30 are valid but ill-advised */
 	if (sec < -1 || sec > 0x7FFF) {
 		return STAT_SET_INVALID;
 	}
 
-	cbuf[0] = PW_SET_OUTLET_COMMAND;	/* Cmd */
-	cbuf[1] = onOff_setting;			/* Set Auto Off (1) or On (2) Delay */
-	cbuf[2] = outlet_num;				/* Outlet number */
-	cbuf[3] = sec&0xff;					/* Delay in seconds LSB */
-	cbuf[4] = sec>>8;					/* Delay in seconds MSB */
+	cbuf[0] = PW_SET_OUTLET_COMMAND; /* Cmd */
+	cbuf[1] = onOff_setting;         /* Set Auto Off (1) or On (2) Delay */
+	cbuf[2] = outlet_num;            /* Outlet number */
+	cbuf[3] = sec&0xff;              /* Delay in seconds LSB */
+	cbuf[4] = sec>>8;                /* Delay in seconds MSB */
 
 	res = command_write_sequence(cbuf, 5, answer);
 	if (res <= 0) {
@@ -1857,7 +1857,7 @@ int setvar (const char *varname, const char *val)
 /* find the NUT value matching that XCP Item value */
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting)
 {
-	info_lkp_t	*info_lkp;
+	info_lkp_t *info_lkp;
 
 	/* if a conversion function is defined, use 'value' as argument for it */
 	if (xcp2info->fun != NULL) {
