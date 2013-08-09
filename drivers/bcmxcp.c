@@ -1404,16 +1404,13 @@ void upsdrv_updateinfo(void)
 					if (iIndex == BCMXCP_ALARM_UPS_ON_BATTERY) {
 						bcmxcp_status.alarm_on_battery = 1;
 					}
-
-					if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
+					else if (iIndex == BCMXCP_ALARM_BATTERY_LOW) {
 						bcmxcp_status.alarm_low_battery = 1;
 					}
-
-					if (iIndex == BCMXCP_ALARM_BATTERY_TEST_FAILED) {
+					else if (iIndex == BCMXCP_ALARM_BATTERY_TEST_FAILED) {
 						bcmxcp_status.alarm_replace_battery = 1;
 					}
-
-					if (iIndex == BCMXCP_ALARM_BATTERY_NEEDS_SERVICE) {
+					else if (iIndex == BCMXCP_ALARM_BATTERY_NEEDS_SERVICE) {
 						bcmxcp_status.alarm_replace_battery = 1;
 					}
 				}
