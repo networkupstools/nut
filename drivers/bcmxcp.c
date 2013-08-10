@@ -152,6 +152,7 @@ static void init_ups_alarm_map(const unsigned char *map, unsigned char len);
 static bool_t set_alarm_support_in_alarm_map(const unsigned char *map, const int mapIndex, const int bitmask, const int alarmMapIndex, const int alarmBlockIndex);
 static void decode_meter_map_entry(const unsigned char *entry, const unsigned char format, char* value);
 static int init_outlet(unsigned char len);
+static void init_system_test_capabilities(void);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
@@ -211,9 +212,17 @@ info_lkp_t topology_info[] = {
 /* Command map results */
 info_lkp_t command_map_info[] = {
 	{ PW_INIT_BAT_TEST, "test.battery.start", NULL },
-	{ PW_INIT_SYS_TEST, "test.system.start", NULL },
 	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL },
 	{ PW_UPS_OFF, "shutdown.stayoff", NULL },
+	{ 0, NULL, NULL }
+};
+
+/* System test capabilities results */
+info_lkp_t system_test_info[] = {
+	{ PW_SYS_TEST_GENERAL, "test.system.start", NULL },
+/*	{ PW_SYS_TEST_SCHEDULE_BATTERY_COMMISSION, "test.battery.start.delayed", NULL }, */
+/*	{ PW_SYS_TEST_ALTERNATE_AC_INPUT, "test.alternate_acinput.start", NULL }, */
+	{ PW_SYS_TEST_FLASH_LIGHTS, "test.panel.start", NULL },
 	{ 0, NULL, NULL }
 };
 
@@ -1140,6 +1149,40 @@ void init_topology(void)
 	}
 }
 
+void init_system_test_capabilities(void)
+{
+	unsigned char answer[PW_ANSWER_MAX_SIZE], cbuf[5];
+	const char* nutvalue;
+	int res, value, i;
+
+	/* Query what system test capabilities are supported */
+	send_write_command(AUTHOR, 4);
+		
+	sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+	cbuf[0] = PW_INIT_SYS_TEST;
+	cbuf[1] = PW_SYS_TEST_REPORT_CAPABILITIES;
+	res = command_write_sequence(cbuf, 2, answer);
+	if (res <= 0) {
+		upslogx(LOG_ERR, "Short read from UPS");
+		return;
+	}
+
+	if((unsigned char)answer[0] != BCMXCP_RETURN_ACCEPTED) {
+		upsdebugx(2, "System test capabilities list not supported");
+		return;
+	}
+
+	/* Add instcmd for system test capabilities */
+	for(i = 3; i < res; i++) {
+		value = answer[i];
+		if ((nutvalue = nut_find_infoval(system_test_info, value, TRUE)) != NULL) {
+			upsdebugx(2, "Added support for instcmd %s", nutvalue);
+			dstate_addcmd(nutvalue);
+		}
+	}
+}
+
 void upsdrv_initinfo(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
@@ -1326,6 +1369,10 @@ void upsdrv_initinfo(void)
 	/* Get information on UPS topology */
 	if (topology_block_len)
 		init_topology();
+	/* Get information on system test capabilities */
+	if (bcmxcp_command_map[PW_INIT_SYS_TEST].command_byte > 0) {
+		init_system_test_capabilities();
+	}
 
 	upsh.instcmd = instcmd;
 	upsh.setvar = setvar;
