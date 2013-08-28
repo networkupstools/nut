@@ -128,13 +128,13 @@ td#driver-col { width: 30%; }
 
 .hidden { display: none; }
 
-#filters-set, #filters-set fieldset { display: none; border: 1px solid silver; padding: 10px; }
-#filters-set legend { font-weight: bold; }
+#filters-set { display: none; border: 1px solid silver; padding: 10px; }
+#filters-set legend, #support-level-legend legend { font-weight: bold; }
 #filters-set td { border: 0; }
-#filters-set fieldset { display: block; }
 #filters-set select { max-width: 200px }
+#filters-set + * { clear: both; }
 
-#support-level-legend { width: 31.25em; float: right; margin-right: 10px; padding: 10px; }
+#support-level-legend { width: 31.25em; float: right; margin: 0 1em 1em 1em; padding: 10px; border: 1px solid silver; }
 #support-level-legend dt { margin: 0; padding: 0; width: 15%; float: left; }
 #support-level-legend dd { margin: 0; padding: 0; width: 85%; float: left; }
 
