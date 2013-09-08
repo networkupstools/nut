@@ -15,18 +15,18 @@ Be sure to also read the <<footnotes,footnotes>>.
 
 ifdef::website[]
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+<fieldset id="support-level-legend">
+  <legend>Support level legend</legend>
+  <dl style="list-style: none; padding: 0;">
+    <dt><span class="red">*</span></dt><dd>protocol based on reverse engineering</dd>
+    <dt><span class="orange">**</span></dt><dd>based on fragments of publicly available protocol</dd>
+    <dt><span class="yellow">***</span></dt><dd>based on publicly available protocol</dd>
+    <dt><span class="blue">****</span></dt><dd>vendor provided protocol</dd>
+    <dt><span class="green">*****</span></dt><dd>vendor provided protocol and hardware</dd>
+  </dl>
+</fieldset>
 <fieldset id="filters-set">
   <legend>Filters</legend>
-  <fieldset id="support-level-legend">
-    <legend>Support level legend</legend>
-    <dl style="list-style: none; padding: 0;">
-      <dt><span class="red">*</span></dt><dd>protocol based on reverse engineering</dd>
-      <dt><span class="orange">**</span></dt><dd>based on fragments of publicly available protocol</dd>
-      <dt><span class="yellow">***</span></dt><dd>based on publicly available protocol</dd>
-      <dt><span class="blue">****</span></dt><dd>vendor provided protocol</dd>
-      <dt><span class="green">*****</span></dt><dd>vendor provided protocol and hardware</dd>
-    </dl>
-  </fieldset>
   <table>
     <tbody>
       <tr>
