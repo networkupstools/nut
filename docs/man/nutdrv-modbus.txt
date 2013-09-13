@@ -1,0 +1,71 @@
+NUTDRV-MODBUS(8) 
+================
+
+NAME
+----
+
+nutdrv-modbus - Driver for Modbus devices
+
+SYNOPSIS
+--------
+
+*nutdrv-modbus* -h
+
+*nutdrv-modbus* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This driver is experimental, and still a work-in-progress. Feedback is
+encouraged.
+
+NOTE: This man page only documents the hardware-specific features of the
+nutdrv-modbus driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver should support a wide range of Modbus compatbile devices, like
+UPS and meters, through serial port (RS232 / RS485) and network (TCP)
+interface.
+
+nutdrv-modbus uses the libmodbus project, for Modbus implementation.
+
+
+EXTRA ARGUMENTS
+---------------
+
+This driver doesn't support any optional settings.
+
+INSTALLATION
+------------
+
+This driver is not built by default.  You can build it by using
+"configure --with-modbus=yes".
+
+You also need to give proper permissions on the local serial device file
+(/dev/ttyS0 for example) to allow the NUT user to access it.
+
+INSTANT COMMANDS
+----------------
+
+This driver doesn't support any instant commands.
+
+IMPLEMENTATION
+--------------
+
+TO BE COMPLETED
+
+AUTHOR
+------
+Arnaud Quette <arnaud.quette@free.fr>
+
+SEE ALSO
+--------
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+libmodbus home page: http://libmodbus.org
