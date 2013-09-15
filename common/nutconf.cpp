@@ -1486,4 +1486,166 @@ bool UpsdUsersConfiguration::writeTo(NutStream & ostream) const
 	return NutWriter::NUTW_OK == writer.writeConfig(*this);
 }
 
+
+
+//
+// UpsdUser
+//
+
+UpsdUser::UpsdUser(const std::string& name):
+username(name),
+upsmon_mode(UPSMON_UNDEF)
+{
+}
+
+UpsdUser::UpsdUser(const UpsdUser& user):
+username(user.username),
+password(user.password),
+actions(user.actions),
+instcmds(user.instcmds),
+upsmon_mode(user.upsmon_mode)
+{
+}
+
+//
+// UpsdUsersConfig
+//
+
+UpsdUsersConfig::UpsdUsersConfig()
+{
+}
+
+void UpsdUsersConfig::parseFromString(const std::string& str)
+{
+    UpsdUsersConfigParser parser(str);
+    parser.parseUpsdUsersConfig(this);
+}
+
+bool UpsdUsersConfig::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+bool UpsdUsersConfig::writeTo(NutStream & ostream) const
+{
+	// Not implemented yet.
+  return false;
+}
+
+//
+// UpsdUsersConfigParser
+//
+
+UpsdUsersConfigParser::UpsdUsersConfigParser(const char* buffer):
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
+{
+}
+
+UpsdUsersConfigParser::UpsdUsersConfigParser(const std::string& buffer):
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
+{
+}
+
+void UpsdUsersConfigParser::parseUpsdUsersConfig(UpsdUsersConfig* config)
+{
+	if(config!=NULL)
+	{
+		_config = config;
+		_current_user = _config->end();
+		NutConfigParser::parseConfig();
+		_config = NULL;
+	}
+}
+
+void UpsdUsersConfigParser::onParseBegin()
+{
+    // Do nothing
+}
+
+void UpsdUsersConfigParser::onParseComment(const std::string& comment)
+{
+    // Comment are ignored for now
+}
+
+void UpsdUsersConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
+{
+	// Create a new user
+	UpsdUser user(sectionName);
+
+	std::pair<std::map<std::string,UpsdUser>::iterator,bool> ret;
+	ret = _config->insert( std::pair<std::string,UpsdUser>(sectionName, user) );
+	_current_user = ret.first;
+}
+
+void UpsdUsersConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
+{
+	// NOTE: separators are always ignored
+
+	if(_config && _current_user != _config->end())
+	{
+		if(directiveName == "password")
+		{
+			if(values.size()>0)
+			{
+				_current_user->second.password = values.front();
+			}
+		}
+		else if(directiveName == "actions")
+		{
+			if(values.size()>0)
+			{
+				for(ConfigParamList::const_iterator it=values.begin(); it!=values.end(); ++it)
+				{
+					_current_user->second.actions.insert(*it);
+				}
+			}
+		}
+		else if(directiveName == "instcmds")
+		{
+			if(values.size()>0)
+			{
+				for(ConfigParamList::const_iterator it=values.begin(); it!=values.end(); ++it)
+				{
+					_current_user->second.instcmds.insert(*it);
+				}
+			}
+		}
+		else if(directiveName == "upsmon")
+		{
+			if(values.size()>0)
+			{
+				if(values.front() == "master")
+				{
+					_current_user->second.upsmon_mode = UpsdUser::UPSMON_MASTER;
+				}
+				else if(values.front() == "master")
+				{
+					_current_user->second.upsmon_mode = UpsdUser::UPSMON_SLAVE;
+				}
+				else
+				{
+					_current_user->second.upsmon_mode = UpsdUser::UPSMON_UNDEF;
+				}
+			}
+		}
+		else
+		{
+			// TODO WTF with unknown commands ?
+		}
+	}
+}
+
+void UpsdUsersConfigParser::onParseEnd()
+{
+    // Do nothing
+}
+
 } /* namespace nut */

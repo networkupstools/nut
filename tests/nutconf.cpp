@@ -41,6 +41,7 @@ class NutConfTest : public CppUnit::TestFixture
 	CPPUNIT_TEST( testUpsmonConfigParser );
 	CPPUNIT_TEST( testNutConfConfigParser );
 	CPPUNIT_TEST( testUpsdConfigParser );
+	CPPUNIT_TEST( testUpsdUsersConfigParser );
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -57,6 +58,7 @@ public:
   void testUpsmonConfigParser();
   void testNutConfConfigParser();
   void testUpsdConfigParser();
+  void testUpsdUsersConfigParser();
 };
 
 // Registers the fixture into the 'registry'
@@ -341,6 +343,31 @@ void NutConfTest::testUpsdConfigParser()
 
 }
 
+void NutConfTest::testUpsdUsersConfigParser()
+{
+	static const char* src =
+		"[admin]\n"
+		"\tactions = SET\n"
+		"\tinstcmds = ALL\n"
+		"\tpassword = \"qwerty=ui\"\n"
+		"\n"
+		"[upsmon]\n"
+		"\tpassword = ytrewq\n"
+		"\tupsmon master\n"
+		"\n"
+		;
 
+	UpsdUsersConfig conf;
+	conf.parseFromString(src);
+
+	CPPUNIT_ASSERT_MESSAGE("Cannot find user 'admin'", conf.find("admin") != conf.end() );
+	CPPUNIT_ASSERT_MESSAGE("User 'admin' not has 'SET' action", conf["admin"].actions.find("SET") != conf["admin"].actions.end() );
+	CPPUNIT_ASSERT_MESSAGE("User 'admin' not has 'ALL' instcmds", conf["admin"].instcmds.find("ALL") != conf["admin"].instcmds.end() );
+	CPPUNIT_ASSERT_MESSAGE("User 'admin' not has 'qwerty=ui' password", conf["admin"].password == "qwerty=ui");
+
+	CPPUNIT_ASSERT_MESSAGE("Cannot find user 'upsmon'", conf.find("upsmon") != conf.end() );
+	CPPUNIT_ASSERT_MESSAGE("User 'upsmon' not has 'ytrewq' password", conf["upsmon"].password == "ytrewq");
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("User 'upsmon' not has master upsmon rights", UpsdUser::UPSMON_MASTER, conf["upsmon"].upsmon_mode);
+}
 
 

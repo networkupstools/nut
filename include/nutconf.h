@@ -32,6 +32,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 #include <stdexcept>
 
 #ifdef __cplusplus
@@ -1098,6 +1099,77 @@ public:
 	/** \} */
 
 };  // end of class UpsdUsersConfiguration
+
+
+
+
+
+/** upsd user */
+struct UpsdUser
+{
+  /** Default and named constructor. */
+	UpsdUser(const std::string& name = "");
+
+	/** Copy constructor.*/
+	UpsdUser(const UpsdUser& user);
+
+	/**
+	 * User name
+	 * Is head of section in upsd.users configuration file.
+	 */
+	std::string username;
+
+	/** User password */
+	std::string password;
+
+	/** Action the user is allowed to (SET or FSD) */
+	std::set<std::string> actions;
+
+	/** Instant commands the user is allowed to ("ALL" when all are allowed) */
+	std::set<std::string> instcmds;
+
+	/** upsmon mode */
+	typedef enum {
+		UPSMON_UNDEF = 0,  /**< Unknown mode */
+		UPSMON_MASTER,     /**< Master  mode */
+		UPSMON_SLAVE,      /**< Slave   mode */
+	} upsmon_mode_t;
+
+	upsmon_mode_t upsmon_mode;
+};
+
+/** upsd users configuration */
+class UpsdUsersConfig : public std::map<std::string,UpsdUser> , public Serialisable
+{
+public:
+	UpsdUsersConfig();
+
+	void parseFromString(const std::string& str);
+
+	/** Serialisable interface implementation \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream) const;
+	/** \} */
+};
+
+
+class UpsdUsersConfigParser : public NutConfigParser
+{
+public:
+    UpsdUsersConfigParser(const char* buffer = NULL);
+    UpsdUsersConfigParser(const std::string& buffer);
+
+    void parseUpsdUsersConfig(UpsdUsersConfig* config);
+protected:
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+    UpsdUsersConfig* _config;
+		std::map<std::string,UpsdUser>::iterator _current_user;
+};
 
 } /* namespace nut */
 #endif /* __cplusplus */
