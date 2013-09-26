@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #ifndef WIN32
 #include <netdb.h>
 #include <sys/socket.h>
@@ -47,7 +46,7 @@
 #define W32_NETWORK_CALL_OVERRIDE
 #include "wincompat.h"
 #undef W32_NETWORK_CALL_OVERRIDE
-#endif 
+#endif
 
 #include "upsclient.h"
 #include "common.h"
@@ -936,8 +935,6 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 			fcntl(sock_fd, F_SETFL, fd_flags);
 		}
 
-		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			if(errno == EINPROGRESS) {
 #else
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
@@ -998,16 +995,16 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 		}
 
 		/* switch back to blocking operation */
-#ifndef WIN32
 		if(timeout != NULL) {
+#ifndef WIN32
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-		}
 #else
 			argp = 0;
 			ioctlsocket(sock_fd,FIONBIO,&argp);
 #endif
+		}
 
 		ups->fd = sock_fd;
 		ups->upserror = 0;

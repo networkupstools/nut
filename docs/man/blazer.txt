@@ -4,7 +4,7 @@ BLAZER(8)
 NAME
 ----
 
-blazer - Driver for Megatec/Q1 protocol serial (blazer_ser) and USB (blazer_usb) based UPS equipment
+blazer, blazer_ser, blazer_usb - Driver for Megatec/Q1 protocol serial and USB based UPS equipment
 
 NOTE
 ----

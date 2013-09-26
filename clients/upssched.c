@@ -561,7 +561,7 @@ static HANDLE conn_add(HANDLE sockfd)
 		fatal_with_errno(EXIT_FAILURE, "Can't create event");
 	}
 
-	ReadFile (conn->fd,conn->buf,1,NULL,&(conn->read_overlapped)); 
+	ReadFile (conn->fd,conn->buf,1,NULL,&(conn->read_overlapped));
 
 	conn->next = NULL;
 
@@ -632,6 +632,7 @@ static int sock_read(conn_t *conn)
 	char	ch;
 
 	for (i = 0; i < US_MAX_READ; i++) {
+
 #ifndef WIN32
 		ret = read(conn->fd, &ch, 1);
 
@@ -704,6 +705,7 @@ static void start_daemon(int lockfd)
 
 		return;
 	}
+
 	/* child */
 
 	close(0);
@@ -925,6 +927,7 @@ static HANDLE try_connect(void)
 static int get_lock(const char *fn)
 {
 	return open(fn, O_RDONLY | O_CREAT | O_EXCL, 0);
+
 }
 #else
 static HANDLE get_lock(const char *fn)
@@ -1083,6 +1086,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 			return;
 
 		/* we're connected now */
+
 #ifndef WIN32
 		ret = write(pipefd, enc, strlen(enc));
 
@@ -1101,6 +1105,7 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		alarm(0);
 
 		signal(SIGALRM, SIG_IGN);
+
 		close(pipefd);
 
 		/* same idea: no OK = go try it all again */

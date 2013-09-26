@@ -54,6 +54,7 @@
 /* *INDENT-OFF* */
 extern "C" {
 /* *INDENT-ON* */
+#endif
 
 #ifdef WIN32
 typedef struct serial_handler_s {
@@ -184,6 +185,7 @@ extern int optind;
 /* *INDENT-OFF* */
 }
 /* *INDENT-ON* */
+#endif
 
 #ifdef WIN32
 /* FIXME : this might not be the optimal mapping between syslog and ReportEvent*/

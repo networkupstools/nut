@@ -25,7 +25,6 @@ else !HAVE_WINDOWS_SOCKETS
 sbin_PROGRAMS = upsmon upssched
 endif !HAVE_WINDOWS_SOCKETS
 lib_LTLIBRARIES = libupsclient.la libnutclient.la
->>>>>>> Add an external wall-like application.
 if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
 endif

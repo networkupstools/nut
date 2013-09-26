@@ -6,7 +6,5 @@ StopWhenUnneeded=yes
 [Service]
 ExecStart=@DRVPATH@/upsdrvctl start
 ExecStop=@DRVPATH@/upsdrvctl stop
-ExecStart=/sbin/upsdrvctl start
-ExecStop=/sbin/upsdrvctl stop
 Type=forking
 

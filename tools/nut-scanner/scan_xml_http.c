@@ -107,6 +107,7 @@ err:
 	lt_dlexit();
         return 0;
 }
+
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
 	nutscan_device_t * dev = (nutscan_device_t *)userdata;
 	char buf[SMALLBUF];
@@ -245,11 +246,6 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 
 
 	return nutscan_rewind_device(current_nut_dev);
-}
-#else /* WITH_NEON */
-nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
-{
-	return NULL;
 }
 #else /* WITH_NEON */
 nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)

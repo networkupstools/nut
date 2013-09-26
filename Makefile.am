@@ -55,17 +55,6 @@ website:
 	@echo "Not building website since 'asciidoc' was not found."
 endif !HAVE_ASCIIDOC
 
-if HAVE_ASCIIDOC
-website:
-	cd docs;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/man;  $(MAKE) $(AM_MAKEFLAGS) html-man
-	cd tools;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/website;  $(MAKE) $(AM_MAKEFLAGS) website
-else !HAVE_ASCIIDOC
-website:
-	@echo "Not building website since 'asciidoc' was not found."
-endif !HAVE_ASCIIDOC
-
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".

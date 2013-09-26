@@ -30,5 +30,5 @@ upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
 if HAVE_WINDOWS
 sockdebug_SOURCES = pipedebug.c
 else !HAVE_WINDOWS
-sockdebug_SOURCES = sockdebug.c
+ sockdebug_SOURCES = sockdebug.c
 endif !HAVE_WINDOWS

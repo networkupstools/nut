@@ -81,7 +81,6 @@ static char *	start_ip = NULL;
 static char *	end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
->>>>>>> Merge from trunk [[SVN:3060]] to [[SVN:3318]]
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
@@ -174,8 +173,6 @@ int main(int argc, char *argv[])
 	ipmi_sec.ipmi_version = IPMI_1_5; /* default to IPMI 1.5, if not otherwise specified */
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
-
-	nutscan_init();
 
 	nutscan_init();
 

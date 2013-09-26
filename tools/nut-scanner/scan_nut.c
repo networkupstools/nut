@@ -205,7 +205,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
 	char buf[SMALLBUF];
-	int change_action_handler = 0;
 	int i;
 #ifndef WIN32
 	struct sigaction oldact;
@@ -218,7 +217,6 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 
 #ifdef HAVE_PTHREAD
-	int i;
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
