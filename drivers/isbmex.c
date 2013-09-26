@@ -161,6 +161,7 @@ static const char *getpacket(int *we_know){
   
   bytes_per_packet=*we_know;
   D(printf("getpacket with %d\n",bytes_per_packet);)
+
 #ifndef WIN32 
   FD_ZERO(&readfds);
   FD_SET(upsfd,&readfds);

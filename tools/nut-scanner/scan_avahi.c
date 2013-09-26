@@ -360,7 +360,6 @@ static void resolve_callback(
 	switch (event) {
 		case AVAHI_RESOLVER_FAILURE:
 			fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, (*nut_avahi_strerror)((*nut_avahi_client_errno)((*nut_avahi_service_resolver_get_client)(r))));
-			fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
 			break;
 
 		case AVAHI_RESOLVER_FOUND: {
@@ -508,12 +507,6 @@ fail:
 		(*nut_avahi_simple_poll_free)(simple_poll);
 
 	return nutscan_rewind_device(dev_ret);
-}
-#else  /* WITH_AVAHI */
-/* stub function */
-nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
-{
-	return NULL;
 }
 #else  /* WITH_AVAHI */
 /* stub function */

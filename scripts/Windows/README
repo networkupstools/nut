@@ -10,7 +10,7 @@ Cross compiling from Linux
 --------------------------
 
 Fortunately, you are not forced to have a real Windows system to compile NUT.
-The following chapters will guide you through setting up up a 
+The following chapters will guide you through setting up up a
 link:http://mingw-w64.sourceforge.net[MinGW-w64] build environment and
 compiling NUT.
 

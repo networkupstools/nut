@@ -803,7 +803,6 @@ static int belkin_wait(void)
 		if (fd == ERROR_FD) {
 			fd = belkin_std_open_tty(device_path);
 		}
-
 		if (fd == ERROR_FD) {
 			failcount++;
 			failerrno = errno;

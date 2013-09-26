@@ -130,7 +130,7 @@ static void wall(const char *text)
 	char * command;
 
 	/* first +1 is for the space between message and text
-	   second +1 is for trailing 0 
+	   second +1 is for trailing 0
 	   +2 is for "" */
 	command = malloc (strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1);
 	if( command == NULL ) {
@@ -159,7 +159,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 	char	exec[LARGEBUF];
 	char	notice[LARGEBUF];
 
-	/* the following code is a copy of the content of the NOT WIN32 part of 
+	/* the following code is a copy of the content of the NOT WIN32 part of
 	"notify" function below */
 
 	async_notify_t *data = (async_notify_t *)param;
@@ -207,6 +207,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (flag_isset(flags, NOTIFY_SYSLOG))
 		upslogx(LOG_NOTICE, "%s", notice);
+
 #ifndef WIN32
 	/* fork here so upsmon doesn't get wedged if the notifier is slow */
 	ret = fork();
@@ -218,6 +219,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (ret != 0)	/* parent */
 		return;
+
 	/* child continues and does all the work */
 
 	if (flag_isset(flags, NOTIFY_WALL))
@@ -539,6 +541,7 @@ static void doshutdown(void)
 		ret = write(pipefd[1], &ch, 1);
 	} else {
 		/* one process model = we do all the work here */
+
 #ifndef WIN32
 		if (geteuid() != 0)
 			upslogx(LOG_WARNING, "Not root, shutdown may fail");
@@ -2109,16 +2112,6 @@ int main(int argc, char *argv[])
 		exit(EXIT_SUCCESS);
 	}
 
-	argc -= optind;
-	argv += optind;
-
-	open_syslog(prog);
-
-	loadconfig();
-
-	if (checking_flag)
-		exit(check_pdflag());
-
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
@@ -2138,6 +2131,16 @@ int main(int argc, char *argv[])
 		printf("Either stop the previous instance first, or use the 'reload' command.\n");
 		exit(EXIT_FAILURE);
 	}
+
+	argc -= optind;
+	argv += optind;
+
+	open_syslog(prog);
+
+	loadconfig();
+
+	if (checking_flag)
+		exit(check_pdflag());
 
 	if (shutdowncmd == NULL)
 		printf("Warning: no shutdown command defined!\n");

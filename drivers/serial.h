@@ -10,11 +10,11 @@
 #  include <sys/termios.h>      /* for speed_t */
 #else
 #  include <termios.h>
-#endif
-#else
+#endif /* HAVE_SYS_TERMIOS_H */
+#else /* WIN32 */
 #include "common.h"
 #include "wincompat.h"
-#endif /* HAVE_SYS_TERMIOS_H */
+#endif /* WIN32 */
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
 #define SER_ERR_LIMIT 10	/* start limiting after 10 in a row  */
@@ -79,7 +79,7 @@ int ser_send(TYPE_FD fd, const char *fmt, ...)
 int ser_send_buf(TYPE_FD fd, const void *buf, size_t buflen);
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(TYPE_FD fd, unsigned long d_usec, const void *buf, 
+int ser_send_buf_pace(TYPE_FD fd, unsigned long d_usec, const void *buf,
 	size_t buflen);
 
 int ser_get_char(TYPE_FD fd, void *ch, long d_sec, long d_usec);

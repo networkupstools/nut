@@ -376,7 +376,6 @@ static void try_all_oid(void * arg)
 		scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
 
 		(*nut_snmp_free_pdu)(response);
-		snmp_free_pdu(response);
 		response = NULL;
 
 		index++;
@@ -709,11 +708,6 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #endif
 
 	return nutscan_rewind_device(dev_ret);
-}
-#else /* WITH_SNMP */
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
-{
-	return NULL;
 }
 #else /* WITH_SNMP */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)

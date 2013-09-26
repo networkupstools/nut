@@ -153,6 +153,7 @@ void background(void)
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 #endif
+
 #else /* WIN32 */
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
@@ -176,7 +177,8 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
-#endif	
+
+#endif
 	return NULL;  /* to make the compiler happy */
 }
 
@@ -208,9 +210,11 @@ void chroot_start(const char *path)
 {
 	if (chdir(path))
 		fatal_with_errno(EXIT_FAILURE, "chdir(%s)", path);
+
 #ifndef WIN32
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
+
 #endif
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
@@ -221,7 +225,7 @@ void chroot_start(const char *path)
 #ifdef WIN32
 /* In WIN32 all non binaries files (namely configuration and PID files)
    are retrieved relative to the path of the binary itself.
-   So this function fill "dest" with the full path to "relative_path" 
+   So this function fill "dest" with the full path to "relative_path"
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
@@ -277,11 +281,9 @@ int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	int	pid;
-	int	ret;
+	int	pid, ret;
 
 	pidf = fopen(pidfn, "r");
-
 	if (!pidf) {
 		upslog_with_errno(LOG_NOTICE, "fopen %s", pidfn);
 		return -1;
@@ -319,6 +321,7 @@ int sendsignalfn(const char *pidfn, int sig)
 		return -1;
 	}
 
+	fclose(pidf);
 	return 0;
 }
 #else
@@ -360,6 +363,7 @@ int sendsignal(const char *progname, int sig)
 	char	fn[SMALLBUF];
 
 	snprintf(fn, sizeof(fn), "%s/%s.pid", PIDPATH, progname);
+
 	return sendsignalfn(fn, sig);
 }
 #else
@@ -397,7 +401,6 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
 			LARGEBUF);
-	
 
 	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
@@ -406,7 +409,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		DWORD WinErr = GetLastError();
 		FormatMessage(
 				FORMAT_MESSAGE_MAX_WIDTH_MASK |
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
 				FORMAT_MESSAGE_FROM_SYSTEM |
 				FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL,

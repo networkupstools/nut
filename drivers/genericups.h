@@ -16,6 +16,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
 struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/

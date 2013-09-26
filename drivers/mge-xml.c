@@ -30,6 +30,7 @@
 
 #include "netxml-ups.h"
 #include "mge-xml.h"
+
 #ifdef WIN32
 #include "wincompat.h"
 #endif

@@ -50,17 +50,6 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 
 	temp->stale = 1;
 	temp->retain = 1;
-	temp->sock_fd = sstate_connect(temp);
-
-	/* preload this to the current time to avoid false staleness */
-	time(&temp->last_heard);
-
-	temp->next = firstups;
-	firstups = temp;
-	temp->last_ping = 0;
-	temp->last_connfail = 0;
-	temp->inforoot = NULL;
-	temp->cmdlist = NULL;
 #ifdef WIN32
 	memset(&temp->read_overlapped,0,sizeof(temp->read_overlapped));
 	memset(temp->buf,0,sizeof(temp->buf));
@@ -69,7 +58,7 @@ static void ups_create(const char *fn, const char *name, const char *desc)
 						FALSE, /* initial state = non signaled */
 						NULL /* no name */);
 	if(temp->read_overlapped.hEvent == NULL ) {
-		upslogx(LOG_ERR, "Can't create event for UPS [%s]", 
+		upslogx(LOG_ERR, "Can't create event for UPS [%s]",
 			name);
 		return;
 	}
@@ -113,6 +102,7 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 		sstate_infofree(temp);
 		sstate_cmdfree(temp);
 		pconf_finish(&temp->sock_ctx);
+
 #ifndef WIN32
 		close(temp->sock_fd);
 		temp->sock_fd = -1;

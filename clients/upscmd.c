@@ -247,6 +247,7 @@ int main(int argc, char **argv)
 	if (!strchr(argv[1], '.')) {
 		fatalx(EXIT_FAILURE, "Error: old command names are not supported");
 	}
+
 	if (!have_un) {
 		struct passwd	*pw;
 
@@ -287,6 +288,7 @@ int main(int argc, char **argv)
 
 		snprintf(password, sizeof(password), "%s", pwtmp);
 	}
+
 	snprintf(buf, sizeof(buf), "USERNAME %s\n", username);
 
 	if (upscli_sendline(ups, buf, strlen(buf)) < 0) {

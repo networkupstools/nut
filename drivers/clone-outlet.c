@@ -146,6 +146,7 @@ static int parse_args(int numargs, char **arg)
 	return 0;
 }
 
+
 #ifndef WIN32
 static int sstate_connect(void)
 {

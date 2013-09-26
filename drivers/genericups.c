@@ -156,7 +156,7 @@ void upsdrv_initinfo(void)
 /* normal idle loop - keep up with the current state of the UPS */
 void upsdrv_updateinfo(void)
 {
-	int	ol, bl,flags,ret;
+	int     flags, ol, bl, ret;
 
 #ifndef WIN32
 	ret = ioctl(upsfd, TIOCMGET, &flags);
@@ -345,8 +345,6 @@ void upsdrv_initups(void)
 #endif
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
-
-	
 }
 
 void upsdrv_cleanup(void)

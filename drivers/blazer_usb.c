@@ -443,6 +443,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 		usb->close(udev);
 		udev = NULL;
 		break;
+
 	case -ETIMEDOUT:	/* Connection timed out */
 /* libusb win32 does not know EPROTO and EOVERFLOW, it only returns EIO for any
    IO errors */
