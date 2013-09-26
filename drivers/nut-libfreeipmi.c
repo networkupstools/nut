@@ -64,16 +64,6 @@
 static ipmi_ctx_t ipmi_ctx = NULL;
 static ipmi_monitoring_ctx_t mon_ctx = NULL;
 /* static struct ipmi_monitoring_ipmi_config ipmi_config; */
-/* SDR management API has changed with 1.1.X and later */
-#ifdef HAVE_FREEIPMI_11X_12X
-  ipmi_sdr_ctx_t sdr_ctx = NULL;
-#else
-  ipmi_sdr_cache_ctx_t sdr_cache_ctx = NULL;
-  ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
-# ifndef IPMI_SDR_MAX_RECORD_LENGTH
-  #define IPMI_SDR_MAX_RECORD_LENGTH IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH
-# endif
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 /* SDR management API has changed with 1.1.X and later */
 #ifdef HAVE_FREEIPMI_11X_12X
@@ -633,7 +623,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 		}
 	}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 	if (ipmi_sdr_ctx_errnum (sdr_ctx) == IPMI_SDR_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
 	{
@@ -656,7 +645,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 			}
 		}
 	}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 	if (ipmi_sdr_cache_record_count (sdr_ctx, &record_count) < 0) {
 		fprintf (stderr,
@@ -664,7 +652,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 			ipmi_sdr_ctx_errormsg (sdr_ctx));
 		goto cleanup;
 	}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 	upsdebugx(3, "Found %i records in SDR cache", record_count);
 
@@ -690,7 +677,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 			goto cleanup;
 		}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 		upsdebugx (5, "Checking record %i (/%i)", i, record_count);
 
@@ -713,7 +699,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 			goto cleanup;
 		}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 		upsdebugx(2, "Checking device %i/%i", logical_physical_fru_device,
 					logical_fru_device_device_slave_address);
@@ -734,7 +719,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 					ipmi_sdr_ctx_errormsg (sdr_ctx));
 				goto cleanup;
 			}
-#endif /* HAVE_FREEIPMI_11X_12X */
 			break;
 		}
 	}
@@ -753,24 +737,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 			ipmi_sdr_ctx_errormsg (sdr_ctx));
 		goto cleanup;
 	}
-#endif /* HAVE_FREEIPMI_11X_12X */
-
-#ifdef HAVE_FREEIPMI_11X_12X
-	for (i = 0; i < record_count; i++, ipmi_sdr_cache_next (sdr_ctx))
-	{
-		/* uint8_t sdr_record[IPMI_SDR_CACHE_MAX_SDR_RECORD_LENGTH];
-		uint8_t record_type, tmp_entity_id, tmp_entity_instance;
-		int sdr_record_len; */
-
-		memset (sdr_record, '\0', IPMI_SDR_MAX_RECORD_LENGTH);
-		if ((sdr_record_len = ipmi_sdr_cache_record_read (sdr_ctx,
-				sdr_record,
-				IPMI_SDR_MAX_RECORD_LENGTH)) < 0)
-		{
-			fprintf (stderr, "ipmi_sdr_cache_record_read: %s",
-				ipmi_sdr_ctx_errormsg (sdr_ctx));
-			goto cleanup;
-		}
 
 	for (i = 0; i < record_count; i++, ipmi_sdr_cache_next (sdr_ctx))
 	{
@@ -798,7 +764,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 			goto cleanup;
 		}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 		upsdebugx (5, "Checking record %i (/%i)", record_id, record_count);
 
@@ -819,7 +784,6 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 				ipmi_sdr_ctx_errormsg (sdr_ctx));
 			goto cleanup;
 		}
-#endif /* HAVE_FREEIPMI_11X_12X */
 
 		if (tmp_entity_id == entity_id
 			&& tmp_entity_instance == entity_instance)

@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 #ifndef WIN32
 #include <netdb.h>
 #include <sys/socket.h>
@@ -1052,21 +1051,17 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags |= O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-		}
-
-		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
-			if(errno == EINPROGRESS || SOLARIS_i386_NBCONNECT_ENOENT(errno) || AIX_NBCONNECT_0(errno)) {
 #else
 			event = CreateEvent(NULL, /* Security */
 					FALSE, /* auto-reset */
 					FALSE, /* initial state */
 					NULL); /* no name */
 
-		/* Associate socket event to the socket via its Event object */
+			/* Associate socket event to the socket via its Event object */
 			WSAEventSelect( sock_fd, event, FD_CONNECT );
 			CloseHandle(event);
-		}
 #endif
+		}
 
 		while ((v = connect(sock_fd, ai->ai_addr, ai->ai_addrlen)) < 0) {
 #ifndef WIN32
@@ -1116,16 +1111,16 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 		}
 
 		/* switch back to blocking operation */
+		if (timeout != NULL) {
 #ifndef WIN32
-		if(timeout != NULL) {
 			fd_flags = fcntl(sock_fd, F_GETFL);
 			fd_flags &= ~O_NONBLOCK;
 			fcntl(sock_fd, F_SETFL, fd_flags);
-		}
 #else
 			argp = 0;
-			ioctlsocket(sock_fd,FIONBIO,&argp);
+			ioctlsocket(sock_fd, FIONBIO, &argp);
 #endif
+		}
 
 		ups->fd = sock_fd;
 		ups->upserror = 0;

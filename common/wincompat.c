@@ -1,4 +1,4 @@
-/* 
+/*
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
 
@@ -14,7 +14,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, WRITE to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.              
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 #ifdef WIN32
 #include "wincompat.h"
@@ -256,7 +256,7 @@ void syslog(int priority, const char *fmt, ...)
 	result = WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
 
 	/* testing result is useless. If we have an error and try to report it,
-	   this will probably lead to a call to this function and an infinite 
+	   this will probably lead to a call to this function and an infinite
 	   loop */
 	/*
 	   if (result == 0 || bytesWritten != strlen(buf2)+sizeof(DWORD) ) {
@@ -289,7 +289,7 @@ void pipe_create(const char * pipe_name)
 	}
 
 	snprintf(pipe_full_name,sizeof(pipe_full_name),"\\\\.\\pipe\\%s",named_pipe_name);
-	
+
 	if( pipe_connection_overlapped.hEvent != 0 ) {
 		CloseHandle(pipe_connection_overlapped.hEvent);
 	}
@@ -485,11 +485,11 @@ int w32_getcomm ( serial_handler_t * h, int * flags )
 	}
 
 	*flags = f;
-	
+
 	return 0;
 }
 
-/* Serial port wrapper inspired by : 
+/* Serial port wrapper inspired by :
 http://serial-programming-in-win32-os.blogspot.com/2008/07/convert-linux-code-to-windows-serial.html */
 
 void overlapped_setup (serial_handler_t * sh)
@@ -1350,11 +1350,11 @@ int tcgetattr (serial_handler_t * sh, struct termios *t)
 /* FIXME no difference between ispeed and ospeed */
 void cfsetispeed(struct termios * t, speed_t speed)
 {
-	t->c_ispeed = t->c_ospeed = speed;	
+	t->c_ispeed = t->c_ospeed = speed;
 }
 void cfsetospeed(struct termios * t, speed_t speed)
 {
-	t->c_ispeed = t->c_ospeed = speed;	
+	t->c_ispeed = t->c_ospeed = speed;
 }
 speed_t cfgetispeed(const struct termios *t)
 {

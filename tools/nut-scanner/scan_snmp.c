@@ -507,7 +507,6 @@ static void try_all_oid(void * arg, const char * mib_found)
 		}
 
 		(*nut_snmp_free_pdu)(response);
-		snmp_free_pdu(response);
 		response = NULL;
 
 		index++;
@@ -1190,7 +1189,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	return result;
 }
 
-#else /* WITH_SNMP */
+#else /* not WITH_SNMP */
 
 /* stub function */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,

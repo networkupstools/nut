@@ -80,7 +80,7 @@ static void print_event(DWORD priority, const char * fmt, ...)
 
 	}
 
-	if( buf ) 
+	if( buf )
 		free(buf);
 }
 
@@ -570,7 +570,7 @@ static void WINAPI SvcMain( DWORD argc, LPTSTR *argv )
 				ReportSvcStatus( SERVICE_STOPPED, NO_ERROR, 0);
 			}
 			return;
-		} 
+		}
 
 		/* Retrieve the signaled connection */
 		for(conn = pipe_connhead; conn != NULL; conn = conn->next) {

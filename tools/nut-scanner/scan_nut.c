@@ -222,6 +222,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
 	char buf[SMALLBUF];
+	int i;
 #ifndef WIN32
 	struct sigaction oldact;
 #endif

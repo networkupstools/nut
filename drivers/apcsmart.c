@@ -1693,11 +1693,6 @@ static void upsdrv_shutdown_advanced(void)
 		if (sdlist[val[i] - '0'](arg) == STAT_INSTCMD_HANDLED)
 			break;	/* finish if command succeeded */
 	}
-
-	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
-		upsdrv_shutdown_advanced(status);
-	else
-		upsdrv_shutdown_simple(status);
 }
 
 /* power down the attached load immediately */

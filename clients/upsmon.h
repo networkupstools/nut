@@ -123,6 +123,7 @@ static struct {
 };
 
 /* values for signals passed between processes */
+
 #ifndef WIN32
 #define SIGCMD_FSD	SIGUSR1
 #define SIGCMD_STOP	SIGTERM

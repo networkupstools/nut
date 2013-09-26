@@ -1,7 +1,7 @@
 #ifndef NUT_WINCOMPAT_H
 #define NUT_WINCOMPAT_H
 
-/* 
+/*
    Copyright (C) 2001 Andrew Delpha (delpha@computer.org)
 
    This program is free software; you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, WRITE to the Free Software
-   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.              
+   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 
@@ -51,7 +51,7 @@ char * filter_path(const char * source);
 /* Network compatibility */
 
 /* This is conditional because read/write are generic in unix, and this will make them network specific */
-#ifdef W32_NETWORK_CALL_OVERRIDE 
+#ifdef W32_NETWORK_CALL_OVERRIDE
 #define close(h) sktclose(h)
 #define read(h,b,s) sktread(h,b,s)
 #define write(h,b,s) sktwrite( h ,(char *) b , s )

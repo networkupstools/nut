@@ -276,15 +276,15 @@ HANDLE sstate_connect(upstype_t *ups)
 		return INVALID_HANDLE_VALUE;
 	}
 
-	fd = CreateFile( 
-			pipename,   // pipe name 
-			GENERIC_READ |  // read and write access 
-			GENERIC_WRITE, 
-			0,              // no sharing 
+	fd = CreateFile(
+			pipename,   // pipe name
+			GENERIC_READ |  // read and write access
+			GENERIC_WRITE,
+			0,              // no sharing
 			NULL,           // default security attributes FIXME
-			OPEN_EXISTING,  // opens existing pipe 
+			OPEN_EXISTING,  // opens existing pipe
 			FILE_FLAG_OVERLAPPED, //  enable async IO
-			NULL);          // no template file 
+			NULL);          // no template file
 
 	if (fd == INVALID_HANDLE_VALUE) {
                 upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", ups->name, ups->fn);

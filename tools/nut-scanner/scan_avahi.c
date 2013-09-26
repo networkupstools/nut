@@ -582,7 +582,8 @@ fail:
 
 	return nutscan_rewind_device(dev_ret);
 }
-#else  /* WITH_AVAHI */
+
+#else  /* not WITH_AVAHI */
 
 /* stub function */
 nutscan_device_t * nutscan_scan_avahi(useconds_t usec_timeout)

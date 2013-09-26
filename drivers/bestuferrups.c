@@ -419,6 +419,7 @@ static void setup_serial(void)
 	sync_serial();
 }
 
+
 void upsdrv_initups ()
 {
 	char	temp[256], fcstring[512];

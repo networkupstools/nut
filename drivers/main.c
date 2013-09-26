@@ -934,75 +934,41 @@ int main(int argc, char **argv)
 			writepid(pidfn);	/* before backgrounding */
 		}
 	}
-#endif
-	/* Setup signals to communicate with driver once backgrounded. */
-	if ((nut_debug_level == 0) && (!do_forceshutdown)) {
-		char	buffer[SMALLBUF];
-
-		setup_signals();
-
-		snprintf(buffer, sizeof(buffer), "%s/%s-%s.pid", altpidpath(), progname, upsname);
-
-		/* Try to prevent that driver is started multiple times. If a PID file */
-		/* already exists, send a TERM signal to the process and try if it goes */
-		/* away. If not, retry a couple of times. */
-		for (i = 0; i < 3; i++) {
-			struct stat	st;
-
-			if (stat(buffer, &st) != 0) {
-				/* PID file not found */
-				break;
-			}
-
-			if (sendsignalfn(buffer, SIGTERM) != 0) {
-				/* Can't send signal to PID, assume invalid file */
-				break;
-			}
-
-			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
-
-			/* Allow driver some time to quit */
-			sleep(5);
-		}
-
-		pidfn = xstrdup(buffer);
-		writepid(pidfn);	/* before backgrounding */
-	}
 #else
-		char	name[SMALLBUF];
+	char	name[SMALLBUF];
 
-		snprintf(name,sizeof(name), "%s-%s",progname,upsname);
+	snprintf(name,sizeof(name), "%s-%s",progname,upsname);
 
-		mutex = CreateMutex(NULL,TRUE,name);
-		if(mutex == NULL ) {
-			if( GetLastError() != ERROR_ACCESS_DENIED ) {
-				fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",name,(int)GetLastError());
-			}
+	mutex = CreateMutex(NULL,TRUE,name);
+	if(mutex == NULL ) {
+		if( GetLastError() != ERROR_ACCESS_DENIED ) {
+			fatalx(EXIT_FAILURE, "Can not create mutex %s : %d.\n",name,(int)GetLastError());
 		}
+	}
 
-		if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
-			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
-			for(i=0;i<10;i++) {
-				DWORD res;
-				sendsignal(name, COMMAND_STOP);
+	if (GetLastError() == ERROR_ALREADY_EXISTS || GetLastError() == ERROR_ACCESS_DENIED) {
+		upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+		for(i=0;i<10;i++) {
+			DWORD res;
+			sendsignal(name, COMMAND_STOP);
+			if(mutex != NULL ) {
+				res = WaitForSingleObject(mutex,1000);
+				if(res==WAIT_OBJECT_0) {
+					break;
+				}
+			}
+			else {
+				sleep(1);
+				mutex = CreateMutex(NULL,TRUE,name);
 				if(mutex != NULL ) {
-					res = WaitForSingleObject(mutex,1000);
-					if(res==WAIT_OBJECT_0) {
-						break;
-					}
+					break;
 				}
-				else {
-					sleep(1);
-					mutex = CreateMutex(NULL,TRUE,name);
-					if(mutex != NULL ) {
-						break;
-					}
-				}
-			}
-			if(i >= 10 ) {
-				fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
 			}
 		}
+		if(i >= 10 ) {
+			fatalx(EXIT_FAILURE, "Can not terminate the previous driver.\n");
+		}
+	}
 #endif
 
 	/* clear out callback handler data */
@@ -1187,9 +1153,13 @@ int main(int argc, char **argv)
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
+<<<<<<< HEAD
 	/* however, avoid to "pollute" data dump output! */
 	if (!dump_data)
 		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+=======
+	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+>>>>>>> More changes after rebase
 
 	exit(EXIT_SUCCESS);
 }

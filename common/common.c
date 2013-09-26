@@ -203,6 +203,7 @@ void background(void)
 #ifdef HAVE_SETSID
 	setsid();		/* make a new session to dodge signals */
 #endif
+
 #else /* WIN32 */
 	xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 	xbit_clear(&upslog_flags, UPSLOG_STDERR);
@@ -283,9 +284,11 @@ void chroot_start(const char *path)
 {
 	if (chdir(path))
 		fatal_with_errno(EXIT_FAILURE, "chdir(%s)", path);
+
 #ifndef WIN32
 	if (chroot(path))
 		fatal_with_errno(EXIT_FAILURE, "chroot(%s)", path);
+
 #endif
 	if (chdir("/"))
 		fatal_with_errno(EXIT_FAILURE, "chdir(/)");
@@ -296,7 +299,7 @@ void chroot_start(const char *path)
 #ifdef WIN32
 /* In WIN32 all non binaries files (namely configuration and PID files)
    are retrieved relative to the path of the binary itself.
-   So this function fill "dest" with the full path to "relative_path" 
+   So this function fill "dest" with the full path to "relative_path"
    depending on the .exe path */
 char * getfullpath(char * relative_path)
 {
@@ -584,7 +587,6 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if ((ret < 0) || (ret >= (int) sizeof(buf)))
 		syslog(LOG_WARNING, "vupslog: vsnprintf needed more than %d bytes",
 			LARGEBUF);
-	
 
 	if (use_strerror) {
 		snprintfcat(buf, sizeof(buf), ": %s", strerror(errno));
@@ -593,7 +595,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 		DWORD WinErr = GetLastError();
 		FormatMessage(
 				FORMAT_MESSAGE_MAX_WIDTH_MASK |
-				FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
 				FORMAT_MESSAGE_FROM_SYSTEM |
 				FORMAT_MESSAGE_IGNORE_INSERTS,
 				NULL,

@@ -144,7 +144,7 @@ static void wall(const char *text)
 	char * command;
 
 	/* first +1 is for the space between message and text
-	   second +1 is for trailing 0 
+	   second +1 is for trailing 0
 	   +2 is for "" */
 	command = malloc (strlen(MESSAGE_CMD) + 1 + 2 + strlen(text) + 1);
 	if( command == NULL ) {
@@ -173,7 +173,7 @@ static unsigned __stdcall async_notify(LPVOID param)
 	char	exec[LARGEBUF];
 	char	notice[LARGEBUF];
 
-	/* the following code is a copy of the content of the NOT WIN32 part of 
+	/* the following code is a copy of the content of the NOT WIN32 part of
 	"notify" function below */
 
 	async_notify_t *data = (async_notify_t *)param;
@@ -221,6 +221,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (flag_isset(flags, NOTIFY_SYSLOG))
 		upslogx(LOG_NOTICE, "%s", notice);
+
 #ifndef WIN32
 	/* fork here so upsmon doesn't get wedged if the notifier is slow */
 	ret = fork();
@@ -232,6 +233,7 @@ static void notify(const char *notice, int flags, const char *ntype,
 
 	if (ret != 0)	/* parent */
 		return;
+
 	/* child continues and does all the work */
 
 	if (flag_isset(flags, NOTIFY_WALL))
@@ -2373,24 +2375,6 @@ int main(int argc, char *argv[])
 		exit((cmdret == 0) ? EXIT_SUCCESS : EXIT_FAILURE);
 	}
 
-	argc -= optind;
-	argv += optind;
-
-	open_syslog(prog);
-
-	loadconfig();
-
-	/* CLI debug level can not be smaller than debug_min specified
-	 * in upsmon.conf. Note that non-zero debug_min does not impact
-	 * foreground running mode.
-	 */
-	if (nut_debug_level_global > nut_debug_level)
-		nut_debug_level = nut_debug_level_global;
-	upsdebugx(1, "debug level is '%d'", nut_debug_level);
-
-	if (checking_flag)
-		exit(check_pdflag());
-
 	/* otherwise, we are being asked to start.
 	 * so check if a previous instance is running by sending signal '0'
 	 * (Ie 'kill <pid> 0') */
@@ -2432,6 +2416,16 @@ int main(int argc, char *argv[])
 		/* Just failed to send signal, no competitor running */
 		break;
 	}
+
+	argc -= optind;
+	argv += optind;
+
+	open_syslog(prog);
+
+	loadconfig();
+
+	if (checking_flag)
+		exit(check_pdflag());
 
 	if (shutdowncmd == NULL)
 		printf("Warning: no shutdown command defined!\n");

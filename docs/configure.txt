@@ -124,26 +124,7 @@ To save time during the compile and disk space later on, you can
 use this option to just build and install a subset of the drivers.
 For example, to select `mge-shut` and `usbhid-ups`, you'd do this:
 
-	--with-doc=<output-format(s)>  (default: no)
-
-Build and install NUT documentation file(s).
-The possible values are "html-single" for single page HTML, "html-chunked"
-for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
-possible previous documentation formats.
-Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
-
-This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
-
-
-Optional features
------------------
-
-	--with-cgi (default: no)
-
-Build and install the optional CGI programs, HTML files, and sample
-CGI configuration files. This is not enabled by default, as they
-are only useful on web servers. See data/html/README for additional
-information on how to set up CGI programs.
+	--with-drivers=apcsmart,usbhid-ups
 
 If you need to build more drivers later on, you will need to rerun
 `configure` with a different list. To make it build all of the

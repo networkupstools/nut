@@ -445,8 +445,6 @@ void upsdrv_initups(void)
 #endif
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
-
-	
 }
 
 void upsdrv_cleanup(void)

@@ -294,6 +294,7 @@ static void setuptcp(stype_t *server)
 		if (fcntl(sock_fd, F_SETFL, v | O_NDELAY) == -1) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: fcntl(set)");
 		}
+
 #endif
 		if (listen(sock_fd, 16) < 0) {
 			upsdebug_with_errno(3, "setuptcp: listen");
@@ -1056,12 +1057,12 @@ static void set_reload_flag(int sig)
 /* service requests and check on new data */
 static void mainloop(void)
 {
+	int     nfds = 0;
 #ifndef WIN32
 	int	ret;
 	nfds_t	i, nfds = 0;
 #else
 	DWORD	ret;
-	int 	nfds = 0;
 	pipe_conn_t * conn;
 #endif
 
@@ -1427,6 +1428,7 @@ static void help(const char *arg_progname)
 	printf("  -V		display the version of this software\n");
 	printf("  -4		IPv4 only\n");
 	printf("  -6		IPv6 only\n");
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -1552,6 +1554,7 @@ int main(int argc, char **argv)
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
+
 			case 'c':
 				if (!strncmp(optarg, "reload", strlen(optarg)))
 					cmd = SIGCMD_RELOAD;
@@ -1562,12 +1565,14 @@ int main(int argc, char **argv)
 				if (cmd == 0)
 					help(progname);
 				break;
+
 #ifndef WIN32
 			case 'P':
 				if ((oldpid = parsepid(optarg)) < 0)
 					help(progname);
 				break;
 #endif
+
 			case 'D':
 				nut_debug_level++;
 				break;

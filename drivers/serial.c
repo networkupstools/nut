@@ -83,6 +83,7 @@ static void ser_open_error(const char *port)
 	if (group)
 		printf("Serial port group: %s (%d)\n",
 			group->gr_name, (int) fs.st_gid);
+
 #endif
 	printf("     Mode of port: %04o\n\n", (int) fs.st_mode & 07777);
 

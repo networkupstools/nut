@@ -47,8 +47,7 @@
 	#include <sslerr.h>
 	#include <sslproto.h>
 #endif /* WITH_NSS */
-
-char	*certfile = NULL;
+Hchar	*certfile = NULL;
 char	*certname = NULL;
 char	*certpasswd = NULL;
 
@@ -323,6 +322,7 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		upslog_with_errno(LOG_ERR, "SSL_accept do not accept handshake.");
 		ssl_error(client->ssl, ret);
 		break;
+
 	case -1:
 		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
 		ssl_error(client->ssl, ret);
@@ -332,21 +332,21 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
-	if (socket == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (socket == NULL) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / PR_ImportTCPSocket");
 		return;
 	}
 
 	client->ssl = SSL_ImportFD(NULL, socket);
-	if (client->ssl == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (client->ssl == NULL) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ImportFD");
 		return;
 	}
 
-	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1){
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1) {
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
 		return;
 	}
@@ -356,35 +356,35 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 	 */
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_AuthCertificateHook");
 		return;
 	}
 
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_BadCertHook");
 		return;
 	}
 
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_HandshakeCallback");
 		return;
 	}
 
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connection");
+		upslogx(LOG_ERR, "Can not initialize SSL connection");
 		nss_error("net_starttls / SSL_ResetHandshake");
 		return;
 	}

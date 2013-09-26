@@ -31,8 +31,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #else
-#include <stdio.h> 
-#include <strings.h> 
+#include <stdio.h>
+#include <strings.h>
 #include "wincompat.h"
 #endif
 
@@ -44,15 +44,14 @@
 #include "nut_stdint.h"
 
 #ifndef WIN32
-	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
+	static int	sockfd = -1;
 	static char	*sockfn = NULL;
 #else
-	static HANDLE 	sockfd = INVALID_HANDLE_VALUE; 
-	static int 	stale = 1, alarm_active = 0; ignorelb = 0;
+	static HANDLE 	sockfd = INVALID_HANDLE_VALUE;
 	static OVERLAPPED connect_overlapped;
 	static char	*pipename = NULL;
 #endif
-	static int	ignorelb = 0;
+	static int	stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
@@ -165,18 +164,18 @@ static HANDLE sock_open(const char *fn)
 {
 	HANDLE fd;
 
-	fd = CreateNamedPipe( 
-			fn,			// pipe name 
-			PIPE_ACCESS_DUPLEX |  // read/write access 
+	fd = CreateNamedPipe(
+			fn,			// pipe name
+			PIPE_ACCESS_DUPLEX |  // read/write access
 			FILE_FLAG_OVERLAPPED, // async IO
-			PIPE_TYPE_BYTE |	 
-			PIPE_READMODE_BYTE |	 
-			PIPE_WAIT,		 
-			PIPE_UNLIMITED_INSTANCES, // max. instances  
-			ST_SOCK_BUF_LEN,	// output buffer size 
-			ST_SOCK_BUF_LEN,	// input buffer size 
-			0,			// client time-out 
-			NULL);			// FIXME: default security attribute 
+			PIPE_TYPE_BYTE |
+			PIPE_READMODE_BYTE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, // max. instances
+			ST_SOCK_BUF_LEN,	// output buffer size
+			ST_SOCK_BUF_LEN,	// input buffer size
+			0,			// client time-out
+			NULL);			// FIXME: default security attribute
 
 	if (fd == INVALID_HANDLE_VALUE) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
@@ -430,7 +429,7 @@ static void sock_connect(HANDLE sock)
 
 #ifndef WIN32
 	int	ret;
-	int fd;
+	int	fd;
 
 	struct sockaddr_un sa;
 #if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
@@ -494,18 +493,18 @@ static void sock_connect(HANDLE sock)
 	conn->fd = sock;
 
 	/* sockfd is the handle of the connection pending pipe */
-	sockfd = CreateNamedPipe( 
-			pipename,			// pipe name 
-			PIPE_ACCESS_DUPLEX |  // read/write access 
+	sockfd = CreateNamedPipe(
+			pipename,			// pipe name
+			PIPE_ACCESS_DUPLEX |  // read/write access
 			FILE_FLAG_OVERLAPPED, // async IO
-			PIPE_TYPE_BYTE |	 
-			PIPE_READMODE_BYTE |	 
-			PIPE_WAIT,		 
-			PIPE_UNLIMITED_INSTANCES, // max. instances  
-			ST_SOCK_BUF_LEN,	// output buffer size 
-			ST_SOCK_BUF_LEN,	// input buffer size 
-			0,			// client time-out 
-			NULL);			// FIXME: default security attribute 
+			PIPE_TYPE_BYTE |
+			PIPE_READMODE_BYTE |
+			PIPE_WAIT,
+			PIPE_UNLIMITED_INSTANCES, // max. instances
+			ST_SOCK_BUF_LEN,	// output buffer size
+			ST_SOCK_BUF_LEN,	// input buffer size
+			0,			// client time-out
+			NULL);			// FIXME: default security attribute
 
 	if (sockfd == INVALID_HANDLE_VALUE) {
 		fatal_with_errno(EXIT_FAILURE, "Can't create a state socket (windows named pipe)");
@@ -1039,7 +1038,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 	rfds[maxfd] = connect_overlapped.hEvent;
 	maxfd++;
 
-	ret = WaitForMultipleObjects( 
+	ret = WaitForMultipleObjects(
 				maxfd,	/* number of objects in array */
 				rfds,	/* array of objects */
 				FALSE,	/* wait for any object */
@@ -1071,7 +1070,7 @@ int dstate_poll_fds(struct timeval timeout, HANDLE extrafd)
 			sock_read(conn);
 		}
 	}
-		
+
 	/* tell the caller if that fd woke up */
 /*
 	if ((extrafd != -1) && (ret == extrafd)) {

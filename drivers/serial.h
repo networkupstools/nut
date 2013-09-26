@@ -10,11 +10,11 @@
 #  include <sys/termios.h>      /* for speed_t */
 #else
 #  include <termios.h>
-#endif
-#else
+#endif /* HAVE_SYS_TERMIOS_H */
+#else /* WIN32 */
 #include "common.h"
 #include "wincompat.h"
-#endif /* HAVE_SYS_TERMIOS_H */
+#endif /* WIN32 */
 
 #include <unistd.h>             /* for usleep() and useconds_t, latter also might be via <sys/types.h> */
 #include <sys/types.h>

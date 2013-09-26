@@ -148,7 +148,6 @@ void upsdrv_initinfo(void)
 }
 
 static const char *getpacket(int *we_know){
-<<<<<<< HEAD
 #ifndef WIN32
 	fd_set readfds;
 	struct timeval tv;
@@ -166,6 +165,7 @@ static const char *getpacket(int *we_know){
 #ifndef WIN32
 	FD_ZERO(&readfds);
 	FD_SET(upsfd,&readfds);
+
 	/* Wait up to 2 seconds. */
 	tv.tv_sec = 5;
 	tv.tv_usec = 0;

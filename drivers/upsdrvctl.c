@@ -303,7 +303,7 @@ static void forkexec(char *const argv[], const ups_t *ups)
 
 	/* the command line is made of the driver name followed by args */
 	snprintf(commandline,sizeof(commandline),"%s", ups->driver);
-	while( argv[i] != NULL ) {	
+	while( argv[i] != NULL ) {
 		snprintfcat(commandline, sizeof(commandline), " %s", argv[i]);
 		i++;
 	}
