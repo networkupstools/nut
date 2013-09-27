@@ -52,19 +52,21 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 
 # not LDADD.
+
+# libupsclient version information
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
 if HAVE_WINDOWS_SOCKETS
-  libupsclient_la_SOURCES = upsclient.c upsclient.h ../common/wincompat.c ../common/common.c
+libupsclient_la_SOURCES = upsclient.c upsclient.h ../common/wincompat.c ../common/common.c
+libupsclient_la_LIBADD = ../common/libparseconf.la -lws2_32
+libupsclient_la_LDFLAGS = -version-info 3:1:0 -no-undefined
 else !HAVE_WINDOWS_SOCKETS
-  libupsclient_la_SOURCES = upsclient.c upsclient.h
-endif !HAVE_WINDOWS_SOCKETS
+libupsclient_la_SOURCES = upsclient.c upsclient.h
 libupsclient_la_LIBADD = ../common/libparseconf.la
+libupsclient_la_LDFLAGS = -version-info 3:1:0
+endif !HAVE_WINDOWS_SOCKETS
+
 if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
 
-# libupsclient version information
-# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-libupsclient_la_LDFLAGS = -version-info 3:1:0 -no-undefined
-
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
-
