@@ -11,8 +11,8 @@
 #include <unistd.h>
 #include <usb.h>
 
-#define SUBDRIVER_NAME	"USB communication subdriver"
-#define SUBDRIVER_VERSION	"0.22"
+#define SUBDRIVER_NAME    "USB communication subdriver"
+#define SUBDRIVER_VERSION "0.22"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -26,13 +26,13 @@ upsdrv_info_t comm_upsdrv_info = {
 #define MAX_TRY 4
 
 /* Powerware */
-#define POWERWARE	0x0592
+#define POWERWARE 0x0592
 
 /* Phoenixtec Power Co., Ltd */
-#define PHOENIXTEC	0x06da
+#define PHOENIXTEC 0x06da
 
 /* Hewlett Packard */
-#define HP_VENDORID	0x03f0
+#define HP_VENDORID 0x03f0
 
 /* USB functions */
 usb_dev_handle *nutusb_open(const char *port);
@@ -85,14 +85,14 @@ static usb_device_id_t pw_usb_device_table[] = {
 };
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
-#define USB_ERR_LIMIT 10	/* start limiting after 10 in a row  */
-#define USB_ERR_RATE 10		/* then only print every 10th error */
+#define USB_ERR_LIMIT 10 /* start limiting after 10 in a row  */
+#define USB_ERR_RATE 10  /* then only print every 10th error */
 #define XCP_USB_TIMEOUT 5000
 
 /* global variables */
 usb_dev_handle *upsdev = NULL;
-extern	int		exit_flag;
-static	unsigned int	comm_failures = 0;
+extern int exit_flag;
+static unsigned int comm_failures = 0;
 
 /* Functions implementations */
 void send_read_command(unsigned char command)
@@ -139,13 +139,13 @@ int get_answer(unsigned char *data, unsigned char command)
 	if (upsdev == NULL)
 		return -1;
 
-	length = 1;			/* non zero to enter the read loop */
-	end_length = 0;		/* total length of sequence(s), not counting header(s) */
-	endblock = 0;		/* signal the last sequence in the block */
-	bytes_read = 0;		/* total length of data read, including XCP header */
+	length = 1;        /* non zero to enter the read loop */
+	end_length = 0;    /* total length of sequence(s), not counting header(s) */
+	endblock = 0;      /* signal the last sequence in the block */
+	bytes_read = 0;    /* total length of data read, including XCP header */
 	res = 0;
 	ellapsed_time = 0;
-	seq_num = 1;		/* current theoric sequence */
+	seq_num = 1;       /* current theoric sequence */
 
 	upsdebugx(1, "entering get_answer(%x)", command);
 
@@ -295,7 +295,7 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 }
 
 /* Sends a setup command (length > 1) */
-int command_write_sequence(unsigned char *command, int command_length, unsigned	char *answer)
+int command_write_sequence(unsigned char *command, int command_length, unsigned char *answer)
 {
 	int bytes_read = 0;
 	int retry = 0;
@@ -477,13 +477,13 @@ int nutusb_close(usb_dev_handle *dev_h, const char *port)
 
 void nutusb_comm_fail(const char *fmt, ...)
 {
-	int	ret;
-	char	why[SMALLBUF];
-	va_list	ap;
+	int ret;
+	char why[SMALLBUF];
+	va_list ap;
 
 	/* this means we're probably here because select was interrupted */
 	if (exit_flag != 0)
-		return;		/* ignored, since we're about to exit anyway */
+		return; /* ignored, since we're about to exit anyway */
 
 	comm_failures++;
 
@@ -529,3 +529,4 @@ void nutusb_comm_good(void)
 	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
+
