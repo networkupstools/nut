@@ -387,6 +387,7 @@ void init_command_map()
 	bcmxcp_command_map[PW_UPS_OFF].command_desc = "PW_UPS_OFF";
 	bcmxcp_command_map[PW_DECREMENT_OUTPUT_VOLTAGE].command_desc = "PW_DECREMENT_OUTPUT_VOLTAGE";
 	bcmxcp_command_map[PW_INCREMENT_OUTPUT_VOLTAGE].command_desc = "PW_INCREMENT_OUTPUT_VOLTAGE";
+	bcmxcp_command_map[PW_SET_TIME_AND_DATE].command_desc = "PW_SET_TIME_AND_DATE";
 	bcmxcp_command_map[PW_UPS_ON_TIME].command_desc = "PW_UPS_ON_TIME";
 	bcmxcp_command_map[PW_UPS_ON_AT_TIME].command_desc = "PW_UPS_ON_AT_TIME";
 	bcmxcp_command_map[PW_UPS_OFF_TIME].command_desc = "PW_UPS_OFF_TIME";
@@ -431,11 +432,12 @@ void init_meter_map()
 	if (nphases == 1) {
 		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A].nut_entity = "input.current";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A].nut_entity = "ups.load"; /* TODO: Decide on corresponding three-phase variable mapping. */
+		bcmxcp_meter_map[BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_A].nut_entity = "input.bypass.voltage";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.voltage";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.current";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.current.nominal";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_A].nut_entity = "output.voltage";
-		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.realpower";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS].nut_entity = "ups.realpower";
 	} else {
 		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_CURRENT_PHASE_A].nut_entity = "input.L1.current";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_LOAD_PHASE_A].nut_entity = "output.L1.power.percent";
@@ -444,14 +446,17 @@ void init_meter_map()
 		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_A].nut_entity = "output.L1.power";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_B].nut_entity = "output.L2.power";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_PHASE_C].nut_entity = "output.L3.power";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_A].nut_entity = "input.bypass.L1-N.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_B].nut_entity = "input.bypass.L2-N.voltage";
+		bcmxcp_meter_map[BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_C].nut_entity = "input.bypass.L3-N.voltage";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A].nut_entity = "input.L1-N.voltage";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A].nut_entity = "output.L1.current";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART].nut_entity = "output.L1.current.nominal";
 		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_A].nut_entity = "output.L1-N.voltage";
-		bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.L1-N.realpower";
 	}
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_FREQUENCY].nut_entity = "output.frequency";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_INPUT_FREQUENCY].nut_entity = "input.frequency";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_BYPASS_FREQUENCY].nut_entity = "input.bypass.frequency";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_CURRENT].nut_entity = "battery.current";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_VOLTAGE].nut_entity = "battery.voltage";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_PERCENT_BATTERY_LEFT].nut_entity = "battery.charge";
@@ -468,11 +473,13 @@ void init_meter_map()
 	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C].nut_entity = "output.L3.current";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B_BAR_CHART].nut_entity = "output.L2.current.nominal";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C_BAR_CHART].nut_entity = "output.L3.current.nominal";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART].nut_entity = "ups.power.nominal";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_DATE].nut_entity = "ups.date";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_TIME].nut_entity = "ups.time";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_BATTERY_TEMPERATURE].nut_entity = "battery.temperature";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_B].nut_entity = "output.L2-N.voltage";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_VOLTS_C].nut_entity = "output.L3-N.voltage";
+	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A].nut_entity = "ups.L1-N.realpower";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_B].nut_entity = "ups.L2-N.realpower";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_C].nut_entity = "ups.L3-N.realpower";
 	bcmxcp_meter_map[BCMXCP_METER_MAP_OUTPUT_WATTS_PHASE_A_B_C_BAR_CHART].nut_entity = "ups.realpower.nominal";

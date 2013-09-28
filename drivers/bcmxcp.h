@@ -45,6 +45,7 @@
 #define PW_UPS_OFF                  (unsigned char)0x8B /* UPS off command. length 1-2 */
 #define PW_DECREMENT_OUTPUT_VOLTAGE (unsigned char)0x8C /* Decrease output voltage. length 1 */
 #define PW_INCREMENT_OUTPUT_VOLTAGE (unsigned char)0x8D /* Increase output voltage. length 1 */
+#define PW_SET_TIME_AND_DATE        (unsigned char)0x90 /* Set the real-time clock inside UPS. length 8 */
 #define PW_UPS_ON_TIME              (unsigned char)0x91 /* Scheduled UPS on in n minutes. length 3-4 */
 #define PW_UPS_ON_AT_TIME           (unsigned char)0x92 /* Schedule UPS on at specified date and time. length 7-8 */
 #define PW_UPS_OFF_TIME             (unsigned char)0x93 /* Scheduled UPS off in n minutes. length 3-4 */
@@ -145,7 +146,7 @@
 #define BCMXCP_METER_MAP_OUTPUT_FREQUENCY                       27 /* mapped */
 #define BCMXCP_METER_MAP_INPUT_FREQUENCY                        28 /* mapped */
 #define BCMXCP_METER_MAP_INVERTER_FREQUENCY                     29
-#define BCMXCP_METER_MAP_BYPASS_FREQUENCY                       30
+#define BCMXCP_METER_MAP_BYPASS_FREQUENCY                       30 /* mapped */
 #define BCMXCP_METER_MAP_DC_LINK_VOLTS_DC                       31
 #define BCMXCP_METER_MAP_BATTERY_CURRENT                        32 /* mapped */
 #define BCMXCP_METER_MAP_BATTERY_VOLTAGE                        33 /* mapped */
@@ -168,9 +169,9 @@
 #define BCMXCP_METER_MAP_OUTPUT_VA_PHASE_A                      50 /* mapped */
 #define BCMXCP_METER_MAP_OUTPUT_VA_PHASE_B                      51 /* mapped */
 #define BCMXCP_METER_MAP_OUTPUT_VA_PHASE_C                      52 /* mapped */
-#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_A                   53
-#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_B                   54
-#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_C                   55
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_A                   53 /* mapped */
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_B                   54 /* mapped */
+#define BCMXCP_METER_MAP_BYPASS_VOLTS_PHASE_C                   55 /* mapped */
 #define BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_A                    56 /* mapped */
 #define BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_B                    57 /* mapped */
 #define BCMXCP_METER_MAP_INPUT_VOLTS_PHASE_C                    58 /* mapped */
@@ -186,7 +187,7 @@
 #define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_A_BAR_CHART         68 /* mapped */
 #define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_B_BAR_CHART         69 /* mapped */
 #define BCMXCP_METER_MAP_LOAD_CURRENT_PHASE_C_BAR_CHART         70 /* mapped */
-#define BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART                    71 /* used, but not mapped */
+#define BCMXCP_METER_MAP_OUTPUT_VA_BAR_CHART                    71 /* mapped */
 #define BCMXCP_METER_MAP_DATE                                   72 /* mapped */
 #define BCMXCP_METER_MAP_TIME                                   73 /* mapped */
 #define BCMXCP_METER_MAP_POSITIVE_DC_LINK_RAIL_VOLTAGE          74
