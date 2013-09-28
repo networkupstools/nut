@@ -978,25 +978,25 @@ int init_outlet(unsigned char len)
 		upsdebugx(1, "init_outlet(%i), res=%i", len, res);
 
 	num_outlet = answer[iIndex++];
-	upsdebugx(2, "Number of outlets: %d\n", num_outlet);
+	upsdebugx(2, "Number of outlets: %d", num_outlet);
 
 	size_outlet = answer[iIndex++];
-	upsdebugx(2, "Number of bytes: %d\n", size_outlet);
+	upsdebugx(2, "Number of bytes: %d", size_outlet);
 
 	for(num = 1 ; num <= num_outlet ; num++) {
 		outlet_num = answer[iIndex++];
-		upsdebugx(2, "Outlet number: %d\n", outlet_num);
+		upsdebugx(2, "Outlet number: %d", outlet_num);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.id", num);
 		dstate_setinfo(outlet_name, "%d", outlet_num);
 
 		outlet_state = answer[iIndex++];
-		upsdebugx(2, "Outlet state: %d\n", outlet_state);
+		upsdebugx(2, "Outlet state: %d", outlet_state);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.status", num);
 		dstate_setinfo(outlet_name, "%s", (outlet_state & 0x01 ? "On" : "Off"));
 
 		auto_dly_off = get_word(answer+iIndex);
 		iIndex += 2;
-		upsdebugx(2, "Auto delay off: %d\n", auto_dly_off);
+		upsdebugx(2, "Auto delay off: %d", auto_dly_off);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.shutdown", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_off);
 		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
@@ -1004,7 +1004,7 @@ int init_outlet(unsigned char len)
 
 		auto_dly_on = get_word(answer+iIndex);
 		iIndex += 2;
-		upsdebugx(2, "Auto delay on: %d\n", auto_dly_on);
+		upsdebugx(2, "Auto delay on: %d", auto_dly_on);
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.delay.start", num);
 		dstate_setinfo(outlet_name, "%d", auto_dly_on);
 		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
