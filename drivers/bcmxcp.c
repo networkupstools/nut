@@ -861,6 +861,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 	else if (format <= 0x97) {
 		/* Floating point */
 		fValue = get_float(entry);
+		/* Format is packed BCD */
 		snprintf(sFormat, 31, "%%%d.%df", ((format & 0xf0) >> 4), (format & 0x0f));
 		snprintf(value, 127, sFormat, fValue);
 	}
@@ -871,6 +872,7 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 	}
 	else if (format == 0xe0) {
 		/* Date */
+		/* Format is packed BCD for each byte, and cc uses most signifcant bit to signal date format */
 		dd = entry[0];
 		mm = entry[1];
 		yy = entry[2];
@@ -878,22 +880,24 @@ void decode_meter_map_entry(const unsigned char *entry, const unsigned char form
 
 		/* Check format type */
 		if (cc & 0x80) {
-			/* Julian format */
-			snprintf(value, 127, "%2d%2d:%3d", (cc & 0x7f), yy, (mm * 0x100)+dd);
+			/* Month:Day format */
+			snprintf(value, 127, "%d%d/%d%d/%d%d%d%d", ((dd & 0xf0) >> 4), (dd & 0x0f), ((mm & 0xf0) >> 4), (mm & 0x0f), (((cc & 0x7f) & 0xf0) >> 4), ((cc & 0x7f) & 0x0f), ((yy & 0xf0) >> 4), (yy & 0x0f));
 		}
 		else {
-			/* Month:Day format */
-			snprintf(value, 127, "%2d/%2d/%2d%2d", dd, mm, (cc & 0x7f), yy);
+			/* Julian format */
+			/* TODO test this, unsure if the day part is correct, i.e. how we use the two bytes mm and dd to calculate the number of julian days */
+			snprintf(value, 127, "%d%d%d%d:%d%d%d", (((cc & 0x7f) & 0xf0) >> 4), ((cc & 0x7f) & 0x0f), ((yy & 0xf0) >> 4), (yy & 0x0f), (mm & 0x0f), ((dd & 0xf0) >> 4), (dd & 0x0f));
 		}
 	}
 	else if (format == 0xe1) {
 		/* Time */
+		/* Format is packed BCD for each byte */
 		cc = entry[0];
 		ss = entry[1];
 		mm = entry[2];
 		hh = entry[3];
 
-		snprintf(value, 127, "%2d:%2d:%2d.%2d", hh, mm, ss, cc);
+		snprintf(value, 127, "%d%d:%d%d:%d%d.%d%d", ((hh & 0xf0) >> 4), (hh & 0x0f), ((mm & 0xf0) >> 4), (mm & 0x0f), ((ss & 0xf0) >> 4), (ss & 0x0f), ((cc & 0xf0) >> 4), (cc & 0x0f));
 	}
 	else {
 		/* Unknown format */
