@@ -139,11 +139,11 @@ nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 	int devfd = -1;
 
 	if ( (devfd = ser_open_nf(port_name)) != -1 ) {
-		/* set RTS to on and DTR to off first, as these are not fatal
-		 * and allow to test the port */
-		if (ser_set_dtr(devfd, 0) != -1) {
+		/* set RTS to off and DTR to on to allow correct behavior
+		 * with UPS using PnP feature */
+		if (ser_set_dtr(devfd, 1) != -1) {
 
-			ser_set_rts(devfd, 1);
+			ser_set_rts(devfd, 0);
 			ser_set_speed_nf(devfd, port_name, B2400);
 
 			if (shut_synchronise(devfd)) {
