@@ -29,6 +29,7 @@ mge-shut.html
 mge-utalk.html
 microdowell.html
 netxml-ups.html
+nutdrv-modbus.html
 nut.conf.html
 nutupsdrv.html
 oneac.html
@@ -112,6 +113,7 @@ mge-shut.8
 mge-utalk.8
 microdowell.8
 netxml-ups.8
+nutdrv-modbus.8
 nut.conf.5
 nutupsdrv.8
 oneac.8
