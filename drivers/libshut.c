@@ -41,7 +41,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.83"
+#define SHUT_DRIVER_VERSION	"0.84"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -312,7 +312,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	/* FIXME: add variable baudrate detection */
 	*upsfd = ser_open(device_path);
 	ser_set_speed(*upsfd, device_path, B2400);
-	setline(*upsfd, 1);
+	setline(*upsfd, 0);
 
 	/* initialise communication */
 	if (!shut_synchronise(*upsfd))
