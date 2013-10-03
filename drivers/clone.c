@@ -66,9 +66,10 @@ static long	offdelay = 120, ondelay = 30;
 
 static PCONF_CTX_t	sock_ctx;
 static time_t	last_poll = 0, last_heard = 0,
-		last_ping = 0, last_connfail = 0;
-
-#ifdef WIN32
+		last_ping = 0;
+#ifndef WIN32
+static time_t last_connfail = 0;
+#else
 static char	read_buf[SMALLBUF];
 static OVERLAPPED read_overlapped;
 #endif

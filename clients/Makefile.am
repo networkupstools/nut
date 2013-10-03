@@ -31,7 +31,6 @@ endif
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
-<<<<<<< HEAD
 sbin_PROGRAMS = upsmon upssched
 if HAVE_WINDOWS_SOCKETS
   sbin_PROGRAMS += message

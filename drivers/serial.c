@@ -131,6 +131,8 @@ static void lock_set(TYPE_FD fd, const char *port)
 
 #else
 
+	ret = 0; /* Make compiler happy */
+	ret = ret;
 	upslog_with_errno(LOG_WARNING, "Warning: no locking method is available");
 
 #endif

@@ -51,7 +51,9 @@
 
 	static	FILE	*logfile;
 	static	const	char *logfn, *monhost;
+#ifndef WIN32
 	static	sigset_t	nut_upslog_sigmask;
+#endif
 	static	char	logbuffer[LARGEBUF], *logformat;
 
 	static	flist_t	*fhead = NULL;
@@ -73,6 +75,7 @@ static void reopen_log(void)
 		fatal_with_errno(EXIT_FAILURE, "could not reopen logfile %s", logfn);
 }
 
+#ifndef WIN32
 static void set_reopen_flag(int sig)
 {
 	reopen_flag = sig;
@@ -82,6 +85,7 @@ static void set_exit_flag(int sig)
 {
 	exit_flag = sig;
 }
+#endif
 
 static void set_print_now_flag(int sig)
 {

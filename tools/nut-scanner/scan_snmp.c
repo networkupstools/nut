@@ -31,6 +31,8 @@
 
 #ifndef WIN32
 #include <sys/socket.h>
+#else
+#undef _WIN32_WINNT
 #endif
 
 #include <stdio.h>

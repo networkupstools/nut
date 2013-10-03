@@ -36,7 +36,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/select.h>
+#define SOCK_OPT_CAST
 #else
+#define SOCK_OPT_CAST (char*)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
 #include <ws2tcpip.h>
@@ -195,9 +197,9 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	int i;
 
 #ifdef WIN32
-        WSADATA WSAdata;
-        WSAStartup(2,&WSAdata);
-        atexit((void(*)(void))WSACleanup);
+	WSADATA WSAdata;
+	WSAStartup(2,&WSAdata);
+	atexit((void(*)(void))WSACleanup);
 #endif
 
 	nutscan_device_t * nut_dev = NULL;
@@ -235,7 +237,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				"with a broadcast, attempt %d of %d with a timeout of %jd usec",
 				(i + 1), MAX_RETRIES, (uintmax_t)usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
-			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, SOCK_OPT_CAST &sockopt_on,
 				sizeof(sockopt_on));
 		} else {
 			upsdebugx(2,

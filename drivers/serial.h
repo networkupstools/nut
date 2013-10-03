@@ -5,15 +5,15 @@
 
 #include "config.h"
 
+#include "common.h" /* for TYPE_FD */
 #ifndef WIN32
-#if defined(HAVE_SYS_TERMIOS_H)
+# if defined(HAVE_SYS_TERMIOS_H)
 #  include <sys/termios.h>      /* for speed_t */
-#else
+# else
 #  include <termios.h>
-#endif /* HAVE_SYS_TERMIOS_H */
+# endif /* HAVE_SYS_TERMIOS_H */
 #else /* WIN32 */
-#include "common.h"
-#include "wincompat.h"
+# include "wincompat.h"
 #endif /* WIN32 */
 
 #include <unistd.h>             /* for usleep() and useconds_t, latter also might be via <sys/types.h> */
@@ -25,18 +25,10 @@
 #define SER_ERR_RATE 100	/* then only print every 100th error */
 
 /* porting stuff for WIN32 */
-#ifndef WIN32
-#define ERROR_FD (-1)
-#define TYPE_FD int
-#define PRINT_FD(x) x
-#else
-#define ERROR_FD (NULL)
-#define TYPE_FD serial_handler_t *
-#define PRINT_FD(x) (int)x->handle
-
+#ifdef WIN32
 /* TODO : support "open" flags */
-#define O_NONBLOCK 0
-#define O_NOCTTY 0
+# define O_NONBLOCK 0
+# define O_NOCTTY 0
 #endif
 
 TYPE_FD ser_open_nf(const char *port);

@@ -50,6 +50,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #else
+#include "wincompat.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #endif
@@ -1038,7 +1039,7 @@ static HANDLE check_parent(const char *cmd, const char *arg2)
 
 		/* it's not running, so there's nothing to cancel */
 		if (!strcmp(cmd, "CANCEL") && (arg2 == NULL))
-			return PARENT_UNNECESSARY;
+			return (HANDLE)PARENT_UNNECESSARY;
 
 		/* arg2 non-NULL means there is a cancel action available */
 
@@ -1048,7 +1049,7 @@ static HANDLE check_parent(const char *cmd, const char *arg2)
 
 		if (lockfd != INVALID_HANDLE_VALUE) {
 			start_daemon(lockfd);
-			return PARENT_STARTED;	/* started successfully */
+			return (HANDLE)PARENT_STARTED;	/* started successfully */
 		}
 
 		/* we didn't get the lock - must be two upsscheds running */
@@ -1130,14 +1131,14 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 
 		pipefd = check_parent(cmd, arg2);
 
-		if (pipefd == PARENT_STARTED) {
+		if (pipefd == (HANDLE)PARENT_STARTED) {
 			/* loop back and try to connect now */
 			usleep(250000);
 			continue;
 		}
 
 		/* special case for CANCEL when no parent is running */
-		if (pipefd == PARENT_UNNECESSARY)
+		if (pipefd == (HANDLE)PARENT_UNNECESSARY)
 			return;
 
 		/* we're connected now */

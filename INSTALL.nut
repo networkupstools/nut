@@ -365,6 +365,11 @@ If you plan to use an UPS which is locally connected to an USB port, you have to
 link:https://sourceforge.net/projects/libusb-win32/files/[libUSB-win32]
 on your system. Then you must install your device via libUSB's "Inf Wizard".
 
+NOTE: If you intend to build from source, relevant sources may be available at
+https://github.com/mcuee/libusb-win32 and keep in mind that it is a variant of
+libusb-0.1. Current NUT supports libusb-1.0 as well, and that project should
+have Windows support out of the box (but it was not explored for NUT yet).
+
 If you have selected default directory, all configuration files are located in
 `C:\Program Files\NUT\ups\etc`
 

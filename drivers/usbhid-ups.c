@@ -1505,18 +1505,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case 0:
 			continue;
 
-<<<<<<< HEAD
-#ifndef WIN32
 		case ERROR_TIMEOUT:   /* Connection timed out */
+/* libusb win32 does not know EPROTO and EOVERFLOW,
+ * it only returns EIO for any IO errors */
+#ifndef WIN32
 		case ERROR_OVERFLOW:  /* Value too large for defined data type */
 # if EPROTO && WITH_LIBUSB_0_1
-=======
-		case -ETIMEDOUT:	/* Connection timed out */
-/* libusb win32 does not know EPROTO and EOVERFLOW, it only returns EIO for any
-   IO errors */
-#ifndef WIN32
-		case -EOVERFLOW:	/* Value too large for defined data type */
->>>>>>> Better handling of ETIMEDOUT
 		case -EPROTO:		/* Protocol error */
 # endif
 #endif

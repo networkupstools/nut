@@ -22,9 +22,11 @@
 #include "config.h"	/* safe because it doesn't contain prototypes */
 #include "nut_platform.h"
 
-#ifdef HAVE_PTHREAD
+#ifndef WIN32
+# ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
-#include <pthread.h>
+#  include <pthread.h>
+# endif
 #endif
 
 #include <errno.h>
@@ -32,21 +34,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 #ifndef WIN32
-#include <netdb.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#else
+# include <netdb.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
+# include <fcntl.h>
+# define SOCK_OPT_CAST
+#else /* => WIN32 */
+# define SOCK_OPT_CAST (char *)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
-#include <ws2tcpip.h>
-#include <wspiapi.h>
+# include <ws2tcpip.h>
+# include <wspiapi.h>
 /* This override network system calls to adapt to Windows specificity */
-#define W32_NETWORK_CALL_OVERRIDE
-#include "wincompat.h"
-#undef W32_NETWORK_CALL_OVERRIDE
+# define W32_NETWORK_CALL_OVERRIDE
+# include "wincompat.h"
+# undef W32_NETWORK_CALL_OVERRIDE
 #endif
 
 #include "common.h"
@@ -1075,8 +1080,8 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, uint16_t port, int flags
 						timeout);
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);
-					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
-							&error,&error_size);
+					getsockopt(sock_fd, SOL_SOCKET, SO_ERROR,
+							SOCK_OPT_CAST &error, &error_size);
 					if( error == 0) {
 						/* connect successful */
 						v = 0;

@@ -76,7 +76,13 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-#ifdef WIN32
+/* porting stuff for WIN32, used by serial and SHUT codebases */
+#ifndef WIN32
+# define TYPE_FD int
+# define ERROR_FD (-1)
+# define VALID_FD(a) (a>0)
+# define PRINT_FD(x) x
+#else
 typedef struct serial_handler_s {
 	HANDLE handle;
 	OVERLAPPED io_status;
@@ -87,6 +93,12 @@ typedef struct serial_handler_s {
 	unsigned int r_binary;
 	unsigned int w_binary;
 } serial_handler_t;
+
+# define TYPE_FD serial_handler_t *
+# define ERROR_FD (NULL)
+# define VALID_FD(a) (a!=NULL)
+/* FIXME: HANDLE is not guaranteed to be an int(-sized memory area), right? */
+# define PRINT_FD(x) (int)x->handle
 #endif
 
 extern const char *UPS_VERSION;
@@ -238,11 +250,13 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
+/* Note: different method signatures instead of TYPE_FD due to "const" */
 #ifndef WIN32
 ssize_t select_read(const int fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #else
 ssize_t select_read(serial_handler_t fd, void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 #endif
+/* Note: currently not implemented de-facto for Win32 */
 ssize_t select_write(const int fd, const void *buf, const size_t buflen, const time_t d_sec, const suseconds_t d_usec);
 
 char * get_libname(const char* base_libname);
