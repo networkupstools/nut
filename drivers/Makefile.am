@@ -250,7 +250,7 @@ snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) -lm
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
-netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS) -lintl
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
