@@ -454,8 +454,9 @@ static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, u
 		fatalx (EXIT_FAILURE, "Error: apc_read_i called with buflen too large");
 	}
 
-	if (upsfd == -1)
+	if (upsfd == ERROR_FD)
 		return 0;
+
 	if (flags & SER_D0) {
 		sec = 0; usec = 0;
 	}

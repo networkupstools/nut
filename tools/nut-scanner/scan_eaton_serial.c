@@ -89,7 +89,11 @@ static pthread_mutex_t dev_mutex;
 
 /* Fake driver main, for using serial functions, needed for bcmxcp_ser.c */
 char  *device_path;
+#ifndef WIN32
 int   upsfd;
+#else
+HANDLE   upsfd;
+#endif
 int   exit_flag = 0;
 int   do_lock_port;
 
@@ -131,7 +135,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 /* Light version of of drivers/libshut.c->shut_synchronise()
  * return 1 if OK, 0 otherwise */
-static int shut_synchronise(int arg_upsfd)
+static int shut_synchronise(TYPE_FD arg_upsfd)
 {
 	int try;
 	unsigned char reply = '\0';
@@ -161,9 +165,9 @@ static int shut_synchronise(int arg_upsfd)
 static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	int devfd = -1;
+	TYPE_FD devfd = ERROR_FD;
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if ( (devfd = ser_open_nf(port_name)) != ERROR_FD ) {
 		/* set RTS to off and DTR to on to allow correct behavior
 		 * with UPS using PnP feature */
 		if (ser_set_dtr(devfd, 1) != -1) {
@@ -210,14 +214,15 @@ static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
-	int i, devfd = -1;
+	int i;
 	ssize_t ret;
+	TYPE_FD devfd = ERROR_FD;
 	unsigned char	answer[256];
 	unsigned char	sbuf[128];
 
 	memset(sbuf, 0, 128);
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if ( (devfd = ser_open_nf(port_name)) != ERROR_FD ) {
 #ifdef HAVE_PTHREAD
 		pthread_mutex_lock(&dev_mutex);
 #endif
@@ -303,10 +308,10 @@ static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 	struct termios tio;
 	ssize_t ret = 0;
 	int retry;
-	int devfd = -1;
+	TYPE_FD devfd = ERROR_FD;
 	char buf[128];
 
-	if ((devfd = ser_open_nf(port_name)) != -1) {
+	if ( (devfd = ser_open_nf(port_name)) != ERROR_FD ) {
 		if (ser_set_speed_nf(devfd, port_name, B2400) != -1) {
 
 			if (!tcgetattr(devfd, &tio)) {
@@ -399,8 +404,10 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 {
 	bool_t pass = TRUE; /* Track that we may spawn a scanning thread */
+#ifndef WIN32
 	struct sigaction oldact;
 	int change_action_handler = 0;
+#endif
 	char *current_port_name = NULL;
 	char **serial_ports_list;
 	int  current_port_nb;
@@ -421,6 +428,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		return NULL;
 	}
 
+#ifndef WIN32
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if (sigaction(SIGPIPE, NULL, &oldact) == 0) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
@@ -435,6 +443,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # pragma GCC diagnostic pop
 #endif
 	}
+#endif
 
 	/* port(s) iterator */
 	current_port_nb = 0;
@@ -635,6 +644,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	pthread_mutex_destroy(&dev_mutex);
 #endif /* HAVE_PTHREAD */
 
+#ifndef WIN32
 	if (change_action_handler) {
 #if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_STRICT_PROTOTYPES)
 # pragma GCC diagnostic push
@@ -645,6 +655,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 # pragma GCC diagnostic pop
 #endif
 	}
+#endif /* WIN32 */
 
 	/* free everything... */
 	i = 0;

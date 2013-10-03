@@ -1389,20 +1389,11 @@ Public License instead of this License.
                     <Component Id="msys_ssl_1.0.0.dll" DiskId="1" Guid="C267BD52-3D05-4D2F-A761-DDD795694EAB">
                         <File Id="msys_ssl_1.0.0.dll" Name="msys-ssl-1.0.0.dll" Source="ImageFiles\others\msys-ssl-1.0.0.dll" />
                     </Component>
-                    <Component Id="libusb.dll" DiskId="1" Guid="00C5789F-7ED4-43C0-8483-29F674F47CC1">
-                        <File Id="libusb.dll" Name="libusb.dll" Source="ImageFiles\others\libusb.dll" />
-                    </Component>
-                    <Component Id="libneon.dll" DiskId="1" Guid="1C240775-B7F3-414D-A18E-AD2B0AFBE3B2">
-                        <File Id="libneon.dll" Name="libneon.dll" Source="ImageFiles\others\libneon.dll" />
-                    </Component>
-                    <Component Id="libnetsnmp.dll" DiskId="1" Guid="EF5DF7CF-B7EE-4760-8CB9-3971838F1B17">
-                        <File Id="libnetsnmp.dll" Name="libnetsnmp.dll" Source="ImageFiles\others\libnetsnmp.dll" />
-                    </Component>
                     <Component Id="nut_scanner.exe" DiskId="1" Guid="A8072D78-5F56-4965-AACC-9DE300445080">
                         <File Id="nut_scanner.exe" Name="nut-scanner.exe" Source="..\..\..\tools\nut-scanner\.libs\nut-scanner.exe" />
                     </Component>
-                    <Component Id="libupsclient_1_1.dll" DiskId="1" Guid="CF7C834D-FE42-4698-9065-68B67165101D">
-                        <File Id="libupsclient_1_1.dll" Name="libupsclient-1.dll" Source="..\..\..\clients\.libs\libupsclient-1.dll" />
+                    <Component Id="libupsclient_3_1.dll" DiskId="1" Guid="CF7C834D-FE42-4698-9065-68B67165101D">
+                        <File Id="libupsclient_3_1.dll" Name="libupsclient-3.dll" Source="..\..\..\clients\.libs\libupsclient-3.dll" />
                     </Component>
                 </Directory>
                 <Directory Id="etc" Name="etc">
@@ -1443,8 +1434,8 @@ Public License instead of this License.
                     <Component Id="message.exe" DiskId="1" Guid="82F5C9BB-95A5-4000-B3C5-F8032016EC33">
                         <File Id="message.exe" Name="message.exe" Source="..\..\..\clients\.libs\message.exe" />
                     </Component>
-                    <Component Id="libupsclient_1_2.dll" DiskId="1" Guid="9F297F2A-6A54-40B0-90D8-AAB5D8354D69">
-                        <File Id="libupsclient_1_2.dll" Name="libupsclient-1.dll" Source="..\..\..\clients\.libs\libupsclient-1.dll" />
+                    <Component Id="libupsclient_3_2.dll" DiskId="1" Guid="9F297F2A-6A54-40B0-90D8-AAB5D8354D69">
+                        <File Id="libupsclient_3_2.dll" Name="libupsclient-3.dll" Source="..\..\..\clients\.libs\libupsclient-3.dll" />
                     </Component>
                     <Component Id="upssched.exe" DiskId="1" Guid="142F2FB6-1DEA-42E8-A9DF-C8088C49A63E">
                         <File Id="upssched.exe" Name="upssched.exe" Source="..\..\..\clients\.libs\upssched.exe" />
@@ -1899,11 +1890,8 @@ Public License instead of this License.
                 <ComponentRef Id="msys_1.0.dll" />
                 <ComponentRef Id="msys_crypto_1.0.0.dll" />
                 <ComponentRef Id="msys_ssl_1.0.0.dll" />
-                <ComponentRef Id="libusb.dll" />
-                <ComponentRef Id="libneon.dll" />
-                <ComponentRef Id="libnetsnmp.dll" />
                 <ComponentRef Id="nut_scanner.exe" />
-                <ComponentRef Id="libupsclient_1_1.dll" />
+                <ComponentRef Id="libupsclient_3_1.dll" />
             </Feature>
             <Feature Id="etc" Level="1" Title="NUT etc files for Windows">
                 <ComponentRef Id="nut.conf.sample" />
@@ -1921,7 +1909,7 @@ Public License instead of this License.
                 <ComponentRef Id="upsd.exe" />
                 <ComponentRef Id="upsmon.exe" />
                 <ComponentRef Id="message.exe" />
-                <ComponentRef Id="libupsclient_1_2.dll" />
+                <ComponentRef Id="libupsclient_3_2.dll" />
                 <ComponentRef Id="upssched.exe" />
                 <ComponentRef Id="msys1.0.dll" />
                 <ComponentRef Id="msyscrypto_1.0.0.dll" />

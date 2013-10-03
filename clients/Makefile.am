@@ -31,16 +31,21 @@ endif
 
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
+<<<<<<< HEAD
 sbin_PROGRAMS = upsmon upssched
 if HAVE_WINDOWS_SOCKETS
   sbin_PROGRAMS += message
 endif !HAVE_WINDOWS_SOCKETS
 
 lib_LTLIBRARIES = libupsclient.la
+if HAVE_WINDOWS_SOCKETS
+  # FIXME: Currently C++ libs don't build on Win32?
+else
 if HAVE_CXX11
   lib_LTLIBRARIES += libnutclient.la
   lib_LTLIBRARIES += libnutclientstub.la
-endif
+endif !HAVE_CXX11
+endif !HAVE_WINDOWS_SOCKETS
 
 if WITH_DEV
  include_HEADERS = upsclient.h $(top_srcdir)/include/parseconf.h nutclient.h nutclientmem.h

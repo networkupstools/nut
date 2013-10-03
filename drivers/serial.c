@@ -101,7 +101,7 @@ static void lock_set(TYPE_FD fd, const char *port)
 	int	ret;
 
 	if (fd == ERROR_FD)
-		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", fd);
+		fatal_with_errno(EXIT_FAILURE, "lock_set: programming error: fd = %d", PRINT_FD(fd));
 
 	if (do_lock_port == 0)
 		return;
@@ -169,7 +169,7 @@ int ser_set_speed_nf(TYPE_FD fd, const char *port, speed_t speed)
 	NUT_UNUSED_VARIABLE(port);
 
 	if (tcgetattr(fd, &tio) != 0) {
-		return ERROR_FD;
+		return -1;
 	}
 
 	tio.c_cflag = CS8 | CLOCAL | CREAD;
@@ -193,10 +193,10 @@ int ser_set_speed_nf(TYPE_FD fd, const char *port, speed_t speed)
 }
 int ser_set_speed(TYPE_FD fd, const char *port, speed_t speed)
 {
-	TYPE_FD res;
+	int res;
 
 	res = ser_set_speed_nf(fd,port,speed);
-	if(res == ERROR_FD) {
+	if(res == -1) {
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", port);
 	}
 
@@ -204,7 +204,7 @@ int ser_set_speed(TYPE_FD fd, const char *port, speed_t speed)
 }
 
 #ifndef WIN32
-static int ser_set_control(int fd, int line, int state)
+static int ser_set_control(TYPE_FD fd, int line, int state)
 {
 	if (state) {
 		return ioctl(fd, TIOCMBIS, &line);
@@ -213,7 +213,7 @@ static int ser_set_control(int fd, int line, int state)
 	}
 }
 
-int ser_set_dtr(int fd, int state)
+int ser_set_dtr(TYPE_FD fd, int state)
 {
 	return ser_set_control(fd, TIOCM_DTR, state);
 }
@@ -223,7 +223,7 @@ int ser_set_rts(int fd, int state)
 	return ser_set_control(fd, TIOCM_RTS, state);
 }
 #else
-int ser_set_dtr(serial_handler_t * fd, int state)
+int ser_set_dtr(TYPE_FD fd, int state)
 {
 	DWORD action;
 
@@ -233,10 +233,15 @@ int ser_set_dtr(serial_handler_t * fd, int state)
 	else {
 		action = SETDTR;
 	}
-	return EscapeCommFunction(fd->handle,action);
+
+	/* Success */
+	if( EscapeCommFunction(fd->handle,action) != 0) {
+		return 0;
+	}
+	return -1;
 }
 
-int ser_set_rts(serial_handler_t * fd, int state)
+int ser_set_rts(TYPE_FD fd, int state)
 {
 	DWORD action;
 
@@ -246,12 +251,16 @@ int ser_set_rts(serial_handler_t * fd, int state)
 	else {
 		action = SETRTS;
 	}
-	return EscapeCommFunction(fd->handle,action);
+	/* Success */
+	if( EscapeCommFunction(fd->handle,action) != 0) {
+		return 0;
+	}
+	return -1;
 }
 #endif
 
 #ifndef WIN32
-static int ser_get_control(int fd, int line)
+static int ser_get_control(TYPE_FD fd, int line)
 {
 	int	flags;
 
@@ -260,22 +269,22 @@ static int ser_get_control(int fd, int line)
 	return (flags & line);
 }
 
-int ser_get_dsr(int fd)
+int ser_get_dsr(TYPE_FD fd)
 {
 	return ser_get_control(fd, TIOCM_DSR);
 }
 
-int ser_get_cts(int fd)
+int ser_get_cts(TYPE_FD fd)
 {
 	return ser_get_control(fd, TIOCM_CTS);
 }
 
-int ser_get_dcd(int fd)
+int ser_get_dcd(TYPE_FD fd)
 {
 	return ser_get_control(fd, TIOCM_CD);
 }
 #else
-int ser_get_dsr(serial_handler_t * fd)
+int ser_get_dsr(TYPE_FD fd)
 {
 	int flags;
 
@@ -283,7 +292,7 @@ int ser_get_dsr(serial_handler_t * fd)
 	return (flags & TIOCM_DSR);
 }
 
-int ser_get_cts(serial_handler_t * fd)
+int ser_get_cts(TYPE_FD fd)
 {
 	int flags;
 
@@ -291,7 +300,7 @@ int ser_get_cts(serial_handler_t * fd)
 	return (flags & TIOCM_CTS);
 }
 
-int ser_get_dcd(serial_handler_t * fd)
+int ser_get_dcd(TYPE_FD fd)
 {
 	int flags;
 
@@ -309,7 +318,7 @@ int ser_flush_io(TYPE_FD fd)
 int ser_close(TYPE_FD fd, const char *port)
 {
 	if (fd == ERROR_FD)
-		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", fd, port);
+		fatal_with_errno(EXIT_FAILURE, "ser_close: programming error: fd=%d port=%s", PRINT_FD(fd), port);
 
 	if (close(fd) != 0)
 		return -1;

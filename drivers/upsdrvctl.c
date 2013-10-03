@@ -151,11 +151,11 @@ static void stop_driver(const ups_t *ups)
 {
 	char	pidfn[SMALLBUF];
 	int	ret;
-	struct stat	fs;
 
 	upsdebugx(1, "Stopping UPS: %s", ups->upsname);
 
 #ifndef WIN32
+	struct stat	fs;
 	snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 		ups->driver, ups->upsname);
 	ret = stat(pidfn, &fs);
@@ -195,6 +195,7 @@ static void stop_driver(const ups_t *ups)
 	}
 }
 
+#ifndef WIN32
 static void waitpid_timeout(const int sig)
 {
 	NUT_UNUSED_VARIABLE(sig);
@@ -202,6 +203,7 @@ static void waitpid_timeout(const int sig)
 	/* do nothing */
 	return;
 }
+#endif
 
 /* print out a command line at the given debug level. */
 static void debugcmdline(int level, const char *msg, char *const argv[])

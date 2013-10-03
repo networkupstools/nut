@@ -28,33 +28,22 @@
 #ifndef WIN32
 #define ERROR_FD (-1)
 #define TYPE_FD int
+#define PRINT_FD(x) x
 #else
 #define ERROR_FD (NULL)
 #define TYPE_FD serial_handler_t *
+#define PRINT_FD(x) (int)x->handle
 
 /* TODO : support "open" flags */
 #define O_NONBLOCK 0
 #define O_NOCTTY 0
 #endif
 
-int ser_open_nf(const char *port);
-int ser_open(const char *port);
-
-int ser_set_speed_nf(int fd, const char *port, speed_t speed);
-int ser_set_speed(int fd, const char *port, speed_t speed);
-
-/* set the state of modem control lines */
-int ser_set_dtr(int fd, int state);
-int ser_set_rts(int fd, int state);
-
-/* get the status of modem control lines */
-int ser_get_dsr(int fd);
-int ser_get_cts(int fd);
-int ser_get_dcd(int fd);
-
+TYPE_FD ser_open_nf(const char *port);
 TYPE_FD ser_open(const char *port);
 
 int ser_set_speed(TYPE_FD fd, const char *port, speed_t speed);
+int ser_set_speed_nf(TYPE_FD fd, const char *port, speed_t speed);
 
 /* set the state of modem control lines */
 int ser_set_dtr(TYPE_FD fd, int state);

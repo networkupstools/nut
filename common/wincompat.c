@@ -173,7 +173,7 @@ int win_system(const char * command)
 	si.cb = sizeof(si);
 	memset(&pi,0,sizeof(pi));
 
-	res = CreateProcess(NULL,command,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi);
+	res = CreateProcess(NULL,(char *)command,NULL,NULL,FALSE,0,NULL,NULL,&si,&pi);
 
 	if( res != 0 ) {
 		return 0;
@@ -189,7 +189,7 @@ explanation in the documentation */
 char * filter_path(const char * source)
 {
 	char * res;
-	int i,j;
+	unsigned int i,j;
 
 	if( source == NULL ) {
 		return NULL;
@@ -218,7 +218,6 @@ void syslog(int priority, const char *fmt, ...)
 	char buf2[LARGEBUF];
 	va_list ap;
 	HANDLE pipe;
-	BOOL result = FALSE;
 	DWORD bytesWritten = 0;
 
 	if( EventLogName == NULL ) {
@@ -253,16 +252,11 @@ void syslog(int priority, const char *fmt, ...)
 		return;
 	}
 
-	result = WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
+	WriteFile (pipe,buf1,strlen(buf2)+sizeof(DWORD),&bytesWritten,NULL);
 
 	/* testing result is useless. If we have an error and try to report it,
 	   this will probably lead to a call to this function and an infinite
 	   loop */
-	/*
-	   if (result == 0 || bytesWritten != strlen(buf2)+sizeof(DWORD) ) {
-	   return;;
-	   }
-	 */
 	CloseHandle(pipe);
 }
 
@@ -371,7 +365,7 @@ void pipe_disconnect(pipe_conn_t *conn)
 	}
 	if( conn->handle != INVALID_HANDLE_VALUE) {
 		if ( DisconnectNamedPipe(conn->handle) == 0 ) {
-			upslogx(LOG_ERR,"DisconnectNamedPipe error : %d",GetLastError());
+			upslogx(LOG_ERR,"DisconnectNamedPipe error : %d",(int)GetLastError());
 		}
 		CloseHandle(conn->handle);
 		conn->handle = INVALID_HANDLE_VALUE;

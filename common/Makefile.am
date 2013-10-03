@@ -37,12 +37,14 @@ CLEANFILES = $(top_builddir)/common/common.c
 BUILT_SOURCES = common.c
 endif
 
+# TODO: libnutwincompat.la?
 libcommon_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
+libcommonclient_la_SOURCES += wincompat.c $(top_srcdir)/include/wincompat.h
 
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS
-libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
-libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
+libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@ @NETLIBS@
 
 MAINTAINERCLEANFILES = Makefile.in .dirstamp
 
