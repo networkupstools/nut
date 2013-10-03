@@ -43,6 +43,7 @@ Makefile.in
 /.ci*.log
 /.ci*.log.*
 .dirstamp
+*.exe
 
 # Python precompiled files
 __pycache__/
@@ -55,6 +56,8 @@ __pycache__/
 /NUT*.local.gz
 /NUT*.p5i
 /NUT*.depot
+/*.msi
+/*.MSI
 
 # Official dist
 /nut-*.tar.gz.md5
