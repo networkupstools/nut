@@ -1411,11 +1411,13 @@ static void loadconfig(void)
 	pconf_finish(&ctx);		
 }
 
+#ifndef WIN32
 /* SIGPIPE handler */
 static void sigpipe(int sig)
 {
 	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing...");
 }
+#endif
 
 /* SIGQUIT, SIGTERM handler */
 static void set_exit_flag(int sig)
@@ -1480,11 +1482,13 @@ static void set_reload_flag(int sig)
 	reload_flag = 1;
 }
 
+#ifndef WIN32
 /* handler for alarm when getupsvarfd times out */
 static void read_timeout(int sig)
 {
 	/* don't do anything here, just return */
 }
+#endif
 
 /* install handlers for a few signals */
 static void setup_signals(void)
@@ -1807,6 +1811,7 @@ static void help(const char *progname)
 	exit(EXIT_SUCCESS);
 }
 
+#ifndef WIN32
 static void runparent(int fd)
 {
 	int	ret;
@@ -1843,6 +1848,7 @@ static void runparent(int fd)
 	close(fd);
 	exit(EXIT_SUCCESS);
 }
+#endif
 
 /* fire up the split parent/child scheme */
 static void start_pipe(void)

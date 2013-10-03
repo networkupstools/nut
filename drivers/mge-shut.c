@@ -547,15 +547,15 @@ int shut_wait_ack (void)
 static int char_read (char *bytes, int size, int read_timeout)
 {
 	struct timeval serial_timeout;
-	fd_set readfs;
 	int bytes_read = 0;
-	int rc = 0;
 	int now;
 
 	serial_timeout.tv_usec = (read_timeout % 1000) * 1000;
 	serial_timeout.tv_sec = (read_timeout / 1000);
 
 #ifndef WIN32
+	fd_set readfs;
+	int rc = 0;
 	FD_ZERO (&readfs);
 	FD_SET (upsfd, &readfs);
 

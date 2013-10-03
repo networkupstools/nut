@@ -27,7 +27,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/select.h>
+#define SOCK_OPT_CAST
 #else
+#define SOCK_OPT_CAST (char*)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
 #include <ws2tcpip.h>
@@ -158,7 +160,7 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 		sockAddress.sin_family = AF_INET;
 		sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
 		sockAddress.sin_port = htons(port);
-		setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+		setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, SOCK_OPT_CAST&sockopt_on,
 				sizeof(sockopt_on));
 
 		/* Send scan request */

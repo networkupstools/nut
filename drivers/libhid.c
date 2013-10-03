@@ -143,7 +143,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
 /* because buggy firmwares from APC return wrong report size, we either
    ask the report with the found report size or with the whole buffer size
    depending on the max_report_size flag */
-static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, int age)
+static int refresh_report_buffer(reportbuf_t *rbuf, TYPE_FD udev, HIDData_t *pData, int age)
 {
 	int	id = pData->ReportID;
 	int	r;
@@ -178,7 +178,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
    conversion is performed. If age>0, the read operation is buffered
    if the item's age is less than "age". On success, return 0 and
    store the answer in *value. On failure, return -1 and set errno. */
-static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, int age)
+static int get_item_buffered(reportbuf_t *rbuf, TYPE_FD udev, HIDData_t *pData, long *Value, int age)
 {
 	int id = pData->ReportID;
 	int r;
@@ -196,7 +196,7 @@ static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 /* set the logical value for the given pData. No physical to logical
    conversion is performed. On success, return 0, and failure, return
    -1 and set errno. The updated value is sent to the device. */
-static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long Value)
+static int set_item_buffered(reportbuf_t *rbuf, TYPE_FD udev, HIDData_t *pData, long Value)
 {
 	int id = pData->ReportID;
 	int r;
@@ -266,7 +266,7 @@ static struct {
  * since it's used to produce sub-drivers "stub" using
  * scripts/subdriver/gen-usbhid-subdriver.sh
  */
-void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
+void HIDDumpTree(TYPE_FD udev, usage_tables_t *utab)
 {
 	int	i;
 #ifndef SHUT_MODE
@@ -362,7 +362,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
 /* Return the physical value associated with the given HIDData path.
  * return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
  */
-int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age)
+int HIDGetDataValue(TYPE_FD udev, HIDData_t *hiddata, double *Value, int age)
 {
 	int	r;
 	long	hValue;
@@ -391,14 +391,14 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 /* Return the physical value associated with the given path.
  * return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
  */
-int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, usage_tables_t *utab)
+int HIDGetItemValue(TYPE_FD udev, const char *hidpath, double *Value, usage_tables_t *utab)
 {
 	return HIDGetDataValue(udev, HIDGetItemData(hidpath, utab), Value, MAX_TS);
 }
 
 /* Return pointer to indexed string (empty if not found)
  */
-char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_t buflen)
+char *HIDGetIndexString(TYPE_FD udev, const int Index, char *buf, size_t buflen)
 {
 	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
 		buf[0] = '\0';
@@ -408,7 +408,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 
 /* Return pointer to indexed string from HID path (empty if not found)
  */
-char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, size_t buflen, usage_tables_t *utab)
+char *HIDGetItemString(TYPE_FD udev, const char *hidpath, char *buf, size_t buflen, usage_tables_t *utab)
 {
 	double	Index;
 
@@ -423,7 +423,7 @@ char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, si
 /* Set the given physical value for the variable associated with
  * path. return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
  */
-int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
+int HIDSetDataValue(TYPE_FD udev, HIDData_t *hiddata, double Value)
 {
 	int	i, r;
 	long	hValue;
@@ -460,7 +460,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 	return 1;
 }
 
-bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double Value, usage_tables_t *utab)
+bool_t HIDSetItemValue(TYPE_FD udev, const char *hidpath, double Value, usage_tables_t *utab)
 {
 	if (HIDSetDataValue(udev, HIDGetItemData(hidpath, utab), Value) != 1)
 		return FALSE;
@@ -471,7 +471,7 @@ bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double Value,
 /* On success, return item count >0. When no notifications are available,
  * return 'error' or 'no event' code.
  */
-int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
+int HIDGetEvents(TYPE_FD udev, HIDData_t **event, int eventsize)
 {
 	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;

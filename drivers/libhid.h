@@ -35,6 +35,9 @@
 #include "hidtypes.h"
 
 #include "timehead.h"
+
+#include "win_shut_compat.h"
+
 #ifdef SHUT_MODE
 	#include "libshut.h"
 	typedef SHUTDevice_t			HIDDevice_t;
@@ -94,17 +97,17 @@ extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 /*
  * HIDGetItemValue
  * -------------------------------------------------------------------------- */
-int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, usage_tables_t *utab);
+int HIDGetItemValue(TYPE_FD udev, const char *hidpath, double *Value, usage_tables_t *utab);
 
 /*
  * HIDGetItemString
  * -------------------------------------------------------------------------- */
-char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, size_t buflen, usage_tables_t *utab);
+char *HIDGetItemString(TYPE_FD udev, const char *hidpath, char *buf, size_t buflen, usage_tables_t *utab);
 
 /*
  * HIDSetItemValue
  * -------------------------------------------------------------------------- */
-bool_t HIDSetItemValue(hid_dev_handle_t udev, const char *hidpath, double value, usage_tables_t *utab);
+bool_t HIDSetItemValue(TYPE_FD udev, const char *hidpath, double value, usage_tables_t *utab);
 
 /*
  * GetItemData
@@ -119,27 +122,27 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab);
 /*
  * HIDGetDataValue
  * -------------------------------------------------------------------------- */
-int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age);
+int HIDGetDataValue(TYPE_FD udev, HIDData_t *hiddata, double *Value, int age);
 
 /*
  * HIDSetDataValue
  * -------------------------------------------------------------------------- */
-int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value);
+int HIDSetDataValue(TYPE_FD udev, HIDData_t *hiddata, double Value);
 
 /*
  * HIDGetIndexString
  * -------------------------------------------------------------------------- */
-char *HIDGetIndexString(hid_dev_handle_t udev, int Index, char *buf, size_t buflen);
+char *HIDGetIndexString(TYPE_FD udev, int Index, char *buf, size_t buflen);
 
 /*
  * HIDGetEvents
  * -------------------------------------------------------------------------- */
-int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventlen);
+int HIDGetEvents(TYPE_FD udev, HIDData_t **event, int eventlen);
 
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab);
+void HIDDumpTree(TYPE_FD udev, usage_tables_t *utab);
 const char *HIDDataType(const HIDData_t *hiddata);
 
 void free_report_buffer(reportbuf_t *rbuf);
