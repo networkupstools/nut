@@ -73,7 +73,7 @@ static void print_event(DWORD priority, const char * fmt, ...)
 				NULL,		/* no security identifier*/
 				1,		/* size of string array */
 				0,		/* no binary data */
-				&buf,	/* array of string */
+				(const char **)&buf,	/* array of string */
 				NULL);		/* no binary data */
 
 		DeregisterEventSource(EventSource);

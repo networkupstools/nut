@@ -447,7 +447,7 @@ static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsig
 	int	i, ret, sec = 3, usec = 0;
 	char	temp[APC_LBUF];
 
-	if (upsfd == -1)
+	if (upsfd == ERROR_FD)
 		return 0;
 	if (flags & SER_D0) {
 		sec = 0; usec = 0;

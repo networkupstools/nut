@@ -21,10 +21,12 @@ bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 if HAVE_WINDOWS_SOCKETS
 sbin_PROGRAMS = upsmon upssched message
+#TODO : port libnutclient
+lib_LTLIBRARIES = libupsclient.la
 else !HAVE_WINDOWS_SOCKETS
 sbin_PROGRAMS = upsmon upssched
-endif !HAVE_WINDOWS_SOCKETS
 lib_LTLIBRARIES = libupsclient.la libnutclient.la
+endif !HAVE_WINDOWS_SOCKETS
 if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
 endif

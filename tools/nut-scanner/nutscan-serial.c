@@ -22,6 +22,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "nut_platform.h"
+#ifdef WIN32
+#include "wincompat.h"
+#endif
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */

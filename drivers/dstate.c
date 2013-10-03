@@ -55,6 +55,7 @@
 
 	struct ups_handler	upsh;
 
+#ifndef WIN32
 /* this may be a frequent stumbling point for new users, so be verbose here */
 static void sock_fail(const char *fn)
 {
@@ -110,7 +111,6 @@ static void sock_fail(const char *fn)
 	fatalx(EXIT_FAILURE, "Exiting.");
 }
 
-#ifndef WIN32
 static int sock_open(const char *fn)
 {
 	int	ret, fd;
@@ -183,8 +183,7 @@ static HANDLE sock_open(const char *fn)
 	}
 
 	/* Wait for a connection */
-	BOOL ret;
-	ret = ConnectNamedPipe(fd,&connect_overlapped);
+	ConnectNamedPipe(fd,&connect_overlapped);
 
 #endif
 
@@ -401,8 +400,7 @@ static void sock_connect(HANDLE sock)
 	}
 
 	/* Wait for a connection */
-	BOOL ret;
-	ret = ConnectNamedPipe(sockfd,&connect_overlapped);
+	ConnectNamedPipe(sockfd,&connect_overlapped);
 
 	/* A new pipe waiting for new client connection has been created. We could manage the current connection now */
 	/* Start a read operation on the newly connected pipe so we could wait on the event associated to this IO */
@@ -590,6 +588,10 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 	/* unknown */
 	return 0;
 }
+
+#ifdef WIN32
+void set_exit_flag(int sig);
+#endif
 
 static void sock_read(conn_t *conn)
 {
