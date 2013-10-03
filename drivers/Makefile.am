@@ -99,6 +99,7 @@ upsdrvctl_LDADD = $(LDADD_COMMON)
 
 # serial drivers: all of them use standard LDADD and CFLAGS
 apcsmart_SOURCES = apcsmart.c apcsmart_tabs.c
+apcsmart_LDADD = $(LDADD) $(LIBREGEX_LIBS)
 apcsmart_old_SOURCES = apcsmart-old.c
 bcmxcp_SOURCES = bcmxcp.c bcmxcp_ser.c
 bcmxcp_LDADD = $(LDADD) -lm
@@ -224,7 +225,7 @@ hald_addon_voltronic_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LI
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
-netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS) -lintl
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c

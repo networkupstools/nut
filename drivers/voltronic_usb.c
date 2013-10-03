@@ -195,8 +195,12 @@ int voltronic_command(const char *cmd, char *buf, size_t buflen)
 		break;
 
 	case -ETIMEDOUT:	/* Connection timed out */
-	case -EOVERFLOW:	/* Value too large for defined data type */
-	case -EPROTO:		/* Protocol error */
+#ifndef WIN32
+/* libusb win32 does not know EPROTO and EOVERFLOW, it only returns EIO for any
+   IO errors */
+	case -EOVERFLOW:        /* Value too large for defined data type */
+	case -EPROTO:           /* Protocol error */
+#endif
 	default:
 		break;
 	}
