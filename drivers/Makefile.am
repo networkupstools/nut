@@ -225,7 +225,7 @@ hald_addon_voltronic_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LI
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
-netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS) -lintl
+netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
