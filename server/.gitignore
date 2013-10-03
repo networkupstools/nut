@@ -3,3 +3,4 @@ upsd
 .deps
 Makefile.in
 .libs
+*.exe
