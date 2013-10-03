@@ -16,7 +16,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
-
+#ifndef WIN32
 #include "nutclient.h"
 
 #include <sstream>
@@ -1723,4 +1723,4 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
 
 } /* extern "C" */
 
-
+#endif

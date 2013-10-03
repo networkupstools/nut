@@ -21,10 +21,12 @@
 
 #include "config.h"	/* safe because it doesn't contain prototypes */
 
+#ifndef WIN32
 #ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
 #include <pthread.h>
 #endif 
+#endif
 
 #include <errno.h>
 #include <stdio.h>
@@ -37,7 +39,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#define SOCK_OPT_CAST 
 #else
+#define SOCK_OPT_CAST (char *)
 /* Those 2 files for support of getaddrinfo, getnameinfo and freeaddrinfo
    on Windows 2000 and older versions */
 #include <ws2tcpip.h>
@@ -960,7 +964,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 				if (FD_ISSET(sock_fd, &wfds)) {
 					error_size = sizeof(error);
 					getsockopt(sock_fd,SOL_SOCKET,SO_ERROR,
-							&error,&error_size);
+							SOCK_OPT_CAST&error,&error_size);
 					if( error == 0) {
 						/* connect successful */
 						v = 0;

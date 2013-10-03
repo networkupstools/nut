@@ -31,6 +31,8 @@
 #ifndef LIBUSB_H
 #define LIBUSB_H
 
+#include "win_shut_compat.h"
+
 #include "main.h"	/* for subdrv_info_t */
 #include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
 

@@ -27,19 +27,10 @@
 #ifndef LIBSHUT_H
 #define LIBSHUT_H
 
+#include "win_shut_compat.h"
+
 #include "main.h"	/* for subdrv_info_t */
 #include "nut_stdint.h"	/* for uint16_t */
-
-/* porting stuff for WIN32 */
-#ifndef WIN32
-#define ERROR_FD (-1)
-#define VALID_FD(a) (a>0)
-#define TYPE_FD int
-#else
-#define ERROR_FD (NULL)
-#define VALID_FD(a) (a!=NULL)
-#define TYPE_FD serial_handler_t *
-#endif
 
 extern upsdrv_info_t comm_upsdrv_info; 
 
@@ -67,18 +58,18 @@ typedef struct SHUTDevice_s {
 typedef struct shut_communication_subdriver_s {
 	const char *name;				/* name of this subdriver		*/
 	const char *version;				/* version of this subdriver		*/
-	int (*open)(int *upsfd,			/* try to open the next available	*/
+	int (*open)(TYPE_FD *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,
-		int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen));
-	void (*close)(int upsfd);
-	int (*get_report)(int upsfd, int ReportId,
+		int (*callback)(TYPE_FD upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen));
+	void (*close)(TYPE_FD upsfd);
+	int (*get_report)(TYPE_FD upsfd, int ReportId,
 	unsigned char *raw_buf, int ReportSize );
-	int (*set_report)(int upsfd, int ReportId,
+	int (*set_report)(TYPE_FD upsfd, int ReportId,
 	unsigned char *raw_buf, int ReportSize );
-	int (*get_string)(int upsfd,
+	int (*get_string)(TYPE_FD upsfd,
 	int StringIdx, char *buf, size_t buflen);
-	int (*get_interrupt)(int upsfd,
+	int (*get_interrupt)(TYPE_FD upsfd,
 	unsigned char *buf, int bufsize, int timeout);
 } shut_communication_subdriver_t;
 
