@@ -465,7 +465,6 @@ int sstate_dead(upstype_t *ups, int arg_maxage)
 		return 1;	/* dead */
 	}
 
-	printf("now = %d, ups->last_heard = %d\n",now,ups->last_heard);
 	elapsed = difftime(now, ups->last_heard);
 
 	/* somewhere beyond a third of the maximum time - prod it to make it talk */

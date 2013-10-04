@@ -99,6 +99,10 @@ typedef struct serial_handler_s {
 # define VALID_FD(a) (a!=NULL)
 /* FIXME: HANDLE is not guaranteed to be an int(-sized memory area), right? */
 # define PRINT_FD(x) (int)x->handle
+
+/* difftime returns erroneous value so we use this macro */
+# undef difftime
+# define difftime(t1,t0) (double)(t1 - t0)
 #endif
 
 extern const char *UPS_VERSION;

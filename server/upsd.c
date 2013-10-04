@@ -1297,11 +1297,7 @@ static void mainloop(void)
 
 		cnext = client->next;
 
-		printf("difftime = %d\n",now-client->last_heard);
-		//printf("difftime = %f\n",difftime(now, client->last_heard));
-		//if (difftime(now, client->last_heard) > 60) {
-		if (difftime(time(NULL), client->last_heard) > 60) {
-		//if (now - client->last_heard > 60) {
+		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
 			client_disconnect(client);
 			continue;
