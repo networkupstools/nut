@@ -1125,25 +1125,25 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		fatalx(EXIT_FAILURE, "Unable to connect to daemon: buffered message too large");
 	}
 
+#ifndef WIN32
 	/* see if the parent needs to be started (and maybe start it) */
 
 	for (i = 0; i < MAX_TRIES; i++) {
 
 		pipefd = check_parent(cmd, arg2);
 
-		if (pipefd == (HANDLE)PARENT_STARTED) {
+		if (pipefd == PARENT_STARTED) {
 			/* loop back and try to connect now */
 			usleep(250000);
 			continue;
 		}
 
 		/* special case for CANCEL when no parent is running */
-		if (pipefd == (HANDLE)PARENT_UNNECESSARY)
+		if (pipefd == PARENT_UNNECESSARY)
 			return;
 
 		/* we're connected now */
 
-#ifndef WIN32
 		ret = write(pipefd, enc, enclen);
 
 		/* if we can't send the whole thing, loop back and try again */
@@ -1198,6 +1198,23 @@ static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 		}
 
 #else
+	/* see if the parent needs to be started (and maybe start it) */
+
+	for (i = 0; i < MAX_TRIES; i++) {
+
+		pipefd = check_parent(cmd, arg2);
+
+		if (pipefd == (HANDLE)PARENT_STARTED) {
+			/* loop back and try to connect now */
+			usleep(250000);
+			continue;
+		}
+
+		/* special case for CANCEL when no parent is running */
+		if (pipefd == (HANDLE)PARENT_UNNECESSARY)
+			return;
+
+		/* we're connected now */
 		ret = WriteFile(pipefd, enc, enclen, &bytesWritten, NULL);
 		if (ret == 0 || bytesWritten != (ssize_t)enclen) {
 			upslogx(LOG_ERR, "write failed, trying again");
