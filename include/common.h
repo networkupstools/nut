@@ -67,6 +67,10 @@ typedef struct serial_handler_s {
 	unsigned int r_binary;
 	unsigned int w_binary;
 } serial_handler_t;
+
+/* difftime returns erroneous value so we use this macro.*/
+#undef difftime
+#define difftime(t1,t0) (double)(t1 - t0)
 #endif
 
 extern const char *UPS_VERSION;
