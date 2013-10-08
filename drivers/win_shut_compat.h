@@ -27,7 +27,11 @@
 #ifndef WIN32
 #define ERROR_FD (-1)
 #define VALID_FD(a) (a>0)
+#ifdef SHUT_MODE
 #define TYPE_FD int
+#else /* NO SHUT MODE -> USB MODE*/
+#define TYPE_FD struct usb_dev_handle *
+#endif /* NO SHUT MODE */
 #else /* WIN32 */
 #define ERROR_FD (NULL)
 #define VALID_FD(a) (a!=NULL)
