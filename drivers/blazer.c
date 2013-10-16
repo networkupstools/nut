@@ -565,7 +565,7 @@ static void blazer_initbattery(void)
 
 	/* If no values were provided by the user in ups.conf, try to guesstimate
 	 * battery.charge, but announce it! */
-	if ((batt.volt.nom != 1) && (batt.volt.high == -1) && (batt.volt.high == -1)) {
+	if ((batt.volt.nom != 1) && ((batt.volt.high == -1) || (batt.volt.low == -1))) {
 		upslogx(LOG_INFO, "No values provided for battery high/low voltages in ups.conf\n");
 
 		/* Basic formula, which should cover most cases */
