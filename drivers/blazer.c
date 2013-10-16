@@ -476,7 +476,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	} else if (!strcasecmp(cmdname, "test.battery.start")) {
 		int	delay = extra ? strtol(extra, NULL, 10) : 10;
 
-		if ((delay < 0) || (delay > 99)) {
+		if ((delay < 1) || (delay > 99)) {
 			return STAT_INSTCMD_FAILED;
 		}
 
