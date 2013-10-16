@@ -1,11 +1,3 @@
-BLAZER(8)
-=========
-
-NAME
-----
-
-blazer, blazer_ser, blazer_usb - Driver for Megatec/Q1 protocol serial and USB based UPS equipment
-
 NOTE
 ----
 This man page only documents the hardware-specific features of the
@@ -111,6 +103,8 @@ Minimum battery load used by the driver to estimate the runtime. If not
 specified, the driver defaults to 10%. Only used if *runtimecal* is also
 specified.
 
+
+ifndef::blazer_usb[]
 SERIAL INTERFACE ONLY
 ---------------------
 
@@ -120,7 +114,10 @@ By default the driver will set DTR and clear RTS ('normal'). If you find that
 your UPS isn't detected or the communication with the UPS is unreliable, you may
 try if clear DTR and set RTS ('reverse'), set DTR and RTS ('both') or
 clear DTR and RTS ('none') improves this situation.
+endif::blazer_usb[]
 
+
+ifdef::blazer_usb[]
 USB INTERFACE ONLY
 ------------------
 
@@ -161,6 +158,7 @@ Apply the language ID workaround to the krauler subdriver. This is mandatory
 for some devices to work (LDLC, Dynamix and others). You must to provide
 *value* (0x409 or 0x4095), according to your device entry in NUT hardware
 compatibility list (HCL).
+endif::blazer_usb[]
 
 
 UPS COMMANDS
@@ -298,6 +296,12 @@ Alexander Gordeev <lasaine at lvk.cs.msu.su>
 SEE ALSO
 --------
 
+ifdef::blazer_usb[]
+linkman:blazer_ser[8],
+endif::blazer_usb[]
+ifndef::blazer_usb[]
+linkman:blazer_usb[8],
+endif::blazer_usb[]
 linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 
 Internet Resources:
