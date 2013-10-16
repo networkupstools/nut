@@ -509,8 +509,8 @@ void blazer_initups(void)
 		offdelay = strtol(val, NULL, 10);
 	}
 
-	if ((offdelay < 6) || (offdelay > 600)) {
-		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [6..600]", offdelay);
+	if ((offdelay < 12) || (offdelay > 600)) {
+		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [12..600]", offdelay);
 	}
 
 	/* Truncate to nearest setable value */
