@@ -387,7 +387,17 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 {
 	return 0;
 }
-	
+
+int dstate_addrange(const char *var, const int min, const int max)
+{
+	return 0;
+}
+
+const st_tree_t *dstate_getroot(void)
+{
+	return NULL;
+}
+
 int dstate_delinfo(const char *var)
 {
 	return 0;

@@ -303,6 +303,9 @@ sub find_usbdevs
 			elsif ($nameFile eq "voltronic_usb.c") {
 				$driver="voltronic_usb";
 			}
+			elsif ($nameFile eq "blzr.c") {
+				$driver="blzr";
+			}
 			else {
 				die "Unknown driver type: $nameFile";
 			}

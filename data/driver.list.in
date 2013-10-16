@@ -98,8 +98,12 @@
 "ATEK"	"ups"	"2"	"Defensor 10K Tower / Rack"	"USB"	"blazer_usb"
 
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
+"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"blzr protocol=voltronic"
+"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"blzr protocol=voltronic"
 "Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"voltronic_ser"
 "Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"voltronic_usb"
+"Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"blzr protocol=voltronic"
+"Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"blzr protocol=voltronic"
 "Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
 "Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
@@ -1045,6 +1049,8 @@
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
 "Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
+"Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"blzr protocol=voltronic"
+"Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"blzr protocol=voltronic"
 "Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"voltronic_ser"
 "Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"voltronic_usb"
 "Various"	"ups"	"2"	"(Various serial)"	"WinPower software"	"blazer_ser"
@@ -1062,8 +1068,12 @@
 
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"voltronic_ser"
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"blzr protocol=voltronic"
+"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"blzr protocol=voltronic"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"blzr protocol=voltronic"
+"Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"blzr protocol=voltronic"
 "Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
 "Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
@@ -1071,3 +1081,4 @@
 
 "WTI"	"pdu"	"1"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
 "WTI"	"pdu"	"1"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
+

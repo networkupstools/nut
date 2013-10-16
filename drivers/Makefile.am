@@ -39,14 +39,14 @@ SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
  oldmge-shut mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old riello_ser	\
- voltronic_ser
+ voltronic_ser blzr
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb voltronic_usb
+ blazer_usb richcomm_usb riello_usb voltronic_usb blzr
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-blazer_usb hald-addon-riello_usb	\
- hald-addon-voltronic_usb
+ hald-addon-voltronic_usb hald-addon-blzr
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 
@@ -222,6 +222,10 @@ hald_addon_riello_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 hald_addon_voltronic_usb_SOURCES = voltronic.c voltronic_usb.c libusb.c
 hald_addon_voltronic_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
 
+hald_addon_blzr_SOURCES = blzr.c libusb.c $(BLZR_SUBDRIVERS)
+hald_addon_blzr_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+hald_addon_blzr_CFLAGS = $(AM_CFLAGS) -DBLZR_USB
+
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
@@ -242,6 +246,23 @@ macosx_ups_LDADD = $(LDADD_DRIVERS)
 macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
 macosx_ups_SOURCES = macosx-ups.c
 
+# blzr USB/Serial
+blzr_SOURCES = blzr.c
+blzr_LDADD = $(LDADD_DRIVERS) -lm
+blzr_CFLAGS = $(AM_CFLAGS)
+if WITH_SERIAL
+blzr_CFLAGS += -DBLZR_SERIAL
+blzr_LDADD += $(SERLIBS) serial.o
+endif
+if WITH_USB
+blzr_CFLAGS += -DBLZR_USB
+blzr_SOURCES += libusb.c usb-common.c
+blzr_LDADD += $(LIBUSB_LIBS)
+endif
+BLZR_SUBDRIVERS = blzr_blazer-common.c blzr_megatec.c blzr_megatec-old.c	\
+ blzr_mustek.c blzr_voltronic.c blzr_zinto.c
+blzr_SOURCES += $(BLZR_SUBDRIVERS)
+
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
 # tracking (which is automatic), but to ensure these files are
@@ -257,7 +278,8 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h voltronic.h
+ delta_ups-mib.h voltronic.h blzr.h blzr_blazer-common.h blzr_megatec.h	\
+ blzr_megatec-old.h blzr_mustek.h blzr_voltronic.h blzr_zinto.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

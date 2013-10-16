@@ -19,8 +19,8 @@ USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  outlets.txt scheduling.txt security.txt support.txt user-manual.txt \
  stable-hcl.txt
 
-DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
- developer-guide.txt hid-subdrivers.txt macros.txt \
+DEVELOPER_GUIDE_DEPS = blzr-subdrivers.txt contact-closure.txt	\
+ design.txt developers.txt developer-guide.txt hid-subdrivers.txt macros.txt \
  new-clients.txt new-drivers.txt net-protocol.txt snmp-subdrivers.txt \
  sock-protocol.txt
 
