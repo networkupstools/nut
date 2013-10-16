@@ -428,24 +428,51 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
+
 		/*
+		 * Sn: Shutdown after n minutes and then turn on when mains is back
+		 * SnRm: Shutdown after n minutes and then turn on after m minutes
+		 * Accepted values for n: .2 -> .9 , 01 -> 10
+		 * Accepted values for m: 0001 -> 9999
 		 * Note: "S01R0001" and "S01R0002" may not work on early (GE)
 		 * firmware versions.  The failure mode is that the UPS turns
 		 * off and never returns.  The fix is to push the return value
 		 * up by 2, i.e. S01R0003, and it will return online properly.
 		 * (thus the default of ondelay=3 mins)
 		 */
-		if (offdelay < 60) {
+
+		if (ondelay == 0) {
+
+			if (offdelay < 60) {
+				snprintf(buf, sizeof(buf), "S.%d\r", offdelay / 6);
+			} else {
+				snprintf(buf, sizeof(buf), "S%02d\r", offdelay / 60);
+			}
+
+		} else if (offdelay < 60) {
+
 			snprintf(buf, sizeof(buf), "S.%dR%04d\r", offdelay / 6, ondelay);
+
 		} else {
+
 			snprintf(buf, sizeof(buf), "S%02dR%04d\r", offdelay / 60, ondelay);
+
 		}
+
 	} else if (!strcasecmp(cmdname, "shutdown.stayoff")) {
+
+		/*
+		 * SnR0000
+		 * Shutdown after n minutes and stay off
+		 * Accepted values for n: .2 -> .9 , 01 -> 10
+		 */
+
 		if (offdelay < 60) {
 			snprintf(buf, sizeof(buf), "S.%dR0000\r", offdelay / 6);
 		} else {
 			snprintf(buf, sizeof(buf), "S%02dR0000\r", offdelay / 60);
 		}
+
 	} else if (!strcasecmp(cmdname, "test.battery.start")) {
 		int	delay = extra ? strtol(extra, NULL, 10) : 10;
 
