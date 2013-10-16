@@ -62,6 +62,7 @@ Drivers
 - linkman:bestuferrups[8]
 - linkman:bestups[8]
 - linkman:blazer[8]
+- linkman:blzr[8]
 - linkman:clone[8]
 - linkman:dummy-ups[8]
 - linkman:etapro[8]

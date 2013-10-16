@@ -1,0 +1,172 @@
+/* blzr.h - Driver for USB and serial UPS units with Q* protocols
+ *
+ * Copyright (C)
+ *   2013 Daniele Pezzini <hyouko@gmail.com>
+ * Based on usbhid-ups.h - Copyright (C)
+ *   2003-2009 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+ *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
+ *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ *
+ */
+
+#ifndef BLZR_H
+#define BLZR_H
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include "config.h"
+
+/* For testing purposes */
+/*#define TESTING*/
+
+/* Driver's parameters */
+#define BLZR_VAR_ONDELAY	"ondelay"
+#define BLZR_VAR_OFFDELAY	"offdelay"
+#define BLZR_VAR_POLLFREQ	"pollfreq"
+
+/* Parameters default values */
+#define DEFAULT_ONDELAY		"180"	/* Delay between return of utility power and powering up of load, in seconds */
+#define DEFAULT_OFFDELAY	"30"	/* Delay before power off, in seconds */
+#define DEFAULT_POLLFREQ	30	/* Polling interval between full updates, in seconds; the driver will do quick polls in the meantime */
+
+typedef enum { FALSE, TRUE } bool_t;
+
+/* Structure for rw vars */
+typedef struct {
+	char	value[SMALLBUF];			/* Value for enum/range, or length for ST_FLAG_STRING */
+	int	(*preprocess)(char *value, size_t len);	/* Optional function to preprocess range/enum value.
+							 * This function will be given value and its size_t and must return either 0 if value is supported or -1 if not supported. */
+} info_rw_t;
+
+/* Structure containing information about how to get/set data from/to the UPS and convert these to/from NUT standard */
+typedef struct item_t {
+	const char	*info_type;		/* NUT variable name
+						 * If BLZR_FLAG_NONUT is set, name to print to the logs
+						 * If both BLZR_FLAG_NONUT and BLZR_FLAG_SETVAR are set, name of the var to retrieve from ups.conf */
+	const int	info_flags;		/* NUT flags (ST_FLAG_* values to set in dstate_addinfo) */
+	info_rw_t	*info_rw;		/* An array of info_rw_t to handle r/w variables:
+						 * If ST_FLAG_STRING is set: length of the string (dstate_setaux)
+						 * If BLZR_FLAG_ENUM is set: enumerated values (dstate_addenum)
+						 * If BLZR_FLAG_RANGE is set: range boundaries (dstate_addrange)
+						 * If BLZR_FLAG_SETVAR is set the value given by the user will be checked against these infos. */
+	const char	*command;		/* Command sent to the UPS to get answer/to execute an instant command/to set a variable */
+
+	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime */
+	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there’s no minimum length to look after. */
+	const char	leading;		/* Expected leading character of the answer (optional) */
+
+	char		value[SMALLBUF];	/* Value from the answer, filled at runtime (i.e. answer between from and to) */
+	const int	from;			/* Position of the starting character of the info (i.e. 'value') we're after in the answer */
+	const int	to;			/* Position of the ending character of the info (i.e. 'value') we're after in the answer: use 0 if all the remaining of the line is needed */
+
+	const char	*dfl;			/* Format to store value from the UPS in NUT variables. Not used by the driver for BLZR_FLAG_{CMD,SETVAR} items.
+						 * If there's no preprocess function, set it either to %s for strings or to a floating point specifier (e.g. %.1f) for numbers.
+						 * Otherwise:
+						 * If BLZR_FLAG_ABSENT: default value
+						 * If BLZR_FLAG_CMD: default command value */
+
+	unsigned long	blzrflags;		/* Driver's own flags */
+
+	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);	/* Function to preprocess the data from/to the UPS
+						 * This function is given the currently processed item (item), a char array (value) and its size_t (valuelen).
+						 * Return -1 in case of errors, else 0.
+						 * If BLZR_FLAG_SETVAR/BLZR_FLAG_CMD -> process command before it is sent: value must be filled with the command to be sent to the UPS.
+						 * Otherwise -> process value we got from answer before it gets stored in a NUT variable: value must be filled with the processed value already compliant to NUT standards. */
+} item_t;
+
+/* Driver's own flags */
+#define BLZR_FLAG_STATIC	2	/* Retrieve info only once. */
+#define BLZR_FLAG_SEMI_STATIC	4	/* Retrieve info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed. */
+#define BLZR_FLAG_ABSENT	8	/* Data is absent in the device, use default value. */
+#define BLZR_FLAG_QUICK_POLL	16	/* Mandatory vars, polled also in BLZR_WALKMODE_QUICK_UPDATE.
+					 * If there’s a problem with a var not flagged as BLZR_FLAG_QUICK_POLL in BLZR_WALKMODE_INIT, the driver will automagically set BLZR_FLAG_SKIP on it and then it’ll skip that item in BLZR_WALKMODE_{QUICK,FULL}_UPDATE.
+					 * Otherwise, if the item has the flag BLZR_FLAG_QUICK_POLL set, in case of errors in BLZR_WALKMODE_INIT the driver will set datastale. */
+#define BLZR_FLAG_CMD		32	/* Instant command. */
+#define BLZR_FLAG_SETVAR	64	/* The var is settable and the actual item stores info on how to set it. */
+#define BLZR_FLAG_TRIM		128	/* This var's value need to be trimmed of leading/trailing spaces/hashes. */
+#define BLZR_FLAG_ENUM		256	/* Enum values exist and are stored in info_rw. */
+#define BLZR_FLAG_RANGE		512	/* Ranges for this var available and are stored in info_rw. */
+#define BLZR_FLAG_NONUT		1024	/* This var doesn't have a corresponding var in NUT. */
+#define BLZR_FLAG_SKIP		2048	/* Skip this var: this item won’t be processed. */
+
+#define MAXTRIES		3	/* Max number of retries */
+
+/* Testing struct */
+typedef struct {
+	const char	*cmd;		/* Command to match */
+	const char	*answer;	/* Answer for that command */
+} testing_t;
+
+/* Subdriver interface */
+typedef struct {
+	const char	*name;			/* Name of this subdriver, i.e. name (must be equal to the protocol name) + space + version */
+	int		(*claim)(void);		/* Function that allows the subdriver to "claim" a device: return 1 if device is covered by this subdriver, else 0 */
+	item_t		*blzr2nut;		/* Main table of vars and instcmds */
+	void		(*initups)(void);	/* Subdriver specific upsdrv_initups. Called at the end of blzr's own upsdrv_initups */
+	void		(*initinfo)(void);	/* Subdriver specific upsdrv_initinfo. Called at the end of blzr's own upsdrv_initinfo */
+	void		(*makevartable)(void);	/* Subdriver specific ups.conf flags/vars */
+	const char	*accepted;		/* String to match if the driver is expecting a reply from the UPS on instcmd/setvar.
+						 * This comparison is done after the answer we got back from the UPS has been processed to get the value we are searching:
+						 *  - you don’t have to include the trailing carriage return (\r)
+						 *  - you can decide at which index of the answer the value should start or end setting the appropriate from and to in the item_t */
+	const char	*rejected;		/* String to match if the driver is expecting a reply from the UPS in case of error.
+						 * This comparison is done on the answer we got back from the UPS before it has been processed:
+						 *  - include also the trailing carriage return (\r) and whatever character is expected */
+#ifdef TESTING
+	testing_t	*testing;		/* Testing table: commands and the replies used for testing the subdriver */
+#endif	/* TESTING */
+} subdriver_t;
+
+/* The following functions are exported for the benefit of subdrivers */
+	/* Execute an instant command. Return STAT_INSTCMD_INVALID if the command is invalid, STAT_INSTCMD_FAILED if it failed, STAT_INSTCMD_HANDLED on success. */
+int	instcmd(const char *cmdname, const char *extradata);
+	/* Set r/w variable to a value after it has been checked against its info_rw structure. Return STAT_SET_HANDLED on success, otherwise STAT_SET_UNKNOWN. */
+int	setvar(const char *varname, const char *val);
+	/* Find an item of item_t type in blzr2nut data structure by its info_type, optionally filtered by its blzrflags, and return it if found, otherwise return NULL.
+	 *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
+	 *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
+item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag);
+	/* Send 'command' or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
+int	blzr_process(item_t *item, const char *command);
+	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its preprocess function, if any. Return -1 on failure, 0 for a status update and 1 in all other cases. */
+int	ups_infoval_set(item_t *item);
+	/* Return the currently processed status so that it can be checked with one of the status_bit_t passed to the STATUS() macro. */
+int	blzr_status(void);
+	/* Edit the current status: it takes one of the NUT status (all but OB are supported, simply set it as not OL), eventually preceded with an exclamation mark to clear it from the status (e.g. !OL). */
+void	update_status(const char *nutvalue);
+
+/* Data for processing status values */
+#define	STATUS(x)	((unsigned)1<<x)
+
+typedef enum {
+	OL = 0,		/* On line */
+	LB,		/* Low battery */
+	RB,		/* Replace battery */
+	CHRG,		/* Charging */
+	DISCHRG,	/* Discharging */
+	BYPASS,		/* On bypass */
+	CAL,		/* Calibration */
+	OFF,		/* UPS is off */
+	OVER,		/* Overload */
+	TRIM,		/* SmartTrim */
+	BOOST,		/* SmartBoost */
+	FSD,		/* Shutdown imminent */
+} status_bit_t;
+
+#endif	/* BLZR_H */
