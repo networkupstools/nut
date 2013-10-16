@@ -805,17 +805,30 @@ void upsdrv_shutdown(void)
 {
 	int	retry;
 
+	/* Stop pending shutdowns */
 	for (retry = 1; retry <= MAXTRIES; retry++) {
 
 		if (blazer_instcmd("shutdown.stop", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
+		break;
+
+	}
+
+	if (retry > MAXTRIES) {
+		upslogx(LOG_NOTICE, "No shutdown pending");
+	}
+
+	/* Shutdown */
+	for (retry = 1; retry <= MAXTRIES; retry++) {
+
 		if (blazer_instcmd("shutdown.return", NULL) != STAT_INSTCMD_HANDLED) {
 			continue;
 		}
 
 		fatalx(EXIT_SUCCESS, "Shutting down in %d seconds", offdelay);
+
 	}
 
 	fatalx(EXIT_FAILURE, "Shutdown failed!");
