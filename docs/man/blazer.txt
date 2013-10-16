@@ -61,13 +61,13 @@ somehow, you may want to override this value.
 
 Time to wait before switching on the UPS (minutes). Note that a value below 3
 minutes, may cause earlier firmware versions to not switch on automatically,
-so it defaults to 3 minutes.
+so it defaults to 3 minutes. The acceptable range is +0..9999+ minutes.
 
 *offdelay =* 'value'::
 
 Time to wait before shutting down the UPS (seconds). This value is truncated
 to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60
-seconds). Defaults to 30 seconds.
+seconds). Defaults to 30 seconds. The acceptable range is +12..600+ seconds.
 
 *norating*::
 
@@ -136,14 +136,12 @@ USB. Each option specifies an extended regular expression (see
 string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try *-DD* for
 finding out the strings to match.
-
++
 Examples:
 
-    -x vendor="Foo.Corporation.*"
-
-    -x vendorid=051d    # (APC)
-
-    -x product=".*(Smart|Back)-?UPS.*"
+ -  `-x vendor="Foo.Corporation.*"`
+ -  `-x vendorid=051d*` (APC)
+ -  `-x product=".*(Smart|Back)-?UPS.*"`
 
 *bus =* 'regex'::
 
@@ -182,12 +180,12 @@ Turn on the load immediately.
 
 Turn off the load immediately (see <<_known_problems,KNOWN PROBLEMS>>).
 
-*shutdown.return* ['value']::
+*shutdown.return*::
 
 Turn off the load and return when power is back. Uses the timers defined by
 *ondelay* and *offdelay*.
 
-*shutdown.stayoff* ['value']::
+*shutdown.stayoff*::
 
 Turn off the load and remain off (see <<_known_problems,KNOWN PROBLEMS>>). Uses
 the timer defined by *offdelay*.
@@ -206,8 +204,7 @@ Perform a (10 second) battery test.
 
 *test.battery.start* 'value'::
 
-Perform a battery test for the duration of 'value' seconds (truncated to units of
-60 seconds).
+Perform a battery test for the duration of 'value' minutes.
 
 *test.battery.stop*::
 
