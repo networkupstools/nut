@@ -1286,9 +1286,7 @@ static int voltronic_eco(void)	/* This functions returns -1 on errors, 0 on succ
 
 	/* Populating NUT variables */
 	dstate_setinfo("input.frequency.low", "%04.1f", eco.freq.min.act);
-	dstate_addrange("input.frequency.low", eco.freq.min.limits.lower, eco.freq.min.limits.upper);
 	dstate_setinfo("input.frequency.high", "%04.1f", eco.freq.max.act);
-	dstate_addrange("input.frequency.high", eco.freq.max.limits.lower, eco.freq.max.limits.upper);
 
 	if (testvar("reset_to_default")) {	/* If reset_to_default is set in ups.conf, the function won't change frequency limits */
 		upslogx(LOG_INFO, "Frequency Limits for ECO Mode won't be changed (reset_to_default option)");
