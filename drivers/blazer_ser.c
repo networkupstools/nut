@@ -114,6 +114,7 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+#ifndef TESTING
 	const struct {
 		const char	*val;
 		const int	dtr;
@@ -129,7 +130,7 @@ void upsdrv_initups(void)
 	int	i;
 
 	const char	*val;
-#ifndef TESTING
+
 	struct termios		tio;
 
 	/*

@@ -40,6 +40,8 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+#ifndef TESTING
+
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle		*udev = NULL;
 static USBDevice_t		usbdevice;
@@ -383,6 +385,8 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL,
 	NULL
 };
+
+#endif	/* TESTING */
 
 
 /*
