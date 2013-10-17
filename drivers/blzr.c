@@ -567,7 +567,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Krauler communication subdriver */
-static int 	krauler_command(const char *cmd, char *buf, size_t buflen)
+static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 {
 	/* Still not implemented:
 	 * 0x6	T<n>	(don't know how to pass the parameter)

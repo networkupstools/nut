@@ -1269,7 +1269,7 @@ static item_t	voltronic_blzr2nut[] = {
 
 	/* Query UPS for programmable outlet (1-4) status
 	 * > [QSK1\r]
-	 * < [(1\r]	<-  if outlet is on -> (1 , if off -> (0 ; (NAK -> outlet is not programmable
+	 * < [(1\r]	<- if outlet is on -> (1 , if off -> (0 ; (NAK -> outlet is not programmable
 	 *    012
 	 *    0
 	 */
@@ -1285,7 +1285,7 @@ static item_t	voltronic_blzr2nut[] = {
 
 	/* Query UPS for programmable outlet n (1-4) delay time before it shuts down the load when on battery mode
 	 * > [QSKT1\r]
-	 * < [(008\r]	<-  if delay time is set (by PSK[1-4]n) it'll report n (minutes) otherwise it'll report (NAK (also if outlet is not programmable)
+	 * < [(008\r]	<- if delay time is set (by PSK[1-4]n) it'll report n (minutes) otherwise it'll report (NAK (also if outlet is not programmable)
 	 *    01234
 	 *    0
 	 */
@@ -1748,7 +1748,7 @@ static void	voltronic_makevartable(void)
 	addvar(VAR_FLAG, "testing", "If invoked the driver will exec also commands that still need testing");
 }
 
-/* Unskip vars according to protocol used by the UPS  */
+/* Unskip vars according to protocol used by the UPS */
 static void	voltronic_massive_unskip(const int protocol)
 {
 	item_t	*item;
@@ -1807,7 +1807,7 @@ static void	voltronic_massive_unskip(const int protocol)
 				!strcasecmp(item->info_type, "input.L3.current")*//* Not unskipped because P09 should be 2-phase input/output */
 			)) ||
 			/* P03-P10 */
-			((protocol ==  3 || protocol == 10) && (
+			((protocol == 3 || protocol == 10) && (
 				!strcasecmp(item->info_type, "input.L3-N.voltage") ||
 				(!strcasecmp(item->info_type, "input.L2-L3.voltage") && item->from == 25) ||
 				(!strcasecmp(item->info_type, "input.L1-L3.voltage") && item->from == 31) ||
@@ -2258,27 +2258,27 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 
 	} else if (!strcasecmp(item->info_type, "")) {
 
-		if (strchr(enabled, 't')) { 	unknown/unused
+		if (strchr(enabled, 't')) {	unknown/unused
 		} else if (strchr(disabled, 't')) { }
 
 	} else if (!strcasecmp(item->info_type, "")) {
 
-		if (strchr(enabled, 'k')) { 	unknown/unused
+		if (strchr(enabled, 'k')) {	unknown/unused
 		} else if (strchr(disabled, 'k')) { }
 
 	} else if (!strcasecmp(item->info_type, "")) {
 
-		if (strchr(enabled, 'i')) { 	unknown/unused
+		if (strchr(enabled, 'i')) {	unknown/unused
 		} else if (strchr(disabled, 'i')) { }
 
 	} else if (!strcasecmp(item->info_type, "")) {
 
-		if (strchr(enabled, 'm')) { 	unknown/unused
+		if (strchr(enabled, 'm')) {	unknown/unused
 		} else if (strchr(disabled, 'm')) { }
 
 	} else if (!strcasecmp(item->info_type, "")) {
 
-		if (strchr(enabled, 'z')) { 	unknown/unused
+		if (strchr(enabled, 'z')) {	unknown/unused
 		} else if (strchr(disabled, 'z')) { }
 */
 	/* Items with a NUT variable */
