@@ -2980,6 +2980,8 @@ static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
 
 			}
 
+			break;
+
 		case 2:
 
 			strcpy(alarm, "Bus voltage over maximum value.");
