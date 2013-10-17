@@ -142,7 +142,7 @@ victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
 voltronic_ser_SOURCES = voltronic.c voltronic_ser.c
-voltronic_ser_LDADD = $(LDADD) -lm
+voltronic_ser_LDADD = $(LDADD)
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -188,7 +188,7 @@ riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 voltronic_usb_SOURCES = voltronic.c voltronic_usb.c libusb.c usb-common.c
-voltronic_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+voltronic_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
@@ -220,7 +220,7 @@ hald_addon_riello_usb_SOURCES = riello.c riello_usb.c libusb.c
 hald_addon_riello_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
 
 hald_addon_voltronic_usb_SOURCES = voltronic.c voltronic_usb.c libusb.c
-hald_addon_voltronic_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+hald_addon_voltronic_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c

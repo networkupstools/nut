@@ -28,8 +28,6 @@
 #include "main.h"
 #include "voltronic.h"
 
-#include <math.h>
-
 static int	ondelay = 0;	/* minutes */
 static int	offdelay = 30;	/* seconds */
 
