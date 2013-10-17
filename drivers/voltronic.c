@@ -1672,7 +1672,7 @@ static int	voltronic_capability(void)
 		bypass_forbidding = "disabled";
 	}
 
-/*	if (strchr(enabled, 't')) { 	unknown/unused
+/*	if (strchr(enabled, 't')) {	unknown/unused
 	} else if (strchr(disabled, 't')) { }		*/
 
 	if (strchr(enabled, 'j')) {
@@ -1681,10 +1681,10 @@ static int	voltronic_capability(void)
 		dstate_setinfo("outlet.0.switchable", "no");
 	}
 
-/*	if (strchr(enabled, 'k')) { 	unknown/unused
+/*	if (strchr(enabled, 'k')) {	unknown/unused
 	} else if (strchr(disabled, 'k')) { }		*/
 
-/*	if (strchr(enabled, 'i')) { 	unknown/unused
+/*	if (strchr(enabled, 'i')) {	unknown/unused
 	} else if (strchr(disabled, 'i')) { }		*/
 
 	if (strchr(enabled, 'l')) {
@@ -1711,10 +1711,10 @@ static int	voltronic_capability(void)
 		limited_runtime_on_battery = "disabled";
 	}
 
-/*	if (strchr(enabled, 'm')) { 	unknown/unused
+/*	if (strchr(enabled, 'm')) {	unknown/unused
 	} else if (strchr(disabled, 'm')) { }		*/
 
-/*	if (strchr(enabled, 'z')) { 	unknown/unused
+/*	if (strchr(enabled, 'z')) {	unknown/unused
 	} else if (strchr(disabled, 'z')) { }		*/
 
 	return 0;
