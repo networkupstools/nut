@@ -1,11 +1,11 @@
 /*
- * voltronic_usb.c: support for Voltronic Power UPSes
+ * voltronic_usb.c: support for USB Voltronic Power UPSes
  *
  * A document describing the protocol implemented by this driver can be
  * found online at http://www.networkupstools.org/ups-protocols/
  *
  * Copyright (C)
- *   2013 - Daniele Pezzini <hyouko@gmail.com>
+ *   2013 Daniele Pezzini <hyouko@gmail.com>
  * Based on blazer_usb.c - Copyright (C)
  *   2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2011-2012  Arnaud Quette <arnaud.quette@free.fr>
@@ -402,7 +402,7 @@ void upsdrv_initups(void)
 				continue;
 			}
 
-			subdriver_command =  subdriver[i].command;
+			subdriver_command = subdriver[i].command;
 			break;
 		}
 
