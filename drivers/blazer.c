@@ -407,6 +407,8 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 	char	buf[SMALLBUF] = "";
 	int	i;
 
+	upslogx(LOG_INFO, "instcmd(%s, %s)", cmdname, extra ? extra : "[NULL]");
+
 	for (i = 0; instcmd[i].cmd; i++) {
 
 		if (strcasecmp(cmdname, instcmd[i].cmd)) {
@@ -477,6 +479,7 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 		int	delay = extra ? strtol(extra, NULL, 10) : 10;
 
 		if ((delay < 1) || (delay > 99)) {
+			upslogx(LOG_ERR, "instcmd: command [%s] failed, delay [%s] out of range", cmdname, extra);
 			return STAT_INSTCMD_FAILED;
 		}
 
