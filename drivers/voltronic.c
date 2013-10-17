@@ -465,6 +465,8 @@ static int	voltronic_fault(void)
 
 			}
 
+			break;
+
 		case 2:
 
 			strcpy(alarm, "Bus voltage over maximum value.");
