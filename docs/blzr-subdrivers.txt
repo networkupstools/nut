@@ -227,6 +227,8 @@ NOTE: In this case +value+ must be filled with the processed value already compl
 
 IMPORTANT: You must provide an +item_t+ with +BLZR_FLAG_SETVAR+ and its boundaries set for both +ups.delay.start+ and +ups.delay.shutdown+ to map the driver variables +ondelay+ and +offdelay+, as they will be used in the shutdown sequence.
 
+TIP: In order to keep the data flow at minimum you should keep together the items in +blzr2nut+ that need data from the same query (i.e. +command+): doing so the driver will send the query only once and then every +item_t+ processed after the one that got the answer, provided that it's filled with the same +command+ and that the answer wasn't +NULL+, will get that +answer+.
+
 
 Examples
 ~~~~~~~~
