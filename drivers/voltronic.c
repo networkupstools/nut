@@ -3655,6 +3655,8 @@ void upsdrv_shutdown(void)
 			continue;
 		}
 
+		break;
+
 	}
 
 	if (retry > MAXTRIES) {
