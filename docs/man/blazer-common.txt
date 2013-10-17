@@ -4,6 +4,7 @@ This man page only documents the hardware-specific features of the
 blazer driver. For information about the core driver, see
 linkman:nutupsdrv[8].
 
+
 SUPPORTED HARDWARE
 ------------------
 
@@ -15,6 +16,7 @@ but haven't been tested.
 
 All devices with a serial interface (use the *blazer_ser* driver) and
 many with a USB interface (use the *blazer_usb* driver) are supported.
+
 
 EXTRA ARGUMENTS
 ---------------
@@ -106,7 +108,7 @@ specified.
 
 ifndef::blazer_usb[]
 SERIAL INTERFACE ONLY
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 *cablepower =* 'string'::
 
@@ -119,7 +121,7 @@ endif::blazer_usb[]
 
 ifdef::blazer_usb[]
 USB INTERFACE ONLY
-------------------
+~~~~~~~~~~~~~~~~~~
 
 *vendorid =* 'regex'::
 *productid =* 'regex'::
@@ -208,6 +210,7 @@ Perform a battery test for the duration of 'value' minutes.
 
 Stop a running battery test (not available on some hardware.)
 
+
 BATTERY CHARGE
 --------------
 
@@ -248,6 +251,7 @@ linkman:ups.conf[5], so don't complain with the author. If you need something be
 buy a UPS that reports *battery.charge* and *battery.runtime* all by itself
 without the help of a NUT driver.
 
+
 NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS
 ----------------------------------------------
 
@@ -269,6 +273,7 @@ You need to use 'cablepower'
 This parameter can simply be discarded, since it was a wrong understanding
 of the specification.
 
+
 KNOWN PROBLEMS
 --------------
 
@@ -287,11 +292,13 @@ in the status reported by the driver when, in fact, it is working fine.
 
 The temperature and load value is known to be bogus in some models.
 
+
 AUTHORS
 -------
 
 Arjen de Korte <adkorte-guest at alioth.debian.org>,
 Alexander Gordeev <lasaine at lvk.cs.msu.su>
+
 
 SEE ALSO
 --------
@@ -304,8 +311,11 @@ linkman:blazer_usb[8],
 endif::blazer_usb[]
 linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
 
+
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
 The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+
