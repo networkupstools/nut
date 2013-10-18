@@ -38,12 +38,16 @@
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
 
+extern int 	shutdown_duration;
+
 static int	mge_ambient_value = 0;
 
 static char	mge_scratch_buf[256];
 
 static char	var[128];
 static char	val[128];
+
+static int	mge_shutdown_pending = 0;
 
 typedef enum {
 	ROOTPARENT = NE_XML_STATEROOT,
@@ -125,6 +129,10 @@ static const char *discharging_info(const char *val)
 {
 	if (val[0] == '1') {
 		STATUS_SET(DISCHRG);
+		/* Workaround NMC bug: both charging and discharging set to 1 */
+		if(STATUS_BIT(CHRG)) {
+			STATUS_CLR(CHRG);
+		}
 	} else {
 		STATUS_CLR(DISCHRG);
 	}
@@ -255,7 +263,8 @@ static const char *fanfail_info(const char *val)
 
 	return NULL;
 }
-/*
+
+#if 0
 static const char *shutdownimm_info(const char *val)
 {
 	if (val[0] == '1') {
@@ -266,7 +275,8 @@ static const char *shutdownimm_info(const char *val)
 
 	return NULL;
 }
- */
+#endif
+
 static const char *overheat_info(const char *val)
 {
 	if (val[0] == '1') {
@@ -524,24 +534,328 @@ static const char *mge_ambient_info(const char *val)
 	}
 }
 
-static const char *mge_timer_shutdown(const char *val)
+static const char *mge_timer_shutdown(const char *delay_before_shutoff)
 {
-	const char	*delay = dstate_getinfo("ups.delay.shutdown");
-
-	if ((delay) && (atoi(val) > -1) && (atoi(val) < atoi(delay))) {
+	if (atoi(delay_before_shutoff) > -1 ) {
 		STATUS_SET(SHUTDOWNIMM);
+		mge_shutdown_pending = 1;
+
+		if( atoi(delay_before_shutoff) > shutdown_duration ) {
+			STATUS_CLR(SHUTDOWNIMM);
+			mge_shutdown_pending = 0;
+		}
 	} else {
 		STATUS_CLR(SHUTDOWNIMM);
+		mge_shutdown_pending = 0;
 	}
 
 	return val;
 }
 
+static const char *mge_shutdown_imminent(const char *val)
+{
+	const int shutdown_delay = atoi(val);
+
+	/* shutdown is already managed by mge_timer_shutdown, give up */
+	if(mge_shutdown_pending) {
+		return NULL;
+	}
+
+	/* We may have "NONE" or "-1" or ?? as value
+	 * We also double check both the string and numeric values to be zero!*/
+	if ((val) && (val[0] == '0') && (shutdown_delay == 0)) {
+		STATUS_SET(SHUTDOWNIMM);
+	} else {
+		STATUS_CLR(SHUTDOWNIMM);
+	}
+
+	return NULL;
+}
+
 static xml_info_t mge_xml2nut[] = {
+	/* NMC configuration (mapped 1:1 for now) */
+	{ "device.contact", ST_FLAG_RW, 0, "System.Contact", 0, 0, NULL },
+	{ "device.location", ST_FLAG_RW, 0, "System.Location", 0, 0, NULL },
+	/* Not used for now; might however be used in future for history & stats collection
+	{ "System.History.Log.Interval", ST_FLAG_RW, 0, "System.History.Log.Interval", 0, 0, NULL },
+	*/
+	{ "System.Environment.Log.Interval", ST_FLAG_RW, 0, "System.Environment.Log.Interval", 0, 0, NULL },
+	{ "System.Outlet[1].iName", ST_FLAG_RW, 0, "System.Outlet[1].iName", 0, 0, NULL },
+	/* Mapped as ups.delay.shutdown
+	{ "System.ShutdownDuration", ST_FLAG_RW, 0, "System.ShutdownDuration", 0, 0, NULL },
+	*/
+	{ "System.ShutdownTimerSelected", ST_FLAG_RW, 0, "System.ShutdownTimerSelected", 0, 0, NULL },
+	{ "System.ShutdownTimer", ST_FLAG_RW, 0, "System.ShutdownTimer", 0, 0, NULL },
+	/* Mapped as battery.runtime.low
+	{ "System.RunTimeToEmptyLimit", ST_FLAG_RW, 0, "System.RunTimeToEmptyLimit", 0, 0, NULL },
+	*/
+	{ "System.RemainingCapacityLimit", ST_FLAG_RW, 0, "System.RemainingCapacityLimit", 0, 0, NULL },
+	{ "System.RestartLevel", ST_FLAG_RW, 0, "System.RestartLevel", 0, 0, NULL },
+	{ "System.Outlet[2].iName", ST_FLAG_RW, 0, "System.Outlet[2].iName", 0, 0, NULL },
+	/* Mapped as outlet.1.delay.shutdown
+	{ "System.Outlet[2].ShutdownDuration", ST_FLAG_RW, 0, "System.Outlet[2].ShutdownDuration", 0, 0, NULL },
+	*/
+	{ "System.Outlet[2].ShutdownTimer", ST_FLAG_RW, 0, "System.Outlet[2].ShutdownTimer", 0, 0, NULL },
+	{ "System.Outlet[2].StartupTimer", ST_FLAG_RW, 0, "System.Outlet[2].StartupTimer", 0, 0, NULL },
+	{ "System.Outlet[2].RemainingCapacityLimit", ST_FLAG_RW, 0, "System.Outlet[2].RemainingCapacityLimit", 0, 0, NULL },
+	/* For future extension, and support of shutdown on load segment
+	 * { "System.Outlet[2].RunTimeToShutdown", ST_FLAG_RW, 0, "System.Outlet[2].RunTimeToShutdown", 0, 0, NULL }, */
+	{ "System.Outlet[3].iName", ST_FLAG_RW, 0, "System.Outlet[3].iName", 0, 0, NULL },
+	/* Mapped as outlet.2.delay.shutdown
+	{ "System.Outlet[3].ShutdownDuration", ST_FLAG_RW, 0, "System.Outlet[3].ShutdownDuration", 0, 0, NULL },
+	*/
+	{ "System.Outlet[3].ShutdownTimer", ST_FLAG_RW, 0, "System.Outlet[3].ShutdownTimer", 0, 0, NULL },
+	{ "System.Outlet[3].StartupTimer", ST_FLAG_RW, 0, "System.Outlet[3].StartupTimer", 0, 0, NULL },
+	{ "System.Outlet[3].RemainingCapacityLimit", ST_FLAG_RW, 0, "System.Outlet[3].RemainingCapacityLimit", 0, 0, NULL },
+	/* For future extension, and support of shutdown on load segment
+	 * { "System.Outlet[3].RunTimeToShutdown", ST_FLAG_RW, 0, "System.Outlet[3].RunTimeToShutdown", 0, 0, NULL }, */
+	{ "System.Outlet[1].OffDelay", ST_FLAG_RW, 0, "System.Outlet[1].OffDelay", 0, 0, NULL },
+	{ "System.Outlet[1].Toggle", ST_FLAG_RW, 0, "System.Outlet[1].Toggle", 0, 0, NULL },
+	{ "System.Outlet[1].OnDelay", ST_FLAG_RW, 0, "System.Outlet[1].OnDelay", 0, 0, NULL },
+	{ "System.Outlet[2].OffDelay", ST_FLAG_RW, 0, "System.Outlet[2].OffDelay", 0, 0, NULL },
+	{ "System.Outlet[2].Toggle", ST_FLAG_RW, 0, "System.Outlet[2].Toggle", 0, 0, NULL },
+	{ "System.Outlet[2].OnDelay", ST_FLAG_RW, 0, "System.Outlet[2].OnDelay", 0, 0, NULL },
+	{ "System.Outlet[3].OffDelay", ST_FLAG_RW, 0, "System.Outlet[3].OffDelay", 0, 0, NULL },
+	{ "System.Outlet[3].Toggle", ST_FLAG_RW, 0, "System.Outlet[3].Toggle", 0, 0, NULL },
+	{ "System.Outlet[3].OnDelay", ST_FLAG_RW, 0, "System.Outlet[3].OnDelay", 0, 0, NULL },
+	{ "System.Login", ST_FLAG_RW, 0, "System.Login", 0, 0, NULL },
+	{ "System.Password", ST_FLAG_RW, 0, "System.Password", 0, 0, NULL },
+	{ "System.Security", ST_FLAG_RW, 0, "System.Security", 0, 0, NULL },
+	{ "System.FirmwareUpgrade", ST_FLAG_RW, 0, "System.FirmwareUpgrade", 0, 0, NULL },
+#if (0)  /* not interresting for NUT */
+	{ "System.Network.SNMP.ReadCommunity", ST_FLAG_RW, 0, "System.Network.SNMP.ReadCommunity", 0, 0, NULL },
+	{ "System.Network.SNMP.ReadCommunityName", 0, 0, "System.Network.SNMP.ReadCommunityName", 0, 0, NULL },
+	{ "System.Network.SNMP.ReadCommunitySecurityLevel", 0, 0, "System.Network.SNMP.ReadCommunitySecurityLevel", 0, 0, NULL },
+	{ "System.Network.SNMP.ReadCommunitySecurityRight", 0, 0, "System.Network.SNMP.ReadCommunitySecurityRight", 0, 0, NULL },
+	{ "System.Network.SNMP.WriteCommunity", ST_FLAG_RW, 0, "System.Network.SNMP.WriteCommunity", 0, 0, NULL },
+	{ "System.Network.SNMP.WriteCommunityName", 0, 0, "System.Network.SNMP.WriteCommunityName", 0, 0, NULL },
+	{ "System.Network.SNMP.WriteCommunitySecurityLevel", 0, 0, "System.Network.SNMP.WriteCommunitySecurityLevel", 0, 0, NULL },
+	{ "System.Network.SNMP.WriteCommunitySecurityRight", ST_FLAG_RW, 0, "System.Network.SNMP.WriteCommunitySecurityRight", 0, 0, NULL },
+	{ "System.Network.SNMP.Admin", ST_FLAG_RW, 0, "System.Network.SNMP.Admin", 0, 0, NULL },
+	{ "System.Network.SNMP.AdminPassword", ST_FLAG_RW, 0, "System.Network.SNMP.AdminPassword", 0, 0, NULL },
+	{ "System.Network.SNMP.AdminSecurityLevel", ST_FLAG_RW, 0, "System.Network.SNMP.AdminSecurityLevel", 0, 0, NULL },
+	{ "System.Network.SNMP.AdminSecurityRight", 0, 0, "System.Network.SNMP.AdminSecurityRight", 0, 0, NULL },
+	{ "System.Network.SNMP.User", ST_FLAG_RW, 0, "System.Network.SNMP.User", 0, 0, NULL },
+	{ "System.Network.SNMP.UserPassword", ST_FLAG_RW, 0, "System.Network.SNMP.UserPassword", 0, 0, NULL },
+	{ "System.Network.SNMP.UserSecurityLevel", ST_FLAG_RW, 0, "System.Network.SNMP.UserSecurityLevel", 0, 0, NULL },
+	{ "System.Network.SNMP.UserSecurityRight", 0, 0, "System.Network.SNMP.UserSecurityRight", 0, 0, NULL },
+	{ "System.Network.SNMP.NotificationUserName", ST_FLAG_RW, 0, "System.Network.SNMP.NotificationUserName", 0, 0, NULL },
+	{ "System.Network.SNMP.snmpVersion", ST_FLAG_RW, 0, "System.Network.SNMP.snmpVersion", 0, 0, NULL },
+	{ "System.Network.SNMP.engineBoots", 0, 0, "System.Network.SNMP.engineBoots", 0, 0, NULL },
+	{ "System.Network.Telnet.Access", ST_FLAG_RW, 0, "System.Network.Telnet.Access", 0, 0, NULL },
+	{ "System.Network.Telnet.Security", ST_FLAG_RW, 0, "System.Network.Telnet.Security", 0, 0, NULL },
+	{ "System.Network.Telnet.Console", ST_FLAG_RW, 0, "System.Network.Telnet.Console", 0, 0, NULL },
+	{ "System.Email.Sender", ST_FLAG_RW, 0, "System.Email.Sender", 0, 0, NULL },
+	{ "System.Email.Subject", ST_FLAG_RW, 0, "System.Email.Subject", 0, 0, NULL },
+	{ "System.Email.UPSName", ST_FLAG_RW, 0, "System.Email.UPSName", 0, 0, NULL },
+	{ "System.Email.Message", ST_FLAG_RW, 0, "System.Email.Message", 0, 0, NULL },
+	{ "System.Email.Localization", ST_FLAG_RW, 0, "System.Email.Localization", 0, 0, NULL },
+	{ "System.Email.EventName", ST_FLAG_RW, 0, "System.Email.EventName", 0, 0, NULL },
+	{ "System.Email[0].Recipient", ST_FLAG_RW, 0, "System.Email[0].Recipient", 0, 0, NULL },
+	{ "System.Email[0].Selected", ST_FLAG_RW, 0, "System.Email[0].Selected", 0, 0, NULL },
+	{ "System.Email[0].Enotify", ST_FLAG_RW, 0, "System.Email[0].Enotify", 0, 0, NULL },
+	{ "System.Email[0].Measures.Log", ST_FLAG_RW, 0, "System.Email[0].Measures.Log", 0, 0, NULL },
+	{ "System.Email[0].Events.Log", ST_FLAG_RW, 0, "System.Email[0].Events.Log", 0, 0, NULL },
+	{ "System.Email[0].SystemEvents.Log", ST_FLAG_RW, 0, "System.Email[0].SystemEvents.Log", 0, 0, NULL },
+	{ "System.Email[0].Environment.Log", ST_FLAG_RW, 0, "System.Email[0].Environment.Log", 0, 0, NULL },
+	{ "System.Email[0].Report.Periodicity", ST_FLAG_RW, 0, "System.Email[0].Report.Periodicity", 0, 0, NULL },
+	{ "System.Email[0].Report.Hour", ST_FLAG_RW, 0, "System.Email[0].Report.Hour", 0, 0, NULL },
+	{ "System.Email[0].Report.Next", ST_FLAG_RW, 0, "System.Email[0].Report.Next", 0, 0, NULL },
+	{ "System.Email[0].EventList.Discharging", ST_FLAG_RW, 0, "System.Email[0].EventList.Discharging", 0, 0, NULL },
+	{ "System.Email[0].EventList.ACPresent", ST_FLAG_RW, 0, "System.Email[0].EventList.ACPresent", 0, 0, NULL },
+	{ "System.Email[0].EventList.RunTimeToShutdown", ST_FLAG_RW, 0, "System.Email[0].EventList.RunTimeToShutdown", 0, 0, NULL },
+	{ "System.Email[0].EventList.BelowRemainingCapacityLimit", ST_FLAG_RW, 0, "System.Email[0].EventList.BelowRemainingCapacityLimit", 0, 0, NULL },
+	{ "System.Email[0].EventList.NeedReplacement.1", ST_FLAG_RW, 0, "System.Email[0].EventList.NeedReplacement.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.NeedReplacement.0", ST_FLAG_RW, 0, "System.Email[0].EventList.NeedReplacement.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.Overload.1", ST_FLAG_RW, 0, "System.Email[0].EventList.Overload.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.Overload.0", ST_FLAG_RW, 0, "System.Email[0].EventList.Overload.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.InternalFailure.1", ST_FLAG_RW, 0, "System.Email[0].EventList.InternalFailure.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.InternalFailure.0", ST_FLAG_RW, 0, "System.Email[0].EventList.InternalFailure.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.CommunicationLost.1", ST_FLAG_RW, 0, "System.Email[0].EventList.CommunicationLost.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.CommunicationLost.0", ST_FLAG_RW, 0, "System.Email[0].EventList.CommunicationLost.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.Charger.InternalFailure", ST_FLAG_RW, 0, "System.Email[0].EventList.Charger.InternalFailure", 0, 0, NULL },
+	{ "System.Email[0].EventList.Input[2].Used.1", ST_FLAG_RW, 0, "System.Email[0].EventList.Input[2].Used.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.Input[2].Used.0", ST_FLAG_RW, 0, "System.Email[0].EventList.Input[2].Used.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.PowerModule.RedundancyLost.1", ST_FLAG_RW, 0, "System.Email[0].EventList.PowerModule.RedundancyLost.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.PowerModule.RedundancyLost.0", ST_FLAG_RW, 0, "System.Email[0].EventList.PowerModule.RedundancyLost.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.PowerModule.ProtectionLost.1", ST_FLAG_RW, 0, "System.Email[0].EventList.PowerModule.ProtectionLost.1", 0, 0, NULL },
+	{ "System.Email[0].EventList.PowerModule.ProtectionLost.0", ST_FLAG_RW, 0, "System.Email[0].EventList.PowerModule.ProtectionLost.0", 0, 0, NULL },
+	{ "System.Email[0].EventList.FirmwareUpgrade", ST_FLAG_RW, 0, "System.Email[0].EventList.FirmwareUpgrade", 0, 0, NULL },
+	{ "System.Email[0].EventList.Environment.CommunicationLost", ST_FLAG_RW, 0, "System.Email[0].EventList.Environment.CommunicationLost", 0, 0, NULL },
+	{ "System.Email[0].EventList.Environment.Notify", ST_FLAG_RW, 0, "System.Email[0].EventList.Environment.Notify", 0, 0, NULL },
+	{ "System.Email[1].Recipient", ST_FLAG_RW, 0, "System.Email[1].Recipient", 0, 0, NULL },
+	{ "System.Email[1].Selected", ST_FLAG_RW, 0, "System.Email[1].Selected", 0, 0, NULL },
+	{ "System.Email[1].Enotify", ST_FLAG_RW, 0, "System.Email[1].Enotify", 0, 0, NULL },
+	{ "System.Email[1].Measures.Log", ST_FLAG_RW, 0, "System.Email[1].Measures.Log", 0, 0, NULL },
+	{ "System.Email[1].Events.Log", ST_FLAG_RW, 0, "System.Email[1].Events.Log", 0, 0, NULL },
+	{ "System.Email[1].SystemEvents.Log", ST_FLAG_RW, 0, "System.Email[1].SystemEvents.Log", 0, 0, NULL },
+	{ "System.Email[1].Environment.Log", ST_FLAG_RW, 0, "System.Email[1].Environment.Log", 0, 0, NULL },
+	{ "System.Email[1].Report.Periodicity", ST_FLAG_RW, 0, "System.Email[1].Report.Periodicity", 0, 0, NULL },
+	{ "System.Email[1].Report.Hour", ST_FLAG_RW, 0, "System.Email[1].Report.Hour", 0, 0, NULL },
+	{ "System.Email[1].Report.Next", ST_FLAG_RW, 0, "System.Email[1].Report.Next", 0, 0, NULL },
+	{ "System.Email[1].EventList.Discharging", ST_FLAG_RW, 0, "System.Email[1].EventList.Discharging", 0, 0, NULL },
+	{ "System.Email[1].EventList.ACPresent", ST_FLAG_RW, 0, "System.Email[1].EventList.ACPresent", 0, 0, NULL },
+	{ "System.Email[1].EventList.RunTimeToShutdown", ST_FLAG_RW, 0, "System.Email[1].EventList.RunTimeToShutdown", 0, 0, NULL },
+	{ "System.Email[1].EventList.BelowRemainingCapacityLimit", ST_FLAG_RW, 0, "System.Email[1].EventList.BelowRemainingCapacityLimit", 0, 0, NULL },
+	{ "System.Email[1].EventList.NeedReplacement.1", ST_FLAG_RW, 0, "System.Email[1].EventList.NeedReplacement.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.NeedReplacement.0", ST_FLAG_RW, 0, "System.Email[1].EventList.NeedReplacement.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.Overload.1", ST_FLAG_RW, 0, "System.Email[1].EventList.Overload.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.Overload.0", ST_FLAG_RW, 0, "System.Email[1].EventList.Overload.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.InternalFailure.1", ST_FLAG_RW, 0, "System.Email[1].EventList.InternalFailure.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.InternalFailure.0", ST_FLAG_RW, 0, "System.Email[1].EventList.InternalFailure.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.CommunicationLost.1", ST_FLAG_RW, 0, "System.Email[1].EventList.CommunicationLost.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.CommunicationLost.0", ST_FLAG_RW, 0, "System.Email[1].EventList.CommunicationLost.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.Charger.InternalFailure", ST_FLAG_RW, 0, "System.Email[1].EventList.Charger.InternalFailure", 0, 0, NULL },
+	{ "System.Email[1].EventList.Input[2].Used.1", ST_FLAG_RW, 0, "System.Email[1].EventList.Input[2].Used.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.Input[2].Used.0", ST_FLAG_RW, 0, "System.Email[1].EventList.Input[2].Used.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.PowerModule.RedundancyLost.1", ST_FLAG_RW, 0, "System.Email[1].EventList.PowerModule.RedundancyLost.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.PowerModule.RedundancyLost.0", ST_FLAG_RW, 0, "System.Email[1].EventList.PowerModule.RedundancyLost.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.PowerModule.ProtectionLost.1", ST_FLAG_RW, 0, "System.Email[1].EventList.PowerModule.ProtectionLost.1", 0, 0, NULL },
+	{ "System.Email[1].EventList.PowerModule.ProtectionLost.0", ST_FLAG_RW, 0, "System.Email[1].EventList.PowerModule.ProtectionLost.0", 0, 0, NULL },
+	{ "System.Email[1].EventList.FirmwareUpgrade", ST_FLAG_RW, 0, "System.Email[1].EventList.FirmwareUpgrade", 0, 0, NULL },
+	{ "System.Email[1].EventList.Environment.CommunicationLost", ST_FLAG_RW, 0, "System.Email[1].EventList.Environment.CommunicationLost", 0, 0, NULL },
+	{ "System.Email[1].EventList.Environment.Notify", ST_FLAG_RW, 0, "System.Email[1].EventList.Environment.Notify", 0, 0, NULL },
+	{ "System.Email[2].Recipient", ST_FLAG_RW, 0, "System.Email[2].Recipient", 0, 0, NULL },
+	{ "System.Email[2].Selected", ST_FLAG_RW, 0, "System.Email[2].Selected", 0, 0, NULL },
+	{ "System.Email[2].Enotify", ST_FLAG_RW, 0, "System.Email[2].Enotify", 0, 0, NULL },
+	{ "System.Email[2].Measures.Log", ST_FLAG_RW, 0, "System.Email[2].Measures.Log", 0, 0, NULL },
+	{ "System.Email[2].Events.Log", ST_FLAG_RW, 0, "System.Email[2].Events.Log", 0, 0, NULL },
+	{ "System.Email[2].SystemEvents.Log", ST_FLAG_RW, 0, "System.Email[2].SystemEvents.Log", 0, 0, NULL },
+	{ "System.Email[2].Environment.Log", ST_FLAG_RW, 0, "System.Email[2].Environment.Log", 0, 0, NULL },
+	{ "System.Email[2].Report.Periodicity", ST_FLAG_RW, 0, "System.Email[2].Report.Periodicity", 0, 0, NULL },
+	{ "System.Email[2].Report.Hour", ST_FLAG_RW, 0, "System.Email[2].Report.Hour", 0, 0, NULL },
+	{ "System.Email[2].Report.Next", ST_FLAG_RW, 0, "System.Email[2].Report.Next", 0, 0, NULL },
+	{ "System.Email[2].EventList.Discharging", ST_FLAG_RW, 0, "System.Email[2].EventList.Discharging", 0, 0, NULL },
+	{ "System.Email[2].EventList.ACPresent", ST_FLAG_RW, 0, "System.Email[2].EventList.ACPresent", 0, 0, NULL },
+	{ "System.Email[2].EventList.RunTimeToShutdown", ST_FLAG_RW, 0, "System.Email[2].EventList.RunTimeToShutdown", 0, 0, NULL },
+	{ "System.Email[2].EventList.BelowRemainingCapacityLimit", ST_FLAG_RW, 0, "System.Email[2].EventList.BelowRemainingCapacityLimit", 0, 0, NULL },
+	{ "System.Email[2].EventList.NeedReplacement.1", ST_FLAG_RW, 0, "System.Email[2].EventList.NeedReplacement.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.NeedReplacement.0", ST_FLAG_RW, 0, "System.Email[2].EventList.NeedReplacement.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.Overload.1", ST_FLAG_RW, 0, "System.Email[2].EventList.Overload.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.Overload.0", ST_FLAG_RW, 0, "System.Email[2].EventList.Overload.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.InternalFailure.1", ST_FLAG_RW, 0, "System.Email[2].EventList.InternalFailure.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.InternalFailure.0", ST_FLAG_RW, 0, "System.Email[2].EventList.InternalFailure.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.CommunicationLost.1", ST_FLAG_RW, 0, "System.Email[2].EventList.CommunicationLost.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.CommunicationLost.0", ST_FLAG_RW, 0, "System.Email[2].EventList.CommunicationLost.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.Charger.InternalFailure", ST_FLAG_RW, 0, "System.Email[2].EventList.Charger.InternalFailure", 0, 0, NULL },
+	{ "System.Email[2].EventList.Input[2].Used.1", ST_FLAG_RW, 0, "System.Email[2].EventList.Input[2].Used.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.Input[2].Used.0", ST_FLAG_RW, 0, "System.Email[2].EventList.Input[2].Used.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.PowerModule.RedundancyLost.1", ST_FLAG_RW, 0, "System.Email[2].EventList.PowerModule.RedundancyLost.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.PowerModule.RedundancyLost.0", ST_FLAG_RW, 0, "System.Email[2].EventList.PowerModule.RedundancyLost.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.PowerModule.ProtectionLost.1", ST_FLAG_RW, 0, "System.Email[2].EventList.PowerModule.ProtectionLost.1", 0, 0, NULL },
+	{ "System.Email[2].EventList.PowerModule.ProtectionLost.0", ST_FLAG_RW, 0, "System.Email[2].EventList.PowerModule.ProtectionLost.0", 0, 0, NULL },
+	{ "System.Email[2].EventList.FirmwareUpgrade", ST_FLAG_RW, 0, "System.Email[2].EventList.FirmwareUpgrade", 0, 0, NULL },
+	{ "System.Email[2].EventList.Environment.CommunicationLost", ST_FLAG_RW, 0, "System.Email[2].EventList.Environment.CommunicationLost", 0, 0, NULL },
+	{ "System.Email[2].EventList.Environment.Notify", ST_FLAG_RW, 0, "System.Email[2].EventList.Environment.Notify", 0, 0, NULL },
+	{ "System.Email[3].Recipient", ST_FLAG_RW, 0, "System.Email[3].Recipient", 0, 0, NULL },
+	{ "System.Email[3].Selected", ST_FLAG_RW, 0, "System.Email[3].Selected", 0, 0, NULL },
+	{ "System.Email[3].Enotify", ST_FLAG_RW, 0, "System.Email[3].Enotify", 0, 0, NULL },
+	{ "System.Email[3].Measures.Log", ST_FLAG_RW, 0, "System.Email[3].Measures.Log", 0, 0, NULL },
+	{ "System.Email[3].Events.Log", ST_FLAG_RW, 0, "System.Email[3].Events.Log", 0, 0, NULL },
+	{ "System.Email[3].SystemEvents.Log", ST_FLAG_RW, 0, "System.Email[3].SystemEvents.Log", 0, 0, NULL },
+	{ "System.Email[3].Environment.Log", ST_FLAG_RW, 0, "System.Email[3].Environment.Log", 0, 0, NULL },
+	{ "System.Email[3].Report.Periodicity", ST_FLAG_RW, 0, "System.Email[3].Report.Periodicity", 0, 0, NULL },
+	{ "System.Email[3].Report.Hour", ST_FLAG_RW, 0, "System.Email[3].Report.Hour", 0, 0, NULL },
+	{ "System.Email[3].Report.Next", ST_FLAG_RW, 0, "System.Email[3].Report.Next", 0, 0, NULL },
+	{ "System.Email[3].EventList.Discharging", ST_FLAG_RW, 0, "System.Email[3].EventList.Discharging", 0, 0, NULL },
+	{ "System.Email[3].EventList.ACPresent", ST_FLAG_RW, 0, "System.Email[3].EventList.ACPresent", 0, 0, NULL },
+	{ "System.Email[3].EventList.RunTimeToShutdown", ST_FLAG_RW, 0, "System.Email[3].EventList.RunTimeToShutdown", 0, 0, NULL },
+	{ "System.Email[3].EventList.BelowRemainingCapacityLimit", ST_FLAG_RW, 0, "System.Email[3].EventList.BelowRemainingCapacityLimit", 0, 0, NULL },
+	{ "System.Email[3].EventList.NeedReplacement.1", ST_FLAG_RW, 0, "System.Email[3].EventList.NeedReplacement.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.NeedReplacement.0", ST_FLAG_RW, 0, "System.Email[3].EventList.NeedReplacement.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.Overload.1", ST_FLAG_RW, 0, "System.Email[3].EventList.Overload.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.Overload.0", ST_FLAG_RW, 0, "System.Email[3].EventList.Overload.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.InternalFailure.1", ST_FLAG_RW, 0, "System.Email[3].EventList.InternalFailure.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.InternalFailure.0", ST_FLAG_RW, 0, "System.Email[3].EventList.InternalFailure.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.CommunicationLost.1", ST_FLAG_RW, 0, "System.Email[3].EventList.CommunicationLost.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.CommunicationLost.0", ST_FLAG_RW, 0, "System.Email[3].EventList.CommunicationLost.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.Charger.InternalFailure", ST_FLAG_RW, 0, "System.Email[3].EventList.Charger.InternalFailure", 0, 0, NULL },
+	{ "System.Email[3].EventList.Input[2].Used.1", ST_FLAG_RW, 0, "System.Email[3].EventList.Input[2].Used.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.Input[2].Used.0", ST_FLAG_RW, 0, "System.Email[3].EventList.Input[2].Used.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.PowerModule.RedundancyLost.1", ST_FLAG_RW, 0, "System.Email[3].EventList.PowerModule.RedundancyLost.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.PowerModule.RedundancyLost.0", ST_FLAG_RW, 0, "System.Email[3].EventList.PowerModule.RedundancyLost.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.PowerModule.ProtectionLost.1", ST_FLAG_RW, 0, "System.Email[3].EventList.PowerModule.ProtectionLost.1", 0, 0, NULL },
+	{ "System.Email[3].EventList.PowerModule.ProtectionLost.0", ST_FLAG_RW, 0, "System.Email[3].EventList.PowerModule.ProtectionLost.0", 0, 0, NULL },
+	{ "System.Email[3].EventList.FirmwareUpgrade", ST_FLAG_RW, 0, "System.Email[3].EventList.FirmwareUpgrade", 0, 0, NULL },
+	{ "System.Email[3].EventList.Environment.CommunicationLost", ST_FLAG_RW, 0, "System.Email[3].EventList.Environment.CommunicationLost", 0, 0, NULL },
+	{ "System.Email[3].EventList.Environment.Notify", ST_FLAG_RW, 0, "System.Email[3].EventList.Environment.Notify", 0, 0, NULL },
+	{ "System.Schedule[0].Off", ST_FLAG_RW, 0, "System.Schedule[0].Off", 0, 0, NULL },
+	{ "System.Schedule[0].On", ST_FLAG_RW, 0, "System.Schedule[0].On", 0, 0, NULL },
+	{ "System.Schedule[1].Off", ST_FLAG_RW, 0, "System.Schedule[1].Off", 0, 0, NULL },
+	{ "System.Schedule[1].On", ST_FLAG_RW, 0, "System.Schedule[1].On", 0, 0, NULL },
+	{ "System.Schedule[2].Off", ST_FLAG_RW, 0, "System.Schedule[2].Off", 0, 0, NULL },
+	{ "System.Schedule[2].On", ST_FLAG_RW, 0, "System.Schedule[2].On", 0, 0, NULL },
+	{ "System.Schedule[3].Off", ST_FLAG_RW, 0, "System.Schedule[3].Off", 0, 0, NULL },
+	{ "System.Schedule[3].On", ST_FLAG_RW, 0, "System.Schedule[3].On", 0, 0, NULL },
+	{ "System.Schedule[4].Off", ST_FLAG_RW, 0, "System.Schedule[4].Off", 0, 0, NULL },
+	{ "System.Schedule[4].On", ST_FLAG_RW, 0, "System.Schedule[4].On", 0, 0, NULL },
+	{ "System.Schedule[5].Off", ST_FLAG_RW, 0, "System.Schedule[5].Off", 0, 0, NULL },
+	{ "System.Schedule[5].On", ST_FLAG_RW, 0, "System.Schedule[5].On", 0, 0, NULL },
+	{ "System.Schedule[6].Off", ST_FLAG_RW, 0, "System.Schedule[6].Off", 0, 0, NULL },
+	{ "System.Schedule[6].On", ST_FLAG_RW, 0, "System.Schedule[6].On", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[0].Name", ST_FLAG_RW, 0, "System.NetworkManagementSystem[0].Name", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[0].HostName", ST_FLAG_RW, 0, "System.NetworkManagementSystem[0].HostName", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[0].TrapCommunity", ST_FLAG_RW, 0, "System.NetworkManagementSystem[0].TrapCommunity", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[0].TrapSnmpVersion", ST_FLAG_RW, 0, "System.NetworkManagementSystem[0].TrapSnmpVersion", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[0].TrapSelectedMibs", ST_FLAG_RW, 0, "System.NetworkManagementSystem[0].TrapSelectedMibs", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[1].Name", ST_FLAG_RW, 0, "System.NetworkManagementSystem[1].Name", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[1].HostName", ST_FLAG_RW, 0, "System.NetworkManagementSystem[1].HostName", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[1].TrapCommunity", ST_FLAG_RW, 0, "System.NetworkManagementSystem[1].TrapCommunity", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[1].TrapSnmpVersion", ST_FLAG_RW, 0, "System.NetworkManagementSystem[1].TrapSnmpVersion", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[1].TrapSelectedMibs", ST_FLAG_RW, 0, "System.NetworkManagementSystem[1].TrapSelectedMibs", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[2].Name", ST_FLAG_RW, 0, "System.NetworkManagementSystem[2].Name", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[2].HostName", ST_FLAG_RW, 0, "System.NetworkManagementSystem[2].HostName", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[2].TrapCommunity", ST_FLAG_RW, 0, "System.NetworkManagementSystem[2].TrapCommunity", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[2].TrapSnmpVersion", ST_FLAG_RW, 0, "System.NetworkManagementSystem[2].TrapSnmpVersion", 0, 0, NULL },
+	{ "System.NetworkManagementSystem[2].TrapSelectedMibs", ST_FLAG_RW, 0, "System.NetworkManagementSystem[2].TrapSelectedMibs", 0, 0, NULL },
+	{ "System.ClientCfg.ShutdownTimer.Select", ST_FLAG_RW, 0, "System.ClientCfg.ShutdownTimer.Select", 0, 0, NULL },
+	{ "System.ClientCfg.ShutdownTimer", ST_FLAG_RW, 0, "System.ClientCfg.ShutdownTimer", 0, 0, NULL },
+	{ "System.ClientCfg.ShutdownDuration", ST_FLAG_RW, 0, "System.ClientCfg.ShutdownDuration", 0, 0, NULL },
+	{ "System.ClientCfg.BroadcastAdmins", ST_FLAG_RW, 0, "System.ClientCfg.BroadcastAdmins", 0, 0, NULL },
+	{ "System.ClientCfg.BroadcastUsers", ST_FLAG_RW, 0, "System.ClientCfg.BroadcastUsers", 0, 0, NULL },
+#endif  /* not interresting for NUT */
+	{ "Environment.iName", ST_FLAG_RW, 0, "Environment.iName", 0, 0, NULL },
+	{ "Environment.Temperature.Unit", ST_FLAG_RW, 0, "Environment.Temperature.Unit", 0, 0, NULL },
+	{ "Environment.Temperature.HighThreshold", ST_FLAG_RW, 0, "Environment.Temperature.HighThreshold", 0, 0, NULL },
+	{ "Environment.Temperature.LowThreshold", ST_FLAG_RW, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
+	{ "Environment.Temperature.Hysteresis", ST_FLAG_RW, 0, "Environment.Temperature.Hysteresis", 0, 0, NULL },
+	{ "Environment.Temperature.Offset", ST_FLAG_RW, 0, "Environment.Temperature.Offset", 0, 0, NULL },
+	{ "Environment.Temperature.HighNotify", ST_FLAG_RW, 0, "Environment.Temperature.HighNotify", 0, 0, NULL },
+	{ "Environment.Temperature.LowNotify", ST_FLAG_RW, 0, "Environment.Temperature.LowNotify", 0, 0, NULL },
+	{ "Environment.Temperature.HighShutdown", ST_FLAG_RW, 0, "Environment.Temperature.HighShutdown", 0, 0, NULL },
+	{ "Environment.Temperature.LowShutdown", ST_FLAG_RW, 0, "Environment.Temperature.LowShutdown", 0, 0, NULL },
+	{ "Environment.Humidity.HighThreshold", ST_FLAG_RW, 0, "Environment.Humidity.HighThreshold", 0, 0, NULL },
+	{ "Environment.Humidity.LowThreshold", ST_FLAG_RW, 0, "Environment.Humidity.LowThreshold", 0, 0, NULL },
+	{ "Environment.Humidity.Hysteresis", ST_FLAG_RW, 0, "Environment.Humidity.Hysteresis", 0, 0, NULL },
+	{ "Environment.Humidity.Offset", ST_FLAG_RW, 0, "Environment.Humidity.Offset", 0, 0, NULL },
+	{ "Environment.Humidity.HighNotify", ST_FLAG_RW, 0, "Environment.Humidity.HighNotify", 0, 0, NULL },
+	{ "Environment.Humidity.LowNotify", ST_FLAG_RW, 0, "Environment.Humidity.LowNotify", 0, 0, NULL },
+	{ "Environment.Humidity.HighShutdown", ST_FLAG_RW, 0, "Environment.Humidity.HighShutdown", 0, 0, NULL },
+	{ "Environment.Humidity.LowShutdown", ST_FLAG_RW, 0, "Environment.Humidity.LowShutdown", 0, 0, NULL },
+	{ "Environment.Input[1].iName", ST_FLAG_RW, 0, "Environment.Input[1].iName", 0, 0, NULL },
+	{ "Environment.Input[1].State[0].Description", ST_FLAG_RW, 0, "Environment.Input[1].State[0].Description", 0, 0, NULL },
+	{ "Environment.Input[1].State[0].Notify", ST_FLAG_RW, 0, "Environment.Input[1].State[0].Notify", 0, 0, NULL },
+	{ "Environment.Input[1].State[0].Shutdown", ST_FLAG_RW, 0, "Environment.Input[1].State[0].Shutdown", 0, 0, NULL },
+	{ "Environment.Input[1].State[1].Description", ST_FLAG_RW, 0, "Environment.Input[1].State[1].Description", 0, 0, NULL },
+	{ "Environment.Input[1].State[1].Notify", ST_FLAG_RW, 0, "Environment.Input[1].State[1].Notify", 0, 0, NULL },
+	{ "Environment.Input[1].State[1].Shutdown", ST_FLAG_RW, 0, "Environment.Input[1].State[1].Shutdown", 0, 0, NULL },
+	{ "Environment.Input[2].iName", ST_FLAG_RW, 0, "Environment.Input[2].iName", 0, 0, NULL },
+	{ "Environment.Input[2].State[0].Description", ST_FLAG_RW, 0, "Environment.Input[2].State[0].Description", 0, 0, NULL },
+	{ "Environment.Input[2].State[0].Notify", ST_FLAG_RW, 0, "Environment.Input[2].State[0].Notify", 0, 0, NULL },
+	{ "Environment.Input[2].State[0].Shutdown", ST_FLAG_RW, 0, "Environment.Input[2].State[0].Shutdown", 0, 0, NULL },
+	{ "Environment.Input[2].State[1].Description", ST_FLAG_RW, 0, "Environment.Input[2].State[1].Description", 0, 0, NULL },
+	{ "Environment.Input[2].State[1].Notify", ST_FLAG_RW, 0, "Environment.Input[2].State[1].Notify", 0, 0, NULL },
+	{ "Environment.Input[2].State[1].Shutdown", ST_FLAG_RW, 0, "Environment.Input[2].State[1].Shutdown", 0, 0, NULL },
+	{ "System.TimeSync", ST_FLAG_RW, 0, "System.TimeSync", 0, 0, NULL },
+	{ "System.TimeNtp", ST_FLAG_RW, 0, "System.TimeNtp", 0, 0, NULL },
+	{ "System.TimeZone", ST_FLAG_RW, 0, "System.TimeZone", 0, 0, NULL },
+	{ "System.TimeDaylight", ST_FLAG_RW, 0, "System.TimeDaylight", 0, 0, NULL },
+
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, online_info },
-	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", 0, 0, discharging_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Charging", 0, 0, charging_info },
+	/* NMC bug: keep discharging test AFTER charging test */
+	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", 0, 0, discharging_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", 0, 0, lowbatt_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.Overload", 0, 0, overload_info },
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", 0, 0, replacebatt_info },
@@ -573,7 +887,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "battery.charge.restart", 0, 0, "UPS.PowerSummary.RestartLevel", 0, 0, NULL },
 	{ "battery.capacity", 0, 0, "UPS.BatterySystem.Battery.DesignCapacity", 0, 0, mge_battery_capacity }, /* conversion needed from As to Ah */
 	{ "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", 0, 0, NULL },
-	{ "battery.runtime.low", 0, 0, "System.RunTimeToEmptyLimit", 0, 0, NULL },
+	{ "battery.runtime.low", ST_FLAG_RW, 0, "System.RunTimeToEmptyLimit", 0, 0, NULL },
 	{ "battery.temperature", 0, 0, "UPS.BatterySystem.Battery.Temperature", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistry", 0, 0, NULL },
 	{ "battery.type", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iDeviceChemistery", 0, 0, NULL }, /* [sic] */
@@ -598,9 +912,12 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.firmware", ST_FLAG_STATIC, 0, "UPS.PowerSummary.iVersion", 0, 0, NULL },
 	{ "ups.load", 0, 0, "UPS.PowerSummary.PercentLoad", 0, 0, NULL },
 	{ "ups.load.high", 0, 0, "UPS.Flow[4].ConfigPercentLoad", 0, 0, NULL },
-	{ "ups.delay.shutdown", 0, 0, "System.ShutdownDuration", 0, 0, NULL },
-	{ "ups.timer.start", 0, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
-	{ "ups.timer.shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, mge_timer_shutdown },
+	{ "ups.delay.shutdown", ST_FLAG_RW, 0, "System.ShutdownDuration", 0, 0, NULL },
+	{ "ups.timer.start", ST_FLAG_RW, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
+	{ "ups.timer.shutdown", ST_FLAG_RW, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, mge_timer_shutdown },
+	/* Catch shutdown imminent criteria, keep it after 
+	UPS.PowerSummary.DelayBeforeShutdown managment */
+	{ NULL, 0, 0, "System.RunTimeToShutdown", 0, 0, mge_shutdown_imminent },
 	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL },
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", 0, 0, mge_test_result_info },
 	{ "ups.test.interval", 0, 0, "UPS.BatterySystem.Battery.TestPeriod", 0, 0, NULL },
@@ -722,7 +1039,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "outlet.1.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[2].DelayBeforeShutdown", 0, 0, NULL },
 	{ "outlet.1.delay.start", 0, 0, "UPS.OutletSystem.Outlet[2].StartupTimer", 0, 0, NULL },
 	/* { "outlet.1.delay.shutdown", 0, 0, "UPS.OutletSystem.Outlet[2].ShutdownTimer", 0, 0, NULL }, */
-	{ "outlet.1.delay.shutdown", 0, 0, "System.Outlet[2].ShutdownDuration", 0, 0, NULL },
+	{ "outlet.1.delay.shutdown", ST_FLAG_RW, 0, "System.Outlet[2].ShutdownDuration", 0, 0, NULL },
 
 	{ "outlet.2.id", 0, 0, "UPS.OutletSystem.Outlet[3].OutletID", 0, 0, NULL },
 	{ "outlet.2.desc", 0, 0, "UPS.OutletSystem.Outlet[3].iName", 0, 0, NULL },
@@ -733,7 +1050,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "outlet.2.timer.shutdown", 0, 0, "UPS.OutletSystem.Outlet[3].DelayBeforeShutdown", 0, 0, NULL },
 	{ "outlet.2.delay.start", 0, 0, "UPS.OutletSystem.Outlet[3].StartupTimer", 0, 0, NULL },
 	/* { "outlet.2.delay.shutdown", 0, 0, "UPS.OutletSystem.Outlet[3].ShutdownTimer", 0, 0, NULL }, */
-	{ "outlet.2.delay.shutdown", 0, 0, "System.Outlet[3].ShutdownDuration", 0, 0, NULL },
+	{ "outlet.2.delay.shutdown", ST_FLAG_RW, 0, "System.Outlet[3].ShutdownDuration", 0, 0, NULL },
 
 	/* For newer ePDU Monitored */
 	{ "outlet.1.desc", 0, 0, "PDU.OutletSystem.Outlet[1].iName", 0, 0, NULL },
@@ -1118,3 +1435,83 @@ subdriver_t mge_xml_subdriver = {
 	mge_xml_cdata_cb,
 	mge_xml_endelm_cb,
 };
+
+const char *vname_nut2mge_xml(const char *name) {
+	assert(NULL != name);
+
+	size_t i = 0;
+
+	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
+		xml_info_t *info = mge_xml2nut + i;
+
+		if (NULL != info->nutname)
+			if (0 == strcasecmp(name, info->nutname))
+				return info->xmlname;
+	}
+
+	return NULL;
+}
+
+const char *vname_mge_xml2nut(const char *name) {
+	assert(NULL != name);
+
+	size_t i = 0;
+
+	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
+		xml_info_t *info = mge_xml2nut + i;
+
+		if (NULL != info->xmlname)
+			if (0 == strcasecmp(name, info->xmlname))
+				return info->nutname;
+	}
+
+	return NULL;
+}
+
+char *vvalue_mge_xml2nut(const char *name, const char *value, size_t len) {
+	assert(NULL != name);
+
+	size_t i = 0;
+
+	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
+		xml_info_t *info = mge_xml2nut + i;
+
+		if (NULL != info->nutname)
+			if (0 == strcasecmp(name, info->nutname)) {
+				/* Copy value */
+				char *vcpy = (char *)malloc((len + 1) * sizeof(char));
+
+				if (NULL == vcpy)
+					return vcpy;
+
+				memcpy(vcpy, value, len * sizeof(char));
+				vcpy[len] = '\0';
+
+				/* Convert */
+				if (NULL != info->convert) {
+					char *vconv = info->convert(vcpy);
+
+					free(vcpy);
+
+					return vconv;
+				}
+				else
+					return vcpy;
+			}
+	}
+
+	return NULL;
+}
+
+void vname_register_rw(void) {
+	size_t i = 0;
+
+	for (; i < sizeof(mge_xml2nut) / sizeof(xml_info_t); ++i) {
+		xml_info_t *info = mge_xml2nut + i;
+
+		if (NULL != info->nutname && info->nutflags & ST_FLAG_RW) {
+			dstate_setinfo(info->nutname, "");
+			dstate_setflags(info->nutname, ST_FLAG_RW);
+		}
+	}
+}
