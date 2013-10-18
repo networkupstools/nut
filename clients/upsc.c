@@ -19,6 +19,7 @@
 */
 
 #include "common.h"
+#include "nut_platform.h"
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -274,3 +275,11 @@ int main(int argc, char **argv)
 
 	exit(EXIT_SUCCESS);
 }
+
+
+/* Formal do_upsconf_args implementation to satisfy linker on AIX */
+#if (defined NUT_PLATFORM_AIX)
+void do_upsconf_args(char *upsname, char *var, char *val) {
+        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+}
+#endif  /* end of #if (defined NUT_PLATFORM_AIX) */
