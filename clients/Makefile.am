@@ -45,10 +45,6 @@ upsstats_cgi_SOURCES = upsstats.c upsclient.h status.h upsstats.h	\
  upsimagearg.h cgilib.c cgilib.h
 
 # not LDADD.
-#Some platforms (Solaris) need this to allow a thread local storage errno.
-#If not reentrant the global errno is used, and "connect" fails on fancy errno
-#values when used in multi-thread environnement (libnutscanner).
-libupsclient_la_CFLAGS = -D_REENTRANT
 libupsclient_la_SOURCES = upsclient.c upsclient.h
 libupsclient_la_LIBADD = ../common/libparseconf.la
 if WITH_SSL
