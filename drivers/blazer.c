@@ -419,10 +419,13 @@ static int blazer_instcmd(const char *cmdname, const char *extra)
 
 		/*
 		 * If a command is invalid, it will be echoed back
+		 * As an exception, Best UPS units will report "ACK" in case of success!
 		 */
 		if (blazer_command(buf, buf, sizeof(buf)) > 0) {
-			upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
-			return STAT_INSTCMD_FAILED;
+			if (strncmp(buf, "ACK", 3)) {
+				upslogx(LOG_ERR, "instcmd: command [%s] failed", cmdname);
+				return STAT_INSTCMD_FAILED;
+			}
 		}
 
 		upslogx(LOG_INFO, "instcmd: command [%s] handled", cmdname);
