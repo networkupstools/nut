@@ -1830,8 +1830,8 @@ static int	blzr_command(const char *cmd, char *buf, size_t buflen)
 
 	/* ..otherwise.. */
 	} else {
-		/* ..echo back the command */
 
+		/* ..echo back the command */
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(cmd, "\r"), cmd);
 		return snprintf(buf, buflen, "%s", cmd);
 
