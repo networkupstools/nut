@@ -50,7 +50,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'megatec', 'megatec/old', 'mustek', 'voltronic' and 'zinto'.
+Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'voltronic' and 'zinto'.
 
 *pollfreq =* 'value'::
 Set polling frequency, in seconds, to reduce the data flow.
@@ -99,8 +99,8 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
-MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *offdelay*::
 The acceptable range is +12..600+ seconds.
@@ -317,8 +317,8 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-MEGATEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MECER, MEGATEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].

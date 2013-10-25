@@ -652,6 +652,7 @@ You can then recompile +blzr+, and start experimenting with the new subdriver.
 
 For more informations, have a look at the currently available subdrivers:
 
+- +blzr_mecer.+{+c+,+h+}
 - +blzr_megatec.+{+c+,+h+}
 - +blzr_megatec-old.+{+c+,+h+}
 - +blzr_mustek.+{+c+,+h+}

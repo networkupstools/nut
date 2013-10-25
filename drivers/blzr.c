@@ -62,6 +62,7 @@
 
 /* == Subdrivers == */
 /* Include all known subdrivers */
+#include "blzr_mecer.h"
 #include "blzr_megatec.h"
 #include "blzr_megatec-old.h"
 #include "blzr_mustek.h"
@@ -74,6 +75,7 @@ static subdriver_t	*subdriver_list[] = {
 	&mustek_subdriver,
 	&megatec_old_subdriver,
 	&megatec_subdriver,
+	&mecer_subdriver,
 	&zinto_subdriver,
 	NULL
 };

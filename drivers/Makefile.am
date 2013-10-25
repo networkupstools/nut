@@ -259,8 +259,8 @@ blzr_CFLAGS += -DBLZR_USB
 blzr_SOURCES += libusb.c usb-common.c
 blzr_LDADD += $(LIBUSB_LIBS)
 endif
-BLZR_SUBDRIVERS = blzr_blazer-common.c blzr_megatec.c blzr_megatec-old.c	\
- blzr_mustek.c blzr_voltronic.c blzr_zinto.c
+BLZR_SUBDRIVERS = blzr_blazer-common.c blzr_mecer.c blzr_megatec.c	\
+ blzr_megatec-old.c blzr_mustek.c blzr_voltronic.c blzr_zinto.c
 blzr_SOURCES += $(BLZR_SUBDRIVERS)
 
 # ----------------------------------------------------------------------
@@ -278,7 +278,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h voltronic.h blzr.h blzr_blazer-common.h blzr_megatec.h	\
+ delta_ups-mib.h voltronic.h blzr.h blzr_blazer-common.h blzr_mecer.h blzr_megatec.h	\
  blzr_megatec-old.h blzr_mustek.h blzr_voltronic.h blzr_zinto.h
 
 # Define a dummy library so that Automake builds rules for the
