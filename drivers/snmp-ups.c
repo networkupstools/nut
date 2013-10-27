@@ -29,6 +29,8 @@
  *
  */
 
+#include <limits.h>
+
 /* NUT SNMP common functions */
 #include "main.h"
 #include "snmp-ups.h"
@@ -89,13 +91,14 @@ int input_phases, output_phases, bypass_phases;
 mib2nut_info_t *mib2nut_info;
 /* FIXME: to be trashed */
 snmp_info_t *snmp_info;
+alarms_info_t *alarms_info;
 const char *mibname;
 const char *mibvers;
 
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.69"
+#define DRIVER_VERSION		"0.70"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -471,76 +474,138 @@ void nut_snmp_cleanup(void)
 	SOCK_CLEANUP; /* wrapper not needed on Unix! */
 }
 
-struct snmp_pdu *nut_snmp_get(const char *OID)
+/* Free a struct snmp_pdu * returned by nut_snmp_walk */
+void nut_snmp_free(struct snmp_pdu ** array_to_free)
+{
+	struct snmp_pdu ** current_element;
+
+	current_element = array_to_free;
+
+	while (*current_element != NULL) {
+		snmp_free_pdu(*current_element);
+		current_element++;
+	}
+
+	free( array_to_free );
+}
+
+/* Return a NULL terminated array of snmp_pdu * */
+struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
 	oid name[MAX_OID_LEN];
 	size_t name_len = MAX_OID_LEN;
+	oid * current_name;
+	size_t current_name_len;
 	static unsigned int numerr = 0;
+	int nb_iteration = 0;
+	struct snmp_pdu ** ret_array = NULL;
+	int type = SNMP_MSG_GET;
 
-	upsdebugx(3, "nut_snmp_get(%s)", OID);
+	upsdebugx(3, "nut_snmp_walk(%s)", OID);
 
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
-		upsdebugx(2, "[%s] nut_snmp_get: %s: %s",
+		upsdebugx(2, "[%s] nut_snmp_walk: %s: %s",
 			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
 		return NULL;
 	}
 
-	pdu = snmp_pdu_create(SNMP_MSG_GET);
+	current_name = name;
+	current_name_len = name_len;
 
-	if (pdu == NULL)
-		fatalx(EXIT_FAILURE, "Not enough memory");
-
-	snmp_add_null_var(pdu, name, name_len);
-
-	status = snmp_synch_response(g_snmp_sess_p, pdu, &response);
-
-	if (!response)
-		return NULL;
-
-	if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR)))
-	{
-		if (mibname == NULL) {
-			/* We are probing for proper mib - ignore errors */
-			snmp_free_pdu(response);
-			return NULL;
+	while( nb_iteration < max_iteration ) {
+		/* Going to a shorter OID means we are outside our sub-tree */
+		if( current_name_len < name_len ) {
+			break;
 		}
 
-		numerr++;
+		pdu = snmp_pdu_create(type);
 
-		if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0))
-			upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
-				"failures, limiting error reporting",
-				upsname?upsname:device_name);
+		if (pdu == NULL) {
+			fatalx(EXIT_FAILURE, "Not enough memory");
+		}
 
-		if ((numerr < SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0))
-			nut_snmp_perror(g_snmp_sess_p, status, response,
-				"nut_snmp_get: %s", OID);
+		snmp_add_null_var(pdu, current_name, current_name_len);
 
-		snmp_free_pdu(response);
-		response = NULL;
-	} else {
-		numerr = 0;
+		status = snmp_synch_response(g_snmp_sess_p, pdu, &response);
+
+		if (!response) {
+			break;
+		}
+
+		if (!((status == STAT_SUCCESS) && (response->errstat == SNMP_ERR_NOERROR))) {
+			if (mibname == NULL) {
+				/* We are probing for proper mib - ignore errors */
+				snmp_free_pdu(response);
+				return NULL;
+			}
+
+			numerr++;
+
+			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
+				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
+						"failures, limiting error reporting",
+						upsname?upsname:device_name);
+			}
+
+			if ((numerr < SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
+				if (type == SNMP_MSG_GETNEXT) {
+					upsdebugx(2, "=> No more OID, walk complete");
+				}
+				else {
+					nut_snmp_perror(g_snmp_sess_p, status, response,
+							"nut_snmp_walk: %s", OID);
+				}
+			}
+
+			snmp_free_pdu(response);
+			break;
+		} else {
+			numerr = 0;
+		}
+
+		nb_iteration++;
+		/* +1 is for the terminating NULL */
+		ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		ret_array[nb_iteration-1] = response;
+		ret_array[nb_iteration]=NULL;
+
+		current_name = response->variables->name;
+		current_name_len = response->variables->name_length;
+
+		type = SNMP_MSG_GETNEXT;
 	}
 
-	return response;
+	return ret_array;
 }
 
-bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
+struct snmp_pdu *nut_snmp_get(const char *OID)
 {
-	size_t len = 0;
-	struct snmp_pdu *pdu;
+	struct snmp_pdu ** pdu_array;
+	struct snmp_pdu * ret_pdu;
 
-	upsdebugx(3, "Entering nut_snmp_get_str()");
+	upsdebugx(3, "nut_snmp_get(%s)", OID);
+
+	pdu_array = nut_snmp_walk(OID,1);
+
+	if(pdu_array == NULL) {
+		return NULL;
+	}
+
+	ret_pdu = snmp_clone_pdu(*pdu_array);
+
+	nut_snmp_free(pdu_array);
+
+	return ret_pdu;
+}
+
+static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_lkp_t *oid2info) {
+	size_t len = 0;
 
 	/* zero out buffer. */
 	memset(buf, 0, buf_len);
-
-	pdu = nut_snmp_get(OID);
-	if (pdu == NULL)
-		return FALSE;
 
 	switch (pdu->variables->type) {
 	case ASN_OCTET_STR:
@@ -575,14 +640,33 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 		len = snprint_objid (buf, buf_len, pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
 		break;
 	default:
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *oid2info)
+{
+	struct snmp_pdu *pdu;
+	bool_t ret;
+
+	upsdebugx(3, "Entering nut_snmp_get_str()");
+
+	pdu = nut_snmp_get(OID);
+	if (pdu == NULL)
+		return FALSE;
+
+	ret = decode_str(pdu,buf,buf_len,oid2info);
+
+	if(ret == FALSE) {
 		upsdebugx(2, "[%s] unhandled ASN 0x%x received from %s",
 			upsname?upsname:device_name, pdu->variables->type, OID);
-		return FALSE;
 	}
 
 	snmp_free_pdu(pdu);
 
-	return TRUE;
+	return ret;
 }
 
 bool_t nut_snmp_get_int(const char *OID, long *pval)
@@ -919,6 +1003,7 @@ bool_t load_mib2nut(const char *mib)
 		OID_pwr_status = m2n->oid_pwr_status;
 		mibname = m2n->mib_name;
 		mibvers = m2n->mib_version;
+		alarms_info = m2n->alarms_info;
 		upsdebugx(1, "load_mib2nut: using %s mib", mibname);
 		return TRUE;
 	}
@@ -1343,6 +1428,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	static char buf[SU_INFOSIZE];
 	bool_t status;
 	long value;
+	struct snmp_pdu ** pdu_array;
+	struct snmp_pdu * current_pdu;
+	alarms_info_t * alarms;
+	int index = 0;
 
 	upsdebugx(2, "su_ups_get: %s %s", su_info_p->info_type, su_info_p->OID);
 
@@ -1355,6 +1444,43 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			upsdebugx(2, "=> value: %ld", value);
 		}
 		else upsdebugx(2, "=> Failed");
+
+		return status;
+	}
+
+	if (!strcasecmp(su_info_p->info_type, "ups.alarms")) {
+		status = nut_snmp_get_int(su_info_p->OID, &value);
+		if (status == TRUE) {
+			upsdebugx(2, "=> value: %ld", value);
+			if( value > 0 ) {
+				pdu_array = nut_snmp_walk(su_info_p->OID,INT_MAX);
+				if(pdu_array == NULL) {
+					upsdebugx(2, "=> Walk failed");
+					return FALSE;
+				}
+
+				current_pdu = pdu_array[index];
+				while(current_pdu) {
+					decode_str(current_pdu,buf,sizeof(buf),NULL);
+					alarms = alarms_info;
+					while( alarms->OID ) {
+						if(!strcmp(buf+1,alarms_info->OID)) {
+							upsdebugx(3, "Alarm OID %s found => %s", alarms->OID, alarms->info_value);
+							status_set(alarms->info_value);
+							break;
+						}
+						alarms++;
+					}
+					index++;
+					current_pdu = pdu_array[index];
+				}
+				nut_snmp_free(pdu_array);
+			}
+		}
+
+		else {
+			upsdebugx(2, "=> Failed");
+		}
 
 		return status;
 	}
