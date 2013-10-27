@@ -136,8 +136,12 @@ then
 fi
 
 case ${target_os} in
-   solaris2.1* )
-      dnl On Solaris 10/11 this allow errno to use thread local storage
+   solaris2* )
+      dnl On Solaris, this allows errno to use thread local storage
+      CFLAGS="${CFLAGS} -D_REENTRANT"
+      ;;
+   aix* )
+      dnl On AIX, this allows errno to use thread local storage
       CFLAGS="${CFLAGS} -D_REENTRANT"
       ;;
    hpux11* )
