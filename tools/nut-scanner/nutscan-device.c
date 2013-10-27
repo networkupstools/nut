@@ -48,7 +48,6 @@ nutscan_device_t * nutscan_new_device()
 static void deep_free_device(nutscan_device_t * device)
 {
 	nutscan_options_t * current;
-	nutscan_options_t * old;
 
 	if(device==NULL) {
 		return;
