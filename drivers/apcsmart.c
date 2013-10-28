@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
- *           (C) 2011  Michal Soltys <soltys@ziu.info>
+ *           (C) 2011+ Michal Soltys <soltys@ziu.info>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <sys/file.h>
 #include <regex.h>
 #include <ctype.h>
+#include <strings.h> /* strcasecmp() */
 
 #include "main.h"
 #include "serial.h"
@@ -45,79 +46,6 @@ upsdrv_info_t upsdrv_info = {
 
 static int ups_status = 0;
 
-/*
- * Aix compatible names
- */
-#if defined(VWERSE) && !defined(VWERASE)
-#define VWERASE VWERSE
-#endif /* VWERSE && !VWERASE */
-
-#if defined(VDISCRD) && !defined(VDISCARD)
-#define VDISCARD VDISCRD
-#endif /* VDISCRD && !VDISCARD */
-
-#ifndef CTRL
-#define CONTROL(x) (x&037)
-#else
-#define CONTROL CTRL
-#endif
-
-/*
- * Allow use of system default characters if defined and reasonable.
- * These are based on the BSD ttydefaults.h
- */
-#ifndef CDISCARD
-#define CDISCARD CONTROL('O')
-#endif
-#ifndef CDSUSP
-#define CDSUSP	 CONTROL('Y')
-#endif
-#ifndef CEOF
-#define CEOF	 CONTROL('D')
-#endif
-#ifndef CEOL
-#define CEOL	 0xff		/* was 0 */
-#endif
-#ifndef CERASE
-#define CERASE	 0177
-#endif
-#ifndef CINTR
-#define CINTR	 CONTROL('C')
-#endif
-#ifndef CKILL
-#define CKILL	 CONTROL('U')	/* was '@' */
-#endif
-#ifndef CLNEXT
-#define CLNEXT	 CONTROL('V')
-#endif
-#ifndef CMIN
-#define CMIN	 CEOF
-#endif
-#ifndef CQUIT
-#define CQUIT	 CONTROL('\\')
-#endif
-#ifndef CRPRNT
-#define CRPRNT	 CONTROL('R')
-#endif
-#ifndef CREPRINT
-#define CREPRINT CRPRNT
-#endif
-#ifndef CSTART
-#define CSTART	 CONTROL('Q')
-#endif
-#ifndef CSTOP
-#define CSTOP	 CONTROL('S')
-#endif
-#ifndef CSUSP
-#define CSUSP	 CONTROL('Z')
-#endif
-#ifndef CTIME
-#define CTIME	 CEOL
-#endif
-#ifndef CWERASE
-#define CWERASE  CONTROL('W')
-#endif
-
 /* some forwards */
 
 static int sdcmd_S(const void *);
@@ -125,6 +53,15 @@ static int sdcmd_AT(const void *);
 static int sdcmd_K(const void *);
 static int sdcmd_Z(const void *);
 static int sdcmd_CS(const void *);
+
+/*
+ * following table *must* match order defined in the man page, namely:
+ * 0:: soft hibernate (*S*)
+ * 1:: hard hibernate (*@*)
+ * 2:: delayed poweroff (*K*)
+ * 3:: instant poweroff (*Z*)
+ * 4:: "force OB hack" (*CS*)
+ */
 
 static int (*sdlist[])(const void *) = {
 	sdcmd_S,
@@ -134,65 +71,81 @@ static int (*sdlist[])(const void *) = {
 	sdcmd_CS,
 };
 
-#define SDIDX_S		0
 #define SDIDX_AT	1
-#define SDIDX_K		2
-#define SDIDX_Z		3
-#define SDIDX_CS	4
-#define SDCNT		((int)(sizeof(sdlist)/sizeof(sdlist[0])))
 
-static apc_vartab_t *vartab_lookup_char(char cmdchar)
+/*
+ * note: both lookup functions MUST be used after variable detection is
+ * completed - that is after deprecate_vars() call; the general reason for this
+ * is 1:n and n:1 nut <-> apc mappings, which are not determined prior to the
+ * detection
+ */
+static apc_vartab_t *vt_lookup_char(char cmdchar)
 {
 	int	i;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if (apc_vartab[i].cmd == cmdchar)
+		if ((apc_vartab[i].flags & APC_PRESENT) &&
+		    apc_vartab[i].cmd == cmdchar)
 			return &apc_vartab[i];
 
 	return NULL;
 }
 
-static apc_vartab_t *vartab_lookup_name(const char *var)
+static apc_vartab_t *vt_lookup_name(const char *var)
 {
 	int	i;
 
 	for (i = 0; apc_vartab[i].name != NULL; i++)
-		if (!(apc_vartab[i].flags & APC_DEPR) &&
+		if ((apc_vartab[i].flags & APC_PRESENT) &&
 		    !strcasecmp(apc_vartab[i].name, var))
 			return &apc_vartab[i];
 
 	return NULL;
 }
 
-/* FUTURE: change to use function pointers */
+static const char *prtchr(char x)
+{
+	static size_t curr = 24;
+	static char info[32];
+
+	curr = (curr + 8) & 0x1F;
+	snprintf(info + curr, 8, isprint(x) ? "%c" : "0x%02x", x);
+
+	return info + curr;
+}
 
 static int rexhlp(const char *rex, const char *val)
 {
+	static const char *empty = "";
 	int ret;
 	regex_t mbuf;
 
+	if (!rex || !*rex)
+		return 1;
+	if (!val)
+		val = empty;
 	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
-	ret = regexec(&mbuf, val, 0,0,0);
+	ret = regexec(&mbuf, val, 0, 0, 0);
 	regfree(&mbuf);
-	return ret;
+	return !ret;
 }
 
 /* convert APC formatting to NUT formatting */
 /* TODO: handle errors better */
-static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
+static const char *convert_data(apc_vartab_t *vt, const char *upsval)
 {
 	static char temp[APC_LBUF];
 	int tval;
 
 	/* this should never happen */
 	if (strlen(upsval) >= sizeof(temp)) {
-		upslogx(LOG_CRIT, "length of [%s] too long", cmd_entry->name);
-		strncpy(temp, upsval, sizeof(temp) - 1);
+		logx(LOG_CRIT, "the length of [%s] is too big", vt->name);
+		memcpy(temp, upsval, sizeof(temp) - 1);
 		temp[sizeof(temp) - 1] = '\0';
 		return temp;
 	}
 
-	switch(cmd_entry->flags & APC_F_MASK) {
+	switch (vt->flags & APC_F_MASK) {
 		case APC_F_PERCENT:
 		case APC_F_VOLT:
 		case APC_F_AMP:
@@ -234,12 +187,25 @@ static const char *convert_data(apc_vartab_t *cmd_entry, const char *upsval)
 			}
 	}
 
-	upslogx(LOG_NOTICE, "Unable to handle conversion of [%s]", cmd_entry->name);
+	/* this should never happen */
+	logx(LOG_CRIT, "unable to convert [%s]", vt->name);
 	strcpy(temp, upsval);
 	return temp;
 }
 
 /* report differences if tcsetattr != tcgetattr, return otherwise */
+
+/*
+ * Aix compatible names
+ */
+#if defined(VWERSE) && !defined(VWERASE)
+#define VWERASE VWERSE
+#endif /* VWERSE && !VWERASE */
+
+#if defined(VDISCRD) && !defined(VDISCARD)
+#define VDISCARD VDISCRD
+#endif /* VDISCRD && !VDISCARD */
+
 static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 {
 	size_t i;
@@ -247,38 +213,37 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	struct termios *tio[] = { tioset, tioget };
 	struct cchar {
 		const char *name;
-		int sub;
-		u_char def;
+		unsigned int sub;
 	};
 	const struct cchar cchars1[] = {
 #ifdef VDISCARD
-		{ "discard",	VDISCARD,	CDISCARD },
+		{ "discard",	VDISCARD	},
 #endif
 #ifdef VDSUSP
-		{ "dsusp",	VDSUSP,		CDSUSP },
+		{ "dsusp",	VDSUSP		},
 #endif
-		{ "eof",	VEOF,		CEOF },
-		{ "eol",	VEOL,		CEOL },
-		{ "eol2",	VEOL2,		CEOL },
-		{ "erase",	VERASE,		CERASE },
+		{ "eof",	VEOF		},
+		{ "eol",	VEOL		},
+		{ "eol2",	VEOL2		},
+		{ "erase",	VERASE		},
 #ifdef VINTR
-		{ "intr",	VINTR,		CINTR },
+		{ "intr",	VINTR		},
 #endif
-		{ "kill",	VKILL,		CKILL },
-		{ "lnext",	VLNEXT,		CLNEXT },
-		{ "min",	VMIN,		CMIN },
-		{ "quit",	VQUIT,		CQUIT },
+		{ "kill",	VKILL		},
+		{ "lnext",	VLNEXT		},
+		{ "min",	VMIN		},
+		{ "quit",	VQUIT		},
 #ifdef VREPRINT
-		{ "reprint",	VREPRINT,	CREPRINT },
+		{ "reprint",	VREPRINT	},
 #endif
-		{ "start",	VSTART,		CSTART },
+		{ "start",	VSTART		},
 #ifdef VSTATUS
-		{ "status",	VSTATUS,	CSTATUS },
+		{ "status",	VSTATUS		},
 #endif
-		{ "stop",	VSTOP,		CSTOP },
-		{ "susp",	VSUSP,		CSUSP },
-		{ "time",	VTIME,		CTIME },
-		{ "werase",	VWERASE,	CWERASE },
+		{ "stop",	VSTOP		},
+		{ "susp",	VSUSP		},
+		{ "time",	VTIME		},
+		{ "werase",	VWERASE		},
 		{ NULL },
 	}, *cp;
 
@@ -297,7 +262,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 	if (!memcmp(tio[0], tio[1], sizeof(*tio[0])))
 		return;
 
-	upslogx(LOG_NOTICE, "%s: device reports different attributes than what were set", device_path);
+	upslogx(LOG_NOTICE, "%s: device reports different attributes than requested", device_path);
 
 	/*
 	 * According to the manual the most common problem is mis-matched
@@ -320,7 +285,7 @@ static void apc_ser_diff(struct termios *tioset, struct termios *tioget)
 static void apc_ser_set(void)
 {
 	struct termios tio, tio_chk;
-	char *cable;
+	char *val;
 
 	/*
 	 * this must be called before the rest, as ser_set_speed() performs
@@ -328,11 +293,27 @@ static void apc_ser_set(void)
 	 */
 	ser_set_speed(upsfd, device_path, B2400);
 
+	val = getval("cable");
+	if (val && !strcasecmp(val, ALT_CABLE_1)) {
+		if (ser_set_dtr(upsfd, 1) == -1)
+			fatx("ser_set_dtr(%s) failed", device_path);
+		if (ser_set_rts(upsfd, 0) == -1)
+			fatx("ser_set_rts(%s) failed", device_path);
+	}
+
+	/*
+	 * that's all if we want simple non canonical mode; this is meant as a
+	 * compatibility measure for windows systems and perhaps some
+	 * problematic serial cards/converters
+	 */
+	if ((val = getval("ttymode")) && !strcmp(val, "raw"))
+		return;
+
 	memset(&tio, 0, sizeof(tio));
 	errno = 0;
 
 	if (tcgetattr(upsfd, &tio))
-		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
+		fate("tcgetattr(%s)", device_path);
 
 	/* set port mode: common stuff, canonical processing */
 
@@ -348,7 +329,6 @@ static void apc_ser_set(void)
 	tio.c_iflag &= ~(IXON | IXOFF);
 
 	tio.c_cc[VEOL] = '*';	/* specially handled in apc_read() */
-
 #ifdef _POSIX_VDISABLE
 	tio.c_cc[VERASE] = _POSIX_VDISABLE;
 	tio.c_cc[VKILL]  = _POSIX_VDISABLE;
@@ -356,14 +336,8 @@ static void apc_ser_set(void)
 	tio.c_cc[VEOL2] = _POSIX_VDISABLE;
 #endif
 
-#if 0
-	/* unused in canonical mode: */
-	tio.c_cc[VMIN] = 1;
-	tio.c_cc[VTIME] = 0;
-#endif
-
 	if (tcflush(upsfd, TCIOFLUSH))
-		fatal_with_errno(EXIT_FAILURE, "tcflush(%s)", device_path);
+		fate("tcflush(%s)", device_path);
 
 	/*
 	 * warn:
@@ -372,21 +346,13 @@ static void apc_ser_set(void)
 	 * test.
 	 */
 	if (tcsetattr(upsfd, TCSANOW, &tio))
-		fatal_with_errno(EXIT_FAILURE, "tcsetattr(%s)", device_path);
+		fate("tcsetattr(%s)", device_path);
 
 	memset(&tio_chk, 0, sizeof(tio_chk));
 	if (tcgetattr(upsfd, &tio_chk))
-		fatal_with_errno(EXIT_FAILURE, "tcgetattr(%s)", device_path);
+		fate("tcgetattr(%s)", device_path);
 
 	apc_ser_diff(&tio, &tio_chk);
-
-	cable = getval("cable");
-	if (cable && !strcasecmp(cable, ALT_CABLE_1)) {
-		if (ser_set_dtr(upsfd, 1) == -1)
-			fatalx(EXIT_FAILURE, "ser_set_dtr() failed (%s)", device_path);
-		if (ser_set_rts(upsfd, 0) == -1)
-			fatalx(EXIT_FAILURE, "ser_set_rts() failed (%s)", device_path);
-	}
 }
 
 static void ups_status_set(void)
@@ -419,44 +385,44 @@ static void alert_handler(char ch)
 {
 	switch (ch) {
 		case '!':		/* clear OL, set OB */
-			upsdebugx(4, "alert_handler: OB");
+			debx(1, "OB");
 			ups_status &= ~APC_STAT_OL;
 			ups_status |= APC_STAT_OB;
 			break;
 
 		case '$':		/* clear OB, set OL */
-			upsdebugx(4, "alert_handler: OL");
+			debx(1, "OL");
 			ups_status &= ~APC_STAT_OB;
 			ups_status |= APC_STAT_OL;
 			break;
 
 		case '%':		/* set LB */
-			upsdebugx(4, "alert_handler: LB");
+			debx(1, "LB");
 			ups_status |= APC_STAT_LB;
 			break;
 
 		case '+':		/* clear LB */
-			upsdebugx(4, "alert_handler: not LB");
+			debx(1, "not LB");
 			ups_status &= ~APC_STAT_LB;
 			break;
 
 		case '#':		/* set RB */
-			upsdebugx(4, "alert_handler: RB");
+			debx(1, "RB");
 			ups_status |= APC_STAT_RB;
 			break;
 
 		case '?':		/* set OVER */
-			upsdebugx(4, "alert_handler: OVER");
+			debx(1, "OVER");
 			ups_status |= APC_STAT_OVER;
 			break;
 
 		case '=':		/* clear OVER */
-			upsdebugx(4, "alert_handler: not OVER");
+			debx(1, "not OVER");
 			ups_status &= ~APC_STAT_OVER;
 			break;
 
 		default:
-			upsdebugx(4, "alert_handler got 0x%02x (unhandled)", ch);
+			debx(1, "got 0x%02x (unhandled)", ch);
 			break;
 	}
 
@@ -467,7 +433,8 @@ static void alert_handler(char ch)
  * we need a tiny bit different processing due to '*' and canonical mode; the
  * function is subtly different from generic ser_get_line_alert()
  */
-static int apc_read(char *buf, size_t buflen, int flags)
+#define apc_read(b, l, f) apc_read_i(b, l, f, __func__, __LINE__)
+static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
 {
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
@@ -509,9 +476,17 @@ static int apc_read(char *buf, size_t buflen, int flags)
 		errno = 0;
 		ret = select_read(upsfd, temp, sizeof(temp), sec, usec);
 
+		/* partial timeout (non-canon only paranoid check) */
+		if (ret == 0 && count) {
+			ser_comm_fail("serial port partial timeout: %u(%s)", ln, fn);
+			return -1;
+		}
 		/* error or no timeout allowed */
 		if (ret < 0 || (ret == 0 && !(flags & SER_TO))) {
-			ser_comm_fail("%s", ret ? strerror(errno) : "timeout");
+			if (ret)
+				ser_comm_fail("serial port read error: %u(%s): %s", ln, fn, strerror(errno));
+			else
+				ser_comm_fail("serial port read timeout: %u(%s)", ln, fn);
 			return ret;
 		}
 		/* ok, timeout is acceptable */
@@ -519,20 +494,26 @@ static int apc_read(char *buf, size_t buflen, int flags)
 			/*
 			 * but it doesn't imply ser_comm_good
 			 *
-			 * to be more precise - we might be in comm_fail
-			 * condition, trying to "nudge" the UPS with some
-			 * command obviously expecting timeout if the comm is
-			 * still lost. This would result with filling logs with
-			 * confusing comm lost/comm re-established pairs. Thus
-			 * - just return here.
+			 * for example we might be in comm_fail condition,
+			 * trying to "nudge" the UPS with some command
+			 * obviously expecting timeout if the comm is still
+			 * lost. This would result with filling logs with
+			 * confusing comm lost/comm re-established pairs due to
+			 * successful serial writes
 			 */
-			return count;
+			return 0;
 		}
 
 		/* parse input */
 		for (i = 0; i < ret; i++) {
+			/* overflow read */
+			if (count == buflen - 1) {
+				ser_comm_fail("serial port read overflow: %u(%s)", ln, fn);
+				tcflush(upsfd, TCIFLUSH);
+				return -1;
+			}
 			/* standard "line received" condition */
-			if ((count == buflen - 1) || (temp[i] == ENDCHAR)) {
+			if (temp[i] == ENDCHAR) {
 				ser_comm_good();
 				return count;
 			}
@@ -553,7 +534,7 @@ static int apc_read(char *buf, size_t buflen, int flags)
 				errno = 0;
 				ret = select_read(upsfd, temp, sizeof(temp), 1, 0);
 				if (ret < 0) {
-					ser_comm_fail("%s", strerror(errno));
+					ser_comm_fail("serial port read error: %u(%s): %s", ln, fn, strerror(errno));
 					return ret;
 				}
 				buf[0] = 'O';
@@ -578,12 +559,27 @@ static int apc_read(char *buf, size_t buflen, int flags)
 	ser_comm_good();
 	return count;
 }
-static int apc_write(unsigned char code)
+
+#define apc_write(code) apc_write_i(code, __func__, __LINE__)
+static int apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 {
+	int ret;
 	errno = 0;
+
 	if (upsfd == -1)
 		return 0;
-	return ser_send_char(upsfd, code);
+
+	ret = ser_send_char(upsfd, code);
+	/*
+	 * Formally any write() sould never return 0, if the count != 0. For
+	 * the sake of handling any obscure nonsense, we consider such return
+	 * as a failure - thus <= condition; either way, LE is pretty hard
+	 * condition hardly ever happening;
+	 */
+	if (ret <= 0)
+		ser_comm_fail("serial port write error: %u(%s): %s", ln, fn, strerror(errno));
+
+	return ret;
 }
 
 /*
@@ -599,16 +595,13 @@ static int apc_write(unsigned char code)
  * We also set errno to something usable, so outside upslog calls don't output
  * confusing "success".
  */
-static int apc_write_long(const char *code)
+#define apc_write_long(code) apc_write_long_i(code, __func__, __LINE__)
+static int apc_write_long_i(const char *code, const char *fn, unsigned int ln)
 {
 	char temp[APC_LBUF];
 	int ret;
-	errno = 0;
 
-	if (upsfd == -1)
-		return 0;
-
-	ret = ser_send_char(upsfd, *code);
+	ret = apc_write_i(*code, fn, ln);
 	if (ret != 1)
 		return ret;
 	/* peek for the answer - anything at this point is failure */
@@ -619,19 +612,21 @@ static int apc_write_long(const char *code)
 	}
 
 	ret = ser_send_pace(upsfd, 50000, "%s", code + 1);
-	return ret < 0 ? ret : ret + 1;
+	if (ret >= 0)
+		ret++;
+	/* see remark in plain apc_write() */
+	if (ret != (int)strlen(code))
+		ser_comm_fail("serial port write error: %u(%s): %s", ln, fn, strerror(errno));
+	return ret;
 }
 
-static int apc_write_rep(unsigned char code)
+#define apc_write_rep(code) apc_write_rep_i(code, __func__, __LINE__)
+static int apc_write_rep_i(unsigned char code, const char *fn, unsigned int ln)
 {
 	char temp[APC_LBUF];
 	int ret;
-	errno = 0;
 
-	if (upsfd == -1)
-		return 0;
-
-	ret = ser_send_char(upsfd, code);
+	ret = apc_write_i(code, fn, ln);
 	if (ret != 1)
 		return ret;
 	/* peek for the answer - anything at this point is failure */
@@ -640,12 +635,12 @@ static int apc_write_rep(unsigned char code)
 		errno = ECANCELED;
 		return -1;
 	}
-
 	usleep(1300000);
-	ret = ser_send_char(upsfd, code);
-	if (ret != 1)
-		return ret;
-	return 2;
+
+	ret = apc_write_i(code, fn, ln);
+	if (ret >= 0)
+		ret++;
+	return ret;
 }
 
 /* all flags other than SER_AA are ignored */
@@ -655,7 +650,8 @@ static void apc_flush(int flags)
 
 	if (flags & SER_AA) {
 		tcflush(upsfd, TCOFLUSH);
-		while(apc_read(temp, sizeof(temp), SER_D0|SER_TO|SER_AA));
+		/* TODO */
+		while(apc_read(temp, sizeof(temp), SER_D0|SER_TO|SER_AA) > 0);
 	} else {
 		tcflush(upsfd, TCIOFLUSH);
 		/* tcflush(upsfd, TCIFLUSH); */
@@ -663,216 +659,219 @@ static void apc_flush(int flags)
 	}
 }
 
+/* apc specific wrappers around set/del info - to handle "packed" variables */
+void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
+{
+	char name[vt->nlen0], *nidx;
+	int c;
+
+	/* standard not packed var */
+	if (!(vt->flags & APC_PACK)) {
+		dstate_delinfo(vt->name);
+		return;
+	}
+
+	strcpy(name, vt->name);
+	nidx = strstr(name,".0.") + 1;
+
+	for (c = skip; c < vt->cnt; c++) {
+		*nidx = (char)('1' + c);
+		dstate_delinfo(name);
+	}
+
+	vt->cnt = 0;
+}
+
+void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
+{
+	char name[vt->nlen0], *nidx;
+	char temp[strlen(upsval) + 1], *vidx[APC_PACK_MAX], *com, *curr;
+	int c;
+
+	/* standard not packed var */
+	if (!(vt->flags & APC_PACK)) {
+		dstate_setinfo(vt->name, "%s", convert_data(vt, upsval));
+		return;
+	}
+
+	/* we have to set proper name for dstate_setinfo() calls */
+	strcpy(name, vt->name);
+	nidx = strstr(name,".0.") + 1;
+
+	/* split the value string */
+	strcpy(temp, upsval);
+	curr = temp;
+	c = 0;
+	do {
+		vidx[c] = curr;
+		com = strchr(curr, ',');
+		if (com) {
+			curr = com + 1;
+			*com = '\0';
+		}
+	} while(++c < APC_PACK_MAX && com);
+
+	/*
+	 * unlikely, but keep things tidy - remove leftover values, if
+	 * subsequent read returns less
+	 */
+	if (vt->cnt > c)
+		apc_dstate_delinfo(vt, c);
+
+	/* unlikely - warn user if we have more than APC_PACK_MAX fields */
+	if (c == APC_PACK_MAX && com)
+		upslogx(LOG_WARNING,
+				"packed variable %s [%s] longer than %d fields,\n"
+				"ignoring remaining fields",
+				vt->name, prtchr(vt->cmd), c);
+
+	vt->cnt = c;
+
+	while (c-- > 0) {
+		*nidx = (char)('1' + c);
+		if (*vidx[c])
+			dstate_setinfo(name, "%s", convert_data(vt, vidx[c]));
+		else
+			dstate_setinfo(name, "N/A");
+	}
+}
+
 static const char *preread_data(apc_vartab_t *vt)
 {
 	int ret;
-	char temp[APC_LBUF];
+	static char temp[APC_LBUF];
 
-	upsdebugx(4, "preread_data: %s", vt->name);
+	debx(1, "%s [%s]", vt->name, prtchr(vt->cmd));
 
 	apc_flush(0);
 	ret = apc_write(vt->cmd);
 
-	if (ret != 1) {
-		upslogx(LOG_ERR, "preread_data: apc_write failed");
+	if (ret != 1)
 		return 0;
-	}
 
 	ret = apc_read(temp, sizeof(temp), SER_TO);
 
-	if (ret < 0) {
-		upslogx(LOG_ERR, "preread_data: apc_read failed");
+	if (ret < 1 || !strcmp(temp, "NA")) {
+		if (ret >= 0)
+			logx(LOG_ERR, "%s [%s] timed out or not supported", vt->name, prtchr(vt->cmd));
 		return 0;
 	}
 
-	if (!ret || !strcmp(temp, "NA")) {
-		upslogx(LOG_ERR, "preread_data: %s timed out or not supported", vt->name);
-		return 0;
-	}
-
-	return convert_data(vt, temp);
-}
-
-static void remove_var(const char *cal, apc_vartab_t *vt)
-{
-	const char *fmt;
-	char info[256];
-
-	if (isprint(vt->cmd))
-		fmt = "[%c]";
-	else
-		fmt = "[0x%02x]";
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"%s: verified variable [%s] (APC: ",
-		fmt,
-		") returned NA"
-	);
-	upsdebugx(1, info, cal, vt->name, vt->cmd);
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"%s: removing [%s] (APC: ",
-		fmt,
-		")"
-	);
-	upsdebugx(1, info, cal, vt->name, vt->cmd);
-
-	vt->flags &= ~APC_PRESENT;
-	dstate_delinfo(vt->name);
+	return temp;
 }
 
 static int poll_data(apc_vartab_t *vt)
 {
-	int	ret;
-	char	temp[APC_LBUF];
+	char temp[APC_LBUF];
 
 	if (!(vt->flags & APC_PRESENT))
 		return 1;
 
-	upsdebugx(4, "poll_data: %s", vt->name);
+	debx(1, "%s [%s]", vt->name, prtchr(vt->cmd));
 
 	apc_flush(SER_AA);
-	ret = apc_write(vt->cmd);
-
-	if (ret != 1) {
-		upslogx(LOG_ERR, "poll_data: apc_write failed");
-		dstate_datastale();
+	if (apc_write(vt->cmd) != 1)
 		return 0;
-	}
-
-	if (apc_read(temp, sizeof(temp), SER_AA) < 1) {
-		dstate_datastale();
+	if (apc_read(temp, sizeof(temp), SER_AA) < 1)
 		return 0;
-	}
 
 	/* automagically no longer supported by the hardware somehow */
-	if (!strcmp(temp, "NA"))
-		remove_var("poll_data", vt);
-
-	dstate_setinfo(vt->name, "%s", convert_data(vt, temp));
-	dstate_dataok();
+	if (!strcmp(temp, "NA")) {
+		logx(LOG_WARNING, "verified variable %s [%s] returned NA, removing", vt->name, prtchr(vt->cmd));
+		vt->flags &= ~APC_PRESENT;
+		apc_dstate_delinfo(vt, 0);
+	} else
+		apc_dstate_setinfo(vt, temp);
 
 	return 1;
 }
 
-static int dfa_fwnew(const char *val)
+static int update_status(void)
 {
-	int ret;
-	regex_t mbuf;
-	/* must be xx.yy.zz */
-	const char rex[] = "^[[:alnum:]]+\\.[[:alnum:]]+\\.[[:alnum:]]+$";
+	int	ret;
+	char	buf[APC_LBUF];
 
-	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
-	ret = regexec(&mbuf, val, 0,0,0);
-	regfree(&mbuf);
-	return ret;
-}
+	debx(1, "[%s]", prtchr(APC_STATUS));
 
-static int dfa_cmdset(const char *val)
-{
-	int ret;
-	regex_t mbuf;
-	/*
-	 * must be #.alerts.commands ; we'll be a bit lax here
-	 */
-	const char rex[] = "^[0-9]\\.[^.]*\\.[^.]+$";
+	apc_flush(SER_AA);
+	if (apc_write(APC_STATUS) != 1)
+		return 0;
+	ret = apc_read(buf, sizeof(buf), SER_AA);
 
-	regcomp(&mbuf, rex, REG_EXTENDED|REG_NOSUB);
-	ret = regexec(&mbuf, val, 0,0,0);
-	regfree(&mbuf);
-	return ret;
-}
-
-static int valid_cmd(char cmd, const char *val)
-{
-	char info[256], *fmt;
-	int ret;
-
-	switch (cmd) {
-		case APC_FW_NEW:
-			ret = dfa_fwnew(val);
-			break;
-		case APC_CMDSET:
-			ret = dfa_cmdset(val);
-			break;
-		default:
-			return 1;
+	if ((ret < 1) || (!strcmp(buf, "NA"))) {
+		if (ret >= 0)
+			logx(LOG_WARNING, "failed");
+		return 0;
 	}
 
-	if (ret) {
-		if (isprint(cmd))
-			fmt = "[%c]";
-		else
-			fmt = "[0x%02x]";
+	ups_status = strtol(buf, 0, 16) & 0xff;
+	ups_status_set();
 
-		snprintf(info, sizeof(info), "%s%s%s",
-			"valid_cmd: cmd ",
-			fmt,
-			" failed regex match"
-		);
-		upslogx(LOG_WARNING, info, cmd);
-	}
-
-	return !ret;
+	return 1;
 }
 
 /*
- * query_ups() is called before any APC_PRESENT flags are determined;
- * only for the variable provided
+ * two informative functions, to not redo the same thing in few places
  */
-static int query_ups(const char *var)
+
+static inline void confirm_cv(unsigned char cmd, const char *tag, const char *name)
 {
-	int i, j;
-	const char *temp;
-	apc_vartab_t *vt, *vtn;
+	upsdebugx(1, "%s [%s] - %s supported", name, prtchr(cmd), tag);
+}
 
+static inline void warn_cv(unsigned char cmd, const char *tag, const char *name)
+{
+	if (tag && name)
+		upslogx(LOG_WARNING, "%s [%s] - %s invalid", name, prtchr(cmd), tag);
+	else
+		upslogx(LOG_WARNING, "[%s] unrecognized", prtchr(cmd));
+}
+
+static void var_string_setup(apc_vartab_t *vt)
+{
 	/*
-	 * at first run we know nothing about variable; we have to handle
-	 * APC_MULTI gracefully as well
+	 * handle special data for our two strings; note - STRING variables
+	 * cannot be PACK at the same time
 	 */
-	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		vt = &apc_vartab[i];
-		if (strcmp(vt->name, var) || vt->flags & APC_DEPR)
-			continue;
+	if (vt->flags & APC_STRING) {
+		dstate_setflags(vt->name, ST_FLAG_RW | ST_FLAG_STRING);
+		dstate_setaux(vt->name, APC_STRLEN);
+		vt->flags |= APC_RW;
+	}
+}
 
-		/* found, [try to] get it */
+static int var_verify(apc_vartab_t *vt)
+{
+	const char *temp;
 
-		temp = preread_data(vt);
-		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			if (vt->flags & APC_MULTI) {
-				vt->flags |= APC_DEPR;
-				continue;
-			}
-			upsdebugx(1, "query_ups: unknown variable %s", var);
-			break;
-		}
-
+	if (vt->flags & APC_MULTI) {
+		/* APC_MULTI are handled by deprecate_vars() */
 		vt->flags |= APC_PRESENT;
-		dstate_setinfo(vt->name, "%s", temp);
-		dstate_dataok();
-
-		/* supported, deprecate all the remaining ones */
-		if (vt->flags & APC_MULTI)
-			for (j = i + 1; apc_vartab[j].name != NULL; j++) {
-				vtn = &apc_vartab[j];
-				if (strcmp(vtn->name, vt->name))
-					continue;
-				vtn->flags |= APC_DEPR;
-				vtn->flags &= ~APC_PRESENT;
-			}
-
-		return 1; /* success */
+		return -1;
 	}
 
-	return 0;
+	temp = preread_data(vt);
+	/* no conversion here, validator should operate on raw values */
+	if (!temp || !rexhlp(vt->regex, temp)) {
+		warn_cv(vt->cmd, "variable", vt->name);
+		return 0;
+	}
+
+	vt->flags |= APC_PRESENT;
+	apc_dstate_setinfo(vt, temp);
+	var_string_setup(vt);
+
+	confirm_cv(vt->cmd, "variable", vt->name);
+
+	return 1;
 }
 
 /*
- * This function iterates over vartab, deprecating nut:apc 1:n variables. We
- * prefer earliest present variable. All the other ones must be marked as
- * deprecated and as not present.
- * This is intended to call after verifying the presence of variables.
- * Otherwise it would take a while to execute due to preread_data()
+ * This function iterates over vartab, deprecating nut<->apc 1:n and n:1
+ * variables. We prefer earliest present variable. All the other ones must be
+ * marked as not present (which implies deprecation).
+ * This pass is requried after completion of all protocol_verify() and/or
+ * legacy_verify() calls.
  */
 static void deprecate_vars(void)
 {
@@ -882,50 +881,50 @@ static void deprecate_vars(void)
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
 		vt = &apc_vartab[i];
-		if (vt->flags & APC_DEPR)
-			/* already handled */
-			continue;
-
-		if (!(vt->flags & APC_MULTI))
-			continue;
-		if (!(vt->flags & APC_PRESENT)) {
-			vt->flags |= APC_DEPR;
+		if (!(vt->flags & APC_MULTI) || !(vt->flags & APC_PRESENT)) {
+			/*
+			 * a) not interesting, or
+			 * b) not marked as present earlier, or already handled
+			 */
 			continue;
 		}
 		/* pre-read data, we have to verify it */
 		temp = preread_data(vt);
-		if (!temp || !valid_cmd(vt->cmd, temp)) {
-			upslogx(LOG_ERR, "deprecate_vars: [%s] is unreadable or invalid, deprecating", vt->name);
-			vt->flags |= APC_DEPR;
+		/* no conversion here, validator should operate on raw values */
+		if (!temp || !rexhlp(vt->regex, temp)) {
 			vt->flags &= ~APC_PRESENT;
+
+			warn_cv(vt->cmd, "variable combination", vt->name);
 			continue;
 		}
 
 		/* multi & present, deprecate all the remaining ones */
 		for (j = i + 1; apc_vartab[j].name != NULL; j++) {
 			vtn = &apc_vartab[j];
-			if (strcmp(vtn->name, vt->name))
+			if (strcmp(vtn->name, vt->name) && vtn->cmd != vt->cmd)
 				continue;
-			vtn->flags |= APC_DEPR;
 			vtn->flags &= ~APC_PRESENT;
 		}
 
-		dstate_setinfo(vt->name, "%s", temp);
-		dstate_dataok();
+		apc_dstate_setinfo(vt, temp);
+		var_string_setup(vt);
+
+		confirm_cv(vt->cmd, "variable combination", vt->name);
 	}
 }
 
-static void do_capabilities(int qco)
+static void apc_getcaps(int qco)
 {
 	const	char	*ptr, *entptr;
 	char	upsloc, temp[APC_LBUF], cmd, loc, etmp[APC_SBUF], *endtemp;
 	int	nument, entlen, i, matrix, ret, valid;
 	apc_vartab_t *vt;
 
-	upsdebugx(1, "APC - About to get capabilities string");
-	/* If we can do caps, then we need the Firmware revision which has
-	   the locale descriptor as the last character (ugh)
-	*/
+	/*
+	 * If we can do caps, then we need the Firmware revision which has the
+	 * locale descriptor as the last character (ugh); this is valid for
+	 * both 'V' and 'b' commands.
+	 */
 	ptr = dstate_getinfo("ups.firmware");
 	if (ptr)
 		upsloc = ptr[strlen(ptr) - 1];
@@ -934,25 +933,25 @@ static void do_capabilities(int qco)
 
 	/* get capability string */
 	apc_flush(0);
-	ret = apc_write(APC_CAPS);
-
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_capabilities: apc_write failed");
+	if (apc_write(APC_CAPS) != 1)
 		return;
-	}
+
 	/*
-	 * note - apc_read() needs larger timeout grace and different
+	 * note - apc_read() needs larger timeout grace (not a problem w.r.t.
+	 * to nut's timing, as it's done only during setup) and different
 	 * ignore set due to certain characters like '#' being received
 	 */
 	ret = apc_read(temp, sizeof(temp), SER_CC|SER_TO);
 
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
 
-		/* Early Smart-UPS, not as smart as later ones */
-		/* This should never happen since we only call
-		   this if the REQ_CAPABILITIES command is supported
-		*/
-		upslogx(LOG_ERR, "ERROR: APC cannot do capabilities but said it could !");
+		/*
+		 * Early Smart-UPS not as smart as the later ones ...
+		 * this should never happen on properly functioning hardware -
+		 * as capability support was reported earlier
+		 */
+		if (ret >= 0)
+			upslogx(LOG_WARNING, "APC cannot do capabilities but said it could !");
 		return;
 	}
 
@@ -961,19 +960,15 @@ static void do_capabilities(int qco)
 	endtemp = &temp[0] + strlen(temp);
 
 	if (temp[0] != '#') {
-		upsdebugx(1, "unrecognized capability start char %c", temp[0]);
-		upsdebugx(1, "please report this error [%s]", temp);
-		upslogx(LOG_ERR, "ERROR: unknown capability start char %c!",
-			temp[0]);
-
+		upslogx(LOG_WARNING, "unknown capability start char [%c] !", temp[0]);
+		upsdebugx(1, "please report this caps string: %s", temp);
 		return;
 	}
 
 	if (temp[1] == '#') {		/* Matrix-UPS */
-		matrix = 1;
 		ptr = &temp[0];
-	}
-	else {
+		matrix = 1;
+	} else {
 		ptr = &temp[1];
 		matrix = 0;
 	}
@@ -986,16 +981,10 @@ static void do_capabilities(int qco)
 
 		/* check for idiocy */
 		if (ptr >= endtemp) {
-
 			/* if we expected this, just ignore it */
 			if (qco)
 				return;
-
-			fatalx(EXIT_FAILURE,
-				"capability string has overflowed\n"
-				"please report this error\n"
-				"ERROR: capability overflow!"
-				);
+			fatalx(EXIT_FAILURE, "capability string has overflowed, please report this error !");
 		}
 
 		cmd = ptr[0];
@@ -1004,19 +993,29 @@ static void do_capabilities(int qco)
 		entlen = ptr[3] - 48;
 		entptr = &ptr[4];
 
-		vt = vartab_lookup_char(cmd);
-		valid = vt && ((loc == upsloc) || (loc == '4'));
+		vt = vt_lookup_char(cmd);
+		valid = vt && ((loc == upsloc) || (loc == '4')) && !(vt->flags & APC_PACK);
 
 		/* mark this as writable */
 		if (valid) {
-			upsdebugx(1, "supported capability: %02x (%c) - %s",
-				cmd, loc, vt->name);
+			upsdebugx(1, "%s [%s(%c)] - capability supported", vt->name, prtchr(cmd), loc);
 
 			dstate_setflags(vt->name, ST_FLAG_RW);
 
 			/* make sure setvar knows what this is */
 			vt->flags |= APC_RW | APC_ENUM;
-		}
+		} else if (vt->flags & APC_PACK)
+			/*
+			 * Currently we assume - basing on the following
+			 * feedback:
+			 * http://www.mail-archive.com/nut-upsdev@lists.alioth.debian.org/msg03398.html
+			 * - that "packed" variables are not enumerable; if at
+			 * some point in the future it turns out to be false,
+			 * the handling will have to be a bit more complex
+			 */
+			upslogx(LOG_WARNING,
+					"WARN: packed APC variable %s [%s] reported as enumerable,\n"
+					"please report it on the mailing list", vt->name, prtchr(cmd));
 
 		for (i = 0; i < nument; i++) {
 			if (valid) {
@@ -1031,60 +1030,102 @@ static void do_capabilities(int qco)
 	}
 }
 
-static int update_status(void)
+static void legacy_verify(const char *var)
 {
-	int	ret;
-	char	buf[APC_LBUF];
+	int i;
+	/*
+	 * note: some NUT variables map onto multiple APC ones, e.g. firmware:
+	 * V,b -> ups.firmware; that's why we keep the loop, as it's over NUT
+	 * names
+	 */
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		if (strcmp(apc_vartab[i].name, var))
+			continue;
+		var_verify(&apc_vartab[i]);
+	}
+}
 
-	upsdebugx(4, "update_status");
+static void protocol_verify(unsigned char cmd)
+{
+	int i, found;
+	apc_vartab_t *vt;
+	apc_cmdtab_t *ct;
 
-	apc_flush(SER_AA);
-	ret = apc_write(APC_STATUS);
+	/* don't bother with cmd/var we don't care about */
+	if (strchr(APC_UNR_CMDS, cmd))
+		return;
 
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "update_status: apc_write failed");
-		dstate_datastale();
-		return 0;
+	/*
+	 * loop necessary for apc:nut 1:n cases (e.g. T -> device.uptime,
+	 * ambient.0.temperature)
+	 */
+	found = 0;
+	for (i = 0; apc_vartab[i].name != NULL; i++) {
+		vt = &apc_vartab[i];
+		if (vt->cmd != cmd)
+			continue;
+		var_verify(vt);
+		found = 1;
+	}
+	if (found)
+		return;
+
+	/*
+	 * see if it's a command
+	 * loop necessary for apc:nut 1:n cases (e.g. D -> calibrate.start,
+	 * calibrate.stop)
+	 */
+	found = 0;
+	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
+		ct = &apc_cmdtab[i];
+		if (ct->cmd != cmd)
+			continue;
+		ct->flags |= APC_PRESENT;
+		dstate_addcmd(ct->name);
+		confirm_cv(cmd, "command", ct->name);
+		found = 1;
 	}
 
-	ret = apc_read(buf, sizeof(buf), SER_AA);
+	if (found)
+		return;
 
-	if ((ret < 1) || (!strcmp(buf, "NA"))) {
-		dstate_datastale();
-		return 0;
-	}
-
-	ups_status = strtol(buf, 0, 16) & 0xff;
-	ups_status_set();
-
-	dstate_dataok();
-
-	return 1;
+	/*
+	 * epilogue - unrecognized command / variable not included
+	 * in APC_UNR_CMDS
+	 */
+	warn_cv(cmd, NULL, NULL);
 }
 
 static void oldapcsetup(void)
 {
-	/* really old models ignore REQ_MODEL, so find them first */
-	if (!query_ups("ups.model")) {
-		/* force the model name */
-		dstate_setinfo("ups.model", "Smart-UPS");
-	}
+	/*
+	 * note: battery.date and ups.id make little sense here, as
+	 * that would imply writability and this is an *old* apc psu
+	 */
+	legacy_verify("ups.temperature");
+	legacy_verify("ups.load");
+	legacy_verify("input.voltage");
+	legacy_verify("output.voltage");
+	legacy_verify("battery.charge");
+	legacy_verify("battery.voltage");
+
+	/* these will usually timeout */
+	legacy_verify("ups.model");
+	legacy_verify("ups.serial");
+	legacy_verify("ups.firmware");
+	legacy_verify("output.current");
+
+	deprecate_vars();
 
 	/* see if this might be an old Matrix-UPS instead */
-	if (query_ups("output.current"))
+	if (vt_lookup_name("output.current"))
 		dstate_setinfo("ups.model", "Matrix-UPS");
-
-	query_ups("ups.firmware");
-	query_ups("ups.serial");
-	query_ups("input.voltage");
-	query_ups("battery.charge");
-	query_ups("battery.voltage");
-	query_ups("input.voltage");
-	query_ups("output.voltage");
-	query_ups("ups.temperature");
-	query_ups("ups.load");
-
-	update_status();
+	else {
+		/* really old models don't support ups.model (apc: 0x01) */
+		if (!vt_lookup_name("ups.model"))
+			/* force the model name */
+			dstate_setinfo("ups.model", "Smart-UPS");
+	}
 
 	/*
 	 * If we have come down this path then we dont do capabilities and
@@ -1092,152 +1133,58 @@ static void oldapcsetup(void)
 	 */
 }
 
-static void protocol_verify(unsigned char cmd)
-{
-	int i, found;
-	const char *fmt, *temp;
-	char info[256];
-
-	/* don't bother with cmd/var we don't care about */
-	if (strchr(APC_UNR_CMDS, cmd))
-		return;
-
-	if (isprint(cmd))
-		fmt = "[%c]";
-	else
-		fmt = "[0x%02x]";
-
-	/*
-	 * see if it's a variable
-	 * note: some nut variables map onto multiple APC ones (firmware)
-	 */
-	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if (apc_vartab[i].cmd == cmd) {
-			if (apc_vartab[i].flags & APC_MULTI) {
-				/* APC_MULTI are handled by deprecate_vars() */
-				apc_vartab[i].flags |= APC_PRESENT;
-				return;
-			}
-
-			temp = preread_data(&apc_vartab[i]);
-			if (!temp || !valid_cmd(cmd, temp)) {
-				snprintf(info, sizeof(info), "%s%s%s",
-					"UPS variable [%s] - APC: ",
-					fmt,
-					" invalid or unreadable"
-				);
-				upsdebugx(3, info, apc_vartab[i].name, cmd);
-				return;
-			}
-
-			apc_vartab[i].flags |= APC_PRESENT;
-
-			snprintf(info, sizeof(info), "%s%s",
-				"UPS supports variable [%s] - APC: ",
-				fmt
-			);
-			upsdebugx(3, info, apc_vartab[i].name, cmd);
-
-			dstate_setinfo(apc_vartab[i].name, "%s", temp);
-			dstate_dataok();
-
-			/* handle special data for our two strings */
-			if (apc_vartab[i].flags & APC_STRING) {
-				dstate_setflags(apc_vartab[i].name,
-					ST_FLAG_RW | ST_FLAG_STRING);
-				dstate_setaux(apc_vartab[i].name, APC_STRLEN);
-
-				apc_vartab[i].flags |= APC_RW;
-			}
-			return;
-		}
-	}
-
-	/*
-	 * check the command list
-	 * some APC commands map onto multiple nut ones (start and stop)
-	 */
-	found = 0;
-	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
-		if (apc_cmdtab[i].cmd == cmd) {
-
-			snprintf(info, sizeof(info), "%s%s",
-				"UPS supports command [%s] - APC: ",
-				fmt
-			);
-			upsdebugx(3, info, apc_cmdtab[i].name, cmd);
-
-			dstate_addcmd(apc_cmdtab[i].name);
-
-			apc_cmdtab[i].flags |= APC_PRESENT;
-			found = 1;
-		}
-	}
-
-	if (found)
-		return;
-
-	snprintf(info, sizeof(info), "%s%s%s",
-		"protocol_verify - APC: ",
-		fmt,
-		" unrecognized"
-	);
-	upsdebugx(1, info, cmd);
-}
-
 /* some hardware is a special case - hotwire the list of cmdchars */
 static int firmware_table_lookup(void)
 {
-	int	ret;
-	unsigned int	i, j;
-	char	buf[APC_LBUF];
+	int ret;
+	unsigned int i, j;
+	char buf[APC_LBUF];
 
-	upsdebugx(1, "attempting firmware lookup using command 'V'");
+	upsdebugx(1, "attempting firmware lookup using [%s]", prtchr(APC_FW_OLD));
 
 	apc_flush(0);
-	ret = apc_write(APC_FW_OLD);
-
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "firmware_table_lookup: apc_write failed");
+	if (apc_write(APC_FW_OLD) != 1)
 		return 0;
-	}
-
-	ret = apc_read(buf, sizeof(buf), SER_TO);
+	if ((ret = apc_read(buf, sizeof(buf), SER_TO)) < 0)
+		return 0;
 
         /*
 	 * Some UPSes support both 'V' and 'b'. As 'b' doesn't always return
 	 * firmware version, we attempt that only if 'V' doesn't work.
 	 */
-	if ((ret < 1) || (!strcmp(buf, "NA"))) {
-		upsdebugx(1, "attempting firmware lookup using command 'b'");
-		ret = apc_write(APC_FW_NEW);
+	if (!ret || !strcmp(buf, "NA")) {
+		upsdebugx(1, "attempting firmware lookup using [%s]", prtchr(APC_FW_NEW));
 
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "firmware_table_lookup: apc_write failed");
+		if (apc_write(APC_FW_NEW) != 1)
 			return 0;
-		}
-
-		ret = apc_read(buf, sizeof(buf), SER_TO);
-
-		if (ret < 1) {
-			upslog_with_errno(LOG_ERR, "firmware_table_lookup: apc_read failed");
+		if (apc_read(buf, sizeof(buf), SER_TO) < 1)
 			return 0;
-		}
 	}
 
-	upsdebugx(2, "firmware: [%s]", buf);
+	upsdebugx(1, "detected firmware version: %s", buf);
 
 	/* this will be reworked if we get a lot of these things */
-	if (!strcmp(buf, "451.2.I"))
+	if (!strcmp(buf, "451.2.I")) {
 		/* quirk_capability_overflow */
+		upsdebugx(1, "WARN: quirky firmware !");
 		return 2;
+	}
+
+	if (rexhlp("^[a-fA-F0-9]{2}$", buf)) {
+		/*
+		 * certain old set of UPSes that return voltage above 255V
+		 * through 'b'; see:
+		 * http://article.gmane.org/gmane.comp.monitoring.nut.user/7762
+		 */
+		strcpy(buf, "set\1");
+	}
 
 	for (i = 0; apc_compattab[i].firmware != NULL; i++) {
 		if (!strcmp(apc_compattab[i].firmware, buf)) {
 
-			upsdebugx(2, "matched - cmdchars: %s",
-					apc_compattab[i].cmdchars);
+			upsdebugx(1, "matched firmware: %s", apc_compattab[i].firmware);
 
+			/* magic ? */
 			if (strspn(apc_compattab[i].firmware, "05")) {
 				dstate_setinfo("ups.model", "Matrix-UPS");
 			} else {
@@ -1245,6 +1192,7 @@ static int firmware_table_lookup(void)
 			}
 
 			/* matched - run the cmdchars from the table */
+			upsdebugx(1, "parsing out supported cmds and vars");
 			for (j = 0; j < strlen(apc_compattab[i].cmdchars); j++)
 				protocol_verify(apc_compattab[i].cmdchars[j]);
 			deprecate_vars();
@@ -1256,7 +1204,7 @@ static int firmware_table_lookup(void)
 	return 0;
 }
 
-static void getbaseinfo(void)
+static int getbaseinfo(void)
 {
 	unsigned int	i;
 	int	ret, qco;
@@ -1269,34 +1217,29 @@ static void getbaseinfo(void)
 	qco = firmware_table_lookup();
 	if (qco == 1)
 		/* found compat */
-		return;
+		return 1;
 
-	upsdebugx(2, "firmware not found in compatibility table - trying normal method");
-	upsdebugx(1, "APC - attempting to find command set");
+	upsdebugx(1, "attempting var/cmdset lookup using [%s]", prtchr(APC_CMDSET));
 	/*
-	 * Initially we ask the UPS what commands it takes If this fails we are
+	 * Initially we ask the UPS what commands it takes. If this fails we are
 	 * going to need an alternate strategy - we can deal with that if it
 	 * happens
 	 */
 
 	apc_flush(0);
-	ret = apc_write(APC_CMDSET);
+	if (apc_write(APC_CMDSET) != 1)
+		return 0;
+	if ((ret = apc_read(temp, sizeof(temp), SER_CS|SER_TO)) < 0)
+		return 0;
 
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "getbaseinfo: apc_write failed");
-		return;
-	}
-
-	ret = apc_read(temp, sizeof(temp), SER_CS|SER_TO);
-
-	if ((ret < 1) || (!strcmp(temp, "NA")) || !valid_cmd(APC_CMDSET, temp)) {
+	if (!ret || !strcmp(temp, "NA") || !rexhlp(APC_CMDSET_FMT, temp)) {
 		/* We have an old dumb UPS - go to specific code for old stuff */
-		upsdebugx(1, "APC - trying to handle unknown model");
+		upslogx(LOG_NOTICE, "very old or unknown APC model, support will be limited");
 		oldapcsetup();
-		return;
+		return 1;
 	}
 
-	upsdebugx(1, "APC - Parsing out supported cmds and vars");
+	upsdebugx(1, "parsing out supported cmds/vars");
 	/*
 	 * returned set is verified for validity above, so just extract
 	 * what's interesting for us
@@ -1308,9 +1251,10 @@ static void getbaseinfo(void)
 
 	/* if capabilities are supported, add them here */
 	if (strchr(cmds, APC_CAPS)) {
-		do_capabilities(qco);
-		upsdebugx(1, "APC - UPS capabilities determined");
+		upsdebugx(1, "parsing out caps");
+		apc_getcaps(qco);
 	}
+	return 1;
 }
 
 /* check for calibration status and either start or stop */
@@ -1323,41 +1267,40 @@ static int do_cal(int start)
 	ret = apc_write(APC_STATUS);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cal: apc_write failed");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	/* if we can't check the current calibration status, bail out */
-	if ((ret < 1) || (!strcmp(temp, "NA")))
+	if ((ret < 1) || (!strcmp(temp, "NA"))) {
+		upslogx(LOG_WARNING, "runtime calibration state undeterminable");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
+	}
 
 	tval = strtol(temp, 0, 16);
 
 	if (tval & APC_STAT_CAL) {	/* calibration currently happening */
 		if (start == 1) {
 			/* requested start while calibration still running */
-			upslogx(LOG_INFO, "runtime calibration already in progress");
+			upslogx(LOG_NOTICE, "runtime calibration already in progress");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
 		/* stop requested */
 
-		upslogx(LOG_INFO, "stopping runtime calibration");
+		upslogx(LOG_NOTICE, "stopping runtime calibration");
 
 		ret = apc_write(APC_CMD_CALTOGGLE);
 
 		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "do_cal: apc_write failed");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
 		ret = apc_read(temp, sizeof(temp), SER_AA);
 
 		if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
-			upslogx(LOG_WARNING, "stop calibration failed: %s",
-				temp);
+			upslogx(LOG_WARNING, "stop calibration failed, cmd returned: %s", temp);
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
@@ -1367,23 +1310,22 @@ static int do_cal(int start)
 	/* calibration not happening */
 
 	if (start == 0) {		/* stop requested */
-		upslogx(LOG_INFO, "runtime calibration not occurring");
+		upslogx(LOG_NOTICE, "runtime calibration not occurring");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	upslogx(LOG_INFO, "starting runtime calibration");
+	upslogx(LOG_NOTICE, "starting runtime calibration");
 
 	ret = apc_write(APC_CMD_CALTOGGLE);
 
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "do_cal: apc_write failed");
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
-		upslogx(LOG_WARNING, "start calibration failed: %s", temp);
+		upslogx(LOG_WARNING, "start calibration failed, cmd returned: %s", temp);
 		return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 	}
 
@@ -1400,7 +1342,6 @@ static int smartmode(void)
 	apc_flush(0);
 	ret = apc_write(APC_GOSMART);
 	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "smartmode: apc_write failed");
 		return 0;
 	}
 	ret = apc_read(temp, sizeof(temp), 0);
@@ -1428,27 +1369,19 @@ static int smartmode(int cnt)
 	for (tries = 0; tries < cnt; tries++) {
 
 		apc_flush(0);
-		ret = apc_write(APC_GOSMART);
-
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "smartmode: issuing 'Y' failed");
+		if (apc_write(APC_GOSMART) != 1)
 			return 0;
-		}
-		ret = apc_read(temp, sizeof(temp), SER_D1);
+
+		/* timeout here is intented */
+		ret = apc_read(temp, sizeof(temp), SER_TO|SER_D1);
 		if (ret > 0 && !strcmp(temp, "SM"))
 			return 1;	/* success */
-		if (ret < 0) {
+		if (ret < 0)
 			/* error, so we didn't timeout - wait a bit before retry */
 			sleep(1);
-		}
 
-		apc_flush(0);
-		ret = apc_write(27); /* ESC */
-
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "smartmode: issuing ESC failed");
+		if (apc_write(27) != 1) /* ESC */
 			return 0;
-		}
 
 		/* eat the response (might be NA, might be something else) */
 		apc_read(temp, sizeof(temp), SER_TO|SER_D1);
@@ -1473,35 +1406,28 @@ static int sdok(int ign)
 	 * furthermore, command 'Z' will not reply with anything
 	 */
 	ret = apc_read(temp, sizeof(temp), SER_HA|SER_D1|SER_TO);
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdok: apc_read failed");
+	if (ret < 0)
 		return STAT_INSTCMD_FAILED;
-	}
 
-	upsdebugx(4, "sdok: got \"%s\"", temp);
+	debx(1, "got \"%s\"", temp);
 
 	if ((!ret && ign) || !strcmp(temp, "OK")) {
-		upsdebugx(4, "sdok: last issued shutdown cmd succeeded");
+		debx(1, "last shutdown cmd succeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upsdebugx(1, "sdok: last issued shutdown cmd failed");
+	debx(1, "last shutdown cmd failed");
 	return STAT_INSTCMD_FAILED;
 }
 
 /* soft hibernate: S - working only when OB, otherwise ignored */
 static int sdcmd_S(const void *foo)
 {
-	int ret;
-
 	apc_flush(0);
-	upsdebugx(1, "issuing soft hibernate");
-	ret = apc_write(APC_CMD_SOFTDOWN);
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_S: issuing 'S' failed");
+	if (!foo)
+		debx(1, "issuing [%s]", prtchr(APC_CMD_SOFTDOWN));
+	if (apc_write(APC_CMD_SOFTDOWN) != 1)
 		return STAT_INSTCMD_FAILED;
-	}
-
 	return sdok(0);
 }
 
@@ -1511,23 +1437,22 @@ static int sdcmd_CS(const void *foo)
 	int ret;
 	char temp[APC_SBUF];
 
-	upsdebugx(1, "using CS 350 'force OB' shutdown method");
+	debx(1, "issuing CS 'hack' [%s+%s]", prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN));
 	if (ups_status & APC_STAT_OL) {
 		apc_flush(0);
-		upsdebugx(1, "status OL - forcing OB temporarily");
+		debx(1, "issuing [%s]", prtchr(APC_CMD_SIMPWF));
 		ret = apc_write(APC_CMD_SIMPWF);
-		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "sdcmd_CS: issuing 'U' failed");
+		if (ret != 1) {
 			return STAT_INSTCMD_FAILED;
 		}
-		/* eat response */
-		ret = apc_read(temp, sizeof(temp), SER_D1);
+		/* eat response, allow timeout */
+		ret = apc_read(temp, sizeof(temp), SER_D1|SER_TO);
 		if (ret < 0) {
-			upslog_with_errno(LOG_ERR, "sdcmd_CS: 'U' returned nothing ?");
 			return STAT_INSTCMD_FAILED;
 		}
 	}
-	return sdcmd_S(0);
+	/* continue with regular soft hibernate */
+	return sdcmd_S((void *)1);
 }
 
 /*
@@ -1554,12 +1479,13 @@ static int sdcmd_AT(const void *str)
 	}
 	strcpy(ptr, awd);
 
-	upsdebugx(1, "issuing '@' with %d minutes of additional wakeup delay", (int)strtol(awd, NULL, 10)*6);
+	debx(1, "issuing [%s] with %d minutes of additional wakeup delay",
+			prtchr(APC_CMD_GRACEDOWN), (int)strtol(awd, NULL, 10)*6);
 
 	apc_flush(0);
 	ret = apc_write_long(temp);
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_AT: issuing '@' with %d digits failed", padto);
+	if (ret != padto + 1) {
+		upslogx(LOG_ERR, "issuing [%s] with %d digits failed", prtchr(APC_CMD_GRACEDOWN), padto);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1567,14 +1493,14 @@ static int sdcmd_AT(const void *str)
 	if (ret == STAT_INSTCMD_HANDLED || padto == 3)
 		return ret;
 
-	upslog_with_errno(LOG_ERR, "sdcmd_AT: command '@' with 2 digits doesn't work - try 3 digits");
+	upslogx(LOG_ERR, "command [%s] with 2 digits doesn't work - try 3 digits", prtchr(APC_CMD_GRACEDOWN));
 	/*
 	 * "tricky" part - we tried @nn variation and it (unsurprisingly)
 	 * failed; we have to abort the sequence with something bogus to have
 	 * the clean state; newer upses will respond with 'NO', older will be
 	 * silent (YMMV);
 	 */
-	apc_write(APC_CMD_GRACEDOWN);
+	apc_write(APC_GOSMART);
 	/* eat response, allow it to timeout */
 	apc_read(temp, sizeof(temp), SER_D1|SER_TO);
 
@@ -1586,14 +1512,12 @@ static int sdcmd_K(const void *foo)
 {
 	int ret;
 
-	upsdebugx(1, "issuing 'K'");
+	debx(1, "issuing [%s]", prtchr(APC_CMD_SHUTDOWN));
 
 	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_SHUTDOWN);
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_K: issuing 'K' failed");
+	if (ret != 2)
 		return STAT_INSTCMD_FAILED;
-	}
 
 	return sdok(0);
 }
@@ -1603,12 +1527,11 @@ static int sdcmd_Z(const void *foo)
 {
 	int ret;
 
-	upsdebugx(1, "issuing 'Z'");
+	debx(1, "issuing [%s]", prtchr(APC_CMD_OFF));
 
 	apc_flush(0);
 	ret = apc_write_rep(APC_CMD_OFF);
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "sdcmd_Z: issuing 'Z' failed");
+	if (ret != 2) {
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -1623,6 +1546,8 @@ static void upsdrv_shutdown_simple(void)
 
 	if ((val = getval("sdtype")))
 		sdtype = strtol(val, NULL, 10);
+
+	debx(1, "currently: %s, sdtype: %d", (ups_status & APC_STAT_OL) ? "on-line" : "on battery", sdtype);
 
 	switch (sdtype) {
 
@@ -1647,13 +1572,10 @@ static void upsdrv_shutdown_simple(void)
 		 * Specifically it sends both the soft shutdown 'S' and the
 		 * hard hibernate '@nnn' commands
 		 */
-		upsdebugx(1, "UPS - currently %s - sending soft/hard hibernate commands",
-			(ups_status & APC_STAT_OL) ? "on-line" : "on battery");
 
 		/* S works only when OB */
-		if ((ups_status & APC_STAT_OB) && sdcmd_S(0) == STAT_INSTCMD_HANDLED)
-			break;
-		sdcmd_AT(getval("awd"));
+		if (!(ups_status & APC_STAT_OB) || sdcmd_S(0) != STAT_INSTCMD_HANDLED)
+			sdcmd_AT(getval("awd"));
 		break;
 
 	default:
@@ -1676,6 +1598,8 @@ static void upsdrv_shutdown_advanced(void)
 	val = getval("advorder");
 	len = strlen(val);
 
+	debx(1, "currently: %s, advorder: %s", (ups_status & APC_STAT_OL) ? "on-line" : "on battery", val);
+
 	/*
 	 * try each method in the list with a little bit of handling in certain
 	 * cases
@@ -1697,72 +1621,49 @@ static void upsdrv_shutdown_advanced(void)
 /* power down the attached load immediately */
 void upsdrv_shutdown(void)
 {
-	char	temp[APC_LBUF];
-	int	ret;
+	char temp[APC_LBUF];
 
 	if (!smartmode(1))
-		upsdebugx(1, "SM detection failed. Trying a shutdown command anyway");
+		logx(LOG_WARNING, "setting SmartMode failed !");
 
 	/* check the line status */
 
-	ret = apc_write(APC_STATUS);
-
-	if (ret == 1) {
-		ret = apc_read(temp, sizeof(temp), SER_D1);
-
-		if (ret < 1) {
-			upsdebugx(1, "status read failed ! assuming on battery state");
-			ups_status = APC_STAT_LB | APC_STAT_OB;
-		} else {
+	if (apc_write(APC_STATUS) == 1) {
+		if (apc_read(temp, sizeof(temp), SER_D1) == 1) {
 			ups_status = strtol(temp, 0, 16);
+		} else {
+			logx(LOG_WARNING, "status read failed, assuming LB+OB");
+			ups_status = APC_STAT_LB | APC_STAT_OB;
 		}
-
 	} else {
-		upsdebugx(1, "status request failed; assuming on battery state");
+		logx(LOG_WARNING, "status write failed, assuming LB+OB");
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
-	if (testvar("advorder") && strcasecmp(getval("advorder"), "no"))
+	if (testvar("advorder") && toupper(*getval("advorder")) != 'N')
 		upsdrv_shutdown_advanced();
 	else
 		upsdrv_shutdown_simple();
 }
 
-static void update_info_normal(void)
+static int update_info(int all)
 {
-	int	i;
+	int i;
 
-	upsdebugx(3, "update_info_normal: starting");
+	debx(1, "starting scan%s", all ? " (all vars)" : "");
 
 	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if ((apc_vartab[i].flags & APC_POLL) == 0)
+		if (!all && (apc_vartab[i].flags & APC_POLL) == 0)
 			continue;
 
 		if (!poll_data(&apc_vartab[i])) {
-			upsdebugx(3, "update_info_normal: poll_data (%s) failed - "
-				"aborting scan", apc_vartab[i].name);
-			return;
+			debx(1, "aborting scan");
+			return 0;
 		}
 	}
 
-	upsdebugx(3, "update_info_normal: done");
-}
-
-static void update_info_all(void)
-{
-	int	i;
-
-	upsdebugx(3, "update_info_all: starting");
-
-	for (i = 0; apc_vartab[i].name != NULL; i++) {
-		if (!poll_data(&apc_vartab[i])) {
-			upsdebugx(3, "update_info_all: poll_data (%s) failed - "
-				"aborting scan", apc_vartab[i].name);
-			return;
-		}
-	}
-
-	upsdebugx(3, "update_info_all: done");
+	debx(1, "scan completed");
+	return 1;
 }
 
 static int setvar_enum(apc_vartab_t *vt, const char *val)
@@ -1772,12 +1673,8 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 	const char	*ptr;
 
 	apc_flush(SER_AA);
-	ret = apc_write(vt->cmd);
-
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
+	if (apc_write(vt->cmd) != 1)
 		return STAT_SET_FAILED;
-	}
 
 	ret = apc_read(orig, sizeof(orig), SER_AA);
 
@@ -1788,19 +1685,15 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 	/* suppress redundant changes - easier on the eeprom */
 	if (!strcmp(ptr, val)) {
-		upslogx(LOG_INFO, "ignoring enum SET %s='%s' (unchanged value)",
+		logx(LOG_INFO, "ignoring SET %s='%s' (unchanged value)",
 			vt->name, val);
 
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
 
 	for (i = 0; i < 6; i++) {
-		ret = apc_write(APC_NEXTVAL);
-
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
+		if (apc_write(APC_NEXTVAL) != 1)
 			return STAT_SET_FAILED;
-		}
 
 		/* this should return either OK (if rotated) or NO (if not) */
 		ret = apc_read(temp, sizeof(temp), SER_AA);
@@ -1815,12 +1708,8 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 			return STAT_SET_FAILED;
 
 		/* see what it rotated onto */
-		ret = apc_write(vt->cmd);
-
-		if (ret != 1) {
-			upslog_with_errno(LOG_ERR, "setvar_enum: apc_write failed");
+		if (apc_write(vt->cmd) != 1)
 			return STAT_SET_FAILED;
-		}
 
 		ret = apc_read(temp, sizeof(temp), SER_AA);
 
@@ -1829,36 +1718,31 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 
 		ptr = convert_data(vt, temp);
 
-		upsdebugx(1, "rotate value: got [%s], want [%s]",
-			ptr, val);
+		debx(1, "rotate - got [%s], want [%s]", ptr, val);
 
 		if (!strcmp(ptr, val)) {	/* got it */
-			upslogx(LOG_INFO, "SET %s='%s'", vt->name, val);
+			logx(LOG_INFO, "SET %s='%s'", vt->name, val);
 
 			/* refresh data from the hardware */
 			poll_data(vt);
-			/* query_ups(vt->name, 0); */
 
 			return STAT_SET_HANDLED;	/* FUTURE: success */
 		}
 
 		/* check for wraparound */
 		if (!strcmp(ptr, orig)) {
-			upslogx(LOG_ERR, "setvar: variable %s wrapped",
-				vt->name);
+			logx(LOG_ERR, "variable %s wrapped", vt->name);
 
 			return STAT_SET_FAILED;
 		}
 	}
 
-	upslogx(LOG_ERR, "setvar: gave up after 6 tries for %s",
-		vt->name);
+	logx(LOG_ERR, "gave up after 6 tries for %s", vt->name);
 
 	/* refresh data from the hardware */
 	poll_data(vt);
-	/* query_ups(vt->name, 0); */
 
-	return STAT_SET_HANDLED;
+	return STAT_SET_FAILED;
 }
 
 static int setvar_string(apc_vartab_t *vt, const char *val)
@@ -1869,17 +1753,13 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* sanitize length */
 	if (strlen(val) > APC_STRLEN) {
-		upslogx(LOG_ERR, "setvar_string: value (%s) too long", val);
+		logx(LOG_ERR, "value (%s) too long", val);
 		return STAT_SET_FAILED;
 	}
 
 	apc_flush(SER_AA);
-	ret = apc_write(vt->cmd);
-
-	if (ret != 1) {
-		upslog_with_errno(LOG_ERR, "setvar_string: apc_write failed");
+	if (apc_write(vt->cmd) != 1)
 		return STAT_SET_FAILED;
-	}
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
@@ -1888,7 +1768,7 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 
 	/* suppress redundant changes - easier on the eeprom */
 	if (!strcmp(temp, val)) {
-		upslogx(LOG_INFO, "ignoring string SET %s='%s' (unchanged value)",
+		logx(LOG_INFO, "ignoring SET %s='%s' (unchanged value)",
 			vt->name, val);
 
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
@@ -1902,30 +1782,25 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 		*ptr++ = '\015'; /* pad with CRs */
 	*ptr = 0;
 
-	ret = apc_write_long(temp);
-
-	if (ret != APC_STRLEN + 1) {
-		upslog_with_errno(LOG_ERR, "setvar_string: apc_write_long failed");
+	if (apc_write_long(temp) != APC_STRLEN + 1)
 		return STAT_SET_FAILED;
-	}
 
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1) {
-		upslogx(LOG_ERR, "setvar_string: short final read");
+		logx(LOG_ERR, "short final read");
 		return STAT_SET_FAILED;
 	}
 
 	if (!strcmp(temp, "NO")) {
-		upslogx(LOG_ERR, "setvar_string: got NO at final read");
+		logx(LOG_ERR, "got NO at final read");
 		return STAT_SET_FAILED;
 	}
 
 	/* refresh data from the hardware */
 	poll_data(vt);
-	/* query_ups(vt->name, 0); */
 
-	upslogx(LOG_INFO, "SET %s='%s'", vt->name, val);
+	logx(LOG_INFO, "SET %s='%s'", vt->name, val);
 
 	return STAT_SET_HANDLED;	/* FUTURE: success */
 }
@@ -1934,13 +1809,13 @@ static int setvar(const char *varname, const char *val)
 {
 	apc_vartab_t	*vt;
 
-	vt = vartab_lookup_name(varname);
+	vt = vt_lookup_name(varname);
 
 	if (!vt)
 		return STAT_SET_UNKNOWN;
 
 	if ((vt->flags & APC_RW) == 0) {
-		upslogx(LOG_WARNING, "setvar: [%s] is not writable", varname);
+		logx(LOG_WARNING, "[%s] is not writable", varname);
 		return STAT_SET_UNKNOWN;
 	}
 
@@ -1950,22 +1825,18 @@ static int setvar(const char *varname, const char *val)
 	if (vt->flags & APC_STRING)
 		return setvar_string(vt, val);
 
-	upslogx(LOG_WARNING, "setvar: Unknown type for [%s]", varname);
+	logx(LOG_WARNING, "unknown type for [%s]", varname);
 	return STAT_SET_UNKNOWN;
 }
 
 /* load on */
 static int do_loadon(void)
 {
-	int ret;
 	apc_flush(0);
-	upsdebugx(1, "issuing load-on command");
+	debx(1, "issuing [%s]", prtchr(APC_CMD_ON));
 
-	ret = apc_write_rep(APC_CMD_ON);
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "do_loadon: apc_write_rep failed");
+	if (apc_write_rep(APC_CMD_ON) != 2)
 		return STAT_INSTCMD_FAILED;
-	}
 
 	/*
 	 * ups will not reply anything after this command, but might
@@ -1973,29 +1844,27 @@ static int do_loadon(void)
 	 * the next status update)
 	 */
 
-	upsdebugx(1, "load-on command (apc:^N) executed");
+	debx(1, "[%s] completed", prtchr(APC_CMD_ON));
 	return STAT_INSTCMD_HANDLED;
 }
 
 /* actually send the instcmd's char to the ups */
 static int do_cmd(const apc_cmdtab_t *ct)
 {
-	int ret;
+	int ret, c;
 	char temp[APC_LBUF];
-	const char *strerr;
 
 	apc_flush(SER_AA);
 
 	if (ct->flags & APC_REPEAT) {
 		ret = apc_write_rep(ct->cmd);
-		strerr = "apc_write_rep";
+		c = 2;
 	} else {
 		ret = apc_write(ct->cmd);
-		strerr = "apc_write";
+		c = 1;
 	}
 
-	if (ret < 1) {
-		upslog_with_errno(LOG_ERR, "do_cmd: %s failed", strerr);
+	if (ret != c) {
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -2005,13 +1874,13 @@ static int do_cmd(const apc_cmdtab_t *ct)
 		return STAT_INSTCMD_FAILED;
 
 	if (strcmp(temp, "OK")) {
-		upslogx(LOG_WARNING, "got [%s] after command [%s]",
+		logx(LOG_WARNING, "got [%s] after command [%s]",
 			temp, ct->name);
 
 		return STAT_INSTCMD_FAILED;
 	}
 
-	upslogx(LOG_INFO, "command: %s", ct->name);
+	logx(LOG_INFO, "%s completed", ct->name);
 	return STAT_INSTCMD_HANDLED;
 }
 
@@ -2029,7 +1898,7 @@ static int instcmd_chktime(apc_cmdtab_t *ct, const char *ext)
 
 	/* you have to hit this in a small window or it fails */
 	if ((elapsed < MINCMDTIME) || (elapsed > MAXCMDTIME)) {
-		upsdebugx(1, "instcmd_chktime: outside window for [%s %s] (%2.0f)",
+		debx(1, "outside window for [%s %s] (%2.0f)",
 				ct->name, ext ? ext : "\b", elapsed);
 		return 0;
 	}
@@ -2043,34 +1912,30 @@ static int instcmd(const char *cmd, const char *ext)
 	apc_cmdtab_t *ct = NULL;
 
 	for (i = 0; apc_cmdtab[i].name != NULL; i++) {
-		/* main command must match */
+		/* cmd must match */
 		if (strcasecmp(apc_cmdtab[i].name, cmd))
 			continue;
-		/* extra was provided - check it */
-		if (ext && *ext) {
-			if (!apc_cmdtab[i].ext)
+		/* if cmd specifies regex, ext must match */
+		if (apc_cmdtab[i].ext) {
+			if (!rexhlp(apc_cmdtab[i].ext, ext))
 				continue;
-			if (strlen(apc_cmdtab[i].ext) > 2) {
-				if (rexhlp(apc_cmdtab[i].ext, ext))
-					continue;
-			} else {
-				if (strcasecmp(apc_cmdtab[i].ext, ext))
-					continue;
-			}
-		} else if (apc_cmdtab[i].ext)
-			continue;
+		/* if cmd doesn't specify regex, ext must be NULL */
+		} else {
+			if (ext)
+				continue;
+		}
 		ct = &apc_cmdtab[i];
 		break;
 	}
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s %s]", cmd,
+		logx(LOG_WARNING, "unknown command [%s %s]", cmd,
 				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
 	}
 
 	if (!(ct->flags & APC_PRESENT)) {
-		upslogx(LOG_WARNING, "instcmd: command [%s %s] recognized, but"
+		logx(LOG_WARNING, "command [%s %s] recognized, but"
 		       " not supported by your UPS model", cmd,
 				ext ? ext : "\b");
 		return STAT_INSTCMD_INVALID;
@@ -2101,11 +1966,10 @@ static int instcmd(const char *cmd, const char *ext)
 		if (!ext || !*ext)
 			return sdcmd_S(0);
 
-		/* ext length is guaranteed by regex match above */
-		if (!strncasecmp(ext, "at", 2))
+		if (toupper(*ext) == 'A')
 			return sdcmd_AT(ext + 3);
 
-		if (!strncasecmp(ext, "cs", 2))
+		if (toupper(*ext) == 'C')
 			return sdcmd_CS(0);
 	}
 
@@ -2120,61 +1984,66 @@ static void setuphandlers(void)
 	upsh.instcmd = instcmd;
 }
 
-/* functions that interface with main.c */
+/* ---- functions that interface with main.c ------------------------------- */
 
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
+	addvar(VAR_VALUE, "ttymode", "tty discipline selection");
+	addvar(VAR_VALUE, "cable", "alternate cable (940-0095B) selection");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
-	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method (0 - " APC_SDMAX ")");
-	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
+	addvar(VAR_VALUE, "sdtype", "simple shutdown method");
+	addvar(VAR_VALUE, "advorder", "advanced shutdown control");
+}
+
+void upsdrv_help(void)
+{
+	printf(
+		"\nFor detailed information, please refer to:\n"
+		  " - apcsmart(8)\n"
+		  " - http://www.networkupstools.org/docs/man/apcsmart.html\n"
+	      );
 }
 
 void upsdrv_initups(void)
 {
-	size_t i, len;
 	char *val;
-
-	upsfd = extrafd = ser_open(device_path);
-	apc_ser_set();
+	apc_vartab_t *ptr;
 
 	/* sanitize awd (additional waekup delay of '@' command) */
-	if ((val = getval("awd")) && rexhlp(APC_AWDFMT, val)) {
+	if ((val = getval("awd")) && !rexhlp(APC_AWDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'awd'", val);
 	}
 
 	/* sanitize sdtype */
-	if ((val = getval("sdtype")) && rexhlp(APC_SDFMT, val)) {
+	if ((val = getval("sdtype")) && !rexhlp(APC_SDFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'sdtype'", val);
 	}
 
 	/* sanitize advorder */
-	if ((val = getval("advorder")) && strcasecmp(val, "no")) {
-		len = strlen(val);
-
-		if (!len || len > SDCNT)
-			fatalx(EXIT_FAILURE, "invalid length of 'advorder' option (%s)", val);
-		for (i = 0; i < len; i++) {
-			if (val[i] < '0' || val[i] >= '0' + SDCNT) {
-				fatalx(EXIT_FAILURE, "invalid characters in 'advorder' option (%s)", val);
-			}
-		}
+	if ((val = getval("advorder")) && !rexhlp(APC_ADVFMT, val)) {
+			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'advorder'", val);
 	}
+
+	upsfd = extrafd = ser_open(device_path);
+	apc_ser_set();
+
+	/* fill length values */
+	for (ptr = apc_vartab; ptr->name; ptr++)
+		ptr->nlen0 = strlen(ptr->name) + 1;
 }
 
 void upsdrv_cleanup(void)
 {
 	char temp[APC_LBUF];
 
+	if (upsfd == -1)
+		return;
+
 	apc_flush(0);
 	/* try to bring the UPS out of smart mode */
 	apc_write(APC_GODUMB);
 	apc_read(temp, sizeof(temp), SER_TO);
 	ser_close(upsfd, device_path);
-}
-
-void upsdrv_help(void)
-{
 }
 
 void upsdrv_initinfo(void)
@@ -2188,10 +2057,14 @@ void upsdrv_initinfo(void)
 			);
 	}
 
+	if (!getbaseinfo()) {
+		fatalx(EXIT_FAILURE,
+			"Problems with communicating APC UPS on port %s\n", device_path
+			);
+	}
+
 	/* manufacturer ID - hardcoded in this particular module */
 	dstate_setinfo("ups.mfr", "APC");
-
-	getbaseinfo();
 
 	if (!(pmod = dstate_getinfo("ups.model")))
 		pmod = "\"unknown model\"";
@@ -2201,18 +2074,24 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "detected %s [%s] on %s", pmod, pser, device_path);
 
 	setuphandlers();
+	/*
+	 * seems to be ok so far, it must be set so initial call of
+	 * upsdrv_updateinfo() doesn't begin with stale condition
+	 */
+	dstate_dataok();
 }
 
 void upsdrv_updateinfo(void)
 {
 	static int last_worked = 0;
 	static time_t last_full = 0;
+	int all;
 	time_t now;
 
 	/* try to wake up a dead ups once in awhile */
 	if (dstate_is_stale()) {
 		if (!last_worked)
-			upsdebugx(LOG_DEBUG, "upsdrv_updateinfo: comm lost");
+			debx(1, "comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
@@ -2221,15 +2100,17 @@ void upsdrv_updateinfo(void)
 			return;
 
 		/* become aggressive after a few tries */
-		upsdebugx(LOG_DEBUG, "upsdrv_updateinfo: nudging ups with 'Y', iteration #%d ...", last_worked);
+		debx(1, "nudging ups with 'Y', iteration #%d ...", last_worked);
 		if (!smartmode(1))
 			return;
 
 		last_worked = 0;
 	}
 
-	if (!update_status())
+	if (!update_status()) {
+		dstate_datastale();
 		return;
+	}
 
 	time(&now);
 
@@ -2237,9 +2118,13 @@ void upsdrv_updateinfo(void)
 	/* does not catch measure-ups II insertion/removal */
 	if (difftime(now, last_full) > 3600) {
 		last_full = now;
-		update_info_all();
-		return;
-	}
+		all = 1;
+	} else
+		all = 0;
 
-	update_info_normal();
+	if (update_info(all)) {
+		dstate_dataok();
+	} else {
+		dstate_datastale();
+	}
 }

@@ -89,6 +89,22 @@ Alternatively, you can also provide it on the command line using:
 
 -x *cable*=940-0095B
 
+TTY MODES
+---------
+
+By default the driver works in canonical mode, but it showed to be a problem in
+windows systems. Furthermore there's a possibility of some obscure serial cards
+or serial-usb convertes that could cause problems as well. You can use
+\'ttymode=' option to force non-canonical discipline in linkman:ups.conf[5]:
+
+*ttymode*=raw
+
+Alternatively, you can also provide it on the command line using:
+
+-x *ttymode*=raw
+
+NOTE: Any other value will make the driver work in the canonical mode.
+
 EXPLANATION OF SHUTDOWN METHODS SUPPORTED BY APC UPSES
 ------------------------------------------------------
 
@@ -315,6 +331,14 @@ Other supported commands:
 - bypass.stop
 - calibrate.start
 - calibrate.stop
+
+PREVIOUS DRIVER VERSION
+-----------------------
+
+Previous driver is still available as apcsmart-old - should there be any need to
+use earlier version (bugs, incompatiblities with new functionality, etc.). In
+due time apcsmart-old will be phased out completely, but this won't happen until
+the new version gets solid exposure with no pending issues.
 
 BUGS
 ----

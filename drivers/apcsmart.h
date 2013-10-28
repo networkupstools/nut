@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
  *           (C) 2000  Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>
- *           (C) 2011  Michal Soltys <soltys@ziu.info>
+ *           (C) 2011+ Michal Soltys <soltys@ziu.info>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #define __apcsmart_h__
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"3.04"
+#define DRIVER_VERSION	"3.1"
 
 #define ALT_CABLE_1 "940-0095B"
 
@@ -59,11 +59,22 @@
  * as it's handled by IGNCR at read() level
  */
 
+/*
+ * about CR:
+ * apparently windows is unable to ignore CRs by means of IGNCR flag (or
+ * perhaps there is something else involved); so despite IGNCR we re-aad \015
+ * to ignore sets for now; see:
+ * http://article.gmane.org/gmane.comp.monitoring.nut.user/7762
+ *
+ * furthermore, since the canonical/non-canonical mode is user selectable now,
+ * we have to ignore this character explicitly
+ */
+
 /* Basic UPS reply line structure */
 #define ENDCHAR 10		/* APC ends responses with LF (and CR, but it's IGNCRed) */
 
 /* what to ignore during alert aware serial reads */
-#define IGN_AACHARS "|&"
+#define IGN_AACHARS "\015|&"
 
 /* what alert_handler() should care about */
 #define ALERT_CHARS "$!%+#?="
@@ -72,15 +83,15 @@
 #define IGN_CHARS IGN_AACHARS ALERT_CHARS
 
 /*
- * these ones are used only during capability read, due to ^Z sending certain
- * characters such as #; it seems it could be equal to just IGN_CHARS w/o #
- * old: #define IGN_CCCHARS "|$!+"
+ * these ones are used only during Capability Check read, due to ^Z sending
+ * certain characters such as #; it seems it could be equal to just IGN_CHARS
+ * w/o # old: #define IGN_CCCHARS "|$!+"
  */
-#define IGN_CCCHARS "|&$!%+?="	/* capability check ignore set */
+#define IGN_CCCHARS "\015|&$!%+?="	/* capability check ignore set */
 
 /*
- * command set 'a' command reports everything - protocol number, alerts and
- * supported commands
+ * Command Set 'a' reports everything - protocol number, alerts and supported
+ * commands
  */
 #define IGN_CSCHARS ""	/* command set ignore set */
 
@@ -95,9 +106,9 @@
 #define SER_DX	0x002	/* 200 ms for long/repeated cmds, in case of unexpected NAs */
 #define SER_D1	0x004	/* 1.5 sec. */
 #define SER_D3	0x008	/* 3 sec. (default) */
-#define SER_AA	0x010	/* alert aware set */
-#define SER_CC	0x020	/* capability check ign set */
-#define SER_CS	0x040	/* command set ign set */
+#define SER_AA	0x010	/* Alert Aware set */
+#define SER_CC	0x020	/* Capability Check ign set */
+#define SER_CS	0x040	/* Command Set ign set */
 #define SER_TO	0x080	/* timeout allowed */
 #define SER_HA	0x100	/* handle asterisk */
 
@@ -132,6 +143,7 @@
 #define APC_GOSMART	'Y'
 #define APC_GODUMB	'R'
 #define APC_CMDSET	'a'
+#define APC_CMDSET_FMT	"^[0-9]\\.[^.]*\\.[^.]+$"
 #define APC_CAPS	'\032'	/* ^Z */
 #define APC_NEXTVAL	'-'
 #define APC_FW_OLD	'V'
@@ -141,11 +153,20 @@
 #define APC_SBUF	32
 
 /* default a.w.d. value / regex format for command '@' */
-#define APC_AWDDEF	"000"
 #define APC_AWDFMT	"^[0-9]{1,3}$"
 
-/* maximum number of supported sdtype methods + regex format*/
-#define APC_SDMAX	"5"
+/* sdtype method regex format*/
 #define APC_SDFMT	"^[0-5]$"
+
+/* advorder method regex format*/
+#define APC_ADVFMT	"^([0-4]{1,5}|[Nn][Oo])$"
+
+/* error logging/debug related macros */
+
+#define fatx(fmt, ...) fatalx(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)
+#define fate(fmt, ...) fatal_with_errno(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)
+
+#define logx(lev, fmt, ...) upslogx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
+#define debx(lev, fmt, ...) upsdebugx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
 
 #endif
