@@ -332,6 +332,14 @@ Other supported commands:
 - calibrate.start
 - calibrate.stop
 
+PREVIOUS DRIVER VERSION
+-----------------------
+
+Previous driver is still available as apcsmart-old - should there be any need to
+use earlier version (bugs, incompatiblities with new functionality, etc.). In
+due time apcsmart-old will be phased out completely, but this won't happen until
+the new version gets solid exposure with no pending issues.
+
 BUGS
 ----
 
