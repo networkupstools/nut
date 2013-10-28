@@ -65,6 +65,9 @@
  * perhaps there is something else involved); so despite IGNCR we re-aad \015
  * to ignore sets for now; see:
  * http://article.gmane.org/gmane.comp.monitoring.nut.user/7762
+ *
+ * furthermore, since the canonical/non-canonical mode is user selectable now,
+ * we have to ignore this character explicitly
  */
 
 /* Basic UPS reply line structure */

@@ -97,11 +97,13 @@ windows systems. Furthermore there's a possibility of some obscure serial cards
 or serial-usb convertes that could cause problems as well. You can use
 \'ttymode=' option to force non-canonical discipline in linkman:ups.conf[5]:
 
-*ttymode*=simple
+*ttymode*=raw
 
 Alternatively, you can also provide it on the command line using:
 
--x *ttymode*=simple
+-x *ttymode*=raw
+
+NOTE: Any other value will make the driver work in the canonical mode.
 
 EXPLANATION OF SHUTDOWN METHODS SUPPORTED BY APC UPSES
 ------------------------------------------------------

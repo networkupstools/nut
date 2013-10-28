@@ -306,7 +306,7 @@ static void apc_ser_set(void)
 	 * compatibility measure for windows systems and perhaps some
 	 * problematic serial cards/converters
 	 */
-	if ((val = getval("ttymode")) && !strcmp(val, "simple"))
+	if ((val = getval("ttymode")) && !strcmp(val, "raw"))
 		return;
 
 	memset(&tio, 0, sizeof(tio));
@@ -478,15 +478,15 @@ static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsig
 
 		/* partial timeout (non-canon only paranoid check) */
 		if (ret == 0 && count) {
-			ser_comm_fail("serial port partial timeout:%u(%s)", ln, fn);
+			ser_comm_fail("serial port partial timeout: %u(%s)", ln, fn);
 			return -1;
 		}
 		/* error or no timeout allowed */
 		if (ret < 0 || (ret == 0 && !(flags & SER_TO))) {
 			if (ret)
-				ser_comm_fail("serial port read error:%u(%s): %s", ln, fn, strerror(errno));
+				ser_comm_fail("serial port read error: %u(%s): %s", ln, fn, strerror(errno));
 			else
-				ser_comm_fail("serial port read timeout:%u(%s)", ln, fn);
+				ser_comm_fail("serial port read timeout: %u(%s)", ln, fn);
 			return ret;
 		}
 		/* ok, timeout is acceptable */
@@ -508,7 +508,7 @@ static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsig
 		for (i = 0; i < ret; i++) {
 			/* overflow read */
 			if (count == buflen - 1) {
-				ser_comm_fail("serial port read overflow:%u(%s)", ln, fn);
+				ser_comm_fail("serial port read overflow: %u(%s)", ln, fn);
 				tcflush(upsfd, TCIFLUSH);
 				return -1;
 			}
@@ -534,7 +534,7 @@ static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsig
 				errno = 0;
 				ret = select_read(upsfd, temp, sizeof(temp), 1, 0);
 				if (ret < 0) {
-					ser_comm_fail("serial port read error:%u(%s): %s", ln, fn, strerror(errno));
+					ser_comm_fail("serial port read error: %u(%s): %s", ln, fn, strerror(errno));
 					return ret;
 				}
 				buf[0] = 'O';
@@ -577,7 +577,7 @@ static int apc_write_i(unsigned char code, const char *fn, unsigned int ln)
 	 * condition hardly ever happening;
 	 */
 	if (ret <= 0)
-		ser_comm_fail("serial port write error:%u(%s): %s", ln, fn, strerror(errno));
+		ser_comm_fail("serial port write error: %u(%s): %s", ln, fn, strerror(errno));
 
 	return ret;
 }
@@ -616,7 +616,7 @@ static int apc_write_long_i(const char *code, const char *fn, unsigned int ln)
 		ret++;
 	/* see remark in plain apc_write() */
 	if (ret != (int)strlen(code))
-		ser_comm_fail("serial port write error:%u(%s): %s", ln, fn, strerror(errno));
+		ser_comm_fail("serial port write error: %u(%s): %s", ln, fn, strerror(errno));
 	return ret;
 }
 
@@ -966,10 +966,9 @@ static void apc_getcaps(int qco)
 	}
 
 	if (temp[1] == '#') {		/* Matrix-UPS */
-		matrix = 1;
 		ptr = &temp[0];
-	}
-	else {
+		matrix = 1;
+	} else {
 		ptr = &temp[1];
 		matrix = 0;
 	}
@@ -1989,11 +1988,11 @@ static void setuphandlers(void)
 
 void upsdrv_makevartable(void)
 {
-	addvar(VAR_VALUE, "ttymode", "allow tty discipline selection");
-	addvar(VAR_VALUE, "cable", "specify alternate cable (940-0095B)");
+	addvar(VAR_VALUE, "ttymode", "tty discipline selection");
+	addvar(VAR_VALUE, "cable", "alternate cable (940-0095B) selection");
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
-	addvar(VAR_VALUE, "sdtype", "specify simple shutdown method");
-	addvar(VAR_VALUE, "advorder", "enable advanced shutdown control");
+	addvar(VAR_VALUE, "sdtype", "simple shutdown method");
+	addvar(VAR_VALUE, "advorder", "advanced shutdown control");
 }
 
 void upsdrv_help(void)
