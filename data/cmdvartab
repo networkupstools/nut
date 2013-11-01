@@ -139,6 +139,8 @@ VARDESC driver.name "Driver name"
 VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
 
+VARDESC device.part "Device Part Number"
+
 # FIXME: driver.parameter and driver.flag can have many possible members
 #
 # VARDESC driver.parameter.[[:alpha:]]+ "Driver parameter: <name>"
@@ -162,6 +164,7 @@ CMDDESC test.battery.start "Start a battery test"
 CMDDESC test.battery.start.quick "Start a quick battery test"
 CMDDESC test.battery.start.deep "Start a deep battery test"
 CMDDESC test.battery.stop "Stop the battery test"
+CMDDESC test.system.start "Start a system test"
 CMDDESC calibrate.start "Start run time calibration"
 CMDDESC calibrate.stop "Stop run time calibration"
 CMDDESC bypass.start "Put the UPS in bypass mode"

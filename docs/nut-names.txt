@@ -492,6 +492,7 @@ Instant commands
 | test.battery.start.quick | Start a "quick" battery test
 | test.battery.start.deep  | Start a "deep" battery test
 | test.battery.stop        | Stop the battery test
+| test.system.start        | Start a system test
 | calibrate.start          | Start runtime calibration
 | calibrate.stop           | Stop runtime calibration
 | bypass.start             | Put the UPS in bypass mode
