@@ -200,7 +200,7 @@ def buildHTMLTable(deviceData):
             except:
                 cH = False
                 
-            if cH and cH.get("text") == cellContent:
+            if not column["name"] == "driver" and cH and cH.get("text") == cellContent:
                 cH["rowspan"] = cH.get("rowspan", 1) + 1
             else:
                 cell = { "text": cellContent, "rowspan": 1 }

@@ -230,7 +230,7 @@ var NUT =
         
         // Inspect the last cell on this column and increase row span if the current cell has the same content
         var cH = cellHistory[colIndex];
-        if(cH && cH.html == cellContent)
+        if(column.indexOf("driver") == -1 && cH && cH.html == cellContent)
           cH.rowSpan += 1;
         else
         {
