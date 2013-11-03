@@ -100,12 +100,8 @@
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
 "Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"blzr protocol=voltronic"
 "Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"blzr protocol=voltronic"
-"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"voltronic_ser"
-"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"voltronic_usb"
 "Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"blzr protocol=voltronic"
 "Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"blzr protocol=voltronic"
-"Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
 "Aviem Systems"	"ups"	"2"	"Aviem Power RT 1000-3000VA"	""	"blazer_ser"
 
@@ -342,11 +338,6 @@
 "Fiskars"	"ups"	"4"	"PowerServer 10"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"PowerServer 30"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"9200"	"UPS Information Unit"	"upscode2"
-
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"Serial"	"voltronic_ser"
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"USB"	"voltronic_usb"
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
 "Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"blazer_usb"
 "Forza Power Technologies"	"ups"	"2"	"FX-1500LCD"	"USB"	"blazer_usb"
@@ -1051,8 +1042,6 @@
 "Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
 "Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"blzr protocol=voltronic"
 "Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"blzr protocol=voltronic"
-"Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"voltronic_ser"
-"Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"voltronic_usb"
 "Various"	"ups"	"2"	"(Various serial)"	"WinPower software"	"blazer_ser"
 "Various"	"ups"	"2"	"(Various USB)"	"WinPower software"	"blazer_usb"
 "Various"	"ups"	"2"	"Various Innova T"	"(USB ID 06da:0201)"	"blazer_ser or blazer_usb"
@@ -1066,16 +1055,12 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
-"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"voltronic_ser"
-"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"blzr protocol=voltronic"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"blzr protocol=voltronic"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"blzr protocol=voltronic"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"blzr protocol=voltronic"
-"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
-"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
 "Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"blzr protocol=voltronic"
 "Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"blzr protocol=voltronic"
-"Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 
