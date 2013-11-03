@@ -68,7 +68,13 @@ var NUT =
       for(var i = 0; i<getList.length; i++)
       {
         var getField = getList[i].split("=");
-        get[unescape(getField[0])] = unescape(getField[1]);
+        key = unescape(getField[0]).toLowerCase();
+	value = unescape(getField[1]);
+        if(key === "manufacturer" && value === "Tripp-Lite")
+        {
+          value = "Tripp Lite"; // just in case there are any old links out there.
+        }
+        get[key] = value;
       }
     }
     return get;
