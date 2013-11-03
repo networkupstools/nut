@@ -27,9 +27,11 @@ var NUT =
   // driver => connection type mappings
   driverMap: function(driver)
   {
-    if(driver.match(/bcmxcp_usb|blazer_usb|richcomm_usb|tripplite_usb|usbhid-ups/))
+    // Try not to catch "usb" across a word boundary:
+    if(driver.match(/_usb|usbserial|usbhid-ups/))
       return "USB";
       
+    // TODO: what about IPMI/powerman-pdu?
     if(driver.match(/snmp-ups|netxml-ups/))
       return "Network";
      
