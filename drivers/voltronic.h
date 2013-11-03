@@ -5,9 +5,9 @@
  * found online at http://www.networkupstools.org/ups-protocols/
  *
  * Copyright (C)
- *   2013 - Daniele Pezzini <hyouko@gmail.com>
+ *   2013 Daniele Pezzini <hyouko@gmail.com>
  * Based on blazer.h - Copyright (C)
- *   2008 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2008 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

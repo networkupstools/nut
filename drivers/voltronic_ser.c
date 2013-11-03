@@ -1,13 +1,13 @@
 /*
- * voltronic_ser.c: support for Voltronic Power UPSes
+ * voltronic_ser.c: support for serial Voltronic Power UPSes
  *
  * A document describing the protocol implemented by this driver can be
  * found online at http://www.networkupstools.org/ups-protocols/
  *
  * Copyright (C)
- *   2013 - Daniele Pezzini <hyouko@gmail.com>
+ *   2013 Daniele Pezzini <hyouko@gmail.com>
  * Based on blazer_ser.c - Copyright (C)
- *   2008 - Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2008 Arjen de Korte <adkorte-guest@alioth.debian.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
 #include "voltronic.h"
 
 #define DRIVER_NAME	"Voltronic Power serial driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* For testing purposes */
 /*#define TESTING*/

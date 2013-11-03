@@ -1,11 +1,11 @@
 /*
- * voltronic_usb.c: support for Voltronic Power UPSes
+ * voltronic_usb.c: support for USB Voltronic Power UPSes
  *
  * A document describing the protocol implemented by this driver can be
  * found online at http://www.networkupstools.org/ups-protocols/
  *
  * Copyright (C)
- *   2013 - Daniele Pezzini <hyouko@gmail.com>
+ *   2013 Daniele Pezzini <hyouko@gmail.com>
  * Based on blazer_usb.c - Copyright (C)
  *   2003-2009  Arjen de Korte <adkorte-guest@alioth.debian.org>
  *   2011-2012  Arnaud Quette <arnaud.quette@free.fr>
@@ -31,7 +31,7 @@
 #include "voltronic.h"
 
 #define DRIVER_NAME	"Voltronic Power USB driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* For testing purposes */
 /*#define TESTING*/
@@ -46,6 +46,8 @@ upsdrv_info_t upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
+
+#ifndef TESTING
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle		*udev = NULL;
@@ -140,6 +142,8 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL,
 	NULL
 };
+
+#endif	/* TESTING */
 
 
 /*
@@ -402,7 +406,7 @@ void upsdrv_initups(void)
 				continue;
 			}
 
-			subdriver_command =  subdriver[i].command;
+			subdriver_command = subdriver[i].command;
 			break;
 		}
 
