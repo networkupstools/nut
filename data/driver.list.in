@@ -902,7 +902,6 @@
 "Tripp Lite"	"ups"	"1"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
 "Tripp Lite"	"ups"	"2"	"1500 LCD"	"USB"	"usbhid-ups"
 "Tripp Lite"	"ups"	"3"	"AVR550U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3090
-"Tripp Lite"	"ups"	"2"	"AVR550U"	"USB"	"usbhid-ups"
 "Tripp Lite"	"ups"	"3"	"AVR700U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=4785
 "Tripp Lite"	"ups"	"3"	"AVR750U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3141
 "Tripp Lite"	"ups"	"3"	"AVR900U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3649

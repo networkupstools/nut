@@ -142,7 +142,7 @@ enough for now,
 
 *Linking to the HCL*
 
-You can create direct link to the HCL, specifying some filters within the URL
+You can create a uirect link to the HCL, specifying some filters within the URL
 (JavaScript must be enabled in the browser for this to work). This allows to
 select devices that matches some specific criteria, like a connection type or a
 manufacturer. All filters available on the page itself are also available for
