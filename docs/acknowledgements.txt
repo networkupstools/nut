@@ -103,6 +103,13 @@ with development units.
 provided link:ups-protocols.html[all protocols information]. Elio Parisi has
 also created riello_ser and riello_usb to support these protocols.
 
+- link:http://www.tripplite.com[Tripp Lite], through Eric Cobb, has provided
+test results from connecting their HID-compliant UPS hardware to NUT. Some of
+this information has been incorporated into the NUT hardware compatibility
+list, and the rest of the information is available via the
+link:http://article.gmane.org/gmane.comp.monitoring.nut.user/8173[list
+archives].
+
 Appliances manufacturers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
