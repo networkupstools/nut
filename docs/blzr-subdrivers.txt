@@ -1,0 +1,661 @@
+How to make a new subdriver to support another Q* UPS
+-----------------------------------------------------
+
+Overall concept
+~~~~~~~~~~~~~~~
+
+The NUT "*blzr*" driver is a meta-driver that handles Q* UPS devices.
+
+It consists of a core driver that handles most of the work of talking to the hardware, and several sub-drivers to handle specific UPS manufacturers.
+
+Adding support for a new UPS device is easy, because it requires only the creation of a new sub-driver.
+
+
+Creating a subdriver
+~~~~~~~~~~~~~~~~~~~~
+
+In order to develop a new subdriver for a specific UPS you have to know the idiom spoken by that device.
+
+This kind of devices speaks idioms that can be summed up as follows:
+
+- We send the UPS a query for one or more informations
+
+ * If the query is supported by the device, we'll get a reply that is mostly of a fixed length, therefore, in most cases, each information starts and ends always at the same indexes
+
+- We send the UPS a command
+
+ * If the command is supported by the device, the UPS will either take action without any reply or reply us with a device-specific answer signaling that the command has been accepted (e.g. +ACK+)
+
+- If the query/command isn't supported by the device we'll get either the query/command echoed back or a device-specific reply signaling that it has been rejected (e.g. +NAK+)
+
+To be supported by this driver the idiom spoken by the UPS must comply to these conditions.
+
+
+Writing a subdriver
+~~~~~~~~~~~~~~~~~~~
+
+You have to fill the +subdriver_t+ structure:
+
+----
+typedef struct {
+	const char	*name;
+	int		(*claim)(void);
+	item_t		*blzr2nut;
+	void		(*initups)(void);
+	void		(*initinfo)(void);
+	void		(*makevartable)(void);
+	const char	*accepted;
+	const char	*rejected;
+#ifdef TESTING
+	testing_t	*testing;
+#endif	/* TESTING */
+} subdriver_t;
+----
+
+Where:
+
+*+name+*::
+Name of this subdriver: name of the +protocol+ that will need to be set in +ups.conf+ to use this subdriver plus the internal version of it separated by a space (e.g. "++Megatec 0.01++").
+
+*+claim+*::
+This function allows the subdriver to "claim" a device: return +1+ if the device is supported by this subdriver, else +0+.
+
+*+blzr2nut+*::
+Main table of vars and instcmds: an array of +item_t+ mapping a UPS idiom to NUT.
+
+*+initups+* (optional)::
+Subdriver-specific +upsdrv_initups+.
+This function will be called at the end of blzr's own +upsdrv_initups+.
+
+*+initinfo+* (optional)::
+Subdriver-specific +upsdrv_initinfo+.
+This function will be called at the end of blzr's own +upsdrv_initinfo+.
+
+*+makevartable+* (optional)::
+Function to add subdriver-specific +ups.conf+ vars and flags.
+Make sure not to collide with other subdrivers' vars and flags.
+
+*+accepted+* (optional)::
+String to match if the driver is expecting a reply from the UPS on instcmd/setvar in case of success.
+This comparison is done after the answer we got back from the UPS has been processed to get the value we are searching, so you don't have to include the trailing carriage return (+\r+) and you can decide at which index of the answer the value should start or end setting the appropriate +from+ and +to+ in the +item_t+ (see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>).
+
+*+rejected+* (optional)::
+String to match if the driver is expecting a reply from the UPS in case of error.
+Note that this comparison is done on the answer we got back from the UPS before it has been processed, so include also the trailing carriage return (+\r+) and whatever character is expected.
+
+*+testing+*::
+Testing table that will hold the commands and the replies used for testing the subdriver.
+
+
+Mapping an idiom to NUT
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If you understand the idiom spoken by your device, you can easily map it to NUT variables and instant commands, filling +blzr2nut+ with an array of +item_t+ data structure:
+
+----
+typedef struct item_t {
+	const char	*info_type;
+	const int	info_flags;
+	info_rw_t	*info_rw;
+	const char	*command;
+	char		answer[SMALLBUF];
+	const int	answer_len;
+	const char	leading;
+	char		value[SMALLBUF];
+	const int	from;
+	const int	to;
+	const char	*dfl;
+	unsigned long	blzrflags;
+	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);
+} item_t;
+----
+
+Where:
+
+*+info_type+*::
+NUT variable name, otherwise, if +BLZR_FLAG_NONUT+ is set, name to print to logs and if both +BLZR_FLAG_NONUT+ and +BLZR_FLAG_SETVAR+ are set, name of the var to retrieve from +ups.conf+.
+
+*+info_flags+*::
+NUT flags (+ST_FLAG_*+ values to set in +dstate_addinfo+).
+
+*+info_rw+*::
++
+--
+An array of +info_rw_t+ to handle r/w variables:
+
+- If +ST_FLAG_STRING+ is set in +info_flags+ it'll be used to set the length of the string (in +dstate_setaux+)
+- If +BLZR_FLAG_ENUM+ is set in +blzrflags+ it'll be used to set enumerated values (in +dstate_addenum+)
+- If +BLZR_FLAG_RANGE+ is set in +blzrflags+ it'll be used to set range boundaries (in +dstate_addrange+)
+
+NOTE: If +BLZR_FLAG_SETVAR+ is set the value given by the user will be checked against these infos.
+
++info_rw_t+:
+
+----
+typedef struct {
+	char	value[SMALLBUF];
+	int	(*preprocess)(char *value, size_t len);
+} info_rw_t;
+----
+
+Where:
+
+*+value+*::
+Value for enum/range, or length for +ST_FLAG_STRING+.
+
+*+preprocess(value, len)+*::
+Optional function to preprocess range/enum +value+.
++
+This function will be given +value+ and its +size_t+ and must return either +0+ if +value+ is supported or +-1+ if not supported.
+--
+
+*+command+*::
+Command sent to the UPS to get answer/to execute a instant command/to set a variable.
+
+*+answer+*::
+Answer from the UPS, filled at runtime.
+
+*+answer_len+*::
+Expected minimum length of the answer.
+Set it to +0+ if there's no minimum length to look after.
+
+*+leading+*::
+Expected leading character of the answer (optional), e.g. +#+, +(+ ...
+
+*+value+*::
+Value from the answer, filled at runtime (i.e. +answer+ between +from+ and +to+).
+
+*+from+*::
+Position of the starting character of the info we're after in the answer.
+
+*+to+*::
+Position of the ending character of the info we're after in the answer: use +0+ if all the remaining of the line is needed.
+
+*+dfl+*::
+printf format to store value from the UPS in NUT variables.
+Set it either to +%s+ for strings or to a floating point specifier (e.g. +%.1f+) for numbers.
++
+--
+
+Otherwise:
+
+- If +BLZR_FLAG_ABSENT+ -> default value
+- If +BLZR_FLAG_CMD+ -> default command value
+--
++
+*+blzrflags+*::
+Driver's own flags.
++
+--
+[cols="l,",options="autowidth"]
+|====
+|BLZR_FLAG_STATIC |Retrieve this variable only once.
+|BLZR_FLAG_SEMI_STATIC |Retrieve this info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed.
+|BLZR_FLAG_ABSENT |Data is absent in the device, use default value.
+|BLZR_FLAG_QUICK_POLL |Mandatory vars.
+|BLZR_FLAG_CMD |Instant command.
+|BLZR_FLAG_SETVAR |The var is settable and the actual item stores info on how to set it.
+|BLZR_FLAG_TRIM |This var's value need to be trimmed of leading/trailing spaces/hashes.
+|BLZR_FLAG_ENUM |Enum values exist.
+|BLZR_FLAG_RANGE |Ranges for this var are available.
+|BLZR_FLAG_NONUT |This var doesn't have a corresponding var in NUT.
+|BLZR_FLAG_SKIP |Skip this var: this item won't be processed.
+|====
+
+[NOTE]
+====
+The driver will run a so-called +BLZR_WALKMODE_INIT+ in +initinfo+ walking through all the items in +blzr2nut+, adding instant commands and the like.
+From then on it'll run a so-called +BLZR_WALKMODE_QUICK_UPDATE+ just to see if the UPS is still there and then it'll do a so-called +BLZR_WALKMODE_FULL_UPDATE+ to update all the vars.
+
+If there's a problem with a var in +BLZR_WALKMODE_INIT+, the driver will automagically set +BLZR_FLAG_SKIP+ on it and then it'll skip that item in +BLZR_WALKMODE_QUICK_UPDATE+/+BLZR_WALKMODE_FULL_UPDATE+, provided that the item has not the flag +BLZR_FLAG_QUICK_POLL+ set, in that case the driver will set +datastale+.
+====
+--
+
+*+preprocess(item, value, valuelen)+*::
+Function to preprocess the data from/to the UPS: you are given the currently processed item (+item+), a char array (+value+) and its +size_t+ (+valuelen+).
+Return +-1+ in case of errors, else +0+.
++
+--
+- If +BLZR_FLAG_SETVAR+/+BLZR_FLAG_CMD+ is set then the item is processed before the command is sent to the UPS so that you can fill it with the value provided by the user.
++
+NOTE: In this case +value+ must be filled with the command to be sent to the UPS.
+
+- Otherwise the function will be used to process the value we got from the answer of the UPS before it'll get stored in a NUT variable.
++
+NOTE: In this case +value+ must be filled with the processed value already compliant to NUT standards.
+--
+
+IMPORTANT: You must provide an +item_t+ with +BLZR_FLAG_SETVAR+ and its boundaries set for both +ups.delay.start+ and +ups.delay.shutdown+ to map the driver variables +ondelay+ and +offdelay+, as they will be used in the shutdown sequence.
+
+TIP: In order to keep the data flow at minimum you should keep together the items in +blzr2nut+ that need data from the same query (i.e. +command+): doing so the driver will send the query only once and then every +item_t+ processed after the one that got the answer, provided that it's filled with the same +command+ and that the answer wasn't +NULL+, will get that +answer+.
+
+
+Examples
+~~~~~~~~
+
+The following examples are from the +voltronic+ subdriver.
+
+
+Simple vars
+^^^^^^^^^^^
+
+We know that when the UPS is queried for status with +QGS\r+, it replies with something like +(234.9 50.0 229.8 50.0 000.0 000 369.1 ---.- 026.5 ---.- 018.8 100000000001\r+ and we want to access the output voltage (the third token, in this case +229.8+).
+
+----
+> [QGS\r]
+< [(234.9 50.0 229.8 50.0 000.0 000 369.1 ---.- 026.5 ---.- 018.8 100000000001\r]
+   0123456789012345678901234567890123456789012345678901234567890123456789012345
+   0         1         2         3         4         5         6         7
+----
+
+Here's the +item_t+:
+
+----
+{ "output.voltage", 0, NULL, "QGS\r", "", 76, '(', "", 12, 16, "%.1f", 0, NULL },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+output.voltage+
+|info_flags |+0+
+|info_rw |+NULL+
+|command |+QGS\r+
+|answer |Filled at runtime
+|answer_len |+76+
+|leading |+(+
+|value |Filled at runtime
+|from |+12+ -> the index at which the info (i.e. +value+) starts
+|to |+16+ -> the index at which the info (i.e. +value+) ends
+|dfl |+%.1f+
+
+We are expecting a number, so at first the core driver will check if it's made up entirely of digits/points/spaces, then it'll convert it into a double.
+Because of that we need to provide a floating point specifier.
+|blzrflags |+0+
+|preprocess |+NULL+
+|====
+
+
+Mandatory vars
+^^^^^^^^^^^^^^
+
+Also from +QGS\r+, we want to process the 9th status bit +10000000+*`0`*+001+ that tells us whether the UPS is shutting down or not.
+
+----
+> [QGS\r]
+< [(234.9 50.0 229.8 50.0 000.0 000 369.1 ---.- 026.5 ---.- 018.8 100000000001\r]
+   0123456789012345678901234567890123456789012345678901234567890123456789012345
+   0         1         2         3         4         5         6         7
+----
+
+Here's the +item_t+:
+
+----
+{ "ups.status", 0, NULL, "QGS\r", "", 76, '(', "", 71, 71, "%s", BLZR_FLAG_QUICK_POLL, voltronic_status },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+ups.status+
+|info_flags |+0+
+|info_rw |+NULL+
+|command |+QGS\r+
+|answer |Filled at runtime
+|answer_len |+76+
+|leading |+(+
+|value |Filled at runtime
+|from |+71+ -> the index at which the info (i.e. +value+) starts
+|to |+71+ -> the index at which the info (i.e. +value+) ends
+|dfl |+%s+
+
+Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
+|blzrflags |+BLZR_FLAG_QUICK_POLL+ -> this item will be polled every time the driver will check for updates.
+Since this item is mandatory to run the driver, if a problem arises in +BLZR_WALKMODE_INIT+ the driver won't skip it an it'll set +datastale+.
+|preprocess |+voltronic_status+
+
+This function will be called *after* the +command+ has been sent to the UPS and we got back the +answer+ and stored the +value+ in order to process it to NUT standards: in this case we will convert the binary +value+ to a NUT status.
+|====
+
+
+Settable vars
+^^^^^^^^^^^^^
+
+So your UPS reports its battery type when queried for +QBT\r+; we are expecting an answer like +(01\r+ and we know that the values can be mapped as follows: +00+ -> "Li", +01+ -> "Flooded" and +02+ -> "AGM".
+
+----
+> [QBT\r]
+< [(01\r]	<- 00="Li", 01="Flooded" or 02="AGM"
+   0123
+   0
+----
+
+Here's the +item_t+:
+
+----
+{ "battery.type", ST_FLAG_RW, voltronic_e_batt_type, "QBT\r", "", 4, '(', "", 1, 2, "%s", BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM, voltronic_p31b },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+battery.type+
+|info_flags |+ST_FLAG_RW+ -> this is a r/w var
+|info_rw |+voltronic_e_batt_type+
+
+The values stored here will be added to the NUT variable, setting its boundaries: in this case +Li+, +Flooded+ and +AGM+ will be added as enumerated values.
+|command |+QBT\r+
+|answer |Filled at runtime
+|answer_len |+4+
+|leading |+(+
+|value |Filled at runtime
+|from |+1+ -> the index at which the info (i.e. +value+) starts
+|to |+2+ -> the index at which the info (i.e. +value+) ends
+|dfl |+%s+
+
+Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
+|blzrflags |+BLZR_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
+
++BLZR_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
+|preprocess |+voltronic_p31b+
+
+This function will be called *after* the +command+ has been sent to the UPS and we got back the +answer+ and stored the +value+ in order to process it to NUT standards: in this case we will check if the value is in the range and then publish the human readable form of it (i.e. +Li+, +Flooded+ or +AGM+).
+|====
+
+We also know that we can change battery type with the +PBTnn\r+ command; we are expecting either +(ACK\r+ if the command succeded or +(NAK\r+ if the command is rejected.
+
+----
+> [PBTnn\r]		nn = 00/01/02
+< [(ACK\r]
+   01234
+   0
+----
+
+Here's the +item_t+:
+
+----
+{ "battery.type", 0, voltronic_e_batt_type, "PBT%02.0f\r", "", 5, '(', "", 1, 4, NULL, BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM, voltronic_p31b_set },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+battery.type+
+|info_flags |+0+
+|info_rw |+voltronic_e_batt_type+
+
+The value provided by the user will be automagically checked by the core blzr driver against the enumerated values already set by the non setvar item (i.e. +Li+, +Flooded+ or +AGM+), so this could have been +NULL+, however if we want - like here - we can use it in our +preprocess+ function.
+|command |+PBT%02.0f\r+
+|answer |Filled at runtime
+|answer_len |+5+ <- either +(NAK\r+ or +(ACK\r+
+|leading |+(+
+|value |Filled at runtime
+|from |+1+ -> the index at which the info (i.e. +value+) starts
+|to |+3+ -> the index at which the info (i.e. +value+) ends
+|dfl |Not used for +BLZR_FLAG_SETVAR+
+|blzrflags |+BLZR_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +battery.type+)
+
++BLZR_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
+|preprocess |+voltronic_p31b_set+
+
+This function will be called *before* the +command+ is sent to the UPS so that we can fill +command+ with the value provided by the user: in this case the function will simply translate the human readable form of battery type (i.e. +Li+, +Flooded+ or +AGM+) to the UPS compliant type (i.e. +00+, +01+ and +02+) and then fill +value+ (the second argument passed to the +preprocess+ function).
+|====
+
+
+Instant commands
+^^^^^^^^^^^^^^^^
+
+We know that we have to send to the UPS +Tnn\r+ or +T.n\r+ in order to start a battery test lasting +nn+ minutes or +.n+ minutes: we are expecting either +(ACK\r+ on success or +(NAK\r+ if the command is rejected.
+
+----
+> [Tnn\r]
+< [(ACK\r]
+   01234
+   0
+----
+
+Here's the +item_t+:
+
+----
+{ "test.battery.start", 0, NULL, "T%s\r", "", 5, '(', "", 1, 4, NULL, BLZR_FLAG_CMD, voltronic_process_command },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+test.battery.start+
+|info_flags |+0+
+|info_rw |+NULL+
+|command |+T%s\r+
+|answer |Filled at runtime
+|answer_len |+5+ <- either +(NAK\r+ or +(ACK\r+
+|leading |+(+
+|value |Filled at runtime
+|from |+1+ -> the index at which the info (i.e. +value+) starts
+|to |+3+ -> the index at which the info (i.e. +value+) ends
+|dfl |Not used for +BLZR_TYPECMD+
+|blzrflags |+BLZR_FLAG_CMD+ -> this item is an instant command that will be fired when +info_type+ (i.e. +test.battery.start+) is called
+|preprocess |+voltronic_process_command+
+
+This function will be called *before* the +command+ is sent to the UPS so that we can fill +command+ with the value provided by the user: in this case the function will check if the value is in the accepted range and then fill +value+ (the second argument passed to the +preprocess+ function) with +command+ and the given value.
+|====
+
+
+Informations absent in the device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In order to set the server-side var +ups.delay.start+, that will be then used by the driver, we have to provide the following +item_t+:
+
+----
+{ "ups.delay.start", ST_FLAG_RW, voltronic_r_ondelay, NULL, "", 0, 0, "", 0, 0, "180", BLZR_FLAG_ABSENT | BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE, voltronic_process_setvar },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+ups.delay.start+
+|info_flags |+ST_FLAG_RW+ -> this is a r/w var
+|info_rw |+voltronic_r_ondelay+
+
+The values stored here will be added to the NUT variable, setting its boundaries: in this case +0+ and +599940+ will be set as the minimum and maximum value of the variable's range.
+Those values will then be used by the driver to check the user provided value.
+|command |Not used for +BLZR_FLAG_ABSENT+
+|answer |Not used for +BLZR_FLAG_ABSENT+
+|answer_len |Not used for +BLZR_FLAG_ABSENT+
+|leading |Not used for +BLZR_FLAG_ABSENT+
+|value |Not used for +BLZR_FLAG_ABSENT+
+|from |Not used for +BLZR_FLAG_ABSENT+
+|to |Not used for +BLZR_FLAG_ABSENT+
+|dfl |+180+ <- the default value that will be set for this variable
+|blzrflags |+BLZR_FLAG_ABSENT+ -> this item isn't available in the device
+
++BLZR_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +ups.delay.start+)
+
++BLZR_FLAG_RANGE+ -> this r/w variable has a settable range and its boundaries are listed in the +info_rw+ structure (i.e. +voltronic_r_ondelay+)
+|preprocess |+voltronic_process_setvar+
+
+This function will be called, in setvar, before the driver stores the value in the NUT var: here is used to truncate the user-provided value to the neareset settable interval.
+|====
+
+
+Informations not yet available in NUT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If your UPS reports some informations that are not yet available as NUT variables and you need to process them, you can add them in +item_t+ data structure adding the +BLZR_FLAG_NONUT+ flag to its +blzrflags+: the info will then be printed to the logs.
+
+So we know that the UPS reports actual input/output phase angles when queried for +QPD\r+:
+
+----
+> [QPD\r]
+< [(000 120\r]	<- Input Phase Angle - Output Phase Angle
+   012345678
+   0
+----
+
+Here's the +item_t+ for input phase angle:
+
+----
+{ "input_phase_angle", 0, NULL, "QPD\r", "", 9,	'(', "", 1, 3, "%03.0f", BLZR_FLAG_STATIC | BLZR_FLAG_NONUT, voltronic_phase },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+input_phase_angle+
+
+This information will be used to print the value we got back from the UPS in the logs.
+|info_flags |+0+
+|info_rw |+NULL+
+|command |+QPD\r+
+|answer |Filled at runtime
+|answer_len |+9+
+|leading |+(+
+|value |Filled at runtime
+|from |+1+ -> the index at which the info (i.e. +value+) starts
+|to |+3+ -> the index at which the info (i.e. +value+) ends
+|dfl |+%03.0f+
+
+If there's no +preprocess+ function, the format is used to print the value to the logs.
+Here instead is used by the +preprocess+ function.
+|blzrflags |+BLZR_FLAG_STATIC+ -> this item doesn't change
+
++BLZR_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
+|preprocess |+voltronic_phase+
+
+This function will be called *after* the +command+ has been sent to the UPS so that we can parse the value we got back and check it.
+|====
+
+Here's the +item_t+ for output phase angle:
+
+----
+{ "output_phase_angle", ST_FLAG_RW, voltronic_e_phase, "QPD\r",	"", 9, '(', "", 5, 7, "%03.0f", BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT, voltronic_phase },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+output_phase_angle+
+
+This information will be used to print the value we got back from the UPS in the logs.
+|info_flags |+ST_FLAG_RW+
+
+This could also be +0+ (it's not really used by the driver), but it's set to +ST_FLAG_RW+ for cohesion with other rw vars - also, if ever a NUT variable would become available for this item, it'll be easier to change this item and its +BLZR_FLAG_SETVAR+ counterpart to use it.
+|info_rw |+voltronic_e_phase+
+
+Enumerated list of available value (here: +000+, +120+, +240+ and +360+).
+Since +BLZR_FLAG_NONUT+ is set the driver will print those values to the logs, plus you could use it in the +preprocess+ function to check the value we got back from the UPS (as done here).
+|command |+QPD\r+
+|answer |Filled at runtime
+|answer_len |+9+
+|leading |+(+
+|value |Filled at runtime
+|from |+5+ -> the index at which the info (i.e. +value+) starts
+|to |+7+ -> the index at which the info (i.e. +value+) ends
+|dfl |+%03.0f+
+
+If there's no +preprocess+ function, the format is used to print the value to the logs.
+Here instead is used by the +preprocess+ function.
+|blzrflags |+BLZR_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
+
++BLZR_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_phase+).
+
++BLZR_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
+|preprocess |+voltronic_phase+
+
+This function will be called *after* the +command+ has been sent to the UPS so that we can parse the value we got back and check it.
+Here is used also to store a var that will then be used to check the value in setvar's preprocess function.
+|====
+
+If you need also to change some values in the UPS you can add a +ups.conf+ var/flag in the subdriver's own +makevartable+ and then process it adding to its +blzrflags+ both +BLZR_FLAG_NONUT+ and +BLZR_FLAG_SETVAR+: this item will be processed only once in +BLZR_WALKMODE_INIT+.
+
+The driver will check if the var/flag is defined in +ups.conf+: if so, it'll then call +setvar+ passing to this item the defined value, if any, and then it'll print the results in the logs.
+
+We know we can set output phase angle sending +PPDnnn\r+ to the UPS:
+
+----
+> [PPDn\r]		n = (000, 120, 180 or 240)
+< [(ACK\r]
+   01234
+   0
+----
+
+Here's the +item_t+
+
+----
+{ "output_phase_angle", 0, voltronic_e_phase, "PPD%03.0f\r", "", 5, '(', "", 1, 4, NULL, BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT, voltronic_phase_set },
+----
+
+[cols="l,",options="autowidth"]
+|====
+|info_type |+output_phase_angle+
+
+This information will be used to print the value we got back from the UPS in the logs and to retrieve the user-provided value in +ups.conf+.
+So, name it after the variable you created to use in +ups.conf+ in the subdriver's own +makevartable+.
+|info_flags |+0+
+|info_rw |+voltronic_e_phase+
+
+Enumerated list of available values (here: +000+, +120+, +240+ and +360+).
+The value provided by the user will be automagically checked by the core blzr driver against the enumerated values stored here.
+|command |+PPD%03.0f\r+
+|answer |Filled at runtime
+|answer_len |+5+ <- either +(NAK\r+ or +(ACK\r+
+|leading |+(+
+|value |Filled at runtime
+|from |+1+ -> the index at which the info (i.e. +value+) starts
+|to |+3+ -> the index at which the info (i.e. +value+) ends
+|dfl |Not used for +BLZR_FLAG_SETVAR+
+|blzrflags |+BLZR_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +output_phase_angle+)
+
++BLZR_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_phase+).
+
++BLZR_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
+|preprocess |+voltronic_phase_set+
+
+This function will be called *before* the +command+ is sent to the UPS so that we can check user-provided value and fill +command+ with it and then fill +value+ (the second argument passed to the +preprocess+ function).
+|====
+
+
+Support functions
+~~~~~~~~~~~~~~~~~
+
+You are already given the following functions:
+
+*+int	instcmd(const char *cmdname, const char *extradata)+*::
+Execute an instant command.
+Return +STAT_INSTCMD_INVALID+ if the command is invalid, +STAT_INSTCMD_FAILED+ if it failed, +STAT_INSTCMD_HANDLED+ on success.
+
+*+int	setvar(const char *varname, const char *val)+*::
+Set r/w variable to a value after it has been checked against its +info_rw+ structure.
+Return +STAT_SET_HANDLED+ on success, otherwise +STAT_SET_UNKNOWN+.
+
+*+item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag)+*::
+Find an item of +item_t+ type in +blzr2nut+ data structure by its +info_type+, optionally filtered by its +blzrflags+, and return it if found, otherwise return +NULL+.
+ - +flag+: flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned.
+ - +noflag+: flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned.
+
+*+int	blzr_process(item_t *item, const char *command)+*::
+Send +command+ or, if it is +NULL+, send the command stored in the +item+ to the UPS and process the reply.
+Return +-1+ on errors, +0+ on success.
+
+*+int	ups_infoval_set(item_t *item)+*::
+Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its +preprocess+ function, if any.
+Return +-1+ on failure, +0+ for a status update and +1+ in all other cases.
+
+*+int	blzr_status(void)+*::
+Return the currently processed status so that it can be checked with one of the +status_bit_t+ passed to the +STATUS()+ macro (see +blzr.h+).
+
+*+void	update_status(const char *nutvalue)+*::
+If you need to edit the current status call this function with one of the NUT status (all but +OB+ are supported, simply set it as not +OL+); preceed them with an exclamation mark if you want to clear them from the status (e.g. +!OL+).
+
+
+Notes
+~~~~~
+
+You must put the generated files into the +drivers/+ subdirectory, with the name of your subdriver preceded by +blzr_+, and update +blzr.c+ by adding the appropriate +#include+ line and by updating the definition of +subdriver_list+.
+Please, make sure to add your driver in that list in a smart way: if your device supports also the basic commands used by the other subdrivers to claim a device, add something that is unique (i.e. not supported by the other subdrivers) to your device in your claim function and then add it on top of the slighty supported ones in that list.
+
+You must also add the subdriver to +BLZR_SUBDRIVERS+ in +drivers/Makefile.am+ and call "++autoreconf++" and/or "++./configure++" from the top level NUT directory.
+
+You can then recompile +blzr+, and start experimenting with the new subdriver.
+
+For more informations, have a look at the currently available subdrivers:
+
+- +blzr_mecer.+{+c+,+h+}
+- +blzr_megatec.+{+c+,+h+}
+- +blzr_megatec-old.+{+c+,+h+}
+- +blzr_mustek.+{+c+,+h+}
+- +blzr_voltronic.+{+c+,+h+}
+- +blzr_zinto.+{+c+,+h+}
+
