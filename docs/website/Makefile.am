@@ -123,7 +123,7 @@ support.html: ../support.txt
 nut-qa.html: ../nut-qa.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ $<
 
-stable-hcl.html: ../stable-hcl.txt
+stable-hcl.html: ../stable-hcl.txt ../ups-html.txt
 	$(ASCIIDOC) $(ASCIIDOC_PARAMS) -o $@ -a hcl $<
 
 .txt.html:

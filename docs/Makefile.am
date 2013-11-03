@@ -83,8 +83,9 @@ clean-local:
 # Static HCL is generated automatically
 # This is more of a harness, since this file should have already been
 # generated, due to the top level Makefile SUBDIRS ordering (tools before docs)
-ups-html.txt:
-	cd ../tools; $(MAKE) $(AM_MAKEFLAGS) website
+ups-html.txt: ../data/driver.list.in
+	cd ../data && $(MAKE) $(AM_MAKEFLAGS) driver.list
+	cd ../tools && $(MAKE) $(AM_MAKEFLAGS) website
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
