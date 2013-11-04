@@ -2815,16 +2815,19 @@ static int	voltronic_protocol(item_t *item, char *value, size_t valuelen)
 	return 0;
 }
 
-/* Fault reported by the UPS */
+/* Fault reported by the UPS:
+ * When the UPS is queried for status (QGS), if it reports a fault (6th bit of 12bit flag of the reply to QGS set to 1), the driver unskips the QFS item in blzr2nut array: this function processes the reply to QFS query */
 static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
 {
 	int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
 	char	alarm[SMALLBUF];
 
+	upslogx(LOG_INFO, "Checking for faults..");
+
 	if (!strcasecmp(item->value, "OK")) {
 		snprintf(value, valuelen, item->dfl, "No fault found");
-		upslogx(LOG_INFO, value);
+		upslogx(LOG_INFO, "%s", value);
 		item->blzrflags |= BLZR_FLAG_SKIP;
 		return 0;
 	}
