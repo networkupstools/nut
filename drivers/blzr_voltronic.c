@@ -2390,7 +2390,7 @@ static int	voltronic_capability_set(item_t *item, char *value, size_t valuelen)
 	}
 
 	/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
-	upslogx(LOG_ERR, "%s: given value [%s] is not acceptable. Enter either 'yes' or 'no'.", __func__, value);
+	upslogx(LOG_ERR, "%s: given value [%s] is not acceptable. Enter either 'yes' or 'no'.", item->info_type, value);
 
 	return -1;
 }
