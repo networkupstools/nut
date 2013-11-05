@@ -1,4 +1,4 @@
-/* blzr_blazer-common.h - Common functions/settings for blzr_{megatec,megatec-old,mustek,zinto}.{c,h}
+/* blzr_blazer-common.h - Common functions/settings for blzr_{mecer,megatec,megatec-old,mustek,zinto}.{c,h}
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
