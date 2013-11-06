@@ -1,16 +1,9 @@
-BLAZER(8)
-=========
-
-NAME
-----
-
-blazer, blazer_ser, blazer_usb - Driver for Megatec/Q1 protocol serial and USB based UPS equipment
-
 NOTE
 ----
 This man page only documents the hardware-specific features of the
 blazer driver. For information about the core driver, see
 linkman:nutupsdrv[8].
+
 
 SUPPORTED HARDWARE
 ------------------
@@ -23,6 +16,7 @@ but haven't been tested.
 
 All devices with a serial interface (use the *blazer_ser* driver) and
 many with a USB interface (use the *blazer_usb* driver) are supported.
+
 
 EXTRA ARGUMENTS
 ---------------
@@ -61,13 +55,13 @@ somehow, you may want to override this value.
 
 Time to wait before switching on the UPS (minutes). Note that a value below 3
 minutes, may cause earlier firmware versions to not switch on automatically,
-so it defaults to 3 minutes.
+so it defaults to 3 minutes. The acceptable range is +0..9999+ minutes.
 
 *offdelay =* 'value'::
 
 Time to wait before shutting down the UPS (seconds). This value is truncated
 to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60
-seconds). Defaults to 30 seconds.
+seconds). Defaults to 30 seconds. The acceptable range is +12..600+ seconds.
 
 *norating*::
 
@@ -111,8 +105,10 @@ Minimum battery load used by the driver to estimate the runtime. If not
 specified, the driver defaults to 10%. Only used if *runtimecal* is also
 specified.
 
+
+ifndef::blazer_usb[]
 SERIAL INTERFACE ONLY
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 *cablepower =* 'string'::
 
@@ -120,9 +116,12 @@ By default the driver will set DTR and clear RTS ('normal'). If you find that
 your UPS isn't detected or the communication with the UPS is unreliable, you may
 try if clear DTR and set RTS ('reverse'), set DTR and RTS ('both') or
 clear DTR and RTS ('none') improves this situation.
+endif::blazer_usb[]
 
+
+ifdef::blazer_usb[]
 USB INTERFACE ONLY
-------------------
+~~~~~~~~~~~~~~~~~~
 
 *vendorid =* 'regex'::
 *productid =* 'regex'::
@@ -136,14 +135,12 @@ USB. Each option specifies an extended regular expression (see
 string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try *-DD* for
 finding out the strings to match.
-
++
 Examples:
 
-    -x vendor="Foo.Corporation.*"
-
-    -x vendorid=051d    # (APC)
-
-    -x product=".*(Smart|Back)-?UPS.*"
+ - `-x vendor="Foo.Corporation.*"`
+ - `-x vendorid=051d*` (APC)
+ - `-x product=".*(Smart|Back)-?UPS.*"`
 
 *bus =* 'regex'::
 
@@ -163,6 +160,7 @@ Apply the language ID workaround to the krauler subdriver. This is mandatory
 for some devices to work (LDLC, Dynamix and others). You must to provide
 *value* (0x409 or 0x4095), according to your device entry in NUT hardware
 compatibility list (HCL).
+endif::blazer_usb[]
 
 
 UPS COMMANDS
@@ -182,12 +180,12 @@ Turn on the load immediately.
 
 Turn off the load immediately (see <<_known_problems,KNOWN PROBLEMS>>).
 
-*shutdown.return* ['value']::
+*shutdown.return*::
 
 Turn off the load and return when power is back. Uses the timers defined by
 *ondelay* and *offdelay*.
 
-*shutdown.stayoff* ['value']::
+*shutdown.stayoff*::
 
 Turn off the load and remain off (see <<_known_problems,KNOWN PROBLEMS>>). Uses
 the timer defined by *offdelay*.
@@ -206,12 +204,12 @@ Perform a (10 second) battery test.
 
 *test.battery.start* 'value'::
 
-Perform a battery test for the duration of 'value' seconds (truncated to units of
-60 seconds).
+Perform a battery test for the duration of 'value' minutes.
 
 *test.battery.stop*::
 
 Stop a running battery test (not available on some hardware.)
+
 
 BATTERY CHARGE
 --------------
@@ -253,6 +251,7 @@ linkman:ups.conf[5], so don't complain with the author. If you need something be
 buy a UPS that reports *battery.charge* and *battery.runtime* all by itself
 without the help of a NUT driver.
 
+
 NOTES FOR THE PREVIOUS USER OF MEGATEC DRIVERS
 ----------------------------------------------
 
@@ -274,6 +273,7 @@ You need to use 'cablepower'
 This parameter can simply be discarded, since it was a wrong understanding
 of the specification.
 
+
 KNOWN PROBLEMS
 --------------
 
@@ -292,19 +292,30 @@ in the status reported by the driver when, in fact, it is working fine.
 
 The temperature and load value is known to be bogus in some models.
 
+
 AUTHORS
 -------
 
 Arjen de Korte <adkorte-guest at alioth.debian.org>,
 Alexander Gordeev <lasaine at lvk.cs.msu.su>
 
+
 SEE ALSO
 --------
 
+ifdef::blazer_usb[]
+linkman:blazer_ser[8],
+endif::blazer_usb[]
+ifndef::blazer_usb[]
+linkman:blazer_usb[8],
+endif::blazer_usb[]
 linkman:nutupsdrv[8], linkman:upsc[8], linkman:upscmd[8], linkman:upsrw[8]
+
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
 
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
 The NUT HCL: http://www.networkupstools.org/stable-hcl.html
+

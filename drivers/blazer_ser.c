@@ -26,7 +26,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.55"
+#define DRIVER_VERSION	"1.56"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -114,6 +114,7 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+#ifndef TESTING
 	const struct {
 		const char	*val;
 		const int	dtr;
@@ -129,7 +130,7 @@ void upsdrv_initups(void)
 	int	i;
 
 	const char	*val;
-#ifndef TESTING
+
 	struct termios		tio;
 
 	/*
