@@ -8,12 +8,6 @@ This page tries to track them.
 Graphical desktop clients
 -------------------------
 
-link:http://sourceforge.net/projects/gknut/[GKrellM NUT]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Simple UPS monitoring plugin for GKrellM. Uses NUT (Network UPS Tools) for UPS
-connection.
-
 link:http://knut.prynych.cz[KNutClient]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -33,17 +27,6 @@ link:https://github.com/zykh/walNUT[walNUT]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A Gnome Shell extension that uses upsc/upscmd to monitor devices and invoke instant commands.
-
-link:http://download.mgeops.com/explore/eng/ptp/ptp_sol.htm?sol=PSP[Eaton - Personal Solution Pac]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-NUT configuration and monitoring software for Eaton (previously MGE Office
-Protection Systems) units.
-
-link:http://www.amautacorp.com/staff/Rudd-O/ups-monitor/[UPS Monitor]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Multi-threaded python/GTK2 graphical monitoring application.
 
 link:http://sourceforge.net/projects/winnutclient[Windows NUT client]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,11 +107,6 @@ KNutSetting is a visual KDE tool for configuring NUT - Network UPS Tools.
 
 Other software projects
 -----------------------
-
-link:http://www.the-mcdonalds.org/Nut-Graph/[Nut-Graph]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-PHP4 / GD / MySQL / jpgraph package to visualize logged UPS status data.
 
 [[PyNUT]]
 link:http://www.lestat.st/informatique/projets/pynut-en[PyNUT]
@@ -216,6 +194,33 @@ link:http://www.webbastards.com/projects/[lcd-nut]
  
 A Project to display the status of a UPS on computer through one of the many
 cheap LCD matrix displays available on the market.
+
+
+Legacy and discontinued projects
+--------------------------------
+
+link:http://sourceforge.net/projects/gknut/[GKrellM NUT]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Simple UPS monitoring plugin for GKrellM. Uses NUT (Network UPS Tools) for UPS
+connection.
+
+Nut-Graph
+~~~~~~~~~
+
+PHP4 / GD / MySQL / jpgraph package to visualize logged UPS status data.
+
+Eaton - Personal Solution Pac
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NUT configuration and monitoring software for Eaton (previously MGE Office
+Protection Systems) units.
+
+UPS Monitor
+~~~~~~~~~~~
+
+Multi-threaded python/GTK2 graphical monitoring application.
+
 
 Notes
 -------
