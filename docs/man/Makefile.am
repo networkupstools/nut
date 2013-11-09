@@ -327,6 +327,7 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
+	nutdrv_qx.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -337,8 +338,7 @@ SRC_SERIAL_PAGES = \
 	tripplite.txt	\
 	tripplitesu.txt	\
 	upscode2.txt	\
-	victronups.txt	\
-	voltronic_ser.txt
+	victronups.txt
 
 # NOTE: blazer_ser.8 has no source counterpart (blazer.txt)
 MAN_SERIAL_PAGES = \
@@ -367,6 +367,7 @@ MAN_SERIAL_PAGES = \
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
+	nutdrv_qx.8	\
 	oneac.8		\
 	microdowell.8	\
 	optiups.8	\
@@ -379,8 +380,7 @@ MAN_SERIAL_PAGES = \
 	tripplite.8	\
 	tripplitesu.8	\
 	upscode2.8	\
-	victronups.8	\
-	voltronic_ser.8
+	victronups.8
 
 if WITH_SERIAL
   man8_MANS +=  $(MAN_SERIAL_PAGES)
@@ -411,6 +411,7 @@ HTML_SERIAL_MANS = \
 	metasys.html	\
 	mge-shut.html	\
 	mge-utalk.html	\
+	nutdrv_qx.html	\
 	oneac.html		\
 	microdowell.html	\
 	optiups.html	\
@@ -423,8 +424,7 @@ HTML_SERIAL_MANS = \
 	tripplite.html	\
 	tripplitesu.html	\
 	upscode2.html	\
-	victronups.html	\
-	voltronic_ser.html
+	victronups.html
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
@@ -439,21 +439,21 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
+	nutdrv_qx.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
-	usbhid-ups.txt	\
-	voltronic_usb.txt
+	usbhid-ups.txt
 
 # NOTE: blazer_usb.8 has no source counterpart (blazer.txt)
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
+	nutdrv_qx.8	\
 	richcomm_usb.8 \
 	riello_usb.8	\
 	tripplite_usb.8 \
-	usbhid-ups.8	\
-	voltronic_usb.8
+	usbhid-ups.8
 
 if WITH_USB
  man8_MANS += $(MAN_USB_LIBUSB_PAGES)
@@ -461,11 +461,11 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
+	nutdrv_qx.html	\
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
-	usbhid-ups.html	\
-	voltronic_usb.html
+	usbhid-ups.html
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
