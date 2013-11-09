@@ -120,6 +120,15 @@ var NUT =
       if(this.driverMap(driver) == value) return true;
       
       return false;
+    },
+    "support-level": function(value, row)
+    {
+      var level = row[this.fields.indexOf("support-level")];
+
+      if (level >= value)
+        return true;
+
+      return false;
     }
   },
   
