@@ -1,4 +1,4 @@
-/* blzr_blazer-common.h - Common functions/settings for blzr_{mecer,megatec,megatec-old,mustek,zinto}.{c,h}
+/* nutdrv_qx_megatec-old.h - Subdriver for Megatec/old protocol based UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -19,23 +19,11 @@
  *
  */
 
-#ifndef BLZR_BLAZER_COMMON_H
-#define BLZR_BLAZER_COMMON_H
+#ifndef NUTDRV_QX_MEGATEC_OLD_H
+#define NUTDRV_QX_MEGATEC_OLD_H
 
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
-/* Support functions */
-void	blazer_makevartable(void);
-void	blazer_initups(item_t *blzr2nut);
-int	blazer_claim(void);
+extern subdriver_t	megatec_old_subdriver;
 
-/* Preprocess functions */
-int	blazer_process_command(item_t *item, char *value, size_t valuelen);
-int	blazer_process_setvar(item_t *item, char *value, size_t valuelen);
-int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen);
-
-/* Ranges */
-extern info_rw_t	blazer_r_ondelay[];
-extern info_rw_t	blazer_r_offdelay[];
-
-#endif /* BLZR_BLAZER_COMMON_H */
+#endif /* NUTDRV_QX_MEGATECH_OLD_H */

@@ -1,4 +1,4 @@
-/* blzr.c - Driver for USB and serial UPS units with Q* protocols
+/* nutdrv_qx.c - Driver for USB and serial UPS units with Q* protocols
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -39,35 +39,35 @@
 
 #include <math.h>
 
-/* note: BLZR_USB/BLZR_SERIAL set through Makefile */
-#ifdef BLZR_USB
+/* note: QX_USB/QX_SERIAL set through Makefile */
+#ifdef QX_USB
 	#include "libusb.h"
 	#include "usb-common.h"
 
-	#ifdef BLZR_SERIAL
+	#ifdef QX_SERIAL
 		#define DRIVER_NAME	"Generic Q* USB/Serial driver"
 	#else
 		#define	DRIVER_NAME	"Generic Q* USB driver"
-	#endif	/* BLZR_SERIAL */
+	#endif	/* QX_SERIAL */
 #else
 	#define DRIVER_NAME	"Generic Q* Serial driver"
-#endif	/* BLZR_USB */
+#endif	/* QX_USB */
 
-#ifdef BLZR_SERIAL
+#ifdef QX_SERIAL
 	#include "serial.h"
 	#define SER_WAIT_SEC	1	/* 3 seconds for Best UPS */
-#endif	/* BLZR_SERIAL */
+#endif	/* QX_SERIAL */
 
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
 /* == Subdrivers == */
 /* Include all known subdrivers */
-#include "blzr_mecer.h"
-#include "blzr_megatec.h"
-#include "blzr_megatec-old.h"
-#include "blzr_mustek.h"
-#include "blzr_voltronic.h"
-#include "blzr_zinto.h"
+#include "nutdrv_qx_mecer.h"
+#include "nutdrv_qx_megatec.h"
+#include "nutdrv_qx_megatec-old.h"
+#include "nutdrv_qx_mustek.h"
+#include "nutdrv_qx_voltronic.h"
+#include "nutdrv_qx_zinto.h"
 
 /* Master list of avaiable subdrivers */
 static subdriver_t	*subdriver_list[] = {
@@ -91,19 +91,19 @@ upsdrv_info_t	upsdrv_info = {
 	"Peter Selinger <selinger@users.sourceforge.net>" \
 	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
 	DRV_BETA,
-#ifdef BLZR_USB
+#ifdef QX_USB
 	{ &comm_upsdrv_info, NULL }
 #else
 	{ NULL }
-#endif	/* BLZR_USB */
+#endif	/* QX_USB */
 };
 
 
 /* == Data walk modes == */
 typedef enum {
-	BLZR_WALKMODE_INIT = 0,
-	BLZR_WALKMODE_QUICK_UPDATE,
-	BLZR_WALKMODE_FULL_UPDATE
+	QX_WALKMODE_INIT = 0,
+	QX_WALKMODE_QUICK_UPDATE,
+	QX_WALKMODE_FULL_UPDATE
 } walkmode_t;
 
 
@@ -117,9 +117,9 @@ static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
 
-#if defined(BLZR_USB) && defined(BLZR_SERIAL)
+#if defined(QX_USB) && defined(QX_SERIAL)
 static int	is_usb = 0;	/* Whether the device is connected through USB (1) or serial (0) */
-#endif	/* BLZR_USB && BLZR_SERIAL */
+#endif	/* QX_USB && QX_SERIAL */
 
 static struct {
 	char	command[SMALLBUF];	/* Command sent to the UPS to get answer/to execute an instant command */
@@ -129,12 +129,12 @@ static struct {
 
 /* == Support functions == */
 static int	subdriver_matcher(void);
-static int	blzr_command(const char *cmd, char *buf, size_t buflen);
-static int	blzr_process_answer(item_t *item, const int len);
-static bool_t	blzr_ups_walk(walkmode_t mode);
+static int	qx_command(const char *cmd, char *buf, size_t buflen);
+static int	qx_process_answer(item_t *item, const int len);
+static bool_t	qx_ups_walk(walkmode_t mode);
 static void	ups_status_set(void);
 static void	ups_alarm_set(void);
-static void	blzr_set_var(item_t *item);
+static void	qx_set_var(item_t *item);
 
 
 /* == Struct & data for status processing == */
@@ -163,9 +163,9 @@ static status_lkp_t	status_info[] = {
 
 /* == battery.{charge,runtime} guesstimation == */
 /* Support functions */
-static int	blzr_battery(void);
-static int	blzr_load(void);
-static void	blzr_initbattery(void);
+static int	qx_battery(void);
+static int	qx_load(void);
+static void	qx_initbattery(void);
 
 /* Battery data */
 static struct {
@@ -198,7 +198,7 @@ static struct {
 static time_t	battery_lastpoll = 0;
 
 /* Fill batt.volt.act and guesstimate the battery charge if it isn't already available. */
-static int	blzr_battery(void)
+static int	qx_battery(void)
 {
 	const char	*val = dstate_getinfo("battery.voltage");
 
@@ -229,7 +229,7 @@ static int	blzr_battery(void)
 }
 
 /* Load for battery.{charge,runtime} from runtimecal */
-static int	blzr_load(void)
+static int	qx_load(void)
 {
 	const char	*val = dstate_getinfo("ups.load");
 
@@ -250,7 +250,7 @@ static int	blzr_load(void)
 }
 
 /* Guesstimation: init */
-static void	blzr_initbattery(void)
+static void	qx_initbattery(void)
 {
 	if (!dstate_getinfo("battery.charge") || !dstate_getinfo("battery.runtime")) {
 
@@ -293,8 +293,8 @@ static void	blzr_initbattery(void)
 			batt.packs = strtod(val, NULL);
 		} else {
 
-			/* blzr_battery -> batt.volt.act */
-			if (!blzr_battery() && batt.volt.nom != -1) {
+			/* qx_battery -> batt.volt.act */
+			if (!qx_battery() && batt.volt.nom != -1) {
 
 				const double	packs[] = { 120, 100, 80, 60, 48, 36, 30, 24, 18, 12, 8, 6, 4, 3, 2, 1, 0.5, -1 };
 				int		i;
@@ -324,7 +324,7 @@ static void	blzr_initbattery(void)
 		}
 
 		/* Update batt.{chrg,volt}.act */
-		blzr_battery();
+		qx_battery();
 
 		val = getval("runtimecal");
 		if (val) {
@@ -363,7 +363,7 @@ static void	blzr_initbattery(void)
 			batt.volt.low = batt.volt.nom;
 			batt.volt.high = 1.15 * batt.volt.nom;
 
-			if (blzr_battery())
+			if (qx_battery())
 				fatalx(EXIT_FAILURE, "Initial battery charge undetermined");
 
 			val = dstate_getinfo("battery.charge");
@@ -406,7 +406,7 @@ static void	blzr_initbattery(void)
 
 
 /* == USB communication subdrivers == */
-#if defined(BLZR_USB) && !defined(TESTING)
+#if defined(QX_USB) && !defined(TESTING)
 static usb_communication_subdriver_t	*usb = &usb_subdriver;
 static usb_dev_handle			*udev = NULL;
 static USBDevice_t			usbdevice;
@@ -698,7 +698,7 @@ static void	*phoenix_subdriver(USBDevice_t *device)
 }
 
 /* USB VendorID/ProductID match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
-static usb_device_id_t	blzr_usb_id[] = {
+static usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
 	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
@@ -721,7 +721,7 @@ static int	device_match_func(USBDevice_t *hd, void *privdata)
 		return 1;
 	}
 
-	switch (is_usb_device_supported(blzr_usb_id, hd))
+	switch (is_usb_device_supported(qx_usb_id, hd))
 	{
 	case SUPPORTED:
 		return 1;
@@ -738,7 +738,7 @@ static USBDeviceMatcher_t	device_matcher = {
 	NULL,
 	NULL
 };
-#endif	/* BLZR_USB && !TESTING */
+#endif	/* QX_USB && !TESTING */
 
 
 /* == Driver functions implementations == */
@@ -764,7 +764,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 	upslogx(LOG_INFO, "%s(%s, %s)", __func__, cmdname, extradata ? extradata : "[NULL]");
 
 	/* Retrieve item by command name */
-	item = find_nut_info(cmdname, BLZR_FLAG_CMD, BLZR_FLAG_SKIP);
+	item = find_nut_info(cmdname, QX_FLAG_CMD, QX_FLAG_SKIP);
 
 	/* Check for fallback if not found */
 	if (item == NULL) {
@@ -839,7 +839,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 		snprintf(value, sizeof(value), "%s", "");
 
 	/* Send the command, get the reply */
-	if (blzr_process(item, strlen(value) > 0 ? value : NULL)) {
+	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
 		upslogx(LOG_ERR, "%s: FAILED", __func__);
 		return STAT_INSTCMD_FAILED;
@@ -876,7 +876,7 @@ int	setvar(const char *varname, const char *val)
 	int		ok = 0;
 
 	/* Retrieve variable */
-	item = find_nut_info(varname, BLZR_FLAG_SETVAR, BLZR_FLAG_SKIP);
+	item = find_nut_info(varname, QX_FLAG_SETVAR, QX_FLAG_SKIP);
 
 	if (item == NULL) {
 		upsdebugx(2, "%s: element %s unavailable", __func__, varname);
@@ -884,7 +884,7 @@ int	setvar(const char *varname, const char *val)
 	}
 
 	/* No NUT variable is available for this item, so we're handling a one-time setvar from ups.conf */
-	if (item->blzrflags & BLZR_FLAG_NONUT) {
+	if (item->qxflags & QX_FLAG_NONUT) {
 
 		const char	*userval;
 
@@ -921,7 +921,7 @@ int	setvar(const char *varname, const char *val)
 	}
 
 	/* Check if given value is in the range of accepted values (range) */
-	if (item->blzrflags & BLZR_FLAG_RANGE) {
+	if (item->qxflags & QX_FLAG_RANGE) {
 
 		int	valuetoset, min, max;
 
@@ -932,8 +932,8 @@ int	setvar(const char *varname, const char *val)
 
 		valuetoset = strtol(value, NULL, 10);
 
-		/* No NUT var is available for this item, so take its range from blzr2nut table */
-		if (item->blzrflags & BLZR_FLAG_NONUT) {
+		/* No NUT var is available for this item, so take its range from qx2nut table */
+		if (item->qxflags & QX_FLAG_NONUT) {
 
 			info_rw_t	*rvalue;
 
@@ -1000,10 +1000,10 @@ int	setvar(const char *varname, const char *val)
 		}
 
 	/* Check if given value is in the range of accepted values (enum) */
-	} else if (item->blzrflags & BLZR_FLAG_ENUM) {
+	} else if (item->qxflags & QX_FLAG_ENUM) {
 
-		/* No NUT var is available for this item, so take its range from blzr2nut table */
-		if (item->blzrflags & BLZR_FLAG_NONUT) {
+		/* No NUT var is available for this item, so take its range from qx2nut table */
+		if (item->qxflags & QX_FLAG_NONUT) {
 
 			info_rw_t	*envalue;
 
@@ -1084,7 +1084,7 @@ int	setvar(const char *varname, const char *val)
 	}
 
 	/* Handle server side variable */
-	if (item->blzrflags & BLZR_FLAG_ABSENT) {
+	if (item->qxflags & QX_FLAG_ABSENT) {
 		upsdebugx(2, "%s: setting server side variable %s", __func__, item->info_type);
 		dstate_setinfo(item->info_type, "%s", value);
 		upslogx(LOG_INFO, "%s: SUCCEED", __func__);
@@ -1096,7 +1096,7 @@ int	setvar(const char *varname, const char *val)
 		snprintf(value, sizeof(value), "%s", "");
 
 	/* Actual variable setting */
-	if (blzr_process(item, strlen(value) > 0 ? value : NULL)) {
+	if (qx_process(item, strlen(value) > 0 ? value : NULL)) {
 		/* Something went wrong */
 		upslogx(LOG_ERR, "%s: FAILED", __func__);
 		return STAT_SET_UNKNOWN;	/* TODO: HANDLED but FAILED, not UNKNOWN! */
@@ -1136,7 +1136,7 @@ void	upsdrv_shutdown(void)
 	/* Get user-defined delays */
 
 	/* Start delay */
-	item = find_nut_info("ups.delay.start", 0, BLZR_FLAG_SKIP);
+	item = find_nut_info("ups.delay.start", 0, QX_FLAG_SKIP);
 
 	/* Don't know what happened */
 	if (!item)
@@ -1146,17 +1146,17 @@ void	upsdrv_shutdown(void)
 	dstate_setinfo(item->info_type, "%s", item->dfl);
 
 	/* Set var flags/range/enum */
-	blzr_set_var(item);
+	qx_set_var(item);
 
 	/* Retrieve user defined delay settings */
-	val = getval(BLZR_VAR_ONDELAY);
+	val = getval(QX_VAR_ONDELAY);
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		fatalx(EXIT_FAILURE, "Start delay '%s' out of range", val);
 	}
 
 	/* Shutdown delay */
-	item = find_nut_info("ups.delay.shutdown", 0, BLZR_FLAG_SKIP);
+	item = find_nut_info("ups.delay.shutdown", 0, QX_FLAG_SKIP);
 
 	/* Don't know what happened */
 	if (!item)
@@ -1166,17 +1166,17 @@ void	upsdrv_shutdown(void)
 	dstate_setinfo(item->info_type, "%s", item->dfl);
 
 	/* Set var flags/range/enum */
-	blzr_set_var(item);
+	qx_set_var(item);
 
 	/* Retrieve user defined delay settings */
-	val = getval(BLZR_VAR_OFFDELAY);
+	val = getval(QX_VAR_OFFDELAY);
 
 	if (val && setvar(item->info_type, val) != STAT_SET_HANDLED) {
 		fatalx(EXIT_FAILURE, "Shutdown delay '%s' out of range", val);
 	}
 
 	/* Stop pending shutdowns */
-	if (find_nut_info("shutdown.stop", BLZR_FLAG_CMD, BLZR_FLAG_SKIP)) {
+	if (find_nut_info("shutdown.stop", QX_FLAG_CMD, QX_FLAG_SKIP)) {
 
 		for (retry = 1; retry <= MAXTRIES; retry++) {
 
@@ -1219,7 +1219,7 @@ void	upsdrv_shutdown(void)
 
 void	upsdrv_help(void)
 {
-	printf("Read The Fine Manual ('man 8 blzr')\n");
+	printf("Read The Fine Manual ('man 8 nutdrv_qx')\n");
 }
 
 /* Adding flags/vars */
@@ -1231,15 +1231,15 @@ void	upsdrv_makevartable(void)
 	upsdebugx(1, "%s...", __func__);
 
 	snprintf(temp, sizeof(temp), "Set shutdown delay, in seconds (default=%s)", DEFAULT_OFFDELAY);
-	addvar(VAR_VALUE, BLZR_VAR_OFFDELAY, temp);
+	addvar(VAR_VALUE, QX_VAR_OFFDELAY, temp);
 
 	snprintf(temp, sizeof(temp), "Set startup delay, in seconds (default=%s)", DEFAULT_ONDELAY);
-	addvar(VAR_VALUE, BLZR_VAR_ONDELAY, temp);
+	addvar(VAR_VALUE, QX_VAR_ONDELAY, temp);
 
 	addvar(VAR_FLAG, "stayoff", "If invoked the UPS won't return after a shutdown when FSD arises");
 
 	snprintf(temp, sizeof(temp), "Set polling frequency, in seconds, to reduce data flow (default=%d)", DEFAULT_POLLFREQ);
-	addvar(VAR_VALUE, BLZR_VAR_POLLFREQ, temp);
+	addvar(VAR_VALUE, QX_VAR_POLLFREQ, temp);
 
 	addvar(VAR_VALUE, "protocol", "Preselect communication protocol (skip autodetection)");
 
@@ -1248,7 +1248,7 @@ void	upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "chargetime", "Nominal charge time for UPS battery");
 	addvar(VAR_VALUE, "idleload", "Minimum load to be used for runtime calculation");
 
-#ifdef BLZR_USB
+#ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
 	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
@@ -1260,11 +1260,11 @@ void	upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
-#endif	/* BLZR_USB */
+#endif	/* QX_USB */
 
-#ifdef BLZR_SERIAL
+#ifdef QX_SERIAL
 	addvar(VAR_VALUE, "cablepower", "Set cable power for serial interface");
-#endif	/* BLZR_SERIAL */
+#endif	/* QX_SERIAL */
 
 	/* Subdrivers flags/vars */
 	for (i = 0; subdriver_list[i] != NULL; i++) {
@@ -1298,7 +1298,7 @@ void	upsdrv_updateinfo(void)
 
 		alarm_init();
 
-		if (blzr_ups_walk(BLZR_WALKMODE_FULL_UPDATE) == FALSE) {
+		if (qx_ups_walk(QX_WALKMODE_FULL_UPDATE) == FALSE) {
 
 			if (retry < MAXTRIES || retry == MAXTRIES) {
 				upsdebugx(1, "Communications with the UPS lost: status read failed!");
@@ -1321,7 +1321,7 @@ void	upsdrv_updateinfo(void)
 		upsdebugx(1, "Quick update...");
 
 		/* Quick poll data only to see if the UPS is still connected */
-		if (blzr_ups_walk(BLZR_WALKMODE_QUICK_UPDATE) == FALSE) {
+		if (qx_ups_walk(QX_WALKMODE_QUICK_UPDATE) == FALSE) {
 
 			if (retry < MAXTRIES || retry == MAXTRIES) {
 				upsdebugx(1, "Communications with the UPS lost: status read failed!");
@@ -1357,17 +1357,17 @@ void	upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.data", "%s", subdriver->name);
 
 	/* Initialise data */
-	if (blzr_ups_walk(BLZR_WALKMODE_INIT) == FALSE) {
+	if (qx_ups_walk(QX_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialise data from the UPS");
 	}
 
 	/* Init battery guesstimation */
-	blzr_initbattery();
+	qx_initbattery();
 
 	if (dstate_getinfo("ups.delay.start")) {
 
 		/* Retrieve user defined delay settings */
-		val = getval(BLZR_VAR_ONDELAY);
+		val = getval(QX_VAR_ONDELAY);
 
 		if (val && setvar("ups.delay.start", val) != STAT_SET_HANDLED) {
 			fatalx(EXIT_FAILURE, "Start delay '%s' out of range", val);
@@ -1378,7 +1378,7 @@ void	upsdrv_initinfo(void)
 	if (dstate_getinfo("ups.delay.shutdown")) {
 
 		/* Retrieve user defined delay settings */
-		val = getval(BLZR_VAR_OFFDELAY);
+		val = getval(QX_VAR_OFFDELAY);
 
 		if (val && setvar("ups.delay.shutdown", val) != STAT_SET_HANDLED) {
 			fatalx(EXIT_FAILURE, "Shutdown delay '%s' out of range", val);
@@ -1386,18 +1386,18 @@ void	upsdrv_initinfo(void)
 
 	}
 
-	if (!find_nut_info("load.off", BLZR_FLAG_CMD, BLZR_FLAG_SKIP) && find_nut_info("load.off.delay", BLZR_FLAG_CMD, BLZR_FLAG_SKIP)) {
+	if (!find_nut_info("load.off", QX_FLAG_CMD, QX_FLAG_SKIP) && find_nut_info("load.off.delay", QX_FLAG_CMD, QX_FLAG_SKIP)) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
 	}
 
-	if (!find_nut_info("load.on", BLZR_FLAG_CMD, BLZR_FLAG_SKIP) && find_nut_info("load.on.delay", BLZR_FLAG_CMD, BLZR_FLAG_SKIP)) {
+	if (!find_nut_info("load.on", QX_FLAG_CMD, QX_FLAG_SKIP) && find_nut_info("load.on.delay", QX_FLAG_CMD, QX_FLAG_SKIP)) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.on");
 	}
 
 	/* Init polling frequency */
-	val = getval(BLZR_VAR_POLLFREQ);
+	val = getval(QX_VAR_POLLFREQ);
 	if (val)
 		pollfreq = strtol(val, NULL, 10);
 
@@ -1419,7 +1419,7 @@ void	upsdrv_initups(void)
 {
 	upsdebugx(1, "%s...", __func__);
 
-#if defined(BLZR_SERIAL) && defined(BLZR_USB)
+#if defined(QX_SERIAL) && defined(QX_USB)
 
 	/* Whether the device is connected through USB or serial */
 	if (
@@ -1440,14 +1440,14 @@ void	upsdrv_initups(void)
 		is_usb = 0;
 	}
 
-#endif	/* BLZR_SERIAL && BLZR_USB */
+#endif	/* QX_SERIAL && QX_USB */
 
 /* Serial */
-#ifdef BLZR_SERIAL
+#ifdef QX_SERIAL
 
-	#ifdef BLZR_USB
+	#ifdef QX_USB
 	if (!is_usb) {
-	#endif	/* BLZR_USB */
+	#endif	/* QX_USB */
 
 	#ifndef TESTING
 
@@ -1512,14 +1512,14 @@ void	upsdrv_initups(void)
 
 	#endif	/* TESTING */
 
-	#ifdef BLZR_USB
+	#ifdef QX_USB
 	} else {	/* is_usb */
-	#endif	/* BLZR_USB */
+	#endif	/* QX_USB */
 
-#endif	/* BLZR_SERIAL */
+#endif	/* QX_SERIAL */
 
 /* USB */
-#ifdef BLZR_USB
+#ifdef QX_USB
 
 	#ifndef TESTING
 
@@ -1603,7 +1603,7 @@ void	upsdrv_initups(void)
 				"and make sure you have an up-to-date version of NUT. If this does not help,\n"
 				"try running the driver with at least 'subdriver', 'vendorid' and 'productid'\n"
 				"options specified. Please refer to the man page for details about these options\n"
-				"(man 8 blzr).\n");
+				"(man 8 nutdrv_qx).\n");
 		}
 
 		if (!subdriver_command) {
@@ -1639,11 +1639,11 @@ void	upsdrv_initups(void)
 
 	#endif	/* TESTING */
 
-	#ifdef BLZR_SERIAL
+	#ifdef QX_SERIAL
 	}	/* is_usb */
-	#endif	/* BLZR_SERIAL */
+	#endif	/* QX_SERIAL */
 
-#endif	/* BLZR_USB */
+#endif	/* QX_USB */
 
 	/* Choose subdriver */
 	if (!subdriver_matcher())
@@ -1661,22 +1661,22 @@ void	upsdrv_cleanup(void)
 
 #ifndef TESTING
 
-#ifdef BLZR_SERIAL
+#ifdef QX_SERIAL
 
-	#ifdef BLZR_USB
+	#ifdef QX_USB
 	if (!is_usb) {
-	#endif	/* BLZR_USB */
+	#endif	/* QX_USB */
 
 		ser_set_dtr(upsfd, 0);
 		ser_close(upsfd, device_path);
 
-	#ifdef BLZR_USB
+	#ifdef QX_USB
 	} else {	/* is_usb */
-	#endif	/* BLZR_USB */
+	#endif	/* QX_USB */
 
-#endif	/* BLZR_SERIAL */
+#endif	/* QX_SERIAL */
 
-#ifdef BLZR_USB
+#ifdef QX_USB
 
 		usb->close(udev);
 		USBFreeExactMatcher(reopen_matcher);
@@ -1686,11 +1686,11 @@ void	upsdrv_cleanup(void)
 		free(usbdevice.Serial);
 		free(usbdevice.Bus);
 
-	#ifdef BLZR_SERIAL
+	#ifdef QX_SERIAL
 	}	/* is_usb */
-	#endif	/* BLZR_SERIAL */
+	#endif	/* QX_SERIAL */
 
-#endif	/* BLZR_USB */
+#endif	/* QX_USB */
 
 #endif	/* TESTING */
 
@@ -1701,18 +1701,18 @@ void	upsdrv_cleanup(void)
 
 /* Generic command processing function: send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on success. */
-static int	blzr_command(const char *cmd, char *buf, size_t buflen)
+static int	qx_command(const char *cmd, char *buf, size_t buflen)
 {
 #ifndef TESTING
 
 	int	ret = -1;
 
-#ifdef BLZR_USB
+#ifdef QX_USB
 
-	#ifdef BLZR_SERIAL
+	#ifdef QX_SERIAL
 	/* Communication: USB */
 	if (is_usb) {
-	#endif	/* BLZR_SERIAL */
+	#endif	/* QX_SERIAL */
 
 		if (udev == NULL) {
 			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
@@ -1764,14 +1764,14 @@ static int	blzr_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 
-	#ifdef BLZR_SERIAL
+	#ifdef QX_SERIAL
 	/* Communication: serial */
 	} else {	/* !is_usb */
-	#endif	/* BLZR_SERIAL */
+	#endif	/* QX_SERIAL */
 
-#endif	/* BLZR_USB */
+#endif	/* QX_USB */
 
-#ifdef BLZR_SERIAL
+#ifdef QX_SERIAL
 
 		ser_flush_io(upsfd);
 
@@ -1793,11 +1793,11 @@ static int	blzr_command(const char *cmd, char *buf, size_t buflen)
 
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(buf, "\r"), buf);
 
-	#ifdef BLZR_USB
+	#ifdef QX_USB
 	}	/* !is_usb */
-	#endif	/* BLZR_USB */
+	#endif	/* QX_USB */
 
-#endif	/* BLZR_SERIAL */
+#endif	/* QX_SERIAL */
 
 	return ret;
 
@@ -1926,17 +1926,17 @@ static int	subdriver_matcher(void)
 }
 
 /* Set vars boundaries */
-static void	blzr_set_var(item_t *item)
+static void	qx_set_var(item_t *item)
 {
-	if (!(item->blzrflags & BLZR_FLAG_NONUT))
+	if (!(item->qxflags & QX_FLAG_NONUT))
 		dstate_setflags(item->info_type, item->info_flags);
 
 	/* Set max length for strings, if needed */
-	if (item->info_flags & ST_FLAG_STRING && !(item->blzrflags & BLZR_FLAG_NONUT))
+	if (item->info_flags & ST_FLAG_STRING && !(item->qxflags & QX_FLAG_NONUT))
 		dstate_setaux(item->info_type, strtol(item->info_rw[0].value, NULL, 10));
 
 	/* Set enum list */
-	if (item->blzrflags & BLZR_FLAG_ENUM) {
+	if (item->qxflags & QX_FLAG_ENUM) {
 
 		info_rw_t	*envalue;
 		char		buf[LARGEBUF] = "";
@@ -1948,7 +1948,7 @@ static void	blzr_set_var(item_t *item)
 				continue;
 
 			/* This item is not available yet in NUT, so publish these data in the logs */
-			if (item->blzrflags & BLZR_FLAG_NONUT) {
+			if (item->qxflags & QX_FLAG_NONUT) {
 
 				snprintfcat(buf, sizeof(buf), " %s", envalue->value);
 
@@ -1961,13 +1961,13 @@ static void	blzr_set_var(item_t *item)
 
 		}
 
-		if (item->blzrflags & BLZR_FLAG_NONUT)
+		if (item->qxflags & QX_FLAG_NONUT)
 			upslogx(LOG_INFO, "%s, settable values:%s", item->info_type, strlen(buf) > 0 ? buf : " none");
 
 	}
 
 	/* Set range */
-	if (item->blzrflags & BLZR_FLAG_RANGE) {
+	if (item->qxflags & QX_FLAG_RANGE) {
 
 		info_rw_t	*rvalue, *from = NULL, *to = NULL;
 		int		ok = 0;
@@ -1986,7 +1986,7 @@ static void	blzr_set_var(item_t *item)
 			to = rvalue;
 
 			/* This item is not available yet in NUT, so publish these data in the logs */
-			if (item->blzrflags & BLZR_FLAG_NONUT) {
+			if (item->qxflags & QX_FLAG_NONUT) {
 
 				upslogx(LOG_INFO, "%s, settable range: %s..%s", item->info_type, from->value, to->value);
 				ok++;
@@ -2004,31 +2004,31 @@ static void	blzr_set_var(item_t *item)
 		}
 
 		/* This item is not available yet in NUT and we weren't able to get its range; let people know it */
-		if ((item->blzrflags & BLZR_FLAG_NONUT) && !ok)
+		if ((item->qxflags & QX_FLAG_NONUT) && !ok)
 			upslogx(LOG_INFO, "%s, settable range: none", item->info_type);
 
 	}
 }
 
-/* Walk UPS variables and set elements of the blzr2nut array. */
-static bool_t	blzr_ups_walk(walkmode_t mode)
+/* Walk UPS variables and set elements of the qx2nut array. */
+static bool_t	qx_ups_walk(walkmode_t mode)
 {
 	item_t	*item;
 	int	retcode;
 
 	/* Clear batt.{chrg,runt}.act for guesstimation */
-	if (mode == BLZR_WALKMODE_FULL_UPDATE) {
+	if (mode == QX_WALKMODE_FULL_UPDATE) {
 		batt.runt.act = -1;
 		batt.chrg.act = -1;
 	}
 
-	/* 3 modes: BLZR_WALKMODE_INIT, BLZR_WALKMODE_QUICK_UPDATE and BLZR_WALKMODE_FULL_UPDATE */
+	/* 3 modes: QX_WALKMODE_INIT, QX_WALKMODE_QUICK_UPDATE and QX_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk */
-	for (item = subdriver->blzr2nut; item->info_type != NULL; item++) {
+	for (item = subdriver->qx2nut; item->info_type != NULL; item++) {
 
 		/* Skip this item */
-		if (item->blzrflags & BLZR_FLAG_SKIP)
+		if (item->qxflags & QX_FLAG_SKIP)
 			continue;
 
 		upsdebugx(10, "%s: processing: %s", __func__, item->info_type);
@@ -2037,10 +2037,10 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 		switch (mode)
 		{
 		/* Device capabilities enumeration */
-		case BLZR_WALKMODE_INIT:
+		case QX_WALKMODE_INIT:
 
 			/* Special case for handling server side variables */
-			if (item->blzrflags & BLZR_FLAG_ABSENT) {
+			if (item->qxflags & QX_FLAG_ABSENT) {
 
 				/* Already set */
 				if (dstate_getinfo(item->info_type))
@@ -2049,7 +2049,7 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 				dstate_setinfo(item->info_type, "%s", item->dfl);
 
 				/* Set var flags/range/enum */
-				blzr_set_var(item);
+				qx_set_var(item);
 
 				continue;
 			}
@@ -2064,22 +2064,22 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 
 			continue;
 
-		case BLZR_WALKMODE_QUICK_UPDATE:
+		case QX_WALKMODE_QUICK_UPDATE:
 
 			/* Quick update only deals with status and alarms! */
-			if (!(item->blzrflags & BLZR_FLAG_QUICK_POLL))
+			if (!(item->qxflags & QX_FLAG_QUICK_POLL))
 				continue;
 
 			break;
 
-		case BLZR_WALKMODE_FULL_UPDATE:
+		case QX_WALKMODE_FULL_UPDATE:
 
 			/* These don't need polling after initinfo() */
-			if (item->blzrflags & (BLZR_FLAG_ABSENT | BLZR_FLAG_CMD | BLZR_FLAG_SETVAR | BLZR_FLAG_STATIC))
+			if (item->qxflags & (QX_FLAG_ABSENT | QX_FLAG_CMD | QX_FLAG_SETVAR | QX_FLAG_STATIC))
 				continue;
 
 			/* These need to be polled after user changes (setvar / instcmd) */
-			if ((item->blzrflags & BLZR_FLAG_SEMI_STATIC) && (data_has_changed == FALSE))
+			if ((item->qxflags & QX_FLAG_SEMI_STATIC) && (data_has_changed == FALSE))
 				continue;
 
 			break;
@@ -2091,17 +2091,17 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 		}
 
 		/* Instant commands */
-		if (item->blzrflags & BLZR_FLAG_CMD) {
+		if (item->qxflags & QX_FLAG_CMD) {
 			dstate_addcmd(item->info_type);
 			continue;
 		}
 
 		/* Setvars */
-		if (item->blzrflags & BLZR_FLAG_SETVAR) {
+		if (item->qxflags & QX_FLAG_SETVAR) {
 
-			if (item->blzrflags & BLZR_FLAG_NONUT) {
+			if (item->qxflags & QX_FLAG_NONUT) {
 				setvar(item->info_type, NULL);
-				item->blzrflags |= BLZR_FLAG_SKIP;
+				item->qxflags |= QX_FLAG_SKIP;
 			}
 
 			continue;
@@ -2114,11 +2114,11 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 			snprintf(item->answer, sizeof(item->answer), "%s", previous_item.answer);
 
 			/* Process the answer */
-			retcode = blzr_process_answer(item, strlen(item->answer));
+			retcode = qx_process_answer(item, strlen(item->answer));
 
 		/* ..otherwise: execute command to get answer from the UPS */
 		} else
-			retcode = blzr_process(item, NULL);
+			retcode = qx_process(item, NULL);
 
 		/* Record item as previous_item */
 		snprintf(previous_item.command, sizeof(previous_item.command), "%s", item->command);
@@ -2126,12 +2126,12 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 
 		if (retcode) {
 
-			if (item->blzrflags & BLZR_FLAG_QUICK_POLL)
+			if (item->qxflags & QX_FLAG_QUICK_POLL)
 				return FALSE;
 
-			if (mode == BLZR_WALKMODE_INIT)
+			if (mode == QX_WALKMODE_INIT)
 				/* Skip this item from now on */
-				item->blzrflags |= BLZR_FLAG_SKIP;
+				item->qxflags |= QX_FLAG_SKIP;
 
 			/* Clear data from the item */
 			snprintf(item->answer, sizeof(item->answer), "%s", "");
@@ -2154,8 +2154,8 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 			continue;
 
 		/* Set var flags/range/enum (not for ups.{alarm.status}, hence the retcode check) */
-		if (retcode && mode == BLZR_WALKMODE_INIT) {
-			blzr_set_var(item);
+		if (retcode && mode == QX_WALKMODE_INIT) {
+			qx_set_var(item);
 		}
 
 	}
@@ -2165,7 +2165,7 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 	snprintf(previous_item.answer, sizeof(previous_item.answer), "%s", "");
 
 	/* Update battery guesstimation */
-	if (mode == BLZR_WALKMODE_FULL_UPDATE && (batt.runt.act == -1 || batt.chrg.act == -1)) {
+	if (mode == QX_WALKMODE_FULL_UPDATE && (batt.runt.act == -1 || batt.chrg.act == -1)) {
 
 		if (getval("runtimecal")) {
 
@@ -2194,14 +2194,14 @@ static bool_t	blzr_ups_walk(walkmode_t mode)
 			if (batt.chrg.act == -1)
 				dstate_setinfo("battery.charge", "%.0f", 100 * batt.runt.est / batt.runt.nom);
 
-			if (batt.runt.act == -1 && !blzr_load())
+			if (batt.runt.act == -1 && !qx_load())
 				dstate_setinfo("battery.runtime", "%.0f", batt.runt.est / load.eff);
 
 			battery_lastpoll = battery_now;
 
 		} else {
 
-			blzr_battery();
+			qx_battery();
 
 		}
 	}
@@ -2263,22 +2263,22 @@ static void	ups_status_set(void)
 	}
 }
 
-/* Find element definition in blzr2nut array by NUT varname optionally filtered by its blzrflags:
+/* Find element definition in qx2nut array by NUT varname optionally filtered by its qxflags:
  *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
  *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag)
 {
 	item_t	*item;
 
-	for (item = subdriver->blzr2nut; item->info_type != NULL; item++) {
+	for (item = subdriver->qx2nut; item->info_type != NULL; item++) {
 
 		if (strcasecmp(item->info_type, varname))
 			continue;
 
-		if (flag && ((item->blzrflags & flag) != flag))
+		if (flag && ((item->qxflags & flag) != flag))
 			continue;
 
-		if (noflag && (item->blzrflags & noflag))
+		if (noflag && (item->qxflags & noflag))
 			continue;
 
 		return item;
@@ -2290,7 +2290,7 @@ item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsig
 
 /* Process the answer we got back from the UPS
  * Return -1 on errors, 0 on success */
-static int	blzr_process_answer(item_t *item, const int len)
+static int	qx_process_answer(item_t *item, const int len)
 {
 	/* Query rejected by the UPS */
 	if (subdriver->rejected && !strcasecmp(item->answer, subdriver->rejected)) {
@@ -2322,17 +2322,17 @@ static int	blzr_process_answer(item_t *item, const int len)
 
 /* Send the command to the UPS and process the reply.
  * Return -1 on errors, 0 on success */
-int	blzr_process(item_t *item, const char *command)
+int	qx_process(item_t *item, const char *command)
 {
 	char	buf[SMALLBUF] = "";
 
 	/* Send the command */
-	int	len = blzr_command(command ? command : item->command, buf, sizeof(buf));
+	int	len = qx_command(command ? command : item->command, buf, sizeof(buf));
 
 	snprintf(item->answer, sizeof(item->answer), "%s", buf);
 
 	/* Process the answer to get the value */
-	return blzr_process_answer(item, len);
+	return qx_process_answer(item, len);
 }
 
 /* Process the value we got back (set status bits and set the value of other parameters). */
@@ -2369,7 +2369,7 @@ int	ups_infoval_set(item_t *item)
 		snprintf(value, sizeof(value), "%s", item->value);
 
 		/* Cover most of the cases: either left/right filled with hashes, spaces or a mix of both */
-		if (item->blzrflags & BLZR_FLAG_TRIM) {
+		if (item->qxflags & QX_FLAG_TRIM) {
 
 			char	buf[SMALLBUF];
 
@@ -2411,7 +2411,7 @@ int	ups_infoval_set(item_t *item)
 
 	}
 
-	if (item->blzrflags & BLZR_FLAG_NONUT) {
+	if (item->qxflags & QX_FLAG_NONUT) {
 		upslogx(LOG_INFO, "%s: %s", item->info_type, value);
 		return 1;
 	}
@@ -2433,7 +2433,7 @@ int	ups_infoval_set(item_t *item)
 }
 
 /* Return actual status */
-int	blzr_status(void)
+int	qx_status(void)
 {
 	return ups_status;
 }

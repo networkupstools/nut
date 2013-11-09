@@ -1,4 +1,4 @@
-/* blzr_voltronic.c - Subdriver for Voltronic Power UPSes
+/* nutdrv_qx_voltronic.c - Subdriver for Voltronic Power UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -20,9 +20,9 @@
  */
 
 #include "main.h"
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
-#include "blzr_voltronic.h"
+#include "nutdrv_qx_voltronic.h"
 
 #define VOLTRONIC_VERSION "Voltronic 0.01"
 
@@ -962,8 +962,8 @@ static info_rw_t	voltronic_e_cap_nonut[] = {
 };
 
 
-/* == blzr2nut lookup table == */
-static item_t	voltronic_blzr2nut[] = {
+/* == qx2nut lookup table == */
+static item_t	voltronic_qx2nut[] = {
 
 	/* Query UPS for protocol
 	 * > [QPI\r]
@@ -972,7 +972,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "ups.firmware.aux",		0,	NULL,	"QPI\r",	"",	6,	'(',	"",	1,	4,	"%s",	BLZR_FLAG_STATIC,	voltronic_protocol },
+	{ "ups.firmware.aux",		0,	NULL,	"QPI\r",	"",	6,	'(',	"",	1,	4,	"%s",	QX_FLAG_STATIC,	voltronic_protocol },
 
 	/* Query UPS for ratings
 	 * > [QRI\r]
@@ -981,10 +981,10 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "output.voltage.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	1,	5,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
-	{ "output.current.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	7,	9,	"%.0f",	BLZR_FLAG_STATIC,	NULL },
-	{ "battery.voltage.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	11,	15,	"%.1f",	BLZR_FLAG_SEMI_STATIC,	NULL },	/* as *per battery pack*: the value will change when the number of batteries is changed (battery_number through BATNn) */
-	{ "output.frequency.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	17,	20,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
+	{ "output.voltage.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	1,	5,	"%.1f",	QX_FLAG_STATIC,		NULL },
+	{ "output.current.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	7,	9,	"%.0f",	QX_FLAG_STATIC,		NULL },
+	{ "battery.voltage.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	11,	15,	"%.1f",	QX_FLAG_SEMI_STATIC,	NULL },	/* as *per battery pack*: the value will change when the number of batteries is changed (battery_number through BATNn) */
+	{ "output.frequency.nominal",	0,	NULL,	"QRI\r",	"",	22,	'(',	"",	17,	20,	"%.1f",	QX_FLAG_STATIC,		NULL },
 
 	/* Query UPS for ratings
 	 * > [QMD\r]
@@ -993,15 +993,15 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1         2         3         4
 	 */
 
-	{ "device.model",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	1,	15,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_TRIM,	NULL },
-	{ "ups.power.nominal",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	17,	23,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_TRIM,	NULL },
-	{ "output.powerfactor",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	25,	26,	"%.1f",	BLZR_FLAG_STATIC,	voltronic_output_powerfactor },
-	{ "input.phases",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	28,	28,	"%.0f",	BLZR_FLAG_STATIC,	NULL },
-	{ "output.phases",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	30,	30,	"%.0f",	BLZR_FLAG_STATIC,	NULL },
-	{ "input.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	32,	34,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
-	{ "output.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	36,	38,	"%.1f",	BLZR_FLAG_STATIC,	NULL },	/* redundant with value from QRI */
-/*	{ "battery_number",		ST_FLAG_RW,	voltronic_r_batt_numb,	"QMD\r",	"",	48,	'(',	"",	40,	41,	"%d",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT,	voltronic_batt_numb },	*//* redundant with value from QBV */
-/*	{ "battery.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	43,	46,	"%.1f",	BLZR_FLAG_STATIC,	NULL },	*//* as *per battery* vs *per pack* reported by QRI */
+	{ "device.model",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	1,	15,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL },
+	{ "ups.power.nominal",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	17,	23,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL },
+	{ "output.powerfactor",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	25,	26,	"%.1f",	QX_FLAG_STATIC,	voltronic_output_powerfactor },
+	{ "input.phases",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	28,	28,	"%.0f",	QX_FLAG_STATIC,	NULL },
+	{ "output.phases",		0,	NULL,	"QMD\r",	"",	48,	'(',	"",	30,	30,	"%.0f",	QX_FLAG_STATIC,	NULL },
+	{ "input.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	32,	34,	"%.1f",	QX_FLAG_STATIC,	NULL },
+	{ "output.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	36,	38,	"%.1f",	QX_FLAG_STATIC,	NULL },	/* redundant with value from QRI */
+/*	{ "battery_number",		ST_FLAG_RW,	voltronic_r_batt_numb,	"QMD\r",	"",	48,	'(',	"",	40,	41,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,	voltronic_batt_numb },	*//* redundant with value from QBV */
+/*	{ "battery.voltage.nominal",	0,	NULL,	"QMD\r",	"",	48,	'(',	"",	43,	46,	"%.1f",	QX_FLAG_STATIC,	NULL },	*//* as *per battery* vs *per pack* reported by QRI */
 
 	/* Query UPS for ratings
 	 * > [F\r]
@@ -1010,10 +1010,10 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "input.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	5,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
-	{ "input.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
-	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
-	{ "input.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.1f",	BLZR_FLAG_STATIC,	NULL },
+	{ "input.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	5,	"%.1f",	QX_FLAG_STATIC,	NULL },
+	{ "input.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	QX_FLAG_STATIC,	NULL },
+	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	QX_FLAG_STATIC,	NULL },
+	{ "input.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.1f",	QX_FLAG_STATIC,	NULL },
 
 	/* Query UPS for manufacturer
 	 * > [QMF\r]
@@ -1022,7 +1022,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1
 	 */
 
-	{ "device.mfr",		0,	NULL,	"QMF\r",	"",	2,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_TRIM,	NULL },
+	{ "device.mfr",		0,	NULL,	"QMF\r",	"",	2,	'(',	"",	1,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL },
 
 	/* Query UPS for firmware version
 	 * > [QVFW\r]
@@ -1031,7 +1031,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1
 	 */
 
-	{ "ups.firmware",	0,	NULL,	"QVFW\r",	"",	16,	'(',	"",	7,	14,	"%s",	BLZR_FLAG_STATIC,	NULL },
+	{ "ups.firmware",	0,	NULL,	"QVFW\r",	"",	16,	'(',	"",	7,	14,	"%s",	QX_FLAG_STATIC,	NULL },
 
 	/* Query UPS for serial number
 	 * > [QID\r]
@@ -1040,7 +1040,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1
 	 */
 
-	{ "device.serial",	0,	NULL,	"QID\r",	"",	2,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_STATIC,	voltronic_serial_numb },
+	{ "device.serial",	0,	NULL,	"QID\r",	"",	2,	'(',	"",	1,	0,	"%s",	QX_FLAG_STATIC,	voltronic_serial_numb },
 
 	/* Query UPS for vendor infos
 	 * > [I\r]
@@ -1049,9 +1049,9 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1         2         3
 	 */
 
-	{ "device.mfr",		0,	NULL,	"I\r",	"",	39,	'#',	"",	1,	15,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_TRIM,	NULL },
-	{ "device.model",	0,	NULL,	"I\r",	"",	39,	'#',	"",	17,	26,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_TRIM,	NULL },
-	{ "ups.firmware",	0,	NULL,	"I\r",	"",	39,	'#',	"",	28,	37,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_TRIM,	NULL },
+	{ "device.mfr",		0,	NULL,	"I\r",	"",	39,	'#',	"",	1,	15,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL },
+	{ "device.model",	0,	NULL,	"I\r",	"",	39,	'#',	"",	17,	26,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL },
+	{ "ups.firmware",	0,	NULL,	"I\r",	"",	39,	'#',	"",	28,	37,	"%s",	QX_FLAG_STATIC | QX_FLAG_TRIM,	NULL },
 
 	/* Query UPS for status
 	 * > [QGS\r]
@@ -1071,15 +1071,15 @@ static item_t	voltronic_blzr2nut[] = {
 	{ "battery.voltage",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	45,	49,	"%.2f",	0,	NULL },
 /*	{ "unknown.3",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	51,	55,	"%.1f",	0,	NULL },	*//* Unknown */
 	{ "ups.temperature",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	57,	61,	"%.1f",	0,	NULL },
-	{ "ups.type",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	63,	64,	"%s",	BLZR_FLAG_SEMI_STATIC,	voltronic_status },
-	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	65,	65,	"%s",	BLZR_FLAG_QUICK_POLL,	voltronic_status },	/* Utility Fail (Immediate) */
-	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	66,	66,	"%s",	BLZR_FLAG_QUICK_POLL,	voltronic_status },	/* Battery Low */
-	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	67,	67,	"%s",	BLZR_FLAG_QUICK_POLL,	voltronic_status },	/* Bypass/Boost or Buck Active */
+	{ "ups.type",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	63,	64,	"%s",	QX_FLAG_SEMI_STATIC,	voltronic_status },
+	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	65,	65,	"%s",	QX_FLAG_QUICK_POLL,	voltronic_status },	/* Utility Fail (Immediate) */
+	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	66,	66,	"%s",	QX_FLAG_QUICK_POLL,	voltronic_status },	/* Battery Low */
+	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	67,	67,	"%s",	QX_FLAG_QUICK_POLL,	voltronic_status },	/* Bypass/Boost or Buck Active */
 	{ "ups.alarm",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	67,	67,	"%s",	0,			voltronic_status },	/* Bypass/Boost or Buck Active */
 	{ "ups.alarm",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	68,	68,	"%s",	0,			voltronic_status },	/* UPS Fault */
 /*	{ "unknown.4",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	69,	69,	"%s",	0,			voltronic_status },	*//* Unknown */
-	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	70,	70,	"%s",	BLZR_FLAG_QUICK_POLL,	voltronic_status },	/* Test in Progress */
-	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	71,	71,	"%s",	BLZR_FLAG_QUICK_POLL,	voltronic_status },	/* Shutdown Active */
+	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	70,	70,	"%s",	QX_FLAG_QUICK_POLL,	voltronic_status },	/* Test in Progress */
+	{ "ups.status",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	71,	71,	"%s",	QX_FLAG_QUICK_POLL,	voltronic_status },	/* Shutdown Active */
 	{ "ups.beeper.status",	0,	NULL,	"QGS\r",	"",	76,	'(',	"",	72,	72,	"%s",	0,			voltronic_status },	/* Beeper status - ups.beeper.status */
 /*	{ "unknown.5",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	73,	73,	"%s",	0,			voltronic_status },	*//* Unknown */
 /*	{ "unknown.6",		0,	NULL,	"QGS\r",	"",	76,	'(',	"",	74,	74,	"%s",	0,			voltronic_status },	*//* Unknown */
@@ -1104,7 +1104,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1         2         3         4         5         6
 	 */
 
-	{ "ups.alarm",		0,	NULL,	"QFS\r",	"",	4,	'(',	"",	1,	2,	"%s",	BLZR_FLAG_SKIP,	voltronic_fault },
+	{ "ups.alarm",		0,	NULL,	"QFS\r",	"",	4,	'(',	"",	1,	2,	"%s",	QX_FLAG_SKIP,	voltronic_fault },
 
 	/* Query UPS for warnings and their type
 	 * > [QWS\r]
@@ -1123,8 +1123,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 */
 
 	{ "battery.voltage",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	1,	5,	"%.2f",	0,	NULL },
-	{ "battery_number",	ST_FLAG_RW,	voltronic_r_batt_numb,	"QBV\r",	"",	21,	'(',	"",	7,	9,	"%d",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT,	voltronic_batt_numb },	/* Number of batteries that make a pack */
-	{ "battery.packs",	ST_FLAG_RW,	voltronic_r_batt_packs,	"QBV\r",	"",	21,	'(',	"",	10,	11,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE,	NULL },	/* Number of battery packs in parallel */
+	{ "battery_number",	ST_FLAG_RW,	voltronic_r_batt_numb,	"QBV\r",	"",	21,	'(',	"",	7,	9,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,	voltronic_batt_numb },	/* Number of batteries that make a pack */
+	{ "battery.packs",	ST_FLAG_RW,	voltronic_r_batt_packs,	"QBV\r",	"",	21,	'(',	"",	10,	11,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE,	NULL },	/* Number of battery packs in parallel */
 	{ "battery.charge",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	13,	15,	"%.0f",	0,	NULL },
 	{ "battery.runtime",	0,		NULL,			"QBV\r",	"",	21,	'(',	"",	17,	19,	"%.0f",	0,	voltronic_batt_runtime },
 
@@ -1169,50 +1169,50 @@ static item_t	voltronic_blzr2nut[] = {
 	 */
 
 	/*	From Q3PV	*/
-	{ "input.L1-N.voltage",			0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	1,	5,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L2-N.voltage",			0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	7,	11,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L3-N.voltage",			0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	13,	17,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L1-L2.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	19,	23,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L2-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L1-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-/*	{ "input.L1-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
-/*	{ "input.L2-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
+	{ "input.L1-N.voltage",			0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	1,	5,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L2-N.voltage",			0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	7,	11,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L3-N.voltage",			0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	13,	17,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L1-L2.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	19,	23,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L2-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L1-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	QX_FLAG_SKIP,	NULL },
+/*	{ "input.L1-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	QX_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
+/*	{ "input.L2-L3.voltage",		0,	NULL,	"Q3PV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	QX_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
 
 	/*	From Q3PC	*/
-	{ "input.L1.current",			0,	NULL,	"Q3PC\r",	"",	13,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L2.current",			0,	NULL,	"Q3PC\r",	"",	13,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
-	{ "input.L3.current",			0,	NULL,	"Q3PC\r",	"",	13,	'(',	"",	9,	11,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
+	{ "input.L1.current",			0,	NULL,	"Q3PC\r",	"",	13,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L2.current",			0,	NULL,	"Q3PC\r",	"",	13,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SKIP,	NULL },
+	{ "input.L3.current",			0,	NULL,	"Q3PC\r",	"",	13,	'(',	"",	9,	11,	"%.0f",	QX_FLAG_SKIP,	NULL },
 
 	/*	From Q3OV	*/
-	{ "output.L1-N.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	1,	5,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L2-N.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	7,	11,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L3-N.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	13,	17,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L1-L2.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	19,	23,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L2-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L1-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-/*	{ "output.L1-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
-/*	{ "output.L2-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
+	{ "output.L1-N.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	1,	5,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L2-N.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	7,	11,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L3-N.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	13,	17,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L1-L2.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	19,	23,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L2-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L1-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	QX_FLAG_SKIP,	NULL },
+/*	{ "output.L1-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	QX_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
+/*	{ "output.L2-L3.voltage",		0,	NULL,	"Q3OV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	QX_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
 
 	/*	From Q3OC	*/
-	{ "output.L1.current",			0,	NULL,	"Q3OC\r",	"",	13,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L2.current",			0,	NULL,	"Q3OC\r",	"",	13,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L3.current",			0,	NULL,	"Q3OC\r",	"",	13,	'(',	"",	9,	11,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
+	{ "output.L1.current",			0,	NULL,	"Q3OC\r",	"",	13,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L2.current",			0,	NULL,	"Q3OC\r",	"",	13,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L3.current",			0,	NULL,	"Q3OC\r",	"",	13,	'(',	"",	9,	11,	"%.0f",	QX_FLAG_SKIP,	NULL },
 
 	/*	From Q3LD	*/
-	{ "output.L1.power.percent",		0,	NULL,	"Q3LD\r",	"",	13,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L2.power.percent",		0,	NULL,	"Q3LD\r",	"",	13,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.L3.power.percent",		0,	NULL,	"Q3LD\r",	"",	13,	'(',	"",	9,	11,	"%.0f",	BLZR_FLAG_SKIP,	NULL },
+	{ "output.L1.power.percent",		0,	NULL,	"Q3LD\r",	"",	13,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L2.power.percent",		0,	NULL,	"Q3LD\r",	"",	13,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SKIP,	NULL },
+	{ "output.L3.power.percent",		0,	NULL,	"Q3LD\r",	"",	13,	'(',	"",	9,	11,	"%.0f",	QX_FLAG_SKIP,	NULL },
 
 	/*	From Q3YV	*/
-	{ "output.bypass.L1-N.voltage",		0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	1,	5,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.bypass.L2-N.voltage",		0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	7,	11,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.bypass.L3-N.voltage",		0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	13,	17,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.bypass.L1-N.voltage",		0,	NULL,	"Q3YV\r",	"",	19,	'(',	"",	1,	5,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	/* P09 */
-	{ "output.bypass.L2-N.voltage",		0,	NULL,	"Q3YV\r",	"",	19,	'(',	"",	7,	11,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	/* P09 */
-/*	{ "output.bypass.L3-N.voltage",		0,	NULL,	"Q3YV\r",	"",	19,	'(',	"",	13,	17,	"%.1f",	BLZR_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
-	{ "output.bypass.L1-L2.voltage",	0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	19,	23,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.bypass.L2-L3.voltage",	0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
-	{ "output.bypass.L1-L3.voltage",	0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	BLZR_FLAG_SKIP,	NULL },
+	{ "output.bypass.L1-N.voltage",		0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	1,	5,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.bypass.L2-N.voltage",		0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	7,	11,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.bypass.L3-N.voltage",		0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	13,	17,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.bypass.L1-N.voltage",		0,	NULL,	"Q3YV\r",	"",	19,	'(',	"",	1,	5,	"%.1f",	QX_FLAG_SKIP,	NULL },	/* P09 */
+	{ "output.bypass.L2-N.voltage",		0,	NULL,	"Q3YV\r",	"",	19,	'(',	"",	7,	11,	"%.1f",	QX_FLAG_SKIP,	NULL },	/* P09 */
+/*	{ "output.bypass.L3-N.voltage",		0,	NULL,	"Q3YV\r",	"",	19,	'(',	"",	13,	17,	"%.1f",	QX_FLAG_SKIP,	NULL },	*//* P09 *//* Commented out because P09 should be two-phase input/output UPSes */
+	{ "output.bypass.L1-L2.voltage",	0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	19,	23,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.bypass.L2-L3.voltage",	0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	25,	29,	"%.1f",	QX_FLAG_SKIP,	NULL },
+	{ "output.bypass.L1-L3.voltage",	0,	NULL,	"Q3YV\r",	"",	37,	'(',	"",	31,	35,	"%.1f",	QX_FLAG_SKIP,	NULL },
 
 	/* Query UPS for capability - total options available: 23; only those whom the UPS is capable of are reported as Enabled or Disabled
 	 * > [QFLAG\r]
@@ -1221,24 +1221,24 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1	* min length = ( + E + D + \r = 4
 	 */
 
-	{ "ups.start.auto",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM,	voltronic_capability },
-	{ "battery.protection",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM,	voltronic_capability },
-	{ "battery.energysave",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM,	voltronic_capability },
-	{ "ups.start.battery",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM,	voltronic_capability },
-	{ "outlet.0.switchable",	ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM,	voltronic_capability },
+	{ "ups.start.auto",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM,	voltronic_capability },
+	{ "battery.protection",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM,	voltronic_capability },
+	{ "battery.energysave",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM,	voltronic_capability },
+	{ "ups.start.battery",		ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM,	voltronic_capability },
+	{ "outlet.0.switchable",	ST_FLAG_RW,	voltronic_e_cap,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM,	voltronic_capability },
 	/* Not available in NUT */
-	{ "bypass_alarm",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "battery_alarm",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "bypass_when_off",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "alarm_control",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "converter_mode",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "eco_mode",			0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "battery_open_status_check",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "bypass_forbidding",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "site_fault_detection",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "advanced_eco_mode",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "constant_phase_angle",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
-	{ "limited_runtime_on_battery",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,	voltronic_capability },
+	{ "bypass_alarm",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "battery_alarm",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "bypass_when_off",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "alarm_control",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "converter_mode",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "eco_mode",			0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "battery_open_status_check",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "bypass_forbidding",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "site_fault_detection",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "advanced_eco_mode",		0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "constant_phase_angle",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
+	{ "limited_runtime_on_battery",	0,	NULL,	"QFLAG\r",	"",	4,	'(',	"",	1,	0,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,	voltronic_capability },
 
 	/*   Enable	or	  Disable	or	Reset to safe default values	capability options
 	 * > [PEX\r]		> [PDX\r]		> [PF\r]
@@ -1247,25 +1247,25 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0			   0			   0
 	 */
 
-	{ "ups.start.auto",		0,	voltronic_e_cap,	"P%sR\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_capability_set },
-	{ "battery.protection",		0,	voltronic_e_cap,	"P%sS\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_capability_set },
-	{ "battery.energysave",		0,	voltronic_e_cap,	"P%sG\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_capability_set },
-	{ "ups.start.battery",		0,	voltronic_e_cap,	"P%sC\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_capability_set },
-	{ "outlet.0.switchable",	0,	voltronic_e_cap,	"P%sJ\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_capability_set },
+	{ "ups.start.auto",		0,	voltronic_e_cap,	"P%sR\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_capability_set },
+	{ "battery.protection",		0,	voltronic_e_cap,	"P%sS\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_capability_set },
+	{ "battery.energysave",		0,	voltronic_e_cap,	"P%sG\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_capability_set },
+	{ "ups.start.battery",		0,	voltronic_e_cap,	"P%sC\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_capability_set },
+	{ "outlet.0.switchable",	0,	voltronic_e_cap,	"P%sJ\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_capability_set },
 	/* Not available in NUT */
-	{ "reset_to_default",		0,	NULL,			"PF\r",		"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_reset },
-	{ "bypass_alarm",		0,	voltronic_e_cap_nonut,	"P%sP\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "battery_alarm",		0,	voltronic_e_cap_nonut,	"P%sB\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "bypass_when_off",		0,	voltronic_e_cap_nonut,	"P%sO\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "alarm_control",		0,	voltronic_e_cap_nonut,	"P%sA\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "converter_mode",		0,	voltronic_e_cap_nonut,	"P%sV\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "eco_mode",			0,	voltronic_e_cap_nonut,	"P%sE\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "battery_open_status_check",	0,	voltronic_e_cap_nonut,	"P%sD\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "bypass_forbidding",		0,	voltronic_e_cap_nonut,	"P%sF\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "site_fault_detection",	0,	voltronic_e_cap_nonut,	"P%sL\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "advanced_eco_mode",		0,	voltronic_e_cap_nonut,	"P%sN\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "constant_phase_angle",	0,	voltronic_e_cap_nonut,	"P%sQ\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
-	{ "limited_runtime_on_battery",	0,	voltronic_e_cap_nonut,	"P%sW\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "reset_to_default",		0,	NULL,			"PF\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_reset },
+	{ "bypass_alarm",		0,	voltronic_e_cap_nonut,	"P%sP\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "battery_alarm",		0,	voltronic_e_cap_nonut,	"P%sB\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "bypass_when_off",		0,	voltronic_e_cap_nonut,	"P%sO\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "alarm_control",		0,	voltronic_e_cap_nonut,	"P%sA\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "converter_mode",		0,	voltronic_e_cap_nonut,	"P%sV\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "eco_mode",			0,	voltronic_e_cap_nonut,	"P%sE\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "battery_open_status_check",	0,	voltronic_e_cap_nonut,	"P%sD\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "bypass_forbidding",		0,	voltronic_e_cap_nonut,	"P%sF\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "site_fault_detection",	0,	voltronic_e_cap_nonut,	"P%sL\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "advanced_eco_mode",		0,	voltronic_e_cap_nonut,	"P%sN\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "constant_phase_angle",	0,	voltronic_e_cap_nonut,	"P%sQ\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
+	{ "limited_runtime_on_battery",	0,	voltronic_e_cap_nonut,	"P%sW\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_capability_set_nonut },
 
 	/* Query UPS for programmable outlet (1-4) status
 	 * > [QSK1\r]
@@ -1274,14 +1274,14 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "outlet.1.switchable",	0,	NULL,	"QSK1\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.1.status",		0,	NULL,	"QSK1\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.2.switchable",	0,	NULL,	"QSK2\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.2.status",		0,	NULL,	"QSK2\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.3.switchable",	0,	NULL,	"QSK3\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.3.status",		0,	NULL,	"QSK3\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.4.switchable",	0,	NULL,	"QSK4\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
-	{ "outlet.4.status",		0,	NULL,	"QSK4\r",	"",	3,	'(',	"",	1,	1,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.1.switchable",	0,	NULL,	"QSK1\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.1.status",		0,	NULL,	"QSK1\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.2.switchable",	0,	NULL,	"QSK2\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.2.status",		0,	NULL,	"QSK2\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.3.switchable",	0,	NULL,	"QSK3\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.3.status",		0,	NULL,	"QSK3\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.4.switchable",	0,	NULL,	"QSK4\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
+	{ "outlet.4.status",		0,	NULL,	"QSK4\r",	"",	3,	'(',	"",	1,	1,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,	voltronic_outlet },
 
 	/* Query UPS for programmable outlet n (1-4) delay time before it shuts down the load when on battery mode
 	 * > [QSKT1\r]
@@ -1290,10 +1290,10 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "outlet.1.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT1\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay },
-	{ "outlet.2.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT2\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay },
-	{ "outlet.3.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT3\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay },
-	{ "outlet.4.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT4\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay },
+	{ "outlet.1.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT1\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay },
+	{ "outlet.2.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT2\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay },
+	{ "outlet.3.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT3\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay },
+	{ "outlet.4.delay.shutdown",	ST_FLAG_RW,	voltronic_r_outlet_delay,	"QSKT4\r",	"",	5,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay },
 
 	/* Set delay time for programmable outlets
 	 * > [PSK1nnn\r]	n = 0..9
@@ -1302,10 +1302,10 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "outlet.1.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK1%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay_set },
-	{ "outlet.2.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK2%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay_set },
-	{ "outlet.3.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK3%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay_set },
-	{ "outlet.4.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK4%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_outlet_delay_set },
+	{ "outlet.1.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK1%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay_set },
+	{ "outlet.2.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK2%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay_set },
+	{ "outlet.3.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK3%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay_set },
+	{ "outlet.4.delay.shutdown",	0,	voltronic_r_outlet_delay,	"PSK4%03d\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_outlet_delay_set },
 
 	/* Query UPS for ECO Mode voltage limits
 	 * > [QHE\r]
@@ -1314,12 +1314,12 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "input.transfer.high",	ST_FLAG_RW,	voltronic_r_eco_volt_max,	"QHE\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_eco_volt },
-	{ "input.transfer.low",		ST_FLAG_RW,	voltronic_r_eco_volt_min,	"QHE\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_eco_volt },
-	{ "input.transfer.low.min",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,				voltronic_eco_volt_range },
-	{ "input.transfer.low.max",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,				voltronic_eco_volt_range },
-	{ "input.transfer.high.min",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,				voltronic_eco_volt_range },
-	{ "input.transfer.high.max",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_SKIP,				voltronic_eco_volt_range },
+	{ "input.transfer.high",	ST_FLAG_RW,	voltronic_r_eco_volt_max,	"QHE\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_eco_volt },
+	{ "input.transfer.low",		ST_FLAG_RW,	voltronic_r_eco_volt_min,	"QHE\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_eco_volt },
+	{ "input.transfer.low.min",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,			voltronic_eco_volt_range },
+	{ "input.transfer.low.max",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,			voltronic_eco_volt_range },
+	{ "input.transfer.high.min",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,			voltronic_eco_volt_range },
+	{ "input.transfer.high.max",	0,		NULL,				"QHE\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_SKIP,			voltronic_eco_volt_range },
 
 	/* Set ECO Mode voltage limits
 	 * > [HEHnnn\r]		> [HELnnn\r]		n = 0..9
@@ -1328,8 +1328,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "input.transfer.high",	0,	voltronic_r_eco_volt_max,	"HEH%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_process_setvar },
-	{ "input.transfer.low",		0,	voltronic_r_eco_volt_min,	"HEL%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_process_setvar },
+	{ "input.transfer.high",	0,	voltronic_r_eco_volt_max,	"HEH%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_process_setvar },
+	{ "input.transfer.low",		0,	voltronic_r_eco_volt_min,	"HEL%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_process_setvar },
 
 	/* Query UPS for ECO Mode frequency limits
 	 * > [QFRE\r]
@@ -1338,8 +1338,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1
 	 */
 
-	{ "input.frequency.high",	ST_FLAG_RW,	voltronic_r_eco_freq_max,	"QFRE\r",	"",	11,	'(',	"",	1,	4,	"%.1f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_eco_freq },
-	{ "input.frequency.low",	ST_FLAG_RW,	voltronic_r_eco_freq_min,	"QFRE\r",	"",	11,	'(',	"",	6,	9,	"%.1f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_eco_freq },
+	{ "input.frequency.high",	ST_FLAG_RW,	voltronic_r_eco_freq_max,	"QFRE\r",	"",	11,	'(',	"",	1,	4,	"%.1f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_eco_freq },
+	{ "input.frequency.low",	ST_FLAG_RW,	voltronic_r_eco_freq_min,	"QFRE\r",	"",	11,	'(',	"",	6,	9,	"%.1f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_eco_freq },
 
 	/* Set ECO Mode frequency limits
 	 * > [FREHnn.n\r]	> [FRELnn.n\r]		n = 0..9
@@ -1348,8 +1348,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "input.frequency.high",	0,	voltronic_r_eco_freq_max,	"FREH%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_process_setvar },
-	{ "input.frequency.low",	0,	voltronic_r_eco_freq_min,	"FREL%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_SKIP,	voltronic_process_setvar },
+	{ "input.frequency.high",	0,	voltronic_r_eco_freq_max,	"FREH%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_process_setvar },
+	{ "input.frequency.low",	0,	voltronic_r_eco_freq_min,	"FREL%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,	voltronic_process_setvar },
 
 	/* Query UPS for Bypass Mode voltage limits
 	 * > [QBYV\r]
@@ -1358,8 +1358,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "max_bypass_volt",	ST_FLAG_RW,	voltronic_r_bypass_volt_max,	"QBYV\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_bypass },
-	{ "min_bypass_volt",	ST_FLAG_RW,	voltronic_r_bypass_volt_min,	"QBYV\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_bypass },
+	{ "max_bypass_volt",	ST_FLAG_RW,	voltronic_r_bypass_volt_max,	"QBYV\r",	"",	9,	'(',	"",	1,	3,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_bypass },
+	{ "min_bypass_volt",	ST_FLAG_RW,	voltronic_r_bypass_volt_min,	"QBYV\r",	"",	9,	'(',	"",	5,	7,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_bypass },
 
 	/* Set Bypass Mode voltage limits
 	 * > [PHVnnn\r]		> [PLVnnn\r]		n = 0..9
@@ -1368,8 +1368,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "max_bypass_volt",	0,	voltronic_r_bypass_volt_max,	"PHV%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_process_setvar },
-	{ "min_bypass_volt",	0,	voltronic_r_bypass_volt_min,	"PLV%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_process_setvar },
+	{ "max_bypass_volt",	0,	voltronic_r_bypass_volt_max,	"PHV%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_process_setvar },
+	{ "min_bypass_volt",	0,	voltronic_r_bypass_volt_min,	"PLV%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_process_setvar },
 
 	/* Query UPS for Bypass Mode frequency limits
 	 * > [QBYF\r]
@@ -1378,8 +1378,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0         1
 	 */
 
-	{ "max_bypass_freq",	ST_FLAG_RW,	voltronic_r_bypass_freq_max,	"QBYF\r",	"",	11,	'(',	"",	1,	4,	"%.1f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_bypass },
-	{ "min_bypass_freq",	ST_FLAG_RW,	voltronic_r_bypass_freq_min,	"QBYF\r",	"",	11,	'(',	"",	6,	9,	"%.1f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_bypass },
+	{ "max_bypass_freq",	ST_FLAG_RW,	voltronic_r_bypass_freq_max,	"QBYF\r",	"",	11,	'(',	"",	1,	4,	"%.1f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_bypass },
+	{ "min_bypass_freq",	ST_FLAG_RW,	voltronic_r_bypass_freq_min,	"QBYF\r",	"",	11,	'(',	"",	6,	9,	"%.1f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_bypass },
 
 	/* Set Bypass Mode frequency limits
 	 * > [PGFnn.n\r]	> [PSFnn.n\r]		n = 0..9
@@ -1388,8 +1388,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0			   0
 	 */
 
-	{ "max_bypass_freq",	0,	voltronic_r_bypass_freq_max,	"PGF%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_process_setvar },
-	{ "min_bypass_freq",	0,	voltronic_r_bypass_freq_min,	"PSF%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_process_setvar },
+	{ "max_bypass_freq",	0,	voltronic_r_bypass_freq_max,	"PGF%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_process_setvar },
+	{ "min_bypass_freq",	0,	voltronic_r_bypass_freq_min,	"PSF%04.1f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_process_setvar },
 
 	/* Set number of batteries that make a pack to n (integer, 1-9). NOTE: changing the number of batteries will change the UPS's estimation on battery charge/runtime
 	 * > [BATNn\r]
@@ -1398,7 +1398,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "battery_number",	0,	voltronic_r_batt_numb,	"BATN%1.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE | BLZR_FLAG_NONUT,	voltronic_process_setvar },
+	{ "battery_number",	0,	voltronic_r_batt_numb,	"BATN%1.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT,	voltronic_process_setvar },
 
 	/* Set number of battery packs in parallel to n (integer, 01-99). NOTE: changing the number of battery packs will change the UPS's estimation on battery charge/runtime
 	 * > [BATGNn\r]
@@ -1407,7 +1407,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.packs",	0,	voltronic_r_batt_packs,	"BATGN%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE,	voltronic_process_setvar },
+	{ "battery.packs",	0,	voltronic_r_batt_packs,	"BATGN%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE,	voltronic_process_setvar },
 
 	/* Query UPS for battery type (Only P31)
 	 * > [QBT\r]
@@ -1416,7 +1416,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.type",	ST_FLAG_RW,	voltronic_e_batt_type,	"QBT\r",	"",	4,	'(',	"",	1,	2,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_p31b },
+	{ "battery.type",	ST_FLAG_RW,	voltronic_e_batt_type,	"QBT\r",	"",	4,	'(',	"",	1,	2,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_p31b },
 
 	/* Set battery type (Only P31)
 	 * > [PBTnn\r]		nn = 00/01/02
@@ -1425,7 +1425,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.type",	0,	voltronic_e_batt_type,	"PBT%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_SKIP,	voltronic_p31b_set },
+	{ "battery.type",	0,	voltronic_e_batt_type,	"PBT%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,	voltronic_p31b_set },
 
 	/* Query UPS for device grid working range (Only P31)
 	 * > [QGR\r]
@@ -1434,7 +1434,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "work_range_type",	ST_FLAG_RW,	voltronic_e_work_range,	"QGR\r",	"",	4,	'(',	"",	1,	2,	"%s",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_p31g },
+	{ "work_range_type",	ST_FLAG_RW,	voltronic_e_work_range,	"QGR\r",	"",	4,	'(',	"",	1,	2,	"%s",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_p31g },
 
 	/* Set device grid working range type (Only P31)
 	 * > [PBTnn\r]		nn = 00/01
@@ -1443,7 +1443,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "work_range_type",	0,	voltronic_e_work_range,	"PGR%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_p31g_set },
+	{ "work_range_type",	0,	voltronic_e_work_range,	"PGR%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_p31g_set },
 
 	/* Query UPS for battery low voltage
 	 * > [RE0\r]
@@ -1452,7 +1452,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.voltage.low",	ST_FLAG_RW,	voltronic_r_batt_low,	"RE0\r",	"",	3,	'#',	"",	1,	2,	"%.1f",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_RANGE,	NULL },
+	{ "battery.voltage.low",	ST_FLAG_RW,	voltronic_r_batt_low,	"RE0\r",	"",	3,	'#',	"",	1,	2,	"%.1f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE,	NULL },
 
 	/* Set voltage for battery low to n (integer, 20..24/20..28). NOTE: changing the battery low voltage will change the UPS's estimation on battery charge/runtime
 	 * > [W0En\r]
@@ -1461,7 +1461,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.voltage.low",	0,	voltronic_r_batt_low,	"W0E%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE,	voltronic_process_setvar },
+	{ "battery.voltage.low",	0,	voltronic_r_batt_low,	"W0E%02.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE,	voltronic_process_setvar },
 
 	/* Query UPS for Phase Angle
 	 * > [QPD\r]
@@ -1470,8 +1470,8 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "input_phase_angle",		0,		NULL,			"QPD\r",	"",	9,	'(',	"",	1,	3,	"%03d",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_NONUT,			voltronic_phase },
-	{ "output_phase_angle",		ST_FLAG_RW,	voltronic_e_phase,	"QPD\r",	"",	9,	'(',	"",	5,	7,	"%03d",	BLZR_FLAG_SEMI_STATIC | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT,	voltronic_phase },
+	{ "input_phase_angle",		0,		NULL,			"QPD\r",	"",	9,	'(',	"",	1,	3,	"%03d",	QX_FLAG_SEMI_STATIC | QX_FLAG_NONUT,			voltronic_phase },
+	{ "output_phase_angle",		ST_FLAG_RW,	voltronic_e_phase,	"QPD\r",	"",	9,	'(',	"",	5,	7,	"%03d",	QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT,	voltronic_phase },
 
 	/* Set output phase angle
 	 * > [PPDn\r]		n = (000, 120, 180 or 240)
@@ -1480,7 +1480,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "output_phase_angle",		0,	voltronic_e_phase,	"PPD%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_SETVAR | BLZR_FLAG_ENUM | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	voltronic_phase_set },
+	{ "output_phase_angle",		0,	voltronic_e_phase,	"PPD%03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT | QX_FLAG_SKIP,	voltronic_phase_set },
 
 	/* Query UPS for master/slave for a system of UPSes in parallel
 	 * > [QPAR\r]
@@ -1489,7 +1489,7 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "voltronic_parallel",		0,	NULL,	"QPAR\r",	"",	5,	'(',	"",	1,	3,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_NONUT,	voltronic_parallel },
+	{ "voltronic_parallel",		0,	NULL,	"QPAR\r",	"",	5,	'(',	"",	1,	3,	"%s",	QX_FLAG_STATIC | QX_FLAG_NONUT,	voltronic_parallel },
 
 	/* Query UPS for ??
 	 * > [QBDR\r]
@@ -1498,43 +1498,43 @@ static item_t	voltronic_blzr2nut[] = {
 	 *    0
 	 */
 
-	{ "unknown.7",		0,	NULL,	"QBDR\r",	"",	5,	'(',	"",	1,	0,	"%s",	BLZR_FLAG_STATIC | BLZR_FLAG_NONUT | BLZR_FLAG_SKIP,	NULL },
+	{ "unknown.7",		0,	NULL,	"QBDR\r",	"",	5,	'(',	"",	1,	0,	"%s",	QX_FLAG_STATIC | QX_FLAG_NONUT | QX_FLAG_SKIP,	NULL },
 
 	/* Instant commands */
-	{ "load.off",			0,	NULL,	"SOFF\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	NULL },
-	{ "load.on",			0,	NULL,	"SON\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	NULL },
+	{ "load.off",			0,	NULL,	"SOFF\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
+	{ "load.on",			0,	NULL,	"SON\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
 
-	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	voltronic_process_command },
-	{ "shutdown.stayoff",		0,	NULL,	"S%sR0000\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	voltronic_process_command },
-	{ "shutdown.stop",		0,	NULL,	"CS\r",		"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	NULL },
+	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	voltronic_process_command },
+	{ "shutdown.stayoff",		0,	NULL,	"S%sR0000\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	voltronic_process_command },
+	{ "shutdown.stop",		0,	NULL,	"CS\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
 
-	{ "test.battery.start",		0,	NULL,	"T%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	voltronic_process_command },
-	{ "test.battery.start.deep",	0,	NULL,	"TL\r",		"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	NULL },
-	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	NULL },
-	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	NULL },
+	{ "test.battery.start",		0,	NULL,	"T%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	voltronic_process_command },
+	{ "test.battery.start.deep",	0,	NULL,	"TL\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
+	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
+	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
 
-	{ "beeper.toggle",		0,	NULL,	"BZ%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD,	voltronic_process_command },
+	{ "beeper.toggle",		0,	NULL,	"BZ%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	voltronic_process_command },
 	/* Enable/disable beeper: unskipped if the UPS can control alarm (capability) */
-	{ "beeper.enable",		0,	NULL,	"PEA\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "beeper.disable",		0,	NULL,	"PDA\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
+	{ "beeper.enable",		0,	NULL,	"PEA\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "beeper.disable",		0,	NULL,	"PDA\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
 
 	/* Outlet control: unskipped if the outlets are manageable */
-	{ "outlet.1.load.off",		0,	NULL,	"SKOFF1\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.1.load.on",		0,	NULL,	"SKON1\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.2.load.off",		0,	NULL,	"SKOFF2\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.2.load.on",		0,	NULL,	"SKON2\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.3.load.off",		0,	NULL,	"SKOFF3\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.3.load.on",		0,	NULL,	"SKON3\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.4.load.off",		0,	NULL,	"SKOFF4\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "outlet.4.load.on",		0,	NULL,	"SKON4\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
+	{ "outlet.1.load.off",		0,	NULL,	"SKOFF1\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.1.load.on",		0,	NULL,	"SKON1\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.2.load.off",		0,	NULL,	"SKOFF2\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.2.load.on",		0,	NULL,	"SKON2\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.3.load.off",		0,	NULL,	"SKOFF3\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.3.load.on",		0,	NULL,	"SKON3\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.4.load.off",		0,	NULL,	"SKOFF4\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "outlet.4.load.on",		0,	NULL,	"SKON4\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
 
 	/* Bypass: unskipped if the UPS is capable of ECO Mode */
-	{ "bypass.start",		0,	NULL,	"PEE\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
-	{ "bypass.stop",		0,	NULL,	"PDE\r",	"",	5,	'(',	"",	1,	3,	NULL,	BLZR_FLAG_CMD | BLZR_FLAG_SKIP,	NULL },
+	{ "bypass.start",		0,	NULL,	"PEE\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
+	{ "bypass.stop",		0,	NULL,	"PDE\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL },
 
 	/* Server-side settable vars */
-	{ "ups.delay.start",		ST_FLAG_RW,	voltronic_r_ondelay,	NULL,		"",	0,	0,	"",	0,	0,	DEFAULT_ONDELAY,	BLZR_FLAG_ABSENT | BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE,	voltronic_process_setvar },
-	{ "ups.delay.shutdown",		ST_FLAG_RW,	voltronic_r_offdelay,	NULL,		"",	0,	0,	"",	0,	0,	DEFAULT_OFFDELAY,	BLZR_FLAG_ABSENT | BLZR_FLAG_SETVAR | BLZR_FLAG_RANGE,	voltronic_process_setvar },
+	{ "ups.delay.start",		ST_FLAG_RW,	voltronic_r_ondelay,	NULL,		"",	0,	0,	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	voltronic_process_setvar },
+	{ "ups.delay.shutdown",		ST_FLAG_RW,	voltronic_r_offdelay,	NULL,		"",	0,	0,	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	voltronic_process_setvar },
 
 	/* End of structure. */
 	{ NULL,		0,	NULL,	NULL,	"",	0,	0,	"",	0,	0,	NULL,	0,	NULL }
@@ -1679,7 +1679,7 @@ static int	voltronic_claim(void)
 		return 0;
 
 	/* No reply/Unable to get value */
-	if (blzr_process(item, NULL))
+	if (qx_process(item, NULL))
 		return 0;
 
 	/* Unable to process value */
@@ -1696,7 +1696,7 @@ static int	voltronic_claim(void)
 	}
 
 	/* No reply/Unable to get value */
-	if (blzr_process(item, NULL)) {
+	if (qx_process(item, NULL)) {
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
@@ -1753,7 +1753,7 @@ static void	voltronic_massive_unskip(const int protocol)
 {
 	item_t	*item;
 
-	for (item = voltronic_blzr2nut; item->info_type != NULL; item++) {
+	for (item = voltronic_qx2nut; item->info_type != NULL; item++) {
 
 		if (!item->command)
 			continue;
@@ -1816,15 +1816,15 @@ static void	voltronic_massive_unskip(const int protocol)
 			/* == P31 battery type/device grid working range == */
 			(protocol == 31 && (
 				!strcasecmp(item->info_type, "battery.type") ||
-				(!strcasecmp(item->info_type, "work_range_type") && !(item->blzrflags & BLZR_FLAG_SETVAR)) ||
-				(!strcasecmp(item->info_type, "work_range_type") && (item->blzrflags & BLZR_FLAG_SETVAR) && getval(item->info_type))
+				(!strcasecmp(item->info_type, "work_range_type") && !(item->qxflags & QX_FLAG_SETVAR)) ||
+				(!strcasecmp(item->info_type, "work_range_type") && (item->qxflags & QX_FLAG_SETVAR) && getval(item->info_type))
 			)) ||
 			/* == ByPass limits: all but P00/P08/P31 == */
 			(protocol != 0 && protocol != 8 && protocol != 31 && (
-				(!strcasecmp(item->info_type, "max_bypass_volt") && !(item->blzrflags & BLZR_FLAG_SETVAR)) ||
-				(!strcasecmp(item->info_type, "min_bypass_volt") && !(item->blzrflags & BLZR_FLAG_SETVAR)) ||
-				(!strcasecmp(item->info_type, "max_bypass_freq") && !(item->blzrflags & BLZR_FLAG_SETVAR)) ||
-				(!strcasecmp(item->info_type, "min_bypass_freq") && !(item->blzrflags & BLZR_FLAG_SETVAR))
+				(!strcasecmp(item->info_type, "max_bypass_volt") && !(item->qxflags & QX_FLAG_SETVAR)) ||
+				(!strcasecmp(item->info_type, "min_bypass_volt") && !(item->qxflags & QX_FLAG_SETVAR)) ||
+				(!strcasecmp(item->info_type, "max_bypass_freq") && !(item->qxflags & QX_FLAG_SETVAR)) ||
+				(!strcasecmp(item->info_type, "min_bypass_freq") && !(item->qxflags & QX_FLAG_SETVAR))
 			)) ||
 			/* == Reset capabilities options to safe default values == */
 			(!strcasecmp(item->info_type, "reset_to_default") && testvar("reset_to_default")) ||
@@ -1832,7 +1832,7 @@ static void	voltronic_massive_unskip(const int protocol)
 			(!strcasecmp(item->info_type, "unknown.7") && testvar("testing"))
 		) {
 
-				item->blzrflags &= ~BLZR_FLAG_SKIP;
+				item->qxflags &= ~QX_FLAG_SKIP;
 
 		}
 
@@ -2114,21 +2114,21 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 			}
 
 			/* Unskip beeper.{enable,disable} instcmds */
-			unskip = find_nut_info("beeper.enable", BLZR_FLAG_CMD, 0);
+			unskip = find_nut_info("beeper.enable", QX_FLAG_CMD, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
-			unskip = find_nut_info("beeper.disable", BLZR_FLAG_CMD, 0);
+			unskip = find_nut_info("beeper.disable", QX_FLAG_CMD, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
 		}
 
@@ -2151,55 +2151,55 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 			}
 
 			/* Unskip bypass.{start,stop} instcmds */
-			unskip = find_nut_info("bypass.start", BLZR_FLAG_CMD, 0);
+			unskip = find_nut_info("bypass.start", QX_FLAG_CMD, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
-			unskip = find_nut_info("bypass.stop", BLZR_FLAG_CMD, 0);
+			unskip = find_nut_info("bypass.stop", QX_FLAG_CMD, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
 			/* Unskip input.transfer.{high,low} */
-			unskip = find_nut_info("input.transfer.high", BLZR_FLAG_SEMI_STATIC, 0);
+			unskip = find_nut_info("input.transfer.high", QX_FLAG_SEMI_STATIC, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
-			unskip = find_nut_info("input.transfer.low", BLZR_FLAG_SEMI_STATIC, 0);
+			unskip = find_nut_info("input.transfer.low", QX_FLAG_SEMI_STATIC, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
 			/* Unskip input.frequency.{high,low} */
-			unskip = find_nut_info("input.frequency.high", BLZR_FLAG_SEMI_STATIC, 0);
+			unskip = find_nut_info("input.frequency.high", QX_FLAG_SEMI_STATIC, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
-			unskip = find_nut_info("input.frequency.low", BLZR_FLAG_SEMI_STATIC, 0);
+			unskip = find_nut_info("input.frequency.low", QX_FLAG_SEMI_STATIC, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
 		}
 
@@ -2334,7 +2334,7 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 				if (!unskip)
 					return -1;
 
-				unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+				unskip->qxflags &= ~QX_FLAG_SKIP;
 
 				snprintf(buf, sizeof(buf), "outlet.%d.status", i);
 
@@ -2344,7 +2344,7 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 				if (!unskip)
 					return -1;
 
-				unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+				unskip->qxflags &= ~QX_FLAG_SKIP;
 
 			}
 
@@ -2361,17 +2361,17 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 	snprintf(value, valuelen, item->dfl, val);
 
 	/* This item doesn't have a NUT var and we were not asked by the user to change its value */
-	if ((item->blzrflags & BLZR_FLAG_NONUT) && !getval(item->info_type))
+	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
 		return 0;
 
 	/* Unskip setvar */
-	unskip = find_nut_info(item->info_type, BLZR_FLAG_SETVAR, 0);
+	unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -2434,7 +2434,7 @@ static int	voltronic_capability_set_nonut(item_t *item, char *value, size_t valu
 	if (!match)
 		return -1;
 
-	/* At this point value should have been already checked by blzr's own setvar so this shouldn't happen.. however.. */
+	/* At this point value should have been already checked by nutdrv_qx's own setvar so this shouldn't happen.. however.. */
 	if (!strcasecmp(value, match)) {
 		upslogx(LOG_INFO, "%s is already %s", item->info_type, match);
 		return -1;
@@ -2461,7 +2461,7 @@ static int	voltronic_capability_reset(item_t *item, char *value, size_t valuelen
 		return -1;
 
 	/* UPS capability options can be reset only when the UPS is in 'Standby Mode' (=OFF) (from QMOD) */
-	if (!(blzr_status() & STATUS(OFF))) {
+	if (!(qx_status() & STATUS(OFF))) {
 		upslogx(LOG_ERR, "%s: UPS capability options can be reset only when the UPS is in Standby Mode (i.e. ups.status = 'OFF').", item->info_type);
 		return -1;
 	}
@@ -2564,32 +2564,32 @@ static int	voltronic_eco_volt(item_t *item, char *value, size_t valuelen)
 	/* Unskip input.transfer.{high,low}.{min,max} */
 	snprintf(buf, sizeof(buf), "%s.min", item->info_type);
 
-	unskip = find_nut_info(buf, BLZR_FLAG_SEMI_STATIC, 0);
+	unskip = find_nut_info(buf, QX_FLAG_SEMI_STATIC, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	snprintf(buf, sizeof(buf), "%s.max", item->info_type);
 
-	unskip = find_nut_info(buf, BLZR_FLAG_SEMI_STATIC, 0);
+	unskip = find_nut_info(buf, QX_FLAG_SEMI_STATIC, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	/* Unskip input.transfer.{high,low} setvar */
-	unskip = find_nut_info(item->info_type, BLZR_FLAG_SETVAR, 0);
+	unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -2628,7 +2628,7 @@ static int	voltronic_eco_volt_range(item_t *item, char *value, size_t valuelen)
 
 	}
 
-	from = find_nut_info(buf, BLZR_FLAG_SEMI_STATIC, 0);
+	from = find_nut_info(buf, QX_FLAG_SEMI_STATIC, 0);
 
 	/* Don't know what happened */
 	if (!from)
@@ -2656,13 +2656,13 @@ static int	voltronic_eco_freq(item_t *item, char *value, size_t valuelen)
 	snprintf(value, valuelen, item->dfl, strtod(item->value, NULL));
 
 	/* Unskip input.transfer.{high,low} setvar */
-	unskip = find_nut_info(item->info_type, BLZR_FLAG_SETVAR, 0);
+	unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -2708,13 +2708,13 @@ static int	voltronic_bypass(item_t *item, char *value, size_t valuelen)
 		return 0;
 
 	/* Unskip {min,max}_bypass_volt setvar */
-	unskip = find_nut_info(item->info_type, BLZR_FLAG_SETVAR, 0);
+	unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -2738,13 +2738,13 @@ static int	voltronic_batt_numb(item_t *item, char *value, size_t valuelen)
 		return 0;
 
 	/* Unskip battery_number setvar */
-	unskip = find_nut_info("battery_number", BLZR_FLAG_SETVAR, 0);
+	unskip = find_nut_info("battery_number", QX_FLAG_SETVAR, 0);
 
 	/* Don't know what happened */
 	if (!unskip)
 		return -1;
 
-	unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+	unskip->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -2816,7 +2816,7 @@ static int	voltronic_protocol(item_t *item, char *value, size_t valuelen)
 }
 
 /* Fault reported by the UPS:
- * When the UPS is queried for status (QGS), if it reports a fault (6th bit of 12bit flag of the reply to QGS set to 1), the driver unskips the QFS item in blzr2nut array: this function processes the reply to QFS query */
+ * When the UPS is queried for status (QGS), if it reports a fault (6th bit of 12bit flag of the reply to QGS set to 1), the driver unskips the QFS item in qx2nut array: this function processes the reply to QFS query */
 static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
 {
 	int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
@@ -2828,7 +2828,7 @@ static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
 	if (!strcasecmp(item->value, "OK")) {
 		snprintf(value, valuelen, item->dfl, "No fault found");
 		upslogx(LOG_INFO, "%s", value);
-		item->blzrflags |= BLZR_FLAG_SKIP;
+		item->qxflags |= QX_FLAG_SKIP;
 		return 0;
 	}
 
@@ -3178,7 +3178,7 @@ static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
 	snprintf(value, valuelen, item->dfl, alarm);
 	upslogx(LOG_INFO, "Fault found: %s", alarm);
 
-	item->blzrflags |= BLZR_FLAG_SKIP;
+	item->qxflags |= QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -3763,13 +3763,13 @@ static int	voltronic_status(item_t *item, char *value, size_t valuelen)
 
 			item_t	*faultitem;
 
-			for (faultitem = voltronic_blzr2nut; faultitem->info_type != NULL; faultitem++) {
+			for (faultitem = voltronic_qx2nut; faultitem->info_type != NULL; faultitem++) {
 
 				if (!faultitem->command)
 					continue;
 
 				if (!strcasecmp(faultitem->command, "QFS\r")) {
-					faultitem->blzrflags &= ~BLZR_FLAG_SKIP;
+					faultitem->qxflags &= ~QX_FLAG_SKIP;
 					break;
 				}
 
@@ -3921,35 +3921,35 @@ static int	voltronic_outlet(item_t *item, char *value, size_t valuelen)
 	/* Unskip outlet.n.delay.shutdown */
 	snprintf(buf, sizeof(buf), "outlet.%c.delay.shutdown", number);
 
-	outlet_item = find_nut_info(buf, BLZR_FLAG_SEMI_STATIC, 0);
+	outlet_item = find_nut_info(buf, QX_FLAG_SEMI_STATIC, 0);
 
 	/* Don't know what happened*/
 	if (!outlet_item)
 		return -1;
 
-	outlet_item->blzrflags &= ~BLZR_FLAG_SKIP;
+	outlet_item->qxflags &= ~QX_FLAG_SKIP;
 
 	/* Unskip outlet.n.load.on */
 	snprintf(buf, sizeof(buf), "outlet.%c.load.on", number);
 
-	outlet_item = find_nut_info(buf, BLZR_FLAG_CMD, 0);
+	outlet_item = find_nut_info(buf, QX_FLAG_CMD, 0);
 
 	/* Don't know what happened*/
 	if (!outlet_item)
 		return -1;
 
-	outlet_item->blzrflags &= ~BLZR_FLAG_SKIP;
+	outlet_item->qxflags &= ~QX_FLAG_SKIP;
 
 	/* Unskip outlet.n.load.off */
 	snprintf(buf, sizeof(buf), "outlet.%c.load.off", number);
 
-	outlet_item = find_nut_info(buf, BLZR_FLAG_CMD, 0);
+	outlet_item = find_nut_info(buf, QX_FLAG_CMD, 0);
 
 	/* Don't know what happened*/
 	if (!outlet_item)
 		return -1;
 
-	outlet_item->blzrflags &= ~BLZR_FLAG_SKIP;
+	outlet_item->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -3975,13 +3975,13 @@ static int	voltronic_outlet_delay(item_t *item, char *value, size_t valuelen)
 	/* Unskip outlet.n.delay.shutdown setvar */
 	snprintf(buf, sizeof(buf), "outlet.%c.delay.shutdown", number);
 
-	setvar_item = find_nut_info(buf, BLZR_FLAG_SETVAR, 0);
+	setvar_item = find_nut_info(buf, QX_FLAG_SETVAR, 0);
 
 	/* Don't know what happened*/
 	if (!setvar_item)
 		return -1;
 
-	setvar_item->blzrflags &= ~BLZR_FLAG_SKIP;
+	setvar_item->qxflags &= ~QX_FLAG_SKIP;
 
 	return 0;
 }
@@ -4111,13 +4111,13 @@ static int	voltronic_phase(item_t *item, char *value, size_t valuelen)
 			item_t	*unskip;
 
 			/* Unskip output_phase_angle setvar */
-			unskip = find_nut_info(item->info_type, BLZR_FLAG_SETVAR, 0);
+			unskip = find_nut_info(item->info_type, QX_FLAG_SETVAR, 0);
 
 			/* Don't know what happened */
 			if (!unskip)
 				return -1;
 
-			unskip->blzrflags &= ~BLZR_FLAG_SKIP;
+			unskip->qxflags &= ~QX_FLAG_SKIP;
 
 		}
 
@@ -4197,7 +4197,7 @@ static int	voltronic_parallel(item_t *item, char *value, size_t valuelen)
 subdriver_t	voltronic_subdriver = {
 	VOLTRONIC_VERSION,
 	voltronic_claim,
-	voltronic_blzr2nut,
+	voltronic_qx2nut,
 	NULL,
 	NULL,
 	voltronic_makevartable,

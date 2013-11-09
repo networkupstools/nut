@@ -311,7 +311,6 @@ SRC_SERIAL_PAGES = \
 	bestups.txt 	\
 	bestfcom.txt	\
 	blazer.txt	\
-	blzr.txt	\
 	clone.txt \
 	dummy-ups.txt	\
 	etapro.txt	\
@@ -328,6 +327,7 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
+	nutdrv_qx.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -353,7 +353,6 @@ MAN_SERIAL_PAGES = \
 	bestfcom.8	\
 	blazer.8	\
 	blazer_ser.8	\
-	blzr.8	\
 	clone.8 \
 	dummy-ups.8	\
 	etapro.8	\
@@ -368,6 +367,7 @@ MAN_SERIAL_PAGES = \
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
+	nutdrv_qx.8	\
 	oneac.8		\
 	microdowell.8	\
 	optiups.8	\
@@ -397,7 +397,6 @@ HTML_SERIAL_MANS = \
 	bestups.html 	\
 	bestfcom.html	\
 	blazer.html	\
-	blzr.html	\
 	clone.html \
 	dummy-ups.html	\
 	etapro.html	\
@@ -412,6 +411,7 @@ HTML_SERIAL_MANS = \
 	metasys.html	\
 	mge-shut.html	\
 	mge-utalk.html	\
+	nutdrv_qx.html	\
 	oneac.html		\
 	microdowell.html	\
 	optiups.html	\
@@ -439,7 +439,7 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
-	blzr.txt	\
+	nutdrv_qx.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
@@ -449,7 +449,7 @@ SRC_USB_LIBUSB_PAGES = \
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
-	blzr.8	\
+	nutdrv_qx.8	\
 	richcomm_usb.8 \
 	riello_usb.8	\
 	tripplite_usb.8 \
@@ -461,7 +461,7 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
-	blzr.html	\
+	nutdrv_qx.html	\
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \

@@ -1,4 +1,4 @@
-/* blzr_voltronic.h - Subdriver for Voltronic Power UPSes
+/* nutdrv_qx_voltronic.h - Subdriver for Voltronic Power UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef BLZR_VOLTRONIC_H
-#define BLZR_VOLTRONIC_H
+#ifndef NUTDRV_QX_VOLTRONIC_H
+#define NUTDRV_QX_VOLTRONIC_H
 
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
 extern subdriver_t	voltronic_subdriver;
 
-#endif /* BLZR_VOLTRONIC_H */
+#endif /* NUTDRV_QX_VOLTRONIC_H */

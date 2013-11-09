@@ -1,4 +1,4 @@
-/* blzr_zinto.h - Subdriver for Zinto protocol based UPSes
+/* nutdrv_qx_zinto.h - Subdriver for Zinto protocol based UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef BLZR_ZINTO_H
-#define BLZR_ZINTO_H
+#ifndef NUTDRV_QX_ZINTO_H
+#define NUTDRV_QX_ZINTO_H
 
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
 extern subdriver_t	zinto_subdriver;
 
-#endif /* BLZR_ZINTO_H */
+#endif /* NUTDRV_QX_ZINTO_H */

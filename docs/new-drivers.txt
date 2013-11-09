@@ -714,6 +714,6 @@ include::hid-subdrivers.txt[]
 include::snmp-subdrivers.txt[]
 
 
-[[blzr-subdrivers]]
+[[nutdrv_qx-subdrivers]]
 
-include::blzr-subdrivers.txt[]
+include::nutdrv_qx-subdrivers.txt[]

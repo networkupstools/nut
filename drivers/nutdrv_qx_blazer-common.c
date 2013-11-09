@@ -1,4 +1,4 @@
-/* blzr_blazer-common.c - Common functions/settings for blzr_{mecer,megatec,megatec-old,mustek,zinto}.{c,h}
+/* nutdrv_qx_blazer-common.c - Common functions/settings for nutdrv_qx_{mecer,megatec,megatec-old,mustek,zinto}.{c,h}
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -20,8 +20,8 @@
  */
 
 #include "main.h"
-#include "blzr.h"
-#include "blzr_blazer-common.h"
+#include "nutdrv_qx.h"
+#include "nutdrv_qx_blazer-common.h"
 
 /* == Ranges == */
 
@@ -53,7 +53,7 @@ int	blazer_claim(void) {
 		return 0;
 
 	/* No reply/Unable to get value */
-	if (blzr_process(item, NULL))
+	if (qx_process(item, NULL))
 		return 0;
 
 	/* Unable to process value */
@@ -73,7 +73,7 @@ int	blazer_claim(void) {
 	}
 
 	/* No reply/Unable to get value */
-	if (blzr_process(item, NULL)) {
+	if (qx_process(item, NULL)) {
 		dstate_delinfo("input.voltage");
 		return 0;
 	}
@@ -96,7 +96,7 @@ void	blazer_makevartable(void)
 }
 
 /* Subdriver-specific initups */
-void	blazer_initups(item_t *blzr2nut)
+void	blazer_initups(item_t *qx2nut)
 {
 	int	nr, nv;
 	item_t	*item;
@@ -107,7 +107,7 @@ void	blazer_initups(item_t *blzr2nut)
 	if (!nr && !nv)
 		return;
 
-	for (item = blzr2nut; item->info_type != NULL; item++) {
+	for (item = qx2nut; item->info_type != NULL; item++) {
 
 		if (!item->command)
 			continue;
@@ -115,13 +115,13 @@ void	blazer_initups(item_t *blzr2nut)
 		/* norating */
 		if (nr && !strcasecmp(item->command, "F\r")) {
 			upsdebugx(2, "%s: skipping %s", __func__, item->info_type);
-			item->blzrflags |= BLZR_FLAG_SKIP;
+			item->qxflags |= QX_FLAG_SKIP;
 		}
 
 		/* novendor */
 		if (nv && (!strcasecmp(item->command, "I\r") || !strcasecmp(item->command, "FW?\r"))) {
 			upsdebugx(2, "%s: skipping %s", __func__, item->info_type);
-			item->blzrflags |= BLZR_FLAG_SKIP;
+			item->qxflags |= QX_FLAG_SKIP;
 		}
 
 	}

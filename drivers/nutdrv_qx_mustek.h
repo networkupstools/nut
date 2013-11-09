@@ -1,4 +1,4 @@
-/* blzr_mecer.h - Subdriver for Mecer UPSes
+/* nutdrv_qx_mustek.h - Subdriver for Mustek protocol based UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef BLZR_MECER_H
-#define BLZR_MECER_H
+#ifndef NUTDRV_QX_MUSTEK_H
+#define NUTDRV_QX_MUSTEK_H
 
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
-extern subdriver_t	mecer_subdriver;
+extern subdriver_t	mustek_subdriver;
 
-#endif /* BLZR_MECER_H */
+#endif /* NUTDRV_QX_MUSTEK_H */

@@ -1,4 +1,4 @@
-/* blzr_megatec.h - Subdriver for Megatec protocol based UPSes
+/* nutdrv_qx_megatec.h - Subdriver for Megatec protocol based UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -19,11 +19,11 @@
  *
  */
 
-#ifndef BLZR_MEGATEC_H
-#define BLZR_MEGATEC_H
+#ifndef NUTDRV_QX_MEGATEC_H
+#define NUTDRV_QX_MEGATEC_H
 
-#include "blzr.h"
+#include "nutdrv_qx.h"
 
 extern subdriver_t	megatec_subdriver;
 
-#endif /* BLZR_MEGATECH_H */
+#endif /* NUTDRV_QX_MEGATECH_H */

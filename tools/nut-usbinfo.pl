@@ -300,8 +300,8 @@ sub find_usbdevs
 			elsif ($nameFile eq "riello_usb.c") {
 				$driver="riello_usb";
 			}
-			elsif ($nameFile eq "blzr.c") {
-				$driver="blzr";
+			elsif ($nameFile eq "nutdrv_qx.c") {
+				$driver="nutdrv_qx";
 			}
 			else {
 				die "Unknown driver type: $nameFile";

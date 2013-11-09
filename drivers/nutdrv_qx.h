@@ -1,4 +1,4 @@
-/* blzr.h - Driver for USB and serial UPS units with Q* protocols
+/* nutdrv_qx.h - Driver for USB and serial UPS units with Q* protocols
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef BLZR_H
-#define BLZR_H
+#ifndef NUTDRV_QX_H
+#define NUTDRV_QX_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,9 +36,9 @@
 /*#define TESTING*/
 
 /* Driver's parameters */
-#define BLZR_VAR_ONDELAY	"ondelay"
-#define BLZR_VAR_OFFDELAY	"offdelay"
-#define BLZR_VAR_POLLFREQ	"pollfreq"
+#define QX_VAR_ONDELAY	"ondelay"
+#define QX_VAR_OFFDELAY	"offdelay"
+#define QX_VAR_POLLFREQ	"pollfreq"
 
 /* Parameters default values */
 #define DEFAULT_ONDELAY		"180"	/* Delay between return of utility power and powering up of load, in seconds */
@@ -57,14 +57,14 @@ typedef struct {
 /* Structure containing information about how to get/set data from/to the UPS and convert these to/from NUT standard */
 typedef struct item_t {
 	const char	*info_type;		/* NUT variable name
-						 * If BLZR_FLAG_NONUT is set, name to print to the logs
-						 * If both BLZR_FLAG_NONUT and BLZR_FLAG_SETVAR are set, name of the var to retrieve from ups.conf */
+						 * If QX_FLAG_NONUT is set, name to print to the logs
+						 * If both QX_FLAG_NONUT and QX_FLAG_SETVAR are set, name of the var to retrieve from ups.conf */
 	const int	info_flags;		/* NUT flags (ST_FLAG_* values to set in dstate_addinfo) */
 	info_rw_t	*info_rw;		/* An array of info_rw_t to handle r/w variables:
 						 * If ST_FLAG_STRING is set: length of the string (dstate_setaux)
-						 * If BLZR_FLAG_ENUM is set: enumerated values (dstate_addenum)
-						 * If BLZR_FLAG_RANGE is set: range boundaries (dstate_addrange)
-						 * If BLZR_FLAG_SETVAR is set the value given by the user will be checked against these infos. */
+						 * If QX_FLAG_ENUM is set: enumerated values (dstate_addenum)
+						 * If QX_FLAG_RANGE is set: range boundaries (dstate_addrange)
+						 * If QX_FLAG_SETVAR is set the value given by the user will be checked against these infos. */
 	const char	*command;		/* Command sent to the UPS to get answer/to execute an instant command/to set a variable */
 
 	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime */
@@ -75,35 +75,35 @@ typedef struct item_t {
 	const int	from;			/* Position of the starting character of the info (i.e. 'value') we're after in the answer */
 	const int	to;			/* Position of the ending character of the info (i.e. 'value') we're after in the answer: use 0 if all the remaining of the line is needed */
 
-	const char	*dfl;			/* Format to store value from the UPS in NUT variables. Not used by the driver for BLZR_FLAG_{CMD,SETVAR} items.
+	const char	*dfl;			/* Format to store value from the UPS in NUT variables. Not used by the driver for QX_FLAG_{CMD,SETVAR} items.
 						 * If there's no preprocess function, set it either to %s for strings or to a floating point specifier (e.g. %.1f) for numbers.
 						 * Otherwise:
-						 * If BLZR_FLAG_ABSENT: default value
-						 * If BLZR_FLAG_CMD: default command value */
+						 * If QX_FLAG_ABSENT: default value
+						 * If QX_FLAG_CMD: default command value */
 
-	unsigned long	blzrflags;		/* Driver's own flags */
+	unsigned long	qxflags;		/* Driver's own flags */
 
 	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);	/* Function to preprocess the data from/to the UPS
 						 * This function is given the currently processed item (item), a char array (value) and its size_t (valuelen).
 						 * Return -1 in case of errors, else 0.
-						 * If BLZR_FLAG_SETVAR/BLZR_FLAG_CMD -> process command before it is sent: value must be filled with the command to be sent to the UPS.
+						 * If QX_FLAG_SETVAR/QX_FLAG_CMD -> process command before it is sent: value must be filled with the command to be sent to the UPS.
 						 * Otherwise -> process value we got from answer before it gets stored in a NUT variable: value must be filled with the processed value already compliant to NUT standards. */
 } item_t;
 
 /* Driver's own flags */
-#define BLZR_FLAG_STATIC	2	/* Retrieve info only once. */
-#define BLZR_FLAG_SEMI_STATIC	4	/* Retrieve info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed. */
-#define BLZR_FLAG_ABSENT	8	/* Data is absent in the device, use default value. */
-#define BLZR_FLAG_QUICK_POLL	16	/* Mandatory vars, polled also in BLZR_WALKMODE_QUICK_UPDATE.
-					 * If there’s a problem with a var not flagged as BLZR_FLAG_QUICK_POLL in BLZR_WALKMODE_INIT, the driver will automagically set BLZR_FLAG_SKIP on it and then it’ll skip that item in BLZR_WALKMODE_{QUICK,FULL}_UPDATE.
-					 * Otherwise, if the item has the flag BLZR_FLAG_QUICK_POLL set, in case of errors in BLZR_WALKMODE_INIT the driver will set datastale. */
-#define BLZR_FLAG_CMD		32	/* Instant command. */
-#define BLZR_FLAG_SETVAR	64	/* The var is settable and the actual item stores info on how to set it. */
-#define BLZR_FLAG_TRIM		128	/* This var's value need to be trimmed of leading/trailing spaces/hashes. */
-#define BLZR_FLAG_ENUM		256	/* Enum values exist and are stored in info_rw. */
-#define BLZR_FLAG_RANGE		512	/* Ranges for this var available and are stored in info_rw. */
-#define BLZR_FLAG_NONUT		1024	/* This var doesn't have a corresponding var in NUT. */
-#define BLZR_FLAG_SKIP		2048	/* Skip this var: this item won’t be processed. */
+#define QX_FLAG_STATIC		2	/* Retrieve info only once. */
+#define QX_FLAG_SEMI_STATIC	4	/* Retrieve info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed. */
+#define QX_FLAG_ABSENT		8	/* Data is absent in the device, use default value. */
+#define QX_FLAG_QUICK_POLL	16	/* Mandatory vars, polled also in QX_WALKMODE_QUICK_UPDATE.
+					 * If there’s a problem with a var not flagged as QX_FLAG_QUICK_POLL in QX_WALKMODE_INIT, the driver will automagically set QX_FLAG_SKIP on it and then it’ll skip that item in QX_WALKMODE_{QUICK,FULL}_UPDATE.
+					 * Otherwise, if the item has the flag QX_FLAG_QUICK_POLL set, in case of errors in QX_WALKMODE_INIT the driver will set datastale. */
+#define QX_FLAG_CMD		32	/* Instant command. */
+#define QX_FLAG_SETVAR		64	/* The var is settable and the actual item stores info on how to set it. */
+#define QX_FLAG_TRIM		128	/* This var's value need to be trimmed of leading/trailing spaces/hashes. */
+#define QX_FLAG_ENUM		256	/* Enum values exist and are stored in info_rw. */
+#define QX_FLAG_RANGE		512	/* Ranges for this var available and are stored in info_rw. */
+#define QX_FLAG_NONUT		1024	/* This var doesn't have a corresponding var in NUT. */
+#define QX_FLAG_SKIP		2048	/* Skip this var: this item won’t be processed. */
 
 #define MAXTRIES		3	/* Max number of retries */
 
@@ -117,9 +117,9 @@ typedef struct {
 typedef struct {
 	const char	*name;			/* Name of this subdriver, i.e. name (must be equal to the protocol name) + space + version */
 	int		(*claim)(void);		/* Function that allows the subdriver to "claim" a device: return 1 if device is covered by this subdriver, else 0 */
-	item_t		*blzr2nut;		/* Main table of vars and instcmds */
-	void		(*initups)(void);	/* Subdriver specific upsdrv_initups. Called at the end of blzr's own upsdrv_initups */
-	void		(*initinfo)(void);	/* Subdriver specific upsdrv_initinfo. Called at the end of blzr's own upsdrv_initinfo */
+	item_t		*qx2nut;		/* Main table of vars and instcmds */
+	void		(*initups)(void);	/* Subdriver specific upsdrv_initups. Called at the end of nutdrv_qx's own upsdrv_initups */
+	void		(*initinfo)(void);	/* Subdriver specific upsdrv_initinfo. Called at the end of nutdrv_qx's own upsdrv_initinfo */
 	void		(*makevartable)(void);	/* Subdriver specific ups.conf flags/vars */
 	const char	*accepted;		/* String to match if the driver is expecting a reply from the UPS on instcmd/setvar.
 						 * This comparison is done after the answer we got back from the UPS has been processed to get the value we are searching:
@@ -138,16 +138,16 @@ typedef struct {
 int	instcmd(const char *cmdname, const char *extradata);
 	/* Set r/w variable to a value after it has been checked against its info_rw structure. Return STAT_SET_HANDLED on success, otherwise STAT_SET_UNKNOWN. */
 int	setvar(const char *varname, const char *val);
-	/* Find an item of item_t type in blzr2nut data structure by its info_type, optionally filtered by its blzrflags, and return it if found, otherwise return NULL.
+	/* Find an item of item_t type in qx2nut data structure by its info_type, optionally filtered by its qxflags, and return it if found, otherwise return NULL.
 	 *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
 	 *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag);
 	/* Send 'command' or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
-int	blzr_process(item_t *item, const char *command);
+int	qx_process(item_t *item, const char *command);
 	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its preprocess function, if any. Return -1 on failure, 0 for a status update and 1 in all other cases. */
 int	ups_infoval_set(item_t *item);
 	/* Return the currently processed status so that it can be checked with one of the status_bit_t passed to the STATUS() macro. */
-int	blzr_status(void);
+int	qx_status(void);
 	/* Edit the current status: it takes one of the NUT status (all but OB are supported, simply set it as not OL), eventually preceded with an exclamation mark to clear it from the status (e.g. !OL). */
 void	update_status(const char *nutvalue);
 
@@ -169,4 +169,4 @@ typedef enum {
 	FSD,		/* Shutdown imminent */
 } status_bit_t;
 
-#endif	/* BLZR_H */
+#endif	/* NUTDRV_QX_H */
