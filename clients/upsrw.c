@@ -203,7 +203,7 @@ static const char *get_data(const char *type, const char *varname)
 	return answer[3];
 }
 
-static void do_string(const char *varname)
+static void do_string(const char *varname, const int len)
 {
 	const char	*val;
 
@@ -214,6 +214,7 @@ static void do_string(const char *varname)
 	}
 
 	printf("Type: STRING\n");
+	printf("Maximum length: %d\n", len);
 	printf("Value: %s\n", val);
 }
 
@@ -356,8 +357,13 @@ static void do_type(const char *varname)
 		}
 
 		if (!strncasecmp(answer[i], "STRING:", 7)) {
-			do_string(varname);
+
+			char	*len = answer[i] + 7;
+			int	length = strtol(len, NULL, 10);
+
+			do_string(varname, length);
 			return;
+
 		}
 
 		/* ignore this one */
