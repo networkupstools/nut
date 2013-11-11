@@ -28,7 +28,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -39,6 +39,8 @@ upsdrv_info_t upsdrv_info = {
 	DRV_BETA,
 	{ NULL }
 };
+
+#ifndef TESTING
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle		*udev = NULL;
@@ -383,6 +385,8 @@ static USBDeviceMatcher_t device_matcher = {
 	NULL,
 	NULL
 };
+
+#endif	/* TESTING */
 
 
 /*

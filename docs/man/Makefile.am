@@ -310,7 +310,7 @@ SRC_SERIAL_PAGES = \
 	bestuferrups.txt	\
 	bestups.txt 	\
 	bestfcom.txt	\
-	blazer.txt	\
+	blazer_ser.txt	\
 	clone.txt \
 	dummy-ups.txt	\
 	etapro.txt	\
@@ -340,7 +340,6 @@ SRC_SERIAL_PAGES = \
 	victronups.txt	\
 	voltronic_ser.txt
 
-# NOTE: blazer_ser.8 has no source counterpart (blazer.txt)
 MAN_SERIAL_PAGES = \
 	apcsmart.8	\
 	apcsmart-old.8	\
@@ -351,7 +350,6 @@ MAN_SERIAL_PAGES = \
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\
-	blazer.8	\
 	blazer_ser.8	\
 	clone.8 \
 	dummy-ups.8	\
@@ -396,7 +394,7 @@ HTML_SERIAL_MANS = \
 	bestuferrups.html	\
 	bestups.html 	\
 	bestfcom.html	\
-	blazer.html	\
+	blazer_ser.html	\
 	clone.html \
 	dummy-ups.html	\
 	etapro.html	\
@@ -439,13 +437,13 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
+	blazer_usb.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
 	usbhid-ups.txt	\
 	voltronic_usb.txt
 
-# NOTE: blazer_usb.8 has no source counterpart (blazer.txt)
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
@@ -461,6 +459,7 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
+	blazer_usb.html	\
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
