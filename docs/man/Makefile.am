@@ -310,6 +310,7 @@ SRC_SERIAL_PAGES = \
 	bestuferrups.txt	\
 	bestups.txt 	\
 	bestfcom.txt	\
+	blazer-common.txt	\
 	blazer_ser.txt	\
 	clone.txt \
 	dummy-ups.txt	\
@@ -437,6 +438,7 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
+	blazer-common.txt	\
 	blazer_usb.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
