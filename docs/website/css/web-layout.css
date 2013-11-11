@@ -155,7 +155,7 @@ td#driver-col { width: 30%; }
 #support-level-legend {
   width: 31.25em;
   float: right;
-  margin: 0 1em 1em 1em;
+  margin: 0 0 1em 1em;
   padding: 10px;
   border: 1px solid silver;
 }
@@ -165,6 +165,46 @@ td#driver-col { width: 30%; }
   padding: 0;
   width: 15%;
   float: left;
+}
+
+.hcl-legend-level {
+  visibility: hidden;
+  position: relative;
+}
+
+.red.hcl-legend-level:after {
+  content: '*';
+  position: absolute;
+  visibility: visible;
+  background-color: #ffa4a4;
+}
+
+.orange.hcl-legend-level:after {
+  content: '**';
+  position: absolute;
+  visibility: visible;
+  background-color: #fccb81;
+}
+
+.yellow.hcl-legend-level:after {
+  content: '***';
+  position: absolute;
+  visibility: visible;
+  background-color: #fdf88e;
+}
+
+.blue.hcl-legend-level:after {
+  content: '****';
+  position: absolute;
+  visibility: visible;
+  background-color: #cfd9fe;
+}
+
+.green.hcl-legend-level:after {
+  content: '*****';
+  position: absolute;
+  visibility: visible;
+  background-color: #b1fea7;
 }
 
 #support-level-legend dd {
