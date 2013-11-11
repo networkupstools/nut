@@ -18,11 +18,11 @@ ifdef::website[]
 <fieldset id="support-level-legend">
   <legend>Support level legend</legend>
   <dl style="list-style: none; padding: 0;">
-    <dt><span class="red">*</span></dt><dd>protocol based on reverse engineering</dd>
-    <dt><span class="orange">**</span></dt><dd>based on fragments of publicly available protocol</dd>
-    <dt><span class="yellow">***</span></dt><dd>based on publicly available protocol</dd>
-    <dt><span class="blue">****</span></dt><dd>vendor provided protocol</dd>
-    <dt><span class="green">*****</span></dt><dd>vendor provided protocol and hardware</dd>
+    <dt><span class="red hcl-legend-level">1</span></dt><dd>protocol based on reverse engineering</dd>
+    <dt><span class="orange hcl-legend-level">2</span></dt><dd>based on fragments of publicly available protocol</dd>
+    <dt><span class="yellow hcl-legend-level">3</span></dt><dd>based on publicly available protocol</dd>
+    <dt><span class="blue hcl-legend-level">4</span></dt><dd>vendor provided protocol</dd>
+    <dt><span class="green hcl-legend-level">5</span></dt><dd>vendor provided protocol and hardware</dd>
   </dl>
 </fieldset>
 <fieldset id="filters-set">
