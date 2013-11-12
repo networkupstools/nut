@@ -627,7 +627,15 @@ Alexander Gordeev <lasaine@lvk.cs.msu.su>
 SEE ALSO
 --------
 
-linkman:blazer[8], linkman:nutupsdrv[8], linkman:ups.conf[5], linkman:upsc[8], linkman:upscmd[8], linkman:upsdrvctl[8], linkman:upsmon[8], linkman:upsrw[8], linkman:voltronic_ser[8], linkman:voltronic_usb[8]
+linkman:blazer_ser[8],
+linkman:blazer_usb[8],
+linkman:nutupsdrv[8],
+linkman:ups.conf[5],
+linkman:upsc[8],
+linkman:upscmd[8],
+linkman:upsdrvctl[8],
+linkman:upsmon[8],
+linkman:upsrw[8]
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
