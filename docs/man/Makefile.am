@@ -577,28 +577,24 @@ if HAVE_ASCIIDOC
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
 		-o $@ $<
 
-### The --destination-dir flag doesn't seem to affect the intermediate .xml file.
-### Hence, the copying dance below.
+### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual"
+	--attribute manmanual="NUT Manual" \
+	--destination-dir=.
 
 .txt.1:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.3:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.5:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.8:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 else !HAVE_ASCIIDOC
 
