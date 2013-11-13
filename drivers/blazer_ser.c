@@ -130,15 +130,8 @@ void upsdrv_initups(void)
 	int	i;
 
 	const char	*val;
-<<<<<<< HEAD
 
-=======
-#ifndef TESTING
-<<<<<<< HEAD
 #ifndef WIN32 /* TODO : Correctly set the port parameters for WIN32 */
->>>>>>> caf5d58... More work on serial drivers.
-=======
->>>>>>> 1c3900e... First implementation of termios functions
 	struct termios		tio;
 
 	/*
@@ -189,7 +182,8 @@ void upsdrv_initups(void)
 	 * Allow some time to settle for the cablepower
 	 */
 	usleep(100000);
-#endif
+#endif /* WIN32 */
+#endif /* TESTING */
 	blazer_initups();
 }
 
