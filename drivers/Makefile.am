@@ -39,14 +39,14 @@ SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
  oldmge-shut mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old riello_ser	\
- voltronic_ser
+ nutdrv_qx
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb voltronic_usb
+ blazer_usb richcomm_usb riello_usb nutdrv_qx
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-blazer_usb hald-addon-riello_usb	\
- hald-addon-voltronic_usb
+ hald-addon-nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 
@@ -141,8 +141,6 @@ upscode2_LDADD = $(LDADD) -lm
 victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
-voltronic_ser_SOURCES = voltronic.c voltronic_ser.c
-voltronic_ser_LDADD = $(LDADD) -lm
 
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
@@ -187,9 +185,6 @@ richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
-voltronic_usb_SOURCES = voltronic.c voltronic_usb.c libusb.c usb-common.c
-voltronic_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
-
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
@@ -219,8 +214,9 @@ hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
 hald_addon_riello_usb_SOURCES = riello.c riello_usb.c libusb.c
 hald_addon_riello_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
 
-hald_addon_voltronic_usb_SOURCES = voltronic.c voltronic_usb.c libusb.c
-hald_addon_voltronic_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+hald_addon_nutdrv_qx_SOURCES = nutdrv_qx.c libusb.c $(NUTDRV_QX_SUBDRIVERS)
+hald_addon_nutdrv_qx_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
+hald_addon_nutdrv_qx_CFLAGS = $(AM_CFLAGS) -DQX_USB
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
@@ -242,6 +238,24 @@ macosx_ups_LDADD = $(LDADD_DRIVERS)
 macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
 macosx_ups_SOURCES = macosx-ups.c
 
+# nutdrv_qx USB/Serial
+nutdrv_qx_SOURCES = nutdrv_qx.c
+nutdrv_qx_LDADD = $(LDADD_DRIVERS) -lm
+nutdrv_qx_CFLAGS = $(AM_CFLAGS)
+if WITH_SERIAL
+nutdrv_qx_CFLAGS += -DQX_SERIAL
+nutdrv_qx_LDADD += $(SERLIBS) serial.o
+endif
+if WITH_USB
+nutdrv_qx_CFLAGS += -DQX_USB
+nutdrv_qx_SOURCES += libusb.c usb-common.c
+nutdrv_qx_LDADD += $(LIBUSB_LIBS)
+endif
+NUTDRV_QX_SUBDRIVERS = nutdrv_qx_blazer-common.c nutdrv_qx_mecer.c	\
+ nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c nutdrv_qx_mustek.c	\
+ nutdrv_qx_voltronic.c nutdrv_qx_zinto.c
+nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
+
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
 # tracking (which is automatic), but to ensure these files are
@@ -257,7 +271,9 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h voltronic.h
+ delta_ups-mib.h nutdrv_qx.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
+ nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_voltronic.h	\
+ nutdrv_qx_zinto.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
