@@ -119,6 +119,7 @@ between the set of developers and the set of owners of that hardware.
 The way to fix it is to turn a developer into an owner, or an owner into a
 developer.
 
+
 *Report new devices, omissions or errors*
 
 There are a lot of power devices hardware for sale, and it's possible
@@ -126,18 +127,20 @@ that we have missed listing some that are supported, or made an error.
 
 So that this list can be as accurate as possible, please report any
 omissions to the
-link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
-mailing list, including the following information:
+link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers] mailing list
+or the NUT link:https://github.com/networkupstools/nut/issues/new[issue tracker on GitHub],
+including the following information:
 
 - mail subject: [HCL] <Manufacturer> <Device> supported by <driver>
+- or tag the issue "HCL" and title it: <Manufacturer> <Device> supported by <driver>
 replacing Manufacturer, Device and driver by your specific values,
-- mail body:
+- mail or issue body:
   - Device manufacturer and name,
   - upsc output (upsrw and upscmd outputs are also welcome),
   - link:docs/user-manual.chunked/ar01s06.html#Shutdown_design[shutdown sequence]
 testing results: a statement that you have actually tested it successfully is
 enough for now,
-  - a link to an online description is also appreciated.
+  - a link to the manufacturer's online description of the device is also appreciated.
 
 
 *Linking to the HCL*
