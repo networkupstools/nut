@@ -347,7 +347,7 @@ When compiled with SSL support with NSS, you can specify security directive
 for each server you can contact.
 +
 Each entry maps server name with the expected certificate name and flags
-indicating if the server certificate is verified and if the connexion
+indicating if the server certificate is verified and if the connection
 must be secure.
 
 *CERTVERIFY* '0 | 1'::
@@ -356,7 +356,7 @@ When compiled with SSL support, make upsmon verify all connections with
 certificates.
 +
 Without this, there is no guarantee that the upsd is the right host.
-Enabling this greatly reduces the risk of man in the middle attacks.
+Enabling this greatly reduces the risk of man-in-the-middle attacks.
 This effectively forces the use of SSL, so don't use this unless
 all of your upsd hosts are ready for SSL and have their certificates
 in order.
@@ -366,7 +366,7 @@ specified with a CERTHOST directive.
 
 *FORCESSL* '0 | 1'::
 
-When compiled with SSL, specify than a secured connexion must be used
+When compiled with SSL, specify that a secured connection must be used
 to communicate with upsd.
 +
 If you don't use 'CERTVERIFY 1', then this will at least make sure

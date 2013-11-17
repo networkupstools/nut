@@ -188,9 +188,9 @@ static int reconnect_ups(void)
 {
 	pm_err_t rv;
 
-	upsdebugx(4, "==================================================");
-	upsdebugx(4, "= connexion lost with Powerman, try to reconnect =");
-	upsdebugx(4, "==================================================");
+	upsdebugx(4, "===================================================");
+	upsdebugx(4, "= connection lost with Powerman, try to reconnect =");
+	upsdebugx(4, "===================================================");
 
 	/* clear the situation */
 	pm_disconnect(pm);
@@ -199,7 +199,7 @@ static int reconnect_ups(void)
 	if ((rv = pm_connect(device_path, NULL, &pm, 0)) != PM_ESUCCESS)
 		return 0;
 	else {
-		upsdebugx(4, "connexion restored with Powerman");
+		upsdebugx(4, "connection restored with Powerman");
 		return 1;
 	}
 }

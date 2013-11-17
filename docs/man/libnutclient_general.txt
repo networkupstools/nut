@@ -24,18 +24,18 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutclient_destroy()* function destroy a 'NUTCLIENT_t' or derivated
-(like 'NUTCLIENT_TCP_t') connexion object and free allocated memory.
+The *nutclient_destroy()* function destroys a 'NUTCLIENT_t' or derived
+(like 'NUTCLIENT_TCP_t') connection object, and frees allocated memory.
 
-The *strarr* type represent an array of C strings (array of char pointer).
+The *strarr* type represents an array of C strings (array of char pointer).
 The array must always be terminated by a NULL pointer.
 Pointed strings must be allocated by (x)calloc or (x)strdup.
 
-The *strarr_alloc()* function allocate a 'strarr' array with the specified
+The *strarr_alloc()* function allocates a 'strarr' array with the specified
 number of (non-initialized) string pointers.
-Another additionnal pointer set to 0 is added at the end of the array.
+Another additional pointer set to 0 is added at the end of the array.
 
-The *strarr_free* function free a 'strarr' array.
+The *strarr_free* function frees a 'strarr' array.
 It also frees all pointed strings.
 
 'dev' is the device name.

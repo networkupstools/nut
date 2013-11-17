@@ -435,13 +435,13 @@ and the password to decrypt private key associated to certificate:
 	CERTIDENT 'certificate name' 'database password'
 
 NOTE: Generally, the certificate name is the server domain name, but is not
-a hard rule. The certificate can be named as usefull.
+a hard rule. The certificate can be named as useful.
 
 upsd (optional): client authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NOTE: This functionnality is disabled by default, to activate it, recompile
-nut with 'WITH_CLIENT_CERTIFICATE_VALIDATION' defined:
+NOTE: This functionality is disabled by default. To activate it, recompile
+NUT with 'WITH_CLIENT_CERTIFICATE_VALIDATION' defined:
 
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION" 
 
@@ -450,9 +450,9 @@ the directive 'CERTREQUEST' with the corresponding value in the upsd.conf file:
 
 - NO: no client authentication.
 - REQUEST: a certificate is request to the client but it is not strictly validated.
-If the client does not send any certificate, the connexion is closed.
+If the client does not send any certificate, the connection is closed.
 - REQUIRE: a certificate is requested to the client and if it is not valid
-(no validation chain) the connexion is closed.
+(no validation chain) the connection is closed.
 
 Like CA certificates, you can add many 'trusted' client and CA certificates
 in server's certificate databases.
@@ -461,30 +461,30 @@ in server's certificate databases.
 upsmon (required): upsd authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When upsmon securely connect to an upsd, it must authenticate it.
+In order for upsmon to securely connect to upsd, it must authenticate it.
 You must associate an upsd host name to security rules in upsmon.conf
 with the directive 'CERTHOST'.
 
-'CERTHOST' associate to an hostname a certificate name and if a SSL connexion
+'CERTHOST' associate to an hostname a certificate name and if a SSL connection
 is mandatory and if its certificate must be validated.
 
 	CERTHOST 'hostname' 'certificate name' 'certverify' 'forcessl'
 
 If the flag 'forcessl' is set to '1' and the upsd answer that it can not
-connect in SSL, the connexion closes.
-If the flag 'certverify' is set to '1' and the connexion is done in ssl,
+connect in SSL, the connection closes.
+If the flag 'certverify' is set to '1' and the connection is done in ssl,
 upsd's certificate is verified and its name must be the specified
 'certificate name'.
 
 To prevent security leaks, you should set all 'certverify' and 'forcessl'
-flags to '1' (force ssl connexion and validate all certificates for all
+flags to '1' (force SSL connection and validate all certificates for all
 peers).
 
 You can specify 'CERTVERIFY' and 'FORCESSL' directive (to '1' or '0') to
 define a default security rule to apply to all host not specified with a
 dedicated 'CERTHOST' directive.
 
-If an host is not specified in a 'CERTHOST' directive, its expected certificate
+If a host is not specified in a 'CERTHOST' directive, its expected certificate
 name is its hostname.
 
 

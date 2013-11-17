@@ -126,17 +126,17 @@ public:
 
 	/**
 	 * Intend to authenticate to a NUTD server.
-	 * Set the username and password associated to the connexion.
+	 * Set the username and password associated to the connection.
 	 * \param user User name.
 	 * \param passwd Password.
-	 * \todo Is his method is global to all connexion protocol or is it specific to TCP ?
+	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 * \note Actually, authentication fails only if already set, not if bad values are sent.
 	 */
 	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException)=0;
 
 	/**
 	 * Disconnect from the NUTD server.
-	 * \todo Is his method is global to all connexion protocol or is it specific to TCP ?
+	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
 	virtual void logout()throw(NutException)=0;
 

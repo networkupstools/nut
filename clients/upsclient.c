@@ -812,7 +812,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 		nss_error("upscli_sslinit / SSL_ForceHandshake");
 		ups->ssl = NULL;
 		/* EKI wtf unimport or free the socket ? */
-		/* TODO : Close the connexion. */
+		/* TODO : Close the connection. */
 		return -1;
 	}
 	

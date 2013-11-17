@@ -340,7 +340,7 @@ FINALDELAY 5
 # When compiled with SSL support with NSS, you can specify security directive
 # for each server you can contact.
 # Each entry maps server name with the expected certificate name and flags
-# indicating if the server certificate is verified and if the connexion
+# indicating if the server certificate is verified and if the connection
 # must be secure.
 #
 # CERTHOST localhost "My nut server" 1 1
@@ -367,7 +367,7 @@ FINALDELAY 5
 # FORCESSL - force upsmon to use SSL
 # FORCESSL 1
 #
-# When compiled with SSL, specify than a secured connexion must be used
+# When compiled with SSL, specify that a secured connection must be used
 # to communicate with upsd.
 # If you don't use 'CERTVERIFY 1', then this will at least make sure
 # that nobody can sniff your sessions without a large effort.  Setting

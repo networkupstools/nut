@@ -90,7 +90,7 @@ There can be various reasons. To fix it, check:
 
 - the LISTEN directive in upsd.conf. It should allow your local or remote
 access method,
-- your firewall rules. Port 3493/tcp must be opened to incoming connexions,
+- your firewall rules. Port 3493/tcp must be opened to incoming connections,
 - your tcp-wrappers configuration (hosts.allow and hosts.deny).
 
 Refer to the upsd(8) and upsd.conf(5) manpages for more information.

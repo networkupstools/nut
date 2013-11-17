@@ -276,7 +276,7 @@ case ${target_os} in
       AC_SEARCH_LIBS(nanosleep, rt)
       LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
       dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
-      dnl and need to call libusb close upon reconnexion
+      dnl and need to call libusb close upon reconnection
       AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
       SUN_LIBUSB=1
       ;;
