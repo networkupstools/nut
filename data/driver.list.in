@@ -872,6 +872,8 @@
 
 "SquareOne Power"	"ups"	"2"	"QP1000"	""	"blazer_ser"
 
+"StarPower"	"ups"	"1"	"PCF-800VA"	"USB"	"richcomm_usb"	# http://www.sako.com.cn/products01.asp?Id=29&proid=53
+
 "Sun"	"pdu"	"1"	"ILOM Management Module"	"1 outlet"	"powerman-pdu (experimental)"
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
