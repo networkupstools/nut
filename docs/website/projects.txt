@@ -109,7 +109,7 @@ Other software projects
 -----------------------
 
 [[PyNUT]]
-link:http://www.lestat.st/informatique/projets/pynut-en[PyNUT]
+link:http://www.lestat.st/en/informatique/projets/pynut[PyNUT]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PyNUT is an abstraction class written in Python to access NUT (Network UPS
@@ -162,7 +162,7 @@ Synology
 ~~~~~~~~
 
 link:http://www.synology.com[Synology] has worked closely with Arnaud to integrate 
-link:http://www.synology.com/enu/products/features/power.php[UPS support] on all
+link:http://www.synology.com/support/faq_show.php?lang=enu&q_id=300[UPS support] on all
 its devices.
 
 Alcatel Lucent IPBX
