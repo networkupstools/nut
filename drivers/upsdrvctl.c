@@ -45,6 +45,12 @@ static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 	/* timer - keeps us from getting stuck if a driver hangs */
 static int	maxstartdelay = 45;
 
+	/* counter - retry that many time(s) to start the driver if it fails to */
+static int	maxretry = 1;
+
+	/* timer - delay between each restart attempt of the driver(s) */
+static int	retrydelay = 5;
+
 	/* Directory where driver executables live */
 static char	*driverpath = NULL;
 
@@ -64,6 +70,12 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 			free(driverpath);
 			driverpath = xstrdup(val);
 		}
+
+		if (!strcmp(var, "maxretry"))
+			maxretry = atoi(val);
+
+		if (!strcmp(var, "retrydelay"))
+			retrydelay = atoi(val);
 
 		/* ignore anything else - it's probably for main */
 
@@ -473,11 +485,17 @@ int main(int argc, char **argv)
 	if (!strcmp(argv[0], "start"))
 		command = &start_driver;
 
-	if (!strcmp(argv[0], "stop"))
+	if (!strcmp(argv[0], "stop")) {
 		command = &stop_driver;
+		/* maxretry is only valid for "start" (TODO: to be discussed) */
+		maxretry = 1;
+	}
 
-	if (!strcmp(argv[0], "shutdown"))
+	if (!strcmp(argv[0], "shutdown")) {
 		command = &shutdown_driver;
+		/* maxretry is only valid for "start" (TODO: to be discussed) */
+		maxretry = 1;
+	}
 
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
@@ -488,10 +506,17 @@ int main(int argc, char **argv)
 
 	read_upsconf();
 
-	if (argc == 1)
-		send_all_drivers(command);
-	else
-		send_one_driver(command, argv[1]);
+	while (maxretry > 0) {
+		upsdebugx(2, "%i remaining attempts", maxretry);
+
+		if (argc == 1)
+			send_all_drivers(command);
+		else
+			send_one_driver(command, argv[1]);
+
+		if (maxretry-- > 0)
+			sleep (retrydelay);
+	}
 
 	if (exec_error)
 		exit(EXIT_FAILURE);
