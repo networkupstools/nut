@@ -1,19 +1,95 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
-For a complete list of changes, please refer to the ChangeLog file.
+For a complete and more detailed list of changes, please refer to the
+ChangeLog file.
 
+---------------------------------------------------------------------------
+Release notes for NUT 2.7.1 - what's new since 2.6.5:
+
+ - This release is an interim release, part of the testing series, and the
+   first release after the transition from Subversion to Git.
+   The last release (2.6.5) is almost a year old. A lot of work has
+   been done, but a good amount remains to achieve 2.8.0 goals.
+   Please read the UPGRADING notes.
+
+ - The jNut Java source has been split into a separate GitHub repository.
+
+ - Added support for SSL via the Mozilla NSS library, in addition to the
+   existing OpenSSL support.
+
+ - Added many devices to the HCL. Of particular note are many Tripp Lite USB
+   HID PDC models which were tested against NUT by Tripp Lite.
+
+ - Reworked some visual elements of the HCL. The output is better tailored for
+   graphical and text-only browsers, but suggestions are welcome for additional
+   accessibility enhancements.
+
+ - Increased USB_TIMEOUT to standards-compliant 5.000 seconds in most drivers.
+   This should reduce the number of timeouts on low-speed USB 1.1 devices.
+
+ - Also increased timeouts and added redundant commands to improve reliability
+   of mge-utalk driver.
+
+ - Added a new driver, nutdrv_qx, for Megatec/Qx devices. This driver will
+   eventually replace the blazer_ser and blazer_usb drivers. In particular, it
+   adds support for Voltronic Power devices.
+
+ - Added documentation on creating subdrivers for snmp-ups and nutdrv_qx.
+
+ - Added new drivers for the Riello UPS product line (riello_ser/riello_usb).
+
+ - Many improvements to the BCM/XCP drivers have been merged in. This includes
+   an improved data reception loop, and additional mappings.
+
+ - Added a few variables to the Powercom HID mappings.
+
+ - Updated the apcsmart driver, and renamed the previous driver to apcsmart-old.
+
+ - Fixed the battery percentage calculation in the bestfcom driver.
+
+ - libnutclient has been added as a C++ alternative to libupsclient.
+
+ - Packaging files for Solaris and HP-UX (sponsored by Eaton)
+ 
+ - Fix shutdown of Eaton HID, using usbhid-ups and mge-shut
+
+ - usbhid-ups: final fix for APC Back UPS ES.  APC Back UPS ES devices have
+   buggy firmware, and this version does not cause a regression. The max_report
+   variable should be set automatically based on the USB identification values.
+
+ - nut-scanner: fix crash
+
+ - IPMI support can handle more different versions of FreeIPMI
+
+ - Support power supplies scan over the network
+   nut-scanner can now scan for power supplies with IPMI over LAN.
+   This is currently limited to IPMI 1.5 only
+
+ - Implement a framework to spell check documentation source files,
+   using Aspell. This includes an interactive build target (make
+   spellcheck-interactive), and an automated one (make spellcheck),
+   mainly for QA / Buildbot purpose. Note that a base NUT dictionary
+   is also available (docs/nut.dict), providing a glossary of terms
+   related to power devices and management
+
+ - Improve systemd integration
+ 
+ - snmp-ups: Fixed a crash on outlet management, and added delta_ups MIB
+   support. Also fixed mappings for upsBypassVoltage, upsBypassCurrent, and
+   upsBypassPower in three-phase IETF MIB.
+ 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.6.5 - what's new since 2.6.4:
 
- - This release Fix an important regression in upssched:
+ - This release fixes an important regression in upssched:
    any upssched.conf command that takes a second argument resulted in
    a defective frame sent to the parent process. Thus, the command was
    not executed (report and patch from Oliver Schonefeld)
 
  - Website hosting: free NUT from Eaton website hosting
-   NUT website (http://www.networkupstools.org) is no more hosted by Eaton.
+   NUT website (http://www.networkupstools.org) is no longer hosted by Eaton.
    Arnaud Quette (NUT project leader) has taken over NUT hosting on his own,
-   to give NUT back some independance.
+   to give NUT back some independence.
    This effort is also part of a logic to stop crediting Eaton for
    contributions from others (especially Arnaud Quette, as an individual).
    The new hosting service is located, as for Arnaud's blog
