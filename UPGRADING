@@ -23,6 +23,10 @@ Changes from 2.6.5 to 2.7.1
   be unchanged, but please refer to the linkman:upsd.conf[5] and
   linkman:upsmon.conf[5] documentation in case we missed something.
 
+- linkman:upsrw[8] now prints out the maximum size of variables. Hopefully you
+  are not parsing the output of upsrw - it would be easier to use one of the
+  NUT libraries, or implement the network protocol yourself.
+
 - The jNut source is now here: https://github.com/networkupstools/jNut
 
 Changes from 2.6.4 to 2.6.5
