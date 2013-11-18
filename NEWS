@@ -30,6 +30,8 @@ Release notes for NUT 2.7.1 - what's new since 2.6.5:
  - Also increased timeouts and added redundant commands to improve reliability
    of mge-utalk driver.
 
+ - Added the apcupsd-ups driver to interoperate with apcupsd installations.
+
  - Added a new driver, nutdrv_qx, for Megatec/Qx devices. This driver will
    eventually replace the blazer_ser and blazer_usb drivers. In particular, it
    adds support for Voltronic Power devices.
