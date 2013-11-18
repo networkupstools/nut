@@ -137,7 +137,7 @@ static void process(char *item,char *data)
 
 static int getdata(void)
 {
-	int fd_flags;
+	int x, fd_flags;
 	short n;
 	char *item;
 	char *data;
