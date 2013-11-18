@@ -12,10 +12,17 @@ Release notes for NUT 2.7.1 - what's new since 2.6.5:
    been done, but a good amount remains to achieve 2.8.0 goals.
    Please read the UPGRADING notes.
 
- - The jNut Java source has been split into a separate GitHub repository.
-
  - Added support for SSL via the Mozilla NSS library, in addition to the
    existing OpenSSL support.
+
+ - Added a new driver, nutdrv_qx, for Megatec/Qx devices. This driver will
+   eventually replace the blazer_ser and blazer_usb drivers. In particular, it
+   adds support for Voltronic Power devices.
+
+ - Increased USB_TIMEOUT to standards-compliant 5.000 seconds in most drivers.
+   This should reduce the number of timeouts on low-speed USB 1.1 devices.
+
+ - The jNut Java source has been split into a separate GitHub repository.
 
  - Added many devices to the HCL. Of particular note are many Tripp Lite USB
    HID PDC models which were tested against NUT by Tripp Lite.
@@ -24,17 +31,10 @@ Release notes for NUT 2.7.1 - what's new since 2.6.5:
    graphical and text-only browsers, but suggestions are welcome for additional
    accessibility enhancements.
 
- - Increased USB_TIMEOUT to standards-compliant 5.000 seconds in most drivers.
-   This should reduce the number of timeouts on low-speed USB 1.1 devices.
-
  - Also increased timeouts and added redundant commands to improve reliability
    of mge-utalk driver.
 
  - Added the apcupsd-ups driver to interoperate with apcupsd installations.
-
- - Added a new driver, nutdrv_qx, for Megatec/Qx devices. This driver will
-   eventually replace the blazer_ser and blazer_usb drivers. In particular, it
-   adds support for Voltronic Power devices.
 
  - Added documentation on creating subdrivers for snmp-ups and nutdrv_qx.
 
