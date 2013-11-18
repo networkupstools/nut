@@ -485,17 +485,11 @@ int main(int argc, char **argv)
 	if (!strcmp(argv[0], "start"))
 		command = &start_driver;
 
-	if (!strcmp(argv[0], "stop")) {
+	if (!strcmp(argv[0], "stop"))
 		command = &stop_driver;
-		/* maxretry is only valid for "start" (TODO: to be discussed) */
-		maxretry = 1;
-	}
 
-	if (!strcmp(argv[0], "shutdown")) {
+	if (!strcmp(argv[0], "shutdown"))
 		command = &shutdown_driver;
-		/* maxretry is only valid for "start" (TODO: to be discussed) */
-		maxretry = 1;
-	}
 
 	if (!command)
 		fatalx(EXIT_FAILURE, "Error: unrecognized command [%s]", argv[0]);
@@ -505,6 +499,12 @@ int main(int argc, char **argv)
 	atexit(exit_cleanup);
 
 	read_upsconf();
+
+	if (strcmp(argv[0], "start")) {
+		/* maxretry is only valid for "start", not for "stop" and
+		 * "shutdown" (TODO: to be discussed) */
+		maxretry = 1;
+	}
 
 	while (maxretry > 0) {
 		upsdebugx(2, "%i remaining attempts", maxretry);
