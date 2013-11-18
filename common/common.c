@@ -452,6 +452,68 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 	upsdebugx(level, "%s", line);
 }
 
+/* taken from www.asciitable.com */
+static const char* ascii_symb[] = {
+	"NUL",  /*  0x00    */
+	"SOH",  /*  0x01    */
+	"STX",  /*  0x02    */
+	"ETX",  /*  0x03    */
+	"EOT",  /*  0x04    */
+	"ENQ",  /*  0x05    */
+	"ACK",  /*  0x06    */
+	"BEL",  /*  0x07    */
+	"BS",   /*  0x08    */
+	"TAB",  /*  0x09    */
+	"LF",   /*  0x0A    */
+	"VT",   /*  0x0B    */
+	"FF",   /*  0x0C    */
+	"CR",   /*  0x0D    */
+	"SO",   /*  0x0E    */
+	"SI",   /*  0x0F    */
+	"DLE",  /*  0x10    */
+	"DC1",  /*  0x11    */
+	"DC2",  /*  0x12    */
+	"DC3",  /*  0x13    */
+	"DC4",  /*  0x14    */
+	"NAK",  /*  0x15    */
+	"SYN",  /*  0x16    */
+	"ETB",  /*  0x17    */
+	"CAN",  /*  0x18    */
+	"EM",   /*  0x19    */
+	"SUB",  /*  0x1A    */
+	"ESC",  /*  0x1B    */
+	"FS",   /*  0x1C    */
+	"GS",   /*  0x1D    */
+	"RS",   /*  0x1E    */
+	"US"    /*  0x1F    */
+};
+
+/* dump message msg and len bytes from buf to upsdebugx(level) in ascii. */
+void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
+{
+	char line[256];
+	int i;
+	unsigned char ch;
+
+	if (nut_debug_level < level)
+		return;	/* save cpu cycles */
+
+	snprintf(line, sizeof(line), "%s", msg);
+
+	for (i=0; i<len; ++i) {
+		ch = ((unsigned char *)buf)[i];
+
+		if (ch < 0x20)
+			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
+		else if (ch >= 0x80)
+			snprintfcat(line, sizeof(line), "%02Xh ", ch);
+		else
+			snprintfcat(line, sizeof(line), "'%c' ", ch);
+	}
+
+	upsdebugx(level, "%s", line);
+}
+
 static void vfatal(const char *fmt, va_list va, int use_strerror)
 {
 	if (xbit_test(upslog_flags, UPSLOG_STDERR_ON_FATAL))
