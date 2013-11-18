@@ -157,6 +157,7 @@ Driver control:
 linkman:upsdrvctl[8]
 
 Drivers:
+linkman:al175[8]
 linkman:apcsmart[8],
 linkman:bcmxcp[8],
 linkman:bcmxcp_usb[8],

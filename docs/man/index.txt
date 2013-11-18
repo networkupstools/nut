@@ -52,6 +52,7 @@ Drivers
 
 - linkman:upsdrvctl[8]
 
+- linkman:al175[8]
 - linkman:apcsmart[8]
 - linkman:apcupsd-ups[8]
 - linkman:bcmxcp[8]

@@ -200,6 +200,7 @@ Possible values for status_set:
 	OL      - On line (mains is present)
 	OB      - On battery (mains is not present)
 	LB      - Low battery
+	HB	- High battery
 	RB      - The battery needs to be replaced
 	CHRG    - The battery is charging
 	DISCHRG - The battery is discharging (inverter is providing load power)
