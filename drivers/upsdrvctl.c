@@ -508,14 +508,22 @@ int main(int argc, char **argv)
 
 	while (maxretry > 0) {
 		upsdebugx(2, "%i remaining attempts", maxretry);
+		maxretry--;
 
 		if (argc == 1)
 			send_all_drivers(command);
 		else
 			send_one_driver(command, argv[1]);
 
-		if (maxretry-- > 0)
-			sleep (retrydelay);
+		/* driver command succeeded */
+		if (!exec_error) {
+			maxretry = 0;
+		}
+		else {
+			/* otherwise, retry if still needed */
+			if (maxretry > 0)
+				sleep (retrydelay);
+		}
 	}
 
 	if (exec_error)
