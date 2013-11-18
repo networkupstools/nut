@@ -1,4 +1,5 @@
 apcsmart.html
+apcupsd-ups.html
 bcmxcp.html
 bcmxcp_usb.html
 belkin.html
@@ -83,6 +84,7 @@ richcomm_usb.html
 Makefile
 Makefile.in
 apcsmart.8
+apcupsd-ups.8
 bcmxcp.8
 bcmxcp_usb.8
 belkin.8

@@ -5,6 +5,7 @@ Makefile.in
 libnuthalmain.a
 al175
 apcsmart
+apcupsd-ups
 bcmxcp
 bcmxcp_usb
 belkin
