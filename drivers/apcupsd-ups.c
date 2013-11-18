@@ -26,7 +26,7 @@
 #include "apcupsd-ups.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -137,7 +137,7 @@ static void process(char *item,char *data)
 
 static int getdata(void)
 {
-	int x;
+	int fd_flags;
 	short n;
 	char *item;
 	char *data;
@@ -161,10 +161,11 @@ static int getdata(void)
 		return -1;
 	}
 
-	x=1;
-	if(ioctl(p.fd,FIONBIO,&x))
+	fd_flags = fcntl(p.fd, F_GETFL);
+	fd_flags |= O_NONBLOCK;
+	if(fcntl(p.fd, F_SETFL, fd_flags))
 	{
-		upsdebugx(1,"unexpected ioctl failure");
+		upsdebugx(1,"unexpected fcntl(fd, F_SETFL, fd_flags|O_NONBLOCK) failure");
 		close(p.fd);
 		return -1;
 	}
@@ -266,6 +267,7 @@ void upsdrv_initups(void)
 
 	if(device_path&&*device_path)
 	{
+		/* TODO: fix parsing since bare IPv6 addresses contain colons */
 		if((p=strchr(device_path,':')))
 		{
 			*p++=0;
