@@ -38,7 +38,7 @@ SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  oldmge-shut mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old riello_ser	\
+ blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser	\
  nutdrv_qx
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
@@ -157,6 +157,11 @@ endif
 clone_SOURCES = clone.c
 clone_outlet_SOURCES = clone-outlet.c
 
+# apcupsd client driver
+apcupsd_ups_SOURCES = apcupsd-ups.c
+apcupsd_ups_CFLAGS = $(AM_CFLAGS)
+apcupsd_ups_LDADD = $(LDADD_DRIVERS)
+
 # sample skeleton driver
 
 skel_SOURCES = skel.c
@@ -270,7 +275,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
- apcsmart.h apcsmart_tabs.h apcsmart-old.h cyberpower-mib.h riello.h openups-hid.h \
+ apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
  delta_ups-mib.h nutdrv_qx.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_voltronic.h	\
  nutdrv_qx_zinto.h

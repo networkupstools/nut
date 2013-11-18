@@ -209,6 +209,11 @@ and networked PDU, along with Blade and IPMI enabled servers.
 See the linkman:powerman-pdu[8] man page for more
 information.
 
+- The `apcupsd-ups` driver is a bridge to the Apcupsd daemon, thus handling
+all Apcupsd supported devices. The Apcupsd project supports many serial,
+USB and networked APC UPS.
++
+See the linkman:apcupsd-ups[8] man page for more information.
 
 UPS Shutdowns
 ~~~~~~~~~~~~~

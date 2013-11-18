@@ -1,0 +1,107 @@
+APCUPSD-UPS(8)
+==============
+
+NAME
+----
+apcupsd-ups - Driver for apcupsd client access
+
+NOTE
+----
+This man page only documents the specific features of the
+*apcupsd-ups* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+DESCRIPTION
+-----------
+This driver is a client to *apcupsd*.
+
+*apcupsd-ups* acts as an *apcupsd* client, simply forwarding data.
+This can be useful in cases where both protocols are required in a network,
+or in case apcupsd has a required UPS access mode missing from NUT.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in linkman:nut.conf[5]:
+
+*port*=<hostname>[:<port>]::
+This is the name of a remote host running apcupsd (plus an optional port).
+
+For instance:
+
+    [apcupsd]
+		driver = apcupsd-ups
+		port = localhost
+		desc = "apcupsd client"
+
+BACKGROUND
+----------
+
+This driver was originally written in one evening to allow interworking with *apcupsd*.
+
+SUPPORTED VARIABLES
+-------------------
+
+The following variables are translated from *apcupsd* to NUT. All times should be
+converted to seconds (please file a bug if you notice a mismatch in units).
+
+[width="50%",cols="m,m",options="header"]
+|===============================
+| apcupsd variable | NUT variable(s)
+| BCHARGE          | battery.charge
+| MBATTCHG         | battery.charge.low
+| RETPCT           | battery.charge.restart
+| BATTDATE         | battery.date
+| TIMELEFT         | battery.runtime
+| MINTIMEL         | battery.runtime.low
+| BATTV            | battery.voltage
+| NOMBATTV         | battery.voltage.nominal
+| LINEFREQ         | input.frequency
+| SENSE            | input.sensitivity
+| HITRANS          | input.transfer.high
+| LOTRANS          | input.transfer.low
+| LASTXFER         | input.transfer.reason
+| LINEV            | input.voltage
+| MAXLINEV         | input.voltage.maximum
+| MINLINEV         | input.voltage.minimum
+| NOMINV           | input.voltage.nominal
+| LINEFREQ         | output.frequency
+| OUTPUTV          | output.voltage
+| NOMOUTV          | output.voltage.nominal
+| DATE             | ups.date, ups.time
+| DSHUTD           | ups.delay.shutdown
+| DWAKE            | ups.delay.start
+| FIRMWARE         | ups.firmware, ups.firmware.aux
+| UPSNAME          | ups.id
+| LOADPCT          | ups.load
+| MANDATE          | ups.mfr.date
+| NOMPOWER         | ups.realpower.nominal
+| SERIALNO         | ups.serial
+| STATUS           | ups.status
+| ITEMP            | ups.temperature
+| STESTI           | ups.test.interval
+| SELFTEST         | ups.test.result
+|===============================
+
+LIMITATIONS
+-----------
+Access to *apcupsd* is strictly read only: no commands can be issued. This
+stems from the design of *apcupsd*, where the settings are changed in
+*apctest*. In order to run *apctest*, *apcupsd* must be stopped (and *apcupsd*
+exposes the UPS to the network).
+
+AUTHOR
+------
+Andreas Steinmetz
+
+SEE ALSO
+--------
+
+linkman:ups.conf[5],
+linkman:nutupsdrv[8]
+
+Internet Resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+The apcupsd home page: http://www.apcupsd.org/
