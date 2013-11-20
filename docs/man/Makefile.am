@@ -301,6 +301,7 @@ else
 
 # (--with-serial)
 SRC_SERIAL_PAGES = \
+	al175.txt	\
 	apcsmart.txt	\
 	apcsmart-old.txt	\
 	bcmxcp.txt 	\
@@ -343,6 +344,7 @@ SRC_SERIAL_PAGES = \
 	apcupsd-ups.txt
 
 MAN_SERIAL_PAGES = \
+	al175.8	\
 	apcsmart.8	\
 	apcsmart-old.8	\
 	bcmxcp.8 	\
@@ -388,6 +390,7 @@ if WITH_SERIAL
 endif
 
 HTML_SERIAL_MANS = \
+	al175.html	\
 	apcsmart.html	\
 	apcsmart-old.html	\
 	bcmxcp.html 	\

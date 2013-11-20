@@ -38,8 +38,8 @@ exit(EXIT_FAILURE) afterwards. Don't call exit() directly.
 Debugging information
 ~~~~~~~~~~~~~~~~~~~~~
 
-upsdebug_with_errno(), upsdebugx() and upsdebug_hex() use the
-global `nut_debug_level` so you don't have to mess around with
+upsdebug_with_errno(), upsdebugx(), upsdebug_hex() and upsdebug_ascii()
+use the global `nut_debug_level` so you don't have to mess around with
 printf()s yourself.  Use them.
 
 Memory allocation
