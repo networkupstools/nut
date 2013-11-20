@@ -41,7 +41,7 @@ MAINTAINERCLEAN_FILES = ChangeLog
 # in case it has already been generated previously
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	tools/gitlog2changelog.py v2.6.0 || \
+	$(top_srcdir)/tools/gitlog2changelog.py v2.6.0 || \
 		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
 if HAVE_ASCIIDOC
