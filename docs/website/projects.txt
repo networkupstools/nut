@@ -69,6 +69,7 @@ There are three different scripts that add NUT support to Cacti:
 - link:http://forums.cacti.net/about14475.html[Ruby script]
 - link:http://forums.cacti.net/about9729.html[shell script]
 
+[[collectd]]
 link:http://collectd.org[collectd]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -122,10 +123,10 @@ link:http://bugs.debian.org/343530[RRDtool logging support]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This patch adds link:http://oss.oetiker.ch/rrdtool[RRDtool] logging support to
-NUT.
+NUT. (See also <<collectd>>.)
 
-link:http://home.tele2.fr/elrik/[ups_control]
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+link:http://elrik75.free.fr/ups_control/[ups_control]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 A developing Python wrapper to upsc which can generate mails and shutdown the
 machine.
