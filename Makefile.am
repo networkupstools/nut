@@ -55,6 +55,14 @@ website:
 	@echo "Not building website since 'asciidoc' was not found."
 endif !HAVE_ASCIIDOC
 
+# Maintainers targets: distribution signature and hashes
+dist-sig:
+	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
+
+dist-hash:
+	md5sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.md5
+	sha256sum nut-@PACKAGE_VERSION@.tar.gz > nut-@PACKAGE_VERSION@.tar.gz.sha256
+
 # ----------------------------------------------------------------------
 # targets from old build system (pre-automake).
 # supported for a period of time for backward "compatibility".
