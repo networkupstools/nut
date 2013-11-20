@@ -1,3 +1,4 @@
+- November 20, 2013: 2.7.1 released
 - June 21, 2013: new client link:https://github.com/zykh/walNUT[walNUT] released
 - February 10, 2013: NUT source repository is converted to link:https://github.com/networkupstools/nut[Git] using link:http://www.catb.org/~esr/reposurgeon/[reposurgeon]
 - September 19, 2012: link:download.html#_binary_packages[Beta NUT 2.6.5-3 package for Windows released]
