@@ -1,0 +1,1563 @@
+Voltronic Power UPS Protocol
+============================
+Daniele Pezzini <hyouko@gmail.com>
+v1.1, October 2013
+
+
+Communication
+-------------
+
+*RS232C*::
+9 pins female D-type connector - only 3 wires: TX, RX (crossed) and GND
+
+[horizontal]
+Baud rate:::
+2400 bps
+
+Data length:::
+8 bits
+
+Stop bit::: 1 bit
+
+Parity::: none
+
+*USB*::
+Serial over USB with 'cypress' protocol
+
+
+Accepted queries and commands
+-----------------------------
+
+All commands, queries and UPS's replies are terminated by +<cr>+
+
+Command begginning with *+Q+* -> query
+
+
+UPS replies
+~~~~~~~~~~~
+
+*+(ACK+* -> Command accepted
+
+*+(NAK+* -> Command/Query rejected or invalid
+
+
+UPS status
+~~~~~~~~~~
+
+[horizontal]
+[[qgs]]*+QGS+*::
+Query UPS for status
++
+.Reply
+----
+(MMM.M NN.N PPP.P QQ.Q RRR.R SSS TTT.T UUU.U VVV.V XXX.X YYY.Y b11..b0
+----
++
+.e.g.
+----
+(234.9 50.0 229.8 50.0 000.0 000 369.1 ---.- 026.5 ---.- 018.8 100000000001
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Input voltage
+
++NN.N+::
+Input frequency (Hz)
+
++PPP.P+::
+Output voltage
+
++QQ.Q+::
+Output frequency (Hz)
+
++RRR.R+::
+Output current (Ampère)
+
++SSS+::
+Load level (%)
+
++TTT.T+::
+*{sp}unknown *
+
++UUU.U+::
+*{sp}unknown *
+
++VVV.V+::
+Battery voltage (Volt) [or +VV.VV+]
+
++XXX.X+::
+*{sp}unknown *
+
++YYY.Y+::
+UPS temperature (° Celsius)
+
+[[bit-qgs]]+bit11..b0+::
+-> 12 bit status - *+1+* means:
++
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|bit#	|Description
+|11	.2+a|UPS Type:
+
+- +00+ -> standby
+- +01+ -> line-interactive
+- +10+ -> on-line
+
+|10
+|9	|<<battery-mode,Battery Mode>> (= mains absent)
+|8	|Battery Low
+|7	|<<bypass-mode,Bypass>>/<<eco-mode,ECO Mode>> active,
+
+*+0+* -> <<bypass-mode,Bypass>>/<<eco-mode,ECO Mode>> inactive or without output
+
+*<<qpi-protocol,P00>>*/*<<qpi-protocol,P08>>*: <<avr-mode,AVR Mode>> on/off
+
+|6	|Fault found
+|5	|*{sp}unknown *
+|4	|Test in progress
+|3	|Shutdown Active (also as a consequence of *<<shutdown-management,+Sn+>>*/*<<shutdown-management,+SnRm+>>* commands, while *+n+* minutes pass)
+|2	|Beeper Off/muted,
+
+*+0+* -> Beeper On/enabled
+
+(changed through *<<buzzer-control,+BZON+>>*/*<<buzzer-control,+BZOFF+>>*)
+
+|1	|*{sp}unknown *
+|0	|*{sp}unknown *
+|====
+--
+
+*+QS+*::
+*+Q1+*::
+Query UPS for status (short) (old)
++
+.Reply
+----
+(MMM.M NNN.N PPP.P QQQ RR.R SS.S TT.T b7..b0
+----
++
+.e.g.
+----
+(209.7 209.7 219.7 020 50.0 41.8 23.3 00000001
+----
++
+.Alternative reply
+----
+(MMM.M NNN.N PPP.P QQQ RR.R S.SS TT.T b7..b0
+----
++
+.e.g.
+----
+(002.9 000.0 000.0 000 00.0 2.02 21.0 10000001
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Input voltage
+
++NNN.N+::
+Fault voltage
+
++PPP.P+::
+Output voltage
+
++QQQ+::
+Load level (%)
+
++RR.R+::
+Output frequency (Hz)
+
++SS.S+::
+Battery voltage [or +S.SS+]
+
++TT.T+::
+UPS temperature (° Celsius)
+
++b7..b0#+::
+-> 8 bit status - *+1+* means:
++
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|bit#	|Description
+|7	|Utility Fail (Immediate)
+|6	|Battery Low
+|5	|Bypass/Boost or Buck Active
+|4	|UPS Failed
+|3	|UPS Type is Standby
+
+*+0+* is Online
+
+|2	|Test in progress
+|1	|Shutdown Active
+|0	|Beeper On
+|====
+--
+
+*+QBV+*::
+Query UPS for battery informations
++
+.Reply
+----
+(MM.M NN PP QQQ RRR
+----
++
+.e.g.
+----
+(026.5 02 01 068 255
+----
++
+Where:
++
+--
+[horizontal]
++MM.M+::
+Battery voltage
+
++NN+::
+Number of batteries (that make a battery pack)
+
++PP+::
+Number of battery packs in parallel
+
++QQQ+::
+Battery capacity (%)
+
++RRR+::
+Remaining backup time (minutes)
+--
+
+*+QLDL+*::
+Query for last seen minimum and maximum load level
++
+.Reply
+----
+(MMM NNN
+----
++
+.e.g.
+----
+(022 025
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Last seen minimum load level (%)
+
++NNN+::
+Last seen maximum load level (%)
+--
+
+*+QMOD+*::
+Query UPS for actual operational mode (-> see <<operational-modes,'Operational Modes'>>)
++
+Possible replies:
++
+--
+[horizontal]
++(P+::
+<<power-on-mode,Power On Mode>>
+
++(S+::
+<<standby-mode,Standby Mode>>
+
++(Y+::
+<<bypass-mode,Bypass Mode>>
+
++(L+::
+<<line-mode,Line Mode>>
+
++(B+::
+<<battery-mode,Battery Mode>>
+
++(T+::
+<<battery-test-mode,Battery Test Mode>>
+
++(F+::
+<<fault-mode,Fault Mode>>
+
++(E+::
+<<eco-mode,ECO Mode>>
+
++(C+::
+<<converter-mode,Converter Mode>>
+
++(D+::
+<<shutdown-mode,Shutdown Mode>>
+--
+
+
+Rated informations
+~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+QMD+*::
+Query UPS for rated informations #1
++
+.Reply
+----
+(MMMMMMMMMMMMMMM NNNNNNN PP Q/R SSS TTT UU VV.V
+----
++
+.e.g.
+----
+(#######OLHVT1K0 ###1000 80 1/1 230 230 02 12.0
+----
++
+Where:
++
+--
+[horizontal]
++M..M+::
+UPS model (15 characters, filled with spaces or +#+)
+
++N..N+::
+UPS rated VA (7 characters, filled with spaces or +#+)
+
++PP+::
+Output power factor (%)
+
++Q/R+::
+Input phases/Output phases
+
++SSS+::
+Rated input voltage
+
++TTT+::
+Rated output voltage
+
++UU+::
+Number of batteries (that make a battery pack)
+
++VV.V+::
+Rated voltage (as *per battery*)
+--
+
+*+QRI+*::
+Query UPS for rated informations #2
++
+.Reply
+----
+(MMM.M NNN PPP.P QQ.Q
+----
++
+.e.g.
+----
+(230.0 004 024.0 50.0
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Rated output voltage
+
++NNN+::
+Rated output current (Ampère)
+
++PPP.P+::
+Rated battery voltage (as *per battery pack*) [or +PP.PP+]
+
++QQ.Q+::
+Rated output frequency (Hz)
+--
+
+*+I+*::
+Query UPS for rated informations #3 (old)
++
+.Reply
+----
+#MMMMMMMMMMMMMMM NNNNNNNNNN PPPPPPPPPP
+----
++
+.e.g.
+----
+#                OLHVT1K0   00322.02  
+----
++
+Where:
++
+--
+[horizontal]
++M..M+::
+UPS manufacturer (15 characters fixed length, filled with spaces)
+
++N..N+::
+UPS model (10 characters fixed length, filled with spaces)
+
++P..P+::
+UPS firmware version (10 characters fixed length, filled with spaces)
+--
+
+*+F+*::
+Query UPS for rated informations #4 (old)
++
+.Reply
+----
+#MMM.M NNN PPP.P QQ.Q
+----
++
+.e.g.
+----
+#220.0 004 036.0 50.0
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Rating voltage
+
++NNN+::
+Rating current (Ampère)
+
++PPP.P+::
+Battery voltage (as *per battery pack*) [or +PP.PP+]
+
++QQ.Q+::
+Nominal frequency (Hz)
+--
+
+*+QID+*::
+Query UPS for serial number
++
+.Reply
+----
+(NNNNNNNNNNNNNNNNNNN
+----
++
+.e.g.
+----
+(0000000000000000000
+----
++
+Where:
++
+--
+[horizontal]
++N..N+::
+UPS serial number (not fixed length)
+--
+
+*+QVFW+*::
+Query UPS for firmware version
++
+.Reply
+----
+(VERFW:NNNNN.NN
+----
++
+.e.g.
+----
+(VERFW:00322.02
+----
++
+Where:
++
+--
+[horizontal]
++N..N+::
+UPS firmware version
+--
+
+*+QMF+*::
+Query UPS for manufacturer
++
+.Reply
+----
+(NNNNNNNN
+----
++
+.e.g.
+----
+(####BOH
+----
++
+Where:
++
+--
+[horizontal]
++N..N+::
+UPS manufacturer (not fixed length, filled with spaces or +#+)
+--
+
+*+QPAR+*::
+Query UPS for master/slave for UPSes in parallel
++
+Possible replies:
++
+--
+[horizontal]
++(001+::
+Master
+
++(002+::
+Slave
+
++(003+::
+Slave
+--
+
+[[qpi-protocol]]*+QPI+*::
+Query UPS for the protocol to use
++
+.Reply
+----
+(PINN
+----
++
+Where:
++
+--
+[horizontal]
++NN+::
+Protocol used by UPS
+--
++
+Known replies:
++
+--
+[horizontal]
++(PI00+::
+e.g.
+
++(PI01+::
+e.g. Galleon 1KVA-3KVA-ISO TX
+
++(PI02+::
+e.g. Galleon 6KVA/10KVA-ISO TX
+
++(PI03+::
+3-phase input/1-phase output (e.g. Galleon 3-phase in/1-phase out 10KVA/15KVA/20KVA)
+
++(PI08+::
+e.g.
+
++(PI09+::
+2-phase input/output (e.g. Galleon 2-phase in/2-phase out 6KVA/10KVA)
+
++(PI10+::
+3-phase input/output (e.g. Galleon 3-phase in/3-phase out 10KVA/15KVA/20KVA)
+
++(PI14+::
+e.g.
+
++(PI31+::
+e.g.
+
++(PI98+::
+Old models -> megatech
+
++(PI99+::
+e.g.
+
++(NAK+::
+Old models -> megatech
+--
+
+
+Error/Warning status
+~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+QWS+*::
+Query UPS for warning status
++
+.Reply
+----
+(b1b2..b63b64
+----
++
+.e.g.
+----
+(0000000100000000000000000000000000000000000000000000000000000000
+----
++
+Each bit set to *+1+* corresponds to an error/warning. *+0+* means no warning/error -> see <<warnings,'Warnings'>>
+
+[[qfs-fault]]*+QFS+*::
+Query UPS for fault status
++
+.Reply
+----
+(MM NNN.N PP.P QQQ.Q RR.R SSS.S TTT UUU.U WWW.W VVV.V XXX.X YYY.Y ZZZZZZZZ
+----
++
+.e.g.
+----
+(11 234.9 50.0 229.8 50.0 000.0 000 369.1 ---.- 026.5 ---.- 018.8 10000000
+----
++
+Where:
++
+--
+[horizontal]
++NN+::
+Type of fault found (-> see <<fault-handler,'Fault Handler'>>)
+
++N..Z+::
+Short status
+--
++
+.Alternative reply
+----
+(OK
+----
++
+-> No fault
++
+[NOTE]
+====
+Use this query only if a fault is found in <<bit-qgs,12bit status>> of <<qgs,*+QGS+*>> otherwise you'll get a fake reply, such as:
+
+----
+(14 212.1 50.0 005.6 49.9 006 010.6 343.8 ---.- 026.2 021.8 01101100
+----
+====
+
+
+[[shutdown-management]]
+Shutdown management
+~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+SON+*::
+Turn UPS On
+
+*+SOFF+*::
+Turn UPS Off
+
+*+Sn+*::
+Shutdown in *+n+* (+.2+->++.9++, +01+->++99++) minutes and then turn on when mains returns
+
+*+SnRm+*::
+Shutdown in *+n+* (+.2+->++.9++, +01+->++99++) minutes and then turn on after *+m+* (+0001+..+9999+) minutes
+
+*+SnR0000+*::
+Shutdown in *+n+* (+.2+->++.9++, +01+->++99++) minutes and stay off
+
+*+CS+*::
+Cancel Shutdown
+
+
+[[battery-test]]
+Battery test
+~~~~~~~~~~~~
+
+Tests are doable in <<operational-modes,Line Mode/Converter Mode/ECO Mode>>
+
+[horizontal]
+*+T+*::
+Invoke a quick battery self-test
+
+*+Tn+*::
+Invoke a battery self-test lasting *+n+* (+.2+->++.9++, +01+->++99++) minutes
+
+*+TL+*::
+Invoke a battery deep discharge test
+
+*+CT+*::
+Cancel Battery Test
+
+
+[[outlet-management]]
+Outlet management
+~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+QSKn+*::
+Query UPS for status of outlet *+n+* (+1+..+4+)
++
+Possible replies:
++
+--
+[horizontal]
++(1+::
+Outlet *+n+* is ON
+
++(0+::
+Outlet *+n+* is OFF
+
++(NAK+::
+Outlet n is not switchable
+--
+
+*+SKONn+*::
+Start outlet *+n+* (+1+..+4+)
+
+*+SKOFFn+*::
+Stop outlet *+n+* (+1+..+4+)
+
+*+QSKTn+*::
+Query UPS for outlet *+n+* (+1+..+4+) <<programmable-outlets-control,delay time on battery mode>>
++
+Possible replies:
++
+--
+[horizontal]
++(NNN+::
++
+.e.g.
+----
+(023
+----
++
+Where:
++
+--
+[horizontal]
++NNN+::
+Backup time for outlet *+n+* before the UPS shutdown the load when on battery mode (minutes)
+--
+
++(NAK+::
+Backup time for outlet *+n+* before the UPS shutdown the load when on battery mode not set in UPS
+--
+
+*+PSKxn+*::
+Set outlet *+x+* (+1+..+4+) delay time on battery mode to *+n+* (+000+...+999+) minutes
+
+
+[[capability-options]]
+Capability options
+~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+QFLAG+*::
+Query UPS for capability flag
++
+.Reply
+----
+(EmmmmDnnnnn
+----
++
+.e.g.
+----
+(EpbrashcDoegfl
+----
++
+Where:
++
+--
+[horizontal]
++m..m+::
+Enabled options
+
++n..n+::
+Disabled options
+--
+
+[[reset-to-default]]*+PF+*::
+Set all capability options and their limits to safe default values (*Doable only in <<standby-mode,Standby Mode>>*)
+
+*+PEX+*::
+Enable *+X+* option
+
+*+PDX+*::
+Disable *+X+* option
+
+.Available options
+[horizontal]
+*+P+*::
+Alarm at <<bypass-mode,Bypass Mode>> (-> the alarm will beep only if <<alarm-control,Alarm Control>>, if available, is enabled)
+
+*+B+*::
+Alarm at <<battery-mode,Battery Mode>> (-> the alarm will beep only if <<alarm-control,Alarm Control>>, if available, is enabled)
+
+*+R+*::
+Auto reboot (-> the UPS will auto recover when AC is recovering)
+
+[[bypass-when-off]]*+O+*::
+<<bypass-mode,Bypass>> when the UPS is Off (-> the bypass will work only if <<bypass-forbidding,Bypass Forbidding>> is disabled)
+
+[[alarm-control]]*+A+*::
+Alarm Control (BEEP!)
+
+*+S+*::
+Battery deep discharge protection
+
+*+V+*::
+<<converter-mode,Converter Mode>>
+
+*+E+*::
+<<eco-mode,ECO Mode>> (-> not influenced by <<bypass-forbidding,Bypass Forbidding>>)
+
+*+G+*::
+Green power function (Energy Saving -> Auto Off when there is no load)
+
+*+D+*::
+Battery Open Status Check (-> the UPS will check on startup if the battery is connected or not)
+
+*+H+*::
+*{sp}unknown/unused *
+
+*+C+*::
+Cold Start (-> the UPS can be turned on also if AC is not connected to the UPS)
+
+[[bypass-forbidding]]*+F+*::
+<<bypass-mode,Bypass>> not allowed (Bypass Forbidding -> the UPS won't transfer to bypass under any conditions)
+
+*+T+*::
+*{sp}unknown/unused *
+
+[[programmable-outlets-control]]*+J+*::
+Programmable outlets control (<<"outlet-management","-> on battery, the UPS will cut off outlets when set time arrives">>)
+
+*+K+*::
+*{sp}unknown/unused *
+
+*+I+*::
+*{sp}unknown/unused *
+
+*+L+*::
+Site fault detection
+
+*+M+*::
+*{sp}unknown/unused *
+
+*+N+*::
+<<advanced-eco-mode,Advanced ECO Mode>> (-> not influenced by <<bypass-forbidding,Bypass Forbidding>>)
+
+[[constant-phase-angle]]*+Q+*::
+Constant Phase Angle Function (<<phase-angle-management,Output and input phase angles are not equal>>)
+
+*+W+*::
+Limited runtime on <<battery-mode,battery mode>>
+
+*+Z+*::
+*{sp}unknown/unused *
+
+
+Voltage/Frequency limits management
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[[eco-mode-limits]]
+for <<eco-mode,ECO Mode>>:
+
+[horizontal]
+*+QHE+*::
+Query UPS for voltage range for ECO mode (Reset by <<reset-to-default,*+PF+*>>)
++
+.Reply
+----
+(MMM NNN
+----
++
+.e.g.
+----
+(242 218
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Maximum voltage
+
++NNN+::
+Minimum voltage
+--
+
+*+HELn+*::
+Change minimum voltage for ECO Mode to *+n+* (3 digit integer, +NNN+) Volt
+
+*+HEHn+*::
+Change maximum voltage for ECO Mode to *+n+* (3 digit integer, +NNN+) Volt
+
+*+QFRE+*::
+Query UPS for frequency range for ECO mode (Reset by <<reset-to-default,*+PF+*>>)
++
+.Reply
+----
+(MM.M NN.N
+----
++
+.e.g.
+----
+(53.0 47.0
+----
++
+Where:
++
+--
+[horizontal]
++MM.M+::
+Maximum frequency (Hz)
+
++NN.N+::
+Minimum frequency (Hz)
+--
+
+*+FRELn+*::
+Set minimum frequency for ECO Mode to *+n+* (3 digit decimal number, +NN.N+) Hz
+
+*+FREHn+*::
+Set maximum frequency for ECO Mode to *+n+* (3 digit decimal number, +NN.N+) Hz
+
+[[bypass-mode-limits]]
+for <<bypass-mode,Bypass Mode>>:
+
+[horizontal]
+*+QBYV+*::
+Query UPS for voltage range for Bypass mode (Reset by <<reset-to-default,*+PF+*>>)
++
+.Reply
+----
+(MMM NNN
+----
++
+.e.g.
+----
+(264 170
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Maximum voltage
+
++NNN+::
+Minimum voltage
+--
+
+*+PLVn+*::
+Change minimum voltage for Bypass Mode to *+n+* (3 digit integer, +NNN+) Volt
+
+*+PHVn+*::
+Change maximum voltage for Bypass Mode to *+n+* (3 digit integer, +NNN+) Volt
+
+*+QBYF+*::
+Query UPS for frequency range for Bypass mode (Reset by <<reset-to-default,*+PF+*>>)
++
+.Reply
+----
+(MM.M NN.N
+----
++
+.e.g.
+----
+(53.0 47.0
+----
++
+Where:
++
+--
+[horizontal]
++MM.M+::
+Maximum frequency (Hz)
+
++NN.N+::
+Minimum frequency (Hz)
+--
+
+*+PSFn+*::
+Change minimum frequency for Bypass Mode to *+n+* (3 digit decimal number, +NN.N+) Hz
+
+*+PGFn+*::
+Change maximum frequency for Bypass Mode to *+n+* (3 digit decimal number, +NN.N+) Hz
+
+
+Battery management
+~~~~~~~~~~~~~~~~~~
+
+Changing these options will change the UPS's estimation on battery charge/runtime
+
+[horizontal]
+*+RE0+*::
+Query UPS for battery low voltage
++
+.Reply
+----
+#NN
+----
++
+.e.g.
+----
+#20
+----
++
+Where:
++
+--
+[horizontal]
++NN+::
+Battery low voltage
+--
+
+*+W0En+*::
+Set battery low voltage to *+n+* (2 digit integer, +NN+) Volt
+
+*+BATNn+*::
+Set number of batteries (that make a battery pack) to *+n+* (+1+..+9+)
+
+*+BATGNn+*::
+Set number of battery packs in parallel to *+n+* (+01+..+99+)
+
+
+[[buzzer-control]]
+Buzzer control
+~~~~~~~~~~~~~~
+
+[horizontal]
+*+BZOFF+*::
+Disable alarm (BEEP!)
++
+NOTE: Accepted only if the UPS is buzzing
+
+*+BZON+*::
+Enable alarm (BEEP!)
+
+
+[[phase-angle-management]]
+Phase angle management
+~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+QPD+*::
+Query UPS for input/output phase angle
++
+.Reply
+----
+(MMM NNN
+----
++
+.e.g.
+----
+(000 120
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Input phase angle
+
++NNN+::
+Output phase angle
+--
+
+*+PPDn+*::
+Set <<constant-phase-angle,output phase angle>> to *+n+* (+000+, +120+, +180+ or +240+)°
+
+
+Multi-phase queries
+~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+Q3PV+*::
+Query UPS for multi-phase input voltage
++
+.Reply
+----
+(MMM.M NNN.N PPP.P QQQ.Q RRR.R SSS.S
+----
++
+.e.g.
+----
+(104.4 090.9 102.3 240.0 260.2 190.0
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Input Voltage L1
+
++NNN.N+::
+Input Voltage L2
+
++PPP.P+::
+Voltage L3
+
++QQQ.Q+::
+Input Voltage L1-L2
+
++RRR.R+::
+Input Voltage L2-L3
++
+<<qpi-protocol,*P09*>>: Input Voltage L1-L3
+
++SSS.S+::
+Input Voltage L1-L3
++
+<<qpi-protocol,*P09*>>: Input Voltage L2-L3
+--
+
+*+Q3OV+*::
+Query UPS for multi-phase output voltage
++
+.Reply
+----
+(MMM.M NNN.N PPP.P QQQ.Q RRR.R SSS.S
+----
++
+.e.g.
+----
+(104.4 090.9 102.3 240.0 260.2 190.0
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Output Voltage L1
+
++NNN.N+::
+Output Voltage L2
+
++PPP.P+::
+Output Voltage L3
+
++QQQ.Q+::
+Output Voltage L1-L2
+
++RRR.R+::
+Output Voltage L2-L3
++
+<<qpi-protocol,*P09*>>: Output Voltage L1-L3
+
++SSS.S+::
+Output Voltage L1-L3
++
+<<qpi-protocol,*P09*>>: Output Voltage L2-L3
+--
+
+*+Q3PC+*::
+Query UPS for multi-phase input current
++
+.Reply
+----
+(MMM NNN PPP
+----
++
+.e.g.
+----
+(002 011 003
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Input Current L1 (Ampère)
+
++NNN+::
+Input Current L2 (Ampère)
+
++PPP+::
+Input Current L3 (Ampère)
+--
+
+*+Q3OC+*::
+Query UPS for multi-phase output current
++
+.Reply
+----
+(MMM NNN PPP
+----
++
+.e.g.
+----
+(004 003 012
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Output Current L1 (Ampère)
+
++NNN+::
+Output Current L2 (Ampère)
+
++PPP+::
+Output Current L3 (Ampère)
+--
+
+*+Q3LD+*::
+Query UPS for multi-phase load level
++
+.Reply
+----
+(MMM NNN PPP
+----
++
+.e.g.
+----
+(002 042 012
+----
++
+Where:
++
+--
+[horizontal]
++MMM+::
+Output Load Level L1 (%)
+
++NNN+::
+Output Load Level L2 (%)
+
++PPP+::
+Output Load Level L3 (%)
+--
+
+*+Q3YV+*::
+Query UPS for multi-phase bypass voltage
++
+.Reply
+----
+(MMM.M NNN.N PPP.P QQQ.Q RRR.R SSS.S
+----
++
+.Reply for P09 UPSes
+----
+(MMM.M NNN.N PPP.P
+----
++
+.e.g.
+----
+(104.4 090.9 102.3 240.0 260.2 190.0
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Output Bypass Voltage L1
+
++NNN.N+::
+Output Bypass Voltage L2
+
++PPP.P+::
+Output Bypass Voltage L3
+
++QQQ.Q+::
+Output Bypass Voltage L1-L2
+
++RRR.R+::
+Output Bypass Voltage L2-L3
+
++SSS.S+::
+Output Bypass Voltage L1-L3
+--
+
+
+Queries/commands limited to <<qpi-protocol,P31>> UPSes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+QBT+*::
+Query UPS for battery type
++
+.Reply
+----
+(NN
+----
++
+.e.g.
+----
+(02
+----
++
+Where:
++
+--
+[horizontal]
++NN+::
+Battery type:
++
+--
+[horizontal]
++00+::
+Li
+
++01+::
+Flooded
+
++02+::
+AGM
+--
+--
+
+*+PBTn+*::
+Set battery type to *+n+* (+00+ -> Li, +01+ -> Flooded or +02+ -> AGM)
+
+*+QGR+*::
+Query UPS for device grid working range
++
+.Reply
+----
+(NN
+----
++
+.e.g.
+----
+(00
+----
++
+Where:
++
+--
+[horizontal]
++NN+::
+Device grid working range:
++
+--
+[horizontal]
++00+::
+Appliance
+
++01+::
+UPS
+--
+--
+
+*+PGRn+*::
+Set device grid working range to *+n+* (+00+ -> Appliance or +01+ -> UPS)
+
+
+Old/Megatec commands not supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+M+*::
+*{sp}unknown *
+
+*+Q+*::
+Beeper Toggle
+
+*+C+*::
+Cancel Shutdown
+
+
+Unknown
+~~~~~~~
+
+[horizontal]
+*+QBDR+*:: * unknown * - Query UPS for baud rate??
+
+
+[[warnings]]
+Warnings
+--------
+
+[cols="5>,75,15,5^",options="autowidth,header",frame="topbot",grid="rows",align="center"]
+|====
+|#	|Corresponding Warning									|Type			|Level
+|1	|Battery disconnected									|Battery event		|2
+|2	|Neutral not connected									|Input event		|2
+|3	|Site fault										|Input event		|2
+|4	|Phase sequence incorrect								|Input event		|2
+|5	|Phase sequence incorrect in bypass							|Bypass event		|2
+|6	|Input frequency unstable in bypass							|Bypass event		|2
+|7	|Battery overcharged									|Battery event		|2
+|8	|Low battery										|Battery event		|1
+|9	|Overload alarm										|Load event		|2
+|10	|Fan alarm										|UPS internal event	|2
+|11	|EPO enabled										|UPS internal event	|2
+|12	|Unable to turn on UPS									|UPS internal event	|2
+|13	|Over temperature alarm									|UPS internal event	|2
+|14	|Charger alarm										|UPS internal event	|2
+|15	|Remote auto shutdown									|UPS internal event	|3
+|16	|L1 input fuse not working								|UPS internal event	|2
+|17	|L2 input fuse not working								|UPS internal event	|2
+|18	|L3 input fuse not working								|UPS internal event	|2
+|19	|Positive PFC abnormal in L1								|UPS internal event	|2
+|20	|Negative PFC abnormal in L1								|UPS internal event	|2
+|21	|Positive PFC abnormal in L2								|UPS internal event	|2
+|22	|Negative PFC abnormal in L2								|UPS internal event	|2
+|23	|Positive PFC abnormal in L3								|UPS internal event	|2
+|24	|Negative PFC abnormal in L3								|UPS internal event	|2
+|25	|Abnormal in CAN-bus communication							|Parallel system event	|2
+|26	|Abnormal in synchronous signal circuit							|Parallel system event	|2
+|27	|Abnormal in synchronous pulse signal circuit						|Parallel system event	|2
+|28	|Abnormal in host signal circuit							|Parallel system event	|2
+|29	|Male connector of parallel cable not connected well					|Parallel system event	|2
+|30	|Female connector of parallel cable not connected well					|Parallel system event	|2
+|31	|Parallel cable not connected well							|Parallel system event	|2
+|32	|Battery connection not consistent in parallel systems					|Parallel system event	|2
+|33	|AC connection not consistent in parallel systems					|Parallel system event	|2
+|34	|Bypass connection not consistent in parallel systems					|Parallel system event	|2
+|35	|UPS model types not consistent in parallel systems					|Parallel system event	|2
+|36	|Capacity of UPSs not consistent in parallel systems					|Parallel system event	|2
+|37	|Auto restart setting not consistent in parallel systems				|Parallel system event	|2
+|38	|Battery cell over charge								|Parallel system event	|2
+|39	|Battery protection setting not consistent in parallel systems				|Parallel system event	|2
+|40	|Battery detection setting not consistent in parallel systems				|Parallel system event	|2
+|41	|Bypass not allowed setting not consistent in parallel systems				|Parallel system event	|2
+|42	|Converter setting not consistent in parallel systems					|Parallel system event	|2
+|43	|High loss point for frequency in bypass mode not consistent in parallel systems	|Parallel system event	|2
+|44	|Low loss point for frequency in bypass mode not consistent in parallel systems		|Parallel system event	|2
+|45	|High loss point for voltage in bypass mode not consistent in parallel systems		|Parallel system event	|2
+|46	|Low loss point for voltage in bypass mode not consistent in parallel systems		|Parallel system event	|2
+|47	|High loss point for frequency in AC mode not consistent in parallel systems		|Parallel system event	|2
+|48	|Low loss point for frequency in AC mode not consistent in parallel systems		|Parallel system event	|2
+|49	|High loss point for voltage in AC mode not consistent in parallel systems		|Parallel system event	|2
+|50	|Low loss point for voltage in AC mode not consistent in parallel systems		|Parallel system event	|2
+|51	|Warning for locking in bypass mode after 3 consecutive overloads within 30 min		|Parallel system event	|2
+|52	|Warning for three-phase AC input current unbalance					|Parallel system event	|2
+|53	|Warning for a three-phase input current unbalance detected in battery mode		|Parallel system event	|2
+|54	|Warning for Inverter inter-current unbalance						|Parallel system event	|2
+|55	|Programmable outlets cut off pre-alarm							|UPS internal event	|1
+|56	|Warning for Battery replace								|UPS internal event	|1
+|57	|Abnormal warning on input phase angle							|UPS internal event	|2
+|58	|Warning!! Cover of maintain switch is open						|UPS internal event	|2
+|62	|EEPROM operation error									|UPS internal event	|2
+|====
+
+
+[[fault-handler]]
+Fault handler
+-------------
+
+[cols="5>m,75,15,5^",options="autowidth,header",frame="topbot",grid="rows",align="center"]
+|====
+|#	|Correspondig Fault					|Type			|Level
+|01	|Bus voltage not within default setting			|UPS internal event	|1
+|02	|Bus voltage over maximum value				|UPS internal event	|1
+|03	|Bus voltage below minimum value			|UPS internal event	|1
+|04	|Bus voltage differences out of acceptable range	|UPS internal event	|1
+|05	|Bus voltage of slope rate drops too fast		|UPS internal event	|1
+|06	|Over current in PFC input inductor			|UPS internal event	|1
+|11	|Inverter voltage not within default setting		|UPS internal event	|1
+|12	|Inverter voltage over maximum value			|UPS internal event	|1
+|13	|Inverter voltage below minimum value			|UPS internal event	|1
+|14	|Inverter short-circuited				|UPS internal event	|1
+|15	|L2 phase inverter short-circuited			|UPS internal event	|1
+|16	|L3 phase inverter short-circuited			|UPS internal event	|1
+|17	|L1L2 inverter short-circuited				|UPS internal event	|1
+|18	|L2L3 inverter short-circuited				|UPS internal event	|1
+|19	|L3L1 inverter short-circuited				|UPS internal event	|1
+|1A	|L1 inverter negative power out of acceptable range	|UPS internal event	|1
+|1B	|L2 inverter negative power out of acceptable range	|UPS internal event	|1
+|1C	|L3 inverter negative power out of acceptable range	|UPS internal event	|1
+|21	|Battery SCR short-circuited				|UPS internal event	|1
+|22	|Line SCR short-circuited				|UPS internal event	|1
+|23	|Inverter relay open fault				|UPS internal event	|1
+|24	|Inverter relay short-circuited				|UPS internal event	|1
+|25	|Input and output wires oppositely connected		|UPS internal event	|1
+|26	|Battery oppositely connected				|Battery event		|2
+|27	|Battery voltage is too high				|Battery event		|2
+|28	|Battery voltage too low				|Battery event		|2
+|29	|Failure for battery fuse being open-circuited		|Battery event		|1
+|31	|CAN-bus communication fault				|Parallel system event	|2
+|32	|Host signal circuit fault				|Parallel system event	|2
+|33	|Synchronous signal circuit fault			|Parallel system event	|2
+|34	|Synchronous pulse signal circuit fault			|Parallel system event	|2
+|35	|Parallel cable disconnected				|Parallel system event	|2
+|36	|Load unbalanced					|Load event		|2
+|41	|Over temperature fault					|UPS internal event	|1
+|42	|Communication failure between CPUs in control board	|UPS internal event	|1
+|43	|Overload fault						|Load event		|1
+|44	|Fan failure						|UPS internal event	|1
+|45	|Charger failure					|UPS internal event	|1
+|46	|Model fault						|UPS internal event	|1
+|47	|MCU communication fault				|UPS internal event	|1
+|====
+
+
+P31 UPSes
+~~~~~~~~~
+
+[cols="5>m,75,15,5^",options="autowidth,header",frame="topbot",grid="rows",align="center"]
+|====
+|#	|Correspondig Fault				|Type			|Level
+|01	|Fan failure					|UPS internal event	|1
+|02	|Over temperature fault				|UPS internal event	|1
+|03	|Battery voltage is too high			|Battery event		|1
+|04	|Battery voltage too low			|Battery event		|1
+|05	|Inverter relay short-circuited			|UPS internal event	|1
+|06	|Inverter voltage over maximum value		|UPS internal event	|1
+|07	|Overload fault					|Load event		|1
+|08	|Bus voltage exceeds its upper limit		|UPS internal event	|1
+|09	|Bus soft start fail				|UPS internal event	|1
+|10	|* unknown *					|UPS internal event	|1
+|51	|Over current fault				|UPS internal event	|1
+|52	|Bus voltage below its under limit		|UPS internal event	|1
+|53	|Inverter soft start fail			|UPS internal event	|1
+|54	|Self test fail					|UPS internal event	|1
+|55	|Output DC voltage exceeds its upper limit	|UPS internal event	|1
+|56	|Battery open fault				|Battery event		|1
+|57	|Current sensor fault				|UPS internal event	|1
+|58	|Battery short					|Battery event		|1
+|59	|Inverter voltage below its lower limit		|UPS internal event	|1
+|====
+
+
+[[operational-modes]]
+Operational modes
+-----------------
+
+[[power-on-mode]]*Power On Mode*::
+The UPS is going On.
+
+[[shutdown-mode]]*Shutdown Mode*::
+The UPS is shutting down.
+
+[[standby-mode]]*Standby Mode*::
+The UPS has powered off output power, but the battery can still be charged.
+
+[[line-mode]]*Line Mode*::
+When the input voltage/frequency are within acceptable range, the UPS will provide pure and stable AC power to output.
+The UPS will also charge the battery under this mode.
+
+[[battery-mode]]*Battery Mode*::
+When the input voltage is beyond the acceptable range or as a consequence of a power failure, UPS will backup power from battery.
+
+[[eco-mode]]*ECO Mode*::
+(Efficiency Corrective Optimizer)
+When the <<eco-mode-limits,input voltage/frequency are within acceptable range>>, the UPS will bypass voltage to output for energy saving.
+PFC and INVERTER are still active at this mode.
+
+[[advanced-eco-mode]]*Advanced ECO Mode*::
+(Advanced Efficiency Corrective Optimizer)
+When the <<eco-mode-limits,input voltage/frequency are within acceptable range>>, the UPS will bypass voltage to output for energy saving.
+PFC and INVERTER are off at this mode.
+
+[[bypass-mode]]*Bypass Mode*::
+When <<bypass-mode-limits,input voltage/frequency are within acceptable range>> but UPS is overload, the UPS will enter Bypass Mode or Bypass Mode can be set by front panel or <<bypass-when-off,you can set the UPS to enter Bypass Mode when the UPS is off>>: the UPS will bypass voltage to output.
+
+[[converter-mode]]*Converter Mode*::
+(Frequency Converter Mode)
+When input frequency is within 40 Hz to 70 Hz, the UPS can be set at a constant output frequency, 50 Hz or 60 Hz.
+The UPS will still charge battery under this mode.
+
+[[battery-test-mode]]*Battery Test Mode*::
+The UPS is performing a <<battery-test,battery test>>.
+
+[[fault-mode]]*Fault Mode*::
+The UPS is in Fault Mode when a fault is found and no output power is supplied by the UPS.
+
+[[avr-mode]]*AVR Mode*::
+The UPS bypasses voltage to output regulating input voltage to the appropriate level.
+
+
+Revision History
+----------------
+
+[cols="1^.^,2^.^,5.^,2.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Rev.	|Date		|Description									|Author
+|1.0	|04/2013	|Initial release								|Daniele Pezzini
+|1.1	|10/2013	|Add some unused <<capability-options,capability options>> (*+M+*, *+Z+*)	|Daniele Pezzini
+|====

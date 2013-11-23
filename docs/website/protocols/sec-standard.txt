@@ -1,0 +1,55 @@
+SEC Standard UPS Communication Interface
+========================================
+:revnumber: 2.0
+:revdate: July 24, 1995
+
+The following document describes the standard UPS communication interface that Systems Enahancemcnt Corporation has adopted.
+
+Connector: *D-Sub-9 Female*
+
+
+Communication Interface Pin Assignment
+--------------------------------------
+
+[cols="^1,3,6",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|PIN NUMBER	|SIGNAL			|DESCRIPTION
+|1		|Inverter Shutoff	|The UPS shuts off when a high RS-232 level is applied to pin 1 for .5 seconds.
+The UPS responds to this signal, after a delay, and only during on-battery operations.
+
+|2		|ByPass Active		|UPS relay closes between pins 2 & 4 when the power supply has a failure or is being serviced and power is being provided to the system from the utility power line.
+
+|3		|AC Fail (N.O.)		|UPS relay closes betwen pins 3 & 4 when input power is lost.
+|4		|Common			|Switch common for pins 2, 3, 5, 6.
+|5		|Low Battery (N.O.)	|UPS relay closes between pins 5 & 4 when UPS battery has less than 2 minutes of life left.
+|6		|UPS On			|The UPS is powered on and is capable of providing power to the system.
+|7		|TXD			|RS-232 Transmit Data
+|8		|RXD			|RS-232 Receive Data
+|9		|Ground			|Communication Signal Ground
+|====
+
+NOTE: Pin 4 should be connected to ground
+
+
+RS232 Technical Specification Summary
+-------------------------------------
+
+[horizontal]
+Connector: ::
+9 pin, Type D, Female
+
+Format: ::
+ASCII 8 Bit, One Start Bit, One Stop Bit
+
+Baud Rate: ::
+Default 2400
+
+Parity: ::
+None
+
+Duplex: ::
+Full
+
+Delimiters: ::
+Carriage Return per Block
+

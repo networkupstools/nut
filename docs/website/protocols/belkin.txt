@@ -1,0 +1,427 @@
+Belkin Regulator Pro smart protocol
+===================================
+Marcus Mueller <marcus@ebootis.de>
+
+
+New information available
+-------------------------
+
+Thanks to http://www.tankstage.co.uk/[Tank] (<webmaster@tankstage.co.uk>), link:belkin-protocol.html[far more information] is available on this protocol.
+This page may be updated to reflect this at some point.
+
+This page is known to look bad on most browsers.
+It will be rewritten to look better some day.
+
+
+Description
+-----------
+
+Following the tradition of the earlier APC and Opti-UPS decoding work, here is some knowledge about the newer Belkin UPS protocol.
+This has all been obtained by prodding a F6C525-SER and their closed-source software, so there will probably be a lot of holes or unknown items.
+
+
+Beware random queries
+---------------------
+
+During the course of creating the original document, I managed to send a bunch of bogus queries and apparently managed to confuse my original UPS pretty badly.
+It started acting like a glorified power strip - unable to hold any significant load.
+
+Play it safe: do not send random commands to this hardware.
+Many of them are aliased and you will uncover things that are merely duplicates of well-documented commands.
+
+In particular, the *+SDE+* sequence seems to be very touchy.
+I convinced their software that it had a battery at 0 volts with 0% charge and that it was at 68 degrees F.
+The magic values for a F6C525-SER are "+160;2650;1932;1030;162+" - whatever that means.
+Now that you know how to break things, don't step into this trap.
+
+
+Firmware differences
+--------------------
+
+There may be differences in the command strings from one version to the next.
+Occasionally bugs are fixed, so these notes may diverge from your hardware as time goes by and newer versions come out.
+
+
+String format
+-------------
+
+The strings seem to be formatted like this:
+
+[horizontal]
+*+~+*::
+attention character
+
+*+00+*::
+unknown
+
+*+P+* or *+S+*, *+D+* or *+R+*::
+command type:
+
+[horizontal]
+*+P+*:::
+from PC to UPS: poll value
+
+*+S+*:::
+from PC to UPS: set value / run command
+
+*+D+*:::
+from UPS to PC: response to poll
+
+*+R+*:::
+from UPS to PC: "unimplemented" response
+
+*+nnn+*::
+length of data to follow, in bytes (e.g. +004+)
+
+*+xxx+*::
+3 letter command name (e.g. +BUZ+)
+
+*+zzz+*::
+optional: data for the command
++
+NOTE: commands with multiple fields use *+;+* to separate them.
+
+A typical command might look like this:
+
+----
+~00S004BUZ0
+----
+
+That's a command from the PC (+S+), data length is +4+, the command is +BUZ+, and the data for the command is +0+.
+This command happens to be the one that turns off the buzzer in the UPS.
+
+
+Commands and variable setting
+-----------------------------
+
+[cols=".^2m,.^7,.^1",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|String			|Apparent meaning								|Typical value/response
+|~00S004BUZ0		|Turn off UPS buzzer (may be BUZ2 on some hardware)				|n/a
+|~00S004BUZ1		|Turn on UPS buzzer								|n/a
+|~00S006RON1;1		|Turn on receptacle relay 1, delay 1 second					|n/a
+|~00S006ROF1;10		|Turn off receptacle relay 1, delay 10 seconds					|n/a
+|~00S004TST3		|10 second battery test								|n/a
+|~00S004TST4		|Deep battery test								|n/a
+|~00S004TST0		|Cancel battery test
+
+After using this, the UPS may need to be rebooted before it will start another battery test.
+
+													|n/a
+|~00S004SDA0		|Cancel shutdown								|n/a
+|~00S004SDT2		|Unsure: may be "shutdown type" - used for shutdown+restore command		|n/a
+|~00S006SDA120		|Shut down the UPS after 120 seconds
+
+NOTE: the only known way to return from this is with the power button!
+
+													|n/a
+|~00S008SDRnnnnn	|Untested, not seen in logs (only seen in 'strings')
+
+Seen in the binary as "+~00S008SDR%d+" - probably also shutdown + scheduled return.
+
+This may have second-level precision since 5 digits allows for values like 86400 - one day worth of seconds.
+
+													|n/a
+|~00S004ECO1		|Enable "economic mode" - probably only on higher-end units			|n/a
+|~00S004VSN0		|Set normal sensitivity								|n/a
+|~00S004VSN1		|Set reduced sensitivity							|n/a
+|~00S004VSN2		|Set low sensitivity								|n/a
+|~00S009TXVxx;yyy	|Set low transfer point to +xx+ VAC and high transfer point to +yyy+ VAC	|n/a
+|====
+
+
+Status/information polling
+--------------------------
+
+[cols="2m,3,5m",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|String		|Apparent meaning				|Typical value/response
+|~00P003MNU	|Manufacturer					|~00D006BELKIN
+|~00P003MOD	|Model						|~00D010F6C525-SER
+|~00P003VER	|Firmware					|~00D003001
+|~00P003STB	|Status: battery				a|+~00D0220;0;1;;;;0136;;047;100+
+
+[horizontal]
+Field 1 (+0+)::
+unknown
+
+Field 2 (+0+)::
++
++0+ -> battery normal
++
++1+ -> battery weak (below 15%)
+
+Field 3 (+1+)::
++
++1+ -> battery charging
++
++3+ -> discharging
+
+Field 4 (+null+)::
+unknown
+
+Field 5 (+null+)::
+unknown
+
+Field 6 (+null+)::
+unknown
+
+Field 7 (+0136+)::
+battery voltage (13.6V)
+
+Field 8 (+null+)::
+unknown
+
+Field 9 (+047+)::
+temperature (47 degrees C)
+
+Field 10 (+100+)::
+battery charge level (100%)
+
+|~00P003STO	|Status: output					a|+~00D0182;600;1;1234;;;016+
+
+[horizontal]
+Field 1 (+2+)::
+power source:
++
+- +1+ -> inverter
+- +2+ -> utility
+
+Field 2 (+600+)::
+output frequency (60.0 Hz)
+
+Field 3 (+1+)::
+may be number of phases or output circuits
+
+Field 4 (+1234+)::
+output voltage 1 (123.4 V)
+
+Field 5 (+null+)::
+unknown
+
+Field 6 (+null+)::
+unknown
+
+Field 7 (+016+)::
+UPS load (16%)
+
+|~00P003STI	|Status: input					a|+~00D0101;600;1245+
+
+[horizontal]
+Field 1 (+1+)::
+may mean number of phases
+
+Field 2 (+600+)::
+input frequency (60.0 Hz)
+
+Field 3 (+1245+)::
+input voltage (124.5 V)
+
+|~00P003TSR	|Test result					a|+~00D001n+
+
+Values for +n+:
+
+- +0+ -> no test performed
+- +1+ -> test passed
+- +2+ -> test in progress
+- +3+ -> battery test failed
+- +4+ -> battery test failed (duplicated for some reason)
+- +5+ -> deep battery test failed (monitor flips out with this one)
+- +6+ -> test aborted
+
+|~00P003STA	|Alarm status					a|+~00D024;0;;0;;0;0;;0;;;0;0;0;0;;0;1+
+
+[horizontal]
+Field 1::
++1+ -> overheat
+
+Field 2::
++0+ -> on line
++
++1+ -> on battery
+
+Field 3::
++1+ -> output bad
+
+Field 4::
++1+ -> overload - at/over 110% load, clears below 95%
+
+Field 5::
++1+ -> bypass bad
+
+Field 6::
++1+ -> output off
+
+Field 7::
++1+ -> UPS shutdown
+
+Field 8::
++1+ -> charger bad
+
+Field 9::
++1+ -> UPS system off
+
+Field 10::
++1+ -> fan failure
+
+Field 11::
++1+ -> fuse break
+
+Field 12::
++1+ -> UPS fault (general fault)
+
+Field 13::
++1+ -> awaiting power
+
+Field 14::
++1+ -> shutdown pending (*+SDA+* command underway)
+
+Field 15::
++1+ -> shutdown imminent (<5 seconds of power left)
+
+Field 16::
++0+ -> buzzer alarm off
++
++1+ -> on
+
+|~00P003AVL	a|Available commands
+
+Each digit represents whether a given command is available on this hardware.
+
+Bit 0 is the rightmost (last character).
+
+One interpretation follows:
+--
+[cols="^.^4m,^.^6m",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit	!Command
+!0	!*UBD*
+!1	!*TXF*
+!2	!*ECO*
+!3	!*ATT*
+!4	!*BTT*
+!5	!*ATX*
+!6	!*ARB*
+!7	!*BUZ*
+!8	!*RST*
+!9	!*SDA*
+!10	!*SDR*
+!11	!*SDT*
+!12	!*TST*
+!13	!*UBR*
+!14	!*UID*
+!15	!*TXV*
+!16	!*VSN*
+!17	!*RON*
+!18	!*ROF*
+!19	!*RNF*
+!====
+--
+I assume that older models simply lack the higher bits.
+
+								a|+~00D0130111100111111+
+
+Unconfirmed decoding:
+
+[horizontal]
+Supported: ::
+*+UBD+* (0), *+TXF+* (1), *+ECO+* (2), *+ATT+* (3), *+BTT+* (4), *+ATX+* (5)
+
+Unsupported: ::
+*+ARB+* (6), *+BUZ+* (7)
+
+Supported: ::
+*+RST+* (8), *+SDA+* (9), *+SDR+* (10), *+SDT+* (11)
+
+Unsupported: ::
+*+TST+* (12)
+
+|~00P003RAT	|UPS ratings					a|+~00D053134;612;159;600;525;315;;85;100;90;80;150;140;1;12+
+
+WARNING: this is truncated in my hardware - full decoding impossible
+
+NOTE: Broken in firmware 001, fixed in firmware 004.
+
+[horizontal]
+Field 1 (+120+)::
+nominal input voltage (120 V)
+
+Field 2 (+600+)::
+nominal input frequency (60.0 Hz)
+
+Field 3 (+120+)::
+nominal output voltage (120 V)
+
+Field 4 (+600+)::
+nominal output frequency (60.0 Hz)
+
+Field 5 (+525+)::
+VA rating (525 VA)
+
+Field 6 (+315+)::
+wattage (315 W)
+
+Field 7 (+null+)::
+unknown
+
+Field 8 (+85+)::
+nominal low transfer voltage
+
+Field 9 (+145+)::
+nominal high transfer voltage
+
+Field 10 (+90+)::
+severe load point (90%)
+
+Field 11 (+80+)::
+load warning point (80%)
+
+Field 12 (+150+)::
+unknown (absolute load shutdown point?)
+
+Field 13 (+140+)::
+unknown (pre-load shutdown point?)
+
+Field 14 (+1+)::
+unknown (battery count?)
+
+Field 15 (+12+)::
+unknown (first battery voltage?) (truncated?)
+
+Remaining data is unavailable
+
+|~00P003LET	|Unknown - only polled at startup		|~00D003001
+|~00P003STP	|Unknown - polled at startup, not supported	|~00R000
+|~00P003VSN	|Sensitivity					a|+~00D001n+
+
+Values for +n+:
+
+- +0+ -> normal
+- +1+ -> reduced
+- +2+ -> low
+
+|~00P003TXV	|Transfer voltages				a|+~00D007085;145+
+
+[horizontal]
+Field 1 (+085+)::
+low transfer point
+
+Field 2 (+145+)::
+high transfer point
+
+|~00P004SOL1	|Unknown - may mean "socket 1 offline"		d|+~00D0010+
+
+Seems to be the same as *+STA+* field 6
+
+|~00P003ATX	|Unknown - only in program strings		|+004.+
+|====
+
+
+Other notes
+-----------
+
+*+ARB+*, *+BRD+* and *+STP+* all return zero length responses.
+
+*+ATT+* returns the same data as *+STB+*.
+
+Upon receiving any command with the +\~00S+ prefix, the UPS will respond with "+~00A+". This may be some kind of ACK response.

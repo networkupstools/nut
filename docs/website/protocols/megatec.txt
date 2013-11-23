@@ -1,0 +1,442 @@
+Megatec Protocol information
+============================
+Kevin Chiou
+v2.7, July 30, 1996
+
+
+General
+-------
+
+This document specifies the RS232C communication protocol of the 'Advance-Intelligent UPS'.
+
+The protocol provided the following features:
+
+- Monitor charger status.
+- Monitor battery status and condition.
+- Monitor the utility status.
+- Provide the power switch function for computer to turn on and off the utility on schedule for power saving.
+
+Computer will control information exchange by a query followed by +<cr>+.
+
+UPS will respond with information followed by a +<cr>+ or action.
+
+
+Hardware
+--------
+
+[horizontal]
+BAUD RATE::
+2400 bps
+
+DATA LENGTH::
+8 bits
+
+STOP BIT::
+1 bit
+
+PARITY::
+NONE
+
+CABLING::
+9 pins female D-type connector
++
+----
+COMPUTER           UPS
+==========================
+   RX    <---  TX  (pin 9)
+   TX     ---> RX  (pin 6)
+   GND   <---  GND (pin 7)
+----
+
+
+Communication protocol
+----------------------
+
+
+Status Inquiry
+~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+Q1<cr>+*
+
+'UPS:'::
+UPS status data stream, such as +(MMM.M NNN.N PPP.P QQQ RR.R S.SS TT.T b7b6b5b4b3b2b1b0<cr>+
+
+
+UPS status data stream
+^^^^^^^^^^^^^^^^^^^^^^
+
+There should be a space character between every field for data separation.
+
+The meaning of each field is list as followed:
+
+[horizontal]
++(+::
+Start byte
+
++MMM.M+::
+I/P voltage
++
++M+ is and integer number ranging from +0+ to +9+.
+The unit is Volt.
+
++NNN.N+::
+I/P fault voltage
++
++N+ is and integer number ranging from +0+ to +9+.
+The unit is Volt.
+
+*For OFF LINE UPS*:::
+Its purpose is to identify a short duration voltage glitch which cause OFF line UPS to go to Invter mode.
+If this occurs input voltage will appear normal at query prior to glitch and will still appear normal at next query.
++
+The I/P fault voltage will hold glitch voltage till next query.
+After query, the I/P fault voltage will be same as I/P voltage until next glitch occurs.
+
+*For ON LINE UPS*:::
+Its purpose is to identify a short duration utility fail which cause ON line UPS to go to battery mode.
+If this occurs input voltage will appear normal at query prior to fail and will still appear normal at next query.
++
+The I/P fault voltage will hold utility fail voltage till next query.
+After query, the I/P voltage will be same as I/P voltage until next utility fail occurs.
+
++PPP.P+::
+O/P voltage
++
++P+ is an integer number ranging form +0+ to +9+.
+The unit is Volt.
+
++QQQ+::
+O/P current
++
++QQQ+ is a percent of maximum current, not an absolute value.
+
++RR.R+::
+I/P frequency
++
++R+ is an integer number ranging from +0+ to +9+.
+The unit is HZ.
+
++SS.S+ or +S.SS+::
+Battery voltage
++
++S+ is an integer number ranging from +0+ to +9+.
++
+For on-line units battery voltage/cell is provided in the form +S.SS+.
++
+For standby units actual battery voltage is provided in the form +SS.S+.
++
+UPS type in UPS status will determine which reading was obtained.
+
++TT.T+::
+Temperature
++
++T+ is an integer number ranging form +0+ to +9+.
+The unit is degree of centigrade.
+
++<U>+::
+UPS Status
++
++<U>+ is one byte of binary information such as +<b7b6b5b4b3b2b1b0>+.
+Where +bn+ is a ASCII character *+0+* or *+1+*.
++
+*+1+* means:
++
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Bit#	|Description
+|7	|Utility Fail (Immediate)
+|6	|Battery Low
+|5	|Bypass/Boost or Buck Active
+|4	|UPS Failed
+|3	|UPS Type is Standby
+
+*+0+* is On_line
+
+|2	|Test in Progress
+|1	|Shutdown Active
+|0	|Beeper On
+|====
+
++<cr>+::
+Stop Byte
+
+
+Example
+^^^^^^^
+
+[horizontal]
+'Computer:'::
+*+Q1<cr>+*
+
+'UPS:'::
++(208.4 140.0 208.4 034 59.9 2.05 35.0 00110000<cr>+
+
+Means:
+
+- I/P voltage is 208.4V.
+- I/P fault voltage is 140.0V.
+- O/P voltage is 208.4V.
+- O/P current is 34 %.
+- I/P frequency is 59.9 HZ.
+- Battery voltage is 2.05V.
+- Temperature is 35.0 degrees of centigrade.
+- UPS type is on-line, UPS failed.
+- Bypass active, and shutdown not active.
+
+
+Test for 10 seconds
+~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+T<cr>+*
+
+'UPS:'::
+Test for 10 seconds and return to utility.
+
+If battery low occur during testing, UPS will return to utility immediately.
+
+
+Test until battery low
+~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+TL<cr>+*
+
+'UPS:'::
+Test until battery low and return to utility.
+
+
+Test for specified time period
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+T<n><cr>+*
+
+'UPS:'::
+Test for *+<n>+* minutes.
+
+During testing, UPS returns to utility immediately, if battery low occur.
+
+*+<n>+* is a number ranging from +01+ to +99+.
+
+
+Turn On/Off beep - Toggle the UPS beeper
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+Q<cr>+*
+
+When the AC power failed, UPS will generate a warning beep to inform the manager.
+Manager could toggle the warning beep by sending this command.
+
+
+Shutdown Command
+~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+S<n><cr>+*
+
+'UPS:'::
+Shut UPS output off in *+<n>+* minutes.
+
+The UPS output will be off in *+<n>+* minutes, even if the utility power is present.
+If the battery low occurs before *+<n>+* minutes, the output is turned off immediately.
+
+After UPS shutdown, the controller of UPS monitors the utility power.
+If the utility is recovered, the UPS will wait for 10 seconds and connect the utility to output.
+
+*+<n>+* is a number ranging form +.2+, +.3+, ..., +01+, +02+, ..., up to +10+.
+
+
+Example
+^^^^^^^
+
+[horizontal]
+'Computer:'::
++S.3<cr>+
+
+'UPS:'::
+Shut output off in (+.3+) minutes
+
+
+Shutdown and Restore Command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+S<n>R<m><cr>+*
+
+'UPS:'::
+Shut UPS output off in *+<n>+* minutes, and waiting for *+<m>+* minutes then turn on UPS output again.
+
+The shutdown sequence is the same as the previous command.
+When the *+<m>+* minutes expired, the utility do not restore, the UPS will wait until utility restore.
+
+If UPS is in shutdown waiting state, the "*+C+*" command can let the shutdown procedure cancelled.
+
+If UPS is in restore waiting state, the "*+C+*" command can let the UPS output turned on, but UPS must be hold off at least 10 seconds. (if utility is present)
+
+*+<n>+* is a number ranging from +.2+, +.3+, ..., +01+, +02+, ..., up to +10+.
+
+*+<m>+* is a number ranging from +0001+ to +9999+.
+
+
+Cancel Shutdown Command
+~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+C<cr>+*
+
+'UPS:'::
+Cancel the *+SN<n><cr>*+ and *+SN<n>R<m><cr>+* command.
+
+If UPS is in shut down waiting state, the shut down command is cancelled.
+
+If UPS is in restore waiting state, the UPS output is turned on, but UPS must be hold off at least 10 seconds. (if utility is present)
+
+
+Cancel Test Command
+~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+CT<cr>+*
+
+'UPS:'::
+Cancel all test activity and connect the utility to output immediately.
+
+
+UPS Information Command
+~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+I<cr>+*
+
+'UPS:'::
++#Company_Name UPS_Model Version<cr>+
+
+This function will make the UPS respond with the basic information about the company who manufacture the UPS, the model name of the UPS and the version number of the UPS firmware.
+
+The length of every field is listed as follows:
+
+[horizontal]
++Company_Name+::
+15 characters, leave space if less than 15 characters
+
++UPS_Model+::
+10 characters, leave space if less than 10 characters
+
++Version+::
+10 characters, leave space if less than 10 characters
+
+There should be a space character between every field for separation.
+
+
+UPS Rating Information
+~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer:'::
+*+F<cr>+*
+
+'UPS:'::
++#MMM.M QQQ SS.SS RR.R<cr>+
+
+This function makes the UPS answer the rating value of UPS.
+
+There should be a space character between every field for separation.
+
+The UPS's response contains the following information field:
+
+[horizontal]
++MMM.M+::
+Rating Voltage
+
++QQQ+::
+Rating Current
+
++SS.SS+ or +SSS.S+::
+Battery Voltage
+
++RR.R+::
+Frequency
+
+
+Command summary
+---------------
+
+[horizontal]
+*+D+*::
+Status Inquiry *disable
+
+*+Q1+*::
+Status Inquiry
+
+*+T+*::
+10 Seconds Test
+
+*+TL+*::
+Test until Battery Low
+
+*+T<n>+*::
+Test for Specified Time Period
+
+*+Q+*::
+Turn On/Off beep
+
+*+S<n>+*::
+Shut Down Command
+
+*+S<n>R<m>+*::
+Shut Down and Restore Command
+
+*+C+*::
+Cancel Shut Down Command
+
+*+CT+*::
+Cancel Test Command
+
+*+I+*::
+UPS Information Command
+
+*+F+*::
+UPS Rating Information
+
+
+Invalid Command/Information Handling
+------------------------------------
+
+If the UPS receives any command that it could not handle, the UPS should echo the received command back to the computer.
+The host should check if the command send to UPS been echo or not.
+
+If there is any information field in the UPS's response which is unavailable or not supported, the UPS should fill the field with *+@+*.
+
+
+Implementation notes
+--------------------
+
+*+S01R0001+* and *+S01R0002+* may not work on early firmware versions.
+
+The failure mode is that the UPS turns off and never returns.
+
+The fix is to push the return value up by 2, i.e. *+S01R0003+*, and it will return online properly.
+
+
+Revision History
+----------------
+
+[cols="1^.^,2^.^,5.^,2.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Rev.	|Date		|Description					|Modify by
+|2.6	|95-9-30	|UPDATE "*+D+*" COMMAND (+SS.SS+ -> +SSS.SS+)	|Kevin Chiou
+|2.7	|96-8-01	|Disable "*+D+*" COMMAND			|Kevin Chiou
+|====

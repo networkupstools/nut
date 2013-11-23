@@ -1,0 +1,308 @@
+US9003 UPS Communication Interface
+==================================
+
+
+Hardware
+--------
+
+*UPS Connector*::
+D-Sub-9 Female
+
+*Communication Interface Pins Assignment*::
++
+[cols="1^.^,2.^,7.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Pin No.	|Signal		|Description
+|2		|RXD		|RS232 receive data (Output data from UPS to PC)
+|3		|TXD		|RS232 transmit data (Input data from PC to UPS)
+|4		|DTR		|+12Vdc
+|5		|GND		|Signal ground
+|6		|BATT LOW	|This pin triggers an active-low signal in battery low condition
+|8		|BATT MODE	|This pin triggers an active-low signal in UPS backup mode
+|1, 7, 9	2+|UNUSED
+|====
+
+*RS232 Technical Specification Summary*::
++
+[horizontal]
+'Connector':::
+9 pin, Type D, Female
+
+'Format':::
+ASCII 8 bit, 1 start bit, 1 stop bit
+
+'Baud Rate':::
+1200 bps
+
+'Parity':::
+None
+
+'Duplex':::
+Full
+
+
+Message Format
+--------------
+
++<+*+Header+*++ 1 byte><++*+Message Type+*++ 1 byte><++*+Data Length+*++ 3 bytes><++*+Data+*++ 128bytes max>++
+
+Where:
+
+[[horizontal]]
+*+Header+*::
+is a *+^+* (carat) character
+
+*+Message Type+*::
+will be one of the following:
+
+[horizontal]
+*+0+*:::
+Command rejected (from UPS to PC)
+
+*+1+*:::
+Command accepted (from UPS to PC)
+
+*+P+*:::
+Poll command (from PC to UPS)
+
+*+S+*:::
+Set command (from PC to UPS)
+
+*+D+*:::
+Data returned (from UPS to PC)
+
+*+Data Length+*::
+is the number of bytes of data passed
+
+*+Data+*::
+is comma delimited.
+If a variable value is unavailable, a comma with no data is placed in the variable location.
++
+For example, if only the 2nd, 4th, and 6th variables have valid data, the UPS response will have the following format:
++
+----
+^D010,1,,22,,82
+----
+
+
+Poll Commands
+-------------
+
+[cols="1^.^m,2.^,1^.^,6.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Description			|Max Data Length	|Variables Returned
+|*MAN*		|UPS manufacturer		|32			|Manufacturer
+|*MOD*		|UPS model			|64			|UPS model
+|*ST1*		|Status group 1 - Battery	|32			|,Battery status ,,,, Estimated charge
+|*ST2*		|Status group 2 - Input		|65			|,Input num lines, Input frequency 1, Input voltage 1
+|*ST3*		|Status group 3 - Output	|66			|Output source, Output frequency, Output num lines, Output voltage 1,,,Output load1
+|*VER*		|UPS version			|32			|UPS firmware and/or software version
+|====
+
+
+UPS Status
+~~~~~~~~~~
+
+*+ST1+* command will return up to 32 bytes of data (including commas).
+All values are comma delimited.
+
+[cols="3.^,1^.^,6.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Variable Name		|Max Length	|Units
+|Battery status		|1		a|
+
+- +0+ -> Battery ok
+- +1+ -> Battery Low
+- +2+ -> Battery Depleted
+
+|Estimated Charge	|3		|Percent
+|====
+
+*+ST2+* command will return up to 65 bytes of data (including commas).
+All values are comma delimited.
+
+[cols="3.^,1^.^,6.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Variable Name		|Max Length	|Units
+|Input num lines	|1		|Integer (1-3)
+|Input frequency 1	|3		|0.1 Hz
+|Input voltage 1	|4		|0.1 volts
+|====
+
+*+ST3+* command will return up to 66 bytes of data (including commas).
+All values are delimited.
+
+[cols="3.^,1^.^,6.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Variable Name		|Max Length	|Units
+|Output source		|1		a|
+
+- +0+ -> Normal
+- +1+ -> On battery
+- +2+ -> On bypass
+- +3+ -> Reducing
+- +4+ -> Boosting
+- +5+ -> Other
+
+|Output frequency	|3		|0.1 Hz
+|Output num lines	|1		|Integer (1-3)
+|Output voltage 1	|4		|0.1 volts
+|Output load 1		|3		|Percent
+|====
+
+
+Set Commands
+------------
+
+[cols="1^.^m,4.^,1^.^,2.^,2.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Description									|Max Length	|Data		|Variable Set
+|*PSD*		|Performs UPS shutdown after the indicated no. of seconds			|7		a|
+
+- +-1+ -> Abort
+- +0+ -> Immediate
+- +>0+ -> seconds until shutdown
+
+																|Shutdown After Delay
+
+|*RWD*		|Immediately perform UPS shutdown, then restarts after indicated no. of seconds	|7		|Seconds	|Reboot with Duration
+|*STD*		|Starts UPS after indicated no. of seconds					|7		a|
+
+- +-1+ -> Abort
+- +0+ -> Immediate
+- +>0+ -> seconds until startup
+
+																|Startup After Delay
+
+|*TST*		|Test UPS									|2		a|
+
+- +-1+ -> Abort test
+- +0+ -> No effect
+- +1+ -> General test
+
+																|Test Type
+
+|====
+
+
+Communication Examples
+----------------------
+
+1. Host PC requests for UPS manufacturer:
++
+--
+----
+^P003MAN
+----
+
+UPS responds:
+
+----
+^D014PK ELECTRONICS
+----
+
+[horizontal]
++014+::
+14 bytes to follow
+
++PK ELECTRONICS+::
+Manufacturer
+--
+
+2. Host PC requests for UPS model:
++
+--
+----
+^P003MOD
+----
+
+UPS responds:
+
+----
+^D006US9003
+----
+
+[horizontal]
++006+::
+6 bytes to follow
+
++US9003+::
+Model
+--
+
+3. Host PC requests for UPS status input parameters:
++
+--
+----
+^P003ST2
+----
+
+UPS responds:
+
+----
+^D011,1,500,2350
+----
+
+[horizontal]
++011+::
+11 bytes to follow
+
++1+::
+Input num lines (single phase UPS)
+
++500+::
+Input frequency 1 of 50.0 Hz
+
++2350+::
+Input voltage 1 of 235.0 Volts
+--
+
+4. Host PC attempts to shutdown UPS:
++
+--
+----
+^S006PSD120
+----
+
+[horizontal]
++006+::
+6 bytes to follow
+
++PSD120+::
+Shutdown UPS in 2 minutes
+
+UPS responds:
+
+----
+^1
+----
+
+[horizontal]
++1+::
+Command accepted
+--
+
+5. Host PC attempts to reboot UPS:
++
+--
+----
+^S006RWD300
+----
+
+[horizontal]
++006+::
+6 bytes to follow
+
++RWD300+::
+Shutdown UPS immediately and restarts it after 5 minutes
+
+UPS responds:
+
+----
+^1
+----
+
+[horizontal]
++1+::
+Command accepted
+--

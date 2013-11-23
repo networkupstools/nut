@@ -1,0 +1,1942 @@
+Fortress UPS Protocol
+=====================
+:revdate: December 23, 1996
+
+
+Communicating with Fortress(R) Using the RS232 Port
+---------------------------------------------------
+
+This FTS explains how to communicate with standalone LI 520, 720, 1020, and 1420 Fortress models using the DB9S communication port.
+(This FTS is *not* for rackmount models.)
+This document provides information for all Fortress software versions through 1.00.
+
+Fortress includes a free CheckUPS® II Suite software package for power monitoring and for automatic shutdown during long power outages.
+If you are planning to use this software, see the instructions and the online manual you received with the CheckUPS II CD.
+
+This document begins with a list of ways you can use the RS232 port.
+It then describes how to set up full-duplex RS232 communication between your computer and Fortress so you can send commands and receive messages from the UPS.
+This document also explains how to use the commands and Fortress' parameters to control Fortress operation or to display information about the Fortress and power conditions.
+
+If you have any questions about Fortress communication, call the nearest Best Power office, or call Best Power's Worldwide Service at 1-800-356-5737 (U.S. and Canada) or 1-608-565-2100.
+
+
+How You Can Use the Communication Port
+--------------------------------------
+
+You can use the Fortress' RS232 communication port for several functions:
+
+*+12 Level -- Pin 8:*::
+You can use the + 12 VDC Level on pin 8 for setting an external logic level 1.
+You can use this to set a fixed input logic level in an external device.
+The voltage is present whenever the Fortress is operating.
+
+*CheckUPS II Software:*::
+If you are using the free CheckUPS II software you received for power monitoring and automatic shutdown, the communication port is the connection point for your CheckUPS II interface cable.
+See the instructions that came with the CheckUPS II software.
+CheckUPS II is also set up to work with Windows 95(R) Plug and Play Sense.
+See step 8 in the Startup section of the Fortress User Guide.
+
+*Remote Monitoring (Relay Contacts):*::
+Fortress has contacts that indicate when the unit is running on battery and when it is sounding a Low Battery Alarm.
+You can connect these contacts to your own alarm system or indicator for remote monitoring.
+ChcckUPS II software also uses these contacts to control the shutdown of computers or computer networks.
++
+Using parameter 81, you can decide which alarms will activate alarm contact; see <<s503,section 'Choosing Which Alarms Enable the Alarm Contact (Parameter 81)'>> for more information.
+Using parameters 80 and 88-89, you can also change the contacts from normally open to normally closed, and you can change the delay before the battery contact closes.
+See <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>> for more information.
+
+*Remote Shutdown:*::
+Two pins at the Fortress' DB9S port allow you to shut down your Fortress from a remote switch.
+Parameters 85-87 and 82-84 let you decide what type of signal or contact action will cause a shut down and how long the Fortress should delay before shutdown.
+See <<s505,section 'Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)'>> for more information.
+
+*RS232 Communication:*::
+You can connect your Fortress to a terminal, computer, or modem for full-duplex communication.
+This connection lets you send commands to the Fortress to display values or control Fortress operation.
+You can even set up your Fortress to start and shut down automatically at the times you choose.
+<<s300,Section 'Starting Two-way RS232 Communication'>> describes how to to set up RS232 communication, <<s400,section 'Using Commands to Communicate with the Fortress'>> explains how to use Fortress commands, and <<s500,section 'Using Parameters'>> explains how to use parameters.
+
+
+[[s200]]
+Choosing a Communication Mode
+-----------------------------
+
+Fortress has two communication modes: RS232 Communication Mode and Extended Signal Mode.
+This section explains the modes and how to change them.
+
+
+RS232 Communication Mode
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fortress is set to the RS232 Communication Mode when you receive it.
+This is the mode that your CheckUPS II Suite uses; it is also the mode that you must use for RS232 communication.
+When you select this mode, the pins at the DB9 port perform these functions:
+
+[cols="^1,9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Pin	|Function
+|1	|RS232 Receive Data.
+Receives incoming RS232 communication data.
+
+|2	|RS232 Transmit Data.
+Sends outgoing RS232 communication data.
+
+|3	|Normally Open On Battery Contact.
+A normally open contact that closes 15 seconds after the UPS switches to battery power.
+You can adjust the delay before the contact closes, and you can change the contact to normally closed; see <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|4	|Common.
+The signal ground for all signal pins.
+
+|5	|Normally Open Low Battery Contact.
+A normally open contact that closes during a Low Battery, Near Low Battery or Low Runtime alarm.
+This tells CheckUPS II and other shutdown software when to start a computer shutdown.
+'You can program this contact to close during other alarms; see <<s503,section Choosing Which Alarms Enable the Alarm Contact (Parameter 81)>>.'
+You can also change the contact to normally closed; see <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|6	|Plug and Play Sense for Windows 95(R)
+|7	|Remote Shutdown.
+Shorting this pin to common turns the UPS off.
+See <<s505,section 'Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)'>> to change what causes a shutdown and the delay before the shutdown.
+
+|8	|Unregulated +12V isolated source.
+|9	|Not Used.
+|====
+
+Contacts consist of open collector circuits capable of switching up to +40 VDC 50 mA resistive load.
+Only pins 1 and 2 differ from Extended Signal Mode; these are the pins that allow RS232 communication.
+
+Extended Signal Mode
+~~~~~~~~~~~~~~~~~~~~
+
+The Extended Signal Mode does not allow RS232 communication, but it includes a programmable contact for remote shutdown and a pin that produces a 12 VDC (RS232-level) signal when the unit runs on battery.
+This mode is mainly for applications that require signals for your computer software or other external equipment.
+
+Only pins 1 and 2 change in this mode; pins 3-9 have the same functions that they have in the RS232 Communication Mode.
+See the next table.
+
+[cols="^1,9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Pin	|Function
+|1	|Remote shutdown.
+If the UPS is using battery power and a +12 VDC signal is applied to this pin for 5 seconds, the UPS will shut down 30 seconds later.
+When the power outage ends, the UPS will automatically restart.
+Signal and shutdown times and automatic restart are programmable.
+See <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>> and parameter 39.
+
+|2	|On Battery Status.
+When the UPS is using battery power, this pin produces a +12 VDC (RS232-level) signal.
+
+|3	|Normally Open On Battery Contact.
+A normally open contact that closes 15 seconds after the UPS switches to battery power.
+You can adjust the delay before the contact closes, and you can change the contact to normally closed; see <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|4	|Common.
+The signal ground for all signal pins.
+
+|5	|Normally Open Low Battery Contact.
+A normally open contact that closes during a Low Battery, Near Low Battery or Low Runtime alarm.
+This tells CheckUPS II and other shutdown software when to start a computer shutdown.
+'You can program this contact to close during other alarms; see <<s503,section Choosing Which Alarms Enable the Alarm Contact (Parameter 81)>>.'
+You can also change the contact to normally closed; see <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|6	|Plug and Play Sense for Windows 95(R)
+|7	|Remote Shutdown.
+Shorting this pin to common turns the UPS off.
+See <<s505,section 'Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)'>> to change what causes a shutdown and the delay before the shutdown.
+
+|8	|Unregulated +12V isolated source.
+|9	|Not Used.
+|====
+
+Contacts consist of open collector circuits capable of switching up to +40 VDC 50 mA resistive load.
+
+
+Selecting the Communication Mode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+DIP switch 4 on the back of your Fortress sets the communication mode.
+The DIP switches are on the right side of the back panel as shown below.
+
+image::images/fortress_dip-switch-1.png["DIP switch locations", align = "center"]
+
+To set the communication mode, find DIP switch 4 shown.
+Use a *nonmetal* object such as a toothpick to move the DIP switch to the correct position for the communication mode you select (left for RS232 Mode, right for Extended Signal Mode).
+If the UPS is on, it will beep when you change the communication mode.
+*Make sure you do not accidentally change the position of another DIP switch.*
+
+
+[[s300]]
+Starting Two-way RS232 Communication
+------------------------------------
+
+You can set up two-way (full-duplex) communication with the Fortress using a dumb terminal or terminal communication program.
+Two-way communication allows you to issue commands to the Fortress and to display information on your computer or terminal's screen.
+The commands are in <<s400,section 'Using Commands to Communicate with the Fortress'>>.
+To set up two-way communication, follow these steps:
+
+1. Order an interface cable from Best Power (or call Best Power for cable specifications).
+Connect this cable to the UPS and to the terminal.
+(Instead of a terminal, you can use a computer with terminal emulation software such as CROSSTALK' or Procomm-, or the Windows Terminal function.)
+If you are using a terminal, note that Fortress supports the Televideo 900 series, ADM3A and WSE 50 emulation.
++
+NOTE: If you are connecting the Fortress to a modem, you must configure the modem properly.
+Set up the modem to ignore RTS and CTS signals (disable hardware handshaking).
+Enable support for X/ON X/OFF software handshaking.
+At the Fortress, parameters 73 and 74 enable software handshaking; unless you have changed the settings of these parameters, Fortress is already set up for software handshaking.
+
+2. Start the terminal or run terminal emulation software on your computer.
+
+3. Set the terminal or terminal emulation software for the following:
++
+- FULL DUPLEX
+- 1200 baud (see note in step 4)
+- 8 data bits and 1 stop bit
+- No parity
+
+4. Press <ENTER> at your keyboard.
+You should receive a \=> prompt.
+Press <ENTER> a few times to make sure the Fortress responds.
++
+[NOTE]
+====
+If you want to change the baud rate at which the Fortress communicates, follow these steps:
+
+a. Set your computer or terminal baud rate to 1200 temporarily so you can communicate with the Fortress.
+
+b. Find the DIP switches on the back of the Fortress; then, find DIP switch 1.
++
+image::images/fortress_dip-switch-2.png["DIP switch detail", align = "center"]
+
+c. If DIP switch 1 is set to the right, the Fortress baud rate will stay 1200 until you change the DIP switch setting.
+If DIP switch 1 is set to the left as it is in the drawing, the Fortress baud rate depends on the setting of parameter 70.
+When the Fortress is shipped, parameter 70 is also set to 1200.
+To change the DIP switch setting, use a *nonmetal* object such as a toothpick to move DIP switch 1 from one side to the other; if the UPS is on, it will beep.
+*Make sure you do not accidentally change the position of another DIP switch.*
+
+d. Establish communication with the Fortress.
+Then, enter the Service password by typing *+password 2639+* <ENTER>.
+
+e. To display baud rate (parameter 70), type *+display 70+* <ENTER>.
+If you have never changed the parameter setting, the display will show "+70 Baud 2)1200+".
++
+Setting:
++
+- +0+ -> 300
+- +1+ -> 600
+- +2+ -> 1200.
+
+f. To change the setting type *+program 70 <new setting>+* <ENTER>.
+'Example:' To change the baud rate to 300, type *+program 70 0+* <ENTER>.
+
+g. Clear the password by typing *+clearpassword+* <ENTER>.
+====
+
+5. To control or monitor the Fortress, simply type the command you need and press <ENTER>.
+(See <<s402,section 'Commands'>> for a list of commands.)
+You can use the following keystrokes as you type commands or view displays:
+
+.Control characters
+[options="header,autowidth",frame="topbot",grid="rows",align="center",caption=""]
+|====
+|To do this...					|Use these keys:
+|Delete the last character typed.		|<BACKSPACE> or <CTRL><H>
+|Delete a line.					|<CTRL><X>
+|Pause displays that take more than one screen.	|<CTRL><S>
+|Resume scrolling. (Turn pause off.)		|<CTRL><Q>
+|====
+
+
+[[s400]]
+Using Commands to Communicate with the Fortress
+-----------------------------------------------
+
+This section explains how to communicate with the Fortress in RS232 mode.
+See <<s300,section 'Starting Two-way RS232 Communication'>> to start two-way communication.
+If you plan to use CheckUPS II software, see the online manual on the CheckUPS CD for more information about UPS monitoring and control.
+
+
+[[s401]]
+Passwords
+~~~~~~~~~
+
+Before you can enter some commands, you must enter a password.
+There are two levels of passwords: User and Service.
+To enter the User password, type the following at the +\=>+ prompt: *+pw 377+* <ENTER>.
+After you enter the password, the prompt will change to "+User\=>+".
+The Service password is for more advanced parameter programming and for service functions.
+Before you change parameters, you should make sure you understand the effects of the change; if you are not sure, call Best Power for help.
+To enter the Service password, type *+pw 2639+* <ENTER>.
+The prompt will change to "+Serv\=>+".
+
+
+[[s402]]
+Commands
+~~~~~~~~
+
+You can only enter commands if the Fortress is in the RS232 Communication Mode and you are not using CheckUPS II.
+To enter a command, simply type it in and press <ENTER>.
+You can type the command in uppercase or lowercase, and you can use the whole command or the short form, or you can abbreviate the command as long as you include the letters in the short form.
+You can also enter more than one command at once if you put a semicolon between commands.
+The next table shows each command, its short form, the password required (if any), and what the command does.
+
+[cols=".^2,^.^2,.^6",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command (Short Form)			|Password Needed		|What the Command Does
+|*+alarmshelp+* (*+ah+*)		|None				|Shows a list of all alarm messages, their alarm codes and whether each alarm is active (sounding) now.
+This command also shows whether a DB9 contact is enabled for each alarm; "enabled means the contact will change position when there is ana alarm,
+To choose which alarms will enable the contact see <<s503,section 'Choosing Which Alarms Enable the Alarm Contact (Parameter 81)'>>.
+
+|*+alarmstatus+* (*+as+*)		|None				|Shows a list of all alarm messages, their alarm codes and whether each alarm active (sounding) now.
+This command also shows whether a DB9 contact is enabled for each alarm; "enabled means the contact will change position when there is ana alarm,
+To choose which alarms will enable the contact see <<s503,section 'Choosing Which Alarms Enable the Alarm Contact (Parameter 81)'>>.
+
+|*+alarmtest+* (*+at+*)			|User				|Lets you test the Fortress' ability to sound an alarm.
+The display will show alarm "Ut", the alarm light will flash and the Fortress will sound the Morse Code for alarm J (.---).
+The alarm will stop when you send the *+alarmtest cancel+* command.
+
+|*+alarmtest cancel+* (*+at c+*)	|None				|Cancels an alarm test.
+|*+clearalarms+* (*+ca+*)		|User				|Clears all active alarms.
+|*+clearhistory+* (*+ch+*)		|None				|Clears the minimum and maximum parameter values shown when you use the *+extendedhistory+* or *+history+* commands.
+|*+clearpassword+* (*+cp+*)		|None				|Clears any passwords you have entered.
+|*+commands+* (*+cmds+*)		|None				|Displays a list of all commands.
+(This list includes some commands that are not valid for Fortress; see <<s403,section 'Help Commands'>>.)
+
+|*+contdisplay+* (*+cd+*)		|Depends on parameter password	|Continuously displays the parameters that you specify.
+To specify parameters for the continuous display, enter the name or number of each parameter after the *+contdisplay+* command.
+To stop displaying the parameter, press any key.
+
+|*+constatus+* (*+cs+*)			|None				|Continuously displays the status of the UPS and input and output power.
+(See the *+status+* command.)
+To stop displaying the status information, press any key.
+
+|*+date+* (*+da+*)			|User				|Displays a system time and date.
+To set the date, enter *+date [month]/[day]/[year]+*.
+
+|*+delay+* (*+dl+*)			|None				|When you enter more than one command on a line, using *+delay [#]+* between commands delays the next command.
+Each unit represents 2.5 milliseconds, so *+delay 1+* would cause a 2.5mS delay.
+For a 1-second delay, enter *+delay 400+*.
+
+|*+display+* (*+d+*)			|Depends on parameter password	|Displays the values of one or more parameters.
+If you choose to display more than one parameter, you can use spaces or commas between the parameters you specify.
+(See sections <<s405,'Parameter Commands'>> and <<s501,'Parameter Table'>> for more on parameter commands and parameters)
+
+'Format:' *+display [parameter # or name] [parameter # or name]+*
+
+'Example:' *+d 1 fullload+* or *+d 1,fullload+* displays the values of parameters 1 and 16.
+
+|*+extendedhistory+* (*+xh+*)		|None				|Displays the minimum and maximum values of parameters 1 (AC Volts In), 2 (AC Volts Out), 7 (DC Volts) and 5 (VA Out); the command then clears the minimum and maximum values.
+See the parameter table in <<s501,section 'Parameter Table'>>.
+
+|*+format+* (*+f+*)			|None				|Displays an 80-character line containing information on the Fortress' status.
+CheckUPS and other UPS monitoring software use this data.
+See <<s406,section 'The Format Commands'>>.
+
+|*+formatconfig+* (*+fc+*)		|None				|Displays a string of characters containing information about the Fortress' status.
+Some UPS monitoring software may use this data.
+See <<s406,section 'The Format Commands'>>.
+
+|*+formatparam+* (*+fp+*)		|None				|Displays a string of characters containing information about the Fortress' status.
+Some UPS monitoring software may use this data.
+See <<s406,section 'The Format Commands'>>.
+
+|*+history+* (*+h+*)			|None				|Displays the minimum and maximum values of parameter 1 (AC Volts In); the command then clears the minimum and maximum values.
+|*+identify+* (*+i+*)			|None				|Shows Best Power's address and telephone number and information about your Fortress.
+|*+lock+* (*+lk+*)			|User				|Locks the front panel so that the buttons cannot be used.
+After you send this command, the message "+front panel buttons locked+" will appear on your terminal.
+Use the *+unlock+* command to enable the Fortress' buttons again.
+
+|*+message [ ] [delay]+* (*+m+*)	|User				|Displays the message you specify on the front panel.
+For example, *+message "On"+* will display "On" on the front panel.
+Normally, this display will last three seconds, but you can specify the length of time in the command by entering a delay after the message.
+(The delay is optional, not required.)
+*+message "On" 1+* would display the message for 1/4 seconds; to specify a whole second, use "+4+".
+To keep the message on the display indefinitely, use "+0+"; you can clear the message by sending the *+message+* command alone.
+
+|*+off [time]+* (*+o [time]+*)		|None				|Shuts down the Fortress in the number of seconds you enter.
+The UPS will display "+\--+" once it has shut down.
+'Example:' *+off 60+* shuts down the Fortress in 60 seconds.
+After shutdown, if you try to restart the UPS before utility power (AC input power) is available, the display will show "+L?+".
+
+|*+off cancel+* (*+o c+*)		|None				|Cancels a timed shutdown.
+|*+parameters+* (*+p+*)			|Depends on parameter password	|Shows a list of Fortress parameters.
+(See sections <<s405,'Parameter Commands'>> and <<s501,'Parameter Table'>>.)
+You can also display a arange of parameters by entering the starting and ending parameter number or parameter name after the command.
+
+|*+paramkeywords+* (*+pk+*)		|Depends on parameter password	|Displays all paramaters and their keywords (the names you can use with commands).
+You can also display a range of parameters by entering the numbers or the names of the starting and ending parameters.
+
+|*+password [#]+* (*+pw [#]+*)		|None				|Entering this command followed by a password number enters that password.
+For example, *+password 377+* enters the User password and *+password 2639+* enters the Service password.
+Entering the command alone clears the password.
+
+|*+program+* (*+pr+*)			|Depends on parameter password	|Lets you set the value of any parameter.
+You must enter the appropriate password before you reset the value.
+See the *+password+* command above.
+
+'Format:' *+pr [parameter # or name] [new value]+*
+
+'Example:' *+pr 0 815+* resets the time (parameter 0) to 8:15 am.
+
+|*+reset+* (*+reset+*)			|User				|Shuts down the Fortress immediately.
+To restart the Fortress, press the top button on the front panel.
+
+|*+restart+* (*+restart+*)		|User				|Shuts down the Fortress and restart it.
+There will be a break in power as the Fortress shuts down and restart.
+
+|*+shutdown+* (*+sd+*)			|None				|Shuts down the Fortress in 60 seconds or the number of seconds you type after the command.
+The UPS beeps every 4-5 seconds until shutdown.
+
+|*+shutdown autostart+* (*+sd a+*)	|None				|Shuts down the Fortress as described above and restart the UPS shortly after power returns.
+|*+shutdown cancel+* (*+sd c+*)		|None				|Cancels a shutdown started with the *+shutdown+* command.
+|*+shutup+* (*+sh+*)			|None				|Turns off a Morse Code alarm.
+The display will still flash the alarm message and the red alarm light will stay on.
+
+|*+status+* (*+s+*)			|None				|Displays the status of the incoming utility power, the output to your protected equipment, the UPS and some UPS parameters.
+|*+systemmode __+* (*+sm+*)		|User				a|Typing *+systemmode+* alone displays the mode the Fortress is operating n: +Auto+ (+a+), +Inverter+ (+i+), +Line Condition+ (+l+) or +Off+ (+o+).
+You can also use the *+systemmode+* command to put the Fortress in one of these modes; for example, *+systemmode auto+* or *+sm a+* puts the Fortress into Auto mode.
+
+[horizontal]
++Auto+: ::
+The normal operating mode; the unit will operate on utily power until there is a power outage or a severe power problem; then, it will switch to battery power.
+
++Inverter+: ::
+The unit will always operate on battery power.
+
++Line Condition+: ::
+The unit will always run on utility power; it will only operate on battery power momentarily, even if there is a power outage.
+
++Off+: ::
+The unit is off
+
+|*+systemtest+* (*+stst+*)		|User				|Starts a system test to determine whether Fortress is ready to run on battery power.
+Fortress does this test automatically every 30 days.
+If the Fortress fails the test, it sounds an "rb" alarm.
+The batteries must be fully charged before a test may be started.
+
+|*+time+* (*+t+*)			|User				|Shows the current Fortress time.
+To set the time, enter *+[hour]:[minutes]+* after the command.
+
+|*+turnoff+* (*+toff+*)			|User				|Shuts down the Fortress after the number of seconds you specify and restarts it after the number of minutes you specify.
+The format of this command is *+turnoff [minutes until restart] [seconds untill turnoff]+*.
+For example, *+turnoff 3 60+* would turn off the Fortress after 60 seconds and restart if after three minutes.
+
+|*+unlock+* (*+ul+*)			|User				|Using the *+lock+* command, you can lock the Fortress' front panel buttons.
+When you are ready to unlock the front panel, use the *+unlock+* command-
+
+|*+unshutup+* (*+u+*)			|None				|Turns the Morse Code alarm on again after you have silenced it.
+|====
+
+
+[[s403]]
+Help Commands
+~~~~~~~~~~~~~
+
+You can use some commands to help you learn more about how the Fortress works.
+These commands are *+alarmshelp+*, *+alarmstatus+*, and *+commands+*.
+
+*+AlarmsHelp*+ and *+AlarmStatus+* Commands::
+The *+alarmshelp+* and *+alarmstatus+* commands display a list of alarms with their letters and codes, the current status of the alarm (active or off), and the relay setting.
+See the sample list below:
++
+----
+Active   Alarm Name         Ltr   Code     Contact
+------   -----------------  ---   ----     -------
+  No     Low Battery         A    ._       Enabled
+  No     Near Low Battery    B    _ ...    Enabled
+  No     High Battery        C    _._.     Disabled
+  No     Low Runtime         D    _..      Disabled
+  No     Low AC Output       E    .        Disabled
+  No     Fan Malfunction     F    .._.     Disabled
+  No     Output Overload     G    _ _.     Disabled
+  No     External Shutdn     H    ....     Disabled
+  No     Calibration Lost    I    ..       Disabled
+  No     User Test Alarm     J    ._ _ _   Disabled
+  No     Replace Battery     K    _._      Disabled
+  No                         L    ._..     Disabled
+  No                         M    _ _      Disabled
+  No                         N    _.       Disabled
+  No                         O    _ _ _    Disabled
+  No                         P    ._ _.    Disabled
+----
+
+*+Commands+*::
+When you enter *+commands+*, the terminal will display a list of commands.
++
+NOTE: The following commands in the displayed list are not implemented for Fortress: *+alarmlog+*, *+chargermode+*, *+clearlogs+*, *+help+*, *+inverterlog+*, and *+logs+*.
+If you use the help command, you will be referred to the Fortress User Guide; if you use the other commands, you will receive the message "+Command not implemented+".
+The command list also shows commands that you cannot use without a password higher than the Service password.
+See <<s402,section 'Commands'>> for a list of valid commands and the passwords you need to use them.
+
+
+Status Commands
+~~~~~~~~~~~~~~~
+
+The *+alarmstatus+* command shows the same alarm information that the *+alarmshelp+* command does.
+See the sample above.
+The *+status+* and *+contstatus+* commands display several Fortress parameter values, active alarms, and other status information.
+Next is an example of a status display.
+
+----
+System status report for L1520VA [Unit ID - parameter 15] (Serial Number) Friday, July 12, 1996 - 12:32:41
+
+Line Status   | Load Status   | UPS Status    | Totals
+--------------|---------------|---------------|----------------
+V In      120 | I Out     .9  | Mode:  OnLine | SysHrs:   0000
+V Out     120 | VA Out    108 | Tap:   Bypass | InvMin   0000.0
+Freq 59.96 Hz | Watts     106 | V Batt   30.4 | #PwrOut      0
+FF  0.98 ---- | FullLoad% 030 | Runtime   0m  | #OvrLds      0
+
+Front panel: L - - | 30
+
+Last battery power run duration: 25 seconds
+
+Active alarms:
+(None)
+----
+
+In the *+status+* display, the table shows the values of many Fortress parameters and the status of Fortress operation.
+
+[horizontal]
+*+Line Status+:*::
+"+V In+" and "+V Out+" show the input and output voltage, "+Freq+" shows the output frequency, and "+PF+" shows the power factor.
+See parameters 1, 2, 8 and 18 in <<s501,section 'Parameter Table'>> for more information.
+
+*+Load Status+:*::
+"+I Out+" shows the output current, "+VA Out+" shows the output volt-amperes, "+Watts+" shows the output watts, and "+FullLoad%+" shows the percent of the Fortress' power your equipment (or load) is using.
+See parameters 4, 5, 17 and 16 in <<s501,section 'Parameter Table'>> for more information.
+
+*+UPS Status+:*::
+"+Mode+" shows whether the unit is running on line (utility power) or battery.
+"+Tap+" shows whether the UPS is using boost (to increase a low input voltage), buck (to decrease a high input voltage), or bypass (to condition input voltage that is at acceptable levels).
+"+V Batt+" shows the battery voltage, and "+Runtime+" shows how long the unit can run on battery power; see parameters 7 and 9 in <<s501,section 'Parameter Table'>> for more information.
+
+*+Totals+:*::
+"+SysHrs+" shows the total number of hours the Fortress has operated.
+"+InvMin+" shows the number of minutes the Fortress has operated on inverter (battery power) since it started.
+"+#PwrOut+" shows how many power outages have taken place since you started the Fortress, and "+#OvrLds+" shows how many times the Fortress has been overloaded since you started the Fortress.
+See parameters 22, 23, 20 and 21 in <<s501,section 'Parameter Table'>> for more information.
+
+*+Front Panel+:*::
+This part of the status report approximates what you will see on the Fortress front panel.
+In the example, "+L+" means the green light (the "line" light) is on, which shows that the Fortress is running on utility power.
+The two dashes behind the line mean that the yellow light and red light are not on.
+If they were, you would see a "+B+" (meaning the Fortress was running on battery power) and an "+A+" (meaning Fortress is sounding an alarm).
+"+30+" is the number shown on display; since the green (+L+) light is on, this is the percent of the UPS' total power that your equipment is using.
+See the Fortress User Guide for more information about the display.
+
+*+Last Battery Power Run Duration+:*::
+This entry shows how long the UPS ran on battery power last time there was a power outage or severe power problem.
+
+*+Active Alarms+:*::
+The last part of the status report shows which alarms are active.
+If the UPS is not sounding any alarms, the report will show "+(None)+" as it does in the example.
+
+The *+contstatus+* command shows the same report as the *+status+* command, but it continuously updates the information until you press a key.
+
+
+[[s405]]
+Parameter Commands
+~~~~~~~~~~~~~~~~~~
+
+This section describes the commands you can use to display and program parameters.
+
+When you use the commands described below, you must often specify a parameter.
+To do this, you can enter the parameter number or its name.
+The Parameter Table in <<s501,section 'Parameter Table'>> shows the name you can use for each parameter; you can also use the short form shown in the table, or you can enter an abbreviation of the name as long as you include the letters in the short form.
+(You can also abbreviate commands; see <<s402,section 'Commands'>>.)
+
+The *+display+*, *+contdisplay+*, *+parameters+* and *+paramkeywords+* commands let you display parameters.
+The program command changes parameter values.
+
+*+Display+*::
+The *+display+* (or *+d+*) command lets you display specific parameters on your computer or terminal.
+For example, if you enter *+display 0+*, *+display time+* or *+d t+*, your computer or terminal will display parameter 0 (below).
+Notice that you must leave a space between the command and the parameter number or name.
++
+----
+00 Time 14:42:21
+----
++
+If you enter more than one parameter name or number after this command, your computer or terminal will display those parameters.
+For example, if you enter *+d time 38 10+*, the display will show parameters 0, 38, and 10:
++
+----
+00 Time 14:42:21
+38 LowRuntime 5
+10 Date 08/30/96
+----
++
+Notice that you can mix names and numbers, and you can list the parameters in any order.
++
+If you have already displayed a parameter, you can display the next parameter by entering *+display+* alone.
+
+*+Contdisplay+*::
+The *+contdisplay+* (or *+cd+*) command works like the *+display+* command, but it constantly updates the parameter values displayed until you press a key.
+
+*+Parameters+*::
+Like the *+display+* command, the *+parameters+* (or *+p+*) command will display a parameter if you enter a parameter number or name after the command.
+For example, if you enter *+parameter 0+*, *+parameter time+*, or *+p t+*, your terminal or computer will display something like the next sample.
++
+----
+00 Time 14:42:21
+----
++
+However, the *+parameters+* command works differently when you enter it alone or when you enter more than one parameter after the command.
+When you enter *+parameters+* (or *+p+*) alone, your computer or terminal displays all of the user-level and service-level parameters shown in <<s501,section 'Parameter Table'>>.
++
+To display a range of parameters, enter the starting and ending parameters after the command.
+Instead of showing just the parameters you list (as the *+display+* command does), the *+parameters+* command will display all of the parameters in between.
+For example, if you enter *+parameter 0 5+*, *+parameter time vaout+*, or *+p t va+*, your computer or terminal will display parameters 0 through 5:
++
+----
+00 Time 14:42:21
+01 V In 118.2
+02 V Out 118.2
+03 *L - A 00
+04 I Out 11.8
+05 VA Out 345
+----
+
+*+Paramkeywords+*::
+The *+paramkeywords+* (or *+pk+*) command works like the *+parameters+* command, but it also displays the keyword or name of each parameter you display.
+(The keyword is the name shown in <<s501,section 'Parameter Table'>>.)
+For example, if you enter *+paramkeywords time vaout+* (or *+pk t va+*), your computer or terminal will display a list like this example:
++
+----
+00 Time 14:43:59 Time
+01 V In 118.2 acVoltsIn
+02 V Out 118.8 acVoltsout
+03 *L - A | 00 DiSplay
+04 I Out 11.8 acampsiOut
+05 VA Out 345 VAout
+----
++
+Notice that some letters are capitalized in the keywords on the right.
+These letters make up the short form of the parameter name (or keyword).
++
+To display all of the user and service parameters and their keywords, enter *+paramkeywords+* (or *+pk+*) alone.
+
+*+Program+*::
+Before you can program or change some parameters, you must enter the User or Service password.
+(See <<s401,section 'Passwords'>>.)
+Some parameters cannot be changed; see <<s501,section 'Parameter Table'>>.
++
+The *+program+* (or *+pr+*) command lets you program parameters.
+Simply type *+program+*, the parameter number or name, and the new value.
++
+'Example:' If you enter *+program time 09:30:00+*, the time will be changed to 9:30 a.m.
+If you then display the parameter using the command *+display time+*, you will see a display similar to this:
++
+----
+00 Time 09:30:00
+----
+
+
+[[s406]]
+The Format Commands
+~~~~~~~~~~~~~~~~~~~
+
+The three *format* commands tell the Fortress to send system status and metering information in a fixed format.
+You can incorporate this information into your computer system's software without any text or punctuation.
+There are three commands: *+format+* (*+f+*), *+formatconfig+* (*+fc+*), and *+formatparam+* (*+fp+*).
+
+For the *+format+* (*+f+*) command, the data string is made up of
+
+- two carriage returns and a line feed,
+- 80 ASCII characters that represent 40 hexadecimal bytes of information, and
+- two more carriage returns and a line feed.
+
+The characters in the string represent the data shown in the next table.
+For an example of the string, see <<examples,section 'Examples'>>.
+
+.F String
+[cols="^.^2,^.^2,.^6",options="header,autowidth",frame="topbot",grid="rows",align="center",caption=""]
+|====
+|Characters	|# Bytes	|Description
+|header		|Not Applicable	|A carriage return, carriage return, line feed sequence (or <ODH><ODH><OAH>).
+|0-1		|1		|Month (BCD).
+'Range:' 01-12
+
+|2-3		|1		|Day (BCD).
+'Range:' 01-31
+
+|4-5		|1		|Hours (BCD).
+'Range:' 00-23
+
+|6-7		|1		|Minutes (BCD).
+'Range:' 00-59
+
+|8-9		|1		|Seconds (BCD).
+'Range:' 00-59
+
+|10-11		|1		a|System Mode (BCD).
+'Range:' 00-03
+
+- 00 = Off
+- 01 = Auto
+- 02 = Line Condition
+- 04 = Battery Power
+
+|12-13		|1		|Reserved for future use.
+|14-15		|1		a|Status of the Morse Code alarm (BCD).
+'Range:' 00-01
+
+- 00 = Alarm silenced
+- 01 = Alarm beeper enabled
+
+|16-17		|1		a|Inverter (battery power) status (BCD).
+'Range:' 00-01
+
+- 00 = Unit is not using battery power
+- 01 = Unit is using battery power
+
+|18-19		|1		a|Charger Status (BCD).
+'Range:' 00-01
+
+- 00 = Charger is off
+- 01 = Charger is on
+
+|20-21		|1		a|Alarm Status Register #1 for alarms A-H (bit-mapped, 1 = true).
+The value is transmitted as a two-digit hexadecimal number.
+See the information below.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7			!6			!5			!4		!3		!2		!1			!0
+h!Alarm		!External Shutdown	!Output Overload	!Fan Malfcuntion	!Low AC Output	!Low Runtime	!High Battery	!Near Low Battery	!Low Battery
+!====
+
+|22-23		|1		a|Alarm Status register #2 for alarms I-K (bit-mapped, 1 = true).
+The Value is transmitted as a two-digit hexadecimal number.
+See the information below.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7		!6		!5		!4		!3		!2			!1		!0
+h!Alarm		!Reserved	!Reserved	!Reserved	!Reserved	!Reserved	!Replace Battery	!User Test	!Calibration Lost
+!====
+
+|24-27		|2		|AC Volt In (BCD).
+'Range:' 0000-9999
+
+|28-31		|2		|AC Volts Out (BCD).
+'Range:' 0000-9999
+
+|32-35		|2		|Reserved for future use.
+|36-39		|2		|AC Output Current in Amps (BCD).
+'Range:' 0000-9999
+
+|40-45		|3		|Volt-Amperes (VA) Out (BCD).
+'Range:' 000000-999999
+
+|46-49		|2		|Reserved for future use.
+|50-53		|2		|Battery Voltage (BCD).
+'Range:' 0000-9999
+
+A decimal point is implied after the thir digit (xxx.x).
+
+|54-57		|2		|Frequency in Hz (BCD).
+'Range:' 0000-9999
+
+A decimal point is implied after the second digit (xx.xx)
+
+|58-61		|2		|Runtime Minutes Remaining (BCD).
+'Range:' 0000-9999
+
+|62-69		|2		|Reserved for future use.
+|70-71		|1		a|Console Error Codes:
+
+- +00+ = No error
+- +01+ = Unrecognized command
+- +02+ = Not implemented
+- +03+ = Number expected
+- +04+ = Bad/missing keyword
+- +05+ = String expected
+- +06+ = Keyword or number expected
+- +07+ = Additional parameters expected
+- +08+ = Too many parameters
+- +09+ = Value out of range
+- +0A+ = Bad password
+- +0B+ = Password required
+- +0C+ = Parameter not programmable
+- +0D+ = Cannot change system mode
+- +0E+ = Unreconized error code
+
+|72-73		|1		a|Input Line Status.
+The value is transmitted as a two digit hexadecimal number.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7					!6				!5		!4		!3		!2				!1			!0
+h!Status	!Inverter frequency locked to line	!Inverter phase locked to line	!Reserved	!Reserved	!Line gone	!Input voltage too high or low	!Line glitch detected	!Input frequency is bad
+!====
+
+|74-77		|2		|Fortress' Software Version number.
+A decimal point is implied after the second digit (xx.xx)
+
+|78-79		|1		|Checksum Byte (Hexadecimal, 00-FF is valid).
+Equal to the 2's complement hex sum, without carry, of the preceding 39 two-digit hexadecimal numbers.
+
+|trailer	|Not Applicable	|A carriage return, carriage return, line feed sequence (<ODH><ODH><OAH>).
+|====
+
+For the *+formatconfig+* (*+fc+*) command, the data string is made up of
+
+- a carriage return and a line feed,
+- the data string defined in the following table, and
+- another carriage return and a line feed.
+
+NOTE: The header and the first 70 characters in the string are always present; if the information required for one of these characters is not available, the characters will be filled with a question mark (+?+).
+After character 70, all characters are optional.
+This means that if the information is not available, the characters are not included in the string; however, backslashes will appear between fields of information even if there is no information in a particular field.
+
+The next table shows the *+fc+*-string fields in the order in which they appear.
+The table does not identify the character position because this depends on the length of some fields and the number of fields that are present.
+For an example of the *+fc+* string with the fields identified, see <<examples,section 'Examples'>>.
+
+.FC String
+[cols="^.^2,^.^2,.^6",options="header,autowidth",frame="topbot",grid="rows",align="center",caption=""]
+|====
+|Field		|Field Size			|Explanation
+|header		|Varies				|A carriage return and line feed (or <ODH><OAH>).
+The size of this field can vary because the Fortress echos back the command you enter.
+See field 1 below.
+
+|1		|1 character (+$+)		|+$+ (ASCII +24h+).
+This is the start-of transmission character.
+Since Fortress II echos back the command you enter and begins the *+fc+* string with a carriage return and line feed, you should program your system to discard any data before this character.
+
+|2		|2 characters (hexadecimal)	|Two hexadecimal characters that represent the revision code of the *+fc+* data string.
+|3		|2 characters (hexadecimal)	a|Two characters that show the type of power protection being used:
+
+- +00+ = unknown
+- +01+ = Patriot/SPS
+- +02+ = Fortress
+- +03+ = FERRUPS
+- +04+ = UNITY/1 single-phase
+
+For Fortress, this is always +02+.
+
+|4		|2 characters (hexadecimal)	a|The UPS model.
+
+- +00+ = LI 520
+- +01+ = LI 720
+- +02+ = LI 1020
+- +03+ = LI 1420
+
+|5		|4 characters			|The Fortress' software version (xx.xx).
+For example, +0100+ = Fortress software version 1.00.
+
+|6		|5 characters			|The Fortress' full-load VA rating.
+For example, +0520+ means the Fortress is rated 520 VA.
+
+|7		|5 characters			|The Fortress' full-load Watt rating-
+For example, +0340+ means the Fortress is rated for 340 watts.
+
+|8		|3 characters			|The nominal input voltage (VAC).
+|9		|3 characters			|The nominal output voltage (VAC).
+|10		|3 characters			|Low voltage battery power setpoint (VAC).
+When the input voltage to the Fortress drops to this level, the Fortress begins running on battery power because input voltage is too low.
+
+|11		|3 characters			|High voltage battery power setpoint (VAC).
+When the input voltage to the Fortress rises to this level the Fortress begins running on battery power because input voltage is too high.
+
+|12		|4 characters			|Nominal operating frequency in Hz (xx.xx).
+For example, +5000+ means the nominal frequency is 50 Hz.
+
+|13		|4 characters			|Low frequency setpoint in Hz (xx.xx).
+When the input frequency drops to this level, the Fortress begins runnint on battery power because input frequency is too low.
+
+|14		|4 characters			|High frequency setpoint in Hz (xx.xx).
+When the input frequency rises to this level, the Fortress begins running on battery power because input frequency is too high.
+
+|15		|4 characters			|The nominal battery voltage in VDC (xxx.x).
+For example, +0480+ means the nominal battery voltage is 48 VDC.
+
+|16		|4 characters			|Full charge battery setpoint in VDC (xxx.x)
+|17		|4 characters			|Near low battery setpoint in VDC (xxx.x).
+The point at which the Fortress sounds a Newar Low Battery alarm (alarm B; see the Fortress User Guide).
+
+|18		|4 characters			|Low battery setpoint in VDC (xxx.x).
+When battery voltage drops to this level, the Fortress shuts down and sounds a Low Battery alarm (alarm A; see the Fortress User Guide).
+
+|19		|3 characters			|Low runtime setpoint in minutes (xxx).
+When runtime drops to this level, the Fortress sounds a Low Runtime alarm (alarm D; see the Fortress User Guide).
+
+|20		|3 characters			|For Fortress, these characters are always "+???+".
+|21		|3 characters			|For Fortress, these characters are always "+???+".
+|22		|1 character (+\+)		|+\+ (ASCII +5Ch+).
+This character shows that an optional field follows.
+(See field 23.)
+If the Fortress does not have any data for that field, no data will be between this character and field 24, and the string will show "+\\+".
+
+|23		|String of up to 16 characters	|This field shows the UPS model number.
+For example, the string could show "+LI520U+".
+The string may be up to 16 characters.
+
+|24		|1 character (+\+)		|+\+ (ASCII +5Ch+).
+This character shows that an optional field follows.
+(See field 25.)
+If the Fortress does not have any data for that field, no data will be between this character and field 26, and the string will show "+\\+".
+
+|25		|String of up to 16 characters	|This field shows the UPS serial number.
+The string may be up to 16 characters.
+
+|26		|1 character (+\+)		|+\+ (ASCII +5Ch+).
+This character shows that an optional field follows.
+(See field 27.)
+If the Fortress does not have any data for that field, no data will be between this character and field 28, and the string will show "+\\+".
+
+|27		|String of up to 32 characters	|This field shows the user-specified identification string programmed into parameter 15.
+The string may be up to 32 characters.
+
+|28		|1 character (+\+)		|+\+ (ASCII +5Ch+).
+This character shows that an optional field follows.
+(See field 29.)
+If the Fortress does not have any data for that field, no data will be between this character and field 30, and the string will show "+\\|+".
+
+|29		|String of up to 32 characters	|This field includes data specific to your unit.
+|30		|1 character (+\|+)		|+\|+ (ASCII +7Ch+).
+This is the end-of transmission character.
+If you are programmin your system to work with the Fortress, you should program it to ignore any data after this character.
+
+|trailer	|Varies				|A carriage return, line feed and prompt.
+|====
+
+For the *+formatparam+* (*+fp+*) command, the data string is made up of
+
+- a carriage return and a line feed,
+- the data string defined in the following table, and
+- another carriage return and a line feed.
+
+NOTE: The header and the first 124 characters in the string are always present; if the information required for one of these characters is not available, the characters will be filled with a question mark (+?+).
+All characters after character 124 are optional.
+This means that if the information is not available, the characters are not included in the string; however, backslashes will still appear between fields of information even if there is no information in a particular field.
+
+The next table shows the *+fp+*-string fields in the order in which they appear.
+The table does not identify the character position because this depends on the length of some fields and the number of fields that are present.
+For an example of the *+fp+* string with the fields identified, see <<examples,section 'Examples'>>.
+
+.FP String
+[cols="^.^2,^.^2,.^6",options="header,autowidth",frame="topbot",grid="rows",align="center",caption=""]
+|====
+|Field		|Field Size and Type		|Explanation
+|header		|Varies				|A carriage return and line feed (or <ODH><OAH>).
+The size of this field can vary because the Fortress echos back the command you enter.
+See field 1 below.
+
+|1		|1 character (+&+)		|+&+ (ASCII +26h+).
+This is the start-of-transmission character.
+Since Fortress echos back the command you enter and begins the *+fp+* string witha carriage return and line feed, you should program your system to discard any data before this character.
+
+|2		|6 characters			|The date programmed into Fortress parameter 10 (month/day/year).
+For example, +092396+ = September 23, 1996.
+
+|3		|6 characters			|The time programmed into Fortress paramater 0 (hour:minutes:seconds).
+Remember that the Fortress uses 24-hour time.
+For example, +153602+ = 3:36 p.m. and 2 seconds.
+
+|4		|1 character			a|The day of the week programmed into Fortress parameter 11:
+
+- +00+ = Sunday
+- +01+ = Monday
+- +02+ = Tuesday
+- +03+ = Wednesday
+- +04+ = Thursday
+- +05+ = Friday
+- +06+ = Saturday
+
+|5		|3 characters			|AC input voltage.
+This is the input voltage the Fortress is receiving.
+
+|6		|4 characters			|AC input current.
+For Fortress, this data is based on output current.
+
+|7		|4 characters			|AC input frequency in Hz (xx.xx).
+This is the frequency of the input Fortress is receiving.
+For example, +5000+ = 50 Hz.
+
+|8		|5 characters			|Input volt-amperes (VA).
+This is the volt-amperes that the Fortress is drawing from your input power source.
+
+|9		|5 characters			|Input watts.
+This is the watts that the Fortress is drawing from your input power source.
+
+|10		|3 characters			|AC output voltage.
+This is the voltage the Fortress is providing to protected equipment.
+
+|11		|4 characters			|AC output current in amperes (xxx.x).
+For example, +0031+ = 3.1 amperes.
+
+|12		|4 characters			|AC output frequency in Hz (xx.xx).
+This is the frequency of the output Fortress is providing to the protected equipment.
+For example, +5000+ = 50 Hz.
+
+|13		|5 characters			|Output volt-amperes (VA).
+This shows the volt-amperes that the Fortress is providing to your protected equipment.
+
+|14		|5 characters			|Output watts.
+This shows the watts that the Fortress is providing to your protected equipment.
+
+|15		|3 characters			|Output load (% of the Fortress' rated watts or VA).
+For example, +075+ = 75% of full load.
+
+|16		|3 characters			|Output power factor (x.xx).
+For example, +070+ = 0.7 pF.
+
+|17		|1 character			a|Power factor type:
+
+- +0+ = unknown
+- +1+ = lead
+- +2+ = lag
+- +3+ = distortion
+
+|18		|3 characters			|Output load crest factor (x.xx).
+|19		|5 characters			|The number of times the UPS has run on battery power and/or detected bad input power since startup.
+|20		|5 characters			|The number of times the Fortress has been overloaded since startup.
+|21		|4 characters			|Battery voltage in VDC (xxx.x).
+For example, +0486+ = 48.6 VDC.
+
+|22		|4 characters			|Battery current in amperes (xxx.x).
+For example, +0036+ = 3.6 amperes.
+
+|23		|3 characters			|For Fortress, these characters are always "+???+".
+|24		|3 characters			|Estimated battery runtime in minutes.
+|25		|4 characters			|The number of seconds the UPS has been operating on battery power; if the UPS in not runninf on battery power, this shows the lingth of the last battery power run (in seconds).
+|26		|1 character			|For Fortress, this character is alwas "+?+".
+|27		|3 characters			|For Fortress, these characters are always "+???+".
+|28		|5 characters			|The total number of hours the UPS has operated.
+|29		|5 characters			|The total number of minutes (xxxx.x) the UPS has run on battery power.
++00255+ = 25.5 min.
+
+|30		|3 characters			|For Fortress, these characters are always "+???+".
+|31		|2 characters (hexadecimal)	|For Fortress, these characters are always "+00+".
+|32		|2 characters (hexadecimal)	|For Fortress, these characters are always "+00+".
+|33		|2 characters (hexadecimal)	a|Alarm status for alarms I-K (bit-mapped, 1 = true).
+See the information below.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7		!6		!5		!4		!3		!2			!1			!0
+h!Alarm		!Reserved	!Reserved	!Reserved	!Reserved	!Reserved	!Replace Battery	!User Test Alarm	!Calibration Lost
+!====
+
+|34		|2 characters (hexadecimal)	a|Alarm status for alarms A-H (bit-mapped, 1 = true).
+See the information below.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7			!6			!5			!4		!3		!2		!1			!0
+h!Alarm		!External Shutdown	!Output Overload	!Fan Malfunction	!Low AC Output	!Low Runtime	!High Battery	!Near Low Battery	!Low Battery
+!====
+
+|35		|2 characters (hexadecimal)	a|System status (bit-mapped, 1 = true).
+See the information below.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7			!6				!5				!4				!3			!2			!1		!0
+h!Meaning	!Recheck FP String	!Automatic Restart Enabled	!Timed Shutdown in Progress	!System Test in Progress	!Alarm Beeper Enabled	!UPS can Run on Battery	!On Line	!On Battery
+!====
+
+|36		|2 characters (hexadecimal)	a|AC input status (bit-mapped, 1 = true).
+See the information below.
+
+[cols=".^,^.^,^.^,^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+!====
+!Bit Position	!7			!6			!5		!4		!3		!2				!1		!0
+h!Meaning	!PLL Frequency Locked	!PLL Phase Locked	!Reserved	!Reserved	!Power Outage	!Input Voltage Too High or Low	!Glitches Found	!Input Frequency Problem
+!====
+
+|37		|1 character (+\+)		|+\+ (ASCII +5Ch+).
+This character shows that an optional field follow.
+(See field 38.)
+If the Fortress does not have any data for that field, no data will be between this character and field 39, and the string will show "+\\|+".
+
+|38		|String of up to 32 characters	|Data specific to your model.
+|39		|1 characters (+\|+)		|+\|+ (ASCII +7Ch+).
+This is the end-of-transmission character.
+If you are programmin your system to work with the Fortress, you should program it to ignore any data after this character.
+
+|trailer	|Varies				|A carriage return, line feed and prompt.
+|====
+
+
+[[examples]]
+Examples
+~~~~~~~~
+
+Below you will find examples of the strings sent in response to the *+format+* (*+f+*) command, the *+formatconfig+* (*+fc+*) command, and the *+formatparam+* (*+fp+*) command.
+In these examples, some parts of the string are shaded to show you the fields or groups of information.
+The shading is not part of the data string.
+
+The *+format+* (*+f+*) command::
++
+--
++0924+
+*+104504+*
++01+
+*+00+*
++01+
+*+00+*
++01+
+*+0000+*
++0120+
+*+0120+*
++0000+
+*+0031+*
++000520+
+*+0000+*
++0486+
+*+6000+*
++0015+
+*+00000000+*
++0101+
+*+DE+*
+
+Where:
+
+[horizontal]
++0924+::
+Date
+
+*+104504+*::
+Time
+
++01+::
+System Mode
+
+*+00+*::
+Always +0+
+
++01+::
+Alarm Beep
+
+*+00+*::
+Batt. Power
+
++01+::
+Charger Status
+
+*+0000+*::
+Alarm Status
+
++0120+::
+Input Voltage
+
+*+0120+*::
+Output Voltage
+
++0000+::
+Always +0+
+
+*+0031+*::
+Output Current
+
++000520+::
+VA
+
+*+0000+*::
+Always +0+
+
++0486+::
+Battery Voltage
+
+*+6000+*::
+Frequency
+
++0015+::
+Runtime
+
+*+00000000+*::
+Always +0+
+
++0101+::
+Software Version
+
+*+DE+*::
+Checksum Byte
+--
+
+The *+formatconfig+* (*+fc+*) command::
++
+--
++$+
+*+01+*
++02+
+*+00+*
++0101+
+*+0520+*
++00340+
+*+120+*
++120+
+*+090+*
++147+
+*+6000+*
++5700+
+*+6300+*
++2400+
+*+0287+*
++0210+
+*+0190+*
++003+
+*+??????+*
++\+
+*+LI520U+*
++\+
+*+LI067125+*
++\\+
+*+5C67345FA001+*
++|+
+
+Where:
+
+[horizontal]
++$+::
+Begin Transmission
+
+*+01+*::
+FC Rev.
+
++02+::
+Fortress
+
+*+00+*::
+Model
+
++0101+::
+Software Version
+
+*+0520+*::
+VA Rating
+
++00340+::
+Watt Rating
+
+*+120+*::
+Input Voltage
+
++120+::
+Output Voltage
+
+*+090+*::
+Low Input Volts
+
++147+::
+High Input Volts
+
+*+6000+*::
+Nominal Frequency
+
++5700+::
+Low Freq.
+
+*+6300+*::
+High Freq.
+
++2400+::
+Nominal Battery Voltage
+
+*+0287+*::
+Full Battery Charge
+
++0210+::
+Near Low Battery
+
+*+0190+*::
+Low Battery
+
++003+::
+Low Runtime
+
+*+??????+*::
+Not Used
+
++\+::
+Start of Optional Field
+
+*+LI520U+*::
+Model Name
+
++\+::
+Start of Optional Field
+
+*+LI067125+*::
+Serial Number
+
++\\+::
+Empty Optional Field
+
+*+5C67345FA001+*::
+Unit-specific data
+
++|+::
+End Transmission
+--
+
+The *+formatparam+* (*+fp+*) command::
++
+--
++&+
+*+092796+*
++131513+
+*+5+*
++120+
+*+0043+*
++5999+
+*+00520+*
++00340+
+*+120+*
++0043+
+*+5999+*
++00520+
+*+00340+*
++100+
+*+005+*
++1+
+*+250+*
++00021+
+*+00002+*
++0251+
+*+0043+*
++???+
+*+008+*
++0000+
+*+?+*
++???+
+*+00282+*
++00343+
+*+???+*
++00000000+
+*+4D+*
++8C+
+*+\+*
++45FC245012FA+
+*+|+*
+
+Where:
+
+[horizontal]
++&+::
+Begin Transmission
+
+*+092796+*::
+Date
+
++131513+::
+Time
+
+*+5+*::
+Day
+
++120+::
+Input Voltage
+
+*+0043+*::
+Input Current
+
++5999+::
+Input Freq.
+
+*+00520+*::
+Input VA
+
++00340+::
+Input Watts
+
+*+120+*::
+Output Voltage
+
++0043+::
+Output Current
+
+*+5999+*::
+Output Freq.
+
++00520+::
+Output VA
+
+*+00340+*::
+Output Watts
+
++100+::
+% Load
+
+*+005+*::
+Power Factor
+
++1+::
+Power Factor Type
+
+*+250+*::
+Crest Factor
+
++00021+::
+Number of Battery Power Runs
+
+*+00002+*::
+Number of Overloads
+
++0251+::
+Battery Voltage
+
+*+0043+*::
+Battery Current
+
++???+::
+Not Used
+
+*+008+*::
+Runtime
+
++0000+::
+Sec. on Battery
+
+*+?+*::
+Not Used
+
++???+::
+Not Used
+
+*+00282+*::
+Hours Operated
+
++00343+::
+Batt. Power Minutes
+
+*+???+*::
+Not Used
+
++00000000+::
+Alarm Status
+
+*+4D+*::
+System Status
+
++8C+::
+Line Status
+
+*+\+*::
+Start of Optional Field
+
++45FC245012FA+::
+Model Data
+
+*+|+*::
+End of transmission
+--
+
+
+[[s500]]
+Using Parameters
+----------------
+
+
+[[s501]]
+Parameter Table
+~~~~~~~~~~~~~~~
+
+The next table shows the parameters that you can view or program from a terminal or computer.
+Some of these parameters keep track of information (like Time or Date) or display operating and power conditions (like voltage, current, or temperature).
+Other parameters, (Like User ID) let you program the Fortress for special operating conditions.
+
+When you use the Fortress commands to display and program parameters, you can identify the parameter with either its number or name.
+If you use the name, you can enter the whole parameter name or just the letters in the short form.
+(See the Name column in the parameter table).
+
+Passwords restrict access to some parameters; see the "Password to Change" column in the table and <<s401,section 'Passwords'>>.
+
+WARNING: All changeable parameters except 0 (Time), 10 (Date) and 15 (Unit ID) are set at the factory.
+In many situations, only qualified service personnel using the proper metering equipment should change other parameters.
+Incorrect settings may make the Fortress malfunction.
+Make sure you fully understand the effects of a parameter change before you try to change the parameter value.
+If you have questions call Best Power's Worldwide Service at 1-800-356-5737 or 1-608-565-2100; you can also call the nearest Best Power office.
+
+[cols="^.^1m,.^2,.^2m,.^1,^.^1,.^3",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Number		|Name (Short Form)			|Sample Display				|Password Required to change		|Range					|Explanation
+|0		|*+time+* (*+t+*)			|00 Time 12:00:00			|User					|0:00-23:59				|Time.
+Fortress uses this time when tou program it to startup and shut down automatically.
+See <<s502,section 'Automatic Startup and Shutdown (Parameters 90-93)'>>.
+
+|1		|*+acvoltsin+* (*+vi+*)			|01 V In 120				|Service				|60-255					|The input voltage the Fortress is receiving.
+If this voltage is slightly low, Fortress boosts the voltage; if it is slightly high, Fortress reduces the voltage before supplying output to your equipment.
+If the input voltage is very high or very low, Fortress switches to battery power operation.
+
+|2		|*+acvoltsout+* (*+vo+*)		|02 V Out 120				|Service				|60-255					|The output voltage Fortress is providing to your equipment.
+|3		|*+display+* (*+ds+*)			|03 *L - A \| 00			|User					|1-3					|The status of the front panel display.
+"+L+" means the green light on the front panel is on, "+B+" means the yellow battery light is on and "+A+" means the red alarm light is on.
++*+ next to +L+, +B+ or +A+ means the light is blinking.
+The last two characters ("+00+" in the sample display) show what the front panel display is showing.
+You can program this parameter to show a particular display in the last two digits.
+Choose "+1+" to display percent load, "+2+" to display the input voltage bar graph and "+3+" to display the battery charge bar graph.
+
+|4		|*+acampsiout+* (*+o+*)			|04 I Out 11.8				|Service				|1.0-25.5				|The output current Fortress is providing to your equipment.
+|5		|*+vaout+* (*+va+*)			|05 Va Out 1416				|Change not allowed			|Not applicable				|The output volt-amperes or the total "apparent power" your equipment is drawing from the Fortress.
+This value is based on parameter 2 multiplied by parameter 3; it should be less than or equal to the unit's VA rating.
+
+|6		|*+ibattery+* (*+ib+*)			|06 I Batt 22.3				|Change not allowed			|Not applicable				|When the Fortress runs on battery, this is the estimated battery current.
+(When the Fortress runs on utility power, this parameter shows "+0+".)
+
+|7		|*+vbatt+* (*+vb+*)			|07 V Batt 36.0				|Service				|15.0-75.0				|The Fortress' battery voltage.
+If this voltage is too low, the Fortress will sound a "Lb" (Low Battery) or "Lo" (Low Battery Shutdown) alarm.
+If this voltage is too high, the Fortress will sound a "Hb" (High Battery) alarm.
+
+|8		|*+frequency+* (*+f+*)			|08 Freq 60.00 Hz			|Change not allowed			|Not applicable				|During normal operation, this is the frequency of power that Fortress is receiving from its power source.
+If this value falls outside preset limits, Fortress switches to battery operation and this parameter shows the frequency of power Fortress is providing to your equipment.
+
+|9		|*+runtime+* (*+rt+*)			|09 Runtime 10m				|Change not allowed			|0-255					|The stimated number of minutes that Fortress can run (or continue to run) on battery power.
+|10		|*+date+* (*+d+*)			|10 Date 09/09/96			|User					|01/01-12/31				|The date (month, day and year).
+|11		|*+dayofweek+* (*+day+*)		|11 Day 2)Tue				|User					|0)Sun-6)Sat				|The day of the week: +0)Sun+, +1)Mon+, +2)Tue+, +3)Wed+, +4)Thu+, +5)Fri+ or +6)Sat+.
+Fortress uses the day when you program it for automatic startup and shutdown.
+See <<s502,section 'Automatic Startup and Shutdown (Parameters 90-93)'>>.
+
+|12		|*+passwordlevel+* (*+pwl+*)		|12 PWLv1 0)None			|Depends on current password level.	|0-4 (or current password level)	|The password level when the UPS starts up.
+Normally, this is set to +0+, so you must enter the appropriate password level before you program the UPS.
++0+ = None, +1+ = User, +2+ = Service and +3+ and +4+ = higher passwords.
+*You can only change the setting to a password level you have already enterede; for example, to change the setting to +2)Service+, you must first enter the Service password.*
+
+|13		|*+modelname+* (*+mn+*)			|13 Model Name [Model number]		|Change not allowed			|0-16 characters			|The Fortress model number and name.
+|14		|*+serialnumber+* (*+sn+*)		|14 Serial Number [Serial number]	|Change not allowed			|0-16 characters			|Your unit's serial number.
+|15		|*+unitidentify+* (*+id+*)		|15 Unit ID				|User					|0-31 characters			|This is an identification string that you can configure for use with your network.
+|16		|*+fullload+* (*+l+*)			|16 FullLoad% 100			|Change not allowed			|Not applicable				|The percent of the Fortress' power that your equipment is using.
+|17		|*+watts+* (*+w+*)			|17 Watts 970				|Change not allowed			|Not applicable				|The Total "real power" your equipment is drawing from the Fortress.
+|18		|*+powerfactor+* (*+pf+*)		|18 PF 0.69 Dist			|Change not allowed			|Not applicable				|The power factor of your equipment.
+This is the difference in the way it draws output volta an current.
+Power factor = parameter 17 divided bu parameter 5.
+This parameter also tells whether power factor is leading (+Lead+), lagging (+Lag+) or distortion (+Dist+).
+
+|19		|*+crestfactor+* (*+cf+*)		|19 CrestF 1.44				|Change not allowed			|Not applicable				|Crest factor.
+|20		|*+powerouts+* (*+pwro+*)		|20 #PwrOut 0				|Service				|0-65535				|The number of power outages since you started the unit.
+|21		|*+overloads+* (*+ol+*)			|21 #OvrLds 0				|Service				|0-65535				|The number of times the unit was overloaded since startup.
+|22		|*+systemhours+* (*+sh+*)		|22 SysHrs 0				|Service				|0-65535				|The total number of hours the unit has operated.
+|23		|*+inverterminutes+* (*+im+*)		|23 InvMin 1.0				|Service				|0-6553.5				|The number of minutes the unit has un on battery power since startup.
+|24		|*+badpassword+* (*+bp+*)		|24 #BadPW 0				|Change not allowed			|0-255					|The number of times an invalid password was entered.
+|25		|*+batttesttime+* (*+btt+*)		|25 BTTime 02:00			|User					|00:00-23:59				|The time of dat when Fortress will perform the automatic battery test.
+|26		|*+batttestinterval+* (*+bti+*)		|26 BTIntervl 7				|User					|0-168					|The number of days between battery tests.
+To disable the automatic battery test set this parameter to "+0+".
+
+|27		|*+keyclick+* (*+kc+*)			|27 KeyClic 1)On			|User					|0)Off-1)On				|This parameter determines whether the Fortress will click when you press a button on the front panel.
+|28		|*+beepertone+* (*+bt+*)		|28 BeepTone 0)Lo			|User					|0)Lo-1)Hi				|The pitch for the "beep" the Fortress sounds during alarms and battery operation.
+"+Lo+" is a low pitch; "+Hi+" is a high pitch.
+
+|29		|*+fan+* (*+fa+*)			|29 Fan 1)Yes				|Change not allowed			|0)No-1)Yes				|This parameter enables the Fortress' fan.
+|30		|*+mindcv+* (*+mind+*)			|30 MinDCV 30.0				|User					|0.0-72.0				|The minimum battery voltage measured since you started the Fortress or sincethe last time you used the *+extendedhistory+* command.
+|31		|*+maxdcv+* (*+maxd+*)			|31 MaxDCV 38.0				|User					|0.0-72.0				|The maximum battery voltage measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|32		|*+minacvi+* (*+minvi+*)		|32 MinACVI 90				|User					|0-300					|The minimum AC input voltage measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|33		|*+maxacvi+* (*+maxvi+*)		|33 MaxACVI 132				|User					|0-300					|The maximum AC input voltage measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|34		|*+minacvo+* (*+minvo+*)		|34 MinACVO 106				|User					|0-300					|The minimum AC output voltage measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|35		|*+maxacvo+* (*+maxvo+*)		|35 MaxACVO 127				|User					|0-300					|The maximum AC output voltage measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|36		|*+minva+* (*+minva+*)			|36 Min VA 0				|User					|0-5000					|The minimum volt-ampere output measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|37		|*+maxva+* (*+maxva+*)			|37 Max VA 1420				|User					|0-5000					|The maximum volt-ampere output measured since you started the Fortress or since the last time you used the *+extendedhistory+* command.
+|38		|*+lowruntime+* (*+lr+*)		|38 LowRntm 5				|User					|0-255					|When runtime (parameter 9) drops to the number of minutes shown in this parameter, the Fortress sounds a Low Runtime alarm. (See the User Guide.)
+|39		|*+autorestart+* (*+ar+*)		|39 AutoRst 60				|Service				|0-65200				|When you have shut down the Fortress using an *+off+* or *+shutdown+* command or the remote shutdown on pin 1 (see sections <<s402,'Commands'>> and <<s505,'Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)'>>), or when an alarm shuts down the Fortress, this is the minimum number of seconds the Fortress will remain off before it can restart automatically.
+To disable the automatic restart set this to "+0+".
+
+|40		|*+nomacvoltsin+* (*+nvi+*)		|40 NomVIn 120				|Change not allowed			|90-255					|The nominal (rated) AC input voltage to the Fortress.
+|41		|*+nomacvoltsout+* (*+nvo+*)		|41 NomVOut 120				|Change not allowed			|90-255					|The nominal (rated) AC output voltage from the Fortress to your equipment.
+|42		|*+lowvoltsout+* (*+lvo+*)		|42 Low Vout 96				|Service				|60-511					|When the output voltage drops to the level programmed in this parameter, the Fortress will shut down and sound alarm "LU" (Low AC Output).
+|43		|*+boostvoolts+* (*+bsv+*)		|43 Boost V 90				|Service				|60-511					|When the AC input voltage is below this level, the Fortress runs on battery power.
+When AC input voltage is above this voltage but below parameter 44, the Fortress runs on utility power but will boosts the voltage.
+
+|44		|*+bypassvolts+* (*+byv+*)		|44 Bypass V 106			|Service				|60-511					|When the AC input voltage is above this level but below parameter 45, the Fortress will use utility power without boosting or bucking the voltage.
+|45		|*+buckvolts+* (*+bv+*)			|45 Buck V 126				|Service				|60-511					|When the AC input voltage is above this level but below parameter 46, the Fortress will use utility power, but it will "buck" (reduce) the voltage.
+|46		|*+invertervolts+* (*+iv+*)		|46 InverterV 147			|Service				|60-511					|When the AC input voltage is above this level, Fortress will run on battery power because the input voltage is too high.
+|47		|*+buckboosthyst+* (*+bbh+*)		|47 BBHyst 2				|Service				|1-15					|Buck/boost hysteresis.
+|48		|*+ratedva+* (*+rva+*)			|48 RatedVA 1420			|Change not allowed			|150-6500				|The maximum rated volt-amperes your Fortress can provide without sounding an "OL" (overload) alarm.
+|49		|*+ratedwatts+* (*+rw+*)		|49 RatedWatts 1100			|Change not allowed			|150-6500				|The maximum rated watts your Fortress can provide without sounding an "OL" (overload) alarm.
+|50		|*+cblimit+* (*+cbl+*)			|50 CBLimit 384				|Change not allowed			|1-9999					|The software circuit breaker limit.
+|51		|*+nomfrequency+* (*+nf+*)		|51 Nom Freq 1)60			|Change not allowed			|0)50-1)60				|The frequency Fortress is programmed to expect as input and provide as output.
+|52		|*+autofrequency+* (*+af+*)		|52 AutoFrq 1)Yes			|Service				|0)No-1)Yes				|When this parameter is set to +1)Yes+, the Fortress will automatically detect the frequency it receives during startup and program parameter 41 to that frequency.
+|53		|*+lowfrequency+* (*+lf+*)		|53 LowFreq -3.00			|Service				|0.25-4.00				|Wjem AC input frequency drops to this level, the Fortress will run on battery power because frequency is low.
+"+-3.00+" means 3 Hz below nominal frequency, parameter 51.
+
+|54		|*+highfrequency+* (*+hf+*)		|54 HiFreq +3.00			|Service				|0.25-4.00				|When AC input frequency rises to this level, the Fortress will run on battery power beacuse input frequency is too high.
+"++3.00+" means 3 Hz above nominal frequency, parameter 51.
+
+|55		|*+slewrate+* (*+sr+*)			|55 Slew Rate 50			|Service				|2-255					|The rate at which the Fortress' inverter tracks a varying AC input.
+|56		|*+phasewindow+* (*+pw+*)		|56 PhaseWin 500			|Service				|50-5000				|This parameter helps determine how the Fortress' inverter will track the AC input.
+|57		|*+freqsensitivity+* (*+fs+*)		|57 FreqSens 3				|Service				|1-30					|This parameter sets the Fortress' sensitivity to frequency glitches; the setting represents the number of cycles that the glitch must appear.
+|58		|*+linesensitivity+* (*+ls+*)		|58LineSens 10				|Service				|1-127					|This parameter sets the Fortress' sensitivity to line fault glitches.
+|59		|*+faultsensitivity+* (*+flts+*)	|59 FaltSens 1)Hi			|Service				|0)Lo-1)Hi				|This parameter sets the Fortress' sensitiviti to line faults.
+|60		|*+nomdcvolts+* (*+ndcv+*)		|60 NomDCV 36.0				|Change not allowed			|60-720					|The Fortress' rated battery voltage.
+|61		|*+lowbattery+* (*+lb+*)		|61 LowBatt 28.8			|Change not allowed			|14.0-72.0				|When battery voltage falls below this level, Fortress shuts down and sounds an "Lb" (Low Battery) alarm.
+See the User Guide.
+
+|62		|*+nearlowbattery+* (*+nlb+*)		|62 NrLoBatt 32.4			|Change not allowed			|14.0-72.0				|When battery voltage falls below this level, Fortress sounds an "Lo" (Near Low Battery) alarm.
+See the User Guide.
+
+|63		|*+highbattery+* (*+hb+*)		|63 HighBatt 46.8			|Change not allowed			|14.0-72.0				|When battery voltage rises above this level, Fortress sounds an "Hb" (High Battery) alarm.
+See the User Guide.
+
+|64		|*+maintenance-volts+* (*+mv+*)		|64 Maint V 39.9			|Change not allowed			|14.0-72.0				|When battery voltage is at this level, the charger is in the "maintenance" mode.
+|65		|*+equalizevolts+* (*+ev+*)		|65 Eqls V 43.2				|Change not allowed			|14.0-72.0				|When battery voltage is at this level, the charger is in the "equalize" mode.
+|66		|*+constantitime+* (*+cit+*)		|66 ConITm 346				|Service				|1-65535				|The minimum number of seconds that the charger stays in constant current mode.
+|67		|*+constantvtime+* (*+cvt+*)		|67 ConVTm 14400			|Service				|1-65535				|The number of seconds that the Fortress will stay in the constant voltage mode.
+|68		|*+equalizetime+* (*+et+*)		|68 EqlzTm 64800			|Service				|1-65535				|The number of seconds that the charger will stay in the equalize mode.
+|69		|*+equalizeinterval+* (*+ei+*)		|69 EqlzInvl 30				|Service				|1-255					|The number of days between automatic equalize.
+|70		|*+baudrate+* (*+bd+*)			|70 BaudRt 2)1200			|Service				|0)300-2)1200				|When DIP switch 1 on the back of the Fortress is set to the *left*, this parameter sets the communiation port's baud rate (communication rate).
++0+ = 300 baud, +1+ = 600 baud and +2+ = 1200 baud.
+When the DIP switch is set to the *right*, baud rate is always 1200.
+
+|71		|*+wordformat+* (*+wf+*)		|71 WordFmt 0)8N1			|Service				|0)8N1-9)7S2				|The data word format of the RS232 communication port.
+Settings: +8N1+, +8N2+, +7N1+, +7N2+, +7E1+, +7E2+, +7O1+, +7O2+, +7S1+ and +7S2+.
+Changing the setting could cause communication problems.
+(+N+ = no parity, +O+ = odd, +E+ = even, +S+ = stick parity.)
+
+|72		|*+plugnplay+* (*+pnp+*)		|72 PNP 1)Yes				|Service				|0)No-1)Yes				|This parameter enables and disables the automatic Windows 05(R) plug and play feature.
+|73		|*+transmitxhs+* (*+th+*)		|73 TxHS 1)Yes				|Service				|0)No-1)Yes				|This parameter enables and disables transmit software handshake for communication.
+When this is set to +1)Yes+, the Fortress will transmit software handshaking characters (+XON+, +XOFF+) to the host when it is busy.
+
+|74		|*+receivexhs+* (*+rh+*)		|74 RxHs 1)Yes				|Service				|0)No-1)Yes				|This parameter enables and disables receive software handshake for communication-
+When this is set to +1)Yes+, the Fortress will pause transmissions when it receives +XOFF+ and transmit again when it receives +XON+.
+
+|75		|*+prompt+* (*+pr+*)			|75 Prompt 1)Yes			|Service				|0)No-1)Yes				|This parameter determines whether your terminal or computer screen will display a "+\=>+" prompt during RS232 communication.
+|76		|*+echoback+* (*+ec+*)			|76 Echo 1)Yes				|Service				|0)No-1)Yes				|This parameter enables and disables charcter echo back during RS232 communication.
+|77		|*+automessage+* (*+am+*)		|77 AutoMsg 1)Yes			|Service				|0)No-1)Yes				|This parameter determines whether the Fortress will send automatic status messages during RE232 communication.
+|78		|*+identifymessage+* (*+idm+*)		|78 ID Msg 1)Yes			|Service				|0)No-1)Yes				|This parameter determines whether the Fortress will send an automatic ID message during startup.
+|79		|*+consolecontrol+* (*+cc+*)		|79 Con Ctrl 15 Eco\|Err\|Msg\|P\=>	|Service				|1-15					|This parameter enables and disables UPS messaging and echo back during RS232 communication.
+|80		|*+alarmconpolarity+* (*+ap+*)		|80 AlmCPol 0)Neg			|Service				|0)Neg-1)Pos				|When this is set to +0)Neg+, Fortress closes the alarm contact (pin 5) during the alarms you set in paramter 81.
+When this is set to +1)Pos+, the contact is normally closed and it opens during the alarms.
+See <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|81		|*+alarmcenables+* (*+ac+*)		|81 AlmEnbl 11				|Service				|0-65535				|This parameter determines which alarms will activate the alarm relay contact (pin 5) at the Fortress' communication port.
+See <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|82		|*+shutdownpolarity+* (*+sp+*)		|82 ShdnPol 1)Pos			|Service				|0)Neg-1)Pos				|This parameter determines the polarity of the signal that will activate a remote shutdown using pin 1.
+|83		|*+shutdowndebounce+* (*+sdb+*)		|83 ShdnDbnc 5.0			|Service				|0.1-25.5				|After a remote shutdown signal is detected on pin 1 (in Extended Signal Mode), this parameter determines how long the signal must be present before the Fortress will shut down.
+|84		|*+shutdowndelay+* (*+sdl+*)		|84 ShdnDly 30.0			|Service				|0.1-2000.0				|After the Fortress recognizes a remote shutdown signal on pin 1, this is the number of seconds it will delay before shutting down.
+The pin 1 remote shutdown only works when the Fortress is in Extended Signal Mode.
+See <<s505,section 'Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)'>>.
+
+|85		|*+epopolarity+* (*+epop+*)		|85 EPO Pol 0)Neg			|Service				|0)Neg-1)Pos				|This parameter determines when Fortress will start a remote shutdwon based on pin 7.
+When this is set to +0)Neg+, Fortress will shut down when the pin shorts to pin 4.
+When this is set to +1)Pos+, Fortress will shut down when the contact opens.
+See <<s505,section 'Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)'>>.
+
+|86		|*+epodebounce+* (*+edb+*)		|86 EPO Dbnc .2				|Service				|0.1-25.5				|The number of seconds a signal for the pin 7 remote shutdown must be present before the Fortress recognizes the signal.
+|87		|*+epodelay+* (*+edl+*)			|87 EPO Dly .1				|Service				|0.1-2000-0				|After Fortress recognizes a shutdown signal on pin 7, this is the number of seconds it delays before shutting down.
+|88		|*+invcontpolarity+* (*+icp+*)		|88 InvCPol 0)Neg			|Service				|0)Neg-1)Pos				|When this is +0)Neg+, Fortress closes the on battery contact (pin 3) when the Fortress runs on battery power.
+When this is +1)Pos+, the contact is normally closed and it opens during battery operation.
+See <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>>.
+
+|89		|*+invcontdelay+* (*+icd+*)		|89 InvCDly 1.0				|Service				|0.1-25.5				|After the Fortress begins running on battery power, it will delay this many seconds bfore activating the inverter (on battery) contact on pin 3 of the communication port.
+|90		|*+powerontime+* (*+ont+*)		|90 OnTime 08.00			|Service				|00:00-23:59				|When you are using Fortress' automatic startup feature, this is the time the Fortress will start.
+See <<s502,section 'Automatic Startup and Shutdown (Parameters 90-93)'>>.
+
+|91		|*+ontimedays+* (*+ontd+*)		|91 OnTmDays 0 SFTWTMS: 0000000		|Service				|0-255					|When you are using Fortress' automatic startup feature, this parameter determines which days the Fortress will start.
+See <<s502,section 'Automatic Startup and Shutdown (Parameters 90-93)'>>.
+
+|92		|*+powerofftime+* (*+offt+*)		|92 OffTime 17:00			|Service				|00:00-23:59				|When you are using Fortress' automatic startup and shutdown feature, this is the time when the Fortress will shut down.
+See <<s502,section 'Automatic Startup and Shutdown (Parameters 90-93)'>>.
+
+|93		|*+offtimedays+* (*+oftd+*)		|93 OffTmDays 0 SFTWTMS: 0000000	|Service				|0-255					|When you are using Fortress' automatic startup and shutdown, this parameter determines which days the unit will shut down automatically.
+See <<s502,section 'Automatic Startup and Shutdown (Parameters 90-93)'>>.
+
+|94		|*+poweronmode+* (*+pom+*)		|94 POMode 1)On				|Service				|0)Off-1)On				|This parameter determines whether the UPS will supply output when you turn it on.
+|95		|*+xferdelay+* (*+xd+*)			|95 XferDly .5				|Service				|0.1-25.5				|The number of seconds the Fortress will wait after a power outage or power problem ends before switching from battery power back to utility power.
+|96		|*+tapswitchdelay+* (*+tsd+*)		|96 TapSwDly .2				|Change not allowed			|0.1-25.5				|The number of seconds that the Fortress will delay before switching between battery power, boost, bypass (line) and buck.
+|97		|*+tapswitchphase+* (*+tsp+*)		|97 TapSwPh 16				|Change not allowed			|0-31					|This parameter helps to govern how the Fortress switches between battery power, boost, bypass (line) and buck.
+|98		|*+guardpstart+* (*+gs+*)		|98 GuardSt 27				|Change not allowed			|0-31					|This parameter helps to gevern how the Fortress detects power problems.
+|99		|*+guardpend+* (*+ge+*)			|99 GuardEnd 6				|Change not allowed			|0-31					|This parameter helps to gevern how the Fortress detects power problems.
+|100		|*+chargedvbattery+* (*+chv+*)		|100 ChargdV 25.6			|Change not allowed			|25.6-55.2				|When battery voltage reaches this level, the Fortress considres the batteries charged.
+|101		|*+runtimek1+* (*+rk1+*)		|101 RntmK1 2000			|Change not allowed			|0-65535				|A factor for calculating runtime.
+|102		|*+runtimek2+* (*+rk2+*)		|102 RntmK2 10				|Change not allowed			|0-255					|A factor for calculating runtime.
+|103-109	^|--					|- Reserved -				^|--					^|--					|These parameters are reserved for future use.
+|110		|*+cfacvin+* (*+vin+*)			|110 CFACVIN 120			|Change not allowed			|0-255					|Calibration factor numerator for AC input voltage.
+|111		|*+cfacvid+* (*+vid+*)			|111 CFACVID 123			|Change not allowed			|0-255					|Calibration factor denominator for AC input voltage.
+|112		|*+cfacvon+* (*+von+*)			|112 CFACVON 120			|Change not allowed			|0-255					|Calibration factor numerator for AC output voltage.
+|113		|*+cfacvod+* (*+vod+*)			|113 CFACVOD 105			|Change not allowed			|0-255					|Calibration factor denominator for AC outpu voltage.
+|114		|*+cfacaon+* (*+aon+*)			|114 CFACAON 41				|Change not allowed			|0-255					|Calibration factor numerator for AC output current.
+|115		|*+cfacaod+* (*+aod+*)			|115 CFACAOD 39				|Change not allowed			|0-255					|Calibration factor denominator for AC output current.
+|116		|*+cfdcvn+* (*+dcn+*)			|116 CFDCVN 240				|Change not allowed			|0-255					|Calibration factor numerator for battery voltage.
+|117		|*+cfdcvd+* (*+dcd+*)			|117 CFDCVD 194				|Change not allowed			|0-255					|Calibration factor denominator for battery voltage.
+|118		|*+referencenominal+* (*+rn+*)		|118 RefNom 168				|Change not allowed			|0-255					|This parameter helps determine how the Fortress determines a line glith.
+|119		|*+xfmrresistance+* (*+xr+*)		|119 XfmrRes 50				|Change not allowed			|0-255					|Transformer resistange constant.
+|120		|*+inhibits+* (*+inh+*)			|120 Inhibits 00h			|Change not allowed			|0-255					|This parameter is used for factory testing.
+|====
+
+
+[[s502]]
+Automatic Startup and Shutdown (Parameters 90-93)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you do not want the Fortress to run constantly, you can program it to startup and shut down automatically using parameters 0, 11, and 90-93.
+Just follow the steps below.
+
+1. You must enter the Service password before you can change parameters 90-93.
+To enter the password, use the command *+pw 2639+*.
+
+2. Using the display command, display parameters 0 and 11 to make sure the time and the day of the week are correct.
+(Note that parameter 0 shows the time in 24-hour or military time.)
+If both parameters are correct, go to step 2.
+If not, follow steps a-b:
++
+a. Use this command to change the time: *+program time <new time>+*.
+Be sure to use the 24-hour system.
+For example, if the time is 9:30 a.m., use the command *+program time 09:30+*.
+If the time is 7:00 p.m., use the command *+program time 19:00+*.
+
+b. To change the day of the week, use this command: *+program day <new day of week>+*.
+For the new day of the week, +0+ = Sunday, +1+ = Monday, +2+ = Tuesday, +3+ = Wednesday, +4+ = Thursday, +5+ = Friday, and +6+ = Saturday.
+For example, if the day of the week is Monday, use the command *+program day 1+*.
+
+3. Parameters 90-93 let you set up automatic startup and shutdown.
+
+4. Parameter 91 (*+ontiniedays+* or *+ontd+*) lets you choose which days you want the Fortress to automatically shut down.
+When you receive the Fortress, this is set to +0+, which means none of the days have been selected.
++
+If you want the Fortress to start automatically every day, use this command: *+program ontd 127+*.
+If you only want Fortress to operate some days, use the table below.
+In the right column enter "+0+" for each day you do not want the Fortress to operate.
+For the days you do want the Fortress to operate, enter the day's value from the second column.
+Then, add the right column and use this command to change the parameter setting: *+program ontd <total of right column>+*.
++
+[cols="5,^1,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Day of Week	|Value for that Day:	|Enter "0" for days Fortress should NOT run; enter the value for days that Fortress SHOULD run
+|Sunday		|1			|
+|Monday		|2			|
+|Tuesday	|4			|
+|Wednesday	|8			|
+|Thursday	|16			|
+|Friday		|32			|
+|Saturday	|64			|
+2+^s|TOTAL:				|
+|====
++
+'Example:' If you wanted the Fortress to operate automatically Monday through Friday, you would write "+0+" next to Sunday and Saturday and the values next to the other day.
+0 + 2 + 4 + 8 + 16 + 32 + 0 = 62, so you would use the command *+program ontd 62+*.
+
+5. Parameter 90 (*+powerontime+* or *+ont+*) sets the time you want the Fortress to start automatically.
+When you receive the Fortress, this parameter is set to 8:00 a.m.
+If you want the Fortress to start at a different time, use this command: *+program ont <new start time>+*.
+Be sure to use 24-hour or military time.
+For example, if you want the Fortress to start at 9:00 a.m., use the command *+program ont 09:00+*.
+If you want the Fortress to start at 3:00 p.m., use the command *+program ont 15:00+*.
+
+6. Parameter 92 (*+powerofftime+* or *+offt+*) sets the time you want the Fortress to shut down automatically.
+When you receive the Fortress, this parameter is set to +17:00+, which is 5:00 p.m.
+If you want the Fortress to shut down at a different time, use this command: *+program offt <new shutdown time>+*.
+Be sure to use 24-hour or military time.
+
+7. Parameter 93 (*+offtimedays+* or *+oftd+*) lets you choose which days you want the Fortress to shut down.
+When you receive the Fortress, this is set to +0+, which means none of the days have been selected.
+If you want the Fortress to shut down automatically every day, use this command: *+program oftd 255+*.
++
+If you only want Fortress to shut down some days, use the table used for parameter 91 to calculate the setting just as you did for parameter 91.
+'If you want the Fortress to start and shut down on the same days, you can use the setting you calculated for parameter 91.'
+
+8. Clear the Service password using the *+clearpassword command+*.
+
+
+[[s503]]
+Choosing Which Alarms Enable the Alarm Contact (Parameter 81)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you receive the Fortress, the alarm contact (pin 5) only closes for the Low Battery, Near Low Battery, and Low Runtime alarms.
+'This setting is important if you are using your free CheckUPS II Suite software package or other automatic shutdown software.'
+However, if you are not using CheckUPS and you would like other alarms to close the contact, you can use parameter 81 to determine which alarms will close the contact.
+(See <<s504,section 'Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)'>> for information about other settings that affect the alarm contact.)
+
+'No matter how you program parameter 81, when the UPS is off, the alarm contact will be open.'
+
+To program parameter 81, follow these steps:
+
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Display parameter 81 using the *+display 81+* command.
+
+3. The next table will help you calculate the new parameter setting based on the alarms that you want to activate the contact.
+If you do not want any of the alarms to activate the contact, write "0" for the total.
+If you want some of the alarms to activate the contact, see the table to find the Alarm Value for each of these alarms; write the value for these alarms in the third column of the table.
+Write "0" for alarms that should not activate the contacts.
+Then, add the numbers in the third column.
+For example, to enable alarms A (Low Battery), B (Near Low Battery), and C (High Battery), write "1" for alarm A, "2" for alarm B, "4" for alarm C, and "0" for the rest of the alarms.
+The total is 7.
++
+'If you are using the Fortress with an AS/400, you should ONLY enable the alarm contact for the Low Battery, Near Low Battery, and Low Runtime alarms.
+In the blanks, A = 1, B = 2, D = 8, and C and E - K = 0.
+The total = 11.'
++
+[cols="5,^1,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Alarm			|Alarm Value	|Enter "0" to disable contact or the Alarm Value to enable it
+|Low Battery (A)	|1		|
+|Newar Low Battery (B)	|2		|
+|High Battery \(C)	|4		|
+|Low Runtime (D)	|8		|
+|Low AC Output (E)	|16		|
+|Fan Malfunction (F)	|32		|
+|Output Overload (G)	|64		|
+|External Shutdown (H)	|128		|
+|Calibration Lost (I)	|256		|
+|User Test Alarm (J)	|512		|
+|Replace Battery (K)	|1024		|
+2+^s|TOTAL:				|
+|====
+
+4. Now, change the parameter 81 setting to the total you found in step 3.
+To do this, use the *+program 81 <new setting>+* command.
++
+'Example:' If you would like to activate the contact for alarms A, B and C and your total in step 3 was 7, enter the command *+program 81 7+*.
+
+5. Use the *+display 81+* command to display the parameter once more and confirm that you have entered the correct setting.
+
+6. Clear the Service password using the *+clearpassword+* or *+cp+* command.
+
+
+[[s504]]
+Changing the Settings for Alarm and Battery Contacts (Parameters 80 and 88-89)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Parameters 80 and 88-89 let you program how the alarm and battery contacts operate.
+
+*Alarm Contact (Pin 5)*::
+When you receive the Fortress, a Low Battery Alarm will cause the normally open contact on pin 5 to close to common (pin 4).
+(<<s503,Section 'Choosing Which Alarms Enable the Alarm Contact (Parameter 81)'>> tells you how to activate the contact for other alarms.)
+The contact is normally open because parameter 80 is set to +0)Neg+ when you receive the Fortress.
+If you would like the contact to be normally closed and to open during the alarm, you must change parameter 80 to +1)Pos+.
+'No matter how you program parameter 80, when the UPS is off, the alarm contact will be open.'
+To change the parameter, follow these steps:
++
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Program parameter 80 to +1)Pos+ using this command: *+program 81 1+*.
+
+3. Clear the password using the *+clearpassword+* or *+cp+* command.
+
+*On Battery Contact (Pin 3)*::
+When you receive the Fortress, the on battery contact (pin 3) is a normally open contact that closes 15 seconds after the Fortress starts running on battery power.
+Using parameter 88, you can change the contact to a normally closed contact.
+Using parameter 89, you can adjust the 15-second delay.
++
+--
+Parameter 88 is set to +0)Neg+ when you receive the UPS.
+This means that the contact is normally open and that it closes when the Fortress runs on battery power.
+To change the contact to a normally closed contact that opens when the Fortress runs on battery, follow these steps:
+
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Program parameter 88 to +1)Pos+ using this command: *+program 88 1+*.
+'No matter how you program parameter 88, when the UPS is off,the inverter contact will be open.'
+
+3. Clear the password using the *+clearpassword+* or *+cp+* command.
+
+After the Fortress begins running on battery power, parameter 89 determines how long the Fortress will wait before closing the on battery contact.
+When you receive the Fortress, this parameter is set to 15 seconds.
+You can decrease the delay to as little as 0.1 seconds or increase it to as much as 25.5 seconds.
+To do this, follow these steps:
+
+1. Enter the Service password using the command *+password 2639+*.
+
+2. To change the delay, enter the command *+program 89 <new delay in seconds>+*.
+For example, if you want the delay to be 20 seconds instead of 15 seconds, enter *+program 89 20+*.
+
+3. Clear the password using the command *+clearpassword+* or *+cp+*.
+--
+
+
+[[s505]]
+Changing Remote Shutdown Settings (Parameters 82-84 and 85-87)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Pin 7 Shutdown*::
++
+--
+The Remote Shutdown available on pin 7 lets you shut down the Fortress' output power through a remote switch.
+The switch must have a set of contacts that can short pin 7 on the UPS communication port to pin 4 (common).
+(Use a shielded, single twisted pair cable to connect your switch to these pins.)
+The connection will shut down the UPS' output power to the protected equipment.
+When this happens, the UPS will sound alarm "Sd" for "shutdown" (Morse code alarm H).
+When you are ready to restart the UPS, the shutdown switch must remove the connection to pin 7 on the UPS communication port.
+Then, you can press the ( | ) button to restart the UPS.
+
+You can change the way this feature operates by using parameters 85, 86, and 87.
+
+Parameter 85 determines whether this shutdown works with a normally open or normally closed switch.
+When you receive the Fortress, it is programmed to expect a normally open switch, and the Fortress shuts down when the switch input is shorted to pin 4.
+You can change the Fortress to work with a normally closed switch.
+To do this, you must change the setting of parameter 85 from +0)Neg+ to +1)Pos+.
+Follow these steps:
+
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Change the parameter setting using the command *+program 85 1+*.
+
+3. Clear the password using the command *+clearpassword+* or *+cp+*.
+
+Parameter 86 determines how long the shutdown signal should be.
+In some environments with a lot of electrical noise, the noise could mimic the shutdown signal and cause a Fortress shutdown.
+To avoid this problem, you can increase the amount of time that the signal must be present before Fortress recognizes it.
+When you receive your Fortress, this parameter is set to 0.2 seconds.
+By changing the parameter value, you can decrease the required signal length to 0.1 seconds or increase it to as much as 25.5 seconds.
+To change the value, follow these steps:
+
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Change the parameter setting using the command *+program 86 <new value in seconds>+*.
+For example, if you want to change the parameter value to 2 seconds, you would use the command *+program 86 2+*.
+
+3. Clear the password using the command *+clearpassword+* or *+cp+*.
+
+After the Fortress recognizes a shutdown signal, parameter 87 determines how long the Fortress will wait before shutting down.
+When you receive your Fortress, this parameter is set to 0.1 seconds.
+By changing the parameter value, you can increase the delay to as much as 2000 seconds (33 minutes).
+Follow these steps:
+
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Change the parameter value using the command *+program 87 <new delay in seconds>+*.
+For example, if you want the Fortress to delay 3 seconds, use the command *+program 87 3+*.
+
+3. Clear the password using the command *+clearpassword+* or *+cp+*.
+--
+
+*Pin 1 Shutdown*::
+If your Fortress is set to Extended Signal communication mode (see <<s200,section 'Choosing a Communication Mode'>>), remote shutdown is also available on pin 1.
+If the UPS is using battery power, a +12-volt signal applied to the pin for 5 seconds will shut down the UPS 30 seconds later.
+The UPS willl automatically restart when the power outage ends (unless you have changed parameter 39).
++
+You can change the way this feature operates by using parameters 82, 83 and 84.
++
+Parameter 82 determines the type of signal on pin 1 that will start a Fortress shutdown.
+When you receive the Fortress, this is programmed to +0)Neg+, which means ground or a -12V input causes the shutdown.
+If you change the parameter to +1)Pos+, a +12V input shuts down the UPS.
+Note: +12V is available on pin 8 of the Fortress' port.
++
+1. Enter the Service password using the command *+password 2639+*.
+
+2. Change the parameter value using the command *+program 82 1+*.
+
+3. Clear the password using the command *+clearpassword+* or *+cp+*.
+
+
+Copyright
+---------
+
+Best Power makes no claim on trade names of application products mentioned in this publication.
+
+Best Power's trademark ownership extends to its own products only.
+
+*FPT-0502B*
+
+*Copyright 1996, Best Power.
+All rights reserved.*
+
+P.O. Box 280 - Necedah, Wisconsin 54646 U.S.A. -- 608-565-7200
+
+*Toll-Free: 800-356-5794*
+
+*Service Toll-Free: 800-356-5737 (U.S.A. & Canada)*
+
+FAX: 608-565-2221
+
+Service FAX: 608-565-2509
+
+
+Acknowledgements
+----------------
+
+Graciously scanned and provided to the NUT Protocol Library by Chris McKinnon.

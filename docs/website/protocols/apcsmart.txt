@@ -1,0 +1,561 @@
+APC's smart protocol
+====================
+
+
+Description
+-----------
+
+Here's the information on the elusive APC smart signalling protocol used by their higher end units (Back-UPS Pro, Smart-UPS, Matrix-UPS, etc).
+What you see here has been collected from a variety of sources.
+Some people analyzed the chatter between PowerChute and their hardware.
+Others sent various characters to the UPS and figured out what the results meant.
+
+
+RS-232 differences
+------------------
+
+Normal 9 pin serial connections have TxD on 3 and RxD on 2.
+APC's smart serial ports put TxD on pin 1 and RxD on pin 2.
+This means you go nowhere if you use a normal straight through serial cable.
+In fact, you might even power down the load if you plug one of those cables in.
+This is due to the odd routing of pins - DTR and RTS from the PC usually wind up driving the on/off line.
+So, when you open the port, they go high and \*poof* your computer dies.
+
+Originally link:images/apcsmart_evilhack.jpg[this evil hack] was used to connect the UPS to the PC when this page was first being built.
+As you can see, I cheated and neglected the ground (only 2 wires!) and it still worked.
+This method can be used for playing around, but for professional systems this is obviously not a viable option.
+
+That hack didn't work out so well (damned cats), so it was retired quite awhile back.
+The most practical solution was to go out and BUY the DOS/Win version of Powerchute just for the black (smart) cable.
+I recommend doing the same thing if you actually care about this thing working properly.
+Of course, if you have one of the newer packages that came with PowerChute, you already have the cable you need.
+
+
+Cable hacking
+-------------
+
+.Redrawn 940-0024C clone diagram (D. Stimits)
+image::images/apcsmart_cable_940-0024C.jpg["Redrawn 940-0024C clone diagram (D. Stimits)", align = "center"]
+
+.Mac 940-0024C clone diagram (Miguel Howard)
+image::images/apcsmart_cable_mac-940-0024C.png["Mac 940-0024C clone diagram (Miguel Howard)", align = "center"]
+
+.Original 940-0024C diagram (Steve Draper)
+image::images/apcsmart_cable_940-0024C-orig.jpg["Original 940-0024C diagram (Steve Draper)", align = "center"]
+
+If you are handy with cable tools, check out these diagrams.
+They show how to clone the black "smart" cable that's normally provided with APC models sold after 1996.
+The loopback pins (back to the PC) are used to keep PowerChute happy by allowing cable detection.
+If you use the NUT apcsmart or newapc drivers, those pins don't matter.
+
+
+The Smart Protocol
+------------------
+
+Despite the lack of official information from APC, this table has been constructed.
+It's standard RS-232 serial communications at 2400 bps/8N1.
+Don't rush the UPS while transmitting or it may stop talking to you.
+This isn't a problem with the normal single character queries, but it really does matter for multi-char things like "*+@000+*".
+Sprinkle a few calls to usleep() in your code and everything will work a lot better.
+
+[cols="^.^1m,.^3,.^2m,.^4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|===
+|Character	|Meaning			|Typical results	|Other info
+|*^A*		|Model string			|SMART-UPS 700		|Spotty support for this query on older models
+|*^N*		|Turn on UPS			d|n/a			|Send twice with > 1.5s delay between chars
+
+Only on 3rd gen SmartUPS and Black Back-UPS Pros
+
+|*^Z*		|Capability string		d|(long string)		|See <<cap,"Capabilities" section>> for more info
+|*A*		|Front panel test		d|Light show + "+OK+"	|Also sounds the beeper for 2 seconds
+|[[B]]*B*	|Battery voltage		|27.87			|This obviously varies a lot based on the current charge.
+
+Compare this to the <<g,nominal battery voltage>>
+
+|*C*		|Internal temperature		|036.0			|Units are degrees C
+|[[D]]*D*	|Runtime calibration		d|+!+, then +$+		|Runs until battery is below 25% (35% for Matrix)
+
+This updates the *+j+* values - only works at 100% battery charge
+
+Can be aborted with a second "*+D+*"
+
+|*E*		|Automatic selftest intervals	|336			a|Writable variable
+
+Values:
+
+- +336+ (14 days)
+- +168+ (7 days)
+- +ON+ (at power on) (note extra space)
+- +OFF+ (never)
+
+|*F*		|Line frequency, Hz		|60.00			|If this varies much, have a word with your local electrician
+|*G*		|Cause of transfer		|O			a|Writable variable
+
+Values:
+
+- +R+ (unacceptable utility voltage rate of change)
+- +H+ (high utility voltage)
+- +L+ (low utility voltage)
+- +T+ (line voltage notch or spike)
+- +O+ (no transfers yet since turnon)
+- +S+ (transfer due to <<U,*+U+* command>> or activation of UPS test)
+
+|*I*		|Measure-UPS: Alarm enable	|FF			|(not yet decoded)(bitmapped table, coming soon)
+|*J*		|Measure-UPS: Alarm status	|0F,00			|(not yet decoded)(bitmapped table, coming soon)
+|[[K]]*K*	|Shutdown with grace period	|OK			|Send twice with > 1.5s delay between chars
+
+Older units may send "+*+" instead of "+OK+"
+
+Also see <<p,grace period>>
+
+|*L*		|Input line voltage		|118.3			|Does not necessarily read +000.0+ on line failure
+|*M*		|Maximum line voltage		|118.9			|This is the max voltage since the last time this query was run
+|*N*		|Minimum line voltage		|118.9			|Like the one above, this one also resets itself on every query
+|*O*		|Output voltage			|118.3			|Also see <<o,on battery output voltage>>
+|*P*		|Power load %			|023.5			|Relative to the capacity of the UPS
+|*Q*		|Status flags			|08			|See <<status,status flags section>> for more info
+|[[R]]*R*	|Turn dumb			|BYE			|Only on 3rd gen Smart-UPS, Smart-UPS v/s, Back-UPS Pro
+
+UPS must receive command to <<Y,enter smart mode>> continue communications after sending this
+
+|[[S]]*S*	|Soft shutdown			|OK			|Command executes after <<p,grace period>>
+
+UPS goes online when power returns
+
+Only works when on battery
+
+|[[U]]*U*	|Simulate power failure		d|+!+, then +$+		|See <<async,async notifier section>> for info on +!+ and +$+
+|[[V]]*V*	|Firmware revision		|GWD			|Can be used to determine abilities of hardware
+|*W*		|Self test			|OK			|Tests battery, like pushing the test button on the front panel
+
+Also see <<X,test results>> entry
+
+|[[X]]*X*	|Self-test results		|OK			a|Values:
+
+- +OK+ -> good battery
+- +BT+ -> failed due to insufficient capacity
+- +NG+ -> failed due to overload
+- +NO+ -> no results available (no test performed in last 5 minutes)
+
+|[[Y]]*Y*	|Enter smart mode		|SM			|This must be sent before anything else on this page will work.
+
+Also see <<R,turn dumb command>> to exit smart mode
+
+|*Z*		|Shutdown immediately		d|n/a			|Send twice with > 1.5s delay between chars
+
+UPS switches the load off immediately (no grace period)
+
+|*a*		|Protocol info			d|(long string)		a|Returns three main sections:
+
+- Protocol version
+- Alert messages (aka <<async,async notifiers>>)
+- Valid commands
+
+Sections are separated with a period
+
+|*b*		|Firmware revision		|50.9.D			a|Decoding above info:
+
+[horizontal]
++50+::
+SKU (variable length)
+
++9+::
+firmware revision
+
++D+::
+country code (used in <<cap,capability>> decoding)
+
+|[[c]]*c*	|UPS local id			|UPS_IDEN		|Writable variable
+
+Up to 8 letter identifier for keeping track of your hardware
+
+|[[e]]*e*	|Return threshold		|00			a|Writable variable
+
+Minimum battery charge % to return from shutdown after power returns
+
+Values:
+
+- +00+ = 0% (UPS switches on immediately)
+- +01+ = 15%
+- +02+ = 25%
+- +03+ = 90%
+
+This prevents excessive cycling during multiple power failures
+
+|[[g]]*g*	|Nominal battery voltage	|024			|The battery voltage that's expected to be present in the UPS normally
+
+Compare to the <<B,actual voltage>> reading
+
+|*f*		|Battery level			|099.0			|Percentage
+
+It's much easier to use this rather than doing math on the <<B,current battery voltage>> and the <<g,nominal battery voltage>>
+
+|*h*		|Measure-UPS: Ambient humidity	|042.4			|Percentage
+
+Only works on models with the Measure-UPS SmartSlot card
+
+|*i*		|Measure-UPS: Dry contacts	|00			a|Bitmapped hex variable
+
+Component values:
+
+- +10+ = contact 1
+- +20+ = contact 2
+- +40+ = contact 3
+- +80+ = contact 4
+
+|*j*		|Estimated runtime		|0327:			|Minutes
+
+Must be <<D,calibrated>> to be effective
+
+|*k*		|Alarm delay			|0			a|Writable variable
+
+Values:
+
+- +0+ = 5 second delay after power failure
+- +T+ = 30 second delay
+- +L+ = alarm at low battery only
+- +N+ = alarm disabled
+
+Does not affect low battery warning
+
+|*l*		|Low transfer voltage		|103			|Writable variable
+
+See <<cap,capabilities>> to get values for a UPS
+
+UPS goes on battery after voltage drops below this point
+
+|*m*		|Manufacturing date		|11/29/96		|Format may vary by country (+MM/DD/YY+ vs +DD/MM/YY+)
+|*n*		|Serial number			|WS9643050926		|Unique for each UPS
+|[[o]]*o*	|On-battery voltage		|115			|May be a writable variable on 220/230/240 VAC units
+|[[p]]*p*	|Shutdown grace delay		|020			|Writable variable - seconds
+
+See <<cap,capabilities>> to read values
+
+Sets the delay before <<S,soft shutdown>> completes
+
+|*q*		|Low battery warning		|02			|Writable variable - minutes
+
+See <<cap,capabilities>> to read values
+
+The UPS will report a low battery this many minutes before it runs out of power
+
+|[[r]]*r*	|Wakeup delay			|000			|Writable variable - seconds
+
+See <<cap,capabilities>> to read values
+
+The UPS will wait this many seconds after reaching the <<e,minimum charge>> before returning online
+
+|*s*		|Sensitivity			|H			a|Writable variable
+
+See <<cap,capabilities>> to read values
+
+Meaning of values:
+
+- +H+ -> highest
+- +M+ -> medium
+- +L+ -> lowest
+- +A+ -> autoadjust (Matrix only)
+
+|*u*		|Upper transfer voltage		|132			|Writable variable
+
+See <<cap,capabilities>> to read values
+
+UPS goes on battery after voltage rises above this point
+
+|*v*		|Measure-UPS: Firmware		|4Kx			|Firmware information for Measure-UPS board
+|*t*		|Measure-UPS: Ambient temperature	|80.5		|Degrees C
+
+Only works on models with the Measure-UPS SmartSlot card
+
+|[[x]]*x*	|Last battery change		|11/29/96		|Writable variable
+
+This holds whatever the user sets in it, much like the <<c,UPS local id>> variable
+
+|*y*		|Copyright notice		|(C) APCC		|Only works if <<V,firmware letter>> is later than +O+
+|*z*		|Reset to factory settings	|CLEAR			|Resets most variables to initial factory values except <<c,identity>> or <<x,battery change date>>
+
+Not on SmartUPS v/s or BackUPS Pro
+
+|*-*		|Capability cycle		d|(various)		|Cycle through possible <<cap,capability values>>
+
+UPS sends +\|+ afterward to confirm change to PROM
+
+|[["@"]]**@**nnn|Shutdown and return		|OK		|UPS shuts down after <<p,grace period>> with delayed wakeup after +nnn+ tenths of an hour plus any <<r,wakeup delay>> time
+
+Some older models send +*+ instead of +OK+
+
+|*0x7f*		|Abort shutdown			|OK			|Abort shutdown - use to abort <<"@","*+@+*">>, <<S,*+S+*>>, <<K,*+K+*>>
+
+Also known as the delete key in some places
+
+|*~*		|Register #1			d|n/a			|See <<reg1,register 1>> table
+|*'*		|Register #2			d|n/a			|See <<reg2,register 2>> table
+|*7*		|Dip switch positions		d|n/a			|See <<dipsw,dip switch>> table
+
+Only makes sense on models which actually have dip switches
+
+|*8*		|Register #3			d|n/a			|See <<reg3,register 3>> table
+|*9*		|Line quality			|FF			a|Values
+
+- +00+ -> unacceptable
+- +FF+ -> acceptable
+
+|*>*		|Battery packs			d|n/a			|SmartCell models: returns number of connected packs
+
+Non-SmartCell models: returns number set by user (use *+++* and *+-+*)
+
+|*[*		|Measure-UPS: Upper temp limit	|NO,NO			|Degrees C
+
+Writable variable
+
+Values: +55+, +50+, +45+, ..., +05+ for both
+
+Use *+-+* to enumerate through left side, *+++* to enumerate through right side
+
+|*]*		|Measure-UPS: Lower temp limit	|NO,NO			|Degrees C
+
+Writable variable
+
+See 'lower temp limit' above
+
+|*{*		|Measure-UPS: Upper humidity limit	|NO,NO		|%
+
+Writable variable
+
+Values: +90+, +80+, +70+, ..., +10+ for both
+
+Use *+-+* and *+++* to change values
+
+|*}*		|Measure-UPS: Lower humidity limit	|NO,NO		|%
+
+Writable variable
+
+Values: +90+, +80+, +70+, ..., +10+ for both
+
+Use *+-+* and *+++* to change values
+
+
+4+h|Matrix-UPS and Symmetra commands
+
+|*^*		|Run in bypass mode		d|n/a			|If online, "+BYP+" response is received as bypass mode starts
+
+If already in bypass, "+INV+" is received and UPS goes online
+
+If UPS can't transfer, "+ERR+" received
+
+|*<*		|Number of bad battery packs	|000			|Returns count of bad packs connected to the UPS
+|*/*		|Load current			d|n/a			|True RMS load current drawn by UPS
+|*\*		|Apparent load power		d|n/a			|Output load as percentage of full rated load
+|*^V*		|Output voltage selection	d|n/a			a|Writable variable
+
+Values:
+
+- +A+ -> Automatic (based on input tap)
+- +M+ -> 208 VAC
+- +I+ -> 240 VAC
+
+|*^L*		|Front panel language		d|n/a			a|Writable variable
+
+Values:
+
+- +E+ -> English
+- +F+ -> French
+- +G+ -> German
+- +S+ -> Spanish
+- Also +1+, +2+, +3+, +4+ -> unknown
+
+|*w*		|Run time conservation		d|n/a			a|Writable variable
+
+Values:
+
+- +NO+ -> disabled
+- +02+ -> leave 2 minutes of runtime in battery
+- +05+ -> leave 5 minutes
+- +08+ -> leave 8 minutes
+
+|====
+
+
+[[dipsw]]
+Dip switch information
+----------------------
+
+[cols="^.^1,^.^1,.^8",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Bit	|Switch	|Option when bit=1
+|0	|4	|Low battery alarm changed from 2 to 5 mins. Autostartup disabled on SU370ci and 400
+|1	|3	|Audible alarm delayed 30 seconds
+|2	|2	|Output transfer set to 115 VAC (from 120 VAC) or to 240 VAC (from 230 VAC)
+|3	|1	|UPS desensitized - input voltage range expanded
+|4 - 7	|-	|Unused at this time
+|====
+
+
+[[status]]
+Status flags
+------------
+
+Some common things you'll see:
+
+- +08+ = on line, battery OK
+- +10+ = on battery, battery OK
+- +50+ = on battery, battery low
+
+[cols="^.^1,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Bit	|Meaning
+|0	|*+1+* = runtime calibration occurring
+
+Not reported by Smart UPS v/s and BackUPS Pro
+
+|1	|*+1+* = SmartTrim
+
+Not reported by 1st and 2nd generation SmartUPS models
+
+|2	|*+1+* = SmartBoost
+|3	|*+1+* = on line
+|4	|*+1+* = on battery
+|5	|*+1+* = overloaded output
+|6	|*+1+* = battery low
+|7	|*+1+* = replace battery
+|====
+
+
+[[async]]
+Alert messages
+--------------
+
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Character	|Description
+|!		|Line Fail - sent when the UPS goes on-battery, repeated every 30 seconds until low battery condition reached.
+Sometimes occurs more than once in the first 30 seconds.
+
+|$		|Return from line fail - UPS back on line power, only sent if a *+!+* has been sent.
+|%		|Low battery - Sent to indicate low battery, but not on SmartUPS v/s or BackUPS Pro models
+|+		|Return from low battery - Sent when the battery has been recharged to some level only if a % has been sent previously
+|?		|Abnormal condition - sent for conditions such as "shutdown due to overload" or "shutdown due to low battery capacity".
+Also occurs within 10 minutes of turnon.
+
+|=		|Return from abnormal condition - Sent when the UPS returns from an abnormal condition where *+?+* was sent, but not a turn-on.
+Not implemented on SmartUPS v/s or BackUPS Pro models.
+
+|*		|About to turn off - Sent when the UPS is about to switch off the load. No commands are processed after this character is sent.
+Not implemented on SmartUPS v/s, BackUPS Pro, or 3rd generation SmartUPS models.
+
+|#		|Replace battery - Sent when the UPS detects that the battery needs to be replaced.
+Sent every 5 hours until a new battery test is run or the UPS is shut off.
+Not implemented on SmartUPS v/s or BackUPS Pro models.
+
+|&		|Check alarm register for fault (Measure-UPS) - sent to signal that temp or humidity out of set limits.
+Also sent when one of the contact closures changes states.
+Sent every 2 minutes, stops when the alarm conditions are reset.
+Only sent for alarms enabled with *+I+*.
+Cause of alarm may be determined with *+J+*.
+Not on SmartUPS v/s or BackUPS Pro.
+
+|\|		|Variable change in EEPROM - Sent whenever any EEPROM variable is changed.
+Only supported on Matrix UPS and 3rd generation SmartUPS models.
+|====
+
+
+[[reg1]]
+Register 1
+----------
+
+All bits are valid on the Matrix UPS.
+SmartUPS models only support bits 6 and 7.
+Other models do not respond.
+
+[cols="^.^1,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Bit	|Meaning
+|0	|In wakeup mode (typically lasts < 2s)
+|1	|In bypass mode due to internal fault - see register 2 or 3
+|2	|Going to bypass mode due to command
+|3	|In bypass mode due to command
+|4	|Returning from bypass mode
+|5	|In bypass mode due to manual bypass control
+|6	|Ready to power load on user command
+|7	|Ready to power load on user command or return of line power
+|====
+
+
+[[reg2]]
+Register 2
+----------
+
+Matrix UPS models report bits 0 - 5.
+SmartUPS models only support bits 4 and 6.
+SmartUPS v/s and BackUPS Pro report bits 4, 6, 7.
+Unused bits are set to *+0+*.
+Other models do not respond.
+
+[cols="^.^1,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Bit	|Meaning
+|0	|Fan failure in electronics, UPS in bypass
+|1	|Fan failure in isolation unit
+|2	|Bypass supply failure
+|3	|Output voltage select failure, UPS in bypass
+|4	|DC imbalance, UPS in bypass
+|5	|Command sent to stop bypass with no battery connected - UPS still in bypass
+|6	|Relay fault in SmartTrim or SmartBoost
+|7	|Bad output voltage
+|====
+
+
+[[reg3]]
+Register 3
+----------
+
+All bits are valid on the Matrix UPS and 3rd generation SmartUPS models.
+SmartUPS v/s and BackUPS Pro models report bits 0 - 5.
+All others report 0 - 4.
+State change of bits 1, 2, 5, 6, 7 are reported asynchronously with *+?+* and *+=+* messages.
+
+[cols="^.^1,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Bit	|Meaning
+|0	|Output unpowered due to shutdown by low battery
+|1	|Unable to transfer to battery due to overload
+|2	|Main relay malfunction - UPS turned off
+|3	|In sleep mode from *+@+* (maybe others)
+|4	|In shutdown mode from *+S+*
+|5	|Battery charger failure
+|6	|Bypass relay malfunction
+|7	|Normal operating temperature exceeded
+|====
+
+
+[[cap]]
+Capabilities
+------------
+
+Upon sending a *+^Z+*, your UPS will probably spit back something like this (truncated here for the example):
+
+----
+#uD43132135138129uM43229234239224uA43110112114108 ....
+----
+
+It looks bizarre and ugly, but is easily parsed.
+The +#+ is some kind of marker/ident character.
+Skip it.
+The rest fits this form:
+
+- Command character - use this to select the value
+- Locale - use *+b+* to find out what yours is, +4+ applies to all
+- Number of choices - +4+ means there are 4 possibilities coming up
+- Choice length - +3+ means they are all 3 chars long
+
+Then it's followed by the choices, and it starts over.
+
+Matrix-UPS models have +##+ between each grouping for some reason.
+
+
+Acknowledgements
+----------------
+
+Large parts of this data were contributed or corrected by Steven Freed.
+This guy is some sort of APC UPS god.
+Many thanks.

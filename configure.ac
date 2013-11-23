@@ -1195,6 +1195,7 @@ AC_OUTPUT([
  docs/Makefile
  docs/man/Makefile
  docs/website/Makefile
+ docs/website/protocols/Makefile
  drivers/Makefile
  include/Makefile
  lib/libupsclient-config
