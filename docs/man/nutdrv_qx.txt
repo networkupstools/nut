@@ -50,7 +50,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'voltronic' and 'zinto'.
+Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic' and 'zinto'.
 
 *pollfreq =* 'value'::
 Set polling frequency, in seconds, to reduce the data flow.
@@ -112,6 +112,13 @@ Setting this flag will make the driver skip this step.
 *novendor*::
 Some UPSes will lock up if you attempt to read vendor information from them.
 Setting this flag will make the driver skip this step.
+
+
+Q1 PROTOCOL
+~~~~~~~~~~~
+
+*offdelay*::
+The acceptable range is +12..600+ seconds.
 
 
 VOLTRONIC PROTOCOL
@@ -317,8 +324,8 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-MECER, MEGATEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
@@ -548,68 +555,68 @@ Since more than one warning at a time can be signaled, and because of the limite
 If you want to know the explanation of that bit you can either watch the log or see the next table (unlisted bits equal to unknown warnings).
 
 .UPS Warnings for 'voltronic' UPSes
-[cols="5>,95",options="autowidth,header",frame="topbot",align="center",caption=""]
+[cols="5>,95",options="autowidth,header",frame="topbot",grid="rows",align="center",caption=""]
 |====
-|# |Corresponding Warning
-|1 |Battery disconnected
-|2 |Neutral not connected
-|3 |Site fault
-|4 |Phase sequence incorrect
-|5 |Phase sequence incorrect in bypass
-|6 |Input frequency unstable in bypass
-|7 |Battery overcharged
-|8 |Low battery
-|9 |Overload alarm
-|10 |Fan alarm
-|11 |EPO enabled
-|12 |Unable to turn on UPS
-|13 |Over temperature alarm
-|14 |Charger alarm
-|15 |Remote auto shutdown
-|16 |L1 input fuse not working
-|17 |L2 input fuse not working
-|18 |L3 input fuse not working
-|19 |Positive PFC abnormal in L1
-|20 |Negative PFC abnormal in L1
-|21 |Positive PFC abnormal in L2
-|22 |Negative PFC abnormal in L2
-|23 |Positive PFC abnormal in L3
-|24 |Negative PFC abnormal in L3
-|25 |Abnormal in CAN-bus communication
-|26 |Abnormal in synchronous signal circuit
-|27 |Abnormal in synchronous pulse signal circuit
-|28 |Abnormal in host signal circuit
-|29 |Male connector of parallel cable not connected well
-|30 |Female connector of parallel cable not connected well
-|31 |Parallel cable not connected well
-|32 |Battery connection not consistent in parallel systems
-|33 |AC connection not consistent in parallel systems
-|34 |Bypass connection not consistent in parallel systems
-|35 |UPS model types not consistent in parallel systems
-|36 |Capacity of UPSs not consistent in parallel systems
-|37 |Auto restart setting not consistent in parallel systems
-|38 |Battery cell over charge
-|39 |Battery protection setting not consistent in parallel systems
-|40 |Battery detection setting not consistent in parallel systems
-|41 |Bypass not allowed setting not consistent in parallel systems
-|42 |Converter setting not consistent in parallel systems
-|43 |High loss point for frequency in bypass mode not consistent in parallel systems
-|44 |Low loss point for frequency in bypass mode not consistent in parallel systems
-|45 |High loss point for voltage in bypass mode not consistent in parallel systems
-|46 |Low loss point for voltage in bypass mode not consistent in parallel systems
-|47 |High loss point for frequency in AC mode not consistent in parallel systems
-|48 |Low loss point for frequency in AC mode not consistent in parallel systems
-|49 |High loss point for voltage in AC mode not consistent in parallel systems
-|50 |Low loss point for voltage in AC mode not consistent in parallel systems
-|51 |Warning for locking in bypass mode after 3 consecutive overloads within 30 min
-|52 |Warning for three-phase AC input current unbalance
-|53 |Warning for a three-phase input current unbalance detected in battery mode
-|54 |Warning for Inverter inter-current unbalance
-|55 |Programmable outlets cut off pre-alarm
-|56 |Warning for Battery replace
-|57 |Abnormal warning on input phase angle
-|58 |Warning!! Cover of maintain switch is open
-|62 |EEPROM operation error
+|#	|Corresponding Warning
+|1	|Battery disconnected
+|2	|Neutral not connected
+|3	|Site fault
+|4	|Phase sequence incorrect
+|5	|Phase sequence incorrect in bypass
+|6	|Input frequency unstable in bypass
+|7	|Battery overcharged
+|8	|Low battery
+|9	|Overload alarm
+|10	|Fan alarm
+|11	|EPO enabled
+|12	|Unable to turn on UPS
+|13	|Over temperature alarm
+|14	|Charger alarm
+|15	|Remote auto shutdown
+|16	|L1 input fuse not working
+|17	|L2 input fuse not working
+|18	|L3 input fuse not working
+|19	|Positive PFC abnormal in L1
+|20	|Negative PFC abnormal in L1
+|21	|Positive PFC abnormal in L2
+|22	|Negative PFC abnormal in L2
+|23	|Positive PFC abnormal in L3
+|24	|Negative PFC abnormal in L3
+|25	|Abnormal in CAN-bus communication
+|26	|Abnormal in synchronous signal circuit
+|27	|Abnormal in synchronous pulse signal circuit
+|28	|Abnormal in host signal circuit
+|29	|Male connector of parallel cable not connected well
+|30	|Female connector of parallel cable not connected well
+|31	|Parallel cable not connected well
+|32	|Battery connection not consistent in parallel systems
+|33	|AC connection not consistent in parallel systems
+|34	|Bypass connection not consistent in parallel systems
+|35	|UPS model types not consistent in parallel systems
+|36	|Capacity of UPSs not consistent in parallel systems
+|37	|Auto restart setting not consistent in parallel systems
+|38	|Battery cell over charge
+|39	|Battery protection setting not consistent in parallel systems
+|40	|Battery detection setting not consistent in parallel systems
+|41	|Bypass not allowed setting not consistent in parallel systems
+|42	|Converter setting not consistent in parallel systems
+|43	|High loss point for frequency in bypass mode not consistent in parallel systems
+|44	|Low loss point for frequency in bypass mode not consistent in parallel systems
+|45	|High loss point for voltage in bypass mode not consistent in parallel systems
+|46	|Low loss point for voltage in bypass mode not consistent in parallel systems
+|47	|High loss point for frequency in AC mode not consistent in parallel systems
+|48	|Low loss point for frequency in AC mode not consistent in parallel systems
+|49	|High loss point for voltage in AC mode not consistent in parallel systems
+|50	|Low loss point for voltage in AC mode not consistent in parallel systems
+|51	|Warning for locking in bypass mode after 3 consecutive overloads within 30 min
+|52	|Warning for three-phase AC input current unbalance
+|53	|Warning for a three-phase input current unbalance detected in battery mode
+|54	|Warning for Inverter inter-current unbalance
+|55	|Programmable outlets cut off pre-alarm
+|56	|Warning for Battery replace
+|57	|Abnormal warning on input phase angle
+|58	|Warning!! Cover of maintain switch is open
+|62	|EEPROM operation error
 |====
 
 
@@ -636,6 +643,7 @@ linkman:upscmd[8],
 linkman:upsdrvctl[8],
 linkman:upsmon[8],
 linkman:upsrw[8]
+
 
 Internet Resources:
 ~~~~~~~~~~~~~~~~~~~
