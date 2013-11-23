@@ -66,6 +66,7 @@
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
 #include "nutdrv_qx_mustek.h"
+#include "nutdrv_qx_q1.h"
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_zinto.h"
 
@@ -77,6 +78,8 @@ static subdriver_t	*subdriver_list[] = {
 	&megatec_subdriver,
 	&mecer_subdriver,
 	&zinto_subdriver,
+	/* Fallback Q1 subdriver */
+	&q1_subdriver,
 	NULL
 };
 
