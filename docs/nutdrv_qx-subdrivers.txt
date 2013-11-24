@@ -1,6 +1,7 @@
 How to make a new subdriver to support another Q* UPS
 -----------------------------------------------------
 
+
 Overall concept
 ~~~~~~~~~~~~~~~
 
@@ -187,19 +188,19 @@ Otherwise:
 Driver's own flags.
 +
 --
-[cols="l,",options="autowidth"]
+[cols="m,",options="autowidth",frame="topbot",grid="rows"]
 |====
-|QX_FLAG_STATIC |Retrieve this variable only once.
-|QX_FLAG_SEMI_STATIC |Retrieve this info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed.
-|QX_FLAG_ABSENT |Data is absent in the device, use default value.
-|QX_FLAG_QUICK_POLL |Mandatory vars.
-|QX_FLAG_CMD |Instant command.
-|QX_FLAG_SETVAR |The var is settable and the actual item stores info on how to set it.
-|QX_FLAG_TRIM |This var's value need to be trimmed of leading/trailing spaces/hashes.
-|QX_FLAG_ENUM |Enum values exist.
-|QX_FLAG_RANGE |Ranges for this var are available.
-|QX_FLAG_NONUT |This var doesn't have a corresponding var in NUT.
-|QX_FLAG_SKIP |Skip this var: this item won't be processed.
+|QX_FLAG_STATIC		|Retrieve this variable only once.
+|QX_FLAG_SEMI_STATIC	|Retrieve this info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed.
+|QX_FLAG_ABSENT		|Data is absent in the device, use default value.
+|QX_FLAG_QUICK_POLL	|Mandatory vars.
+|QX_FLAG_CMD		|Instant command.
+|QX_FLAG_SETVAR		|The var is settable and the actual item stores info on how to set it.
+|QX_FLAG_TRIM		|This var's value need to be trimmed of leading/trailing spaces/hashes.
+|QX_FLAG_ENUM		|Enum values exist.
+|QX_FLAG_RANGE		|Ranges for this var are available.
+|QX_FLAG_NONUT		|This var doesn't have a corresponding var in NUT.
+|QX_FLAG_SKIP		|Skip this var: this item won't be processed.
 |====
 
 [NOTE]
@@ -254,25 +255,48 @@ Here's the +item_t+:
 { "output.voltage", 0, NULL, "QGS\r", "", 76, '(', "", 12, 16, "%.1f", 0, NULL },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+output.voltage+
-|info_flags |+0+
-|info_rw |+NULL+
-|command |+QGS\r+
-|answer |Filled at runtime
-|answer_len |+76+
-|leading |+(+
-|value |Filled at runtime
-|from |+12+ -> the index at which the info (i.e. +value+) starts
-|to |+16+ -> the index at which the info (i.e. +value+) ends
-|dfl |+%.1f+
+[horizontal]
++info_type+::
++output.voltage+
 
++info_flags+::
++0+
+
++info_rw+::
++NULL+
+
++command+::
++QGS\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++76+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++12+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++16+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
++%.1f+
++
 We are expecting a number, so at first the core driver will check if it's made up entirely of digits/points/spaces, then it'll convert it into a double.
 Because of that we need to provide a floating point specifier.
-|qxflags |+0+
-|preprocess |+NULL+
-|====
+
++qxflags+::
++0+
+
++preprocess+::
++NULL+
 
 
 Mandatory vars
@@ -293,27 +317,50 @@ Here's the +item_t+:
 { "ups.status", 0, NULL, "QGS\r", "", 76, '(', "", 71, 71, "%s", QX_FLAG_QUICK_POLL, voltronic_status },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+ups.status+
-|info_flags |+0+
-|info_rw |+NULL+
-|command |+QGS\r+
-|answer |Filled at runtime
-|answer_len |+76+
-|leading |+(+
-|value |Filled at runtime
-|from |+71+ -> the index at which the info (i.e. +value+) starts
-|to |+71+ -> the index at which the info (i.e. +value+) ends
-|dfl |+%s+
+[horizontal]
++info_type+::
++ups.status+
 
++info_flags+::
++0+
+
++info_rw+::
++NULL+
+
++command+::
++QGS\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++76+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++71+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++71+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
++%s+
++
 Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
-|qxflags |+QX_FLAG_QUICK_POLL+ -> this item will be polled every time the driver will check for updates.
-Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it an it'll set +datastale+.
-|preprocess |+voltronic_status+
 
++qxflags+::
++QX_FLAG_QUICK_POLL+ -> this item will be polled every time the driver will check for updates.
+Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it an it'll set +datastale+.
+
++preprocess+::
++voltronic_status+
++
 This function will be called *after* the +command+ has been sent to the UPS and we got back the +answer+ and stored the +value+ in order to process it to NUT standards: in this case we will convert the binary +value+ to a NUT status.
-|====
 
 
 Settable vars
@@ -334,30 +381,53 @@ Here's the +item_t+:
 { "battery.type", ST_FLAG_RW, voltronic_e_batt_type, "QBT\r", "", 4, '(', "", 1, 2, "%s", QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM, voltronic_p31b },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+battery.type+
-|info_flags |+ST_FLAG_RW+ -> this is a r/w var
-|info_rw |+voltronic_e_batt_type+
+[horizontal]
++info_type+::
++battery.type+
 
++info_flags+::
++ST_FLAG_RW+ -> this is a r/w var
+
++info_rw+::
++voltronic_e_batt_type+
++
 The values stored here will be added to the NUT variable, setting its boundaries: in this case +Li+, +Flooded+ and +AGM+ will be added as enumerated values.
-|command |+QBT\r+
-|answer |Filled at runtime
-|answer_len |+4+
-|leading |+(+
-|value |Filled at runtime
-|from |+1+ -> the index at which the info (i.e. +value+) starts
-|to |+2+ -> the index at which the info (i.e. +value+) ends
-|dfl |+%s+
 
++command+::
++QBT\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++4+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++1+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++2+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
++%s+
++
 Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
-|qxflags |+QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
 
++qxflags+::
++QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
++
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
-|preprocess |+voltronic_p31b+
 
++preprocess+::
++voltronic_p31b+
++
 This function will be called *after* the +command+ has been sent to the UPS and we got back the +answer+ and stored the +value+ in order to process it to NUT standards: in this case we will check if the value is in the range and then publish the human readable form of it (i.e. +Li+, +Flooded+ or +AGM+).
-|====
 
 We also know that we can change battery type with the +PBTnn\r+ command; we are expecting either +(ACK\r+ if the command succeded or +(NAK\r+ if the command is rejected.
 
@@ -374,28 +444,51 @@ Here's the +item_t+:
 { "battery.type", 0, voltronic_e_batt_type, "PBT%02.0f\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_SETVAR | QX_FLAG_ENUM, voltronic_p31b_set },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+battery.type+
-|info_flags |+0+
-|info_rw |+voltronic_e_batt_type+
+[horizontal]
++info_type+::
++battery.type+
 
++info_flags+::
++0+
+
++info_rw+::
++voltronic_e_batt_type+
++
 The value provided by the user will be automagically checked by the core nutdrv_qx driver against the enumerated values already set by the non setvar item (i.e. +Li+, +Flooded+ or +AGM+), so this could have been +NULL+, however if we want - like here - we can use it in our +preprocess+ function.
-|command |+PBT%02.0f\r+
-|answer |Filled at runtime
-|answer_len |+5+ <- either +(NAK\r+ or +(ACK\r+
-|leading |+(+
-|value |Filled at runtime
-|from |+1+ -> the index at which the info (i.e. +value+) starts
-|to |+3+ -> the index at which the info (i.e. +value+) ends
-|dfl |Not used for +QX_FLAG_SETVAR+
-|qxflags |+QX_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +battery.type+)
 
++command+::
++PBT%02.0f\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++5+ <- either +(NAK\r+ or +(ACK\r+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++1+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++3+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
+Not used for +QX_FLAG_SETVAR+
+
++qxflags+::
++QX_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +battery.type+)
++
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
-|preprocess |+voltronic_p31b_set+
 
++preprocess+::
++voltronic_p31b_set+
++
 This function will be called *before* the +command+ is sent to the UPS so that we can fill +command+ with the value provided by the user: in this case the function will simply translate the human readable form of battery type (i.e. +Li+, +Flooded+ or +AGM+) to the UPS compliant type (i.e. +00+, +01+ and +02+) and then fill +value+ (the second argument passed to the +preprocess+ function).
-|====
 
 
 Instant commands
@@ -416,24 +509,47 @@ Here's the +item_t+:
 { "test.battery.start", 0, NULL, "T%s\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_CMD, voltronic_process_command },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+test.battery.start+
-|info_flags |+0+
-|info_rw |+NULL+
-|command |+T%s\r+
-|answer |Filled at runtime
-|answer_len |+5+ <- either +(NAK\r+ or +(ACK\r+
-|leading |+(+
-|value |Filled at runtime
-|from |+1+ -> the index at which the info (i.e. +value+) starts
-|to |+3+ -> the index at which the info (i.e. +value+) ends
-|dfl |Not used for +QX_TYPECMD+
-|qxflags |+QX_FLAG_CMD+ -> this item is an instant command that will be fired when +info_type+ (i.e. +test.battery.start+) is called
-|preprocess |+voltronic_process_command+
+[horizontal]
++info_type+::
++test.battery.start+
 
++info_flags+::
++0+
+
++info_rw+::
++NULL+
+
++command+::
++T%s\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++5+ <- either +(NAK\r+ or +(ACK\r+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++1+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++3+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
+Not used for +QX_FLAG_CMD+
+
++qxflags+::
++QX_FLAG_CMD+ -> this item is an instant command that will be fired when +info_type+ (i.e. +test.battery.start+) is called
+
++preprocess+::
++voltronic_process_command+
++
 This function will be called *before* the +command+ is sent to the UPS so that we can fill +command+ with the value provided by the user: in this case the function will check if the value is in the accepted range and then fill +value+ (the second argument passed to the +preprocess+ function) with +command+ and the given value.
-|====
 
 
 Informations absent in the device
@@ -445,31 +561,54 @@ In order to set the server-side var +ups.delay.start+, that will be then used by
 { "ups.delay.start", ST_FLAG_RW, voltronic_r_ondelay, NULL, "", 0, 0, "", 0, 0, "180", QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE, voltronic_process_setvar },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+ups.delay.start+
-|info_flags |+ST_FLAG_RW+ -> this is a r/w var
-|info_rw |+voltronic_r_ondelay+
+[horizontal]
++info_type+::
++ups.delay.start+
 
++info_flags+::
++ST_FLAG_RW+ -> this is a r/w var
+
++info_rw+::
++voltronic_r_ondelay+
++
 The values stored here will be added to the NUT variable, setting its boundaries: in this case +0+ and +599940+ will be set as the minimum and maximum value of the variable's range.
 Those values will then be used by the driver to check the user provided value.
-|command |Not used for +QX_FLAG_ABSENT+
-|answer |Not used for +QX_FLAG_ABSENT+
-|answer_len |Not used for +QX_FLAG_ABSENT+
-|leading |Not used for +QX_FLAG_ABSENT+
-|value |Not used for +QX_FLAG_ABSENT+
-|from |Not used for +QX_FLAG_ABSENT+
-|to |Not used for +QX_FLAG_ABSENT+
-|dfl |+180+ <- the default value that will be set for this variable
-|qxflags |+QX_FLAG_ABSENT+ -> this item isn't available in the device
 
++command+::
+Not used for +QX_FLAG_ABSENT+
+
++answer+::
+Not used for +QX_FLAG_ABSENT+
+
++answer_len+::
+Not used for +QX_FLAG_ABSENT+
+
++leading+::
+Not used for +QX_FLAG_ABSENT+
+
++value+::
+Not used for +QX_FLAG_ABSENT+
+
++from+::
+Not used for +QX_FLAG_ABSENT+
+
++to+::
+Not used for +QX_FLAG_ABSENT+
+
++dfl+::
++180+ <- the default value that will be set for this variable
+
++qxflags+::
++QX_FLAG_ABSENT+ -> this item isn't available in the device
++
 +QX_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +ups.delay.start+)
-
++
 +QX_FLAG_RANGE+ -> this r/w variable has a settable range and its boundaries are listed in the +info_rw+ structure (i.e. +voltronic_r_ondelay+)
-|preprocess |+voltronic_process_setvar+
 
-This function will be called, in setvar, before the driver stores the value in the NUT var: here is used to truncate the user-provided value to the neareset settable interval.
-|====
++preprocess+::
++voltronic_process_setvar+
++
+This function will be called, in setvar, before the driver stores the value in the NUT var: here it's used to truncate the user-provided value to the neareset settable interval.
 
 
 Informations not yet available in NUT
@@ -492,31 +631,54 @@ Here's the +item_t+ for input phase angle:
 { "input_phase_angle", 0, NULL, "QPD\r", "", 9,	'(', "", 1, 3, "%03.0f", QX_FLAG_STATIC | QX_FLAG_NONUT, voltronic_phase },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+input_phase_angle+
-
+[horizontal]
++info_type+::
++input_phase_angle+
++
 This information will be used to print the value we got back from the UPS in the logs.
-|info_flags |+0+
-|info_rw |+NULL+
-|command |+QPD\r+
-|answer |Filled at runtime
-|answer_len |+9+
-|leading |+(+
-|value |Filled at runtime
-|from |+1+ -> the index at which the info (i.e. +value+) starts
-|to |+3+ -> the index at which the info (i.e. +value+) ends
-|dfl |+%03.0f+
 
++info_flags+::
++0+
+
++info_rw+::
++NULL+
+
++command+::
++QPD\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++9+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++1+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++3+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
++%03.0f+
++
 If there's no +preprocess+ function, the format is used to print the value to the logs.
-Here instead is used by the +preprocess+ function.
-|qxflags |+QX_FLAG_STATIC+ -> this item doesn't change
+Here instead it's used by the +preprocess+ function.
 
++qxflags+::
++QX_FLAG_STATIC+ -> this item doesn't change
++
 +QX_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
-|preprocess |+voltronic_phase+
 
++preprocess+::
++voltronic_phase+
++
 This function will be called *after* the +command+ has been sent to the UPS so that we can parse the value we got back and check it.
-|====
 
 Here's the +item_t+ for output phase angle:
 
@@ -524,39 +686,62 @@ Here's the +item_t+ for output phase angle:
 { "output_phase_angle", ST_FLAG_RW, voltronic_e_phase, "QPD\r",	"", 9, '(', "", 5, 7, "%03.0f", QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT, voltronic_phase },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+output_phase_angle+
-
+[horizontal]
++info_type+::
++output_phase_angle+
++
 This information will be used to print the value we got back from the UPS in the logs.
-|info_flags |+ST_FLAG_RW+
 
++info_flags+::
++ST_FLAG_RW+
++
 This could also be +0+ (it's not really used by the driver), but it's set to +ST_FLAG_RW+ for cohesion with other rw vars - also, if ever a NUT variable would become available for this item, it'll be easier to change this item and its +QX_FLAG_SETVAR+ counterpart to use it.
-|info_rw |+voltronic_e_phase+
 
++info_rw+::
++voltronic_e_phase+
++
 Enumerated list of available value (here: +000+, +120+, +240+ and +360+).
 Since +QX_FLAG_NONUT+ is set the driver will print those values to the logs, plus you could use it in the +preprocess+ function to check the value we got back from the UPS (as done here).
-|command |+QPD\r+
-|answer |Filled at runtime
-|answer_len |+9+
-|leading |+(+
-|value |Filled at runtime
-|from |+5+ -> the index at which the info (i.e. +value+) starts
-|to |+7+ -> the index at which the info (i.e. +value+) ends
-|dfl |+%03.0f+
 
++command+::
++QPD\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++9+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+ ::
++5+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++7+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
++%03.0f+
++
 If there's no +preprocess+ function, the format is used to print the value to the logs.
-Here instead is used by the +preprocess+ function.
-|qxflags |+QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
+Here instead it's used by the +preprocess+ function.
 
++qxflags+::
++QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
++
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_phase+).
-
++
 +QX_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
-|preprocess |+voltronic_phase+
 
++preprocess+::
++voltronic_phase+
++
 This function will be called *after* the +command+ has been sent to the UPS so that we can parse the value we got back and check it.
-Here is used also to store a var that will then be used to check the value in setvar's preprocess function.
-|====
+Here it's used also to store a var that will then be used to check the value in setvar's preprocess function.
 
 If you need also to change some values in the UPS you can add a +ups.conf+ var/flag in the subdriver's own +makevartable+ and then process it adding to its +qxflags+ both +QX_FLAG_NONUT+ and +QX_FLAG_SETVAR+: this item will be processed only once in +QX_WALKMODE_INIT+.
 
@@ -577,34 +762,57 @@ Here's the +item_t+
 { "output_phase_angle", 0, voltronic_e_phase, "PPD%03.0f\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT, voltronic_phase_set },
 ----
 
-[cols="l,",options="autowidth"]
-|====
-|info_type |+output_phase_angle+
-
+[horizontal]
++info_type+::
++output_phase_angle+
++
 This information will be used to print the value we got back from the UPS in the logs and to retrieve the user-provided value in +ups.conf+.
 So, name it after the variable you created to use in +ups.conf+ in the subdriver's own +makevartable+.
-|info_flags |+0+
-|info_rw |+voltronic_e_phase+
 
++info_flags+::
++0+
+
++info_rw+::
++voltronic_e_phase+
++
 Enumerated list of available values (here: +000+, +120+, +240+ and +360+).
 The value provided by the user will be automagically checked by the core nutdrv_qx driver against the enumerated values stored here.
-|command |+PPD%03.0f\r+
-|answer |Filled at runtime
-|answer_len |+5+ <- either +(NAK\r+ or +(ACK\r+
-|leading |+(+
-|value |Filled at runtime
-|from |+1+ -> the index at which the info (i.e. +value+) starts
-|to |+3+ -> the index at which the info (i.e. +value+) ends
-|dfl |Not used for +QX_FLAG_SETVAR+
-|qxflags |+QX_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +output_phase_angle+)
 
++command+::
++PPD%03.0f\r+
+
++answer+::
+Filled at runtime
+
++answer_len+::
++5+ <- either +(NAK\r+ or +(ACK\r+
+
++leading+::
++(+
+
++value+::
+Filled at runtime
+
++from+::
++1+ -> the index at which the info (i.e. +value+) starts
+
++to+::
++3+ -> the index at which the info (i.e. +value+) ends
+
++dfl+::
+Not used for +QX_FLAG_SETVAR+
+
++qxflags+::
++QX_FLAG_SETVAR+ -> this item is used to set the variable +info_type+ (i.e. +output_phase_angle+)
++
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_phase+).
-
++
 +QX_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
-|preprocess |+voltronic_phase_set+
 
++preprocess+::
++voltronic_phase_set+
++
 This function will be called *before* the +command+ is sent to the UPS so that we can check user-provided value and fill +command+ with it and then fill +value+ (the second argument passed to the +preprocess+ function).
-|====
 
 
 Support functions
@@ -656,6 +864,7 @@ For more informations, have a look at the currently available subdrivers:
 - +nutdrv_qx_megatec.+{+c+,+h+}
 - +nutdrv_qx_megatec-old.+{+c+,+h+}
 - +nutdrv_qx_mustek.+{+c+,+h+}
+- +nutdrv_qx_q1.+{+c+,+h+}
 - +nutdrv_qx_voltronic.+{+c+,+h+}
 - +nutdrv_qx_zinto.+{+c+,+h+}
 
