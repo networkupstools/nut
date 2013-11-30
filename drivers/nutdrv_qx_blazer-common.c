@@ -88,6 +88,30 @@ int	blazer_claim(void) {
 
 }
 
+/* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0.
+ * NOTE: this 'light' version only checks for status (Q1/QS/D/..) */
+int	blazer_claim_light(void) {
+
+	/* To tell whether the UPS is supported or not, we'll check just status (Q1/QS/D/..). */
+
+	item_t	*item = find_nut_info("input.voltage", 0, 0);
+
+	/* Don't know what happened */
+	if (!item)
+		return 0;
+
+	/* No reply/Unable to get value */
+	if (qx_process(item, NULL))
+		return 0;
+
+	/* Unable to process value */
+	if (ups_infoval_set(item) != 1)
+		return 0;
+
+	return 1;
+
+}
+
 /* Subdriver-specific flags/vars */
 void	blazer_makevartable(void)
 {
