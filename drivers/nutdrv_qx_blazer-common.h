@@ -28,6 +28,7 @@
 void	blazer_makevartable(void);
 void	blazer_initups(item_t *qx2nut);
 int	blazer_claim(void);
+int	blazer_claim_light(void);
 
 /* Preprocess functions */
 int	blazer_process_command(item_t *item, char *value, size_t valuelen);

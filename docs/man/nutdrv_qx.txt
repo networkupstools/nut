@@ -50,7 +50,9 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic' and 'zinto'.
+Supported values: 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic' and 'zinto'.
++
+Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
 *pollfreq =* 'value'::
 Set polling frequency, in seconds, to reduce the data flow.
@@ -99,6 +101,7 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
+[[old-blazer-protocols-options]]
 MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

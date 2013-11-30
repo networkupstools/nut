@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_mustek.h"
 
-#define MUSTEK_VERSION "Mustek 0.01"
+#define MUSTEK_VERSION "Mustek 0.02"
 
 /* qx2nut lookup table */
 static item_t	mustek_qx2nut[] = {
@@ -128,7 +128,7 @@ static void	mustek_initups(void)
 /* Subdriver interface */
 subdriver_t	mustek_subdriver = {
 	MUSTEK_VERSION,
-	blazer_claim,
+	blazer_claim_light,
 	mustek_qx2nut,
 	mustek_initups,
 	NULL,
