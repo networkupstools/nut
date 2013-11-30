@@ -35,7 +35,7 @@
 
 #include "nutdrv_qx_q1.h"
 
-#define Q1_VERSION "Q1 0.01"
+#define Q1_VERSION "Q1 0.02"
 
 /* qx2nut lookup table */
 static item_t	q1_qx2nut[] = {
@@ -102,34 +102,10 @@ static testing_t	q1_testing[] = {
 };
 #endif	/* TESTING */
 
-
-/* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
-int	q1_claim(void) {
-
-	/* To tell whether the UPS is supported or not, we'll check just status (Q1). */
-
-	item_t	*item = find_nut_info("input.voltage", 0, 0);
-
-	/* Don't know what happened */
-	if (!item)
-		return 0;
-
-	/* No reply/Unable to get value */
-	if (qx_process(item, NULL))
-		return 0;
-
-	/* Unable to process value */
-	if (ups_infoval_set(item) != 1)
-		return 0;
-
-	return 1;
-
-}
-
 /* Subdriver interface */
 subdriver_t	q1_subdriver = {
 	Q1_VERSION,
-	q1_claim,
+	blazer_claim_light,
 	q1_qx2nut,
 	NULL,
 	NULL,
