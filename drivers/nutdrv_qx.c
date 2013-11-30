@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 #include "main.h"
 
@@ -62,11 +62,13 @@
 
 /* == Subdrivers == */
 /* Include all known subdrivers */
+#include "nutdrv_qx_d.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
 #include "nutdrv_qx_mustek.h"
 #include "nutdrv_qx_q1.h"
+#include "nutdrv_qx_qs.h"
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_zinto.h"
 
@@ -78,7 +80,9 @@ static subdriver_t	*subdriver_list[] = {
 	&megatec_subdriver,
 	&mecer_subdriver,
 	&zinto_subdriver,
-	/* Fallback Q1 subdriver */
+	/* Fallback subdrivers */
+	&qs_subdriver,
+	&d_subdriver,
 	&q1_subdriver,
 	NULL
 };

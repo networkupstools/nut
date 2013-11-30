@@ -50,7 +50,9 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic' and 'zinto'.
+Supported values: 'd', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'qs', 'voltronic' and 'zinto'.
++
+Note that if you end up using the 'd', 'q1' and 'qs' protocols, you may want to give a try to the 'mecer', 'megatec', 'megatec/old', 'mustek' and 'zinto' ones setting the <<old-blazer-protocols-options,'novendor'/'norating' flags>> (only one, or both).
 
 *pollfreq =* 'value'::
 Set polling frequency, in seconds, to reduce the data flow.
@@ -99,6 +101,7 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
+[[old-blazer-protocols-options]]
 MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -114,8 +117,8 @@ Some UPSes will lock up if you attempt to read vendor information from them.
 Setting this flag will make the driver skip this step.
 
 
-Q1 PROTOCOL
-~~~~~~~~~~~
+D, Q1, QS PROTOCOLS
+~~~~~~~~~~~~~~~~~~~
 
 *offdelay*::
 The acceptable range is +12..600+ seconds.
@@ -324,8 +327,8 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+D, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, QS, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
