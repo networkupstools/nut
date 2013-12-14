@@ -28,7 +28,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -176,7 +176,7 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 static int ippon_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[64];
-	int	ret;
+	int	ret, len;
 	size_t	i;
 
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
@@ -207,10 +207,19 @@ static int ippon_command(const char *cmd, char *buf, size_t buflen)
 		return ret;
 	}
 
-	snprintf(buf, buflen, "%.*s", ret, tmp);
-
-	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
-	return ret;
+	/*
+	 * As Ippon will always return 64 bytes in response, we have to
+	 * calculate and return length of actual response data here.
+	 * Empty response will look like 0x00 0x0D, otherwise it will be
+	 * data string terminated by 0x0D.
+	 */
+	len = (int)strcspn(tmp, "\r");
+	upsdebugx(3, "read: %.*s", len, tmp);
+	if (len > 0) {
+		len ++;
+	}
+	snprintf(buf, buflen, "%.*s", len, tmp);
+	return len;
 }
 
 
