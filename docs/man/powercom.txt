@@ -46,7 +46,7 @@ Like modelname above, but for the serial number. The default is 'Unknown'.
 The exact type of the communication protocol within the powercom family, that
 will be used to communicate with the UPS. The type is named after the first
 modelname that was coded with that protocol. The acceptable names are
-'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN', 'BNT', and 'BNT-other'. 
+'Trust', 'Egys', 'KP625AP', 'IMP', 'KIN', 'BNT', 'BNT-other' and 'OPTI'.
 The default is 'Trust'.
 +
 'BNT-other' is a special type for other BNT models (such as the 1500A at 120V 
@@ -185,6 +185,13 @@ BNT-other
  loadPercentage = {1.0000,0.0,1.0000,0.0}
  batteryPercentage = {1.0000,0.0000,0.0000,1.0000,0.0000}
  voltage = {2.0000,0.0000,2.0000,0.0000}
+
+OPTI
+~~~~
+ numOfBytesFromUPS = 16
+ methodOfFlowControl = no_flow_control
+ validationSequence = {{5,0xFF},{7,0},{8,0}}
+ shutdownArguments = {{1,30},y}
 
 AUTHOR
 ------

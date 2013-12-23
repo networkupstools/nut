@@ -6,8 +6,10 @@
  *    See http://www.advice.co.il/product/inter/ups.html for its specifications.
  *    This model is based on PowerCom (www.powercom.com) models.
  *  -Socomec Sicon Egys 420
+ *  -OptiUPS VS 575C
  *
  * Copyrights:
+ * (C) 2013 Florian Bruhin <nut@the-compiler.org>
  * (C) 2002 Simon Rozman <simon@rozman.net>
  * (C) 1999  Peter Bieringer <pb@bieringer.de>
  *                              
@@ -58,6 +60,10 @@
  *
  * Tested on: BNT-1500A
  *
+ * rev 0.14: Florian Bruhin (The Compiler) <nut@the-compiler.org>
+ * - Added support for OptiUPS VS 575C
+ *   This probably also works with others, but I don't have their model numbers.
+ *
  */ 
 
 #include "main.h"
@@ -66,7 +72,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -74,7 +80,8 @@ upsdrv_info_t	upsdrv_info = {
 	DRIVER_VERSION,
 	"Simon Rozman <simon@rozman.net>\n" \
 	"Peter Bieringer <pb@bieringer.de>\n" \
-	"Alexey Sidorov <alexsid@altlinux.org>",
+	"Alexey Sidorov <alexsid@altlinux.org>\n" \
+	"Florian Bruhin <nut@the-compiler.org>",
 	DRV_STABLE,
 	{ NULL }
 };
@@ -199,6 +206,17 @@ static struct type types[] = {
                 {  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
                 {  2.0000,  0.0000,  2.0000,  0.0000 },
         },
+        {
+                "OPTI",
+                16,
+                {  "no_flow_control", no_flow_control },
+                { { 5U, 0xFFU }, { 7U, 0U }, { 8U, 0U } },
+                { { 1U, 30U }, 'y' },
+                {  0.0000, 0.0000 },
+                {  1.0000,  0.0000,  1.0000,  0.0000 },
+                {  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
+                {  2.0000,  0.0000,  2.0000,  0.0000 },
+        },
 };
 
 /* values for sending to UPS */
@@ -249,6 +267,7 @@ unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240,0,0,0,0,0};
 unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000,0,0,0,0,0,0};
 unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000,0};
 unsigned int IMPmodels[]={0,425,525,625,825,1025,1200,1500,2000,0,0,0,0,0,0,0};
+unsigned int OPTImodels[]={0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /*
  * local used functions
@@ -398,7 +417,7 @@ static float input_voltage(void)
 		} else {
 			tmp=1.625*raw_data[INPUT_VOLTAGE];
 		}
-	} else if ( !strcmp(types[type].name, "IMP")) {
+	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[INPUT_VOLTAGE]*2.0;
 	} else {
 	    tmp=linevoltage >= 220 ?
@@ -489,7 +508,7 @@ static float output_voltage(void)
 					tmp=sqrt(tmp)*rdatay;
 			}
 		}
-	} else if ( !strcmp(types[type].name, "IMP")) {
+	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[OUTPUT_VOLTAGE]*2.0;
 	} else {
 		tmp= linevoltage >= 220 ?
@@ -506,7 +525,7 @@ static float input_freq(void)
 {
 	if ( !strcmp(types[type].name, "BNT") || !strcmp(types[type].name, "KIN"))
 		return 4807.0/raw_data[INPUT_FREQUENCY];
-	else if ( !strcmp(types[type].name, "IMP"))
+	else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI"))
 		return raw_data[INPUT_FREQUENCY];
 	return raw_data[INPUT_FREQUENCY] ? 
 		1.0 / (types[type].freq[0] *
@@ -518,7 +537,7 @@ static float output_freq(void)
 {
 	if ( !strcmp(types[type].name, "BNT") || !strcmp(types[type].name, "KIN"))
 		return 4807.0/raw_data[OUTPUT_FREQUENCY];
-	else if ( !strcmp(types[type].name, "IMP"))
+	else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI"))
 		return raw_data[OUTPUT_FREQUENCY];
 	return raw_data[OUTPUT_FREQUENCY] ? 
 		1.0 / (types[type].freq[0] *
@@ -588,7 +607,7 @@ static float load_level(void)
 			if (model<2000) return raw_data[UPS_LOAD]*1.66;
 			if (model>=2000) return raw_data[UPS_LOAD]*110.0/load2ki[voltage];
 		}
-	} else if ( !strcmp(types[type].name, "IMP")) {
+	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		return raw_data[UPS_LOAD];
 	}
 	return raw_data[STATUS_A] & MAINS_FAILURE ?
@@ -644,7 +663,7 @@ static float batt_level(void)
 			return 30.0+(battval-bat29)*70.0/(bat100-bat29);
 		return 100;
 	}
-	if ( !strcmp(types[type].name, "IMP"))
+	if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI"))
 		return raw_data[BATTERY_CHARGE];
 	return raw_data[STATUS_A] & ONLINE ? /* Are we on battery power? */
 		/* Yes */
@@ -885,10 +904,10 @@ void upsdrv_initups(void)
 	types[type].flowControl.setup_flow_control();
 
 	/* Setup Model and LineVoltage */
-	if (!strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN") || !strcmp(types[type].name, "IMP")){
+	if (!strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN") || !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		if (!ups_getinfo()) return;
 		/* Give "BNT-other" a chance! */
-		if (raw_data[MODELNAME]==0x42 || raw_data[MODELNAME]==0x4B){
+		if (raw_data[MODELNAME]==0x42 || raw_data[MODELNAME]==0x4B || raw_data[MODELNAME]==0x4F){
 			model=BNTmodels[raw_data[MODELNUMBER]/16];
 			if (!strcmp(types[type].name, "BNT-other"))
 				types[type].name="BNT-other";
@@ -897,6 +916,9 @@ void upsdrv_initups(void)
 			else if (raw_data[MODELNAME]==0x4B){
 				types[type].name="KIN";
 				model=KINmodels[raw_data[MODELNUMBER]/16];
+			} else if (raw_data[MODELNAME]==0x4F){
+				types[type].name="OPTI";
+				model=OPTImodels[raw_data[MODELNUMBER]/16];
 			}
 		}
 		else if (raw_data[UPSVERSION]==0xFF){
@@ -904,7 +926,11 @@ void upsdrv_initups(void)
 			model=IMPmodels[raw_data[MODELNUMBER]/16];
 		}
 		linevoltage=voltages[raw_data[MODELNUMBER]%16];
-		snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
+		if (!strcmp(types[type].name, "OPTI")) {
+			snprintf(buf,sizeof(buf),"%s-%d",types[type].name,model);
+		} else {
+			snprintf(buf,sizeof(buf),"%s-%dAP",types[type].name,model);
+		}
 		if (!strcmp(modelname, "Unknown"))
 			modelname=buf;
 		upsdebugx(1,"Detected: %s , %dV",buf,linevoltage);
@@ -962,7 +988,7 @@ void upsdrv_help(void)
 	printf("\n");
 	printf("Specify UPS information in the ups.conf file.\n");
 	printf(" type:          Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT',\n");
-	printf("                 'BNT-other' (default: 'Trust')\n");
+	printf("                 'BNT-other', 'OPTI' (default: 'Trust')\n");
 	printf("                'BNT-other' is a special type intended for BNT 100-120V models,\n");
 	printf("                 but can be used to override ALL models.\n");
 	printf("You can additional specify these variables:\n");
@@ -1042,7 +1068,7 @@ void upsdrv_makevartable(void)
 		//        1         2         3         4         5         6         7         8
 		//2345678901234567890123456789012345678901234567890123456789012345678901234567890 MAX
 	addvar(VAR_VALUE, "type",
-		"Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other'\n"
+		"Type of UPS: 'Trust','Egys','KP625AP','IMP','KIN','BNT','BNT-other','OPTI'\n"
 		" (default: 'Trust')");
 	addvar(VAR_VALUE, "manufacturer",
 		"Manufacturer name (default: 'PowerCom')");
