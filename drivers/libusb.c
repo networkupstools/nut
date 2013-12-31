@@ -33,9 +33,6 @@
 #include "usb-common.h"
 #include "libusb.h"
 
-/* USB standard timeout */
-#define USB_TIMEOUT 5000
-
 #define USB_DRIVER_NAME		"USB communication driver"
 #define USB_DRIVER_VERSION	"0.32"
 

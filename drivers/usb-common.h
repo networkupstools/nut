@@ -25,6 +25,9 @@
 #include <regex.h>
 #include <usb.h>
 
+/* USB standard timeout [ms] */
+#define USB_TIMEOUT 5000
+
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
  * the 5 pieces of information by which a USB device identifies
