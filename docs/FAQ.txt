@@ -262,7 +262,7 @@ running.  Maybe your state path is not configured properly.
 Check your syslog.  upsd will complain regularly if it can't
 connect to a driver, and it should say why it can't connect.
 
-Note: if you jumped in with both feet and didn't follow the INSTALL
+Note: if you jumped in with both feet and didn't follow the INSTALL.nut
 document, you probably started upsd by itself.  You have to run
 'upsdrvctl start' to start the drivers after configuring ups.conf.
 

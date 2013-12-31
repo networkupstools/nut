@@ -173,7 +173,7 @@ for this software.
 If you use one of the --with-user and --with-group options, then
 you have to use the other one too. 
 
-See the INSTALL document and the FAQ for more on this topic.
+See the INSTALL.nut document and the FAQ for more on this topic.
 
 	--with-logfacility=FACILITY
 

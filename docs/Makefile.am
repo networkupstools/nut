@@ -90,7 +90,7 @@ ups-html.txt: ../data/driver.list.in
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
 FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
-	../INSTALL ../UPGRADING ../TODO ../scripts/ufw/README
+	../INSTALL.nut ../UPGRADING ../TODO ../scripts/ufw/README
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README ../TODO ../lib/README \
 	../tools/nut-scanner/README
