@@ -446,6 +446,7 @@ SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
 	blazer-common.txt	\
 	blazer_usb.txt	\
+	nutdrv_atcl_usb.txt \
 	nutdrv_qx.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
@@ -455,6 +456,7 @@ SRC_USB_LIBUSB_PAGES = \
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
+	nutdrv_atcl_usb.8 \
 	nutdrv_qx.8	\
 	richcomm_usb.8 \
 	riello_usb.8	\
@@ -469,6 +471,7 @@ HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
 	nutdrv_qx.html	\
+	nutdrv_atcl_usb.html \
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
