@@ -27,7 +27,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -50,7 +50,7 @@ upsdrv_info_t upsdrv_info = {
 #define USB_ERR_LIMIT	10	/* start limiting after 10 in a row */
 #define USB_ERR_RATE	10	/* then only print every 10th error */
 
-static usb_device_id_t richcomm_usb_id[] = {
+static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
 	{ USB_DEVICE(0x0001, 0x0000),  NULL /* TODO: match string descriptors, to avoid confusion with other 0001:0000 devices */ },
 
@@ -64,7 +64,7 @@ static unsigned int	comm_failures = 0;
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
-	switch (is_usb_device_supported(richcomm_usb_id, device))
+	switch (is_usb_device_supported(atcl_usb_id, device))
 	{
 	case SUPPORTED:
 		return 1;
@@ -165,18 +165,6 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 		return -1;
 	}
 
-#if 0
-	if (usb_set_altinterface(handle, 0) < 0) {
-		upsdebugx(5, "Can't set USB alternate interface");
-		return -1;
-	}
-
-	if (usb_clear_halt(handle, 0x81) < 0) {
-		upsdebugx(5, "Can't reset USB endpoint");
-		return -1;
-	}
-#endif
-
 	/* TODO: HID SET_IDLE to 0 */
 
 	return 1;
@@ -219,7 +207,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i, ret;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
+			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
 			
 			/* supported vendors are now checked by the supplied matcher */
@@ -310,7 +298,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				 * it forces device claiming by unbinding
 				 * attached driver... From libhid */
 				if (usb_detach_kernel_driver_np(handle, 0) < 0) {
-					upsdebugx(4, "failed to detach kernel driver from USB device: %s", usb_strerror());
+					upsdebugx(1, "failed to detach kernel driver from USB device: %s", usb_strerror());
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
@@ -340,7 +328,7 @@ void upsdrv_initups(void)
 
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 
-		if ((i < 32) && (sleep(5) == 0)) {
+		if ((i < 3) && (sleep(5) == 0)) {
 			usb_comm_fail("Can't open USB device, retrying ...");
 			continue;
 		}
@@ -396,7 +384,7 @@ void upsdrv_updateinfo(void)
 
 	ret = query_ups(reply);
 
-	if (ret != 8) {
+	if (ret != STATUS_PACKETSIZE) {
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
@@ -413,12 +401,15 @@ void upsdrv_updateinfo(void)
 
 	switch(reply[0]) {
 		case 3:
+			upsdebugx(2, "reply[0] = 0x%02x -> OL", reply[0]);
 			status_set("OL");
 			break;
 		case 2:
+			upsdebugx(2, "reply[0] = 0x%02x -> LB", reply[0]);
 			status_set("LB");
 			/* fall through */
 		case 1:
+			upsdebugx(2, "reply[0] = 0x%02x -> OB", reply[0]);
 			status_set("OB");
 			break;
 		default:
@@ -434,7 +425,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	/*
-	 * This packet shuts down the UPS (so far, only tested when not on line power):
+	 * This packet seems to be what would shut down the UPS, but does not appear to work:
 	 */
 	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
