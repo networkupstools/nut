@@ -1034,7 +1034,10 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 
 int upscli_connect(UPSCONN_t *ups, const char *host, int port, int flags)
 {
-	return upscli_tryconnect(ups,host,port,flags,NULL);
+	struct timeval timeout;
+	timeout.tv_sec = 10;
+	timeout.tv_usec = 0;
+	return upscli_tryconnect(ups,host,port,flags,&timeout);
 }
 
 /* map upsd error strings back to upsclient internal numbers */
