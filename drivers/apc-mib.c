@@ -72,7 +72,7 @@ static info_lkp_t apcc_pwr_info[] = {
     { 1, "" },          /* unknown  */
     { 2, "OL" },        /* onLine */
     { 3, "OB" },        /* onBattery */
-    { 4, "BOOST" },     /* onSmartBoost */
+    { 4, "OL BOOST" },     /* onSmartBoost */
     { 5, "OFF" },       /* timedSleeping */
     { 6, "OFF" },       /* softwareBypass  */
     { 7, "OFF" },       /* off */
@@ -80,7 +80,7 @@ static info_lkp_t apcc_pwr_info[] = {
     { 9, "BYPASS" },    /* switchedBypass */
     { 10, "BYPASS" },   /* hardwareFailureBypass */
     { 11, "OFF" },      /* sleepingUntilPowerReturn */
-    { 12, "TRIM" },     /* onSmartTrim */
+    { 12, "OL TRIM" },     /* onSmartTrim */
     { 0, "NULL" }
 } ;
 
