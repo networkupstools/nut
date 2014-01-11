@@ -16,6 +16,7 @@ SUPPORTED HARDWARE
 ------------------
 
 The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS:
+
 *ietf*::
 UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps others (default)
 
@@ -56,15 +57,15 @@ This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
 *mibs*='name'::
-Set MIB compliance (default=auto, allowed entries: refer to the above SUPPORTED HARDWARE).
+Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE above).
 With "auto", the driver will try a select set of SNMP objects until it finds
-one that the device responds to.  Note that, since NUT 2.6.2, snmp-ups has a new
-method that uses sysObjectID, which is a pointer to the prefered MIB of the
-device, to detect supported devices.  This renders void the use of 'mib' option.
+one that the device responds to.  Note that since NUT 2.6.2, snmp-ups has a new
+method that uses sysObjectID (which is a pointer to the prefered MIB of the
+device) to detect supported devices.  This renders void the use of "mibs" option.
    
 *community*='name'::
 Set community name (default = public).
-Note that you require a RW community name to change UPS settings (as for a powerdown).
+Note that a RW community name is required to change UPS settings (as for a powerdown).
 
 *snmp_version*='version'::
 Set SNMP version (default = v1, allowed: v2c, v3)
@@ -107,27 +108,28 @@ http://www.net-snmp.org/ before building this driver.
 
 SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
-LIMITATION
-----------
+LIMITATIONS
+-----------
 Shutdown
 ~~~~~~~~
 
-This driver does not provide a proper upsdrv_shutdown() function. There probably
-never will be one, since at the time this script should run (near the end of
-the system halt script), there will be no network capabilities anymore.
-Probably the only way to shutdown an SNMP UPS is by sending it a shutdown
-with delay command through linkman:upscmd[8] and hope for the best that the
-system will have finished shutting down before the power is cut.
+The shutdown sequence should be tested before relying on NUT to send a
+shutdown command to the UPS. The problem is that the host network stack may
+have been torn down by the time the driver is invoked to send the shutdown
+command. The driver attempts to send +shutdown.return+, +shutdown.reboot+,
+and +load.off.delay+ commands to the UPS in sequence, stopping after the first
+supported command.
 
 INSTALLATION
 ------------
-This driver is only built if the Net-SNMP development files are present on the system.
-You can also force it to be built by using "configure --with-snmp=yes" before calling make.
+This driver is only built if the Net-SNMP development files are present at
+configuration time.  You can also force it to be built by using
++configure --with-snmp=yes+ before calling make.
 
-IMPLEMENTATION
---------------
+EXAMPLES
+--------
 The hostname of the UPS is specified with the "port" value in
-`ups.conf`, i.e.:
+`ups.conf`:
 
 	[snmpv1]
 		driver = snmp-ups
