@@ -643,6 +643,7 @@
 "MicroDowell"	"ups"	"1"	"B.Box BP  750"	""	"powerpanel"
 "MicroDowell"	"ups"	"1"	"B.Box BP 1000"	""	"powerpanel"
 "MicroDowell"	"ups"	"1"	"B.Box BP 1500"	""	"powerpanel"
+"MicroDowell"	"ups"	"1"	"B.Box LP  500"	""	"genericups upstype=7"
 "MicroDowell"	"ups"	"5"	"Enterprise B8"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise B10"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise N8"	""	"microdowell"
