@@ -28,7 +28,7 @@ LAYOUT_FILES = css/ie-overrides.css \
 SCRIPT_FILES = scripts/filter_png.js \
 	scripts/jquery.js \
 	scripts/nut_jquery.js \
-	scripts/toc.js
+	scripts/asciidoc.js
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html \
