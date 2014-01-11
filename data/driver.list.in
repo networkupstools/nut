@@ -99,8 +99,10 @@
 
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
 "Atlantis Land"	"ups"	"2"	"A03-P551"	"USB"	"blazer_usb langid_fix=0x0409"	# http://www.atlantisland.it/pub/prodotti.php?famiglia=1&l1=7&l2=24&articolo=QTAzLVA1NTE=
+"Atlantis Land"	"ups"	"2"	"HostPower 851 (A03-HP851)"	"USB"	"nutdrv_qx"
 "Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"nutdrv_qx"
 "Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"2"	"OnePower 841+ (A03-P841)"	"USB"	"nutdrv_qx"
 "Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
 "Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
 
@@ -1069,6 +1071,9 @@
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Prosine 800"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Prosine 800"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Vesta LED 850VA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
 
