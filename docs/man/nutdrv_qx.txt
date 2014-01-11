@@ -17,7 +17,7 @@ For information about the core driver, see linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Mustek', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with the 'voltronic' <<_extra_arguments,protocol>>) and many others.
+The *nutdrv_qx* driver is known to work with various UPSes from 'Blazer', 'Energy Sistem', 'Fenton Technologies', 'General Electric', 'Mustek', 'Voltronic Power' (rebranded by many, many - have I said many? - others.. Long story short: if your UPS came with a software called 'Viewpower', chances are high that it works with this driver with one of the 'voltronic*' <<_extra_arguments,protocols>>) and many others.
 
 The <<_internet_resources,NUT compatibility table>> lists all the known supported models.
 Keep in mind, however, that other models not listed there may also be supported, but haven't been tested.
@@ -35,22 +35,24 @@ The following are the ones that most likely will need changing (see linkman:ups.
 *ondelay =* 'value'::
 Time to wait before switching on the UPS (seconds).
 This value is truncated to units of 60 seconds.
-The acceptable range is +0..599940+ seconds.
++
 Note that a value below 3 minutes, may cause earlier firmware versions to not switch on automatically, so it defaults to 3 minutes (i.e. 180 seconds).
++
 This option provides a default value for *ups.delay.start* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.start* with linkman:upsrw[8].
 
 *offdelay =* 'value'::
 Time to wait before shutting down the UPS (seconds).
 This value is truncated to units of 6 seconds (less than 60 seconds) or 60 seconds (more than 60 seconds).
 Defaults to 30 seconds.
++
 This option provides a default value for *ups.delay.shutdown* that will then be used by the driver in the automatic shutdown sequence (i.e. calling the driver with the *-k* option, calling linkman:upsdrvctl[8] with the *shutdown* option or when the +FSD+ flag is set and linkman:upsmon[8] enters its shutdown sequence): however you can change this value `on the fly' for the actual session, only for the use with instant commands, setting *ups.delay.shutdown* with linkman:upsrw[8].
 
 *stayoff*::
-If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *shutdown.stayoff* shutting down after *ups.delay.shutdown* seconds and won't return, otherwise (standard behaviour) the UPS will call *shutdown.return* shutting down after *ups.delay.shutdown* seconds and then turn on after *ups.delay.start* seconds (if mains meanwhile returned).
+If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *shutdown.stayoff* shutting down after *ups.delay.shutdown* seconds and won't return (see <<_known_problems,KNOWN PROBLEMS>>), otherwise (standard behaviour) the UPS will call *shutdown.return* shutting down after *ups.delay.shutdown* seconds and then turn on after *ups.delay.start* seconds (if mains meanwhile returned).
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic' and 'zinto'.
+Supported values: 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs' and 'zinto'.
 +
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
@@ -105,6 +107,9 @@ Only used if *runtimecal* is also specified.
 MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
+
 *offdelay*::
 The acceptable range is +12..600+ seconds.
 
@@ -120,8 +125,21 @@ Setting this flag will make the driver skip this step.
 Q1 PROTOCOL
 ~~~~~~~~~~~
 
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
+
 *offdelay*::
 The acceptable range is +12..600+ seconds.
+
+
+VOLTRONIC-QS PROTOCOL
+~~~~~~~~~~~~~~~~~~~~~
+
+*ondelay*::
+The acceptable range is +60..599940+ seconds.
+
+*offdelay*::
+The acceptable range is +12..540+ seconds.
 
 
 VOLTRONIC PROTOCOL
@@ -129,6 +147,9 @@ VOLTRONIC PROTOCOL
 
 The following options are supported only by the 'voltronic' protocol.
 Not all of them are available on all the UPSes supported by this protocol.
+
+*ondelay*::
+The acceptable range is +0..599940+ seconds.
 
 *offdelay*::
 The acceptable range is +12..5940+ seconds.
@@ -548,6 +569,20 @@ Some models report a bogus value for the beeper status (will always be 'enabled'
 So, the *beeper.toggle* command may appear to have no effect in the status reported by the driver when, in fact, it is working fine.
 
 The temperature and load value is known to be bogus in some models.
+
+
+VOLTRONIC-QS UNITS
+~~~~~~~~~~~~~~~~~~
+
+Both *load.off* and *shutdown.stayoff* instant commands are known to work as expected (i.e. turn the load off indefinitely) only if mains is present, otherwise, as soon as mains returns the load will be powered.
+
+After issuing a *shutdown.return* instant command, the UPS won't wait *ondelay* before powering on the load, provided the following conditions are met:
+
+- if the load has been previously (no matter how long before) powered off through *load.off*/*shutdown.stayoff* _and_ powered on through *load.on*/*shutdown.stop* _and_
+- if AC wasn't cut after issuing the *load.off*/*shutdown.stayoff* (i.e. the UPS didn't turn itself off) _and_
+- if there's a power outage after issuing the *shutdown.return* command
+
+In this case, as soon as mains returns the load will be powered.
 
 
 UPS WARNINGS (VOLTRONIC PROTOCOL)
