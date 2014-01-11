@@ -18,6 +18,17 @@ include Kanji and Plexus. The UPS interface seems to be a USB frontend to a
 traditional contact-closure interface, which translates into only three states
 in ups.status: *OL*, *OB* and *OB LB*.  See also linkman:genericups[8].
 
+EXTRA ARGUMENTS
+---------------
+
+This driver also supports the following optional setting:
+
+*vendor*='name'::
+In case your iManufacturer string does not exactly match +ATCL FOR UPS+, you
+may provide an alternate string here. Note that a more likely case is that your
+device is handled by another driver for 0001:0000 devices, such as
+linkman:nutdrv_qx[8].
+
 BUGS
 ----
 The UPS returns the same code for "load power is off" as for "on line power".
@@ -36,7 +47,7 @@ that allows detection and proper load cycling on command.
 AUTHORS
 -------
 
-Charles Lepple <clepple+nut@gmail.com>
+Charles Lepple
 
 SEE ALSO
 --------
@@ -48,6 +59,10 @@ linkman:nutupsdrv[8]
 The generic serial driver:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 linkman:genericups[8]
+
+The Qx driver:
+~~~~~~~~~~~~~~
+linkman:nutdrv_qx[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

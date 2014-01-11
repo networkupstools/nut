@@ -27,7 +27,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -50,9 +50,11 @@ upsdrv_info_t upsdrv_info = {
 #define USB_ERR_LIMIT	10	/* start limiting after 10 in a row */
 #define USB_ERR_RATE	10	/* then only print every 10th error */
 
+#define USB_VENDOR_STRING "ATCL FOR UPS"
+
 static usb_device_id_t atcl_usb_id[] = {
 	/* ATCL FOR UPS */
-	{ USB_DEVICE(0x0001, 0x0000),  NULL /* TODO: match string descriptors, to avoid confusion with other 0001:0000 devices */ },
+	{ USB_DEVICE(0x0001, 0x0000),  NULL },
 
 	/* end of list */
 	{-1, -1, NULL}
@@ -64,10 +66,30 @@ static unsigned int	comm_failures = 0;
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
+	char *requested_vendor;
 	switch (is_usb_device_supported(atcl_usb_id, device))
 	{
 	case SUPPORTED:
-		return 1;
+		if(!strcmp(device->Vendor, USB_VENDOR_STRING)) {
+			return 1;
+		}
+		/* Didn't match, but the user provided an alternate vendor ID: */
+		requested_vendor = getval("vendor");
+		if(requested_vendor) {
+			if(!strcmp(device->Vendor, requested_vendor)) {
+				upsdebugx(3, "Matched device with vendor='%s'.", requested_vendor);
+				return 1;
+			} else {
+				upsdebugx(2, "idVendor=%04x and idProduct=%04x, but provided vendor '%s' does not match device: '%s'.",
+					device->VendorID, device->ProductID, requested_vendor, device->Vendor);
+				return 0;
+			}
+		}
+
+		/* TODO: automatic way of suggesting other drivers? */
+		upsdebugx(2, "idVendor=%04x and idProduct=%04x, but device vendor string '%s' does not match expected string '%s'. Have you tried the nutdrv_qx driver?",
+					device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
+		return 0;
 
 	case POSSIBLY_SUPPORTED:
 	case NOT_SUPPORTED:
@@ -326,6 +348,8 @@ void upsdrv_initups(void)
 {
 	int	i;
 
+	upsdebugx(1, "Searching for USB device...");
+
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 
 		if ((i < 3) && (sleep(5) == 0)) {
@@ -430,10 +454,12 @@ void upsdrv_shutdown(void)
 	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
+	upslogx(LOG_DEBUG, "%s: attempting to call usb_interrupt_write(01 00 00 00 00 00 00 00)", __func__);
+
 	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upsdebugx(LOG_NOTICE, "%s: first usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
+		upslogx(LOG_NOTICE, "%s: first usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
 	}
 
 	/* Totally guessing from the .pcap file here: */
@@ -442,7 +468,7 @@ void upsdrv_shutdown(void)
 	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
 
 	if (ret <= 0) {
-		upsdebugx(LOG_ERR, "%s: second usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
+		upslogx(LOG_ERR, "%s: second usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
 	}
 
 }
