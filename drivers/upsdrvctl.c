@@ -329,20 +329,21 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		fatal_with_errno(EXIT_FAILURE, "execv");
 	}
 	
-	res = WaitForSingleObject(ProcessInformation.hProcess, (ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
+	/* Wait a bit then look at driver process.
+	 Unlike under Linux, Windows spwan drivers directly. If the driver is alive, all is OK.
+	 An optimization can probably be implemented to prevent waiting so much time when all is OK.
+	 */
+	res = WaitForSingleObject(ProcessInformation.hProcess,
+			(ups->maxstartdelay!=-1?ups->maxstartdelay:maxstartdelay)*1000);
 	
-if (res == WAIT_TIMEOUT) {
-		upslogx(LOG_WARNING, "Startup timer elapsed, continuing...");
-		exec_error++;
-		return;
-	}
-	
-	GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
-	if( ret != 0) {
+	if (res != WAIT_TIMEOUT) {
+		GetExitCodeProcess( ProcessInformation.hProcess, &exit_code );
 		upslogx(LOG_WARNING, "Driver failed to start (exit status=%d)", ret);
 		exec_error++;
 		return;
 	}
+	
+	return;
 #endif
 }
 
