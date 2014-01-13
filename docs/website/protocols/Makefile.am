@@ -13,7 +13,8 @@ EXTRA_DIST =	\
 	sec-standard.txt	\
 	sola.txt	\
 	us9003.txt	\
-	voltronic.txt
+	voltronic.txt	\
+	voltronic-qs.txt
 
 all:
 
@@ -42,7 +43,8 @@ PROTOCOLS_FILES =	\
 	sec-standard.html	\
 	sola.html	\
 	us9003.html	\
-	voltronic.html
+	voltronic.html	\
+	voltronic-qs.html
 
 # CSS based simulated frames layout.
 LAYOUT = web-layout

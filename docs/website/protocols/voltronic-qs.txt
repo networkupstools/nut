@@ -1,0 +1,235 @@
+Voltronic Power - QS Protocol
+=============================
+Daniele Pezzini <hyouko@gmail.com>
+v1.0, January 2014
+
+
+Communication
+-------------
+
+*RS232C*::
+9 pins female D-type connector - only 3 wires: TX, RX (crossed) and GND
+
+[horizontal]
+Baud rate:::
+2400 bps
+
+Data length:::
+8 bits
+
+Stop bit:::
+1 bit
+
+Parity:::
+none
+
+*USB*::
+Serial over USB with 'cypress' protocol
+
+
+Accepted queries and commands
+-----------------------------
+
+All commands, queries and UPS's replies are terminated by +<cr>+
+
+
+UPS replies
+~~~~~~~~~~~
+
+Two implementations are known:
+
+1. {empty}
++
+- Invalid commands or queries will be echoed back
+- Accepted commands will be followed by action without any further reply
+
+2. {empty}
++
+- *+(ACK+* -> Command accepted
+- *+(NAK+* -> Command/Query rejected or invalid
+
+In both cases:
+
+- Valid queries will get a reply terminated by +<cr>+
+- Unavailable or not supported data is filled with *+-+*.
+
+
+UPS status
+~~~~~~~~~~
+
+[horizontal]
+*+QS+*::
+Query UPS for status
++
+.Reply
+----
+(MMM.M NNN.N PPP.P QQQ RR.R SS.S TT.T b7..b0
+----
++
+.e.g.
+----
+(209.7 209.7 219.7 020 50.0 41.8 23.3 00000001
+----
++
+.Alternative reply
+----
+(MMM.M NNN.N PPP.P QQQ RR.R S.SS TT.T b7..b0
+----
++
+.e.g.
+----
+(002.9 000.0 000.0 000 00.0 2.02 21.0 10000001
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Input voltage
+
++NNN.N+::
+Fault voltage
+
++PPP.P+::
+Output voltage
+
++QQQ+::
+Load level (%)
+
++RR.R+::
+Output frequency (Hz)
+
++SS.S+::
+Battery voltage [or +S.SS+]
+
++TT.T+::
+UPS temperature (° Celsius)
+
++b7..b0#+::
+-> 8 bit status - *+1+* means:
++
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|bit#	|Description
+|7	|Utility Fail (Immediate)
+|6	|Battery Low
+|5	|Bypass/Boost or Buck Active
+|4	|UPS Failed
+|3	|UPS Type is Standby
+
+*+0+* is Online
+
+|2	|Test in progress
+|1	|Shutdown Active
+|0	|Beeper On
+|====
+--
+
+
+Rated informations
+~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+*+F+*::
+Query UPS for rated informations
++
+.Reply
+----
+#MMM.M NNN PPP.P QQ.Q
+----
++
+.e.g.
+----
+#220.0 004 036.0 50.0
+----
++
+Where:
++
+--
+[horizontal]
++MMM.M+::
+Rating voltage
+
++NNN+::
+Rating current (Ampère)
+
++PPP.P+::
+Battery voltage [or +PP.PP+]
+
++QQ.Q+::
+Nominal frequency (Hz)
+--
+
+*+M+*::
+Query UPS for manufacturer
++
+.Reply
+----
+V
+----
++
+Where:
++
+--
+[horizontal]
++V+::
+**'V'**oltronic Power (UPS manufacturer)
+--
+
+
+Shutdown management
+~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+[[SnRm]]*+SnRm+*::
+Shutdown in *+n+* (+.2+->++.9++, +01+->++09++) minutes and then turn on after *+m+* (+0001+..+9999+) minutes
+
+[[SnR0000]]*+SnR0000+*::
+Shutdown in *+n+* (+.2+->++.9++, +01+->++09++) minutes and stay off
+
+[[C]]*+C+*::
+Cancel the *+SnRm+*/*+SnR0000+* commands:
++
+- If executed before *+n+* time has elapsed -> cancel shutdown
+- If executed after *+n+* time has elapsed _and_ mains is present -> the UPS output is turned on
+
+
+Battery test
+~~~~~~~~~~~~
+
+[horizontal]
+*+T+*::
+Invoke a quick battery self-test
+
+
+Buzzer control
+~~~~~~~~~~~~~~
+
+[horizontal]
+*+Q+*::
+Toggle the UPS beeper
+
+
+Known problems
+--------------
+
+<<SnR0000,*+SnR0000+* command>> is known to work as expected (i.e. turn the load off indefinitely) only if mains is present, otherwise, as soon as mains returns the load will be powered.
+
+After issuing a <<SnRm,*+SnRm+* command>>, the UPS won't wait *+m+* minutes before powering on the load, provided the following conditions are met:
+
+- if the load has been previously (no matter how long before) powered off through <<SnR0000,*+SnR0000+* command>> _and_ powered on through <<C,*+C+* command>> _and_
+- if AC wasn't cut after issuing the <<SnR0000,*+SnR0000+* command>> (i.e. the UPS didn't turn itself off) _and_
+- if there's a power outage after issuing the <<SnRm,*+SnRm+* command>>
+
+In this case, as soon as mains returns the load will be powered.
+
+
+Revision History
+----------------
+
+[cols="1^.^,2^.^,5.^,2.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Rev.	|Date		|Description									|Author
+|1.0	|01/2014	|Initial release								|Daniele Pezzini
+|====

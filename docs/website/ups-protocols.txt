@@ -158,3 +158,4 @@ Voltronic Power
 ---------------
 
 - link:protocols/voltronic.html[Voltronic Power UPS Protocol] - unofficial decoding work
+- link:protocols/voltronic-qs.html[Voltronic Power - QS Protocol] - unofficial decoding work
