@@ -1,7 +1,7 @@
 Voltronic Power UPS Protocol
 ============================
 Daniele Pezzini <hyouko@gmail.com>
-v1.1, October 2013
+v1.2, January 2014
 
 
 Communication
@@ -17,9 +17,11 @@ Baud rate:::
 Data length:::
 8 bits
 
-Stop bit::: 1 bit
+Stop bit:::
+1 bit
 
-Parity::: none
+Parity:::
+none
 
 *USB*::
 Serial over USB with 'cypress' protocol
@@ -33,6 +35,7 @@ All commands, queries and UPS's replies are terminated by +<cr>+
 Command begginning with *+Q+* -> query
 
 
+[[ups-replies]]
 UPS replies
 ~~~~~~~~~~~
 
@@ -557,13 +560,13 @@ e.g.
 e.g.
 
 +(PI98+::
-Old models -> megatech
+Old models -> link:megatec.html[megatec] with <<ups-replies,*+(ACK+*/*+(NAK+* replies>>
 
 +(PI99+::
 e.g.
 
 +(NAK+::
-Old models -> megatech
+Old models -> link:megatec.html[megatec] with <<ups-replies,*+(ACK+*/*+(NAK+* replies>>
 --
 
 
@@ -1336,12 +1339,13 @@ UPS
 Set device grid working range to *+n+* (+00+ -> Appliance or +01+ -> UPS)
 
 
+[[not-supported]]
 Old/Megatec commands not supported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 [horizontal]
 *+M+*::
-*{sp}unknown *
+Manufacturer, from link:voltronic-qs.html[Voltronic Power QS protocol]
 
 *+Q+*::
 Beeper Toggle
@@ -1560,4 +1564,5 @@ Revision History
 |Rev.	|Date		|Description									|Author
 |1.0	|04/2013	|Initial release								|Daniele Pezzini
 |1.1	|10/2013	|Add some unused <<capability-options,capability options>> (*+M+*, *+Z+*)	|Daniele Pezzini
+|1.2	|01/2014	|Fix typos, add description of <<not-supported,not supported *+M+* command>>	|Daniele Pezzini
 |====
