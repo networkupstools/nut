@@ -268,5 +268,7 @@ nutscan_get_serial_ports_list.3
 nutscan_scan_eaton_serial.3
 nutscan_get_serial_ports_list.html
 nutscan_scan_eaton_serial.html
+nutdrv_atcl_usb.8
+nutdrv_atcl_usb.html
 nutdrv_qx.8
 nutdrv_qx.html

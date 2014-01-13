@@ -1,7 +1,7 @@
 /*
  * nutdrv_atcl_usb.c - driver for generic-brand "ATCL FOR UPS"
  *
- * Copyright (C) 2013 Charles Lepple <clepple+nut@gmail.com>
+ * Copyright (C) 2013-2014 Charles Lepple <clepple+nut@gmail.com>
  *
  * Loosely based on richcomm_usb.c,
  * Copyright (C) 2007 Peter van Valderen <p.v.valderen@probu.nl>
@@ -27,7 +27,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"1.0"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -87,8 +87,9 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 		}
 
 		/* TODO: automatic way of suggesting other drivers? */
-		upsdebugx(2, "idVendor=%04x and idProduct=%04x, but device vendor string '%s' does not match expected string '%s'. Have you tried the nutdrv_qx driver?",
-					device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
+		upsdebugx(2, "idVendor=%04x and idProduct=%04x, but device vendor string '%s' does not match expected string '%s'. "
+				"Have you tried the nutdrv_qx driver?",
+				device->VendorID, device->ProductID, device->Vendor, USB_VENDOR_STRING);
 		return 0;
 
 	case POSSIBLY_SUPPORTED:
@@ -178,16 +179,16 @@ static void usb_comm_good(void)
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 {
 	if (usb_set_configuration(handle, 1) < 0) {
-		upsdebugx(5, "Can't set USB configuration");
+		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
 		return -1;
 	}
 
 	if (usb_claim_interface(handle, 0) < 0) {
-		upsdebugx(5, "Can't claim USB interface");
+		upslogx(LOG_WARNING, "Can't claim USB interface: %s", usb_strerror());
 		return -1;
 	}
 
-	/* TODO: HID SET_IDLE to 0 */
+	/* TODO: HID SET_IDLE to 0 (not necessary?) */
 
 	return 1;
 }
@@ -312,7 +313,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 				ret = callback(handle, device);
 				if (ret >= 0) {
-					upsdebugx(4, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
+					upsdebugx(3, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
 					return ret;
 				}
 #ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
@@ -336,7 +337,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	}
 
 	*handlep = NULL;
-	upsdebugx(4, "No matching USB device found");
+	upsdebugx(3, "No matching USB device found");
 
 	return -1;
 }
@@ -446,11 +447,11 @@ void upsdrv_updateinfo(void)
 	status_commit();
 }
 
+/* If the UPS is on battery, it should shut down about 30 seconds after
+ * receiving this packet.
+ */
 void upsdrv_shutdown(void)
 {
-	/*
-	 * This packet seems to be what would shut down the UPS, but does not appear to work:
-	 */
 	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
@@ -462,7 +463,7 @@ void upsdrv_shutdown(void)
 		upslogx(LOG_NOTICE, "%s: first usb_interrupt_write() failed: %s", __func__, ret ? usb_strerror() : "timeout");
 	}
 
-	/* Totally guessing from the .pcap file here: */
+	/* Totally guessing from the .pcap file here. TODO: configurable delay? */
 	usleep(170*1000);
 
 	ret = usb_interrupt_write(udev, SHUTDOWN_ENDPOINT, (char *)shutdown_packet, SHUTDOWN_PACKETSIZE, ATCL_USB_TIMEOUT);
