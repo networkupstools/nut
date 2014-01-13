@@ -439,6 +439,8 @@
 
 "Jageson Technology"	"ups"	"1"	"Jasuny USPS"	""	"genericups upstype=4"
 
+"Kanji"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"
+
 "Kebo"	"ups"	"2"	"1200D/D Series"	""	"blazer_ser"
 
 "KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	""	"blazer_usb"
@@ -727,6 +729,7 @@
 
 "Plexus"	"ups"	"2"	"500VA"	"USB"	"blazer_usb"
 "Plexus"	"ups"	"2"	"1000VA Pro"	"USB"	"blazer_usb"
+"Plexus"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"
 
 "Powercom"	"ups"	"4"	"SMK"	""	"blazer_ser"
 "Powercom"	"ups"	"4"	"SXL"	""	"blazer_ser"

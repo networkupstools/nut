@@ -42,8 +42,11 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  nutdrv_qx
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
- blazer_usb richcomm_usb riello_usb nutdrv_qx
+ blazer_usb richcomm_usb riello_usb \
+ nutdrv_atcl_usb \
+ nutdrv_qx
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
+# Since HAL is deprecated anyway, don't try to build hald-addon-nutdrv_atcl_usb (the VID:PID is too generic anyway)
 HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-tripplite_usb hald-addon-blazer_usb hald-addon-riello_usb	\
  hald-addon-nutdrv_qx
@@ -185,11 +188,15 @@ bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
+nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
+nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
 richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
 
 riello_usb_SOURCES = riello.c riello_usb.c libusb.c usb-common.c
 riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+
 
 # HID-over-serial
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c

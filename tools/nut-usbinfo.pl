@@ -297,6 +297,9 @@ sub find_usbdevs
 			elsif ($nameFile eq "richcomm_usb.c") {
 				$driver="richcomm_usb";
 			}
+			elsif ($nameFile eq "nutdrv_atcl_usb.c") {
+				$driver="nutdrv_atcl_usb";
+			}
 			elsif ($nameFile eq "riello_usb.c") {
 				$driver="riello_usb";
 			}

@@ -82,6 +82,7 @@ Drivers
 - linkman:mge-utalk[8]
 - linkman:microdowell[8]
 - linkman:netxml-ups[8]
+- linkman:nutdrv_atcl_usb[8]
 - linkman:nutdrv_qx[8]
 - linkman:nutupsdrv[8]
 - linkman:oneac[8]
