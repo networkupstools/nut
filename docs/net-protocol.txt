@@ -13,12 +13,14 @@ query commands as authentication is impossible over a UDP socket.
 A library, named libupsclient, that implement this protocol is provided
 in both static and shared version to help the client application development.
 
+
 Old command removal notice
 --------------------------
 
 Before version 1.5.0, a number of old commands were supported.  These
 have been removed from the specification.  For more information, consult
 an older version of the software.
+
 
 Command reference
 -----------------
@@ -28,13 +30,14 @@ Embedded quotes are escaped with backslashes.  Embedded backslashes are
 also escaped by representing them as \\.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
 
+
 Revision history
 ----------------
 
 Here's a table to present the various changes that happened to the
 NUT network protocol, over the time:
 
-[options="header",style="asciidoc",cols="^.^,^.^,<"]
+[options="header,autowidth",frame="topbot",grid="rows",cols="^.^,^.^,<",align="center"]
 |===============================================================================
 |Protocol version |NUT version |Description
 |1.0              |< 1.5.0     |Original protocol (legacy version)
@@ -46,12 +49,14 @@ NUT network protocol, over the time:
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
 in *configure.in*.
 
+
 GET
 ---
 
 Retrieve a single response from the server.
 
 Possible sub-commands:
+
 
 NUMLOGINS
 ~~~~~~~~~
@@ -72,6 +77,7 @@ still connected when starting the shutdown process.
 
 This replaces the old "REQ NUMLOGINS" command.
 
+
 UPSDESC
 ~~~~~~~
 
@@ -91,6 +97,7 @@ is not set, upsd will return "Unavailable".
 This can be used to provide human-readable descriptions instead of a
 cryptic "upsname@hostname" string.
 
+
 VAR
 ~~~
 
@@ -105,6 +112,7 @@ Response:
 	VAR su700 ups.status "OL"
 
 This replaces the old "REQ" command.
+
 
 TYPE
 ~~~~
@@ -131,6 +139,7 @@ The default <type>, when omitted, is integer.
 
 This replaces the old "VARTYPE" command.
 
+
 DESC
 ~~~~
 
@@ -153,6 +162,7 @@ provide for localization and internationalization.
 
 This replaces the old "VARDESC" command.
 
+
 CMDDESC
 ~~~~~~~
 
@@ -170,6 +180,7 @@ This is like DESC above, but it applies to the instant commands.
 
 This replaces the old "INSTCMDDESC" command.
 
+
 LIST
 ----
 
@@ -182,6 +193,7 @@ The formatting may seem a bit redundant, but it makes a different form
 of client possible.  You can send a LIST query and then go off and wait
 for it to get back to you.  When it arrives, you don't need complicated
 state machines to remember which list is which.
+
 
 UPS
 ~~~
@@ -211,6 +223,7 @@ handle situations where a single upsd supports multiple drivers.
 
 Clients which perform a UPS discovery process may find this useful.
 
+
 VAR
 ~~~
 
@@ -233,6 +246,7 @@ Response:
 	END LIST VAR su700
 
 This replaces the old "LISTVARS" command.
+
 
 RW
 ~~
@@ -257,6 +271,7 @@ Response:
 
 This replaces the old "LISTRW" command.
 
+
 CMD
 ~~~
 
@@ -279,6 +294,7 @@ Response:
 	END LIST CMD su700
 
 This replaces the old "LISTINSTCMD" command.
+
 
 ENUM
 ~~~~
@@ -306,6 +322,7 @@ This replaces the old "ENUM" command.
 NOTE: this does not support the old "SELECTED" notation.  You must
 request the current value separately.
 
+
 RANGE
 ~~~~~
 
@@ -327,6 +344,7 @@ Response:
 	...
 	END LIST RANGE su700 input.transfer.low
 
+
 CLIENT
 ~~~~~~
 
@@ -347,6 +365,7 @@ Response:
 	CLIENT ups1 192.168.1.2
 	END LIST CLIENT ups1
 
+
 SET
 ---
 
@@ -355,6 +374,7 @@ Form:
 	SET VAR <upsname> <varname> "<value>"
 	SET VAR su700 ups.id "My UPS"
 
+
 INSTCMD
 -------
 
@@ -362,6 +382,7 @@ Form:
 
 	INSTCMD <upsname> <cmdname>
 	INSTCMD su700 test.panel.start
+
 
 LOGOUT
 ------
@@ -377,6 +398,7 @@ Response:
 
 Used to disconnect gracefully from the server.
 
+
 LOGIN
 -----
 
@@ -387,7 +409,8 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon slave" or "upsmon master" in upsd.users
 
@@ -397,6 +420,7 @@ The upsmon master will wait until the count of attached systems reaches
 
 NOTE: You probably shouldn't send this command unless you are upsmon,
 or a upsmon replacement.
+
 
 MASTER
 ------
@@ -408,12 +432,14 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon master" in upsd.users
 
 This function doesn't do much by itself.  It is used by upsmon to make
 sure that master-level functions like FSD are available if necessary.
+
 
 FSD
 ---
@@ -425,7 +451,8 @@ Form:
 Response:
 
 	OK FSD-SET	(success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon master" in upsd.users, or "FSD" action
 granted in upsd.users
@@ -443,6 +470,7 @@ no way to clear it short of restarting upsd or dropping then re-adding
 it in the ups.conf.  This may cause issues when upsd is running on a
 system that is not shut down due to the UPS event.
 
+
 PASSWORD
 --------
 
@@ -453,10 +481,12 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 Sets the password associated with a connection.  Used for later
 authentication for commands that require it.
+
 
 USERNAME
 --------
@@ -468,10 +498,12 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 Sets the username associated with a connection.  This is also used for
 authentication, specifically in conjunction with the upsd.users file.
+
 
 STARTTLS
 --------
@@ -483,11 +515,13 @@ Form:
 Response:
 
 	OK STARTTLS
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 This tells upsd to switch to TLS mode internally, so all future
 communications will be encrypted.  You must also change to TLS mode in
 the client after receiving the OK, or the connection will be useless.
+
 
 Other commands
 --------------
@@ -502,6 +536,8 @@ telnet, make sure you don't have it set to negotiate extra options.
 upsd doesn't speak telnet and will probably misunderstand your first
 request due to the extra junk in the buffer.
 
+
+[[np-errors]]
 Error responses
 ---------------
 
@@ -639,8 +675,10 @@ The value specified in the request is not valid.  This usually
 applies to a SET of an ENUM type which is using a value which is
 not in the list of allowed values.
 
+
 Future ideas
 ------------
+
 
 Dense lists
 ~~~~~~~~~~~
@@ -649,11 +687,13 @@ The LIST commands may be given the ability to handle options some day.
 For example, "LIST VARS <ups> +DESC" would return the current value
 like now, but it would also append the description of that variable.
 
+
 Command status
 ~~~~~~~~~~~~~~
 
 After sending an INSTCMD or SET, a client will eventually be able to
 poll to see whether it was completed successfully by the driver.
+
 
 Get collection
 ~~~~~~~~~~~~~~
