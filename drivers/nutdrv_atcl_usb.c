@@ -27,7 +27,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.0"
+#define DRIVER_VERSION	"1.1"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -70,7 +70,21 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 	switch (is_usb_device_supported(atcl_usb_id, device))
 	{
 	case SUPPORTED:
+		if(!device->Vendor) { 
+			upsdebugx(1, "Couldn't retrieve USB string descriptor for vendor. Check permissions?");
+			requested_vendor = getval("vendor");
+			if(requested_vendor) {
+				if(!strcmp("NULL", requested_vendor)) {
+					upsdebugx(3, "Matched device with NULL vendor string.");
+					return 1;
+				}
+			}	
+			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
+			return 0;
+		}
+
 		if(!strcmp(device->Vendor, USB_VENDOR_STRING)) {
+			upsdebugx(4, "Matched expected vendor='%s'.", USB_VENDOR_STRING);
 			return 1;
 		}
 		/* Didn't match, but the user provided an alternate vendor ID: */
@@ -480,4 +494,5 @@ void upsdrv_help(void)
 
 void upsdrv_makevartable(void)
 {
+        addvar(VAR_VALUE, "vendor", "USB vendor string (or NULL if none)");
 }
