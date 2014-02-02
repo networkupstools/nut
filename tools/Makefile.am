@@ -16,7 +16,7 @@
 # sub-directory
 SUBDIRS = . nut-scanner
 
-EXTRA_DIST = nut-usbinfo.pl nut-hclinfo.py nut-recorder.sh gitlog2changelog.py nut-snmpinfo.py
+EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh gitlog2changelog.py nut-snmpinfo.py
 
 all: nut-scanner-deps 
 
@@ -45,22 +45,9 @@ nut-scanner-deps:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-website:
-	@if python -c "import json,simplejson,lxml"; then \
-		echo "Regenerating the HTML and JSON formated HCL tables."; \
-		$(top_srcdir)/tools/nut-hclinfo.py; \
-	else \
-		echo "----------------------------------------------------------------------"; \
-		echo "Warning: either Python, or a required module (json, simplejson, lxml) "; \
-		echo "is not available."; \
-		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
-		echo "----------------------------------------------------------------------"; \
-	fi
-
 # call the USB info script upon "make dist", and if Perl is present
 # call the SNMP info script upon "make dist", and if Python is present
 # and call both for building nut-scanner
-# also generate HCL data files
 dist-hook:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files."; \
@@ -79,17 +66,6 @@ dist-hook:
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
 		echo "Skipping the USB helper files regeneration."; \
-		echo "----------------------------------------------------------------------"; \
-	fi
-
-	@if python -c "import json,simplejson,lxml"; then \
-		echo "Regenerating the HTML and JSON formated HCL tables."; \
-		$(distdir)/nut-hclinfo.py; \
-	else \
-		echo "----------------------------------------------------------------------"; \
-		echo "Warning: either Python, or a required module (json, simplejson, lxml) "; \
-		echo "is not available."; \
-		echo "Skipping the HTML and JSON formated HCL tables regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 

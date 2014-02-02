@@ -16,8 +16,7 @@ SHARED_DEPS = nut-names.txt asciidoc.conf
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
- outlets.txt scheduling.txt security.txt support.txt user-manual.txt \
- stable-hcl.txt
+ outlets.txt scheduling.txt security.txt support.txt user-manual.txt
 
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt new-clients.txt	\
@@ -57,8 +56,7 @@ ASCIIDOC_PDF = user-manual.pdf \
 	packager-guide.pdf \
 	FAQ.pdf
 
-# Force build in ./ and man/ before website 
-SUBDIRS = . man website
+SUBDIRS = man
 SUFFIXES = .txt .html .pdf
 
 all: doc
@@ -70,22 +68,8 @@ pdf: $(ASCIIDOC_PDF)
 html-single: $(ASCIIDOC_HTML_SINGLE)
 html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 
-if HAVE_ASCIIDOC
-website: html-chunked pdf
-else !HAVE_ASCIIDOC
-website:
-	@echo "Not building website documentation since 'asciidoc' was not found."
-endif !HAVE_ASCIIDOC
-
 clean-local:
 	rm -rf *.pdf *.html *.chunked docbook-xsl.css *.bak
-
-# Static HCL is generated automatically
-# This is more of a harness, since this file should have already been
-# generated, due to the top level Makefile SUBDIRS ordering (tools before docs)
-ups-html.txt: ../data/driver.list.in
-	cd ../data && $(MAKE) $(AM_MAKEFLAGS) driver.list
-	cd ../tools && $(MAKE) $(AM_MAKEFLAGS) website
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
@@ -144,4 +128,4 @@ spellcheck-interactive:
 	@echo "Documentation spell check not available since 'aspell' was not found."
 endif !HAVE_ASPELL
 
-.PHONY: html html-single pdf website
+.PHONY: html html-single pdf
