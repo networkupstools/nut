@@ -54,6 +54,7 @@ ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
+	cables.pdf	\
 	FAQ.pdf
 
 SUBDIRS = man

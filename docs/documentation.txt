@@ -9,7 +9,7 @@ User Documentation
 ifdef::website[]
 - FAQ - Frequently Asked Questions (link:docs/FAQ.html[online]) (link:docs/FAQ.pdf[PDF])
 - NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
-- Cables information (link:cables.html[online]) (link:cables.pdf[PDF])
+- Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
 endif::website[]
 ifndef::website[]
