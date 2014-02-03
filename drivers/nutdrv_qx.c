@@ -71,11 +71,13 @@
 #include "nutdrv_qx_voltronic.h"
 #include "nutdrv_qx_voltronic-qs.h"
 #include "nutdrv_qx_voltronic-qs-hex.h"
+#include "nutdrv_qx_voltronic-sunny.h"
 #include "nutdrv_qx_zinto.h"
 
 /* Master list of available subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
+	&voltronic_sunny_subdriver,
 	&voltronic_qs_subdriver,
 	&voltronic_qs_hex_subdriver,
 	&mustek_subdriver,
