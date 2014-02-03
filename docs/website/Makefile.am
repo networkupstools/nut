@@ -5,6 +5,8 @@ EXTRA_DIST = news.txt old-news.txt projects.txt website.txt \
 	ups-protocols.txt $(LAYOUT).conf $(SCRIPT_FILES) $(LAYOUT_FILES) \
 	$(FAVICON_FILES)
 
+SUBDIRS = protocols
+
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
 	images/blue-arrow.png \
@@ -26,7 +28,7 @@ LAYOUT_FILES = css/ie-overrides.css \
 SCRIPT_FILES = scripts/filter_png.js \
 	scripts/jquery.js \
 	scripts/nut_jquery.js \
-	scripts/toc.js
+	scripts/asciidoc.js
 
 WEBSITE_FILES = index.html projects.html stable-hcl.html \
 	documentation.html acknowledgements.html features.html \
@@ -86,10 +88,13 @@ endif !HAVE_ASCIIDOC
 $(OUTDIR):
 	$(RM) -r $(OUTDIR)
 	$(MKDIR_P) $(OUTDIR)/docs/man
+	$(MKDIR_P) $(OUTDIR)/protocols
 	cp -fR $(WEBSITE_FILES) css images scripts $(OUTDIR)
 	cp -fR $(WEBSITE_DEPS) $(OUTDIR)/docs/
 	cp -f ../man/man-index.html $(OUTDIR)/docs/man/
 	cp -f ../man/*.html $(OUTDIR)/docs/man/
+	cp -f protocols/*.html $(OUTDIR)/protocols/
+	cp -fR protocols/images $(OUTDIR)/protocols
 
 clean-local:
 	rm -rf $(WEBSITE_FILES) $(OUTDIR) images/

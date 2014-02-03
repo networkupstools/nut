@@ -1,0 +1,770 @@
+Phoenixtec UPS Communication Protocol
+=====================================
+
+
+UPS Communication Protocol
+--------------------------
+
+As Used On The Following SOLA/ Best Power UPS Models:
+
+*http://www.solaaust.com.au[SOLA Australia]*::
++
+--
+- SOLA 320
+- SOLA 325
+- SOLA 520
+- SOLA 525
+- SOLA 610
+- SOLA 620
+--
+
+*http://www.bestpower.com[BEST Power]*::
++
+--
+- Patriot Pro
+- Patriot Pro II
+- Fortress
+- Fortress.TeleCom
+- Best 610
+- Axxium
+--
+
+
+General
+-------
+
+This document contains specific information regarding the RS232C communication protocol for UPS models built for Best Power and SOLA.
+The protocol provides features to allow the user to:
+
+1. Monitor charger status.
+2. Monitor battery status and condition.
+3. Monitor inverter status.
+4. Monitor UPS status.
+5. Monitor the utility status.
+6. Shut off power to the UPS load
+7. Turn off power to the UPS load and allow the power to return after a user-selected amount of time
+
+NOTE: +<cr>+ as used in this document is the IBM PC ASCII code for Carriage Return.
+It has the HEX code of +0D+.
+
+The connected computer will control information exchange through a query command followed by +<cr>+.
+The UPS is case sensitive to commands received from the connected computer.
+The UPS will respond with information followed by a +<cr>+ or a specific action will take place without a serial response.
+
+Some data/functions will be different depending on whether the UPS is a standby or on-line (double-conversion) system.
+
+UPS data will be provided at a rate of 2400 baud and consist of 8 data bits, 1 stop bit, and no parity bit.
+All the information is provided in ASCII format.
+
+Standby UPS systems following this specification will be capable of performing a UPS test.
+This test will be short term, user specified term, or to a low battery warning.
+
+All system will respond to inverter shut down and output shut down after a specified delay and for specified time.
+They will also permit cancellation of the shut down sequence.
+
+
+Hardware
+--------
+
+The DB9S (Female) Communication Port on the UPS must conform to Best Power's BestPort Communication Port Specification.
+Reference document number: EPS-0059.
+
+For the communications described in this document, the following pins a functionality are required:
+
+[cols=".^2,.^8",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Pin |Function
+|1
+
+(6 on 610)
+|*RS-232 Receive Data*
+
+Receives incoming RS-232 communication data at 2400 baud, 8 bits, no parity and 1 stop bit.
+|2
+
+(9 on 610)
+|*RS-232 Transmit Data*
+
+Sends outgoing RS-232 communication data at 2400 baud, 8 bits, no parity and 1 stop bit.
+|4
+
+(7 on 610)
+|*Common*
+
+The signal ground for all signal pins.
+|6
+
+(NC on 610)
+a|*Reserved _or_ Plug and Play Sense*
+
+UPS Models that support Microsoft Plug and Play (PnP) compatibility use this pin to sense the PnP request from the PC.
+
+Currently, models that have PnP support are the Patriot Pro, Patriot Pro II, SOLA 320, SOLA 325, Fortress 520 Series, SOLA 520, Fortress.TeleCom and SOLA 525.
+
+The 610 series, Axxium, SOLA 620 do not support Plug and Play compatibility.
+
+NOTE: If a new UPS is to support Plug and Play, Best Power software engineers must assign the unique numerical identifiers for the PnP sequence, as well as provide the text identifier for the UPS having the PnP feature.
+|====
+
+
+CABLING
+~~~~~~~
+
+Best Power's INT-0062 (SOLA's 0999-3400M3) cable shall be used to connect a PC's DB9P (Male) serial port to the DB9S (Female) port (BestPort) on all models except the 610 series.
+
+The cable used on the 610 series is part number A4D0044. (SOLA's 0999-3403M3)
+
+
+COMMUNICATION PROTOCOL COMMAND DEFINITIONS
+------------------------------------------
+
+
+Status Inquiry #1
+~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+Q<cr>+*
+
+'UPS Responds:'::
+UPS status stream with the format +(MMM.MNNN.NPPP.PQQQRR.RS.SSTT.TU<cr>+
+
+Where:
+
+[horizontal]
++(+::
+Start Byte
+
++MMM.M+::
+Input Voltage
++
++M+ is an integer number ranging from +0+ to +9+ and the unit is Volts.
+
++NNN.N+::
+Input Fault Voltage
++
++N+ is an integer number ranging from +0+ to +9+ and the unit is Volts.
++
+[NOTE]
+====
+For Offline UPS Models, its purpose is to identify a short duration voltage glitch which has caused an offline UPS to transfer to Inverter mode.
+If this occurs, the measured input voltage will appear normal at the query prior to the glitch and will still appear normal during the next query.
+The Input Fault Voltage will hold the glitch voltage until the next query.
+After the query, the Input Fault Voltage will be the same as the Input Voltage, until the next glitch occurs.
+
+For Online UPS Models, its purpose is to identify a short duration utility failure which has caused the online UPS to transfer to Battery mode.
+If this occurs, the measured input voltage will appear normal at the query prior to the utility failure and will still appear normal during the next query.
+The Input Fault voltage will hold the utility failure voltage until the next query.
+After the query, the Input Fault Voltage will be the same as the Input Voltage, until the next utility fail occurs.
+====
+
++PPP.P+::
+Output Voltage
++
++P+ is an integer number ranging from +0+ to +9+ and the unit is Volts.
+
++QQQ+::
+Output Load
++
+For Offline UPS Models, +QQQ+ is a percent of maximum VA, not an absolute value.
++
+For Online UPS Models, +QQQ+ is maximum of W% or VA%, where W% is a percent of the maximum real power and VA% is a percent of maximum VA.
+
++RR.R+::
+Input Frequency
++
++R+ is an integer number ranging from +0+ to +9+ and the unit is Hertz.
+
++SS.S+ or +SSSS+::
+Battery voltage
++
++S+ is an integer number ranging from +0+ to +9+.
++
+[NOTE]
+====
+For Online UPS models with battery string voltages of less than 100 volts, the battery voltage reported is provided in the form of +SS.S+.
+Otherwise, it is provided in the form +SSSS+.
+
+For Offline UPS Models, the actual battery voltage is provided in the form +SS.S+.
+
+The type of UPS indicated in the UPS status byte (*+Q+* response string: Status bit 3), determines which Battery Voltage reading is provided.
+====
+
++TT.T+::
+Temperature
++
++T+ is an integer number ranging from +0+ to +9+ and the unit is Degrees Centigrade.
+
++<U>+::
+UPS Status
++
+--
++<U>+ is one byte of binary information decoded as +<b7b6b5b4b3b2b1b0>+, where +bn+ is a binary number, either *+0+* or a *+1+*.
+
+The table below defines the bits as they are decoded:
+
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Bit +n+:	|Description
+|7		|A *+1+* indicates that there has been a Utility Failure (Immediate)
+|6		|A *+1+* indicates that the UPS Battery is Low
+|5		|A *+1+* indicates that Bypass or Boost (offline UPS) is Active
+|4		|A *+1+* indicates that the UPS has Failed
+|3		|A *+1+* indicates that the UPS Type is Offline (Standby).
+
+A *+0+* indicates that the UPS Type is Online.
+
+|2		|A *+1+* indicates that a UPS Test is in Progress
+|1		|A *+1+* indicates that a Shutdown is in Progress
+|0		|Reserved (Always *+0+*)
+|====
+--
+
++<cr>+::
+Stop Byte
+
+
+Example
+^^^^^^^
+
+[horizontal]
+'Computer Sends:'::
+*+Q<cr>+*
+
+'UPS Responds:'::
++(208.4140.0208.403459.939.635.0U<cr>+
+
++U+ represents the byte equivalent of +00110000+
+
+Decodes to:
+
+- Input voltage = 208.4 Volts
+- Input Fault Voltage =140.0 Volts
+- Output Voltage = 208.4 Volts
+- Output Load = 34%
+- Input Frequency = 59.9 Hertz
+- Battery voltage = 39.6 Volts
+- Temperature = 35.0 Degrees of Centigrade
+- Utility Power has not failed
+- The Battery is not low
+- The UPS Bypass is active
+- The UPS has failed
+- The UPS Type is Online
+- UPS Test is not in progress
+- UPS Shutdown is not in progress
+
+
+Status Inquiry #2
+~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+Q1<cr>+*
+
+'UPS Responds:'::
+UPS status stream with the format +(MMM.M NNN.N PPP.P QQQ RR.R S.SS TT.T b7b6b5b4b3b2b1b0<cr>+
+
+Note that a single space character separates each parameter. One space follows the Temperature data (precedes the status bytes.)
+
+The binary Status code (from the *+Q+* response) is modified to 8 bytes ASCII code to avoid any confusion between the binary code and the ASCII control code.
+
+Where:
+
+[horizontal]
++(+::
+Start Byte
+
++MMM.M+::
+Input Voltage
++
++M+ is an integer number ranging from +0+ to +9+ and the unit is Volts.
+
++NNN.N+::
+Input Fault Voltage
++
++N+ is an integer number ranging from +0+ to +9+ and the unit is Volts.
++
+[NOTE]
+====
+For Offline UPS Models, its purpose is to identify a short duration voltage glitch which has caused an offline UPS to transfer to Inverter mode.
+If this occurs, the measured input voltage will appear normal at the query prior to the glitch and will still appear normal during the next query.
+The Input Fault Voltage will hold the glitch voltage until the next query.
+After the query, the Input Fault Voltage will be the same as the Input Voltage, until the next glitch occurs.
+
+For Online UPS Models, its purpose is to identify a short duration utility failure which has caused the online UPS to transfer to Battery mode.
+If this occurs, the measured input voltage will appear normal at the query prior to the utility failure and will still appear normal during the next query.
+The Input Fault voltage will hold the utility failure voltage until the next query.
+After the query, the Input Fault Voltage will be the same as the Input Voltage, until the next utility fail occurs.
+====
+
++PPP.P+::
+Output Voltage
++
++P+ is an integer number ranging from +0+ to +9+ and the unit is Volts.
+
++QQQ+::
+Output Load
++
+For Offline UPS Models, +QQQ+ is a percent of maximum VA, not an absolute value.
++
+For Online UPS Models, +QQQ+ is maximum of W% or VA%, where W% is a percent of the maximum real power and VA% is a percent of maximum VA.
+
++RR.R+::
+Input Frequency
++
++R+ is an integer number ranging from +0+ to +9+ and the unit is Hertz.
+
++SS.S+ or +SSSS+::
+Battery voltage
++
++S+ is an integer number ranging from +0+ to +9+.
++
+[NOTE]
+====
+For Online UPS models with battery string voltages of less than 100 volts, the battery voltage reported is provided in the form of +SS.S+.
+Otherwise, it is provided in the form +SSSS+.
+
+For Offline UPS Models, the actual battery voltage is provided in the form +SS.S+.
+
+The type of UPS indicated in the UPS status byte (*+Q1+* response string: Status Byte 3), determines which Battery Voltage reading is provided.
+====
+
++TT.T+::
+Temperature
++
++T+ is an integer number ranging from +0+ to +9+ and the unit is Degrees Centigrade.
+
++b7b6b5b4b3b2b1b0+::
+UPS Status Bytes
++
+--
++bn+ is a binary number, either *+0+* or a *+1+*.
+
+The table below defines the bytes as they are decoded:
+
+[cols="^.^1m,.^9",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Byte +n+	|Description
+|7		|A *+1+* indicates that there has been a Utility Failure (Immediate)
+|6		|A *+1+* indicates that the UPS Battery is Low
+|5		|A *+1+* indicates that Bypass or Boost (offline UPS) is Active
+|4		|A *+1+* indicates that the UPS has Failed
+|3		|A *+1+* indicates that the UPS Type is Offline (Standby).
+
+A *+0+* indicates that the UPS Type is Online.
+
+|2		|A *+1+* indicates that a UPS Test is in Progress
+|1		|A *+1+* indicates that a Shutdown is in Progress
+|0		|Reserved (Always *+0+*)
+|====
+--
+
++<cr>+::
+Stop Byte
+
+
+Example
+^^^^^^^
+
+[horizontal]
+'Computer Sends:'::
+*+Q1<cr>+*
+
+'UPS Responds:'::
++(208.4 140.0 208.4 034 59.9 39.6 35.0 00110000<cr>+
+
+Decodes to:
+
+- Input voltage = 208.4 Volts
+- Input Fault Voltage =140.0 Volts
+- Output Voltage = 208.4 Volts
+- Output Load = 34%
+- Input Frequency = 59.9 Hertz
+- Battery voltage = 39.6 Volts
+- Temperature = 35.0 Degrees of Centigrade
+- Utility Power has not failed
+- The Battery is not low
+- The UPS Bypass is active
+- The UPS has failed
+- The UPS Type is Online
+- UPS Test is not in progress
+- UPS Shutdown is not in progress
+
+
+10 Seconds Test
+~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+T<cr>+*
+
+'UPS Responds:'::
+with a Test for 10 seconds and return to utility
+
+If battery low occur during testing, UPS will return to utility immediately.
+
+This command is available in all Best Power/Sola UPS models.
+
+
+Test Until Low Battery
+~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+TL<cr>+*
+
+'UPS Responds:'::
+with a Test that lasts until a Low Battery condition exists and then the UPS returns to utility power.
+
+This command is available in all Best Power/Sola UPS models.
+
+
+Test for specified time period
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+T<n><cr>+*
+
+'UPS Responds:'::
+with a Test that lasts for the specified number of minutes
+
+Where *+<n>+* is the number of minutes (+01+ - +99+) the test should continue for.
+
+During the test, the UPS will return to utility immediately if a Low Battery condition occurs.
+
+This command is available in all Best Power/Sola UPS models.
+
+
+Shutdown Command
+~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+S<n><cr>+*
+
+'UPS Responds:'::
+by shutting the UPS output off in *+<n>+* minutes.
+
+Where *+<n>+* is the number of minutes (see below) to wait before turning off the UPS output.
+
+The UPS output will turn off in *+<n>+* minutes, even if utility power is present.
+
+If a Low Battery condition occurs before *+<n>+* minutes, the UPS output is turned off immediately.
+
+After UPS shuts down, the UPS must not restart even though the input power is restored or is still present unless the user turns the unit on again.
+
+NOTE: Best/SOLA 610 and Patriot Pro/SOLA 320 Models will restart after a 10 second delay upon the return of AC input power.
+
+*+<n>+* is a number ranging from +.2+, +.3+, ..., +01+, +02+, ..., to +99+.
+
+The Cancel Shutdown command (*+C+*) may be used to cancel the shutdown of the UPS output during the countdown period defined by *+<n>+* minutes (shutdown waiting status).
+
+
+Example
+^^^^^^^
+
+[horizontal]
+'Computer Sends:'::
+*+S.3<cr>+*
+
+'UPS Responds:'::
+by shutting the output off in *+.3+* minutes (18 seconds)
+
+
+Shutdown and Restore Command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+S<n>R<m><cr>+*
+
+'UPS Responds:'::
+by shutting the UPS output off in *+<n>+* minutes and then waiting for *+<m>+* minutes before turning on the UPS output again.
+
+The UPS output will turn off in *+<n>+* minutes, even if utility power is present.
+
+*+<n>+* is a number ranging from +.2+, +.3+, ..., +01+, +02+, ..., to +99+.
+
+If a Low Battery condition occurs before *+<n>+* minutes, the UPS output is turned off immediately.
+
+*+<m>+* is a number ranging from +0001+ to +9999+.
+
+If *+<m>+* minutes expires and the utility power has not returned, the UPS must wait until utility power is restored before turning on the UPS output again.
+
+The Cancel Shutdown command (*+C+*) may be used to cancel the shutdown of the UPS output during the countdown period defined by *+<n>+* minutes (shutdown waiting status).
+
+The Cancel Shutdown command (*+C+*) may be used to cancel the delay before turning on the UPS output defined by the countdown period *+<m>+* minutes (restore waiting status).
+The UPS output must remain off for at least 10 additional seconds before turning on (if utility power is present).
+
+
+Cancel Shutdown Command
+~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+C<cr>+*
+
+'UPS Responds:'::
+by canceling the *+S<n><cr>+* or *+S<n>R<m><cr>+* command sequence (if in progress).
+
+The Cancel Shutdown command may be used to cancel the shutdown of the UPS output during the countdown period defined by *+<n>+* minutes (shutdown waiting status).
+
+The Cancel Shutdown command may be used to cancel the delay before turning on the UPS output defined by the countdown period *+<m>+* minutes (restore waiting status).
+The UPS output must remain off for at least 10 additional seconds before turning on (if utility power is present).
+
+
+Cancel Test Command
+~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+CT<cr>+*
+
+'UPS Responds:'::
+by canceling all test activity and connecting the utility power to the UPS output immediately.
+
+
+UPS Runtime Remaining Inquiry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+RT<cr>+*
+
+'UPS Responds:'::
+with the calculated battery runtime remaining +TTT<cr>+
++
+Where +T+ is an integer value from +0+ to +9+ and the unit are in minutes.
+
+This command provides the number of minutes the UPS can run on battery before a low battery shutdown occurs.
+
+This command is not available on the Best/SOLA 610 model series.
+It is also not available on Patriot Pro/SOLA 320 model series.
+
+
+Set the Quantity of Attached Battery Packs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+BP<n>+*
+
+'UPS Responds:'::
+by understanding that there are now *+<n>+* battery packs assumed to be connected to the UPS
+
+Where *+<n>+* is an integer ranging from +0+ to +5+.
+
+This command is only available on the Axxium/SOLA 620 model series.
+
+
+Examples
+^^^^^^^^
+
+[horizontal]
+'Computer Sends:'::
+*+BP0<cr>+*
+
+'UPS Responds:'::
+by understanding that there is no attached battery pack
+
+'Computer Sends:'::
+*+BP3<cr>+*
+
+'UPS Responds:'::
+by understanding that there are *+3+* attached battery packs
+
+
+Attached Battery Packs Inquiry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+BP?<cr>+*
+
+'UPS Responds:'::
++<nn><cr>+
+
+Where +<nn>+ represents the number of battery packs the UPS currently understands it has.
+
+A leading +O+ (zero) is always supplied, assuming that less than +10+ (ten) battery packs are connected.
+
+- +00+ -> No attached battery packs
+- +01+ -> One attached battery pack
+- +02+ -> Two attached battery packs
+- +03+ -> Three attached battery packs
+- +04+ -> Four attached battery packs
+- +05+ -> Five attached battery packs
+
+This command is only available on the Axxium/SOLA 620 model series.
+
+
+UPS ID Inquiry
+~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+ID<cr>+*
+
+'UPS Responds:'::
+with the UPS Identification stream with the format: +AAA,BBBB,CCC,DDD,EE.E,FF.F+
+
+Where:
+
+[horizontal]
++AAA+::
+is the three-character identification for the UPS model as define by Best Power and listed in the table below:
++
+[cols="^.^2m,.^8",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Identifier	|UPS Model
+|PRO		|Patriot Pro U or E models
+|320		|SOLA 320 A models
+|FOR		|Fortress 520 Series U or E models
+|520		|SOLA 520 A models
+|PR2		|Patriot Pro II U or E models
+|325		|SOLA 325 A models
+|FTC		|Fortress TeleCom U or E models
+|525		|SOLA 525 A models
+|AX1		|Axxium U or E models
+|620		|SOLA 620 A models
+|====
+
++BBBB+::
+is the output power in VA (volt amperes).
++B+ is an integer number ranging from +0+ to +9+.
++
+Example: +1500+ represents a 1.5KVA UPS
+
++CCC+::
+is the Nominal Input Voltage.
++C+ is an integer number ranging from +0+ to +9+.
+The unit is Volts AC.
+
++DDD+::
+is the Nominal Output Voltage.
++D+ is an integer number ranging from +0+ to +9+.
+The unit is Volts AC.
+
++EE.E+::
+is the Battery Voltage that will cause the UPS to shut itself off.
++E+ is an integer number ranging from +0+ to +9+.
+Then unit is Volts DC and a decimal point is present.
+
++FF.F+ or +FFF.F+::
+is the Battery Voltage at full charge.
++F+ is an integer number ranging from +0+ to +9+.
+Then unit is Volts DC.
++
+Typically, for 700VA, 1KVA and 1.5KVA units, the format is +FF.F+.
+For 2KVA and 3KVA units, the format is +FFF.F+.
+
+This command is not available on the Best/SOLA 610 model series.
+
+
+Shutdown Set Command
+~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+SS<n><cr>+*
+
+'UPS Responds:'::
+by setting the shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059)
+
+Where:
+
+*+<n>+* is an integer number ranging from +0+ to +6+.
+
+The following table summarizes the effects on Pin 1 and Pin 7 functionality:
+
+[cols=".^2m,.^2,.^4,.^4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Shutdown Set # mode	|LEDs on UPS	|Pin 1 Functionality						|Pin 7 Functionality
+d|+0+ Default		|LEDs OFF
+|Shut off after 2 minutes on battery, even if input power returns during the 2 minutes. Restart after a 12 second delay following shutdown, once input power returns.
+|Emergency Power Off (EPO) immediately under any condition (normal input power or on battery). UPS will not restart.
+|1			|LED 1
+|Shut off after 2 minutes on battery, even if input power returns during the 2 minutes. UPS will not restart when normal input power returns.
+|Shut off after 2 minutes on battery, even if input power returns during the 2 minutes. UPS will not restart when normal input power returns.
+|2			|LED 2
+|Shut off after 1 minute on battery.
+footnoteref:["note1","Shutdown occurs in each case even if input power returns during the \"+n+\" minutes.
+In each case, a restart will occur after a 12 second delay following shutdown, once input power returns."]
+|Shut off after 1 minute on battery.
+footnoteref:["note2","Shutdown occurs in each case even if input power returns during the \"+n+\" minutes.
+In each case, a restart will not occur following shutdown, once input power returns."]
+|3			|LED 3		|Shut off after 3 minutes on battery. footnoteref:[note1]	|Shut off after 3 minutes on battery. footnoteref:[note2]
+|4			|LED 4		|Shut off after 5 minutes on battery. footnoteref:[note1]	|Shut off after 5 minutes on battery. footnoteref:[note2]
+|5			|LED 5		|Shut off after 10 minutes on battery. footnoteref:[note1]	|Shut off after 10 minutes on battery. footnoteref:[note2]
+|6			|LED 6		|Shut off after 20 minutes on battery. footnoteref:[note1]	|Shut off after 20 minutes on battery. footnoteref:[note2]
+|====
+
+This command is not available on the Best/SOLA 610 model series.
+
+
+Shutdown Set Inquiry Command
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+'Computer Sends:'::
+*+SS?<cr>+*
+
+'UPS Responds:'::
+by reporting the current value set as the Shutdown mode as +<n><cr>+
+
+Where +<n>+ is an integer number between +0+ and +6+ representing the functionality listed on the table above.
+
+This command is not available on the Best/SOLA 610 model series.
+
+
+COMMAND SUMMARY
+---------------
+
+Below is a summary of all the commands listed in this document:
+
+[horizontal]
+*+Q+*::
+Status Inquiry
+
+*+Q1+*::
+Status Inquiry (typically used by CheckUPS)
+
+*+T+*::
+10 Seconds Test
+
+*+TL+*::
+Test until Low Battery occurs
+
+*+T<n>+*::
+Test for a Specified Time Period
+
+*+S<n>+*::
+Shutdown Command
+
+*+S<n>R<n>+*::
+Shutdown and Restore Command
+
+*+C+*::
+Cancel Shutdown Command
+
+*+CT+*::
+Cancel Test Command
+
+*+RT+*::
+UPS Runtime Remaining Inquiry
+
+*+BP<n>+*::
+Set the Quantity of Attached Battery Packs
+
+*+BP?+*::
+Attached Battery Packs Inquiry
+
+*+ID+*::
+UPS ID Inquiry
+
+*+SS<n>+*::
+Shutdown Set Command
+
+*+SS?+*::
+Shutdown Set Inquiry Command

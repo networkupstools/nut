@@ -1,0 +1,144 @@
+MiniCOL
+=======
+:revnumber: 1.2
+
+
+Communication Specification
+---------------------------
+
+[horizontal]
+Format::
+RS-232
+
+Baud rate::
+1200 bps
+
+Data::
+8 bits
+
+Start Bit::
+1 bit
+
+Stop Bit::
+1 bit
+
+Parity::
+None
+
+
+"MiniCOL" for MonUPS III (revision 1.2)
+---------------------------------------
+
+
+Query the status of UPS
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Command from PC to UPS
+
+[cols="^.^m,^.^,^.^m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Header (1 byte)	|Command (1 byte)	|CSUM
+|*Q*			|*+1+* (ASCII)		|XX
+|====
+
+*CSUM* = 2's complement of the SUM of the total package
+
+
+UPS Status Feedback / Shutdown Request
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Command from UPS to PC
+
+[cols="2^.^m,6^.^,2^.^m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Header (1 byte)	|Command (1 byte)			|CSUM
+.5+|*Q*			|*+A+* - AC Fail			.5+|XX
+			|*+B+* - Battery Low
+			|*+C+* - Both A & B
+			|*+D+* - All normal
+			|*+E+* - System Shutdown Request
+|====
+
+*+QE+* - UPS requests for System Shutdown. PC to read three consecutive QE bytes and acknowledge before proceeding with normal shutdown.
+
+
+System & UPS Shutdown
+~~~~~~~~~~~~~~~~~~~~~
+
+Step 1. Command from PC to UPS::
++
+--
+[cols="2^.^m,6^.^,2^.^m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Header (1 byte)	|Command (1 byte Integer)	|CSUM
+|*T*			|+XX+ (+1+ ~ +255+)		|YY
+|====
+
+(*+T+* - stands for Time-delay, +XX+ is the delay factor in multiple of 10 seconds. So, max. delay time = 42:30 min.)
+--
+
+Step 2. Command from UPS to PC::
++
+--
+[cols="^.^m,^.^m,^.^m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Header (1 byte)	|Command	|CSUM (same as MCOL checksum)
+|*T*			|*A*		|XX
+|====
+
+(*+TA+* - stands for Time-delay command acknowledged)
+--
+
+Step 3. Command from PC to UPS::
++
+--
+[cols="^.^m,^.^m,^.^m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Header (1 byte)	|Command (1 byte)	|CSUM
+|*S*			|*D*			|XX
+|====
+
+(*+SD+* - stands for shutdown)
+--
+
+Step 4. Command from UPS to PC::
++
+--
+[cols="^.^m,^.^m,^.^m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Header (1 byte)	|Command (1 byte)	|CSUM
+|*S*			|*A*			|XX
+|====
+
+(*+SA+* - stands for shutdown acknowledged)
+--
+
+
+Miscelleaneous
+~~~~~~~~~~~~~~
+
+a. Software to poll the UPS at least 6 times in 2 seconds at program startup to determine if there is "NO COMMUNICATION" and advise "Please check cable connection", etc.
+
+b. During normal operation, if software receives five checksum error, display "Communication Error".
+
+c. If there is no response from the UPS, display "No Communication" (after 5 consecutive times) in RED colour (must be outstanding) .
+
+d. PC to send a UPS shutdown delay *+T+*+XX+ and continue sending command until it receives a confirmation command *+TA+* before sending ups shutdown command *+SD+*.
+*+T+*+XX+ - where +XX+ is a multiple of 10 seconds.
+So, maximum time delay is 42 minutes and 30 seconds (255 * 10 = 2550 seconds).
+
+e. Software to have a UPS Off Delay setting screen to accommodate item d. above.
+
+f. PC must send a *+SD+* continuously until it receives a *+SA+* from the UPS before system can perform shutdown.
+
+g. Baudrate = 1200 bps.
+
+h. Software to perform system shutdown when it receives three consecutive system shutdown request bytes (*+QE+*) from UPS.
+A pop-up message with 5 seconds countdown, and message `System powering down, shutdown in 5 seconds' is to be displayed.
+The usual system shutdown (with autosaving of files) will take place (to include item d. & f. above).
+
+
+Shutdown timeline
+~~~~~~~~~~~~~~~~~
+
+image::images/minicol_shutdowntime.png["Shutdown timeline", align = "center"]

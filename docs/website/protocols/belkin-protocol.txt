@@ -1,0 +1,1557 @@
+Belkin UPS Protocol
+===================
+:revnumber: 1.44
+
+
+[NOTE]
+====
+*[N]* indicates the item is supported by N 1~3K series
+
+*[L]* indicates the item is supported by L series
+====
+
+
+History
+-------
+
+[cols="1,3,6",options="autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|1.0	2+|09/23/1997
+|1.1	2+|11/14/1997
+|1.2	|12/30/1997	|Add *+VSN+* (Voltage Sensitivity)
+|1.3	|10/09/1998	|Control Outlet
+
+Add Regular Format ID
+
+Add *+TEL+*, *+BRD+* commands
+
+|1.31	|01/26/1999	|*+SDR+* from +99999+ to +65535+
+|1.32	|03/04/1999	|Add *+STA+* (Inverter Bad)
+|1.33	|04/28/1999	|Add *+ENV+*, Battery Level, Rating Battery Voltage
+
+Mark some items that UPS must support
+
+|1.34	|05/03/1999	|Change *+BUZ+* Status (+0+ -> Buzzer off, +1+ -> Buzzer on)
+|1.35	|07/21/1999	|Economic Mode enable/disable
+
+Periodic Auto-test
+
+Buzzer Test
+
+*+ATX+* Reboot enable/disable
+
+Auto Reboot enable/disable
+
+|1.36	|07/28/1999	|Add *+RSM+* (Resume PC), *+AVL+* rearrange
+|1.37	|08/17/1999	|Change Length of *+MNU+*, *+MOD+* and *+VER+* to +16+
+
+Change Range of *+RNF+* from +1+ to +65535+
+
+|1.38	|05/09/2000	|Add the Emergency Power Off item in the *+STA+*
+|1.39	|04/03/2001	|Add *+TXF+* (Raymond), *+UBD+* Commands
+
+Define the *+ARB+* command
+
+|1.40	|07/18/2001	|Add *+SOV+* command
+|1.41	|01/25/2002	|Delete the *+RST+* command because it is conflict to the *+ARB+* command.
+
+Redefine *+BUZ+* command to alarm/silence
+
+Add *+EDB+* command to enable/disable buzzer alarm
+
+Define a standard string of Windows Plug & Play
+
+|1.42	|01/30/2002	|Redefine `Battery Temperature' to `Temperature'
+|1.44	|05/24/2002	|Add *+BTV+* command for battery test
+|====
+
+
+Communication Parameters
+------------------------
+
+[horizontal]
+Baud Rate::
+2400
+
+Parity::
+None
+
+Data Bits::
+8
+
+Stop Bits::
+1
+
+
+Message Format
+--------------
+
+
+Regular Format
+~~~~~~~~~~~~~~
+
+[horizontal]
+Header::
+1 byte
++
+The header will be a *+~+* character.
+
+ID::
+2 bytes
++
+Default value is *+00+*.
+
+Type::
+1 byte
+
+[horizontal]
+*+R+*:::
+Command rejected (UPS à Computer)
+
+*+A+*:::
+Command accepted (UPS à Computer)
+
+*+P+*:::
+Polling command (Computer à UPS)
+
+*+S+*:::
+Set command (Computer à UPS)
+
+*+D+*:::
+Data returned (UPS à Computer)
+
+Length::
+3 bytes
++
+The length is the number of bytes of data passed.
+
+Data::
+128 bytes max
++
+All data will be separated by *+;+*.
+If a variable value is not currently available, a *+;+* with no data should be placed in the variable location.
+
+
+Regular Format Messages: Polling Commands
+-----------------------------------------
+
+[cols="^.^2m,.^8",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Description
+|* *AVL*	|*[N][L]* Available Commands
+|* *MNU*	|*[N][L]* UPS Manufacturer
+|* *MOD*	|*[N][L]* UPS Model Name
+|* *RAT*	|*[N][L]* Rating (Nominal) Values
+|*SDT*		|Shutdown Type
+|* *STB*	|*[N][L]* Battery Status
+|* *STI*	|*[N][L]* Input Status
+|* *STO*	|*[N][L]* Output Status
+|* *STP*	|*[N]* Bypass Status
+|* *STA*	|*[N][L]* Alarm Status
+|* *TSR*	|*[N][L]* Self Test Results
+|*UBR*		|UPS Baud Rate
+|* *UID*	|UPS Identification
+|* *VER*	|*[N][L]* UPS Firmware Version
+|*TXV*		|*[N][L]* Transfer Voltage
+|*VSN*		|*[L]* Voltage Sensitivity
+|* *LET*	|*[N][L]* Number of Outlet Relay
+|* *SOL*	|*[N][L]* Outlet Relay Status
+|*TEL*		|Modem Phone Number
+|* *BRD*	|*[N][L]* Battery Replacement Date
+|*ENV*		|Environment Information
+|*ATT*		|Auto Test
+|*ATX*		|*[N][L]* ATX Reboot enable/disable
+|*ARB*		|*[N][L]* AC Fail & Restore Auto-Reboot enable/disable
+|*TXF*		|Transfer Frequency
+|*UBD*		|UPS Boot Delay
+|*SOV*		|Select Output Voltage
+|*BTV*		|Battery Test Time & Voltage
+|====
+
+
++AVL+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4m,^2,^1m,3a",options="header,autowidth",frame="topbot",grid="rows"]
+|===
+|Name									|Type		|Range/Length	|Comment
+|b19 b18 b17 b16 b15 b14 b13 b12 b11 b10 b9 b8 b7b6 b5 b4 b3 b2 b1 b0	|Integer	|20		|
+
+- +1+ -> Available
+- +0+ -> Not supported
+
+|====
+
+Description::
+
+[horizontal]
+b0:::
+*+UBD+*
+
+b1:::
+*+TXF+*
+
+b2:::
+*+ECO+*
+
+b3:::
+*+ATT+*
+
+b4:::
+*+BTT+*
+
+b5:::
+*+ATX+*
+
+b6:::
+*+ARB+*
+
+b7:::
+*+BUZ+*
+
+b8:::
+*+RST+*
+
+b9:::
+*+SDA+*
+
+b10:::
+*+SDR+*
+
+b11:::
+*+SDT+*
+
+b12:::
+*+TST+*
+
+b13:::
+*+UBR+*
+
+b14:::
+*+UID+*
+
+b15:::
+*+TXV+*
+
+b16:::
+*+VSN+*
+
+b17:::
+*+RON+*
+
+b18:::
+*+ROF+*
+
+b19:::
+*+RNF+*
+
+
++MNU+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Manufacturer	|String		|+0+ to +16+	|
+|====
+
+Description::
+The string identifies the manufacturer.
+
+
++MOD+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name	|Type	|Range/Length	|Comment
+|Model	|String	|+0+ to +16+	|
+|====
+
+Description::
+The string identifies the UPS model name.
+
+
++RAT+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="2,^2,^2,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length		|Comment
+|* Rating Input Voltage		|Integer	|+0+ to +999+		|*[N][L]* Volt
+|* Rating Input Frequency	|Integer	|+0+ to +999+		|*[N][L]* 0.1Hz
+|Rating Output Voltage		|Integer	|+0+ to +999+		|*[N][L]* Volt
+|Rating Output Frequency	|Integer	|+0+ to +999+		|*[N][L]* 0.1Hz
+|* Rating VA			|Integer	|+0+ to +999999+	|*[N][L]* VA
+|Rating Output Power		|Integer	|+0+ to +999999+	|*[N][L]* Watt
+|Low Battery Time		|Integer	|+0+ to +99+		|Minute, time from low battery to low battery shutdown
+|Low Tx Voltage Point		|Integer	|+0+ to +999+		|*[N][L]* Volt
+|High Tx Voltage Point		|Integer	|+0+ to +999+		|*[N][L]* Volt
+|Low Tx Voltage Upper Bound	|Integer	|+0+ to +999+		|*[N][L]* Volt
+|Low Tx Voltage Lower Bound	|Integer	|+0+ to +999+		|*[N][L]* Volt
+|High Tx Voltage Upper Bound	|Integer	|+0+ to +999+		|*[N][L]* Volt
+|High Tx Voltage Lower Bound	|Integer	|+0+ to +999+		|*[N][L]* Volt
+|* UPS Type			|Integer	|+0+ to +4+		a|*[N][L]*
+
+- +0+ -> On-Line
+- +1+ -> Off-Line
+- +2+ -> Line-Interactive
+- +3+ -> 3 Phase
+- +4+ -> Others
+
+|* Rating Battery Voltage	|Integer	|+0+ to +999+		|*[N][L]* Volt
+|Low Tx Freq Point		|Integer	|+0+ to +999+		|0.1Hz
+|High Tx Freq Point		|Integer	|+0+ to +999+		|0.1Hz
+|Low Tx Freq Upper Bound	|Integer	|+0+ to +999+		|0.1Hz
+|Low Tx Freq Lower Bound	|Integer	|+0+ to +999+		|0.1Hz
+|High Tx Freq Upper Bound	|Integer	|+0+ to +999+		|0.1Hz
+|High Tx Freq Lower Bound	|Integer	|+0+ to +999+		|0.1Hz
+|====
+
+Description::
+The Tx voltage
++
+image::images/belkin-protocol_tx-voltage.png[Tx voltage]
+
+
++SDT+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="2,^2,^2,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Shutdown Type	|Integer	|+1+ to +2+	|
+
+- +1+ -> UPS output
+- +2+ -> UPS system
+
+|====
+
+Description::
+default value is +2+.
+
+
++STB+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="2,^2,^2,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|* Battery Condition		|Integer	|+0+ to +2+	a|*[N][L]*
+
+- +0+ -> Good
+- +1+ -> Weak
+- +2+ -> Replace
+
+|* Battery Status		|Integer	|+0+ to +2+	a|*[N][L]*
+
+- +0+ -> OK
+- +1+ -> Low
+- +2+ -> Depleted
+
+|* Battery Charge		|Integer	|+0+ to +3+	a|*[N][L]*
+
+- +0+ -> Floating
+- +1+ -> Charging
+- +2+ -> Resting
+- +3+ -> Discharging
+
+|Seconds on Battery		|Integer	|+0+ to +99999+	|*[N]* Seconds
+|Estimated Minutes Remaining	|Integer	|+0+ to +9999+	|Estimated time from backup to low battery shutdown.
+|Estimated Charge Remaining	|Integer	|+0+ to +999+	|*[N]* Estimated of percent battery charge remaining.
+|Battery Voltage		|Integer	|+0+ to +9999+	|*[N][L]* 0.1Volt
+|Battery Current		|Integer	|+0+ to +9999+	|*[N]* 0.1Amp
+|Temperature			|Integer	|+0+ to +999+	|*[N][L]* Degree Celsius
+|* Battery Level		|Integer	|+0+ to +999+	|*[N][L]* %
+|====
+
+Description::
+
+Battery Condition:::
+If input power normal and battery normal then UPS replies Good (+0+).
+If input power normal and battery low then Weak (+1+) is replied.
+
+Battery Status:::
+The indication of the capacity remaining in the batteries.
+
+Estimated Minutes Remaining:::
+Estimated time from backup to low battery shutdown base on the current load.
+
+Estimated Charge Remaining:::
+An estimate of the battery charge remaining expressed as a percent of full charge.
+
+Temperature:::
+The temperature value that is measured in the UPS.
+
+
++STI+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|* Input Num Lines (Phases)	|Integer	|+0+ to +9+	|*[N][L]* Number of input lines
+|Input Frequency1		|Integer	|+0+ to +999+	|*[N][L]* 0.1Hz
+|Input Voltage1			|Integer	|+0+ to +9999+	|*[N][L]* 0.1Volt
+|Input Current1			|Integer	|+0+ to +9999+	|0.1Amp
+|Input Power1			|Integer	|+0+ to +99999+	|Watt
+|Input Frequency2		|Integer	|+0+ to +999+	|0.1Hz
+|Input Voltage2			|Integer	|+0+ to +9999+	|0.1Volt
+|Input Current2			|Integer	|+0+ to +9999+	|0.1Amp
+|Input Power2			|Integer	|+0+ to +99999+	|Watt
+|Input Frequency3		|Integer	|+0+ to +999+	|0.1Hz
+|Input Voltage3			|Integer	|+0+ to +9999+	|0.1Volt
+|Input Current3			|Integer	|+0+ to +9999+	|0.1Amp
+|Input Power3			|Integer	|+0+ to +99999+	|Watt
+|====
+
+
++STO+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length		|Comment
+|* Output Source		|Integer	|+0+ to +5+		a|*[N][L]*
+
+- +0+ -> Normal
+- +1+ -> Battery
+- +2+ -> Bypass (Reserve)
+- +3+ -> Reducing
+- +4+ -> Boosting
+- +5+ -> Manual Bypass
+- +6+ -> Other
+- +7+ -> None
+
+|Output Frequency		|Integer	|+0+ to +999+		|*[N][L]* 0.1Hz
+|* Output Num Lines (Phase)	|Integer	|+0+ to +9+		|*[N][L]* Number of output lines
+|Output Voltage1		|Integer	|+0+ to +9999+		|*[N][L]* 0.1Volt
+|Output Current1		|Integer	|+0+ to +9999+		|0.1Amp
+|Output Power1			|Integer	|+0+ to +999999+	|*[N]* Watt
+|* Output Load1			|Integer	|+0+ to +999+		|*[N][L]* Percent
+|Output Voltage2		|Integer	|+0+ to +9999+		|0.1Volt
+|Output Current2		|Integer	|+0+ to +9999+		|0.1Amp
+|Output Power2			|Integer	|+0+ to +999999+	|Watt
+|Output Load2			|Integer	|+0+ to +999+		|Percent
+|Output Voltage3		|Integer	|+0+ to +9999+		|0.1Volt
+|Output Current3		|Integer	|+0+ to +9999+		|0.1Amp
+|Output Power3			|Integer	|+0+ to +999999+	|Watt
+|Output Load3			|Integer	|+0+ to +999+		|Percent
+|====
+
+Description::
+
+Output Source:::
+On-Line UPS status will be +0+, +1+, +2+
++
+Off-Line UPS status will be +1+, +2+, +3+, +4+
++
+3 Phase UPS status will be +0+, +1+, +2+, +5+
++
+The present source of output power.
+
+
++STP+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length		|Comment
+|Bypass Frequency		|Integer	|+0+ to +999+		|*[N]* 0.1Hz
+|* Bypass Num Lines(Phase)	|Integer	|+0+ to +9+		|*[N]* Number of bypass lines
+|Bypass Voltage1		|Integer	|+0+ to +9999+		|*[N]* 0.1Volt
+|Bypass Current1		|Integer	|+0+ to +9999+		|0.1Amp
+|Bypass Power1			|Integer	|+0+ to +999999+	|*[N]* Watt
+|Bypass Voltage2		|Integer	|+0+ to +9999+		|0.1Volt
+|Bypass Current2		|Integer	|+0+ to +9999+		|0.1Amp
+|Bypass Power2			|Integer	|+0+ to +999999+	|Watt
+|Bypass Voltage3		|Integer	|+0+ to +9999+		|0.1Volt
+|Bypass Current3		|Integer	|+0+ to +9999+		|0.1Amp
+|Bypass Power3			|Integer	|+0+ to +999999+	|Watt
+|====
+
+
++STA+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|Alarm Temperature		|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> OK
+- +1+ -> Over Temperature
+
+|Alarm Input Bad		|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> OK
+- +1+ -> Input Bad
+
+|Alarm Output Bad		|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> OK
+- +1+ -> Output Bad
+
+|Alarm Overload			|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> OK
+- +1+ -> Overload
+
+|Alarm Bypass Bad		|Integer	|+0+ or +1+	|*[L]*
+
+- +0+ -> OK
+- +1+ -> Bypass Bad
+
+|Alarm Output Off		|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> Output On
+- +1+ -> Output Off
+
+|Alarm UPS Shutdown		|Integer	|+0+ or +1+	|*[L]*
+
+- +0+ -> OK
+- +1+ -> Shutdown
+
+|Alarm Charger Failure		|Integer	|+0+ or +1+	|*[L]*
+
+- +0+ -> OK
+- +1+ -> Charger Failed
+
+|Alarm System Off		|Integer	|+0+ or +1+	|*[L]*
+
+- +0+ -> System On
+- +1+ -> System Off
+
+|Alarm Fan Failure		|Integer	|+0+ or +1+	|
+
+- +0+ -> OK
+- +1+ -> Fan Fault
+
+|Alarm Fuse Failure		|Integer	|+0+ or +1+	|
+
+- +0+ -> OK
+- +1+ -> Fuse Fault
+
+|Alarm General Fault		|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> OK
+- +1+ -> General Fault
+
+|Alarm Awaiting Power		|Integer	|+0+ or +1+	|
+
+- +0+ -> OK
+- +1+ -> Awaiting Power
+
+|Alarm Shutdown Pending		|Integer	|+0+ or +1+	|
+
+- +0+ -> OK
+- +1+ -> Shutdown Pending
+
+|Alarm Shutdown Imminent	|Integer	|+0+ or +1+	|
+
+- +0+ -> OK
+- +1+ -> Shutdown Imminent
+
+|Buzzer Status			|Integer	|+0+ or +1+	|*[N][L]*
+
+- +0+ -> UPS Buzzer Silence
+- +1+ -> UPS Buzzer Alarm
+
+|Economic Mode			|Integer	|+0+ or +1+	|
+
+- +0+ -> No
+- +1+ -> Yes
+
+|Alarm Inverter Bad		|Integer	|+0+ or +1+	|*[L]*
+
+- +0+ -> No
+- +1+ -> Yes
+
+|Emergency Power Off		|Integer	|+0+ or +1+	|
+
+- +0+ -> Off
+- +1+ -> On
+
+|Buzzer State			|Integer	|+0+ or +1+	|
+
+- +0+ -> UPS Buzzer Disable
+- +1+ -> UPS Buzzer Enable
+
+|====
+
+Description::
+
+Alarm Input Bad:::
+An input condition is out of tolerance.
+This item is used to indicate the input power fail, a test condition should not set this item on.
+
+Alarm Output Bad:::
+An output condition (other than OutputOverload) is out of tolerance.
+
+Alarm Overload:::
+The output load exceeds the UPS output capacity.
+
+Alarm Bypass Bad:::
+The Bypass is out of tolerance.
+
+Alarm Output Off:::
+The UPS has shutdown as requested, i.e., the output is off.
+
+Alarm UPS Shutdown:::
+The entire UPS has shutdown as commanded.
+
+Alarm Charger Failure:::
+An uncorrected problem has been detected within the UPS charger subsystem.
+
+Alarm System Off:::
+The UPS system is in the off state.
+For example: The UPS get the input power but does not startup the system.
+
+Alarm Fan Failure:::
+The failure of one or more fans in the UPS has been detected.
+
+Alarm Fuse Failure:::
+The failure of one or more fuses has been detected.
+
+Alarm Awaiting Power:::
+The UPS output is off and the UPS is awaiting the return of input power.
+
+Alarm Shutdown Pending:::
+A shutdown UPS command SDA countdown is underway.
+
+Alarm Shutdown Imminent:::
+The UPS will turn off power to the load in less than 5 seconds; this may be either a timed shutdown or a low battery shutdown.
+
+Alarm Buzzer Status:::
+To indicate the UPS buzzer is silent or alarm.
+
+Economic Mode:::
+The UPS is in the economic mode (act like a off-line UPS).
+
+Emergency Power Off:::
+The User pressed the Emergency Power Off button.
+
+Alarm Buzzer State:::
+To indicate the UPS buzzer is enabled or disabled.
+
+
++TSR+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|* Test Result	|Integer	|+0+ to +5+	|
+
+- +0+ -> No test performed
+- +1+ -> Test passed
+- +2+ -> Test in progress
+- +3+ -> General test failed
+- +4+ -> Battery test failed
+- +5+ -> Deep batt test failed
+- +6+ -> Test Aborted
+
+|====
+
+
++UBR+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="3,^1,^2,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Baud Rate	|Integer	|See Comment	|+1200+, +2400+, +4800+, +9600+
+|====
+
+Default::
++2400+
+
+
++UID+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|UPS Identification	|Integer	|+0+ to +99+	|Used for one PC connect to multi-UPS
+|====
+
+Default::
++0+
+
+
++VER+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="5,^2,^2,1",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type	|Range/Length	|Comment
+|UPS Firmware Version	|String	|+0+ to +16+	|
+|====
+
+
++TXV+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="5,^1,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Low Transfer Voltage	|Integer	|+0+ to +999+	|Volt
+|High Transfer Voltage	|Integer	|+0+ to +999+	|Volt
+|====
+
+
++VSN+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Voltage Sensitivity	|Integer	|+0+ to +2+	|
+
+- +0+ -> Normal
+- +1+ -> Reduced
+- +2+ -> Low
+
+|====
+
+
++LET+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Number of Output Relay	|Integer	|+0+ to +99+	|
+
+- +0+ -> Not available
+- +>0+ -> Available
+
+|====
+
+
++SOL+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="5,^2,^2,1",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Index of Output Relay	|Integer	|+1+ to +99+	|
+|====
+
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Normal or Shutdown	|Integer	|+0+ or +1+	|
+
+- +0+ -> Normal
+- +1+ -> Shutdown
+
+|====
+
+
++TEL+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type	|Range/Length	|Comment
+|Modem Phone Number	|String	|+0+ to +16+	|Telephone Number
+|====
+
+
++BRD+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="6,^1,^1m,2m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type	|Range/Length	|Comment
+|Last Battery Replacement Date	|String	|8		|YYYYMMDD
+|Next Battery Replacement Date	|String	|8		|YYYYMMDD
+|====
+
+
++ENV+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Temperature	|Integer	|+0+ to +999+	|Degree Celsius
+|Humidity	|Integer	|+0+ to +999+	|Sensor Box Humidity
+|Relay1		|Integer	|+0+ or +1+	a|
+
+- +0+ -> Off
+- +1+ -> On
+
+|Relay2		|Integer	|+0+ or +1+	a|
+
+- +0+ -> Off
+- +1+ -> On
+
+|Relay3		|Integer	|+0+ or +1+	a|
+
+- +0+ -> Off
+- +1+ -> On
+
+|Relay4		|Integer	|+0+ or +1+	a|
+
+- +0+ -> Off
+- +1+ -> On
+
+|====
+
+
++ATT+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|UPS Periodic Auto-Test	|Integer	|+1+ to +5+	|
+
+- +1+ -> Disable
+- +2+ -> Daily
+- +3+ -> Weekly
+- +4+ -> BiWeekly
+- +5+ -> Monthly
+
+|====
+
+
++ATX+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|ATX PC Reboot Function	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable
+- +2+ -> Disable
+
+|====
+
+Description::
+Enable/Disable ATX PC reboot function (RS-232 Ring Indicator).
+
+
++ARB+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|AC Fail & Restore Auto-Reboot	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable (default)
+- +2+ -> Disable
+
+|====
+
+Description::
+If you enable this function, UPS will reboot to restart the computer otherwise, it will back to normal state.
+
+
++TXF+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="5,^2,^2,1",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|Low Transfer Frequency		|Integer	|+0+ to +999+	|0.1Hz
+|High Transfer Frequency	|Integer	|+0+ to +999+	|0.1Hz
+|====
+
+
++UBD+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|UPS Boot Delay	|Integer	|+0+ to +999+	|Seconds
+|====
+
+
++SOV+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="5,^1,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Current Output Voltage	|Integer	|+0+ to +999+	|Voltage
+|Select Output Voltage1	|Integer	|+0+ to +999+	|Voltage
+|Select Output Voltage2	|Integer	|+0+ to +999+	|Voltage
+|Select Output Voltage3	|Integer	|+0+ to +999+	|Voltage
+|?			|Integer	|+0+ to +999+	|Voltage
+|====
+
+Description::
+UPS provide the output voltage list for users to pick up a suitable one for the current environment.
+
+
++BTV+
+~~~~~
+
+[horizontal]
+Data::
+(UPS->Computer)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Test Time	|Integer	|+1+ to +60+	|Minutes
+|Test Voltage	|Integer	|+0+ to +999+	|Voltage
+|====
+
+Description::
+This command is the same as 3Phase UPS.
+If battery voltage is lower than the "Test Voltage" which is set by users then UPS reports test fail.
+This kind of battery test is triggered by *+TST+* (+2+) command.
+
+
+Regular Format: Set Commands
+----------------------------
+
+[cols="^.^2m,.^8",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Description
+|*BUZ*		|*[N][L]* Switch UPS Buzzer
+|*SDA*		|*[N][L]* Shutdown Action
+|*SDR*		|*[N][L]* Shutdown and Restart
+|*SDT*		|Shutdown Type
+|*TST*		|*[N][L]* Test Type
+|*UBR*		|UPS Baud Rate
+|*UID*		|UPS Identification
+|*TXV*		|*[N][L]* Transfer Voltage
+|*VSN*		|*[L]* Voltage Sensitivity
+|*RON*		|*[N]* Outlet Relay On
+|*ROF*		|*[N]* Outlet Relay Off
+|*RNF*		|*[N]* Outlet Relay On and Off
+|*TEL*		|Modem Telephone Number
+|*BRD*		|*[N]* Battery Replacement Date
+|*ECO*		|Economic Mode enable/disable
+|*ATT*		|Auto Test
+|*BTT*		|*[N]* Buzzer Test
+|*ATX*		|*[N][L]* ATX Reboot enable/disable
+|*ARB*		|*[N][L]* AC Fail & Restore Auto-Reboot enable/disable
+|*RSM*		|*[N][L]* ATX Resume enable/disable
+|*UBD*		|UPS Boot Delay
+|*TXF*		|Transfer Frequency
+|*SOV*		|Select Output Voltage
+|*EDB*		|Enable/Disable Buzzer
+|*BTV*		|Battery Test Time & Voltage
+|====
+
+
++BUZ+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|UPS Buzzer	|Integer	|+1+ or +2+	|
+
+- +1+ -> Buzzer Alarm
+- +2+ -> Buzzer Silence
+
+|====
+
+Description::
+If +1+, UPS system alarms normally.
+If +2+, UPS will keep silence but will alarm again when next power event is occurred.
+
+
++SDA+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length		|Comment
+|Shutdown Action	|Integer	|+0+ or +1+ to +9999+	|
+
+- +0+ -> Abort
+- +>0+ -> Seconds
+
+|====
+
+Description::
+Performs shutdown action defined by *+SDT+* after the seconds.
+
+
++SDR+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Shutdown Restart	|Integer	|+0+ to +65535+	|Minute
+|====
+
+Description::
+Perform shutdown action and delay defined by *+SDT+* and *+SDA+* then reboot after indicated number of minutes.
+65535 minutes == 45 days
+
+
++SDT+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Shutdown Type	|Integer	|+1+ or +2+	|
+
+- +1+ -> UPS output (all outlet relay)
+- +2+ -> UPS system
+
+|====
+
+Description::
+Defines action to be taken at UPS shutdown.
+
+
++TST+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="2,^2,^2,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name	|Type		|Range/Length	|Comment
+|Test	|Integer	|+0+ to +4+	|
+
+- +0+ -> Abort test
+- +1+ -> General test
+- +2+ -> *+BTV+* test
+- +3+ -> Test for 10 seconds
+- +4+ -> Test until battery low
+
+|====
+
+Description::
+Application support only +0+, +3+, +4+.
+
+
++UBR+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Baud Rate	|Integer	|See Comment	|+1200+, +2400+, +4800+, +9600+
+|====
+
+Description::
+Sets UPS baud rate.
+
+
++UID+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="5,^2,^2,1",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|UPS Identification	|Integer	|+0+ to +99+	|
+|====
+
+Description::
+Sets UPS ID for one PC monitor more than one UPS.
+
+
++TXV+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Low Transfer Voltage	|Integer	|+0+ to +999+	|Volt
+|High Transfer Voltage	|Integer	|+0+ to +999+	|Volt
+|====
+
+Description::
+Sets high and low transfer voltages.
+
+
++VSN+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Voltage Sensitivity	|Integer	|+0+ to +2+	|
+
+- +0+ -> Normal
+- +1+ -> Reduced
+- +2+ -> Low
+
+|====
+
+Description::
+Sets UPS voltage sensitivity.
+
+
++RON+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Outlet Relay Number	|Integer	|+>0+		|
+|Delay Time		|Integer	|+0+ to +9999+	a|
+
+- +0+ -> Cancel
+- +>0+ -> Seconds
+
+|====
+
+Description::
+Perform relay on after the seconds.
+
+
++ROF+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Outlet Relay Number	|Integer	|+>0+		|
+|Delay Time		|Integer	|+0+ to +9999+	a|
+
+- +0+ -> Cancel
+- +>0+ -> Seconds
+
+|====
+
+Description::
+Perform relay off after the seconds.
+
+
++RNF+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="5,^1,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Outlet Relay Number	|Integer	|+>0+		|
+|Turn Off Delay Time	|Integer	|+1+ to +9999+	|Seconds
+|Turn On Delay Time	|Integer	|+1+ to +65535+	|Minute
+|====
+
+Description::
+Perform relay on after the seconds.
+
+
++TEL+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="5,^1,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type	|Range/Length	|Comment
+|Modem Telephone Number	|String	|+0+ to +16+	|Phone Number
+|====
+
+
++BRD+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="6,^1,^1m,2m",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type	|Range/Length	|Comment
+|Last Battery Replacement Date	|String	|8		|YYYYMMDD
+|Next Battery Replacement Date	|String	|8		|YYYYMMDD
+|====
+
+
++ECO+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name					|Type		|Range/Length	|Comment
+|Switch Economic Mode enable/disable	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable
+- +2+ -> Disable
+
+|====
+
+
++ATT+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Set Periodic Auto-Test	|Integer	|+1+ to +5+	|
+
+- +1+ -> Disable
+- +2+ -> Daily
+- +3+ -> Weekly
+- +4+ -> BiWeekly
+- +5+ -> Monthly
+
+|====
+
+
++BTT+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Buzzer Test	|Integer	|+1+ to +99+	|Seconds
+|====
+
+
++ATX+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|ATX PC Reboot Function	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable
+- +2+ -> Disable(default)
+
+|====
+
+Description::
+Enable/Disable ATX PC reboot function (RS-232 Ring Indicator).
+The UPS set the RI (pin 9) to high for a while when it startup (For example: schedule or power restore).
+
+
++ARB+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|AC Fail & Restore Auto-Reboot	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable (default)
+- +2+ -> Disable
+
+|====
+
+Description::
+Use the *+ARB+* command to choose whether the UPS turns on its power outlets automatically when power returns after an extended power failure.
++
+1. UPS receives the *+SDA+* command in Backup mode (AC Power Fail):
++
+--
+- Enable *+ARB+*: Shutdown the UPS when the countdown time reaches 0.
+UPS turns on its power outlets automatically when power restores.
+- Disable *+ARB+*: Shutdown the UPS when the countdown time reaches 0.
+UPS won't startup users need to startup the UPS manually.
+--
++
+image::images/belkin-protocol_shutdown-time.png["Shutdown time", align = "center"]
+
+2. UPS receive the *+SDA+* command in AC mode (AC Normal):
+ - Shutdown the UPS when the countdown time reaches 0.
+UPS won't startup users need to startup the UPS manually.
+
+
++RSM+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|ATX PC Resume Function	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable
+- +2+ -> Disable (default)
+
+|====
+
+Description::
+Enable/Disable ATX PC resume (RS-232 Ring Indicator) when the UPS status changes.
+The aim of this function is to wakeup the PC and let the UPS notify the application that the status changes.
+The UPS should disable this function when UPS shutdown each time and waiting for the direction from the application.
+
+
++UBD+
+~~~~~
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|UPS Boot Delay	|Integer	|+0+ to +999+	|Seconds
+|====
+
+Description::
+Delay the UPS startup after power restores.
+The power quality may not stable when power restores, this feature let the UPS wait a period of time to startup the system.
+
+
++TXF+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name				|Type		|Range/Length	|Comment
+|Low Transfer Frequency		|Integer	|+0+ to +999+	|0.1 Hz
+|High Transfer Frequency	|Integer	|+0+ to +999+	|0.1 Hz
+|====
+
+Description::
+Sets high and low transfer frequency.
+
+
++SOV+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Select Output Voltage	|Integer	|+0+ to +999+	|Voltage
+|====
+
+Description::
+Select the output voltage.
+
+
++EDB+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^1,^1,4a",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name			|Type		|Range/Length	|Comment
+|Enable/Disable Buzzer	|Integer	|+1+ to +2+	|
+
+- +1+ -> Enable (Default)
+- +2+ -> Disable
+
+|====
+
+Description::
+Enable/Disable UPS buzzer.
+If it is enabled, the UPS should check the *+BUZ+* to decide to alarm or silence.
+If it is disabled then the UPS will always mute.
+
+
++BTV+
+~~~~~
+
+[horizontal]
+Data::
+(Computer->UPS)
++
+[cols="4,^2,^2,2",options="header,autowidth",frame="topbot",grid="rows"]
+|====
+|Name		|Type		|Range/Length	|Comment
+|Test Time	|Integer	|+1+ to +60+	|Minutes
+|Test Voltage	|Integer	|+0+ to +999+	|Voltage
+|====
+
+Description::
+This command is the same as 3Phase UPS.
+If battery voltage is lower than the "Test Voltage" which is set by users then UPS reports test fail.
+This kind of battery test is triggered by *+TST+* (+2+) command.

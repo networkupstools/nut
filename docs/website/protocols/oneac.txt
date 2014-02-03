@@ -1,0 +1,152 @@
+ONEAC(R) Serial Interface
+=========================
+
+
+Advanced Interface Installation Instructions
+--------------------------------------------
+
+ONEAC uninterruptible power supplies (UPS) are the first to offer an open architecture for electronic interfaces.
+This allows the user to fully integrate his computer system.
+While most systems today typically use the interface from the UPS to shut down automatically following a prolonged outage, these interchangeable interfaces are also capable of informing the computer system of other conditions such as high temperature, over/undervoltage and battery condition.
+
+
+Installation Instructions '(Not necessary for units with interface already installed)'
+--------------------------------------------------------------------------------------
+
+1. Observe Electrostatic-Discharge Precautions:
+Keep the interface card in the static-shielded bag until you are ready to complete the installation.
+Use a grounded wrist strap at the workstation where you will be installing the interface.
+If this is not available, ground yourself by frequently touching the Environmental Reference Ground on the rear of the UPS just before handling the interface card.
+Avoid carpeted areas during the installation because they are typically high static areas.
+
+2. Inspect the unit.
+Make sure it is the type you need and that it has not suffered damage in shipment.
+
+3. Switch the UPS off and unplug it from the wall.
+(Be sure the supported equipment is ready to be shut down.)
+
+4. Remove the interface cover plate on the rear of the UPS by removing the two screws which hold it.
+Keep these screws in a safe place.
+
+5. Open the static-shielded bag and remove the interface card.
+
+6. With the component side of the printed circuit board away from the center of the rear panel, slide the interface card into the opening.
+Just before the rear plate on the interface card reaches the rear panel of the UPS, the connectors inside will start to touch.
+Gently increase pressure and move the interface slightly up and down until the rear plate is flush with the rear panel of the UPS.
+Install the two screws (from step 4 above) until snug.
+Make sure that the toothed washer is still attached to the screws.
+If these screws are lost, they may be obtained from any hardware store.
+They are No. 6-32 by 3/8 inch machine screws with No. 6 internal tooth lockwashers.
+
+7. Connect the appropriate cable between the UPS and the host device.
+
+8. Plug the UPS back into the wall and turn it on.
+
+
+Interface Removal Instructions
+------------------------------
+
+1. As during installation, observe Electrostatic-Discharge precautions.
+
+2. Switch the UPS off and unplug it from the wall outlet.
+
+3. Remove the two screws holding the interface to the UPS back plate.
+
+4. Attach a molded cable to the DB25 connector of the interface.
+
+5. Using the hood of the cable as a handle, move the interface up and down slightly while pulling straight back from the UPS.
+
+
+Interface General Overview '(IF-ARS232 & IF-ARS422)'
+----------------------------------------------------
+
+The advanced interface cards send ASCII characters and strings to the computer system.
+Configuration of the card is accomplished through DIP switches on the back plate of the interface.
+Switch 1 is for baud rate and word configuration.
+The two options are 1200, 7 Data, 1 Stop, Even Parity or 9600, 8 Data, 1 Stop, No Parity (default).
+Switches 2 & 3 are reserved.
+Switch 4 is for disabling the internal buzzer when UPS monitoring is being done from a remote location and there is no need for the local buzzer.
+Switches 5 through 8 are for DTE/DCE (RS-232 only, DTE default).
+Each setting option is shown on the back plate.
+These interfaces will work with both the ONEAC EG and ON series of UPSs although not all of the information is available when used with an EG series UPS.
+(See the next chapter for details)
+
+
+Connector Information and Command Set
+-------------------------------------
+
+[cols=".^,^.^,.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Signal	|IF-ARS232 pin	|Signal	|IF-ARS422 pin
+|RD	|2		|+ RxD	|2
+|TD	|3		|+ TxD	|3
+|RTS	|4		|- RxD	|4
+|CTS	|5		|- TxD	|5
+|DSR	|6		|Gnd	|7
+|Gnd	|7		|	|
+|DTR	|20		|	|
+|====
+
+The list below indicates the available information on the interface and how to obtain it.
+To receive the entire packet of information, send a *+%+*, CR, LF.
+A packet request on an EG series UPS only responds with the first 22 characters of the packet.
+
+[cols="2,1,3,2,^1m,^1",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Name			|Works With	|Description					|Return Format						|Request Characters	|Packet Position
+|Manufacturer		|ON/EG		|ONEAC						|String=+ONEAC+						|*M*			|1-5
+|UPS Family		|ON/EG		|Family of UPS					|String=xx (+ON+/+EG+)					|*F*			|6,7
+|Firmware Version	|ON/EG		|Version of advanced interface firmware		|String=x.x						|*N*			|8-10
+|UPS on Inverter	|ON/EG		|Is the UPS on inverter? Yes/No			|Char=x (+Y+/+N+)					|*G*			|11
+|Battery Low		|ON/EG		|Is the battery low? Yes/No			|Char=x (+Y+/+N+)					|*K*			|12
+|Current Status		|ON/EG		|
+Normal, on battery-low line, on battery-hi line, low battery (low), low battery (hi), replace battery, maintenance required, UPS is too hot.
+
+											|Char=x (+@+,+A+,+Q+,+C+,+S+,+H+,+D+,+`+, respectively)	|*X*			|13
+|Last Transfer		|ON/EG		|Black out, low line, high line			|Char=x (+B+,+L+,+H+)					|*W*			|14
+|Inverter Ready		|ON/EG		|Inverter ready					|Char=x (+Y+/+N+)					|*I*			|15
+|UPS Shutdown		|ON/EG		|Time remaining to inverter off in seconds	|String=xxx						|*O*			|16-18
+|Battery Test Time	|ON/EG		|Remaining battery test time in minutes		|String=xx						|*Q*			|19,20
+|Frequency		|ON/EG		|UPS operating frequency (50/60)		|String=xx						|*H*			|21,22
+|Reserved		|ON		|Reserved					|String=xxxx						|			|23-26
+|Operating Voltage	|ON		|120/13O Volts					|Char=x (+1+/+2+)					|*V*			|27
+|Front Panel Display	|ON		|What the front panel is now			|String=xx						|*D*			|28,29
+|Condition Code		|ON		|Last displayed condition status code		|String=xx						|*C*			|30,31
+|% Load Power
+footnoteref:[f1,% Load Power is only valid when the UPS is on line.
+The last known value will be kept in this variable.]
+
+			|ON		|Last displayed output load power		|String=xx						|*P*			|32,33
+|% Battery Time
+footnoteref:[f2,% Battery Time is only valid when the UPS is on Inverter.
+The last known value will be kept in this variable.]
+
+			|ON		|Last displayed number while on inverter	|String=xx						|*T*			|34,35
+|Line Voltage
+footnoteref:[f3,Line voltage measurements are not intended to be a substitute for power monitoring equipment.]
+
+			|ON		|Input AC line voltage in volts ACrms		|String=xxx						|*L*			|36-38
+|Min Line Voltage
+footnoteref:[f3]	|ON		|Minimum line voltage since last reset		|String=xxx						|*A*			|39-41
+
+|Max Line Voltage
+footnoteref:[f3]	|ON		|Maximum line voltage since last reset		|String=xxx						|*E*			|42-44
+
+|Server Voltage
+footnoteref:[f2]	|ON		|Output AC line voltage in volts ACrms		|String=xxx						|*S*			|45-47
+
+|Boost Enabled		|ON		|Output voltage boost on? Yes/No		|Char=x (+Y+/+N+)					|*B*			|48
+6+h|Control Options:
+|Power Fail Simulation	|ON/EG		|Simulates power failure for 15 seconds		|							|*\^B^U*		|
+|Battery Run Test	|ON/EG		|Run on battery for +xx+ minutes		|							|**^B**xx		|
+|Shutdown		|ON/EG		|Inverter shutdown (immediate)			|							|*\^O^F*		|
+|Timed Shutdown		|ON/EG		|Inverter shutdown in +xxx+ seconds		|							|**Z**xxx		|
+|Reset Min/Max		|ON		|Reset AC input minimum and maximum		|							|*R*			|
+|====
+
+All incoming characters EXCEPT "*+X+*" require a trailing CR, LF sequence to be recognized.
+Responses from the UPS EXCEPT CURRENT STATUS are followed by a CR, LF sequence.
+All request characters are upper case.
+Invalid characters or request format returns a "+*+", CR, LF to the host machine.
+A valid request that cannot be executed at the time returns a "+#+" to the host.
+Periods occupy data positions that have not had an event to load them.

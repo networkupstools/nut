@@ -1,0 +1,1359 @@
+UPS Standard Protocol System Enhancement Corporation
+====================================================
+:revnumber: 2.6
+:revdate: June 22, 1995
+
+
+Introduction
+------------
+
+This document specifies a standard protocol for UPS manufacturers to use in the design and implementation of a UPS serial interface.
+
+
+Definition of available UPS parameters
+--------------------------------------
+
+NOTE: *Length* is defined as the number of bytes that may be sent from the UPS to the host.
+The UPS may send less than the maximum number of bytes.
+*Length* will apply only to variables of the type *string*.
+*Range* is defined as the minimum and maximum integer values which may be sent from the UPS to the host.
+The integer values may be zero padded, but this is not required.
+*Range* will apply only to variables of the type *integer*.
+In some instances, only a defined set of integer values will be accepted by the host.
+This set will be specified in the description field.
+
+
+Identification Group
+~~~~~~~~~~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type	|Length		|Description
+|Manufacturer		|string	|+0+ to +32+	|Name of the UPS manufacturer.
+|Model			|string	|+0+ to +64+	|UPS Model designation.
+|Software version	|string	|+0+ to +32+	|UPS firmware/software version.
+|Identification		|string	|+0+ to +64+	|String identifying the UPS.
+|====
+
+
+[[s22]]
+Battery Group
+~~~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type		|Range		|Description
+|Battery Condition	|integer	|+0+ to +2+	a|
+
+- +0+ = Good
+- +1+ = Weak
+- +2+ = Replace
+
+|Battery Status		|integer	|+0+ to +2+	a|
+
+- +0+ = Battery OK
+- +1+ = Battary Low
+- +2+ = Battery Depleted
+
+|Battery Charge		|integer	|+0+ to +3+	a|
+
+- +0+ = Floating
+- +1+ = Charging
+- +2+ = Resting
+- +3+ = Discharging
+
+|Seconds on Battery	|integer	|+0+ to +99999+	|Seconds since UPS switched to battery.
+|Estimated Minutes	|integer	|+0+ to +999+	|Estimated time to battery charge depletion.
+|Estimated Charge	|integer	|+0+ to +999+	|Estimate of percent baattery charge remaining.
+|Battery Voltage	|integer	|+0+ to +9999+	|Battery voltage in 0.1 volts DC.
+|Battery Current	|integer	|+0+ to +9999+	|Battery current in 0.1 amps DC.
+|Battery Temperature	|integer	|+0+ to +99+	|Battery temperature in degrees Celsius.
+|====
+
+
+Input Group
+~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type		|Range		|Description
+|Input Line Bads	|integer	|+0+ to +999+	|Number of out of tolerange conditions.
+|Input Num Lines	|integer	|+0+ to +9+	|Number of input lines used in this device.
+|Input Frequency 1	|integer	|+0+ to +999+	|Present input frequency in 0.1 Hz.
+|Input Voltage 1	|integer	|+0+ to +9999+	|Present input voltage in 0.1 volts.
+|Input Current 1	|integer	|+0+ to +9999+	|Present input current in 0.1 RMS Amps.
+|Input Power 1		|integer	|+0+ to +99999+	|Present input true power in Watts.
+|Input Frequency 2	|integer	|+0+ to +999+	|Present input frequency in 0.1 Hz.
+|Input Voltage 2	|integer	|+0+ to +9999+	|Present input voltage in 0.1 volts.
+|Input Current 2	|integer	|+0+ to +9999+	|Present input current in 0.1 RMS Amps.
+|Input Power 2		|integer	|+0+ to +99999+	|Present input true power in Watts.
+|Input Frequency 3	|integer	|+0+ to +999+	|Present input frequency in 0.1 Hz.
+|Input Voltage 3	|integer	|+0+ to +9999+	|Present input voltage in 0.1 volts.
+|Input Current 3	|integer	|+0+ to +9999+	|Present input current in 0.1 RMS Amps.
+|Input Power 3		|integer	|+0+ to +99999+	|Present input true power in Watts.
+|====
+
+
+Output Group
+~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type		|Range		|Description
+|Output Source		|integer	|+0+ to +5+	a|Present source of output power
+
+- +0+ = Normal
+- +1+ = On Bypass
+- +2+ = Boosting
+- +3+ = On Battery
+- +4+ = Reducing
+- +5+ = Other
+
+|Output Frequency	|integer	|+0+ to +999+	|Present output frequency in 0.1 Hz.
+|Output Num Lines	|integer	|+0+ to +9+	|Number of output lines used in this device.
+|Output Voltage 1	|integer	|+0+ to +9999+	|Present output voltage in 0.1 volts.
+|Output Current 1	|integer	|+0+ to +9999+	|Present output current in 0.1 RMS Amps.
+|Output Power 1		|integer	|+0+ to +99999+	|Present output true power in Watts.
+|Output Load 1		|integer	|+0+ to +999+	|Percent of UPS power capacity presently used.
+|Output Voltage 2	|integer	|+0+ to +9999+	|Present output voltage in 0.1 volts.
+|Output Current 2	|integer	|+0+ to +9999+	|Present output current in 0.1 RMS Amps.
+|Output Power 2		|integer	|+0+ to +99999+	|Present output true power in Watts.
+|Output Load 2		|integer	|+0+ to +999+	|Percent of UPS power capacity presently used.
+|Output Voltage 3	|integer	|+0+ to +9999+	|Present output voltage in 0.1 volts.
+|Output Current 3	|integer	|+0+ to +9999+	|Present output current in 0.1 RMS Amps.
+|Output Power 3		|integer	|+0+ to +99999+	|Present output true power in Watts.
+|Output Load 3		|integer	|+0+ to +999+	|Percent of UPS power capacity presently used.
+|====
+
+
+Bypass Group
+~~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type		|Range		|Description
+|Bypass Frequency	|integer	|+0+ to +999+	|Present bypass frequency in 0.1 Hz.
+|Bypass Num Lines	|integer	|+0+ to +9+	|Number of bypass lines used in this device.
+|Bypass Voltage 1	|integer	|+0+ to +9999+	|Present bypass voltage in 0.1 volts.
+|Bypass Current 1	|integer	|+0+ to +9999+	|Present bypass current in 0.1 RMS Amps.
+|Bypass Power 1		|integer	|+0+ to +99999+	|Present bypass true power in Watts.
+|Bypass Voltage 2	|integer	|+0+ to +9999+	|Present bypass voltage in 0.1 volts.
+|Bypass Current 2	|integer	|+0+ to +9999+	|Present bypass current in 0.1 RMS Amps.
+|Bypass Power 2		|integer	|+0+ to +99999+	|Present bypass true power in Watts.
+|Bypass Voltage 3	|integer	|+0+ to +9999+	|Present bypass voltage in 0.1 volts.
+|Bypass Current 3	|integer	|+0+ to +9999+	|Present bypass current in 0.1 RMS Amps.
+|Bypass Power 3		|integer	|+0+ to +99999+	|Present bypass true power in Watts.
+|====
+
+
+Alarm Group
+~~~~~~~~~~~
+
+[cols="3,1,1,5a",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name			|Type		|Range		|Description
+|Alarm Temperature		|integer	|+0+ or +1+	|
+
+- +0+ = Temperature OK
+- +1+ = Over Temperature
+
+|Alarm Input Bad		|integer	|+0+ or +1+	|
+
+- +0+ = Input OK
+- +1+ = Input Fault
+
+|Alarm Output Bad		|integer	|+0+ or +1+	|
+
+- +0+ = Output OK
+- +1+ = Output Fault
+
+|Alarm Overload			|integer	|+0+ or +1+	|
+
+- +0+ = UPS not Overloaded
+- +1+ = UPS Overloaded
+
+|Alarm Bypass Bad		|integer	|+0+ or +1+	|
+
+- +0+ = Bypass OK
+- +1+ = Bypass Fault
+
+|Alarm Output Off		|integer	|+0+ or +1+	|
+
+- +0+ = Output On
+- +1+ = Output Off
+
+|Alarm UPS Shutdown		|integer	|+0+ or +1+	|
+
+- +0+ = UPS not Shutdown
+- +1+ = UPS Shutdown
+
+|Alarm Charger Failure		|integer	|+0+ or +1+	|
+
+- +0+ = Charger OK
+- +1+ = Charger Fault
+
+|Alarm System Off		|integer	|+0+ or +1+	|
+
+- +0+ = System On
+- +1+ = System Off
+
+|Alarm Fan Failure		|integer	|+0+ or +1+	|
+
+- +0+ = Fan OK
+- +1+ = Fan Fault
+
+|Alarm Fuse Failure		|integer	|+0+ or +1+	|
+
+- +0+ = Fuse OK
+- +1+ = Fuse Fault
+
+|Alarm General Fault		|integer	|+0+ or +1+	|
+
+- +0+ = General system OK
+- +1+ = General system Fault
+
+|Alarm Awaiting Power		|integer	|+0+ or +1+	|
+
+- +0+ = Not Awaiting Power
+- +1+ = Awaiting Power
+
+|Alarm Shutdown Pending		|integer	|+0+ or +1+	|
+
+- +0+ = No Shutdown Pending
+- +1+ = Shutdown Pending
+
+|Alarm Shutdown Imminent	|integer	|+0+ or +1+	|
+
+- +0+ = No Shutdown Imminent
+- +1+ = Shutdown Imminent
+
+|====
+
+
+Test Group
+~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type		|Length/Range	|Description
+|Test Results Summary	|integer	|+0+ to +5+	a|
+
+- +0+ = No test performed
+- +1+ = Test Passed
+- +2+ = Test in progress
+- +3+ = General Test failed
+- +4+ = Battery Test failed
+- +5+ = Deep Battery Test failed
+
+|Test Results Detail	|string		|+0+ to +64+	|Additional information about the last self test.
+|Test Type		|integer	|+-1+ to +3+	a|
+
+- +-1+ = Abort test in progress
+- +0+ = No test
+- +1+ = General System Test
+- +2+ = Quick Battery Test
+- +3+ = Deep Battery Calibration
+
+|====
+
+
+Control Group
+~~~~~~~~~~~~~
+
+[cols="3,1,1,5a",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Type		|Range			|Description
+|Shutdown Type		|integer	|+1+ or +2+		|Shutdown action to be taken:
+
+- +1+ = UPS output only
+- +2+ = Entire UPS
+
+|Shutdown After Delay	|integer	|+-1+ to +9999999+	|Perform shutdown action defined by Shutdown Type after indicated number seconds.
+
+- +-1+ = Cancel shutdown
+- +0+ = Shutdown immediately
+
+|Startup After Delay	|integer	|+-1+ to +9999999+	|Start output after indicated number of seconds.
+
+- +-1+ = Cancel countdown
+- +0+ = Start output immediately
+
+|Reboot With Duration	|integer	|+0+ to +9999999+	d|Perform immediate shutdown action defined by Shutdown Type and wait indicated number of seconds before restarting.
+|Auto Restart		|integer	|+1+ or +2+		|Flag indicating whether UPS should be automatically restarted after a shutdown.
+
+- +1+ = Automatic Restart
+- +2+ = Manual Restart
+
+|====
+
+
+Configuration Group
+~~~~~~~~~~~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name			|Type		|Range/Length	|Description
+|Nominal Input Voltage		|integer	|+0+ to +999+	|Nominal input voltage in Volts.
+|Nominal Input Frequency	|integer	|+0+ to +999+	|Nominal input frequency in 0.1 Hz.
+|Nominal Output Voltage		|integer	|+0+ to +999+	|Nominal output voltage in Volts.
+|Nominal Output Frequency	|integer	|+0+ to +999+	|Nominal output frequency in 0.1 Hz.
+|Nominal Volt-Amp Rating	|integer	|+0+ to +99999+	|Nominal Volt-Amp rating.
+|Nominal Output Power		|integer	|+0+ to +99999+	|Nominal true power rating in Watts.
+|Nominal Low Battery Time	|integer	|+0+ to +99+	|Number of estimated minutes remaining at which a low battery condition is declared.
+|Audible Alarm			|integer	|+0+ to +4+	a|State of the audible alarm
+
+- +1+ = Disabled
+- +2+ = Enabled
+- +3+ = Muted
+- +4+ = Disabled Until Low Battery Warning
+
+|Low Voltage Transfer Point	|integer	|+0+ to +999+	|Minimum input line voltage in Volts before UPS transfers to battery backup.
+|High Voltage Transfer Point	|integer	|+0+ to +999+	|Maximum input line voltage in Volts before UPS transfers to battery backup.
+|Battery Installed Date		|string		|+8+		|The date that the battery was installed in the UPS [format +mmddyyyy+]
+|Nominal Battery Life		|integer	|+0+ to +99999+	|The length of nominal useful battery life in days.
+|====
+
+
+Baud Rate
+~~~~~~~~~
+
+[cols="3,1,1,5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name	|Type		|Range			|Description
+|UPS Baud Rate	|integer	|See Description	|Baud rate of the UPS.
+Valid values are +1200+, +2400+, +4800+, +9600+ and +19200+.
+
+|====
+
+
+ID Number Assignments
+~~~~~~~~~~~~~~~~~~~~~
+
+[cols="^3,1,^1m,^5",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|ID #	|Parameter			|Command	|Group
+|1	|Alarm Awaiting Power		|*ST5*		|Alarm
+|2	|Alarm Bypass Bad		|*ST5*		|Alarm
+|3	|Alarm Charger Failure		|*ST5*		|Alarm
+|4	|Alarm Fan Failure		|*ST5*		|Alarm
+|5	|Alarm Fuse Failure		|*ST5*		|Alarm
+|6	|Alarm General Fault		|*ST5*		|Alarm
+|7	|Alarm Input Bad		|*ST5*		|Alarm
+|8	|Alarm Output Bad		|*ST5*		|Alarm
+|9	|Alarm Output Off		|*ST5*		|Alarm
+|10	|Alarm Overload			|*ST5*		|Alarm
+|11	|Alarm Shutdown Imminent	|*ST5*		|Alarm
+|12	|Alarm Shutdown Pending		|*ST5*		|Alarm
+|13	|Alarm System Off		|*ST5*		|Alarm
+|14	|Alarm Temperature		|*ST5*		|Alarm
+|15	|Alarm UPS Shutdown		|*ST5*		|Alarm
+|16	|Audible Alarm			|*NOM*		|Configuration
+|17	|Auto Restart			|*ATR*		|Control
+|18	|Battery Charge			|*ST1*		|Battery
+|19	|Battery Condition		|*ST1*		|Battery
+|20	|Battery Current		|*ST1*		|Battery
+|21	|Battery Installed Date		|*NOM*		|Configuration
+|22	|Battery Status			|*ST1*		|Battery
+|23	|Battery Temperature		|*ST1*		|Battery
+|24	|Battery Voltage		|*ST1*		|Battery
+|25	|Bypass Current 1		|*ST4*		|Bypass
+|26	|Bypass Current 2		|*ST4*		|Bypass
+|27	|Bypass Current 3		|*ST4*		|Bypass
+|28	|Bypass Frequency		|*ST4*		|Bypass
+|29	|Bypass Num Lines		|*ST4*		|Bypass
+|30	|Bypass Power 1			|*ST4*		|Bypass
+|31	|Bypass Power 2			|*ST4*		|Bypass
+|32	|Bypass Power 3			|*ST4*		|Bypass
+|33	|Bypass Voltage 1		|*ST4*		|Bypass
+|34	|Bypass Voltage 2		|*ST4*		|Bypass
+|35	|Bypass Voltage 3		|*ST4*		|Bypass
+|36	|Estimated Charge		|*ST1*		|Bypass
+|37	|Estimated Minutes		|*ST1*		|Bypass
+|38	|High Voltage Transfer Point	|*NOM*		|Configuration
+|39	|Identification			|*UID*		|Identification
+|40	|Input Current 1		|*ST2*		|Input
+|41	|Input Current 2		|*ST2*		|Input
+|42	|Input Current 3		|*ST2*		|Input
+|43	|Input Frequency 1		|*ST2*		|Input
+|44	|Input Frequency 2		|*ST2*		|Input
+|45	|Input Frequency 3		|*ST2*		|Input
+|46	|Input Line Bads		|*ST2*		|Input
+|47	|Input Num Lines		|*ST2*		|Input
+|48	|Input Power 1			|*ST2*		|Input
+|49	|Input Power 2			|*ST2*		|Input
+|50	|Input Power 3			|*ST2*		|Input
+|51	|Input Voltage 1		|*ST2*		|Input
+|52	|Input Voltage 2		|*ST2*		|Input
+|53	|Input Voltage 3		|*ST2*		|Input
+|54	|Low Voltage Transfer Point	|*NOM*		|Configuration
+|55	|Manufacturer			|*MAN*		|Identification
+|56	|Model				|*MOD*		|Identification
+|57	|Nominal Battery Life		|*NOM*		|Configuration
+|58	|Nominal Input Frequency	|*NOM*		|Configuration
+|59	|Nominal Input Voltage		|*NOM*		|Configuration
+|60	|Nominal Low Battery Time	|*NOM*		|Configuration
+|61	|Nominal Output Frequency	|*NOM*		|Configuration
+|62	|Nominal Output Power		|*NOM*		|Configuration
+|63	|Nominal Output Voltage		|*NOM*		|Configuration
+|64	|Nominal Volt-Amp Rating	|*NOM*		|Configuration
+|65	|Output Current 1		|*ST3*		|Output
+|66	|Output Current 2		|*ST3*		|Output
+|67	|Output Current 3		|*ST3*		|Output
+|68	|Output Frequency		|*ST3*		|Output
+|69	|Output Load 1			|*ST3*		|Output
+|70	|Output Load 2			|*ST3*		|Output
+|71	|Output Load 3			|*ST3*		|Output
+|72	|Output Num Lines		|*ST3*		|Output
+|73	|Output Power 1			|*ST3*		|Output
+|74	|Output Power 2			|*ST3*		|Output
+|75	|Output Power 3			|*ST3*		|Output
+|76	|Output Source			|*ST3*		|Output
+|77	|Output Voltage 1		|*ST3*		|Output
+|78	|Output Voltage 2		|*ST3*		|Output
+|79	|Output Voltage 3		|*ST3*		|Output
+|80	|Reboot With Duration		|*RWD*		|Control
+|81	|Seconds on Battery		|*ST1*		|Battery
+|82	|Shutdown Type			|*SDA*		|Control
+|83	|Shutdown After Delay		|*PSD*		|Control
+|84	|Software Version		|*VER*		|Identification
+|85	|Startup After Delay		|*STD*		|Control
+|86	|Test Results Detail		|*STR*		|Test
+|87	|Test Results Summary		|*STR*		|Test
+|88	|Test Type			|*TST*		|Test
+|89	|UPS Baud Rate			|*UBR*		|Configuration
+|====
+
+
+Communications
+--------------
+
+Operating Parameters
+~~~~~~~~~~~~~~~~~~~~
+
+[horizontal]
+Baud Rate::
+2400 (default - can be modified with the *+UBR+* command)
+
+Data Bits::
+8
+
+Stop Bits::
+1
+
+Parity::
+None
+
+
+[[s32]]
+Message Format
+~~~~~~~~~~~~~~
+
+[cols="^,^,^,^",options="header,autowidth",frame="topbot",grid="none",align="center"]
+|===
+|Header		|Message Type	|Data Length	|Data
+|(1 byte)	|(1 byte)	|(3 bytes)	|(128 bytes max)
+|====
+
+*Header*::
+The message header is a single byte of data.
+The header will be a *+^+* (carat) character.
+
+*Message Type*::
+The message type is a single byte of data.
+The type will be one of the following:
++
+[cols="^1m,4,5",options="autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|*0*	|Command rejected	|(from UPS to attached system)
+|*1*	|Command accepted	|(from UPS to attached system)
+|*P*	|Poll command		|(from attached system to UPS)
+|*S*	|Set command		|(from attached system to UPS)
+|***	|Unsolicited data	|(from UPS to attached system)
+|*D*	|Data returned		|(from UPS to attached system)
+|====
+
+*Data Length*::
+The data length is the number of bytes of data passed.
+
+[[s324]]*Data*::
+All data will be comma delimited.
+The variables should comply with the order specified in sections <<s331,'Poll Commands'>> and <<s334,'Set Commands'>>.
+If a variable value is not currently available, a comma with no data should be placed in the variable location.
+It is not necessary to provide commas beyond the last data value.
+For example, the *+ST1+* command (Battery group) can return up to 9 data values.
+If only the 2nd, 4th and 6th variables have valid data, the UPS response will have the following format:
++
+----
+^D010,1,,22,,82
+----
++
+Note that it is not necessary to provide the final 3 commas since there is no valid data for the final 3 variables.
+
+
+Messages from the attached system to the UPS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[[s331]]
+Poll Commands
+^^^^^^^^^^^^^
+
+[cols="1^m,2,1^,6",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Description			|Max Data Length (bytes)	|Parameters Returned
+|*AP1*		|Available Parameters 1		|128				|Comma delimited parameter ID numbers indicating which parameters are available from the UPS. (ID #'s 1-46)
+|*AP2*		|Available Parameters 1		|128				|Comma delimited parameter ID numbers indicating which parameters are available from the UPS. (ID #'s 47-89)
+|*ATR*		|Auto Reboot			|1				|Auto reboot parameter
+|*MAN*		|UPS Manufacturer		|32				|Manufacturer
+|*MOD*		|UPS Model			|64				|UPS Model
+|*NOM*		|UPS Nominal Values		|55				|Nominal Input Voltage, Nominal Input Frequency, Nominal Output Voltage, Nominal Output Frequency, Nominal VA Rating, Nominal Output Power, Low Battery Time, Audible Alarm, Low Voltage Transfer Point, High Voltage Transfer Point, Battery Installed Date, Nominal Battery Life
+|*SDA*		|Shutdown Action		|1				|Shutdown Type
+|*ST1*		|Status group 1 (Battery)	|32				|Battery Condition, Battery Status, Battery Charge, Seconds on Battery, Estimated Minutes, Estimated Charge, Battery Voltage, Battery Current, Battery Temperature
+|*ST2*		|Status group 2 (Input)		|65				|Input Line Bads, Input Num Lines, Input Frequency 1, Input Voltage 1, Input Current 1, Input Power 1, Input Frequency 2, Input Voltage 2, Input Current 2, Input Power 2, Input Frequency 3, Input Voltage 3, Input Current 3, Input Power 3
+|*ST3*		|Status group 3 (Output)	|66				|Output Source, Output Frequency, Output Num Lines, Output Voltage 1, Output Current 1, Output Power 1, Output Load 1, Output Voltage 2, Output Current 2, Output Power 2, Output Load 2, Output Voltage 3, Output Current 3, Output Power 3, Output Load 3
+|*ST4*		|Status group 4 (Bypass)	|53				|Bypass Frequency, Bypass Num Lines, Bypass Voltage 1, Bypass Current 1, Bypass Power 1, Bypass Voltage 2, Bypass Current 2, Bypass Power 2, Bypass Voltage 3, Bypass Current 3, Bypass Power 3
+|*ST5*		|Status group 5 (Alarm)		|29				|Alarm Temperature, Alarm Input Bad, Alarm Output Bad, Alarm Overload, Alarm Bypass Bad, Alarm Output Off, Alarm UPS Shutdown, Alarm Charger Failure, Alarm System Off, Alarm Fan Failure, Alarm Fuse Failure, Alarm General Fault, Alarm Awaiting Power, Alarm Shutdown Pending, Alarm Shutdown Imminent
+|*STR*		|Selft Test Results		|66				|Selft Test Result Summary, Self Test Result Details
+|*UBR*		|UPS Baud Rate			|5				|UPS Baud Rate
+|*UID*		|UPS Identification		|64				|UPS Identification
+|*VER*		|UPS Version			|32				|UPS firmware and/or software version
+|====
+
+
+*Available Parameters*::
++
+--
+The *+AP1+* command will return a string of data which specifies which of the parameters (1-46) are available from the UPS.
+The data will be a list of supported ID numbers separated by commas.
+If a parameter is supported, that ID number is included in this list.
+If the parameter is not supported, that ID number will not be returned.
+
+The *+AP2+* command is identical to the *+AP1+* command except that it specifies which of the parameters (47-89) are available from the UPS.
+--
+
+[[s3312]]*UPS Identification*::
++
+--
+The *+ATR+* poll command will return 1 byte of data which provides the Auto Reboot value stored in the UPS.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name	|Max Length	|Units
+|Auto Reboot	|1		|integer
+|====
+
+The *+MAN+* command will return up to 32 bytes of data which provide the UPS Manufacturer value stored in the UPS.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name	|Max Length	|Units
+|Manufacturer	|32		|string
+|====
+
+The *+MOD+* command will return up to 64 bytes of data which provide the UPS Model Number value stored in the UPS.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name	|Max Length	|Units
+|Model		|64		|string
+|====
+
+The *+SDA+* poll command will return 1 byte of data which provides the Shutdown Type value stored in the UPS.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name	|Max Length	|Units
+|Shutdown Type	|1		|integer
+|====
+
+The *+UID+* command will return up to 64 bytes of data which provide the UPS Identificatioj string value stored in the UPS.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|UPS Identification	|64		|string
+|====
+
+The *+VER+* command will return up to 32 bytes of data which provide the UPS Software/Hardware version value(s) stored in the UPS.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|Software Version	|32		|string
+|====
+
+The *+NOM+* command will return up to 55 bytes of data (including commas) which provide the UPS Nominal values stored in the UPS.
+All values are comma delimited.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name			|Max Length	|Units
+|Nominal Input Voltage		|3		|volts
+|Nominal Input Frequency	|3		|0.1 Hz
+|Nominal Output Voltage		|3		|volts
+|Nominal Output Frequency	|3		|0.1 Hz
+|Nominal VA Rating		|5		|volt-amps
+|Nominal Output Power		|5		|watts
+|Low Battery Time		|2		|minutes
+|Audible Alarm			|1		a|
+
+- +1+ = disabled
+- +2+ = enabled
+- +3+ = muted
+- +4+ = disabled until low battery
+
+|Low Voltage Transfer Point	|3		|volts
+|High Voltage Transfer Point	|3		|volts
+|Battery Installed Date		|8		|+mmddyyyy+
+|Nominal Battery Life		|5		|days
+|====
+--
+
+[[s3313]]*UPS Status*::
++
+--
+The *+ST1+* command will return up to 32 bytes of data (including commas) which provide dynamic information about the status of the UPS.
+All values are comma delimited.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|Battery Condition	|1		a|
+
+- +0+ = Good
+- +1+ = Weak
+- +2+ = Replace
+
+|Battery Status		|1		a|
+
+- +0+ = Battery OK
+- +1+ = Battery Low
+- +2+ = Battery Depleted
+
+|Battery Charge		|1		a|
+
+- +0+ = Floating
+- +1+ = Charging
+- +2+ = Resting
+- +3+ = Discharging
+
+|Seconds On Battery	|5		|seconds
+|Estimated Minutes	|3		|minutes
+|Estimated Charge	|3		|percent
+|Battery Voltage	|4		|0.1 volts
+|Battery Current	|4		|0.1 amps
+|Battery Temperature	|2		|degrees
+|====
+
+The *+ST2+* command will return up to 65 bytes of data (including commas) which provide dynamic information about the status of the UPS.
+All values are comma delimited.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|Input Line Bads	|3		|integer
+|Input Num Lines	|1		|integer (+1+-+3+)
+|Input Frequency 1	|3		|0.1 Hz
+|Input Voltage 1	|4		|0.1 volts
+|Input Current 1	|4		|0.1 amps
+|Input Power 1		|5		|watts
+|Input Frequency 2	|3		|0.1 Hz
+|Input Voltage 2	|4		|0.1 volts
+|Input Current 2	|4		|0.1 amps
+|Input Power 2		|5		|watts
+|Input Frequency 3	|3		|0.1 Hz
+|Input Voltage 3	|4		|0.1 volts
+|Input Current 3	|4		|0.1 amps
+|Input Power 3		|5		|watts
+|====
+
+The *+ST3+* command will return up to 66 bytes of data (including commas) which provide dynamic information about the status of the UPS.
+All values are comma delimited.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|Output Source		|1		a|
+
+- +0+ = Normal
+- +1+ = On Battery
+- +2+ = On Bypass
+- +3+ = Reducing
+- +4+ = Boosting
+- +5+ = Other
+
+|Output Frequency	|3		|0.1 Hz
+|Output Num Lines	|1		|integer (+1+-+3+)
+|Output Voltage 1	|4		|0.1 volts
+|Output Current 1	|4		|0.1 amps
+|Output Power 1		|5		|watts
+|Output Load 1		|3		|percent
+|Output Voltage 2	|4		|0.1 volts
+|Output Current 2	|4		|0.1 amps
+|Output Power 2		|5		|watts
+|Output Load 2		|3		|percent
+|Output Voltage 3	|4		|0.1 volts
+|Output Current 3	|4		|0.1 amps
+|Output Power 3		|5		|watts
+|Output Load 3		|3		|percent
+|====
+
+The *+ST4+* command will return up to 53 bytes of data (including commas) which provide dynamic information about the status of the UPS.
+All values are commad delimited.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|Bypass Frequency	|3		|0.1 Hz
+|Bypass Num Lines	|1		|integer (+1+-+3+)
+|Bypass Voltage 1	|4		|0.1 volts
+|Bypass Current 1	|4		|0.1 amps
+|Bypass Power 1		|5		|watts
+|Bypass Voltage 2	|4		|0.1 volts
+|Bypass Current 2	|4		|0.1 amps
+|Bypass Power 2		|5		|watts
+|Bypass Voltage 3	|4		|0.1 volts
+|Bypass Current 3	|4		|0.1 amps
+|Bypass Power 3		|5		|watts
+|====
+
+The *+ST5+* command will return up to 29 bytes of data (including commas) which provide dynamic information about the status of the UPS.
+All values are comma delimited.
+
+[cols="4,2^,4a",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name			|Max Length	|Units
+|Alarm Temperature		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Input Bad		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Output Bad		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Overload			|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Bypass Bad		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Output Off		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm UPS Shutdown		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Charger Failure		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm System Off		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Fan Failure		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Fuse Failure		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm General Fault		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Awaiting Power		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Shutdown Pending		|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|Alarm Shutdown Imminent	|1		|
+
+- +0+ = No Alarm Active
+- +1+ = Alarm Active
+
+|====
+
+The *+STR3+* command will return up to 66 bytes of data (including commas) which provide the detailed result of the most recent UPS self test performed.
+All values are comma delimited.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name		|Max Length	|Units
+|Test Results Summary	|1		a|
+
+- +0+ = No test performed
+- +1+ = Test passed
+- +2+ = Test in progress
+- +3+ = General test failed
+- +4+ = Battery test failed
+- +5+ = Deep test failed
+
+|Test Results Detail	|64		|string
+|====
+
+The *+UBR+* command will return up to 5 bytes of data showing the UPS baud rate.
+
+[cols="4,2^,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Parameter Name	|Max Length	|Units
+|UPS Baud Rate	|5		|+1200+, +2400+, +4800+, +9600+, +19200+
+|====
+--
+
+[[s334]]
+Set Commands
+^^^^^^^^^^^^
+
+[cols="1^m,4,1^,2,2",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Description	|Max Length	|Data	|Parameter Set
+
+|*ATR*
+|If ON, UPS system will restart after a shutdown.
+
+If OFF, UPS must be restart manually.
+|1
+a|
+- +1+ = ON (auto)
+- +2+ = OFF (manual)
+|Auto Reboot
+
+|*NOM*
+|Sets configuration group values.
+|55
+|Configuration group parameters (comma delimited)
+|Nominal Input Voltage, Nominal Input Frequency, Nominal Output Voltage, Nominal Output Frequency, Nominal volt-amp rating, Nominal Output Power, Nominal Low Battery Time, Audible alarm state, Low Volt Transfer Point, High Volt Transfer Point, Battery Installed Date, Nominal Battery Life
+
+|*PSD*
+|Performs shutdown action defined bt the 'Shutdown Type' after the indicated number of seconds.
+|7
+a|
+- +-1+ = Abort
+- +0+ = Immediate
+- +>0+ = seconds until shutdown
+|Shutdown After Delay
+
+|*RWD*
+|Immediately performs shutdown action defined by 'Shutdown Type', then restarts after indicated number of seconds.
+|7
+|Seconds
+|Reboot With Duration
+
+|*SDA*
+|Defines action to be taken at UPS shutdown.
+|1
+a|
+- +1+ = UPS output
+- +2+ = UPS system
+|Shutdown Type
+
+|*STD*
+|Starts UPS output after indicated number of seconds.
+|1
+a|
+- +-1+ = Abort
+- +0+ = Immediate
+- +>0+ = seconds until startup
+|Startup After Delay
+
+|*TST*
+|Test
+|2
+a|
+- +-1+ = Abort Test
+- +0+ = No effect
+- +1+ = General Test
+- +2+ = Battery Test
+- +3+ = Deep Test
+|Test Type
+
+|*UBR*
+|Sets UPS baud rate
+|5
+|+1200+, +2400+, +4800+, +9600+, +19200+
+|UPS baud rate
+
+|*UID*
+|Sets UPS ID string
+|64
+|ID string
+|Identification
+
+|====
+
+
+Communication Examples
+~~~~~~~~~~~~~~~~~~~~~~
+
+Following are examples of commands that may be sent to a UPS, and responses to those commands from the UPS.
+
+
+Poll commands examples
+^^^^^^^^^^^^^^^^^^^^^^
+
+*Host requests the Available parameters (part 1):*::
++
+----
+^P003AP1
+----
+
+[horizontal]
++^+:::
+Header character
+
++P+:::
+Record type (poll request)
+
++003+:::
+Number of data bytes to follow
+
++AP1+:::
+Request for Available parameters (part 1)
+
+*UPS responds:*::
++
+----
+^D0196,10,21,22,23,36,37
+----
+
+[horizontal]
++^+:::
+Header character
+
++D+:::
+Record type (Data returned in reponse to poll)
+
++019+:::
+number of data bytes to follow
+
++6+:::
+Alarm General fault supported
+
++10+:::
+Alarm overload supported
+
++21+:::
+Battery installed date supported
+
++22+:::
+Battery status supported
+
++23+:::
+Battery Temperature supported
+
++36+:::
+Estimated charge supported
+
++37+:::
+Estimated minutes supported
+
+*Host requests the UPS Manufacturer:*::
++
+----
+^P003MAN
+----
+
+*UPS responds:*::
++
+----
+^0
+----
+
+[horizontal]
++^+:::
+Header character
+
++0+:::
+Record type (command rejected/not supported)
+
+*Host requests the UPS Model:*::
++
+----
+^P003MOD
+----
+
+*UPS responds:*::
++
+----
+^D010Model 9999
+----
+
+[horizontal]
++010+:::
+Number of data bytes to follow
+
++Model 9999+:::
+Model number
+
+*Host requests the Nominal parameters:*::
++
+----
+^P003NOM
+----
+
+*UPS responds:*::
++
+----
+^D025,,,,900,,,,,,04171995,750
+----
+
+[horizontal]
++025+:::
+Number of data bytes to follow
+
++900+:::
+Nominal Volt/amp rating
+
++04171995+:::
+Battery installed date
+
++750+:::
+Nominal Battery Life
+
+*Host requests the Status parameters (part 1 - Battery):*::
++
+----
+^P003ST1
+----
+
+*UPS responds:*::
++
+----
+^D015,0,,,10,90,,,35
+----
+
+[horizontal]
++015+:::
+Number of data bytes to follow
+
++0+:::
+Battery status normal
+
++10+:::
+Estimated minutes
+
++90+:::
+Estimated charge
+
++35+:::
+Battery temperature
+
+*Host requests the Status parameters (part 2 - Input):*::
++
+----
+^P003ST2
+----
+
+*UPS responds:*::
++
+--
+----
+^D007,,,1180
+----
+
+[horizontal]
++007+:::
+Number of data bytes to follow
+
++1180+:::
+Input voltage 1 (118.0 volts)
+
+NOTE: Since no other parameters after Input Voltage 1 are returned, it is not necessary to provide the comma delimiters.
+
+--
+
+*Host requests the Status parameters (part 3 - Output):*::
++
+----
+^P003ST3
+----
+
+*UPS responds:*::
++
+----
+^D007,,,1200
+----
+
+[horizontal]
++007+:::
+Number of data bytes to follow
+
++1200+:::
+Output voltage 1 (120.0 volts)
+
+*Host requests the Status parameters (part 5 - Alarms):*::
++
+----
+^P003ST5
+----
+
+*UPS responds:*::
++
+----
+^D013,,,1,,,,,,,,0
+----
+
+[horizontal]
++013+:::
+Number of data bytes to follow
+
++1+:::
+Alarm overload (true)
+
++0+:::
+Alarm general fault (false)
+
+*Host requests the UPS Self test results:*::
++
+----
+^P003STR
+----
+
+*UPS responds:*::
++
+----
+^D0011
+----
+
+[horizontal]
++^+:::
+Header character
+
++D+:::
+Record type (Data returned in response to poll)
+
++001+:::
+Number of data bytes to follow
+
++1+:::
+Self test passed
+
+
+[[s342]]
+SET Commands Examples
+^^^^^^^^^^^^^^^^^^^^^
+
+*Host attempts to set the UPS identification string:*::
++
+----
+^S008UIDA UPS
+----
+
+[horizontal]
++^+:::
+Header character
+
++S+:::
+Record type (set request)
+
++008+:::
+Number of data bytes to follow
+
++UID+:::
+Request to set UPS Idenification string
+
++A UPS+:::
+UPS Identification string
+
+*Host attempts to set the UPS Baud Rate:*::
++
+----
+^S007UBR9600
+----
+
+*Host attempts to set the perform test variable:*::
++
+----
+^S004TST1
+----
+
+*Host attempts to set the Shutdown action:*::
++
+----
+^S004SDA1
+----
+
+*Host attempts to set the Perform Shutdown:*::
++
+----
+^S006PSD120
+----
+
+*Host attempts to set the Nominal values:*::
++
+----
+^S015NOM120,60,,,600
+----
+
+[horizontal]
++015+:::
+Number of data bytes to follow
+
++NOM+:::
+Request to set nominal values
+
++120+:::
+Nominal Input Voltage
+
++60+:::
+Nominal Input Frequency
+
++600+:::
+Nominal VA Rating
+
+
+Revision History
+----------------
+
+[cols="2^,2^,6",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Revision	|Date		|Comments
+|1.0		|10/15/94	|Initial draft.
+|1.1		|11/01/94	|Downsized packet sizes.
+|1.2		|12/01/94	|Increased packet sized.
+|1.3		|01/14/95	|Added *+RWD+* command.
+
+Added ID# assignment table.
+
+|1.4		|01/25/95	|Split *+ST+* command into *+ST1+*, *+ST2+*, *+ST3+*, *+ST4+*.
+
+Split AP command into *+AP1+*, *+AP2+*.
+
+Replaced ID command with *+MAN+*, *+MOD+*, *+VER+*, *+UID+*, *+NOM+*.
+
+Removed checksum from packets.
+
+Increased the command length to 3 characters.
+
+Modified data lengths so all packets are \<= 64 bytes.
+
+Added *+STR+* command to retrieve selft test result details.
+
+Split `bitwise' integers into separate integer fields.
+
+|1.5		|02/01/95	|Modified *+ST1+* description in sections <<s331,'Poll Commands'>> and <<s3313,'UPS Status'>>.
+
+Split out Battery Status integer to multiple status integers to match sections <<s22,'Battery Group'>> and <<s331,'Poll Commands'>>.
+
+Modified *+ST4+* description in sections <<s331,'Poll Commands'>> and <<s3313,'UPS Status'>>.
+
+Moved the Test Results SUmmary from the *+ST4+* response into the *+STR+* response.
+
+Modified the *+STR+* description in <<s3313,section 'UPS Status'>>.
+
+Split *+ST4+* command into *+ST4+* and *+ST5+*.
+
+Changed temperature scale from centigrade to Celsius.
+
+Corrected spelling errors in Rev 1.4.
+
+Changed `Header' Character to +^+ character.
+
+Changed `NAK' to +0+ for +NAK, +1+ for +ACK+.
+
+Modified Nominal Output Power to length of 5.
+
+Modified Input Power 1, 2, 3 to length of 5.
+
+Modified Output Power 1, 2, 3 to length of 5.
+
+|2.0		|04/17/95	|Modified *+ST1+* command to make battery status 1 byte.
+
+Added example communication loops between host and UPS.
+
+Modified *+TST+* to accept 9 as the abort test in progress.
+
+Modified Input power fields to be a maximum of 5 digits.
+
+Modified Input current fields to be a maximum of 4 digits.
+
+Added Battery Installed date - 8 characters (+MMDDYYYY+).
+
+Added Nominal Battery Life - 5 characters (in days).
+
+|2.1		|04/20/95	a|Modified Bypass power data length to 5 bytes maximum.
+
+Increased all voltage data to 4 bytes maximum (Voltage values will now represent voltages in .1 volts).
+
+Added poll commands:
+
+- *+UBR+* -- UPS Baud Rate
+- *+SDA+* -- Shutdown Action
+- *+SDT+* -- Shutoff delay time
+- *+RWD+* -- Reboot with delay
+- *+TST+* -- Test type
+- *+PSD+* -- Perform Shutdown
+- *+STD+* -- Startup delay
+- *+ATR+* -- Auto Reboot
+
+|2.2		|05/10/95	|Corrected data lengths of the set commands *+TST+*, *+PSD+* and *+STD+*.
+(<<s334,Section 'Set Commands'>>).
+
+Replaced Abort Test in Progress, Deep Battery Calibration, General Systems Test and Quick Battery test with Test Type.
+
+Made the lengths of Nominal Input Frequency and Nominal Output Frequency consistently 3 digits throughout the protocol.
+
+Made the length of Nominal Output Power consistently 5 digits throughout the protocol.
+
+Replaced the *+INV+*, *+INF+*, *+ONV+*, *+ONF+*, *+NVA+*, *+NOP+*, *+LBT+*, *+AAS+*, *+LVT+*, *+HVT+*, *+BID+* and *+NBF+* set commands with the *+NOM+* set command.
+
+|2.3		|06/05/95	|Minor clean-up changes-
+
+Changed data length to 3 bytes.
+
+Removed *+PSD+*, *+RWD+*, *+STD+* and *+TST+* poll commands.
+
+|2.4		|06/09/95	|Changed Shutdown UPS parameter to Shutdown After Delay.
+
+Moved UPS Baud Rate from the Configuration group.
+
+Modified description of Auto Restart.
+
+Removed Shutoff Delay Time paramater and *+STD+* command.
+
+Modified parameter return order for *+ST1+* and *+NOM+*.
+
+Increased range of Bypass Currents to +9999+.
+
+Changed Power units from 0.1 watts to watts.
+
+Modified *+PSD+* command.
+
+|2.5		|06/13/95	|Minor clean-up changes.
+|2.6		|06/22/95	|Added <<s324,section 'Message Format -> Data'>> to explain comma delimited data.
+
+Modified maximum data size in <<s32,section 'Message Format'>>.
+
+Added Discharging (3) to sections <<s22,'Battery Group'>> and <<s3313,'UPS Status'>>.
+
+Added Disabled Until Low Battery (4) to Audible Alarm in <<s3312,section 'UPS Identification'>>.
+
+Added *+NOM+* example to <<s342,section 'SET Commands Examples'>>.
+
+|====

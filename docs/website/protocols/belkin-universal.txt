@@ -1,0 +1,843 @@
+Belkin Universal UPS protocol description
+=========================================
+Peter Selinger <selinger@users.sourceforge.net>
+January 7, 2004
+
+
+This document describes the serial port communication protocol used by the Belkin "Universal UPS" and compatible models.
+
+
+Summary
+-------
+
+This document describes the serial port communication protocol used by the Belkin "Universal UPS".
+This protocol is known to work with the F6C800-UNV and F6C120-UNV models, and presumably also works with the other Universal UPS models, such as the F6C500-UNV, F6C100-UNV, and so forth.
+Note that this protocol does not work with the Belkin "Home Office" series, nor with the "Regulator Pro" series.
+For some pointers to information on other Belkin protocols, see <<otherprotocols,Note: Other Belkin Protocols>> below.
+
+
+General Information
+-------------------
+
+I bought a Belkin "Universal UPS" because, next to APC, Belkin systems are among the most widely available in stores, at least in Canada.
+For instance, they are available from Radio Shack, Target, Office Depot, etc.
+
+On the surface, Belkin seems Linux-friendly, because they provide a Linux version of their "Bulldog Plus" UPS management software.
+This software is not included on the CD Rom which ships with the UPS, but one can download it from http://www.belkin.com/pyramid/AdvancedInfo/UPS/Bulldog/[Belkin's website].
+
+However, unfortunately, the Bulldog Plus software is not as useful as it might seem.
+It has many bugs (see https://web.archive.org/web/20050408231453/http://quasar.mathstat.uottawa.ca/~selinger/ups/#bulldog[Bugs in Bulldog]), and it cannot be configured to allow an unsupervised recovery (the user must press the front panel button to restart the UPS after a power failure).
+
+Since the specifications of the protocol were not available, I decided to do some detective work and to decipher the protocol myself.
+The results are described in this document.
+The information reported here is necessarily incomplete, but it seems that the most important aspects of the protocol have been covered.
+
+Unfortunately, there is one serious problem with the "Universal UPS" firmware: there is no command which causes the UPS to go into "soft shutdown" mode, which means, to shut off the load until AC power returns.
+This makes unsupervised recovery from power failures tricky and awkward (see <<workaround,Soft Shutdown Workaround>> for a suggested solution).
+
+On balance, the Belkin UPS works fine, but the lack of a "soft shutdown" command is annoying.
+If you are thinking about buying a UPS, I think currently APC is a better choice than Belkin at approximately the same price.
+Maybe Belkin will come up with an improved version of their firmware in the future.
+
+
+[[otherprotocols]]
+Note: Other Belkin Protocols
+----------------------------
+
+Belkin uses different communication protocols for different UPS hardware.
+Belkin's "Bulldog Plus" software apparently knows several of these protocols, and automatically figures out which one to use based on the responses it receives from the UPS.
+I know of the following protocols.
+The "NUT Driver" entries below refer to the Network UPS Tools software.
+
+*Universal UPS and compatible*::
+
+[horizontal]
+'Typical message:':::
++0x7e 03 02 01 00 84+
+
+'Described in:':::
+this document
+
+'NUT Driver:':::
+'belkinunv'
+
+'Product code:':::
+F6C800-UNV, F6C120-UNV etc.
+
+'Date:':::
+2004
+
+*Home Office UPS and compatible*::
+
+[horizontal]
+'Typical message:':::
+None (dumb UPS only?)
+
+'NUT Driver:':::
+'genericups', with +upstype=7+.
+
+'Product code:':::
+F6H350-SER, F6H500-SER etc.
+
+'Date:':::
+2003
+
+*Regulator pro Gold series and compatible*::
+
+[horizontal]
+'Typical message:':::
++~00P003MNU+
+
+'Described in:':::
+link:belkin.html[Belkin Regulator Pro smart protocol]
++
+link:belkin-protocol.html[Belkin UPS Protocol]
+
+'NUT Driver:':::
+'belkin'
+
+'Date:':::
+ca. 2000
+
+*Older Belkin USVs, compatible with Trust425&625 UPS*::
+
+[horizontal]
+'Typical message:':::
++0x01+
+
+'Described in:':::
+ups-trust425+625.txt by Peter Bieringer <pb@bieringer.de> (distributed with nut-0.41.2)
+
+'NUT Driver:':::
+'powercom' (?)
+
+'Date:':::
+ca. 1999
+
+The following information was provided by Dean Gibson about the "Home Office" models:
+
+[quote]
+--
+From my testing with Belkin's software, the F6C units and F6H units appear to NOT be software compatible.
+Belkin's Bulldog Plus software (Windows or UNIX, either from the included CD or from the web site) refuses to talk to the F6H units, but the basic Bulldog software (Windows or UNIX) on the CD that comes with the F6H units works just fine (although appears to be extremely limited in capability) with those units.
+--
+
+Only the "Universal UPS" is described in this document.
+
+
+[[workaround]]
+Soft Shutdown Workaround
+------------------------
+
+The main problem with the Belkin Universal UPS is that there appears to be no software way to put the UPS into "soft shutdown" mode.
+This makes unsupervised recovery from power failures tricky.
+There is a reliable workaround, as described in this section, but it is awkward.
+One must conclude that Belkin's engineers do not understand the purpose of a UPS very well, at least as it relates to unsupervised recovery.
+
+To understand the issue, consider what should normally happen to an unsupervised computer (such as a server) during a power failure:
+
+1. The AC power fails, and the UPS goes on battery mode.
+2. When the battery gets low, the computer enters its normal shutdown sequence.
+3. As the very last step of the shutdown process, the computer signals the UPS to do a "soft shutdown", i.e., to turn its load off and await AC power.
+This kills the computer's power supply, and thus the computer is turned off.
+4. When the power comes back on, the UPS load comes back on, restoring the computer's power supply, and thus causing the computer to reboot.
+(Note that there is a BIOS setting by which one can tell the computer to reboot after power loss).
+
+Moreover, if AC power happens to be restored during step 2, the UPS should still turn its load off briefly in step 3, to allow the computer to reboot.
+
+The problem with the Belkin UPS is that step 3 is not possible.
+One cannot signal the UPS to do a "soft shutdown".
+One can only signal it to do a "final shutdown", which means, the UPS stays off even if the power returns.
+This leaves the entire system in a state where a human needs to press the button on the UPS front panel to restart the system.
+
+There is one way around this problem.
+Namely, the UPS will enter "soft shutdown" mode when its batteries run out.
+Thus, it is possible to handle a power failure as follows:
+
+1. The AC power fails, and the UPS goes on battery mode.
+2. When the battery gets low, the computer enters its normal shutdown sequence.
+3. As the very last step of the shutdown process, we call a special program which does nothing but to monitor the UPS status.
+4. If the AC power comes back on before the batteries run out, our program notices this and causes the computer to reboot.
+5. If the batteries run out before the AC power comes back on, then the UPS shuts off its load, thereby killing the computer's power supply.
+The UPS is now in "soft shutdown" mode and everything will reboot when the power comes back on.
+
+The major practical drawback of this solution is that the battery level is guaranteed to be 0% when the system reboots.
+Thus, if another power failure happens before the batteries are recharged, the system will crash with not enough warning to do an orderly shutdown.
+We can solve this problem by adding another special purpose program to the startup script, before anything is written to the hard disks, which monitors the UPS and waits for the battery level to reach a minimum amount before allowing the boot process to resume.
+This ensures that the system is in a safe state, should the power fail again.
+
+I have implemented the required functionality as part of the NUT 'belkinunv' driver.
+The 'belkinunv' driver can be used as a standalone program by calling it with the "+-x wait+" option.
+When called with this option, the driver does not fork into the background, but simply connects to the UPS and waits for AC power to be restored.
+The intention is that one puts commands such as the following as the last part of the computer's shutdown script:
+
+----
+# NEAR END OF SHUTDOWN SCRIPT:
+# if shutdown was caused by UPS, perform Belkin UPS workaround.
+if [ -f /etc/killpower ] ; then
+    echo "Waiting for AC power, or for UPS batteries to run out..."
+    /usr/bin/belkinunv -x wait /dev/ttyS1
+
+    # we get here if the power came back on. Reboot.
+    echo "Power is back. Rebooting..."
+    reboot
+fi
+----
+
+In addition, when called with the "+-x wait=level+" option, the belkinunv driver waits for the battery charge to reach the specified level.
+This can be used in a startup script as follows.
+Put this before any disks are mounted read/write, and before any file system integrity checks, so that the system is in a safe state.
+
+----
+# NEAR BEGINNING OF STARTUP SCRIPT:
+# if we are recovering from a power failure, wait for the UPS to
+# charge to a comfortable level before writing anything to disk
+if [ -f /etc/killpower ] ; then
+    echo "Waiting for UPS battery charge to reach 60%..."
+    /usr/bin/belkinunv -x wait=60 -x nohang /dev/ttyS1
+fi
+----
+
+Here, the "+-x nohang+" option ensures that the computer will boot properly in case the UPS is no longer attached.
+There might be many reasons to remove the UPS during a power failure, for instance, you take your computer to a friend's house, or you attach it to a generator, or whatever.
+Giving the "+-x nohang+" option ensures that your computer is always bootable.
+
+For a detailed description of the "+-x wait+" and related options, please see the 'belkinunv(8)' man page.
+
+
+Description of the Protocol
+---------------------------
+
+
+Opening the serial communication link
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The serial port parameters are: 2400 baud, 8 bits, 1 stop bit, no parity.
+More precisely, the following parameters are used: +B2400 | CS8 | CREAD | HUPCL | CLOCAL+.
+
+In order to get the UPS to switch to "smart" mode, one first needs to set RTS and drop DTR for at least 0.25 seconds (RTS and DTR refer to two specific pins in the 9-pin serial connector).
+This signals the UPS to switch to serial mode.
+Without this step, there will be no serial communication possible.
+In experimenting with my own UPS, I found that 0.25 seconds is the minimum time required for the UPS to react; however, the time required may differ for different UPS hardware.
+The Bulldog software waits 1 second, so this is probably a safe bet.
+
+After this, flush any unread garbage bytes from the serial port.
+Thereafter, simply communicate with the port via usual "read" and "write" operations.
+
+The following C procedure shows exactly how the serial port should be opened and prepared:
+
+----
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <string.h>
+#include <errno.h>
+#include <termios.h>
+#include <unistd.h>
+
+/* Open and prepare a serial port for communication with a Belkin
+   Universal UPS. DEVICE is the name of the serial port. It will be
+   opened in blocking read/write mode, and the appropriate
+   communications parameters will be set. The device will also be
+   sent a special signal (clear DTR, set RTS) to cause the UPS to
+   switch from "dumb" to "smart" mode, and any pending data (=garbage)
+   will be discarded. After this call, the device is ready for reading
+   and writing via read(2) and write(2). Return a valid file
+   descriptor on success, or else -1 with errno set. */
+
+int belkin_open_tty(char *device) {
+  int fd;
+  struct termios tios;
+  struct flock flock;
+  char buf[128];
+  const int tiocm_dtr = TIOCM_DTR;
+  const int tiocm_rts = TIOCM_RTS;
+  int r;
+
+  /* open the device */
+  fd = open(device, O_RDWR | O_NONBLOCK);
+  if (fd == -1) {
+    return -1;
+  }
+
+  /* set communications parameters: 2400 baud, 8 bits, 1 stop bit, no
+     parity, enable reading, hang up when done, ignore modem control
+     lines. */
+  memset(&tios, 0, sizeof(tios));
+  tios.c_cflag = B2400 | CS8 | CREAD | HUPCL | CLOCAL;
+  tios.c_cc[VMIN] = 1;
+  tios.c_cc[VTIME] = 0;
+  r = tcsetattr(fd, TCSANOW, &tios);
+  if (r == -1) {
+    close(fd);
+    return -1;
+  }
+
+  /* signal the UPS to enter "smart" mode. This is done by setting RTS
+     and dropping DTR for at least 0.25 seconds. RTS and DTR refer to
+     two specific pins in the 9-pin serial connector. Note: this must
+     be done for at least 0.25 seconds for the UPS to react. */
+  r = ioctl(fd, TIOCMBIC, &tiocm_dtr);
+  if (r == -1) {
+    close(fd);
+    return -1;
+  }
+  r = ioctl(fd, TIOCMBIS, &tiocm_rts);
+  if (r == -1) {
+    close(fd);
+    return -1;
+  }
+
+  /* flush both directions of serial port: throw away all data in
+     transit */
+  r = tcflush(fd, TCIOFLUSH);
+  if (r == -1) {
+    close(fd);
+    return -1;
+  }
+
+  /* lock the port */
+  memset(&flock, 0, sizeof(flock));
+  flock.l_type = F_RDLCK;
+  r = fcntl(fd, F_SETLK, &flock);
+  if (r == -1) {
+    close(fd);
+    return -1;
+  }
+
+  /* sleep at least 0.25 seconds for the UPS to wake up. Belkin's own
+     software sleeps 1 second, so that's what we do, too. */
+  usleep(1000000);
+
+  /* flush incoming data again, and read any remaining garbage
+     bytes. There should not be any. */
+  r = tcflush(fd, TCIFLUSH);
+  if (r == -1) {
+    close(fd);
+    return -1;
+  }
+
+  r = read(fd, buf, 127);
+  if (r == -1 && errno != EAGAIN) {
+    close(fd);
+    return -1;
+  }
+
+  /* finally, switch to blocking i/o, so that future read/write calls
+     will read or write at least one byte */
+
+  r = fcntl(fd, F_SETFL, 0);   /* clear O_NONBLOCK */
+  if (r == -1 && errno != EAGAIN) {
+    close(fd);
+    return -1;
+  }
+
+  return fd;
+}
+----
+
+
+Structure of messages
+~~~~~~~~~~~~~~~~~~~~~
+
+The same basic format is used for messages from the computer to the UPS ("commands") and from the UPS to the computers ("responses").
+Communication takes place as a sequence of command/response pairs.
+Communication is always initiated by the computer, and the UPS reacts to each command by sending a single, matching, response.
+
+The format of all messages is:
+
+[cols="^.^,^.^,^.^,^.^,^.^,^.^",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Header	|Type	|Length	|Register ID	|Data		|Checksum
+|1 byte	|1 byte	|1 byte	|1 byte		|variable	|1 byte
+|====
+
+The message fields are explained as follows:
+
+[horizontal]
+*Header*::
+The literal byte +0x7e+, or ASCII `++~++'
+
+*Type*::
+There are five possible message types:
+
+[horizontal]
++3+: :::
+read command (computer to UPS): polls the value of a register
+
++5+: :::
+read response (UPS to computer): returns data from read command
+
++4+: :::
+write command (computer to UPS): write the value of a register
+
++2+: :::
+write response (UPS to computer): write was successful
+
++1+: :::
+error response (UPS to computer): sent in response to a bad command
+
+*Length*::
+The number of bytes in the *Data* field, plus 1.
+Equivalently, the length of the entire message, minus 4.
+
+*Register ID*::
+The number of the register to be read or written.
+
+*Data*::
+The argument of the message.
+The precise meaning depends on the type of message.
+
+read command (type=+3+):::
+the argument is the single byte +00+.
+
+read response (type=+5+):::
+the argument depends on the type of data stored in the register in question (see <<registers,Individual UPS registers>> below):
++
+- For a 1-byte register, it is a single byte.
+- For a 2-byte register, it is a little-endian 2-byte integer (i.e., with the lower order byte sent first).
+- For a string register, the data is the string itself (not null-terminated).
+
+write command (type=+4+):::
+the argument is always encoded as a 2-byte, little-endian integer, regardless of whether the corresponding register holds a 1-byte or 2-byte value.
+In case of a 1-byte register, the higher-order byte of the argument (i.e., the second byte) is set to +0+.
+Write commands do not occur for string registers, since such registers are read-only.
+
+write response (type=+2+):::
+the argument is the same as that of the write command which is being responded to.
+
+error response (type=+1+):::
+the argument is the same as that of the command which caused the error.
+
+*Checksum*::
+The checksum for this message.
+It equals the sum of all previous bytes of the message (including the initial +7e+), modulo +0x100+.
+
+
+Format of responses
+^^^^^^^^^^^^^^^^^^^
+
+Each command (computer to UPS) is followed by a single response (UPS to computer).
+A read command (type=+3+) is normally followed by a read response (type=+5+), or sometimes by an error response (type=+1+).
+A write command (type=+4+) is normally followed by a write response (type=+2+), or sometimes by an error response (type=+1+).
+
+The Register ID field of the response is identical to the Register ID field of the command being responded to.
+Moreover, the Data field of the response is identical to the Data field of the command being responded to, in case of an error response or a write response.
+In case of a read response, the Data field is of course the value being read.
+
+An error response is only sent if the corresponding command was well-formed (including a correct checksum), but cannot be obeyed for some reason (e.g., the corresponding register is not implemented).
+Ill-formed commands are silently ignored.
+
+
+Examples
+~~~~~~~~
+
+
+Reading a 1-byte register
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[horizontal]
+Command::
++7e 03 02 01 00 84+
++
+read register +01+, voltage rating
+
+Response::
++7e 05 02 01 78 fe+
++
+register +01+ is +0x78+ = 120 = 120V
+
+
+Reading a 2-byte register
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[horizontal]
+Command::
++7e 03 02 20 00 a3+
++
+read register +20+, battery voltage
+
+Response::
++7e 05 03 20 0e 01 b5+
++
+register +20+ is +0x010e+ = 269 = 26.9V
+
+
+Reading a string register
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[horizontal]
+Command::
++7e 03 02 0d 00 90+
++
+read register +0d+, UPS model
+
+Response::
++7e 05 0e 0d 46 36 43 38 30+
++
++30 2d 55 4e 56 20 20 20 7b+
++
+register +0d+ is "F6C800-UNV   "
+
+
+Reading a non-existent register
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[horizontal]
+Command::
++7e 03 02 1a 00 9d+
++
+read register +1a+, temperature
+
+Response::
++7e 01 02 1a 00 9b+
++
+error: cannot read register +1a+
+
+
+Writing to a register
+^^^^^^^^^^^^^^^^^^^^^
+
+[horizontal]
+Command::
++7e 04 03 0c 02 00 93+
++
+write +0x02+ to register +0c+, voltage sensitivity
+
+Response::
++7e 02 03 0c 02 00 91+
++
+written successfully
+
+
+Writing to a non-existent register
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[horizontal]
+Command::
++7e 04 03 00 00 00 85+
++
+write +0x00+ to register +00+
+
+Response::
++7e 01 03 00 00 00 82+
++
+error: cannot write to register +00+
+
+
+[[registers]]
+Individual UPS registers
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The UPS has a number of internal registers, which can be read and/or written.
+Some registers are read-only.
+There either hold hard-coded values (such as the UPS model name or nominal voltage rating), or they describe the state of the UPS, such as the current battery voltage or whether certain events have occured.
+Some other registers can be read and written.
+These registers control or configure aspects of the UPS's behavior, such as its voltage sensitivity, or whether the audible alarm is enabled.
+In some cases, setting the value of a writable register triggers an event, such as a battery self-test or a UPS shutdown.
+
+Each register is identified by a unique number, the register ID.
+We always write register ID's as hexadecimal values.
+
+Registers can hold different types of data.
+Some registers hold a 1-byte integer, others hold a 2-byte integer, and others hold a variable length string.
+
+Some registers are read only once (during startup) by the Bulldog software, and thereafter ignored.
+These registers are marked "startup" in the list below.
+All other registers are read periodically.
+
+We now describe the individual registers:
+
+[cols="^1m,2,1,^1m,^1m,4",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Reg.ID	|Name					|Data		|Flags		|Typical Value	|Description
+|00:	|unknown / does not exist		|n/a		d|n/a		d|n/a		|This register does not really exist.
+It is written by the linux driver when the user requests to set the voltage sensitivity.
+However, this is a bug and the UPS responds with an error message.
+The Windows driver correctly writes register +0c+ instead.
+
+|01:	|voltage rating				|1 byte		|RO HC ST	|120		|The nominal voltage in V.
+In North America, this is +120+.
+
+|02:	|frequency rating			|1 byte		|RO HC		|60		|The nominal AC frequency in Hz.
+In North America, this is +60+.
+
+|03:	|power rating				|2 bytes	|RO HC ST	|800		|The nominal power rating in VA.
+For a 800VA UPS, this is +800+.
+
+|04:	|battery voltage rating			|1 byte		|RO HC ST	|24		|The nomial battery voltage in V.
+For my system, this is +24+.
+
+|05:	|unknown				|1 byte		|RO ST		|100		|I don't know the function of this register.
+On my system, it takes value +0x64+ = 100.
+
+|06:	|low transfer voltage			|2 bytes	|RW		|90		.6+|I am not entirely sure about the meaning of registers +06+-+0b+, but I think that they are voltage transfer points.
++06+ and +09+ are read/write, the others are read-only.
+
+The only way to test whether these "transfer points" actually work would be to vary the UPS input voltage and observe what happens.
+I don't have equipment to do this.
+Ditto for register +0c+, voltage sensitivity.
+
+|07:	|low transfer voltage upper bound	|2 bytes	|RO HC ST	|95
+|08:	|low transfer voltage lower bound	|2 bytes	|RO HC ST	|85
+|09:	|high transfer voltage			|2 bytes	|RW		|136
+|0a:	|high transfer voltage upper bound	|2 bytes	|RO HC ST	|141
+|0b:	|high transfer voltage lower bound	|2 bytes	|RO HC ST	|131
+|0c:	|voltage sensitivity			|1 byte		|RW		|0		|The voltage sensitivity can be read and written.
+Admissible values are +0+ = normal, +1+ = medium, +2+ = low.
+Presumably this influences how tolerant the UPS is to deviations from the "nominal" voltage; however, I have not found this point elaborated in Belkin's documentation.
+I am not sure how this interacts with registers +06+-+0b+.
+
+|0d:	|UPS model				|string		|RO HC ST	|		.2+|The UPS model name as a sequence of ASCII characters, not null-terminated.
+For my system, registers +0d+ and +0e+ are identical, and both contain the string "++F6C800-UNV   ++" (with three space characters at the end of the string).
+
+|0e:	|UPS model				|string		|RO HC ST	|
+|0f:	|firmware/ups type			|1 byte		|RO HC ST	|0x41		a|The higher 4 bits determine the firmware version.
+
+The lower 4 bits determine the UPS type: +0+ = online, +1+ = offline, +2+ = line-interactive.
+In the Belkin Monitor, this is used to determine the type of "wiring diagram" displayed (and does not affect anything else, as far as I can tell).
+
+Online:
+
+image::images/belkin-universal_figonline.png["Wiring Diagram: AC Input->Charger->Battery->Inverter->AC Output", align = "center"]
+
+Offline:
+
+image::images/belkin-universal_figoffline.png["Wiring Diagram: AC Input->Charger->Battery->Inverter->AC Output and AC Input->AC Output", align = "center"]
+
+Line-interactive:
+
+image::images/belkin-universal_figlineint.png["Wiring Diagram: AC Input->AC Output and Battery->AC Output", align = "center"]
+
+Example: a value of +0x41+ means firmware version = 4, UPS type = offline.
+
+|10:	|battery test status			|1 byte		|RW		|0		a|When read, this register takes the following values:
+
+- +0+ = no test performed
+- +1+ = test passed (this is also sometimes used for canceled tests)
+- +2+ = test failed
+- +3+ = test failed
+- +4+ = test aborted
+- +5+ = test in progress
+
+When written, this register triggers the following events:
+
+- +1+ = initiate 10-second battery test
+- +2+ = initiate deep battery test
+- +3+ = cancel test
+
+|11:	|audible alarm status			|1 byte		|RW		|2		a|A flag which determines whether the audible alarm of the UPS system is enabled.
+
+- +2+ = audible alarm enabled
+- +3+ = audible alarm disabled
+
+My UPS allows this value to be set to any value in the range +0+-+255+.
+For val\<=+2+, the alarm is enabled, for val>=+3+, it is disabled.
+
+NOTE: the alarm can only be disabled when it is already ringing.
+In other words, the alarm is enabled each time an alarm-worthy event occurs, but can then be disabled during the event.
+
+NOTE: during a critical event (e.g., low battery), the alarm rings faster and cannot be disabled.
+
+|12:	|unknown				|1 byte		|RW		|0		.3+|I don't know the function of registers +12+-+14+.
+On my system, they all take value +0+.
+Setting these registers has no apparent effect; subsequents reads will still return +0+.
+
+|13:	|unknown				|1 byte		|RW		|0
+|14:	|unknown				|1 byte		|RW		|0
+|15:	|shutdown timer				|2 bytes	|RW		|0		a|This register holds the time, in seconds, until the UPS shuts down its load, or +0+ if no shutdown is scheduled.
+It can be read and written.
+
+NOTE: A scheduled shutdown cannot be stopped.
+Setting a running shutdown timer to +0+ causes it to continue to count down from +0xffff+ = 65535.
+This is idiotic in my opinion, but it is what my Belkin UPS does.
+
+NOTE: When this counter reaches +0+, the UPS either performs a "final shutdown" or a "timed shutdown", never a "soft shutdown" as far as I can tell (see <<workaround,Soft Shutdown Workaround>> above for more information).
+Which kind of shutdown is performed depends on the state of the restart timer, see register +16+ below.
+
+WARNING: The Bulldog software panics and wants to shut down the operting system immediately if it sees that register +15+ is non-zero.
+
+|16:	|restart timer				|2 bytes	|RW, ST		|0		a|This register holds the time, in minutes (not seconds!), until the UPS will restart its load, or +0+ if the timer is not set.
+
+Once this timer is set, it will be decremented once a minute; however, one cannot predict when the first decrement will happen (it happens between 0 and 60 seconds after the counter was set).
+There is no way to stop a running timer: setting it to +0+ will cause it to loop back to +0xfff+ = 65535.
+
+When the shutdown timer (register +15+) reaches 0, then the value of the restart timer (register +16+) at that particular time determines what kind of shutdown the UPS performs.
+If the restart timer is +0+, a "final shutdown" will be performed, otherwise a "timed shutdown".
+
+After a "final shutdown", flag +0x0020+ in register +22+ will be set, and the UPS will remain off permanently until the front panel button is pressed.
+It do not currently know a way of re-starting it through the serial port.
+Also, the system remains off irrespectively of what happens to the AC power.
+In the "final shutdown" state, all timers (register +15+ and +16+) are stopped and no longer work; thus there is no way of ending a final shutdown in software.
+If AC power is lost during a final shutdown, the UPS loses communication on its serial port.
+
+During a "timed shutdown", flag +0x0020+ in register +22+ will not be set.
+Register +23+ will be +0x10+ if AC power is on, or else +0x00+.
+The system load will be turned back on as soon as the restart timer reaches 0.
+If any non-zero value is written to the restart timer during a timed shutdown, the system load will be immediately turned on (and the restart timer is reset to 0).
+
+NOTE: To initiate a timed shutdown, write +2+ to register +16+, then write +1+ to register +15+.
+The reason we write "+2+" and not "+1+" to register +16+ is that there is no guarantee it is not decremented between the two writes.
+
+|17:	|unknown				|1 byte		|RW		|0		|I don't know the function of this register.
+On my system, it takes value +0+.
+I found that if this register is non-zero, then the Bulldog software initiates an immediate shutdown.
+But it does not specify the reason.
+Setting this register has no apparent effect; subsequents reads will still return +0+.
+
+|18:	|AC input voltage			|2 bytes	|RO		|1176		|The current AC input voltage in 0.1V, or +0+ on loss of utility power.
+Note that this value is non-zero as long as AC power is present, even during a battery test.
+Example: +1176+ = 117.6V
+
+|19:	|AC input frequency			|2 bytes	|RO		|599		|The current AC input frequency in 0.1Hz, or +0+ on loss of utility power.
+Note that this value is non-zero as long as AC power is present, even during a battery test.
+Example: +599+ = 59.9Hz.
+
+|1a:	|temperature				|1 byte		|RO		|23		|The current UPS temperature, in degrees C.
+My UPS does not actually implement this register, but the Bulldog software recognizes it.
+
+|1b:	|AC output voltage			|2 bytes	|RO		|1168		|The current AC output voltage in 0.1V, both during on-line and battery operation.
+Example: +1168+ = 116.8V.
+
+|1c:	|AC output frequency			|2 bytes	|RO		|598		|The current AC output frequency in 0.1Hz, both during on-line and battery operation.
+Example: +598+ = 59.8Hz.
+
+|1d:	|unknown				|1 byte		|RO		|250		|I don't know the function of this register.
+On my system, it takes value +250+.
+
+|1e:	|loading level				|1 byte		|RO		|35		|The current loading level in percent.
+|1f:	|battery status				|1 byte		|RO ST		|0x10		|Apparently identical to register +23+.
+|20:	|battery voltage			|2 bytes	|RO		|248		|The current battery voltage in 0.1V.
+Example: +248+ = 24.8V.
+
+|21:	|battery level				|1 byte		|RO		|86		|The current battery level in percent.
+|22:	|UPS status				|2 bytes	|RO		|0x8000		a|This register holds the following flags.
+Since some of these conditions rarely occur, I am not sure whether my UPS implements all of them; anyway, the Bulldog Monitor recognizes them.
+
+- +0x0001+: AC Failure
+- +0x0004+: ? - this is used, but I am not sure what it means.
+- +0x0008+: ?
+- +0x0010+: Overload
+- +0x0020+: UPS System Off (i.e., load is off)
+- +0x0040+: Overheat
+- +0x0080+: UPS Fault
+- +0x2000+: Awaiting Power
+- +0x8000+: Buzzer status (see below)
+
+[NOTE]
+====
+The AC Failure flag is set whenever the input AC power fails.
+This flag is not set during battery self-tests (unless the power fails at the same time).
+The Bulldog driver uses the AC Failure flag as the sole means to determine whether to initiate shutdown procedures, and also as the sole means to determine the drawing of the "Diagram" display, as well as the AC Source status line in the "Main" display.
+
+The Buzzer status flag is somewhat strange.
+On my UPS, it seems to be set precisely if (1) the UPS is operating on Battery power and the alarm is physically ringing, including during a test, or (2) the UPS is operating on AC power.
+The Bulldog software uses this flag as the basis for the "Buzzer Alarm" status flag (in the "Status" display), with the annoying effect that this flag is almost always on, even when the buzzer is not ringing.
+Maybe this is a bug in my UPS's firmware.
+In any case, it seems that the buzzer is actually ringing if and only if flag +0x8000+ in register +22+ and flag +0x20+ in register +23+ are both set.
+
+Also note that my UPS sets +0x0005+ on AC Failure; however, the +0x0004+ bit is apparently ignored by the Bulldog software.
+
+Finally, if the +0x0008+ flag is set during an AC Failure, then the "UPS Health" status line in the "Main" display will turn orange.
+If +0x0008+ is not set, this is not necessarily the case (unless, strangely, register +1f+ was +0x00+ or +0x20+ during startup).
+It is not clear to what extent this behavior means anything, and to what extent it just reveals idiosyncracies in the Bulldog software.
+====
+
+|23:	|battery status				|1 byte		|RO		|0x10		a|This register holds the following flags.
+
+- +0x04+: battery low
+- +0x10+: battery charging
+- +0x20+: operating on battery power (including during tests)
+- +0x40+: battery depleted
+- +0x80+: battery needs to be replaced
+
+NOTE: The Bulldog software ignores flags +0x10+ and +0x20+, and relies solely on flag +0x0001+ of register +22+ to determine the current operating mode.
+This is strictly speaking wrong.
+
+NOTE: After switching from battery powered mode to AC powered mode, it takes a few seconds until the battery starts being charged, i.e., the UPS status / AC Failure flag will go off a while before the battery status flag goes from +0x20+ to +0x10+.
+A battery status flag of +0x00+ has also been observed, for instance, when turning off the load during a test (so that the battery is neither charging nor discharging).
+
+[NOTE]
+====
+Here is what happens if AC power gets disconnected and we continue the load:
+
+- First, the UPS will switch to battery power (and the buzzer will beep every 10 seconds unless disabled).
+- The UPS status becomes +0x8005+ (or +0x0005+ if the buzzer is disabled).
+- The battery status becomes +0x20+.
+- The battery voltage and battery level will decrease continually.
+- When the battery level falls below 15, the "battery low" flag will come on, thus the battery status become +0x24+.
+- At the same time the buzzer will start ringing fast and can no longer be disabled.
+- The UPS status is unchanged at +0x8005+.
+- The battery voltage and level will continue to drop, and the UPS will continue to supply power, even when the battery level reaches 0.
+- Finally, after the battery level has been 0 for a while, the UPS turns its load off and does a "soft shutdown".
+- At this point, the battery status becomes +0x40+ (battery depleted) and the UPS status becomes +0xa001+ (AC failure and awaiting power).
+- If one now turns the AC power back on, the UPS will power up and enter UPS status +0x8000+ and battery status +0x10+.
+
+This is the only scenario in which I have observed a "soft shutdown", as indicated by UPS status flag +0x2000+.
+I still don't know how to bring about a soft shutdown manually.
+Therefore, the workaround under <<workaround,Soft Shutdown Workaround>> above is necessary.
+====
+
+[NOTE]
+====
+Based just on registers +22+ and +23+, it is not in general possible to determine whether the UPS is "online", i.e., whether the load is currently powered by AC power.
+
+Indeed, if the load has been turned off manually (e.g. due to a timed shutdown), the UPS status may well be +0x8000+, and the battery status may be +0x10+, just as during normal operation.
+
+We therefore use the following method for determining whether the system is "online", "on battery", or "off load": if battery status flag +0x20+ is set, the system of "on battery", else if the output voltage is non-zero, the system is "online", else the system is "off load".
+====
+
+|24:	|unknown				|1 byte		|RW		|0		.4+|I don't know the function of registers +24+-+27+.
+On my system, they all take value +0+.
+Setting these registers has no apparent effect; subsequents reads will still return +0+.
+The Bulldog driver does not attempt to read these registers.
+
+|25:	|unknown				|1 byte		|RW		|0
+|26:	|unknown				|1 byte		|RW		|0
+|27:	|unknown				|1 byte		|RW		|0
+|3f:	|time remaining				|1 byte		|RO		|0		|The estimated backup time until the battery runs out, in minutes.
+My UPS does not actually implement this register, but the Bulldog software recognizes it.
+
+|====
+
+
+Open Questions
+--------------
+
+- There should be a way of initiating a soft shutdown without waiting for the batteries to run out.
+
+- Some information is still missing.
+There must be some flags which I have not observed during my tests, in particular, there should be flags for: Bypass Active, Fan Failure, Fuse Break, Inverter Bad, Charger Bad, Bypass Bad.
+
+- I am not sure how registers +06+-+0b+ interact with register +0c+.
+
+
+Firmware Problems
+-----------------
+
+Here are some areas in which the Belkin Universal UPS firmware could be improved:
+
+- add a command to shut down the load and put UPS into "awaiting power" mode.
+This should "flash" the load briefly (shut the load off and back on) in case AC power is already present.
+
+- allow shutdown timer and restart timer to be reset to +0+ to cancel a pending shutdown, rather than starting to count from 65535.
+
+- allow timers to be set more accurately.
+Currently, by setting the restart timer to +1+, it might expire anywhere between immediately and 60 seconds.
+In particular, it is not possible to set both the shutdown timer and the restart timer to +1+ at the same time, because there is no guarantee that the first timer won't expire before the second one is set.
+Thus, it is not possible to do a reliable timed shutdown of less than 2 minutes.
+
+- Calculate battery level more accurately.
+Currently, this is a simple function of battery voltage, which means that the levels are interpreted very differently in battery mode than in line mode.
+This could be compensated for in software, but not reliably, as the battery levels might differ from one hardware/firmware version to the next.
+
+
+Disclaimer
+----------
+
+This document is distributed in the hope that it will be useful, but without any warranty.
+It is provided "as is", without warranty of any kind, either expressed or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose.
+The entire risk as to the usage of information contained in this document is with you.
+Should the information prove incorrect, it may damage your UPS, your computer, or other equipment.
+You assume the cost of all necessary servicing, repair or correction.
+
+In no event unless required by applicable law or agreed to in writing will any of the authors of this document, or any other party who may modify and/or redistribute this document, be liable to you for damages, including any general, special, incidental or consequential damages arising out of the use or inability to use the information (including but not limited to loss of data or data being rendered inaccurate or losses sustained by you or third parties), even if such author or other party has been advised of the possibility of such damages.

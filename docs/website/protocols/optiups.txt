@@ -1,0 +1,94 @@
+Opti-UPS smart protocol
+=======================
+
+This is a partial decoding of the protocol used in the Opti-UPS PowerES models.
+There are a bunch of things missing, and the UPS itself is very difficult to probe due to an annoying 20 second pause every time a command is sent.
+
+[cols="^.^1m,.^4,.^5m",options="header,autowidth",frame="topbot",grid="rows",align="center"]
+|====
+|Command	|Apparent meaning		|Typical value
+|*AG*		|UPS Status			a|This field is in hex, but it's bitmapped.
+
+[horizontal]
+bit 3: ::
++1+ -> overload
+
+bit 4: ::
++1+ -> replace battery
+
+bit 5: ::
++1+ -> on battery
++
++0+ -> on line
+
+bit 6: ::
++1+ -> low battery
+
+3+h|Test group
+
+|*TR*		|Test results			a|
+
+- +00+ -> Unknown
+- +01+ -> Passed
+- +02+ -> Warning
+- +03+ -> Error
+- +04+ -> Aborted
+- +05+ -> In Progress
+- +06+ -> No test init
+
+3+h|Battery group
+
+|*BT*		|Battery temperature (deg C)	|0033
+|*BV*		|Battery voltage (.1 volts)	|0140
+
+3+h|Configuration group
+
+|*FA*		|Output VA			|0280
+|*FF*		|Input frequency (.1 Hz units)	|600
+|*FH*		|High transfer point		|144
+|*FL*		|Low transfer point		|093
+|*FO*		|Output volts			|120
+|*FP*		|Output power			|0280
+|*FR*		|Output frequency (.1 Hz units)	|600
+|*FT*		|Transfer point?		|121
+|*FV*		|Input voltage			|120
+
+3+h|Input group
+
+|*IM*		|Manufacturer			|OPTI-UPS
+|*IO*		|Model				|280es
+|*IS*		|Firmware version		d|+V1.5B2+ (change this and their software stops working)
+|*IZ*		|Serial number			|801292607978
+
+3+h|Input group
+
+|*NF*		|Input frequency (.1 Hz)	|605
+|*NV*		|Input voltage	|114
+
+3+h|Output group
+
+|*OF*		|Output frequency (.1 Hz)	|605
+|*OL*		|Output load			|75
+|*OV*		|Output volts			|120
+|====
+
+
+Cable information
+-----------------
+
+According to contributor Stephen S., the stock PnP cable that is provided with the unit does not work properly with Linux.
+Cables using this pinout should perform better.
+
+- UPS 6 - PC 3
+- UPS 9 - PC 2
+- UPS 4 - PC 5
+
+UPS end = male, PC end = female.
+
+
+No more updates
+---------------
+
+I no longer have access to this hardware, so this page will probably remain frozen in this state forever.
+The 20 second delay was unbelievably annoying, so this turn of events is not entirely bad.
+If you can circumvent this problem and want to continue the page, then contact me.
