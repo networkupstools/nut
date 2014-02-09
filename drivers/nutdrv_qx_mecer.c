@@ -1,4 +1,4 @@
-/* nutdrv_qx_mecer.c - Subdriver for Mecer UPSes
+/* nutdrv_qx_mecer.c - Subdriver for Mecer/Voltronic Power P98 UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
@@ -25,10 +25,28 @@
 
 #include "nutdrv_qx_mecer.h"
 
-#define MECER_VERSION "Mecer 0.01"
+#define MECER_VERSION "Mecer 0.02"
 
-/* qx2nut lookup table */
+/* Support functions */
+static int	mecer_claim(void);
+static void	mecer_initups(void);
+
+/* Preprocess functions */
+static int	voltronic_p98_protocol(item_t *item, char *value, size_t valuelen);
+static int	mecer_process_test_battery(item_t *item, char *value, size_t valuelen);
+
+
+/* == qx2nut lookup table == */
 static item_t	mecer_qx2nut[] = {
+
+	/* Query UPS for protocol (Voltronic Power UPSes)
+	 * > [QPI\r]
+	 * < [(PI98\r]
+	 *    012345
+	 *    0
+	 */
+
+	{ "ups.firmware.aux",		0,	NULL,	"QPI\r",	"",	6,	'(',	"",	1,	4,	"%s",	QX_FLAG_STATIC,	voltronic_p98_protocol },
 
 	/*
 	 * > [Q1\r]
@@ -87,7 +105,7 @@ static item_t	mecer_qx2nut[] = {
 	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	blazer_process_command },
 	{ "shutdown.stayoff",		0,	NULL,	"S%sR0000\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	blazer_process_command },
 	{ "shutdown.stop",		0,	NULL,	"C\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
-	{ "test.battery.start",		0,	NULL,	"T%02d\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	blazer_process_command },
+	{ "test.battery.start",		0,	NULL,	"T%s\r",	"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	mecer_process_test_battery },
 	{ "test.battery.start.deep",	0,	NULL,	"TL\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
 	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
 	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	5,	'(',	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL },
@@ -100,10 +118,12 @@ static item_t	mecer_qx2nut[] = {
 	{ NULL,				0,	NULL,	NULL,		"",	0,	0,	"",	0,	0,	NULL,	0,	NULL }
 };
 
-/* Testing table */
+
+/* == Testing table == */
 #ifdef TESTING
 static testing_t	mecer_testing[] = {
 	{ "Q1\r",	"(215.0 195.0 230.0 014 49.0 22.7 30.0 00000000\r" },
+	{ "QPI\r",	"(PI98\r" },
 	{ "F\r",	"#230.0 000 024.0 50.0\r" },
 	{ "I\r",	"#NOT_A_LIVE_UPS  TESTING    TESTING   \r" },
 	{ "Q\r",	"(ACK\r" },
@@ -119,6 +139,68 @@ static testing_t	mecer_testing[] = {
 };
 #endif	/* TESTING */
 
+
+/* == Support functions == */
+
+/* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
+static int	mecer_claim(void)
+{
+
+	/* Apart from status (Q1), try to identify protocol (QPI, for Voltronic Power P98 units) or whether the UPS uses '(ACK\r'/'(NAK\r' replies */
+
+	item_t	*item = find_nut_info("input.voltage", 0, 0);
+
+	/* Don't know what happened */
+	if (!item)
+		return 0;
+
+	/* No reply/Unable to get value */
+	if (qx_process(item, NULL))
+		return 0;
+
+	/* Unable to process value */
+	if (ups_infoval_set(item) != 1)
+		return 0;
+
+	/* UPS Protocol */
+	item = find_nut_info("ups.firmware.aux", 0, 0);
+
+	/* Don't know what happened */
+	if (!item) {
+		dstate_delinfo("input.voltage");
+		return 0;
+	}
+
+	/* No reply/Unable to get value/Command rejected */
+	if (qx_process(item, NULL)) {
+
+		/* No reply/Command echoed back or rejected with something other than '(NAK\r' -> Not a '(ACK/(NAK' unit */
+		if (!strlen(item->answer) || strcasecmp(item->answer, "(NAK\r")) {
+			dstate_delinfo("input.voltage");
+			return 0;
+		}
+
+		/* Command rejected with '(NAK\r' -> '(ACK/(NAK' unit */
+
+		/* Skip protocol query from now on */
+		item->qxflags |= QX_FLAG_SKIP;
+
+	} else {
+
+		/* Unable to process value/Command echoed back or rejected with something other than '(NAK\r'/Protocol not supported */
+		if (ups_infoval_set(item) != 1) {
+			dstate_delinfo("input.voltage");
+			return 0;
+		}
+
+		/* Voltronic Power P98 unit */
+
+	}
+
+	return 1;
+
+}
+
 /* Subdriver-specific initups */
 static void	mecer_initups(void)
 {
@@ -127,10 +209,72 @@ static void	mecer_initups(void)
 
 }
 
-/* Subdriver interface */
+
+/* == Preprocess functions == */
+
+/* Protocol used by the UPS */
+static int	voltronic_p98_protocol(item_t *item, char *value, size_t valuelen)
+{
+	if (strcasecmp(item->value, "PI98")) {
+		upslogx(LOG_ERR, "Protocol [%s] is not supported by this driver", item->value);
+		return -1;
+	}
+
+	snprintf(value, valuelen, item->dfl, "Voltronic Power P98");
+
+	return 0;
+}
+
+/* *CMD* Preprocess 'test.battery.start' instant command */
+static int	mecer_process_test_battery(item_t *item, char *value, size_t valuelen)
+{
+	const char	*protocol = dstate_getinfo("ups.firmware.aux");
+	char		buf[SMALLBUF] = "";
+	int		min, test_time;
+
+	/* Voltronic P98 units -> Accepted values for test time: .2 -> .9 (.2=12sec ..), 01 -> 99 (minutes) -> range = [12..5940] */
+	if (protocol && !strcasecmp(protocol, "Voltronic Power P98"))
+		min = 12;
+	/* Other units: 01 -> 99 (minutes) -> [60..5940] */
+	else
+		min = 60;
+
+	if (strlen(value) != strspn(value, "0123456789")) {
+		upslogx(LOG_ERR, "%s: non numerical value [%s]", item->info_type, value);
+		return -1;
+	}
+
+	test_time = strlen(value) > 0 ? strtol(value, NULL, 10) : 600;
+
+	if ((test_time < min) || (test_time > 5940)) {
+		upslogx(LOG_ERR, "%s: battery test time '%d' out of range [%d..5940] seconds", item->info_type, test_time, min);
+		return -1;
+	}
+
+	/* test time < 1 minute */
+	if (test_time < 60) {
+
+		test_time = test_time / 6;
+		snprintf(buf, sizeof(buf), ".%d", test_time);
+
+	/* test time > 1 minute */
+	} else {
+
+		test_time = test_time / 60;
+		snprintf(buf, sizeof(buf), "%02d", test_time);
+
+	}
+
+	snprintf(value, valuelen, item->command, buf);
+
+	return 0;
+}
+
+
+/* == Subdriver interface == */
 subdriver_t	mecer_subdriver = {
 	MECER_VERSION,
-	blazer_claim,
+	mecer_claim,
 	mecer_qx2nut,
 	mecer_initups,
 	NULL,

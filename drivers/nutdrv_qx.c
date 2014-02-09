@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 #include "main.h"
 
@@ -77,8 +77,8 @@ static subdriver_t	*subdriver_list[] = {
 	&voltronic_qs_subdriver,
 	&mustek_subdriver,
 	&megatec_old_subdriver,
-	&megatec_subdriver,
 	&mecer_subdriver,
+	&megatec_subdriver,
 	&zinto_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
