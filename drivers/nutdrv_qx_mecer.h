@@ -1,4 +1,4 @@
-/* nutdrv_qx_mecer.h - Subdriver for Mecer UPSes
+/* nutdrv_qx_mecer.h - Subdriver for Mecer/Voltronic Power P98 UPSes
  *
  * Copyright (C)
  *   2013 Daniele Pezzini <hyouko@gmail.com>
