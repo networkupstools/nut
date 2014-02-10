@@ -19,6 +19,7 @@ RedHat/upsmon \
 RedHat/upsmon.in \
 Solaris8/S99upsmon \
 subdriver/gen-usbhid-subdriver.sh \
+subdriver/gen-snmp-subdriver.sh \
 ufw/README \
 upower/95-upower-hid.rules \
 Windows/halt.c \
