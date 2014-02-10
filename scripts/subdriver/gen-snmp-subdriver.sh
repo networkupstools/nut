@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.3
+# Version: 0.4
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -71,7 +71,7 @@ get_snmp_data() {
 
     # 2) get the content of the mfr specif MIB
     snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
-    snmpwalk -Os -v1 -M $MIBS_DIRLIST-c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+    snmpwalk -Os -v1 -M $MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
 }
 
 # process command line options
@@ -79,7 +79,7 @@ while [ $# -gt 0 ]; do
     if [ $# -gt 1 -a "$1" = "-n" ]; then
         DRIVER="$2"
         shift 2
-    elif [ $# -gt 1 -a "$1" = "-m" ]; then
+    elif [ $# -gt 1 -a "$1" = "-M" ]; then
         MIBS_DIRLIST="$MIBS_DIRLIST:$2"
         shift 2
     elif [ "$1" = "-k" ]; then
