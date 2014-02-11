@@ -1,6 +1,4 @@
-Makefile
-Makefile.in
-libupsclient-config
-libupsclient.pc
-libnutscan.pc
-libnutclient.pc
+/libnutclient.pc
+/libnutscan.pc
+/libupsclient-config
+/libupsclient.pc

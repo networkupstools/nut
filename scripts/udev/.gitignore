@@ -1,8 +1,5 @@
-52_nut-usbups.rules
-Makefile
-Makefile.in
-nut-usbups.rules
-nut-usbups.rules.in
-52-nut-usbups.rules
-nut-ipmipsu.rules
-52-nut-ipmipsu.rules
+/52-nut-ipmipsu.rules
+/52-nut-usbups.rules
+/nut-ipmipsu.rules
+/nut-usbups.rules
+/nut-usbups.rules.in
