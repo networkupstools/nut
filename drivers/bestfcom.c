@@ -45,7 +45,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Best Ferrups/Fortress driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -527,7 +527,7 @@ Released: 08/01/1995
 
 void upsdrv_init_nofc(void)
 {
-	char tmp[256], rstring[1024];
+	char tmp[256], rstring[1024], *model;
 
 	/* This is a Best UPS	
 	 * Set initial values for old Fortress???
@@ -576,11 +576,19 @@ void upsdrv_init_nofc(void)
 			fc.watts = 3000;
 		}
 	} else
-	if (strstr(rstring, "Model:	   FE")
-	    || strstr(rstring, "Model:    FE")){
-		fc.model = FExxxx;
-		fc.type = FERRUPS;
-		snprintf(fc.name, sizeof(fc.name), "%s", "Ferrups");
+	if ((model = strstr(rstring, "Model:"))) {
+		model += sizeof("Model:");
+		while(*model == ' ' || *model == '\t') {
+			model++;
+		}
+		if(strncmp(model, "FE", 2)) {
+			fc.model = FExxxx;
+			fc.type = FERRUPS;
+			/* fc.va and fc.watts are detected below */
+			snprintf(fc.name, sizeof(fc.name), "%s", "Ferrups");
+		} else {
+			upsdebugx(2, "Found 'Model:' string, but unknown model name prefix: '%s'", model);
+		}
 	} else
 	if (strlen(rstring) < 300 ) {
 		/* How does the old Fortress respond to this? */
