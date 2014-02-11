@@ -312,7 +312,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	/* FIXME: add variable baudrate detection */
 	*upsfd = ser_open(device_path);
 	ser_set_speed(*upsfd, device_path, B2400);
-	setline(*upsfd, 0);
+	setline(*upsfd, 1);
 
 	/* initialise communication */
 	if (!shut_synchronise(*upsfd))
