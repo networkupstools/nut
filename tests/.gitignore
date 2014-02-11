@@ -1,4 +1,4 @@
-.deps
-Makefile
-Makefile.in
-cppunittest
+/cppunittest
+/cppunittest.log
+/cppunittest.trs
+/test-suite.log

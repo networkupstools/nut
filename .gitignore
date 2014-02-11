@@ -1,29 +1,33 @@
-*-stamp
-*.[oa]
+# Backup files
 *.bak
-*.l[oa]
 *~
-.deps
-.libs
-ChangeLog
-INSTALL
+
+# Build process
+## Global
+*.[oa]
+*.l[oa]
+.deps/
+.libs/
 Makefile
 Makefile.in
-aclocal.m4
-autom4te.cache
-config.guess
-config.log
-config.status
-config.sub
-configure
-cscope.out
-depcomp
-install-sh
-libtool
-ltmain.sh
-missing
-mkinstalldirs
-nut-*.*.*
-nut-*.tar.gz
-svn-commit.tmp
+## Parent directory only
+/aclocal.m4
+/autom4te.cache/
+/ChangeLog
+/config.guess
+/config.log
+/config.status
+/config.sub
+/configure
+/cscope.*
+/depcomp
+/INSTALL
+/install-sh
+/libtool
+/ltmain.sh
+/missing
 /test-driver
+
+# Dist
+/nut-*.*.*/
+/nut-*.tar.gz
