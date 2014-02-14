@@ -36,7 +36,7 @@ usage() {
     echo " -k                  -- keep temporary files (for debugging)"
     echo ""
     echo "mode 1: get SNMP data from a real agent"
-    echo " -H host address     -- SNMP host IP address or name"
+    echo " -H host_address     -- SNMP host IP address or name"
     echo " -c community        -- SNMP v1 community name (default: public)"
     echo ""
     echo "mode 2: get data from files (snmpwalk dumps of 'sysOID' subtree)"
@@ -344,6 +344,5 @@ Do not forget to:
 * add &${LDRIVER} to snmp-ups.c:mib2nut[] list,
 * add ${LDRIVER}-mib.c to snmp_ups_SOURCES in drivers/Makefile.am
 * add ${LDRIVER}-mib.h to dist_noinst_HEADERS in drivers/Makefile.am
-* copy ${LDRIVER}-mib.c and ${LDRIVER}-mib.h to ../drivers/
-* "autoreconf && configure && make" from the top level directory
+* "./autogen.sh && ./configure && make" from the top level directory
 EOF
