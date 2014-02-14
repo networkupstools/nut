@@ -22,7 +22,8 @@ DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
- --with-udev-dir='$${prefix}/etc/udev'
+ --with-udev-dir='$${prefix}/etc/udev'			\
+ --with-devd-dir='$${prefix}/etc/devd'
 
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
