@@ -21,7 +21,6 @@ Active members
 
 - Arnaud Quette: project leader (since 2005), Debian packager and jack of all trades
 - Charles Lepple: senior lieutenant
-- Frederic Bohe: senior developer
 - Emilien Kia: senior developer
 - Václav Krpec: junior developer
 - Kjell Claesson: senior developer
@@ -36,7 +35,7 @@ Active members
 - Antoine Colombier: trainee
 
 For an up to date list of NUT developers, refer to
-link:https://alioth.debian.org/project/memberlist.php?group_id=30602[Alioth].
+link:https://github.com/orgs/networkupstools/members[GitHub].
 
 Retired members
 ~~~~~~~~~~~~~~~
@@ -56,6 +55,7 @@ blazer_ser and blazer_usb
 - Dominique Lallement: Consultant (chairman of the USB/HID PDC Forum)
 - Julius Malkiewicz: junior developer
 - Tomas Smetana: former Redhat packager (2007-2008)
+- Frederic Bohe: senior developer, Eaton contractor (2009-2013)
 
 [[Eaton]]
 Our main supporter: Eaton
