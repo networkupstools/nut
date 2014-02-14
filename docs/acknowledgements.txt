@@ -57,25 +57,6 @@ blazer_ser and blazer_usb
 - Tomas Smetana: former Redhat packager (2007-2008)
 - Frederic Bohe: senior developer, Eaton contractor (2009-2013)
 
-[[Eaton]]
-Our main supporter: Eaton
--------------------------
-
-Through the acquisition of MGE Office Protection Systems (a carve out of
-the MGE UPS SYSTEMS small systems, up to 10 KVA), Eaton has been supporting
-NUT, and more generally the Free/Libre Opensource Software Community
-since around 2002.
-
-This support includes the following actions:
-
-- providing extensive technical documents (Eaton protocols library),
-- providing units to developers of NUT and related projects,
-- hosting the networkupstools.org webserver (from 2005 to August 2012),
-- providing artwork,
-- promoting NUT in general.
-
-For more detailed information on Eaton's Opensource commitment, please refer to
-link:http://opensource.eaton.com[Eaton Opensource website].
 
 Supporting manufacturers
 ------------------------
@@ -83,27 +64,46 @@ Supporting manufacturers
 UPS manufacturers
 ~~~~~~~~~~~~~~~~~
 
-- link:http://powerquality.eaton.com[Eaton], our main supporter, as presented in
-the <<Eaton,above section>>.
+[[Eaton]]
+* link:http://powerquality.eaton.com[Eaton], has been the main NUT supporter in
+the past, between 2007 and 2011, continuing MGE UPS SYSTEMS efforts.
+As such, Eaton has been:
+  - providing extensive technical documents (Eaton protocols library),
+  - providing units to developers of NUT and related projects,
+  - hosting the networkupstools.org webserver (from 2007 to August 2012),
+  - providing artwork,
+  - promoting NUT in general,
+  - supporting its customers using NUT.
++
+[WARNING]
+================================================================================
+*The situation has evolved, and since 2011 Eaton does not support NUT anymore.*
 
-- link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
+*This may still evolve in the future.*
+
+*But for now, please do not consider anymore that buying Eaton products will
+provide you with official support from Eaton, or a better level of device
+support in NUT.*
+================================================================================
+
+* link:http://www.gamatronic.com[Gamatronic], through Nadav Moskovitch, has
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
 UPSs with alarm interface.
 
-- link:http://www.microdowell.com[Microdowell], through Elio Corbolante, has
+* link:http://www.microdowell.com[Microdowell], through Elio Corbolante, has
 created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial devices.
 They also proposes NUT as an alternative to its software for
 link:http://www.microdowell.com/fra/download.html[Linux / Unix].
 
-- link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
+* link:http://pcmups.com.tw[Powercom], through Alexey Morozov, has provided
 link:ups-protocols.html[extensive information] on its USB/HID devices, along
 with development units.
 
-- link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
+* link:http://www.riello-ups.com[Riello UPS], through Massimo Zampieri, has
 provided link:ups-protocols.html[all protocols information]. Elio Parisi has
 also created riello_ser and riello_usb to support these protocols.
 
-- link:http://www.tripplite.com[Tripp Lite], through Eric Cobb, has provided
+* link:http://www.tripplite.com[Tripp Lite], through Eric Cobb, has provided
 test results from connecting their HID-compliant UPS hardware to NUT. Some of
 this information has been incorporated into the NUT hardware compatibility
 list, and the rest of the information is available via the
@@ -133,13 +133,14 @@ safenet driver.
 Older entries (before 2005)
 ---------------------------
 
-- MGE UPS SYSTEMS was the previous NUT sponsor. They provided protocols
-information, many units for development of NUT-related projects.
+- MGE UPS SYSTEMS was the previous NUT sponsor, from 2002 until its partial
+acquisition by Eaton. They provided protocols information, many units for
+development of NUT-related projects.
 Several drivers such as mge-utalk, mge-shut, snmp-ups, hidups, and usbhid-ups
 are the result of this collaboration, in addition to the WMNut, MGE HID Parser
-the libhid projects, ... through Arnaud.
-All the MGE supporters have now gone with Eaton (through MGE Office
-Protection Systems), which is the new NUT sponsor.
+the libhid projects, ... through Arnaud Quette (who was also an MGE employee).
+All the MGE supporters have gone with Eaton (through MGE Office Protection
+Systems), which was temporarily the new NUT sponsor.
 
 - Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
 stance and quick responses to technical inquiries were appreciated for 

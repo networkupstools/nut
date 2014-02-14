@@ -1,3 +1,4 @@
+- February 14, 2014: Formalizing the link:acknowledgements.html#Eaton[end of the relationship with Eaton]
 - November 20, 2013: 2.7.1 released
 - June 21, 2013: new client link:https://github.com/zykh/walNUT[walNUT] released
 - February 10, 2013: NUT source repository is converted to link:https://github.com/networkupstools/nut[Git] using link:http://www.catb.org/~esr/reposurgeon/[reposurgeon]
