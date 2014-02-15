@@ -22,6 +22,7 @@ Active members
 - Arnaud Quette: project leader (since 2005), Debian packager and jack of all trades
 - Charles Lepple: senior lieutenant
 - Emilien Kia: senior developer
+- Daniele Pezzini: senior developer
 - Václav Krpec: junior developer
 - Kjell Claesson: senior developer
 - Alexander Gordeev: junior developer
