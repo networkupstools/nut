@@ -45,17 +45,6 @@ ChangeLog: tools/gitlog2changelog.py dummy-stamp
 	$(top_srcdir)/tools/gitlog2changelog.py v2.6.0 || \
 		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
-if HAVE_ASCIIDOC
-website:
-	cd docs;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/man;  $(MAKE) $(AM_MAKEFLAGS) html-man
-	cd tools;  $(MAKE) $(AM_MAKEFLAGS) website
-	cd docs/website;  $(MAKE) $(AM_MAKEFLAGS) website
-else !HAVE_ASCIIDOC
-website:
-	@echo "Not building website since 'asciidoc' was not found."
-endif !HAVE_ASCIIDOC
-
 # Maintainers targets: distribution signature and hashes
 dist-sig:
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz

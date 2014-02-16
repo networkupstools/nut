@@ -619,8 +619,7 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
-dnl is set to 'no', we may still want to build the website, or some
-dnl doc targets manually
+dnl is set to 'no', we may still want to build some doc targets manually
 NUT_CHECK_ASCIIDOC
 
 case "${nut_with_doc}" in
@@ -691,7 +690,7 @@ no)
 	;;
 esac
 
-AC_MSG_CHECKING([if asciidoc version can build website (minimum required 8.6.3)])
+AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
 AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 	AC_MSG_RESULT(yes)
 	nut_have_asciidoc="yes"
@@ -700,7 +699,7 @@ AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 	nut_have_asciidoc="no"
 ])
 
-AC_MSG_CHECKING([if a2x version can build website (minimum required 8.6.3)])
+AC_MSG_CHECKING([if a2x version can build manpages (minimum required 8.6.3)])
 AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 	AC_MSG_RESULT(yes)
 ], [
@@ -1235,7 +1234,6 @@ AC_OUTPUT([
  data/driver.list
  docs/Makefile
  docs/man/Makefile
- docs/website/Makefile
  drivers/Makefile
  include/Makefile
  lib/libupsclient-config

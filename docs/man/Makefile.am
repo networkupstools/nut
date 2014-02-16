@@ -569,10 +569,7 @@ HTML_MANS = \
 
 all:
 
-man-index.html: index.html
-	cp -f $< $@
-
-html-man: $(HTML_MANS) man-index.html
+html-man: $(HTML_MANS) index.html
 
 CLEANFILES = *.xml *.html
 
