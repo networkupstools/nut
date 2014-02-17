@@ -49,6 +49,7 @@
 #include "cyberpower-mib.h"
 #include "delta_ups-mib.h"
 #include "ietf-mib.h"
+#include "xppc-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -71,6 +72,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&bestpower,
 	&cyberpower,
 	&delta_ups,
+        &xppc,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -98,7 +100,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.70"
+#define DRIVER_VERSION		"0.71"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
