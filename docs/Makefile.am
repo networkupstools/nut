@@ -39,7 +39,8 @@ ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
 
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
- $(CABLES_IMAGES) docinfo.xml $(NUT_SPELL_DICT)
+ $(CABLES_IMAGES) docinfo.xml $(NUT_SPELL_DICT) \
+ common.xsl xhtml.xsl chunked.xsl
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
@@ -97,11 +98,11 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute tree_version=@TREE_VERSION@ \
     -a toc -a numbered --destination-dir=.
 
-.txt.html:
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml $<
+.txt.html: common.xsl xhtml.xsl
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
-.txt.chunked:
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked $<
+.txt.chunked: common.xsl chunked.xsl
+	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
 .txt.pdf: docinfo.xml
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
