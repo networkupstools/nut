@@ -36,7 +36,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.32"
+#define MGE_HID_VERSION		"MGE HID 1.33"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -98,7 +98,8 @@ typedef enum {
 	MGE_PULSAR_M = 0x400,		/* MGE Pulsar M series */
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
-		MGE_PULSAR_M_3000_XL
+		MGE_PULSAR_M_3000_XL,
+	EATON_5P = 0x500			/* Eaton 5P / 5PX series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -211,6 +212,7 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 		break;
 
 	case MGE_PULSAR_M:
+	case EATON_5P:
 		break;
 
 	default:
@@ -234,6 +236,7 @@ static const char *mge_battery_voltage_fun(double value)
 	{
 	case MGE_EVOLUTION:
 	case MGE_PULSAR_M:
+	case EATON_5P:
 		break;
 
 	default:
@@ -774,6 +777,12 @@ static models_name_t mge_model_names [] =
 	{ "Evolution", "S 2500", MGE_EVOLUTION_S_2500, NULL },
 	{ "Evolution", "S 3000", MGE_EVOLUTION_S_3000, NULL },
 
+	/* Eaton 5P */
+	{ "Eaton 5P", "650", EATON_5P, "5P 650" },
+	{ "Eaton 5P", "850", EATON_5P, "5P 850" },
+	{ "Eaton 5P", "1150", EATON_5P, "5P 1150" },
+	{ "Eaton 5P", "1550", EATON_5P, "5P 1550" },
+	
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
