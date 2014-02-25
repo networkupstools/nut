@@ -1269,7 +1269,9 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		case -ETIMEDOUT:	/* Connection timed out */
 		case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 		case -EPROTO:		/* Protocol error */
+#endif
 		case -EPIPE:		/* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */

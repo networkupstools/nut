@@ -355,7 +355,9 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 
 	case -ETIMEDOUT:	/* Connection timed out */
 	case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 	case -EPROTO:		/* Protocol error */
+#endif
 	default:
 		break;
 	}

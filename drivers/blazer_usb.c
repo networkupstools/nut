@@ -452,7 +452,9 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 
 	case -ETIMEDOUT:	/* Connection timed out */
 	case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 	case -EPROTO:		/* Protocol error */
+#endif
 	default:
 		break;
 	}

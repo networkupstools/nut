@@ -372,7 +372,9 @@ static int libusb_strerror(const int ret, const char *desc)
 		return 0;
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
+#ifdef EPROTO
 	case -EPROTO:	/* Protocol error */
+#endif
 		upsdebugx(2, "%s: %s", desc, usb_strerror());
 		return 0;
 
