@@ -285,7 +285,7 @@ might look like this:
 
 	if (test -f /etc/killpower)
 	then
-		/usr/local/ups/bin/upsdrvctl shutdown
+		/usr/local/ups/sbin/upsdrvctl shutdown
 
 		sleep 600	# this should never return
 
@@ -387,7 +387,7 @@ For my development system this yields the following /dev entries:
 
 - Switch to root, then start the drivers:
 
-	# /usr/local/ups/bin/upsdrvctl -u nutdev start
+	# /usr/local/ups/sbin/upsdrvctl -u nutdev start
 
 - The listing for /var/state/ups then looks like this:
 
@@ -759,7 +759,7 @@ Implement this by modifying your shutdown script like this:
 
 	if (test -f /etc/killpower)
 	then
-		/usr/local/ups/bin/upsdrvctl shutdown
+		/usr/local/ups/sbin/upsdrvctl shutdown
 
 		sleep 120
 

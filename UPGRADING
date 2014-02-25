@@ -7,6 +7,13 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.7.1 to 2.7.2
+---------------------------
+
+- upsdrvctl is now installed to $prefix/sbin rather than $driverexec.
+This usually means moving from /bin to /sbin, apart from few exceptions.
+In all cases, please adapt your scripts.
+
 Changes from 2.6.5 to 2.7.1
 ---------------------------
 

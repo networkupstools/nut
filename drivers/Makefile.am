@@ -91,7 +91,7 @@ else
 endif
 
 # always build upsdrvctl
-driverexec_PROGRAMS += upsdrvctl
+sbin_PROGRAMS = upsdrvctl
 
 # ==========================================================================
 # Driver build details

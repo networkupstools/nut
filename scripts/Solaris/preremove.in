@@ -4,5 +4,5 @@
 
 NUT_DIR="@prefix@"
 
-#$NUT_DIR/bin/upsdrvctl stop
+#$NUT_DIR/sbin/upsdrvctl stop
 

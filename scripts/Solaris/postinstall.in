@@ -59,7 +59,7 @@ ln -s /etc/init.d/nut /etc/rc3.d/K100nut > /dev/null 2>&1
 # Start nut services
 
 #echo "Starting nut services"
-#$NUT_DIR/bin/upsdrvctl start #> /dev/null 2>&1
+#$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
 #$NUT_DIR/sbin/upsd #> /dev/null 2>&1
 #$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
 

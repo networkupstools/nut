@@ -158,14 +158,14 @@ Starting the driver(s)
 
 Start the driver(s) for your hardware:
 
-	/usr/local/ups/bin/upsdrvctl start
+	/usr/local/ups/sbin/upsdrvctl start
 
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
 should get back to the command prompt a few seconds later.  For
 reference, a successful start of the `usbhid-ups` driver looks like this:
 
-	# /usr/local/ups/bin/upsdrvctl start
+	# /usr/local/ups/sbin/upsdrvctl start
 	Network UPS Tools - Generic HID driver 0.34 (2.4.1)
 	USB communication driver 0.31
 	Using subdriver: MGE HID 1.12
