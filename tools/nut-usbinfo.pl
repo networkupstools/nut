@@ -1,8 +1,7 @@
 #!/usr/bin/env perl
-#   Current Version : 1.2
-#   Copyright (C) 2008 - 2012
-#            Arnaud Quette <arnaud.quette@gmail.com>
-#            dloic (loic.dardant AT gmail DOT com)
+#   Current Version : 1.3
+#   Copyright (C) 2008 - 2012 dloic (loic.dardant AT gmail DOT com)
+#   Copyright (C) 2008 - 2014 Arnaud Quette <arnaud.quette@free.fr>
 #   Copyright (C) 2013 - 2014 Charles Lepple <clepple+nut@gmail.com>
 #
 #	Based on the usbdevice.pl script, made for the Ubuntu Media Center
@@ -31,9 +30,6 @@ use strict;
 
 # path to scan for USB_DEVICE pattern
 my $scanPath="../drivers";
-
-# HAL output file
-my $outputHAL="../scripts/hal/ups-nut-device.fdi.in";
 
 # Hotplug output file
 my $outputHotplug="../scripts/hotplug/libhid.usermap";
@@ -86,13 +82,6 @@ find(\&find_usbdevs,$scanPath);
 ################# SUB METHOD #################
 sub gen_usb_files
 {
-	# HAL file header
-	open my $outHAL, ">$outputHAL" || die "error $outputHAL : $!";
-	print $outHAL '<?xml version="1.0" encoding="ISO-8859-1"?> <!-- -*- SGML -*- -->'."\n";
-	print $outHAL '<deviceinfo version="0.2">'."\n";
-	print $outHAL '  <device>'."\n";
-	print $outHAL '    <match key="@HAL_DEVICE_MATCH_KEY@" string="usb_device">'."\n";
-
 	# Hotplug file header
 	open my $outHotplug, ">$outputHotplug" || die "error $outputHotplug : $!";
 	print $outHotplug '# This file is generated and installed by the Network UPS Tools package.'."\n";
@@ -140,12 +129,6 @@ sub gen_usb_files
 	# generate the file in alphabetical order (first for VendorID, then for ProductID)
 	foreach my $vendorId (sort { lc $a cmp lc $b } keys  %vendorName)
 	{
-		# HAL vendor header
-		if ($vendorName{$vendorId}) {
-			print $outHAL "\n      <!-- ".$vendorName{$vendorId}." -->\n";
-		}
-		print $outHAL "      <match key=\"usb_device.vendor_id\" int=\"".$vendorId."\">\n";
-
 		# Hotplug vendor header
 		if ($vendorName{$vendorId}) {
 			print $outHotplug "\n# ".$vendorName{$vendorId}."\n";
@@ -167,15 +150,6 @@ sub gen_usb_files
 
 		foreach my $productId (sort { lc $a cmp lc $b } keys %{$vendor{$vendorId}})
 		{
-			# HAL device entry
-			print $outHAL "        <!-- ".$vendor{$vendorId}{$productId}{"comment"}." -->\n";
-			print $outHAL "        <match key=\"usb_device.product_id\" int=\"".$productId."\">\n";
-   			print $outHAL '          <append key="info.category" type="string">battery</append>'."\n";
-   			print $outHAL '          <merge key="info.capabilities" type="strlist">battery</merge>'."\n";
-   			print $outHAL "          <merge key=\"info.addons\" type=\"strlist\">hald-addon-".$vendor{$vendorId}{$productId}{"driver"}."</merge>\n";
-   			print $outHAL '          <merge key="battery.type" type="string">ups</merge>'."\n";
-  			print $outHAL '        </match>'."\n";
-
 			# Hotplug device entry
 			print $outHotplug "# ".$vendor{$vendorId}{$productId}{"comment"}."\n";
 			print $outHotplug "libhidups      0x0003      ".$vendorId."   ".$productId."    0x0000       0x0000       0x00";
@@ -218,14 +192,7 @@ sub gen_usb_files
 			# Device scanner entry
 			print $outputDevScanner "\t{ ".$vendorId.', '.$productId.", \"".$vendor{$vendorId}{$productId}{"driver"}."\" },\n";
 		}
-		# HAL vendor footer
-		print $outHAL "      </match>\n";
 	}
-	# HAL footer
-	print $outHAL "    </match>\n";
-	print $outHAL "  </device>\n";
-	print $outHAL "</deviceinfo>\n";
-
 	# Udev footer
 	print $outUdev "\n".'LABEL="nut-usbups_rules_end"'."\n";
 
