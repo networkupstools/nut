@@ -3,7 +3,7 @@
  *  Based on NetSNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *	2002 - 2012	Arnaud Quette <arnaud.quette@free.fr>
+ *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -100,7 +100,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.71"
+#define DRIVER_VERSION		"0.72"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -587,6 +587,9 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 {
 	struct snmp_pdu ** pdu_array;
 	struct snmp_pdu * ret_pdu;
+
+	if (OID == NULL)
+		return NULL;
 
 	upsdebugx(3, "nut_snmp_get(%s)", OID);
 
