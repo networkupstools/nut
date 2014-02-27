@@ -84,9 +84,7 @@ will get the right headers on every system.
 Device drivers - main.c
 -----------------------
 
-The device drivers use main.c as their core.  The only exceptions are the
-HAL-based drivers, which use the same dstate function calls while integrating
-with the DBUS event loop.
+The device drivers use main.c as their core.
 
 To write a new driver, you create a file with a series of support
 functions that will be called by main.  These all have names that start
