@@ -14,6 +14,10 @@ Changes from 2.7.1 to 2.7.2
 This usually means moving from /bin to /sbin, apart from few exceptions.
 In all cases, please adapt your scripts.
 
+- FreeDesktop Hardware Abstraction Layer (HAL) support was removed.
+Please adapt your packaging files, if you used to distribute the
+nut-hal-drivers package.
+
 Changes from 2.6.5 to 2.7.1
 ---------------------------
 
