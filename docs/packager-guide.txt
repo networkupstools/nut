@@ -54,7 +54,7 @@ Let's now have an overview on how NUT is currently packaged:
 
 	1) Debian:
 	http://packages.qa.debian.org/n/nut.html
-		nut, nut-dev, nut-usb, nut-snmp, nut-xml, nut-cgi, nut-doc [, nut-hal-drivers]
+		nut, nut-dev, nut-usb, nut-snmp, nut-xml, nut-cgi, nut-doc
 
 	2) Mandriva
 	http://cvs.mandriva.com/cgi-bin/cvsweb.cgi/SPECS/nut/
@@ -169,7 +169,6 @@ FIXME: make a dependency graph
 - <<pkg-libupsclient1,libupsclient1>>
 - <<pkg-libupsclient1-dev,libupsclient1-dev>>
 - <<pkg-nut-cgi,nut-cgi>>
-- <<pkg-nut-hal-drivers,nut-hal-drivers>>
 - <<pkg-nut-powerman-pdu,nut-powerman-pdu>>
 - <<pkg-nut-snmp,nut-snmp>>
 - <<pkg-nut-xml,nut-xml>>
@@ -238,13 +237,6 @@ nut-cgi
 - Size: 
 - Deps:
 
-[[pkg-nut-hal-drivers]]
-nut-hal-drivers
-^^^^^^^^^^^^^^^
-- Desc:
-- Files:
-- Size: 
-- Deps:
 
 [[pkg-nut-powerman-pdu]]
 nut-powerman-pdu

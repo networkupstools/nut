@@ -35,7 +35,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
  images/cables/SOLA-330.png
 
 ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) FAQ.txt nut-hal.txt nut-qa.txt packager-guide.txt snmp.txt
+ $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt
 
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \

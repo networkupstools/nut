@@ -262,9 +262,6 @@ dnl what will be in the --with-drivers argument.
 
 NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
-NUT_ARG_WITH([hal], [build and install HAL support], [no])
-NUT_CHECK_LIBHAL
-NUT_CONFIG_LIBHAL
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
 NUT_CHECK_LIBNETSNMP
 NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
@@ -590,29 +587,6 @@ fi
 NUT_REPORT_FEATURE([build CGI programs], [${nut_with_cgi}], [],
 					[WITH_CGI], [Define to enable CGI (HTTP) support])
 
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-hal
-
-dnl ${nut_with_hal}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_hal}" = "yes" -a "${nut_have_libhal}" != "yes"; then
-   AC_MSG_ERROR(["libhal not found, required for HAL support"])
-fi
-
-if test "${nut_with_hal}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-   AC_MSG_ERROR(["libusb not found, required for HAL support"])
-fi
-
-if test "${nut_with_hal}" != "no"; then
-   if test "${nut_have_libhal}" = "yes" -a "${nut_have_libusb}" = "yes"; then
-      nut_with_hal="yes"
-   else
-      nut_with_hal="no"
-   fi
-fi
-
-AM_CONDITIONAL(WITH_HAL, test "${nut_with_hal}" = "yes")
-NUT_REPORT_FEATURE([enable HAL support], [${nut_with_hal}], [],
-					[WITH_HAL], [Define to enable HAL support])
 
 dnl ----------------------------------------------------------------------
 
@@ -1190,12 +1164,6 @@ AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
 AC_SUBST(LIBLTDL_LIBS)
-AC_SUBST(HAL_USER)
-AC_SUBST(HAL_DEVICE_MATCH_KEY)
-AC_SUBST(HAL_FDI_PATH)
-AC_SUBST(HAL_CALLOUTS_PATH)
-AC_SUBST(LIBHAL_CFLAGS)
-AC_SUBST(LIBHAL_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)
@@ -1253,8 +1221,6 @@ AC_OUTPUT([
  scripts/avahi/nut.service
  scripts/devd/Makefile
  scripts/devd/nut-usb.conf
- scripts/hal/Makefile
- scripts/hal/ups-nut-device.fdi
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf

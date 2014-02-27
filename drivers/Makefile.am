@@ -5,7 +5,6 @@
 #FIXME: SERLIBS is only useful for LDADD_DRIVERS_SERIAL not for LDADD_COMMON
 LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
 LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
-LDADD_HAL_DRIVERS = $(LDADD_COMMON) libnuthalmain.a
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
 
 # most targets are drivers, so make this the default
@@ -14,9 +13,6 @@ LDADD = $(LDADD_DRIVERS_SERIAL)
 # files. In any case, CFLAGS are only -I options, so there is no harm,
 # but only add them if we really use the target.
 AM_CFLAGS = -I$(top_srcdir)/include
-if WITH_HAL
-  AM_CFLAGS += $(LIBHAL_CFLAGS)
-endif
 if WITH_USB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
 endif
@@ -46,10 +42,6 @@ USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  nutdrv_atcl_usb \
  nutdrv_qx
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
-# Since HAL is deprecated anyway, don't try to build hald-addon-nutdrv_atcl_usb (the VID:PID is too generic anyway)
-HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
- hald-addon-tripplite_usb hald-addon-blazer_usb hald-addon-riello_usb	\
- hald-addon-nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 
@@ -69,10 +61,6 @@ if WITH_SNMP
 endif
 if WITH_USB
    driverexec_PROGRAMS += $(USB_LIBUSB_DRIVERLIST)
-endif
-if WITH_HAL
-   halexecdir = $(HAL_CALLOUTS_PATH)
-   halexec_PROGRAMS = $(HAL_DRIVERLIST)
 endif
 if WITH_NEON
    driverexec_PROGRAMS += $(NEONXML_DRIVERLIST)
@@ -211,27 +199,6 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  xppc-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
 
-# HAL
-hald_addon_usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
- $(USBHID_UPS_SUBDRIVERS)
-hald_addon_usbhid_ups_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
-
-hald_addon_tripplite_usb_SOURCES = tripplite_usb.c libusb.c
-hald_addon_tripplite_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c
-hald_addon_bcmxcp_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS)
-
-hald_addon_blazer_usb_SOURCES = blazer.c blazer_usb.c libusb.c
-hald_addon_blazer_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_riello_usb_SOURCES = riello.c riello_usb.c libusb.c
-hald_addon_riello_usb_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-
-hald_addon_nutdrv_qx_SOURCES = nutdrv_qx.c libusb.c $(NUTDRV_QX_SUBDRIVERS)
-hald_addon_nutdrv_qx_LDADD = $(LDADD_HAL_DRIVERS) $(LIBUSB_LIBS) $(LIBHAL_LIBS) -lm
-hald_addon_nutdrv_qx_CFLAGS = $(AM_CFLAGS) -DQX_USB
-
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
@@ -277,9 +244,9 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
- dstate-hal.h dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
+ dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
- main.h main-hal.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
+ main.h mge-hid.h mge-mib.h mge-shut.h mge-utalk.h		\
  mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
  powercom.h powerpanel.h powerp-bin.h powerp-txt.h powerware-mib.h raritan-pdu-mib.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
@@ -294,14 +261,3 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
 # corresponding object files.  This library is not actually built,
 EXTRA_LIBRARIES = libdummy.a
 libdummy_a_SOURCES = main.c dstate.c serial.c
-
-# the nuthalmain library combines the code for main-hal.c and
-# dstate-hal.c. It is necessary for Automake-technical reasons,
-# because per-object CFLAGS can only be specified for libraries, not
-# for object files. This library is used during the build process,
-# and is not meant to be installed.
-
-EXTRA_LIBRARIES += libnuthalmain.a
-libnuthalmain_a_SOURCES = main-hal.c dstate-hal.c usb-common.c
-
-MOSTLYCLEANFILES = libnuthalmain.a

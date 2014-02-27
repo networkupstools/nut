@@ -494,8 +494,7 @@ Structure and macro
  
 You should us the usb_device_id structure, and the USB_DEVICE macro to
 declare the supported devices. This allows the automatic extraction of
-USB information, to generate the HAL, Hotplug, udev and DeviceKit-power
-support files.
+USB information, to generate the Hotplug, udev and UPower support files.
 
 For example:
 

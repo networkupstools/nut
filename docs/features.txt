@@ -58,19 +58,6 @@ WARNING: Be sure to plug your network's physical hardware (switches, hubs,
 routers, bridges, ...) into the UPS!
 
 
-////////////////////////////////////////////////////////////////////////////////
-*FIXME* to be removed?
-
-- This has also allowed us to create easily the Power Management integration.
-
-=== Power Management integration ===
-
-- Thanks to its modular design, NUT can feed data to the FreeDesktop Hardware Abstraction Layer (HAL).[[BR]]
- This allow a seemless integration of USB UPSs, at a small cost (around 200 Kb), reusing the standard Power Management GUIs and providing to users a full Plug & Play system.
-
-- The added bonus is that this is the best Power Management existing, surpassing the one that exist on Windows and Mac OS, both in terms of devices supported and of features.
-////////////////////////////////////////////////////////////////////////////////
-
 Redundancy support - Hot swap/high availability power supplies
 --------------------------------------------------------------
 
