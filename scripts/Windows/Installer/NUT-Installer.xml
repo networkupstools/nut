@@ -1499,8 +1499,11 @@ Public License instead of this License.
                         <Component Id="BESTUPS.HTML" DiskId="1" Guid="C6ED1527-CE73-4895-B12B-4DEFC0716779">
                             <File Id="BESTUPS.HTML" Name="bestups.html" Source="..\..\..\docs\man\bestups.html" />
                         </Component>
-                        <Component Id="BLAZER.HTML" DiskId="1" Guid="29F38410-B0F2-4475-AF01-C3F2B5F29AA8">
-                            <File Id="BLAZER.HTML" Name="blazer.html" Source="..\..\..\docs\man\blazer.html" />
+                        <Component Id="BLAZER_SER.HTML" Guid="2A259AB2-15C6-4728-A8C7-50FB01E0074E" DiskId="1">
+                            <File Id="BLAZER_SER.HTML" Name="blazer_ser.html" Source="..\..\..\docs\man\blazer_ser.html" />
+                        </Component>
+                        <Component Id="BLAZER_USB.HTML" Guid="829EBD77-9944-4DB4-91C3-50DDB9C82340" DiskId="1">
+                            <File Id="BLAZER_USB.HTML" Name="blazer_usb.html" Source="..\..\..\docs\man\blazer_usb.html" />
                         </Component>
                         <Component Id="CLONE.HTML" DiskId="1" Guid="CA920E20-5DD1-4BB0-B750-F72BDD5825C0">
                             <File Id="CLONE.HTML" Name="clone.html" Source="..\..\..\docs\man\clone.html" />
@@ -1948,7 +1951,8 @@ Public License instead of this License.
                 <ComponentRef Id="BESTFORTRESS.HTML" />
                 <ComponentRef Id="BESTUFERRUPS.HTML" />
                 <ComponentRef Id="BESTUPS.HTML" />
-                <ComponentRef Id="BLAZER.HTML" />
+                <ComponentRef Id="BLAZER_SER.HTML" />
+                <ComponentRef Id="BLAZER_USB.HTML" />
                 <ComponentRef Id="CLONE.HTML" />
                 <ComponentRef Id="DUMMY_UPS.HTML" />
                 <ComponentRef Id="ETAPRO.HTML" />
