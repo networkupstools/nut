@@ -185,7 +185,7 @@ UPS.
 This is also a good option to consider if you can't use networked
 monitoring code for security or safety reasons.
 
-See ideas.txt for more on this and other related topics.
+See the TODO file for more on this and other related topics.
 
 == Why isn't upssched part of upsmon?
 
@@ -219,12 +219,13 @@ a shell script and make upsmon call it.  Everyone wins.
 
 There are at least two different protocols being used for hardware
 with very similar names.  The bestups driver tends to support the
-units built around the newer "PhoenixTec" protocol.  
+units built around the newer "PhoenixTec" protocol, and the bestfortress
+driver supports the older Best hardware.
 
-Previous releases of this software included a driver called
-bestfortress which supported the older Best hardware.  See the
-earlier entries about updating old drivers which have been removed
-from the tree.
+There is a similar problem with the tripplite_usb driver: it only supports the
+older, proprietary protocol. Newer standards-compliant Tripp Lite UPS models
+are supported by usbhid-ups. We name drivers based on the information
+available at that time, which often is incomplete.
 
 == What's this about 'data stale'?
 
@@ -342,7 +343,7 @@ same effect with the following command:
 The following pages have some slightly more kludgy answers which involve the
 use of `setpci`, and are highly model-specific:
 
- - http://mythic-beasts.com/support/macminicolo_howto.html
+ - https://www.mythic-beasts.com/support/servers/colo/macminicolo_howto
  - http://superuser.com/questions/212434/reboot-after-power-failure-for-mac-running-ubuntu
  - http://ubuntuforums.org/showthread.php?t=1209576
 
@@ -359,7 +360,7 @@ solution.
 == My Mac won't power back up by itself into Mac OS X after the UPS shuts down.  What can I do about this?
 
 This is relatively simple to fix.  If you have console or VNC access, log in as
-an administrator, go to System Preferences, click on energy saver, click on the
+an administrator, go to System Preferences, click on Energy Saver, click on the
 options tab, check "Restart automatically after a power failure".
 
 Alternatively, you can connect via SSH and run "sudo pmset autorestart 1" to
@@ -492,11 +493,12 @@ any of the user accounts which run inside the jail.
 
 == upsd is running, so why can't I connect to it?
 
-Assuming you haven't changed the TCP port number on the command line
-or at compile-time, then you probably have some sort of firewall
-blocking the connection.
+Assuming you haven't changed the TCP port number on the command line or at
+compile-time, then you may have some sort of firewall blocking the connection.
 
-upsd listens on TCP port 3493 by default.
+upsd listens on TCP port 3493 by default. If you do not specify a LISTEN
+directive in upsd.conf, upsd only listens on the loopback interface. See the
+upsd.conf man page for details.
 
 == How do you make upsmon reload the config file?
 
