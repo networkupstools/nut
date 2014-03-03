@@ -10,25 +10,27 @@ NQA is present in many aspects and areas of NUT.
 Documentation
 -------------
 
-The documentation toolchain now use
+The documentation toolchain uses
 link:http://www.methods.co.nz/asciidoc/[AsciiDoc] to output both HTML pages and
-manual pages (troff). This single point of control permitted to fill many gaps,
-to suppress many redundancies and to optimize documentation management in
+manual pages (troff). This single point of control fills many gaps,
+suppresses many redundancies, and optimizes documentation management in
 general.
  
-- the NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
+- The NUT website and HTML documentation are tested for W3C XHTML 1.1 and CSS
 compliance. This can be counter verified by clicking the W3C XHTML 1.1 and CSS
 icons, at the bottom of each page.
 
+////////////////////////////////////////////////////////////////////////////////
 - the manual pages conformance is tested with
 link:http://catb.org/~esr/doclifter/index.html[doclifter] (outdated)
+////////////////////////////////////////////////////////////////////////////////
 
 - Documentation source files are spell checked, using
 link:http://aspell.net[Aspell], both interactively (using
 'make spellcheck-interactive') and automatically in Buildbot (using
 'make spellcheck').
 
-NOTE: A NUT dictionnary is also available (docs/nut.dict), providing a glossary
+NOTE: A NUT dictionary is also available (docs/nut.dict), providing a glossary
 of terms related to power devices and management.
 
 Source code
@@ -37,7 +39,7 @@ Source code
 Use of standards
 ~~~~~~~~~~~~~~~~
 
-NUT promotes and uses many standards, like:
+NUT promotes and uses many standards, such as:
 
 - the variable names standard used in NUT,
 - the coding rules and best practices for developers,
@@ -47,7 +49,7 @@ NUT promotes and uses many standards, like:
   * the Net SNMP project,
   * the Neon library,
   * the OpenSSL library (to be replaced by NSS, which is more license compliant
-    with NUT and is FIPS 140 certified),
+    with NUT and can be FIPS 140 certified),
   * the TCP Wrappers library.
 
 QA tools and metrics
@@ -55,14 +57,24 @@ QA tools and metrics
 
 NUT's quality is constently monitored using many tools, like:
 
-- a Revision Control System (link:http://svn.debian.org/wsvn/nut[Subversion]) to
-track development and ease regression fixes. Any modification on the NUT source
+- a Revision Control System (link:https://github.com/networkupstools/nut[Git]) to
+track development and ease regression fixes.
+
+////////////////////////////////////////////////////////////////////////////////
+Any modification on the NUT source
 trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list.
+////////////////////////////////////////////////////////////////////////////////
+
 - link:http://buildbot.networkupstools.org/public/nut/[Buildbot] to automate the compile/test
-cycle. Any build failure is caught early, reported through the
+cycle. Any build failure is caught early, and fixed quickly.
+
+////////////////////////////////////////////////////////////////////////////////
+ reported through the
 link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list, and fixed quickly.
+////////////////////////////////////////////////////////////////////////////////
+
 - a project portal with trackers for bugs, feature request, patchs
 and tasks
 
@@ -78,19 +90,19 @@ FIXME (POST):
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
+- Clang
 - the Debian QA tools, available through the link:http://packages.qa.debian.org/n/nut.html[NUT Package Tracking System]:
 
    * Lintian general QA checks,
    * link:http://piuparts.debian.org/sid/source/n/nut.html[piuparts] automates
      the installation, upgrade and removal testing processes.
 
-- a runtime testing suite, which automates the inter layer communication testing
+- a runtime testing suite, which automates the inter-layer communication testing
 (driver - upsd - upsmon / clients), that is part of Ubuntu.
 link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
 is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
-It installs nut, configure with for the dummy-ups driver, changes a few data and
-check that these are well propagated with upsc.
+It installs NUT, configures it with the dummy-ups driver, changes a few data and
+checks that these are well propagated with upsc.
 
 
 Runtime quality
@@ -106,7 +118,7 @@ to protect NUT binaries.
 FIXME (POST):
 
 - write a code conformance checker (nut-lint)
-- write a § on driver maintainance status
+- write a § on driver maintenance status
 - consider using [http://forge.novell.com/modules/xfmod/project/?opensuse OpenSUSE Build Service tools]
 - provide software metrics and evolution over the time
 
