@@ -27,8 +27,8 @@
 #   *****   vendor provided protocol and hardware
 #
 # - driver [parameters]: mention the driver(s) (separated by "or" if there are
-#   several possibilities. Any mandatory parameter(s) must be referenced, as
-#   they will be parsed by configuration helper softwares.
+#   several possibilities). Any mandatory parameter(s) must be referenced, as
+#   they will be parsed by configuration helper software.
 #   For example, genericups entries must mention the "upstype=nn" format.
 #
 # Duplicate text in the last field will be cooked out during the conversion
@@ -194,6 +194,7 @@
 "Cyber Power Systems"	"ups"	"2"	"CPS800AVR"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"AE550"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"CP 1500C"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"CP825AVR-G / LE825G"	"USB"	"usbhid-ups"	# http://www.cyberpowersystems.com/products/ups-systems/retail-products/LE825G.html
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
@@ -416,6 +417,7 @@
 "Infosec"	"ups"	"2"	"iPEL 750"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"iPEL 1000"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"500XP"	""	"blazer_ser"
+"Infosec"	"ups"	"2"	"X2, X3, X4, E2, E3, E4"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
 
@@ -679,6 +681,7 @@
 "Mustek"	"ups"	"2"	"Powermust"	"600VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"800VA Pro"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"1000VA Plus"	"blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"1000VA USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Powermust"	"1400VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"blazer_usb"
@@ -691,6 +694,8 @@
 "Nitram"	"ups"	"1"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
+
+"Novex"	"ups"	"1"	"NUPS-650"	"USB"	"blazer_usb protocol=megatec"	# http://komp.1k.by/periphery-ups/novex/Novex_NUPS_650-130052.html
 
 "NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
 
@@ -894,6 +899,8 @@
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
 "Sweex"	"ups"	"1"	"1000"	"USB"	"richcomm_usb"
 "Sweex"	"ups"	"2"	"(various)"	""	"blazer_ser"
+
+"Syndome"	"ups"	"2"	"Era 500VA"	"USB"	"blazer_usb"
 
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
