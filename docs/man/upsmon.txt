@@ -169,8 +169,9 @@ NOTIFY FLAGS
 ------------
 
 By default, all notify events (see above) generate a global message
-(wall) to all users, plus they are logged via the syslog.  You can change
-this with the NOTIFYFLAG directive in the configuration file:
+(wall) to all users, plus they are logged via the syslog.
+Except for Windows where upsmon only writes to the syslog by default.
+You can change this with the NOTIFYFLAG directive in the configuration file:
 
 +NOTIFYFLAG+ 'notifytype' 'flags'
 
