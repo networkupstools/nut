@@ -297,7 +297,9 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYFLAG - change behavior of upsmon when NOTIFY events occur
 #
 # By default, upsmon sends walls (global messages to all logged in users)
-# and writes to the syslog when things happen.  You can change this.
+# and writes to the syslog when things happen.
+# Except for Windows where upsmon only writes to the syslog by default.
+# You can change this.
 #
 # NOTIFYFLAG <notify type> <flag>[+<flag>][+<flag>] ...
 #
