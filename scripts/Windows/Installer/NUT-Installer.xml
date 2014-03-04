@@ -1803,6 +1803,9 @@ Public License instead of this License.
                 </RegistryKey>
                 <RegistryKey Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\Network UPS Tools" Action="createAndRemoveOnUninstall">
                 </RegistryKey>
+                <RegistryKey Action="createAndRemoveOnUninstall" Root="HKLM" Key="SOFTWARE\Network UPS Tools">
+                    <RegistryValue Name="InstallDir" Type="string" Value="[NUT]" />
+                </RegistryKey>
                 <ServiceControl Id="StopNUTService" Name="Network UPS Tools" Stop="uninstall" />
             </Component>
         </DirectoryRef>
