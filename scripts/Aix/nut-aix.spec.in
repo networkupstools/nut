@@ -1,6 +1,5 @@
-# FIXME: TBC
-%define nut_id ipp
-%define nut_group ipp
+%define nut_id @RUN_AS_USER@
+%define nut_group @RUN_AS_GROUP@
 
 %define _prefix /usr/local/ups
 %define _docdir %{_datadir}/doc
