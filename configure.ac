@@ -1116,7 +1116,7 @@ dnl AIX system
 AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
 
 dnl processor type
-AC_DEFINE_UNQUOTED(CPU_TYPE, `uname -p 2>/dev/null || echo unknown`, [Define processor type])
+AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
 
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
