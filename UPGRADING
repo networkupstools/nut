@@ -18,6 +18,10 @@ In all cases, please adapt your scripts.
 Please adapt your packaging files, if you used to distribute the
 nut-hal-drivers package.
 
+- This is a good time to point out that for stricter packaging systems, it may
+  be beneficial to add "--enable-option-checking=fatal" to the ./configure
+  command line, in order to quickly pick up any other removed option flags.
+
 Changes from 2.6.5 to 2.7.1
 ---------------------------
 
