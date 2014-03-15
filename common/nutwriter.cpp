@@ -68,17 +68,20 @@ namespace nut {
 /** UNIX style EoL */
 static const std::string LF("\n");
 
-// TODO: Make a compile-time selection
-#if (0)
 // M$ Windows EoL
 static const std::string CRLF("\r\n");
 
 // Apple MAC EoL
 static const std::string CR("\r");
-#endif  // end of #if (0)
-
 
 const std::string & NutWriter::eol(LF);
+
+// TODO: Make a compile-time selection
+#if (0)
+const std::string & NutWriter::eol(CRLF);
+const std::string & NutWriter::eol(CR);
+#endif  // end of #if (0)
+
 
 const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
 const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
