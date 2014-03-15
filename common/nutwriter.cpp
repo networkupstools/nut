@@ -87,6 +87,10 @@ const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
 const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
 
 
+//
+// NutWriter
+//
+
 NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std::string & pref) {
 	for (size_t pos = 0; pos < str.size(); ) {
 		// Prefix every line
@@ -116,15 +120,28 @@ NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std:
 }
 
 
-NutWriter::status_t SectionlessConfigWriter::writeDirective(const std::string & str) {
-	return write(str + eol);
-}
+//
+// NutConfigWriter
+//
 
-
-NutWriter::status_t SectionlessConfigWriter::writeComment(const std::string & str) {
+NutWriter::status_t NutConfigWriter::writeComment(const std::string & str) {
 	return writeEachLine(str, "# ");
 }
 
+NutWriter::status_t NutConfigWriter::writeSectionName(const std::string & name) {
+	std::string section_line("[");
+	section_line += name + "]" + eol;
+
+	return write(section_line);
+}
+
+NutWriter::status_t NutConfigWriter::writeDirective(const std::string & str) {
+	return write(str + eol);
+}
+
+//
+// SectionlessConfigWriter
+//
 
 NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string & name) {
 	std::string e("INTERNAL ERROR: Attempt to write section name ");
@@ -133,6 +150,9 @@ NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string 
 	throw std::logic_error(e);
 }
 
+//
+// NutConfConfigWriter
+//
 
 NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & config) {
 	status_t status;
@@ -526,25 +546,6 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 
 	return NUTW_OK;
 }
-
-
-NutWriter::status_t DefaultConfigWriter::writeComment(const std::string & str) {
-	return writeEachLine(str, "# ");
-}
-
-
-NutWriter::status_t DefaultConfigWriter::writeSectionName(const std::string & name) {
-	std::string section_line("[");
-	section_line += name + "]" + eol;
-
-	return write(section_line);
-}
-
-
-NutWriter::status_t DefaultConfigWriter::writeDirective(const std::string & str) {
-	return write(str + eol);
-}
-
 
 /**
  *  \brief  Value quoting and escaping

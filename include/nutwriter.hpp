@@ -125,7 +125,10 @@ class NutWriter {
 
 
 /**
- *  \brief  NUT consfiguration writer interface
+ *  \brief  NUT configuration writer class.
+ * 
+ * This class helps to write configuration base elements like comments or
+ * section names.
  */
 class NutConfigWriter: public NutWriter {
 	protected:
@@ -137,33 +140,40 @@ class NutConfigWriter: public NutWriter {
 
 	/**
 	 *  \brief  Write comment
+	 * 
+	 * Default behavior is to prepend each comment line by a "# " character
+	 * sequence.
 	 *
 	 *  \param  str  Comment string
 	 *
 	 *  \retval NUTW_OK    on success
 	 *  \retval NUTW_ERROR otherwise
 	 */
-	virtual status_t writeComment(const std::string & str) = 0;
+	virtual status_t writeComment(const std::string & str);
 
 	/**
 	 *  \brief  Write section name
+	 * 
+	 * Default behavior is to write section name between brackets ('[' and ']').
 	 *
 	 *  \param  name  Section name
 	 *
 	 *  \retval NUTW_OK    on success
 	 *  \retval NUTW_ERROR otherwise
 	 */
-	virtual status_t writeSectionName(const std::string & name) = 0;
+	virtual status_t writeSectionName(const std::string & name);
 
 	/**
 	 *  \brief  Write directive
+	 * 
+	 * The default behavior is to write a line as is.
 	 *
 	 *  \param  str  Directive string
 	 *
 	 *  \retval NUTW_OK    on success
 	 *  \retval NUTW_ERROR otherwise
 	 */
-	virtual status_t writeDirective(const std::string & str) = 0;
+	virtual status_t writeDirective(const std::string & str);
 
 	/** Virtual destructor */
 	virtual ~NutConfigWriter() {}
@@ -186,12 +196,6 @@ class SectionlessConfigWriter: public NutConfigWriter {
 	 *  \param  ostream  Output stream
 	 */
 	SectionlessConfigWriter(NutStream & ostream): NutConfigWriter(ostream) {}
-
-	public:
-
-	// Partial \ref NutConfigWriter interface implementation
-	status_t writeDirective(const std::string & str);
-	status_t writeComment(const std::string & str);
 
 	private:
 
@@ -297,11 +301,6 @@ class DefaultConfigWriter: public NutConfigWriter {
 	DefaultConfigWriter(NutStream & ostream): NutConfigWriter(ostream) {}
 
 	public:
-
-	// \ref NutConfigWriter interface implementation
-	status_t writeComment(const std::string & str);
-	status_t writeSectionName(const std::string & name);
-	status_t writeDirective(const std::string & str);
 
 	/**
 	 *  \brief  Write configuration section
