@@ -244,6 +244,7 @@
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
+"Digitus"	"ups"	"1"	"DN-170014"	"USB"	"richcomm_usb"	# http://www.digitus.info/en/products/professional-network/security-and-surveillance/power-supply/uninterrruptable-power-supplies/ups-uninterruptible-power-systems-dn-170014/section/prof/
 "Digitus"	"ups"	"2"	"DN-170020"	""	"blazer_ser"
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
