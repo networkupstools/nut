@@ -156,6 +156,8 @@
 "Borri"	"ups"	"2"	"B500-R060-B/B500-R100-B"	""	"blazer_usb"
 "Borri"	"ups"	"2"	"B500EVO-100-B/B500EVO-200-B"	""	"blazer_usb"
 
+"CABAC"	"ups"	"2"	"UPS-1700DV2"	""	"blazer_usb"
+
 "Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"blazer_ser"
 
 "Cito Power"	"ups"	"2"	"CPG-SR1000"	""	"blazer_ser"
