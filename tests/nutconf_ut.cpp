@@ -35,6 +35,8 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 
 	CPPUNIT_TEST_SUITE(NutConfigUnitTest);
 		CPPUNIT_TEST(test);
+
+		CPPUNIT_TEST(testGenericConfiguration);
 	CPPUNIT_TEST_SUITE_END();
 
 	/**
@@ -80,6 +82,10 @@ class NutConfigUnitTest: public CppUnit::TestFixture {
 		testUpsConfiguration();
 		testUpsdUsersConfiguration();
 	}
+
+	/** Test generic configuration serialization. */
+	void testGenericConfiguration();
+	void compareGenericConfiguration(const nut::GenericConfiguration& expected, const nut::GenericConfiguration& tested);
 
 };  // end of class NutConfigUnitTest
 
@@ -229,4 +235,74 @@ void NutConfigUnitTest::testUpsdUsersConfiguration() {
 		"\tupsmon master\n"
 		"\n"
 	);
+}
+
+void NutConfigUnitTest::testGenericConfiguration()
+{
+	nut::GenericConfiguration config;
+	config["section01"]["value01"] = 1;
+	config["section01"]["value02"] = "2";
+	config["section02"]["val"] = 42;
+	config["section02"]["mul"] << "01" << "02" << 3.4;
+	config[""]["global"] = "The \"Global\" value.";
+
+	nut::NutMemory memory;
+	config.writeTo(memory);
+
+	nut::GenericConfiguration test;
+	test.parseFrom(memory);
+
+	compareGenericConfiguration(config, test);
+}
+
+void NutConfigUnitTest::compareGenericConfiguration(const nut::GenericConfiguration& expected, const nut::GenericConfiguration& tested)
+{
+	// Assert they have the same section count.
+	CPPUNIT_ASSERT_EQUAL_MESSAGE("GenericConfiguration must have same section count",
+		expected.sections.size(), tested.sections.size());
+
+	// Test each section.
+	for(nut::GenericConfiguration::SectionMap::const_iterator it = expected.sections.begin(); it != expected.sections.end(); ++it)
+	{
+		// Section must be found in the other.
+		CPPUNIT_ASSERT_MESSAGE("GenericConfiguration must have same sections",
+			tested.hasSection(it->first) );
+
+		const nut::GenericConfigSection& expectedSection = it->second;
+		const nut::GenericConfigSection& testedSection = tested[it->first];
+
+		// Section name must be sames.
+		CPPUNIT_ASSERT_EQUAL_MESSAGE("GenericConfiguration section must have same name",
+			expectedSection.name, testedSection.name);
+
+		// Sections must have same entry count.
+		CPPUNIT_ASSERT_EQUAL_MESSAGE("GenericConfiguration section must have same entry count",
+			expectedSection.entries.size(), testedSection.entries.size());
+
+		// Test each entry.
+		for(nut::GenericConfigSection::EntryMap::const_iterator iter = expectedSection.entries.begin(); iter != expectedSection.entries.end(); ++iter)
+		{
+			// Entry must be found in the other.
+			CPPUNIT_ASSERT_MESSAGE("GenericConfigSection must have same entries",
+				testedSection.hasEntry(iter->first) );
+
+			const nut::GenericConfigSectionEntry& expectedEntry = iter->second;
+			const nut::GenericConfigSectionEntry& testedEntry = testedSection[iter->first];
+
+			// Entry name must be sames.
+			CPPUNIT_ASSERT_EQUAL_MESSAGE("GenericConfigSectionEntry must have same name",
+				expectedEntry.name, testedEntry.name);
+
+			// Entries must have same value count.
+			CPPUNIT_ASSERT_EQUAL_MESSAGE("GenericConfigSectionEntry must have same value count",
+				expectedEntry.values.size(), testedEntry.values.size());
+
+			// Entries must have same values.
+			for(size_t n=0; n<expectedEntry.values.size(); ++n)
+			{
+				CPPUNIT_ASSERT_EQUAL_MESSAGE("GenericConfigSectionEntry must have same values",
+					expectedEntry.values[n], testedEntry.values[n]);
+			}
+		}
+	}
 }
