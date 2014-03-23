@@ -330,6 +330,14 @@ struct GenericConfigSection
 	 */
 	void setEntry(const GenericConfigSectionEntry& entry);
 
+	/**
+	 * Test if the section has a specific entry.
+	 * \param name Entry name to look for.
+	 * \retval true if entry is found
+	 * \retval false otherwise.
+	 */
+	bool hasEntry(const std::string& name)const;
+
 	bool empty()const;
 	void clear();
 };
@@ -361,7 +369,7 @@ public:
 
 	/**
 	 * \brief Add a section, replacing existing if any.
-	 * @param section Section to add.
+	 * \param section Section to add.
 	 */
 	void setSection(const GenericConfigSection& section);
 
@@ -371,6 +379,14 @@ public:
 	 * \return Section reference.
 	 */
 	GenericConfigSection& getSection(const std::string & section);
+
+	/**
+	 * Test is the configuration has a specific section.
+	 * \param section Section name to look for.
+	 * \retval true if the section is found
+	 * \retval false otherwise.
+	 */
+	bool hasSection(const std::string & section)const;
 
 protected:
 	/**

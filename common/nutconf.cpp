@@ -672,6 +672,11 @@ void GenericConfigSection::setEntry(const GenericConfigSectionEntry& entry)
 	entries[entry.name] = entry;
 }
 
+bool GenericConfigSection::hasEntry(const std::string& name)const
+{
+	return entries.find(name) != entries.end();
+}
+
 bool GenericConfigSection::empty()const {
     return name.empty() && entries.empty();
 }
@@ -736,6 +741,11 @@ GenericConfigSection& GenericConfiguration::getSection(const std::string & secti
 		it->second.name = section;
 	}
 	return it->second;
+}
+
+bool GenericConfiguration::hasSection(const std::string & section)const
+{
+	return sections.find(section) != sections.end();
 }
 
 void GenericConfiguration::parseFromString(const std::string& str)
