@@ -284,7 +284,7 @@ class BaseConfiguration
 {
 	friend class GenericConfigParser;
 protected:
-	virtual void setGenericConfigSection(const GenericConfigSection& section) = 0;
+	virtual void setSection(const GenericConfigSection& section) = 0;
 };
 
 class GenericConfigParser : public DefaultConfigParser
@@ -325,7 +325,7 @@ public:
 
 
 protected:
-	virtual void setGenericConfigSection(const GenericConfigSection& section);
+	virtual void setSection(const GenericConfigSection& section);
 
 	/**
 	 * \brief Safely retrieve a section, creating it if not existing.

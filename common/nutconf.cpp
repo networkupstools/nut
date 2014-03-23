@@ -694,7 +694,7 @@ void GenericConfigParser::onParseSection(const GenericConfigSection& section)
 {
 	if(_config!=NULL)
 	{
-		_config->setGenericConfigSection(section);
+		_config->setSection(section);
 	}
 }
 
@@ -702,7 +702,7 @@ void GenericConfigParser::onParseSection(const GenericConfigSection& section)
 // GenericConfiguration
 //
 
-void GenericConfiguration::setGenericConfigSection(const GenericConfigSection& section)
+void GenericConfiguration::setSection(const GenericConfigSection& section)
 {
 	sections[section.name] = section;
 }
