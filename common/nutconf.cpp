@@ -707,6 +707,18 @@ void GenericConfiguration::setGenericConfigSection(const GenericConfigSection& s
 	sections[section.name] = section;
 }
 
+GenericConfigSection& GenericConfiguration::getSection(const std::string & section)
+{
+	SectionMap::iterator it = sections.find(section);
+	if (it == sections.end())
+	{
+		std::pair<SectionMap::iterator, bool> ins =
+			sections.insert(std::pair<const std::string, GenericConfigSection>(section, GenericConfigSection()));
+		it = ins.first;
+		it->second.name = section;
+	}
+	return it->second;
+}
 
 void GenericConfiguration::parseFromString(const std::string& str)
 {

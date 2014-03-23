@@ -321,11 +321,18 @@ public:
 	SectionMap sections;
 
 	const GenericConfigSection& operator[](const std::string& secname)const{return sections.find(secname)->second;}
-	GenericConfigSection& operator[](const std::string& secname){return sections[secname];}
+	GenericConfigSection& operator[](const std::string& secname){return getSection(secname);}
 
 
 protected:
 	virtual void setGenericConfigSection(const GenericConfigSection& section);
+
+	/**
+	 * \brief Safely retrieve a section, creating it if not existing.
+	 * \param[in] section Section name to look for.
+	 * \return Section reference.
+	 */
+	GenericConfigSection& getSection(const std::string & section);
 
 	/**
 	 *  \brief  Configuration parameters getter
