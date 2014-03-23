@@ -237,13 +237,64 @@ protected:
     virtual void onParseEnd()=0;
 };
 
+/**
+ * \brief Entry of a section of a generic configuration.
+ * Each entry has a name, a value (can be multiple) and a comment.
+ */
 struct GenericConfigSectionEntry
 {
+	/** Name of the entry.*/
 	std::string     name;
+	/** List of values of the entry (usually only one).*/
 	ConfigParamList values;
+	/** Comment associated to the entry.*/
 	// std::string  comment;
 
+	/**
+	 * \brief Assignment operator to set a value to the entry.
+	 * @param value Value to assign.
+	 */
+	template<typename Type>
+	void operator = (const Type& value)
+	{
+		std::ostringstream stm;
+		stm << value;
+		values.clear();
+		values.push_back(stm.str());
+	}
+
+	/**
+	 * \brief Appender operator to add a value to the entry.
+	 * @param value Value to append.
+	 * @return The entry reference in order to chain appends.
+	 */
+	template<typename Type>
+	GenericConfigSectionEntry& operator << (const Type& value)
+	{
+		std::ostringstream stm;
+		stm << value;
+		values.push_back(stm.str());
+		return *this;
+	}
+
 };
+
+
+/** Specific refinment for strings.*/
+template<> inline
+void GenericConfigSectionEntry::operator = (const std::string& value)
+{
+	values.clear();
+	values.push_back(value);
+}
+
+/** Specific refinment for strings.*/
+template<> inline
+GenericConfigSectionEntry& GenericConfigSectionEntry::operator << (const std::string& value)
+{
+	values.push_back(value);
+	return *this;
+}
 
 struct GenericConfigSection
 {
