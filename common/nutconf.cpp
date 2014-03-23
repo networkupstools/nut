@@ -403,7 +403,7 @@ void NutConfigParser::parseConfig() {
 
     Token tok;
     std::string name;
-    std::list<std::string> values;
+    ConfigParamList values;
     char sep;
     while (tok = parseToken()) {
         switch (state) {
@@ -507,7 +507,7 @@ void NutConfigParser::parseConfig() {
                 switch (tok.type) {
                     case Token::TOKEN_COMMENT:
                         /* Could occur ! */
-                        onParseDirective(name, 0, std::list<std::string > (), tok.str);
+                        onParseDirective(name, 0, ConfigParamList(), tok.str);
                         /* Clean and return to default */
                         name.clear();
                         state = CPS_DEFAULT;
