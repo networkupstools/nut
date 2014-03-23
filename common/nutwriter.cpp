@@ -85,7 +85,7 @@ const std::string & NutWriter::eol(CR);
 
 const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
 const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
-
+const std::string GenericConfigWriter::s_default_section_entry_values_separator(" ");
 
 //
 // NutWriter
@@ -595,20 +595,20 @@ static std::string encodeValue(const std::string & val) {
 NutWriter::status_t GenericConfigWriter::writeSectionEntry(
 	const GenericConfigSectionEntry & entry,
 	const std::string & indent,
-	const std::string & kv_sep)
+	const std::string & kv_sep,
+	const std::string & val_sep)
 {
 	ConfigParamList::const_iterator value_iter = entry.values.begin();
 
-	for (; value_iter != entry.values.end(); ++value_iter) {
-		std::string value = encodeValue(*value_iter);
-
-		status_t status = writeDirective(indent + entry.name + kv_sep + value);
-
-		if (NUTW_OK != status)
-			return status;
+	std::string value;
+	if (value_iter != entry.values.end()) {
+		value = kv_sep + encodeValue(*value_iter++);
+		for (; value_iter != entry.values.end(); ++value_iter) {
+			value += val_sep + encodeValue(*value_iter);
+		}
 	}
 
-	return NUTW_OK;
+	return writeDirective(indent + entry.name + value);
 }
 
 

@@ -333,6 +333,9 @@ class GenericConfigWriter: public DefaultConfigWriter {
 	/** Default separator of the key/ value pair in section entry */
 	static const std::string s_default_section_entry_separator;
 
+	/** Default separator of the multiple values in section entry */
+	static const std::string s_default_section_entry_values_separator;
+
 	/**
 	 *  \brief  Section entry serialiser
 	 *
@@ -346,7 +349,8 @@ class GenericConfigWriter: public DefaultConfigWriter {
 	status_t writeSectionEntry(
 		const GenericConfigSectionEntry & entry,
 		const std::string & indent = s_default_section_entry_indent,
-		const std::string & kv_sep = s_default_section_entry_separator);
+		const std::string & kv_sep = s_default_section_entry_separator,
+		const std::string & val_sep = s_default_section_entry_values_separator);
 
 	public:
 
