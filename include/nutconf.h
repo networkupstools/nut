@@ -254,8 +254,21 @@ struct GenericConfigSection
 	// std::string comment;
 	EntryMap entries;
 
-	const GenericConfigSectionEntry& operator [] (const std::string& varname)const{return entries.find(varname)->second;}
-	GenericConfigSectionEntry& operator [] (const std::string& varname){return entries[varname];}
+	const GenericConfigSectionEntry& operator [] (const std::string& entryname)const{return entries.find(entryname)->second;}
+	GenericConfigSectionEntry& operator [] (const std::string& entryname){return getEntry(entryname);}
+
+	/**
+	 * \brief Retrieve a section entry from its name, creating it if needed.
+	 * \param entryname Entry name.
+	 * \return Entry reference.
+	 */
+	GenericConfigSectionEntry& getEntry(const std::string& entryname);
+
+	/**
+	 * Insert a new entry.
+	 * @param entry Entry to insert.
+	 */
+	void setEntry(const GenericConfigSectionEntry& entry);
 
 	bool empty()const;
 	void clear();

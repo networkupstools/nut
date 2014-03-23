@@ -654,6 +654,24 @@ void DefaultConfigParser::onParseEnd() {
 // GenericConfigSection
 //
 
+GenericConfigSectionEntry& GenericConfigSection::getEntry(const std::string& entryname)
+{
+	EntryMap::iterator it = entries.find(entryname);
+	if (it == entries.end())
+	{
+		std::pair<EntryMap::iterator, bool> ins =
+			entries.insert(std::pair<const std::string, GenericConfigSectionEntry>(entryname, GenericConfigSectionEntry()));
+		it = ins.first;
+		it->second.name = entryname;
+	}
+	return it->second;
+}
+
+void GenericConfigSection::setEntry(const GenericConfigSectionEntry& entry)
+{
+	entries[entry.name] = entry;
+}
+
 bool GenericConfigSection::empty()const {
     return name.empty() && entries.empty();
 }
