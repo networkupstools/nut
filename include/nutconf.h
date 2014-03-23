@@ -296,13 +296,20 @@ GenericConfigSectionEntry& GenericConfigSectionEntry::operator << (const std::st
 	return *this;
 }
 
+/**
+ * \brief Section of generic configuration.
+ * Each section has a name and a map of named entries.
+ */
 struct GenericConfigSection
 {
 	/** Section entries map */
 	typedef std::map<std::string, GenericConfigSectionEntry> EntryMap;
 
+	/** Name of the section.*/
 	std::string name;
+	/** Comment of the section.*/
 	// std::string comment;
+	/** Entries of the section.*/
 	EntryMap entries;
 
 	const GenericConfigSectionEntry& operator [] (const std::string& entryname)const{return entries.find(entryname)->second;}
@@ -365,7 +372,10 @@ protected:
 	BaseConfiguration* _config;
 };
 
-
+/**
+ * \brief Generic configuration.
+ * Generic configuration is a map of named sections.
+ */
 class GenericConfiguration : public BaseConfiguration, public Serialisable
 {
 public:
