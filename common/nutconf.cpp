@@ -403,7 +403,7 @@ void NutConfigParser::parseConfig() {
 
     Token tok;
     std::string name;
-    std::list<std::string> values;
+    ConfigParamList values;
     char sep;
     while (tok = parseToken()) {
         switch (state) {
@@ -507,7 +507,7 @@ void NutConfigParser::parseConfig() {
                 switch (tok.type) {
                     case Token::TOKEN_COMMENT:
                         /* Could occur ! */
-                        onParseDirective(name, 0, std::list<std::string > (), tok.str);
+                        onParseDirective(name, 0, ConfigParamList(), tok.str);
                         /* Clean and return to default */
                         name.clear();
                         state = CPS_DEFAULT;
@@ -654,6 +654,29 @@ void DefaultConfigParser::onParseEnd() {
 // GenericConfigSection
 //
 
+GenericConfigSectionEntry& GenericConfigSection::getEntry(const std::string& entryname)
+{
+	EntryMap::iterator it = entries.find(entryname);
+	if (it == entries.end())
+	{
+		std::pair<EntryMap::iterator, bool> ins =
+			entries.insert(std::pair<const std::string, GenericConfigSectionEntry>(entryname, GenericConfigSectionEntry()));
+		it = ins.first;
+		it->second.name = entryname;
+	}
+	return it->second;
+}
+
+void GenericConfigSection::setEntry(const GenericConfigSectionEntry& entry)
+{
+	entries[entry.name] = entry;
+}
+
+bool GenericConfigSection::hasEntry(const std::string& name)const
+{
+	return entries.find(name) != entries.end();
+}
+
 bool GenericConfigSection::empty()const {
     return name.empty() && entries.empty();
 }
@@ -679,7 +702,7 @@ _config(NULL)
 {
 }
 
-void GenericConfigParser::parseConfig(BaseConfiguration* config)
+void GenericConfigParser::parseConfig(GenericConfiguration* config)
 {
 	if(config!=NULL)
 	{
@@ -694,7 +717,7 @@ void GenericConfigParser::onParseSection(const GenericConfigSection& section)
 {
 	if(_config!=NULL)
 	{
-		_config->setGenericConfigSection(section);
+		_config->setSection(section);
 	}
 }
 
@@ -702,11 +725,28 @@ void GenericConfigParser::onParseSection(const GenericConfigSection& section)
 // GenericConfiguration
 //
 
-void GenericConfiguration::setGenericConfigSection(const GenericConfigSection& section)
+void GenericConfiguration::setSection(const GenericConfigSection& section)
 {
 	sections[section.name] = section;
 }
 
+GenericConfigSection& GenericConfiguration::getSection(const std::string & section)
+{
+	SectionMap::iterator it = sections.find(section);
+	if (it == sections.end())
+	{
+		std::pair<SectionMap::iterator, bool> ins =
+			sections.insert(std::pair<const std::string, GenericConfigSection>(section, GenericConfigSection()));
+		it = ins.first;
+		it->second.name = section;
+	}
+	return it->second;
+}
+
+bool GenericConfiguration::hasSection(const std::string & section)const
+{
+	return sections.find(section) != sections.end();
+}
 
 void GenericConfiguration::parseFromString(const std::string& str)
 {
@@ -1484,6 +1524,168 @@ bool UpsdUsersConfiguration::writeTo(NutStream & ostream) const
 	UpsdUsersConfigWriter writer(ostream);
 
 	return NutWriter::NUTW_OK == writer.writeConfig(*this);
+}
+
+
+
+//
+// UpsdUser
+//
+
+UpsdUser::UpsdUser(const std::string& name):
+username(name),
+upsmon_mode(UPSMON_UNDEF)
+{
+}
+
+UpsdUser::UpsdUser(const UpsdUser& user):
+username(user.username),
+password(user.password),
+actions(user.actions),
+instcmds(user.instcmds),
+upsmon_mode(user.upsmon_mode)
+{
+}
+
+//
+// UpsdUsersConfig
+//
+
+UpsdUsersConfig::UpsdUsersConfig()
+{
+}
+
+void UpsdUsersConfig::parseFromString(const std::string& str)
+{
+    UpsdUsersConfigParser parser(str);
+    parser.parseUpsdUsersConfig(this);
+}
+
+bool UpsdUsersConfig::parseFrom(NutStream & istream)
+{
+	// TODO: The parser is highly inefficient, it should use NutStream, directly
+	std::string str;
+
+	if (NutStream::NUTS_OK != istream.getString(str))
+		return false;
+
+	parseFromString(str);
+
+	return true;
+}
+
+bool UpsdUsersConfig::writeTo(NutStream & ostream) const
+{
+	// Not implemented yet.
+  return false;
+}
+
+//
+// UpsdUsersConfigParser
+//
+
+UpsdUsersConfigParser::UpsdUsersConfigParser(const char* buffer):
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
+{
+}
+
+UpsdUsersConfigParser::UpsdUsersConfigParser(const std::string& buffer):
+NutConfigParser(buffer, NutParser::OPTION_IGNORE_COLON)
+{
+}
+
+void UpsdUsersConfigParser::parseUpsdUsersConfig(UpsdUsersConfig* config)
+{
+	if(config!=NULL)
+	{
+		_config = config;
+		_current_user = _config->end();
+		NutConfigParser::parseConfig();
+		_config = NULL;
+	}
+}
+
+void UpsdUsersConfigParser::onParseBegin()
+{
+    // Do nothing
+}
+
+void UpsdUsersConfigParser::onParseComment(const std::string& comment)
+{
+    // Comment are ignored for now
+}
+
+void UpsdUsersConfigParser::onParseSectionName(const std::string& sectionName, const std::string& comment)
+{
+	// Create a new user
+	UpsdUser user(sectionName);
+
+	std::pair<std::map<std::string,UpsdUser>::iterator,bool> ret;
+	ret = _config->insert( std::pair<std::string,UpsdUser>(sectionName, user) );
+	_current_user = ret.first;
+}
+
+void UpsdUsersConfigParser::onParseDirective(const std::string& directiveName, char sep, const ConfigParamList& values, const std::string& comment)
+{
+	// NOTE: separators are always ignored
+
+	if(_config && _current_user != _config->end())
+	{
+		if(directiveName == "password")
+		{
+			if(values.size()>0)
+			{
+				_current_user->second.password = values.front();
+			}
+		}
+		else if(directiveName == "actions")
+		{
+			if(values.size()>0)
+			{
+				for(ConfigParamList::const_iterator it=values.begin(); it!=values.end(); ++it)
+				{
+					_current_user->second.actions.insert(*it);
+				}
+			}
+		}
+		else if(directiveName == "instcmds")
+		{
+			if(values.size()>0)
+			{
+				for(ConfigParamList::const_iterator it=values.begin(); it!=values.end(); ++it)
+				{
+					_current_user->second.instcmds.insert(*it);
+				}
+			}
+		}
+		else if(directiveName == "upsmon")
+		{
+			if(values.size()>0)
+			{
+				if(values.front() == "master")
+				{
+					_current_user->second.upsmon_mode = UpsdUser::UPSMON_MASTER;
+				}
+				else if(values.front() == "master")
+				{
+					_current_user->second.upsmon_mode = UpsdUser::UPSMON_SLAVE;
+				}
+				else
+				{
+					_current_user->second.upsmon_mode = UpsdUser::UPSMON_UNDEF;
+				}
+			}
+		}
+		else
+		{
+			// TODO WTF with unknown commands ?
+		}
+	}
+}
+
+void UpsdUsersConfigParser::onParseEnd()
+{
+    // Do nothing
 }
 
 } /* namespace nut */

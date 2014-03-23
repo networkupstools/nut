@@ -68,21 +68,28 @@ namespace nut {
 /** UNIX style EoL */
 static const std::string LF("\n");
 
-// TODO: Make a compile-time selection
-#if (0)
 // M$ Windows EoL
 static const std::string CRLF("\r\n");
 
 // Apple MAC EoL
 static const std::string CR("\r");
-#endif  // end of #if (0)
-
 
 const std::string & NutWriter::eol(LF);
 
+// TODO: Make a compile-time selection
+#if (0)
+const std::string & NutWriter::eol(CRLF);
+const std::string & NutWriter::eol(CR);
+#endif  // end of #if (0)
+
+
 const std::string GenericConfigWriter::s_default_section_entry_indent("\t");
 const std::string GenericConfigWriter::s_default_section_entry_separator(" = ");
+const std::string GenericConfigWriter::s_default_section_entry_values_separator(" ");
 
+//
+// NutWriter
+//
 
 NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std::string & pref) {
 	for (size_t pos = 0; pos < str.size(); ) {
@@ -113,15 +120,28 @@ NutWriter::status_t NutWriter::writeEachLine(const std::string & str, const std:
 }
 
 
-NutWriter::status_t SectionlessConfigWriter::writeDirective(const std::string & str) {
-	return write(str + eol);
-}
+//
+// NutConfigWriter
+//
 
-
-NutWriter::status_t SectionlessConfigWriter::writeComment(const std::string & str) {
+NutWriter::status_t NutConfigWriter::writeComment(const std::string & str) {
 	return writeEachLine(str, "# ");
 }
 
+NutWriter::status_t NutConfigWriter::writeSectionName(const std::string & name) {
+	std::string section_line("[");
+	section_line += name + "]" + eol;
+
+	return write(section_line);
+}
+
+NutWriter::status_t NutConfigWriter::writeDirective(const std::string & str) {
+	return write(str + eol);
+}
+
+//
+// SectionlessConfigWriter
+//
 
 NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string & name) {
 	std::string e("INTERNAL ERROR: Attempt to write section name ");
@@ -130,6 +150,9 @@ NutWriter::status_t SectionlessConfigWriter::writeSectionName(const std::string 
 	throw std::logic_error(e);
 }
 
+//
+// NutConfConfigWriter
+//
 
 NutWriter::status_t NutConfConfigWriter::writeConfig(const NutConfiguration & config) {
 	status_t status;
@@ -524,25 +547,6 @@ NutWriter::status_t UpsdConfigWriter::writeConfig(const UpsdConfiguration & conf
 	return NUTW_OK;
 }
 
-
-NutWriter::status_t DefaultConfigWriter::writeComment(const std::string & str) {
-	return writeEachLine(str, "# ");
-}
-
-
-NutWriter::status_t DefaultConfigWriter::writeSectionName(const std::string & name) {
-	std::string section_line("[");
-	section_line += name + "]" + eol;
-
-	return write(section_line);
-}
-
-
-NutWriter::status_t DefaultConfigWriter::writeDirective(const std::string & str) {
-	return write(str + eol);
-}
-
-
 /**
  *  \brief  Value quoting and escaping
  *
@@ -591,20 +595,20 @@ static std::string encodeValue(const std::string & val) {
 NutWriter::status_t GenericConfigWriter::writeSectionEntry(
 	const GenericConfigSectionEntry & entry,
 	const std::string & indent,
-	const std::string & kv_sep)
+	const std::string & kv_sep,
+	const std::string & val_sep)
 {
 	ConfigParamList::const_iterator value_iter = entry.values.begin();
 
-	for (; value_iter != entry.values.end(); ++value_iter) {
-		std::string value = encodeValue(*value_iter);
-
-		status_t status = writeDirective(indent + entry.name + kv_sep + value);
-
-		if (NUTW_OK != status)
-			return status;
+	std::string value;
+	if (value_iter != entry.values.end()) {
+		value = kv_sep + encodeValue(*value_iter++);
+		for (; value_iter != entry.values.end(); ++value_iter) {
+			value += val_sep + encodeValue(*value_iter);
+		}
 	}
 
-	return NUTW_OK;
+	return writeDirective(indent + entry.name + value);
 }
 
 

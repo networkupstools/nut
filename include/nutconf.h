@@ -32,6 +32,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 #include <stdexcept>
 
 #ifdef __cplusplus
@@ -43,6 +44,8 @@ class NutParser;
 class NutConfigParser;
 class DefaultConfigParser;
 class GenericConfigParser;
+
+class GenericConfiguration;
 
 
 /**
@@ -217,8 +220,9 @@ private:
     std::vector<size_t> _stack;
 };
 
+/** Configuration parameter list.*/
+typedef std::vector<std::string> ConfigParamList;
 
-typedef std::list<std::string> ConfigParamList;
 
 class NutConfigParser : public NutParser
 {
@@ -236,72 +240,116 @@ protected:
     virtual void onParseEnd()=0;
 };
 
+
+
+/**
+ * \brief Entry of a section of a generic configuration.
+ * Each entry has a name, a value (can be multiple) and a comment.
+ */
 struct GenericConfigSectionEntry
 {
+	/** Name of the entry.*/
 	std::string     name;
+	/** List of values of the entry (usually only one).*/
 	ConfigParamList values;
+	/** Comment associated to the entry.*/
 	// std::string  comment;
+
+	/**
+	 * \brief Assignment operator to set a value to the entry.
+	 * @param value Value to assign.
+	 */
+	template<typename Type>
+	void operator = (const Type& value)
+	{
+		std::ostringstream stm;
+		stm << value;
+		values.clear();
+		values.push_back(stm.str());
+	}
+
+	/**
+	 * \brief Appender operator to add a value to the entry.
+	 * @param value Value to append.
+	 * @return The entry reference in order to chain appends.
+	 */
+	template<typename Type>
+	GenericConfigSectionEntry& operator << (const Type& value)
+	{
+		std::ostringstream stm;
+		stm << value;
+		values.push_back(stm.str());
+		return *this;
+	}
 
 };
 
+
+/** Specific refinment for strings.*/
+template<> inline
+void GenericConfigSectionEntry::operator = (const std::string& value)
+{
+	values.clear();
+	values.push_back(value);
+}
+
+/** Specific refinment for strings.*/
+template<> inline
+GenericConfigSectionEntry& GenericConfigSectionEntry::operator << (const std::string& value)
+{
+	values.push_back(value);
+	return *this;
+}
+
+/**
+ * \brief Section of generic configuration.
+ * Each section has a name and a map of named entries.
+ */
 struct GenericConfigSection
 {
 	/** Section entries map */
 	typedef std::map<std::string, GenericConfigSectionEntry> EntryMap;
 
+	/** Name of the section.*/
 	std::string name;
+	/** Comment of the section.*/
 	// std::string comment;
+	/** Entries of the section.*/
 	EntryMap entries;
 
-	const GenericConfigSectionEntry& operator [] (const std::string& varname)const{return entries.find(varname)->second;}
-	GenericConfigSectionEntry& operator [] (const std::string& varname){return entries[varname];}
+	const GenericConfigSectionEntry& operator [] (const std::string& entryname)const{return entries.find(entryname)->second;}
+	GenericConfigSectionEntry& operator [] (const std::string& entryname){return getEntry(entryname);}
+
+	/**
+	 * \brief Retrieve a section entry from its name, creating it if needed.
+	 * \param entryname Entry name.
+	 * \return Entry reference.
+	 */
+	GenericConfigSectionEntry& getEntry(const std::string& entryname);
+
+	/**
+	 * Insert a new entry.
+	 * @param entry Entry to insert.
+	 */
+	void setEntry(const GenericConfigSectionEntry& entry);
+
+	/**
+	 * Test if the section has a specific entry.
+	 * \param name Entry name to look for.
+	 * \retval true if entry is found
+	 * \retval false otherwise.
+	 */
+	bool hasEntry(const std::string& name)const;
 
 	bool empty()const;
 	void clear();
 };
 
-class DefaultConfigParser : public NutConfigParser
-{
-public:
-    DefaultConfigParser(const char* buffer = NULL);
-    DefaultConfigParser(const std::string& buffer);
-
-protected:
-	virtual void onParseSection(const GenericConfigSection& section)=0;
-
-    virtual void onParseBegin();
-    virtual void onParseComment(const std::string& comment);
-    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
-    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
-    virtual void onParseEnd();
-
-	GenericConfigSection _section; ///> Currently parsed section
-};
-
-
-class BaseConfiguration
-{
-	friend class GenericConfigParser;
-protected:
-	virtual void setGenericConfigSection(const GenericConfigSection& section) = 0;
-};
-
-class GenericConfigParser : public DefaultConfigParser
-{
-public:
-    GenericConfigParser(const char* buffer = NULL);
-    GenericConfigParser(const std::string& buffer);
-
-	virtual void parseConfig(BaseConfiguration* config);
-
-protected:
-	virtual void onParseSection(const GenericConfigSection& section);
-
-	BaseConfiguration* _config;
-};
-
-
-class GenericConfiguration : public BaseConfiguration, public Serialisable
+/**
+ * \brief Generic configuration.
+ * Generic configuration is a map of named sections.
+ */
+class GenericConfiguration : public Serialisable
 {
 public:
 	/** Sections map */
@@ -320,12 +368,30 @@ public:
 	SectionMap sections;
 
 	const GenericConfigSection& operator[](const std::string& secname)const{return sections.find(secname)->second;}
-	GenericConfigSection& operator[](const std::string& secname){return sections[secname];}
+	GenericConfigSection& operator[](const std::string& secname){return getSection(secname);}
 
+	/**
+	 * \brief Add a section, replacing existing if any.
+	 * \param section Section to add.
+	 */
+	void setSection(const GenericConfigSection& section);
+
+	/**
+	 * \brief Safely retrieve a section, creating it if not existing.
+	 * \param[in] section Section name to look for.
+	 * \return Section reference.
+	 */
+	GenericConfigSection& getSection(const std::string & section);
+
+	/**
+	 * Test is the configuration has a specific section.
+	 * \param section Section name to look for.
+	 * \retval true if the section is found
+	 * \retval false otherwise.
+	 */
+	bool hasSection(const std::string & section)const;
 
 protected:
-	virtual void setGenericConfigSection(const GenericConfigSection& section);
-
 	/**
 	 *  \brief  Configuration parameters getter
 	 *
@@ -600,7 +666,37 @@ protected:
 
 };  // end of class GenericConfiguration
 
+class DefaultConfigParser : public NutConfigParser
+{
+public:
+    DefaultConfigParser(const char* buffer = NULL);
+    DefaultConfigParser(const std::string& buffer);
 
+protected:
+	virtual void onParseSection(const GenericConfigSection& section)=0;
+
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+	GenericConfigSection _section; ///> Currently parsed section
+};
+
+class GenericConfigParser : public DefaultConfigParser
+{
+public:
+    GenericConfigParser(const char* buffer = NULL);
+    GenericConfigParser(const std::string& buffer);
+
+	virtual void parseConfig(GenericConfiguration* config);
+
+protected:
+	virtual void onParseSection(const GenericConfigSection& section);
+
+	GenericConfiguration* _config;
+};
 
 class UpsmonConfiguration : public Serialisable
 {
@@ -1098,6 +1194,77 @@ public:
 	/** \} */
 
 };  // end of class UpsdUsersConfiguration
+
+
+
+
+
+/** upsd user */
+struct UpsdUser
+{
+  /** Default and named constructor. */
+	UpsdUser(const std::string& name = "");
+
+	/** Copy constructor.*/
+	UpsdUser(const UpsdUser& user);
+
+	/**
+	 * User name
+	 * Is head of section in upsd.users configuration file.
+	 */
+	std::string username;
+
+	/** User password */
+	std::string password;
+
+	/** Action the user is allowed to (SET or FSD) */
+	std::set<std::string> actions;
+
+	/** Instant commands the user is allowed to ("ALL" when all are allowed) */
+	std::set<std::string> instcmds;
+
+	/** upsmon mode */
+	typedef enum {
+		UPSMON_UNDEF = 0,  /**< Unknown mode */
+		UPSMON_MASTER,     /**< Master  mode */
+		UPSMON_SLAVE,      /**< Slave   mode */
+	} upsmon_mode_t;
+
+	upsmon_mode_t upsmon_mode;
+};
+
+/** upsd users configuration */
+class UpsdUsersConfig : public std::map<std::string,UpsdUser> , public Serialisable
+{
+public:
+	UpsdUsersConfig();
+
+	void parseFromString(const std::string& str);
+
+	/** Serialisable interface implementation \{ */
+	bool parseFrom(NutStream & istream);
+	bool writeTo(NutStream & ostream) const;
+	/** \} */
+};
+
+
+class UpsdUsersConfigParser : public NutConfigParser
+{
+public:
+    UpsdUsersConfigParser(const char* buffer = NULL);
+    UpsdUsersConfigParser(const std::string& buffer);
+
+    void parseUpsdUsersConfig(UpsdUsersConfig* config);
+protected:
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+    UpsdUsersConfig* _config;
+		std::map<std::string,UpsdUser>::iterator _current_user;
+};
 
 } /* namespace nut */
 #endif /* __cplusplus */
