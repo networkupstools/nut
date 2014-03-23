@@ -220,8 +220,9 @@ private:
     std::vector<size_t> _stack;
 };
 
+/** Configuration parameter list.*/
+typedef std::vector<std::string> ConfigParamList;
 
-typedef std::list<std::string> ConfigParamList;
 
 class NutConfigParser : public NutParser
 {
@@ -238,6 +239,8 @@ protected:
     virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "")=0;
     virtual void onParseEnd()=0;
 };
+
+
 
 /**
  * \brief Entry of a section of a generic configuration.
