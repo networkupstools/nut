@@ -697,7 +697,7 @@ _config(NULL)
 {
 }
 
-void GenericConfigParser::parseConfig(BaseConfiguration* config)
+void GenericConfigParser::parseConfig(GenericConfiguration* config)
 {
 	if(config!=NULL)
 	{

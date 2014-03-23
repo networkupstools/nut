@@ -45,6 +45,8 @@ class NutConfigParser;
 class DefaultConfigParser;
 class GenericConfigParser;
 
+class GenericConfiguration;
+
 
 /**
  * Helper to specify if a configuration variable is set or not.
@@ -332,51 +334,11 @@ struct GenericConfigSection
 	void clear();
 };
 
-class DefaultConfigParser : public NutConfigParser
-{
-public:
-    DefaultConfigParser(const char* buffer = NULL);
-    DefaultConfigParser(const std::string& buffer);
-
-protected:
-	virtual void onParseSection(const GenericConfigSection& section)=0;
-
-    virtual void onParseBegin();
-    virtual void onParseComment(const std::string& comment);
-    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
-    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
-    virtual void onParseEnd();
-
-	GenericConfigSection _section; ///> Currently parsed section
-};
-
-
-class BaseConfiguration
-{
-	friend class GenericConfigParser;
-protected:
-	virtual void setSection(const GenericConfigSection& section) = 0;
-};
-
-class GenericConfigParser : public DefaultConfigParser
-{
-public:
-    GenericConfigParser(const char* buffer = NULL);
-    GenericConfigParser(const std::string& buffer);
-
-	virtual void parseConfig(BaseConfiguration* config);
-
-protected:
-	virtual void onParseSection(const GenericConfigSection& section);
-
-	BaseConfiguration* _config;
-};
-
 /**
  * \brief Generic configuration.
  * Generic configuration is a map of named sections.
  */
-class GenericConfiguration : public BaseConfiguration, public Serialisable
+class GenericConfiguration : public Serialisable
 {
 public:
 	/** Sections map */
@@ -397,9 +359,11 @@ public:
 	const GenericConfigSection& operator[](const std::string& secname)const{return sections.find(secname)->second;}
 	GenericConfigSection& operator[](const std::string& secname){return getSection(secname);}
 
-
-protected:
-	virtual void setSection(const GenericConfigSection& section);
+	/**
+	 * \brief Add a section, replacing existing if any.
+	 * @param section Section to add.
+	 */
+	void setSection(const GenericConfigSection& section);
 
 	/**
 	 * \brief Safely retrieve a section, creating it if not existing.
@@ -408,6 +372,7 @@ protected:
 	 */
 	GenericConfigSection& getSection(const std::string & section);
 
+protected:
 	/**
 	 *  \brief  Configuration parameters getter
 	 *
@@ -682,7 +647,37 @@ protected:
 
 };  // end of class GenericConfiguration
 
+class DefaultConfigParser : public NutConfigParser
+{
+public:
+    DefaultConfigParser(const char* buffer = NULL);
+    DefaultConfigParser(const std::string& buffer);
 
+protected:
+	virtual void onParseSection(const GenericConfigSection& section)=0;
+
+    virtual void onParseBegin();
+    virtual void onParseComment(const std::string& comment);
+    virtual void onParseSectionName(const std::string& sectionName, const std::string& comment = "");
+    virtual void onParseDirective(const std::string& directiveName, char sep = 0, const ConfigParamList& values = ConfigParamList(), const std::string& comment = "");
+    virtual void onParseEnd();
+
+	GenericConfigSection _section; ///> Currently parsed section
+};
+
+class GenericConfigParser : public DefaultConfigParser
+{
+public:
+    GenericConfigParser(const char* buffer = NULL);
+    GenericConfigParser(const std::string& buffer);
+
+	virtual void parseConfig(GenericConfiguration* config);
+
+protected:
+	virtual void onParseSection(const GenericConfigSection& section);
+
+	GenericConfiguration* _config;
+};
 
 class UpsmonConfiguration : public Serialisable
 {
