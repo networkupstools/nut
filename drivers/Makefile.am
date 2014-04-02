@@ -134,6 +134,10 @@ victronups_SOURCES = victronups.c
 riello_ser_SOURCES = riello.c riello_ser.c
 riello_ser_LDADD = $(LDADD) -lm
 
+#alezz's blazer_soi
+blazer_soi_SOURCES = blazer.c blazer_soi.c
+blazer_soi_LDADD = $(LDADD) -lm
+
 # non-serial drivers: these use custom LDADD and/or CFLAGS
 
 # dummy
