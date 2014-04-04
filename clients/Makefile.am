@@ -56,4 +56,5 @@ endif
 libupsclient_la_LDFLAGS = -version-info 3:1:0
 
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
+libnutclient_la_LDFLAGS = -version-info 0:0:0
 
