@@ -462,7 +462,7 @@ static int al_parse_reply_head(io_head_t *io, const raw_data_t raw_reply_head)
 	const byte_t *reply_head = raw_reply_head.begin - 1;
 
 	if ( (raw_reply_head.end - raw_reply_head.begin) != 10)  {
-		upsdebugx(3, "%s: wrong size\t(%i != 10)", __func__, (raw_reply_head.end - raw_reply_head.begin));
+		upsdebugx(3, "%s: wrong size\t(%li != 10)", __func__, (raw_reply_head.end - raw_reply_head.begin));
 		return -1;		/* wrong size	*/
 	}
 
@@ -548,7 +548,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 	reply = raw_reply.begin - 1;
 
 	if ( (raw_reply.end - raw_reply.begin) != (ptrdiff_t)(10 + io_head->len))  {
-		upsdebugx(3, "%s: corrupt sentence\t(%i != %i)",
+		upsdebugx(3, "%s: corrupt sentence\t(%li != %u)",
 				__func__, raw_reply.end - raw_reply.begin, 10 + io_head->len);
 		return -1;		/* corrupt sentence	*/
 	}
@@ -597,7 +597,7 @@ static int al_check_ack(/*const*/ raw_data_t raw_ack)
 	const byte_t *ack = raw_ack.begin - 1;
 
 	if ( (raw_ack.end - raw_ack.begin) !=5)  {
-		upsdebugx(3, "%s: wrong size\t(%i != 5)", __func__, raw_ack.end - raw_ack.begin);
+		upsdebugx(3, "%s: wrong size\t(%li != 5)", __func__, raw_ack.end - raw_ack.begin);
 		return -1;		/* wrong size	*/
 	}
 
@@ -965,7 +965,8 @@ static int al175_read(byte_t *dst, unsigned addr, size_t count)
 
 	if ( (io.addr != addr) || (io.len != count) ) {
 		upsdebugx(3, "%s: io_head mismatch\t(%x,%x != %x,%x)",
-				__func__, io.addr, io.len, addr, count);
+				__func__, io.addr, io.len, addr,
+				(unsigned int)count);
 		return -1;
 	}
 
