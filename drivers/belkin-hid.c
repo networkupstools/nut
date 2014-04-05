@@ -3,7 +3,7 @@
  *  Copyright (C)
  *	2003 - 2008	Arnaud Quette <arnaud.quette@free.fr>
  *  2005        Peter Selinger <selinger@users.sourceforge.net>
- *  2011        Charles Lepple <clepple+nut@gmail>
+ *  2011, 2014  Charles Lepple <clepple+nut@gmail>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -29,7 +29,7 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.15"
+#define BELKIN_HID_VERSION      "Belkin HID 0.16"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -65,6 +65,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 
 	/* Liebert PowerSure PSA UPS */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
+	/* Liebert PowerSure PSI 1440 */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
