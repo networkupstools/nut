@@ -702,7 +702,8 @@
 
 "Novex"	"ups"	"1"	"NUPS-650"	"USB"	"blazer_usb protocol=megatec"	# http://komp.1k.by/periphery-ups/novex/Novex_NUPS_650-130052.html
 
-"NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+"Numeric"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+"Numeric"	"ups"	"2"	"Digital 800 plus"	"USB"	"blazer_usb"
 
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
