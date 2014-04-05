@@ -301,6 +301,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
+"Eaton"	"ups"	"5"	"Powerware 3105"	"USB"	"bcmxcp_usb"	# http://powerquality.eaton.com/Products-services/Backup-Power-UPS/3105-eol.aspx
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
