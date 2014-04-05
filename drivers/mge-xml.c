@@ -31,7 +31,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.22"
+#define MGE_XML_VERSION		"MGEXML/0.23"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
@@ -1489,7 +1489,7 @@ char *vvalue_mge_xml2nut(const char *name, const char *value, size_t len) {
 
 				/* Convert */
 				if (NULL != info->convert) {
-					char *vconv = info->convert(vcpy);
+					char *vconv = (char *)info->convert(vcpy);
 
 					free(vcpy);
 
@@ -1510,7 +1510,7 @@ void vname_register_rw(void) {
 		xml_info_t *info = mge_xml2nut + i;
 
 		if (NULL != info->nutname && info->nutflags & ST_FLAG_RW) {
-			dstate_setinfo(info->nutname, "");
+			dstate_setinfo(info->nutname, "%s", "");
 			dstate_setflags(info->nutname, ST_FLAG_RW);
 		}
 	}
