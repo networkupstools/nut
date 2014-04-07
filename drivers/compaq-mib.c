@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.5"
+#define CPQPOWER_MIB_VERSION	"1.6"
 
 #define DEFAULT_ONDELAY			30
 #define DEFAULT_OFFDELAY		20
@@ -188,9 +188,10 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "ups.L3.realpower", 0, 0.1, CPQPOWER_OID_OUT_POWER ".3", "", SU_OUTPUT_3, NULL },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "OFF", SU_STATUS_PWR, cpqpower_pwr_info },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_BATT_STATUS, "", SU_STATUS_PWR, cpqpower_battery_abm_status },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_OB, "", SU_STATUS_BATT, cpqpower_alarm_ob },
-	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb },
-/*	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
+	/* The next two lines are no longer supported by MIB ver. 1.76 (Github issue 118)
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_OB, "", SU_STATUS_BATT, cpqpower_alarm_ob },
+	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_ALARM_LB, "", SU_STATUS_BATT, cpqpower_alarm_lb }, */
+	/* { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_BATT_STATUS, "", SU_STATUS_BATT, ietf_batt_info }, */
 	/* FIXME: this should use either .1.3.6.1.4.1.232.165.3.11.1.0 (upsTopologyType)
 	 * or .1.3.6.1.4.1.232.165.3.11.2.0 (upsTopoMachineCode) */
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_POWER_STATUS, "", SU_STATUS_PWR, cpqpower_mode_info },
