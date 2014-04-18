@@ -618,14 +618,20 @@ int instcmd(const char *cmdname, const char *extradata)
 		value = atol(val);
 	}
 
+	if (comm_driver->claim_interface(udev, 0) != 0) {
+		return STAT_INSTCMD_FAILED;
+	}
+
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(5, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
+		comm_driver->release_interface(udev, 0);
 		return STAT_INSTCMD_HANDLED;
 	}
 
+	comm_driver->release_interface(udev, 0);
 	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_INSTCMD_FAILED;
 }
@@ -672,14 +678,20 @@ int setvar(const char *varname, const char *val)
 		value = atol(val);
 	}
 
+	if (comm_driver->claim_interface(udev, 0) != 0) {
+		return STAT_SET_UNKNOWN;
+	}
+
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(5, "setvar: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
+		comm_driver->release_interface(udev, 0);
 		return STAT_SET_HANDLED;
 	}
 
+	comm_driver->release_interface(udev, 0);
 	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_SET_UNKNOWN;
 }
@@ -791,35 +803,42 @@ void upsdrv_updateinfo(void)
 #endif
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
+		if (comm_driver->claim_interface(udev, 0) != 0) {
+			return;
+		}
+
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+
+		/* Process pending events (HID notifications on Interrupt pipe) */
+		for (i = 0; i < evtCount; i++) {
+
+			if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
+				continue;
+
+			if (nut_debug_level >= 2) {
+				upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
+					HIDGetDataItem(event[i], subdriver->utab),
+					HIDDataType(event[i]), event[i]->ReportID,
+					event[i]->Offset, event[i]->Size, value);
+			}
+
+			/* Skip Input reports, if we don't use the Feature report */
+			item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
+			if (!item) {
+				upsdebugx(3, "NUT doesn't use this HID object");
+				continue;
+			}
+
+			ups_infoval_set(item, value);
+		}
+
+		comm_driver->release_interface(udev, 0);
 	} else {
 		evtCount = 0;
 		upsdebugx(1, "Not using interrupt pipe...");
 	}
 
-	/* Process pending events (HID notifications on Interrupt pipe) */
-	for (i = 0; i < evtCount; i++) {
-
-		if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
-			continue;
-
-		if (nut_debug_level >= 2) {
-			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
-				HIDGetDataItem(event[i], subdriver->utab),
-				HIDDataType(event[i]), event[i]->ReportID,
-				event[i]->Offset, event[i]->Size, value);
-		}
-
-		/* Skip Input reports, if we don't use the Feature report */
-		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
-		if (!item) {
-			upsdebugx(3, "NUT doesn't use this HID object");
-			continue;
-		}
-
-		ups_infoval_set(item, value);
-	}
 #ifdef DEBUG
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());
 #endif
@@ -1165,6 +1184,10 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	double		value;
 	int		retcode;
 
+	if (comm_driver->claim_interface(udev, 0) != 0) {
+		return FALSE;
+	}
+
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk ----------------------------- */
@@ -1174,8 +1197,10 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		/* Check if we are asked to stop (reactivity++) in SHUT mode.
 		 * In USB mode, looping through this takes well under a second,
 		 * so any effort to improve reactivity here is wasted. */
-		if (exit_flag != 0)
+		if (exit_flag != 0) {
+			comm_driver->release_interface(udev, 0);
 			return TRUE;
+		}
 #endif
 		/* filter data according to mode */
 		switch (mode)
@@ -1258,6 +1283,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
 			/* Uh oh, got to reconnect! */
+			comm_driver->release_interface(udev, 0);
 			hd = NULL;
 			return FALSE;
 
@@ -1318,6 +1344,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		}
 	}
 
+	comm_driver->release_interface(udev, 0);
 	return TRUE;
 }
 

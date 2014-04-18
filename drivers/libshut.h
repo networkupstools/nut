@@ -69,6 +69,8 @@ typedef struct shut_communication_subdriver_s {
 	int StringIdx, char *buf, size_t buflen);
 	int (*get_interrupt)(int upsfd,
 	unsigned char *buf, int bufsize, int timeout);
+	int (*claim_interface)(int upsfd, int interface);
+	int (*release_interface)(int upsfd, int interface);
 } shut_communication_subdriver_t;
 
 extern shut_communication_subdriver_t	shut_subdriver;

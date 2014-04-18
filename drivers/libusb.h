@@ -58,6 +58,8 @@ typedef struct usb_communication_subdriver_s {
 	int StringIdx, char *buf, size_t buflen);
 	int (*get_interrupt)(usb_dev_handle *sdev,
 	unsigned char *buf, int bufsize, int timeout);
+	int (*claim_interface)(usb_dev_handle *sdev, int interface);
+	int (*release_interface)(usb_dev_handle *sdev, int interface);
 } usb_communication_subdriver_t;
 
 extern usb_communication_subdriver_t	usb_subdriver;

@@ -70,6 +70,45 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 	return matcher->match_function(device, matcher->privdata);
 }
 
+static int libusb_claim_interface(usb_dev_handle *udev, int interface) {
+	int retries, res = -1;
+
+	for (retries = 3; retries > 0; --retries) {
+		res = usb_claim_interface(udev, interface);
+		if (res == 0) {
+			upsdebugx(2, "Claimed USB interface");
+			break;
+		} else {
+			upsdebugx(2, "failed to claim USB device: %s", usb_strerror());
+			/* don't run the rest of this scope if
+			 * we're not going to loop again */
+			if (retries <= 0)
+				break;
+		}
+
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+		/* this method requires at least libusb 0.1.8:
+		 * it force device claiming by unbinding
+		 * attached driver... From libhid */
+		if (usb_detach_kernel_driver_np(udev, interface) < 0) {
+			upsdebugx(2, "failed to detach kernel driver from USB device: %s", usb_strerror());
+		} else {
+			upsdebugx(2, "detached kernel driver from USB device...");
+		}
+#endif
+
+		/* wait before trying again */
+		sleep( 5 );
+	}
+
+	if (res == 0) {
+		/* set default interface */
+		usb_set_altinterface(udev, interface);
+	}
+
+	return res;
+}
+
 #define usb_control_msg         typesafe_control_msg
 
 /* On success, fill in the curDevice structure and return the report
@@ -83,9 +122,7 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
-	int retries;
-#endif
+	static int done_init = 0; /* only call usb_init() once */
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	struct usb_device *dev;
@@ -93,7 +130,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	usb_dev_handle *udev;
 	struct usb_interface_descriptor *iface;
 
-	int ret, res;
+	int ret, res, claimed;
 	unsigned char buf[20];
 	unsigned char *p;
 	char string[256];
@@ -104,7 +141,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	int		rdlen;
 
 	/* libusb base init */
-	usb_init();
+	if (!done_init) {
+		usb_init();
+		done_init = 1;
+	}
 	usb_find_busses();
 	usb_find_devices();
 
@@ -122,6 +162,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			   supplied matcher */
 
 			/* open the device */
+			claimed = 0;
 			*udevp = udev = usb_open(dev);
 			if (!udev) {
 				upsdebugx(2, "Failed to open device, skipping. (%s)", usb_strerror());
@@ -191,41 +232,18 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			}
 			upsdebugx(2, "Device matches");
 
-			/* Now we have matched the device we wanted. Claim it. */
-
-#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
-			/* this method requires at least libusb 0.1.8:
-			 * it force device claiming by unbinding
-			 * attached driver... From libhid */
-			retries = 3;
-			while (usb_claim_interface(udev, 0) < 0) {
-
-				upsdebugx(2, "failed to claim USB device: %s", usb_strerror());
-
-				if (usb_detach_kernel_driver_np(udev, 0) < 0) {
-					upsdebugx(2, "failed to detach kernel driver from USB device: %s", usb_strerror());
-				} else {
-					upsdebugx(2, "detached kernel driver from USB device...");
-				}
-
-				if (retries-- > 0) {
-					continue;
-				}
-
-				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
-			}
-#else
-			if (usb_claim_interface(udev, 0) < 0) {
-				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
-			}
-#endif
-
-			/* set default interface */
-			usb_set_altinterface(udev, 0);
-
 			if (!callback) {
 				return 1;
 			}
+
+			/* Now we have matched the device we wanted. Claim it. */
+			claimed = (libusb_claim_interface(udev, 0) == 0);
+				
+			if (!claimed) {
+				upsdebugx(2, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
+				goto next_device;
+			}
+
 
 			if (!dev->config) { /* ?? this should never happen */
 				upsdebugx(2, "  Couldn't retrieve descriptors");
@@ -329,9 +347,16 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "Found HID device");
 			fflush(stdout);
 
+			usb_release_interface(udev, 0);
+			claimed = 0;
+
 			return rdlen;
 
 		next_device:
+			if (claimed) {
+				usb_release_interface(udev, 0);
+				claimed = 0;
+			}
 			usb_close(udev);
 		}
 	}
@@ -486,5 +511,7 @@ usb_communication_subdriver_t usb_subdriver = {
 	libusb_get_report,
 	libusb_set_report,
 	libusb_get_string,
-	libusb_get_interrupt
+	libusb_get_interrupt,
+	libusb_claim_interface,
+	usb_release_interface
 };
