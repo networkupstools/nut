@@ -958,7 +958,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
+	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback, FALSE);
 	if (ret < 1)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
@@ -1356,7 +1356,7 @@ static int reconnect_ups(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
+	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL, FALSE);
 
 	if (ret > 0) {
 		return 1;

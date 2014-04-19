@@ -298,7 +298,7 @@ int libshut_release_interface(int upsfd, int interface) {
  * is accepted, or < 1 if not.
  */
 int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
-	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen))
+	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen), int claim)
 {
 	int ret, res; 
 	unsigned char buf[20];

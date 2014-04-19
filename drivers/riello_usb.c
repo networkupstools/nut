@@ -312,7 +312,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL, 1);
 
 		if (ret < 1) {
 			return ret;
@@ -759,7 +759,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL, 1);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"

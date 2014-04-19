@@ -59,7 +59,7 @@ typedef struct shut_communication_subdriver_s {
 	int (*open)(int *upsfd,			/* try to open the next available	*/
 		SHUTDevice_t *curDevice,	/* device matching USBDeviceMatcher_t	*/
 		char *device_path,
-		int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen));
+		int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen), int claim);
 	void (*close)(int upsfd);
 	int (*get_report)(int upsfd, int ReportId,
 	unsigned char *raw_buf, int ReportSize );

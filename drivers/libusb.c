@@ -120,7 +120,7 @@ static int libusb_claim_interface(usb_dev_handle *udev, int interface) {
  * (if any) will be tried, until there are no more devices left.
  */
 static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
-	int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
+	int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen), int claim)
 {
 	static int done_init = 0; /* only call usb_init() once */
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
@@ -347,8 +347,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "Found HID device");
 			fflush(stdout);
 
-			usb_release_interface(udev, 0);
-			claimed = 0;
+			if (!claim) {
+				usb_release_interface(udev, 0);
+				claimed = 0;
+			}
 
 			return rdlen;
 
