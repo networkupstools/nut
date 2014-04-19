@@ -515,7 +515,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "shutdown_timer", buf);
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	int	ret;
 	char	*val;
@@ -629,6 +629,8 @@ void upsdrv_initups(void)
 	}
 
 	upslogx(LOG_INFO, "Connectivity test: %s", ne_get_error(session));
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

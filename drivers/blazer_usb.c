@@ -513,7 +513,7 @@ void upsdrv_makevartable(void)
 }
 
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 #ifndef TESTING
 	const struct {
@@ -633,6 +633,8 @@ void upsdrv_initups(void)
 	}
 #endif
 	blazer_initups();
+
+	return 1;
 }
 
 

@@ -1307,7 +1307,7 @@ void upsdrv_makevartable(void)
 }
 
 /* prep the serial port */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	/* If '-x wait' or '-x wait=<level>' option given, branch into
 	   standalone behavior. */
@@ -1316,6 +1316,8 @@ void upsdrv_initups(void)
 	}
 
 	belkin_nut_open_tty();
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

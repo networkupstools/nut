@@ -147,7 +147,7 @@ void upsdrv_shutdown(void)
 	upslogx(LOG_ERR, "Shutdown command failed!");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char	*version;
 
@@ -170,7 +170,7 @@ void upsdrv_initups(void)
 
 		if (subdriver[mode]->initups() > 0) {
 			upslogx(LOG_INFO, "CyberPower UPS with %s protocol on %s detected", subdriver[mode]->version, device_path);
-			return;
+			return 1;
 		}
 
 		ser_set_dtr(upsfd, 0);
@@ -178,6 +178,7 @@ void upsdrv_initups(void)
 	}
 
 	fatalx(EXIT_FAILURE, "CyberPower UPS not found on %s", device_path);
+	return 0;
 }
 
 void upsdrv_help(void)

@@ -804,6 +804,8 @@ void upsdrv_updateinfo(void)
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		if (comm_driver->claim_interface(udev, 0) != 0) {
+			/* flag for reconnect */
+			hd = NULL;
 			return;
 		}
 
@@ -904,71 +906,86 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
+	static int initups_stage = 0;
+
 	int ret;
 	char *val;
+
+	if (initups_stage == 0) {
 #ifdef SHUT_MODE
-	/*!
-	 * SHUT is a serial protocol, so it needs
-	 * only the device path
-	 */
-	upsdebugx(1, "upsdrv_initups...");
+		/*!
+		 * SHUT is a serial protocol, so it needs
+		 * only the device path
+		 */
+		upsdebugx(1, "upsdrv_initups...");
 
-	subdriver_matcher = device_path;
+		subdriver_matcher = device_path;
 #else
-	char *regex_array[6];
+		char *regex_array[6];
 
-	upsdebugx(1, "upsdrv_initups...");
+		upsdebugx(1, "upsdrv_initups...");
 
-	subdriver_matcher = &subdriver_matcher_struct;
+		subdriver_matcher = &subdriver_matcher_struct;
 
-	/* enforce use of the "vendorid" option if "explore" is given */
-	if (testvar("explore") && getval("vendorid")==NULL) {
-		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
-	}
+		/* enforce use of the "vendorid" option if "explore" is given */
+		if (testvar("explore") && getval("vendorid")==NULL) {
+			fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
+		}
 
-	/* Activate maxreport tweak */
-	if (testvar("maxreport")) {
-		max_report_size = 1;
-	}
+		/* Activate maxreport tweak */
+		if (testvar("maxreport")) {
+			max_report_size = 1;
+		}
 
-	/* process the UPS selection options */
-	regex_array[0] = getval("vendorid");
-	regex_array[1] = getval("productid");
-	regex_array[2] = getval("vendor");
-	regex_array[3] = getval("product");
-	regex_array[4] = getval("serial");
-	regex_array[5] = getval("bus");
+		/* process the UPS selection options */
+		regex_array[0] = getval("vendorid");
+		regex_array[1] = getval("productid");
+		regex_array[2] = getval("vendor");
+		regex_array[3] = getval("product");
+		regex_array[4] = getval("serial");
+		regex_array[5] = getval("bus");
 
-	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-	switch(ret)
-	{
-	case 0:
-		break;
-	case -1:
-		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
-	default:
-		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
-	}
+		ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+		switch(ret)
+		{
+		case 0:
+			break;
+		case -1:
+			fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
+		default:
+			fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
+		}
 
-	/* link the matchers */
-	subdriver_matcher->next = regex_matcher;
+		/* link the matchers */
+		subdriver_matcher->next = regex_matcher;
 #endif /* SHUT_MODE */
+		initups_stage = 1;
+	}
 
-	/* Search for the first supported UPS matching the
-	   regular expression (USB) or device_path (SHUT) */
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback, FALSE);
-	if (ret < 1)
-		fatalx(EXIT_FAILURE, "No matching HID UPS found");
+	if (initups_stage == 1) {
+		/* Search for the first supported UPS matching the
+		   regular expression (USB) or device_path (SHUT) */
+		ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback, FALSE);
+		if (ret < 1) {
+			upslogx(LOG_ERR, "No matching HID UPS found");
+			return 0;
+		}
 
-	hd = &curDevice;
+		hd = &curDevice;
 
-	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
-		hd->Product ? hd->Product : "unknown");
+		upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
+			hd->Product ? hd->Product : "unknown");
 
+		initups_stage = 2;
+	}
+
+	// after this part there aren't any more things to retry, so stop
+	// tracking the stage
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
-		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+		upslogx(LOG_ERR, "Can't initialize data from HID UPS");
+		return 0;
 	}
 
 	if (dstate_getinfo("battery.charge.low")) {
@@ -1010,6 +1027,8 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)
@@ -1185,6 +1204,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	int		retcode;
 
 	if (comm_driver->claim_interface(udev, 0) != 0) {
+		/* Uh oh, got to reconnect! */
+		hd = NULL;
 		return FALSE;
 	}
 

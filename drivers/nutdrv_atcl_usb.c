@@ -359,7 +359,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 /*
  * Initialise the UPS
  */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	int	i;
 
@@ -383,6 +383,7 @@ void upsdrv_initups(void)
 			"Fatal error: unusable configuration");
 	}
 
+	return 1;
 }
 
 void upsdrv_cleanup(void)

@@ -1414,7 +1414,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "advorder", "Enable advanced shutdown control");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char	*cable;
 
@@ -1428,6 +1428,8 @@ void upsdrv_initups(void)
 
 	/* make sure we wake up if the UPS sends alert chars to us */
 	extrafd = upsfd;
+
+	return 1;
 }
 
 void upsdrv_help(void)

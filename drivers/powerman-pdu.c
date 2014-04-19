@@ -165,7 +165,7 @@ void upsdrv_makevartable(void)
 	/* FIXME: anything useful to be put here? */
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	pm_err_t rv = PM_ESUCCESS;
 
@@ -177,6 +177,8 @@ void upsdrv_initups(void)
 
 	/* FIXME: suitable?
 	 * poll_interval = 30; */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

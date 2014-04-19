@@ -567,7 +567,7 @@ void upsdrv_makevartable(void)
  * Detects the UPS and handles the command line args.
  * 
  ********************************************************************/
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
     int     count = 0;
     int     fail  = 0;
@@ -608,6 +608,8 @@ void upsdrv_initups(void)
        ser_send_pace(upsfd, UPS_PACE, "%s", "C\x0D" );
        fatalx(EXIT_FAILURE, "Shutdown cancelled");
     }
+
+    return 1;
 }
 
 /********************************************************************

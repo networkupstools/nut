@@ -761,7 +761,7 @@ void upsdrv_shutdown(void)
 }
 
 /* initialize UPS */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	int tmp,model = 0;
 	unsigned int i;
@@ -905,7 +905,7 @@ void upsdrv_initups(void)
 
 	/* Setup Model and LineVoltage */
 	if (!strncmp(types[type].name, "BNT",3) || !strcmp(types[type].name, "KIN") || !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
-		if (!ups_getinfo()) return;
+		if (!ups_getinfo()) return 1;
 		/* Give "BNT-other" a chance! */
 		if (raw_data[MODELNAME]==0x42 || raw_data[MODELNAME]==0x4B || raw_data[MODELNAME]==0x4F){
 			model=BNTmodels[raw_data[MODELNUMBER]/16];
@@ -937,7 +937,7 @@ void upsdrv_initups(void)
 		if (ser_send_char (upsfd, BATTERY_TEST) != 1) {
 			upslogx(LOG_NOTICE, "writing error");
 			dstate_datastale();
-			return;
+			return 1;
 		}
 	}
 	
@@ -978,6 +978,7 @@ void upsdrv_initups(void)
 							types[type].voltage[2], types[type].voltage[3]);
 	}
 
+	return 1;
 }
 
 /* display help */

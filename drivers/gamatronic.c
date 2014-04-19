@@ -365,7 +365,7 @@ void setup_serial(const char *port)
 printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	  upsfd = ser_open(device_path);
           setup_serial(device_path);
@@ -401,6 +401,7 @@ void upsdrv_initups(void)
 	 */
 
 
+	  return 1;
 }
 
 void upsdrv_cleanup(void)

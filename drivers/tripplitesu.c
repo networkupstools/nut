@@ -845,10 +845,12 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "lowbatt", "Set low battery level, in percent");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

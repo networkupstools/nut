@@ -568,7 +568,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "rebootdelay", msg);
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -579,6 +579,8 @@ void upsdrv_initups(void)
 		startdelay = atoi(getval("startdelay"));
 	if (getval("rebootdelay"))
 		bootdelay = atoi(getval("rebootdelay"));
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

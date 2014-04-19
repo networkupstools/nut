@@ -545,9 +545,11 @@ void upsdrv_makevartable(void)
 }
 
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	extrafd = upsfd = sstate_connect();
+
+	return 1;
 }
 
 

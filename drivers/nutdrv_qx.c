@@ -1429,7 +1429,7 @@ void	upsdrv_initinfo(void)
 }
 
 /* Open the port and the like and choose the subdriver */
-void	upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsdebugx(1, "%s...", __func__);
 
@@ -1666,6 +1666,8 @@ void	upsdrv_initups(void)
 	/* Subdriver initups */
 	if (subdriver->initups != NULL)
 		subdriver->initups();
+
+	return 1;
 }
 
 /* Close the ports and the like */

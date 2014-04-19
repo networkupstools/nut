@@ -1298,7 +1298,7 @@ void upsdrv_makevartable(void)
  * @todo Allow binding based on firmware version (which seems to vary wildly
  * from unit to unit)
  */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char *regex_array[6];
 	int r;
@@ -1351,6 +1351,8 @@ void upsdrv_initups(void)
 	if (getval("rebootdelay"))
 		bootdelay = atoi(getval("rebootdelay"));
 #endif
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

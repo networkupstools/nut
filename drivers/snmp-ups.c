@@ -256,7 +256,7 @@ void upsdrv_makevartable(void)
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
@@ -308,6 +308,8 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

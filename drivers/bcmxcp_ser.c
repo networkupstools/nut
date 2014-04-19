@@ -322,10 +322,12 @@ void pw_comm_setup(const char *port)
 	fatalx(EXIT_FAILURE, "Can't connect to the UPS on port %s!\n", port);
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	pw_comm_setup(device_path);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

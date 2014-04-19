@@ -189,7 +189,7 @@ void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
  * Below are the commands that are called by main				*
  ***************************************************************/
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
@@ -198,6 +198,8 @@ void upsdrv_initups(void)
 	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
 	ser_send_pace(upsfd, 100, "%s", COMMAND_END);
 	sleep (1);
+
+	return 1;
 }
 
 void upsdrv_initinfo(void)

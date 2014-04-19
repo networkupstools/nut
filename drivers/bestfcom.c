@@ -731,7 +731,7 @@ void upsdrv_init_fc(const char *fcstring)
 	fc.valid = 1;
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char rstring[256];
 
@@ -754,7 +754,7 @@ void upsdrv_initups(void)
 		upsdrv_init_fc(rstring);
 	}
 
-	return;
+	return 1;
 }
 
 void upsdrv_cleanup(void)

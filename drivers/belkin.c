@@ -466,7 +466,7 @@ void upsdrv_makevartable(void)
 }
 
 /* prep the serial port */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
@@ -478,6 +478,8 @@ void upsdrv_initups(void)
 	sleep(1);
 
 	ser_flush_io(upsfd);
+
+	return 1;
 }
 
 void upsdrv_initinfo(void)

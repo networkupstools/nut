@@ -322,9 +322,11 @@ void upsdrv_comm_good(void)
 	nutusb_comm_good();
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsdev = nutusb_open("USB");
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

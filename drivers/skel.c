@@ -150,7 +150,7 @@ void upsdrv_makevartable(void)
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	/* upsfd = ser_open(device_path); */
 	/* ser_set_speed(upsfd, device_path, B1200); */
@@ -184,6 +184,8 @@ void upsdrv_initups(void)
 	 */
 
 	/* don't try to detect the UPS here */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

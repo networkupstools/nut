@@ -698,7 +698,7 @@ void upsdrv_makevartable(void)
 
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	const struct {
 		const char	*name;
@@ -784,6 +784,8 @@ void upsdrv_initups(void)
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
 	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
+
+	return 1;
 }
 
 void upsdrv_initinfo(void)

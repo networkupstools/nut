@@ -290,7 +290,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "sdtime", "Hold time for shutdown value (seconds)");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	struct termios	tio;
 	char	*v;
@@ -329,6 +329,8 @@ void upsdrv_initups(void)
 	if (ioctl(upsfd, TIOCMSET, &upstab[upstype].line_norm)) {
 		fatal_with_errno(EXIT_FAILURE, "ioctl TIOCMSET");
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

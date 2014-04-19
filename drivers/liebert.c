@@ -172,7 +172,7 @@ void upsdrv_help(void)
 {
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 
@@ -183,6 +183,8 @@ void upsdrv_initups(void)
 
 	/* raise RTS */
 	ser_set_rts(upsfd, 1);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)
