@@ -148,10 +148,8 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	usb_find_busses();
 	usb_find_devices();
 
-#ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
-	/* Causes a double free corruption in linux if device is detached! */
 	libusb_close(*udevp);
-#endif
+	*udevp = NULL;
 
 	for (bus = usb_busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
@@ -163,7 +161,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 			/* open the device */
 			claimed = 0;
-			*udevp = udev = usb_open(dev);
+			udev = usb_open(dev);
 			if (!udev) {
 				upsdebugx(2, "Failed to open device, skipping. (%s)", usb_strerror());
 				continue;
@@ -233,6 +231,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "Device matches");
 
 			if (!callback) {
+				*udevp = udev;
 				return 1;
 			}
 
@@ -352,6 +351,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				claimed = 0;
 			}
 
+			*udevp = udev;
 			return rdlen;
 
 		next_device:
@@ -363,7 +363,6 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 		}
 	}
 
-	*udevp = NULL;
 	upsdebugx(2, "No appropriate HID device found");
 	fflush(stdout);
 
