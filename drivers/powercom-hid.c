@@ -181,19 +181,6 @@ static info_lkp_t powercom_test_conversion[] = {
 	{ 0, NULL, powercom_test_conversion_fun }
 };
 
-static const char *powercom_discharging_conversion_fun(double value)
-{
-	if ((long)value & 0x0008) {
-		return "dischrg";
-	} else {
-		return "!dischrg";
-	}
-}
-
-static info_lkp_t powercom_discharging_conversion[] = {
-	{ 0, NULL, powercom_discharging_conversion_fun }
-};
-
 static const char *powercom_shutdownimm_conversion_fun(double value)
 {
 	if ((long)value & 0x0010) {
@@ -441,7 +428,7 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "input.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
 	{ "output.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
 	{ "ups.load", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPercentLoad", NULL, "%.0f", 0, NULL },
-	/* flags: 4 - Testing, 8 - Discharging
+	/* flags: 4 - Testing
 	 * bit 0  UPS fault  (1 = FAILT)
 	 * bit 1  Battery status (1 = BAD, 0 = NORMAL)
 	 * bit 2  Test  mode  (1 = TEST, 0 = NORMAL)
@@ -455,9 +442,8 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_upsfail_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_replacebatt_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_test_conversion },
-	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_discharging_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_shutdownimm_conversion },
-	/* flags: 1 - On battery, 2 - Low Battery, 4 - ?, 8 - Trim, 8+16 - Boost
+	/* flags: 1 - On battery, 2 - Low Battery, 8 - Trim, 8+16 - Boost
 	 * bit 0  is line fail (1 = INV, 0 = LINE)
 	 * bit 1  is low battery (1 = BAT_ LOW, 0 = NORMAL)
 	 * bit 2  X
