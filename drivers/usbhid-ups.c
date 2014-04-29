@@ -795,6 +795,20 @@ void upsdrv_updateinfo(void)
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+		switch (evtCount)
+		{
+		case -EBUSY:		/* Device or resource busy */
+			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+		case -EPERM:		/* Operation not permitted */
+		case -ENODEV:		/* No such device */
+		case -EACCES:		/* Permission denied */
+		case -EIO:		/* I/O error */
+		case -ENXIO:		/* No such device or address */
+		case -ENOENT:		/* No such file or directory */
+			/* Uh oh, got to reconnect! */
+			hd = NULL;
+			return;
+		}
 	} else {
 		evtCount = 0;
 		upsdebugx(1, "Not using interrupt pipe...");
