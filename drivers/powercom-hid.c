@@ -432,11 +432,11 @@ static hid_info_t powercom_hid2nut[] = {
 
 	{ "ups.serial", 0, 0, "PowercomUPS.PowercomSerialNumber", NULL, "%s", 0, stringid_conversion },
 	{ "ups.mfr", 0, 0, "PowercomUPS.PowercomManufacturerName", NULL, "%s", 0, stringid_conversion },
-	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL },
+/*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, */
 	{ "ups.mfr.date", 0, 0, "PowercomUPS.PowercomManufacturerDate", NULL, "%s", 0, date_conversion },
 	{ "battery.temperature", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomTemperature", NULL, "%.0f", 0, NULL },
 	{ "battery.charge", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomVoltage", NULL, "%.0f", 0, NULL },
-	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL },
+/*	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL }, */
 	{ "input.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomFrequency", NULL, "%.0f", 0, NULL },
 	{ "input.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
 	{ "output.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
@@ -451,7 +451,7 @@ static hid_info_t powercom_hid2nut[] = {
 	 * bit 6  Disable NO LOAD SHUTDOWN (1 = ACTIVE)
 	 * bit 7  0
 	 */
-	{ "UPS.PowerConverter.Output.InternalChargeController", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, "%.0f", 0, NULL },
+/*	{ "UPS.PowerConverter.Output.InternalChargeController", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, "%.0f", 0, NULL }, */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_upsfail_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_replacebatt_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_test_conversion },
@@ -467,7 +467,7 @@ static hid_info_t powercom_hid2nut[] = {
 	 * bit 6  X
 	 * bit 7  SD mode display
 	 */
-	{ "UPS.PowerConverter.Output.PrimaryBatterySupport", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, "%.0f", 0, NULL },
+/*	{ "UPS.PowerConverter.Output.PrimaryBatterySupport", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, "%.0f", 0, NULL }, */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_online_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_lowbatt_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_trim_conversion },
@@ -475,7 +475,7 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_overload_conversion },
 	{ "output.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomFrequency", NULL, "%.0f", 0, NULL },
 	{ "ups.test.result", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomTest", NULL, "%s", 0, test_read_info },
-	{ "UPS.PowerConverter.ShutdownRequested", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomShutdownRequested", NULL, "%.0f", 0, NULL },
+/*	{ "UPS.PowerConverter.ShutdownRequested", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomShutdownRequested", NULL, "%.0f", 0, NULL }, */
 	{ "ups.delay.shutdown", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeShutdown", NULL, "%.0f", 0, NULL },
 	{ "ups.delay.start", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeStartup", NULL, "%.0f", 0, NULL },
 	{ "load.off", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
