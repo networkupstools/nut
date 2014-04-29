@@ -747,7 +747,6 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
 	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
 	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
-	addvar(VAR_FLAG, "findinputobjects", "Read input objects instead of feature ones");
 #else
 	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
@@ -815,7 +814,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* Skip Input reports, if we don't use the Feature report */
-		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), find_input_objects ? ITEM_INPUT:ITEM_FEATURE));
+		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE));
 		if (!item) {
 			upsdebugx(3, "NUT doesn't use this HID object");
 			continue;
@@ -958,9 +957,6 @@ void upsdrv_initups(void)
 	char *interruptsize = getval("interruptsize");
 	if (interruptsize != NULL) {
 		interrupt_size = atoi(interruptsize);
-	}
-	if (testvar("findinputobjects")) {
-		find_input_objects = 1;
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {

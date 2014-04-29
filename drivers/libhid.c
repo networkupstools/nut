@@ -62,7 +62,6 @@ int max_report_size = 0;
 /* Tweaks for Powercom */
 int interrupt_only = 0;
 int interrupt_size = 0;
-int find_input_objects = 0;
 
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
@@ -351,7 +350,7 @@ HIDData_t *HIDGetItemData(const char *hidpath, usage_tables_t *utab)
 	}
 
 	/* Get info on object (reportID, offset and size) */
-	return FindObject_with_Path(pDesc, &Path, find_input_objects ? ITEM_INPUT:ITEM_FEATURE);
+	return FindObject_with_Path(pDesc, &Path, interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
 }
 
 char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)

@@ -91,7 +91,6 @@ extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
 extern int interrupt_only;
 extern int interrupt_size;
-extern int find_input_objects;
 
 /* ---------------------------------------------------------------------- */
 

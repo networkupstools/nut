@@ -508,7 +508,6 @@ static int powercom_claim(HIDDevice_t *hd)
 		if (hd->ProductID == 0x0001) {
 			interrupt_only = 1;
 			interrupt_size = 8;
-			find_input_objects = 1;
 		}
 		return 1;
 
