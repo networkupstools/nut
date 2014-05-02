@@ -55,7 +55,7 @@ Documents in this section are provided courtesy of Eaton.
 MGE Office Protection Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The two first cables also applies to MGE UPS SYSTEMS.
+The three first cables also applies to MGE UPS SYSTEMS and Eaton.
 
 DB9-DB9 cable (ref 66049)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -67,10 +67,18 @@ image::images/cables/mge-66049.png[DB9-DB9 cable]
 DB9-RJ45 cable
 ^^^^^^^^^^^^^^
 
-This cable is used on the more recent models, including Ellipse MAX, Protection
-Station, ...
+This cable is used on the more recent models, including Ellipse MAX,
+Protection Station, ...
 
 image::images/cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
+
+DB9-RJ45 cable
+^^^^^^^^^^^^^^
+
+This cable is used also on the more recent models, including Ellipse MAX,
+Protection Station, ...
+
+image::images/cables/mge-usb-rj45.jpg[USB-RJ45 cable]
 
 DB9-RJ12 cable
 ^^^^^^^^^^^^^^
