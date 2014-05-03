@@ -32,6 +32,7 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
  images/cables/belkin-f6cx-rkm-xu-cable.jpg images/cables/Lansafecable.jpg \
  images/cables/mac-940-0024C.png images/cables/mge-66049.png \
  images/cables/mge-db9-rj12.jpg images/cables/mge-db9-rj45.jpg \
+ images/cables/mge-usb-rj45.jpg \
  images/cables/SOLA-330.png
 
 ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
