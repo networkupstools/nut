@@ -83,15 +83,19 @@
 #define CPQPOWER_OID_ALARM_LB         ".1.3.6.1.4.1.232.165.3.7.4.0"     /* UPS-MIB::upsLowBattery */
 
 
+/* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
 	{ 1, "OB" },
 	{ 0, "NULL" }
-} ;
+};
+*/
 
+/* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_lb[] = {
 	{ 1, "LB" },
 	{ 0, "NULL" }
-} ;
+};
+*/
 
 /* Defines for CPQPOWER_OID_POWER_STATUS (1) */
 static info_lkp_t cpqpower_pwr_info[] = {
