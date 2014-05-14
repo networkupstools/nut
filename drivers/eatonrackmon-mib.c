@@ -1,7 +1,7 @@
 /* eatonrackmon-mib.c - subdriver to monitor EatonRackMon SNMP devices with NUT
  *
  *  Copyright (C)
- *  2011 - 2012	Arnaud Quette <arnaud.quette@free.fr>
+ *  2014	Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver script. It must be customized!
@@ -23,7 +23,7 @@
 
 #include "eatonrackmon-mib.h"
 
-#define EATONRACKMON_MIB_VERSION  "0.1"
+#define EATONRACKMON_MIB_VERSION  "0.2"
 
 #define EATONRACKMON_SYSOID       "1.3.6.1.4.1.534.6.7.1"
 
@@ -35,6 +35,25 @@
  * 	{ 0, "NULL" }
  * };
  */
+
+static info_lkp_t sensor_alarm_setting_info[] = {
+	{ 1, "disabled" },
+	{ 2, "normalOpen" },
+	{ 3, "normalClose" },
+	{ 4, "highActive" },
+	{ 5, "lowActive" },
+	{ 0, "NULL" }
+};
+
+
+static info_lkp_t sensor_alarm_status_info[] = {
+	{ 1, "unknow" },
+	{ 2, "disabled" },
+	{ 3, "active" },
+	{ 4, "inactive" },
+	{ 0, "NULL" }
+};
+
 
 /* EATONRACKMON Snmp2NUT lookup table */
 static snmp_info_t eatonrackmon_mib[] = {
@@ -76,7 +95,11 @@ static snmp_info_t eatonrackmon_mib[] = {
 	/*{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.1.2.0",
 		"Eaton Rack Monitor", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },*/
 	/* insIdentAgentSoftwareVersion.0 = STRING: "Rack Monitor v2.01 (SN 11110041235009)" */
-	{ "unmapped.insIdentAgentSoftwareVersion", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.1.3.0", NULL, SU_FLAG_OK, NULL },
+	/* FIXME: we'll have to extract the bits between parenthesis... which is not
+	 * possible with the current snmp-ups.
+	 * Refer to https://github.com/networkupstools/nut/issues/20 */
+	{ "device.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.1.3.0", NULL, SU_FLAG_OK, NULL },
+
 	/* insIdentName.0 = STRING: "Rack Monitor" */
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.1.4.0",
 		"Eaton Rack Monitor", SU_FLAG_OK, NULL, NULL },
@@ -265,6 +288,7 @@ static snmp_info_t eatonrackmon_mib[] = {
 	/* accessCommunityString.8 = Wrong Type (should be OCTET STRING): INTEGER: 2 */
 	{ "unmapped.accessCommunityString", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.2.15.1.3.8", NULL, SU_FLAG_OK, NULL },
 	/* rmConfigTemperatureUnit.0 = INTEGER: celsius(1) */
+	/* FIXME: according to the actual unit, we may need to convert to Celsius */
 	{ "unmapped.rmConfigTemperatureUnit", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.2.16.0", NULL, SU_FLAG_OK, NULL },
 	/* rmConfigDateFormat.0 = INTEGER: mm-dd-yyyy(1) */
 	{ "unmapped.rmConfigDateFormat", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.2.17.0", NULL, SU_FLAG_OK, NULL },
@@ -305,7 +329,8 @@ static snmp_info_t eatonrackmon_mib[] = {
 	/* rmConfig.20.0 = STRING: "*" */
 	{ "unmapped.rmConfig", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.2.20.0", NULL, SU_FLAG_OK, NULL },
 	/* smSensorNumber.0 = INTEGER: 2 */
-	{ "unmapped.smSensorNumber", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.count", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.1.0", NULL, SU_FLAG_OK, NULL },
+
 	/* smDeviceIndex.1 = INTEGER: 1 */
 	{ "unmapped.smDeviceIndex", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.1.1", NULL, SU_FLAG_OK, NULL },
 	/* smDeviceIndex.2 = INTEGER: 2 */
@@ -315,29 +340,35 @@ static snmp_info_t eatonrackmon_mib[] = {
 	/* smDeviceStatus.2 = INTEGER: disabled(2) */
 	{ "unmapped.smDeviceStatus", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.2.2", NULL, SU_FLAG_OK, NULL },
 	/* smDeviceTemperature.1 = INTEGER: 264 */
-	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.3.1", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.3.1", NULL, SU_FLAG_NEGINVALID, NULL },
+	{ "ambient.1.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.3.1", NULL, SU_FLAG_NEGINVALID, NULL },
 	/* smDeviceTemperature.2 = INTEGER: -1 */
-	{ "unmapped.smDeviceTemperature", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.3.2", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.2.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.3.2", NULL, SU_FLAG_NEGINVALID, NULL },
 	/* smDeviceTemperatureAlarm.1 = INTEGER: normal(3) */
 	{ "unmapped.smDeviceTemperatureAlarm", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.4.1", NULL, SU_FLAG_OK, NULL },
 	/* smDeviceTemperatureAlarm.2 = INTEGER: unknow(1) */
 	{ "unmapped.smDeviceTemperatureAlarm", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.4.2", NULL, SU_FLAG_OK, NULL },
 	/* smDeviceHumidity.1 = INTEGER: 260 */
-	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.5.1", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.5.1", NULL, SU_FLAG_NEGINVALID, NULL },
+	{ "ambient.1.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.5.1", NULL, SU_FLAG_NEGINVALID, NULL },
+	
 	/* smDeviceHumidity.2 = INTEGER: -1 */
-	{ "unmapped.smDeviceHumidity", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.5.2", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.2.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.5.2", NULL, SU_FLAG_NEGINVALID, NULL },
+
 	/* smDeviceHumidityAlarm.1 = INTEGER: lowCritical(5) */
 	{ "unmapped.smDeviceHumidityAlarm", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.6.1", NULL, SU_FLAG_OK, NULL },
 	/* smDeviceHumidityAlarm.2 = INTEGER: unknow(1) */
 	{ "unmapped.smDeviceHumidityAlarm", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.6.2", NULL, SU_FLAG_OK, NULL },
+
 	/* smAlarm1.1 = INTEGER: disabled(2) */
-	{ "unmapped.smAlarm1", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.7.1", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.1.drycontact.1.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.7.1", NULL, SU_FLAG_OK, &sensor_alarm_status_info[0] },
 	/* smAlarm1.2 = INTEGER: unknow(1) */
-	{ "unmapped.smAlarm1", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.7.2", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.1.drycontact.2.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.7.2", NULL, SU_FLAG_OK, &sensor_alarm_status_info[0] },
 	/* smAlarm2.1 = INTEGER: disabled(2) */
-	{ "unmapped.smAlarm2", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.8.1", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.2.drycontact.1.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.8.1", NULL, SU_FLAG_OK, &sensor_alarm_status_info[0] },
 	/* smAlarm2.2 = INTEGER: unknow(1) */
-	{ "unmapped.smAlarm2", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.8.2", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.2.drycontact.2.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.6.7.1.1.3.2.1.8.2", NULL, SU_FLAG_OK, &sensor_alarm_status_info[0] },
+
 	/* scSensorNumber.0 = INTEGER: 2 */
 	{ "unmapped.scSensorNumber", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.1.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor1DeviceName.0 = STRING: "SENSOR 1" */
@@ -390,14 +421,57 @@ static snmp_info_t eatonrackmon_mib[] = {
 	{ "unmapped.scSensor1HumidityHighCriticalStatus", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.4.11.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor1Alarm1Name.0 = STRING: "Alarm-1" */
 	{ "unmapped.scSensor1Alarm1Name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.4.3.5.1.0", NULL, SU_FLAG_OK, NULL },
+
 	/* scSensor1Alarm1State.0 = INTEGER: disabled(1) */
-	{ "unmapped.scSensor1Alarm1State", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.5.2.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.1.drycontact.1.setting", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.5.2.0", NULL, ST_FLAG_RW | SU_FLAG_OK, sensor_alarm_setting_info },
+/*
+scSensor1Alarm1State , scSensor1Alarm2State du TH1 et scSensor2Alarm1State, scSensor2Alarm2State du TH2 avec les valeurs suivantes
+disabled(1), => Valeur par défaut
+normalOpen(2),
+normalClose(3),
+highActive(4),
+lowActive(5)
+
+scSensor1Alarm1State  .1.3.6.1.4.1.534.6.7.1.1.4.3.5.2.0
+scSensor1Alarm2State  .1.3.6.1.4.1.534.6.7.1.1.4.3.6.2.0
+scSensor2Alarm1State .1.3.6.1.4.1.534.6.7.1.1.4.4.5.2.0
+scSensor2Alarm2State .1.3.6.1.4.1.534.6.7.1.1.4.4.6.2.0
+
+sensor_alarm_state_info
+
+Une fois activée, par exemple en NormalOpen, la config devient :
+iso.3.6.1.4.1.534.6.7.1.1.4.3.5.1.0 = STRING: "Alarm-1"
+iso.3.6.1.4.1.534.6.7.1.1.4.3.5.2.0 = INTEGER: 2 <- normalOpen
+iso.3.6.1.4.1.534.6.7.1.1.4.3.5.3.0 = INTEGER: 0
+iso.3.6.1.4.1.534.6.7.1.1.4.3.6.1.0 = STRING: "Alarm-2"
+iso.3.6.1.4.1.534.6.7.1.1.4.3.6.2.0 = INTEGER: 2 <- normalOpen
+iso.3.6.1.4.1.534.6.7.1.1.4.3.6.3.0 = INTEGER: 0
+
+Le monitoring est en place
+TH1.smAlarm1 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.7.1 = INTEGER: 4 <- inactive
+TH2.smAlarm1 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.7.2 = INTEGER: 1 <- unknow
+TH1.smAlarm2 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.8.1 = INTEGER: 4 <- inactive
+TH2.smAlarm2 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.8.2 = INTEGER: 1 <- unknow
+
+                unknow(1),
+                disabled(2),
+                active(3),
+                inactive(4)
+
+La fermeture du contact provoque le changement d’état (monitoring) : par exple pour le contact 2 du TH1
+TH1.smAlarm1 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.7.1 = INTEGER: 4
+TH2.smAlarm1 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.7.2 = INTEGER: 1
+TH1.smAlarm2 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.8.1 = INTEGER: 3 <-active
+TH2.smAlarm2 : iso.3.6.1.4.1.534.6.7.1.1.3.2.1.8.2 = INTEGER: 1
+*/
+
 	/* scSensor1Alarm1Hysteresis.0 = INTEGER: 0 */
 	{ "unmapped.scSensor1Alarm1Hysteresis", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.5.3.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor1Alarm2Name.0 = STRING: "Alarm-2" */
 	{ "unmapped.scSensor1Alarm2Name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.4.3.6.1.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor1Alarm2State.0 = INTEGER: disabled(1) */
-	{ "unmapped.scSensor1Alarm2State", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.6.2.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.1.drycontact.2.setting", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.6.2.0", NULL, SU_FLAG_OK, sensor_alarm_setting_info },
+
 	/* scSensor1Alarm2Hysteresis.0 = INTEGER: 0 */
 	{ "unmapped.scSensor1Alarm2Hysteresis", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.3.6.3.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor2DeviceName.0 = STRING: "SENSOR 2" */
@@ -451,13 +525,15 @@ static snmp_info_t eatonrackmon_mib[] = {
 	/* scSensor2Alarm1Name.0 = STRING: "Alarm-3" */
 	{ "unmapped.scSensor2Alarm1Name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.4.4.5.1.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor2Alarm1State.0 = INTEGER: disabled(1) */
-	{ "unmapped.scSensor2Alarm1State", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.4.5.2.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.2.drycontact.1.setting", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.4.5.2.0", NULL, SU_FLAG_OK, sensor_alarm_setting_info },
+
 	/* scSensor2Alarm1Hysteresis.0 = INTEGER: 0 */
 	{ "unmapped.scSensor2Alarm1Hysteresis", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.4.5.3.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor2Alarm2Name.0 = STRING: "Alarm-4" */
 	{ "unmapped.scSensor2Alarm2Name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.7.1.1.4.4.6.1.0", NULL, SU_FLAG_OK, NULL },
 	/* scSensor2Alarm2State.0 = INTEGER: disabled(1) */
-	{ "unmapped.scSensor2Alarm2State", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.4.6.2.0", NULL, SU_FLAG_OK, NULL },
+	{ "ambient.2.drycontact.2.setting", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.4.6.2.0", NULL, SU_FLAG_OK, sensor_alarm_setting_info },
+
 	/* scSensor2Alarm2Hysteresis.0 = INTEGER: 0 */
 	{ "unmapped.scSensor2Alarm2Hysteresis", 0, 1, ".1.3.6.1.4.1.534.6.7.1.1.4.4.6.3.0", NULL, SU_FLAG_OK, NULL },
 
