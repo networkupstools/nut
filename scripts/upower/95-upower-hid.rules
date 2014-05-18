@@ -123,5 +123,6 @@ ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a6", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # Liebert
 ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0001", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0004", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 LABEL="up_hid_end"
