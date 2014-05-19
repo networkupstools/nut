@@ -419,7 +419,7 @@ static hid_info_t powercom_hid2nut[] = {
 
 	{ "ups.serial", 0, 0, "PowercomUPS.PowercomSerialNumber", NULL, "%s", 0, stringid_conversion },
 	{ "ups.mfr", 0, 0, "PowercomUPS.PowercomManufacturerName", NULL, "%s", 0, stringid_conversion },
-/*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, */
+/*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, is always 255 */
 	{ "ups.mfr.date", 0, 0, "PowercomUPS.PowercomManufacturerDate", NULL, "%s", 0, date_conversion },
 	{ "battery.temperature", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomTemperature", NULL, "%.0f", 0, NULL },
 	{ "battery.charge", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomVoltage", NULL, "%.0f", 0, NULL },
@@ -428,7 +428,7 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "input.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
 	{ "output.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
 	{ "ups.load", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPercentLoad", NULL, "%.0f", 0, NULL },
-	/* flags: 4 - Testing
+	/* flags: 4 - Testing, 8 - Probably mute (it's set on battery with muted beeper and sometimes during ups test)
 	 * bit 0  UPS fault  (1 = FAILT)
 	 * bit 1  Battery status (1 = BAD, 0 = NORMAL)
 	 * bit 2  Test  mode  (1 = TEST, 0 = NORMAL)
@@ -455,6 +455,7 @@ static hid_info_t powercom_hid2nut[] = {
 	 */
 /*	{ "UPS.PowerConverter.Output.PrimaryBatterySupport", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, "%.0f", 0, NULL }, */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_online_conversion },
+	/* Low battery status may not work */
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_lowbatt_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_trim_conversion },
 	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_boost_conversion },
