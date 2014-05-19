@@ -970,9 +970,9 @@ void upsdrv_initups(void)
 	if (testvar("interruptonly")) {
 		interrupt_only = 1;
 	}
-	char *interruptsize = getval("interruptsize");
-	if (interruptsize != NULL) {
-		interrupt_size = atoi(interruptsize);
+	val = getval("interruptsize");
+	if (val) {
+		interrupt_size = atoi(val);
 	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
