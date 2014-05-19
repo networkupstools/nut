@@ -794,7 +794,6 @@ void upsdrv_updateinfo(void)
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
-		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
 		switch (evtCount)
 		{
 		case -EBUSY:		/* Device or resource busy */
@@ -808,6 +807,9 @@ void upsdrv_updateinfo(void)
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return;
+		default:
+			upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+			break;
 		}
 	} else {
 		evtCount = 0;
