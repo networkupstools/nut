@@ -133,7 +133,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1002,10 +1002,10 @@ void upsdrv_updateinfo(void)
 	unsigned char b_value[9], d_value[9], l_value[9], s_value[9],
 			m_value[9], t_value[9];
 	int bp, freq;
-	double bv;
+	double bv_12V; /*!< battery voltage, relative to a 12V battery */
+	double battery_voltage; /*!< the total battery voltage */
 
 	int ret;
-	unsigned battery_charge;
 
 	status_init();
 
@@ -1096,11 +1096,17 @@ void upsdrv_updateinfo(void)
 			}
 		}
 
-		/* This may not be right... */
+#if 0
+		/* Apparently, this value changes more frequently when the
+		 * battery is discharged, but it does not track the actual
+		 * state-of-charge. See battery.charge calculation below.
+		 */
 		if(tl_model == TRIPP_LITE_SMARTPRO) {
+			unsigned battery_charge;
 			battery_charge = (unsigned)(s_value[5]);
 			dstate_setinfo("battery.charge",  "%u", battery_charge);
 		}
+#endif
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
@@ -1136,21 +1142,10 @@ void upsdrv_updateinfo(void)
 
 		dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
 
-		bv = hex2d(b_value+5, 2)/16.0;
+		bv_12V = hex2d(b_value+5, 2)/16.0;
 
-		/* dq ~= sqrt(dV) is a reasonable approximation
-		 * Results fit well against the discrete function used in the Tripp Lite
-		 * source, but give a continuous result. */
-		if (bv >= V_interval[1])
-			bp = 100;
-		else if (bv <= V_interval[0])
-			bp = 10;
-		else
-			bp = (int)(100*sqrt((bv - V_interval[0])
-						/ (V_interval[1] - V_interval[0])));
-
-		dstate_setinfo("battery.voltage", "%.2f", bv);
-		dstate_setinfo("battery.charge",  "%3d", bp);
+		/* TODO: use battery_voltage_nominal, even though it is most likely 12V */
+		dstate_setinfo("battery.voltage", "%.2f", bv_12V);
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
@@ -1166,9 +1161,11 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("input.voltage", "%d",
 				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
 
-		bv = hex2d(d_value+3, 2) * battery_voltage_nominal / 120.0 ;
+		/* TODO: factor out the two constants */
+		bv_12V = hex2d(d_value+3, 2) / 10.0 ;
+		battery_voltage = bv_12V * battery_voltage_nominal / 12.0;
 
-		dstate_setinfo("battery.voltage", "%.2f", bv);
+		dstate_setinfo("battery.voltage", "%.2f", battery_voltage);
 
 		/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
@@ -1219,6 +1216,21 @@ void upsdrv_updateinfo(void)
 		/* I'm guessing this is a calibration constant of some sort. */
 		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
 	}
+
+	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
+
+	/* dq ~= sqrt(dV) is a reasonable approximation
+	 * Results fit well against the discrete function used in the Tripp Lite
+	 * source, but give a continuous result. */
+	if (bv_12V >= V_interval[1])
+		bp = 100;
+	else if (bv_12V <= V_interval[0])
+		bp = 10;
+	else
+		bp = (int)(100*sqrt((bv_12V - V_interval[0])
+					/ (V_interval[1] - V_interval[0])));
+
+	dstate_setinfo("battery.charge",  "%3d", bp);
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
