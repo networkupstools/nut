@@ -8,7 +8,7 @@
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
-   Copyright (C) 2005-2008  Charles Lepple <clepple+nut@gmail.com>
+   Copyright (C) 2005-2008, 2014  Charles Lepple <clepple+nut@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -133,7 +133,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -201,7 +201,7 @@ static enum tl_model_t {
 #define SEND_WAIT_NSEC (1000*1000*100)
 
 #define MAX_RECV_TRIES 10
-#define RECV_WAIT_MSEC 1000	/*! was 100 for OMNIVS; SMARTPRO units need longer */
+#define RECV_WAIT_MSEC 1000	/*!< was 100 for OMNIVS; SMARTPRO units need longer */
 
 #define MAX_RECONNECT_TRIES 10
 
@@ -1284,7 +1284,7 @@ void upsdrv_makevartable(void)
 {
 	char msg[256];
 
-	snprintf(msg, sizeof msg, "Set shutdown delay, in seconds (default=%d).",
+	snprintf(msg, sizeof msg, "Set shutdown delay, in seconds (default=%d)",
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, "offdelay", msg);
 
@@ -1294,6 +1294,14 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+
+	snprintf(msg, sizeof msg, "Minimum battery voltage, corresponding to 0%% charge (default=%.1f)",
+		MIN_VOLT);
+	addvar(VAR_VALUE, "battery_min", msg);
+
+	snprintf(msg, sizeof msg, "Maximum battery voltage, corresponding to 100%% charge (default=%.1f)",
+		MAX_VOLT);
+	addvar(VAR_VALUE, "battery_max", msg);
 
 #if 0
 	snprintf(msg, sizeof msg, "Set start delay, in seconds (default=%d).",
@@ -1313,6 +1321,7 @@ void upsdrv_makevartable(void)
 void upsdrv_initups(void)
 {
 	char *regex_array[6];
+	char *value;
 	int r;
 
 	/* process the UPS selection options */
@@ -1355,8 +1364,24 @@ void upsdrv_initups(void)
 	/* link the two matchers */
 	reopen_matcher->next = regex_matcher;
 
-	if (getval("offdelay"))
-		offdelay = atoi(getval("offdelay"));
+	value = getval("offdelay");
+	if (value) {
+		offdelay = atoi(value);
+		upsdebugx(2, "Setting 'offdelay' to %d", offdelay);
+	}
+
+	value = getval("battery_min");
+	if (value) {
+		V_interval[0] = atof(value);
+		upsdebugx(2, "Setting 'battery_min' to %.g", V_interval[0]);
+	}
+
+	value = getval("battery_max");
+	if (value) {
+		V_interval[1] = atof(value);
+		upsdebugx(2, "Setting 'battery_max' to %.g", V_interval[1]);
+	}
+
 #if 0
 	if (getval("startdelay"))
 		startdelay = atoi(getval("startdelay"));
