@@ -62,11 +62,12 @@ and actually cutting power to the computer.
 
 *battery_min*, *battery_max*::
 
-These floating-point values correspond to the "empty" and "full" voltages of
-the battery. They are used for an approximation of the battery state-of-charge.
-The calculated battery.charge value will be clamped to the range of 0 through
-100%, so the resting voltage of the charged battery can be used for
-*battery_max*, and the float charge voltage should not cause problems.
+These floating-point values correspond to the "empty" (10%) and "full" (100%)
+voltages of the battery. They are used for an approximation of the battery
+state-of-charge.  The calculated battery.charge value will be clamped to the
+range of 10% through 100%, so the resting voltage of the charged battery can be
+used for *battery_max*, and the higher float charge voltage should not cause
+problems.
 
 *bus*::
 

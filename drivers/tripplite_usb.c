@@ -1002,7 +1002,7 @@ void upsdrv_updateinfo(void)
 	unsigned char b_value[9], d_value[9], l_value[9], s_value[9],
 			m_value[9], t_value[9];
 	int bp, freq;
-	double bv_12V; /*!< battery voltage, relative to a 12V battery */
+	double bv_12V = 0.0; /*!< battery voltage, relative to a 12V battery */
 	double battery_voltage; /*!< the total battery voltage */
 
 	int ret;
@@ -1298,7 +1298,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 
-	snprintf(msg, sizeof msg, "Minimum battery voltage, corresponding to 0%% charge (default=%.1f)",
+	snprintf(msg, sizeof msg, "Minimum battery voltage, corresponding to 10%% charge (default=%.1f)",
 		MIN_VOLT);
 	addvar(VAR_VALUE, "battery_min", msg);
 
