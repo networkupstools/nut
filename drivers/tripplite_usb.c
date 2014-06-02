@@ -133,7 +133,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.23"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1219,18 +1219,21 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	/* dq ~= sqrt(dV) is a reasonable approximation
-	 * Results fit well against the discrete function used in the Tripp Lite
-	 * source, but give a continuous result. */
-	if (bv_12V >= V_interval[1])
-		bp = 100;
-	else if (bv_12V <= V_interval[0])
-		bp = 10;
-	else
-		bp = (int)(100*sqrt((bv_12V - V_interval[0])
-					/ (V_interval[1] - V_interval[0])));
+	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
+	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
+		/* dq ~= sqrt(dV) is a reasonable approximation
+		 * Results fit well against the discrete function used in the Tripp Lite
+		 * source, but give a continuous result. */
+		if (bv_12V >= V_interval[1])
+			bp = 100;
+		else if (bv_12V <= V_interval[0])
+			bp = 10;
+		else
+			bp = (int)(100*sqrt((bv_12V - V_interval[0])
+						/ (V_interval[1] - V_interval[0])));
 
-	dstate_setinfo("battery.charge",  "%3d", bp);
+		dstate_setinfo("battery.charge",  "%3d", bp);
+	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
