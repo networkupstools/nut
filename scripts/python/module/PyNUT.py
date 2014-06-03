@@ -185,7 +185,7 @@ of the command as value
                 self.__srv_handler.write( "GET CMDDESC %s %s\n" % ( ups, var ) )
                 temp = self.__srv_handler.read_until( "\n" )
                 if temp[:7] != "CMDDESC" :
-                    raise
+                    raise Exception
                 else :
                     off  = len( "CMDDESC %s %s " % ( ups, var ) )
                     desc = temp[off:-1].split('"')[1]
