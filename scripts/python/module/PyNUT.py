@@ -35,6 +35,9 @@
 # 2012-02-07 René Martín Rodríguez <rmrodri@ull.es> - Version 1.2.2
 #            Added support for LIST CLIENTS command
 #
+# 2014-06-03 george2 - Version 1.3.0
+#            Added custom exception class, fixed minor bug.
+#
 
 import telnetlib
 
@@ -53,8 +56,8 @@ class PyNUTClient :
     __timeout     = None
     __srv_handler = None
 
-    __version     = "1.2.2"
-    __release     = "2012-02-07"
+    __version     = "1.3.0"
+    __release     = "2014-06-03"
 
 
     def __init__( self, host="127.0.0.1", port=3493, login=None, password=None, debug=False, timeout=5 ) :
