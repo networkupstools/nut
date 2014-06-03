@@ -105,13 +105,13 @@ if something goes wrong.
             self.__srv_handler.write( "USERNAME %s\n" % self.__login )
             result = self.__srv_handler.read_until( "\n", self.__timeout )
             if result[:2] != "OK" :
-                raise PyNUTError, result.replace( "\n", "" )
+                raise PyNUTError( result.replace( "\n", "" ) )
 
         if self.__password != None :
             self.__srv_handler.write( "PASSWORD %s\n" % self.__password )
             result = self.__srv_handler.read_until( "\n", self.__timeout )
             if result[:2] != "OK" :
-                raise PyNUTError, result.replace( "\n", "" )
+                raise PyNUTError( result.replace( "\n", "" ) )
 
     def GetUPSList( self ) :
         """ Returns the list of available UPS from the NUT server
@@ -124,7 +124,7 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and 'UPS Des
         self.__srv_handler.write( "LIST UPS\n" )
         result = self.__srv_handler.read_until( "\n" )
         if result != "BEGIN LIST UPS\n" :
-            raise PyNUTError, result.replace( "\n", "" )
+            raise PyNUTError( result.replace( "\n", "" ) )
 
         result = self.__srv_handler.read_until( "END LIST UPS\n" )
         ups_list = {}
@@ -148,7 +148,7 @@ available vars.
         self.__srv_handler.write( "LIST VAR %s\n" % ups )
         result = self.__srv_handler.read_until( "\n" )
         if result != "BEGIN LIST VAR %s\n" % ups :
-            raise PyNUTError, result.replace( "\n", "" )
+            raise PyNUTError( result.replace( "\n", "" ) )
 
         ups_vars   = {}
         result     = self.__srv_handler.read_until( "END LIST VAR %s\n" % ups )
@@ -174,7 +174,7 @@ of the command as value
         self.__srv_handler.write( "LIST CMD %s\n" % ups )
         result = self.__srv_handler.read_until( "\n" )
         if result != "BEGIN LIST CMD %s\n" % ups :
-            raise PyNUTError, result.replace( "\n", "" )
+            raise PyNUTError( result.replace( "\n", "" ) )
 
         ups_cmds   = {}
         result     = self.__srv_handler.read_until( "END LIST CMD %s\n" % ups )
@@ -211,7 +211,7 @@ The result is presented as a dictionary containing 'key->val' pairs
         self.__srv_handler.write( "LIST RW %s\n" % ups )
         result = self.__srv_handler.read_until( "\n" )
         if ( result != "BEGIN LIST RW %s\n" % ups ) :
-            raise PyNUTError,  result.replace( "\n",  "" )
+            raise PyNUTError( result.replace( "\n",  "" ) )
 
         result     = self.__srv_handler.read_until( "END LIST RW %s\n" % ups )
         offset     = len( "VAR %s" % ups )
@@ -241,7 +241,7 @@ rights to set it (maybe login/password).
         if ( result == "OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError, result
+            raise PyNUTError( result )
 
     def RunUPSCommand( self, ups="", command="" ) :
         """ Send a command to the specified UPS
@@ -257,7 +257,7 @@ Returns OK on success or raises an error
         if ( result == "OK\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError, result.replace( "\n", "" )
+            raise PyNUTError( result.replace( "\n", "" ) )
 
     def FSD( self, ups="") :
         """ Send FSD command
@@ -271,7 +271,7 @@ Returns OK on success or raises an error
         self.__srv_handler.write( "MASTER %s\n" % ups )
         result = self.__srv_handler.read_until( "\n" )
         if ( result != "OK MASTER-GRANTED\n" ) :
-            raise PyNUTError, ( "Master level function are not available", "" )
+            raise PyNUTError( ( "Master level function are not available", "" ) )
 
         if self.__debug :
             print( "[DEBUG] FSD called..." )
@@ -280,7 +280,7 @@ Returns OK on success or raises an error
         if ( result == "OK FSD-SET\n" ) :
             return( "OK" )
         else :
-            raise PyNUTError, result.replace( "\n", "" )
+            raise PyNUTError( result.replace( "\n", "" ) )
 
     def help(self) :
         """ Send HELP command
@@ -311,7 +311,7 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
             print( "[DEBUG] ListClients from server" )
 
         if ups and (ups not in self.GetUPSList()):
-            raise PyNUTError, "%s is not a valid UPS" % ups
+            raise PyNUTError( "%s is not a valid UPS" % ups )
 
         if ups:
             self.__srv_handler.write( "LIST CLIENTS %s\n" % ups)
@@ -319,7 +319,7 @@ The result is a dictionary containing 'key->val' pairs of 'UPSName' and a list o
             self.__srv_handler.write( "LIST CLIENTS\n" )
         result = self.__srv_handler.read_until( "\n" )
         if result != "BEGIN LIST CLIENTS\n" :
-            raise PyNUTError, result.replace( "\n", "" )
+            raise PyNUTError( result.replace( "\n", "" ) )
 
         result = self.__srv_handler.read_until( "END LIST CLIENTS\n" )
         ups_list = {}
