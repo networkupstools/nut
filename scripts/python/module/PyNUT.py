@@ -36,7 +36,7 @@
 #            Added support for LIST CLIENTS command
 #
 # 2014-06-03 george2 - Version 1.3.0
-#            Added custom exception class, fixed minor bug.
+#            Added custom exception class, fixed minor bug, added Python 3 support.
 #
 
 import telnetlib
