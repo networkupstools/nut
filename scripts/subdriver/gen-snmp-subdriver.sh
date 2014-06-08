@@ -340,8 +340,8 @@ Done.
 Do not forget to:
 * bump DRIVER_VERSION in snmp-ups.c (add "0.01")
 * copy "${HFILE}" and "${CFILE}" to "../../drivers"
-* add #include "${HFILE}" to drivers/snmp-ups.c
-* add &${LDRIVER} to drivers/snmp-ups.c:mib2nut[] list,
+* add #include "${HFILE}" to snmp-ups.c
+* add &${LDRIVER} to snmp-ups.c:mib2nut[] list,
 * add ${LDRIVER}-mib.c to snmp_ups_SOURCES in drivers/Makefile.am
 * add ${LDRIVER}-mib.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "./autogen.sh && ./configure && make" from the top level directory
