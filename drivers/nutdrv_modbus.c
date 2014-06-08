@@ -1,7 +1,7 @@
-/*  nutdrv-modbus.c - Driver for Modbus power devices (UPS, meters, ...)
+/*  nutdrv_modbus.c - Driver for Modbus power devices (UPS, meters, ...)
  *
  *  Copyright (C)
- *    2012  Arnaud Quette <arnaud.quette@free.fr>
+ *    2012-2014  Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

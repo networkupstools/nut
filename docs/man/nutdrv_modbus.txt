@@ -1,33 +1,33 @@
-NUTDRV-MODBUS(8) 
+NUTDRV_MODBUS(8) 
 ================
 
 NAME
 ----
 
-nutdrv-modbus - Driver for Modbus devices
+nutdrv_modbus - Driver for Modbus devices
 
 SYNOPSIS
 --------
 
-*nutdrv-modbus* -h
+*nutdrv_modbus* -h
 
-*nutdrv-modbus* -a 'DEVICE_NAME' ['OPTIONS']
+*nutdrv_modbus* -a 'DEVICE_NAME' ['OPTIONS']
 
 NOTE: This driver is experimental, and still a work-in-progress. Feedback is
 encouraged.
 
 NOTE: This man page only documents the hardware-specific features of the
-nutdrv-modbus driver.  For information about the core driver, see
+nutdrv_modbus driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
 ------------------
 
-This driver should support a wide range of Modbus compatbile devices, like
+This driver should support a wide range of Modbus compatible devices, like
 UPS and meters, through serial port (RS232 / RS485) and network (TCP)
 interface.
 
-nutdrv-modbus uses the libmodbus project, for Modbus implementation.
+nutdrv_modbus uses the libmodbus project, for Modbus implementation.
 
 
 EXTRA ARGUMENTS
