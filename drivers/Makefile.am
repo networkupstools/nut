@@ -32,6 +32,9 @@ endif
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
+if WITH_MODBUS
+  AM_CFLAGS += $(LIBMODBUS_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
@@ -49,6 +52,7 @@ HAL_DRIVERLIST = hald-addon-usbhid-ups hald-addon-bcmxcp_usb \
  hald-addon-voltronic_usb
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
+MODBUS_DRIVERLIST = nutdrv_modbus
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
@@ -82,6 +86,9 @@ if WITH_IPMI
 endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
+endif
+if WITH_MODBUS
+  driverexec_PROGRAMS += $(MODBUS_DRIVERLIST)
 endif
 else
    driverexec_PROGRAMS += skel
@@ -241,6 +248,10 @@ nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 macosx_ups_LDADD = $(LDADD_DRIVERS)
 macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
 macosx_ups_SOURCES = macosx-ups.c
+
+# Modbus driver
+nutdrv_modbus_SOURCES = nutdrv_modbus.c
+nutdrv_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 
 # ----------------------------------------------------------------------
 # List of header files. The purpose of this list is not dependency
