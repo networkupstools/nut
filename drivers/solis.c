@@ -40,7 +40,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.61"
+#define DRIVER_VERSION	"0.62"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -727,7 +727,8 @@ CommReceive(const char *bufptr,  int size)
 		ser_flush_in(upsfd,"",0); /* clean port */
   
 		/* correct package */
-		if(  ( (RecPack[0] & 0xF0) == 0xA0 )
+		/* 0xA0 is original solis.c; 0xB0 is for APC-branded Microsol units */
+		if(  ( ( (RecPack[0] & 0xF0) == 0xA0 ) || (RecPack[0] & 0xF0) == 0xB0)
 		       && ( RecPack[ 24 ] == 254 )
 		       && ( RecPack[ 23 ] == CheckSum ) ) {
 
