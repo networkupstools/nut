@@ -21,8 +21,13 @@ This driver has been tested with :
  * Solis   1500 VA
  * Solis   2000 VA
  * Solis   3000 VA
+ * Back-UPS BZ1200-BR
+ * Back-UPS BZ2200BI-BR
 
-All Solis models are sinusoidal on-line 
+All Solis models are sinusoidal on-line.
+
+In 2009, Schneider Electric acquired Microsol Technologies, and by 2012, the
+entire Microsol line of equipment was being sold under the APC brand.
 
 EXTRA ARGUMENTS
 ---------------
@@ -40,6 +45,13 @@ COMMANDS
  * shutdown.return - Shut down in .3 minutes and restart in .3 minutes
 
  * shutdown.stayoff - Shut down in .3 minutes and do not return
+
+ISSUES
+------
+
+The APC version of the Microsol protocol is slightly incompatible with the
+*solis* driver. As of version 0.62 of the *solis* driver, the driver will
+connect to the UPS, but some values are read incorrectly.
 
 AUTHOR
 ------
