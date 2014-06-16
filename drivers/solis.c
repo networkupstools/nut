@@ -890,7 +890,10 @@ static void getbaseinfo(void)
 	switch( SolisModel )
 	{
 	case 10: /* Added for APC-Microsol units */
+	{
 		strcpy(Model, "Back-UPS 1200 BR");
+		break;
+	}
 	case 11:
 	case 12:
 	{
