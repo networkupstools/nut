@@ -891,28 +891,28 @@ static void getbaseinfo(void)
 	{
 	case 10: /* Added for APC-Microsol units */
 	{
-		strcpy(Model, "Back-UPS 1200 BR");
+		Model = "Back-UPS 1200 BR";
 		break;
 	}
 	case 11:
 	case 12:
 	{
-		strcpy(Model, "Solis 1.0");
+		Model = "Solis 1.0";
 		break;
 	}
 	case 13:
 	{
-		strcpy(Model, "Solis 1.5");
+		Model = "Solis 1.5";
 		break;
 	}
 	case 14:
 	{
-		strcpy(Model, "Solis 2.0");
+		Model = "Solis 2.0";
 		break;
 	}
 	case 15:
 	{
-		strcpy(Model, "Solis 3.0");
+		Model = "Solis 3.0";
 		break;
 	}
 	}
