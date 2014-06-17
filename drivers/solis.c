@@ -610,7 +610,7 @@ static void ScanReceivePack( void )
 
 	/* Autonomy */
 
-	if( ( Autonomy < 5 ) )
+	if( Autonomy < 5 )
 		LowBatt = true;
 	else
 		LowBatt = false;
@@ -618,7 +618,7 @@ static void ScanReceivePack( void )
 	UpsPowerFactor = 700;
 
 	/* input 110V or 220v */
-	if(  ( InputValue == 0 ) )  {
+	if(  InputValue == 0 )  {
 		InDownLim = 75;
 		InUpLim = 150;
 		NomInVolt = 110;
@@ -702,7 +702,7 @@ CommReceive(const char *bufptr,  int size)
 
 	int i, CheckSum, i_end;
 
-	if(  ( size==25 ) )
+	if(  size==25 )
 		Waiting = 0;
 	
 	switch( Waiting )
