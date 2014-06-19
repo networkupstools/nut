@@ -461,6 +461,8 @@
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
 
+"Lacerda"	"ups"	"2"	"New Orion 800VA"	"USB"	"blazer_usb"
+
 "LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
