@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 #include "main.h"
 
@@ -73,7 +73,7 @@
 #include "nutdrv_qx_voltronic-qs-hex.h"
 #include "nutdrv_qx_zinto.h"
 
-/* Master list of avaiable subdrivers */
+/* Master list of available subdrivers */
 static subdriver_t	*subdriver_list[] = {
 	&voltronic_subdriver,
 	&voltronic_qs_subdriver,
@@ -806,6 +806,127 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	return ret;
 }
 
+/* Fuji communication subdriver */
+static int	fuji_command(const char *cmd, char *buf, size_t buflen)
+{
+	unsigned char	tmp[SMALLBUF];
+	char		command[SMALLBUF] = "",
+			read[SMALLBUF] = "";
+	int		ret, answer_len;
+	size_t		i, len;
+	const struct {
+		const char	*command;	/* Megatec command */
+		const int	answer_len;	/* Expected length of the answer to the ongoing query */
+	} query[] = {
+		{ "Q1",	47 },
+		{ "F",	22 },
+		{ "I",	39 },
+		{ NULL }
+	};
+
+	/*
+	 * Queries (b1..b8x) sent (in 8-byte chunks) to the UPS adopt the following scheme:
+	 *
+	 *	b1:		0x80
+	 *	b2:		0x06
+	 *	b3:		<LEN>
+	 *	b4:		0x03
+	 *	b5..bn:		<COMMAND>
+	 *	bn+1..b8x-1:	[<PADDING>]
+	 *	b8x:		<ANSWER_LEN>
+	 *
+	 * Where:
+	 *	<LEN>		Length (in Hex) of the command (without the trailing CR) + 1
+	 *	<COMMAND>	Command/query (without the trailing CR)
+	 *	[<PADDING>]	0x00 padding to the last 8-byte chunk's 7th byte
+	 *	<ANSWER_LEN>	Expected length (in Hex) of the answer to the ongoing query (0 when no reply is expected, i.e. commands)
+	 *
+	 * Replies to queries (commands are followed by action without any reply) are sent from the UPS (in 8-byte chunks) with 0x00 padding after the trailing CR to full 8 bytes.
+	 *
+	 */
+
+	/* Send command */
+
+	/* Remove the CR */
+	snprintf(command, sizeof(command), "%.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	/* Expected length of the answer to the ongoing query (0 when no reply is expected, i.e. commands) */
+	answer_len = 0;
+	for (i = 0; query[i].command; i++) {
+
+		if (strcmp(command, query[i].command))
+			continue;
+
+		answer_len = query[i].answer_len;
+		break;
+
+	}
+
+	/* Length of the command that will be sent to the UPS: megatec command length + 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) [+ padding to get a multiple of 8] */
+	len = strlen(command) + 5;
+	if (len % 8)
+		len += 8 - len % 8;
+
+	if (len > sizeof(tmp))
+		len = sizeof(tmp);
+
+	memset(tmp, 0, sizeof(tmp));
+
+	/* 0x80 */
+	tmp[0] = 0x80;
+	/* 0x06 */
+	tmp[1] = 0x06;
+	/* <LEN> */
+	tmp[2] = strlen(command) + 1;
+	/* 0x03 */
+	tmp[3] = 0x03;
+	/* <COMMAND> */
+	memcpy(&tmp[4], command, strlen(command) <= len - 5 ? strlen(command) : len - 5);
+	/* <ANSWER_LEN> */
+	tmp[len - 1] = answer_len;
+
+	upsdebug_hex(4, "command", (char *)tmp, (int)len);
+
+	for (i = 0; i < len; i += ret) {
+
+		/* Write data in 8-byte chunks */
+		ret = usb_interrupt_write(udev, USB_ENDPOINT_OUT | 2, (char *)&tmp[i], 8, USB_TIMEOUT);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			return ret;
+		}
+
+	}
+
+	upsdebugx(3, "send: %s", command);
+
+	/* Read reply */
+
+	memset(buf, 0, buflen);
+
+	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+
+		/* Read data in 8-byte chunks */
+		ret = usb_interrupt_read(udev, USB_ENDPOINT_IN | 1, &buf[i], 8, 1000);
+
+		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			return ret;
+		}
+
+		snprintf(read, sizeof(read), "read [%3d]", (int)i);
+		upsdebug_hex(5, read, &buf[i], ret);
+
+	}
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
+	/* As Fuji units return the reply in 8-byte chunks always padded to the 8th byte with 0x00, we need to calculate and return the length of the actual response here. */
+	return (int)strlen(buf);
+}
+
 static void	*cypress_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &cypress_command;
@@ -836,6 +957,12 @@ static void	*fabula_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void	*fuji_subdriver(USBDevice_t *device)
+{
+	subdriver_command = &fuji_command;
+	return NULL;
+}
+
 /* USB device match structure */
 typedef struct {
 	const int	vendorID;		/* USB device's VendorID */
@@ -847,19 +974,20 @@ typedef struct {
 
 /* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
 static qx_usb_device_id_t	qx_usb_id[] = {
-	{ USB_DEVICE(0x05b8, 0x0000),	NULL,	NULL,		&cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0xffff, 0x0000),	NULL,	NULL,		&krauler_subdriver },	/* Ablerex 625L USB */
-	{ USB_DEVICE(0x0665, 0x5161),	NULL,	NULL,		&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
-	{ USB_DEVICE(0x06da, 0x0002),	NULL,	NULL,		&cypress_subdriver },	/* Online Yunto YQ450 */
-	{ USB_DEVICE(0x06da, 0x0003),	NULL,	NULL,		&ippon_subdriver },	/* Mustek Powermust */
-	{ USB_DEVICE(0x06da, 0x0004),	NULL,	NULL,		&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
-	{ USB_DEVICE(0x06da, 0x0005),	NULL,	NULL,		&cypress_subdriver },	/* Phoenixtec Innova RT */
-	{ USB_DEVICE(0x06da, 0x0201),	NULL,	NULL,		&cypress_subdriver },	/* Phoenixtec Innova T */
-	{ USB_DEVICE(0x06da, 0x0601),	NULL,	NULL,		&phoenix_subdriver },	/* Online Zinto A */
-	{ USB_DEVICE(0x0f03, 0x0001),	NULL,	NULL,		&cypress_subdriver },	/* Unitek Alpha 1200Sx */
-	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,	NULL,		&phoenix_subdriver },	/* GE EP series */
-	{ USB_DEVICE(0x0001, 0x0000),	"MEC",	"MEC0003",	&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
-	{ USB_DEVICE(0x0001, 0x0000),	NULL,	NULL,		&krauler_subdriver },	/* Krauler UP-M500VA */
+	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
+	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
+	{ USB_DEVICE(0x06da, 0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */
+	{ USB_DEVICE(0x06da, 0x0004),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
+	{ USB_DEVICE(0x06da, 0x0005),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova RT */
+	{ USB_DEVICE(0x06da, 0x0201),	NULL,		NULL,			&cypress_subdriver },	/* Phoenixtec Innova T */
+	{ USB_DEVICE(0x06da, 0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
+	{ USB_DEVICE(0x0f03, 0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
 	/* End of list */
 	{ -1,	-1,	NULL,	NULL,	NULL }
 };
@@ -1708,6 +1836,7 @@ void	upsdrv_initups(void)
 			{ "ippon", &ippon_command },
 			{ "krauler", &krauler_command },
 			{ "fabula", &fabula_command },
+			{ "fuji", &fuji_command },
 			{ NULL }
 		};
 
