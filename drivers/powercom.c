@@ -64,6 +64,11 @@
  * - Added support for OptiUPS VS 575C
  *   This probably also works with others, but I don't have their model numbers.
  *
+ * rev 0.15: VSE NN <metanoite@rambler.ru>
+ * - Fixed UPS type assignment for Powercom Imperial USB series manufactured since 2009.
+ *
+ * Tested on: IMP-625AP
+ *
  */ 
 
 #include "main.h"
@@ -908,17 +913,24 @@ void upsdrv_initups(void)
 		if (!ups_getinfo()) return;
 		/* Give "BNT-other" a chance! */
 		if (raw_data[MODELNAME]==0x42 || raw_data[MODELNAME]==0x4B || raw_data[MODELNAME]==0x4F){
-			model=BNTmodels[raw_data[MODELNUMBER]/16];
-			if (!strcmp(types[type].name, "BNT-other"))
-				types[type].name="BNT-other";
-			else if (raw_data[MODELNAME]==0x42)
-				types[type].name="BNT";
-			else if (raw_data[MODELNAME]==0x4B){
-				types[type].name="KIN";
-				model=KINmodels[raw_data[MODELNUMBER]/16];
-			} else if (raw_data[MODELNAME]==0x4F){
-				types[type].name="OPTI";
-				model=OPTImodels[raw_data[MODELNUMBER]/16];
+			/* Give "IMP" a chance also! */
+			if (raw_data[UPSVERSION]==0xFF){
+				types[type].name="IMP";
+				model=IMPmodels[raw_data[MODELNUMBER]/16];
+			}
+			else {
+				model=BNTmodels[raw_data[MODELNUMBER]/16];
+				if (!strcmp(types[type].name, "BNT-other"))
+					types[type].name="BNT-other";
+				else if (raw_data[MODELNAME]==0x42)
+					types[type].name="BNT";
+				else if (raw_data[MODELNAME]==0x4B){
+					types[type].name="KIN";
+					model=KINmodels[raw_data[MODELNUMBER]/16];
+				} else if (raw_data[MODELNAME]==0x4F){
+					types[type].name="OPTI";
+					model=OPTImodels[raw_data[MODELNUMBER]/16];
+				}
 			}
 		}
 		else if (raw_data[UPSVERSION]==0xFF){
