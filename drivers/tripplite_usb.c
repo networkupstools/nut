@@ -133,7 +133,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -188,8 +188,22 @@ static enum tl_model_t {
 	TRIPP_LITE_OMNIVS,
 	TRIPP_LITE_OMNIVS_2001,
 	TRIPP_LITE_SMARTPRO,
-	TRIPP_LITE_SMART_0004
+	TRIPP_LITE_SMART_0004,
+	TRIPP_LITE_SMART_3005
 } tl_model = TRIPP_LITE_UNKNOWN;
+
+/*! Are the values encoded in ASCII or binary?
+ * TODO: Add 3004?
+ */
+static int is_binary_protocol()
+{
+	switch(tl_model) {
+	case TRIPP_LITE_SMART_3005:
+		return 1;
+	default:
+		return 0;
+	}
+}
 
 /*!@brief If a character is not printable, return a dot. */
 #define toprint(x) (isalnum((unsigned)x) ? (x) : '.')
@@ -360,6 +374,9 @@ enum tl_model_t decode_protocol(unsigned int proto)
 		case 0x3003:
 			upslogx(3, "Using SMARTPRO protocol (%x)", proto);
 			return TRIPP_LITE_SMARTPRO;
+		case 0x3005:
+			upslogx(3, "Using binary SMART protocol (%x)", proto);
+			return TRIPP_LITE_SMART_3005;
 		default:
 			printf("Unknown protocol (%x)", proto);
 			break;
@@ -371,7 +388,15 @@ enum tl_model_t decode_protocol(unsigned int proto)
 void decode_v(const unsigned char *value)
 {
 	unsigned char ivn, lb;
-	int bv = hex2d(value+2, 2);
+	int bv;
+
+	if(is_binary_protocol()) {
+		/* 0x00 0x0c -> 12V ? */
+		battery_voltage_nominal = (value[2] << 8) | value[3];
+	} else {
+		bv = hex2d(value+2, 2);
+		battery_voltage_nominal = bv * 6;
+	}
 
  	ivn = value[1];
 	lb = value[4];
@@ -381,6 +406,7 @@ void decode_v(const unsigned char *value)
 			  input_voltage_scaled  = 100;
 			  break;
 
+		case 2: /* protocol 3005 */
 		case '1': input_voltage_nominal = 
 			  input_voltage_scaled  = 120;
 			  break;
@@ -398,16 +424,18 @@ void decode_v(const unsigned char *value)
 			  break;
 	}
 
-	battery_voltage_nominal = bv * 6;
-		
 	if( (lb >= '0') && (lb <= '9') ) {
 		switchable_load_banks = lb - '0';
 	} else {
+		if(is_binary_protocol()) {
+			switchable_load_banks = value[4];
+		}
 		if( lb != 'X' ) {
 			upslogx(2, "Unknown number of switchable load banks: 0x%02x",
 					(unsigned int)lb);
 		}
 	}
+	upsdebugx(2, "Switchable load banks: %d", switchable_load_banks);
 }
 
 void upsdrv_initinfo(void);
@@ -1005,6 +1033,8 @@ void upsdrv_updateinfo(void)
 	double bv_12V = 0.0; /*!< battery voltage, relative to a 12V battery */
 	double battery_voltage; /*!< the total battery voltage */
 
+	unsigned int s_value_1;
+
 	int ret;
 
 	status_init();
@@ -1055,8 +1085,17 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_OMNIVS_2001 || tl_model == TRIPP_LITE_SMART_0004) {
-		switch(s_value[2]) {
+	if(tl_model == TRIPP_LITE_SMARTPRO || 
+		tl_model == TRIPP_LITE_OMNIVS_2001 ||
+		tl_model == TRIPP_LITE_SMART_0004 ||
+		tl_model == TRIPP_LITE_SMART_3005) {
+
+		unsigned int s_value_2 = s_value[2];
+
+		if(is_binary_protocol()) {
+			s_value_2 += '0';
+		}
+		switch(s_value_2) {
 			case '0':
 				dstate_setinfo("battery.test.status", "Battery OK");
 				break;
@@ -1111,7 +1150,12 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	switch(s_value[1]) {
+	s_value_1 = s_value[1];
+	if(is_binary_protocol()) {
+		s_value_1 += '0';
+	}
+
+	switch(s_value_1) {
 		case '0':
 			status_set("LB");
 			break;
