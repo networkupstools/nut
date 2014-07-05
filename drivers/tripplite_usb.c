@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -355,7 +355,7 @@ static unsigned int bin2d(const unsigned char *start, unsigned int len)
 	unsigned int value = 0, index = 0;
 	for(index = 0; index < len; index++) {
 		value <<= 8;
-		value |= start[len];
+		value |= start[index];
 	}
 
 	return value;
@@ -730,6 +730,7 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+			break;
 		case TRIPP_LITE_SMART_3005:
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%c", 5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
@@ -742,6 +743,7 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+			break;
 		default:
 			upslogx(LOG_ERR, "control_outlet unimplemented for protocol %04x", tl_model);
 	}
