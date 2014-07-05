@@ -125,6 +125,9 @@
  * :S     -- enables remote reboot/remote power on
  */
 
+/* Watchdog for 3005 is 15 - 255 seconds.
+ */
+
 #include "main.h"
 #include "libusb.h"
 #include <math.h>
@@ -133,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -408,7 +411,7 @@ enum tl_model_t decode_protocol(unsigned int proto)
 {
 	switch(proto) {
 		case 0x0004:
-			upslogx(3, "Using older SMART protocol (%x)", proto);
+			upslogx(3, "Using older SMART protocol (%04x)", proto);
 			return TRIPP_LITE_SMART_0004;
 		case 0x1001:
 			upslogx(3, "Using OMNIVS protocol (%x)", proto);
@@ -423,7 +426,7 @@ enum tl_model_t decode_protocol(unsigned int proto)
 			upslogx(3, "Using binary SMART protocol (%x)", proto);
 			return TRIPP_LITE_SMART_3005;
 		default:
-			printf("Unknown protocol (%x)", proto);
+			printf("Unknown protocol (%04x)", proto);
 			break;
 	}
 
@@ -655,6 +658,7 @@ static int soft_shutdown(void)
 	int ret;
 	unsigned char buf[256], cmd_N[]="N\0x", cmd_G[] = "G";
 
+	/* Already binary: */
 	cmd_N[2] = offdelay;
 	cmd_N[1] = offdelay >> 8;
 	upsdebugx(3, "soft_shutdown(offdelay=%d): N", offdelay);
@@ -726,8 +730,20 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+		case TRIPP_LITE_SMART_3005:
+			snprintf(k_cmd, sizeof(k_cmd)-1, "N%c", 5);
+			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
+			snprintf(k_cmd, sizeof(k_cmd)-1, "K%c%c", outlet_id, state & 1);
+			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
+
+			if(ret != 8) {
+				upslogx(LOG_ERR, "Could not set outlet %d to state %d, ret = %d", outlet_id, state, ret);
+				return 0;
+			} else {
+				return 1;
+			}
 		default:
-			upslogx(LOG_ERR, "control_outlet unimplemented for this UPS model");
+			upslogx(LOG_ERR, "control_outlet unimplemented for protocol %04x", tl_model);
 	}
 	return 0;
 }
@@ -1301,7 +1317,9 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 		}
 
-		if( tl_model != TRIPP_LITE_SMART_3005 ) {
+		if( tl_model == TRIPP_LITE_SMART_3005 ) {
+			dstate_setinfo("ups.temperature", "%d", (unsigned)(hex2d(t_value+1, 1)));
+		} else {
 			/* I'm guessing this is a calibration constant of some sort. */
 			dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
 		}
