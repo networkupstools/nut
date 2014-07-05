@@ -133,7 +133,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -198,6 +198,21 @@ static enum tl_model_t {
 static int is_binary_protocol()
 {
 	switch(tl_model) {
+	case TRIPP_LITE_SMART_3005:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+/*! Is this the "SMART" family of protocols?
+ * TODO: Add 3004?
+ */
+static int is_smart_protocol()
+{
+	switch(tl_model) {
+	case TRIPP_LITE_SMARTPRO:
+	case TRIPP_LITE_SMART_0004:
 	case TRIPP_LITE_SMART_3005:
 		return 1;
 	default:
@@ -321,6 +336,36 @@ static int hex2d(const unsigned char *start, unsigned int len)
 	return strtol((char *)buf, NULL, 16);
 }
 
+/*!@brief Convert N characters from big-endian binary to decimal
+ *
+ * @param start		Beginning of string to convert
+ * @param len		Maximum number of characters to consider (max 32)
+ *
+ * @a len characters of @a start are shifted into an accumulator.
+ *
+ * We assume len < sizeof(int), and that value > 0.
+ *
+ * @return the value
+ */
+static unsigned int bin2d(const unsigned char *start, unsigned int len)
+{
+	unsigned int value = 0, index = 0;
+	for(index = 0; index < len; index++) {
+		value <<= 8;
+		value |= start[len];
+	}
+
+	return value;
+}
+
+static int hex_or_bin2d(const unsigned char *start, unsigned int len)
+{
+	if(is_binary_protocol()) {
+		return bin2d(start, len);
+	}
+	return hex2d(start, len);
+}
+
 /*!@brief Dump message in both hex and ASCII
  *
  * @param[in] msg	Buffer to dump
@@ -428,11 +473,12 @@ void decode_v(const unsigned char *value)
 		switchable_load_banks = lb - '0';
 	} else {
 		if(is_binary_protocol()) {
-			switchable_load_banks = value[4];
-		}
-		if( lb != 'X' ) {
-			upslogx(2, "Unknown number of switchable load banks: 0x%02x",
+			switchable_load_banks = lb;
+		} else {
+			if( lb != 'X' ) {
+				upslogx(2, "Unknown number of switchable load banks: 0x%02x",
 					(unsigned int)lb);
+			}
 		}
 	}
 	upsdebugx(2, "Switchable load banks: %d", switchable_load_banks);
@@ -692,7 +738,7 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char buf[10];
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
+	if(is_smart_protocol()) {
 		if (!strcasecmp(cmdname, "test.battery.start")) {
 			send_cmd((const unsigned char *)"A", 2, buf, sizeof buf);
 			return STAT_INSTCMD_HANDLED;
@@ -992,7 +1038,7 @@ void upsdrv_initinfo(void)
 	dstate_setaux("ups.delay.reboot", 3);
 #endif
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
+	if(is_smart_protocol()) {
 		dstate_addcmd("test.battery.start");
 		dstate_addcmd("reset.input.minmax");
 	}
@@ -1085,10 +1131,7 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if(tl_model == TRIPP_LITE_SMARTPRO || 
-		tl_model == TRIPP_LITE_OMNIVS_2001 ||
-		tl_model == TRIPP_LITE_SMART_0004 ||
-		tl_model == TRIPP_LITE_SMART_3005) {
+	if(is_smart_protocol() || tl_model == TRIPP_LITE_OMNIVS_2001) {
 
 		unsigned int s_value_2 = s_value[2];
 
@@ -1194,7 +1237,8 @@ void upsdrv_updateinfo(void)
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
-	if( tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
+	if( is_smart_protocol() ) {
+
 		ret = send_cmd(d_msg, sizeof(d_msg), d_value, sizeof(d_value));
 		if(ret <= 0) {
 			dstate_datastale();
@@ -1203,10 +1247,10 @@ void upsdrv_updateinfo(void)
 		}
 
 		dstate_setinfo("input.voltage", "%d",
-				hex2d(d_value+1, 2) * input_voltage_scaled / 120);
+				hex_or_bin2d(d_value+1, 2) * input_voltage_scaled / 120);
 
 		/* TODO: factor out the two constants */
-		bv_12V = hex2d(d_value+3, 2) / 10.0 ;
+		bv_12V = hex_or_bin2d(d_value+3, 2) / 10.0 ;
 		battery_voltage = bv_12V * battery_voltage_nominal / 12.0;
 
 		dstate_setinfo("battery.voltage", "%.2f", battery_voltage);
@@ -1215,7 +1259,7 @@ void upsdrv_updateinfo(void)
 
 		ret = send_cmd(m_msg, sizeof(m_msg), m_value, sizeof(m_value));
 
-                if(m_value[5] != 0x0d) { /* we only expect 4 hex digits */
+                if(m_value[5] != 0x0d) { /* we only expect 4 hex/binary digits */
 			dstate_setinfo("ups.debug.M", "%s", hexascdump(m_value+1, 7));
 		}
 
@@ -1225,8 +1269,8 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		dstate_setinfo("input.voltage.minimum", "%3d", hex2d(m_value+1, 2));
-		dstate_setinfo("input.voltage.maximum", "%3d", hex2d(m_value+3, 2));
+		dstate_setinfo("input.voltage.minimum", "%3d", hex_or_bin2d(m_value+1, 2));
+		dstate_setinfo("input.voltage.maximum", "%3d", hex_or_bin2d(m_value+3, 2));
 
 		/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
@@ -1257,8 +1301,10 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 		}
 
-		/* I'm guessing this is a calibration constant of some sort. */
-		dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
+		if( tl_model != TRIPP_LITE_SMART_3005 ) {
+			/* I'm guessing this is a calibration constant of some sort. */
+			dstate_setinfo("ups.temperature", "%.1f", (unsigned)(hex2d(t_value+1, 2)) * 0.3636 - 21);
+		}
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
