@@ -44,6 +44,7 @@ USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
+LINUX_I2C_DRIVERLIST = asem
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
@@ -73,6 +74,9 @@ if WITH_IPMI
 endif
 if WITH_MACOSX
    driverexec_PROGRAMS += $(MACOSX_DRIVERLIST)
+endif
+if WITH_LINUX_I2C
+   driverexec_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
 endif
 else
    driverexec_PROGRAMS += skel
@@ -218,6 +222,10 @@ nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 macosx_ups_LDADD = $(LDADD_DRIVERS)
 macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
 macosx_ups_SOURCES = macosx-ups.c
+
+# Asem
+asem_LDADD = $(LDADD_DRIVERS)
+asem_SOURCES = asem.c
 
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c

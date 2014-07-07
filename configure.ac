@@ -221,7 +221,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -235,6 +235,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
+		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -463,6 +464,35 @@ fi
 NUT_REPORT_FEATURE([build Mac OS X meta-driver],
 			[${nut_with_macosx_ups}], [${nut_macosx_ups_lib}],
 			[WITH_MACOSX], [Define to enable Mac OS X meta-driver])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with_linux_i2c
+dnl Check for i2c header on Linux, used for ASEM UPS driver
+NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
+if test "${nut_with_linux_i2c}" != no; then
+    case ${target_os} in
+        linux* )
+            AC_CHECK_DECLS(
+                [i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [nut_with_linux_i2c="yes"],
+                [nut_with_linux_i2c="no"],
+                [#include <stdio.h>
+                 #include <linux/i2c-dev.h>
+                ]
+            )
+            ;;
+        * )
+            nut_with_linux_i2c="no"
+            ;;
+    esac
+fi
+NUT_REPORT_FEATURE(
+    [build i2c based drivers],
+    [${nut_with_linux_i2c}],
+    [],
+    [WITH_LINUX_I2C],
+    [Define to enable I2C support]
+)
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ssl, and --with-nss or --with-openssl
