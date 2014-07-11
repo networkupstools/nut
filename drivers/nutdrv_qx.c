@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 #include "main.h"
 
@@ -834,24 +834,66 @@ static void	*fabula_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
-/* USB VendorID/ProductID match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
-static usb_device_id_t	qx_usb_id[] = {
-	{ USB_DEVICE(0x05b8, 0x0000), &cypress_subdriver },	/* Agiler UPS */
-	{ USB_DEVICE(0x0001, 0x0000), &krauler_subdriver },	/* Krauler UP-M500VA */
-	{ USB_DEVICE(0xffff, 0x0000), &krauler_subdriver },	/* Ablerex 625L USB */
-	{ USB_DEVICE(0x0665, 0x5161), &cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
-	{ USB_DEVICE(0x06da, 0x0002), &cypress_subdriver },	/* Online Yunto YQ450 */
-	{ USB_DEVICE(0x06da, 0x0003), &ippon_subdriver },	/* Mustek Powermust */
-	{ USB_DEVICE(0x06da, 0x0004), &cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
-	{ USB_DEVICE(0x06da, 0x0005), &cypress_subdriver },	/* Phoenixtec Innova RT */
-	{ USB_DEVICE(0x06da, 0x0201), &cypress_subdriver },	/* Phoenixtec Innova T */
-	{ USB_DEVICE(0x06da, 0x0601), &phoenix_subdriver },	/* Online Zinto A */
-	{ USB_DEVICE(0x0f03, 0x0001), &cypress_subdriver },	/* Unitek Alpha 1200Sx */
-	{ USB_DEVICE(0x14f0, 0x00c9), &phoenix_subdriver },	/* GE EP series */
-	{ USB_DEVICE(0x0001, 0x0000), &fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+/* USB device match structure */
+typedef struct {
+	const int	vendorID;		/* USB device's VendorID */
+	const int	productID;		/* USB device's ProductID */
+	const char	*vendor;		/* USB device's iManufacturer string */
+	const char	*product;		/* USB device's iProduct string */
+	void		*(*fun)(USBDevice_t *);	/* Handler for specific processing */
+} qx_usb_device_id_t;
+
+/* USB VendorID/ProductID/iManufacturer/iProduct match - note: rightmost comment is used for naming rules by tools/nut-usbinfo.pl */
+static qx_usb_device_id_t	qx_usb_id[] = {
+	{ USB_DEVICE(0x05b8, 0x0000),	NULL,	NULL,		&cypress_subdriver },	/* Agiler UPS */
+	{ USB_DEVICE(0xffff, 0x0000),	NULL,	NULL,		&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0x0665, 0x5161),	NULL,	NULL,		&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
+	{ USB_DEVICE(0x06da, 0x0002),	NULL,	NULL,		&cypress_subdriver },	/* Online Yunto YQ450 */
+	{ USB_DEVICE(0x06da, 0x0003),	NULL,	NULL,		&ippon_subdriver },	/* Mustek Powermust */
+	{ USB_DEVICE(0x06da, 0x0004),	NULL,	NULL,		&cypress_subdriver },	/* Phoenixtec Innova 3/1 T */
+	{ USB_DEVICE(0x06da, 0x0005),	NULL,	NULL,		&cypress_subdriver },	/* Phoenixtec Innova RT */
+	{ USB_DEVICE(0x06da, 0x0201),	NULL,	NULL,		&cypress_subdriver },	/* Phoenixtec Innova T */
+	{ USB_DEVICE(0x06da, 0x0601),	NULL,	NULL,		&phoenix_subdriver },	/* Online Zinto A */
+	{ USB_DEVICE(0x0f03, 0x0001),	NULL,	NULL,		&cypress_subdriver },	/* Unitek Alpha 1200Sx */
+	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,	NULL,		&phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(0x0001, 0x0000),	"MEC",	"MEC0003",	&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,	NULL,		&krauler_subdriver },	/* Krauler UP-M500VA */
 	/* End of list */
-	{ -1, -1, NULL }
+	{ -1,	-1,	NULL,	NULL,	NULL }
 };
+
+static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, USBDevice_t *device)
+{
+	int			retval = NOT_SUPPORTED;
+	qx_usb_device_id_t	*usbdev;
+
+	for (usbdev = usb_device_id_list; usbdev->vendorID != -1; usbdev++) {
+
+		if (usbdev->vendorID != device->VendorID)
+			continue;
+
+		/* Flag as possibly supported if we see a known vendor */
+		retval = POSSIBLY_SUPPORTED;
+
+		if (usbdev->productID != device->ProductID)
+			continue;
+
+		if (usbdev->vendor && (!device->Vendor || strcasecmp(usbdev->vendor, device->Vendor)))
+			continue;
+
+		if (usbdev->product && (!device->Product || strcasecmp(usbdev->product, device->Product)))
+			continue;
+
+		/* Call the specific handler, if it exists */
+		if (usbdev->fun != NULL)
+			(*usbdev->fun)(device);
+
+		return SUPPORTED;
+
+	}
+
+	return retval;
+}
 
 static int	device_match_func(USBDevice_t *hd, void *privdata)
 {
@@ -859,7 +901,7 @@ static int	device_match_func(USBDevice_t *hd, void *privdata)
 		return 1;
 	}
 
-	switch (is_usb_device_supported(qx_usb_id, hd))
+	switch (qx_is_usb_device_supported(qx_usb_id, hd))
 	{
 	case SUPPORTED:
 		return 1;
