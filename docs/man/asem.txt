@@ -1,0 +1,62 @@
+ASEM(8)
+=======
+
+NAME
+----
+asem - driver for UPS in ASEM PB1300
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+*asem* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+The *asem* driver supports the UPS in ASEM PB1300 embedded PCs.
+
+EXTRA ARGUMENTS
+---------------
+This driver also supports the following optional settings:
+
+*lb*='num'::
+Set the low battery threshold to 'num'.
+ 
+*hb*='num'::
+Set the high battery threshold to 'num'.
+
+INSTALLATION
+------------
+This driver is specific to the Linux i2c API, and requires the lm_sensors
+libi2c-dev or its equivalent to compile.
+
+//////////////////////////////////////////
+Optional: use DIAGNOSTICS to describe troubleshooting techniques that are
+longer than what can be conveniently described in the driver error messages.
+
+DIAGNOSTICS
+-----------
+
+//////////////////////////////////////////
+
+KNOWN ISSUES AND BUGS
+---------------------
+The driver shutdown function is not implemented, so other arrangements must be
+made to turn off the UPS.
+
+AUTHORS
+-------
+Giuseppe Corbelli <giuseppe.corbelli@copanitalia.com>
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+PB1300 specifications: http://www.asem.it/en/products/industrial-automation/box-pcs/performance/pb1300/
+
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

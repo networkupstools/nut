@@ -91,7 +91,7 @@
 "ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
 "ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
 
-"ASEM SPA"  "UPS"   "5" "PB1300 UPS"    "UPS"   "asem"
+"ASEM SPA"  "UPS"   "5" "PB1300 UPS"    "i2c"   "asem"
 
 "ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"

@@ -516,6 +516,15 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
+SRC_LINUX_I2C_PAGES = asem.txt
+MAN_LINUX_I2C_PAGES = asem.8
+
+if WITH_LINUX_I2C
+   man8_MANS += $(LINUX_I2C_PAGES)
+endif
+
+HTML_LINUX_I2C_MANS = asem.html
+
 # SOME_DRIVERS
 endif
 
@@ -533,7 +542,8 @@ MAN_MANS = \
 	$(MAN_NETXML_PAGES) \
 	$(MAN_POWERMAN_PAGES) \
 	$(MAN_IPMIPSU_PAGES) \
-	$(MAN_MACOSX_PAGES)
+	$(MAN_MACOSX_PAGES) \
+	$(MAN_LINUX_I2C_PAGES)
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
@@ -550,6 +560,7 @@ EXTRA_DIST = \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
+	$(SRC_LINUX_I2C_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
@@ -565,7 +576,8 @@ HTML_MANS = \
 	$(HTML_NETXML_MANS) \
 	$(HTML_POWERMAN_MANS) \
 	$(HTML_IPMIPSU_MANS) \
-	$(HTML_MACOSX_MANS)
+	$(HTML_MACOSX_MANS) \
+	$(HTML_LINUX_I2C_MANS)
 
 all:
 
