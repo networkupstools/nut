@@ -1142,6 +1142,12 @@ dnl check for spell checking deps
 AC_PATH_PROGS([ASPELL], [aspell], [none])
 AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
 
+dnl AIX system
+AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
+
+dnl processor type
+AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
@@ -1239,6 +1245,7 @@ AC_OUTPUT([
  lib/libnutclient.pc
  lib/libnutscan.pc
  lib/Makefile
+ scripts/Aix/nut-aix.spec
  scripts/augeas/Makefile
  scripts/augeas/nutnutconf.aug
  scripts/augeas/nutupsconf.aug
