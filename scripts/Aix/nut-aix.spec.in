@@ -78,7 +78,6 @@ necessary to develop NUT client applications.
 
 %configure \
     --with-all \
-    --without-hal \
     --without-powerman \
     --without-avahi \
     --without-usb \
@@ -248,7 +247,7 @@ exit 0
 %{_mandir}/man5/upsd.conf.5
 %{_mandir}/man5/upsd.users.5
 %{_mandir}/man8/apcsmart.8
-%{_mandir}/man8/bcmxcp.8*
+%{_mandir}/man8/bcmxcp.8
 #%{_mandir}/man8/bcmxcp_usb.8
 %{_mandir}/man8/belkin.8
 %{_mandir}/man8/bestfcom.8
@@ -282,12 +281,12 @@ exit 0
 #%{_mandir}/man8/richcomm_usb.8
 %{_mandir}/man8/safenet.8
 %{_mandir}/man8/snmp-ups.8
-%{_mandir}/man8/solis.8*
+%{_mandir}/man8/solis.8
 %{_mandir}/man8/tripplite.8
 #%{_mandir}/man8/tripplite_usb.8
 %{_mandir}/man8/tripplitesu.8
 %{_mandir}/man8/victronups.8
-%{_mandir}/man8/upscode2.8*
+%{_mandir}/man8/upscode2.8
 %{_mandir}/man8/upsd.8
 %{_mandir}/man8/upsdrvctl.8
 
@@ -324,5 +323,8 @@ exit 0
 %{_libdir}/pkgconfig/libupsclient.pc
 
 %changelog
+* Tue Jul 12 2014 Arnaud Quette <arnaud.quette@free.fr> - 2.7.2-1.master
+- Minor adjustments
+
 * Tue Jul 12 2011 Arnaud Quette <ArnaudQuette@Eaton.com> - 2.6.5-1.trunk
 - derive from RHEL 2.6.1-2, and adapt for Aix 6.1
