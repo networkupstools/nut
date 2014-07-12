@@ -21,12 +21,11 @@
  * TODO list:
  * - everything...
  * - create the format for the "NUT Modbus definition file"
- * - initups
- * - initinfo
- * - updateinfo
- * - (to be completed)
+ * - complete initups
+ * - create initinfo
+ * - create updateinfo
  * 
- * "NUT Modbus definition file"
+ * "NUT Modbus definition file"		xxx.modbus
  * # A comment header may contain information such as
  * # - author and device information
  * # - default communication settings (baudrate, parity, data_bit, stop_bit)
@@ -183,7 +182,8 @@ void upsdrv_initups(void)
 	upsdebugx(2, "upsdrv_initups");
 
 	/* Determine if it's a RTU (serial) or ethernet (TCP) connection */
-	/* FIXME: need to address windows COM port too! */
+	/* FIXME: need to address windows COM port too!
+	 * || !strncmp(device_path[0], "COM", 3) */
 	if (device_path[0] == '/') {
 		upsdebugx(2, "upsdrv_initups: RTU (serial) device");
 
@@ -194,6 +194,7 @@ void upsdrv_initups(void)
 			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 	}
 	/* else {
+		 * upscli_splitaddr(device_path[0] ? device_path[0] : "localhost", &hostname, &port
 		upsdebugx(2, "upsdrv_initups: TCP (network) device");
 		ctx = modbus_new_tcp(device_path, 1502); 
 		if (ctx == NULL)
