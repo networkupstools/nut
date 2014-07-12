@@ -1,0 +1,330 @@
+%define nut_id @RUN_AS_USER@
+%define nut_group @RUN_AS_GROUP@
+
+%define _prefix /usr/local/ups
+%define _docdir %{_datadir}/doc
+
+%define confdir %{_prefix}/etc
+%define rcdir   /etc/rc.d
+%define initdir %{rcdir}/init.d
+%define cgidir  /var/www/nut-cgi-bin
+%define piddir  /var/run/nut
+
+Summary: Network UPS Tools
+Name: nut
+Version: @PACKAGE_VERSION@
+Release: 1
+Group: Applications/System
+License: GPLv2+
+Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Url: http://www.networkupstools.org/
+Source: http://www.networkupstools.org/source/@TREE_VERSION@/%{name}-%{version}.tar.gz
+Source1: nut.init
+#Source2: ups.sysconfig
+#Source3: nut-client.tmpfiles
+
+
+# FIXME: adjust according to what is available through RPM on Aix
+BuildRequires: libtool
+BuildRequires: net-snmp-devel
+BuildRequires: openssl-devel
+BuildRequires: pkgconfig
+
+# AIX BUILDERS, PLEASE NOTE:
+#  If building with xlc version 3.6.X rather than gcc, you must ensure
+# you have the following PTF's installed on your system, or
+# you will see a runtime error that says:
+#    "Expected </Directory> but saw </Directory>"
+# PTFS needed: U462006 U462007 U462023 U462024 U462025 U462026 U462027
+# Refer to http://service.software.ibm.com/support/rs6000, or
+# set CC=gcc to force use of the GCC compiler.
+# 
+# %define stdlib lib
+# %define liblink ../..
+# %define DEFCC xlc
+
+%description
+Network UPS Tools (NUT) is a client/server monitoring system that allows
+computers to share uninterruptible power supply (UPS) and power distribution
+unit (PDU) hardware. Clients access the hardware through the server, and are
+notified whenever the power status changes.
+
+%package client
+Group: Applications/System
+Summary: Network UPS Tools client monitoring utilities
+#Requires(post): chkconfig
+#Requires(preun): chkconfig
+#Requires(pre): shadow-utils
+
+%description client
+This package includes the client utilities that are required to monitor a
+ups that the client host has access to, but where the UPS is physically
+attached to a different computer on the network.
+
+%package devel
+Group: Development/Libraries
+Summary: Development files for NUT Client
+Requires: %{name}-client = %{version}-%{release} webserver openssl-devel
+
+%description devel
+This package contains the development header files and libraries
+necessary to develop NUT client applications.
+
+%prep
+%setup -q
+
+%build
+/usr/bin/rm configure.in
+
+%configure \
+    --with-all \
+    --without-powerman \
+    --without-avahi \
+    --without-usb \
+    --without-ipmi \
+    --without-cgi \
+    --datadir=%{_datadir}/%{name} \
+    --with-user=%{nut_id} \
+    --with-group=%{nut_group} \
+    --with-statepath=%{piddir} \
+    --with-pidpath=%{piddir} \
+    --with-altpidpath=%{piddir} \
+    --sysconfdir=%{confdir} \
+    --with-cgipath=%{cgidir} \
+    --with-drvpath=%{_sbindir} \
+    --with-pkgconfig-dir=%{_libdir}/pkgconfig \
+    --disable-static \
+    --libdir=%{_libdir} \
+    --program-transform-name=s,^%{_target_platform}-,, \
+    LDFLAGS="$LDFLAGS -Wl,-brtl" \
+#    --with-libltdl-includes=/opt/freeware/share/libtool/libltdl/libltdl/ \
+#    --with-libltdl-libs=/opt/freeware/lib \
+#    --with-doc \ asciidoc >= 8.6.3 is required
+
+# FIXME: remove rpath?
+#sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' libtool
+#sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' libtool
+
+make %{?_smp_mflags}
+
+%install
+/usr/bin/rm -rf %{buildroot}
+
+/usr/bin/mkdir -p %{buildroot}%{_sbindir} \
+         %{buildroot}%{piddir} \
+         %{buildroot}%{_libdir}/ups \
+         %{buildroot}%{initdir} \
+         %{buildroot}%{_libexecdir}
+
+make install DESTDIR=%{buildroot}
+
+install -m 755 %{SOURCE1} %{buildroot}%{initdir}/ups
+
+/usr/bin/rm -f %{buildroot}%{_libdir}/*.la
+
+# Remove ".sample" suffix from the config filenames
+#pushd conf; 
+#make install DESTDIR=%{buildroot}
+#for file in %{buildroot}%{confdir}/*.sample
+#do
+#   mv $file %{buildroot}%{confdir}/`basename $file .sample`
+#done
+#popd
+
+%pre
+/usr/bin/test -L %{_libdir}/ups || \
+/usr/bin/mkdir -p %{_libdir}/ups
+/usr/bin/grep -qc %{nut_group} /etc/group || \
+/usr/bin/mkgroup %{nut_group}
+/usr/bin/grep -qc %{nut_id} /etc/passwd || \
+/usr/sbin/useradd -c "Network UPS Tools" \
+        -g %{nut_group} -d %{_libdir}/ups %{nut_id}
+/usr/bin/test -L %{piddir} || \
+/usr/bin/mkdir -p %{piddir}
+/usr/bin/chmod 750 %{piddir}
+/usr/bin/chown %{nut_id}:%{nut_group} %{piddir}
+
+%post
+/usr/bin/test -L %{rcdir}/rc2.d/Sups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Sups
+/usr/bin/test -L %{rcdir}/rc2.d/Kups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Kups
+exit 0
+
+%preun
+%{initdir}/ups stop
+if [ "$1" = "0" ]; then
+    /usr/bin/rm -f %{rcdir}/rc2.d/[SK]ups
+fi
+exit 0
+
+%postun
+if [ "$1" = "0" ]; then
+    /usr/bin/grep -qc %{nut_id} /etc/passwd && \
+    /usr/sbin/userdel %{nut_id}
+    /usr/bin/grep -qc %{nut_group}: /etc/group && \
+    /usr/sbin/rmgroup %{nut_group}
+    /usr/bin/test -L %{piddir}  && \
+    /usr/bin/rm -rf %{piddir}
+    /usr/bin/test -L %{_libdir}/ups && \
+    /usr/bin/rm -rf %{_libdir}/ups
+fi
+exit 0
+
+%pre client
+/usr/bin/grep -qc %{nut_group}: /etc/group || \
+/usr/bin/mkgroup %{nut_group}
+/usr/bin/grep -qc %{nut_id} /etc/passwd || \
+/usr/sbin/useradd -c "Network UPS Tools" \
+        -g %{nut_group} -d %{_libdir}/ups %{nut_id}
+/usr/bin/test -L %{piddir} || \
+/usr/bin/mkdir -p %{piddir}
+/usr/bin/chmod 750 %{piddir}
+/usr/bin/chown %{nut_id}:%{nut_group} %{piddir}
+
+%post client
+/usr/bin/test -L %{rcdir}/rc2.d/Sups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Sups
+/usr/bin/test -L %{rcdir}/rc2.d/Kups || \
+/usr/bin/ln -s %{initdir}/ups %{rcdir}/rc2.d/Kups
+#%{initdir}/ups start
+exit 0
+
+%preun client
+%{initdir}/ups stop
+remove="no"
+if /usr/bin/rpm -q nut >/dev/null 2>&1; then
+    remove="no"
+elif [ "$1" = "0" ]; then
+    remove="yes"
+fi
+if [ "$remove" = "yes" ]; then
+    /usr/bin/rm -f %{rcdir}/rc2.d/[SK]ups
+    /usr/bin/test -L %{piddir}  && \
+    /usr/bin/rm -rf %{piddir}
+fi
+exit 0
+
+%postun client
+remove="no"
+if /usr/bin/rpm -q nut >/dev/null 2>&1; then
+    remove="no"
+elif [ "$1" = "0" ]; then
+    remove="yes"
+fi
+if [ "$remove" = "yes" ]; then
+    /usr/bin/grep -qc %{nut_id} /etc/passwd && \
+    /usr/sbin/userdel %{nut_id}
+    /usr/bin/grep -qc %{nut_group}: /etc/group && \
+    /usr/sbin/rmgroup %{nut_group}
+#else
+#    %{initdir}/ups start
+fi
+exit 0
+
+%clean
+/usr/bin/rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root,-)
+%attr(755,root,root) %{initdir}/ups
+%doc COPYING ChangeLog AUTHORS MAINTAINERS README docs UPGRADING INSTALL NEWS
+%config(noreplace) %attr(640,root,%nut_group) %{confdir}/nut.conf.sample
+%config(noreplace) %attr(640,root,%nut_group) %{confdir}/ups.conf.sample
+%config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsd.conf.sample
+%config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsd.users.sample
+%dir %attr(750,%nut_id,%nut_group) %{_libdir}/ups
+#%ghost %{piddir}
+%{_sbindir}/*
+%{_bindir}/upslog
+%{_bindir}/nutconf
+%{_libdir}/libnutscan.so*
+%{_libdir}/libupsclient.so*
+%{_datadir}/%{name}/cmdvartab
+%{_datadir}/%{name}/driver.list
+%{_mandir}/man5/nut.conf.5
+%{_mandir}/man5/ups.conf.5
+%{_mandir}/man5/upsd.conf.5
+%{_mandir}/man5/upsd.users.5
+%{_mandir}/man8/apcsmart.8
+%{_mandir}/man8/bcmxcp.8
+#%{_mandir}/man8/bcmxcp_usb.8
+%{_mandir}/man8/belkin.8
+%{_mandir}/man8/bestfcom.8
+%{_mandir}/man8/belkinunv.8
+%{_mandir}/man8/bestfortress.8
+%{_mandir}/man8/bestups.8
+%{_mandir}/man8/bestuferrups.8
+%{_mandir}/man8/blazer.8
+%{_mandir}/man8/clone.8
+%{_mandir}/man8/dummy-ups.8
+%{_mandir}/man8/everups.8
+%{_mandir}/man8/etapro.8
+%{_mandir}/man8/gamatronic.8
+%{_mandir}/man8/genericups.8
+%{_mandir}/man8/isbmex.8
+%{_mandir}/man8/ivtscd.8
+%{_mandir}/man8/liebert.8
+%{_mandir}/man8/liebert-esp2.8
+%{_mandir}/man8/masterguard.8
+%{_mandir}/man8/metasys.8
+%{_mandir}/man8/microdowell.8
+%{_mandir}/man8/mge-utalk.8
+%{_mandir}/man8/mge-shut.8
+%{_mandir}/man8/nutupsdrv.8
+%{_mandir}/man8/oneac.8
+%{_mandir}/man8/optiups.8
+%{_mandir}/man8/powercom.8
+#%{_mandir}/man8/powerman-pdu.8
+%{_mandir}/man8/powerpanel.8
+%{_mandir}/man8/rhino.8
+#%{_mandir}/man8/richcomm_usb.8
+%{_mandir}/man8/safenet.8
+%{_mandir}/man8/snmp-ups.8
+%{_mandir}/man8/solis.8
+%{_mandir}/man8/tripplite.8
+#%{_mandir}/man8/tripplite_usb.8
+%{_mandir}/man8/tripplitesu.8
+%{_mandir}/man8/victronups.8
+%{_mandir}/man8/upscode2.8
+%{_mandir}/man8/upsd.8
+%{_mandir}/man8/upsdrvctl.8
+
+%files client
+%doc COPYING
+%defattr(-,root,root)
+%attr(755,root,root) %{initdir}/ups
+%dir %{confdir}
+%config(noreplace) %attr(640,root,%nut_group) %{confdir}/upsmon.conf.sample
+%config(noreplace) %attr(640,root,%nut_group) %{confdir}/upssched.conf.sample
+%dir %attr(750,%nut_id,%nut_group) %{_libdir}/ups
+#%ghost %{piddir}
+%{_bindir}/upsc
+%{_bindir}/upscmd
+%{_bindir}/upsrw
+%{_sbindir}/upsmon
+%{_sbindir}/upssched
+%{_bindir}/upssched-cmd
+%{_libdir}/libupsclient.so*
+%{_mandir}/man5/upsmon.conf.5
+%{_mandir}/man5/upssched.conf.5
+%{_mandir}/man8/upsc.8
+%{_mandir}/man8/upscmd.8
+%{_mandir}/man8/upsrw.8
+%{_mandir}/man8/upslog.8
+%{_mandir}/man8/upsmon.8
+%{_mandir}/man8/upssched.8
+
+%files devel
+%defattr(-,root,root,-)
+%{_includedir}/*
+%{_mandir}/man3/upscli*
+%{_libdir}/libupsclient.so*
+%{_libdir}/pkgconfig/libupsclient.pc
+
+%changelog
+* Tue Jul 12 2014 Arnaud Quette <arnaud.quette@free.fr> - 2.7.2-1.master
+- Minor adjustments
+
+* Tue Jul 12 2011 Arnaud Quette <ArnaudQuette@Eaton.com> - 2.6.5-1.trunk
+- derive from RHEL 2.6.1-2, and adapt for Aix 6.1
