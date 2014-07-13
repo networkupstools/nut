@@ -998,7 +998,8 @@
 "Tripp Lite"	"ups"	"3"	"SMART3000RMXL2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=4418
 "Tripp Lite"	"ups"	"3"	"SMART3000RMXLN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5425
 "Tripp Lite"	"ups"	"3"	"SMART3000SLT"	"USB (protocol 3013)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3490
-"Tripp Lite"	"ups"	"3"	"SMART500RT1U"	"USB (protocol 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2853
+"Tripp Lite"	"ups"	"2"	"SMART500RT1U"	"USB (older; product ID 0001, protocol 3005)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"SMART500RT1U"	"USB (newer; protocol/product ID 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2853
 "Tripp Lite"	"ups"	"3"	"SMART550USB"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2002
 "Tripp Lite"	"ups"	"3"	"SMART550USBWD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2591
 "Tripp Lite"	"ups"	"3"	"SMART750RMXL2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3020
