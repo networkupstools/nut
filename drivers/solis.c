@@ -610,7 +610,7 @@ static void ScanReceivePack( void )
 
 	/* Autonomy */
 
-	if( ( Autonomy < 5 ) )
+	if( Autonomy < 5 )
 		LowBatt = true;
 	else
 		LowBatt = false;
@@ -618,7 +618,7 @@ static void ScanReceivePack( void )
 	UpsPowerFactor = 700;
 
 	/* input 110V or 220v */
-	if(  ( InputValue == 0 ) )  {
+	if(  InputValue == 0 )  {
 		InDownLim = 75;
 		InUpLim = 150;
 		NomInVolt = 110;
@@ -702,7 +702,7 @@ CommReceive(const char *bufptr,  int size)
 
 	int i, CheckSum, i_end;
 
-	if(  ( size==25 ) )
+	if(  size==25 )
 		Waiting = 0;
 	
 	switch( Waiting )
@@ -743,7 +743,11 @@ CommReceive(const char *bufptr,  int size)
 
 			switch( SolisModel )
 			{
-			case 10:
+			case 10: /* Added for APC-Branded Microsol units */
+				{
+				ScanReceivePack();	
+				break;	
+				}
 			case 11:
 			case 12:
 			case 13:
@@ -885,26 +889,30 @@ static void getbaseinfo(void)
 
 	switch( SolisModel )
 	{
-	case 10:
+	case 10: /* Added for APC-Microsol units */
+	{
+		Model = "Back-UPS 1200 BR";
+		break;
+	}
 	case 11:
 	case 12:
 	{
-		strcpy(Model, "Solis 1.0");
+		Model = "Solis 1.0";
 		break;
 	}
 	case 13:
 	{
-		strcpy(Model, "Solis 1.5");
+		Model = "Solis 1.5";
 		break;
 	}
 	case 14:
 	{
-		strcpy(Model, "Solis 2.0");
+		Model = "Solis 2.0";
 		break;
 	}
 	case 15:
 	{
-		strcpy(Model, "Solis 3.0");
+		Model = "Solis 3.0";
 		break;
 	}
 	}

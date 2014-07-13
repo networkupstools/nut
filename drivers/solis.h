@@ -309,7 +309,7 @@ unsigned char DumpPack[242];
 */
 
 /* Identification */
-char Model[12];
+const char *Model;
 int SolisModel, imodel;
 int InputValue, Out220;
 

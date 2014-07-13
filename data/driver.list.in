@@ -48,6 +48,8 @@
 
 "AEG Power Solutions"	"ups"	"2"	"PROTECT HOME"	""	"blazer_ser or blazer_usb"
 
+"APC"	"ups"	"2"	"Back-UPS 1200BR (Microsol)"	""	"solis"
+"APC"	"ups"	"2"	"Back-UPS BZ2200BI-BR (Microsol)"	""	"solis"
 "APC"	"ups"	"1"	"Back-UPS Pro"	""	"apcsmart"
 "APC"	"ups"	"1"	"Matrix-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
@@ -460,6 +462,8 @@
 
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
+
+"Lacerda"	"ups"	"2"	"New Orion 800VA"	"USB"	"blazer_usb"
 
 "LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
 
