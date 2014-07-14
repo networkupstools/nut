@@ -98,6 +98,16 @@ RETURN VALUE
 The *upscli_get()* function returns 0 on success, or -1 if an
 error occurs.
 
+If *upsd* disconnects, you may need to handle or ignore `SIGPIPE` in order to
+prevent your program from terminating the next time that the library writes to
+the disconnected socket. The following code in your initialization function
+will allow the *upscli_get()* call to return an error in that case:
+
+   #include <signal.h>
+   ...
+   signal (SIGPIPE, SIG_IGN);
+   ...
+
 SEE ALSO
 --------
 linkman:upscli_list_start[3], linkman:upscli_list_next[3],
