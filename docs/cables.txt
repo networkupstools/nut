@@ -72,7 +72,7 @@ Protection Station, ...
 
 image::images/cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
 
-DB9-RJ45 cable
+USB-RJ45 cable
 ^^^^^^^^^^^^^^
 
 This cable is used also on the more recent models, including Ellipse MAX,
