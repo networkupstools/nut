@@ -154,6 +154,16 @@ system from getting stuck due to a broken driver or UPS.
 +
 The default is 45 seconds.
 
+*usb_set_altinterface*[='altinterface']::
+
+Optional.  Force the USB code to call `usb_set_altinterface(0)`, as was done in
+NUT 2.7.2 and earlier.  This should not be necessary, since the default for
+`bAlternateSetting` (as shown in lsusb) is zero on all USB devices seen to
+date.  However, this redundant call to `usb_set_altinterface()` prevents
+certain UPSes from working on Mac OS X. If your UPS requires explicitly setting
+the alternate interface, include this flag, and email the nut-upsdev list with
+details about your UPS and operating system.
+
 *default.<variable>*::
 
 Optional.  Set a default value for <variable> which is used in case the UPS
