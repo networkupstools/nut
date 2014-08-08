@@ -134,7 +134,7 @@ IPMI OPTIONS
 Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default).
 
 *-B* | *--password* 'password'::
-Specify the password to use when authenticationg with the remote host (mandatory for IPMI over LAN. No default).
+Specify the password to use when authenticating with the remote host (mandatory for IPMI over LAN. No default).
 
 *-d* | *--authType* 'authentication type'::
 Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5).
