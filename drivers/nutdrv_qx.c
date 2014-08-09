@@ -1264,14 +1264,8 @@ void	upsdrv_makevartable(void)
 
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
-	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
-
-	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
-	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
-	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
-
-	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
 #endif	/* QX_USB */

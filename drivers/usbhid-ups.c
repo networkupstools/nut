@@ -737,12 +737,8 @@ void upsdrv_makevartable(void)
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
-	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
-	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
-	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	nut_usb_addvars();
+
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
 #else

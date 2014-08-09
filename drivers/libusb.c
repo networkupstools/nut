@@ -49,6 +49,22 @@ upsdrv_info_t comm_upsdrv_info = {
 
 static void libusb_close(usb_dev_handle *udev);
 
+/*! Add USB-related driver variables with addvar().
+ * This removes some code duplication across the USB drivers.
+ */
+void nut_usb_addvars(void)
+{
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+}
+
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
  * using "char" is trouble.  Likewise, sizes should never be negative.
  */
