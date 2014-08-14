@@ -711,7 +711,7 @@ AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 	nut_have_asciidoc="no"
 ])
 
-AC_MSG_CHECKING([if xsltproc is present])
+AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
 if test -n "${XSLTPROC}"; then
   AC_MSG_RESULT(yes)
 else
@@ -719,7 +719,13 @@ else
   nut_have_asciidoc="no"
 fi
 
-
+AC_MSG_CHECKING([if xmllint is present (mandatory for man page regeneration)])
+if test -n "${XMLLINT}"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+  nut_have_asciidoc="no"
+fi
 
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
