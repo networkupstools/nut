@@ -617,18 +617,18 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@echo "Not (re)building $@ manual page, since 'asciidoc' was not found."
+	@echo "Not (re)building $@ manual page, since 'asciidoc' or 'xsltproc' were not found."
 
 .txt.1:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' or 'xsltproc' were not found."
 
 .txt.3:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' or 'xsltproc' were not found."
 
 .txt.5:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' or 'xsltproc' were not found."
 
 .txt.8:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@echo "Using existing $@ manual page, since 'asciidoc' or 'xsltproc' were not found."
 
 endif !HAVE_ASCIIDOC
