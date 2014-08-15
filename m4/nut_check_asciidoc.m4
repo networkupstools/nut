@@ -35,6 +35,23 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		AC_MSG_RESULT(${DBLATEX_VERSION} found)
 	fi
 
-	dnl FIXME check for xsltproc, xmlllint, etc for chunked HTML and man pages
+	AC_PATH_PROGS([XSLTPROC], [xsltproc])
+	if test -n "${XSLTPROC}"; then
+		AC_MSG_CHECKING([for xsltproc version])
+		XSLTPROC_VERSION="`${XSLTPROC} --version 2>/dev/null`"
+		dnl strip 'xsltproc version ' from version string
+		XSLTPROC_VERSION="${XSLTPROC_VERSION##* }"
+		AC_MSG_RESULT(${XSLTPROC_VERSION} found)
+	fi
+
+	AC_PATH_PROGS([XMLLINT], [xmllint])
+	if test -n "${XMLLINT}"; then
+		AC_MSG_CHECKING([for xmllint version])
+		XMLLINT_VERSION="`${XMLLINT} --version 2>/dev/null`"
+		dnl strip 'xmllint version ' from version string
+		XMLLINT_VERSION="${XMLLINT_VERSION##* }"
+		AC_MSG_RESULT(${XMLLINT_VERSION} found)
+	fi
+
 fi
 ])
