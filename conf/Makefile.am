@@ -2,7 +2,7 @@
 
 INSTALL_0600 = $(INSTALL) -m 0600
 
-SECFILES = upsmon.conf.sample upsd.conf.sample upsd.users.sample
+SECFILES = upsd.conf.sample upsd.users.sample
 PUBFILES = nut.conf.sample ups.conf.sample
 CGIPUB = hosts.conf.sample upsset.conf.sample upsstats.html.sample	\
  upsstats-single.html.sample
