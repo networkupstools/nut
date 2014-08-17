@@ -169,7 +169,7 @@ sub gen_usb_files
 			print $out_devd "\tmatch \"vendor\"\t\t\"$vendorId\";\n";
 			#
 			print $out_devd "\tmatch \"product\"\t\t\"$productId\";\n";
-			print $out_devd "\taction \"chgrp \@RUN_AS_GROUP\@ /dev/\$device-name*; chmod g+rw /dev/\$device-name*\";\n";
+			print $out_devd "\taction \"chgrp \@RUN_AS_GROUP\@ /dev/\$cdev; chmod g+rw /dev/\$cdev\";\n";
 			print $out_devd "};\n";
 
 			# UPower device entry (only for USB/HID devices!)
