@@ -1,7 +1,7 @@
 ##############################################################################################################
 # Uninterruptible Power Supplies with USB HID interfaces
 #
-# to keep up to date, monitor: http://svn.debian.org/wsvn/nut/trunk/scripts/upower/95-upower-hid.rules
+# to keep up to date, monitor https://github.com/networkupstools/nut/commits/master/scripts/upower/95-upower-hid.rules
 
 # only support USB, else ignore
 SUBSYSTEM!="usb", GOTO="up_hid_end"
