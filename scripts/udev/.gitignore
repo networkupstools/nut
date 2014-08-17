@@ -1,5 +1,5 @@
 /52-nut-ipmipsu.rules
-/52-nut-usbups.rules
+/62-nut-usbups.rules
 /nut-ipmipsu.rules
 /nut-usbups.rules
 /nut-usbups.rules.in
