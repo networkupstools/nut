@@ -111,7 +111,7 @@ sub gen_usb_files
 	open my $outputUPower, ">$outputUPower" || die "error $outputUPower : $!";
 	print $outputUPower '##############################################################################################################'."\n";
 	print $outputUPower '# Uninterruptible Power Supplies with USB HID interfaces'."\n#\n";
-	print $outputUPower '# to keep up to date, monitor: http://svn.debian.org/wsvn/nut/trunk/scripts/upower/95-upower-hid.rules'."\n\n";
+	print $outputUPower '# to keep up to date, monitor https://github.com/networkupstools/nut/commits/master/scripts/upower/95-upower-hid.rules'."\n\n";
 	print $outputUPower '# only support USB, else ignore'."\n".'SUBSYSTEM!="usb", GOTO="up_hid_end"'."\n\n";
 	print $outputUPower '# if usbraw device, ignore'."\n".'KERNEL!="hiddev*", GOTO="up_hid_end"'."\n\n";
 	print $outputUPower '# if an interface, ignore'."\n".'ENV{DEVTYPE}=="usb_interface", GOTO="up_hid_end"'."\n\n";
