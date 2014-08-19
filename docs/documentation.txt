@@ -67,5 +67,5 @@ These are writeups by users of the software.
 News articles and Press releases
 --------------------------------
 
-- link:http://www.crn.com/white-box/199000818?pgno=1[Linux UPS Without Tears] '(A. Lizard)'
-- link:http://networking.earthweb.com/netsysm/article.php/10954_3295841_1[Graceful UPS shutdowns on Linux] '(Carla Schroder)'
+- link:http://www.crn.com/news/channel-programs/199000818/linux-ups-without-tears.htm[Linux UPS Without Tears] '(A. Lizard)'
+- link:http://www.enterprisenetworkingplanet.com/netsysm/article.php/3295841/Graceful-UPS-Shutdowns-on-Linux.htm[Graceful UPS shutdowns on Linux] '(Carla Schroder)'
