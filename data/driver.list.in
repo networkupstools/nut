@@ -486,6 +486,7 @@
 
 "Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"blazer_ser"
 
+"Mecer"	"ups"	"2"	"ME-1000-WTU"	"USB"	"blazer_usb"	# http://www.comx-computers.co.za/download/mecer/ME-1000-WTU.pdf
 "Mecer"	"ups"	"2"	"ME-2000"	""	"blazer_ser"
 
 "Meta System"	"ups"	"1"	"HF Line"	"1..4 boards"	"metasys"
