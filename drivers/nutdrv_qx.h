@@ -71,7 +71,8 @@ typedef struct item_t {
 						 * If QX_FLAG_SETVAR is set the value given by the user will be checked against these infos. */
 	const char	*command;		/* Command sent to the UPS to get answer/to execute an instant command/to set a variable */
 
-	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime */
+	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime.
+						 * If you expect a nonvalid C string (e.g.: inner '\0's) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a preprocess_answer() function */
 	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there’s no minimum length to look after. */
 	const char	leading;		/* Expected leading character of the answer (optional) */
 
@@ -86,6 +87,10 @@ typedef struct item_t {
 						 * If QX_FLAG_CMD: default command value */
 
 	unsigned long	qxflags;		/* Driver's own flags */
+
+	int		(*preprocess_answer)(struct item_t *item, const int len);	/* Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...)
+						 * This function is given the currently processed item (item) with the answer we got from the UPS unmolested and already stored in item->answer and the length of that answer (len).
+						 * Return -1 in case of errors, else the length of the newly allocated item->answer (from now on, treated as a null-terminated string). */
 
 	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);	/* Function to preprocess the data from/to the UPS
 						 * This function is given the currently processed item (item), a char array (value) and its size_t (valuelen).
@@ -113,8 +118,12 @@ typedef struct item_t {
 
 /* Testing struct */
 typedef struct {
-	const char	*cmd;		/* Command to match */
-	const char	*answer;	/* Answer for that command */
+	const char	*cmd;			/* Command to match */
+	const char	answer[SMALLBUF];	/* Answer for that command.
+						 * Note: if 'answer' contains inner '\0's, in order to preserve them, 'answer_len' as well as an item_t->preprocess_answer() function must be set */
+	const int	answer_len;		/* Answer length:
+						 * - if set to -1 -> auto calculate answer length (treat 'answer' as a null-terminated string)
+						 * - otherwise -> use the provided length (if reasonable) and preserve inner '\0's (treat 'answer' as a sequence of bytes till the item_t->preprocess_answer() function gets called) */
 } testing_t;
 
 /* Subdriver interface */

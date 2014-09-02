@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 #include "main.h"
 
@@ -439,9 +439,10 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, &tmp[i], 8, 5000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
+
 	}
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
@@ -449,7 +450,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -457,9 +458,13 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
+
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], ret);
+
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
@@ -490,11 +495,12 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		if (ret < 0) {
-			upsdebugx(3, "flush: %s", usb_strerror());
+			upsdebugx(3, "flush: %s (%d)", usb_strerror(), ret);
 			break;
 		}
 
 		upsdebug_hex(4, "dump", tmp, ret);
+
 	}
 
 	/* Send command */
@@ -508,9 +514,10 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, &tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
+
 	}
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
@@ -518,7 +525,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (strchr(buf, '\r') == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
 
 		/* Read data in 8-byte chunks */
 		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
@@ -526,9 +533,13 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
+
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], ret);
+
 	}
 
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
@@ -539,8 +550,8 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[64];
-	int	ret, len;
-	size_t	i;
+	int	ret;
+	size_t	i, len;
 
 	/* Send command */
 	snprintf(tmp, sizeof(tmp), "%s", cmd);
@@ -551,9 +562,10 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x2, 0, &tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out");
+			upsdebugx(3, "send: %s (%d)", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out", ret);
 			return ret;
 		}
+
 	}
 
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
@@ -563,23 +575,36 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out");
+		upsdebugx(3, "read: %s (%d)", (ret != -ETIMEDOUT) ? usb_strerror() : "Connection timed out", ret);
 		return ret;
 	}
 
-	/*
-	 * As Ippon will always return 64 bytes in response, we have to
-	 * calculate and return length of actual response data here.
-	 * Empty response will look like 0x00 0x0D, otherwise it will be
-	 * data string terminated by 0x0D.
-	 */
-	len = (int)strcspn(tmp, "\r");
-	upsdebugx(3, "read: %.*s", len, tmp);
-	if (len > 0) {
-		len ++;
+	/* As Ippon will always return 64 bytes in response, we have to calculate and return length of actual response data here.
+	 * Empty response will look like 0x00 0x0D, otherwise it will be data string terminated by 0x0D. */
+
+	for (i = 0, len = 0; i < (size_t)ret; i++) {
+
+		if (tmp[i] != '\r')
+			continue;
+
+		len = ++i;
+		break;
+
 	}
-	snprintf(buf, buflen, "%.*s", len, tmp);
-	return len;
+
+	/* Just in case there wasn't any '\r', fallback to string length, if any */
+	if (!len)
+		len = strlen(tmp);
+
+	upsdebug_hex(5, "read", tmp, (int)len);
+	upsdebugx(3, "read: %.*s", (int)strcspn(tmp, "\r"), tmp);
+
+	len = len < buflen ? len : buflen - 1;
+
+	memset(buf, 0, buflen);
+	memcpy(buf, tmp, len);
+
+	return (int)len;
 }
 
 /* Krauler communication subdriver */
@@ -623,13 +648,12 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			if (langid_fix != -1) {
 				/* Apply langid_fix value */
 				ret = usb_get_string(udev, command[i].index, langid_fix, buf, buflen);
-			}
-			else {
+			} else {
 				ret = usb_get_string_simple(udev, command[i].index, buf, buflen);
 			}
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+				upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 				return ret;
 			}
 
@@ -673,7 +697,9 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			/* Replace the first byte of what we received with the correct one */
 			buf[0] = command[i].prefix;
 
+			upsdebug_hex(5, "read", buf, ret);
 			upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+
 			return ret;
 
 		}
@@ -1794,7 +1820,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_send(upsfd, "%s", cmd);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", ret ? strerror(errno) : "timeout");
+			upsdebugx(3, "send: %s (%d)", ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
 
@@ -1803,10 +1829,11 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		ret = ser_get_buf(upsfd, buf, buflen, SER_WAIT_SEC, 0);
 
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? strerror(errno) : "timeout");
+			upsdebugx(3, "read: %s (%d)", ret ? strerror(errno) : "timeout", ret);
 			return ret;
 		}
 
+		upsdebug_hex(5, "read", buf, ret);
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(buf, "\r"), buf);
 
 	#ifdef QX_USB
@@ -1833,6 +1860,22 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		}
 
 		upsdebugx(3, "read: '%.*s'", (int)strcspn(testing[i].answer, "\r"), testing[i].answer);
+
+		/* If requested to do so and this is the case, try to preserve inner '\0's (treat answer as a sequence of bytes) */
+		if (testing[i].answer_len > 0 && strlen(testing[i].answer) < (size_t)testing[i].answer_len) {
+
+			size_t	len;
+
+			len = buflen <= (size_t)testing[i].answer_len ? buflen - 1 : (size_t)testing[i].answer_len;
+			len = len <= sizeof(testing[i].answer) ? len : sizeof(testing[i].answer);
+
+			memcpy(buf, testing[i].answer, len);
+			upsdebug_hex(4, "read", buf, (int)len);
+
+			return len;
+
+		}
+
 		return snprintf(buf, buflen, "%s", testing[i].answer);
 
 	}
@@ -2354,7 +2397,17 @@ int	qx_process(item_t *item, const char *command)
 	/* Send the command */
 	int	len = qx_command(command ? command : item->command, buf, sizeof(buf));
 
-	snprintf(item->answer, sizeof(item->answer), "%s", buf);
+	memset(item->answer, 0, sizeof(item->answer));
+	memcpy(item->answer, buf, sizeof(item->answer) <= sizeof(buf) ? sizeof(item->answer) - 1 : sizeof(buf));
+
+	/* Preprocess the answer */
+	if (item->preprocess_answer != NULL) {
+		len = item->preprocess_answer(item, len);
+		if (len == -1) {
+			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
+			return -1;
+		}
+	}
 
 	/* Process the answer to get the value */
 	return qx_process_answer(item, len);
