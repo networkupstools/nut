@@ -124,6 +124,7 @@
 "Belkin"	"ups"	"2"	"F6H375-USB"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
 "Belkin"	"ups"	"2"	"F6H375-USB"	"USB (2007 models, vendor id: 0665)"	"blazer_usb"
 "Belkin"	"ups"	"2"	"Office Series F6C550-AVR"	"USB"	"usbhid-ups"
+"Belkin"	"ups"	"3"	"Regulator PRO-USB"	"USB (~2000, product id: 0f51)"	"usbhid-ups"
 "Belkin"	"ups"	"2"	"Regulator Pro"	"F6C525-SER, F6C625-SER"	"belkin"
 "Belkin"	"ups"	"1"	"Resource"	""	"genericups upstype=4"
 "Belkin"	"ups"	"2"	"Small Enterprise F6C1500-TW-RK"	"serial port"	"belkin"

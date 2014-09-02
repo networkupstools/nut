@@ -29,7 +29,7 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.16"
+#define BELKIN_HID_VERSION      "Belkin HID 0.17"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
@@ -60,6 +60,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0751), NULL },
 	/* F6H375-USB */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0375), NULL },
+	/* Regulator PRO-USB */
+	{ USB_DEVICE(BELKIN_VENDORID, 0x0f51), NULL },
 	/* F6C1100-UNV, F6C1200-UNV */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x1100), NULL },
 
