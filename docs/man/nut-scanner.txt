@@ -188,7 +188,7 @@ The same using CIDR notation:
 
 *nut-scanner -S -m 192.168.0.0/24*
 
-To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0 to 192.168.0.128 using CIDR notation:
+To scan NUT servers with a timeout of 10 seconds on IP range 192.168.0.0 to 192.168.0.127 using CIDR notation:
 
 *nut-scanner -O -t 10 -m 192.168.0.0/25*
 
