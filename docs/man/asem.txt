@@ -25,6 +25,12 @@ Battery monitor is a BQ2060 at address 0x0B.
 
 EXTRA ARGUMENTS
 ---------------
+
+The required parameter for this driver is the I2C bus name:
+
+*port*='dev-node'::
+On the Asem PB1300, this should be `/dev/i2c-7` for the i801 SMBUS adapter.
+
 This driver also supports the following optional settings:
 
 *lb*='num'::
