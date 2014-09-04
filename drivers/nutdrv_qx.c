@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 #include "main.h"
 
@@ -837,7 +837,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	/* If extradata is empty, use the default value from the blazer to NUT table */
+	/* If extradata is empty, use the default value from the QX to NUT table */
 	extradata = extradata ? extradata : item->dfl;
 	snprintf(value, sizeof(value), "%s", extradata ? extradata : "");
 
@@ -2038,6 +2038,10 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 		batt.chrg.act = -1;
 	}
 
+	/* Clear data from previous_item */
+	memset(previous_item.command, 0, sizeof(previous_item.command));
+	memset(previous_item.answer, 0, sizeof(previous_item.answer));
+
 	/* 3 modes: QX_WALKMODE_INIT, QX_WALKMODE_QUICK_UPDATE and QX_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk */
@@ -2133,8 +2137,11 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 			retcode = qx_process_answer(item, strlen(item->answer));
 
 		/* ..otherwise: execute command to get answer from the UPS */
-		} else
+		} else {
+
 			retcode = qx_process(item, NULL);
+
+		}
 
 		/* Record item as previous_item */
 		snprintf(previous_item.command, sizeof(previous_item.command), "%s", item->command);
@@ -2142,16 +2149,16 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 
 		if (retcode) {
 
+			/* Clear data from the item */
+			memset(item->answer, 0, sizeof(item->answer));
+			memset(item->value, 0, sizeof(item->value));
+
 			if (item->qxflags & QX_FLAG_QUICK_POLL)
 				return FALSE;
 
 			if (mode == QX_WALKMODE_INIT)
 				/* Skip this item from now on */
 				item->qxflags |= QX_FLAG_SKIP;
-
-			/* Clear data from the item */
-			snprintf(item->answer, sizeof(item->answer), "%s", "");
-			snprintf(item->value, sizeof(item->value), "%s", "");
 
 			/* Don't know what happened, try again later... */
 			continue;
@@ -2162,12 +2169,18 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 		retcode = ups_infoval_set(item);
 
 		/* Clear data from the item */
-		snprintf(item->answer, sizeof(item->answer), "%s", "");
-		snprintf(item->value, sizeof(item->value), "%s", "");
+		memset(item->answer, 0, sizeof(item->answer));
+		memset(item->value, 0, sizeof(item->value));
 
 		/* Uh-oh! Some error! */
-		if (retcode == -1)
+		if (retcode == -1) {
+
+			if (item->qxflags & QX_FLAG_QUICK_POLL)
+				return FALSE;
+
 			continue;
+
+		}
 
 		/* Set var flags/range/enum (not for ups.{alarm.status}, hence the retcode check) */
 		if (retcode && mode == QX_WALKMODE_INIT) {
@@ -2175,10 +2188,6 @@ static bool_t	qx_ups_walk(walkmode_t mode)
 		}
 
 	}
-
-	/* Clear data from previous_item */
-	snprintf(previous_item.command, sizeof(previous_item.command), "%s", "");
-	snprintf(previous_item.answer, sizeof(previous_item.answer), "%s", "");
 
 	/* Update battery guesstimation */
 	if (mode == QX_WALKMODE_FULL_UPDATE && (batt.runt.act == -1 || batt.chrg.act == -1)) {
