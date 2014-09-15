@@ -346,6 +346,7 @@
 "Fairstone"	"ups"	"1"	"L525/L625/L750"	""	"safenet"
 
 "Fideltronik"	"ups"	"1"	"Ares 700 and larger"	""	"genericups upstype=6"
+"Fideltronik"	"ups"	"2"	"LUPUS 500"	"USB"	"nutdrv_qx"
 "Fideltronik"	"ups"	"1"	"Other Ares models"	""	"genericups upstype=19"
 
 "Fiskars"	"ups"	"4"	"PowerRite MAX"	""	"upscode2"
@@ -353,6 +354,10 @@
 "Fiskars"	"ups"	"4"	"PowerServer 30"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"9200"	"UPS Information Unit"	"upscode2"
 
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS"	"Serial"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS"	"USB"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS(T)"	"Serial"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS(T)"	"USB"	"nutdrv_qx"
 "Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"Serial"	"nutdrv_qx"
 "Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"USB"	"nutdrv_qx"
 "Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
@@ -1095,10 +1100,14 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
+"Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Imperial 1KVA"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Imperial 1KVA"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Prosine 800"	"Serial"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Prosine 800"	"USB"	"nutdrv_qx"
 "Voltronic Power"	"ups"	"2"	"Vesta LED 850VA"	"USB"	"nutdrv_qx"
