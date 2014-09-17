@@ -78,7 +78,7 @@ mailing list, and fixed quickly.
 - a project portal with trackers for bugs, feature request, patchs
 and tasks
 
-NUT QA also relies on external tools, like:
+NUT QA also relies on external tools and trackers, like:
 
 ////////////////////////////////////////////////////////////////////////////////
 FIXME (POST):
@@ -91,7 +91,7 @@ FIXME (POST):
 ////////////////////////////////////////////////////////////////////////////////
 
 - Clang
-- the Debian QA tools, available through the link:http://packages.qa.debian.org/n/nut.html[NUT Package Tracking System]:
+- the Debian QA tools, available through the link:https://tracker.debian.org/pkg/nut[NUT Package Tracking System]:
 
    * Lintian general QA checks,
    * link:http://piuparts.debian.org/sid/source/n/nut.html[piuparts] automates
@@ -104,6 +104,7 @@ is available in the link:https://code.edge.launchpad.net/qa-regression-testing[U
 It installs NUT, configures it with the dummy-ups driver, changes a few data and
 checks that these are well propagated with upsc.
 
+- link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
 Runtime quality
 ~~~~~~~~~~~~~~~
