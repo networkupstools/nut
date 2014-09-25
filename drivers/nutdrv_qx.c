@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 #include "main.h"
 
@@ -2588,35 +2588,8 @@ int	ups_infoval_set(item_t *item)
 		snprintf(value, sizeof(value), "%s", item->value);
 
 		/* Cover most of the cases: either left/right filled with hashes, spaces or a mix of both */
-		if (item->qxflags & QX_FLAG_TRIM) {
-
-			char	buf[SMALLBUF];
-
-			snprintf(buf, sizeof(buf), "%s", ltrim(value, ' '));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", rtrim(value, ' '));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", ltrim(value, '#'));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", rtrim(value, '#'));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", ltrim(value, ' '));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", rtrim(value, ' '));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", ltrim(value, '#'));
-			snprintf(value, sizeof(value), "%s", buf);
-
-			snprintf(buf, sizeof(buf), "%s", rtrim(value, '#'));
-			snprintf(value, sizeof(value), "%s", buf);
-
-		}
+		if (item->qxflags & QX_FLAG_TRIM)
+			rtrim_m(ltrim_m(value, "# "), "# ");
 
 		if (strcasecmp(item->dfl, "%s")) {
 
