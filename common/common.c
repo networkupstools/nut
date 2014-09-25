@@ -589,7 +589,7 @@ char *rtrim(char *in, const char sep)
 {
 	char	*p;
 
-	if (in) {
+	if (in && strlen(in)) {
 		p = &in[strlen(in) - 1];
 
 		while ((p >= in) && (*p == sep))
@@ -601,16 +601,11 @@ char *rtrim(char *in, const char sep)
 /* modify in - strip all leading instances of <sep> */
 char* ltrim(char *in, const char sep)
 {
-	char *p;
-
-	if (in) {
-		p = in;
-
-		while ((*p != '\0') && (*p == sep))
-			*p++ = *in++;
-
-		p = '\0';
+	if (in && strlen(in)) {
+		while ((*in != '\0') && (*in == sep))
+			memmove(in, in + 1, strlen(in));
 	}
+
 	return in;
 }
 
