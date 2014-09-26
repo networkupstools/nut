@@ -275,7 +275,10 @@ the "halted" stage even if the power returns during the shutdown
 process.  This usually does not work well on contact-closure UPSes that
 use the genericups driver.
 +
-See the shutdown.txt file in the docs subdirectory for more information.
+See the config-notes.txt file in the docs subdirectory for more information.
+Refer to the section: 
+[[UPS_shutdown]] "Configuring automatic shutdowns for low battery events",
+or refer to the online version.
 
 *RBWARNTIME* 'seconds'::
 

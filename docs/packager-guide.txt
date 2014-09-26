@@ -35,7 +35,7 @@ support and maintenance accross the supported OSes.
 ------------------------------------------------------------------------
 *sandbox*
 This document assumes that you have read the other NUT document such
-as INSTALL.nut, FAQ, shutdown.txt, ...
+as INSTALL.nut, FAQ, config-notes.txt, ...
 
 Facts about NUT packaging
 =========================

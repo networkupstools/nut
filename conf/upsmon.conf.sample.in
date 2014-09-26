@@ -194,7 +194,10 @@ DEADTIME 15
 # to shut down the load.  You should check for this file's existence in
 # your shutdown scripts and run 'upsdrvctl shutdown' if it exists.
 #
-# See the shutdown.txt file in the docs subdirectory for more information.
+# See the config-notes.txt file in the docs subdirectory for more information.
+# Refer to the section:
+# [[UPS_shutdown]] "Configuring automatic shutdowns for low battery events"
+# or refer to the online version.
 
 POWERDOWNFLAG /etc/killpower
 
