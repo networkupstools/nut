@@ -929,6 +929,7 @@
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	""	"blazer_usb langid_fix=0x409"
 
 "Tripp Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"2"	"OMNIVSINT800"	"USB (older; product ID: 0001)"	"tripplite_usb"
 "Tripp Lite"	"ups"	"2"	"OMNIVS1000"	"USB (older; product ID: 0001)"	"tripplite_usb"
 "Tripp Lite"	"ups"	"1"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
 "Tripp Lite"	"ups"	"1"	"SMART700USB"	"USB"	"tripplite_usb"
