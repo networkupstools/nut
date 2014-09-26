@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.27"
+#define DRIVER_VERSION	"0.28"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -460,7 +460,7 @@ void decode_v(const unsigned char *value)
 			  break;
 
 		case '2': input_voltage_nominal = 
-			  input_voltage_scaled  = 230;
+			  input_voltage_scaled  = 240;
 			  break;
 
 		case '3': input_voltage_nominal = 208;
@@ -1245,7 +1245,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/30.0);
+		dstate_setinfo("input.voltage", "%.2f", hex2d(b_value+1, 4)/3600.0*input_voltage_scaled);
 
 		bv_12V = hex2d(b_value+5, 2)/16.0;
 
@@ -1357,7 +1357,7 @@ void upsdrv_updateinfo(void)
 	switch(tl_model) {
 		case TRIPP_LITE_OMNIVS:
 		case TRIPP_LITE_OMNIVS_2001:
-			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/2.0);
+			dstate_setinfo("output.voltage", "%.1f", hex2d(l_value+1, 4)/240.0*input_voltage_scaled);
 			break;
 		case TRIPP_LITE_SMARTPRO:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
