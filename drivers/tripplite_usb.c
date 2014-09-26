@@ -460,7 +460,7 @@ void decode_v(const unsigned char *value)
 			  break;
 
 		case '2': input_voltage_nominal = 
-			  input_voltage_scaled  = 240;
+			  input_voltage_scaled  = 230;
 			  break;
 
 		case '3': input_voltage_nominal = 208;
