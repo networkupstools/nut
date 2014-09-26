@@ -196,7 +196,7 @@ DEADTIME 15
 #
 # See the shutdown.txt file in the docs subdirectory for more information.
 
-POWERDOWNFLAG @CONFPATH@/killpower
+POWERDOWNFLAG /etc/killpower
 
 # --------------------------------------------------------------------------
 # NOTIFYMSG - change messages sent by upsmon when certain events occur
