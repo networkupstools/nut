@@ -103,6 +103,11 @@ book    nop
   </xsl:choose>
 </xsl:param>
 
+<!-- Format-detection to prevent smartphones from being too smart -->
+<xsl:template name="user.head.content">
+	<meta name="format-detection" content="telephone=no" />
+</xsl:template>
+
 <!-- NUT version/date -->
 <xsl:param name="nut.nutversion"/>
 <xsl:param name="nut.localdate"/>
