@@ -91,8 +91,9 @@ packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.tx
 # variable ASCIIDOC_VERBOSE to "-v", ie:
 #   $ ASCIIDOC_VERBOSE=-v make
 A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
-    --attribute localdate=`TZ=UTC date +%Y-%m-%d` \
-    --attribute localtime=`TZ=UTC date +%H:%M:%S` \
+    --xsltproc-opts "--stringparam nut.localdate \"`TZ=UTC date +%Y-%m-%d`\"" \
+    --xsltproc-opts "--stringparam nut.localtime \"`TZ=UTC date +%H:%M:%S`\"" \
+    --xsltproc-opts "--stringparam nut.nutversion \"@PACKAGE_VERSION@\"" \
     --attribute iconsdir=$(srcdir)/images \
     --attribute=badges \
     --attribute=external_title \

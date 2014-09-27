@@ -103,4 +103,17 @@ book    nop
   </xsl:choose>
 </xsl:param>
 
+<!-- NUT version/date -->
+<xsl:param name="nut.nutversion"/>
+<xsl:param name="nut.localdate"/>
+<xsl:param name="nut.localtime"/>
+
+<!-- Footer -->
+<xsl:template name="user.footer.content">
+	<div class="navfooter nut_footer">
+		<hr/>
+		Last updated <xsl:value-of select="$nut.localdate"/><xsl:text> </xsl:text><xsl:value-of select="$nut.localtime"/> -- Network UPS Tools <xsl:value-of select="$nut.nutversion"/>
+	</div>
+</xsl:template>
+
 </xsl:stylesheet>
