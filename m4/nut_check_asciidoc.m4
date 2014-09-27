@@ -53,5 +53,7 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		AC_MSG_RESULT(${XMLLINT_VERSION} found)
 	fi
 
+	AC_PATH_PROGS([SOURCE_HIGHLIGHT], [source-highlight])
+
 fi
 ])

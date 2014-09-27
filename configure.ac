@@ -727,6 +727,13 @@ else
   nut_have_asciidoc="no"
 fi
 
+AC_MSG_CHECKING([if source-highlight is present (preferable for documentation generation)])
+if test -n "${SOURCE_HIGHLIGHT}"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
