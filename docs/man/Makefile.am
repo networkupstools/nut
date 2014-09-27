@@ -593,6 +593,7 @@ if HAVE_ASCIIDOC
 	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
+		--attribute nutversion="@PACKAGE_VERSION@" \
 		-o $@ $<
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
