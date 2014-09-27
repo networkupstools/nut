@@ -28,6 +28,11 @@ OPTIONS
 *-h*::
 Display the help text.
 
+*-n*::
+do not fail (i.e., return EXIT_FAILURE 1) when no devices are
+configured. This may be useful to not wrongly fail after initial
+installation.
+
 *-r* 'directory'::
 If starting a driver, this value will direct it to *chroot*(2) into
 'directory'.  This can be useful when securing systems.

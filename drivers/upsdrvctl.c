@@ -1,6 +1,8 @@
 /* upsdrvctl.c - UPS driver controller
 
-   Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+                 2001  Russell Kroll <rkroll@exploits.org>
+                 2014  Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,6 +43,9 @@ typedef struct {
 static ups_t	*upstable = NULL;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
+
+	/* fail when no devices are configured (initial installation) */
+static int	fatal_on_missing_conf = 1;
 
 	/* timer - keeps us from getting stuck if a driver hangs */
 static int	maxstartdelay = 45;
@@ -320,6 +325,7 @@ static void help(const char *progname)
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
 
 	printf("  -h			display this help\n");
+	printf("  -n			do not fail when no devices are configured\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
@@ -373,8 +379,14 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 {
 	ups_t	*ups = upstable;
 
-	if (!ups)
-		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
+	if (!ups) {
+		if (fatal_on_missing_conf)
+			fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
+		else {
+			upslogx(LOG_ERR, "Warning: no UPS definitions found in ups.conf!\n");
+			return;
+		}
+	}
 
 	while (ups) {
 		if (!strcmp(ups->upsname, upsname)) {
@@ -394,8 +406,14 @@ static void send_all_drivers(void (*command)(const ups_t *))
 	ups_t	*ups;
 	int	i;
 
-	if (!upstable)
-		fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf");
+	if (!upstable) {
+		if (fatal_on_missing_conf)
+			fatalx(EXIT_FAILURE, "Error: no UPS definitions found in ups.conf!\n");
+		else {
+			upslogx(LOG_ERR, "Warning: no UPS definitions found in ups.conf!\n");
+			return;
+		}
+	}
 
 	if (command != &shutdown_driver) {
 		ups = upstable;
@@ -451,8 +469,12 @@ int main(int argc, char **argv)
 		UPS_VERSION);
 
 	prog = argv[0];
-	while ((i = getopt(argc, argv, "+htu:r:DV")) != -1) {
+	while ((i = getopt(argc, argv, "+htu:r:DnV")) != -1) {
 		switch(i) {
+			case 'n':
+				fatal_on_missing_conf = 0;
+				break;
+
 			case 'r':
 				pt_root = optarg;
 				break;
