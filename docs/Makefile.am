@@ -40,7 +40,7 @@ ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
 
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
- $(CABLES_IMAGES) docinfo.xml $(NUT_SPELL_DICT) \
+ $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  common.xsl xhtml.xsl chunked.xsl
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \

@@ -1199,6 +1199,10 @@ eval conftemp=\"${conftemp}\"
 SBINDIR=${conftemp}
 AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables])
 
+dnl Current date
+now=`TZ=UTC date +%Y-%m-%d`
+
+AC_SUBST(now)
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
@@ -1260,6 +1264,7 @@ AC_OUTPUT([
  data/Makefile
  data/driver.list
  docs/Makefile
+ docs/docinfo.xml
  docs/man/Makefile
  drivers/Makefile
  include/Makefile
