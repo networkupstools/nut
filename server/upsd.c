@@ -3,7 +3,7 @@
    Copyright (C)
 	1999		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
+	2011 - 2014	Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -70,6 +70,9 @@ nut_ctype_t	*firstclient = NULL;
 
 	/* default is to listen on all local interfaces */
 static stype_t	*firstaddr = NULL;
+
+	/* fail when no devices are configured (initial installation) */
+static int	fatal_on_missing_upsconf = 1;
 
 static int 	opt_af = AF_UNSPEC;
 
@@ -828,6 +831,7 @@ static void help(const char *progname)
 	printf("		 - stop: stop process and exit\n");
 	printf("  -D		raise debugging level\n");
 	printf("  -h		display this help\n");
+	printf("  -n		do not fail when no devices are configured in ups.conf\n");
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -q		raise log level threshold\n");
 	printf("  -u <user>	switch to <user> (if started as root)\n");
@@ -906,10 +910,13 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:Dn")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
+				break;
+			case 'n':
+				fatal_on_missing_upsconf = 0;
 				break;
 			case 'p':
 			case 'i':
@@ -1022,7 +1029,10 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		if (fatal_on_missing_upsconf)
+			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		else
+			upslogx(LOG_WARNING, "Warning: at least one UPS should be defined in ups.conf");
 	}
 
 	/* try to bring in the var/cmd descriptions */

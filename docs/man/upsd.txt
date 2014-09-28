@@ -49,6 +49,11 @@ Raise the debug level.  Use this multiple times for additional details.
 *-h*::
 Display the help text.
 
+*-n*::
+do not fail (i.e., return EXIT_FAILURE 1) when no devices are
+configured in linkman:ups.conf[5].  This may be useful to not wrongly
+fail after initial installation.
+
 *-r* 'directory'::
 upsd will *chroot*(2) to 'directory' shortly after startup
 and before parsing any configuration files with this option set.  You
