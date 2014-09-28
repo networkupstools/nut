@@ -120,7 +120,8 @@ Enable IPv6 support.
 	--with-avahi (default: auto-detect)
 
 Build and install Avahi support, to publish NUT server availability
-using mDNS protocol.
+using mDNS protocol.  This requires Avahi development files for the
+Core and Client parts. 
 
 	--with-libltdl (default: auto-detect)
 
