@@ -2,7 +2,7 @@
 
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
-     2012  Arnaud Quette <arnaud.quette.free.fr>
+     2014  Arnaud Quette <arnaud.quette.free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -62,6 +62,9 @@ static	int	reload_flag = 0;
 
 	/* set after SIGINT, SIGQUIT, or SIGTERM */
 static	int	exit_flag = 0;
+
+	/* fail when no MONITOR line is configured (initial installation) */
+static int	fatal_on_missing_conf = 1;
 
 	/* userid for unprivileged process when using fork mode */
 static	char	*run_as_user = NULL;
@@ -1647,6 +1650,7 @@ static void help(const char *progname)
 	printf("  -D		raise debugging level\n");
 	printf("  -h		display this help\n");
 	printf("  -K		checks POWERDOWNFLAG, sets exit code to 0 if set\n");
+	printf("  -n		do not fail when no MONITOR line is configured\n");
 	printf("  -p		always run privileged (disable privileged parent)\n");
 	printf("  -u <user>	run child as user <user> (ignored when using -p)\n");
 	printf("  -4		IPv4 only\n");
@@ -1870,7 +1874,7 @@ int main(int argc, char *argv[])
 
 	run_as_user = xstrdup(RUN_AS_USER);
 
-	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46")) != -1) {
+	while ((i = getopt(argc, argv, "+Dhic:f:pu:VK46n")) != -1) {
 		switch (i) {
 			case 'c':
 				if (!strncmp(optarg, "fsd", strlen(optarg)))
@@ -1896,6 +1900,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'K':
 				checking_flag = 1;
+				break;
+			case 'n':
+				fatal_on_missing_conf = 0;
 				break;
 			case 'p':
 				use_pipe = 0;
@@ -1953,13 +1960,23 @@ int main(int argc, char *argv[])
 	 * => fallback to a default value */
 
 	if (totalpv < minsupplies) {
-		printf("\nFatal error: insufficient power configured!\n\n");
+		if (!fatal_on_missing_conf && (firstups == NULL)) {
+			printf("\nWarning: no MONITOR line defined!");
+			printf("\nWarning: insufficient power configured!\n\n");
+		}
+		else
+			printf("\nFatal error: insufficient power configured!\n\n");
 
 		printf("Sum of power values........: %d\n", totalpv);
 		printf("Minimum value (MINSUPPLIES): %d\n", minsupplies);
 
 		printf("\nEdit your upsmon.conf and change the values.\n");
-		exit(EXIT_FAILURE);
+
+		/* Only exit successfully is requested AND no MONITOR line defined */
+		if (!fatal_on_missing_conf && (firstups == NULL))
+			exit(EXIT_SUCCESS);
+		else
+			exit(EXIT_FAILURE);
 	}
 
 	if (nut_debug_level < 1) {
