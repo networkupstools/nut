@@ -325,7 +325,7 @@ static void help(const char *progname)
 	printf("usage: %s [OPTIONS] (start | stop | shutdown) [<ups>]\n\n", progname);
 
 	printf("  -h			display this help\n");
-	printf("  -n			do not fail when no devices are configured\n");
+	printf("  -n			do not fail when no devices are configured in ups.conf\n");
 	printf("  -r <path>		drivers will chroot to <path>\n");
 	printf("  -t			testing mode - prints actions without doing them\n");
 	printf("  -u <user>		drivers started will switch from root to <user>\n");
