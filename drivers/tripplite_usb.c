@@ -290,7 +290,7 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL, 1);
 	if (ret < 1) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -1431,7 +1431,7 @@ void upsdrv_makevartable(void)
  * @todo Allow binding based on firmware version (which seems to vary wildly
  * from unit to unit)
  */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char *regex_array[6];
 	char *value;
@@ -1457,7 +1457,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 *            expression */
-	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL, 1);
 	if (r < 1) {
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 	}
@@ -1501,6 +1501,8 @@ void upsdrv_initups(void)
 	if (getval("rebootdelay"))
 		bootdelay = atoi(getval("rebootdelay"));
 #endif
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

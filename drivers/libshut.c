@@ -281,6 +281,15 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
 #endif
 }
 
+int libshut_claim_interface(int upsfd, int interface) {
+	return 0;
+}
+
+int libshut_release_interface(int upsfd, int interface) {
+	return 0;
+}
+
+
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
  * Note: When callback is not NULL, the report descriptor will be
@@ -289,7 +298,7 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
  * is accepted, or < 1 if not.
  */
 int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
-	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen))
+	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen), int claim)
 {
 	int ret, res; 
 	unsigned char buf[20];
@@ -569,7 +578,9 @@ shut_communication_subdriver_t shut_subdriver = {
 	libshut_get_report,
 	libshut_set_report,
 	libshut_get_string,
-	libshut_get_interrupt
+	libshut_get_interrupt,
+	libshut_claim_interface,
+	libshut_release_interface
 };
 
 /***********************************************************************/

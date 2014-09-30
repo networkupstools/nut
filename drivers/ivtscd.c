@@ -201,7 +201,7 @@ void upsdrv_makevartable(void)
 {
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	struct termios	tio;
 	const char	*val;
@@ -250,6 +250,8 @@ void upsdrv_initups(void)
 	if (battery.voltage.nom <= battery.voltage.low) {
 		fatalx(EXIT_FAILURE, "Nominal battery voltage must be higher than low battery voltage!");
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

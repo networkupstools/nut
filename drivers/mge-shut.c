@@ -290,7 +290,7 @@ void upsdrv_makevartable (void)
 
 /* --------------------------------------------------------------- */
 
-void upsdrv_initups (void)
+int upsdrv_initups (void)
 {
 	upsdebugx(2, "entering upsdrv_initups()");
 
@@ -324,6 +324,8 @@ void upsdrv_initups (void)
 	/* initialise HID communication */
 	if(hid_init_device() != 0)
 		fatalx(EXIT_FAILURE, "Can't initialise HID device");
+
+	return 1;
 }
 
 /* --------------------------------------------------------------- */

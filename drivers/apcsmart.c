@@ -2004,7 +2004,7 @@ void upsdrv_help(void)
 	      );
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char *val;
 	apc_vartab_t *ptr;
@@ -2030,6 +2030,8 @@ void upsdrv_initups(void)
 	/* fill length values */
 	for (ptr = apc_vartab; ptr->name; ptr++)
 		ptr->nlen0 = strlen(ptr->name) + 1;
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

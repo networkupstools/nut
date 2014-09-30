@@ -1122,13 +1122,15 @@ void upsdrv_makevartable(void)
 	
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
 
 	ser_set_dtr(upsfd, 1);
 	ser_set_rts(upsfd, 0);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

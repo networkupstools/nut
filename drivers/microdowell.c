@@ -958,7 +958,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "ups.delay.start", "Override restart delay (10s)");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path) ;
 
@@ -970,6 +970,8 @@ void upsdrv_initups(void)
 	ser_set_rts(upsfd, 0);
 
 	usleep(10000) ; /* small delay (1/100 s)) */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

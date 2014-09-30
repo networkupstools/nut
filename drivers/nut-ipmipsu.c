@@ -186,7 +186,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "fruid", "FRU identifier to match a specific device"); */
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsdebugx(1, "upsdrv_initups...");
 
@@ -232,6 +232,8 @@ void upsdrv_initups(void)
 	 */
 
 	/* don't try to detect the UPS here */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

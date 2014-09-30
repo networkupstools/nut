@@ -312,7 +312,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL, 1);
 
 		if (ret < 1) {
 			return ret;
@@ -698,7 +698,7 @@ void upsdrv_makevartable(void)
 
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	const struct {
 		const char	*name;
@@ -759,7 +759,7 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL, 1);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -784,6 +784,8 @@ void upsdrv_initups(void)
 
 	dstate_setinfo("ups.vendorid", "%04x", usbdevice.VendorID);
 	dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
+
+	return 1;
 }
 
 void upsdrv_initinfo(void)

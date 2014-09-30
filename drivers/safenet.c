@@ -462,7 +462,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "offdelay", "Delay before UPS shutdown (seconds)");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	struct termios	tio;
 	const char	*val;
@@ -519,6 +519,8 @@ void upsdrv_initups(void)
 	if ((offdelay < 0) || (offdelay > 999)) {
 		fatalx(EXIT_FAILURE, "Shutdown delay '%d' out of range [0..999]", offdelay);
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

@@ -351,7 +351,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 /*
  * Initialise the UPS
  */
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char	reply[REPLY_PACKETSIZE];
 	int	i;
@@ -382,6 +382,8 @@ void upsdrv_initups(void)
 		query_ups(reply);
 		sleep(1);
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

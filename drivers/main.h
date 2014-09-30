@@ -13,7 +13,7 @@ extern int		upsfd, extrafd, broken_driver, experimental_driver, do_lock_port, ex
 extern unsigned int	poll_interval;
 
 /* functions & variables required in each driver */
-void upsdrv_initups(void);	/* open connection to UPS, fail if not found */
+int upsdrv_initups(void);	/* open connection to UPS, retry if not found */
 void upsdrv_initinfo(void);	/* prep data, settings for UPS monitoring */
 void upsdrv_updateinfo(void);	/* update state data if possible */
 void upsdrv_shutdown(void);	/* make the UPS power off the load */

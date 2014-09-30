@@ -460,7 +460,7 @@ void upsdrv_help(void)
 }
 
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	struct termios tio;
 	int baud = B1200;
@@ -529,6 +529,8 @@ void upsdrv_initups(void)
 	upsdebugx(1, "use_crlf = %d", use_crlf);
 	use_pre_lf = testvar("use_pre_lf");
 	upsdebugx(1, "use_pre_lf = %d", use_pre_lf);
+
+	return 1;
 }
 
 

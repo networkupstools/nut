@@ -519,7 +519,7 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, "baudrate", "serial line speed");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	const char *val = getval("baudrate");
 	speed_t baudrate = B2400;
@@ -549,6 +549,8 @@ void upsdrv_initups(void)
 
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, baudrate);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

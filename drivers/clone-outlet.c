@@ -385,7 +385,7 @@ void upsdrv_makevartable(void)
 }
 
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char	buf[SMALLBUF];
 	const char	*val;
@@ -405,6 +405,8 @@ void upsdrv_initups(void)
 	prefix.status = xstrdup(buf);
 
 	extrafd = upsfd = sstate_connect();
+
+	return 1;
 }
 
 

@@ -422,7 +422,7 @@ struct {
 	{NULL, B1200},
 };
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	speed_t speed = B1200;
 
@@ -447,6 +447,8 @@ void upsdrv_initups(void)
 	/* the upsh handlers can't be done here, as they get initialized
 	 * shortly after upsdrv_initups returns to main.
 	 */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

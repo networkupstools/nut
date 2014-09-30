@@ -1261,12 +1261,14 @@ void upsdrv_makevartable(void)
 {
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
 
 	ser_disable_flow_control();
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

@@ -350,7 +350,7 @@ upsdrv_makevartable(void)
 {
 }
 
-void
+int
 upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
@@ -358,6 +358,8 @@ upsdrv_initups(void)
 
 	ser_set_dtr(upsfd, 0);
 	ser_set_rts(upsfd, 1);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

@@ -159,7 +159,7 @@ void upsdrv_makevartable(void)
 
 /* --------------------------------------------------------------- */
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
 	int RTS = TIOCM_RTS;
@@ -210,6 +210,8 @@ void upsdrv_initups(void)
 		else
 			upsdebugx(1, "initups: OffDelay unavailable");
 	}
+
+	return 1;
 }
 
 /* --------------------------------------------------------------- */

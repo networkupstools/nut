@@ -307,7 +307,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "model", "Regular Expression to match power source model name");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	CFArrayRef power_source_key_list;
 	CFIndex num_keys, index;
@@ -428,6 +428,8 @@ void upsdrv_initups(void)
 	/* do stuff */
 
 	CFRelease(power_dictionary);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

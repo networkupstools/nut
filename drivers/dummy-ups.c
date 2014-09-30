@@ -218,7 +218,7 @@ void upsdrv_makevartable(void)
 {
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	/* check the running mode... */
 	if (strchr(device_path, '@'))
@@ -234,6 +234,8 @@ void upsdrv_initups(void)
 		mode = MODE_DUMMY;
 		dstate_setinfo("driver.parameter.mode", "dummy");
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

@@ -1595,7 +1595,7 @@ void	upsdrv_initinfo(void)
 }
 
 /* Open the port and the like and choose the subdriver */
-void	upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsdebugx(1, "%s...", __func__);
 
@@ -1777,7 +1777,7 @@ void	upsdrv_initups(void)
 		/* Link the matchers */
 		regex_matcher->next = &device_matcher;
 
-		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL, TRUE);
 		if (ret < 0) {
 			fatalx(EXIT_FAILURE,
 				"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -1833,6 +1833,8 @@ void	upsdrv_initups(void)
 	/* Subdriver initups */
 	if (subdriver->initups != NULL)
 		subdriver->initups();
+
+	return 1;
 }
 
 /* Close the ports and the like */
@@ -1896,7 +1898,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 	#endif	/* QX_SERIAL */
 
 		if (udev == NULL) {
-			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL, TRUE);
 
 			if (ret < 1) {
 				return ret;

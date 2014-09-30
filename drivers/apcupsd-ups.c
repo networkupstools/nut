@@ -260,7 +260,7 @@ void upsdrv_makevartable(void)
 {
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char *p;
 	struct hostent *h;
@@ -283,6 +283,8 @@ void upsdrv_initups(void)
 	/* TODO: add IPv6 support */
 	host.sin_family=AF_INET;
 	host.sin_port=htons(port);
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

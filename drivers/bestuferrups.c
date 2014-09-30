@@ -397,7 +397,7 @@ static void setup_serial(void)
 }
 
 
-void upsdrv_initups ()
+int upsdrv_initups ()
 {
   char	temp[256], fcstring[512];
 
@@ -488,7 +488,7 @@ void upsdrv_initups ()
   }
 
   fc.valid = 1;
-  return;
+  return 1;
 }
 
 void upsdrv_cleanup(void)

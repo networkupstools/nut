@@ -540,12 +540,14 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, OPTI_POWERUP, "(Zinto D) Power-up UPS at start (cannot identify a powered-down Zinto D)");
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* NO PARSED COMMAND LINE VARIABLES */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

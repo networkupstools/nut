@@ -606,7 +606,15 @@ int main(int argc, char **argv)
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
 
-	upsdrv_initups();
+	/* loop looking for the UPS. Driver is allowed to not see it
+	 * immediately. */
+	while (!exit_flag) {
+		if (upsdrv_initups())
+			break;
+
+		upslogx(LOG_WARNING, "UPS initialization failed. Retrying after sleep...");
+		sleep(poll_interval);
+	}
 
 	/* UPS is detected now, cleanup upon exit */
 	atexit(upsdrv_cleanup);

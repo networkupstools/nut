@@ -514,7 +514,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "modelname", "Seting model name"); 
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
 	char temp[ LENGTH_TEMP ], *usd = NULL;  /* = NULL je dulezite jen pro prekladac */
 	
@@ -551,6 +551,8 @@ void upsdrv_initups(void)
 	/* the upsh handlers can't be done here, as they get initialized
 	 * shortly after upsdrv_initups returns to main.
 	 */
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)

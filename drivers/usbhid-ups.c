@@ -618,14 +618,20 @@ int instcmd(const char *cmdname, const char *extradata)
 		value = atol(val);
 	}
 
+	if (comm_driver->claim_interface(udev, 0) != 0) {
+		return STAT_INSTCMD_FAILED;
+	}
+
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(5, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
+		comm_driver->release_interface(udev, 0);
 		return STAT_INSTCMD_HANDLED;
 	}
 
+	comm_driver->release_interface(udev, 0);
 	upsdebugx(3, "instcmd: FAILED\n"); /* TODO: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_INSTCMD_FAILED;
 }
@@ -672,14 +678,20 @@ int setvar(const char *varname, const char *val)
 		value = atol(val);
 	}
 
+	if (comm_driver->claim_interface(udev, 0) != 0) {
+		return STAT_SET_UNKNOWN;
+	}
+
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
 		upsdebugx(5, "setvar: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
+		comm_driver->release_interface(udev, 0);
 		return STAT_SET_HANDLED;
 	}
 
+	comm_driver->release_interface(udev, 0);
 	upsdebugx(3, "setvar: FAILED\n"); /* FIXME: HANDLED but FAILED, not UNKNOWN! */
 	return STAT_SET_UNKNOWN;
 }
@@ -791,35 +803,44 @@ void upsdrv_updateinfo(void)
 #endif
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
+		if (comm_driver->claim_interface(udev, 0) != 0) {
+			/* flag for reconnect */
+			hd = NULL;
+			return;
+		}
+
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+
+		/* Process pending events (HID notifications on Interrupt pipe) */
+		for (i = 0; i < evtCount; i++) {
+
+			if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
+				continue;
+
+			if (nut_debug_level >= 2) {
+				upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
+					HIDGetDataItem(event[i], subdriver->utab),
+					HIDDataType(event[i]), event[i]->ReportID,
+					event[i]->Offset, event[i]->Size, value);
+			}
+
+			/* Skip Input reports, if we don't use the Feature report */
+			item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
+			if (!item) {
+				upsdebugx(3, "NUT doesn't use this HID object");
+				continue;
+			}
+
+			ups_infoval_set(item, value);
+		}
+
+		comm_driver->release_interface(udev, 0);
 	} else {
 		evtCount = 0;
 		upsdebugx(1, "Not using interrupt pipe...");
 	}
 
-	/* Process pending events (HID notifications on Interrupt pipe) */
-	for (i = 0; i < evtCount; i++) {
-
-		if (HIDGetDataValue(udev, event[i], &value, poll_interval) != 1)
-			continue;
-
-		if (nut_debug_level >= 2) {
-			upsdebugx(2, "Path: %s, Type: %s, ReportID: 0x%02x, Offset: %i, Size: %i, Value: %g",
-				HIDGetDataItem(event[i], subdriver->utab),
-				HIDDataType(event[i]), event[i]->ReportID,
-				event[i]->Offset, event[i]->Size, value);
-		}
-
-		/* Skip Input reports, if we don't use the Feature report */
-		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
-		if (!item) {
-			upsdebugx(3, "NUT doesn't use this HID object");
-			continue;
-		}
-
-		ups_infoval_set(item, value);
-	}
 #ifdef DEBUG
 	upsdebugx(1, "took %.3f seconds handling interrupt reports...\n", interval());
 #endif
@@ -885,71 +906,86 @@ void upsdrv_initinfo(void)
 	upsh.instcmd = instcmd;
 }
 
-void upsdrv_initups(void)
+int upsdrv_initups(void)
 {
+	static int initups_stage = 0;
+
 	int ret;
 	char *val;
+
+	if (initups_stage == 0) {
 #ifdef SHUT_MODE
-	/*!
-	 * SHUT is a serial protocol, so it needs
-	 * only the device path
-	 */
-	upsdebugx(1, "upsdrv_initups...");
+		/*!
+		 * SHUT is a serial protocol, so it needs
+		 * only the device path
+		 */
+		upsdebugx(1, "upsdrv_initups...");
 
-	subdriver_matcher = device_path;
+		subdriver_matcher = device_path;
 #else
-	char *regex_array[6];
+		char *regex_array[6];
 
-	upsdebugx(1, "upsdrv_initups...");
+		upsdebugx(1, "upsdrv_initups...");
 
-	subdriver_matcher = &subdriver_matcher_struct;
+		subdriver_matcher = &subdriver_matcher_struct;
 
-	/* enforce use of the "vendorid" option if "explore" is given */
-	if (testvar("explore") && getval("vendorid")==NULL) {
-		fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
-	}
+		/* enforce use of the "vendorid" option if "explore" is given */
+		if (testvar("explore") && getval("vendorid")==NULL) {
+			fatalx(EXIT_FAILURE, "must specify \"vendorid\" when using \"explore\"");
+		}
 
-	/* Activate maxreport tweak */
-	if (testvar("maxreport")) {
-		max_report_size = 1;
-	}
+		/* Activate maxreport tweak */
+		if (testvar("maxreport")) {
+			max_report_size = 1;
+		}
 
-	/* process the UPS selection options */
-	regex_array[0] = getval("vendorid");
-	regex_array[1] = getval("productid");
-	regex_array[2] = getval("vendor");
-	regex_array[3] = getval("product");
-	regex_array[4] = getval("serial");
-	regex_array[5] = getval("bus");
+		/* process the UPS selection options */
+		regex_array[0] = getval("vendorid");
+		regex_array[1] = getval("productid");
+		regex_array[2] = getval("vendor");
+		regex_array[3] = getval("product");
+		regex_array[4] = getval("serial");
+		regex_array[5] = getval("bus");
 
-	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
-	switch(ret)
-	{
-	case 0:
-		break;
-	case -1:
-		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
-	default:
-		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
-	}
+		ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+		switch(ret)
+		{
+		case 0:
+			break;
+		case -1:
+			fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
+		default:
+			fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
+		}
 
-	/* link the matchers */
-	subdriver_matcher->next = regex_matcher;
+		/* link the matchers */
+		subdriver_matcher->next = regex_matcher;
 #endif /* SHUT_MODE */
+		initups_stage = 1;
+	}
 
-	/* Search for the first supported UPS matching the
-	   regular expression (USB) or device_path (SHUT) */
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
-	if (ret < 1)
-		fatalx(EXIT_FAILURE, "No matching HID UPS found");
+	if (initups_stage == 1) {
+		/* Search for the first supported UPS matching the
+		   regular expression (USB) or device_path (SHUT) */
+		ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback, FALSE);
+		if (ret < 1) {
+			upslogx(LOG_ERR, "No matching HID UPS found");
+			return 0;
+		}
 
-	hd = &curDevice;
+		hd = &curDevice;
 
-	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
-		hd->Product ? hd->Product : "unknown");
+		upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
+			hd->Product ? hd->Product : "unknown");
 
+		initups_stage = 2;
+	}
+
+	// after this part there aren't any more things to retry, so stop
+	// tracking the stage
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
-		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");
+		upslogx(LOG_ERR, "Can't initialize data from HID UPS");
+		return 0;
 	}
 
 	if (dstate_getinfo("battery.charge.low")) {
@@ -991,6 +1027,8 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	return 1;
 }
 
 void upsdrv_cleanup(void)
@@ -1165,6 +1203,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	double		value;
 	int		retcode;
 
+	if (comm_driver->claim_interface(udev, 0) != 0) {
+		/* Uh oh, got to reconnect! */
+		hd = NULL;
+		return FALSE;
+	}
+
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk ----------------------------- */
@@ -1174,8 +1218,10 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		/* Check if we are asked to stop (reactivity++) in SHUT mode.
 		 * In USB mode, looping through this takes well under a second,
 		 * so any effort to improve reactivity here is wasted. */
-		if (exit_flag != 0)
+		if (exit_flag != 0) {
+			comm_driver->release_interface(udev, 0);
 			return TRUE;
+		}
 #endif
 		/* filter data according to mode */
 		switch (mode)
@@ -1258,6 +1304,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
 			/* Uh oh, got to reconnect! */
+			comm_driver->release_interface(udev, 0);
 			hd = NULL;
 			return FALSE;
 
@@ -1318,6 +1365,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		}
 	}
 
+	comm_driver->release_interface(udev, 0);
 	return TRUE;
 }
 
@@ -1329,7 +1377,7 @@ static int reconnect_ups(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
+	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL, FALSE);
 
 	if (ret > 0) {
 		return 1;
