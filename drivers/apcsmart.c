@@ -1691,7 +1691,7 @@ static int setvar_enum(apc_vartab_t *vt, const char *val)
 		return STAT_SET_HANDLED;	/* FUTURE: no change */
 	}
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < 32; i++) {
 		if (apc_write(APC_NEXTVAL) != 1)
 			return STAT_SET_FAILED;
 
