@@ -158,6 +158,7 @@ static void init_system_test_capabilities(void);
 static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static int decode_instcmd_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
+static int decode_setvar_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg);
 static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
@@ -2071,7 +2072,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " BOOST threshold volage set to %d V", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
@@ -2094,7 +2095,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " TRIM threshold volage set to %d V", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2116,7 +2117,7 @@ int setvar (const char *varname, const char *val)
 		 res = command_write_sequence(cbuf, 4, answer);
 	       snprintf(success_msg, sizeof(success_msg)-1, " Low battery warning time set to %d min", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2138,7 +2139,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Mains return delay set to %d sec", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2160,7 +2161,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Mains return minimum battery capacity set to %d %%", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2183,7 +2184,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Maximum temperature set to %d C", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2205,7 +2206,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Nominal output voltage set to %d V", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2227,7 +2228,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Minimum load before sleep countdown set to %d %%", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
@@ -2251,7 +2252,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Delay before sleep shutdown set to %d min", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
@@ -2274,7 +2275,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, "EBM Count set to %d ", tmp);
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
@@ -2319,43 +2320,11 @@ int setvar (const char *varname, const char *val)
 		cbuf[4] = sec>>8;					/* Delay in seconds MSB */
 
 		res = command_write_sequence(cbuf, 5, answer);
-		if (res <= 0) {
-			upslogx(LOG_ERR, "Short read from UPS");
-			dstate_datastale();
-			return -1;
-		}
-
-		switch ((unsigned char) answer[0]) {
-
-			case 0x31: {
-				upslogx(LOG_NOTICE,"Outlet %d %s delay set to %d sec",
+		snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d %s delay set to %d sec",
 					outlet_num, (onOff_setting == PW_AUTO_ON_DELAY)?"start":"shutdown", sec);
-				dstate_setinfo(varname, "%d", sec);
-				return STAT_SET_HANDLED;
-				break;
-				}
-			case 0x33: {
-				upslogx(LOG_NOTICE, "Set [%s] failed due to UPS busy", varname);
-				/* TODO: we should probably retry... */
-				return STAT_SET_UNKNOWN;
-				break;
-				}
-			case 0x35: {
-				upslogx(LOG_NOTICE, "Set [%s %s] failed due to parameter out of range", varname, val);
-				return STAT_SET_UNKNOWN;
-				break;
-				}
-			case 0x36: {
-				upslogx(LOG_NOTICE, "Set [%s %s] failed due to invalid parameter", varname, val);
-				return STAT_SET_UNKNOWN;
-				break;
-				}
-			default: {
-				upslogx(LOG_NOTICE, "Set [%s] not supported", varname);
-				return STAT_SET_FAILED;
-				break;
-				}
-		}
+
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
+
 	}
 
         if ( !strcasecmp(namebuf, "outlet.n.status") ) {
@@ -2380,11 +2349,62 @@ int setvar (const char *varname, const char *val)
                 res = command_write_sequence(cbuf, 2, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, tmp?"On":"Off");
 
-       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
                 
         }
 
 	return STAT_SET_INVALID;
+}
+
+static int decode_setvar_exec(const int res, const unsigned char exec_status, const char *cmdname, const char *success_msg)
+{
+	if (res <= 0) {
+		upslogx(LOG_ERR, "[%s] Short read from UPS", cmdname);
+		dstate_datastale();
+		return STAT_SET_FAILED;
+	}
+
+	/* Decode the status code from command execution */
+	switch (exec_status) {
+		case BCMXCP_RETURN_ACCEPTED: {
+			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
+			upsdrv_comm_good();
+			return STAT_SET_HANDLED;
+			break;
+			}
+		case BCMXCP_RETURN_ACCEPTED_PARAMETER_ADJUST: {
+			upslogx(LOG_NOTICE, "[%s] Parameter adjusted", cmdname);
+			upslogx(LOG_NOTICE, "[%s] %s", cmdname, success_msg);
+			upsdrv_comm_good();
+			return STAT_SET_HANDLED;
+			break;
+			}
+		case BCMXCP_RETURN_BUSY: {
+			upslogx(LOG_NOTICE, "[%s] Busy or disbled by front panel", cmdname);
+			return STAT_SET_FAILED;
+			break;
+			}
+		case BCMXCP_RETURN_UNRECOGNISED: {
+			upslogx(LOG_NOTICE, "[%s] Unrecognised command byte or corrupt checksum", cmdname);
+			return STAT_SET_FAILED;
+			break;
+			}
+		case BCMXCP_RETURN_INVALID_PARAMETER: {
+			upslogx(LOG_NOTICE, "[%s] Invalid parameter", cmdname);
+			return STAT_SET_INVALID;
+			break;
+			}
+		case BCMXCP_RETURN_PARAMETER_OUT_OF_RANGE: {
+			upslogx(LOG_NOTICE, "[%s] Parameter out of range", cmdname);
+			return STAT_SET_INVALID;
+			break;
+			}
+		default: {
+			upslogx(LOG_NOTICE, "[%s] Not supported", cmdname);
+			return STAT_SET_INVALID;
+			break;
+			}
+	}
 }
 
 /*******************************
