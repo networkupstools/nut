@@ -2085,7 +2085,7 @@ int setvar (const char *varname, const char *val)
                 sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
                 tmp=atoi(val);
-                if (tmp > 110 || tmp < 540) {
+                if (tmp < 110 || tmp > 540) {
                         return STAT_SET_INVALID;
                 }
 
