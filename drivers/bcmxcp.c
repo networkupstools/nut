@@ -1614,11 +1614,14 @@ void upsdrv_updateinfo(void)
 				status_set("OVER");
 				break;
 			case BCMXCP_STATUS_TRIM: /* Trim */
+				upslogx(LOG_NOTICE, "Entering Trim state");
 				status_set("OL");
 				status_set("TRIM");
 				break;
 			case BCMXCP_STATUS_BOOST1:
+				upslogx(LOG_NOTICE, "Entering Boost state");
 			case BCMXCP_STATUS_BOOST2: /* Boost */
+				upslogx(LOG_NOTICE, "Entering Double Boost state");
 				status_set("OL");
 				status_set("BOOST");
 				break;
