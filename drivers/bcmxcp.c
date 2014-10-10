@@ -8,10 +8,10 @@
 
  Copyright (C)
    2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
-   2004 Tore Гrpetveit <tore-at-orpetveit.net>
+   2004 Tore Ørpetveit <tore-at-orpetveit.net>
    2011 - 2012 Arnaud Quette <ArnaudQuette@Eaton.com>
 
- Thanks to Tore Гrpetveit <tore-at-orpetveit.net> that sent me the
+ Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
  manuals for bcm/xcp.
 
  And to Fabio Di Niro <fabio.diniro@email.it> and his metasys module.
@@ -128,11 +128,11 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_VERSION,
 	"Martin Schroeder <emes@geomer.de>\n" \
 	"Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
-	"Tore Гrpetveit <tore@orpetveit.net>\n" \
+	"Tore Ørpetveit <tore@orpetveit.net>\n" \
 	"Wolfgang Ocker <weo@weo1.de>\n" \
 	"Oliver Wilcock\n" \
 	"Prachi Gandhi <prachisgandhi@eaton.com>\n" \
-	"Alf HГёgemark <alf@i100>\n" \
+	"Alf Høgemark <alf@i100>\n" \
     "Gavrilov Igor",
 	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
