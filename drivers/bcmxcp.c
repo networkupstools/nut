@@ -8,10 +8,10 @@
 
  Copyright (C)
    2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
-   2004 Tore Ørpetveit <tore-at-orpetveit.net>
+   2004 Tore Гrpetveit <tore-at-orpetveit.net>
    2011 - 2012 Arnaud Quette <ArnaudQuette@Eaton.com>
 
- Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
+ Thanks to Tore Гrpetveit <tore-at-orpetveit.net> that sent me the
  manuals for bcm/xcp.
 
  And to Fabio Di Niro <fabio.diniro@email.it> and his metasys module.
@@ -117,7 +117,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.29"
+#define DRIVER_VERSION "0.28"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -128,12 +128,12 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_VERSION,
 	"Martin Schroeder <emes@geomer.de>\n" \
 	"Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
-	"Tore Ørpetveit <tore@orpetveit.net>\n" \
+	"Tore Гrpetveit <tore@orpetveit.net>\n" \
 	"Wolfgang Ocker <weo@weo1.de>\n" \
 	"Oliver Wilcock\n" \
 	"Prachi Gandhi <prachisgandhi@eaton.com>\n" \
-	"Alf Høgemark <alf@i100>\n" \
-    	"Gavrilov Igor",
+	"Alf HГёgemark <alf@i100>\n" \
+    "Gavrilov Igor",
 	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
 };
@@ -1944,6 +1944,37 @@ static int instcmd(const char *cmdname, const char *extra)
 		res = command_write_sequence(cbuf, 3, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Testing panel now");
+	}
+
+	 if (!strcasecmp(cmdname, "beeper.disable") || !strcasecmp(cmdname, "beeper.enable") || !strcasecmp(cmdname, "beeper.mute")) {
+                send_write_command(AUTHOR, 4);
+
+                sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+                cbuf[0] = PW_SET_CONF_COMMAND;
+                cbuf[1] = PW_CONF_BEEPER;
+                switch (cmdname[7]){
+
+                        case 'd':
+                        case 'D': {
+                                cbuf[2] = 0x0;            /*disable beeper*/
+                                break;
+                                }
+                        case 'e':
+                        case 'E': {
+                                cbuf[2] = 0x1;          /*enable beeper*/
+                                break;
+                                }
+                        case 'm':
+                        case 'M': {
+                                cbuf[2] = 0x2;
+                                break;                  /*mute beeper*/
+                                }
+                }
+                cbuf[3] = 0x0;          /*padding*/
+
+                res = command_write_sequence(cbuf, 4, answer);
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Beeper status changed");
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
