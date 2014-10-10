@@ -78,19 +78,19 @@
 #define PW_TURN_ON_DELAY  4
 
 /* Config vars*/
-#define PW_CONF_BYPASS_FREQ_DEV_LIMIT	0x01
-#define PW_CONF_LOW_DEV_LIMIT		0x02
-#define PW_CONF_HIGH_DEV_LIMIT		0x03
+#define PW_CONF_BYPASS_FREQ_DEV_LIMIT   0x01
+#define PW_CONF_LOW_DEV_LIMIT           0x02
+#define PW_CONF_HIGH_DEV_LIMIT          0x03
 #define PW_CONF_PHASE_DEV_LIMIT         0x04
-#define PW_CONF_LOW_BATT		0x05
-#define PW_CONF_BEEPER			0x06
-#define PW_CONF_RETURN_DELAY		0x07
-#define PW_CONF_RETURN_CAP		0x08
-#define PW_CONF_MAX_TEMP		0x0a
-#define PW_CONF_NOMINAL_OUT_VOLTAGE	0x0b
-#define PW_CONF_SLEEP_TH_LOAD		0x0d
-#define PW_CONF_SLEEP_DELAY		0x0e
-#define PW_CONF_BATT_STRINGS		0x0f
+#define PW_CONF_LOW_BATT                0x05
+#define PW_CONF_BEEPER                  0x06
+#define PW_CONF_RETURN_DELAY            0x07
+#define PW_CONF_RETURN_CAP              0x08
+#define PW_CONF_MAX_TEMP                0x0a
+#define PW_CONF_NOMINAL_OUT_VOLTAGE     0x0b
+#define PW_CONF_SLEEP_TH_LOAD           0x0d
+#define PW_CONF_SLEEP_DELAY             0x0e
+#define PW_CONF_BATT_STRINGS            0x0f
 
 /* Config block offsets */
 #define BCMXCP_CONFIG_BLOCK_MACHINE_TYPE_CODE           0
@@ -114,13 +114,13 @@
 
 /*Battery block offsets*/
 
-#define BCMXCP_BATTDATA_BLOCK_BATT_TEST_STATUS		0
-#define BCMXCP_BATTDATA_BLOCK_BATT_VOLTS_T1		1
-#define BCMXCP_BATTDATA_BLOCK_BATT_VOLTS_T2		5
-#define BCMXCP_BATTDATA_BLOCK_TEST_DURATION		9
-#define BCMXCP_BATTDATA_BLOCK_UTIL_VOLT			10
-#define BCMXCP_BATTDATA_BLOCK_INPUT_CURRENT             14
-#define BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS         18
+#define BCMXCP_BATTDATA_BLOCK_BATT_TEST_STATUS          0
+#define BCMXCP_BATTDATA_BLOCK_BATT_VOLTS_T1             1
+#define BCMXCP_BATTDATA_BLOCK_BATT_VOLTS_T2             5
+#define BCMXCP_BATTDATA_BLOCK_TEST_DURATION             9
+#define BCMXCP_BATTDATA_BLOCK_UTIL_VOLT                10
+#define BCMXCP_BATTDATA_BLOCK_INPUT_CURRENT            14
+#define BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS        18
 /*BATT_TEST_STATUS for external strings (1 byte each) if BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS == 0 no external test statuses at all*/
 /*next - number of ABM Statuses - at least 1 for internal batteries*/
 
