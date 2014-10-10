@@ -1222,20 +1222,20 @@ void init_limit(void)
 		dstate_setinfo("ambient.temperature.high", "%d", value);
 	}
     
-    /*Sleep minimum load*/
+        /*Sleep minimum load*/
 		dstate_setinfo("ups.sleep.min.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
 
-	/*Sleep delay*/
+	/* Sleep delay*/
 		dstate_setinfo("ups.sleep.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
 
-	/*Low batt minutes warning*/
+	/* Low batt minutes warning*/
 		dstate_setinfo("ups.low.batt.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
 
-	/*Return to mains delay */
+	/* Return to mains delay */
 	value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
 		dstate_setinfo("ups.return.delay","%d",value);
 
-	/*Minimum return capacity*/
+	/* Minimum return capacity*/
 		dstate_setinfo("ups.return.capacity","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
 
 }
