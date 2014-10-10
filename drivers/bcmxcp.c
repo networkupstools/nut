@@ -133,7 +133,7 @@ upsdrv_info_t upsdrv_info = {
 	"Oliver Wilcock\n" \
 	"Prachi Gandhi <prachisgandhi@eaton.com>\n" \
 	"Alf Høgemark <alf@i100>\n" \
-    "Gavrilov Igor",
+	"Gavrilov Igor",
 	DRV_STABLE,
 	{ &comm_upsdrv_info, NULL }
 };
@@ -1673,7 +1673,7 @@ void upsdrv_updateinfo(void)
 			upsdebugx(1, "Failed to extract Battery Status from answer");
 		}
 	
-    /*Extracting internal batteries ABM status*/
+    		/*Extracting internal batteries ABM status*/
 		/*Plased first in ABM statuses list. For examples above - on position BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS (18):
 		PW5115RM - 0 - no external strings, no status bytes, 
 		so next byte (19) - number of ABM statuses, next (20) - first ABM Status for internal batteries.
@@ -2071,13 +2071,10 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " BOOST threshold volage set to %d V", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
-
-
-
 
          if (!strcasecmp(varname, "input.transfer.trim.low")) {
 
@@ -2097,11 +2094,9 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " TRIM threshold volage set to %d V", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
-
-
 
 	if (!strcasecmp(varname, "ups.low.batt.delay")) {
 
@@ -2121,7 +2116,7 @@ int setvar (const char *varname, const char *val)
 		 res = command_write_sequence(cbuf, 4, answer);
 	       snprintf(success_msg, sizeof(success_msg)-1, " Low battery warning time set to %d min", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2143,8 +2138,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Mains return delay set to %d sec", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
-
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2166,7 +2160,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Mains return minimum battery capacity set to %d %%", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2189,13 +2183,9 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Maximum temperature set to %d C", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
-
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
-
-
-
 
          if (!strcasecmp(varname, "output.voltage.nominal")) {
 
@@ -2215,9 +2205,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Nominal output voltage set to %d V", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
-
-
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
         }
 
@@ -2239,7 +2227,7 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Minimum load before sleep countdown set to %d %%", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
@@ -2263,13 +2251,10 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, " Delay before sleep shutdown set to %d min", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
-
-
-
 
 	 if (!strcasecmp(varname, "battery.packs")) {
 
@@ -2289,13 +2274,11 @@ int setvar (const char *varname, const char *val)
                  res = command_write_sequence(cbuf, 4, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, "EBM Count set to %d ", tmp);
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 
         }
 
-
-								
 	strncpy(namebuf, varname, sizeof(namebuf));
 	namebuf[NUT_OUTLET_POSITION] = 'n'; /* Assumes a maximum of 9 outlets */
 
@@ -2397,11 +2380,9 @@ int setvar (const char *varname, const char *val)
                 res = command_write_sequence(cbuf, 2, answer);
                 snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, tmp?"On":"Off");
 
-        		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
+       		return decode_instcmd_exec(res, (unsigned char)answer[0], varname, success_msg);
                 
         }
-
-
 
 	return STAT_SET_INVALID;
 }
