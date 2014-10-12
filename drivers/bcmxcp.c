@@ -218,7 +218,7 @@ info_lkp_t command_map_info[] = {
 	{ PW_INIT_BAT_TEST, "test.battery.start", NULL },
 	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL },
 	{ PW_UPS_OFF, "shutdown.stayoff", NULL },
-	{PW_UPS_ON, "load.on", NULL},
+	{ PW_UPS_ON, "load.on", NULL},
 	{ 0, NULL, NULL }
 };
 
