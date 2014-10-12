@@ -1903,6 +1903,16 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Going down NOW");
 	}
+	
+	if (!strcasecmp(cmdname, "load.on")) {
+		send_write_command(AUTHOR, 4);
+
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+		res = command_read_sequence(PW_UPS_ON, answer);
+
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Enabling");
+	}
 
 	/* Note: test result will be parsed from Battery status block,
 	 * part of the update loop, and published into ups.test.result
