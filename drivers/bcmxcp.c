@@ -1062,8 +1062,8 @@ void init_ext_vars(void)
                                                 dstate_setaux("input.transfer.trim.low", 5);
                                                 break;
 
-			case PW_CONF_LOW_BATT:  dstate_setflags("ups.low.batt.delay", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ups.low.batt.delay", 5);
+			case PW_CONF_LOW_BATT:  dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
+						dstate_setaux("battery.runtime.low", 5);
 						break;
 
 			case PW_CONF_BEEPER:	dstate_addcmd("beeper.disable");
@@ -1071,12 +1071,12 @@ void init_ext_vars(void)
 						dstate_addcmd("beeper.mute");
 						break;
 
-			case PW_CONF_RETURN_DELAY: dstate_setflags("ups.return.delay", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ups.return.delay", 5);
+			case PW_CONF_RETURN_DELAY: dstate_setflags("input.transfer.delay", ST_FLAG_RW | ST_FLAG_STRING);
+						dstate_setaux("input.transfer.delay", 5);
                                                 break;
 
-			case PW_CONF_RETURN_CAP: dstate_setflags("ups.return.capacity", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ups.return.capacity", 5);
+			case PW_CONF_RETURN_CAP: dstate_setflags("battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING);
+						dstate_setaux("battery.charge.restart", 5);
                                                 break;
 
 			case PW_CONF_MAX_TEMP: dstate_setflags("ambient.temperature.high", ST_FLAG_RW | ST_FLAG_STRING);
@@ -1087,12 +1087,12 @@ void init_ext_vars(void)
 						dstate_setaux("output.voltage.nominal", 5);
                                                 break;
 
-			case PW_CONF_SLEEP_TH_LOAD:	dstate_setflags("ups.sleep.min.load", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ups.sleep.min.load", 5);
+			case PW_CONF_SLEEP_TH_LOAD:	dstate_setflags("battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING);
+						dstate_setaux("battery.energysave.load", 5);
                                                 break;
 
-			case PW_CONF_SLEEP_DELAY: dstate_setflags("ups.sleep.delay", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ups.sleep.delay", 5);
+			case PW_CONF_SLEEP_DELAY: dstate_setflags("battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING);
+						dstate_setaux("battery.energysave.delay", 5);
                                                 break;
 
 			case PW_CONF_BATT_STRINGS: dstate_setflags("battery.packs", ST_FLAG_RW | ST_FLAG_STRING);
@@ -1224,20 +1224,20 @@ void init_limit(void)
 	}
 
         /*Sleep minimum load*/
-		dstate_setinfo("ups.sleep.min.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
+		dstate_setinfo("battery.energysave.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
 
 	/* Sleep delay*/
-		dstate_setinfo("ups.sleep.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
+		dstate_setinfo("battery.energysave.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
 
 	/* Low batt minutes warning*/
-		dstate_setinfo("ups.low.batt.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
+		dstate_setinfo("battery.runtime.low", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
 
 	/* Return to mains delay */
 	value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
-		dstate_setinfo("ups.return.delay","%d",value);
+		dstate_setinfo("input.transfer.delay","%d",value);
 
 	/* Minimum return capacity*/
-		dstate_setinfo("ups.return.capacity","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
+		dstate_setinfo("battery.charge.restart","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
 
 }
 
@@ -1692,7 +1692,7 @@ void upsdrv_updateinfo(void)
 		value=*(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS + *(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS)*1+2 ); 
 			upsdebugx(2, "ABM Status = %d ",value);
 		if (value > 0 && value < 5)
-			dstate_setinfo("ups.abm.status","%s",ABMStatus[value-1]);
+			dstate_setinfo("battery.charger.status","%s",ABMStatus[value-1]);
 	}
 
     
@@ -1751,20 +1751,20 @@ void upsdrv_updateinfo(void)
 	        }
 
         	/*Sleep minimum load*/
-                	dstate_setinfo("ups.sleep.min.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
+                	dstate_setinfo("battery.energysave.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
 
 	        /*Sleep delay*/
-        	        dstate_setinfo("ups.sleep.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
+        	        dstate_setinfo("battery.energysave.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
 
 	        /*Low batt minutes warning*/
-        	        dstate_setinfo("ups.low.batt.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
+        	        dstate_setinfo("battery.runtime.low", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
 
 	        /*Return to mains delay */
 	        value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
-        	        dstate_setinfo("ups.return.delay","%d",value);
+        	        dstate_setinfo("input.transfer.delay","%d",value);
 
 	        /*Minimum return capacity*/
-        	        dstate_setinfo("ups.return.capacity","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
+        	        dstate_setinfo("battery.charge.restart","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
 	};
 
 	 res = command_read_sequence(PW_CONFIG_BLOCK_REQ, answer);
@@ -2143,7 +2143,7 @@ int setvar (const char *varname, const char *val)
 
         }
 
-	if (!strcasecmp(varname, "ups.low.batt.delay")) {
+	if (!strcasecmp(varname, "battery.runtime.low")) {
 
 		send_write_command(AUTHOR, 4);
 	        sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
@@ -2165,7 +2165,7 @@ int setvar (const char *varname, const char *val)
 
         }
 
-        if (!strcasecmp(varname, "ups.return.delay")) {
+        if (!strcasecmp(varname, "input.transfer.delay")) {
 
                 send_write_command(AUTHOR, 4);
                 sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
@@ -2187,7 +2187,7 @@ int setvar (const char *varname, const char *val)
 
         }
 
-        if (!strcasecmp(varname, "ups.return.capacity")) {
+        if (!strcasecmp(varname, "battery.charge.restart")) {
 
                 send_write_command(AUTHOR, 4);
                 sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
@@ -2254,7 +2254,7 @@ int setvar (const char *varname, const char *val)
 
         }
 
-         if (!strcasecmp(varname, "ups.sleep.min.load")) {
+         if (!strcasecmp(varname, "battery.energysave.load")) {
 
                 send_write_command(AUTHOR, 4);
                 sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
@@ -2278,7 +2278,7 @@ int setvar (const char *varname, const char *val)
         }
 
 
-         if (!strcasecmp(varname, "ups.sleep.delay")) {
+         if (!strcasecmp(varname, "battery.energysave.delay")) {
 
                 send_write_command(AUTHOR, 4);
                 sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
@@ -2451,6 +2451,3 @@ static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, co
 	}
 	return NULL;
 }
-
-
- 
