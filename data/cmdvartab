@@ -67,6 +67,7 @@ VARDESC input.transfer.boost.low "Low voltage boosting transfer point (V)"
 VARDESC input.transfer.boost.high "High voltage boosting transfer point (V)"
 VARDESC input.transfer.trim.low "Low voltage trimming transfer point (V)"
 VARDESC input.transfer.trim.high "High voltage trimming transfer point (V)"
+VARDESC input.transfer.delay "Delay before transfer to mains"
 
 VARDESC output.voltage "Output voltage (V)"
 VARDESC output.voltage.nominal "Nominal output voltage (V)"
