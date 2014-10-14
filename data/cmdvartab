@@ -94,6 +94,9 @@ VARDESC battery.packs.bad "Number of bad battery packs"
 VARDESC battery.type "Battery chemistry"
 VARDESC battery.protection "Prevent deep discharge of battery"
 VARDESC battery.energysave "Switch off when running on battery and no/low load"
+VARDESC battery.energysave.load "Switch off UPS if on battery and load level lower (percent)"
+VARDESC battery.energysave.delay "Delay before switch off UPS if on battery and load level low (min)"
+VARDESC battery.charger.status "Battery charger status"
 
 VARDESC ambient.temperature "Ambient temperature (degrees C)"
 VARDESC ambient.temperature.alarm "Ambient temperature alarm is active"
@@ -179,8 +182,10 @@ CMDDESC beeper.mute "Temporarily mute the UPS beeper"
 CMDDESC beeper.toggle "Toggle the UPS beeper"
 CMDDESC outlet.1.load.off "Turn off the load on outlet 1 immediately"
 CMDDESC outlet.1.load.on "Turn on the load on outlet 1 immediately"
+CMDDESC outlet.1.shutdown.return "Turn off the outlet 1 and return when power is back"
 CMDDESC outlet.2.load.off "Turn off the load on outlet 2 immediately"
 CMDDESC outlet.2.load.on "Turn on the load on outlet 2 immediately"
+CMDDESC outlet.2.shutdown.return "Turn off the outlet 2 and return when power is back"
 
 # The following two commands should *only* be defined when you need
 # to compose a 'shutdown.return' command by sending both a switch-off
