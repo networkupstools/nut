@@ -22,7 +22,7 @@
  ojw0000 2007Apr5 Oliver Wilcock - modified to control individual load segments (outlet.2.shutdown.return) on Powerware PW5125.
 
  Modified to support setvar for outlet.n.delay.start by Rich Wrenn (RFW) 9-3-11.
- Modified to support setvar for outlet.n.delay.shutdown by Arnaud Quette, 9-12-11 
+ Modified to support setvar for outlet.n.delay.shutdown by Arnaud Quette, 9-12-11
 
 This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -40,72 +40,72 @@ This program is free software; you can redistribute it and/or modify
 
 TODO List:
 
-	Extend the parsing of the Standard ID Block, to read:
+        Extend the parsing of the Standard ID Block, to read:
 
-		Config Block Length: (High priority)
-		Give information if config block is
-		present, and how long it is, if it exist.
-		If config block exist, read the config block and parse the
-		'Length of the Extended Limits Configuration Block' for
-		extended configuration commands
+                Config Block Length: (High priority)
+                Give information if config block is
+                present, and how long it is, if it exist.
+                If config block exist, read the config block and parse the
+                'Length of the Extended Limits Configuration Block' for
+                extended configuration commands
 
-		Statistic map Size: (Low priority)
-		May be used to se if there is a Statistic Map.
-		It holds data on the utility power quality for
-		the past month and since last reset. Number of
-		times on battery and how long. Up time and utility
-		frequency deviation. (Only larger ups'es)
+                Statistic map Size: (Low priority)
+                May be used to se if there is a Statistic Map.
+                It holds data on the utility power quality for
+                the past month and since last reset. Number of
+                times on battery and how long. Up time and utility
+                frequency deviation. (Only larger ups'es)
 
-		Size of Alarm History Log: (Low priority)
-		See if it have any alarm history block and enable
-		command to dump it.
+                Size of Alarm History Log: (Low priority)
+                See if it have any alarm history block and enable
+                command to dump it.
 
-		Maximum Supported Command Length: ( Med. to High priority)
-		Give info about the ups receive buffer size.
+                Maximum Supported Command Length: ( Med. to High priority)
+                Give info about the ups receive buffer size.
 
-		Size of Alarm Block: ( Med. to High priority)
-		Make a smarter handling of the Active alarm's if we know the length
-		of the Active Alarm Block. Don't need the long loop to parse the
-		alarm's. Maybe use another way to set up the alarm struct in the
-		'init_alarm_map'.
+                Size of Alarm Block: ( Med. to High priority)
+                Make a smarter handling of the Active alarm's if we know the length
+                of the Active Alarm Block. Don't need the long loop to parse the
+                alarm's. Maybe use another way to set up the alarm struct in the
+                'init_alarm_map'.
 
-	Parse 'Communication Capabilities Block' ( Low priority)
-		Get info of the connected ports ID, number of baud rates,
-		command and respnse length.
+        Parse 'Communication Capabilities Block' ( Low priority)
+                Get info of the connected ports ID, number of baud rates,
+                command and respnse length.
 
-	Parse 'Communication Port List Block': ( Low priority)
-		This block gives info about the communication ports. Some ups'es
-		have multiple comport's, and use one port for eatch load segment.
-		In this block it is possible to get:
-		Number of ports. (In this List)
-		This Comport id (Which Comm Port is reporting this block.)
-		Comport id (Id for eatch port listed. The first comport ID=1)
-		Baudrate of the listed port.
-		Serial config.
-		Port usage:
-			What this Comm Port is being used for:
-			0 = Unknown usage, No communication occurring.
-			1 = Undefined / Unknown communication occurring
-			2 = Waiting to communicate with a UPS
-			3 = Communication established with a UPS
-			4 = Waiting to communicate with software or adapter
-			5 = Communication established software (e.g., LanSafe)
-				or adapter (e.g., ConnectUPS)
-			6 = Communicating with a Display Device
-			7 = Multi-drop Serial channel
-			8 = Communicating with an Outlet Controller
-		Number of outlets. (Number of Outlets "assigned to" (controlled by) this Comm Port)
-		Outlet number. (Each assigned Outlet is listed (1-64))
+        Parse 'Communication Port List Block': ( Low priority)
+                This block gives info about the communication ports. Some ups'es
+                have multiple comport's, and use one port for eatch load segment.
+                In this block it is possible to get:
+                Number of ports. (In this List)
+                This Comport id (Which Comm Port is reporting this block.)
+                Comport id (Id for eatch port listed. The first comport ID=1)
+                Baudrate of the listed port.
+                Serial config.
+                Port usage:
+                        What this Comm Port is being used for:
+                        0 = Unknown usage, No communication occurring.
+                        1 = Undefined / Unknown communication occurring
+                        2 = Waiting to communicate with a UPS
+                        3 = Communication established with a UPS
+                        4 = Waiting to communicate with software or adapter
+                        5 = Communication established software (e.g., LanSafe)
+                                or adapter (e.g., ConnectUPS)
+                        6 = Communicating with a Display Device
+                        7 = Multi-drop Serial channel
+                        8 = Communicating with an Outlet Controller
+                Number of outlets. (Number of Outlets "assigned to" (controlled by) this Comm Port)
+                Outlet number. (Each assigned Outlet is listed (1-64))
 
-		'Set outlet parameter command (0x97)' to alter the delay
-		settings or turn the outlet on or off with a delay (0 - 32767 seconds)
+                'Set outlet parameter command (0x97)' to alter the delay
+                settings or turn the outlet on or off with a delay (0 - 32767 seconds)
 
 
-	Rewrite some parts of the driver, to minimise code duplication. (Like the instant commands)
+        Rewrite some parts of the driver, to minimise code duplication. (Like the instant commands)
 
-	Implement support for Password Authorization (XCP spec, В§4.3.2)
+        Implement support for Password Authorization (XCP spec, В§4.3.2)
 
-	Complete support for settable variables (upsh.setvar)
+        Complete support for settable variables (upsh.setvar)
 */
 
 
@@ -124,18 +124,18 @@ TODO List:
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
-	DRIVER_NAME,
-	DRIVER_VERSION,
-	"Martin Schroeder <emes@geomer.de>\n" \
-	"Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
-	"Tore Ørpetveit <tore@orpetveit.net>\n" \
-	"Wolfgang Ocker <weo@weo1.de>\n" \
-	"Oliver Wilcock\n" \
-	"Prachi Gandhi <prachisgandhi@eaton.com>\n" \
-	"Alf Høgemark <alf@i100>\n" \
-	"Gavrilov Igor",
-	DRV_STABLE,
-	{ &comm_upsdrv_info, NULL }
+        DRIVER_NAME,
+        DRIVER_VERSION,
+        "Martin Schroeder <emes@geomer.de>\n" \
+        "Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
+        "Tore Ørpetveit <tore@orpetveit.net>\n" \
+        "Wolfgang Ocker <weo@weo1.de>\n" \
+        "Oliver Wilcock\n" \
+        "Prachi Gandhi <prachisgandhi@eaton.com>\n" \
+        "Alf Høgemark <alf@i100>\n" \
+        "Gavrilov Igor",
+        DRV_STABLE,
+        { &comm_upsdrv_info, NULL }
 };
 
 static int get_word(const unsigned char*);
@@ -1010,8 +1010,8 @@ int init_outlet(unsigned char len)
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.status", num);
 		if (outlet_state>0 && outlet_state <9 )
 			dstate_setinfo(outlet_name, "%s", OutletStatus[outlet_state] );
-		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
-		dstate_setaux(outlet_name, 5);
+//		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
+//		dstate_setaux(outlet_name, 5);
 
 		auto_dly_off = get_word(answer+iIndex);
 		iIndex += 2;
@@ -1127,15 +1127,15 @@ void init_config(void)
 	frequency = get_word((answer+BCMXCP_CONFIG_BLOCK_NOMINAL_OUTPUT_FREQ));
 	if (frequency != 0)
 		dstate_setinfo("output.frequency.nominal", "%d", frequency);
-    
-    /*Number of EBM*/
-		dstate_setinfo("battery.packs", "%d", (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3));
-	
+
+	/*Number of EBM*/
+	dstate_setinfo("battery.packs", "%d", (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3));
+
 	/* UPS serial number */
 	snprintf(sValue, sizeof(sValue), "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
 	if(sValue[0] != '\0')
 		dstate_setinfo("ups.serial", "%s", sValue);
-		
+
 	/* UPS Part Number*/
 	snprintf(sPartNumber, sizeof(sPartNumber), "%s", answer + BCMXCP_CONFIG_BLOCK_PART_NUMBER);
 	if(sPartNumber[0] != '\0')
@@ -1222,7 +1222,7 @@ void init_limit(void)
 	if (value != 0) {
 		dstate_setinfo("ambient.temperature.high", "%d", value);
 	}
-    
+
         /*Sleep minimum load*/
 		dstate_setinfo("ups.sleep.min.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
 
@@ -1266,7 +1266,7 @@ void init_system_test_capabilities(void)
 
 	/* Query what system test capabilities are supported */
 	send_write_command(AUTHOR, 4);
-		
+
 	sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	cbuf[0] = PW_INIT_SYS_TEST;
@@ -1420,7 +1420,6 @@ void upsdrv_initinfo(void)
 
 	/* Size of custom event log, always 0 according to spec */
 	iIndex += 2;
-
 	/* Size of topology block */
 	topology_block_len = get_word(answer+iIndex);
 	upsdebugx(2, "Length of topology block: %d\n", topology_block_len);
@@ -1457,6 +1456,10 @@ void upsdrv_initinfo(void)
 		for(res = 1 ; res <= len ; res++) {
 			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.shutdown.return", res);
 			dstate_addcmd(outlet_name);
+			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.load.on", res);
+                        dstate_addcmd(outlet_name);
+			snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.load.off", res);
+                        dstate_addcmd(outlet_name);
 		}
 	}
 
@@ -1839,43 +1842,13 @@ static int instcmd(const char *cmdname, const char *extra)
 {
 	unsigned char answer[128], cbuf[6];
 	char success_msg[40];
+        char namebuf[MAX_NUT_NAME_LENGTH];
 	char varname[32];
 	const char *varvalue = NULL;
-	int res, sec;
+	int res, sec, outlet_num;
 	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
 	upsdebugx(1, "entering instcmd(%s)", cmdname);
-
-	/* ojw0000 outlet power cycle for PW5125 and perhaps others */
-	if (!strcasecmp(cmdname, "outlet.1.shutdown.return")
-		|| !strcasecmp(cmdname, "outlet.2.shutdown.return")
-		|| !strcasecmp(cmdname, "outlet.3.shutdown.return")
-	    ) {
-		send_write_command(AUTHOR, 4);
-
-		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
-
-		/* Get the shutdown delay, if any */
-		snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[7]);
-		if ((varvalue = dstate_getinfo(varname)) != NULL) {
-			sddelay = atoi(varvalue);
-		}
-        
-        /*if -1 then use global shutdown_delay from ups.conf*/
-        if (sddelay == -1) sddelay=bcmxcp_status.shutdowndelay;
-
-		cbuf[0] = PW_LOAD_OFF_RESTART;
-		cbuf[1] = sddelay & 0xff;
-		cbuf[2] = sddelay >> 8;     /* high byte of the 2 byte time argument */
-		cbuf[3] = cmdname[7] - '0'; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
-
-		res = command_write_sequence(cbuf, 4, answer);
-
-		sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
-		snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
-
-		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
-	} /* ojw0000 end outlet power cycle */
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
@@ -1903,7 +1876,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Going down NOW");
 	}
-	
+
 	if (!strcasecmp(cmdname, "load.on")) {
 		send_write_command(AUTHOR, 4);
 
@@ -1934,11 +1907,11 @@ static int instcmd(const char *cmdname, const char *extra)
 			 answer from the test.
 			 Or return, as we may lose line power
 			 and need to do a shutdown.*/
-	}	
-	
+	}
+
 	if (!strcasecmp(cmdname, "test.system.start")) {
 		send_write_command(AUTHOR, 4);
-		
+
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
@@ -1950,7 +1923,7 @@ static int instcmd(const char *cmdname, const char *extra)
 
 	if (!strcasecmp(cmdname, "test.panel.start")) {
 		send_write_command(AUTHOR, 4);
-		
+
 		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 		cbuf[0] = PW_INIT_SYS_TEST;
@@ -1990,6 +1963,63 @@ static int instcmd(const char *cmdname, const char *extra)
 
                 res = command_write_sequence(cbuf, 4, answer);
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Beeper status changed");
+	}
+
+        strncpy(namebuf, cmdname, sizeof(namebuf));
+        namebuf[NUT_OUTLET_POSITION] = 'n'; /* Assumes a maximum of 9 outlets */
+
+        /* ojw0000 outlet power cycle for PW5125 and perhaps others */
+        if (!strcasecmp(namebuf, "outlet.n.shutdown.return")) {
+                send_write_command(AUTHOR, 4);
+
+                sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+                /* Get the shutdown delay, if any */
+                snprintf(varname, sizeof(varname)-1, "outlet.%c.delay.shutdown", cmdname[NUT_OUTLET_POSITION]);
+                if ((varvalue = dstate_getinfo(varname)) != NULL) {
+                        sddelay = atoi(varvalue);
+                }
+
+                /*if -1 then use global shutdown_delay from ups.conf*/
+                if (sddelay == -1) sddelay=bcmxcp_status.shutdowndelay;
+
+		outlet_num = cmdname[NUT_OUTLET_POSITION] - '0';
+		if (outlet_num < 1 || outlet_num > 9)
+			return STAT_INSTCMD_FAILED;
+
+                cbuf[0] = PW_LOAD_OFF_RESTART;
+                cbuf[1] = sddelay & 0xff;
+                cbuf[2] = sddelay >> 8;     /* high byte of the 2 byte time argument */
+                cbuf[3] = outlet_num; /* which outlet load segment? Assumes outlet number at position 8 of the command string. */
+
+                res = command_write_sequence(cbuf, 4, answer);
+
+                sec = (256 * (unsigned char)answer[3]) + (unsigned char)answer[2];
+                snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
+
+                return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
+        } /* ojw0000 end outlet power cycle */
+
+	if (!strcasecmp(namebuf,"outlet.n.load.on") || !strcasecmp(namebuf,"outlet.n.load.off")){
+                send_write_command(AUTHOR, 4);
+
+                sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+                outlet_num = cmdname[NUT_OUTLET_POSITION] - '0';
+                if (outlet_num < 1 || outlet_num > 9)
+                        return STAT_INSTCMD_FAILED;
+
+
+		cbuf[0] = (cmdname[NUT_OUTLET_POSITION+8] == 'n')?PW_UPS_ON:PW_UPS_OFF;        /* Cmd oN or not*/
+                cbuf[1] = outlet_num;                           /* Outlet number */
+
+                res = command_write_sequence(cbuf, 2, answer);
+                snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, (cmdname[NUT_OUTLET_POSITION+8] == 'n')?"On":"Off");
+
+                return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
+
+
+
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
@@ -2299,7 +2329,7 @@ int setvar (const char *varname, const char *val)
 
 	if ( (!strcasecmp(namebuf, "outlet.n.delay.start")) ||
 		(!strcasecmp(namebuf, "outlet.n.delay.shutdown")) ) {
-		
+
 
 		if (outlet_block_len <= 8) {
 			return STAT_SET_INVALID;
@@ -2340,32 +2370,6 @@ int setvar (const char *varname, const char *val)
        		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
 
 	}
-
-        if ( !strcasecmp(namebuf, "outlet.n.status") ) {
-
-
-                send_write_command(AUTHOR, 4);
-                sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
-
-                outlet_num = varname[NUT_OUTLET_POSITION] - '0';
-                if (outlet_num < 1 || outlet_num > 9) {
-                        return STAT_SET_INVALID;
-                }
-
-                 tmp = atoi(val);
-                if (tmp < 0 || tmp > 1) {
-                        return STAT_SET_INVALID;
-                }
-
-                cbuf[0] = tmp?PW_UPS_ON:PW_UPS_OFF;        /* Cmd */
-                cbuf[1] = outlet_num;                           /* Outlet number */
-
-                res = command_write_sequence(cbuf, 2, answer);
-                snprintf(success_msg, sizeof(success_msg)-1, "Outlet %d is  %s",outlet_num, tmp?"On":"Off");
-
-       		return decode_setvar_exec(res, (unsigned char)answer[0], varname, success_msg);
-                
-        }
 
 	return STAT_SET_INVALID;
 }
@@ -2449,3 +2453,4 @@ static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, co
 }
 
 
+ 
