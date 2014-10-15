@@ -1043,7 +1043,7 @@ void init_ext_vars(void)
         sleep(PW_SLEEP);        /* Need to. Have to wait at least 0,25 sec max 16 sec */
 
 	cbuf[0] = PW_SET_CONF_COMMAND;
-	cbuf[1] = 0xff;
+	cbuf[1] = PW_CONF_REQ;
 	cbuf[2] = 0x0;
 	cbuf[3] = 0x0;
 
