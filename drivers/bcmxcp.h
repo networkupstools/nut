@@ -91,6 +91,7 @@
 #define PW_CONF_SLEEP_TH_LOAD           0x0d
 #define PW_CONF_SLEEP_DELAY             0x0e
 #define PW_CONF_BATT_STRINGS            0x0f
+#define PW_CONF_REQ			0xff
 
 /* Config block offsets */
 #define BCMXCP_CONFIG_BLOCK_MACHINE_TYPE_CODE           0
