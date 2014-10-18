@@ -93,4 +93,6 @@ typedef struct {
 int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
 							USBDevice_t *device);
 
+void nut_usb_addvars(void);
+
 #endif /* NUT_USB_COMMON_H */

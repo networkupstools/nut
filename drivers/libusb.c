@@ -49,6 +49,23 @@ upsdrv_info_t comm_upsdrv_info = {
 
 static void libusb_close(usb_dev_handle *udev);
 
+/*! Add USB-related driver variables with addvar().
+ * This removes some code duplication across the USB drivers.
+ */
+void nut_usb_addvars(void)
+{
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
+}
+
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
  * using "char" is trouble.  Likewise, sizes should never be negative.
  */
@@ -68,6 +85,45 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 		return 1;
 	}
 	return matcher->match_function(device, matcher->privdata);
+}
+
+/*! If needed, set the USB alternate interface.
+ *
+ * In NUT 2.7.2 and earlier, the following call was made unconditionally:
+ *   usb_set_altinterface(udev, 0);
+ *
+ * Although harmless on Linux and *BSD, this extra call prevents old Tripp Lite
+ * devices from working on Mac OS X (presumably the OS is already setting
+ * altinterface to 0).
+ */
+static int nut_usb_set_altinterface(usb_dev_handle *udev)
+{
+	int altinterface = 0, ret = 0;
+	char *alt_string, *endp = NULL;
+
+	if(testvar("usb_set_altinterface")) {
+		alt_string = getval("usb_set_altinterface");
+		if(alt_string) {
+			altinterface = (int)strtol(alt_string, &endp, 10);
+			if(endp && !(endp[0] == 0)) {
+				upslogx(LOG_WARNING, "%s: '%s' is not a valid number", __func__, alt_string);
+			}
+			if(altinterface < 0 || altinterface > 255) {
+				upslogx(LOG_WARNING, "%s: setting bAlternateInterface to %d will probably not work", __func__, altinterface);
+			}
+		}
+		/* set default interface */
+		upsdebugx(2, "%s: calling usb_set_altinterface(udev, %d)", __func__, altinterface);
+		ret = usb_set_altinterface(udev, altinterface);
+		if(ret != 0) {
+			upslogx(LOG_WARNING, "%s: usb_set_altinterface(udev, %d) returned %d (%s)",
+					__func__, altinterface, ret, usb_strerror() );
+		}
+		upslogx(LOG_NOTICE, "%s: usb_set_altinterface() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
+	} else {
+		upsdebugx(3, "%s: skipped usb_set_altinterface(udev, 0)", __func__);
+	}
+	return ret;
 }
 
 #define usb_control_msg         typesafe_control_msg
@@ -220,8 +276,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			}
 #endif
 
-			/* set default interface */
-			usb_set_altinterface(udev, 0);
+			nut_usb_set_altinterface(udev);
 
 			if (!callback) {
 				return 1;

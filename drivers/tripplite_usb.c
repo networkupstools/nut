@@ -1401,12 +1401,8 @@ void upsdrv_makevartable(void)
 		DEFAULT_OFFDELAY);
 	addvar(VAR_VALUE, "offdelay", msg);
 
-        /* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
-	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
-	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
-	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
+	nut_usb_addvars();
 
 	snprintf(msg, sizeof msg, "Minimum battery voltage, corresponding to 10%% charge (default=%.1f)",
 		MIN_VOLT);

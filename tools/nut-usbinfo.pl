@@ -209,7 +209,7 @@ sub gen_usb_files
 sub find_usbdevs
 {
 	# maybe there's an option to turn off all .* files, but anyway this is stupid
-	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/);
+	return $File::Find::prune = 1 if ($_ eq '.svn') || ($_ =~ /^\.#/) || ($_ =~ /\.orig$/);
 
 	my $nameFile=$_;
 	my $lastComment="";
@@ -265,8 +265,8 @@ sub find_usbdevs
 				}
 			}
 
-			# store date (to be optimized)
-			# and don't overwritte actual vendor names with empty values
+			# store data (to be optimized)
+			# and don't overwrite actual vendor names with empty values
 			if( (!$vendorName{$VendorID}) or (($vendorName{$VendorID} eq "") and ($VendorName ne "")) )
 			{
 				$vendorName{$VendorID}=trim($VendorName);
