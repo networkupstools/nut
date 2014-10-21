@@ -219,6 +219,7 @@ info_lkp_t command_map_info[] = {
 	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL },
 	{ PW_UPS_OFF, "shutdown.stayoff", NULL },
 	{ PW_UPS_ON, "load.on", NULL},
+	{ PW_GO_TO_BYPASS, "bypass.start", NULL},
 	{ 0, NULL, NULL }
 };
 
@@ -1885,6 +1886,16 @@ static int instcmd(const char *cmdname, const char *extra)
 		res = command_read_sequence(PW_UPS_ON, answer);
 
 		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Enabling");
+	}
+	
+	if (!strcasecmp(cmdname, "bypass.start")) {
+		send_write_command(AUTHOR, 4);
+
+		sleep(PW_SLEEP); /* Need to. Have to wait at least 0,25 sec max 16 sec */
+
+		res = command_read_sequence(PW_GO_TO_BYPASS, answer);
+
+		return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, "Bypass enabled");
 	}
 
 	/* Note: test result will be parsed from Battery status block,
