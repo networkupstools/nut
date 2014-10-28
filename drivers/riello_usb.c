@@ -294,6 +294,30 @@ static USBDeviceMatcher_t device_matcher = {
 
 
 /*
+ * Callback that is called by usb_device_open() that handles USB device
+ * settings prior to accepting the devide. At the very least claim the
+ * device here. Detaching the kernel driver will be handled by the
+ * caller, don't do this here. Return < 0 on error, 0 or higher on
+ * success.
+ */
+static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
+{
+	/*if (usb_set_configuration(handle, 1) < 0) {
+		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
+		return -1;
+	} */
+
+	if (usb_claim_interface(handle, 0) < 0) {
+		upslogx(LOG_WARNING, "Can't claim USB interface: %s", usb_strerror());
+		return -1;
+	}
+
+	/* TODO: HID SET_IDLE to 0 (not necessary?) */
+
+	return 1;
+}
+
+/*
  * Generic command processing function. Send a command and read a reply.
  * Returns < 0 on error, 0 on timeout and the number of bytes read on
  * success.
@@ -303,7 +327,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret < 0) 
@@ -815,11 +839,10 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
 	}
 
-
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, &driver_callback);
 	if (ret < 0) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"
