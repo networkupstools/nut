@@ -69,6 +69,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
 	/* Liebert PowerSure PSI 1440 */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
+	/* Liebert GXT3 */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0008), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -522,6 +524,22 @@ static hid_info_t belkin_hid2nut[] = {
      more detailed description of the problem and a possible (but not
      yet implemented) workaround, see the belkinunv(8) man page.
      -PS 2005/08/28 */
+
+#if 0
+  /* added for debugging Liebert GXT3 : */
+  { "unmapped.ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iManufacturer", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion },
+  { "unmapped.ups.powersummary.designcapacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.remainingtimelimit", 0, 0, "UPS.PowerSummary.RemainingTimeLimit", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.capacitymode", 0, 0, "UPS.PowerSummary.CapacityMode", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.rechargeable", 0, 0, "UPS.PowerSummary.Rechargeable", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.batterypresent", 0, 0, "UPS.PowerSummary.BatteryPresent", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.fullchargecapacity", 0, 0, "UPS.PowerSummary.FullChargeCapacity", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.capacitygranularity1", 0, 0, "UPS.PowerSummary.CapacityGranularity1", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.capacitygranularity2", 0, 0, "UPS.PowerSummary.CapacityGranularity2", NULL, "%.0f", 0, NULL },
+  { "unmapped.ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%.0f", 0, NULL },
+#endif
 
   /* end of structure. */
   { NULL, 0, 0, NULL, NULL, NULL, 0, NULL }

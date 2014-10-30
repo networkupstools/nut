@@ -519,6 +519,7 @@ int main(int argc, char **argv)
 				chroot_path = xstrdup(optarg);
 				break;
 			case 'u':
+				free(user);
 				user = xstrdup(optarg);
 				break;
 			case 'V':
