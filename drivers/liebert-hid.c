@@ -26,13 +26,18 @@
 #include "liebert-hid.h"
 #include "usb-common.h"
 
-#define LIEBERT_HID_VERSION     "Liebert HID 0.3"
+#define LIEBERT_HID_VERSION     "Phoenixtec/Liebert HID 0.3"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* Phoenixtec Power Co., Ltd */
 #define LIEBERT_VENDORID	0x06da
 
-/* USB IDs device table */
+/*! USB IDs device table.
+ *
+ * Note that this subdriver was named before the USB VendorID was determined to
+ * actually belong to Phoenixtec. The belkin-hid.c file covers the other
+ * Liebert units which share some of the same incorrect exponents as the
+ * Belkin HID firmware. */
 static usb_device_id_t liebert_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0xffff), NULL },

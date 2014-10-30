@@ -29,20 +29,20 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
-#define BELKIN_HID_VERSION      "Belkin HID 0.17"
+#define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.17"
 
 /* Belkin */
 #define BELKIN_VENDORID	0x050d
 
 /* Liebert */
 #define LIEBERT_VENDORID	0x10af
-/* Note that there are at least two Liebert firmware types which both report
+
+/*! USB IDs device table.
+ * Note that there are at least two Liebert firmware types which both report
  * a VID:PID of 10af:0001. The newer ones tend not to have the Belkin broken
  * Usage Pages (and therefore use standard HID PDC paths) but they have
  * incorrect exponents for some fields.
  */
-
-/* USB IDs device table */
 static usb_device_id_t belkin_usb_device_table[] = {
 	/* F6C800-UNV */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x0980), NULL },
