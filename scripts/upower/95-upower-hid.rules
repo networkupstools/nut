@@ -60,6 +60,7 @@ ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0900", ENV{UPOWER_BATTERY_TYPE}="ups
 ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0910", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0912", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0980", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0f51", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="050d", ATTRS{idProduct}=="1100", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # APC
@@ -124,5 +125,6 @@ ATTRS{idVendor}=="0d9f", ATTRS{idProduct}=="00a6", ENV{UPOWER_BATTERY_TYPE}="ups
 # Liebert
 ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0001", ENV{UPOWER_BATTERY_TYPE}="ups"
 ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0004", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="10af", ATTRS{idProduct}=="0008", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 LABEL="up_hid_end"
