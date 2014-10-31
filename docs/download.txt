@@ -144,7 +144,7 @@ Virtualization packages
 VMware
 ~~~~~~
 
-- NUT client for ESXi 5.0 (offsite, René Garcia)
+- NUT client 2.7.2 for ESXi 5.x (offsite, René Garcia)
 
   * link:http://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[blog entry (French)]
-  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.2.0.tar.gz[VIB package (v1.2.0)]
+  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.3.0.tar.gz[VIB package (v1.3.0)]
