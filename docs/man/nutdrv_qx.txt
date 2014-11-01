@@ -52,7 +52,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs' and 'zinto'.
+Supported values: 'bestups', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs' and 'zinto'.
 +
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
@@ -120,6 +120,13 @@ Setting this flag will make the driver skip this step.
 *novendor*::
 Some UPSes will lock up if you attempt to read vendor information from them.
 Setting this flag will make the driver skip this step.
+
+
+BESTUPS PROTOCOL
+~~~~~~~~~~~~~~~~
+
+*pins_shutdown_mode =* 'value'::
+Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power’s EPS-0059) to 'value' [+0..6+].
 
 
 Q1 PROTOCOL
@@ -321,6 +328,7 @@ Toggle the UPS beeper.
 
 *load.on*::
 Turn on the load immediately.
+(Not available on some hardware)
 
 *load.off*::
 Turn off the load immediately (see <<_known_problems,KNOWN PROBLEMS>>).
@@ -468,6 +476,21 @@ The following instant command has also been changed:
 
 *test.battery.start* 'value'::
 While the old blazer drivers expected a 'value' in minutes, the *nutdrv_qx* driver wants a 'value' in seconds.
+
+
+NOTES FOR THE PREVIOUS USER OF BESTUPS DRIVER
+---------------------------------------------
+
+The *nutdrv_qx* driver having replaced the bestups one, some configuration changes may be required by users switching to *nutdrv_qx*.
+
+Part of this, the following bestups options, in linkman:ups.conf[5], are no longer supported by this driver:
+
+*nombattvolt*::
+*battvoltmult*::
+See <<_battery_charge,BATTERY CHARGE>>.
+
+*ID*::
+Discarded.
 
 
 NOTES FOR THE PREVIOUS USER OF VOLTRONIC DRIVERS

@@ -925,6 +925,7 @@ You can then recompile +nutdrv_qx+, and start experimenting with the new subdriv
 
 For more informations, have a look at the currently available subdrivers:
 
+- +nutdrv_qx_bestups.+{+c+,+h+}
 - +nutdrv_qx_mecer.+{+c+,+h+}
 - +nutdrv_qx_megatec.+{+c+,+h+}
 - +nutdrv_qx_megatec-old.+{+c+,+h+}
