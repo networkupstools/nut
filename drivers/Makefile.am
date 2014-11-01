@@ -240,10 +240,10 @@ nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += libusb.c usb-common.c
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
 endif
-NUTDRV_QX_SUBDRIVERS = nutdrv_qx_blazer-common.c nutdrv_qx_mecer.c	\
- nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c nutdrv_qx_mustek.c	\
- nutdrv_qx_q1.c nutdrv_qx_voltronic.c nutdrv_qx_voltronic-qs.c	\
- nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c
+NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
+ nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\
+ nutdrv_qx_mustek.c nutdrv_qx_q1.c nutdrv_qx_voltronic.c	\
+ nutdrv_qx_voltronic-qs.c nutdrv_qx_voltronic-qs-hex.c nutdrv_qx_zinto.c
 nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 # ----------------------------------------------------------------------
@@ -261,7 +261,7 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  safenet.h serial.h snmp-ups.h solis.h tripplite.h tripplite-hid.h 			\
  upshandler.h usb-common.h usbhid-ups.h powercom-hid.h compaq-mib.h idowell-hid.h \
  apcsmart.h apcsmart_tabs.h apcsmart-old.h apcupsd-ups.h cyberpower-mib.h riello.h openups-hid.h \
- delta_ups-mib.h nutdrv_qx.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
+ delta_ups-mib.h nutdrv_qx.h nutdrv_qx_bestups.h nutdrv_qx_blazer-common.h nutdrv_qx_mecer.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h
