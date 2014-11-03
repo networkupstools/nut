@@ -1055,15 +1055,18 @@ void init_ext_vars(void)
 		return; 
 	for( index=3; index < length; index++) {
 		switch(answer[index]){
-                        case PW_CONF_LOW_DEV_LIMIT:  dstate_setflags("input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING);
+                        case PW_CONF_LOW_DEV_LIMIT:  dstate_setinfo("input.transfer.boost.high","%d",0);
+                        			dstate_setflags("input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING);
                                                 dstate_setaux("input.transfer.boost.high", 5);
                                                 break;
 
-                        case PW_CONF_HIGH_DEV_LIMIT:  dstate_setflags("input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING);
+                        case PW_CONF_HIGH_DEV_LIMIT:  dstate_setinfo("input.transfer.trim.low","%d",0);
+                        			dstate_setflags("input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING);
                                                 dstate_setaux("input.transfer.trim.low", 5);
                                                 break;
 
-			case PW_CONF_LOW_BATT:  dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_LOW_BATT:  dstate_setinfo("battery.runtime.low","%d",0);
+						dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("battery.runtime.low", 5);
 						break;
 
@@ -1072,31 +1075,38 @@ void init_ext_vars(void)
 						dstate_addcmd("beeper.mute");
 						break;
 
-			case PW_CONF_RETURN_DELAY: dstate_setflags("input.transfer.delay", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_RETURN_DELAY: dstate_setinfo("input.transfer.delay","%d",0);
+						dstate_setflags("input.transfer.delay", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("input.transfer.delay", 5);
                                                 break;
 
-			case PW_CONF_RETURN_CAP: dstate_setflags("battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_RETURN_CAP: dstate_setinfo("battery.charge.restart","%d",0);
+						dstate_setflags("battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("battery.charge.restart", 5);
                                                 break;
 
-			case PW_CONF_MAX_TEMP: dstate_setflags("ambient.temperature.high", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_MAX_TEMP:  dstate_setinfo("ambient.temperature.high","%d",0);
+						dstate_setflags("ambient.temperature.high", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("ambient.temperature.high", 5);
                                                 break;
 
-			case PW_CONF_NOMINAL_OUT_VOLTAGE: dstate_setflags("output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_NOMINAL_OUT_VOLTAGE: dstate_setinfo("output.voltage.nominal","%d",0);
+						dstate_setflags("output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("output.voltage.nominal", 5);
                                                 break;
 
-			case PW_CONF_SLEEP_TH_LOAD:	dstate_setflags("battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_SLEEP_TH_LOAD:	dstate_setinfo("battery.energysave.load","%d",0);
+						dstate_setflags("battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("battery.energysave.load", 5);
                                                 break;
 
-			case PW_CONF_SLEEP_DELAY: dstate_setflags("battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_SLEEP_DELAY: dstate_setinfo("battery.energysave.delay","%d",0);
+						dstate_setflags("battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("battery.energysave.delay", 5);
                                                 break;
 
-			case PW_CONF_BATT_STRINGS: dstate_setflags("battery.packs", ST_FLAG_RW | ST_FLAG_STRING);
+			case PW_CONF_BATT_STRINGS: dstate_setinfo("battery.packs","%d",0);
+						dstate_setflags("battery.packs", ST_FLAG_RW | ST_FLAG_STRING);
 						dstate_setaux("battery.packs", 5);
                                                 break;
 
@@ -1108,7 +1118,7 @@ void init_ext_vars(void)
 void init_config(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
-	int voltage = 0, frequency = 0, res;
+	int voltage = 0, frequency = 0, res, tmp=0;
 	char sValue[17];
 	char sPartNumber[17];
 
@@ -1130,7 +1140,9 @@ void init_config(void)
 		dstate_setinfo("output.frequency.nominal", "%d", frequency);
 
 	/*Number of EBM*/
-	dstate_setinfo("battery.packs", "%d", (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3));
+	tmp = (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
+	if (tmp != 0)
+		dstate_setinfo("battery.packs", "%d", tmp);
 
 	/* UPS serial number */
 	snprintf(sValue, sizeof(sValue), "%s", answer + BCMXCP_CONFIG_BLOCK_SERIAL_NUMBER);
@@ -1225,20 +1237,34 @@ void init_limit(void)
 	}
 
         /*Sleep minimum load*/
-		dstate_setinfo("battery.energysave.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
+        value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD];
+        if (value != 0) {
+		dstate_setinfo("battery.energysave.load", "%d", value);
+        }
 
 	/* Sleep delay*/
-		dstate_setinfo("battery.energysave.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
+	value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY];
+        if (value != 0) {
+		dstate_setinfo("battery.energysave.delay", "%d", value);
+        }
 
 	/* Low batt minutes warning*/
-		dstate_setinfo("battery.runtime.low", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
+	value = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING];
+        if (value != 0) {
+		dstate_setinfo("battery.runtime.low", "%d", value);
+        }
 
 	/* Return to mains delay */
 	value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
+	if (value != 0) {
 		dstate_setinfo("input.transfer.delay","%d",value);
+	}
 
 	/* Minimum return capacity*/
-		dstate_setinfo("battery.charge.restart","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
+	value = answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN];
+	if (value != 0) {
+		dstate_setinfo("battery.charge.restart","%d",value);
+	}
 
 }
 
@@ -1749,20 +1775,34 @@ void upsdrv_updateinfo(void)
 	        }
 
         	/*Sleep minimum load*/
-                	dstate_setinfo("battery.energysave.load", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD]);
+        	value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_TH_LOAD];
+        	if (value != 0) {
+			dstate_setinfo("battery.energysave.load", "%d", value);
+        	}
 
-	        /*Sleep delay*/
-        	        dstate_setinfo("battery.energysave.delay", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY]);
+		/* Sleep delay*/
+		value = answer[BCMXCP_EXT_LIMITS_BLOCK_SLEEP_DELAY];
+        	if (value != 0) {
+			dstate_setinfo("battery.energysave.delay", "%d", value);
+        	}
 
-	        /*Low batt minutes warning*/
-        	        dstate_setinfo("battery.runtime.low", "%d", answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING]);
+		/* Low batt minutes warning*/
+		value = answer[BCMXCP_EXT_LIMITS_BLOCK_LOW_BATT_WARNING];
+        	if (value != 0) {
+			dstate_setinfo("battery.runtime.low", "%d", value);
+        	}
 
-	        /*Return to mains delay */
-	        value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
-        	        dstate_setinfo("input.transfer.delay","%d",value);
+		/* Return to mains delay */
+		value = get_word(answer + BCMXCP_EXT_LIMITS_BLOCK_RETURN_STAB_DELAY);
+		if (value != 0) {
+			dstate_setinfo("input.transfer.delay","%d",value);
+		}
 
-	        /*Minimum return capacity*/
-        	        dstate_setinfo("battery.charge.restart","%d",answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN]);
+		/* Minimum return capacity*/
+		value = answer[BCMXCP_EXT_LIMITS_BLOCK_BATT_CAPACITY_RETURN];
+		if (value != 0) {
+			dstate_setinfo("battery.charge.restart","%d",value);
+		}
 	};
 
 	 res = command_read_sequence(PW_CONFIG_BLOCK_REQ, answer);
@@ -1777,7 +1817,9 @@ void upsdrv_updateinfo(void)
 	        if (value != 0)
         	        dstate_setinfo("output.voltage.nominal", "%d", value);
 	        /*Number of EBM*/
-	                dstate_setinfo("battery.packs", "%d", (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3));
+	        value = (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
+		if (value != 0)        
+	                dstate_setinfo("battery.packs", "%d", value);
 
 	}
 
