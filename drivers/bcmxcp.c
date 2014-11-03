@@ -1011,8 +1011,6 @@ int init_outlet(unsigned char len)
 		snprintf(outlet_name, sizeof(outlet_name)-1, "outlet.%d.status", num);
 		if (outlet_state>0 && outlet_state <9 )
 			dstate_setinfo(outlet_name, "%s", OutletStatus[outlet_state] );
-//		dstate_setflags(outlet_name, ST_FLAG_RW | ST_FLAG_STRING);
-//		dstate_setaux(outlet_name, 5);
 
 		auto_dly_off = get_word(answer+iIndex);
 		iIndex += 2;
@@ -2018,7 +2016,6 @@ static int instcmd(const char *cmdname, const char *extra)
         strncpy(namebuf, cmdname, sizeof(namebuf));
         namebuf[NUT_OUTLET_POSITION] = 'n'; /* Assumes a maximum of 9 outlets */
 
-        /* ojw0000 outlet power cycle for PW5125 and perhaps others */
         if (!strcasecmp(namebuf, "outlet.n.shutdown.return")) {
                 send_write_command(AUTHOR, 4);
 
@@ -2048,7 +2045,7 @@ static int instcmd(const char *cmdname, const char *extra)
                 snprintf(success_msg, sizeof(success_msg)-1, "Going down in %d sec", sec);
 
                 return decode_instcmd_exec(res, (unsigned char)answer[0], cmdname, success_msg);
-        } /* ojw0000 end outlet power cycle */
+        } 
 
 	if (!strcasecmp(namebuf,"outlet.n.load.on") || !strcasecmp(namebuf,"outlet.n.load.off")){
                 send_write_command(AUTHOR, 4);
