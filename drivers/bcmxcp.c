@@ -1055,17 +1055,17 @@ void init_ext_vars(void)
 		switch(answer[index]){
                         case PW_CONF_LOW_DEV_LIMIT:  dstate_setinfo("input.transfer.boost.high","%d",0);
                         			dstate_setflags("input.transfer.boost.high", ST_FLAG_RW | ST_FLAG_STRING);
-                                                dstate_setaux("input.transfer.boost.high", 5);
+                                                dstate_setaux("input.transfer.boost.high", 3);
                                                 break;
 
                         case PW_CONF_HIGH_DEV_LIMIT:  dstate_setinfo("input.transfer.trim.low","%d",0);
                         			dstate_setflags("input.transfer.trim.low", ST_FLAG_RW | ST_FLAG_STRING);
-                                                dstate_setaux("input.transfer.trim.low", 5);
+                                                dstate_setaux("input.transfer.trim.low", 3);
                                                 break;
 
 			case PW_CONF_LOW_BATT:  dstate_setinfo("battery.runtime.low","%d",0);
 						dstate_setflags("battery.runtime.low", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.runtime.low", 5);
+						dstate_setaux("battery.runtime.low", 2);
 						break;
 
 			case PW_CONF_BEEPER:	dstate_addcmd("beeper.disable");
@@ -1080,32 +1080,32 @@ void init_ext_vars(void)
 
 			case PW_CONF_RETURN_CAP: dstate_setinfo("battery.charge.restart","%d",0);
 						dstate_setflags("battery.charge.restart", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.charge.restart", 5);
+						dstate_setaux("battery.charge.restart", 3);
                                                 break;
 
 			case PW_CONF_MAX_TEMP:  dstate_setinfo("ambient.temperature.high","%d",0);
 						dstate_setflags("ambient.temperature.high", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("ambient.temperature.high", 5);
+						dstate_setaux("ambient.temperature.high", 3);
                                                 break;
 
 			case PW_CONF_NOMINAL_OUT_VOLTAGE: dstate_setinfo("output.voltage.nominal","%d",0);
 						dstate_setflags("output.voltage.nominal", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("output.voltage.nominal", 5);
+						dstate_setaux("output.voltage.nominal", 3);
                                                 break;
 
 			case PW_CONF_SLEEP_TH_LOAD:	dstate_setinfo("battery.energysave.load","%d",0);
 						dstate_setflags("battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.energysave.load", 5);
+						dstate_setaux("battery.energysave.load", 3);
                                                 break;
 
 			case PW_CONF_SLEEP_DELAY: dstate_setinfo("battery.energysave.delay","%d",0);
 						dstate_setflags("battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.energysave.delay", 5);
+						dstate_setaux("battery.energysave.delay", 3);
                                                 break;
 
 			case PW_CONF_BATT_STRINGS: dstate_setinfo("battery.packs","%d",0);
 						dstate_setflags("battery.packs", ST_FLAG_RW | ST_FLAG_STRING);
-						dstate_setaux("battery.packs", 5);
+						dstate_setaux("battery.packs", 1);
                                                 break;
 
 		}
