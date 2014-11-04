@@ -103,7 +103,7 @@ TODO List:
 
         Rewrite some parts of the driver, to minimise code duplication. (Like the instant commands)
 
-        Implement support for Password Authorization (XCP spec, В§4.3.2)
+        Implement support for Password Authorization (XCP spec, §4.3.2)
 
         Complete support for settable variables (upsh.setvar)
 */
@@ -117,7 +117,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.28"
+#define DRIVER_VERSION "0.29"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
