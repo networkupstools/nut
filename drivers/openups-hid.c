@@ -26,7 +26,7 @@
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.1"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.2"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
@@ -34,7 +34,7 @@
 static char openups_scratch_buf[20];
 
 /* USB IDs device table */
-static usb_device_id_t openups_usb_device_table[] = {
+static const usb_device_id_t openups_usb_device_table[] = {
 	/* openUPS Intelligent UPS (minimum required firmware 1.4) */
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd004), NULL},
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), NULL},
@@ -46,7 +46,7 @@ static usb_device_id_t openups_usb_device_table[] = {
 /* Thermistor table used for temperature lookups 
  * taken from the windows monitoring application
  */
-static unsigned int therm_tbl[] = 
+static const unsigned int therm_tbl[] =
 { 
 	(unsigned int)0x31,
 	(unsigned int)0x40,
@@ -84,7 +84,7 @@ static unsigned int therm_tbl[] =
 	(unsigned int)0x3CC
 };
 
-static unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
+static const unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
 
 static const char *openups_charging_fun(double value);
 static const char *openups_discharging_fun(double value);
@@ -226,7 +226,7 @@ static const char *openups_temperature_fun(double value)
 				unsigned int d1 = therm_tbl[pos];
 				unsigned int d2 = therm_tbl[pos + 1];
 
-				float temp = (float) (thermistor - d1) * (t2 - t1) / (d2 - d1) + t1;
+				double temp = (double) (thermistor - d1) * (t2 - t1) / (d2 - d1) + t1;
 				snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", temp);
 			}
 		}
