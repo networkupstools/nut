@@ -36,15 +36,23 @@ distcheck-light:
 distcleancheck:
 	@:
 
+# ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
+
+# Older boundary of the ChangeLog commits range
+# It can be a tag ('v2.2.0'), a commit hash, a date, ...
+# See gitrevisions for more information on specifying ranges
+GITLOG_START_POINT=v2.6.0
+
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
 dummy-stamp:
 ChangeLog: tools/gitlog2changelog.py dummy-stamp
-	$(top_srcdir)/tools/gitlog2changelog.py v2.6.0 || \
+	$(top_srcdir)/tools/gitlog2changelog.py $(GITLOG_START_POINT) || \
 		echo "gitlog2changelog.py failed to generate the ChangeLog. See https://github.com/networkupstools/nut/commits/master" > $@
 
+# ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
 dist-sig:
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
