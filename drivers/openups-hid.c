@@ -34,7 +34,7 @@
 static char openups_scratch_buf[20];
 
 /* USB IDs device table */
-static const usb_device_id_t openups_usb_device_table[] = {
+static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	/* openUPS Intelligent UPS (minimum required firmware 1.4) */
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd004), NULL},
 	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), NULL},
