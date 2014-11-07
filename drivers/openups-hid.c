@@ -26,18 +26,49 @@
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.2"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.3"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
 
+/* constants for converting HID read values to real values */
+static const double vin_scale_base = 0.03545;
+static const double vout_scale_base = 0.02571;
+/* static const double vbat_scale = 0.00857 * 100; */
+static const double ccharge_scale = 0.8274 / 10;
+static const double cdischarge_scale = 16.113 / 10;
+
+static double vin_scale = vin_scale_base * 100;
+static double vout_scale= vout_scale_base * 100;
+
 static char openups_scratch_buf[20];
+
+static void *get_voltage_multiplier(USBDevice_t *device)
+{
+	double voltage_multiplier = 100;
+
+	switch(device->ProductID) {
+		case 0xd004:
+			voltage_multiplier = 100;
+			break;
+		case 0xd005:
+			voltage_multiplier = 10;
+			break;
+	}
+
+	vin_scale = vin_scale_base * voltage_multiplier;
+	vout_scale= vout_scale_base * voltage_multiplier;
+
+	upsdebugx(1, "vin_scale = %g; vout_scale = %g\n", vin_scale, vout_scale);
+	return NULL;
+}
+
 
 /* USB IDs device table */
 static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	/* openUPS Intelligent UPS (minimum required firmware 1.4) */
-	{USB_DEVICE(OPENUPS_VENDORID, 0xd004), NULL},
-	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), NULL},
+	{USB_DEVICE(OPENUPS_VENDORID, 0xd004), get_voltage_multiplier},
+	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), get_voltage_multiplier},
 
 	/* Terminating entry */
 	{-1, -1, NULL}
