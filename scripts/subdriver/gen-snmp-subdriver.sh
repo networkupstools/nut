@@ -67,11 +67,14 @@ TMP_STRWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`
 
 get_snmp_data() {
     # 1) get the sysOID (points the mfr specif MIB)
-    SYSOID=`snmpget -v1 -c $COMMUNITY $HOSTNAME .1.3.6.1.2.1.1.2.0 41`
+    SYSOID=`snmpget -v1 -c $COMMUNITY -Ov $HOSTNAME .1.3.6.1.2.1.1.2.0 | cut -d' ' -f2`
+
+	echo "sysOID retrieved: ${SYSOID}"
 
     # 2) get the content of the mfr specif MIB
+    echo "Retrieving SNMP information. This may take some time"
     snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
-    snmpwalk -Os -v1 -M $MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+    snmpwalk -Os -v1 -m ALL -M $MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
 }
 
 # process command line options
@@ -80,7 +83,7 @@ while [ $# -gt 0 ]; do
         DRIVER="$2"
         shift 2
     elif [ $# -gt 1 -a "$1" = "-M" ]; then
-        MIBS_DIRLIST="$MIBS_DIRLIST:$2"
+        MIBS_DIRLIST="+$2"
         shift 2
     elif [ "$1" = "-k" ]; then
         KEEP=yes
