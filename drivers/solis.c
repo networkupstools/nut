@@ -760,6 +760,7 @@ CommReceive(const char *bufptr,  int size)
 			default:
 			{
 				printf( M_UNKN );
+				ScanReceivePack(); // Scan anyway.
 				break;
 			}
 		}
