@@ -72,6 +72,23 @@ Protection Station, ...
 
 image::images/cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
 
+NMC DB9-RJ45 cable
+^^^^^^^^^^^^^^^^^^
+
+The following applies to the MGE 66102 NMC (Network Management Card), and
+possibly other models. The NMC connection is an 8P8C RJ45-style jack.
+
+|====
+|Signal  | PC      |    NMC
+|        | 1,4,6   |
+|TxD     | 2       |      3
+|RxD     | 3       |      6
+|GND     | 5       |      4
+|        | 7,8     |
+|        | shield  | shield
+|====
+
+
 USB-RJ45 cable
 ^^^^^^^^^^^^^^
 
