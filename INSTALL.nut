@@ -141,7 +141,7 @@ State path creation
 
 Create the state path directory for the driver(s) and server to use
 for storing UPS status data and other auxiliary files, and make it
-owned by the user you created.
+group-writable by the group of the system user you created.
 
 	mkdir -p /var/state/ups
 	chmod 0770 /var/state/ups
@@ -183,7 +183,7 @@ drivers; this should allow you to follow the below
 instructions. However, don't forget to set up the correct
 permissions later!).
 
-NOTE: if you are using something like devfs or udev, make sure
+NOTE: if you are using something like udev or devd, make sure
 these permissions stay set across a reboot.  If they revert to the
 old values, your drivers may fail to start.
 
