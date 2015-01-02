@@ -76,7 +76,7 @@ Much better.
 
 The *=* character should be used with care too. There should be only one
 "simple" *=* character in a line: between the parameter name and its value.
-All other *=* characters should be either escaped or whithin "quotes".
+All other *=* characters should be either escaped or within "quotes".
 
 	password = 123=123
 
@@ -648,9 +648,9 @@ shut down completely in the middle.
 In order for this to work, you need to shutdown NUT (UPS driver, upsd
 server and upsmon client) in the suspend script and start them again in
 the resume script.  Don't try to keep them running.  The upsd server
-will latch the FSD state (so it won't be useable after resuming) and so
+will latch the FSD state (so it won't be usable after resuming) and so
 will the upsmon client.  Some drivers may work after resuming, but many
-don't and some UPS'es will require re-initialization, so it's best not
+don't and some UPSs will require re-initialization, so it's best not
 to keep this running either.
 
 After stopping driver, server and client you'll have to send the UPS

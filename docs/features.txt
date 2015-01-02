@@ -120,7 +120,7 @@ no mysteries or secrets in your critical monitoring tools.
 UPS management and control
 --------------------------
 
-- Writable variables may be edited on higher end equipment for local customizations
+- Writable variables may be edited on higher end equipment for local customization
 
 - Status monitoring can generate notifications (email/pager/SMS/...) on alert conditions
 

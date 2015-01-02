@@ -143,7 +143,7 @@ Contributed by Kjell Claesson and Arnaud Quette.
 Phoenixtec (Best Power)
 -----------------------
 
-Many Best Power units (inclding the Patriot Pro II) have a female DB-9 socket
+Many Best Power units (including the Patriot Pro II) have a female DB-9 socket
 with a non-standard pinout.
 
 |====

@@ -234,7 +234,7 @@ On July 25, 2003, 1.4.0 was released. It contained support for both the old "REQ
 July 2003: pushing towards 2.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1.5.0 forked from 1.4.0 and was released on July 29, 2003. The first changes were to throw out anything which was providing compatibilty with the older versions of the software. This means that 1.5 and the eventual 2.0 will not talk to anything older than 1.4.
+1.5.0 forked from 1.4.0 and was released on July 29, 2003. The first changes were to throw out anything which was providing compatibility with the older versions of the software. This means that 1.5 and the eventual 2.0 will not talk to anything older than 1.4.
 
 This tree continues to evolve with new serial routines for the drivers which are intended to replace the aging upscommon code which dates back to the early 0.x releases. The original routines would call alarm and read in a tight loop while fetching characters. The new functions are much cleaner, and wait for data with select. This makes for much cleaner code and easier strace/ktrace logs, since the number of syscalls has been greatly reduced.
 

@@ -122,7 +122,7 @@ ups: General unit information
 
 NOTE: When present, the value of *ups.start.auto* has an impact on shutdown.*
 commands. For the sake of coherence, shutdown commands will set *ups.start.auto*
-to the right value before issuing the command. Ie, shutdown.stayoff will first
+to the right value before issuing the command. That is, shutdown.stayoff will first
 set *ups.start.auto* to *no*, while shutdown.return will set it to *yes*.
 
 input: Incoming line/power information
@@ -239,14 +239,14 @@ Valid CONTEXTs
  L3-N  /
 
  L1  \
- L2  for currrent and power measurements
+ L2  for current and power measurements
  L3  /
  N  - for current measurement
 
 Valid SPECs
 ^^^^^^^^^^^
 
-Valid with/without context (ie. per phase or aggregated/averaged)
+Valid with/without context (i.e. per phase or aggregated/averaged)
 
 [options="header"]
 |===============================================================================
@@ -270,7 +270,7 @@ Valid with/without context (ie. per phase or aggregated/averaged)
 | crestfactor           | Crest Factor (dimensionless value greater or equal to 1)
 |===============================================================================
 
-Valid without context (ie. aggregation of all phases):
+Valid without context (i.e. aggregation of all phases):
 
 [options="header"]
 |===============================================================================
@@ -322,7 +322,7 @@ battery: Any battery details
 | battery.voltage.low     | Minimum battery voltage, that
                             triggers FSD status                 | 21,52
 | battery.voltage.high    | Maximum battery voltage
-                            (Ie battery.charge = 100)           | 26,9
+                            (i.e. battery.charge = 100)           | 26,9
 | battery.capacity        | Battery capacity (Ah)               | 7.2
 | battery.current         | Battery current (A)                 | 1.19
 | battery.current.total   | Total battery current (A)           | 1.19

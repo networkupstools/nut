@@ -270,7 +270,7 @@ The design of the timer handler is also geared towards minimizing impact.
 It will come and go from the process list as necessary.  When a new timer
 is started, a process will be forked to actually watch the clock and
 eventually start the CMDSCRIPT.  When a timer triggers, it is removed from
-the queue.  Cancelling a timer will also remove it from the queue.  When
+the queue.  Canceling a timer will also remove it from the queue.  When
 no timers are present in the queue, the background process exits.
 
 This means that you will only see upssched running when one of two things

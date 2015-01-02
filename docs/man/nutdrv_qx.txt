@@ -215,7 +215,7 @@ If enabled, when the UPS is turned on, it will check if the battery is connected
 Enable or disable site fault detection [+enabled+/+disabled+].
 If enabled, the UPS will beep when the input neutral and hot wires are reversed.
 
-*costant_phase_angle =* 'string'::
+*constant_phase_angle =* 'string'::
 Enable or disable Constant Phase Angle Function (output and input phase angles are not equal) [+enabled+/+disabled+].
 
 *limited_runtime_on_battery =* 'string'::

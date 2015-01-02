@@ -174,7 +174,7 @@ Several things must happen before this will work, however. This chapter will
 present these steps.
 
 SSL is available via two back-end libraries : NSS and OpenSSL (historically).
-You can choose to use one of them by specifying it with abuild option
+You can choose to use one of them by specifying it with a build option
 ('--with-nss' or '--with-openssl'). If any is specified, configure script will
 try to detect one of them and use it with a precedence for OpenSSL.
 
@@ -388,7 +388,7 @@ to follow your company procedures.
 - Display the content of certificate server:
 	'certutil -L -d cert_db'
 
-Clients and servers in the same host could share the same certificate to authentify them
+Clients and servers in the same host could share the same certificate to authenticate them
 or use different ones in same or different databases.
 The same operation can be done in same or different databases to generate
 other certificates.
@@ -561,7 +561,7 @@ pair using the procedure above.
 Conclusion
 ~~~~~~~~~~
 
-SSL support should be considered stable but purposely underdocumented
+SSL support should be considered stable but purposely under-documented
 since various bits of the implementation or configuration may change in
 the future. In other words, if you use this and it stops working after
 an upgrade, come back to this file to find out what changed.
