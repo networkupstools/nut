@@ -29,7 +29,7 @@
 
 #include "nutdrv_qx_bestups.h"
 
-#define BESTUPS_VERSION "BestUPS 0.01"
+#define BESTUPS_VERSION "BestUPS 0.02"
 
 /* Support functions */
 static int	bestups_claim(void);
@@ -45,6 +45,7 @@ static int	bestups_model(item_t *item, char *value, size_t valuelen);
 static int	bestups_batt_runtime(item_t *item, char *value, size_t valuelen);
 static int	bestups_batt_packs(item_t *item, char *value, size_t valuelen);
 static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, size_t valuelen);
+static int	bestups_voltage_settings(item_t *item, char *value, size_t valuelen);
 
 /* ups.conf settings */
 static int	pins_shutdown_mode;
@@ -171,6 +172,22 @@ static item_t	bestups_qx2nut[] = {
 
 	{ "pins_shutdown_mode",	0,		bestups_r_pins_shutdown_mode,	"SS%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,		NULL,	bestups_process_setvar },
 
+	/* Query UPS for voltage settings
+	 * > [M\r]
+	 * < [0\r]
+	 *    01
+	 *    0
+	 */
+
+	{ "input.transfer.low",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.boost.low",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.boost.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.voltage.nominal",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "output.voltage.nominal",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.trim.low",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.trim.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+
 	/* Instant commands */
 	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
 	{ "shutdown.stayoff",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
@@ -201,6 +218,7 @@ static testing_t	bestups_testing[] = {
 	{ "BP1\r",	"",	-1 },
 	{ "SS?\r",	"0\r",	-1 },
 	{ "SS2\r",	"",	-1 },
+	{ "M\r",	"0\r",	-1 },
 	{ "S03\r",	"",	-1 },
 	{ "C\r",	"",	-1 },
 	{ "S02R0005\r",	"",	-1 },
@@ -554,6 +572,109 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, size_t valu
 		return -1;
 
 	unskip->qxflags &= ~QX_FLAG_SKIP;
+
+	return 0;
+}
+
+/* Voltage settings */
+static int	bestups_voltage_settings(item_t *item, char *value, size_t valuelen)
+{
+	int		index, val;
+	const char	*nominal_voltage;
+	const struct {
+		const int	low;		/* Low voltage		->	input.transfer.low / input.transfer.boost.low */
+		const int	boost;		/* Boost voltage	->	input.transfer.boost.high */
+		const int	nominal;	/* Nominal voltage	->	input.voltage.nominal / output.voltage.nominal */
+		const int	buck;		/* Buck voltage		->	input.transfer.trim.low */
+		const int	high;		/* High voltage		->	input.transfer.high / input.transfer.trim.high */
+	} voltage_settings[] = {
+		/* U models voltage limits, for:
+		 * - Fortress (750U, 1050U, 1425U, 1800U and 2250U)
+		 * - Fortress Rackmount (750, 1050, 1425, 1800, and 2250 VA)
+		 * - Patriot Pro II (400U, 750U, and 1000U) */
+	/* M	  low	boost	nominal	buck	high */
+	/* 0 */	{ 96,	109,	120,	130,	146 },	/* LEDs lit: 2,3,4 (Default) */
+	/* 1 */	{ 96,	109,	120,	138,	156 },	/* LEDs lit: 1,3,4 */
+	/* 2 */	{ 90,	104,	120,	130,	146 },	/* LEDs lit: 2,3,5 */
+	/* 3 */	{ 90,	104,	120,	138,	156 },	/* LEDs lit: 1,3,5 */
+	/* 4 */	{ 90,	104,	110,	120,	130 },	/* LEDs lit: 3,4,5 */
+	/* 5 */	{ 90,	104,	110,	130,	146 },	/* LEDs lit: 2,4,5 */
+	/* 6 */	{ 90,	96,	110,	120,	130 },	/* LEDs lit: 3,4,6 */
+	/* 7 */	{ 90,	96,	110,	130,	146 },	/* LEDs lit: 2,4,6 */
+	/* 8 */	{ 96,	109,	128,	146,	156 },	/* LEDs lit: 1,2,4 */
+	/* 9 */	{ 90,	104,	128,	146,	156 },	/* LEDs lit: 1,2,5 */
+
+		/* E models voltage limits, for:
+		 * - Fortress (750E, 1050E, 1425E, and 2250E)
+		 * - Fortress Rackmount (750, 1050, 1425, and 2250 VA)
+		 * - Patriot Pro II (400E, 750E, and 1000E) */
+	/* M	  low	boost	nominal	buck	high */
+	/* 0 */	{ 200,	222,	240,	250,	284 },	/* LEDs lit: 2,3,4 */
+	/* 1 */	{ 200,	222,	240,	264,	290 },	/* LEDs lit: 1,3,4 */
+	/* 2 */	{ 188,	210,	240,	250,	284 },	/* LEDs lit: 2,3,5 */
+	/* 3 */	{ 188,	210,	240,	264,	290 },	/* LEDs lit: 1,3,5 */
+	/* 4 */	{ 188,	210,	230,	244,	270 },	/* LEDs lit: 3,4,5 (Default) */
+	/* 5 */	{ 188,	210,	230,	250,	284 },	/* LEDs lit: 2,4,5 */
+	/* 6 */	{ 180,	200,	230,	244,	270 },	/* LEDs lit: 3,4,6 */
+	/* 7 */	{ 180,	200,	230,	250,	284 },	/* LEDs lit: 2,4,6 */
+	/* 8 */	{ 165,	188,	208,	222,	244 },	/* LEDs lit: 4,5,6 */
+	/* 9 */	{ 165,	188,	208,	244,	270 }	/* LEDs lit: 3,5,6 */
+	};
+
+	if (strspn(item->value, "0123456789") != strlen(item->value)) {
+		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
+		return -1;
+	}
+
+	index = strtol(item->value, NULL, 10);
+
+	if (index < 0 || index > 9) {
+		upsdebugx(2, "%s: value '%d' out of range [0..9]", __func__, index);
+		return -1;
+	}
+
+	nominal_voltage = dstate_getinfo("input.voltage.nominal");
+
+	if (!nominal_voltage)
+		nominal_voltage = dstate_getinfo("output.voltage.nominal");
+
+	if (!nominal_voltage) {
+		upsdebugx(2, "%s: unable to get nominal voltage", __func__);
+		return -1;
+	}
+
+	/* E models */
+	if (strtol(nominal_voltage, NULL, 10) > 160)
+		index += 10;
+
+	if (!strcasecmp(item->info_type, "input.transfer.low") || !strcasecmp(item->info_type, "input.transfer.boost.low")) {
+
+		val = voltage_settings[index].low;
+
+	} else if (!strcasecmp(item->info_type, "input.transfer.boost.high")) {
+
+		val = voltage_settings[index].boost;
+
+	} else if (!strcasecmp(item->info_type, "input.voltage.nominal") || !strcasecmp(item->info_type, "output.voltage.nominal")) {
+
+		val = voltage_settings[index].nominal;
+
+	} else if (!strcasecmp(item->info_type, "input.transfer.trim.low")) {
+
+		val = voltage_settings[index].buck;
+
+	} else if (!strcasecmp(item->info_type, "input.transfer.trim.high") || !strcasecmp(item->info_type, "input.transfer.high")) {
+
+		val = voltage_settings[index].high;
+
+	} else {
+
+		/* Don't know what happened */
+		return -1;
+
+	}
+
+	snprintf(value, valuelen, item->dfl, val);
 
 	return 0;
 }
