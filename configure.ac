@@ -1063,7 +1063,6 @@ dnl files will try to get intalled to the actual system directories
 if test -n "${systemdsystemunitdir}"; then
 	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
-	systemdsystemunitdir="`echo ${systemdsystemunitdir} | sed 's/\/lib/\${libdir}/'`"
 else
 	AC_MSG_RESULT(no)
 fi
