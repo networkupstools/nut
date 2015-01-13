@@ -50,6 +50,7 @@ ATTRS{idVendor}=="047c", ATTRS{idProduct}=="ffff", ENV{UPOWER_BATTERY_TYPE}="ups
 
 # Minibox
 ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="d004", ENV{UPOWER_BATTERY_TYPE}="ups"
+ATTRS{idVendor}=="04d8", ATTRS{idProduct}=="d005", ENV{UPOWER_BATTERY_TYPE}="ups"
 
 # Belkin
 ATTRS{idVendor}=="050d", ATTRS{idProduct}=="0375", ENV{UPOWER_BATTERY_TYPE}="ups"
