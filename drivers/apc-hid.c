@@ -79,6 +79,8 @@ static void *general_apc_check(USBDevice_t *device)
 
 /* USB IDs device table */
 static usb_device_id_t apc_usb_device_table[] = {
+	/* APC AP9584 Serial->USB kit */
+	{ USB_DEVICE(APC_VENDORID, 0x0000), NULL },
 	/* various models */
 	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */
