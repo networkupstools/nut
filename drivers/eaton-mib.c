@@ -1,6 +1,9 @@
-/*  eaton-mib.c - data to monitor Eaton Aphel PDUs (Basic and Complex)
+/*  eaton-mib.c - data to monitor Eaton ePDUs:
+ *                G? Aphel based ePDUs (Basic and Complex)
+ *                G? Pulizzi Monitored and Switched ePDUs
+ *                G3 Marlin SW / MI / MO / MA 
  *
- *  Copyright (C) 2008 - 2012
+ *  Copyright (C) 2008 - 2015
  * 		Arnaud Quette <arnaud.quette@gmail.com>
  * 		Arnaud Quette <ArnaudQuette@Eaton.com>
  *
@@ -212,7 +215,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.06"
+#define EATON_MARLIN_MIB_VERSION	"0.07"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -220,7 +223,7 @@ static info_lkp_t marlin_outlet_status_info[] = {
 	{ 0, "off" },
 	{ 1, "on" },
 	{ 2, "pendingOff" }, /* transitional status */
-	{ 3, "pendingOn" }, /* transitional status */
+	{ 3, "pendingOn" },  /* transitional status */
 	{ 0, NULL }
 };
 
@@ -234,6 +237,7 @@ static info_lkp_t outlet_switchability_info[] = {
 
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
 static snmp_info_t eaton_marlin_mib[] = {
+
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -277,12 +281,55 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 
 	/* Input page */
+	/* Historically, some of these data were previously published as
+	 * outlet.{realpower,...}
+	 * However, it's more suitable and logic to have these on input.{...}
+	 */
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	/* inputType.0.1	singlePhase  (1) 		iso.3.6.1.4.1.534.6.6.7.3.1.1.2.0.1 */
+	/* FIXME: to be implemented
+	 * inputType.0.1	iso.3.6.1.4.1.534.6.6.7.3.1.1.2.0.1
+	 * singlePhase  (1), ... split phase, three phase delta, or three phase wye
+	 */
+
+	/* Frequency is measured globally */
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
+
+	/* inputCurrentPercentLoad (measured globally)
+	 * Current percent load, based on the rated current capacity */
+	/* FIXME: input.load is mapped on input.L1.load for both single and 3phase !!! */
+	{ "input.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L1.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L2.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L3.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+
+	/* FIXME:
+	 * - Voltage is only mesured per phase, as mV!
+	 *   so input.voltage == input.L1.voltage for both single and 3phase
+	 * - As per NUT namespace (http://www.networkupstools.org/docs/developer-guide.chunked/apas01.html#_valid_contexts)
+	 *   Voltage has to be expressed either phase-phase or phase-neutral
+	 *   This is depending on OID inputVoltageMeasType
+	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)*/
 	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
-	/* FIXME: check multiplier */
-	{ "input.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
+	{ "input.L1.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
+	{ "input.L2.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.2", NULL, 0, NULL, NULL },
+	{ "input.L3.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.3", NULL, 0, NULL, NULL },
+
+	/* FIXME:
+	 * - input.current is mapped on input.L1.current for both single and 3phase !!! */
+	{ "input.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
+	{ "input.L1.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
+	{ "input.L2.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.2", NULL, 0, NULL, NULL },
+	{ "input.L3.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.3", NULL, 0, NULL, NULL },
+	/* Sum of all phases realpower */
+	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.4", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L1.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L2.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L3.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	/* Sum of all phases apparent power */
+	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.4", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L1.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L2.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 
 	/* Ambient page */
 	/* We use critical levels, for both temperature and humidity,
@@ -300,11 +347,12 @@ static snmp_info_t eaton_marlin_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.0", "0", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	/* The below ones are the same as the input.* equivalent */
+	/* FIXME: transition period, TO BE REMOVED, moved to input.* */
 	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
 	{ "outlet.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
 	{ "outlet.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
 	/* There is also a .2 available (ie .1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2) */
-	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.2", NULL, 0, NULL, NULL },
+	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.1", NULL, 0, NULL, NULL },
 	/* There is also a .2 available (ie .1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2) */
 	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.1", NULL, 0, NULL, NULL },
 
