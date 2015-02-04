@@ -4,6 +4,7 @@
  *  Copyright (C)
  *  	2004	Thanos Chatziathanassiou <tchatzi@arx.net>
  *  	2012	Manuel Bouyer <bouyer@NetBSD.org>
+ * 		2015	Arnaud Quette <arnaud.quette@gmail.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@
 
 #include "netvision-mib.h"
 
-#define NETVISION_MIB_VERSION			"0.3"
+#define NETVISION_MIB_VERSION			"0.4"
 
 #define NETVISION_SYSOID				".1.3.6.1.4.1.4555.1.1.1"
 
@@ -43,6 +44,13 @@ static info_lkp_t netvision_batt_info[] = {
 	{ 4, "LB" },      /* battery depleted    */
 	{ 5, "DISCHRG" }, /* battery discharging */
 	{ 6, "RB" },      /* battery failure     */
+	{ 0, "NULL" }
+};
+
+/* Battery status: upsAlarmOnBattery */
+static info_lkp_t netvision_onbatt_info[] = {
+	{ 0, "OL" },      /* Online      */
+	{ 1, "OB" },      /* On battery  */
 	{ 0, "NULL" }
 };
 
@@ -119,6 +127,9 @@ static snmp_info_t netvision_mib[] = {
 		SU_FLAG_OK | SU_STATUS_BATT, &netvision_batt_info[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, NETVISION_OID_OUTPUT_SOURCE, "",
 		SU_FLAG_OK | SU_STATUS_PWR, &netvision_output_info[0] },
+	/* upsAlarmOnBattery */
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4555.1.1.1.1.6.3.2.0", "",
+		SU_FLAG_OK | SU_STATUS_PWR, &netvision_onbatt_info[0] },
 
 	/* ups load */
 	{ "ups.load", 0, 1, NETVISION_OID_OUT_LOAD_PCT_P1, 0, SU_INPUT_1, NULL },
