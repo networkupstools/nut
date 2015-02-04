@@ -59,6 +59,10 @@ static double exponent(double a, int8_t b);
 /* Tweak flag for APC Back-UPS */
 int max_report_size = 0;
 
+/* Tweaks for Powercom */
+int interrupt_only = 0;
+int interrupt_size = 0;
+
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
 
@@ -148,7 +152,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	int	id = pData->ReportID;
 	int	r;
 
-	if (rbuf->ts[id] + age > time(NULL)) {
+	if (interrupt_only || rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
 		upsdebug_hex(3, "Report[buf]", rbuf->data[id], rbuf->len[id]);
 		return 0;
@@ -346,7 +350,7 @@ HIDData_t *HIDGetItemData(const char *hidpath, usage_tables_t *utab)
 	}
 
 	/* Get info on object (reportID, offset and size) */
-	return FindObject_with_Path(pDesc, &Path, ITEM_FEATURE);
+	return FindObject_with_Path(pDesc, &Path, interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
 }
 
 char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
@@ -479,7 +483,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	buflen = comm_driver->get_interrupt(udev, buf, sizeof(buf), 250);
+	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size:sizeof(buf), 250);
 	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */
 	}

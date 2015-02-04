@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.38"
+#define DRIVER_VERSION		"0.39"
 
 #include "main.h"
 #include "libhid.h"
@@ -741,6 +741,8 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
+	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
+	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
 #else
 	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
@@ -788,7 +790,23 @@ void upsdrv_updateinfo(void)
 	/* Get HID notifications on Interrupt pipe first */
 	if (use_interrupt_pipe == TRUE) {
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
-		upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+		switch (evtCount)
+		{
+		case -EBUSY:		/* Device or resource busy */
+			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+		case -EPERM:		/* Operation not permitted */
+		case -ENODEV:		/* No such device */
+		case -EACCES:		/* Permission denied */
+		case -EIO:		/* I/O error */
+		case -ENXIO:		/* No such device or address */
+		case -ENOENT:		/* No such file or directory */
+			/* Uh oh, got to reconnect! */
+			hd = NULL;
+			return;
+		default:
+			upsdebugx(1, "Got %i HID objects...", (evtCount >= 0) ? evtCount : 0);
+			break;
+		}
 	} else {
 		evtCount = 0;
 		upsdebugx(1, "Not using interrupt pipe...");
@@ -808,7 +826,7 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* Skip Input reports, if we don't use the Feature report */
-		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_FEATURE));
+		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE));
 		if (!item) {
 			upsdebugx(3, "NUT doesn't use this HID object");
 			continue;
@@ -943,6 +961,15 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "Detected a UPS: %s/%s", hd->Vendor ? hd->Vendor : "unknown",
 		hd->Product ? hd->Product : "unknown");
+
+	/* Activate Powercom tweaks */
+	if (testvar("interruptonly")) {
+		interrupt_only = 1;
+	}
+	val = getval("interruptsize");
+	if (val) {
+		interrupt_size = atoi(val);
+	}
 
 	if (hid_ups_walk(HU_WALKMODE_INIT) == FALSE) {
 		fatalx(EXIT_FAILURE, "Can't initialize data from HID UPS");

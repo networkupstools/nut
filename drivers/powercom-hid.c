@@ -25,7 +25,7 @@
 #include "powercom-hid.h"
 #include "usb-common.h"
 
-#define POWERCOM_HID_VERSION	"PowerCOM HID 0.4"
+#define POWERCOM_HID_VERSION	"PowerCOM HID 0.5"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 /* PowerCOM */
@@ -45,6 +45,7 @@ static usb_device_id_t powercom_usb_device_table[] = {
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x00a6), NULL },
 	/* PowerCOM Vanguard and BNT-xxxAP */
 	{ USB_DEVICE(POWERCOM_VENDORID, 0x0004), NULL },
+	{ USB_DEVICE(POWERCOM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -130,12 +131,160 @@ static info_lkp_t powercom_beeper_info[] = {
 	{ 0, NULL, NULL }
 };
 
+static const char *powercom_voltage_conversion_fun(double value)
+{
+	static char buf[20];
+	snprintf(buf, sizeof(buf), "%0.0f", value * 4);
+	return buf;
+}
+
+static info_lkp_t powercom_voltage_conversion[] = {
+	{ 0, NULL, powercom_voltage_conversion_fun }
+};
+
+static const char *powercom_upsfail_conversion_fun(double value)
+{
+	if ((long)value & 0x0001) {
+		return "fanfail";
+	} else {
+		return "!fanfail";
+	}
+}
+
+static info_lkp_t powercom_upsfail_conversion[] = {
+	{ 0, NULL, powercom_upsfail_conversion_fun }
+};
+
+static const char *powercom_replacebatt_conversion_fun(double value)
+{
+	if ((long)value & 0x0002) {
+		return "replacebatt";
+	} else {
+		return "!replacebatt";
+	}
+}
+
+static info_lkp_t powercom_replacebatt_conversion[] = {
+	{ 0, NULL, powercom_replacebatt_conversion_fun }
+};
+
+static const char *powercom_test_conversion_fun(double value)
+{
+	if ((long)value & 0x0004) {
+		return "cal";
+	} else {
+		return "!cal";
+	}
+}
+
+static info_lkp_t powercom_test_conversion[] = {
+	{ 0, NULL, powercom_test_conversion_fun }
+};
+
+static const char *powercom_shutdownimm_conversion_fun(double value)
+{
+	if ((long)value & 0x0010) {
+		return "shutdownimm";
+	} else {
+		return "!shutdownimm";
+	}
+}
+
+static info_lkp_t powercom_shutdownimm_conversion[] = {
+	{ 0, NULL, powercom_shutdownimm_conversion_fun }
+};
+
+static const char *powercom_online_conversion_fun(double value)
+{
+	if ((long)value & 0x0001) {
+		return "!online";
+	} else {
+		return "online";
+	}
+}
+
+static info_lkp_t powercom_online_conversion[] = {
+	{ 0, NULL, powercom_online_conversion_fun }
+};
+
+static const char *powercom_lowbatt_conversion_fun(double value)
+{
+	if ((long)value & 0x0002) {
+		return "lowbatt";
+	} else {
+		return "!lowbatt";
+	}
+}
+
+static info_lkp_t powercom_lowbatt_conversion[] = {
+	{ 0, NULL, powercom_lowbatt_conversion_fun }
+};
+
+static const char *powercom_trim_conversion_fun(double value)
+{
+	if (((long)value & 0x0018) == 0x0008) {
+		return "trim";
+	} else {
+		return "!trim";
+	}
+}
+
+static info_lkp_t powercom_trim_conversion[] = {
+	{ 0, NULL, powercom_trim_conversion_fun }
+};
+
+static const char *powercom_boost_conversion_fun(double value)
+{
+	if (((long)value & 0x0018) == 0x0018) {
+		return "boost";
+	} else {
+		return "!boost";
+	}
+}
+
+static info_lkp_t powercom_boost_conversion[] = {
+	{ 0, NULL, powercom_boost_conversion_fun }
+};
+
+static const char *powercom_overload_conversion_fun(double value)
+{
+	if ((long)value & 0x0020) {
+		return "overload";
+	} else {
+		return "!overload";
+	}
+}
+
+static info_lkp_t powercom_overload_conversion[] = {
+	{ 0, NULL, powercom_overload_conversion_fun }
+};
+
 /* --------------------------------------------------------------- */
 /* Vendor-specific usage table */
 /* --------------------------------------------------------------- */
 
 /* POWERCOM usage table */
 static usage_lkp_t powercom_usage_lkp[] = {
+	{ "PowercomUPS",                      0x00020004 },
+	{ "PowercomBatterySystem",            0x00020010 },
+	{ "PowercomPowerConverter",           0x00020016 },
+	{ "PowercomInput",                    0x0002001a },
+	{ "PowercomOutput",                   0x0002001c },
+	{ "PowercomVoltage",                  0x00020030 },
+	{ "PowercomFrequency",                0x00020032 },
+	{ "PowercomPercentLoad",              0x00020035 },
+	{ "PowercomTemperature",              0x00020036 },
+	{ "PowercomDelayBeforeStartup",       0x00020056 },
+	{ "PowercomDelayBeforeShutdown",      0x00020057 },
+	{ "PowercomTest",                     0x00020058 },
+	{ "PowercomShutdownRequested",        0x00020068 },
+	{ "PowercomInternalChargeController", 0x00020081 },
+	{ "PowercomPrimaryBatterySupport",    0x00020082 },
+	{ "PowercomDesignCapacity",           0x00020083 },
+	{ "PowercomSpecificationInfo",        0x00020084 },
+	{ "PowercomManufacturerDate",         0x00020085 },
+	{ "PowercomSerialNumber",             0x00020086 },
+	{ "PowercomManufacturerName",         0x00020087 },
 	{ "POWERCOM1",	0x0084002f },
 	{ "POWERCOM2",	0xff860060 },
 	{ "POWERCOM3",	0xff860080 },
@@ -268,6 +417,56 @@ static hid_info_t powercom_hid2nut[] = {
 	{ "shutdown.return", 0, 0, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_shutdown_info },
 	{ "shutdown.stayoff", 0, 0, "UPS.PowerSummary.PCMDelayBeforeShutdown", NULL, NULL, HU_TYPE_CMD, powercom_stayoff_info },
 
+	{ "ups.serial", 0, 0, "PowercomUPS.PowercomSerialNumber", NULL, "%s", 0, stringid_conversion },
+	{ "ups.mfr", 0, 0, "PowercomUPS.PowercomManufacturerName", NULL, "%s", 0, stringid_conversion },
+/*	{ "UPS.DesignCapacity", 0, 0, "PowercomUPS.PowercomDesignCapacity", NULL, "%.0f", 0, NULL }, is always 255 */
+	{ "ups.mfr.date", 0, 0, "PowercomUPS.PowercomManufacturerDate", NULL, "%s", 0, date_conversion },
+	{ "battery.temperature", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomTemperature", NULL, "%.0f", 0, NULL },
+	{ "battery.charge", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomVoltage", NULL, "%.0f", 0, NULL },
+/*	{ "UPS.BatterySystem.SpecificationInfo", 0, 0, "PowercomUPS.PowercomBatterySystem.PowercomSpecificationInfo", NULL, "%.0f", 0, NULL }, */
+	{ "input.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomFrequency", NULL, "%.0f", 0, NULL },
+	{ "input.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomInput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
+	{ "output.voltage", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomVoltage", NULL, "%.0f", 0, powercom_voltage_conversion },
+	{ "ups.load", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPercentLoad", NULL, "%.0f", 0, NULL },
+	/* flags: 4 - Testing, 8 - Probably mute (it's set on battery with muted beeper and sometimes during ups test)
+	 * bit 0  UPS fault  (1 = FAILT)
+	 * bit 1  Battery status (1 = BAD, 0 = NORMAL)
+	 * bit 2  Test  mode  (1 = TEST, 0 = NORMAL)
+	 * bit 3  X
+	 * bit 4  Pre-SD count mode (1 = ACTIVE)
+	 * bit 5  Schedule count mode (1 = ACTIVE)
+	 * bit 6  Disable NO LOAD SHUTDOWN (1 = ACTIVE)
+	 * bit 7  0
+	 */
+/*	{ "UPS.PowerConverter.Output.InternalChargeController", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, "%.0f", 0, NULL }, */
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_upsfail_conversion },
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_replacebatt_conversion },
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_test_conversion },
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomInternalChargeController", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_shutdownimm_conversion },
+	/* flags: 1 - On battery, 2 - Low Battery, 8 - Trim, 8+16 - Boost
+	 * bit 0  is line fail (1 = INV, 0 = LINE)
+	 * bit 1  is low battery (1 = BAT_ LOW, 0 = NORMAL)
+	 * bit 2  X
+	 * bit 3  AVR status (1 = AVR, 0 = NO_AVR)
+	 * bit 4  AVR mode (1 = BOOST, 0 = BUCK)
+	 * bit 5  Load status (1 = OVER LOAD, 0 = NORMAL)
+	 * bit 6  X
+	 * bit 7  SD mode display
+	 */
+/*	{ "UPS.PowerConverter.Output.PrimaryBatterySupport", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, "%.0f", 0, NULL }, */
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_online_conversion },
+	/* Low battery status may not work */
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_lowbatt_conversion },
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_trim_conversion },
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_boost_conversion },
+	{ "BOOL", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomPrimaryBatterySupport", NULL, NULL, HU_FLAG_QUICK_POLL, powercom_overload_conversion },
+	{ "output.frequency", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomOutput.PowercomFrequency", NULL, "%.0f", 0, NULL },
+	{ "ups.test.result", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomTest", NULL, "%s", 0, test_read_info },
+/*	{ "UPS.PowerConverter.ShutdownRequested", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomShutdownRequested", NULL, "%.0f", 0, NULL }, */
+	{ "ups.delay.shutdown", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeShutdown", NULL, "%.0f", 0, NULL },
+	{ "ups.delay.start", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeStartup", NULL, "%.0f", 0, NULL },
+	{ "load.off", 0, 0, "PowercomUPS.PowercomPowerConverter.PowercomDelayBeforeShutdown", NULL, "0", HU_TYPE_CMD, NULL },
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, NULL, 0, NULL }
 };
@@ -307,6 +506,10 @@ static int powercom_claim(HIDDevice_t *hd)
 		return 0;
 
 	case SUPPORTED:
+		if (hd->ProductID == 0x0001) {
+			interrupt_only = 1;
+			interrupt_size = 8;
+		}
 		return 1;
 
 	case NOT_SUPPORTED:
