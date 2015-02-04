@@ -215,7 +215,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.07"
+#define EATON_MARLIN_MIB_VERSION	"0.08"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -351,10 +351,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
 	{ "outlet.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
 	{ "outlet.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
-	/* There is also a .2 available (ie .1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2) */
-	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.1", NULL, 0, NULL, NULL },
-	/* There is also a .2 available (ie .1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2) */
-	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.1", NULL, 0, NULL, NULL },
+	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.4", NULL, 0, NULL, NULL },
+	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.4", NULL, 0, NULL, NULL },
 
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
