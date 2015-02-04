@@ -90,7 +90,7 @@ typedef struct reportbuf_s {
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
 extern int interrupt_only;
-extern int interrupt_size;
+extern unsigned int interrupt_size;
 
 /* ---------------------------------------------------------------------- */
 

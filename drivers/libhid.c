@@ -59,9 +59,9 @@ static double exponent(double a, int8_t b);
 /* Tweak flag for APC Back-UPS */
 int max_report_size = 0;
 
-/* Tweaks for Powercom */
+/* Tweaks for Powercom, at least */
 int interrupt_only = 0;
-int interrupt_size = 0;
+int unsigned interrupt_size = 0;
 
 /* ---------------------------------------------------------------------- */
 /* report buffering system */
