@@ -1,9 +1,9 @@
 dnl +------------------------------------------------------------------+
-dnl | Network UPS Tools: configure.in                                  |
+dnl | Network UPS Tools: configure.ac                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
-AC_INIT(nut, 2.7.2.5, [https://github.com/networkupstools/nut/issues])
+AC_INIT(nut, 2.7.2.6, [https://github.com/networkupstools/nut/issues])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
@@ -23,7 +23,7 @@ m4_version_prereq(2.60, [
 ])
 
 dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
-dnl in sync after SVN updates.
+dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
 dnl PKG_PROG_PKG_CONFIG
@@ -42,6 +42,8 @@ dnl However, automatically define the tree version (mostly for AC_SUBST)
 TREE_VERSION="`echo ${PACKAGE_VERSION} | awk '{ print substr($0,1,3) }'`"
 AC_DEFINE_UNQUOTED(TREE_VERSION, "${TREE_VERSION}", [NUT tree version])
 
+dnl Should not be necessary, since old servers have well-defined errors for
+dnl unsupported commands:
 NUT_NETVERSION="1.2"
 AC_DEFINE_UNQUOTED(NUT_NETVERSION, "${NUT_NETVERSION}", [NUT network protocol version])
 
