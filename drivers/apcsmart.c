@@ -1004,7 +1004,7 @@ static void apc_getcaps(int qco)
 
 			/* make sure setvar knows what this is */
 			vt->flags |= APC_RW | APC_ENUM;
-		} else if (vt->flags & APC_PACK)
+		} else if (vt && (vt->flags & APC_PACK))
 			/*
 			 * Currently we assume - basing on the following
 			 * feedback:
