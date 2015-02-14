@@ -29,6 +29,7 @@ import gtk, gtk.glade, gobject
 import sys
 import base64
 import os, os.path
+import stat
 import platform
 import time
 import threading
@@ -44,21 +45,23 @@ gobject.threads_init()
 
 class interface :
 
-    __widgets                  = {}
-    __callbacks                = {}
-    __favorites                = {}
-    __favorites_file           = None
-    __favorites_path           = ""
-    __fav_menu_items           = list()
-    __window_visible           = True
-    __glade_file               = None
-    __connected                = False
-    __ups_handler              = None
-    __ups_commands             = None
-    __ups_vars                 = None
-    __ups_rw_vars              = None
-    __gui_thread               = None
-    __current_ups              = None
+    DESIRED_FAVORITES_DIRECTORY_MODE = 0700
+
+    __widgets                        = {}
+    __callbacks                      = {}
+    __favorites                      = {}
+    __favorites_file                 = None
+    __favorites_path                 = ""
+    __fav_menu_items                 = list()
+    __window_visible                 = True
+    __glade_file                     = None
+    __connected                      = False
+    __ups_handler                    = None
+    __ups_commands                   = None
+    __ups_vars                       = None
+    __ups_rw_vars                    = None
+    __gui_thread                     = None
+    __current_ups                    = None
 
     def __init__( self ) :
 
@@ -528,6 +531,9 @@ class interface :
             return
 
         try :
+            if ( not stat.S_IMODE( os.stat( self.__favorites_path ).st_mode ) == self.DESIRED_FAVORITES_DIRECTORY_MODE ) : # unsafe pre-1.2 directory found
+                os.chmod( self.__favorites_path, self.DESIRED_FAVORITES_DIRECTORY_MODE )
+
             conf = ConfigParser.ConfigParser()
             conf.read( self.__favorites_file )
             for current in conf.sections() :
@@ -573,7 +579,7 @@ class interface :
         # If path does not exists, try to create it
         if ( not os.path.exists( self.__favorites_file ) ) :
             try :
-                os.makedirs( self.__favorites_path, mode=0700 )
+                os.makedirs( self.__favorites_path, mode=self.DESIRED_FAVORITES_DIRECTORY_MODE )
             except :
                 self.gui_status_message( _("Error while creating configuration folder (%s)") % sys.exc_info()[1] )
 
