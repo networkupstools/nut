@@ -125,6 +125,12 @@ Setting this flag will make the driver skip this step.
 BESTUPS PROTOCOL
 ~~~~~~~~~~~~~~~~
 
+*ondelay*::
+The acceptable range is +60..599940+ seconds.
+
+*offdelay*::
+The acceptable range is +12..5940+ seconds.
+
 *pins_shutdown_mode =* 'value'::
 Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power’s EPS-0059) to 'value' [+0..6+].
 
@@ -356,8 +362,8 @@ Stop a running battery test.
 (Not available on some hardware)
 
 
-MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, MECER, MEGATEC, MEGATEC/OLD, MUSTEK, Q1, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *test.battery.start* 'value'::
 Perform a battery test for the duration of 'value' seconds (truncated to 60 seconds) [+60..5940+].
