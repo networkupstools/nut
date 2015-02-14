@@ -7,6 +7,21 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.7.2 to 2.7.3
+---------------------------
+
+- The linkman:nutdrv_qx[8] driver will eventually supersede linkman:bestups[8].
+  It has been tested on a U-series Patriot Pro II. Please test the new driver
+  on your hardware during your next maintenance window, and report any bugs.
+
+- If you are upgrading from a new install of 2.7.1 or 2.7.2, double-check the
+  value of POWERDOWNFLAG in $prefix/etc/upsmon.conf - it has been restored to
+  /etc/killpower as in 2.6.5 and earlier.
+
+- If you use upslog with a large sleep value, you may be interested in adding
+  `killall -SIGUSR1 upslog` to any OB/OL script actions. This will force
+  upslog to write a log entry to catch short power transients.
+
 Changes from 2.7.1 to 2.7.2
 ---------------------------
 
