@@ -23,6 +23,9 @@
 #
 # 2010-10-06 David Goncalves - Version 1.3
 #            Added localisation support
+#
+# 2015-02-14 Michal Fincham - Version 1.3.1
+#            Corrected unsafe permissions on ~/.nut-monitor (Debian #777706)
 
 
 import gtk, gtk.glade, gobject
