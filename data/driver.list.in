@@ -457,6 +457,8 @@
 
 "Jageson Technology"	"ups"	"1"	"Jasuny USPS"	""	"genericups upstype=4"
 
+"JAWAN"	"ups"	"2"	"JW-UPSLC02"	"USB"	"blazer_usb"
+
 "Kanji"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"
 
 "Kebo"	"ups"	"2"	"1200D/D Series"	""	"blazer_ser"
