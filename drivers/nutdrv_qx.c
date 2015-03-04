@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.25"
+#define DRIVER_VERSION	"0.26"
 
 #include "main.h"
 
@@ -478,7 +478,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 /* SGS communication subdriver */
 static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 {
-	char	tmp[8];
+	char	tmp[SMALLBUF];
 	int	ret;
 	size_t  cmdlen, i;
 
@@ -487,7 +487,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 	for (i = 0; i < cmdlen; i += ret) {
 
-		memset(tmp, 0, 8);
+		memset(tmp, 0, sizeof(tmp));
 
 		ret = (cmdlen - i) < 7 ? (cmdlen - i) : 7;
 
@@ -498,7 +498,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0x09, 0x200, 0, tmp, 8, 500);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
 
@@ -506,14 +506,14 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
-	upsdebugx(3, "send: %s", cmd);
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
 
 	/* Read reply */
 	memset(buf, 0, buflen);
 
 	for (i = 0; i <= buflen - 8; i += ret) {
 
-		memset(tmp, 0, 8);
+		memset(tmp, 0, sizeof(tmp));
 
 		/* Read data in 8-byte chunks */
 		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 500);
@@ -524,7 +524,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
 		if (ret <= 0) {
-			upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
 
@@ -535,9 +535,12 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		if (ret > 0)
 			memcpy(&buf[i], &tmp[1], ret);
 
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], ret);
+
 	}
 
-	upsdebugx(3, "read: %s", buf);
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 	return i;
 }
 
