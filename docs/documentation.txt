@@ -3,6 +3,7 @@ Documentation
 =============
 endif::website[]
 
+
 User Documentation
 ------------------
 
@@ -11,12 +12,14 @@ ifdef::website[]
 - NUT User Manual (link:docs/user-manual.chunked/index.html[online]) (link:docs/user-manual.pdf[PDF])
 - Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
+- link:ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
 endif::website[]
 ifndef::website[]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
 - linkdoc:user-manual[NUT user manual]
 - <<Cables_information,Cables information>>
 - link:../man/index.html#User_man[User manual pages]
+- link:http://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
 endif::website[]
 
 Developer Documentation
@@ -28,6 +31,7 @@ ifdef::website[]
 - link:ups-protocols.html[UPS protocols library]
 - link:docs/man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
+- link:ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 ifndef::website[]
 - linkdoc:developer-guide[NUT Developer Guide]
@@ -35,6 +39,7 @@ ifndef::website[]
 - link:ups-protocols.html[UPS protocols library]
 - link:../man/index.html#Developer_man[Developer manual pages]
 - link:nut-qa.html[NUT Quality Assurance]
+- link:http://www.networkupstools.org/ddl/index.html[Devices Dumps Library (DDL)]: Provides simulation data to the linkman:dummy-ups[8] driver
 endif::website[]
 
 Offsite Links
