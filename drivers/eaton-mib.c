@@ -1,7 +1,7 @@
 /*  eaton-mib.c - data to monitor Eaton ePDUs:
- *                G? Aphel based ePDUs (Basic and Complex)
- *                G? Pulizzi Monitored and Switched ePDUs
- *                G3 Marlin SW / MI / MO / MA 
+ *                G1 Aphel based ePDUs (Basic and Complex)
+ *                G1 Pulizzi Monitored and Switched ePDUs
+ *                G2 Marlin SW / MI / MO / MA 
  *
  *  Copyright (C) 2008 - 2015
  * 		Arnaud Quette <arnaud.quette@gmail.com>
@@ -33,7 +33,8 @@
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
- * Note: we should also be able to support this one using netxml-ups!
+ * Note: There is also a basic XML interface, but not worth
+ * implementing in netxml-ups!
  */
 
 #define APHEL1_OID_MIB						".1.3.6.1.4.1.17373"
