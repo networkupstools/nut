@@ -131,28 +131,19 @@ static info_rw_t	voltronic_r_batt_low[] = {
 /* Preprocess range value for battery low voltage */
 static int	voltronic_batt_low(char *value, size_t len)
 {
-	int		val = strtol(value, NULL, 10);
-	const char	*ovn = dstate_getinfo("output.voltage.nominal"),
-			*ocn = dstate_getinfo("output.current.nominal");
-
+	const char *ovn = dstate_getinfo("output.voltage.nominal");
+	const char *ocn = dstate_getinfo("output.current.nominal");
 	if (!ovn || !ocn) {
 		upsdebugx(2, "%s: unable to get the value of output voltage nominal/output current nominal", __func__);
 		return -1;
 	}
 
-	if ((strtol(ovn, NULL, 10) * strtol(ocn, NULL, 10)) < 1000) {
-
-		if (val == 24)
-			return 0;
-		else
-			return -1;
-
+	const int val = strtol(value, NULL, 10);
+	const int wattsNominal = strtol(ovn, NULL, 10) * strtol(ocn, NULL, 10);
+	if (wattsNominal < 1000) {
+		return (val == 24) ? 0 : -1;
 	} else {
-
-		if (val == 28)
-			return 0;
-		else
-			return -1;
+		return (val == 28) ? 0 : -1;
 	}
 }
 
