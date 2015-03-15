@@ -619,18 +619,48 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found."
+	@if [ -r "$@" ]; then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.1:
-	@echo "Using existing $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found."
+	@if [ -r "$@" ]; then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.3:
-	@echo "Using existing $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found."
+	@if [ -r "$@" ]; then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.5:
-	@echo "Using existing $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found."
+	@if [ -r "$@" ]; then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.8:
-	@echo "Using existing $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found."
+	@if [ -r "$@" ]; then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 endif !HAVE_ASCIIDOC
