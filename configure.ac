@@ -643,7 +643,7 @@ esac
 for nut_doc_build_target in ${nut_doc_build_list}; do
 	case "${nut_doc_build_target}" in
 	html-single)
-		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target}])
+		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target} (minimum required 8.6.3)])
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
@@ -654,7 +654,7 @@ for nut_doc_build_target in ${nut_doc_build_list}; do
 		;;
 
 	html-chunked)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target}])
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target} (minimum required 8.6.3)])
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
@@ -665,7 +665,7 @@ for nut_doc_build_target in ${nut_doc_build_list}; do
 		;;
 
 	pdf)
-		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target}])
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target} (minimum required 0.2.5)])
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
@@ -691,7 +691,7 @@ no)
 	if test -z "${DOC_NOBUILD_LIST}"; then
 		nut_with_doc="yes"
 	else
-		AC_MSG_ERROR(["Unable to build ${DOC_NOBUILD_LIST} documentation"])
+		AC_MSG_ERROR(["Unable to build ${DOC_NOBUILD_LIST} documentation (check for 'no' results above)"])
 	fi
 	;;
 esac
@@ -713,6 +713,8 @@ AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 	nut_have_asciidoc="no"
 ])
 
+dnl TODO: test for docbook-xsl files (maybe build a test man page?)
+dnl https://github.com/networkupstools/nut/issues/162
 AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
 if test -n "${XSLTPROC}"; then
   AC_MSG_RESULT(yes)
