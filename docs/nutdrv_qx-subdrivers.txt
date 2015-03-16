@@ -422,7 +422,8 @@ So your UPS reports its battery type when queried for +QBT\r+; we are expecting 
 Here's the +item_t+:
 
 ----
-{ "battery.type", ST_FLAG_RW, voltronic_e_batt_type, "QBT\r", "", 4, '(', "", 1, 2, "%s", QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM, NULL, voltronic_p31b },
+{ "battery.type", ST_FLAG_RW, voltronic_e_batt_type, "QBT\r", "", 4, '(', "", 1, 2, "%s",
+  QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM, NULL, voltronic_p31b },
 ----
 
 [horizontal]
@@ -488,7 +489,8 @@ We also know that we can change battery type with the +PBTnn\r+ command; we are 
 Here's the +item_t+:
 
 ----
-{ "battery.type", 0, voltronic_e_batt_type, "PBT%02.0f\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_SETVAR | QX_FLAG_ENUM, NULL, voltronic_p31b_set },
+{ "battery.type", 0, voltronic_e_batt_type, "PBT%02.0f\r", "", 5, '(', "", 1, 4, NULL,
+  QX_FLAG_SETVAR | QX_FLAG_ENUM, NULL, voltronic_p31b_set },
 ----
 
 [horizontal]
@@ -611,7 +613,8 @@ Informations absent in the device
 In order to set the server-side var +ups.delay.start+, that will be then used by the driver, we have to provide the following +item_t+:
 
 ----
-{ "ups.delay.start", ST_FLAG_RW, voltronic_r_ondelay, NULL, "", 0, 0, "", 0, 0, "180", QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE, NULL, voltronic_process_setvar },
+{ "ups.delay.start", ST_FLAG_RW, voltronic_r_ondelay, NULL, "", 0, 0, "", 0, 0, "180",
+  QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE, NULL, voltronic_process_setvar },
 ----
 
 [horizontal]
@@ -684,7 +687,8 @@ So we know that the UPS reports actual input/output phase angles when queried fo
 Here's the +item_t+ for input phase angle:
 
 ----
-{ "input_phase_angle", 0, NULL, "QPD\r", "", 9,	'(', "", 1, 3, "%03.0f", QX_FLAG_STATIC | QX_FLAG_NONUT, NULL, voltronic_phase },
+{ "input_phase_angle", 0, NULL, "QPD\r", "", 9,	'(', "", 1, 3, "%03.0f",
+  QX_FLAG_STATIC | QX_FLAG_NONUT, NULL, voltronic_phase },
 ----
 
 [horizontal]
@@ -742,7 +746,8 @@ This function will be called *after* the +command+ has been sent to the UPS so t
 Here's the +item_t+ for output phase angle:
 
 ----
-{ "output_phase_angle", ST_FLAG_RW, voltronic_e_phase, "QPD\r",	"", 9, '(', "", 5, 7, "%03.0f", QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, voltronic_phase },
+{ "output_phase_angle", ST_FLAG_RW, voltronic_e_phase, "QPD\r",	"", 9, '(', "", 5, 7, "%03.0f",
+  QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, voltronic_phase },
 ----
 
 [horizontal]
@@ -821,7 +826,8 @@ We know we can set output phase angle sending +PPDnnn\r+ to the UPS:
 Here's the +item_t+
 
 ----
-{ "output_phase_angle", 0, voltronic_e_phase, "PPD%03.0f\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, voltronic_phase_set },
+{ "output_phase_angle", 0, voltronic_e_phase, "PPD%03.0f\r", "", 5, '(', "", 1, 4, NULL,
+  QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, voltronic_phase_set },
 ----
 
 [horizontal]
