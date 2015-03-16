@@ -10,15 +10,6 @@ right?
 If not, go read it now, then come back to this file if your
 question wasn't answered in there.
 
-== upsstats says 'Error: can't open template file (upsstats.html)'.
-Go into your configuration path (/usr/local/ups/etc by default) and
-copy the sample template files over to their real names.  The sample
-template files are installed with 'make install' and can 
-also be found inside the source distribution in the conf directory. 
-
-== upsmon fails the login and says 'username required' now.
-Go read the link:UPGRADING[UPGRADING] file again.
-
 == My UPS driver now says it's 'broken', and won't start.  What now?
 Or a variation like...
 
@@ -108,6 +99,19 @@ tcp-wrappers or kernel firewall rules.
 This isn't a NUT-specific limitation - it applies equally to your web server or
 mailer daemon.
 
+== Which UPS should I buy?
+
+One with a no-questions-asked money-back guarantee. Seriously. The NUT
+developers cannot take responsibility for recommending an UPS (see the LICENSE
+file for more details on the explicit lack of warranty), only to find out that
+the manufacturer has changed the internals of the UPS without changing the
+model name.
+
+That said, from time to time, certain vendors have helped out by providing
+hardware for testing, results of their testing efforts, or protocol
+specifications. We try to publish this information on the NUT website, so you
+can take this into consideration when selecting an UPS brand.
+
 == I have an APC Smart-UPS connected with a grey APC serial cable and it won't work. 
 
 The Back-UPS type in the genericups driver works but then I don't get to use
@@ -158,7 +162,7 @@ hardware properly.
 
 *Answer 1*
 
-I try to follow the "tool for the job" philosophy.  It may mean
+We try to follow the "tool for the job" philosophy.  It may mean
 more programs running, but the flexibility you get is usually
 worth it.
 
@@ -172,7 +176,8 @@ Besides, if upsmon were rolled into upsd, upsd would get even
 bigger than it is now.  You'd have one less process, but the
 RAM consumption would be pretty close to now.
 
-See data-room.txt for more configuration ideas and explanations.
+See the "Data Room" section in docs/config-notes.txt for more configuration
+ideas and explanations.
 
 *Answer 2*
 
@@ -225,7 +230,7 @@ driver supports the older Best hardware.
 There is a similar problem with the tripplite_usb driver: it only supports the
 older, proprietary protocol. Newer standards-compliant Tripp Lite UPS models
 are supported by usbhid-ups. We name drivers based on the information
-available at that time, which often is incomplete.
+available at the time the driver was first written, which often is incomplete.
 
 == What's this about 'data stale'?
 
@@ -237,9 +242,9 @@ If this happens to you, make sure your driver is still running.
 Also look at the syslog.  Sometimes the driver loses the connection
 to the UPS, and that will also make the data go stale.
 
-Note: some very slow machines have trouble keeping up with the
-serial ports during periods of extreme load.  My old 486 used to
-flip between "stale" and "OK" while running backups.
+This might also happen on certain virtualization platforms. If you cannot
+reproduce the problem on a physical machine, please report the bug to the
+virtualization software vendor.
 
 If this happens a lot, you might consider cranking up DEADTIME
 in the upsmon.conf to suppress some of the warnings for shorter
@@ -250,8 +255,8 @@ what's going on with the UPS.
 Note: some drivers occasionally need more time to update than the
 default value of MAXAGE (in upsd.conf) allows.  As a result, they 
 are temporarily marked stale even though everything is fine.  This
-can happen with MGE Ellipse equipment - see the mge-shut man page.
-In such cases, you can raise the value of MAXAGE to avoid these
+can happen with MGE Ellipse equipment - see the mge-shut or usbhid-ups man
+pages.  In such cases, you can raise the value of MAXAGE to avoid these
 warnings; try a value like 25 or 30.
 
 == Why do the client programs say 'Driver not connected' when I try to run them?
@@ -266,6 +271,17 @@ connect to a driver, and it should say why it can't connect.
 Note: if you jumped in with both feet and didn't follow the INSTALL.nut
 document, you probably started upsd by itself.  You have to run
 'upsdrvctl start' to start the drivers after configuring ups.conf.
+
+== Why don't the pathnames in your documentation match the package I installed?
+
+Each distribution has conventions for where specific file types should be
+stored. The NUT project cannot possibly track all of these conventions, so the
+documentation assumes the default installation directory prefix of
+`/usr/local/ups` when describing file locations. The distributions tend not to
+change the base name of the files, so you can search for drivers and
+configuration files in the package database of installed files. For instance,
+on Debian or Ubuntu derivatives, you can use `dpkg --search usbhid-ups` to see
+where the drivers are stored.
 
 == Everything works perfectly during the shutdown, and the UPS comes back on, but my system stays off.  What's happening?
 
@@ -518,45 +534,65 @@ file.
 
 There are several driver to support USB models.
 
-- usbhid-ups supports various manufacturers complying to the HID standard,
-- tripplite_usb supports various Tripp-Lite units,
+- usbhid-ups supports various manufacturers complying to the HID Power Device Class (PDC) standard,
+- tripplite_usb supports various older Tripp-Lite units (with USB ProductID 0001)
 - bcmxcp_usb supports various Powerware units,
-- blazer_usb supports various manufacturers that use the Megatec / Q1 protocol.
+- nutdrv_qx and blazer_usb support various manufacturers that use the Megatec / Q1 protocol.
 
 Refer to the 'driver-name' (8) manpage for more information.
 
-== What is this usbhid-ups (formerly newhidups) about?
-
-The basic USB UPS support was done until NUT 2.2 using hidups. To allow
-a wider support accross platforms for USB/HID compliant devices,
-usbhid-ups driver uses libusb (which is available for a wide range of
-operating systems) and libhid (currently, a modified internal version
-of it).
-
-As of NUT 2.2, usbhid-ups completely replaces the legacy hidups driver,
-and provides support for various manufacturers. At that time, newhidups was
-renamed to usbhid-ups.
-
-usbhid-ups is built automatically if possible (libusb development files
-need to be installed) and installed by the "make install" command.
+You can also consult the Hardware Compatibility List (HCL) and filter on USB:
+http://www.networkupstools.org/stable-hcl.html?connection=USB
 
 == My USB UPS is supported but doesn't work!
 
 On Linux, udev rules are provided to set the correct permissions on device file.
 This allows the NUT driver to communicate with the UPS, through this device file.
 
-However, the driver may still failed to start and support the device, with a
+However, the driver may still fail to start and support the device, with a
 message like:
 
 	failed to claim USB device: could not claim interface 0: Operation not permitted
 
-*Operation not permitted* is a message pointing a privilege issue.
+*Operation not permitted* is a message pointing to a privilege issue.
 The most frequent issue is that udev has not actually applied the rule:
 
 - if NUT has been freshly installed,
-- and if the device USB cord was already plugged when installing nut.
+- and if the device USB cord was already plugged when installing NUT.
 
-In this case, just unplug and plug back the USB cord, then restart nut.
+In this case, just unplug and plug back the USB cord, then restart NUT.
+
+There was a mistake in the naming of the NUT udev rules file which resulted in
+the rules being overridden by another udev configuration file. While this has
+been fixed in the Git master branch, your distribution may still be affected.
+Details are available in the following Github issue:
+https://github.com/networkupstools/nut/issues/140
+
+== Why do you not use the Linux kernel HID driver when communicating with USB UPSes?
+
+When the `usbhid-ups` was first written, it replaced an older driver `hidups`
+which used the Linux kernel USB HID API. At the time, the kernel HID API could
+not distinguish between identical Usage IDs that were nested in different
+parent IDs, so many common measurements were not available from `hidups`. For
+this reason, the libusb approach was chosen, which has the added side effect
+of being more portable than the Linux HID API. The Linux hiddev device nodes
+have very similar permissions problems as the `/dev/bus/usb` nodes that the
+libusb approach uses.
+
+Due to difficulties in running libusb on OS X and Windows, those platforms
+might benefit more from a native HID approach.
+
+== I get a message from the kernel that the driver "did not claim interface 0 before use"
+
+On Linux, if two copies of a driver are competing for the UPS, these messages
+will appear in dmesg:
+
+	usbfs: process 29641 (usbhid-ups) did not claim interface 0 before use
+
+This can be a symptom of a source install conflicting with a package install.
+There is a rudimetary locking mechanism in NUT, but there is a chance that the
+packages might not use the same directory as the NUT default, and the conflict
+will be reported by the kernel.
 
 == Why doesn't my package work?
 
@@ -587,23 +623,50 @@ root, start upsmon with -p and it will go back to being one big
 process.  This is not recommended, so don't blame us if something
 bad happens in this mode.
 
+== I get the following error while building: `make[4]: don't know how to make HP-UX/nut-drvctl.sh. Stop`
+
+NUT still has some hidden dependencies on GNU Make which show up while running
+`make distcheck`. If you are running `make distcheck` or its variants, you
+will need to install GNU Make (`devel/gmake` in the ports tree), which is
+incidentally what the official FreeBSD port of NUT does for all builds.
+
 == I have 'some problem' with 'some old version' ...
 
 Get the latest stable release, and see if it still happens.  If it
 goes away, it means someone else reported it and got it fixed a 
 long time ago.
 
-If that doesn't work, try the latest development version.
+You may want to search the mailing lists to see if someone else has
+experienced the same problem. If so, there is a good chance that someone else
+has worked through the process necessary to shoehorn the latest NUT version
+into your distribution (potentially with unofficial packages).
 
-If your problem is STILL there, then contact the mailing lists.
+Some OS distributions contain old versions of NUT. If your hardware is newer
+than the NUT release, there is a good chance that support has not been added
+yet. Please do not tell us you have the "latest version for Distro XYZ" - even
+if the developers are familiar with that distribution, it helps others if you
+quote the exact package version.
 
 NOTE: check the release date on the version you have.  If it's more
-than about 6 months old, there's probably a newer stable tree
+than about 6-12 months old, there's probably a newer stable tree
 version out there.
+
+== I built NUT from Git, and it complains about lots of missing files. What happened?
+
+If you are not actively developing a driver, can you use a snapshot instead?
+The NUT instance of Buildbot generates tar files of the latest NUT source
+after each successful build, and these snapshots include a prebuilt version of
+the `./configure` script.
+
+Otherwise, you will need recent versions of autoconf, automake, libtool,
+asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a
+list of the exact versions needed (which will quickly become out of date), we
+recommend you consult your distribution's dependency list for building a NUT
+package, and use that as a starting point.
 
 == Do I have to use a serial connection to monitor the UPS? What about direct network connections (SNMP or otherwise)?
 
-No. NUT currently support USB communication through several drivers,
+NUT currently supports USB communication through several drivers,
 and also SNMP and XML/HTTP (Eaton and MGE) communications.
 
 Since NUT is very extensible, support for a new communication bus can be added
@@ -616,15 +679,10 @@ turn an owner into a developer or vice-versa.
 
 == What happened to the patch I sent?
 
-If a release goes by and your patch hasn't been included, it was
-probably dropped.  There can be a lot of patches waiting for 
-inclusion at some points, and occasionally some have to be
-rejected.
-
-Design issues or severe coding style problems can be the reason
-for this.  I try to point out what the problems are, but there are
-limits.  See developers.txt for some pointers on submitting
-patches.
+We try to prioritize emails with patches, but you should understand that a
+simple fix for your bug might be complicated to integrate with the rest of
+NUT. Changing the way a fundamental component works, such as USB support,
+means a lot of testing to ensure that your fix does not break other drivers.
 
 Sometimes patches are put on hold due to a feature freeze.  If it
 doesn't show up once the new version opens up, send it again.
@@ -632,7 +690,7 @@ doesn't show up once the new version opens up, send it again.
 == I'm not much of a programmer.  How can I help?
 
 There's always work to be done outside of the realm of code bashing.
-Documentation might not always be so clear.  A user's perspective
+Documentation can always be improved.  A user's perspective
 is sometimes needed to appreciate this.  Bug reports on a project's
 documentation are just as valuable as those for the actual source.
 
@@ -686,9 +744,12 @@ upsstats.html and change it from TEMPC to TEMPF.
 
 == Why is the mailing list ignoring me?
 
-You probably asked a question that's answered in this FAQ or
-somewhere else in the documentation and nobody wants to quote it
+You probably asked a question that's answered in this FAQ, or
+somewhere else in the documentation, and nobody wants to quote it
 for you.
+
+There is a small chance that the mailing list spam filter ate your message.
+Check the list archives to see if your message appears there.
 
 Convincing the other subscribers that you've actually read down this
 far might be useful.  You might mention "queequeg" for better results.
@@ -696,6 +757,22 @@ far might be useful.  You might mention "queequeg" for better results.
 This URL may also be helpful:
 
 http://www.catb.org/~esr/faqs/smart-questions.html
+
+== Why are you so insistent about sending emails to public mailing lists instead of to individuals?
+
+By and large, NUT is a volunteer effort. By emailing one person, you are
+asking them to take care of your question. If you email the list instead, you
+give others the opportunity to answer.
+
+In addition, the mailing lists are publicly archived, and therefore easily
+searchable. Chances are, you aren't the only person who will ever have that
+question.
+
+== If you want mailing list replies to go to the list, why don't you add a Reply-To: header?
+
+We are not going to rehash all of the arguments for and against this in a
+simple FAQ entry. If you intend for your reply to go to more than just the
+last person who posted, it is not too much trouble to hit "reply all".
 
 == I found some information about another kind of UPS protocol you don't support yet, but I don't know what to do with it. Can you help?
 
