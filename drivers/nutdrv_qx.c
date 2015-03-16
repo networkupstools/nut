@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 #include "main.h"
 
@@ -809,11 +809,11 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 /* Fuji communication subdriver */
 static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 {
-	unsigned char	tmp[SMALLBUF];
+	unsigned char	tmp[8];
 	char		command[SMALLBUF] = "",
 			read[SMALLBUF] = "";
 	int		ret, answer_len;
-	size_t		i, len;
+	size_t		i;
 	const struct {
 		const char	*command;	/* Megatec command */
 		const int	answer_len;	/* Expected length of the answer to the ongoing query */
@@ -825,20 +825,20 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	};
 
 	/*
-	 * Queries (b1..b8x) sent (in 8-byte chunks) to the UPS adopt the following scheme:
+	 * Queries (b1..b8) sent (as a 8-bytes interrupt) to the UPS adopt the following scheme:
 	 *
 	 *	b1:		0x80
 	 *	b2:		0x06
 	 *	b3:		<LEN>
 	 *	b4:		0x03
 	 *	b5..bn:		<COMMAND>
-	 *	bn+1..b8x-1:	[<PADDING>]
-	 *	b8x:		<ANSWER_LEN>
+	 *	bn+1..b7:	[<PADDING>]
+	 *	b8:		<ANSWER_LEN>
 	 *
 	 * Where:
 	 *	<LEN>		Length (in Hex) of the command (without the trailing CR) + 1
 	 *	<COMMAND>	Command/query (without the trailing CR)
-	 *	[<PADDING>]	0x00 padding to the last 8-byte chunk's 7th byte
+	 *	[<PADDING>]	0x00 padding to the 7th byte
 	 *	<ANSWER_LEN>	Expected length (in Hex) of the answer to the ongoing query (0 when no reply is expected, i.e. commands)
 	 *
 	 * Replies to queries (commands are followed by action without any reply) are sent from the UPS (in 8-byte chunks) with 0x00 padding after the trailing CR to full 8 bytes.
@@ -849,6 +849,13 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Remove the CR */
 	snprintf(command, sizeof(command), "%.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	/* Length of the command that will be sent to the UPS can be at most: 8 - 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) = 3 */
+	if (strlen(command) > 3) {
+		/* Be 'megatec-y': echo the unsupported command back */
+		upsdebugx(3, "%s: unsupported command %s", __func__, command);
+		return snprintf(buf, buflen, "%s", cmd);
+	}
 
 	/* Expected length of the answer to the ongoing query (0 when no reply is expected, i.e. commands) */
 	answer_len = 0;
@@ -862,14 +869,6 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 
 	}
 
-	/* Length of the command that will be sent to the UPS: megatec command length + 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) [+ padding to get a multiple of 8] */
-	len = strlen(command) + 5;
-	if (len % 8)
-		len += 8 - len % 8;
-
-	if (len > sizeof(tmp))
-		len = sizeof(tmp);
-
 	memset(tmp, 0, sizeof(tmp));
 
 	/* 0x80 */
@@ -881,22 +880,18 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	/* 0x03 */
 	tmp[3] = 0x03;
 	/* <COMMAND> */
-	memcpy(&tmp[4], command, strlen(command) <= len - 5 ? strlen(command) : len - 5);
+	memcpy(&tmp[4], command, strlen(command));
 	/* <ANSWER_LEN> */
-	tmp[len - 1] = answer_len;
+	tmp[7] = answer_len;
 
-	upsdebug_hex(4, "command", (char *)tmp, (int)len);
+	upsdebug_hex(4, "command", (char *)tmp, 8);
 
-	for (i = 0; i < len; i += ret) {
+	/* Write data */
+	ret = usb_interrupt_write(udev, USB_ENDPOINT_OUT | 2, (char *)tmp, 8, USB_TIMEOUT);
 
-		/* Write data in 8-byte chunks */
-		ret = usb_interrupt_write(udev, USB_ENDPOINT_OUT | 2, (char *)&tmp[i], 8, USB_TIMEOUT);
-
-		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
-			return ret;
-		}
-
+	if (ret <= 0) {
+		upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+		return ret;
 	}
 
 	upsdebugx(3, "send: %s", command);
