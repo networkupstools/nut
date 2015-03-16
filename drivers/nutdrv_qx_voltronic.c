@@ -3196,7 +3196,7 @@ static int	voltronic_warning(item_t *item, char *value, size_t valuelen)
 
 		int	u = 0;
 
-		if (item->value[i] == '1') {
+		if (item->value[i] == '1') { /*@TODO replace by "continue" and remove one indentation*/
 
 			switch (i)
 			{
@@ -3663,7 +3663,8 @@ static int	voltronic_status(item_t *item, char *value, size_t valuelen)
 {
 	char	*val = "";
 
-	if (strspn(item->value, "01") != strlen(item->value)) {
+	const char filter_binary[] = "01";
+	if (strspn(item->value, filter_binary) != strlen(item->value)) {
 		upsdebugx(3, "%s: unexpected value %s@%d->%s", __func__, item->value, item->from, item->value);
 		return -1;
 	}
