@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.15"
+#define DRIVER_VERSION	"0.16"
 
 #include "main.h"
 
@@ -812,7 +812,8 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	unsigned char	tmp[8];
 	char		command[SMALLBUF] = "",
 			read[SMALLBUF] = "";
-	int		ret, answer_len;
+	int		ret, answer_len, val2;
+	double		val1;
 	size_t		i;
 	const struct {
 		const char	*command;	/* Megatec command */
@@ -850,7 +851,14 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	/* Remove the CR */
 	snprintf(command, sizeof(command), "%.*s", (int)strcspn(cmd, "\r"), cmd);
 
-	/* Length of the command that will be sent to the UPS can be at most: 8 - 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) = 3 */
+	/* Length of the command that will be sent to the UPS can be at most: 8 - 5 (0x80, 0x06, <LEN>, 0x03, <ANSWER_LEN>) = 3.
+	 * As a consequence also 'SnRm' commands (shutdown.{return,stayoff} and load.off) are not supported.
+	 * So, map all the 'SnRm' shutdown.returns (m != 0) as the corresponding 'Sn' commands, meanwhile ignoring ups.delay.start and making the UPS turn on the load as soon as power is back. */
+	if (sscanf(cmd, "S%lfR%d\r", &val1, &val2) == 2 && val2) {
+		upsdebugx(4, "%s: trimming '%s' to '%.*s'", __func__, command, 3, command);
+		command[3] = 0;
+	}
+	/* Too long command */
 	if (strlen(command) > 3) {
 		/* Be 'megatec-y': echo the unsupported command back */
 		upsdebugx(3, "%s: unsupported command %s", __func__, command);
