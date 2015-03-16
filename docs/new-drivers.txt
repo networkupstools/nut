@@ -1,15 +1,15 @@
 Creating a new driver to support another device
 ===============================================
 
-This chapter will present the process to create a new driver to support
+This chapter will present the process of creating a new driver to support
 another device.
 
-Since NUT already supports all major power devices protocols, through
-several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_*, ...),
-creation of new drivers has become rare.
+Since NUT already supports many major power devices protocols through
+several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_* and
+nutdrv_qx), creation of new drivers has become rare.
 
 So most of the time, it will be limited to completing one of these
-generic driver.
+generic drivers.
 
 Smart vs. Contact-closure
 -------------------------
@@ -698,6 +698,26 @@ latter accepts either "\n", "\n\r" or "\r\n" as line termination. You
 can define other termination characters as well, but can't undefine
 "\r" and "\n" (so if you need these as data, this is not for you).
 
+Adding the driver into the tree
+-------------------------------
+
+In order to build your new driver, it needs to be added to
+`drivers/Makefile.am`. At the moment, there are several driver list variables
+corresponding to the general protocol of the driver (`SERIAL_DRIVERLIST`,
+`SNMP_DRIVERLIST`, etc.). If your driver does not fit into one of these
+categories, please discuss it on the nut-upsdev mailing list.
+
+There are also `*_SOURCES` and optional `*_LDADD` variables to list the source
+files, and any additional linker flags. If your driver uses the C math
+library, be sure to add `-lm`, since this flag is not always included by
+default on embedded systems.
+
+When you add a driver to one of these lists, pay attention to the backslash
+continuation characters (`\\`) at the end of the lines.
+
+The `automake` program converts the `Makefile.am` files into `Makefile.in`
+files to be processed by `./configure`. See the discussion in <<building>>
+about automating the rebuild process for these files.
 
 [[contact-closure]]
 

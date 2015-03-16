@@ -371,15 +371,21 @@ Most developers will be well served by committing to their own Git repository,
 and having the NUT team merge their changes.
 
 Git offers a little more flexibility than the +svn update+ command. You may
-fetch other developers' changes from SVN into your repository, but hold off on
+fetch other developers' changes into your repository, but hold off on
 actually combining them with your branch until you have compared the two
 branches (for instance, with `gitk --all`). Git also allows you to accumulate
 more than one commit worth of changes before pushing to another repository.
+This allows development to continue without a constant network connection.
 
 For a quick change to a file in the Git working copy, you can use `git diff` to
 generate a patch to send to the nut-upsdev mailing list.  If you have more
 extensive changes, you can use `git format-patch` on a complete commit or
 branch, and send the resulting series of patches to the list.
+
+If you use GitHub's web-based editor to make changes, it tends to create lots
+of small commits, one per change per file. Unless there is reason to keep the
+intermediate history, we will probably collapse the entire branch into one
+commit with `git rebase -i` before merging.
 
 The link:https://git.wiki.kernel.org/index.php/GitSvnCrashCourse[GitSvnCrashCourse]
 wiki page has some useful information for long-time users of Subversion.
@@ -479,7 +485,7 @@ best to add some context such as the commit title or a date.
 
 You may notice that some older commits have `[[SVN:####]]` tags and Fossil-ID
 footers. These were lifted from the old SVN commit messages using reposurgeon,
-and should not be used as a guide for future commits.
+and should *not* be used as a guide for future commits.
 
 Repository etiquette and quality assurance
 ------------------------------------------
@@ -500,28 +506,9 @@ will need to rebase on top of your rebased branch. Obviously, this hinders
 collaboration. In this case, we recommend that you rebase only in your private
 repository, and push when things are ready for discussion. Merging instead of
 rebasing will help with collaboration, but please do not turn the repository
-history into a pile of spaghetti by merging unnecessarily. Be sure that your
-commit messages are descriptive when merging.
-
-Before pushing your commits upstream, please remember to run +make
-distcheck-light+. This checks that the Makefiles are not broken, that all the
-relevant files are distributed, and that there are no compilation or
-installation errors.
-
-Running +make distcheck-light+ is especially important if you have added or
-removed files, or updated configure.in or some Makefile.am.  Remember: simply
-adding a file to Git does not mean it will be distributed. To distribute a
-file, you must update the corresponding Makefile.am.
-
-There is also +make distcheck+, which runs an even stricter set of
-tests than +make distcheck-light+, but will not work unless you have all the
-optional libraries and features installed.
-
-You may create as many branches as you like in your local Git repository. When
-using Git, our preferred way to combine small changes with the upstream
-upstream repository is to use `git rebase` on your local branch. This is
-equivalent to treating your branch as a series of patches, and re-applying your
-patches on top of the upstream changes.
+history into a pile of spaghetti by merging unnecessarily. (Test merges can be
+done on integration branches, which can be discarded if the merge is trivial.)
+Be sure that your commit messages are descriptive when merging.
 
 If you haven't created a commit out of your local changes yet, and you want to
 fetch the latest code, you can also use +git stash+ before pulling, then +git
@@ -561,4 +548,49 @@ Here is an example workflow:
 If you are new to Git, but are familiar with SVN, the
 link:http://git-scm.com/course/svn.html[following link] may be of use.
 
+[[building]]
+Building the Code
+-----------------
+
+For a developer, the NUT build process starts with `./autogen.sh`. This script
+generates the `./configure` script that end users typically invoke to build
+NUT. If you are making a number of changes to the NUT source tree, configuring
+with the `--enable-maintainer-mode` flag will ensure that after you change
+`Makefile.am`, the `Makefile.in` and `Makefile` get regenerated. At a
+minimum, you will need:
+
+* autoconf
+* automake
+* libtool
+* Python
+* Perl
+
+After running `./autogen.sh`, you can pass your local configuration options to
+`./configure` and run `make` from the top-level directory. To avoid the need
+for root privileges when testing new NUT code, you may wish to use
+`--prefix=$HOME/local/nut --with-statepath=/tmp`. You can also keep
+compilation times down by only building the driver you are currently working
+on: `--with-drivers=driver1,dummy-ups`.
+
+Before pushing your commits upstream, please run +make distcheck-light+. This
+checks that the Makefiles are not broken, that all the
+relevant files are distributed, and that there are no compilation or
+installation errors. Note that this requires all of the dependencies necessary
+to build the documentation, including asciidoc, a2x, xsltproc, dblatex and any
+additional XSL stylesheets.
+
+Running +make distcheck-light+ is especially important if you have added or
+removed files, or updated configure.in or some Makefile.am.  Remember: simply
+adding a file to Git does not mean it will be distributed. To distribute a
+file, you must update the corresponding Makefile.am.
+
+There is also +make distcheck+, which runs an even stricter set of
+tests than +make distcheck-light+, but will not work unless you have all the
+optional libraries and features installed.
+
+Even if you do not use your distribution's packages of NUT, installing the
+distribution's list of build dependencies for NUT can reduce the amount of
+trial-and-error when installing dependencies. For instance, in Debian, you can
+run `apt-get build-dep nut` to install all of the auto* tools as well as any
+development libraries and headers.
 
