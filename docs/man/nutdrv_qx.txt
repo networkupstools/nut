@@ -323,6 +323,21 @@ This is mandatory for some devices to work (LDLC, Dynamix and others).
 You must provide *value* (+0x409+ or +0x4095+), according to your device entry in NUT hardware compatibility list (HCL).
 
 
+IMPLEMENTATION NOTES
+^^^^^^^^^^^^^^^^^^^^
+
+*'fabula' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the various *test.battery* commands.
+Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'fuji' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the *shutdown.stayoff* and *load.off* commands.
+Plus, the *shutdown.return* command ignores the values set in 'ups.delay.start'/*ondelay* and makes the UPS turn on the load as soon as power is back.
+
+*'krauler' subdriver*::
+This subdriver, meant to be used with the 'megatec' protocol, does *not* support the shutdown commands, i.e.: *shutdown.return*, *shutdown.stayoff* and *load.off*.
+
+
 UPS COMMANDS
 ------------
 
