@@ -325,6 +325,8 @@
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"	"ups"	"1"	"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
 
+"EUROCASE"	"ups"	"2"	"EA200N 2000VA"	"USB"	"nutdrv_qx"	# http://partis.cz/index.php?gid=2551
+
 "EVER"	"ups"	"1"	"NET DPC series"	"Serial port"	"everups"
 "EVER"	"ups"	"1"	"AP Pro series"	"Serial port"	"everups"
 "EVER"	"ups"	"1"	"625/1000"	""	"safenet"
