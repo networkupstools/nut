@@ -350,14 +350,10 @@ int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen)
 
 	case 44:	/* Shutdown Active */
 
-		if (item->value[0] == '1') {
-			if (!strcasecmp(item->info_type, "ups.status"))
-				val = "FSD";
-			else	/* ups.alarm */
-				val = "Shutdown imminent!";
-		} else if (!strcasecmp(item->info_type, "ups.status")) {
+		if (item->value[0] == '1')
+			val = "FSD";
+		else
 			val = "!FSD";
-		}
 		break;
 
 	case 45:	/* Beeper status - ups.beeper.status */

@@ -35,7 +35,7 @@
 
 #include "nutdrv_qx_q1.h"
 
-#define Q1_VERSION "Q1 0.03"
+#define Q1_VERSION "Q1 0.04"
 
 /* qx2nut lookup table */
 static item_t	q1_qx2nut[] = {
@@ -61,7 +61,6 @@ static item_t	q1_qx2nut[] = {
 	{ "ups.alarm",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	41,	41,	NULL,	0,			NULL,	blazer_process_status_bits },	/* UPS Failed */
 	{ "ups.type",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	42,	42,	"%s",	QX_FLAG_STATIC,		NULL,	blazer_process_status_bits },	/* UPS Type */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	43,	43,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },	/* Test in Progress */
-	{ "ups.alarm",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	44,	44,	NULL,	0,			NULL,	blazer_process_status_bits },	/* Shutdown Active */
 	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },	/* Shutdown Active */
 	{ "ups.beeper.status",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	45,	45,	"%s",	0,			NULL,	blazer_process_status_bits },	/* Beeper status */
 

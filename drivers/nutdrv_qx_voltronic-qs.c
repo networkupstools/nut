@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.02"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.03"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
@@ -84,7 +84,6 @@ static item_t	voltronic_qs_qx2nut[] = {
 	{ "ups.alarm",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	41,	41,	NULL,	0,			NULL,	blazer_process_status_bits },	/* UPS Failed */
 	{ "ups.type",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	42,	42,	"%s",	QX_FLAG_STATIC,		NULL,	blazer_process_status_bits },	/* UPS Type */
 	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	43,	43,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },	/* Test in Progress */
-	{ "ups.alarm",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	44,	44,	NULL,	0,			NULL,	blazer_process_status_bits },	/* Shutdown Active */
 	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },	/* Shutdown Active */
 	{ "ups.beeper.status",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	45,	45,	"%s",	0,			NULL,	blazer_process_status_bits },	/* Beeper status */
 
