@@ -344,6 +344,8 @@ battery: Any battery details
                             battery                             | yes
 | battery.energysave      | Switch off when running on
                             battery and no/low load             | no
+| battery.energysave.realpower | Switch off UPS if on battery
+                                 and load level lower (Watts)   | 10
 |===============================================================================
 
 
