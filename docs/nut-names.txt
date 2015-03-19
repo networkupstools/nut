@@ -136,6 +136,8 @@ input: Incoming line/power information
 | input.voltage.minimum     | Minimum incoming voltage seen  | 100
 | input.voltage.nominal     | Nominal input voltage          | 120
 | input.voltage.extended    | Extended input voltage range   | no
+| input.transfer.delay      | Delay before transfer to mains
+                              (seconds)                      | 60
 | input.transfer.reason     | Reason for last transfer
                               to battery (*** opaque)        | T
 | input.transfer.low        | Low voltage transfer point     | 91
@@ -317,43 +319,47 @@ battery: Any battery details
 
 [options="header"]
 |===============================================================================
-| Name                    | Description                         | Example value
-| battery.charge          | Battery charge (percent)            | 100.0
-| battery.charge.low      | Remaining battery level when
-                            UPS switches to LB (percent)        | 20
-| battery.charge.restart  | Minimum battery level for
-                            UPS restart after power-off         | 20
-| battery.charge.warning  | Battery level when UPS switches
-                            to "Warning" state (percent)        | 50
-| battery.voltage         | Battery voltage (V)                 | 24.84
-| battery.voltage.nominal | Nominal battery voltage (V)         | 024
-| battery.voltage.low     | Minimum battery voltage, that
-                            triggers FSD status                 | 21,52
-| battery.voltage.high    | Maximum battery voltage
-                            (i.e. battery.charge = 100)           | 26,9
-| battery.capacity        | Battery capacity (Ah)               | 7.2
-| battery.current         | Battery current (A)                 | 1.19
-| battery.current.total   | Total battery current (A)           | 1.19
-| battery.temperature     | Battery temperature (degrees C)     | 050.7
-| battery.runtime         | Battery runtime (seconds)           | 1080
-| battery.runtime.low     | Remaining battery runtime when
-                            UPS switches to LB (seconds)        | 180
-| battery.runtime.restart | Minimum battery runtime for UPS
-                            restart after power-off (seconds)   | 120
-| battery.alarm.threshold | Battery alarm threshold             | 0 (immediate)
-| battery.date            | Battery change date (opaque string) | 11/14/00
-| battery.mfr.date        | Battery manufacturing date 
-                            (opaque string)                     | 2005/04/02
-| battery.packs           | Number of battery packs             | 001
-| battery.packs.bad       | Number of bad battery packs         | 000
-| battery.type            | Battery chemistry (opaque
-                            string)                             | PbAc
-| battery.protection      | Prevent deep discharge of
-                            battery                             | yes
-| battery.energysave      | Switch off when running on
-                            battery and no/low load             | no
+| Name                         | Description                         | Example value
+| battery.charge               | Battery charge (percent)            | 100.0
+| battery.charge.low           | Remaining battery level when
+                                 UPS switches to LB (percent)        | 20
+| battery.charge.restart       | Minimum battery level for
+                                 UPS restart after power-off         | 20
+| battery.charge.warning       | Battery level when UPS switches
+                                 to "Warning" state (percent)        | 50
+| battery.voltage              | Battery voltage (V)                 | 24.84
+| battery.voltage.nominal      | Nominal battery voltage (V)         | 024
+| battery.voltage.low          | Minimum battery voltage, that
+                                 triggers FSD status                 | 21,52
+| battery.voltage.high         | Maximum battery voltage
+                                 (i.e. battery.charge = 100)         | 26,9
+| battery.capacity             | Battery capacity (Ah)               | 7.2
+| battery.current              | Battery current (A)                 | 1.19
+| battery.current.total        | Total battery current (A)           | 1.19
+| battery.temperature          | Battery temperature (degrees C)     | 050.7
+| battery.runtime              | Battery runtime (seconds)           | 1080
+| battery.runtime.low          | Remaining battery runtime when
+                                 UPS switches to LB (seconds)        | 180
+| battery.runtime.restart      | Minimum battery runtime for UPS
+                                 restart after power-off (seconds)   | 120
+| battery.alarm.threshold      | Battery alarm threshold             | 0 (immediate)
+| battery.date                 | Battery change date (opaque string) | 11/14/00
+| battery.mfr.date             | Battery manufacturing date 
+                                 (opaque string)                     | 2005/04/02
+| battery.packs                | Number of battery packs             | 001
+| battery.packs.bad            | Number of bad battery packs         | 000
+| battery.type                 | Battery chemistry (opaque
+                                 string)                             | PbAc
+| battery.protection           | Prevent deep discharge of
+                                 battery                             | yes
+| battery.energysave           | Switch off when running on
+                                 battery and no/low load             | no
+| battery.energysave.load      | Switch off UPS if on battery and
+                                 load level lower (percent)          | 5
+| battery.energysave.delay     | Delay before switch off UPS if on
+                                 battery and load level low (min)    | 3
 | battery.energysave.realpower | Switch off UPS if on battery
-                                 and load level lower (Watts)   | 10
+                                 and load level lower (Watts)        | 10
 |===============================================================================
 
 
@@ -518,4 +524,5 @@ Instant commands
 | outlet.n.load.off        | Turn off the outlet immediately
 | outlet.n.load.on         | Turn on the outlet immediately
 | outlet.n.load.cycle      | Power cycle the outlet immediately
+| outlet.n.shutdown.return | Turn off the outlet and return when power is back
 |========================================================================
