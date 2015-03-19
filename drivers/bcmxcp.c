@@ -117,7 +117,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.29"
+#define DRIVER_VERSION "0.30"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -165,8 +165,8 @@ static float calculate_ups_load(const unsigned char *data);
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
 
 const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
-const char *ABMStatus[4] = {"Charging", "Discharging", "Floating", "Resting"};
-const char *OutletStatus[9] = {"Unknown","On/Closed","Off/Open","On with Pending","Off with Pending","Unknown","Unknown","Failed and Closed","Failed and Open"};
+const char *ABMStatus[4] = {"charging", "discharging", "floating", "resting"};
+const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with pending","off with pending","unknown","unknown","failed and closed","failed and open"};
 /* Standard Authorization Block */
 unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
 int nphases = 0;
