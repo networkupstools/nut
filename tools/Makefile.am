@@ -16,7 +16,8 @@
 # sub-directory
 SUBDIRS = . nut-scanner
 
-EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh gitlog2changelog.py nut-snmpinfo.py
+EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
+  gitlog2changelog.py nut-snmpinfo.py
 
 all: nut-scanner-deps 
 
