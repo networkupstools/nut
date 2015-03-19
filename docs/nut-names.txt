@@ -167,8 +167,13 @@ input: Incoming line/power information
                               transfer point                 | 230
 | input.transfer.trim.high  | High voltage trimming
                               transfer point                 | 240
+| input.load                | Load on (ePDU) input (percent
+                              of full)                       | 25
+| input.realpower           | Current sum value of all (ePDU)
+                              phases real power (W)          | 300
+| input.power               | Current sum value of all (ePDU)
+                              phases apparent power (VA)     | 500
 |===============================================================================
-
 
 output: Outgoing power/inverter information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -268,6 +273,7 @@ Valid with/without context (i.e. per phase or aggregated/averaged)
 | realpower             | Real power (W)
 | powerfactor           | Power Factor (dimensionless value between 0.00 and 1.00)
 | crestfactor           | Crest Factor (dimensionless value greater or equal to 1)
+| load                  | Load on (ePDU) input
 |===============================================================================
 
 Valid without context (i.e. aggregation of all phases):
@@ -277,6 +283,8 @@ Valid without context (i.e. aggregation of all phases):
 | Name                  | Description
 | frequency             | Frequency (Hz)
 | frequency.nominal     | Nominal frequency (Hz)
+| realpower             | Current value of real power (Watts)
+| power                 | Current value of apparent power (Volt-Amps)
 |===============================================================================
 
 EXAMPLES
