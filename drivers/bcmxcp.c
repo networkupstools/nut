@@ -9,7 +9,7 @@
  Copyright (C)
    2004 Kjell Claesson <kjell.claesson-at-epost.tidanet.se>
    2004 Tore Ørpetveit <tore-at-orpetveit.net>
-   2011 - 2012 Arnaud Quette <ArnaudQuette@Eaton.com>
+   2011 - 2015 Arnaud Quette <ArnaudQuette@Eaton.com>
 
  Thanks to Tore Ørpetveit <tore-at-orpetveit.net> that sent me the
  manuals for bcm/xcp.
@@ -129,6 +129,7 @@ upsdrv_info_t upsdrv_info = {
         "Martin Schroeder <emes@geomer.de>\n" \
         "Kjell Claesson <kjell.claesson@epost.tidanet.se>\n" \
         "Tore Ørpetveit <tore@orpetveit.net>\n" \
+        "Arnaud Quette <ArnaudQuette@Eaton.com>\n" \
         "Wolfgang Ocker <weo@weo1.de>\n" \
         "Oliver Wilcock\n" \
         "Prachi Gandhi <prachisgandhi@eaton.com>\n" \
