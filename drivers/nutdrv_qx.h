@@ -116,6 +116,7 @@ typedef struct item_t {
 
 #define MAXTRIES		3	/* Max number of retries */
 
+#ifdef TESTING
 /* Testing struct */
 typedef struct {
 	const char	*cmd;			/* Command to match */
@@ -125,6 +126,7 @@ typedef struct {
 						 * - if set to -1 -> auto calculate answer length (treat 'answer' as a null-terminated string)
 						 * - otherwise -> use the provided length (if reasonable) and preserve inner '\0's (treat 'answer' as a sequence of bytes till the item_t->preprocess_answer() function gets called) */
 } testing_t;
+#endif /* TESTING */
 
 /* Subdriver interface */
 typedef struct {
