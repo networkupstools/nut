@@ -29,10 +29,12 @@
 
 #include "nutdrv_qx_bestups.h"
 
-#define BESTUPS_VERSION "BestUPS 0.03"
+#define BESTUPS_VERSION "BestUPS 0.04"
 
 /* Support functions */
 static int	bestups_claim(void);
+static void	bestups_initups(void);
+static void	bestups_makevartable(void);
 
 /* Answer preprocess functions */
 static int	bestups_preprocess_id_answer(item_t *item, const int len);
@@ -276,10 +278,18 @@ static int	bestups_claim(void)
 	return 1;
 }
 
+/* Subdriver-specific initups */
+static void	bestups_initups(void)
+{
+	blazer_initups_light(bestups_qx2nut);
+}
+
 /* Subdriver-specific flags/vars */
-void	bestups_makevartable(void)
+static void	bestups_makevartable(void)
 {
 	addvar(VAR_VALUE, "pins_shutdown_mode", "Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) to n (integer, 0-6)");
+
+	blazer_makevartable_light();
 }
 
 
@@ -684,7 +694,7 @@ subdriver_t	bestups_subdriver = {
 	BESTUPS_VERSION,
 	bestups_claim,
 	bestups_qx2nut,
-	NULL,
+	bestups_initups,
 	NULL,
 	bestups_makevartable,
 	NULL,

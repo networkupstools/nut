@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_mustek.h"
 
-#define MUSTEK_VERSION "Mustek 0.04"
+#define MUSTEK_VERSION "Mustek 0.05"
 
 /* qx2nut lookup table */
 static item_t	mustek_qx2nut[] = {
@@ -119,9 +119,7 @@ static testing_t	mustek_testing[] = {
 /* Subdriver-specific initups */
 static void	mustek_initups(void)
 {
-
 	blazer_initups(mustek_qx2nut);
-
 }
 
 /* Subdriver interface */

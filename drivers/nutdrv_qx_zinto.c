@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_zinto.h"
 
-#define ZINTO_VERSION "Zinto 0.03"
+#define ZINTO_VERSION "Zinto 0.04"
 
 /* qx2nut lookup table */
 static item_t	zinto_qx2nut[] = {
@@ -119,9 +119,7 @@ static testing_t	zinto_testing[] = {
 /* Subdriver-specific initups */
 static void	zinto_initups(void)
 {
-
 	blazer_initups(zinto_qx2nut);
-
 }
 
 /* Subdriver interface */

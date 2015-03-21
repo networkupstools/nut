@@ -42,8 +42,8 @@ info_rw_t	blazer_r_offdelay[] = {
 /* == Support functions == */
 
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
-int	blazer_claim(void) {
-
+int	blazer_claim(void)
+{
 	/* To tell whether the UPS is supported or not, we'll check both status (Q1/QS/D) and vendor (I/FW?) - provided that we were not told not to do it with the ups.conf flag 'novendor'. */
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
@@ -85,13 +85,12 @@ int	blazer_claim(void) {
 	}
 
 	return 1;
-
 }
 
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0.
  * NOTE: this 'light' version only checks for status (Q1/QS/D/..) */
-int	blazer_claim_light(void) {
-
+int	blazer_claim_light(void)
+{
 	/* To tell whether the UPS is supported or not, we'll check just status (Q1/QS/D/..). */
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
@@ -109,7 +108,6 @@ int	blazer_claim_light(void) {
 		return 0;
 
 	return 1;
-
 }
 
 /* Subdriver-specific flags/vars */
@@ -117,18 +115,28 @@ void	blazer_makevartable(void)
 {
 	addvar(VAR_FLAG, "norating", "Skip reading rating information from UPS");
 	addvar(VAR_FLAG, "novendor", "Skip reading vendor information from UPS");
+
+	blazer_makevartable_light();
+}
+
+/* Subdriver-specific flags/vars
+ * NOTE: this 'light' version only handles vars/flags related to UPS status query (Q1/QS/D/...) */
+void	blazer_makevartable_light(void)
+{
+	addvar(VAR_FLAG, "ignoresab", "Ignore 'Shutdown Active' bit in UPS status");
 }
 
 /* Subdriver-specific initups */
 void	blazer_initups(item_t *qx2nut)
 {
-	int	nr, nv;
+	int	nr, nv, isb;
 	item_t	*item;
 
 	nr = testvar("norating");
 	nv = testvar("novendor");
+	isb = testvar("ignoresab");
 
-	if (!nr && !nv)
+	if (!nr && !nv && !isb)
 		return;
 
 	for (item = qx2nut; item->info_type != NULL; item++) {
@@ -147,6 +155,33 @@ void	blazer_initups(item_t *qx2nut)
 			upsdebugx(2, "%s: skipping %s", __func__, item->info_type);
 			item->qxflags |= QX_FLAG_SKIP;
 		}
+
+		/* ignoresab */
+		if (isb && !strcasecmp(item->info_type, "ups.status") && item->from == 44 && item->to == 44) {
+			upsdebugx(2, "%s: skipping %s ('Shutdown Active' bit)", __func__, item->info_type);
+			item->qxflags |= QX_FLAG_SKIP;
+		}
+
+	}
+}
+
+/* Subdriver-specific initups
+ * NOTE: this 'light' version only checks for status (Q1/QS/D/..) related items */
+void	blazer_initups_light(item_t *qx2nut)
+{
+	item_t	*item;
+
+	if (!testvar("ignoresab"))
+		return;
+
+	for (item = qx2nut; item->info_type != NULL; item++) {
+
+		if (strcasecmp(item->info_type, "ups.status") || item->from != 44 || item->to != 44)
+			continue;
+
+		upsdebugx(2, "%s: skipping %s ('Shutdown Active' bit)", __func__, item->info_type);
+		item->qxflags |= QX_FLAG_SKIP;
+		break;
 
 	}
 }

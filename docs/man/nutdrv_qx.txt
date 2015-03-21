@@ -103,6 +103,14 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
+BESTUPS, MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, Q1, VOLTRONIC-QS, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*ignoresab*::
+Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
+Setting this flag will make the driver ignore the `Shutdown Active' bit.
+
+
 [[old-blazer-protocols-options]]
 MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, ZINTO PROTOCOLS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

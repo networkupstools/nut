@@ -25,10 +25,11 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.03"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.04"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
+static void	voltronic_qs_initups(void);
 
 /* Preprocess functions */
 static int	voltronic_qs_protocol(item_t *item, char *value, size_t valuelen);
@@ -138,7 +139,6 @@ static testing_t	voltronic_qs_testing[] = {
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
 static int	voltronic_qs_claim(void)
 {
-
 	/* We need at least M and QS to run this subdriver */
 
 	/* UPS Protocol */
@@ -177,7 +177,12 @@ static int	voltronic_qs_claim(void)
 	}
 
 	return 1;
+}
 
+/* Subdriver-specific initups */
+static void	voltronic_qs_initups(void)
+{
+	blazer_initups_light(voltronic_qs_qx2nut);
 }
 
 
@@ -202,9 +207,9 @@ subdriver_t	voltronic_qs_subdriver = {
 	VOLTRONIC_QS_VERSION,
 	voltronic_qs_claim,
 	voltronic_qs_qx2nut,
+	voltronic_qs_initups,
 	NULL,
-	NULL,
-	NULL,
+	blazer_makevartable_light,
 	"ACK",
 	"(NAK\r",
 #ifdef TESTING

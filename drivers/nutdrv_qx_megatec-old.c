@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_megatec-old.h"
 
-#define MEGATEC_OLD_VERSION "Megatec/old 0.04"
+#define MEGATEC_OLD_VERSION "Megatec/old 0.05"
 
 /* qx2nut lookup table */
 static item_t	megatec_old_qx2nut[] = {
@@ -119,9 +119,7 @@ static testing_t	megatec_old_testing[] = {
 /* Subdriver-specific initups */
 static void	megatec_old_initups(void)
 {
-
 	blazer_initups(megatec_old_qx2nut);
-
 }
 
 /* Subdriver interface */

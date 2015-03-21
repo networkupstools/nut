@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_mecer.h"
 
-#define MECER_VERSION "Mecer 0.04"
+#define MECER_VERSION "Mecer 0.05"
 
 /* Support functions */
 static int	mecer_claim(void);
@@ -144,7 +144,6 @@ static testing_t	mecer_testing[] = {
 /* This function allows the subdriver to "claim" a device: return 1 if the device is supported by this subdriver, else 0. */
 static int	mecer_claim(void)
 {
-
 	/* Apart from status (Q1), try to identify protocol (QPI, for Voltronic Power P98 units) or whether the UPS uses '(ACK\r'/'(NAK\r' replies */
 
 	item_t	*item = find_nut_info("input.voltage", 0, 0);
@@ -197,15 +196,12 @@ static int	mecer_claim(void)
 	}
 
 	return 1;
-
 }
 
 /* Subdriver-specific initups */
 static void	mecer_initups(void)
 {
-
 	blazer_initups(mecer_qx2nut);
-
 }
 
 

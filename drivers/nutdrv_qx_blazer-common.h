@@ -26,7 +26,9 @@
 
 /* Support functions */
 void	blazer_makevartable(void);
+void	blazer_makevartable_light(void);
 void	blazer_initups(item_t *qx2nut);
+void	blazer_initups_light(item_t *qx2nut);
 int	blazer_claim(void);
 int	blazer_claim_light(void);
 

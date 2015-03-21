@@ -25,10 +25,11 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.02"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.03"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
+static void	voltronic_qs_hex_initups(void);
 
 /* Answer preprocess functions */
 static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len);
@@ -174,6 +175,12 @@ static int	voltronic_qs_hex_claim(void)
 	}
 
 	return 1;
+}
+
+/* Subdriver-specific initups */
+static void	voltronic_qs_hex_initups(void)
+{
+	blazer_initups_light(voltronic_qs_hex_qx2nut);
 }
 
 
@@ -397,9 +404,9 @@ subdriver_t	voltronic_qs_hex_subdriver = {
 	VOLTRONIC_QS_HEX_VERSION,
 	voltronic_qs_hex_claim,
 	voltronic_qs_hex_qx2nut,
+	voltronic_qs_hex_initups,
 	NULL,
-	NULL,
-	NULL,
+	blazer_makevartable_light,
 	NULL,
 	"N\r",
 #ifdef TESTING

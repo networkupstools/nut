@@ -35,7 +35,7 @@
 
 #include "nutdrv_qx_q1.h"
 
-#define Q1_VERSION "Q1 0.04"
+#define Q1_VERSION "Q1 0.05"
 
 /* qx2nut lookup table */
 static item_t	q1_qx2nut[] = {
@@ -101,14 +101,20 @@ static testing_t	q1_testing[] = {
 };
 #endif	/* TESTING */
 
+/* Subdriver-specific initups */
+static void	q1_initups(void)
+{
+	blazer_initups_light(q1_qx2nut);
+}
+
 /* Subdriver interface */
 subdriver_t	q1_subdriver = {
 	Q1_VERSION,
 	blazer_claim_light,
 	q1_qx2nut,
+	q1_initups,
 	NULL,
-	NULL,
-	NULL,
+	blazer_makevartable_light,
 	"ACK",
 	NULL,
 #ifdef TESTING
