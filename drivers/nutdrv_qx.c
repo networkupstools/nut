@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 #include "main.h"
 
