@@ -52,7 +52,7 @@ If you set stayoff in linkman:ups.conf[5] when FSD arises the UPS will call a *s
 
 *protocol =* 'string'::
 Skip autodetection of the protocol to use and only use the one specified.
-Supported values: 'bestups', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs' and 'zinto'.
+Supported values: 'bestups', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 'voltronic', 'voltronic-qs', 'voltronic-qs-hex' and 'zinto'.
 +
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
@@ -103,8 +103,8 @@ If not specified, the driver defaults to 10%.
 Only used if *runtimecal* is also specified.
 
 
-BESTUPS, MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, Q1, VOLTRONIC-QS, ZINTO PROTOCOLS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+BESTUPS, MECER, MEGATAEC, MEGATEC/OLD, MUSTEK, Q1, VOLTRONIC-QS, VOLTRONIC-QS-HEX, ZINTO PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ignoresab*::
 Some UPSes incorrectly report the `Shutdown Active' bit as always on, consequently making the driver believe the UPS is nearing a shutdown (and, as a result, ups.status always contains +FSD+... and you know what this means).
@@ -153,8 +153,8 @@ The acceptable range is +0..599940+ seconds.
 The acceptable range is +12..600+ seconds.
 
 
-VOLTRONIC-QS PROTOCOL
-~~~~~~~~~~~~~~~~~~~~~
+VOLTRONIC-QS, VOLTRONIC-QS-HEX PROTOCOLS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 *ondelay*::
 The acceptable range is +60..599940+ seconds.
@@ -643,6 +643,12 @@ After issuing a *shutdown.return* instant command, the UPS won't wait *ondelay* 
 - if there's a power outage after issuing the *shutdown.return* command
 
 In this case, as soon as mains returns the load will be powered.
+
+
+VOLTRONIC-QS-HEX UNITS
+~~~~~~~~~~~~~~~~~~~~~~
+
+*shutdown.return*, *load.off*, and *shutdown.stayoff* instant commands are known to work as expected only if mains is present, otherwise, as soon as mains returns the load will be powered.
 
 
 UPS WARNINGS (VOLTRONIC PROTOCOL)
