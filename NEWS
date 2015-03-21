@@ -24,8 +24,8 @@ Release notes for NUT 2.7.3 - what's new since 2.7.2:
 
  - USB core: do not call usb_set_altinterface(0) by default
 
- - nutdrv_qx: added fabula USB and Voltronic-QS-HEX subdrivers; add bestups
-   subdriver to supersede the old standalone bestups driver
+ - nutdrv_qx: added fabula, fuji USB and Voltronic-QS-HEX subdrivers; add
+   bestups subdriver to supersede the old standalone bestups driver
 
  - NUT Monitor: added FreeDesktop AppData file (including screenshots)
 
