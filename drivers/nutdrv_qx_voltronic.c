@@ -24,7 +24,7 @@
 
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.02"
+#define VOLTRONIC_VERSION "Voltronic 0.03"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -195,16 +195,16 @@ static info_rw_t	voltronic_r_batt_numb[] = {
 /* Range for Bypass Mode maximum voltage */
 static info_rw_t	voltronic_r_bypass_volt_max[] = {
 	{ "60", voltronic_bypass_volt_max },	/* P09 */
-	{ "115", voltronic_bypass_volt_max },	/* P02/P03/P10/P14/P99 ivn<200 */
+	{ "115", voltronic_bypass_volt_max },	/* P02/P03/P10/P13/P14/P99 ivn<200 */
 	{ "120", voltronic_bypass_volt_max },	/* P01 ivn<200 */
 	{ "132", voltronic_bypass_volt_max },	/* P99 ivn<200 */
-	{ "138", voltronic_bypass_volt_max },	/* P02/P03/P10/P14 ivn<200 */
+	{ "138", voltronic_bypass_volt_max },	/* P02/P03/P10/P13/P14 ivn<200 */
 	{ "140", voltronic_bypass_volt_max },	/* P01 ivn<200, P09 */
 	{ "230", voltronic_bypass_volt_max },	/* P01 ivn>=200 */
-	{ "231", voltronic_bypass_volt_max },	/* P02/P03/P10/P14/P99 ivn>=200 */
+	{ "231", voltronic_bypass_volt_max },	/* P02/P03/P10/P13/P14/P99 ivn>=200 */
 	{ "261", voltronic_bypass_volt_max },	/* P99 ivn>=200 */
 	{ "264", voltronic_bypass_volt_max },	/* P01 ivn>=200 */
-	{ "276", voltronic_bypass_volt_max },	/* P02/P03/P10/P14 ivn>=200 */
+	{ "276", voltronic_bypass_volt_max },	/* P02/P03/P10/P13/P14 ivn>=200 */
 	{ "", 0 }
 };
 
@@ -232,12 +232,12 @@ static int	voltronic_bypass_volt_max(char *value, size_t len)
 
 		break;
 
-	case 115:	/* P02/P03/P10/P14/P99 ivn<200 */
+	case 115:	/* P02/P03/P10/P13/P14/P99 ivn<200 */
 
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -262,12 +262,12 @@ static int	voltronic_bypass_volt_max(char *value, size_t len)
 
 		break;
 
-	case 138:	/* P02/P03/P10/P14 ivn<200 */
+	case 138:	/* P02/P03/P10/P13/P14 ivn<200 */
 
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 14)
+		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -295,12 +295,12 @@ static int	voltronic_bypass_volt_max(char *value, size_t len)
 
 		break;
 
-	case 231:	/* P02/P03/P10/P14/P99 ivn>=200 */
+	case 231:	/* P02/P03/P10/P13/P14/P99 ivn>=200 */
 
 		if (ivn < 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -325,12 +325,12 @@ static int	voltronic_bypass_volt_max(char *value, size_t len)
 
 		break;
 
-	case 276:	/* P02/P03/P10/P14 ivn>=200 */
+	case 276:	/* P02/P03/P10/P13/P14 ivn>=200 */
 
 		if (ivn < 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -348,16 +348,16 @@ static int	voltronic_bypass_volt_max(char *value, size_t len)
 /* Range for Bypass Mode minimum voltage */
 static info_rw_t	voltronic_r_bypass_volt_min[] = {
 	{ "50", voltronic_bypass_volt_min },	/* P99 ivn<200 */
-	{ "55", voltronic_bypass_volt_min },	/* P02/P03/P10/P14 ivn<200 */
+	{ "55", voltronic_bypass_volt_min },	/* P02/P03/P10/P13/P14 ivn<200 */
 	{ "60", voltronic_bypass_volt_min },	/* P09 */
 	{ "85", voltronic_bypass_volt_min },	/* P01/P99 ivn<200 */
-	{ "104", voltronic_bypass_volt_min },	/* P02/P03/P10/P14 ivn<200 */
-	{ "110", voltronic_bypass_volt_min },	/* P02/P03/P10/P14 ivn>=200 */
+	{ "104", voltronic_bypass_volt_min },	/* P02/P03/P10/P13/P14 ivn<200 */
+	{ "110", voltronic_bypass_volt_min },	/* P02/P03/P10/P13/P14 ivn>=200 */
 	{ "115", voltronic_bypass_volt_min },	/* P01 ivn<200 */
 	{ "140", voltronic_bypass_volt_min },	/* P09 */
 	{ "149", voltronic_bypass_volt_min },	/* P99 ivn>=200 */
 	{ "170", voltronic_bypass_volt_min },	/* P01 ivn>=200 */
-	{ "209", voltronic_bypass_volt_min },	/* P02/P03/P10/P14/P99 ivn>=200 */
+	{ "209", voltronic_bypass_volt_min },	/* P02/P03/P10/P13/P14/P99 ivn>=200 */
 	{ "220", voltronic_bypass_volt_min },	/* P01 ivn>=200 */
 	{ "", 0 }
 };
@@ -389,12 +389,12 @@ static int	voltronic_bypass_volt_min(char *value, size_t len)
 
 		break;
 
-	case 55:	/* P02/P03/P10/P14 ivn<200 */
+	case 55:	/* P02/P03/P10/P13/P14 ivn<200 */
 
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 10 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -417,22 +417,22 @@ static int	voltronic_bypass_volt_min(char *value, size_t len)
 
 		break;
 
-	case 104:	/* P02/P03/P10/P14 ivn<200 */
+	case 104:	/* P02/P03/P10/P13/P14 ivn<200 */
 
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
 
-	case 110:	/* P02/P03/P10/P14 ivn>=200 */
+	case 110:	/* P02/P03/P10/P13/P14 ivn>=200 */
 
 		if (ivn < 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -467,12 +467,12 @@ static int	voltronic_bypass_volt_min(char *value, size_t len)
 
 		break;
 
-	case 209:	/* P02/P03/P10/P14/P99 ivn>=200 */
+	case 209:	/* P02/P03/P10/P13/P14/P99 ivn>=200 */
 
 		if (ivn < 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -499,11 +499,11 @@ static int	voltronic_bypass_volt_min(char *value, size_t len)
 
 /* Range for Bypass Mode maximum frequency */
 static info_rw_t	voltronic_r_bypass_freq_max[] = {
-	{ "51.0", voltronic_bypass_freq_max },	/* P01/P09/P02/P03/P10/P14/P99 ofn==50.0 */
-	{ "54.0", voltronic_bypass_freq_max },	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	{ "51.0", voltronic_bypass_freq_max },	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==50.0 */
+	{ "54.0", voltronic_bypass_freq_max },	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 	{ "60.0", voltronic_bypass_freq_max },	/* P01/P09 ofn==50.0 */
-	{ "61.0", voltronic_bypass_freq_max },	/* P01/P09/P02/P03/P10/P14/P99 ofn==60.0 */
-	{ "64.0", voltronic_bypass_freq_max },	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	{ "61.0", voltronic_bypass_freq_max },	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==60.0 */
+	{ "64.0", voltronic_bypass_freq_max },	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 	{ "70.0", voltronic_bypass_freq_max },	/* P01/P09 ofn==60.0 */
 	{ "", 0 }
 };
@@ -525,22 +525,22 @@ static int	voltronic_bypass_freq_max(char *value, size_t len)
 
 	switch (val)
 	{
-	case 51:	/* P01/P09/P02/P03/P10/P14/P99 ofn==50.0 */
+	case 51:	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
 
-	case 54:	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	case 54:	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -555,22 +555,22 @@ static int	voltronic_bypass_freq_max(char *value, size_t len)
 
 		break;
 
-	case 61:	/* P01/P09/P02/P03/P10/P14/P99 ofn==60.0 */
+	case 61:	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
 
-	case 64:	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	case 64:	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -598,11 +598,11 @@ static int	voltronic_bypass_freq_max(char *value, size_t len)
 /* Range for Bypass Mode minimum frequency */
 static info_rw_t	voltronic_r_bypass_freq_min[] = {
 	{ "40.0", voltronic_bypass_freq_min },	/* P01/P09 ofn==50.0 */
-	{ "46.0", voltronic_bypass_freq_min },	/* P02/P03/P10/P14/P99 ofn==50.0 */
-	{ "49.0", voltronic_bypass_freq_min },	/* P01/P09/P02/P03/P10/P14/P99 ofn==50.0 */
+	{ "46.0", voltronic_bypass_freq_min },	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
+	{ "49.0", voltronic_bypass_freq_min },	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==50.0 */
 	{ "50.0", voltronic_bypass_freq_min },	/* P01/P09 ofn==60.0 */
-	{ "56.0", voltronic_bypass_freq_min },	/* P02/P03/P10/P14/P99 ofn==60.0 */
-	{ "59.0", voltronic_bypass_freq_min },	/* P01/P09/P02/P03/P10/P14/P99 ofn==60.0 */
+	{ "56.0", voltronic_bypass_freq_min },	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
+	{ "59.0", voltronic_bypass_freq_min },	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==60.0 */
 	{ "", 0 }
 };
 
@@ -633,22 +633,22 @@ static int	voltronic_bypass_freq_min(char *value, size_t len)
 
 		break;
 
-	case 46:	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	case 46:	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
 
-	case 49:	/* P01/P09/P02/P03/P10/P14/P99 ofn==50.0 */
+	case 49:	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -663,22 +663,22 @@ static int	voltronic_bypass_freq_min(char *value, size_t len)
 
 		break;
 
-	case 56:	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	case 56:	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
 
-	case 59:	/* P01/P09/P02/P03/P10/P14/P99 ofn==60.0 */
+	case 59:	/* P01/P09/P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 1 || protocol == 2 || protocol == 3 || protocol == 9 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -710,13 +710,13 @@ static info_rw_t	voltronic_r_eco_volt_min[] = {
 /* Range for ECO Mode minimum frequency */
 static info_rw_t	voltronic_r_eco_freq_min[] = {
 	{ "40.0", voltronic_eco_freq_min },	/* P01/P09 ofn==50.0 */
-	{ "46.0", voltronic_eco_freq_min },	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	{ "46.0", voltronic_eco_freq_min },	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 	{ "47.0", voltronic_eco_freq_min },	/* P01/P09 ofn==50.0 */
-	{ "48.0", voltronic_eco_freq_min },	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	{ "48.0", voltronic_eco_freq_min },	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 	{ "50.0", voltronic_eco_freq_min },	/* P01/P09 ofn==60.0 */
-	{ "56.0", voltronic_eco_freq_min },	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	{ "56.0", voltronic_eco_freq_min },	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 	{ "57.0", voltronic_eco_freq_min },	/* P01/P09 ofn==60.0 */
-	{ "58.0", voltronic_eco_freq_min },	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	{ "58.0", voltronic_eco_freq_min },	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 	{ "", 0 }
 };
 
@@ -747,12 +747,12 @@ static int	voltronic_eco_freq_min(char *value, size_t len)
 
 		break;
 
-	case 46:	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	case 46:	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -767,12 +767,12 @@ static int	voltronic_eco_freq_min(char *value, size_t len)
 
 		break;
 
-	case 48:	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	case 48:	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -787,12 +787,12 @@ static int	voltronic_eco_freq_min(char *value, size_t len)
 
 		break;
 
-	case 56:	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	case 56:	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -807,12 +807,12 @@ static int	voltronic_eco_freq_min(char *value, size_t len)
 
 		break;
 
-	case 58:	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	case 58:	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -829,13 +829,13 @@ static int	voltronic_eco_freq_min(char *value, size_t len)
 
 /* Range for ECO Mode maximum frequency */
 static info_rw_t	voltronic_r_eco_freq_max[] = {
-	{ "52.0", voltronic_eco_freq_max },	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	{ "52.0", voltronic_eco_freq_max },	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 	{ "53.0", voltronic_eco_freq_max },	/* P01/P09 ofn==50.0 */
-	{ "54.0", voltronic_eco_freq_max },	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	{ "54.0", voltronic_eco_freq_max },	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 	{ "60.0", voltronic_eco_freq_max },	/* P01/P09 ofn==50.0 */
-	{ "62.0", voltronic_eco_freq_max },	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	{ "62.0", voltronic_eco_freq_max },	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 	{ "63.0", voltronic_eco_freq_max },	/* P01/P09 ofn==60.0 */
-	{ "64.0", voltronic_eco_freq_max },	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	{ "64.0", voltronic_eco_freq_max },	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 	{ "70.0", voltronic_eco_freq_max },	/* P01/P09 ofn==60.0 */
 	{ "", 0 }
 };
@@ -857,12 +857,12 @@ static int	voltronic_eco_freq_max(char *value, size_t len)
 
 	switch (val)
 	{
-	case 52:	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	case 52:	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -877,12 +877,12 @@ static int	voltronic_eco_freq_max(char *value, size_t len)
 
 		break;
 
-	case 54:	/* P02/P03/P10/P14/P99 ofn==50.0 */
+	case 54:	/* P02/P03/P10/P13/P14/P99 ofn==50.0 */
 
 		if (ofn != 50.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -897,12 +897,12 @@ static int	voltronic_eco_freq_max(char *value, size_t len)
 
 		break;
 
-	case 62:	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	case 62:	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -917,12 +917,12 @@ static int	voltronic_eco_freq_max(char *value, size_t len)
 
 		break;
 
-	case 64:	/* P02/P03/P10/P14/P99 ofn==60.0 */
+	case 64:	/* P02/P03/P10/P13/P14/P99 ofn==60.0 */
 
 		if (ofn != 60.0)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -2524,8 +2524,8 @@ static int	voltronic_eco_volt(item_t *item, char *value, size_t valuelen)
 
 		}
 
-	/* For P02/P03/P10/P14/P99 */
-	} else if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 14 || protocol == 99) {
+	/* For P02/P03/P10/P13/P14/P99 */
+	} else if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99) {
 
 		if (ovn >= 200) {
 			min.lower = ovn - 24;
@@ -2794,6 +2794,7 @@ static int	voltronic_protocol(item_t *item, char *value, size_t valuelen)
 	case 8:
 	case 9:
 	case 10:
+	case 13:
 	case 14:
 	case 31:
 	case 99:
