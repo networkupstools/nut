@@ -417,6 +417,8 @@
 "HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module "	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
+"Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
+
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
