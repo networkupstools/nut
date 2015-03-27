@@ -1,7 +1,8 @@
 /*  mge-hid.c - data to monitor Eaton / MGE HID (USB and serial) devices
  *
- *  Copyright (C) 2003 - 2015
- *  			Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *        2003 - 2015 Arnaud Quette <arnaud.quette@free.fr>
+ *        2015 Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -36,7 +37,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.36"
+#define MGE_HID_VERSION		"MGE HID 1.37"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -120,6 +121,143 @@ typedef enum {
 static int		country_code = COUNTRY_UNKNOWN;
 
 static char		mge_scratch_buf[20];
+
+/* ABM - Advanced Battery Monitoring
+ ***********************************
+ * Synthesis table
+ * HID data                                   |             Charger in ABM mode             | Charger in Constant mode
+ * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0
+ * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery
+ * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled
+ * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6
+ * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0
+ * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1
+ *
+ */
+#define			ABM_DISABLED 0
+#define			ABM_ENABLED  1
+
+/* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
+static int advanced_battery_monitoring = ABM_DISABLED;
+
+/* Used to store internally if ABM is enabled or not */
+static const char *eaton_abm_enabled_fun(double value)
+{
+	advanced_battery_monitoring = value;
+
+	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_enabled_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_fun },
+	{ 0, NULL, NULL }
+};
+
+/* Used to process ABM flags */
+static const char *eaton_abm_status_fun(double value)
+{
+	/* Don't process if ABM is disabled */
+	if (advanced_battery_monitoring == ABM_DISABLED) {
+		/* Clear any previously published data, in case
+		 * the user has switched off ABM */
+		dstate_delinfo("battery.charger.status");
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM numeric status: %i", (int)value);
+
+	switch ((long)value)
+	{
+	case 1:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+		break;
+	case 2:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+		break;
+	case 3:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+		break;
+	case 4:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+		break;
+	case 5: /* Undefined - ABM is not activated */
+	case 6: /* ABM Charger Disabled */
+	default:
+		/* Return NULL, not to get the value published! */
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
+
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_abm_status_info[] = {
+	{ 1, "dummy", eaton_abm_status_fun },	// + ups.status => CHRG
+	{ 0, NULL, NULL }
+};
+
+
+/* ABM also implies that standard CHRG/DISCHRG are processed according
+ * to weither ABM is enabled or not...
+ * If ABM is disabled, we publish these legacy status
+ * Otherwise, we don't publish on ups.status, but only battery.charger.status */
+/* FIXME: we may prefer to publish the CHRG/DISCHRG status
+ * on battery.charger.status?! */
+static const char *eaton_abm_check_dischrg_fun(double value)
+{
+	if (advanced_battery_monitoring == ABM_DISABLED)
+	{
+		if (value == 1) {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+		}
+		else {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!dischrg");
+		}
+	}
+	else {
+		/* Else, ABM is enabled, we should return NULL,
+		 * not to get the value published!
+		 * However, clear flags that would persist in case of prior
+		 * publication in ABM-disabled mode */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!dischrg");
+	}
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_discharging_info[] = {
+	{ 1, "dummy", eaton_abm_check_dischrg_fun },
+	{ 0, NULL, NULL }
+};
+
+static const char *eaton_abm_check_chrg_fun(double value)
+{
+	if (advanced_battery_monitoring == ABM_DISABLED)
+	{
+		if (value == 1) {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+		}
+		else {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
+		}
+	}
+	else {
+		/* Else, ABM is enabled, we should return NULL,
+		 * not to get the value published!
+		 * However, clear flags that would persist in case of prior
+		 * publication in ABM-disabled mode */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
+	}
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_charging_info[] = {
+	{ 1, "dummy", eaton_abm_check_chrg_fun },
+	{ 0, NULL, NULL }
+};
 
 /* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
  * seconds since 1970-01-01 00:00:00. This has to be split between ups.date and
@@ -886,6 +1024,12 @@ static hid_info_t mge_hid2nut[] =
 	/* Newer implementation */
 	{ "battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.energysave.realpower", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ConfigActivePower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* ABM (Advanced Battery Monitoring) processing
+	 * Must be processing before the BOOL status */
+	/* not published, just to store in internal var. advanced_battery_monitoring */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	/* This data is the actual ABM status information */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
@@ -928,8 +1072,8 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
-	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
-	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
 	/* Output overload, Level 1 (FIXME: add the level?) */
