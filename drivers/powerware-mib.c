@@ -1,9 +1,10 @@
 /*  powerware-mib.c - data to monitor Powerware UPS with NUT
  *  (using MIBs described in stdupsv1.mib and Xups.mib)
  *
- *  Copyright (C) 2005-2006
- *  			Olli Savia <ops@iki.fi>
- *  			Niels Baggesen <niels@baggesen.net>
+ *  Copyright (C)
+ *       2005-2006 Olli Savia <ops@iki.fi>
+ *       2005-2006 Niels Baggesen <niels@baggesen.net>
+ *       2015      Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.6.2"
+#define PW_MIB_VERSION "0.7"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -134,6 +135,7 @@ static info_lkp_t pw_mode_info[] = {
 	{ 0, "NULL" }
 };
 
+/* Legacy implementation */
 static info_lkp_t pw_battery_abm_status[] = {
 	{ 1, "CHRG" },
 	{ 2, "DISCHRG" },
@@ -143,13 +145,13 @@ static info_lkp_t pw_battery_abm_status[] = {
 	{ 0, "NULL" }
 } ;
 
-static info_lkp_t pw_batt_info[] = {
-	{ 1, "" },
-	{ 2, "" },
-	{ 3, "Battery Floating" },	/* battery floating  - can we put that stuff somewhere so one actually access that information? */
-	{ 4, "Battery Resting" },	/* battery resting   - could come handy if support asks what
-			   state the batteries are in... pw_batt_info doesn't get used */
-	{ 5, "unknown" },	/* unknown */
+static info_lkp_t eaton_abm_status_info[] = {
+	{ 1, "charging" },
+	{ 2, "discharging" },
+	{ 3, "floating" },
+	{ 4, "resting" },
+	{ 5, "unknown" },   /* Undefined - ABM is not activated */
+	{ 6, "disabled" },  /* ABM Charger Disabled */
 	{ 0, "NULL" }
 };
 
@@ -200,8 +202,8 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
-	{ "vendor.specific.abmstatus", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
-	  SU_STATUS_BATT, &pw_batt_info[0] },
+	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
+	  SU_STATUS_BATT, &eaton_abm_status_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",
