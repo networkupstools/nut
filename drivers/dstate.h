@@ -41,6 +41,10 @@ typedef struct conn_s {
 
 	extern	struct	ups_handler	upsh;
 
+	/* nonblocking (asynchronous) Vs blocking I/O
+	 * Defaults to nonblocking, for backward compatibility */
+	extern	int	do_nonblocking;
+
 void dstate_init(const char *prog, const char *devname);
 int dstate_poll_fds(struct timeval timeout, int extrafd);
 int dstate_setinfo(const char *var, const char *fmt, ...)

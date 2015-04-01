@@ -31,6 +31,9 @@
 	/* for ser_open */
 	int	do_lock_port = 1;
 
+	/* for dstate->sock_connect */
+	int	do_nonblocking = 1;
+
 	/* for detecting -a values that don't match anything */
 	static	int	upsname_found = 0;
 
@@ -250,7 +253,7 @@ void addvar(int vartype, const char *name, const char *desc)
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {
-	/* flags for main: just 'nolock' for now */
+	/* flags for main */
 
 	if (!strcmp(var, "nolock")) {
 		do_lock_port = 0;
@@ -309,6 +312,10 @@ static void do_global_args(const char *var, const char *val)
 		user = xstrdup(val);
 	}
 
+	if (!strcmp(var, "synchronous")) {
+		do_nonblocking=0;
+	}
+
 
 	/* unrecognized */
 }
@@ -354,6 +361,12 @@ void do_upsconf_args(char *confupsname, char *var, char *val)
 	/* allow per-driver overrides of the global setting */
 	if (!strcmp(var, "pollinterval")) {
 		poll_interval = atoi(val);
+		return;
+	}
+
+	/* allow per-driver overrides of the global setting */
+	if (!strcmp(var, "synchronous")) {
+		do_nonblocking=0;
 		return;
 	}
 
@@ -660,6 +673,10 @@ int main(int argc, char **argv)
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+
+	/* The poll_interval may have been changed from the default */
+	dstate_setinfo("driver.parameter.synchronous", "%s",
+		(do_nonblocking==1)?"disabled":"enabled");
 
 	/* remap the device.* info from ups.* for the transition period */
 	if (dstate_getinfo("ups.mfr") != NULL)
