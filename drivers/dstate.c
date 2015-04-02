@@ -238,7 +238,7 @@ static void sock_connect(int sock)
 	}
 
 	/* enable nonblocking I/O */
-	if (do_nonblocking) {
+	if (!do_synchronous) {
 		ret = fcntl(fd, F_GETFL, 0);
 
 		if (ret < 0) {
