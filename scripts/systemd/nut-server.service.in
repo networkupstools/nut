@@ -1,7 +1,10 @@
 [Unit]
 Description=Network UPS Tools - power devices information server
 After=local-fs.target network.target nut-driver.service
-Requires=nut-driver.service
+# We don't Require drivers to be successfully started! This would be
+# a change of behavior compared to init SysV, and could prevent from
+# accessing successfully started, at least to audit a system.
+#Requires=nut-driver.service
 Before=nut-monitor.service
 
 [Service]
