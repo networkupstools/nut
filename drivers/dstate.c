@@ -238,22 +238,23 @@ static void sock_connect(int sock)
 	}
 
 	/* enable nonblocking I/O */
+	if (!do_synchronous) {
+		ret = fcntl(fd, F_GETFL, 0);
 
-	ret = fcntl(fd, F_GETFL, 0);
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
+			close(fd);
+			return;
+		}
 
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl get on unix fd failed");
-		close(fd);
-		return;
+		ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
+
+		if (ret < 0) {
+			upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
+			close(fd);
+			return;
+		}	
 	}
-
-	ret = fcntl(fd, F_SETFL, ret | O_NDELAY);
-
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
-		close(fd);
-		return;
-	}	
 
 	conn = xcalloc(1, sizeof(*conn));
 	conn->fd = fd;

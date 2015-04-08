@@ -31,6 +31,9 @@
 	/* for ser_open */
 	int	do_lock_port = 1;
 
+	/* for dstate->sock_connect, default to asynchronous */
+	int	do_synchronous = 0;
+
 	/* for detecting -a values that don't match anything */
 	static	int	upsname_found = 0;
 
@@ -250,7 +253,7 @@ void addvar(int vartype, const char *name, const char *desc)
 /* handle -x / ups.conf config details that are for this part of the code */
 static int main_arg(char *var, char *val)
 {
-	/* flags for main: just 'nolock' for now */
+	/* flags for main */
 
 	if (!strcmp(var, "nolock")) {
 		do_lock_port = 0;
@@ -281,6 +284,16 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	/* allow per-driver overrides of the global setting */
+	if (!strcmp(var, "synchronous")) {
+		if (!strcmp(val, "yes"))
+			do_synchronous=1;
+		else
+			do_synchronous=0;
+
+		return 1;	/* handled */
+	}
+
 	/* only for upsdrvctl - ignored here */
 	if (!strcmp(var, "sdorder"))
 		return 1;	/* handled */
@@ -307,6 +320,13 @@ static void do_global_args(const char *var, const char *val)
 	if (!strcmp(var, "user")) {
 		free(user);
 		user = xstrdup(val);
+	}
+
+	if (!strcmp(var, "synchronous")) {
+		if (!strcmp(val, "yes"))
+			do_synchronous=1;
+		else
+			do_synchronous=0;
 	}
 
 
@@ -660,6 +680,10 @@ int main(int argc, char **argv)
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
+
+	/* The synchronous option may have been changed from the default */
+	dstate_setinfo("driver.parameter.synchronous", "%s",
+		(do_synchronous==1)?"yes":"no");
 
 	/* remap the device.* info from ups.* for the transition period */
 	if (dstate_getinfo("ups.mfr") != NULL)
