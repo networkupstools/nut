@@ -159,7 +159,8 @@ int	setvar(const char *varname, const char *val);
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag);
 	/* Send 'command' or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
 int	qx_process(item_t *item, const char *command);
-	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its preprocess function, if any. Return -1 on failure, 0 for a status update and 1 in all other cases. */
+	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its preprocess function, if any, otherwise executing the standard preprocessing (including trimming if QX_FLAG_TRIM is set).
+	 * Return -1 on failure, 0 for a status update and 1 in all other cases. */
 int	ups_infoval_set(item_t *item);
 	/* Return the currently processed status so that it can be checked with one of the status_bit_t passed to the STATUS() macro. */
 int	qx_status(void);
