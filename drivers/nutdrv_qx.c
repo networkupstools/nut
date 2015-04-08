@@ -2682,8 +2682,13 @@ int	qx_process(item_t *item, const char *command)
 	return qx_process_answer(item, len);
 }
 
-/* Process the value we got back (set status bits and set the value of other parameters). */
-/* Return -1 on failure, 0 for a status update and 1 in all other cases */
+/* Process the value we got back (set status bits and set the value of other parameters).
+ *
+ * It also executes the item specific preprocessing if applicable, otherwise the
+ * standard preprocessing (including trimming if QX_FLAG_TRIM is set).
+ *
+ * Return -1 on failure, 0 for a status update and 1 in all other cases (e.g. no errors and or no changes)
+ */
 int	ups_infoval_set(item_t *item)
 {
 	char	value[SMALLBUF] = "";
