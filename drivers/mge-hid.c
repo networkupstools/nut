@@ -37,7 +37,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.37"
+#define MGE_HID_VERSION		"MGE HID 1.38"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -133,12 +133,38 @@ static char		mge_scratch_buf[20];
  * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0
  * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1
  *
+ * Notes (from David G. Miller) to understand ABM status:
+ * When supporting ABM, when a UPS powers up or returns from battery, or
+ * ends the ABM rest mode, it enters charge mode.
+ * Some UPSs run a different charger reference voltage during charge mode
+ * but all the newer models should not be doing that, but basically once
+ * the battery voltage reaches the charger reference level (should be 2.3
+ * volts/cell), the charger is considered in float mode.  Some UPSs will not
+ * annunciate float mode until the charger power starts falling from the maximum
+ * level indicating the battery is truly at the float voltage or in float mode.
+ * The %charge level is based on battery voltage and the charge mode timer
+ * (should be 48 hours) and some UPSs add in a value that’s related to charger
+ * power output.  So you can have UPS that enters float mode with anywhere
+ * from 80% or greater battery capacity.
+ * float mode is not important from the software’s perspective, it’s there to
+ * help determine if the charger is advancing correctly.
+ * So in float mode, the charger is charging the battery, so by definition you
+ * can assert the CHRG flag in NUT when in “float” mode or “charge” mode.
+ * When in “rest” mode the charger is not delivering anything to the battery,
+ * but it will when the ABM cycle(28 days) ends, or a battery discharge occurs
+ * and utility returns.  This is when the ABM status should be “resting”.
+ * If a battery failure is detected that disables the charger, it should be
+ * reporting “off” in the ABM charger status.
+ * Of course when delivering load power from the battery, the ABM status is
+ * discharging.
  */
-#define			ABM_DISABLED 0
-#define			ABM_ENABLED  1
+
+#define			ABM_UNKNOWN  -1
+#define			ABM_DISABLED  0
+#define			ABM_ENABLED   1
 
 /* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
-static int advanced_battery_monitoring = ABM_DISABLED;
+static int advanced_battery_monitoring = ABM_UNKNOWN;
 
 /* Used to store internally if ABM is enabled or not */
 static const char *eaton_abm_enabled_fun(double value)
@@ -156,7 +182,26 @@ static info_lkp_t eaton_abm_enabled_info[] = {
 	{ 0, NULL, NULL }
 };
 
-/* Used to process ABM flags */
+/* Note 1: This point will need more clarification! */
+# if 0
+/* Used to store internally if ABM is enabled or not (for legacy units) */
+static const char *eaton_abm_enabled_legacy_fun(double value)
+{
+	advanced_battery_monitoring = value;
+
+	upsdebugx(2, "ABM is %s (legacy data)", (advanced_battery_monitoring==1)?"enabled":"disabled");
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_enabled_legacy_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_legacy_fun },
+	{ 0, NULL, NULL }
+};
+#endif /* if 0 */
+
+/* Used to process ABM flags, for battery.charger.status */
 static const char *eaton_abm_status_fun(double value)
 {
 	/* Don't process if ABM is disabled */
@@ -183,8 +228,10 @@ static const char *eaton_abm_status_fun(double value)
 	case 4:
 		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
 		break;
-	case 5: /* Undefined - ABM is not activated */
 	case 6: /* ABM Charger Disabled */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+		break;
+	case 5: /* Undefined - ABM is not activated */
 	default:
 		/* Return NULL, not to get the value published! */
 		return NULL;
@@ -196,10 +243,43 @@ static const char *eaton_abm_status_fun(double value)
 }
 
 static info_lkp_t eaton_abm_status_info[] = {
-	{ 1, "dummy", eaton_abm_status_fun },	// + ups.status => CHRG
+	{ 1, "dummy", eaton_abm_status_fun },
 	{ 0, NULL, NULL }
 };
 
+/* Used to process ABM flags, for ups.status (CHRG/DISCHRG/RB) */
+static const char *eaton_abm_chrg_dischrg_fun(double value)
+{
+	/* Don't process if ABM is disabled */
+	if (advanced_battery_monitoring == ABM_DISABLED)
+		return NULL;
+
+	switch ((long)value)
+	{
+	case 1: /* charging status */
+	case 3: /* floating status */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+		break;
+	case 2:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+		break;
+	case 6: /* ABM Charger Disabled */
+	case 4: /* resting, nothing to publish! (?) */
+	case 5: /* Undefined - ABM is not activated */
+	default:
+		/* Return NULL, not to get the value published! */
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM CHRG/DISCHRG legacy string status (ups.status): %s", mge_scratch_buf);
+
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_abm_chrg_dischrg_info[] = {
+	{ 1, "dummy", eaton_abm_chrg_dischrg_fun },
+	{ 0, NULL, NULL }
+};
 
 /* ABM also implies that standard CHRG/DISCHRG are processed according
  * to weither ABM is enabled or not...
@@ -1025,9 +1105,12 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "battery.energysave.realpower", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ConfigActivePower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
 	/* ABM (Advanced Battery Monitoring) processing
-	 * Must be processing before the BOOL status */
-	/* not published, just to store in internal var. advanced_battery_monitoring */
+	 * Must be processed before the BOOL status */
+	/* Not published, just to store in internal var. advanced_battery_monitoring */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	/* Same as the one above, but for legacy units */
+	/* Refer to Note 1 (This point will need more clarification!)
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
 	/* This data is the actual ABM status information */
 	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
 
@@ -1072,8 +1155,11 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
+	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
+	/* And this one when ABM is enabled (same as battery.charger.status) */
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
 	/* Output overload, Level 1 (FIXME: add the level?) */
@@ -1090,11 +1176,6 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
-#if 0
-	/* TODO: UPS.BatterySystem.Charger.PresentStatus.Used is related to ABM */
-	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, NULL, 0, off_info },
-	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 4 (ABM Resting)" */
-#endif
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
