@@ -22,6 +22,10 @@ Changes from 2.7.2 to 2.7.3
   `killall -SIGUSR1 upslog` to any OB/OL script actions. This will force
   upslog to write a log entry to catch short power transients.
 
+- Be sure that your SSL keys are readable by the NUT system user. The SSL
+  subsystem is now initialized after `upsd` forks, to work around issues in the
+  NSS library.
+
 Changes from 2.7.1 to 2.7.2
 ---------------------------
 

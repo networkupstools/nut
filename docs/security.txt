@@ -142,7 +142,7 @@ TCP Wrappers
 
 If the server is build with tcp-wrappers support enabled, it will check if the
 NUT username is allowed to connect from the client address through the
-'/etc/hosts.allow' and '/etc/hosts.deny' files.
+`/etc/hosts.allow` and `/etc/hosts.deny` files.
 
 NOTE: this will only be done for commands that require the user to be logged
 into the server.
@@ -162,7 +162,7 @@ Further details are described in hosts_access(5).
 Configuring SSL
 ---------------
 
-SSL is available as a build option ('--with-ssl').
+SSL is available as a build option (`--with-ssl`).
 
 It encrypts sessions between upsd and clients, and can also be used to
 authenticate servers.
@@ -175,8 +175,8 @@ present these steps.
 
 SSL is available via two back-end libraries : NSS and OpenSSL (historically).
 You can choose to use one of them by specifying it with a build option
-('--with-nss' or '--with-openssl'). If any is specified, configure script will
-try to detect one of them and use it with a precedence for OpenSSL.
+(`--with-nss` or `--with-openssl`). If neither is specified, the configure
+script will try to detect one of them, with a precedence for OpenSSL.
 
 OpenSSL backend usage
 ~~~~~~~~~~~~~~~~~~~~~
@@ -188,12 +188,13 @@ Install OpenSSL
 ^^^^^^^^^^^^^^^
 
 Install link:http://www.openssl.org[OpenSSL] as usual, either from source
-or binary packages including nss-tools.
+or binary packages. If using binary packages, be sure to include the developer
+libraries.
 
 Recompile and install NUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Recompile NUT from source, starting with 'configure --with-openssl'.
+Recompile NUT from source, starting with `configure --with-openssl`.
 
 Then install everything as usual.
 
@@ -207,7 +208,7 @@ Use the following command to create the certificate:
 
 	openssl req -new -x509 -nodes -out upsd.crt -keyout upsd.key
 
-You can also put a '-days nnn' in there to set the expiration.  If
+You can also put a `-days nnn` in there to set the expiration.  If
 you skip this, it may default to 30 days.  This is probably not what
 you want.    
 
@@ -271,7 +272,8 @@ hold of port 3493.
 
 Having it be owned by 'root' and readable by group 'nut' allows upsd
 to read the file without being able to change the contents.  This
-is done to minimize the impact if someone should break into upsd.
+is done to minimize the impact if someone should break into upsd. NUT reads the
+key and certificate files after dropping privileges and forking.
 
 Note on certification authorities (CAs) and signed keys
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -340,7 +342,7 @@ Again in upsmon.conf:
 
 	FORCESSL 1
 
-If you don't use 'CERTVERIFY 1', then this will at least make sure
+If you don't use `CERTVERIFY 1`, then this will at least make sure
 that nobody can sniff your sessions without a large effort.  Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
@@ -355,12 +357,13 @@ Install NSS
 ^^^^^^^^^^^
 
 Install link:http://www.mozilla.org/projects/security/pki/nss/[Mozilla NSS] as
-usual, either from source or binary packages.
+usual, either from source or binary packages. If using binary packages, be sure
+to include the developer libraries, and nss-tools (for `certutil`).
 
 Recompile and install NUT
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Recompile NUT from source, starting with 'configure --with-nss'.
+Recompile NUT from source, starting with `configure --with-nss`.
 
 Then install everything as usual.
 
@@ -368,7 +371,7 @@ Create certificate and key for the host
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NSS (package generally called libnss3-tools) will install a tool called 
-'certutil'.
+`certutil`.
 It will be used to generate certificates and manage certificate database.
 
 Certificates should be signed by a certification authorities (CAs).
@@ -376,17 +379,17 @@ Following commands are typical samples, contact your SSL guru or security office
 to follow your company procedures.
 
 .Generate a server certificate for upsd:
-- Create a directory where store the certificate database: 'mkdir cert_db'
-- Create the certificate database : 'certutil -N -d cert_db'
+- Create a directory where store the certificate database: `mkdir cert_db`
+- Create the certificate database : `certutil -N -d cert_db`
 - Import the CA certificate:
-	'certutil -A -d cert_db -n "My Root CA" -t "TC,," -a -i rootca.crt'
+	`certutil -A -d cert_db -n "My Root CA" -t "TC,," -a -i rootca.crt`
 - Create a server certificate request (here called 'My nut server'):
-	'certutil -R -d cert_db -s "CN=My nut server,O=MyCompany,ST=MyState,C=US" -a -o server.req'
+	`certutil -R -d cert_db -s "CN=My nut server,O=MyCompany,ST=MyState,C=US" -a -o server.req`
 - Make your CA sign the certificate (produces server.crt)
 - Import the signed certificate into server database:
-	'certutil -A -d cert_db -n "My nut server" -a -i server.crt -t ",,"'
+	`certutil -A -d cert_db -n "My nut server" -a -i server.crt -t ",,"`
 - Display the content of certificate server:
-	'certutil -L -d cert_db'
+	`certutil -L -d cert_db`
 
 Clients and servers in the same host could share the same certificate to authenticate them
 or use different ones in same or different databases.
@@ -397,27 +400,27 @@ Create a self-signed CA certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NSS provides a way to create self-signed certificate which can acting as
-CA certificate and to sign other certificates with this CA certificate.
-This method can be used to provide CA certification chain without passing
-by an 'official' CA provider.
+CA certificate, and to sign other certificates with this CA certificate.
+This method can be used to provide a CA certification chain without using
+an "official" certificate authority.
 
 .Generate a self-signed CA certificate:
-- Create a directory where store the CA certificate database: 'mkdir CA_db'
+- Create a directory where store the CA certificate database: `mkdir CA_db`
 - Create the certificate database:
-	'certutil -N -d CA_db'
+	`certutil -N -d CA_db`
 - Generate a certificate for CA:
-	'certutil -S -d CA_db -n "My Root CA" -s "CN=My CA,O=MyCompany,ST=MyState,C=US" -t "CT,," -x -2'
-Do not forget to answer 'Yes' to the question 'Is this a CA certificate [y/N]?'
+	`certutil -S -d CA_db -n "My Root CA" -s "CN=My CA,O=MyCompany,ST=MyState,C=US" -t "CT,," -x -2`
+(Do not forget to answer 'Yes' to the question 'Is this a CA certificate [y/N]?')
 - Extract the CA certificate to be able to import it in upsd (or upsmon) certificate database:
-	'certutil -L -d CA_db -n "My Root CA" -a -o rootca.crt'
+	`certutil -L -d CA_db -n "My Root CA" -a -o rootca.crt`
 - Sign a certificate request with the CA certificate (simulate a real CA signature):
-	'certutil -C -d CA_db -c "My Root CA" -a -i server.req -o server.crt -2 -6'
+	`certutil -C -d CA_db -c "My Root CA" -a -i server.req -o server.crt -2 -6`
 	
 Install the server-side certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Just copy the database directory (just the directory and included 3
-database .db files) at the right place like in '/usr/local/ups/etc/':
+database .db files) to the right place, such as `/usr/local/ups/etc/`:
 
 	mv cert_db /usr/local/ups/etc/
 
@@ -441,12 +444,12 @@ upsd (optional): client authentication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 NOTE: This functionality is disabled by default. To activate it, recompile
-NUT with 'WITH_CLIENT_CERTIFICATE_VALIDATION' defined:
+NUT with `WITH_CLIENT_CERTIFICATE_VALIDATION` defined:
 
 	make CFLAGS="-DWITH_CLIENT_CERTIFICATE_VALIDATION" 
 
 UPSD can accept three levels of client authentication. Just specify it with
-the directive 'CERTREQUEST' with the corresponding value in the upsd.conf file:
+the directive `CERTREQUEST` with the corresponding value in the upsd.conf file:
 
 - NO: no client authentication.
 - REQUEST: a certificate is request to the client but it is not strictly validated.
@@ -465,36 +468,37 @@ In order for upsmon to securely connect to upsd, it must authenticate it.
 You must associate an upsd host name to security rules in upsmon.conf
 with the directive 'CERTHOST'.
 
-'CERTHOST' associate to an hostname a certificate name and if a SSL connection
-is mandatory and if its certificate must be validated.
+'CERTHOST' associates a hostname to a certificate name. It also determines
+whether a SSL connection is mandatory, and if the server certificate must be
+validated.
 
 	CERTHOST 'hostname' 'certificate name' 'certverify' 'forcessl'
 
-If the flag 'forcessl' is set to '1' and the upsd answer that it can not
-connect in SSL, the connection closes.
-If the flag 'certverify' is set to '1' and the connection is done in ssl,
+If the flag `forcessl` is set to `1`, and upsd answers that it can not
+connect with SSL, the connection closes.
+If the flag `certverify` is set to `1` and the connection is done in SSL,
 upsd's certificate is verified and its name must be the specified
 'certificate name'.
 
-To prevent security leaks, you should set all 'certverify' and 'forcessl'
-flags to '1' (force SSL connection and validate all certificates for all
+To prevent security leaks, you should set all `certverify` and `forcessl`
+flags to `1` (force SSL connection and validate all certificates for all
 peers).
 
-You can specify 'CERTVERIFY' and 'FORCESSL' directive (to '1' or '0') to
+You can specify `CERTVERIFY` and `FORCESSL` directive (to `1` or `0`) to
 define a default security rule to apply to all host not specified with a
-dedicated 'CERTHOST' directive.
+dedicated `CERTHOST` directive.
 
-If a host is not specified in a 'CERTHOST' directive, its expected certificate
+If a host is not specified in a `CERTHOST` directive, its expected certificate
 name is its hostname.
 
 
 upsmon (optional): certificate database and self certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Like upsd, upsmon may need to authenticate itself (upsd's 'CERTREQUEST'
-directive set to 'REQUEST' or 'REQUIRE').
+Like upsd, upsmon may need to authenticate itself (upsd's `CERTREQUEST`
+directive set to `REQUEST` or `REQUIRE`).
 It must access to a certificate (and its private key) in a certificate database
-configuring 'CERTPATH' and 'CERTIDENT' in upsmon.conf in the same way than upsd.
+configuring `CERTPATH` and `CERTIDENT` in upsmon.conf in the same way than upsd.
 
 	CERTPATH /usr/local/ups/etc/cert_db
 	CERTIDENT 'certificate name' 'database password'
@@ -506,8 +510,9 @@ Restart upsd
 It should come back up without any complaints.  If it says something
 about keys or certificates, then you probably missed a step.
 
-If you run upsd as a separate user id (like nutsrv), make sure that
-user can read files in certificate directory.
+If you run upsd as a separate user ID (like nutsrv), make sure that
+user can read files in the certificate directory. NUT reads the keys and
+certificates after forking and dropping privileges.
 
 Restart upsmon
 ~~~~~~~~~~~~~~
@@ -516,7 +521,7 @@ You should see something like this in the syslog from upsd:
 
 	foo upsd[1234]: Client mon@localhost logged in to UPS [myups] (SSL)
 
-If upsd or upsmon give any error messages, or the (SSL) is missing,
+If upsd or upsmon give any error messages, or the `(SSL)` is missing,
 then something isn't right.
 
 If in doubt about upsmon, start it with -D so it will stay in 
@@ -525,14 +530,14 @@ like this every couple of seconds:
 
 	polling ups: myups@localhost [SSL]
 
-Obviously, if the '[SSL]' isn't there, something's broken.
+Obviously, if the `[SSL]` isn't there, something's broken.
 
 Recommended: sniff the connection to see it for yourself
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Using tcpdump, Wireshark (Ethereal), or another network sniffer tool,
 tell it to monitor port 3493/tcp and see what happens.  You should only
-see 'STARTTLS' go out, 'OK STARTTLS' come back, and the rest will be
+see `STARTTLS` go out, `OK STARTTLS` come back, and the rest will be
 certificate data and then seemingly random characters.
 
 If you see any plaintext besides that (USERNAME, PASSWORD, etc.)
@@ -583,7 +588,7 @@ license change.  This is actually a feature, since it means nobody can
 unilaterally run off with the source - not even the NUT team.
 
 Note that the replacement of OpenSSL by Mozilla Network Security Services
-(NSS) is scheduled in the future, to avoid the above licensing issues.
+(NSS) should avoid the above licensing issues.
 
 
 chrooting and other forms of paranoia

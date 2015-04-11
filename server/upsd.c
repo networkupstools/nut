@@ -1004,9 +1004,6 @@ int main(int argc, char **argv)
 	/* start server */
 	server_load();
 
-	/* initialize SSL before we drop privileges (we may not be able to read the keyfile as non-root) */
-	ssl_init();
-
 	become_user(new_uid);
 
 	if (chdir(statepath)) {
@@ -1037,6 +1034,9 @@ int main(int argc, char **argv)
 	} else {
 		memset(pidfn, 0, sizeof(pidfn));
 	}
+
+	/* initialize SSL (keyfile must be readable by nut user) */
+	ssl_init();
 
 	while (!exit_flag) {
 		mainloop();
