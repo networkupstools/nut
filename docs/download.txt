@@ -15,7 +15,7 @@ ifdef::website[]
 link:docs/user-manual.chunked/ar01s09.html#verifySourceSig[following procedure]
 endif::website[]
 ifndef::website[]
-- Else, you can read the <<verifySourceSig,following procedure>>.
+<<verifySourceSig,following procedure>>.
 endif::website[]
 to do so.
 ================================================================================
