@@ -26,16 +26,24 @@ In order to verify the NUT source code signature for releases, perform the follo
 
 	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
 
+NOTE: As of NUT 2.7.3, a new release key is used. In order to verify previous release, please use
+link:http://www.networkupstools.org/source/nut-key.gpg[NUT old maintainer's signature]
+
 - Launch the GPG checking using the following command:
 
 	$ gpg --verify nut-X.Y.Z.tar.gz.sig
 
 - You should see a message mentioning a "Good signature", like:
 
-	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
+	gpg: Signature made Wed Apr 15 15:55:30 2015 CEST using RSA key ID 55CA5976
 	gpg: Good signature from "Arnaud Quette ..."
 	...
 
+NOTE: the previously used maintainer's signature would output:
++
+	gpg: Signature made Thu Jul  5 16:15:05 2007 CEST using DSA key ID 204DDF1B
+	gpg: Good signature from "Arnaud Quette ..."
+	...
 
 System level privileges and ownership
 -------------------------------------
