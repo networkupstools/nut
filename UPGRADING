@@ -26,6 +26,11 @@ Changes from 2.7.2 to 2.7.3
   subsystem is now initialized after `upsd` forks, to work around issues in the
   NSS library.
 
+- The systemd nut-server.service does not Require nut-driver to be started
+  successfully.  This was previously preventing upsd startup, even for just
+  one driver failure among many.  This also matches the behavior of sysV
+  initscripts.
+
 Changes from 2.7.1 to 2.7.2
 ---------------------------
 

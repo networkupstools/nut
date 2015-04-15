@@ -43,6 +43,36 @@ Release notes for NUT 2.7.3 - what's new since 2.7.2:
 
  - genericups: better debugging while parsing the cable description flags
 
+ - all drivers: a new 'synchronous' driver flag is available for very verbose
+   units, such as some ePDUs
+
+ - Eaton: 
+   * Add support for EnergySaving features for Eaton UPSs (HID USB/SHUT and
+     XCP USB/serial)
+   * Fix and complete Eaton ePDUs G2/G3 support
+   * ABM (Advanced Battery Monitoring) support through battery.charger.status
+     in HID (USB and SHUT), XCP (USB and serial) and SNMP (Powerware XUPS
+     MIB)
+
+ - support for new devices:
+   APC Back-UPS 1200BR and Back-UPS BZ2200BI-BR (Microsol)
+   ASEM SPA PB1300 UPS
+   Belkin Regulator PRO-USB
+   Cyber Power Systems Value 1500ELCD-RU
+   EUROCASE EA200N 2000VA
+   Fideltronik LUPUS 500
+   Flight Technic & International (FTUPS) FT-1000BS and FT-1000BS(T)
+   Grafenthal PR-3000-HS
+   JAWAN JW-UPSLC02
+   Lacerda New Orion 800VA
+   Mecer ME-1000-WTU
+   NHS Sistemas de Energia Expert C Online 6000/8000/10000
+   NHS Sistemas de Energia Expert S Online 6000/8000/10000
+   Powercom BNT-xxxAP (USB product id: 0001)
+   Rucelf UPOII-3000-96-EL
+   Tripp Lite OMNIVSINT800   
+   Voltronic Power Apex 1KVA and Imperial 1KVA
+
 ---------------------------------------------------------------------------
 Release notes for NUT 2.7.2 - what's new since 2.7.1:
 
