@@ -197,7 +197,7 @@ Set it to +0+ if there's no minimum length to look after.
 Expected leading character of the answer (optional), e.g. +#+, +(+ ...
 
 *+value+*::
-Value from the answer, filled at runtime (i.e. +answer+ between +from+ and +to+).
+Value from the answer, filled at runtime (i.e. +answer+ in the interval [+from+ to +to+]).
 
 *+from+*::
 Position of the starting character of the info we're after in the answer.
