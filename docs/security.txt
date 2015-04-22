@@ -27,7 +27,7 @@ In order to verify the NUT source code signature for releases, perform the follo
 	$ gpg --fetch-keys http://www.networkupstools.org/source/nut-key.gpg
 
 NOTE: As of NUT 2.7.3, a new release key is used. In order to verify previous release, please use
-link:http://www.networkupstools.org/source/nut-key.gpg[NUT old maintainer's signature]
+link:http://www.networkupstools.org/source/nut-old-key.gpg[NUT old maintainer's signature]
 
 - Launch the GPG checking using the following command:
 
