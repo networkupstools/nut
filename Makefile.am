@@ -56,6 +56,7 @@ ChangeLog: tools/gitlog2changelog.py dummy-stamp
 # ----------------------------------------------------------------------
 # Maintainers targets: distribution signature and hashes
 dist-sig:
+	rm -f nut-@PACKAGE_VERSION@.tar.gz.sig
 	gpg --detach-sign nut-@PACKAGE_VERSION@.tar.gz
 
 dist-hash:
