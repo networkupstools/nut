@@ -1056,7 +1056,20 @@ static USBDeviceMatcher_t	device_matcher = {
 
 /* == Driver functions implementations == */
 
-/* Process instant command and take action. */
+/**
+ * Process instant command and take action.
+ *
+ * - Therefor it looks up the given cmdname in the *item array
+ *  -- if it finds nothing it tries to fallback to commonly known commands and returns
+ * - Otherwise it
+ *  -- processes extradata with item->dfl and
+ *  -- tries to call the item->preprocessor with extradata as value
+ *  -- executes qx_process
+ *
+ * @var[in] cmdname	input cmd name called from upscmd
+ * @var[in] extradata	given value
+ * @returs one out of STAT_INSTCMD_*
+ * */
 int	instcmd(const char *cmdname, const char *extradata)
 {
 	item_t	*item;
@@ -1136,7 +1149,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	/* If extradata is empty, use the default value from the QX to NUT table */
+	/* If extradata is empty, tries to use the default value from the QX to NUT table */
 	extradata = extradata ? extradata : item->dfl;
 	snprintf(value, sizeof(value), "%s", extradata ? extradata : "");
 
@@ -2647,6 +2660,10 @@ static int	qx_process_answer(item_t *item, const int len)
 		return -1;
 	}
 
+	if(item->to && (item->from > item->to)) {
+		upsdebugx(LOG_WARNING, "%s: item->from(%d) points to a point after item->to(%d)", __func__, item->from, item->to);
+	}
+
 	/* Get value */
 	if (strlen(item->answer)) {
 		snprintf(item->value, sizeof(item->value), "%.*s", item->to ? 1 + item->to - item->from : (int)strcspn(item->answer, "\r") - item->from, item->answer + item->from);
@@ -2658,6 +2675,8 @@ static int	qx_process_answer(item_t *item, const int len)
 }
 
 /* Send the command to the UPS and process the reply.
+ *
+ * reply is copied to item->answer
  * Return -1 on errors, 0 on success */
 int	qx_process(item_t *item, const char *command)
 {
