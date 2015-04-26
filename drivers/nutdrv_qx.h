@@ -157,7 +157,11 @@ typedef struct {
 } subdriver_t;
 
 /* The following functions are exported for the benefit of subdrivers */
-	/* Execute an instant command. Return STAT_INSTCMD_INVALID if the command is invalid, STAT_INSTCMD_FAILED if it failed, STAT_INSTCMD_HANDLED on success. */
+	/* Execute an instant command. In detail:
+	 * - look up the given 'cmdname' in the qx2nut data structure (if not found, try to fallback to commonly known commands);
+	 * - if 'cmdname' is found, call its preprocess function, passing to it 'extradata', if any, otherwise its dfl value, if any;
+	 * - send the command to the device and check the reply.
+	 * Return STAT_INSTCMD_INVALID if the command is invalid, STAT_INSTCMD_FAILED if it failed, STAT_INSTCMD_HANDLED on success. */
 int	instcmd(const char *cmdname, const char *extradata);
 	/* Set r/w variable to a value after it has been checked against its info_rw structure. Return STAT_SET_HANDLED on success, otherwise STAT_SET_UNKNOWN. */
 int	setvar(const char *varname, const char *val);
@@ -165,7 +169,7 @@ int	setvar(const char *varname, const char *val);
 	 *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
 	 *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag);
-	/* Send 'command' (a null-terminated byte string) or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
+	/* Send 'command' (a null-terminated byte string) or, if it is NULL, send the command stored in the item to the UPS and process the reply, saving it in item->answer. Return -1 on errors, 0 on success. */
 int	qx_process(item_t *item, const char *command);
 	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling the item-specific preprocess function, if any, otherwise executing the standard preprocessing (including trimming if QX_FLAG_TRIM is set).
 	 * Return -1 on failure, 0 for a status update and 1 in all other cases. */

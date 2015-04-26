@@ -926,7 +926,14 @@ Support functions
 You are already given the following functions:
 
 *+int	instcmd(const char *cmdname, const char *extradata)+*::
-Execute an instant command.
+Execute an instant command. In detail:
++
+--
+- look up the given +cmdname+ in the qx2nut data structure (if not found, try to fallback to commonly known commands);
+- if +cmdname+ is found, call its preprocess function, passing to it +extradata+, if any, otherwise its +dfl+ value, if any;
+- send the command to the device and check the reply.
+--
++
 Return +STAT_INSTCMD_INVALID+ if the command is invalid, +STAT_INSTCMD_FAILED+ if it failed, +STAT_INSTCMD_HANDLED+ on success.
 
 *+int	setvar(const char *varname, const char *val)+*::
@@ -939,7 +946,7 @@ Find an item of +item_t+ type in +qx2nut+ data structure by its +info_type+, opt
  - +noflag+: flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned.
 
 *+int	qx_process(item_t *item, const char *command)+*::
-Send +command+ (a null-terminated byte string) or, if it is +NULL+, send the command stored in the +item+ to the UPS and process the reply.
+Send +command+ (a null-terminated byte string) or, if it is +NULL+, send the command stored in the +item+ to the UPS and process the reply, saving it in +item+'s +answer+.
 Return +-1+ on errors, +0+ on success.
 
 *+int	ups_infoval_set(item_t *item)+*::

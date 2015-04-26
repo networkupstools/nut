@@ -1136,7 +1136,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
-	/* If extradata is empty, use the default value from the QX to NUT table */
+	/* If extradata is empty, use the default value from the QX to NUT table, if any */
 	extradata = extradata ? extradata : item->dfl;
 	snprintf(value, sizeof(value), "%s", extradata ? extradata : "");
 
