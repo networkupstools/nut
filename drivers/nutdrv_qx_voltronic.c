@@ -1845,12 +1845,14 @@ static void	voltronic_massive_unskip(const int protocol)
 /* *SETVAR(/NONUT)* Preprocess setvars */
 static int	voltronic_process_setvar(item_t *item, char *value, size_t valuelen)
 {
+	double	val = 0;
+
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
 		return -1;
 	}
 
-	double	val = strtod(value, NULL);
+	val = strtod(value, NULL);
 
 	if (!strcasecmp(item->info_type, "ups.delay.start")) {
 
