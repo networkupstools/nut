@@ -429,7 +429,7 @@ char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, si
  */
 int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 {
-	int	i, r;
+	int	r;
 	long	hValue;
 
 	if (hiddata == NULL) {
@@ -456,9 +456,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 	}
 
 	/* flush the report buffer (data may have changed) */
-	for (i=0; i<256; i++) {
-		reportbuf->ts[i] = 0;
-	}
+	memset(reportbuf->ts, '\0', sizeof(reportbuf->ts));
 	
 	upsdebugx(4, "Set report succeeded");
 	return 1;
