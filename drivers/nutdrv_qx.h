@@ -88,8 +88,14 @@ typedef struct item_t {
 
 	unsigned long	qxflags;		/* Driver's own flags */
 
+	int		(*preprocess_command)(struct item_t *item, char *command, const size_t commandlen);
+						/* Last chance to preprocess the command to be sent to the UPS (e.g. to add CRC, ...).
+						 * This function is given the currently processed item (item), the command to be sent to the UPS (command) and its size_t (commandlen).
+						 * Return -1 in case of errors, else 0.
+						 * command must be filled with the actual command to be sent to the UPS. */
+
 	int		(*preprocess_answer)(struct item_t *item, const int len);
-						/* Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...)
+						/* Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...).
 						 * This function is given the currently processed item (item) with the answer we got from the UPS unmolested and already stored in item->answer and the length of that answer (len).
 						 * Return -1 in case of errors, else the length of the newly allocated item->answer (from now on, treated as a null-terminated string). */
 
@@ -159,7 +165,7 @@ int	setvar(const char *varname, const char *val);
 	 *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
 	 *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag);
-	/* Send 'command' or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
+	/* Send 'command' (a null-terminated byte string) or, if it is NULL, send the command stored in the item to the UPS and process the reply. Return -1 on errors, 0 on success. */
 int	qx_process(item_t *item, const char *command);
 	/* Process the value we got back from the UPS (set status bits and set the value of other parameters), calling its preprocess function, if any, otherwise executing the standard preprocessing (including trimming if QX_FLAG_TRIM is set).
 	 * Return -1 on failure, 0 for a status update and 1 in all other cases. */

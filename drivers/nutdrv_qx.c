@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 #include "main.h"
 
@@ -2661,13 +2661,28 @@ static int	qx_process_answer(item_t *item, const int len)
  * Return -1 on errors, 0 on success */
 int	qx_process(item_t *item, const char *command)
 {
-	char	buf[SMALLBUF] = "";
+	char	buf[sizeof(item->answer) - 1] = "",
+		cmd[command ? (strlen(command) >= SMALLBUF ? strlen(command) + 1 : SMALLBUF) : (item->command && strlen(item->command) >= SMALLBUF ? strlen(item->command) + 1 : SMALLBUF)];
+	int	len;
+
+	/* Prepare the command to be used */
+	memset(cmd, 0, sizeof(cmd));
+	snprintf(cmd, sizeof(cmd), "%s", command ? command : item->command);
+
+	/* Preprocess the command */
+	if (
+		item->preprocess_command != NULL &&
+		item->preprocess_command(item, cmd, sizeof(cmd)) == -1
+	) {
+		upsdebugx(4, "%s: failed to preprocess command [%s]", __func__, item->info_type);
+		return -1;
+	}
 
 	/* Send the command */
-	int	len = qx_command(command ? command : item->command, buf, sizeof(buf));
+	len = qx_command(cmd, buf, sizeof(buf));
 
 	memset(item->answer, 0, sizeof(item->answer));
-	memcpy(item->answer, buf, sizeof(item->answer) <= sizeof(buf) ? sizeof(item->answer) - 1 : sizeof(buf));
+	memcpy(item->answer, buf, sizeof(buf));
 
 	/* Preprocess the answer */
 	if (item->preprocess_answer != NULL) {

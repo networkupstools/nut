@@ -29,7 +29,7 @@
 
 #include "nutdrv_qx_bestups.h"
 
-#define BESTUPS_VERSION "BestUPS 0.05"
+#define BESTUPS_VERSION "BestUPS 0.06"
 
 /* Support functions */
 static int	bestups_claim(void);
@@ -97,22 +97,22 @@ static item_t	bestups_qx2nut[] = {
 	 *    0         1         2         3         4
 	 */
 
-	{ "input.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL },
-	{ "input.voltage.fault",	0,	NULL,	"Q1\r",	"",	47,	'(',	"",	7,	11,	"%.1f",	0,	NULL,	NULL },
-	{ "output.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL },
-	{ "ups.load",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL },
-	{ "input.frequency",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL },
-	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL },
-	{ "ups.temperature",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL },
+	{ "input.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	1,	5,	"%.1f",	0,	NULL,	NULL,	NULL },
+	{ "input.voltage.fault",	0,	NULL,	"Q1\r",	"",	47,	'(',	"",	7,	11,	"%.1f",	0,	NULL,	NULL,	NULL },
+	{ "output.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },
+	{ "ups.load",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL,	NULL },
+	{ "input.frequency",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
+	{ "battery.voltage",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	NULL },
+	{ "ups.temperature",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL,	NULL },
 	/* Status bits */
-	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },		/* Utility Fail (Immediate) */
-	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	39,	39,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },		/* Battery Low */
-	{ "ups.alarm",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	41,	41,	NULL,	0,			NULL,	blazer_process_status_bits },		/* UPS Failed */
-	{ "ups.type",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	42,	42,	"%s",	QX_FLAG_STATIC,		NULL,	blazer_process_status_bits },		/* UPS Type */
-	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	43,	43,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },		/* Test in Progress */
-	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	blazer_process_status_bits },		/* Shutdown Active */
-/*	{ "ups.beeper.status",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	45,	45,	"%s",	0,			NULL,	blazer_process_status_bits },		*//* Beeper status: not supported; always 0 */
-	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	40,	40,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	bestups_process_bbb_status_bit },	/* Bypass/Boost or Buck Active - keep this one at the end as it needs the processed data from the previous items */
+	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },		/* Utility Fail (Immediate) */
+	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	39,	39,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },		/* Battery Low */
+	{ "ups.alarm",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	41,	41,	NULL,	0,			NULL,	NULL,	blazer_process_status_bits },		/* UPS Failed */
+	{ "ups.type",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	42,	42,	"%s",	QX_FLAG_STATIC,		NULL,	NULL,	blazer_process_status_bits },		/* UPS Type */
+	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	43,	43,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },		/* Test in Progress */
+	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	blazer_process_status_bits },		/* Shutdown Active */
+/*	{ "ups.beeper.status",		0,	NULL,	"Q1\r",	"",	47,	'(',	"",	45,	45,	"%s",	0,			NULL,	NULL,	blazer_process_status_bits },		*//* Beeper status: not supported; always 0 */
+	{ "ups.status",			0,	NULL,	"Q1\r",	"",	47,	'(',	"",	40,	40,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	NULL,	bestups_process_bbb_status_bit },	/* Bypass/Boost or Buck Active - keep this one at the end as it needs the processed data from the previous items */
 
 	/* Query UPS for ratings and model infos
 	 * > [ID\r]
@@ -124,13 +124,13 @@ static item_t	bestups_qx2nut[] = {
 	 *    0         1         2
 	 */
 
-	{ "device.mfr",			0,	NULL,	"ID\r",	"",	28,	0,	"",	0,	2,	"%s",	QX_FLAG_STATIC,		bestups_preprocess_id_answer,	bestups_manufacturer },
-	{ "device.model",		0,	NULL,	"ID\r",	"",	28,	0,	"",	0,	2,	"%s",	QX_FLAG_STATIC,		bestups_preprocess_id_answer,	bestups_model },
-	{ "ups.power.nominal",		0,	NULL,	"ID\r",	"",	28,	0,	"",	4,	7,	"%.0f",	QX_FLAG_STATIC,		bestups_preprocess_id_answer,	NULL },
-	{ "input.voltage.nominal",	0,	NULL,	"ID\r",	"",	28,	0,	"",	9,	11,	"%.0f",	QX_FLAG_STATIC,		bestups_preprocess_id_answer,	NULL },
-	{ "output.voltage.nominal",	0,	NULL,	"ID\r",	"",	28,	0,	"",	13,	15,	"%.0f",	QX_FLAG_STATIC,		bestups_preprocess_id_answer,	NULL },
-	{ "battery.voltage.low",	0,	NULL,	"ID\r",	"",	28,	0,	"",	17,	20,	"%.1f",	QX_FLAG_SEMI_STATIC,	bestups_preprocess_id_answer,	NULL },
-	{ "battery.voltage.high",	0,	NULL,	"ID\r",	"",	28,	0,	"",	22,	26,	"%.1f",	QX_FLAG_SEMI_STATIC,	bestups_preprocess_id_answer,	NULL },
+	{ "device.mfr",			0,	NULL,	"ID\r",	"",	28,	0,	"",	0,	2,	"%s",	QX_FLAG_STATIC,		NULL,	bestups_preprocess_id_answer,	bestups_manufacturer },
+	{ "device.model",		0,	NULL,	"ID\r",	"",	28,	0,	"",	0,	2,	"%s",	QX_FLAG_STATIC,		NULL,	bestups_preprocess_id_answer,	bestups_model },
+	{ "ups.power.nominal",		0,	NULL,	"ID\r",	"",	28,	0,	"",	4,	7,	"%.0f",	QX_FLAG_STATIC,		NULL,	bestups_preprocess_id_answer,	NULL },
+	{ "input.voltage.nominal",	0,	NULL,	"ID\r",	"",	28,	0,	"",	9,	11,	"%.0f",	QX_FLAG_STATIC,		NULL,	bestups_preprocess_id_answer,	NULL },
+	{ "output.voltage.nominal",	0,	NULL,	"ID\r",	"",	28,	0,	"",	13,	15,	"%.0f",	QX_FLAG_STATIC,		NULL,	bestups_preprocess_id_answer,	NULL },
+	{ "battery.voltage.low",	0,	NULL,	"ID\r",	"",	28,	0,	"",	17,	20,	"%.1f",	QX_FLAG_SEMI_STATIC,	NULL,	bestups_preprocess_id_answer,	NULL },
+	{ "battery.voltage.high",	0,	NULL,	"ID\r",	"",	28,	0,	"",	22,	26,	"%.1f",	QX_FLAG_SEMI_STATIC,	NULL,	bestups_preprocess_id_answer,	NULL },
 
 	/* Query UPS for battery runtime (not available on the Patriot Pro/Sola 320 model series)
 	 * > [RT\r]
@@ -139,7 +139,7 @@ static item_t	bestups_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.runtime",	0,	NULL,	"RT\r",	"",	4,	0,	"",	0,	2,	"%.0f",	 QX_FLAG_SKIP,	NULL,	bestups_batt_runtime },
+	{ "battery.runtime",	0,	NULL,	"RT\r",	"",	4,	0,	"",	0,	2,	"%.0f",	 QX_FLAG_SKIP,	NULL,	NULL,	bestups_batt_runtime },
 
 	/* Query UPS for number of battery packs (available only on the Axxium/Sola 620 model series)
 	 * > [BP?\r]
@@ -148,14 +148,14 @@ static item_t	bestups_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "battery.packs",	ST_FLAG_RW,	bestups_r_batt_packs,	"BP?\r",	"",	3,	0,	"",	0,	1,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	NULL,	bestups_batt_packs },
+	{ "battery.packs",	ST_FLAG_RW,	bestups_r_batt_packs,	"BP?\r",	"",	3,	0,	"",	0,	1,	"%d",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_SKIP,	NULL,	NULL,	bestups_batt_packs },
 
 	/* Set number of battery packs to n (integer, 0-5) (available only on the Axxium/Sola 620 model series)
 	 * > [BPn\r]
 	 * < []
 	 */
 
-	{ "battery.packs",	0,		bestups_r_batt_packs,	"BP%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,		NULL,	bestups_process_setvar },
+	{ "battery.packs",	0,		bestups_r_batt_packs,	"BP%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,		NULL,	NULL,	bestups_process_setvar },
 
 	/* Query UPS for shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059)
 	 * > [SS?\r]
@@ -164,14 +164,14 @@ static item_t	bestups_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "pins_shutdown_mode",	ST_FLAG_RW,	bestups_r_pins_shutdown_mode,	"SS?\r",	"",	2,	0,	"",	0,	0,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,			NULL,	bestups_get_pins_shutdown_mode },
+	{ "pins_shutdown_mode",	ST_FLAG_RW,	bestups_r_pins_shutdown_mode,	"SS?\r",	"",	2,	0,	"",	0,	0,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,			NULL,	NULL,	bestups_get_pins_shutdown_mode },
 
 	/* Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) to n (integer, 0-6)
 	 * > [SSn\r]
 	 * < []
 	 */
 
-	{ "pins_shutdown_mode",	0,		bestups_r_pins_shutdown_mode,	"SS%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,		NULL,	bestups_process_setvar },
+	{ "pins_shutdown_mode",	0,		bestups_r_pins_shutdown_mode,	"SS%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_NONUT | QX_FLAG_SKIP,		NULL,	NULL,	bestups_process_setvar },
 
 	/* Query UPS for voltage settings
 	 * > [M\r]
@@ -180,32 +180,32 @@ static item_t	bestups_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "input.transfer.low",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "input.transfer.boost.low",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "input.transfer.boost.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "input.voltage.nominal",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "output.voltage.nominal",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "input.transfer.trim.low",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "input.transfer.trim.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
-	{ "input.transfer.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.low",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.boost.low",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.boost.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "input.voltage.nominal",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "output.voltage.nominal",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.trim.low",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.trim.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
+	{ "input.transfer.high",	0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%d",	0,	NULL,	NULL,	bestups_voltage_settings },
 
 	/* Instant commands */
-	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
-	{ "shutdown.stayoff",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
-	{ "shutdown.stop",		0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "load.on",			0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "load.off",			0,	NULL,	"S00R0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "test.battery.start",		0,	NULL,	"T%02d\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
-	{ "test.battery.start.deep",	0,	NULL,	"TL\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
+	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	blazer_process_command },
+	{ "shutdown.stayoff",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	blazer_process_command },
+	{ "shutdown.stop",		0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "load.on",			0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "load.off",			0,	NULL,	"S00R0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "test.battery.start",		0,	NULL,	"T%02d\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	blazer_process_command },
+	{ "test.battery.start.deep",	0,	NULL,	"TL\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "test.battery.stop",		0,	NULL,	"CT\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
 
 	/* Server-side settable vars */
-	{ "ups.delay.start",		ST_FLAG_RW,	bestups_r_ondelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	blazer_process_setvar },
-	{ "ups.delay.shutdown",		ST_FLAG_RW,	bestups_r_offdelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	blazer_process_setvar },
+	{ "ups.delay.start",		ST_FLAG_RW,	bestups_r_ondelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	blazer_process_setvar },
+	{ "ups.delay.shutdown",		ST_FLAG_RW,	bestups_r_offdelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	blazer_process_setvar },
 
 	/* End of structure. */
-	{ NULL,		0,	NULL,	NULL,	"",	0,	0,	"",	0,	0,	NULL,	0,	NULL,	NULL }
+	{ NULL,		0,	NULL,	NULL,	"",	0,	0,	"",	0,	0,	NULL,	0,	NULL,	NULL,	NULL }
 };
 
 

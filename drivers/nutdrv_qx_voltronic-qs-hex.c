@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.04"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.05"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
@@ -70,7 +70,7 @@ static item_t	voltronic_qs_hex_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "ups.firmware.aux",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"PMV-%s",	QX_FLAG_STATIC,	NULL,	voltronic_qs_hex_protocol },
+	{ "ups.firmware.aux",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"PMV-%s",	QX_FLAG_STATIC,	NULL,	NULL,	voltronic_qs_hex_protocol },
 
 	/* Query UPS for status
 	 * > [QS\r]
@@ -79,36 +79,36 @@ static item_t	voltronic_qs_hex_qx2nut[] = {
 	 *    0         1         2         3         4
 	 */
 
-	{ "input.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	1,	7,	"%.1f",	0,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_input_output_voltage },
-	{ "output.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	9,	15,	"%.1f",	0,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_input_output_voltage },
-	{ "ups.load",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	17,	18,	"%d",	0,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_load },
-	{ "output.frequency",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	20,	30,	"%.1f",	0,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_frequency },
-	{ "battery.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	32,	36,	"%.2f",	0,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_battery_voltage },
+	{ "input.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	1,	7,	"%.1f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_input_output_voltage },
+	{ "output.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	9,	15,	"%.1f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_input_output_voltage },
+	{ "ups.load",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	17,	18,	"%d",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_load },
+	{ "output.frequency",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	20,	30,	"%.1f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_frequency },
+	{ "battery.voltage",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	32,	36,	"%.2f",	0,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	voltronic_qs_hex_battery_voltage },
 	/* Status bits */
-	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Utility Fail (Immediate) */
-	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	39,	39,	NULL,	QX_FLAG_QUICK_POLL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Battery Low */
-	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	40,	40,	NULL,	QX_FLAG_QUICK_POLL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Bypass/Boost or Buck Active */
-	{ "ups.alarm",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	41,	41,	NULL,	0,			voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* UPS Failed */
-	{ "ups.type",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	42,	42,	"%s",	QX_FLAG_STATIC,		voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* UPS Type */
-	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	43,	43,	NULL,	QX_FLAG_QUICK_POLL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Test in Progress */
-	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Shutdown Active */
-	{ "ups.beeper.status",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	45,	45,	"%s",	0,			voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Beeper status */
+	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	38,	38,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Utility Fail (Immediate) */
+	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	39,	39,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Battery Low */
+	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	40,	40,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Bypass/Boost or Buck Active */
+	{ "ups.alarm",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	41,	41,	NULL,	0,			NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* UPS Failed */
+	{ "ups.type",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	42,	42,	"%s",	QX_FLAG_STATIC,		NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* UPS Type */
+	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	43,	43,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Test in Progress */
+	{ "ups.status",			0,	NULL,	"QS\r",	"",	47,	'#',	"",	44,	44,	NULL,	QX_FLAG_QUICK_POLL,	NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Shutdown Active */
+	{ "ups.beeper.status",		0,	NULL,	"QS\r",	"",	47,	'#',	"",	45,	45,	"%s",	0,			NULL,	voltronic_qs_hex_preprocess_qs_answer,	blazer_process_status_bits },	/* Beeper status */
 
 	/* Instant commands */
-	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "load.off",			0,	NULL,	"S00R0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "load.on",			0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
-	{ "shutdown.stayoff",		0,	NULL,	"S%sR0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	blazer_process_command },
-	{ "shutdown.stop",		0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL },
-	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL,	NULL },
+	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "load.off",			0,	NULL,	"S00R0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "load.on",			0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "shutdown.return",		0,	NULL,	"S%s\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	blazer_process_command },
+	{ "shutdown.stayoff",		0,	NULL,	"S%sR0000\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	blazer_process_command },
+	{ "shutdown.stop",		0,	NULL,	"C\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
+	{ "test.battery.start.quick",	0,	NULL,	"T\r",		"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_CMD | QX_FLAG_SKIP,	NULL,	NULL,	NULL },
 
 	/* Server-side settable vars */
-	{ "ups.delay.start",		ST_FLAG_RW,	voltronic_qs_hex_r_ondelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	blazer_process_setvar },
-	{ "ups.delay.shutdown",		ST_FLAG_RW,	voltronic_qs_hex_r_offdelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	blazer_process_setvar },
+	{ "ups.delay.start",		ST_FLAG_RW,	voltronic_qs_hex_r_ondelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_ONDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	blazer_process_setvar },
+	{ "ups.delay.shutdown",		ST_FLAG_RW,	voltronic_qs_hex_r_offdelay,	NULL,	"",	0,	0,	"",	0,	0,	DEFAULT_OFFDELAY,	QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE,	NULL,	NULL,	blazer_process_setvar },
 
 	/* End of structure. */
-	{ NULL,				0,	NULL,	NULL,		"",	0,	0,	"",	0,	0,	NULL,	0,	NULL,	NULL }
+	{ NULL,				0,	NULL,	NULL,		"",	0,	0,	"",	0,	0,	NULL,	0,	NULL,	NULL,	NULL }
 };
 
 

@@ -137,6 +137,7 @@ typedef struct item_t {
 	const int	to;
 	const char	*dfl;
 	unsigned long	qxflags;
+	int		(*preprocess_command)(struct item_t *item, char *command, const size_t commandlen);
 	int		(*preprocess_answer)(struct item_t *item, const int len);
 	int		(*preprocess)(struct item_t *item, char *value, const size_t valuelen);
 } item_t;
@@ -245,6 +246,12 @@ If there's a problem with a var in +QX_WALKMODE_INIT+, the driver will automagic
 ====
 --
 
+*+preprocess_command(item, command, commandlen)+*::
+Last chance to preprocess the command to be sent to the UPS (e.g. to add CRC, ...).
+This function is given the currently processed item (+item+), the command to be sent to the UPS (+command+) and its size_t (+commandlen+).
+Return +-1+ in case of errors, else +0+.
++command+ must be filled with the actual command to be sent to the UPS.
+
 *+preprocess_answer(item, len)+*::
 Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...).
 This function is given the currently processed item (+item+) with the answer we got from the UPS unmolested and already stored in +item+'s +answer+ and the length of that answer (+len+).
@@ -290,7 +297,7 @@ We know that when the UPS is queried for status with +QGS\r+, it replies with so
 Here's the +item_t+:
 
 ----
-{ "output.voltage", 0, NULL, "QGS\r", "", 76, '(', "", 12, 16, "%.1f", 0, NULL, NULL },
+{ "output.voltage", 0, NULL, "QGS\r", "", 76, '(', "", 12, 16, "%.1f", 0, NULL, NULL, NULL },
 ----
 
 [horizontal]
@@ -333,6 +340,9 @@ Because of that we need to provide a floating point specifier.
 +qxflags+::
 +0+
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -355,7 +365,7 @@ Also from +QGS\r+, we want to process the 9th status bit +10000000+*`0`*+001+ th
 Here's the +item_t+:
 
 ----
-{ "ups.status", 0, NULL, "QGS\r", "", 76, '(', "", 71, 71, "%s", QX_FLAG_QUICK_POLL, NULL, voltronic_status },
+{ "ups.status", 0, NULL, "QGS\r", "", 76, '(', "", 71, 71, "%s", QX_FLAG_QUICK_POLL, NULL, NULL, voltronic_status },
 ----
 
 [horizontal]
@@ -398,6 +408,9 @@ Since a +preprocess+ function is defined for this item, this could have been +NU
 +QX_FLAG_QUICK_POLL+ -> this item will be polled every time the driver will check for updates.
 Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it an it'll set +datastale+.
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -423,7 +436,7 @@ Here's the +item_t+:
 
 ----
 { "battery.type", ST_FLAG_RW, voltronic_e_batt_type, "QBT\r", "", 4, '(', "", 1, 2, "%s",
-  QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM, NULL, voltronic_p31b },
+  QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM, NULL, NULL, voltronic_p31b },
 ----
 
 [horizontal]
@@ -469,6 +482,9 @@ Since a +preprocess+ function is defined for this item, this could have been +NU
 +
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -490,7 +506,7 @@ Here's the +item_t+:
 
 ----
 { "battery.type", 0, voltronic_e_batt_type, "PBT%02.0f\r", "", 5, '(', "", 1, 4, NULL,
-  QX_FLAG_SETVAR | QX_FLAG_ENUM, NULL, voltronic_p31b_set },
+  QX_FLAG_SETVAR | QX_FLAG_ENUM, NULL, NULL, voltronic_p31b_set },
 ----
 
 [horizontal]
@@ -534,6 +550,9 @@ Not used for +QX_FLAG_SETVAR+
 +
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -558,7 +577,7 @@ We know that we have to send to the UPS +Tnn\r+ or +T.n\r+ in order to start a b
 Here's the +item_t+:
 
 ----
-{ "test.battery.start", 0, NULL, "T%s\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_CMD, NULL, voltronic_process_command },
+{ "test.battery.start", 0, NULL, "T%s\r", "", 5, '(', "", 1, 4, NULL, QX_FLAG_CMD, NULL, NULL, voltronic_process_command },
 ----
 
 [horizontal]
@@ -598,6 +617,9 @@ Not used for +QX_FLAG_CMD+
 +qxflags+::
 +QX_FLAG_CMD+ -> this item is an instant command that will be fired when +info_type+ (i.e. +test.battery.start+) is called
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -614,7 +636,7 @@ In order to set the server-side var +ups.delay.start+, that will be then used by
 
 ----
 { "ups.delay.start", ST_FLAG_RW, voltronic_r_ondelay, NULL, "", 0, 0, "", 0, 0, "180",
-  QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE, NULL, voltronic_process_setvar },
+  QX_FLAG_ABSENT | QX_FLAG_SETVAR | QX_FLAG_RANGE, NULL, NULL, voltronic_process_setvar },
 ----
 
 [horizontal]
@@ -661,6 +683,9 @@ Not used for +QX_FLAG_ABSENT+
 +
 +QX_FLAG_RANGE+ -> this r/w variable has a settable range and its boundaries are listed in the +info_rw+ structure (i.e. +voltronic_r_ondelay+)
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -688,7 +713,7 @@ Here's the +item_t+ for input phase angle:
 
 ----
 { "input_phase_angle", 0, NULL, "QPD\r", "", 9,	'(', "", 1, 3, "%03.0f",
-  QX_FLAG_STATIC | QX_FLAG_NONUT, NULL, voltronic_phase },
+  QX_FLAG_STATIC | QX_FLAG_NONUT, NULL, NULL, voltronic_phase },
 ----
 
 [horizontal]
@@ -735,6 +760,9 @@ Here instead it's used by the +preprocess+ function.
 +
 +QX_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -747,7 +775,7 @@ Here's the +item_t+ for output phase angle:
 
 ----
 { "output_phase_angle", ST_FLAG_RW, voltronic_e_phase, "QPD\r",	"", 9, '(', "", 5, 7, "%03.0f",
-  QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, voltronic_phase },
+  QX_FLAG_SEMI_STATIC | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, NULL, voltronic_phase },
 ----
 
 [horizontal]
@@ -801,6 +829,9 @@ Here instead it's used by the +preprocess+ function.
 +
 +QX_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -827,7 +858,7 @@ Here's the +item_t+
 
 ----
 { "output_phase_angle", 0, voltronic_e_phase, "PPD%03.0f\r", "", 5, '(', "", 1, 4, NULL,
-  QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, voltronic_phase_set },
+  QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_NONUT, NULL, NULL, voltronic_phase_set },
 ----
 
 [horizontal]
@@ -877,6 +908,9 @@ Not used for +QX_FLAG_SETVAR+
 +
 +QX_FLAG_NONUT+ -> this item doesn't have yet a NUT variable
 
++preprocess_command+::
++NULL+
+
 +preprocess_answer+::
 +NULL+
 
@@ -905,7 +939,7 @@ Find an item of +item_t+ type in +qx2nut+ data structure by its +info_type+, opt
  - +noflag+: flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned.
 
 *+int	qx_process(item_t *item, const char *command)+*::
-Send +command+ or, if it is +NULL+, send the command stored in the +item+ to the UPS and process the reply.
+Send +command+ (a null-terminated byte string) or, if it is +NULL+, send the command stored in the +item+ to the UPS and process the reply.
 Return +-1+ on errors, +0+ on success.
 
 *+int	ups_infoval_set(item_t *item)+*::
