@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 #include "main.h"
 
@@ -2674,6 +2674,8 @@ int	qx_process(item_t *item, const char *command)
 		len = item->preprocess_answer(item, len);
 		if (len == -1) {
 			upsdebugx(4, "%s: failed to preprocess answer [%s]", __func__, item->info_type);
+			/* Clear answer, preventing it from being reused by next items with same command */
+			memset(item->answer, 0, sizeof(item->answer));
 			return -1;
 		}
 	}
