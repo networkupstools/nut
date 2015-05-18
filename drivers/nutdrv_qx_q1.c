@@ -35,7 +35,7 @@
 
 #include "nutdrv_qx_q1.h"
 
-#define Q1_VERSION "Q1 0.05"
+#define Q1_VERSION "Q1 0.06"
 
 /* qx2nut lookup table */
 static item_t	q1_qx2nut[] = {

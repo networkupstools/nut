@@ -24,7 +24,7 @@
 
 #include "nutdrv_qx_voltronic.h"
 
-#define VOLTRONIC_VERSION "Voltronic 0.03"
+#define VOLTRONIC_VERSION "Voltronic 0.04"
 
 /* Support functions */
 static int	voltronic_claim(void);
@@ -32,44 +32,44 @@ static void	voltronic_makevartable(void);
 static void	voltronic_massive_unskip(const int protocol);
 
 /* Range/enum functions */
-static int	voltronic_batt_low(char *value, size_t len);
-static int	voltronic_bypass_volt_max(char *value, size_t len);
-static int	voltronic_bypass_volt_min(char *value, size_t len);
-static int	voltronic_bypass_freq_max(char *value, size_t len);
-static int	voltronic_bypass_freq_min(char *value, size_t len);
-static int	voltronic_eco_freq_min(char *value, size_t len);
-static int	voltronic_eco_freq_max(char *value, size_t len);
+static int	voltronic_batt_low(char *value, const size_t len);
+static int	voltronic_bypass_volt_max(char *value, const size_t len);
+static int	voltronic_bypass_volt_min(char *value, const size_t len);
+static int	voltronic_bypass_freq_max(char *value, const size_t len);
+static int	voltronic_bypass_freq_min(char *value, const size_t len);
+static int	voltronic_eco_freq_min(char *value, const size_t len);
+static int	voltronic_eco_freq_max(char *value, const size_t len);
 
 /* Preprocess functions */
-static int	voltronic_process_setvar(item_t *item, char *value, size_t valuelen);
-static int	voltronic_process_command(item_t *item, char *value, size_t valuelen);
-static int	voltronic_capability(item_t *item, char *value, size_t valuelen);
-static int	voltronic_capability_set(item_t *item, char *value, size_t valuelen);
-static int	voltronic_capability_set_nonut(item_t *item, char *value, size_t valuelen);
-static int	voltronic_capability_reset(item_t *item, char *value, size_t valuelen);
-static int	voltronic_eco_volt(item_t *item, char *value, size_t valuelen);
-static int	voltronic_eco_volt_range(item_t *item, char *value, size_t valuelen);
-static int	voltronic_eco_freq(item_t *item, char *value, size_t valuelen);
-static int	voltronic_bypass(item_t *item, char *value, size_t valuelen);
-static int	voltronic_batt_numb(item_t *item, char *value, size_t valuelen);
-static int	voltronic_batt_runtime(item_t *item, char *value, size_t valuelen);
-static int	voltronic_protocol(item_t *item, char *value, size_t valuelen);
-static int	voltronic_fault(item_t *item, char *value, size_t valuelen);
-static int	voltronic_warning(item_t *item, char *value, size_t valuelen);
-static int	voltronic_mode(item_t *item, char *value, size_t valuelen);
-static int	voltronic_status(item_t *item, char *value, size_t valuelen);
-static int	voltronic_output_powerfactor(item_t *item, char *value, size_t valuelen);
-static int	voltronic_serial_numb(item_t *item, char *value, size_t valuelen);
-static int	voltronic_outlet(item_t *item, char *value, size_t valuelen);
-static int	voltronic_outlet_delay(item_t *item, char *value, size_t valuelen);
-static int	voltronic_outlet_delay_set(item_t *item, char *value, size_t valuelen);
-static int	voltronic_p31b(item_t *item, char *value, size_t valuelen);
-static int	voltronic_p31b_set(item_t *item, char *value, size_t valuelen);
-static int	voltronic_p31g(item_t *item, char *value, size_t valuelen);
-static int	voltronic_p31g_set(item_t *item, char *value, size_t valuelen);
-static int	voltronic_phase(item_t *item, char *value, size_t valuelen);
-static int	voltronic_phase_set(item_t *item, char *value, size_t valuelen);
-static int	voltronic_parallel(item_t *item, char *value, size_t valuelen);
+static int	voltronic_process_setvar(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_process_command(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_capability(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_capability_set(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_capability_set_nonut(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_capability_reset(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_eco_volt_range(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_eco_freq(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_bypass(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_batt_numb(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_batt_runtime(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_fault(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_warning(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_mode(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_status(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_output_powerfactor(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_serial_numb(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_outlet(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_outlet_delay(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_p31b(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_p31g(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_phase(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_phase_set(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_parallel(item_t *item, char *value, const size_t valuelen);
 
 /* Capability vars */
 static char	*bypass_alarm,
@@ -129,7 +129,7 @@ static info_rw_t	voltronic_r_batt_low[] = {
 };
 
 /* Preprocess range value for battery low voltage */
-static int	voltronic_batt_low(char *value, size_t len)
+static int	voltronic_batt_low(char *value, const size_t len)
 {
 	int		val = strtol(value, NULL, 10);
 	const char	*ovn = dstate_getinfo("output.voltage.nominal"),
@@ -209,7 +209,7 @@ static info_rw_t	voltronic_r_bypass_volt_max[] = {
 };
 
 /* Preprocess range value for Bypass Mode maximum voltage */
-static int	voltronic_bypass_volt_max(char *value, size_t len)
+static int	voltronic_bypass_volt_max(char *value, const size_t len)
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
@@ -363,7 +363,7 @@ static info_rw_t	voltronic_r_bypass_volt_min[] = {
 };
 
 /* Preprocess range value for Bypass Mode minimum voltage */
-static int	voltronic_bypass_volt_min(char *value, size_t len)
+static int	voltronic_bypass_volt_min(char *value, const size_t len)
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
@@ -509,7 +509,7 @@ static info_rw_t	voltronic_r_bypass_freq_max[] = {
 };
 
 /* Preprocess range value for Bypass Mode maximum frequency */
-static int	voltronic_bypass_freq_max(char *value, size_t len)
+static int	voltronic_bypass_freq_max(char *value, const size_t len)
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -607,7 +607,7 @@ static info_rw_t	voltronic_r_bypass_freq_min[] = {
 };
 
 /* Preprocess range value for Bypass Mode minimum frequency */
-static int	voltronic_bypass_freq_min(char *value, size_t len)
+static int	voltronic_bypass_freq_min(char *value, const size_t len)
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -721,7 +721,7 @@ static info_rw_t	voltronic_r_eco_freq_min[] = {
 };
 
 /* Preprocess range value for ECO Mode minimum frequency */
-static int	voltronic_eco_freq_min(char *value, size_t len)
+static int	voltronic_eco_freq_min(char *value, const size_t len)
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -841,7 +841,7 @@ static info_rw_t	voltronic_r_eco_freq_max[] = {
 };
 
 /* Preprocess range value for ECO Mode maximum frequency */
-static int	voltronic_eco_freq_max(char *value, size_t len)
+static int	voltronic_eco_freq_max(char *value, const size_t len)
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -1843,7 +1843,7 @@ static void	voltronic_massive_unskip(const int protocol)
 /* == Preprocess functions == */
 
 /* *SETVAR(/NONUT)* Preprocess setvars */
-static int	voltronic_process_setvar(item_t *item, char *value, size_t valuelen)
+static int	voltronic_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
@@ -1917,7 +1917,7 @@ static int	voltronic_process_setvar(item_t *item, char *value, size_t valuelen)
 }
 
 /* *CMD* Preprocess instant commands */
-static int	voltronic_process_command(item_t *item, char *value, size_t valuelen)
+static int	voltronic_process_command(item_t *item, char *value, const size_t valuelen)
 {
 	char	buf[SMALLBUF] = "";
 
@@ -2049,7 +2049,7 @@ static int	voltronic_process_command(item_t *item, char *value, size_t valuelen)
 }
 
 /* UPS capabilities */
-static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
+static int	voltronic_capability(item_t *item, char *value, const size_t valuelen)
 {
 	char	rawval[SMALLBUF], *enabled, *disabled, *val = NULL, *saveptr = NULL;
 	item_t	*unskip;
@@ -2377,7 +2377,7 @@ static int	voltronic_capability(item_t *item, char *value, size_t valuelen)
 }
 
 /* *SETVAR* Set UPS capability options */
-static int	voltronic_capability_set(item_t *item, char *value, size_t valuelen)
+static int	voltronic_capability_set(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strcasecmp(value, "yes")) {
 		snprintf(value, valuelen, item->command, "E");
@@ -2396,7 +2396,7 @@ static int	voltronic_capability_set(item_t *item, char *value, size_t valuelen)
 }
 
 /* *SETVAR/NONUT* Change UPS capability according to user configuration in ups.conf */
-static int	voltronic_capability_set_nonut(item_t *item, char *value, size_t valuelen)
+static int	voltronic_capability_set_nonut(item_t *item, char *value, const size_t valuelen)
 {
 	const char	*match = NULL;
 	int		i;
@@ -2454,7 +2454,7 @@ static int	voltronic_capability_set_nonut(item_t *item, char *value, size_t valu
 }
 
 /* *SETVAR/NONUT* Reset capability options and their limits to safe default values */
-static int	voltronic_capability_reset(item_t *item, char *value, size_t valuelen)
+static int	voltronic_capability_reset(item_t *item, char *value, const size_t valuelen)
 {
 	/* Nothing to do */
 	if (!testvar("reset_to_default"))
@@ -2472,7 +2472,7 @@ static int	voltronic_capability_reset(item_t *item, char *value, size_t valuelen
 }
 
 /* Voltage limits for ECO Mode */
-static int	voltronic_eco_volt(item_t *item, char *value, size_t valuelen)
+static int	voltronic_eco_volt(item_t *item, char *value, const size_t valuelen)
 {
 	const int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 	int		ovn;
@@ -2595,7 +2595,7 @@ static int	voltronic_eco_volt(item_t *item, char *value, size_t valuelen)
 }
 
 /* Voltage limits for ECO Mode (max, min) */
-static int	voltronic_eco_volt_range(item_t *item, char *value, size_t valuelen)
+static int	voltronic_eco_volt_range(item_t *item, char *value, const size_t valuelen)
 {
 	char	*buf;
 	int	i;
@@ -2644,7 +2644,7 @@ static int	voltronic_eco_volt_range(item_t *item, char *value, size_t valuelen)
 }
 
 /* Frequency limits for ECO Mode */
-static int	voltronic_eco_freq(item_t *item, char *value, size_t valuelen)
+static int	voltronic_eco_freq(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
 
@@ -2668,7 +2668,7 @@ static int	voltronic_eco_freq(item_t *item, char *value, size_t valuelen)
 }
 
 /* *NONUT* Voltage/frequency limits for Bypass Mode */
-static int	voltronic_bypass(item_t *item, char *value, size_t valuelen)
+static int	voltronic_bypass(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
 	double	val;
@@ -2720,7 +2720,7 @@ static int	voltronic_bypass(item_t *item, char *value, size_t valuelen)
 }
 
 /* *NONUT* Number of batteries */
-static int	voltronic_batt_numb(item_t *item, char *value, size_t valuelen)
+static int	voltronic_batt_numb(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
 
@@ -2750,7 +2750,7 @@ static int	voltronic_batt_numb(item_t *item, char *value, size_t valuelen)
 }
 
 /* Battery runtime */
-static int	voltronic_batt_runtime(item_t *item, char *value, size_t valuelen)
+static int	voltronic_batt_runtime(item_t *item, char *value, const size_t valuelen)
 {
 	double	runtime;
 
@@ -2768,7 +2768,7 @@ static int	voltronic_batt_runtime(item_t *item, char *value, size_t valuelen)
 }
 
 /* Protocol used by the UPS */
-static int	voltronic_protocol(item_t *item, char *value, size_t valuelen)
+static int	voltronic_protocol(item_t *item, char *value, const size_t valuelen)
 {
 	int	protocol;
 
@@ -2818,7 +2818,7 @@ static int	voltronic_protocol(item_t *item, char *value, size_t valuelen)
 
 /* Fault reported by the UPS:
  * When the UPS is queried for status (QGS), if it reports a fault (6th bit of 12bit flag of the reply to QGS set to 1), the driver unskips the QFS item in qx2nut array: this function processes the reply to QFS query */
-static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
+static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 {
 	int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
@@ -3185,7 +3185,7 @@ static int	voltronic_fault(item_t *item, char *value, size_t valuelen)
 }
 
 /* Warnings reported by the UPS */
-static int	voltronic_warning(item_t *item, char *value, size_t valuelen)
+static int	voltronic_warning(item_t *item, char *value, const size_t valuelen)
 {
 	char	warn[SMALLBUF] = "", unk[SMALLBUF] = "", bitwarns[SMALLBUF] = "", warns[4096] = "";
 	int	i;
@@ -3591,7 +3591,7 @@ static int	voltronic_warning(item_t *item, char *value, size_t valuelen)
 }
 
 /* Working mode reported by the UPS */
-static int	voltronic_mode(item_t *item, char *value, size_t valuelen)
+static int	voltronic_mode(item_t *item, char *value, const size_t valuelen)
 {
 	char	*status = NULL, *alarm = NULL;
 
@@ -3669,7 +3669,7 @@ static int	voltronic_mode(item_t *item, char *value, size_t valuelen)
 }
 
 /* Process status bits */
-static int	voltronic_status(item_t *item, char *value, size_t valuelen)
+static int	voltronic_status(item_t *item, char *value, const size_t valuelen)
 {
 	char	*val = "";
 
@@ -3845,7 +3845,7 @@ static int	voltronic_status(item_t *item, char *value, size_t valuelen)
 }
 
 /* Output power factor */
-static int	voltronic_output_powerfactor(item_t *item, char *value, size_t valuelen)
+static int	voltronic_output_powerfactor(item_t *item, char *value, const size_t valuelen)
 {
 	double	opf;
 
@@ -3863,7 +3863,7 @@ static int	voltronic_output_powerfactor(item_t *item, char *value, size_t valuel
 }
 
 /* UPS serial number */
-static int	voltronic_serial_numb(item_t *item, char *value, size_t valuelen)
+static int	voltronic_serial_numb(item_t *item, char *value, const size_t valuelen)
 {
 	/* If the UPS report a 00..0 serial we'll log it but we won't store it in device.serial */
 	if (strspn(item->value, "0") == strlen(item->value)) {
@@ -3876,7 +3876,7 @@ static int	voltronic_serial_numb(item_t *item, char *value, size_t valuelen)
 }
 
 /* Outlet status */
-static int	voltronic_outlet(item_t *item, char *value, size_t valuelen)
+static int	voltronic_outlet(item_t *item, char *value, const size_t valuelen)
 {
 	const char	*status, *switchable;
 	char		number = item->info_type[7],
@@ -3956,7 +3956,7 @@ static int	voltronic_outlet(item_t *item, char *value, size_t valuelen)
 }
 
 /* Outlet delay time */
-static int	voltronic_outlet_delay(item_t *item, char *value, size_t valuelen)
+static int	voltronic_outlet_delay(item_t *item, char *value, const size_t valuelen)
 {
 	char	number = item->info_type[7],
 		buf[SMALLBUF];
@@ -3988,7 +3988,7 @@ static int	voltronic_outlet_delay(item_t *item, char *value, size_t valuelen)
 }
 
 /* *SETVAR* Outlet delay time */
-static int	voltronic_outlet_delay_set(item_t *item, char *value, size_t valuelen)
+static int	voltronic_outlet_delay_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	delay = strtol(value, NULL, 10);
 
@@ -4001,7 +4001,7 @@ static int	voltronic_outlet_delay_set(item_t *item, char *value, size_t valuelen
 }
 
 /* Type of battery */
-static int	voltronic_p31b(item_t *item, char *value, size_t valuelen)
+static int	voltronic_p31b(item_t *item, char *value, const size_t valuelen)
 {
 	int	val;
 
@@ -4020,7 +4020,7 @@ static int	voltronic_p31b(item_t *item, char *value, size_t valuelen)
 }
 
 /* *SETVAR* Type of battery */
-static int	voltronic_p31b_set(item_t *item, char *value, size_t valuelen)
+static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
@@ -4043,7 +4043,7 @@ static int	voltronic_p31b_set(item_t *item, char *value, size_t valuelen)
 }
 
 /* *NONUT* Actual device grid working range type for P31 UPSes */
-static int	voltronic_p31g(item_t *item, char *value, size_t valuelen)
+static int	voltronic_p31g(item_t *item, char *value, const size_t valuelen)
 {
 	int	val;
 
@@ -4063,7 +4063,7 @@ static int	voltronic_p31g(item_t *item, char *value, size_t valuelen)
 }
 
 /* *SETVAR/NONUT* Device grid working range type for P31 UPSes */
-static int	voltronic_p31g_set(item_t *item, char *value, size_t valuelen)
+static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
@@ -4091,7 +4091,7 @@ static int	voltronic_p31g_set(item_t *item, char *value, size_t valuelen)
 }
 
 /* *NONUT* UPS actual input/output phase angles */
-static int	voltronic_phase(item_t *item, char *value, size_t valuelen)
+static int	voltronic_phase(item_t *item, char *value, const size_t valuelen)
 {
 	int	angle;
 
@@ -4130,7 +4130,7 @@ static int	voltronic_phase(item_t *item, char *value, size_t valuelen)
 }
 
 /* *SETVAR/NONUT* Output phase angle */
-static int	voltronic_phase_set(item_t *item, char *value, size_t valuelen)
+static int	voltronic_phase_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
@@ -4158,7 +4158,7 @@ static int	voltronic_phase_set(item_t *item, char *value, size_t valuelen)
 }
 
 /* *NONUT* UPS is master/slave in a system of UPSes in parallel */
-static int	voltronic_parallel(item_t *item, char *value, size_t valuelen)
+static int	voltronic_parallel(item_t *item, char *value, const size_t valuelen)
 {
 	char	*type;
 

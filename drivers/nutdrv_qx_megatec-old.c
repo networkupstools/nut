@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_megatec-old.h"
 
-#define MEGATEC_OLD_VERSION "Megatec/old 0.05"
+#define MEGATEC_OLD_VERSION "Megatec/old 0.06"
 
 /* qx2nut lookup table */
 static item_t	megatec_old_qx2nut[] = {

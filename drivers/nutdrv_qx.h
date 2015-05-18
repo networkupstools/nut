@@ -53,9 +53,9 @@ typedef int bool_t;
 
 /* Structure for rw vars */
 typedef struct {
-	char	value[SMALLBUF];			/* Value for enum/range, or length for ST_FLAG_STRING */
-	int	(*preprocess)(char *value, size_t len);	/* Optional function to preprocess range/enum value.
-							 * This function will be given value and its size_t and must return either 0 if value is supported or -1 if not supported. */
+	char	value[SMALLBUF];				/* Value for enum/range, or length for ST_FLAG_STRING */
+	int	(*preprocess)(char *value, const size_t len);	/* Optional function to preprocess range/enum value.
+								 * This function will be given value and its size_t and must return either 0 if value is supported or -1 if not supported. */
 } info_rw_t;
 
 /* Structure containing information about how to get/set data from/to the UPS and convert these to/from NUT standard */
@@ -88,11 +88,13 @@ typedef struct item_t {
 
 	unsigned long	qxflags;		/* Driver's own flags */
 
-	int		(*preprocess_answer)(struct item_t *item, const int len);	/* Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...)
+	int		(*preprocess_answer)(struct item_t *item, const int len);
+						/* Function to preprocess the answer we got from the UPS before we do anything else (e.g. for CRC, decoding, ...)
 						 * This function is given the currently processed item (item) with the answer we got from the UPS unmolested and already stored in item->answer and the length of that answer (len).
 						 * Return -1 in case of errors, else the length of the newly allocated item->answer (from now on, treated as a null-terminated string). */
 
-	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);	/* Function to preprocess the data from/to the UPS
+	int		(*preprocess)(struct item_t *item, char *value, const size_t valuelen);
+						/* Function to preprocess the data from/to the UPS
 						 * This function is given the currently processed item (item), a char array (value) and its size_t (valuelen).
 						 * Return -1 in case of errors, else 0.
 						 * If QX_FLAG_SETVAR/QX_FLAG_CMD -> process command before it is sent: value must be filled with the command to be sent to the UPS.

@@ -33,9 +33,9 @@ int	blazer_claim(void);
 int	blazer_claim_light(void);
 
 /* Preprocess functions */
-int	blazer_process_command(item_t *item, char *value, size_t valuelen);
-int	blazer_process_setvar(item_t *item, char *value, size_t valuelen);
-int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen);
+int	blazer_process_command(item_t *item, char *value, const size_t valuelen);
+int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen);
+int	blazer_process_status_bits(item_t *item, char *value, const size_t valuelen);
 
 /* Ranges */
 extern info_rw_t	blazer_r_ondelay[];

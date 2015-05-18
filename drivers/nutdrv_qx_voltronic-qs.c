@@ -25,14 +25,14 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.04"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.05"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
 static void	voltronic_qs_initups(void);
 
 /* Preprocess functions */
-static int	voltronic_qs_protocol(item_t *item, char *value, size_t valuelen);
+static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuelen);
 
 
 /* == Ranges == */
@@ -189,7 +189,7 @@ static void	voltronic_qs_initups(void)
 /* == Preprocess functions == */
 
 /* Protocol used by the UPS */
-static int	voltronic_qs_protocol(item_t *item, char *value, size_t valuelen)
+static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuelen)
 {
 	if (strcasecmp(item->value, "V")) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);

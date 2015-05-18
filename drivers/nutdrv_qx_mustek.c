@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_mustek.h"
 
-#define MUSTEK_VERSION "Mustek 0.05"
+#define MUSTEK_VERSION "Mustek 0.06"
 
 /* qx2nut lookup table */
 static item_t	mustek_qx2nut[] = {

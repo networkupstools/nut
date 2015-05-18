@@ -138,7 +138,7 @@ typedef struct item_t {
 	const char	*dfl;
 	unsigned long	qxflags;
 	int		(*preprocess_answer)(struct item_t *item, const int len);
-	int		(*preprocess)(struct item_t *item, char *value, size_t valuelen);
+	int		(*preprocess)(struct item_t *item, char *value, const size_t valuelen);
 } item_t;
 ----
 
@@ -166,7 +166,7 @@ NOTE: If +QX_FLAG_SETVAR+ is set the value given by the user will be checked aga
 ----
 typedef struct {
 	char	value[SMALLBUF];
-	int	(*preprocess)(char *value, size_t len);
+	int	(*preprocess)(char *value, const size_t len);
 } info_rw_t;
 ----
 

@@ -189,7 +189,7 @@ void	blazer_initups_light(item_t *qx2nut)
 /* == Preprocess functions == */
 
 /* Preprocess setvars */
-int	blazer_process_setvar(item_t *item, char *value, size_t valuelen)
+int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
@@ -229,7 +229,7 @@ int	blazer_process_setvar(item_t *item, char *value, size_t valuelen)
 }
 
 /* Preprocess instant commands */
-int	blazer_process_command(item_t *item, char *value, size_t valuelen)
+int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
@@ -307,7 +307,7 @@ int	blazer_process_command(item_t *item, char *value, size_t valuelen)
 }
 
 /* Process status bits */
-int	blazer_process_status_bits(item_t *item, char *value, size_t valuelen)
+int	blazer_process_status_bits(item_t *item, char *value, const size_t valuelen)
 {
 	char	*val = "";
 

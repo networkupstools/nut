@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_zinto.h"
 
-#define ZINTO_VERSION "Zinto 0.04"
+#define ZINTO_VERSION "Zinto 0.05"
 
 /* qx2nut lookup table */
 static item_t	zinto_qx2nut[] = {

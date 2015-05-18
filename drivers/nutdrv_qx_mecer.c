@@ -25,15 +25,15 @@
 
 #include "nutdrv_qx_mecer.h"
 
-#define MECER_VERSION "Mecer 0.05"
+#define MECER_VERSION "Mecer 0.06"
 
 /* Support functions */
 static int	mecer_claim(void);
 static void	mecer_initups(void);
 
 /* Preprocess functions */
-static int	voltronic_p98_protocol(item_t *item, char *value, size_t valuelen);
-static int	mecer_process_test_battery(item_t *item, char *value, size_t valuelen);
+static int	voltronic_p98_protocol(item_t *item, char *value, const size_t valuelen);
+static int	mecer_process_test_battery(item_t *item, char *value, const size_t valuelen);
 
 
 /* == qx2nut lookup table == */
@@ -208,7 +208,7 @@ static void	mecer_initups(void)
 /* == Preprocess functions == */
 
 /* Protocol used by the UPS */
-static int	voltronic_p98_protocol(item_t *item, char *value, size_t valuelen)
+static int	voltronic_p98_protocol(item_t *item, char *value, const size_t valuelen)
 {
 	if (strcasecmp(item->value, "PI98")) {
 		upslogx(LOG_ERR, "Protocol [%s] is not supported by this driver", item->value);
@@ -221,7 +221,7 @@ static int	voltronic_p98_protocol(item_t *item, char *value, size_t valuelen)
 }
 
 /* *CMD* Preprocess 'test.battery.start' instant command */
-static int	mecer_process_test_battery(item_t *item, char *value, size_t valuelen)
+static int	mecer_process_test_battery(item_t *item, char *value, const size_t valuelen)
 {
 	const char	*protocol = dstate_getinfo("ups.firmware.aux");
 	char		buf[SMALLBUF] = "";

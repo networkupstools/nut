@@ -29,7 +29,7 @@
 
 #include "nutdrv_qx_bestups.h"
 
-#define BESTUPS_VERSION "BestUPS 0.04"
+#define BESTUPS_VERSION "BestUPS 0.05"
 
 /* Support functions */
 static int	bestups_claim(void);
@@ -40,14 +40,14 @@ static void	bestups_makevartable(void);
 static int	bestups_preprocess_id_answer(item_t *item, const int len);
 
 /* Preprocess functions */
-static int	bestups_process_setvar(item_t *item, char *value, size_t valuelen);
-static int	bestups_process_bbb_status_bit(item_t *item, char *value, size_t valuelen);
-static int	bestups_manufacturer(item_t *item, char *value, size_t valuelen);
-static int	bestups_model(item_t *item, char *value, size_t valuelen);
-static int	bestups_batt_runtime(item_t *item, char *value, size_t valuelen);
-static int	bestups_batt_packs(item_t *item, char *value, size_t valuelen);
-static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, size_t valuelen);
-static int	bestups_voltage_settings(item_t *item, char *value, size_t valuelen);
+static int	bestups_process_setvar(item_t *item, char *value, const size_t valuelen);
+static int	bestups_process_bbb_status_bit(item_t *item, char *value, const size_t valuelen);
+static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen);
+static int	bestups_model(item_t *item, char *value, const size_t valuelen);
+static int	bestups_batt_runtime(item_t *item, char *value, const size_t valuelen);
+static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen);
+static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_t valuelen);
+static int	bestups_voltage_settings(item_t *item, char *value, const size_t valuelen);
 
 /* ups.conf settings */
 static int	pins_shutdown_mode;
@@ -354,7 +354,7 @@ static int	bestups_preprocess_id_answer(item_t *item, const int len)
 /* == Preprocess functions == */
 
 /* *SETVAR(/NONUT)* Preprocess setvars */
-static int	bestups_process_setvar(item_t *item, char *value, size_t valuelen)
+static int	bestups_process_setvar(item_t *item, char *value, const size_t valuelen)
 {
 	if (!strlen(value)) {
 		upsdebugx(2, "%s: value not given for %s", __func__, item->info_type);
@@ -378,7 +378,7 @@ static int	bestups_process_setvar(item_t *item, char *value, size_t valuelen)
 }
 
 /* Bypass/Boost or Buck status */
-static int	bestups_process_bbb_status_bit(item_t *item, char *value, size_t valuelen)
+static int	bestups_process_bbb_status_bit(item_t *item, char *value, const size_t valuelen)
 {
 	/* Bypass/Boost/Buck bit is not reliable when a battery test, shutdown or on battery condition occurs: always ignore it in these cases */
 	if (!(qx_status() & STATUS(OL)) || (qx_status() & (STATUS(CAL) | STATUS(FSD)))) {
@@ -405,7 +405,7 @@ static int	bestups_process_bbb_status_bit(item_t *item, char *value, size_t valu
 }
 
 /* Identify UPS manufacturer */
-static int	bestups_manufacturer(item_t *item, char *value, size_t valuelen)
+static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen)
 {
 	/* Best Power devices */
 	if (
@@ -435,7 +435,7 @@ static int	bestups_manufacturer(item_t *item, char *value, size_t valuelen)
 }
 
 /* Identify UPS model and unskip qx2nut table's items accordingly */
-static int	bestups_model(item_t *item, char *value, size_t valuelen)
+static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
 
@@ -514,7 +514,7 @@ static int	bestups_model(item_t *item, char *value, size_t valuelen)
 }
 
 /* Battery runtime */
-static int	bestups_batt_runtime(item_t *item, char *value, size_t valuelen)
+static int	bestups_batt_runtime(item_t *item, char *value, const size_t valuelen)
 {
 	double	runtime;
 
@@ -532,7 +532,7 @@ static int	bestups_batt_runtime(item_t *item, char *value, size_t valuelen)
 }
 
 /* Battery packs */
-static int	bestups_batt_packs(item_t *item, char *value, size_t valuelen)
+static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
 
@@ -556,7 +556,7 @@ static int	bestups_batt_packs(item_t *item, char *value, size_t valuelen)
 }
 
 /* *NONUT* Get shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) as set in the UPS */
-static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, size_t valuelen)
+static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
 
@@ -586,7 +586,7 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, size_t valu
 }
 
 /* Voltage settings */
-static int	bestups_voltage_settings(item_t *item, char *value, size_t valuelen)
+static int	bestups_voltage_settings(item_t *item, char *value, const size_t valuelen)
 {
 	int		index, val;
 	const char	*nominal_voltage;
