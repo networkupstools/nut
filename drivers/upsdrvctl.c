@@ -47,9 +47,9 @@ static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 	 * "partial failures".
 	 * If 1 driver, among multiple, fails to execute command, or at only
 	 * worst 1 driver among multiple succeed to execute command, upsdrvctl
-	 * will exit with error code '2', so that init systems (such as
-	 * systemd) can have a different consideration of full Vs partial
-	 * failures, to continue the startup sequence */
+	 * will exit with error code '2' (EXIT_FAILURE + 1), so that init
+	 * systems (such as systemd) can have a different consideration of
+	 * full Vs partial failures, to continue the startup sequence */
 static int	nbdevices = 0;
 
 	/* timer - keeps us from getting stuck if a driver hangs */
