@@ -93,6 +93,11 @@ while performing the desired operation.  This will also happen if a
 driver takes longer than the 'maxstartdelay' period to enter the
 background.
 
+More specifically, upsdrvctl will return '1' if all requested actions
+have failed, and '2' (EXIT_FAILURE + 1) if it is only a partial failure.
+As an example, upon calling *upsdrvctl start* for 2 drivers, and 1 fails
+to start, upsdrvctl will exit with the code '2'. 
+
 SEE ALSO
 --------
 linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]

@@ -7,4 +7,5 @@ StopWhenUnneeded=yes
 ExecStart=@SBINDIR@/upsdrvctl start
 ExecStop=@SBINDIR@/upsdrvctl stop
 Type=forking
-
+# Consider partial failures as possibly normal
+SuccessExitStatus=2

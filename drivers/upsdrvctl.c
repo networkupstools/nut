@@ -1,6 +1,7 @@
 /* upsdrvctl.c - UPS driver controller
 
    Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+                 2015  Arnaud Quette <ArnaudQuette@Eaton.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -41,6 +42,15 @@ typedef struct {
 static ups_t	*upstable = NULL;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
+
+	/* Number of device(s) we send command to, in order to check for
+	 * "partial failures".
+	 * If 1 driver, among multiple, fails to execute command, or at only
+	 * worst 1 driver among multiple succeed to execute command, upsdrvctl
+	 * will exit with error code '2', so that init systems (such as
+	 * systemd) can have a different consideration of full Vs partial
+	 * failures, to continue the startup sequence */
+static int	nbdevices = 0;
 
 	/* timer - keeps us from getting stuck if a driver hangs */
 static int	maxstartdelay = 45;
@@ -378,6 +388,7 @@ static void send_one_driver(void (*command)(const ups_t *), const char *upsname)
 
 	while (ups) {
 		if (!strcmp(ups->upsname, upsname)) {
+			nbdevices++;
 			command(ups);
 			return;
 		}
@@ -401,6 +412,8 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		ups = upstable;
 
 		while (ups) {
+			nbdevices++;
+
 			command(ups);
 
 			ups = ups->next;
@@ -524,7 +537,15 @@ int main(int argc, char **argv)
 	else
 		send_one_driver(command, argv[1]);
 
-	if (exec_error)
+	upsdebugx(1, "exec_error = %i for a total of %i driver(s)",
+		exec_error, nbdevices);
+
+	if (exec_error < nbdevices) {
+		upsdebugx(1, "Partial execution failure! Exiting with code %i",
+			(EXIT_FAILURE + 1));
+		exit(EXIT_FAILURE + 1);
+	}
+	else
 		exit(EXIT_FAILURE);
 
 	exit(EXIT_SUCCESS);
