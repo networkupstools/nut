@@ -1,6 +1,5 @@
-/* scan_avahi.c: detect NUT avahi services
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file scan_avahi.c
+    \brief detect NUT through Avahi mDNS / DNS-SD services
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
+
 #include "common.h"
 #include "nut-scan.h"
 

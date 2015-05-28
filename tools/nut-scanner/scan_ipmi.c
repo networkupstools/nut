@@ -1,5 +1,4 @@
-/* scan_ipmi.c: detect NUT supported Power Supply Units
- * 
+/*
  *  Copyright (C)
  *    2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
  *
@@ -17,6 +16,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file scan_ipmi.c
+    \brief detect NUT supported Power Supply Units
+    \author Arnaud Quette <arnaud.quette@free.fr>
+*/
+
 #include "common.h"
 #include "nut-scan.h"
 

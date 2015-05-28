@@ -1,6 +1,5 @@
-/* scan_xml_http.c: detect NUT supported XML HTTP devices
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file scan_xml_http.c
+    \brief detect NUT supported XML HTTP devices
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
 
 #include "common.h"
 #include "nut-scan.h"
