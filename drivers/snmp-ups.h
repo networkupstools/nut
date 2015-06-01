@@ -174,6 +174,8 @@ typedef struct {
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
+#define SU_VAR_RETRIES		"snmp_retries"
+#define SU_VAR_TIMEOUT		"snmp_timeout"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */

@@ -4,6 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
+ *	2015		Arnaud Quette <ArnaudQuette@Eaton.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -100,7 +101,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.72"
+#define DRIVER_VERSION		"0.73"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -240,6 +241,10 @@ void upsdrv_makevartable(void)
 		"Set SNMP version (default=v1, allowed v2c)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
+	addvar(VAR_VALUE, SU_VAR_RETRIES,
+		"Specifies the number of Net-SNMP retries to be used in the requests (default=5)");
+	addvar(VAR_VALUE, SU_VAR_TIMEOUT,
+		"Specifies the Net-SNMP timeout in seconds between retries (default=1)");
 	addvar(VAR_FLAG, "notransferoids",
 		"Disable transfer OIDs (use on APCC Symmetras)");
 	addvar(VAR_VALUE, SU_VAR_SECLEVEL,
@@ -325,6 +330,8 @@ void nut_snmp_init(const char *type, const char *hostname)
 	const char *community, *version;
 	const char *secLevel = NULL, *authPassword, *privPassword;
 	const char *authProtocol, *privProtocol;
+	int snmp_retries = SNMP_DEFAULT_RETRIES;
+	long snmp_timeout = SNMP_DEFAULT_TIMEOUT;
 
 	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s)", type);
 
@@ -343,6 +350,20 @@ void nut_snmp_init(const char *type, const char *hostname)
 
 	g_snmp_sess.peername = xstrdup(hostname);
 
+	/* Net-SNMP timeout and retries */
+	if (testvar(SU_VAR_RETRIES)) {
+		snmp_retries = atoi(getval(SU_VAR_RETRIES));
+		upsdebugx(2, "Setting SNMP retries to %i", snmp_retries);
+	}
+	g_snmp_sess.retries = snmp_retries;
+
+	if (testvar(SU_VAR_TIMEOUT)) {
+		snmp_timeout = atol(getval(SU_VAR_TIMEOUT));
+		upsdebugx(2, "Setting SNMP timeout to %ld", snmp_timeout);
+	}
+	/* We have to convert from seconds to microseconds */
+	g_snmp_sess.timeout = snmp_timeout * ONE_SEC;
+		
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
 	

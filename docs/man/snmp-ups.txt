@@ -70,6 +70,12 @@ Note that a RW community name is required to change UPS settings (as for a power
 *snmp_version*='version'::
 Set SNMP version (default = v1, allowed: v2c, v3)
 
+*snmp_retries*='retries'::
+Specifies the number of Net-SNMP retries to be used in the requests (default=5)
+
+*snmp_timeout*='timeout'::
+Specifies the Net-SNMP timeout in seconds between retries (default=1)
+
 *pollfreq*='value'::
 Set polling frequency in seconds, to reduce network flow (default=30)
 
