@@ -31,6 +31,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "config.h"
+#include "common.h"
 
 /* For testing purposes */
 /*#define TESTING*/

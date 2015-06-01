@@ -22,6 +22,7 @@
 #ifndef STATE_H_SEEN
 #define STATE_H_SEEN
 
+#include <stdlib.h>
 #include "extstate.h"
 
 #ifdef __cplusplus
