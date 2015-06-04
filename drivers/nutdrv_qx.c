@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 #include "main.h"
 
@@ -2642,6 +2642,12 @@ static int	qx_process_answer(item_t *item, const int len)
 	/* Wrong leading character */
 	if (item->leading && item->answer[0] != item->leading) {
 		upsdebugx(2, "%s: %s - invalid start character [%02x], expected [%02x]", __func__, item->info_type, item->answer[0], item->leading);
+		return -1;
+	}
+
+	/* Check boundaries */
+	if (item->to && item->to < item->from) {
+		upsdebugx(1, "%s: in %s, starting char's position (%d) follows ending char's one (%d)", __func__, item->info_type, item->from, item->to);
 		return -1;
 	}
 
