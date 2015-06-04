@@ -1056,7 +1056,7 @@ static USBDeviceMatcher_t	device_matcher = {
 
 /* == Driver functions implementations == */
 
-/* Process instant command and take action. */
+/* See header file for details. */
 int	instcmd(const char *cmdname, const char *extradata)
 {
 	item_t	*item;
@@ -1180,7 +1180,7 @@ int	instcmd(const char *cmdname, const char *extradata)
 	return STAT_INSTCMD_HANDLED;
 }
 
-/* Set r/w variable to a value. */
+/* See header file for details. */
 int	setvar(const char *varname, const char *val)
 {
 	item_t		*item;
@@ -2168,7 +2168,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 #endif	/* TESTING */
 }
 
-/* Update ups_status to remember this status item.
+/* See header file for details.
  * Interpretation is done in ups_status_set(). */
 void	update_status(const char *value)
 {
@@ -2600,9 +2600,7 @@ static void	ups_status_set(void)
 	}
 }
 
-/* Find element definition in qx2nut array by NUT varname optionally filtered by its qxflags:
- *  - 'flag': flags that have to be set in the item, i.e. if one of the flags is absent in the item it won't be returned
- *  - 'noflag': flags that have to be absent in the item, i.e. if at least one of the flags is set in the item it won't be returned */
+/* See header file for details. */
 item_t	*find_nut_info(const char *varname, const unsigned long flag, const unsigned long noflag)
 {
 	item_t	*item;
@@ -2657,8 +2655,7 @@ static int	qx_process_answer(item_t *item, const int len)
 	return 0;
 }
 
-/* Send the command to the UPS and process the reply.
- * Return -1 on errors, 0 on success */
+/* See header file for details. */
 int	qx_process(item_t *item, const char *command)
 {
 	char	buf[sizeof(item->answer) - 1] = "",
@@ -2699,10 +2696,7 @@ int	qx_process(item_t *item, const char *command)
 	return qx_process_answer(item, len);
 }
 
-/* Process the value we got back (set status bits and set the value of other parameters) and execute:
- * - item-specific preprocessing, if any, otherwise
- * - the standard preprocessing (including trimming if QX_FLAG_TRIM is set).
- * Return -1 on failure, 0 for a status update and 1 in all other cases */
+/* See header file for details. */
 int	ups_infoval_set(item_t *item)
 {
 	char	value[SMALLBUF] = "";
@@ -2771,7 +2765,7 @@ int	ups_infoval_set(item_t *item)
 	return 1;
 }
 
-/* Return actual status */
+/* See header file for details. */
 int	qx_status(void)
 {
 	return ups_status;
