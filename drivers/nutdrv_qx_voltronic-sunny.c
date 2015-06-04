@@ -545,6 +545,13 @@ static info_rw_t	voltronic_sunny_r_grid_in_avg_volt_max[] = {
 	{ "", 0 }
 };
 
+/* Range for grid power deviation */
+static info_rw_t	voltronic_sunny_r_grid_power_deviation[] = {
+	{ "0", 0 },
+	{ "999", 0 },
+	{ "", 0 }
+};
+
 /* Range for power factor */
 static info_rw_t	voltronic_sunny_r_output_powerfactor[] = {	/* FIXME: 1. nutdrv_qx setvar+RANGE doesn't support negative values; 2. values should be divided by 100 */
 	{ "-99", 0 },
@@ -1088,6 +1095,15 @@ static item_t	voltronic_sunny_qx2nut[] = {
 	{ "battery.charging.restartvoltage",		0,				voltronic_sunny_r_bc_v_restart,		"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_charger_limits_set },
 	{ "battery.charging.timethreshold",		0,				voltronic_sunny_r_bc_time_threshold,	"OFFC%04.1f %04.1f %03.0f\r",	"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_charger_limits_set },
 
+	/* Query device for MaxAcChargingCurrent (P16 only)	TODO: update with real device data	FIXME
+	 * > [QACCHC\r]
+	 * < [(??\r]
+	 *    0
+	 *    0
+	 */
+
+/*	{ "battery.charging.current.ac.high",		0,				NULL,					"QACCHC\r",			"",	2,	'(',	"",	1,	0,	"%s",			QX_FLAG_STATIC,							NULL,				NULL,					NULL },	*/
+
 	/* Query device for battery-discharging limits (P16 only)
 	 * > [QBSDV\r]
 	 * < [(48.0 48.0 48.0 49.4\r]
@@ -1286,6 +1302,35 @@ static item_t	voltronic_sunny_qx2nut[] = {
 	 */
 
 	{ "grid.input.voltage.avg.max",			0,				voltronic_sunny_r_grid_in_avg_volt_max,	"GLTHV%03.0f\r",		"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_process_setvar },
+
+	/* Query device for liFe flag (P16 only)	FIXME
+	 * liFeSign = (splitArray[1] > 0) ? true : false
+	 * > [QEBGP\r]
+	 * < [(+000 00\r]|
+	 *    012345678
+	 *    0
+	 */
+
+	{ "grid.power.deviation", 			ST_FLAG_RW,			voltronic_sunny_r_grid_power_deviation,	"QEBGP\r",			"",	9,	'(',	"",	2,	4,	"%.0f",			QX_FLAG_RANGE | QX_FLAG_SEMI_STATIC,				NULL, 				voltronic_sunny_checkcrc,		voltronic_sunny_unskip_setvar },
+	{ "battery.isLiFe", 				ST_FLAG_RW,			voltronic_sunny_e_cap,			"QEBGP\r",			"",	9,	'(',	"",	7,	7,	"%s",			QX_FLAG_ENUM | QX_FLAG_SEMI_STATIC,				NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_01 },
+
+	/* Set grid power deviation (P16 only)	FIXME
+	 * > [ABGP<n>\r]
+	 * < [(ACK\r]
+	 *    01234
+	 *    0
+	 */
+
+	{ "grid.power.deviation",			0,				voltronic_sunny_r_grid_power_deviation,	"ABGP%+04.0f\r",		"",	5,	'(',	"",	1,	3,	"%d",			QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_process_setvar },
+
+	/* Set whether a LiFePo battery is connected or not (P16 only)	FIXME
+	 * > [LBF<n>\r]
+	 * < [(ACK\r]
+	 *    01234
+	 *    0
+	 */
+
+	{ "battery.isLiFe",				0,				voltronic_sunny_e_cap,			"LBF%d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_01_set },
 
 	/*#######################################################################################################################################################################################################################################################################################################################################################################################################################################*/
 
@@ -1714,6 +1759,7 @@ static testing_t	voltronic_sunny_testing[] = {
 	{ "BCHGV15.1\r",		"(ACK\r",																	-1 },
 	{ "QOFFC\r",			"(00.0 53.0 060\r",																-1 },
 	{ "OFFC10.1 10.2 103\r",	"(ACK\r",																	-1 },
+	{ "QACCHC\r",			"(??\r",																	-1 },	/* TODO: update with real device data */
 	{ "QBSDV\r",			"(48.0 48.0 48.0 49.4\r",															-1 },
 	{ "BSDV47.9 47.9\r",		"(ACK\r",																	-1 },
 	{ "DSUBV10.3 10.4\r",		"(ACK\r",																	-1 },
@@ -1739,6 +1785,9 @@ static testing_t	voltronic_sunny_testing[] = {
 	{ "LDT0730 1945\r",		"(ACK\r",																	-1 },
 	{ "QGLTV\r",			"(253 ---\r",																	-1 },
 	{ "GLTHV044\r",			"(ACK\r",																	-1 },
+	{ "QEBGP\r",			"(+000 00\r",																	-1 },
+	{ "ABGP+010\r",			"(ACK\r",																	-1 },	/* TODO: update with real device data */
+	{ "LBF1\r",			"(ACK\r",																	-1 },	/* TODO: update with real device data */
 	/*###############################################################################################################################################################################################*/
 	{ "QOPF\r",			"(100\r",																	-1 },
 	{ "SOPF+090\r",			"(ACK\r",																	-1 },
