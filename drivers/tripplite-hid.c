@@ -29,7 +29,7 @@
 #include "tripplite-hid.h"
 #include "usb-common.h"
 
-#define TRIPPLITE_HID_VERSION "TrippLite HID 0.81"
+#define TRIPPLITE_HID_VERSION "TrippLite HID 0.82"
 /* FIXME: experimental flag to be put in upsdrv_info */
 
 
@@ -279,7 +279,7 @@ static hid_info_t tripplite_hid2nut[] = {
 #endif /* USBHID_UPS_TRIPPLITE_DEBUG */
 
 	/* Device page */
-	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%.0f", 0, stringid_conversion },
+	{ "device.part", 0, 0, "UPS.TLCustom.[1].iUPSPartNumber", NULL, "%s", HU_FLAG_STATIC, stringid_conversion },
 
 	/* Battery page */
 	{ "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
