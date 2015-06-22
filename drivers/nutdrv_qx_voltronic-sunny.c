@@ -1415,8 +1415,8 @@ static item_t	voltronic_sunny_qx2nut[] = {
 	 *    0         1
 	 */
 
-	{ "device.date",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_date,			"QT\r",				"",	16,	'(',	"",	1,	8,	"%04d/%02d/%02d",	QX_FLAG_SEMI_STATIC,						NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_date },
-	{ "device.time",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_time,			"QT\r",				"",	16,	'(',	"",	9,	14,	"%02d:%02d:%02d",	QX_FLAG_SEMI_STATIC,						NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_time },
+	{ "device.date",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_date,			"QT\r",				"",	16,	'(',	"",	1,	8,	"%04d/%02d/%02d",	0,								NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_date },
+	{ "device.time",				ST_FLAG_RW | ST_FLAG_STRING,	voltronic_sunny_l_time,			"QT\r",				"",	16,	'(',	"",	9,	14,	"%02d:%02d:%02d",	0,								NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_time },
 
 	/* Set device date/time
 	 * > [DAT<time>\r]	<time>: YYMMDDhhmmss
