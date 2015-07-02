@@ -753,7 +753,7 @@ void upsdrv_makevartable(void)
 void upsdrv_updateinfo(void)
 {
 	hid_info_t	*item;
-	HIDData_t	*event[MAX_EVENT_NUM];
+	HIDData_t	*event[MAX_EVENT_NUM], *found_data;
 	int		i, evtCount;
 	double		value;
 	time_t		now;
@@ -826,7 +826,15 @@ void upsdrv_updateinfo(void)
 		}
 
 		/* Skip Input reports, if we don't use the Feature report */
-		item = find_hid_info(FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE));
+		found_data = FindObject_with_Path(pDesc, &(event[i]->Path), interrupt_only ? ITEM_INPUT:ITEM_FEATURE);
+                if(!found_data && !interrupt_only) {
+			found_data = FindObject_with_Path(pDesc, &(event[i]->Path), ITEM_INPUT);
+		}
+		if(!found_data) {
+			upsdebugx(2, "Could not find event as either ITEM_INPUT or ITEM_FEATURE?");
+			continue;
+		}
+		item = find_hid_info(found_data);
 		if (!item) {
 			upsdebugx(3, "NUT doesn't use this HID object");
 			continue;
@@ -1480,6 +1488,11 @@ static hid_info_t *find_nut_info(const char *varname)
 static hid_info_t *find_hid_info(const HIDData_t *hiddata)
 {
 	hid_info_t *hidups_item;
+
+	if(!hiddata) {
+		upsdebugx(2, "%s: hiddata == NULL", __func__);
+		return NULL;
+	}
 
 	for (hidups_item = subdriver->hid2nut; hidups_item->info_type != NULL ; hidups_item++) {
 
