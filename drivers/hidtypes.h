@@ -5,6 +5,7 @@
  *
  * Copyright (C)
  *	1998-2003	MGE UPS SYSTEMS, Luc Descotils
+ *	2015		Eaton, Arnaud Quette (Update MAX_REPORT)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,11 +39,11 @@ extern "C" {
 /*
  * Constants
  * -------------------------------------------------------------------------- */
-#define PATH_SIZE		10	/* Deep max for Path					*/
-#define USAGE_TAB_SIZE		50	/* Size of usage stack					*/
-#define MAX_REPORT		300	/* Including FEATURE, INPUT and OUTPUT			*/
-#define REPORT_DSC_SIZE		6144	/* Size max of Report Descriptor			*/
-#define MAX_REPORT_TS		3	/* Max time validity of a report			*/
+#define PATH_SIZE         10   /* Deep max for Path                   */
+#define USAGE_TAB_SIZE    50   /* Size of usage stack                 */
+#define MAX_REPORT        50  /* Including FEATURE, INPUT and OUTPUT */
+#define REPORT_DSC_SIZE   6144 /* Size max of Report Descriptor       */
+#define MAX_REPORT_TS     3    /* Max time validity of a report       */
 
 /*
  * Items
