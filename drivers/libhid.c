@@ -287,6 +287,8 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 		return;
 	}
 
+	upsdebugx(1, "%i HID objects found", pDesc->nitems);
+
 	for (i = 0; i < pDesc->nitems; i++)
 	{
 		double		value;
