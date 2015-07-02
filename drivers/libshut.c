@@ -41,7 +41,7 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"
-#define SHUT_DRIVER_VERSION	"0.84"
+#define SHUT_DRIVER_VERSION	"0.85"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -300,6 +300,10 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
 	int		rdlen;
+	/* All devices use HID descriptor at index 0. However, some newer
+	 * Eaton units have a light HID descriptor at index 0, and the full
+	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
+	int hid_desc_index = 0;
 
 	upsdebugx(2, "libshut_open: using port %s", device_path);
 
@@ -361,6 +365,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	curDevice->VendorID = dev_descriptor->idVendor;
 	curDevice->ProductID = dev_descriptor->idProduct;
 	curDevice->Bus = strdup("serial");
+	curDevice->bcdDevice = dev_descriptor->bcdDevice;
 	curDevice->Vendor = strdup("Eaton");
 	if (dev_descriptor->iManufacturer) {
 		ret = shut_get_string_simple(*upsfd, dev_descriptor->iManufacturer,
@@ -400,11 +405,17 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	upsdebugx(2, "- Product: %s", curDevice->Product);
 	upsdebugx(2, "- Serial Number: %s", curDevice->Serial);
 	upsdebugx(2, "- Bus: %s", curDevice->Bus);
+	upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 	upsdebugx(2, "Device matches");
+
+	if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
+			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+			hid_desc_index = 1;
+	}
 
 	/* Get HID descriptor */
 	desc = (struct my_hid_descriptor *)buf;
-	res = shut_get_descriptor(*upsfd, USB_DT_HID, 0, buf, 0x9);
+	res = shut_get_descriptor(*upsfd, USB_DT_HID, hid_desc_index, buf, 0x9);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_HID << 8) + 0, 0, buf, 0x9, SHUT_TIMEOUT); */
 
@@ -437,7 +448,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	}
 
 	/* Get REPORT descriptor */
-	res = shut_get_descriptor(*upsfd, USB_DT_REPORT, 0, rdbuf, rdlen);
+	res = shut_get_descriptor(*upsfd, USB_DT_REPORT, hid_desc_index, rdbuf, rdlen);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
 				(USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
 			desc->wDescriptorLength, SHUT_TIMEOUT); */

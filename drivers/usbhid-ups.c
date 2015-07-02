@@ -27,7 +27,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.39"
+#define DRIVER_VERSION		"0.40"
 
 #include "main.h"
 #include "libhid.h"

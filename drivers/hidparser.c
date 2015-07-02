@@ -27,11 +27,8 @@
 
 #include "config.h"
 #include "hidparser.h"
-#include "nut_stdint.h"		/* for int8_t, int16_t, int32_t */
-
-/* to be implemented for DEBUG purpose */
-/* previously: #define ERROR(x) if(x) __asm { int 3 }; */
-#define ERROR(x)
+#include "nut_stdint.h"  /* for int8_t, int16_t, int32_t */
+#include "common.h"      /* for fatalx() */
 
 static const uint8_t ItemSize[4] = { 0, 1, 2, 4 };
 
@@ -175,7 +172,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			memcpy(&pParser->Value, &pParser->ReportDesc[pParser->Pos], ItemSize[pParser->Item & SIZE_MASK]);
 #endif
 			/* Pos on next item */
-      			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
+			pParser->Pos += ItemSize[pParser->Item & SIZE_MASK];
 		}
 
 		switch (pParser->Item & ITEM_MASK)
@@ -249,7 +246,7 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 			if(pParser->Count == 0) {
 				pParser->Count = pParser->ReportCount;
 			}
-			
+
 			/* Get UPage/Usage from UsageTab and store them in pParser->Data.Path */
 			pParser->Data.Path.Node[pParser->Data.Path.Size] = pParser->UsageTab[0];
 			pParser->Data.Path.Size++;
@@ -341,10 +338,14 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		}
 	} /* while ((Found < 0) && (pParser->Pos < pParser->ReportDescSize)) */
 
-	ERROR(pParser->Data.Path.Size >= PATH_SIZE);
-	ERROR(pParser->ReportDescSize >= REPORT_DSC_SIZE);
-	ERROR(pParser->UsageSize >= USAGE_TAB_SIZE);
-	ERROR(pParser->Data.ReportID >= MAX_REPORT);
+	if(pParser->Data.Path.Size >= PATH_SIZE)
+		upslogx(LOG_ERR, "%s: HID path too long", __func__);
+	if(pParser->ReportDescSize >= REPORT_DSC_SIZE)
+		upslogx(LOG_ERR, "%s: Report descriptor too big", __func__);
+	if(pParser->UsageSize >= USAGE_TAB_SIZE)
+		upslogx(LOG_ERR, "%s: HID Usage too high", __func__);
+	if(pParser->Data.ReportID >= MAX_REPORT)
+		upslogx(LOG_ERR, "%s: Too many HID reports", __func__);
 
 	return Found;
 }
@@ -593,6 +594,11 @@ HIDDesc_t *Parse_ReportDesc(const unsigned char *ReportDesc, const int n)
 			pDesc->replen[id] = max;
 		}
 	}
+
+	/* Sanity check: are there remaining HID objects that can't
+	 * be processed? */
+	if ((pDesc->nitems == MAX_REPORT) && (parser->Pos < parser->ReportDescSize))
+		upslogx(LOG_ERR, "ERROR in %s: Too many HID objects", __func__);
 
 	free(parser);
 

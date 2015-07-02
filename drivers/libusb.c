@@ -34,7 +34,7 @@
 #include "libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver"
-#define USB_DRIVER_VERSION	"0.32"
+#define USB_DRIVER_VERSION	"0.33"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -154,6 +154,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	unsigned char *p;
 	char string[256];
 	int i;
+	/* All devices use HID descriptor at index 0. However, some newer
+	 * Eaton units have a light HID descriptor at index 0, and the full
+	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
+	int hid_desc_index = 0;
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
@@ -199,6 +203,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
 			curDevice->Bus = strdup(bus->dirname);
+			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
@@ -230,6 +235,11 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 			upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
 			upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+			upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
+
+			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
+				hid_desc_index = 1;
+			}
 
 			upsdebugx(2, "Trying to match device");
 			for (m = matcher; m; m=m->next) {
@@ -293,9 +303,9 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			/* Get HID descriptor */
 
 			/* FIRST METHOD: ask for HID descriptor directly. */
-			/* res = usb_get_descriptor(udev, USB_DT_HID, 0, buf, 0x9); */
+			/* res = usb_get_descriptor(udev, USB_DT_HID, hid_desc_index, buf, 0x9); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-					      (USB_DT_HID << 8) + 0, 0, buf, 0x9, USB_TIMEOUT);
+					      (USB_DT_HID << 8) + hid_desc_index, 0, buf, 0x9, USB_TIMEOUT);
 
 			if (res < 0) {
 				upsdebugx(2, "Unable to get HID descriptor (%s)", usb_strerror());
@@ -311,6 +321,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			if (rdlen1 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 1 failed");
 			}
+			upsdebugx(3, "HID descriptor length (method 1) %d", rdlen1);
 
 			/* SECOND METHOD: find HID descriptor among "extra" bytes of
 			   interface descriptor, i.e., bytes tucked onto the end of
@@ -336,12 +347,19 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			if (rdlen2 < -1) {
 				upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 			}
+			upsdebugx(3, "HID descriptor length (method 2) %d", rdlen2);
 
 			/* when available, always choose the second value, as it
 				seems to be more reliable (it is the one reported e.g. by
 				lsusb). Note: if the need arises, can change this to use
 				the maximum of the two values instead. */
-			rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
+				upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+				rdlen = rdlen1;
+			}
+			else {
+				rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
+			}
 
 			if (rdlen < 0) {
 				upsdebugx(2, "Unable to retrieve any HID descriptor");
@@ -358,9 +376,9 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				goto next_device;
 			}
 
-			/* res = usb_get_descriptor(udev, USB_DT_REPORT, 0, bigbuf, rdlen); */
+			/* res = usb_get_descriptor(udev, USB_DT_REPORT, hid_desc_index, bigbuf, rdlen); */
 			res = usb_control_msg(udev, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-				(USB_DT_REPORT << 8) + 0, 0, rdbuf, rdlen, USB_TIMEOUT);
+				(USB_DT_REPORT << 8) + hid_desc_index, 0, rdbuf, rdlen, USB_TIMEOUT);
 
 			if (res < 0)
 			{
