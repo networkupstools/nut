@@ -192,23 +192,11 @@ int	common_voltronic_crc_calc_and_add_m(char *input, const size_t inputlen)
 }
 
 /* See header file for details */
-int	common_voltronic_crc_validate(const char *input, const size_t len)
-{
-	/* Check CRC */
-
-	/* Fail */
-	if (common_voltronic_crc_compute(input, len))
-		return -1;
-
-	/* Success */
-	return 0;
-}
-
-/* See header file for details */
 int	common_voltronic_crc_check(const char *input, const size_t inputlen)
 {
-	char	*cr = memchr(input, '\r', inputlen);
-	size_t	len;
+	unsigned short	crc, crc_MSB, crc_LSB;
+	char		*cr = memchr(input, '\r', inputlen);
+	size_t		len;
 
 	/* No CR, fall back to string length (and hope *input* doesn't contain inner '\0's) */
 	if (cr == NULL)
@@ -220,10 +208,16 @@ int	common_voltronic_crc_check(const char *input, const size_t inputlen)
 	if (len < 3)
 		return -1;
 
-	/* Check CRC */
+	/* Compute CRC */
+	crc = common_voltronic_crc_compute(input, len - 2);
+	crc_MSB = (crc >> 8) & 0xff;
+	crc_LSB = crc & 0xff;
 
 	/* Fail */
-	if (common_voltronic_crc_compute(input, len))
+	if (
+		crc_MSB != (unsigned char)input[len - 2] ||
+		crc_LSB != (unsigned char)input[len - 1]
+	)
 		return -1;
 
 	/* Success */

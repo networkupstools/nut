@@ -76,12 +76,6 @@ int	common_voltronic_crc_calc_and_add(const char *input, const size_t inputlen, 
  * - the number of bytes that make up the modified *input*, on success. */
 int	common_voltronic_crc_calc_and_add_m(char *input, const size_t inputlen);
 
-/* Check CRC of *len* bytes of *input*.
- * Return:
- * - -1, on failure (i.e: *input* not CRC-validated);
- * - 0, on success (i.e.: *input* successfully validated). */
-int	common_voltronic_crc_validate(const char *input, const size_t len);
-
 /* Check *input* (of max size *inputlen*) CRC.
  * Please note that *input* must be:
  * - at least 3 bytes long (not counting the optional trailing CR and the terminating '\0' byte);
