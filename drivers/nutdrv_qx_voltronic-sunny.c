@@ -798,7 +798,7 @@ static item_t	voltronic_sunny_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "grid.voltage.nominal",			0,				voltronic_sunny_e_volt_nom,		"V%03.0f\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_volt_nom_set },
+	{ "grid.voltage.nominal",			0,				voltronic_sunny_e_volt_nom,		"V%03d\r",			"",	5,	'(',	"",	1,	3,	NULL,			QX_FLAG_SETVAR | QX_FLAG_ENUM | QX_FLAG_SKIP,			NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_volt_nom_set },
 
 	/* Set nominal frequency (P16 only)
 	 * > [F<n>\r]
