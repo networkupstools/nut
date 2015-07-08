@@ -218,6 +218,7 @@ subdrivers are written.:
 - netvision-mib.c/h
 - powerware-mib.c/h
 - raritan-pdu-mib.c
+- huawei-mib.c/h
 
 To help you, above each entry in <LDRIVER>-mib.c, there is a comment that
 displays the textual OID name. For example, the following entry:

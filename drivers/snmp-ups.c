@@ -49,6 +49,7 @@
 #include "bestpower-mib.h"
 #include "cyberpower-mib.h"
 #include "delta_ups-mib.h"
+#include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
 
@@ -73,7 +74,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&bestpower,
 	&cyberpower,
 	&delta_ups,
-        &xppc,
+	&xppc,
+	&huawei,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
