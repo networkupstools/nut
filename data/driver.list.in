@@ -351,6 +351,7 @@
 "Fideltronik"	"ups"	"1"	"Ares 700 and larger"	""	"genericups upstype=6"
 "Fideltronik"	"ups"	"2"	"LUPUS 500"	"USB"	"nutdrv_qx"
 "Fideltronik"	"ups"	"1"	"Other Ares models"	""	"genericups upstype=19"
+"Fideltronik INIGO"	"ups"	"2"	"Viper 1200"	"USB"	"nutdrv_qx" # http://fideltronikinigo.com/viper/viper-1200/
 
 "Fiskars"	"ups"	"4"	"PowerRite MAX"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"PowerServer 10"	""	"upscode2"
