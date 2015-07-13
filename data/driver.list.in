@@ -74,6 +74,7 @@
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"3"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
+"APC" "ups" "3" "Connect to APCUPSD daemon"  ""  "apcupsd-ups" 
 
 "Aphel"	"pdu"	"3"	"various PDU"	""	"snmp-ups (experimental)"
 
