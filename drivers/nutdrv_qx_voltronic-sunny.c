@@ -96,6 +96,7 @@ static int	voltronic_sunny_time(item_t *item, char *value, const size_t valuelen
 static int	voltronic_sunny_time_set(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_process_sign(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_status(item_t *item, char *value, const size_t valuelen);
+static int	voltronic_sunny_inverter_direction(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_warning(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_mode(item_t *item, char *value, const size_t valuelen);
 static int	voltronic_sunny_batt_runtime(item_t *item, char *value, const size_t valuelen);
@@ -1419,7 +1420,7 @@ static item_t	voltronic_sunny_qx2nut[] = {
 /*	{ "unknown.?",					0,				NULL,					"QPIGS\r",			"",	134,	'(',	"",	126,	126,	"%s",			0,								NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_status },	*/
 	{ "ups.status",					0,				NULL,					"QPIGS\r",			"",	134,	'(',	"",	127,	127,	"%s",			QX_FLAG_QUICK_POLL,						NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_status },	/* FIXME: should be "device.status" */
 	{ "ups.status",					0,				NULL,					"QPIGS\r",			"",	134,	'(',	"",	128,	129,	"%s",			QX_FLAG_QUICK_POLL,						NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_status },	/* FIXME: should be "battery.status" or "device.status" */
-	{ "inverter.direction",				0,				NULL,					"QPIGS\r",			"",	134,	'(',	"",	130,	130,	"%s",			0,								NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_status },
+	{ "inverter.direction",				0,				NULL,					"QPIGS\r",			"",	134,	'(',	"",	130,	130,	"%s",			0,								NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_inverter_direction },
 	{ "line.direction",				0,				NULL,					"QPIGS\r",			"",	134,	'(',	"",	131,	132,	"%s",			0,								NULL,				voltronic_sunny_checkcrc,		voltronic_sunny_status },
 
 	/* Query device for warnings and their type
@@ -3579,12 +3580,6 @@ static int	voltronic_sunny_status(item_t *item, char *value, const size_t valuel
 			}
 		}
 		break;
-	case 130:	/* Inverter direction */
-		if (item->value[0] == '0')	/* 0 -> DC-to-AC */
-			val = "DC-to-AC";
-		else				/* 1 -> AC-to-DC */
-			val = "AC-to-DC";
-		break;
 	case 131:	/* Line direction */
 		{
 			int	direction = strtol(item->value, NULL, 10);
@@ -3603,6 +3598,35 @@ static int	voltronic_sunny_status(item_t *item, char *value, const size_t valuel
 		break;
 	default:
 		/* Don't know what happened */
+		return -1;
+	}
+
+	snprintf(value, valuelen, "%s", val);
+
+	return 0;
+}
+
+/* Inverter direction */
+static int	voltronic_sunny_inverter_direction(item_t *item, char *value, const size_t valuelen)
+{
+	char	*val = "";
+
+	switch (item->value[0])
+	{
+	case '0':	/* 0 -> DC-to-AC */
+		val = "DC-to-AC";
+		break;
+	case '1':	/* 1 -> AC-to-DC */
+		val = "AC-to-DC";
+		break;
+	case '2':	/* 2 -> ?? */	/* FIXME */
+		val = "unknown";
+		break;
+	case '-':	/* - -> not supported */
+		upsdebugx(2, "%s: option '%s' not supported", __func__, item->info_type);
+		return -1;
+	default:
+		upsdebugx(2, "%s: unexpected value [%s: %s]", __func__, item->info_type, item->value);
 		return -1;
 	}
 
