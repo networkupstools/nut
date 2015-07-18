@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 #include "main.h"
 
@@ -799,9 +799,11 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
-	if (!strcasecmp(buf, "UPS No Ack"))
-		/* ..because of that, always return 0 (as if it was a timeout): queries will see it as a failure, instant commands ('megatec' protocol) as a success */
+	if (!strcasecmp(buf, "UPS No Ack")) {
+		/* ..because of that, always return 0 (with buf empty, as if it was a timeout): queries will see it as a failure, instant commands ('megatec' protocol) as a success */
+		memset(buf, 0, buflen);
 		return 0;
+	}
 
 	return ret;
 }
