@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.22"
+#define DRIVER_VERSION	"0.23"
 
 #include "main.h"
 
@@ -693,7 +693,10 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 			}
 
 			/* "UPS No Ack" has a special meaning */
-			if (!strcasecmp(buf, "UPS No Ack")) {
+			if (
+				strcspn(buf, "\r") == 10 &&
+				!strncasecmp(buf, "UPS No Ack", 10)
+			) {
 				upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 				continue;
 			}
@@ -799,7 +802,10 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
 
 	/* The UPS always replies "UPS No Ack" when a supported command is issued (either if it fails or if it succeeds).. */
-	if (!strcasecmp(buf, "UPS No Ack")) {
+	if (
+		strcspn(buf, "\r") == 10 &&
+		!strncasecmp(buf, "UPS No Ack", 10)
+	) {
 		/* ..because of that, always return 0 (with buf empty, as if it was a timeout): queries will see it as a failure, instant commands ('megatec' protocol) as a success */
 		memset(buf, 0, buflen);
 		return 0;
