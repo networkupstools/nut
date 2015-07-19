@@ -93,7 +93,7 @@
 "ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
 "ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
 
-"ASEM SPA"  "UPS"   "5" "PB1300 UPS"    "i2c"   "asem"
+"ASEM SPA"	"ups"	"5"	"PB1300 UPS"	"i2c"	"asem"
 
 "ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"
@@ -242,8 +242,8 @@
 "Dell"	"ups"	"5"	"Rack 3750W High Efficiency Online HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 4200W High Efficiency Online HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 5600W HV"	"USB port"	"usbhid-ups"
-"Dell"	"ups"	"5"	"Various (SNMP mode)"	"UPS Network Management Card "	"snmp-ups"
-"Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card "	"netxml-ups (experimental)"
+"Dell"	"ups"	"5"	"Various (SNMP mode)"	"UPS Network Management Card"	"snmp-ups"
+"Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card"	"netxml-ups (experimental)"
 
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
 
@@ -415,7 +415,7 @@
 "HP"	"ups"	"3"	"R/T 2200 G2"	""	"usbhid-ups"
 "HP"	"ups"	"3"	"R/T3000"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"3"	"R5000 / R7000"	"USB port"	"usbhid-ups"
-"HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module "	"snmp-ups"
+"HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
@@ -714,7 +714,7 @@
 "Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"PowerMust 424 / 636 / 848"	"USB"	"blazer_usb"
-"Mustek"	"ups"	"2"	"Yukai PowerMust" "1000 USB (PID: 5161)"	"blazer_usb"
+"Mustek"	"ups"	"2"	"Yukai PowerMust"	"1000 USB (PID: 5161)"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
