@@ -125,7 +125,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME		"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -552,6 +552,11 @@ static int init_comm(void)
 	char response[MAX_RESPONSE_LENGTH];
 
 	ups.commands_available = 0;
+	/* Repeat enumerate command 2x, firmware bug on some units garbles 1st response */
+	if (do_command(POLL, AVAILABLE, "", response) <= 0){
+		upslogx(LOG_NOTICE, "init_comm: Initial response malformed, retrying in 300ms");
+		usleep(3E5);
+	}
 	if (do_command(POLL, AVAILABLE, "", response) <= 0)
 		return 0;
 	i = strlen(response);
