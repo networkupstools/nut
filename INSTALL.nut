@@ -207,8 +207,8 @@ Debian, Ubuntu and other derivatives
 NOTE: NUT is packaged and well maintained in these systems.
 The official Debian packager is part of the NUT Team.
 
-Using your prefered method (apt-get, aptitude, Synaptic, ...), install
-the 'nut' package, and optionaly the following:
+Using your preferred method (apt-get, aptitude, Synaptic, ...), install
+the 'nut' package, and optionally the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-snmp', if you need the snmp-ups driver,
@@ -233,32 +233,32 @@ Mandriva
 NOTE: NUT is packaged and well maintained in these systems.
 The official Mandriva packager is part of the NUT Team.
 
-Using your prefered method (urpmi, RPMdrake, ...), install one of the two below
+Using your preferred method (urpmi, RPMdrake, ...), install one of the two below
 packages:
 
 - 'nut-server' if you have a 'standalone' or 'netserver' installation,
 - 'nut' if you have a 'netclient' installation.
 
-Optionaly, you can also install the following:
+Optionally, you can also install the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-devel', if you need the development files.
 
 
-[[Suse]]
-Suse / Opensuse
+[[SUSE]]
+SUSE / openSUSE
 ~~~~~~~~~~~~~~~
 
 NOTE: NUT is packaged and well maintained in these systems.
-The official Suse packager is part of the NUT Team.
+The official SUSE packager is part of the NUT Team.
 
-Install the 'nut-classic' package, and optionaly the following:
+Install the 'nut-classic' package, and optionally the following:
 
 - 'nut-drivers-net', if you need the snmp-ups or the netxml-ups drivers,
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-devel', if you need the development files,
 
-NOTE: Suse and Opensuse users can use the
+NOTE: SUSE and openSUSE users can use the
 link:http://software.opensuse.org/search?baseproject=ALL&p=1&q=nut[one-click install method]
 to install NUT.
 
@@ -270,13 +270,13 @@ Red Hat, Fedora and CentOS
 NOTE: NUT is packaged and well maintained in these systems.
 The official Red Hat packager is part of the NUT Team.
 
-Using your prefered method (yum, Add/Remove Software, ...), install one of the
+Using your preferred method (yum, Add/Remove Software, ...), install one of the
 two below packages:
 
 - 'nut' if you have a 'standalone' or 'netserver' installation,
 - 'nut-client' if you have a 'netclient' installation.
 
-Optionaly, you can also install the following:
+Optionally, you can also install the following:
 
 - 'nut-cgi', if you need the CGI (HTML) option,
 - 'nut-xml', if you need the netxml-ups driver,
@@ -306,7 +306,7 @@ To install it, use the following command:
 
 You have to define WITH_NUT_CGI to build the optional CGI scripts.
 
-Optionaly, you can also install the following ports:
+Optionally, you can also install the following ports:
 
 - sysutils/nut-snmp, for the SNMP driver,
 - sysutils/nut-usb, for the USB drivers,
