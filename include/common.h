@@ -43,6 +43,7 @@
 #include "timehead.h"
 #include "attribute.h"
 #include "proto.h"
+#include "str.h"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
