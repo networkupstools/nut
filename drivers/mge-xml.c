@@ -31,7 +31,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.23"
+#define MGE_XML_VERSION		"MGEXML/0.24"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
@@ -1107,7 +1107,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 					snprintfcat(val, sizeof(val), "/%s", atts[i+1]);
 					s = strstr(val, " (SN ");
 					if (s) {
-						dstate_setinfo("ups.serial", "%s", rtrim(s + 5, ')'));
+						dstate_setinfo("ups.serial", "%s", str_rtrim(s + 5, ')'));
 						s[0] = '\0';
 					}
 					dstate_setinfo("ups.firmware.aux", "%s", val);

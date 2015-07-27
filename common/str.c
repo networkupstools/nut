@@ -1,6 +1,7 @@
 /* str.c - Common string-related functions
  *
  * Copyright (C)
+ *   2000 Russell Kroll <rkroll@exploits.org>
  *   2015 Daniele Pezzini <hyouko@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,6 +27,72 @@
 #include <string.h>
 
 #include "str.h"
+
+char	*str_trim(char *string, const char character)
+{
+	return str_rtrim(str_ltrim(string, character), character);
+}
+
+char	*str_trim_m(char *string, const char *characters)
+{
+	return str_rtrim_m(str_ltrim_m(string, characters), characters);
+}
+
+char	*str_ltrim(char *string, const char character)
+{
+	char	characters[2] = { character, '\0' };
+
+	return str_ltrim_m(string, characters);
+}
+
+char	*str_ltrim_m(char *string, const char *characters)
+{
+	if (
+		string == NULL ||
+		*string == '\0' ||
+		characters == NULL ||
+		*characters == '\0'
+	)
+		return string;
+
+	while (
+		*string != '\0' &&
+		strchr(characters, *string) != NULL
+	)
+		memmove(string, string + 1, strlen(string));
+
+	return string;
+}
+
+char	*str_rtrim(char *string, const char character)
+{
+	char	characters[2] = { character, '\0' };
+
+	return str_rtrim_m(string, characters);
+}
+
+char	*str_rtrim_m(char *string, const char *characters)
+{
+	char	*ptr;
+
+	if (
+		string == NULL ||
+		*string == '\0' ||
+		characters == NULL ||
+		*characters == '\0'
+	)
+		return string;
+
+	ptr = &string[strlen(string) - 1];
+
+	while (
+		ptr >= string &&
+		strchr(characters, *ptr) != NULL
+	)
+		*ptr-- = '\0';
+
+	return string;
+}
 
 char	*str_trim_space(char *string)
 {

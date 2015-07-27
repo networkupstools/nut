@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 #include "main.h"
 
@@ -2744,7 +2744,7 @@ int	ups_infoval_set(item_t *item)
 
 		/* Cover most of the cases: either left/right filled with hashes, spaces or a mix of both */
 		if (item->qxflags & QX_FLAG_TRIM)
-			rtrim_m(ltrim_m(value, "# "), "# ");
+			str_trim_m(value, "# ");
 
 		if (strcasecmp(item->dfl, "%s")) {
 

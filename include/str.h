@@ -1,6 +1,7 @@
 /* str.h - Common string-related functions
  *
  * Copyright (C)
+ *   2000 Russell Kroll <rkroll@exploits.org>
  *   2015 Daniele Pezzini <hyouko@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +28,27 @@
 extern "C" {
 /* *INDENT-ON* */
 #endif
+
+/* Remove all
+ * - leading and trailing (str_trim[_m]())
+ * - leading (str_ltrim[_m]())
+ * - trailing (str_rtrim[_m]))
+ * instances of
+ * - *character* (plain versions)
+ * - each character in *characters* ('_m' versions)
+ * from a string.
+ * - *string*: null-terminated byte string from which characters are to be removed;
+ * - *character*: character that has to be removed from *string*;
+ * - *characters*: null-terminated byte string of characters to be removed from string.
+ * Return:
+ * - NULL, if *string* is NULL, otherwise
+ * - *string* without the specified characters (upto an empty string). */
+char	*str_trim(char *string, const char character);
+char	*str_trim_m(char *string, const char *characters);
+char	*str_ltrim(char *string, const char character);
+char	*str_ltrim_m(char *string, const char *characters);
+char	*str_rtrim(char *string, const char character);
+char	*str_rtrim_m(char *string, const char *characters);
 
 /* Remove all
  * - leading and trailing (str_trim_space())

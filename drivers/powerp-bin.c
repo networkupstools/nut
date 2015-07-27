@@ -341,7 +341,7 @@ static void powpan_initinfo(void)
 			dstate_setinfo("ups.model", "%s", modeltab[i].model);
 		} else {
 			/* report model value as is */
-			dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+			dstate_setinfo("ups.model", "%s", str_rtrim(s, ' '));
 		}
 	}
 	if ((s = strtok(NULL, ".")) != NULL) {

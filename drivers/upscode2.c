@@ -44,7 +44,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.88"
+#define DRIVER_VERSION	"0.89"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1046,7 +1046,7 @@ static int upscrecv(char *buf)
 	} else if (res == 0) {
 		upsdebugx(3, "upscrecv: Timeout");
 	} else {
-		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", res-1, rtrim(buf, ENDCHAR));
+		upsdebugx(3, "upscrecv: %u bytes:\t'%s'", res-1, str_rtrim(buf, ENDCHAR));
 	}
 
 	return res;

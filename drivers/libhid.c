@@ -409,7 +409,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
 		buf[0] = '\0';
 
-	return rtrim(buf, '\n');
+	return str_rtrim(buf, '\n');
 }
 
 /* Return pointer to indexed string from HID path (empty if not found)
