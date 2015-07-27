@@ -125,7 +125,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME		"Tripp Lite SmartOnline driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -296,7 +296,7 @@ static int do_command(char type, const char *command, const char *parameters, ch
 		   I don't like that, so I remove them.  This is safe to
 		   do with all responses for this protocol, so I just
 		   do that here. */
-		rtrim(response, ' ');
+		str_rtrim(response, ' ');
 
 		return ret;
 	}

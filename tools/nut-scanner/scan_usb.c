@@ -181,7 +181,7 @@ nutscan_device_t * nutscan_scan_usb()
 						dev->descriptor.iSerialNumber,
 						string, sizeof(string));
 					if (ret > 0) {
-						serialnumber = strdup(rtrim(string, ' '));
+						serialnumber = strdup(str_rtrim(string, ' '));
 					}
 				}
 				/* get product name */
@@ -190,7 +190,7 @@ nutscan_device_t * nutscan_scan_usb()
 						dev->descriptor.iProduct,
 						string, sizeof(string));
 					if (ret > 0) {
-						device_name = strdup(rtrim(string, ' '));
+						device_name = strdup(str_rtrim(string, ' '));
 					}
 				}
 
@@ -200,7 +200,7 @@ nutscan_device_t * nutscan_scan_usb()
 						dev->descriptor.iManufacturer, 
 						string, sizeof(string));
 					if (ret > 0) {
-						vendor_name = strdup(rtrim(string, ' '));
+						vendor_name = strdup(str_rtrim(string, ' '));
 					}
 				}
 

@@ -334,7 +334,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 		res = write(client->sock_fd, ans, len);
 	}
 
-	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, rtrim(ans, '\n'));
+	upsdebugx(2, "write: [destfd=%d] [len=%d] [%s]", client->sock_fd, len, str_rtrim(ans, '\n'));
 
 	if (len != res) {
 		upslog_with_errno(LOG_NOTICE, "write() failed for %s", client->addr);

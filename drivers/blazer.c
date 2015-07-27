@@ -381,7 +381,7 @@ static int blazer_vendor(const char *cmd)
 
 		snprintf(val, sizeof(val), "%.*s", information[i].len, &buf[index]);
 
-		dstate_setinfo(information[i].var, "%s", rtrim(val, ' '));
+		dstate_setinfo(information[i].var, "%s", str_rtrim(val, ' '));
 	}
 
 	return 0;

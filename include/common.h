@@ -119,11 +119,6 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
-char *rtrim(char *in, const char sep);
-char* ltrim(char *in, const char sep);
-char *rtrim_m(char *in, const char *seps);
-char* ltrim_m(char *in, const char *seps);
-
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
 
