@@ -374,6 +374,11 @@ std::string Socket::read()throw(nut::IOException)
 
 		// Read new buffer
 		size_t sz = read(&buff, 256);
+		if(sz==0)
+		{
+			disconnect();
+			throw nut::IOException("Server closed connection unexpectedly");
+		}
 		_buffer.assign(buff, sz);
 	}
 }
