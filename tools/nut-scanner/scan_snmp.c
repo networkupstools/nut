@@ -72,8 +72,6 @@
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
-static pthread_t * thread_array = NULL;
-static int thread_count = 0;
 #endif
 long g_usec_timeout ;
 
@@ -659,6 +657,8 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
 	pthread_t thread;
+	pthread_t * thread_array = NULL;
+	int thread_count = 0;
 
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
@@ -700,8 +700,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_destroy(&dev_mutex);
 	free(thread_array);
 #endif
-
-	return nutscan_rewind_device(dev_ret);
+	nutscan_device_t * result = nutscan_rewind_device(dev_ret);
+	dev_ret = NULL;
+	return result;
 }
 #else /* WITH_SNMP */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
