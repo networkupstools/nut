@@ -55,9 +55,10 @@ if test -z "${nut_have_libnss_seen}"; then
 	], [])
 	AC_MSG_RESULT([${LIBS}])
 
-	dnl check if NSS is usable
-	AC_CHECK_HEADERS(nss.h, [nut_have_libnss=yes], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(NSS_Init, [], [nut_have_libnss=no])
+	dnl check if NSS is usable: we need both the runtime and headers
+	AC_CHECK_FUNCS(NSS_Init, [nut_have_libnss=yes], [nut_have_libnss=no])
+	dnl libc6 also provides an nss.h file, so also check for ssl.h
+	AC_CHECK_HEADERS([nss.h ssl.h], [], [nut_have_libnss=no], [AC_INCLUDES_DEFAULT])
 	
 	if test "${nut_have_libnss}" = "yes"; then
 		nut_with_ssl="yes"
