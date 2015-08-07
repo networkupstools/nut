@@ -186,7 +186,7 @@ battery.packs.bad
 	{ "ambient.humidity.high", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, NULL, DU_FLAG_NONE, NULL },
 /*
-FIXME: how to manage these?
+FIXME: how to manage these? (i.e. index <n>)
 outlet.n.id
 outlet.n.desc
 outlet.n.switch
@@ -195,6 +195,7 @@ outlet.n.switchable
 outlet.n.autoswitch.charge.low
 outlet.n.delay.shutdown
 outlet.n.delay.start
+...
 
 driver.name
 driver.version

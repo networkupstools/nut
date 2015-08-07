@@ -1,7 +1,7 @@
 /* dummy-ups.c - NUT simulation and device repeater driver
 
    Copyright (C)
-       2005 - 2010  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+       2005 - 2015  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 #include "dummy-ups.h"
 
 #define DRIVER_NAME	"Device simulation and repeater driver"
-#define DRIVER_VERSION	"0.13"
+#define DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info =
@@ -308,6 +308,12 @@ static int setvar(const char *varname, const char *val)
 			/* Set max length for strings, if needed */
 			if (item->info_flags & ST_FLAG_STRING)
 				dstate_setaux(item->info_type, item->info_len);
+		}
+		else
+		{
+			upsdebugx(2, "setvar: unknown variable (%s), using default flags", varname);
+			dstate_setflags(varname, ST_FLAG_STRING | ST_FLAG_RW);
+			dstate_setaux(varname, 32);
 		}
 	}
 	return STAT_SET_HANDLED;
