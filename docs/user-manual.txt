@@ -33,7 +33,7 @@ If you wish to discover how everything came together, have a look at the
 
 [[Overview]]
 
-include::../README[]
+include::../README.adoc[]
 
 
 [[Features]]

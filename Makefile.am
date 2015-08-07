@@ -9,7 +9,8 @@ SUBDIRS = include common clients conf data tools docs drivers \
   lib scripts server tests
 
 # COPYING is included automatically.
-EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
+EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS README.adoc \
+	UPGRADING
 
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make

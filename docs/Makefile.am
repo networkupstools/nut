@@ -76,7 +76,7 @@ clean-local:
 
 ### TODO: automatic dependency generation
 # Add other directory deps (not for local EXTRA_DIST) and generated contents
-FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README \
+FULL_USER_MANUAL_DEPS = $(USER_MANUAL_DEPS) $(SHARED_DEPS) ../README.adoc \
 	../INSTALL.nut ../UPGRADING ../TODO ../scripts/ufw/README
 FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 	../scripts/augeas/README ../TODO ../lib/README \
@@ -111,7 +111,7 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
-# FIXME: also check ../{NEWS,README,UPGRADING}+other dirs
+# FIXME: also check ../{NEWS,README.adoc,UPGRADING}+other dirs
 # Non-interactively spell check all documentation source files.
 # This is useful for Buildbot and automated QA processing
 # FIXME: how to present output (std{out,err}, single file or per target)?
