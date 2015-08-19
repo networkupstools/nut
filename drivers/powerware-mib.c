@@ -95,6 +95,11 @@
 #define IETF_OID_CONF_RUNTIME_LOW	"1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
 #define IETF_OID_LOAD_LEVEL	"1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
 
+/* Delay before powering off in seconds */
+#define DEFAULT_OFFDELAY	30
+/* Delay before powering on in seconds */
+#define DEFAULT_ONDELAY	20
+
 static info_lkp_t pw_alarm_ob[] = {
 	{ 1, "OB" },
 	{ 2, "" },
@@ -315,11 +320,15 @@ static snmp_info_t pw_mib[] = {
 	 /* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
 	{ "shutdown.stop", 0, 0, PW_OID_CONT_OFFDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	/* load off after 1 sec, shortest possible delay */
+	/* load off after 1 sec, shortest possible delay; 0 cancels */
 	{ "load.off", 0, 1, PW_OID_CONT_OFFDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	/* load on after 1 sec, shortest possible delay */
+	{ "load.off.delay", 0, DEFAULT_OFFDELAY, PW_OID_CONT_OFFDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* load on after 1 sec, shortest possible delay; 0 cancels */
 	{ "load.on", 0, 1, PW_OID_CONT_ONDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.on.delay", 0, DEFAULT_ONDELAY, PW_OID_CONT_ONDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	{ "ups.alarms", 0, 1.0, PW_OID_ALARMS, "",
