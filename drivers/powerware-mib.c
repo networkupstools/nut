@@ -95,6 +95,7 @@
 #define IETF_OID_CONF_OUT_VA	"1.3.6.1.2.1.33.1.9.5.0"	/* UPS-MIB::upsConfigOutputVA.0 */
 #define IETF_OID_CONF_RUNTIME_LOW	"1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
 #define IETF_OID_LOAD_LEVEL	"1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
+#define IETF_OID_AUTO_RESTART	"1.3.6.1.2.1.33.1.8.5.0"	/* UPS-MIB::upsAutoRestart */
 
 /* Delay before powering off in seconds */
 #define DEFAULT_OFFDELAY	30
@@ -174,6 +175,11 @@ static info_lkp_t pw_batt_test_info[] = {
 	{ 0, "NULL" }
 };
 
+static info_lkp_t ietf_yes_no_info[] = {
+	{ 1, "yes" },
+	{ 2, "no" },
+	{ 0, "NULL" }
+};
 
 /* Snmp2NUT lookup table */
 
@@ -210,6 +216,8 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
+	{ "ups.start.auto", ST_FLAG_RW, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
+		SU_FLAG_OK, &ietf_yes_no_info[0] },
 	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &eaton_abm_status_info[0] },
 
