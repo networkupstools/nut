@@ -211,7 +211,7 @@ static snmp_info_t pw_mib[] = {
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
 	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
-	  SU_STATUS_BATT, &eaton_abm_status_info[0] },
+		SU_STATUS_BATT, &eaton_abm_status_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",
@@ -323,7 +323,7 @@ static snmp_info_t pw_mib[] = {
 	/* Shed load and restart when line power back on; cannot be canceled */
 	{ "shutdown.return", 0, DEFAULT_SHUTDOWNDELAY, PW_OID_CONT_LOAD_SHED_AND_RESTART, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	 /* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
+	/* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
 	{ "shutdown.stop", 0, 0, PW_OID_CONT_OFFDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* load off after 1 sec, shortest possible delay; 0 cancels */
