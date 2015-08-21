@@ -1,0 +1,12 @@
+[Unit]
+Description=Network UPS Tools - device driver for %I
+After=local-fs.target network.target
+PartOf=nut-driver.target
+
+[Service]
+ExecStart=@SBINDIR@/upsdrvctl start %i
+ExecStop=@SBINDIR@/upsdrvctl stop %i
+Type=forking
+
+[Install]
+WantedBy=multi-user.target nut-driver.target
