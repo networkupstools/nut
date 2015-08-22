@@ -75,6 +75,7 @@ static item_t	voltronic_qs_hex_qx2nut[] = {
 	/* Query UPS for status
 	 * > [QS\r]
 	 * < [#6C01 35 6C01 35 03 519A 1312D0 E6 1E 00001001\r]	(after being preprocessed)
+	 *   [#6901 6c 6802 6c 00 5fd7 12c000 e4 1e 00001001 02] (this is the answer of the LYONN CTB-800v)
 	 *    01234567890123456789012345678901234567890123456
 	 *    0         1         2         3         4
 	 */
@@ -257,7 +258,7 @@ static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len)
 
 	}
 
-	if (token != 10 || strlen(refined) != 46) {
+	if (token < 10 || strlen(refined) < 46) {
 		upsdebugx(2, "noncompliant reply: %s", refined);
 		return -1;
 	}
