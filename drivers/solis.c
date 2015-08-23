@@ -40,7 +40,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.62"
+#define DRIVER_VERSION	"0.63"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -705,6 +705,7 @@ CommReceive(const char *bufptr,  int size)
 	if(  size==25 )
 		Waiting = 0;
 	
+	/* FIXME: is "Waiting" ever not 0? */
 	switch( Waiting )
 	{
 		/* normal package */
@@ -716,6 +717,9 @@ CommReceive(const char *bufptr,  int size)
 				RecPack[i] = *bufptr;
 				bufptr++;
 		}
+		if(nut_debug_level >= 3) {
+			upsdebug_hex(3, "CommReceive: RecPack", RecPack, size);
+		}
 	  
 		/* CheckSum verify */
 		CheckSum = 0;
@@ -723,6 +727,7 @@ CommReceive(const char *bufptr,  int size)
 		for( i = 0 ; i < i_end ; ++i )
 			CheckSum = RecPack[ i ] + CheckSum;
 		CheckSum = CheckSum % 256;
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
   
 		ser_flush_in(upsfd,"",0); /* clean port */
   
@@ -864,13 +869,19 @@ static void getbaseinfo(void)
 	} /* end prgups 1 - 2 */
 
 	/* dummy read attempt to sync - throw it out */
+	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR to sync", __func__);
 	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
 	ser_send(upsfd, "%s", mycmd);
 
 	/* trying detect solis model */
 	while ( ( !detected ) && ( j < 20 ) )  {
 		temp[0] = 0; /* flush temp buffer */
+		upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, tpac);
 		tam = ser_get_buf_len(upsfd, temp, tpac, 3, 0);
+		upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+		if(tam > 0 && nut_debug_level >= 4) {
+			upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+		}
 		if( tam == 25 ) {
 			for( i = 0 ; i < tam ; i++ ) {
 				Pacote[i] = temp[i];
@@ -994,7 +1005,14 @@ static void getupdateinfo(void)
 
 	/* get update package */
 	temp[0] = 0; /* flush temp buffer */
+
+	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, pacsize);
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
+
+	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	if(tam > 0 && nut_debug_level >= 4) {
+		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+	}
 
 	CommReceive((char *)temp, tam);
 
@@ -1067,22 +1085,23 @@ void upsdrv_updateinfo(void)
 
 }
 
-/* power down the attached load immediately */
+/*! @brief Power down the attached load immediately.
+ * Basic idea: find out line status and send appropriate command.
+ *  - on battery: send normal shutdown, UPS will return by itself on utility
+ *  - on line: send shutdown+return, UPS will cycle and return soon.
+ */
 void upsdrv_shutdown(void)
 {
 
-	/* basic idea: find out line status and send appropriate command */
-	/* on battery: send normal shutdown, ups will return by itself on utility */
-	/* on line: send shutdown+return, ups will cycle and return soon */
 
 	if (!SourceFail) {     /* on line */
 	
-		printf("On line, sending shutdown+return command...\n");
+		upslogx(LOG_NOTICE, "On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );
 	}
 	else
 	{
-		printf("On battery, sending normal shutdown command...\n");
+		upslogx(LOG_NOTICE, "On battery, sending normal shutdown command...\n");
 		ser_send_char(upsfd, CMD_SHUT);
 	}
 	
