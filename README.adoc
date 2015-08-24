@@ -156,7 +156,7 @@ This package is broken down into several categories:
 - *clients*	- They talk to upsd and do things with the status data.
 - *cgi-bin*	- Special class of clients that you can use with your web server.
 - *scripts*	- Contains various scripts, like the Perl and Python binding,
-integration bits and applications. 
+integration bits and applications.
 
 Drivers
 -------
@@ -291,7 +291,7 @@ Power distribution unit management
 NUT also provides an advanced support for power distribution units.
 
 You should read the {xref}Outlets_PDU_notes{x-s}[Configuring automatic UPS shutdowns]
-chapter to learn more about when to use this feature. 
+chapter to learn more about when to use this feature.
 
 Network Server
 --------------
