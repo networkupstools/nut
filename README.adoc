@@ -1,6 +1,48 @@
 Network UPS Tools Overview
 ===========================
 
+:website-url:	http://www.networkupstools.org/
+
+// Address links on GitHub vs docs
+// (note: 'env-github' attribute is set on GitHub)
+// - when generating docs:
+ifndef::env-github[]
+//   * link to doc -> our macro
+//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//     -> linkdoc:<document>[<display title>]
+:linkdoc:			linkdoc:
+:ld-s:
+//   * link to manpage -> our macro
+:linkman_apcupsd-ups-8:		linkman:apcupsd-ups[8]
+:linkman_genericups-8:		linkman:genericups[8]
+:linkman_nutdrv_qx-8:		linkman:nutdrv_qx[8]
+:linkman_powerman-pdu-8:	linkman:powerman-pdu[8]
+:linkman_snmp-ups-8:		linkman:snmp-ups[8]
+:linkman_upsc-8:		linkman:upsc[8]
+:linkman_upsd-users-5:		linkman:upsd.users[5]
+:linkman_upsmon-8:		linkman:upsmon[8]
+:linkman_usbhid-ups-8:		linkman:usbhid-ups[8]
+endif::env-github[]
+// - on GitHub:
+ifdef::env-github[]
+//   * link to doc -> link
+//     syntax: {linkdoc}<document>{ld-s}[<display title>]
+//     -> {website-url}docs/<document>.chunked/index.html[<display title>]
+:linkdoc:			{website-url}docs/
+:ld-s:				.chunked/index.html
+//   * link to manpage -> link
+:man-url:			{website-url}docs/man/
+:linkman_apcupsd-ups-8:		{man-url}apcupsd-ups.html[apcupsd-ups(8)]
+:linkman_genericups-8:		{man-url}genericups.html[genericups(8)]
+:linkman_nutdrv_qx-8:		{man-url}nutdrv_qx.html[nutdrv_qx(8)]
+:linkman_powerman-pdu-8:	{man-url}powerman-pdu.html[powerman-pdu[8)]
+:linkman_snmp-ups-8:		{man-url}snmp-ups.html[snmp-ups(8)]
+:linkman_upsc-8:		{man-url}upsc.html[upsc(8)]
+:linkman_upsd-users-5:		{man-url}upsd.users.html[upsd.users[5)]
+:linkman_upsmon-8:		{man-url}upsmon.html[upsmon(8)]
+:linkman_usbhid-ups-8:		{man-url}usbhid-ups.html[usbhid-ups(8)]
+endif::env-github[]
+
 Description
 -----------
 
@@ -159,7 +201,7 @@ For example, it is available on Debian systems as:
 
 	/usr/share/nut/driver.list
 
-This table is also available link:http://www.networkupstools.org/stable-hcl.html[online].
+This table is also available link:{website-url}stable-hcl.html[online].
 
 
 If your driver has vanished, see the link:FAQ.html[FAQ] and
@@ -180,7 +222,7 @@ data about power and battery status.  Advanced features like battery
 charge readings and such require a "smart" UPS and a driver which
 supports it.
 +
-See the linkman:genericups[8] man page for more information.
+See the {linkman_genericups-8} man page for more information.
 
 - The `usbhid-ups` driver attempts to communicate with USB HID Power Device
 Class (PDC) UPSes. These units generally implement the same basic protocol,
@@ -188,32 +230,32 @@ with minor variations in the exact set of supported attributes. This driver
 also applies several correction factors when the UPS firmware reports values
 with incorrect scale factors.
 +
-See the linkman:usbhid-ups[8] man page for more information.
+See the {linkman_usbhid-ups-8} man page for more information.
 
 - The `nutdrv_qx` driver supports the Megatec / Q1 protocol that is used in
 many brands (Blazer, Energy Sistem, Fenton Technologies, Mustek, Voltronic
 Power and many others).
 +
-See the linkman:nutdrv_qx[8] man page for more information.
+See the {linkman_nutdrv_qx-8} man page for more information.
 
 - The `snmp-ups` driver handles various SNMP enabled devices, from many
 different manufacturers. In SNMP terms, `snmp-ups` is a manager, that
 monitors SNMP agents.
 +
-See the linkman:snmp-ups[8] man page for more information.
+See the {linkman_snmp-ups-8} man page for more information.
 
 - The `powerman-pdu` is a bridge to the PowerMan daemon, thus handling all
 PowerMan supported devices. The PowerMan project supports several serial
 and networked PDU, along with Blade and IPMI enabled servers.
 +
-See the linkman:powerman-pdu[8] man page for more
+See the {linkman_powerman-pdu-8} man page for more
 information.
 
 - The `apcupsd-ups` driver is a bridge to the Apcupsd daemon, thus handling
 all Apcupsd supported devices. The Apcupsd project supports many serial,
 USB and networked APC UPS.
 +
-See the linkman:apcupsd-ups[8] man page for more information.
+See the {linkman_apcupsd-ups-8} man page for more information.
 
 UPS Shutdowns
 ~~~~~~~~~~~~~
@@ -293,7 +335,7 @@ Additional Information
 
 More information on configuring upsmon can be found in these places:
 
-- The linkman:upsmon[8] man page
+- The {linkman_upsmon-8} man page
 - <<BigServers,Typical setups for big servers>>
 - <<UPS_shutdown,Configuring automatic UPS shutdowns>> chapter
 - The stock `upsmon.conf` that comes with the package
@@ -332,7 +374,7 @@ If you are interested in writing a simple client that monitors `upsd`,
 the source code for `upsc` is a good way to learn about using the
 upsclient functions.
 
-See the linkman:upsc[8] man page and
+See the {linkman_upsc-8} man page and
 <<nut-names,NUT command and variable naming scheme>> for more information.
 
 upslog
@@ -371,7 +413,7 @@ On the other hand, one that doesn't support them won't print anything:
 	( nothing )
 
 `upsrw` requires administrator powers to change settings in the hardware.
-Refer to linkman:upsd.users[5] for information on defining
+Refer to {linkman_upsd-users-5} for information on defining
 users in `upsd`.
 
 upscmd
@@ -395,7 +437,7 @@ Use the -l command to list them, like this:
 
 `upscmd` requires administrator powers to start instant commands.
 To define users and passwords in `upsd`, see
-linkman:upsd.users[5].
+{linkman_upsd-users-5}.
 
 
 CGI Programs
@@ -501,8 +543,8 @@ Hacking / Development Info
 
 Additional documentation can be found in:
 
-- the linkdoc:developer-guide[Developer Guide],
-- the linkdoc:packager-guide[Packager Guide].
+- the {linkdoc}developer-guide{ld-s}[Developer Guide],
+- the {linkdoc}packager-guide{ld-s}[Packager Guide].
 
 
 Acknowledgements / Contributions
