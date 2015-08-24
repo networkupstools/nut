@@ -190,11 +190,11 @@ with incorrect scale factors.
 +
 See the linkman:usbhid-ups[8] man page for more information.
 
-- The `blazer_ser` and `blazer_usb` drivers supports the Megatec / Q1
-protocol that is used in many brands (Blazer, Energy Sistem, Fenton
-Technologies, Mustek and many others).
+- The `nutdrv_qx` driver supports the Megatec / Q1 protocol that is used in
+many brands (Blazer, Energy Sistem, Fenton Technologies, Mustek, Voltronic
+Power and many others).
 +
-See the linkman:blazer[8] man page for more information.
+See the linkman:nutdrv_qx[8] man page for more information.
 
 - The `snmp-ups` driver handles various SNMP enabled devices, from many
 different manufacturers. In SNMP terms, `snmp-ups` is a manager, that
