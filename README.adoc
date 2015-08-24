@@ -17,6 +17,11 @@ ifndef::env-github[]
 //     -> linkdoc:<document>[<display title>]
 :linkdoc:			linkdoc:
 :ld-s:
+//   * link to single doc -> our macro
+//     syntax: {linksingledoc}<document>{lsd-s}[<display title>]
+//     -> linksingledoc:<document>[<display title>]
+:linksingledoc:			linksingledoc:
+:lsd-s:
 //   * link to manpage -> our macro
 :linkman_apcupsd-ups-8:		linkman:apcupsd-ups[8]
 :linkman_genericups-8:		linkman:genericups[8]
@@ -42,6 +47,11 @@ ifdef::env-github[]
 //     -> {website-url}docs/<document>.chunked/index.html[<display title>]
 :linkdoc:			{website-url}docs/
 :ld-s:				.chunked/index.html
+//   * link to single doc -> link
+//     syntax: {linksingledoc}<document>{lsd-s}[<display title>]
+//     -> {website-url}docs/<document>.html[<display title>]
+:linksingledoc:			{website-url}docs/
+:lsd-s:				.html
 //   * link to manpage -> link
 :man-url:			{website-url}docs/man/
 :linkman_apcupsd-ups-8:		{man-url}apcupsd-ups.html[apcupsd-ups(8)]
@@ -216,7 +226,7 @@ For example, it is available on Debian systems as:
 This table is also available link:{website-url}stable-hcl.html[online].
 
 
-If your driver has vanished, see the link:FAQ.html[FAQ] and
+If your driver has vanished, see the {linksingledoc}FAQ{lsd-s}[FAQ] and
 {xref}Upgrading_notes{x-s}[Upgrading notes].
 
 Generic Device Drivers
