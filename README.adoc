@@ -7,6 +7,11 @@ Network UPS Tools Overview
 // (note: 'env-github' attribute is set on GitHub)
 // - when generating docs:
 ifndef::env-github[]
+//   * xref -> xref
+//     syntax: {xref}<id>{x-s}[<caption>]
+//     -> xref:<id>[<caption>]
+:xref:				xref:
+:x-s:
 //   * link to doc -> our macro
 //     syntax: {linkdoc}<document>{ld-s}[<display title>]
 //     -> linkdoc:<document>[<display title>]
@@ -25,6 +30,13 @@ ifndef::env-github[]
 endif::env-github[]
 // - on GitHub:
 ifdef::env-github[]
+//   * xref -> link
+//     syntax: {xref}<id>{x-s}[<caption>]
+//     In order for it to work, <id> can reference at most a section of
+//     level docs/common.xsl's <chunk.section.depth>
+//     -> {website-url}docs/user-manual.chunked/<id>.html[<caption>]
+:xref:				{website-url}docs/user-manual.chunked/
+:x-s:				.html
 //   * link to doc -> link
 //     syntax: {linkdoc}<document>{ld-s}[<display title>]
 //     -> {website-url}docs/<document>.chunked/index.html[<display title>]
@@ -76,7 +88,7 @@ Installing
 ----------
 
 If you are installing these programs for the first time, go read the
-<<_installation_instructions,installation instructions>>
+{xref}_installation_instructions{x-s}[installation instructions]
 to find out how to do that.  This document contains more information on what all
 of this stuff does.
 
@@ -85,7 +97,7 @@ Upgrading
 ---------
 
 When upgrading from an older version, always check the
-<<Upgrading_notes,upgrading notes>> to see what may have
+{xref}Upgrading_notes{x-s}[upgrading notes] to see what may have
 changed.  Compatibility issues and other changes will be listed there to ease
 the process.
 
@@ -94,7 +106,7 @@ Configuring and using
 ---------------------
 
 Once NUT is installed, refer to the
-<<Configuration_notes,configuration notes>> for directions.
+{xref}Configuration_notes{x-s}[configuration notes] for directions.
 
 
 Documentation
@@ -195,7 +207,7 @@ feature, just add another line to your ups.conf section for that UPS:
 Hardware Compatibility List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The <<HCL,Hardware Compatibility List>> is available in the source directory
+The {xref}HCL{x-s}[Hardware Compatibility List] is available in the source directory
 ('nut-X.Y.Z/data/driver.list'), and is generally distributed with packages.
 For example, it is available on Debian systems as:
 
@@ -205,7 +217,7 @@ This table is also available link:{website-url}stable-hcl.html[online].
 
 
 If your driver has vanished, see the link:FAQ.html[FAQ] and
-<<Upgrading_notes,Upgrading notes>>.
+{xref}Upgrading_notes{x-s}[Upgrading notes].
 
 Generic Device Drivers
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -268,7 +280,7 @@ to die.  Don't power off your computers unless they're ready for it:
 	/usr/local/ups/sbin/upsdrvctl shutdown
 	/usr/local/ups/sbin/upsdrvctl shutdown sparky
 
-You should read the <<UPS_shutdown,Configuring automatic UPS shutdowns>>
+You should read the {xref}UPS_shutdown{x-s}[Configuring automatic UPS shutdowns]
 chapter to learn more about when to use this feature.  If called at the wrong
 time, you may cause data loss by turning off a system with a filesystem
 mounted read-write.
@@ -278,7 +290,7 @@ Power distribution unit management
 
 NUT also provides an advanced support for power distribution units.
 
-You should read the <<Outlets_PDU_notes,Configuring automatic UPS shutdowns>>
+You should read the {xref}Outlets_PDU_notes{x-s}[Configuring automatic UPS shutdowns]
 chapter to learn more about when to use this feature. 
 
 Network Server
@@ -336,8 +348,8 @@ Additional Information
 More information on configuring upsmon can be found in these places:
 
 - The {linkman_upsmon-8} man page
-- <<BigServers,Typical setups for big servers>>
-- <<UPS_shutdown,Configuring automatic UPS shutdowns>> chapter
+- {xref}BigServers{x-s}[Typical setups for big servers]
+- {xref}UPS_shutdown{x-s}[Configuring automatic UPS shutdowns] chapter
 - The stock `upsmon.conf` that comes with the package
 
 
@@ -375,7 +387,7 @@ the source code for `upsc` is a good way to learn about using the
 upsclient functions.
 
 See the {linkman_upsc-8} man page and
-<<nut-names,NUT command and variable naming scheme>> for more information.
+{xref}nut-names{x-s}[NUT command and variable naming scheme] for more information.
 
 upslog
 ~~~~~~
@@ -535,7 +547,7 @@ Support / Help / etc.
 ---------------------
 
 If you are in need of help, refer to the
-<<Support_Request,Support instructions>> in the user manual.
+{xref}Support_Request{x-s}[Support instructions] in the user manual.
 
 
 Hacking / Development Info
@@ -551,4 +563,4 @@ Acknowledgements / Contributions
 --------------------------------
 
 The many people who have participated in creating and improving NUT are
-listed in the user manual <<Acknowledgements,acknowledgements appendix>>.
+listed in the user manual {xref}Acknowledgements{x-s}[acknowledgements appendix].
