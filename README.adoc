@@ -466,14 +466,13 @@ get it and install it before continuing.
 
 You can get the source here:
 
-	http://www.libgd.org/
+- http://www.libgd.org/
 
 In the event that you need libpng or zlib in order to compile gd,
 they can be found at these URLs:
 
-	http://www.libpng.org/pub/png/pngcode.html
-
-	http://www.gzip.org/zlib/
+- http://www.libpng.org/pub/png/pngcode.html
+- http://www.zlib.net/
 
 
 Access Restrictions
