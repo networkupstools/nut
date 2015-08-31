@@ -79,7 +79,9 @@ for each OID request we made), instead of sending many small packets
 #define DISABLE_MIB_LOADING 1
 
 /* Parameters default values */
-#define DEFAULT_POLLFREQ	30		/* in seconds */
+#define DEFAULT_POLLFREQ          30   /* in seconds */
+#define DEFAULT_NETSNMP_RETRIES   5
+#define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
 
 /* use explicit booleans */
 #ifndef FALSE
