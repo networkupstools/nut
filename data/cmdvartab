@@ -129,7 +129,8 @@ VARDESC ambient.humidity.high "Ambient humidity threshold high"
 VARDESC ambient.humidity.high.warning "Ambient humidity threshold high warning"
 VARDESC ambient.humidity.high.critical "Ambient humidity threshold high critical"
 VARDESC ambient.present "Ambient sensor presence"
-
+VARDESC ambient.contacts.1.status "State of the dry contact sensor 1"
+VARDESC ambient.contacts.2.status "State of the dry contact sensor 2"
 
 # FIXME: the outlet collection is indexed - solve with regexs?
 #

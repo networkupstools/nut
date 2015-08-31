@@ -421,6 +421,8 @@ sensor temperature.
                                         seen (percent)              | 60
 | ambient.n.humidity.minimum          | Minimum relative humidity
                                         seen (percent)              | 13
+| ambient.n.contacts.x.status         | State of the dry contact
+                                        sensor x                    | open
 |==================================================================================
 
 
