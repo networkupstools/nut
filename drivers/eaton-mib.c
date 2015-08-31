@@ -443,7 +443,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 
 /* Pulizzi Switched ePDU */
 
-#define EATON_PULIZZI_SW_MIB_VERSION	"0.1"
+#define EATON_PULIZZI_SW_MIB_VERSION	"0.2"
 
 #define PULIZZI_SW_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
 #define PULIZZI_SW_OID_MODEL_NAME		".1.3.6.1.4.1.20677.2.1.1.0"
@@ -511,9 +511,9 @@ static snmp_info_t eaton_pulizzi_switched_mib[] = {
 	/* we use the same OID as outlet.n.status..., to expose switchability */
 	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.3.%i.0", "yes", SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, &pulizzi_sw_outlet_switchability_info[0], NULL },
 	/* FIXME: need to be added to the namespace! */
-	{ "outlet.%i.delay.reboot", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.1.%i.5.0", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.delay.reboot", ST_FLAG_RW, 1, ".1.3.6.1.4.1.20677.2.6.1.%i.5.0", NULL, SU_OUTLET, NULL, NULL },
 	/* "outlet1SequenceTime" is used for global sequence */
-	{ "outlet.%i.delay.start", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.1.%i.4.0", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.delay.start", ST_FLAG_RW, 1, ".1.3.6.1.4.1.20677.2.6.1.%i.4.0", NULL, SU_OUTLET, NULL, NULL },
 
 	/* instant commands. */
 	/* FIXME: not exposed as "outlet.load...", or otherwise specific processing applies (template instanciation) */
