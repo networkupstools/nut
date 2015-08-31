@@ -88,10 +88,14 @@ on the communication socket to upsd (Unix socket on Unix, Named pipe
 on Windows) without waiting for these data to be actually consumed.
 With some HW, such as ePDUs, that can produce a lot of data,
 asynchronous mode may cause some congestion, resulting in the socket to
-be full, and the driver to appear as not connected.  By enabling the
-'synchronous' flag (value = 'yes'), the driver will wait for data to be
-consumed by upsd, prior to publishing more.  This can be enabled either
-globally or per driver.
+be full, and the driver to appear as not connected.  In such case, the
+driver will provide the following debug message:
++
+	write XX bytes to socket Y failed
++
+By enabling the 'synchronous' flag (value = 'yes'), the driver will wait
+for data to be consumed by upsd, prior to publishing more.  This can be
+enabled either globally or per driver.
 +
 The default is 'no' (i.e. asynchronous mode) for backward compatibility
 of the driver behavior.
