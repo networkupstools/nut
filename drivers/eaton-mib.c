@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.10"
+#define EATON_MARLIN_MIB_VERSION	"0.11"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -234,6 +234,13 @@ static info_lkp_t marlin_outlet_status_info[] = {
 static info_lkp_t outlet_switchability_info[] = {
 	{ -1, "yes" },
 	{ 0, "yes" },
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_ambient_presence_info[] = {
+	{ -1, "unknown" },
+	{ 0, "no" },  /* disconnected */
+	{ 1, "yes" }, /* connected */
 	{ 0, NULL }
 };
 
@@ -340,6 +347,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 
 	/* Ambient page */
+	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.3.0.1", NULL, SU_FLAG_OK, &marlin_ambient_presence_info[0], NULL },
 	/* We use critical levels, for both temperature and humidity,
 	 * since warning levels are also available! */
 	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
