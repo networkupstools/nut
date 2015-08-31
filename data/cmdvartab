@@ -114,6 +114,7 @@ VARDESC ambient.humidity.alarm "Ambient humidity alarm is active"
 VARDESC ambient.humidity.alarm.maximum "Maximum allowed ambient humidity"
 VARDESC ambient.humidity.alarm.minimum "Minimum allowed ambient humidity"
 VARDESC ambient.humidity.alarm.enable "Enable ambient humidity alarm"
+VARDESC ambient.present "Ambient sensor presence"
 
 # FIXME: the outlet collection is indexed - solve with regexs?
 #
