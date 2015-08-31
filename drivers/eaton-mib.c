@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.12"
+#define EATON_MARLIN_MIB_VERSION	"0.13"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -250,6 +250,13 @@ static info_lkp_t marlin_threshold_status_info[] = {
 	{ 2, "cricital-low" },  /* Critical low threshold trigged */
 	{ 3, "warning-high" },  /* Warning high threshold trigged */
 	{ 4, "cricital-high" }, /* Critical high threshold trigged */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_ambient_drycontacts_info[] = {
+	{ -1, "unknown" },
+	{ 0, "open" },
+	{ 1, "closed" },
 	{ 0, NULL }
 };
 
@@ -375,6 +382,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ambient.humidity.high", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	{ "ambient.humidity.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.8.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	{ "ambient.humidity.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	/* Dry contacts on TH module */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.1", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.2", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
 
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
