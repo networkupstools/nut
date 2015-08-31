@@ -376,6 +376,7 @@ sensor temperature.
 [options="header"]
 |===============================================================================
 | Name                              | Description                | Example value
+| ambient.n.present                 | Ambient sensor presence    | yes
 | ambient.n.temperature             | Ambient temperature
                                       (degrees C)                | 25.40
 | ambient.n.temperature.alarm       | Temperature alarm
