@@ -103,7 +103,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.74"
+#define DRIVER_VERSION		"0.75"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1546,7 +1546,9 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return TRUE;
 	}
 
-	if (su_info_p->info_flags == 0) {
+	if (su_info_p->info_flags & ST_FLAG_STRING) {
+		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
+	} else {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
 			if (su_info_p->flags&SU_FLAG_NEGINVALID && value<0) {
@@ -1563,8 +1565,6 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			}
 			snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
 		}
-	} else {
-		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
 	}
 
 	if (status == TRUE) {
@@ -1665,7 +1665,8 @@ int su_setvar(const char *varname, const char *val)
 			value = su_find_valinfo(su_info_p->oid2info, val);
 		}
 		else {
-			value = strtol(val, NULL, 0);
+			/* Convert value and apply multiplier */
+			value = strtof(val, NULL) / su_info_p->info_len;
 		}
 		/* Actually apply the new value */
 		status = nut_snmp_set_int(su_info_p->OID, value);
