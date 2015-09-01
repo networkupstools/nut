@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.14"
+#define EATON_MARLIN_MIB_VERSION	"0.15"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -263,6 +263,48 @@ static info_lkp_t marlin_ambient_drycontacts_info[] = {
 	{ -1, "unknown" },
 	{ 0, "open" },
 	{ 1, "closed" },
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_threshold_voltage_alarms_info[] = {
+	{ 0, "" },                       /* No threshold trigged */
+	{ 1, "low voltage warning!" },   /* Warning low threshold trigged */
+	{ 2, "low voltage cricital!" },  /* Critical low threshold trigged */
+	{ 3, "high voltage warning!" },  /* Warning high threshold trigged */
+	{ 4, "high voltage cricital!" }, /* Critical high threshold trigged */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_threshold_current_alarms_info[] = {
+	{ 0, "" },                       /* No threshold trigged */
+	{ 1, "low current warning!" },   /* Warning low threshold trigged */
+	{ 2, "low current cricital!" },  /* Critical low threshold trigged */
+	{ 3, "high current warning!" },  /* Warning high threshold trigged */
+	{ 4, "high current cricital!" }, /* Critical high threshold trigged */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_threshold_frequency_alarm_info[] = {
+	{ 0, "" },                         /* No threshold trigged */
+	{ 1, "frequency out of range!" },  /* Frequency out of range trigged */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_threshold_temperature_alarms_info[] = {
+	{ 0, "" },                           /* No threshold trigged */
+	{ 1, "low temperature warning!" },   /* Warning low threshold trigged */
+	{ 2, "low temperature cricital!" },  /* Critical low threshold trigged */
+	{ 3, "high temperature warning!" },  /* Warning high threshold trigged */
+	{ 4, "high temperature cricital!" }, /* Critical high threshold trigged */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_threshold_humidity_alarms_info[] = {
+	{ 0, "" },                        /* No threshold trigged */
+	{ 1, "low humidity warning!" },   /* Warning low threshold trigged */
+	{ 2, "low humidity cricital!" },  /* Critical low threshold trigged */
+	{ 3, "high humidity warning!" },  /* Warning high threshold trigged */
+	{ 4, "high humidity cricital!" }, /* Critical high threshold trigged */
 	{ 0, NULL }
 };
 
@@ -325,6 +367,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* Frequency is measured globally */
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
 	{ "input.frequency.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1", NULL, SU_FLAG_OK, &marlin_threshold_frequency_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1", NULL, SU_FLAG_OK, &marlin_threshold_frequency_alarm_info[0], NULL },
 
 	/* inputCurrentPercentLoad (measured globally)
 	 * Current percent load, based on the rated current capacity */
@@ -343,6 +386,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)*/
 	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
 	{ "input.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
 	{ "input.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
@@ -355,6 +399,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * - input.current is mapped on input.L1.current for both single and 3phase !!! */
 	{ "input.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
 	{ "input.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
 	{ "input.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
@@ -383,6 +428,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* Ambient page */
 	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.3.0.1", NULL, SU_FLAG_OK, &marlin_ambient_presence_info[0], NULL },
 	{ "ambient.temperature.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_temperature_alarms_info[0], NULL },
 	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* Low and high threshold use the respective critical levels */
 	{ "ambient.temperature.low", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
@@ -392,6 +438,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ambient.temperature.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.8.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	{ "ambient.temperature.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	{ "ambient.humidity.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_humidity_alarms_info[0], NULL },
 	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* Low and high threshold use the respective critical levels */
 	{ "ambient.humidity.low", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
