@@ -163,10 +163,10 @@ input: Incoming line/power information
 | input.current.nominal       | Nominal input current (A)      | 5.0
 | input.current.status        | Status relative to the
                                 thresholds                     | critical-high
-| input.current.low.warning   | Low warning threshold          | 4
-| input.current.low.critical  | Low critical threshold         | 2
-| input.current.high.warning  | High warning threshold         | 10
-| input.current.high.critical | High critical threshold        | 12
+| input.current.low.warning   | Low warning threshold (A)      | 4
+| input.current.low.critical  | Low critical threshold (A)     | 2
+| input.current.high.warning  | High warning threshold (A)     | 10
+| input.current.high.critical | High critical threshold (A)    | 12
 | input.frequency             | Input line frequency (Hz)      | 60.00
 | input.frequency.nominal     | Nominal input line
                                 frequency (Hz)                 | 60
