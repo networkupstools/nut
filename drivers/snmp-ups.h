@@ -30,9 +30,12 @@
 - add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
-- optimize network flow by constructing one big packet (calling snmp_add_null_var
-for each OID request we made), instead of sending many small packets
-- add support for registration and traps (manager mode),
+- optimize network flow by:
+  1) caching OID values (as in usbhid-ups) with timestamping and lifetime
+  2) constructing one big packet (calling snmp_add_null_var
+     for each OID request we made), instead of sending many small packets
+- add support for registration and traps (manager mode)
+  => Issue: 1 trap listener for N snmp-ups drivers!
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
 - adjust information logging.

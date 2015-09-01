@@ -103,7 +103,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.75"
+#define DRIVER_VERSION		"0.76"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -176,6 +176,7 @@ void upsdrv_updateinfo(void)
 	/* FIXME: only update status (SU_STATUS_*), à la usbhid-ups, in between */
 	if (time(NULL) > (lastpoll + pollfreq)) {
 
+		alarm_init();
 		status_init();
 
 		/* update all dynamic info fields */
@@ -184,6 +185,7 @@ void upsdrv_updateinfo(void)
 		else
 			dstate_datastale();
 
+		alarm_commit();
 		status_commit();
 
 		/* store timestamp */
@@ -875,7 +877,9 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
 
-	if (strcasecmp(su_info_p->info_type, "ups.status"))
+	/* ups.status and ups.alarm have special handling, not here! */
+	if ((strcasecmp(su_info_p->info_type, "ups.status"))
+		&& (strcasecmp(su_info_p->info_type, "ups.alarm")))
 	{
 		if (value != NULL)
 			dstate_setinfo(su_info_p->info_type, "%s", value);
@@ -901,6 +905,21 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 	{
 		if (strcmp(info_value, "")) {
 			status_set(info_value);
+		}
+	}
+	/* TODO: else */
+}
+
+void su_alarm_set(snmp_info_t *su_info_p, long value)
+{
+	const char *info_value = NULL;
+
+	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set()");
+
+	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+	{
+		if (strcmp(info_value, "")) {
+			alarm_set(info_value);
 		}
 	}
 	/* TODO: else */
@@ -1476,6 +1495,22 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return status;
 	}
 
+	if (!strcasecmp(su_info_p->info_type, "ups.alarm")) {
+
+		status = nut_snmp_get_int(su_info_p->OID, &value);
+		if (status == TRUE)
+		{
+			su_alarm_set(su_info_p, value);
+			upsdebugx(2, "=> value: %ld", value);
+		}
+		else upsdebugx(2, "=> Failed");
+
+		return status;
+	}
+
+	/* FIXME: this is not compliant nor coherent with ups.alarm and
+	 * MUST be reworked!
+	 * Only present in powerware-mib.c */
 	if (!strcasecmp(su_info_p->info_type, "ups.alarms")) {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
