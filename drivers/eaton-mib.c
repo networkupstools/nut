@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.13"
+#define EATON_MARLIN_MIB_VERSION	"0.14"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -250,6 +250,12 @@ static info_lkp_t marlin_threshold_status_info[] = {
 	{ 2, "cricital-low" },  /* Critical low threshold trigged */
 	{ 3, "warning-high" },  /* Warning high threshold trigged */
 	{ 4, "cricital-high" }, /* Critical high threshold trigged */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_threshold_frequency_status_info[] = {
+	{ 0, "good" },          /* No threshold trigged */
+	{ 1, "out of range" },  /* Frequency out of range trigged */
 	{ 0, NULL }
 };
 
@@ -318,6 +324,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 
 	/* Frequency is measured globally */
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
+	{ "input.frequency.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1", NULL, SU_FLAG_OK, &marlin_threshold_frequency_status_info[0], NULL },
 
 	/* inputCurrentPercentLoad (measured globally)
 	 * Current percent load, based on the rated current capacity */
@@ -335,6 +342,11 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 *   This is depending on OID inputVoltageMeasType
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)*/
 	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
+	{ "input.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "input.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.L1.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
 	{ "input.L2.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.2", NULL, 0, NULL, NULL },
 	{ "input.L3.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.3", NULL, 0, NULL, NULL },
@@ -342,9 +354,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* FIXME:
 	 * - input.current is mapped on input.L1.current for both single and 3phase !!! */
 	{ "input.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
+	{ "input.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "input.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.L1.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
 	{ "input.L2.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.2", NULL, 0, NULL, NULL },
 	{ "input.L3.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.3", NULL, 0, NULL, NULL },
+
 	/* Sum of all phases realpower, valid for Shark 1ph/3ph only */
 	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.4.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
 	/* Fallback 1: Sum of all phases realpower, valid for Marlin 3ph only */
