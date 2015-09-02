@@ -449,26 +449,26 @@ represent the whole set of outlets of the device.
 
 [options="header"]
 |===============================================================================
-| Name                           | Description                | Example value
+| Name                           | Description                 | Example value
 | outlet.n.id                    | Outlet system identifier
-                                   (opaque string)            | 1
+                                   (opaque string)             | 1
 | outlet.n.desc                  | Outlet description
-                                   (opaque string)            | Main outlet
+                                   (opaque string)             | Main outlet
 | outlet.n.switch                | Outlet switch control
-                                   (on/off)                   | on
+                                   (on/off)                    | on
 | outlet.n.status                | Outlet switch status
-                                   (on/off)                   | on
+                                   (on/off)                    | on
 | outlet.n.switchable            | Outlet switch ability
-                                   (yes/no)                   | yes
+                                   (yes/no)                    | yes
 | outlet.n.autoswitch.charge.low | Remaining battery level to
                                    power off this outlet
-                                   (percent)                  | 80
+                                   (percent)                   | 80
 | outlet.n.battery.charge.low    | Remaining battery level to
                                    power off this outlet
-                                   (percent)                  | 80
+                                   (percent)                   | 80
 | outlet.n.delay.shutdown        | Interval to wait before
                                    shutting down this outlet
-                                   (seconds)                  | 180
+                                   (seconds)                   | 180
 | outlet.n.delay.start           | Interval to wait before
                                    restarting this outlet
                                    (seconds)                   | 120
@@ -476,18 +476,28 @@ represent the whole set of outlets of the device.
                                    will be shutdown (seconds)  | 20
 | outlet.n.timer.start           | Time before the outlet load
                                    will be started (seconds)   | 30
-| outlet.n.current               | Current (A)                | 0.19
-| outlet.n.current.maximum       | Maximum seen current (A)   | 0.56
+| outlet.n.current               | Current (A)                 | 0.19
+| outlet.n.current.maximum       | Maximum seen current (A)    | 0.56
+| outlet.n.current.status        | Current status relative to
+                                   the thresholds              | good
+| outlet.n.current.low.warning   | Low warning threshold (A)   | 0.10
+| outlet.n.current.low.critical  | Low critical threshold (A)  | 0.05
+| outlet.n.current.high.warning  | High warning threshold (A)  | 0.30
+| outlet.n.current.high.critical | High critical threshold (A) | 0.40
 | outlet.n.realpower             | Current value of real
-                                   power (W)                  | 28
-| outlet.n.voltage               | Voltage (V)                | 247.0
-| outlet.n.powerfactor           | Power Factor
-                                   (dimensionless value
-                                   between 0 and 1)           | 0.85
-| outlet.n.crestfactor           | Crest Factor
-                                   (dimensionless, equal
-                                   to or greater than 1)      | 1.41
-| outlet.n.power                 | Apparent power (VA)        | 46
+                                   power (W)                   | 28
+| outlet.n.voltage               | Voltage (V)                 | 247.0
+| outlet.n.voltage.status        | Voltage status relative to
+                                   the thresholds              | good
+| outlet.n.voltage.low.warning   | Low warning threshold (V)   | 205
+| outlet.n.voltage.low.critical  | Low critical threshold (V)  | 200
+| outlet.n.voltage.high.warning  | High warning threshold (V)  | 230
+| outlet.n.voltage.high.critical | High critical threshold (V) | 240
+| outlet.n.powerfactor           | Power Factor (dimensionless,
+                                   value between 0 and 1)      | 0.85
+| outlet.n.crestfactor           | Crest Factor (dimensionless,
+                                   equal to or greater than 1) | 1.41
+| outlet.n.power                 | Apparent power (VA)         | 46
 |===============================================================================
 
 driver: Internal driver information
