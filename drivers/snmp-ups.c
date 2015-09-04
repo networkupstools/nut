@@ -103,7 +103,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.76"
+#define DRIVER_VERSION		"0.77"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -913,12 +913,24 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 void su_alarm_set(snmp_info_t *su_info_p, long value)
 {
 	const char *info_value = NULL;
+	char outlet_info_value[SU_LARGEBUF];
+	int outlet_number = -1;
 
-	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set()");
+	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set(%s)", su_info_p->info_type);
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 	{
 		if (strcmp(info_value, "")) {
+			/* Special handling for outlet alarms */
+			if (su_info_p->flags & SU_OUTLET) {
+				/* Extract outlet number */
+				outlet_number = atoi(strchr(su_info_p->info_type, '.')+1);
+
+				/* Inject in the alarm string */
+				sprintf(outlet_info_value, info_value, outlet_number);
+				info_value = &outlet_info_value[0];
+			}
+			/* Set the alarm value */
 			alarm_set(info_value);
 		}
 	}
@@ -1495,7 +1507,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return status;
 	}
 
-	if (!strcasecmp(su_info_p->info_type, "ups.alarm")) {
+	/* Handle 'ups.alarm' and 'outlet.n.alarm', nothing else! */
+	if (!strcmp(strrchr(su_info_p->info_type, '.'), ".alarm")) {
 
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
