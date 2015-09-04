@@ -35,7 +35,7 @@
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
-	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[ST_MAX_VALUE_LEN];
+	static char	status_buf[ST_MAX_VALUE_LEN], alarm_buf[LARGEBUF];
 	static st_tree_t	*dtree_root = NULL;
 	static conn_t	*connhead = NULL;
 	static cmdlist_t *cmdhead = NULL;
