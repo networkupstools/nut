@@ -90,9 +90,9 @@ Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
 
-	--with-lib (default: no)
+	--with-dev (default: no)
 
-Build and install the upsclient library and header files. 
+Build and install the upsclient and nutclient library and header files. 
 
 	--with-all (no default)
 
@@ -227,7 +227,7 @@ Sets the base directories for the man pages.  The default is
 
 	--includedir=PATH
 
-Sets the path for include files to be installed when --with-lib is
+Sets the path for include files to be installed when `--with-dev` is
 selected. For example, upsclient.h is installed here. The default
 is <prefix>/include.
 
@@ -266,7 +266,7 @@ HTML files will be installed to this path. By default, this is
 	--with-pkgconfig-dir=PATH
 
 Where to install pkg-config *.pc files. This option only has an
-effect if --with-lib is selected, and causes a pkg-config file to
+effect if `--with-dev` is selected, and causes a pkg-config file to
 be installed in the named location. The default is
 <exec_prefix>/pkgconfig.
 
