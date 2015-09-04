@@ -458,6 +458,9 @@ represent the whole set of outlets of the device.
                                    (on/off)                    | on
 | outlet.n.status                | Outlet switch status
                                    (on/off)                    | on
+| outlet.n.alarm                 | Alarms for outlets and PDU,
+                                   published in ups.alarm      | outlet 1 low
+                                                                 voltage warning
 | outlet.n.switchable            | Outlet switch ability
                                    (yes/no)                    | yes
 | outlet.n.autoswitch.charge.low | Remaining battery level to
