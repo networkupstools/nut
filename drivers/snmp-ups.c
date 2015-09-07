@@ -1714,7 +1714,7 @@ int su_setvar(const char *varname, const char *val)
 		}
 		else {
 			/* Convert value and apply multiplier */
-			value = atof(val, NULL) / su_info_p->info_len;
+			value = atof(val) / su_info_p->info_len;
 		}
 		/* Actually apply the new value */
 		status = nut_snmp_set_int(su_info_p->OID, value);
