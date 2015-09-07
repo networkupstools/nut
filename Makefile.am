@@ -108,7 +108,7 @@ install-cgi-man install-cgi-conf install-cgi-html:
 	@echo "Use './configure --with-cgi' instead."
 install-lib:
 	@echo "Error: 'make $@' no longer exists."
-	@echo "Use './configure --with-lib' instead."
+	@echo "Use './configure --with-dev' instead."
 usb build-usb install-usb:
 	@echo "Error: 'make $@' no longer exists."
 	@echo "Use './configure --with-usb' instead."
