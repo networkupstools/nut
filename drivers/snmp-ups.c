@@ -104,7 +104,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.77"
+#define DRIVER_VERSION		"0.78"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1632,7 +1632,7 @@ int su_setvar(const char *varname, const char *val)
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
 	int retval = STAT_SET_FAILED;
-	int value = -1;
+	long value = -1;
 
 	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
 
@@ -1715,7 +1715,7 @@ int su_setvar(const char *varname, const char *val)
 		}
 		else {
 			/* Convert value and apply multiplier */
-			value = strtof(val, NULL) / su_info_p->info_len;
+			value = atof(val) / su_info_p->info_len;
 		}
 		/* Actually apply the new value */
 		status = nut_snmp_set_int(su_info_p->OID, value);
