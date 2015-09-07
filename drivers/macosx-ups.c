@@ -1,6 +1,6 @@
 /* Bridge driver to read Mac OS X UPS status (as displayed in Energy Saver control panel)
  *
- * Copyright (C) 2011-2012 Charles Lepple <clepple+nut@gmail.com>
+ * Copyright (C) 2011-2012, 2015 Charles Lepple <clepple+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.1"
+#define DRIVER_VERSION	"1.2"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -91,11 +91,10 @@ static CFDictionaryRef copy_power_dictionary(CFStringRef power_source_name)
 		}
 	}
 
-	/* TODO: handle this more gracefully when UPS is unplugged */
-	upsdebugx(5, "Asserting 'power_dictionary': %p", power_dictionary);
-	assert(power_dictionary);
-	upsdebugx(5, "CFShowing 'power_dictionary'");
-	if(nut_debug_level >= 5) CFShow(power_dictionary);
+	if(power_dictionary) {
+		upsdebugx(5, "CFShowing 'power_dictionary'");
+		if(nut_debug_level >= 5) CFShow(power_dictionary);
+	}
 
 	/* Get a new power_sources_info next time: */
 	CFRelease(power_sources_info);
@@ -170,7 +169,10 @@ void upsdrv_updateinfo(void)
 	upsdebugx(1, "upsdrv_updateinfo()");
 
 	power_dictionary = copy_power_dictionary( g_power_source_name );
-	assert(power_dictionary); /* TODO: call dstate_datastale()? */
+	if(!power_dictionary) {
+		dstate_datastale();
+		return;
+	}
 
 	status_init();
 
@@ -339,7 +341,7 @@ void upsdrv_initups(void)
 	CFDictionaryRef power_dictionary;
 	CFTypeRef power_blob;
 	CFStringRef potential_key, potential_model;
-	char *device_name = device_path, *model_name; /* regex(3) */
+	char *model_name; /* regex(3) */
 	char potential_model_name[256];
         regex_t model_regex;
 	int ret;
@@ -431,8 +433,12 @@ void upsdrv_initups(void)
 	}
 
 	if(ret) {
-		fatalx(EXIT_FAILURE, "Couldn't find UPS or battery matching both 'port' (%s) and 'model' (%s)",
-			device_name, model_name);
+		if(model_name) {
+			fatalx(EXIT_FAILURE, "Couldn't find UPS or battery matching 'model' (%s)",
+					model_name);
+		} else {
+			fatalx(EXIT_FAILURE, "Couldn't find an UPS or battery.");
+		}
 	}
 
 	g_power_source_name = potential_model;
