@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.7"
+#define PW_MIB_VERSION "0.8"
 
 /* TODO: more sysOID and MIBs support:
  * 
