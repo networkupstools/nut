@@ -79,6 +79,7 @@
 #define PW_OID_CONT_ONDELAY	"1.3.6.1.4.1.534.1.9.2"		/* XUPS-MIB::xupsControlOutputOnDelay */
 #define PW_OID_CONT_OFFT_DEL	"1.3.6.1.4.1.534.1.9.3"		/* XUPS-MIB::xupsControlOutputOffTrapDelay */
 #define PW_OID_CONT_ONT_DEL	"1.3.6.1.4.1.534.1.9.4"		/* XUPS-MIB::xupsControlOutputOnTrapDelay */
+#define PW_OID_CONT_LOAD_SHED_AND_RESTART	"1.3.6.1.4.1.534.1.9.6"		/* XUPS-MIB::xupsLoadShedSecsWithRestart */
 
 #define PW_OID_CONF_OVOLTAGE	"1.3.6.1.4.1.534.1.10.1.0"	/* XUPS-MIB::xupsConfigOutputVoltage.0 */
 #define PW_OID_CONF_IVOLTAGE	"1.3.6.1.4.1.534.1.10.2.0"	/* XUPS-MIB::xupsConfigInputVoltage.0 */
@@ -94,6 +95,14 @@
 #define IETF_OID_CONF_OUT_VA	"1.3.6.1.2.1.33.1.9.5.0"	/* UPS-MIB::upsConfigOutputVA.0 */
 #define IETF_OID_CONF_RUNTIME_LOW	"1.3.6.1.2.1.33.1.9.7.0"	/* UPS-MIB::upsConfigLowBattTime.0 */
 #define IETF_OID_LOAD_LEVEL	"1.3.6.1.2.1.33.1.4.4.1.5"	/* UPS-MIB::upsOutputPercentLoad */
+#define IETF_OID_AUTO_RESTART	"1.3.6.1.2.1.33.1.8.5.0"	/* UPS-MIB::upsAutoRestart */
+
+/* Delay before powering off in seconds */
+#define DEFAULT_OFFDELAY	30
+/* Delay before powering on in seconds */
+#define DEFAULT_ONDELAY	20
+/* Default shutdown.return delay in seconds */
+#define DEFAULT_SHUTDOWNDELAY	0
 
 static info_lkp_t pw_alarm_ob[] = {
 	{ 1, "OB" },
@@ -166,6 +175,11 @@ static info_lkp_t pw_batt_test_info[] = {
 	{ 0, "NULL" }
 };
 
+static info_lkp_t ietf_yes_no_info[] = {
+	{ 1, "yes" },
+	{ 2, "no" },
+	{ 0, "NULL" }
+};
 
 /* Snmp2NUT lookup table */
 
@@ -202,8 +216,10 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
+	{ "ups.start.auto", ST_FLAG_RW, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
+		SU_FLAG_OK, &ietf_yes_no_info[0] },
 	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
-	  SU_STATUS_BATT, &eaton_abm_status_info[0] },
+		SU_STATUS_BATT, &eaton_abm_status_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",
@@ -312,14 +328,21 @@ static snmp_info_t pw_mib[] = {
 	/* instant commands */
 	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	 /* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
+	/* Shed load and restart when line power back on; cannot be canceled */
+	{ "shutdown.return", 0, DEFAULT_SHUTDOWNDELAY, PW_OID_CONT_LOAD_SHED_AND_RESTART, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
 	{ "shutdown.stop", 0, 0, PW_OID_CONT_OFFDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	/* load off after 1 sec, shortest possible delay */
+	/* load off after 1 sec, shortest possible delay; 0 cancels */
 	{ "load.off", 0, 1, PW_OID_CONT_OFFDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	/* load on after 1 sec, shortest possible delay */
+	{ "load.off.delay", 0, DEFAULT_OFFDELAY, PW_OID_CONT_OFFDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* load on after 1 sec, shortest possible delay; 0 cancels */
 	{ "load.on", 0, 1, PW_OID_CONT_ONDELAY, "",
+		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.on.delay", 0, DEFAULT_ONDELAY, PW_OID_CONT_ONDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	{ "ups.alarms", 0, 1.0, PW_OID_ALARMS, "",
