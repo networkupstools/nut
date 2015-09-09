@@ -1,6 +1,6 @@
 /* Bridge driver to read Mac OS X UPS status (as displayed in Energy Saver control panel)
  *
- * Copyright (C) 2011-2012 Charles Lepple <clepple+nut@gmail.com>
+ * Copyright (C) 2011-2012, 2015 Charles Lepple <clepple+nut@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.0"
+#define DRIVER_VERSION	"1.2"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -42,39 +42,63 @@ upsdrv_info_t upsdrv_info = {
 #define CFRelease(ref) do { upsdebugx(3, "%s:%d: CFRelease(%p)", __FILE__, __LINE__, ref); CFRelease(ref); } while(0)
 #endif
 
-static CFStringRef g_power_key = NULL;
+static CFStringRef g_power_source_name = NULL;
 static double max_capacity_value = 100.0;
 
 /*! Copy the current power dictionary.
  *
  * Caller must release power dictionary when finished with it.
  */
-static CFDictionaryRef copy_power_dictionary(CFTypeRef power_key)
+static CFDictionaryRef copy_power_dictionary(CFStringRef power_source_name)
 {
-	CFTypeRef power_blob;
-	CFDictionaryRef power_dictionary;
+	CFTypeRef power_sources_info, power_source;
+	CFArrayRef sources_list;
+	CFDictionaryRef this_power_dictionary, power_dictionary = NULL;
+	CFStringRef this_power_source_name;
+	CFIndex num_keys, index;
 
-	power_blob = IOPSCopyPowerSourcesInfo();
+	power_sources_info = IOPSCopyPowerSourcesInfo();
 
-	assert(power_blob);
-	upsdebugx(6, "%s: Got power_blob:", __func__);
-	if(nut_debug_level >= 6) CFShow(power_blob);
+	assert(power_sources_info);
+	upsdebugx(6, "%s: Got power_sources_info:", __func__);
+	if(nut_debug_level >= 6) CFShow(power_sources_info);
 
-	upsdebugx(5, "power_key = ");
-	if(nut_debug_level >= 5) CFShow(power_key);
-	upsdebugx(6, "end power_key");
+	upsdebugx(5, "power_source_name = ");
+	if(nut_debug_level >= 5) CFShow(power_source_name);
+	upsdebugx(6, "end power_source_name");
 
-	power_dictionary = IOPSGetPowerSourceDescription(power_blob, power_key);
+	sources_list = IOPSCopyPowerSourcesList(power_sources_info);
 
-	upsdebugx(5, "Asserting 'power_dictionary': %p", power_dictionary);
-	assert(power_dictionary);
-	upsdebugx(5, "CFShowing 'power_dictionary'");
-	if(nut_debug_level >= 5) CFShow(power_dictionary);
+	num_keys = CFArrayGetCount(sources_list);
+	for(index=0; index < num_keys; index++) {
+		upsdebugx(6, "%s: Getting power source %ld/%ld...", __func__, index+1, num_keys);
+		power_source = CFArrayGetValueAtIndex(sources_list, index);
+		assert(power_source);
 
-	CFRetain(power_dictionary);
+		upsdebugx(6, "%s: power source %ld = ", __func__, index+1);
+		if(nut_debug_level >= 6) CFShow(power_source);
 
-	/* Get a new power_blob next time: */
-	CFRelease(power_blob);
+		this_power_dictionary = IOPSGetPowerSourceDescription(power_sources_info, power_source);
+		assert(this_power_dictionary);
+
+		this_power_source_name = CFDictionaryGetValue(this_power_dictionary, CFSTR(kIOPSNameKey));
+		assert(this_power_source_name);
+
+		if(!CFStringCompare(this_power_source_name, power_source_name, 0)) {
+			power_dictionary = this_power_dictionary;
+			CFRetain(power_dictionary);
+			break;
+		}
+	}
+
+	if(power_dictionary) {
+		upsdebugx(5, "CFShowing 'power_dictionary'");
+		if(nut_debug_level >= 5) CFShow(power_dictionary);
+	}
+
+	/* Get a new power_sources_info next time: */
+	CFRelease(power_sources_info);
+	CFRelease(sources_list);
 
 	return power_dictionary;
 }
@@ -92,7 +116,7 @@ void upsdrv_initinfo(void)
 
 	dstate_setinfo("device.mfr", "(unknown)");
 
-	power_dictionary = copy_power_dictionary(g_power_key);
+	power_dictionary = copy_power_dictionary(g_power_source_name);
 
 	device_type_cfstr = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSTypeKey));
 	if(device_type_cfstr && !CFStringCompare(device_type_cfstr, CFSTR(kIOPSInternalBatteryType), 0)) {
@@ -144,8 +168,11 @@ void upsdrv_updateinfo(void)
 
 	upsdebugx(1, "upsdrv_updateinfo()");
 
-	power_dictionary = copy_power_dictionary( g_power_key );
-	assert(power_dictionary); /* TODO: call dstate_datastale()? */
+	power_dictionary = copy_power_dictionary( g_power_source_name );
+	if(!power_dictionary) {
+		dstate_datastale();
+		return;
+	}
 
 	status_init();
 
@@ -314,9 +341,9 @@ void upsdrv_initups(void)
 	CFDictionaryRef power_dictionary;
 	CFTypeRef power_blob;
 	CFStringRef potential_key, potential_model;
-	char *device_name = device_path, *model_name; /* regex(3) */
-	char potential_device_name[80], potential_model_name[80];
-        regex_t name_regex, model_regex;
+	char *model_name; /* regex(3) */
+	char potential_model_name[256];
+        regex_t model_regex;
 	int ret;
 
 	upsdebugx(3, "upsdrv_initups(): Power Sources blob:");
@@ -329,6 +356,8 @@ void upsdrv_initups(void)
 
 	if(nut_debug_level >= 3) CFShow(power_blob);
 
+/* The CFDictionary through 10.9 has changed to a CFArray, so this part is no longer applicable: */
+#if 0
 	if(!strcmp(device_name, "auto")) {
 		device_name = "/UPS";
 	}
@@ -342,6 +371,7 @@ void upsdrv_initups(void)
 				"Failed to compile regex from 'port' parameter: '%s'.",
 				device_name);
 	}
+#endif
 
 	if((model_name = getval("model"))) {
 		upsdebugx(2, "Matching power supply model names against regex '%s'", model_name);
@@ -363,61 +393,55 @@ void upsdrv_initups(void)
 
 	if(num_keys < 1) {
 		/* bail */
-		fatalx(EXIT_FAILURE, "Couldn't find any UPS or battery");
+		fatalx(EXIT_FAILURE, "Couldn't find any UPS or battery. Is your UPS shown in the 'Energy Saver' control panel?");
 	}
 
 	for(index=0; index < num_keys; index++) {
+		upsdebugx(2, "Retrieving power source #%ld", index+1);
 		potential_key = CFArrayGetValueAtIndex(power_source_key_list, index);
-		CFStringGetCString(potential_key, potential_device_name,
-				sizeof(potential_device_name), kCFStringEncodingUTF8);
-		upsdebugx(1, "    Power supply: %s", potential_device_name);
+		upsdebugx(3, "Power source key/index:");
+		if(nut_debug_level >= 3) CFShow(potential_key);
 
-		ret = regexec(&name_regex, potential_device_name, 0,0,0);
-
-		power_dictionary = copy_power_dictionary(potential_key);
+		power_dictionary = IOPSGetPowerSourceDescription(power_blob, potential_key);
+		assert(power_dictionary);
+		CFRetain(power_dictionary);
 
 		upsdebugx(2, "Getting 'Name' key (UPS model)");
 
 		potential_model = CFDictionaryGetValue(power_dictionary, CFSTR(kIOPSNameKey));
-		CFStringGetCString(potential_model, potential_model_name, sizeof(potential_model_name), kCFStringEncodingUTF8);
-		upsdebugx(1, "        model name: %s", potential_model_name);
+		CFRetain(potential_model);
+		if(CFStringGetCString(potential_model, potential_model_name, sizeof(potential_model_name), kCFStringEncodingUTF8)) {
+			upsdebugx(1, "        model name: %s", potential_model_name);
+		} else {
+			upsdebugx(1, "        (failed to retrieve 'Name')");
+		}
 
 		CFRelease(power_dictionary);
 
-		/* Does key match? Check model: */
-		if (!ret) {
-			if(model_name) {
-				ret = regexec(&model_regex, potential_model_name, 0,0,0);
-				if(!ret) {
-					upsdebugx(2, "Matched model name");
-					break;
-				}
-			} else {
-				upsdebugx(2, "Matched key name");
+		if(model_name) {
+			ret = regexec(&model_regex, potential_model_name, 0,0,0);
+			if(!ret) {
+				upsdebugx(2, "Matched model name");
 				break;
 			}
 		}
+		CFRelease(potential_model);
 	}
 
-        regfree(&name_regex);
 	if(model_name) {
 		regfree(&model_regex);
 	}
 
 	if(ret) {
-		fatalx(EXIT_FAILURE, "Couldn't find UPS or battery matching both 'port' (%s) and 'model' (%s)",
-			device_name, model_name);
+		if(model_name) {
+			fatalx(EXIT_FAILURE, "Couldn't find UPS or battery matching 'model' (%s)",
+					model_name);
+		} else {
+			fatalx(EXIT_FAILURE, "Couldn't find an UPS or battery.");
+		}
 	}
 
-	g_power_key = potential_key;
-	CFRetain(g_power_key);
-	upsdebugx(2, "g_power_key = ");
-	if(nut_debug_level >= 2) CFShow(g_power_key);
-	upsdebugx(2, "end g_power_key.");
-
-	power_dictionary = copy_power_dictionary(g_power_key);
-	assert(power_dictionary);
-	if(nut_debug_level >= 3) CFShow(power_dictionary);
+	g_power_source_name = potential_model;
 
 	/* the upsh handlers can't be done here, as they get initialized
 	 * shortly after upsdrv_initups returns to main.
@@ -426,14 +450,12 @@ void upsdrv_initups(void)
 	/* don't try to detect the UPS here */
 
 	/* do stuff */
-
-	CFRelease(power_dictionary);
 }
 
 void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "Cleanup: release references");
-	CFRelease(g_power_key);
+	CFRelease(g_power_source_name);
 
 	/* free(dynamic_mem); */
 	/* ser_close(upsfd, device_path); */
