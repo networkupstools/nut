@@ -24,6 +24,7 @@
    2005/07/01 - Version 0.50 - add internal e external shutdown programming
    2005/08/18 - Version 0.60 - save external shutdown programming to ups,
  			       and support new cables for solis 3
+   (see the version control logs for more recent updates)
 
    Microsol contributed with UPS Solis 1.5 HS 1.5 KVA for my tests.
 
@@ -39,8 +40,8 @@
 #include "solis.h"
 #include "timehead.h"
 
-#define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.63"
+#define DRIVER_NAME	"APC/Microsol Solis UPS driver"
+#define DRIVER_VERSION	"0.64"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,6 +54,7 @@ upsdrv_info_t upsdrv_info = {
 
 #define false 0
 #define true 1
+#define RESP_END    0xFE
 #define ENDCHAR 13	/* replies end with CR */
 /* solis commands */
 #define CMD_UPSCONT 0xCC
@@ -90,11 +92,11 @@ upsdrv_info_t upsdrv_info = {
 #define NO_EVENT   "No events\n"
 #define UPS_TIME   "UPS internal Time %0d:%02d:%02d\n"
 #define PRG_DAYS   "Programming Shutdown Sun  Mon  Tue  Wed  Thu  Fri  Sat\n"
-#define PRG_ONON   "External shutdown programming ative\n"
-#define PRG_ONOU   "Internal shutdown programming ative\n"
+#define PRG_ONON   "External shutdown programming active\n"
+#define PRG_ONOU   "Internal shutdown programming atcive\n"
 #define TIME_OFF   "UPS Time power off %02d:%02d\n"
 #define TIME_ON    "UPS Time power on %02d:%02d\n"
-#define PRG_ONOF   "Shutdown programming not atived\n"
+#define PRG_ONOF   "Shutdown programming not activated\n"
 #define TODAY_DD   "Shutdown today at %02d:%02d\n"
 #define SHUT_NOW   "Shutdown now!\n"
 #endif
@@ -791,17 +793,16 @@ CommReceive(const char *bufptr,  int size)
 
 static void getbaseinfo(void)
 {
-
-	unsigned char  temp[256];
+	unsigned char tmp;
 #ifdef PORTUGUESE
 	char diassemana[7][4]={"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
 #else
 	char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	char    mycmd[8]; 
 	char *str1, *str2, *str3, *str4, *strx;
 	unsigned char Pacote[25];
-	int  i, i1=0, i2=0, j=0, tam, tpac=25;
+	int  i, i1=0, i2=0, tam;
+	const int tpac=25;
 
 	time_t tmt;
 	struct tm *now;
@@ -870,30 +871,26 @@ static void getbaseinfo(void)
 
 	/* dummy read attempt to sync - throw it out */
 	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR to sync", __func__);
-	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
-	ser_send(upsfd, "%s", mycmd);
+	ser_send(upsfd, "%c%c", CMD_UPSCONT, ENDCHAR);
 
-	/* trying detect solis model */
-	while ( ( !detected ) && ( j < 20 ) )  {
-		temp[0] = 0; /* flush temp buffer */
-		upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, tpac);
-		tam = ser_get_buf_len(upsfd, temp, tpac, 3, 0);
+	/* Read until end-of-response character (0xFE): */
+	for(i=0; i<tpac*3; i++) {
+		ser_get_char(upsfd, &tmp, 3, 0);
+		if(tmp == RESP_END)
+			break;
+	}
+
+	if(tmp != RESP_END) {
+		fatalx(EXIT_FAILURE, NO_SOLIS);
+	} else {
+		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, tpac);
+		tam = ser_get_buf_len(upsfd, Pacote, tpac, 3, 0);
 		upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
 		if(tam > 0 && nut_debug_level >= 4) {
-			upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+			upsdebug_hex(4, "received from ser_get_buf_len()", Pacote, tam);
 		}
-		if( tam == 25 ) {
-			for( i = 0 ; i < tam ; i++ ) {
-				Pacote[i] = temp[i];
-			}
-		}
-
-		j++;
-		if( tam == 25)
-			CommReceive((char *)Pacote, tam);
-		else
-			 CommReceive((char *)temp, tam);
-	} /* while end */
+		CommReceive((char *)Pacote, tam);
+	}
 
 	if( (!detected) ) {
 		fatalx(EXIT_FAILURE,  NO_SOLIS );
