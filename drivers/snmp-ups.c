@@ -573,8 +573,8 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 			if ((numerr == SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
 				upslogx(LOG_WARNING, "[%s] Warning: excessive poll "
-						"failures, limiting error reporting",
-						upsname?upsname:device_name);
+						"failures, limiting error reporting (OID = %s)",
+						upsname?upsname:device_name, OID);
 			}
 
 			if ((numerr < SU_ERR_LIMIT) || ((numerr % SU_ERR_RATE) == 0)) {
