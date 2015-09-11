@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.19"
+#define EATON_MARLIN_MIB_VERSION	"0.20"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -340,9 +340,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	/* FIXME: need RFC validation on this variable
-	 * { "device.part", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.3.0",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL }, */
+	{ "device.part", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.3.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
