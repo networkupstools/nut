@@ -271,6 +271,7 @@ Valid with/without context (i.e. per phase or aggregated/averaged)
 [options="header"]
 |===============================================================================
 | Name                  | Description
+| alarm                 | Alarms for phases, published in ups.alarm
 | current               | Current (A)
 | current.maximum       | Maximum seen current (A)
 | current.minimum       | Minimum seen current (A)
