@@ -104,7 +104,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.78"
+#define DRIVER_VERSION		"0.79"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -878,9 +878,9 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
 
-	/* ups.status and ups.alarm have special handling, not here! */
+	/* ups.status and {ups, Lx, outlet}.alarm have special handling, not here! */
 	if ((strcasecmp(su_info_p->info_type, "ups.status"))
-		&& (strcasecmp(su_info_p->info_type, "ups.alarm")))
+		&& (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm")))
 	{
 		if (value != NULL)
 			dstate_setinfo(su_info_p->info_type, "%s", value);
@@ -914,8 +914,8 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 void su_alarm_set(snmp_info_t *su_info_p, long value)
 {
 	const char *info_value = NULL;
-	char outlet_info_value[SU_LARGEBUF];
-	int outlet_number = -1;
+	char alarm_info_value[SU_LARGEBUF];
+	int item_number = -1; /* number of the outlet or phase */
 
 	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set(%s)", su_info_p->info_type);
 
@@ -925,12 +925,24 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 			/* Special handling for outlet alarms */
 			if (su_info_p->flags & SU_OUTLET) {
 				/* Extract outlet number */
-				outlet_number = atoi(strchr(su_info_p->info_type, '.')+1);
+				item_number = atoi(strchr(su_info_p->info_type, '.')+1);
 
 				/* Inject in the alarm string */
-				sprintf(outlet_info_value, info_value, outlet_number);
-				info_value = &outlet_info_value[0];
+				sprintf(alarm_info_value, info_value, "outlet ", item_number);
+				info_value = &alarm_info_value[0];
 			}
+			/* Special handling for phase alarms
+			 * Note that SU_*PHASE flags are cleared, so match the 'Lx'
+			 * start of path */
+			if (su_info_p->info_type[0] == 'L') {
+				/* Extract phase number */
+				item_number = atoi(strchr(su_info_p->info_type, 'L')+1);
+
+				/* Inject in the alarm string */
+				sprintf(alarm_info_value, info_value, "phase L", item_number);
+				info_value = &alarm_info_value[0];
+			}
+
 			/* Set the alarm value */
 			alarm_set(info_value);
 		}
@@ -1315,7 +1327,7 @@ bool_t snmp_ups_walk(int mode)
 			continue;
 
 		if (su_info_p->flags & SU_INPHASES) {
-			upsdebugx(1, "Check input_phases");
+			upsdebugx(1, "Check input_phases (%i)", input_phases);
 			if (input_phases == 0) {
 				continue;
 			}
@@ -1508,8 +1520,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return status;
 	}
 
-	/* Handle 'ups.alarm' and 'outlet.n.alarm', nothing else! */
+	/* Handle 'ups.alarm', 'outlet.n.alarm' and 3phase 'Lx.alarm',
+	 * nothing else! */
 	if (!strcmp(strrchr(su_info_p->info_type, '.'), ".alarm")) {
+
+		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
 
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
