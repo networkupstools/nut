@@ -1,0 +1,13 @@
+Mac OS X launchd plists
+=======================
+
+This directory contains property list (plist) files for the Mac OS X launchd
+init system.
+
+NOTE: at the moment, there is no universal solution for launching NUT drivers.
+The `upsdrvctl` binary does not provide an option to stay in the foreground,
+since it simply starts the driver(s), and terminates. One option is to write a
+tool that would create a separate launchd job for each UPS listed in
+`ups.conf`.
+
+Reference: https://developer.apple.com/library/mac/documentation/MacOSX/Conceptual/BPSystemStartup/Chapters/CreatingLaunchdJobs.html

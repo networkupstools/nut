@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!-- Network UPS Tools (NUT): http://www.networkupstools.org -->
+<dict>
+	<key>Label</key>
+	<string>org.networkupstools.upsmon</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>@SBINDIR@/upsmon</string>
+		<string>-D</string> <!-- "-D" keeps upsmon from going into the background -->
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>UserName</key>
+	<string>@RUN_AS_USER@</string>
+	<key>GroupName</key>
+	<string>@RUN_AS_GROUP@</string>
+</dict>
+</plist>

@@ -86,6 +86,11 @@ if test ! -d "${devddir}"; then
    fi
 fi
 
+launchdaemondir='/Library/LaunchDaemons'
+if test ! -d "${launchdaemondir}"; then
+   launchdaemondir=''
+fi
+
 RUN_AS_USER="nobody"
 RUN_AS_GROUP="nobody"
 PIDPATH="/var/run"
@@ -1160,6 +1165,36 @@ AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
 dnl
 
+AC_MSG_CHECKING(whether to install Mac OS X launchd plists)
+AC_ARG_WITH(launchd-daemon-dir,
+	AS_HELP_STRING([--with-launchd-daemon-dir=PATH], [where to install launchd plists (/Library/LaunchDaemons or /System/Library/LaunchDaemons)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${launchdaemondir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["launchd directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		launchdaemondir=""
+		;;
+	*)
+		launchdaemondir="${withval}"
+		;;
+	esac
+],[])
+if test -n "${launchdaemondir}"; then
+	AC_MSG_RESULT(using ${launchdaemondir})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_LAUNCHD, [test -n "${launchdaemondir}"])
+
+dnl
+
 AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
 AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
 AC_PATH_PROGS([A2X], [a2x], [none])
@@ -1250,6 +1285,7 @@ AC_SUBST(cgiexecdir)
 AC_SUBST(devddir)
 AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
+AC_SUBST(launchdaemondir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystemshutdowndir)
@@ -1293,6 +1329,9 @@ AC_OUTPUT([
  scripts/hotplug/libhidups
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
+ scripts/launchd/Makefile
+ scripts/launchd/org.networkupstools.upsd.plist
+ scripts/launchd/org.networkupstools.upsmon.plist
  scripts/python/Makefile
  scripts/systemd/Makefile
  scripts/systemd/nut-driver.service
