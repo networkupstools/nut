@@ -21,6 +21,7 @@ DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
+ --with-launchd-daemon-dir='$${prefix}/Library/LaunchDaemons' \
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
