@@ -456,7 +456,8 @@ outlet: Smart outlet management
 NOTE: *n* stands for the outlet index. For more information, refer to the
 NUT outlets management and PDU notes chapter of the user manual.
 A special case is "outlet.0" which is equivalent to "outlet", and
-represent the whole set of outlets of the device.
+represent the whole set of outlets of the device. The most important
+data is "outlet.count", used to iterate over the whole set of outlets.
 
 [options="header"]
 |===============================================================================
