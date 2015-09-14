@@ -14,9 +14,5 @@
 	<true/>
 	<key>KeepAlive</key>
 	<true/>
-	<key>UserName</key>
-	<string>@RUN_AS_USER@</string>
-	<key>GroupName</key>
-	<string>@RUN_AS_GROUP@</string>
 </dict>
 </plist>
