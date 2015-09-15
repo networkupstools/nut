@@ -156,6 +156,8 @@ typedef struct {
 #define SU_STATUS_NUM_ELEM	4
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
+#define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
+
 /* Phase specific data */
 #define SU_PHASES		(0x3F << 12)
 #define SU_INPHASES		(0x3 << 12)
