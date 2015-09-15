@@ -100,10 +100,8 @@ alarms_info_t *alarms_info;
 const char *mibname;
 const char *mibvers;
 
-static void disable_transfer_oids(void);
-
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.79"
+#define DRIVER_VERSION		"0.80"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -121,12 +119,16 @@ upsdrv_info_t	upsdrv_info = {
 
 time_t lastpoll = 0;
 
-/* outlet OID index start with 0 or 1,
+/* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
-int outlet_index_base = -1;
+int template_index_base = -1;
 
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
+
+/* Forward functions declarations */
+static void disable_transfer_oids(void);
+bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -140,12 +142,13 @@ void upsdrv_initinfo(void)
 	dstate_setinfo("driver.version.data", "%s MIB %s", mibname, mibvers);
 
 	/* add instant commands to the info database.
-	 * outlet commands are processed later, during initial walk */
+	 * outlet (and groups) commands are processed later, during initial walk */
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
 	{
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
-			&& !(su_info_p->flags & SU_OUTLET)) {
+			&& !(su_info_p->flags & SU_OUTLET)
+			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
 			/* first check that this OID actually exists */
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -877,7 +880,8 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
 
-	/* ups.status and {ups, Lx, outlet}.alarm have special handling, not here! */
+	/* ups.status and {ups, Lx, outlet, outlet.group}.alarm have special
+	 * handling, not here! */
 	if ((strcasecmp(su_info_p->info_type, "ups.status"))
 		&& (strcasecmp(strrchr(su_info_p->info_type, '.'), ".alarm")))
 	{
@@ -930,6 +934,9 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 				sprintf(alarm_info_value, info_value, "outlet ", item_number);
 				info_value = &alarm_info_value[0];
 			}
+			/* Special handling for outlet group alarms */
+			// FIXME: if (su_info_p->flags & SU_OUTLET_GROUP) {
+
 			/* Special handling for phase alarms
 			 * Note that SU_*PHASE flags are cleared, so match the 'Lx'
 			 * start of path */
@@ -1138,8 +1145,8 @@ static void disable_competition(snmp_info_t *entry)
 	}
 }
 
-/* instantiate an snmp_info_t from a template.
- * mostly (only?) useful for outlet templates.
+/* Instantiate an snmp_info_t from a template.
+ * Useful for outlet and outlet.group templates.
  * Note: remember to adapt info_type, OID and optionaly dfl */
 snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
@@ -1166,8 +1173,8 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 	return new_instance;
 }
 
-/* free a dynamically allocated snmp_info_t.
- * mostly (only?) useful for outlet templates */
+/* Free a dynamically allocated snmp_info_t.
+ * Useful for outlet and outlet.group templates */
 void free_info(snmp_info_t *su_info_p)
 {
 	/* sanity check */
@@ -1183,14 +1190,14 @@ void free_info(snmp_info_t *su_info_p)
 	free (su_info_p);
 }
 
-/* return the base SNMP index (0 or 1) to start outlet iteration on the MIB,
- * based on a test using a template OID */
-int base_snmp_outlet_index(const char *OID_template)
+/* return the base SNMP index (0 or 1) to start template iteration on
+ * the MIB, based on a test using a template OID */
+int base_snmp_template_index(const char *OID_template)
 {
-	int base_index = outlet_index_base;
+	int base_index = template_index_base;
 	char test_OID[SU_INFOSIZE];
 
-	if (outlet_index_base == -1)
+	if (template_index_base == -1)
 	{
 		/* not initialised yet */
 		for (base_index = 0 ; base_index < 2 ; base_index++) {
@@ -1198,23 +1205,24 @@ int base_snmp_outlet_index(const char *OID_template)
 			if (nut_snmp_get(test_OID) != NULL)
 				break;
 		}
-		outlet_index_base = base_index;
+		template_index_base = base_index;
 	}
-	upsdebugx(3, "base_snmp_outlet_index: %i", outlet_index_base);
+	upsdebugx(3, "base_snmp_template_index: %i", template_index_base);
 	return base_index;
 }
 
-/* return the NUT offset (increment) based on outlet_index_base
- * ie (outlet_index_base == 0) => increment +1
- *    (outlet_index_base == 1) => increment +0 */
-int base_nut_outlet_offset(void)
+/* return the NUT offset (increment) based on template_index_base
+ * ie (template_index_base == 0) => increment +1
+ *    (template_index_base == 1) => increment +0 */
+int base_nut_template_offset(void)
 {
-	return (outlet_index_base==0)?1:0;
+	return (template_index_base==0)?1:0;
 }
 
-/* try to determine the number of outlets, using a template definition,
- * that we walk, until we can't get anymore values */
-static int guestimate_outlet_count(const char *OID_template)
+/* Try to determine the number of items (outlets, outlet groups, ...),
+ * using a template definition. Walk through the template until we can't
+ * get anymore values. I.e., if we can iterate up to 8 item, return 8 */
+static int guestimate_template_count(const char *OID_template)
 {
 	int base_index = 0;
 	char test_OID[SU_INFOSIZE];
@@ -1236,6 +1244,88 @@ static int guestimate_outlet_count(const char *OID_template)
 
 	upsdebugx(3, "guestimate_outlet_count: %i", base_count);
 	return base_count;
+}
+
+/* Process template definition, instantiate and get data or register
+ * command
+ * type: outlet, outlet.group */
+bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
+{
+	/* Default to TRUE, and leave to get_and_process_data() to set
+	 * to FALSE when actually getting data from devices, to avoid false
+	 * negative with server side data */
+	bool_t status = TRUE;
+	int cur_template_number = 1;
+	int cur_nut_index = 0;
+	int template_count = 0;
+	snmp_info_t cur_info_p;
+	char template_count_var[SU_BUFSIZE];
+
+	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
+
+	sprintf(template_count_var, "%s.count", type);
+
+	if(dstate_getinfo(template_count_var) == NULL) {
+		/* FIXME: should we disable it?
+		 * su_info_p->flags &= ~SU_FLAG_OK;
+		 * or rely on guestimation? */
+		template_count = guestimate_template_count(su_info_p->OID);
+		/* Publish the count estimation */
+		dstate_setinfo(template_count_var, "%i", template_count);
+	}
+	else {
+		template_count = atoi(dstate_getinfo(template_count_var));
+	}
+
+	/* Only instantiate templates if needed! */
+	if (template_count > 0) {
+		/* general init of data using the template */
+		instantiate_info(su_info_p, &cur_info_p);
+
+		for (cur_template_number = base_snmp_template_index(su_info_p->OID) ;
+				cur_template_number < (template_count + base_snmp_template_index(su_info_p->OID)) ;
+				cur_template_number++)
+		{
+			cur_nut_index = cur_template_number + base_nut_template_offset();
+			sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
+					cur_nut_index);
+
+			/* check if default value is also a template */
+			if ((cur_info_p.dfl != NULL) &&
+				(strstr(su_info_p->dfl, "%i") != NULL)) {
+				cur_info_p.dfl = (char *)xmalloc(SU_INFOSIZE);
+				sprintf((char *)cur_info_p.dfl, su_info_p->dfl, cur_nut_index);
+			}
+
+			if (cur_info_p.OID != NULL) {
+				sprintf((char *)cur_info_p.OID, su_info_p->OID, cur_template_number);
+
+				/* add instant commands to the info database. */
+				if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
+					/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
+					if (mode == SU_WALKMODE_INIT)
+						dstate_addcmd(cur_info_p.info_type);
+				}
+				else /* get and process this data */
+					status = get_and_process_data(mode, &cur_info_p);
+			} else {
+				/* server side (ABSENT) data */
+				su_setinfo(&cur_info_p, NULL);
+			}
+			/* set back the flag */
+			su_info_p->flags = cur_info_p.flags;
+		}
+		free((char*)cur_info_p.info_type);
+		if (cur_info_p.OID != NULL)
+			free((char*)cur_info_p.OID);
+		if ((cur_info_p.dfl != NULL) &&
+			(strstr(su_info_p->dfl, "%i") != NULL))
+			free((char*)cur_info_p.dfl);
+	}
+	else {
+		upsdebugx(1, "No %s present, discarding template definition...", type);
+	}
+	return status;
 }
 
 /* process a single data from a walk */
@@ -1292,7 +1382,8 @@ bool_t snmp_ups_walk(int mode)
 
 		/* skip instcmd, not linked to outlets */
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
-			&& !(su_info_p->flags & SU_OUTLET)) {
+			&& !(su_info_p->flags & SU_OUTLET)
+			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
 			upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
 			continue;
 		}
@@ -1305,11 +1396,12 @@ bool_t snmp_ups_walk(int mode)
 				su_info_p->flags & SU_FLAG_STATIC)
 			continue;
 
-		/* set default value if we cannot fetch it */
+		/* Set default value if we cannot fetch it */
 		/* and set static flag on this element.
-		 * not applicable to outlets (need SU_FLAG_STATIC tagging) */
+		 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
 		if ((su_info_p->flags & SU_FLAG_ABSENT)
-			&& !(su_info_p->flags & SU_OUTLET)) {
+			&& !(su_info_p->flags & SU_OUTLET)
+			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
 			if (mode == SU_WALKMODE_INIT) {
 				if (su_info_p->dfl) {
 					/* Set default value if we cannot fetch it from ups. */
@@ -1325,9 +1417,16 @@ bool_t snmp_ups_walk(int mode)
 				(iterations % SU_STALE_RETRY) != 0)
 			continue;
 
+		/* Filter 1-phase Vs 3-phase according to {input,output}.phase.
+		 * Non matching items are disabled, and flags are cleared at
+		 * init time */
 		if (su_info_p->flags & SU_INPHASES) {
 			upsdebugx(1, "Check input_phases (%i)", input_phases);
 			if (input_phases == 0) {
+				/* FIXME: to get from input.phases
+				 * this would avoid the use of the SU_FLAG_SETINT flag
+				 * and potential human-error to not declare the right way.
+				 * It would also free the slot for SU_OUTLET_GROUP */
 				continue;
 			}
 			if (su_info_p->flags & SU_INPUT_1) {
@@ -1356,6 +1455,7 @@ bool_t snmp_ups_walk(int mode)
 		if (su_info_p->flags & SU_OUTPHASES) {
 			upsdebugx(1, "Check output_phases");
 			if (output_phases == 0) {
+				/* FIXME: same as for input_phases */
 				continue;
 			}
 			if (su_info_p->flags & SU_OUTPUT_1) {
@@ -1384,6 +1484,7 @@ bool_t snmp_ups_walk(int mode)
 		if (su_info_p->flags & SU_BYPPHASES) {
 			upsdebugx(1, "Check bypass_phases");
 			if (bypass_phases == 0) {
+				/* FIXME: same as for input_phases */
 				continue;
 			}
 			if (su_info_p->flags & SU_BYPASS_1) {
@@ -1411,77 +1512,10 @@ bool_t snmp_ups_walk(int mode)
 
 		/* process outlet template definition */
 		if (su_info_p->flags & SU_OUTLET) {
-			upsdebugx(1, "outlet template definition found (%s)...", su_info_p->info_type);
-			int cur_outlet_number = 1;
-			int cur_nut_index = 0;
-			int outlet_count = 0;
-			snmp_info_t cur_info_p;
-
-			if(dstate_getinfo("outlet.count") == NULL) {
-				/* FIXME: should we disable it?
-				 * su_info_p->flags &= ~SU_FLAG_OK;
-				 * or rely on guestimation? */
-				if ((outlet_count = guestimate_outlet_count(su_info_p->OID)) == -1) {
-					/* Failed */
-					continue;
-				}
-				else {
-					/* Publish the count estimation */
-					dstate_setinfo("outlet.count", "%i", outlet_count);
-				}
-			}
-			else {
-				outlet_count = atoi(dstate_getinfo("outlet.count"));
-			}
-
-			/* Only instantiate outlets if needed! */
-			if (outlet_count > 0) {
-				/* general init of data using the template */
-				instantiate_info(su_info_p, &cur_info_p);
-
-				for (cur_outlet_number = base_snmp_outlet_index(su_info_p->OID) ;
-						cur_outlet_number < (outlet_count + base_snmp_outlet_index(su_info_p->OID)) ;
-						cur_outlet_number++)
-				{
-					cur_nut_index = cur_outlet_number + base_nut_outlet_offset();
-					sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
-							cur_nut_index);
-
-					/* check if default value is also a template */
-					if ((cur_info_p.dfl != NULL) &&
-						(strstr(su_info_p->dfl, "%i") != NULL)) {
-						cur_info_p.dfl = (char *)xmalloc(SU_INFOSIZE);
-						sprintf((char *)cur_info_p.dfl, su_info_p->dfl, cur_nut_index);
-					}
-
-					if (cur_info_p.OID != NULL) {
-						sprintf((char *)cur_info_p.OID, su_info_p->OID, cur_outlet_number);
-
-						/* add outlet instant commands to the info database. */
-						if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
-							/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
-							if (mode == SU_WALKMODE_INIT)
-								dstate_addcmd(cur_info_p.info_type);
-						}
-						else /* get and process this data */
-							status = get_and_process_data(mode, &cur_info_p);
-					} else {
-						/* server side (ABSENT) data */
-						su_setinfo(&cur_info_p, NULL);
-					}
-					/* set back the flag */
-					su_info_p->flags = cur_info_p.flags;
-				}
-				free((char*)cur_info_p.info_type);
-				if (cur_info_p.OID != NULL)
-					free((char*)cur_info_p.OID);
-				if ((cur_info_p.dfl != NULL) &&
-					(strstr(su_info_p->dfl, "%i") != NULL))
-					free((char*)cur_info_p.dfl);
-			}
-			else {
-				upsdebugx(1, "No outlet present, discarding template definition...");
-			}
+			status = process_template(mode, "outlet", su_info_p);
+		}
+		else if (su_info_p->flags & SU_OUTLET_GROUP) {
+			status = process_template(mode, "outlet.group", su_info_p);
 		}
 		else {
 			/* get and process this data */
@@ -1490,7 +1524,6 @@ bool_t snmp_ups_walk(int mode)
 	}	/* for (su_info_p... */
 
 	iterations++;
-
 	return status;
 }
 
@@ -1650,6 +1683,7 @@ int su_setvar(const char *varname, const char *val)
 
 	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
 
+	/* Check if it is outlet or outlet.group */
 	if (strncmp(varname, "outlet", 6))
 		su_info_p = su_find_info(varname);
 	else {
@@ -1686,12 +1720,12 @@ int su_setvar(const char *varname, const char *val)
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 			sprintf((char *)su_info_p->dfl, tmp_info_p->dfl,
-				outlet_number - base_nut_outlet_offset());
+				outlet_number - base_nut_template_offset());
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
 			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
-				outlet_number - base_nut_outlet_offset());
+				outlet_number - base_nut_template_offset());
 		}
 		/* else, don't return STAT_SET_INVALID since we can be setting
 		 * a server side variable! */
@@ -1704,6 +1738,7 @@ int su_setvar(const char *varname, const char *val)
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
 		upsdebugx(2, "su_setvar: info element unavailable %s", varname);
 
+		/* Free template (outlet and outlet.group) */
 		if (!strncmp(varname, "outlet", 6))
 			free_info(su_info_p);
 
@@ -1713,6 +1748,7 @@ int su_setvar(const char *varname, const char *val)
 	if (!(su_info_p->info_flags & ST_FLAG_RW) || su_info_p->OID == NULL) {
 		upsdebugx(2, "su_setvar: not writable %s", varname);
 
+		/* Free template (outlet and outlet.group) */
 		if (!strncmp(varname, "outlet", 6))
 			free_info(su_info_p);
 
@@ -1744,6 +1780,7 @@ int su_setvar(const char *varname, const char *val)
 		/* update info array */
 		su_setinfo(su_info_p, val);
 	}
+	/* Free template (outlet and outlet.group) */
 	if (!strncmp(varname, "outlet", 6))
 		free_info(su_info_p);
 
@@ -1799,7 +1836,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 			sprintf((char *)su_info_p->dfl, tmp_info_p->dfl,
-				outlet_number - base_nut_outlet_offset());
+				outlet_number - base_nut_template_offset());
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
@@ -1811,7 +1848,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 			}
 
 			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
-				outlet_number - base_nut_outlet_offset() + cmd_offset);
+				outlet_number - base_nut_template_offset() + cmd_offset);
 		} else {
 			free_info(su_info_p);
 			return STAT_INSTCMD_UNKNOWN;
