@@ -455,16 +455,18 @@ outlet: Smart outlet management
 
 NOTE: *n* stands for the outlet index. For more information, refer to the
 NUT outlets management and PDU notes chapter of the user manual.
-A special case is "outlet.0" which is equivalent to "outlet", and
-represent the whole set of outlets of the device. The most important
-data is "outlet.count", used to iterate over the whole set of outlets.
+A special case is "outlet.0" which is equivalent to "outlet" (without
+index), and represent the whole set of outlets of the device. The most
+important data is "outlet.count", used to iterate over the whole set of
+outlets.
 
 [options="header"]
 |===============================================================================
 | Name                           | Description                 | Example value
+| outlet.count                   | Total number of outlets     | 12
 | outlet.n.id                    | Outlet system identifier
                                    (opaque string)             | 1
-| outlet.n.desc                  | Outlet description
+| outlet.n.desc                  | Outlet name / description
                                    (opaque string)             | Main outlet
 | outlet.n.switch                | Outlet switch control
                                    (on/off)                    | on
@@ -514,6 +516,39 @@ data is "outlet.count", used to iterate over the whole set of outlets.
                                    equal to or greater than 1) | 1.41
 | outlet.n.power                 | Apparent power (VA)         | 46
 |===============================================================================
+
+outlet.group: groups of smart outlets
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is a refinement of the outlet collection, providing grouped
+management for a set of outlets. The same principles and data than the
+outlet collection apply to outlet.group, especially for the indexing 'n'
+and "outlet.group.count". 
+
+Most of the data published for outlets also apply to outlet.group,
+including: id, name (similar as outlet "desc"), status, current and
+voltage (including status, alarm and thresholds).
+
+Example:
+
+	outlet.group.1.current: 0.00
+	outlet.group.1.current.high.critical: 16.00
+	outlet.group.1.current.high.warning: 12.80
+	outlet.group.1.current.low.warning: 0.00
+	outlet.group.1.current.nominal: 16.00
+	outlet.group.1.current.status: good
+	outlet.group.1.id: 1
+	outlet.group.1.name: Branch Circuit A
+	outlet.group.1.status: on
+	outlet.group.1.voltage: 244.23
+	outlet.group.1.voltage.high.critical: 265.00
+	outlet.group.1.voltage.high.warning: 255.00
+	outlet.group.1.voltage.low.critical: 180.00
+	outlet.group.1.voltage.low.warning: 190.00
+	outlet.group.1.voltage.status: good
+	...
+	outlet.group.count: 3.00
+
 
 driver: Internal driver information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
