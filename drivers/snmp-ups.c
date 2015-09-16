@@ -1229,7 +1229,7 @@ static int guestimate_template_count(const char *OID_template)
 	char test_OID[SU_INFOSIZE];
 	int base_count;
 
-	upsdebugx(1, "guestimate_outlet_count(%s)", OID_template);
+	upsdebugx(1, "guestimate_template_count(%s)", OID_template);
 
 	/* Determine if OID index starts from 0 or 1? */
 	sprintf(test_OID, OID_template, base_index);
@@ -1243,7 +1243,7 @@ static int guestimate_template_count(const char *OID_template)
 			break;
 	}
 
-	upsdebugx(3, "guestimate_outlet_count: %i", base_count);
+	upsdebugx(3, "guestimate_template_count: %i", base_count);
 	return base_count;
 }
 
@@ -1602,7 +1602,6 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				nut_snmp_free(pdu_array);
 			}
 		}
-
 		else {
 			upsdebugx(2, "=> Failed");
 		}
