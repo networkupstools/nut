@@ -63,6 +63,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&mge,
 	&netvision,
 	&powerware,
+	&pxgx_ups,
 	&aphel_genesisII,
 	&aphel_revelation,
 	&eaton_marlin,
@@ -103,7 +104,7 @@ const char *mibvers;
 static void disable_transfer_oids(void);
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.76"
+#define DRIVER_VERSION		"0.77"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
