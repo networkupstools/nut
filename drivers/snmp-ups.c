@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.80"
+#define DRIVER_VERSION		"0.81"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1680,37 +1680,54 @@ int su_setvar(const char *varname, const char *val)
 	bool_t status;
 	int retval = STAT_SET_FAILED;
 	long value = -1;
+	/* normal (default), outlet, or outlet group variable */
+	int vartype = 0;
 
 	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
 
-	/* Check if it is outlet or outlet.group */
+	/* Check if it is outlet / outlet.group */
 	if (strncmp(varname, "outlet", 6))
 		su_info_p = su_find_info(varname);
 	else {
 		snmp_info_t *tmp_info_p;
-		char *outlet_number_ptr = strchr(varname, '.');
-		int outlet_number = atoi(++outlet_number_ptr);
-		if (dstate_getinfo("outlet.count") == NULL) {
-			upsdebugx(2, "su_setvar: can't get outlet.count...");
-			return STAT_SET_INVALID;
+		/* Point the outlet or outlet group number in the string */
+		const char *item_number_ptr = NULL;
+		/* Store the target outlet or group number */
+		int item_number = -1;
+		/* Store the total number of outlets or outlet groups */
+		int total_items = -1;
+
+		/* Check if it is outlet / outlet.group */
+		if (!strncmp(varname, "outlet.group", 12)) {
+			total_items = atoi(dstate_getinfo("outlet.group.count"));
+			item_number_ptr = &varname[12];
+			vartype = SU_OUTLET_GROUP;
+		}
+		else {
+			total_items = atoi(dstate_getinfo("outlet.count"));
+			item_number_ptr = &varname[6];
+			vartype = SU_OUTLET;
 		}
 
-		upsdebugx(3, "su_setvar: outlet %i / %i", outlet_number,
-			atoi(dstate_getinfo("outlet.count")));
+		item_number = atoi(++item_number_ptr);		
+		upsdebugx(3, "su_setvar: item %i / %i", item_number, total_items);
 
-		/* ensure the outlet number is supported (filtered upstream though)! */
-		if (outlet_number > atoi(dstate_getinfo("outlet.count"))) {
-			/* out of bound outlet number */
-			upsdebugx(2, "su_setvar: outlet is out of bound (%i / %s)",
-				outlet_number, dstate_getinfo("outlet.count"));
+		/* ensure the item number is supported (filtered upstream though)! */
+		if (item_number > total_items) {
+			/* out of bound item number */
+			upsdebugx(2, "su_setvar: item is out of bound (%i / %i)",
+				item_number, total_items);
 			return STAT_SET_INVALID;
 		}
-		/* find back the outlet template */
-		char *outlet_varname = (char *)xmalloc(SU_INFOSIZE);
-		sprintf(outlet_varname, "outlet.%s%s", "%i", strchr(outlet_number_ptr++, '.'));
-		upsdebugx(3, "su_setvar: searching for template\"%s\"", outlet_varname);
-		tmp_info_p = su_find_info(outlet_varname);
-		free(outlet_varname);
+		/* find back the item template */
+		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
+		sprintf(item_varname, "%s.%s%s",
+				(vartype & SU_OUTLET)?"outlet":"outlet.group",
+				"%i", strchr(item_number_ptr++, '.'));
+
+		upsdebugx(3, "su_setvar: searching for template\"%s\"", item_varname);
+		tmp_info_p = su_find_info(item_varname);
+		free(item_varname);
 
 		/* for an snmp_info_t instance */
 		su_info_p = instantiate_info(tmp_info_p, su_info_p);
@@ -1720,12 +1737,12 @@ int su_setvar(const char *varname, const char *val)
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 			sprintf((char *)su_info_p->dfl, tmp_info_p->dfl,
-				outlet_number - base_nut_template_offset());
+				item_number - base_nut_template_offset());
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
 			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
-				outlet_number - base_nut_template_offset());
+				item_number - base_nut_template_offset());
 		}
 		/* else, don't return STAT_SET_INVALID since we can be setting
 		 * a server side variable! */
@@ -1739,7 +1756,7 @@ int su_setvar(const char *varname, const char *val)
 		upsdebugx(2, "su_setvar: info element unavailable %s", varname);
 
 		/* Free template (outlet and outlet.group) */
-		if (!strncmp(varname, "outlet", 6))
+		if (vartype != 0)
 			free_info(su_info_p);
 
 		return STAT_SET_UNKNOWN;
@@ -1749,7 +1766,7 @@ int su_setvar(const char *varname, const char *val)
 		upsdebugx(2, "su_setvar: not writable %s", varname);
 
 		/* Free template (outlet and outlet.group) */
-		if (!strncmp(varname, "outlet", 6))
+		if (vartype != 0)
 			free_info(su_info_p);
 
 		return STAT_SET_INVALID;
@@ -1781,7 +1798,7 @@ int su_setvar(const char *varname, const char *val)
 		su_setinfo(su_info_p, val);
 	}
 	/* Free template (outlet and outlet.group) */
-	if (!strncmp(varname, "outlet", 6))
+	if (vartype != 0)
 		free_info(su_info_p);
 
 	return retval;
