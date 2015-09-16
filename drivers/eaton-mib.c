@@ -132,7 +132,7 @@ static info_lkp_t outlet_status_info[] = {
 
 /* Snmp2NUT lookup table for Eaton Revelation MIB */
 static snmp_info_t eaton_aphel_revelation_mib[] = {
-	/* Device page */
+	/* Device collection */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
@@ -142,7 +142,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 
-	/* UPS page */
+	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
@@ -159,7 +159,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "ups.temperature", 0, 1, AR_OID_UNIT_CPUTEMPERATURE, NULL, 0, NULL, NULL },
 
-	/* Outlet page */
+	/* Outlet collection */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
@@ -190,7 +190,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	 * 		ambient.%i.humidity => .1.3.6.1.4.1.534.6.6.6.2.4.1.3.%i
 	 */
 
-	/* Ambient page */
+	/* Ambient collection */
 	/* We use critical levels, for both temperature and humidity,
 	 * since warning levels are also available! */
 	{ "ambient.temperature", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.2.1.3.0", NULL, SU_FLAG_OK, NULL, NULL },
@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.22"
+#define EATON_MARLIN_MIB_VERSION	"0.30"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -226,6 +226,14 @@ static info_lkp_t marlin_outlet_status_info[] = {
 	{ 1, "on" },
 	{ 2, "pendingOff" }, /* transitional status */
 	{ 3, "pendingOn" },  /* transitional status */
+	{ 0, NULL }
+};
+
+static info_lkp_t marlin_outletgroups_status_info[] = {
+	{ 0, "off" },
+	{ 1, "on" },
+	{ 2, "rebooting" }, /* transitional status */
+	{ 3, "mixed" },     /* transitional status, not sure what it means! */
 	{ 0, NULL }
 };
 
@@ -331,7 +339,7 @@ static info_lkp_t marlin_threshold_humidity_alarms_info[] = {
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
 static snmp_info_t eaton_marlin_mib[] = {
 
-	/* Device page */
+	/* Device collection */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0",
@@ -343,7 +351,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "device.part", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.3.0",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
-	/* UPS page */
+	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.6.6.7.1.2.1.2.0",
@@ -372,7 +380,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	 */
 
-	/* Input page */
+	/* Input collection */
 	/* Historically, some of these data were previously published as
 	 * outlet.{realpower,...}
 	 * However, it's more suitable and logic to have these on input.{...}
@@ -485,7 +493,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "input.L2.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 
-	/* Ambient page */
+	/* Ambient collection */
 	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.3.0.1", NULL, SU_FLAG_OK, &marlin_ambient_presence_info[0], NULL },
 	{ "ambient.temperature.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
 	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_temperature_alarms_info[0], NULL },
@@ -511,7 +519,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.1", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
 	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.2", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
 
-	/* Outlet page */
+	/* Outlet collection */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -555,6 +563,53 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * outletWh.0.1
 	 * outletWhTimer.0.1
 	 */
+
+	/* Outlet groups collection */
+	{ "outlet.group.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.21.0", "0", SU_FLAG_STATIC, NULL, NULL },
+	/* outlet groups template definition
+	 * Indexes start from 1, ie outlet.group.1 => <OID>.1 */
+	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
+	/* groupID.0.1 = OctetString: A */
+	{ "outlet.group.%i.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.0.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupName.0.1 = OctetString: Factory Group 1 */
+	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
+	{ "outlet.group.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.3.0.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupControlStatus.0.1 = Integer: on  (1) */
+	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.6.1.2.0.%i",
+		NULL, SU_FLAG_OK | SU_OUTLET_GROUP, &marlin_outletgroups_status_info[0], NULL },
+	/* groupVoltage.0.1 = Integer: 243080 */
+	{ "outlet.group.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.3.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
+	/* groupVoltageThStatus.0.1 = Integer: good (0) */
+	{ "outlet.group.%i.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_status_info[0], NULL },
+// FIXME
+//	{ "outlet.group.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_other_voltage_alarms_info[0], NULL },
+	{ "outlet.group.%i.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.5.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	{ "outlet.group.%i.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.6.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	{ "outlet.group.%i.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.7.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	{ "outlet.group.%i.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.8.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrent.0.1 = Integer: 0 */
+	{ "outlet.group.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.3.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrentCapacity.0.1 = Integer: 16000 */
+	{ "outlet.group.%i.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.2.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrentThStatus.0.1 = Integer: good  (0) */
+	{ "outlet.group.%i.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_status_info[0], NULL },
+// FIXME
+//	{ "outlet.group.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_other_current_alarms_info[0], NULL },
+	/* groupCurrentPercentLoad.0.1 = Integer: 0 */
+	{ "outlet.group.%i.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.5.4.1.10.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrentThLowerWarning.0.1 = Integer: 0 */
+	{ "outlet.group.%i.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.5.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrentThLowerCritical.0.1 = Integer: -1 */
+	{ "outlet.group.%i.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.6.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrentThUpperWarning.0.1 = Integer: 12800 */
+	{ "outlet.group.%i.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.7.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupCurrentThUpperCritical.0.1 = Integer: 16000 */
+	{ "outlet.group.%i.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.8.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupWatts.0.1 = Integer: 2670 */
+	{ "outlet.group.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.5.5.1.3.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupVA.0.1 = Integer: 3132 */
+	{ "outlet.group.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.5.5.1.2.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
+
 
 	/* instant commands. */
 	/* Notes:
