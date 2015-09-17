@@ -336,6 +336,16 @@ static info_lkp_t marlin_threshold_humidity_alarms_info[] = {
 	{ 0, NULL }
 };
 
+static info_lkp_t marlin_outlet_group_type_info[] = {
+	{ 0, "unknown" },
+	{ 1, "breaker1pole" },
+	{ 2, "breaker2pole" },
+	{ 3, "breaker3pole" },
+	{ 4, "outlet-section" },
+	{ 5, "user-defined" },
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
 static snmp_info_t eaton_marlin_mib[] = {
 
@@ -574,6 +584,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* groupName.0.1 = OctetString: Factory Group 1 */
 	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
 	{ "outlet.group.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.3.0.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, NULL, NULL },
+	/* groupType.0.1 = Integer: outletSection  (4) */
+	{ "outlet.group.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.0.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP, &marlin_outlet_group_type_info[0], NULL },
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.6.1.2.0.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET_GROUP, &marlin_outletgroups_status_info[0], NULL },
