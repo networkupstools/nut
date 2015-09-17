@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.83"
+#define DRIVER_VERSION		"0.84"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1157,6 +1157,8 @@ static void disable_competition(snmp_info_t *entry)
  * Note: remember to adapt info_type, OID and optionaly dfl */
 snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
+	upsdebugx(1, "instantiate_info (%s)", info_template->info_type);
+
 	/* sanity check */
 	if (info_template == NULL)
 		return NULL;
@@ -1177,6 +1179,7 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 	new_instance->oid2info = info_template->oid2info;
 	new_instance->setvar = info_template->setvar;
 
+	upsdebugx(2, "instantiate_info: template instantiated");
 	return new_instance;
 }
 
@@ -1377,6 +1380,9 @@ int extract_template_number_from_snmp_info_t(const char* varname)
 {
 	return extract_template_number(get_template_type(varname), varname);
 }
+
+/* end of template functions */
+
 
 /* process a single data from a walk */
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
@@ -1841,7 +1847,8 @@ int su_setvar(const char *varname, const char *val)
 		retval = STAT_SET_HANDLED;
 		upsdebugx(1, "su_setvar: successfully set %s to \"%s\"", varname, val);
 
-		/* update info array */
+		/* update info array
+		 * FIXME: we'd better call su_ups_get() to refresh! */
 		su_setinfo(su_info_p, val);
 	}
 	/* Free template (outlet and outlet.group) */
@@ -1858,6 +1865,8 @@ int su_instcmd(const char *cmdname, const char *extradata)
 	int status;
 	int retval = STAT_INSTCMD_FAILED;
 	int cmd_offset = 0;
+	/* normal (default), outlet, or outlet group variable */
+	int vartype = get_template_type(cmdname);
 
 	upsdebugx(2, "entering su_instcmd(%s, %s)", cmdname, extradata);
 
@@ -1866,31 +1875,44 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		su_info_p = su_find_info(cmdname);
 	}
 	else {
+/* FIXME: common with su_setvar(), apart from upsdebugx */
 		snmp_info_t *tmp_info_p;
-		char *outlet_number_ptr = strchr(cmdname, '.');
-		int outlet_number = atoi(++outlet_number_ptr);
-		if (dstate_getinfo("outlet.count") == NULL) {
-			upsdebugx(2, "su_instcmd: can't get outlet.count...");
-			return STAT_INSTCMD_UNKNOWN;
+		/* Point the outlet or outlet group number in the string */
+		const char *item_number_ptr = NULL;
+		/* Store the target outlet or group number */
+		int item_number = extract_template_number_from_snmp_info_t(cmdname);
+		/* Store the total number of outlets or outlet groups */
+		int total_items = -1;
+
+		/* Check if it is outlet / outlet.group */
+		if (vartype == SU_OUTLET_GROUP) {
+			total_items = atoi(dstate_getinfo("outlet.group.count"));
+			item_number_ptr = &cmdname[12];
+		}
+		else {
+			total_items = atoi(dstate_getinfo("outlet.count"));
+			item_number_ptr = &cmdname[6];
 		}
 
-		upsdebugx(3, "su_instcmd: outlet %i / %i", outlet_number,
-			atoi(dstate_getinfo("outlet.count")));
+		item_number = atoi(++item_number_ptr);
+		upsdebugx(3, "su_instcmd: item %i / %i", item_number, total_items);
 
-		/* ensure the outlet number is supported! */
-		if (outlet_number > atoi(dstate_getinfo("outlet.count"))) {
-			/* out of bound outlet number */
-			upsdebugx(2, "su_instcmd: outlet is out of bound (%i / %s)",
-				outlet_number, dstate_getinfo("outlet.count"));
-			return STAT_INSTCMD_INVALID;
+		/* ensure the item number is supported (filtered upstream though)! */
+		if (item_number > total_items) {
+			/* out of bound item number */
+			upsdebugx(2, "su_instcmd: item is out of bound (%i / %i)",
+				item_number, total_items);
+			return STAT_SET_INVALID;
 		}
+		/* find back the item template */
+		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
+		sprintf(item_varname, "%s.%s%s",
+				(vartype == SU_OUTLET)?"outlet":"outlet.group",
+				"%i", strchr(item_number_ptr++, '.'));
 
-		/* find back the outlet template */
-		char *outlet_cmdname = (char *)xmalloc(SU_INFOSIZE);
-		sprintf(outlet_cmdname, "outlet.%s%s", "%i", strchr(outlet_number_ptr++, '.'));
-		upsdebugx(3, "su_instcmd: searching for template\"%s\"", outlet_cmdname);
-		tmp_info_p = su_find_info(outlet_cmdname);
-		free(outlet_cmdname);
+		upsdebugx(3, "su_instcmd: searching for template\"%s\"", item_varname);
+		tmp_info_p = su_find_info(item_varname);
+		free(item_varname);
 
 		/* for an snmp_info_t instance */
 		su_info_p = instantiate_info(tmp_info_p, su_info_p);
@@ -1900,8 +1922,10 @@ int su_instcmd(const char *cmdname, const char *extradata)
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 			sprintf((char *)su_info_p->dfl, tmp_info_p->dfl,
-				outlet_number - base_nut_template_offset());
+				item_number - base_nut_template_offset());
 		}
+/* FIXME: </end> common with su_setvar(), apart from upsdebugx */
+
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
 			/* Workaround buggy Eaton Pulizzi implementation
@@ -1912,7 +1936,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 			}
 
 			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
-				outlet_number - base_nut_template_offset() + cmd_offset);
+				item_number - base_nut_template_offset() + cmd_offset);
 		} else {
 			free_info(su_info_p);
 			return STAT_INSTCMD_UNKNOWN;
