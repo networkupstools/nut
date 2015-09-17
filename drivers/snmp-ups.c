@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.81"
+#define DRIVER_VERSION		"0.83"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -130,6 +130,7 @@ int template_index_base = -1;
 /* Forward functions declarations */
 static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
+int extract_template_number(int template_type, const char* varname);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -919,25 +920,26 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 {
 	const char *info_value = NULL;
 	char alarm_info_value[SU_LARGEBUF];
-	int item_number = -1; /* number of the outlet or phase */
+	/* number of the outlet or phase */
+	int item_number = -1;
 
 	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set(%s)", su_info_p->info_type);
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 	{
 		if (strcmp(info_value, "")) {
-			/* Special handling for outlet alarms */
-			if (su_info_p->flags & SU_OUTLET) {
-				/* Extract outlet number */
-				item_number = atoi(strchr(su_info_p->info_type, '.')+1);
+			/* Special handling for outlet & outlet groups alarms */
+			if ((su_info_p->flags & SU_OUTLET)
+				|| (su_info_p->flags & SU_OUTLET_GROUP)) {
+				/* Extract template number */
+				item_number = extract_template_number(su_info_p->flags, su_info_p->info_type);
 
 				/* Inject in the alarm string */
-				sprintf(alarm_info_value, info_value, "outlet ", item_number);
+				sprintf(alarm_info_value, info_value, 
+					(su_info_p->flags & SU_OUTLET_GROUP)?"outlet group ":"outlet ",
+					item_number);
 				info_value = &alarm_info_value[0];
 			}
-			/* Special handling for outlet group alarms */
-			// FIXME: if (su_info_p->flags & SU_OUTLET_GROUP) {
-
 			/* Special handling for phase alarms
 			 * Note that SU_*PHASE flags are cleared, so match the 'Lx'
 			 * start of path */
@@ -1146,6 +1148,10 @@ static void disable_competition(snmp_info_t *entry)
 	}
 }
 
+/***********************************************************************
+ * Template handling functions
+ **********************************************************************/
+
 /* Instantiate an snmp_info_t from a template.
  * Useful for outlet and outlet.group templates.
  * Note: remember to adapt info_type, OID and optionaly dfl */
@@ -1327,6 +1333,49 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 		upsdebugx(1, "No %s present, discarding template definition...", type);
 	}
 	return status;
+}
+
+/* Return the type of template, according to a variable name.
+ * Return: SU_OUTLET_GROUP, SU_OUTLET or 0 if not a template */
+int get_template_type(const char* varname)
+{
+	/* Check if it is outlet / outlet.group */
+	if (!strncmp(varname, "outlet.group", 12)) {
+		return SU_OUTLET_GROUP;
+	}
+	else if (!strncmp(varname, "outlet", 6)) {
+		return SU_OUTLET_GROUP;
+	}
+	else {
+		upsdebugx(2, "Unknow template type: %s", varname);
+		return 0;
+	}
+}
+
+/* Extract the id number of an instantiated template.
+ * Example: return '1' for type = 'outlet.1.desc', -1 if unknown */
+int extract_template_number(int template_type, const char* varname)
+{
+	const char* item_number_ptr = NULL;
+	int item_number = -1;
+
+	if (template_type & SU_OUTLET_GROUP)
+		item_number_ptr = &varname[12];
+	else if (template_type & SU_OUTLET)
+		item_number_ptr = &varname[6];
+	else
+		return -1;
+
+	item_number = atoi(++item_number_ptr);
+	upsdebugx(3, "extract_template_number: item %i", item_number);
+	return item_number;
+}
+
+/* Extract the id number of a template from a variable name.
+ * Example: return '1' for type = 'outlet.1.desc' */
+int extract_template_number_from_snmp_info_t(const char* varname)
+{
+	return extract_template_number(get_template_type(varname), varname);
 }
 
 /* process a single data from a walk */
@@ -1681,7 +1730,7 @@ int su_setvar(const char *varname, const char *val)
 	int retval = STAT_SET_FAILED;
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
-	int vartype = 0;
+	int vartype = get_template_type(varname);
 
 	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
 
@@ -1693,23 +1742,21 @@ int su_setvar(const char *varname, const char *val)
 		/* Point the outlet or outlet group number in the string */
 		const char *item_number_ptr = NULL;
 		/* Store the target outlet or group number */
-		int item_number = -1;
+		int item_number = extract_template_number_from_snmp_info_t(varname);
 		/* Store the total number of outlets or outlet groups */
 		int total_items = -1;
 
 		/* Check if it is outlet / outlet.group */
-		if (!strncmp(varname, "outlet.group", 12)) {
+		if (vartype == SU_OUTLET_GROUP) {
 			total_items = atoi(dstate_getinfo("outlet.group.count"));
 			item_number_ptr = &varname[12];
-			vartype = SU_OUTLET_GROUP;
 		}
 		else {
 			total_items = atoi(dstate_getinfo("outlet.count"));
 			item_number_ptr = &varname[6];
-			vartype = SU_OUTLET;
 		}
 
-		item_number = atoi(++item_number_ptr);		
+		item_number = atoi(++item_number_ptr);
 		upsdebugx(3, "su_setvar: item %i / %i", item_number, total_items);
 
 		/* ensure the item number is supported (filtered upstream though)! */
@@ -1722,7 +1769,7 @@ int su_setvar(const char *varname, const char *val)
 		/* find back the item template */
 		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
 		sprintf(item_varname, "%s.%s%s",
-				(vartype & SU_OUTLET)?"outlet":"outlet.group",
+				(vartype == SU_OUTLET)?"outlet":"outlet.group",
 				"%i", strchr(item_number_ptr++, '.'));
 
 		upsdebugx(3, "su_setvar: searching for template\"%s\"", item_varname);
