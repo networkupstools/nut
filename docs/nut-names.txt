@@ -529,6 +529,14 @@ Most of the data published for outlets also apply to outlet.group,
 including: id, name (similar as outlet "desc"), status, current and
 voltage (including status, alarm and thresholds).
 
+Some specific data to outlet groups exists:
+
+[options="header"]
+|================================================================================
+| Name                           | Description                   | Example value
+| outlet.group.n.type            | Type of outlet group (OPAQUE) | outlet-section
+|================================================================================
+
 Example:
 
 	outlet.group.1.current: 0.00
