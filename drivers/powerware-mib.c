@@ -37,6 +37,8 @@
 
 /* Powerware UPS (Ingrasys X-SLOT and BD-SLOT) */
 #define POWERWARE_SYSOID	".1.3.6.1.4.1.534.1"
+/* Powerware UPS newer PXGX UPS cards (BladeUPS, ...) */
+#define EATON_PXGX_SYSOID	".1.3.6.1.4.1.534.2.12"
 
 /* SNMP OIDs set */
 #define PW_OID_MFR_NAME		"1.3.6.1.4.1.534.1.1.1.0"	/* XUPS-MIB::xupsIdentManufacturer.0 */
@@ -360,3 +362,4 @@ static alarms_info_t pw_alarms[] = {
 
 
 mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };
+mib2nut_info_t	pxgx_ups = { "pxgx_ups", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, EATON_PXGX_SYSOID , pw_alarms };

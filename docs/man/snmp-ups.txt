@@ -32,6 +32,10 @@ Socomec Sicon UPS with Netvision Web/SNMP management card/external box
 *pw*::
 Powerware devices with ConnectUPS SNMP cards
 
+*pxgx_ups*::
+Eaton devices with Power Xpert Gateway UPS Card
+
+
 *aphel_genesisII*::
 Eaton Powerware ePDU Monitored
 

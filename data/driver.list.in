@@ -299,6 +299,7 @@
 "Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
 "Eaton"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
+"Eaton"	"ups"	"5"	"various models (SNMP mode)"	"Power Xpert Gateway UPS Card"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (ref 66102)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
