@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.30"
+#define EATON_MARLIN_MIB_VERSION	"0.31"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -581,8 +581,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.3.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
 	/* groupVoltageThStatus.0.1 = Integer: good (0) */
 	{ "outlet.group.%i.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_status_info[0], NULL },
-// FIXME
-//	{ "outlet.group.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_other_voltage_alarms_info[0], NULL },
+	{ "outlet.group.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_other_voltage_alarms_info[0], NULL },
 	{ "outlet.group.%i.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.5.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
 	{ "outlet.group.%i.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.6.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
 	{ "outlet.group.%i.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.7.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
@@ -593,8 +592,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.4.1.2.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
 	/* groupCurrentThStatus.0.1 = Integer: good  (0) */
 	{ "outlet.group.%i.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_status_info[0], NULL },
-// FIXME
-//	{ "outlet.group.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_other_current_alarms_info[0], NULL },
+	{ "outlet.group.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i", NULL, SU_OUTLET_GROUP, &marlin_threshold_other_current_alarms_info[0], NULL },
 	/* groupCurrentPercentLoad.0.1 = Integer: 0 */
 	{ "outlet.group.%i.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.5.4.1.10.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP, NULL, NULL },
 	/* groupCurrentThLowerWarning.0.1 = Integer: 0 */
