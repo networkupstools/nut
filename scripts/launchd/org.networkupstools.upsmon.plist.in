@@ -12,7 +12,10 @@
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
-	<key>KeepAlive</key>
-	<true/>
+        <key>KeepAlive</key>
+        <dict>
+                <key>SuccessfulExit</key>
+                <false/> <!-- Do not respawn at shutdown time -->
+        <dict/>
 </dict>
 </plist>

@@ -13,7 +13,10 @@
 	<key>RunAtLoad</key>
 	<true/>
 	<key>KeepAlive</key>
-	<true/>
+	<dict>
+		<key>SuccessfulExit</key>
+		<false/> <!-- Do not respawn at shutdown time -->
+	<dict/>
 	<key>UserName</key>
 	<string>@RUN_AS_USER@</string>
 	<key>GroupName</key>
