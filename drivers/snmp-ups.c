@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.84"
+#define DRIVER_VERSION		"0.85"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -704,6 +704,39 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 	return ret;
 }
 
+/* Return the value stored in OID, which is an OID (sysOID for example)
+ * and don't try to get the value pointed by this OID (no follow).
+ * To achieve the latter behavior, use standard nut_snmp_get_{str,int}() */
+bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
+{
+	struct snmp_pdu *pdu;
+	bool_t ret = FALSE;
+
+	/* zero out buffer. */
+	memset(buf, 0, buf_len);
+
+	upsdebugx(3, "Entering nut_snmp_get_oid()");
+
+	pdu = nut_snmp_get(OID);
+	if (pdu == NULL)
+		return FALSE;
+
+	switch (pdu->variables->type) {
+		case ASN_OBJECT_ID:
+			snprint_objid (buf, buf_len, pdu->variables->val.objid,
+				pdu->variables->val_len / sizeof(oid));
+			break;
+		default:
+			upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
+				upsname?upsname:device_name, pdu->variables->type, OID);
+			break;
+	}
+
+	snmp_free_pdu(pdu);
+
+	return ret;
+}
+
 bool_t nut_snmp_get_int(const char *OID, long *pval)
 {
 	struct snmp_pdu *pdu;
@@ -736,7 +769,6 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
 			upsname?upsname:device_name, pdu->variables->type, OID);
 		return FALSE;
-		break;
 	}
 
 	snmp_free_pdu(pdu);
@@ -986,7 +1018,7 @@ mib2nut_info_t *match_sysoid()
 	int i;
 
 	/* Retrieve sysOID value of this device */
-	if (nut_snmp_get_str(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf), NULL))
+	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)))
 	{
 		upsdebugx(1, "match_sysoid: device sysOID value = %s", sysOID_buf);
 
