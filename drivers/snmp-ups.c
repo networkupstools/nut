@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.85"
+#define DRIVER_VERSION		"0.86"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -636,8 +636,10 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	return ret_pdu;
 }
 
-static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_lkp_t *oid2info) {
+static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_lkp_t *oid2info)
+{
 	size_t len = 0;
+	char tmp_buf[SU_LARGEBUF];
 
 	/* zero out buffer. */
 	memset(buf, 0, buf_len);
@@ -672,7 +674,18 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 		len = snprintf(buf, buf_len, "%ld", *pdu->variables->val.integer / 100);
 		break;
 	case ASN_OBJECT_ID:
-		len = snprint_objid (buf, buf_len, pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
+		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
+		upsdebugx(2, "Received an OID value: %s", tmp_buf);
+		/* Try to get the value of the pointed OID */
+		if (nut_snmp_get_str(tmp_buf, buf, buf_len, oid2info) == FALSE) {
+			upsdebugx(3, "Failed to retrieve OID value, using fallback");
+			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
+			char *oid_leaf = strrchr(tmp_buf, '.');
+			sprintf(buf, "%s", oid_leaf+1);
+			upsdebugx(3, "Fallback value: %s", buf);
+		}
+		else
+			sprintf(buf, "%s", tmp_buf);
 		break;
 	default:
 		return FALSE;
@@ -739,6 +752,7 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 
 bool_t nut_snmp_get_int(const char *OID, long *pval)
 {
+	char tmp_buf[SU_LARGEBUF];
 	struct snmp_pdu *pdu;
 	long value;
 	char *buf;
@@ -764,6 +778,18 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	case ASN_TIMETICKS:
 		/* convert timeticks to seconds */
 		value = *pdu->variables->val.integer / 100;
+		break;
+	case ASN_OBJECT_ID:
+		snprint_objid (tmp_buf, sizeof(tmp_buf), pdu->variables->val.objid, pdu->variables->val_len / sizeof(oid));
+		upsdebugx(2, "Received an OID value: %s", tmp_buf);
+		/* Try to get the value of the pointed OID */
+		if (nut_snmp_get_int(tmp_buf, &value) == FALSE) {
+			upsdebugx(3, "Failed to retrieve OID value, using fallback");
+			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
+			char *oid_leaf = strrchr(tmp_buf, '.');
+			value = strtol(oid_leaf+1, NULL, 0);
+			upsdebugx(3, "Fallback value: %ld", value);
+		}
 		break;
 	default:
 		upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
@@ -1167,6 +1193,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 	return NULL;
 }
 
+/* FIXME: doesn't work with templates! */
 static void disable_competition(snmp_info_t *entry)
 {
 	snmp_info_t	*p;
