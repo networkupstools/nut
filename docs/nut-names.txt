@@ -468,6 +468,8 @@ outlets.
                                    (opaque string)             | 1
 | outlet.n.desc                  | Outlet name / description
                                    (opaque string)             | Main outlet
+| outlet.n.groupid               | Identifier of the group to
+                                   which the outlet belongs to | 1
 | outlet.n.switch                | Outlet switch control
                                    (on/off)                    | on
 | outlet.n.status                | Outlet switch status
