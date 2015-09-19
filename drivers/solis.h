@@ -22,7 +22,8 @@
    2004/10/30 - Version 0.40 - add model data structs
    2004/11/22 - Version 0.50 - add internal e external shutdown programming
    2005/06/16 - Version 0.60 - save external shutdown programming to ups,
- 			       support new cables and Solaris compilation
+ 			       support new cables and Solaris compilation   
+   2015/09/19 - Version 0.63 - patch for correct reading for Microsol Back-Ups BZ1200-BR
 
 */
 
@@ -34,8 +35,8 @@ typedef int bool_t;
 /* autonomy constants */
 
 int bext[5] = {14,18,28,18,1};
-int nompow[4] = { 1000,1500,2000,3000 };
-int inds[5] = { 0,0,1,2,3 };
+int nompow[5] = { 1000,1500,2000,3000,1200 };
+int inds[6] = { 0,0,1,2,3,4 };
 double InVolt_offset = 30.;
 
 struct {
@@ -216,7 +217,7 @@ struct {
   double m_utilp_i[2][2];
   double m_appp_s[2][2];
   double m_appp_i[2][2];
-} ctab[5] =
+} ctab[6] =
 {
   { 101620.0, 25.0,
     { 1.141, 13.0 },
@@ -287,6 +288,41 @@ struct {
     { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } },
     { { 1.0/5.15, 29.0 }, { 1.0/4.8, 26.0 } },
     { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } }
+  },
+
+  /*STAY1200_USB
+
+  double m_infreq;
+  double m_appp_offset;
+  double m_involt193[2];
+  double m_involt194[2];
+  double m_incurr[2];
+  double m_battvolt[2];
+  double m_outvolt_s[2][2];
+  double m_outvolt_i[2][2];
+  double m_outcurr_s[2][2];
+  double m_outcurr_i[2][2];
+  double m_utilp_s[2][2];
+  double m_utilp_i[2][2];
+  double m_appp_s[2][2];
+  double m_appp_i[2][2];
+
+
+   */
+  { 101800.0, //m_infreq
+    56.0, //m_appp_offset
+    { 1.64, 9.34 },// m_involt193 - ok
+    { 2.5, -250.0 }, //m_involt194
+    { 35.0, 1000.0 }, //m_incurr
+    { 0.1551, 0.2525 }, //m_battvolt
+    { { 1.41, 13.0 }, { 1.4, 17.0 } }, //m_outvolt_s
+    { { 2.73, 25.0 }, { 2.73, 30.0 } }, //m_outvolt_i
+    { { 1.0/8.15, 0.25 }, { 1.0/8.15, 0.25 } }, //m_outcurr_s
+    { { 1.0/16.0, 0.4 }, { 1.0/15.0, 0.4 } }, //m_outcurr_i
+    { { 1.0/4.87, 19.0 }, { 1.0/4.55, 17.0 } }, //m_utilp_s
+    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } }, //m_utilp_i
+    { { 1.0/5.15, 29.0 }, { 1.0/4.8, 26.0 } },  //m__app_s
+    { { 1.0/4.78, 52.0 }, { 1.0/4.55, 55.0 } } //m_app_i
   }
 };
 
