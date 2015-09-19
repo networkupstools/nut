@@ -24,8 +24,9 @@
    2005/07/01 - Version 0.50 - add internal e external shutdown programming
    2005/08/18 - Version 0.60 - save external shutdown programming to ups,
  			       and support new cables for solis 3
-
+   2015/09/19 - Version 0.63 - patch for correct reading for Microsol Back-Ups BZ1200-BR
    Microsol contributed with UPS Solis 1.5 HS 1.5 KVA for my tests.
+   
 
    http://www.microsol.com.br
 
@@ -33,14 +34,14 @@
 
 #include <ctype.h>
 #include <stdio.h>
-
+#include <math.h> 
 #include "main.h"
 #include "serial.h"
 #include "solis.h"
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.62"
+#define DRIVER_VERSION	"0.63"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -506,16 +507,39 @@ static void ScanReceivePack( void )
 
 	im = inds[imodel];
 	ov = Out220;
-
-	if(  RecPack[ 6 ] >= 194 )
-		InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt194[0] + ctab[imodel].m_involt194[1];
-	else
-		InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
 	
-	BattVoltage = RecPack[ 3 ] * ctab[imodel].m_battvolt[0] + ctab[imodel].m_battvolt[1];
+	if (SolisModel != 16) {
+
+	  if(  RecPack[ 6 ] >= 194 )
+	    InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt194[0] + ctab[imodel].m_involt194[1];
+	  else
+	    InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
+	} else {
+	  /* Code InVoltage for STAY1200_USB */
+
+	  if ((RecPack[20] & 0x1) == 0) { //IsOutVoltage 220
+
+	    InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
+	  } else {
+
+	    InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1] - 3.0;
+	    
+	  }
+	  
+
+	}
+       
+	  
+       
+	  BattVoltage = RecPack[ 3 ] * ctab[imodel].m_battvolt[0] + ctab[imodel].m_battvolt[1];
+  
 	
 	NominalPower = nompow[im];
+
 	if(  SourceFail ) {
+	  
+	  
+	  
 		OutVoltage = RecPack[ 1 ] * ctab[imodel].m_outvolt_i[ov][0] + ctab[imodel].m_outvolt_i[ov][1];
 		OutCurrent = RecPack[ 5 ] * ctab[imodel].m_outcurr_i[ov][0] + ctab[imodel].m_outcurr_i[ov][1];
 		AppPower = ( RecPack[ 5 ] * RecPack[ 1 ] ) * ctab[imodel].m_appp_i[ov][0] + ctab[imodel].m_appp_i[ov][1];
@@ -531,10 +555,72 @@ static void ScanReceivePack( void )
 		InCurrent = ( ctab[imodel].m_incurr[0] * 1.0 / BattVoltage ) - ( AppPower * 1.0 / ctab[imodel].m_incurr[1] )
 		+ OutCurrent *( OutVoltage * 1.0 / InVoltage );
 	}
+		if (SolisModel == 16) {
+
+		  int configRelay = (RecPack[6] & 0x38) >> 3;
+		  double TENSAO_SAIDA_F1_MR[8] = { 1.1549, 1.0925, 0.0, 0.0, 1.0929, 1.0885, 0.0, 0.8654262224145391 };
+		  double TENSAO_SAIDA_F2_MR[8] = { -6.9157, 11.026, 10.43, 0.0, -0.6109, 12.18, 0.0, 13.677};
+
+		  double TENSAO_SAIDA_F2_MI[8] ={ 5.59, 9.47, 13.7, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		  double TENSAO_SAIDA_F1_MI[8] = { 7.9, 9.1, 17.6, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		  
+		  double corrente_saida_F1_MR = 0.12970000389100012;
+		  double corrente_saida_F2_MR = 0.5387060281204546;
+		  double corrente_saida_F1_MI = 0.1372;
+		  double corrente_saida_F2_MI = 0.3456;
+		  
+		  if (SourceFail) {
+		    if (RecPack[20] == 0) {
+		        double a = RecPack[1] * 2;
+			a /= 128.0;
+			//	a = double sqrt(a);
+		        OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
+	
+		    }
+
+		  } else {
+		
+
+		   OutCurrent = (float)(corrente_saida_F1_MR * RecPack[5] + corrente_saida_F2_MR);
+		   OutVoltage = RecPack[1] * TENSAO_SAIDA_F1_MR[configRelay] + TENSAO_SAIDA_F2_MR[configRelay];
+		   AppPower = OutCurrent * OutVoltage;
+		  
+		   
+		   
+		   double RealPower = (RecPack[7] + RecPack[8] * 256);
+		 
+		       double potVA1 = 5.968 * AppPower - 284.36;
+		       double potVA2 = 7.149 * AppPower - 567.18;
+		       double potLin = 0.1664 * RealPower + 49.182;
+		       double potRe = 0.1519 * RealPower + 32.644;
+		       if (abs(potVA1 - RealPower) < abs(potVA2 - RealPower)) {
+		        RealPower = (float) potLin;
+		       } else {
+			 RealPower = (float) potRe;
+
+		       }
+		       if (OutCurrent < 0.7) {
+			 RealPower = AppPower;
+		       }
+		       if (AppPower < RealPower) {
+			 float f = AppPower;
+			 AppPower = RealPower;
+			 RealPower = f;
+		       }
+		      
+
+			  
+		}
+	}
 
 	aux = ( RecPack[ 21 ] + RecPack[ 22 ] * 256 );
 	if( aux > 0 )
 		InFreq = ctab[imodel].m_infreq * 1.0 / aux;
+
+	/* Specific for STAY1200_USB */
+	        if (SolisModel == 16) {
+	             InFreq = ((float)(0.37 * (257 - (aux >> 8))));
+	        }
 	else
 		InFreq = 0;
 	
@@ -726,28 +812,51 @@ CommReceive(const char *bufptr,  int size)
   
 		ser_flush_in(upsfd,"",0); /* clean port */
   
-		/* correct package */
-		/* 0xA0 is original solis.c; 0xB0 is for APC-branded Microsol units */
+		/* RecPack[0] identify the model number below. 
+		 *  SOLIS = 1;
+		    RHINO = 2;
+                    STAY = 3;
+                    SOLIS_LI_700 = 169;
+                    SOLIS_M11 = 171;
+                    SOLIS_M15 = 175;
+                    SOLIS_M14 = 174;
+                    SOLIS_M13 = 173;
+                    SOLISDC_M14 = 201;
+                    SOLISDC_M13 = 206;
+                    SOLISDC_M15 = 207;
+                    CABECALHO_RHINO = 194;
+                    PS800 = 185;
+                    STAY1200_USB = 186;
+                    PS350_CII = 184;
+                    PS2200 = 187;
+                    PS2200_22 = 188;
+                    STAY700_USB = 189;
+                    BZ1500 = 190;
+		*/  
 		if(  ( ( (RecPack[0] & 0xF0) == 0xA0 ) || (RecPack[0] & 0xF0) == 0xB0)
 		       && ( RecPack[ 24 ] == 254 )
 		       && ( RecPack[ 23 ] == CheckSum ) ) {
 
 			if(!(detected)) {
+			
+			    if (RecPack[0] == 186) {
+			      SolisModel = 16;
+			    } else {
 				SolisModel = (int) (RecPack[0] & 0x0F);
+			    }
 				if( SolisModel < 13 )
 					imodel = SolisModel - 10; /* 10 = 0, 11 = 1 */
 				else
 					imodel = SolisModel - 11; /* 13 = 2, 14 = 3, 15 = 4 */
+				
 				detected = true;
+			  
 			}
 
 			switch( SolisModel )
 			{
-			case 10: /* Added for APC-Branded Microsol units */
-				{
-				ScanReceivePack();	
-				break;	
-				}
+			case 10: 
+			
 			case 11:
 			case 12:
 			case 13:
@@ -757,6 +866,11 @@ CommReceive(const char *bufptr,  int size)
 			    	ScanReceivePack();
 				break;
 			}
+			case 16:      // STAY1200_USB model
+			  {
+			    ScanReceivePack();
+			    break;
+			  }
 			default:
 			{
 				printf( M_UNKN );
@@ -890,11 +1004,8 @@ static void getbaseinfo(void)
 
 	switch( SolisModel )
 	{
-	case 10: /* Added for APC-Microsol units */
-	{
-		Model = "Back-UPS 1200 BR";
-		break;
-	}
+	case 10:
+	
 	case 11:
 	case 12:
 	{
@@ -916,6 +1027,9 @@ static void getbaseinfo(void)
 		Model = "Solis 3.0";
 		break;
 	}
+	case 16:
+	  Model = "Microsol Back-Ups BZ1200-BR";
+	  break;
 	}
 
 	/* if( isprogram ) */
@@ -1039,7 +1153,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.voltage", "%03.1f", InVoltage);
 	dstate_setinfo("battery.voltage", "%02.1f", BattVoltage);
 	dstate_setinfo("battery.charge", "%03.1f", batcharge);
-
+	dstate_setinfo("output.current", "%03.1f", OutCurrent);
 	status_init();
 
 	if (!SourceFail )
