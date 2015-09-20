@@ -585,17 +585,17 @@ static void ScanReceivePack( void )
 				double potVA2 = 7.149 * AppPower - 567.18;
 				double potLin = 0.1664 * RealPower + 49.182;
 				double potRe = 0.1519 * RealPower + 32.644;
-				if (abs(potVA1 - RealPower) < abs(potVA2 - RealPower)) {
-					RealPower = (float) potLin;
+				if (fabs(potVA1 - RealPower) < fabs(potVA2 - RealPower)) {
+					RealPower = potLin;
 				} else {
-					RealPower = (float) potRe;
+					RealPower = potRe;
 
 				}
 				if (OutCurrent < 0.7) {
 					RealPower = AppPower;
 				}
 				if (AppPower < RealPower) {
-					float f = AppPower;
+					double f = AppPower;
 					AppPower = RealPower;
 					RealPower = f;
 				}
