@@ -1409,7 +1409,7 @@ int get_template_type(const char* varname)
 		return SU_OUTLET_GROUP;
 	}
 	else {
-		upsdebugx(2, "Unknow template type: %s", varname);
+		upsdebugx(2, "Unknown template type: %s", varname);
 		return 0;
 	}
 }
