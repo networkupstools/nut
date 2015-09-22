@@ -170,7 +170,7 @@ input: Incoming line/power information
 | input.frequency             | Input line frequency (Hz)         | 60.00
 | input.frequency.nominal     | Nominal input line
                                 frequency (Hz)                    | 60
-| input.frequency.status      | Frequency status                  | out of range
+| input.frequency.status      | Frequency status                  | out-of-range
 | input.frequency.low         | Input line frequency low (Hz)     | 47
 | input.frequency.high        | Input line frequency high (Hz)    | 63
 | input.frequency.extended    | Extended input frequency range    | no
