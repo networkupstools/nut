@@ -253,17 +253,17 @@ static info_lkp_t marlin_ambient_presence_info[] = {
 };
 
 static info_lkp_t marlin_threshold_status_info[] = {
-	{ 0, "good" },          /* No threshold trigged */
-	{ 1, "warning-low" },   /* Warning low threshold trigged */
-	{ 2, "critical-low" },  /* Critical low threshold trigged */
-	{ 3, "warning-high" },  /* Warning high threshold trigged */
-	{ 4, "critical-high" }, /* Critical high threshold trigged */
+	{ 0, "good" },          /* No threshold triggered */
+	{ 1, "warning-low" },   /* Warning low threshold triggered */
+	{ 2, "critical-low" },  /* Critical low threshold triggered */
+	{ 3, "warning-high" },  /* Warning high threshold triggered */
+	{ 4, "critical-high" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
 static info_lkp_t marlin_threshold_frequency_status_info[] = {
-	{ 0, "good" },          /* No threshold trigged */
-	{ 1, "out of range" },  /* Frequency out of range trigged */
+	{ 0, "good" },          /* No threshold triggered */
+	{ 1, "out of range" },  /* Frequency out of range triggered */
 	{ 0, NULL }
 };
 
@@ -275,64 +275,64 @@ static info_lkp_t marlin_ambient_drycontacts_info[] = {
 };
 
 static info_lkp_t marlin_threshold_voltage_alarms_info[] = {
-	{ 0, "" },                       /* No threshold trigged */
-	{ 1, "low voltage warning!" },   /* Warning low threshold trigged */
-	{ 2, "low voltage critical!" },  /* Critical low threshold trigged */
-	{ 3, "high voltage warning!" },  /* Warning high threshold trigged */
-	{ 4, "high voltage critical!" }, /* Critical high threshold trigged */
+	{ 0, "" },                       /* No threshold triggered */
+	{ 1, "low voltage warning!" },   /* Warning low threshold triggered */
+	{ 2, "low voltage critical!" },  /* Critical low threshold triggered */
+	{ 3, "high voltage warning!" },  /* Warning high threshold triggered */
+	{ 4, "high voltage critical!" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
 /* Works for outlet and phase alarms */
 static info_lkp_t marlin_threshold_other_voltage_alarms_info[] = {
-	{ 0, "" },                            /* No threshold trigged */
-	{ 1, "%s%i low voltage warning!" },   /* Warning low threshold trigged */
-	{ 2, "%s%i low voltage critical!" },  /* Critical low threshold trigged */
-	{ 3, "%s%i high voltage warning!" },  /* Warning high threshold trigged */
-	{ 4, "%s%i high voltage critical!" }, /* Critical high threshold trigged */
+	{ 0, "" },                            /* No threshold triggered */
+	{ 1, "%s%i low voltage warning!" },   /* Warning low threshold triggered */
+	{ 2, "%s%i low voltage critical!" },  /* Critical low threshold triggered */
+	{ 3, "%s%i high voltage warning!" },  /* Warning high threshold triggered */
+	{ 4, "%s%i high voltage critical!" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
 static info_lkp_t marlin_threshold_current_alarms_info[] = {
-	{ 0, "" },                       /* No threshold trigged */
-	{ 1, "low current warning!" },   /* Warning low threshold trigged */
-	{ 2, "low current critical!" },  /* Critical low threshold trigged */
-	{ 3, "high current warning!" },  /* Warning high threshold trigged */
-	{ 4, "high current critical!" }, /* Critical high threshold trigged */
+	{ 0, "" },                       /* No threshold triggered */
+	{ 1, "low current warning!" },   /* Warning low threshold triggered */
+	{ 2, "low current critical!" },  /* Critical low threshold triggered */
+	{ 3, "high current warning!" },  /* Warning high threshold triggered */
+	{ 4, "high current critical!" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
 /* Works for outlet and phase alarms */
 static info_lkp_t marlin_threshold_other_current_alarms_info[] = {
-	{ 0, "" },                            /* No threshold trigged */
-	{ 1, "%s%i low current warning!" },   /* Warning low threshold trigged */
-	{ 2, "%s%i low current critical!" },  /* Critical low threshold trigged */
-	{ 3, "%s%i high current warning!" },  /* Warning high threshold trigged */
-	{ 4, "%s%i high current critical!" }, /* Critical high threshold trigged */
+	{ 0, "" },                            /* No threshold triggered */
+	{ 1, "%s%i low current warning!" },   /* Warning low threshold triggered */
+	{ 2, "%s%i low current critical!" },  /* Critical low threshold triggered */
+	{ 3, "%s%i high current warning!" },  /* Warning high threshold triggered */
+	{ 4, "%s%i high current critical!" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
 static info_lkp_t marlin_threshold_frequency_alarm_info[] = {
-	{ 0, "" },                         /* No threshold trigged */
-	{ 1, "frequency out of range!" },  /* Frequency out of range trigged */
+	{ 0, "" },                         /* No threshold triggered */
+	{ 1, "frequency out of range!" },  /* Frequency out of range triggered */
 	{ 0, NULL }
 };
 
 static info_lkp_t marlin_threshold_temperature_alarms_info[] = {
-	{ 0, "" },                           /* No threshold trigged */
-	{ 1, "low temperature warning!" },   /* Warning low threshold trigged */
-	{ 2, "low temperature critical!" },  /* Critical low threshold trigged */
-	{ 3, "high temperature warning!" },  /* Warning high threshold trigged */
-	{ 4, "high temperature critical!" }, /* Critical high threshold trigged */
+	{ 0, "" },                           /* No threshold triggered */
+	{ 1, "low temperature warning!" },   /* Warning low threshold triggered */
+	{ 2, "low temperature critical!" },  /* Critical low threshold triggered */
+	{ 3, "high temperature warning!" },  /* Warning high threshold triggered */
+	{ 4, "high temperature critical!" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
 static info_lkp_t marlin_threshold_humidity_alarms_info[] = {
-	{ 0, "" },                        /* No threshold trigged */
-	{ 1, "low humidity warning!" },   /* Warning low threshold trigged */
-	{ 2, "low humidity critical!" },  /* Critical low threshold trigged */
-	{ 3, "high humidity warning!" },  /* Warning high threshold trigged */
-	{ 4, "high humidity critical!" }, /* Critical high threshold trigged */
+	{ 0, "" },                        /* No threshold triggered */
+	{ 1, "low humidity warning!" },   /* Warning low threshold triggered */
+	{ 2, "low humidity critical!" },  /* Critical low threshold triggered */
+	{ 3, "high humidity warning!" },  /* Warning high threshold triggered */
+	{ 4, "high humidity critical!" }, /* Critical high threshold triggered */
 	{ 0, NULL }
 };
 
