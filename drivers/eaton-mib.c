@@ -263,7 +263,7 @@ static info_lkp_t marlin_threshold_status_info[] = {
 
 static info_lkp_t marlin_threshold_frequency_status_info[] = {
 	{ 0, "good" },          /* No threshold triggered */
-	{ 1, "out of range" },  /* Frequency out of range triggered */
+	{ 1, "out-of-range" },  /* Frequency out of range triggered */
 	{ 0, NULL }
 };
 
