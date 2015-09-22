@@ -1003,7 +1003,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 			 * start of path */
 			if (su_info_p->info_type[0] == 'L') {
 				/* Extract phase number */
-				item_number = atoi(strchr(su_info_p->info_type, 'L')+1);
+				item_number = atoi(su_info_p->info_type+1);
 
 				/* Inject in the alarm string */
 				sprintf(alarm_info_value, info_value, "phase L", item_number);
