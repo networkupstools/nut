@@ -553,13 +553,13 @@ static void ScanReceivePack( void )
 			double TENSAO_SAIDA_F1_MR[8] = { 1.1549, 1.0925, 0.0, 0.0, 1.0929, 1.0885, 0.0, 0.8654262224145391 };
 			double TENSAO_SAIDA_F2_MR[8] = { -6.9157, 11.026, 10.43, 0.0, -0.6109, 12.18, 0.0, 13.677};
 
-			double TENSAO_SAIDA_F2_MI[8] ={ 5.59, 9.47, 13.7, 0.0, 0.0, 0.0, 0.0, 0.0 };
-			double TENSAO_SAIDA_F1_MI[8] = { 7.9, 9.1, 17.6, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			const double TENSAO_SAIDA_F2_MI[8] ={ 5.59, 9.47, 13.7, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			const double TENSAO_SAIDA_F1_MI[8] = { 7.9, 9.1, 17.6, 0.0, 0.0, 0.0, 0.0, 0.0 };
 
-			double corrente_saida_F1_MR = 0.12970000389100012;
-			double corrente_saida_F2_MR = 0.5387060281204546;
-			double corrente_saida_F1_MI = 0.1372;
-			double corrente_saida_F2_MI = 0.3456;
+			const double corrente_saida_F1_MR = 0.12970000389100012;
+			const double corrente_saida_F2_MR = 0.5387060281204546;
+			/* double corrente_saida_F1_MI = 0.1372; 
+			double corrente_saida_F2_MI = 0.3456; */
 
 			if (SourceFail) {
 				if (RecPack[20] == 0) {
@@ -898,9 +898,9 @@ static void getbaseinfo(void)
 {
 	unsigned char tmp;
 #ifdef PORTUGUESE
-	char diassemana[7][4]={"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
+	const char diassemana[7][4]={"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
 #else
-	char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
 	char *str1, *str2, *str3, *str4, *strx;
 	unsigned char Pacote[25];

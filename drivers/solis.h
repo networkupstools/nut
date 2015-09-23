@@ -34,12 +34,12 @@ typedef int bool_t;
 
 /* autonomy constants */
 
-int bext[5] = {14,18,28,18,1};
-int nompow[5] = { 1000,1500,2000,3000,1200 };
-int inds[6] = { 0,0,1,2,3,4 };
-double InVolt_offset = 30.;
+const static int bext[5] = {14,18,28,18,1};
+const static int nompow[5] = { 1000,1500,2000,3000,1200 };
+const static int inds[6] = { 0,0,1,2,3,4 };
+const static double InVolt_offset = 30.;
 
-struct {
+const static struct {
          int maxi;              /* power internals */
          int minc[21];          /* power minimal index */
          int maxc[21];          /* power maximus index */
@@ -202,7 +202,7 @@ struct {
  * Solis constants for data ajustment
  * ----------------------------------------------------------- */
 
-struct {
+const static struct {
   double m_infreq;
   double m_appp_offset;
   double m_involt193[2];
@@ -328,16 +328,16 @@ struct {
 
 /* Date, time and programming group */
 static int const BASE_YEAR = 1998;
-int Day, Month, Year;
-int isprogram = 0, progshut = 0, prgups = 0;
-int dian=0, mesn=0, anon=0, weekn=0;
-int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
-unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
-char seman[4];
+static int Day, Month, Year;
+static int isprogram = 0, progshut = 0, prgups = 0;
+static int dian=0, mesn=0, anon=0, weekn=0;
+static int dhour, dmin, lhour, lmin, ihour,imin, isec, hourshut, minshut;
+static unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
+static char seman[4];
 
 /* buffers */
-unsigned char RecPack[25];
-unsigned char ConfigPack[12];
+static unsigned char RecPack[25];
+static unsigned char ConfigPack[12];
 
 /*
 unsigned char MibData[161];
@@ -345,37 +345,37 @@ unsigned char DumpPack[242];
 */
 
 /* Identification */
-const char *Model;
-int SolisModel, imodel;
-int InputValue, Out220;
+static const char *Model;
+static int SolisModel, imodel;
+static int InputValue, Out220;
 
 /* protocol */
-int Waiting, NumByteRec = 0;
-int pacsize;
+static int Waiting, NumByteRec = 0;
+static int pacsize;
 
 /* Status group */
-unsigned char InputStatus,OutputStatus, BattStatus, StatusGeral;
+static unsigned char InputStatus,OutputStatus, BattStatus, StatusGeral;
 /* Events group */
-unsigned char SourceEvents, OutputEvents, BattEvents, GeneralEvents;
+static unsigned char SourceEvents, OutputEvents, BattEvents, GeneralEvents;
 
 /* logical */
-bool_t detected = 0;
-bool_t SourceFail, SourceLast, FailureFlag, SourceReturn, SuperHeat;
-bool_t SuperHeatLast, OverCharge, OverChargeLast, LowBatt;
-bool_t CriticBatt, CriticBattLast, Flag_inversor, InversorOn, InversorOnLast;
+static bool_t detected = 0;
+static bool_t SourceFail, SourceLast, FailureFlag, SourceReturn, SuperHeat;
+static bool_t SuperHeatLast, OverCharge, OverChargeLast, LowBatt;
+static bool_t CriticBatt, CriticBattLast, Flag_inversor, InversorOn, InversorOnLast;
 
 /* Input group */
-double InVoltage, InCurrent, InFreq;
-double InDownLim, InUpLim, NomInVolt;
+static double InVoltage, InCurrent, InFreq;
+static double InDownLim, InUpLim, NomInVolt;
 /* Output group */
-double OutVoltage, OutCurrent, OutFreq, OutDownLim, OutUpLim, NomOutVolt;
+static double OutVoltage, OutCurrent, OutFreq, OutDownLim, OutUpLim, NomOutVolt;
 /* Battery group */
-int Autonomy, BattExtension, maxauto;
-double BattVoltage, BattCurrent, Temperature, batcharge;
-double Bat_LimInfRede, Bat_LimSupRede, Bat_LimInfInv, Bat_LimSupInv, Bat_VoltNom;
+static int Autonomy, BattExtension, maxauto;
+static double BattVoltage, BattCurrent, Temperature, batcharge;
+static double Bat_LimInfRede, Bat_LimSupRede, Bat_LimInfInv, Bat_LimSupInv, Bat_VoltNom;
 /* Power group */
-double AppPower, UtilPower, upscharge;
-int ChargePowerFactor, NominalPower, UpsPowerFactor;
+static double AppPower, UtilPower, upscharge;
+static int ChargePowerFactor, NominalPower, UpsPowerFactor;
 
 static void prnInfo(void);
 static int  IsToday( unsigned char, int );
@@ -386,7 +386,3 @@ static void getbaseinfo(void);
 static void getupdateinfo(void);
 
 #endif /* INCLUDED_SOLIS_H */
-
-
-
-
