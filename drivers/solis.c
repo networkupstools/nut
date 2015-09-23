@@ -780,118 +780,93 @@ CommReceive(const char *bufptr,  int size)
 
 	int i, CheckSum, i_end;
 
-	if(  size==25 )
-		Waiting = 0;
+	if(  size == 25 )  {
+		i_end = 25;
+		for( i = 0 ; i < i_end ; ++i ) {
+			RecPack[i] = *bufptr;
+			bufptr++;
+		}
+		if(nut_debug_level >= 3) {
+			upsdebug_hex(3, "CommReceive: RecPack", RecPack, size);
+		}
 
-	/* FIXME: is "Waiting" ever not 0? */
-	switch( Waiting )
-	{
-		/* normal package */
-		case 0:
-			{
-				if(  size == 25 )  {
-					i_end = 25;
-					for( i = 0 ; i < i_end ; ++i ) {
-						RecPack[i] = *bufptr;
-						bufptr++;
-					}
-					if(nut_debug_level >= 3) {
-						upsdebug_hex(3, "CommReceive: RecPack", RecPack, size);
-					}
+		/* CheckSum verify */
+		CheckSum = 0;
+		i_end = 23;
+		for( i = 0 ; i < i_end ; ++i )
+			CheckSum = RecPack[ i ] + CheckSum;
+		CheckSum = CheckSum % 256;
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
 
-					/* CheckSum verify */
-					CheckSum = 0;
-					i_end = 23;
-					for( i = 0 ; i < i_end ; ++i )
-						CheckSum = RecPack[ i ] + CheckSum;
-					CheckSum = CheckSum % 256;
-					upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
+		ser_flush_in(upsfd,"",0); /* clean port */
 
-					ser_flush_in(upsfd,"",0); /* clean port */
+		/* RecPack[0] identify the model number below.
+		 *  SOLIS = 1;
+		 RHINO = 2;
+		 STAY = 3;
+		 SOLIS_LI_700 = 169;
+		 SOLIS_M11 = 171;
+		 SOLIS_M15 = 175;
+		 SOLIS_M14 = 174;
+		 SOLIS_M13 = 173;
+		 SOLISDC_M14 = 201;
+		 SOLISDC_M13 = 206;
+		 SOLISDC_M15 = 207;
+		 CABECALHO_RHINO = 194;
+		 PS800 = 185;
+		 STAY1200_USB = 186;
+		 PS350_CII = 184;
+		 PS2200 = 187;
+		 PS2200_22 = 188;
+		 STAY700_USB = 189;
+		 BZ1500 = 190;
+		 */
+		if(  ( ( (RecPack[0] & 0xF0) == 0xA0 ) || (RecPack[0] & 0xF0) == 0xB0)
+				&& ( RecPack[ 24 ] == 254 )
+				&& ( RecPack[ 23 ] == CheckSum ) ) {
 
-					/* RecPack[0] identify the model number below.
-					 *  SOLIS = 1;
-					 RHINO = 2;
-					 STAY = 3;
-					 SOLIS_LI_700 = 169;
-					 SOLIS_M11 = 171;
-					 SOLIS_M15 = 175;
-					 SOLIS_M14 = 174;
-					 SOLIS_M13 = 173;
-					 SOLISDC_M14 = 201;
-					 SOLISDC_M13 = 206;
-					 SOLISDC_M15 = 207;
-					 CABECALHO_RHINO = 194;
-					 PS800 = 185;
-					 STAY1200_USB = 186;
-					 PS350_CII = 184;
-					 PS2200 = 187;
-					 PS2200_22 = 188;
-					 STAY700_USB = 189;
-					 BZ1500 = 190;
-					 */
-					if(  ( ( (RecPack[0] & 0xF0) == 0xA0 ) || (RecPack[0] & 0xF0) == 0xB0)
-							&& ( RecPack[ 24 ] == 254 )
-							&& ( RecPack[ 23 ] == CheckSum ) ) {
+			if(!(detected)) {
 
-						if(!(detected)) {
-
-							if (RecPack[0] == 186) {
-								SolisModel = 16;
-							} else {
-								SolisModel = (int) (RecPack[0] & 0x0F);
-							}
-							if( SolisModel < 13 )
-								imodel = SolisModel - 10; /* 10 = 0, 11 = 1 */
-							else
-								imodel = SolisModel - 11; /* 13 = 2, 14 = 3, 15 = 4 */
-
-							detected = true;
-
-						}
-
-						switch( SolisModel )
-						{
-							case 10:
-							case 11:
-							case 12:
-							case 13:
-							case 14:
-							case 15:
-								{
-									ScanReceivePack();
-									break;
-								}
-							case 16:      // STAY1200_USB model
-								{
-									ScanReceivePack();
-									break;
-								}
-							default:
-								{
-									printf( M_UNKN );
-									ScanReceivePack(); // Scan anyway.
-									break;
-								}
-						}
-					}
-
+				if (RecPack[0] == 186) {
+					SolisModel = 16;
+				} else {
+					SolisModel = (int) (RecPack[0] & 0x0F);
 				}
+				if( SolisModel < 13 )
+					imodel = SolisModel - 10; /* 10 = 0, 11 = 1 */
+				else
+					imodel = SolisModel - 11; /* 13 = 2, 14 = 3, 15 = 4 */
 
-				break;
+				detected = true;
+
 			}
 
-		case 1:
+			switch( SolisModel )
 			{
-				/* dumping package nothing to do yet */
-				Waiting = 0;
-				break;
+				case 10:
+				case 11:
+				case 12:
+				case 13:
+				case 14:
+				case 15:
+					{
+						ScanReceivePack();
+						break;
+					}
+				case 16:      // STAY1200_USB model
+					{
+						ScanReceivePack();
+						break;
+					}
+				default:
+					{
+						printf( M_UNKN );
+						ScanReceivePack(); // Scan anyway.
+						break;
+					}
 			}
-
+		}
 	}
-
-	Waiting =0;
-
 }
 
 static void getbaseinfo(void)

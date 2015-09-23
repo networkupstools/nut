@@ -350,13 +350,12 @@ static int SolisModel, imodel;
 static int InputValue, Out220;
 
 /* protocol */
-static int Waiting, NumByteRec = 0;
 static int pacsize;
 
 /* Status group */
-static unsigned char InputStatus,OutputStatus, BattStatus, StatusGeral;
+static unsigned char InputStatus,OutputStatus, BattStatus;
 /* Events group */
-static unsigned char SourceEvents, OutputEvents, BattEvents, GeneralEvents;
+static unsigned char SourceEvents, OutputEvents, BattEvents;
 
 /* logical */
 static bool_t detected = 0;
@@ -371,8 +370,7 @@ static double InDownLim, InUpLim, NomInVolt;
 static double OutVoltage, OutCurrent, OutFreq, OutDownLim, OutUpLim, NomOutVolt;
 /* Battery group */
 static int Autonomy, BattExtension, maxauto;
-static double BattVoltage, BattCurrent, Temperature, batcharge;
-static double Bat_LimInfRede, Bat_LimSupRede, Bat_LimInfInv, Bat_LimSupInv, Bat_VoltNom;
+static double BattVoltage, Temperature, batcharge;
 /* Power group */
 static double AppPower, UtilPower, upscharge;
 static int ChargePowerFactor, NominalPower, UpsPowerFactor;
