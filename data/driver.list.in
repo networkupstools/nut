@@ -495,6 +495,7 @@
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
+"Lyonn"	"ups"	"2"	"CTB-800V"	""	"nutdrv_qx"
 "Lyonn"	"ups"	"2"	"CTB-1200"	""	"blazer_usb"
 
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
