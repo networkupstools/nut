@@ -95,6 +95,8 @@
 
 "ASEM SPA"	"ups"	"5"	"PB1300 UPS"	"i2c"	"asem"
 
+"Asium"	"ups"	"3"	"P700"	"USB"	"blazer_usb"	# http://www.asiumpower.com/Asium-ASIUM-P700-650VA-360W/dp/B009SMEQ10
+
 "ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 3K Tower / Rack"	"USB"	"blazer_usb"
@@ -275,6 +277,8 @@
 "Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5 PX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Nova AVR 625/1250"	"USB"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5E650iUSB"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5E1100iUSB"	"USB port"	"usbhid-ups"	# http://powerquality.eaton.com/5E1100iUSB.aspx?CX&GUID=8D85FE66-3102-427C-8F33-B8D56BBDD4D3
 "Eaton"	"ups"	"5"	"5S"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5SC"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5P"	"USB port"	"usbhid-ups"
@@ -695,6 +699,8 @@
 "Microline"	"ups"	"2"	"C-Lion Innova RT 6K/10K (Parallel)"	""	"blazer_usb"
 "Microline"	"ups"	"2"	"C-Lion Innova Tower 6K/10K"	""	"blazer_usb"
 "Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	""	"blazer_usb"
+
+"Micropower"	"ups"	"2"	"LCD 1000"	"USB"	"blazer_usb"
 
 "Microsol"	"ups"	"4"	"Solis 1.0"	"1000VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 1.5"	"1500VA"	"solis"
