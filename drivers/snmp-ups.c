@@ -139,7 +139,7 @@ void upsdrv_initinfo(void)
 {
 	snmp_info_t *su_info_p;
 
-	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initinfo()");
+	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
 	dstate_setinfo("driver.version.data", "%s MIB %s", mibname, mibvers);
 
@@ -175,7 +175,7 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	upsdebugx(1,"SNMP UPS driver : entering upsdrv_updateinfo()");
+	upsdebugx(1,"SNMP UPS driver: entering %s()", __func__);
 
 	/* only update every pollfreq */
 	/* FIXME: only update status (SU_STATUS_*), à la usbhid-ups, in between */
@@ -209,7 +209,7 @@ void upsdrv_shutdown(void)
 	but a limitation of the interface used.
 	*/
 
-	upsdebugx(1, "upsdrv_shutdown...");
+	upsdebugx(1, "%s...", __func__);
 
 	/* Try to shutdown with delay */
 	if (su_instcmd("shutdown.return", NULL) == STAT_INSTCMD_HANDLED) {
@@ -234,13 +234,13 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
-	upsdebugx(1, "entering upsdrv_help");
+	upsdebugx(1, "entering %s", __func__);
 }
 
 /* list flags and values that you want to receive via -x */
 void upsdrv_makevartable(void)
 {
-	upsdebugx(1, "entering upsdrv_makevartable()");
+	upsdebugx(1, "entering %s()", __func__);
 
 	addvar(VAR_VALUE, SU_VAR_MIBS,
 		"Set MIB compliance (default=ietf, allowed: mge,apcc,netvision,pw,cpqpower,...)");
@@ -277,7 +277,7 @@ void upsdrv_initups(void)
 	bool_t status;
 	const char *mibs;
 
-	upsdebugx(1, "SNMP UPS driver : entering upsdrv_initups()");
+	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
@@ -342,7 +342,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 	int snmp_retries = DEFAULT_NETSNMP_RETRIES;
 	long snmp_timeout = DEFAULT_NETSNMP_TIMEOUT;
 
-	upsdebugx(2, "SNMP UPS driver : entering nut_snmp_init(%s)", type);
+	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, type);
 
 	/* Force numeric OIDs resolution (ie, do not resolve to textual names)
 	 * This is mostly for the convenience of debug output */
@@ -535,12 +535,12 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	struct snmp_pdu ** ret_array = NULL;
 	int type = SNMP_MSG_GET;
 
-	upsdebugx(3, "nut_snmp_walk(%s)", OID);
+	upsdebugx(3, "%s(%s)", __func__, OID);
 
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
-		upsdebugx(2, "[%s] nut_snmp_walk: %s: %s",
-			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
+		upsdebugx(2, "[%s] %s: %s: %s",
+			upsname?upsname:device_name, __func__, OID, snmp_api_errstring(snmp_errno));
 		return NULL;
 	}
 
@@ -588,7 +588,7 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 				}
 				else {
 					nut_snmp_perror(g_snmp_sess_p, status, response,
-							"nut_snmp_walk: %s", OID);
+							"%s: %s", __func__, OID);
 				}
 			}
 
@@ -621,7 +621,7 @@ struct snmp_pdu *nut_snmp_get(const char *OID)
 	if (OID == NULL)
 		return NULL;
 
-	upsdebugx(3, "nut_snmp_get(%s)", OID);
+	upsdebugx(3, "%s(%s)", __func__, OID);
 
 	pdu_array = nut_snmp_walk(OID,1);
 
@@ -699,7 +699,7 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 	struct snmp_pdu *pdu;
 	bool_t ret;
 
-	upsdebugx(3, "Entering nut_snmp_get_str()");
+	upsdebugx(3, "Entering %s()", __func__);
 
 	pdu = nut_snmp_get(OID);
 	if (pdu == NULL)
@@ -728,7 +728,7 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 	/* zero out buffer. */
 	memset(buf, 0, buf_len);
 
-	upsdebugx(3, "Entering nut_snmp_get_oid()");
+	upsdebugx(3, "Entering %s()", __func__);
 
 	pdu = nut_snmp_get(OID);
 	if (pdu == NULL)
@@ -814,11 +814,11 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 	oid name[MAX_OID_LEN];
 	size_t name_len = MAX_OID_LEN;
 
-	upsdebugx(1, "entering nut_snmp_set (%s, %c, %s)", OID, type, value);
+	upsdebugx(1, "entering %s(%s, %c, %s)", __func__, OID, type, value);
 
 	if (!snmp_parse_oid(OID, name, &name_len)) {
-		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
-			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
+		upslogx(LOG_ERR, "[%s] %s: %s: %s",
+			upsname?upsname:device_name, __func__, OID, snmp_api_errstring(snmp_errno));
 		return FALSE;
 	}
 
@@ -827,8 +827,8 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 		fatalx(EXIT_FAILURE, "Not enough memory");
 
 	if (snmp_add_var(pdu, name, name_len, type, value)) {
-		upslogx(LOG_ERR, "[%s] nut_snmp_set: %s: %s",
-			upsname?upsname:device_name, OID, snmp_api_errstring(snmp_errno));
+		upslogx(LOG_ERR, "[%s] %s: %s: %s",
+			upsname?upsname:device_name, __func__, OID, snmp_api_errstring(snmp_errno));
 
 		return FALSE;
 	}
@@ -839,7 +839,7 @@ bool_t nut_snmp_set(const char *OID, char type, const char *value)
 		ret = TRUE;
 	else
 		nut_snmp_perror(g_snmp_sess_p, status, response,
-			"nut_snmp_set: can't set %s", OID);
+			"%s: can't set %s", __func__, OID);
 
 	snmp_free_pdu(response);
 	return ret;
@@ -936,7 +936,7 @@ static void disable_transfer_oids(void)
 /* universal function to add or update info element. */
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
-	upsdebugx(1, "entering su_setinfo(%s)", su_info_p->info_type);
+	upsdebugx(1, "entering %s(%s)", __func__, su_info_p->info_type);
 
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
 		return;
@@ -964,7 +964,7 @@ void su_status_set(snmp_info_t *su_info_p, long value)
 {
 	const char *info_value = NULL;
 
-	upsdebugx(2, "SNMP UPS driver : entering su_status_set()");
+	upsdebugx(2, "SNMP UPS driver: entering %s()", __func__);
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 	{
@@ -982,7 +982,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 	/* number of the outlet or phase */
 	int item_number = -1;
 
-	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set(%s)", su_info_p->info_type);
+	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, su_info_p->info_type);
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL
 		&& info_value[0] != 0)
@@ -1025,11 +1025,11 @@ snmp_info_t *su_find_info(const char *type)
 
 	for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++)
 		if (!strcasecmp(su_info_p->info_type, type)) {
-			upsdebugx(3, "su_find_info: \"%s\" found", type);
+			upsdebugx(3, "%s: \"%s\" found", __func__, type);
 			return su_info_p;
 		}
 
-	upsdebugx(3, "su_find_info: unknown info type (%s)", type);
+	upsdebugx(3, "%s: unknown info type (%s)", __func__, type);
 	return NULL;
 }
 
@@ -1047,13 +1047,13 @@ mib2nut_info_t *match_sysoid()
 	/* Retrieve sysOID value of this device */
 	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
 	{
-		upsdebugx(1, "match_sysoid: device sysOID value = %s", sysOID_buf);
+		upsdebugx(1, "%s: device sysOID value = %s", __func__, sysOID_buf);
 
 		/* Build OIDs for comparison */
 		if (!read_objid(sysOID_buf, device_sysOID, &device_sysOID_len))
 		{
-			upsdebugx(2, "match_sysoid: can't build device_sysOID %s: %s",
-				sysOID_buf, snmp_api_errstring(snmp_errno));
+			upsdebugx(2, "%s: can't build device_sysOID %s: %s",
+				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
 			return FALSE;
 		}
@@ -1061,7 +1061,7 @@ mib2nut_info_t *match_sysoid()
 		/* Now, iterate on mib2nut definitions */
 		for (i = 0; mib2nut[i] != NULL; i++)
 		{
-			upsdebugx(1, "match_sysoid: checking MIB %s", mib2nut[i]->mib_name);
+			upsdebugx(1, "%s: checking MIB %s", __func__, mib2nut[i]->mib_name);
 
 			if (mib2nut[i]->sysOID == NULL)
 				continue;
@@ -1072,17 +1072,17 @@ mib2nut_info_t *match_sysoid()
 
 			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
 			{
-				upsdebugx(2, "match_sysoid: can't build OID %s: %s",
-					sysOID_buf, snmp_api_errstring(snmp_errno));
+				upsdebugx(2, "%s: can't build OID %s: %s",
+					__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
 				/* Try to continue anyway! */
 				continue;
 			}
 			/* Now compare these */
-			upsdebugx(1, "match_sysoid: comparing %s with %s", sysOID_buf, mib2nut[i]->sysOID);
+			upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
 			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
 			{
-				upsdebugx(2, "match_sysoid: sysOID matches MIB '%s'!", mib2nut[i]->mib_name);
+				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
 				return mib2nut[i];
 			}
 		}
@@ -1105,7 +1105,7 @@ bool_t load_mib2nut(const char *mib)
 	char	buf[LARGEBUF];
 	mib2nut_info_t *m2n = NULL;
 
-	upsdebugx(2, "SNMP UPS driver : entering load_mib2nut(%s)", mib);
+	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
 	/* First, try to match against sysOID, if no MIB was provided.
 	 * This should speed up init stage
@@ -1165,13 +1165,13 @@ long su_find_valinfo(info_lkp_t *oid2info, const char* value)
 		(strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
 
 		if (!(strcmp(info_lkp->info_value, value))) {
-			upsdebugx(1, "su_find_valinfo: found %s (value: %s)",
-					info_lkp->info_value, value);
+			upsdebugx(1, "%s: found %s (value: %s)",
+					__func__, info_lkp->info_value, value);
 
 			return info_lkp->oid_value;
 		}
 	}
-	upsdebugx(1, "su_find_valinfo: no matching INFO_* value for this OID value (%s)", value);
+	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%s)", __func__, value);
 	return -1;
 }
 
@@ -1184,13 +1184,13 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 		(strcmp(info_lkp->info_value, "NULL")) && (info_lkp->info_value != NULL); info_lkp++) {
 
 		if (info_lkp->oid_value == value) {
-			upsdebugx(1, "su_find_infoval: found %s (value: %ld)",
-					info_lkp->info_value, value);
+			upsdebugx(1, "%s: found %s (value: %ld)",
+					__func__, info_lkp->info_value, value);
 
 			return info_lkp->info_value;
 		}
 	}
-	upsdebugx(1, "su_find_infoval: no matching INFO_* value for this OID value (%ld)", value);
+	upsdebugx(1, "%s: no matching INFO_* value for this OID value (%ld)", __func__, value);
 	return NULL;
 }
 
@@ -1201,8 +1201,8 @@ static void disable_competition(snmp_info_t *entry)
 
 	for(p=snmp_info; p->info_type!=NULL; p++) {
 		if(p!=entry && !strcmp(p->info_type, entry->info_type)) {
-			upsdebugx(2, "disable_competition: disabling %s %s",
-					p->info_type, p->OID);
+			upsdebugx(2, "%s: disabling %s %s",
+					__func__, p->info_type, p->OID);
 			p->flags &= ~SU_FLAG_OK;
 		}
 	}
@@ -1217,7 +1217,7 @@ static void disable_competition(snmp_info_t *entry)
  * Note: remember to adapt info_type, OID and optionaly dfl */
 snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
-	upsdebugx(1, "instantiate_info (%s)", info_template->info_type);
+	upsdebugx(1, "%s(%s)", __func__, info_template->info_type);
 
 	/* sanity check */
 	if (info_template == NULL)
@@ -1277,7 +1277,7 @@ int base_snmp_template_index(const char *OID_template)
 		}
 		template_index_base = base_index;
 	}
-	upsdebugx(3, "base_snmp_template_index: %i", template_index_base);
+	upsdebugx(3, "%s: %i", __func__, template_index_base);
 	return base_index;
 }
 
@@ -1298,7 +1298,7 @@ static int guestimate_template_count(const char *OID_template)
 	char test_OID[SU_INFOSIZE];
 	int base_count;
 
-	upsdebugx(1, "guestimate_template_count(%s)", OID_template);
+	upsdebugx(1, "%s(%s)", __func__, OID_template);
 
 	/* Determine if OID index starts from 0 or 1? */
 	snprintf(test_OID, sizeof(test_OID), OID_template, base_index);
@@ -1312,7 +1312,7 @@ static int guestimate_template_count(const char *OID_template)
 			break;
 	}
 
-	upsdebugx(3, "guestimate_template_count: %i", base_count);
+	upsdebugx(3, "%s: %i", __func__, base_count);
 	return base_count;
 }
 
@@ -1430,7 +1430,7 @@ int extract_template_number(int template_type, const char* varname)
 		return -1;
 
 	item_number = atoi(++item_number_ptr);
-	upsdebugx(3, "extract_template_number: item %i", item_number);
+	upsdebugx(3, "%s: item %i", __func__, item_number);
 	return item_number;
 }
 
@@ -1653,7 +1653,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	alarms_info_t * alarms;
 	int index = 0;
 
-	upsdebugx(2, "su_ups_get: %s %s", su_info_p->info_type, su_info_p->OID);
+	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 
@@ -1798,7 +1798,7 @@ int su_setvar(const char *varname, const char *val)
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = get_template_type(varname);
 
-	upsdebugx(2, "entering su_setvar(%s, %s)", varname, val);
+	upsdebugx(2, "entering %s(%s, %s)", __func__, varname, val);
 
 	/* Check if it is outlet / outlet.group */
 	if (strncmp(varname, "outlet", 6))
@@ -1823,13 +1823,13 @@ int su_setvar(const char *varname, const char *val)
 		}
 
 		item_number = atoi(++item_number_ptr);
-		upsdebugx(3, "su_setvar: item %i / %i", item_number, total_items);
+		upsdebugx(3, "%s: item %i / %i", __func__, item_number, total_items);
 
 		/* ensure the item number is supported (filtered upstream though)! */
 		if (item_number > total_items) {
 			/* out of bound item number */
-			upsdebugx(2, "su_setvar: item is out of bound (%i / %i)",
-				item_number, total_items);
+			upsdebugx(2, "%s: item is out of bound (%i / %i)",
+				__func__, item_number, total_items);
 			return STAT_SET_INVALID;
 		}
 		/* find back the item template */
@@ -1838,7 +1838,7 @@ int su_setvar(const char *varname, const char *val)
 				(vartype == SU_OUTLET)?"outlet":"outlet.group",
 				"%i", strchr(item_number_ptr++, '.'));
 
-		upsdebugx(3, "su_setvar: searching for template\"%s\"", item_varname);
+		upsdebugx(3, "%s: searching for template\"%s\"", __func__, item_varname);
 		tmp_info_p = su_find_info(item_varname);
 		free(item_varname);
 
@@ -1866,7 +1866,7 @@ int su_setvar(const char *varname, const char *val)
 	}
 
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
-		upsdebugx(2, "su_setvar: info element unavailable %s", varname);
+		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
 
 		/* Free template (outlet and outlet.group) */
 		if (vartype != 0)
@@ -1876,7 +1876,7 @@ int su_setvar(const char *varname, const char *val)
 	}
 
 	if (!(su_info_p->info_flags & ST_FLAG_RW) || su_info_p->OID == NULL) {
-		upsdebugx(2, "su_setvar: not writable %s", varname);
+		upsdebugx(2, "%s: not writable %s", __func__, varname);
 
 		/* Free template (outlet and outlet.group) */
 		if (vartype != 0)
@@ -1902,10 +1902,10 @@ int su_setvar(const char *varname, const char *val)
 	}
 
 	if (status == FALSE)
-		upsdebugx(1, "su_setvar: cannot set value %s for %s", val, su_info_p->OID);
+		upsdebugx(1, "%s: cannot set value %s for %s", __func__, val, su_info_p->OID);
 	else {
 		retval = STAT_SET_HANDLED;
-		upsdebugx(1, "su_setvar: successfully set %s to \"%s\"", varname, val);
+		upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, varname, val);
 
 		/* update info array
 		 * FIXME: we'd better call su_ups_get() to refresh! */
@@ -1928,7 +1928,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = get_template_type(cmdname);
 
-	upsdebugx(2, "entering su_instcmd(%s, %s)", cmdname, extradata);
+	upsdebugx(2, "entering %s(%s, %s)", __func__, cmdname, extradata);
 
 	/* FIXME: this should only apply if strchr(%)! */
 	if (strncmp(cmdname, "outlet", 6)) {
@@ -1955,13 +1955,13 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		}
 
 		item_number = atoi(++item_number_ptr);
-		upsdebugx(3, "su_instcmd: item %i / %i", item_number, total_items);
+		upsdebugx(3, "%s: item %i / %i", __func__, item_number, total_items);
 
 		/* ensure the item number is supported (filtered upstream though)! */
 		if (item_number > total_items) {
 			/* out of bound item number */
-			upsdebugx(2, "su_instcmd: item is out of bound (%i / %i)",
-				item_number, total_items);
+			upsdebugx(2, "%s: item is out of bound (%i / %i)",
+				__func__, item_number, total_items);
 			return STAT_SET_INVALID;
 		}
 		/* find back the item template */
@@ -1970,7 +1970,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 				(vartype == SU_OUTLET)?"outlet":"outlet.group",
 				"%i", strchr(item_number_ptr++, '.'));
 
-		upsdebugx(3, "su_instcmd: searching for template\"%s\"", item_varname);
+		upsdebugx(3, "%s: searching for template\"%s\"", __func__, item_varname);
 		tmp_info_p = su_find_info(item_varname);
 		free(item_varname);
 
@@ -2047,7 +2047,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
 		}
 
-		upsdebugx(2, "su_instcmd: %s unavailable", cmdname);
+		upsdebugx(2, "%s: %s unavailable", __func__, cmdname);
 
 		if (!strncmp(cmdname, "outlet", 6))
 			free_info(su_info_p);
@@ -2063,10 +2063,10 @@ int su_instcmd(const char *cmdname, const char *extradata)
 	}
 
 	if (status == FALSE)
-		upsdebugx(1, "su_instcmd: cannot set value for %s", cmdname);
+		upsdebugx(1, "%s: cannot set value for %s", __func__, cmdname);
 	else {
 		retval = STAT_INSTCMD_HANDLED;
-		upsdebugx(1, "su_instcmd: successfully sent command %s", cmdname);
+		upsdebugx(1, "%s: successfully sent command %s", __func__, cmdname);
 	}
 
 	if (!strncmp(cmdname, "outlet", 6))
@@ -2098,9 +2098,9 @@ static int parse_mibconf_args(int numargs, char **arg)
 		}
 
 		if (ret == FALSE)
-			upslogx(LOG_ERR, "su_setvar: cannot set value %s for %s", arg[4], arg[3]);
+			upslogx(LOG_ERR, "%s: cannot set value %s for %s", __func__, arg[4], arg[3]);
 		else
-			upsdebugx(1, "su_setvar: successfully set %s to \"%s\"", arg[0], arg[4]);
+			upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, arg[0], arg[4]);
 
 		return 1;
 	}
@@ -2121,7 +2121,7 @@ void read_mibconf(char *mib)
 	char	fn[SMALLBUF];
 	PCONF_CTX_t	ctx;
 
-	upsdebugx(2, "SNMP UPS driver : entering read_mibconf(%s)", mib);
+	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
 
 	snprintf(fn, sizeof(fn), "%s/snmp/%s.conf", CONFPATH, mib);
 
