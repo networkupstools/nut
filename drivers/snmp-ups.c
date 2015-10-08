@@ -536,7 +536,7 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	int type = SNMP_MSG_GET;
 
 	upsdebugx(3, "%s(%s)", __func__, OID);
-	upsdebugx(4, "nut_snmp_walk: max. iteration = %i", max_iteration);
+	upsdebugx(4, "%s: max. iteration = %i", __func__, max_iteration);
 
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
