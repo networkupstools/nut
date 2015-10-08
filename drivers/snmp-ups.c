@@ -1357,21 +1357,22 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				cur_template_number++)
 		{
 			cur_nut_index = cur_template_number + base_nut_template_offset();
-			snprintf((char*)cur_info_p.info_type, sizeof(cur_info_p.info_type),
+			snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 					su_info_p->info_type, cur_nut_index);
 
 			/* check if default value is also a template */
 			if ((cur_info_p.dfl != NULL) &&
 				(strstr(su_info_p->dfl, "%i") != NULL)) {
 				cur_info_p.dfl = (char *)xmalloc(SU_INFOSIZE);
-				snprintf((char *)cur_info_p.dfl, sizeof(cur_info_p.dfl), su_info_p->dfl, cur_nut_index);
+				snprintf((char *)cur_info_p.dfl, SU_INFOSIZE, su_info_p->dfl, cur_nut_index);
 			}
 
 			if (cur_info_p.OID != NULL) {
-				snprintf((char *)cur_info_p.OID, sizeof(cur_info_p.OID), su_info_p->OID, cur_template_number);
+				snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
 
 				/* add instant commands to the info database. */
 				if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
+					upsdebugx(1, "Adding template command %s", cur_info_p.info_type);
 					/* FIXME: only add if "su_ups_get(cur_info_p) == TRUE" */
 					if (mode == SU_WALKMODE_INIT)
 						dstate_addcmd(cur_info_p.info_type);
