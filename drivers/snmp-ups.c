@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.87"
+#define DRIVER_VERSION		"0.88"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -681,11 +681,11 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			upsdebugx(3, "Failed to retrieve OID value, using fallback");
 			/* Otherwise return the last part of the returned OID (ex: 1.2.3 => 3) */
 			char *oid_leaf = strrchr(tmp_buf, '.');
-			sprintf(buf, "%s", oid_leaf+1);
+			snprintf(buf, buf_len, "%s", oid_leaf+1);
 			upsdebugx(3, "Fallback value: %s", buf);
 		}
 		else
-			sprintf(buf, "%s", tmp_buf);
+			snprintf(buf, buf_len, "%s", tmp_buf);
 		break;
 	default:
 		return FALSE;
@@ -1270,7 +1270,7 @@ int base_snmp_template_index(const char *OID_template)
 	{
 		/* not initialised yet */
 		for (base_index = 0 ; base_index < 2 ; base_index++) {
-			sprintf(test_OID, OID_template, base_index);
+			snprintf(test_OID, sizeof(test_OID), OID_template, base_index);
 			if (nut_snmp_get(test_OID) != NULL)
 				break;
 		}
@@ -1300,13 +1300,13 @@ static int guestimate_template_count(const char *OID_template)
 	upsdebugx(1, "guestimate_template_count(%s)", OID_template);
 
 	/* Determine if OID index starts from 0 or 1? */
-	sprintf(test_OID, OID_template, base_index);
+	snprintf(test_OID, sizeof(test_OID), OID_template, base_index);
 	if (nut_snmp_get(test_OID) == NULL)
 		base_index++;
 
 	/* Now, actually iterate */
 	for (base_count = 0 ;  ; base_count++) {
-		sprintf(test_OID, OID_template, base_index + base_count);
+		snprintf(test_OID, sizeof(test_OID), OID_template, base_index + base_count);
 		if (nut_snmp_get(test_OID) == NULL)
 			break;
 	}
@@ -1332,7 +1332,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 
 	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
 
-	sprintf(template_count_var, "%s.count", type);
+	snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
 
 	if(dstate_getinfo(template_count_var) == NULL) {
 		/* FIXME: should we disable it?
@@ -1356,18 +1356,18 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				cur_template_number++)
 		{
 			cur_nut_index = cur_template_number + base_nut_template_offset();
-			sprintf((char*)cur_info_p.info_type, su_info_p->info_type,
-					cur_nut_index);
+			snprintf((char*)cur_info_p.info_type, sizeof(cur_info_p.info_type),
+					su_info_p->info_type, cur_nut_index);
 
 			/* check if default value is also a template */
 			if ((cur_info_p.dfl != NULL) &&
 				(strstr(su_info_p->dfl, "%i") != NULL)) {
 				cur_info_p.dfl = (char *)xmalloc(SU_INFOSIZE);
-				sprintf((char *)cur_info_p.dfl, su_info_p->dfl, cur_nut_index);
+				snprintf((char *)cur_info_p.dfl, sizeof(cur_info_p.dfl), su_info_p->dfl, cur_nut_index);
 			}
 
 			if (cur_info_p.OID != NULL) {
-				sprintf((char *)cur_info_p.OID, su_info_p->OID, cur_template_number);
+				snprintf((char *)cur_info_p.OID, sizeof(cur_info_p.OID), su_info_p->OID, cur_template_number);
 
 				/* add instant commands to the info database. */
 				if (SU_TYPE(su_info_p) == SU_TYPE_CMD) {
@@ -1833,7 +1833,7 @@ int su_setvar(const char *varname, const char *val)
 		}
 		/* find back the item template */
 		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
-		sprintf(item_varname, "%s.%s%s",
+		snprintf(item_varname, SU_INFOSIZE, "%s.%s%s",
 				(vartype == SU_OUTLET)?"outlet":"outlet.group",
 				"%i", strchr(item_number_ptr++, '.'));
 
@@ -1848,12 +1848,12 @@ int su_setvar(const char *varname, const char *val)
 		if ((su_info_p->dfl != NULL) &&
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
-			sprintf((char *)su_info_p->dfl, tmp_info_p->dfl,
+			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
 				item_number - base_nut_template_offset());
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
-			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
+			snprintf((char *)su_info_p->OID, sizeof(su_info_p->OID), tmp_info_p->OID,
 				item_number - base_nut_template_offset());
 		}
 		/* else, don't return STAT_SET_INVALID since we can be setting
@@ -1861,7 +1861,7 @@ int su_setvar(const char *varname, const char *val)
 
 		/* adapt info_type */
 		if (su_info_p->info_type != NULL)
-			sprintf((char *)su_info_p->info_type, "%s", varname);
+			snprintf((char *)su_info_p->info_type, sizeof(su_info_p->info_type), "%s", varname);
 	}
 
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
@@ -1965,7 +1965,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		}
 		/* find back the item template */
 		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
-		sprintf(item_varname, "%s.%s%s",
+		snprintf(item_varname, SU_INFOSIZE, "%s.%s%s",
 				(vartype == SU_OUTLET)?"outlet":"outlet.group",
 				"%i", strchr(item_number_ptr++, '.'));
 
@@ -1980,7 +1980,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 		if ((su_info_p->dfl != NULL) &&
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
-			sprintf((char *)su_info_p->dfl, tmp_info_p->dfl,
+			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
 				item_number - base_nut_template_offset());
 		}
 /* FIXME: </end> common with su_setvar(), apart from upsdebugx */
@@ -1994,7 +1994,7 @@ int su_instcmd(const char *cmdname, const char *extradata)
 				cmd_offset++;
 			}
 
-			sprintf((char *)su_info_p->OID, tmp_info_p->OID,
+			snprintf((char *)su_info_p->OID, sizeof(su_info_p->OID), tmp_info_p->OID,
 				item_number - base_nut_template_offset() + cmd_offset);
 		} else {
 			free_info(su_info_p);
