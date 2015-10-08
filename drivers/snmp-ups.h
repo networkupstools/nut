@@ -211,7 +211,8 @@ typedef struct {
 
 typedef struct {
 	const char * OID;
-	const char *info_value;
+	const char *status_value; /* when not NULL, set ups.status to this */
+	const char *alarm_value;  /* when not NULL, set ups.alarm to this */
 } alarms_info_t;
 
 typedef struct {
