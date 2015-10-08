@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.88"
+#define DRIVER_VERSION		"0.89"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -738,6 +738,7 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 		case ASN_OBJECT_ID:
 			snprint_objid (buf, buf_len, pdu->variables->val.objid,
 				pdu->variables->val_len / sizeof(oid));
+			ret = TRUE;
 			break;
 		default:
 			upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
@@ -1044,7 +1045,7 @@ mib2nut_info_t *match_sysoid()
 	int i;
 
 	/* Retrieve sysOID value of this device */
-	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)))
+	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
 	{
 		upsdebugx(1, "match_sysoid: device sysOID value = %s", sysOID_buf);
 
