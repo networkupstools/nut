@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.86"
+#define DRIVER_VERSION		"0.87"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -983,36 +983,36 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 
 	upsdebugx(2, "SNMP UPS driver : entering su_alarm_set(%s)", su_info_p->info_type);
 
-	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL
+		&& info_value[0] != 0)
 	{
-		if (strcmp(info_value, "")) {
-			/* Special handling for outlet & outlet groups alarms */
-			if ((su_info_p->flags & SU_OUTLET)
-				|| (su_info_p->flags & SU_OUTLET_GROUP)) {
-				/* Extract template number */
-				item_number = extract_template_number(su_info_p->flags, su_info_p->info_type);
+		/* Special handling for outlet & outlet groups alarms */
+		if ((su_info_p->flags & SU_OUTLET)
+			|| (su_info_p->flags & SU_OUTLET_GROUP)) {
+			/* Extract template number */
+			item_number = extract_template_number(su_info_p->flags, su_info_p->info_type);
 
-				/* Inject in the alarm string */
-				sprintf(alarm_info_value, info_value, 
-					(su_info_p->flags & SU_OUTLET_GROUP)?"outlet group ":"outlet ",
-					item_number);
-				info_value = &alarm_info_value[0];
-			}
-			/* Special handling for phase alarms
-			 * Note that SU_*PHASE flags are cleared, so match the 'Lx'
-			 * start of path */
-			if (su_info_p->info_type[0] == 'L') {
-				/* Extract phase number */
-				item_number = atoi(su_info_p->info_type+1);
-
-				/* Inject in the alarm string */
-				sprintf(alarm_info_value, info_value, "phase L", item_number);
-				info_value = &alarm_info_value[0];
-			}
-
-			/* Set the alarm value */
-			alarm_set(info_value);
+			/* Inject in the alarm string */
+			snprintf(alarm_info_value, sizeof(alarm_info_value),
+				"outlet%s %i %s", (su_info_p->flags & SU_OUTLET_GROUP) ? " group" : "",
+				item_number, info_value);
+			info_value = &alarm_info_value[0];
 		}
+		/* Special handling for phase alarms
+		 * Note that SU_*PHASE flags are cleared, so match the 'Lx'
+		 * start of path */
+		if (su_info_p->info_type[0] == 'L') {
+			/* Extract phase number */
+			item_number = atoi(su_info_p->info_type+1);
+
+			/* Inject in the alarm string */
+			snprintf(alarm_info_value, sizeof(alarm_info_value),
+				"phase L%i %s", item_number, info_value);
+			info_value = &alarm_info_value[0];
+		}
+
+		/* Set the alarm value */
+		alarm_set(info_value);
 	}
 	/* TODO: else */
 }
