@@ -117,7 +117,7 @@ typedef struct {
 typedef struct {
 	const char   *info_type;	/* INFO_ or CMD_ element */
 	int           info_flags;	/* flags to set in addinfo */
-	float         info_len;		/* length of strings if STR,
+	double        info_len;		/* length of strings if STR,
 								 * cmd value if CMD, multiplier otherwise. */
 	const char   *OID;			/* SNMP OID or NULL */
 	const char   *dfl;			/* default value */
@@ -155,6 +155,8 @@ typedef struct {
 #define SU_STATUS_RB		(3 << 8)	/* indicates replace battery status element */
 #define SU_STATUS_NUM_ELEM	4
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
+
+#define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
 
 /* Phase specific data */
 #define SU_PHASES		(0x3F << 12)
