@@ -102,7 +102,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.89"
+#define DRIVER_VERSION		"0.90"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -536,6 +536,7 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 	int type = SNMP_MSG_GET;
 
 	upsdebugx(3, "%s(%s)", __func__, OID);
+	upsdebugx(4, "%s: max. iteration = %i", __func__, max_iteration);
 
 	/* create and send request. */
 	if (!snmp_parse_oid(OID, name, &name_len)) {
@@ -717,6 +718,25 @@ bool_t nut_snmp_get_str(const char *OID, char *buf, size_t buf_len, info_lkp_t *
 	return ret;
 }
 
+
+static bool_t decode_oid(struct snmp_pdu *pdu, char *buf, size_t buf_len)
+{
+	/* zero out buffer. */
+	memset(buf, 0, buf_len);
+
+	switch (pdu->variables->type) {
+		case ASN_OBJECT_ID:
+			snprint_objid (buf, buf_len, pdu->variables->val.objid,
+				pdu->variables->val_len / sizeof(oid));
+			upsdebugx(2, "OID value: %s", buf);
+			break;
+		default:
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 /* Return the value stored in OID, which is an OID (sysOID for example)
  * and don't try to get the value pointed by this OID (no follow).
  * To achieve the latter behavior, use standard nut_snmp_get_{str,int}() */
@@ -734,16 +754,11 @@ bool_t nut_snmp_get_oid(const char *OID, char *buf, size_t buf_len)
 	if (pdu == NULL)
 		return FALSE;
 
-	switch (pdu->variables->type) {
-		case ASN_OBJECT_ID:
-			snprint_objid (buf, buf_len, pdu->variables->val.objid,
-				pdu->variables->val_len / sizeof(oid));
-			ret = TRUE;
-			break;
-		default:
-			upslogx(LOG_ERR, "[%s] unhandled ASN 0x%x received from %s",
-				upsname?upsname:device_name, pdu->variables->type, OID);
-			break;
+	ret = decode_oid(pdu, buf, buf_len);
+
+	if(ret == FALSE) {
+		upsdebugx(2, "[%s] unhandled ASN 0x%x received from %s",
+			upsname?upsname:device_name, pdu->variables->type, OID);
 	}
 
 	snmp_free_pdu(pdu);
@@ -1686,15 +1701,16 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		return status;
 	}
 
-	/* FIXME: this is not compliant nor coherent with ups.alarm and
-	 * MUST be reworked!
-	 * Only present in powerware-mib.c */
+	/* Walk a subtree (array) of alarms, composed of OID references.
+	 * The object referenced should not be accessible, but rather when
+	 * present, this means that the alarm condition is TRUE.
+	 * Only present in powerware-mib.c for now */
 	if (!strcasecmp(su_info_p->info_type, "ups.alarms")) {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
-			upsdebugx(2, "=> value: %ld", value);
+			upsdebugx(2, "=> %ld alarms present", value);
 			if( value > 0 ) {
-				pdu_array = nut_snmp_walk(su_info_p->OID,INT_MAX);
+				pdu_array = nut_snmp_walk(su_info_p->OID, INT_MAX);
 				if(pdu_array == NULL) {
 					upsdebugx(2, "=> Walk failed");
 					return FALSE;
@@ -1702,15 +1718,26 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 				current_pdu = pdu_array[index];
 				while(current_pdu) {
-					decode_str(current_pdu,buf,sizeof(buf),NULL);
-					alarms = alarms_info;
-					while( alarms->OID ) {
-						if(!strcmp(buf+1,alarms_info->OID)) {
-							upsdebugx(3, "Alarm OID %s found => %s", alarms->OID, alarms->info_value);
-							status_set(alarms->info_value);
-							break;
+					/* Retrieve the OID name, for comparison */
+					if (decode_oid(current_pdu, buf, sizeof(buf)) == TRUE) {
+						alarms = alarms_info;
+						while( alarms->OID ) {
+							if(!strcmp(buf, alarms->OID)) {
+								upsdebugx(3, "Alarm OID found => %s", alarms->OID);
+								/* Check for ups.status value */
+								if (alarms->status_value) {
+									upsdebugx(3, "Alarm value (status) found => %s", alarms->status_value);
+									status_set(alarms->status_value);
+								}
+								/* Check for ups.alarm value */
+								if (alarms->alarm_value) {
+									upsdebugx(3, "Alarm value (alarm) found => %s", alarms->alarm_value);
+									alarm_set(alarms->alarm_value);
+								}
+								break;
+							}
+							alarms++;
 						}
-						alarms++;
 					}
 					index++;
 					current_pdu = pdu_array[index];

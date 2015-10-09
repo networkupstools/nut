@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.8"
+#define PW_MIB_VERSION "0.85"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -355,9 +355,105 @@ static snmp_info_t pw_mib[] = {
 } ;
 
 static alarms_info_t pw_alarms[] = {
-        { PW_OID_ALARM_LB, "LB" },
+	/* xupsLowBattery */
+	{ PW_OID_ALARM_LB, "LB", NULL },
+	/* xupsOutputOverload */
+	{ ".1.3.6.1.4.1.534.1.7.7", "OVER", "Output overload!" },
+	/* xupsInternalFailure */
+	{ ".1.3.6.1.4.1.534.1.7.8", NULL, "Internal failure!" },
+	/* xupsBatteryDischarged */
+	{ ".1.3.6.1.4.1.534.1.7.9", NULL, "Battery discharged!" },
+	/* xupsInverterFailure */
+	{ ".1.3.6.1.4.1.534.1.7.10", NULL, "Inverter failure!" },
+	/* xupsOnBypass
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.11", "BYPASS", "On bypass!" },
+	/* xupsBypassNotAvailable
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.12", NULL, "Bypass not available!" },
+	/* xupsOutputOff
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.13", "OFF", "Output off!" },
+	/* xupsInputFailure
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.14", NULL, "Input failure!" },
+	/* xupsBuildingAlarm
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.15", NULL, "Building alarm!" },
+	/* xupsShutdownImminent */
+	{ ".1.3.6.1.4.1.534.1.7.16", NULL, "Shutdown imminent!" },
+	/* xupsOnInverter
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.17", NULL, "On inverter!" },
+	/* xupsBreakerOpen
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.20", NULL, "Breaker open!" },
+	/* xupsAlarmBatteryBad */
+	{ ".1.3.6.1.4.1.534.1.7.23", "RB", "Battery bad!" },
+	/* xupsOutputOffAsRequested
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.24", "OFF", "Output off as requested!" },
+	/* xupsDiagnosticTestFailed
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.25", NULL, "Diagnostic test failure!" },
+	/* xupsCommunicationsLost */
+	{ ".1.3.6.1.4.1.534.1.7.26", NULL, "Communication with UPS lost!" },
+	/* xupsUpsShutdownPending */
+	{ ".1.3.6.1.4.1.534.1.7.27", NULL, "Shutdown pending!" },
+	/* xupsAmbientTempBad */
+	{ ".1.3.6.1.4.1.534.1.7.29", NULL, "Bad ambient temperature!" },
+	/* xupsLossOfRedundancy */
+	{ ".1.3.6.1.4.1.534.1.7.30", NULL, "Redundancy lost!" },
+	/* xupsAlarmTempBad */
+	{ ".1.3.6.1.4.1.534.1.7.31", NULL, "Bad temperature!" },
+	/* xupsAlarmChargerFailed */
+	{ ".1.3.6.1.4.1.534.1.7.32", NULL, "Charger failure!" },
+	/* xupsAlarmFanFailure */
+	{ ".1.3.6.1.4.1.534.1.7.33", NULL, "Fan failure!" },
+	/* xupsAlarmFuseFailure */
+	{ ".1.3.6.1.4.1.534.1.7.34", NULL, "Fuse failure!" },
+	/* xupsPowerSwitchBad */
+	{ ".1.3.6.1.4.1.534.1.7.35", NULL, "Powerswitch failure!" },
+	/* xupsModuleFailure */
+	{ ".1.3.6.1.4.1.534.1.7.36", NULL, "Parallel or composite module failure!" },
+	/* xupsOnAlternatePowerSource
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.37", NULL, "Using alternative power source!" },
+	/* xupsAltPowerNotAvailable
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.38", NULL, "Alternative power source unavailable!" },
+	/* xupsRemoteTempBad */
+	{ ".1.3.6.1.4.1.534.1.7.40", NULL, "Bad remote temperature!" },
+	/* xupsRemoteHumidityBad */
+	{ ".1.3.6.1.4.1.534.1.7.41", NULL, "Bad remote humidity!" },
+	/* xupsAlarmOutputBad */
+	{ ".1.3.6.1.4.1.534.1.7.42", NULL, "Bad output condition!" },
+	/* xupsAlarmAwaitingPower
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event? */
+	{ ".1.3.6.1.4.1.534.1.7.43", NULL, "Awaiting power!" },
+	/* xupsOnMaintenanceBypass
+	 * FIXME: informational (not an alarm),
+	 * to RFC'ed for device.event?
+	 * FIXME: NUT currently doesn't distinguish between Maintenance and
+	 * Automatic Bypass (both published as "ups.alarm: BYPASS)
+	 * Should we make the distinction? */
+	{ ".1.3.6.1.4.1.534.1.7.44", "BYPASS", "On maintenance bypass!" },
+
+
 	/* end of structure. */
-	{ NULL, NULL }
+	{ NULL, NULL, NULL }
 } ;
 
 
