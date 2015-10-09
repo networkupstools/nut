@@ -106,6 +106,9 @@ checks that these are well propagated with upsc.
 
 - link:https://bugzilla.redhat.com/buglist.cgi?component=nut[Redhat / Fedora Bug tracker]
 
+- link:https://www.openhub.net/p/nut[Black Duck Open Hub] (formerly Ohloh.net) 
+provides metrics on NUT source code base and activity.
+
 Runtime quality
 ~~~~~~~~~~~~~~~
 
