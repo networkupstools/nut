@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.07"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.08"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
@@ -119,14 +119,11 @@ static testing_t	voltronic_qs_hex_testing[] = {
 	{ "QS\r",	"#\x6C\x01 \x35 \x6C\x01 \x35 \x03 \x51\x9A \x28\x02\x12\xD0 \xE6 \x1E \x09\r",	27 },
 	{ "M\r",	"P\r",	-1 },
 	{ "Q\r",	"",	-1 },
-	{ "S03\r",	"",	-1 },
+	{ "S00R0000\r",	"",	-1 },
 	{ "C\r",	"",	-1 },
 	{ "S02R0005\r",	"",	-1 },
 	{ "S.5R0000\r",	"N\r",	-1 },
-	{ "T04\r",	"",	-1 },
-	{ "TL\r",	"",	-1 },
 	{ "T\r",	"",	-1 },
-	{ "CT\r",	"",	-1 },
 	{ NULL }
 };
 #endif	/* TESTING */
@@ -302,7 +299,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 {
 	item_t	*unskip;
 
-	if (strcasecmp(item->value, "P") && strcasecmp(item->value, "T") && strcasecmp(item->value, "V")) {
+	if (strcasecmp(item->value, "P") && strcasecmp(item->value, "T")) {
 		upsdebugx(2, "%s: invalid protocol [%s]", __func__, item->value);
 		return -1;
 	}
