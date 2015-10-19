@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.08"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.09"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
@@ -327,7 +327,7 @@ static int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, cons
 {
 	int	val;
 	double	ret;
-	char	*str_end, buf[SMALLBUF] = "";
+	char	*str_end;
 
 	if (strspn(item->value, "0123456789ABCDEFabcdef ") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
@@ -335,11 +335,7 @@ static int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, cons
 	}
 
 	val = strtol(item->value, &str_end, 16) * strtol(str_end, NULL, 16) / 51;
-	snprintf(buf, sizeof(buf), "%06x", val);
-
-	ret = strtol(buf + 4, NULL, 16) / 256.0;
-	buf[4] = '\0';
-	ret += strtol(buf, NULL, 16);
+	ret = val / 256.0;
 
 	snprintf(value, valuelen, item->dfl, ret);
 
