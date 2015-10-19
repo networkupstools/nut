@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs-hex.h"
 
-#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.06"
+#define VOLTRONIC_QS_HEX_VERSION "Voltronic-QS-Hex 0.07"
 
 /* Support functions */
 static int	voltronic_qs_hex_claim(void);
@@ -326,7 +326,7 @@ static int	voltronic_qs_hex_protocol(item_t *item, char *value, const size_t val
 }
 
 /* Input/Output voltage */
-int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, const size_t valuelen)
+static int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, const size_t valuelen)
 {
 	int	val;
 	double	ret;
@@ -350,7 +350,7 @@ int	voltronic_qs_hex_input_output_voltage(item_t *item, char *value, const size_
 }
 
 /* Device load */
-int	voltronic_qs_hex_load(item_t *item, char *value, const size_t valuelen)
+static int	voltronic_qs_hex_load(item_t *item, char *value, const size_t valuelen)
 {
 	if (strspn(item->value, "0123456789ABCDEFabcdef") != strlen(item->value)) {
 		upsdebugx(2, "%s: non numerical value [%s: %s]", __func__, item->info_type, item->value);
@@ -363,7 +363,7 @@ int	voltronic_qs_hex_load(item_t *item, char *value, const size_t valuelen)
 }
 
 /* Output frequency */
-int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t valuelen)
+static int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t valuelen)
 {
 	double	val1, val2, ret;
 	char	*str_end;
@@ -385,7 +385,7 @@ int	voltronic_qs_hex_frequency(item_t *item, char *value, const size_t valuelen)
 }
 
 /* Battery voltage */
-int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const size_t valuelen)
+static int	voltronic_qs_hex_battery_voltage(item_t *item, char *value, const size_t valuelen)
 {
 	int	val1, val2;
 	char	*str_end;
