@@ -25,7 +25,7 @@
 
 #include "nutdrv_qx_voltronic-qs.h"
 
-#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.06"
+#define VOLTRONIC_QS_VERSION "Voltronic-QS 0.07"
 
 /* Support functions */
 static int	voltronic_qs_claim(void);
@@ -62,7 +62,7 @@ static item_t	voltronic_qs_qx2nut[] = {
 	 *    0
 	 */
 
-	{ "ups.firmware.aux",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"%s",	QX_FLAG_STATIC,	NULL,	NULL,	voltronic_qs_protocol },
+	{ "ups.firmware.aux",		0,	NULL,	"M\r",	"",	2,	0,	"",	0,	0,	"PM-%s",	QX_FLAG_STATIC,	NULL,	NULL,	voltronic_qs_protocol },
 
 	/* Query UPS for status
 	 * > [QS\r]
@@ -75,7 +75,7 @@ static item_t	voltronic_qs_qx2nut[] = {
 	{ "input.voltage.fault",	0,	NULL,	"QS\r",	"",	47,	'(',	"",	7,	11,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "output.voltage",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	13,	17,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "ups.load",			0,	NULL,	"QS\r",	"",	47,	'(',	"",	19,	21,	"%.0f",	0,	NULL,	NULL,	NULL },
-	{ "input.frequency",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
+	{ "output.frequency",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	23,	26,	"%.1f",	0,	NULL,	NULL,	NULL },
 	{ "battery.voltage",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	28,	31,	"%.2f",	0,	NULL,	NULL,	NULL },
 	{ "ups.temperature",		0,	NULL,	"QS\r",	"",	47,	'(',	"",	33,	36,	"%.1f",	0,	NULL,	NULL,	NULL },
 	/* Status bits */
@@ -90,15 +90,15 @@ static item_t	voltronic_qs_qx2nut[] = {
 
 	/* Query UPS for ratings
 	 * > [F\r]
-	 * < [#220.0 000 024.0 50.0\r]
+	 * < [#220.0 003 12.00 50.0\r]
 	 *    0123456789012345678901
 	 *    0         1         2
 	 */
 
-	{ "input.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	5,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
-	{ "input.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+	{ "output.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	1,	5,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+	{ "output.current.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	7,	9,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 	{ "battery.voltage.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	11,	15,	"%.1f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
-	{ "input.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
+	{ "output.frequency.nominal",	0,	NULL,	"F\r",	"",	22,	'#',	"",	17,	20,	"%.0f",	QX_FLAG_STATIC,	NULL,	NULL,	NULL },
 
 	/* Instant commands */
 	{ "beeper.toggle",		0,	NULL,	"Q\r",		"",	0,	0,	"",	1,	3,	NULL,	QX_FLAG_CMD,	NULL,	NULL,	NULL },
@@ -122,7 +122,7 @@ static item_t	voltronic_qs_qx2nut[] = {
 #ifdef TESTING
 static testing_t	voltronic_qs_testing[] = {
 	{ "QS\r",	"(215.0 195.0 230.0 014 49.0 22.7 30.0 00000000\r",	-1 },
-	{ "F\r",	"#230.0 000 024.0 50.0\r",	-1 },
+	{ "F\r",	"#220.0 003 12.00 50.0\r",	-1 },
 	{ "M\r",	"V\r",	-1 },
 	{ "Q\r",	"",	-1 },
 	{ "C\r",	"",	-1 },
@@ -196,7 +196,7 @@ static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuele
 		return -1;
 	}
 
-	snprintf(value, valuelen, item->dfl, "PMV");
+	snprintf(value, valuelen, item->dfl, item->value);
 
 	return 0;
 }
@@ -210,8 +210,8 @@ subdriver_t	voltronic_qs_subdriver = {
 	voltronic_qs_initups,
 	NULL,
 	blazer_makevartable_light,
-	"ACK",
-	"(NAK\r",
+	NULL,
+	NULL,
 #ifdef TESTING
 	voltronic_qs_testing,
 #endif	/* TESTING */
