@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.34"
+#define EATON_MARLIN_MIB_VERSION	"0.35"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -577,6 +577,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.6.1.2.0.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET_GROUP, &marlin_outletgroups_status_info[0], NULL },
+	/* groupChildCount.0.1 = Integer: 12 */
+	{ "outlet.group.%i.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.5.1.1.6.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
 	/* groupVoltage.0.1 = Integer: 243080 */
 	{ "outlet.group.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.5.3.1.3.0.%i", NULL, SU_OUTLET_GROUP, NULL, NULL },
 	/* groupVoltageThStatus.0.1 = Integer: good (0) */
