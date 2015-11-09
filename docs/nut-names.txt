@@ -534,10 +534,11 @@ voltage (including status, alarm and thresholds).
 Some specific data to outlet groups exists:
 
 [options="header"]
-|================================================================================
-| Name                           | Description                   | Example value
-| outlet.group.n.type            | Type of outlet group (OPAQUE) | outlet-section
-|================================================================================
+|=================================================================================
+| Name                           | Description                    | Example value
+| outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
+| outlet.group.n.count           | Number of outlets in the group | 12
+|=================================================================================
 
 Example:
 
