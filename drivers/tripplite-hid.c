@@ -40,6 +40,10 @@
  */
 static double	battery_scale = 1.0;
 
+static double   io_voltage_scale = 1.0;
+static double   io_frequency_scale = 1.0;
+static double   io_current_scale = 1.0;
+
 /* Specific handlers for USB device matching */
 static void *battery_scale_1dot0(USBDevice_t *device)
 {
@@ -50,6 +54,14 @@ static void *battery_scale_1dot0(USBDevice_t *device)
 static void *battery_scale_0dot1(USBDevice_t *device)
 {
 	battery_scale = 0.1;
+	return NULL;
+}
+static void *smart1500lcdt_scale(USBDevice_t *device)
+{
+	battery_scale = 100000.0;
+	io_voltage_scale = 100000.0;
+	io_frequency_scale = 0.01;
+	io_current_scale = 0.01;
 	return NULL;
 }
 
@@ -96,7 +108,7 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	/* e.g. ? */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3015), battery_scale_1dot0 },
 	/* e.g. TrippLite Smart1500LCD (newer unit) */
-	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), battery_scale_1dot0 },
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x3016), smart1500lcdt_scale },
 	/* e.g. TrippLite SmartOnline SU1500RTXL2UA (older unit?) */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x4001), battery_scale_1dot0 },
 	/* e.g. TrippLite SmartOnline SU6000RT4U? */
@@ -173,6 +185,45 @@ static const char *tripplite_battvolt_fun(double value)
 
 static info_lkp_t tripplite_battvolt[] = {
 	{ 0, NULL, tripplite_battvolt_fun }
+};
+
+static const char *tripplite_iovolt_fun(double value)
+{
+	static char	buf[8];
+
+	snprintf(buf, sizeof(buf), "%.1f", io_voltage_scale * value);
+
+	return buf;
+}
+
+static info_lkp_t tripplite_iovolt[] = {
+	{ 0, NULL, tripplite_iovolt_fun }
+};
+
+static const char *tripplite_iofreq_fun(double value)
+{
+	static char	buf[8];
+
+	snprintf(buf, sizeof(buf), "%.1f", io_frequency_scale * value);
+
+	return buf;
+}
+
+static info_lkp_t tripplite_iofreq[] = {
+	{ 0, NULL, tripplite_iofreq_fun }
+};
+
+static const char *tripplite_ioamp_fun(double value)
+{
+	static char	buf[8];
+
+	snprintf(buf, sizeof(buf), "%.1f", io_current_scale * value);
+
+	return buf;
+}
+
+static info_lkp_t tripplite_ioamp[] = {
+	{ 0, NULL, tripplite_ioamp_fun }
 };
 
 /* --------------------------------------------------------------- */
@@ -363,9 +414,9 @@ static hid_info_t tripplite_hid2nut[] = {
 
 	/* Input page */
 	{ "input.voltage.nominal", 0, 0, "UPS.PowerSummary.Input.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "input.voltage", 0, 0, "UPS.PowerSummary.Input.Voltage", NULL, "%.1f", 0, NULL },
-	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%.1f", 0, NULL },
-	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%.1f", 0, NULL },
+	{ "input.voltage", 0, 0, "UPS.PowerSummary.Input.Voltage", NULL, "%s", 0, tripplite_iovolt },
+	{ "input.voltage", 0, 0, "UPS.PowerConverter.Input.Voltage", NULL, "%s", 0, tripplite_iovolt },
+	{ "input.frequency", 0, 0, "UPS.PowerConverter.Input.Frequency", NULL, "%s", 0, tripplite_iofreq },
 	{ "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Output.LowVoltageTransfer", NULL, "%.1f", HU_FLAG_SEMI_STATIC, NULL },
 	{ "input.transfer.low.max", 0, 0, "UPS.PowerConverter.Output.TLLowVoltageTransferMax", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "input.transfer.low.min", 0, 0, "UPS.PowerConverter.Output.TLLowVoltageTransferMin", NULL, "%.0f", HU_FLAG_STATIC, NULL },
@@ -375,11 +426,11 @@ static hid_info_t tripplite_hid2nut[] = {
 
 	/* Output page */
 	{ "output.voltage.nominal", 0, 0, "UPS.Flow.ConfigVoltage", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
-	{ "output.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.1f", 0, NULL },
-	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%.2f", 0, NULL },
+	{ "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%s", 0, tripplite_iovolt },
+	{ "output.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%s", 0, tripplite_iovolt },
+	{ "output.current", 0, 0, "UPS.PowerConverter.Output.Current", NULL, "%s", 0, tripplite_ioamp },
 	{ "output.frequency.nominal", 0, 0, "UPS.Flow.ConfigFrequency", NULL, "%.0f", HU_FLAG_STATIC, NULL },
-	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.1f", 0, NULL },
+	{ "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%s", 0, tripplite_iofreq },
 
 	/* instant commands. */
 	{ "test.battery.start.quick", 0, 0, "UPS.BatterySystem.Test", NULL, "1", HU_TYPE_CMD, NULL }, /* reported to work on OMNI1000 */
