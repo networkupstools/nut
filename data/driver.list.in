@@ -300,7 +300,7 @@
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"blazer_usb"
-"Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
+"Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"blazer_ser"	# http://www.eaton.com/Eaton/ESeriesUPS/DXUPS/
 "Eaton"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"Power Xpert Gateway UPS Card"	"snmp-ups (experimental)"
