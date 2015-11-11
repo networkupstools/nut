@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.26"
+#define DRIVER_VERSION	"0.27"
 
 #include "main.h"
 
@@ -530,7 +530,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 
 		/* Every call to read returns 8 bytes
 		 * -> actually returned bytes: */
-		ret = tmp[0];
+		ret = tmp[0] <= 7 ? tmp[0] : 7;
 
 		if (ret > 0)
 			memcpy(&buf[i], &tmp[1], ret);
