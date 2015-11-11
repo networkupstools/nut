@@ -1098,6 +1098,8 @@
 "Trust"	"ups"	"2"	"UPS 1200VA Management PW-4120M"	""	"blazer_ser"
 "Trust"	"ups"	"2"	"UPS 1300VA Management PW-4130M"	""	"blazer_ser"
 
+"TS Shara"	"ups"	"4"	"(various)"	""	"nutdrv_qx"
+
 "UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 500"	""	"blazer_ser"
