@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.27"
+#define DRIVER_VERSION	"0.28"
 
 #include "main.h"
 
@@ -495,7 +495,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		memcpy(&tmp[1], &cmd[i], ret);
 
 		/* Write data in 8-byte chunks */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0x09, 0x200, 0, tmp, 8, 500);
+		ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0x09, 0x200, 0, tmp, 8, 5000);
 
 		if (ret <= 0) {
 			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
@@ -516,7 +516,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		memset(tmp, 0, sizeof(tmp));
 
 		/* Read data in 8-byte chunks */
-		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 500);
+		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
 
 		/* No error!!! */
 		if (ret == -110)
