@@ -253,7 +253,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, mqtt, cgi, dev, avahi, linux_i2c]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -264,6 +264,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
 		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
+		if test -z "${with_mqtt}"; then with_mqtt="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
@@ -311,6 +312,8 @@ NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
+NUT_ARG_WITH([mqtt], [build and install MQTT client driver], [auto])
+NUT_CHECK_LIBMOSQUITTO
 NUT_CHECK_LIBAVAHI
 
 dnl ----------------------------------------------------------------------
@@ -420,6 +423,22 @@ fi
 
 NUT_REPORT_FEATURE([build Modbus driver], [${nut_with_modbus}], [],
                                        [WITH_MODBUS], [Define to enable Modbus support])
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-mqtt
+
+dnl ${nut_with_mqtt}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_mqtt}" = "yes" -a "${nut_have_libmosquitto}" != "yes"; then
+   AC_MSG_ERROR(["Mosquitto client libraries not found, required for MQTT client driver"])
+fi
+
+if test "${nut_with_mqtt}" != "no"; then
+   nut_with_mqtt="${nut_have_libmosquitto}"
+fi
+
+NUT_REPORT_FEATURE([build MQTT client driver], [${nut_with_mqtt}], [],
+					[WITH_MQTT], [Define to enable MQTT support])
+
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
 dnl Only one can be enabled at a time, with a preference for FreeIPMI
@@ -1484,6 +1503,8 @@ AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LIBS)
 AC_SUBST(LIBMODBUS_CFLAGS)
 AC_SUBST(LIBMODBUS_LIBS)
+AC_SUBST(LIBMOSQUITTO_CFLAGS)
+AC_SUBST(LIBMOSQUITTO_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
