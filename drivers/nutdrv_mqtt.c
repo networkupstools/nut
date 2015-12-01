@@ -13,7 +13,6 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -26,7 +25,7 @@
 #include <mosquitto.h>
 
 #define DRIVER_NAME	"MQTT driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -37,11 +36,17 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
+
+typedef struct {
+	char  *topic_name;
+	int   topic_qos; /* Default to QOS 0 */
+} topic_info_t;
+
 /* Variables */
 struct mosquitto *mosq = NULL;
-char *topic = NULL;
+topic_info_t *topics[10] = { NULL }; /* Max of 10 topics! */
 char *client_id = NULL;
-bool clean_session = true;
+bool clean_session = false; //true;
 
 /* Callbacks */
 void mqtt_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos);
@@ -53,7 +58,16 @@ int mqtt_reconnect();
 
 void upsdrv_initinfo(void)
 {
+	int rc;
+
 	upsdebugx(1, "%s...", __func__);
+
+	rc = mosquitto_loop(mosq, 2 /* timeout */, 10 /* max_packets */);
+	if(rc) {
+		upsdebugx(1, "Error: %s", mosquitto_strerror(rc));
+		if (rc == MOSQ_ERR_CONN_LOST)
+			mqtt_reconnect();
+	}
 
 	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ...)
 	 * or fatalx(EXIT_FAILURE, ...) if it fails */
@@ -74,7 +88,7 @@ void upsdrv_updateinfo(void)
 
 	upsdebugx(1, "%s...", __func__);
 
-	rc = mosquitto_loop(mosq, 2 /* timeout */, 1 /* max_packets */);
+	rc = mosquitto_loop(mosq, 2 /* timeout */, 10 /* max_packets */);
 	if(rc) {
 		upsdebugx(1, "Error: %s", mosquitto_strerror(rc));
 		if (rc == MOSQ_ERR_CONN_LOST)
@@ -176,7 +190,9 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	/* allow '-x topic=<some value>' */
-	addvar(VAR_VALUE, "topic", "Specify the MQTT topic to subscribe to");
+	addvar(VAR_VALUE, "topics", "Specify the MQTT topic(s) to subscribe to, optionally with QOS");
+	addvar(VAR_VALUE, "client_id", "Specify the MQTT client ID");
+	addvar(VAR_FLAG, "clean_session", "When set, client session won't persist on the broker");
 }
 
 void upsdrv_initups(void)
@@ -185,30 +201,84 @@ void upsdrv_initups(void)
 	int len;
 	char *bind_address = NULL;
 	int keepalive = 60;
-	int rc;
+	int rc, i;
 	int port = 1883;
 	char err[1024];
+	char *arg_topics = NULL;
+	char *topic_ptr, *qos_ptr;
+	char *cur_topic_str;
 
-	upsdebugx(1, "%s...", __func__);
+	upsdebugx(1, "%s... with broker %s", __func__, device_path);
 
-	topic = getval("topic");
-	if (topic == NULL)
+	/* Get configuration points */
+	/* Topic(s) */
+	arg_topics = getval("topics");
+	if (arg_topics == NULL) {
 		fatalx(EXIT_FAILURE, "No topic specified, aborting");
+	}
+	else {
+		/* Split multiple topics
+		 * Format: topic[:qos][,topic[:qos]]... */
+	 	topic_ptr = strtok(arg_topics, ",");
+		for (i = 0; topic_ptr; i++) {
+			
+			cur_topic_str = xstrdup(topic_ptr);
+	
+			qos_ptr = strchr(cur_topic_str, ':');
+			topics[i] = (topic_info_t *)malloc(sizeof(topic_info_t));
+			if (topics[i]) {
+				/* Process QOS */
+				if (qos_ptr) {
+					*qos_ptr = '\0';
+					topics[i]->topic_qos = atoi(qos_ptr+1);
+				}
+				else {
+					upsdebugx(3, "No QOS specified, defaulting to 0");
+					topics[i]->topic_qos = 0;
+				}
+				/* Process topic */
+				topics[i]->topic_name = xstrdup(cur_topic_str);
 
+				upsdebugx(1, "Adding topic '%s' with QOS %i",
+							topics[i]->topic_name,
+							topics[i]->topic_qos);
+				/* Cleanup */
+				free(cur_topic_str);
+			}
+			else {
+				free(cur_topic_str);
+				fatalx(EXIT_FAILURE, "Can't allocate memory for topics");
+			}
+			/* Get next topic */
+			topic_ptr = strtok(NULL, ",");
+		}
+
+	}
+
+	/* Should we set clean_session */
+	if (testvar ("clean_session")) {
+		upsdebugx(2, "clean_session set to true, as per request");
+		clean_session = true;
+	}
+
+	/* Initialize Mosquitto */
 	mosquitto_lib_init();
 
-	/* Build client_id for subscription */
-	hostname[0] = '\0';
-	gethostname(hostname, 256);
-	hostname[255] = '\0';
-	len = strlen("mosqsub/-") + 6 + strlen(hostname);
-	client_id = malloc(len);
-	if(!client_id){
-		mosquitto_lib_cleanup();
-		fatalx(EXIT_FAILURE, "Error: Out of memory");
+	/* Client id */
+	client_id = getval("client_id");
+	if (client_id == NULL) {
+		/* Build client_id for subscription */
+		hostname[0] = '\0';
+		gethostname(hostname, 256);
+		hostname[255] = '\0';
+		len = strlen("nutdrv_mqtt/-") + 6 + strlen(hostname);
+		client_id = malloc(len);
+		if(!client_id){
+			mosquitto_lib_cleanup();
+			fatalx(EXIT_FAILURE, "Error: Out of memory");
+		}
+		snprintf(client_id, len, "nutdrv_mqtt/%d-%s", getpid(), hostname);
 	}
-	snprintf(client_id, len, "mosqsub/%d-%s", getpid(), hostname);
-
 	upsdebugx(2, "subscribing using id = %s", client_id);
 
 	mosq = mosquitto_new(client_id, clean_session, NULL);
@@ -224,77 +294,57 @@ void upsdrv_initups(void)
 		}
 	}
 
+	/* Setup callbacks for connection, subscription and messages */
 	mosquitto_connect_callback_set(mosq, mqtt_connect_callback);
-	mosquitto_message_callback_set(mosq, mqtt_message_callback);
 	mosquitto_subscribe_callback_set(mosq, mqtt_subscribe_callback);
+	mosquitto_message_callback_set(mosq, mqtt_message_callback);
 	
 	//rc = mosquitto_connect_srv(mosq, device_path, keepalive, bind_address);
+	/* Connect to the broker */
 	rc = mosquitto_connect_bind(mosq, device_path, port, keepalive, bind_address);
-	if(rc){
+	if(rc) {
 
-		if(rc == MOSQ_ERR_ERRNO){
+		if(rc == MOSQ_ERR_ERRNO) {
 #ifndef WIN32
-			strerror_r(errno, err, 1024);
+			if (strerror_r(errno, err, 1024) == 0)
 #else
 			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errno, 0, (LPTSTR)&err, 1024, NULL);
 #endif
-			upsdebugx(1, "Error: %s", err);
+				upsdebugx(1, "Error: %s", err);
 		}else{
 			upsdebugx(1, "Unable to connect (%d)", rc);
 		}
 
 		mosquitto_lib_cleanup();
-		return rc;
+		fatalx(EXIT_FAILURE, "Error at init time");
 	}
 
-/*	rc = mosquitto_loop_forever(mosq, -1, 1);
-
-	mosquitto_destroy(mosq);
-	mosquitto_lib_cleanup();
-
-	if(rc){
-		fprintf(stderr, "Error: %s\n", mosquitto_strerror(rc));
+	/* First loop to allow connection / subscription */
+	rc = mosquitto_loop(mosq, 1 /* timeout */, 10 /* max_packets */);
+	if(rc) {
+		upsdebugx(1, "Error: %s", mosquitto_strerror(rc));
+		if (rc == MOSQ_ERR_CONN_LOST)
+			mqtt_reconnect();
 	}
-*/
-
-	/* upsfd = ser_open(device_path); */
-	/* ser_set_speed(upsfd, device_path, B1200); */
-
-	/* probe ups type */
-
-	/* to get variables and flags from the command line, use this:
-	 *
-	 * first populate with upsdrv_makevartable() above, then...
-	 *
-	 *                   set flag foo : /bin/driver -x foo
-	 * set variable 'cable' to '1234' : /bin/driver -x cable=1234
-	 *
-	 * to test flag foo in your code:
-	 *
-	 * 	if (testvar("foo"))
-	 * 		do_something();
-	 *
-	 * to show the value of cable:
-	 *
-	 *      if ((cable = getval("cable")))
-	 *		printf("cable is set to %s\n", cable);
-	 *	else
-	 *		printf("cable is not set!\n");
-	 *
-	 * don't use NULL pointers - test the return result first!
-	 */
-
-	/* the upsh handlers can't be done here, as they get initialized
-	 * shortly after upsdrv_initups returns to main.
-	 */
-
-	/* don't try to detect the UPS here */
 }
 
 void upsdrv_cleanup(void)
 {
+	int i;
+
 	upsdebugx(1, "%s...", __func__);
 
+	/* TODO: unsubscribe... */
+
+	for (i = 0; topics[i]; i++) {
+		
+		if (topics[i]->topic_name)
+			free(topics[i]->topic_name);
+		
+		free(topics[i]);
+	}
+
+	/* Cleanup Mosquitto */
 	mosquitto_destroy(mosq);
 	mosquitto_lib_cleanup();
 }
@@ -305,10 +355,19 @@ void upsdrv_cleanup(void)
 
 void mqtt_connect_callback(struct mosquitto *mosq, void *obj, int result)
 {
+	int i;
+
 	if(!result) {
 		upsdebugx(1, "Connected to host %s", device_path);
-		upsdebugx(1, "Subscribing to topic %s", topic);
-		mosquitto_subscribe(mosq, NULL, topic, 0 /* topic_qos */);
+		/* Subscribe to all provided topics */
+		for (i = 0; topics[i]; i++) {
+			if (topics[i]->topic_name)
+				upsdebugx(1, "Subscribing to topic %s", topics[i]->topic_name);
+				mosquitto_subscribe(mosq, NULL,
+									topics[i]->topic_name,
+									topics[i]->topic_qos);
+		}
+		
 	}
 	else
 		upsdebugx(1, "%s", mosquitto_connack_string(result));
@@ -319,8 +378,10 @@ void mqtt_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos
 	int i;
 
 	/* TODO: build a string with granted_qos */
-	upsdebugx(1, "Subscribed to topic %s (msg id: %d) with QOS: %d", mid, granted_qos[0]);
-	for(i=1; i<qos_count; i++) {
+	upsdebugx(1, "Subscribed to topic %s (msg id: %d) with QOS: %d",
+				topics[mid-1]->topic_name, /* Not sure it's actually stable!! */
+				mid, granted_qos[0]);
+	for(i = 1; i < qos_count; i++) {
 		upsdebugx(1, ", %d", granted_qos[i]);
 	}
 }
@@ -328,8 +389,8 @@ void mqtt_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos
 
 void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
-	int i;
-	bool res;
+/*	int i;
+	bool res; */
 	char *mqtt_message = NULL;
 
 //	if(message->retain && ud->no_retain) return;
