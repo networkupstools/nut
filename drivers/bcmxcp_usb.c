@@ -427,6 +427,11 @@ usb_dev_handle *nutusb_open(const char *port)
 			if (usb_clear_halt(dev_h, 0x81) < 0)
 			{
 				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
+				if (dev_claimed)
+				    usb_release_interface(dev_h, 0);
+				usb_reset(dev_h);
+				usb_close(dev_h);
+				sleep(5);	/* Wait reconnect */
 				errout = 1;
 			}
 			else
