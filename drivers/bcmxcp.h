@@ -16,6 +16,7 @@
 #define PW_COMMAND_START_BYTE (unsigned char)0xAB
 #define PW_LAST_SEQ           (unsigned char)0x80 /* bit flag to indicate final sequence */
 #define PW_SEQ_MASK           (unsigned char)0x7F /* bit mask to extract just the sequence # */
+#define PW_HEADER_LENGTH			4 /* Size of response header */
 
 #define PW_ANSWER_MAX_SIZE 256
 
