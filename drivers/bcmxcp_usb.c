@@ -430,7 +430,6 @@ usb_dev_handle *nutusb_open(const char *port)
 				if (dev_claimed)
 				    usb_release_interface(dev_h, 0);
 				usb_reset(dev_h);
-				usb_close(dev_h);
 				sleep(5);	/* Wait reconnect */
 				errout = 1;
 			}
