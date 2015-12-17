@@ -488,6 +488,8 @@
 
 "LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
 
+"Legrand"	"ups"	"2"	"Keor Multiplug"	""	"nutdrv_qx"
+
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
 "Lexis"	"ups"	"2"	"X-Power Tigra 1kVA"	""	"blazer_ser or bestups"
