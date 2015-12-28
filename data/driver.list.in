@@ -47,6 +47,8 @@
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"	"Megatec M2501 cable"	"genericups upstype=21"
 
 "AEG Power Solutions"	"ups"	"2"	"PROTECT HOME"	""	"blazer_ser or blazer_usb"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT NAS"	""	"usbhid-ups"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT B"	""	"usbhid-ups"
 
 "APC"	"ups"	"2"	"Back-UPS 1200BR (Microsol)"	""	"solis"
 "APC"	"ups"	"2"	"Back-UPS BZ2200BI-BR (Microsol)"	""	"solis"
