@@ -39,6 +39,14 @@ In this case, the linkman:apcsmart[8] driver will receive variables called
 "cable" and "sdtype" which have special meanings.  See the man pages of
 your driver(s) to learn which variables are supported and what they do.
 
+Here is another example, when connecting a serial UPS on Windows:
+
+	[windows-ups]
+		driver = mge-shut
+		port = "\\\\.\\COM10"
+		desc = "UPS on a Windows machine"
+
+
 GLOBAL DIRECTIVES
 -----------------
 
@@ -83,7 +91,8 @@ man pages of specific drivers.
 
 Required.  This is the serial port where the UPS is connected.  On a Linux
 system, the first serial port usually is '/dev/ttyS0'.  On FreeBSD and
-similar systems, it probably will be '/dev/cuaa0'.
+similar systems, it probably will be '/dev/cuaa0'.  On Windows, the first serial
+port will be "\\\\.\\COM1".
 
 *sdorder*::
 
