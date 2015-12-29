@@ -185,11 +185,11 @@ static int ssl_error(SSL *ssl, ssize_t ret)
 	{
 	case SSL_ERROR_WANT_READ:
 		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_READ", ret);
-		break;
+		return 0;
 
 	case SSL_ERROR_WANT_WRITE:
 		upsdebugx(1, "ssl_error() ret=%" PRIiSIZE " SSL_ERROR_WANT_WRITE", ret);
-		break;
+		return 0;
 
 	case SSL_ERROR_SYSCALL:
 		if (ret == 0 && ERR_peek_error() == 0) {
@@ -380,8 +380,8 @@ void net_starttls(nut_ctype_t *client, size_t numarg, const char **arg)
 		break;
 
 	case -1:
-		upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept");
-		ssl_error(client->ssl, ret);
+		/* upslog_with_errno(LOG_ERR, "Unknown return value from SSL_accept"); */
+		client->ssl_connected = (ssl_error(client->ssl, ret) >= 0);
 		break;
 	default:
 		break;
@@ -737,8 +737,7 @@ ssize_t ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 # endif	/* WITH_OPENSSL | WITH_NSS */
 
 	if (ret < 1) {
-		ssl_error(client->ssl, ret);
-		return -1;
+		ret = ssl_error(client->ssl, ret);
 	}
 
 	return ret;
