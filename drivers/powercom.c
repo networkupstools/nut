@@ -9,6 +9,7 @@
  *  -OptiUPS VS 575C
  *
  * Copyrights:
+ * (C) 2015 Arnaud Quette <ArnaudQuette@Eaton.com>
  * (C) 2013 Florian Bruhin <nut@the-compiler.org>
  * (C) 2002 Simon Rozman <simon@rozman.net>
  * (C) 1999  Peter Bieringer <pb@bieringer.de>
@@ -69,6 +70,10 @@
  *
  * Tested on: IMP-625AP
  *
+ * rev 0.16: Arnaud Quette
+ * - Fixed the processing of input/output voltages for KIN models
+ *   (https://github.com/networkupstools/nut/issues/187)
+ *
  */ 
 
 #include "main.h"
@@ -77,7 +82,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -86,7 +91,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Simon Rozman <simon@rozman.net>\n" \
 	"Peter Bieringer <pb@bieringer.de>\n" \
 	"Alexey Sidorov <alexsid@altlinux.org>\n" \
-	"Florian Bruhin <nut@the-compiler.org>",
+	"Florian Bruhin <nut@the-compiler.org>\n" \
+	"Arnaud Quette <ArnaudQuette@Eaton.com>",
 	DRV_STABLE,
 	{ NULL }
 };
@@ -415,12 +421,24 @@ static float input_voltage(void)
 		tmp=2.2*raw_data[INPUT_VOLTAGE]-24;
 	} else if ( !strcmp(types[type].name, "KIN")) {
 		model=KINmodels[raw_data[MODELNUMBER]/16];
-		if (model<=625){
-			tmp=1.79*raw_data[INPUT_VOLTAGE]+3.35;
-		} else if (model<2000){
-			tmp=1.61*raw_data[INPUT_VOLTAGE];
-		} else {
-			tmp=1.625*raw_data[INPUT_VOLTAGE];
+		/* Process input voltage, according to line voltage and model rating */
+		if (linevoltage < 200) {
+			if (model <= 625) {
+				tmp = 0.89 * raw_data[INPUT_VOLTAGE] + 6.18;
+			} else if ((model >= 800) && (model < 2000)) {
+				tmp = 1.61 * raw_data[INPUT_VOLTAGE] / 2.0;
+			} else {
+				tmp = 1.625 * raw_data[INPUT_VOLTAGE] / 2.0;
+			}
+		}
+		if (linevoltage >= 200) {
+			if (model <= 625) {
+				tmp = 1.79 * raw_data[INPUT_VOLTAGE] + 3.35;
+			} else if ((model >= 800) && (model < 2000)) {
+				tmp = 1.61 * raw_data[INPUT_VOLTAGE];
+			} else {
+				tmp = 1.625 * raw_data[INPUT_VOLTAGE];
+			}
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[INPUT_VOLTAGE]*2.0;
