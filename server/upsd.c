@@ -509,20 +509,21 @@ static void client_readline(nut_ctype_t *client)
 #ifdef WITH_SSL
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
+		/* A read of size 0 is valid for OpenSSL with a non-blocking BIO */
 	} else 
 #endif /* WITH_SSL */
 	{
 		ret = read(client->sock_fd, buf, sizeof(buf));
+
+		if (ret == 0) {
+			upsdebugx(2, "Disconnect %s (no data available)", client->addr);
+			client_disconnect(client);
+			return;
+		}
 	}
 
 	if (ret < 0) {
 		upsdebug_with_errno(2, "Disconnect %s (read failure)", client->addr);
-		client_disconnect(client);
-		return;
-	}
-
-	if (ret == 0) {
-		upsdebugx(2, "Disconnect %s (no data available)", client->addr);
 		client_disconnect(client);
 		return;
 	}
