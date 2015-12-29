@@ -53,7 +53,7 @@
 #define HP_VENDORID 0x03f0
 
 /* AEG */
-#define AEG_VENDORID 0x2B2D
+#define AEG_VENDORID 0x2b2d
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
