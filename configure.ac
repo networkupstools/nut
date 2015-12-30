@@ -1205,6 +1205,13 @@ AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables]
 dnl Current date
 now=`TZ=UTC date +%Y-%m-%d`
 
+dnl Ensure that driver.list.in is properly formatted with tabs, before
+dnl generating the final file
+AC_MSG_CHECKING(whether driver.list.in is well formatted)
+sed -e '/^#/!s/\" \+\"/\"\t\"/g' -e "/^#/!s/[[:blank:]]*$//" < data/driver.list.in > data/driver.list.in.tabbed
+mv data/driver.list.in.tabbed data/driver.list.in
+AC_MSG_RESULT(done)
+
 AC_SUBST(now)
 AC_SUBST(OS_NAME)
 AC_SUBST(TREE_VERSION)
