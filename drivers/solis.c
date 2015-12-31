@@ -24,6 +24,8 @@
    2005/07/01 - Version 0.50 - add internal e external shutdown programming
    2005/08/18 - Version 0.60 - save external shutdown programming to ups,
  			       and support new cables for solis 3
+   2015/09/19 - Version 0.65 - patch for correct reading for Microsol Back-Ups BZ1200-BR
+   (see the version control logs for more recent updates)
 
    Microsol contributed with UPS Solis 1.5 HS 1.5 KVA for my tests.
 
@@ -33,14 +35,14 @@
 
 #include <ctype.h>
 #include <stdio.h>
-
+#include <math.h>
 #include "main.h"
 #include "serial.h"
 #include "solis.h"
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.62"
+#define DRIVER_VERSION	"0.65"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,6 +55,7 @@ upsdrv_info_t upsdrv_info = {
 
 #define false 0
 #define true 1
+#define RESP_END    0xFE
 #define ENDCHAR 13	/* replies end with CR */
 /* solis commands */
 #define CMD_UPSCONT 0xCC
@@ -90,11 +93,11 @@ upsdrv_info_t upsdrv_info = {
 #define NO_EVENT   "No events\n"
 #define UPS_TIME   "UPS internal Time %0d:%02d:%02d\n"
 #define PRG_DAYS   "Programming Shutdown Sun  Mon  Tue  Wed  Thu  Fri  Sat\n"
-#define PRG_ONON   "External shutdown programming ative\n"
-#define PRG_ONOU   "Internal shutdown programming ative\n"
+#define PRG_ONON   "External shutdown programming active\n"
+#define PRG_ONOU   "Internal shutdown programming atcive\n"
 #define TIME_OFF   "UPS Time power off %02d:%02d\n"
 #define TIME_ON    "UPS Time power on %02d:%02d\n"
-#define PRG_ONOF   "Shutdown programming not atived\n"
+#define PRG_ONOF   "Shutdown programming not activated\n"
 #define TODAY_DD   "Shutdown today at %02d:%02d\n"
 #define SHUT_NOW   "Shutdown now!\n"
 #endif
@@ -129,7 +132,7 @@ static char* convdays( char *cop )
 	}
 
 	alt[7] = 0; /* string terminator */
-	
+
 	stra = strdup( alt );
 	return stra;
 }
@@ -149,7 +152,7 @@ static int Binary( char *nome )
 	char ch, cc;
 	int cont=0, nint = 1, tobin=0;
 	int ex, nbin;
-	
+
 	while( *nome && ( cont < 7 ) ) {
 		ch = *nome;
 		if( !(IsBinary( ch ) ) )
@@ -166,7 +169,7 @@ static int Binary( char *nome )
 		nome++;
 		cont++;
 	}
-	
+
 	if( nint == 0 )
 		return nint;
 	else
@@ -345,7 +348,7 @@ static void confups( void )
 
 	for(i=0; i < 12; i++)
 	  ser_send_char(upsfd, ConfigPack[i] );
-	
+
 }
 
 /* print UPS internal variables */
@@ -363,7 +366,7 @@ static void prnInfo( void )
 	dweek = DaysStd;
 
 	if( prgups > 0 ) {
-	    
+
 		/* this is the string to binary standard */
 		sunday = ( ( dweek & 0x40 ) == 0x40 );
 		monday = ( ( dweek & 0x20 ) == 0x20 );
@@ -408,9 +411,9 @@ static int IsToday( unsigned char dweek, int nweek)
 	case 6: /* saturday */
 		return ( ( ( dweek & 0x01 ) == 0x01 ) );
 	}
-	
+
 	return 0;
-	
+
 }
 
 static void AutonomyCalc( int iauto ) /* all models */
@@ -451,7 +454,7 @@ static void AutonomyCalc( int iauto ) /* all models */
 			if(  indice < min ) Autonomy = 0;
 		}
 	}
-	
+
 	if(  BattExtension > 0 && iauto < 4 )
 		Autonomy = ( Autonomy * ( BattExtension + bx ) * 1.0 / bx );
 
@@ -459,7 +462,6 @@ static void AutonomyCalc( int iauto ) /* all models */
 
 static void ScanReceivePack( void )
 {
-
 	int aux, im, ov = 0;
 
 	/* model independent data */
@@ -472,7 +474,7 @@ static void ScanReceivePack( void )
 	/*  Days of week if in UPS shutdown programming mode */
 	if( prgups == 3 ) {
 		DaysStd = revertdays( DaysOnWeek );
-	    
+
 		/* time for programming UPS off */
 		dhour = RecPack[15];
 		dmin  = RecPack[16];
@@ -480,12 +482,12 @@ static void ScanReceivePack( void )
 		lhour = RecPack[13];
 		lmin  = RecPack[14];
 	}
-	
+
 	/* UPS internal time */
 	ihour = RecPack[11];
 	imin  = RecPack[10];
 	isec  = RecPack[9];
-	
+
 	if( ( ( 0x01  & RecPack[ 20 ] ) == 0x01 ) )
 		Out220 = 1;
 	CriticBatt = ( ( 0x04  & RecPack[ 20 ] ) == 0x04 );
@@ -507,14 +509,28 @@ static void ScanReceivePack( void )
 	im = inds[imodel];
 	ov = Out220;
 
-	if(  RecPack[ 6 ] >= 194 )
-		InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt194[0] + ctab[imodel].m_involt194[1];
-	else
-		InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
-	
+	if (SolisModel != 16) {
+
+		if(  RecPack[ 6 ] >= 194 )
+			InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt194[0] + ctab[imodel].m_involt194[1];
+		else
+			InVoltage = RecPack[ 6 ] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
+	} else {
+		/* Code InVoltage for STAY1200_USB */
+
+		if ((RecPack[20] & 0x1) == 0) { //IsOutVoltage 220
+
+			InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
+		} else {
+
+			InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1] - 3.0;
+		}
+	}
+
 	BattVoltage = RecPack[ 3 ] * ctab[imodel].m_battvolt[0] + ctab[imodel].m_battvolt[1];
-	
+
 	NominalPower = nompow[im];
+
 	if(  SourceFail ) {
 		OutVoltage = RecPack[ 1 ] * ctab[imodel].m_outvolt_i[ov][0] + ctab[imodel].m_outvolt_i[ov][1];
 		OutCurrent = RecPack[ 5 ] * ctab[imodel].m_outcurr_i[ov][0] + ctab[imodel].m_outcurr_i[ov][1];
@@ -531,13 +547,75 @@ static void ScanReceivePack( void )
 		InCurrent = ( ctab[imodel].m_incurr[0] * 1.0 / BattVoltage ) - ( AppPower * 1.0 / ctab[imodel].m_incurr[1] )
 		+ OutCurrent *( OutVoltage * 1.0 / InVoltage );
 	}
+		if (SolisModel == 16) {
+
+			int configRelay = (RecPack[6] & 0x38) >> 3;
+			double TENSAO_SAIDA_F1_MR[8] = { 1.1549, 1.0925, 0.0, 0.0, 1.0929, 1.0885, 0.0, 0.8654262224145391 };
+			double TENSAO_SAIDA_F2_MR[8] = { -6.9157, 11.026, 10.43, 0.0, -0.6109, 12.18, 0.0, 13.677};
+
+			const double TENSAO_SAIDA_F2_MI[8] ={ 5.59, 9.47, 13.7, 0.0, 0.0, 0.0, 0.0, 0.0 };
+			const double TENSAO_SAIDA_F1_MI[8] = { 7.9, 9.1, 17.6, 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+			const double corrente_saida_F1_MR = 0.12970000389100012;
+			const double corrente_saida_F2_MR = 0.5387060281204546;
+			/* double corrente_saida_F1_MI = 0.1372; 
+			double corrente_saida_F2_MI = 0.3456; */
+
+			if (SourceFail) {
+				if (RecPack[20] == 0) {
+					double a = RecPack[1] * 2;
+					a /= 128.0;
+					//	a = double sqrt(a);
+					OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
+
+				}
+
+			} else {
+
+
+				OutCurrent = (float)(corrente_saida_F1_MR * RecPack[5] + corrente_saida_F2_MR);
+				OutVoltage = RecPack[1] * TENSAO_SAIDA_F1_MR[configRelay] + TENSAO_SAIDA_F2_MR[configRelay];
+				AppPower = OutCurrent * OutVoltage;
+
+
+
+				double RealPower = (RecPack[7] + RecPack[8] * 256);
+
+				double potVA1 = 5.968 * AppPower - 284.36;
+				double potVA2 = 7.149 * AppPower - 567.18;
+				double potLin = 0.1664 * RealPower + 49.182;
+				double potRe = 0.1519 * RealPower + 32.644;
+				if (fabs(potVA1 - RealPower) < fabs(potVA2 - RealPower)) {
+					RealPower = potLin;
+				} else {
+					RealPower = potRe;
+
+				}
+				if (OutCurrent < 0.7) {
+					RealPower = AppPower;
+				}
+				if (AppPower < RealPower) {
+					double f = AppPower;
+					AppPower = RealPower;
+					RealPower = f;
+				}
+
+
+
+			}
+		}
 
 	aux = ( RecPack[ 21 ] + RecPack[ 22 ] * 256 );
 	if( aux > 0 )
 		InFreq = ctab[imodel].m_infreq * 1.0 / aux;
+
+	/* Specific for STAY1200_USB */
+	        if (SolisModel == 16) {
+	             InFreq = ((float)(0.37 * (257 - (aux >> 8))));
+	        }
 	else
 		InFreq = 0;
-	
+
 	/* input voltage offset */
 	if( InVoltage < InVolt_offset ) { /* all is equal 30 */
 		InFreq = 0;
@@ -552,7 +630,7 @@ static void ScanReceivePack( void )
 		ChargePowerFactor = 0;
 		OutCurrent = 0;
 	}
-	
+
 	if( im < 3 )
 		AutonomyCalc( im );
 	else
@@ -600,7 +678,7 @@ static void ScanReceivePack( void )
 		SourceReturn = true;
 		ser_flush_in(upsfd,"",0);    /* clean port */
 	}
-	
+
 	if( !( SourceFail ) == SourceLast ) {
 		SourceReturn = false;
 		FailureFlag = false;
@@ -702,101 +780,107 @@ CommReceive(const char *bufptr,  int size)
 
 	int i, CheckSum, i_end;
 
-	if(  size==25 )
-		Waiting = 0;
-	
-	switch( Waiting )
-	{
-		/* normal package */
-	case 0:
-	{
-		if(  size == 25 )  {
-			i_end = 25;
-			for( i = 0 ; i < i_end ; ++i ) {
-				RecPack[i] = *bufptr;
-				bufptr++;
+	if(  size == 25 )  {
+		i_end = 25;
+		for( i = 0 ; i < i_end ; ++i ) {
+			RecPack[i] = *bufptr;
+			bufptr++;
 		}
-	  
+		if(nut_debug_level >= 3) {
+			upsdebug_hex(3, "CommReceive: RecPack", RecPack, size);
+		}
+
 		/* CheckSum verify */
 		CheckSum = 0;
 		i_end = 23;
 		for( i = 0 ; i < i_end ; ++i )
 			CheckSum = RecPack[ i ] + CheckSum;
 		CheckSum = CheckSum % 256;
-  
+		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
+
 		ser_flush_in(upsfd,"",0); /* clean port */
-  
-		/* correct package */
-		/* 0xA0 is original solis.c; 0xB0 is for APC-branded Microsol units */
+
+		/* RecPack[0] identify the model number below.
+		 *  SOLIS = 1;
+		 RHINO = 2;
+		 STAY = 3;
+		 SOLIS_LI_700 = 169;
+		 SOLIS_M11 = 171;
+		 SOLIS_M15 = 175;
+		 SOLIS_M14 = 174;
+		 SOLIS_M13 = 173;
+		 SOLISDC_M14 = 201;
+		 SOLISDC_M13 = 206;
+		 SOLISDC_M15 = 207;
+		 CABECALHO_RHINO = 194;
+		 PS800 = 185;
+		 STAY1200_USB = 186;
+		 PS350_CII = 184;
+		 PS2200 = 187;
+		 PS2200_22 = 188;
+		 STAY700_USB = 189;
+		 BZ1500 = 190;
+		 */
 		if(  ( ( (RecPack[0] & 0xF0) == 0xA0 ) || (RecPack[0] & 0xF0) == 0xB0)
-		       && ( RecPack[ 24 ] == 254 )
-		       && ( RecPack[ 23 ] == CheckSum ) ) {
+				&& ( RecPack[ 24 ] == 254 )
+				&& ( RecPack[ 23 ] == CheckSum ) ) {
 
 			if(!(detected)) {
-				SolisModel = (int) (RecPack[0] & 0x0F);
+
+				if (RecPack[0] == 186) {
+					SolisModel = 16;
+				} else {
+					SolisModel = (int) (RecPack[0] & 0x0F);
+				}
 				if( SolisModel < 13 )
 					imodel = SolisModel - 10; /* 10 = 0, 11 = 1 */
 				else
 					imodel = SolisModel - 11; /* 13 = 2, 14 = 3, 15 = 4 */
+
 				detected = true;
+
 			}
 
 			switch( SolisModel )
 			{
-			case 10: /* Added for APC-Branded Microsol units */
-				{
-				ScanReceivePack();	
-				break;	
-				}
-			case 11:
-			case 12:
-			case 13:
-			case 14:
-			case 15:
-				{
-			    	ScanReceivePack();
-				break;
-			}
-			default:
-			{
-				printf( M_UNKN );
-				ScanReceivePack(); // Scan anyway.
-				break;
+				case 10:
+				case 11:
+				case 12:
+				case 13:
+				case 14:
+				case 15:
+					{
+						ScanReceivePack();
+						break;
+					}
+				case 16:      // STAY1200_USB model
+					{
+						ScanReceivePack();
+						break;
+					}
+				default:
+					{
+						printf( M_UNKN );
+						ScanReceivePack(); // Scan anyway.
+						break;
+					}
 			}
 		}
-		}
-	  
 	}
-      
-	      break;
-	}
-    
-	case 1:
-	{
-		/* dumping package nothing to do yet */
-		Waiting = 0;
-		break;
-	}
-	    
-	}
-	
-	Waiting =0;
-	
 }
 
 static void getbaseinfo(void)
 {
-
-	unsigned char  temp[256];
+	unsigned char tmp;
 #ifdef PORTUGUESE
-	char diassemana[7][4]={"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
+	const char diassemana[7][4]={"Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"};
 #else
-	char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
-	char    mycmd[8]; 
 	char *str1, *str2, *str3, *str4, *strx;
 	unsigned char Pacote[25];
-	int  i, i1=0, i2=0, j=0, tam, tpac=25;
+	int  i, i1=0, i2=0, tam;
+	const int tpac=25;
 
 	time_t tmt;
 	struct tm *now;
@@ -812,7 +896,7 @@ static void getbaseinfo(void)
 
 #ifdef PORTUGUESE
 	strcpy( seman, diassemana[weekn] );
-#else	
+#else
 	strcpy( seman, DaysOfWeek[weekn] );
 #endif
 
@@ -860,29 +944,31 @@ static void getbaseinfo(void)
 				DaysOnWeek = DaysOffWeek;
 		}
 	}
-	    
+
 	} /* end prgups 1 - 2 */
 
 	/* dummy read attempt to sync - throw it out */
-	snprintf(mycmd, sizeof(mycmd), "%c%c",CMD_UPSCONT, ENDCHAR);
-	ser_send(upsfd, "%s", mycmd);
+	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR to sync", __func__);
+	ser_send(upsfd, "%c%c", CMD_UPSCONT, ENDCHAR);
 
-	/* trying detect solis model */
-	while ( ( !detected ) && ( j < 20 ) )  {
-		temp[0] = 0; /* flush temp buffer */
-		tam = ser_get_buf_len(upsfd, temp, tpac, 3, 0);
-		if( tam == 25 ) {
-			for( i = 0 ; i < tam ; i++ ) {
-				Pacote[i] = temp[i];
-			}
+	/* Read until end-of-response character (0xFE): */
+	for(i=0; i<tpac*3; i++) {
+		ser_get_char(upsfd, &tmp, 3, 0);
+		if(tmp == RESP_END)
+			break;
+	}
+
+	if(tmp != RESP_END) {
+		fatalx(EXIT_FAILURE, NO_SOLIS);
+	} else {
+		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, tpac);
+		tam = ser_get_buf_len(upsfd, Pacote, tpac, 3, 0);
+		upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+		if(tam > 0 && nut_debug_level >= 4) {
+			upsdebug_hex(4, "received from ser_get_buf_len()", Pacote, tam);
 		}
-
-		j++;
-		if( tam == 25)
-			CommReceive((char *)Pacote, tam);
-		else
-			 CommReceive((char *)temp, tam);
-	} /* while end */
+		CommReceive((char *)Pacote, tam);
+	}
 
 	if( (!detected) ) {
 		fatalx(EXIT_FAILURE,  NO_SOLIS );
@@ -890,11 +976,8 @@ static void getbaseinfo(void)
 
 	switch( SolisModel )
 	{
-	case 10: /* Added for APC-Microsol units */
-	{
-		Model = "Back-UPS 1200 BR";
-		break;
-	}
+	case 10:
+
 	case 11:
 	case 12:
 	{
@@ -916,6 +999,9 @@ static void getbaseinfo(void)
 		Model = "Solis 3.0";
 		break;
 	}
+	case 16:
+	  Model = "Microsol Back-Ups BZ1200-BR";
+	  break;
 	}
 
 	/* if( isprogram ) */
@@ -955,8 +1041,6 @@ static void getbaseinfo(void)
 	printf("Detected %s on %s\n", dstate_getinfo("ups.model"), device_path);
 
 	prnInfo();
-
-	
 }
 
 static void getupdateinfo(void)
@@ -978,7 +1062,7 @@ static void getupdateinfo(void)
 			isday = IsToday( DaysStd, weekn );
 		else
 			isday = IsToday( DaysStd, weekn );
-   
+
 		if( isday )
 			printf( TODAY_DD, hourshut, minshut );
 
@@ -986,7 +1070,7 @@ static void getupdateinfo(void)
 			printf( SHUT_NOW );
 			progshut = 1;
 		}
-	}	
+	}
 
 	/* programable shutdown end block */
 
@@ -994,7 +1078,14 @@ static void getupdateinfo(void)
 
 	/* get update package */
 	temp[0] = 0; /* flush temp buffer */
+
+	upsdebugx(3, "%s: requesting %d bytes from ser_get_buf_len()", __func__, pacsize);
 	tam = ser_get_buf_len(upsfd, temp, pacsize, 3, 0);
+
+	upsdebugx(2, "%s: received %d bytes from ser_get_buf_len()", __func__, tam);
+	if(tam > 0 && nut_debug_level >= 4) {
+		upsdebug_hex(4, "received from ser_get_buf_len()", temp, tam);
+	}
 
 	CommReceive((char *)temp, tam);
 
@@ -1039,7 +1130,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("input.voltage", "%03.1f", InVoltage);
 	dstate_setinfo("battery.voltage", "%02.1f", BattVoltage);
 	dstate_setinfo("battery.charge", "%03.1f", batcharge);
-
+	dstate_setinfo("output.current", "%03.1f", OutCurrent);
 	status_init();
 
 	if (!SourceFail )
@@ -1067,25 +1158,26 @@ void upsdrv_updateinfo(void)
 
 }
 
-/* power down the attached load immediately */
+/*! @brief Power down the attached load immediately.
+ * Basic idea: find out line status and send appropriate command.
+ *  - on battery: send normal shutdown, UPS will return by itself on utility
+ *  - on line: send shutdown+return, UPS will cycle and return soon.
+ */
 void upsdrv_shutdown(void)
 {
 
-	/* basic idea: find out line status and send appropriate command */
-	/* on battery: send normal shutdown, ups will return by itself on utility */
-	/* on line: send shutdown+return, ups will cycle and return soon */
 
 	if (!SourceFail) {     /* on line */
-	
-		printf("On line, sending shutdown+return command...\n");
+
+		upslogx(LOG_NOTICE, "On line, sending shutdown+return command...\n");
 		ser_send_char(upsfd, CMD_SHUTRET );
 	}
 	else
 	{
-		printf("On battery, sending normal shutdown command...\n");
+		upslogx(LOG_NOTICE, "On battery, sending normal shutdown command...\n");
 		ser_send_char(upsfd, CMD_SHUT);
 	}
-	
+
 }
 
 void upsdrv_help(void)
@@ -1120,7 +1212,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "daysoff",  "Days of week Driver shutdown");
 	addvar(VAR_VALUE, "houron",   "Power on hour (hh:mm)");
 	addvar(VAR_VALUE, "houroff",  "Power off hour (hh:mm)");
-	
+
 }
 
 void upsdrv_initups(void)
