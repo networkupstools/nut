@@ -129,6 +129,7 @@ rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
 solis_SOURCES = solis.c
+solis_LDADD = $(LDADD) -lm
 tripplite_SOURCES = tripplite.c
 tripplite_LDADD = $(LDADD) -lm
 tripplitesu_SOURCES = tripplitesu.c
