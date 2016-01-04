@@ -953,6 +953,7 @@
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
 "Sweex"	"ups"	"1"	"1000"	"USB"	"richcomm_usb"
 "Sweex"	"ups"	"2"	"(various)"	""	"blazer_ser"
+"Sweex"	"ups"	"2"	"INTELLIGENT UPS 1500VA P220"	"USB"	"blazer_usb (USB ID 0665:5161)"	# http://www.sweex.com/en/notebook-pc-accessoires/ups/PP220/
 
 "Syndome"	"ups"	"2"	"Era 500VA"	"USB"	"blazer_usb"
 
