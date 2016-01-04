@@ -77,6 +77,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&delta_ups,
 	&xppc,
 	&huawei,
+	&tripplite_ietf,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
