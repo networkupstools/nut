@@ -1546,10 +1546,10 @@ bool_t snmp_ups_walk(int mode)
 		}
 
 		/* check stale elements only on each PN_STALE_RETRY iteration. */
-		if ((su_info_p->flags & SU_FLAG_STALE) &&
+/*		if ((su_info_p->flags & SU_FLAG_STALE) &&
 				(iterations % SU_STALE_RETRY) != 0)
 			continue;
-
+*/
 		/* Filter 1-phase Vs 3-phase according to {input,output}.phase.
 		 * Non matching items are disabled, and flags are cleared at
 		 * init time */
