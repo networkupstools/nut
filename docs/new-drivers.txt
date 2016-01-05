@@ -228,6 +228,10 @@ detected. In this case, the "on battery + low battery" condition should not be
 met. Otherwise, setting status to "OB LB" should be prefered.
 
 - the OL and OB flags are an indication of the input line status only.
+
+- the CHRG and DISCHRG flags are under replacement by battery.charger.status.
+See the linkdoc:user-manual[NUT command and variable naming scheme,nut-names]
+for more information.
 ================================================================================
 
 UPS alarms

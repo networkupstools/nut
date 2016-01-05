@@ -351,6 +351,8 @@ battery: Any battery details
                                  UPS restart after power-off         | 20
 | battery.charge.warning       | Battery level when UPS switches
                                  to "Warning" state (percent)        | 50
+| battery.charger.status       | Status of the battery charger
+                                 (see the note below)                | charging
 | battery.voltage              | Battery voltage (V)                 | 24.84
 | battery.voltage.nominal      | Nominal battery voltage (V)         | 024
 | battery.voltage.low          | Minimum battery voltage, that
@@ -385,6 +387,17 @@ battery: Any battery details
 | battery.energysave.realpower | Switch off UPS if on battery
                                  and load level lower (Watts)        | 10
 |===============================================================================
+
+NOTE:
+battery.charger.status replaces the historic flags CHRG and DISCHRG that were
+exposed through ups.status.  battery.charger.status can have one of the
+following value:
+
+- charging: battery is charging,
+- discharging: battery is discharging,
+- floating: battery has completed its charge cycle, and waiting to go to resting
+mode,
+- resting: the battery is fully charged, and not charging nor discharging.
 
 
 ambient: Conditions from external probe equipment
