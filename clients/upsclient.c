@@ -404,6 +404,9 @@ int upscli_init(int certverify, const char *certpath,
 		return -1;
 	}
 
+	/* Force blocking I/O: */
+	SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
+
 # if OPENSSL_VERSION_NUMBER < 0x10100000L
 	/* set minimum protocol TLSv1 */
 	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
