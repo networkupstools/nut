@@ -330,6 +330,9 @@ int upscli_init(int certverify, const char *certpath,
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
 	}
+
+	/* Force blocking I/O: */
+	SSL_CTX_set_mode(ssl_ctx, SSL_MODE_AUTO_RETRY);
 	
 	if (!certpath) {
 		if (certverify == 1) {
