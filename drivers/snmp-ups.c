@@ -103,7 +103,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.90"
+#define DRIVER_VERSION		"0.91"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -164,7 +164,7 @@ void upsdrv_initinfo(void)
 		disable_transfer_oids();
 
 	/* initialize all other INFO_ fields from list */
-	if (snmp_ups_walk(SU_WALKMODE_INIT))
+	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE)
 		dstate_dataok();
 	else
 		dstate_datastale();
@@ -1645,10 +1645,18 @@ bool_t snmp_ups_walk(int mode)
 
 		/* process outlet template definition */
 		if (su_info_p->flags & SU_OUTLET) {
-			status = process_template(mode, "outlet", su_info_p);
+			/* Skip commands after init */
+			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+				continue;
+			else
+				status = process_template(mode, "outlet", su_info_p);
 		}
 		else if (su_info_p->flags & SU_OUTLET_GROUP) {
-			status = process_template(mode, "outlet.group", su_info_p);
+			/* Skip commands after init */
+			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+				continue;
+			else
+				status = process_template(mode, "outlet.group", su_info_p);
 		}
 		else {
 			/* get and process this data */
