@@ -31,7 +31,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.95"
+#define APC_HID_VERSION "APC HID 0.96"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -61,6 +61,11 @@ static void *disable_interrupt_pipe(USBDevice_t *device)
 static void *general_apc_check(USBDevice_t *device)
 {
 	int i = 0;
+
+	if (!device->Product) {
+		upslogx(LOG_WARNING, "device->Product is NULL so it is not possible to determine whether to activate max_report_size workaround");
+		return NULL;
+	}
 
 	/* Some models of Back-UPS overflow on some ReportID.
 	 * This results in some data not being exposed and IO errors on
