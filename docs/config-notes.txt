@@ -30,7 +30,7 @@ configuration directive.  This may be something like MONITOR, NOTIFYCMD,
 or ACCESS.  The case does matter here.  "monitor" won't be recognized.
 
 Next, the parser does not care about whitespace between words.  If you
-like to indent things with tabs or spaces, feel free to do it here.  
+like to indent things with tabs or spaces, feel free to do it here.
 
 If you need to set a value to something containing spaces, it has to be
 contained within "quotes" to keep the parser from splitting up the line.
@@ -45,46 +45,46 @@ configuration directive for some reason.  You can do that too.
 
 	NOTIFYCMD "/bin/notifyme -foo -bar \"hi there\" -baz"
 
-In other words, *\* can be used to escape the *"*.
+In other words, `\` can be used to escape the `"`.
 
-Finally, for the situation where you need to put the *\* character into your
+Finally, for the situation where you need to put the `\` character into your
 string, you just escape it.
 
 	NOTIFYCMD "/bin/notifyme c:\\dos\\style\\path"
 
-The *\* can actually be used to escape any character, but you only really
-need it for *\*, *"*, and *#* as they have special meanings to the parser.
+The `\` can actually be used to escape any character, but you only really
+need it for `\`, `"`, and `#` as they have special meanings to the parser.
 
 When using file names with space characters, you may end up having tricky
-things since you need to write them inside *""* which must be escaped:
+things since you need to write them inside `""` which must be escaped:
 
 	NOTIFYCMD "\"c:\\path with space\\notifyme\" \"c:\\path with space\\name\""
 
-*#* is the comment character.  Anything after an unescaped *#* is ignored.
+`#` is the comment character.  Anything after an unescaped `#` is ignored.
 
 Something like this...
 
 	identity = my#1ups
 
-... will actually turn into "identity = my", since the *#* stops the 
-parsing. If you really need to have a *#* in your configuration, then
+will actually turn into `identity = my`, since the `#` stops the
+parsing. If you really need to have a `#` in your configuration, then
 escape it.
 
 	identity = my\#1ups
 
 Much better.
 
-The *=* character should be used with care too. There should be only one
-"simple" *=* character in a line: between the parameter name and its value.
-All other *=* characters should be either escaped or within "quotes".
+The `=` character should be used with care too. There should be only one
+"simple" `=` character in a line: between the parameter name and its value.
+All other `=` characters should be either escaped or within "quotes".
 
 	password = 123=123
 
- ... is incorrect. You should use:
+is incorrect. You should use:
 
 	password = 123\=123
 
- ... or :
+or:
 
 	password = "123=123"
 
@@ -95,7 +95,7 @@ You can put a backslash at the end of the line to join it to the next
 one.  This creates one virtual line that is composed of more than one
 physical line.
 
-Also, if you leave the *""* quote container open before a newline, it will
+Also, if you leave the `""` quote container open before a newline, it will
 keep scanning until it reaches another one.  If you see bizarre behavior
 in your configuration files, check for an unintentional instance of
 quotes spanning multiple lines.
@@ -176,9 +176,9 @@ right one for your hardware.  You might need to try other drivers
 by changing the "driver=" value in ups.conf.
 
 Be sure to check the driver's man page to see if it needs any extra
-settings in ups.conf to detect your hardware.
+settings in `ups.conf` to detect your hardware.
 
-If it says "can't bind /var/state/ups/..." or similar, then your
+If it says `can't bind /var/state/ups/...` or similar, then your
 state path probably isn't writable by the driver.  Check the
 <<StatePath,permissions and mode on that directory>>.
 
@@ -204,7 +204,7 @@ NOTE: Refer to the NUT user manual <<NUT_Security,security chapter>> for
 information on how to access and secure upsd clients connections.
 
 Next, create upsd.users.  For now, this can be an empty file.
-You can come back and add more to it later when it's time to 
+You can come back and add more to it later when it's time to
 configure upsmon or run one of the management tools.
 
 Do not make either file world-readable, since they both hold
@@ -266,7 +266,7 @@ You should see just one line in response:
 OL means your system is running on line power.  If it says something
 else (like OB - on battery, or LB - low battery), your driver was
 probably misconfigured during the <<Driver_configuration, Driver configuration>>
-step.  If you reconfigure the driver, use 'upsdrvctl stop' to stop it, then
+step.  If you reconfigure the driver, use `upsdrvctl stop` to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
 
 Reference: man page: linkman:upsc[8]
@@ -335,7 +335,7 @@ Reference: man page: linkman:upsc[8],
 Startup scripts
 ~~~~~~~~~~~~~~~
 
-NOTE: This step is not need if you installed from packages.
+NOTE: This step is not necessary if you installed from packages.
 
 Edit your startup scripts, and make sure upsdrvctl and upsd are run every time
 your system starts.
@@ -347,7 +347,7 @@ Configuring automatic shutdowns for low battery events
 The whole point of UPS software is to bring down the OS cleanly when you
 run out of battery power. Everything else is roughly eye candy.
 
-To make  sure your system shuts down properly, you will need to perform some
+To make sure your system shuts down properly, you will need to perform some
 additional configuration and run upsmon. Here are the basics.
 
 [[Shutdown_design]]
@@ -384,9 +384,9 @@ The exact behavior depends on the specific device, and is related to:
    - call their SHUTDOWNCMD
    - disconnect from upsd
 
-5. The upsmon master system waits up to HOSTSYNC seconds (typically 15) 
-   for the slaves to disconnect from upsd.  If any are connected after 
-   this time, upsmon stops waiting and proceeds with the shutdown 
+5. The upsmon master system waits up to HOSTSYNC seconds (typically 15)
+   for the slaves to disconnect from upsd.  If any are connected after
+   this time, upsmon stops waiting and proceeds with the shutdown
    process.
 
 6. The upsmon master:
@@ -433,7 +433,7 @@ References: linkman:upsd[8], linkman:upsd.users[5]
 Reloading the data server
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Reload upsd.  Depending on your configuration, you may be able to 
+Reload upsd.  Depending on your configuration, you may be able to
 do this without stopping upsd:
 
 	/usr/local/ups/sbin/upsd -c reload
@@ -441,7 +441,7 @@ do this without stopping upsd:
 If that doesn't work (check the syslog), just restart it:
 
 	/usr/local/ups/sbin/upsd -c stop
-	/usr/local/ups/sbin/upsd 
+	/usr/local/ups/sbin/upsd
 
 NOTE: if you want to make reloading work later, see the entry in the
 link:FAQ.html[FAQ] about starting upsd as a different user.
@@ -479,7 +479,7 @@ adding sensitive data in the next step.
 Create a MONITOR directive for upsmon
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Edit upsmon.conf and create a MONITOR line with the UPS definition 
+Edit upsmon.conf and create a MONITOR line with the UPS definition
 (<upsname>@<hostname>), username and password from the <<NUT_user_creation, NUT user creation>>
 step, and the master or slave setting.
 
@@ -655,7 +655,7 @@ to keep this running either.
 
 After stopping driver, server and client you'll have to send the UPS
 the command to shutdown only if the POWERDOWNFLAG is present.  Note
-that most likely you'll have to allow for a grace period after sending 
+that most likely you'll have to allow for a grace period after sending
 'upsdrvctl shutdown' since the system will still have to take a
 snapshot of itself after that.  Not all drivers support this, so before
 going down this road, make sure that the one you're using does.
@@ -706,7 +706,7 @@ for individual hosts:
 
 A small to medium sized data room usually has one C and a bunch of Bs.
 This means that there's a system (type C) hooked to the UPS which depends
-on it for power.  There are also some other systems in there (type B) 
+on it for power.  There are also some other systems in there (type B)
 which depend on that same UPS for power, but aren't directly connected to
 it.
 
@@ -715,7 +715,7 @@ of the "single C, many Bs" depending on how it's all wired.
 
 Finally, there's a special case.  Type A systems are connected to a UPS's
 serial port, but don't depend on it for power.  This usually happens when
-a UPS is physically close to a box and can reach the serial port, but 
+a UPS is physically close to a box and can reach the serial port, but
 the wiring is such that it doesn't actually feed it.
 
 Once you identify a system's type, use this list to decide which of the
