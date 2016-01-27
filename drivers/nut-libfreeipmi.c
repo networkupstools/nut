@@ -107,6 +107,12 @@ struct ipmi_monitoring_ipmi_config ipmi_config;
 #define CACHE_LOCATION "/tmp/sdrcache"
 
 /* Support functions */
+#ifndef HAVE_FREEIPMI_11X_12X
+  #define CACHE_CREATED ipmi_sdr_cache_create (sdr_ctx, ipmi_ctx, CACHE_LOCATION, IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT, IPMI_SDR_CACHE_VALIDATION_FLAGS_DEFAULT, NULL, NULL) < 0)
+#else
+  #define CACHE_CREATED ipmi_sdr_cache_create (sdr_ctx, ipmi_ctx, CACHE_LOCATION, IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT, NULL, NULL) < 0)
+#endif
+				 
 static const char* libfreeipmi_getfield (uint8_t language_code,
 	ipmi_fru_field_t *field);
 
@@ -552,13 +558,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 	if (ipmi_sdr_ctx_errnum (sdr_ctx) == IPMI_SDR_ERR_CACHE_READ_CACHE_DOES_NOT_EXIST)
 	{
-		if (ipmi_sdr_cache_create (sdr_ctx,
-				 ipmi_ctx, CACHE_LOCATION,
-				 IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT,
-#ifndef HAVE_FREEIPMI_11X_12X
-				 IPMI_SDR_CACHE_VALIDATION_FLAGS_DEFAULT,
-#endif
-				 NULL, NULL) < 0)
+		if (CACHE_CREATED < 0)
 		{
 			libfreeipmi_cleanup();
 			fatal_with_errno(EXIT_FAILURE, "ipmi_sdr_cache_create: %s",
