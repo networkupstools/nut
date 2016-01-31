@@ -72,6 +72,7 @@
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
+"APC"	"ups"	"3"	"(various)"	"APCUPSD-controlled devices"	"apcupsd-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
