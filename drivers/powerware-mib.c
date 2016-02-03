@@ -4,7 +4,7 @@
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015      Arnaud Quette <ArnaudQuette@Eaton.com>
+ *       2015-2016 Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.85"
+#define PW_MIB_VERSION "0.86"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -69,10 +69,6 @@
 #define PW_OID_BY_FREQUENCY	"1.3.6.1.4.1.534.1.5.1.0"	/* XUPS-MIB::xupsBypassFrequency.0 */
 #define PW_OID_BY_LINES		"1.3.6.1.4.1.534.1.5.2.0"	/* XUPS-MIB::xupsBypassNumPhases.0 */
 #define PW_OID_BY_VOLTAGE	"1.3.6.1.4.1.534.1.5.3.1.2"	/* XUPS-MIB::xupsBypassVoltage */
-
-#define PW_OID_AMBIENT_TEMP	"1.3.6.1.4.1.534.1.6.1.0"	/* XUPS-MIB::xupsEnvAmbientTemp.0 */
-#define PW_OID_AMBIENT_LOW	"1.3.6.1.4.1.534.1.6.2.0"	/* XUPS-MIB::xupsEnvAmbientLowerLimit.0 */
-#define PW_OID_AMBIENT_HIGH	"1.3.6.1.4.1.534.1.6.3.0"	/* XUPS-MIB::xupsEnvAmbientUpperLimit.0 */
 
 #define PW_OID_BATTEST_START	"1.3.6.1.4.1.534.1.8.1"		/* XUPS-MIB::xupsTestBattery   set to startTest(1) to initiate test*/
 #define PW_OID_BATTEST_RES	"1.3.6.1.4.1.534.1.8.2"		/* XUPS-MIB::xupsTestBatteryStatus */
@@ -216,6 +212,13 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.power.nominal", 0, 1.0, IETF_OID_CONF_OUT_VA, "",
 		0, NULL },
+	/* XUPS-MIB::xupsEnvAmbientTemp.0 */
+	{ "ups.temperature", 0, 1.0, "1.3.6.1.4.1.534.1.6.1.0", "", 0, NULL },
+	/* FIXME: These 2 data needs RFC! */
+	/* XUPS-MIB::xupsEnvAmbientLowerLimit.0 */
+	{ "ups.temperature.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.2.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvAmbientUpperLimit.0 */
+	{ "ups.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.3.0", "", 0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
 	{ "ups.start.auto", ST_FLAG_RW, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
@@ -320,12 +323,18 @@ static snmp_info_t pw_mib[] = {
 		SU_INPUT_3, NULL },
 
 	/* Ambient page */
-	{ "ambient.temperature", 0, 1.0, PW_OID_AMBIENT_TEMP, "",
-		0, NULL },
-	{ "ambient.temperature.low", 0, 1.0, PW_OID_AMBIENT_LOW, "",
-		0, NULL },
-	{ "ambient.temperature.high", 0, 1.0, PW_OID_AMBIENT_HIGH, "",
-		0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteTemp.0 */
+	{ "ambient.temperature", 0, 1.0, "1.3.6.1.4.1.534.1.6.5.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteTempLowerLimit.0 */
+	{ "ambient.temperature.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.9.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteTempUpperLimit.0 */
+	{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteHumidity.0 */
+	{ "ambient.humidity", 0, 1.0, "1.3.6.1.4.1.534.1.6.6.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteHumidityLowerLimit.0 */
+	{ "ambient.humidity.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.11.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteHumidityUpperLimit.0 */
+	{ "ambient.humidity.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.12.0", "", 0, NULL },
 
 	/* instant commands */
 	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
