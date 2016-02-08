@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.86"
+#define PW_MIB_VERSION "0.87"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -115,31 +115,47 @@ static info_lkp_t pw_alarm_lb[] = {
 } ;
 
 static info_lkp_t pw_pwr_info[] = {
-	{ 1, ""		/* other */ },
-	{ 2, "OFF"       /* none */ },
-	{ 3, "OL"        /* normal */ },
-	{ 4, "BYPASS"    /* bypass */ },
-	{ 5, "OB"        /* battery */ },
-	{ 6, "OL BOOST"  /* booster */ },
-	{ 7, "OL TRIM"   /* reducer */ },
-	{ 8, "OL"        /* parallel capacity */ },
-	{ 9, "OL"        /* parallel redundancy */ },
-	{10, "OL"        /* high efficiancy */ },
+	{   1, ""		   /* other */ },
+	{   2, "OFF"       /* none */ },
+	{   3, "OL"        /* normal */ },
+	{   4, "BYPASS"    /* bypass */ },
+	{   5, "OB"        /* battery */ },
+	{   6, "OL BOOST"  /* booster */ },
+	{   7, "OL TRIM"   /* reducer */ },
+	{   8, "OL"        /* parallel capacity */ },
+	{   9, "OL"        /* parallel redundancy */ },
+	{  10, "OL"        /* high efficiency */ },
+	/* Extended status values */
+	{ 240, "OB"        /* battery (0xF0) */ },
+	{ 100, "BYPASS"    /* maintenanceBypass (0x64) */ },
+	{  96, "BYPASS"    /* Bypass (0x60) */ },
+	{  81, "OL"        /* high efficiency (0x51) */ },
+	{  80, "OL"        /* normal (0x50) */ },
+	{  64, "OL"        /* UPS supporting load, normal degraded mode (0x40) */ },
+	{  16, "OFF"       /* none (0x10) */ },
 	{ 0, "NULL" }
 };
 
 static info_lkp_t pw_mode_info[] = {
-	{ 1, ""  },
-	{ 2, ""  },
-	{ 3, "normal" },
-	{ 4, "" },
-	{ 5, "" },
-	{ 6, "" },
-	{ 7, "" },
-	{ 8, "parallel capacity" },
-	{ 9, "parallel redundancy" },
-	{10, "high efficiency" },
-	{ 0, "NULL" }
+	{   1, ""  },
+	{   2, ""  },
+	{   3, "normal" },
+	{   4, "" },
+	{   5, "" },
+	{   6, "" },
+	{   7, "" },
+	{   8, "parallel capacity" },
+	{   9, "parallel redundancy" },
+	{  10, "high efficiency" },
+	/* Extended status values */
+	{ 240, ""                /* battery (0xF0) */ },
+	{ 100, ""                /* maintenanceBypass (0x64) */ },
+	{  96, ""                /* Bypass (0x60) */ },
+	{  81, "high efficiency" /* high efficiency (0x51) */ },
+	{  80, "normal"          /* normal (0x50) */ },
+	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */ },
+	{  16, ""                /* none (0x10) */ },
+	{   0, "NULL" }
 };
 
 /* Legacy implementation */
