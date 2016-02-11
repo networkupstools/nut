@@ -4,7 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015		Arnaud Quette <ArnaudQuette@Eaton.com>
+ *	2015 - 2016	Arnaud Quette <ArnaudQuette@Eaton.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -103,13 +103,14 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.91"
+#define DRIVER_VERSION		"0.92"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Arnaud Quette <arnaud.quette@free.fr>\n" \
+	"Arnaud Quette <ArnaudQuette@Eaton.com>\n" \
 	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
 	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
 	"Niels Baggesen <niels@baggesen.net>\n" \
@@ -275,7 +276,7 @@ void upsdrv_initups(void)
 {
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
-	bool_t status;
+	bool_t status= FALSE;
 	const char *mibs;
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
@@ -299,7 +300,12 @@ void upsdrv_initups(void)
 
 	/* Get UPS Model node to see if there's a MIB */
 	su_info_p = su_find_info("ups.model");
-	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
+	/* Try to get device.model if ups.model is not available */
+	if (su_info_p == NULL)
+		su_info_p = su_find_info("device.model");
+
+	if (su_info_p != NULL)
+		status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
 
 	if (status == TRUE)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
