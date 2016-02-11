@@ -31,6 +31,7 @@
  */
 
 #include <limits.h>
+#include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
@@ -103,7 +104,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.92"
+#define DRIVER_VERSION		"0.93"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -657,8 +658,15 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_OPAQUE:
 		len = pdu->variables->val_len > buf_len - 1 ?
 			buf_len - 1 : pdu->variables->val_len;
-		memcpy(buf, pdu->variables->val.string, len);
-		buf[len] = '\0';
+		if (len > 0) {
+			/* Test for hexadecimal values */
+			if (!isprint(pdu->variables->val.string[0]))
+				snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
+			else {
+				memcpy(buf, pdu->variables->val.string, len);
+				buf[len] = '\0';
+			}
+		}
 		break;
 	case ASN_INTEGER:
 	case ASN_COUNTER:
