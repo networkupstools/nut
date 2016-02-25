@@ -339,7 +339,7 @@ while IFS= read -r line; do
 	fi
 	# get the matching numeric OID
 	NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
-	printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
+	printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL, NULL },\n"
 done < ${STRWALKFILE} >> ${CFILE}
 
 # append footer
