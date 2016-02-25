@@ -1236,7 +1236,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 	info_lkp_t *info_lkp;
 
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		(strcmp(info_lkp->info_value, "NULL")) && (info_lkp->info_value != NULL); info_lkp++) {
+		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
 
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
