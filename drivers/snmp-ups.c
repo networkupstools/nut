@@ -104,7 +104,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.95"
+#define DRIVER_VERSION		"0.96"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -966,6 +966,8 @@ static void disable_transfer_oids(void)
 /* universal function to add or update info element. */
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
+	info_lkp_t	*info_lkp;
+
 	upsdebugx(1, "entering %s(%s)", __func__, su_info_p->info_type);
 
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
@@ -983,6 +985,19 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 
 		dstate_setflags(su_info_p->info_type, su_info_p->info_flags);
 		dstate_setaux(su_info_p->info_type, su_info_p->info_len);
+
+		/* Set enumerated values, only if the data has ST_FLAG_RW and there
+		 * are lookup values */
+		if ((su_info_p->info_flags & ST_FLAG_RW) && su_info_p->oid2info) {
+
+			upsdebugx(3, "%s: adding enumerated values", __func__);
+
+			/* Loop on all existing values */
+			for (info_lkp = su_info_p->oid2info; info_lkp != NULL
+				&& info_lkp->info_value != NULL; info_lkp++) {
+					dstate_addenum(su_info_p->info_type, "%s", info_lkp->info_value);
+			}
+		}
 
 		/* Commit the current value, to avoid staleness with huge
 		 * data collections on slow devices */
