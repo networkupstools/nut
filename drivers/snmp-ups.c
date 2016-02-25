@@ -104,7 +104,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.94"
+#define DRIVER_VERSION		"0.95"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1697,6 +1697,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	static char buf[SU_INFOSIZE];
 	bool_t status;
 	long value;
+	const char *strValue = NULL;
 	struct snmp_pdu ** pdu_array;
 	struct snmp_pdu * current_pdu;
 	alarms_info_t * alarms;
@@ -1835,7 +1836,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			    	upsdebugx(1, "setvar %s", su_info_p->OID);
 			    	*su_info_p->setvar = value;
 			}
-			snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
+			/* Check if there is a value to be looked up */
+			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+				snprintf(buf, sizeof(buf), "%s", strValue);
+			else
+				snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
 		}
 	}
 
