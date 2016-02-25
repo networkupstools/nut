@@ -104,7 +104,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.93"
+#define DRIVER_VERSION		"0.94"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1068,6 +1068,7 @@ snmp_info_t *su_find_info(const char *type)
 mib2nut_info_t *match_sysoid()
 {
 	char sysOID_buf[LARGEBUF];
+	char testOID_buf[LARGEBUF];
 	oid device_sysOID[MAX_OID_LEN];
 	size_t device_sysOID_len = MAX_OID_LEN;
 	oid mib2nut_sysOID[MAX_OID_LEN];
@@ -1113,6 +1114,15 @@ mib2nut_info_t *match_sysoid()
 			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
 			{
 				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				/* Counter verify, if there is a test OID */
+				if (mib2nut[i]->oid_pwr_status != NULL) {
+					if (nut_snmp_get_str(mib2nut[i]->oid_pwr_status, testOID_buf, LARGEBUF, NULL) != TRUE) {
+						upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+						continue;
+					}
+					else
+						upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				}
 				return mib2nut[i];
 			}
 		}
