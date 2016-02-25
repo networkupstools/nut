@@ -86,14 +86,14 @@
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
 	{ 1, "OB" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 */
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_lb[] = {
 	{ 1, "LB" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 */
 
@@ -109,7 +109,7 @@ static info_lkp_t cpqpower_pwr_info[] = {
 	{ 8, "OL"   /* parallelCapacity */ },
 	{ 9, "OL"   /* parallelRedundant */ },
 	{ 10, "OL" /* HighEfficiencyMode */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t cpqpower_mode_info[] = {
@@ -123,7 +123,7 @@ static info_lkp_t cpqpower_mode_info[] = {
 	{ 8, "parallel capacity" },
 	{ 9, "parallel redundancy" },
 	{10, "high efficiency" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t cpqpower_battery_abm_status[] = {
@@ -132,7 +132,7 @@ static info_lkp_t cpqpower_battery_abm_status[] = {
 /*	{ 3, "Floating" }, */
 /*	{ 4, "Resting" }, */
 /*	{ 5, "Unknown" }, */
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 /* Defines for CPQPOWER_OID_UPS_TEST_RES */
@@ -144,7 +144,7 @@ static info_lkp_t cpqpower_test_res_info[] = {
 	{ 5, "Not supported" },
 	{ 6, "Inhibited" },
 	{ 7, "Scheduled" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 #define CPQPOWER_START_TEST		1

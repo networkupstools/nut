@@ -36,7 +36,7 @@
 static info_lkp_t bestpower_power_status[] = {
 	{ 1, "OL" },
 	{ 2, "OB" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 /* Snmp2NUT lookup table for Best Power MIB */

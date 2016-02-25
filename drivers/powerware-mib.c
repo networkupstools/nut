@@ -105,13 +105,13 @@
 static info_lkp_t pw_alarm_ob[] = {
 	{ 1, "OB" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t pw_alarm_lb[] = {
 	{ 1, "LB" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t pw_pwr_info[] = {
@@ -133,7 +133,7 @@ static info_lkp_t pw_pwr_info[] = {
 	{  80, "OL"        /* normal (0x50) */ },
 	{  64, "OL"        /* UPS supporting load, normal degraded mode (0x40) */ },
 	{  16, "OFF"       /* none (0x10) */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t pw_mode_info[] = {
@@ -155,7 +155,7 @@ static info_lkp_t pw_mode_info[] = {
 	{  80, "normal"          /* normal (0x50) */ },
 	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */ },
 	{  16, ""                /* none (0x10) */ },
-	{   0, "NULL" }
+	{   0, NULL }
 };
 
 /* Legacy implementation */
@@ -165,7 +165,7 @@ static info_lkp_t pw_battery_abm_status[] = {
 /*	{ 3, "Floating" }, */
 /*	{ 4, "Resting" }, */
 /*	{ 5, "Unknown" }, */
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t eaton_abm_status_info[] = {
@@ -175,7 +175,7 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 4, "resting" },
 	{ 5, "unknown" },   /* Undefined - ABM is not activated */
 	{ 6, "disabled" },  /* ABM Charger Disabled */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t pw_batt_test_info[] = {
@@ -186,18 +186,19 @@ static info_lkp_t pw_batt_test_info[] = {
 	{ 5, "Not supported" },
 	{ 6, "Inhibited" },
 	{ 7, "Scheduled" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_yes_no_info[] = {
 	{ 1, "yes" },
 	{ 2, "no" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Snmp2NUT lookup table */
 
 static snmp_info_t pw_mib[] = {
+	/* FIXME: miss device page! */
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MFR_NAME, "",
@@ -283,6 +284,7 @@ static snmp_info_t pw_mib[] = {
 		SU_OUTPUT_3, NULL },
 	{ "output.L3.realpower", 0, 1.0, PW_OID_OUT_POWER ".3", "",
 		SU_OUTPUT_3, NULL },
+	/* FIXME: should better be output.Lx.load */
 	{ "output.L1.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".1", "",
 		SU_OUTPUT_3, NULL },
 	{ "output.L2.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".2", "",
