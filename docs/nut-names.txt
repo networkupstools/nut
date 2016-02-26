@@ -32,7 +32,7 @@ during a transition period. The ups.* data will then be removed.
 | device.model        | Device model                               | BladeUPS
 | device.mfr          | Device manufacturer                        | Eaton
 | device.serial       | Device serial number (opaque string)       | WS9643050926
-| device.type         | Device type (ups, pdu, scd, psu)           | ups
+| device.type         | Device type (ups, pdu, scd, psu, ats)      | ups
 | device.description  | Device description (opaque string)         | Some ups
 | device.contact      | Device administrator name (opaque string)  | John Doe
 | device.location     | Device physical location (opaque string)   | 1st floor
@@ -188,6 +188,8 @@ input: Incoming line/power information
                                 phases real power (W)             | 300
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
+| input.source                | The current input power source    | 1
+| input.source.preferred      | The prefered power source         | 1
 |=================================================================================
 
 output: Outgoing power/inverter information
