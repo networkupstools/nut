@@ -18,6 +18,7 @@
 #   "ups" for Uninterruptible Power Supply
 #   "pdu" for Power Distributions Unit
 #   "scd" for Solar Controlers Device
+#   "ats" for Automatic Transfer Switch
 #
 # - support level: a number from "1" to "5" (stars) meaning:
 #   *       protocol based on reverse engineering
@@ -324,6 +325,7 @@
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Serial Pass-through mode"	"bcmxcp"
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Network port"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Management Card Contact"	"Config 3 - Cable 66033"	"genericups upstype=7"
+"Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"

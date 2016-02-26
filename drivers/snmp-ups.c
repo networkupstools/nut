@@ -53,6 +53,7 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
+#include "eaton-ats-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -79,6 +80,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&xppc,
 	&huawei,
 	&tripplite_ietf,
+	&eaton_ats,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
