@@ -138,7 +138,7 @@ for filename in glob.glob('../drivers/*-mib.c'):
 			else:
 				sysoid = "\"" + sysoid + "\""
 
-			output_file.write( "\t{ \"" + oid + "\" , " + mib + ", " + sysoid + "},\n" )
+			output_file.write( "\t{ \"" + oid + "\", " + mib + ", " + sysoid + "},\n" )
 
 output_file.write( "        /* Terminating entry */\n" )
 output_file.write( "        { NULL, NULL, NULL}\n" )
