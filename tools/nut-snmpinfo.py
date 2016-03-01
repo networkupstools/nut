@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-#   Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+#   Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>
+#   Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -15,11 +16,11 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-# This program extracts all SNMP information related to NUT snmp-ups
-# drivers.
+# This program extracts all SNMP information related to NUT snmp-ups drivers.
 
 import glob
 import re
+import sys
 
 output_file_name="./nut-scanner/nutscan-snmp.h"
 output_file = open(output_file_name,'w')
@@ -49,7 +50,8 @@ def expand_define(filename,constant):
 
 
 output_file.write( "/* nutscan-snmp\n" )
-output_file.write( " *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>\n" )
+output_file.write( " *  Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>\n" )
+output_file.write( " *  Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>\n" )
 output_file.write( " *\n" )
 output_file.write( " *  This program is free software; you can redistribute it and/or modify\n" )
 output_file.write( " *  it under the terms of the GNU General Public License as published by\n" )
@@ -82,6 +84,13 @@ for filename in glob.glob('../drivers/*-mib.c'):
 	list_of_line = open(filename,'r').read().split(';')
 	for line in list_of_line:
 		if "mib2nut_info_t" in line:
+			# Discard commented lines
+			# Note that we only search for the beginning of the comment, the
+			# end can be in the following line, due to the .split(';')
+			m = re.search(r'/\*.*', line)
+			if m:
+				#sys.stderr.write('discarding line'+line+'\n')
+				continue
 			#clean up line
 			line2 = re.sub("[\n\t\r}]", "", line)
 			# split line
