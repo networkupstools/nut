@@ -9,6 +9,7 @@
  *  -OptiUPS VS 575C
  *
  * Copyrights:
+ * (C) 2015 Arnaud Quette <ArnaudQuette@Eaton.com>
  * (C) 2013 Florian Bruhin <nut@the-compiler.org>
  * (C) 2002 Simon Rozman <simon@rozman.net>
  * (C) 1999  Peter Bieringer <pb@bieringer.de>
@@ -69,6 +70,10 @@
  *
  * Tested on: IMP-625AP
  *
+ * rev 0.16: Arnaud Quette
+ * - Fixed the processing of input/output voltages for KIN models
+ *   (https://github.com/networkupstools/nut/issues/187)
+ *
  */ 
 
 #include "main.h"
@@ -77,7 +82,7 @@
 #include "math.h"
 
 #define DRIVER_NAME		"PowerCom protocol UPS driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -86,7 +91,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Simon Rozman <simon@rozman.net>\n" \
 	"Peter Bieringer <pb@bieringer.de>\n" \
 	"Alexey Sidorov <alexsid@altlinux.org>\n" \
-	"Florian Bruhin <nut@the-compiler.org>",
+	"Florian Bruhin <nut@the-compiler.org>\n" \
+	"Arnaud Quette <ArnaudQuette@Eaton.com>",
 	DRV_STABLE,
 	{ NULL }
 };
@@ -415,12 +421,24 @@ static float input_voltage(void)
 		tmp=2.2*raw_data[INPUT_VOLTAGE]-24;
 	} else if ( !strcmp(types[type].name, "KIN")) {
 		model=KINmodels[raw_data[MODELNUMBER]/16];
-		if (model<=625){
-			tmp=1.79*raw_data[INPUT_VOLTAGE]+3.35;
-		} else if (model<2000){
-			tmp=1.61*raw_data[INPUT_VOLTAGE];
-		} else {
-			tmp=1.625*raw_data[INPUT_VOLTAGE];
+		/* Process input voltage, according to line voltage and model rating */
+		if (linevoltage < 200) {
+			if (model <= 625) {
+				tmp = 0.89 * raw_data[INPUT_VOLTAGE] + 6.18;
+			} else if ((model >= 800) && (model < 2000)) {
+				tmp = 1.61 * raw_data[INPUT_VOLTAGE] / 2.0;
+			} else {
+				tmp = 1.625 * raw_data[INPUT_VOLTAGE] / 2.0;
+			}
+		}
+		if (linevoltage >= 200) {
+			if (model <= 625) {
+				tmp = 1.79 * raw_data[INPUT_VOLTAGE] + 3.35;
+			} else if ((model >= 800) && (model < 2000)) {
+				tmp = 1.61 * raw_data[INPUT_VOLTAGE];
+			} else {
+				tmp = 1.625 * raw_data[INPUT_VOLTAGE];
+			}
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[INPUT_VOLTAGE]*2.0;
@@ -437,10 +455,13 @@ static float output_voltage(void)
 {
 	float tmp,rdatax,rdatay,rdataz,boostdata;
 	unsigned int statINV = 0,statAVR = 0,statAVRMode = 0,model,t;
-	static float datax[]={0,1.0,1.0,1.0,1.0,1.89,1.89,1.89,0.127,0.127,1.89,1.89,1.89,0.256};
-	static float datay[]={0,1.73,1.74,1.74,1.77,0.9,0.9,0.9,13.204,13.204,0.88,0.88,0.88,6.645};
-	static float dataz[]={0,1.15,0.9,0.9,0.75,1.1,1.1,1.1,0.8,0.8,0.86,0.86,0.86,0.7};
-	
+	static float datax1[]={0,1.0,1.0,1.0,1.0,0.945,0.945,0.945,0.127,0.127,0.945,0.945,0.945,0.256};
+	static float datay1[]={0,0.85,0.85,0.85,0.88,0.9,0.9,0.9,6.6,6.6,0.87,0.87,0.87,3.29};
+	static float dataz1[]={0,1.03,0.78,0.78,0.72,0.55,0.55,0.55,0.5,0.5,0.43,0.43,0.43,0.3};
+	static float datax2[]={0,1.0,1.0,1.0,1.0,1.89,1.89,1.89,0.127,0.127,1.89,1.89,1.89,0.256};
+	static float datay2[]={0,1.73,1.74,1.74,1.77,0.9,0.9,0.9,13.204,13.204,0.88,0.88,0.88,6.645};
+	static float dataz2[]={0,1.15,0.9,0.9,0.75,1.1,1.1,1.1,0.8,0.8,0.86,0.86,0.86,0.7};
+
 	if ( !strcmp(types[type].name, "BNT") || !strcmp(types[type].name, "KIN")) {
 		statINV=raw_data[STATUS_A] & ONLINE;
 		statAVR=raw_data[STATUS_A] & AVR_ON;
@@ -466,41 +487,78 @@ static float output_voltage(void)
 		}
 	} else if ( !strcmp(types[type].name, "KIN")) {
 		model=KINmodels[raw_data[MODELNUMBER]/16];
-		if (statINV==0) {
-			if (statAVR==0) {
-				if (model<=625)
-					tmp=1.79*raw_data[OUTPUT_VOLTAGE]+3.35;
-				else if (model<2000)
-					tmp=1.61*raw_data[OUTPUT_VOLTAGE];
-				else
-					tmp=1.625*raw_data[OUTPUT_VOLTAGE];
-			} else {
-				if (statAVRMode > 0){
-					if (model<=525)
-						tmp=2.07*raw_data[OUTPUT_VOLTAGE];
-					else if (model==625)
-						tmp=2.07*raw_data[OUTPUT_VOLTAGE]+5;
+		if (statINV == 0) {
+			if (statAVR == 0) {
+				// FIXME: miss test "if (iUPS == 1) {"
+				if (linevoltage >= 200) {
+					if (linevoltage <= 625)
+						tmp = 1.79*raw_data[OUTPUT_VOLTAGE] + 3.35;
 					else if (model<2000)
-						tmp=1.87*raw_data[OUTPUT_VOLTAGE];
+						tmp = 1.61*raw_data[OUTPUT_VOLTAGE];
 					else
-						tmp=1.87*raw_data[OUTPUT_VOLTAGE];
+						tmp = 1.625*raw_data[OUTPUT_VOLTAGE];
 				} else {
-					if (model<=625)
-						tmp=1.571*raw_data[OUTPUT_VOLTAGE];
+					if (linevoltage <= 625)
+						tmp = 0.89 * raw_data[OUTPUT_VOLTAGE] + 6.18;
 					else if (model<2000)
-						tmp=1.37*raw_data[OUTPUT_VOLTAGE];
+						tmp = 1.61 * raw_data[OUTPUT_VOLTAGE] / 2.0;
 					else
-						tmp=1.4*raw_data[OUTPUT_VOLTAGE];
+						tmp = 1.625 * raw_data[OUTPUT_VOLTAGE] / 2.0;
+				}
+			}
+			else if (statAVR == 1) {
+				// FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {"
+				if (linevoltage >= 200) {
+					if (model <= 525)
+						tmp = 2.07 * raw_data[OUTPUT_VOLTAGE];
+					else if (model == 625)
+						tmp = 2.07 * raw_data[OUTPUT_VOLTAGE]+5;
+					else if (model < 2000)
+						tmp = 1.87 * raw_data[OUTPUT_VOLTAGE];
+					else
+						tmp = 1.87 * raw_data[OUTPUT_VOLTAGE];
+				} else {
+					if (model <= 625)
+						tmp = 2.158 * raw_data[OUTPUT_VOLTAGE] / 2.0;
+					else if (model < 2000)
+						tmp = 1.842 * raw_data[OUTPUT_VOLTAGE] / 2.0;
+					else
+						tmp = 1.875 * raw_data[OUTPUT_VOLTAGE] / 2.0;
+				}
+			} else {
+				// FIXME: miss test "if ((iUPS == 1) || (iUPS == 13)) {"
+				if (linevoltage >= 200) {
+					if (model == 625)
+						tmp = 1.571 * raw_data[OUTPUT_VOLTAGE];
+					else if (model < 2000)
+						tmp = 1.37 * raw_data[OUTPUT_VOLTAGE];
+					else
+						tmp = 1.4 * raw_data[OUTPUT_VOLTAGE];
+				} else {
+					if (model <= 625)
+						tmp = 1.635 * raw_data[OUTPUT_VOLTAGE] / 2.0;
+					else if (model < 2000)
+						tmp = 1.392 * raw_data[OUTPUT_VOLTAGE] / 2.0;
+					else
+						tmp = 1.392 * raw_data[OUTPUT_VOLTAGE] / 2.0;
 				}
 			}
 		} else {
-			rdatax=datax[raw_data[MODELNUMBER]/16];
-			rdatay=datay[raw_data[MODELNUMBER]/16];
-			rdataz=dataz[raw_data[MODELNUMBER]/16];
-			boostdata=1.0+statAVR*20.0/135.0;
-			t=raw_data[OUTPUT_FREQUENCY]/2;
-			tmp=0;
-			if (model>625){
+			// FIXME: miss test "if ((iUPS == 1) && (T != 0))"
+			if (linevoltage < 200) {
+				rdatax = datax1[raw_data[MODELNUMBER]/16];
+				rdatay = datay1[raw_data[MODELNUMBER]/16];
+				rdataz = dataz1[raw_data[MODELNUMBER]/16];
+			} else {
+				rdatax = datax2[raw_data[MODELNUMBER]/16];
+				rdatay = datay2[raw_data[MODELNUMBER]/16];
+				rdataz = dataz2[raw_data[MODELNUMBER]/16+1];
+			}
+
+			boostdata = 1.0 + statAVR * 20.0 / 135.0;
+			t = raw_data[OUTPUT_FREQUENCY]/2;
+			tmp = 0;
+			if (model > 625){
 				tmp=(raw_data[BATTERY_CHARGE]*rdatax)*(raw_data[BATTERY_CHARGE]*rdatax)*
 					(t-raw_data[OUTPUT_VOLTAGE])/t;
 				if (tmp>0)
@@ -512,6 +570,7 @@ static float output_voltage(void)
 				if (tmp>0)
 					tmp=sqrt(tmp)*rdatay;
 			}
+			// FIXME: may miss a last processing with ErrorVal = 5 | 10
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[OUTPUT_VOLTAGE]*2.0;
