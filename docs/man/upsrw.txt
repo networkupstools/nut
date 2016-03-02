@@ -84,6 +84,13 @@ username and password.  If you get "access denied" errors, make sure
 that your linkman:upsd.users[5] has an entry for you, and that the
 username you are using has permissions to SET variables.
 
+VALUE FORMAT
+------------
+
+When using *upsrw* to modify a numeric float value, that values must be given
+using decimal english-based representation, so using a dot. For example: "10.20"
+and not "10,20".
+
 HISTORY
 -------
 

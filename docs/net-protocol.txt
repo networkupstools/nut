@@ -139,6 +139,9 @@ ENUM, STRING and RANGE are usually associated with RW, but not always.
 The default <type>, when omitted, is numeric, so either integer or float.  Each
 driver is then responsible for handling values as either integer or float.
 
+Note that float values are expressed using decimal english-based representation,
+so using a dot. For example: "10.20" and not "10,20".
+
 This replaces the old "VARTYPE" command.
 
 
