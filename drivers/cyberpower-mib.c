@@ -37,7 +37,7 @@ static info_lkp_t cyberpower_power_status[] = {
 	{ 7, "OL" },
 	{ 1, "NULL" },
 	{ 6, "NULL" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 /* Snmp2NUT lookup table for CyberPower MIB */

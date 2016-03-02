@@ -34,7 +34,7 @@
  * static info_lkp_t onbatt_info[] = {
  * 	{ 1, "OB" },
  * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * 	{ 0, NULL }
  * };
  */
 
@@ -44,7 +44,7 @@ static info_lkp_t delta_ups_upstype_info[] = {
 	{ 3, "line-interactive" },
 	{ 4, "3phase" },
 	{ 5, "splite-phase" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
@@ -56,7 +56,7 @@ static info_lkp_t delta_ups_pwr_info[] = {
     { 5, "BYPASS" },    /* manualBypass */
     /*{ 6, "NULL" },*/      /* other  */
     { 7, "OFF" },      /* none */
-    { 0, "NULL" }
+    { 0, NULL }
 } ;
 
 /* DELTA_UPS Snmp2NUT lookup table */
@@ -84,7 +84,7 @@ static snmp_info_t delta_ups_mib[] = {
 	 * static info_lkp_t onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
 

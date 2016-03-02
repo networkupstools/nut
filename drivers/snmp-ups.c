@@ -4,7 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015		Arnaud Quette <ArnaudQuette@Eaton.com>
+ *	2015 - 2016	Arnaud Quette <ArnaudQuette@Eaton.com>
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -31,6 +31,7 @@
  */
 
 #include <limits.h>
+#include <ctype.h> /* for isprint() */
 
 /* NUT SNMP common functions */
 #include "main.h"
@@ -77,6 +78,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&delta_ups,
 	&xppc,
 	&huawei,
+	&tripplite_ietf,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -102,13 +104,14 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.90"
+#define DRIVER_VERSION		"0.96"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Arnaud Quette <arnaud.quette@free.fr>\n" \
+	"Arnaud Quette <ArnaudQuette@Eaton.com>\n" \
 	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
 	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
 	"Niels Baggesen <niels@baggesen.net>\n" \
@@ -163,7 +166,7 @@ void upsdrv_initinfo(void)
 		disable_transfer_oids();
 
 	/* initialize all other INFO_ fields from list */
-	if (snmp_ups_walk(SU_WALKMODE_INIT))
+	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE)
 		dstate_dataok();
 	else
 		dstate_datastale();
@@ -274,7 +277,7 @@ void upsdrv_initups(void)
 {
 	snmp_info_t *su_info_p;
 	char model[SU_INFOSIZE];
-	bool_t status;
+	bool_t status= FALSE;
 	const char *mibs;
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
@@ -298,7 +301,12 @@ void upsdrv_initups(void)
 
 	/* Get UPS Model node to see if there's a MIB */
 	su_info_p = su_find_info("ups.model");
-	status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
+	/* Try to get device.model if ups.model is not available */
+	if (su_info_p == NULL)
+		su_info_p = su_find_info("device.model");
+
+	if (su_info_p != NULL)
+		status = nut_snmp_get_str(su_info_p->OID, model, sizeof(model), NULL);
 
 	if (status == TRUE)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
@@ -650,8 +658,15 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_OPAQUE:
 		len = pdu->variables->val_len > buf_len - 1 ?
 			buf_len - 1 : pdu->variables->val_len;
-		memcpy(buf, pdu->variables->val.string, len);
-		buf[len] = '\0';
+		if (len > 0) {
+			/* Test for hexadecimal values */
+			if (!isprint(pdu->variables->val.string[0]))
+				snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
+			else {
+				memcpy(buf, pdu->variables->val.string, len);
+				buf[len] = '\0';
+			}
+		}
 		break;
 	case ASN_INTEGER:
 	case ASN_COUNTER:
@@ -951,6 +966,8 @@ static void disable_transfer_oids(void)
 /* universal function to add or update info element. */
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
+	info_lkp_t	*info_lkp;
+
 	upsdebugx(1, "entering %s(%s)", __func__, su_info_p->info_type);
 
 	if (SU_TYPE(su_info_p) == SU_TYPE_CMD)
@@ -968,6 +985,19 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 
 		dstate_setflags(su_info_p->info_type, su_info_p->info_flags);
 		dstate_setaux(su_info_p->info_type, su_info_p->info_len);
+
+		/* Set enumerated values, only if the data has ST_FLAG_RW and there
+		 * are lookup values */
+		if ((su_info_p->info_flags & ST_FLAG_RW) && su_info_p->oid2info) {
+
+			upsdebugx(3, "%s: adding enumerated values", __func__);
+
+			/* Loop on all existing values */
+			for (info_lkp = su_info_p->oid2info; info_lkp != NULL
+				&& info_lkp->info_value != NULL; info_lkp++) {
+					dstate_addenum(su_info_p->info_type, "%s", info_lkp->info_value);
+			}
+		}
 
 		/* Commit the current value, to avoid staleness with huge
 		 * data collections on slow devices */
@@ -1053,6 +1083,7 @@ snmp_info_t *su_find_info(const char *type)
 mib2nut_info_t *match_sysoid()
 {
 	char sysOID_buf[LARGEBUF];
+	char testOID_buf[LARGEBUF];
 	oid device_sysOID[MAX_OID_LEN];
 	size_t device_sysOID_len = MAX_OID_LEN;
 	oid mib2nut_sysOID[MAX_OID_LEN];
@@ -1098,6 +1129,15 @@ mib2nut_info_t *match_sysoid()
 			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
 			{
 				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				/* Counter verify, if there is a test OID */
+				if (mib2nut[i]->oid_pwr_status != NULL) {
+					if (nut_snmp_get_str(mib2nut[i]->oid_pwr_status, testOID_buf, LARGEBUF, NULL) != TRUE) {
+						upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+						continue;
+					}
+					else
+						upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
+				}
 				return mib2nut[i];
 			}
 		}
@@ -1196,7 +1236,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 	info_lkp_t *info_lkp;
 
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
-		(strcmp(info_lkp->info_value, "NULL")) && (info_lkp->info_value != NULL); info_lkp++) {
+		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
 
 		if (info_lkp->oid_value == value) {
 			upsdebugx(1, "%s: found %s (value: %ld)",
@@ -1545,10 +1585,10 @@ bool_t snmp_ups_walk(int mode)
 		}
 
 		/* check stale elements only on each PN_STALE_RETRY iteration. */
-		if ((su_info_p->flags & SU_FLAG_STALE) &&
+/*		if ((su_info_p->flags & SU_FLAG_STALE) &&
 				(iterations % SU_STALE_RETRY) != 0)
 			continue;
-
+*/
 		/* Filter 1-phase Vs 3-phase according to {input,output}.phase.
 		 * Non matching items are disabled, and flags are cleared at
 		 * init time */
@@ -1644,10 +1684,18 @@ bool_t snmp_ups_walk(int mode)
 
 		/* process outlet template definition */
 		if (su_info_p->flags & SU_OUTLET) {
-			status = process_template(mode, "outlet", su_info_p);
+			/* Skip commands after init */
+			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+				continue;
+			else
+				status = process_template(mode, "outlet", su_info_p);
 		}
 		else if (su_info_p->flags & SU_OUTLET_GROUP) {
-			status = process_template(mode, "outlet.group", su_info_p);
+			/* Skip commands after init */
+			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+				continue;
+			else
+				status = process_template(mode, "outlet.group", su_info_p);
 		}
 		else {
 			/* get and process this data */
@@ -1664,6 +1712,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	static char buf[SU_INFOSIZE];
 	bool_t status;
 	long value;
+	const char *strValue = NULL;
 	struct snmp_pdu ** pdu_array;
 	struct snmp_pdu * current_pdu;
 	alarms_info_t * alarms;
@@ -1802,7 +1851,11 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			    	upsdebugx(1, "setvar %s", su_info_p->OID);
 			    	*su_info_p->setvar = value;
 			}
-			snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
+			/* Check if there is a value to be looked up */
+			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
+				snprintf(buf, sizeof(buf), "%s", strValue);
+			else
+				snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
 		}
 	}
 

@@ -25,7 +25,7 @@
 
 #include "raritan-pdu-mib.h"
 
-#define RARITAN_MIB_VERSION	"0.4"
+#define RARITAN_MIB_VERSION	"0.5"
 
 /* Raritan MIB
  * this one uses the same MIB as Eaton Revelation,
@@ -57,6 +57,8 @@ static snmp_info_t raritan_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.1.1.6.0", "",
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Raritan",
@@ -71,8 +73,6 @@ static snmp_info_t raritan_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.1.1.6.0", "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "ups.temperature", 0, 1, ".1.3.6.1.4.1.13742.1.3.1.5.0", NULL, 0, NULL, NULL },
 
 	/* Outlet page */

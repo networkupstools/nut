@@ -14,9 +14,13 @@ SUPPORTED HARDWARE
 ------------------
 This driver is for UPS hardware which identifies itself as USB idVendor 0001
 and idProduct 0000, and iManufacturer +ATCL FOR UPS+.  Known manufacturers
-include Kanji and Plexus. The UPS interface seems to be a USB frontend to a
-traditional contact-closure interface, which translates into only three states
-in ups.status: *OL*, *OB* and *OB LB*.  See also linkman:genericups[8].
+include Kanji and Plexus. The UPS interface seems to be a generic USB-to-serial
+chip, and for hardware manufactured by Kanji and Plexus, the microcontroller
+appears to emulate a traditional contact-closure interface. This translates
+into only three states in ups.status: *OL*, *OB* and *OB LB* (similar to
+linkman:genericups[8]), with no other dynamic status values reported. Note that
+these USB identifiers (including the iManufacturer string) have also been seen
+on devices that are supported by the `fuji` subdriver of linkman:nutdrv_qx[8].
 
 EXTRA ARGUMENTS
 ---------------
@@ -63,7 +67,7 @@ linkman:genericups[8]
 
 The Qx driver:
 ~~~~~~~~~~~~~~
-linkman:nutdrv_qx[8]
+linkman:nutdrv_qx[8] (`fuji` subdriver)
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

@@ -72,6 +72,7 @@
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
+"APC"	"ups"	"3"	"(various)"	"APCUPSD-controlled devices"	"apcupsd-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
@@ -740,6 +741,7 @@
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 8000"	""	"gamatronic"
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 10000"	""	"gamatronic"
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 10000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Laser Senoidal 5000VA"	"USB"	"gamatronic"	# http://www.nhs.com.br/produtos_interna/id/T0RrPQ==
 
 "Nitram"	"ups"	"1"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
@@ -953,6 +955,7 @@
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
 "Sweex"	"ups"	"1"	"1000"	"USB"	"richcomm_usb"
 "Sweex"	"ups"	"2"	"(various)"	""	"blazer_ser"
+"Sweex"	"ups"	"2"	"INTELLIGENT UPS 1500VA P220"	"USB"	"blazer_usb (USB ID 0665:5161)"	# http://www.sweex.com/en/notebook-pc-accessoires/ups/PP220/
 
 "Syndome"	"ups"	"2"	"Era 500VA"	"USB"	"blazer_usb"
 

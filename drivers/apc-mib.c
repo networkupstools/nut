@@ -63,7 +63,7 @@ static info_lkp_t apcc_batt_info[] = {
 	{ 1, "" },	/* unknown */
 	{ 2, "" },	/* batteryNormal */
 	{ 3, "LB" },	/* batteryLow */
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 #define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
@@ -81,7 +81,7 @@ static info_lkp_t apcc_pwr_info[] = {
     { 10, "BYPASS" },   /* hardwareFailureBypass */
     { 11, "OFF" },      /* sleepingUntilPowerReturn */
     { 12, "OL TRIM" },     /* onSmartTrim */
-    { 0, "NULL" }
+    { 0, NULL }
 } ;
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
@@ -89,14 +89,14 @@ static info_lkp_t apcc_cal_info[] = {
     { 1, "" },          /* Calibration Successful */
     { 2, "" },          /* Calibration not done, battery capacity below 100% */
     { 3, "CAL" },       /* Calibration in progress */
-    { 0, "NULL" }
+    { 0, NULL }
 };
 
 #define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
 static info_lkp_t apcc_battrepl_info[] = {
     { 1, "" },          /* No battery needs replacing */
     { 2, "RB" },        /* Batteries need to be replaced */
-    { 0, "NULL" }
+    { 0, NULL }
 };
 
 #define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
@@ -105,7 +105,7 @@ static info_lkp_t apcc_testdiag_results[] = {
     { 2, "Failed" },
     { 3, "InvalidTest" },
     { 4, "TestInProgress"},
-    { 0, "NULL" }
+    { 0, NULL }
 };
 
 #define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
@@ -114,7 +114,7 @@ static info_lkp_t apcc_sensitivity_modes[] = {
     { 2, "low" },
     { 3, "medium" },
     { 4, "high" },
-    { 0, "NULL" }
+    { 0, NULL }
 };
 
 #define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"

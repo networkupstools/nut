@@ -23,7 +23,7 @@
 
 #include "baytech-mib.h"
 
-#define BAYTECH_MIB_VERSION	"4031"
+#define BAYTECH_MIB_VERSION	"4032"
 
 /* Baytech MIB */
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
@@ -48,6 +48,8 @@ static snmp_info_t baytech_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Baytech",
@@ -62,8 +64,6 @@ static snmp_info_t baytech_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "ups.temperature", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.10.2.1", NULL, 0, NULL, NULL },
 
 	/* Outlet page */
