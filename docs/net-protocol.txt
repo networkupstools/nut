@@ -133,7 +133,7 @@ Response:
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
 - 'RANGE': this is an numeric, either integer or float, comprised in the range (see LIST RANGE)
-- 'NUMERIC': this is a simple numeric value, either integer or float
+- 'NUMBER': this is a simple numeric value, either integer or float
 
 ENUM, STRING and RANGE are usually associated with RW, but not always.
 The default <type>, when omitted, is numeric, so either integer or float.  Each

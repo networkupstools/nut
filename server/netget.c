@@ -159,7 +159,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	/* Any variable that is not string | range | enum is just a simple
 	 * numeric value */
 
-	sendback(client, "TYPE %s %s NUMERIC\n", upsname, var);
+	sendback(client, "TYPE %s %s NUMBER\n", upsname, var);
 }		
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
