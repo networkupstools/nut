@@ -195,6 +195,12 @@ static info_lkp_t ietf_yes_no_info[] = {
 	{ 0, NULL }
 };
 
+static info_lkp_t test_enum_info[] = {
+	{ 1, "1" },
+	{ 2, "2" },
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table */
 
 static snmp_info_t pw_mib[] = {
@@ -238,7 +244,7 @@ static snmp_info_t pw_mib[] = {
 	{ "ups.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.3.0", "", 0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
-	{ "ups.start.auto", ST_FLAG_RW, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
 		SU_FLAG_OK, &ietf_yes_no_info[0] },
 	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &eaton_abm_status_info[0] },
@@ -346,7 +352,9 @@ static snmp_info_t pw_mib[] = {
 	/* XUPS-MIB::xupsEnvRemoteTempLowerLimit.0 */
 	{ "ambient.temperature.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.9.0", "", 0, NULL },
 	/* XUPS-MIB::xupsEnvRemoteTempUpperLimit.0 */
-	{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, NULL },
+	//{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, NULL },
+	{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, test_enum_info },
+	
 	/* XUPS-MIB::xupsEnvRemoteHumidity.0 */
 	{ "ambient.humidity", 0, 1.0, "1.3.6.1.4.1.534.1.6.6.0", "", 0, NULL },
 	/* XUPS-MIB::xupsEnvRemoteHumidityLowerLimit.0 */
@@ -484,5 +492,5 @@ static alarms_info_t pw_alarms[] = {
 } ;
 
 
-mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };
-mib2nut_info_t	pxgx_ups = { "pxgx_ups", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, EATON_PXGX_SYSOID , pw_alarms };
+mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };
+mib2nut_info_t	pxgx_ups = { "pxgx_ups", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, EATON_PXGX_SYSOID , pw_alarms };

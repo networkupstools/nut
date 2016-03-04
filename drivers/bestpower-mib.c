@@ -80,5 +80,5 @@ static snmp_info_t bestpower_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 } ;
 
-mib2nut_info_t	bestpower = { "bestpower", BESTPOWER_MIB_VERSION, "",
+mib2nut_info_t	bestpower = { "bestpower", BESTPOWER_MIB_VERSION, NULL,
 	BESTPOWER_OID_MODEL_NAME, bestpower_mib };
