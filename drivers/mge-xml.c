@@ -31,7 +31,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.24"
+#define MGE_XML_VERSION		"MGEXML/0.25"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
@@ -579,6 +579,7 @@ static xml_info_t mge_xml2nut[] = {
 	/* Not used for now; might however be used in future for history & stats collection
 	{ "System.History.Log.Interval", ST_FLAG_RW, 0, "System.History.Log.Interval", 0, 0, NULL },
 	*/
+#if (0)  /* not interresting for NUT */
 	{ "System.Environment.Log.Interval", ST_FLAG_RW, 0, "System.Environment.Log.Interval", 0, 0, NULL },
 	{ "System.Outlet[1].iName", ST_FLAG_RW, 0, "System.Outlet[1].iName", 0, 0, NULL },
 	/* Mapped as ups.delay.shutdown
@@ -622,7 +623,6 @@ static xml_info_t mge_xml2nut[] = {
 	{ "System.Password", ST_FLAG_RW, 0, "System.Password", 0, 0, NULL },
 	{ "System.Security", ST_FLAG_RW, 0, "System.Security", 0, 0, NULL },
 	{ "System.FirmwareUpgrade", ST_FLAG_RW, 0, "System.FirmwareUpgrade", 0, 0, NULL },
-#if (0)  /* not interresting for NUT */
 	{ "System.Network.SNMP.ReadCommunity", ST_FLAG_RW, 0, "System.Network.SNMP.ReadCommunity", 0, 0, NULL },
 	{ "System.Network.SNMP.ReadCommunityName", 0, 0, "System.Network.SNMP.ReadCommunityName", 0, 0, NULL },
 	{ "System.Network.SNMP.ReadCommunitySecurityLevel", 0, 0, "System.Network.SNMP.ReadCommunitySecurityLevel", 0, 0, NULL },
@@ -813,19 +813,14 @@ static xml_info_t mge_xml2nut[] = {
 	{ "System.ClientCfg.ShutdownDuration", ST_FLAG_RW, 0, "System.ClientCfg.ShutdownDuration", 0, 0, NULL },
 	{ "System.ClientCfg.BroadcastAdmins", ST_FLAG_RW, 0, "System.ClientCfg.BroadcastAdmins", 0, 0, NULL },
 	{ "System.ClientCfg.BroadcastUsers", ST_FLAG_RW, 0, "System.ClientCfg.BroadcastUsers", 0, 0, NULL },
-#endif  /* not interresting for NUT */
 	{ "Environment.iName", ST_FLAG_RW, 0, "Environment.iName", 0, 0, NULL },
 	{ "Environment.Temperature.Unit", ST_FLAG_RW, 0, "Environment.Temperature.Unit", 0, 0, NULL },
-	{ "Environment.Temperature.HighThreshold", ST_FLAG_RW, 0, "Environment.Temperature.HighThreshold", 0, 0, NULL },
-	{ "Environment.Temperature.LowThreshold", ST_FLAG_RW, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
 	{ "Environment.Temperature.Hysteresis", ST_FLAG_RW, 0, "Environment.Temperature.Hysteresis", 0, 0, NULL },
 	{ "Environment.Temperature.Offset", ST_FLAG_RW, 0, "Environment.Temperature.Offset", 0, 0, NULL },
 	{ "Environment.Temperature.HighNotify", ST_FLAG_RW, 0, "Environment.Temperature.HighNotify", 0, 0, NULL },
 	{ "Environment.Temperature.LowNotify", ST_FLAG_RW, 0, "Environment.Temperature.LowNotify", 0, 0, NULL },
 	{ "Environment.Temperature.HighShutdown", ST_FLAG_RW, 0, "Environment.Temperature.HighShutdown", 0, 0, NULL },
 	{ "Environment.Temperature.LowShutdown", ST_FLAG_RW, 0, "Environment.Temperature.LowShutdown", 0, 0, NULL },
-	{ "Environment.Humidity.HighThreshold", ST_FLAG_RW, 0, "Environment.Humidity.HighThreshold", 0, 0, NULL },
-	{ "Environment.Humidity.LowThreshold", ST_FLAG_RW, 0, "Environment.Humidity.LowThreshold", 0, 0, NULL },
 	{ "Environment.Humidity.Hysteresis", ST_FLAG_RW, 0, "Environment.Humidity.Hysteresis", 0, 0, NULL },
 	{ "Environment.Humidity.Offset", ST_FLAG_RW, 0, "Environment.Humidity.Offset", 0, 0, NULL },
 	{ "Environment.Humidity.HighNotify", ST_FLAG_RW, 0, "Environment.Humidity.HighNotify", 0, 0, NULL },
@@ -850,6 +845,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "System.TimeNtp", ST_FLAG_RW, 0, "System.TimeNtp", 0, 0, NULL },
 	{ "System.TimeZone", ST_FLAG_RW, 0, "System.TimeZone", 0, 0, NULL },
 	{ "System.TimeDaylight", ST_FLAG_RW, 0, "System.TimeDaylight", 0, 0, NULL },
+#endif  /* not interresting for NUT */
 
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ NULL, 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", 0, 0, online_info },
@@ -1013,13 +1009,13 @@ static xml_info_t mge_xml2nut[] = {
 
 	/* Ambient page */
 	{ "ambient.humidity", 0, 0, "Environment.Humidity", 0, 0, NULL },
-	{ "ambient.humidity.high", 0, 0, "Environment.Humidity.HighThreshold", 0, 0, NULL },
-	{ "ambient.humidity.low", 0, 0, "Environment.Humidity.LowThreshold", 0, 0, NULL },
+	{ "ambient.humidity.high", ST_FLAG_RW, 0, "Environment.Humidity.HighThreshold", 0, 0, NULL },
+	{ "ambient.humidity.low", ST_FLAG_RW, 0, "Environment.Humidity.LowThreshold", 0, 0, NULL },
 	{ "ambient.humidity.maximum", 0, 0, "Environment.PresentStatus.HighHumidity", 0, 0, mge_ambient_info },
 	{ "ambient.humidity.minimum", 0, 0, "Environment.PresentStatus.LowHumidity", 0, 0, mge_ambient_info },
 	{ "ambient.temperature", 0, 0, "Environment.Temperature", 0, 0, NULL },
-	{ "ambient.temperature.high", 0, 0, "Environment.Temperature.HighThreshold", 0, 0, NULL },
-	{ "ambient.temperature.low", 0, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
+	{ "ambient.temperature.high", ST_FLAG_RW, 0, "Environment.Temperature.HighThreshold", 0, 0, NULL },
+	{ "ambient.temperature.low", ST_FLAG_RW, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
 	{ "ambient.temperature.maximum", 0, 0, "Environment.PresentStatus.HighTemperature", 0, 0, mge_ambient_info },
 	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, mge_ambient_info },
 

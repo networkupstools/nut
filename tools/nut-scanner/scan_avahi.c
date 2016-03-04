@@ -41,7 +41,6 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libavahi-client";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -88,125 +87,129 @@ static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const Ava
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 
 /* return 0 on error */
-int nutscan_load_avahi_library()
+int nutscan_load_avahi_library(const char *libname_path)
 {
-        if( dl_handle != NULL ) {
-                /* if previous init failed */
-                if( dl_handle == (void *)1 ) {
-                        return 0;
-                }
-                /* init has already been done */
-                return 1;
-        }
+	if( dl_handle != NULL ) {
+		/* if previous init failed */
+		if( dl_handle == (void *)1 ) {
+				return 0;
+		}
+		/* init has already been done */
+		return 1;
+	}
 
-        if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                return 0;
-        }
+	if (libname_path == NULL) {
+		fprintf(stderr, "AVAHI client library not found. AVAHI search disabled.\n");
+		return 0;
+	}
 
-        dl_handle = lt_dlopenext(libname);
-        if (!dl_handle) {
-                dl_error = lt_dlerror();
-                goto err;
-        }
-        lt_dlerror();      /* Clear any existing error */
-        *(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	if( lt_dlinit() != 0 ) {
+		fprintf(stderr, "Error initializing lt_init\n");
+		return 0;
+	}
 
-        *(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	dl_handle = lt_dlopen(libname_path);
+	if (!dl_handle) {
+		dl_error = lt_dlerror();
+		goto err;
+	}
+	lt_dlerror();      /* Clear any existing error */
+	*(void **) (&nut_avahi_service_browser_get_client) = lt_dlsym(dl_handle, "avahi_service_browser_get_client");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_simple_poll_loop) = lt_dlsym(dl_handle, "avahi_simple_poll_loop");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_client_free) = lt_dlsym(dl_handle, "avahi_client_free");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_client_errno) = lt_dlsym(dl_handle, "avahi_client_errno");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_free) = lt_dlsym(dl_handle, "avahi_free");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_simple_poll_quit) = lt_dlsym(dl_handle, "avahi_simple_poll_quit");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_client_new) = lt_dlsym(dl_handle, "avahi_client_new");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_simple_poll_free) = lt_dlsym(dl_handle, "avahi_simple_poll_free");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_service_resolver_new) = lt_dlsym(dl_handle, "avahi_service_resolver_new");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_strerror) = lt_dlsym(dl_handle, "avahi_strerror");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_service_resolver_get_client) = lt_dlsym(dl_handle, "avahi_service_resolver_get_client");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_service_browser_new) = lt_dlsym(dl_handle, "avahi_service_browser_new");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_service_resolver_free) = lt_dlsym(dl_handle, "avahi_service_resolver_free");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_simple_poll_new) = lt_dlsym(dl_handle, "avahi_simple_poll_new");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_string_list_to_string) = lt_dlsym(dl_handle, "avahi_string_list_to_string");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_service_browser_free) = lt_dlsym(dl_handle, "avahi_service_browser_free");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_avahi_address_snprint) = lt_dlsym(dl_handle, "avahi_address_snprint");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        return 1;
+	*(void **) (&nut_avahi_simple_poll_get) = lt_dlsym(dl_handle, "avahi_simple_poll_get");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	return 1;
 err:
-        fprintf(stderr, "Cannot load AVAHI library (%s) : %s. AVAHI search disabled.\n", libname, dl_error);
-
-        dl_handle = (void *)1;
+	fprintf(stderr, "Cannot load AVAHI library (%s) : %s. AVAHI search disabled.\n", libname_path, dl_error);
+	dl_handle = (void *)1;
 	lt_dlexit();
-        return 0;
+	return 0;
 }
 /* end of dynamic link library stuff */
 

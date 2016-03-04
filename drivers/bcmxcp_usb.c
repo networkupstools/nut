@@ -128,18 +128,21 @@ void send_write_command(unsigned char *command, int command_length)
 	}
 }
 
+#define PW_HEADER_SIZE (PW_HEADER_LENGTH + 1)
+#define PW_CMD_BUFSIZE	256
 /* get the answer of a command from the ups. And check that the answer is for this command */
 int get_answer(unsigned char *data, unsigned char command)
 {
-	unsigned char buf[1024], *my_buf = buf;
-	int length, end_length, res, endblock, bytes_read, ellapsed_time;
+	unsigned char buf[PW_CMD_BUFSIZE], *my_buf = buf;
+	int length, end_length, res, endblock, bytes_read, ellapsed_time, need_data;
+	int tail;
 	unsigned char block_number, sequence, seq_num;
 	struct timeval start_time, now;
 
 	if (upsdev == NULL)
 		return -1;
 
-	length = 1;        /* non zero to enter the read loop */
+	need_data = PW_HEADER_SIZE; /* 4 - cmd response header length, 1 for csum */
 	end_length = 0;    /* total length of sequence(s), not counting header(s) */
 	endblock = 0;      /* signal the last sequence in the block */
 	bytes_read = 0;    /* total length of data read, including XCP header */
@@ -151,14 +154,14 @@ int get_answer(unsigned char *data, unsigned char command)
 
 	/* Store current time */
 	gettimeofday(&start_time, NULL);
+	memset(&buf, 0x0, PW_CMD_BUFSIZE);
 
 	while ( (!endblock) && ((XCP_USB_TIMEOUT - ellapsed_time)  > 0) ) {
 
 		/* Get (more) data if needed */
-		if ((length - (bytes_read - 5)) > 0) {
-			res = usb_interrupt_read(upsdev, 0x81,
-				(char *)&buf[bytes_read],
-				(PW_ANSWER_MAX_SIZE - bytes_read),
+		if (need_data > 0) {
+			res = usb_interrupt_read(upsdev, 0x81, (char *) buf + bytes_read,
+				128,
 				(XCP_USB_TIMEOUT - ellapsed_time));
 
 			/* Update time */
@@ -181,54 +184,41 @@ int get_answer(unsigned char *data, unsigned char command)
 				/* FIXME: */
 				continue;
 			}
-			
-			/* Else, we got some input bytes */ 
+			/* Else, we got some input bytes */
 			bytes_read += res;
+			need_data -= res;
 			upsdebug_hex(1, "get_answer", buf, bytes_read);
 		}
 
+		if (need_data > 0) /* We need more data */
+		    continue;
+
 		/* Now validate XCP frame */
 		/* Check header */
-		if ( my_buf[0] != 0xAB ) {
-			upsdebugx(2, "get_answer: wrong header");
-			return -1;
+		if ( my_buf[0] != PW_COMMAND_START_BYTE ) {
+			upsdebugx(2, "get_answer: wrong header 0xab vs %02x", my_buf[0]);
+			/* Sometime we read something wrong. bad cables? bad ports? */
+			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
+			if (!my_buf)
+			    return -1;
 		}
 
-		/* These validations seem not needed! */
 		/* Read block number byte */
 		block_number = my_buf[1];
 		upsdebugx(1, "get_answer: block_number = %x", block_number);
-#if 0
-		if (command <= 0x43) {
-			if ((command - 0x30) != block_number){
-				nutusb_comm_fail("Receive error (Request command): BLOCK: %x (instead of %x), COMMAND: %x!\n",
-					block_number, (command - 0x30), command);
-				return -1;
-			}
-		}
-
-		if (command >= 0x89) {
-			if ((command == 0xA0) && (block_number != 0x01)){
-				nutusb_comm_fail("Receive error (Request command): BLOCK: %x (instead of 0x01), COMMAND: %x!\n", block_number, command);
-				return -1;
-			}
-			else if ((command != 0xA0) && (block_number != 0x09)){
-				nutusb_comm_fail("Receive error (Request command): BLOCK: %x (instead of 0x09), COMMAND: %x!\n", block_number, command);
-				return -1;
-			}
-		}
-#endif /* if 0 */
 
 		/* Check data length byte (remove the header length) */
 		length = my_buf[2];
 		upsdebugx(3, "get_answer: data length = %d", length);
-		if ((bytes_read - 5) < length) {
-			upsdebugx(2, "get_answer: need to read %d more data", length - (bytes_read - 5));
+		if (bytes_read - (length + PW_HEADER_SIZE) < 0) {
+			if (need_data < 0) --need_data; /* count zerro byte too */
+			need_data += length + 1; /* packet lenght + checksum */
+			upsdebugx(2, "get_answer: need to read %d more data", need_data);
 			continue;
 		}
 		/* Check if Length conforms to XCP (121 for normal, 140 for Test mode) */
 		/* Use the more generous length for testing */
-		if (length > 140 ) {
+		if (length > 140) {
 			upsdebugx(2, "get_answer: bad length");
 			return -1;
 		}
@@ -260,13 +250,19 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 		else {
 			seq_num++;
+			upsdebugx(2, "get_answer: next sequence is %d", seq_num);
 		}
 
 		/* copy the current valid XCP frame back */
-		memcpy(data+end_length, my_buf+4, length);
+		memcpy(data+end_length, my_buf + 4, length);
 		/* increment pointers to process the next sequence */
 		end_length += length;
-		my_buf += length + 5;
+		tail = bytes_read - (length + PW_HEADER_SIZE);
+		if (tail > 0)
+		    my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, tail);
+		else if (tail == 0)
+		    my_buf = &buf[0];
+		bytes_read = tail;
 	}
 
 	upsdebug_hex (5, "get_answer", data, end_length);
@@ -431,6 +427,10 @@ usb_dev_handle *nutusb_open(const char *port)
 			if (usb_clear_halt(dev_h, 0x81) < 0)
 			{
 				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
+				if (dev_claimed)
+				    usb_release_interface(dev_h, 0);
+				usb_reset(dev_h);
+				sleep(5);	/* Wait reconnect */
 				errout = 1;
 			}
 			else

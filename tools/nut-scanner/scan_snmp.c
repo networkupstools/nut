@@ -76,7 +76,6 @@ static pthread_mutex_t dev_mutex;
 long g_usec_timeout ;
 
 /* dynamic link library stuff */
-static char * libname = "libnetsnmp";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -105,7 +104,7 @@ static oid * (*nut_usmHMACSHA1AuthProtocol);
 static oid * (*nut_usmDESPrivProtocol);
 
 /* return 0 on error */
-int nutscan_load_snmp_library()
+int nutscan_load_snmp_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
@@ -116,12 +115,17 @@ int nutscan_load_snmp_library()
 		return 1;
 	}
 
-        if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                return 0;
-        }
+	if (libname_path == NULL) {
+		fprintf(stderr, "SNMP library not found. SNMP search disabled.\n");
+		return 0;
+	}
 
-	dl_handle = lt_dlopenext(libname);
+	if( lt_dlinit() != 0 ) {
+		fprintf(stderr, "Error initializing lt_init\n");
+		return 0;
+	}
+
+	dl_handle = lt_dlopen(libname_path);
 	if (!dl_handle) {
 		dl_error = lt_dlerror();
 		goto err;
@@ -234,7 +238,7 @@ int nutscan_load_snmp_library()
 
 	return 1;
 err:
-        fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname, dl_error);
+	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;

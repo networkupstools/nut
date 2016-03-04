@@ -1202,6 +1202,13 @@ eval conftemp=\"${conftemp}\"
 SBINDIR=${conftemp}
 AC_DEFINE_UNQUOTED(SBINDIR, "${conftemp}", [Default path for system executables])
 
+dnl same for libdir
+conftemp="${libdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+LIBDIR=${conftemp}
+AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
+
 dnl Current date
 now=`TZ=UTC date +%Y-%m-%d`
 
@@ -1239,6 +1246,7 @@ AC_SUBST(PIDPATH)
 AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
+AC_SUBST(LIBDIR)
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
