@@ -195,12 +195,6 @@ static info_lkp_t ietf_yes_no_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t test_enum_info[] = {
-	{ 1, "1" },
-	{ 2, "2" },
-	{ 0, NULL }
-};
-
 /* Snmp2NUT lookup table */
 
 static snmp_info_t pw_mib[] = {
@@ -352,8 +346,7 @@ static snmp_info_t pw_mib[] = {
 	/* XUPS-MIB::xupsEnvRemoteTempLowerLimit.0 */
 	{ "ambient.temperature.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.9.0", "", 0, NULL },
 	/* XUPS-MIB::xupsEnvRemoteTempUpperLimit.0 */
-	//{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, NULL },
-	{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, test_enum_info },
+	{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, NULL },
 	
 	/* XUPS-MIB::xupsEnvRemoteHumidity.0 */
 	{ "ambient.humidity", 0, 1.0, "1.3.6.1.4.1.534.1.6.6.0", "", 0, NULL },
