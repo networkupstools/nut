@@ -51,57 +51,61 @@ static ne_xml_parser * (*nut_ne_xml_create)(void);
 static int (*nut_ne_xml_parse)(ne_xml_parser *p, const char *block, size_t len);
 
 /* return 0 on error */
-int nutscan_load_neon_library()
+int nutscan_load_neon_library(const char *libname_path)
 {
+	if( dl_handle != NULL ) {
+		/* if previous init failed */
+		if( dl_handle == (void *)1 ) {
+				return 0;
+		}
+		/* init has already been done */
+		return 1;
+	}
 
-        if( dl_handle != NULL ) {
-                /* if previous init failed */
-                if( dl_handle == (void *)1 ) {
-                        return 0;
-                }
-                /* init has already been done */
-                return 1;
-        }
+	if (libname_path == NULL) {
+		fprintf(stderr, "Neon library not found. XML search disabled.\n");
+		return 0;
+	}
 
-        if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                return 0;
-        }
+	if( lt_dlinit() != 0 ) {
+		fprintf(stderr, "Error initializing lt_init\n");
+		return 0;
+	}
 
-        dl_handle = lt_dlopenext(libname);
-        if (!dl_handle) {
-                dl_error = lt_dlerror();
-                goto err;
-        }
+	dl_handle = lt_dlopen(libname_path);
+	if (!dl_handle) {
+		dl_error = lt_dlerror();
+		goto err;
+	}
 
-        lt_dlerror();      /* Clear any existing error */
-        *(void **) (&nut_ne_xml_push_handler) = lt_dlsym(dl_handle,
-							"ne_xml_push_handler");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	lt_dlerror();      /* Clear any existing error */
+	*(void **) (&nut_ne_xml_push_handler) = lt_dlsym(dl_handle,
+						"ne_xml_push_handler");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle,"ne_xml_destroy");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_ne_xml_destroy) = lt_dlsym(dl_handle,"ne_xml_destroy");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle,"ne_xml_create");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_ne_xml_create) = lt_dlsym(dl_handle,"ne_xml_create");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        *(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle,"ne_xml_parse");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_ne_xml_parse) = lt_dlsym(dl_handle,"ne_xml_parse");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
 
-        return 1;
+	return 1;
 err:
-        fprintf(stderr, "Cannot load XML library (%s) : %s. XML search disabled.\n", libname, dl_error);
-        dl_handle = (void *)1;
+	fprintf(stderr, "Cannot load XML library (%s) : %s. XML search disabled.\n", libname, dl_error);
+	dl_handle = (void *)1;
 	lt_dlexit();
-        return 0;
+	return 0;
 }
 
 static int startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts) {
