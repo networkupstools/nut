@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.5
+# Version: 0.6
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -39,6 +39,7 @@ usage() {
     echo "mode 1: get SNMP data from a real agent"
     echo " -H host_address     -- SNMP host IP address or name"
     echo " -c community        -- SNMP v1 community name (default: public)"
+    echo " -s XXXX             -- override SNMP OID entry point (sysOID). Ex: '.1.3.6.1.4.1.534.10'"
     echo ""
     echo "mode 2: get data from files (snmpwalk dumps of 'sysOID' subtree)"
     echo " -s XXXX             -- SNMP OID entry point (sysOID). Ex: '.1.3.6.1.4.1.534.6.6.7'"
@@ -77,10 +78,14 @@ TMP_NUMWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-NUMWALK.XXXXXX"`
 TMP_STRWALKFILE=`mktemp "$TMPDIR/$NAME-TMP-STRWALK.XXXXXX"`
 
 get_snmp_data() {
-    # 1) get the sysOID (points the mfr specif MIB)
-    SYSOID=`snmpget -On -v1 -c $COMMUNITY -Ov $HOSTNAME .1.3.6.1.2.1.1.2.0 | cut -d' ' -f2`
-
-	echo "sysOID retrieved: ${SYSOID}"
+    # 1) get the sysOID (points the mfr specif MIB), apart if there's an override
+    if [ -z "$SYSOID" ]
+    then
+		SYSOID=`snmpget -On -v1 -c $COMMUNITY -Ov $HOSTNAME .1.3.6.1.2.1.1.2.0 | cut -d' ' -f2`
+		echo "sysOID retrieved: ${SYSOID}"
+	else
+		echo "Using the provided sysOID override ($SYSOID)"
+	fi
 
     # 2) get the content of the mfr specif MIB
     echo "Retrieving SNMP information. This may take some time"
@@ -283,7 +288,7 @@ cat > "$CFILE" <<EOF
  * static info_lkp_t onbatt_info[] = {
  * 	{ 1, "OB" },
  * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * 	{ 0, NULL }
  * };
  */
 
@@ -312,7 +317,7 @@ static snmp_info_t ${LDRIVER}_mib[] = {
 	 * static info_lkp_t onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
 EOF
@@ -334,7 +339,7 @@ while IFS= read -r line; do
 	fi
 	# get the matching numeric OID
 	NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
-	printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL },\n"
+	printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL, NULL },\n"
 done < ${STRWALKFILE} >> ${CFILE}
 
 # append footer

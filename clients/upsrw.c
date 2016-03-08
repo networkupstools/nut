@@ -366,6 +366,11 @@ static void do_type(const char *varname)
 
 		}
 
+		if (!strcasecmp(answer[i], "NUMBER")) {
+			printf("Type: NUMBER\n");
+			return;
+		}
+
 		/* ignore this one */
 		if (!strcasecmp(answer[i], "RW")) {
 			continue;

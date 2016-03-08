@@ -33,7 +33,7 @@
  * static info_lkp_t onbatt_info[] = {
  * 	{ 1, "OB" },
  * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * 	{ 0, NULL }
  * };
  */
 
@@ -94,7 +94,7 @@ static snmp_info_t xppc_mib[] = {
 	 * static info_lkp_t onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
         { "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Tripp Lite / Phoenixtec",

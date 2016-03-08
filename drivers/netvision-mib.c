@@ -44,14 +44,14 @@ static info_lkp_t netvision_batt_info[] = {
 	{ 4, "LB" },      /* battery depleted    */
 	{ 5, "DISCHRG" }, /* battery discharging */
 	{ 6, "RB" },      /* battery failure     */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Battery status: upsAlarmOnBattery */
 static info_lkp_t netvision_onbatt_info[] = {
 	{ 0, "OL" },      /* Online      */
 	{ 1, "OB" },      /* On battery  */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 #define NETVISION_OID_SECONDSONBATTERY		".1.3.6.1.4.1.4555.1.1.1.1.2.2.0"
@@ -110,7 +110,7 @@ static info_lkp_t netvision_output_info[] = {
 	{ 7, "OL TRIM" },   /* output source reducer */
 	{ 8, "OL" },        /* output source standby */
 	{ 9, "" },          /* output source ecomode */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Snmp2NUT lookup table */
@@ -181,4 +181,4 @@ static snmp_info_t netvision_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, "", NETVISION_OID_UPSIDENTMODEL, netvision_mib, NETVISION_SYSOID };
+mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, NULL, NETVISION_OID_UPSIDENTMODEL, netvision_mib, NETVISION_SYSOID };

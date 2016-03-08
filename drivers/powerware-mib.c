@@ -4,7 +4,7 @@
  *  Copyright (C)
  *       2005-2006 Olli Savia <ops@iki.fi>
  *       2005-2006 Niels Baggesen <niels@baggesen.net>
- *       2015      Arnaud Quette <ArnaudQuette@Eaton.com>
+ *       2015-2016 Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.85"
+#define PW_MIB_VERSION "0.87"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -70,10 +70,6 @@
 #define PW_OID_BY_LINES		"1.3.6.1.4.1.534.1.5.2.0"	/* XUPS-MIB::xupsBypassNumPhases.0 */
 #define PW_OID_BY_VOLTAGE	"1.3.6.1.4.1.534.1.5.3.1.2"	/* XUPS-MIB::xupsBypassVoltage */
 
-#define PW_OID_AMBIENT_TEMP	"1.3.6.1.4.1.534.1.6.1.0"	/* XUPS-MIB::xupsEnvAmbientTemp.0 */
-#define PW_OID_AMBIENT_LOW	"1.3.6.1.4.1.534.1.6.2.0"	/* XUPS-MIB::xupsEnvAmbientLowerLimit.0 */
-#define PW_OID_AMBIENT_HIGH	"1.3.6.1.4.1.534.1.6.3.0"	/* XUPS-MIB::xupsEnvAmbientUpperLimit.0 */
-
 #define PW_OID_BATTEST_START	"1.3.6.1.4.1.534.1.8.1"		/* XUPS-MIB::xupsTestBattery   set to startTest(1) to initiate test*/
 #define PW_OID_BATTEST_RES	"1.3.6.1.4.1.534.1.8.2"		/* XUPS-MIB::xupsTestBatteryStatus */
 
@@ -109,41 +105,57 @@
 static info_lkp_t pw_alarm_ob[] = {
 	{ 1, "OB" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t pw_alarm_lb[] = {
 	{ 1, "LB" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t pw_pwr_info[] = {
-	{ 1, ""		/* other */ },
-	{ 2, "OFF"       /* none */ },
-	{ 3, "OL"        /* normal */ },
-	{ 4, "BYPASS"    /* bypass */ },
-	{ 5, "OB"        /* battery */ },
-	{ 6, "OL BOOST"  /* booster */ },
-	{ 7, "OL TRIM"   /* reducer */ },
-	{ 8, "OL"        /* parallel capacity */ },
-	{ 9, "OL"        /* parallel redundancy */ },
-	{10, "OL"        /* high efficiancy */ },
-	{ 0, "NULL" }
+	{   1, ""		   /* other */ },
+	{   2, "OFF"       /* none */ },
+	{   3, "OL"        /* normal */ },
+	{   4, "BYPASS"    /* bypass */ },
+	{   5, "OB"        /* battery */ },
+	{   6, "OL BOOST"  /* booster */ },
+	{   7, "OL TRIM"   /* reducer */ },
+	{   8, "OL"        /* parallel capacity */ },
+	{   9, "OL"        /* parallel redundancy */ },
+	{  10, "OL"        /* high efficiency */ },
+	/* Extended status values */
+	{ 240, "OB"        /* battery (0xF0) */ },
+	{ 100, "BYPASS"    /* maintenanceBypass (0x64) */ },
+	{  96, "BYPASS"    /* Bypass (0x60) */ },
+	{  81, "OL"        /* high efficiency (0x51) */ },
+	{  80, "OL"        /* normal (0x50) */ },
+	{  64, "OL"        /* UPS supporting load, normal degraded mode (0x40) */ },
+	{  16, "OFF"       /* none (0x10) */ },
+	{ 0, NULL }
 };
 
 static info_lkp_t pw_mode_info[] = {
-	{ 1, ""  },
-	{ 2, ""  },
-	{ 3, "normal" },
-	{ 4, "" },
-	{ 5, "" },
-	{ 6, "" },
-	{ 7, "" },
-	{ 8, "parallel capacity" },
-	{ 9, "parallel redundancy" },
-	{10, "high efficiency" },
-	{ 0, "NULL" }
+	{   1, ""  },
+	{   2, ""  },
+	{   3, "normal" },
+	{   4, "" },
+	{   5, "" },
+	{   6, "" },
+	{   7, "" },
+	{   8, "parallel capacity" },
+	{   9, "parallel redundancy" },
+	{  10, "high efficiency" },
+	/* Extended status values */
+	{ 240, ""                /* battery (0xF0) */ },
+	{ 100, ""                /* maintenanceBypass (0x64) */ },
+	{  96, ""                /* Bypass (0x60) */ },
+	{  81, "high efficiency" /* high efficiency (0x51) */ },
+	{  80, "normal"          /* normal (0x50) */ },
+	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */ },
+	{  16, ""                /* none (0x10) */ },
+	{   0, NULL }
 };
 
 /* Legacy implementation */
@@ -153,7 +165,7 @@ static info_lkp_t pw_battery_abm_status[] = {
 /*	{ 3, "Floating" }, */
 /*	{ 4, "Resting" }, */
 /*	{ 5, "Unknown" }, */
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 static info_lkp_t eaton_abm_status_info[] = {
@@ -163,7 +175,7 @@ static info_lkp_t eaton_abm_status_info[] = {
 	{ 4, "resting" },
 	{ 5, "unknown" },   /* Undefined - ABM is not activated */
 	{ 6, "disabled" },  /* ABM Charger Disabled */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t pw_batt_test_info[] = {
@@ -174,18 +186,19 @@ static info_lkp_t pw_batt_test_info[] = {
 	{ 5, "Not supported" },
 	{ 6, "Inhibited" },
 	{ 7, "Scheduled" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_yes_no_info[] = {
 	{ 1, "yes" },
 	{ 2, "no" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Snmp2NUT lookup table */
 
 static snmp_info_t pw_mib[] = {
+	/* FIXME: miss device page! */
 	/* UPS page */
 	/* info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MFR_NAME, "",
@@ -216,9 +229,16 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "ups.power.nominal", 0, 1.0, IETF_OID_CONF_OUT_VA, "",
 		0, NULL },
+	/* XUPS-MIB::xupsEnvAmbientTemp.0 */
+	{ "ups.temperature", 0, 1.0, "1.3.6.1.4.1.534.1.6.1.0", "", 0, NULL },
+	/* FIXME: These 2 data needs RFC! */
+	/* XUPS-MIB::xupsEnvAmbientLowerLimit.0 */
+	{ "ups.temperature.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.2.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvAmbientUpperLimit.0 */
+	{ "ups.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.3.0", "", 0, NULL },
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATTEST_RES, "",
 		0, &pw_batt_test_info[0] },
-	{ "ups.start.auto", ST_FLAG_RW, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AUTO_RESTART, "",
 		SU_FLAG_OK, &ietf_yes_no_info[0] },
 	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &eaton_abm_status_info[0] },
@@ -264,6 +284,7 @@ static snmp_info_t pw_mib[] = {
 		SU_OUTPUT_3, NULL },
 	{ "output.L3.realpower", 0, 1.0, PW_OID_OUT_POWER ".3", "",
 		SU_OUTPUT_3, NULL },
+	/* FIXME: should better be output.Lx.load */
 	{ "output.L1.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".1", "",
 		SU_OUTPUT_3, NULL },
 	{ "output.L2.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".2", "",
@@ -320,12 +341,19 @@ static snmp_info_t pw_mib[] = {
 		SU_INPUT_3, NULL },
 
 	/* Ambient page */
-	{ "ambient.temperature", 0, 1.0, PW_OID_AMBIENT_TEMP, "",
-		0, NULL },
-	{ "ambient.temperature.low", 0, 1.0, PW_OID_AMBIENT_LOW, "",
-		0, NULL },
-	{ "ambient.temperature.high", 0, 1.0, PW_OID_AMBIENT_HIGH, "",
-		0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteTemp.0 */
+	{ "ambient.temperature", 0, 1.0, "1.3.6.1.4.1.534.1.6.5.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteTempLowerLimit.0 */
+	{ "ambient.temperature.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.9.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteTempUpperLimit.0 */
+	{ "ambient.temperature.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.10.0", "", 0, NULL },
+	
+	/* XUPS-MIB::xupsEnvRemoteHumidity.0 */
+	{ "ambient.humidity", 0, 1.0, "1.3.6.1.4.1.534.1.6.6.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteHumidityLowerLimit.0 */
+	{ "ambient.humidity.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.11.0", "", 0, NULL },
+	/* XUPS-MIB::xupsEnvRemoteHumidityUpperLimit.0 */
+	{ "ambient.humidity.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.12.0", "", 0, NULL },
 
 	/* instant commands */
 	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
@@ -457,5 +485,5 @@ static alarms_info_t pw_alarms[] = {
 } ;
 
 
-mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };
-mib2nut_info_t	pxgx_ups = { "pxgx_ups", PW_MIB_VERSION, "", PW_OID_MODEL_NAME, pw_mib, EATON_PXGX_SYSOID , pw_alarms };
+mib2nut_info_t	powerware = { "pw", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, POWERWARE_SYSOID , pw_alarms };
+mib2nut_info_t	pxgx_ups = { "pxgx_ups", PW_MIB_VERSION, NULL, PW_OID_MODEL_NAME, pw_mib, EATON_PXGX_SYSOID , pw_alarms };

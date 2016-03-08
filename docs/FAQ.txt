@@ -561,6 +561,8 @@ The most frequent issue is that udev has not actually applied the rule:
 - and if the device USB cord was already plugged when installing NUT.
 
 In this case, just unplug and plug back the USB cord, then restart NUT.
+Instead of unplugging, you might also be able to run `udevadm trigger
+--subsystem-match=usb --action=change` to fix permissions.
 
 There was a mistake in the naming of the NUT udev rules file which resulted in
 the rules being overridden by another udev configuration file. While this has

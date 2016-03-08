@@ -40,7 +40,6 @@
 #define IPMI_RETRANSMISSION_TIMEOUT_LENGTH_DEFAULT	250
 
 /* dynamic link library stuff */
-static char * libname = "libfreeipmi";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -117,7 +116,7 @@ static void (*nut_ipmi_ctx_destroy) (ipmi_ctx_t ctx);
 static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * sec);
 
 /* Return 0 on error */
-int nutscan_load_ipmi_library()
+int nutscan_load_ipmi_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
@@ -128,12 +127,17 @@ int nutscan_load_ipmi_library()
 		return 1;
 	}
 
+	if (libname_path == NULL) {
+		fprintf(stderr, "IPMI library not found. IPMI search disabled.\n");
+		return 0;
+	}
+
 	if( lt_dlinit() != 0 ) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
 
-	dl_handle = lt_dlopenext(libname);
+	dl_handle = lt_dlopen(libname_path);
 	if (!dl_handle) {
 		dl_error = lt_dlerror();
 		goto err;
@@ -239,7 +243,7 @@ int nutscan_load_ipmi_library()
 
 	return 1;
 err:
-	fprintf(stderr, "Cannot load IPMI library (%s) : %s. IPMI search disabled.\n", libname, dl_error);
+	fprintf(stderr, "Cannot load IPMI library (%s) : %s. IPMI search disabled.\n", libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
