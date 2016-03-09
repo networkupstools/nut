@@ -108,7 +108,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.96"
+#define DRIVER_VERSION		"0.97"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1086,6 +1086,7 @@ snmp_info_t *su_find_info(const char *type)
  * Return a pointer to a mib2nut definition if found, NULL otherwise */
 mib2nut_info_t *match_sysoid()
 {
+	snmp_info_t *su_info_p;
 	char sysOID_buf[LARGEBUF];
 	char testOID_buf[LARGEBUF];
 	oid device_sysOID[MAX_OID_LEN];
@@ -1133,10 +1134,18 @@ mib2nut_info_t *match_sysoid()
 			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
 			{
 				upsdebugx(2, "%s: sysOID matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
-				/* Counter verify, if there is a test OID */
-				if (mib2nut[i]->oid_pwr_status != NULL) {
-					if (nut_snmp_get_str(mib2nut[i]->oid_pwr_status, testOID_buf, LARGEBUF, NULL) != TRUE) {
+				/* Counter verify, using {ups,device}.model */
+				snmp_info = mib2nut[i]->snmp_info;
+				su_info_p = su_find_info("ups.model");
+				/* Try to get device.model if ups.model is not available */
+				if (su_info_p == NULL)
+					su_info_p = su_find_info("device.model");
+
+				if (su_info_p != NULL) {
+					upsdebugx(2, "Testing %s using OID %s", su_info_p->info_type, su_info_p->OID);
+					if (nut_snmp_get_str(su_info_p->OID, testOID_buf, LARGEBUF, NULL) != TRUE) {
 						upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+						snmp_info = NULL;
 						continue;
 					}
 					else
@@ -1162,6 +1171,7 @@ bool_t load_mib2nut(const char *mib)
 {
 	int	i;
 	char	buf[LARGEBUF];
+	snmp_info_t *su_info_p;
 	mib2nut_info_t *m2n = NULL;
 
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, mib);
@@ -1186,8 +1196,21 @@ bool_t load_mib2nut(const char *mib)
 			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
 
 			/* Classic method: test an OID specific to this MIB */
-			if (!nut_snmp_get_str(mib2nut[i]->oid_auto_check, buf, sizeof(buf), NULL)) {
-				continue;
+			snmp_info = mib2nut[i]->snmp_info;
+			su_info_p = su_find_info("ups.model");
+			/* Try to get device.model if ups.model is not available */
+			if (su_info_p == NULL)
+				su_info_p = su_find_info("device.model");
+
+			if (su_info_p != NULL) {
+				upsdebugx(2, "Testing %s using OID %s", su_info_p->info_type, su_info_p->OID);
+				if (nut_snmp_get_str(su_info_p->OID, buf, LARGEBUF, NULL) != TRUE) {
+					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
+					snmp_info = NULL;
+					continue;
+				}
+				else
+					upsdebugx(2, "%s: testOID provided and matches MIB '%s'!", __func__, mib2nut[i]->mib_name);
 			}
 			/* MIB found */
 			m2n = mib2nut[i];
