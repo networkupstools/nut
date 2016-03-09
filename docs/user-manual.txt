@@ -111,10 +111,14 @@ This section document the various acronyms used throughout the present
 documentation.
 
 [template="glossary",id="terms"]
+ATS::
+	Automatic Transfer Switch.
 NUT::
 	Network UPS Tools.
 PDU::
 	Power Distribution Unit.
+PSU::
+	Power Supply Units.
 SCD::
 	Solar Controller Device.
 UPS::
