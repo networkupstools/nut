@@ -141,7 +141,7 @@ driver is then responsible for handling values as either integer or float.
 
 Note that float values are expressed using decimal (base 10) english-based
 representation, so using a dot, in non-scientific notation.  So hexadecimal,
-exponents, and comma for thousands separator are forbiden.
+exponents, and comma for thousands separator are forbidden.
 For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
 
 

@@ -592,7 +592,7 @@ will appear in dmesg:
 	usbfs: process 29641 (usbhid-ups) did not claim interface 0 before use
 
 This can be a symptom of a source install conflicting with a package install.
-There is a rudimetary locking mechanism in NUT, but there is a chance that the
+There is a rudimentary locking mechanism in NUT, but there is a chance that the
 packages might not use the same directory as the NUT default, and the conflict
 will be reported by the kernel.
 

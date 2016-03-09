@@ -225,7 +225,7 @@ below).
 
 - As an exception, drivers may set "FSD" when an imminent shutdown has been
 detected. In this case, the "on battery + low battery" condition should not be
-met. Otherwise, setting status to "OB LB" should be prefered.
+met. Otherwise, setting status to "OB LB" should be preferred.
 
 - the OL and OB flags are an indication of the input line status only.
 

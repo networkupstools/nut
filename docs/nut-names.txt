@@ -189,7 +189,7 @@ input: Incoming line/power information
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
-| input.source.preferred      | The prefered power source         | 1
+| input.source.preferred      | The preferred power source         | 1
 |=================================================================================
 
 output: Outgoing power/inverter information

@@ -126,7 +126,7 @@ mode 1: get SNMP data from a real agent
 This method requires to have a network access to the device, in order to
 automatically retrieve the needed information.
 
-You have to specify the following paramaters:
+You have to specify the following parameters:
 
 - *-H* host address: is the SNMP host IP address or name
 - *-c* community: is the SNMP v1 community name (default: public)"

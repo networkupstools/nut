@@ -207,7 +207,7 @@ automake). Refer to packaging/debian/ for an example of migration.
 ie not using upsdrvctl.
 - Developers of external client application using libupsclient are
 encouraged to rename the "UPSCONN" client structure to "UPSCONN_t"
-since the former will disapear by the release of NUT 2.4.
+since the former will disappear by the release of NUT 2.4.
 
 Changes from 2.0.4 to 2.0.5
 ---------------------------

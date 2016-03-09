@@ -30,7 +30,7 @@ software integration into an OS, and allows users to have an easy
 software installation and support out of the box.
 
 NOTE: making NUT packaging more uniform should help its documentation,
-support and maintenance accross the supported OSes.
+support and maintenance across the supported OSes.
 
 ------------------------------------------------------------------------
 *sandbox*
@@ -41,7 +41,7 @@ Facts about NUT packaging
 =========================
 
 NUT has so much evolved those two last years (with USB and SNMP
-support, the premices of libraries, ...) that the simple
+support, the premises of libraries, ...) that the simple
 "1, 2 or 3  package(s)" approach is no more suitable.
 
 This fact has reached a high level since NUT 1.4. Actually,

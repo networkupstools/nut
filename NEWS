@@ -47,7 +47,7 @@ Release notes for NUT 2.7.4 - what's new since 2.7.3:
    * Improve communication staleness detection and recovery
    * Add devices MAC address publication
    * Register values enumerations, when available
-   * Many improvevements and fixes to the SNMP subdriver creation script
+   * Many improvements and fixes to the SNMP subdriver creation script
 
  - Eaton:
    * 3ph SNMP:
@@ -441,7 +441,7 @@ Release notes for NUT 2.6.4 - what's new since 2.6.3:
  - bestups has also received some care, though users are encouraged to switch
    to blazer_ser, since bestups will soon be deprecated.
 
- - newmge-shut has been heavilly improved.  However, replacement of the
+ - newmge-shut has been heavily improved.  However, replacement of the
    current mge-shut has been postponed to the next release, due to the CVE
    issue.
 
