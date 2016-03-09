@@ -111,18 +111,21 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
-# FIXME: also check ../{NEWS,README,UPGRADING}+other dirs
 # Non-interactively spell check all documentation source files.
 # This is useful for Buildbot and automated QA processing
 # FIXME: how to present output (std{out,err}, single file or per target)?
+SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
+	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
+	../tools/nut-scanner/README
+
 spellcheck: 
-	@for docsrc in $(ALL_TXT_SRC); do \
+	@for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
 		LANG=C $(ASPELL) -a -t -p $(NUT_SPELL_DICT) < $$docsrc | grep [^*]; \
 	done
 # Interactively spell check all documentation source files
 spellcheck-interactive: 
-	@for docsrc in $(ALL_TXT_SRC); do\
+	@for docsrc in $(SPELLCHECK_SRC); do\
 		echo "Spell checking on $$docsrc"; \
 		LANG=C $(ASPELL) check -p $(NUT_SPELL_DICT) $$docsrc; \
 	done
