@@ -24,7 +24,7 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.1"
+#define APC_ATS_MIB_VERSION  "0.2"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
 
@@ -85,6 +85,8 @@ static snmp_info_t apc_ats_mib[] = {
 	{ "input.voltage.nominal", 0, 1, ".1.3.6.1.4.1.318.1.1.8.1.7.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* atsIdentNominalLineFrequency.0 = INTEGER: 50 */
 	{ "input.frequency.nominal", 0, 1, ".1.3.6.1.4.1.318.1.1.8.1.8.0", NULL, SU_FLAG_OK, NULL, NULL },
+	/* atsStatusSelectedSource.0 = INTEGER: sourceB(2) */
+	{ "input.source", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.1.2.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* atsConfigPreferredSource.0 = INTEGER: sourceB(2) */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.318.1.1.8.4.2.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* atsInputVoltage.1.1.1 = INTEGER: 216 */
@@ -245,8 +247,7 @@ static snmp_info_t apc_ats_mib[] = {
 	{ "unmapped.atsConfigPhaseTableSize", 0, 1, ".1.3.6.1.4.1.318.1.1.8.4.15.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* atsStatusCommStatus.0 = INTEGER: atsCommEstablished(2) */
 	{ "unmapped.atsStatusCommStatus", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.1.1.0", NULL, SU_FLAG_OK, NULL, NULL },
-	/* atsStatusSelectedSource.0 = INTEGER: sourceB(2) */
-	{ "unmapped.atsStatusSelectedSource", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.1.2.0", NULL, SU_FLAG_OK, NULL, NULL },
+
 	/* atsStatusRedundancyState.0 = INTEGER: atsFullyRedundant(2) */
 	{ "unmapped.atsStatusRedundancyState", 0, 1, ".1.3.6.1.4.1.318.1.1.8.5.1.3.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* atsStatusOverCurrentState.0 = INTEGER: atsCurrentOK(2) */
