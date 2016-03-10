@@ -792,6 +792,8 @@ bool_t nut_snmp_get_int(const char *OID, long *pval)
 	long value;
 	char *buf;
 
+	upsdebugx(3, "Entering %s()", __func__);
+
 	pdu = nut_snmp_get(OID);
 	if (pdu == NULL)
 		return FALSE;
