@@ -245,6 +245,28 @@ static info_lkp_t outlet_switchability_info[] = {
 	{ 0, NULL }
 };
 
+/* The physical type of outlet */
+static info_lkp_t outlet_type_info[] = {
+	{ 0, "unknown" },
+	{ 1, "iecC13" },
+	{ 2, "iecC19" },
+	{ 10, "uk" },
+	{ 11, "french" },
+	{ 12, "schuko" },
+	{ 20, "nema515" },
+	{ 21, "nema51520" },
+	{ 22, "nema520" },
+	{ 23, "nemaL520" },
+	{ 24, "nemaL530" },
+	{ 25, "nema615" },
+	{ 26, "nema620" },
+	{ 27, "nemaL620" },
+	{ 28, "nemaL630" },
+	{ 29, "nemaL715" },
+	{ 30, "rf203p277" },
+	{ 0, NULL }
+};
+
 static info_lkp_t marlin_ambient_presence_info[] = {
 	{ -1, "unknown" },
 	{ 0, "no" },  /* disconnected */
@@ -553,6 +575,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
 	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
 	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &outlet_switchability_info[0], NULL },
+	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET, &outlet_type_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1
