@@ -398,7 +398,7 @@ if test "${nut_with_ipmi}" != "no"; then
    if test "${nut_with_freeipmi}" = "yes"; then
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
-         AC_MSG_ERROR(["GNU FreeIPMI not found, required for IPMI support"])
+         AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
       fi
       dnl Implies --with-ipmi
       nut_with_ipmi="yes"
