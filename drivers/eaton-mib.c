@@ -30,7 +30,7 @@
 
 #include "eaton-mib.h"
 
-#define EATON_APHEL_MIB_VERSION	"0.47"
+#define EATON_APHEL_MIB_VERSION	"0.48"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
