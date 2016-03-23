@@ -176,7 +176,7 @@ linkman:nutupsdrv[8]
 
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-Available at: http://www.networkupstools.org/protocols/snmp/
+Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
