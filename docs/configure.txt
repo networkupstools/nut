@@ -89,13 +89,39 @@ information on how to set up CGI programs.
 	--with-doc=<output-format(s)>  (default: no)
 
 Build and install NUT documentation file(s).
+
 The possible values are "html-single" for single page HTML, "html-chunked"
-for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
-possible previous documentation formats.  Multiple values can be specified,
-separated with comma.
+for multi pages HTML, "pdf" for a PDF file, and "man" for the usual manpages.
+
+If the "--with-doc" argument is passed without a list, or lists just "=yes"
+or "=all", it enables all supported formats with a "=yes".
+
+An (explicit!) "--with-doc=auto" argument tries to enable all supported
+formats with an "=auto".
+
+A "--with-doc=no" quietly skips generation of all types of documentation,
+including manpages.
+
+Multiple documentation format values can be specified, separated with comma.
+Each such value can be suffixed with "=yes" to require building of the this
+documentation format (abort configuration if tools are missing), "=auto" to
+detect and enable if we can build it on this system (and not abort if we
+can not), and "=no" (or "=skip") to explicitly skip generation of this
+document format even if we do have the tools to build it.
+
+If a document format is mentioned in the list without a suffix, then it is
+treated as a "=yes" requirement.
+
 Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
+
+Example valid formats of this flag:
+* `--with-doc`
+* `--with-doc=` is a valid empty list, effectively same as `--with-doc=no`
+* `--with-doc=auto`
+* `--with-doc=pdf,html-chunked`
+* `--with-doc=man=no,pdf=auto,html-single`
 
 	--with-dev (default: no)
 
