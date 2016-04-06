@@ -9,7 +9,7 @@
 #
 # Copyright (C)
 # 2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
-# 2015        Arnaud Quette <ArnaudQuette@Eaton.com>
+# 2015 - 2016 Arnaud Quette <ArnaudQuette@Eaton.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -216,13 +216,15 @@ UDRIVER=`echo $DRIVER | tr a-z A-Z`
 CFILE="$LDRIVER-mib.c"
 HFILE="$LDRIVER-mib.h"
 
+FIXME: LDRIVER & UDRIVER => replace - by _
+
 # generate header file
 echo "Creating $HFILE"
 cat > "$HFILE" <<EOF
 /* ${HFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
  *
  *  Copyright (C)
- *  2011 - 2012	Arnaud Quette <arnaud.quette@free.fr>
+ *  2011 - 2016	Arnaud Quette <arnaud.quette@free.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -257,7 +259,7 @@ cat > "$CFILE" <<EOF
 /* ${CFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
  *
  *  Copyright (C)
- *  2011 - 2012	Arnaud Quette <arnaud.quette@free.fr>
+ *  2011 - 2016	Arnaud Quette <arnaud.quette@free.fr>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver script. It must be customized!
