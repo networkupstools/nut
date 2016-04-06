@@ -45,6 +45,7 @@
 #include "powerware-mib.h"
 #include "eaton-mib.h"
 #include "raritan-pdu-mib.h"
+#include "raritan-px2-mib.h"
 #include "baytech-mib.h"
 #include "compaq-mib.h"
 #include "bestpower-mib.h"
@@ -83,6 +84,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&tripplite_ietf,
 	&eaton_ats,
 	&apc_ats,
+	&raritan_px2,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -108,7 +110,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.97"
+#define DRIVER_VERSION		"0.98"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {

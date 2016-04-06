@@ -868,6 +868,7 @@
 "Raritan"	"pdu"	"3"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"pdu"	"3"	"Dominion PX2"	""	"snmp-ups"
 
 "REDi"	"ups"	"2"	"Blazer 400VA / 600VA / 800VA"	""	"blazer_ser"
 
