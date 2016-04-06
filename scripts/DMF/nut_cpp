@@ -1,0 +1,31 @@
+#!/bin/sh
+# postprocessor of C preprocessor - removes __attribute__ declarations, which are not compatible for pycparser
+
+CPP=cpp
+
+cpp -I ../../include "${@}" | sed \
+    -e 's/ __asm(.*)$/;/' \
+    -e 's/__asm__ (.*);/;/' \
+    -e 's/__attribute__ ((visibility("default"))) //' \
+    -e 's/__attribute__((unused))//' \
+    -e 's/__attribute__((aligned(8)));/;/' \
+    -e 's/__attribute__((availability(.*)));/;/' \
+    -e 's/__attribute__((availability(.*)))//' \
+    -e 's/__attribute__((format.*)));$/;/' \
+    -e 's/__inline__/inline/' \
+    -e 's/__THROW;$/;/' \
+    -e 's/__END_DECLS//' \
+    -e 's/__BEGIN_DECLS//' \
+    -e 's/void (\*signal(int, void (\*)(int)))(int);//' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__const__));/;/' \
+    -e 's/__attribute__ ((__mode__ (__[A-Z][A-Z]__)));/;/' \
+    -e 's/__attribute__ ((__mode__ (__word__)));/;/' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__));/;/' \
+    -e 's/__attribute__ ((__nonnull__ ([0-9])));/;/' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) ;/;/' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__malloc__)) ;/;/' \
+    -e 's/__attribute__.*$/;/' \
+    -e 's/static __inline/static/' \
+    -e 's/__restrict//g' \
+    -e 's/__extension__//' \
+    -e 's/__builtin_va_list/int/'
