@@ -19,8 +19,25 @@ if test -z "${nut_have_libgd_seen}"; then
 	LDFLAGS="-L/usr/X11R6/lib"
 	LIBS="-lgd -lpng -lz -ljpeg -lfreetype -lm -lXpm -lX11"
 
-	AC_MSG_CHECKING(for gd version via gdlib-config)
-	GD_VERSION=`gdlib-config --version 2>/dev/null`
+	dnl By default seek in PATH
+	GDLIB_CONFIG=gdlib-config
+	AC_ARG_WITH(gdlib-config,
+		AS_HELP_STRING([@<:@--with-gdlib-config=/path/to/gdlib-config@:>@],
+			[path to program that reports GDLIB configuration]),
+	[
+		case "${withval}" in
+		"") ;;
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-gdlib-config - see docs/configure.txt)
+			;;
+		*)
+			GDLIB_CONFIG="${withval}"
+			;;
+		esac
+	])
+
+	AC_MSG_CHECKING(for gd version via ${GDLIB_CONFIG})
+	GD_VERSION=`${GDLIB_CONFIG} --version 2>/dev/null`
 	if test "$?" != "0" -o -z "${GD_VERSION}"; then
 		GD_VERSION="none"
 	fi
@@ -30,13 +47,13 @@ if test -z "${nut_have_libgd_seen}"; then
 	none)
 		;;
 	2.0.5 | 2.0.6 | 2.0.7)
-		AC_MSG_WARN([[gd ${GD_VERSION} detected, unable to use gdlib-config script]])
+		AC_MSG_WARN([[gd ${GD_VERSION} detected, unable to use ${GDLIB_CONFIG} script]])
 		AC_MSG_WARN([[If gd detection fails, upgrade gd or use --with-gd-includes and --with-gd-libs]])
 		;;
 	*)
-		CFLAGS="`gdlib-config --includes 2>/dev/null`"
-		LDFLAGS="`gdlib-config --ldflags 2>/dev/null`"
-		LIBS="`gdlib-config --libs 2>/dev/null`"
+		CFLAGS="`${GDLIB_CONFIG} --includes 2>/dev/null`"
+		LDFLAGS="`${GDLIB_CONFIG} --ldflags 2>/dev/null`"
+		LIBS="`${GDLIB_CONFIG} --libs 2>/dev/null`"
 		;;
 	esac
 
