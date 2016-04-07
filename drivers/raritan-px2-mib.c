@@ -90,7 +90,7 @@ static snmp_info_t raritan_px2_mib[] = {
 	/* boardFirmwareVersion.1.mainController.1 = STRING: 2.4.3.5-40298 */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.3.1.6.1.1.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	/* pduName.1 = STRING: my PX */
-	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.2.1.13.1", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.2.1.13.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1",
 		"Raritan PX2 SNMP PDU device", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
