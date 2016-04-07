@@ -23,6 +23,13 @@ Note that you need to install the libusb development package or files.
 Build and install the SNMP drivers (default: auto-detect)
 Note that you need to install libsnmp development package or files.
 
+	--with-net-snmp-config
+
+In addition to the `--with-snmp` option above, this one allows to provide
+a custom program name (in `PATH`) or complete pathname to `net-snmp-config`.
+This may be needed on build systems which support multiple architectures,
+or in cases where your distribution names this program differently.
+
 	--with-neon
 
 Build and install the XML drivers (default: auto-detect)
@@ -334,6 +341,13 @@ proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
 NOTE: the --with-gd switches are not necessary if you have gd 2.0.8
 or higher installed properly.  The gdlib-config script will be 
 detected and used by default in that situation.
+
+	--with-gdlib-config
+
+This option allows to provide a custom program name (in `PATH`) or
+a complete pathname to `gdlib-config`. This may be needed on build
+systems which support multiple architectures, or in cases where your
+distribution names this program differently.
 
 	--with-ssl-includes, --with-usb-includes, --with-snmp-includes,
 	--with-neon-includes, --with-libltdl-includes,
