@@ -1053,13 +1053,13 @@ fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
 PKG_PROG_PKG_CONFIG
-systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 [
 	case "${withval}" in
-	yes|auto)
+	yes|auto|"")
+		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
 		;;
 	no)
 		systemdsystemunitdir=""

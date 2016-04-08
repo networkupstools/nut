@@ -300,6 +300,16 @@ override this option.
 
 Use --without-udev-dir to disable this feature altogether. 
 
+	--with-systemdsystemunitdir=PATH
+
+Where to install Linux systemd unit definitions. Useless and harmless
+on other OSes, including Linux distributions without systemd, just adding
+a little noise to configure script output.
+
+Use --with-systemdsystemunitdir to detect the settings using pkg-config.
+
+Use --with-systemdsystemunitdir=no to disable this feature altogether.
+
 
 Directories used by NUT at run-time
 -----------------------------------
