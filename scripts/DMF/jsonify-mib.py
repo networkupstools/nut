@@ -1,6 +1,10 @@
 from __future__ import print_function
+import argparse
+import copy
+import functools
 import json
 import sys
+import subprocess
 import os
 
 from pycparser import c_parser, c_ast, parse_file
@@ -95,8 +99,10 @@ class Visitor(c_ast.NodeVisitor):
             _, oid2info = kids [6]
             if isinstance (oid2info, c_ast.Cast):
                 ditem ["oid2info"] = None
-            if isinstance (oid2info, c_ast.ID):
+            elif isinstance (oid2info, c_ast.ID):
                 ditem ["oid2info"] = oid2info.name
+            elif isinstance (oid2info, c_ast.UnaryOp) and oid2info.op == '&':
+                ditem ["oid2info"] = oid2info.expr.name.name
 
             # 7: int *setvar
             try:
@@ -147,10 +153,108 @@ def s_cpp_path ():
                 os.path.abspath (__file__)),
             "nut_cpp")
 
-## MAIN
+def s_info2c (fout, jsinfo):
+    for key in jsinfo.keys ():
+        print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
+        for key, value in jsinfo [key].items ():
+            print ("    { %d, \"%s\" }," % (key, value), file=fout)
+        print ("    { 0, NULL }\n};\n", file=fout)
 
+def s_snmp2c (fout, js, name):
+    print ("\nstatic snmp_info_t %s_TEST[] = {" % name, file=fout)
+    for info in js[name]:
+        pinfo = copy.copy (info)
+        pinfo ["info_flags"] = functools.reduce (lambda x, y : x|y, pinfo ["info_flags"])
+        pinfo ["flags"] = functools.reduce (lambda x, y : x|y, pinfo ["flags"])
+        for k in ("OID", "oid2info", "dfl", "info_type", "setvar"):
+            if not k in pinfo or pinfo [k] is None:
+                pinfo [k] = "NULL"
+
+        for k in ("dfl", "OID"):
+            if pinfo [k] != "NULL":
+                pinfo [k] = '"' + pinfo [k] + '"'
+        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
+    print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
+    print ("};", file=fout)
+
+def s_json2c (fout, MIB_name, js):
+    print ("""
+#include <stdbool.h>
+#include "main.h"
+#include "snmp-ups.h"
+#include "%s.c"
+
+static inline bool streq (const char* x, const char* y)
+{
+    if (!x && !y)
+        return true;
+    if (!x || !y)
+        return false;
+    return strcmp (x, y) == 0;
+}
+
+""" % MIB_name, file=fout)
+
+    if "INFO" in js:
+        s_info2c (fout, js["INFO"])
+    for key in (k for k in js.keys () if k != "INFO"):
+        s_snmp2c (fout, js, key)
+
+    # generate test function
+    print ("""
+int main () {
+    size_t i = 0;""", file=fout)
+
+    for key in js["INFO"]:
+        print ("""
+    fprintf (stderr, "Test %(k)s: ");
+    for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
+        assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
+        assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
+        assert (!strcmp (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
+    }
+    fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
+
+    for key in (k for k in js.keys () if k != "INFO"):
+        print ("""
+    fprintf (stderr, "Test %(k)s: ");
+    for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
+        if (!streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type)) {
+            fprintf (stderr, "%(k)s[%%d].info_type=%%s\\n", i, %(k)s[i].info_type);
+            fprintf (stderr, "%(k)s_TEST[%%d].info_type=%%s\\n", i, %(k)s_TEST[i].info_type);
+            return 1;
+        }
+        assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
+        assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
+        assert (streq (%(k)s [i].OID, %(k)s_TEST [i].OID));
+        assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
+        assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
+        if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
+            fprintf (stderr, "%(k)s[%%d].oid2info=<%%p>\\n", i, %(k)s[i].oid2info);
+            fprintf (stderr, "%(k)s_TEST[%%d].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
+            return 1;
+        }
+        assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
+    }
+    fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
+
+    print ("""
+    return 0;
+}
+""", file=fout)
+
+def s_mkparser ():
+    p = argparse.ArgumentParser ()
+    p.add_argument ("--test", default=False, action='store_true',
+            help="compile json dump back to C and compare against original static structure")
+    p.add_argument ("source", help="source code of MIB.c")
+    return p
+
+## MAIN
+p = s_mkparser ()
+args = p.parse_args (sys.argv[1:])
 ast = parse_file (
-        sys.argv[1],
+        args.source,
         use_cpp=True,
         cpp_path=s_cpp_path (),
         )
@@ -158,4 +262,19 @@ v = Visitor ()
 for idx, node in ast.children ():
     v.visit (node)
 
+if args.test:
+    test_file = os.path.basename (args.source)
+    MIB_name = os.path.splitext (test_file) [0]
+    test_file = MIB_name + "_TEST.c"
+    with open (test_file, "wt") as fout:
+        s_json2c (fout, MIB_name, v._mappings)
+
+    drivers_dir = os.path.dirname (os.path.abspath (args.source))
+    include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
+    cmd = ["cc", "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", MIB_name, test_file]
+    print (" ".join (cmd), file=sys.stderr)
+    subprocess.check_call (cmd)
+    subprocess.check_call ("./%s" % MIB_name)
+
 json.dump (v._mappings, sys.stdout, indent=4)
+sys.exit (0)
