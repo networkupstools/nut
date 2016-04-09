@@ -120,7 +120,7 @@ class Visitor(c_ast.NodeVisitor):
         return tuple (ret)
 
     def _visit_info_lkp_t (self, node):
-        ret = {}
+        ret = []
         for _, ilist in node.init.children ():
             key_node = ilist.exprs [0]
             if isinstance (key_node, c_ast.UnaryOp):
@@ -132,7 +132,7 @@ class Visitor(c_ast.NodeVisitor):
             if isinstance (ilist.exprs [1], c_ast.Cast):
                 continue
 
-            ret [key] = ilist.exprs [1].value.strip ('"')
+            ret.append ((key, ilist.exprs [1].value.strip ('"')))
         return ret
 
     def visit_Decl (self, node):
@@ -156,7 +156,7 @@ def s_cpp_path ():
 def s_info2c (fout, jsinfo):
     for key in jsinfo.keys ():
         print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
-        for key, value in jsinfo [key].items ():
+        for key, value in jsinfo [key]:
             print ("    { %d, \"%s\" }," % (key, value), file=fout)
         print ("    { 0, NULL }\n};\n", file=fout)
 
