@@ -87,7 +87,10 @@ class Visitor(c_ast.NodeVisitor):
             # 4: const char *dfl
             _, default = kids [4]
             if isinstance (default, c_ast.Constant):
-                ditem ["dfl"] = default.value.strip ('"')
+                if default.type == "string":
+                    ditem ["dfl"] = default.value.strip ('"')
+                elif default.type == "int":
+                    ditem ["dfl"] = int (default.value)
             elif isinstance (default, c_ast.Cast):
                 ditem ["dfl"] = None
 
@@ -171,6 +174,8 @@ def s_snmp2c (fout, js, name):
                 pinfo [k] = "NULL"
 
         for k in ("dfl", "OID"):
+            if isinstance (pinfo [k], int):
+                continue
             if pinfo [k] != "NULL":
                 pinfo [k] = '"' + pinfo [k] + '"'
 
@@ -233,7 +238,11 @@ int main () {
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
         assert (streq (%(k)s [i].OID, %(k)s_TEST [i].OID));
-        assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
+        if (!streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl)) {
+            fprintf (stderr, "%(k)s[%%d].dfl=%%s\\n", i, %(k)s[i].dfl);
+            fprintf (stderr, "%(k)s_TEST[%%d].dfl=%%s\\n", i, %(k)s_TEST[i].dfl);
+            return 1;
+        }
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
             fprintf (stderr, "%(k)s[%%d].oid2info=<%%p>\\n", i, %(k)s[i].oid2info);
