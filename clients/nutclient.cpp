@@ -1270,6 +1270,7 @@ strarr stringset_to_strarr(const std::set<std::string>& strset)
 	for(std::set<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
 	{
 		*pstr = xstrdup(it->c_str());
+		pstr++;
 	}
 	return arr;	
 }
@@ -1281,6 +1282,7 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 	for(std::vector<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
 	{
 		*pstr = xstrdup(it->c_str());
+		pstr++;
 	}
 	return arr;	
 }
