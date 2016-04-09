@@ -173,6 +173,9 @@ def s_snmp2c (fout, js, name):
         for k in ("dfl", "OID"):
             if pinfo [k] != "NULL":
                 pinfo [k] = '"' + pinfo [k] + '"'
+
+        if pinfo ["setvar"] != "NULL":
+            pinfo ["setvar"] = '&' + pinfo ["setvar"]
         print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
     print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
     print ("};", file=fout)
@@ -182,6 +185,10 @@ def s_json2c (fout, MIB_name, js):
 #include <stdbool.h>
 #include "main.h"
 #include "snmp-ups.h"
+
+// for setvar field
+int input_phases, output_phases, bypass_phases;
+
 #include "%s.c"
 
 static inline bool streq (const char* x, const char* y)
@@ -192,7 +199,6 @@ static inline bool streq (const char* x, const char* y)
         return false;
     return strcmp (x, y) == 0;
 }
-
 """ % MIB_name, file=fout)
 
     if "INFO" in js:
