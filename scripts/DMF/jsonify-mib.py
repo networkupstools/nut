@@ -148,6 +148,12 @@ class Visitor(c_ast.NodeVisitor):
         for i, key in enumerate (("mib_name", "mib_version", "oid_pwr_status", "oid_auto_check", None, "sysOID")):
             if key is None:
                 continue
+            try:
+                kids [i]
+            except IndexError:
+                ret [key] = None
+                continue
+
             if isinstance (kids [i], c_ast.Cast):
                 ret [key] = None
             else:
@@ -159,7 +165,7 @@ class Visitor(c_ast.NodeVisitor):
         # 6 alarms_info
         if len (kids) == 6:
             warn ("alarms_info_t is missing for %s" % node.name)
-        else:
+        elif len (kids) == 7:
             ret ["alarms_info"] = kids [6].name
         return ret
 
