@@ -45,6 +45,7 @@ int nutscan_load_upsclient_library(const char *libname_path);
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] */
 char * search_paths[] = {
 	LIBDIR,
+	"/usr"LIBDIR,
 	"/usr/lib64",
 	"/lib64",
 	"/usr/lib",
