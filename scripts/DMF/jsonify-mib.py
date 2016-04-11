@@ -45,7 +45,8 @@ class Visitor(c_ast.NodeVisitor):
         super(Visitor, self).__init__(*args, **kwargs)
         self._mappings = {
             "INFO" : dict (),
-            "MIB2NUT" : dict ()}
+            "MIB2NUT" : dict (),
+            "SNMP-INFO" : dict ()}
 
     def _visit_snmp_info_t (self, node):
         ret = list ()
@@ -175,7 +176,7 @@ class Visitor(c_ast.NodeVisitor):
             isinstance (node.type.type.type, c_ast.IdentifierType):
 
             if node.type.type.type.names == ['snmp_info_t']:
-                self._mappings [node.name] = self._visit_snmp_info_t (node)
+                self._mappings ["SNMP-INFO"][node.name] = self._visit_snmp_info_t (node)
             elif node.type.type.type.names == ['info_lkp_t']:
                 self._mappings ["INFO"][node.type.type.declname] = \
                 self._visit_info_lkp_t (node)
@@ -244,10 +245,9 @@ static inline bool streq (const char* x, const char* y)
 }
 """ % MIB_name, file=fout)
 
-    if "INFO" in js:
-        s_info2c (fout, js["INFO"])
-    for key in (k for k in js.keys () if k != "INFO"):
-        s_snmp2c (fout, js, key)
+    s_info2c (fout, js["INFO"])
+    for key in js ["SNMP-INFO"].keys ():
+        s_snmp2c (fout, js ["SNMP-INFO"], key)
 
     # generate test function
     print ("""
@@ -264,7 +264,7 @@ int main () {
     }
     fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
-    for key in (k for k in js.keys () if k != "INFO"):
+    for key in js ["SNMP-INFO"].keys ():
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
