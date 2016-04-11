@@ -46,7 +46,8 @@ class Visitor(c_ast.NodeVisitor):
         self._mappings = {
             "INFO" : dict (),
             "MIB2NUT" : dict (),
-            "SNMP-INFO" : dict ()}
+            "SNMP-INFO" : dict (),
+            "ALARMS-INFO" : dict ()}
 
     def _visit_snmp_info_t (self, node):
         ret = list ()
@@ -166,9 +167,30 @@ class Visitor(c_ast.NodeVisitor):
         # 6 alarms_info
         if len (kids) == 6:
             warn ("alarms_info_t is missing for %s" % node.name)
+
         elif len (kids) == 7:
             ret ["alarms_info"] = kids [6].name
         return ret
+
+    def _visit_alarms_info_t (self, node):
+        lst = list ()
+        for _, ilist in node.init.children ():
+            kids = [k for _, k in ilist.children ()]
+            ret = dict ()
+            for i, key in enumerate (("OID", "status_value", "alarm_value")):
+                try:
+                    kids [i]
+                except IndexError:
+                    ret [key] = None
+                    continue
+
+                if isinstance (kids [i], c_ast.Cast):
+                    ret [key] = None
+                else:
+                    ret [key] = kids [i].value.strip ('"')
+            lst.append (ret)
+
+        return lst
 
     def visit_Decl (self, node):
         if  isinstance (node.type, c_ast.ArrayDecl) and \
@@ -180,6 +202,9 @@ class Visitor(c_ast.NodeVisitor):
             elif node.type.type.type.names == ['info_lkp_t']:
                 self._mappings ["INFO"][node.type.type.declname] = \
                 self._visit_info_lkp_t (node)
+            elif node.type.type.type.names == ['alarms_info_t']:
+                self._mappings ["ALARMS-INFO"][node.type.type.declname] = \
+                self._visit_alarms_info_t (node)
 
         if  isinstance (node.type, c_ast.TypeDecl) and \
             isinstance (node.type.type, c_ast.IdentifierType) and \
