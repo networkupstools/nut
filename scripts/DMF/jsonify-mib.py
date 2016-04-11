@@ -43,7 +43,9 @@ class Visitor(c_ast.NodeVisitor):
 
     def __init__(self, *args, **kwargs):
         super(Visitor, self).__init__(*args, **kwargs)
-        self._mappings = {"INFO" : dict ()}
+        self._mappings = {
+            "INFO" : dict (),
+            "MIB2NUT" : dict ()}
 
     def _visit_snmp_info_t (self, node):
         ret = list ()
@@ -138,6 +140,27 @@ class Visitor(c_ast.NodeVisitor):
             ret.append ((key, ilist.exprs [1].value.strip ('"')))
         return ret
 
+    def _visit_mib2nit_info_t (self, node):
+        ret = dict ()
+        kids = [c for _, c in node.init.children ()]
+
+        # 0 - 3, 5) mib_name - oid_auto_check, 5 sysOID
+        for i, key in enumerate (("mib_name", "mib_version", "oid_pwr_status", "oid_auto_check", None, "sysOID")):
+            if key is None:
+                continue
+            if isinstance (kids [i], c_ast.Cast):
+                ret [key] = None
+            else:
+                ret [key] = kids [i].value.strip ('"')
+
+        # 4 snmp_info
+        ret ["snmp_info"] = kids [4].name
+
+        # 6 alarms_info
+        if len (kids) == 5:
+            warn ("alarms_info_t is missingfor %s" % node.name)
+        return ret
+
     def visit_Decl (self, node):
         if  isinstance (node.type, c_ast.ArrayDecl) and \
             isinstance (node.type.type, c_ast.TypeDecl) and \
@@ -148,6 +171,13 @@ class Visitor(c_ast.NodeVisitor):
             elif node.type.type.type.names == ['info_lkp_t']:
                 self._mappings ["INFO"][node.type.type.declname] = \
                 self._visit_info_lkp_t (node)
+
+        if  isinstance (node.type, c_ast.TypeDecl) and \
+            isinstance (node.type.type, c_ast.IdentifierType) and \
+            node.type.type.names == ['mib2nut_info_t'] and \
+            node.storage == [] :
+                self._mappings ["MIB2NUT"][node.name] = \
+                self._visit_mib2nit_info_t (node)
 
 def s_cpp_path ():
     return \
