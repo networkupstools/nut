@@ -157,8 +157,10 @@ class Visitor(c_ast.NodeVisitor):
         ret ["snmp_info"] = kids [4].name
 
         # 6 alarms_info
-        if len (kids) == 5:
-            warn ("alarms_info_t is missingfor %s" % node.name)
+        if len (kids) == 6:
+            warn ("alarms_info_t is missing for %s" % node.name)
+        else:
+            ret ["alarms_info"] = kids [6].name
         return ret
 
     def visit_Decl (self, node):
