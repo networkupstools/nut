@@ -167,8 +167,7 @@ class Visitor(c_ast.NodeVisitor):
         # 6 alarms_info
         if len (kids) == 6:
             warn ("alarms_info_t is missing for %s" % node.name)
-
-        elif len (kids) == 7:
+        elif len (kids) > 6:
             ret ["alarms_info"] = kids [6].name
         return ret
 
@@ -249,6 +248,24 @@ def s_snmp2c (fout, js, name):
     print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
     print ("};", file=fout)
 
+def s_mib2nut (fout, js, name):
+    pinfo = copy.copy (js [name])
+    pinfo ["name"] = name
+
+    for key in ("mib_name", "mib_version", "oid_pwr_status", "oid_auto_check", "sysOID"):
+        if pinfo.get (key) is None:
+            pinfo [key] = "NULL"
+        else:
+            pinfo [key] = '"%s"' % pinfo [key]
+
+    for key in ("snmp_info", "alarms_info"):
+        if pinfo.get (key) is None:
+            pinfo [key] = "NULL"
+
+    print ("""
+static mib2nut_info_t %(name)s_TEST = { %(mib_name)s, %(mib_version)s, %(oid_pwr_status)s, %(oid_auto_check)s, %(snmp_info)s, %(sysOID)s, %(alarms_info)s };
+""" % pinfo, file=fout)
+
 def s_json2c (fout, MIB_name, js):
     print ("""
 #include <stdbool.h>
@@ -273,6 +290,8 @@ static inline bool streq (const char* x, const char* y)
     s_info2c (fout, js["INFO"])
     for key in js ["SNMP-INFO"].keys ():
         s_snmp2c (fout, js ["SNMP-INFO"], key)
+    for key in js ["MIB2NUT"].keys ():
+        s_mib2nut (fout, js ["MIB2NUT"], key)
 
     # generate test function
     print ("""
@@ -315,6 +334,18 @@ int main () {
         assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
     }
     fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
+
+    for key in js ["MIB2NUT"].keys ():
+        print ("""
+    fprintf (stderr, "Test %(k)s\\n");
+    assert (streq (%(k)s_TEST.mib_name, %(k)s.mib_name));
+    assert (streq (%(k)s_TEST.mib_version, %(k)s.mib_version));
+    assert (streq (%(k)s_TEST.oid_pwr_status, %(k)s.oid_pwr_status));
+    assert (streq (%(k)s_TEST.oid_auto_check, %(k)s.oid_auto_check));
+    assert (%(k)s_TEST.snmp_info == %(k)s.snmp_info);
+    assert (streq (%(k)s_TEST.sysOID, %(k)s.sysOID));
+    assert (%(k)s_TEST.alarms_info == %(k)s.alarms_info);
+""" % {'k' : key}, file=fout)
 
     print ("""
     return 0;
