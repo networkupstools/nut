@@ -37,7 +37,7 @@
 #include "usbhid-ups.h"
 #include "mge-hid.h"
 
-#define MGE_HID_VERSION		"MGE HID 1.40"
+#define MGE_HID_VERSION		"MGE HID 1.41"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -57,6 +57,9 @@
 
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC 0x06da
+
+/* IBM */
+#define IBM_VENDORID 0x04b3
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -84,6 +87,9 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* PROTECT B / NAS */
 	{ USB_DEVICE(AEG_VENDORID, 0xffff), NULL },
 	{ USB_DEVICE(PHOENIXTEC, 0xffff), NULL },
+
+	/* 6000 VA LCD 4U Rack UPS; 5396-1Kx */
+	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
