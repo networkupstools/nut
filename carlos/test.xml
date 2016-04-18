@@ -1,0 +1,11 @@
+<test>
+    <info name="source">
+      <lookup device="1" nut_value="OL"/>
+      <lookup device="2" nut_value="OB"/>
+      <lookup device="3" nut_value="OL"/>
+    </info>
+    <info name="sensitivity">
+      <lookup device="1" nut_value="High"/>
+      <lookup device="2" nut_value="Low"/>
+    </info>
+</test>
