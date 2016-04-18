@@ -4,6 +4,22 @@
 
 The aim is to develop solution allowing NUT to read the SNMP (right now) MIBs mappings from external file.
 
+## XML spec
+
+There are *4* main structures
+ * info_lkp_t
+ * alarms_info_t
+ * snmp_info_t
+ * mib2nut_info_t
+
+### LOOKUP
+
+<nut>
+    <lookup name="ats_output_status_info">
+        <item oid = "1" info = "OFF" />
+    </lookup>
+</nut>
+
 ## Tools
 
  * jsonify-mib.py - print mib mapping to stdout
@@ -36,3 +52,4 @@ Usage is then
                 "2": "low"
             },
     ...
+
