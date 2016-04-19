@@ -46,6 +46,19 @@ info_lkp_destroy (info_lkp_t **self_p)
     }
 }
 
+/*  Use common API ad info_lkp_t
+// step #1
+index_lkp_new ();
+
+// step #2
+index_lkp_append (index_lkp_t *self, void *item);
+
+// step #3
+index_lkp_destroy (index_lkp_t **self_p);
+
+// step #4
+index_lkp_set_destructor (index_lkp_t *);
+*/
 int index_add(index_lkp_t *index, int pos, const char **attrs){
   
     if(!index)return ERR;
