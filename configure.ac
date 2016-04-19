@@ -398,7 +398,7 @@ if test "${nut_with_ipmi}" != "no"; then
    if test "${nut_with_freeipmi}" = "yes"; then
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
-         AC_MSG_ERROR(["GNU FreeIPMI not found, required for IPMI support"])
+         AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
       fi
       dnl Implies --with-ipmi
       nut_with_ipmi="yes"
@@ -630,10 +630,14 @@ dnl is set to 'no', we may still want to build some doc targets manually
 NUT_CHECK_ASCIIDOC
 
 case "${nut_with_doc}" in
-	yes|all|auto)
+	yes|all)
 		nut_doc_build_list="html-single html-chunked pdf"
 		;;
-	no)
+	auto)
+		nut_doc_build_list="html-single=auto html-chunked=auto pdf=auto"
+		nut_with_doc=auto
+		;;
+	no|"")
 		nut_doc_build_list=""
 		;;
 	*)
@@ -643,36 +647,39 @@ esac
 
 for nut_doc_build_target in ${nut_doc_build_list}; do
 	case "${nut_doc_build_target}" in
-	html-single)
+	html-single*)
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target} (minimum required 8.6.3)])
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} `basename ${nut_doc_build_target} =auto`"
 		], [
+			case "${nut_doc_build_target}" in *=auto) ;; *) AC_MSG_ERROR([Unable to build ${nut_doc_build_target} documentation which you requested]) ;; esac
 			AC_MSG_RESULT(no)
-			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} `basename ${nut_doc_build_target} =auto`"
 		])
 		;;
 
-	html-chunked)
+	html-chunked*)
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target} (minimum required 8.6.3)])
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
 			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} `basename ${nut_doc_build_target} =auto`"
 		], [
+			case "${nut_doc_build_target}" in *=auto) ;; *) AC_MSG_ERROR([Unable to build ${nut_doc_build_target} documentation which you requested]) ;; esac
 			AC_MSG_RESULT(no)
-			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} `basename ${nut_doc_build_target} =auto`"
 		])
 		;;
 
-	pdf)
+	pdf*)
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target} (minimum required 0.2.5)])
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
 			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target}"
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} `basename ${nut_doc_build_target} =auto`"
 		], [
+			case "${nut_doc_build_target}" in *=auto) ;; *) AC_MSG_ERROR([Unable to build ${nut_doc_build_target} documentation which you requested]) ;; esac
 			AC_MSG_RESULT(no)
-			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} ${nut_doc_build_target}"
+			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} `basename ${nut_doc_build_target} =auto`"
 		])
 		;;
 	esac

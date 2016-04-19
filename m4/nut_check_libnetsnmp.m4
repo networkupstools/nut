@@ -13,9 +13,26 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
+	dnl By default seek in PATH
+	NET_SNMP_CONFIG=net-snmp-config
+	AC_ARG_WITH(net-snmp-config,
+		AS_HELP_STRING([@<:@--with-net-snmp-config=/path/to/net-snmp-config@:>@],
+			[path to program that reports Net-SNMP configuration]),
+	[
+		case "${withval}" in
+		"") ;;
+		yes|no)
+			AC_MSG_ERROR(invalid option --with(out)-net-snmp-config - see docs/configure.txt)
+			;;
+		*)
+			NET_SNMP_CONFIG="${withval}"
+			;;
+		esac
+	])
+
 	dnl See which version of the Net-SNMP library (if any) is installed
-	AC_MSG_CHECKING(for Net-SNMP version via net-snmp-config)
-	SNMP_VERSION=`net-snmp-config --version 2>/dev/null`
+	AC_MSG_CHECKING(for Net-SNMP version via ${NET_SNMP_CONFIG})
+	SNMP_VERSION=`${NET_SNMP_CONFIG} --version 2>/dev/null`
 	if test "$?" != "0" -o -z "${SNMP_VERSION}"; then
 		SNMP_VERSION="none"
 	fi
@@ -33,7 +50,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`net-snmp-config --base-cflags 2>/dev/null`"])
+	], [CFLAGS="`${NET_SNMP_CONFIG} --base-cflags 2>/dev/null`"])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for Net-SNMP libs)
@@ -48,7 +65,7 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 			LIBS="${withval}"
 			;;
 		esac
-	], [LIBS="`net-snmp-config --libs 2>/dev/null`"])
+	], [LIBS="`${NET_SNMP_CONFIG} --libs 2>/dev/null`"])
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl Check if the Net-SNMP library is usable
