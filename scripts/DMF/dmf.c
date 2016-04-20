@@ -1,7 +1,10 @@
 //TODO: not in final
 #include <malamute.h>
 
-
+/*
+ *      HEADER FILE
+ *
+ */
 typedef struct {
 	int oid_value;			/* OID value */
 	const char *info_value;	/* INFO_* value */
@@ -11,8 +14,7 @@ typedef struct {
 	void **values;
 	int size;
 	int capacity;
-	char *name;
-} index_lkp_t;
+} alist_t;
 
 typedef enum {
     ERR = -1,
@@ -20,6 +22,23 @@ typedef enum {
 } state_t;
 
 // Create and initialize info_lkp_t
+info_lkp_t *
+    info_lkp_new (int oid, const char *value);
+
+// Destroy and NULLify the reference to info_lkp_t
+void
+    info_lkp_destroy (void **self_p);
+
+// Create new instance of alist
+alist_t *
+    alist_new ();
+
+/*
+ *
+ *  C FILE
+ *
+ */
+
 info_lkp_t *
 info_lkp_new (int oid, const char *value)
 {
@@ -30,22 +49,7 @@ info_lkp_new (int oid, const char *value)
     self->info_value = strdup (value);
     return self;
 }
-void index_lkp_append(index_lkp_t *self,void *element){
-/*  if(self->values==NULL){
-    self->values=(void**)malloc(sizeof(void*));
-    assert(self->values);
-    self->values[self->size]=NULL;
-  }else{
-    self->values=realloc(self->values,self->size*sizeof());
-  }*/
-/*TODO Check when allocatd memory get full for reallocate more*/
-  if(self->size<self->capacity){
-  self->values[self->size]=element;
-  self->size++;
-  }
-}
 
-// Destroy and NULLify the reference to info_lkp_t
 void
 info_lkp_destroy (void **self_p)
 {
@@ -61,53 +65,72 @@ info_lkp_destroy (void **self_p)
     }
 }
 
-void index_lkp_delete_allvalues(index_lkp_t *self){
-  do{
-    info_lkp_destroy((void**)&self->values[self->size]);
-    self->size--;
-  }while(self->size>0);
-  free(self->values);
+alist_t *alist_new ()
+{
+  alist_t *self = (alist_t*) malloc (sizeof (alist_t));
+  assert (self);
+  memset (self, 0, sizeof(alist_t));
+  self->size = 0;
+  self->capacity = 16;
+  self->values = (void**) malloc (self->capacity * sizeof (void*));
+  assert (self->values);
+  memset (self->values, 0, self->capacity);
+  return self;
 }
 
-/*  Use common API ad info_lkp_t*/
-// step #1
-index_lkp_t *index_lkp_new (const char *name){
-  index_lkp_t *index=(index_lkp_t*)malloc(sizeof(index_lkp_t));
-  assert(index);
-  memset(index, 0, sizeof(index_lkp_t));
-  index->name=strdup(name);
-  index->size=0;
-  index->values=(void**)malloc(16*sizeof(void*));
-  assert(index->values);
-  index->capacity=16;
-  index->values[index->size]=NULL;
-  return index;
+void
+alist_destroy (alist_t **self_p)
+{
+    if (*self_p)
+    {
+        alist_t *self = *self_p;
+        for (int i = 0; i != self->size; i++)
+            info_lkp_destroy ((void**)& self->values [self->size]);
+        free (self->values);
+        free (self);
+        *self_p = NULL;
+    }
 }
+
+
+void alist_append(alist_t *self,void *element){
+/*  if(self->values==NULL){
+    self->values=(void**)malloc(sizeof(void*));
+    assert(self->values);
+    self->values[self->size]=NULL;
+  }else{
+    self->values=realloc(self->values,self->size*sizeof());
+  }*/
+/*TODO Check when allocatd memory get full for reallocate more*/
+  if(self->size<self->capacity){
+  self->values[self->size]=element;
+  self->size++;
+  }
+}
+
 
 // step #2
-//index_lkp_append (index_lkp_t *self, void *item);
+//alist_append (alist_t *self, void *item);
 
 // step #3
-//index_lkp_destroy (index_lkp_t **self_p);
+//alist_destroy (alist_t **self_p);
 
 // step #4
-//index_lkp_set_destructor (index_lkp_t *);
+//alist_set_destructor (alist_t *);
 
 
 int main ()
 {
     //info_lkp_t * lkp = info_lkp_new (1, "one");
+    /* TODO: must be rewritten for the new prototypes
     const char *attrs[]={"Sensitivity","1","","OK",""};
-    index_lkp_t *index=index_lkp_new(attrs[0]);
+    alist_t *index=alist_new(attrs[0]);
     info_lkp_t *element=info_lkp_new(atoi(attrs[1]),attrs[3]);
-    index_lkp_append(index,element);
-    
-    index_lkp_delete_allvalues(index);
+    alist_append(index,element);
+    alist_delete_allvalues(index);
     //index_add(index,0,attrs);
     //index_del(index,0);
-    free(index->name);
-    
     free(index);
-    
+    */
 
 }
