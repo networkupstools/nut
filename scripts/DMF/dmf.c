@@ -114,10 +114,16 @@ int xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
 {
-  printf("Node --%s\n",name);
+  alist_t *list = (alist_t*) userdata;
+  printf("Node --%s\n", name);
   if(!userdata)return ERR;
-  if(strcmp(name,"lookup")==0){
+  if(strcmp(name,"lookup") == 0)
+  {
     printf("    Its matched\n");
+  }
+  if(strcmp(name,"info") == 0)
+  {
+    alist_append(list, info_lkp_new(atoi(attrs[1]), attrs[3]));
   }
   return 1;
 }
@@ -125,7 +131,8 @@ int xml_dict_start_cb(void *userdata, int parent,
 int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
   if(!userdata)return ERR;
-  if(strcmp(name,"lookup")==0){
+  if(strcmp(name,"lookup") == 0)
+  {
     printf("Its matched\n");
   }
   return OK;
@@ -170,16 +177,17 @@ int main ()
     ne_xml_destroy (parser);
     
     
-    int i;
-    for(i = 0; i<3; i++)//Exeded initial size for force realloc
+    //int i;
+    //for(i = 0; i<3; i++)//Exeded initial size for force realloc
       /*Apparently this should be the right form because already exist in memory,
        * but as a constant type witch is no using malloc, is crashing in the destroy method
        * in the free() stament
       alist_append(list,&bestpower_power_status[i]);
        * lets allocate and copy with the info_lkp_new()*/
-      {
-	printf("muestra: %d ----> %s\n",bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value);
-	alist_append(list,info_lkp_new(bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value));
-      }
+      //{
+	//printf("muestra: %d ----> %s\n",bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value);
+	//alist_append(list,info_lkp_new(bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value));
+      //}
+      printf("Now checking what is in memory and destroying\n");
     alist_destroy(&list);
 }
