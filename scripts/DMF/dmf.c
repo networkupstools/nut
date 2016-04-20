@@ -74,7 +74,7 @@ alist_t *alist_new ()
   self->capacity = 16;
   self->values = (void**) malloc (self->capacity * sizeof (void*));
   assert (self->values);
-  self->values [self->size] = NULL;
+  memset (self->values, 0, self->capacity);
   return self;
 }
 
