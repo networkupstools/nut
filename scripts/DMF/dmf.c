@@ -78,6 +78,20 @@ alist_t *alist_new ()
   return self;
 }
 
+void
+alist_destroy (alist_t **self_p)
+{
+    if (*self_p)
+    {
+        alist_t *self = *self_p;
+        for (int i = 0; i != self->size; i++)
+            info_lkp_destroy ((void**)& self->values [self->size]);
+        free (self->values);
+        free (self);
+        *self_p = NULL;
+    }
+}
+
 
 void alist_append(alist_t *self,void *element){
 /*  if(self->values==NULL){
@@ -94,13 +108,6 @@ void alist_append(alist_t *self,void *element){
   }
 }
 
-void alist_delete_allvalues(alist_t *self){
-  do{
-    info_lkp_destroy((void**)&self->values[self->size]);
-    self->size--;
-  }while(self->size>0);
-  free(self->values);
-}
 
 // step #2
 //alist_append (alist_t *self, void *item);
@@ -115,16 +122,15 @@ void alist_delete_allvalues(alist_t *self){
 int main ()
 {
     //info_lkp_t * lkp = info_lkp_new (1, "one");
+    /* TODO: must be rewritten for the new prototypes
     const char *attrs[]={"Sensitivity","1","","OK",""};
     alist_t *index=alist_new(attrs[0]);
     info_lkp_t *element=info_lkp_new(atoi(attrs[1]),attrs[3]);
     alist_append(index,element);
-    
     alist_delete_allvalues(index);
     //index_add(index,0,attrs);
     //index_del(index,0);
-    
     free(index);
-    
+    */
 
 }
