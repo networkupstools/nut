@@ -43,7 +43,8 @@ info_lkp_new (int oid, const char *value)
     assert (self);
     memset (self, 0, sizeof (info_lkp_t));
     self->oid_value = oid;
-    self->info_value = strdup (value);
+    if(value)
+      self->info_value = strdup (value);
     return self;
 }
 
@@ -121,7 +122,7 @@ int main ()
     
     int i;
     alist_t * list = alist_new();
-    for(i = 0; i<2; i++)//Exeded initial size for force realloc
+    for(i = 0; i<3; i++)//Exeded initial size for force realloc
       /*Apparently this should be the right form because already exist in memory,
        * but as a constant type witch is no using malloc, is crashing in the destroy method
        * in the free() stament
