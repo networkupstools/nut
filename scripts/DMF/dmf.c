@@ -14,7 +14,6 @@ typedef struct {
 	void **values;
 	int size;
 	int capacity;
-	char *name;
 } alist_t;
 
 typedef enum {
@@ -29,6 +28,7 @@ info_lkp_t *
 // Destroy and NULLify the reference to info_lkp_t
 void
     info_lkp_destroy (void **self_p);
+
 
 /*
  *
@@ -87,11 +87,10 @@ void alist_delete_allvalues(alist_t *self){
 
 /*  Use common API ad info_lkp_t*/
 // step #1
-alist_t *alist_new (const char *name){
+alist_t *alist_new (){
   alist_t *index=(alist_t*)malloc(sizeof(alist_t));
   assert(index);
   memset(index, 0, sizeof(alist_t));
-  index->name=strdup(name);
   index->size=0;
   index->values=(void**)malloc(16*sizeof(void*));
   assert(index->values);
@@ -121,7 +120,6 @@ int main ()
     alist_delete_allvalues(index);
     //index_add(index,0,attrs);
     //index_del(index,0);
-    free(index->name);
     
     free(index);
     
