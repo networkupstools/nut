@@ -114,8 +114,8 @@ int main ()
     assert (!info);
     info_lkp_destroy (&info);
     assert (!info);
-
     // alist new/destroy test case
+    
     int i;
     alist_t * list = alist_new();
     for(i = 0; i<30; i++)//Exeded initial size for force realloc
