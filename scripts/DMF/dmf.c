@@ -87,12 +87,14 @@ alist_destroy (alist_t **self_p)
 	printf("N elements %d \n",self->size);
 	
         for (;self->size>0; self->size--){
-	  
+	  //This printf is only for show test result
+	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
 	}
         free (self->values);
         free (self);
 	*self_p = NULL;
+        *self_p = NULL;
     }
 }
 
@@ -118,8 +120,8 @@ int main ()
     assert (!info);
     info_lkp_destroy (&info);
     assert (!info);
+
     // alist new/destroy test case
-    
     int i;
     alist_t * list = alist_new();
     for(i = 0; i<3; i++)//Exeded initial size for force realloc
