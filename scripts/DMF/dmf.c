@@ -29,7 +29,7 @@ info_lkp_t *
 
 // Destroy and NULLify the reference to info_lkp_t
 void
-    info_lkp_destroy (void **self_p);
+    info_lkp_destroy (info_lkp_t **self_p);
 
 // Create new instance of alist
 alist_t *
@@ -53,7 +53,7 @@ info_lkp_new (int oid, const char *value)
 }
 
 void
-info_lkp_destroy (void **self_p)
+info_lkp_destroy (info_lkp_t **self_p)
 {
     if (*self_p) {
         info_lkp_t *self =(info_lkp_t*) *self_p;
@@ -63,6 +63,7 @@ info_lkp_destroy (void **self_p)
             self->info_value = NULL;
         }
         free (self);
+        *self_p = NULL;
     }
 }
 
@@ -89,10 +90,11 @@ alist_destroy (alist_t **self_p)
         for (;self->size>0; self->size--){
 	  //This printf is only for show test result
 	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
-            info_lkp_destroy ((void**)& self->values [self->size-1]);
+            info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
 	}
         free (self->values);
         free (self);
+        *self_p = NULL;
     }
 }
 
@@ -109,6 +111,16 @@ void alist_append(alist_t *self,void *element)
 
 int main ()
 {
+    // info_lkp_t new/destroy test case
+    info_lkp_t *info = info_lkp_new (1, "one");
+    assert (info);
+    assert (info->oid_value == 1);
+    info_lkp_destroy (&info);
+    assert (!info);
+    info_lkp_destroy (&info);
+    assert (!info);
+
+    // alist new/destroy test case
     int i;
     alist_t * list = alist_new();
     for(i = 0; i<30; i++)//Exeded initial size for force realloc
