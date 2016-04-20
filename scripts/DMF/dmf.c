@@ -1,5 +1,6 @@
 //TODO: not in final
 #include <malamute.h>
+#include <neon/ne_xml.h>
 #include "bestpower-mib.c"
 /*
  *      HEADER FILE
@@ -60,11 +61,7 @@ info_lkp_destroy (info_lkp_t **self_p)
             self->info_value = NULL;
         }
         free (self);
-<<<<<<< HEAD
 	*self_p = NULL;
-=======
-        *self_p = NULL;
->>>>>>> eaton/DMF
     }
 }
 
@@ -91,21 +88,12 @@ alist_destroy (alist_t **self_p)
 	printf("N elements %d \n",self->size);
 	
         for (;self->size>0; self->size--){
-<<<<<<< HEAD
 	  
-=======
-	  //This printf is only for show test result
-	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
->>>>>>> eaton/DMF
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
 	}
         free (self->values);
         free (self);
-<<<<<<< HEAD
 	*self_p = NULL;
-=======
-        *self_p = NULL;
->>>>>>> eaton/DMF
     }
 }
 
@@ -121,25 +109,57 @@ void alist_append(alist_t *self,void *element)
     self->size++;
 }
 
+int xml_dict_start_cb(void *userdata, int parent,
+                      const char *nspace, const char *name,
+                      const char **attrs)
+{
+  printf("Node --%s\n",name);
+  if(!userdata)return ERR;
+  if(strcmp(name,"lookup")==0){
+    printf("    Its matched\n");
+  }
+  return 1;
+}
+
+int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
+{
+  if(!userdata)return ERR;
+  if(strcmp(name,"lookup")==0){
+    printf("Its matched\n");
+  }
+  return OK;
+  
+}
+
 int main ()
 {
-    // info_lkp_t new/destroy test case
-    info_lkp_t *info = info_lkp_new (1, "one");
-    assert (info);
-    assert (info->oid_value == 1);
-    info_lkp_destroy (&info);
-    assert (!info);
-    info_lkp_destroy (&info);
-    assert (!info);
-<<<<<<< HEAD
-    // alist new/destroy test case
-    
-=======
-
-    // alist new/destroy test case
->>>>>>> eaton/DMF
-    int i;
     alist_t * list = alist_new();
+    char buffer[1024];
+    int result = 0;ne_xml_parser *parser = ne_xml_create ();
+    ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
+    FILE *f = fopen ("test.xml", "r");
+    if (f) {
+        while (!feof (f)) {
+            size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
+            if (len == 0) {
+                result = 1;
+                break;
+            } else {
+                if ((result = ne_xml_parse (parser, buffer, len))) {
+                    break;
+                }
+            }
+        }
+        if (!result) ne_xml_parse (parser, buffer, 0);
+	/*printf("aqui %s", buffer);*/
+        fclose (f);
+    } else {
+        result = 1;
+    }
+    ne_xml_destroy (parser);
+    
+    
+    int i;
     for(i = 0; i<3; i++)//Exeded initial size for force realloc
       /*Apparently this should be the right form because already exist in memory,
        * but as a constant type witch is no using malloc, is crashing in the destroy method
