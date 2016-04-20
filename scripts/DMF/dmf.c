@@ -29,6 +29,9 @@ info_lkp_t *
 void
     info_lkp_destroy (void **self_p);
 
+// Create new instance of alist
+alist_t *
+    alist_new ();
 
 /*
  *
@@ -62,6 +65,20 @@ info_lkp_destroy (void **self_p)
     }
 }
 
+alist_t *alist_new ()
+{
+  alist_t *self = (alist_t*) malloc (sizeof (alist_t));
+  assert (self);
+  memset (self, 0, sizeof(alist_t));
+  self->size = 0;
+  self->capacity = 16;
+  self->values = (void**) malloc (self->capacity * sizeof (void*));
+  assert (self->values);
+  self->values [self->size] = NULL;
+  return self;
+}
+
+
 void alist_append(alist_t *self,void *element){
 /*  if(self->values==NULL){
     self->values=(void**)malloc(sizeof(void*));
@@ -83,20 +100,6 @@ void alist_delete_allvalues(alist_t *self){
     self->size--;
   }while(self->size>0);
   free(self->values);
-}
-
-/*  Use common API ad info_lkp_t*/
-// step #1
-alist_t *alist_new (){
-  alist_t *index=(alist_t*)malloc(sizeof(alist_t));
-  assert(index);
-  memset(index, 0, sizeof(alist_t));
-  index->size=0;
-  index->values=(void**)malloc(16*sizeof(void*));
-  assert(index->values);
-  index->capacity=16;
-  index->values[index->size]=NULL;
-  return index;
 }
 
 // step #2
