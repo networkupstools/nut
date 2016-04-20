@@ -5,6 +5,8 @@
  *      HEADER FILE
  *
  */
+#define DEFAULT_CAPACITY 16
+
 typedef struct {
 	int oid_value;			/* OID value */
 	const char *info_value;	/* INFO_* value */
@@ -61,7 +63,7 @@ info_lkp_destroy (void **self_p)
             self->info_value = NULL;
         }
         free (self);
-        *self_p = NULL;
+        
     }
 }
 
@@ -71,7 +73,7 @@ alist_t *alist_new ()
   assert (self);
   memset (self, 0, sizeof(alist_t));
   self->size = 0;
-  self->capacity = 16;
+  self->capacity = DEFAULT_CAPACITY;
   self->values = (void**) malloc (self->capacity * sizeof (void*));
   assert (self->values);
   memset (self->values, 0, self->capacity);
@@ -88,49 +90,25 @@ alist_destroy (alist_t **self_p)
             info_lkp_destroy ((void**)& self->values [self->size]);
         free (self->values);
         free (self);
-        *self_p = NULL;
     }
 }
 
 
-void alist_append(alist_t *self,void *element){
-/*  if(self->values==NULL){
-    self->values=(void**)malloc(sizeof(void*));
-    assert(self->values);
-    self->values[self->size]=NULL;
-  }else{
-    self->values=realloc(self->values,self->size*sizeof());
-  }*/
+void alist_append(alist_t *self,void *element)
+{
 /*TODO Check when allocatd memory get full for reallocate more*/
   if(self->size<self->capacity){
-  self->values[self->size]=element;
-  self->size++;
+    self->values[self->size] = element;
+    self->size++;
   }
 }
 
-
-// step #2
-//alist_append (alist_t *self, void *item);
-
-// step #3
-//alist_destroy (alist_t **self_p);
-
-// step #4
-//alist_set_destructor (alist_t *);
-
-
 int main ()
 {
-    //info_lkp_t * lkp = info_lkp_new (1, "one");
-    /* TODO: must be rewritten for the new prototypes
-    const char *attrs[]={"Sensitivity","1","","OK",""};
-    alist_t *index=alist_new(attrs[0]);
-    info_lkp_t *element=info_lkp_new(atoi(attrs[1]),attrs[3]);
-    alist_append(index,element);
-    alist_delete_allvalues(index);
-    //index_add(index,0,attrs);
-    //index_del(index,0);
-    free(index);
-    */
-
+    info_lkp_t * lkp = info_lkp_new (1, "one");
+    alist_t * list = alist_new();
+    alist_append(list,lkp);
+    alist_destroy(&list);
+    info_lkp_destroy((void**)&lkp);
+    
 }
