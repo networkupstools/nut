@@ -51,9 +51,10 @@ void
 info_lkp_destroy (info_lkp_t **self_p)
 {
     if (*self_p) {
-        info_lkp_t *self =(info_lkp_t*) *self_p;
-
-        if (self->info_value) {
+        info_lkp_t *self = (info_lkp_t*) *self_p;
+	printf("Destroying: %d ---> %s\n",self->oid_value, self->info_value);
+        if (self->info_value)
+	{
             free ((char*)self->info_value);
             self->info_value = NULL;
         }
@@ -81,10 +82,11 @@ alist_destroy (alist_t **self_p)
     if (*self_p)
     {
         alist_t *self = *self_p;
+	
 	printf("N elements %d \n",self->size);
+	
         for (;self->size>0; self->size--){
-	  //This printf is only for show test result
-	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
+	  
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
 	}
         free (self->values);
@@ -96,7 +98,8 @@ alist_destroy (alist_t **self_p)
 
 void alist_append(alist_t *self,void *element)
 {
-  if(self->size==self->capacity){
+  if(self->size==self->capacity)
+  {
     self->capacity+=DEFAULT_CAPACITY;
     self->values = (void**) realloc(self->values, self->capacity * sizeof(void*));
   }
@@ -118,7 +121,15 @@ int main ()
     
     int i;
     alist_t * list = alist_new();
-    for(i = 0; i<30; i++)//Exeded initial size for force realloc
-      alist_append(list,info_lkp_new (1, "one"));
+    for(i = 0; i<2; i++)//Exeded initial size for force realloc
+      /*Apparently this should be the right form because already exist in memory,
+       * but as a constant type witch is no using malloc, is crashing in the destroy method
+       * in the free() stament
+      alist_append(list,&bestpower_power_status[i]);
+       * lets allocate and copy with the info_lkp_new()*/
+      {
+	printf("muestra: %d ----> %s\n",bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value);
+	alist_append(list,info_lkp_new(bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value));
+      }
     alist_destroy(&list);
 }
