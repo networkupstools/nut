@@ -1,16 +1,12 @@
 //TODO: not in final
 #include <malamute.h>
-
+#include <neon/ne_xml.h>
+#include "bestpower-mib.c"
 /*
  *      HEADER FILE
  *
  */
 #define DEFAULT_CAPACITY 16
-
-typedef struct {
-	int oid_value;			/* OID value */
-	const char *info_value;	/* INFO_* value */
-} info_lkp_t;
 
 typedef struct {
 	void **values;
@@ -48,7 +44,8 @@ info_lkp_new (int oid, const char *value)
     assert (self);
     memset (self, 0, sizeof (info_lkp_t));
     self->oid_value = oid;
-    self->info_value = strdup (value);
+    if(value)
+      self->info_value = strdup (value);
     return self;
 }
 
@@ -56,14 +53,15 @@ void
 info_lkp_destroy (info_lkp_t **self_p)
 {
     if (*self_p) {
-        info_lkp_t *self =(info_lkp_t*) *self_p;
-
-        if (self->info_value) {
+        info_lkp_t *self = (info_lkp_t*) *self_p;
+	printf("Destroying: %d ---> %s\n",self->oid_value, self->info_value);
+        if (self->info_value)
+	{
             free ((char*)self->info_value);
             self->info_value = NULL;
         }
         free (self);
-        *self_p = NULL;
+	*self_p = NULL;
     }
 }
 
@@ -86,22 +84,24 @@ alist_destroy (alist_t **self_p)
     if (*self_p)
     {
         alist_t *self = *self_p;
+	
 	printf("N elements %d \n",self->size);
+	
         for (;self->size>0; self->size--){
-	  //This printf is only for show test result
-	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
+	  
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
 	}
         free (self->values);
         free (self);
-        *self_p = NULL;
+	*self_p = NULL;
     }
 }
 
 
 void alist_append(alist_t *self,void *element)
 {
-  if(self->size==self->capacity){
+  if(self->size==self->capacity)
+  {
     self->capacity+=DEFAULT_CAPACITY;
     self->values = (void**) realloc(self->values, self->capacity * sizeof(void*));
   }
@@ -109,21 +109,74 @@ void alist_append(alist_t *self,void *element)
     self->size++;
 }
 
+int xml_dict_start_cb(void *userdata, int parent,
+                      const char *nspace, const char *name,
+                      const char **attrs)
+{
+  alist_t *list = (alist_t*) userdata;
+  printf("Node --%s\n", name);
+  if(!userdata)return ERR;
+  if(strcmp(name,"lookup") == 0)
+  {
+    printf("    Its matched\n");
+  }
+  if(strcmp(name,"info") == 0)
+  {
+    alist_append(list, info_lkp_new(atoi(attrs[1]), attrs[3]));
+  }
+  return 1;
+}
+
+int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
+{
+  if(!userdata)return ERR;
+  if(strcmp(name,"lookup") == 0)
+  {
+    printf("Its matched\n");
+  }
+  return OK;
+  
+}
+
 int main ()
 {
-    // info_lkp_t new/destroy test case
-    info_lkp_t *info = info_lkp_new (1, "one");
-    assert (info);
-    assert (info->oid_value == 1);
-    info_lkp_destroy (&info);
-    assert (!info);
-    info_lkp_destroy (&info);
-    assert (!info);
-
-    // alist new/destroy test case
-    int i;
     alist_t * list = alist_new();
-    for(i = 0; i<30; i++)//Exeded initial size for force realloc
-      alist_append(list,info_lkp_new (1, "one"));
+    char buffer[1024];
+    int result = 0;ne_xml_parser *parser = ne_xml_create ();
+    ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
+    FILE *f = fopen ("test.xml", "r");
+    if (f) {
+        while (!feof (f)) {
+            size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
+            if (len == 0) {
+                result = 1;
+                break;
+            } else {
+                if ((result = ne_xml_parse (parser, buffer, len))) {
+                    break;
+                }
+            }
+        }
+        if (!result) ne_xml_parse (parser, buffer, 0);
+	/*printf("aqui %s", buffer);*/
+        fclose (f);
+    } else {
+        result = 1;
+    }
+    ne_xml_destroy (parser);
+    
+    
+    //int i;
+    //for(i = 0; i<3; i++)//Exeded initial size for force realloc
+      /*Apparently this should be the right form because already exist in memory,
+       * but as a constant type witch is no using malloc, is crashing in the destroy method
+       * in the free() stament
+      alist_append(list,&bestpower_power_status[i]);
+       * lets allocate and copy with the info_lkp_new()*/
+      //{
+	//printf("muestra: %d ----> %s\n",bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value);
+	//alist_append(list,info_lkp_new(bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value));
+      //}
+      printf("Now checking what is in memory and destroying\n");
     alist_destroy(&list);
 }

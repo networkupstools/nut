@@ -1,5 +1,5 @@
 #!/bin/sh
 
 set -x
-gcc -ggdb -std=c11 -Werror -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -O -fstack-protector dmf.c && \
+gcc -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -O -fstack-protector -lneon -I../../include -I../../drivers dmf.c && \
 valgrind --leak-check=full ./a.out
