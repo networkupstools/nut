@@ -1,5 +1,6 @@
 //TODO: not in final
 #include <malamute.h>
+#include <neon/ne_xml.h>
 #include "bestpower-mib.c"
 /*
  *      HEADER FILE
@@ -94,7 +95,6 @@ alist_destroy (alist_t **self_p)
         free (self->values);
         free (self);
 	*self_p = NULL;
-        *self_p = NULL;
     }
 }
 
@@ -110,6 +110,28 @@ void alist_append(alist_t *self,void *element)
     self->size++;
 }
 
+int xml_dict_start_cb(void *userdata, int parent,
+                      const char *nspace, const char *name,
+                      const char **attrs)
+{
+  printf("Node --%s\n",name);
+  if(!userdata)return ERR;
+  if(strcmp(name,"lookup")==0){
+    printf("    Its matched\n");
+  }
+  return 1;
+}
+
+int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
+{
+  if(!userdata)return ERR;
+  if(strcmp(name,"lookup")==0){
+    printf("Its matched\n");
+  }
+  return OK;
+  
+}
+
 int main ()
 {
     // info_lkp_t new/destroy test case
@@ -122,8 +144,33 @@ int main ()
     assert (!info);
 
     // alist new/destroy test case
-    int i;
     alist_t * list = alist_new();
+    char buffer[1024];
+    int result = 0;ne_xml_parser *parser = ne_xml_create ();
+    ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
+    FILE *f = fopen ("test.xml", "r");
+    if (f) {
+        while (!feof (f)) {
+            size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
+            if (len == 0) {
+                result = 1;
+                break;
+            } else {
+                if ((result = ne_xml_parse (parser, buffer, len))) {
+                    break;
+                }
+            }
+        }
+        if (!result) ne_xml_parse (parser, buffer, 0);
+	/*printf("aqui %s", buffer);*/
+        fclose (f);
+    } else {
+        result = 1;
+    }
+    ne_xml_destroy (parser);
+    
+    
+    int i;
     for(i = 0; i<3; i++)//Exeded initial size for force realloc
       /*Apparently this should be the right form because already exist in memory,
        * but as a constant type witch is no using malloc, is crashing in the destroy method
