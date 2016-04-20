@@ -63,7 +63,6 @@ info_lkp_destroy (void **self_p)
             self->info_value = NULL;
         }
         free (self);
-        
     }
 }
 
@@ -86,8 +85,12 @@ alist_destroy (alist_t **self_p)
     if (*self_p)
     {
         alist_t *self = *self_p;
-        for (int i = 0; i != self->size; i++)
-            info_lkp_destroy ((void**)& self->values [self->size]);
+	printf("N elements %d \n",self->size);
+        for (;self->size>0; self->size--){
+	  //This printf is only for show test result
+	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
+            info_lkp_destroy ((void**)& self->values [self->size-1]);
+	}
         free (self->values);
         free (self);
     }
@@ -96,19 +99,19 @@ alist_destroy (alist_t **self_p)
 
 void alist_append(alist_t *self,void *element)
 {
-/*TODO Check when allocatd memory get full for reallocate more*/
-  if(self->size<self->capacity){
+  if(self->size==self->capacity){
+    self->capacity+=DEFAULT_CAPACITY;
+    self->values = (void**) realloc(self->values, self->capacity * sizeof(void*));
+  }
     self->values[self->size] = element;
     self->size++;
-  }
 }
 
 int main ()
 {
-    info_lkp_t * lkp = info_lkp_new (1, "one");
+    int i;
     alist_t * list = alist_new();
-    alist_append(list,lkp);
+    for(i = 0; i<30; i++)//Exeded initial size for force realloc
+      alist_append(list,info_lkp_new (1, "one"));
     alist_destroy(&list);
-    info_lkp_destroy((void**)&lkp);
-    
 }
