@@ -7,11 +7,17 @@
  *
  */
 #define DEFAULT_CAPACITY 16
+typedef enum {
+    LOOKUP_LIST = 1,
+    INFO_LIST
+} type_t;
 
 typedef struct {
 	void **values;
 	int size;
 	int capacity;
+	char *name;
+	type_t type;
 } alist_t;
 
 typedef enum {
@@ -23,11 +29,11 @@ typedef enum {
 info_lkp_t *
     info_lkp_new (int oid, const char *value);
 
-// Destroy and NULLify the reference to info_lkp_t
+// Destroy and NULLify the reference to alist_t, list of collections
 void
     info_lkp_destroy (info_lkp_t **self_p);
 
-// Create new instance of alist
+// Create new instance of alist with LOOKUP type, for storage a list of collections
 alist_t *
     alist_new ();
 
@@ -65,16 +71,22 @@ info_lkp_destroy (info_lkp_t **self_p)
     }
 }
 
-alist_t *alist_new ()
+
+alist_t *alist_new (type_t type, const char *name)
 {
   alist_t *self = (alist_t*) malloc (sizeof (alist_t));
   assert (self);
   memset (self, 0, sizeof(alist_t));
   self->size = 0;
+  self->type = type;
   self->capacity = DEFAULT_CAPACITY;
   self->values = (void**) malloc (self->capacity * sizeof (void*));
   assert (self->values);
   memset (self->values, 0, self->capacity);
+  if(name)
+    self->name = strdup(name);
+  else 
+    self->name = NULL;
   return self;
 }
 
@@ -86,18 +98,23 @@ alist_destroy (alist_t **self_p)
         alist_t *self = *self_p;
 	
 	printf("N elements %d \n",self->size);
+	if(self->name)printf("** Name collection: %s \n",self->name);
 	
         for (;self->size>0; self->size--){
-	  
+	  if(self->type == INFO_LIST)
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
+	  else 
+	    alist_destroy ((alist_t**)& self->values [self->size-1]);
 	}
+	if(self->name)
+	  free(self->name);
         free (self->values);
         free (self);
 	*self_p = NULL;
     }
 }
 
-
+//Add a generic element at the end of the list
 void alist_append(alist_t *self,void *element)
 {
   if(self->size==self->capacity)
@@ -109,6 +126,12 @@ void alist_append(alist_t *self,void *element)
     self->size++;
 }
 
+//Return the last element of the list
+alist_t *alist_get_last_element(alist_t *self)
+{
+    return (alist_t*)self->values[self->size-1];
+}
+
 int xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
@@ -118,11 +141,13 @@ int xml_dict_start_cb(void *userdata, int parent,
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    printf("    Its matched\n");
+    alist_append(list, alist_new(INFO_LIST,attrs[1]));
+    printf(" %s   Its matched\n",attrs[1]);
   }
   if(strcmp(name,"info") == 0)
   {
-    alist_append(list, info_lkp_new(atoi(attrs[1]), attrs[3]));
+    //alist_append((alist_t*)*list->values, info_lkp_new(atoi(attrs[1]), attrs[3]));
+    alist_append(alist_get_last_element(list), info_lkp_new(atoi(attrs[1]), attrs[3]));
   }
   return 1;
 }
@@ -132,7 +157,7 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    printf("Its matched\n");
+    printf("Exit function\n");
   }
   return OK;
   
@@ -140,7 +165,7 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 
 int main ()
 {
-    alist_t * list = alist_new();
+    alist_t * list = alist_new(LOOKUP_LIST,NULL);
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
@@ -164,19 +189,7 @@ int main ()
         result = 1;
     }
     ne_xml_destroy (parser);
-    
-    
-    //int i;
-    //for(i = 0; i<3; i++)//Exeded initial size for force realloc
-      /*Apparently this should be the right form because already exist in memory,
-       * but as a constant type witch is no using malloc, is crashing in the destroy method
-       * in the free() stament
-      alist_append(list,&bestpower_power_status[i]);
-       * lets allocate and copy with the info_lkp_new()*/
-      //{
-	//printf("muestra: %d ----> %s\n",bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value);
-	//alist_append(list,info_lkp_new(bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value));
-      //}
-      printf("Now checking what is in memory and destroying\n");
+
+    printf("Now checking what is in memory and destroying\n");
     alist_destroy(&list);
 }
