@@ -14,6 +14,7 @@ typedef struct {
 	int capacity;
 	char *name;
 	void (*destroy)(void **self_p);
+	void (*new_element)(void);
 } alist_t;
 
 typedef enum {
@@ -108,7 +109,7 @@ info_alarm_destroy (void **self_p)
     }
 }
 
-alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
+alist_t *alist_new (const char *name, void (*destroy)(void **self_p), void (*new_element)(void))
 {
   alist_t *self = (alist_t*) malloc (sizeof (alist_t));
   assert (self);
@@ -119,6 +120,7 @@ alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
   assert (self->values);
   memset (self->values, 0, self->capacity);
   self->destroy = destroy;
+  self->new_element = new_element;
   if(name)
     self->name = strdup(name);
   else 
@@ -180,22 +182,25 @@ int xml_dict_start_cb(void *userdata, int parent,
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    alist_append(list, alist_new(attrs[1], (void (*)(void **))info_lkp_destroy));
+    alist_append(list, alist_new(attrs[1], info_lkp_destroy,(void (*)(void)) info_lkp_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
   if(strcmp(name,"info_lookup") == 0)
   {
-    //alist_append((alist_t*)*list->values, info_lkp_new(atoi(attrs[1]), attrs[3]));
-    alist_append(alist_get_last_element(list), info_lkp_new(atoi(attrs[1]), attrs[3]));
+    //alist_append(alist_get_last_element(list), info_lkp_new(atoi(attrs[1]), attrs[3]));
+    alist_t *element = alist_get_last_element(list);
+    alist_append(element, ((info_lkp_t *(*) (int, const char *))element->new_element)(atoi(attrs[1]), attrs[3]));
   }
     if(strcmp(name,"alarm") == 0)
   {
-    alist_append(list, alist_new(attrs[1], (void (*)(void **))info_alarm_destroy));
+    alist_append(list, alist_new(attrs[1], info_alarm_destroy, (void (*)(void)) info_alarm_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
   if(strcmp(name,"info_alarm") == 0)
   {
-    alist_append(alist_get_last_element(list), info_alarm_new(attrs[1], attrs[3], attrs[5]));
+    //alist_append(alist_get_last_element(list), info_alarm_new(attrs[1], attrs[3], attrs[5]));
+    alist_t *element = alist_get_last_element(list);
+    alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *))element->new_element)(attrs[1], attrs[3], attrs[5]));
   }
   return 1;
 }
@@ -224,7 +229,7 @@ int main ()
 
     // alist new/destroy test case
     /* alist_t * list = alist_new(LOOKUP_LIST,NULL); */
-    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy);
+    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
