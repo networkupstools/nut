@@ -81,7 +81,7 @@ info_lkp_destroy (info_lkp_t **self_p)
 }
 
 
-alist_t *alist_new (type_t type)
+alist_t *alist_new (type_t type, const char *name)
 {
   alist_t *self = (alist_t*) malloc (sizeof (alist_t));
   assert (self);
@@ -92,6 +92,10 @@ alist_t *alist_new (type_t type)
   self->values = (void**) malloc (self->capacity * sizeof (void*));
   assert (self->values);
   memset (self->values, 0, self->capacity);
+  if(name)
+    self->name = strdup(name);
+  else 
+    self->name = NULL;
   return self;
 }
 
@@ -103,6 +107,7 @@ alist_destroy (alist_t **self_p)
         alist_t *self = *self_p;
 	
 	printf("N elements %d \n",self->size);
+	if(self->name)printf("** Name collection: %s \n",self->name);
 	
         for (;self->size>0; self->size--){
 	  //This printf is only for show test result
@@ -112,6 +117,8 @@ alist_destroy (alist_t **self_p)
 	  else 
 	    alist_destroy ((alist_t**)& self->values [self->size-1]);
 	}
+	if(self->name)
+	  free(self->name);
         free (self->values);
         free (self);
 	*self_p = NULL;
@@ -143,8 +150,8 @@ int xml_dict_start_cb(void *userdata, int parent,
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    alist_append(list, alist_new(INFO_LIST));
-    printf("    Its matched\n");
+    alist_append(list, alist_new(INFO_LIST,attrs[1]));
+    printf(" %s   Its matched\n",attrs[1]);
   }
   if(strcmp(name,"info") == 0)
   {
@@ -177,7 +184,7 @@ int main ()
     assert (!info);
 
     // alist new/destroy test case
-    alist_t * list = alist_new(LOOKUP_LIST);
+    alist_t * list = alist_new(LOOKUP_LIST,NULL);
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
