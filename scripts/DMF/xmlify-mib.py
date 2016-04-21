@@ -20,7 +20,7 @@ def mk_lookup (inp, root):
     for name, lookup in inp ["INFO"].items ():
         lookup_el = mkElement ("lookup", name=name)
         for oid, value in lookup:
-            info_el = mkElement ("info", oid=oid, value=value)
+            info_el = mkElement ("lookup_info", oid=oid, value=value)
             lookup_el.appendChild (info_el)
         root.appendChild (lookup_el)
 
