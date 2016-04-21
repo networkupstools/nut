@@ -8,8 +8,8 @@
  */
 #define DEFAULT_CAPACITY 16
 typedef enum {
-    LOOKUP = 1,
-    INFO
+    LOOKUP_LIST = 1,
+    INFO_LIST
 } type_t;
 
 typedef struct {
@@ -38,12 +38,13 @@ alist_t *
     alist_new ();
 
 // Create new instance of alist with INFO type, for storage one collection
-alist_t
-    lookup_new (int oid, const char *value);
+    //merged with the generic methods
+/*alist_t
+    lookup_new (int oid, const char *value);*/
 
 // Destroy and NULLify the reference to info_lkp_t
-void
-    lookup_destroy (info_lkp_t **self_p);
+/*void
+    lookup_destroy (alist_t **self_p);*/
 
 /*
  *
@@ -79,12 +80,14 @@ info_lkp_destroy (info_lkp_t **self_p)
     }
 }
 
-alist_t *alist_new ()
+
+alist_t *alist_new (type_t type)
 {
   alist_t *self = (alist_t*) malloc (sizeof (alist_t));
   assert (self);
   memset (self, 0, sizeof(alist_t));
   self->size = 0;
+  self->type = type;
   self->capacity = DEFAULT_CAPACITY;
   self->values = (void**) malloc (self->capacity * sizeof (void*));
   assert (self->values);
@@ -104,7 +107,10 @@ alist_destroy (alist_t **self_p)
         for (;self->size>0; self->size--){
 	  //This printf is only for show test result
 	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
+	  if(self->type == INFO_LIST)
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
+	  else 
+	    alist_destroy ((alist_t**)& self->values [self->size-1]);
 	}
         free (self->values);
         free (self);
@@ -133,6 +139,7 @@ int xml_dict_start_cb(void *userdata, int parent,
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
+    alist_append(list, alist_new(INFO_LIST));
     printf("    Its matched\n");
   }
   if(strcmp(name,"info") == 0)
@@ -165,7 +172,7 @@ int main ()
     assert (!info);
 
     // alist new/destroy test case
-    alist_t * list = alist_new();
+    alist_t * list = alist_new(LOOKUP_LIST);
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
