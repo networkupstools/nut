@@ -27,7 +27,7 @@ info_lkp_t *
 
 // Destroy and NULLify the reference to alist_t, list of collections
 void
-    info_lkp_destroy (info_lkp_t **self_p);
+    info_lkp_destroy (void **self_p);
 
 // Create new instance of alist with LOOKUP type, for storage a list of collections
 alist_t *
@@ -51,8 +51,23 @@ info_lkp_new (int oid, const char *value)
     return self;
 }
 
+alarms_info_t *
+info_alarm_new (const char *oid, const char *status, const char *alarm)
+{
+    alarms_info_t *self = (alarms_info_t*) malloc (sizeof (alarms_info_t));
+    assert (self);
+    memset (self, 0, sizeof (alarms_info_t));
+    if(oid)
+      self->OID = strdup (oid);
+    if(status)
+      self->status_value = strdup (status);
+    if(alarm)
+      self->alarm_value = strdup (alarm);
+    return self;
+}
+
 void
-info_lkp_destroy (info_lkp_t **self_p)
+info_lkp_destroy (void **self_p)
 {
     if (*self_p) {
         info_lkp_t *self = (info_lkp_t*) *self_p;
@@ -67,6 +82,31 @@ info_lkp_destroy (info_lkp_t **self_p)
     }
 }
 
+void
+info_alarm_destroy (void **self_p)
+{
+    if (*self_p) {
+        alarms_info_t *self = (alarms_info_t*) *self_p;
+	printf("Destroying: %s ---> %s ---> %s\n",self->OID, self->status_value, self->alarm_value);
+        if (self->OID)
+	{
+            free ((char*)self->OID);
+            self->OID = NULL;
+        }
+        if (self->status_value)
+	{
+            free ((char*)self->status_value);
+            self->status_value = NULL;
+        }
+        if (self->alarm_value)
+	{
+            free ((char*)self->alarm_value);
+            self->alarm_value = NULL;
+        }
+        free (self);
+	*self_p = NULL;
+    }
+}
 
 alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
 {
@@ -143,10 +183,19 @@ int xml_dict_start_cb(void *userdata, int parent,
     alist_append(list, alist_new(attrs[1], (void (*)(void **))info_lkp_destroy));
     printf(" %s   Its matched\n",attrs[1]);
   }
-  if(strcmp(name,"info") == 0)
+  if(strcmp(name,"info_lookup") == 0)
   {
     //alist_append((alist_t*)*list->values, info_lkp_new(atoi(attrs[1]), attrs[3]));
     alist_append(alist_get_last_element(list), info_lkp_new(atoi(attrs[1]), attrs[3]));
+  }
+    if(strcmp(name,"alarm") == 0)
+  {
+    alist_append(list, alist_new(attrs[1], (void (*)(void **))info_alarm_destroy));
+    printf(" %s   Its matched\n",attrs[1]);
+  }
+  if(strcmp(name,"info_alarm") == 0)
+  {
+    alist_append(alist_get_last_element(list), info_alarm_new(attrs[1], attrs[3], attrs[5]));
   }
   return 1;
 }
