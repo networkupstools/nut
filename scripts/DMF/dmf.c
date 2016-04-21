@@ -173,6 +173,17 @@ alist_t *alist_get_last_element(alist_t *self)
     return (alist_t*)self->values[self->size-1];
 }
 
+//I splited because with the error control is going a grow a lot
+void
+info_node_handler(alist_t *list, const char **attrs)
+{
+    alist_t *element = alist_get_last_element(list);
+    if(!(attrs[4]))
+      alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(attrs[1]), attrs[3]));
+    else
+      alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (attrs[1], attrs[3], attrs[5]));
+}
+
 int xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
@@ -192,11 +203,7 @@ int xml_dict_start_cb(void *userdata, int parent,
   }
   if(strcmp(name,"info") == 0)
   {
-    alist_t *element = alist_get_last_element(list);
-    if(!(attrs+4))
-      alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(attrs[1]), attrs[3]));
-    else
-      alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (attrs[1], attrs[3], attrs[5]));
+    info_node_handler(list,attrs);
   }
   return 1;
 }
@@ -206,7 +213,7 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    printf("Exit function\n");
+    
   }
   return OK;
   
