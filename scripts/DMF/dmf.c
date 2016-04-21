@@ -37,15 +37,6 @@ void
 alist_t *
     alist_new ();
 
-// Create new instance of alist with INFO type, for storage one collection
-    //merged with the generic methods
-/*alist_t
-    lookup_new (int oid, const char *value);*/
-
-// Destroy and NULLify the reference to info_lkp_t
-/*void
-    lookup_destroy (alist_t **self_p);*/
-
 /*
  *
  *  C FILE
@@ -125,7 +116,7 @@ alist_destroy (alist_t **self_p)
     }
 }
 
-
+//Add a generic element at the end of the list
 void alist_append(alist_t *self,void *element)
 {
   if(self->size==self->capacity)
@@ -136,6 +127,8 @@ void alist_append(alist_t *self,void *element)
     self->values[self->size] = element;
     self->size++;
 }
+
+//Return the last element of the list
 alist_t *alist_get_last_element(alist_t *self)
 {
     return (alist_t*)self->values[self->size-1];
@@ -208,19 +201,7 @@ int main ()
         result = 1;
     }
     ne_xml_destroy (parser);
-    
-    
-    //int i;
-    //for(i = 0; i<3; i++)//Exeded initial size for force realloc
-      /*Apparently this should be the right form because already exist in memory,
-       * but as a constant type witch is no using malloc, is crashing in the destroy method
-       * in the free() stament
-      alist_append(list,&bestpower_power_status[i]);
-       * lets allocate and copy with the info_lkp_new()*/
-      //{
-	//printf("muestra: %d ----> %s\n",bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value);
-	//alist_append(list,info_lkp_new(bestpower_power_status[i].oid_value,bestpower_power_status[i].info_value));
-      //}
-      printf("Now checking what is in memory and destroying\n");
+
+    printf("Now checking what is in memory and destroying\n");
     alist_destroy(&list);
 }
