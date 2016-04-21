@@ -11,8 +11,7 @@
 	<lookup name="pw_alarm_lb">
 		<info oid="1" value="LB"/>
 		<info oid="2" value=""/>
-		<info oid="5" value="LO"/>
-		<info oid="6" value=""/>
+		<info oid="3" value="LB"/>
 	</lookup>
 </nut>
 

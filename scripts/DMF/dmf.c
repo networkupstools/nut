@@ -127,6 +127,10 @@ void alist_append(alist_t *self,void *element)
     self->values[self->size] = element;
     self->size++;
 }
+alist_t *alist_get_last_element(alist_t *self)
+{
+    return (alist_t*)self->values[self->size-1];
+}
 
 int xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
@@ -142,7 +146,8 @@ int xml_dict_start_cb(void *userdata, int parent,
   }
   if(strcmp(name,"info") == 0)
   {
-    alist_append(list, info_lkp_new(atoi(attrs[1]), attrs[3]));
+    //alist_append((alist_t*)*list->values, info_lkp_new(atoi(attrs[1]), attrs[3]));
+    alist_append(alist_get_last_element(list), info_lkp_new(atoi(attrs[1]), attrs[3]));
   }
   return 1;
 }
