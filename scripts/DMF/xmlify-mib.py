@@ -24,6 +24,16 @@ def mk_lookup (inp, root):
             lookup_el.appendChild (info_el)
         root.appendChild (lookup_el)
 
+def mk_alarms (inp, root):
+    if not "ALARMS-INFO" in inp:
+        return
+    for name, lookup in inp ["ALARMS-INFO"].items ():
+        lookup_el = mkElement ("alarm", name=name)
+        for info in lookup:
+            info_el = mkElement ("info_alarm", oid=info ["OID"], status=info ["status_value"], alarm=info ["alarm_value"])
+            lookup_el.appendChild (info_el)
+        root.appendChild (lookup_el)
+
 def s_mkparser ():
     p = argparse.ArgumentParser ()
     p.add_argument ("json", help="json input file (default stdin)", default='-', nargs='?')
@@ -45,4 +55,5 @@ else:
         inp = json.load (fp)
 
 mk_lookup (inp, root)
+mk_alarms (inp, root)
 print (doc.toprettyxml ())
