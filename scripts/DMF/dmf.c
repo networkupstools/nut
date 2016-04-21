@@ -7,17 +7,13 @@
  *
  */
 #define DEFAULT_CAPACITY 16
-typedef enum {
-    LOOKUP_LIST = 1,
-    INFO_LIST
-} type_t;
 
 typedef struct {
 	void **values;
 	int size;
 	int capacity;
 	char *name;
-	type_t type;
+	void (*destroy)(void **self_p);
 } alist_t;
 
 typedef enum {
@@ -72,17 +68,17 @@ info_lkp_destroy (info_lkp_t **self_p)
 }
 
 
-alist_t *alist_new (type_t type, const char *name)
+alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
 {
   alist_t *self = (alist_t*) malloc (sizeof (alist_t));
   assert (self);
   memset (self, 0, sizeof(alist_t));
   self->size = 0;
-  self->type = type;
   self->capacity = DEFAULT_CAPACITY;
   self->values = (void**) malloc (self->capacity * sizeof (void*));
   assert (self->values);
   memset (self->values, 0, self->capacity);
+  self->destroy = destroy;
   if(name)
     self->name = strdup(name);
   else 
@@ -103,10 +99,11 @@ alist_destroy (alist_t **self_p)
         for (;self->size>0; self->size--){
 	  //This printf is only for show test result
 	  printf("Destroying %d ---> %s\n",((info_lkp_t*) *(self->values))->oid_value, ((info_lkp_t*) *(self->values))->info_value);
-	  if(self->type == INFO_LIST)
+	  self->destroy(& self->values [self->size-1]);
+	  /*if(self->type == INFO_LIST)
             info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
 	  else 
-	    alist_destroy ((alist_t**)& self->values [self->size-1]);
+	    alist_destroy ((alist_t**)& self->values [self->size-1]);*/
 	}
 	if(self->name)
 	  free(self->name);
@@ -143,7 +140,7 @@ int xml_dict_start_cb(void *userdata, int parent,
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    alist_append(list, alist_new(INFO_LIST,attrs[1]));
+    alist_append(list, alist_new(attrs[1], (void (*)(void **))info_lkp_destroy));
     printf(" %s   Its matched\n",attrs[1]);
   }
   if(strcmp(name,"info") == 0)
@@ -177,7 +174,8 @@ int main ()
     assert (!info);
 
     // alist new/destroy test case
-    alist_t * list = alist_new(LOOKUP_LIST,NULL);
+    /* alist_t * list = alist_new(LOOKUP_LIST,NULL); */
+    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy);
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
