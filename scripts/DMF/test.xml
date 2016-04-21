@@ -1,25 +1,25 @@
 <?xml version="1.0" ?>
 <nut>
 	<lookup name="source">
-		<info_lookup oid="1" value="LB"/>
-		<info_lookup oid="2" value=""/>
-		<info_lookup oid="3" value="LB"/>
-		<info_lookup oid="4" value="OB"/>
-		<info_lookup oid="5" value="LO"/>
-		<info_lookup oid="6" value=""/>
+		<info oid="1" value="LB"/>
+		<info oid="2" value=""/>
+		<info oid="3" value="LB"/>
+		<info oid="4" value="OB"/>
+		<info oid="5" value="LO"/>
+		<info oid="6" value=""/>
 	</lookup>
 	<lookup name="sensitivity">
-		<info_lookup oid="1" value="LB"/>
-		<info_lookup oid="2" value=""/>
-		<info_lookup oid="3" value="LB"/>
+		<info oid="1" value="LB"/>
+		<info oid="2" value=""/>
+		<info oid="3" value="LB"/>
 	</lookup>
 	<alarm name="pw_alarm_lb">
-		<info_alarm oid=".1.3.6.1.4.1.534.1.7.7" status="OVER" alarm="Output overload!"/>
-		<info_alarm oid=".1.3.6.1.4.1.534.1.7.8" status="NULL" alarm="Internal failure!"/>
-		<info_alarm oid=".1.3.6.1.4.1.534.1.7.9" status="BYPASS" alarm="On bypass!"/>
+		<info oid=".1.3.6.1.4.1.534.1.7.7" status="OVER" alarm="Output overload!"/>
+		<info oid=".1.3.6.1.4.1.534.1.7.8" status="NULL" alarm="Internal failure!"/>
+		<info oid=".1.3.6.1.4.1.534.1.7.9" status="BYPASS" alarm="On bypass!"/>
 	</alarm>
 	<alarm name="temp_alarm">
-		<info_alarm oid=".1.3.6.1.4.1.534.1.3.7" status="OVER" alarm="Burning"/>
-		<info_alarm oid=".1.3.6.1.4.1.534.1.3.8" status="NULL" alarm="No data"/>
+		<info oid=".1.3.6.1.4.1.534.1.3.7" status="OVER" alarm="Burning"/>
+		<info oid=".1.3.6.1.4.1.534.1.3.8" status="NULL" alarm="No data"/>
 	</alarm>
 </nut>
