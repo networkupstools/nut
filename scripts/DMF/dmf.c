@@ -8,6 +8,17 @@
  */
 #define DEFAULT_CAPACITY 16
 
+#define INFO "info"
+#define LOOKUP "lookup"
+#define LOOKUP_OID "oid"
+#define LOOKUP_VALUE "value"
+#define ALARM "alarm"
+#define ALARM_OID "oid"
+#define ALARM_STATUS "status"
+#define ALARM_ALARM "alarm"
+
+
+
 typedef struct {
 	void **values;
 	int size;
@@ -180,10 +191,46 @@ void
 info_node_handler(alist_t *list, const char **attrs)
 {
     alist_t *element = alist_get_last_element(list);
-    if(!(attrs[4]))
-      alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(attrs[1]), attrs[3]));
-    else
-      alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (attrs[1], attrs[3], attrs[5]));
+    int i=0;
+    int flag=0;
+    char **arg = (char**) malloc (8 * sizeof (void**));
+    assert (arg);
+    memset (arg, 0, 8 * sizeof(void**));
+    
+    while((attrs[i])&&(i<8))
+    {
+      arg[i] = strdup(attrs[i]);
+      i++;
+    }
+
+    if(arg[0])
+    {
+      if(strcmp(arg[0],ALARM_OID) == 0)
+      {
+	if(arg[2]){
+	  if(strcmp(arg[2], ALARM_STATUS) == 0)
+	  {
+	    if(arg[4])alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (attrs[1], attrs[3], attrs[5]));
+	    flag = 1;
+	  }else if(strcmp(arg[2], ALARM_ALARM) == 0)
+	  {
+	    alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (attrs[1], NULL, attrs[3]));
+	    flag = 1;
+	  }
+	}
+      }if((strcmp(arg[0],LOOKUP_OID) == 0)&&(flag == 0))
+      {
+	alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(arg[1]), arg[3]));
+      }
+    }
+    
+    i = 0;
+    while(arg[i])
+    {
+      free (arg[i]);
+      i++;
+    }
+    free (arg);
 }
 
 int xml_dict_start_cb(void *userdata, int parent,
@@ -193,17 +240,17 @@ int xml_dict_start_cb(void *userdata, int parent,
   alist_t *list = (alist_t*) userdata;
   printf("Node --%s\n", name);
   if(!userdata)return ERR;
-  if(strcmp(name,"lookup") == 0)
+  if(strcmp(name,LOOKUP) == 0)
   {
     alist_append(list, alist_new(attrs[1], info_lkp_destroy,(void (*)(void)) info_lkp_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
-    if(strcmp(name,"alarm") == 0)
+    if(strcmp(name,ALARM) == 0)
   {
     alist_append(list, alist_new(attrs[1], info_alarm_destroy, (void (*)(void)) info_alarm_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
-  if(strcmp(name,"info") == 0)
+  if(strcmp(name,INFO) == 0)
   {
     info_node_handler(list,attrs);
   }

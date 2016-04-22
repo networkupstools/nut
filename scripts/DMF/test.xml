@@ -2,14 +2,14 @@
 <nut>
 	<lookup name="pw_alarm_lb">
 		<info oid="1" value="LB"/>
-		<info oid="2" value=""/>
+		<info oid="2"/>
 	</lookup>
 	<lookup name="pw_mode_info">
 		<info oid="1" value=""/>
 		<info oid="2" value=""/>
 		<info oid="3" value="normal"/>
 		<info oid="4" value=""/>
-		<info oid="5" value=""/>
+		<info oid="5"/>
 		<info oid="6" value=""/>
 		<info oid="7" value=""/>
 		<info oid="8" value="parallel capacity"/>
@@ -38,7 +38,7 @@
 	</lookup>
 	<lookup name="eaton_abm_status_info">
 		<info oid="1" value="charging"/>
-		<info oid="2" value="discharging"/>
+		<info oid="2"/>
 		<info oid="3" value="floating"/>
 		<info oid="4" value="resting"/>
 		<info oid="5" value="unknown"/>
@@ -64,7 +64,7 @@
 		<info oid="9" value="OL"/>
 		<info oid="10" value="OL"/>
 		<info oid="240" value="OB"/>
-		<info oid="100" value="BYPASS"/>
+		<info oid="100"/>
 		<info oid="96" value="BYPASS"/>
 		<info oid="81" value="OL"/>
 		<info oid="80" value="OL"/>
@@ -73,12 +73,12 @@
 	</lookup>
 	<alarm name="pw_alarm_lb">
 		<info oid=".1.3.6.1.4.1.534.1.7.7" status="OVER" alarm="Output overload!"/>
-		<info oid=".1.3.6.1.4.1.534.1.7.8" status="NULL" alarm="Internal failure!"/>
-		<info oid=".1.3.6.1.4.1.534.1.7.9" status= alarm="On bypass!"/>
+		<info oid=".1.3.6.1.4.1.534.1.7.8" alarm="Internal failure!"/>
+		<info oid=".1.3.6.1.4.1.534.1.7.9" status="" alarm="On bypass!"/>
 	</alarm>
 	<alarm name="temp_alarm">
 		<info oid=".1.3.6.1.4.1.534.1.3.7" status="OVER" alarm="Burning"/>
-		<info oid=".1.3.6.1.4.1.534.1.3.8" status="NULL" alarm="No data"/>
-	</alarm>
+		<info oid=".1.3.6.1.4.1.534.1.3.8" alarm="No data"/>
+	      </alarm>
 </nut>
 
