@@ -2,15 +2,20 @@
 
 ## Abstract
 
-The aim is to develop solution allowing NUT to read the SNMP (right now) MIBs mappings from external file.
+The aim is to develop a solution allowing to add new NUT SNMP (only, right now)
+MIBs mappings without recompiling the binary driver (snmp-ups) or the whole NUT
+source. The present solution is a first iteration to read these information from
+external file (XML formatted), along with being able to convert existing C
+implementations to such external files.
 
 ## XML spec
 
 There are *4* main structures
- * info_lkp_t
- * alarms_info_t
- * snmp_info_t
- * mib2nut_info_t
+ * info_lkp_t: mapping between NUT and SNMP values for a variable
+ * alarms_info_t: mapping between NUT and SNMP *ups.alarm* values for a variable
+ * snmp_info_t: mapping between NUT variables and SNMP OIDs
+ * mib2nut_info_t: declaration of discovery and mapping (snmp_info_t)
+   information
 
 ### LOOKUP
 
@@ -33,7 +38,7 @@ intermediate form for easier processing.
 You need pycparser installed
     via your package management
 
-of using pip
+or using pip
     virtualenv dmf
     source dmf/bin/activate
     pip install -e pycparser
