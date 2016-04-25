@@ -36,9 +36,23 @@ those as JSON. Note this is NOT intended as final DMF form, this json is
 intermediate form for easier processing.
 
 You need pycparser installed
-    via your package management
 
-or using pip
+ * via your package management
+   As an example, you can do so:
+
+  ** on Debian and derivative systems, using:
+
+   # apt-get install python-pycparser
+
+   and / or
+
+   # apt-get install python3-pycparser
+
+  ** on Redhat and derivative systems, using:
+
+   <yum install... to be completed>
+
+ * or using pip
     virtualenv dmf
     source dmf/bin/activate
     pip install -e pycparser
