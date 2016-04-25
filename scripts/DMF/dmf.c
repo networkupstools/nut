@@ -181,6 +181,11 @@ info_snmp_destroy (void **self_p)
             free ((char*)self->dfl);
             self->dfl = NULL;
         }
+        if (self->oid2info)
+	{
+            free ((info_lkp_t*)self->oid2info);
+            self->oid2info = NULL;
+        }
         free (self);
 	*self_p = NULL;
     }
@@ -244,9 +249,20 @@ void alist_append(alist_t *self,void *element)
 //Return the last element of the list
 alist_t *alist_get_last_element(alist_t *self)
 {
+  if(self)
     return (alist_t*)self->values[self->size-1];
+  return NULL;
 }
 
+alist_t *alist_get_element_by_name(alist_t *self, char *name)
+{
+  int i;
+  if(self)
+    for(i = 0; i < self->size; i++)
+      if(strcmp(((alist_t*)self->values[i])->name, name) == 0)
+	return (alist_t*)self->values[i];
+  return NULL;
+}
 //I splited because with the error control is going a grow a lot
 void
 alarm_info_node_handler(alist_t *list, const char **attrs)
@@ -312,7 +328,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     //temporal
     int *x=0;
     //end tremporal
-    
+    info_lkp_t *lookup = NULL;
     alist_t *element = alist_get_last_element(list);
     int i=0;
     char **arg = (char**) malloc ((INFO_SNMP_MAX_ATTRS + 1) * sizeof (void**));
@@ -324,9 +340,12 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       arg[i] = strdup(attrs[i]);
       i++;
     }
-
+    if(arg[9]){
+      alist_t *lkp = alist_get_element_by_name(list, arg[9]);
+      lookup = (info_lkp_t*) malloc(lkp->size * sizeof(info_lkp_t));
+    }
     if(arg[0])
-	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[1], atof(arg[3]), arg[5], arg[7], (info_lkp_t *)arg[9], x));
+	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[1], atof(arg[3]), arg[5], arg[7], lookup, x));
     
     i = 0;
     while(arg[i])
