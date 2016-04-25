@@ -8,12 +8,27 @@
  */
 #define DEFAULT_CAPACITY 16
 
-#define INFO_LOOKUP "lookup_info"
-#define INFO_ALARM "info_alarm"
 #define LOOKUP "lookup"
+#define SNMP "snmp"
+#define ALARM "alarm"
+
+#define INFO_LOOKUP "lookup_info"
 #define LOOKUP_OID "oid"
 #define LOOKUP_VALUE "value"
-#define ALARM "alarm"
+
+#define INFO_SNMP "snmp_info"
+#define SNMP_NAME "name"
+#define SNMP_MULTIPLIER "multiplier"
+#define SNMP_OID "oid"
+#define SNMP_DEFAULT "default"
+#define SNMP_LOOKUP "lookup"
+#define SNMP_SETVAR "setvar"
+#define SNMP_INFOFLAG_WRITABLE "writable"
+#define SNMP_INFOFLAG_STRING "string"
+#define SNMP_FLAG_STATIC "static"
+#define SNMP_FLAG_ABSENT "absent"
+
+#define INFO_ALARM "info_alarm"
 #define ALARM_OID "oid"
 #define ALARM_STATUS "status"
 #define ALARM_ALARM "alarm"
@@ -80,7 +95,23 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
       self->alarm_value = strdup (alarm);
     return self;
 }
-
+snmp_info_t *
+info_snmp_new (const char *name, double multiplier, const char *oid, const char *dfl, info_lkp_t *lookup, int *setvar)
+{
+    snmp_info_t *self = (snmp_info_t*) malloc (sizeof (snmp_info_t));
+    assert (self);
+    memset (self, 0, sizeof (snmp_info_t));
+    if(name)
+      self->info_type = strdup (name);
+    self->info_len = multiplier;
+    if(oid)
+      self->OID = strdup (oid);
+    if(dfl)
+      self->dfl = strdup (dfl);
+    self->oid2info = lookup;
+    self->setvar = setvar;
+    return self;
+}
 //Destroy full array of lookup elements
 void
 info_lkp_destroy (void **self_p)
@@ -125,6 +156,31 @@ info_alarm_destroy (void **self_p)
     }
 }
 
+void
+info_snmp_destroy (void **self_p)
+{
+    if (*self_p) {
+        snmp_info_t *self = (snmp_info_t*) *self_p;
+	printf("Destroying: %s ---> %f ---> %s---> %s\n",self->info_type, self->info_len, self->OID, self->dfl);
+        if (self->info_type)
+	{
+            free ((char*)self->info_type);
+            self->info_type = NULL;
+        }
+        if (self->OID)
+	{
+            free ((char*)self->OID);
+            self->OID = NULL;
+        }
+        if (self->dfl)
+	{
+            free ((char*)self->dfl);
+            self->dfl = NULL;
+        }
+        free (self);
+	*self_p = NULL;
+    }
+}
 //New generic list element (can be the root element)
 alist_t *alist_new (const char *name, void (*destroy)(void **self_p), void (*new_element)(void))
 {
@@ -243,6 +299,38 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
     }
     free (arg);
 }
+
+void
+snmp_info_node_handler(alist_t *list, const char **attrs)
+{
+    //temporal
+    int *x=0;
+    //end tremporal
+    
+    alist_t *element = alist_get_last_element(list);
+    int i=0;
+    char **arg = (char**) malloc (8 * sizeof (void**));
+    assert (arg);
+    memset (arg, 0, 8 * sizeof(void**));
+    
+    while((attrs[i])&&(i<8))
+    {
+      arg[i] = strdup(attrs[i]);
+      i++;
+    }
+
+    if(arg[0])
+	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[1], atof(arg[3]), arg[5], arg[7], (info_lkp_t *)arg[9], x));
+    
+    i = 0;
+    while(arg[i])
+    {
+      free (arg[i]);
+      i++;
+    }
+    free (arg);
+}
+
 int xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
@@ -255,18 +343,26 @@ int xml_dict_start_cb(void *userdata, int parent,
     alist_append(list, alist_new(attrs[1], info_lkp_destroy,(void (*)(void)) info_lkp_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
-    if(strcmp(name,ALARM) == 0)
+  else if(strcmp(name,ALARM) == 0)
   {
     alist_append(list, alist_new(attrs[1], info_alarm_destroy, (void (*)(void)) info_alarm_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
-  if(strcmp(name,INFO_LOOKUP) == 0)
+  else if(strcmp(name,SNMP) == 0)
+  {
+    alist_append(list, alist_new(attrs[1], info_snmp_destroy, (void (*)(void)) info_snmp_new));
+    printf(" %s   Its matched\n",attrs[1]);
+  }
+  else if(strcmp(name,INFO_LOOKUP) == 0)
   {
     lookup_info_node_handler(list,attrs);
   }
-  if(strcmp(name,INFO_ALARM) == 0)
+  else if(strcmp(name,INFO_ALARM) == 0)
   {
     alarm_info_node_handler(list,attrs);
+  }else if(strcmp(name,INFO_SNMP) == 0)
+  {
+    snmp_info_node_handler(list,attrs);
   }
   return 1;
 }
