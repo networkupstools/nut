@@ -8,12 +8,25 @@
  */
 #define DEFAULT_CAPACITY 16
 
+#define INFO_LOOKUP "lookup_info"
+#define INFO_ALARM "info_alarm"
+#define LOOKUP "lookup"
+#define LOOKUP_OID "oid"
+#define LOOKUP_VALUE "value"
+#define ALARM "alarm"
+#define ALARM_OID "oid"
+#define ALARM_STATUS "status"
+#define ALARM_ALARM "alarm"
+
+
+
 typedef struct {
 	void **values;
 	int size;
 	int capacity;
 	char *name;
 	void (*destroy)(void **self_p);
+	void (*new_element)(void);
 } alist_t;
 
 typedef enum {
@@ -39,6 +52,7 @@ alist_t *
  *
  */
 
+//Create a lookup elemet
 info_lkp_t *
 info_lkp_new (int oid, const char *value)
 {
@@ -51,6 +65,7 @@ info_lkp_new (int oid, const char *value)
     return self;
 }
 
+//Create alarm element
 alarms_info_t *
 info_alarm_new (const char *oid, const char *status, const char *alarm)
 {
@@ -66,6 +81,7 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
     return self;
 }
 
+//Destroy full array of lookup elements
 void
 info_lkp_destroy (void **self_p)
 {
@@ -82,6 +98,7 @@ info_lkp_destroy (void **self_p)
     }
 }
 
+//Destroy full array of alarm elements
 void
 info_alarm_destroy (void **self_p)
 {
@@ -108,7 +125,8 @@ info_alarm_destroy (void **self_p)
     }
 }
 
-alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
+//New generic list element (can be the root element)
+alist_t *alist_new (const char *name, void (*destroy)(void **self_p), void (*new_element)(void))
 {
   alist_t *self = (alist_t*) malloc (sizeof (alist_t));
   assert (self);
@@ -119,6 +137,7 @@ alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
   assert (self->values);
   memset (self->values, 0, self->capacity);
   self->destroy = destroy;
+  self->new_element = new_element;
   if(name)
     self->name = strdup(name);
   else 
@@ -126,6 +145,7 @@ alist_t *alist_new (const char *name, void (*destroy)(void **self_p))
   return self;
 }
 
+//Destroy full array of generic list elements
 void
 alist_destroy (alist_t **self_p)
 {
@@ -138,10 +158,6 @@ alist_destroy (alist_t **self_p)
 	
         for (;self->size>0; self->size--){
 	  self->destroy(& self->values [self->size-1]);
-	  /*if(self->type == INFO_LIST)
-            info_lkp_destroy ((info_lkp_t**)& self->values [self->size-1]);
-	  else 
-	    alist_destroy ((alist_t**)& self->values [self->size-1]);*/
 	}
 	if(self->name)
 	  free(self->name);
@@ -169,6 +185,64 @@ alist_t *alist_get_last_element(alist_t *self)
     return (alist_t*)self->values[self->size-1];
 }
 
+//I splited because with the error control is going a grow a lot
+void
+alarm_info_node_handler(alist_t *list, const char **attrs)
+{
+    alist_t *element = alist_get_last_element(list);
+    int i=0;
+    char **arg = (char**) malloc (8 * sizeof (void**));
+    assert (arg);
+    memset (arg, 0, 8 * sizeof(void**));
+    while((attrs[i])&&(i<8))
+    {
+      arg[i] = strdup(attrs[i]);
+      i++;
+    }
+
+    if(arg[0])
+      if(arg[3]){
+	if(strcmp(arg[2], ALARM_OID) == 0)
+	  alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (arg[1], arg[3], arg[5]));
+	if(strcmp(arg[2], ALARM_STATUS) == 0)
+	  alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (arg[1], NULL, arg[3]));
+      }
+    
+    i = 0;
+    while(arg[i])
+    {
+      free (arg[i]);
+      i++;
+    }
+    free (arg);
+}
+
+void
+lookup_info_node_handler(alist_t *list, const char **attrs)
+{
+    alist_t *element = alist_get_last_element(list);
+    int i=0;
+    char **arg = (char**) malloc (8 * sizeof (void**));
+    assert (arg);
+    memset (arg, 0, 8 * sizeof(void**));
+    
+    while((attrs[i])&&(i<8))
+    {
+      arg[i] = strdup(attrs[i]);
+      i++;
+    }
+
+    if(arg[0])
+	alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(arg[1]), arg[3]));
+    
+    i = 0;
+    while(arg[i])
+    {
+      free (arg[i]);
+      i++;
+    }
+    free (arg);
+}
 int xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
@@ -176,24 +250,23 @@ int xml_dict_start_cb(void *userdata, int parent,
   alist_t *list = (alist_t*) userdata;
   printf("Node --%s\n", name);
   if(!userdata)return ERR;
-  if(strcmp(name,"lookup") == 0)
+  if(strcmp(name,LOOKUP) == 0)
   {
-    alist_append(list, alist_new(attrs[1], (void (*)(void **))info_lkp_destroy));
+    alist_append(list, alist_new(attrs[1], info_lkp_destroy,(void (*)(void)) info_lkp_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
-  if(strcmp(name,"info_lookup") == 0)
+    if(strcmp(name,ALARM) == 0)
   {
-    //alist_append((alist_t*)*list->values, info_lkp_new(atoi(attrs[1]), attrs[3]));
-    alist_append(alist_get_last_element(list), info_lkp_new(atoi(attrs[1]), attrs[3]));
-  }
-    if(strcmp(name,"alarm") == 0)
-  {
-    alist_append(list, alist_new(attrs[1], (void (*)(void **))info_alarm_destroy));
+    alist_append(list, alist_new(attrs[1], info_alarm_destroy, (void (*)(void)) info_alarm_new));
     printf(" %s   Its matched\n",attrs[1]);
   }
-  if(strcmp(name,"info_alarm") == 0)
+  if(strcmp(name,INFO_LOOKUP) == 0)
   {
-    alist_append(alist_get_last_element(list), info_alarm_new(attrs[1], attrs[3], attrs[5]));
+    lookup_info_node_handler(list,attrs);
+  }
+  if(strcmp(name,INFO_ALARM) == 0)
+  {
+    alarm_info_node_handler(list,attrs);
   }
   return 1;
 }
@@ -203,7 +276,7 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   if(!userdata)return ERR;
   if(strcmp(name,"lookup") == 0)
   {
-    printf("Exit function\n");
+    
   }
   return OK;
   
@@ -211,7 +284,7 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 
 int main ()
 {
-    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy);
+    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
