@@ -306,6 +306,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     //temporal
     int *x=0;
     //end tremporal
+    
     alist_t *element = alist_get_last_element(list);
     int i=0;
     char **arg = (char**) malloc (8 * sizeof (void**));
