@@ -12,6 +12,10 @@
 #define SNMP "snmp"
 #define ALARM "alarm"
 
+#define INFO_LOOKUP_MAX_ATTRS 4
+#define INFO_SNMP_MAX_ATTRS 16
+#define INFO_ALARM_MAX_ATTRS 6
+
 #define INFO_LOOKUP "lookup_info"
 #define LOOKUP_OID "oid"
 #define LOOKUP_VALUE "value"
@@ -249,10 +253,10 @@ alarm_info_node_handler(alist_t *list, const char **attrs)
 {
     alist_t *element = alist_get_last_element(list);
     int i=0;
-    char **arg = (char**) malloc (8 * sizeof (void**));
+    char **arg = (char**) malloc ((INFO_ALARM_MAX_ATTRS + 1) * sizeof (void**));
     assert (arg);
-    memset (arg, 0, 8 * sizeof(void**));
-    while((attrs[i])&&(i<8))
+    memset (arg, 0, (INFO_ALARM_MAX_ATTRS + 1) * sizeof(void**));
+    while((attrs[i])&&(i < INFO_ALARM_MAX_ATTRS))
     {
       arg[i] = strdup(attrs[i]);
       i++;
@@ -280,11 +284,11 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 {
     alist_t *element = alist_get_last_element(list);
     int i=0;
-    char **arg = (char**) malloc (8 * sizeof (void**));
+    char **arg = (char**) malloc ((INFO_LOOKUP_MAX_ATTRS + 1) * sizeof (void**));
     assert (arg);
-    memset (arg, 0, 8 * sizeof(void**));
+    memset (arg, 0, (INFO_LOOKUP_MAX_ATTRS + 1) * sizeof(void**));
     
-    while((attrs[i])&&(i<8))
+    while((attrs[i])&&(i < INFO_LOOKUP_MAX_ATTRS))
     {
       arg[i] = strdup(attrs[i]);
       i++;
@@ -311,11 +315,11 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     
     alist_t *element = alist_get_last_element(list);
     int i=0;
-    char **arg = (char**) malloc (8 * sizeof (void**));
+    char **arg = (char**) malloc ((INFO_SNMP_MAX_ATTRS + 1) * sizeof (void**));
     assert (arg);
-    memset (arg, 0, 8 * sizeof(void**));
+    memset (arg, 0, (INFO_SNMP_MAX_ATTRS + 1) * sizeof(void**));
     
-    while((attrs[i])&&(i<8))
+    while((attrs[i])&&(i < INFO_SNMP_MAX_ATTRS))
     {
       arg[i] = strdup(attrs[i]);
       i++;
