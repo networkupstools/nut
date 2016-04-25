@@ -20,7 +20,17 @@ def mk_lookup (inp, root):
     for name, lookup in inp ["INFO"].items ():
         lookup_el = mkElement ("lookup", name=name)
         for oid, value in lookup:
-            info_el = mkElement ("info", oid=oid, value=value)
+            info_el = mkElement ("lookup_info", oid=oid, value=value)
+            lookup_el.appendChild (info_el)
+        root.appendChild (lookup_el)
+
+def mk_alarms (inp, root):
+    if not "ALARMS-INFO" in inp:
+        return
+    for name, lookup in inp ["ALARMS-INFO"].items ():
+        lookup_el = mkElement ("alarm", name=name)
+        for info in lookup:
+            info_el = mkElement ("info_alarm", oid=info ["OID"], status=info ["status_value"], alarm=info ["alarm_value"])
             lookup_el.appendChild (info_el)
         root.appendChild (lookup_el)
 
@@ -45,4 +55,5 @@ else:
         inp = json.load (fp)
 
 mk_lookup (inp, root)
+mk_alarms (inp, root)
 print (doc.toprettyxml ())
