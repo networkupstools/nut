@@ -295,26 +295,17 @@ alarm_info_node_handler(alist_t *list, const char **attrs)
     char **arg = (char**) malloc ((INFO_ALARM_MAX_ATTRS + 1) * sizeof (void**));
     assert (arg);
     memset (arg, 0, (INFO_ALARM_MAX_ATTRS + 1) * sizeof(void**));
-    while((attrs[i])&&(i < INFO_ALARM_MAX_ATTRS))
-    {
-      arg[i] = strdup(attrs[i]);
-      i++;
-    }
-
-    if(arg[0])
-      if(arg[3]){
-	if(strcmp(arg[2], ALARM_OID) == 0)
-	  alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (arg[1], arg[3], arg[5]));
-	if(strcmp(arg[2], ALARM_STATUS) == 0)
-	  alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (arg[1], NULL, arg[3]));
-      }
     
-    i = 0;
-    while(arg[i])
-    {
+    arg[0] = get_param_by_name(ALARM_ALARM, attrs);
+    arg[1] = get_param_by_name(ALARM_STATUS, attrs);
+    arg[2] = get_param_by_name(ALARM_OID, attrs);
+    
+    if(arg[0])
+	  alist_append(element, ((alarms_info_t *(*) (const char *, const char *, const char *)) element->new_element) (arg[0], arg[1], arg[2]));
+    
+    for(i = 0; i < (INFO_ALARM_MAX_ATTRS + 1); i++)
       free (arg[i]);
-      i++;
-    }
+    
     free (arg);
 }
 
@@ -327,21 +318,15 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
     assert (arg);
     memset (arg, 0, (INFO_LOOKUP_MAX_ATTRS + 1) * sizeof(void**));
     
-    while((attrs[i])&&(i < INFO_LOOKUP_MAX_ATTRS))
-    {
-      arg[i] = strdup(attrs[i]);
-      i++;
-    }
+    arg[0] = get_param_by_name(LOOKUP_OID, attrs);
+    arg[1] = get_param_by_name(LOOKUP_VALUE, attrs);
 
     if(arg[0])
-	alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(arg[1]), arg[3]));
+	alist_append(element, ((info_lkp_t *(*) (int, const char *)) element->new_element) (atoi(arg[0]), arg[1]));
     
-    i = 0;
-    while(arg[i])
-    {
+    for(i = 0; i < (INFO_LOOKUP_MAX_ATTRS + 1); i++)
       free (arg[i]);
-      i++;
-    }
+    
     free (arg);
 }
 
@@ -367,10 +352,10 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     arg[6] = get_param_by_name(SNMP_SETVAR, attrs);
     
     //flags
-    /*arg[8] = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
-    arg[9] = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
-    arg[10] = get_param_by_name(SNMP_FLAG_STATIC, attrs);
-    arg[11] = get_param_by_name(SNMP_FLAG_ABSENT, attrs);*/
+    arg[7] = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
+    arg[8] = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
+    arg[9] = get_param_by_name(SNMP_FLAG_STATIC, attrs);
+    arg[10] = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
     
     if(arg[4]){
       alist_t *lkp = alist_get_element_by_name(list, arg[4]);
@@ -387,12 +372,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     if(arg[0])
 	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[0], atof(arg[1]), arg[2], arg[3], lookup, x));
     
-    i = 0;
-    while(arg[i])
-    {
+    for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
       free (arg[i]);
-      i++;
-    }
+    
     free (arg);
 }
 
