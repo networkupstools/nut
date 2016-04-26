@@ -369,8 +369,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       lookup[i].oid_value = 0;
       lookup[i].info_value = NULL;
     }
-    if(arg[0])
+    if(arg[1])
 	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[0], atof(arg[1]), arg[2], arg[3], lookup, x));
+    alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[0], 128, arg[2], arg[3], lookup, x));
     
     for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
       free (arg[i]);
@@ -431,7 +432,7 @@ int main ()
     char buffer[1024];
     int result = 0;ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
-    FILE *f = fopen ("test.xml", "r");
+    FILE *f = fopen ("powerware-mib.dmf", "r");
     if (f) {
         while (!feof (f)) {
             size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
