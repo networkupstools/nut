@@ -88,6 +88,11 @@ get_snmp_data() {
 	fi
 
     # 2) get the content of the mfr specif MIB
+    # FIXME: test return value of the walk, and possibly ramp-up the path to get something.
+    # only works if we're pointed somehow in the right direction
+    # i.e. doesn't work if sysOID is .1.3.6.1.4.1.705.1 and data is at .1.3.6.1.4.1.534...
+    # Ex: sysOID = ".1.X.Y.Z"
+    # try with ".1.X.Y.Z", if fails try with .1.X.Y", if fails try with .1.X"...
     echo "Retrieving SNMP information. This may take some time"
     snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
     snmpwalk -Os -v1 -m ALL -M $MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
