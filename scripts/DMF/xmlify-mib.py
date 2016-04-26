@@ -159,6 +159,27 @@ def mk_snmp (inp, root):
             lookup_el.appendChild (info_el)
         root.appendChild (lookup_el)
 
+def mk_mib2nut (inp, root):
+    if not "MIB2NUT" in inp:
+        return
+
+    for name, lookup in inp ["MIB2NUT"].items ():
+
+        kwargs = dict (name=name)
+        for attr, key in (
+                ("oid", "sysOID"),
+                ("version", "mib_version"),
+                ("power_status", "oid_pwr_status"),
+                ("auto_check", "oid_auto_check"),
+                ("mib_name", "mib_name"),
+                ("snmp_info", "snmp_info")):
+            if not key in lookup or lookup [key] is None:
+                continue
+            kwargs [attr] = lookup [key]
+
+        lookup_el = mkElement ("mib2nut", **kwargs)
+        root.appendChild (lookup_el)
+
 def s_mkparser ():
     p = argparse.ArgumentParser ()
     p.add_argument ("json", help="json input file (default stdin)", default='-', nargs='?')
@@ -182,4 +203,5 @@ else:
 mk_lookup (inp, root)
 mk_alarms (inp, root)
 mk_snmp (inp, root)
+mk_mib2nut (inp, root)
 print (doc.toprettyxml ())
