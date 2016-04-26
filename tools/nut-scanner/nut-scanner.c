@@ -77,6 +77,7 @@ const struct option longopts[] =
 	{ "version",no_argument,NULL,'V' },
 	{ "available",no_argument,NULL,'a' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
+	{ "snmp_fingerprints_file",required_argument,NULL,'F' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -415,6 +416,12 @@ int main(int argc, char *argv[])
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
 				exit(EXIT_SUCCESS);
+			case 'F':
+				if(!nutscan_avail_snmp) {
+					goto display_help;
+				}
+				snmp_sec.fingerprints_file = strdup(optarg);
+				break;
 			case 'a':
 				printf("OLDNUT\n");
 				if(nutscan_avail_usb) {

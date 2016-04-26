@@ -55,6 +55,7 @@ typedef struct nutscan_snmp {
 	char * privProtocol;
 	char * peername;
 	void * handle;
+	char * fingerprints_file;
 } nutscan_snmp_t;
 
 /* IPMI structure */
