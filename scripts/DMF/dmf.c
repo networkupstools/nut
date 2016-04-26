@@ -163,6 +163,7 @@ info_alarm_destroy (void **self_p)
 void
 info_snmp_destroy (void **self_p)
 {
+    int i = 0;
     if (*self_p) {
         snmp_info_t *self = (snmp_info_t*) *self_p;
 	printf("Destroying: %s ---> %f ---> %s---> %s\n",self->info_type, self->info_len, self->OID, self->dfl);
@@ -183,6 +184,10 @@ info_snmp_destroy (void **self_p)
         }
         if (self->oid2info)
 	{
+	    while(self->oid2info[i].oid_value != 0){
+	      printf("Info_lkp_t-----------> %d\n",self->oid2info[i].oid_value);
+	      i++;
+	    }
             free ((info_lkp_t*)self->oid2info);
             self->oid2info = NULL;
         }
@@ -340,7 +345,11 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     }
     if(arg[9]){
       alist_t *lkp = alist_get_element_by_name(list, arg[9]);
-      lookup = (info_lkp_t*) malloc(lkp->size * sizeof(info_lkp_t));
+      lookup = (info_lkp_t*) malloc((lkp->size + 1) * sizeof(info_lkp_t));
+      for(i = 0; i < lkp->size; i++){
+	lookup[i].oid_value = ((info_lkp_t*) lkp->values[i])->oid_value;
+      }
+      lookup[i].oid_value = 0;
     }
     if(arg[0])
 	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[1], atof(arg[3]), arg[5], arg[7], lookup, x));
@@ -393,7 +402,7 @@ int xml_dict_start_cb(void *userdata, int parent,
 int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
   if(!userdata)return ERR;
-  if(strcmp(name,"lookup") == 0)
+  if(strcmp(name,LOOKUP) == 0)
   {
     
   }
