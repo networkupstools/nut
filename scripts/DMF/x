@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for cmib in $(ls -1 ../../drivers/*-mib.c); do
+    mib=$(basename "${cmib}")
+    mib=${mib/.c/}
+
+    python jsonify-mib.py --test ${cmib} | python xmlify-mib.py > ${mib}.dmf
+done
