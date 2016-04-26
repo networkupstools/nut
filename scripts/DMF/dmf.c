@@ -185,7 +185,12 @@ info_snmp_destroy (void **self_p)
         if (self->oid2info)
 	{
 	    while(self->oid2info[i].oid_value != 0){
-	      printf("Info_lkp_t-----------> %d\n",self->oid2info[i].oid_value);
+	      printf("Info_lkp_t-----------> %d",self->oid2info[i].oid_value);
+	      if(self->oid2info[i].info_value){
+		printf("  value---> %s\n",self->oid2info[i].info_value);
+		free((void*)self->oid2info[i].info_value);
+		self->oid2info[i].info_value = NULL;
+	      }
 	      i++;
 	    }
             free ((info_lkp_t*)self->oid2info);
@@ -350,8 +355,12 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       lookup = (info_lkp_t*) malloc((lkp->size + 1) * sizeof(info_lkp_t));
       for(i = 0; i < lkp->size; i++){
 	lookup[i].oid_value = ((info_lkp_t*) lkp->values[i])->oid_value;
+	if(((info_lkp_t*) lkp->values[i])->info_value)
+	  lookup[i].info_value = strdup(((info_lkp_t*) lkp->values[i])->info_value);
+	else lookup[i].info_value = NULL;
       }
       lookup[i].oid_value = 0;
+      lookup[i].info_value = NULL;
     }
     if(arg[0])
 	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[1], atof(arg[3]), arg[5], arg[7], lookup, x));
