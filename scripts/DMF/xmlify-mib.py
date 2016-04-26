@@ -118,13 +118,22 @@ def mk_snmp (inp, root):
             ### process flags
             for name, flag, value in (
                     ("static", SU_FLAG_STATIC, "yes"),
+                    ("absent", SU_FLAG_ABSENT, "yes"),
+                    ("positive", SU_FLAG_NEGINVALID, "yes"),
+                    ("unique", SU_FLAG_UNIQUE, "yes"),
                     ("power_status", SU_STATUS_PWR, "yes"),
                     ("battery_status", SU_STATUS_BATT, "yes"),
+                    ("calibration", SU_STATUS_CAL, "yes"),
+                    ("replace_baterry", SU_STATUS_RB, "yes"),
                     ("command", SU_TYPE_CMD, "yes"),
+                    ("outlet_group", SU_OUTLET_GROUP, "yes"),
+                    ("outlet", SU_OUTLET, "yes"),
                     ("output_phase", SU_OUTPUT_1, "1"),
                     ("output_phase", SU_OUTPUT_3, "3"),
                     ("input_phase", SU_INPUT_1, "1"),
                     ("input_phase", SU_INPUT_3, "3"),
+                    ("bypass_phase", SU_BYPASS_1, "1"),
+                    ("bypass_phase", SU_BYPASS_3, "3"),
                     ):
                 if not flag in info ["flags"]:
                     continue
@@ -132,7 +141,7 @@ def mk_snmp (inp, root):
                 info ["flags"].remove (flag)
 
             # ignore flags not relevant to XML generations
-            for flag in (SU_FLAG_OK, ):
+            for flag in (SU_FLAG_OK, SU_TYPE_STRING, SU_TYPE_INT):
                 if flag in info ["flags"]:
                     info ["flags"].remove (flag)
 
