@@ -70,6 +70,21 @@ alist_t *
  *  C FILE
  *
  */
+char
+*get_param_by_name (const char *name, const char **items)
+{
+    int iname;
+
+    if (!items || !name) return NULL;
+    iname = 0;
+    while (items[iname]) {
+        if (strcmp (items[iname],name) == 0) {
+            return strdup(items[iname+1]);
+        }
+        iname += 2;
+    }
+    return NULL;
+}
 
 //Create a lookup elemet
 info_lkp_t *
@@ -343,13 +358,22 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     assert (arg);
     memset (arg, 0, (INFO_SNMP_MAX_ATTRS + 1) * sizeof(void**));
     
-    while((attrs[i])&&(i < INFO_SNMP_MAX_ATTRS))
-    {
-      arg[i] = strdup(attrs[i]);
-      i++;
-    }
-    if(arg[9]){
-      alist_t *lkp = alist_get_element_by_name(list, arg[9]);
+    arg[0] = get_param_by_name(SNMP_NAME, attrs);
+    arg[1] = get_param_by_name(SNMP_MULTIPLIER, attrs);
+    arg[2] = get_param_by_name(SNMP_OID, attrs);
+    arg[3] = get_param_by_name(SNMP_DEFAULT, attrs);
+    arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
+    arg[5] = get_param_by_name(SNMP_OID, attrs);
+    arg[6] = get_param_by_name(SNMP_SETVAR, attrs);
+    
+    //flags
+    /*arg[8] = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
+    arg[9] = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
+    arg[10] = get_param_by_name(SNMP_FLAG_STATIC, attrs);
+    arg[11] = get_param_by_name(SNMP_FLAG_ABSENT, attrs);*/
+    
+    if(arg[4]){
+      alist_t *lkp = alist_get_element_by_name(list, arg[4]);
       lookup = (info_lkp_t*) malloc((lkp->size + 1) * sizeof(info_lkp_t));
       for(i = 0; i < lkp->size; i++){
 	lookup[i].oid_value = ((info_lkp_t*) lkp->values[i])->oid_value;
@@ -361,7 +385,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       lookup[i].info_value = NULL;
     }
     if(arg[0])
-	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[1], atof(arg[3]), arg[5], arg[7], lookup, x));
+	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[0], atof(arg[1]), arg[2], arg[3], lookup, x));
     
     i = 0;
     while(arg[i])
