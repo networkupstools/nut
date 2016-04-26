@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.6
+# Version: 0.7
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -31,6 +31,7 @@
 usage() {
     echo "Usage: $0 [options] [file]"
     echo "Options:"
+    echo " -d, --dmf           -- generate DMF formatted files instead of C-style"
     echo " -h, --help          -- show this message and quit"
     echo " -n name             -- subdriver name (use natural capitalization)"
     echo " -M DIRLIST          -- colon separated list of directories to also search for MIBs"
@@ -67,6 +68,7 @@ MIBS_DIRLIST="+."
 COMMUNITY="public"
 SYSOID=""
 MODE=0
+DMF=0
 
 # constants
 NAME=gen-snmp-subdriver
@@ -93,6 +95,188 @@ get_snmp_data() {
     snmpwalk -Os -v1 -m ALL -M $MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
 }
 
+generate_C() {
+	# create file names
+	LDRIVER=`echo $DRIVER | tr A-Z a-z`
+	UDRIVER=`echo $DRIVER | tr a-z A-Z`
+	CFILE="$LDRIVER-mib.c"
+	HFILE="$LDRIVER-mib.h"
+
+	#FIXME: LDRIVER & UDRIVER => replace - by _
+
+	# generate header file
+	echo "Creating $HFILE"
+	cat > "$HFILE" <<-EOF
+	/* ${HFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
+	 *
+	 *  Copyright (C)
+	 *  2011 - 2016	Arnaud Quette <arnaud.quette@free.fr>
+	 *
+	 *  This program is free software; you can redistribute it and/or modify
+	 *  it under the terms of the GNU General Public License as published by
+	 *  the Free Software Foundation; either version 2 of the License, or
+	 *  (at your option) any later version.
+	 *
+	 *  This program is distributed in the hope that it will be useful,
+	 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 *  GNU General Public License for more details.
+	 *
+	 *  You should have received a copy of the GNU General Public License
+	 *  along with this program; if not, write to the Free Software
+	 *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	 */
+
+	#ifndef ${UDRIVER}_MIB_H
+	#define ${UDRIVER}_MIB_H
+
+	#include "main.h"
+	#include "snmp-ups.h"
+
+	extern mib2nut_info_t ${LDRIVER};
+
+	#endif /* ${UDRIVER}_MIB_H */
+	EOF
+
+	# generate source file
+	# create header
+	echo "Creating $CFILE"
+	cat > "$CFILE" <<-EOF
+	/* ${CFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
+	 *
+	 *  Copyright (C)
+	 *  2011 - 2016	Arnaud Quette <arnaud.quette@free.fr>
+	 *
+	 *  Note: this subdriver was initially generated as a "stub" by the
+	 *  gen-snmp-subdriver script. It must be customized!
+	 *
+	 *  This program is free software; you can redistribute it and/or modify
+	 *  it under the terms of the GNU General Public License as published by
+	 *  the Free Software Foundation; either version 2 of the License, or
+	 *  (at your option) any later version.
+	 *
+	 *  This program is distributed in the hope that it will be useful,
+	 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 *  GNU General Public License for more details.
+	 *
+	 *  You should have received a copy of the GNU General Public License
+	 *  along with this program; if not, write to the Free Software
+	 *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+	 */
+
+	#include "${HFILE}"
+
+	#define ${UDRIVER}_MIB_VERSION  "0.1"
+
+	#define ${UDRIVER}_SYSOID       "${SYSOID}"
+
+	/* To create a value lookup structure (as needed on the 2nd line of the example
+	 * below), use the following kind of declaration, outside of the present snmp_info_t[]:
+	 * static info_lkp_t onbatt_info[] = {
+	 * 	{ 1, "OB" },
+	 * 	{ 2, "OL" },
+	 * 	{ 0, NULL }
+	 * };
+	 */
+
+	/* ${UDRIVER} Snmp2NUT lookup table */
+	static snmp_info_t ${LDRIVER}_mib[] = {
+
+		/* Data format:
+		 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar },
+		 *
+		 *	info_type:	NUT INFO_ or CMD_ element name
+		 *	info_flags:	flags to set in addinfo
+		 *	info_len:	length of strings if STR
+		 *				cmd value if CMD, multiplier otherwise
+		 *	OID: SNMP OID or NULL
+		 *	dfl: default value
+		 *	flags: snmp-ups internal flags (FIXME: ...)
+		 *	oid2info: lookup table between OID and NUT values
+		 *	setvar: variable to set for SU_FLAG_SETINT
+		 *
+		 * Example:
+		 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
+		 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
+		 *
+		 * To create a value lookup structure (as needed on the 2nd line), use the
+		 * following kind of declaration, outside of the present snmp_info_t[]:
+		 * static info_lkp_t onbatt_info[] = {
+		 * 	{ 1, "OB" },
+		 * 	{ 2, "OL" },
+		 * 	{ 0, NULL }
+		 * };
+		 */
+	EOF
+
+	# extract OID string paths, one by one
+	LINENB="0"
+	while IFS= read -r line; do
+		LINENB="`expr $LINENB + 1`"
+		FULL_STR_OID="$line"
+		STR_OID="`echo $line | cut -d'.' -f1`"
+		echo $line | grep STRING > /dev/null
+		if [ $? -eq 0 ]; then
+			ST_FLAG_TYPE="ST_FLAG_STRING"
+			SU_INFOSIZE="SU_INFOSIZE"
+		else
+			ST_FLAG_TYPE="0"
+			SU_INFOSIZE="1"
+		fi
+		# get the matching numeric OID
+		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
+		printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL, NULL },\n"
+	done < ${STRWALKFILE} >> ${CFILE}
+
+	# append footer
+	cat >> "$CFILE" <<-EOF
+
+		/* end of structure. */
+		{ NULL, 0, 0, NULL, NULL, 0, NULL }
+	};
+
+	mib2nut_info_t	${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_SYSOID };
+	EOF
+}
+
+generate_DMF() {
+
+	# create file names
+	LDRIVER=`echo $DRIVER | tr A-Z a-z`
+	UDRIVER=`echo $DRIVER | tr a-z A-Z`
+	DMFFILE="$LDRIVER-mib.dmf"
+
+	#FIXME: LDRIVER & UDRIVER => replace - by _
+
+	# generate DMF file
+	echo "Creating $DMFFILE"
+	printf "<-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > ${DMFFILE}
+	printf "<?xml version=\"1.0\" ?>\n<nut>\n\t<snmp name=\"${LDRIVER}_mib\">\n" >> ${DMFFILE}
+
+	# extract OID string paths, one by one
+	LINENB="0"
+	while IFS= read -r line; do
+		LINENB="`expr $LINENB + 1`"
+		FULL_STR_OID="$line"
+		STR_OID="`echo $line | cut -d'.' -f1`"
+		echo $line | grep STRING > /dev/null
+		if [ $? -eq 0 ]; then
+			ST_FLAG_TYPE="ST_FLAG_STRING"
+			SU_INFOSIZE="SU_INFOSIZE"
+		else
+			ST_FLAG_TYPE="0"
+			SU_INFOSIZE="1"
+		fi
+		# get the matching numeric OID
+		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
+		printf "\t\t<-- ${FULL_STR_OID} -->\n\t\t<snmp_info name=\"unmapped.${STR_OID}\", oid=\"${NUM_OID}\", default=\"\"/>\n"
+	done < ${STRWALKFILE} >> ${DMFFILE}
+
+	# append footer
+	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n</nut>\n" >> "$DMFFILE"
+}
+
 # process command line options
 while [ $# -gt 0 ]; do
     if [ $# -gt 1 -a "$1" = "-n" ]; then
@@ -101,6 +285,9 @@ while [ $# -gt 0 ]; do
     elif [ $# -gt 1 -a "$1" = "-M" ]; then
         MIBS_DIRLIST="$MIBS_DIRLIST:$2"
         shift 2
+    elif [ "$1" = "-d" ]; then
+        DMF=1
+        shift
     elif [ "$1" = "-k" ]; then
         KEEP=yes
         shift
@@ -210,155 +397,16 @@ STR_OID_COUNT="`cat $STRWALKFILE | wc -l`"
 
 echo "COUNT = $NUM_OID_COUNT / $NUM_OID_COUNT"
 
-# create file names
-LDRIVER=`echo $DRIVER | tr A-Z a-z`
-UDRIVER=`echo $DRIVER | tr a-z A-Z`
-CFILE="$LDRIVER-mib.c"
-HFILE="$LDRIVER-mib.h"
-
-FIXME: LDRIVER & UDRIVER => replace - by _
-
-# generate header file
-echo "Creating $HFILE"
-cat > "$HFILE" <<EOF
-/* ${HFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
- *
- *  Copyright (C)
- *  2011 - 2016	Arnaud Quette <arnaud.quette@free.fr>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- */
-
-#ifndef ${UDRIVER}_MIB_H
-#define ${UDRIVER}_MIB_H
-
-#include "main.h"
-#include "snmp-ups.h"
-
-extern mib2nut_info_t ${LDRIVER};
-
-#endif /* ${UDRIVER}_MIB_H */
-EOF
-
-# generate source file
-# create header
-echo "Creating $CFILE"
-cat > "$CFILE" <<EOF
-/* ${CFILE} - subdriver to monitor ${DRIVER} SNMP devices with NUT
- *
- *  Copyright (C)
- *  2011 - 2016	Arnaud Quette <arnaud.quette@free.fr>
- *
- *  Note: this subdriver was initially generated as a "stub" by the
- *  gen-snmp-subdriver script. It must be customized!
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- */
-
-#include "${HFILE}"
-
-#define ${UDRIVER}_MIB_VERSION  "0.1"
-
-#define ${UDRIVER}_SYSOID       "${SYSOID}"
-
-/* To create a value lookup structure (as needed on the 2nd line of the example
- * below), use the following kind of declaration, outside of the present snmp_info_t[]:
- * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, NULL }
- * };
- */
-
-/* ${UDRIVER} Snmp2NUT lookup table */
-static snmp_info_t ${LDRIVER}_mib[] = {
-
-	/* Data format:
-	 * { info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar },
-	 *
-	 *	info_type:	NUT INFO_ or CMD_ element name
-	 *	info_flags:	flags to set in addinfo
-	 *	info_len:	length of strings if STR
-	 *				cmd value if CMD, multiplier otherwise
-	 *	OID: SNMP OID or NULL
-	 *	dfl: default value
-	 *	flags: snmp-ups internal flags (FIXME: ...)
-	 *	oid2info: lookup table between OID and NUT values
-	 *	setvar: variable to set for SU_FLAG_SETINT
-	 *
-	 * Example:
-	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
-	 * { "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.7.3.0", "", SU_FLAG_OK | SU_STATUS_BATT, onbatt_info },
-	 *
-	 * To create a value lookup structure (as needed on the 2nd line), use the
-	 * following kind of declaration, outside of the present snmp_info_t[]:
-	 * static info_lkp_t onbatt_info[] = {
-	 * 	{ 1, "OB" },
-	 * 	{ 2, "OL" },
-	 * 	{ 0, NULL }
-	 * };
-	 */
-EOF
-
-
-# extract OID string paths, one by one
-LINENB="0"
-while IFS= read -r line; do
-	LINENB="`expr $LINENB + 1`"
-	FULL_STR_OID="$line"
-	STR_OID="`echo $line | cut -d'.' -f1`"
-	echo $line | grep STRING > /dev/null
-	if [ $? -eq 0 ]; then
-		ST_FLAG_TYPE="ST_FLAG_STRING"
-		SU_INFOSIZE="SU_INFOSIZE"
-	else
-		ST_FLAG_TYPE="0"
-		SU_INFOSIZE="1"
-	fi
-	# get the matching numeric OID
-	NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
-	printf "\t/* ${FULL_STR_OID} */\n\t{ \"unmapped.${STR_OID}\", ${ST_FLAG_TYPE}, ${SU_INFOSIZE}, \"${NUM_OID}\", NULL, SU_FLAG_OK, NULL, NULL },\n"
-done < ${STRWALKFILE} >> ${CFILE}
-
-# append footer
-cat >> "$CFILE" <<EOF
-
-	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL }
-};
-
-mib2nut_info_t	${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_SYSOID };
-EOF
+generate_C
+if [ "$DMF" -eq 1 ]; then
+	generate_DMF
+fi
 
 # Display the remaining tasks
 cat <<EOF
 Done.
 
-Do not forget to:
+For C-style integration, do not forget to:
 * bump DRIVER_VERSION in snmp-ups.c (add "0.01")
 * copy "${HFILE}" and "${CFILE}" to "../../drivers"
 * add #include "${HFILE}" to drivers/snmp-ups.c
@@ -366,4 +414,7 @@ Do not forget to:
 * add ${LDRIVER}-mib.c to snmp_ups_SOURCES in drivers/Makefile.am
 * add ${LDRIVER}-mib.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "./autogen.sh && ./configure && make" from the top level directory
+
+If otherwise using DMF, ensure that MIB2NUT information are present in
+snmp-discovery.dmf
 EOF
