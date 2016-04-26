@@ -184,7 +184,7 @@ info_snmp_destroy (void **self_p)
         }
         if (self->oid2info)
 	{
-	    while(self->oid2info[i].oid_value != 0){
+	    while(!((self->oid2info[i].oid_value == 0) && (!self->oid2info[i].info_value))){
 	      printf("Info_lkp_t-----------> %d",self->oid2info[i].oid_value);
 	      if(self->oid2info[i].info_value){
 		printf("  value---> %s\n",self->oid2info[i].info_value);
