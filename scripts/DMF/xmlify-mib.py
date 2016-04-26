@@ -116,10 +116,19 @@ def mk_snmp (inp, root):
                 die ("There are unprocessed items in info_flags in '%s'" % (info, ))
 
             ### process flags
-            for name, flag in (("static", SU_FLAG_STATIC), ):
+            for name, flag, value in (
+                    ("static", SU_FLAG_STATIC, "yes"),
+                    ("power_status", SU_STATUS_PWR, "yes"),
+                    ("battery_status", SU_STATUS_BATT, "yes"),
+                    ("command", SU_TYPE_CMD, "yes"),
+                    ("output_phase", SU_OUTPUT_1, "1"),
+                    ("output_phase", SU_OUTPUT_3, "3"),
+                    ("input_phase", SU_INPUT_1, "1"),
+                    ("input_phase", SU_INPUT_3, "3"),
+                    ):
                 if not flag in info ["flags"]:
                     continue
-                kwargs [name] = "yes"
+                kwargs [name] = value
                 info ["flags"].remove (flag)
 
             # ignore flags not relevant to XML generations
@@ -127,9 +136,15 @@ def mk_snmp (inp, root):
                 if flag in info ["flags"]:
                     info ["flags"].remove (flag)
 
+            if SU_FLAG_SETINT in info ["flags"]:
+                if not "setvar" in info:
+                    die ("SU_FLAG_SETINT in flags, but not setvar for '%s'", (info, ))
+                kwargs ["setvar"] = info ["setvar"]
+                info ["flags"].remove (SU_FLAG_SETINT)
+
             # This is a assert - if there are info_flags we do not cover, fail here!!!
             if len (info ["flags"]) > 0:
-                warn ("There are unprocessed items in flags in '%s'" % (info, ))
+                die ("There are unprocessed items in flags in '%s'" % (info, ))
 
             info_el = mkElement ("snmp_info", **kwargs)
             lookup_el.appendChild (info_el)
