@@ -6,6 +6,7 @@
  *      HEADER FILE
  *
  */
+#define YES "yes"
 #define DEFAULT_CAPACITY 16
 
 #define LOOKUP "lookup"
@@ -64,6 +65,12 @@ void
 // Create new instance of alist with LOOKUP type, for storage a list of collections
 alist_t *
     alist_new ();
+    
+unsigned long 
+    compile_flags(const char **attrs);
+
+int
+    compile_info_flags(const char **attrs);
 
 /*
  *
@@ -353,11 +360,10 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     arg[5] = get_param_by_name(SNMP_OID, attrs);
     arg[6] = get_param_by_name(SNMP_SETVAR, attrs);
     
-    //flags
-    arg[7] = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
-    arg[8] = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
-    arg[9] = get_param_by_name(SNMP_FLAG_STATIC, attrs);
-    arg[10] = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
+    i = 7;
+    //Info_flags
+    
+    //Flags
     
     if(arg[4]){
       alist_t *lkp = alist_get_element_by_name(list, arg[4]);
@@ -379,6 +385,51 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       free (arg[i]);
     
     free (arg);
+}
+
+unsigned long
+compile_flags(const char **attrs)
+{
+  int i = 0;
+  unsigned long flags;
+  char *aux_flags = NULL;
+  aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
+    if(aux_flags)if(strcmp(get_param_by_name(SNMP_FLAG_STATIC, attrs), YES) == 0){
+      //arg[i] = strdup(aux_flags);
+      i++;
+    }
+    if(aux_flags)free(aux_flags);
+    aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
+    if(aux_flags)if(strcmp(get_param_by_name(SNMP_FLAG_ABSENT, attrs), YES) == 0){
+      //arg[i] = strdup(aux_flags);
+      i++;
+    }
+    if(aux_flags)free(aux_flags);
+    
+  flags = 0;
+  return flags;
+}
+int
+compile_info_flags(const char **attrs)
+{
+  int i = 0;
+  int info_flags;
+  char *aux_flags = NULL;
+  aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      //arg[i] = strdup(aux_flags);
+      i++;
+    }
+    if(aux_flags)free(aux_flags);
+    aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
+    if(aux_flags)if(strcmp(get_param_by_name(SNMP_INFOFLAG_STRING, attrs), YES) == 0){
+      //arg[i] = strdup(aux_flags);
+      i++;
+    }
+    if(aux_flags)free(aux_flags);
+    
+  info_flags = 0;
+  return info_flags;
 }
 
 int xml_dict_start_cb(void *userdata, int parent,
