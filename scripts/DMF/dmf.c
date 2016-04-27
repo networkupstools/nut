@@ -28,10 +28,27 @@
 #define SNMP_DEFAULT "default"
 #define SNMP_LOOKUP "lookup"
 #define SNMP_SETVAR "setvar"
+//Info_flags
 #define SNMP_INFOFLAG_WRITABLE "writable"
 #define SNMP_INFOFLAG_STRING "string"
+//Flags
 #define SNMP_FLAG_STATIC "static"
 #define SNMP_FLAG_ABSENT "absent"
+#define SNMP_FLAG_NEGINVALID "positive"
+#define SNMP_FLAG_UNIQUE "unique"
+#define SNMP_STATUS_PWR "power_status"
+#define SNMP_STATUS_BATT "battery_status"
+#define SNMP_STATUS_CAL "calibration"
+#define SNMP_STATUS_RB "replace_baterry"
+#define SNMP_TYPE_CMD "command"
+#define SNMP_OUTLET_GROUP "outlet_group"
+#define SNMP_OUTLET "outlet"
+#define SNMP_OUTPUT_1 "output_phase"
+#define SNMP_OUTPUT_3 "output_phase"
+#define SNMP_INPUT_1 "input_phase"
+#define SNMP_INPUT_3 "input_phase"
+#define SNMP_BYPASS_1 "bypass_phase"
+#define SNMP_BYPASS_3 "bypass_phase"
 
 #define INFO_ALARM "info_alarm"
 #define ALARM_OID "oid"
@@ -77,6 +94,31 @@ int
  *  C FILE
  *
  */
+//DEBUGGING
+void print_snmp_memory_struct(snmp_info_t *self)
+{
+  int i = 0;
+  printf("SNMP: %s ---> %f ---> %s---> %s\n",self->info_type, self->info_len, self->OID, self->dfl);
+  
+  if (self->oid2info)
+	{
+	    while(!((self->oid2info[i].oid_value == 0) && (!self->oid2info[i].info_value))){
+	      printf("Info_lkp_t-----------> %d",self->oid2info[i].oid_value);
+	      if(self->oid2info[i].info_value)
+		printf("  value---> %s\n",self->oid2info[i].info_value);
+	      i++;
+  }    
+  printf("*-*-*-->Info_flags %d\n", self->info_flags);
+  printf("*-*-*-->Flags %lu\n", self->flags);
+  }
+}
+
+void print_alarm_memory_struct(alarms_info_t *self)
+{
+  printf("Alarm: %s ---> %s ---> %s\n",self->OID, self->status_value, self->alarm_value);
+}
+//END DEBUGGING
+
 char
 *get_param_by_name (const char *name, const char **items)
 {
@@ -146,7 +188,6 @@ info_lkp_destroy (void **self_p)
 {
     if (*self_p) {
         info_lkp_t *self = (info_lkp_t*) *self_p;
-	printf("Destroying: %d ---> %s\n",self->oid_value, self->info_value);
         if (self->info_value)
 	{
             free ((char*)self->info_value);
@@ -163,7 +204,6 @@ info_alarm_destroy (void **self_p)
 {
     if (*self_p) {
         alarms_info_t *self = (alarms_info_t*) *self_p;
-	printf("Destroying: %s ---> %s ---> %s\n",self->OID, self->status_value, self->alarm_value);
         if (self->OID)
 	{
             free ((char*)self->OID);
@@ -190,7 +230,6 @@ info_snmp_destroy (void **self_p)
     int i = 0;
     if (*self_p) {
         snmp_info_t *self = (snmp_info_t*) *self_p;
-	printf("Destroying: %s ---> %f ---> %s---> %s\n",self->info_type, self->info_len, self->OID, self->dfl);
         if (self->info_type)
 	{
             free ((char*)self->info_type);
@@ -209,9 +248,7 @@ info_snmp_destroy (void **self_p)
         if (self->oid2info)
 	{
 	    while(!((self->oid2info[i].oid_value == 0) && (!self->oid2info[i].info_value))){
-	      printf("Info_lkp_t-----------> %d",self->oid2info[i].oid_value);
 	      if(self->oid2info[i].info_value){
-		printf("  value---> %s\n",self->oid2info[i].info_value);
 		free((void*)self->oid2info[i].info_value);
 		self->oid2info[i].info_value = NULL;
 	      }
@@ -220,8 +257,6 @@ info_snmp_destroy (void **self_p)
             free ((info_lkp_t*)self->oid2info);
             self->oid2info = NULL;
         }
-        printf("*-*-*-->Info_flags %d\n", self->info_flags);
-	printf("*-*-*-->Flags %ld\n", self->flags);
         free (self);
 	*self_p = NULL;
     }
@@ -253,9 +288,6 @@ alist_destroy (alist_t **self_p)
     if (*self_p)
     {
         alist_t *self = *self_p;
-	
-	printf("N elements %d \n",self->size);
-	if(self->name)printf("** Name collection: %s \n",self->name);
 	
         for (;self->size>0; self->size--){
 	  self->destroy(& self->values [self->size-1]);
@@ -395,44 +427,131 @@ unsigned long
 compile_flags(const char **attrs)
 {
   int i = 0;
-  unsigned long flags;
+  unsigned long flags = 0;
   char *aux_flags = NULL;
-  aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
-    if(aux_flags)if(strcmp(get_param_by_name(SNMP_FLAG_STATIC, attrs), YES) == 0){
-      //arg[i] = strdup(aux_flags);
+  aux_flags = get_param_by_name(SNMP_FLAG_STATIC, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_FLAG_STATIC;
       i++;
     }
-    if(aux_flags)free(aux_flags);
-    aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
-    if(aux_flags)if(strcmp(get_param_by_name(SNMP_FLAG_ABSENT, attrs), YES) == 0){
-      //arg[i] = strdup(aux_flags);
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_FLAG_ABSENT;
       i++;
     }
-    if(aux_flags)free(aux_flags);
-    
-  flags = 0;
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_FLAG_NEGINVALID, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_FLAG_NEGINVALID;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_FLAG_UNIQUE, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_FLAG_UNIQUE;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_STATUS_PWR;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_STATUS_BATT, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_STATUS_BATT;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+    aux_flags = get_param_by_name(SNMP_STATUS_CAL, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_STATUS_CAL;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_STATUS_RB;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_TYPE_CMD;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_OUTLET_GROUP;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_OUTLET, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_OUTLET;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_OUTPUT_1, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_OUTPUT_1;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+   aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_OUTPUT_3;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_INPUT_1, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_INPUT_1;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_INPUT_3, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_INPUT_3;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_BYPASS_1, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_BYPASS_1;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
+   aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_BYPASS_3;
+      i++;
+    }
+  if(aux_flags)free(aux_flags);
   return flags;
 }
 int
 compile_info_flags(const char **attrs)
 {
   int i = 0;
-  int info_flags;
+  int info_flags = 0;
   char *aux_flags = NULL;
   aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
-    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
-      //arg[i] = strdup(aux_flags);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      info_flags = info_flags | ST_FLAG_RW;
       i++;
     }
-    if(aux_flags)free(aux_flags);
-    aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
-    if(aux_flags)if(strcmp(get_param_by_name(SNMP_INFOFLAG_STRING, attrs), YES) == 0){
-      //arg[i] = strdup(aux_flags);
+  if(aux_flags)free(aux_flags);
+  aux_flags = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
+  if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      info_flags = info_flags | ST_FLAG_STRING;
       i++;
     }
-    if(aux_flags)free(aux_flags);
-    
-  info_flags = 0;
+  if(aux_flags)free(aux_flags);
+  
   return info_flags;
 }
 
@@ -441,22 +560,19 @@ int xml_dict_start_cb(void *userdata, int parent,
                       const char **attrs)
 {
   alist_t *list = (alist_t*) userdata;
-  printf("Node --%s\n", name);
+  
   if(!userdata)return ERR;
   if(strcmp(name,LOOKUP) == 0)
   {
     alist_append(list, alist_new(attrs[1], info_lkp_destroy,(void (*)(void)) info_lkp_new));
-    printf(" %s   Its matched\n",attrs[1]);
   }
   else if(strcmp(name,ALARM) == 0)
   {
     alist_append(list, alist_new(attrs[1], info_alarm_destroy, (void (*)(void)) info_alarm_new));
-    printf(" %s   Its matched\n",attrs[1]);
   }
   else if(strcmp(name,SNMP) == 0)
   {
     alist_append(list, alist_new(attrs[1], info_snmp_destroy, (void (*)(void)) info_snmp_new));
-    printf(" %s   Its matched\n",attrs[1]);
   }
   else if(strcmp(name,INFO_LOOKUP) == 0)
   {
@@ -474,10 +590,18 @@ int xml_dict_start_cb(void *userdata, int parent,
 
 int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
+  alist_t *list = (alist_t*) userdata;
+  alist_t *element = alist_get_last_element(list);
+  int i;
+  
   if(!userdata)return ERR;
-  if(strcmp(name,LOOKUP) == 0)
+  if(strcmp(name,SNMP) == 0)
   {
-    
+    for(i = 0; i < element->size; i++)print_snmp_memory_struct((snmp_info_t*)element->values[i]);
+  }
+  if(strcmp(name,ALARM) == 0)
+  {
+    for(i = 0; i < element->size; i++)print_alarm_memory_struct((alarms_info_t*)element->values[i]);
   }
   return OK;
   
@@ -509,7 +633,6 @@ int main ()
         result = 1;
     }
     ne_xml_destroy (parser);
-
-    printf("Now checking what is in memory and destroying\n");
+    
     alist_destroy(&list);
 }
