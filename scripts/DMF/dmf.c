@@ -122,7 +122,7 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
     return self;
 }
 snmp_info_t *
-info_snmp_new (const char *name, double multiplier, const char *oid, const char *dfl, info_lkp_t *lookup, int *setvar)
+info_snmp_new (const char *name, int info_flags, double multiplier, const char *oid, const char *dfl, unsigned long flags, info_lkp_t *lookup, int *setvar)
 {
     snmp_info_t *self = (snmp_info_t*) malloc (sizeof (snmp_info_t));
     assert (self);
@@ -134,6 +134,8 @@ info_snmp_new (const char *name, double multiplier, const char *oid, const char 
       self->OID = strdup (oid);
     if(dfl)
       self->dfl = strdup (dfl);
+    self->info_flags = info_flags;
+    self->flags = flags;
     self->oid2info = lookup;
     self->setvar = setvar;
     return self;
@@ -218,6 +220,8 @@ info_snmp_destroy (void **self_p)
             free ((info_lkp_t*)self->oid2info);
             self->oid2info = NULL;
         }
+        printf("*-*-*-->Info_flags %d\n", self->info_flags);
+	printf("*-*-*-->Flags %ld\n", self->flags);
         free (self);
 	*self_p = NULL;
     }
@@ -345,6 +349,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     //temporal
     int *x=0;
     //end tremporal
+    unsigned long flags;
+    int info_flags;
     info_lkp_t *lookup = NULL;
     alist_t *element = alist_get_last_element(list);
     int i=0;
@@ -360,10 +366,10 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     arg[5] = get_param_by_name(SNMP_OID, attrs);
     arg[6] = get_param_by_name(SNMP_SETVAR, attrs);
     
-    i = 7;
     //Info_flags
-    
+    info_flags = compile_info_flags(attrs);
     //Flags
+    flags = compile_flags(attrs);
     
     if(arg[4]){
       alist_t *lkp = alist_get_element_by_name(list, arg[4]);
@@ -378,8 +384,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       lookup[i].info_value = NULL;
     }
     if(arg[1])
-	alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[0], atof(arg[1]), arg[2], arg[3], lookup, x));
-    alist_append(element, ((snmp_info_t *(*) (const char *, double, const char *, const char *, info_lkp_t *, int *)) element->new_element) (arg[0], 128, arg[2], arg[3], lookup, x));
+	alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, atof(arg[1]), arg[2], arg[3], flags, lookup, x));
+    alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, 128, arg[2], arg[3], flags, lookup, x));
     
     for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
       free (arg[i]);
