@@ -1,6 +1,7 @@
 //TODO: not in final
 #include <malamute.h>
 #include <neon/ne_xml.h>
+#include "snmp-ups.h"
 #include "powerware-mib.c"
 /*
  *      HEADER FILE
@@ -60,6 +61,10 @@
 #define SNMP_INPUT_3 "input_phase"
 #define SNMP_BYPASS_1 "bypass_phase"
 #define SNMP_BYPASS_3 "bypass_phase"
+//Setvar
+#define SETVAR_INPUT_PHASES "input_phases"
+#define SETVAR_OUTPUT_PHASES "output_phases"
+#define SETVAR_BYPASS_PHASES "bypass_phases"
 
 #define INFO_ALARM "info_alarm"
 #define ALARM_OID "oid"
@@ -109,7 +114,10 @@ int
 void print_snmp_memory_struct(snmp_info_t *self)
 {
   int i = 0;
-  printf("SNMP: --> Info_type: %s //   Info_len: %f //   OID:  %s //   Default: %s\n",self->info_type, self->info_len, self->OID, self->dfl);
+  printf("SNMP: --> Info_type: %s //   Info_len: %f //   OID:  %s //   Default: %s",self->info_type, self->info_len, self->OID, self->dfl);
+  if(self->setvar)
+    printf("//   Setvar: %d", *self->setvar);
+  printf("\n");
   
   if (self->oid2info)
 	{
@@ -361,10 +369,6 @@ info_mib2nut_destroy (void **self_p)
 		free((void*)self->snmp_info[i].dfl);
 		self->snmp_info[i].dfl = NULL;
 	      }
-	      if(self->snmp_info[i].setvar){
-		free((void*)self->snmp_info[i].setvar);
-		self->snmp_info[i].setvar = NULL;
-	      }
 	      i++;
 	    }
             free ((snmp_info_t*)self->snmp_info);
@@ -589,7 +593,7 @@ void
 snmp_info_node_handler(alist_t *list, const char **attrs)
 {
     //temporal
-    int *x=0;
+    double multiplier = 128;
     //end tremporal
     unsigned long flags;
     int info_flags;
@@ -626,8 +630,16 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
       lookup[i].info_value = NULL;
     }
     if(arg[1])
-	alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, atof(arg[1]), arg[2], arg[3], flags, lookup, x));
-    else alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, 128, arg[2], arg[3], flags, lookup, x));
+      multiplier = atof(arg[1]);
+    if(arg[6]){
+      if(strcmp(arg[6], SETVAR_INPUT_PHASES) == 0)
+        alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, multiplier, arg[2], arg[3], flags, lookup, &input_phases));
+      else if(strcmp(arg[6], SETVAR_OUTPUT_PHASES) == 0)
+        alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, multiplier, arg[2], arg[3], flags, lookup, &output_phases));
+      else if(strcmp(arg[6], SETVAR_BYPASS_PHASES) == 0)
+        alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, multiplier, arg[2], arg[3], flags, lookup, &bypass_phases));
+    }else
+      alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, multiplier, arg[2], arg[3], flags, lookup, NULL));
     
     for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
       free (arg[i]);
