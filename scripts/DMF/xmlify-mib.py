@@ -106,7 +106,7 @@ def mk_snmp (inp, root):
             if not ST_FLAG_STRING in info ["info_flags"]:
                 kwargs ["multiplier"] = info ["info_len"]
 
-            # ignore info_flags not relevant to XML generations
+            # I detect some diferences with the original structures if info_flags is ignored!
             for info_flag in (ST_FLAG_STRING, ST_FLAG_RW, 0):
                 if info_flag in info ["info_flags"]:
                     info ["info_flags"].remove (info_flag)
@@ -128,12 +128,12 @@ def mk_snmp (inp, root):
                     ("command", SU_TYPE_CMD, "yes"),
                     ("outlet_group", SU_OUTLET_GROUP, "yes"),
                     ("outlet", SU_OUTLET, "yes"),
-                    ("output_phase", SU_OUTPUT_1, "1"),
-                    ("output_phase", SU_OUTPUT_3, "3"),
-                    ("input_phase", SU_INPUT_1, "1"),
-                    ("input_phase", SU_INPUT_3, "3"),
-                    ("bypass_phase", SU_BYPASS_1, "1"),
-                    ("bypass_phase", SU_BYPASS_3, "3"),
+                    ("output_1_phase", SU_OUTPUT_1, "yes"),
+                    ("output_3_phase", SU_OUTPUT_3, "yes"),
+                    ("input_1_phase", SU_INPUT_1, "yes"),
+                    ("input_3_phase", SU_INPUT_3, "yes"),
+                    ("bypass_1_phase", SU_BYPASS_1, "yes"),
+                    ("bypass_3_phase", SU_BYPASS_3, "yes"),
                     ):
                 if not flag in info ["flags"]:
                     continue
