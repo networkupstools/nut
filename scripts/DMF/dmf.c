@@ -627,7 +627,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
     }
     if(arg[1])
 	alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, atof(arg[1]), arg[2], arg[3], flags, lookup, x));
-    alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, 128, arg[2], arg[3], flags, lookup, x));
+    else alist_append(element, ((snmp_info_t *(*) (const char *, int, double, const char *, const char *, unsigned long, info_lkp_t *, int *)) element->new_element) (arg[0], info_flags, 128, arg[2], arg[3], flags, lookup, x));
     
     for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
       free (arg[i]);
