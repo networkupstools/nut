@@ -14,8 +14,18 @@
 #define SNMP "snmp"
 #define ALARM "alarm"
 
+//#define MIB2NUT_NAME "name"
+#define MIB2NUT_VERSION "version"
+#define MIB2NUT_OID "oid"
+#define MIB2NUT_MIB_NAME "mib_name"
+#define MIB2NUT_AUTO_CHECK "auto_check"
+#define MIB2NUT_POWER_STATUS "power_status"
+#define MIB2NUT_SNMP "snmp_info"
+#define MIB2NUT_ALARMS "alarms_info"
+
+#define INFO_MIB2NUT_MAX_ATTRS 14
 #define INFO_LOOKUP_MAX_ATTRS 4
-#define INFO_SNMP_MAX_ATTRS 16
+#define INFO_SNMP_MAX_ATTRS 14
 #define INFO_ALARM_MAX_ATTRS 6
 
 #define INFO_LOOKUP "lookup_info"
@@ -99,7 +109,7 @@ int
 void print_snmp_memory_struct(snmp_info_t *self)
 {
   int i = 0;
-  printf("SNMP: %s ---> %f ---> %s---> %s\n",self->info_type, self->info_len, self->OID, self->dfl);
+  printf("SNMP: --> Info_type: %s //   Info_len: %f //   OID:  %s //   Default: %s\n",self->info_type, self->info_len, self->OID, self->dfl);
   
   if (self->oid2info)
 	{
@@ -116,15 +126,15 @@ void print_snmp_memory_struct(snmp_info_t *self)
 
 void print_alarm_memory_struct(alarms_info_t *self)
 {
-  printf("Alarm: %s ---> %s ---> %s\n",self->OID, self->status_value, self->alarm_value);
+  printf("Alarm: -->  OID: %s //   Status: %s //   Value: %s\n",self->OID, self->status_value, self->alarm_value);
 }
 void print_mib2nut_memory_struct(mib2nut_info_t *self){
   int i = 0;
-  printf("SNMP: %s ---> %s ---> %s---> %s ---> %s\n",self->mib_name, self->mib_version, self->oid_pwr_status, self->oid_auto_check, self->sysOID);
+  printf("       MIB2NUT: --> Mib_name: %s //   Version: %s //   Power_status: %s //   Auto_check: %s //   SysOID: %s\n",self->mib_name, self->mib_version, self->oid_pwr_status, self->oid_auto_check, self->sysOID);
   
   if (self->snmp_info)
 	{
-	    while(!((!self->snmp_info[i].info_type) && (!self->snmp_info[i].info_flags == 0) && (self->snmp_info[i].info_len == 0) && (!self->snmp_info[i].OID) && (!self->snmp_info[i].dfl) && (self->snmp_info[i].flags == 0) && (!self->snmp_info[i].oid2info))){
+	    while(!((!self->snmp_info[i].info_type) && (self->snmp_info[i].info_len == 0) && (!self->snmp_info[i].OID) && (!self->snmp_info[i].dfl) && (self->snmp_info[i].flags == 0) && (!self->snmp_info[i].oid2info))){
 	      print_snmp_memory_struct(self->snmp_info+i);
 	      i++;
         }
@@ -132,7 +142,7 @@ void print_mib2nut_memory_struct(mib2nut_info_t *self){
   i = 0;
   if (self->alarms_info)
 	{
-	    while((self->alarms_info[i].alarm_value) || (!self->alarms_info[i].OID) || (!self->alarms_info[i].status_value)){
+	    while((self->alarms_info[i].alarm_value) || (self->alarms_info[i].OID) || (self->alarms_info[i].status_value)){
 	      print_alarm_memory_struct(self->alarms_info+i);
 	      i++;
         }
@@ -307,7 +317,7 @@ void
 info_mib2nut_destroy (void **self_p)
 {
     int i = 0;
-    int j = 0;
+    //int j = 0;
     if (*self_p) {
         mib2nut_info_t *self = (mib2nut_info_t*) *self_p;
         if (self->mib_name)
@@ -337,7 +347,7 @@ info_mib2nut_destroy (void **self_p)
         }
         if (self->snmp_info)
 	{
-	    while(!((!self->snmp_info[i].info_type) && (!self->snmp_info[i].info_flags == 0) && (self->snmp_info[i].info_len == 0) && (!self->snmp_info[i].OID) && (!self->snmp_info[i].dfl) && (self->snmp_info[i].flags == 0) && (!self->snmp_info[i].oid2info))){
+	    while(!((!self->snmp_info[i].info_type) && (self->snmp_info[i].info_len == 0) && (!self->snmp_info[i].OID) && (!self->snmp_info[i].dfl) && (self->snmp_info[i].flags == 0) && (!self->snmp_info[i].oid2info))){
 	      if(self->snmp_info[i].info_type){
 		free((void*)self->snmp_info[i].info_type);
 		self->snmp_info[i].info_type = NULL;
@@ -354,25 +364,15 @@ info_mib2nut_destroy (void **self_p)
 		free((void*)self->snmp_info[i].setvar);
 		self->snmp_info[i].setvar = NULL;
 	      }
-	      if(self->snmp_info[i].oid2info){
-		while(!((self->snmp_info[i].oid2info[j].oid_value == 0) && (!self->snmp_info[i].oid2info[j].info_value))){
-		  if(self->snmp_info[i].oid2info[j].info_value){
-		    free((void*)self->snmp_info[i].oid2info[j].info_value);
-		    self->snmp_info[i].oid2info[j].info_value = NULL;
-		  }
-		  i++;
-		}
-		free((void*)self->snmp_info[i].oid2info);
-		self->snmp_info[i].oid2info = NULL;
-	      }
 	      i++;
 	    }
             free ((snmp_info_t*)self->snmp_info);
             self->snmp_info = NULL;
         }
+        i = 0;
         if (self->alarms_info)
 	{
-	    while((self->alarms_info[i].alarm_value) || (!self->alarms_info[i].OID) || (!self->alarms_info[i].status_value)){
+	    while((self->alarms_info[i].alarm_value) || (self->alarms_info[i].OID) || (self->alarms_info[i].status_value)){
 	      if(self->alarms_info[i].alarm_value){
 		free((void*)self->alarms_info[i].alarm_value);
 		self->alarms_info[i].alarm_value = NULL;
@@ -467,41 +467,73 @@ void
 mib2nut_info_node_handler(alist_t *list, const char **attrs){
     alist_t *element = alist_get_last_element(list);
     int i=0;
-    char **arg = (char**) malloc ((INFO_ALARM_MAX_ATTRS + 1) * sizeof (void**));
-    assert (arg);
-    memset (arg, 0, (INFO_ALARM_MAX_ATTRS + 1) * sizeof(void**));
+    snmp_info_t *snmp = NULL;
+    alarms_info_t *alarm = NULL;
     
-    arg[0] = get_param_by_name(ALARM_ALARM, attrs);
-    arg[1] = get_param_by_name(ALARM_STATUS, attrs);
-    arg[2] = get_param_by_name(ALARM_OID, attrs);
-    arg[3] = get_param_by_name(ALARM_STATUS, attrs);
-    arg[4] = get_param_by_name(ALARM_OID, attrs);
+    char **arg = (char**) malloc ((INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof (void**));
+    assert (arg);
+    memset (arg, 0, (INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof(void**));
+    
+    arg[0] = get_param_by_name(MIB2NUT_MIB_NAME, attrs);
+    arg[1] = get_param_by_name(MIB2NUT_VERSION, attrs);
+    arg[2] = get_param_by_name(MIB2NUT_OID, attrs);
+    arg[3] = get_param_by_name(MIB2NUT_POWER_STATUS, attrs);
+    arg[4] = get_param_by_name(MIB2NUT_AUTO_CHECK, attrs);
+    arg[5] = get_param_by_name(MIB2NUT_SNMP, attrs);
+    arg[6] = get_param_by_name(MIB2NUT_ALARMS, attrs);
+    
     if(arg[5]){
-      alist_t *lkp = alist_get_element_by_name(list, arg[4]);
-      lookup = (info_lkp_t*) malloc((lkp->size + 1) * sizeof(info_lkp_t));
+      alist_t *lkp = alist_get_element_by_name(list, arg[5]);
+      snmp = (snmp_info_t*) malloc((lkp->size + 1) * sizeof(snmp_info_t));
       for(i = 0; i < lkp->size; i++){
-	lookup[i].oid_value = ((info_lkp_t*) lkp->values[i])->oid_value;
-	if(((info_lkp_t*) lkp->values[i])->info_value)
-	  lookup[i].info_value = strdup(((info_lkp_t*) lkp->values[i])->info_value);
-	else lookup[i].info_value = NULL;
+	snmp[i].info_flags = ((snmp_info_t*) lkp->values[i])->info_flags;
+	snmp[i].info_len = ((snmp_info_t*) lkp->values[i])->info_len;
+	snmp[i].flags = ((snmp_info_t*) lkp->values[i])->flags;
+	if(((snmp_info_t*) lkp->values[i])->info_type)
+	  snmp[i].info_type = strdup(((snmp_info_t*) lkp->values[i])->info_type);
+	else snmp[i].info_type = NULL;
+	if(((snmp_info_t*) lkp->values[i])->OID)
+	  snmp[i].OID = strdup(((snmp_info_t*) lkp->values[i])->OID);
+	else snmp[i].OID = NULL;
+	if(((snmp_info_t*) lkp->values[i])->dfl)
+	  snmp[i].dfl = strdup(((snmp_info_t*) lkp->values[i])->dfl);
+	else snmp[i].dfl = NULL;
+	if(((snmp_info_t*) lkp->values[i])->setvar)
+	  snmp[i].setvar = ((snmp_info_t*) lkp->values[i])->setvar;
+	else snmp[i].setvar = NULL;
+	if(((snmp_info_t*) lkp->values[i])->oid2info)
+	  snmp[i].oid2info = ((snmp_info_t*) lkp->values[i])->oid2info;
+	else snmp[i].oid2info = NULL;
       }
-      lookup[i].oid_value = 0;
-      lookup[i].info_value = NULL;
+      snmp[i].info_flags = 0;
+      snmp[i].info_type = NULL;
+      snmp[i].info_len = 0;
+      snmp[i].OID = NULL;
+      snmp[i].flags = 0;
+      snmp[i].dfl = NULL;
+      snmp[i].setvar = NULL;
+      snmp[i].oid2info = NULL;
     }
-    if(arg[5]){
-      alist_t *lkp = alist_get_element_by_name(list, arg[4]);
-      lookup = (info_lkp_t*) malloc((lkp->size + 1) * sizeof(info_lkp_t));
-      for(i = 0; i < lkp->size; i++){
-	lookup[i].oid_value = ((info_lkp_t*) lkp->values[i])->oid_value;
-	if(((info_lkp_t*) lkp->values[i])->info_value)
-	  lookup[i].info_value = strdup(((info_lkp_t*) lkp->values[i])->info_value);
-	else lookup[i].info_value = NULL;
+    if(arg[6]){
+      alist_t *alm = alist_get_element_by_name(list, arg[6]);
+      alarm = (alarms_info_t*) malloc((alm->size + 1) * sizeof(alarms_info_t));
+      for(i = 0; i < alm->size; i++){
+	if(((alarms_info_t*) alm->values[i])->OID)
+	  alarm[i].OID = strdup(((alarms_info_t*) alm->values[i])->OID);
+	else alarm[i].OID = NULL;
+	if(((alarms_info_t*) alm->values[i])->status_value)
+	  alarm[i].status_value = strdup(((alarms_info_t*) alm->values[i])->status_value);
+	else alarm[i].status_value = NULL;
+	if(((alarms_info_t*) alm->values[i])->alarm_value)
+	  alarm[i].alarm_value = strdup(((alarms_info_t*) alm->values[i])->alarm_value);
+	else alarm[i].alarm_value = NULL;
       }
-      lookup[i].oid_value = 0;
-      lookup[i].info_value = NULL;
+      alarm[i].OID = NULL;
+      alarm[i].status_value = NULL;
+      alarm[i].alarm_value = NULL;
     }
     if(arg[0])
-	  alist_append(element, ((mib2nut_info_t *(*) (const char *, const char *, const char *, const char *, snmp_info_t *, const char *, alarms_info_t *)) element->new_element) (arg[0], arg[1], arg[2]));
+	  alist_append(element, ((mib2nut_info_t *(*) (const char *, const char *, const char *, const char *, snmp_info_t *, const char *, alarms_info_t *)) element->new_element) (arg[0], arg[1], arg[3], arg[4], snmp, arg[2], alarm));
     
     for(i = 0; i < (INFO_ALARM_MAX_ATTRS + 1); i++)
       free (arg[i]);
@@ -777,13 +809,11 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
   alist_t *list = (alist_t*) userdata;
   alist_t *element = alist_get_last_element(list);
-  int i;
   
   if(!userdata)return ERR;
   if(strcmp(name,MIB2NUT) == 0)
   {
-    printf("*********************** %d/n", element->size);
-    for(i = 0; i < element->size; i++)print_mib2nut_memory_struct((mib2nut_info_t*)element->values[i]);
+    print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
   }
   return OK;
   
