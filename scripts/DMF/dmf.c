@@ -1,7 +1,7 @@
 //TODO: not in final
 #include <malamute.h>
 #include <neon/ne_xml.h>
-#include "bestpower-mib.c"
+#include "powerware-mib.c"
 /*
  *      HEADER FILE
  *
@@ -130,6 +130,7 @@ void print_alarm_memory_struct(alarms_info_t *self)
 }
 void print_mib2nut_memory_struct(mib2nut_info_t *self){
   int i = 0;
+  printf("\n");
   printf("       MIB2NUT: --> Mib_name: %s //   Version: %s //   Power_status: %s //   Auto_check: %s //   SysOID: %s\n",self->mib_name, self->mib_version, self->oid_pwr_status, self->oid_auto_check, self->sysOID);
   
   if (self->snmp_info)
@@ -860,4 +861,11 @@ int main ()
     ne_xml_destroy (parser);
     
     alist_destroy(&list);
+    
+    //Debugging
+    printf("\n\n");
+    printf("Original C structures:\n\n");
+    print_mib2nut_memory_struct(&powerware);
+    print_mib2nut_memory_struct(&pxgx_ups);
+    //End debugging
 }
