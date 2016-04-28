@@ -1,6 +1,7 @@
 //TODO: not in final
 #include <malamute.h>
 #include <neon/ne_xml.h>
+#include <dirent.h>
 #include "snmp-ups.h"
 #include "powerware-mib.c"
 /*
@@ -831,14 +832,13 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   return OK;
   
 }
-
-int main ()
+int parse_file(char *file_name, alist_t *list)
 {
-    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
     char buffer[1024];
-    int result = 0;ne_xml_parser *parser = ne_xml_create ();
+    int result = 0;
+    ne_xml_parser *parser = ne_xml_create ();
     ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
-    FILE *f = fopen ("powerware-mib.dmf", "r");
+    FILE *f = fopen (file_name, "r");
     if (f) {
         while (!feof (f)) {
             size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
@@ -857,14 +857,34 @@ int main ()
     } else {
         result = 1;
     }
-    ne_xml_destroy (parser);
-    
-    alist_destroy(&list);
+    ne_xml_destroy (parser);    
+    return result;
+}
+int main ()
+{
+    alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
+    DIR *dir;
+    struct dirent *dir_ent;
+    int i = 0; 
+    if ((dir = opendir("./")) == NULL){
+      printf("DMF directory not found/n");
+      return 0;
+    }
+    while ((dir_ent = readdir(dir)) != NULL)
+    {
+      i++;
+      if(strstr(dir_ent->d_name, ".dmf"))
+	parse_file(dir_ent->d_name, list);
+      
+    }
     
     //Debugging
     printf("\n\n");
     printf("Original C structures:\n\n");
-    print_mib2nut_memory_struct(&powerware);
-    print_mib2nut_memory_struct(&pxgx_ups);
+    //print_mib2nut_memory_struct(&powerware);
+    //print_mib2nut_memory_struct(&pxgx_ups);
     //End debugging
+    
+    alist_destroy(&list);
+    closedir(dir);
 }
