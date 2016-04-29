@@ -178,7 +178,8 @@ def mk_mib2nut (inp, root):
                 ("power_status", "oid_pwr_status"),
                 ("auto_check", "oid_auto_check"),
                 ("mib_name", "mib_name"),
-                ("snmp_info", "snmp_info")):
+                ("snmp_info", "snmp_info"),
+                ("alarms_info", "alarms_info")):
             if not key in lookup or lookup [key] is None:
                 continue
             kwargs [attr] = lookup [key]
