@@ -106,7 +106,8 @@ def mk_snmp (inp, root):
             if not ST_FLAG_STRING in info ["info_flags"]:
                 kwargs ["multiplier"] = info ["info_len"]
 
-            # I detect some diferences with the original structures if info_flags is ignored!
+            # I detected some differences against the original structures
+            # if the info_flags is ignored!
             for name, info_flag, value in (
                     ("writable", ST_FLAG_RW, "yes"),
                     ("string", ST_FLAG_STRING, "yes"),
@@ -115,14 +116,16 @@ def mk_snmp (inp, root):
                     continue
                 kwargs [name] = value
                 info ["info_flags"].remove (info_flag)
-            
-            # This is a assert - if there are info_flags we do not cover, fail here!!!
-            #if len (info ["info_flags"]) > 0:
-            #    die ("There are unprocessed items in info_flags in '%s'" % (info, ))
+
+            # This is a assert - if there are info_flags we do not cover,
+            # fail here!!! (Mostly useful for NUT forks that might have a
+            # different schema that this stock script does not cover OOB).
+            if len (info ["info_flags"]) > 0:
+                die ("There are unprocessed items in info_flags in '%s'" % (info, ))
 
             ### process flags
             for name, flag, value in (
-			        ("flag_ok", SU_FLAG_OK, "yes"),
+                    ("flag_ok", SU_FLAG_OK, "yes"),
                     ("static", SU_FLAG_STATIC, "yes"),
                     ("absent", SU_FLAG_ABSENT, "yes"),
                     ("positive", SU_FLAG_NEGINVALID, "yes"),
