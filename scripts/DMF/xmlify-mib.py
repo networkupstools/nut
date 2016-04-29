@@ -108,8 +108,8 @@ def mk_snmp (inp, root):
 
             # I detect some diferences with the original structures if info_flags is ignored!
             for name, info_flag, value in (
-                    ("writable", SU_FLAG_STATIC, "yes"),
-                    ("string", SU_FLAG_ABSENT, "yes"),
+                    ("writable", ST_FLAG_RW, "yes"),
+                    ("string", ST_FLAG_STRING, "yes"),
                     ):
                 if not info_flag in info ["info_flags"]:
                     continue
