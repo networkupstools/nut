@@ -922,12 +922,13 @@ int main ()
     }
     
     //Debugging
-    mib2nut_info_t *m2n = get_mib2nut_table();
-    print_mib2nut_memory_struct(m2n + 12);
+    //mib2nut_info_t *m2n = get_mib2nut_table();
+    //print_mib2nut_memory_struct(m2n + 6);
+    //print_mib2nut_memory_struct(&pxgx_ups);
+    print_mib2nut_memory_struct((mib2nut_info_t *)alist_get_element_by_name(list, "powerware")->values[0]);
     printf("\n\n");
     printf("Original C structures:\n\n");
     print_mib2nut_memory_struct(&powerware);
-    //print_mib2nut_memory_struct(&pxgx_ups);
     //End debugging
     
     free(device_table);
