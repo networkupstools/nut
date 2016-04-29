@@ -45,6 +45,7 @@
 #define SNMP_INFOFLAG_WRITABLE "writable"
 #define SNMP_INFOFLAG_STRING "string"
 //Flags
+#define SNMP_FLAG_OK "flag_ok"
 #define SNMP_FLAG_STATIC "static"
 #define SNMP_FLAG_ABSENT "absent"
 #define SNMP_FLAG_NEGINVALID "positive"
@@ -651,109 +652,96 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 unsigned long
 compile_flags(const char **attrs)
 {
-  int i = 0;
   unsigned long flags = 0;
   char *aux_flags = NULL;
+  aux_flags = get_param_by_name(SNMP_FLAG_OK, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_FLAG_OK;
+    }
+  if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_STATIC, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_STATIC;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_ABSENT;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_NEGINVALID, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_NEGINVALID;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_UNIQUE, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_UNIQUE;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_PWR;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_STATUS_BATT, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_BATT;
-      i++;
     }
   if(aux_flags)free(aux_flags);
     aux_flags = get_param_by_name(SNMP_STATUS_CAL, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_CAL;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_RB;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_TYPE_CMD;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTLET_GROUP;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_OUTLET, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTLET;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_OUTPUT_1, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTPUT_1;
-      i++;
     }
   if(aux_flags)free(aux_flags);
    aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTPUT_3;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_INPUT_1, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_INPUT_1;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_INPUT_3, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_INPUT_3;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_BYPASS_1, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_BYPASS_1;
-      i++;
     }
   if(aux_flags)free(aux_flags);
    aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_BYPASS_3;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   return flags;
@@ -761,19 +749,16 @@ compile_flags(const char **attrs)
 int
 compile_info_flags(const char **attrs)
 {
-  int i = 0;
   int info_flags = 0;
   char *aux_flags = NULL;
   aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       info_flags = info_flags | ST_FLAG_RW;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       info_flags = info_flags | ST_FLAG_STRING;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   
@@ -879,8 +864,8 @@ int main ()
     }
     
     //Debugging
-    printf("\n\n");
-    printf("Original C structures:\n\n");
+    //printf("\n\n");
+    //printf("Original C structures:\n\n");
     //print_mib2nut_memory_struct(&powerware);
     //print_mib2nut_memory_struct(&pxgx_ups);
     //End debugging
