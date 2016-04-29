@@ -3,7 +3,12 @@
 #include <neon/ne_xml.h>
 #include <dirent.h>
 #include "snmp-ups.h"
+#include "nutscan-snmp.h"
+
 #include "powerware-mib.c"
+
+snmp_device_id_t *device_table;
+mib2nut_info_t *mib2nut_table;
 /*
  *      HEADER FILE
  *
@@ -88,6 +93,9 @@ typedef enum {
     ERR = -1,
     OK
 } state_t;
+
+int device_table_counter = 1;
+int mib2nut_counter = 1;
 
 // Create and initialize info_lkp_t
 info_lkp_t *
@@ -812,11 +820,39 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   if(!userdata)return ERR;
   if(strcmp(name,MIB2NUT) == 0)
   {
-    print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
+    //print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
+    device_table = (snmp_device_id_t *) realloc(device_table, device_table_counter * sizeof(snmp_device_id_t));
+    mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table, device_table_counter * sizeof(mib2nut_info_t));
+    assert (device_table);
+    assert (mib2nut_table);
+    
+    if(((mib2nut_info_t *) element->values[0])->oid_auto_check)
+      mib2nut_table[device_table_counter - 1].oid_auto_check = device_table[device_table_counter - 1].oid = (char *)((mib2nut_info_t *) element->values[0])->oid_auto_check;
+    
+    if(((mib2nut_info_t *) element->values[0])->mib_name)
+      mib2nut_table[device_table_counter - 1].mib_name = device_table[device_table_counter - 1].mib = (char *)((mib2nut_info_t *) element->values[0])->mib_name;
+      
+    if(((mib2nut_info_t *) element->values[0])->sysOID)
+      mib2nut_table[device_table_counter - 1].sysOID = device_table[device_table_counter - 1].sysoid = (char *)((mib2nut_info_t *) element->values[0])->sysOID;
+    
+    if(((mib2nut_info_t *) element->values[0])->mib_version)
+      mib2nut_table[device_table_counter - 1].mib_version = (char *)((mib2nut_info_t *) element->values[0])->mib_version;
+    
+    if(((mib2nut_info_t *) element->values[0])->oid_pwr_status)
+      mib2nut_table[device_table_counter - 1].oid_pwr_status = (char *)((mib2nut_info_t *) element->values[0])->oid_pwr_status;
+    
+    if(((mib2nut_info_t *) element->values[0])->snmp_info)
+      mib2nut_table[device_table_counter - 1].snmp_info = (snmp_info_t *)((mib2nut_info_t *) element->values[0])->snmp_info;
+    
+    if(((mib2nut_info_t *) element->values[0])->alarms_info)
+      mib2nut_table[device_table_counter - 1].alarms_info = (alarms_info_t *)((mib2nut_info_t *) element->values[0])->alarms_info;
+    
+    device_table_counter++;
   }
   return OK;
   
 }
+
 int parse_file(char *file_name, alist_t *list)
 {
     char buffer[1024];
@@ -842,11 +878,31 @@ int parse_file(char *file_name, alist_t *list)
     } else {
         result = 1;
     }
-    ne_xml_destroy (parser);    
+    ne_xml_destroy (parser);
+    
+    device_table = (snmp_device_id_t *) realloc(device_table, device_table_counter * sizeof(snmp_device_id_t));
+    mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table, device_table_counter * sizeof(mib2nut_info_t));
+    assert (device_table);
+    memset (device_table + device_table_counter -1, 0, sizeof (snmp_device_id_t));
+    assert (mib2nut_table);
+    memset (mib2nut_table + device_table_counter - 1, 0, sizeof (mib2nut_info_t));
     return result;
 }
+
+snmp_device_id_t *get_device_table()
+{
+ return device_table; 
+}
+
+mib2nut_info_t *get_mib2nut_table()
+{
+  return mib2nut_table;
+}
+
 int main ()
 {
+    device_table = NULL;
+    mib2nut_table = NULL;
     alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
     DIR *dir;
     struct dirent *dir_ent;
@@ -864,12 +920,16 @@ int main ()
     }
     
     //Debugging
-    //printf("\n\n");
-    //printf("Original C structures:\n\n");
-    //print_mib2nut_memory_struct(&powerware);
+    mib2nut_info_t *m2n = get_mib2nut_table();
+    print_mib2nut_memory_struct(m2n + 12);
+    printf("\n\n");
+    printf("Original C structures:\n\n");
+    print_mib2nut_memory_struct(&powerware);
     //print_mib2nut_memory_struct(&pxgx_ups);
     //End debugging
     
+    free(device_table);
+    free(mib2nut_table);
     alist_destroy(&list);
     closedir(dir);
 }
