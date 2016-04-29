@@ -3,7 +3,12 @@
 #include <neon/ne_xml.h>
 #include <dirent.h>
 #include "snmp-ups.h"
+#include "nutscan-snmp.h"
+
 #include "powerware-mib.c"
+
+snmp_device_id_t *device_table;
+mib2nut_info_t *mib2nut_table;
 /*
  *      HEADER FILE
  *
@@ -45,6 +50,7 @@
 #define SNMP_INFOFLAG_WRITABLE "writable"
 #define SNMP_INFOFLAG_STRING "string"
 //Flags
+#define SNMP_FLAG_OK "flag_ok"
 #define SNMP_FLAG_STATIC "static"
 #define SNMP_FLAG_ABSENT "absent"
 #define SNMP_FLAG_NEGINVALID "positive"
@@ -87,6 +93,9 @@ typedef enum {
     ERR = -1,
     OK
 } state_t;
+
+int device_table_counter = 1;
+int mib2nut_counter = 1;
 
 // Create and initialize info_lkp_t
 info_lkp_t *
@@ -651,109 +660,96 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 unsigned long
 compile_flags(const char **attrs)
 {
-  int i = 0;
   unsigned long flags = 0;
   char *aux_flags = NULL;
+  aux_flags = get_param_by_name(SNMP_FLAG_OK, attrs);
+    if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+      flags = flags | SU_FLAG_OK;
+    }
+  if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_STATIC, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_STATIC;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_ABSENT;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_NEGINVALID, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_NEGINVALID;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_FLAG_UNIQUE, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_FLAG_UNIQUE;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_PWR;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_STATUS_BATT, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_BATT;
-      i++;
     }
   if(aux_flags)free(aux_flags);
     aux_flags = get_param_by_name(SNMP_STATUS_CAL, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_CAL;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_STATUS_RB;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_TYPE_CMD;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTLET_GROUP;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_OUTLET, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTLET;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_OUTPUT_1, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTPUT_1;
-      i++;
     }
   if(aux_flags)free(aux_flags);
    aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_OUTPUT_3;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_INPUT_1, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_INPUT_1;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_INPUT_3, attrs);
     if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_INPUT_3;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_BYPASS_1, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_BYPASS_1;
-      i++;
     }
   if(aux_flags)free(aux_flags);
    aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       flags = flags | SU_BYPASS_3;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   return flags;
@@ -761,19 +757,16 @@ compile_flags(const char **attrs)
 int
 compile_info_flags(const char **attrs)
 {
-  int i = 0;
   int info_flags = 0;
   char *aux_flags = NULL;
   aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       info_flags = info_flags | ST_FLAG_RW;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   aux_flags = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
   if(aux_flags)if(strcmp(aux_flags, YES) == 0){
       info_flags = info_flags | ST_FLAG_STRING;
-      i++;
     }
   if(aux_flags)free(aux_flags);
   
@@ -827,11 +820,39 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   if(!userdata)return ERR;
   if(strcmp(name,MIB2NUT) == 0)
   {
-    print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
+    //print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
+    device_table = (snmp_device_id_t *) realloc(device_table, device_table_counter * sizeof(snmp_device_id_t));
+    mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table, device_table_counter * sizeof(mib2nut_info_t));
+    assert (device_table);
+    assert (mib2nut_table);
+    
+    if(((mib2nut_info_t *) element->values[0])->oid_auto_check)
+      mib2nut_table[device_table_counter - 1].oid_auto_check = device_table[device_table_counter - 1].oid = (char *)((mib2nut_info_t *) element->values[0])->oid_auto_check;
+    
+    if(((mib2nut_info_t *) element->values[0])->mib_name)
+      mib2nut_table[device_table_counter - 1].mib_name = device_table[device_table_counter - 1].mib = (char *)((mib2nut_info_t *) element->values[0])->mib_name;
+      
+    if(((mib2nut_info_t *) element->values[0])->sysOID)
+      mib2nut_table[device_table_counter - 1].sysOID = device_table[device_table_counter - 1].sysoid = (char *)((mib2nut_info_t *) element->values[0])->sysOID;
+    
+    if(((mib2nut_info_t *) element->values[0])->mib_version)
+      mib2nut_table[device_table_counter - 1].mib_version = (char *)((mib2nut_info_t *) element->values[0])->mib_version;
+    
+    if(((mib2nut_info_t *) element->values[0])->oid_pwr_status)
+      mib2nut_table[device_table_counter - 1].oid_pwr_status = (char *)((mib2nut_info_t *) element->values[0])->oid_pwr_status;
+    
+    if(((mib2nut_info_t *) element->values[0])->snmp_info)
+      mib2nut_table[device_table_counter - 1].snmp_info = (snmp_info_t *)((mib2nut_info_t *) element->values[0])->snmp_info;
+    
+    if(((mib2nut_info_t *) element->values[0])->alarms_info)
+      mib2nut_table[device_table_counter - 1].alarms_info = (alarms_info_t *)((mib2nut_info_t *) element->values[0])->alarms_info;
+    
+    device_table_counter++;
   }
   return OK;
   
 }
+
 int parse_file(char *file_name, alist_t *list)
 {
     char buffer[1024];
@@ -857,11 +878,31 @@ int parse_file(char *file_name, alist_t *list)
     } else {
         result = 1;
     }
-    ne_xml_destroy (parser);    
+    ne_xml_destroy (parser);
+    
+    device_table = (snmp_device_id_t *) realloc(device_table, device_table_counter * sizeof(snmp_device_id_t));
+    mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table, device_table_counter * sizeof(mib2nut_info_t));
+    assert (device_table);
+    memset (device_table + device_table_counter -1, 0, sizeof (snmp_device_id_t));
+    assert (mib2nut_table);
+    memset (mib2nut_table + device_table_counter - 1, 0, sizeof (mib2nut_info_t));
     return result;
 }
+
+snmp_device_id_t *get_device_table()
+{
+ return device_table; 
+}
+
+mib2nut_info_t *get_mib2nut_table()
+{
+  return mib2nut_table;
+}
+
 int main ()
 {
+    device_table = NULL;
+    mib2nut_table = NULL;
     alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
     DIR *dir;
     struct dirent *dir_ent;
@@ -879,12 +920,17 @@ int main ()
     }
     
     //Debugging
+    //mib2nut_info_t *m2n = get_mib2nut_table();
+    //print_mib2nut_memory_struct(m2n + 6);
+    //print_mib2nut_memory_struct(&pxgx_ups);
+    print_mib2nut_memory_struct((mib2nut_info_t *)alist_get_element_by_name(list, "powerware")->values[0]);
     printf("\n\n");
     printf("Original C structures:\n\n");
-    //print_mib2nut_memory_struct(&powerware);
-    //print_mib2nut_memory_struct(&pxgx_ups);
+    print_mib2nut_memory_struct(&powerware);
     //End debugging
     
+    free(device_table);
+    free(mib2nut_table);
     alist_destroy(&list);
     closedir(dir);
 }
