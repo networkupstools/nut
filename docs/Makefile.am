@@ -99,13 +99,13 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute=badges \
     --attribute=external_title \
     --attribute tree_version=@TREE_VERSION@ \
-    -a toc -a numbered --destination-dir=.
+    -a toc -a numbered
 
 .txt.html: common.xsl xhtml.xsl
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
+	$(A2X) $(A2X_COMMON_OPTS) --destination-dir=. --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
 .txt.chunked: common.xsl chunked.xsl
-	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
+	$(A2X) $(A2X_COMMON_OPTS) --destination-dir=. --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
 .txt.pdf: docinfo.xml
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
