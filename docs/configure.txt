@@ -336,6 +336,13 @@ Use --with-systemdsystemunitdir to detect the settings using pkg-config.
 
 Use --with-systemdsystemunitdir=no to disable this feature altogether.
 
+	--with-augeas-lenses-dir=PATH
+
+Where to install Augeas configuration-management lenses. Only useful and valid
+if you use Augeas to parse and modify configuration files. The default is
+/usr/share/augeas/lenses, if that directory exists, and not to install it
+otherwise.
+
 
 Directories used by NUT at run-time
 -----------------------------------
