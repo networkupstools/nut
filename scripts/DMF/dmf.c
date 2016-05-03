@@ -457,7 +457,10 @@ alist_destroy (alist_t **self_p)
         alist_t *self = *self_p;
 	
         for (;self->size>0; self->size--){
-	  self->destroy(& self->values [self->size-1]);
+	  if(self->destroy) 
+	    self->destroy(& self->values [self->size-1]);
+	  else 
+	    free(self->values[self->size-1]);
 	}
 	if(self->name)
 	  free(self->name);
@@ -569,7 +572,7 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
     if(arg[0])
 	  alist_append(element, ((mib2nut_info_t *(*) (const char *, const char *, const char *, const char *, snmp_info_t *, const char *, alarms_info_t *)) element->new_element) (arg[0], arg[1], arg[3], arg[4], snmp, arg[2], alarm));
     
-    for(i = 0; i < (INFO_ALARM_MAX_ATTRS + 1); i++)
+    for(i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
       free (arg[i]);
     
     free (arg);
