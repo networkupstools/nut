@@ -473,13 +473,14 @@ alist_destroy (alist_t **self_p)
 //Add a generic element at the end of the list
 void alist_append(alist_t *self,void *element)
 {
-  if(self->size==self->capacity)
+  if(self->size + 1 == self->capacity)
   {
     self->capacity+=DEFAULT_CAPACITY;
     self->values = (void**) realloc(self->values, self->capacity * sizeof(void*));
   }
     self->values[self->size] = element;
     self->size++;
+    self->values[self->size] = NULL;
 }
 
 //Return the last element of the list
