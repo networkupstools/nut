@@ -202,7 +202,7 @@ AC_CHECK_DECLS(__func__, [], [
 		AC_DEFINE(__func__, __LINE__, [Replace missing  __func__ declaration])
 	], [AC_INCLUDES_DEFAULT])
 ], [AC_INCLUDES_DEFAULT])
-	      
+
 dnl Solaris compatibility - check for -lnsl and -lsocket
 AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
@@ -210,7 +210,7 @@ AC_SEARCH_LIBS(connect, socket)
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
 
-# pthread related checks
+dnl pthread related checks
 AC_SEARCH_LIBS([pthread_create], [pthread],
        [AC_DEFINE(HAVE_PTHREAD, 1, [Define to enable pthread support code])],
        [])
@@ -254,7 +254,7 @@ dnl they are listed near the top by "./configure --help"
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([doc], [build and install documentation], [no])
+NUT_ARG_WITH([doc], [build and install documentation], [man=yes])
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 
 dnl ----------------------------------------------------------------------
@@ -629,81 +629,6 @@ dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
 NUT_CHECK_ASCIIDOC
 
-case "${nut_with_doc}" in
-	yes|all)
-		nut_doc_build_list="html-single html-chunked pdf"
-		;;
-	auto)
-		nut_doc_build_list="html-single=auto html-chunked=auto pdf=auto"
-		nut_with_doc=auto
-		;;
-	no|"")
-		nut_doc_build_list=""
-		;;
-	*)
-		nut_doc_build_list="`echo ${nut_with_doc} | sed 's/,/ /g'`"
-		;;
-esac
-
-for nut_doc_build_target in ${nut_doc_build_list}; do
-	case "${nut_doc_build_target}" in
-	html-single*)
-		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target} (minimum required 8.6.3)])
-		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} `basename ${nut_doc_build_target} =auto`"
-		], [
-			case "${nut_doc_build_target}" in *=auto) ;; *) AC_MSG_ERROR([Unable to build ${nut_doc_build_target} documentation which you requested]) ;; esac
-			AC_MSG_RESULT(no)
-			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} `basename ${nut_doc_build_target} =auto`"
-		])
-		;;
-
-	html-chunked*)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target} (minimum required 8.6.3)])
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} `basename ${nut_doc_build_target} =auto`"
-		], [
-			case "${nut_doc_build_target}" in *=auto) ;; *) AC_MSG_ERROR([Unable to build ${nut_doc_build_target} documentation which you requested]) ;; esac
-			AC_MSG_RESULT(no)
-			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} `basename ${nut_doc_build_target} =auto`"
-		])
-		;;
-
-	pdf*)
-		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target} (minimum required 0.2.5)])
-		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} `basename ${nut_doc_build_target} =auto`"
-		], [
-			case "${nut_doc_build_target}" in *=auto) ;; *) AC_MSG_ERROR([Unable to build ${nut_doc_build_target} documentation which you requested]) ;; esac
-			AC_MSG_RESULT(no)
-			DOC_NOBUILD_LIST="${DOC_NOBUILD_LIST} `basename ${nut_doc_build_target} =auto`"
-		])
-		;;
-	esac
-done
-
-case "${nut_with_doc}" in
-auto)
-	if test -n "${DOC_BUILD_LIST}"; then
-		nut_with_doc="yes"
-	else
-		nut_with_doc="no"
-	fi
-	;;	
-no)
-	;;
-*)
-	if test -z "${DOC_NOBUILD_LIST}"; then
-		nut_with_doc="yes"
-	else
-		AC_MSG_ERROR(["Unable to build ${DOC_NOBUILD_LIST} documentation (check for 'no' results above)"])
-	fi
-	;;
-esac
-
 AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
 AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 	AC_MSG_RESULT(yes)
@@ -753,9 +678,156 @@ dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
 dnl building
 AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 
-if test "${nut_with_doc}" = "yes"; then
-	NUT_REPORT([only build specific documentation format], [${DOC_BUILD_LIST}])
+
+case "${nut_with_doc}" in
+	yes|all)
+		nut_doc_build_list="man html-single html-chunked pdf"
+		;;
+	auto)
+		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
+		;;
+	no)
+		nut_doc_build_list=""
+		;;
+dnl If user passed --with-doc='' they they want nothing, right?
+	"")
+		nut_doc_build_list=""
+		AC_MSG_NOTICE([Got explicit empty list of document formats to build; nothing will be generated])
+		;;
+	*)
+		nut_doc_build_list="`echo ${nut_with_doc} | sed 's/,/ /g'`"
+		AC_MSG_NOTICE([Got explicit list of document formats to build or not: ${nut_doc_build_list}; formats not listed will be silently skipped])
+		;;
+esac
+
+dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
+dnl to ensure that it is processed as several space-separated tokens
+for nut_doc_build_target in $nut_doc_build_list; do
+	case "${nut_doc_build_target}" in
+	*=*=*) AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
+	*=*)
+		nut_doc_build_target_base="`echo "${nut_doc_build_target}" | sed 's,=.*$,,'`"
+		nut_doc_build_target_flag="`echo "${nut_doc_build_target}" | sed 's,^.*=,,'`"
+		;;
+	*)
+		nut_doc_build_target_base="${nut_doc_build_target}"
+		nut_doc_build_target_flag="yes"
+		;;
+	esac
+	case "${nut_doc_build_target_flag}" in
+	yes|no|auto|skip) ;;
+	"") nut_doc_build_target_flag="yes" ;;
+	*)  AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
+	esac
+	AC_MSG_CHECKING([desire and ability to build ${nut_doc_build_target_base} documentation])
+	AC_MSG_RESULT([${nut_doc_build_target_flag}])
+
+	case "${nut_doc_build_target}" in
+	*=no|*=skip)
+		DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+		;;
+
+dnl Notes: Document options below assume either no flag value (which
+dnl by default means "yes"), "yes" which is a requirement, or "auto"
+dnl to detect if we can build the wanted documentation format and yet
+dnl not fail if we have no tools to generate it.
+
+	html-single*)
+		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		], [
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target}" = "yes" ; then
+				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			fi
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+		])
+		;;
+
+	html-chunked*)
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		], [
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target}" = "yes" ; then
+				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			fi
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+		])
+		;;
+
+	pdf*)
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		], [
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target}" = "yes" ; then
+				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			fi
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+		])
+		;;
+
+	man*)
+		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
+		if test "${nut_have_asciidoc}" = yes ; then
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		else
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target}" = "yes" ; then
+				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			fi
+			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+		fi
+		;;
+
+	*) AC_MSG_ERROR([--with-doc option refers to unknown documentation format: $nut_doc_build_target]) ;;
+
+	esac
+done
+
+case "${nut_with_doc}" in
+auto)
+	if test -n "${DOC_BUILD_LIST}"; then
+		nut_with_doc="yes"
+	else
+		nut_with_doc="no"
+	fi
+	;;
+no)
+	;;
+*)
+	if test -n "${DOC_CANNOTBUILD_LIST}"; then
+		AC_MSG_ERROR([Unable to build${DOC_CANNOTBUILD_LIST} documentation (check for 'no' results above)])
+	fi
+
+	if test -n "${DOC_SKIPBUILD_LIST}"; then
+		AC_MSG_NOTICE([Skipping build of${DOC_SKIPBUILD_LIST} documentation (check for 'skip' results above)])
+	fi
+
+	if test -n "${DOC_BUILD_LIST}"; then
+		nut_with_doc="yes"
+	else
+		nut_with_doc="no"
+	fi
+	;;
+esac
+
+NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
+					[WITH_DOCS], [Define to enable overall documentation generation])
+
+WITH_MANS=no
+if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
+	WITH_MANS=yes
 fi
+AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -1000,17 +1072,22 @@ if test "${DRIVER_BUILD_LIST}" != "all"; then
 fi
 
 AC_MSG_CHECKING(which driver man pages to install)
-if test "${DRIVER_BUILD_LIST}" = "all"; then
-	DRIVER_MAN_LIST=all
-	AC_MSG_RESULT(all available)
+if test "${WITH_MANS}" = "yes"; then
+	if test "${DRIVER_BUILD_LIST}" = "all"; then
+		DRIVER_MAN_LIST=all
+		AC_MSG_RESULT(all available)
+	else
+		DRIVER_MAN_LIST=""
+		for i in ${DRIVER_BUILD_LIST}; do
+			if test -f ${srcdir}/docs/man/$i.8; then
+				DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
+			fi
+		done
+		AC_MSG_RESULT(${DRIVER_MAN_LIST})
+	fi
 else
 	DRIVER_MAN_LIST=""
-	for i in ${DRIVER_BUILD_LIST}; do
-		if test -f ${srcdir}/docs/man/$i.8; then
-			DRIVER_MAN_LIST="${DRIVER_MAN_LIST} $i.8"
-		fi
-	done
-	AC_MSG_RESULT(${DRIVER_MAN_LIST})
+	AC_MSG_RESULT([none (manpages disabled)])
 fi
 
 AC_MSG_CHECKING(whether to strip debug symbols)
@@ -1053,13 +1130,13 @@ fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
 PKG_PROG_PKG_CONFIG
-systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
 [
 	case "${withval}" in
-	yes|auto)
+	yes|auto|"")
+		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
 		;;
 	no)
 		systemdsystemunitdir=""
