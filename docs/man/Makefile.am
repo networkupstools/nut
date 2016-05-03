@@ -21,6 +21,7 @@ SRC_CONF_PAGES = \
 	upsmon.conf.txt \
 	upssched.conf.txt
 
+if WITH_MANS
 MAN_CONF_PAGES = \
 	nut.conf.5 \
 	ups.conf.5 \
@@ -28,6 +29,7 @@ MAN_CONF_PAGES = \
 	upsd.users.5 \
 	upsmon.conf.5 \
 	upssched.conf.5
+endif
 
 man5_MANS = $(MAN_CONF_PAGES)
 
@@ -50,6 +52,7 @@ SRC_CLIENT_PAGES = \
 	upsrw.txt \
 	upssched.txt
 
+if WITH_MANS
 MAN_CLIENT_PAGES = \
 	nutupsdrv.8 \
 	upsc.8 \
@@ -60,6 +63,7 @@ MAN_CLIENT_PAGES = \
 	upsmon.8 \
 	upsrw.8 \
 	upssched.8
+endif
 
 man8_MANS = $(MAN_CLIENT_PAGES)
 
@@ -76,7 +80,9 @@ HTML_CLIENT_MANS = \
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt
 
+if WITH_MANS
 MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8
+endif
 
 man8_MANS += $(MAN_TOOL_PAGES)
 
@@ -91,6 +97,7 @@ SRC_CGI_PAGES = \
 	upsstats.cgi.txt \
 	upsimage.cgi.txt
 
+if WITH_MANS
 MAN5_CGI_PAGES = \
 	hosts.conf.5 \
 	upsset.conf.5 \
@@ -100,6 +107,7 @@ MAN8_CGI_PAGES = \
 	upsset.cgi.8 \
 	upsstats.cgi.8 \
 	upsimage.cgi.8
+endif
 
 if WITH_CGI
  man5_MANS += $(MAN5_CGI_PAGES)
@@ -162,6 +170,7 @@ SRC_DEV_PAGES = \
 	libupsclient-config.txt \
 	skel.txt
 
+if WITH_MANS
 # NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
 MAN3_DEV_PAGES = \
 	upsclient.3 \
@@ -235,6 +244,7 @@ MAN3_DEV_PAGES = \
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
+endif
 
 if WITH_DEV
  man3_MANS = $(MAN3_DEV_PAGES)
@@ -343,6 +353,7 @@ SRC_SERIAL_PAGES = \
 	victronups.txt	\
 	apcupsd-ups.txt
 
+if WITH_MANS
 MAN_SERIAL_PAGES = \
 	al175.8	\
 	apcsmart.8	\
@@ -384,6 +395,7 @@ MAN_SERIAL_PAGES = \
 	upscode2.8	\
 	victronups.8	\
 	apcupsd-ups.8
+endif
 
 if WITH_SERIAL
   man8_MANS +=  $(MAN_SERIAL_PAGES)
@@ -433,7 +445,9 @@ HTML_SERIAL_MANS = \
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
+if WITH_MANS
 MAN_SNMP_PAGES = snmp-ups.8
+endif
 
 if WITH_SNMP
   man8_MANS += $(MAN_SNMP_PAGES)
@@ -453,6 +467,7 @@ SRC_USB_LIBUSB_PAGES = \
 	tripplite_usb.txt \
 	usbhid-ups.txt
 
+if WITH_MANS
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
@@ -462,6 +477,7 @@ MAN_USB_LIBUSB_PAGES = \
 	riello_usb.8	\
 	tripplite_usb.8 \
 	usbhid-ups.8
+endif
 
 if WITH_USB
  man8_MANS += $(MAN_USB_LIBUSB_PAGES)
@@ -479,7 +495,9 @@ HTML_USB_LIBUSB_MANS = \
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
+if WITH_MANS
 MAN_NETXML_PAGES = netxml-ups.8
+endif
 
 if WITH_NEON
    man8_MANS += $(MAN_NETXML_PAGES)
@@ -489,7 +507,9 @@ HTML_NETXML_MANS = netxml-ups.html
 
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
+if WITH_MANS
 MAN_POWERMAN_PAGES = powerman-pdu.8
+endif
 
 if WITH_LIBPOWERMAN
    man8_MANS += $(MAN_POWERMAN_PAGES)
@@ -499,7 +519,9 @@ HTML_POWERMAN_MANS = powerman-pdu.html
 
 # (--with-ipmi)
 SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+if WITH_MANS
 MAN_IPMIPSU_PAGES = nut-ipmipsu.8
+endif
 
 if WITH_IPMI
    man8_MANS += $(MAN_IPMIPSU_PAGES)
@@ -508,7 +530,9 @@ endif
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
 
 SRC_MACOSX_PAGES = macosx-ups.txt
+if WITH_MANS
 MAN_MACOSX_PAGES = macosx-ups.8
+endif
 
 if WITH_MACOSX
    man8_MANS += $(MAN_MACOSX_PAGES)
@@ -517,7 +541,9 @@ endif
 HTML_MACOSX_MANS = macosx-ups.html
 
 SRC_LINUX_I2C_PAGES = asem.txt
+if WITH_MANS
 MAN_LINUX_I2C_PAGES = asem.8
+endif
 
 if WITH_LINUX_I2C
    man8_MANS += $(LINUX_I2C_PAGES)
@@ -528,7 +554,9 @@ HTML_LINUX_I2C_MANS = asem.html
 # SOME_DRIVERS
 endif
 
-MAN_MANS = \
+MAN_MANS =
+if WITH_MANS
+MAN_MANS += \
 	$(MAN_CONF_PAGES) \
 	$(MAN_CLIENT_PAGES) \
 	$(MAN_TOOL_PAGES) \
@@ -544,6 +572,7 @@ MAN_MANS = \
 	$(MAN_IPMIPSU_PAGES) \
 	$(MAN_MACOSX_PAGES) \
 	$(MAN_LINUX_I2C_PAGES)
+endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
@@ -563,6 +592,13 @@ EXTRA_DIST = \
 	$(SRC_LINUX_I2C_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
+
+if ! WITH_MANS
+# Cause "make dist" to fail
+EXTRA_DIST += dist
+dist:
+	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+endif
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
