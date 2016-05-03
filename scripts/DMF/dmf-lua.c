@@ -43,6 +43,7 @@ mib2nut_info_t *mib2nut_table;
 #define LOOKUP "lookup"
 #define SNMP "snmp"
 #define ALARM "alarm"
+#define FUNCTION "function"
 
 //#define MIB2NUT_NAME "name"
 #define MIB2NUT_VERSION "version"
@@ -461,7 +462,10 @@ alist_destroy (alist_t **self_p)
         alist_t *self = *self_p;
 	
         for (;self->size>0; self->size--){
-	  self->destroy(& self->values [self->size-1]);
+	  if(self->destroy) 
+	    self->destroy(& self->values [self->size-1]);
+	  else 
+	    free(self->values[self->size-1]);
 	}
 	if(self->name)
 	  free(self->name);
@@ -830,6 +834,9 @@ int xml_dict_start_cb(void *userdata, int parent,
   }else if(strcmp(name,INFO_SNMP) == 0)
   {
     snmp_info_node_handler(list,attrs);
+  }else if(strcmp(name,FUNCTION) == 0)
+  {
+    alist_append(list, alist_new(auxname, NULL, NULL));
   }
   free(auxname);
   return 1;
@@ -876,12 +883,34 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
   
 }
 
+int xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
+{
+  char *luatext;
+  
+  if(!userdata)return ERR;
+  
+  alist_t *list = (alist_t*) userdata;
+  
+  if(len > 2){
+    alist_t *element = alist_get_last_element(list);
+    
+    luatext = (char*) malloc(len + 1 * sizeof(char));
+    memset(luatext, 0, len + 1);
+    strncpy(luatext, cdata, len);
+    
+    printf("%d --> %s\n",(int)len,luatext);
+    alist_append(element, (void*) luatext);
+    //free(luatext);
+  }
+  return OK;
+}
+
 int parse_file(char *file_name, alist_t *list)
 {
     char buffer[1024];
     int result = 0;
     ne_xml_parser *parser = ne_xml_create ();
-    ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
+    ne_xml_push_handler (parser, xml_dict_start_cb, xml_cdata_cb, xml_end_cb, list);
     FILE *f = fopen (file_name, "r");
     if (f) {
         while (!feof (f)) {
