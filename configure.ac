@@ -67,6 +67,10 @@ cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
 pkgconfigdir='${libdir}/pkgconfig'
+auglensdir='/usr/share/augeas/lenses'
+if test ! -d "${auglensdir}"; then
+   auglensdir=''
+fi
 hotplugdir='/etc/hotplug'
 if test ! -d "${hotplugdir}"; then
    hotplugdir=''
@@ -1157,6 +1161,34 @@ else
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 
+AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
+AC_ARG_WITH(augeas-lenses-dir,
+	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${auglensdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["augeas lenses directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		auglensdir=""
+		;;
+	*)
+		auglensdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${auglensdir}"; then
+	AC_MSG_RESULT(using ${auglensdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
+
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
 	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
@@ -1346,6 +1378,7 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
