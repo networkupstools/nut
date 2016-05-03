@@ -102,7 +102,6 @@ mib2nut_info_t *mib2nut_table;
 #define ALARM_STATUS "status"
 #define ALARM_ALARM "alarm"
 
-lua_State **lfunction;
 
 typedef struct {
 	void **values;
@@ -511,6 +510,7 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
     int i=0;
     snmp_info_t *snmp = NULL;
     alarms_info_t *alarm = NULL;
+    //lua_State **lfunction;
     
     char **arg = (char**) malloc ((INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof (void**));
     assert (arg);
@@ -523,6 +523,7 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
     arg[4] = get_param_by_name(MIB2NUT_AUTO_CHECK, attrs);
     arg[5] = get_param_by_name(MIB2NUT_SNMP, attrs);
     arg[6] = get_param_by_name(MIB2NUT_ALARMS, attrs);
+    arg[7] = get_param_by_name(FUNCTION, attrs);
     
     if(arg[5]){
       alist_t *lkp = alist_get_element_by_name(list, arg[5]);
@@ -577,7 +578,7 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
     if(arg[0])
 	  alist_append(element, ((mib2nut_info_t *(*) (const char *, const char *, const char *, const char *, snmp_info_t *, const char *, alarms_info_t *)) element->new_element) (arg[0], arg[1], arg[3], arg[4], snmp, arg[2], alarm));
     
-    for(i = 0; i < (INFO_ALARM_MAX_ATTRS + 1); i++)
+    for(i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
       free (arg[i]);
     
     free (arg);
@@ -953,13 +954,13 @@ mib2nut_info_t *get_mib2nut_table()
 
 int main ()
 {
-    char *luaquery = "print(\"something\")";
+    /*char *luaquery = "print(\"something\")";
     lfunction =(lua_State**) malloc(sizeof(lua_State**));
     *lfunction = lua_open();
     luaopen_base(*lfunction);
     luaopen_string(*lfunction);
     luaL_loadbuffer(*lfunction, luaquery, strlen(luaquery), "fn");
-    lua_pcall(*lfunction, 0, 0, 0);
+    lua_pcall(*lfunction, 0, 0, 0);*/
     device_table = NULL;
     mib2nut_table = NULL;
     alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
@@ -982,7 +983,7 @@ int main ()
     //mib2nut_info_t *m2n = get_mib2nut_table();
     //print_mib2nut_memory_struct(m2n + 6);
     //print_mib2nut_memory_struct(&pxgx_ups);
-    //print_mib2nut_memory_struct((mib2nut_info_t *)alist_get_element_by_name(list, "powerware")->values[0]);
+    print_mib2nut_memory_struct((mib2nut_info_t *)alist_get_element_by_name(list, "powerware")->values[0]);
     //printf("\n\n");
     //printf("Original C structures:\n\n");
     //print_mib2nut_memory_struct(&powerware);
@@ -993,6 +994,6 @@ int main ()
     alist_destroy(&list);
     closedir(dir);
     
-    lua_close(*lfunction);
-    free(lfunction);
+    /*lua_close(*lfunction);
+    free(lfunction);*/
 }
