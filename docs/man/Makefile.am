@@ -637,7 +637,8 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual"
+	--attribute manmanual="NUT Manual" \
+	--destination-dir=.
 
 .txt.1:
 	$(A2X) $(A2X_MANPAGE_OPTS) $<
