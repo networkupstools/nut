@@ -100,6 +100,13 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute=external_title \
     --attribute tree_version=@TREE_VERSION@ \
     -a toc -a numbered --destination-dir=.
+# NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
+# As of version 8.6.9 it lies, and the argument is required for our distcheck.
+# For more details see issues https://github.com/asciidoc/asciidoc/issues/44
+# and https://github.com/networkupstools/nut/pull/281 (in short, attempts
+# to "fix" this warning broke NUT build). If this is to be retried later, see
+# https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
+# and do not forget to fix up docs/man/Makefile.am too ;)
 
 .txt.html: common.xsl xhtml.xsl
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
