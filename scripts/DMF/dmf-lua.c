@@ -193,7 +193,8 @@ void print_mib2nut_memory_struct(mib2nut_info_t *self){
   if (self->functions)
 	{
 	    while(self->functions[i]){
-	      printf("Lua Function n- %d\n", i);
+	      printf("Lua Function n- %d result: \n", i);
+	      lua_pcall(self->functions[i], 0, 0, 0);
 	      i++;
         }
   }
