@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -x
+gcc -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -O -fstack-protector -lneon -llua -I../../include -I../../drivers dmf-lua.c && \
+valgrind --leak-check=full --track-origins=yes ./a.out
