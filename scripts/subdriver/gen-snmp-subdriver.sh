@@ -256,8 +256,42 @@ generate_DMF() {
 
 	# generate DMF file
 	echo "Creating $DMFFILE"
-	printf "<-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > ${DMFFILE}
+	printf "<!-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > ${DMFFILE}
+	printf "<!-- this DMF was generated automatically. It must be customized! -->\n" >> ${DMFFILE}
 	printf "<?xml version=\"1.0\" ?>\n<nut>\n\t<snmp name=\"${LDRIVER}_mib\">\n" >> ${DMFFILE}
+	printf "\t\t<!-- Data format: -->\n" >> ${DMFFILE}
+	printf "\t\t<!-- To create a value lookup structure (as needed on the 2nd line of the example" >> ${DMFFILE}
+	printf "below), use the following kind of declaration:\n" >> ${DMFFILE}
+	printf "\t\t<lookup name=\"onbatt_info\">\n" >> ${DMFFILE}
+	printf "\t\t\t<lookup_info oid=\"1\" value=\"OB\"/>\n" >> ${DMFFILE}
+	printf "\t\t\t<lookup_info oid=\"2\" value=\"OL\"/>\n" >> ${DMFFILE}
+	printf "\t\t</lookup> -->\n\n" >> ${DMFFILE}
+	printf "\t\t<!-- To create a variable mapping entry, use the following kind of declaration:\n" >> ${DMFFILE}
+	printf "\t\t<snmp_info multiplier=\"...\" name=\"...\" oid=\"...\" power_status=\"...\" default=\"\" static=\"yes\" string=\"yes\"/>\n\n" >> ${DMFFILE}
+	printf "\t\tPossible attributes:\n" >> ${DMFFILE}
+	printf "\t\t* multiplier: if present, multiply the value by this\n" >> ${DMFFILE}
+	printf "\t\t* power_status=\"yes\": if present and set to \"yes\", indicates power status element\n" >> ${DMFFILE}
+	printf "\t\t* battery_status=\"yes\": if present and set to \"yes\", indicates battery status element\n" >> ${DMFFILE}
+	printf "\t\t* calibration=\"yes\": if present and set to \"yes\", indicates calibration status element\n" >> ${DMFFILE}
+	printf "\t\t* replace_battery=\"yes\": if present and set to \"yes\", indicates replace battery status element\n" >> ${DMFFILE}
+	printf "\t\t* default: the default value, if we can't retrieve the OID value\n" >> ${DMFFILE}
+	printf "\t\t* static: retrieve info only once\n" >> ${DMFFILE}
+	printf "\t\t* string: the value of the OID is to be processed as a string\n" >> ${DMFFILE}
+	printf "\t\t* absent: data is absent in the device, use default value\n" >> ${DMFFILE}
+	printf "\t\t* positive: Invalid if negative value\n" >> ${DMFFILE}
+	printf "\t\t* unique: There can be only be one provider of this info, disable the other providers\n" >> ${DMFFILE}
+	printf "\t\t* input_1_phase: only processed if 1 input phase\n" >> ${DMFFILE}
+	printf "\t\t* input_3_phase: only processed if 3 input phase\n" >> ${DMFFILE}
+	printf "\t\t* output_1_phase: only processed if 1 output phase\n" >> ${DMFFILE}
+	printf "\t\t* output_3_phase: only processed if 3 output phase\n" >> ${DMFFILE}
+	printf "\t\t* bypass_1_phase: only processed if 1 bypass phase\n" >> ${DMFFILE}
+	printf "\t\t* bypass_1_phase: only processed if 3 bypass phase\n" >> ${DMFFILE}
+	printf "\t\t* outlet: outlet template definition\n" >> ${DMFFILE}
+	printf "\t\t* outlet_group: outlet group template definition\n" >> ${DMFFILE}
+	printf "\t\t* command: instant command definition\n" >> ${DMFFILE}
+	printf "\t\tExamples:\n" >> ${DMFFILE}
+	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"input.voltage\" oid=\".1.3.6.1.4.1.705.1.6.2.1.2.1\" input_1_phase=\"yes\"/>\n" >> ${DMFFILE}
+	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"ups.status\" oid=\".1.3.6.1.4.1.705.1.7.3.0\" string=\"yes\" battery_status=\"yes\" lookup=\"onbatt_info\"/> -->\n" >> ${DMFFILE}
 
 	# extract OID string paths, one by one
 	LINENB="0"
@@ -279,6 +313,7 @@ generate_DMF() {
 	done < ${STRWALKFILE} >> ${DMFFILE}
 
 	# append footer
+	# FIXME: missing license field in mib2nut
 	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n</nut>\n" >> "$DMFFILE"
 }
 
