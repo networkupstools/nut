@@ -133,7 +133,7 @@ def mk_snmp (inp, root):
                     ("power_status", SU_STATUS_PWR, "yes"),
                     ("battery_status", SU_STATUS_BATT, "yes"),
                     ("calibration", SU_STATUS_CAL, "yes"),
-                    ("replace_baterry", SU_STATUS_RB, "yes"),
+                    ("replace_battery", SU_STATUS_RB, "yes"),
                     ("command", SU_TYPE_CMD, "yes"),
                     ("outlet_group", SU_OUTLET_GROUP, "yes"),
                     ("outlet", SU_OUTLET, "yes"),
