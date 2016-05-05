@@ -251,9 +251,60 @@ generate_DMF() {
 
 	# generate DMF file
 	echo "Creating $DMFFILE"
-	printf "<-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > ${DMFFILE}
+	printf "<!-- ${DMFFILE} - Data Mapping File to monitor ${DRIVER} SNMP devices with NUT -->\n" > ${DMFFILE}
+	printf "<!-- this DMF was generated automatically. It must be customized! -->\n" >> ${DMFFILE}
 	printf "<?xml version=\"1.0\" ?>\n<nut>\n\t<snmp name=\"${LDRIVER}_mib\">\n" >> ${DMFFILE}
+	printf "\t\t<!-- Data format: -->\n" >> ${DMFFILE}
+	printf "\t\t<!-- To create a value lookup structure (as needed on the 2nd line of the example" >> ${DMFFILE}
+	printf "below), use the following kind of declaration:\n" >> ${DMFFILE}
+	printf "\t\t<lookup name=\"onbatt_info\">\n" >> ${DMFFILE}
+	printf "\t\t\t<lookup_info oid=\"1\" value=\"OB\"/>\n" >> ${DMFFILE}
+	printf "\t\t\t<lookup_info oid=\"2\" value=\"OL\"/>\n" >> ${DMFFILE}
+	printf "\t\t</lookup> -->\n\n" >> ${DMFFILE}
+	printf "\t\t<!-- To create a variable mapping entry, use the following kind of declaration:\n" >> ${DMFFILE}
+	printf "\t\t<snmp_info multiplier=\"...\" name=\"...\" oid=\"...\" power_status=\"...\" default=\"\" static=\"yes\" string=\"yes\"/>\n\n" >> ${DMFFILE}
+	printf "\t\tPossible attributes:\n" >> ${DMFFILE}
+	printf "\t\t* oid: numeric SNMP OID to get data from\n" >> ${DMFFILE}
+	printf "\t\t* multiplier: if present, multiply the value by this\n" >> ${DMFFILE}
+	printf "\t\t* power_status=\"yes\": if present and set to \"yes\", indicates power status element\n" >> ${DMFFILE}
+	printf "\t\t* battery_status=\"yes\": if present and set to \"yes\", indicates battery status element\n" >> ${DMFFILE}
+	printf "\t\t* calibration=\"yes\": if present and set to \"yes\", indicates calibration status element\n" >> ${DMFFILE}
+	printf "\t\t* replace_battery=\"yes\": if present and set to \"yes\", indicates replace battery status element\n" >> ${DMFFILE}
+	printf "\t\t* default: the default value, if we can't retrieve the OID value\n" >> ${DMFFILE}
+	printf "\t\t* static: retrieve info only once\n" >> ${DMFFILE}
+	printf "\t\t* string: the value of the OID is to be processed as a string\n" >> ${DMFFILE}
+	printf "\t\t* absent: data is absent in the device, use default value\n" >> ${DMFFILE}
+	printf "\t\t* positive: Invalid if negative value\n" >> ${DMFFILE}
+	printf "\t\t* unique: There can be only be one provider of this info, disable the other providers\n" >> ${DMFFILE}
+	printf "\t\t* input_1_phase: only processed if 1 input phase\n" >> ${DMFFILE}
+	printf "\t\t* input_3_phase: only processed if 3 input phase\n" >> ${DMFFILE}
+	printf "\t\t* output_1_phase: only processed if 1 output phase\n" >> ${DMFFILE}
+	printf "\t\t* output_3_phase: only processed if 3 output phase\n" >> ${DMFFILE}
+	printf "\t\t* bypass_1_phase: only processed if 1 bypass phase\n" >> ${DMFFILE}
+	printf "\t\t* bypass_1_phase: only processed if 3 bypass phase\n" >> ${DMFFILE}
+	printf "\t\t* outlet: outlet template definition\n" >> ${DMFFILE}
+	printf "\t\t* outlet_group: outlet group template definition\n" >> ${DMFFILE}
+	printf "\t\t* command: instant command definition\n" >> ${DMFFILE}
+	printf "\t\tExamples:\n" >> ${DMFFILE}
+	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"input.voltage\" oid=\".1.3.6.1.4.1.705.1.6.2.1.2.1\" input_1_phase=\"yes\"/>\n" >> ${DMFFILE}
+	printf "\t\t<snmp_info multiplier=\"0.1\" name=\"ups.status\" oid=\".1.3.6.1.4.1.705.1.7.3.0\" string=\"yes\" battery_status=\"yes\" lookup=\"onbatt_info\"/>\n\t\t-->\n" >> ${DMFFILE}
 
+	printf "\n\t\t<!-- To create an alarm lookup structure (as needed in the mib2nut example" >> ${DMFFILE}
+	printf "below), use the following kind of declaration:\n" >> ${DMFFILE}
+	printf "\t\t<alarm name=\"pw_alarms\">\n" >> ${DMFFILE}
+	printf "\t\t\t<info_alarm alarm=\"...\" oid=\"...\" status=\"...\"/>\n" >> ${DMFFILE}
+	printf "\t\t</alarm>\n" >> ${DMFFILE}
+	printf "\t\tPossible attributes:\n" >> ${DMFFILE}
+	printf "\t\t* oid: numeric SNMP OID to match\n" >> ${DMFFILE}
+	printf "\t\t* alarm: if present, and different than \"None\", value to be published in *ups.alarm*\n" >> ${DMFFILE}
+	printf "\t\t* status: if present, and different than \"None\", value to be published in *ups.status*\n\n" >> ${DMFFILE}
+	printf "\t\tExamples:\n" >> ${DMFFILE}
+	printf "\t\t<alarm name=\"pw_alarms\">\n" >> ${DMFFILE}
+	printf "\t\t\t<info_alarm alarm=\"None\" oid=\"1.3.6.1.4.1.534.1.7.4\" status=\"LB\"/>\n" >> ${DMFFILE}
+	printf "\t\t\t<info_alarm alarm=\"Output overload!\" oid=\".1.3.6.1.4.1.534.1.7.7\" status=\"OVER\"/>\n" >> ${DMFFILE}
+	printf "\t\t\t<info_alarm alarm=\"Internal failure!\" oid=\".1.3.6.1.4.1.534.1.7.8\" status=\"None\"/>\n" >> ${DMFFILE}
+	printf "\t\t</alarm>\n\t\t-->\n" >> ${DMFFILE}
+	
 	# extract OID string paths, one by one
 	LINENB="0"
 	while IFS= read -r line; do
@@ -274,7 +325,25 @@ generate_DMF() {
 	done < ${STRWALKFILE} >> ${DMFFILE}
 
 	# append footer
-	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n</nut>\n" >> "$DMFFILE"
+	# FIXME: missing license field in mib2nut
+	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n" >> "$DMFFILE"
+
+	printf "\n\t<!-- Data format: -->\n" >> ${DMFFILE}
+	printf "\t<!-- To create a MIB mapping entry, use the following kind of declaration:\n" >> ${DMFFILE}
+	printf "\t<mib2nut alarms_info=\"...\" auto_check=\"...\" mib_name=\"...\" name=\"...\" oid=\".1.3.6.1.4.1.534.1\" snmp_info=\"...\" version=\"...\"/>" >> ${DMFFILE}
+	printf "\tPossible attributes:\n" >> ${DMFFILE}
+	printf "\t* oid: sysOID to match to use the present MIB\n" >> ${DMFFILE}
+	printf "\t* alarms_info: alarm lookup structure to use, to resolve status and alarms\n" >> ${DMFFILE}
+	printf "\t* auto_check: OID to counter check if the present MIB matches the device\n" >> ${DMFFILE}
+	printf "\t* mib_name: internal name of the DMF structure\n" >> ${DMFFILE}
+	printf "\t* name: friendly name of the DMF structure\n" >> ${DMFFILE}
+	printf "\t* snmp_info: snmp_info structure to use\n" >> ${DMFFILE}
+	printf "\t* version: version of the present mib2nut structure\n" >> ${DMFFILE}
+	printf "\tExamples:\n" >> ${DMFFILE}
+	printf "\t<mib2nut alarms_info=\"pw_alarms\" auto_check=\"1.3.6.1.4.1.534.1.1.2.0\" mib_name=\"pw\" name=\"powerware\" oid=\".1.3.6.1.4.1.534.1\" snmp_info=\"pw_mib\" version=\"0.88\"/>\n\t-->\n" >> ${DMFFILE}
+
+	printf "</nut>\n" >> "$DMFFILE"
+
 }
 
 # process command line options
