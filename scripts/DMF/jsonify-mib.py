@@ -1,3 +1,13 @@
+#!/usr/bin/python
+
+# This Python script takes structure contents from existing legacy
+# NUT *-mib.c sources. This is the first stage for DMF generation,
+# which just dumps those structures as JSON markup that can be consumed
+# by anyone interested.
+#
+#    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+#
+
 from __future__ import print_function
 import argparse
 import copy

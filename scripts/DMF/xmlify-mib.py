@@ -1,5 +1,14 @@
 #!/usr/bin/python
 
+# This Python script takes structure contents from JSON markup generated
+# by `jsonify-mib.py` and generates XML DMF structure that can be parsed
+# by `dmf.c` routines.
+#
+#    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+#    Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
+#    Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+#
+
 from __future__ import print_function
 
 import argparse
@@ -14,7 +23,7 @@ ST_FLAG_STRING = 0x0002
 ST_FLAG_IMMUTABLE = 0x0004
 
 # snmp-ups.h
-SU_FLAG_OK = (1 << 0)	        #/* show element to upsd - internal to snmp driver */
+SU_FLAG_OK = (1 << 0)		#/* show element to upsd - internal to snmp driver */
 SU_FLAG_STATIC = (1 << 1)	#/* retrieve info only once. */
 SU_FLAG_ABSENT = (1 << 2)	#/* data is absent in the device,
 				# * use default value. */
@@ -29,28 +38,28 @@ SU_CMD_OFFSET = (1 << 8)	#/* Add +1 to the OID index */
 
 SU_STATUS_PWR = (0 << 8)	#/* indicates power status element */
 SU_STATUS_BATT = (1 << 8)	#/* indicates battery status element */
-SU_STATUS_CAL = (2 << 8)        #/* indicates calibration status element */
-SU_STATUS_RB = (3 << 8)	        #/* indicates replace battery status element */
+SU_STATUS_CAL = (2 << 8)	#/* indicates calibration status element */
+SU_STATUS_RB = (3 << 8)		#/* indicates replace battery status element */
 SU_STATUS_NUM_ELEM = 4
-SU_OUTLET_GROUP = (1 << 10)     #/* outlet group template definition */
+SU_OUTLET_GROUP = (1 << 10)	#/* outlet group template definition */
 
 #/* Phase specific data */
 SU_PHASES = (0x3F << 12)
 SU_INPHASES = (0x3 << 12)
-SU_INPUT_1 = (1 << 12)	#/* only if 1 input phase */
-SU_INPUT_3 = (1 << 13)	#/* only if 3 input phases */
+SU_INPUT_1 = (1 << 12)		#/* only if 1 input phase */
+SU_INPUT_3 = (1 << 13)		#/* only if 3 input phases */
 SU_OUTPHASES = (0x3 << 14)
-SU_OUTPUT_1 = (1 << 14)	#/* only if 1 output phase */
-SU_OUTPUT_3 = (1 << 15)	#/* only if 3 output phases */
+SU_OUTPUT_1 = (1 << 14)		#/* only if 1 output phase */
+SU_OUTPUT_3 = (1 << 15)		#/* only if 3 output phases */
 SU_BYPPHASES = (0x3 << 16)
-SU_BYPASS_1 = (1 << 16)	#/* only if 1 bypass phase */
-SU_BYPASS_3 = (1 << 17)	#/* only if 3 bypass phases */
+SU_BYPASS_1 = (1 << 16)		#/* only if 1 bypass phase */
+SU_BYPASS_3 = (1 << 17)		#/* only if 3 bypass phases */
 
 #/* hints for su_ups_set, applicable only to rw vars */
-SU_TYPE_INT = (0 << 18)	    #/* cast to int when setting value */
-SU_TYPE_STRING = (1 << 18)  #/* cast to string. FIXME: redundant with ST_FLAG_STRING */
-SU_TYPE_TIME = (2 << 18)    #/* cast to int */
-SU_TYPE_CMD = (3 << 18)	    #/* instant command */
+SU_TYPE_INT = (0 << 18)		#/* cast to int when setting value */
+SU_TYPE_STRING = (1 << 18)	#/* cast to string. FIXME: redundant with ST_FLAG_STRING */
+SU_TYPE_TIME = (2 << 18)	#/* cast to int */
+SU_TYPE_CMD = (3 << 18)		#/* instant command */
 
 def die (msg):
     print ("E: " + msg, file=sys.stderr)
