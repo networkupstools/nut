@@ -1,7 +1,6 @@
 /* dmf.c - Network UPS Tools XML-driver-loader
 
-   Copyright (C)
-	2016	Carlos Dominguez <CarlosDominguez@eaton.com>
+   Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -18,16 +17,39 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#include <malamute.h>
+#ifdef HAVE_MALAMUTE_H
+# include <malamute.h>
+#else
+#endif
+
 #include <neon/ne_xml.h>
 #include <dirent.h>
+
+#ifdef WITH_DMF_LUA
+# include <lua.h>
+# include <lauxlib.h>
+# include <lualib.h>
+#endif
+
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
+#ifdef WITH_DMFTEST_MAIN
+/* The test involves generation of DMF and comparison to existing data.
+   As a random pick, we use powerware-mib.c "as is" (with structures).
+   This causes macro-redefinition conflict (and -Werror dies on it).
+*/
+#undef PACKAGE_VERSION
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_BUGREPORT
 #include "powerware-mib.c"
+#endif
 
 snmp_device_id_t *device_table;
 mib2nut_info_t *mib2nut_table;
+
 /*
  *      HEADER FILE
  *
@@ -39,6 +61,9 @@ mib2nut_info_t *mib2nut_table;
 #define LOOKUP "lookup"
 #define SNMP "snmp"
 #define ALARM "alarm"
+#ifdef WITH_DMF_LUA
+#define FUNCTION "function"
+#endif
 
 //#define MIB2NUT_NAME "name"
 #define MIB2NUT_VERSION "version"
@@ -140,7 +165,8 @@ int
  *
  */
 //DEBUGGING
-void print_snmp_memory_struct(snmp_info_t *self)
+void
+print_snmp_memory_struct(snmp_info_t *self)
 {
   int i = 0;
   printf("SNMP: --> Info_type: %s //   Info_len: %f //   OID:  %s //   Default: %s",self->info_type, self->info_len, self->OID, self->dfl);
@@ -161,11 +187,15 @@ void print_snmp_memory_struct(snmp_info_t *self)
   }
 }
 
-void print_alarm_memory_struct(alarms_info_t *self)
+void
+print_alarm_memory_struct(alarms_info_t *self)
 {
   printf("Alarm: -->  OID: %s //   Status: %s //   Value: %s\n",self->OID, self->status_value, self->alarm_value);
 }
-void print_mib2nut_memory_struct(mib2nut_info_t *self){
+
+void
+print_mib2nut_memory_struct(mib2nut_info_t *self)
+{
   int i = 0;
   printf("\n");
   printf("       MIB2NUT: --> Mib_name: %s //   Version: %s //   Power_status: %s //   Auto_check: %s //   SysOID: %s\n",self->mib_name, self->mib_version, self->oid_pwr_status, self->oid_auto_check, self->sysOID);
@@ -185,11 +215,22 @@ void print_mib2nut_memory_struct(mib2nut_info_t *self){
 	      i++;
         }
   }
+#ifdef WITH_DMF_LUA
+  i = 0;
+  if (self->functions)
+	{
+	    while(self->functions[i]){
+	      printf("Lua Function n- %d result: \n", i);
+	      lua_pcall(self->functions[i], 0, 0, 0);
+	      i++;
+        }
+  }
+#endif
 }
 //END DEBUGGING
 
-char
-*get_param_by_name (const char *name, const char **items)
+char *
+get_param_by_name (const char *name, const char **items)
 {
     int iname;
 
@@ -232,6 +273,7 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
       self->alarm_value = strdup (alarm);
     return self;
 }
+
 snmp_info_t *
 info_snmp_new (const char *name, int info_flags, double multiplier, const char *oid, const char *dfl, unsigned long flags, info_lkp_t *lookup, int *setvar)
 {
@@ -251,8 +293,15 @@ info_snmp_new (const char *name, int info_flags, double multiplier, const char *
     self->setvar = setvar;
     return self;
 }
+
 mib2nut_info_t *
-info_mib2nut_new (const char *name, const char *version, const char *oid_power_status, const char *oid_auto_check, snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms)
+info_mib2nut_new (const char *name, const char *version,
+	const char *oid_power_status, const char *oid_auto_check,
+	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
+#ifdef WITH_DMF_LUA
+	, lua_State **functions
+#endif
+)
 {
     mib2nut_info_t *self = (mib2nut_info_t*) malloc (sizeof (mib2nut_info_t));
     assert (self);
@@ -269,8 +318,12 @@ info_mib2nut_new (const char *name, const char *version, const char *oid_power_s
       self->sysOID = strdup (sysOID);
     self->snmp_info = snmp;
     self->alarms_info = alarms;
+#ifdef WITH_DMF_LUA
+    self->functions = functions;
+#endif
     return self;
 }
+
 //Destroy full array of lookup elements
 void
 info_lkp_destroy (void **self_p)
@@ -424,6 +477,17 @@ info_mib2nut_destroy (void **self_p)
             free ((alarms_info_t*)self->alarms_info);
             self->alarms_info = NULL;
         }
+#ifdef WITH_DMF_LUA
+        if (self->functions)
+	{
+	  i = 0;
+	  while(self->functions[i]){
+	    lua_close(self->functions[i]);
+	    i++;
+	  }
+	}
+	free(self->functions);
+#endif
         free (self);
 	*self_p = NULL;
     }
@@ -456,7 +520,7 @@ alist_destroy (alist_t **self_p)
     {
         alist_t *self = *self_p;
 	
-        for (;self->size>0; self->size--){
+        for (;self->size > 0; self->size--){
 	  if(self->destroy) 
 	    self->destroy(& self->values [self->size-1]);
 	  else 
@@ -471,7 +535,8 @@ alist_destroy (alist_t **self_p)
 }
 
 //Add a generic element at the end of the list
-void alist_append(alist_t *self,void *element)
+void
+alist_append(alist_t *self,void *element)
 {
   if(self->size + 1 == self->capacity)
   {
@@ -484,14 +549,16 @@ void alist_append(alist_t *self,void *element)
 }
 
 //Return the last element of the list
-alist_t *alist_get_last_element(alist_t *self)
+alist_t *
+alist_get_last_element(alist_t *self)
 {
   if(self)
     return (alist_t*)self->values[self->size-1];
   return NULL;
 }
 
-alist_t *alist_get_element_by_name(alist_t *self, char *name)
+alist_t *
+alist_get_element_by_name(alist_t *self, char *name)
 {
   int i;
   if(self)
@@ -500,6 +567,31 @@ alist_t *alist_get_element_by_name(alist_t *self, char *name)
 	return (alist_t*)self->values[i];
   return NULL;
 }
+
+#ifdef WITH_DMF_LUA
+lua_State *compile_lua_functionFrom_array(char **array, char *name){
+  int j=0;
+  int lenLuaLine = 1;
+  char *lua_code = NULL;
+  lua_State *function = NULL;
+  while(array[j]){
+     lenLuaLine = lenLuaLine + strlen(array[j]);
+     if(!lua_code) lua_code = strdup(array[j]);
+     else{
+       lua_code = (char*) realloc(lua_code, lenLuaLine * sizeof(char));
+       lua_code = strcat(lua_code, array[j]);
+     }
+     j++;
+  }
+  function = lua_open();
+  luaopen_base(function);
+  luaopen_string(function);
+  luaL_loadbuffer(function, lua_code, strlen(lua_code), name);
+  free(lua_code);
+  return function;
+}
+#endif
+
 //I splited because with the error control is going a grow a lot
 void
 mib2nut_info_node_handler(alist_t *list, const char **attrs){
@@ -507,6 +599,10 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
     int i=0;
     snmp_info_t *snmp = NULL;
     alarms_info_t *alarm = NULL;
+#ifdef WITH_DMF_LUA
+    lua_State **functions = NULL;
+    //lua_State **lfunction;
+#endif
     
     char **arg = (char**) malloc ((INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof (void**));
     assert (arg);
@@ -519,6 +615,9 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
     arg[4] = get_param_by_name(MIB2NUT_AUTO_CHECK, attrs);
     arg[5] = get_param_by_name(MIB2NUT_SNMP, attrs);
     arg[6] = get_param_by_name(MIB2NUT_ALARMS, attrs);
+#ifdef WITH_DMF_LUA
+    arg[7] = get_param_by_name(FUNCTION, attrs);
+#endif
     
     if(arg[5]){
       alist_t *lkp = alist_get_element_by_name(list, arg[5]);
@@ -570,12 +669,52 @@ mib2nut_info_node_handler(alist_t *list, const char **attrs){
       alarm[i].status_value = NULL;
       alarm[i].alarm_value = NULL;
     }
+#ifdef WITH_DMF_LUA
+    if(arg[7]){
+      int contFunc = 2;
+      
+      char *func = (char*) calloc(128, sizeof(char));
+      int j = 0;
+      for(i=0; i < strlen(arg[7]); i++){
+	if((arg[7][i] != ',') && (arg[7][i] != ' ')){
+	  func[j] = arg[7][i];
+	  j++;
+	}
+	else if(arg[7][i] == ','){
+	  if(contFunc == 1) functions =(lua_State**) malloc(contFunc * sizeof(lua_State**));
+	  else functions = (lua_State**) realloc(functions, contFunc * sizeof(lua_State**));
+	  functions[contFunc - 2] = compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
+	  //lua_close(functions[contFunc - 1]);
+	  contFunc++;
+	  memset(func, 0, 128 * sizeof(char));
+	  j = 0;
+	}
+      }
+      if(contFunc == 1) functions =(lua_State**) malloc(contFunc *sizeof(lua_State**));
+      else functions = (lua_State**) realloc(functions, contFunc * sizeof(lua_State**));
+      functions[contFunc - 2] = compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
+      functions[contFunc - 1] = NULL;
+      //lua_close(functions[contFunc - 1]);
+      
+      free(func);
+    }
+#endif
     if(arg[0])
-	  alist_append(element, ((mib2nut_info_t *(*) (const char *, const char *, const char *, const char *, snmp_info_t *, const char *, alarms_info_t *)) element->new_element) (arg[0], arg[1], arg[3], arg[4], snmp, arg[2], alarm));
+	  alist_append(element, ((mib2nut_info_t *(*) (const char *, const char *, const char *, const char *, snmp_info_t *, const char *, alarms_info_t *
+#ifdef WITH_DMF_LUA
+		, lua_State **
+#endif
+		)) element->new_element) (arg[0], arg[1], arg[3], arg[4], snmp, arg[2], alarm
+#ifdef WITH_DMF_LUA
+		, functions
+#endif
+		));
     
     for(i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
       free (arg[i]);
-    
+#ifdef WITH_DMF_LUA
+    //free(functions);
+#endif
     free (arg);
 }
 
@@ -830,6 +969,11 @@ int xml_dict_start_cb(void *userdata, int parent,
   }else if(strcmp(name,INFO_SNMP) == 0)
   {
     snmp_info_node_handler(list,attrs);
+#ifdef WITH_DMF_LUA
+  }else if(strcmp(name,FUNCTION) == 0)
+  {
+    alist_append(list, alist_new(auxname, NULL, NULL));
+#endif
   }
   free(auxname);
   return 1;
@@ -872,16 +1016,43 @@ int xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
     
     device_table_counter++;
   }
-  return OK;
-  
+  return OK;  
 }
+
+#ifdef WITH_DMF_LUA
+int xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
+{
+  char *luatext;
+  
+  if(!userdata)return ERR;
+  
+  alist_t *list = (alist_t*) userdata;
+  
+  if(len > 2){
+    alist_t *element = alist_get_last_element(list);
+    
+    luatext = (char*) malloc(len + 1 * sizeof(char));
+    memset(luatext, 0, len + 1);
+    strncpy(luatext, cdata, len);
+    
+    alist_append(element, (void*) luatext);
+  }
+  return OK;
+}
+#endif
 
 int parse_file(char *file_name, alist_t *list)
 {
     char buffer[1024];
     int result = 0;
     ne_xml_parser *parser = ne_xml_create ();
-    ne_xml_push_handler (parser, xml_dict_start_cb, NULL, xml_end_cb, list);
+    ne_xml_push_handler (parser, xml_dict_start_cb, 
+#ifdef WITH_DMF_LUA
+	xml_cdata_cb
+#else
+	NULL
+#endif
+	, xml_end_cb, list);
     FILE *f = fopen (file_name, "r");
     if (f) {
         while (!feof (f)) {
@@ -922,8 +1093,18 @@ mib2nut_info_t *get_mib2nut_table()
   return mib2nut_table;
 }
 
+#ifdef WITH_DMFTEST_MAIN
 int main ()
 {
+#ifdef WITH_DMF_LUA
+    /*char *luaquery = "print(\"something\")";
+    lfunction =(lua_State**) malloc(sizeof(lua_State**));
+    *lfunction = lua_open();
+    luaopen_base(*lfunction);
+    luaopen_string(*lfunction);
+    luaL_loadbuffer(*lfunction, luaquery, strlen(luaquery), "fn");
+    lua_pcall(*lfunction, 0, 0, 0);*/
+#endif
     device_table = NULL;
     mib2nut_table = NULL;
     alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL);
@@ -942,6 +1123,7 @@ int main ()
       
     }
     
+#ifdef DEBUG
     //Debugging
     //mib2nut_info_t *m2n = get_mib2nut_table();
     //print_mib2nut_memory_struct(m2n + 6);
@@ -951,9 +1133,16 @@ int main ()
     printf("Original C structures:\n\n");
     print_mib2nut_memory_struct(&powerware);
     //End debugging
+#endif
     
     free(device_table);
     free(mib2nut_table);
     alist_destroy(&list);
     closedir(dir);
+    
+#ifdef WITH_DMF_LUA
+    /*lua_close(*lfunction);
+    free(lfunction);*/
+#endif
 }
+#endif
