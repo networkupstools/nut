@@ -45,9 +45,12 @@
 - add a claim function and move to usbhid-ups style for specific processing
 - rework the flagging system
 */
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
+
+#ifdef WITH_DMF_LUA
+# include <lua.h>
+# include <lauxlib.h>
+# include <lualib.h>
+#endif
 
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
@@ -227,8 +230,9 @@ typedef struct {
 	const char	*sysOID;			/* OID to match against sysOID, aka MIB
 									 * main entry point */
 	alarms_info_t	*alarms_info;
-	
+#ifdef WITH_DMF_LUA
 	lua_State **functions;
+#endif
 } mib2nut_info_t;
 
 /* Common SNMP functions */

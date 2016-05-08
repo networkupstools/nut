@@ -18,12 +18,15 @@ dmf-test: dmf.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon -I../../include -I../../drivers \
+	-DWITH_DMFTEST_MAIN=1 -DDEBUG=1 \
 	-o $@ $^
 
-dmf-lua-test: dmf-lua.c
+dmf-lua-test: dmf.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon -llua -I../../include -I../../drivers \
+	-DWITH_DMFTEST_MAIN=1 -DDEBUG=1 \
+	-DWITH_DMF_LUA=1 \
 	-o $@ $^
 
 run-dmf-test: dmf-test
