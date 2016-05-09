@@ -32,6 +32,7 @@
 #include <dirent.h>
 
 #ifdef WITH_DMF_LUA
+/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2 */
 # include <lua.h>
 # include <lauxlib.h>
 # include <lualib.h>
@@ -772,7 +773,6 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	} // arg[6]
 
 #ifdef WITH_DMF_LUA
-// TODO: Some mess with braces here... typo or mismerge?
 	if(arg[7])
 	{
 		int contFunc = 2;
@@ -784,30 +784,36 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 			{
 				func[j] = arg[7][i];
 				j++;
-			} else {
-				if(arg[7][i] == ',')
-				{
-					if(contFunc == 1)
-						functions = (lua_State**)
-							malloc(contFunc * sizeof(lua_State**));
-					else	functions = (lua_State**)
-							realloc(functions, contFunc * sizeof(lua_State**));
-					functions[contFunc - 2] =
-						compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
-					//lua_close(functions[contFunc - 1]);
-					contFunc++;
-					memset(func, 0, 128 * sizeof(char));
-					j = 0;
-				}
 			}
-			if(contFunc == 1)
-				functions = (lua_State**) malloc(contFunc *sizeof(lua_State**));
-			else	functions = (lua_State**) realloc(functions, contFunc * sizeof(lua_State**));
-			functions[contFunc - 2] = compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
-			functions[contFunc - 1] = NULL;
-			//lua_close(functions[contFunc - 1]);
-			free(func);
-		} //arg[7]
+			else if(arg[7][i] == ',')
+			{
+				if(contFunc == 1)
+					functions = (lua_State**)
+						malloc(contFunc * sizeof(lua_State**));
+				else	functions = (lua_State**)
+						realloc(functions, contFunc * sizeof(lua_State**));
+				functions[contFunc - 2] =
+					compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
+				//lua_close(functions[contFunc - 1]);
+				contFunc++;
+				memset(func, 0, 128 * sizeof(char));
+				j = 0;
+			}
+		}
+
+		if(contFunc == 1)
+			functions = (lua_State**) malloc(
+				contFunc * sizeof(lua_State**) );
+		else	functions = (lua_State**) realloc(functions,
+				contFunc * sizeof(lua_State**) );
+
+		functions[contFunc - 2] = compile_lua_functionFrom_array(
+			(char**) alist_get_element_by_name(list, func)->values,
+			func);
+		functions[contFunc - 1] = NULL;
+		//lua_close(functions[contFunc - 1]);
+		free(func);
+	} //arg[7]
 #endif
 
 	if(arg[0])
@@ -1289,8 +1295,8 @@ main ()
 {
 #ifdef WITH_DMF_LUA
 	// TODO: Verify this for typos/mismerges
-	*char *luaquery = "print(\"something\")";
-	lfunction =(lua_State**) malloc(sizeof(lua_State**));
+	char *luaquery = "print(\"something\")";
+	lua_State** lfunction = (lua_State**) malloc(sizeof(lua_State**));
 	*lfunction = lua_open();
 	luaopen_base(*lfunction);
 	luaopen_string(*lfunction);
