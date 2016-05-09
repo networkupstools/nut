@@ -48,8 +48,8 @@ dmfify_c_file() {
         echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
         return $ERRCODE; }
 
-    mv -f "${mib}.dmf.tmp" "${mib}.dmf" && \
-    rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
+    mv -f "${mib}.dmf.tmp" "${mib}.dmf" \
+#    && rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
 }
 
 dmfify_NUT_drivers() {
