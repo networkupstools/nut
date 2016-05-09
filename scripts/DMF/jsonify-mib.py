@@ -385,15 +385,20 @@ if args.test:
     test_file = os.path.basename (args.source)
     MIB_name = os.path.splitext (test_file) [0]
     test_file = MIB_name + "_TEST.c"
+    prog_file = MIB_name + "_TEST.exe"
     with open (test_file, "wt") as fout:
         s_json2c (fout, MIB_name, v._mappings)
 
     drivers_dir = os.path.dirname (os.path.abspath (args.source))
     include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
-    cmd = ["cc", "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", MIB_name, test_file]
+    try:
+        gcc = os.environ["CC"]
+    except KeyError:
+        gcc = "cc"
+    cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", prog_file, test_file]
     print (" ".join (cmd), file=sys.stderr)
     subprocess.check_call (cmd)
-    subprocess.check_call ("./%s" % MIB_name)
+    subprocess.check_call ("./%s" % prog_file)
 
 json.dump (v._mappings, sys.stdout, indent=4)
 sys.exit (0)
