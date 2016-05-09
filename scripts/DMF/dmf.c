@@ -30,16 +30,9 @@
 
 #include <neon/ne_xml.h>
 #include <dirent.h>
+#include <assert.h>
 
-#ifdef WITH_DMF_LUA
-/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2 */
-# include <lua.h>
-# include <lauxlib.h>
-# include <lualib.h>
-#endif
-
-#include "snmp-ups.h"
-#include "nutscan-snmp.h"
+#include "dmf.h"
 
 #ifdef WITH_DMFTEST_MAIN
 /* The test involves generation of DMF and comparison to existing data.
@@ -54,118 +47,11 @@
 #include "powerware-mib.c"
 #endif
 
-snmp_device_id_t *device_table;
-mib2nut_info_t *mib2nut_table;
-
-/*
- *      HEADER FILE
- *
- */
-#define YES "yes"
-#define DEFAULT_CAPACITY 16
-
-#define MIB2NUT "mib2nut"
-#define LOOKUP "lookup"
-#define SNMP "snmp"
-#define ALARM "alarm"
-#ifdef WITH_DMF_LUA
-#define FUNCTION "function"
-#endif
-
-//#define MIB2NUT_NAME "name"
-#define MIB2NUT_VERSION "version"
-#define MIB2NUT_OID "oid"
-#define MIB2NUT_MIB_NAME "mib_name"
-#define MIB2NUT_AUTO_CHECK "auto_check"
-#define MIB2NUT_POWER_STATUS "power_status"
-#define MIB2NUT_SNMP "snmp_info"
-#define MIB2NUT_ALARMS "alarms_info"
-
-#define INFO_MIB2NUT_MAX_ATTRS 14
-#define INFO_LOOKUP_MAX_ATTRS 4
-#define INFO_SNMP_MAX_ATTRS 14
-#define INFO_ALARM_MAX_ATTRS 6
-
-#define INFO_LOOKUP "lookup_info"
-#define LOOKUP_OID "oid"
-#define LOOKUP_VALUE "value"
-
-#define INFO_SNMP "snmp_info"
-#define SNMP_NAME "name"
-#define SNMP_MULTIPLIER "multiplier"
-#define SNMP_OID "oid"
-#define SNMP_DEFAULT "default"
-#define SNMP_LOOKUP "lookup"
-#define SNMP_SETVAR "setvar"
-//Info_flags
-#define SNMP_INFOFLAG_WRITABLE "writable"
-#define SNMP_INFOFLAG_STRING "string"
-//Flags
-#define SNMP_FLAG_OK "flag_ok"
-#define SNMP_FLAG_STATIC "static"
-#define SNMP_FLAG_ABSENT "absent"
-#define SNMP_FLAG_NEGINVALID "positive"
-#define SNMP_FLAG_UNIQUE "unique"
-#define SNMP_STATUS_PWR "power_status"
-#define SNMP_STATUS_BATT "battery_status"
-#define SNMP_STATUS_CAL "calibration"
-#define SNMP_STATUS_RB "replace_baterry"
-#define SNMP_TYPE_CMD "command"
-#define SNMP_OUTLET_GROUP "outlet_group"
-#define SNMP_OUTLET "outlet"
-#define SNMP_OUTPUT_1 "output_1_phase"
-#define SNMP_OUTPUT_3 "output_3_phase"
-#define SNMP_INPUT_1 "input_1_phase"
-#define SNMP_INPUT_3 "input_3_phase"
-#define SNMP_BYPASS_1 "bypass_1_phase"
-#define SNMP_BYPASS_3 "bypass_3_phase"
-//Setvar
-#define SETVAR_INPUT_PHASES "input_phases"
-#define SETVAR_OUTPUT_PHASES "output_phases"
-#define SETVAR_BYPASS_PHASES "bypass_phases"
-
-#define INFO_ALARM "info_alarm"
-#define ALARM_OID "oid"
-#define ALARM_STATUS "status"
-#define ALARM_ALARM "alarm"
-
-
-
-typedef struct {
-	void **values;
-	int size;
-	int capacity;
-	char *name;
-	void (*destroy)(void **self_p);
-	void (*new_element)(void);
-} alist_t;
-
-typedef enum {
-	ERR = -1,
-	OK
-} state_t;
+snmp_device_id_t *device_table = NULL;
+mib2nut_info_t *mib2nut_table = NULL;
 
 int device_table_counter = 1;
-int mib2nut_counter = 1;
-
-// Create and initialize info_lkp_t
-info_lkp_t *
-	info_lkp_new (int oid, const char *value);
-
-// Destroy and NULLify the reference to alist_t, list of collections
-void
-	info_lkp_destroy (void **self_p);
-
-// Create new instance of alist with LOOKUP type,
-// for storage a list of collections
-alist_t *
-	alist_new ();
-
-unsigned long
-	compile_flags(const char **attrs);
-
-int
-	compile_info_flags(const char **attrs);
+int mib2nut_table_counter = 1;
 
 /*
  *
@@ -1098,7 +984,8 @@ compile_info_flags(const char **attrs)
 	return info_flags;
 }
 
-int xml_dict_start_cb(void *userdata, int parent,
+int
+xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
 {
@@ -1283,16 +1170,48 @@ get_device_table()
 	return device_table;
 }
 
+int
+get_device_table_counter()
+{
+	return device_table_counter;
+}
+
 mib2nut_info_t *
 get_mib2nut_table()
 {
 	return mib2nut_table;
 }
 
+int
+get_mib2nut_table_counter()
+{
+	return mib2nut_table_counter;
+}
+
+int
+dmf_parser_init()
+{
+	device_table = NULL;
+	mib2nut_table = NULL;
+	return 0;
+}
+
+int
+dmf_parser_destroy()
+{
+	if (device_table)	free(device_table);
+	device_table = NULL;
+	if (mib2nut_table)	free(mib2nut_table);
+	mib2nut_table = NULL;
+	return 0;
+}
+
 #ifdef WITH_DMFTEST_MAIN
 int
 main ()
 {
+	dmf_parser_init();
+
 #ifdef WITH_DMF_LUA
 	// TODO: Verify this for typos/mismerges
 	char *luaquery = "print(\"something\")";
@@ -1304,8 +1223,6 @@ main ()
 	lua_pcall(*lfunction, 0, 0, 0);
 #endif
 
-	device_table = NULL;
-	mib2nut_table = NULL;
 	alist_t * list = alist_new(
 		NULL,(void (*)(void **))alist_destroy, NULL );
 	DIR *dir;
@@ -1336,8 +1253,7 @@ main ()
 	//End debugging
 #endif
 
-	free(device_table);
-	free(mib2nut_table);
+	dmf_parser_destroy();
 	alist_destroy(&list);
 	closedir(dir);
 
