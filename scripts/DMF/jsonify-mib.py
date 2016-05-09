@@ -102,12 +102,13 @@ class Visitor(c_ast.NodeVisitor):
             try:
                 ditem ["OID"] = OID.value.strip ('"')
                 if ( ditem ["OID"] == "0" ):
-                    ditem ["OID"] = "NULL"
+                    ditem ["OID"] = None
             except:
                 ditem ["OID"] = None
 
             # 4: const char *dfl
             _, default = kids [4]
+            ditem ["dfl"] = None
             if isinstance (default, c_ast.Constant):
                 if default.type == "string":
                     ditem ["dfl"] = default.value.strip ('"')
@@ -116,12 +117,14 @@ class Visitor(c_ast.NodeVisitor):
             elif isinstance (default, c_ast.Cast):
                 ditem ["dfl"] = None
 
+
             # 5: unsigned long flags
             _, flags = kids [5]
             ditem ["flags"] = tuple (f2f (flags))
 
             # 6: info_lkp_t *oid2info
             _, oid2info = kids [6]
+            ditem ["oid2info"] = None
             if isinstance (oid2info, c_ast.Cast):
                 ditem ["oid2info"] = None
             elif isinstance (oid2info, c_ast.ID):
@@ -158,7 +161,9 @@ class Visitor(c_ast.NodeVisitor):
                 continue
 
             if ( key == 0 ):
-                if ( ilist.exprs [1] == "0" ):
+                if ( ilist.exprs [1].value.strip ('"') == "0" ):
+                    continue
+                elif ( ilist.exprs [1] == "0" ):
                     continue
 
             ret.append ((key, ilist.exprs [1].value.strip ('"')))
@@ -182,6 +187,9 @@ class Visitor(c_ast.NodeVisitor):
                 ret [key] = None
             else:
                 ret [key] = kids [i].value.strip ('"')
+
+            if ( ret [key] == "0" ):
+                ret [key] = None
 
         # 4 snmp_info
         ret ["snmp_info"] = kids [4].name
@@ -209,6 +217,10 @@ class Visitor(c_ast.NodeVisitor):
                     ret [key] = None
                 else:
                     ret [key] = kids [i].value.strip ('"')
+
+                if ( ret [key] == "0" ):
+                    ret [key] = None
+
             lst.append (ret)
 
         return lst
@@ -277,7 +289,7 @@ def s_mib2nut (fout, js, name):
     for key in ("mib_name", "mib_version", "oid_pwr_status", "oid_auto_check", "sysOID"):
         if pinfo.get (key) is None:
             pinfo [key] = "NULL"
-        elif ( pinfo.get (key) == "0" ):
+        elif ( pinfo [key] == "0" ):
             pinfo [key] = "NULL"
         else:
             pinfo [key] = '"%s"' % pinfo [key]
@@ -285,7 +297,7 @@ def s_mib2nut (fout, js, name):
     for key in ("snmp_info", "alarms_info"):
         if pinfo.get (key) is None:
             pinfo [key] = "NULL"
-        elif ( pinfo.get (key) == "0" ):
+        elif ( pinfo [key] == "0" ):
             pinfo [key] = "NULL"
 
     print ("""
