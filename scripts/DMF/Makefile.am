@@ -31,7 +31,7 @@ dmf-lua-test: dmf-test.c dmf.c
 	-o $@ $^
 
 run-dmf-test: dmf-test
-	valgrind --leak-check=full $<
+	valgrind --leak-check=full ./$<
 
 run-dmf-lua-test: dmf-lua-test
-	valgrind --leak-check=full --track-origins=yes $<
+	valgrind --leak-check=full --track-origins=yes ./$<
