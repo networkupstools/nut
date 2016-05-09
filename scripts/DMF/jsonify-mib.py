@@ -285,15 +285,29 @@ def s_json2c (fout, MIB_name, js):
 // for setvar field
 int input_phases, output_phases, bypass_phases;
 
+// avoid macro-conflict with snmp-ups
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_BUGREPORT
+#endif
 #include "%s.c"
 
 static inline bool streq (const char* x, const char* y)
 {
     if (!x && !y)
         return true;
-    if (!x || !y)
+    if (!x || !y) {
+        fprintf(stderr, "DEBUG: strEQ(): At least one compared string is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
         return false;
-    return strcmp (x, y) == 0;
+        }
+    int cmp = strcmp (x, y);
+    if (cmp != 0) {
+        fprintf(stderr, "DEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+    }
+    return cmp == 0;
 }
 """ % MIB_name, file=fout)
 
