@@ -1,4 +1,7 @@
 dmf-test
 dmf-lua-test
 *.o
+*.dmf.tmp
+*_TEST.c
+*_TEST.exe
 

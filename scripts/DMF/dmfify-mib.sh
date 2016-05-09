@@ -11,8 +11,14 @@
 # A bashism, important for us here
 set -o pipefail
 
+# TODO: The PYTHON and CC variables currently assume pathnames (no args)
 [ -n "${PYTHON-}" ] || PYTHON="`which python2.7`"
-[ -n "${PYTHON}" ] && [ -x "$PYTHON" ] || { echo "ERROR: Can not find Python 2.7" >&2; exit 2; }
+[ -n "${PYTHON}" ] && [ -x "$PYTHON" ] || { echo "ERROR: Can not find Python 2.7: '$PYTHON'" >&2; exit 2; }
+
+# The pycparser uses GCC-compatible flags
+[ -n "${CC-}" ] || CC="`which gcc`"
+[ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
+export CC
 
 # Here we only check basic prerequisites (a module provided with Python 2.7
 # and an extra module that end-user is expected to pre-install per README).
@@ -33,10 +39,10 @@ dmfify_c_file() {
     && [ -s "${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
         echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
-        echo "       You can inspect a copy of the intermediate result in '${mib}.dmf.tmp'" >&2
+        echo "       You can inspect a copy of the intermediate result in '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
         return $ERRCODE; }
 
-    mv -f "${mib}.dmf.tmp" "${mib}.dmf"
+    mv -f "${mib}.dmf.tmp" "${mib}.dmf" && rm -f "${mib}_TEST"{.c,.exe}
 }
 
 dmfify_NUT_drivers() {
