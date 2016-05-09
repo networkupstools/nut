@@ -300,15 +300,32 @@ static inline bool streq (const char* x, const char* y)
     if (!x && !y)
         return true;
     if (!x || !y) {
-        fprintf(stderr, "DEBUG: strEQ(): At least one compared string is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
+        fprintf(stderr, "\\nDEBUG: strEQ(): One compared string (but not both) is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
         return false;
         }
     int cmp = strcmp (x, y);
     if (cmp != 0) {
-        fprintf(stderr, "DEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+        fprintf(stderr, "\\nDEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
     }
     return cmp == 0;
 }
+
+static inline bool strneq (const char* x, const char* y)
+{
+    if (!x && !y) {
+        fprintf(stderr, "\\nDEBUG: strNEQ(): Both compared strings are NULL\\n");
+        return false;
+        }
+    if (!x || !y) {
+        return true;
+        }
+    int cmp = strcmp (x, y);
+    if (cmp == 0) {
+        fprintf(stderr, "\\nDEBUG: strNEQ(): Strings are equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+    }
+    return cmp != 0;
+}
+
 """ % MIB_name, file=fout)
 
     s_info2c (fout, js["INFO"])
@@ -326,9 +343,10 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
+        fprintf (stderr, "[%%i] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
-        assert (!strcmp (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
+        assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
     }
     fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
@@ -336,19 +354,12 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
-        if (!streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type)) {
-            fprintf (stderr, "%(k)s[%%d].info_type=%%s\\n", i, %(k)s[i].info_type);
-            fprintf (stderr, "%(k)s_TEST[%%d].info_type=%%s\\n", i, %(k)s_TEST[i].info_type);
-            return 1;
-        }
+        fprintf (stderr, "[%%i] ", i);
+        assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
         assert (streq (%(k)s [i].OID, %(k)s_TEST [i].OID));
-        if (!streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl)) {
-            fprintf (stderr, "%(k)s[%%d].dfl=%%s\\n", i, %(k)s[i].dfl);
-            fprintf (stderr, "%(k)s_TEST[%%d].dfl=%%s\\n", i, %(k)s_TEST[i].dfl);
-            return 1;
-        }
+        assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
             fprintf (stderr, "%(k)s[%%d].oid2info=<%%p>\\n", i, %(k)s[i].oid2info);
