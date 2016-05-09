@@ -174,7 +174,7 @@ typedef struct {
 
 /* hints for su_ups_set, applicable only to rw vars */
 #define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
-#define SU_TYPE_STRING		(1 << 18)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
+/* Free slot                (1 << 18) */
 #define SU_TYPE_TIME		(2 << 18)	/* cast to int */
 #define SU_TYPE_CMD			(3 << 18)	/* instant command */
 #define SU_TYPE(t)			((t)->flags & (7 << 18))
