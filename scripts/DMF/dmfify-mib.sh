@@ -34,6 +34,12 @@ dmfify_c_file() {
     local cmib="$1"
     local mib="$(basename "${cmib}" .c)"
 
+    [ -n "${cmib}" ] && [ -s "${cmib}" ] || \
+        { echo "ERROR: dmfify_c_file() can not process argument '${cmib}'!" >&2
+          return 2; }
+
+    echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..."
+
     ( "${PYTHON}" jsonify-mib.py --test "${cmib}" > "${mib}.json.tmp" && \
       "${PYTHON}" xmlify-mib.py < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
     && [ -s "${mib}.dmf.tmp" ] \
