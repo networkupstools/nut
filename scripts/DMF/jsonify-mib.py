@@ -277,11 +277,15 @@ def s_mib2nut (fout, js, name):
     for key in ("mib_name", "mib_version", "oid_pwr_status", "oid_auto_check", "sysOID"):
         if pinfo.get (key) is None:
             pinfo [key] = "NULL"
+        elif ( pinfo.get (key) == "0" ):
+            pinfo [key] = "NULL"
         else:
             pinfo [key] = '"%s"' % pinfo [key]
 
     for key in ("snmp_info", "alarms_info"):
         if pinfo.get (key) is None:
+            pinfo [key] = "NULL"
+        elif ( pinfo.get (key) == "0" ):
             pinfo [key] = "NULL"
 
     print ("""
