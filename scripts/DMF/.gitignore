@@ -5,4 +5,5 @@ dmf-lua-test
 *.dmf.tmp
 *_TEST.c
 *_TEST.exe
+*-mib.c
 
