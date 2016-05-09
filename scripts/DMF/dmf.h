@@ -89,7 +89,7 @@
 #define SNMP_STATUS_PWR "power_status"
 #define SNMP_STATUS_BATT "battery_status"
 #define SNMP_STATUS_CAL "calibration"
-#define SNMP_STATUS_RB "replace_baterry"
+#define SNMP_STATUS_RB "replace_battery"
 #define SNMP_TYPE_CMD "command"
 #define SNMP_OUTLET_GROUP "outlet_group"
 #define SNMP_OUTLET "outlet"
