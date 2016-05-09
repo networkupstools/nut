@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 # This Python script takes structure contents from JSON markup generated
 # by `jsonify-mib.py` and generates XML DMF structure that can be parsed

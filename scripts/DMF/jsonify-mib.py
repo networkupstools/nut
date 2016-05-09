@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 # This Python script takes structure contents from existing legacy
 # NUT *-mib.c sources. This is the first stage for DMF generation,
