@@ -10,7 +10,7 @@ PROGS = dmf-test dmf-lua-test
 all: $(PROGS)
 
 clean:
-	$(RM) $(PROGS) *.o *.dmf.tmp *_TEST.c *_TEST.exe
+	$(RM) $(PROGS) *.o *.dmf.tmp *.json.tmp *_TEST.c *_TEST.exe
 
 check: run-dmf-test run-dmf-lua-test
 

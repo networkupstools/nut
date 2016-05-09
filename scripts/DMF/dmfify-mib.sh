@@ -34,15 +34,16 @@ dmfify_c_file() {
     local cmib="$1"
     local mib="$(basename "${cmib}" .c)"
 
-    "${PYTHON}" jsonify-mib.py --test "${cmib}" \
-    | "${PYTHON}" xmlify-mib.py > "${mib}.dmf.tmp" \
+    ( "${PYTHON}" jsonify-mib.py --test "${cmib}" > "${mib}.json.tmp" && \
+      "${PYTHON}" xmlify-mib.py < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
     && [ -s "${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
         echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
-        echo "       You can inspect a copy of the intermediate result in '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
+        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
         return $ERRCODE; }
 
-    mv -f "${mib}.dmf.tmp" "${mib}.dmf" && rm -f "${mib}_TEST"{.c,.exe}
+    mv -f "${mib}.dmf.tmp" "${mib}.dmf" && \
+    rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
 }
 
 dmfify_NUT_drivers() {
