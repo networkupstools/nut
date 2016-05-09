@@ -34,19 +34,6 @@
 
 #include "dmf.h"
 
-#ifdef WITH_DMFTEST_MAIN
-/* The test involves generation of DMF and comparison to existing data.
-   As a random pick, we use powerware-mib.c "as is" (with structures).
-   This causes macro-redefinition conflict (and -Werror dies on it).
-*/
-#undef PACKAGE_VERSION
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_BUGREPORT
-#include "powerware-mib.c"
-#endif
-
 snmp_device_id_t *device_table = NULL;
 mib2nut_info_t *mib2nut_table = NULL;
 
@@ -1205,61 +1192,3 @@ dmf_parser_destroy()
 	mib2nut_table = NULL;
 	return 0;
 }
-
-#ifdef WITH_DMFTEST_MAIN
-int
-main ()
-{
-	dmf_parser_init();
-
-#ifdef WITH_DMF_LUA
-	// TODO: Verify this for typos/mismerges
-	char *luaquery = "print(\"something\")";
-	lua_State** lfunction = (lua_State**) malloc(sizeof(lua_State**));
-	*lfunction = lua_open();
-	luaopen_base(*lfunction);
-	luaopen_string(*lfunction);
-	luaL_loadbuffer(*lfunction, luaquery, strlen(luaquery), "fn");
-	lua_pcall(*lfunction, 0, 0, 0);
-#endif
-
-	alist_t * list = alist_new(
-		NULL,(void (*)(void **))alist_destroy, NULL );
-	DIR *dir;
-	struct dirent *dir_ent;
-	int i = 0;
-	if ((dir = opendir("./")) == NULL)
-	{
-		printf("DMF directory not found/n");
-		return 0;
-	}
-	while ((dir_ent = readdir(dir)) != NULL)
-	{
-		i++;
-		if(strstr(dir_ent->d_name, ".dmf"))
-		parse_file(dir_ent->d_name, list);
-	}
-
-#ifdef DEBUG
-	//Debugging
-	//mib2nut_info_t *m2n = get_mib2nut_table();
-	//print_mib2nut_memory_struct(m2n + 6);
-	//print_mib2nut_memory_struct(&pxgx_ups);
-	print_mib2nut_memory_struct((mib2nut_info_t *)
-		alist_get_element_by_name(list, "powerware")->values[0]);
-	printf("\n\n");
-	printf("Original C structures:\n\n");
-	print_mib2nut_memory_struct(&powerware);
-	//End debugging
-#endif
-
-	dmf_parser_destroy();
-	alist_destroy(&list);
-	closedir(dir);
-
-#ifdef WITH_DMF_LUA
-	lua_close(*lfunction);
-	free(lfunction);
-#endif
-}
-#endif

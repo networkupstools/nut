@@ -14,20 +14,20 @@ clean:
 
 check: run-dmf-test run-dmf-lua-test
 
-dmf-test: dmf.c
+dmf-test: dmf-test.c dmf.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon -I../../include -I../../drivers \
-	-DWITH_DMFTEST_MAIN=1 -DDEBUG=1 \
+	-DDEBUG=1 \
 	-o $@ $^
 
-dmf-lua-test: dmf.c
+# -DWITH_DMFTEST_MAIN=1
+dmf-lua-test: dmf-test.c dmf.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon -I../../include -I../../drivers \
-	-llua5.1 -I/usr/include/lua5.1 \
-	-DWITH_DMFTEST_MAIN=1 -DDEBUG=1 \
-	-DWITH_DMF_LUA=1 \
+	-llua5.1 -I/usr/include/lua5.1 -DWITH_DMF_LUA=1 \
+	-DDEBUG=1 \
 	-o $@ $^
 
 run-dmf-test: dmf-test
