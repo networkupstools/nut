@@ -70,6 +70,12 @@ class Visitor(c_ast.NodeVisitor):
             _, info_type = kids [0]
             try:
                 ditem ["info_type"] = info_type.value.strip ('"')
+                if ( ditem ["info_type"] == 0 ):
+                    continue
+                if ( ditem ["info_type"] == "0" ):
+                    continue
+                if ( ditem ["info_type"] == "NULL" ):
+                    continue
             except AttributeError:
                 # There is { NULL, 0, 0 ...} on the end of each structure
                 # we should skip this one
@@ -95,6 +101,8 @@ class Visitor(c_ast.NodeVisitor):
             _, OID = kids [3]
             try:
                 ditem ["OID"] = OID.value.strip ('"')
+                if ( ditem ["OID"] == "0" ):
+                    ditem ["OID"] = "NULL"
             except:
                 ditem ["OID"] = None
 
@@ -148,6 +156,10 @@ class Visitor(c_ast.NodeVisitor):
             # array ends with {0, NULL}
             if isinstance (ilist.exprs [1], c_ast.Cast):
                 continue
+
+            if ( key == 0 ):
+                if ( ilist.exprs [1] == "0" ):
+                    continue
 
             ret.append ((key, ilist.exprs [1].value.strip ('"')))
         return ret
