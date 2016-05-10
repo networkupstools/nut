@@ -10,9 +10,15 @@ PROGS = dmf-test dmf-lua-test
 all: $(PROGS)
 
 clean:
-	$(RM) $(PROGS)
+	$(RM) $(PROGS) *.o *.dmf.tmp *.json.tmp *_TEST.c *_TEST.exe
 
 check: run-dmf-test run-dmf-lua-test
+
+%.dmf: ../../drivers/%.c dmfify-mib.sh jsonify-mib.py xmlify-mib.py
+	./dmfify-mib.sh $<
+
+dmf:
+	./dmfify-mib.sh
 
 dmf-test: dmf-test.c dmf.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \

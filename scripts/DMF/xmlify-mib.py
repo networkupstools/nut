@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 # This Python script takes structure contents from JSON markup generated
 # by `jsonify-mib.py` and generates XML DMF structure that can be parsed
@@ -120,17 +120,26 @@ def mk_snmp (inp, root):
             for name, info_flag, value in (
                     ("writable", ST_FLAG_RW, "yes"),
                     ("string", ST_FLAG_STRING, "yes"),
+                    ("immutable", ST_FLAG_IMMUTABLE, "yes"),
                     ):
                 if not info_flag in info ["info_flags"]:
                     continue
                 kwargs [name] = value
                 info ["info_flags"].remove (info_flag)
 
+            # ignore the "0" flag which means no bits set
+            len1 = len (info ["info_flags"])
+            if 0 in info ["info_flags"]:
+                info ["info_flags"].remove (0)
+                len2 = len (info ["info_flags"])
+                if ((len1-1) != len2):
+                    die ("Killed too much in info_flags array!")
+
             # This is a assert - if there are info_flags we do not cover,
             # fail here!!! (Mostly useful for NUT forks that might have a
             # different schema that this stock script does not cover OOB).
             if len (info ["info_flags"]) > 0:
-                die ("There are unprocessed items in info_flags in '%s'" % (info, ))
+                die ("There are unprocessed items in info_flags (len == %d) in '%s'" % ( (len (info ["info_flags"])), info, ))
 
             ### process flags
             for name, flag, value in (
@@ -169,9 +178,17 @@ def mk_snmp (inp, root):
                 kwargs ["setvar"] = info ["setvar"]
                 info ["flags"].remove (SU_FLAG_SETINT)
 
+            # ignore the "0" flag which means no bits set
+            len1 = len (info ["flags"])
+            if 0 in info ["flags"]:
+                info ["flags"].remove (0)
+                len2 = len (info ["flags"])
+                if ((len1-1) != len2):
+                    die ("Killed too much in flags array!")
+
             # This is a assert - if there are info_flags we do not cover, fail here!!!
             if len (info ["flags"]) > 0:
-                die ("There are unprocessed items in flags in '%s'" % (info, ))
+                die ("There are unprocessed items in flags (len == %d) in '%s'" % ( (len (info ["flags"])), info, ))
 
             info_el = mkElement ("snmp_info", **kwargs)
             lookup_el.appendChild (info_el)

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 # This Python script takes structure contents from existing legacy
 # NUT *-mib.c sources. This is the first stage for DMF generation,
@@ -70,6 +70,13 @@ class Visitor(c_ast.NodeVisitor):
             _, info_type = kids [0]
             try:
                 ditem ["info_type"] = info_type.value.strip ('"')
+                # some pycparser versions need this check for 0 vs. NULL instead
+                if ( ditem ["info_type"] == 0 ):
+                    continue
+                if ( ditem ["info_type"] == "0" ):
+                    continue
+                if ( ditem ["info_type"] == "NULL" ):
+                    continue
             except AttributeError:
                 # There is { NULL, 0, 0 ...} on the end of each structure
                 # we should skip this one
@@ -95,16 +102,26 @@ class Visitor(c_ast.NodeVisitor):
             _, OID = kids [3]
             try:
                 ditem ["OID"] = OID.value.strip ('"')
+                # some pycparser versions need this check for 0 vs. NULL instead
+                if ( ditem ["OID"] == "0" ):
+                    ditem ["OID"] = None
             except:
                 ditem ["OID"] = None
 
             # 4: const char *dfl
+            # NOTE: Some MIB.C's incorrectly declare the value as numeric zero
+            # rather than symbolic NULL. No more examples should remain in the
+            # upstream NUT (recently fixed), but may happen in downstream forks
             _, default = kids [4]
+            ditem ["dfl"] = None
             if isinstance (default, c_ast.Constant):
                 if default.type == "string":
                     ditem ["dfl"] = default.value.strip ('"')
                 elif default.type == "int":
-                    ditem ["dfl"] = int (default.value)
+                    # Note: after pycparser NULL is resolved into 0 too
+                    # So we only warn if some other number is encountered
+                    if ( int(default.value) != 0 ):
+                        warn ("numeric value '%s' passed as 'char *dfl' in 'snmp_info_t'; ASSUMING this is explicit NULL for your platform" % default.value)
             elif isinstance (default, c_ast.Cast):
                 ditem ["dfl"] = None
 
@@ -114,6 +131,7 @@ class Visitor(c_ast.NodeVisitor):
 
             # 6: info_lkp_t *oid2info
             _, oid2info = kids [6]
+            ditem ["oid2info"] = None
             if isinstance (oid2info, c_ast.Cast):
                 ditem ["oid2info"] = None
             elif isinstance (oid2info, c_ast.ID):
@@ -149,6 +167,13 @@ class Visitor(c_ast.NodeVisitor):
             if isinstance (ilist.exprs [1], c_ast.Cast):
                 continue
 
+            # in some pycparser versions this check for {0, NULL} works instead
+            if ( key == 0 ):
+                if ( ilist.exprs [1].value.strip ('"') == "0" ):
+                    continue
+                elif ( ilist.exprs [1] == "0" ):
+                    continue
+
             ret.append ((key, ilist.exprs [1].value.strip ('"')))
         return ret
 
@@ -170,6 +195,9 @@ class Visitor(c_ast.NodeVisitor):
                 ret [key] = None
             else:
                 ret [key] = kids [i].value.strip ('"')
+
+            if ( ret [key] == "0" ):
+                ret [key] = None
 
         # 4 snmp_info
         ret ["snmp_info"] = kids [4].name
@@ -197,6 +225,10 @@ class Visitor(c_ast.NodeVisitor):
                     ret [key] = None
                 else:
                     ret [key] = kids [i].value.strip ('"')
+
+                if ( ret [key] == "0" ):
+                    ret [key] = None
+
             lst.append (ret)
 
         return lst
@@ -265,11 +297,15 @@ def s_mib2nut (fout, js, name):
     for key in ("mib_name", "mib_version", "oid_pwr_status", "oid_auto_check", "sysOID"):
         if pinfo.get (key) is None:
             pinfo [key] = "NULL"
+        elif ( pinfo [key] == "0" ):
+            pinfo [key] = "NULL"
         else:
             pinfo [key] = '"%s"' % pinfo [key]
 
     for key in ("snmp_info", "alarms_info"):
         if pinfo.get (key) is None:
+            pinfo [key] = "NULL"
+        elif ( pinfo [key] == "0" ):
             pinfo [key] = "NULL"
 
     print ("""
@@ -285,16 +321,47 @@ def s_json2c (fout, MIB_name, js):
 // for setvar field
 int input_phases, output_phases, bypass_phases;
 
+// avoid macro-conflict with snmp-ups
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_BUGREPORT
+#endif
 #include "%s.c"
 
 static inline bool streq (const char* x, const char* y)
 {
     if (!x && !y)
         return true;
-    if (!x || !y)
+    if (!x || !y) {
+        fprintf(stderr, "\\nDEBUG: strEQ(): One compared string (but not both) is NULL:\\n\\t%%s\\n\\t%%s\\n\\n", x ? x : "<NULL>" , y ? y : "<NULL>");
         return false;
-    return strcmp (x, y) == 0;
+        }
+    int cmp = strcmp (x, y);
+    if (cmp != 0) {
+        fprintf(stderr, "\\nDEBUG: strEQ(): Strings not equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+    }
+    return cmp == 0;
 }
+
+static inline bool strneq (const char* x, const char* y)
+{
+    if (!x && !y) {
+        fprintf(stderr, "\\nDEBUG: strNEQ(): Both compared strings are NULL\\n");
+        return false;
+        }
+    if (!x || !y) {
+        return true;
+        }
+    int cmp = strcmp (x, y);
+    if (cmp == 0) {
+        fprintf(stderr, "\\nDEBUG: strNEQ(): Strings are equal (%%i):\\n\\t%%s\\n\\t%%s\\n\\n", cmp, x, y);
+    }
+    return cmp != 0;
+}
+
 """ % MIB_name, file=fout)
 
     s_info2c (fout, js["INFO"])
@@ -312,9 +379,10 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
+        fprintf (stderr, "[%%i] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
-        assert (!strcmp (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
+        assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
     }
     fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
@@ -322,19 +390,12 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
-        if (!streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type)) {
-            fprintf (stderr, "%(k)s[%%d].info_type=%%s\\n", i, %(k)s[i].info_type);
-            fprintf (stderr, "%(k)s_TEST[%%d].info_type=%%s\\n", i, %(k)s_TEST[i].info_type);
-            return 1;
-        }
+        fprintf (stderr, "[%%i] ", i);
+        assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
         assert (streq (%(k)s [i].OID, %(k)s_TEST [i].OID));
-        if (!streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl)) {
-            fprintf (stderr, "%(k)s[%%d].dfl=%%s\\n", i, %(k)s[i].dfl);
-            fprintf (stderr, "%(k)s_TEST[%%d].dfl=%%s\\n", i, %(k)s_TEST[i].dfl);
-            return 1;
-        }
+        assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
             fprintf (stderr, "%(k)s[%%d].oid2info=<%%p>\\n", i, %(k)s[i].oid2info);
@@ -385,15 +446,20 @@ if args.test:
     test_file = os.path.basename (args.source)
     MIB_name = os.path.splitext (test_file) [0]
     test_file = MIB_name + "_TEST.c"
+    prog_file = MIB_name + "_TEST.exe"
     with open (test_file, "wt") as fout:
         s_json2c (fout, MIB_name, v._mappings)
 
     drivers_dir = os.path.dirname (os.path.abspath (args.source))
     include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
-    cmd = ["cc", "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", MIB_name, test_file]
+    try:
+        gcc = os.environ["CC"]
+    except KeyError:
+        gcc = "cc"
+    cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", prog_file, test_file]
     print (" ".join (cmd), file=sys.stderr)
     subprocess.check_call (cmd)
-    subprocess.check_call ("./%s" % MIB_name)
+    subprocess.check_call ("./%s" % prog_file)
 
 json.dump (v._mappings, sys.stdout, indent=4)
 sys.exit (0)

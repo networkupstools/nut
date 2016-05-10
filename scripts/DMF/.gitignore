@@ -1,4 +1,9 @@
 dmf-test
 dmf-lua-test
 *.o
+*.json.tmp
+*.dmf.tmp
+*_TEST.c
+*_TEST.exe
+*-mib.c
 
