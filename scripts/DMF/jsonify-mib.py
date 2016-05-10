@@ -70,6 +70,7 @@ class Visitor(c_ast.NodeVisitor):
             _, info_type = kids [0]
             try:
                 ditem ["info_type"] = info_type.value.strip ('"')
+                # some pycparser versions need this check for 0 vs. NULL instead
                 if ( ditem ["info_type"] == 0 ):
                     continue
                 if ( ditem ["info_type"] == "0" ):
@@ -101,22 +102,28 @@ class Visitor(c_ast.NodeVisitor):
             _, OID = kids [3]
             try:
                 ditem ["OID"] = OID.value.strip ('"')
+                # some pycparser versions need this check for 0 vs. NULL instead
                 if ( ditem ["OID"] == "0" ):
                     ditem ["OID"] = None
             except:
                 ditem ["OID"] = None
 
             # 4: const char *dfl
+            # NOTE: Some MIB.C's incorrectly declare the value as numeric zero
+            # rather than symbolic NULL. No more examples should remain in the
+            # upstream NUT (recently fixed), but may happen in downstream forks
             _, default = kids [4]
             ditem ["dfl"] = None
             if isinstance (default, c_ast.Constant):
                 if default.type == "string":
                     ditem ["dfl"] = default.value.strip ('"')
                 elif default.type == "int":
-                    ditem ["dfl"] = int (default.value)
+                    # Note: after pycparser NULL is resolved into 0 too
+                    # So we only warn if some other number is encountered
+                    if ( int(default.value) != 0 ):
+                        warn ("numeric value '%s' passed as 'char *dfl' in 'snmp_info_t'; ASSUMING this is explicit NULL for your platform" % default.value)
             elif isinstance (default, c_ast.Cast):
                 ditem ["dfl"] = None
-
 
             # 5: unsigned long flags
             _, flags = kids [5]
@@ -160,6 +167,7 @@ class Visitor(c_ast.NodeVisitor):
             if isinstance (ilist.exprs [1], c_ast.Cast):
                 continue
 
+            # in some pycparser versions this check for {0, NULL} works instead
             if ( key == 0 ):
                 if ( ilist.exprs [1].value.strip ('"') == "0" ):
                     continue

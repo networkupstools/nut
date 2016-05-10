@@ -70,7 +70,9 @@ They are a mix of Python and shell scripts:
     the final DMF XML format
  * `dmfify-mib.sh`: execute this from the `$NUT_SOURCE/scripts/DMF/` directory
     and it will find and process existing `../../drivers/*-mib.c` files to feed
-    them into the pipeline of the two scripts above and produce `*.dmf` files
+    them into the pipeline of the two scripts above and produce `*.dmf` files.
+    It calls `jsonify-mib.py --test` so the parsed structures are recreated
+    into a C file, compiled and instantly tested to make sure they match.
 
 NOTE: At this time the Python scripts are not intended for direct execution
 (exec bits not set), so you should prepend them with versioned parser name
