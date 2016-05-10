@@ -1263,24 +1263,26 @@ void strarr_free(strarr arr)
 }
 
 
-static strarr stringset_to_strarr(const std::set<std::string>& strset)
+strarr stringset_to_strarr(const std::set<std::string>& strset)
 {
 	strarr arr = strarr_alloc(strset.size());
 	strarr pstr = arr;
 	for(std::set<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
 	{
 		*pstr = xstrdup(it->c_str());
+		pstr++;
 	}
 	return arr;	
 }
 
-static strarr stringvector_to_strarr(const std::vector<std::string>& strset)
+strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 {
 	strarr arr = strarr_alloc(strset.size());
 	strarr pstr = arr;
 	for(std::vector<std::string>::const_iterator it=strset.begin(); it!=strset.end(); ++it)
 	{
 		*pstr = xstrdup(it->c_str());
+		pstr++;
 	}
 	return arr;	
 }

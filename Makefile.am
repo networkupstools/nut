@@ -14,14 +14,15 @@ EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 # ----------------------------------------------------------------------
 # flags to pass to ./configure when calling "make distcheck" and "make
 # distcheck-light". Try to check as many features as possible! Also
-# need to give hotplug-dir and udev-dir, so that staged install does
-# not fail.
+# need to give augeas-lenses-dir, hotplug-dir and udev-dir, so that
+# staged install does not fail.
 
 DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
+ --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
  --with-devd-dir='$${prefix}/etc/devd'
