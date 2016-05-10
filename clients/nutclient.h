@@ -122,7 +122,7 @@ class Client
 	friend class Variable;
 	friend class Command;
 public:
-	~Client();
+	virtual ~Client();
 
 	/**
 	 * Intend to authenticate to a NUTD server.
