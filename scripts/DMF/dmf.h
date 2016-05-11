@@ -193,8 +193,6 @@ void
 mib2nut_info_t *
 	get_mib2nut_table();
 
-int
-	get_mib2nut_table_counter();
 
 
 // Create new instance of alist_t with LOOKUP type,
@@ -263,8 +261,13 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
+// Load DMF XML file into structure tree at *list (precreate with alist_new)
 int
 	parse_file (char *file_name, alist_t *list);
+
+// Load all `*.dmf` DMF XML files from specified directory
+int
+	parse_dir (char *dir_name, alist_t *list);
 
 
 
