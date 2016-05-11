@@ -16,6 +16,9 @@ some Python dependency requirements, but are not strict requirements for
 NUT (as common-case nor `distcheck` builds) -- the tools are only intended
 for manual usage by a few developers.
 
+Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
+and application developers should look there for the "The big theory" details.
+
 A second iteration is experimentally provided, but may be incomplete and is
 subject to change after some team discussions, which is to support not only
 static mappings of the first iteration (so as to be functionally and logically
