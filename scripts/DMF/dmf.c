@@ -2,7 +2,7 @@
  *
  * This file implements procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
- * files of the past.
+ * files of the past. See dmf.h for "The big theory" details.
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
