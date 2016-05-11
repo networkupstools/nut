@@ -106,7 +106,12 @@
  */
 
 #ifdef WITH_DMF_LUA
-/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2 */
+/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2.
+ * As of this initial code-drop, the implementation is experimental and is
+ * incomplete and very likely buggy. Developers of LUA integration should
+ * explicitly reconfigure and rebuild NUT with `-DWITH_DMF_LUA=1` in their
+ * CFLAGS - it is not exposed otherwise.
+ */
 # include <lua.h>
 # include <lauxlib.h>
 # include <lualib.h>
