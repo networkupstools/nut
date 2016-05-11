@@ -57,20 +57,7 @@ main ()
 	dmf_parser_init();
 	alist_t * list = alist_new(
 		NULL,(void (*)(void **))alist_destroy, NULL );
-	DIR *dir;
-	struct dirent *dir_ent;
-	int i = 0;
-	if ((dir = opendir("./")) == NULL)
-	{
-		printf("DMF directory not found/n");
-		return 0;
-	}
-	while ((dir_ent = readdir(dir)) != NULL)
-	{
-		i++;
-		if(strstr(dir_ent->d_name, ".dmf"))
-		parse_file(dir_ent->d_name, list);
-	}
+	parse_dir("./", list);
 
 #ifdef DEBUG
 	//Debugging
@@ -88,7 +75,6 @@ main ()
 	// TODO: Is this order correct?
 	dmf_parser_destroy();
 	alist_destroy(&list);
-	closedir(dir);
 
 #ifdef WITH_DMF_LUA
 	lua_close(*lfunction);

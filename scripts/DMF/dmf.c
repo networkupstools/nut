@@ -24,6 +24,7 @@
  */
 
 #include <neon/ne_xml.h>
+#include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
@@ -32,8 +33,10 @@
 snmp_device_id_t *device_table = NULL;
 mib2nut_info_t *mib2nut_table = NULL;
 
+/* This is an amount of known device_table and mib2nut-table entries (same)
+ * AND the trailing sentinel (zeroed-out entry), so it is always >= 1.
+ */
 int device_table_counter = 1;
-int mib2nut_table_counter = 1;
 
 /*
  *
@@ -1094,11 +1097,27 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 }
 #endif
 
+// Load DMF XML file into structure tree at *list (precreate with alist_new)
+// Returns 0 on success, or an <errno> code on system or parsing errors
 int
 parse_file(char *file_name, alist_t *list)
 {
-	char buffer[1024];
+	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
+	FILE *f;
 	int result = 0;
+
+        assert (file_name);
+        assert (list);
+
+	if ( (file_name == NULL ) || \
+	     ( (f = fopen(file_name, "r")) == NULL ) )
+	{
+#ifdef DEBUG
+		fprintf(stderr, "DMF file '%s' not found or not readable\n", file_name ? file_name : "<NULL>");
+#endif
+		return ENOENT;
+	}
+
 	ne_xml_parser *parser = ne_xml_create ();
 	ne_xml_push_handler (parser, xml_dict_start_cb,
 #ifdef WITH_DMF_LUA
@@ -1108,41 +1127,102 @@ parse_file(char *file_name, alist_t *list)
 #endif
 		, xml_end_cb, list);
 
-	FILE *f = fopen (file_name, "r");
-	if (f)
+	/* The neon XML parser would get blocks from the DMF file and build
+	   the in-memory representation with our xml_dict_start_cb() callback.
+	   Any hiccup (FS, neon, callback) is failure. */
+	while (!feof (f))
 	{
-		while (!feof (f))
+		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
+		if (len == 0) /* Should not zero-read from a non-EOF file */
 		{
-			size_t len = fread(buffer, sizeof(char),
-				sizeof(buffer), f);
-			if (len == 0)
+			result = EIO;
+			break;
+		} else {
+			if ((result = ne_xml_parse (parser, buffer, len)))
 			{
-				result = 1;
+				result = ENOMSG;
 				break;
-			} else {
-				if ((result = ne_xml_parse (parser, buffer, len)))
-					break;
 			}
 		}
-		if (!result)
-			ne_xml_parse (parser, buffer, 0);
-		/*printf("aqui %s", buffer);*/
-		fclose (f);
-	} else {
-		result = 1;
 	}
+	fclose (f);
+	if (!result) /* no errors, complete the parse with len==0 call */
+		ne_xml_parse (parser, buffer, 0);
 	ne_xml_destroy (parser);
 
+#ifdef DEBUG
+	fprintf(stderr, "%s DMF acquired from '%s' (result = %d) %s\n",
+		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
+		( result == 0 ) ? "" : strerror(result)
+	);
+#endif
+
+	/* Extend or truncate the tables to the current amount of known entries
+	   To be on the safe side, we do this even if current file hiccuped. */
+	assert (device_table_counter>=1); /* Avoid underflow in memset below */
 	device_table = (snmp_device_id_t *) realloc(device_table,
 		device_table_counter * sizeof(snmp_device_id_t));
 	mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table,
 		device_table_counter * sizeof(mib2nut_info_t));
 	assert (device_table);
+	assert (mib2nut_table);
+
+	/* Make sure the last entry in the table is the zeroed-out sentinel */
 	memset (device_table + device_table_counter - 1, 0,
 		sizeof (snmp_device_id_t));
-	assert (mib2nut_table);
 	memset (mib2nut_table + device_table_counter - 1, 0,
 		sizeof (mib2nut_info_t));
+
+	return result;
+}
+
+// Load all `*.dmf` DMF XML files from specified directory into aux list tree
+int
+parse_dir (char *dir_name, alist_t *list)
+{
+	DIR *dir;
+	struct dirent *dir_ent;
+	int i = 0, result = 0;
+
+	assert (dir_name);
+        assert (list);
+
+	if ( (dir_name == NULL ) || \
+	     ( (dir = opendir(dir_name)) == NULL ) )
+	{
+#ifdef DEBUG
+		fprintf(stderr, "DMF directory '%s' not found or not readable\n", dir_name ? dir_name : "<NULL>");
+#endif
+		return ENOENT;
+	}
+
+	while ( (dir_ent = readdir(dir)) != NULL )
+	{
+		if ( strstr(dir_ent->d_name, ".dmf") )
+		{
+			i++;
+			int res = parse_file(dir_ent->d_name, list);
+			if ( res != 0 )
+				result = res;
+				// No debug: parse_file() did it if enabled
+		}
+	}
+	closedir(dir);
+
+#ifdef DEBUG
+	if (i==0) {
+		fprintf(stderr, "No DMF files were found or readable in directory '%s'\n",
+			dir_name ? dir_name : "<NULL>");
+	} else {
+		fprintf(stderr, "%d DMF files were inspected in directory '%s'\n",
+			i, dir_name ? dir_name : "<NULL>");
+	}
+	if (result!=0) {
+		fprintf(stderr, "Some DMF files were not readable in directory '%s' (last bad result %d)\n",
+			dir_name ? dir_name : "<NULL>", result);
+	}
+#endif
+
 	return result;
 }
 
@@ -1165,25 +1245,19 @@ get_mib2nut_table()
 }
 
 int
-get_mib2nut_table_counter()
-{
-	return mib2nut_table_counter;
-}
-
-int
-dmf_parser_init()
-{
-	device_table = NULL;
-	mib2nut_table = NULL;
-	return 0;
-}
-
-int
 dmf_parser_destroy()
 {
 	if (device_table)	free(device_table);
 	device_table = NULL;
 	if (mib2nut_table)	free(mib2nut_table);
 	mib2nut_table = NULL;
+	device_table_counter = 1;
 	return 0;
+}
+
+int
+dmf_parser_init()
+{
+	/* At the moment there is no difference in init vs destroy */
+	return dmf_parser_destroy();
 }
