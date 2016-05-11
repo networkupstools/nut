@@ -1105,9 +1105,8 @@ parse_file(char *file_name, alist_t *list)
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
 	{
-#ifdef DEBUG
-		fprintf(stderr, "DMF file '%s' not found or not readable\n", file_name ? file_name : "<NULL>");
-#endif
+		fprintf(stderr, "DMF file '%s' not found or not readable\n",
+			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
 
@@ -1128,11 +1127,15 @@ parse_file(char *file_name, alist_t *list)
 		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
 		if (len == 0) /* Should not zero-read from a non-EOF file */
 		{
+			fprintf(stderr, "Error parsing DMF from '%s'"
+				"(unexpected short read)\n", file_name);
 			result = EIO;
 			break;
 		} else {
 			if ((result = ne_xml_parse (parser, buffer, len)))
 			{
+				fprintf(stderr, "Error parsing DMF from '%s'"
+					"(unexpected markup?)\n", file_name);
 				result = ENOMSG;
 				break;
 			}
@@ -1183,9 +1186,8 @@ parse_dir (char *dir_name, alist_t *list)
 	if ( (dir_name == NULL ) || \
 	     ( (dir = opendir(dir_name)) == NULL ) )
 	{
-#ifdef DEBUG
-		fprintf(stderr, "DMF directory '%s' not found or not readable\n", dir_name ? dir_name : "<NULL>");
-#endif
+		fprintf(stderr, "DMF directory '%s' not found or not readable\n",
+			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
 
