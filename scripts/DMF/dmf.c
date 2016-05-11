@@ -34,9 +34,10 @@ snmp_device_id_t *device_table = NULL;
 mib2nut_info_t *mib2nut_table = NULL;
 
 /* This is an amount of known device_table and mib2nut-table entries (same)
- * AND the trailing sentinel (zeroed-out entry), so it is always >= 1.
+ * AND the trailing sentinel (zeroed-out entry), so it is always >= 1 when
+ * there is some data (table pointers not NULL).
  */
-int device_table_counter = 1;
+int device_table_counter = 0;
 
 /*
  *
@@ -1243,13 +1244,21 @@ dmf_parser_destroy()
 	device_table = NULL;
 	if (mib2nut_table)	free(mib2nut_table);
 	mib2nut_table = NULL;
-	device_table_counter = 1;
+	device_table_counter = 0;
 	return 0;
 }
 
 int
 dmf_parser_init()
 {
-	/* At the moment there is no difference in init vs destroy */
-	return dmf_parser_destroy();
+	dmf_parser_destroy();
+	device_table_counter = 1;
+	device_table = (snmp_device_id_t *)calloc(
+		device_table_counter, sizeof(snmp_device_id_t));
+	mib2nut_table = (mib2nut_info_t *)calloc(
+		device_table_counter, sizeof(mib2nut_info_t));
+	assert (device_table);
+	assert (mib2nut_table);
+	assert (device_table_counter >= 1);
+	return 0;
 }
