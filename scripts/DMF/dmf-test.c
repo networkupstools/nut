@@ -1,4 +1,4 @@
-/* dmf.c - Network UPS Tools XML-driver-loader self-test program
+/* dmf-test.c - Network UPS Tools XML-driver-loader self-test program
  *
  * This file implements procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
@@ -23,7 +23,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <neon/ne_xml.h>
+//#include <neon/ne_xml.h>
+#include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
@@ -54,44 +55,36 @@ main ()
 	lua_pcall(*lfunction, 0, 0, 0);
 #endif
 
-	dmf_parser_init();
 	alist_t * list = alist_new(
 		NULL,(void (*)(void **))alist_destroy, NULL );
-	DIR *dir;
-	struct dirent *dir_ent;
-	int i = 0;
-	if ((dir = opendir("./")) == NULL)
-	{
-		printf("DMF directory not found/n");
-		return 0;
+	if (!list) {
+		fprintf(stderr,"FATAL: Can not allocate the auxiliary list\n");
+		return ENOMEM;
 	}
-	while ((dir_ent = readdir(dir)) != NULL)
-	{
-		i++;
-		if(strstr(dir_ent->d_name, ".dmf"))
-		parse_file(dir_ent->d_name, list);
-	}
+	dmf_parser_init();
 
-#ifdef DEBUG
+	parse_dir("./", list);
+
 	//Debugging
 	//mib2nut_info_t *m2n = get_mib2nut_table();
 	//print_mib2nut_memory_struct(m2n + 6);
 	//print_mib2nut_memory_struct(&pxgx_ups);
+	printf("=== DMF-Test: Loaded C structures (sample for 'powerware'):\n\n");
 	print_mib2nut_memory_struct((mib2nut_info_t *)
 		alist_get_element_by_name(list, "powerware")->values[0]);
 	printf("\n\n");
-	printf("Original C structures:\n\n");
+	printf("=== DMF-Test: Original C structures (sample for 'powerware'):\n\n");
 	print_mib2nut_memory_struct(&powerware);
 	//End debugging
-#endif
 
-	// TODO: Is this order correct?
+	// First we destroy the index tables that reference data in the list...
+	printf("=== DMF-Test: Freeing data...\n\n");
 	dmf_parser_destroy();
 	alist_destroy(&list);
-	closedir(dir);
 
 #ifdef WITH_DMF_LUA
 	lua_close(*lfunction);
 	free(lfunction);
 #endif
+	printf("=== DMF-Test: All done\n\n");
 }

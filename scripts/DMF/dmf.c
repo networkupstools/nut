@@ -2,7 +2,7 @@
  *
  * This file implements procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
- * files of the past.
+ * files of the past. See dmf.h for "The big theory" details.
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
@@ -23,12 +23,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifdef HAVE_MALAMUTE_H
-# include <malamute.h>
-#else
-#endif
-
 #include <neon/ne_xml.h>
+#include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
@@ -37,8 +33,11 @@
 snmp_device_id_t *device_table = NULL;
 mib2nut_info_t *mib2nut_table = NULL;
 
-int device_table_counter = 1;
-int mib2nut_table_counter = 1;
+/* This is an amount of known device_table and mib2nut-table entries (same)
+ * AND the trailing sentinel (zeroed-out entry), so it is always >= 1 when
+ * there is some data (table pointers not NULL).
+ */
+int device_table_counter = 0;
 
 /*
  *
@@ -155,9 +154,8 @@ get_param_by_name (const char *name, const char **items)
 info_lkp_t *
 info_lkp_new (int oid, const char *value)
 {
-	info_lkp_t *self = (info_lkp_t*) malloc (sizeof (info_lkp_t));
+	info_lkp_t *self = (info_lkp_t*) calloc (1, sizeof (info_lkp_t));
 	assert (self);
-	memset (self, 0, sizeof (info_lkp_t));
 	self->oid_value = oid;
 	if (value)
 		self->info_value = strdup (value);
@@ -168,9 +166,8 @@ info_lkp_new (int oid, const char *value)
 alarms_info_t *
 info_alarm_new (const char *oid, const char *status, const char *alarm)
 {
-	alarms_info_t *self = (alarms_info_t*) malloc(sizeof (alarms_info_t));
+	alarms_info_t *self = (alarms_info_t*) calloc(1, sizeof (alarms_info_t));
 	assert (self);
-	memset (self, 0, sizeof (alarms_info_t));
 	if(oid)
 		self->OID = strdup (oid);
 	if(status)
@@ -185,9 +182,8 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
 	info_lkp_t *lookup, int *setvar)
 {
-	snmp_info_t *self = (snmp_info_t*) malloc (sizeof (snmp_info_t));
+	snmp_info_t *self = (snmp_info_t*) calloc (1, sizeof (snmp_info_t));
 	assert (self);
-	memset (self, 0, sizeof (snmp_info_t));
 	if(name)
 		self->info_type = strdup (name);
 	self->info_len = multiplier;
@@ -211,9 +207,8 @@ info_mib2nut_new (const char *name, const char *version,
 #endif
 )
 {
-	mib2nut_info_t *self = (mib2nut_info_t*)malloc(sizeof(mib2nut_info_t));
+	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
-	memset (self, 0, sizeof (mib2nut_info_t));
 	if(name)
 		self->mib_name = strdup (name);
 	if(version)
@@ -434,14 +429,12 @@ alist_new ( const char *name,
 	void (*destroy)(void **self_p),
 	void (*new_element)(void) )
 {
-	alist_t *self = (alist_t*) malloc (sizeof (alist_t));
+	alist_t *self = (alist_t*) calloc (1, sizeof (alist_t));
 	assert (self);
-	memset (self, 0, sizeof(alist_t));
 	self->size = 0;
 	self->capacity = DEFAULT_CAPACITY;
-	self->values = (void**) malloc (self->capacity * sizeof (void*));
+	self->values = (void**) calloc (self->capacity, sizeof (void*));
 	assert (self->values);
-	memset (self->values, 0, self->capacity);
 	self->destroy = destroy;
 	self->new_element = new_element;
 	if(name)
@@ -551,10 +544,9 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	//lua_State **lfunction;
 #endif
 
-	char **arg = (char**) malloc (
-		(INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof (void**) );
+	char **arg = (char**) calloc (
+		(INFO_MIB2NUT_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
-	memset (arg, 0, (INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(MIB2NUT_MIB_NAME, attrs);
 	arg[1] = get_param_by_name(MIB2NUT_VERSION, attrs);
@@ -570,8 +562,8 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	if (arg[5])
 	{
 		alist_t *lkp = alist_get_element_by_name(list, arg[5]);
-		snmp = (snmp_info_t*) malloc(
-			(lkp->size + 1) * sizeof(snmp_info_t) );
+		snmp = (snmp_info_t*) calloc(
+			(lkp->size + 1), sizeof(snmp_info_t) );
 		for(i = 0; i < lkp->size; i++)
 		{
 			snmp[i].info_flags = ((snmp_info_t*)
@@ -608,6 +600,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 
 		} // for
 
+		/* To be safe, do the sentinel entry explicitly */
 		snmp[i].info_flags = 0;
 		snmp[i].info_type = NULL;
 		snmp[i].info_len = 0;
@@ -621,8 +614,8 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	if(arg[6])
 	{
 		alist_t *alm = alist_get_element_by_name(list, arg[6]);
-		alarm = (alarms_info_t*) malloc(
-			(alm->size + 1) * sizeof(alarms_info_t) );
+		alarm = (alarms_info_t*) calloc(
+			alm->size + 1, sizeof(alarms_info_t) );
 		for(i = 0; i < alm->size; i++)
 		{
 			if( ((alarms_info_t*) alm->values[i])->OID )
@@ -665,6 +658,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 						malloc(contFunc * sizeof(lua_State**));
 				else	functions = (lua_State**)
 						realloc(functions, contFunc * sizeof(lua_State**));
+				assert(contFunc>=2); // TODO: According to if() above, we can have 1 or maybe less, and array access below will fail
 				functions[contFunc - 2] =
 					compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
 				//lua_close(functions[contFunc - 1]);
@@ -680,6 +674,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		else	functions = (lua_State**) realloc(functions,
 				contFunc * sizeof(lua_State**) );
 
+		assert(contFunc>=2); // TODO: According to if() above, we can have 1 or maybe less, and array access below will fail
 		functions[contFunc - 2] = compile_lua_functionFrom_array(
 			(char**) alist_get_element_by_name(list, func)->values,
 			func);
@@ -721,10 +716,9 @@ alarm_info_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
 	int i=0;
-	char **arg = (char**) malloc (
-		(INFO_ALARM_MAX_ATTRS + 1) * sizeof (void**) );
+	char **arg = (char**) calloc (
+		(INFO_ALARM_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
-	memset (arg, 0, (INFO_ALARM_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(ALARM_ALARM, attrs);
 	arg[1] = get_param_by_name(ALARM_STATUS, attrs);
@@ -746,9 +740,8 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
 	int i = 0;
-	char **arg = (char**) malloc ((INFO_LOOKUP_MAX_ATTRS + 1) * sizeof (void**));
+	char **arg = (char**) calloc ((INFO_LOOKUP_MAX_ATTRS + 1), sizeof (void**));
 	assert (arg);
-	memset (arg, 0, (INFO_LOOKUP_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(LOOKUP_OID, attrs);
 	arg[1] = get_param_by_name(LOOKUP_VALUE, attrs);
@@ -773,10 +766,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	info_lkp_t *lookup = NULL;
 	alist_t *element = alist_get_last_element(list);
 	int i = 0;
-	char **arg = (char**) malloc (
-		(INFO_SNMP_MAX_ATTRS + 1) * sizeof (void**) );
+	char **arg = (char**) calloc (
+		(INFO_SNMP_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
-	memset (arg, 0, (INFO_SNMP_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(SNMP_NAME, attrs);
 	arg[1] = get_param_by_name(SNMP_MULTIPLIER, attrs);
@@ -795,8 +787,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	if(arg[4])
 	{
 		alist_t *lkp = alist_get_element_by_name(list, arg[4]);
-		lookup = (info_lkp_t*) malloc(
-			(lkp->size + 1) * sizeof(info_lkp_t) );
+		lookup = (info_lkp_t*) calloc(
+			(lkp->size + 1), sizeof(info_lkp_t) );
 		for (i = 0; i < lkp->size; i++)
 		{
 			lookup[i].oid_value = ((info_lkp_t*)
@@ -1089,8 +1081,7 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	if(len > 2){
 		alist_t *element = alist_get_last_element(list);
 
-		luatext = (char*) malloc(len + 1 * sizeof(char));
-		memset(luatext, 0, len + 1);
+		luatext = (char*) calloc(len + 1, sizeof(char));
 		strncpy(luatext, cdata, len);
 
 		alist_append(element, (void*) luatext);
@@ -1099,11 +1090,26 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 }
 #endif
 
+// Load DMF XML file into structure tree at *list (precreate with alist_new)
+// Returns 0 on success, or an <errno> code on system or parsing errors
 int
 parse_file(char *file_name, alist_t *list)
 {
-	char buffer[1024];
+	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
+	FILE *f;
 	int result = 0;
+
+        assert (file_name);
+        assert (list);
+
+	if ( (file_name == NULL ) || \
+	     ( (f = fopen(file_name, "r")) == NULL ) )
+	{
+		fprintf(stderr, "DMF file '%s' not found or not readable\n",
+			file_name ? file_name : "<NULL>");
+		return ENOENT;
+	}
+
 	ne_xml_parser *parser = ne_xml_create ();
 	ne_xml_push_handler (parser, xml_dict_start_cb,
 #ifdef WITH_DMF_LUA
@@ -1113,41 +1119,105 @@ parse_file(char *file_name, alist_t *list)
 #endif
 		, xml_end_cb, list);
 
-	FILE *f = fopen (file_name, "r");
-	if (f)
+	/* The neon XML parser would get blocks from the DMF file and build
+	   the in-memory representation with our xml_dict_start_cb() callback.
+	   Any hiccup (FS, neon, callback) is failure. */
+	while (!feof (f))
 	{
-		while (!feof (f))
+		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
+		if (len == 0) /* Should not zero-read from a non-EOF file */
 		{
-			size_t len = fread(buffer, sizeof(char),
-				sizeof(buffer), f);
-			if (len == 0)
+			fprintf(stderr, "Error parsing DMF from '%s'"
+				"(unexpected short read)\n", file_name);
+			result = EIO;
+			break;
+		} else {
+			if ((result = ne_xml_parse (parser, buffer, len)))
 			{
-				result = 1;
+				fprintf(stderr, "Error parsing DMF from '%s'"
+					"(unexpected markup?)\n", file_name);
+				result = ENOMSG;
 				break;
-			} else {
-				if ((result = ne_xml_parse (parser, buffer, len)))
-					break;
 			}
 		}
-		if (!result)
-			ne_xml_parse (parser, buffer, 0);
-		/*printf("aqui %s", buffer);*/
-		fclose (f);
-	} else {
-		result = 1;
 	}
+	fclose (f);
+	if (!result) /* no errors, complete the parse with len==0 call */
+		ne_xml_parse (parser, buffer, 0);
 	ne_xml_destroy (parser);
 
+#ifdef DEBUG
+	fprintf(stderr, "%s DMF acquired from '%s' (result = %d) %s\n",
+		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
+		( result == 0 ) ? "" : strerror(result)
+	);
+#endif
+
+	/* Extend or truncate the tables to the current amount of known entries
+	   To be on the safe side, we do this even if current file hiccuped. */
+	assert (device_table_counter>=1); /* Avoid underflow in memset below */
 	device_table = (snmp_device_id_t *) realloc(device_table,
 		device_table_counter * sizeof(snmp_device_id_t));
 	mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table,
 		device_table_counter * sizeof(mib2nut_info_t));
 	assert (device_table);
+	assert (mib2nut_table);
+
+	/* Make sure the last entry in the table is the zeroed-out sentinel */
 	memset (device_table + device_table_counter - 1, 0,
 		sizeof (snmp_device_id_t));
-	assert (mib2nut_table);
 	memset (mib2nut_table + device_table_counter - 1, 0,
 		sizeof (mib2nut_info_t));
+
+	return result;
+}
+
+// Load all `*.dmf` DMF XML files from specified directory into aux list tree
+int
+parse_dir (char *dir_name, alist_t *list)
+{
+	DIR *dir;
+	struct dirent *dir_ent;
+	int i = 0, result = 0;
+
+	assert (dir_name);
+        assert (list);
+
+	if ( (dir_name == NULL ) || \
+	     ( (dir = opendir(dir_name)) == NULL ) )
+	{
+		fprintf(stderr, "DMF directory '%s' not found or not readable\n",
+			dir_name ? dir_name : "<NULL>");
+		return ENOENT;
+	}
+
+	while ( (dir_ent = readdir(dir)) != NULL )
+	{
+		if ( strstr(dir_ent->d_name, ".dmf") )
+		{
+			i++;
+			int res = parse_file(dir_ent->d_name, list);
+			if ( res != 0 )
+				result = res;
+				// No debug: parse_file() did it if enabled
+		}
+	}
+	closedir(dir);
+
+#ifdef DEBUG
+	if (i==0) {
+		fprintf(stderr, "No DMF files were found or readable in directory '%s'\n",
+			dir_name ? dir_name : "<NULL>");
+	} else {
+		fprintf(stderr, "%d DMF files were inspected in directory '%s'\n",
+			i, dir_name ? dir_name : "<NULL>");
+	}
+	if (result!=0) {
+		fprintf(stderr, "Some DMF files were not readable in directory '%s' (last bad result %d)\n",
+			dir_name ? dir_name : "<NULL>", result);
+	}
+#endif
+
 	return result;
 }
 
@@ -1170,25 +1240,27 @@ get_mib2nut_table()
 }
 
 int
-get_mib2nut_table_counter()
-{
-	return mib2nut_table_counter;
-}
-
-int
-dmf_parser_init()
-{
-	device_table = NULL;
-	mib2nut_table = NULL;
-	return 0;
-}
-
-int
 dmf_parser_destroy()
 {
 	if (device_table)	free(device_table);
 	device_table = NULL;
 	if (mib2nut_table)	free(mib2nut_table);
 	mib2nut_table = NULL;
+	device_table_counter = 0;
+	return 0;
+}
+
+int
+dmf_parser_init()
+{
+	dmf_parser_destroy();
+	device_table_counter = 1;
+	device_table = (snmp_device_id_t *)calloc(
+		device_table_counter, sizeof(snmp_device_id_t));
+	mib2nut_table = (mib2nut_info_t *)calloc(
+		device_table_counter, sizeof(mib2nut_info_t));
+	assert (device_table);
+	assert (mib2nut_table);
+	assert (device_table_counter >= 1);
 	return 0;
 }

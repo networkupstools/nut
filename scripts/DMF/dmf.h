@@ -2,7 +2,7 @@
  *
  * This file implements procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
- * files of the past.
+ * files of the past. See below for "The big theory" details.
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
@@ -26,8 +26,92 @@
 #ifndef DMF_H
 #define DMF_H
 
+/* THE BIG THEORY COMMENT
+ *
+ * The dynamic DMF supports adds a way to load and populate at run-time the
+ * C structures with OIDs, flags and other information that was previously
+ * statically compiled into "snmp-ups" driver and "nut-scanner" application.
+ *
+ * For snmp-ups this architecture involved linking with multiple *-mib.c files
+ * which defined some structures per supported device type/vendor:
+ * - info_lkp_t = lookup tables with arbitrary dictionaries to map numeric
+ *   IDs to string keywords, usually for deciphering components in an OID
+ * - snmp_info_t = mapping of NUT attribute keywords to SNMP OIDs, maybe the
+ *   lookup tables or default values for this attribute, etc.
+ * - alarms_info_t = optional mapping between SNMP OIDs and alarms
+ * - mib2nut_info_t = each entry is a higher-level mapping between some
+ *   identification strings and pointers to an instance of snmp_info_t and
+ *   optionally an alarms_info_t - this mapping allows NUT to decide which
+ *   one of the known snmp_info_t's to use against a particular device.
+ *
+ * Each typical *-mib.c and accompanying *-mib.h defines one (rarely more)
+ * array of snmp_info_t items and one (rarely more) structure instance of
+ * mib2nut_info_t, usually several arrays of info_lkp_t's and maybe an array
+ * of recently introduced alarms_info_t (at this time only one driver has it).
+ *
+ * After including all the headers and linking with the *-mib.c files, the
+ * snmp-ups.c file defined "mib2nut" - an array of mib2nut_info_t entries
+ * with fixed references to all those known higher-level entries (exported
+ * via header files).
+ *
+ * The nut-scanner defines an snmp_device_table with a subset of that
+ * information as an array of snmp_device_id_t tuples. The table comes from
+ * nutscan-snmp.h which is generated from the *-mib.c files during NUT build.
+ *
+ * The DMF code allows to populate equivalent hierarchy of structures by
+ * parsing an XML file during driver startup, rather than pre-compiling
+ * it statically.
+ *
+ * For that, first you dynamically instantiate the auxiliary list:
+ * `alist_t * list = alist_new(NULL,(void (*)(void **))alist_destroy, NULL );`
+ * This list hides the complexity of a dynamically allocated array of arrays,
+ * ultimately storing the lookup tables, alarms, etc.
+ * Then you populate it with data from XML files, using `parse_file()` or
+ * `parse_dir()` calls. Whenever compatible markup is found in the XML input,
+ * the parser (or rather our callback function called at each tag closure)
+ * places the discovered information into a new entry under the "list" tree,
+ * or into dynamically grown arrays "mib2nut_info_t *mib2nut_table" (snmp-ups)
+ * and "snmp_device_id_t *device_table" (for nut-scanner), as appropriate.
+ * References to these tables can be received with `get_mib2nut_table()` and
+ * `get_device_table()` methods. You can also `get_device_table_counter()` to
+ * look up the two tables' lengths (they were last `realloc()`ed to this size)
+ * including the zeroed-out sentinel last entries, but historically the NUT
+ * way consisted of looking through the tables until hitting the sentinel
+ * entry and so determining its size or otherwise end of loop - and this
+ * remains the official and reliable manner of length determination (not
+ * a copy of the counter from implementation detail).
+ *
+ * In the end, these two tables can be used same as the static tables of the
+ * old days, referencing information maintained in the trees behind "list".
+ * In particular, note that you `dmf_parser_destroy(); alist_destroy(&list);`
+ * only together and typically only when you tear down the executing program.
+ * There is also a `dmf_parser_init()` that can be called to initialize empty
+ * tables (with just one zeroed-out entry in each), but technically it is not
+ * required (the parser can start to grow from unallocated table pointers);
+ * this routine is there mostly for experiments with dynamic re-initialization
+ * of the lists which is not a major goal or use-case.
+ *
+ * For the initial code-drop, all or most of the routines defined in the dmf.c
+ * are declared in this header. The actual consumer API consists of the init,
+ * destroy and parse functions, and getters for reference to the two tables.
+ * The rest of declarations are here to aid development of other types of
+ * consumers (e.g. DMF not for SNMP drivers, alists for something else enirely)
+ * and may later be hidden or rearranged.
+ *
+ * @devs: You can also search for entries in the hierarchy behind "list" with
+ * `alist_get_element_by_name()`, and dump contents with debug methods, e.g.:
+ *      print_mib2nut_memory_struct((mib2nut_info_t *)
+ *              alist_get_element_by_name(list, "powerware")->values[0]);
+ * See dmf-test.c for some example usage.
+ */
+
 #ifdef WITH_DMF_LUA
-/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2 */
+/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2.
+ * As of this initial code-drop, the implementation is experimental and is
+ * incomplete and very likely buggy. Developers of LUA integration should
+ * explicitly reconfigure and rebuild NUT with `-DWITH_DMF_LUA=1` in their
+ * CFLAGS - it is not exposed otherwise.
+ */
 # include <lua.h>
 # include <lauxlib.h>
 # include <lualib.h>
@@ -193,8 +277,6 @@ void
 mib2nut_info_t *
 	get_mib2nut_table();
 
-int
-	get_mib2nut_table_counter();
 
 
 // Create new instance of alist_t with LOOKUP type,
@@ -263,8 +345,13 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
+// Load DMF XML file into structure tree at *list (precreate with alist_new)
 int
 	parse_file (char *file_name, alist_t *list);
+
+// Load all `*.dmf` DMF XML files from specified directory
+int
+	parse_dir (char *dir_name, alist_t *list);
 
 
 
