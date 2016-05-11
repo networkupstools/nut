@@ -153,9 +153,8 @@ get_param_by_name (const char *name, const char **items)
 info_lkp_t *
 info_lkp_new (int oid, const char *value)
 {
-	info_lkp_t *self = (info_lkp_t*) malloc (sizeof (info_lkp_t));
+	info_lkp_t *self = (info_lkp_t*) calloc (1, sizeof (info_lkp_t));
 	assert (self);
-	memset (self, 0, sizeof (info_lkp_t));
 	self->oid_value = oid;
 	if (value)
 		self->info_value = strdup (value);
@@ -166,9 +165,8 @@ info_lkp_new (int oid, const char *value)
 alarms_info_t *
 info_alarm_new (const char *oid, const char *status, const char *alarm)
 {
-	alarms_info_t *self = (alarms_info_t*) malloc(sizeof (alarms_info_t));
+	alarms_info_t *self = (alarms_info_t*) calloc(1, sizeof (alarms_info_t));
 	assert (self);
-	memset (self, 0, sizeof (alarms_info_t));
 	if(oid)
 		self->OID = strdup (oid);
 	if(status)
@@ -183,9 +181,8 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
 	info_lkp_t *lookup, int *setvar)
 {
-	snmp_info_t *self = (snmp_info_t*) malloc (sizeof (snmp_info_t));
+	snmp_info_t *self = (snmp_info_t*) calloc (1, sizeof (snmp_info_t));
 	assert (self);
-	memset (self, 0, sizeof (snmp_info_t));
 	if(name)
 		self->info_type = strdup (name);
 	self->info_len = multiplier;
@@ -209,9 +206,8 @@ info_mib2nut_new (const char *name, const char *version,
 #endif
 )
 {
-	mib2nut_info_t *self = (mib2nut_info_t*)malloc(sizeof(mib2nut_info_t));
+	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
-	memset (self, 0, sizeof (mib2nut_info_t));
 	if(name)
 		self->mib_name = strdup (name);
 	if(version)
@@ -432,14 +428,12 @@ alist_new ( const char *name,
 	void (*destroy)(void **self_p),
 	void (*new_element)(void) )
 {
-	alist_t *self = (alist_t*) malloc (sizeof (alist_t));
+	alist_t *self = (alist_t*) calloc (1, sizeof (alist_t));
 	assert (self);
-	memset (self, 0, sizeof(alist_t));
 	self->size = 0;
 	self->capacity = DEFAULT_CAPACITY;
-	self->values = (void**) malloc (self->capacity * sizeof (void*));
+	self->values = (void**) calloc (self->capacity, sizeof (void*));
 	assert (self->values);
-	memset (self->values, 0, self->capacity);
 	self->destroy = destroy;
 	self->new_element = new_element;
 	if(name)
@@ -549,10 +543,9 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	//lua_State **lfunction;
 #endif
 
-	char **arg = (char**) malloc (
-		(INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof (void**) );
+	char **arg = (char**) calloc (
+		(INFO_MIB2NUT_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
-	memset (arg, 0, (INFO_MIB2NUT_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(MIB2NUT_MIB_NAME, attrs);
 	arg[1] = get_param_by_name(MIB2NUT_VERSION, attrs);
@@ -568,8 +561,8 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	if (arg[5])
 	{
 		alist_t *lkp = alist_get_element_by_name(list, arg[5]);
-		snmp = (snmp_info_t*) malloc(
-			(lkp->size + 1) * sizeof(snmp_info_t) );
+		snmp = (snmp_info_t*) calloc(
+			(lkp->size + 1), sizeof(snmp_info_t) );
 		for(i = 0; i < lkp->size; i++)
 		{
 			snmp[i].info_flags = ((snmp_info_t*)
@@ -606,6 +599,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 
 		} // for
 
+		/* To be safe, do the sentinel entry explicitly */
 		snmp[i].info_flags = 0;
 		snmp[i].info_type = NULL;
 		snmp[i].info_len = 0;
@@ -619,8 +613,8 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	if(arg[6])
 	{
 		alist_t *alm = alist_get_element_by_name(list, arg[6]);
-		alarm = (alarms_info_t*) malloc(
-			(alm->size + 1) * sizeof(alarms_info_t) );
+		alarm = (alarms_info_t*) calloc(
+			alm->size + 1, sizeof(alarms_info_t) );
 		for(i = 0; i < alm->size; i++)
 		{
 			if( ((alarms_info_t*) alm->values[i])->OID )
@@ -663,6 +657,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 						malloc(contFunc * sizeof(lua_State**));
 				else	functions = (lua_State**)
 						realloc(functions, contFunc * sizeof(lua_State**));
+				assert(contFunc>=2); // TODO: According to if() above, we can have 1 or maybe less, and array access below will fail
 				functions[contFunc - 2] =
 					compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
 				//lua_close(functions[contFunc - 1]);
@@ -678,6 +673,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		else	functions = (lua_State**) realloc(functions,
 				contFunc * sizeof(lua_State**) );
 
+		assert(contFunc>=2); // TODO: According to if() above, we can have 1 or maybe less, and array access below will fail
 		functions[contFunc - 2] = compile_lua_functionFrom_array(
 			(char**) alist_get_element_by_name(list, func)->values,
 			func);
@@ -719,10 +715,9 @@ alarm_info_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
 	int i=0;
-	char **arg = (char**) malloc (
-		(INFO_ALARM_MAX_ATTRS + 1) * sizeof (void**) );
+	char **arg = (char**) calloc (
+		(INFO_ALARM_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
-	memset (arg, 0, (INFO_ALARM_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(ALARM_ALARM, attrs);
 	arg[1] = get_param_by_name(ALARM_STATUS, attrs);
@@ -744,9 +739,8 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
 	int i = 0;
-	char **arg = (char**) malloc ((INFO_LOOKUP_MAX_ATTRS + 1) * sizeof (void**));
+	char **arg = (char**) calloc ((INFO_LOOKUP_MAX_ATTRS + 1), sizeof (void**));
 	assert (arg);
-	memset (arg, 0, (INFO_LOOKUP_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(LOOKUP_OID, attrs);
 	arg[1] = get_param_by_name(LOOKUP_VALUE, attrs);
@@ -771,10 +765,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	info_lkp_t *lookup = NULL;
 	alist_t *element = alist_get_last_element(list);
 	int i = 0;
-	char **arg = (char**) malloc (
-		(INFO_SNMP_MAX_ATTRS + 1) * sizeof (void**) );
+	char **arg = (char**) calloc (
+		(INFO_SNMP_MAX_ATTRS + 1), sizeof (void**) );
 	assert (arg);
-	memset (arg, 0, (INFO_SNMP_MAX_ATTRS + 1) * sizeof(void**));
 
 	arg[0] = get_param_by_name(SNMP_NAME, attrs);
 	arg[1] = get_param_by_name(SNMP_MULTIPLIER, attrs);
@@ -793,8 +786,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	if(arg[4])
 	{
 		alist_t *lkp = alist_get_element_by_name(list, arg[4]);
-		lookup = (info_lkp_t*) malloc(
-			(lkp->size + 1) * sizeof(info_lkp_t) );
+		lookup = (info_lkp_t*) calloc(
+			(lkp->size + 1), sizeof(info_lkp_t) );
 		for (i = 0; i < lkp->size; i++)
 		{
 			lookup[i].oid_value = ((info_lkp_t*)
@@ -1087,8 +1080,7 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	if(len > 2){
 		alist_t *element = alist_get_last_element(list);
 
-		luatext = (char*) malloc(len + 1 * sizeof(char));
-		memset(luatext, 0, len + 1);
+		luatext = (char*) calloc(len + 1, sizeof(char));
 		strncpy(luatext, cdata, len);
 
 		alist_append(element, (void*) luatext);
