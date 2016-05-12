@@ -1099,13 +1099,13 @@ parse_file(char *file_name, alist_t *list)
 	FILE *f;
 	int result = 0;
 
-        assert (file_name);
-        assert (list);
+	assert (file_name);
+	assert (list);
 
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
 	{
-		fprintf(stderr, "DMF file '%s' not found or not readable\n",
+		fprintf(stderr, "ERROR: DMF file '%s' not found or not readable\n",
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
@@ -1127,14 +1127,14 @@ parse_file(char *file_name, alist_t *list)
 		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
 		if (len == 0) /* Should not zero-read from a non-EOF file */
 		{
-			fprintf(stderr, "Error parsing DMF from '%s'"
+			fprintf(stderr, "ERROR parsing DMF from '%s'"
 				"(unexpected short read)\n", file_name);
 			result = EIO;
 			break;
 		} else {
 			if ((result = ne_xml_parse (parser, buffer, len)))
 			{
-				fprintf(stderr, "Error parsing DMF from '%s'"
+				fprintf(stderr, "ERROR parsing DMF from '%s'"
 					"(unexpected markup?)\n", file_name);
 				result = ENOMSG;
 				break;
@@ -1178,15 +1178,15 @@ parse_dir (char *dir_name, alist_t *list)
 {
 	DIR *dir;
 	struct dirent *dir_ent;
-	int i = 0, result = 0;
+	int i = 0, x = 0, result = 0;
 
 	assert (dir_name);
-        assert (list);
+	assert (list);
 
 	if ( (dir_name == NULL ) || \
 	     ( (dir = opendir(dir_name)) == NULL ) )
 	{
-		fprintf(stderr, "DMF directory '%s' not found or not readable\n",
+		fprintf(stderr, "ERROR: DMF directory '%s' not found or not readable\n",
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
@@ -1198,23 +1198,26 @@ parse_dir (char *dir_name, alist_t *list)
 			i++;
 			int res = parse_file(dir_ent->d_name, list);
 			if ( res != 0 )
+			{
+				x++;
 				result = res;
 				// No debug: parse_file() did it if enabled
+			}
 		}
 	}
 	closedir(dir);
 
 #ifdef DEBUG
 	if (i==0) {
-		fprintf(stderr, "No DMF files were found or readable in directory '%s'\n",
+		fprintf(stderr, "WARN: No DMF files were found or readable in directory '%s'\n",
 			dir_name ? dir_name : "<NULL>");
 	} else {
-		fprintf(stderr, "%d DMF files were inspected in directory '%s'\n",
+		fprintf(stderr, "INFO: %d DMF files were inspected in directory '%s'\n",
 			i, dir_name ? dir_name : "<NULL>");
 	}
-	if (result!=0) {
-		fprintf(stderr, "Some DMF files were not readable in directory '%s' (last bad result %d)\n",
-			dir_name ? dir_name : "<NULL>", result);
+	if (result!=0 || x>0) {
+		fprintf(stderr, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)\n",
+			x, dir_name ? dir_name : "<NULL>", result);
 	}
 #endif
 
