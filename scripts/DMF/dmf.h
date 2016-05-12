@@ -128,12 +128,16 @@
 #define YES "yes"
 #define DEFAULT_CAPACITY 16
 
-#define MIB2NUT "mib2nut"
-#define LOOKUP "lookup"
-#define SNMP "snmp"
-#define ALARM "alarm"
+// Recognized DMF XML tags
+#define DMFTAG_NUT "nut"
+#define DMFTAG_MIB2NUT "mib2nut"
+#define DMFTAG_LOOKUP "lookup"
+#define DMFTAG_SNMP "snmp"
+#define DMFTAG_ALARM "alarm"
+// NOTE: Actual support for functions is optionally built so
+// it can be missing in a binary (with warning in DMF import)
 #ifdef WITH_DMF_LUA
-#define FUNCTION "function"
+#define DMFTAG_FUNCTION "function"
 #endif
 
 //#define MIB2NUT_NAME "name"
@@ -150,11 +154,11 @@
 #define INFO_SNMP_MAX_ATTRS 14
 #define INFO_ALARM_MAX_ATTRS 6
 
-#define INFO_LOOKUP "lookup_info"
+#define DMFTAG_INFO_LOOKUP "lookup_info"
 #define LOOKUP_OID "oid"
 #define LOOKUP_VALUE "value"
 
-#define INFO_SNMP "snmp_info"
+#define DMFTAG_INFO_SNMP "snmp_info"
 #define SNMP_NAME "name"
 #define SNMP_MULTIPLIER "multiplier"
 #define SNMP_OID "oid"
@@ -188,7 +192,7 @@
 #define SETVAR_OUTPUT_PHASES "output_phases"
 #define SETVAR_BYPASS_PHASES "bypass_phases"
 
-#define INFO_ALARM "info_alarm"
+#define DMFTAG_INFO_ALARM "info_alarm"
 #define ALARM_OID "oid"
 #define ALARM_STATUS "status"
 #define ALARM_ALARM "alarm"

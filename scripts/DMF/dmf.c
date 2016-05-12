@@ -971,44 +971,49 @@ xml_dict_start_cb(void *userdata, int parent,
 	alist_t *list = (alist_t*) userdata;
 	char *auxname = get_param_by_name("name",attrs);
 	if(!userdata)return ERR;
-	if(strcmp(name,MIB2NUT) == 0)
+
+	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_mib2nut_destroy,
 			(void (*)(void)) info_mib2nut_new));
 		mib2nut_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,LOOKUP) == 0)
+	else if(strcmp(name,DMFTAG_LOOKUP) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_lkp_destroy,
 			(void (*)(void)) info_lkp_new));
 	}
-	else if(strcmp(name,ALARM) == 0)
+	else if(strcmp(name,DMFTAG_ALARM) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_alarm_destroy,
 			(void (*)(void)) info_alarm_new));
 	}
-	else if(strcmp(name,SNMP) == 0)
+	else if(strcmp(name,DMFTAG_SNMP) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_snmp_destroy,
 			(void (*)(void)) info_snmp_new));
 	}
-	else if(strcmp(name,INFO_LOOKUP) == 0)
+	else if(strcmp(name,DMFTAG_INFO_LOOKUP) == 0)
 	{
 		lookup_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,INFO_ALARM) == 0)
+	else if(strcmp(name,DMFTAG_INFO_ALARM) == 0)
 	{
 		alarm_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,INFO_SNMP) == 0)
+	else if(strcmp(name,DMFTAG_INFO_SNMP) == 0)
 	{
 		snmp_info_node_handler(list,attrs);
 #ifdef WITH_DMF_LUA
 	}
-	else if(strcmp(name,FUNCTION) == 0)
+	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
 		alist_append(list, alist_new(auxname, NULL, NULL));
 #endif
+	}
+	else if(strcmp(name,DMFTAG_NUT) != 0)
+	{
+		fprintf(stderr, "WARN: The '%s' tag in DMF is not recognized!\n", name);
 	}
 	free(auxname);
 	return 1;
@@ -1021,7 +1026,13 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	alist_t *element = alist_get_last_element(list);
 
 	if(!userdata)return ERR;
-	if(strcmp(name,MIB2NUT) == 0)
+
+	/* Currently, special handling in the DMF tag closure is for "mib2nut"
+	 * tags that are last in the file according to schema - so we know we
+	 * have all needed info at this time to populate an instance of the
+	 * mib2nut_table index (there may be several such entries in one DMF).
+	 */
+	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		//print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
 		device_table = (snmp_device_id_t *) realloc(device_table,
