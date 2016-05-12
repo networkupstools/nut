@@ -706,7 +706,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		free (arg[i]);
 
 #ifdef WITH_DMF_LUA
-	//free(functions);
+	if (functions) free(functions);
 #endif
 	free (arg);
 }
