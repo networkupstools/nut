@@ -177,7 +177,7 @@ class Visitor(c_ast.NodeVisitor):
             ret.append ((key, ilist.exprs [1].value.strip ('"')))
         return ret
 
-    def _visit_mib2nit_info_t (self, node):
+    def _visit_mib2nut_info_t (self, node):
         ret = dict ()
         kids = [c for _, c in node.init.children ()]
 
@@ -252,7 +252,7 @@ class Visitor(c_ast.NodeVisitor):
             node.type.type.names == ['mib2nut_info_t'] and \
             node.storage == [] :
                 self._mappings ["MIB2NUT"][node.name] = \
-                self._visit_mib2nit_info_t (node)
+                self._visit_mib2nut_info_t (node)
 
 def s_cpp_path ():
     return \
