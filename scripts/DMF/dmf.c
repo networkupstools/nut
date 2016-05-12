@@ -556,7 +556,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	arg[5] = get_param_by_name(MIB2NUT_SNMP, attrs);
 	arg[6] = get_param_by_name(MIB2NUT_ALARMS, attrs);
 #ifdef WITH_DMF_LUA
-	arg[7] = get_param_by_name(FUNCTION, attrs);
+	arg[7] = get_param_by_name(MIB2NUT_FUNCTION, attrs);
 #endif
 
 	if (arg[5])
@@ -912,7 +912,7 @@ compile_flags(const char **attrs)
 			flags = flags | SU_OUTPUT_1;
 		}
 	if(aux_flags)free(aux_flags);
-	 aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
+	aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
 			flags = flags | SU_OUTPUT_3;
 		}
@@ -932,7 +932,7 @@ compile_flags(const char **attrs)
 			flags = flags | SU_BYPASS_1;
 		}
 	if(aux_flags)free(aux_flags);
-	 aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
+	aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
 			flags = flags | SU_BYPASS_3;
 		}
@@ -1004,11 +1004,13 @@ xml_dict_start_cb(void *userdata, int parent,
 	else if(strcmp(name,DMFTAG_INFO_SNMP) == 0)
 	{
 		snmp_info_node_handler(list,attrs);
-#ifdef WITH_DMF_LUA
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
+#ifdef WITH_DMF_LUA
 		alist_append(list, alist_new(auxname, NULL, NULL));
+#else
+		fprintf(stderr, "WARN: The '%s' tag in DMF is recognized, but support is not implemented in this build - so it will be ignored\n", name);
 #endif
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
@@ -1078,28 +1080,28 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	return OK;
 }
 
-#ifdef WITH_DMF_LUA
 int
 xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
-	char *luatext;
-
 	if(!userdata)
 		return ERR;
 
-	alist_t *list = (alist_t*) userdata;
-
 	if(len > 2){
+// NOTE: Child-tags are also CDATA when parent-tag processing starts,
+// so we do not report "unsupported" errors when we it a CDATA process.
+#ifdef WITH_DMF_LUA
+		char *luatext;
+		alist_t *list = (alist_t*) userdata;
 		alist_t *element = alist_get_last_element(list);
 
 		luatext = (char*) calloc(len + 1, sizeof(char));
 		strncpy(luatext, cdata, len);
 
 		alist_append(element, (void*) luatext);
+#endif
 	}
 	return OK;
 }
-#endif
 
 // Load DMF XML file into structure tree at *list (precreate with alist_new)
 // Returns 0 on success, or an <errno> code on system or parsing errors
@@ -1123,11 +1125,7 @@ parse_file(char *file_name, alist_t *list)
 
 	ne_xml_parser *parser = ne_xml_create ();
 	ne_xml_push_handler (parser, xml_dict_start_cb,
-#ifdef WITH_DMF_LUA
 		xml_cdata_cb
-#else
-		NULL
-#endif
 		, xml_end_cb, list);
 
 	/* The neon XML parser would get blocks from the DMF file and build

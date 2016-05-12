@@ -136,9 +136,8 @@
 #define DMFTAG_ALARM "alarm"
 // NOTE: Actual support for functions is optionally built so
 // it can be missing in a binary (with warning in DMF import)
-#ifdef WITH_DMF_LUA
+// Also it may be backed by various implementations (LUA for starters)
 #define DMFTAG_FUNCTION "function"
-#endif
 
 //#define MIB2NUT_NAME "name"
 #define MIB2NUT_VERSION "version"
@@ -148,6 +147,7 @@
 #define MIB2NUT_POWER_STATUS "power_status"
 #define MIB2NUT_SNMP "snmp_info"
 #define MIB2NUT_ALARMS "alarms_info"
+#define MIB2NUT_FUNCTION "function"
 
 #define INFO_MIB2NUT_MAX_ATTRS 14
 #define INFO_LOOKUP_MAX_ATTRS 4
@@ -331,12 +331,12 @@ int
 		const char *name
 	);
 
-#ifdef WITH_DMF_LUA
 int
 	xml_cdata_cb(
 		void *userdata, int state, const char *cdata, size_t len
 	);
 
+#ifdef WITH_DMF_LUA
 lua_State *
 	compile_lua_functionFrom_array (char **array, char *name);
 #endif
