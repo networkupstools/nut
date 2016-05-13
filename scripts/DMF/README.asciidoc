@@ -16,6 +16,12 @@ some Python dependency requirements, but are not strict requirements for
 NUT (as common-case nor `distcheck` builds) -- the tools are only intended
 for manual usage by a few developers.
 
+As something between conversion tools and a sample program, the `dmf-reindex`
+code is provided to read the library of complete DMFs (and validate their
+contents along the way), and produce a DMF file that only contains truncated
+`mib2nut` entries as needed for the `nut-scanner`. This `dmf-reindex` program
+is expected to become an end-user tool, to help during updates of the DMF set.
+
 Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
 and application developers should look there for the "The big theory" details.
 

@@ -4,7 +4,7 @@ CC = gcc
 CPP = gcc
 CXX = g++
 
-PROGS = dmf-test dmf-lua-test
+PROGS = dmf-test dmf-reindex dmf-lua-test
 
 # First target is default
 all: progs dmf
@@ -29,7 +29,13 @@ dmf-test: dmf-test.c dmf.c
 	-DDEBUG=1 \
 	-o $@ $^
 
-# -DWITH_DMFTEST_MAIN=1
+dmf-reindex: dmf-reindex.c dmf.c
+	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
+	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
+	-lneon -I../../include -I../../drivers \
+	-DDEBUG=1 \
+	-o $@ $^
+
 dmf-lua-test: dmf-test.c dmf.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
@@ -39,6 +45,9 @@ dmf-lua-test: dmf-test.c dmf.c
 	-o $@ $^
 
 run-dmf-test: dmf-test
+	valgrind --leak-check=full ./$<
+
+run-dmf-reindex: dmf-reindex
 	valgrind --leak-check=full ./$<
 
 run-dmf-lua-test: dmf-lua-test
