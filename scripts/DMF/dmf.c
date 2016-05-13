@@ -30,15 +30,6 @@
 
 #include "dmf.h"
 
-snmp_device_id_t *device_table = NULL;
-mib2nut_info_t *mib2nut_table = NULL;
-
-/* This is an amount of known device_table and mib2nut-table entries (same)
- * AND the trailing sentinel (zeroed-out entry), so it is always >= 1 when
- * there is some data (table pointers not NULL).
- */
-int device_table_counter = 0;
-
 /*
  *
  *  C FILE
@@ -150,7 +141,7 @@ get_param_by_name (const char *name, const char **items)
 	return NULL;
 }
 
-//Create a lookup elemet
+//Create a lookup element
 info_lkp_t *
 info_lkp_new (int oid, const char *value)
 {
@@ -502,6 +493,112 @@ alist_get_element_by_name (alist_t *self, char *name)
 					return (alist_t*)self->values[i];
 	return NULL;
 }
+
+// Accessors and lifecycle management for the structure that marries DMF and MIB
+snmp_device_id_t *
+mibdmf_get_device_table(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return dmp->device_table;
+}
+
+snmp_device_id_t **
+mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return &(dmp->device_table);
+}
+
+int
+mibdmf_get_device_table_counter(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return -1;
+	return dmp->device_table_counter;
+}
+
+int *
+mibdmf_get_device_table_counter_ptr(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return &(dmp->device_table_counter);
+}
+
+mib2nut_info_t *
+mibdmf_get_mib2nut_table(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return dmp->mib2nut_table;
+}
+
+mib2nut_info_t **
+mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return &(dmp->mib2nut_table);
+}
+
+alist_t *
+mibdmf_get_aux_list(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return dmp->list;
+}
+
+alist_t **
+mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp)
+{
+	if (dmp==NULL) return NULL;
+	return &(dmp->list);
+}
+
+// Properly destroy the object hierarchy and NULLify the caller's pointer
+void
+mibdmf_parser_destroy(mibdmf_parser_t **self_p)
+{
+	if (*self_p)
+	{
+		mibdmf_parser_t *self = (mibdmf_parser_t *) *self_p;
+		// First we destroy the index tables that reference data in the list...
+		if (self->device_table)
+		{
+			free(self->device_table);
+			self->device_table = NULL;
+		}
+		if (self->mib2nut_table)
+		{
+			free(self->mib2nut_table);
+			self->mib2nut_table = NULL;
+		}
+		if (self->list)
+		{
+			alist_destroy( &(self->list) );
+			self->list = NULL;
+		}
+		self->device_table_counter = 0;
+		free (self);
+		*self_p = NULL;
+	}
+}
+
+mibdmf_parser_t *
+mibdmf_parser_new()
+{
+	mibdmf_parser_t *self = (mibdmf_parser_t *) calloc (1, sizeof (mibdmf_parser_t));
+	assert (self);
+	// Preallocate the sentinel in tables
+	self->device_table_counter = 1;
+	self->device_table = (snmp_device_id_t *)calloc(
+		self->device_table_counter, sizeof(snmp_device_id_t));
+	self->mib2nut_table = (mib2nut_info_t *)calloc(
+		self->device_table_counter, sizeof(mib2nut_info_t));
+	assert (self->device_table);
+	assert (self->mib2nut_table);
+	assert (self->device_table_counter >= 1);
+	self->list = alist_new( NULL,(void (*)(void **))alist_destroy, NULL );
+	assert (self->list);
+	return self;
+}
+
 
 #ifdef WITH_DMF_LUA
 lua_State *
@@ -969,9 +1066,11 @@ xml_dict_start_cb(void *userdata, int parent,
                       const char *nspace, const char *name,
                       const char **attrs)
 {
-	alist_t *list = (alist_t*) userdata;
-	char *auxname = get_param_by_name("name",attrs);
 	if(!userdata)return ERR;
+
+	char *auxname = get_param_by_name("name",attrs);
+	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
+	alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
 
 	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
@@ -1019,16 +1118,17 @@ xml_dict_start_cb(void *userdata, int parent,
 		fprintf(stderr, "WARN: The '%s' tag in DMF is not recognized!\n", name);
 	}
 	free(auxname);
-	return 1;
+	return DMF_NEON_CALLBACK_OK;
 }
 
 int
 xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
-	alist_t *list = (alist_t*) userdata;
-	alist_t *element = alist_get_last_element(list);
-
 	if(!userdata)return ERR;
+
+	mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
+	alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
+	alist_t *element = alist_get_last_element(list);
 
 	/* Currently, special handling in the DMF tag closure is for "mib2nut"
 	 * tags that are last in the file according to schema - so we know we
@@ -1037,11 +1137,16 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	 */
 	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
+		int device_table_counter = mibdmf_get_device_table_counter(dmp);
+
 		//print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
-		device_table = (snmp_device_id_t *) realloc(device_table,
+		*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
 			device_table_counter * sizeof(snmp_device_id_t));
-		mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table,
+		*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t *) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
 			device_table_counter * sizeof(mib2nut_info_t));
+
+		mib2nut_info_t *mib2nut_table = mibdmf_get_mib2nut_table(dmp);
+		snmp_device_id_t *device_table = mibdmf_get_device_table(dmp);
 		assert (device_table);
 		assert (mib2nut_table);
 
@@ -1082,7 +1187,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 			mib2nut_table[device_table_counter - 1].alarms_info =
 			(alarms_info_t *)((mib2nut_info_t *) element->values[0])->alarms_info;
 
-		device_table_counter++;
+		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
 	return OK;
 }
@@ -1098,7 +1203,8 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 // so we do not report "unsupported" errors when we it a CDATA process.
 #ifdef WITH_DMF_LUA
 		char *luatext;
-		alist_t *list = (alist_t*) userdata;
+		mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
+		alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
 		alist_t *element = alist_get_last_element(list);
 
 		luatext = (char*) calloc(len + 1, sizeof(char));
@@ -1113,14 +1219,15 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 // Load DMF XML file into structure tree at *list (precreate with alist_new)
 // Returns 0 on success, or an <errno> code on system or parsing errors
 int
-parse_file(char *file_name, alist_t *list)
+mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 {
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
 
 	assert (file_name);
-	assert (list);
+	assert (dmp);
+	assert (mibdmf_get_aux_list(dmp)!=NULL);
 
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
@@ -1133,7 +1240,7 @@ parse_file(char *file_name, alist_t *list)
 	ne_xml_parser *parser = ne_xml_create ();
 	ne_xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
-		, xml_end_cb, list);
+		, xml_end_cb, dmp);
 
 	/* The neon XML parser would get blocks from the DMF file and build
 	   the in-memory representation with our xml_dict_start_cb() callback.
@@ -1171,18 +1278,18 @@ parse_file(char *file_name, alist_t *list)
 
 	/* Extend or truncate the tables to the current amount of known entries
 	   To be on the safe side, we do this even if current file hiccuped. */
-	assert (device_table_counter>=1); /* Avoid underflow in memset below */
-	device_table = (snmp_device_id_t *) realloc(device_table,
-		device_table_counter * sizeof(snmp_device_id_t));
-	mib2nut_table = (mib2nut_info_t *) realloc(mib2nut_table,
-		device_table_counter * sizeof(mib2nut_info_t));
-	assert (device_table);
-	assert (mib2nut_table);
+	assert (mibdmf_get_device_table_counter(dmp)>=1); /* Avoid underflow in memset below */
+	*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
+		mibdmf_get_device_table_counter(dmp) * sizeof(snmp_device_id_t));
+	*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t *) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
+		mibdmf_get_device_table_counter(dmp) * sizeof(mib2nut_info_t));
+	assert (mibdmf_get_device_table(dmp));
+	assert (mibdmf_get_mib2nut_table(dmp));
 
 	/* Make sure the last entry in the table is the zeroed-out sentinel */
-	memset (device_table + device_table_counter - 1, 0,
+	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
 		sizeof (snmp_device_id_t));
-	memset (mib2nut_table + device_table_counter - 1, 0,
+	memset (*mibdmf_get_mib2nut_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
 		sizeof (mib2nut_info_t));
 
 	return result;
@@ -1191,14 +1298,14 @@ parse_file(char *file_name, alist_t *list)
 // Load all `*.dmf` DMF XML files from specified directory into aux list tree
 // NOTE: Technically by current implementation, this is `*.dmf*`
 int
-parse_dir (char *dir_name, alist_t *list)
+mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 {
 	DIR *dir;
 	struct dirent *dir_ent;
 	int i = 0, x = 0, result = 0;
 
 	assert (dir_name);
-	assert (list);
+	assert (dmp);
 
 	if ( (dir_name == NULL ) || \
 	     ( (dir = opendir(dir_name)) == NULL ) )
@@ -1213,7 +1320,7 @@ parse_dir (char *dir_name, alist_t *list)
 		if ( strstr(dir_ent->d_name, ".dmf") )
 		{
 			i++;
-			int res = parse_file(dir_ent->d_name, list);
+			int res = mibdmf_parse_file(dir_ent->d_name, dmp);
 			if ( res != 0 )
 			{
 				x++;
@@ -1241,46 +1348,3 @@ parse_dir (char *dir_name, alist_t *list)
 	return result;
 }
 
-snmp_device_id_t *
-get_device_table()
-{
-	return device_table;
-}
-
-int
-get_device_table_counter()
-{
-	return device_table_counter;
-}
-
-mib2nut_info_t *
-get_mib2nut_table()
-{
-	return mib2nut_table;
-}
-
-int
-dmf_parser_destroy()
-{
-	if (device_table)	free(device_table);
-	device_table = NULL;
-	if (mib2nut_table)	free(mib2nut_table);
-	mib2nut_table = NULL;
-	device_table_counter = 0;
-	return 0;
-}
-
-int
-dmf_parser_init()
-{
-	dmf_parser_destroy();
-	device_table_counter = 1;
-	device_table = (snmp_device_id_t *)calloc(
-		device_table_counter, sizeof(snmp_device_id_t));
-	mib2nut_table = (mib2nut_info_t *)calloc(
-		device_table_counter, sizeof(mib2nut_info_t));
-	assert (device_table);
-	assert (mib2nut_table);
-	assert (device_table_counter >= 1);
-	return 0;
-}

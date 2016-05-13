@@ -34,21 +34,19 @@ main ()
 // TODO: Usage (help), Command-line args
 // option to append just a few (new) files to existing (large) index
 
-	alist_t * list = alist_new(
-		NULL,(void (*)(void **))alist_destroy, NULL );
-	if (!list) {
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the auxiliary list\n");
+	mibdmf_parser_t * dmp = mibdmf_parser_new();
+	if (!dmp) {
+		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
 		return ENOMEM;
 	}
-	dmf_parser_init();
 
 	fprintf(stderr, "=== DMF-Reindex: Loading DMF structures from directory '%s':\n\n",
 		dir_name);
-	parse_dir(dir_name, list);
+	mibdmf_parse_dir(dir_name, dmp);
 
 	// Loop through discovered device_table and print it back as DMF markup
 	fprintf(stderr, "=== DMF-Reindex: Print DMF subset for snmp_device_table[]...\n\n");
-	snmp_device_id_t *devtab = get_device_table();
+	snmp_device_id_t *devtab = mibdmf_get_device_table(dmp);
 	if (!devtab)
 	{
 		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not access the parsed device_table\n");
@@ -76,10 +74,8 @@ main ()
 	printf("</nut>\n");
 	fprintf(stderr, "\n=== DMF-Reindex: Indexed %d entries...\n\n", i);
 
-	// First we destroy the index tables that reference data in the list...
 	fprintf(stderr, "=== DMF-Reindex: Freeing data...\n\n");
-	dmf_parser_destroy();
-	alist_destroy(&list);
+	mibdmf_parser_destroy(&dmp);
 
 	fprintf(stderr, "=== DMF-Reindex: All done\n\n");
 
