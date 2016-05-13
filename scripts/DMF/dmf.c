@@ -1348,3 +1348,39 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	return result;
 }
 
+bool
+dmf_streq (const char* x, const char* y, bool verbose)
+{
+	if (!x && !y)
+		return true;
+	if (!x || !y) {
+		if (verbose)
+			fprintf(stderr, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n\n", x ? x : "<NULL>" , y ? y : "<NULL>");
+		return false;
+		}
+	int cmp = strcmp (x, y);
+	if (cmp != 0) {
+		if (verbose)
+			fprintf(stderr, "\nDEBUG: strEQ(): Strings not equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
+	}
+	return (cmp == 0);
+}
+
+bool
+dmf_strneq (const char* x, const char* y, bool verbose)
+{
+	if (!x && !y) {
+		if (verbose)
+			fprintf(stderr, "\nDEBUG: strNEQ(): Both compared strings are NULL\n");
+		return false;
+		}
+	if (!x || !y) {
+		return true;
+		}
+	int cmp = strcmp (x, y);
+	if (cmp == 0) {
+		if (verbose)
+			fprintf(stderr, "\nDEBUG: strNEQ(): Strings are equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
+	}
+	return (cmp != 0);
+}

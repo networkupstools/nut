@@ -117,6 +117,7 @@
 # include <lualib.h>
 #endif
 
+#include <stdbool.h>
 #include "extstate.h"
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
@@ -268,6 +269,14 @@ void
 
 void
 	print_mib2nut_memory_struct (mib2nut_info_t *self);
+
+
+// Helpers for string comparison (includng NULL consideration);
+bool
+	dmf_streq (const char* x, const char* y, bool verbose);
+
+bool
+	dmf_strneq (const char* x, const char* y, bool verbose);
 
 
 // ======================================================================= //
