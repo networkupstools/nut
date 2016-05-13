@@ -453,6 +453,7 @@ void upsdrv_cleanup(void)
 	nut_snmp_cleanup();
 #ifdef WITH_DMFMIB
 	mibdmf_parser_destroy(&dmp);
+	mib2nut = NULL;
 #endif
 }
 
