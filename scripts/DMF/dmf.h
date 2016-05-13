@@ -197,6 +197,8 @@
 #define ALARM_STATUS "status"
 #define ALARM_ALARM "alarm"
 
+/* "Auxiliary list" structure to store hierarchies
+ * of lists with bits of data */
 typedef struct {
 	void **values;
 	int size;
@@ -208,15 +210,90 @@ typedef struct {
 
 typedef enum {
 	ERR = -1,
-	OK
+	OK,
+	DMF_NEON_CALLBACK_OK = 1
 } state_t;
 
+/* Aggregate the data storage and variables needed to
+ * parse the DMF representation of MIB data for NUT */
+typedef struct {
+	alist_t *list;
+	snmp_device_id_t *device_table;
+	mib2nut_info_t *mib2nut_table;
+
+/* This is an amount of known device_table and mib2nut-table entries (same)
+ * AND the trailing sentinel (zeroed-out entry), so it is always >= 1 when
+ * there is some data (and table pointers are not NULL).
+ */
+	int device_table_counter;
+} mibdmf_parser_t;
 
 // Initialize the data for dmf.c
+mibdmf_parser_t *
+	mibdmf_parser_new();
+
+// Properly destroy the object hierarchy and NULLify the caller's pointer
+void
+	mibdmf_parser_destroy(mibdmf_parser_t** self_p);
+
+// OOP-style getters, to let us decouple consumers from implementation du-jour.
+// They should be used for every access because tables are realloc'ed a lot and
+// precise pointer values are not persistent (when you do XML parsing; the data
+// should be stable when you just read them). See also *_ptr() getters below.
+// Note they return a pointer to the live tables that cross-reference data bits
+// stored in the auxiliary list - so do not free() one without the other.
+// These getters return NULL if "dmp" itself or the field are NULL.
+snmp_device_id_t *
+	mibdmf_get_device_table(mibdmf_parser_t *dmp);
+
+mib2nut_info_t *
+	mibdmf_get_mib2nut_table(mibdmf_parser_t *dmp);
+
+
+// Load DMF XML file into structure tree at dmp->list (can append many times)
 int
-	dmf_parser_init();
+	mibdmf_parse_file (char *file_name, mibdmf_parser_t *dmp);
+
+// Load all `*.dmf` DMF XML files from specified directory
 int
-	dmf_parser_destroy();
+	mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp);
+
+
+// Debugging dumpers
+void
+	print_snmp_memory_struct (snmp_info_t *self);
+
+void
+	print_alarm_memory_struct (alarms_info_t *self);
+
+void
+	print_mib2nut_memory_struct (mib2nut_info_t *self);
+
+
+// ======================================================================= //
+// Stuff below is for developers to tinker with DMF and alist technologies //
+// ======================================================================= //
+
+// Returns -1 if `dmp == NULL`
+int
+	mibdmf_get_device_table_counter(mibdmf_parser_t *dmp);
+
+alist_t *
+	mibdmf_get_aux_list(mibdmf_parser_t *dmp);
+
+// There return pointer to the actual pointer in the structure, so it can
+// be validly reallocated, freed, etc.
+alist_t **
+	mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp);
+
+snmp_device_id_t **
+	mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp);
+
+mib2nut_info_t **
+	mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp);
+
+int *
+	mibdmf_get_device_table_counter_ptr(mibdmf_parser_t *dmp);
 
 // Create and initialize info_lkp_t, a lookup element
 info_lkp_t *
@@ -254,12 +331,6 @@ void
 void
 	snmp_info_node_handler (alist_t *list, const char **attrs);
 
-snmp_device_id_t *
-	get_device_table();
-
-int
-	get_device_table_counter();
-
 
 
 // Same for MIB2NUT mappers
@@ -278,8 +349,6 @@ void
 void
 	mib2nut_info_node_handler (alist_t *list, const char **attrs);
 
-mib2nut_info_t *
-	get_mib2nut_table();
 
 
 
@@ -308,6 +377,7 @@ void
 alist_t *
 	alist_get_last_element (alist_t *self);
 
+// Return the element which has `char* name` equal to the requested one
 alist_t *
 	alist_get_element_by_name (alist_t *self, char *name);
 
@@ -318,6 +388,7 @@ char *
 	get_param_by_name (const char *name, const char **items);
 
 
+// The guts of XML parsing: callbacks that act on an instance of mibdmf_parser_t
 int
 	xml_dict_start_cb (
 		void *userdata, int parent,
@@ -349,26 +420,6 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
-// Load DMF XML file into structure tree at *list (precreate with alist_new)
-int
-	parse_file (char *file_name, alist_t *list);
-
-// Load all `*.dmf` DMF XML files from specified directory
-int
-	parse_dir (char *dir_name, alist_t *list);
-
-
-
-
-// Debugging dumpers
-void
-	print_snmp_memory_struct (snmp_info_t *self);
-
-void
-	print_alarm_memory_struct (alarms_info_t *self);
-
-void
-	print_mib2nut_memory_struct (mib2nut_info_t *self);
 
 
 #endif
