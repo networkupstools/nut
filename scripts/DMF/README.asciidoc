@@ -21,6 +21,11 @@ code is provided to read the library of complete DMFs (and validate their
 contents along the way), and produce a DMF file that only contains truncated
 `mib2nut` entries as needed for the `nut-scanner`. This `dmf-reindex` program
 is expected to become an end-user tool, to help during updates of the DMF set.
+NOTE: In the current iteration the `dmf-reindex` program is not configurable,
+so it just scans all `*.dmf*` files in the current directory and prints XML
+DMF markup to `stdout` so you can redirect it to another file. To avoid later
+duplicate entries, consider naming that file with a different extension (may
+be uppercased `*.DMF` for example).
 
 Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
 and application developers should look there for the "The big theory" details.
