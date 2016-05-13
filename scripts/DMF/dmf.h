@@ -255,6 +255,10 @@ mib2nut_info_t *
 int
 	mibdmf_parse_file (char *file_name, mibdmf_parser_t *dmp);
 
+// Parse a buffer with complete DMF XML (from <nut> to </nut>)
+int
+	mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp);
+
 // Load all `*.dmf` DMF XML files from specified directory
 int
 	mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp);
