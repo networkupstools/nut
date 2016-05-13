@@ -497,8 +497,9 @@ alist_get_element_by_name (alist_t *self, char *name)
 	int i;
 	if (self)
 		for (i = 0; i < self->size; i++)
-			if (strcmp(((alist_t*)self->values[i])->name, name) == 0)
-				return (alist_t*)self->values[i];
+			if ( ((alist_t*)self->values[i])->name )
+				if (strcmp(((alist_t*)self->values[i])->name, name) == 0)
+					return (alist_t*)self->values[i];
 	return NULL;
 }
 
@@ -556,7 +557,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	arg[5] = get_param_by_name(MIB2NUT_SNMP, attrs);
 	arg[6] = get_param_by_name(MIB2NUT_ALARMS, attrs);
 #ifdef WITH_DMF_LUA
-	arg[7] = get_param_by_name(FUNCTION, attrs);
+	arg[7] = get_param_by_name(MIB2NUT_FUNCTION, attrs);
 #endif
 
 	if (arg[5])
@@ -706,7 +707,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		free (arg[i]);
 
 #ifdef WITH_DMF_LUA
-	//free(functions);
+	if (functions) free(functions);
 #endif
 	free (arg);
 }
@@ -912,7 +913,7 @@ compile_flags(const char **attrs)
 			flags = flags | SU_OUTPUT_1;
 		}
 	if(aux_flags)free(aux_flags);
-	 aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
+	aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
 			flags = flags | SU_OUTPUT_3;
 		}
@@ -932,7 +933,7 @@ compile_flags(const char **attrs)
 			flags = flags | SU_BYPASS_1;
 		}
 	if(aux_flags)free(aux_flags);
-	 aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
+	aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
 			flags = flags | SU_BYPASS_3;
 		}
@@ -971,44 +972,51 @@ xml_dict_start_cb(void *userdata, int parent,
 	alist_t *list = (alist_t*) userdata;
 	char *auxname = get_param_by_name("name",attrs);
 	if(!userdata)return ERR;
-	if(strcmp(name,MIB2NUT) == 0)
+
+	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_mib2nut_destroy,
 			(void (*)(void)) info_mib2nut_new));
 		mib2nut_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,LOOKUP) == 0)
+	else if(strcmp(name,DMFTAG_LOOKUP) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_lkp_destroy,
 			(void (*)(void)) info_lkp_new));
 	}
-	else if(strcmp(name,ALARM) == 0)
+	else if(strcmp(name,DMFTAG_ALARM) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_alarm_destroy,
 			(void (*)(void)) info_alarm_new));
 	}
-	else if(strcmp(name,SNMP) == 0)
+	else if(strcmp(name,DMFTAG_SNMP) == 0)
 	{
 		alist_append(list, alist_new(auxname, info_snmp_destroy,
 			(void (*)(void)) info_snmp_new));
 	}
-	else if(strcmp(name,INFO_LOOKUP) == 0)
+	else if(strcmp(name,DMFTAG_INFO_LOOKUP) == 0)
 	{
 		lookup_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,INFO_ALARM) == 0)
+	else if(strcmp(name,DMFTAG_INFO_ALARM) == 0)
 	{
 		alarm_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,INFO_SNMP) == 0)
+	else if(strcmp(name,DMFTAG_INFO_SNMP) == 0)
 	{
 		snmp_info_node_handler(list,attrs);
-#ifdef WITH_DMF_LUA
 	}
-	else if(strcmp(name,FUNCTION) == 0)
+	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
+#ifdef WITH_DMF_LUA
 		alist_append(list, alist_new(auxname, NULL, NULL));
+#else
+		fprintf(stderr, "WARN: The '%s' tag in DMF is recognized, but support is not implemented in this build - so it will be ignored\n", name);
 #endif
+	}
+	else if(strcmp(name,DMFTAG_NUT) != 0)
+	{
+		fprintf(stderr, "WARN: The '%s' tag in DMF is not recognized!\n", name);
 	}
 	free(auxname);
 	return 1;
@@ -1021,7 +1029,13 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	alist_t *element = alist_get_last_element(list);
 
 	if(!userdata)return ERR;
-	if(strcmp(name,MIB2NUT) == 0)
+
+	/* Currently, special handling in the DMF tag closure is for "mib2nut"
+	 * tags that are last in the file according to schema - so we know we
+	 * have all needed info at this time to populate an instance of the
+	 * mib2nut_table index (there may be several such entries in one DMF).
+	 */
+	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		//print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
 		device_table = (snmp_device_id_t *) realloc(device_table,
@@ -1030,6 +1044,12 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 			device_table_counter * sizeof(mib2nut_info_t));
 		assert (device_table);
 		assert (mib2nut_table);
+
+		/* Make sure the new last entry in the table is zeroed-out */
+		memset (device_table + device_table_counter - 1, 0,
+			sizeof (snmp_device_id_t));
+		memset (mib2nut_table + device_table_counter - 1, 0,
+			sizeof (mib2nut_info_t));
 
 		if(((mib2nut_info_t *) element->values[0])->oid_auto_check)
 			mib2nut_table[device_table_counter - 1].oid_auto_check =
@@ -1067,28 +1087,28 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	return OK;
 }
 
-#ifdef WITH_DMF_LUA
 int
 xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
-	char *luatext;
-
 	if(!userdata)
 		return ERR;
 
-	alist_t *list = (alist_t*) userdata;
-
 	if(len > 2){
+// NOTE: Child-tags are also CDATA when parent-tag processing starts,
+// so we do not report "unsupported" errors when we it a CDATA process.
+#ifdef WITH_DMF_LUA
+		char *luatext;
+		alist_t *list = (alist_t*) userdata;
 		alist_t *element = alist_get_last_element(list);
 
 		luatext = (char*) calloc(len + 1, sizeof(char));
 		strncpy(luatext, cdata, len);
 
 		alist_append(element, (void*) luatext);
+#endif
 	}
 	return OK;
 }
-#endif
 
 // Load DMF XML file into structure tree at *list (precreate with alist_new)
 // Returns 0 on success, or an <errno> code on system or parsing errors
@@ -1099,24 +1119,20 @@ parse_file(char *file_name, alist_t *list)
 	FILE *f;
 	int result = 0;
 
-        assert (file_name);
-        assert (list);
+	assert (file_name);
+	assert (list);
 
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
 	{
-		fprintf(stderr, "DMF file '%s' not found or not readable\n",
+		fprintf(stderr, "ERROR: DMF file '%s' not found or not readable\n",
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
 
 	ne_xml_parser *parser = ne_xml_create ();
 	ne_xml_push_handler (parser, xml_dict_start_cb,
-#ifdef WITH_DMF_LUA
 		xml_cdata_cb
-#else
-		NULL
-#endif
 		, xml_end_cb, list);
 
 	/* The neon XML parser would get blocks from the DMF file and build
@@ -1127,14 +1143,14 @@ parse_file(char *file_name, alist_t *list)
 		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
 		if (len == 0) /* Should not zero-read from a non-EOF file */
 		{
-			fprintf(stderr, "Error parsing DMF from '%s'"
+			fprintf(stderr, "ERROR parsing DMF from '%s'"
 				"(unexpected short read)\n", file_name);
 			result = EIO;
 			break;
 		} else {
 			if ((result = ne_xml_parse (parser, buffer, len)))
 			{
-				fprintf(stderr, "Error parsing DMF from '%s'"
+				fprintf(stderr, "ERROR parsing DMF from '%s'"
 					"(unexpected markup?)\n", file_name);
 				result = ENOMSG;
 				break;
@@ -1173,20 +1189,21 @@ parse_file(char *file_name, alist_t *list)
 }
 
 // Load all `*.dmf` DMF XML files from specified directory into aux list tree
+// NOTE: Technically by current implementation, this is `*.dmf*`
 int
 parse_dir (char *dir_name, alist_t *list)
 {
 	DIR *dir;
 	struct dirent *dir_ent;
-	int i = 0, result = 0;
+	int i = 0, x = 0, result = 0;
 
 	assert (dir_name);
-        assert (list);
+	assert (list);
 
 	if ( (dir_name == NULL ) || \
 	     ( (dir = opendir(dir_name)) == NULL ) )
 	{
-		fprintf(stderr, "DMF directory '%s' not found or not readable\n",
+		fprintf(stderr, "ERROR: DMF directory '%s' not found or not readable\n",
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
@@ -1198,23 +1215,26 @@ parse_dir (char *dir_name, alist_t *list)
 			i++;
 			int res = parse_file(dir_ent->d_name, list);
 			if ( res != 0 )
+			{
+				x++;
 				result = res;
 				// No debug: parse_file() did it if enabled
+			}
 		}
 	}
 	closedir(dir);
 
 #ifdef DEBUG
 	if (i==0) {
-		fprintf(stderr, "No DMF files were found or readable in directory '%s'\n",
+		fprintf(stderr, "WARN: No DMF files were found or readable in directory '%s'\n",
 			dir_name ? dir_name : "<NULL>");
 	} else {
-		fprintf(stderr, "%d DMF files were inspected in directory '%s'\n",
+		fprintf(stderr, "INFO: %d DMF files were inspected in directory '%s'\n",
 			i, dir_name ? dir_name : "<NULL>");
 	}
-	if (result!=0) {
-		fprintf(stderr, "Some DMF files were not readable in directory '%s' (last bad result %d)\n",
-			dir_name ? dir_name : "<NULL>", result);
+	if (result!=0 || x>0) {
+		fprintf(stderr, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)\n",
+			x, dir_name ? dir_name : "<NULL>", result);
 	}
 #endif
 
