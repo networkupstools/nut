@@ -1295,6 +1295,66 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	return result;
 }
 
+// Parse a buffer with complete DMF XML (from <nut> to </nut>)
+int
+mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
+{
+	int result = 0;
+	size_t len;
+
+	assert (dmf_string);
+	assert (dmp);
+	assert (mibdmf_get_aux_list(dmp)!=NULL);
+
+	if ( (dmf_string == NULL ) || \
+	     ( (len = strlen(dmf_string)) == 0 ) )
+	{
+		fprintf(stderr, "ERROR: DMF passed in a string is empty or NULL\n");
+		return ENOENT;
+	}
+
+	ne_xml_parser *parser = ne_xml_create ();
+	ne_xml_push_handler (parser, xml_dict_start_cb,
+		xml_cdata_cb
+		, xml_end_cb, dmp);
+
+	if ((result = ne_xml_parse (parser, dmf_string, len)))
+	{
+		fprintf(stderr, "ERROR parsing DMF from string "
+			"(unexpected markup?)\n");
+		result = ENOMSG;
+	}
+
+	if (!result) /* no errors, complete the parse with len==0 call */
+		ne_xml_parse (parser, dmf_string, 0);
+	ne_xml_destroy (parser);
+
+#ifdef DEBUG
+	fprintf(stderr, "%s DMF acquired from string (result = %d) %s\n",
+		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", result,
+		( result == 0 ) ? "" : strerror(result)
+	);
+#endif
+
+	/* Extend or truncate the tables to the current amount of known entries
+	   To be on the safe side, we do this even if current file hiccuped. */
+	assert (mibdmf_get_device_table_counter(dmp)>=1); /* Avoid underflow in memset below */
+	*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
+		mibdmf_get_device_table_counter(dmp) * sizeof(snmp_device_id_t));
+	*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t *) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
+		mibdmf_get_device_table_counter(dmp) * sizeof(mib2nut_info_t));
+	assert (mibdmf_get_device_table(dmp));
+	assert (mibdmf_get_mib2nut_table(dmp));
+
+	/* Make sure the last entry in the table is the zeroed-out sentinel */
+	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
+		sizeof (snmp_device_id_t));
+	memset (*mibdmf_get_mib2nut_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
+		sizeof (mib2nut_info_t));
+
+	return result;
+}
+
 // Load all `*.dmf` DMF XML files from specified directory into aux list tree
 // NOTE: Technically by current implementation, this is `*.dmf*`
 int
