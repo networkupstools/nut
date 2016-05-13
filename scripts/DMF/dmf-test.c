@@ -83,4 +83,5 @@ main ()
 	free(lfunction);
 #endif
 	printf("=== DMF-Test: All done\n\n");
+	return 0;
 }
