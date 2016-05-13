@@ -79,5 +79,6 @@ main ()
 
 	fprintf(stderr, "=== DMF-Reindex: All done\n\n");
 
+	return 0;
 // TODO: do we have and return fatal errors?
 }
