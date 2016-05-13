@@ -250,6 +250,13 @@ snmp_device_id_t *
 mib2nut_info_t *
 	mibdmf_get_mib2nut_table(mibdmf_parser_t *dmp);
 
+// Seems some such accessors are what the original snmp-ups wants for example.
+snmp_device_id_t **
+	mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp);
+
+mib2nut_info_t **
+	mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp);
+
 
 // Load DMF XML file into structure tree at dmp->list (can append many times)
 int
@@ -294,19 +301,15 @@ int
 alist_t *
 	mibdmf_get_aux_list(mibdmf_parser_t *dmp);
 
-// There return pointer to the actual pointer in the structure, so it can
+// These return pointer to the actual pointer in the structure, so it can
 // be validly reallocated, freed, etc.
 alist_t **
 	mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp);
 
-snmp_device_id_t **
-	mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp);
-
-mib2nut_info_t **
-	mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp);
-
 int *
 	mibdmf_get_device_table_counter_ptr(mibdmf_parser_t *dmp);
+
+
 
 // Create and initialize info_lkp_t, a lookup element
 info_lkp_t *

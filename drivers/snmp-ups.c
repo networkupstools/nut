@@ -39,7 +39,8 @@
 #include "parseconf.h"
 
 #ifdef WITH_DMFMIB
-#include "dmf.h"
+# include "dmf.h"
+# include "apc-iem-mib.h"
 #else
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
@@ -67,7 +68,7 @@
 #endif
 
 #ifdef WITH_DMFMIB
-mib2nut_info_t *mib2nut = NULL;
+mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 #else
 static mib2nut_info_t *mib2nut[] = {
@@ -309,7 +310,7 @@ void upsdrv_initups(void)
 	}
 	/* FIXME: Add configurability of where we look for *.dmf files */
 	mibdmf_parse_dir("/usr/share/nut/dmf/", dmp);
-	mib2nut = mibdmf_get_mib2nut_table(dmp);
+	mib2nut = mibdmf_get_mib2nut_table_ptr(dmp);
 	if (!mib2nut)
 	{
 		upsdebugx(1,"FATAL: Can not access the mib2nut table parsed from DMF library");
