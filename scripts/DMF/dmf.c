@@ -1045,6 +1045,12 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 		assert (device_table);
 		assert (mib2nut_table);
 
+		/* Make sure the new last entry in the table is zeroed-out */
+		memset (device_table + device_table_counter - 1, 0,
+			sizeof (snmp_device_id_t));
+		memset (mib2nut_table + device_table_counter - 1, 0,
+			sizeof (mib2nut_info_t));
+
 		if(((mib2nut_info_t *) element->values[0])->oid_auto_check)
 			mib2nut_table[device_table_counter - 1].oid_auto_check =
 			device_table[device_table_counter - 1].oid =
@@ -1183,6 +1189,7 @@ parse_file(char *file_name, alist_t *list)
 }
 
 // Load all `*.dmf` DMF XML files from specified directory into aux list tree
+// NOTE: Technically by current implementation, this is `*.dmf*`
 int
 parse_dir (char *dir_name, alist_t *list)
 {
