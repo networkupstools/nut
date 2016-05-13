@@ -497,8 +497,9 @@ alist_get_element_by_name (alist_t *self, char *name)
 	int i;
 	if (self)
 		for (i = 0; i < self->size; i++)
-			if (strcmp(((alist_t*)self->values[i])->name, name) == 0)
-				return (alist_t*)self->values[i];
+			if ( ((alist_t*)self->values[i])->name )
+				if (strcmp(((alist_t*)self->values[i])->name, name) == 0)
+					return (alist_t*)self->values[i];
 	return NULL;
 }
 
