@@ -46,14 +46,14 @@
 - rework the flagging system
 */
 
+#ifndef SNMP_UPS_H
+#define SNMP_UPS_H
+
 #ifdef WITH_DMF_LUA
 # include <lua.h>
 # include <lauxlib.h>
 # include <lualib.h>
 #endif
-
-#ifndef SNMP_UPS_H
-#define SNMP_UPS_H
 
 /* FIXME: still needed?
  * workaround for buggy Net-SNMP config */

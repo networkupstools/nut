@@ -55,15 +55,13 @@ main ()
 	lua_pcall(*lfunction, 0, 0, 0);
 #endif
 
-	alist_t * list = alist_new(
-		NULL,(void (*)(void **))alist_destroy, NULL );
-	if (!list) {
-		fprintf(stderr,"FATAL: Can not allocate the auxiliary list\n");
+	mibdmf_parser_t * dmp = mibdmf_parser_new();
+	if (!dmp) {
+		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
 		return ENOMEM;
 	}
-	dmf_parser_init();
 
-	parse_dir("./", list);
+	mibdmf_parse_dir("./", dmp);
 
 	//Debugging
 	//mib2nut_info_t *m2n = get_mib2nut_table();
@@ -71,20 +69,19 @@ main ()
 	//print_mib2nut_memory_struct(&pxgx_ups);
 	printf("=== DMF-Test: Loaded C structures (sample for 'powerware'):\n\n");
 	print_mib2nut_memory_struct((mib2nut_info_t *)
-		alist_get_element_by_name(list, "powerware")->values[0]);
+		alist_get_element_by_name(mibdmf_get_aux_list(dmp), "powerware")->values[0]);
 	printf("\n\n");
 	printf("=== DMF-Test: Original C structures (sample for 'powerware'):\n\n");
 	print_mib2nut_memory_struct(&powerware);
 	//End debugging
 
-	// First we destroy the index tables that reference data in the list...
 	printf("=== DMF-Test: Freeing data...\n\n");
-	dmf_parser_destroy();
-	alist_destroy(&list);
+	mibdmf_parser_destroy(&dmp);
 
 #ifdef WITH_DMF_LUA
 	lua_close(*lfunction);
 	free(lfunction);
 #endif
 	printf("=== DMF-Test: All done\n\n");
+	return 0;
 }
