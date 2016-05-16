@@ -28,7 +28,7 @@
 #include <dirent.h>
 #include <assert.h>
 
-#include "dmf.h"
+#include "dmfsnmp.h"
 
 /*
  *
