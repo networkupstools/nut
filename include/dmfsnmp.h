@@ -1,6 +1,7 @@
-/* dmf.h - Header for dmf.c - the Network UPS Tools XML-driver-loader
+/* dmfsnmp.h - Header for dmfsnmp.c - the Network UPS Tools XML-driver-loader
+ *   for the snmp-ups and nut-scanner SNMP MIB support.
  *
- * This file implements procedures to manipulate and load MIB structures
+ * This file declares procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
  * files of the past. See below for "The big theory" details.
  *
@@ -23,8 +24,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef DMF_H
-#define DMF_H
+#ifndef DMF_SNMP_H
+#define DMF_SNMP_H
 
 /* THE BIG THEORY COMMENT
  *
@@ -438,4 +439,4 @@ int
 
 
 
-#endif
+#endif /* DMF_SNMP_H */

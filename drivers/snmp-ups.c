@@ -39,7 +39,7 @@
 #include "parseconf.h"
 
 #ifdef WITH_DMFMIB
-# include "dmf.h"
+# include "dmfsnmp.h"
 # include "apc-iem-mib.h"
 #else
 /* include all known mib2nut lookup tables */
