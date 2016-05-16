@@ -8,7 +8,7 @@ linkman:nut-scanner[8] is available to discover supported NUT devices
 (USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the
 classic connection method).
 
-This tool actually use a library, called *libnutscan*, to perform actual
+This tool actually uses a library, called *libnutscan*, to perform actual
 processing.
 
 
