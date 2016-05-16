@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2011-2016 by EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 /*! \file scan_snmp.c
     \brief detect NUT supported SNMP devices
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@Eaton.com>
 */
 
 #include "common.h"
@@ -58,6 +59,13 @@
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
+
+// Cause the header to also declare the external reference to pre-generated
+// compilable structure with the subset of MIB mappings needed by nut-scanner
+#ifndef WANT_DEVSCAN_SNMP_BUILTIN
+#define WANT_DEVSCAN_SNMP_BUILTIN 1
+#endif
+
 #include "nutscan-snmp.h"
 
 /* Address API change */
@@ -74,6 +82,8 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 long g_usec_timeout ;
+
+snmp_device_id_t *snmp_device_table = NULL;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -106,6 +116,16 @@ static oid * (*nut_usmDESPrivProtocol);
 /* return 0 on error */
 int nutscan_load_snmp_library(const char *libname_path)
 {
+#ifdef DEVSCAN_SNMP_BUILTIN
+	if (snmp_device_table == NULL)
+		snmp_device_table = snmp_device_table_builtin;
+#endif
+
+	if (snmp_device_table == NULL) {
+		fprintf(stderr, "SNMP mapping table not found. SNMP search disabled.\n");
+		return 0;
+	}
+
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
 		if( dl_handle == (void *)1 ) {

@@ -1,6 +1,6 @@
-BUILT_SOURCES = nutscan-usb.h nutscan-snmp.h
+BUILT_SOURCES = nutscan-usb.h nutscan-snmp.c
 
-nutscan-usb.h nutscan-snmp.h:
+nutscan-usb.h nutscan-snmp.c:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Only build nut-scanner, and its library, if libltdl was found (required!)
@@ -8,9 +8,9 @@ if WITH_LIBLTDL
  bin_PROGRAMS = nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif
-libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
+libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
-			nutscan-init.c  scan_usb.c scan_snmp.c scan_xml_http.c \
+			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			../../drivers/serial.c \
 			../../drivers/bcmxcp_ser.c \
@@ -43,13 +43,14 @@ if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
 
-dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.h
+# C is not a header, but there is no dist_noinst_SOURCES
+dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.c
 
 if WITH_DEV
- include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h
+ include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
 else
- dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
+ dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
 endif
 
-CLEANFILES = nutscan-usb.h nutscan-snmp.h
+CLEANFILES = nutscan-usb.h nutscan-snmp.c
 
