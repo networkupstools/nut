@@ -44,8 +44,9 @@ upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
 if WITH_NEON
 if WITH_SNMP
  nutdmfsnmp_reindex_SOURCES = nutdmfsnmp-reindex.c $(top_srcdir)/include/dmfsnmp.h
- nutdmfsnmp_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la
-#   $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS)
+ nutdmfsnmp_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
+   $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
+   $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS)
  nutdmfsnmp_reindex_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers \
    -I$(top_srcdir)/tools/nut-scanner $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
 endif

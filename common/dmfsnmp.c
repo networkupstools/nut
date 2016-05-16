@@ -29,6 +29,7 @@
 #include <assert.h>
 
 #include "dmfsnmp.h"
+#include "str.h"
 
 /*
  *
@@ -1380,7 +1381,10 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		if ( strstr(dir_ent->d_name, ".dmf") )
 		{
 			i++;
-			int res = mibdmf_parse_file(dir_ent->d_name, dmp);
+			char *file_path = str_concat(3, dir_name, "/", dir_ent->d_name);
+			assert(file_path);
+			int res = mibdmf_parse_file(file_path, dmp);
+			free(file_path);
 			if ( res != 0 )
 			{
 				x++;

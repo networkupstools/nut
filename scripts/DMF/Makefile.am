@@ -61,21 +61,21 @@ progs: $(PROGS)
 
 progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 
-dmf-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c
+dmf-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/src.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
 	-DDEBUG=1 \
 	-o $@ $^
 
-dmf-reindex: ../../clients/nutdmfsnmp-reindex.c ../../common/dmfsnmp.c
+dmf-reindex: $(top_srcdir)/clients/nutdmfsnmp-reindex.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/src.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
 	-DDEBUG=1 \
 	-o $@ $^
 
-dmf-lua-test: dmf-test.c ../../common/dmfsnmp.c
+dmf-lua-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/src.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
