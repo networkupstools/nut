@@ -179,6 +179,16 @@ typedef struct {
 #define SU_TYPE_CMD			(3 << 18)	/* instant command */
 #define SU_TYPE(t)			((t)->flags & (7 << 18))
 
+/* Daisychain template definition */
+/* the following 2 flags specify the position of the daisychain device index
+ * in the formatting string. This is useful when considering daisychain with
+ * templates, such as outlets / outlets groups, which already have a format
+ * string specifier */
+#define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY		((t)->flags & (7 << 19))
+
+
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
@@ -251,6 +261,8 @@ bool_t snmp_ups_walk(int mode);
 bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
+
+bool_t daisychain_init();
 
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
