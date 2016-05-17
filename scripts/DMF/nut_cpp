@@ -1,9 +1,15 @@
-#!/bin/sh
+#!/bin/bash
 # postprocessor of C preprocessor - removes __attribute__ declarations, which are not compatible for pycparser
 
-CPP=cpp
+[ -n "${CPP-}" ] || CPP="cpp"
+[ -n "${CFLAGS-}" ] || CFLAGS="-I../../include"
 
-cpp -I ../../include "${@}" | sed \
+set -o pipefail
+#set -exv
+
+echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $* )" >&2
+
+$CPP $CFLAGS "${@}" | sed \
     -e 's/ __asm(.*)$/;/' \
     -e 's/__asm__ (.*);/;/' \
     -e 's/__attribute__ ((visibility("default"))) //' \
@@ -28,4 +34,8 @@ cpp -I ../../include "${@}" | sed \
     -e 's/static __inline/static/' \
     -e 's/__restrict//g' \
     -e 's/__extension__//' \
-    -e 's/__builtin_va_list/int/'
+    -e 's/__builtin_va_list/int/' # | tee temp-cpp.tmp
+
+RET=$?
+[ "$RET" = 0 ] && echo "INFO: CPP+SED passed OK" >&2 || echo "ERROR: CPP+SED returned code $RET" >&2
+exit $RET

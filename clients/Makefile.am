@@ -20,11 +20,6 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
-if WITH_NEON
-if WITH_SNMP
- sbin_PROGRAMS += nutdmfsnmp-reindex
-endif
-endif
 
 lib_LTLIBRARIES = libupsclient.la libnutclient.la
 if WITH_DEV
@@ -40,17 +35,6 @@ upscmd_SOURCES = upscmd.c upsclient.h
 upsrw_SOURCES = upsrw.c upsclient.h
 upslog_SOURCES = upslog.c upsclient.h upslog.h
 upsmon_SOURCES = upsmon.c upsmon.h upsclient.h
-
-if WITH_NEON
-if WITH_SNMP
- nutdmfsnmp_reindex_SOURCES = nutdmfsnmp-reindex.c $(top_srcdir)/include/dmfsnmp.h
- nutdmfsnmp_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
-   $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
-   $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS)
- nutdmfsnmp_reindex_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers \
-   -I$(top_srcdir)/tools/nut-scanner $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
-endif
-endif
 
 upssched_SOURCES = upssched.c upssched.h
 upssched_LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
