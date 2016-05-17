@@ -1,3 +1,4 @@
+[[outlet_management]]
 NUT outlets management and PDU notes
 ====================================
 

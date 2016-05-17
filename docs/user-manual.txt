@@ -94,8 +94,6 @@ include::config-notes.txt[]
 include::scheduling.txt[]
 
 
-[[Outlets_PDU_notes]]
-
 include::outlets.txt[]
 
 
