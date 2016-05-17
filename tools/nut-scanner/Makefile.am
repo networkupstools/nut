@@ -3,9 +3,26 @@ BUILT_SOURCES = nutscan-usb.h nutscan-snmp.c
 nutscan-usb.h nutscan-snmp.c:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
+# We optionally append valued to this below
+bin_PROGRAMS =
+if WITH_NEON
+if WITH_SNMP
+ bin_PROGRAMS += nut-scanner-reindex-dmfsnmp
+
+ nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c \
+    $(top_srcdir)/include/dmfsnmp.h
+ nut_scanner_reindex_dmfsnmp_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
+    $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
+    $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS)
+ nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
+    -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
+    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
+endif
+endif
+
 # Only build nut-scanner, and its library, if libltdl was found (required!)
 if WITH_LIBLTDL
- bin_PROGRAMS = nut-scanner
+ bin_PROGRAMS += nut-scanner
  lib_LTLIBRARIES = libnutscan.la
 endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \

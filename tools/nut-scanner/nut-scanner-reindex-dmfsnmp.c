@@ -25,13 +25,28 @@
 #include <dirent.h>
 #include <assert.h>
 
+#include "config.h"
 #include "dmf.h"
 
 int
 main ()
 {
 	int result = 0;
-	char *dir_name = "./"; // TODO: Make configurable the dir and/or list of files
+	char *dir_name = NULL; // TODO: Make configurable the dir and/or list of files
+	// TODO: Consider DEFAULT_DMFNUTSCAN_DIR for automatic output mode into a file?
+#ifdef DEFAULT_DMFSNMP_DIR_OVERRIDE
+#ifdef DEFAULT_DMFSNMP_DIR
+#undef DEFAULT_DMFSNMP_DIR
+#endif
+#define DEFAULT_DMFSNMP_DIR DEFAULT_DMFSNMP_DIR_OVERRIDE
+#endif
+
+#ifdef DEFAULT_DMFSNMP_DIR
+	dir_name = DEFAULT_DMFSNMP_DIR;
+#else
+	dir_name = "./";
+#endif
+
 // TODO: Usage (help), Command-line args
 // option to append just a few (new) files to existing (large) index
 
@@ -168,6 +183,12 @@ main ()
 	if ( i!=j )
 	{
 		fprintf(stderr,"=== DMF-Reindex: mismatch in amount of lines of old(%zu) and new(%zu) tables\n", i, j);
+		result++;
+	}
+
+	if ( i<=1 )
+	{
+		fprintf(stderr,"=== DMF-Reindex: empty table was generated\n");
 		result++;
 	}
 

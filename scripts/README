@@ -6,6 +6,7 @@ distributions,
 - Python Client module and application,
 - Perl client module,
 - Augeas support lenses and modules for NUT,
+- scripts to generate DMF data files from existing drivers/*-mib.c structures,
 - systemd support files.
 
 They have either been contributed by users of the software, or by the NUT Team

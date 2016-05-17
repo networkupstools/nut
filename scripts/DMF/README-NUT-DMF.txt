@@ -80,6 +80,8 @@ They are a mix of Python and shell scripts:
 
  * `jsonify-mib.py`: process MIB mapping from C source and print it to stdout
     as JSON
+ * `nut_cpp`: calls the C preprosessor and filters away GCC modifiers that are
+    not handled well by `pycparser` code
  * `xmlify-mib.py`: process JSON output produced by `jsonify-mib.py` and output
     the final DMF XML format
  * `dmfify-mib.sh`: execute this from the `$NUT_SOURCE/scripts/DMF/` directory
