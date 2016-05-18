@@ -43,7 +43,9 @@ clean-local:
 
 check: check-local
 
-check-local: progs-all run-dmf-test run-dmf-lua-test
+check-local: progs run-dmf-test
+
+check-experimental: progs-all check-local run-dmf-lua-test
 
 # Recipes to build DMF files with the sources and tools we have.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
