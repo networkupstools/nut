@@ -26,6 +26,11 @@ dmfnutscan_DATA = $(wildcard $(DMFNUTSCAN_SUBDIR)/*.dmf)
 
 EXTRA_DIST = $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 
+# This does not rely on automake semantics, so this Makefile.am can be directly
+# used and changed during development without reconfiguring all of NUT sources
+DMFTEST_SRC = dmf-test.c
+EXTRA_DIST += $(DMFTEST_SRC)
+
 # First target is default
 all: progs dmf
 
@@ -69,7 +74,8 @@ progs: $(PROGS)
 
 progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 
-dmf-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
+# Note: These recipes are explicit so they can be built without configuring NUT
+dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
@@ -83,7 +89,7 @@ dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top
 	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
-dmf-lua-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
+dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
