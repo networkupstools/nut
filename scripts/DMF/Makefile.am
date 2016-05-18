@@ -55,10 +55,21 @@ $(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c dmfify-mib.sh jso
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
 # that we use builddir for this final touch. The DMF filess themselves may be
 # prebuilt and distributed as source, the gmake VPATH should figure that out.
+# However, the dmf-reindexer is currently hardcoded to use only one directory.
 $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsubst %.c,%.dmf,$(notdir $(wildcard $(abs_top_srcdir)/drivers/*-mib.c))))
 	@echo "DMFSNMP_SUBDIR is now up to date, made of: $^" >&2
 	mkdir -p $(@D)
+	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ]; then \
+		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
+			B="`basename "$$F"`"; \
+			[ "$$B" = '*.dmf' ] && exit 0 ; \
+			N="$(abs_builddir)/$(DMFSNMP_SUBDIR)/$$B"; \
+			[ -s "$$F" ] && [ ! -s "$$N" ] && \
+				echo "  CP    $$F => $$N" >&2 && \
+				cp -f "$$F" "$$N" || exit ; \
+		done; \
+	fi
 	touch $@
 
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
