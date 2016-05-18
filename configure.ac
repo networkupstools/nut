@@ -67,9 +67,12 @@ cgiexecdir='${exec_prefix}/cgi-bin'
 driverexecdir='${exec_prefix}/bin'
 htmldir='${prefix}/html'
 pkgconfigdir='${libdir}/pkgconfig'
-auglensdir='/usr/share/augeas/lenses'
+auglensdir='/usr/share/augeas/lenses/dist'
 if test ! -d "${auglensdir}"; then
-   auglensdir=''
+   auglensdir='/usr/share/augeas/lenses'
+   if test ! -d "${auglensdir}"; then
+      auglensdir=''
+   fi
 fi
 hotplugdir='/etc/hotplug'
 if test ! -d "${hotplugdir}"; then
@@ -1163,13 +1166,13 @@ AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
-	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses)]),
+	AS_HELP_STRING([--with-augeas-lenses-dir=PATH], [where to install Augeas configuration-management lenses (/usr/share/augeas/lenses{/dist,/})]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${auglensdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["augeas lenses directory requested but not found"])
+			AC_MSG_ERROR(["augeas lenses directory requested but not found in default location"])
 		fi
 		;;
 	auto)

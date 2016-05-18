@@ -75,8 +75,11 @@ link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list, and fixed quickly.
 ////////////////////////////////////////////////////////////////////////////////
 
-- a project portal with trackers for bugs, feature request, patchs
-and tasks
+- a project portal with trackers for bugs, feature request, patchs and tasks
+
+- Static code analysis:
+  * link:https://scan.coverity.com/projects/networkupstools-nut[Coverity Scan overview of NUT]
+  * status: image:https://scan.coverity.com/projects/8829/badge.svg[Coverity Scan Build Status]
 
 NUT QA also relies on external tools and trackers, like:
 
@@ -84,8 +87,7 @@ NUT QA also relies on external tools and trackers, like:
 FIXME (POST):
 - integrate static code analysis
 	- consider splint, Frama-C, BLAST and Clang, and choose one.
-	- integrate link:http://scan.coverity.com[Coverity Scan] program.
-	Note: request made by Arnaud to scan-admin@coverity.com on Sep 24 2009
+	- only use coverity?!
 - point other distro BTS (use Launchpad as an aggregator?!)
 
 ////////////////////////////////////////////////////////////////////////////////
