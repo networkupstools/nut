@@ -63,7 +63,7 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsub
 
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
 	mkdir -p $(@D)
-	cd $(@D) && $(abs_srcdir)/dmf-reindex > $(@F)
+	cd $(@D) && $(abs_builddir)/dmf-reindex > $(@F)
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
