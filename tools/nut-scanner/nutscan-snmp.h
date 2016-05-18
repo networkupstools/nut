@@ -21,7 +21,7 @@
 #ifndef DEVSCAN_SNMP_H
 #define DEVSCAN_SNMP_H
 
-#include <stddef.> //define NULL
+#include <stddef.h> //define NULL
 
 typedef struct {
         char *          oid;
