@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #   Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>
 #   Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>
+#   Copyright (C) 2016 - Jim Klimov <EvgenyKlimov@Eaton.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -22,7 +23,7 @@ import glob
 import re
 import sys
 
-output_file_name="./nut-scanner/nutscan-snmp.h"
+output_file_name="./nut-scanner/nutscan-snmp.c"
 output_file = open(output_file_name,'w')
 
 #expand #define constant
@@ -49,9 +50,10 @@ def expand_define(filename,constant):
 	return ret_line
 
 
-output_file.write( "/* nutscan-snmp\n" )
+output_file.write( "/* nutscan-snmp.c - fully generated during build of NUT\n" )
 output_file.write( " *  Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>\n" )
 output_file.write( " *  Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>\n" )
+output_file.write( " *  Copyright (C) 2016 - Jim Klimov <EvgenyKlimov@Eaton.com>\n" )
 output_file.write( " *\n" )
 output_file.write( " *  This program is free software; you can redistribute it and/or modify\n" )
 output_file.write( " *  it under the terms of the GNU General Public License as published by\n" )
@@ -68,17 +70,24 @@ output_file.write( " *  along with this program; if not, write to the Free Softw
 output_file.write( " *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA\n" )
 output_file.write( " */\n" )
 output_file.write( "\n" )
-output_file.write( "#ifndef DEVSCAN_SNMP_H\n" )
-output_file.write( "#define DEVSCAN_SNMP_H\n" )
+output_file.write( "#include \"nutscan-snmp.h\"\n" )
 output_file.write( "\n" )
-output_file.write( "typedef struct {\n" )
-output_file.write( "        char *          oid;\n" )
-output_file.write( "        char *          mib;\n" )
-output_file.write( "        char *       sysoid;\n" )
-output_file.write( "} snmp_device_id_t;\n" )
+output_file.write( "#ifndef NULL\n" )
+output_file.write( "#define NULL (void*)0ULL\n" )
+output_file.write( "#endif\n" )
 output_file.write( "\n" )
-output_file.write( "/* SNMP IDs device table */\n" )
-output_file.write( "static snmp_device_id_t snmp_device_table[] = {\n" )
+output_file.write( "// marker to tell humans and GCC that the unused parameter is there for some\n" )
+output_file.write( "// reason (i.e. API compatibility) and compiler should not warn if not used\n" )
+output_file.write( "#ifndef UNUSED_PARAM\n" )
+output_file.write( "# ifdef __GNUC__\n" )
+output_file.write( "#  define UNUSED_PARAM __attribute__ ((__unused__))\n" )
+output_file.write( "# else\n" )
+output_file.write( "#  define UNUSED_PARAM\n" )
+output_file.write( "# endif\n" )
+output_file.write( "#endif\n" )
+output_file.write( "\n" )
+output_file.write( "/* SNMP IDs device table, not used in this file itself - silence the warning if we can */\n" )
+output_file.write( "snmp_device_id_t snmp_device_table_builtin[] UNUSED_PARAM = {\n" )
 
 for filename in glob.glob('../drivers/*-mib.c'):
 	list_of_line = open(filename,'r').read().split(';')
@@ -143,4 +152,4 @@ for filename in glob.glob('../drivers/*-mib.c'):
 output_file.write( "        /* Terminating entry */\n" )
 output_file.write( "        { NULL, NULL, NULL}\n" )
 output_file.write( "};\n" )
-output_file.write( "#endif /* DEVSCAN_SNMP_H */\n" )
+output_file.write( "\n" )

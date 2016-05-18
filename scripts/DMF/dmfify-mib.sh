@@ -11,6 +11,10 @@
 # A bashism, important for us here
 set -o pipefail
 
+# Where to look for python scripts - same dir as this shell script
+_SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
+    _SCRIPT_DIR="./" # Fallback can fail
+
 # TODO: The PYTHON and CC variables currently assume pathnames (no args)
 [ -n "${PYTHON-}" ] || PYTHON="`which python2.7`"
 [ -n "${PYTHON}" ] && [ -x "$PYTHON" ] || { echo "ERROR: Can not find Python 2.7: '$PYTHON'" >&2; exit 2; }
@@ -40,8 +44,8 @@ dmfify_c_file() {
 
     echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..."
 
-    ( "${PYTHON}" jsonify-mib.py --test "${cmib}" > "${mib}.json.tmp" && \
-      "${PYTHON}" xmlify-mib.py < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
+    ( "${PYTHON}" "${_SCRIPT_DIR}"/jsonify-mib.py --test "${cmib}" > "${mib}.json.tmp" && \
+      "${PYTHON}" "${_SCRIPT_DIR}"/xmlify-mib.py < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
     && [ -s "${mib}.dmf.tmp" ] \
     || { ERRCODE=$?
         echo "ERROR: Could not parse '${cmib}' into '${mib}.dmf'" >&2
@@ -53,11 +57,15 @@ dmfify_c_file() {
 }
 
 dmfify_NUT_drivers() {
-    for cmib in ../../drivers/*-mib.c; do
+    local i=0
+    for cmib in ../../../drivers/*-mib.c ../../drivers/*-mib.c; do
         [ -s "${cmib}" ] || \
-            { echo "ERROR: File not found or is empty: '${cmib}'" >&2; return 2; }
+            { echo "ERROR: File not found or is empty: '${cmib}'" >&2; continue; }
         dmfify_c_file "${cmib}" || return
+        i=$(($i+1))
     done
+    [ "$i" = 0 ] && echo "ERROR: No files processed" >&2 && return 2
+    echo "INFO: Processed $i files OK" >&2
     return 0
 }
 

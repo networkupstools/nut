@@ -1,54 +1,101 @@
+# GNU Make syntax assumed below
+
 RM ?= /usr/bin/rm -f
 # Take compiler from PATH, may be wrapped with ccache etc.
 CC = gcc
 CPP = gcc
 CXX = g++
 
-PROGS = dmf-test dmf-reindex dmf-lua-test
+AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers \
+    -I$(top_srcdir)/tools/nut-scanner
+
+# Note: this causes a private build of dmf-reindex with debugging etc. which
+# may be slightly different from the distributed `nut-scanner-reindex-dmfsnmp`
+PROGS = dmf-test dmf-reindex
+PROGS_EXPERIMENTAL = dmf-lua-test
+
+DMFSNMP_SUBDIR = dmfsnmp
+DMFNUTSCAN_SUBDIR = dmfnutscan
+
+# Automake installation
+dmfsnmpdir = @dmfsnmpdir@
+dmfsnmp_DATA = $(wildcard $(DMFSNMP_SUBDIR)/*.dmf)
+
+dmfnutscandir = @dmfnutscandir@
+dmfnutscan_DATA = $(wildcard $(DMFNUTSCAN_SUBDIR)/*.dmf)
+
+EXTRA_DIST = $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 
 # First target is default
 all: progs dmf
 
-clean:
-	$(RM) $(PROGS) *.o *.dmf.tmp *.json.tmp *_TEST.c *_TEST.exe
+clean: clean-local
 
-check: progs run-dmf-test run-dmf-lua-test
+clean-local:
+	$(RM) $(PROGS) $(DMFSNMP_SUBDIR)/*.o \
+		$(DMFSNMP_SUBDIR)/*.dmf.tmp $(DMFSNMP_SUBDIR)/*.json.tmp \
+		$(DMFSNMP_SUBDIR)/*_TEST.c $(DMFSNMP_SUBDIR)/*_TEST.exe
 
-%.dmf: ../../drivers/%.c dmfify-mib.sh jsonify-mib.py xmlify-mib.py
-	./dmfify-mib.sh $<
+check: check-local
 
-dmf:
-	./dmfify-mib.sh
+check-local: progs-all run-dmf-test run-dmf-lua-test
+
+# Recipes to build DMF files with the sources and tools we have.
+# NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
+# removed, these DMF files would become redistributable contents by themselves.
+$(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c dmfify-mib.sh jsonify-mib.py xmlify-mib.py
+	mkdir -p $(@D)
+	cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $<
+
+$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsubst %.c,%.dmf,$(notdir $(wildcard $(abs_top_srcdir)/drivers/*-mib.c))))
+	@echo "DMFSNMP_SUBDIR is now up to date, made of: $^" >&2
+	touch $@
+
+$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
+	mkdir -p $(@D)
+	cd $(@D) && $(abs_srcdir)/dmf-reindex > $(@F)
+
+$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
+	touch $@
+
+# The *_DATA rules above refer to these strings, satisfy them
+$(DMFSNMP_SUBDIR)/*.dmf: $(DMFSNMP_SUBDIR)/.uptodate
+$(DMFNUTSCAN_SUBDIR)/*.dmf: $(DMFNUTSCAN_SUBDIR)/.uptodate
+
+dmf: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
 
 progs: $(PROGS)
 
-dmf-test: dmf-test.c dmf.c
+progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
+
+dmf-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lneon -I../../include -I../../drivers \
-	-DDEBUG=1 \
+	-lneon $(AM_CFLAGS) \
+	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
-dmf-reindex: dmf-reindex.c dmf.c
+dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lneon -I../../include -I../../drivers \
-	-DDEBUG=1 \
+	-lneon $(AM_CFLAGS) \
+	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
-dmf-lua-test: dmf-test.c dmf.c
+dmf-lua-test: dmf-test.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lneon -I../../include -I../../drivers \
+	-lneon $(AM_CFLAGS) \
 	-llua5.1 -I/usr/include/lua5.1 -DWITH_DMF_LUA=1 \
-	-DDEBUG=1 \
+	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
 run-dmf-test: dmf-test
-	valgrind --leak-check=full ./$<
+	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(builddir)/$<
 
 run-dmf-reindex: dmf-reindex
-	valgrind --leak-check=full ./$<
+	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(builddir)/$<
 
 run-dmf-lua-test: dmf-lua-test
-	valgrind --leak-check=full --track-origins=yes ./$<
+	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full --track-origins=yes $(builddir)/$<

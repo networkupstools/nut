@@ -34,6 +34,9 @@ Michal Vyskocil <michal.vyskocil@gmail.com>
 def warn (msg):
     print ("W: %s" % msg, file=sys.stderr)
 
+def info (msg):
+    print ("I: %s" % msg, file=sys.stderr)
+
 def f2f(node):
     """convert c_ast node flags to list of numbers
     (1, 2, 4) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT
@@ -254,6 +257,7 @@ class Visitor(c_ast.NodeVisitor):
                 self._mappings ["MIB2NUT"][node.name] = \
                 self._visit_mib2nut_info_t (node)
 
+# Find the shellscript to parse away undesired constructs from GNU CPP output
 def s_cpp_path ():
     return \
         os.path.join (
@@ -433,16 +437,36 @@ def s_mkparser ():
 ## MAIN
 p = s_mkparser ()
 args = p.parse_args (sys.argv[1:])
-ast = parse_file (
+drivers_dir = os.path.dirname (os.path.abspath (args.source))
+include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
+info ("CALL parse_file():")
+try:
+    ast = parse_file (
         args.source,
         use_cpp=True,
         cpp_path=s_cpp_path (),
+        cpp_args=["-I"+drivers_dir, "-I"+include_dir]
         )
+    if not isinstance(ast, c_ast.FileAST):
+        raise RuntimeError("Got a not c_ast.FileAST instance after parsing")
+    c = 0
+    for idx, node in ast.children ():
+        c = c+1
+    if c == 0 :
+        raise RuntimeError ("Got no data in resulting tree")
+except Exception as e:
+    warn ("FAILED to parse %s: %s" % (args.source, e))
+    sys.exit(1)
+
+info ("Parsed %s OK" % args.source)
+
+info ("CALL Visitor():")
 v = Visitor ()
 for idx, node in ast.children ():
     v.visit (node)
 
 if args.test:
+    info ("CALL test()")
     test_file = os.path.basename (args.source)
     MIB_name = os.path.splitext (test_file) [0]
     test_file = MIB_name + "_TEST.c"
@@ -450,16 +474,25 @@ if args.test:
     with open (test_file, "wt") as fout:
         s_json2c (fout, MIB_name, v._mappings)
 
-    drivers_dir = os.path.dirname (os.path.abspath (args.source))
-    include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
     try:
         gcc = os.environ["CC"]
     except KeyError:
         gcc = "cc"
     cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", prog_file, test_file]
-    print (" ".join (cmd), file=sys.stderr)
-    subprocess.check_call (cmd)
-    subprocess.check_call ("./%s" % prog_file)
+    info ("COMPILE: " + " ".join (cmd))
+    try:
+        subprocess.check_call (cmd)
+    except subprocess.CalledProcessError as retcode:
+        warn ("COMPILE FAILED with code ", retcode.returncode)
+        sys.exit (retcode.returncode)
+    info ("SELFTEST ./" + prog_file)
+    try:
+        subprocess.check_call ("./%s" % prog_file)
+    except subprocess.CalledProcessError as retcode:
+        warn ("SELFTEST FAILED with code ", retcode.returncode)
+        sys.exit (retcode.returncode)
+    info ("SELFTEST %s PASSED" % prog_file)
 
+info ("JSONDUMP")
 json.dump (v._mappings, sys.stdout, indent=4)
 sys.exit (0)

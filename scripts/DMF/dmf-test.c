@@ -61,7 +61,18 @@ main ()
 		return ENOMEM;
 	}
 
+#ifdef DEFAULT_DMFSNMP_DIR_OVERRIDE
+#ifdef DEFAULT_DMFSNMP_DIR
+#undef DEFAULT_DMFSNMP_DIR
+#endif
+#define DEFAULT_DMFSNMP_DIR DEFAULT_DMFSNMP_DIR_OVERRIDE
+#endif
+
+#ifdef DEFAULT_DMFSNMP_DIR
+	mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+#else
 	mibdmf_parse_dir("./", dmp);
+#endif
 
 	//Debugging
 	//mib2nut_info_t *m2n = get_mib2nut_table();

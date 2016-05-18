@@ -20,9 +20,11 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
+
 lib_LTLIBRARIES = libupsclient.la libnutclient.la
 if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
+ include_HEADERS += ../include/dmfsnmp.h
 endif
 if WITH_CGI
  cgiexec_PROGRAMS = upsstats.cgi upsimage.cgi upsset.cgi

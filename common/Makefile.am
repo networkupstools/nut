@@ -15,3 +15,20 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 # using LTLIBOBJS. Refer to configure.in -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+
+if WITH_NEON
+if WITH_SNMP
+# Naming may be clumsy, but the current intention is that DMF technique
+# can allow dynamic loading of other protocols and mappings - the SNMP
+# application is just the first of many possible. Some code from current
+# dmfsnmp.c/.h is shareable and may become a separate set of sources/headers
+# sometime later, but the libraries for consumers to bind to are named
+# properly already.
+  noinst_LTLIBRARIES += libnutdmfsnmp.la
+  libnutdmfsnmp_la_SOURCES = dmfsnmp.c
+  libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/drivers \
+        -I$(top_srcdir)/tools/nut-scanner \
+        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
+  libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) libcommon.la
+endif
+endif
