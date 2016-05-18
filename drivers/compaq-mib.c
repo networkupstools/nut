@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.6"
+#define CPQPOWER_MIB_VERSION	"1.61"
 
 #define DEFAULT_ONDELAY			30
 #define DEFAULT_OFFDELAY		20
@@ -232,7 +232,7 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "battery.status", 0, 0.1, ".1.3.6.1.4.1.232.165.3.2.5.0", "", 0, NULL }, */
 
 	/* Input page */
-	{ "input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", SU_FLAG_SETINT, NULL, &input_phases },
+	{ "input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", 0, NULL, NULL },
 /*	{ "input.phase", 0, 1.0, CPQPOWER_OID_IN_PHASE, "", SU_OUTPUT_1, NULL }, */
 	{ "input.frequency", 0, 0.1, CPQPOWER_OID_IN_FREQ , "", 0, NULL },
 	{ "input.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE, "", SU_OUTPUT_1, NULL },
@@ -254,7 +254,7 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "input.quality", 0, 1.0, CPQPOWER_OID_IN_LINEBADS, "", 0, NULL },
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", SU_FLAG_SETINT, NULL, &output_phases },
+	{ "output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", 0, NULL, NULL },
 /*	{ "output.phase", 0, 1.0, CPQPOWER_OID_OUT_PHASE, "", SU_OUTPUT_1, NULL }, */
 	{ "output.frequency", 0, 0.1, CPQPOWER_OID_OUT_FREQUENCY, "", 0, NULL },
 	/* FIXME: handle multiplier (0.1 there) */

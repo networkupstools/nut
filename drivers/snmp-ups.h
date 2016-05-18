@@ -262,8 +262,6 @@ bool_t su_ups_get(snmp_info_t *su_info_p);
 
 bool_t load_mib2nut(const char *mib);
 
-bool_t daisychain_init();
-
 const char *su_find_infoval(info_lkp_t *oid2info, long value);
 long su_find_valinfo(info_lkp_t *oid2info, const char* value);
 
@@ -278,6 +276,19 @@ extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
+
+/* Common daisychain structure and functions */
+
+bool_t daisychain_init();
+
+/* Structure containing info about each daisychain device, including phases
+ * for input, output and bypass */
+typedef struct {
+	long input_phases;
+	long output_phases;
+	long bypass_phases;
+} daisychain_info_t;
+
 
 #endif /* SNMP_UPS_H */
 

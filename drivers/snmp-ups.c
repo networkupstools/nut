@@ -99,11 +99,11 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
-int input_phases, output_phases, bypass_phases;
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
 int current_device_number = 1;      /* to handle daisychain iterations */
 bool_t daisychain_enabled = FALSE;
+daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
 mib2nut_info_t *mib2nut_info;
@@ -289,6 +289,7 @@ void upsdrv_initups(void)
 	char model[SU_INFOSIZE];
 	bool_t status= FALSE;
 	const char *mibs;
+	int curdev = 0;
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
@@ -355,6 +356,14 @@ void upsdrv_initups(void)
 
 	/* Init daisychain and check if support is required */
 	daisychain_init();
+	
+	/* Allocate / init the daisychain info structure (for phases only for now) */
+	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * devices_count);
+	for (curdev = 0 ; curdev > devices_count ; curdev++) {
+		daisychain_info[curdev]->input_phases = -1;
+		daisychain_info[curdev]->output_phases = -1;
+		daisychain_info[curdev]->bypass_phases = -1;
+	}
 
 	/* FIXME: also need daisychain awareness (so init)!
 	 * i.e load.off.delay+load.off + device.1.load.off.delay+device.1.load.off + ... */
@@ -377,6 +386,11 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	/* General cleanup */
+	if (daisychain_info)
+		free(daisychain_info);
+
+	/* Net-SNMP specific cleanup */
 	nut_snmp_cleanup();
 }
 
@@ -1859,9 +1873,139 @@ bool_t daisychain_init()
  * SNMP handling functions
  **********************************************************************/
 
+/* Process a data with regard to SU_OUTPHASES, SU_INPHASES and SU_BYPPHASES.
+ * 3phases related data are disabled if the unit is 1ph, and conversely.
+ * If the related phases data (input, output, bypass) is not yet valued,
+ * retrieve it first.
+ * 
+ * type: input, output, bypass
+ * su_info_p: variable to process flags on
+ * Return 0 if OK, if if the caller needs to "continue" the walk loop
+ */
+int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
+{
+	snmp_info_t *tmp_info_p;
+	char tmpOID[SU_INFOSIZE];
+	char tmpInfo[SU_INFOSIZE];
+	long tmpValue;
+	int phases_flag = 0, single_phase_flag = 0, three_phase_flag = 0;
+
+	/* Phase specific data */
+	if (!strncmp(type, "input", 5)) {
+		phases_flag = SU_INPHASES;
+		single_phase_flag = SU_INPUT_1;
+		three_phase_flag = SU_INPUT_3;
+	}
+	else if (!strncmp(type, "output", 6)) {
+		phases_flag = SU_OUTPHASES;
+		single_phase_flag = SU_OUTPUT_1;
+		three_phase_flag = SU_OUTPUT_3;
+	}
+	else if (!strncmp(type, "bypass", 6)) {
+		phases_flag = SU_BYPPHASES;
+		single_phase_flag = SU_BYPASS_1;
+		three_phase_flag = SU_BYPASS_3;
+	}
+	else {
+		upsdebugx(2, "%s: unknown type '%s'", __func__, type);
+		return 1;
+	}	
+
+	/* Init the phase(s) info for this device, if not already done */
+	if (*nb_phases == -1) {
+		upsdebugx(2, "%s phases information not initialized for device %i",
+			type, current_device_number);
+
+		memset(tmpInfo, 0, SU_INFOSIZE);
+
+		/* daisychain specifics... */
+		if ( (daisychain_enabled == TRUE) && (current_device_number > 1) ) {
+			/* Device(s) 2-N (slave(s)) need to append 'device.x' */
+			snprintf(tmpInfo, sizeof(SU_INFOSIZE),
+					"device.%i.%s.phases", current_device_number, type);
+		}
+		else {
+			snprintf(tmpInfo, sizeof(SU_INFOSIZE), "%s.phases", type);
+		}
+
+		if (dstate_getinfo(tmpInfo) == NULL) {
+			/* {input,output,bypass}.phases is not yet published,
+			 * try to get the template for it */
+			snprintf(tmpInfo, sizeof(SU_INFOSIZE), "%s.phases", type);
+			tmp_info_p = su_find_info(tmpInfo);
+			if (tmp_info_p != NULL) {
+				memset(tmpOID, 0, SU_INFOSIZE);
+
+				/* Daisychain specific: we may have a template (including
+				 * formatting string) that needs to be adapted! */
+				if (strchr(tmp_info_p->OID, '%') != NULL) {
+					upsdebugx(2, "Found template, need to be adapted");										
+					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number);
+				}
+				else {
+					/* Otherwise, just point at what we found */
+					upsdebugx(2, "Found entry, not a template %s", tmp_info_p->OID);
+					snprintf((char*)tmpOID, SU_INFOSIZE, "%s", tmp_info_p->OID);
+				}
+				/* Actually get the data */
+				if (nut_snmp_get_int(tmpOID, &tmpValue) == TRUE) {
+					*nb_phases = tmpValue;
+				}
+				else {
+					upsdebugx(2, "Can't get input.bypass value. Defaulting to 1 %s.phase", type);
+					*nb_phases = 1;
+					/* FIXME: return something or process using default?! */
+				}
+			}
+			else {
+				upsdebugx(2, "No input.bypass entry. Defaulting to 1 %s.phase", type);
+				*nb_phases = 1;
+				/* FIXME: return something or process using default?! */
+			}
+		}
+		else {
+			*nb_phases = atoi(dstate_getinfo(tmpInfo));
+		}
+		/* Publish the number of phase(s) */
+		dstate_setinfo(tmpInfo, "%ld", *nb_phases);
+	}
+	/* FIXME: what to do here?
+	else if (*nb_phases == 0) {
+		return 1;
+	} */
+
+
+	/* Actual processing of phases related data */
+// FIXME: don't clear SU_INPHASES in daisychain mode!!! ???
+	if (su_info_p->flags & single_phase_flag) {
+		if (*nb_phases == 1) {
+			upsdebugx(1, "%s_phases is 1", type);
+			su_info_p->flags &= ~phases_flag;
+		} else {
+			upsdebugx(1, "%s_phases is not 1", type);
+			su_info_p->flags &= ~SU_FLAG_OK;
+			return 1;
+		}
+	} else if (su_info_p->flags & three_phase_flag) {
+		if (*nb_phases == 3) {
+			upsdebugx(1, "%s_phases is 3", type);
+			su_info_p->flags &= ~phases_flag;
+		} else {
+			upsdebugx(1, "%s_phases is not 3", type);
+			su_info_p->flags &= ~SU_FLAG_OK;
+			return 1;
+		}
+	} else {
+		upsdebugx(1, "%s_phases is %ld", type, *nb_phases);
+	}
+	return 0; /* FIXME: remap EXIT_SUCCESS to RETURN_SUCCESS */
+}
+
+
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
 {
+	long *input_phases, *output_phases, *bypass_phases;
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
@@ -1932,97 +2076,31 @@ bool_t snmp_ups_walk(int mode)
 					(iterations % SU_STALE_RETRY) != 0)
 				continue;
 	*/
-			/* Filter 1-phase Vs 3-phase according to {input,output}.phase.
-			 * Non matching items are disabled, and flags are cleared at
-			 * init time */
+			/* Filter 1-phase Vs 3-phase according to {input,output,bypass}.phase.
+			 * Non matching items are disabled, and flags are cleared at init
+			 * time */
+			/* Process input phases information */
+			input_phases = &daisychain_info[current_device_number]->input_phases;
 			if (su_info_p->flags & SU_INPHASES) {
-				upsdebugx(1, "Check input_phases (%i)", input_phases);
-				if (input_phases == 0) {
-					/* FIXME: to get from input.phases
-					 * this would avoid the use of the SU_FLAG_SETINT flag
-					 * and potential human-error to not declare the right way.
-					 * It would also free the slot for flags */
+				upsdebugx(1, "Check input_phases (%ld)", *input_phases);
+				if (process_phase_data("input", input_phases, su_info_p) == 1)
 					continue;
-				}
-				if (su_info_p->flags & SU_INPUT_1) {
-					if (input_phases == 1) {
-						upsdebugx(1, "input_phases is 1");
-						su_info_p->flags &= ~SU_INPHASES;
-					} else {
-						upsdebugx(1, "input_phases is not 1");
-						su_info_p->flags &= ~SU_FLAG_OK;
-						continue;
-					}
-				} else if (su_info_p->flags & SU_INPUT_3) {
-					if (input_phases == 3) {
-						upsdebugx(1, "input_phases is 3");
-						su_info_p->flags &= ~SU_INPHASES;
-					} else {
-						upsdebugx(1, "input_phases is not 3");
-						su_info_p->flags &= ~SU_FLAG_OK;
-						continue;
-					}
-				} else {
-					upsdebugx(1, "input_phases is %d", input_phases);
-				}
 			}
 
+			/* Process output phases information */
+			output_phases = &daisychain_info[current_device_number]->output_phases;
 			if (su_info_p->flags & SU_OUTPHASES) {
-				upsdebugx(1, "Check output_phases");
-				if (output_phases == 0) {
-					/* FIXME: same as for input_phases */
+				upsdebugx(1, "Check output_phases (%ld)", *output_phases);
+				if (process_phase_data("output", output_phases, su_info_p) == 1)
 					continue;
-				}
-				if (su_info_p->flags & SU_OUTPUT_1) {
-					if (output_phases == 1) {
-						upsdebugx(1, "output_phases is 1");
-						su_info_p->flags &= ~SU_OUTPHASES;
-					} else {
-						upsdebugx(1, "output_phases is not 1");
-						su_info_p->flags &= ~SU_FLAG_OK;
-						continue;
-					}
-				} else if (su_info_p->flags & SU_OUTPUT_3) {
-					if (output_phases == 3) {
-						upsdebugx(1, "output_phases is 3");
-						su_info_p->flags &= ~SU_OUTPHASES;
-					} else {
-						upsdebugx(1, "output_phases is not 3");
-						su_info_p->flags &= ~SU_FLAG_OK;
-						continue;
-					}
-				} else {
-					upsdebugx(1, "output_phases is %d", output_phases);
-				}
 			}
 
+			/* Process bypass phases information */
+			bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
 			if (su_info_p->flags & SU_BYPPHASES) {
-				upsdebugx(1, "Check bypass_phases");
-				if (bypass_phases == 0) {
-					/* FIXME: same as for input_phases */
+				upsdebugx(1, "Check bypass_phases (%ld)", *bypass_phases);
+				if (process_phase_data("bypass", bypass_phases, su_info_p) == 1)
 					continue;
-				}
-				if (su_info_p->flags & SU_BYPASS_1) {
-					if (bypass_phases == 1) {
-						upsdebugx(1, "bypass_phases is 1");
-						su_info_p->flags &= ~SU_BYPPHASES;
-					} else {
-						upsdebugx(1, "bypass_phases is not 1");
-						su_info_p->flags &= ~SU_FLAG_OK;
-						continue;
-					}
-				} else if (su_info_p->flags & SU_BYPASS_3) {
-					if (input_phases == 3) {
-						upsdebugx(1, "bypass_phases is 3");
-						su_info_p->flags &= ~SU_BYPPHASES;
-					} else {
-						upsdebugx(1, "bypass_phases is not 3");
-						su_info_p->flags &= ~SU_FLAG_OK;
-						continue;
-					}
-				} else {
-					upsdebugx(1, "bypass_phases is %d", bypass_phases);
-				}
 			}
 
 			/* process template (outlet, outlet group, inc. daisychain) definition */
