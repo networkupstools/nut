@@ -1,6 +1,7 @@
 # GNU Make syntax assumed below
 
-# Be able to run without automade project - bld=src then
+# Be able to run without automade project e.g. `gmake -f Makefile.am dmf`
+# Note: then `bld=src=dir of makefile` is assumed below
 RM ?= /usr/bin/rm -f
 # Take compiler from PATH, may be wrapped with ccache etc.
 CC = gcc
