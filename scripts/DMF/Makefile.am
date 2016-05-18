@@ -52,16 +52,23 @@ $(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c dmfify-mib.sh jso
 	mkdir -p $(@D)
 	cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $<
 
-$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsubst %.c,%.dmf,$(notdir $(wildcard $(abs_top_srcdir)/drivers/*-mib.c))))
+# We can not touch read-only source dirs (e.g. during distcheck) so make sure
+# that we use builddir for this final touch. The DMF filess themselves may be
+# prebuilt and distributed as source, the gmake VPATH should figure that out.
+$(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
+$(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsubst %.c,%.dmf,$(notdir $(wildcard $(abs_top_srcdir)/drivers/*-mib.c))))
 	@echo "DMFSNMP_SUBDIR is now up to date, made of: $^" >&2
+	mkdir -p $(@D)
 	touch $@
 
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
 	mkdir -p $(@D)
 	cd $(@D) && $(abs_srcdir)/dmf-reindex > $(@F)
 
-$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+$(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
+$(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
+	mkdir -p $(@D)
 	touch $@
 
 # The *_DATA rules above refer to these strings, satisfy them
