@@ -76,7 +76,7 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsub
 
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
 	mkdir -p $(@D)
-	cd $(@D) && $(abs_builddir)/dmf-reindex > $(@F)
+	$(abs_builddir)/dmf-reindex > $@
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
@@ -117,11 +117,13 @@ dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common
 	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
-run-dmf-test: dmf-test
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(builddir)/$<
+# Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
+# But some data should be prepopulated there before we run leak tests etc.
+run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
+	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
 
-run-dmf-reindex: dmf-reindex
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(builddir)/$<
+run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
+	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
 
-run-dmf-lua-test: dmf-lua-test
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full --track-origins=yes $(builddir)/$<
+run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
+	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
