@@ -21,6 +21,8 @@
 #ifndef DEVSCAN_SNMP_H
 #define DEVSCAN_SNMP_H
 
+#include <stddef.> //define NULL
+
 typedef struct {
         char *          oid;
         char *          mib;
