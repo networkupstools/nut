@@ -217,7 +217,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.38"
+#define EATON_MARLIN_MIB_VERSION	"0.39"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -326,6 +326,14 @@ static info_lkp_t marlin_outlet_group_type_info[] = {
 	{ 0, NULL }
 };
 
+static info_lkp_t marlin_input_type_info[] = {
+	{ 1, "1" }, /* singlePhase     */
+	{ 2, "2" }, /* splitPhase      */
+	{ 3, "3" }, /* threePhaseDelta */
+	{ 4, "3" }, /* threePhaseWye   */
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
 static snmp_info_t eaton_marlin_mib[] = {
 
@@ -378,13 +386,12 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * outlet.{realpower,...}
 	 * However, it's more suitable and logic to have these on input.{...}
 	 */
-	/* FIXME: for daisychain mode, we must handle phase(s) per device, not
-	 * as a whole */
-	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases },
-	/* FIXME: to be implemented? and RFC input.type?
-	 * inputType.0.1	iso.3.6.1.4.1.534.6.6.7.3.1.1.2.0.1
-	 * singlePhase  (1), ... split phase, three phase delta, or three phase wye
-	 */
+	/* Note: the below gives the number of input, not the number of phase(s)! */
+	/* inputCount.0; Value (Integer): 1
+	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases }, */
+	/* Note: for daisychain mode, we must handle phase(s) per device, not as a whole */
+	/* inputType.%i.1 = INTEGER: singlePhase (1) */
+	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1", NULL, SU_FLAG_STATIC, &marlin_input_type_info[0], NULL },
 
 	/* Frequency is measured globally */
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1", NULL, 0, NULL, NULL },
