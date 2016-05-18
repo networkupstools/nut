@@ -6,8 +6,8 @@ CC = gcc
 CPP = gcc
 CXX = g++
 
-AM_CFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/drivers \
-    -I$(top_srcdir)/tools/nut-scanner
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+    -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner
 
 # Note: this causes a private build of dmf-reindex with debugging etc. which
 # may be slightly different from the distributed `nut-scanner-reindex-dmfsnmp`
