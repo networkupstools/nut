@@ -68,6 +68,9 @@
 #endif
 
 #ifdef WITH_DMFMIB
+// Array of pointers to singular instances of mib2nut_info_t
+// NOTE: Not the dmp->mib2nut_table itself, but array of 
+// addresses of each of its entries
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 #else
@@ -328,13 +331,52 @@ void upsdrv_initups(void)
 		mibdmf_parse_dir("./", dmp);
 #endif
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
-	mib2nut = mibdmf_get_mib2nut_table_ptr(dmp);
-	if (!mib2nut)
+	if ( !(mibdmf_get_mib2nut_table(dmp)) )
 	{
 		upsdebugx(1,"FATAL: Can not access the mib2nut table parsed from DMF library");
 		return;
 	}
-	upsdebugx(2,"Got access to the mib2nut table parsed from DMF library");
+        { // scope the table loop vars
+                // TODO: Change size detection to loop over array until NULLed sentinels?
+                int tablength = mibdmf_get_device_table_counter(dmp), i;
+                mib2nut_info_t* mib2nut_table = NULL;
+                upsdebugx(2,"Got access to the mib2nut table with %d entries parsed from DMF library",
+                        tablength);
+                if (tablength<=1) {
+                        upsdebugx(1,"FATAL: Did not find any DMF library data");
+                        return;
+                }
+                if ( !mib2nut ) {
+                        upsdebugx(1,"mib2nut not NULL when expected to be...");
+                        free(mib2nut);
+                }
+                mib2nut = (mib2nut_info_t**) calloc(tablength, sizeof (mib2nut_info_t*));
+                if ( !mib2nut ) {
+        		upsdebugx(1,"FATAL: Could not allocate mib2nut index table");
+                	return;
+                }
+                mib2nut_table = *(mibdmf_get_mib2nut_table_ptr(dmp));
+                for (i=0;  mib2nut_table[i].mib_name != NULL
+                        || mib2nut_table[i].mib_version != NULL
+                        || mib2nut_table[i].oid_pwr_status != NULL
+                        || mib2nut_table[i].oid_auto_check != NULL
+                        || mib2nut_table[i].sysOID != NULL
+                        || mib2nut_table[i].snmp_info != NULL
+                        || mib2nut_table[i].alarms_info != NULL
+#ifdef WITH_DMF_LUA
+                        || mib2nut_table[i].functions != NULL
+#endif
+                        ; i++ )
+                {
+                        if (i>=tablength) {
+                		upsdebugx(1,"FATAL: Seems we have more mib2nut entries in practice than allocated by counter (i==%d)", i);
+                        	return;
+                        }
+                        mib2nut[i] = &mib2nut_table[i];
+                }
+                // The last i'th entry is the sentinel, but we don't link to it
+                mib2nut[i] = NULL;
+        } // scope the table loop vars
 #endif
 
 	/* Retrieve user's parameters */
