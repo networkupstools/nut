@@ -55,9 +55,11 @@ $(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c dmfify-mib.sh jso
 	cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $<
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
-# that we use builddir for this final touch. The DMF filess themselves may be
+# that we use builddir for this final touch. The DMF files themselves may be
 # prebuilt and distributed as source, the gmake VPATH should figure that out.
-# However, the dmf-reindexer is currently hardcoded to use only one directory.
+# This may cause harmless "circular dependency" notices during in-tree builds.
+# However, the dmf-reindexer is currently hardcoded to use only one directory,
+# so we copy stuff below just in case (if needed).
 $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsubst %.c,%.dmf,$(notdir $(wildcard $(abs_top_srcdir)/drivers/*-mib.c))))
 	@echo "DMFSNMP_SUBDIR is now up to date, made of: $^" >&2
