@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<xs:schema
+ version="1.0.0"
+ attributeFormDefault="unqualified" elementFormDefault="qualified"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ targetNamespace="http://www.networkupstools.org/dmf/snmp/nutscan"
+>
+<!--
+  // This is an XSD schema for NUT DMF files intended for nut-scanner usage
+  // with SNMP MIB references. Technically it is a very small subset of DMF
+  // schema for snmp-ups.
+  // Copyright (C) 2016 by Eaton
+  // Authors:
+  //    Jim Klimov <EvgenyKlimov@eaton.com>
+  //    Carlos Dominguez <CarlosDominguez@eaton.com>
+  //    Michal Vyskocil <MichalVyskocil@eaton.com>
+  // Adapted from markup generated from de-facto DMF files with online tool:
+  //    http://www.freeformatter.com/xsd-generator.html
+  -->
+  <xs:element name="nut">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="mib2nut" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:simpleContent>
+              <xs:extension base="xs:string">
+                <xs:attribute type="xs:string" name="auto_check" use="optional"/>
+                <xs:attribute type="xs:string" name="mib_name" use="required"/>
+                <xs:attribute type="xs:string" name="oid" use="optional"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

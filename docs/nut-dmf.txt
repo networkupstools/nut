@@ -29,7 +29,7 @@ NOTE: In the current iteration the `dmf-reindex` program is not configurable,
 so it just scans all `*.dmf*` files in the current directory and prints XML
 DMF markup to `stdout` so you can redirect it to another file. To avoid later
 duplicate entries, consider naming that file with a different extension (may
-be uppercased `*.DMF` for example).
+be uppercased `*.DMF` for example) or save it into a different directory.
 
 Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
 and application developers should look there for the "The big theory" details.
@@ -51,9 +51,14 @@ match your OS distribution's naming for this version).
 
 The DMF files are implemented as XML with a particular schema.
 
+Verifiable schemas are provided as XSD files and can be run against existing
+or generated DMF files with `make dmf-validate` in the `scripts/DMF` directory
+(uses `xmllint` which is also needed to build NUT manpages with `asciidoc`).
+
 There are *4* main structures in the DMF XML:
  * `info_lkp_t`: mapping between NUT and SNMP values for a variable
- * `alarms_info_t`: mapping between NUT and SNMP `ups.alarm` values for a variable
+ * `alarms_info_t`: mapping between NUT and SNMP `ups.alarm` values for a
+   variable
  * `snmp_info_t`: mapping between NUT variables and SNMP OIDs
  * `mib2nut_info_t`: declaration of discovery and mapping (`snmp_info_t`)
     information

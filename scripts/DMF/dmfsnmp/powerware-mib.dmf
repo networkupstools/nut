@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<nut>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
 	<lookup name="pw_alarm_lb">
 		<lookup_info oid="1" value="LB"/>
 		<lookup_info oid="2" value=""/>
