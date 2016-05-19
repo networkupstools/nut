@@ -165,6 +165,7 @@ void upsdrv_initinfo(void)
 			&& !(su_info_p->flags & SU_OUTLET)
 			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
 			/* first check that this OID actually exists */
+// FIXME: daisychain commands support!
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
 				upsdebugx(1, "upsdrv_initinfo(): adding command '%s'", su_info_p->info_type);
@@ -311,6 +312,7 @@ void upsdrv_initups(void)
 		pollfreq = DEFAULT_POLLFREQ;
 
 	/* Get UPS Model node to see if there's a MIB */
+// FIXME: extend and use match_model_OID(char *model)
 	su_info_p = su_find_info("ups.model");
 	/* Try to get device.model if ups.model is not available */
 	if (su_info_p == NULL)
@@ -367,6 +369,7 @@ void upsdrv_initups(void)
 
 	/* FIXME: also need daisychain awareness (so init)!
 	 * i.e load.off.delay+load.off + device.1.load.off.delay+device.1.load.off + ... */
+// FIXME: daisychain commands support!
 	if (su_find_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
@@ -1048,6 +1051,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 
 		/* Set enumerated values, only if the data has ST_FLAG_RW and there
 		 * are lookup values */
+// FIXME: daisychain settings support: check if applicable
 		if ((su_info_p->info_flags & ST_FLAG_RW) && su_info_p->oid2info) {
 
 			upsdebugx(3, "%s: adding enumerated values", __func__);
@@ -1086,7 +1090,7 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 	char alarm_info_value[SU_LARGEBUF];
 	/* number of the outlet or phase */
 	int item_number = -1;
-
+// FIXME: daisychain alarms support!
 	upsdebugx(2, "SNMP UPS driver: entering %s(%s)", __func__, su_info_p->info_type);
 
 	if ((info_value = su_find_infoval(su_info_p->oid2info, value)) != NULL
@@ -1426,8 +1430,13 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 		new_instance = (snmp_info_t *)xmalloc(sizeof(snmp_info_t));
 
 	new_instance->info_type = (char *)xmalloc(SU_INFOSIZE);
-	if (info_template->OID != NULL)
+	if (new_instance->info_type)
+		memset((char *)new_instance->info_type, 0, SU_INFOSIZE);
+	if (info_template->OID != NULL) {
 		new_instance->OID = (char *)xmalloc(SU_INFOSIZE);
+		if (new_instance->OID)
+			memset((char *)new_instance->OID, 0, SU_INFOSIZE);
+	}
 	else
 		new_instance->OID = NULL;
 	new_instance->info_flags = info_template->info_flags;
@@ -1563,24 +1572,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 
 	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
 
-#if 0
-	if (daisychain_enabled == TRUE) {
-		if (!strncmp(type, "device", 6)) {
-			snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
-		}
-		else {
-			/* Device(s) 2-N (slave(s)) need to append 'device.x' */
-			if (current_device_number > 1) {
-				snprintf(template_count_var, sizeof(template_count_var),
-					"device.%i.%s.count", current_device_number, type);
-			}
-			else
-				snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
-		}
-	}
-	else
-#endif
-		snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
+	snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
 
 	if(dstate_getinfo(template_count_var) == NULL) {
 		/* FIXME: should we disable it?
@@ -1766,7 +1758,7 @@ bool_t get_and_process_data(int mode, snmp_info_t *su_info_p)
 {
 	bool_t status = FALSE;
 
-	upsdebugx(1, "getting data: %s (%s)", su_info_p->info_type, su_info_p->OID);
+	upsdebugx(1, "%s: %s (%s)", __func__, su_info_p->info_type, su_info_p->OID);
 
 	/* ok, update this element. */
 	status = su_ups_get(su_info_p);
@@ -1822,6 +1814,10 @@ bool_t daisychain_init()
 	{
 		upsdebugx(1, "Found device.count entry...");
 
+		/* Enable daisychain if there is a device.count entry.
+		 * This means that will have templates for entries */
+		daisychain_enabled = TRUE;
+
 		/* Try to get the OID value, if it's not a template */
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
@@ -1849,7 +1845,7 @@ bool_t daisychain_init()
 			upsdebugx(1, "Devices count is less than 1! Falling back to 1 device!");
 		}
 
-		if (devices_count > 1) {
+/*		if (devices_count > 1) {
 			daisychain_enabled = TRUE;
 			upsdebugx(1, "Devices count is more than 1, daisychain support enabled");
 		}
@@ -1857,7 +1853,7 @@ bool_t daisychain_init()
 			daisychain_enabled = FALSE;
 			upsdebugx(1, "Devices count is 1, daisychain support not needed");
 		}
-
+*/
 		/* Publish the device(s) count */
 		dstate_setinfo("device.count", "%ld", devices_count);
 	}
@@ -2143,8 +2139,37 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	struct snmp_pdu * current_pdu;
 	alarms_info_t * alarms;
 	int index = 0;
+	char *format_char = NULL;
+	snmp_info_t *tmp_info_p = NULL;
 
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
+
+	/* Check if this is a daisychain template */
+	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
+		tmp_info_p = instantiate_info(su_info_p, tmp_info_p);
+		if (tmp_info_p != NULL) {
+			/* adapt the OID */
+			if (su_info_p->OID != NULL) {
+				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
+					current_device_number - 1);
+			}
+			else
+				return FALSE;
+
+			/* adapt info_type */
+			if (su_info_p->info_type != NULL) {
+				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
+			}
+			else
+				return FALSE;
+
+			su_info_p = tmp_info_p;
+		}
+		else {
+			upsdebugx(2, "%s: can't instantiate template", __func__);
+			return FALSE;
+		}
+	}
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 
@@ -2164,7 +2189,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	if (!strcmp(strrchr(su_info_p->info_type, '.'), ".alarm")) {
 
 		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
-
+// FIXME: daisychain alarms support!
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -2304,7 +2329,7 @@ int su_setvar(const char *varname, const char *val)
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = get_template_type(varname);
-
+//FIXME: daisychain commands / settings support!
 	upsdebugx(2, "entering %s(%s, %s)", __func__, varname, val);
 
 	/* Check if it is outlet / outlet.group */
