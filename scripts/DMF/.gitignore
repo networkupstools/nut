@@ -5,6 +5,7 @@ dmf-lua-test
 */*.json.tmp
 */*.dmf.tmp
 */.uptodate
+*/.validated
 *_TEST.c
 *_TEST.exe
 *-mib.c

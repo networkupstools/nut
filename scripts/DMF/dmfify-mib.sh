@@ -11,6 +11,10 @@
 # A bashism, important for us here
 set -o pipefail
 
+# Strings must verbatim match the XSD (no trailing slash etc.)
+XSD_DMFSNMP_VERSION='1.0.0'
+XSD_DMFSNMP_XMLNS='http://www.networkupstools.org/dmf/snmp/snmp-ups'
+
 # Where to look for python scripts - same dir as this shell script
 _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
     _SCRIPT_DIR="./" # Fallback can fail
@@ -52,7 +56,13 @@ dmfify_c_file() {
         echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
         return $ERRCODE; }
 
-    mv -f "${mib}.dmf.tmp" "${mib}.dmf" \
+    sed 's,^<nut>,\<nut version="'"${XSD_DMFSNMP_VERSION}"'" xmlns="'"${XSD_DMFSNMP_XMLNS}"'"\>,' < "${mib}.dmf.tmp" > "${mib}.dmf" \
+    || { ERRCODE=$?
+        echo "ERROR: Could not fix headers of '${mib}.dmf'" >&2
+        echo "       You can inspect a copy of the intermediate result in '${mib}.json.tmp', '${mib}.dmf.tmp' and '${mib}_TEST.c'" >&2
+        return $ERRCODE; }
+
+#    mv -f "${mib}.dmf.tmp" "${mib}.dmf" \
 #    && rm -f "${mib}_TEST"{.c,.exe} "${mib}.json.tmp"
 }
 
