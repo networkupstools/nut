@@ -31,6 +31,9 @@ DMF markup to `stdout` so you can redirect it to another file. To avoid later
 duplicate entries, consider naming that file with a different extension (may
 be uppercased `*.DMF` for example) or save it into a different directory.
 
+NOTE: If you provide your own DMF files that are not generated from existing
+`*-mib.c` sources, use some filename pattern that does not end in `-mib.dmf`!
+
 Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
 and application developers should look there for the "The big theory" details.
 It is expected that DMF will outgrow the initial SNMP use-case, so there is
