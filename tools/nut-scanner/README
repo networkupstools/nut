@@ -9,7 +9,11 @@ linkman:nut-scanner[8] is available to discover supported NUT devices
 classic connection method).
 
 This tool actually uses a library, called *libnutscan*, to perform actual
-processing.
+processing. The library is built with DMF support for SNMP device discovery,
+when it can use loadable files that map MIB and other needed details to NUT
+internals. If the client does not set relevant flags for loading DMF, or if
+no data was successfully loaded, the library would fall back to using the
+legacy static built-in structure with some mappings available in it.
 
 
 Client access library

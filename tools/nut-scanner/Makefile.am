@@ -40,6 +40,18 @@ nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
 nut_scanner_LDADD = libnutscan.la
 
+if WITH_SNMP
+if WITH_NEON
+nut_scanner_CFLAGS += -DWITH_DMFMIB=1 -I$(top_srcdir)/drivers
+libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
+#	$(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+# The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
+# but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
+#	$(LIBNETSNMP_LIBS)
+libnutscan_la_LIBADD += $(LIBNEON_LIBS)
+endif
+endif
+
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
   libnutscan_la_LIBADD += $(LIBSSL_LIBS)
