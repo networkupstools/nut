@@ -28,6 +28,15 @@
 #include "config.h"
 #include "dmf.h"
 
+// These strings are embedded into <nut> tags to show their schema version
+// Strings must verbatim match the XSD (no trailing slash etc.)
+#ifndef XSD_DMFNUTSCAN_VERSION
+#define XSD_DMFNUTSCAN_VERSION  "1.0.0"
+#endif
+#ifndef XSD_DMFNUTSCAN_XMLNS
+#define XSD_DMFNUTSCAN_XMLNS    "http://www.networkupstools.org/dmf/snmp/nutscan"
+#endif
+
 int
 main ()
 {
@@ -83,7 +92,10 @@ main ()
 		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the buffer for parsed DMF\n");
 		return ENOMEM;
 	}
-	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len), "<nut>\n");
+	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
+                "<nut version=\"%s\" xmlns=\"%s\">\n",
+                XSD_DMFNUTSCAN_VERSION, XSD_DMFNUTSCAN_XMLNS);
 	for (i=0; devtab[i].oid != NULL || devtab[i].mib != NULL || devtab[i].sysoid != NULL ; i++)
 	{
 #ifdef DEBUG
