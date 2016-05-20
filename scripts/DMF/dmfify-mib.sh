@@ -37,6 +37,11 @@ for PYMOD in argparse pycparser json; do
         { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
 done
 
+if [ "$1" = "--sanity-check" ]; then
+    # We are alive by now, so checks above have succeeded
+    exit 0
+fi
+
 dmfify_c_file() {
     # One argument: path to a `*-mib.c` filename
     local cmib="$1"

@@ -1,6 +1,6 @@
-# DMF - Device Mapping File
+= DMF - Device Mapping File
 
-## Abstract
+== Abstract
 
 The aim is to develop a solution allowing to modify or even add new NUT
 SNMP (only, right now) MIBs mappings without having to recompile the binary
@@ -47,7 +47,7 @@ command-line or `CFLAGS`; also the implementation is currently compatible
 with LUA-5.1 or *older* -- so the include-file path and library name should
 match your OS distribution's naming for this version).
 
-## XML spec
+== DMF XML spec
 
 The DMF files are implemented as XML with a particular schema.
 
@@ -56,14 +56,21 @@ or generated DMF files with `make dmf-validate` in the `scripts/DMF` directory
 (uses `xmllint` which is also needed to build NUT manpages with `asciidoc`).
 
 There are *4* main structures in the DMF XML:
+
  * `info_lkp_t`: mapping between NUT and SNMP values for a variable
+
  * `alarms_info_t`: mapping between NUT and SNMP `ups.alarm` values for a
    variable
+
  * `snmp_info_t`: mapping between NUT variables and SNMP OIDs
+
  * `mib2nut_info_t`: declaration of discovery and mapping (`snmp_info_t`)
     information
 
-### LOOKUP
+These structures are wrapped by a `nut` tag with `version` and `xmlns`
+attributes so the DMF file can refer to the currently applicable schema.
+
+=== LOOKUP
 
 ----
 <nut>
@@ -73,7 +80,7 @@ There are *4* main structures in the DMF XML:
 </nut>
 ----
 
-## Tools
+== Tools
 
 For the sake of future temporary co-existence of legacy and DMF-enhanced
 implementations of `snmp-ups` as a fall-back solution or for peace of mind
@@ -91,10 +98,13 @@ They are a mix of Python and shell scripts:
 
  * `jsonify-mib.py`: process MIB mapping from C source and print it to stdout
     as JSON
+
  * `nut_cpp`: calls the C preprosessor and filters away GCC modifiers that are
     not handled well by `pycparser` code
+
  * `xmlify-mib.py`: process JSON output produced by `jsonify-mib.py` and output
     the final DMF XML format
+
  * `dmfify-mib.sh`: execute this from the `$NUT_SOURCE/scripts/DMF/` directory
     and it will find and process existing `../../drivers/*-mib.c` files to feed
     them into the pipeline of the two scripts above and produce `*.dmf` files.
@@ -106,11 +116,9 @@ NOTE: At this time the Python scripts are not intended for direct execution
 (e.g. `python2.7 jsonify-mib.py`). If your system default version is Python-2.x
 then just `python` program name may suffice.
 
-### jsonify-mib.py
+Details on some of the tools are presented below.
 
-Tool parses `*-mib.c` files (picking `snmp_info_t` and `info_lkp_t` structures)
-and prints the output of those as JSON. Note this is NOT intended as final DMF
-form, this JSON markup is an intermediate form for easier processing.
+=== Python and pycparser prerequisites
 
 You need Python version 2.7 with an `argparse` module, as well as a separate
 `pycparser` installed to run it:
@@ -124,7 +132,7 @@ You need Python version 2.7 with an `argparse` module, as well as a separate
     # apt-get install python-pycparser
 ----
 
-   and / or
+        and / or
 
 ----
     # apt-get install python3-pycparser
@@ -157,7 +165,13 @@ You need Python version 2.7 with an `argparse` module, as well as a separate
     pip install -e pycparser
 ----
 
-Usage is then:
+=== jsonify-mib.py
+
+Tool parses `*-mib.c` files (picking `snmp_info_t` and `info_lkp_t` structures)
+and prints the output of those as JSON. Note this is NOT intended as final DMF
+form, this JSON markup is an intermediate form for easier processing.
+
+Usage is then like this:
 
 ----
     $ python2.7 jsonify-mib.py ../../drivers/apc-ats-mib.c
@@ -174,7 +188,7 @@ Usage is then:
     ...
 ----
 
-### xmlify-mib.py
+=== xmlify-mib.py
 
 Assming you have installed Python e.g. using instructions above, you can
 produce final DMF XML markup from the intermediate JSON by simply piping
