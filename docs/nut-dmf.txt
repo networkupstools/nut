@@ -31,6 +31,9 @@ DMF markup to `stdout` so you can redirect it to another file. To avoid later
 duplicate entries, consider naming that file with a different extension (may
 be uppercased `*.DMF` for example) or save it into a different directory.
 
+NOTE: If you provide your own DMF files that are not generated from existing
+`*-mib.c` sources, use some filename pattern that does not end in `-mib.dmf`!
+
 Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
 and application developers should look there for the "The big theory" details.
 It is expected that DMF will outgrow the initial SNMP use-case, so there is
@@ -54,6 +57,14 @@ The DMF files are implemented as XML with a particular schema.
 Verifiable schemas are provided as XSD files and can be run against existing
 or generated DMF files with `make dmf-validate` in the `scripts/DMF` directory
 (uses `xmllint` which is also needed to build NUT manpages with `asciidoc`).
+
+The command-line method of verification that a DMF SNMP file or an index file
+built for the `nut-scanner` conforms to expected schema is:
+
+----
+    $ xmllint --noout --schema $SCHEMADIR/dmfsnmp.xsd $TESTEDFILE.dmf
+    $ xmllint --noout --schema $SCHEMADIR/dmfnutscan.xsd $TESTEDINDEX.dmf
+----
 
 There are *4* main structures in the DMF XML:
 
@@ -121,7 +132,8 @@ Details on some of the tools are presented below.
 === Python and pycparser prerequisites
 
 You need Python version 2.7 with an `argparse` module, as well as a separate
-`pycparser` installed to run it:
+project `pycparser` installed on the build host to run the `jsonify-mib.py`
+script:
 
  * via your package management
    As an example, you can do so:
