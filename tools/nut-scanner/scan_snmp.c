@@ -66,6 +66,24 @@
 #define WANT_DEVSCAN_SNMP_BUILTIN 1
 #endif
 
+// Caller defined this macro to not 1, or undefined it somehow.
+// Maybe a developer might want to disable it as an experiment.
+// Or some patchwork or script made a mistake... Tell them!
+#if WANT_DEVSCAN_SNMP_BUILTIN != 1
+# if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__) || defined(_MSC_VER)
+#  if defined(__GNUC__) || defined(__GNUG__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic warning "-Wcpp"
+#   pragma GCC diagnostic ignored "-Werror"
+#   pragma GCC diagnostic ignored "-Wall"
+#  endif
+#pragma message("WARNING: scan_snmp.c is being built without (WANT_DEVSCAN_SNMP_BUILTIN==1) - you have no fallback if DMF is missing at run-time!")
+#  if defined(__GNUC__) || defined(__GNUG__)
+#   pragma GCC diagnostic pop
+#  endif
+# endif
+#endif
+
 #include "nutscan-snmp.h"
 #include "dmf.h"
 
@@ -172,10 +190,12 @@ int init_snmp_device_table()
 		fprintf(stderr, "SUCCESS: Can use the built-in SNMP device mapping table.\n");
 		snmp_device_table = (snmp_device_id_t *)(&snmp_device_table_builtin);
 	}
+#else
+	upsdebugx(1, "NOTE: The built-in SNMP device mapping table is not built in in this build!");
 #endif
 
 	if (snmp_device_table == NULL) {
-		fprintf(stderr, "FATAL: SNMP device mapping table not found. SNMP search disabled.\n");
+		fprintf(stderr, "FATAL: No SNMP device mapping table found. SNMP search disabled.\n");
 		return 0;
 	}
 
@@ -758,7 +778,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 	g_usec_timeout = usec_timeout;
 
-	init_snmp_device_table();
+	if (init_snmp_device_table() == 0)
+		return NULL;
+	if (snmp_device_table == NULL)
+		return NULL;
 
 	/* Initialize the SNMP library */
 	(*nut_init_snmp)("nut-scanner");
