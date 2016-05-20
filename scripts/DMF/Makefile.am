@@ -39,6 +39,8 @@ DMFSNMP_SUBDIR = dmfsnmp
 DMFNUTSCAN_SUBDIR = dmfnutscan
 
 # Automake installation
+# NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
+# existing sources, use some filename pattern that does not end in "-mib.dmf"!
 dmfsnmpdir = @dmfsnmpdir@
 dmfsnmp_DATA = $(wildcard $(DMFSNMP_SUBDIR)/*.dmf) dmfsnmp.xsd
 
