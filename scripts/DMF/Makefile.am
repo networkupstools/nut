@@ -57,7 +57,11 @@ clean-local:
 
 check: check-local
 
-check-local: progs run-dmf-test
+if HAVE_XMLLINT
+  check-local: progs run-dmf-test dmf-validate
+else
+  check-local: progs run-dmf-test
+endif
 
 check-experimental: progs-all check-local run-dmf-lua-test
 
