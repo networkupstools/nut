@@ -758,7 +758,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 	g_usec_timeout = usec_timeout;
 
-	init_snmp_device_table();
+	if (init_snmp_device_table() == 0)
+		return NULL;
+	if (snmp_device_table == NULL)
+		return NULL;
 
 	/* Initialize the SNMP library */
 	(*nut_init_snmp)("nut-scanner");
