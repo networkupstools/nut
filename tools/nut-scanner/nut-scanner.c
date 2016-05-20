@@ -236,14 +236,11 @@ int main(int argc, char *argv[])
 				cidr = strdup(optarg);
 				break;
 
-// TODO : #ifdef WITH_DMFMIB for options to set up path(s) to the DMFs to load
-// consider also `if (nutscan_avail_snmp && nutscan_avail_xml_http) else help`
 #ifdef WITH_DMFMIB
 			case 'z':
 				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
 					goto display_help;
 				}
-				fprintf(stderr,"DMF SNMP support not yet implemented, option (-%c) effectively ignored.\n", opt_ret);
 				dmfnutscan_snmp_dir = DEFAULT_DMFNUTSCAN_DIR;
 				allow_snmp = 1;
 				break;
@@ -251,7 +248,6 @@ int main(int argc, char *argv[])
 				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
 					goto display_help;
 				}
-				fprintf(stderr,"DMF SNMP support not yet implemented, option (-%c %s) effectively ignored.\n", opt_ret, optarg);
 				dmfnutscan_snmp_dir = strdup(optarg);
 				allow_snmp = 1;
 				break;
@@ -261,7 +257,8 @@ int main(int argc, char *argv[])
 				fprintf(stderr,"DMF SNMP support not built in, option (-%c) ignored (only enabling built-in SNMP).\n", opt_ret);
 				allow_snmp = 1;
 				break;
-#endif
+#endif /* WITH_DMFMIB */
+
 			case 'c':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
@@ -448,7 +445,7 @@ display_help:
 #else
 					printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
 					printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
-#endif
+#endif /* WITH_DMFMIB */
 				}
 				if( nutscan_avail_xml_http ) {
 					printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
