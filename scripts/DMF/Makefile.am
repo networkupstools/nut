@@ -8,6 +8,13 @@ CC = gcc
 CPP = gcc
 CXX = g++
 
+# Note: this is automake "if"
+if HAVE_XMLLINT
+XMLLINT = @XMLLINT@
+else
+XMLLINT = xmllint
+endif
+
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
@@ -57,6 +64,7 @@ clean-local:
 
 check: check-local
 
+# Note: this is automake "if"
 if HAVE_XMLLINT
   check-local: progs run-dmf-test dmf-validate
 else
@@ -132,7 +140,7 @@ $(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.validated
 $(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	@cd $(@D) && for F in *.dmf ; do \
 	    echo " XMLLINT  $$F"; \
-	    xmllint --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
+	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
 	done
 
 # TODO: Maybe per-DMF *.dmf.validated files would be better?
@@ -140,7 +148,7 @@ $(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 	@ERRCODE=0; cd $(@D) && for F in *.dmf ; do \
 	    echo " XMLLINT  $$F"; \
-	    xmllint --noout --schema $(abs_srcdir)/dmfnutscan.xsd "$$F" || ERRCODE=1; \
+	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfnutscan.xsd "$$F" || ERRCODE=1; \
 	done; exit $$ERRCODE
 
 # Make sure all generated DMFs are up to date vs. C sources and recipes
@@ -149,6 +157,7 @@ dmf-uptodate: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
 # Make sure all present DMFs are valid vs. XSD schema
 dmf-validate: dmf-uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
+# Note: this is automake "if"
 if HAVE_XMLLINT
   dmf: dmf-validate
 else
