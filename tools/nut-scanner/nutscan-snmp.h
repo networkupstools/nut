@@ -33,7 +33,11 @@ typedef struct {
 #endif /* DEVSCAN_SNMP_H */
 
 /* SNMP IDs device table, excerpt generated from our available MIBs */
-/* Note: This is commented away with ifdefs, so the consumers who only need
+/* The consumer defines an instance of this table, either dynamic with DMF
+ * or a precompiled legacy binary based on ifdef WITH_DMFMIB compile-time
+ * support and real-time DMF availability (as fallback for no/bad/empty DMF),
+ * with explicit reference like below (builtin generated into nutscan-snmp.c).
+ * Note: This is commented away with ifdefs, so the consumers who only need
  * the structure definition are not burdened with an external reference to
  * structure instances they would not need.
  */
@@ -45,3 +49,10 @@ typedef struct {
     extern snmp_device_id_t *snmp_device_table_builtin;
 # endif /* DEVSCAN_SNMP_BUILTIN */
 #endif /* WANT_DEVSCAN_SNMP_BUILTIN */
+#if WANT_DEVSCAN_SNMP_DMF == 1
+# ifndef DEVSCAN_SNMP_DMF
+#  define DEVSCAN_SNMP_DMF
+/* Can use a copy of the structure that will be populated dynamically */
+    extern snmp_device_id_t *snmp_device_table_dmf;
+# endif /* DEVSCAN_SNMP_DMF */
+#endif /* WANT_DEVSCAN_SNMP_DMF */
