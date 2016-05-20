@@ -25,7 +25,7 @@
  */
 
 #ifndef DMF_SNMP_H
-#define DMF_SNMP_H
+/* Note: we #define DMF_SNMP_H only in the end of file */
 
 /* THE BIG THEORY COMMENT
  *
@@ -438,5 +438,5 @@ int
 	compile_info_flags (const char **attrs);
 
 
-
+#define DMF_SNMP_H
 #endif /* DMF_SNMP_H */

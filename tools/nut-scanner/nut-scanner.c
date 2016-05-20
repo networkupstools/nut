@@ -39,14 +39,20 @@
 #include "nut-scan.h"
 
 #ifdef WITH_DMFMIB
-# include "dmf.h"
-// Variable implemented in scan_snmp.c
-extern char *dmfnutscan_snmp_dir;
-extern mibdmf_parser_t *dmfnutscan_snmp_dmp;
+# ifdef WANT_LIBNUTSCAN_SNMP_DMF
+#  undef WANT_LIBNUTSCAN_SNMP_DMF
+# endif
 
-// Just reference this to NULLify when we free DMF-related stuff
-void uninit_snmp_device_table();
-#endif
+// This chains to also include nutscan-snmp.h and the desired
+// variables need structures defined lower in the dmf.h file.
+// But there is protection in nutscan-snmp.h to only declare
+// those vars if dmf.h was already completely imported.
+# include "dmf.h"
+
+// Now we may "want" the variables from libnutscan with types from dmf.h
+# define WANT_LIBNUTSCAN_SNMP_DMF 1
+# include "nutscan-snmp.h"
+#endif /* WITH_DMFMIB */
 
 #ifdef DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
 # ifdef DEFAULT_DMFNUTSCAN_DIR
