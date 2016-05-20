@@ -684,6 +684,8 @@ NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
 dnl building
 AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
+dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
+AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
 
 
 case "${nut_with_doc}" in
