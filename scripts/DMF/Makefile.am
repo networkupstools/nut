@@ -145,7 +145,7 @@ dmf-uptodate: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
 # Make sure all present DMFs are valid vs. XSD schema
 dmf-validate: dmf-uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
-if HAVE_ASCIIDOC
+if HAVE_XMLLINT
   dmf: dmf-validate
 else
   dmf: dmf-uptodate
