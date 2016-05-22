@@ -1,3 +1,4 @@
 /nut-scanner
-/nutscan-snmp.h
+/nutscan-snmp.c
 /nutscan-usb.h
+/nut-scanner-reindex-dmfsnmp

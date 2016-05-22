@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2011-2016 by EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 /*! \file scan_snmp.c
     \brief detect NUT supported SNMP devices
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@Eaton.com>
 */
 
 #include "common.h"
@@ -58,6 +59,13 @@
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
+
+// Cause the header to also declare the external reference to pre-generated
+// compilable structure with the subset of MIB mappings needed by nut-scanner
+#ifndef WANT_DEVSCAN_SNMP_BUILTIN
+#define WANT_DEVSCAN_SNMP_BUILTIN 1
+#endif
+
 #include "nutscan-snmp.h"
 
 /* Address API change */
@@ -74,6 +82,8 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 long g_usec_timeout ;
+
+snmp_device_id_t *snmp_device_table = NULL;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -106,6 +116,16 @@ static oid * (*nut_usmDESPrivProtocol);
 /* return 0 on error */
 int nutscan_load_snmp_library(const char *libname_path)
 {
+#ifdef DEVSCAN_SNMP_BUILTIN
+	if (snmp_device_table == NULL)
+		snmp_device_table = snmp_device_table_builtin;
+#endif
+
+	if (snmp_device_table == NULL) {
+		fprintf(stderr, "SNMP mapping table not found. SNMP search disabled.\n");
+		return 0;
+	}
+
 	if( dl_handle != NULL ) {
 		/* if previous init failed */
 		if( dl_handle == (void *)1 ) {
@@ -432,31 +452,31 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		}
 
 		/* Process mandatory fields, based on the security level */
-                switch (snmp_sess->securityLevel) {
-                        case SNMP_SEC_LEVEL_AUTHNOPRIV:
-                                if (sec->authPassword == NULL) {
-                                        fprintf(stderr,
+		switch (snmp_sess->securityLevel) {
+			case SNMP_SEC_LEVEL_AUTHNOPRIV:
+				if (sec->authPassword == NULL) {
+					fprintf(stderr,
 			"authPassword is required for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
 				break;
-                        case SNMP_SEC_LEVEL_AUTHPRIV:
-                                if ((sec->authPassword == NULL) ||
+			case SNMP_SEC_LEVEL_AUTHPRIV:
+				if ((sec->authPassword == NULL) ||
 					(sec->privPassword == NULL)) {
-                                        fprintf(stderr,
+					fprintf(stderr,
 	"authPassword and privPassword are required for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
 				break;
-                        default:
-                                /* nothing else needed */
-                                break;
-                }
+			default:
+				/* nothing else needed */
+				break;
+		}
 
-                /* Process authentication protocol and key */
-               	snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
+		/* Process authentication protocol and key */
+		snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
 
 		/* default to MD5 */
 		snmp_sess->securityAuthProto = (*nut_usmHMACMD5AuthProtocol);
@@ -549,8 +569,8 @@ static void * try_SysOID(void * arg)
 	struct snmp_session snmp_sess;
 	void * handle;
 	struct snmp_pdu *pdu, *response = NULL, *resp = NULL;
-        oid name[MAX_OID_LEN];
-        size_t name_len = MAX_OID_LEN;
+	oid name[MAX_OID_LEN];
+	size_t name_len = MAX_OID_LEN;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	int index = 0;
 	int sysoid_found = 0;
@@ -667,10 +687,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-        if( !nutscan_avail_snmp ) {
-                return NULL;
-        }
-
+	if( !nutscan_avail_snmp ) {
+		return NULL;
+	}
 
 	g_usec_timeout = usec_timeout;
 

@@ -38,6 +38,10 @@
 #include "snmp-ups.h"
 #include "parseconf.h"
 
+#ifdef WITH_DMFMIB
+# include "dmfsnmp.h"
+# include "apc-iem-mib.h"
+#else
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
 #include "mge-mib.h"
@@ -56,12 +60,17 @@
 #include "xppc-mib.h"
 #include "eaton-ats-mib.h"
 #include "apc-ats-mib.h"
+#endif
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
 #define usmAESPrivProtocol usmAES128PrivProtocol
 #endif
 
+#ifdef WITH_DMFMIB
+mib2nut_info_t **mib2nut = NULL;
+mibdmf_parser_t *dmp = NULL;
+#else
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
 	&mge,
@@ -94,6 +103,7 @@ static mib2nut_info_t *mib2nut[] = {
 	/* end of structure. */
 	NULL
 };
+#endif
 
 struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
@@ -109,7 +119,11 @@ alarms_info_t *alarms_info;
 const char *mibname;
 const char *mibvers;
 
+#ifdef WITH_DMFMIB
+#define DRIVER_NAME	"Generic SNMP UPS driver (DMF)"
+#else
 #define DRIVER_NAME	"Generic SNMP UPS driver"
+#endif
 #define DRIVER_VERSION		"0.98"
 
 /* driver description structure */
@@ -288,6 +302,29 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
+#ifdef WITH_DMFMIB
+	dmp = mibdmf_parser_new();
+	if (!dmp) {
+		upsdebugx(1,"FATAL: Can not allocate the DMF parsing structures");
+		return;
+	}
+	/* FIXME: Add configurability of where we look for *.dmf files */
+#ifdef DEFAULT_DMFSNMP_DIR
+	mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+#else
+	if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
+		mibdmf_parse_dir("./", dmp);
+#endif
+	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
+	mib2nut = mibdmf_get_mib2nut_table_ptr(dmp);
+	if (!mib2nut)
+	{
+		upsdebugx(1,"FATAL: Can not access the mib2nut table parsed from DMF library");
+		return;
+	}
+	upsdebugx(2,"Got access to the mib2nut table parsed from DMF library");
+#endif
+
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
 
@@ -341,6 +378,10 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	nut_snmp_cleanup();
+#ifdef WITH_DMFMIB
+	mibdmf_parser_destroy(&dmp);
+	mib2nut = NULL;
+#endif
 }
 
 /* -----------------------------------------------------------

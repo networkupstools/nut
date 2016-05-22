@@ -1,0 +1,11 @@
+dmf-test
+dmf-reindex
+dmf-lua-test
+*.o
+*/*.json.tmp
+*/*.dmf.tmp
+*/.uptodate
+*_TEST.c
+*_TEST.exe
+*-mib.c
+

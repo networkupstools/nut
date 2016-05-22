@@ -49,6 +49,12 @@
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
+#ifdef WITH_DMF_LUA
+# include <lua.h>
+# include <lauxlib.h>
+# include <lualib.h>
+#endif
+
 /* FIXME: still needed?
  * workaround for buggy Net-SNMP config */
 #ifdef PACKAGE_BUGREPORT
@@ -126,11 +132,11 @@ typedef struct {
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
 } snmp_info_t;
 
-#define SU_FLAG_OK			(1 << 0)	/* show element to upsd. */
+#define SU_FLAG_OK			(1 << 0)	/* show element to upsd - internal to snmp driver */
 #define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
 #define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device,
 										 * use default value. */
-#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often. */
+#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often - internal to snmp driver */
 #define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
 #define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
 						 				 * provider of this info,
@@ -224,6 +230,9 @@ typedef struct {
 	const char	*sysOID;			/* OID to match against sysOID, aka MIB
 									 * main entry point */
 	alarms_info_t	*alarms_info;
+#ifdef WITH_DMF_LUA
+	lua_State **functions;
+#endif
 } mib2nut_info_t;
 
 /* Common SNMP functions */
@@ -265,7 +274,8 @@ extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
-extern int input_phases, output_phases, bypass_phases;
+//extern int input_phases, output_phases, bypass_phases;
+int input_phases, output_phases, bypass_phases;
 
 #endif /* SNMP_UPS_H */
 
