@@ -1,9 +1,12 @@
+ifndef::external_title[]
 [[daisychain]]
 NUT daisychain support notes
 ============================
+endif::external_title[]
 
 NUT supports daisychained devices for any kind of device that proposes
 it. This chapter introduces:
+
 * for developers: how to implement such mechanism,
 * for users: how to manage and use daisychained devices in NUT in general, and
 how to take advantage of the provided features.
@@ -107,6 +110,7 @@ To achieve this, use the following type of declaration:
 	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i", "1", SU_FLAG_STATIC, NULL, NULL },
 +
 There are two possibilities:
++
 a) point at an OID which provides the number of devices:
 
 	{ "device.count", 0, 1, ".1.3.6.1.4.1.13742.6.3.1.0", "1", SU_FLAG_STATIC, NULL },
@@ -136,12 +140,12 @@ device index in the OID strings for all entries in the mapping table, to
 indicate where the daisychain insertion point is exactly.
 
 For example, using the following entry:
-+
+
 	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
-+
+
 You would have to translate it to:
-+
+
 	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
-+
+
 SU_TYPE_DAISY_1 indicates that the daisychain index is the 1st specifier ("%i")
 in the string. If it is the second one, use SU_TYPE_DAISY_2.

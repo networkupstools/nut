@@ -96,6 +96,12 @@ include::scheduling.txt[]
 
 include::outlets.txt[]
 
+[[daisychain]]
+NUT daisychain support notes
+============================
+
+include::daisychain.txt[]
+
 
 [[NUT_Security]]
 

@@ -159,8 +159,14 @@ Appendix A: NUT command and variable naming scheme
 
 include::nut-names.txt[]
 
+[[daisychain]]
+Appendix B: NUT daisychain support notes
+========================================
+
+include::daisychain.txt[]
+
 [[lib-info]]
-Appendix B: NUT libraries complementary information
+Appendix C: NUT libraries complementary information
 ===================================================
 
 include::../lib/README[]
