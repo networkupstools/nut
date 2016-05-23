@@ -30,7 +30,9 @@
 
 #include "eaton-mib.h"
 
-#define EATON_APHEL_MIB_VERSION	"0.47"
+/* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
+ * per file */
+#define EATON_APHEL_MIB_VERSION	"0.48"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
@@ -118,6 +120,16 @@ static info_lkp_t outlet_status_info[] = {
 	{ 0, NULL }
 };
 
+/* Ugly hack: having the matching OID present means that the outlet is
+ * switchable. So, it should not require this value lookup */
+static info_lkp_t revelation_outlet_switchability_info[] = {
+	{ -1, "yes" },
+	{ 0, "yes" },
+	{ 1, "yes" },
+	{ 2, "yes" },
+	{ 0, NULL }
+};
+
 #define DO_OFF		0
 #define DO_ON		1
 #define DO_CYCLE	2
@@ -143,6 +155,10 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_UNIT_MACADDR, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	/* hardwareRev.0 = Integer: 26 */
+	/* FIXME: not compliant! to be RFC'ed */
+	{ "device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.6.1.1.7.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
 	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
@@ -172,7 +188,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	/* outlet template definition
 	 * Caution: the index of the data start at 0, while the name is +1
 	 * ie outlet.1 => <OID>.0 */
-	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_INDEX ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_STATUS ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &revelation_outlet_switchability_info[0], NULL },
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &outlet_status_info[0], NULL },
