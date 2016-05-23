@@ -26,6 +26,8 @@
 #include <assert.h>
 
 #include "config.h"
+#include "common.h"
+#include "nut_version.h"
 #include "dmf.h"
 
 // These strings are embedded into <nut> tags to show their schema version
@@ -37,11 +39,31 @@
 #define XSD_DMFNUTSCAN_XMLNS    "http://www.networkupstools.org/dmf/snmp/nutscan"
 #endif
 
-int
-main ()
+const char optstring[] = "?hqVkKZ:";
+#define ERR_BAD_OPTION	(-1)
+
+#ifdef HAVE_GETOPT_LONG
+const struct option longopts[] = {
+	{ "help",no_argument,NULL,'h' },
+	{ "quiet",no_argument,NULL,'q' },
+	{ "version",no_argument,NULL,'V' },
+        { "proceed_on_errors",no_argument,NULL,'k' },
+        { "abort_on_errors",no_argument,NULL,'K' },
+	{ "dmf_dir", required_argument, NULL, 'Z' },
+	{NULL,0,NULL,0}};
+#else
+#define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
+#endif /* HAVE_GETOPT_LONG */
+
+int main(int argc, char *argv[])
 {
+	int opt_ret;
 	int result = 0;
+	int ret_code = EXIT_SUCCESS;
+	int quiet = 0;
+	int proceed_on_errors = 1;
 	char *dir_name = NULL; // TODO: Make configurable the dir and/or list of files
+        int dir_name_dynamic = 0;
 	// TODO: Consider DEFAULT_DMFNUTSCAN_DIR for automatic output mode into a file?
 #ifdef DEFAULT_DMFSNMP_DIR_OVERRIDE
 #ifdef DEFAULT_DMFSNMP_DIR
@@ -59,18 +81,62 @@ main ()
 // TODO: Usage (help), Command-line args
 // option to append just a few (new) files to existing (large) index
 
+        while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
+
+                switch(opt_ret) {
+                        case 'Z':
+                                if (dir_name_dynamic != 0)
+                                    free(dir_name);
+                                dir_name = strdup(optarg);
+                                dir_name_dynamic = 1;
+                                break;
+                        case 'q':
+                                quiet = 1;
+                                break;
+                        case 'k':
+                                proceed_on_errors = 1;
+                                break;
+                        case 'K':
+                                proceed_on_errors = 0;
+                                break;
+                        case 'V':
+                                printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+                                exit(EXIT_SUCCESS);
+                                break;
+                        case '?':
+                                ret_code = ERR_BAD_OPTION;
+                        case 'h':
+                        default:
+                                puts("nut-scanner-reindex-dmfsnmp : a tool to reindex existing DMF files into the subset needed by nut-scanner.\n");
+                                puts("OPTIONS:");
+                                printf("  -Z, --dmf_dir: Directory where large DMF MIB mapping file which you want to index reside\n");
+                                printf("\nMiscellaneous options:\n");
+                                printf("  -V, --version: Display NUT version\n");
+                                printf("  -q, --quiet: Do not display progress trace unless that is an error message.\n");
+                                printf("  -k, --proceed-on-errors: If some files could not be parsed, process what we have read%s.\n", proceed_on_errors==1?" (default)":"");
+                                printf("  -K, --abort-on-errors: If some files could not be parsed, do not process anything%s.\n", proceed_on_errors==1?"":" (default)");
+                                return ret_code;
+                }
+        }
+                
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
 		return ENOMEM;
 	}
 
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: Loading DMF structures from directory '%s':\n\n",
 		dir_name);
 	result = mibdmf_parse_dir(dir_name, dmp);
+        if (result != 0 && proceed_on_errors != 1) {
 	// TODO: Error-checking? Faults in some parses should be fatal or not?
-
+                fprintf(stderr,"=== DMF-Reindex: FATAL: Could not find or parse some files\n");
+                return result;
+        }
+            
 	// Loop through discovered device_table and print it back as DMF markup
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: Print DMF subset for snmp_device_table[]...\n\n");
 	snmp_device_id_t *devtab = mibdmf_get_device_table(dmp);
 	if (!devtab)
@@ -99,6 +165,7 @@ main ()
 	for (i=0; devtab[i].oid != NULL || devtab[i].mib != NULL || devtab[i].sysoid != NULL ; i++)
 	{
 #ifdef DEBUG
+                if (!quiet)
 		fprintf(stderr,"[num=%zu (lenbefore=%zu)] ", i, newdmf_len);
 #endif
 
@@ -112,7 +179,8 @@ main ()
 				return ENOMEM;
 			}
 #ifdef DEBUG
-			fprintf(stderr, "\nExtended the buffer to %zu bytes\n", newdmf_size);
+			if (!quiet)
+                        fprintf(stderr, "\nExtended the buffer to %zu bytes\n", newdmf_size);
 #endif
 		}
 
@@ -137,6 +205,7 @@ main ()
 	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
 		"</nut>\n");
 #ifdef DEBUG
+        if (!quiet)
 	fprintf(stderr,"[LAST: num=%zu (lenafter=%zu)] ", i, newdmf_len);
 #endif
 	fprintf(stderr, "\n=== DMF-Reindex: Indexed %zu entries...\n\n", i);
@@ -147,15 +216,17 @@ main ()
 		return ENOMEM;
 	}
 
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: Loading DMF structures from prepared string (verification)\n\n");
-	result = mibdmf_parse_str(newdmf, newdmp);
+	ret_code = mibdmf_parse_str(newdmf, newdmp);
 	// Error checking for one (just made) document makes sense and is definite
 	if ( result != 0 ) {
 		fprintf(stderr, "=== DMF-Reindex: The generated document FAILED syntax verification\n\n");
-		return result;
+		return ret_code;
 	}
 
 	// Loop through reparsed device_table and compare to original one
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: Verify reparsed content for snmp_device_table[]...\n\n");
 	snmp_device_id_t *newdevtab = mibdmf_get_device_table(newdmp);
 	if (!newdevtab)
@@ -210,16 +281,21 @@ main ()
 		return result;
 	}
 
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: Checks succeeded - printing generated DMF to stdout...\n\n");
 	printf("%s", newdmf);
 
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: Freeing data...\n\n");
 	mibdmf_parser_destroy(&newdmp);
 	mibdmf_parser_destroy(&dmp);
 	free(newdmf);
 
+        if (!quiet)
 	fprintf(stderr, "=== DMF-Reindex: All done\n\n");
 
-	return 0;
-// TODO: do we have and return fatal errors?
+        if (dir_name_dynamic != 0)
+            free (dir_name);
+        
+	return ret_code;
 }
