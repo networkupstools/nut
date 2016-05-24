@@ -62,9 +62,9 @@ print_snmp_memory_struct(snmp_info_t *self)
 					self->oid2info[i].info_value);
 			i++;
 		}
-		printf("*-*-*-->Info_flags %d\n", self->info_flags);
-		printf("*-*-*-->Flags %lu\n", self->flags);
 	}
+	printf("*-*-*-->Info_flags %d\n", self->info_flags);
+        printf("*-*-*-->Flags %lu\n", self->flags);
 }
 
 void
@@ -529,6 +529,13 @@ mibdmf_get_mib2nut_table(mibdmf_parser_t *dmp)
 {
 	if (dmp==NULL) return NULL;
 	return dmp->mib2nut_table;
+}
+
+mib2nut_info_t ***
+mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp)
+{
+        if (dmp==NULL) return NULL;
+        return &(dmp->mib2nut_table);
 }
 
 alist_t *
@@ -1136,7 +1143,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 		//print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
 		*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
 			device_table_counter * sizeof(snmp_device_id_t));
-		dmp->mib2nut_table = (mib2nut_info_t **) realloc(dmp->mib2nut_table,
+		*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
 			device_table_counter * sizeof(mib2nut_info_t*));
 
 		snmp_device_id_t *device_table = mibdmf_get_device_table(dmp);
@@ -1146,7 +1153,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 		memset (device_table + device_table_counter - 1, 0,
 			sizeof (snmp_device_id_t));
                 
-                dmp->mib2nut_table[device_table_counter - 1] = (mib2nut_info_t *) element->values[0];
+                (*mibdmf_get_mib2nut_table_ptr(dmp))[device_table_counter - 1] = (mib2nut_info_t *) element->values[0];
                 
 		if(((mib2nut_info_t *) element->values[0])->oid_auto_check)
 			device_table[device_table_counter - 1].oid =
@@ -1254,7 +1261,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	assert (mibdmf_get_device_table_counter(dmp)>=1); /* Avoid underflow in memset below */
 	*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
 		mibdmf_get_device_table_counter(dmp) * sizeof(snmp_device_id_t));
-	dmp->mib2nut_table = (mib2nut_info_t **) realloc(dmp->mib2nut_table,
+	*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
 		mibdmf_get_device_table_counter(dmp) * sizeof(mib2nut_info_t *));
 	assert (mibdmf_get_device_table(dmp));
 	assert (mibdmf_get_mib2nut_table(dmp));
@@ -1262,10 +1269,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	/* Make sure the last entry in the table is the zeroed-out sentinel */
 	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
 		sizeof (snmp_device_id_t));
-	/*memset (dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1, 0,
-		sizeof (mib2nut_info_t *));*/
-        
-        *(dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
+	
+        *(*mibdmf_get_mib2nut_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
         
 	return result;
 }
@@ -1316,7 +1321,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	assert (mibdmf_get_device_table_counter(dmp)>=1); /* Avoid underflow in memset below */
 	*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
 		mibdmf_get_device_table_counter(dmp) * sizeof(snmp_device_id_t));
-	dmp->mib2nut_table = (mib2nut_info_t **) realloc(dmp->mib2nut_table,
+	*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
 		mibdmf_get_device_table_counter(dmp) * sizeof(mib2nut_info_t *));
 	assert (mibdmf_get_device_table(dmp));
 	assert (mibdmf_get_mib2nut_table(dmp));
@@ -1324,10 +1329,8 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	/* Make sure the last entry in the table is the zeroed-out sentinel */
 	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
 		sizeof (snmp_device_id_t));
-	/*memset (dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1, 0,
-		sizeof (mib2nut_info_t *));*/
-
-        *(dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
+	
+        *(*mibdmf_get_mib2nut_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
         
 	return result;
 }

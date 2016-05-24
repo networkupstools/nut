@@ -255,7 +255,8 @@ mib2nut_info_t **
 snmp_device_id_t **
 	mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp);
 
-
+mib2nut_info_t ***
+        mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp);
 // Load DMF XML file into structure tree at dmp->list (can append many times)
 int
 	mibdmf_parse_file (char *file_name, mibdmf_parser_t *dmp);
