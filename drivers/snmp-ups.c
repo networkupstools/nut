@@ -1168,13 +1168,7 @@ mib2nut_info_t *match_sysoid()
 	oid mib2nut_sysOID[MAX_OID_LEN];
 	size_t mib2nut_sysOID_len = MAX_OID_LEN;
 	int i;
-#ifdef WITH_DMFMIB
-                int cc =0;
-while(mib2nut[cc]){
-print_mib2nut_memory_struct(mib2nut[cc]);
-cc++;
-}
-#endif     
+        
 	/* Retrieve sysOID value of this device */
 	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
 	{
