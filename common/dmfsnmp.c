@@ -906,6 +906,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 
 	if(arg[6])
 	{
+          flags = flags | SU_FLAG_SETINT;
+          
 		if(strcmp(arg[6], SETVAR_INPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
