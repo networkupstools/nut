@@ -583,8 +583,8 @@ mibdmf_parser_new()
 	self->device_table_counter = 1;
 	self->device_table = (snmp_device_id_t *)calloc(
 		self->device_table_counter, sizeof(snmp_device_id_t));
-	self->mib2nut_table = (mib2nut_info_t *)calloc(
-		self->device_table_counter, sizeof(mib2nut_info_t));
+	self->mib2nut_table = (mib2nut_info_t **)calloc(
+		self->device_table_counter, sizeof(mib2nut_info_t*));
 	assert (self->device_table);
 	assert (self->mib2nut_table);
 	assert (self->device_table_counter >= 1);
@@ -1159,19 +1159,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 		if(((mib2nut_info_t *) element->values[0])->sysOID)
 			device_table[device_table_counter - 1].sysoid =
 			(char *)((mib2nut_info_t *) element->values[0])->sysOID;
-
-		if(((mib2nut_info_t *) element->values[0])->mib_version)
-			(char *)((mib2nut_info_t *) element->values[0])->mib_version;
-
-		if(((mib2nut_info_t *) element->values[0])->oid_pwr_status)
-			(char *)((mib2nut_info_t *) element->values[0])->oid_pwr_status;
-
-		if(((mib2nut_info_t *) element->values[0])->snmp_info)
-			(snmp_info_t *)((mib2nut_info_t *) element->values[0])->snmp_info;
-
-		if(((mib2nut_info_t *) element->values[0])->alarms_info)
-			(alarms_info_t *)((mib2nut_info_t *) element->values[0])->alarms_info;
-
+                
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
 	return OK;
@@ -1274,9 +1262,11 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	/* Make sure the last entry in the table is the zeroed-out sentinel */
 	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
 		sizeof (snmp_device_id_t));
-	memset (dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1, 0,
-		sizeof (mib2nut_info_t *));
-
+	/*memset (dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1, 0,
+		sizeof (mib2nut_info_t *));*/
+        
+        *(dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
+        
 	return result;
 }
 
@@ -1334,9 +1324,11 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	/* Make sure the last entry in the table is the zeroed-out sentinel */
 	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
 		sizeof (snmp_device_id_t));
-	memset (dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1, 0,
-		sizeof (mib2nut_info_t *));
+	/*memset (dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1, 0,
+		sizeof (mib2nut_info_t *));*/
 
+        *(dmp->mib2nut_table + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
+        
 	return result;
 }
 
