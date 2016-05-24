@@ -69,8 +69,6 @@
 
 #ifdef WITH_DMFMIB
 // Array of pointers to singular instances of mib2nut_info_t
-// NOTE: Not the dmp->mib2nut_table itself, but array of 
-// addresses of each of its entries
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 #else
@@ -324,34 +322,25 @@ void upsdrv_initups(void)
 		upsdebugx(1,"FATAL: Can not access the mib2nut table parsed from DMF library");
 		return;
 	}
-        { // scope the table loop vars
-                // TODO: Change size detection to loop over array until NULLed sentinels?
-                int tablength = mibdmf_get_device_table_counter(dmp);
-                
-                upsdebugx(2,"Got access to the mib2nut table with %d entries parsed from DMF library",
-                        tablength);
-                if (tablength<=1) {
-                        upsdebugx(1,"FATAL: Did not find any DMF library data");
-                        return;
-                }
-                if ( mib2nut != NULL ) {
-                        upsdebugx(1,"mib2nut not NULL when expected to be...");
-                        free(mib2nut);
-                }
-                //mib2nut = (mib2nut_info_t**) calloc(tablength, sizeof (mib2nut_info_t*));
-                mib2nut = mibdmf_get_mib2nut_table(dmp);
-                if ( mib2nut == NULL ) {
-        		upsdebugx(1,"FATAL: Could not allocate mib2nut index table");
-                	return;
-                }
-/*#ifdef WITH_DMFMIB
-                int cc =0;
-while(mibdmf_get_mib2nut_table(dmp)[cc]){
-print_mib2nut_memory_struct(mibdmf_get_mib2nut_table(dmp)[cc]);
-cc++;
-}
-#endif */             
-        } // scope the table loop vars
+	{ // scope the table loop vars
+		// TODO: Change size detection to loop over array until NULLed sentinels?
+		int tablength = mibdmf_get_device_table_counter(dmp);
+		upsdebugx(2,"Got access to the mib2nut table with %d entries parsed from DMF library",
+			tablength);
+		if (tablength<=1) {
+			upsdebugx(1,"FATAL: Did not find any DMF library data");
+			return;
+		}
+		if ( mib2nut != NULL ) {
+			upsdebugx(1,"mib2nut not NULL when expected to be...");
+			free(mib2nut);
+		}
+		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
+		if ( mib2nut == NULL ) {
+			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
+			return;
+		}
+	} // scope the table loop vars
 #endif
 
 	/* Retrieve user's parameters */
@@ -1168,7 +1157,7 @@ mib2nut_info_t *match_sysoid()
 	oid mib2nut_sysOID[MAX_OID_LEN];
 	size_t mib2nut_sysOID_len = MAX_OID_LEN;
 	int i;
-        
+
 	/* Retrieve sysOID value of this device */
 	if (nut_snmp_get_oid(SYSOID_OID, sysOID_buf, sizeof(sysOID_buf)) == TRUE)
 	{
