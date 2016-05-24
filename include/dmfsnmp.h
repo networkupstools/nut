@@ -221,7 +221,7 @@ typedef enum {
 typedef struct {
 	alist_t *list;
 	snmp_device_id_t *device_table;
-	mib2nut_info_t *mib2nut_table;
+	mib2nut_info_t **mib2nut_table;
 
 /* This is an amount of known device_table and mib2nut-table entries (same)
  * AND the trailing sentinel (zeroed-out entry), so it is always >= 1 when
@@ -248,15 +248,12 @@ void
 snmp_device_id_t *
 	mibdmf_get_device_table(mibdmf_parser_t *dmp);
 
-mib2nut_info_t *
+mib2nut_info_t **
 	mibdmf_get_mib2nut_table(mibdmf_parser_t *dmp);
 
 // Seems some such accessors are what the original snmp-ups wants for example.
 snmp_device_id_t **
 	mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp);
-
-mib2nut_info_t **
-	mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp);
 
 
 // Load DMF XML file into structure tree at dmp->list (can append many times)
