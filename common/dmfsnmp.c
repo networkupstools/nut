@@ -1141,8 +1141,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	if(strcmp(name,DMFTAG_MIB2NUT) == 0)
 	{
 		int device_table_counter = mibdmf_get_device_table_counter(dmp);
-
-		//print_mib2nut_memory_struct((mib2nut_info_t*)element->values[0]);
+                
 		*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
 			device_table_counter * sizeof(snmp_device_id_t));
 		*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
