@@ -59,10 +59,12 @@ all: progs dmf
 
 clean: clean-local
 
-clean-local:
-	$(RM) $(PROGS) $(DMFSNMP_SUBDIR)/*.o \
+CLEAN_FILES = $(PROGS) $(DMFSNMP_SUBDIR)/*.o \
 		$(DMFSNMP_SUBDIR)/*.dmf.tmp $(DMFSNMP_SUBDIR)/*.json.tmp \
 		$(DMFSNMP_SUBDIR)/*_TEST.c $(DMFSNMP_SUBDIR)/*_TEST.exe
+
+clean-local:
+	$(RM) $(CLEAN_FILES)
 
 check: check-local
 
@@ -182,7 +184,8 @@ dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
-	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	-DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
+	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
 dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c

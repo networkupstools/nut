@@ -27,7 +27,9 @@
 
 #include "config.h"
 #include "common.h"
-#include "nut_version.h"
+#ifndef DMFREINDEXER_MAKECHECK
+# include "nut_version.h"
+#endif
 #include "dmf.h"
 
 // These strings are embedded into <nut> tags to show their schema version
@@ -100,7 +102,13 @@ int main(int argc, char *argv[])
 				proceed_on_errors = 0;
 				break;
 			case 'V':
-				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
+				printf("Network UPS Tools - %s\n",
+#ifdef DMFREINDEXER_MAKECHECK
+					"private build for DMF make check"
+#else
+					NUT_VERSION_MACRO
+#endif
+					);
 				exit(EXIT_SUCCESS);
 				break;
 			case '?':
