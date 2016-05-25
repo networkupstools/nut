@@ -111,81 +111,81 @@
 		<lookup_info oid="1" value="frequency out of range!"/>
 	</lookup>
 	<snmp name="eaton_marlin_mib">
-		<snmp_info absent="yes" default="EATON" flag_ok="yes" name="device.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" name="device.model" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="device.serial" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.4.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="device.type" oid="None" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="device.part" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.3.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="device.macaddr" oid=".1.3.6.1.2.1.2.2.1.6.2" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="EATON" flag_ok="yes" name="ups.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" name="ups.model" oid="1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.serial" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.4.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.firmware" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.5.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="ups.type" oid="None" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
+		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="device.serial" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.4.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="device.part" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.3.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="device.macaddr" oid=".1.3.6.1.2.1.2.2.1.6.2" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" multiplier="128.0" name="ups.model" oid="1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.4.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.5.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="ups.type" static="yes" string="yes"/>
 		<snmp_info multiplier="1.0" name="input.phases" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0" setvar="input_phases" static="yes"/>
 		<snmp_info multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_frequency_status_info" name="input.frequency.status" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_frequency_alarm_info" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_frequency_status_info" multiplier="128.0" name="input.frequency.status" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_frequency_alarm_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.4.0.1" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.load" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.1" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L1.load" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.1" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L2.load" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.2" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L3.load" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.11.0.1.3" positive="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.L1.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" name="L1.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.L1.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" multiplier="128.0" name="L1.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.2" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.L2.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.2" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" name="L2.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.2" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.L2.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.2" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" multiplier="128.0" name="L2.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.2" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.3" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.L3.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.3" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" name="L3.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.3" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.L3.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.3" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_voltage_alarms_info" multiplier="128.0" name="L3.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.3" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.current" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.nominal" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.1" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.current.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.nominal" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.1" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.L1.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" name="L1.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.L1.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" multiplier="128.0" name="L1.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L1.current.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.1" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.2" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.nominal" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.2" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.L2.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.2" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" name="L2.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.2" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.L2.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.2" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" multiplier="128.0" name="L2.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.2" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L2.current.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.2" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.current" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.3" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.current.nominal" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.3" power_status="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="input.L3.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.3" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" name="L3.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.3" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="input.L3.current.status" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.3" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_current_alarms_info" multiplier="128.0" name="L3.alarm" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.3" string="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.current.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.current.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.3" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="input.L3.current.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.3" positive="yes" writable="yes"/>
@@ -202,9 +202,9 @@
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L1.power" oid=".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.1" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L2.power" oid=".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2" positive="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.L3.power" oid=".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.3" positive="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_ambient_presence_info" name="ambient.present" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.3.0.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="ambient.temperature.status" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_temperature_alarms_info" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_ambient_presence_info" multiplier="128.0" name="ambient.present" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.3.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="ambient.temperature.status" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_temperature_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.temperature" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.4.0.1"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.temperature.low" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.7.0.1" positive="yes" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.temperature.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.7.0.1" positive="yes" writable="yes"/>
@@ -212,8 +212,8 @@
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.temperature.high" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.9.0.1" positive="yes" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.temperature.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.8.0.1" positive="yes" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.temperature.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.7.1.1.9.0.1" positive="yes" writable="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" name="ambient.humidity.status" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_threshold_humidity_alarms_info" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_status_info" multiplier="128.0" name="ambient.humidity.status" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_threshold_humidity_alarms_info" multiplier="128.0" name="ups.alarm" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.humidity" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.4.0.1"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.humidity.low" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.7.0.1" positive="yes" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.humidity.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.6.0.1" positive="yes" writable="yes"/>
@@ -221,60 +221,60 @@
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.humidity.high" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1" positive="yes" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.humidity.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.8.0.1" positive="yes" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="ambient.humidity.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1" positive="yes" writable="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_ambient_drycontacts_info" name="ambient.contacts.1.status" oid=".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.1" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_ambient_drycontacts_info" name="ambient.contacts.2.status" oid=".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.2" string="yes"/>
-		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" oid="None" static="yes"/>
-		<snmp_info absent="yes" default="All outlets" flag_ok="yes" name="outlet.desc" oid="None" static="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_ambient_drycontacts_info" multiplier="128.0" name="ambient.contacts.1.status" oid=".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.1" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_ambient_drycontacts_info" multiplier="128.0" name="ambient.contacts.2.status" oid=".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.2" string="yes"/>
+		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" static="yes"/>
+		<snmp_info absent="yes" default="All outlets" flag_ok="yes" multiplier="20.0" name="outlet.desc" static="yes" string="yes" writable="yes"/>
 		<snmp_info default="0" flag_ok="yes" multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.22.0" static="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.frequency" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.voltage" oid=".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1" power_status="yes"/>
 		<snmp_info multiplier="0.01" name="outlet.current" oid=".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1" power_status="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.realpower" oid=".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.4" power_status="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.power" oid=".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.4" power_status="yes"/>
-		<snmp_info flag_ok="yes" name="outlet.%i.desc" oid=".1.3.6.1.4.1.534.6.6.7.6.1.1.3.0.%i" outlet="yes" static="yes" string="yes" writable="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_outlet_status_info" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.2.0.%i" outlet="yes" string="yes"/>
-		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" oid="None" outlet="yes" static="yes"/>
-		<snmp_info name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.1" outlet="yes" static="yes" string="yes" unique="yes"/>
-		<snmp_info name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.2" outlet="yes" static="yes" string="yes" unique="yes"/>
-		<snmp_info name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.3" outlet="yes" static="yes" string="yes" unique="yes"/>
-		<snmp_info name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.4" outlet="yes" static="yes" string="yes" unique="yes"/>
-		<snmp_info name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.5" outlet="yes" static="yes" string="yes" unique="yes"/>
-		<snmp_info name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.6" outlet="yes" static="yes" string="yes" unique="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="outlet.%i.desc" oid=".1.3.6.1.4.1.534.6.6.7.6.1.1.3.0.%i" outlet="yes" static="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.2.0.%i" outlet="yes" string="yes"/>
+		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" outlet="yes" static="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.1" outlet="yes" static="yes" string="yes" unique="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.2" outlet="yes" static="yes" string="yes" unique="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.3" outlet="yes" static="yes" string="yes" unique="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.4" outlet="yes" static="yes" string="yes" unique="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.5" outlet="yes" static="yes" string="yes" unique="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.groupid" oid=".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.6" outlet="yes" static="yes" string="yes" unique="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.3.0.%i" outlet="yes"/>
-		<snmp_info lookup="marlin_threshold_status_info" name="outlet.%i.current.status" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.4.0.%i" outlet="yes" string="yes"/>
-		<snmp_info lookup="marlin_threshold_current_alarms_info" name="outlet.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.4.0.%i" outlet="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_status_info" multiplier="128.0" name="outlet.%i.current.status" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.4.0.%i" outlet="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_current_alarms_info" multiplier="128.0" name="outlet.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.4.0.%i" outlet="yes" string="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.5.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.6.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.7.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.4.1.8.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.realpower" oid=".1.3.6.1.4.1.534.6.6.7.6.5.1.3.0.%i" outlet="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.2.0.%i" outlet="yes"/>
-		<snmp_info lookup="marlin_threshold_status_info" name="outlet.%i.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.3.0.%i" outlet="yes" string="yes"/>
-		<snmp_info lookup="marlin_threshold_voltage_alarms_info" name="outlet.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.3.0.%i" outlet="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_status_info" multiplier="128.0" name="outlet.%i.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.3.0.%i" outlet="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_voltage_alarms_info" multiplier="128.0" name="outlet.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.3.0.%i" outlet="yes" string="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.4.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.5.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.6.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.7.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.power" oid=".1.3.6.1.4.1.534.6.6.7.6.5.1.2.0.%i" outlet="yes"/>
-		<snmp_info default="no" flag_ok="yes" lookup="eaton_outlet_switchability_info" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i" outlet="yes" static="yes" string="yes"/>
-		<snmp_info default="unknown" lookup="eaton_outlet_type_info" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i" outlet="yes" static="yes" string="yes"/>
+		<snmp_info default="no" flag_ok="yes" lookup="eaton_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i" outlet="yes" static="yes" string="yes"/>
+		<snmp_info default="unknown" lookup="eaton_outlet_type_info" multiplier="128.0" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i" outlet="yes" static="yes" string="yes"/>
 		<snmp_info default="0" multiplier="1.0" name="outlet.group.count" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.21.0" static="yes"/>
-		<snmp_info name="outlet.group.%i.id" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.2.0.%i" outlet_group="yes" static="yes" string="yes"/>
-		<snmp_info name="outlet.group.%i.name" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.3.0.%i" outlet_group="yes" static="yes" string="yes" writable="yes"/>
-		<snmp_info lookup="marlin_outlet_group_type_info" name="outlet.group.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.4.0.%i" outlet_group="yes" static="yes" string="yes"/>
-		<snmp_info flag_ok="yes" lookup="marlin_outletgroups_status_info" name="outlet.group.%i.status" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.2.0.%i" outlet_group="yes" string="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.group.%i.id" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.2.0.%i" outlet_group="yes" static="yes" string="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.group.%i.name" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.3.0.%i" outlet_group="yes" static="yes" string="yes" writable="yes"/>
+		<snmp_info lookup="marlin_outlet_group_type_info" multiplier="128.0" name="outlet.group.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.4.0.%i" outlet_group="yes" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="marlin_outletgroups_status_info" multiplier="128.0" name="outlet.group.%i.status" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.2.0.%i" outlet_group="yes" string="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.group.%i.count" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.6.0.%i" outlet_group="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.voltage" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.3.0.%i" outlet_group="yes"/>
-		<snmp_info lookup="marlin_threshold_status_info" name="outlet.group.%i.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i" outlet_group="yes" string="yes"/>
-		<snmp_info lookup="marlin_threshold_voltage_alarms_info" name="outlet.group.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i" outlet_group="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_status_info" multiplier="128.0" name="outlet.group.%i.voltage.status" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i" outlet_group="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_voltage_alarms_info" multiplier="128.0" name="outlet.group.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.4.0.%i" outlet_group="yes" string="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.voltage.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.5.0.%i" outlet_group="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.voltage.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.6.0.%i" outlet_group="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.7.0.%i" outlet_group="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.8.0.%i" outlet_group="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.current" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.3.0.%i" outlet_group="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.current.nominal" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.2.0.%i" outlet_group="yes"/>
-		<snmp_info lookup="marlin_threshold_status_info" name="outlet.group.%i.current.status" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i" outlet_group="yes" string="yes"/>
-		<snmp_info lookup="marlin_threshold_current_alarms_info" name="outlet.group.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i" outlet_group="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_status_info" multiplier="128.0" name="outlet.group.%i.current.status" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i" outlet_group="yes" string="yes"/>
+		<snmp_info lookup="marlin_threshold_current_alarms_info" multiplier="128.0" name="outlet.group.%i.alarm" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.4.0.%i" outlet_group="yes" string="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.group.%i.load" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.10.0.%i" outlet_group="yes" positive="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.current.low.warning" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.5.0.%i" outlet_group="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.current.low.critical" oid=".1.3.6.1.4.1.534.6.6.7.5.4.1.6.0.%i" outlet_group="yes" positive="yes" writable="yes"/>
@@ -290,29 +290,29 @@
 		<snmp_info command="yes" multiplier="0.0" name="outlet.group.%i.load.cycle" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.0.%i" outlet_group="yes"/>
 	</snmp>
 	<snmp name="eaton_aphel_revelation_mib">
-		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" name="device.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Eaton Powerware ePDU Managed" flag_ok="yes" name="device.model" oid=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="device.serial" oid=".1.3.6.1.4.1.534.6.6.6.1.1.2.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="device.type" oid="None" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="device.macaddr" oid=".1.3.6.1.4.1.534.6.6.6.1.1.6.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" name="ups.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Generic SNMP PDU" flag_ok="yes" name="ups.model" oid=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" static="yes" string="yes"/>
-		<snmp_info default="unknown" flag_ok="yes" name="ups.id" oid=".1.3.6.1.4.1.534.6.6.6.1.1.13.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.serial" oid=".1.3.6.1.4.1.534.6.6.6.1.1.2.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.firmware" oid=".1.3.6.1.4.1.534.6.6.6.1.1.1.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="ups.type" oid="None" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
+		<snmp_info default="Eaton Powerware ePDU Managed" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="device.serial" oid=".1.3.6.1.4.1.534.6.6.6.1.1.2.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="device.macaddr" oid=".1.3.6.1.4.1.534.6.6.6.1.1.6.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Generic SNMP PDU" flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" static="yes" string="yes"/>
+		<snmp_info default="unknown" flag_ok="yes" multiplier="128.0" name="ups.id" oid=".1.3.6.1.4.1.534.6.6.6.1.1.13.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.534.6.6.6.1.1.2.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.534.6.6.6.1.1.1.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="ups.type" static="yes" string="yes"/>
 		<snmp_info multiplier="1.0" name="ups.temperature" oid=".1.3.6.1.4.1.534.6.6.6.1.3.1.5.0" power_status="yes"/>
-		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" oid="None" static="yes"/>
-		<snmp_info absent="yes" default="All outlets" flag_ok="yes" name="outlet.desc" oid="None" static="yes" string="yes" writable="yes"/>
+		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" static="yes"/>
+		<snmp_info absent="yes" default="All outlets" flag_ok="yes" multiplier="20.0" name="outlet.desc" static="yes" string="yes" writable="yes"/>
 		<snmp_info default="0" multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.534.6.6.6.1.2.1.0" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.current" oid=".1.3.6.1.4.1.534.6.6.6.1.3.1.1.0" power_status="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.voltage" oid=".1.3.6.1.4.1.534.6.6.6.1.3.1.2.0" power_status="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.realpower" oid=".1.3.6.1.4.1.534.6.6.6.1.3.1.3.0" power_status="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.power" oid=".1.3.6.1.4.1.534.6.6.6.1.3.1.4.0" power_status="yes"/>
 		<snmp_info default="yes" multiplier="1.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.1.%i" outlet="yes" static="yes"/>
-		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" oid="None" outlet="yes" static="yes"/>
-		<snmp_info name="outlet.%i.desc" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.2.%i" outlet="yes" string="yes" writable="yes"/>
-		<snmp_info flag_ok="yes" lookup="eaton_outlet_status_info" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.3.%i" outlet="yes" string="yes"/>
+		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" outlet="yes" static="yes"/>
+		<snmp_info multiplier="128.0" name="outlet.%i.desc" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.2.%i" outlet="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" lookup="eaton_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.3.%i" outlet="yes" string="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.4.%i" outlet="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current.maximum" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.5.%i" outlet="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.realpower" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.7.%i" outlet="yes"/>
@@ -330,15 +330,15 @@
 		<snmp_info command="yes" multiplier="2.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.3.%i" outlet="yes"/>
 	</snmp>
 	<snmp name="eaton_aphel_genesisII_mib">
-		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" name="device.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Eaton Powerware ePDU Monitored" flag_ok="yes" name="device.model" oid=".1.3.6.1.4.1.17373.3.1.1.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="device.type" oid="None" static="yes" string="yes"/>
-		<snmp_info default="unknown" name="device.macaddr" oid=".1.3.6.1.4.1.17373.3.1.4.0" power_status="yes" string="yes"/>
-		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" name="ups.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Generic SNMP PDU" flag_ok="yes" name="ups.model" oid=".1.3.6.1.4.1.17373.3.1.1.0" static="yes" string="yes"/>
-		<snmp_info default="unknown" flag_ok="yes" name="ups.id" oid=".1.3.6.1.4.1.17373.3.1.3.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.firmware" oid=".1.3.6.1.4.1.17373.3.1.2.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="ups.type" oid="None" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
+		<snmp_info default="Eaton Powerware ePDU Monitored" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.17373.3.1.1.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
+		<snmp_info default="unknown" multiplier="128.0" name="device.macaddr" oid=".1.3.6.1.4.1.17373.3.1.4.0" power_status="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Generic SNMP PDU" flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.17373.3.1.1.0" static="yes" string="yes"/>
+		<snmp_info default="unknown" flag_ok="yes" multiplier="128.0" name="ups.id" oid=".1.3.6.1.4.1.17373.3.1.3.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.17373.3.1.2.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="ups.type" static="yes" string="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.1.current" oid=".1.3.6.1.4.1.17373.3.2.1.0" positive="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.2.current" oid=".1.3.6.1.4.1.17373.3.2.2.0" positive="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.3.current" oid=".1.3.6.1.4.1.17373.3.2.3.0" positive="yes"/>
@@ -349,23 +349,23 @@
 		<snmp_info multiplier="0.1" name="outlet.8.current" oid=".1.3.6.1.4.1.17373.3.2.8.0" positive="yes"/>
 	</snmp>
 	<snmp name="eaton_pulizzi_switched_mib">
-		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" name="device.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Switched ePDU" flag_ok="yes" name="device.model" oid=".1.3.6.1.4.1.20677.2.1.1.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="pdu" flag_ok="yes" name="device.type" oid="None" static="yes" string="yes"/>
-		<snmp_info default="unknown" name="device.macaddr" oid=".1.3.6.1.4.1.20677.2.2.6.0" power_status="yes" string="yes"/>
-		<snmp_info absent="yes" default="EATON" flag_ok="yes" name="ups.mfr" oid="None" static="yes" string="yes"/>
-		<snmp_info default="Switched ePDU" flag_ok="yes" name="ups.model" oid=".1.3.6.1.4.1.20677.2.1.1.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.date" oid=".1.3.6.1.4.1.20677.2.1.4.0" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" name="ups.time" oid=".1.3.6.1.4.1.20677.2.1.3.0" static="yes" string="yes"/>
-		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" oid="None" static="yes"/>
-		<snmp_info absent="yes" default="All outlets" flag_ok="yes" name="outlet.desc" oid="None" static="yes" string="yes" writable="yes"/>
+		<snmp_info absent="yes" default="EATON | Powerware" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
+		<snmp_info default="Switched ePDU" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.20677.2.1.1.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
+		<snmp_info default="unknown" multiplier="128.0" name="device.macaddr" oid=".1.3.6.1.4.1.20677.2.2.6.0" power_status="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Switched ePDU" flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.20677.2.1.1.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.date" oid=".1.3.6.1.4.1.20677.2.1.4.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.time" oid=".1.3.6.1.4.1.20677.2.1.3.0" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" static="yes"/>
+		<snmp_info absent="yes" default="All outlets" flag_ok="yes" multiplier="20.0" name="outlet.desc" static="yes" string="yes" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.current" oid=".1.3.6.1.4.1.20677.2.8.6.4.2.0" power_status="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.voltage" oid=".1.3.6.1.4.1.20677.2.8.6.4.1.0" power_status="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.power" oid=".1.3.6.1.4.1.20677.2.8.6.4.3.0" power_status="yes"/>
-		<snmp_info flag_ok="yes" name="outlet.%i.desc" oid=".1.3.6.1.4.1.20677.2.6.1.%i.1.0" outlet="yes" static="yes" string="yes" writable="yes"/>
-		<snmp_info flag_ok="yes" lookup="pulizzi_sw_outlet_status_info" name="outlet.%i.status" oid=".1.3.6.1.4.1.20677.2.6.3.%i.0" outlet="yes" string="yes"/>
-		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" oid="None" outlet="yes" static="yes"/>
-		<snmp_info default="yes" flag_ok="yes" lookup="pulizzi_sw_outlet_switchability_info" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.20677.2.6.3.%i.0" outlet="yes" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="outlet.%i.desc" oid=".1.3.6.1.4.1.20677.2.6.1.%i.1.0" outlet="yes" static="yes" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" lookup="pulizzi_sw_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.20677.2.6.3.%i.0" outlet="yes" string="yes"/>
+		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" outlet="yes" static="yes"/>
+		<snmp_info default="yes" flag_ok="yes" lookup="pulizzi_sw_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.20677.2.6.3.%i.0" outlet="yes" static="yes" string="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.delay.reboot" oid=".1.3.6.1.4.1.20677.2.6.1.%i.5.0" outlet="yes" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.delay.start" oid=".1.3.6.1.4.1.20677.2.6.1.%i.4.0" outlet="yes" writable="yes"/>
 		<snmp_info command="yes" multiplier="1.0" name="load.on" oid=".1.3.6.1.4.1.20677.2.6.2.1.0"/>
