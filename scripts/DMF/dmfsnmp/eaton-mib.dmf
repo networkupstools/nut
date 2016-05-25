@@ -12,23 +12,15 @@
 		<lookup_info oid="0" value="no"/>
 		<lookup_info oid="1" value="yes"/>
 	</lookup>
-	<lookup name="marlin_outlet_group_type_info">
-		<lookup_info oid="0" value="unknown"/>
-		<lookup_info oid="1" value="breaker1pole"/>
-		<lookup_info oid="2" value="breaker2pole"/>
-		<lookup_info oid="3" value="breaker3pole"/>
-		<lookup_info oid="4" value="outlet-section"/>
-		<lookup_info oid="5" value="user-defined"/>
+	<lookup name="eaton_outlet_switchability_info">
+		<lookup_info oid="-1" value="yes"/>
+		<lookup_info oid="0" value="yes"/>
 	</lookup>
 	<lookup name="marlin_outlet_status_info">
 		<lookup_info oid="0" value="off"/>
 		<lookup_info oid="1" value="on"/>
 		<lookup_info oid="2" value="pendingOff"/>
 		<lookup_info oid="3" value="pendingOn"/>
-	</lookup>
-	<lookup name="outlet_switchability_info">
-		<lookup_info oid="-1" value="yes"/>
-		<lookup_info oid="0" value="yes"/>
 	</lookup>
 	<lookup name="marlin_ambient_drycontacts_info">
 		<lookup_info oid="-1" value="unknown"/>
@@ -38,12 +30,6 @@
 	<lookup name="pulizzi_sw_outlet_switchability_info">
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="yes"/>
-	</lookup>
-	<lookup name="outlet_status_info">
-		<lookup_info oid="-1" value="error"/>
-		<lookup_info oid="0" value="off"/>
-		<lookup_info oid="1" value="on"/>
-		<lookup_info oid="2" value="cycling"/>
 	</lookup>
 	<lookup name="marlin_threshold_current_alarms_info">
 		<lookup_info oid="0" value=""/>
@@ -63,11 +49,20 @@
 		<lookup_info oid="3" value="high temperature warning!"/>
 		<lookup_info oid="4" value="high temperature critical!"/>
 	</lookup>
-	<lookup name="pulizzi_sw_outlet_status_info">
-		<lookup_info oid="1" value="on"/>
-		<lookup_info oid="2" value="off"/>
+	<lookup name="marlin_threshold_status_info">
+		<lookup_info oid="0" value="good"/>
+		<lookup_info oid="1" value="warning-low"/>
+		<lookup_info oid="2" value="critical-low"/>
+		<lookup_info oid="3" value="warning-high"/>
+		<lookup_info oid="4" value="critical-high"/>
 	</lookup>
-	<lookup name="outlet_type_info">
+	<lookup name="eaton_outlet_status_info">
+		<lookup_info oid="-1" value="error"/>
+		<lookup_info oid="0" value="off"/>
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="cycling"/>
+	</lookup>
+	<lookup name="eaton_outlet_type_info">
 		<lookup_info oid="0" value="unknown"/>
 		<lookup_info oid="1" value="iecC13"/>
 		<lookup_info oid="2" value="iecC19"/>
@@ -92,16 +87,13 @@
 		<lookup_info oid="2" value="rebooting"/>
 		<lookup_info oid="3" value="mixed"/>
 	</lookup>
-	<lookup name="marlin_threshold_frequency_alarm_info">
-		<lookup_info oid="0" value=""/>
-		<lookup_info oid="1" value="frequency out of range!"/>
-	</lookup>
-	<lookup name="marlin_threshold_status_info">
-		<lookup_info oid="0" value="good"/>
-		<lookup_info oid="1" value="warning-low"/>
-		<lookup_info oid="2" value="critical-low"/>
-		<lookup_info oid="3" value="warning-high"/>
-		<lookup_info oid="4" value="critical-high"/>
+	<lookup name="marlin_outlet_group_type_info">
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="1" value="breaker1pole"/>
+		<lookup_info oid="2" value="breaker2pole"/>
+		<lookup_info oid="3" value="breaker3pole"/>
+		<lookup_info oid="4" value="outlet-section"/>
+		<lookup_info oid="5" value="user-defined"/>
 	</lookup>
 	<lookup name="marlin_threshold_humidity_alarms_info">
 		<lookup_info oid="0" value=""/>
@@ -109,6 +101,14 @@
 		<lookup_info oid="2" value="low humidity critical!"/>
 		<lookup_info oid="3" value="high humidity warning!"/>
 		<lookup_info oid="4" value="high humidity critical!"/>
+	</lookup>
+	<lookup name="pulizzi_sw_outlet_status_info">
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="off"/>
+	</lookup>
+	<lookup name="marlin_threshold_frequency_alarm_info">
+		<lookup_info oid="0" value=""/>
+		<lookup_info oid="1" value="frequency out of range!"/>
 	</lookup>
 	<snmp name="eaton_marlin_mib">
 		<snmp_info absent="yes" default="EATON" flag_ok="yes" name="device.mfr" oid="None" static="yes" string="yes"/>
@@ -256,8 +256,8 @@
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.warning" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.6.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.7.0.%i" outlet="yes" positive="yes" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.power" oid=".1.3.6.1.4.1.534.6.6.7.6.5.1.2.0.%i" outlet="yes"/>
-		<snmp_info default="no" flag_ok="yes" lookup="outlet_switchability_info" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i" outlet="yes" static="yes" string="yes"/>
-		<snmp_info default="unknown" lookup="outlet_type_info" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i" outlet="yes" static="yes" string="yes"/>
+		<snmp_info default="no" flag_ok="yes" lookup="eaton_outlet_switchability_info" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i" outlet="yes" static="yes" string="yes"/>
+		<snmp_info default="unknown" lookup="eaton_outlet_type_info" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i" outlet="yes" static="yes" string="yes"/>
 		<snmp_info default="0" multiplier="1.0" name="outlet.group.count" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.21.0" static="yes"/>
 		<snmp_info name="outlet.group.%i.id" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.2.0.%i" outlet_group="yes" static="yes" string="yes"/>
 		<snmp_info name="outlet.group.%i.name" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.3.0.%i" outlet_group="yes" static="yes" string="yes" writable="yes"/>
@@ -312,7 +312,7 @@
 		<snmp_info default="yes" multiplier="1.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.1.%i" outlet="yes" static="yes"/>
 		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" oid="None" outlet="yes" static="yes"/>
 		<snmp_info name="outlet.%i.desc" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.2.%i" outlet="yes" string="yes" writable="yes"/>
-		<snmp_info flag_ok="yes" lookup="outlet_status_info" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.3.%i" outlet="yes" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="eaton_outlet_status_info" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.3.%i" outlet="yes" string="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.4.%i" outlet="yes"/>
 		<snmp_info multiplier="0.001" name="outlet.%i.current.maximum" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.5.%i" outlet="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.realpower" oid=".1.3.6.1.4.1.534.6.6.6.1.2.2.1.7.%i" outlet="yes"/>
