@@ -57,7 +57,7 @@ info_lkp_t raritanpx2_outlet_status_info[] = {
 	{ 0, "NULL" }
 };
 
-static info_lkp_t outlet_switchability_info[] = {
+static info_lkp_t raritanpx2_outlet_switchability_info[] = {
 	{ -1, "yes" },
 	{ 1, "yes" },
 	{ 2, "no" },
@@ -152,7 +152,7 @@ static snmp_info_t raritan_px2_mib[] = {
 	 * { "unmapped.measurementsOutletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.1.14", NULL, SU_FLAG_OK, NULL }, */
 
 	/* outletSwitchable.1.%i = INTEGER: true(1) */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &outlet_switchability_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &raritanpx2_outlet_switchability_info[0], NULL },
 
 	/* instant commands. */
 	/* switchingOperation.1.1 = INTEGER: on(1) */
