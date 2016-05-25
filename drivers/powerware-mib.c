@@ -256,46 +256,46 @@ static info_lkp_t pw_ambient_drycontacts_info[] = {
  * Future work for DMF might provide a same-named routine via LUA-C gateway.
  */
 
-#if WITH_SNMP_LKP_FUN_DUMMY
+# if WITH_SNMP_LKP_FUN_DUMMY
 /* Temperature unit consideration */
 const char *eaton_sensor_temperature_unit_fun(long snmp_value)
 		{ return "unknown"; }
 /* FIXME: please DMF, though this should be in snmp-ups.c or equiv. */
 const char *su_temperature_read_fun(long snmp_value)
 	{ return "dummy"; };
-#endif // WITH_SNMP_LKP_FUN_DUMMY
+# endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
-static info_lkp_t eaton_sensor_temperature_unit_info[] = {
+static info_lkp_t pw_sensor_temperature_unit_info[] = {
 	{ 0, "dummy", eaton_sensor_temperature_unit_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t eaton_sensor_temperature_read_info[] = {
+static info_lkp_t pw_sensor_temperature_read_info[] = {
 	{ 0, "dummy", su_temperature_read_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-#else // if not WITH_SNMP_LKP_FUN:
+#else /* if not WITH_SNMP_LKP_FUN: */
 
 /* FIXME: For now, DMF codebase falls back to old implementation with static
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
  */
-static info_lkp_t eaton_sensor_temperature_unit_info[] = {
+static info_lkp_t pw_sensor_temperature_unit_info[] = {
 	{ 0, "kelvin", NULL, NULL },
 	{ 1, "celsius", NULL, NULL },
 	{ 2, "fahrenheit", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-#endif // WITH_SNMP_LKP_FUN
+#endif /* WITH_SNMP_LKP_FUN */
 
-static info_lkp_t ambient_drycontacts_polarity_info[] = {
+static info_lkp_t pw_ambient_drycontacts_polarity_info[] = {
 	{ 0, "normal-opened", NULL, NULL },
 	{ 1, "normal-closed", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
-static info_lkp_t ambient_drycontacts_state_info[] = {
+static info_lkp_t pw_ambient_drycontacts_state_info[] = {
 	{ 0, "active", NULL, NULL },
 	{ 1, "inactive", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -566,11 +566,11 @@ static snmp_info_t pw_mib[] = {
 	{ "ambient.%i.firmware", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.2.1.10.%i", "", SU_AMBIENT_TEMPLATE, NULL },
 	/* temperatureUnit.1
 	 * MUST be before the temperature data reading! */
-	{ "ambient.%i.temperature.unit", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE, &eaton_sensor_temperature_unit_info[0] },
+	{ "ambient.%i.temperature.unit", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.2.5.0", "", SU_AMBIENT_TEMPLATE, &pw_sensor_temperature_unit_info[0] },
 	/* temperatureValue.n.1 */
 	{ "ambient.%i.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.8.1.2.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE,
 #if WITH_SNMP_LKP_FUN
-	&eaton_sensor_temperature_read_info[0]
+	&pw_sensor_temperature_read_info[0]
 #else
 	NULL
 #endif
@@ -611,11 +611,11 @@ static snmp_info_t pw_mib[] = {
 	{ "ambient.%i.contacts.1.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.1", "", SU_AMBIENT_TEMPLATE, NULL },
 	{ "ambient.%i.contacts.2.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.2.1.1.%i.2", "", SU_AMBIENT_TEMPLATE, NULL },
 	/* digitalInputPolarity.n */
-	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &ambient_drycontacts_polarity_info[0] },
-	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &ambient_drycontacts_polarity_info[0] },
+	{ "ambient.%i.contacts.1.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &pw_ambient_drycontacts_polarity_info[0] },
+	{ "ambient.%i.contacts.2.config", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.4.2.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &pw_ambient_drycontacts_polarity_info[0] },
 	/* XUPS-MIB::xupsContactState.n */
-	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &ambient_drycontacts_state_info[0] },
-	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &ambient_drycontacts_state_info[0] },
+	{ "ambient.%i.contacts.1.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.1", "", SU_AMBIENT_TEMPLATE, &pw_ambient_drycontacts_state_info[0] },
+	{ "ambient.%i.contacts.2.status", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2", "", SU_AMBIENT_TEMPLATE, &pw_ambient_drycontacts_state_info[0] },
 
 	/* instant commands */
 	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
