@@ -338,19 +338,12 @@ void upsdrv_initups(void)
                         upsdebugx(1,"mib2nut not NULL when expected to be...");
                         free(mib2nut);
                 }
-                //mib2nut = (mib2nut_info_t**) calloc(tablength, sizeof (mib2nut_info_t*));
+                
                 mib2nut = mibdmf_get_mib2nut_table(dmp);
                 if ( mib2nut == NULL ) {
         		upsdebugx(1,"FATAL: Could not allocate mib2nut index table");
                 	return;
                 }
-/*#ifdef WITH_DMFMIB
-                int cc =0;
-while(mibdmf_get_mib2nut_table(dmp)[cc]){
-print_mib2nut_memory_struct(mibdmf_get_mib2nut_table(dmp)[cc]);
-cc++;
-}
-#endif */             
         } // scope the table loop vars
 #endif
 
