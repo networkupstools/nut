@@ -71,6 +71,8 @@ def warn (msg):
 def mkElement (_element, **attrs):
     el = MD.Element (_element)
     for name, value in attrs.items ():
+        if value is None:
+            continue
         el.setAttribute (name, str(value))
     return el
 
@@ -102,13 +104,12 @@ def mk_snmp (inp, root):
         lookup_el = mkElement ("snmp", name=name)
         for info in lookup:
 
-            kwargs = dict (name=info ["info_type"], oid=info ["OID"])
-
-            for name, opt in (("default", info.get ("dfl")),
-                             ("lookup", info.get ("oid2info"))):
-                if opt is None:
-                    continue
-                kwargs [name] = opt
+            kwargs = dict (
+                    name=info ["info_type"],
+                    default=info.get ("dfl"),
+                    lookup=info.get ("oid2info"),
+                    oid=info.get ("OID")
+                    )
 
             ### process info_flags
             # multiplier is only for !string things
