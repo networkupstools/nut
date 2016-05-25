@@ -35,7 +35,7 @@
  * };
  */
 
-static info_lkp_t supplymethod_info[] = {
+static info_lkp_t huawei_supplymethod_info[] = {
 	{ 1, "" },		/* no supply */
 	{ 2, "OL BYPASS" },
 	{ 3, "OL" },
@@ -46,7 +46,7 @@ static info_lkp_t supplymethod_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t battstate_info[] = {
+static info_lkp_t huawei_battstate_info[] = {
 	{ 1, "" },		/* not connected */
 	{ 2, "" },		/* not charging or discharging */
 	{ 3, "" },		/* hibernation */
@@ -56,13 +56,13 @@ static info_lkp_t battstate_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t phase_info[] = {
+static info_lkp_t huawei_phase_info[] = {
 	{ 1, "1" },
 	{ 2, "3" },
 	{ 0, NULL }
 };
 
-static info_lkp_t voltrating_info[] = {
+static info_lkp_t huawei_voltrating_info[] = {
 	{ 1, "200" },
 	{ 2, "208" },
 	{ 3, "220" },
@@ -75,13 +75,13 @@ static info_lkp_t voltrating_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t freqrating_info[] = {
+static info_lkp_t huawei_freqrating_info[] = {
 	{ 1, "50" },
 	{ 2, "60" },
 	{ 0, NULL }
 };
 
-static info_lkp_t pwrrating_info[] = {
+static info_lkp_t huawei_pwrrating_info[] = {
 	{ 1, "80000" },
 	{ 2, "100000" },
 	{ 3, "120000" },
@@ -97,7 +97,11 @@ static info_lkp_t pwrrating_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t ietf_test_result_info[] = {
+/* Note: This is currently identical to ietf_test_result_info from IETF MIB
+ * We rename it here to a) allow evolution that may become incompatible;
+ * b) avoid namespace conflicts, especially with DMF loader of named objects
+ */
+static info_lkp_t huawei_test_result_info[] = {
 	{ 1, "done and passed" },
 	{ 2, "done and warning" },
 	{ 3, "done and error" },
@@ -148,16 +152,16 @@ static snmp_info_t huawei_mib[] = {
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.3.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.5.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.1.1", NULL, SU_FLAG_OK, supplymethod_info },
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.3.1", NULL, SU_STATUS_BATT | SU_FLAG_OK, battstate_info },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.1.1", NULL, SU_FLAG_OK, huawei_supplymethod_info },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.2011.6.174.1.2.101.1.3.1", NULL, SU_STATUS_BATT | SU_FLAG_OK, huawei_battstate_info },
 
-	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, ietf_test_result_info },
+	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.33.1.7.3.0", "", 0, huawei_test_result_info },
 
 
 	/* Input page */
 
 	/* hwUpsCtrlInputStandard listed in MIB but not present on tested UPS5000-E */
-	{ "input.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.8", "3", SU_FLAG_ABSENT | SU_FLAG_OK, phase_info },
+	{ "input.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.8", "3", SU_FLAG_ABSENT | SU_FLAG_OK, huawei_phase_info },
 
 	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.3.100.1.1.1", NULL, SU_FLAG_OK, NULL },
 	{ "input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.3.100.1.2.1", NULL, SU_FLAG_OK, NULL },
@@ -183,7 +187,7 @@ static snmp_info_t huawei_mib[] = {
 	/* Output page */
 
 	/* hwUpsCtrlOutputStandard listed in MIB but not present on tested UPS5000-E */
-	{ "output.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.9", "3", SU_FLAG_ABSENT | SU_FLAG_OK, phase_info },
+	{ "output.phases", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.102.100.1.9", "3", SU_FLAG_ABSENT | SU_FLAG_OK, huawei_phase_info },
 
 	{ "output.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.1.1", NULL, SU_FLAG_OK, NULL },
 	{ "output.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.2.1", NULL, SU_FLAG_OK, NULL },
@@ -207,9 +211,9 @@ static snmp_info_t huawei_mib[] = {
 	{ "output.L2.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.15.1", NULL, SU_FLAG_OK, NULL },
 	{ "output.L3.power.percent", 0, 0.1, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.16.1", NULL, SU_FLAG_OK, NULL },
 
-	{ "output.voltage.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.17.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, voltrating_info },
-	{ "output.frequency.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.18.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, freqrating_info },
-	{ "output.power.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.6.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, pwrrating_info },
+	{ "output.voltage.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.17.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, huawei_voltrating_info },
+	{ "output.frequency.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.18.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, huawei_freqrating_info },
+	{ "output.power.nominal", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2011.6.174.1.2.100.1.6.1", NULL, SU_FLAG_STATIC | SU_FLAG_OK, huawei_pwrrating_info },
 
 	{ "output.L1.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.19.1", NULL, SU_FLAG_OK, NULL },
 	{ "output.L2.powerfactor", 0, 0.01, ".1.3.6.1.4.1.2011.6.174.1.4.100.1.20.1", NULL, SU_FLAG_OK, NULL },
