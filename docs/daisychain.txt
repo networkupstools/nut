@@ -45,20 +45,25 @@ device.X.{...}
 To ensure backward compatibility in NUT, the data of the various devices are
 exposed the following way:
 
-* "device.0" is a special case, for the master device of the daisychain. It is
-equivalent to "device" and root collections, and is omitted from the device
-subcollection since all the numerous data are already exposed.  As an example,
-to access device.0.outlet.1.id, you use the normal "outlet.1.id".
-* For the first daisy chained device (slave) and subsequent ones, you then use
-device.1.outlet.1.id, device.2.outlet.1.id, ...
+and represent the whole set of outlets
+of the device. The most important data is "outlet.count", used to iterate over
+the whole set of outlets.
+
+* "device.0" is a special case, for the whole set of devices (the whole
+daisychain). It is equivalent to "device" (without ".X" index) and root
+collections. The idea is to be able to get visibility and control over the whole
+daisychain from a single point.
+* daisy chained devices are available from "device.1" (master) to "device.N"
+(slaves).
 
 That way, client application that are unaware of the daisychain support, will
-only see the first device, as it would normally see, and not nothing at all.
+only see the first device (whole daisychain, as it would normally see, and not
+nothing at all.
 
 Moreover, this solution is generic, and not specific to the PDU use case
 currently considered. It thus support both the current NUT scope, along with
-potential evolutions, and technology change (hybrid chain with UPS and PDU for
-example).
+other use cases (parallel / serial UPS setups), and potential evolutions and
+technology change (hybrid chain with UPS and PDU for example).
 
 Example
 ^^^^^^^
@@ -67,19 +72,23 @@ master and two slaves:
 
 	device.count: 3
 	device.mfr: EATON
-	device.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
+	device.model: EATON daisychain PDU
 	device.1.mfr: EATON
 	device.1.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
 	device.2.mfr: EATON
 	device.2.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
+	device.3.mfr: EATON
+	device.3.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
 	...
-	input.voltage: 237.75
+	input.voltage: ??? (proposal: range or list or average?)
 	device.1.input.voltage: 237.75
 	device.2.input.voltage: 237.75
+	device.3.input.voltage: 237.75
 	...
-	outlet.1.status: on
+	outlet.1.status: ?? (proposal: "on, off, off)
 	device.1.outlet.1.status: on
 	device.2.outlet.1.status: off
+	device.3.outlet.1.status: off
 	...
 
 
@@ -105,11 +114,7 @@ steps have to be done:
 
 * Add a "device.count" entry in the mapping file: snmp-ups will determine
 if the daisychain support has to be enabled (if more than 1 device).
-To achieve this, use the following type of declaration:
-+
-	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i", "1", SU_FLAG_STATIC, NULL, NULL },
-+
-There are two possibilities:
+To achieve this, use one of the following type of declarations:
 +
 a) point at an OID which provides the number of devices:
 
