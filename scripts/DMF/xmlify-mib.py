@@ -112,9 +112,7 @@ def mk_snmp (inp, root):
                     )
 
             ### process info_flags
-            # multiplier is only for !string things
-            if not ST_FLAG_STRING in info ["info_flags"]:
-                kwargs ["multiplier"] = info ["info_len"]
+            kwargs ["multiplier"] = info ["info_len"]
 
             # I detected some differences against the original structures
             # if the info_flags is ignored!
