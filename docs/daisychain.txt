@@ -45,10 +45,6 @@ device.X.{...}
 To ensure backward compatibility in NUT, the data of the various devices are
 exposed the following way:
 
-and represent the whole set of outlets
-of the device. The most important data is "outlet.count", used to iterate over
-the whole set of outlets.
-
 * "device.0" is a special case, for the whole set of devices (the whole
 daisychain). It is equivalent to "device" (without ".X" index) and root
 collections. The idea is to be able to get visibility and control over the whole
@@ -57,8 +53,7 @@ daisychain from a single point.
 (slaves).
 
 That way, client application that are unaware of the daisychain support, will
-only see the first device (whole daisychain, as it would normally see, and not
-nothing at all.
+only see the whole daisychain, as it would normally see, and not nothing at all.
 
 Moreover, this solution is generic, and not specific to the PDU use case
 currently considered. It thus support both the current NUT scope, along with
