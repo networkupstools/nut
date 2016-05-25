@@ -187,7 +187,7 @@ typedef struct {
 #define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
 #define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
 #define SU_TYPE_DAISY		((t)->flags & (7 << 19))
-
+#define SU_DAISY			(2 << 19) /* Daisychain template definition */
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
@@ -280,6 +280,7 @@ extern int input_phases, output_phases, bypass_phases;
 /* Common daisychain structure and functions */
 
 bool_t daisychain_init();
+int su_addcmd(snmp_info_t *su_info_p);
 
 /* Structure containing info about each daisychain device, including phases
  * for input, output and bypass */
