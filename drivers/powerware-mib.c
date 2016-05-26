@@ -167,7 +167,7 @@ static info_lkp_t pw_battery_abm_status[] = {
 	{ 0, NULL }
 } ;
 
-static info_lkp_t eaton_abm_status_info[] = {
+static info_lkp_t pw_abm_status_info[] = {
 	{ 1, "charging" },
 	{ 2, "discharging" },
 	{ 3, "floating" },
@@ -188,7 +188,7 @@ static info_lkp_t pw_batt_test_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t ietf_yes_no_info[] = {
+static info_lkp_t pw_yes_no_info[] = {
 	{ 1, "yes" },
 	{ 2, "no" },
 	{ 0, NULL }
@@ -238,9 +238,9 @@ static snmp_info_t pw_mib[] = {
 	/* XUPS-MIB::xupsTestBatteryStatus */
 	{ "ups.test.result", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.8.2.0", "", 0, &pw_batt_test_info[0] },
 	/* UPS-MIB::upsAutoRestart */
-	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, &ietf_yes_no_info[0] },
+	{ "ups.start.auto", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.2.1.33.1.8.5.0", "", SU_FLAG_OK, &pw_yes_no_info[0] },
 	/* XUPS-MIB::xupsBatteryAbmStatus.0 */
-	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.2.5.0", "", SU_STATUS_BATT, &eaton_abm_status_info[0] },
+	{ "battery.charger.status", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.2.5.0", "", SU_STATUS_BATT, &pw_abm_status_info[0] },
 
 	/* Battery page */
 	{ "battery.charge", 0, 1.0, PW_OID_BATT_CHARGE, "",

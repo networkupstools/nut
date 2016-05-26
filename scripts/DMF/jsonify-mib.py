@@ -232,7 +232,9 @@ class Visitor(c_ast.NodeVisitor):
                 if ( ret [key] == "0" ):
                     ret [key] = None
 
-            lst.append (ret)
+            # skip alarm_info with all the values None
+            if any(x is not None for x in ret.values ()):
+                lst.append (ret)
 
         return lst
 
