@@ -874,8 +874,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[2] = get_param_by_name(SNMP_OID, attrs);
 	arg[3] = get_param_by_name(SNMP_DEFAULT, attrs);
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
-	arg[5] = get_param_by_name(SNMP_OID, attrs);
-	arg[6] = get_param_by_name(SNMP_SETVAR, attrs);
+	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 	// TODO: Anything here for arg[7] for LUA?
 
 	//Info_flags
@@ -904,24 +903,24 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	if(arg[1])
 		multiplier = atof(arg[1]);
 
-	if(arg[6])
+	if(arg[5])
 	{
 		flags |= SU_FLAG_SETINT;
-		if(strcmp(arg[6], SETVAR_INPUT_PHASES) == 0)
+		if(strcmp(arg[5], SETVAR_INPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &input_phases));
-		else if(strcmp(arg[6], SETVAR_OUTPUT_PHASES) == 0)
+		else if(strcmp(arg[5], SETVAR_OUTPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &output_phases));
-		else if(strcmp(arg[6], SETVAR_BYPASS_PHASES) == 0)
+		else if(strcmp(arg[5], SETVAR_BYPASS_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
