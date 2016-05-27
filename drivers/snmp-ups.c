@@ -1039,9 +1039,10 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	upsdebugx(1, "entering %s(%s)", __func__, su_info_p->info_type);
 
 	memset(info_type, 0, 20);
+	/* pre-fill with the device name for checking */
 	snprintf(info_type, 128, "device.%i", current_device_number);
 
-	if (daisychain_enabled == TRUE) {
+	if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
 		/* Only append "device.X" for master and slaves, if not already done! */
 		if ((current_device_number > 0) && (strstr(su_info_p->info_type, info_type) == NULL)) {
 			/* Special case: we remove "device" from the device collection not to
@@ -1523,14 +1524,11 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 	int base_index = template_index_base;
 	char test_OID[SU_INFOSIZE];
 
-	/* Check if this is a daisychain enabled template, to fill in the
-	 * daisychain ID, and get a suitable processing */
-
 	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
 
 	/* FIXME: differentiate between template types (SU_OUTLET | SU_OUTLET_GROUP)
 	 * which may have different indexes ; and store it to not redo it again */
-// FIXME: for now, process every time the index, if it's a device template!
+// FIXME: for now, process every time the index, if it's a "device" template!
 	if (!(su_info_p->flags & SU_OUTLET) && !(su_info_p->flags & SU_OUTLET_GROUP))
 		template_index_base = -1;
 
@@ -1620,7 +1618,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 
 	upsdebugx(1, "%s template definition found (%s)...", type, su_info_p->info_type);
 
-	if ((strncmp(type, "device", 6)) && (daisychain_enabled == TRUE) && (current_device_number > 0))
+	if ((strncmp(type, "device", 6)) && (devices_count > 1) && (current_device_number > 0))
 		snprintf(template_count_var, sizeof(template_count_var), "device.%i.%s.count", current_device_number, type);
 	else
 		snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
@@ -1631,7 +1629,8 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 		 * or rely on guestimation? */
 		template_count = guestimate_template_count(su_info_p->OID);
 		/* Publish the count estimation */
-		dstate_setinfo(template_count_var, "%i", template_count);
+		if (template_count > 0)
+			dstate_setinfo(template_count_var, "%i", template_count);
 	}
 	else {
 		template_count = atoi(dstate_getinfo(template_count_var));
@@ -1683,7 +1682,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				/* Special processing for daisychain */
 				if (daisychain_enabled == TRUE) {
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
-					if (current_device_number > 0) {
+					if ((devices_count > 1) && (current_device_number > 0)) {
 						memset(&tmp_buf[0], 0, SU_INFOSIZE);
 						strcat(&tmp_buf[0], "device.%i.");
 						strcat(&tmp_buf[0], su_info_p->info_type);
@@ -1914,23 +1913,28 @@ bool_t daisychain_init()
 		}
 
 		/* Publish the device(s) count */
-		dstate_setinfo("device.count", "%ld", devices_count);
+		if (devices_count > 1) {
+			dstate_setinfo("device.count", "%ld", devices_count);
 
-		/* Also publish the default value for mfr and a forged model
-		 * for device.0 (whole daisychain) */
-		su_info_p = su_find_info("device.mfr");
-		if (su_info_p != NULL) {
-			su_info_p = su_find_info("ups.mfr");
-			if (su_info_p != NULL)
-				su_setinfo(su_info_p, NULL);
+			/* Also publish the default value for mfr and a forged model
+			 * for device.0 (whole daisychain) */
+			su_info_p = su_find_info("device.mfr");
+			if (su_info_p != NULL) {
+				su_info_p = su_find_info("ups.mfr");
+				if (su_info_p != NULL) {
+					su_setinfo(su_info_p, NULL);
+				}
+			}
+			/* Forge model using device.type and number */
+			su_info_p = su_find_info("device.type");
+			if ((su_info_p != NULL) && (su_info_p->dfl != NULL)) {
+				dstate_setinfo("device.model", "daisychain %s (1+%ld)",
+					su_info_p->dfl, devices_count - 1);
+			}
+			else {
+				dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
+			}
 		}
-		/* Forge model using device.type and number */
-		su_info_p = su_find_info("device.type");
-		if ((su_info_p != NULL) && (su_info_p->dfl != NULL))
-			dstate_setinfo("device.model", "daisychain %s (1+%ld)",
-				su_info_p->dfl, devices_count - 1);
-		else
-			dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
 	}
 	else {
 		daisychain_enabled = FALSE;
@@ -2085,7 +2089,8 @@ bool_t snmp_ups_walk(int mode)
 	for (current_device_number = 0 ; current_device_number <= devices_count ; current_device_number++)
 	{
 		/* reinit the alarm buffer, before */
-		device_alarm_init();
+		if (devices_count > 1)
+			device_alarm_init();
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
@@ -2116,7 +2121,7 @@ bool_t snmp_ups_walk(int mode)
 // FIXME: daisychain-whole, what to do?
 			/* skip the whole-daisychain for now */
 			if (current_device_number == 0) {
-				upsdebugx(1, "Skipping device.0 for now...");
+				upsdebugx(1, "Skipping daisychain device.0 for now...");
 				continue;
 			}
 
@@ -2143,7 +2148,7 @@ bool_t snmp_ups_walk(int mode)
 				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
 				if (mode == SU_WALKMODE_INIT) {
 					if (su_info_p->dfl) {
-						if (daisychain_enabled == TRUE) {
+						if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
 							if (current_device_number == 0)
 								su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
 							else
@@ -2217,11 +2222,13 @@ bool_t snmp_ups_walk(int mode)
 			}
 		}	/* for (su_info_p... */
 
-		/* commit the device alarm buffer */
-		device_alarm_commit(current_device_number);
+		if (devices_count > 1) {
+			/* commit the device alarm buffer */
+			device_alarm_commit(current_device_number);
 
-		/* reinit the alarm buffer, after, not to pollute "device.0" */
-		device_alarm_init();
+			/* reinit the alarm buffer, after, not to pollute "device.0" */
+			device_alarm_init();
+		}
 	}
 	iterations++;
 	return status;
