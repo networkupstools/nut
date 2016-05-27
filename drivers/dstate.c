@@ -945,8 +945,11 @@ void device_alarm_commit(const int device_number)
 		alarm_active++;
 	} else {
 		dstate_delinfo(info_name);
-		/* address subdevices, which would otherwise be cleared
-         * from "ups.status==ALARM" */
-		alarm_active--;
+		/* Address subdevices, which would otherwise be cleared
+		 * from "ups.status==ALARM"
+		 * Also ensure that we don't underflow (get -1) which would cause the
+		 * ALARM flag to be falsely published */
+		if (alarm_active > 0)
+			alarm_active--;
 	}
 }
