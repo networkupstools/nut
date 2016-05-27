@@ -173,3 +173,32 @@ You would have to translate it to:
 
 SU_TYPE_DAISY_1 indicates that the daisychain index is the 1st specifier ("%i")
 in the string. If it is the second one, use SU_TYPE_DAISY_2.
+
+
+Devices alarms handling
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Two functions are available to handle alarms on daisychain devices in your
+driver:
+
+* device_alarm_init(): clear the current alarm buffer
+* device_alarm_commit(const int device_number): commit the current alarm buffer
+to "device.<device_number>.ups.alarm", and increase the count of alarms. If the
+current alarms buffer is empty, the count of alarm is decreased, and the
+variable "device.<device_number>.ups.alarm" is removed from publication. Once
+the alarm count reaches "0", the main (device.0) ups.status will also remove the
+"ALARM" flag.
+
+NOTE: when implementing a new driver, the following functions have to be called:
+* "alarm_init()" at the beginning of the main update loop, for the whole
+daisychain. This will set the alarm count to "0", and reinitialize all alarms,
+* "device_alarm_init()" at the beginning of the per-device update loop.
+This will only clear the alarms for the current device,
+* "device_alarm_commit()" at the end of the per-device update loop. This will
+flush the current alarms for the current device,
+* also "device_alarm_init()" at the end of the per-device update loop. This will
+clear the current alarms, and ensure that this buffer will not be considered by
+other subsequent devices,
+- "alarm_commit()" at the end of the main update loop, for the whole daisychain.
+This will take care of publishing or not the "ALARM" flag in the main ups.status
+(device.0, root collection).
