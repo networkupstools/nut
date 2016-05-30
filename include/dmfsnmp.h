@@ -199,6 +199,7 @@
 #define ALARM_STATUS "status"
 #define ALARM_ALARM "alarm"
 
+#define TYPE_DAISY "type_daisy"
 /* "Auxiliary list" structure to store hierarchies
  * of lists with bits of data */
 typedef struct {

@@ -88,6 +88,7 @@
                       <xs:attribute type="xs:string" name="lookup" use="optional"/>
                       <xs:attribute type="xs:string" name="setvar" use="optional"/>
                       <xs:attribute type="xs:string" name="command" use="optional"/>
+                      <xs:attribute type="xs:string" name="type_daisy" use="optional"/>
                     </xs:extension>
                   </xs:simpleContent>
                 </xs:complexType>

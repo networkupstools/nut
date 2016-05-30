@@ -2103,7 +2103,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 				/* Daisychain specific: we may have a template (including
 				 * formatting string) that needs to be adapted! */
 				if (strchr(tmp_info_p->OID, '%') != NULL) {
-					upsdebugx(2, "Found template, need to be adapted");										
+					upsdebugx(2, "Found template, need to be adapted");
 					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number - 1);
 				}
 				else {
@@ -2123,6 +2123,11 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 			}
 			else {
 				upsdebugx(2, "No %s entry. Defaulting to 1 %s.phase", tmpInfo, type);
+				*nb_phases = 1;
+				/* FIXME: return something or process using default?! */
+			}
+			else {
+				upsdebugx(2, "No input.bypass entry. Defaulting to 1 %s.phase", type);
 				*nb_phases = 1;
 				/* FIXME: return something or process using default?! */
 			}
@@ -2370,6 +2375,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				free_info(tmp_info_p);
 				return FALSE;
 			}
+
 			su_info_p = tmp_info_p;
 		}
 		else {
