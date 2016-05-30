@@ -1036,6 +1036,11 @@ compile_flags(const char **attrs)
 			flags = flags | SU_BYPASS_3;
 		}
 	if(aux_flags)free(aux_flags);
+        aux_flags = get_param_by_name(TYPE_DAISY, attrs);
+        if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+                        flags = flags | SU_TYPE_DAISY_1;
+                }
+        if(aux_flags)free(aux_flags);
 	return flags;
 }
 

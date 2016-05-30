@@ -26,7 +26,7 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.5"
+#define IETF_MIB_VERSION	"1.51"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
@@ -125,7 +125,7 @@ static snmp_info_t ietf_mib[] = {
 #ifdef DEBUG
 	{ "debug.upsInputLineBads", 0, 1.0, IETF_OID_UPS_MIB "3.1.0", "", 0, NULL }, /* upsInputLineBads */
 #endif
-	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", SU_FLAG_SETINT, NULL, &input_phases }, /* upsInputNumLines */
+	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", 0, NULL, NULL }, /* upsInputNumLines */
 #ifdef DEBUG
 	{ "debug.upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_1, NULL }, /* upsInputLineIndex */
 	{ "debug.[1].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_3, NULL },
@@ -152,7 +152,7 @@ static snmp_info_t ietf_mib[] = {
 	/* Output Group */
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "4.1.0", "", SU_STATUS_PWR, ietf_power_source_info }, /* upsOutputSource */
 	{ "output.frequency", 0, 0.1, IETF_OID_UPS_MIB "4.2.0", "", 0, NULL }, /* upsOutputFrequency */
-	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", SU_FLAG_SETINT, NULL, &output_phases }, /* upsOutputNumLines */
+	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", 0, NULL, NULL }, /* upsOutputNumLines */
 #ifdef DEBUG
 	{ "debug.upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_1, NULL }, /* upsOutputLineIndex */
 	{ "debug.[1].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_3, NULL },
@@ -177,7 +177,7 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.L3.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.3", "", SU_OUTPUT_3, NULL },
 
 	/* Bypass Group */
-	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", SU_FLAG_SETINT, NULL, &bypass_phases }, /* upsBypassNumLines */
+	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", 0, NULL, NULL }, /* upsBypassNumLines */
 	{ "input.bypass.frequency", 0, 0.1, IETF_OID_UPS_MIB "5.1.0", "", SU_BYPASS_1 | SU_BYPASS_3, NULL }, /* upsBypassFrequency */
 #ifdef DEBUG
 	{ "debug.upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_1, NULL }, /* upsBypassLineIndex */

@@ -185,6 +185,16 @@ typedef struct {
 #define SU_TYPE_CMD			(3 << 18)	/* instant command */
 #define SU_TYPE(t)			((t)->flags & (7 << 18))
 
+/* Daisychain template definition */
+/* the following 2 flags specify the position of the daisychain device index
+ * in the formatting string. This is useful when considering daisychain with
+ * templates, such as outlets / outlets groups, which already have a format
+ * string specifier */
+#define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY		((t)->flags & (7 << 19))
+#define SU_DAISY			(2 << 19) /* Daisychain template definition */
+
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
@@ -276,6 +286,20 @@ extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 //extern int input_phases, output_phases, bypass_phases;
 int input_phases, output_phases, bypass_phases;
+
+/* Common daisychain structure and functions */
+
+bool_t daisychain_init();
+int su_addcmd(snmp_info_t *su_info_p);
+
+/* Structure containing info about each daisychain device, including phases
+ * for input, output and bypass */
+typedef struct {
+	long input_phases;
+	long output_phases;
+	long bypass_phases;
+} daisychain_info_t;
+
 
 #endif /* SNMP_UPS_H */
 
