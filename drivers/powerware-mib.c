@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.88"
+#define PW_MIB_VERSION "0.89"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -256,8 +256,7 @@ static snmp_info_t pw_mib[] = {
 	{ "battery.date", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.1.2.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "",
-		SU_FLAG_SETINT, NULL, &output_phases },
+	{ "output.phases", 0, 1.0, PW_OID_OUT_LINES, "", 0, NULL, NULL },
 	/* XUPS-MIB::xupsOutputFrequency.0 */
 	{ "output.frequency", 0, 0.1, "1.3.6.1.4.1.534.1.4.2.0", "", 0, NULL },
 	/* XUPS-MIB::xupsConfigOutputFreq.0 */
@@ -304,7 +303,7 @@ static snmp_info_t pw_mib[] = {
 
 	/* Input page */
 	{ "input.phases", 0, 1.0, PW_OID_IN_LINES, "",
-		SU_FLAG_SETINT, NULL, &input_phases },
+		0, NULL, NULL },
 	{ "input.frequency", 0, 0.1, PW_OID_IN_FREQUENCY, "",
 		0, NULL },
 	{ "input.voltage", 0, 1.0, PW_OID_IN_VOLTAGE ".0", "",
@@ -334,9 +333,8 @@ static snmp_info_t pw_mib[] = {
 	{ "input.quality", 0, 1.0, PW_OID_IN_LINE_BADS, "",
 		0, NULL },
 
-	/* this segfaults? do we assume the same number of bypass phases as input phases?
-	{ "input.bypass.phases", 0, 1.0, PW_OID_BY_LINES, "",
-		SU_FLAG_SETINT, NULL }, */
+	/* FIXME: this segfaults! do we assume the same number of bypass phases as input phases?
+	{ "input.bypass.phases", 0, 1.0, PW_OID_BY_LINES, "", 0, NULL }, */
 	{ "input.bypass.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
 	{ "input.bypass.L1-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".1", "",

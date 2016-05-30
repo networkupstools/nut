@@ -259,6 +259,10 @@ flag in ups.status.
 There is no official list of alarm words as of this writing, so don't
 use these functions until you check with the upsdev list.
 
+Also refer to the <<daisychain,NUT daisychain support notes>> chapter
+of the user manual and developer guide for information related to alarms
+handling in daisychain mode.
+
 Staleness control
 -----------------
 

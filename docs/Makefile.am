@@ -12,7 +12,7 @@ IMAGE_FILES = images/asciidoc.png \
 	images/old-cgi.png
 
 # Only track here the local deps
-SHARED_DEPS = nut-names.txt asciidoc.conf
+SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
