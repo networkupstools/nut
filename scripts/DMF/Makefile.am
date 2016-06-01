@@ -192,7 +192,7 @@ dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
-	-llua5.1 -I/usr/include/lua5.1 -DWITH_DMF_LUA=1 \
+	-llua -I/usr/include/lua5.1 -DWITH_DMF_LUA=1 \
 	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
