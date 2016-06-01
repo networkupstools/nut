@@ -139,7 +139,7 @@
 // NOTE: Actual support for functions is optionally built so
 // it can be missing in a binary (with warning in DMF import)
 // Also it may be backed by various implementations (LUA for starters)
-#define DMFTAG_FUNCTION "function"
+#define DMFTAG_FUNCTIONS "functions"
 
 //#define MIB2NUT_NAME "name"
 #define MIB2NUT_VERSION "version"
@@ -200,6 +200,7 @@
 #define ALARM_ALARM "alarm"
 
 #define TYPE_DAISY "type_daisy"
+#define TYPE_FUNCTION "function"
 /* "Auxiliary list" structure to store hierarchies
  * of lists with bits of data */
 typedef struct {
