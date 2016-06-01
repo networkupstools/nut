@@ -1041,6 +1041,11 @@ compile_flags(const char **attrs)
                         flags = flags | SU_TYPE_DAISY_1;
                 }
         if(aux_flags)free(aux_flags);
+        aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
+        if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+                        flags = flags | SU_FLAG_FUNCTION;
+                }
+        if(aux_flags)free(aux_flags);
 	return flags;
 }
 
@@ -1111,7 +1116,7 @@ xml_dict_start_cb(void *userdata, int parent,
 	{
 		snmp_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
+	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
 #ifdef WITH_DMF_LUA
 		alist_append(list, alist_new(auxname, NULL, NULL));
