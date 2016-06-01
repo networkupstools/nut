@@ -144,7 +144,10 @@ typedef struct {
 #define SU_FLAG_SETINT		(1 << 6)	/* save value */
 #define SU_OUTLET			(1 << 7)	/* outlet template definition */
 #define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
+
+#ifdef WITH_DMF_LUA
 #define SU_FLAG_FUNCTION        (1 << 9)        /* TODO Pending to check if this flag have any incompatibility*/
+#endif
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
  * Otherwise, the driver will try to determine it by itself...

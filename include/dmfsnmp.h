@@ -149,7 +149,6 @@
 #define MIB2NUT_POWER_STATUS "power_status"
 #define MIB2NUT_SNMP "snmp_info"
 #define MIB2NUT_ALARMS "alarms_info"
-#define MIB2NUT_FUNCTION "function"
 
 #define INFO_MIB2NUT_MAX_ATTRS 14
 #define INFO_LOOKUP_MAX_ATTRS 4
@@ -200,7 +199,10 @@
 #define ALARM_ALARM "alarm"
 
 #define TYPE_DAISY "type_daisy"
+
+#ifdef WITH_DMF_LUA
 #define TYPE_FUNCTION "function"
+#endif
 /* "Auxiliary list" structure to store hierarchies
  * of lists with bits of data */
 typedef struct {
@@ -356,11 +358,7 @@ void
 mib2nut_info_t *
 	info_mib2nut_new (const char *name, const char *version,
 		const char *oid_power_status, const char *oid_auto_check,
-		snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
-#ifdef WITH_DMF_LUA
-		, lua_State **functions
-#endif
-	);
+		snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms);
 
 void
 	info_mib2nut_destroy (void **self_p);
@@ -425,11 +423,6 @@ int
 	xml_cdata_cb(
 		void *userdata, int state, const char *cdata, size_t len
 	);
-
-#ifdef WITH_DMF_LUA
-lua_State *
-	compile_lua_functionFrom_array (char **array, char *name);
-#endif
 
 
 

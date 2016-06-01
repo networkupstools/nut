@@ -111,18 +111,6 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 			i++;
 		}
 	}
-
-#ifdef WITH_DMF_LUA
-	i = 0;
-	if (self->functions)
-	{
-		while ( self->functions[i] ) {
-			printf("Lua Function n- %d result: \n", i);
-			lua_pcall(self->functions[i], 0, 0, 0);
-			i++;
-		}
-	}
-#endif
 }
 //END DEBUGGING
 
@@ -193,11 +181,7 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 mib2nut_info_t *
 info_mib2nut_new (const char *name, const char *version,
 	const char *oid_power_status, const char *oid_auto_check,
-	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
-#ifdef WITH_DMF_LUA
-	, lua_State **functions
-#endif
-)
+	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms)
 {
 	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
@@ -213,9 +197,7 @@ info_mib2nut_new (const char *name, const char *version,
 		self->sysOID = strdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
-#ifdef WITH_DMF_LUA
-	self->functions = functions;
-#endif
+
 	return self;
 }
 
@@ -399,17 +381,6 @@ info_mib2nut_destroy (void **self_p)
 			free ((alarms_info_t*)self->alarms_info);
 			self->alarms_info = NULL;
 		}
-#ifdef WITH_DMF_LUA
-		if (self->functions)
-		{
-			i = 0;
-			while( self->functions[i] ) {
-				lua_close(self->functions[i]);
-				i++;
-			}
-		}
-		free(self->functions);
-#endif
 		free (self);
 		*self_p = NULL;
 	}
@@ -601,35 +572,6 @@ mibdmf_parser_new()
 }
 
 
-#ifdef WITH_DMF_LUA
-lua_State *
-compile_lua_functionFrom_array (char **array, char *name)
-{
-	int j = 0;
-	int lenLuaLine = 1;
-	char *lua_code = NULL;
-	lua_State *function = NULL;
-	while ( array[j] )
-	{
-		lenLuaLine = lenLuaLine + strlen(array[j]);
-		if (!lua_code)
-			lua_code = strdup(array[j]);
-		else {
-			lua_code = (char*) realloc(
-				lua_code, lenLuaLine * sizeof(char));
-			lua_code = strcat(lua_code, array[j]);
-		}
-		j++;
-	}
-	function = lua_open();
-	luaopen_base(function);
-	luaopen_string(function);
-	luaL_loadbuffer(function, lua_code, strlen(lua_code), name);
-	free(lua_code);
-	return function;
-}
-#endif
-
 //I splited because with the error control is going a grow a lot
 void
 mib2nut_info_node_handler (alist_t *list, const char **attrs)
@@ -638,10 +580,6 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	int i=0;
 	snmp_info_t *snmp = NULL;
 	alarms_info_t *alarm = NULL;
-#ifdef WITH_DMF_LUA
-	lua_State **functions = NULL;
-	//lua_State **lfunction;
-#endif
 
 	char **arg = (char**) calloc (
 		(INFO_MIB2NUT_MAX_ATTRS + 1), sizeof (void**) );
@@ -654,9 +592,6 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	arg[4] = get_param_by_name(MIB2NUT_AUTO_CHECK, attrs);
 	arg[5] = get_param_by_name(MIB2NUT_SNMP, attrs);
 	arg[6] = get_param_by_name(MIB2NUT_ALARMS, attrs);
-#ifdef WITH_DMF_LUA
-	arg[7] = get_param_by_name(MIB2NUT_FUNCTION, attrs);
-#endif
 
 	if (arg[5])
 	{
@@ -737,76 +672,19 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		alarm[i].alarm_value = NULL;
 	} // arg[6]
 
-#ifdef WITH_DMF_LUA
-	if(arg[7])
-	{
-		int contFunc = 2;
-		char *func = (char*) calloc(128, sizeof(char));
-		int j = 0;
-		for (i=0; i < strlen(arg[7]); i++)
-		{
-			if( (arg[7][i] != ',') && (arg[7][i] != ' ') )
-			{
-				func[j] = arg[7][i];
-				j++;
-			}
-			else if(arg[7][i] == ',')
-			{
-				if(contFunc == 1)
-					functions = (lua_State**)
-						malloc(contFunc * sizeof(lua_State**));
-				else	functions = (lua_State**)
-						realloc(functions, contFunc * sizeof(lua_State**));
-				assert(contFunc>=2); // TODO: According to if() above, we can have 1 or maybe less, and array access below will fail
-				functions[contFunc - 2] =
-					compile_lua_functionFrom_array((char**) alist_get_element_by_name(list, func)->values, func);
-				//lua_close(functions[contFunc - 1]);
-				contFunc++;
-				memset(func, 0, 128 * sizeof(char));
-				j = 0;
-			}
-		}
-
-		if(contFunc == 1)
-			functions = (lua_State**) malloc(
-				contFunc * sizeof(lua_State**) );
-		else	functions = (lua_State**) realloc(functions,
-				contFunc * sizeof(lua_State**) );
-
-		assert(contFunc>=2); // TODO: According to if() above, we can have 1 or maybe less, and array access below will fail
-		functions[contFunc - 2] = compile_lua_functionFrom_array(
-			(char**) alist_get_element_by_name(list, func)->values,
-			func);
-		functions[contFunc - 1] = NULL;
-		//lua_close(functions[contFunc - 1]);
-		free(func);
-	} //arg[7]
-#endif
-
 	if(arg[0])
 	{
 		alist_append(element, ((mib2nut_info_t *(*) (
 			const char *, const char *, const char *,
 			const char *, snmp_info_t *, const char *,
-			alarms_info_t *
-#ifdef WITH_DMF_LUA
-			, lua_State **
-#endif
-			)) element->new_element)
+			alarms_info_t *)) element->new_element)
 			(arg[0], arg[1], arg[3], arg[4],
-			 snmp, arg[2], alarm
-#ifdef WITH_DMF_LUA
-			, functions
-#endif
-			));
+			 snmp, arg[2], alarm));
 	} // arg[0]
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
 
-#ifdef WITH_DMF_LUA
-	if (functions) free(functions);
-#endif
 	free (arg);
 }
 
@@ -1041,11 +919,13 @@ compile_flags(const char **attrs)
                         flags = flags | SU_TYPE_DAISY_1;
                 }
         if(aux_flags)free(aux_flags);
+#ifdef WITH_DMF_LUA
         aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
         if(aux_flags)if(strcmp(aux_flags, YES) == 0){
                         flags = flags | SU_FLAG_FUNCTION;
                 }
         if(aux_flags)free(aux_flags);
+#endif
 	return flags;
 }
 
@@ -1118,11 +998,7 @@ xml_dict_start_cb(void *userdata, int parent,
 	}
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
-#ifdef WITH_DMF_LUA
-		alist_append(list, alist_new(auxname, NULL, NULL));
-#else
-		fprintf(stderr, "WARN: The '%s' tag in DMF is recognized, but support is not implemented in this build - so it will be ignored\n", name);
-#endif
+          
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
