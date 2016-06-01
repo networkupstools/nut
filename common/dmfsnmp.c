@@ -122,7 +122,6 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 			i++;
 		}
 	}
-	printf("***************************-> Soy LUA\n");
 #endif
 }
 //END DEBUGGING
@@ -1173,7 +1172,6 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 			device_table[device_table_counter - 1].sysoid =
 			(char *)((mib2nut_info_t *) element->values[0])->sysOID;
 
-                print_mib2nut_memory_struct((mib2nut_info_t *) element->values[0]);
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
 	return OK;
