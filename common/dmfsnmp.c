@@ -117,9 +117,15 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 	}
 #ifdef WITH_DMF_LUA
 if(self->functions){
-  lua_getglobal(self->functions, "ups.mfr");
-  printf("++++++++++++++------>Executing LUA\n");
-  printf("Return of LUA: %d\n in code:\n%s\n", lua_pcall(self->functions,0,0,0), lua_tostring(self->functions, -1));
+  functions_aux = luaL_newstate();
+  luaL_openlibs(functions_aux);
+  if(luaL_loadbuffer(functions_aux, self->functions, strlen(self->functions),"functions")){
+     printf("Error loading LUA functions:\n%s\n", self->functions);
+  }
+  lua_getglobal(functions_aux, "ups.mfr");
+  lua_pcall(functions_aux,0,0,0);
+  printf("***********-> Luatext:\n%s\n", self->functions);
+  lua_close(functions_aux);
 }
 #endif
 }
@@ -194,7 +200,7 @@ info_mib2nut_new (const char *name, const char *version,
 	const char *oid_power_status, const char *oid_auto_check,
 	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
 #ifdef WITH_DMF_LUA
-, lua_State **functions
+, char **functions
 #endif
 )
 {
@@ -400,7 +406,7 @@ info_mib2nut_destroy (void **self_p)
 		}
 #ifdef WITH_DMF_LUA
 if(self->functions){
-  lua_close(self->functions);
+  free(self->functions);
 }
 #endif
 		free (self);
@@ -701,13 +707,13 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 			const char *, snmp_info_t *, const char *,
 			alarms_info_t *
 #ifdef WITH_DMF_LUA
-, lua_State **
+, char **
 #endif
                 )) element->new_element)
 			(arg[0], arg[1], arg[3], arg[4],
 			 snmp, arg[2], alarm
 #ifdef WITH_DMF_LUA
-, &functions_aux
+, &luatext
 #endif
 ));
 	} // arg[0]
@@ -715,7 +721,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
 #ifdef WITH_DMF_LUA
-functions_aux = NULL;
+luatext = NULL;
 #endif
 	free (arg);
 }
@@ -1103,8 +1109,8 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
           if(luaL_loadbuffer(functions_aux, luatext, strlen(luatext),"functions")){
                   printf("Error loading LUA functions:\n%s\n", luatext);
           }
-          printf("***********-> Luatext:\n%s\nLua to string:\n%s\n", luatext, lua_tostring(functions_aux, -1));
-          free(luatext);
+          printf("***********-> Luatext:\n%s\n", luatext);
+          lua_close(functions_aux);
         }
 #endif
 	return OK;
