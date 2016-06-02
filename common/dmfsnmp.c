@@ -36,6 +36,10 @@
  *  C FILE
  *
  */
+#ifdef WITH_DMF_LUA
+        lua_State *functions_aux = NULL;
+        char *luatext = NULL;
+#endif
 //DEBUGGING
 void
 print_snmp_memory_struct(snmp_info_t *self)
@@ -111,6 +115,13 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 			i++;
 		}
 	}
+#ifdef WITH_DMF_LUA
+if(self->functions){
+  lua_getglobal(self->functions, "ups.mfr");
+  printf("++++++++++++++------>Executing LUA\n");
+  lua_call(self->functions,0,0);
+}
+#endif
 }
 //END DEBUGGING
 
@@ -181,7 +192,11 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 mib2nut_info_t *
 info_mib2nut_new (const char *name, const char *version,
 	const char *oid_power_status, const char *oid_auto_check,
-	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms)
+	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
+#ifdef WITH_DMF_LUA
+, lua_State **functions
+#endif
+)
 {
 	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
@@ -197,7 +212,9 @@ info_mib2nut_new (const char *name, const char *version,
 		self->sysOID = strdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
-
+#ifdef WITH_DMF_LUA
+self->functions = *functions;
+#endif
 	return self;
 }
 
@@ -381,6 +398,11 @@ info_mib2nut_destroy (void **self_p)
 			free ((alarms_info_t*)self->alarms_info);
 			self->alarms_info = NULL;
 		}
+#ifdef WITH_DMF_LUA
+if(self->functions){
+  lua_close(self->functions);
+}
+#endif
 		free (self);
 		*self_p = NULL;
 	}
@@ -677,14 +699,24 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		alist_append(element, ((mib2nut_info_t *(*) (
 			const char *, const char *, const char *,
 			const char *, snmp_info_t *, const char *,
-			alarms_info_t *)) element->new_element)
+			alarms_info_t *
+#ifdef WITH_DMF_LUA
+, lua_State **
+#endif
+                )) element->new_element)
 			(arg[0], arg[1], arg[3], arg[4],
-			 snmp, arg[2], alarm));
+			 snmp, arg[2], alarm
+#ifdef WITH_DMF_LUA
+, &functions_aux
+#endif
+));
 	} // arg[0]
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
-
+#ifdef WITH_DMF_LUA
+functions_aux = NULL;
+#endif
 	free (arg);
 }
 
@@ -998,7 +1030,11 @@ xml_dict_start_cb(void *userdata, int parent,
 	}
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
-          
+#ifdef WITH_DMF_LUA
+          functions_aux = lua_open();
+#else
+          printf("NUT was not compiled with this feature.\n");
+#endif
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
@@ -1055,6 +1091,15 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
+#ifdef WITH_DMF_LUA
+	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
+        {
+          if(luaL_loadbuffer(functions_aux, luatext, strlen(luatext),"")){
+                  printf("Error loading LUA functions:\n%s\n", luatext);
+          }
+          free(luatext);
+        }
+#endif
 	return OK;
 }
 
@@ -1068,15 +1113,18 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 // NOTE: Child-tags are also CDATA when parent-tag processing starts,
 // so we do not report "unsupported" errors when we it a CDATA process.
 #ifdef WITH_DMF_LUA
-		char *luatext;
-		mibdmf_parser_t *dmp = (mibdmf_parser_t*) userdata;
-		alist_t *list = *(mibdmf_get_aux_list_ptr(dmp));
-		alist_t *element = alist_get_last_element(list);
-
+          if(functions_aux){
+            if(!luatext){
 		luatext = (char*) calloc(len + 1, sizeof(char));
 		strncpy(luatext, cdata, len);
-
-		alist_append(element, (void*) luatext);
+            }else{
+              luatext = (char*) realloc(luatext, (strlen(luatext) + len + 1) * sizeof(char));
+              
+              strncat(luatext, cdata, len);
+              
+              //printf("***************--> Lua code %d : %s",(int) strlen(luatext), luatext);
+            }
+          }
 #endif
 	}
 	return OK;
