@@ -119,7 +119,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 if(self->functions){
   lua_getglobal(self->functions, "ups.mfr");
   printf("++++++++++++++------>Executing LUA\n");
-  //lua_call(self->functions,0,0);
+  printf("Return of LUA: %d\n in code:\n%s\n", lua_pcall(self->functions,0,0,0), lua_tostring(self->functions, -1));
 }
 #endif
 }
