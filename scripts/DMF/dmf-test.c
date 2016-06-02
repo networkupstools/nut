@@ -39,22 +39,11 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_BUGREPORT
-#include "powerware-mib.c"
+#include "mge-mib.c"
 
 int
 main ()
 {
-#ifdef WITH_DMF_LUA
-	// TODO: Verify this for typos/mismerges
-	char *luaquery = "print(\"something\")";
-	lua_State** lfunction = (lua_State**) malloc(sizeof(lua_State**));
-	*lfunction = lua_open();
-	luaopen_base(*lfunction);
-	luaopen_string(*lfunction);
-	luaL_loadbuffer(*lfunction, luaquery, strlen(luaquery), "fn");
-	lua_pcall(*lfunction, 0, 0, 0);
-#endif
-
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
@@ -78,21 +67,17 @@ main ()
 	//mib2nut_info_t *m2n = get_mib2nut_table();
 	//print_mib2nut_memory_struct(m2n + 6);
 	//print_mib2nut_memory_struct(&pxgx_ups);
-	printf("=== DMF-Test: Loaded C structures (sample for 'powerware'):\n\n");
+	printf("=== DMF-Test: Loaded C structures (sample for 'mge'):\n\n");
 	print_mib2nut_memory_struct((mib2nut_info_t *)
-		alist_get_element_by_name(mibdmf_get_aux_list(dmp), "powerware")->values[0]);
+		alist_get_element_by_name(mibdmf_get_aux_list(dmp), "mge")->values[0]);
 	printf("\n\n");
-	printf("=== DMF-Test: Original C structures (sample for 'powerware'):\n\n");
-	print_mib2nut_memory_struct(&powerware);
+	printf("=== DMF-Test: Original C structures (sample for 'mge'):\n\n");
+	print_mib2nut_memory_struct(&mge);
 	//End debugging
 
 	printf("=== DMF-Test: Freeing data...\n\n");
 	mibdmf_parser_destroy(&dmp);
 
-#ifdef WITH_DMF_LUA
-	lua_close(*lfunction);
-	free(lfunction);
-#endif
 	printf("=== DMF-Test: All done\n\n");
 	return 0;
 }
