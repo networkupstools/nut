@@ -248,7 +248,7 @@ typedef struct {
 									 * main entry point */
 	alarms_info_t	*alarms_info;
 #ifdef WITH_DMF_LUA
-	lua_State *functions;
+	char *functions;
 #endif
 } mib2nut_info_t;
 
