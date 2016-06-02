@@ -1031,7 +1031,13 @@ xml_dict_start_cb(void *userdata, int parent,
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
 #ifdef WITH_DMF_LUA
-          functions_aux = lua_open();
+          //functions_aux = lua_open();
+          functions_aux = luaL_newstate();
+          luaL_openlibs(functions_aux);
+          //luaopen_base(functions_aux);
+          //luaopen_io(functions_aux);
+          //luaopen_string(functions_aux);
+          //luaopen_math(functions_aux);
 #else
           printf("NUT was not compiled with this feature.\n");
 #endif
@@ -1094,9 +1100,10 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 #ifdef WITH_DMF_LUA
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
         {
-          if(luaL_loadbuffer(functions_aux, luatext, strlen(luatext),"")){
+          if(luaL_loadbuffer(functions_aux, luatext, strlen(luatext),"functions")){
                   printf("Error loading LUA functions:\n%s\n", luatext);
           }
+          printf("***********-> Luatext:\n%s\nLua to string:\n%s\n", luatext, lua_tostring(functions_aux, -1));
           free(luatext);
         }
 #endif
