@@ -122,7 +122,9 @@ if(self->functions){
   if(luaL_loadbuffer(functions_aux, self->functions, strlen(self->functions),"functions")){
      printf("Error loading LUA functions:\n%s\n", self->functions);
   }
-  printf("***********-> Luatext:\n%s\n", luatext);
+  lua_getglobal(functions_aux, "ups.mfr");
+  lua_pcall(functions_aux,0,0,0);
+  printf("***********-> Luatext:\n%s\n", self->functions);
   lua_close(functions_aux);
 }
 #endif
