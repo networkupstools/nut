@@ -358,7 +358,11 @@ void
 mib2nut_info_t *
 	info_mib2nut_new (const char *name, const char *version,
 		const char *oid_power_status, const char *oid_auto_check,
-		snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms);
+		snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
+#ifdef WITH_DMF_LUA
+,lua_State **functions
+#endif
+);
 
 void
 	info_mib2nut_destroy (void **self_p);
