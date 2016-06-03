@@ -69,6 +69,19 @@ print_snmp_memory_struct(snmp_info_t *self)
 	}
 	printf("*-*-*-->Info_flags %d\n", self->info_flags);
 	printf("*-*-*-->Flags %lu\n", self->flags);
+#ifdef WITH_DMF_LUA
+/*if(self->functions){
+  functions_aux = luaL_newstate();
+  luaL_openlibs(functions_aux);
+  if(luaL_loadbuffer(functions_aux, self->functions, strlen(self->functions),"functions")){
+     printf("Error loading LUA functions:\n%s\n", self->functions);
+  }
+  lua_getglobal(functions_aux, "ups.mfr");
+  lua_pcall(functions_aux,0,0,0);
+  printf("***********-> Luatext:\n%s\n", self->functions);
+  lua_close(functions_aux);
+}*/
+#endif
 }
 
 void
@@ -115,19 +128,6 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 			i++;
 		}
 	}
-#ifdef WITH_DMF_LUA
-if(self->functions){
-  functions_aux = luaL_newstate();
-  luaL_openlibs(functions_aux);
-  if(luaL_loadbuffer(functions_aux, self->functions, strlen(self->functions),"functions")){
-     printf("Error loading LUA functions:\n%s\n", self->functions);
-  }
-  lua_getglobal(functions_aux, "ups.mfr");
-  lua_pcall(functions_aux,0,0,0);
-  printf("***********-> Luatext:\n%s\n", self->functions);
-  lua_close(functions_aux);
-}
-#endif
 }
 //END DEBUGGING
 
@@ -177,7 +177,11 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
 snmp_info_t *
 info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
-	info_lkp_t *lookup, int *setvar)
+	info_lkp_t *lookup, int *setvar
+#ifdef WITH_DMF_LUA
+, char **function
+#endif
+)
 {
 	snmp_info_t *self = (snmp_info_t*) calloc (1, sizeof (snmp_info_t));
 	assert (self);
@@ -192,17 +196,16 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->flags = flags;
 	self->oid2info = lookup;
 	self->setvar = setvar;
+#ifdef WITH_DMF_LUA
+self->function = *function;
+#endif
 	return self;
 }
 
 mib2nut_info_t *
 info_mib2nut_new (const char *name, const char *version,
 	const char *oid_power_status, const char *oid_auto_check,
-	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
-#ifdef WITH_DMF_LUA
-, char **functions
-#endif
-)
+	snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms)
 {
 	mib2nut_info_t *self = (mib2nut_info_t*) calloc(1, sizeof(mib2nut_info_t));
 	assert (self);
@@ -218,11 +221,20 @@ info_mib2nut_new (const char *name, const char *version,
 		self->sysOID = strdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
-#ifdef WITH_DMF_LUA
-self->functions = *functions;
-#endif
+        
 	return self;
 }
+#ifdef WITH_DMF_LUA
+char *
+function_new (const char *value){
+    return (char*)value;
+}
+
+void
+function_destroy (void **self_p){
+  
+}
+#endif
 
 //Destroy full array of lookup elements
 void
@@ -308,7 +320,11 @@ info_snmp_destroy (void **self_p)
 			free ((info_lkp_t*)self->oid2info);
 			self->oid2info = NULL;
 		}
-
+#ifdef WITH_DMF_LUA
+if(self->function){
+  free(self->function);
+}
+#endif
 		free (self);
 		*self_p = NULL;
 	}
@@ -404,11 +420,6 @@ info_mib2nut_destroy (void **self_p)
 			free ((alarms_info_t*)self->alarms_info);
 			self->alarms_info = NULL;
 		}
-#ifdef WITH_DMF_LUA
-if(self->functions){
-  free(self->functions);
-}
-#endif
 		free (self);
 		*self_p = NULL;
 	}
@@ -705,24 +716,14 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		alist_append(element, ((mib2nut_info_t *(*) (
 			const char *, const char *, const char *,
 			const char *, snmp_info_t *, const char *,
-			alarms_info_t *
-#ifdef WITH_DMF_LUA
-, char **
-#endif
-                )) element->new_element)
+			alarms_info_t *)) element->new_element)
 			(arg[0], arg[1], arg[3], arg[4],
-			 snmp, arg[2], alarm
-#ifdef WITH_DMF_LUA
-, &luatext
-#endif
-));
+			 snmp, arg[2], alarm));
 	} // arg[0]
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
-#ifdef WITH_DMF_LUA
-luatext = NULL;
-#endif
+        
 	free (arg);
 }
 
@@ -792,7 +793,15 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 	// TODO: Anything here for arg[7] for LUA?
-
+#ifdef WITH_DMF_LUA
+arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
+//test only
+char *buff = NULL;
+if((arg[6])&&(strcmp(arg[6], "yes"))==0){
+  buff =(char*) calloc(256, sizeof(char));
+  strcpy(buff, "print \"Start\" for i=1,10 do print(i) end print \"End\"");
+}
+#endif
 	//Info_flags
 	info_flags = compile_info_flags(attrs);
 	//Flags
@@ -826,30 +835,62 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
-				 int *)) element->new_element)
+				 int *
+#ifdef WITH_DMF_LUA
+, char**
+#endif
+                                )) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
-				 arg[3], flags, lookup, &input_phases));
+				 arg[3], flags, lookup, &input_phases
+#ifdef WITH_DMF_LUA
+, &buff
+#endif
+                                ));
 		else if(strcmp(arg[5], SETVAR_OUTPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
-				 int *)) element->new_element)
+				 int *
+#ifdef WITH_DMF_LUA
+, char**
+#endif
+                                )) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
-				 arg[3], flags, lookup, &output_phases));
+				 arg[3], flags, lookup, &output_phases
+#ifdef WITH_DMF_LUA
+, &buff
+#endif
+                                ));
 		else if(strcmp(arg[5], SETVAR_BYPASS_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
-				 int *)) element->new_element)
+				 int *
+#ifdef WITH_DMF_LUA
+, char**
+#endif
+                                )) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
-				 arg[3], flags, lookup, &bypass_phases));
+				 arg[3], flags, lookup, &bypass_phases
+#ifdef WITH_DMF_LUA
+, &buff
+#endif
+                                ));
 	} else
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
-			 const char *, unsigned long, info_lkp_t *, int *))
+			 const char *, unsigned long, info_lkp_t *, int *
+#ifdef WITH_DMF_LUA
+, char**
+#endif
+                        ))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
-			 arg[3], flags, lookup, NULL));
+			 arg[3], flags, lookup, NULL
+#ifdef WITH_DMF_LUA
+, &buff
+#endif
+                        ));
 
 	for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -1111,6 +1152,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
           }
           printf("***********-> Luatext:\n%s\n", luatext);
           lua_close(functions_aux);
+          free(luatext);
         }
 #endif
 	return OK;

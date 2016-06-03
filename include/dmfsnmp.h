@@ -339,12 +339,25 @@ void
 	alarm_info_node_handler (alist_t *list, const char **attrs);
 
 
+#ifdef WITH_DMF_LUA
+// Create and initialize a function element
+char *
+        function_new (const char *value);
+
+// Destroy and NULLify the reference to alist_t, list of collections
+void
+        function_destroy (void **self_p);
+#endif
 
 // Same for snmp structure instances
 snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
-		info_lkp_t *lookup, int *setvar);
+		info_lkp_t *lookup, int *setvar
+#ifdef WITH_DMF_LUA
+,char **function
+#endif
+);
 
 void
 	info_snmp_destroy (void **self_p);
@@ -358,11 +371,7 @@ void
 mib2nut_info_t *
 	info_mib2nut_new (const char *name, const char *version,
 		const char *oid_power_status, const char *oid_auto_check,
-		snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms
-#ifdef WITH_DMF_LUA
-,char **functions
-#endif
-);
+		snmp_info_t *snmp, const char *sysOID, alarms_info_t *alarms);
 
 void
 	info_mib2nut_destroy (void **self_p);
