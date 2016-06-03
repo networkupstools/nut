@@ -37,7 +37,7 @@
  *
  */
 #ifdef WITH_DMF_LUA
-        lua_State *functions_aux = NULL;
+        int functions_aux = 0;
         char *luatext = NULL;
 #endif
 //DEBUGGING
@@ -70,17 +70,16 @@ print_snmp_memory_struct(snmp_info_t *self)
 	printf("*-*-*-->Info_flags %d\n", self->info_flags);
 	printf("*-*-*-->Flags %lu\n", self->flags);
 #ifdef WITH_DMF_LUA
-/*if(self->functions){
-  functions_aux = luaL_newstate();
-  luaL_openlibs(functions_aux);
-  if(luaL_loadbuffer(functions_aux, self->functions, strlen(self->functions),"functions")){
-     printf("Error loading LUA functions:\n%s\n", self->functions);
+if(self->function){
+  lua_State *f_aux = lua_open();
+  luaL_openlibs(f_aux);
+  if(luaL_loadstring(f_aux, self->function)){
+     printf("Error loading LUA functions:\n%s\n", self->function);
   }
-  lua_getglobal(functions_aux, "ups.mfr");
-  lua_pcall(functions_aux,0,0,0);
-  printf("***********-> Luatext:\n%s\n", self->functions);
-  lua_close(functions_aux);
-}*/
+  printf("***********-> Luatext:\n%s\nResult:\n", self->function);
+  lua_pcall(f_aux,0,0,0);
+  lua_close(f_aux);
+}
 #endif
 }
 
@@ -225,14 +224,29 @@ info_mib2nut_new (const char *name, const char *version,
 	return self;
 }
 #ifdef WITH_DMF_LUA
-char *
-function_new (const char *value){
-    return (char*)value;
+function_t *
+function_new (const char *name){
+    function_t *self = (function_t*) calloc(1, sizeof(function_t));
+    self->name = strdup (name);
+    return self;
 }
 
 void
 function_destroy (void **self_p){
-  
+    if (*self_p)
+    {
+      function_t *self = (function_t*) *self_p;
+      if(self->name){
+        free(self->name);
+        self->name = NULL;
+      }
+      if(self->code){
+        free(self->code);
+        self->code = NULL;
+      }
+      free(self);
+      self = NULL;
+    }
 }
 #endif
 
@@ -670,7 +684,13 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 				snmp[i].oid2info = ((snmp_info_t*)
 					lkp->values[i])->oid2info;
 			else	snmp[i].oid2info = NULL;
-
+                        
+#ifdef WITH_DMF_LUA
+                        if( ((snmp_info_t*) lkp->values[i])->function )
+                                snmp[i].function = ((snmp_info_t*)
+                                        lkp->values[i])->function;
+                        else    snmp[i].function = NULL;
+#endif
 		} // for
 
 		/* To be safe, do the sentinel entry explicitly */
@@ -682,6 +702,9 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		snmp[i].dfl = NULL;
 		snmp[i].setvar = NULL;
 		snmp[i].oid2info = NULL;
+#ifdef WITH_DMF_LUA
+                snmp[i].function = NULL;
+#endif
 	} // arg[5]
 
 	if(arg[6])
@@ -771,12 +794,28 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	free (arg);
 }
 
+#ifdef WITH_DMF_LUA
+void
+function_node_handler(alist_t *list, const char **attrs)
+{
+    alist_t *element = alist_get_last_element(list);
+    char *arg = (char*) calloc (32, sizeof (char *));
+    arg = get_param_by_name(SNMP_NAME, attrs);
+    
+    if(arg)
+        alist_append(element, ((function_t *(*) (const char *)) element->new_element) (arg));
+    free(arg);
+}
+#endif
+
 void
 snmp_info_node_handler(alist_t *list, const char **attrs)
 {
-	//temporal
+#ifdef WITH_DMF_LUA
+        char *buff = NULL;
+#endif
 	double multiplier = 128;
-	//end tremporal
+	
 	unsigned long flags;
 	int info_flags;
 	info_lkp_t *lookup = NULL;
@@ -795,11 +834,14 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	// TODO: Anything here for arg[7] for LUA?
 #ifdef WITH_DMF_LUA
 arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
-//test only
-char *buff = NULL;
-if((arg[6])&&(strcmp(arg[6], "yes"))==0){
-  buff =(char*) calloc(256, sizeof(char));
-  strcpy(buff, "print \"Start\" for i=1,10 do print(i) end print \"End\"");
+if(arg[6]){
+    alist_t *funcs = alist_get_element_by_name(list, arg[6]);
+    if(funcs){
+      for (i = 0; i < funcs->size; i++)
+         if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0){
+            buff = strdup(((function_t*)funcs->values[i])->code);
+         }
+    }
 }
 #endif
 	//Info_flags
@@ -1078,17 +1120,19 @@ xml_dict_start_cb(void *userdata, int parent,
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
 #ifdef WITH_DMF_LUA
-          //functions_aux = lua_open();
-          functions_aux = luaL_newstate();
-          luaL_openlibs(functions_aux);
-          //luaopen_base(functions_aux);
-          //luaopen_io(functions_aux);
-          //luaopen_string(functions_aux);
-          //luaopen_math(functions_aux);
+          alist_append(list, alist_new(auxname, function_destroy,
+                        (void (*)(void)) function_new));
+          functions_aux = 1;
 #else
           printf("NUT was not compiled with this feature.\n");
 #endif
 	}
+#ifdef WITH_DMF_LUA
+	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
+        {
+                function_node_handler(list,attrs);
+        }
+#endif
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
 		fprintf(stderr, "WARN: The '%s' tag in DMF is not recognized!\n", name);
@@ -1147,12 +1191,15 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 #ifdef WITH_DMF_LUA
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
         {
-          if(luaL_loadbuffer(functions_aux, luatext, strlen(luatext),"functions")){
-                  printf("Error loading LUA functions:\n%s\n", luatext);
-          }
-          printf("***********-> Luatext:\n%s\n", luatext);
-          lua_close(functions_aux);
+          functions_aux = 0;
           free(luatext);
+        }else if(strcmp(name,DMFTAG_FUNCTION) == 0)
+        {
+          alist_t *element = alist_get_last_element(list);
+          function_t *func =(function_t *) alist_get_last_element(element);
+          func->code = strdup(luatext);
+          free(luatext);
+          luatext = NULL;
         }
 #endif
 	return OK;
