@@ -297,7 +297,6 @@ info_alarm_destroy (void **self_p)
 void
 info_snmp_destroy (void **self_p)
 {
-	int i = 0;
 	if (*self_p) {
 		snmp_info_t *self = (snmp_info_t*) *self_p;
 
@@ -319,21 +318,9 @@ info_snmp_destroy (void **self_p)
 			self->dfl = NULL;
 		}
 
-		if (self->oid2info)
-		{
-			while ( !( (self->oid2info[i].oid_value == 0)
-			        && (!self->oid2info[i].info_value)
-			) ) {
-				if(self->oid2info[i].info_value)
-				{
-					free((void*)self->oid2info[i].info_value);
-					self->oid2info[i].info_value = NULL;
-				}
-				i++;
-			}
-			free ((info_lkp_t*)self->oid2info);
-			self->oid2info = NULL;
-		}
+		free ((info_lkp_t*)self->oid2info);
+		self->oid2info = NULL;
+
 #ifdef WITH_DMF_LUA
 if(self->function){
   free(self->function);
@@ -347,8 +334,6 @@ if(self->function){
 void
 info_mib2nut_destroy (void **self_p)
 {
-	int i = 0;
-	//int j = 0;
 	if (*self_p) {
 		mib2nut_info_t *self = (mib2nut_info_t*) *self_p;
 		if (self->mib_name)
@@ -376,61 +361,15 @@ info_mib2nut_destroy (void **self_p)
 			free ((char*)self->sysOID);
 			self->sysOID = NULL;
 		}
-
 		if (self->snmp_info)
 		{
-			while( !( (!self->snmp_info[i].info_type)
-			       && (self->snmp_info[i].info_len == 0)
-			       && (!self->snmp_info[i].OID)
-			       && (!self->snmp_info[i].dfl)
-			       && (self->snmp_info[i].flags == 0)
-			       && (!self->snmp_info[i].oid2info)
-			) ) {
-				if(self->snmp_info[i].info_type)
-				{
-					free((void*)self->snmp_info[i].info_type);
-					self->snmp_info[i].info_type = NULL;
-				}
-				if(self->snmp_info[i].OID)
-				{
-					free((void*)self->snmp_info[i].OID);
-					self->snmp_info[i].OID = NULL;
-				}
-				if(self->snmp_info[i].dfl)
-				{
-					free((void*)self->snmp_info[i].dfl);
-					self->snmp_info[i].dfl = NULL;
-				}
-				i++;
-			}
+			
 			free ((snmp_info_t*)self->snmp_info);
 			self->snmp_info = NULL;
 		}
-
-		i = 0;
 		if (self->alarms_info)
 		{
-			while ( (self->alarms_info[i].alarm_value)
-			     || (self->alarms_info[i].OID)
-			     || (self->alarms_info[i].status_value)
-			) {
-				if(self->alarms_info[i].alarm_value)
-				{
-					free((void*)self->alarms_info[i].alarm_value);
-					self->alarms_info[i].alarm_value = NULL;
-				}
-				if(self->alarms_info[i].OID)
-				{
-					free((void*)self->alarms_info[i].OID);
-					self->alarms_info[i].OID = NULL;
-				}
-				if(self->alarms_info[i].status_value)
-				{
-					free((void*)self->alarms_info[i].status_value);
-					self->alarms_info[i].status_value = NULL;
-				}
-				i++;
-			}
+			
 			free ((alarms_info_t*)self->alarms_info);
 			self->alarms_info = NULL;
 		}
@@ -661,18 +600,18 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 				lkp->values[i])->flags;
 
 			if( ((snmp_info_t*) lkp->values[i])->info_type )
-				snmp[i].info_type = strdup(((snmp_info_t*)
-					lkp->values[i])->info_type);
+				snmp[i].info_type = ((snmp_info_t*)
+					lkp->values[i])->info_type;
 			else	snmp[i].info_type = NULL;
 
 			if( ((snmp_info_t*) lkp->values[i])->OID )
-				snmp[i].OID = strdup(((snmp_info_t*)
-					lkp->values[i])->OID);
+				snmp[i].OID = ((snmp_info_t*)
+					lkp->values[i])->OID;
 			else	snmp[i].OID = NULL;
 
 			if( ((snmp_info_t*) lkp->values[i])->dfl )
-				snmp[i].dfl = strdup(((snmp_info_t*)
-					lkp->values[i])->dfl);
+				snmp[i].dfl = ((snmp_info_t*)
+					lkp->values[i])->dfl;
 			else	snmp[i].dfl = NULL;
 
 			if( ((snmp_info_t*) lkp->values[i])->setvar )
@@ -705,7 +644,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 #ifdef WITH_DMF_LUA
                 snmp[i].function = NULL;
 #endif
-	} // arg[5]
+	}
 
 	if(arg[6])
 	{
@@ -715,24 +654,24 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		for(i = 0; i < alm->size; i++)
 		{
 			if( ((alarms_info_t*) alm->values[i])->OID )
-				alarm[i].OID = strdup( ((alarms_info_t*)
-					alm->values[i])->OID );
+				alarm[i].OID = ((alarms_info_t*)
+					alm->values[i])->OID;
 			else	alarm[i].OID = NULL;
 
 			if( ((alarms_info_t*) alm->values[i])->status_value )
-				alarm[i].status_value = strdup( ((alarms_info_t*)
-					alm->values[i])->status_value);
+				alarm[i].status_value = ((alarms_info_t*)
+					alm->values[i])->status_value;
 			else alarm[i].status_value = NULL;
 
 			if( ((alarms_info_t*) alm->values[i])->alarm_value )
-				alarm[i].alarm_value = strdup(((alarms_info_t*)
-					alm->values[i])->alarm_value);
+				alarm[i].alarm_value = ((alarms_info_t*)
+					alm->values[i])->alarm_value;
 			else alarm[i].alarm_value = NULL;
 		}
 		alarm[i].OID = NULL;
 		alarm[i].status_value = NULL;
 		alarm[i].alarm_value = NULL;
-	} // arg[6]
+	}
 
 	if(arg[0])
 	{
@@ -742,7 +681,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 			alarms_info_t *)) element->new_element)
 			(arg[0], arg[1], arg[3], arg[4],
 			 snmp, arg[2], alarm));
-	} // arg[0]
+	}
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -831,7 +770,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[3] = get_param_by_name(SNMP_DEFAULT, attrs);
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
-	// TODO: Anything here for arg[7] for LUA?
+	
 #ifdef WITH_DMF_LUA
 arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
 if(arg[6]){
@@ -859,8 +798,8 @@ if(arg[6]){
 			lookup[i].oid_value = ((info_lkp_t*)
 				lkp->values[i])->oid_value;
 			if( ((info_lkp_t*) lkp->values[i])->info_value )
-				lookup[i].info_value = strdup(((info_lkp_t*)
-					lkp->values[i])->info_value);
+				lookup[i].info_value = ((info_lkp_t*)
+					lkp->values[i])->info_value;
 			else	lookup[i].info_value = NULL;
 		}
 		lookup[i].oid_value = 0;
@@ -1223,8 +1162,6 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
               luatext = (char*) realloc(luatext, (strlen(luatext) + len + 1) * sizeof(char));
               
               strncat(luatext, cdata, len);
-              
-              //printf("***************--> Lua code %d : %s",(int) strlen(luatext), luatext);
             }
           }
 #endif
