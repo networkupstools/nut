@@ -63,14 +63,12 @@
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="no"/>
 	</lookup>
-        <functions>
-          function ups.mfr()
+        <function name="ups.mfr">
             io.write("This is coming from lua\n")
-          end
-          function ups.model()
+        </function>
+        <function name="ups.model">
             io.write("This is coming from lua\n")
-          end
-        </functions>
+        </function>
 	<snmp name="mge_mib">
 		<snmp_info absent="yes" default="Eaton" flag_ok="yes" multiplier="128.0" name="ups.mfr" function="yes" string="yes"/>
 		<snmp_info absent="yes" default="Generic SNMP UPS" flag_ok="yes" multiplier="128.0" name="ups.model" function="yes" string="yes"/>

@@ -130,6 +130,9 @@ typedef struct {
 	unsigned long flags;		/* my flags */
 	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
+#ifdef WITH_DMF_LUA
+        char *function;
+#endif
 } snmp_info_t;
 
 #define SU_FLAG_OK			(1 << 0)	/* show element to upsd - internal to snmp driver */
@@ -247,9 +250,6 @@ typedef struct {
 	const char	*sysOID;			/* OID to match against sysOID, aka MIB
 									 * main entry point */
 	alarms_info_t	*alarms_info;
-#ifdef WITH_DMF_LUA
-	char *functions;
-#endif
 } mib2nut_info_t;
 
 /* Common SNMP functions */
