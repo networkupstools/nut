@@ -140,6 +140,7 @@
 // it can be missing in a binary (with warning in DMF import)
 // Also it may be backed by various implementations (LUA for starters)
 #define DMFTAG_FUNCTIONS "functions"
+#define DMFTAG_FUNCTION "function"
 
 //#define MIB2NUT_NAME "name"
 #define MIB2NUT_VERSION "version"
@@ -234,6 +235,12 @@ typedef struct {
 	int device_table_counter;
 } mibdmf_parser_t;
 
+#ifdef WITH_DMF_LUA
+typedef struct {
+        char *name;
+        char *code;
+} function_t;
+#endif
 // Initialize the data for dmf.c
 mibdmf_parser_t *
 	mibdmf_parser_new();
@@ -341,12 +348,15 @@ void
 
 #ifdef WITH_DMF_LUA
 // Create and initialize a function element
-char *
-        function_new (const char *value);
+function_t *
+        function_new (const char *name);
 
 // Destroy and NULLify the reference to alist_t, list of collections
 void
         function_destroy (void **self_p);
+        
+void
+function_node_handler(alist_t *list, const char **attrs);
 #endif
 
 // Same for snmp structure instances
