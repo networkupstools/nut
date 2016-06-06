@@ -1003,7 +1003,7 @@ compile_flags(const char **attrs)
         if(aux_flags)free(aux_flags);
 #ifdef WITH_DMF_LUA
         aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
-        if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+        if(aux_flags){
                         flags = flags | SU_FLAG_FUNCTION;
                 }
         if(aux_flags)free(aux_flags);
