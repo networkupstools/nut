@@ -224,7 +224,8 @@ typedef enum {
 /* Aggregate the data storage and variables needed to
  * parse the DMF representation of MIB data for NUT */
 typedef struct {
-	alist_t *list;
+	alist_t **list;
+        int sublist_elements;
 	snmp_device_id_t *device_table;
 	mib2nut_info_t **mib2nut_table;
 
@@ -321,6 +322,8 @@ alist_t **
 int *
 	mibdmf_get_device_table_counter_ptr(mibdmf_parser_t *dmp);
 
+void
+mibdmf_parser_new_list(mibdmf_parser_t *dmp);
 
 
 // Create and initialize info_lkp_t, a lookup element
