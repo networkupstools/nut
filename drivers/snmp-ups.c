@@ -367,11 +367,11 @@ void upsdrv_initups(void)
 	/* Allocate / init the daisychain info structure (for phases only for now)
 	 * daisychain_info[0] is the whole chain! (added +1) */
 	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
-	for (curdev = 0 ; curdev > devices_count ; curdev++) {
+	for (curdev = 0 ; curdev <= devices_count ; curdev++) {
 		daisychain_info[curdev] = (daisychain_info_t*)malloc(sizeof(daisychain_info_t));
-		daisychain_info[curdev]->input_phases = -1;
-		daisychain_info[curdev]->output_phases = -1;
-		daisychain_info[curdev]->bypass_phases = -1;
+		daisychain_info[curdev]->input_phases = (long)-1;
+		daisychain_info[curdev]->output_phases = (long)-1;
+		daisychain_info[curdev]->bypass_phases = (long)-1;
 	}
 
 	/* FIXME: also need daisychain awareness (so init)!
@@ -1958,7 +1958,8 @@ bool_t daisychain_init()
  * 
  * type: input, output, bypass
  * su_info_p: variable to process flags on
- * Return 0 if OK, if if the caller needs to "continue" the walk loop
+ * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
+ * skip the present data)
  */
 int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
 {
@@ -1999,17 +2000,17 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 		/* daisychain specifics... */
 		if ( (daisychain_enabled == TRUE) && (current_device_number > 0) ) {
 			/* Device(s) 2-N (slave(s)) need to append 'device.x' */
-			snprintf(tmpInfo, sizeof(SU_INFOSIZE),
+			snprintf(tmpInfo, SU_INFOSIZE,
 					"device.%i.%s.phases", current_device_number, type);
 		}
 		else {
-			snprintf(tmpInfo, sizeof(SU_INFOSIZE), "%s.phases", type);
+			snprintf(tmpInfo, SU_INFOSIZE, "%s.phases", type);
 		}
 
 		if (dstate_getinfo(tmpInfo) == NULL) {
 			/* {input,output,bypass}.phases is not yet published,
 			 * try to get the template for it */
-			snprintf(tmpInfo, sizeof(SU_INFOSIZE), "%s.phases", type);
+			snprintf(tmpInfo, SU_INFOSIZE, "%s.phases", type);
 			tmp_info_p = su_find_info(tmpInfo);
 			if (tmp_info_p != NULL) {
 				memset(tmpOID, 0, SU_INFOSIZE);
@@ -2030,13 +2031,13 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 					*nb_phases = tmpValue;
 				}
 				else {
-					upsdebugx(2, "Can't get input.bypass value. Defaulting to 1 %s.phase", type);
+					upsdebugx(2, "Can't get %s value. Defaulting to 1 %s.phase", tmpInfo, type);
 					*nb_phases = 1;
 					/* FIXME: return something or process using default?! */
 				}
 			}
 			else {
-				upsdebugx(2, "No input.bypass entry. Defaulting to 1 %s.phase", type);
+				upsdebugx(2, "No %s entry. Defaulting to 1 %s.phase", tmpInfo, type);
 				*nb_phases = 1;
 				/* FIXME: return something or process using default?! */
 			}
@@ -2046,6 +2047,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 		}
 		/* Publish the number of phase(s) */
 		dstate_setinfo(tmpInfo, "%ld", *nb_phases);
+		upsdebugx(2, "device %i has %ld %s.phases", current_device_number, *nb_phases, type);
 	}
 	/* FIXME: what to do here?
 	else if (*nb_phases == 0) {
