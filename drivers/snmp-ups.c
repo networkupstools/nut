@@ -2279,9 +2279,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			if (su_info_p->info_type != NULL) {
 				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			}
-			else
+			else {
+				free(tmp_info_p);
 				return FALSE;
-
+			}
 			su_info_p = tmp_info_p;
 		}
 		else {
@@ -2600,7 +2601,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 			else {
 				/* adapt info_type */
 				if (su_info_p->info_type != NULL)
-					snprintf((char *)su_info_p->info_type, sizeof(su_info_p->info_type), "%s", tmp_varname);
+					snprintf((char *)su_info_p->info_type, SU_INFOSIZE, "%s", tmp_varname);
 			}
 		}
 	}
@@ -2611,8 +2612,11 @@ int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
 
 		/* Free template (outlet and outlet.group) */
-		if (vartype != 0)
+		if (su_info_p != NULL)
 			free_info(su_info_p);
+
+		if (tmp_varname != NULL)
+			free_info(tmp_varname);
 
 		return STAT_SET_UNKNOWN;
 	}
@@ -2661,7 +2665,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Free template (outlet and outlet.group) */
-	if (vartype != 0)
+	if (su_info_p != NULL)
 		free_info(su_info_p);
 
 	free(tmp_varname);
