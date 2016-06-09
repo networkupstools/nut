@@ -647,6 +647,7 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			if (mibname == NULL) {
 				/* We are probing for proper mib - ignore errors */
 				snmp_free_pdu(response);
+				nut_snmp_free(ret_array);
 				return NULL;
 			}
 
@@ -1604,7 +1605,7 @@ static int guestimate_template_count(const char *OID_template)
 
 /* Process template definition, instantiate and get data or register
  * command
- * type: outlet, outlet.group */
+ * type: outlet, outlet.group, device */
 bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 {
 	/* Default to TRUE, and leave to get_and_process_data() to set
@@ -2272,15 +2273,17 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
 					current_device_number + daisychain_offset);
 			}
-			else
+			else {
+				free_info(tmp_info_p);
 				return FALSE;
+			}
 
 			/* adapt info_type */
 			if (su_info_p->info_type != NULL) {
 				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			}
 			else {
-				free(tmp_info_p);
+				free_info(tmp_info_p);
 				return FALSE;
 			}
 			su_info_p = tmp_info_p;
@@ -2300,8 +2303,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			su_status_set(su_info_p, value);
 			upsdebugx(2, "=> value: %ld", value);
 		}
-		else upsdebugx(2, "=> Failed");
+		else
+			upsdebugx(2, "=> Failed");
 
+		free_info(tmp_info_p);
 		return status;
 	}
 
@@ -2319,6 +2324,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		}
 		else upsdebugx(2, "=> Failed");
 
+		free_info(tmp_info_p);
 		return status;
 	}
 
@@ -2370,6 +2376,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			upsdebugx(2, "=> Failed");
 		}
 
+		free_info(tmp_info_p);
 		return status;
 	}
 
@@ -2380,6 +2387,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 
 		if(status != TRUE) {
+			free_info(tmp_info_p);
 			return status;
 		}
 
@@ -2403,6 +2411,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		snprintf(buf, sizeof(buf), "%.1f", temp);
 		su_setinfo(su_info_p, buf);
 
+		free_info(tmp_info_p);
 		return TRUE;
 	}
 
@@ -2417,6 +2426,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					disable_competition(su_info_p);
 					su_info_p->flags &= ~SU_FLAG_UNIQUE;
 				}
+				free_info(tmp_info_p);
 				return FALSE;
 			}
 			if (su_info_p->flags & SU_FLAG_SETINT) {
@@ -2438,6 +2448,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	else
 		upsdebugx(2, "=> Failed");
 
+	free_info(tmp_info_p);
 	return status;
 }
 
@@ -2612,11 +2623,10 @@ int su_setOID(int mode, const char *varname, const char *val)
 		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
 
 		/* Free template (outlet and outlet.group) */
-		if (su_info_p != NULL)
-			free_info(su_info_p);
+		free_info(su_info_p);
 
 		if (tmp_varname != NULL)
-			free_info(tmp_varname);
+			free(tmp_varname);
 
 		return STAT_SET_UNKNOWN;
 	}
@@ -2665,9 +2675,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Free template (outlet and outlet.group) */
-	if (su_info_p != NULL)
-		free_info(su_info_p);
-
+	free_info(su_info_p);
 	free(tmp_varname);
 
 	return retval;
