@@ -505,14 +505,14 @@ alist_t *
 mibdmf_get_aux_list(mibdmf_parser_t *dmp)
 {
 	if (dmp==NULL) return NULL;
-	return dmp->list;
+	return dmp->list[dmp->sublist_elements - 1];
 }
 
 alist_t **
 mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp)
 {
 	if (dmp==NULL) return NULL;
-	return &(dmp->list);
+	return &(dmp->list[dmp->sublist_elements - 1]);
 }
 
 // Properly destroy the object hierarchy and NULLify the caller's pointer
@@ -521,6 +521,7 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 {
 	if (*self_p)
 	{
+                int i;
 		mibdmf_parser_t *self = (mibdmf_parser_t *) *self_p;
 		// First we destroy the index tables that reference data in the list...
 		if (self->device_table)
@@ -533,15 +534,37 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 			free(self->mib2nut_table);
 			self->mib2nut_table = NULL;
 		}
-		if (self->list)
+		for(i = 0; i < self->sublist_elements; i++)
 		{
-			alist_destroy( &(self->list) );
-			self->list = NULL;
+                     if(self->list[i])
+			alist_destroy( &(self->list[i]) );
+			self->list[i] = NULL;
 		}
+		free(self->list);
 		self->device_table_counter = 0;
 		free (self);
 		*self_p = NULL;
 	}
+}
+
+/*This function is implemented for isolate every XML driver.
+ * before was all drivers fields in the same list and this causes problems when
+ * two elements from difrent driver have the same name, now all drivers are isolete in their
+ * own alist, then is possible to have the same names without making bugs
+ * If it necessary, the design allows in the future implement a function for share elements with drivers.
+ * but no anymore by accident.*/
+void
+mibdmf_parser_new_list(mibdmf_parser_t *dmp)
+{
+  dmp->sublist_elements++;
+  if(dmp->sublist_elements == 1)
+    dmp->list = (alist_t **) malloc((dmp->sublist_elements + 1) * sizeof(alist_t *));
+  else
+    dmp->list = (alist_t **) realloc(dmp->list, (dmp->sublist_elements + 1) * sizeof(alist_t *));
+  assert (dmp->list);
+  dmp->list[dmp->sublist_elements - 1] = alist_new( NULL,(void (*)(void **))alist_destroy, NULL );
+  assert (dmp->list[dmp->sublist_elements - 1]);
+  dmp->list[dmp->sublist_elements] = NULL;
 }
 
 mibdmf_parser_t *
@@ -558,8 +581,7 @@ mibdmf_parser_new()
 	assert (self->device_table);
 	assert (self->mib2nut_table);
 	assert (self->device_table_counter >= 1);
-	self->list = alist_new( NULL,(void (*)(void **))alist_destroy, NULL );
-	assert (self->list);
+        self->sublist_elements = 0;
 	return self;
 }
 
@@ -981,7 +1003,7 @@ compile_flags(const char **attrs)
         if(aux_flags)free(aux_flags);
 #ifdef WITH_DMF_LUA
         aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
-        if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+        if(aux_flags){
                         flags = flags | SU_FLAG_FUNCTION;
                 }
         if(aux_flags)free(aux_flags);
@@ -1180,6 +1202,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 
 	assert (file_name);
 	assert (dmp);
+        mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
 
 	if ( (file_name == NULL ) || \
@@ -1256,6 +1279,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 
 	assert (dmf_string);
 	assert (dmp);
+        mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
 
 	if ( (dmf_string == NULL ) || \
