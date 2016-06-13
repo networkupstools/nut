@@ -95,6 +95,7 @@ class Socket
 {
 public:
 	Socket();
+	~Socket();
 
 	void connect(const std::string& host, int port)throw(nut::IOException);
 	void disconnect();
@@ -122,6 +123,11 @@ _tv()
 {
 	_tv.tv_sec = -1;
 	_tv.tv_usec = 0;
+}
+
+Socket::~Socket()
+{
+	disconnect();
 }
 
 void Socket::setTimeout(long timeout)
