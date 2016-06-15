@@ -2153,7 +2153,13 @@ bool_t snmp_ups_walk(int mode)
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
-
+#ifdef WITH_DMF_LUA
+                        if(su_info_p->flags & SU_FLAG_FUNCTION){
+                            if(su_info_p->function)
+                                dstate_setinfo("device.functionTest", "%s", su_info_p->function);
+                            continue;
+                        }
+#endif
 			// FIXME:
 			// switch(current_device_number) {
 			// case 0: devtype = "daisychain whole"
