@@ -318,6 +318,12 @@ alist_t *
 // be validly reallocated, freed, etc.
 alist_t **
 	mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp);
+        
+alist_t **
+        mibdmf_get_initial_list_ptr(mibdmf_parser_t *dmp);
+
+int
+        mibdmf_get_list_size(mibdmf_parser_t *dmp);
 
 int *
 	mibdmf_get_device_table_counter_ptr(mibdmf_parser_t *dmp);
