@@ -515,6 +515,20 @@ mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp)
 	return &(dmp->list[dmp->sublist_elements - 1]);
 }
 
+alist_t **
+mibdmf_get_initial_list_ptr(mibdmf_parser_t *dmp)
+{
+        if (dmp==NULL) return NULL;
+        return dmp->list;
+}
+
+int
+mibdmf_get_list_size(mibdmf_parser_t *dmp)
+{
+        if (dmp==NULL) return 0;
+        return dmp->sublist_elements;
+}
+
 // Properly destroy the object hierarchy and NULLify the caller's pointer
 void
 mibdmf_parser_destroy(mibdmf_parser_t **self_p)
