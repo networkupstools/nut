@@ -71,14 +71,14 @@ main ()
         alist_t *element;
         int iterator = 0;
         
-        printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n");
+        //printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n");
         while(!(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))&&(iterator < mibdmf_get_list_size(dmp)))
           iterator++;
         
         if(element)
                   print_mib2nut_memory_struct((mib2nut_info_t *) element->values[0]);
-	printf("\n\n");
-	printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
+	//printf("\n\n");
+	//printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
 	//print_mib2nut_memory_struct(&eaton_marlin);
 	//End debugging
 
