@@ -75,9 +75,10 @@ if(self->function){
   luaL_openlibs(f_aux);
   if(luaL_loadstring(f_aux, self->function)){
      printf("Error loading LUA functions:\n%s\n", self->function);
+  }else{
+     printf("***********-> Luatext:\n%s\nResult:\n", self->function);
+     lua_pcall(f_aux,0,0,0);
   }
-  printf("***********-> Luatext:\n%s\nResult:\n", self->function);
-  lua_pcall(f_aux,0,0,0);
   lua_close(f_aux);
 }
 #endif
@@ -1194,12 +1195,15 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 #ifdef WITH_DMF_LUA
           if(functions_aux){
             if(!luatext){
-		luatext = (char*) calloc(len + 1, sizeof(char));
-		strncpy(luatext, cdata, len);
+		luatext = (char*) calloc(len + 2, sizeof(char));
+                sprintf(luatext, "%.*s\n", (int) len, cdata);
+		
             }else{
-              luatext = (char*) realloc(luatext, (strlen(luatext) + len + 1) * sizeof(char));
-              
-              strncat(luatext, cdata, len);
+              luatext = (char*) realloc(luatext, (strlen(luatext) + len + 2) * sizeof(char));
+              char *aux_str = (char*) calloc(len + 2, sizeof(char));
+              sprintf(aux_str, "%.*s\n", (int) len, cdata);
+              strcat(luatext, aux_str);
+              free(aux_str);
             }
           }
 #endif
