@@ -2201,8 +2201,18 @@ bool_t snmp_ups_walk(int mode)
                                 
                                 lua_pcall(f_aux,0,1,0);
                                 result = lua_tostring(f_aux, -1);
-                                dstate_setinfo(su_info_p->info_type, "%s", result);
+                                char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
+                                int i = 0;
+                                while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
+                                
+                                if(current_device_number > 0)
+                                  sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+                                else
+                                  sprintf(buf, "%s", su_info_p->info_type);
+                                
+                                dstate_setinfo(buf, "%s", result);
                                 lua_close(f_aux);
+                                free(buf);
                             }
                             continue;
                         }
