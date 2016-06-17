@@ -2155,8 +2155,19 @@ bool_t snmp_ups_walk(int mode)
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 #ifdef WITH_DMF_LUA
                         if(su_info_p->flags & SU_FLAG_FUNCTION){
-                            if(su_info_p->function)
-                                dstate_setinfo("device.functionTest", "%s", su_info_p->function);
+                            if(su_info_p->function){
+                                char *result = NULL;
+                                lua_State *f_aux = lua_open();
+                                luaL_openlibs(f_aux);
+                                if(luaL_loadstring(f_aux, su_info_p->function)){
+                                    result = strdup("Lua function error");
+                                }
+                                
+                                lua_pcall(f_aux,0,1,0);
+                                result = lua_tostring(f_aux, -1);
+                                dstate_setinfo(su_info_p->info_type, "%s", result);
+                                lua_close(f_aux);
+                            }
                             continue;
                         }
 #endif
