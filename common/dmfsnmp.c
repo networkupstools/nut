@@ -1168,6 +1168,8 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
         {
           functions_aux = 0;
           free(luatext);
+          luatext = NULL;
+          
         }else if(strcmp(name,DMFTAG_FUNCTION) == 0)
         {
           alist_t *element = alist_get_last_element(list);
