@@ -1194,12 +1194,15 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 #ifdef WITH_DMF_LUA
           if(functions_aux){
             if(!luatext){
-		luatext = (char*) calloc(len + 1, sizeof(char));
-		strncpy(luatext, cdata, len);
+		luatext = (char*) calloc(len + 2, sizeof(char));
+                sprintf(luatext, "%.*s\n", (int) len, cdata);
+		
             }else{
-              luatext = (char*) realloc(luatext, (strlen(luatext) + len + 1) * sizeof(char));
-              
-              strncat(luatext, cdata, len);
+              luatext = (char*) realloc(luatext, (strlen(luatext) + len + 2) * sizeof(char));
+              char *aux_str = (char*) calloc(len + 2, sizeof(char));
+              sprintf(aux_str, "%.*s\n", (int) len, cdata);
+              strcat(luatext, aux_str);
+              free(aux_str);
             }
           }
 #endif
