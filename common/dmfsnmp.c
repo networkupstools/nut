@@ -75,9 +75,10 @@ if(self->function){
   luaL_openlibs(f_aux);
   if(luaL_loadstring(f_aux, self->function)){
      printf("Error loading LUA functions:\n%s\n", self->function);
+  }else{
+     printf("***********-> Luatext:\n%s\nResult:\n", self->function);
+     lua_pcall(f_aux,0,0,0);
   }
-  printf("***********-> Luatext:\n%s\nResult:\n", self->function);
-  lua_pcall(f_aux,0,0,0);
   lua_close(f_aux);
 }
 #endif
