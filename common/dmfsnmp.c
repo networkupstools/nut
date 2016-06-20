@@ -76,8 +76,14 @@ if(self->function){
   if(luaL_loadstring(f_aux, self->function)){
      printf("Error loading LUA functions:\n%s\n", self->function);
   }else{
-     printf("***********-> Luatext:\n%s\nResult:\n", self->function);
+     printf("***********-> Luatext:\n%s\n", self->function);
      lua_pcall(f_aux,0,0,0);
+     char *funcname = snmp_info_type_to_main_function_name(self->info_type);
+     lua_getglobal(f_aux, funcname);
+     lua_pcall(f_aux,0,1,0);
+     char *result = lua_tostring(f_aux, -1);
+     printf("==--> Result: %s\n\n", result);
+     free(funcname);
   }
   lua_close(f_aux);
 }
@@ -130,6 +136,25 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 	}
 }
 //END DEBUGGING
+
+#ifdef WITH_DMF_LUA
+char *
+snmp_info_type_to_main_function_name(const char * info_type)
+{
+  assert(info_type);
+  char *result = (char *) calloc(strlen(info_type), sizeof(char));
+  int i = 0;
+  int j = 0;
+  while(info_type[i]){
+    if(info_type[i] != '.'){
+      result[j] = info_type[i];
+      j++;
+    }
+    i++;
+  }
+  return result;
+}
+#endif
 
 char *
 get_param_by_name (const char *name, const char **items)

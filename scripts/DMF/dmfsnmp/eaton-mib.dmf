@@ -118,7 +118,9 @@
 	</lookup>
         <functions name="eaton_functions">
           <function name="device.lua">
-            return "Example"
+            function devicelua(device)
+            return "luatest"
+            end
           </function>
         </functions>
 	<snmp name="eaton_marlin_mib">
