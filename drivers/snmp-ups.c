@@ -72,6 +72,11 @@
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 #else
+
+#ifdef WITH_DMF_LUA
+#undef WITH_DMF_LUA
+#endif
+
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
 	&mge,
@@ -2197,10 +2202,14 @@ bool_t snmp_ups_walk(int mode)
                                 luaL_openlibs(f_aux);
                                 if(luaL_loadstring(f_aux, su_info_p->function)){
                                     result = strdup("Lua function error");
+                                }else{
+                                    lua_pcall(f_aux,0,0,0);
+                                    char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+                                    lua_getglobal(f_aux, funcname);
+                                    lua_pcall(f_aux,0,1,0);
+                                    result = lua_tostring(f_aux, -1);
+                                    free(funcname);
                                 }
-                                
-                                lua_pcall(f_aux,0,1,0);
-                                result = lua_tostring(f_aux, -1);
                                 char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
                                 int i = 0;
                                 while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;

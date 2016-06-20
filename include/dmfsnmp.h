@@ -464,6 +464,10 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
+#ifdef WITH_DMF_LUA
+char *
+        snmp_info_type_to_main_function_name(const char * info_type);
+#endif
 
 #define DMF_SNMP_H
 #endif /* DMF_SNMP_H */
