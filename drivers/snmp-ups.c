@@ -72,6 +72,11 @@
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 #else
+
+#ifdef WITH_DMF_LUA
+#undef WITH_DMF_LUA
+#endif
+
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
 	&mge,
@@ -2135,6 +2140,21 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	return 0; /* FIXME: remap EXIT_SUCCESS to RETURN_SUCCESS */
 }
 
+#ifdef WITH_DMF_LUA
+int lua_C_gateway(lua_State *L){
+    /* get number of arguments */
+    //int n = lua_gettop(L);
+    
+    /*char *request = lua_tostring(L, 1);
+    char *value = dstate_getinfo(request);
+    lua_pushstring(L, value);
+    free(request);
+    free(value);*/
+    lua_pushstring(L, "value");
+    /* return the number of results */
+    return 1;
+}
+#endif
 
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
@@ -2159,12 +2179,17 @@ bool_t snmp_ups_walk(int mode)
                                 char *result = NULL;
                                 lua_State *f_aux = lua_open();
                                 luaL_openlibs(f_aux);
+                                lua_register(f_aux, "lua_C_gateway", lua_C_gateway);
                                 if(luaL_loadstring(f_aux, su_info_p->function)){
                                     result = strdup("Lua function error");
+                                }else{
+                                    lua_pcall(f_aux,0,0,0);
+                                    char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+                                    lua_getglobal(f_aux, funcname);
+                                    lua_pcall(f_aux,0,1,0);
+                                    result = lua_tostring(f_aux, -1);
+                                    free(funcname);
                                 }
-                                
-                                lua_pcall(f_aux,0,1,0);
-                                result = lua_tostring(f_aux, -1);
                                 char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
                                 int i = 0;
                                 while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
