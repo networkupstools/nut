@@ -91,6 +91,36 @@ attributes so the DMF file can refer to the currently applicable schema.
 </nut>
 ----
 
+== LUA FUNCTIONS
+
+Is possible to emulate non provide data by LUA, for example, the UPS provides
+current in Amperes and voltage, but not power in Watts, is possible to have
+a function for calculate this value and serve.
+A simple example:
+
+<functions name="eaton_marlin_functions">
+   <function name="device.lua">
+      function devicelua(device)
+         return "Lua emulated value"
+      end
+      function othernededfunc(device)
+      ...
+      end
+   </function>
+</functions>
+<snmp name="eaton_marlin_mib">
+   <snmp_info flag_ok="yes" multiplier="128.0" name="device.lua" string="yes" function="eaton_marlin_functions"/>
+   
+Functions block is the function collection for a driver (mib2nut)
+
+Function block is the function collection for one value (snmp_info)
+  -Attribute name should be the same as the "snmp" name.
+  -Have mandatory at least one function named with the same name of the "snmp"
+  but without point (device.lua -> function devicelua(device))
+  -Could have more functions, but mail fuctions will be allways the mandatory one.
+  -"device" parameter is mandatory for internal requerements.
+  
+                
 == Tools
 
 For the sake of future temporary co-existence of legacy and DMF-enhanced
