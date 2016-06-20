@@ -2140,6 +2140,21 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	return 0; /* FIXME: remap EXIT_SUCCESS to RETURN_SUCCESS */
 }
 
+#ifdef WITH_DMF_LUA
+int lua_C_gateway(lua_State *L){
+    /* get number of arguments */
+    //int n = lua_gettop(L);
+    
+    /*char *request = lua_tostring(L, 1);
+    char *value = dstate_getinfo(request);
+    lua_pushstring(L, value);
+    free(request);
+    free(value);*/
+    lua_pushstring(L, "value");
+    /* return the number of results */
+    return 1;
+}
+#endif
 
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
@@ -2164,6 +2179,7 @@ bool_t snmp_ups_walk(int mode)
                                 char *result = NULL;
                                 lua_State *f_aux = lua_open();
                                 luaL_openlibs(f_aux);
+                                lua_register(f_aux, "lua_C_gateway", lua_C_gateway);
                                 if(luaL_loadstring(f_aux, su_info_p->function)){
                                     result = strdup("Lua function error");
                                 }else{

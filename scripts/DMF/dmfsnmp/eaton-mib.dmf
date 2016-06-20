@@ -119,7 +119,7 @@
         <functions name="eaton_functions">
           <function name="device.lua">
             function devicelua(device)
-            return "luatest"
+            return lua_C_gateway()
             end
           </function>
         </functions>
