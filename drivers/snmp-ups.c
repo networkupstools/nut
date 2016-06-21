@@ -2148,7 +2148,7 @@ int publish_Lua_dstate(lua_State *L){
   
   if((info_type) && (value))
       dstate_setinfo(info_type, value);
-  return 1;
+  return 0;
 }
 
 int lua_C_gateway(lua_State *L){
