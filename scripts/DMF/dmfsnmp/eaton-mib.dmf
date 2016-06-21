@@ -117,14 +117,42 @@
 		<lookup_info oid="1" value="frequency out of range!"/>
 	</lookup>
         <functions name="eaton_functions">
-          <function name="device.lua">
-            function devicelua(device)
-            return lua_C_gateway()
+          <function name="device.amperes">
+            function deviceamperes(device)
+                power = tonumber(lua_C_gateway("input.power", device))
+                voltage = tonumber(lua_C_gateway("input.voltage", device))
+                if voltage ~= 0 and power ~= 0 then
+                    return power / voltage
+                else
+                    return nil
+                end
+            end
+          </function>
+          <function name="device.luaOutlet">
+            function deviceluaOutlet(device)
+                outlet = tonumber(lua_C_gateway("outlet.count", device))
+                if outlet ~= 0 then
+                  for i=0,outlet,1
+                    do
+                      publish_Lua_dstate("device."..device..".outlet."..i..".wastePower", wastePower(device, i))
+                    end
+                end
+                
+                return nil
+            end
+            
+            
+            function wastePower(device, outlet)
+                power = tonumber(lua_C_gateway("outlet."..outlet..".power", device))
+                realpower = tonumber(lua_C_gateway("input.outlet."..outlet..".realpower", device))
+                
+                return power - realpower
             end
           </function>
         </functions>
 	<snmp name="eaton_marlin_mib">
-                <snmp_info flag_ok="yes" multiplier="128.0" name="device.lua" string="yes" function="eaton_functions"/>
+                <snmp_info flag_ok="yes" multiplier="128.0" name="device.amperes" string="yes" function="eaton_functions"/>
+                <snmp_info flag_ok="yes" multiplier="128.0" name="device.luaOutlet" string="yes" function="eaton_functions"/>
 		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="device.mfr" static="yes" string="yes"/>
 		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i" static="yes" string="yes"/>
 		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="device.serial" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.4.%i" static="yes" string="yes"/>

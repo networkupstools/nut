@@ -98,28 +98,66 @@ current in Amperes and voltage, but not power in Watts, is possible to have
 a function for calculate this value and serve.
 A simple example:
 
-<functions name="eaton_marlin_functions">
-   <function name="device.lua">
-      function devicelua(device)
-         return "Lua emulated value"
-      end
-      function othernededfunc(device)
-      ...
-      end
-   </function>
-</functions>
-<snmp name="eaton_marlin_mib">
-   <snmp_info flag_ok="yes" multiplier="128.0" name="device.lua" string="yes" function="eaton_marlin_functions"/>
+        <functions name="eaton_functions">
+          <function name="device.amperes">
+            function deviceamperes(device)
+                power = tonumber(lua_C_gateway("input.power", device))
+                voltage = tonumber(lua_C_gateway("input.voltage", device))
+                if voltage ~= 0 and power ~= 0 then
+                    return power / voltage
+                else
+                    return nil
+                end
+            end
+          </function>
+          <function name="device.luaOutlet">
+            function deviceluaOutlet(device)
+                outlet = tonumber(lua_C_gateway("outlet.count", device))
+                if outlet ~= 0 then
+                  for i=0,outlet,1
+                    do
+                      publish_Lua_dstate("device."..device..".outlet."..i..".wastePower", wastePower(device, i))
+                    end
+                end
+                
+                return nil
+            end
+            
+            
+            function wastePower(device, outlet)
+                power = tonumber(lua_C_gateway("outlet."..outlet..".power", device))
+                realpower = tonumber(lua_C_gateway("input.outlet."..outlet..".realpower", device))
+                
+                return power - realpower
+            end
+          </function>
+        </functions>
+        <snmp name="eaton_marlin_mib">
+                <snmp_info flag_ok="yes" multiplier="128.0" name="device.amperes" string="yes" function="eaton_functions"/>
+                <snmp_info flag_ok="yes" multiplier="128.0" name="device.luaOutlet" string="yes" function="eaton_functions"/>
    
 Functions block is the function collection for a driver (mib2nut)
 
 Function block is the function collection for one value (snmp_info)
   -Attribute name should be the same as the "snmp" name.
-  -Have mandatory at least one function named with the same name of the "snmp"
-  but without point (device.lua -> function devicelua(device))
-  -Could have more functions, but mail fuctions will be allways the mandatory one.
+  -Have mandatory at least one function named with the same name of the "snmp", main function,
+      but without point (device.lua -> function devicelua(device))
+  -Could have more functions, but main fuction will be allways the mandatory one, unique,
+      and is the entry point.
   -"device" parameter is mandatory for internal requerements.
+  -Main function can returns data, if returns, a new variable is going a be created by
+      the driver, named as (device.X.function_name) with the returned value, if not,
+      nothing is publish by the driver.
   
+There is implemented two Lua - C functions bindings
+
+  lua_C_gateway(variable, device) - As a parameter recives the name of the requested variable
+    and number of device (string, integer), returns the value for this variable as string.
+    
+  publish_Lua_dstate(variable, value) - As a parameter recives the name of a variable and value
+    for this variable (string, string), this function create new variables and publish directly data
+    bypassing the driver, useful for publish multiple variables or publish in difren variable name,
+    no returns.
                 
 == Tools
 

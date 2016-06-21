@@ -9,6 +9,7 @@
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
  *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *      2016            Carlos Dominguez <CarlosDominguez@eaton.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -2141,17 +2142,35 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 }
 
 #ifdef WITH_DMF_LUA
+int publish_Lua_dstate(lua_State *L){
+  char *info_type = lua_tostring(L, 1);
+  char *value = lua_tostring(L, 2);
+  
+  if((info_type) && (value))
+      dstate_setinfo(info_type, value);
+  return 0;
+}
+
 int lua_C_gateway(lua_State *L){
     /* get number of arguments */
     //int n = lua_gettop(L);
+    char *info_type = lua_tostring(L, 1);
+    int current_device_number = lua_tointeger(L, 2);
     
-    /*char *request = lua_tostring(L, 1);
-    char *value = dstate_getinfo(request);
-    lua_pushstring(L, value);
-    free(request);
-    free(value);*/
-    lua_pushstring(L, "value");
+    char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
+    
+    if(current_device_number > 0)
+        sprintf(buf, "device.%d.%s", current_device_number, info_type);
+    else
+        sprintf(buf, "device.%s", info_type);
+    
+    char *value = dstate_getinfo(buf);
+    
+    if(value)
+        lua_pushstring(L, value);
+    
     /* return the number of results */
+    free(buf);
     return 1;
 }
 #endif
@@ -2180,28 +2199,32 @@ bool_t snmp_ups_walk(int mode)
                                 lua_State *f_aux = lua_open();
                                 luaL_openlibs(f_aux);
                                 lua_register(f_aux, "lua_C_gateway", lua_C_gateway);
+                                lua_register(f_aux, "publish_Lua_dstate", publish_Lua_dstate);
                                 if(luaL_loadstring(f_aux, su_info_p->function)){
                                     result = strdup("Lua function error");
                                 }else{
                                     lua_pcall(f_aux,0,0,0);
                                     char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
                                     lua_getglobal(f_aux, funcname);
-                                    lua_pcall(f_aux,0,1,0);
+                                    lua_pushnumber(f_aux, current_device_number);
+                                    lua_pcall(f_aux,1,1,0);
                                     result = lua_tostring(f_aux, -1);
                                     free(funcname);
                                 }
-                                char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
-                                int i = 0;
-                                while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
+                                if(result){
+                                    char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
+                                    int i = 0;
+                                    while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
                                 
-                                if(current_device_number > 0)
-                                  sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
-                                else
-                                  sprintf(buf, "%s", su_info_p->info_type);
+                                    if(current_device_number > 0)
+                                      sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+                                    else
+                                      sprintf(buf, "%s", su_info_p->info_type);
                                 
-                                dstate_setinfo(buf, "%s", result);
+                                    dstate_setinfo(buf, "%s", result);
+                                    free(buf);
+                                }
                                 lua_close(f_aux);
-                                free(buf);
                             }
                             continue;
                         }
