@@ -132,6 +132,7 @@ typedef struct {
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
 #ifdef WITH_DMF_LUA
         char *function;
+        lua_State *luaContext;
 #endif
 } snmp_info_t;
 

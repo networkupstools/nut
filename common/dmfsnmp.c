@@ -223,6 +223,16 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->setvar = setvar;
 #ifdef WITH_DMF_LUA
 self->function = *function;
+if(self->function){
+  self->luaContext = lua_open();
+  luaL_openlibs(self->luaContext);
+  if(luaL_loadstring(self->luaContext, self->function)){
+    lua_close(self->luaContext);
+    self->luaContext = NULL;
+  }else
+    lua_pcall(self->luaContext,0,0,0);
+}else
+  self->luaContext = NULL;
 #endif
 	return self;
 }
@@ -349,7 +359,11 @@ info_snmp_destroy (void **self_p)
 
 #ifdef WITH_DMF_LUA
 if(self->function){
-  free(self->function);
+  self->function = NULL;
+}
+if(self->luaContext){
+  lua_close(self->luaContext);
+  self->luaContext = NULL;
 }
 #endif
 		free (self);
@@ -691,6 +705,11 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
                                 snmp[i].function = ((snmp_info_t*)
                                         lkp->values[i])->function;
                         else    snmp[i].function = NULL;
+                        
+                        if( ((snmp_info_t*) lkp->values[i])->luaContext )
+                                snmp[i].luaContext = ((snmp_info_t*)
+                                        lkp->values[i])->luaContext;
+                        else    snmp[i].luaContext = NULL;
 #endif
 		} // for
 
@@ -705,6 +724,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		snmp[i].oid2info = NULL;
 #ifdef WITH_DMF_LUA
                 snmp[i].function = NULL;
+                snmp[i].luaContext = NULL;
 #endif
 	}
 
@@ -840,7 +860,7 @@ if(arg[6]){
     if(funcs){
       for (i = 0; i < funcs->size; i++)
          if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0){
-            buff = strdup(((function_t*)funcs->values[i])->code);
+            buff = ((function_t*)funcs->values[i])->code;
          }
     }
 }

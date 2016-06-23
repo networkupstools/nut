@@ -126,7 +126,7 @@ A simple example:
             
             function wastePower(device, outlet)
                 power = tonumber(lua_C_gateway("outlet."..outlet..".power", device))
-                realpower = tonumber(lua_C_gateway("input.outlet."..outlet..".realpower", device))
+                realpower = tonumber(lua_C_gateway("outlet."..outlet..".realpower", device))
                 
                 return power - realpower
             end
