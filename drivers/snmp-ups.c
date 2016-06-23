@@ -2232,21 +2232,17 @@ bool_t snmp_ups_walk(int mode)
                         if(su_info_p->flags & SU_FLAG_FUNCTION){
                             if((su_info_p->function) && (su_info_p->luaContext)){
                                 char *result = NULL;
-                                //lua_State *f_aux = lua_open();
-                                //luaL_openlibs(f_aux);
+                                
                                 lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
                                 lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
-                                //if(luaL_loadstring(f_aux, su_info_p->function)){
-                                //    result = strdup("Lua function error");
-                                //}else{
-                                    //lua_pcall(su_info_p->luaContext,0,0,0);
-                                    char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
-                                    lua_getglobal(su_info_p->luaContext, funcname);
-                                    lua_pushnumber(su_info_p->luaContext, current_device_number);
-                                    lua_pcall(su_info_p->luaContext,1,1,0);
-                                    result = lua_tostring(su_info_p->luaContext, -1);
-                                    free(funcname);
-                                //}
+                                
+                                char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+                                lua_getglobal(su_info_p->luaContext, funcname);
+                                lua_pushnumber(su_info_p->luaContext, current_device_number);
+                                lua_pcall(su_info_p->luaContext,1,1,0);
+                                result = lua_tostring(su_info_p->luaContext, -1);
+                                free(funcname);
+                                
                                 if(result){
                                     char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
                                     int i = 0;
@@ -2260,7 +2256,6 @@ bool_t snmp_ups_walk(int mode)
                                     dstate_setinfo(buf, "%s", result);
                                     free(buf);
                                 }
-                                //lua_close(su_info_p->luaContext);
                             }
                             continue;
                         }
