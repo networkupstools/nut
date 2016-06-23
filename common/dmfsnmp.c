@@ -349,7 +349,7 @@ info_snmp_destroy (void **self_p)
 
 #ifdef WITH_DMF_LUA
 if(self->function){
-  free(self->function);
+  self->function = NULL;
 }
 #endif
 		free (self);
@@ -840,7 +840,7 @@ if(arg[6]){
     if(funcs){
       for (i = 0; i < funcs->size; i++)
          if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0){
-            buff = strdup(((function_t*)funcs->values[i])->code);
+            buff = ((function_t*)funcs->values[i])->code;
          }
     }
 }
