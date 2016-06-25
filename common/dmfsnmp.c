@@ -71,7 +71,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 	printf("*-*-*-->Flags %lu\n", self->flags);
 #ifdef WITH_DMF_LUA
 if(self->function){
-  lua_State *f_aux = lua_open();
+  lua_State *f_aux = luaL_newstate();
   luaL_openlibs(f_aux);
   if(luaL_loadstring(f_aux, self->function)){
      printf("Error loading LUA functions:\n%s\n", self->function);
@@ -224,7 +224,7 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 #ifdef WITH_DMF_LUA
 self->function = *function;
 if(self->function){
-  self->luaContext = lua_open();
+  self->luaContext = luaL_newstate();
   luaL_openlibs(self->luaContext);
   if(luaL_loadstring(self->luaContext, self->function)){
     lua_close(self->luaContext);
