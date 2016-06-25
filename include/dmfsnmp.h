@@ -113,9 +113,9 @@
  * explicitly reconfigure and rebuild NUT with `-DWITH_DMF_LUA=1` in their
  * CFLAGS - it is not exposed otherwise.
  */
-# include <lua.h>
-# include <lauxlib.h>
-# include <lualib.h>
+# include <lua5.2/lua.h>
+# include <lua5.2/lauxlib.h>
+# include <lua5.2/lualib.h>
 #endif
 
 #include <stdbool.h>
