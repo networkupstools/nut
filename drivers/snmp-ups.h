@@ -50,9 +50,9 @@
 #define SNMP_UPS_H
 
 #ifdef WITH_DMF_LUA
-# include <lua.h>
-# include <lauxlib.h>
-# include <lualib.h>
+# include <lua5.2/lua.h>
+# include <lua5.2/lauxlib.h>
+# include <lua5.2/lualib.h>
 #endif
 
 /* FIXME: still needed?
