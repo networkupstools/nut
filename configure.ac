@@ -150,7 +150,7 @@ dnl Only use these when compiling with gcc
 dnl
 if ( test "${GCC}" = "yes" )
 then
-  CFLAGS="${CFLAGS} -Wall -Wsign-compare -llua -DWITH_DMF_LUA=1"
+  CFLAGS="${CFLAGS} -Wall -Wsign-compare -llua5.2 -DWITH_DMF_LUA=1"
 fi
 
 case ${target_os} in
