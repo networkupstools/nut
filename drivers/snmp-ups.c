@@ -2241,6 +2241,9 @@ bool_t snmp_ups_walk(int mode)
                                 lua_pushnumber(su_info_p->luaContext, current_device_number);
                                 lua_pcall(su_info_p->luaContext,1,1,0);
                                 result = lua_tostring(su_info_p->luaContext, -1);
+#ifdef DEBUG
+	printf("Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
+#endif
                                 free(funcname);
                                 
                                 if(result){
