@@ -2179,18 +2179,18 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 
 #ifdef WITH_DMF_LUA
 int publish_Lua_dstate(lua_State *L){
-  char *info_type = lua_tostring(L, 1);
-  char *value = lua_tostring(L, 2);
+  const char *info_type = lua_tostring(L, 1);
+  const char *value = lua_tostring(L, 2);
   
   if((info_type) && (value))
-      dstate_setinfo(info_type, value);
+      dstate_setinfo(info_type, "%s", value);
   return 0;
 }
 
 int lua_C_gateway(lua_State *L){
     /* get number of arguments */
     //int n = lua_gettop(L);
-    char *info_type = lua_tostring(L, 1);
+    const char *info_type = lua_tostring(L, 1);
     int current_device_number = lua_tointeger(L, 2);
     
     char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
@@ -2200,7 +2200,7 @@ int lua_C_gateway(lua_State *L){
     else
         sprintf(buf, "device.%s", info_type);
     
-    char *value = dstate_getinfo(buf);
+    const char *value = dstate_getinfo(buf);
     
     if(value)
         lua_pushstring(L, value);
@@ -2240,7 +2240,7 @@ bool_t snmp_ups_walk(int mode)
                                 lua_getglobal(su_info_p->luaContext, funcname);
                                 lua_pushnumber(su_info_p->luaContext, current_device_number);
                                 lua_pcall(su_info_p->luaContext,1,1,0);
-                                result = lua_tostring(su_info_p->luaContext, -1);
+                                result = (char *) lua_tostring(su_info_p->luaContext, -1);
 #ifdef DEBUG
 	printf("Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
 #endif
