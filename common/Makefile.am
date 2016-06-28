@@ -28,8 +28,8 @@ if WITH_SNMP
   libnutdmfsnmp_la_SOURCES = dmfsnmp.c
   libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/drivers \
         -I$(top_srcdir)/tools/nut-scanner \
-        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
+        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(LUA_INCLUDE) -DWITH_DMF_LUA
 # Note: Consumers of this lib will generally want these linked in:
-#  libnutdmfsnmp_consumer_LDADD = $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) libcommon.la
+#  libnutdmfsnmp_consumer_LDADD = $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LUA_LIB) libcommon.la
 endif
 endif

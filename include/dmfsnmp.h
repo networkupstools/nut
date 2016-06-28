@@ -106,6 +106,11 @@
  * See dmf-test.c for some example usage.
  */
 
+#include <stdbool.h>
+#include "extstate.h"
+#include "snmp-ups.h"
+#include "nutscan-snmp.h"
+
 #ifdef WITH_DMF_LUA
 /* NOTE: This code uses deprecated lua_open() that is removed since lua5.2.
  * As of this initial code-drop, the implementation is experimental and is
@@ -113,15 +118,10 @@
  * explicitly reconfigure and rebuild NUT with `-DWITH_DMF_LUA=1` in their
  * CFLAGS - it is not exposed otherwise.
  */
-# include <lua5.2/lua.h>
-# include <lua5.2/lauxlib.h>
-# include <lua5.2/lualib.h>
+# include <lua.h>
+# include <lauxlib.h>
+# include <lualib.h>
 #endif
-
-#include <stdbool.h>
-#include "extstate.h"
-#include "snmp-ups.h"
-#include "nutscan-snmp.h"
 
 /*
  *      HEADER FILE

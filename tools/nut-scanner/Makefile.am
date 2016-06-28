@@ -7,16 +7,17 @@ nutscan-usb.h nutscan-snmp.c:
 bin_PROGRAMS =
 if WITH_NEON
 if WITH_SNMP
+if WITH_DMF
  bin_PROGRAMS += nut-scanner-reindex-dmfsnmp
-
  nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c \
     $(top_srcdir)/include/dmfsnmp.h
  nut_scanner_reindex_dmfsnmp_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
     $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
-    $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS)
+    $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LUA_LIB) 
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
-    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
+    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(LUA_INCLUDE)
+endif
 endif
 endif
 
@@ -34,7 +35,7 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			../../common/common.c ../../common/str.c
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
-libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers $(LUA_INCLUDE)
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
@@ -42,13 +43,16 @@ nut_scanner_LDADD = libnutscan.la
 
 if WITH_SNMP
 if WITH_NEON
-nut_scanner_CFLAGS += -DWITH_DMFMIB=1 -I$(top_srcdir)/drivers
+nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
+if WITH_DMF
+  nut_scanner_CFLAGS += -DWITH_DMFMIB=1 $(LUA_INCLUDE)
+endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
 #	$(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
 #	$(LIBNETSNMP_LIBS)
-libnutscan_la_LIBADD += $(LIBNEON_LIBS)
+libnutscan_la_LIBADD += $(LIBNEON_LIBS) $(LIBLUA_LIBS)
 endif
 endif
 
