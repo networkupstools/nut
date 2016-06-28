@@ -49,10 +49,14 @@
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
+#ifndef WITH_DMFMIB
+ #undef WITH_DMF_LUA
+#endif
+
 #ifdef WITH_DMF_LUA
-# include <lua5.2/lua.h>
-# include <lua5.2/lauxlib.h>
-# include <lua5.2/lualib.h>
+# include <lua.h>
+# include <lauxlib.h>
+# include <lualib.h>
 #endif
 
 /* FIXME: still needed?
@@ -131,8 +135,8 @@ typedef struct {
 	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
 #ifdef WITH_DMF_LUA
-        char *function;
-        lua_State *luaContext;
+	char *function;
+	lua_State *luaContext;
 #endif
 } snmp_info_t;
 

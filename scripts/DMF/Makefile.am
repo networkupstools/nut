@@ -8,13 +8,6 @@ CC = gcc
 CPP = gcc
 CXX = g++
 
-# Note: this is automake "if"
-if HAVE_XMLLINT
-XMLLINT = @XMLLINT@
-else
-XMLLINT = xmllint
-endif
-
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
 
@@ -184,6 +177,7 @@ dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
+	$(LUA_LIB) $(LUA_INCLUDE) \
 	-DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
@@ -192,7 +186,7 @@ dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lneon $(AM_CFLAGS) \
-	-llua -I/usr/include/lua5.1 -DWITH_DMF_LUA=1 \
+	$(LUA_LIB) $(LUA_INCLUDE) \
 	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
