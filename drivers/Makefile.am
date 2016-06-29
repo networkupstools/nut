@@ -217,7 +217,10 @@ snmp_ups_dmf_SOURCES = snmp-ups.c
 snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
  $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) $(LUA_LIB) \
  $(top_builddir)/common/libcommon.la
-snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1 $(LUA_INCLUDE)
+snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
+if HAVE_DMF_LUA
+snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+endif
 
 if WITH_SSL
   snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)

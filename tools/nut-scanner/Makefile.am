@@ -45,14 +45,18 @@ if WITH_SNMP
 if WITH_NEON
 nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
 if WITH_DMF
-  nut_scanner_CFLAGS += -DWITH_DMFMIB=1 $(LUA_INCLUDE)
+nut_scanner_CFLAGS += -DWITH_DMFMIB=1
+if HAVE_DMF_LUA
+nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+nut_scanner_LDADD += $(LUA_LIB)
+endif
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
 #	$(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
 #	$(LIBNETSNMP_LIBS)
-libnutscan_la_LIBADD += $(LIBNEON_LIBS) $(LIBLUA_LIBS)
+libnutscan_la_LIBADD += $(LIBNEON_LIBS) $(LUA_LIB)
 endif
 endif
 
