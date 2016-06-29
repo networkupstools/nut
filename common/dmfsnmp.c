@@ -1145,15 +1145,17 @@ xml_dict_start_cb(void *userdata, int parent,
                         (void (*)(void)) function_new));
           functions_aux = 1;
 #else
-          printf("NUT was not compiled with this feature.\n");
+          printf("NUT was not compiled with Lua function feature.\n");
 #endif
 	}
-#ifdef WITH_DMF_LUA
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
         {
+#ifdef WITH_DMF_LUA
                 function_node_handler(list,attrs);
-        }
+#else
+                printf("NUT was not compiled with Lua function feature.\n");
 #endif
+        }
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
 		fprintf(stderr, "WARN: The '%s' tag in DMF is not recognized!\n", name);
