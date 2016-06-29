@@ -875,10 +875,10 @@ AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
 AX_PROG_LUA([5.1], [], [nut_have_lua=yes])
 AX_LUA_HEADERS
 AX_LUA_LIBS
+AM_CONDITIONAL(HAVE_DMF_LUA, test "${nut_have_lua}" = "yes")
 if test "${nut_with_dmf}" = "yes"; then
    AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
    if test "${nut_have_lua}" != "no"; then
-      AM_CONDITIONAL(HAVE_DMF_LUA, test "${nut_have_lua}" = "yes")
       DMF_BUILD_OPTIONS="lua scripting"
       AC_MSG_RESULT(yes)
    else
