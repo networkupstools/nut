@@ -1236,10 +1236,10 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	if(!userdata)
 		return ERR;
 
+#ifdef WITH_DMF_LUA
 	if(len > 2){
 // NOTE: Child-tags are also CDATA when parent-tag processing starts,
 // so we do not report "unsupported" errors when we it a CDATA process.
-#ifdef WITH_DMF_LUA
           if(functions_aux){
             if(!luatext){
 		luatext = (char*) calloc(len + 2, sizeof(char));
@@ -1253,8 +1253,8 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
               free(aux_str);
             }
           }
-#endif
 	}
+#endif
 	return OK;
 }
 
