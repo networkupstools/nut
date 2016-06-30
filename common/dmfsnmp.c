@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
+#include <dlfcn.h>
 
 #include "dmfsnmp.h"
 #include "str.h"
@@ -36,6 +37,17 @@
  *  C FILE
  *
  */
+static void* handle = NULL;
+
+static ne_xml_parser *(*xml_create)(void);
+static void (*xml_push_handler)(ne_xml_parser*,
+                         ne_xml_startelm_cb*, 
+                         ne_xml_cdata_cb*,
+                         ne_xml_endelm_cb*,
+                         void*);
+static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
+static void (*xml_destroy)(ne_xml_parser*);
+
 #ifdef WITH_DMF_LUA
         int functions_aux = 0;
         char *luatext = NULL;
@@ -136,6 +148,24 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 	}
 }
 //END DEBUGGING
+
+int load_neon_lib(void){
+  handle = dlopen(NEON_LIB_PATH, RTLD_LAZY);
+  if(!handle) return ERR;
+  *(void**)&xml_create = dlsym(handle, "ne_xml_create");
+  *(void**)&xml_push_handler = dlsym(handle, "ne_xml_push_handler");
+  *(void**)&xml_parse = dlsym(handle, "ne_xml_parse");
+  *(void**)&xml_destroy = dlsym(handle, "ne_xml_destroy");
+  
+  if (dlerror())
+      return ERR;
+  else
+    return OK;
+}
+void unload_neon_lib(){
+  dlclose(handle);
+  handle = NULL;
+}
 
 #ifdef WITH_DMF_LUA
 char *
@@ -1266,7 +1296,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
-
+        int flag = 0;
+        
 	assert (file_name);
 	assert (dmp);
         mibdmf_parser_new_list(dmp);
@@ -1279,9 +1310,12 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
-
-	ne_xml_parser *parser = ne_xml_create ();
-	ne_xml_push_handler (parser, xml_dict_start_cb,
+	if(!handle){
+          flag = 1;
+          if(load_neon_lib() == ERR) return ERR;
+        }
+	ne_xml_parser *parser = xml_create ();
+	xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
 		, xml_end_cb, dmp);
 
@@ -1298,7 +1332,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			result = EIO;
 			break;
 		} else {
-			if ((result = ne_xml_parse (parser, buffer, len)))
+			if ((result = xml_parse (parser, buffer, len)))
 			{
 				fprintf(stderr, "ERROR parsing DMF from '%s'"
 					"(unexpected markup?)\n", file_name);
@@ -1309,8 +1343,10 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	}
 	fclose (f);
 	if (!result) /* no errors, complete the parse with len==0 call */
-		ne_xml_parse (parser, buffer, 0);
-	ne_xml_destroy (parser);
+		xml_parse (parser, buffer, 0);
+	xml_destroy (parser);
+        if(flag == 1)
+          unload_neon_lib();
 
 #ifdef DEBUG
 	fprintf(stderr, "%s DMF acquired from '%s' (result = %d) %s\n",
@@ -1355,13 +1391,13 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 		fprintf(stderr, "ERROR: DMF passed in a string is empty or NULL\n");
 		return ENOENT;
 	}
-
-	ne_xml_parser *parser = ne_xml_create ();
-	ne_xml_push_handler (parser, xml_dict_start_cb,
+	if(load_neon_lib() == ERR) return ERR;
+	ne_xml_parser *parser = xml_create ();
+	xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
 		, xml_end_cb, dmp);
 
-	if ((result = ne_xml_parse (parser, dmf_string, len)))
+	if ((result = xml_parse (parser, dmf_string, len)))
 	{
 		fprintf(stderr, "ERROR parsing DMF from string "
 			"(unexpected markup?)\n");
@@ -1369,8 +1405,9 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	}
 
 	if (!result) /* no errors, complete the parse with len==0 call */
-		ne_xml_parse (parser, dmf_string, 0);
-	ne_xml_destroy (parser);
+		xml_parse (parser, dmf_string, 0);
+	xml_destroy (parser);
+        unload_neon_lib();
 
 #ifdef DEBUG
 	fprintf(stderr, "%s DMF acquired from string (result = %d) %s\n",
@@ -1416,7 +1453,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
-
+	if(load_neon_lib() == ERR) return ERR;
 	while ( (dir_ent = readdir(dir)) != NULL )
 	{
 		if ( strstr(dir_ent->d_name, ".dmf") )
@@ -1435,6 +1472,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		}
 	}
 	closedir(dir);
+        unload_neon_lib();
 
 #ifdef DEBUG
 	if (i==0) {
