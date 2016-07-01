@@ -150,6 +150,10 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 //END DEBUGGING
 
 int load_neon_lib(void){
+  if( lt_dlinit() != 0 ) {
+                fprintf(stderr, "Error initializing lt_init\n");
+                return 0;
+  }
   handle = lt_dlopen(NEON_LIB_PATH);
   if(!handle) return ERR;
   *(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
