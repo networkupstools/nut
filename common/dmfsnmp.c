@@ -93,8 +93,7 @@ if(self->function){
      char *funcname = snmp_info_type_to_main_function_name(self->info_type);
      lua_getglobal(f_aux, funcname);
      lua_pcall(f_aux,0,1,0);
-     char *result = lua_tostring(f_aux, -1);
-     printf("==--> Result: %s\n\n", result);
+     printf("==--> Result: %s\n\n", lua_tostring(f_aux, -1));
      free(funcname);
   }
   lua_close(f_aux);
@@ -1087,9 +1086,13 @@ compile_flags(const char **attrs)
 		}
 	if(aux_flags)free(aux_flags);
         aux_flags = get_param_by_name(TYPE_DAISY, attrs);
-        if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+        if(aux_flags){
+                if(strcmp(aux_flags, "1") == 0){
                         flags = flags | SU_TYPE_DAISY_1;
+                }if(strcmp(aux_flags, "2") == 0){
+                        flags = flags | SU_TYPE_DAISY_2;
                 }
+        }
         if(aux_flags)free(aux_flags);
 #ifdef WITH_DMF_LUA
         aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
