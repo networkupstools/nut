@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
-#include <dlfcn.h>
+#include <ltdl.h>
 
 #include "dmfsnmp.h"
 #include "str.h"
@@ -37,7 +37,8 @@
  *  C FILE
  *
  */
-static void* handle = NULL;
+static lt_dlhandle handle = NULL;
+static const char *dl_error = NULL;
 
 static ne_xml_parser *(*xml_create)(void);
 static void (*xml_push_handler)(ne_xml_parser*,
@@ -93,8 +94,7 @@ if(self->function){
      char *funcname = snmp_info_type_to_main_function_name(self->info_type);
      lua_getglobal(f_aux, funcname);
      lua_pcall(f_aux,0,1,0);
-     char *result = lua_tostring(f_aux, -1);
-     printf("==--> Result: %s\n\n", result);
+     printf("==--> Result: %s\n\n", lua_tostring(f_aux, -1));
      free(funcname);
   }
   lua_close(f_aux);
@@ -150,20 +150,25 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 //END DEBUGGING
 
 int load_neon_lib(void){
-  handle = dlopen(NEON_LIB_PATH, RTLD_LAZY);
+  if( lt_dlinit() != 0 ) {
+                fprintf(stderr, "Error initializing lt_init\n");
+                return 0;
+  }
+  handle = lt_dlopen(NEON_LIB_PATH);
   if(!handle) return ERR;
-  *(void**)&xml_create = dlsym(handle, "ne_xml_create");
-  *(void**)&xml_push_handler = dlsym(handle, "ne_xml_push_handler");
-  *(void**)&xml_parse = dlsym(handle, "ne_xml_parse");
-  *(void**)&xml_destroy = dlsym(handle, "ne_xml_destroy");
+  *(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
+  *(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
+  *(void**)&xml_parse = lt_dlsym(handle, "ne_xml_parse");
+  *(void**)&xml_destroy = lt_dlsym(handle, "ne_xml_destroy");
   
-  if (dlerror())
+  dl_error = lt_dlerror();
+  if (dl_error)
       return ERR;
   else
     return OK;
 }
 void unload_neon_lib(){
-  dlclose(handle);
+  lt_dlclose(handle);
   handle = NULL;
 }
 
@@ -997,99 +1002,102 @@ compile_flags(const char **attrs)
 	unsigned long flags = 0;
 	char *aux_flags = NULL;
 	aux_flags = get_param_by_name(SNMP_FLAG_OK, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_OK;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_STATIC, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_STATIC;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_ABSENT;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_NEGINVALID, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_NEGINVALID;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_UNIQUE, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_UNIQUE;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_PWR;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_BATT, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_BATT;
-		}
+	
 	if(aux_flags)free(aux_flags);
 		aux_flags = get_param_by_name(SNMP_STATUS_CAL, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_CAL;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_RB;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_TYPE_CMD;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET_GROUP;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTPUT_1, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTPUT_1;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTPUT_3;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INPUT_1, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_INPUT_1;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INPUT_3, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_INPUT_3;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_BYPASS_1, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_BYPASS_1;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_BYPASS_3;
-		}
+	
 	if(aux_flags)free(aux_flags);
         aux_flags = get_param_by_name(TYPE_DAISY, attrs);
-        if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+        if(aux_flags){
+                if(strcmp(aux_flags, "1") == 0)
                         flags = flags | SU_TYPE_DAISY_1;
-                }
+                else if(strcmp(aux_flags, "2") == 0)
+                        flags = flags | SU_TYPE_DAISY_2;
+        }
         if(aux_flags)free(aux_flags);
 #ifdef WITH_DMF_LUA
         aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
@@ -1109,16 +1117,14 @@ compile_info_flags(const char **attrs)
 	aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
 	if(aux_flags)
 		if(strcmp(aux_flags, YES) == 0)
-		{
 			info_flags = info_flags | ST_FLAG_RW;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
 	if(aux_flags)
 		if(strcmp(aux_flags, YES) == 0)
-		{
 			info_flags = info_flags | ST_FLAG_STRING;
-		}
+	
 	if(aux_flags)free(aux_flags);
 
 	return info_flags;
