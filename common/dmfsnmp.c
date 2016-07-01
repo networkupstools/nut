@@ -27,7 +27,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
-#include <dlfcn.h>
+#include <ltdl.h>
 
 #include "dmfsnmp.h"
 #include "str.h"
@@ -37,7 +37,8 @@
  *  C FILE
  *
  */
-static void* handle = NULL;
+static lt_dlhandle handle = NULL;
+static const char *dl_error = NULL;
 
 static ne_xml_parser *(*xml_create)(void);
 static void (*xml_push_handler)(ne_xml_parser*,
@@ -149,20 +150,21 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 //END DEBUGGING
 
 int load_neon_lib(void){
-  handle = dlopen(NEON_LIB_PATH, RTLD_LAZY);
+  handle = lt_dlopen(NEON_LIB_PATH);
   if(!handle) return ERR;
-  *(void**)&xml_create = dlsym(handle, "ne_xml_create");
-  *(void**)&xml_push_handler = dlsym(handle, "ne_xml_push_handler");
-  *(void**)&xml_parse = dlsym(handle, "ne_xml_parse");
-  *(void**)&xml_destroy = dlsym(handle, "ne_xml_destroy");
+  *(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
+  *(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
+  *(void**)&xml_parse = lt_dlsym(handle, "ne_xml_parse");
+  *(void**)&xml_destroy = lt_dlsym(handle, "ne_xml_destroy");
   
-  if (dlerror())
+  dl_error = lt_dlerror();
+  if (dl_error)
       return ERR;
   else
     return OK;
 }
 void unload_neon_lib(){
-  dlclose(handle);
+  lt_dlclose(handle);
   handle = NULL;
 }
 
@@ -1111,16 +1113,14 @@ compile_info_flags(const char **attrs)
 	aux_flags = get_param_by_name(SNMP_INFOFLAG_WRITABLE, attrs);
 	if(aux_flags)
 		if(strcmp(aux_flags, YES) == 0)
-		{
 			info_flags = info_flags | ST_FLAG_RW;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
 	if(aux_flags)
 		if(strcmp(aux_flags, YES) == 0)
-		{
 			info_flags = info_flags | ST_FLAG_STRING;
-		}
+	
 	if(aux_flags)free(aux_flags);
 
 	return info_flags;
