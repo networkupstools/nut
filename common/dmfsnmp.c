@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <ltdl.h>
 
+#include "common.h"
 #include "dmfsnmp.h"
 #include "str.h"
 
@@ -152,6 +153,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 int load_neon_lib(void){
   if( lt_dlinit() != 0 ) {
                 fprintf(stderr, "Error initializing lt_init\n");
+                upslogx(1, "Error initializing lt_init\n");
                 return 0;
   }
   handle = lt_dlopen(NEON_LIB_PATH);
@@ -1181,7 +1183,8 @@ xml_dict_start_cb(void *userdata, int parent,
                         (void (*)(void)) function_new));
           functions_aux = 1;
 #else
-          printf("NUT was not compiled with Lua function feature.\n");
+          upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
+          upslogx(2, "NUT was not compiled with Lua function feature.\n");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
@@ -1189,12 +1192,13 @@ xml_dict_start_cb(void *userdata, int parent,
 #ifdef WITH_DMF_LUA
                 function_node_handler(list,attrs);
 #else
-                printf("NUT was not compiled with Lua function feature.\n");
+                upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
+                upslogx(2, "NUT was not compiled with Lua function feature.\n");
 #endif
         }
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
-		fprintf(stderr, "WARN: The '%s' tag in DMF is not recognized!\n", name);
+		upslogx(2, "WARN: The '%s' tag in DMF is not recognized!\n", name);
 	}
 	free(auxname);
 	return DMF_NEON_CALLBACK_OK;
@@ -1314,6 +1318,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	{
 		fprintf(stderr, "ERROR: DMF file '%s' not found or not readable\n",
 			file_name ? file_name : "<NULL>");
+                upslogx(1, "ERROR: DMF file '%s' not found or not readable\n",
+                        file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
 	if(!handle){
@@ -1335,6 +1341,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 		{
 			fprintf(stderr, "ERROR parsing DMF from '%s'"
 				"(unexpected short read)\n", file_name);
+                        upslogx(2, "ERROR parsing DMF from '%s'"
+                                "(unexpected short read)\n", file_name);
 			result = EIO;
 			break;
 		} else {
@@ -1342,6 +1350,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			{
 				fprintf(stderr, "ERROR parsing DMF from '%s'"
 					"(unexpected markup?)\n", file_name);
+                                upslogx(2, "ERROR parsing DMF from '%s'"
+                                        "(unexpected markup?)\n", file_name);
 				result = ENOMSG;
 				break;
 			}
@@ -1395,6 +1405,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	     ( (len = strlen(dmf_string)) == 0 ) )
 	{
 		fprintf(stderr, "ERROR: DMF passed in a string is empty or NULL\n");
+                upslogx(1, "ERROR: DMF passed in a string is empty or NULL\n");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) return ERR;
@@ -1407,6 +1418,8 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	{
 		fprintf(stderr, "ERROR parsing DMF from string "
 			"(unexpected markup?)\n");
+                upslogx(2, "ERROR parsing DMF from string "
+                        "(unexpected markup?)\n");
 		result = ENOMSG;
 	}
 
@@ -1457,6 +1470,8 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	{
 		fprintf(stderr, "ERROR: DMF directory '%s' not found or not readable\n",
 			dir_name ? dir_name : "<NULL>");
+                upslogx(1, "ERROR: DMF directory '%s' not found or not readable\n",
+                        dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) return ERR;
