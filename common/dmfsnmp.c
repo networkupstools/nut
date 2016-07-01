@@ -996,102 +996,101 @@ compile_flags(const char **attrs)
 	unsigned long flags = 0;
 	char *aux_flags = NULL;
 	aux_flags = get_param_by_name(SNMP_FLAG_OK, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_OK;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_STATIC, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_STATIC;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_ABSENT;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_NEGINVALID, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_NEGINVALID;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_UNIQUE, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_UNIQUE;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_PWR;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_BATT, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_BATT;
-		}
+	
 	if(aux_flags)free(aux_flags);
 		aux_flags = get_param_by_name(SNMP_STATUS_CAL, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_CAL;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_RB;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_TYPE_CMD;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET_GROUP;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTPUT_1, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTPUT_1;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTPUT_3;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INPUT_1, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_INPUT_1;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INPUT_3, attrs);
-		if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_INPUT_3;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_BYPASS_1, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_BYPASS_1;
-		}
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
-	if(aux_flags)if(strcmp(aux_flags, YES) == 0){
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_BYPASS_3;
-		}
+	
 	if(aux_flags)free(aux_flags);
         aux_flags = get_param_by_name(TYPE_DAISY, attrs);
         if(aux_flags){
-                if(strcmp(aux_flags, "1") == 0){
+                if(strcmp(aux_flags, "1") == 0)
                         flags = flags | SU_TYPE_DAISY_1;
-                }if(strcmp(aux_flags, "2") == 0){
+                else if(strcmp(aux_flags, "2") == 0)
                         flags = flags | SU_TYPE_DAISY_2;
-                }
         }
         if(aux_flags)free(aux_flags);
 #ifdef WITH_DMF_LUA
