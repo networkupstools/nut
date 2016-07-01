@@ -962,46 +962,54 @@ bool Device::operator<(const Device& dev)const
 
 std::string Device::getDescription()throw(NutException)
 {
+	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceDescription(getName());
 }
 
 std::vector<std::string> Device::getVariableValue(const std::string& name)
 	throw(NutException)
 {
+	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceVariableValue(getName(), name);
 }
 
 std::map<std::string,std::vector<std::string> > Device::getVariableValues()
 	throw(NutException)
 {
+	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceVariableValues(getName());
 }
 
 std::set<std::string> Device::getVariableNames()throw(NutException)
 {
-  return getClient()->getDeviceVariableNames(getName());
+	if (!isOk()) throw NutException("Invalid device");
+	return getClient()->getDeviceVariableNames(getName());
 }
 
 std::set<std::string> Device::getRWVariableNames()throw(NutException)
 {
-  return getClient()->getDeviceRWVariableNames(getName());
+	if (!isOk()) throw NutException("Invalid device");
+	return getClient()->getDeviceRWVariableNames(getName());
 }
 
 void Device::setVariable(const std::string& name, const std::string& value)throw(NutException)
 {
-  getClient()->setDeviceVariable(getName(), name, value);
+	if (!isOk()) throw NutException("Invalid device");
+	getClient()->setDeviceVariable(getName(), name, value);
 }
 
 void Device::setVariable(const std::string& name, const std::vector<std::string>& values)
 	throw(NutException)
 {
-  getClient()->setDeviceVariable(getName(), name, values);
+	if (!isOk()) throw NutException("Invalid device");
+	getClient()->setDeviceVariable(getName(), name, values);
 }
 
 
 
 Variable Device::getVariable(const std::string& name)throw(NutException)
 {
+  if (!isOk()) throw NutException("Invalid device");
   if(getClient()->hasDeviceVariable(getName(), name))
   	return Variable(this, name);
   else
@@ -1011,6 +1019,7 @@ Variable Device::getVariable(const std::string& name)throw(NutException)
 std::set<Variable> Device::getVariables()throw(NutException)
 {
 	std::set<Variable> set;
+	if (!isOk()) throw NutException("Invalid device");
 
   std::set<std::string> names = getClient()->getDeviceVariableNames(getName());
   for(std::set<std::string>::iterator it=names.begin(); it!=names.end(); ++it)
@@ -1024,6 +1033,7 @@ std::set<Variable> Device::getVariables()throw(NutException)
 std::set<Variable> Device::getRWVariables()throw(NutException)
 {
 	std::set<Variable> set;
+	if (!isOk()) throw NutException("Invalid device");
 
   std::set<std::string> names = getClient()->getDeviceRWVariableNames(getName());
   for(std::set<std::string>::iterator it=names.begin(); it!=names.end(); ++it)
@@ -1036,7 +1046,8 @@ std::set<Variable> Device::getRWVariables()throw(NutException)
 
 std::set<std::string> Device::getCommandNames()throw(NutException)
 {
-  return getClient()->getDeviceCommandNames(getName());
+	if (!isOk()) throw NutException("Invalid device");
+	return getClient()->getDeviceCommandNames(getName());
 }
 
 std::set<Command> Device::getCommands()throw(NutException)
@@ -1054,6 +1065,7 @@ std::set<Command> Device::getCommands()throw(NutException)
 
 Command Device::getCommand(const std::string& name)throw(NutException)
 {
+  if (!isOk()) throw NutException("Invalid device");
   if(getClient()->hasDeviceCommand(getName(), name))
   	return Command(this, name);
   else
@@ -1062,16 +1074,19 @@ Command Device::getCommand(const std::string& name)throw(NutException)
 
 void Device::executeCommand(const std::string& name)throw(NutException)
 {
+  if (!isOk()) throw NutException("Invalid device");
   getClient()->executeDeviceCommand(getName(), name);
 }
 
 void Device::login()throw(NutException)
 {
+  if (!isOk()) throw NutException("Invalid device");
   getClient()->deviceLogin(getName());
 }
 
 void Device::master()throw(NutException)
 {
+  if (!isOk()) throw NutException("Invalid device");
   getClient()->deviceMaster(getName());
 }
 
@@ -1081,6 +1096,7 @@ void Device::forcedShutdown()throw(NutException)
 
 int Device::getNumLogins()throw(NutException)
 {
+  if (!isOk()) throw NutException("Invalid device");
   return getClient()->deviceGetNumLogins(getName());
 }
 
