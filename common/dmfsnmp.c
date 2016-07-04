@@ -151,23 +151,25 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 //END DEBUGGING
 
 int load_neon_lib(void){
-  if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                upslogx(1, "Error initializing lt_init\n");
-                return 0;
-  }
-  handle = lt_dlopen(NEON_LIB_PATH);
-  if(!handle) return ERR;
-  *(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
-  *(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
-  *(void**)&xml_parse = lt_dlsym(handle, "ne_xml_parse");
-  *(void**)&xml_destroy = lt_dlsym(handle, "ne_xml_destroy");
-  
-  dl_error = lt_dlerror();
-  if (dl_error)
-      return ERR;
-  else
-    return OK;
+
+	if( lt_dlinit() != 0 ) {
+		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(1, "Error initializing lt_init\n");
+		return 0;
+	}
+
+	handle = lt_dlopen(get_libname("libneon.so"));
+	if(!handle) return ERR;
+	*(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
+	*(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
+	*(void**)&xml_parse = lt_dlsym(handle, "ne_xml_parse");
+	*(void**)&xml_destroy = lt_dlsym(handle, "ne_xml_destroy");
+
+	dl_error = lt_dlerror();
+	if (dl_error)
+		return ERR;
+	else
+		return OK;
 }
 void unload_neon_lib(){
   lt_dlclose(handle);
@@ -1190,8 +1192,10 @@ xml_dict_start_cb(void *userdata, int parent,
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
         {
 #ifdef WITH_DMF_LUA
+                upsdebugx(1, "LUA support COMPILED IN");
                 function_node_handler(list,attrs);
 #else
+                upsdebugx(1, "LUA support *NOT* COMPILED IN");
                 upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
                 upslogx(2, "NUT was not compiled with Lua function feature.\n");
 #endif
@@ -1470,11 +1474,14 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	{
 		fprintf(stderr, "ERROR: DMF directory '%s' not found or not readable\n",
 			dir_name ? dir_name : "<NULL>");
-                upslogx(1, "ERROR: DMF directory '%s' not found or not readable\n",
+                upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable\n",
                         dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
-	if(load_neon_lib() == ERR) return ERR;
+	if(load_neon_lib() == ERR) {
+		upsdebugx(1, "ERROR: can't load Neon library");
+		return ERR;
+	}
 	while ( (dir_ent = readdir(dir)) != NULL )
 	{
 		if ( strstr(dir_ent->d_name, ".dmf") )
@@ -1493,21 +1500,19 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		}
 	}
 	closedir(dir);
-        unload_neon_lib();
+    unload_neon_lib();
 
-#ifdef DEBUG
 	if (i==0) {
-		fprintf(stderr, "WARN: No DMF files were found or readable in directory '%s'\n",
+		upsdebugx(1, "WARN: No DMF files were found or readable in directory '%s'\n",
 			dir_name ? dir_name : "<NULL>");
 	} else {
-		fprintf(stderr, "INFO: %d DMF files were inspected in directory '%s'\n",
+		upsdebugx(1, "INFO: %d DMF files were inspected in directory '%s'\n",
 			i, dir_name ? dir_name : "<NULL>");
 	}
 	if (result!=0 || x>0) {
-		fprintf(stderr, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)\n",
+		upsdebugx(1, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)\n",
 			x, dir_name ? dir_name : "<NULL>", result);
 	}
-#endif
 
 	return result;
 }
