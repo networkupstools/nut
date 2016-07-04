@@ -31,6 +31,8 @@
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
 #include "nut_version.h"
+
+char *dmf_path = NULL;
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
