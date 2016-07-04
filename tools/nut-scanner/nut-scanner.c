@@ -68,7 +68,7 @@
 #define ERR_BAD_OPTION	(-1)
 
 // TODO : #ifdef WITH_DMFMIB for options to set up path(s) to the DMFs to load
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:D:CUSMOAm:NPqIVazZ:";
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVazZ:D";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -87,7 +87,7 @@ const struct option longopts[] =
 	{ "username",required_argument,NULL,'b' },
 	{ "password",required_argument,NULL,'B' },
 	{ "authType",required_argument,NULL,'d' },
-	{ "cipher_suite_id",required_argument,NULL,'D' },
+	{ "cipher_suite_id",required_argument,NULL,'L' },
 	{ "port",required_argument,NULL,'p' },
 	{ "complete_scan",no_argument,NULL,'C' },
 	{ "usb_scan",no_argument,NULL,'U' },
@@ -105,6 +105,7 @@ const struct option longopts[] =
 	{ "snmp_fingerprints_file",required_argument,NULL,'F' },
 	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
 	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
+	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -235,6 +236,9 @@ int main(int argc, char *argv[])
 			case 'm':
 				cidr = strdup(optarg);
 				break;
+			case 'D':
+				nut_debug_level++;
+				break;
 
 #ifdef WITH_DMFMIB
 			case 'z':
@@ -339,7 +343,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr,"Unknown authentication type (%s). Defaulting to MD5\n", optarg);
 				}
 				break;
-			case 'D':
+			case 'L':
 				if(!nutscan_avail_ipmi) {
 					goto display_help;
 				}

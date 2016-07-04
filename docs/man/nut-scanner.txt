@@ -140,7 +140,7 @@ Specify the password to use when authenticating with the remote host (mandatory 
 Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5).
 This forces connection through the 'lan' IPMI interface , thus in IPMI 1.5 mode.
 
-*-D* | *--cipher_suite_id* 'cipher suite identifier'::
+*-L* | *--cipher_suite_id* 'cipher suite identifier'::
 Specify the IPMI 2.0 cipher suite ID to use. The Cipher Suite ID identifies a set of authentication, integrity, and
 confidentiality algorithms to use for IPMI 2.0  communication. The authentication algorithm identifies the algorithm
 to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the
@@ -172,6 +172,15 @@ Display available bus that can be scanned , depending on how the binary has been
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
+
+*-D* | *--nut_debug_level*::
+Raise the debugging level.  Use this multiple times to see more details.
++
+The level of debugging needed depends both on nut-scanner and the
+problem you're trying to diagnose.  Therefore, first explain the problem you
+have with nut-scanner to a developer/maintainer, before sending them debugging
+output.  More often than not, if you just pick a level, the output may be
+either too limited or too verbose to be of any use.
 
 EXAMPLES
 --------
