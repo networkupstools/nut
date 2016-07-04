@@ -51,6 +51,7 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+extern char *dmf_path;
 extern const char *UPS_VERSION;
 
 /* get the syslog ready for us */

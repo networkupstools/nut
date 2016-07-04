@@ -220,6 +220,7 @@ typedef struct {
 #define SU_VAR_PRIVPASSWD	"privPassword"
 #define SU_VAR_AUTHPROT		"authProtocol"
 #define SU_VAR_PRIVPROT		"privProtocol"
+#define SU_VAR_DMFPATH          "dmfpath"
 
 
 #define SU_INFOSIZE		128

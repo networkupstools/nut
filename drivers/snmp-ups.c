@@ -305,6 +305,8 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
+        addvar(VAR_VALUE, SU_VAR_DMFPATH,
+                "Set the DMF config file");
 }
 
 void upsdrv_initups(void)
@@ -325,10 +327,21 @@ void upsdrv_initups(void)
 	}
 	/* FIXME: Add configurability of where we look for *.dmf files */
 #ifdef DEFAULT_DMFSNMP_DIR
-	mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+        if(testvar(SU_VAR_DMFPATH)){
+          mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
+        }else{
+          if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+          else mibdmf_parse_dir(dmf_path, dmp);
+        }
 #else
-	if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
+        if(testvar(SU_VAR_DMFPATH)){
+          mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
+        }else{
+          if(!dmf_path){
+            if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
 		mibdmf_parse_dir("./", dmp);
+          }else mibdmf_parse_dir(dmf_path, dmp);
+        }
 #endif
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )
