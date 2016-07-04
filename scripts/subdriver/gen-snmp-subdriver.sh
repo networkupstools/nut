@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.7
+# Version: 0.8
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -97,7 +97,7 @@ get_snmp_data() {
     # try with ".1.X.Y.Z", if fails try with .1.X.Y", if fails try with .1.X"...
     echo "Retrieving SNMP information. This may take some time"
     snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
-    snmpwalk -Os -v1 -m ALL -M $MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+    snmpwalk -Os -v1 -m ALL -M$MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
 }
 
 generate_C() {
@@ -326,7 +326,7 @@ generate_DMF() {
 		fi
 		# get the matching numeric OID
 		NUM_OID="`sed -n ${LINENB}p ${NUMWALKFILE} | cut -d' ' -f1`"
-		printf "\t\t<-- ${FULL_STR_OID} -->\n\t\t<snmp_info name=\"unmapped.${STR_OID}\", oid=\"${NUM_OID}\", default=\"\"/>\n"
+		printf "\t\t<!-- ${FULL_STR_OID} -->\n\t\t<snmp_info name=\"unmapped.${STR_OID}\", oid=\"${NUM_OID}\", default=\"\"/>\n"
 	done < ${STRWALKFILE} >> ${DMFFILE}
 
 	# append footer
