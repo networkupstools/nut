@@ -307,6 +307,11 @@ static int main_arg(char *var, char *val)
 
 static void do_global_args(const char *var, const char *val)
 {
+        if (!strcmp(var, "dmfpath")) {
+                free(dmf_path);
+                dmf_path = xstrdup(val);
+        }
+        
 	if (!strcmp(var, "pollinterval")) {
 		poll_interval = atoi(val);
 		return;
