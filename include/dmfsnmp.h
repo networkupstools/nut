@@ -129,7 +129,6 @@
  */
 #define YES "yes"
 #define DEFAULT_CAPACITY 16
-#define NEON_LIB_PATH "/usr/lib64/libneon.so.27.3.0"
 
 // Recognized DMF XML tags
 #define DMFTAG_NUT "nut"
@@ -298,10 +297,10 @@ void
 
 // Helpers for string comparison (includng NULL consideration);
 bool
-	dmf_streq (const char* x, const char* y, bool verbose);
+	dmf_streq (const char* x, const char* y);
 
 bool
-	dmf_strneq (const char* x, const char* y, bool verbose);
+	dmf_strneq (const char* x, const char* y);
 
 
 // ======================================================================= //
