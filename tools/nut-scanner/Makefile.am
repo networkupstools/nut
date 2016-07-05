@@ -16,7 +16,10 @@ if WITH_DMF
     $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LUA_LIB) 
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
-    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(LUA_INCLUDE)
+    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
+if HAVE_DMF_LUA
+ nut_scanner_reindex_dmfsnmp_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+endif
 endif
 endif
 endif
