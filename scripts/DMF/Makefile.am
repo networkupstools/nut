@@ -161,6 +161,10 @@ else
   dmf: dmf-uptodate
 endif
 
+if HAVE_DMF_LUA
+ AM_CFLAGS += -DWITH_DMF_LUA $(LUA_INCLUDE)
+endif
+
 progs: $(PROGS)
 
 progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
@@ -170,7 +174,8 @@ dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lltdl $(AM_CFLAGS) \
-	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	$(LUA_LIB) $(LUA_INCLUDE) \
+	-DWITH_DMFMIB -DWITH_DMF_LUA -DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
 dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
@@ -178,7 +183,7 @@ dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lltdl $(AM_CFLAGS) \
 	$(LUA_LIB) $(LUA_INCLUDE) \
-	-DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
+	-DWITH_DMFMIB -DWITH_DMF_LUA -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
@@ -187,7 +192,7 @@ dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lltdl $(AM_CFLAGS) \
 	$(LUA_LIB) $(LUA_INCLUDE) \
-	-DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	-DWITH_DMFMIB -DWITH_DMF_LUA -DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
