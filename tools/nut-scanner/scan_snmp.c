@@ -141,9 +141,6 @@ static oid * (*nut_usmHMACMD5AuthProtocol);
 static oid * (*nut_usmHMACSHA1AuthProtocol);
 static oid * (*nut_usmDESPrivProtocol);
 
-// TODO: Provide functional upsdebugx() in this library
-#define upsdebugx(N,STR, ...) fprintf(stderr, "DEBUG[%d]: " STR "\n", N, ##__VA_ARGS__)
-
 void uninit_snmp_device_table() {
 	if (snmp_device_table == snmp_device_table_dmf)
 		snmp_device_table = NULL;
@@ -157,13 +154,12 @@ void uninit_snmp_device_table() {
 int init_snmp_device_table()
 {
 	// A simple routine to load nutscan DMFs, safe to call several times
-	// TODO: Provide functional upsdebugx() in this library
 	if (snmp_device_table != NULL)
 		return 1;
 
 	if (dmfnutscan_snmp_dir != NULL) {
 		// parse_dir, check success, assign var
-		upsdebugx(1, "init_snmp_device_table() trying to load DMF from %s.",
+		upsdebugx(1, "init_snmp_device_table() trying to load DMF from %s",
 			dmfnutscan_snmp_dir);
 		dmfnutscan_snmp_dmp = mibdmf_parser_new();
 		if (dmfnutscan_snmp_dmp == NULL) {
@@ -176,7 +172,7 @@ int init_snmp_device_table()
 			    device_table_counter>1 )
 			{
 				snmp_device_table = snmp_device_table_dmf;
-				fprintf(stderr, "SUCCESS: Can use the SNMP device mapping parsed from DMF library with %d definitions.\n", device_table_counter-1);
+				upsdebugx(1, "SUCCESS: Can use the SNMP device mapping parsed from DMF library with %d definitions", device_table_counter-1);
 				// Note: caller should free these structures in the end, just like below
 			} else {
 				upsdebugx(1, "PROBLEM: Can not access the SNMP device mapping parsed from DMF library, or loaded an empty table");
@@ -187,7 +183,7 @@ int init_snmp_device_table()
 
 #ifdef DEVSCAN_SNMP_BUILTIN
 	if (snmp_device_table == NULL && snmp_device_table_builtin!=NULL) {
-		fprintf(stderr, "SUCCESS: Can use the built-in SNMP device mapping table.\n");
+		upsdebugx(1, "SUCCESS: Can use the built-in SNMP device mapping table");
 		snmp_device_table = (snmp_device_id_t *)(&snmp_device_table_builtin);
 	}
 #else
@@ -195,11 +191,11 @@ int init_snmp_device_table()
 #endif
 
 	if (snmp_device_table == NULL) {
-		fprintf(stderr, "FATAL: No SNMP device mapping table found. SNMP search disabled.\n");
+		upsdebugx(1, "FATAL: No SNMP device mapping table found. SNMP search disabled");
 		return 0;
 	}
 
-	upsdebugx(1, "init_snmp_device_table() got a valid SNMP device mapping table.");
+	upsdebugx(1, "init_snmp_device_table() got a valid SNMP device mapping table");
 	return 1;
 }
 

@@ -524,7 +524,6 @@ display_help:
 						"arguments, see more details above the usage help text.\n\n");
 				return ret_code;
 		}
-
 	}
 
 	if( cidr ) {

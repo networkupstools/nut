@@ -297,10 +297,10 @@ void
 
 // Helpers for string comparison (includng NULL consideration);
 bool
-	dmf_streq (const char* x, const char* y, bool verbose);
+	dmf_streq (const char* x, const char* y);
 
 bool
-	dmf_strneq (const char* x, const char* y, bool verbose);
+	dmf_strneq (const char* x, const char* y);
 
 
 // ======================================================================= //
