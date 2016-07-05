@@ -1320,10 +1320,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
 	{
-		fprintf(stderr, "ERROR: DMF file '%s' not found or not readable\n",
+		upsdebugx(1, "ERROR: DMF file '%s' not found or not readable\n",
 			file_name ? file_name : "<NULL>");
-                upslogx(1, "ERROR: DMF file '%s' not found or not readable\n",
-                        file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
 	if(!handle){
@@ -1368,12 +1366,10 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
         if(flag == 1)
           unload_neon_lib();
 
-#ifdef DEBUG
-	fprintf(stderr, "%s DMF acquired from '%s' (result = %d) %s\n",
+	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
 		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
 		( result == 0 ) ? "" : strerror(result)
 	);
-#endif
 
 	/* Extend or truncate the tables to the current amount of known entries
 	   To be on the safe side, we do this even if current file hiccuped. */
@@ -1432,12 +1428,10 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	xml_destroy (parser);
         unload_neon_lib();
 
-#ifdef DEBUG
-	fprintf(stderr, "%s DMF acquired from string (result = %d) %s\n",
+	upsdebugx(1, "%s DMF acquired from string (result = %d) %s",
 		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", result,
 		( result == 0 ) ? "" : strerror(result)
 	);
-#endif
 
 	/* Extend or truncate the tables to the current amount of known entries
 	   To be on the safe side, we do this even if current file hiccuped. */
@@ -1472,10 +1466,8 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	if ( (dir_name == NULL ) || \
 	     ( (dir = opendir(dir_name)) == NULL ) )
 	{
-		fprintf(stderr, "ERROR: DMF directory '%s' not found or not readable\n",
+		upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable\n",
 			dir_name ? dir_name : "<NULL>");
-                upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable\n",
-                        dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) {
@@ -1503,14 +1495,14 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
     unload_neon_lib();
 
 	if (i==0) {
-		upsdebugx(1, "WARN: No DMF files were found or readable in directory '%s'\n",
+		upsdebugx(1, "WARN: No DMF files were found or readable in directory '%s'",
 			dir_name ? dir_name : "<NULL>");
 	} else {
-		upsdebugx(1, "INFO: %d DMF files were inspected in directory '%s'\n",
+		upsdebugx(1, "INFO: %d DMF files were inspected in directory '%s'",
 			i, dir_name ? dir_name : "<NULL>");
 	}
 	if (result!=0 || x>0) {
-		upsdebugx(1, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)\n",
+		upsdebugx(1, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)",
 			x, dir_name ? dir_name : "<NULL>", result);
 	}
 
@@ -1518,38 +1510,34 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 }
 
 bool
-dmf_streq (const char* x, const char* y, bool verbose)
+dmf_streq (const char* x, const char* y)
 {
 	if (!x && !y)
 		return true;
 	if (!x || !y) {
-		if (verbose)
-			fprintf(stderr, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n\n", x ? x : "<NULL>" , y ? y : "<NULL>");
+		upsdebugx(2, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n", x ? x : "<NULL>" , y ? y : "<NULL>");
 		return false;
 		}
 	int cmp = strcmp (x, y);
 	if (cmp != 0) {
-		if (verbose)
-			fprintf(stderr, "\nDEBUG: strEQ(): Strings not equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
+		upsdebugx(2, "\nDEBUG: strEQ(): Strings not equal (%i):\n\t%s\n\t%s\n", cmp, x, y);
 	}
 	return (cmp == 0);
 }
 
 bool
-dmf_strneq (const char* x, const char* y, bool verbose)
+dmf_strneq (const char* x, const char* y)
 {
 	if (!x && !y) {
-		if (verbose)
-			fprintf(stderr, "\nDEBUG: strNEQ(): Both compared strings are NULL\n");
+		upsdebugx(2, "\nDEBUG: strNEQ(): Both compared strings are NULL\n");
 		return false;
-		}
+	}
 	if (!x || !y) {
 		return true;
-		}
+	}
 	int cmp = strcmp (x, y);
 	if (cmp == 0) {
-		if (verbose)
-			fprintf(stderr, "\nDEBUG: strNEQ(): Strings are equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
+		upsdebugx(2, "\nDEBUG: strNEQ(): Strings are equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
 	}
 	return (cmp != 0);
 }

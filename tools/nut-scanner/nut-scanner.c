@@ -495,7 +495,7 @@ display_help:
 					/* Specify the password to use when authenticationg with the remote host.  If not specified, a null password is assumed. Maximum password length is 16 for IPMI
 					 * 1.5 and 20 for IPMI 2.0. */
 					printf("  -d, --authType <authentication type>: Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\n");
-					printf("  -D, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
+					printf("  -L, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
 				}
 
 				printf("\nNUT specific options:\n");
@@ -507,9 +507,9 @@ display_help:
 				printf("  -V, --version: Display NUT version\n");
 				printf("  -a, --available: Display available bus that can be scanned\n");
 				printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
+				printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
 				return ret_code;
 		}
-
 	}
 
 	if( cidr ) {

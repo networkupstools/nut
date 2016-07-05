@@ -41,13 +41,13 @@
 #define XSD_DMFNUTSCAN_XMLNS    "http://www.networkupstools.org/dmf/snmp/nutscan"
 #endif
 
-const char optstring[] = "?hqVkKZ:";
+const char optstring[] = "?hDVkKZ:";
 #define ERR_BAD_OPTION	(-1)
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] = {
 	{ "help",no_argument,NULL,'h' },
-	{ "quiet",no_argument,NULL,'q' },
+	{ "nut_debug_level",no_argument,NULL,'D' },
 	{ "version",no_argument,NULL,'V' },
 	{ "proceed_on_errors",no_argument,NULL,'k' },
 	{ "abort_on_errors",no_argument,NULL,'K' },
@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
 	int opt_ret;
 	int result = 0;
 	int ret_code = EXIT_SUCCESS;
-	int quiet = 0;
 	int proceed_on_errors = 1;
 	char *dir_name = NULL; // TODO: Make configurable the dir and/or list of files
 	int dir_name_dynamic = 0;
@@ -92,8 +91,8 @@ int main(int argc, char *argv[])
 				dir_name = strdup(optarg);
 				dir_name_dynamic = 1;
 				break;
-			case 'q':
-				quiet = 1;
+			case 'D':
+				nut_debug_level++;
 				break;
 			case 'k':
 				proceed_on_errors = 1;
@@ -120,7 +119,7 @@ int main(int argc, char *argv[])
 				printf("  -Z, --dmf_dir: Directory where large DMF MIB mapping file which you want to index reside\n");
 				printf("\nMiscellaneous options:\n");
 				printf("  -V, --version: Display NUT version\n");
-				printf("  -q, --quiet: Do not display progress trace unless that is an error message.\n");
+				printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
 				printf("  -k, --proceed-on-errors: If some files could not be parsed, process what we have read%s.\n", proceed_on_errors==1?" (default)":"");
 				printf("  -K, --abort-on-errors: If some files could not be parsed, do not process anything%s.\n", proceed_on_errors==1?"":" (default)");
 				return ret_code;
@@ -129,28 +128,25 @@ int main(int argc, char *argv[])
 
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
+		upsdebugx(2,"=== DMF-Reindex: FATAL: Can not allocate the DMF parsing structures\n");
 		return ENOMEM;
 	}
 
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: Loading DMF structures from directory '%s':\n\n",
-		dir_name);
+	upsdebugx(1, "=== DMF-Reindex: Loading DMF structures from directory '%s':\n\n", dir_name);
 	result = mibdmf_parse_dir(dir_name, dmp);
 	if (result != 0 && proceed_on_errors != 1) {
 	// TODO: Error-checking? Faults in some parses should be fatal or not?
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Could not find or parse some files\n");
+		upsdebugx(1,"=== DMF-Reindex: FATAL: Could not find or parse some files\n");
 		return result;
 	}
 
 	// Loop through discovered device_table and print it back as DMF markup
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: Print DMF subset for snmp_device_table[]...\n\n");
+	upsdebugx(2, "=== DMF-Reindex: Print DMF subset for snmp_device_table[]...\n\n");
 
 	snmp_device_id_t *devtab = mibdmf_get_device_table(dmp);
 	if (!devtab)
 	{
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not access the parsed device_table\n");
+		upsdebugx(1,"=== DMF-Reindex: FATAL: Can not access the parsed device_table\n");
 		return ENOMEM;
 	}
 
@@ -164,7 +160,7 @@ int main(int argc, char *argv[])
 	size_t newdmf_len=0, newdmf_size=1024;
 	char *newdmf = (char*)calloc(newdmf_size, sizeof(char));
 	if (!newdmf) {
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the buffer for parsed DMF\n");
+		upsdebugx(2,"=== DMF-Reindex: FATAL: Can not allocate the buffer for parsed DMF\n");
 		return ENOMEM;
 	}
 	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
@@ -173,10 +169,7 @@ int main(int argc, char *argv[])
 		XSD_DMFNUTSCAN_VERSION, XSD_DMFNUTSCAN_XMLNS);
 	for (i=0; devtab[i].oid != NULL || devtab[i].mib != NULL || devtab[i].sysoid != NULL ; i++)
 	{
-#ifdef DEBUG
-		if (!quiet)
-			fprintf(stderr,"[num=%zu (lenbefore=%zu)] ", i, newdmf_len);
-#endif
+		upsdebugx(2,"[num=%zu (lenbefore=%zu)]", i, newdmf_len);
 
 		// ASSUMPTION: String increments would not exceed these few bytes
 		if ( (newdmf_size - newdmf_len) < 256)
@@ -184,13 +177,10 @@ int main(int argc, char *argv[])
 			newdmf_size += 1024;
 			newdmf = (char*)realloc(newdmf, newdmf_size * sizeof(char));
 			if (!newdmf) {
-				fprintf(stderr,"=== DMF-Reindex: FATAL: Can not extend the buffer for parsed DMF\n");
+				upsdebugx(2,"=== DMF-Reindex: FATAL: Can not extend the buffer for parsed DMF\n");
 				return ENOMEM;
 			}
-#ifdef DEBUG
-			if (!quiet)
-				fprintf(stderr, "\nExtended the buffer to %zu bytes\n", newdmf_size);
-#endif
+			upsdebugx(2, "\nExtended the buffer to %zu bytes\n", newdmf_size);
 		}
 
 		newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
@@ -213,34 +203,30 @@ int main(int argc, char *argv[])
 	}
 	newdmf_len += snprintf(newdmf + newdmf_len, (newdmf_size - newdmf_len),
 		"</nut>\n");
-#ifdef DEBUG
-	if (!quiet)
-		fprintf(stderr,"[LAST: num=%zu (lenafter=%zu)] ", i, newdmf_len);
-#endif
-	fprintf(stderr, "\n=== DMF-Reindex: Indexed %zu entries...\n\n", i);
+
+	upsdebugx(2,"[LAST: num=%zu (lenafter=%zu)] ", i, newdmf_len);
+	upsdebugx(1, "\n=== DMF-Reindex: Indexed %zu entries...\n\n", i);
 
 	mibdmf_parser_t * newdmp = mibdmf_parser_new();
 	if (!newdmp) {
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not allocate the DMF verification parsing structures\n\n");
+		upsdebugx(2,"=== DMF-Reindex: FATAL: Can not allocate the DMF verification parsing structures\n\n");
 		return ENOMEM;
 	}
 
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: Loading DMF structures from prepared string (verification)\n\n");
+	upsdebugx(1, "=== DMF-Reindex: Loading DMF structures from prepared string (verification)\n\n");
 	ret_code = mibdmf_parse_str(newdmf, newdmp);
 	// Error checking for one (just made) document makes sense and is definite
 	if ( result != 0 ) {
-		fprintf(stderr, "=== DMF-Reindex: The generated document FAILED syntax verification\n\n");
+		upsdebugx(2, "=== DMF-Reindex: The generated document FAILED syntax verification\n\n");
 		return ret_code;
 	}
 
 	// Loop through reparsed device_table and compare to original one
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: Verify reparsed content for snmp_device_table[]...\n\n");
+	upsdebugx(1, "=== DMF-Reindex: Verify reparsed content for snmp_device_table[]...\n\n");
 	snmp_device_id_t *newdevtab = mibdmf_get_device_table(newdmp);
 	if (!newdevtab)
 	{
-		fprintf(stderr,"=== DMF-Reindex: FATAL: Can not access the reparsed device_table\n");
+		upsdebugx(2,"=== DMF-Reindex: FATAL: Can not access the reparsed device_table\n");
 		return ENOMEM;
 	}
 
@@ -252,11 +238,11 @@ int main(int argc, char *argv[])
 		int r = 0;
 		for (j=0; newdevtab[j].oid != NULL || newdevtab[j].mib != NULL || newdevtab[j].sysoid != NULL ; j++)
 		{ // Note: OID attribute may be empty or NULL, these are assumed equal
-			if ( (dmf_streq(newdevtab[j].oid, devtab[k].oid, false)
-			    ||dmf_streq(newdevtab[j].oid, "", false)
-			    ||dmf_streq(newdevtab[j].oid, NULL, false) )
-			 && dmf_streq(newdevtab[j].mib, devtab[k].mib, false)
-			 && dmf_streq(newdevtab[j].sysoid, devtab[k].sysoid, false) )
+			if ( (dmf_streq(newdevtab[j].oid, devtab[k].oid)
+			    ||dmf_streq(newdevtab[j].oid, "")
+			    ||dmf_streq(newdevtab[j].oid, NULL) )
+			 && dmf_streq(newdevtab[j].mib, devtab[k].mib)
+			 && dmf_streq(newdevtab[j].sysoid, devtab[k].sysoid) )
 			{
 				r = 1;
 				break;
@@ -265,7 +251,7 @@ int main(int argc, char *argv[])
 
 		if ( r==0 )
 		{
-			fprintf(stderr,"=== DMF-Reindex: mismatch in line %zu of the old table (no hits in new table)\n", k);
+			upsdebugx(2,"=== DMF-Reindex: mismatch in line %zu of the old table (no hits in new table)\n", k);
 			result++;
 		}
 	}
@@ -274,34 +260,31 @@ int main(int argc, char *argv[])
 
 	if ( i!=j )
 	{
-		fprintf(stderr,"=== DMF-Reindex: mismatch in amount of lines of old(%zu) and new(%zu) tables\n", i, j);
+		upsdebugx(2,"=== DMF-Reindex: mismatch in amount of lines of old(%zu) and new(%zu) tables\n", i, j);
 		result++;
 	}
 
 	if ( i<=1 )
 	{
-		fprintf(stderr,"=== DMF-Reindex: empty table was generated\n");
+		upsdebugx(2,"=== DMF-Reindex: empty table was generated\n");
 		result++;
 	}
 
 	if ( result != 0 )
 	{
-		fprintf(stderr,"=== DMF-Reindex: The generated document FAILED content verification (%d issues)\n\n", result);
+		upsdebugx(2,"=== DMF-Reindex: The generated document FAILED content verification (%d issues)\n\n", result);
 		return result;
 	}
 
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: Checks succeeded - printing generated DMF to stdout...\n\n");
+	upsdebugx(1, "=== DMF-Reindex: Checks succeeded - printing generated DMF to stdout...\n\n");
 	printf("%s", newdmf);
 
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: Freeing data...\n\n");
+	upsdebugx(2, "=== DMF-Reindex: Freeing data...\n\n");
 	mibdmf_parser_destroy(&newdmp);
 	mibdmf_parser_destroy(&dmp);
 	free(newdmf);
 
-	if (!quiet)
-		fprintf(stderr, "=== DMF-Reindex: All done\n\n");
+	upsdebugx(1, "=== DMF-Reindex: All done\n\n");
 
 	if (dir_name_dynamic != 0)
 		free (dir_name);
