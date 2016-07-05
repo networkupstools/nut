@@ -854,113 +854,6 @@ NUT_REPORT_FEATURE([build and install the development files], [${nut_with_dev}],
 					[WITH_DEV], [Define to enable development files support])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-dmf
-
-NUT_ARG_WITH([dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
-
-dnl ${nut_with_dmf}: any value except "yes" or "no" is treated as "auto".
-dnl Check for Neon (mandatory)
-if test "${nut_with_dmf}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for DMF (data mapping file) support for snmp-ups"])
-fi
-
-if test "${nut_with_dmf}" != "no"; then
-   nut_with_dmf="${nut_have_neon}"
-fi
-
-DMF_BUILD_OPTIONS=""
-AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
-AX_PROG_LUA([5.1], [], [nut_have_lua=yes])
-AX_LUA_HEADERS
-AX_LUA_LIBS
-AM_CONDITIONAL(HAVE_DMF_LUA, test "${nut_have_lua}" = "yes")
-if test "${nut_with_dmf}" = "yes"; then
-   AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
-   if test "${nut_have_lua}" != "no"; then
-      DMF_BUILD_OPTIONS="lua scripting"
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT(no)
-   fi
-
-   dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-   AC_MSG_CHECKING(whether to enable XML conformance validation on DMFs (data mapping files))
-   if test "${XMLLINT}" != "no"; then
-      if test -n "${DMF_BUILD_OPTIONS}"; then
-        DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
-      fi
-      DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT(no)
-   fi
-fi
-
-NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
-					[WITH_DMF], [Define to enable DMF (data mapping file) support for snmp-ups])
-
-dmfsnmpdir="${DATADIR}/nut/dmfsnmp"
-dmfnutscandir="${DATADIR}/nut/dmfnutscan"
-
-AC_MSG_CHECKING(whether to install DMF collection of mappings for SNMP-UPS driver)
-AC_ARG_WITH(dmfsnmp-dir,
-	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (/usr/share/nut/dmfsnmp)]),
-[
-	case "${withval}" in
-	yes)
-		if test -z "${dmfsnmpdir}"; then
-			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory requested but not found"])
-		fi
-		;;
-	auto)
-		;;
-	no)
-		dmfsnmpdir=""
-		;;
-	*)
-		dmfsnmpdir="${withval}"
-		;;
-	esac
-], [])
-if test -n "${dmfsnmpdir}"; then
-	AC_MSG_RESULT(using ${dmfsnmpdir})
-else
-	AC_MSG_RESULT(no)
-fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF collection of mappings for SNMP-UPS driver])
-AM_CONDITIONAL(WITH_DMF, test -n "${dmfsnmpdir}")
-
-AC_MSG_CHECKING(whether to install DMF collection of mappings for nut-scanner SNMP mode)
-AC_ARG_WITH(dmfnutscan-dir,
-	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (/usr/share/nut/dmfnutscan)]),
-[
-	case "${withval}" in
-	yes)
-		if test -z "${dmfnutscandir}"; then
-			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory for nut-scanner requested but not found"])
-		fi
-		;;
-	auto)
-		;;
-	no)
-		dmfnutscandir=""
-		;;
-	*)
-		dmfnutscandir="${withval}"
-		;;
-	esac
-], [])
-if test -n "${dmfnutscandir}"; then
-	AC_MSG_RESULT(using ${dmfnutscandir})
-else
-	AC_MSG_RESULT(no)
-fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
-AM_CONDITIONAL(WITH_DMF, test -n "${dmfnutscandir}")
-
-dnl ----------------------------------------------------------------------
 
 
 AC_MSG_CHECKING(state path)
@@ -1437,6 +1330,115 @@ eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
 
+dnl ----------------------------------------------------------------------
+dnl Check for --with-dmf
+dnl This MUST be after DATADIR has been processed!
+
+NUT_ARG_WITH([dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
+
+dnl ${nut_with_dmf}: any value except "yes" or "no" is treated as "auto".
+dnl Check for Neon (mandatory)
+if test "${nut_with_dmf}" = "yes" -a "${nut_have_neon}" != "yes"; then
+   AC_MSG_ERROR(["neon libraries not found, required for DMF (data mapping file) support for snmp-ups"])
+fi
+
+if test "${nut_with_dmf}" != "no"; then
+   nut_with_dmf="${nut_have_neon}"
+fi
+
+DMF_BUILD_OPTIONS=""
+AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
+AX_PROG_LUA([5.1], [], [nut_have_lua=yes])
+AX_LUA_HEADERS
+AX_LUA_LIBS
+AM_CONDITIONAL(HAVE_DMF_LUA, test "${nut_have_lua}" = "yes")
+if test "${nut_with_dmf}" = "yes"; then
+   AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
+   if test "${nut_have_lua}" != "no"; then
+      DMF_BUILD_OPTIONS="lua scripting"
+      AC_MSG_RESULT(yes)
+   else
+      AC_MSG_RESULT(no)
+   fi
+
+   dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
+   AC_MSG_CHECKING(whether to enable XML conformance validation on DMFs (data mapping files))
+   if test "${XMLLINT}" != "no"; then
+      if test -n "${DMF_BUILD_OPTIONS}"; then
+        DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
+      fi
+      DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
+      AC_MSG_RESULT(yes)
+   else
+      AC_MSG_RESULT(no)
+   fi
+fi
+
+NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
+					[WITH_DMF], [Define to enable DMF (data mapping file) support for snmp-ups])
+
+dmfsnmpdir="${DATADIR}/dmfsnmp"
+dmfnutscandir="${DATADIR}/dmfnutscan"
+
+AC_MSG_CHECKING(whether to install DMF collection of mappings for SNMP-UPS driver)
+AC_ARG_WITH(dmfsnmp-dir,
+	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfsnmpdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfsnmpdir=""
+		;;
+	*)
+		dmfsnmpdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfsnmpdir}"; then
+	AC_MSG_RESULT(using ${dmfsnmpdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF collection of mappings for SNMP-UPS driver])
+AM_CONDITIONAL(WITH_DMF, test -n "${dmfsnmpdir}")
+
+AC_MSG_CHECKING(whether to install DMF collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-dir,
+	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfnutscandir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings directory for nut-scanner requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfnutscandir=""
+		;;
+	*)
+		dmfnutscandir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfnutscandir}"; then
+	AC_MSG_RESULT(using ${dmfnutscandir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
+AM_CONDITIONAL(WITH_DMF, test -n "${dmfnutscandir}")
+
+dnl ----------------------------------------------------------------------
 
 dnl Current date
 now=`TZ=UTC date +%Y-%m-%d`
