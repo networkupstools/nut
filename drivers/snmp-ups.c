@@ -305,8 +305,10 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
-        addvar(VAR_VALUE, SU_VAR_DMFPATH,
-                "Set the DMF config file");
+#ifdef WITH_DMFMIB
+    addvar(VAR_VALUE, SU_VAR_DMFPATH,
+        "Set the DMF config file");
+#endif
 }
 
 void upsdrv_initups(void)
