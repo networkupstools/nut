@@ -129,7 +129,6 @@
  */
 #define YES "yes"
 #define DEFAULT_CAPACITY 16
-#define NEON_LIB_PATH "/usr/lib64/libneon.so.27.3.0"
 
 // Recognized DMF XML tags
 #define DMFTAG_NUT "nut"
