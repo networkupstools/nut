@@ -319,10 +319,9 @@ void upsdrv_initups(void)
 
 #ifdef WITH_DMFMIB
 	dmp = mibdmf_parser_new();
-	if (!dmp) {
-		upsdebugx(1,"FATAL: Can not allocate the DMF parsing structures");
-		return;
-	}
+	if (!dmp)
+		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
+
 	/* FIXME: Add configurability of where we look for *.dmf files */
 #ifdef DEFAULT_DMFSNMP_DIR
 	mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
@@ -342,7 +341,7 @@ void upsdrv_initups(void)
 		upsdebugx(2,"Got access to the mib2nut table with %d entries parsed from DMF library",
 			tablength);
 		if (tablength<=1) {
-			upsdebugx(1,"FATAL: Did not find any DMF library data");
+			fatalx(EXIT_FAILURE, "FATAL: Did not find any DMF library data");
 			return;
 		}
 		if ( mib2nut != NULL ) {
