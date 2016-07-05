@@ -1466,7 +1466,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	if ( (dir_name == NULL ) || \
 	     ( (dir = opendir(dir_name)) == NULL ) )
 	{
-		upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable\n",
+		upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
