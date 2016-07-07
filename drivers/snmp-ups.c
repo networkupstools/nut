@@ -72,6 +72,7 @@
 // Array of pointers to singular instances of mib2nut_info_t
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
+char *dmf_path = NULL;
 #else
 
 #ifdef WITH_DMF_LUA
@@ -334,19 +335,15 @@ void upsdrv_initups(void)
 #ifdef DEFAULT_DMFSNMP_DIR
         if(testvar(SU_VAR_DMFPATH)){
           mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-        }else{
-          if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
-          else mibdmf_parse_dir(dmf_path, dmp);
-        }
+        }else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+        else mibdmf_parse_file(dmf_path, dmp);
 #else
         if(testvar(SU_VAR_DMFPATH)){
           mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-        }else{
-          if(!dmf_path){
+        }else if(!dmf_path){
             if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
 		mibdmf_parse_dir("./", dmp);
-          }else mibdmf_parse_dir(dmf_path, dmp);
-        }
+        }else mibdmf_parse_file(dmf_path, dmp);
 #endif
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )
