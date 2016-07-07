@@ -2696,18 +2696,19 @@ int su_addcmd(snmp_info_t *su_info_p)
 {
 	upsdebugx(2, "entering %s(%s)", __func__, su_info_p->info_type);
 
-// FIXME: daisychain
-	for (current_device_number = 1 ; current_device_number <= devices_count ;
-		current_device_number++)
-	{
+	if (daisychain_enabled == TRUE) {
+		for (current_device_number = 1 ; current_device_number <= devices_count ;
+			current_device_number++)
+		{
 
-		process_template(SU_WALKMODE_INIT, "device", su_info_p);
-/*
+			process_template(SU_WALKMODE_INIT, "device", su_info_p);
+		}
+	}
+	else {
 		if (nut_snmp_get(su_info_p->OID) != NULL) {
 			dstate_addcmd(su_info_p->info_type);
 			upsdebugx(1, "%s: adding command '%s'", __func__, su_info_p->info_type);
 		}
-*/
 	}
 	return 0;
 }
