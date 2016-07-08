@@ -308,7 +308,7 @@ void upsdrv_makevartable(void)
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 #ifdef WITH_DMFMIB
     addvar(VAR_VALUE, SU_VAR_DMFPATH,
-        "Set the DMF config file");
+        "Set the Data Mapping File to use");
 #endif
 }
 
