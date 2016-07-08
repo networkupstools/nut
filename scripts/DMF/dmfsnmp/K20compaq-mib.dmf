@@ -1,0 +1,130 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="cpqpower_outlet_switchability_info">
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="yes"/>
+		<lookup_info oid="3" value="yes"/>
+		<lookup_info oid="4" value="yes"/>
+	</lookup>
+	<lookup name="cpqpower_outlet_status_info">
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="off"/>
+		<lookup_info oid="3" value="pendingOff"/>
+		<lookup_info oid="4" value="pendingOn"/>
+		<lookup_info oid="5" value="unknown"/>
+	</lookup>
+	<lookup name="cpqpower_mode_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value="normal"/>
+		<lookup_info oid="4" value=""/>
+		<lookup_info oid="5" value=""/>
+		<lookup_info oid="6" value=""/>
+		<lookup_info oid="7" value=""/>
+		<lookup_info oid="8" value="parallel capacity"/>
+		<lookup_info oid="9" value="parallel redundancy"/>
+		<lookup_info oid="10" value="high efficiency"/>
+	</lookup>
+	<lookup name="cpqpower_pwr_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="OFF"/>
+		<lookup_info oid="3" value="OL"/>
+		<lookup_info oid="4" value="OL BYPASS"/>
+		<lookup_info oid="5" value="OB"/>
+		<lookup_info oid="6" value="OL BOOST"/>
+		<lookup_info oid="7" value="OL TRIM"/>
+		<lookup_info oid="8" value="OL"/>
+		<lookup_info oid="9" value="OL"/>
+		<lookup_info oid="10" value="OL"/>
+	</lookup>
+	<lookup name="cpqpower_test_res_info">
+		<lookup_info oid="1" value="Unknown"/>
+		<lookup_info oid="2" value="Done and passed"/>
+		<lookup_info oid="3" value="Done and error"/>
+		<lookup_info oid="4" value="In progress"/>
+		<lookup_info oid="5" value="Not supported"/>
+		<lookup_info oid="6" value="Inhibited"/>
+		<lookup_info oid="7" value="Scheduled"/>
+	</lookup>
+	<lookup name="cpqpower_battery_abm_status">
+		<lookup_info oid="1" value="CHRG"/>
+		<lookup_info oid="2" value="DISCHRG"/>
+	</lookup>
+	<snmp name="cpqpower_mib">
+		<snmp_info default="HP/Compaq" multiplier="128.0" name="ups.mfr" oid=".1.3.6.1.4.1.232.165.3.1.1.0" static="yes" string="yes"/>
+		<snmp_info default="SNMP UPS" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.232.165.3.1.2.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.232.165.1.2.7.0" static="yes" string="yes"/>
+		<snmp_info default="" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.232.165.3.1.3.0" static="yes" string="yes"/>
+		<snmp_info default="" multiplier="1.0" name="ups.load" oid=".1.3.6.1.4.1.232.165.3.4.1.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="ups.realpower" oid=".1.3.6.1.4.1.232.165.3.4.4.1.4" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="1.0" name="ups.realpower" oid=".1.3.6.1.4.1.232.165.3.9.3.0" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="ups.L1.realpower" oid=".1.3.6.1.4.1.232.165.3.4.4.1.4.1" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="ups.L2.realpower" oid=".1.3.6.1.4.1.232.165.3.4.4.1.4.2" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="ups.L3.realpower" oid=".1.3.6.1.4.1.232.165.3.4.4.1.4.3" output_3_phase="yes"/>
+		<snmp_info default="OFF" lookup="cpqpower_pwr_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.232.165.3.4.5.0" power_status="yes" string="yes"/>
+		<snmp_info default="" lookup="cpqpower_battery_abm_status" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.232.165.3.2.5.0" power_status="yes" string="yes"/>
+		<snmp_info default="" lookup="cpqpower_mode_info" multiplier="128.0" name="ups.type" oid=".1.3.6.1.4.1.232.165.3.4.5.0" power_status="yes" string="yes"/>
+		<snmp_info default="" lookup="cpqpower_test_res_info" multiplier="128.0" name="ups.test.result" oid=".1.3.6.1.4.1.232.165.3.7.2.0" power_status="yes" string="yes"/>
+		<snmp_info absent="yes" default="20" flag_ok="yes" multiplier="6.0" name="ups.delay.shutdown" oid=".1.3.6.1.4.1.232.165.3.8.1.0" string="yes" writable="yes"/>
+		<snmp_info absent="yes" default="30" flag_ok="yes" multiplier="6.0" name="ups.delay.start" oid=".1.3.6.1.4.1.232.165.3.8.2.0" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.timer.shutdown" oid=".1.3.6.1.4.1.232.165.3.8.1.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.timer.start" oid=".1.3.6.1.4.1.232.165.3.8.2.0"/>
+		<snmp_info default="" multiplier="1.0" name="ambient.temperature" oid=".1.3.6.1.4.1.232.165.3.6.1.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="ambient.temperature.low" oid=".1.3.6.1.4.1.232.165.3.6.2.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="ambient.temperature.high" oid=".1.3.6.1.4.1.232.165.3.6.3.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="battery.charge" oid=".1.3.6.1.4.1.232.165.3.2.4.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="battery.runtime" oid=".1.3.6.1.4.1.232.165.3.2.1.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.4.1.232.165.3.2.2.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="battery.current" oid=".1.3.6.1.4.1.232.165.3.2.3.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="input.phases" oid=".1.3.6.1.4.1.232.165.3.3.3.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.232.165.3.3.1.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="input.voltage" oid=".1.3.6.1.4.1.232.165.3.3.4.1.2" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="1.0" name="input.voltage" oid=".1.3.6.1.4.1.232.165.3.3.4.1.2.1" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="3.0" name="input.voltage.nominal" oid=".1.3.6.1.4.1.232.165.3.9.2.0" output_1_phase="yes" string="yes" writable="yes"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.L1-N.voltage" oid=".1.3.6.1.4.1.232.165.3.3.4.1.2.1"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.L2-N.voltage" oid=".1.3.6.1.4.1.232.165.3.3.4.1.2.2"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.L3-N.voltage" oid=".1.3.6.1.4.1.232.165.3.3.4.1.2.3"/>
+		<snmp_info default="" multiplier="0.1" name="input.current" oid=".1.3.6.1.4.1.232.165.3.3.4.1.3" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="input.current" oid=".1.3.6.1.4.1.232.165.3.3.4.1.3.1" output_1_phase="yes"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="0.1" name="input.L1.current" oid=".1.3.6.1.4.1.232.165.3.3.4.1.3.1"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="0.1" name="input.L2.current" oid=".1.3.6.1.4.1.232.165.3.3.4.1.3.2"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="0.1" name="input.L3.current" oid=".1.3.6.1.4.1.232.165.3.3.4.1.3.3"/>
+		<snmp_info default="" multiplier="0.1" name="input.realpower" oid=".1.3.6.1.4.1.232.165.3.3.4.1.4" output_1_phase="yes"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="0.1" name="input.L1.realpower" oid=".1.3.6.1.4.1.232.165.3.3.4.1.4.1"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="0.1" name="input.L2.realpower" oid=".1.3.6.1.4.1.232.165.3.3.4.1.4.2"/>
+		<snmp_info default="" input_3_phase="yes" multiplier="0.1" name="input.L3.realpower" oid=".1.3.6.1.4.1.232.165.3.3.4.1.4.3"/>
+		<snmp_info default="" multiplier="1.0" name="input.quality" oid=".1.3.6.1.4.1.232.165.3.3.2.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="output.phases" oid=".1.3.6.1.4.1.232.165.3.4.3.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="output.frequency" oid=".1.3.6.1.4.1.232.165.3.4.2.0" power_status="yes"/>
+		<snmp_info default="" multiplier="3.0" name="output.frequency.nominal" oid=".1.3.6.1.4.1.232.165.3.9.4.0" output_1_phase="yes" string="yes" writable="yes"/>
+		<snmp_info default="" multiplier="1.0" name="output.voltage" oid=".1.3.6.1.4.1.232.165.3.4.4.1.2" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="1.0" name="output.voltage" oid=".1.3.6.1.4.1.232.165.3.4.4.1.2.1" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="3.0" name="output.voltage.nominal" oid=".1.3.6.1.4.1.232.165.3.9.1.0" output_1_phase="yes" string="yes" writable="yes"/>
+		<snmp_info default="" multiplier="1.0" name="output.L1-N.voltage" oid=".1.3.6.1.4.1.232.165.3.4.4.1.2.1" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="1.0" name="output.L2-N.voltage" oid=".1.3.6.1.4.1.232.165.3.4.4.1.2.2" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="1.0" name="output.L3-N.voltage" oid=".1.3.6.1.4.1.232.165.3.4.4.1.2.3" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.232.165.3.4.4.1.3" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.232.165.3.4.4.1.3.1" output_1_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="output.L1.current" oid=".1.3.6.1.4.1.232.165.3.4.4.1.3.1" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="output.L2.current" oid=".1.3.6.1.4.1.232.165.3.4.4.1.3.2" output_3_phase="yes"/>
+		<snmp_info default="" multiplier="0.1" name="output.L3.current" oid=".1.3.6.1.4.1.232.165.3.4.4.1.3.3" output_3_phase="yes"/>
+		<snmp_info absent="yes" default="0" flag_ok="yes" multiplier="1.0" name="outlet.id" static="yes"/>
+		<snmp_info absent="yes" default="All outlets" flag_ok="yes" multiplier="20.0" name="outlet.desc" static="yes" string="yes" writable="yes"/>
+		<snmp_info default="0" multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.232.165.3.10.1.0" power_status="yes"/>
+		<snmp_info default="yes" lookup="cpqpower_outlet_switchability_info" multiplier="3.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.232.165.3.10.2.1.1.%i" outlet="yes" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.id" oid=".1.3.6.1.4.1.232.165.3.10.2.1.1.%i" outlet="yes" static="yes"/>
+		<snmp_info flag_ok="yes" lookup="cpqpower_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.232.165.3.10.2.1.2.%i" outlet="yes" string="yes"/>
+		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.232.165.3.10.2.1.3.%i" outlet="yes"/>
+		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.232.165.3.10.2.1.4.%i" outlet="yes"/>
+		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.232.165.3.10.2.1.7.%i" outlet="yes"/>
+		<snmp_info command="yes" default="" multiplier="1.0" name="load.off" oid=".1.3.6.1.4.1.232.165.3.8.1.0"/>
+		<snmp_info command="yes" default="" multiplier="1.0" name="load.on" oid=".1.3.6.1.4.1.232.165.3.8.2.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="0.0" name="shutdown.stop" oid=".1.3.6.1.4.1.232.165.3.8.1.0"/>
+		<snmp_info command="yes" default="" multiplier="20.0" name="load.off.delay" oid=".1.3.6.1.4.1.232.165.3.8.1.0"/>
+		<snmp_info command="yes" default="" multiplier="30.0" name="load.on.delay" oid=".1.3.6.1.4.1.232.165.3.8.2.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="0.0" name="shutdown.reboot" oid=".1.3.6.1.4.1.232.165.3.8.6.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="1.0" name="test.battery.start" oid=".1.3.6.1.4.1.232.165.3.7.1.0"/>
+	</snmp>
+	<mib2nut auto_check=".1.3.6.1.4.1.232.165.3.1.1.0" mib_name="cpqpower" name="compaq" oid=".1.3.6.1.4.1.232.165.3" snmp_info="cpqpower_mib" version="1.61"/>
+</nut>
+
