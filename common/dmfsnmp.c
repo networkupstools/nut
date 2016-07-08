@@ -1473,12 +1473,13 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		upsdebugx(1, "ERROR: can't load Neon library");
 		return ERR;
 	}
-	while (n--)
+	int c;
+	for (c = 0; c < n; c++)
 	{
-		if ( strstr(dir_ent[n]->d_name, ".dmf") )
+		if ((strstr(dir_ent[c]->d_name, ".dmf")) && (dir_ent[c]->d_name[0] == 'S'))
 		{
 			i++;
-			char *file_path = str_concat(3, dir_name, "/", dir_ent[n]->d_name);
+			char *file_path = str_concat(3, dir_name, "/", dir_ent[c]->d_name);
 			assert(file_path);
 			int res = mibdmf_parse_file(file_path, dmp);
 			free(file_path);
@@ -1489,7 +1490,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 				// No debug: parse_file() did it if enabled
 			}
 		}
-		free(dir_ent[n]);
+		free(dir_ent[c]);
 	}
 	free(dir_ent);
 	
