@@ -1456,15 +1456,14 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 int
 mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 {
-	DIR *dir;
-	struct dirent *dir_ent;
-	int i = 0, x = 0, result = 0;
+	struct dirent **dir_ent;
+	int i = 0, x = 0, result = 0, n = 0;
 
 	assert (dir_name);
 	assert (dmp);
 
 	if ( (dir_name == NULL ) || \
-	     ( (dir = opendir(dir_name)) == NULL ) )
+	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
 	{
 		upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
@@ -1474,12 +1473,12 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		upsdebugx(1, "ERROR: can't load Neon library");
 		return ERR;
 	}
-	while ( (dir_ent = readdir(dir)) != NULL )
+	while (n--)
 	{
-		if ( strstr(dir_ent->d_name, ".dmf") )
+		if ( strstr(dir_ent[n]->d_name, ".dmf") )
 		{
 			i++;
-			char *file_path = str_concat(3, dir_name, "/", dir_ent->d_name);
+			char *file_path = str_concat(3, dir_name, "/", dir_ent[n]->d_name);
 			assert(file_path);
 			int res = mibdmf_parse_file(file_path, dmp);
 			free(file_path);
@@ -1490,9 +1489,11 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 				// No debug: parse_file() did it if enabled
 			}
 		}
+		free(dir_ent[n]);
 	}
-	closedir(dir);
-    unload_neon_lib();
+	free(dir_ent);
+	
+        unload_neon_lib();
 
 	if (i==0) {
 		upsdebugx(1, "WARN: No DMF files were found or readable in directory '%s'",
