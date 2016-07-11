@@ -130,19 +130,18 @@
 #define YES "yes"
 #define DEFAULT_CAPACITY 16
 
-// Recognized DMF XML tags
+/* Recognized DMF XML tags */
 #define DMFTAG_NUT "nut"
 #define DMFTAG_MIB2NUT "mib2nut"
 #define DMFTAG_LOOKUP "lookup"
 #define DMFTAG_SNMP "snmp"
 #define DMFTAG_ALARM "alarm"
-// NOTE: Actual support for functions is optionally built so
-// it can be missing in a binary (with warning in DMF import)
-// Also it may be backed by various implementations (LUA for starters)
+/* NOTE: Actual support for functions is optionally built so
+ * it can be missing in a binary (with warning in DMF import)
+ * Also it may be backed by various implementations (LUA for starters) */
 #define DMFTAG_FUNCTIONS "functions"
 #define DMFTAG_FUNCTION "function"
 
-//#define MIB2NUT_NAME "name"
 #define MIB2NUT_VERSION "version"
 #define MIB2NUT_OID "oid"
 #define MIB2NUT_MIB_NAME "mib_name"
@@ -167,10 +166,10 @@
 #define SNMP_DEFAULT "default"
 #define SNMP_LOOKUP "lookup"
 #define SNMP_SETVAR "setvar"
-//Info_flags
+/* Info_flags */
 #define SNMP_INFOFLAG_WRITABLE "writable"
 #define SNMP_INFOFLAG_STRING "string"
-//Flags
+/* Flags */
 #define SNMP_FLAG_OK "flag_ok"
 #define SNMP_FLAG_STATIC "static"
 #define SNMP_FLAG_ABSENT "absent"
@@ -189,7 +188,7 @@
 #define SNMP_INPUT_3 "input_3_phase"
 #define SNMP_BYPASS_1 "bypass_1_phase"
 #define SNMP_BYPASS_3 "bypass_3_phase"
-//Setvar
+/* Setvar */
 #define SETVAR_INPUT_PHASES "input_phases"
 #define SETVAR_OUTPUT_PHASES "output_phases"
 #define SETVAR_BYPASS_PHASES "bypass_phases"
@@ -225,7 +224,7 @@ typedef enum {
  * parse the DMF representation of MIB data for NUT */
 typedef struct {
 	alist_t **list;
-        int sublist_elements;
+	int sublist_elements;
 	snmp_device_id_t *device_table;
 	mib2nut_info_t **mib2nut_table;
 
@@ -238,53 +237,53 @@ typedef struct {
 
 #ifdef WITH_DMF_LUA
 typedef struct {
-        char *name;
-        char *code;
+	char *name;
+	char *code;
 } function_t;
 #endif
-// Initialize the data for dmf.c
+/* Initialize the data for dmf.c */
 mibdmf_parser_t *
 	mibdmf_parser_new();
 
-// Properly destroy the object hierarchy and NULLify the caller's pointer
+/* Properly destroy the object hierarchy and NULLify the caller's pointer */
 void
 	mibdmf_parser_destroy(mibdmf_parser_t** self_p);
 
-// OOP-style getters, to let us decouple consumers from implementation du-jour.
-// They should be used for every access because tables are realloc'ed a lot and
-// precise pointer values are not persistent (when you do XML parsing; the data
-// should be stable when you just read them). See also *_ptr() getters below.
-// Note they return a pointer to the live tables that cross-reference data bits
-// stored in the auxiliary list - so do not free() one without the other.
-// These getters return NULL if "dmp" itself or the field are NULL.
+/* OOP-style getters, to let us decouple consumers from implementation du-jour.
+ * They should be used for every access because tables are realloc'ed a lot and
+ * precise pointer values are not persistent (when you do XML parsing; the data
+ * should be stable when you just read them). See also *_ptr() getters below.
+ * Note they return a pointer to the live tables that cross-reference data bits
+ * stored in the auxiliary list - so do not free() one without the other.
+ * These getters return NULL if "dmp" itself or the field are NULL. */
 snmp_device_id_t *
 	mibdmf_get_device_table(mibdmf_parser_t *dmp);
 
 mib2nut_info_t **
 	mibdmf_get_mib2nut_table(mibdmf_parser_t *dmp);
 
-// Seems some such accessors are what the original snmp-ups wants for example.
+/* Seems some such accessors are what the original snmp-ups wants for example. */
 snmp_device_id_t **
 	mibdmf_get_device_table_ptr(mibdmf_parser_t *dmp);
 
-// Yep, it is address of the table of references to instances of the struct :)
+/* Yep, it is address of the table of references to instances of the struct :) */
 mib2nut_info_t ***
 	mibdmf_get_mib2nut_table_ptr(mibdmf_parser_t *dmp);
 
-// Load DMF XML file into structure tree at dmp->list (can append many times)
+/* Load DMF XML file into structure tree at dmp->list (can append many times) */
 int
 	mibdmf_parse_file (char *file_name, mibdmf_parser_t *dmp);
 
-// Parse a buffer with complete DMF XML (from <nut> to </nut>)
+/* Parse a buffer with complete DMF XML (from <nut> to </nut>) */
 int
 	mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp);
 
-// Load all `*.dmf` DMF XML files from specified directory
+/* Load all `*.dmf` DMF XML files from specified directory */
 int
 	mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp);
 
 
-// Debugging dumpers
+/* Debugging dumpers */
 void
 	print_snmp_memory_struct (snmp_info_t *self);
 
@@ -295,7 +294,7 @@ void
 	print_mib2nut_memory_struct (mib2nut_info_t *self);
 
 
-// Helpers for string comparison (includng NULL consideration);
+/* Helpers for string comparison (includng NULL consideration); */
 bool
 	dmf_streq (const char* x, const char* y);
 
@@ -303,51 +302,51 @@ bool
 	dmf_strneq (const char* x, const char* y);
 
 
-// ======================================================================= //
-// Stuff below is for developers to tinker with DMF and alist technologies //
-// ======================================================================= //
+/* ======================================================================= 
+ * Stuff below is for developers to tinker with DMF and alist technologies 
+ * ======================================================================= */
 
-// Returns -1 if `dmp == NULL`
+/* Returns -1 if `dmp == NULL` */
 int
 	mibdmf_get_device_table_counter(mibdmf_parser_t *dmp);
 
 alist_t *
 	mibdmf_get_aux_list(mibdmf_parser_t *dmp);
 
-// These return pointer to the actual pointer in the structure, so it can
-// be validly reallocated, freed, etc.
+/* These return pointer to the actual pointer in the structure, so it can
+ * be validly reallocated, freed, etc. */
 alist_t **
 	mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp);
         
 alist_t **
-        mibdmf_get_initial_list_ptr(mibdmf_parser_t *dmp);
+	mibdmf_get_initial_list_ptr(mibdmf_parser_t *dmp);
 
 int
-        mibdmf_get_list_size(mibdmf_parser_t *dmp);
+	mibdmf_get_list_size(mibdmf_parser_t *dmp);
 
 int *
 	mibdmf_get_device_table_counter_ptr(mibdmf_parser_t *dmp);
 
 void
-mibdmf_parser_new_list(mibdmf_parser_t *dmp);
+	mibdmf_parser_new_list(mibdmf_parser_t *dmp);
 
 
-// Create and initialize info_lkp_t, a lookup element
+/* Create and initialize info_lkp_t, a lookup element */
 info_lkp_t *
 	info_lkp_new (int oid, const char *value);
 
-// Destroy and NULLify the reference to alist_t, list of collections
+/* Destroy and NULLify the reference to alist_t, list of collections */
 void
 	info_lkp_destroy (void **self_p);
 
 
 
-// Create alarm element
+/* Create alarm element */
 alarms_info_t *
 	info_alarm_new (const char *oid,
 		const char *status, const char *alarm);
 
-// Destroy full array of alarm elements
+/* Destroy full array of alarm elements */
 void
 	info_alarm_destroy (void **self_p);
 
@@ -356,19 +355,19 @@ void
 
 
 #ifdef WITH_DMF_LUA
-// Create and initialize a function element
+/* Create and initialize a function element */
 function_t *
-        function_new (const char *name);
+	function_new (const char *name);
 
-// Destroy and NULLify the reference to alist_t, list of collections
+/* Destroy and NULLify the reference to alist_t, list of collections */
 void
-        function_destroy (void **self_p);
+	function_destroy (void **self_p);
         
 void
-function_node_handler(alist_t *list, const char **attrs);
+	function_node_handler(alist_t *list, const char **attrs);
 #endif
 
-// Same for snmp structure instances
+/* Same for snmp structure instances */
 snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
@@ -386,7 +385,7 @@ void
 
 
 
-// Same for MIB2NUT mappers
+/* Same for MIB2NUT mappers */
 mib2nut_info_t *
 	info_mib2nut_new (const char *name, const char *version,
 		const char *oid_power_status, const char *oid_auto_check,
@@ -401,12 +400,12 @@ void
 
 
 
-// Create new instance of alist_t with LOOKUP type,
-// for storage a list of collections
-//alist_t *
-//	alist_new ();
+/* Create new instance of alist_t with LOOKUP type,
+ * for storage a list of collections
+ *alist_t *
+ *	alist_new ();
 
-// New generic list element (can be the root element)
+ * New generic list element (can be the root element) */
 alist_t *
 	alist_new (
 		const char *name,
@@ -414,19 +413,19 @@ alist_t *
 		void (*new_element)(void)
 	);
 
-// Destroy full array of generic list elements
+/* Destroy full array of generic list elements */
 void
 	alist_destroy (alist_t **self_p);
 
-// Add a generic element at the end of the list
+/* Add a generic element at the end of the list */
 void
 	alist_append (alist_t *self, void *element);
 
-// Return the last element of the list
+/* Return the last element of the list */
 alist_t *
 	alist_get_last_element (alist_t *self);
 
-// Return the element which has `char* name` equal to the requested one
+/* Return the element which has `char* name` equal to the requested one */
 alist_t *
 	alist_get_element_by_name (alist_t *self, char *name);
 
@@ -437,7 +436,7 @@ char *
 	get_param_by_name (const char *name, const char **items);
 
 
-// The guts of XML parsing: callbacks that act on an instance of mibdmf_parser_t
+/* The guts of XML parsing: callbacks that act on an instance of mibdmf_parser_t */
 int
 	xml_dict_start_cb (
 		void *userdata, int parent,
@@ -466,7 +465,7 @@ int
 
 #ifdef WITH_DMF_LUA
 char *
-        snmp_info_type_to_main_function_name(const char * info_type);
+	snmp_info_type_to_main_function_name(const char * info_type);
 #endif
 
 #define DMF_SNMP_H

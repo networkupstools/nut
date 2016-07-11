@@ -311,8 +311,8 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 #ifdef WITH_DMFMIB
-    addvar(VAR_VALUE, SU_VAR_DMFPATH,
-        "Set the Data Mapping File to use");
+	addvar(VAR_VALUE, SU_VAR_DMFPATH,
+		"Set the Data Mapping File to use");
 #endif
 }
 
@@ -333,17 +333,17 @@ void upsdrv_initups(void)
 
 	/* FIXME: Add configurability of where we look for *.dmf files */
 #ifdef DEFAULT_DMFSNMP_DIR
-        if(testvar(SU_VAR_DMFPATH)){
-          mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-        }else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
-        else mibdmf_parse_file(dmf_path, dmp);
+	if(testvar(SU_VAR_DMFPATH)){
+		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
+	}else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+	else mibdmf_parse_file(dmf_path, dmp);
 #else
-        if(testvar(SU_VAR_DMFPATH)){
-          mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-        }else if(!dmf_path){
-            if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
-		mibdmf_parse_dir("./", dmp);
-        }else mibdmf_parse_file(dmf_path, dmp);
+	if(testvar(SU_VAR_DMFPATH)){
+		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
+	}else if(!dmf_path){
+		if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
+			mibdmf_parse_dir("./", dmp);
+	}else mibdmf_parse_file(dmf_path, dmp);
 #endif
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )
@@ -351,8 +351,8 @@ void upsdrv_initups(void)
 		upsdebugx(1,"FATAL: Can not access the mib2nut table parsed from DMF library");
 		return;
 	}
-	{ // scope the table loop vars
-		// TODO: Change size detection to loop over array until NULLed sentinels?
+	{ /* scope the table loop vars */
+		/* TODO: Change size detection to loop over array until NULLed sentinels? */
 		int tablength = mibdmf_get_device_table_counter(dmp);
 		upsdebugx(2,"Got access to the mib2nut table with %d entries parsed from DMF library",
 			tablength);
@@ -409,7 +409,7 @@ void upsdrv_initups(void)
 		pollfreq = DEFAULT_POLLFREQ;
 
 	/* Get UPS Model node to see if there's a MIB */
-// FIXME: extend and use match_model_OID(char *model)
+/* FIXME: extend and use match_model_OID(char *model) */
 	su_info_p = su_find_info("ups.model");
 	/* Try to get device.model if ups.model is not available */
 	if (su_info_p == NULL)
@@ -468,7 +468,7 @@ void upsdrv_initups(void)
 
 	/* FIXME: also need daisychain awareness (so init)!
 	 * i.e load.off.delay+load.off + device.1.load.off.delay+device.1.load.off + ... */
-// FIXME: daisychain commands support!
+/* FIXME: daisychain commands support! */
 	if (su_find_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
@@ -1182,7 +1182,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 
 		/* Set enumerated values, only if the data has ST_FLAG_RW and there
 		 * are lookup values */
-// FIXME: daisychain settings support: check if applicable
+/* FIXME: daisychain settings support: check if applicable */
 		if ((su_info_p->info_flags & ST_FLAG_RW) && su_info_p->oid2info) {
 
 			upsdebugx(3, "%s: adding enumerated values", __func__);
@@ -2163,7 +2163,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 
 
 	/* Actual processing of phases related data */
-// FIXME: don't clear SU_INPHASES in daisychain mode!!! ???
+/* FIXME: don't clear SU_INPHASES in daisychain mode!!! ??? */
 	if (su_info_p->flags & single_phase_flag) {
 		if (*nb_phases == 1) {
 			upsdebugx(1, "%s_phases is 1", type);
@@ -2190,35 +2190,34 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 
 #ifdef WITH_DMF_LUA
 int publish_Lua_dstate(lua_State *L){
-  const char *info_type = lua_tostring(L, 1);
-  const char *value = lua_tostring(L, 2);
-  
-  if((info_type) && (value))
-      dstate_setinfo(info_type, "%s", value);
-  return 0;
+	const char *info_type = lua_tostring(L, 1);
+	const char *value = lua_tostring(L, 2);
+
+	if((info_type) && (value))
+		dstate_setinfo(info_type, "%s", value);
+	return 0;
 }
 
 int lua_C_gateway(lua_State *L){
-    /* get number of arguments */
-    //int n = lua_gettop(L);
-    const char *info_type = lua_tostring(L, 1);
-    int current_device_number = lua_tointeger(L, 2);
-    
-    char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
-    
-    if(current_device_number > 0)
-        sprintf(buf, "device.%d.%s", current_device_number, info_type);
-    else
-        sprintf(buf, "device.%s", info_type);
-    
-    const char *value = dstate_getinfo(buf);
-    
-    if(value)
-        lua_pushstring(L, value);
-    
-    /* return the number of results */
-    free(buf);
-    return 1;
+	/* get number of arguments */
+	const char *info_type = lua_tostring(L, 1);
+	int current_device_number = lua_tointeger(L, 2);
+
+	char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
+
+	if(current_device_number > 0)
+		sprintf(buf, "device.%d.%s", current_device_number, info_type);
+	else
+		sprintf(buf, "device.%s", info_type);
+
+	const char *value = dstate_getinfo(buf);
+
+	if(value)
+		lua_pushstring(L, value);
+
+	/* return the number of results */
+	free(buf);
+	return 1;
 }
 #endif
 
@@ -2240,45 +2239,45 @@ bool_t snmp_ups_walk(int mode)
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 #ifdef WITH_DMF_LUA
-                        if(su_info_p->flags & SU_FLAG_FUNCTION){
-                            if((su_info_p->function) && (su_info_p->luaContext)){
-                                char *result = NULL;
-                                
-                                lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
-                                lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
-                                
-                                char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
-                                lua_getglobal(su_info_p->luaContext, funcname);
-                                lua_pushnumber(su_info_p->luaContext, current_device_number);
-                                lua_pcall(su_info_p->luaContext,1,1,0);
-                                result = (char *) lua_tostring(su_info_p->luaContext, -1);
+			if(su_info_p->flags & SU_FLAG_FUNCTION){
+				if((su_info_p->function) && (su_info_p->luaContext)){
+					char *result = NULL;
+
+					lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
+					lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
+
+					char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+					lua_getglobal(su_info_p->luaContext, funcname);
+					lua_pushnumber(su_info_p->luaContext, current_device_number);
+					lua_pcall(su_info_p->luaContext,1,1,0);
+					result = (char *) lua_tostring(su_info_p->luaContext, -1);
 #ifdef DEBUG
 	printf("Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
 #endif
-                                free(funcname);
-                                
-                                if(result){
-                                    char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
-                                    int i = 0;
-                                    while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
-                                
-                                    if(current_device_number > 0)
-                                      sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
-                                    else
-                                      sprintf(buf, "%s", su_info_p->info_type);
-                                
-                                    dstate_setinfo(buf, "%s", result);
-                                    free(buf);
-                                }
-                            }
-                            continue;
-                        }
+					free(funcname);
+
+					if(result){
+						char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
+						int i = 0;
+						while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
+
+						if(current_device_number > 0)
+							sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+						else
+							sprintf(buf, "%s", su_info_p->info_type);
+
+						dstate_setinfo(buf, "%s", result);
+						free(buf);
+					}
+				}
+				continue;
+			}
 #endif
-			// FIXME:
-			// switch(current_device_number) {
-			// case 0: devtype = "daisychain whole"
-			// case 1: devtype = "daisychain master"
-			// default: devtype = "daisychain slave"
+			/* FIXME:
+			 * switch(current_device_number) {
+			 * case 0: devtype = "daisychain whole"
+			 * case 1: devtype = "daisychain master"
+			 * default: devtype = "daisychain slave" */
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing device %i (%s)", __func__,
 					current_device_number,
@@ -2297,7 +2296,7 @@ bool_t snmp_ups_walk(int mode)
 				continue;
 			}
 
-// FIXME: daisychain-whole, what to do?
+/* FIXME: daisychain-whole, what to do? */
 			/* skip the whole-daisychain for now */
 			if (current_device_number == 0) {
 				upsdebugx(1, "Skipping daisychain device.0 for now...");
@@ -2470,7 +2469,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
 
-// FIXME: daisychain status support!
+/* FIXME: daisychain status support! */
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -2489,7 +2488,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	if (!strcmp(strrchr(su_info_p->info_type, '.'), ".alarm")) {
 
 		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
-// FIXME: daisychain alarms support!
+/* FIXME: daisychain alarms support! */
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -2879,10 +2878,10 @@ int su_addcmd(snmp_info_t *su_info_p)
 	upsdebugx(2, "entering %s(%s)", __func__, su_info_p->info_type);
 
 	if (daisychain_enabled == TRUE) {
+/* FIXME: daisychain */
 		for (current_device_number = 1 ; current_device_number <= devices_count ;
 			current_device_number++)
 		{
-
 			process_template(SU_WALKMODE_INIT, "device", su_info_p);
 		}
 	}
