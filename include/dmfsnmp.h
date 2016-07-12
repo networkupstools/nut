@@ -129,7 +129,7 @@
  */
 #define YES "yes"
 #define DEFAULT_CAPACITY 16
-#define PATH_MAX_SIZE 256
+#define PATH_MAX_SIZE 4096
 
 /* Recognized DMF XML tags */
 #define DMFTAG_NUT "nut"
