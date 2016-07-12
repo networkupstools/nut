@@ -31,7 +31,6 @@
 
 #include "common.h"
 #include "dmfsnmp.h"
-#include "str.h"
 
 /*
  *
@@ -60,42 +59,41 @@ print_snmp_memory_struct(snmp_info_t *self)
 {
 	int i = 0;
 
-	printf("SNMP: --> Info_type: %s //   Info_len: %f"
+	upsdebugx(5, "SNMP: --> Info_type: %s //   Info_len: %f"
 		" //   OID:  %s //   Default: %s",
 		self->info_type, self->info_len,
 		self->OID, self->dfl);
 	if(self->setvar)
-		printf(" //   Setvar: %d", *self->setvar);
-	printf("\n");
+		upsdebugx(5, " //   Setvar: %d\n", *self->setvar);
 
 	if (self->oid2info)
 	{
 		while ( !( (self->oid2info[i].oid_value == 0)
 		        && (!self->oid2info[i].info_value)
 		) ) {
-			printf("Info_lkp_t-----------> %d",
+			upsdebugx(5, "Info_lkp_t-----------> %d",
 				self->oid2info[i].oid_value);
 			if(self->oid2info[i].info_value)
-				printf("  value---> %s\n",
+				upsdebugx(5, "  value---> %s\n",
 					self->oid2info[i].info_value);
 			i++;
 		}
 	}
-	printf("*-*-*-->Info_flags %d\n", self->info_flags);
-	printf("*-*-*-->Flags %lu\n", self->flags);
+	upsdebugx(5, "*-*-*-->Info_flags %d\n", self->info_flags);
+	upsdebugx(5, "*-*-*-->Flags %lu\n", self->flags);
 #ifdef WITH_DMF_LUA
 if(self->function){
 	lua_State *f_aux = luaL_newstate();
 	luaL_openlibs(f_aux);
 	if(luaL_loadstring(f_aux, self->function)){
-		printf("Error loading LUA functions:\n%s\n", self->function);
+		upsdebugx(5, "Error loading LUA functions:\n%s\n", self->function);
 	}else{
-		printf("***********-> Luatext:\n%s\n", self->function);
+		upsdebugx(5, "***********-> Luatext:\n%s\n", self->function);
 		lua_pcall(f_aux,0,0,0);
 		char *funcname = snmp_info_type_to_main_function_name(self->info_type);
 		lua_getglobal(f_aux, funcname);
 		lua_pcall(f_aux,0,1,0);
-		printf("==--> Result: %s\n\n", lua_tostring(f_aux, -1));
+		upsdebugx(5, "==--> Result: %s\n\n", lua_tostring(f_aux, -1));
 		free(funcname);
 	}
 	lua_close(f_aux);
@@ -106,7 +104,7 @@ if(self->function){
 void
 print_alarm_memory_struct(alarms_info_t *self)
 {
-	printf("Alarm: -->  OID: %s //   Status: %s //   Value: %s\n",
+	upsdebugx(5, "Alarm: -->  OID: %s //   Status: %s //   Value: %s\n",
 		self->OID, self->status_value, self->alarm_value);
 }
 
@@ -114,8 +112,7 @@ void
 print_mib2nut_memory_struct(mib2nut_info_t *self)
 {
 	int i = 0;
-	printf("\n");
-	printf("       MIB2NUT: --> Mib_name: %s //   Version: %s"
+	upsdebugx(5, "\n       MIB2NUT: --> Mib_name: %s //   Version: %s"
 		" //   Power_status: %s //   Auto_check: %s"
 		" //   SysOID: %s\n",
 		self->mib_name, self->mib_version,
@@ -1479,15 +1476,21 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		if ((strstr(dir_ent[c]->d_name, ".dmf")) && (dir_ent[c]->d_name[0] == 'S'))
 		{
 			i++;
-			char *file_path = str_concat(3, dir_name, "/", dir_ent[c]->d_name);
-			assert(file_path);
-			int res = mibdmf_parse_file(file_path, dmp);
-			free(file_path);
-			if ( res != 0 )
-			{
-				x++;
-				result = res;
-				/* No debug: parse_file() did it if enabled*/
+			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
+				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
+				sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
+				assert(file_path);
+				int res = mibdmf_parse_file(file_path, dmp);
+				if ( res != 0 )
+				{
+					x++;
+					result = res;
+					/* No debug: parse_file() did it if enabled*/
+				}
+				free(file_path);
+			}else{
+				upsdebugx(5, "File path too long\n");
+				upslogx(2, "File path too long\n");
 			}
 		}
 		free(dir_ent[c]);
