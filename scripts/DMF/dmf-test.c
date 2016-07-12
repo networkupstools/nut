@@ -67,11 +67,11 @@ main ()
 	 *mib2nut_info_t *m2n = get_mib2nut_table();
 	 *print_mib2nut_memory_struct(m2n + 6);
 	 *print_mib2nut_memory_struct(&pxgx_ups); */
-        alist_t **aux = mibdmf_get_initial_list_ptr(dmp);
-        alist_t *element;
-        int iterator = 0;
-        
-        /* printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n"); */
+	alist_t **aux = mibdmf_get_initial_list_ptr(dmp);
+	alist_t *element;
+	int iterator = 0;
+
+	/* printf("=== DMF-Test: Loaded C structures (sample for 'eaton_epdu'):\n\n"); */
 	if(aux){
 		while(!(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))&&(iterator < mibdmf_get_list_size(dmp)))
 			iterator++;
