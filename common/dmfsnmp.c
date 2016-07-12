@@ -31,7 +31,6 @@
 
 #include "common.h"
 #include "dmfsnmp.h"
-#include "str.h"
 
 /*
  *
@@ -1477,15 +1476,21 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		if ((strstr(dir_ent[c]->d_name, ".dmf")) && (dir_ent[c]->d_name[0] == 'S'))
 		{
 			i++;
-			char *file_path = str_concat(3, dir_name, "/", dir_ent[c]->d_name);
-			assert(file_path);
-			int res = mibdmf_parse_file(file_path, dmp);
-			free(file_path);
-			if ( res != 0 )
-			{
-				x++;
-				result = res;
-				/* No debug: parse_file() did it if enabled*/
+			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
+				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
+				sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
+				assert(file_path);
+				int res = mibdmf_parse_file(file_path, dmp);
+				if ( res != 0 )
+				{
+					x++;
+					result = res;
+					/* No debug: parse_file() did it if enabled*/
+				}
+				free(file_path);
+			}else{
+				upsdebugx(5, "File path too long\n");
+				upslogx(2, "File path too long\n");
 			}
 		}
 		free(dir_ent[c]);
