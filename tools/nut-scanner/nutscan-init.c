@@ -43,22 +43,47 @@ int nutscan_load_upsclient_library(const char *libname_path);
 
 void nutscan_init(void)
 {
+	char *libname = NULL;
 #ifdef WITH_USB
-	nutscan_avail_usb = nutscan_load_usb_library(get_libname("libusb-0.1.so"));
+	libname = get_libname("libusb-0.1.so");
+	if (libname) {
+		nutscan_avail_usb = nutscan_load_usb_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_SNMP
-	nutscan_avail_snmp = nutscan_load_snmp_library(get_libname("libnetsnmp.so"));
+	libname = get_libname("libnetsnmp.so");
+	if (libname) {
+		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_NEON
-	nutscan_avail_xml_http = nutscan_load_neon_library(get_libname("libneon.so"));
+	libname = get_libname("libneon.so");
+	if (libname) {
+		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_AVAHI
-	nutscan_avail_avahi = nutscan_load_avahi_library(get_libname("libavahi-client.so"));
+	libname = get_libname("libavahi-client.so");
+	if (libname) {
+		nutscan_avail_avahi = nutscan_load_avahi_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_FREEIPMI
-	nutscan_avail_ipmi = nutscan_load_ipmi_library(get_libname("libfreeipmi.so"));
+	libname = get_libname("libfreeipmi.so");
+	if (libname) {
+		nutscan_avail_ipmi = nutscan_load_ipmi_library(libname);
+		free(libname);
+	}
 #endif
-	nutscan_avail_nut = nutscan_load_upsclient_library(get_libname("libupsclient.so"));
+	libname = get_libname("libupsclient.so");
+	if (libname) {
+		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
+		free(libname);
+	}
 }
 
 void nutscan_free(void)

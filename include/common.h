@@ -122,7 +122,7 @@ char *xstrdup(const char *string);
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
 
-const char * get_libname(const char* base_libname);
+char * get_libname(const char* base_libname);
 
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512

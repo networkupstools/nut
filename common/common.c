@@ -676,7 +676,7 @@ char * search_paths[] = {
 	NULL
 };
 
-const char * get_libname(const char* base_libname)
+char * get_libname(const char* base_libname)
 {
 	DIR *dp;
 	struct dirent *dirp;
