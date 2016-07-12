@@ -148,6 +148,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 /*END DEBUGGING*/
 
 int load_neon_lib(void){
+	char *neon_libname = get_libname("libneon.so");
 
 	if( lt_dlinit() != 0 ) {
 		fprintf(stderr, "Error initializing lt_init\n");
@@ -155,7 +156,9 @@ int load_neon_lib(void){
 		return 0;
 	}
 
-	handle = lt_dlopen(get_libname("libneon.so"));
+	if(!neon_libname) return ERR;
+	handle = lt_dlopen(neon_libname);
+	free(neon_libname);
 	if(!handle) return ERR;
 	*(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
 	*(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
@@ -1313,6 +1316,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	assert (dmp);
 	mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
+
+	upsdebugx(1, "%s(%s)", __func__, file_name);
 
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
