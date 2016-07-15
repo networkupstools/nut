@@ -153,7 +153,7 @@ int load_neon_lib(void){
 	if( lt_dlinit() != 0 ) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		upsdebugx(1, "Error initializing lt_init\n");
-		return 0;
+		return ERR;
 	}
 
 	if(!neon_libname) return ERR;
