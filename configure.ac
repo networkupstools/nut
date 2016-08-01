@@ -301,6 +301,8 @@ dnl These checks are performed unconditionally, even if the corresponding
 dnl --with-* options are not given. This is because we cannot predict
 dnl what will be in the --with-drivers argument.
 
+nut_usb_lib=""
+
 NUT_CHECK_LIBNETSNMP
 NUT_CHECK_LIBUSB
 NUT_ARG_WITH([snmp], [build and install SNMP drivers], [auto])
@@ -356,7 +358,9 @@ if test "${nut_with_usb}" != "no"; then
    nut_with_usb="${nut_have_libusb}"
 fi
 
-NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
+AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)")
+AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
 
 dnl ----------------------------------------------------------------------
