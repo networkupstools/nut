@@ -94,6 +94,10 @@ It is wise to end the script with a `TIMER` keyword. Otherwise *dummy-ups*
 will directly go back to the beginning of the file and, in particular, forget
 any values you could have just set with `upsrw`.
 
+Note that to avoid CPU overload with an infinite loop, the driver "sleeps"
+a bit between file-reading cycles (currently this delay is hardcoded to one
+second), independently of (and/or in addition to) any `TIMER` keywords.
+
 Repeater Mode
 ~~~~~~~~~~~~~
 
@@ -112,6 +116,11 @@ For instance:
 Unlike UPS specifications in the rest of NUT, the `@hostname` portion is not
 optional - it is the `@` character which enables Repeater Mode. To refer to an
 UPS on the same host as *dummy-ups*, use `port = upsname@localhost`.
+
+Note that to avoid CPU overload with an infinite loop, the driver "sleeps" a
+bit between data-requesting cycles (currently this delay is hardcoded to one
+second), so propagation of data updates available to a remote `upsd` may lag
+by this much.
 
 INTERACTION
 -----------
