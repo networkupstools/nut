@@ -1,6 +1,6 @@
 /*!
  * @file libusb.c
- * @brief HID Library - Generic USB communication sub driver (using libusb)
+ * @brief HID Library - Generic USB communication sub driver (using libusb 0.1)
  *
  * @author Copyright (C)
  *  2003 - 2007 Arnaud Quette <aquette.dev@gmail.com>
@@ -31,9 +31,9 @@
 #include "config.h" /* for HAVE_USB_DETACH_KERNEL_DRIVER_NP flag */
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
-#include "libusb.h"
+#include "nut_libusb.h"
 
-#define USB_DRIVER_NAME		"USB communication driver"
+#define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
 #define USB_DRIVER_VERSION	"0.33"
 
 /* driver description structure */
