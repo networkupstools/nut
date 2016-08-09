@@ -270,13 +270,13 @@ static struct {
  * since it's used to produce sub-drivers "stub" using
  * scripts/subdriver/gen-usbhid-subdriver.sh
  */
-void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
+void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab)
 {
 	int	i;
 #ifndef SHUT_MODE
 	/* extract the VendorId for further testing */
-	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
-	int productID = usb_device((struct usb_dev_handle *)udev)->descriptor.idProduct;
+	int vendorID = hd->VendorID;
+	int productID = hd->ProductID;
 #endif
 
 	/* Do not go further if we already know nothing will be displayed.

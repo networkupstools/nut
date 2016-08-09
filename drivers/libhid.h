@@ -37,16 +37,16 @@
 #include "timehead.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
-	typedef SHUTDevice_t			HIDDevice_t;
-	typedef char				HIDDeviceMatcher_t;
-	typedef int				hid_dev_handle_t;
-	typedef shut_communication_subdriver_t	communication_subdriver_t;
+	typedef SHUTDevice_t                   HIDDevice_t;
+	typedef char                           HIDDeviceMatcher_t;
+	typedef int                            hid_dev_handle_t;
+	typedef shut_communication_subdriver_t communication_subdriver_t;
 #else
-	#include "libusb.h"
-	typedef USBDevice_t			HIDDevice_t;
-	typedef USBDeviceMatcher_t		HIDDeviceMatcher_t;
-	typedef usb_dev_handle *		hid_dev_handle_t;
-	typedef usb_communication_subdriver_t	communication_subdriver_t;
+	#include "nut_libusb.h"
+	typedef USBDevice_t                   HIDDevice_t;
+	typedef USBDeviceMatcher_t            HIDDeviceMatcher_t;
+	typedef libusb_device_handle *        hid_dev_handle_t;
+	typedef usb_communication_subdriver_t communication_subdriver_t;
 #endif
 
 /* use explicit booleans */
@@ -142,7 +142,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventlen);
 /*
  * Support functions
  * -------------------------------------------------------------------------- */
-void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab);
+void HIDDumpTree(hid_dev_handle_t udev, HIDDevice_t *hd, usage_tables_t *utab);
 const char *HIDDataType(const HIDData_t *hiddata);
 
 void free_report_buffer(reportbuf_t *rbuf);
