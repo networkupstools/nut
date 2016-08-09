@@ -1130,7 +1130,7 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 
 	upslogx(2, "Using subdriver: %s", subdriver->name);
 
-	HIDDumpTree(udev, subdriver->utab);
+	HIDDumpTree(udev, hd, subdriver->utab);
 
 #ifndef SHUT_MODE
 	/* create a new matcher for later matching */
@@ -1198,8 +1198,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 #ifndef SHUT_MODE
 	/* extract the VendorId for further testing */
-	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
-	int productID = usb_device((struct usb_dev_handle *)udev)->descriptor.idProduct;
+	int vendorID = curDevice.VendorID;
+	int productID = curDevice.ProductID;
 #endif
 
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
