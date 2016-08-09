@@ -3,7 +3,7 @@
  * @brief HID Library - Generic USB backend for Generic HID Access (using MGE HIDParser)
  *
  * @author Copyright (C)
- *	2003 - 2006 Arnaud Quette <aquette.dev@gmail.com>
+ *	    2003 - 2016 Arnaud Quette <aquette.dev@gmail.com>
  *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
@@ -28,13 +28,21 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef LIBUSB_H
-#define LIBUSB_H
+#ifndef NUT_LIBUSB_H
+#define NUT_LIBUSB_H
 
 #include "main.h"	/* for subdrv_info_t */
 #include "usb-common.h"	/* for USBDevice_t and USBDeviceMatcher_t */
 
-#include <usb.h>	/* libusb header file */
+/* libusb header file */
+#ifdef WITH_LIBUSB_1_0
+#include <libusb.h>
+#endif
+#ifdef WITH_LIBUSB_0_1
+#include <usb.h>
+/* simple remap to avoid bloating structures */
+typedef libusb_device_handle usb_dev_handle;
+#endif
 
 extern upsdrv_info_t comm_upsdrv_info; 
 
@@ -43,24 +51,24 @@ extern upsdrv_info_t comm_upsdrv_info;
  * @name: can be either "shut" for Serial HID UPS Transfer (from MGE) or "usb"
  */
 typedef struct usb_communication_subdriver_s {
-	const char *name;				/* name of this subdriver		*/
-	const char *version;				/* version of this subdriver		*/
-	int (*open)(usb_dev_handle **sdevp,	/* try to open the next available	*/
-		USBDevice_t *curDevice,		/* device matching USBDeviceMatcher_t	*/
+	const char *name;                         /* name of this subdriver             */
+	const char *version;                      /* version of this subdriver          */
+	int (*open)(libusb_device_handle **sdevp, /* try to open the next available     */
+		USBDevice_t *curDevice,               /* device matching USBDeviceMatcher_t */
 		USBDeviceMatcher_t *matcher,
-		int (*callback)(usb_dev_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen));
-	void (*close)(usb_dev_handle *sdev);
-	int (*get_report)(usb_dev_handle *sdev, int ReportId,
-	unsigned char *raw_buf, int ReportSize );
-	int (*set_report)(usb_dev_handle *sdev, int ReportId,
-	unsigned char *raw_buf, int ReportSize );
-	int (*get_string)(usb_dev_handle *sdev,
+		int (*callback)(libusb_device_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen));
+	void (*close)(libusb_device_handle *sdev);
+	int (*get_report)(libusb_device_handle *sdev, int ReportId,
+		unsigned char *raw_buf, int ReportSize );
+	int (*set_report)(libusb_device_handle *sdev, int ReportId,
+		unsigned char *raw_buf, int ReportSize );
+	int (*get_string)(libusb_device_handle *sdev,
 	int StringIdx, char *buf, size_t buflen);
-	int (*get_interrupt)(usb_dev_handle *sdev,
-	unsigned char *buf, int bufsize, int timeout);
+	int (*get_interrupt)(libusb_device_handle *sdev,
+		unsigned char *buf, int bufsize, int timeout);
 } usb_communication_subdriver_t;
 
 extern usb_communication_subdriver_t	usb_subdriver;
 
-#endif /* LIBUSB_H */
+#endif /* NUT_LIBUSB_H */
 
