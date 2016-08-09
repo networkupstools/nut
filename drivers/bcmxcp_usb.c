@@ -9,10 +9,16 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
+/* libusb header file */
+#ifdef WITH_LIBUSB_1_0
+#include <libusb.h>
+#endif
+#ifdef WITH_LIBUSB_0_1
 #include <usb.h>
+#endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.22"
+#define SUBDRIVER_VERSION "0.23"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -34,6 +40,38 @@ upsdrv_info_t comm_upsdrv_info = {
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
 
+USBDevice_t curDevice;
+
+#ifdef WITH_LIBUSB_1_0
+ /* Simply remap libusb functions/structures from 0.1 to 1.0 */
+ /* Structures */
+ #define usb_dev_handle libusb_device_handle
+ /* defines */
+ #define USB_DT_STRING LIBUSB_DT_STRING
+ #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
+ #define USB_REQ_SET_DESCRIPTOR LIBUSB_REQUEST_SET_DESCRIPTOR
+ #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
+ /* Functions */
+ #define usb_control_msg libusb_control_transfer
+ static inline  int usb_interrupt_read(usb_dev_handle *dev, int ep,
+        char *bytes, int size, int timeout)
+ {
+		return libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+				size, &size, timeout);
+ }
+
+ #define usb_claim_interface libusb_claim_interface
+ #define usb_release_interface libusb_release_interface
+ #define usb_reset libusb_reset_device
+ #define usb_clear_halt libusb_clear_halt
+
+// usb_strerror
+ #define nut_usb_strerror(a) libusb_strerror(a)
+ 
+#else
+ #define nut_usb_strerror(a) usb_strerror()
+#endif // #ifdef WITH_LIBUSB_1_0
+
 /* USB functions */
 usb_dev_handle *nutusb_open(const char *port);
 int nutusb_close(usb_dev_handle *dev_h, const char *port);
@@ -45,10 +83,16 @@ void nutusb_comm_good(void);
 int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 	unsigned char index, void *buf, int size);
 
+
+
 /* usb_set_descriptor() for Powerware devices */
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
+//#ifdef WITH_LIBUSB_1_0
+//	return libusb_control_transfer(udev, LIBUSB_ENDPOINT_OUT, LIBUSB_REQUEST_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
+//#else
 	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
+//#endif
 }
 
 static void *powerware_ups(USBDevice_t *device) {
@@ -59,7 +103,11 @@ static void *powerware_ups(USBDevice_t *device) {
 /* usb_set_descriptor() for Phoenixtec devices */
 static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
+//#ifdef WITH_LIBUSB_1_0
+//	return libusb_control_transfer(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
+//#else
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
+//#endif
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
@@ -356,9 +404,52 @@ static void nutusb_open_error(const char *port)
 /* FIXME: this part of the opening can go into common... */
 static usb_dev_handle *open_powerware_usb(void)
 {
+#ifdef WITH_LIBUSB_1_0
+	libusb_device **devlist;
+	ssize_t devcount = 0;
+	libusb_device_handle *udev;
+	struct libusb_device_descriptor dev_desc;
+	uint8_t bus, port_path[8];
+	int ret, i;
+
+	devcount = libusb_get_device_list(NULL, &devlist);
+	if (devcount <= 0)
+		fatal_with_errno(EXIT_FAILURE, "No USB device found");
+
+	for (i = 0; i < devcount; i++) {
+
+		libusb_device *device = devlist[i];
+		libusb_get_device_descriptor(device, &dev_desc);
+
+		if (dev_desc.bDeviceClass != LIBUSB_CLASS_PER_INTERFACE) {
+			continue;
+		}
+
+		curDevice.VendorID = dev_desc.idVendor;
+		curDevice.ProductID = dev_desc.idProduct;
+		bus = libusb_get_bus_number(device);
+		ret = libusb_get_port_numbers(device, port_path, sizeof(port_path));
+		if (ret > 0) {
+			upsdebugx(2, "bus number: %d, port path: %d (nb elem %i)", bus, port_path[0], ret);
+			curDevice.Bus = (char *)xmalloc(10);
+			sprintf(curDevice.Bus, "%03d/%03d", bus, port_path[0]);
+		}
+
+		/* FIXME: we should also retrieve
+		 * dev->descriptor.iManufacturer
+		 * dev->descriptor.iProduct
+		 * dev->descriptor.iSerialNumber
+		 * as in libusb.c->libusb_open()
+		 * This is part of the things to put in common... */
+
+		if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
+			libusb_open(device, &udev);
+			return udev;
+		}
+	}
+#else
 	struct usb_bus *busses = usb_get_busses();  
 	struct usb_bus *bus;
-	USBDevice_t curDevice;
 
 	for (bus = busses; bus; bus = bus->next)
 	{
@@ -386,6 +477,7 @@ static usb_dev_handle *open_powerware_usb(void)
 			}
 		}
 	}
+#endif
 	return 0;
 }
 
@@ -393,14 +485,21 @@ usb_dev_handle *nutusb_open(const char *port)
 {
 	int            dev_claimed = 0;
 	usb_dev_handle *dev_h = NULL;
-	int            retry, errout = 0;
+	int            retry, errout = 0, ret;
 
 	upsdebugx(1, "entering nutusb_open()");
 
 	/* Initialize Libusb */
+#ifdef WITH_LIBUSB_1_0
+	if (libusb_init(NULL) < 0) {
+		libusb_exit(NULL);
+		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+	}
+#else
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
+#endif /* WITH_LIBUSB_1_0 */
 
 	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
@@ -410,12 +509,12 @@ usb_dev_handle *nutusb_open(const char *port)
 			errout = 1;
 		}
 		else {
-			upsdebugx(1, "device %s opened successfully", usb_device(dev_h)->filename);
+			upsdebugx(1, "device %s opened successfully", curDevice.Bus);
 			errout = 0;
 
-			if (usb_claim_interface(dev_h, 0) < 0)
+			if ((ret = usb_claim_interface(dev_h, 0)) < 0)
 			{
-				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", usb_strerror());
+				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", nut_usb_strerror(ret));
 				errout = 1;
 			}
 			else {
@@ -424,9 +523,9 @@ usb_dev_handle *nutusb_open(const char *port)
 			}
 /* FIXME: the above part of the opening can go into common... up to here at least */
 
-			if (usb_clear_halt(dev_h, 0x81) < 0)
+			if ((ret = usb_clear_halt(dev_h, 0x81)) < 0)
 			{
-				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
+				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", nut_usb_strerror(ret));
 				if (dev_claimed)
 				    usb_release_interface(dev_h, 0);
 				usb_reset(dev_h);
@@ -454,8 +553,7 @@ usb_dev_handle *nutusb_open(const char *port)
 	if (dev_h && dev_claimed)
 		usb_release_interface(dev_h, 0);
 
-	if (dev_h)
-		usb_close(dev_h);
+	nutusb_close(dev_h, port);
 
 	if (errout == 1)
 		nutusb_open_error(port);
@@ -466,13 +564,18 @@ usb_dev_handle *nutusb_open(const char *port)
 /* FIXME: this part can go into common... */
 int nutusb_close(usb_dev_handle *dev_h, const char *port)
 {
+	int ret = 0;
+
 	if (dev_h)
 	{
 		usb_release_interface(dev_h, 0);
-		return usb_close(dev_h);
+#ifdef WITH_LIBUSB_1_0
+		libusb_close(dev_h);
+#else
+		ret = usb_close(dev_h);
+#endif
 	}
-	
-	return 0;
+	return ret;
 }
 
 void nutusb_comm_fail(const char *fmt, ...)
