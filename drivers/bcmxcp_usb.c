@@ -64,13 +64,10 @@ USBDevice_t curDevice;
  #define usb_release_interface libusb_release_interface
  #define usb_reset libusb_reset_device
  #define usb_clear_halt libusb_clear_halt
-
-// usb_strerror
  #define nut_usb_strerror(a) libusb_strerror(a)
- 
 #else
  #define nut_usb_strerror(a) usb_strerror()
-#endif // #ifdef WITH_LIBUSB_1_0
+#endif /* #ifdef WITH_LIBUSB_1_0 */
 
 /* USB functions */
 usb_dev_handle *nutusb_open(const char *port);
@@ -88,11 +85,7 @@ int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
 /* usb_set_descriptor() for Powerware devices */
 static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
-//#ifdef WITH_LIBUSB_1_0
-//	return libusb_control_transfer(udev, LIBUSB_ENDPOINT_OUT, LIBUSB_REQUEST_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
-//#else
 	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
-//#endif
 }
 
 static void *powerware_ups(USBDevice_t *device) {
@@ -103,11 +96,7 @@ static void *powerware_ups(USBDevice_t *device) {
 /* usb_set_descriptor() for Phoenixtec devices */
 static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
-//#ifdef WITH_LIBUSB_1_0
-//	return libusb_control_transfer(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
-//#else
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
-//#endif
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
