@@ -42,7 +42,7 @@
 	#include "libshut.h"
 	communication_subdriver_t *comm_driver = &shut_subdriver;
 #else
-	#include "libusb.h"
+	#include "nut_libusb.h"
 	communication_subdriver_t *comm_driver = &usb_subdriver;
 #endif
 
