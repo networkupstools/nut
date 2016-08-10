@@ -6,6 +6,7 @@
  *
  * Copyright (C) 2007 Peter van Valderen <p.v.valderen@probu.nl>
  *                    Dirk Teurlings <dirk@upexia.nl>
+ * Copyright (C) 2016 Eaton
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -59,6 +60,30 @@ static usb_device_id_t richcomm_usb_id[] = {
 	{-1, -1, NULL}
 };
 
+/* Compatibility layer between libusb 0.1 and 1.0 */
+#ifdef WITH_LIBUSB_1_0
+ /* Simply remap libusb functions/structures from 0.1 to 1.0 */
+ typedef libusb_device_handle usb_dev_handle;
+ typedef unsigned char* usb_ctrl_char;
+ #define usb_control_msg libusb_control_transfer
+ static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
+        unsigned char *bytes, int size, int timeout)
+ {
+		return libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+				size, &size, timeout);
+ }
+ #define usb_claim_interface libusb_claim_interface
+ #define usb_close libusb_close
+ #define usb_set_configuration libusb_set_configuration
+ #define usb_reset libusb_reset_device
+ #define usb_clear_halt libusb_clear_halt
+ #define usb_get_string libusb_get_string_descriptor
+ #define usb_get_string_simple libusb_get_string_descriptor_ascii
+ #define nut_usb_strerror(a) libusb_strerror(a)
+#else
+ typedef char* usb_ctrl_char;
+#endif /* WITH_LIBUSB_1_0 */
+
 static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
 static unsigned int	comm_failures = 0;
@@ -88,19 +113,19 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	int	ret;
 
 	ret = usb_control_msg(udev, STATUS_REQUESTTYPE, REQUEST_VALUE,
-		MESSAGE_VALUE, INDEX_VALUE, query, QUERY_PACKETSIZE, 1000);
+		MESSAGE_VALUE, INDEX_VALUE, (usb_ctrl_char)query, QUERY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s", ret ? usb_strerror() : "timeout");
+		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "timeout");
 		return ret;
 	}
 
 	upsdebug_hex(3, "send", query, ret);
 
-	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, reply, REPLY_PACKETSIZE, 1000);
+	ret = usb_interrupt_read(udev, REPLY_REQUESTTYPE, (usb_ctrl_char)reply, REPLY_PACKETSIZE, 1000);
 
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s", ret ? usb_strerror() : "timeout");
+		upsdebugx(3, "read: %s", ret ? nut_usb_strerror(ret) : "timeout");
 		return ret;
 	}
 
@@ -186,10 +211,12 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 		return -1;
 	}
 
+#ifdef WITH_LIBUSB_0_1
 	if (usb_set_altinterface(handle, 0) < 0) {
 		upsdebugx(5, "Can't set USB alternate interface");
 		return -1;
 	}
+#endif /* WITH_LIBUSB_1_0 */
 
 	if (usb_clear_halt(handle, 0x81) < 0) {
 		upsdebugx(5, "Can't reset USB endpoint");
@@ -201,6 +228,8 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 
 static int usb_device_close(usb_dev_handle *handle)
 {
+	int ret = 0;
+
 	if (!handle) {
 		return 0;
 	}
@@ -208,24 +237,58 @@ static int usb_device_close(usb_dev_handle *handle)
 	/* usb_release_interface() sometimes blocks and goes
 	into uninterruptible sleep.  So don't do it. */
 	/* usb_release_interface(handle, 0); */
-	return usb_close(handle);
+#ifdef WITH_LIBUSB_1_0
+		libusb_close(handle);
+#else
+		ret = usb_close(handle);
+#endif
+	return ret;
 }
 
 static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDeviceMatcher_t *matcher,
 	int (*callback)(usb_dev_handle *handle, USBDevice_t *device))
 {
-	struct usb_bus	*bus;
+	int ret = 0;
+	uint8_t iManufacturer = 0, iProduct = 0, iSerialNumber = 0;
 
 	/* libusb base init */
+#ifdef WITH_LIBUSB_1_0
+	if (libusb_init(NULL) < 0) {
+		libusb_exit(NULL);
+		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+	}
+#else
 	usb_init();
 	usb_find_busses();
 	usb_find_devices();
+#endif /* WITH_LIBUSB_1_0 */
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
 	usb_device_close(*handlep);
 #endif
 
+#ifdef WITH_LIBUSB_1_0
+	libusb_device **devlist;
+	ssize_t devcount = 0;
+	libusb_device_handle *handle;
+	struct libusb_device_descriptor dev_desc;
+	uint8_t bus, port_path[8];
+	int i;
+
+	devcount = libusb_get_device_list(NULL, &devlist);
+	if (devcount <= 0)
+		fatal_with_errno(EXIT_FAILURE, "No USB device found");
+
+	for (i = 0; i < devcount; i++) {
+
+		USBDeviceMatcher_t	*m;
+		libusb_device *dev = devlist[i];
+		libusb_get_device_descriptor(dev, &dev_desc);
+		ret = libusb_open(dev, &handle);
+		*handlep = handle;
+#else
+	struct usb_bus	*bus;
 	for (bus = usb_busses; bus; bus = bus->next) {
 
 		struct usb_device	*dev;
@@ -236,15 +299,16 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			int	i, ret;
 			USBDeviceMatcher_t	*m;
 
-			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
+			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
 			
 			/* supported vendors are now checked by the supplied matcher */
 
 			/* open the device */
 			*handlep = handle = usb_open(dev);
+#endif /* WITH_LIBUSB_1_0 */
 			if (!handle) {
-				upsdebugx(4, "Failed to open USB device, skipping: %s", usb_strerror());
+				upsdebugx(4, "Failed to open USB device, skipping: %s", nut_usb_strerror(ret));
 				continue;
 			}
 
@@ -261,32 +325,50 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			memset(device, 0, sizeof(*device));
 
+#ifdef WITH_LIBUSB_1_0
+			device->VendorID = dev_desc.idVendor;
+			device->ProductID = dev_desc.idProduct;
+			bus = libusb_get_bus_number(dev);
+			ret = libusb_get_port_numbers(dev, port_path, sizeof(port_path));
+			if (ret > 0) {
+				upsdebugx(2, "bus number: %d, port path: %d (nb elem %i)", bus, port_path[0], ret);
+				device->Bus = (char *)xmalloc(10);
+				sprintf(device->Bus, "%03d/%03d", bus, port_path[0]);
+			}
+			iManufacturer = dev_desc.iManufacturer;
+			iProduct = dev_desc.iProduct;
+			iSerialNumber = dev_desc.iSerialNumber;
+#else
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
 			device->Bus = strdup(bus->dirname);
+			iManufacturer = dev->descriptor.iManufacturer;
+			iProduct = dev->descriptor.iProduct;
+			iSerialNumber = dev->descriptor.iSerialNumber;
+#endif /* WITH_LIBUSB_1_0 */
 			
-			if (dev->descriptor.iManufacturer) {
+			if (iManufacturer) {
 				char	buf[SMALLBUF];
-				ret = usb_get_string_simple(handle, dev->descriptor.iManufacturer,
-					buf, sizeof(buf));
+				ret = usb_get_string_simple(handle, iManufacturer,
+					(usb_ctrl_char)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Vendor = strdup(buf);
 				}
 			}
 
-			if (dev->descriptor.iProduct) {
+			if (iProduct) {
 				char	buf[SMALLBUF];
-				ret = usb_get_string_simple(handle, dev->descriptor.iProduct,
-					buf, sizeof(buf));
+				ret = usb_get_string_simple(handle, iProduct,
+					(usb_ctrl_char)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Product = strdup(buf);
 				}
 			}
 
-			if (dev->descriptor.iSerialNumber) {
+			if (iSerialNumber) {
 				char	buf[SMALLBUF];
-				ret = usb_get_string_simple(handle, dev->descriptor.iSerialNumber,
-					buf, sizeof(buf));
+				ret = usb_get_string_simple(handle, iSerialNumber,
+					(usb_ctrl_char)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Serial = strdup(buf);
 				}
@@ -314,6 +396,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				}
 			}
+#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+			libusb_set_auto_detach_kernel_driver (handle, 1);
+#endif
 
 			for (i = 0; i < 3; i++) {
 
@@ -335,11 +420,13 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			}
 
 			fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
-				device->VendorID, device->ProductID, usb_strerror());
+				device->VendorID, device->ProductID, nut_usb_strerror(ret));
 
 		next_device:
 			usb_close(handle);
+#ifndef WITH_LIBUSB_1_0
 		}
+#endif /* WITH_LIBUSB_1_0 */
 	}
 
 	*handlep = NULL;
