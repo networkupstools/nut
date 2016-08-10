@@ -69,8 +69,7 @@ upsdrv_info_t upsdrv_info = {
  #define ERROR_IO LIBUSB_ERROR_IO
  #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
  #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
-typedef libusb_device_handle usb_dev_handle;
-
+ typedef libusb_device_handle usb_dev_handle;
  typedef unsigned char* usb_ctrl_char;
  #define usb_control_msg libusb_control_transfer
  static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
@@ -88,7 +87,6 @@ typedef libusb_device_handle usb_dev_handle;
  #define usb_claim_interface libusb_claim_interface
  #define usb_close libusb_close
  #define usb_set_configuration libusb_set_configuration
- 
  #define usb_reset libusb_reset_device
  #define usb_clear_halt libusb_clear_halt
  #define usb_get_string libusb_get_string_descriptor
@@ -434,6 +432,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				}
 			}
+#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+			libusb_set_auto_detach_kernel_driver (handle, 1);
+#endif
 
 			for (i = 0; i < 3; i++) {
 
