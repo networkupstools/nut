@@ -1,5 +1,5 @@
 /*!
- * @file libusb.h
+ * @file nut_libusb.h
  * @brief HID Library - Generic USB backend for Generic HID Access (using MGE HIDParser)
  *
  * @author Copyright (C)
