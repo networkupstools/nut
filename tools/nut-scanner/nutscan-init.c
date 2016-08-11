@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2011-2016 EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 /*! \file nutscan-init.c
     \brief init functions for nut scanner library
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Arnaud Quette <ArnaudQuette@Eaton.com>
 */
 
 #include "common.h"
@@ -45,11 +46,15 @@ void nutscan_init(void)
 {
 	char *libname = NULL;
 #ifdef WITH_USB
+ #ifdef WITH_LIBUSB_1_0
+	libname = get_libname("libusb-1.0.so");
+ #else
 	libname = get_libname("libusb-0.1.so");
 	if (!libname) {
 		/* We can also use libusb-compat from newer libusb-1.0 releases */
 		libname = get_libname("libusb.so");
 	}
+ #endif
 	if (libname) {
 		nutscan_avail_usb = nutscan_load_usb_library(libname);
 		free(libname);
