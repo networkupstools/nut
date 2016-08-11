@@ -332,7 +332,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 		for (dev = bus->devices; dev; dev = dev->next) {
 
-			int	i, ret;
+			int	i;
 			USBDeviceMatcher_t	*m;
 
 			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
