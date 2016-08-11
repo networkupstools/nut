@@ -82,6 +82,7 @@ static usb_device_id_t richcomm_usb_id[] = {
  #define nut_usb_strerror(a) libusb_strerror(a)
 #else
  typedef char* usb_ctrl_char;
+ #define nut_usb_strerror(a) usb_strerror()
 #endif /* WITH_LIBUSB_1_0 */
 
 static usb_dev_handle	*udev = NULL;
