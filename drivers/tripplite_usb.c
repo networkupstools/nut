@@ -9,7 +9,7 @@
    Copyright (C) 2001  Rickard E. (Rik) Faith <faith@alephnull.com>
    Copyright (C) 2004  Nicholas J. Kain <nicholas@kain.us>
    Copyright (C) 2005-2008, 2014  Charles Lepple <clepple+nut@gmail.com>
- * Copyright (C) 2016  Eaton
+   Copyright (C) 2016  Eaton
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
