@@ -560,6 +560,7 @@ int nutusb_close(usb_dev_handle *dev_h, const char *port)
 		usb_release_interface(dev_h, 0);
 #ifdef WITH_LIBUSB_1_0
 		libusb_close(dev_h);
+		libusb_exit(NULL);
 #else
 		ret = usb_close(dev_h);
 #endif
