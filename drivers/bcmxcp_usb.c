@@ -398,7 +398,7 @@ static usb_dev_handle *open_powerware_usb(void)
 	ssize_t devcount = 0;
 	libusb_device_handle *udev;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus, port_path[8];
+	uint8_t bus;
 	int ret, i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -417,12 +417,8 @@ static usb_dev_handle *open_powerware_usb(void)
 		curDevice.VendorID = dev_desc.idVendor;
 		curDevice.ProductID = dev_desc.idProduct;
 		bus = libusb_get_bus_number(device);
-		ret = libusb_get_port_numbers(device, port_path, sizeof(port_path));
-		if (ret > 0) {
-			upsdebugx(2, "bus number: %d, port path: %d (nb elem %i)", bus, port_path[0], ret);
-			curDevice.Bus = (char *)xmalloc(10);
-			sprintf(curDevice.Bus, "%03d/%03d", bus, port_path[0]);
-		}
+		curDevice.Bus = (char *)xmalloc(4);
+		sprintf(curDevice.Bus, "%03d", bus);
 
 		/* FIXME: we should also retrieve
 		 * dev->descriptor.iManufacturer
