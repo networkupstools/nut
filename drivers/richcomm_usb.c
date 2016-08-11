@@ -240,6 +240,7 @@ static int usb_device_close(usb_dev_handle *handle)
 	/* usb_release_interface(handle, 0); */
 #ifdef WITH_LIBUSB_1_0
 		libusb_close(handle);
+		libusb_exit(NULL);
 #else
 		ret = usb_close(handle);
 #endif
