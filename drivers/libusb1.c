@@ -570,6 +570,7 @@ static void nut_libusb_close(libusb_device_handle *udev)
 	into uninterruptible sleep.  So don't do it. */
 	/* libusb_release_interface(udev, 0); */
 	libusb_close(udev);
+	libusb_exit(NULL);
 }
 
 usb_communication_subdriver_t usb_subdriver = {
