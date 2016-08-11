@@ -152,7 +152,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
-	uint8_t bus, port_path[8];
+	uint8_t bus;
 	int ret, res;
 	unsigned char buf[20];
 	const unsigned char *p;
@@ -213,12 +213,8 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		memset(curDevice, '\0', sizeof(*curDevice));
 
 		bus = libusb_get_bus_number(device);
-		ret = libusb_get_port_numbers(device, port_path, sizeof(port_path));
-		if (ret > 0) {
-			upsdebugx(2, "bus number: %d, port path: %d (nb elem %i)", bus, port_path[0], ret);
-			curDevice->Bus = (char *)xmalloc(10);
-			sprintf(curDevice->Bus, "%03d/%03d", bus, port_path[0]);
-		}
+		curDevice->Bus = (char *)xmalloc(4);
+		sprintf(curDevice->Bus, "%03d", bus);
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
 		curDevice->bcdDevice = dev_desc.bcdDevice;
