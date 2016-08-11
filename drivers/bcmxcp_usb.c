@@ -399,7 +399,7 @@ static usb_dev_handle *open_powerware_usb(void)
 	libusb_device_handle *udev;
 	struct libusb_device_descriptor dev_desc;
 	uint8_t bus;
-	int ret, i;
+	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0)
