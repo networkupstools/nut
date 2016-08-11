@@ -275,7 +275,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	ssize_t devcount = 0;
 	libusb_device_handle *handle;
 	struct libusb_device_descriptor dev_desc;
-	uint8_t bus, port_path[8];
+	uint8_t bus;
 	int i;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
@@ -331,12 +331,8 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
 			bus = libusb_get_bus_number(dev);
-			ret = libusb_get_port_numbers(dev, port_path, sizeof(port_path));
-			if (ret > 0) {
-				upsdebugx(2, "bus number: %d, port path: %d (nb elem %i)", bus, port_path[0], ret);
-				device->Bus = (char *)xmalloc(10);
-				sprintf(device->Bus, "%03d/%03d", bus, port_path[0]);
-			}
+			device->Bus = (char *)xmalloc(4);
+			sprintf(device->Bus, "%03d", bus);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
 			iSerialNumber = dev_desc.iSerialNumber;
