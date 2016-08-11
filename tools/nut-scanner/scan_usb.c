@@ -35,7 +35,6 @@
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
-static libusb_device_handle * (*nut_usb_open)(struct usb_device *dev);
 static int (*nut_usb_close)(libusb_device_handle *dev);
 static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
 		char *buf, size_t buflen);
@@ -47,14 +46,20 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  #define USB_OPEN_SYMBOL "libusb_open"
  #define USB_CLOSE_SYMBOL "libusb_close"
  #define USB_STRERROR_SYMBOL "libusb_strerror"
+ static int (*nut_usb_open)(libusb_device *dev, libusb_device_handle **handle);
+ static int (*nut_usb_init)(libusb_context **ctx);
+ static void (*nut_usb_exit)(libusb_context *ctx); 
  static char * (*nut_usb_strerror)(enum libusb_error errcode);
- int (*libusb_init)(libusb_context **ctx);
- void (*libusb_exit)(libusb_context *ctx); 
+ static ssize_t (*nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
+ static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
+ static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
+	struct libusb_device_descriptor *desc);
 #else
  #define USB_INIT_SYMBOL "usb_init"
  #define USB_OPEN_SYMBOL "usb_open"
  #define USB_CLOSE_SYMBOL "usb_close"
  #define USB_STRERROR_SYMBOL "usb_strerror"
+ static libusb_device_handle * (*nut_usb_open)(struct usb_device *dev);
  static void (*nut_usb_init)(void);
  static int (*nut_usb_find_busses)(void);
  static struct usb_bus * (*nut_usb_busses);
@@ -113,7 +118,22 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 #ifdef WITH_LIBUSB_1_0
-	*(void **) (&libusb_exit) = lt_dlsym(dl_handle, "libusb_exit");
+	*(void **) (&nut_usb_exit) = lt_dlsym(dl_handle, "libusb_exit");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle, "libusb_get_device_list");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+	*(void **) (&nut_usb_get_bus_number) = lt_dlsym(dl_handle, "libusb_get_bus_number");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+	*(void **) (&nut_usb_get_device_descriptor) = lt_dlsym(dl_handle, "libusb_get_device_descriptor");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
 	}
@@ -181,7 +201,7 @@ nutscan_device_t * nutscan_scan_usb()
 #ifdef WITH_LIBUSB_1_0
 	libusb_device *dev;
 	libusb_device **devlist;
-	uint8_t bus, port_path[8];
+	uint8_t bus;
 #else
 	struct usb_device *dev;
 	struct usb_bus *bus;
@@ -198,8 +218,8 @@ nutscan_device_t * nutscan_scan_usb()
 	/* libusb base init */
 	/* Initialize Libusb */
 #ifdef WITH_LIBUSB_1_0
-	if ((*libusb_init)(NULL) < 0) {
-		(*libusb_exit)(NULL);
+	if ((*nut_usb_init)(NULL) < 0) {
+		(*nut_usb_exit)(NULL);
 		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
 	}
 #else
@@ -213,14 +233,14 @@ nutscan_device_t * nutscan_scan_usb()
 	struct libusb_device_descriptor dev_desc;
 	int i;
 
-	devcount = libusb_get_device_list(NULL, &devlist);
+	devcount = (*nut_usb_get_device_list)(NULL, &devlist);
 	if (devcount <= 0)
 		fatal_with_errno(EXIT_FAILURE, "No USB device found");
 
 	for (i = 0; i < devcount; i++) {
 
 		dev = devlist[i];
-		libusb_get_device_descriptor(dev, &dev_desc);
+		(*nut_usb_get_device_descriptor)(dev, &dev_desc);
 
 		VendorID = dev_desc.idVendor;
 		ProductID = dev_desc.idProduct;
@@ -228,13 +248,9 @@ nutscan_device_t * nutscan_scan_usb()
 		iManufacturer = dev_desc.iManufacturer;
 		iProduct = dev_desc.iProduct;
 		iSerialNumber = dev_desc.iSerialNumber;
-		bus = libusb_get_bus_number(dev);
-		ret = libusb_get_port_numbers(dev, port_path, sizeof(port_path));
-		if (ret > 0) {
-			upsdebugx(2, "bus number: %d, port path: %d (nb elem %i)", bus, port_path[0], ret);
-			busname = (char *)xmalloc(10);
-			snprintf(busname, 10, "%03d/%03d", bus, port_path[0]);
-		}
+		bus = (*nut_usb_get_bus_number)(dev);
+		busname = (char *)xmalloc(4);
+		snprintf(busname, 4, "%03d", bus);
 #else
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
@@ -253,8 +269,7 @@ nutscan_device_t * nutscan_scan_usb()
 
 				/* open the device */
 #ifdef WITH_LIBUSB_1_0
-				ret = libusb_open(dev, &dev);
-				*udev = dev;
+				ret = (*nut_usb_open)(dev, &udev);
 				if (!udev) {
 					fprintf(stderr,"Failed to open device, \
 						skipping. (%s)\n",
@@ -350,6 +365,10 @@ nutscan_device_t * nutscan_scan_usb()
 		}
 #endif
 	}
+
+#ifdef WITH_LIBUSB_1_0
+	(*nut_usb_exit)(NULL);
+#endif
 
 	return nutscan_rewind_device(current_nut_dev);
 }
