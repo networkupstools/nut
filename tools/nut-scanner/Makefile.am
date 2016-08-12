@@ -8,6 +8,7 @@ bin_PROGRAMS =
 if WITH_NEON
 if WITH_SNMP
 if WITH_DMF
+# Note: this does not require WITH_DMFMIB specifically, just the abilities
  bin_PROGRAMS += nut-scanner-reindex-dmfsnmp
  nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c \
     $(top_srcdir)/include/dmfsnmp.h
@@ -17,8 +18,10 @@ if WITH_DMF
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
     $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS)
-if HAVE_DMF_LUA
+if WITH_LUA
  nut_scanner_reindex_dmfsnmp_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+else
+ nut_scanner_reindex_dmfsnmp_CFLAGS += -DWITH_DMF_LUA=0
 endif
 endif
 endif
@@ -49,9 +52,11 @@ if WITH_NEON
 nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
 if WITH_DMF
 nut_scanner_CFLAGS += -DWITH_DMFMIB=1
-if HAVE_DMF_LUA
+if WITH_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
 nut_scanner_LDADD += $(LUA_LIB)
+else
+nut_scanner_CFLAGS += -DWITH_DMF_LUA=0
 endif
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
