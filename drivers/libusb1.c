@@ -63,19 +63,6 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 }
 
-/* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;
- * using "char" is trouble.  Likewise, sizes should never be negative.
- */
-
-static inline int typesafe_control_msg(libusb_device_handle *dev,
-        unsigned char requesttype, unsigned char request,
-        int value, int index,
-        unsigned char *bytes, unsigned size, int timeout)
-{
-		return libusb_control_transfer(dev, requesttype, request, value, index,
-                (unsigned char *) bytes, (int) size, timeout);
-}
-
 /* invoke matcher against device */
 static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 	if (!matcher) {
@@ -110,7 +97,7 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 			}
 		}
 		/* set default interface */
-#if 0
+#if 0 /* FIXME: need to investigate this point! */
 		upsdebugx(2, "%s: calling usb_set_altinterface(udev, %d)", __func__, altinterface);
 		ret = usb_set_altinterface(udev, altinterface);
 		if(ret != 0) {
@@ -124,11 +111,9 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 #else
 	}
 	upsdebugx(2, "%s is not implemented yet on libusb 1.0", __func__);
-#endif // 0
+#endif /* 0 */
 	return ret;
 }
-/* FIXME: still needed?! */
-#define usb_control_msg         typesafe_control_msg
 
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
