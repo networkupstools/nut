@@ -65,6 +65,10 @@ EXTRA ARGUMENTS
 This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
+*port*='hostname[:port]'::
+Set SNMP hostname, or IP address, and port number of the peer SNMP agent.
+There is no default for the hostname, but the default port is 161.
+
 *mibs*='name'::
 Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE above).
 With "auto", the driver will try a select set of SNMP objects until it finds
@@ -144,7 +148,7 @@ configuration time.  You can also force it to be built by using
 EXAMPLES
 --------
 The hostname of the UPS is specified with the "port" value in
-`ups.conf`:
+`ups.conf`, and may include a non-standard (161) remote peer port:
 
 	[snmpv1]
 		driver = snmp-ups
@@ -156,7 +160,7 @@ The hostname of the UPS is specified with the "port" value in
 
 	[snmpv3]
 		driver = snmp-ups
-		port = 166.99.224.132
+		port = 166.99.224.132:170
 		snmp_version = v3
 		secLevel = authPriv
 		secName = mysecurityname

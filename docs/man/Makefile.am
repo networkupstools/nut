@@ -633,6 +633,7 @@ if HAVE_ASCIIDOC
 		-o $@ $<
 
 ### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
+### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 	--xsltproc-opts "--nonet" \
 	--attribute mansource="Network UPS Tools" \

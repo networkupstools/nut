@@ -1267,7 +1267,7 @@ mib2nut_info_t *match_sysoid()
 			upsdebugx(2, "%s: can't build device_sysOID %s: %s",
 				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
-			return FALSE;
+			return NULL;
 		}
 
 		/* Now, iterate on mib2nut definitions */
@@ -1335,7 +1335,11 @@ bool_t load_mib2nut(const char *mib)
 	if (!strcmp(mib, "auto"))
 	{
 		upsdebugx(1, "trying the new match_sysoid() method");
-		m2n = match_sysoid();
+		/* Retry at most 3 times, to maximise chances */
+		for (i = 0; i < 3 ; i++) {
+			if ((m2n = match_sysoid()) != NULL)
+				break;
+		}
 	}
 
 	/* Otherwise, revert to the classic method */

@@ -31,7 +31,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.25"
+#define MGE_XML_VERSION		"MGEXML/0.26"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
@@ -1085,6 +1085,7 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			/* name="Network Management Card" type="Mosaic M" version="BA" */
 			/* name="Network Management Card" type="Transverse" version="GB (SN 49EH29101)" */
 			/* name="Monitored ePDU" type="Monitored ePDU" version="Version Upgrade" */
+			/* name="PDU Network Management Card" type="SCOB" version="02.00.0036" signature="34008876" protocol="XML.V4" */
 			int	i;
 			for (i = 0; atts[i] && atts[i+1]; i += 2) {
 				if (!strcasecmp(atts[i], "name")) {
@@ -1107,6 +1108,13 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 						s[0] = '\0';
 					}
 					dstate_setinfo("ups.firmware.aux", "%s", val);
+				}
+				/* netxml-ups currently only supports XML version 3 (for UPS),
+				 * and not version 4 (for UPS and PDU)! */
+				if (!strcasecmp(atts[i], "protocol")) {
+					if (!strcasecmp(atts[i+1], "XML.V4")) {
+						fatalx(EXIT_FAILURE, "XML v4 protocol is not supported!");
+					}
 				}
 			}
 			state = PRODUCT_INFO;
