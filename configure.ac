@@ -231,7 +231,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf, lua, dmf_lua]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -247,6 +247,8 @@ AC_ARG_WITH(all,
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_dmf}"; then with_dmf="${withval}"; fi
+		if test -z "${with_lua}"; then with_lua="${withval}"; fi
+		if test -z "${with_dmf_lua}"; then with_dmf_lua="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -271,6 +273,7 @@ dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
+
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -1325,47 +1328,78 @@ LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-dmf
+dnl Check for --with-dmf, --with-lua and/or --with-dmf_lua
 dnl This MUST be after DATADIR has been processed!
-
+dnl NOTE: It is somewhat incorrect to say that DMF is here for SNMP-UPS only
+dnl when the intention was to have it as a generic mechanism (e.g. for other
+dnl driver types too). So having the DMF support should be one flag, enabling
+dnl specifically for snmp-ups (and interact with --with-snmp flag) - another.
 NUT_ARG_WITH([dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
+NUT_ARG_WITH([lua], [enable LUA-5.1 scripting support], [auto])
+NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1 scripting], [auto])
+
+if test "${nut_with_lua}" = "no" -a "${nut_with_dmf_lua}" = "yes" || \
+   test "${nut_with_lua}" = "yes" -a "${nut_with_dmf_lua}" = "no" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-lua=$nut_with_lua and --with-dmf_lua=$nut_with_dmf_lua])
+fi
+
+if test "${nut_with_dmf}" = "auto" -a "${nut_with_dmf_lua}" = "yes" ; then
+	nut_with_dmf=yes
+fi
 
 dnl ${nut_with_dmf}: any value except "yes" or "no" is treated as "auto".
 dnl Check for Neon (mandatory)
 if test "${nut_with_dmf}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for DMF (data mapping file) support for snmp-ups"])
+	AC_MSG_ERROR(["neon libraries not found, required for DMF (data mapping file) support for snmp-ups"])
 fi
 
 if test "${nut_with_dmf}" != "no"; then
-   nut_with_dmf="${nut_have_neon}"
+	nut_with_dmf="${nut_have_neon}"
 fi
 
+dnl DMF_BUILD_OPTIONS is just a string for detailed report below
 DMF_BUILD_OPTIONS=""
-AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
-AX_PROG_LUA([5.1], [], [nut_have_lua=yes])
+
+dnl Check for LUA-5.1 (mandatory if asked for, optional otherwise)
+dnl Note we currently require exactly 5.1 (in 5.2 some needed syntax is deprecated)
+AX_PROG_LUA([5.1], [5.2], [nut_have_lua=yes], [nut_have_lua=no])
 AX_LUA_HEADERS
 AX_LUA_LIBS
-AM_CONDITIONAL(HAVE_DMF_LUA, test "${nut_have_lua}" = "yes")
-if test "${nut_with_dmf}" = "yes"; then
-   AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
-   if test "${nut_have_lua}" != "no"; then
-      DMF_BUILD_OPTIONS="lua scripting"
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT(no)
-   fi
+if test "${nut_have_lua}" = "no" ; then
+	if test "${nut_with_lua}" = "yes" -o "${nut_with_dmf_lua}" = "yes" ; then
+		AC_MSG_ERROR([LUA-5.1 support was requested, but is missing on this system])
+	fi
+fi
+AM_CONDITIONAL([HAVE_DMF_LUA], [test "${nut_have_lua}" = "yes"])
 
-   dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-   AC_MSG_CHECKING(whether to enable XML conformance validation on DMFs (data mapping files))
-   if test "${XMLLINT}" != "no"; then
-      if test -n "${DMF_BUILD_OPTIONS}"; then
-        DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
-      fi
-      DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT(no)
-   fi
+if test "${nut_with_dmf_lua}" = "auto"; then
+	nut_with_dmf_lua="${nut_have_lua}"
+fi
+
+if test "${nut_with_dmf_lua}" != "no"; then
+	AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
+	if test "${nut_have_lua}" = "yes"; then
+		DMF_BUILD_OPTIONS="lua scripting"
+		AC_MSG_RESULT(yes)
+	else
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}"])
+if test "${nut_with_dmf}" = "yes"; then
+	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
+	AC_MSG_CHECKING(whether to enable optional XML conformance validation on DMFs (data mapping files) during build)
+	if test "${XMLLINT}" != "no"; then
+		if test -n "${DMF_BUILD_OPTIONS}"; then
+			DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
+		fi
+		DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
+		AC_MSG_RESULT(yes)
+	else
+		AC_MSG_RESULT(no)
+	fi
 fi
 
 NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
