@@ -231,7 +231,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf, lua, dmf_lua]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf, lua, dmf_lua, snmp_dmf, snmp_dmf_lua]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -249,6 +249,8 @@ AC_ARG_WITH(all,
 		if test -z "${with_dmf}"; then with_dmf="${withval}"; fi
 		if test -z "${with_lua}"; then with_lua="${withval}"; fi
 		if test -z "${with_dmf_lua}"; then with_dmf_lua="${withval}"; fi
+		if test -z "${with_snmp_dmf}"; then with_snmp_dmf="${withval}"; fi
+		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -338,20 +340,6 @@ fi
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
 					[WITH_USB], [Define to enable USB support])
 
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-snmp
-
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
-fi
-
-if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_libnetsnmp}"
-fi
-
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
-					[WITH_SNMP], [Define to enable SNMP support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neon
@@ -367,6 +355,7 @@ fi
 
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
+AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
@@ -1328,25 +1317,38 @@ LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-dmf, --with-lua and/or --with-dmf_lua
+dnl Check for --with-dmf, --with-lua and/or --with-dmf_lua, --with-snmp_dmf and/or --with-snmp_dmf_lua
 dnl This MUST be after DATADIR has been processed!
-dnl NOTE: It is somewhat incorrect to say that DMF is here for SNMP-UPS only
-dnl when the intention was to have it as a generic mechanism (e.g. for other
-dnl driver types too). So having the DMF support should be one flag, enabling
-dnl specifically for snmp-ups (and interact with --with-snmp flag) - another.
-NUT_ARG_WITH([dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
-NUT_ARG_WITH([lua], [enable LUA-5.1 scripting support], [auto])
-NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1 scripting], [auto])
+NUT_ARG_WITH([dmf], [enable DMF (data mapping file) generic support], [auto])
+NUT_ARG_WITH([lua], [enable LUA-5.1 scripting generic support], [auto])
+NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1 scripting], [auto])
+NUT_ARG_WITH([snmp_dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
+NUT_ARG_WITH([snmp_dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1 scripting], [auto])
 
-if test "${nut_with_lua}" = "no" -a "${nut_with_dmf_lua}" = "yes" || \
-   test "${nut_with_lua}" = "yes" -a "${nut_with_dmf_lua}" = "no" \
+dnl If a higher-level toggle explicitly disables an option, abort the attempt to enable it at lower level
+if test "${nut_with_dmf}" = "no" -a "${nut_with_dmf_lua}" = "yes" ; then
+	AC_MSG_ERROR([Contradicting requests: --with-dmf=$nut_with_dmf and --with-dmf_lua=$nut_with_dmf_lua])
+fi
+
+if test "${nut_with_lua}" = "no" -a "${nut_with_dmf_lua}" = "yes" \
+|| test "${nut_with_lua}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+|| test "${nut_with_dmf_lua}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
 ; then
-	AC_MSG_ERROR([Contradicting requests: --with-lua=$nut_with_lua and --with-dmf_lua=$nut_with_dmf_lua])
+	AC_MSG_ERROR([Contradicting requests: --with-lua=$nut_with_lua and --with-dmf_lua=$nut_with_dmf_lua and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
 fi
 
-if test "${nut_with_dmf}" = "auto" -a "${nut_with_dmf_lua}" = "yes" ; then
-	nut_with_dmf=yes
+if test "${nut_with_dmf}" = "no" -a "${nut_with_snmp_dmf}" = "yes" \
+|| test "${nut_with_dmf}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-dmf=$nut_with_dmf and --with-snmp_dmf=$nut_with_snmp_dmf and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
 fi
+
+if test "${nut_with_snmp}" = "no" -a "${nut_with_snmp_dmf}" = "yes" \
+|| test "${nut_with_snmp}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-snmp=$nut_with_snmp and --with-snmp_dmf=$nut_with_snmp_dmf and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
+fi
+dnl If we got here, assume that the DMF, LUA and SNMP desires do not contradict
 
 dnl ${nut_with_dmf}: any value except "yes" or "no" is treated as "auto".
 dnl Check for Neon (mandatory)
@@ -1358,26 +1360,54 @@ if test "${nut_with_dmf}" != "no"; then
 	nut_with_dmf="${nut_have_neon}"
 fi
 
-dnl DMF_BUILD_OPTIONS is just a string for detailed report below
-DMF_BUILD_OPTIONS=""
+dnl Now make sure that definitive desires (withXXX==yes) of lower-level
+dnl settings enable undecided (withYYY==auto) higher-level settings
+if test "${nut_with_snmp_dmf_lua}" = "yes"; then
+	nut_with_dmf=yes
+	nut_with_snmp=yes
+	nut_with_lua=yes
+fi
+
+if test "${nut_with_dmf_lua}" = "yes"; then
+	nut_with_dmf=yes
+	nut_with_lua=yes
+fi
+
+if test "${nut_with_snmp_dmf}" = "yes"; then
+	nut_with_dmf=yes
+	nut_with_snmp=yes
+fi
 
 dnl Check for LUA-5.1 (mandatory if asked for, optional otherwise)
 dnl Note we currently require exactly 5.1 (in 5.2 some needed syntax is deprecated)
-AX_PROG_LUA([5.1], [5.2], [nut_have_lua=yes], [nut_have_lua=no])
-AX_LUA_HEADERS
-AX_LUA_LIBS
+nut_have_lua=no
+if test "${nut_with_lua}" != "no"; then
+	AX_PROG_LUA([5.1], [5.2], [nut_have_lua=yes], [nut_have_lua=no])
+	if test "${nut_have_lua}" = "yes"; then
+		AX_LUA_HEADERS([nut_have_lua=yes], [nut_have_lua=no])
+	fi
+	if test "${nut_have_lua}" = "yes"; then
+		AX_LUA_LIBS([nut_have_lua=yes], [nut_have_lua=no])
+	fi
+fi
+
 if test "${nut_have_lua}" = "no" ; then
-	if test "${nut_with_lua}" = "yes" -o "${nut_with_dmf_lua}" = "yes" ; then
+	if test "${nut_with_lua}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes" ; then
 		AC_MSG_ERROR([LUA-5.1 support was requested, but is missing on this system])
 	fi
 fi
-AM_CONDITIONAL([HAVE_DMF_LUA], [test "${nut_have_lua}" = "yes"])
 
 if test "${nut_with_dmf_lua}" = "auto"; then
 	nut_with_dmf_lua="${nut_have_lua}"
 fi
 
-if test "${nut_with_dmf_lua}" != "no"; then
+if test "${nut_with_snmp_dmf_lua}" = "auto"; then
+	nut_with_snmp_dmf_lua="${nut_have_lua}"
+fi
+
+dnl DMF_BUILD_OPTIONS is just a string for detailed report below
+DMF_BUILD_OPTIONS=""
+if test "${nut_with_dmf_lua}" != "no" -o "${nut_with_snmp_dmf_lua}" != "no"; then
 	AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
 	if test "${nut_have_lua}" = "yes"; then
 		DMF_BUILD_OPTIONS="lua scripting"
@@ -1388,7 +1418,7 @@ if test "${nut_with_dmf_lua}" != "no"; then
 fi
 
 AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}"])
-if test "${nut_with_dmf}" = "yes"; then
+if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes"; then
 	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
 	AC_MSG_CHECKING(whether to enable optional XML conformance validation on DMFs (data mapping files) during build)
 	if test "${XMLLINT}" != "no"; then
@@ -1402,15 +1432,45 @@ if test "${nut_with_dmf}" = "yes"; then
 	fi
 fi
 
-NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
-					[WITH_DMF], [Define to enable DMF (data mapping file) support for snmp-ups])
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-snmp enabled on command-line or by DMF options above
 
-dmfsnmpdir="${DATADIR}/dmfsnmp"
-dmfnutscandir="${DATADIR}/dmfnutscan"
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_libnetsnmp}"
+fi
+
+NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
+					[WITH_SNMP], [Define to enable SNMP support])
+AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
+
+NUT_REPORT_FEATURE([enable LUA-5.1 scripting generic support], [${nut_with_lua}], [],
+					[WITH_LUA], [Define to enable LUA-5.1 scripting generic support])
+AM_CONDITIONAL([HAVE_LUA], [test "${nut_have_lua}" = "yes"])
+
+NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
+					[WITH_DMF], [Define to enable DMF (data mapping file) generic support])
+
+NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with LUA], [${nut_with_dmf_lua}], [],
+					[WITH_DMF_LUA], [Define to enable DMF (data mapping file) integration with LUA])
+
+NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [${nut_with_snmp_dmf}], [],
+					[WITH_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
+
+dmfsnmpdir=""
+dmfnutscandir=""
+if test "${nut_with_dmf}" = yes -o test "${nut_with_snmp_dmf}" = yes -o.test "${nut_with_snmp_dmf_lua}" = yes ; then
+	dmfsnmpdir="${DATADIR}/dmfsnmp"
+	dmfnutscandir="${DATADIR}/dmfnutscan"
+fi
 
 AC_MSG_CHECKING(whether to install DMF collection of mappings for SNMP-UPS driver)
 AC_ARG_WITH(dmfsnmp-dir,
-	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp)]),
+	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
@@ -1435,11 +1495,10 @@ else
 	AC_MSG_RESULT(no)
 fi
 AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF collection of mappings for SNMP-UPS driver])
-AM_CONDITIONAL(WITH_DMF, test -n "${dmfsnmpdir}")
 
 AC_MSG_CHECKING(whether to install DMF collection of mappings for nut-scanner SNMP mode)
 AC_ARG_WITH(dmfnutscan-dir,
-	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan)]),
+	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
@@ -1464,7 +1523,6 @@ else
 	AC_MSG_RESULT(no)
 fi
 AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
-AM_CONDITIONAL(WITH_DMF, test -n "${dmfnutscandir}")
 
 dnl ----------------------------------------------------------------------
 

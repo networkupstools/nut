@@ -161,8 +161,10 @@ else
   dmf: dmf-uptodate
 endif
 
-if HAVE_DMF_LUA
- AM_CFLAGS += -DWITH_DMF_LUA $(LUA_INCLUDE)
+if WITH_DMF_LUA
+ AM_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+else
+ AM_CFLAGS += -DWITH_DMF_LUA=0
 endif
 
 progs: $(PROGS)
