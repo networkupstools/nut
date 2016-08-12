@@ -1,4 +1,4 @@
-# GNU Make syntax assumed below
+# TODO: GNU Make syntax assumed below; fix this to be portable to other make's
 
 # Be able to run without automade project e.g. `gmake -f Makefile.am dmf`
 # Note: then `bld=src=dir of makefile` is assumed below
