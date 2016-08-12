@@ -218,6 +218,20 @@ static void do_string(const char *varname, const int len)
 	printf("Value: %s\n", val);
 }
 
+static void do_number(const char *varname)
+{
+	const char	*val;
+
+	val = get_data("VAR", varname);
+
+	if (!val) {
+		fatalx(EXIT_FAILURE, "do_number: can't get current value of %s", varname);
+	}
+
+	printf("Type: NUMBER\n");
+	printf("Value: %s\n", val);
+}
+
 static void do_enum(const char *varname)
 {
 	int	ret;
@@ -367,7 +381,7 @@ static void do_type(const char *varname)
 		}
 
 		if (!strcasecmp(answer[i], "NUMBER")) {
-			printf("Type: NUMBER\n");
+			do_number(varname);
 			return;
 		}
 
