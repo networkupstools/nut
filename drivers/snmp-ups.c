@@ -110,7 +110,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.98"
+#define DRIVER_VERSION		"0.99"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1889,8 +1889,16 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			/* Check if there is a value to be looked up */
 			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 				snprintf(buf, sizeof(buf), "%s", strValue);
-			else
-				snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
+			else {
+				/* Check if there is a need to publish decimal too,
+				 * i.e. if switching to integer does not cause a
+				 * loss of precision */
+				value = value * su_info_p->info_len;
+				if ((int)value == value)
+					snprintf(buf, sizeof(buf), "%i", (int)value);
+				else
+					snprintf(buf, sizeof(buf), "%.2f", (float)value);
+			}
 		}
 	}
 
