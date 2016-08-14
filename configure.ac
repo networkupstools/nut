@@ -1336,6 +1336,14 @@ if test "${nut_with_dmf}" = "no" -a "${nut_with_dmf_lua}" = "yes" ; then
 	AC_MSG_ERROR([Contradicting requests: --with-dmf=$nut_with_dmf and --with-dmf_lua=$nut_with_dmf_lua])
 fi
 
+if test "${nut_with_neon}" = "no" -a "${nut_with_dmf}" = "yes" \
+|| test "${nut_with_neon}" = "no" -a "${nut_with_dmf_lua}" = "yes" \
+|| test "${nut_with_neon}" = "no" -a "${nut_with_snmp_dmf}" = "yes" \
+|| test "${nut_with_neon}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-neon=no (required for DMF) and --with-dmf=$nut_with_dmf and --with-dmf_lua=$nut_with_dmf_lua and --with-snmp_dmf=$nut_with_snmp_dmf and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
+fi
+
 if test "${nut_with_lua}" = "no" -a "${nut_with_dmf_lua}" = "yes" \
 || test "${nut_with_lua}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
 || test "${nut_with_dmf_lua}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
@@ -1469,7 +1477,7 @@ NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [
 
 dmfsnmpdir=""
 dmfnutscandir=""
-if test "${nut_with_dmf}" = yes -o test "${nut_with_snmp_dmf}" = yes -o.test "${nut_with_snmp_dmf_lua}" = yes ; then
+if test "${nut_with_dmf}" = yes -o "${nut_with_snmp_dmf}" = yes -o "${nut_with_snmp_dmf_lua}" = yes ; then
 	dmfsnmpdir="${DATADIR}/dmfsnmp"
 	dmfnutscandir="${DATADIR}/dmfnutscan"
 fi
