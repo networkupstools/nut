@@ -49,7 +49,7 @@ static void (*xml_push_handler)(ne_xml_parser*,
 static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
 static void (*xml_destroy)(ne_xml_parser*);
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 	int functions_aux = 0;
 	char *luatext = NULL;
 #endif
@@ -81,7 +81,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 	}
 	upsdebugx(5, "*-*-*-->Info_flags %d\n", self->info_flags);
 	upsdebugx(5, "*-*-*-->Flags %lu\n", self->flags);
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 if(self->function){
 	lua_State *f_aux = luaL_newstate();
 	luaL_openlibs(f_aux);
@@ -176,7 +176,7 @@ void unload_neon_lib(){
 	handle = NULL;
 }
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 char *
 snmp_info_type_to_main_function_name(const char * info_type)
 {
@@ -242,7 +242,7 @@ snmp_info_t *
 info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
 	info_lkp_t *lookup, int *setvar
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , char **function
 #endif
 )
@@ -260,7 +260,7 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->flags = flags;
 	self->oid2info = lookup;
 	self->setvar = setvar;
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 self->function = *function;
 if(self->function){
 	self->luaContext = luaL_newstate();
@@ -295,10 +295,10 @@ info_mib2nut_new (const char *name, const char *version,
 		self->sysOID = strdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
-        
+
 	return self;
 }
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 function_t *
 function_new (const char *name){
 	function_t *self = (function_t*) calloc(1, sizeof(function_t));
@@ -396,7 +396,7 @@ info_snmp_destroy (void **self_p)
 		free ((info_lkp_t*)self->oid2info);
 		self->oid2info = NULL;
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 if(self->function){
 	self->function = NULL;
 }
@@ -614,7 +614,7 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 {
 	if (*self_p)
 	{
-                int i;
+		int i;
 		mibdmf_parser_t *self = (mibdmf_parser_t *) *self_p;
 		/* First we destroy the index tables that reference data in the list...*/
 		if (self->device_table)
@@ -629,7 +629,7 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 		}
 		for(i = 0; i < self->sublist_elements; i++)
 		{
-                     if(self->list[i])
+		if(self->list[i])
 			alist_destroy( &(self->list[i]) );
 			self->list[i] = NULL;
 		}
@@ -738,13 +738,13 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 				snmp[i].oid2info = ((snmp_info_t*)
 					lkp->values[i])->oid2info;
 			else	snmp[i].oid2info = NULL;
-                        
-#ifdef WITH_DMF_LUA
+
+#if WITH_DMF_LUA
 			if( ((snmp_info_t*) lkp->values[i])->function )
 				snmp[i].function = ((snmp_info_t*)
 					lkp->values[i])->function;
 			else    snmp[i].function = NULL;
-                        
+
 			if( ((snmp_info_t*) lkp->values[i])->luaContext )
 				snmp[i].luaContext = ((snmp_info_t*)
 					lkp->values[i])->luaContext;
@@ -761,9 +761,9 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		snmp[i].dfl = NULL;
 		snmp[i].setvar = NULL;
 		snmp[i].oid2info = NULL;
-#ifdef WITH_DMF_LUA
-                snmp[i].function = NULL;
-                snmp[i].luaContext = NULL;
+#if WITH_DMF_LUA
+		snmp[i].function = NULL;
+		snmp[i].luaContext = NULL;
 #endif
 	}
 
@@ -806,7 +806,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
-        
+
 	free (arg);
 }
 
@@ -854,14 +854,14 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	free (arg);
 }
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 void
 function_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
 	char *arg = (char*) calloc (32, sizeof (char *));
 	arg = get_param_by_name(SNMP_NAME, attrs);
-    
+
 	if(arg)
 		alist_append(element, ((function_t *(*) (const char *)) element->new_element) (arg));
 	free(arg);
@@ -871,7 +871,7 @@ function_node_handler(alist_t *list, const char **attrs)
 void
 snmp_info_node_handler(alist_t *list, const char **attrs)
 {
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 	char *buff = NULL;
 #endif
 	double multiplier = 128;
@@ -892,7 +892,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 	
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
 if(arg[6]){
 	alist_t *funcs = alist_get_element_by_name(list, arg[6]);
@@ -938,61 +938,61 @@ if(arg[6]){
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , char**
 #endif
-                                )) element->new_element)
+				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &input_phases
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , &buff
 #endif
-                                ));
+				));
 		else if(strcmp(arg[5], SETVAR_OUTPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , char**
 #endif
-                                )) element->new_element)
+				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &output_phases
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , &buff
 #endif
-                                ));
+				));
 		else if(strcmp(arg[5], SETVAR_BYPASS_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , char**
 #endif
-                                )) element->new_element)
+				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &bypass_phases
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , &buff
 #endif
-                                ));
+				));
 	} else
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
 			 const char *, unsigned long, info_lkp_t *, int *
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , char**
 #endif
-                        ))
+			))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
 			 arg[3], flags, lookup, NULL
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 , &buff
 #endif
-                        ));
+			));
 
 	for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -1103,7 +1103,7 @@ compile_flags(const char **attrs)
 			flags = flags | SU_TYPE_DAISY_2;
 	}
 	if(aux_flags)free(aux_flags);
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 	aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
 	if(aux_flags){
 		flags = flags | SU_FLAG_FUNCTION;
@@ -1180,7 +1180,7 @@ xml_dict_start_cb(void *userdata, int parent,
 	}
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 	alist_append(list, alist_new(auxname, function_destroy,
 			(void (*)(void)) function_new));
 	functions_aux = 1;
@@ -1191,7 +1191,7 @@ xml_dict_start_cb(void *userdata, int parent,
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 		upsdebugx(1, "LUA support COMPILED IN");
 		function_node_handler(list,attrs);
 #else
@@ -1255,13 +1255,13 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
 		functions_aux = 0;
 		free(luatext);
 		luatext = NULL;
-          
+
 	}else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
 		alist_t *element = alist_get_last_element(list);
@@ -1280,7 +1280,7 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	if(!userdata)
 		return ERR;
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 if(len > 2){
 /* NOTE: Child-tags are also CDATA when parent-tag processing starts,
  so we do not report "unsupported" errors when we it a CDATA process.*/
@@ -1311,7 +1311,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	FILE *f;
 	int result = 0;
 	int flag = 0;
-        
+
 	assert (file_name);
 	assert (dmp);
 	mibdmf_parser_new_list(dmp);
@@ -1467,12 +1467,13 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	if ( (dir_name == NULL ) || \
 	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
 	{
-		upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable",
+		upslogx(0, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) {
-		upsdebugx(1, "ERROR: can't load Neon library");
+		// Note: do not "die" from the library context; that's up to the caller
+		upslogx(0, "ERROR: can't load Neon library");
 		return ERR;
 	}
 	int c;
