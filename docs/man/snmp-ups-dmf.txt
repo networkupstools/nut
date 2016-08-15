@@ -134,8 +134,9 @@ Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages
 (default=DES)
 
 *dmfpath*='path'::
-Specifies DMF file for this driver, in case of be missing NUT will load
-all DMF files in default path.
+Specifies a single DMF file for this driver to load. In case this option is
+missing, the driver will load all DMF files starting with `S` and located
+in its default path (e.g. `/usr/share/nut/dmfsnmp/S*.dmf`).
 
 REQUIREMENTS
 ------------
