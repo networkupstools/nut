@@ -1571,10 +1571,10 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	unload_neon_lib();
 
 	if (i==0) {
-		upsdebugx(1, "WARN: No DMF files were found or readable in directory '%s'",
+		upsdebugx(1, "WARN: No 'S*.dmf' DMF files were found or readable in directory '%s'",
 			dir_name ? dir_name : "<NULL>");
 	} else {
-		upsdebugx(1, "INFO: %d DMF files were inspected in directory '%s'",
+		upsdebugx(1, "INFO: %d 'S*.dmf' DMF files were inspected in directory '%s'",
 			i, dir_name ? dir_name : "<NULL>");
 	}
 	if (result!=0 || x>0) {
