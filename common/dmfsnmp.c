@@ -37,7 +37,9 @@
  *  C FILE
  *
  */
-static lt_dlhandle handle = NULL;
+
+/* LTDL variables needed to load LibNEON */
+static lt_dlhandle dl_handle_libneon = NULL;
 static const char *dl_error = NULL;
 
 static ne_xml_parser *(*xml_create)(void);
@@ -147,33 +149,96 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 }
 /*END DEBUGGING*/
 
+/* Returns OK if all went well, or ERR on error */
+/* Based on nut-scanner/scan_xml_http.c code */
 int load_neon_lib(void){
-	char *neon_libname = get_libname("libneon.so");
+#ifdef WITH_NEON
+	char *neon_libname_path = get_libname("libneon.so");
 
-	if( lt_dlinit() != 0 ) {
-		fprintf(stderr, "Error initializing lt_init\n");
-		upsdebugx(1, "Error initializing lt_init\n");
+	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
+	if(!neon_libname_path) {
+		upslogx(0, "Error loading Neon library required for DMF: libneon.so not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path");
 		return ERR;
 	}
 
-	if(!neon_libname) return ERR;
-	handle = lt_dlopen(neon_libname);
-	free(neon_libname);
-	if(!handle) return ERR;
-	*(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
-	*(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
-	*(void**)&xml_parse = lt_dlsym(handle, "ne_xml_parse");
-	*(void**)&xml_destroy = lt_dlsym(handle, "ne_xml_destroy");
+	if( lt_dlinit() != 0 ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlinit() action failed");
+		goto err;
+	}
+
+	if( dl_handle_libneon != NULL ) {
+		/* if previous init failed */
+		if( dl_handle_libneon == (void *)1 ) {
+			upsdebugx(1, "load_neon_lib(): previous ltdl engine init had failed");
+			goto err;
+		}
+		/* init has already been done and not unloaded yet */
+		free(neon_libname_path);
+		return OK;
+	}
+
+	dl_handle_libneon = lt_dlopen(neon_libname_path);
+
+	if(!dl_handle_libneon) {
+		dl_error = lt_dlerror();
+		upsdebugx(1, "load_neon_lib(): lt_dlopen() action failed");
+		goto err;
+	}
+
+	lt_dlerror();      /* Clear any existing error */
+
+	*(void**) (&xml_create) = lt_dlsym(dl_handle_libneon, "ne_xml_create");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_create) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_create");
+		goto err;
+	}
+
+	*(void**) (&xml_push_handler) = lt_dlsym(dl_handle_libneon, "ne_xml_push_handler");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_push_handler) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_push_handler");
+		goto err;
+	}
+
+	*(void**) (&xml_parse) = lt_dlsym(dl_handle_libneon, "ne_xml_parse");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_parse) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_parse");
+		goto err;
+	}
+
+	*(void**) (&xml_destroy) = lt_dlsym(dl_handle_libneon, "ne_xml_destroy");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_destroy) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_destroy");
+		goto err;
+	}
 
 	dl_error = lt_dlerror();
-	if (dl_error)
-		return ERR;
-	else
+	if (dl_error) {
+		upsdebugx(1, "load_neon_lib(): lt_dlerror() final check failed");
+		goto err;
+	}
+	else {
+		free(neon_libname_path);
 		return OK;
+	}
+
+err:
+	upslogx(0, "Error loading Neon library %s required for DMF: %s",
+		neon_libname_path,
+		dl_error ? dl_error : "No details passed");
+	free(neon_libname_path);
+	return ERR;
+
+#else
+	upslogx(0, "Error loading Neon library required for DMF: not enabled during compilation");
+	upsdebugx(1, "load_neon_lib(): not enabled during compilation\n");
+	return ERR;
+#endif
 }
 void unload_neon_lib(){
-	lt_dlclose(handle);
-	handle = NULL;
+#ifdef WITH_NEON
+	lt_dlclose(dl_handle_libneon);
+	dl_handle_libneon = NULL;
+#endif
 }
 
 #if WITH_DMF_LUA
@@ -1310,7 +1375,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
-	int flag = 0;
+	int falg_libneon = 0;
 
 	assert (file_name);
 	assert (dmp);
@@ -1326,9 +1391,9 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
-	if(!handle){
-		flag = 1;
-		if(load_neon_lib() == ERR) return ERR;
+	if(!dl_handle_libneon){
+		falg_libneon = 1;
+		if(load_neon_lib() == ERR) return ERR; // Errors printed by that loader
 	}
 	ne_xml_parser *parser = xml_create ();
 	xml_push_handler (parser, xml_dict_start_cb,
@@ -1365,7 +1430,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	if (!result) /* no errors, complete the parse with len==0 call */
 		xml_parse (parser, buffer, 0);
 	xml_destroy (parser);
-	if(flag == 1)
+	if(falg_libneon == 1)
 		unload_neon_lib();
 
 	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
