@@ -38,7 +38,7 @@
 
 #include "nut-scan.h"
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 # ifdef WANT_LIBNUTSCAN_SNMP_DMF
 #  undef WANT_LIBNUTSCAN_SNMP_DMF
 # endif
@@ -69,7 +69,7 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-// TODO : #ifdef WITH_DMFMIB for options to set up path(s) to the DMFs to load
+// TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
 const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 				cidr = strdup(optarg);
 				break;
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 			case 'z':
 				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
 					goto display_help;
@@ -569,7 +569,7 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 			upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support if possible.\n");
 #else
 			upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
@@ -748,7 +748,7 @@ display_help:
 	upsdebugx(1,"SCANS DONE: free common scanner resources");
 	nutscan_free();
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	uninit_snmp_device_table();
 	upsdebugx(1,"SCANS DONE: free resources: SNMP_DMF");
 #endif

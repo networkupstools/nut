@@ -5,7 +5,7 @@
  *  Copyright (C)
  *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
  *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
-  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
+ *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://opensource.mgeups.com/>
@@ -50,10 +50,17 @@
 #define SNMP_UPS_H
 
 #ifndef WITH_DMFMIB
- #undef WITH_DMF_LUA
+#define WITH_DMFMIB 0
 #endif
 
-#ifdef WITH_DMF_LUA
+#if (!WITH_DMFMIB)
+# ifdef WITH_DMF_LUA
+#  undef WITH_DMF_LUA
+# endif
+#define WITH_DMF_LUA 0
+#endif
+
+#if WITH_DMF_LUA
 # include <lua.h>
 # include <lauxlib.h>
 # include <lualib.h>
@@ -134,7 +141,7 @@ typedef struct {
 	unsigned long flags;		/* my flags */
 	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 	char *function;
 	lua_State *luaContext;
 #endif
@@ -153,7 +160,7 @@ typedef struct {
 #define SU_OUTLET			(1 << 7)	/* outlet template definition */
 #define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 #define SU_FLAG_FUNCTION        (1 << 9)        /* TODO Pending to check if this flag have any incompatibility*/
 #endif
 /* Notes on outlet templates usage:

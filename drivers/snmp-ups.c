@@ -9,7 +9,8 @@
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
  *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
- *      2016            Carlos Dominguez <CarlosDominguez@eaton.com>
+ *	2016	Jim Klimov <EvgenyKlimov@Eaton.com>
+ *	2016	Carlos Dominguez <CarlosDominguez@Eaton.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -39,7 +40,7 @@
 #include "snmp-ups.h"
 #include "parseconf.h"
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 # include "dmfsnmp.h"
 # include "apc-iem-mib.h"
 #else
@@ -68,7 +69,7 @@
 #define usmAESPrivProtocol usmAES128PrivProtocol
 #endif
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 // Array of pointers to singular instances of mib2nut_info_t
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
@@ -78,6 +79,7 @@ char *dmf_path = NULL;
 #ifdef WITH_DMF_LUA
 #undef WITH_DMF_LUA
 #endif
+#define WITH_DMF_LUA 0
 
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
@@ -131,7 +133,7 @@ alarms_info_t *alarms_info;
 const char *mibname;
 const char *mibvers;
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 #define DRIVER_NAME	"Generic SNMP UPS driver (DMF)"
 #else
 #define DRIVER_NAME	"Generic SNMP UPS driver"
@@ -310,7 +312,7 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	addvar(VAR_VALUE, SU_VAR_DMFPATH,
 		"Set the Data Mapping File to use");
 #endif
@@ -326,7 +328,7 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	dmp = mibdmf_parser_new();
 	if (!dmp)
 		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
@@ -494,7 +496,7 @@ void upsdrv_cleanup(void)
 
 	/* Net-SNMP specific cleanup */
 	nut_snmp_cleanup();
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	mibdmf_parser_destroy(&dmp);
 	mib2nut = NULL;
 #endif
@@ -2188,7 +2190,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	return 0; /* FIXME: remap EXIT_SUCCESS to RETURN_SUCCESS */
 }
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 int publish_Lua_dstate(lua_State *L){
 	const char *info_type = lua_tostring(L, 1);
 	const char *value = lua_tostring(L, 2);
@@ -2238,7 +2240,7 @@ bool_t snmp_ups_walk(int mode)
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 			if(su_info_p->flags & SU_FLAG_FUNCTION){
 				if((su_info_p->function) && (su_info_p->luaContext)){
 					char *result = NULL;

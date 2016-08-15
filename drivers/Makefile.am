@@ -206,16 +206,18 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats-mib.c apc-ats-mib.c raritan-px2-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
-snmp_ups_CFLAGS = $(AM_CFLAGS) -UWITH_DMFMIB -UWITH_DMF_LUA
+snmp_ups_CFLAGS = $(AM_CFLAGS) -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 
 # DMF SNMP - ok to define this in the open, it is only built if enabled above
 snmp_ups_dmf_SOURCES = snmp-ups.c
 snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
- $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) $(LUA_LIB) \
+ $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) \
  $(top_builddir)/common/libcommon.la
-snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
+snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) \
+	-I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+snmp_ups_dmf_LDADD += $(LUA_LIB)
 else
 snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=0
 endif

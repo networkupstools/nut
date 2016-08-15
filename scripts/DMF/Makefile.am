@@ -161,10 +161,14 @@ else
   dmf: dmf-uptodate
 endif
 
+CFLAGS_LUA ?= $(LUA_INCLUDE)
+LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
- AM_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+ CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 $(CFLAGS_LUA)
+ LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)
 else
- AM_CFLAGS += -DWITH_DMF_LUA=0
+ CFLAGS_DMF_LUA = -DWITH_DMF_LUA=0
+ LDFLAGS_DMF_LUA =
 endif
 
 progs: $(PROGS)
@@ -175,27 +179,34 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) \
-	$(LUA_LIB) $(LUA_INCLUDE) \
-	-DWITH_DMFMIB -DWITH_DMF_LUA -DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	-lltdl $(AM_CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
+	-DWITH_DMFMIB=1 -DDEBUG=1 \
+	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
 dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) \
-	$(LUA_LIB) $(LUA_INCLUDE) \
-	-DWITH_DMFMIB -DWITH_DMF_LUA -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
+	-lltdl $(AM_CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
+	-DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
 
+# Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
+# even if the general project does not want to build DMF+LUA at this moment
+if WITH_LUA
 dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	-lltdl $(AM_CFLAGS) \
-	$(LUA_LIB) $(LUA_INCLUDE) \
-	-DWITH_DMFMIB -DWITH_DMF_LUA -DDEBUG=1 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	-DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
+	-DWITH_DMFMIB=1 -DDEBUG=1 \
+	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
+else
+dmf-lua-test:
+	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
+endif
 
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
@@ -205,5 +216,10 @@ run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
 run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
 
+if WITH_LUA
 run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
+else
+run-dmf-lua-test:
+	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
+endif

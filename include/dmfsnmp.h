@@ -111,7 +111,7 @@
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 /* NOTE: This code uses deprecated lua_open() that is removed since lua5.2.
  * As of this initial code-drop, the implementation is experimental and is
  * incomplete and very likely buggy. Developers of LUA integration should
@@ -206,7 +206,7 @@
 
 #define TYPE_DAISY "type_daisy"
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 #define TYPE_FUNCTION "function"
 #endif
 /* "Auxiliary list" structure to store hierarchies
@@ -241,12 +241,13 @@ typedef struct {
 	int device_table_counter;
 } mibdmf_parser_t;
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 typedef struct {
 	char *name;
 	char *code;
 } function_t;
 #endif
+
 /* Initialize the data for dmf.c */
 mibdmf_parser_t *
 	mibdmf_parser_new();
@@ -323,7 +324,7 @@ alist_t *
  * be validly reallocated, freed, etc. */
 alist_t **
 	mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp);
-        
+
 alist_t **
 	mibdmf_get_initial_list_ptr(mibdmf_parser_t *dmp);
 
@@ -360,7 +361,7 @@ void
 	alarm_info_node_handler (alist_t *list, const char **attrs);
 
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 /* Create and initialize a function element */
 function_t *
 	function_new (const char *name);
@@ -368,7 +369,7 @@ function_t *
 /* Destroy and NULLify the reference to alist_t, list of collections */
 void
 	function_destroy (void **self_p);
-        
+
 void
 	function_node_handler(alist_t *list, const char **attrs);
 #endif
@@ -378,7 +379,7 @@ snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
 		info_lkp_t *lookup, int *setvar
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 ,char **function
 #endif
 );
@@ -469,7 +470,7 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 char *
 	snmp_info_type_to_main_function_name(const char * info_type);
 #endif
