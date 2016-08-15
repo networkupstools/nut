@@ -1,10 +1,11 @@
 snmp-ups-dmf(8)
-===========
+===============
 
 NAME
 ----
 
-snmp-ups-dmf - Multi-MIB Driver for SNMP UPS equipment
+snmp-ups-dmf - Multi-MIB Driver for SNMP UPS equipment with support for
+dynamic mapping file (DMF)
 
 NOTE
 ----
@@ -15,16 +16,20 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The snmp-ups-dmf driver automatically detects and supports a wide range of devices by loading various MIBS:
+The `snmp-ups-dmf` driver automatically detects and supports a wide range
+of SNMP-capable devices by loading various MIBS:
 
 *ietf*::
-UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps others (default)
+UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert,
+perhaps others (default)
 
 *mge*::
-MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards (ref 66062, 66045, 66074 and 66244)
+MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards
+(ref 66062, 66045, 66074 and 66244)
 
 *apcc*::
-APC AP9605, AP9606, AP9617, and AP9618 APC network management cards, as well as any others supporting the APC POWERNET MIB
+APC AP9605, AP9606, AP9617, and AP9618 APC network management cards,
+as well as any others supporting the APC POWERNET MIB
 
 *netvision*::
 Socomec Sicon UPS with Netvision Web/SNMP management card/external box
@@ -54,10 +59,19 @@ Various BayTech PDUs
 HP/Compaq AF401A management card, perhaps others
 
 *cyberpower*::
-Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202 and RMCARD301
+Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202
+and RMCARD301
 
 *huawei*::
 Huawei UPS5000-E, perhaps others
+
+Unlike the legacy `snmp-ups` driver which mapped MIB data to NUT variables
+using tables built into the driver binary during compilation, the new
+`snmp-ups-dmf` uses equivalent tables loaded at run-time from DMF files
+(XML documents which correspond to the DMF-SNMP schema, provided with the
+NUT sources). This means that to extend NUT support to a new SNMP UPS or
+to experiment during development, users no longer have to recompile NUT --
+it suffices to just provide a new DMF file and restart the driver.
 
 EXTRA ARGUMENTS
 ---------------
@@ -66,15 +80,18 @@ This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
 *mibs*='name'::
-Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE above).
+Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE
+above).
 With "auto", the driver will try a select set of SNMP objects until it finds
-one that the device responds to.  Note that since NUT 2.6.2, snmp-ups-dmf has a new
-method that uses sysObjectID (which is a pointer to the prefered MIB of the
-device) to detect supported devices.  This renders void the use of "mibs" option.
+one that the device responds to.  Note that since NUT 2.6.2, `snmp-ups` drivers
+have a new method that uses sysObjectID (which is a pointer to the prefered MIB
+of the device) to detect supported devices.  This renders void the use of "mibs"
+option.
    
 *community*='name'::
 Set community name (default = public).
-Note that a RW community name is required to change UPS settings (as for a powerdown).
+Note that a RW community name is required to change UPS settings (as for a
+powerdown).
 
 *snmp_version*='version'::
 Set SNMP version (default = v1, allowed: v2c, v3)
