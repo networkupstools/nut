@@ -1466,14 +1466,23 @@ NUT_REPORT_FEATURE([enable LUA-5.1 scripting generic support], [${nut_with_lua}]
 					[WITH_LUA], [Define to enable LUA-5.1 scripting generic support])
 AM_CONDITIONAL([HAVE_LUA], [test "${nut_have_lua}" = "yes"])
 
+dnl NOTE that below there is a difference between WANT_* C macros and
+dnl the WITH_* automake variables to control the Makefile workflows.
+dnl This is needed because same sources are built with different macro
+dnl setups for binaries that support DMF or legacy ones. Where and wen
+dnl needed, the makefile recipes will set same-named WITH_* macros to
+dnl equal 1 or 0, allowing CPP tests like "#if WITH_FEATURENAME".
 NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
-					[WITH_DMF], [Define to enable DMF (data mapping file) generic support])
+					[WANT_DMF], [Define to enable DMF (data mapping file) generic support])
+AM_CONDITIONAL([WITH_DMF], [test "${nut_with_dmf}" = "yes"])
 
 NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with LUA], [${nut_with_dmf_lua}], [],
-					[WITH_DMF_LUA], [Define to enable DMF (data mapping file) integration with LUA])
+					[WANT_DMF_LUA], [Define to enable DMF (data mapping file) integration with LUA])
+AM_CONDITIONAL([WITH_DMF_LUA], [test "${nut_with_dmf_lua}" = "yes"])
 
 NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [${nut_with_snmp_dmf}], [],
-					[WITH_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
+					[WANT_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
+AM_CONDITIONAL([WITH_DMFMIB], [test "${nut_with_snmp_dmf}" = "yes"])
 
 dmfsnmpdir=""
 dmfnutscandir=""

@@ -36,7 +36,7 @@
 
 #include "nut-scan.h"
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 # ifdef WANT_LIBNUTSCAN_SNMP_DMF
 # undef WANT_LIBNUTSCAN_SNMP_DMF
 # endif
@@ -67,7 +67,7 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-// TODO : #ifdef WITH_DMFMIB for options to set up path(s) to the DMFs to load
+// TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
 const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVazZ:D";
 
 #ifdef HAVE_GETOPT_LONG
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 				nut_debug_level++;
 				break;
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 			case 'z':
 				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
 					goto display_help;
@@ -437,7 +437,7 @@ display_help:
 				}
 				if( nutscan_avail_snmp ) {
 					printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 					printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
 					printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
 					if( nutscan_avail_xml_http) {
@@ -548,7 +548,7 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 			printq(quiet,"Scanning SNMP bus with DMF MIB support if possible.\n");
 #else
 			printq(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
@@ -671,7 +671,7 @@ display_help:
 
 	nutscan_free();
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	uninit_snmp_device_table();
 #endif
 

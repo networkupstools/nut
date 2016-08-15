@@ -9,7 +9,8 @@
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
  *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
- *      2016            Carlos Dominguez <CarlosDominguez@eaton.com>
+ *	2016	Jim Klimov <EvgenyKlimov@Eaton.com>
+ *	2016	Carlos Dominguez <CarlosDominguez@Eaton.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -39,7 +40,7 @@
 #include "snmp-ups.h"
 #include "parseconf.h"
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 # include "dmfsnmp.h"
 # include "apc-iem-mib.h"
 #else
@@ -68,7 +69,7 @@
 #define usmAESPrivProtocol usmAES128PrivProtocol
 #endif
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 // Array of pointers to singular instances of mib2nut_info_t
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
@@ -78,6 +79,7 @@ char *dmf_path = NULL;
 #ifdef WITH_DMF_LUA
 #undef WITH_DMF_LUA
 #endif
+#define WITH_DMF_LUA 0
 
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
@@ -131,7 +133,7 @@ alarms_info_t *alarms_info;
 const char *mibname;
 const char *mibvers;
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 #define DRIVER_NAME	"Generic SNMP UPS driver (DMF)"
 #else
 #define DRIVER_NAME	"Generic SNMP UPS driver"
@@ -306,7 +308,7 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	addvar(VAR_VALUE, SU_VAR_DMFPATH,
 		"Set the Data Mapping File to use");
 #endif
@@ -322,7 +324,7 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	dmp = mibdmf_parser_new();
 	if (!dmp)
 		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
@@ -471,7 +473,7 @@ void upsdrv_cleanup(void)
 
 	/* Net-SNMP specific cleanup */
 	nut_snmp_cleanup();
-#ifdef WITH_DMFMIB
+#if WITH_DMFMIB
 	mibdmf_parser_destroy(&dmp);
 	mib2nut = NULL;
 #endif
@@ -2152,11 +2154,11 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	return 0; /* FIXME: remap EXIT_SUCCESS to RETURN_SUCCESS */
 }
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 int publish_Lua_dstate(lua_State *L){
 	const char *info_type = lua_tostring(L, 1);
 	const char *value = lua_tostring(L, 2);
-  
+
 	if((info_type) && (value))
 		dstate_setinfo(info_type, "%s", value);
 	return 0;
@@ -2166,19 +2168,19 @@ int lua_C_gateway(lua_State *L){
 	/* get number of arguments */
 	const char *info_type = lua_tostring(L, 1);
 	int current_device_number = lua_tointeger(L, 2);
-    
+
 	char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
-    
+
 	if(current_device_number > 0)
 		sprintf(buf, "device.%d.%s", current_device_number, info_type);
 	else
 		sprintf(buf, "device.%s", info_type);
-    
+
 	const char *value = dstate_getinfo(buf);
-    
+
 	if(value)
 		lua_pushstring(L, value);
-    
+
 	/* return the number of results */
 	free(buf);
 	return 1;
@@ -2202,14 +2204,14 @@ bool_t snmp_ups_walk(int mode)
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_LUA
 			if(su_info_p->flags & SU_FLAG_FUNCTION){
 				if((su_info_p->function) && (su_info_p->luaContext)){
 					char *result = NULL;
-                                
+
 					lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
 					lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
-                                
+
 					char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
 					lua_getglobal(su_info_p->luaContext, funcname);
 					lua_pushnumber(su_info_p->luaContext, current_device_number);
@@ -2219,17 +2221,17 @@ bool_t snmp_ups_walk(int mode)
 	printf("Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
 #endif
 					free(funcname);
-                                
+
 					if(result){
 						char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
 						int i = 0;
 						while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
-                                
+
 						if(current_device_number > 0)
 							sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
 						else
 							sprintf(buf, "%s", su_info_p->info_type);
-                                
+
 						dstate_setinfo(buf, "%s", result);
 						free(buf);
 					}
