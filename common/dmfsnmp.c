@@ -27,15 +27,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
-
-#if WITH_LIBLTDL
-# include <ltdl.h>
-#else
-# ifdef WITH_NEON
-/* We are linked to LibNEON at compile-time */
-#  include <neon/ne_xml.h>
-# endif
-#endif
+#include <ltdl.h>
 
 #include "common.h"
 #include "dmfsnmp.h"
@@ -45,43 +37,22 @@
  *  C FILE
  *
  */
-
-#if WITH_LIBLTDL
-/* LTDL variables needed to load LibNEON */
-static lt_dlhandle dl_handle_libneon = NULL;
+static lt_dlhandle handle = NULL;
 static const char *dl_error = NULL;
 
-/* Pointers to dynamically-loaded LibNEON functions; do not mistake these
- * with xml_*_cb callbacks that we implement below for actual parsing.
- * If not loaded dynamically by LTDL, these should be available via LDD
- * dynamic linking at compile-time.
- */
 static ne_xml_parser *(*xml_create)(void);
 static void (*xml_push_handler)(ne_xml_parser*,
-			ne_xml_startelm_cb*,
+			ne_xml_startelm_cb*, 
 			ne_xml_cdata_cb*,
 			ne_xml_endelm_cb*,
 			void*);
 static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
 static void (*xml_destroy)(ne_xml_parser*);
-#else
-# define	xml_create		ne_xml_create
-# define	xml_push_handler	ne_xml_push_handler
-# define	xml_parse		ne_xml_parse
-# define	xml_destroy		ne_xml_destroy
-#endif
 
-/* These vars used to be needed as extern vars by some legacy code elsewhere...
- * also they are referenced below, but I'm not sure it is valid code!
- */
-/* FIXME: Inspect codebase to see if these are at all needed (used to be in snmp-ups.{c,h}) */
-int input_phases, output_phases, bypass_phases;
-
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 	int functions_aux = 0;
 	char *luatext = NULL;
 #endif
-
 /*DEBUGGING*/
 void
 print_snmp_memory_struct(snmp_info_t *self)
@@ -110,24 +81,23 @@ print_snmp_memory_struct(snmp_info_t *self)
 	}
 	upsdebugx(5, "*-*-*-->Info_flags %d\n", self->info_flags);
 	upsdebugx(5, "*-*-*-->Flags %lu\n", self->flags);
-
-#if WITH_DMF_LUA
-	if(self->function){
-		lua_State *f_aux = luaL_newstate();
-		luaL_openlibs(f_aux);
-		if (luaL_loadstring(f_aux, self->function)){
-			upsdebugx(5, "Error loading LUA functions:\n%s\n", self->function);
-		} else {
-			upsdebugx(5, "***********-> Luatext:\n%s\n", self->function);
-			lua_pcall(f_aux,0,0,0);
-			char *funcname = snmp_info_type_to_main_function_name(self->info_type);
-			lua_getglobal(f_aux, funcname);
-			lua_pcall(f_aux,0,1,0);
-			upsdebugx(5, "==--> Result: %s\n\n", lua_tostring(f_aux, -1));
-			free(funcname);
-		}
-		lua_close(f_aux);
+#ifdef WITH_DMF_LUA
+if(self->function){
+	lua_State *f_aux = luaL_newstate();
+	luaL_openlibs(f_aux);
+	if(luaL_loadstring(f_aux, self->function)){
+		upsdebugx(5, "Error loading LUA functions:\n%s\n", self->function);
+	}else{
+		upsdebugx(5, "***********-> Luatext:\n%s\n", self->function);
+		lua_pcall(f_aux,0,0,0);
+		char *funcname = snmp_info_type_to_main_function_name(self->info_type);
+		lua_getglobal(f_aux, funcname);
+		lua_pcall(f_aux,0,1,0);
+		upsdebugx(5, "==--> Result: %s\n\n", lua_tostring(f_aux, -1));
+		free(funcname);
 	}
+	lua_close(f_aux);
+}
 #endif
 }
 
@@ -177,107 +147,36 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 }
 /*END DEBUGGING*/
 
-/* Returns OK if all went well, or ERR on error */
-/* Based on nut-scanner/scan_xml_http.c code */
 int load_neon_lib(void){
-#ifdef WITH_NEON
-# if WITH_LIBLTDL
-	char *neon_libname_path = get_libname("libneon.so");
+	char *neon_libname = get_libname("libneon.so");
 
-	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-	if(!neon_libname_path) {
-		upslogx(0, "Error loading Neon library required for DMF: libneon.so not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path");
+	if( lt_dlinit() != 0 ) {
+		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(1, "Error initializing lt_init\n");
 		return ERR;
 	}
 
-	if( lt_dlinit() != 0 ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlinit() action failed");
-		goto err;
-	}
-
-	if( dl_handle_libneon != NULL ) {
-		/* if previous init failed */
-		if( dl_handle_libneon == (void *)1 ) {
-			upsdebugx(1, "load_neon_lib(): previous ltdl engine init had failed");
-			goto err;
-		}
-		/* init has already been done and not unloaded yet */
-		free(neon_libname_path);
-		return OK;
-	}
-
-	dl_handle_libneon = lt_dlopen(neon_libname_path);
-
-	if(!dl_handle_libneon) {
-		dl_error = lt_dlerror();
-		upsdebugx(1, "load_neon_lib(): lt_dlopen() action failed");
-		goto err;
-	}
-
-	lt_dlerror();      /* Clear any existing error */
-
-	*(void**) (&xml_create) = lt_dlsym(dl_handle_libneon, "ne_xml_create");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_create) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_create");
-		goto err;
-	}
-
-	*(void**) (&xml_push_handler) = lt_dlsym(dl_handle_libneon, "ne_xml_push_handler");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_push_handler) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_push_handler");
-		goto err;
-	}
-
-	*(void**) (&xml_parse) = lt_dlsym(dl_handle_libneon, "ne_xml_parse");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_parse) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_parse");
-		goto err;
-	}
-
-	*(void**) (&xml_destroy) = lt_dlsym(dl_handle_libneon, "ne_xml_destroy");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_destroy) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_destroy");
-		goto err;
-	}
+	if(!neon_libname) return ERR;
+	handle = lt_dlopen(neon_libname);
+	free(neon_libname);
+	if(!handle) return ERR;
+	*(void**)&xml_create = lt_dlsym(handle, "ne_xml_create");
+	*(void**)&xml_push_handler = lt_dlsym(handle, "ne_xml_push_handler");
+	*(void**)&xml_parse = lt_dlsym(handle, "ne_xml_parse");
+	*(void**)&xml_destroy = lt_dlsym(handle, "ne_xml_destroy");
 
 	dl_error = lt_dlerror();
-	if (dl_error) {
-		upsdebugx(1, "load_neon_lib(): lt_dlerror() final check failed");
-		goto err;
-	}
-	else {
-		free(neon_libname_path);
+	if (dl_error)
+		return ERR;
+	else
 		return OK;
-	}
-
-err:
-	upslogx(0, "Error loading Neon library %s required for DMF: %s",
-		neon_libname_path,
-		dl_error ? dl_error : "No details passed");
-	free(neon_libname_path);
-	return ERR;
-# else /* not WITH_LIBLTDL */
-	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead\n");
-	return OK;
-# endif /* WITH_LIBLTDL */
-
-#else /* not WITH_NEON */
-	upslogx(0, "Error loading Neon library required for DMF: not enabled during compilation");
-	upsdebugx(1, "load_neon_lib(): not enabled during compilation\n");
-	return ERR;
-#endif /* WITH_NEON */
 }
-
 void unload_neon_lib(){
-#ifdef WITH_NEON
-#if WITH_LIBLTDL
-	lt_dlclose(dl_handle_libneon);
-	dl_handle_libneon = NULL;
-#endif /* WITH_LIBLTDL */
-#endif /* WITH_NEON */
+	lt_dlclose(handle);
+	handle = NULL;
 }
 
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 char *
 snmp_info_type_to_main_function_name(const char * info_type)
 {
@@ -294,7 +193,7 @@ snmp_info_type_to_main_function_name(const char * info_type)
 	}
 	return result;
 }
-#endif /* WITH_DMF_LUA */
+#endif
 
 char *
 get_param_by_name (const char *name, const char **items)
@@ -343,8 +242,8 @@ snmp_info_t *
 info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
 	info_lkp_t *lookup, int *setvar
-#if WITH_DMF_LUA
-	, char **function
+#ifdef WITH_DMF_LUA
+, char **function
 #endif
 )
 {
@@ -361,19 +260,19 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->flags = flags;
 	self->oid2info = lookup;
 	self->setvar = setvar;
-#if WITH_DMF_LUA
-	self->function = *function;
-	if(self->function){
-		self->luaContext = luaL_newstate();
-		luaL_openlibs(self->luaContext);
-		if(luaL_loadstring(self->luaContext, self->function)){
-			lua_close(self->luaContext);
-			self->luaContext = NULL;
-		}else
-			lua_pcall(self->luaContext,0,0,0);
-	}else
+#ifdef WITH_DMF_LUA
+self->function = *function;
+if(self->function){
+	self->luaContext = luaL_newstate();
+	luaL_openlibs(self->luaContext);
+	if(luaL_loadstring(self->luaContext, self->function)){
+		lua_close(self->luaContext);
 		self->luaContext = NULL;
-#endif /* WITH_DMF_LUA */
+	}else
+		lua_pcall(self->luaContext,0,0,0);
+}else
+	self->luaContext = NULL;
+#endif
 	return self;
 }
 
@@ -396,11 +295,10 @@ info_mib2nut_new (const char *name, const char *version,
 		self->sysOID = strdup (sysOID);
 	self->snmp_info = snmp;
 	self->alarms_info = alarms;
-
+        
 	return self;
 }
-
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 function_t *
 function_new (const char *name){
 	function_t *self = (function_t*) calloc(1, sizeof(function_t));
@@ -425,7 +323,7 @@ function_destroy (void **self_p){
 		self = NULL;
 	}
 }
-#endif /* WITH_DMF_LUA */
+#endif
 
 /*Destroy full array of lookup elements*/
 void
@@ -498,16 +396,15 @@ info_snmp_destroy (void **self_p)
 		free ((info_lkp_t*)self->oid2info);
 		self->oid2info = NULL;
 
-#if WITH_DMF_LUA
-		if(self->function){
-			self->function = NULL;
-		}
-		if(self->luaContext){
-			lua_close(self->luaContext);
-			self->luaContext = NULL;
-		}
+#ifdef WITH_DMF_LUA
+if(self->function){
+	self->function = NULL;
+}
+if(self->luaContext){
+	lua_close(self->luaContext);
+	self->luaContext = NULL;
+}
 #endif
-
 		free (self);
 		*self_p = NULL;
 	}
@@ -545,11 +442,13 @@ info_mib2nut_destroy (void **self_p)
 		}
 		if (self->snmp_info)
 		{
+			
 			free ((snmp_info_t*)self->snmp_info);
 			self->snmp_info = NULL;
 		}
 		if (self->alarms_info)
 		{
+			
 			free ((alarms_info_t*)self->alarms_info);
 			self->alarms_info = NULL;
 		}
@@ -715,7 +614,7 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 {
 	if (*self_p)
 	{
-		int i;
+                int i;
 		mibdmf_parser_t *self = (mibdmf_parser_t *) *self_p;
 		/* First we destroy the index tables that reference data in the list...*/
 		if (self->device_table)
@@ -730,7 +629,7 @@ mibdmf_parser_destroy(mibdmf_parser_t **self_p)
 		}
 		for(i = 0; i < self->sublist_elements; i++)
 		{
-		if(self->list[i])
+                     if(self->list[i])
 			alist_destroy( &(self->list[i]) );
 			self->list[i] = NULL;
 		}
@@ -766,7 +665,7 @@ mibdmf_parser_new()
 {
 	mibdmf_parser_t *self = (mibdmf_parser_t *) calloc (1, sizeof (mibdmf_parser_t));
 	assert (self);
-	/* Preallocate the sentinel in tables */
+	// Preallocate the sentinel in tables
 	self->device_table_counter = 1;
 	self->device_table = (snmp_device_id_t *)calloc(
 		self->device_table_counter, sizeof(snmp_device_id_t));
@@ -839,13 +738,13 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 				snmp[i].oid2info = ((snmp_info_t*)
 					lkp->values[i])->oid2info;
 			else	snmp[i].oid2info = NULL;
-
-#if WITH_DMF_LUA
+                        
+#ifdef WITH_DMF_LUA
 			if( ((snmp_info_t*) lkp->values[i])->function )
 				snmp[i].function = ((snmp_info_t*)
 					lkp->values[i])->function;
 			else    snmp[i].function = NULL;
-
+                        
 			if( ((snmp_info_t*) lkp->values[i])->luaContext )
 				snmp[i].luaContext = ((snmp_info_t*)
 					lkp->values[i])->luaContext;
@@ -862,9 +761,9 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		snmp[i].dfl = NULL;
 		snmp[i].setvar = NULL;
 		snmp[i].oid2info = NULL;
-#if WITH_DMF_LUA
-		snmp[i].function = NULL;
-		snmp[i].luaContext = NULL;
+#ifdef WITH_DMF_LUA
+                snmp[i].function = NULL;
+                snmp[i].luaContext = NULL;
 #endif
 	}
 
@@ -907,7 +806,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 
 	for (i = 0; i < (INFO_MIB2NUT_MAX_ATTRS + 1); i++)
 		free (arg[i]);
-
+        
 	free (arg);
 }
 
@@ -955,14 +854,14 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	free (arg);
 }
 
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 void
 function_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
 	char *arg = (char*) calloc (32, sizeof (char *));
 	arg = get_param_by_name(SNMP_NAME, attrs);
-
+    
 	if(arg)
 		alist_append(element, ((function_t *(*) (const char *)) element->new_element) (arg));
 	free(arg);
@@ -972,7 +871,7 @@ function_node_handler(alist_t *list, const char **attrs)
 void
 snmp_info_node_handler(alist_t *list, const char **attrs)
 {
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 	char *buff = NULL;
 #endif
 	double multiplier = 128;
@@ -993,23 +892,20 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 	
-#if WITH_DMF_LUA
-	arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
-	if(arg[6])
-	{
-		alist_t *funcs = alist_get_element_by_name(list, arg[6]);
-		if(funcs)
-		{
-			for (i = 0; i < funcs->size; i++)
-				if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0)
-					buff = ((function_t*)funcs->values[i])->code;
+#ifdef WITH_DMF_LUA
+arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
+if(arg[6]){
+	alist_t *funcs = alist_get_element_by_name(list, arg[6]);
+	if(funcs){
+		for (i = 0; i < funcs->size; i++)
+			if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0){
+				buff = ((function_t*)funcs->values[i])->code;
+			}
 		}
-	}
+}
 #endif
-
 	/*Info_flags*/
 	info_flags = compile_info_flags(attrs);
-
 	/*Flags*/
 	flags = compile_flags(attrs);
 
@@ -1042,61 +938,61 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#if WITH_DMF_LUA
-				, char**
+#ifdef WITH_DMF_LUA
+, char**
 #endif
-				)) element->new_element)
+                                )) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &input_phases
-#if WITH_DMF_LUA
-				, &buff
+#ifdef WITH_DMF_LUA
+, &buff
 #endif
-				));
+                                ));
 		else if(strcmp(arg[5], SETVAR_OUTPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#if WITH_DMF_LUA
-				, char**
+#ifdef WITH_DMF_LUA
+, char**
 #endif
-				)) element->new_element)
+                                )) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &output_phases
-#if WITH_DMF_LUA
-				, &buff
+#ifdef WITH_DMF_LUA
+, &buff
 #endif
-				));
+                                ));
 		else if(strcmp(arg[5], SETVAR_BYPASS_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#if WITH_DMF_LUA
-				, char**
+#ifdef WITH_DMF_LUA
+, char**
 #endif
-				)) element->new_element)
+                                )) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &bypass_phases
-#if WITH_DMF_LUA
-				, &buff
+#ifdef WITH_DMF_LUA
+, &buff
 #endif
-				));
+                                ));
 	} else
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
 			 const char *, unsigned long, info_lkp_t *, int *
-#if WITH_DMF_LUA
-			, char**
+#ifdef WITH_DMF_LUA
+, char**
 #endif
-			))
+                        ))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
 			 arg[3], flags, lookup, NULL
-#if WITH_DMF_LUA
-			, &buff
+#ifdef WITH_DMF_LUA
+, &buff
 #endif
-			));
+                        ));
 
 	for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
 		free (arg[i]);
@@ -1112,92 +1008,92 @@ compile_flags(const char **attrs)
 	aux_flags = get_param_by_name(SNMP_FLAG_OK, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_OK;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_STATIC, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_STATIC;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_ABSENT;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_NEGINVALID, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_NEGINVALID;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_UNIQUE, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_UNIQUE;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_PWR, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_PWR;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_BATT, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_BATT;
-
+	
 	if(aux_flags)free(aux_flags);
 		aux_flags = get_param_by_name(SNMP_STATUS_CAL, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_CAL;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_STATUS_RB, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_STATUS_RB;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_TYPE_CMD, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_TYPE_CMD;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET_GROUP;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET, attrs);
 		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTPUT_1, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTPUT_1;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTPUT_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTPUT_3;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INPUT_1, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_INPUT_1;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INPUT_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_INPUT_3;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_BYPASS_1, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_BYPASS_1;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_BYPASS_3, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_BYPASS_3;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(TYPE_DAISY, attrs);
 	if(aux_flags){
@@ -1207,15 +1103,13 @@ compile_flags(const char **attrs)
 			flags = flags | SU_TYPE_DAISY_2;
 	}
 	if(aux_flags)free(aux_flags);
-
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 	aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
 	if(aux_flags){
 		flags = flags | SU_FLAG_FUNCTION;
 	}
 	if(aux_flags)free(aux_flags);
 #endif
-
 	return flags;
 }
 
@@ -1228,13 +1122,13 @@ compile_info_flags(const char **attrs)
 	if(aux_flags)
 		if(strcmp(aux_flags, YES) == 0)
 			info_flags = info_flags | ST_FLAG_RW;
-
+	
 	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_INFOFLAG_STRING, attrs);
 	if(aux_flags)
 		if(strcmp(aux_flags, YES) == 0)
 			info_flags = info_flags | ST_FLAG_STRING;
-
+	
 	if(aux_flags)free(aux_flags);
 
 	return info_flags;
@@ -1286,18 +1180,18 @@ xml_dict_start_cb(void *userdata, int parent,
 	}
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
-#if WITH_DMF_LUA
-		alist_append(list, alist_new(auxname, function_destroy,
-				(void (*)(void)) function_new));
-		functions_aux = 1;
+#ifdef WITH_DMF_LUA
+	alist_append(list, alist_new(auxname, function_destroy,
+			(void (*)(void)) function_new));
+	functions_aux = 1;
 #else
-		upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
-		upslogx(2, "NUT was not compiled with Lua function feature.\n");
+	upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
+	upslogx(2, "NUT was not compiled with Lua function feature.\n");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 		upsdebugx(1, "LUA support COMPILED IN");
 		function_node_handler(list,attrs);
 #else
@@ -1361,13 +1255,13 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
-#if WITH_DMF_LUA
+#ifdef WITH_DMF_LUA
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
 		functions_aux = 0;
 		free(luatext);
 		luatext = NULL;
-
+          
 	}else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
 		alist_t *element = alist_get_last_element(list);
@@ -1377,7 +1271,6 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 		luatext = NULL;
 	}
 #endif
-
 	return OK;
 }
 
@@ -1387,28 +1280,25 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	if(!userdata)
 		return ERR;
 
-#if WITH_DMF_LUA
-	if(len > 2)
-	{
-	/* NOTE: Child-tags are also CDATA when parent-tag processing starts,
-	 so we do not report "unsupported" errors when we it a CDATA process.*/
-		if(functions_aux)
-		{
-			if(!luatext)
-			{
-				luatext = (char*) calloc(len + 2, sizeof(char));
-				sprintf(luatext, "%.*s\n", (int) len, cdata);
-			} else {
-				luatext = (char*) realloc(luatext, (strlen(luatext) + len + 2) * sizeof(char));
-				char *aux_str = (char*) calloc(len + 2, sizeof(char));
-				sprintf(aux_str, "%.*s\n", (int) len, cdata);
-				strcat(luatext, aux_str);
-				free(aux_str);
-			}
+#ifdef WITH_DMF_LUA
+if(len > 2){
+/* NOTE: Child-tags are also CDATA when parent-tag processing starts,
+ so we do not report "unsupported" errors when we it a CDATA process.*/
+	if(functions_aux){
+		if(!luatext){
+			luatext = (char*) calloc(len + 2, sizeof(char));
+			sprintf(luatext, "%.*s\n", (int) len, cdata);
+
+		}else{
+			luatext = (char*) realloc(luatext, (strlen(luatext) + len + 2) * sizeof(char));
+			char *aux_str = (char*) calloc(len + 2, sizeof(char));
+			sprintf(aux_str, "%.*s\n", (int) len, cdata);
+			strcat(luatext, aux_str);
+			free(aux_str);
 		}
 	}
+}
 #endif
-
 	return OK;
 }
 
@@ -1420,10 +1310,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
-#if WITH_LIBLTDL
-	int flag_libneon = 0;
-#endif /* WITH_LIBLTDL */
-
+	int flag = 0;
+        
 	assert (file_name);
 	assert (dmp);
 	mibdmf_parser_new_list(dmp);
@@ -1438,12 +1326,10 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
-#if WITH_LIBLTDL
-	if(!dl_handle_libneon){
-		flag_libneon = 1;
-		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
+	if(!handle){
+		flag = 1;
+		if(load_neon_lib() == ERR) return ERR;
 	}
-#endif /* WITH_LIBLTDL */
 	ne_xml_parser *parser = xml_create ();
 	xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
@@ -1479,10 +1365,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	if (!result) /* no errors, complete the parse with len==0 call */
 		xml_parse (parser, buffer, 0);
 	xml_destroy (parser);
-#if WITH_LIBLTDL
-	if(flag_libneon == 1)
+	if(flag == 1)
 		unload_neon_lib();
-#endif /* WITH_LIBLTDL */
 
 	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
 		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
@@ -1583,19 +1467,19 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	if ( (dir_name == NULL ) || \
 	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
 	{
-		upslogx(0, "ERROR: DMF directory '%s' not found or not readable",
+		upsdebugx(1, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) {
-		/* Note: do not "die" from the library context; that's up to the caller */
-		upslogx(0, "ERROR: can't load Neon library");
+		upsdebugx(1, "ERROR: can't load Neon library");
 		return ERR;
 	}
 	int c;
 	for (c = 0; c < n; c++)
 	{
-		if ((strstr(dir_ent[c]->d_name, ".dmf")) && (dir_ent[c]->d_name[0] == 'S'))
+		upsdebugx (5, "%s: dir_ent[%d]->d_name=%s", __PRETTY_FUNCTION__, c, dir_ent[c]->d_name);
+		if (strstr(dir_ent[c]->d_name, ".dmf"))
 		{
 			i++;
 			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
@@ -1603,6 +1487,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 				sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
 				assert(file_path);
 				int res = mibdmf_parse_file(file_path, dmp);
+				upsdebugx (5, "mibdmf_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dmp, res);
 				if ( res != 0 )
 				{
 					x++;
@@ -1622,10 +1507,10 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	unload_neon_lib();
 
 	if (i==0) {
-		upsdebugx(1, "WARN: No 'S*.dmf' DMF files were found or readable in directory '%s'",
+		upsdebugx(1, "WARN: No DMF files were found or readable in directory '%s'",
 			dir_name ? dir_name : "<NULL>");
 	} else {
-		upsdebugx(1, "INFO: %d 'S*.dmf' DMF files were inspected in directory '%s'",
+		upsdebugx(1, "INFO: %d DMF files were inspected in directory '%s'",
 			i, dir_name ? dir_name : "<NULL>");
 	}
 	if (result!=0 || x>0) {
