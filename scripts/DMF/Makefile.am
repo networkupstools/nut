@@ -118,11 +118,13 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 				ln -fs "$$F" "S00_$$F" || exit ;; \
 		esac; done
 	$(abs_builddir)/dmf-reindex > $@.tmp
-	( egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
+	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
+	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
 	  grep '<mib2nut ' "$@.tmp" | sort | uniq ; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | tail -1 ; \
 	) > $@
-	@sort "$@.tmp" | egrep -v '^$$' | uniq > "$@.tmp1" ; \
+	@LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
+	  sort "$@.tmp" | egrep -v '^$$' | uniq > "$@.tmp1" ; \
 	    sort "$@" | egrep -v '^$$' | uniq > "$@.tmp2" ; \
 	  diff "$@.tmp1" "$@.tmp2" >/dev/null \
 	|| { echo "FAILED to sort generated $@ without losses!" >&2; \
