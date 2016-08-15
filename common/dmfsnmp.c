@@ -1478,7 +1478,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	int c;
 	for (c = 0; c < n; c++)
 	{
-		if ((strstr(dir_ent[c]->d_name, ".dmf")) && (dir_ent[c]->d_name[0] == 'S'))
+		if (strstr(dir_ent[c]->d_name, ".dmf"))
 		{
 			i++;
 			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
