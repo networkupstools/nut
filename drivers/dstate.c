@@ -693,6 +693,10 @@ void dstate_setflags(const char *var, int flags)
 		snprintfcat(flist, sizeof(flist), " STRING");
 	}
 
+	if (flags & ST_FLAG_NUMBER) {
+		snprintfcat(flist, sizeof(flist), " NUMBER");
+	}
+
 	/* update listeners */
 	send_to_all("SETFLAGS %s\n", flist);
 }
