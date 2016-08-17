@@ -77,8 +77,6 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
 # TODO: add tests whether we can build this (pycparser available)
-###$(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c \
-###		dmfify-mib.sh jsonify-mib.py xmlify-mib.py
 DMFGEN_DEPS = dmfify-mib.sh jsonify-mib.py xmlify-mib.py nut_cpp
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
@@ -147,10 +145,6 @@ $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp
 	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
 	mkdir -p $(@D)
 	touch $@
-
-# The *_DATA rules above refer to these strings, satisfy them
-#$(DMFSNMP_SUBDIR)/*.dmf: $(DMFSNMP_SUBDIR)/.uptodate
-#$(DMFNUTSCAN_SUBDIR)/*.dmf: $(DMFNUTSCAN_SUBDIR)/.uptodate
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
 $(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.validated
