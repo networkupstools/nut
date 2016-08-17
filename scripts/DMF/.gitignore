@@ -4,7 +4,7 @@ dmf-lua-test
 *.o
 */*.json.tmp
 */*.dmf.tmp
-*/S00_*.dmf
+*/S*_*.dmf
 */.uptodate
 */.validated
 *_TEST.c
