@@ -35,13 +35,13 @@ dmfsnmpdir = @dmfsnmpdir@
 dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
 # dmfsnmp_DMFS += $(YOUR_CUSTOM_COMPILED_DMFS)
 # dmfsnmp_DMFS += $(YOUR_CUSTOM_VERBATIM_DMFS)
-dmfsnmp_DATA = $(dmfsnmp_DMFS) dmfsnmp.xsd
+dmfsnmp_DATA = $(dmfsnmp_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) dmfsnmp.xsd
 
 dmfnutscandir = @dmfnutscandir@
 dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 
 EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
-DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 
 # This does not rely on automake semantics, so this Makefile.am can be directly

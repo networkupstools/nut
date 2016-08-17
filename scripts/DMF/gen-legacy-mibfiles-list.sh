@@ -60,6 +60,21 @@ print_makefile_LEGACY_NUT_DMFS() {
     return 0
 }
 
+print_makefile_LEGACY_NUT_DMF_SYMLINKS() {
+    echo "# NOTE: DMFSNMP_SUBDIR is defined in Makefile.am"
+    printf "LEGACY_NUT_DMF_SYMLINKS ="
+    for F in `list_LEGACY_NUT_C_MIBS | sort | uniq` ; do
+        case "$F" in
+            *ietf-mib.c*) DMF_PREFIX="S90_" ;;
+            *) DMF_PREFIX="S10_" ;;
+        esac
+        printf ' \\\n\t$(DMFSNMP_SUBDIR)/%s' "${DMF_PREFIX}`basename "$F" .c`".dmf
+    done || return
+    echo ""
+    echo ""
+    return 0
+}
+
 print_makefile_LEGACY_NUT_DMF_DEPS() {
     echo "# NOTE: DMFSNMP_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD is defined in Makefile.am"
     for F in `list_LEGACY_NUT_C_MIBS | sort | uniq` ; do
@@ -73,6 +88,7 @@ print_makefile() {
     echo "### This file was automatically generated at `date`"
     print_makefile_LEGACY_NUT_C_MIBS && \
     print_makefile_LEGACY_NUT_DMFS && \
+    print_makefile_LEGACY_NUT_DMF_SYMLINKS && \
     print_makefile_LEGACY_NUT_DMF_DEPS
 }
 
