@@ -10,3 +10,5 @@ dmf-lua-test
 *_TEST.c
 *_TEST.exe
 *-mib.c
+legacy-mibfiles-list.mk.in
+legacy-mibfiles-list.mk

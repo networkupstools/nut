@@ -4,9 +4,9 @@
 # Note: then `bld=src=dir of makefile` is assumed below
 RM ?= /usr/bin/rm -f
 # Take compiler from PATH, may be wrapped with ccache etc.
-CC = gcc
-CPP = gcc
-CXX = g++
+CC ?= gcc
+CPP ?= gcc
+CXX ?= g++
 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
@@ -31,14 +31,21 @@ PROGS_EXPERIMENTAL = dmf-lua-test
 DMFSNMP_SUBDIR = dmfsnmp
 DMFNUTSCAN_SUBDIR = dmfnutscan
 
+# This generated file defines LEGACY_NUT_C_MIBS and LEGACY_NUT_DMFS lists
+# based on existing C sources for ../../drivers/*-mib.c
+include legacy-mibfiles-list.mk
+
 # Automake installation
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
 # existing sources, use some filename pattern that does not end in "-mib.dmf"!
 dmfsnmpdir = @dmfsnmpdir@
-dmfsnmp_DATA = $(wildcard $(DMFSNMP_SUBDIR)/*.dmf) dmfsnmp.xsd
+# Note that LEGACY_NUT_DMFS list includes the DMFSNMP_SUBDIR subdirectory.
+dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
+# dmfsnmp_DMFS += $(YOUR_CUSTOM_DMFS)
+dmfsnmp_DATA = $(dmfsnmp_DMFS) dmfsnmp.xsd
 
 dmfnutscandir = @dmfnutscandir@
-dmfnutscan_DATA = $(wildcard $(DMFNUTSCAN_SUBDIR)/*.dmf) dmfnutscan.xsd
+dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 
 EXTRA_DIST = $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 
@@ -74,11 +81,12 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
 # TODO: add tests whether we can build this (pycparser available)
-$(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c dmfify-mib.sh jsonify-mib.py xmlify-mib.py
+$(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c \
+		dmfify-mib.sh jsonify-mib.py xmlify-mib.py
 	mkdir -p $(@D)
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
 	    cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $< || exit; \
-	else echo "NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
+	else echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
 	fi
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
@@ -88,8 +96,8 @@ $(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c dmfify-mib.sh jso
 # However, the dmf-reindexer is currently hardcoded to use only one directory,
 # so we copy stuff below just in case (if needed).
 $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
-$(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(addprefix $(DMFSNMP_SUBDIR)/,$(patsubst %.c,%.dmf,$(notdir $(wildcard $(abs_top_srcdir)/drivers/*-mib.c))))
-	@echo "DMFSNMP_SUBDIR is now up to date, made of: $^" >&2
+$(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
+	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
 	mkdir -p $(@D)
 	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ]; then \
 		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
@@ -138,8 +146,8 @@ $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp
 	touch $@
 
 # The *_DATA rules above refer to these strings, satisfy them
-$(DMFSNMP_SUBDIR)/*.dmf: $(DMFSNMP_SUBDIR)/.uptodate
-$(DMFNUTSCAN_SUBDIR)/*.dmf: $(DMFNUTSCAN_SUBDIR)/.uptodate
+#$(DMFSNMP_SUBDIR)/*.dmf: $(DMFSNMP_SUBDIR)/.uptodate
+#$(DMFNUTSCAN_SUBDIR)/*.dmf: $(DMFNUTSCAN_SUBDIR)/.uptodate
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
 $(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.validated
