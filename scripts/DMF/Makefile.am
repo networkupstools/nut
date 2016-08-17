@@ -43,6 +43,7 @@ dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
+CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
 # This does not rely on automake semantics, so this Makefile.am can be directly
 # used and changed during development without reconfiguring all of NUT sources
@@ -91,8 +92,10 @@ DMFGEN_CMD = ( \
 # that we use builddir for this final touch. The DMF files themselves may be
 # prebuilt and distributed as source, the gmake VPATH should figure that out.
 # This may cause harmless "circular dependency" notices during in-tree builds.
+# We try to use the .PHONY target to quiesce the warnings below.
 # However, the dmf-reindexer is currently hardcoded to use only one directory,
 # so we copy stuff below just in case (if needed).
+.PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
