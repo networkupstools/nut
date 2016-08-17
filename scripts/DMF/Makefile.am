@@ -73,10 +73,10 @@ endif
 
 check-experimental: progs-all check-local run-dmf-lua-test
 
-# Recipes to build DMF files with the sources and tools we have.
+# Recipes to build DMF files with the sources and tools we have are defined
+# via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
-# TODO: add tests whether we can build this (pycparser available)
 DMFGEN_DEPS = dmfify-mib.sh jsonify-mib.py xmlify-mib.py nut_cpp
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
