@@ -77,9 +77,13 @@ if test -z "${nut_have_libusb_seen}"; then
 	if test -n "${LIBUSB_VERSION}"; then
 		pkg-config --silence-errors --atleast-version=1.0 libusb-1.0 2>/dev/null
 		if test "$?" = "0"; then
+			dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
 			AC_CHECK_HEADERS(libusb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(libusb_init, [], [nut_have_libusb=no])
 			dnl Check for libusb "force driver unbind" availability
+			AC_CHECK_FUNCS(libusb_set_auto_detach_kernel_driver)
+			dnl libusb 1.0: libusb_detach_kernel_driver
+			dnl FreeBSD 10.1-10.3 have this, but not libusb_set_auto_detach_kernel_driver
 			AC_CHECK_FUNCS(libusb_detach_kernel_driver)
 		else
 			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
