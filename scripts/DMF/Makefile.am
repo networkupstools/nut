@@ -1,24 +1,9 @@
-# TODO: GNU Make syntax assumed below; fix this to be portable to other make's
+# Rules and recipes to build DMF-related files, e.g.:
+# * regenerate the *-mib.dmf from the legacy *-mib.c sources
+# * generate the dmfnutscan-snmp.dmf from existing DMF files
+# * build and run some test programs to verify that DMF code works
 
-# Be able to run without automade project e.g. `gmake -f Makefile.am dmf`
-# Note: then `bld=src=dir of makefile` is assumed below
-RM ?= /usr/bin/rm -f
-# Take compiler from PATH, may be wrapped with ccache etc.
-CC ?= gcc
-CPP ?= gcc
-CXX ?= g++
-
-mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
-current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))
-
-srcdir ?= .
-builddir ?= .
-top_srcdir ?= ../..
-top_builddir ?= ../..
-abs_srcdir ?= $(current_dir)
-abs_builddir ?= $(current_dir)
-abs_top_srcdir ?= $(current_dir)/../..
-abs_top_builddir ?= $(current_dir)/../..
+# TODO: GNU Make syntax may be assumed below; fix this to be portable to other make's
 
 AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner
