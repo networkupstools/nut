@@ -142,13 +142,11 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 		snprintfcat(buf, sizeof(buf), " RW");
 
 	if (node->enum_list) {
-		sendback(client, "%s ENUM\n", buf);
-		return;
+		snprintfcat(buf, sizeof(buf), " ENUM");
 	}
 
 	if (node->range_list) {
-		sendback(client, "%s RANGE\n", buf);
-		return;
+		snprintfcat(buf, sizeof(buf), " RANGE");
 	}
 
 	if (node->flags & ST_FLAG_STRING) {
@@ -159,7 +157,7 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	/* Any variable that is not string | range | enum is just a simple
 	 * numeric value */
 
-	sendback(client, "TYPE %s %s NUMBER\n", upsname, var);
+	sendback(client, "%s NUMBER\n", buf);
 }		
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
