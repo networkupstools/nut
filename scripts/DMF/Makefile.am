@@ -7,6 +7,10 @@
 
 AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner
+DISTCLEANFILES =
+DISTCLEANDIRS =
+CLEAN_FILES =
+EXTRA_DIST =
 
 # Note: this causes a private build of dmf-reindex with debugging etc. which
 # may be slightly different from the distributed `nut-scanner-reindex-dmfsnmp`
@@ -18,6 +22,7 @@ DMFNUTSCAN_SUBDIR = dmfnutscan
 
 # This generated file defines LEGACY_NUT_C_MIBS and LEGACY_NUT_DMFS lists
 # based on existing C sources for ../../drivers/*-mib.c
+DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 include legacy-mibfiles-list.mk
 
 # Automake installation
@@ -26,13 +31,16 @@ include legacy-mibfiles-list.mk
 dmfsnmpdir = @dmfsnmpdir@
 # Note that LEGACY_NUT_DMFS list includes the DMFSNMP_SUBDIR subdirectory.
 dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
-# dmfsnmp_DMFS += $(YOUR_CUSTOM_DMFS)
+# dmfsnmp_DMFS += $(YOUR_CUSTOM_COMPILED_DMFS)
+# dmfsnmp_DMFS += $(YOUR_CUSTOM_VERBATIM_DMFS)
 dmfsnmp_DATA = $(dmfsnmp_DMFS) dmfsnmp.xsd
 
 dmfnutscandir = @dmfnutscandir@
 dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 
-EXTRA_DIST = $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 
 # This does not rely on automake semantics, so this Makefile.am can be directly
 # used and changed during development without reconfiguring all of NUT sources
@@ -44,7 +52,7 @@ all: progs dmf
 
 clean: clean-local
 
-CLEAN_FILES = $(PROGS) $(DMFSNMP_SUBDIR)/*.o \
+CLEAN_FILES += $(PROGS) $(PROGS_EXPERIMENTAL) $(DMFSNMP_SUBDIR)/*.o \
 		$(DMFSNMP_SUBDIR)/*.dmf.tmp $(DMFSNMP_SUBDIR)/*.json.tmp \
 		$(DMFSNMP_SUBDIR)/*_TEST.c $(DMFSNMP_SUBDIR)/*_TEST.exe
 
@@ -177,7 +185,8 @@ progs: $(PROGS)
 
 progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 
-# Note: These recipes are explicit so they can be built without configuring NUT
+# Note: These recipes are explicit and do not use NUT libs,
+# so they can be built quickly without configuring NUT
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
