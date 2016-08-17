@@ -1651,6 +1651,7 @@ AC_OUTPUT([
  scripts/systemd/nut-server.service
  scripts/systemd/nutshutdown
  scripts/DMF/Makefile
+ scripts/DMF/legacy-mibfiles-list.mk
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
  scripts/Solaris/postinstall

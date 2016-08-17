@@ -31,7 +31,7 @@ export CC
 # Here we only check basic prerequisites (a module provided with Python 2.7
 # and an extra module that end-user is expected to pre-install per README).
 # Other included modules will be checked when scripts are executed.
-echo "INFO: Validating some basics about your Python installation"
+echo "INFO: Validating some basics about your Python installation" >&2
 for PYMOD in argparse pycparser json; do
     "${PYTHON}" -c "import $PYMOD; print $PYMOD" || \
         { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
@@ -51,7 +51,7 @@ dmfify_c_file() {
         { echo "ERROR: dmfify_c_file() can not process argument '${cmib}'!" >&2
           return 2; }
 
-    echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..."
+    echo "INFO: Parsing '${cmib}'; do not worry if 'missing setvar' warnings pop up..." >&2
 
     ( "${PYTHON}" "${_SCRIPT_DIR}"/jsonify-mib.py --test "${cmib}" > "${mib}.json.tmp" && \
       "${PYTHON}" "${_SCRIPT_DIR}"/xmlify-mib.py < "${mib}.json.tmp" > "${mib}.dmf.tmp" ) \
@@ -73,6 +73,8 @@ dmfify_c_file() {
 
 dmfify_NUT_drivers() {
     local i=0
+    # TODO? Use LEGACY_NUT_C_MIBS instead of filesystem query?
+    # Got to know abs_srcdir to use it well then :)
     for cmib in ../../../drivers/*-mib.c ../../drivers/*-mib.c; do
         [ -s "${cmib}" ] || \
             { echo "ERROR: File not found or is empty: '${cmib}'" >&2; continue; }
@@ -85,14 +87,14 @@ dmfify_NUT_drivers() {
 }
 
 if [[ "$#" -gt 0 ]]; then
-    echo "INFO: Got some arguments, assuming they are NUT filenames for parsing"
+    echo "INFO: Got some arguments, assuming they are NUT filenames for parsing" >&2
     while [[ "$#" -gt 0 ]]; do
         dmfify_c_file "$1" || exit
         shift
     done
 else
-    echo "INFO: No arguments provided, will try to parse all NUT drivers"
+    echo "INFO: No arguments provided, will try to parse all NUT drivers" >&2
     dmfify_NUT_drivers || exit
 fi
 
-echo "OK - All done"
+echo "OK - All done" >&2
