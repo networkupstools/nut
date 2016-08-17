@@ -2,6 +2,8 @@
 
 # This script lists existing NUT *-mib.c sources with legacy MIB-mapping
 # structures into a "legacy-mibfiles-list.inc" to be included by Makefile.
+# It also generates the rule snippets to convert such files from C to DMF
+# in a (hopefully) portable manner across different Make implementations.
 # It expects to be located in (executed from) $NUT_SOURCEDIR/scripts/DMF
 # of the real (e.g. not out-of-tree) NUT codebase, before configure is run.
 #
@@ -58,10 +60,24 @@ print_makefile_LEGACY_NUT_DMFS() {
     return 0
 }
 
+print_makefile_LEGACY_NUT_DMF_DEPS() {
+    echo "# NOTE: DMFSNMP_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD is defined in Makefile.am"
+    for F in `list_LEGACY_NUT_C_MIBS | sort | uniq` ; do
+        printf '$(DMFSNMP_SUBDIR)/%s : $(abs_top_srcdir)/drivers/%s $(DMFGEN_DEPS)\n\t$(DMFGEN_CMD)\n\n' "`basename "$F" .c`".dmf "$F"
+    done || return
+    echo ""
+    return 0
+}
+
+print_makefile() {
+    echo "### This file was automatically generated at `date`"
+    print_makefile_LEGACY_NUT_C_MIBS && \
+    print_makefile_LEGACY_NUT_DMFS && \
+    print_makefile_LEGACY_NUT_DMF_DEPS
+}
+
 rm -f "$OUTFILE"
-OUTTEXT="`print_makefile_LEGACY_NUT_C_MIBS && print_makefile_LEGACY_NUT_DMFS`" || exit
-{ echo "### This file was automatically generated at `date`"
-  echo "$OUTTEXT"; } > "$OUTFILE" \
-|| { RES=$?; rm -f "$OUTFILE"; exit $RES; }
+OUTTEXT="`print_makefile`" || exit
+echo "$OUTTEXT" > "$OUTFILE" || { RES=$?; rm -f "$OUTFILE"; exit $RES; }
 
 echo "OK - Generated $OUTFILE" >&2

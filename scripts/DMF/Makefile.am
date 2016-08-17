@@ -76,13 +76,16 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
 # TODO: add tests whether we can build this (pycparser available)
-$(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c \
-		dmfify-mib.sh jsonify-mib.py xmlify-mib.py
-	mkdir -p $(@D)
+###$(DMFSNMP_SUBDIR)/%-mib.dmf: $(abs_top_srcdir)/drivers/%-mib.c \
+###		dmfify-mib.sh jsonify-mib.py xmlify-mib.py
+DMFGEN_DEPS = dmfify-mib.sh jsonify-mib.py xmlify-mib.py nut_cpp
+DMFGEN_CMD = ( \
+	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
 	    cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $< || exit; \
-	else echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
-	fi
+	else echo "SKIP: NOT REBUILDING DMF file $< due to absence of prerequisites like Python or pycparser" >&2; \
+	fi; \
+	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
 # that we use builddir for this final touch. The DMF files themselves may be
