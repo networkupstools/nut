@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.01"
+#define USB_DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -102,7 +102,7 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 		ret = usb_set_altinterface(udev, altinterface);
 		if(ret != 0) {
 			upslogx(LOG_WARNING, "%s: usb_set_altinterface(udev, %d) returned %d (%s)",
-					__func__, altinterface, ret, usb_strerror() );
+					__func__, altinterface, ret, libusb_strerror((enum libusb_error)ret) );
 		}
 		upslogx(LOG_NOTICE, "%s: usb_set_altinterface() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
 	} else {
@@ -261,24 +261,52 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		upsdebugx(2, "Reading first configuration descriptor");
 		ret = libusb_get_config_descriptor(device, 0, &conf_desc);
 		/*ret = libusb_get_active_config_descriptor(device, &conf_desc);*/
-		upsdebugx(2, "got %i (%s)", ret, libusb_strerror((enum libusb_error)ret));
+		if (ret < 0)
+			upsdebugx(2, "result: %i (%s)", ret, libusb_strerror((enum libusb_error)ret));
 
 		/* Now we have matched the device we wanted. Claim it. */
 
-#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-		libusb_set_auto_detach_kernel_driver (udev, 1);
+#ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
+		/* First, try the auto-detach kernel driver method
+		 * This function is not available on FreeBSD 10.1-10.3 */
+		if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) < 0)
+			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s",
+				libusb_strerror((enum libusb_error)ret));
+		else
+			upsdebugx(2, "auto detached kernel driver from USB device");
 #endif
+#if HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+		/* Then, try to explicit detach method
+		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = 3;
-		while ((ret = libusb_claim_interface(udev, 0) != 0)) {
+		while ((ret = libusb_claim_interface(udev, 0)) < 0) {
+			upsdebugx(2, "failed to claim USB device: %s",
+				libusb_strerror((enum libusb_error)ret));
 
-			upsdebugx(2, "failed to claim USB device: %s (%i)", libusb_strerror((enum libusb_error)ret), ret);
+			if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
+				if (ret == LIBUSB_ERROR_NOT_FOUND)
+					upsdebugx(2, "Kernel driver already detached");
+				else
+					upsdebugx(2, "failed to detach kernel driver from USB device: %s",
+						libusb_strerror((enum libusb_error)ret));
+			} else {
+				upsdebugx(2, "detached kernel driver from USB device...");
+			}
 
 			if (retries-- > 0) {
 				continue;
 			}
-
-			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, libusb_strerror((enum libusb_error)ret));
+			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s",
+				curDevice->VendorID, curDevice->ProductID,
+				libusb_strerror((enum libusb_error)ret));
 		}
+#else
+		if ((ret = libusb_claim_interface(udev, 0)) < 0 ) {
+			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s",
+				curDevice->VendorID, curDevice->ProductID,
+				libusb_strerror((enum libusb_error)ret));
+		}
+#endif
 		upsdebugx(2, "Claimed interface 0 successfully");
 
 		nut_usb_set_altinterface(udev);
