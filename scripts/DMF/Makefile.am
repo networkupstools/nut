@@ -23,7 +23,9 @@ DMFNUTSCAN_SUBDIR = dmfnutscan
 # This generated file defines LEGACY_NUT_C_MIBS and LEGACY_NUT_DMFS lists
 # based on existing C sources for ../../drivers/*-mib.c
 DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
-include legacy-mibfiles-list.mk
+# Use "-include" to avoid errors in automake (the file is not yet available
+# in builddir at this moment)
+-include legacy-mibfiles-list.mk
 
 # Automake installation
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
