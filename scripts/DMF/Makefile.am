@@ -115,8 +115,10 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 	@cd "$(abs_builddir)/$(DMFSNMP_SUBDIR)" && \
 		for F in *.dmf ; do case "$$F" in \
 			S*|K*) ;; \
-			*)	echo "  LN     $$F => S00_$$F" >&2 && \
-				ln -fs "$$F" "S00_$$F" || exit ;; \
+			ietf-mib.dmf)	echo "  LN     $$F => S90_$$F" >&2 && \
+				ln -fs "$$F" "S90_$$F" || exit ;; \
+			*)	echo "  LN     $$F => S10_$$F" >&2 && \
+				ln -fs "$$F" "S10_$$F" || exit ;; \
 		esac; done
 	$(abs_builddir)/dmf-reindex > $@.tmp
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
