@@ -1,0 +1,140 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/class/python-module.mk
+
+include /usr/share/cdbs/1/rules/autoreconf.mk
+# We cannot call autoreconf -f -i as it updates INSTALL which is used for doc
+# generation
+DEB_DH_AUTORECONF_ARGS = --as-needed
+
+DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
+
+# List any files which are not installed
+include /usr/share/cdbs/1/rules/utils.mk
+common-binary-post-install-arch:: list-missing
+
+DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,-O1 -Wl,--as-needed
+include /usr/share/dpkg/buildflags.mk
+
+DEB_CONFIGURE_PREFIX      :=
+DEB_CONFIGURE_SYSCONFDIR  := /etc/nut
+DEB_CONFIGURE_INCLUDEDIR  := /usr/include
+DEB_CONFIGURE_MANDIR      := /usr/share/man
+DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
+	                     --with-ssl --with-openssl --with-libltdl=yes \
+	                     --with-cgi=auto --with-powerman=auto \
+                         --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
+                         --with-dmf=yes \
+	                     --with-dev \
+	                     --disable-static \
+	                     --with-statepath=/var/run/nut \
+	                     --with-altpidpath=/var/run/nut \
+	                     --with-drvpath=/lib/nut \
+	                     --with-cgipath=/usr/lib/cgi-bin/nut \
+	                     --with-htmlpath=/usr/share/nut/www \
+	                     --with-pidpath=/var/run/nut \
+	                     --datadir=/usr/share/nut \
+	                     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
+	                     --with-user=nut --with-group=nut
+
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev --with-systemdsystemunitdir=/lib/systemd/system
+endif
+
+# only build documentation if asciidoc is installed
+ifneq ($(shell which asciidoc),)
+#  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=html-chunked,pdf
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man
+endif
+
+pre-build:: debian/compat
+	(cd tools; python nut-snmpinfo.py)
+
+common-install-arch::
+	# install the bash completion script
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/bash-completion/completions/
+	cp $(CURDIR)/scripts/misc/nut.bash_completion \
+		$(CURDIR)/debian/tmp/usr/share/bash-completion/completions/nut
+
+	# install the avahi service file
+	mkdir -p $(CURDIR)/debian/tmp/etc/avahi/services
+	cp $(CURDIR)/scripts/avahi/nut.service \
+		$(CURDIR)/debian/tmp/etc/avahi/services
+
+	# install Augeas lenses
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/augeas/lenses/dist/tests
+	cp $(CURDIR)/scripts/augeas/*.aug \
+		$(CURDIR)/debian/tmp/usr/share/augeas/lenses/dist/
+	cp $(CURDIR)/scripts/augeas/tests/test_nut.aug \
+		$(CURDIR)/debian/tmp/usr/share/augeas/lenses/dist/tests/
+
+	# install the default configuration
+	for f in $(CURDIR)/debian/tmp/etc/nut/*; do           \
+		nf=`basename $${f} | sed 's/\(.*\).sample/\1/'`;  \
+		mv $${f} $(CURDIR)/debian/tmp/etc/nut/$${nf};  \
+	done
+
+	# Move -dev file to /usr
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.4 \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.0 \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
+	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.1 \
+		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+
+	# Install systemd files only on systems where it's supported
+	install -m 644 -D $(CURDIR)/debian/tmp/lib/systemd/system/nut-monitor.service \
+		$(CURDIR)/debian/nut-client/lib/systemd/system/nut-monitor.service
+	install -D $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/systemd/system-shutdown/nutshutdown \
+		$(CURDIR)/debian/nut-server/lib/systemd/system-shutdown/nutshutdown
+	install -m 644 -D $(CURDIR)/debian/tmp/lib/systemd/system/nut-server.service \
+		$(CURDIR)/debian/nut-server/lib/systemd/system/nut-server.service
+	install -m 644 -t $(CURDIR)/debian/nut-server/lib/systemd/system \
+	  $(CURDIR)/debian/tmp/lib/systemd/system/nut-driver*
+
+	# Add a symlink to mask the LSB initscript
+	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/lib/systemd/system/nut-client.service
+
+	# Install tmpfiles config file to create /run/nut directory
+	install -m 644 -D $(CURDIR)/debian/nut-client.tmpfiles \
+		$(CURDIR)/debian/nut-client/usr/lib/tmpfiles.d/nut-client.conf
+	install -m 644 -D $(CURDIR)/debian/nut-server.tmpfiles \
+		$(CURDIR)/debian/nut-server/usr/lib/tmpfiles.d/nut-server.conf
+
+extradocs-install:
+	#install documentation
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/pdf
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/html
+	cp $(CURDIR)/docs/*.pdf $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/pdf
+	cp $(CURDIR)/docs/FAQ.html $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/html
+
+	for f in $(CURDIR)/docs/*.chunked/; do \
+		nf=`basename $${f} | sed 's/\(.*\)\.chunked/\1/'`; \
+		cp -a $${f} $(CURDIR)/debian/tmp/usr/share/doc/nut-doc/html/$${nf}/; \
+	done
+
+#common-install-indep:: extradocs-install
+common-install-indep::
+	# Make sure this exists for packaging to be consistent
+	mkdir -p $(CURDIR)/debian/tmp/usr/share/doc/nut-doc
+
+binary-install/nut-monitor::
+	dh_python2 -pnut-monitor
+
+DEB_DH_INSTALLINIT_ARGS_nut-server := --init-script=nut-server --restart-after-upgrade
+DEB_DH_INSTALLINIT_ARGS_nut-client := --init-script=nut-client --restart-after-upgrade
+DEB_DH_SYSTEMD_START_ARGS_nut-server := --restart-after-upgrade
+DEB_DH_SYSTEMD_START_ARGS_nut-client := --restart-after-upgrade
+DEB_DH_COMPRESS_ARGS_nut-doc := -X.pdf
+
+ifeq (linux,$(DEB_HOST_ARCH_OS))
+# for Debian
+  DEB_DH_GENCONTROL_ARGS := -- -Vudev="udev (>= 0.124-1)"
+# for Ubuntu
+# DEB_DH_GENCONTROL_ARGS := -- -Vudev="udev (>= 136-1)"
+endif

@@ -1,0 +1,2 @@
+nut-client: script-in-etc-init.d-not-registered-via-update-rc.d
+nut-client: systemd-no-service-for-init-script ups-monitor

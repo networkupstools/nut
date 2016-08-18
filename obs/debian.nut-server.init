@@ -1,0 +1,179 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          nut-server upsd
+# Required-Start:    $local_fs $syslog $network $remote_fs udev
+# Required-Stop:     $local_fs $syslog $network $remote_fs udev
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Network UPS Tools initscript
+# Description:       This script take care of starting and stopping the
+#                    Network UPS Tools components. When needed, it also
+#                    handle the UPS hardware shutdown.
+### END INIT INFO
+
+# Author: Arnaud Quette <aquette@debian.org>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+NAME=nut-server
+DESC="NUT - power devices information server and drivers"
+CONFIG=/etc/nut/nut.conf
+pid_dir=/var/run/nut
+upsd_pid=${pid_dir}/upsd.pid
+upsd=/sbin/upsd
+upsdrvctl=/sbin/upsdrvctl
+log=">/dev/null 2>/dev/null"
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+# set upsd specific options. use "man upsd" for more info
+# this parameter is now located in nut.conf, and not in /etc/default/nut anymore
+# FIXME: retrieved from 'nut' script during update 
+UPSD_OPTIONS=""
+
+# Exit if the package is not installed
+[ -x "$upsd" ] || exit 0
+
+# Include NUT nut.conf
+[ -r $CONFIG ] && . $CONFIG
+
+# Explicitly require the configuration to be done in /etc/nut/nut.conf
+# redundant with nut-client
+if [ "x$MODE" = "xnone" -o -z "$MODE" ] ; then
+    log_action_msg "$NAME disabled, please adjust the configuration to your needs"
+    log_action_msg "Then set MODE to a suitable value in $CONFIG to enable it"
+    # exit success to avoid breaking the install process!
+    exit 0
+fi
+
+# Check if /var/run/nut exists and has the correct perms
+check_var_directory() {
+  [ ! -d ${pid_dir} ] && mkdir -p ${pid_dir} \
+    && chown root:nut ${pid_dir} \
+    && chmod 770 ${pid_dir} \
+    && [ -x /sbin/restorecon ] && /sbin/restorecon ${pid_dir}
+}
+
+# check if the right components are running
+check_status() {
+  case "$MODE" in
+    standalone|netserver)
+      status_of_proc -p $upsd_pid $upsd upsd
+      # FIXME: need driver(s) status too!
+      ;;
+    none|netclient|*)
+      # defered to nut-client
+      #status_of_proc -p $upsmon_pid $upsmon upsmon
+      ;;
+  esac
+}
+
+start_stop_server () {
+  case "$MODE" in
+    standalone|netserver)
+      case "$1" in
+        start)
+          # First, start driver(s)
+          ! $upsdrvctl start >/dev/null 2>&1  &&  \
+            log_progress_msg " (driver(s) failed)." || log_progress_msg " driver(s)."
+          # Then, data server (upsd)
+          start-stop-daemon -S -p $upsd_pid -x $upsd \
+            -- $UPSD_OPTIONS >/dev/null 2>&1 &&
+            log_progress_msg "upsd" || log_progress_msg "(upsd failed)"
+          ;;
+        stop)
+          # FIXME: should stop nut-client first!
+          # Reverse order for stop
+          start-stop-daemon -K -o -p $upsd_pid -n upsd && #>/dev/null 2>&1 &&
+            log_progress_msg "upsd" || log_progress_msg "(upsd failed)"
+          ! /sbin/upsdrvctl stop >/dev/null 2>&1  &&  \
+            log_progress_msg "(driver(s) failed)" || log_progress_msg "driver(s)"
+          ;;
+      esac
+      ;;
+    none|netclient|*)
+      # now handled by nut-client
+      return 1
+      ;;
+  esac
+}
+
+case "$1" in
+
+  start)
+    log_daemon_msg "Starting $DESC"
+    check_var_directory
+    start_stop_server start #&& log_progress_msg "upsd"
+    #start_stop_client start && log_progress_msg "upsmon"
+    log_end_msg 0
+    ;;
+
+  stop)
+    log_daemon_msg "Stopping $DESC"
+    start_stop_server stop #&& log_progress_msg "upsd"
+    #start_stop_client stop && log_progress_msg "upsmon"
+    log_end_msg 0
+    ;;
+
+  reload)
+    $upsd   -c reload >/dev/null 2>&1
+    #$upsmon -c reload >/dev/null 2>&1
+    ;;
+
+  restart|force-reload)
+    log_daemon_msg "Restarting $DESC"
+    #start_stop_client stop
+    start_stop_server stop
+    sleep 5
+    check_var_directory
+    start_stop_server start #&& log_progress_msg "upsd"
+    #start_stop_client start && log_progress_msg "upsmon"
+    log_end_msg 0
+    ;;
+
+  status)
+    #log_daemon_msg "Checking status of $DESC"
+    echo "Checking status of $DESC"
+    check_status
+    exit $?
+    ;;
+
+  poweroff)
+    wait_delay=`sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' /etc/nut/nut.conf`
+    # UPS poweroff action is actually done here.
+    # But nut-monitor (Ie nut-client) does the check and call nut-server if needed!
+    # This action MUST NOT be called directly, and thus is not exposed in 'Usage'
+    case "$MODE" in
+      standalone|netserver)
+        log_daemon_msg "Shutting down the UPS ..."
+        if $upsdrvctl shutdown ; then
+          # FIXME (needed?): sleep 5
+          log_progress_msg "Waiting for UPS to cut the power"
+          log_end_msg 0
+        else
+          log_progress_msg "Shutdown failed."
+          log_progress_msg "Waiting for UPS batteries to run down"
+          log_end_msg 0
+        fi
+        if [ -n "$wait_delay" ] ; then
+          log_daemon_msg " (will reboot after $wait_delay) ..."
+          sleep "$wait_delay"
+          invoke-rc.d reboot stop
+        fi
+        ;;
+      none|netclient|*)
+        # nothing to do
+        ;;
+    esac
+    ;;
+
+  *)
+    N=/etc/init.d/$NAME
+    echo "Usage: $N {start|stop|reload|restart|force-reload|status}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

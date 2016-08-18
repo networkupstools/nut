@@ -1,0 +1,180 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          nut-client upsmon ups-monitor
+# Required-Start:    $local_fs $syslog $network $remote_fs
+# Required-Stop:     $local_fs $syslog $network $remote_fs
+# Should-Start:      nut-server
+# Should-Stop:       
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Network UPS Tools monitor initscript
+# Description:       This script take care of starting and stopping the
+#                    Network UPS Tools monitoring component (upsmon).
+### END INIT INFO
+
+# Author: Arnaud Quette <aquette@debian.org>
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin
+
+NAME=nut-client
+DESC="NUT - power device monitor and shutdown controller"
+CONFIG=/etc/nut/nut.conf
+pid_dir=/var/run/nut
+upsmon_pid=${pid_dir}/upsmon.pid
+upsmon=/sbin/upsmon
+log=">/dev/null 2>/dev/null"
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
+# set upsmon specific options. use "man upsmon" for more info
+# this parameter is now located in nut.conf, and not in /etc/default/nut anymore
+# FIXME: retrieved from 'nut' script during update 
+UPSMON_OPTIONS=""
+
+# Exit if the package is not installed
+[ -x "$upsmon" ] || exit 0
+
+# Include NUT nut.conf
+[ -r $CONFIG ] && . $CONFIG
+
+# FIXME: put all common bits, between nut-client and nut-server,
+# into a common nut-function
+
+# Explicitly require the configuration to be done in /etc/nut/nut.conf
+if [ "x$MODE" = "xnone" -o -z "$MODE" ] ; then
+    log_action_msg "$NAME disabled, please adjust the configuration to your needs"
+    log_action_msg "Then set MODE to a suitable value in $CONFIG to enable it"
+    # exit success to avoid breaking the install process!
+    exit 0
+fi
+
+# Check if /var/run/nut exists and has the correct perms
+check_var_directory() {
+  [ ! -d ${pid_dir} ] && mkdir -p ${pid_dir} \
+    && chown root:nut ${pid_dir} \
+    && chmod 770 ${pid_dir} \
+    && [ -x /sbin/restorecon ] && /sbin/restorecon ${pid_dir}
+}
+
+# check if the right components are running
+check_status() {
+  case "$MODE" in
+    standalone|netserver|netclient)
+      status_of_proc -p $upsmon_pid $upsmon upsmon
+      ;;
+    none|*)
+      ;;
+  esac
+}
+
+start_stop_client () {
+  case "$MODE" in
+    standalone|netserver|netclient)
+      # FIXME: for standalone|netserver, ensure 'nut-server status' returns ?
+      case "$1" in
+        start)
+          start-stop-daemon -S -q -p $upsmon_pid -x $upsmon \
+              -- $UPSMON_OPTIONS >/dev/null 2>&1 && return 0 || return 1
+          ;;
+        stop)
+          start-stop-daemon -K -o -q -p $upsmon_pid -n upsmon >/dev/null 2>&1 \
+            && return 0 || return 1
+          ;;
+      esac
+      ;;
+    none|*)
+      return 1
+      ;;
+  esac
+}
+
+case "$1" in
+
+  start)
+    log_daemon_msg "Starting $DESC" "$NAME"
+    check_var_directory
+    start_stop_client start
+    log_end_msg $?
+    ;;
+
+  stop)
+    log_daemon_msg "Stopping $DESC" "$NAME"
+    start_stop_client stop
+    log_end_msg $?
+    ;;
+
+  reload)
+    log_daemon_msg "Reloading $DESC" "$NAME"
+    $upsmon -c reload >/dev/null 2>&1
+    log_end_msg $?
+    ;;
+
+  restart|force-reload)
+    # FIXME: lack consistency, due to initscript split.
+    # This only addresses partial reload.
+    # Full reload requires to:
+    # - stop nut-client
+    # - restart (Ie stop+start) nut-server
+    # - start nut-client
+    log_daemon_msg "Restarting $DESC" "$NAME"
+    start_stop_client stop || true
+    # should then 'start_stop_server stop', Ie /etc/init.d/nut-server stop
+    #sleep 5
+    check_var_directory
+    # should first 'start_stop_server start', Ie /etc/init.d/nut-server start
+    start_stop_client start
+    log_end_msg $?
+    ;;
+
+  status)
+    #log_daemon_msg "Checking status of $DESC"
+    echo "Checking status of $DESC"
+    check_status
+    exit $?
+    ;;
+
+  poweroff)
+    case "$MODE" in
+      standalone|netserver)
+        # Sanity check
+        flag=`sed -ne 's#^ *POWERDOWNFLAG *\(.*\)$#\1#p' /etc/nut/upsmon.conf`
+        if [ -z "$flag" ] ; then
+          log_action_msg "##########################################################"
+          log_action_msg "## POWERDOWNFLAG is not defined in /etc/nut/upsmon.conf ##"
+          log_action_msg "##                                                      ##"
+          log_action_msg "## Please read the Manual page upsmon.conf(5)           ##"
+          log_action_msg "##########################################################"
+          exit 1
+        fi
+
+        # Defer to nut-server to actually poweroff the UPS, if needed
+        # (the need is tested here though!)
+        if $upsmon -K >/dev/null 2>&1 ; then
+          log_daemon_msg "UPS poweroff required..."
+          log_end_msg 0
+          if [ -x /etc/init.d/nut-server ] ; then
+            exec /etc/init.d/nut-server poweroff
+          else
+            log_action_msg "Failure: /etc/init.d/nut-server script missing"
+          fi
+        else
+          log_action_msg "Power down flag is not set (UPS poweroff not needed)"
+        fi
+        ;;
+      none|netclient|*)
+        # nothing to do
+        log_action_msg "'$MODE' configuration does not require UPS poweroff"
+        ;;
+    esac
+    ;;
+
+  *)
+    N=/etc/init.d/$NAME
+    echo "Usage: $N {start|stop|reload|restart|force-reload|status|poweroff}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

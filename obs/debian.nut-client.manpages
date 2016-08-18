@@ -1,0 +1,9 @@
+debian/tmp/usr/share/man/man8/upsc.8
+debian/tmp/usr/share/man/man8/upscmd.8
+debian/tmp/usr/share/man/man8/upsmon.8
+debian/tmp/usr/share/man/man8/upsrw.8
+debian/tmp/usr/share/man/man8/upssched.8
+debian/tmp/usr/share/man/man5/nut.conf.5
+debian/tmp/usr/share/man/man5/upsmon.conf.5
+debian/tmp/usr/share/man/man5/upssched.conf.5
+debian/tmp/usr/share/man/man8/upslog.8
