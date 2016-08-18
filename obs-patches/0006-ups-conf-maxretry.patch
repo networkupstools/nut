@@ -1,0 +1,34 @@
+--- a/conf/ups.conf.sample
++++ b/conf/ups.conf.sample
+@@ -40,6 +40,24 @@
+ #
+ # Configuration directives
+ # ------------------------
++#
++# These directives are used by upsdrvctl only and should be specified outside
++# of a driver definition:
++#
++#    maxretry: Optional.  Specify the number of attempts to start the driver(s),
++#              in case of failure, before giving up. A delay of 'retrydelay' is
++#              inserted between each attempt. Caution should be taken when using
++#              this option, since it can impact the time taken by your system to
++#              start.
++#
++#              The default is 1 attempt.
++#
++#  retrydelay: Optional.  Specify the delay between each restart attempt of the
++#              driver(s), as specified by 'maxretry'. Caution should be taken
++#              when using this option, since it can impact the time taken by your
++#              system to start.
++#
++#              The default is 5 seconds.
+ # 
+ # These directives are common to all drivers that support ups.conf:
+ #
+@@ -102,3 +120,6 @@
+ #
+ # To find out if your driver supports any extra settings, start it with
+ # the -h option and/or read the driver's documentation.
++
++# Set maxretry to 3 by default, this should mitigate race with slow devices:
++maxretry = 3

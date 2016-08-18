@@ -1,0 +1,38 @@
+From 5d98d5536699222bc93c58c1e6f6df43dc9bfcff Mon Sep 17 00:00:00 2001
+From: Arnaud Quette <arnaud.quette@free.fr>
+Date: Thu, 10 Mar 2016 14:41:40 +0100
+Subject: [PATCH] Fix nut-scanner compilation in some environments
+
+Following the commits 5187dab (common: add some string-related functions) and
+e767df5 (common: consolidate some string-related functions), the build rules of
+nut-scanner were not updated to also use str.c. Since the libcommon.la
+dependency was still there, some environments managed to build cleanly, while
+other are failing.  Update build dependencies to fix this situation
+---
+ tools/nut-scanner/Makefile.am | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/nut-scanner/Makefile.am b/tools/nut-scanner/Makefile.am
+index 558cb23..db85c68 100644
+--- a/tools/nut-scanner/Makefile.am
++++ b/tools/nut-scanner/Makefile.am
+@@ -14,14 +14,14 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
+ 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
+ 			../../drivers/serial.c \
+ 			../../drivers/bcmxcp_ser.c \
+-			../../common/common.c
++			../../common/common.c ../../common/str.c
+ libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+ libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+ 
+ nut_scanner_SOURCES = nut-scanner.c
+ nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
+-nut_scanner_LDADD = libnutscan.la ../../common/libcommon.la
++nut_scanner_LDADD = libnutscan.la
+ 
+ if WITH_SSL
+   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
+-- 
+2.1.4
+

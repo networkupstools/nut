@@ -1,0 +1,20 @@
+Description: Adjust .pc paths to install development files to /usr
+Author: Laurent Bigonville <bigon@debian.org>
+Forwarded: not-needed
+
+--- a/lib/libnutscan.pc.in
++++ b/lib/libnutscan.pc.in
+@@ -1,4 +1,4 @@
+-prefix=@prefix@
++prefix=/usr
+ exec_prefix=@exec_prefix@
+ libdir=@libdir@
+ includedir=@includedir@
+--- a/lib/libupsclient.pc.in
++++ b/lib/libupsclient.pc.in
+@@ -1,4 +1,4 @@
+-prefix=@prefix@
++prefix=/usr
+ exec_prefix=@exec_prefix@
+ libdir=@libdir@
+ includedir=@includedir@

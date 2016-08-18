@@ -1,0 +1,203 @@
+From 22b23e99e3a54d187833aaf72212b2242bf80325 Mon Sep 17 00:00:00 2001
+From: Arnaud Quette <arnaud.quette@free.fr>
+Date: Thu, 9 Jun 2016 08:27:36 +0200
+Subject: [PATCH 1/2] snmp-ups: fix memory leaks and incorrect expression
+
+Following the registration of NUT in Coverity scan, a number of issues were
+identified. This is the very first set of QA fixes related to this static code
+analysis
+---
+ drivers/snmp-ups.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/snmp-ups.c b/drivers/snmp-ups.c
+index 633d525..d27d10f 100644
+--- a/drivers/snmp-ups.c
++++ b/drivers/snmp-ups.c
+@@ -2279,9 +2279,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 			if (su_info_p->info_type != NULL) {
+ 				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
+ 			}
+-			else
++			else {
++				free(tmp_info_p);
+ 				return FALSE;
+-
++			}
+ 			su_info_p = tmp_info_p;
+ 		}
+ 		else {
+@@ -2600,7 +2601,7 @@ int su_setOID(int mode, const char *varname, const char *val)
+ 			else {
+ 				/* adapt info_type */
+ 				if (su_info_p->info_type != NULL)
+-					snprintf((char *)su_info_p->info_type, sizeof(su_info_p->info_type), "%s", tmp_varname);
++					snprintf((char *)su_info_p->info_type, SU_INFOSIZE, "%s", tmp_varname);
+ 			}
+ 		}
+ 	}
+@@ -2611,9 +2612,12 @@ int su_setOID(int mode, const char *varname, const char *val)
+ 		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
+ 
+ 		/* Free template (outlet and outlet.group) */
+-		if (vartype != 0)
++		if (su_info_p != NULL)
+ 			free_info(su_info_p);
+ 
++		if (tmp_varname != NULL)
++			free_info(tmp_varname);
++
+ 		return STAT_SET_UNKNOWN;
+ 	}
+ 
+@@ -2661,7 +2665,7 @@ int su_setOID(int mode, const char *varname, const char *val)
+ 	}
+ 
+ 	/* Free template (outlet and outlet.group) */
+-	if (vartype != 0)
++	if (su_info_p != NULL)
+ 		free_info(su_info_p);
+ 
+ 	free(tmp_varname);
+-- 
+2.1.4
+
+From 5d33bf24cb46f9ecdfed7e53ca8349dcc5a07431 Mon Sep 17 00:00:00 2001
+From: Arnaud Quette <arnaud.quette@free.fr>
+Date: Thu, 9 Jun 2016 10:32:07 +0200
+Subject: [PATCH 2/2] snmp-ups: 2nd pass on fixing memory leaks
+
+Fix some remaining memory leaks reported by Coverity scan
+---
+ drivers/snmp-ups.c | 28 ++++++++++++++++++----------
+ 1 file changed, 18 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/snmp-ups.c b/drivers/snmp-ups.c
+index d27d10f..88bba0b 100644
+--- a/drivers/snmp-ups.c
++++ b/drivers/snmp-ups.c
+@@ -647,6 +647,7 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+ 			if (mibname == NULL) {
+ 				/* We are probing for proper mib - ignore errors */
+ 				snmp_free_pdu(response);
++				nut_snmp_free(ret_array);
+ 				return NULL;
+ 			}
+ 
+@@ -1604,7 +1605,7 @@ static int guestimate_template_count(const char *OID_template)
+ 
+ /* Process template definition, instantiate and get data or register
+  * command
+- * type: outlet, outlet.group */
++ * type: outlet, outlet.group, device */
+ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
+ {
+ 	/* Default to TRUE, and leave to get_and_process_data() to set
+@@ -2272,15 +2273,17 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
+ 					current_device_number + daisychain_offset);
+ 			}
+-			else
++			else {
++				free_info(tmp_info_p);
+ 				return FALSE;
++			}
+ 
+ 			/* adapt info_type */
+ 			if (su_info_p->info_type != NULL) {
+ 				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
+ 			}
+ 			else {
+-				free(tmp_info_p);
++				free_info(tmp_info_p);
+ 				return FALSE;
+ 			}
+ 			su_info_p = tmp_info_p;
+@@ -2300,8 +2303,10 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 			su_status_set(su_info_p, value);
+ 			upsdebugx(2, "=> value: %ld", value);
+ 		}
+-		else upsdebugx(2, "=> Failed");
++		else
++			upsdebugx(2, "=> Failed");
+ 
++		free_info(tmp_info_p);
+ 		return status;
+ 	}
+ 
+@@ -2319,6 +2324,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 		}
+ 		else upsdebugx(2, "=> Failed");
+ 
++		free_info(tmp_info_p);
+ 		return status;
+ 	}
+ 
+@@ -2370,6 +2376,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 			upsdebugx(2, "=> Failed");
+ 		}
+ 
++		free_info(tmp_info_p);
+ 		return status;
+ 	}
+ 
+@@ -2380,6 +2387,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 		status = nut_snmp_get_int(su_info_p->OID, &value);
+ 
+ 		if(status != TRUE) {
++			free_info(tmp_info_p);
+ 			return status;
+ 		}
+ 
+@@ -2403,6 +2411,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 		snprintf(buf, sizeof(buf), "%.1f", temp);
+ 		su_setinfo(su_info_p, buf);
+ 
++		free_info(tmp_info_p);
+ 		return TRUE;
+ 	}
+ 
+@@ -2417,6 +2426,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 					disable_competition(su_info_p);
+ 					su_info_p->flags &= ~SU_FLAG_UNIQUE;
+ 				}
++				free_info(tmp_info_p);
+ 				return FALSE;
+ 			}
+ 			if (su_info_p->flags & SU_FLAG_SETINT) {
+@@ -2438,6 +2448,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
+ 	else
+ 		upsdebugx(2, "=> Failed");
+ 
++	free_info(tmp_info_p);
+ 	return status;
+ }
+ 
+@@ -2612,11 +2623,10 @@ int su_setOID(int mode, const char *varname, const char *val)
+ 		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
+ 
+ 		/* Free template (outlet and outlet.group) */
+-		if (su_info_p != NULL)
+-			free_info(su_info_p);
++		free_info(su_info_p);
+ 
+ 		if (tmp_varname != NULL)
+-			free_info(tmp_varname);
++			free(tmp_varname);
+ 
+ 		return STAT_SET_UNKNOWN;
+ 	}
+@@ -2665,9 +2675,7 @@ int su_setOID(int mode, const char *varname, const char *val)
+ 	}
+ 
+ 	/* Free template (outlet and outlet.group) */
+-	if (su_info_p != NULL)
+-		free_info(su_info_p);
+-
++	free_info(su_info_p);
+ 	free(tmp_varname);
+ 
+ 	return retval;
+-- 
+2.1.4
+
