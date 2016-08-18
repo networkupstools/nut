@@ -304,7 +304,6 @@ extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
-extern int input_phases, output_phases, bypass_phases;
 
 /* Common daisychain structure and functions */
 
