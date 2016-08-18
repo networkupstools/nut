@@ -209,31 +209,31 @@ Detailed information about supported hardware can be found in
 
 %prep
 %setup -q
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch6 -p1
-%patch8 -p1
-%patch11 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-# % patch17 -p1
-# % patch18 -p1
-# % patch19 -p1
-%patch20 -p1
-# % patch21 -p1
-# % patch29 -p1
-# % patch30 -p1
-# % patch31 -p1
-# % patch32 -p1
-# % patch33 -p1
-%patch34 -p1
-# % patch35 -p1
-# % patch36 -p1
+#%patch2 -p1
+#%patch3 -p1
+#%patch4 -p1
+#%patch6 -p1
+#%patch8 -p1
+#%patch11 -p1
+#%patch14 -p1
+#%patch15 -p1
+#%patch16 -p1
+### % patch17 -p1
+### % patch18 -p1
+### % patch19 -p1
+#%patch20 -p1
+### % patch21 -p1
+### % patch29 -p1
+### % patch30 -p1
+### % patch31 -p1
+### % patch32 -p1
+### % patch33 -p1
+#%patch34 -p1
+### % patch35 -p1
+### % patch36 -p1
 
 %build
-autoreconf -f -i
+sh autogen.sh
 %configure --disable-static --with-pic --libexecdir=%{_prefix}/lib\
 	--sysconfdir=%{CONFPATH}\
 	--datadir=%{_datadir}/nut\
