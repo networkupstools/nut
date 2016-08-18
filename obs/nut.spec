@@ -96,6 +96,8 @@ BuildRequires:  libusb-devel
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 BuildRequires:  python
+# TODO: Make sure how this is named
+BuildRequires:  python-pycparser
 BuildRequires:  lua-devel == 5.1
 
 %if 0%{?suse_version}
