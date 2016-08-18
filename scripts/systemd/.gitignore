@@ -1,4 +1,5 @@
 /nut-driver.service
+/nut-driver@.service
 /nut-monitor.service
 /nut-server.service
 /nutshutdown
