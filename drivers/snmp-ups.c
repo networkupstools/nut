@@ -1446,6 +1446,7 @@ bool_t load_mib2nut(const char *mib)
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
 			if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
+				upsdebugx(2, "load_mib2nut: skip the \"auto\" entry");
 				continue;
 			}
 			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
