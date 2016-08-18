@@ -96,7 +96,7 @@ BuildRequires:  libusb-devel
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 BuildRequires:  python
-BuildRequires:  lua-devel >= 5.1
+BuildRequires:  lua-devel == 5.1
 
 %if 0%{?suse_version}
 BuildRequires:  apache2-devel
