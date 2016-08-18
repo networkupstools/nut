@@ -31,4 +31,4 @@ Package-List:
  nut-snmp deb admin optional arch=any
  nut-xml deb admin optional arch=any
  python-nut deb python optional arch=all
-DEBTRANSFORM-TAR: nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz
+# DEBTRANSFORM-TAR: nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz
