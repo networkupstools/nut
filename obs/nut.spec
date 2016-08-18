@@ -37,7 +37,7 @@
 
 Name:           nut
 Version:        2.7.4
-Release:        4
+Release:        11
 Summary:        Network UPS Tools Core (Uninterruptible Power Supply Monitoring)
 License:        GPL-2.0+
 Group:          Hardware/UPS
@@ -46,7 +46,8 @@ Url:            http://www.networkupstools.org/
 
 # git clone https://github.com/vyskocilm/nut daisychain+DMF
 # git archive --prefix nut-2.7.4/ -o ~/work/BIOS/ROZ-OBS/Pool\:master/nut/nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz HEAD
-Source:         nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz
+Source0:        %{name}-%{version}.tar.gz
+#Source:         nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz
 #Patch2:         0002-nut-monitor-paths.patch
 #Patch3:         0003-install-dev-files-in-usr.patch
 #Patch4:         0004-fix-systemd-service.patch
