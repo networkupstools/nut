@@ -249,7 +249,7 @@ sh autogen.sh
 	--with-dev\
     --with-ipmi \
 	--with-powerman=auto\
-    --with-doc=man\
+    --with-doc=man=auto\
 	--with-htmlpath=%{HTMLPATH}\
 	--with-cgipath=%{CGIPATH}\
 	--with-statepath=%{STATEPATH}\
