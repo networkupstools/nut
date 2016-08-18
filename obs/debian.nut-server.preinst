@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+if [ "$1" = upgrade ]; then
+	# remove the obsolete udev file(s)
+	[ -f /etc/udev/rules.d/025_nut-usbups.rules ] && rm -f /etc/udev/rules.d/025_nut-usbups.rules
+	[ -f /etc/udev/rules.d/52_nut-usbups.rules ] && rm -f /etc/udev/rules.d/52_nut-usbups.rules
+	[ -f /etc/udev/rules.d/52-nut-usbups.rules ] && rm -f /etc/udev/rules.d/52-nut-usbups.rules
+fi
+
+#DEBHELPER#
+
+exit 0

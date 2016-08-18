@@ -1,0 +1,39 @@
+Network UPS Tools - CGI Interface - Quick Start for Debian
+----------------------------------------------------------
+
+(I) Installation
+=================
+
+1) Sample configuration files are provided in /etc/nut/
+Rename without the ".sample" suffix the files hosts.conf, upsstats.html,
+upsstats-single.html and optionaly upsset.conf.
+Then edit these to match your configuration.
+
+2) Ensure these configuration files are readable by others
+
+      chmod 755 /etc/nut
+      chmod 644 /etc/nut/upsset.conf
+      chmod 644 /etc/nut/hosts.conf
+      chmod 644 /etc/nut/upsstats.html
+      chmod 644 /etc/nut/upsstats-single.html
+
+3) You will then be able to access NUT CGI through a Web browser.
+The URL, which depends on your httpd configuration, is:
+
+      http://localhost/cgi-bin/nut/upsstats.cgi
+
+4) NUT also provides a set of HTML files to wrap the CGIs.
+To use it, create a new virtual host with your preferred webserver, and point the
+Document Root to: /usr/share/nut/www/
+
+	You can also add an alias to an existing site, if it is supported:
+    Alias /nut/ "/usr/share/nut/www/"
+ 
+	Also ensure that the files in this directory have the suitable permissions.
+
+For more information on nut-cgi configuration, have a look at the following
+manual pages:
+- upsstats.html (5)
+- hosts.conf (5)
+- upsset.conf (5)
+
