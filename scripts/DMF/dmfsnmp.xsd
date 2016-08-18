@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+<xs:schema
+ version="1.0.0"
+ attributeFormDefault="unqualified" elementFormDefault="qualified"
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ targetNamespace="http://www.networkupstools.org/dmf/snmp/snmp-ups"
+>
+<!--
+  // This is an XSD schema for NUT DMF files intended for snmp-ups usage
+  // with SNMP MIB references.
+  // Copyright (C) 2016 by Eaton
+  // Authors:
+  //    Jim Klimov <EvgenyKlimov@eaton.com>
+  //    Carlos Dominguez <CarlosDominguez@eaton.com>
+  //    Michal Vyskocil <MichalVyskocil@eaton.com>
+  // Adapted from markup generated from de-facto DMF files with online tool:
+  //    http://www.freeformatter.com/xsd-generator.html
+  // as a superset of all DMFs we have initially generated from *-mib.c files.
+  -->
+  <xs:element name="nut">
+    <xs:complexType>
+      <xs:sequence> 
+        <xs:element name="lookup" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="lookup_info" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute type="xs:string" name="oid" use="optional"/>
+                      <xs:attribute type="xs:string" name="value" use="optional"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute type="xs:string" name="name" use="optional"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="alarm" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="info_alarm" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute type="xs:string" name="alarm" use="optional"/>
+                      <xs:attribute type="xs:string" name="oid" use="optional"/>
+                      <xs:attribute type="xs:string" name="status" use="optional"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute type="xs:string" name="name"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="functions" maxOccurs="1" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="function" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute type="xs:string" name="name" use="optional"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute type="xs:string" name="name"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="snmp" maxOccurs="unbounded" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="snmp_info" maxOccurs="unbounded" minOccurs="0">
+                <xs:complexType>
+                  <xs:simpleContent>
+                    <xs:extension base="xs:string">
+                      <xs:attribute type="xs:string" name="absent" use="optional"/>
+                      <xs:attribute type="xs:string" name="default" use="optional"/>
+                      <xs:attribute type="xs:string" name="flag_ok" use="optional"/>
+                      <xs:attribute type="xs:string" name="name" use="optional"/>
+                      <xs:attribute type="xs:string" name="oid" use="optional"/>
+                      <xs:attribute type="xs:string" name="static" use="optional"/>
+                      <xs:attribute type="xs:string" name="string" use="optional"/>
+                      <xs:attribute type="xs:string" name="positive" use="optional"/>
+                      <xs:attribute type="xs:string" name="unique" use="optional"/>
+                      <xs:attribute type="xs:float" name="multiplier" use="optional"/>
+                      <xs:attribute type="xs:string" name="power_status" use="optional"/>
+                      <xs:attribute type="xs:string" name="battery_status" use="optional"/>
+                      <xs:attribute type="xs:string" name="calibration" use="optional"/>
+                      <xs:attribute type="xs:string" name="replace_battery" use="optional"/>
+                      <xs:attribute type="xs:string" name="output_1_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="output_3_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="input_1_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="input_3_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="bypass_1_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="bypass_3_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="outlet" use="optional"/>
+                      <xs:attribute type="xs:string" name="outlet_group" use="optional"/>
+                      <xs:attribute type="xs:string" name="writable" use="optional"/>
+                      <xs:attribute type="xs:string" name="lookup" use="optional"/>
+                      <xs:attribute type="xs:string" name="setvar" use="optional"/>
+                      <xs:attribute type="xs:string" name="command" use="optional"/>
+                      <xs:attribute type="xs:string" name="type_daisy" use="optional"/>
+                      <xs:attribute type="xs:string" name="function" use="optional"/>
+                    </xs:extension>
+                  </xs:simpleContent>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute type="xs:string" name="name"/>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="mib2nut" maxOccurs="unbounded" minOccurs="1">
+          <xs:complexType>
+            <xs:simpleContent>
+              <xs:extension base="xs:string">
+                <xs:attribute type="xs:string" name="alarms_info" use="optional"/>
+                <xs:attribute type="xs:string" name="auto_check" use="optional"/>
+                <xs:attribute type="xs:string" name="mib_name" use="optional"/>
+                <xs:attribute type="xs:string" name="name" use="required"/>
+                <xs:attribute type="xs:string" name="oid" use="optional"/>
+                <xs:attribute type="xs:string" name="power_status" use="optional"/>
+                <xs:attribute type="xs:string" name="snmp_info" use="optional"/>
+                <xs:attribute type="xs:string" name="version" use="optional"/>
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:string" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+

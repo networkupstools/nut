@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,8 +18,9 @@
  */
 
 /*! \file nut-scanner.c
-    \brief a tool to detect NUT supported devices
+    \brief A tool to detect NUT supported devices
     \author Arnaud Quette <arnaud.quette@free.fr>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #include <stdio.h>
@@ -34,11 +36,39 @@
 
 #include "nut-scan.h"
 
+#if WITH_DMFMIB
+# ifdef WANT_LIBNUTSCAN_SNMP_DMF
+# undef WANT_LIBNUTSCAN_SNMP_DMF
+# endif
+
+// This chains to also include nutscan-snmp.h and the desired
+// variables need structures defined lower in the dmf.h file.
+// But there is protection in nutscan-snmp.h to only declare
+// those vars if dmf.h was already completely imported.
+#include "dmf.h"
+
+// Now we may "want" the variables from libnutscan with types from dmf.h
+#define WANT_LIBNUTSCAN_SNMP_DMF 1
+#include "nutscan-snmp.h"
+#endif /* WITH_DMFMIB */
+
+#ifdef DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
+# ifdef DEFAULT_DMFNUTSCAN_DIR
+# undef DEFAULT_DMFNUTSCAN_DIR
+# endif
+#define DEFAULT_DMFNUTSCAN_DIR DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
+#endif
+
+#ifndef DEFAULT_DMFNUTSCAN_DIR
+#define DEFAULT_DMFNUTSCAN_DIR "./"
+#endif
+
 #define DEFAULT_TIMEOUT 5
 
 #define ERR_BAD_OPTION	(-1)
 
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:D:CUSMOAm:NPqIVa";
+// TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVazZ:D";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -57,7 +87,7 @@ const struct option longopts[] =
 	{ "username",required_argument,NULL,'b' },
 	{ "password",required_argument,NULL,'B' },
 	{ "authType",required_argument,NULL,'d' },
-	{ "cipher_suite_id",required_argument,NULL,'D' },
+	{ "cipher_suite_id",required_argument,NULL,'L' },
 	{ "port",required_argument,NULL,'p' },
 	{ "complete_scan",no_argument,NULL,'C' },
 	{ "usb_scan",no_argument,NULL,'U' },
@@ -73,6 +103,9 @@ const struct option longopts[] =
 	{ "version",no_argument,NULL,'V' },
 	{ "available",no_argument,NULL,'a' },
 	{ "snmp_fingerprints_file",required_argument,NULL,'F' },
+	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
+	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
+	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -210,6 +243,33 @@ int main(int argc, char *argv[])
 			case 'm':
 				cidr = strdup(optarg);
 				break;
+			case 'D':
+				nut_debug_level++;
+				break;
+
+#if WITH_DMFMIB
+			case 'z':
+				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
+					goto display_help;
+				}
+				dmfnutscan_snmp_dir = DEFAULT_DMFNUTSCAN_DIR;
+				allow_snmp = 1;
+				break;
+			case 'Z':
+				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
+					goto display_help;
+				}
+				dmfnutscan_snmp_dir = strdup(optarg);
+				allow_snmp = 1;
+				break;
+#else
+			case 'z':
+			case 'Z':
+				fprintf(stderr,"DMF SNMP support not built in, option (-%c) ignored (only enabling built-in SNMP).\n", opt_ret);
+				allow_snmp = 1;
+				break;
+#endif /* WITH_DMFMIB */
+
 			case 'c':
 				if(!nutscan_avail_snmp) {
 					goto display_help;
@@ -290,7 +350,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr,"Unknown authentication type (%s). Defaulting to MD5\n", optarg);
 				}
 				break;
-			case 'D':
+			case 'L':
 				if(!nutscan_avail_ipmi) {
 					goto display_help;
 				}
@@ -355,6 +415,9 @@ int main(int argc, char *argv[])
 					printf("USB\n");
 				}
 				if(nutscan_avail_snmp) {
+					if(nutscan_avail_xml_http) {
+						printf("SNMP_DMF\n");
+					}
 					printf("SNMP\n");
 				}
 				if(nutscan_avail_xml_http) {
@@ -380,7 +443,20 @@ display_help:
 					printf("  -U, --usb_scan: Scan USB devices.\n");
 				}
 				if( nutscan_avail_snmp ) {
-					printf("  -S, --snmp_scan: Scan SNMP devices.\n");
+					printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
+#if WITH_DMFMIB
+					printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
+					printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
+					if( nutscan_avail_xml_http) {
+						printf("      (libneon will be used to work with dynamically loaded DMF MIB library).\n");
+					} else {
+						printf("      (libneon support seems missing, so built-in definitions will\n"
+						       "       be used rather than DMF MIB library).\n");
+					}
+#else
+					printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
+					printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
+#endif /* WITH_DMFMIB */
 				}
 				if( nutscan_avail_xml_http ) {
 					printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
@@ -426,7 +502,7 @@ display_help:
 					/* Specify the password to use when authenticationg with the remote host.  If not specified, a null password is assumed. Maximum password length is 16 for IPMI
 					 * 1.5 and 20 for IPMI 2.0. */
 					printf("  -d, --authType <authentication type>: Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\n");
-					printf("  -D, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
+					printf("  -L, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
 				}
 
 				printf("\nNUT specific options:\n");
@@ -438,9 +514,9 @@ display_help:
 				printf("  -V, --version: Display NUT version\n");
 				printf("  -a, --available: Display available bus that can be scanned\n");
 				printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
+				printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
 				return ret_code;
 		}
-
 	}
 
 	if( cidr ) {
@@ -479,7 +555,11 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
-			printq(quiet,"Scanning SNMP bus.\n");
+#if WITH_DMFMIB
+			printq(quiet,"Scanning SNMP bus with DMF MIB support if possible.\n");
+#else
+			printq(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
+#endif
 #ifdef HAVE_PTHREAD
 			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&snmp_sec)) {
 				nutscan_avail_snmp = 0;
@@ -597,6 +677,10 @@ display_help:
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
 	nutscan_free();
+
+#if WITH_DMFMIB
+	uninit_snmp_device_table();
+#endif
 
 	return EXIT_SUCCESS;
 }

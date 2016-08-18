@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="xpcc_onbatt_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value="LB"/>
+	</lookup>
+	<lookup name="xpcc_power_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="OL"/>
+		<lookup_info oid="3" value="OB"/>
+		<lookup_info oid="4" value="OL BOOST"/>
+		<lookup_info oid="5" value="OFF"/>
+		<lookup_info oid="6" value="BYPASS"/>
+		<lookup_info oid="7" value=""/>
+		<lookup_info oid="8" value="OFF"/>
+		<lookup_info oid="9" value="OL TRIM"/>
+	</lookup>
+	<snmp name="xppc_mib">
+		<snmp_info absent="yes" default="Tripp Lite / Phoenixtec" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Generic Phoenixtec SNMP device" flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.935.1.1.1.1.1.1.0" string="yes"/>
+		<snmp_info battery_status="yes" default="" flag_ok="yes" lookup="xpcc_onbatt_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.935.1.1.1.2.1.1.0" power_status="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="battery.charge" oid=".1.3.6.1.4.1.935.1.1.1.2.2.1.0" power_status="yes"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="ups.temperature" oid=".1.3.6.1.4.1.935.1.1.1.2.2.3.0" power_status="yes"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.voltage" oid=".1.3.6.1.4.1.935.1.1.1.3.2.1.0" power_status="yes"/>
+		<snmp_info default="" lookup="xpcc_power_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.935.1.1.1.4.1.1.0" power_status="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.935.1.1.1.4.2.1.0" power_status="yes"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="output.frequency" oid=".1.3.6.1.4.1.935.1.1.1.4.2.2.0" power_status="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.load" oid=".1.3.6.1.4.1.935.1.1.1.4.2.3.0" power_status="yes"/>
+	</snmp>
+	<mib2nut mib_name="xppc" name="xppc" oid=".1.3.6.1.4.1.935" snmp_info="xppc_mib" version="0.2"/>
+</nut>
+

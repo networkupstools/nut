@@ -1,4 +1,5 @@
 /*  snmp-ups.c - NUT Generic SNMP driver core (supports different MIBs)
+ *  Can be compiled with built-in or loadable (DMF) MIB-to-NUT mapping tables
  *
  *  Based on NetSNMP API (Simple Network Management Protocol v1-2c-3)
  *
@@ -9,6 +10,8 @@
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
  *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *	2016	Jim Klimov <EvgenyKlimov@Eaton.com>
+ *	2016	Carlos Dominguez <CarlosDominguez@Eaton.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -38,6 +41,12 @@
 #include "snmp-ups.h"
 #include "parseconf.h"
 
+#if WITH_DMFMIB
+# include "dmfsnmp.h"
+# include "apc-iem-mib.h" // For static builds, this one is
+                          // included by "apc-mib.h", so there
+                          // is no explicit inclusion below
+#else /* not WITH_DMFMIB */
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
 #include "mge-mib.h"
@@ -57,11 +66,23 @@
 #include "eaton-ats-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
+#endif /* WITH_DMFMIB */
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
 #define usmAESPrivProtocol usmAES128PrivProtocol
 #endif
+#if WITH_DMFMIB
+// Array of pointers to singular instances of mib2nut_info_t
+mib2nut_info_t **mib2nut = NULL;
+mibdmf_parser_t *dmp = NULL;
+char *dmf_path = NULL;
+#else /* not WITH_DMFMIB */
+
+# ifdef WITH_DMF_LUA
+#  undef WITH_DMF_LUA
+# endif
+# define WITH_DMF_LUA 0
 
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
@@ -98,6 +119,7 @@ static mib2nut_info_t *mib2nut[] = {
 	/* end of structure. */
 	NULL
 };
+#endif /* WITH_DMFMIB */
 
 struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
@@ -117,8 +139,12 @@ alarms_info_t *alarms_info;
 const char *mibname;
 const char *mibvers;
 
+#if WITH_DMFMIB
+#define DRIVER_NAME	"Generic SNMP UPS driver (DMF)"
+#else
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.99"
+#endif /* WITH_DMFMIB */
+#define DRIVER_VERSION		"0.100"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -129,6 +155,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
 	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
 	"Niels Baggesen <niels@baggesen.net>\n" \
+	"Jim Klimov <EvgenyKlimov@Eaton.com>\n" \
+	"Carlos Dominguez <CarlosDominguez@Eaton.com>\n" \
 	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
 	DRV_STABLE,
 	{ NULL }
@@ -167,7 +195,8 @@ void upsdrv_initinfo(void)
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 			&& !(su_info_p->flags & SU_OUTLET)
-			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+			&& !(su_info_p->flags & SU_OUTLET_GROUP))
+		{
 			/* first check that this OID actually exists */
 // FIXME: daisychain commands support!
 su_addcmd(su_info_p);
@@ -175,7 +204,8 @@ su_addcmd(su_info_p);
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
 				upsdebugx(1, "upsdrv_initinfo(): adding command '%s'", su_info_p->info_type);
-			}*/
+			}
+*/
 		}
 	}
 
@@ -291,6 +321,11 @@ void upsdrv_makevartable(void)
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
+#if WITH_DMFMIB
+	addvar(VAR_VALUE, SU_VAR_DMFPATH,
+		"Set path to the Data Mapping File to use");
+// FIXME: Add support for custom DMF directory too
+#endif
 }
 
 void upsdrv_initups(void)
@@ -303,6 +338,55 @@ void upsdrv_initups(void)
 
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
+#if WITH_DMFMIB
+	upsdebugx(1, "SNMP UPS driver: preparing to load dynamic MIB-to-NUT mappings from DMF");
+
+	dmp = mibdmf_parser_new();
+	if (!dmp)
+		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
+
+	/* FIXME: Add configurability of where we look for *.dmf files */
+# ifdef DEFAULT_DMFSNMP_DIR
+	if(testvar(SU_VAR_DMFPATH)){
+		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
+	}else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+	else mibdmf_parse_file(dmf_path, dmp);
+# else /* not defined DEFAULT_DMFSNMP_DIR */
+	if(testvar(SU_VAR_DMFPATH)){
+		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
+	}else if(!dmf_path){
+		if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
+			mibdmf_parse_dir("./", dmp);
+	}else mibdmf_parse_file(dmf_path, dmp);
+# endif /* DEFAULT_DMFSNMP_DIR */
+	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
+	if ( !(mibdmf_get_mib2nut_table(dmp)) )
+	{
+		upsdebugx(1,"FATAL: Can not access the mib2nut table parsed from DMF library");
+		return;
+	}
+	{ /* scope the table loop vars */
+		/* TODO: Change size detection to loop over array until NULLed sentinels? */
+		int tablength = mibdmf_get_device_table_counter(dmp);
+		upsdebugx(2,"Got access to the mib2nut table with %d entries parsed from DMF library",
+			tablength);
+		if (tablength<=1) {
+			fatalx(EXIT_FAILURE, "FATAL: Did not find any DMF library data");
+			return;
+		}
+		if ( mib2nut != NULL ) {
+			upsdebugx(1,"mib2nut not NULL when expected to be...");
+			free(mib2nut);
+		}
+		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
+		if ( mib2nut == NULL ) {
+			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
+			return;
+		}
+	} // scope the table loop vars
+#else
+	upsdebugx(1, "SNMP UPS driver: using built-in MIB-to-NUT mappings");
+#endif /* WITH_DMFMIB */
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
 
@@ -406,6 +490,11 @@ void upsdrv_cleanup(void)
 
 	/* Net-SNMP specific cleanup */
 	nut_snmp_cleanup();
+#if WITH_DMFMIB
+	/* DMF specific cleanup */
+	mibdmf_parser_destroy(&dmp);
+	mib2nut = NULL;
+#endif
 }
 
 /* -----------------------------------------------------------
@@ -1042,10 +1131,13 @@ static void disable_transfer_oids(void)
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
-	char info_type[128];
+	char info_type[128]; // We tweak incoming "su_info_p->info_type" value in some cases
+
+// FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?), and same macro or sizeof(info_type) below?
 
 	upsdebugx(1, "entering %s(%s)", __func__, su_info_p->info_type);
 
+// FIXME: This 20 seems very wrong (should be "128", macro or sizeof? see above)
 	memset(info_type, 0, 20);
 	/* pre-fill with the device name for checking */
 	snprintf(info_type, 128, "device.%i", current_device_number);
@@ -1302,7 +1394,8 @@ mib2nut_info_t *match_sysoid()
 				/* Counter verify, using {ups,device}.model */
 				snmp_info = mib2nut[i]->snmp_info;
 
-				if (match_model_OID() != TRUE) {
+				if (match_model_OID() != TRUE)
+				{
 					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
 					snmp_info = NULL;
 					continue;
@@ -1338,11 +1431,16 @@ bool_t load_mib2nut(const char *mib)
 	 * (Note: sysOID points the device main MIB entry point) */
 	if (!strcmp(mib, "auto"))
 	{
-		upsdebugx(1, "trying the new match_sysoid() method");
+		upsdebugx(1, "load_mib2nut: trying the new match_sysoid() method with %s", mib);
 		/* Retry at most 3 times, to maximise chances */
 		for (i = 0; i < 3 ; i++) {
+			upsdebugx(2, "load_mib2nut: trying the new match_sysoid() method: attempt #%d", (i+1));
 			if ((m2n = match_sysoid()) != NULL)
 				break;
+			if (m2n == NULL)
+				upsdebugx(1, "load_mib2nut: failed with new match_sysoid() method");
+			else
+				upsdebugx(1, "load_mib2nut: found something with new match_sysoid() method");
 		}
 	}
 
@@ -1352,14 +1450,16 @@ bool_t load_mib2nut(const char *mib)
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
 			if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
+				upsdebugx(2, "load_mib2nut: skip the \"auto\" entry");
 				continue;
 			}
-			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
+			upsdebugx(1, "load_mib2nut: trying classic sysOID matching method with '%s' mib", mib2nut[i]->mib_name);
 
 			/* Classic method: test an OID specific to this MIB */
 			snmp_info = mib2nut[i]->snmp_info;
 
-			if (match_model_OID() != TRUE) {
+			if (match_model_OID() != TRUE)
+			{
 				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
 				snmp_info = NULL;
 				continue;
@@ -2091,6 +2191,38 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	return 0; /* FIXME: remap EXIT_SUCCESS to RETURN_SUCCESS */
 }
 
+#if WITH_DMF_LUA
+int publish_Lua_dstate(lua_State *L){
+	const char *info_type = lua_tostring(L, 1);
+	const char *value = lua_tostring(L, 2);
+
+	if((info_type) && (value))
+		dstate_setinfo(info_type, "%s", value);
+	return 0;
+}
+
+int lua_C_gateway(lua_State *L){
+	/* get number of arguments */
+	const char *info_type = lua_tostring(L, 1);
+	int current_device_number = lua_tointeger(L, 2);
+
+	char *buf = (char *) malloc((strlen(info_type)+12) * sizeof(char));
+
+	if(current_device_number > 0)
+		sprintf(buf, "device.%d.%s", current_device_number, info_type);
+	else
+		sprintf(buf, "device.%s", info_type);
+
+	const char *value = dstate_getinfo(buf);
+
+	if(value)
+		lua_pushstring(L, value);
+
+	/* return the number of results */
+	free(buf);
+	return 1;
+}
+#endif /* WITH_DMF_LUA */
 
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
@@ -2109,6 +2241,39 @@ bool_t snmp_ups_walk(int mode)
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
+#if WITH_DMF_LUA
+			if(su_info_p->flags & SU_FLAG_FUNCTION){
+				if((su_info_p->function) && (su_info_p->luaContext)){
+					char *result = NULL;
+
+					lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
+					lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
+
+					char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+					lua_getglobal(su_info_p->luaContext, funcname);
+					lua_pushnumber(su_info_p->luaContext, current_device_number);
+					lua_pcall(su_info_p->luaContext,1,1,0);
+					result = (char *) lua_tostring(su_info_p->luaContext, -1);
+					upsdebugx(2, "Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
+					free(funcname);
+
+					if(result){
+						char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
+						int i = 0;
+						while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
+
+						if(current_device_number > 0)
+							sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+						else
+							sprintf(buf, "%s", su_info_p->info_type);
+
+						dstate_setinfo(buf, "%s", result);
+						free(buf);
+					}
+				}
+				continue;
+			}
+#endif /* WITH_DMF_LUA */
 
 			// FIXME:
 			// switch(current_device_number) {
@@ -2160,10 +2325,14 @@ bool_t snmp_ups_walk(int mode)
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
 			if ((su_info_p->flags & SU_FLAG_ABSENT)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
-				if (mode == SU_WALKMODE_INIT) {
-					if (su_info_p->dfl) {
-						if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
+			&& !(su_info_p->flags & SU_OUTLET_GROUP))
+		{
+			if (mode == SU_WALKMODE_INIT)
+			{
+				if (su_info_p->dfl)
+				{
+					if ((daisychain_enabled == TRUE) && (devices_count > 1))
+					{
 							if (current_device_number == 0)
 								su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
 							else
@@ -2185,8 +2354,8 @@ bool_t snmp_ups_walk(int mode)
 				continue;
 	*/
 			/* Filter 1-phase Vs 3-phase according to {input,output,bypass}.phase.
-			 * Non matching items are disabled, and flags are cleared at init
-			 * time */
+		 * Non matching items are disabled, and flags are cleared at
+		 * init time */
 			/* Process input phases information */
 			input_phases = &daisychain_info[current_device_number]->input_phases;
 			if (su_info_p->flags & SU_INPHASES) {
@@ -2227,11 +2396,12 @@ bool_t snmp_ups_walk(int mode)
 					status = process_template(mode, "outlet.group", su_info_p);
 			}
 			else {
-/*				if (daisychain_enabled == TRUE) {
-					status = process_template(mode, "device", su_info_p);
-				}
-				else {
-*/					/* get and process this data, including daisychain adaptation */
+//				if (daisychain_enabled == TRUE) {
+//					status = process_template(mode, "device", su_info_p);
+//				}
+//				else {
+//
+					/* get and process this data, including daisychain adaptation */
 					status = get_and_process_data(mode, su_info_p);
 //				}
 			}
@@ -2698,8 +2868,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	return retval;
 }
 
-/* set r/w INFO_ element to a value.
- * FIXME: make a common function with su_instcmd! */
+/* set r/w INFO_ element to a value. */
 int su_setvar(const char *varname, const char *val)
 {
 	return su_setOID(SU_MODE_SETVAR, varname, val);

@@ -15,3 +15,31 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 # using LTLIBOBJS. Refer to configure.in -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+
+if WITH_NEON
+if WITH_SNMP
+if WITH_DMF
+# TODO: split the engine and its consumer codebases, and use WITH_DMFMIB
+# specifically for SNMP and WITH_DMF for general DMF codebase.
+# Naming may be clumsy, but the current intention is that DMF technique
+# can allow dynamic loading of other protocols and mappings - the SNMP
+# application is just the first of many possible. Some code from current
+# dmfsnmp.c/.h is shareable and may become a separate set of sources/headers
+# sometime later, but the libraries for consumers to bind to are named
+# properly already.
+  noinst_LTLIBRARIES += libnutdmfsnmp.la
+  libnutdmfsnmp_la_SOURCES = dmfsnmp.c
+  libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/drivers \
+        -I$(top_srcdir)/tools/nut-scanner \
+        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 $(LIBLTDL_LIBS)
+if WITH_DMF_LUA
+  libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+else
+  libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=0
+endif
+endif
+
+# Note: Consumers of this lib will generally want these linked in:
+#  libnutdmfsnmp_consumer_LDADD = $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LUA_LIB) libcommon.la
+endif
+endif

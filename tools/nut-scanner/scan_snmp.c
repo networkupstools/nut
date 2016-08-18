@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2011-2016 by EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 /*! \file scan_snmp.c
     \brief detect NUT supported SNMP devices
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@Eaton.com>
 */
 
 #include "common.h"
@@ -58,7 +59,33 @@
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
 #endif
+
+// Cause the header to also declare the external reference to pre-generated
+// compilable structure with the subset of MIB mappings needed by nut-scanner
+#ifndef WANT_DEVSCAN_SNMP_BUILTIN
+#define WANT_DEVSCAN_SNMP_BUILTIN 1
+#endif
+
+// Caller defined this macro to not 1, or undefined it somehow.
+// Maybe a developer might want to disable it as an experiment.
+// Or some patchwork or script made a mistake... Tell them!
+#if WANT_DEVSCAN_SNMP_BUILTIN != 1
+# if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__) || defined(_MSC_VER)
+#  if defined(__GNUC__) || defined(__GNUG__)
+#   pragma GCC diagnostic push
+#   pragma GCC diagnostic warning "-Wcpp"
+#   pragma GCC diagnostic ignored "-Werror"
+#   pragma GCC diagnostic ignored "-Wall"
+#  endif
+#pragma message("WARNING: scan_snmp.c is being built without (WANT_DEVSCAN_SNMP_BUILTIN==1) - you have no fallback if DMF is missing at run-time!")
+#  if defined(__GNUC__) || defined(__GNUG__)
+#   pragma GCC diagnostic pop
+#  endif
+# endif
+#endif
+
 #include "nutscan-snmp.h"
+#include "dmf.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -74,6 +101,17 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 long g_usec_timeout ;
+
+// Pointer to the array we ultimately use (builtin or dynamic)
+snmp_device_id_t *snmp_device_table = NULL;
+
+// This would point to DMF data loaded to by this library, if loaded
+snmp_device_id_t *snmp_device_table_dmf = NULL;
+mibdmf_parser_t *dmfnutscan_snmp_dmp = NULL;
+
+// Caller of this library like nut-scanner.c should declare extern reference
+// to this variable and set it to non-NULL string in order to try loading DMFs
+char *dmfnutscan_snmp_dir = NULL;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -103,6 +141,64 @@ static oid * (*nut_usmHMACMD5AuthProtocol);
 static oid * (*nut_usmHMACSHA1AuthProtocol);
 static oid * (*nut_usmDESPrivProtocol);
 
+void uninit_snmp_device_table() {
+	if (snmp_device_table == snmp_device_table_dmf)
+		snmp_device_table = NULL;
+	if (dmfnutscan_snmp_dmp!=NULL)
+		mibdmf_parser_destroy(&dmfnutscan_snmp_dmp);
+	snmp_device_table_dmf = NULL;
+	dmfnutscan_snmp_dmp = NULL;
+}
+
+/* return 0 on error */
+int init_snmp_device_table()
+{
+	// A simple routine to load nutscan DMFs, safe to call several times
+	if (snmp_device_table != NULL)
+		return 1;
+
+	if (dmfnutscan_snmp_dir != NULL) {
+		// parse_dir, check success, assign var
+		upsdebugx(1, "init_snmp_device_table() trying to load DMF from %s",
+			dmfnutscan_snmp_dir);
+		dmfnutscan_snmp_dmp = mibdmf_parser_new();
+		if (dmfnutscan_snmp_dmp == NULL) {
+			upsdebugx(1, "PROBLEM: Can not allocate the DMF parsing structures");
+		} else {
+			mibdmf_parse_dir(dmfnutscan_snmp_dir, dmfnutscan_snmp_dmp);
+			snmp_device_table_dmf = mibdmf_get_device_table(dmfnutscan_snmp_dmp);
+			int device_table_counter = mibdmf_get_device_table_counter(dmfnutscan_snmp_dmp);
+			if (snmp_device_table_dmf != NULL && 
+			    device_table_counter>1 )
+			{
+				snmp_device_table = snmp_device_table_dmf;
+				upsdebugx(1, "SUCCESS: Can use the SNMP device mapping parsed from DMF library with %d definitions", device_table_counter-1);
+				// Note: caller should free these structures in the end, just like below
+			} else {
+				upsdebugx(1, "PROBLEM: Can not access the SNMP device mapping parsed from DMF library, or loaded an empty table");
+				uninit_snmp_device_table();
+			}
+		}
+	}
+
+#ifdef DEVSCAN_SNMP_BUILTIN
+	if (snmp_device_table == NULL && snmp_device_table_builtin!=NULL) {
+		upsdebugx(1, "SUCCESS: Can use the built-in SNMP device mapping table");
+		snmp_device_table = (snmp_device_id_t *)(&snmp_device_table_builtin);
+	}
+#else
+	upsdebugx(1, "NOTE: The built-in SNMP device mapping table is not built in in this build!");
+#endif
+
+	if (snmp_device_table == NULL) {
+		upsdebugx(1, "FATAL: No SNMP device mapping table found. SNMP search disabled");
+		return 0;
+	}
+
+	upsdebugx(1, "init_snmp_device_table() got a valid SNMP device mapping table");
+	return 1;
+}
+
 /* return 0 on error */
 int nutscan_load_snmp_library(const char *libname_path)
 {
@@ -116,12 +212,12 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "SNMP library not found. SNMP search disabled.\n");
+		upsdebugx(1, "SNMP library not found. SNMP search disabled");
 		return 0;
 	}
 
 	if( lt_dlinit() != 0 ) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(1, "Error initializing lt_init");
 		return 0;
 	}
 
@@ -258,7 +354,12 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	/* SNMP device found */
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
-	dev->driver = strdup("snmp-ups");
+	if (dmfnutscan_snmp_dmp!=NULL) {
+		/* DMF is loaded thus used, successfully */
+		dev->driver = strdup("snmp-ups-dmf");
+	} else {
+		dev->driver = strdup("snmp-ups");
+	}
 	dev->port = strdup(session->peername);
 	buf = malloc( response->variables->val_len + 1 );
 	if( buf ) {
@@ -432,31 +533,31 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		}
 
 		/* Process mandatory fields, based on the security level */
-                switch (snmp_sess->securityLevel) {
-                        case SNMP_SEC_LEVEL_AUTHNOPRIV:
-                                if (sec->authPassword == NULL) {
-                                        fprintf(stderr,
+		switch (snmp_sess->securityLevel) {
+			case SNMP_SEC_LEVEL_AUTHNOPRIV:
+				if (sec->authPassword == NULL) {
+					fprintf(stderr,
 			"authPassword is required for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
 				break;
-                        case SNMP_SEC_LEVEL_AUTHPRIV:
-                                if ((sec->authPassword == NULL) ||
+			case SNMP_SEC_LEVEL_AUTHPRIV:
+				if ((sec->authPassword == NULL) ||
 					(sec->privPassword == NULL)) {
-                                        fprintf(stderr,
+					fprintf(stderr,
 	"authPassword and privPassword are required for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
 				break;
-                        default:
-                                /* nothing else needed */
-                                break;
-                }
+			default:
+				/* nothing else needed */
+				break;
+		}
 
-                /* Process authentication protocol and key */
-               	snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
+		/* Process authentication protocol and key */
+		snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
 
 		/* default to MD5 */
 		snmp_sess->securityAuthProto = (*nut_usmHMACMD5AuthProtocol);
@@ -549,8 +650,8 @@ static void * try_SysOID(void * arg)
 	struct snmp_session snmp_sess;
 	void * handle;
 	struct snmp_pdu *pdu, *response = NULL, *resp = NULL;
-        oid name[MAX_OID_LEN];
-        size_t name_len = MAX_OID_LEN;
+	oid name[MAX_OID_LEN];
+	size_t name_len = MAX_OID_LEN;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	int index = 0;
 	int sysoid_found = 0;
@@ -667,12 +768,16 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-        if( !nutscan_avail_snmp ) {
-                return NULL;
-        }
-
+	if( !nutscan_avail_snmp ) {
+		return NULL;
+	}
 
 	g_usec_timeout = usec_timeout;
+
+	if (init_snmp_device_table() == 0)
+		return NULL;
+	if (snmp_device_table == NULL)
+		return NULL;
 
 	/* Initialize the SNMP library */
 	(*nut_init_snmp)("nut-scanner");

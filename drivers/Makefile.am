@@ -37,6 +37,9 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser	\
  nutdrv_qx
 SNMP_DRIVERLIST = snmp-ups
+if WITH_DMFMIB
+  SNMP_DRIVERLIST += snmp-ups-dmf
+endif
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
  nutdrv_atcl_usb \
@@ -203,10 +206,39 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats-mib.c apc-ats-mib.c raritan-px2-mib.c apc-pdu-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
+snmp_ups_CFLAGS = $(AM_CFLAGS) -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
+
+# DMF SNMP - ok to define this in the open, it is only built if enabled above
+snmp_ups_dmf_SOURCES = snmp-ups.c
+snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
+ $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) \
+ $(top_builddir)/common/libcommon.la
+snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) \
+	-I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
+if WITH_DMF_LUA
+snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+snmp_ups_dmf_LDADD += $(LUA_LIB)
+else
+snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=0
+endif
+
+if WITH_SSL
+  snmp_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_LDADD += $(LIBSSL_LIBS)
+
+  snmp_ups_dmf_CFLAGS += $(LIBSSL_CFLAGS)
+  snmp_ups_dmf_LDADD += $(LIBSSL_LIBS)
+endif
 
 # NEON XML/HTTP
 netxml_ups_SOURCES = netxml-ups.c mge-xml.c
 netxml_ups_LDADD = $(LDADD_DRIVERS) $(LIBNEON_LIBS)
+netxml_ups_CFLAGS = $(AM_CFLAGS)
+
+if WITH_SSL
+  netxml_ups_CFLAGS += $(LIBSSL_CFLAGS)
+  netxml_ups_LDADD += $(LIBSSL_LIBS)
+endif
 
 # Powerman
 powerman_pdu_SOURCES = powerman-pdu.c
@@ -252,7 +284,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 # tracking (which is automatic), but to ensure these files are
 # distributed by "make dist".
 
-dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
+dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
  dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\

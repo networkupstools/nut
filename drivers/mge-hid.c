@@ -60,7 +60,6 @@
 
 /* IBM */
 #define IBM_VENDORID 0x04b3
-
 #ifndef SHUT_MODE
 #include "usb-common.h"
 

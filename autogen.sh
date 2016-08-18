@@ -23,13 +23,20 @@ then
 	if perl -e 1; then
 		echo "Regenerating the USB helper files..."
 		cd tools && ./nut-usbinfo.pl && cd ..
-	else 
+	else
 		echo "----------------------------------------------------------------------"
 		echo "Error: Perl is not available."
 		echo "Skipping the USB helper files regeneration."
 		echo "----------------------------------------------------------------------"
 	fi
 fi
+
+# we'd rather regenerate this file every time, because the script to generate
+# its content (and the set of input files) can change over time; note that the
+# script produces a $srcdir/scripts/DMF/legacy-mibfiles-list.mk.in template
+# later converted to $builddir/scripts/DMF/legacy-mibfiles-list.mk by configure
+echo "Regenerating the list of legacy *-mib.c files in current codebase to produce DMFs later"
+( cd scripts/DMF && ./gen-legacy-mibfiles-list.sh )
 
 # now we can safely call autoreconf
 echo "Calling autoreconf..."

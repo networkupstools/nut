@@ -23,6 +23,7 @@
 #include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
+#include <dirent.h>
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -30,6 +31,7 @@
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
 #include "nut_version.h"
+
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
@@ -630,4 +632,47 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 	}
 
 	return write(fd, buf, buflen);
+}
+
+
+/* FIXME: would be good to get more from /etc/ld.so.conf[.d] */
+char * search_paths[] = {
+	LIBDIR,
+	"/usr"LIBDIR,
+	"/usr/lib64",
+	"/lib64",
+	"/usr/lib",
+	"/lib",
+	"/usr/local/lib",
+	NULL
+};
+
+char * get_libname(const char* base_libname)
+{
+	DIR *dp;
+	struct dirent *dirp;
+	int index = 0;
+	char *libname_path = NULL;
+	char current_test_path[LARGEBUF];
+
+	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
+	{
+		memset(current_test_path, 0, LARGEBUF);
+
+		if ((dp = opendir(search_paths[index])) == NULL)
+			continue;
+
+		while ((dirp = readdir(dp)) != NULL)
+		{
+			if(!strncmp(dirp->d_name, base_libname, strlen(base_libname))) {
+				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
+				libname_path = realpath(current_test_path, NULL);
+				if (libname_path != NULL)
+					break;
+			}
+		}
+		closedir(dp);
+	}
+	/* fprintf(stderr,"Looking for lib %s, found %s\n", base_libname, (libname_path!=NULL)?libname_path:"NULL");*/
+	return libname_path;
 }
