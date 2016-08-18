@@ -1,3 +1,4 @@
 debian/tmp/lib/nut/snmp-ups
 debian/tmp/lib/nut/snmp-ups-dmf
 usr/share/nut/dmfsnmp
+usr/share/nut/dmfnutscan

@@ -26,7 +26,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 	                     --with-ssl --with-openssl --with-libltdl=yes \
 	                     --with-cgi=auto --with-powerman=auto \
                          --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
-                         --with-dmf=yes \
+                         --with-snmp_dmf_lua=yes \
 	                     --with-dev \
 	                     --disable-static \
 	                     --with-statepath=/var/run/nut \

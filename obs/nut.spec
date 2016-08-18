@@ -47,32 +47,32 @@ Url:            http://www.networkupstools.org/
 # git clone https://github.com/vyskocilm/nut daisychain+DMF
 # git archive --prefix nut-2.7.4/ -o ~/work/BIOS/ROZ-OBS/Pool\:master/nut/nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz HEAD
 Source:         nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz
-Patch2:         0002-nut-monitor-paths.patch
-Patch3:         0003-install-dev-files-in-usr.patch
-Patch4:         0004-fix-systemd-service.patch
-Patch6:         0006-ups-conf-maxretry.patch
-Patch8:         0008-drop-w3c-icons.patch
-Patch11:        0011-libnutscanner-scan-one-ip-xml-http.patch
-Patch14:        0014-upsrdvctl-nowait.patch
-Patch15:        0015-Use-target-for-drivers-in-systemd.patch
-Patch16:        0021-xml_scan_3tries.patch
-# already upstream
-#Patch17:        0024-snmp-ups-Eaton-3ph-UPS-improvements.patch
-#Patch18:        0025-Fix-nut-scanner-compilation-in-some-environments.patch
-#Patch19:        0026-snmp-ups-support-Raritan-Dominion-PX2-PDU.patch
-Patch20:        0027-snmp-ups-support-APC-PDU.patch
-# can't be merged, upstream change
-#Patch21:        0028-nut-scanner-additional-search-path.patch
-# can't be merged, upstream change
-#Patch29:        0029-netvision-mib-uses-0-as-dfl.patch
-# daisy chain is upstream
-# Patch30:        0030-daisychain.patch
-# Patch31:        0031-daisychain-complement.patch
-# Patch32:        0032-snmp-ups-fix-some-regression-due-to-daisychain.patch
-# Patch33:        0033-snmp-ups-fix-memory-leaks.patch
-Patch34:        0034-fix_xmlv4_segfault.patch
-#Patch35:        0035-daisychain+DMF.patch
-#Patch36:        0036-post-carlos-dmf-fixes.patch
+#Patch2:         0002-nut-monitor-paths.patch
+#Patch3:         0003-install-dev-files-in-usr.patch
+#Patch4:         0004-fix-systemd-service.patch
+#Patch6:         0006-ups-conf-maxretry.patch
+#Patch8:         0008-drop-w3c-icons.patch
+#Patch11:        0011-libnutscanner-scan-one-ip-xml-http.patch
+#Patch14:        0014-upsrdvctl-nowait.patch
+#Patch15:        0015-Use-target-for-drivers-in-systemd.patch
+#Patch16:        0021-xml_scan_3tries.patch
+### already upstream
+###Patch17:        0024-snmp-ups-Eaton-3ph-UPS-improvements.patch
+###Patch18:        0025-Fix-nut-scanner-compilation-in-some-environments.patch
+###Patch19:        0026-snmp-ups-support-Raritan-Dominion-PX2-PDU.patch
+#Patch20:        0027-snmp-ups-support-APC-PDU.patch
+### can't be merged, upstream change
+###Patch21:        0028-nut-scanner-additional-search-path.patch
+### can't be merged, upstream change
+###Patch29:        0029-netvision-mib-uses-0-as-dfl.patch
+### daisy chain is upstream
+### Patch30:        0030-daisychain.patch
+### Patch31:        0031-daisychain-complement.patch
+### Patch32:        0032-snmp-ups-fix-some-regression-due-to-daisychain.patch
+### Patch33:        0033-snmp-ups-fix-memory-leaks.patch
+#Patch34:        0034-fix_xmlv4_segfault.patch
+###Patch35:        0035-daisychain+DMF.patch
+###Patch36:        0036-post-carlos-dmf-fixes.patch
 
 Requires:       %{_bindir}/fgrep
 Requires:       %{_bindir}/grep
@@ -243,6 +243,7 @@ autoreconf -f -i
     --with-usb\
     --with-snmp\
     --with-neon\
+    --with-snmp_dmf_lua\
 	--with-dev\
     --with-ipmi \
 	--with-powerman=auto\
@@ -324,6 +325,8 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{_sysconfdir}/logrotate.d/*
 %{_bindir}/*
 %{_datadir}/nut
+%exclude %{_datadir}/nut/dmfnutscan
+%exclude %{_datadir}/nut/dmfsnmp
 %{_mandir}/man5/*.*
 %{_mandir}/man8/*.*
 %exclude %{_mandir}/man8/netxml-ups*.*
@@ -358,6 +361,12 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{MODELPATH}/netxml-ups
 %{_mandir}/man8/netxml-ups*.*
 %{_mandir}/man8/snmp-ups*.*
+%dir %{_datadir}/nut/dmfnutscan
+%dir %{_datadir}/nut/dmfsnmp
+%{_datadir}/nut/dmfnutscan/*.dmf
+%{_datadir}/nut/dmfsnmp/*.dmf
+%{_datadir}/nut/dmfnutscan/*.xsd
+%{_datadir}/nut/dmfsnmp/*.xsd
 
 %files -n libupsclient1
 %defattr(-,root,root)
