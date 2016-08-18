@@ -268,9 +268,8 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
         fprintf(stderr,"Error creating socket\n");
         return NULL;
     }
-
 #define MAX 3
-    for (i = 0; i != MAX || current_nut_dev == NULL; i++) {
+    for (i = 0; i != MAX && current_nut_dev == NULL; i++) {
 		/* Initialize socket */
 		sockAddress.sin_family = AF_INET;
         //sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
@@ -330,8 +329,7 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 					NI_NUMERICHOST) != 0) {
 
 					fprintf(stderr,
-						"Error converting IP address \
-						: %d, #%d/%d\n",errno);
+						"Error converting IP address: %d\n",errno);
                     usleep(usec_timeout);
 					continue;
 				}
