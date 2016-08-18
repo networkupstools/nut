@@ -1,0 +1,1931 @@
+nut (2.7.4-13) UNRELEASED; urgency=high
+
+  * Base on daisychain+DMF branch from vyskocilm fork @ github
+    removed patches
+    * 0024-snmp-ups-Eaton-3ph-UPS-improvements.patch
+    * 0025-Fix-nut-scanner-compilation-in-some-environments.patch
+    * 0026-snmp-ups-support-Raritan-Dominion-PX2-PDU.patch
+    can't be merged, upstream change
+    * 0028-nut-scanner-additional-search-path.patch
+    * 0029-netvision-mib-uses-0-as-dfl.patch
+    daisy chain is upstream
+    * 0030-daisychain.patch
+    * 0031-daisychain-complement.patch
+    * 0032-snmp-ups-fix-some-regression-due-to-daisychain.patch
+    * 0033-snmp-ups-fix-memory-leaks.patch
+    part of daisychain+DMF branch
+    * 0035-daisychain+DMF.patch
+    * 0036-post-carlos-dmf-fixes.patch
+
+ -- Michal Vyskocil <MichalVyskocil@Eaton.com>  Tue, 16 Aug 2016 11:29:12 +0200
+
+nut (2.7.4-12) UNRELEASED; urgency=high
+
+  * Add 0036-post-carlos-dmf-fixes.patch
+    this fixes bug introduced by Carlos after DMF support was validated
+    Pushed upstream (DMF branch) as
+    https://github.com/networkupstools/nut/pull/304
+
+ -- Michal Vyskocil <MichalVyskocil@Eaton.com>  Mon, 15 Aug 2016 15:25:11 +0200
+
+nut (2.7.4-11) UNRELEASED; urgency=high
+
+  * Add 0035-daisychain+DMF.patch
+    this is combination of daisychain+DMF vyskocilm branch on gh + some
+    polishing to apply cleanly
+
+ -- Michal Vyskocil <MichalVyskocil@Eaton.com>  Fri, 12 Aug 2016 15:15:18 +0200
+
+nut (2.7.4-10) UNRELEASED; urgency=high
+
+  * Add 0034-fix_xmlv4_segfault.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Tue, 28 Jun 2016 14:17:57 +0200
+
+nut (2.7.4-9) UNRELEASED; urgency=high
+
+  * Add 0033-snmp-ups-fix-memory-leaks.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Thu, 09 Jun 2016 10:36:07 +0200
+
+nut (2.7.4-8) UNRELEASED; urgency=high
+
+  * Add 0032-snmp-ups-fix-some-regression-due-to-daisychain.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Tue, 07 Jun 2016 16:59:19 +0200
+
+nut (2.7.4-7) UNRELEASED; urgency=high
+
+  * Add the complementary patch 0031-daisychain-complement.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Tue, 31 May 2016 16:23:23 +0200
+
+nut (2.7.4-6) UNRELEASED; urgency=high
+
+  * Add again patch 0030-daisychain.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Fri, 27 May 2016 15:46:43 +0200
+
+nut (2.7.4-5) UNRELEASED; urgency=high
+
+  * Add patch 0029-netvision-mib-uses-0-as-dfl.patch and
+    0030-daisychain.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Thu, 19 May 2016 13:36:45 +0200
+
+nut (2.7.4-4) UNRELEASED; urgency=high
+
+  * Add patch 0028-nut-scanner-additional-search-path.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Mon, 11 Apr 2016 09:34:15 +0200
+
+nut (2.7.4-3) UNRELEASED; urgency=high
+
+  * Add patch 0027-snmp-ups-support-APC-PDU.patch
+
+ -- Tomas Halman <TomasHalman@Eaton.com>  Wed, 06 Apr 2016 16:21:47 +0200
+
+nut (2.7.4-2) UNRELEASED; urgency=high
+
+  * Add patch 0026-snmp-ups-support-Raritan-Dominion-PX2-PDU.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Wed, 06 Apr 2016 16:21:47 +0200
+
+nut (2.7.4-1) UNRELEASED; urgency=high
+
+  * updated to 2.7.4
+    dropped following no longer needed patches:
+      0009-systemd.patch
+      0010-libnutscanner-2pass-crash.patch
+      0012-nutclient-socket-read.patch
+      0013-Fix-dummy-ups-for-external-value-changes.patch
+      0016-Eaton-ePDU.patch
+      0017-Eaton-ePDU-groups.patch
+      0018-Eaton-3phase-alarms.patch
+      0019-stale-comm-recovery.patch
+      0020-stale-comm-detection.patch
+      0022-3ph_temp_hum_internal_th.patch
+      0023-3ph-outputsource.patch
+  * Add patch 0024-snmp-ups-Eaton-3ph-UPS-improvements.patch
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Thu, 10 Mar 2016 11:11:28 +0100
+
+nut (2.7.3-23) UNRELEASED; urgency=high
+
+  * Patch SNMP for Eaton 3ph output source status
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Mon, 08 Feb 2016 11:56:24 +0100
+
+nut (2.7.3-22) UNRELEASED; urgency=high
+
+  * Patch SNMP for Eaton 3ph temperature and humidity (internal and external)
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Wed, 03 Feb 2016 16:21:10 +0100
+
+nut (2.7.3-21) UNRELEASED; urgency=high
+
+  * Patch XML scan to actually limit to 3 attempt, and not loop infinitly
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Tue, 02 Feb 2016 13:01:12 +0100
+
+nut (2.7.3-20) UNRELEASED; urgency=high
+
+  * Patch snmp-ups to improve stale communication detection
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Thu, 14 Jan 2016 15:48:13 +0100
+
+nut (2.7.3-19) UNRELEASED; urgency=high
+
+  * Patch snmp-ups to improve stale communication recovery
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Thu, 07 Jan 2016 13:34:15 +0100
+
+nut (2.7.3-18) UNRELEASED; urgency=high
+
+  * Fix typo in nut-driver@.service
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Thu, 1 Oct 2015 13:28:07 +0200
+
+nut (2.7.3-17) UNRELEASED; urgency=high
+
+  * Add 0018-Eaton-3phase-alarms.patch for 3phase UPS alarms
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Mon, 28 Sep 2015 16:27:48 +0200
+
+nut (2.7.3-16) UNRELEASED; urgency=high
+
+  * Add 0017-Eaton-ePDU-groups.patch for ePDU outlet groups management
+    and others SNMP improvements
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Fri, 11 Sep 2015 15:48:36 +0200
+
+nut (2.7.3-15) UNRELEASED; urgency=high
+
+  * Complete 0016-Eaton-ePDU.patch for ePDU alarms and SNMP improvements
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Fri, 11 Sep 2015 15:48:36 +0200
+
+nut (2.7.3-14) UNRELEASED; urgency=high
+
+  * added 0016-Eaton-ePDU.patch for ePDU alarms and SNMP improvements
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Mon, 07 Sep 2015 14:55:11 +0200
+
+nut (2.7.3-13) UNRELEASED; urgency=high
+
+  * added 0015-Use-target-for-drivers-in-systemd.patch to implement more
+    granular systemd support
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Fri, 21 Aug 2015 12:15:07 +0200
+
+nut (2.7.3-12) UNRELEASED; urgency=high
+
+  * putting 0013-Fix-dummy-ups-for-external-value-changes.patch back
+    for remote settings through upsrw (for GreenDataNet)
+  * including 0014-upsrdvctl-nowait.patch. Provides an option to start
+    The nowait flag allow to tell upsdrvctl to not wait at all for the
+    driver(s) to execute the request command. The default behavior, when
+    this variable is omitted, is to wait 'maxstartdelay' seconds
+
+ -- Tomas Halman <tomashalman@eaton.com>  Mon, 11 Aug 2015 9:20:00 +0100
+
+nut (2.7.3-11) UNRELEASED; urgency=high
+
+  * removed 0013-Fix-dummy-ups-for-external-value-changes.patch
+    probably causes nut unstability
+
+ -- Tomas Halman <tomashalman@eaton.com>  Mon, 11 Aug 2015 9:20:00 +0100
+
+nut (2.7.3-10) UNRELEASED; urgency=high
+
+  * 0013-Fix-dummy-ups-for-external-value-changes.patch: fix dummy-ups
+    for remote settings through upsrw (for GreenDataNet)
+
+ -- Arnaud Quette <ArnaudQuette@Eaton.com>  Mon, 10 Aug 2015 09:41:28 +0200
+
+nut (2.7.3-9) UNRELEASED; urgency=high
+
+  * 0012-nutclient-socket-read.patch fix socket reading
+
+ -- Tomas Halman <tomashalman@eaton.com>  Mon, 3 Aug 2015 13:12:00 +0100
+
+nut (2.7.3-8) UNRELEASED; urgency=low
+
+  * Drop bogus headers from libupsclient-dev
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Tue, 30 Jun 2015 8:13:08 +0100
+
+nut (2.7.3-7) UNRELEASED; urgency=low
+
+  * 0011-libnutscanner-scan-one-ip-xml-http.patch
+
+ -- Michal Vyskocil <michalvyskocil@eaton.com>  Tue, 23 Jun 2015 10:13:08 +0100
+
+nut (2.7.3-6) UNRELEASED; urgency=low
+
+  * fix nutscan library crash on second call
+
+ -- Tomas Halman <tomashalman@eaton.com>  Thu, 18 Jun 2015 8:54:38 +0100
+
+nut (2.7.3-5) UNRELEASED; urgency=low
+
+  * add mising dependency between libraries
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Wed, 17 Jun 2015 8:54:38 +0100
+
+nut (2.7.3-4) UNRELEASED; urgency=low
+
+  * add mising header file for scanner
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Mon, 15 Jun 2015 10:54:38 +0100
+
+nut (2.7.3-3) UNRELEASED; urgency=low
+
+  * drop static libraries
+  * add nut-scanner
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Fri, 12 Jun 2015 16:54:38 +0100
+
+nut (2.7.3-2) UNRELEASED; urgency=low
+
+  * add 0009-systemd.patch
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Wed, 13 May 2015 16:54:38 +0100
+
+nut (2.7.3-1) UNRELEASED; urgency=low
+
+  * to ease the maintenance switched to OBS format
+  * updated to 2.7.3
+    dropped following no longer needed patches:
+	  0007-killpower-path.patch
+	  0009-nut-epdu-input.patch
+
+ -- Michal Hrusecky <michalhrusecky@eaton.com>  Wed, 5 May 2015 16:54:38 +0100
+
+nut (2.7.2-3) UNRELEASED; urgency=low
+
+  * added 0009-nut-epdu-input.patch
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 4 Feb 2015 16:54:38 +0100
+
+nut (2.7.2-2) UNRELEASED; urgency=low
+
+  * debian/control: add new packages libnutclient0 and libnutclient-dev
+  * debian/rules: adapted for the new packages
+  * debian/libnutclient0.install, debian/libnutclient0.symbols,
+    debian/libnutclient-dev.install, debian/libnutclient-dev.manpages:
+    created for the new packages
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 20 Oct 2014 20:41:47 +0200
+
+nut (2.7.2-1) unstable; urgency=low
+
+  * New upstream release
+    - Fix the undefined references (Closes: #731156)
+    - debian/patches/0004-fix-systemd-service.patch: Refreshed
+    - Drop d/p/0005-Provide-retry-options-for-upsdrvctl-and-drivers.patch:
+      Merged upstream
+    - debian/nut-server.install: Upstream is now installing upsdrvctl /sbin
+    - Rename package libupsclient3 to libupsclient4, soname got bumped again
+  * debian/rules, debian/control, d/p/0004-fix-systemd-service.patch: Use a
+    symlink instead of an Alias= to mask the SysV initscript
+  * debian/control: Bump Standards-Version to 3.9.5 (no further changes)
+  * debian/tests/control: Add lsb-release and netcat to the dependencies
+    (Closes: #733189)
+  * debian/control, debian/rules: Call dh-autoreconf and pass LDFLAGS to
+    minimize runtime dependencies
+  * debian/patches/0008-drop-w3c-icons.patch: Remove the link to external W3C
+    icons to prevent privacy breach (privacy-breach-w3c-valid-html)
+  * debian/nut-server.install, debian/nut-server.manpages: Install new
+    nutdrv_atcl_usb driver
+
+ -- Laurent Bigonville <bigon@debian.org>  Tue, 22 Apr 2014 22:46:12 +0200
+
+nut (2.7.1-1) unstable; urgency=low
+
+  * New upstream release (Closes: #730183)
+    - Refresh debian/patches/0004-fix-systemd-service.patch
+    - Rename libupsclient1 to libupsclient3 following the soname bump, rename
+      libupsclient1-dev to libupsclient-dev, the package is not co-installable
+      anyway
+  * debian/rules, debian/control: Enable SSL support using libnss3
+  * d/p/0005-Provide-retry-options-for-upsdrvctl-and-drivers.patch,
+    d/p/0006-ups-conf-maxretry.patch: By default, retry to start the drivers
+    up-to three times, this should mitigate races with slow devices
+    (Closes: #694717)
+  * debian/nut-server.install, debian/nut-server.manpages: Install new drivers
+  * Move bash-completion file to /usr/share/bash-completion/
+  * debian/patches/0007-killpower-path.patch: Revert POWERDOWNFLAG back to
+    /etc/killpower
+  * debian/nut-client.lintian-overrides: Add override for
+    systemd-no-service-for-init-script ups-monitor
+  * debian/rules: Drop static ordering for the initscripts and pass
+    --restart-after-upgrade option to dh_installinit and dh_systemd_start to
+    minimize the downtime of the daemons
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 24 Nov 2013 20:57:51 +0100
+
+nut (2.6.5-4) unstable; urgency=low
+
+  * debian/control: Do not build nut-ipmi on hurd-i386 as freeipmi is not
+    available on that platform.
+
+ -- Laurent Bigonville <bigon@debian.org>  Thu, 11 Jul 2013 12:29:58 +0200
+
+nut (2.6.5-3) unstable; urgency=low
+
+  [ Laurent Bigonville ]
+  * debian/control:
+    - Move libupsclient1 package to libs Section
+    - Add libgd-dev to the Build-Depends, keep the other alternatives to ease
+      the backports
+    - Bump Standards-Version to 3.9.4 (no further changes)
+    - Add autotools-dev to the build-dependencies so config.{guess,sub} are
+      getting updated during build
+    - Use canonical URL for the VCS-* fields
+    - Add build-dependency against dh-systemd and bump minimal cdbs version so
+      systemd helpers are called during build.
+  * Added dep-8-tests to improve QA (from Ubuntu, closes: #708130)
+  * debian/nut-monitor.menu, nut-monitor.xpm: Add Debian menu entry (Closes:
+    #708813)
+  * debian/rules: Drop manual creation of .service files symlink, this should
+    be handled by dh_systemd now
+  * debian/patches/0004-fix-systemd-service.patch: Also add Wants/Before for
+    systemd-udev-settle.service in the nut-driver.service as it got renamed
+    after udev merge
+  * debian/patches/0004-fix-systemd-service.patch: Fix path for upsdrvctl in
+    scripts/systemd/nutshutdown.in
+
+  [ Ivo De Decker ]
+  * debian/nut-client.preinst: also revert /etc/nut/nut.conf mangling done
+    by postinst during upgrade from lenny to squeeze (Really closes: #677054)
+    Thanks to Andreas Beckmann for the review.
+
+ -- Laurent Bigonville <bigon@debian.org>  Thu, 11 Jul 2013 00:50:06 +0200
+
+nut (2.6.5-2) experimental; urgency=low
+
+  [ Laurent Bigonville ]
+  * debian/control: Move the nut-monitor Suggests from nut-server to
+    nut-client
+  * Restore proper SELinux context for runtime created /var/run/nut directory
+  * debian/control: Fix typo in package description
+  * debian/watch: Update watch file URL (Thanks to Bart Martens)
+  * debian/rules: Alias systemd nut-monitor service file to nut-client to
+    prevent it from running twice
+  * d/p/0004-fix-systemd-service.patch: Fix systemd service file for Debian
+  * Install tmpfiles conf files to create /run/nut directory during boot
+
+  [ Sébastien Villemot ]
+  * debian/nut-client.preinst: revert /etc/nut/nut.conf mangling done by older
+    versions of the postinst (Closes: #677054)
+
+  [ Ivo De Decker ]
+  * Only fix permissions of configfiles on first install.
+  * Only remove /etc/init.d/nut from previous versions of nut in nut-server
+    postinst if there are no local changes.
+  * Also remove /etc/init.d/nut in nut-client postinst. Thanks to
+    Laurent Bigonville for the hint.
+
+ -- Laurent Bigonville <bigon@debian.org>  Thu, 31 Jan 2013 21:51:31 +0100
+
+nut (2.6.5-1) experimental; urgency=low
+
+  [ Arnaud Quette ]
+  * debian/control, debian/nut-ipmi.{install,manpages}: create IPMI
+    support package
+  * debian/nut-server.install: only install USB udev rules
+
+  [ Laurent Bigonville ]
+  * New upstream release
+    - Drop debian/patches/0001-fix-upsmon-regression.patch, applied upstream
+  * Follow multi-arch policy
+  * Install systemd .service files (Closes: #679450)
+  * debian/nut-server.install: Drop newmge-shut, renamed upstream to mge-shut
+    and install the old implementation (oldmge-shut) instead
+  * debian/control: Drop ancient Conflicts/Provides/Replaces
+  * Install all development files under /usr
+
+ -- Laurent Bigonville <bigon@debian.org>  Mon, 13 Aug 2012 01:59:18 +0200
+
+nut (2.6.4-2) unstable; urgency=low
+
+  * debian/rules: Stop the nut-client before nut-server on systems using static
+    boot ordering (Closes: #679451)
+  * debian/nut-server.postinst: Remove /etc/init.d/nut on upgrade
+    (Closes: #677822)
+  * Rename nut-server.lintian-overrides to nut-client.lintian-overrides and
+    adjust overrides now that ups-monitor is shipped in nut-client package
+    (Closes: #677947)
+  * Add debian/patches/0001-fix-upsmon-regression.patch: Fix upsmon/upssched
+    regression (Taken from upstream) (Closes: #679513)
+  * Move nut metapackage to Section: metapackages
+  * Also create nut user when installing nut-client package and do not delete
+    it on purge anymore (Closes: #682000)
+  * Drop /etc/default/nut → /etc/nut/nut.conf migration code, migration
+    happends before squeeze release and this was against policy to have a
+    maintainer script modifying a conffile in the first place (Closes: #684392)
+  * Add dependency against adduser and lsb-base on nut-client package
+  * Be sure that client is stopped before the server also when using
+    dependencies based boot
+  * Fix package descriptions (Closes: #678068)
+  * Also install /bin/upssched-cmd in nut-client package as this script is
+    referenced in default upssched.conf config file
+  * debian/watch: Update watch file
+  * Be sure that all maintainer scripts are returning 0 at their end
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 12 Aug 2012 20:38:52 +0200
+
+nut (2.6.4-1) unstable; urgency=high
+
+  * New upstream release (Closes: #671444)
+  * acknowledges NMU (Closes: #613643)
+  * debian/nut-client.init: fix action "start" and use of log_*_*msg
+    LSB log functions (Closes: #675619)
+  * debian/nut-server.preinst: remove obsolete file(s) left in
+    /etc/udev/rules.d and related processing: udev files are now located
+    in /lib/udev/rules, and there is no reason to modify the dedicated
+    USB UPS rules (52-nut-usbups.rules) (Closes: #660072)
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 06 Jun 2012 21:03:50 +0200
+
+nut (2.6.3-2) unstable; urgency=low
+
+  * debian/nut-server.init: rewrite to match upsd / drivers startup scope
+  * debian/nut-client.init: created to match upsmon startup scope
+    (Closes: #634858)
+  * debian/nut.TODO.Debian, debian/Makefile.am: updated to reflect the above
+  * debian/rules: install nut-client.init, and update to reflect the above
+  * debian/control, debian/Makefile.am: updated to reflect the above
+  * debian/control:
+    - add Breaks on nut-server (<< 2.6.3-1~)
+    - bump Standards-Version to 3.9.3
+  * debian/nut-client.links: renamed from debian/nut-server.links, since
+    ups-monitor is now provided by nut-client initscript
+  * debian/nut.README.Debian: renamed from nut-server.README.Debian,
+    to provide it with both client and server packages
+  * debian/nut-server.install: add missing drivers (clone-outlet,
+    liebert-esp2 and microdowell)
+  * debian/nut-server.manpages: add missing manual pages (apcsmart-old,
+    ivtscd, liebert-esp2 and microdowell)
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 24 Jan 2012 13:14:59 +0100
+
+nut (2.6.3-1) unstable; urgency=low
+
+  * New upstream release (Closes: #635186, #598741, #633756, #638221)
+  * debian/nut-server.{install,manpages}: add richcomm_usb
+  * debian/nut-server.install, debian/rules: install Avahi service file
+  * debian/rules, nut-client.install: install Augeas lenses
+  * debian/nut-server.README.Debian: clarify udev explanation (Closes: #529664)
+  * debian/patches/0001-fix_spelling_and_typo.patch,
+    debian/patches/0003-libupsclient-version.patch: removed since these are now
+    fixed upstream
+  * debian/patches/series: updated
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 24 Jan 2012 13:14:59 +0100
+
+nut (2.6.2-1) unstable; urgency=low
+
+  * New upstream release (Closes: #594989)
+  * debian/control:
+    - remove legacy Build-Depends for nut-hal-drivers on libdbus and libglib
+    - Build-Depends-Indep on docbook-xsl for offline document
+      generation (Closes: #635347)
+  * debian/nut-server.install: add apcsmart-old
+  * debian/nut-server.init:
+    - add udev as Required-Start/Stop (Closes: #642412)
+    - remove legacy support for /etc/default/nut (Closes: #638021)
+  * debian/patches/0003-libupsclient-version.patch: added to fix the missing
+    libupsclient version info bump
+  * debian/libupsclient1-dev.links: update link name
+  * debian/libupsclient1.symbols: add with upscli_tryconnect
+  * debian/nut.TODO.Debian: update and complete the TODO list
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 29 Sep 2011 18:39:16 +0200
+
+nut (2.6.1-2) unstable; urgency=low
+
+  * debian/nut.README.Debian: Adjust udev rules naming for permissions override
+    (Closes: #529664)
+  * Re-add and refresh debian/patches/0001-fix_spelling_and_typo.patch:
+    Some typos and spelling errors remain.
+  * Split nut package into nut-client and nut-server, keep nut package as
+    metapackage
+  * Generate PDF and html doc and install it in nut-doc package
+  * debian/rules:
+    - List non-installed files
+    - Includes python-module.mk
+    - Add flags to build documentation and install it
+  * debian/control:
+    - Add python-nut package and add python build-dependency
+    - Set nut-powerman-pdu priority to extras
+    - Add nut-monitor package
+    - Add nut-doc package and add required C/R/P
+    - Add libups-nut-perl package
+  * debian/nut-server.prerm: Remove /var/run/nut during removal
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 17 Jul 2011 19:03:18 +0200
+
+nut (2.6.1-1) unstable; urgency=low
+
+  * New upstream release (Closes: #595953, #614842, #595773)
+  * debian/patches/*.patch: removed since these are now fixed upstream
+  [Laurent Bigonville]
+  * Drop HAL package and build-dependencies (Closes: #613197)
+  * debian/control:
+    - Bump Standards-Version to 3.9.2 (no further changes)
+    - Drop autotools build-dependencies (not needed anymore)
+    - Drop non-existing build-dependencies
+  * debian/rules:
+    - Correctly pass flags to configure
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 01 Jun 2011 22:34:28 +0200
+
+nut (2.6.0-2) unstable; urgency=low
+
+  * debian/nut-snmp.docs: Distribute snmp.txt doc file (Closes: #548295)
+  * d/p/0001-fix_spelling_and_typo.patch: Update and refresh
+  * debian/nut.lintian-overrides: Fix typo
+  * debian/patch/0002-fix_libupsclient_pc.patch: Fix libupsclient.pc (Closes:
+    #624255)
+  * debian/rules:
+    - Switch to cdbs
+    - Remove not existing configure options (Closes: #611813)
+    - Drop Phony rules (Closes: #613699)
+  * debian/control:
+    - Add cdbs build-dependency
+
+ -- Laurent Bigonville <bigon@debian.org>  Sun, 08 May 2011 21:23:46 +0200
+
+nut (2.6.0-1) unstable; urgency=low
+
+  * New upstream release (Closes: #575176, #588648, #609597, #687985)
+  * debian/patches/*.patch: removed since these are now fixed upstream
+  * debian/patches/0001-fix_spelling_and_typo.patch,
+    debian/patches/series: reworked to match the new upstream release
+  * debian/nut.install, debian/nut.manpages: remove obsolete reference to
+    megatec and megatec_usb, now respectively replaced by blazer_ser and
+    blazer_usb
+  * debian/nut.docs: limit distributed documentation
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 16 Feb 2011 22:55:26 +0100
+
+nut (2.4.3-3) UNRELEASED; urgency=low
+
+  * debian/control:
+    - Wrap build-dependencies
+    - Change nut-cgi Recommends to apache2 | httpd-cgi
+  * debian/nut.postinst: Only trigger USB subsystem, should Closes: #574769
+  * debian/patches/0002-fix_udev_action.patch: Use SUBSYSTEM instead of BUS
+
+ -- Laurent Bigonville <bigon@debian.org>  Tue, 11 Jan 2011 22:24:07 +0100
+
+nut (2.4.3-2) unstable; urgency=medium
+
+  * debian/control:
+    - Bump Standards-Version to 3.9.1
+    - Update Vcs-* fields to new GIT repository
+    - Add myself as Uploaders
+  * Switch to dpkg-source 3.0 (quilt) format (Closes: #573601)
+  * debian/patches/0001-low_speed_usb_ups.patch: Use patch system for changes
+    that were applied directly in the source
+  * Add debian/gbp.conf file
+  * debian/watch: Bump version to 3
+  * Add debian/patches/0002-fix_udev_action.patch: Also set permission for
+    "change" udev ACTION (Closes: #557178)
+  * debian/nut.postrm: Do not try to remove nut user is deluser is not
+    installed anymore
+  * debian/nut.manpages: Install manpage nut.conf.5 (Closes: #528222)
+  * debian/copyright: Fix copyright-with-old-dh-make-debian-copyright
+  * Remove nut-snmp.lintian-overrides, not needed anymore
+  * debian/patches/0003-fix_spelling_and_typo.patch: Fix some spelling errors
+  * Add debian/libupsclient1.symbols file
+  * Add debian/nut.links: Re-add /etc/init.d/ups-monitor that was lost for
+    some reasons (Closes: #592351)
+  * debian/nut.lintian-overrides: Add override for
+    init.d-script-does-not-provide-itself /etc/init.d/ups-monitor
+  * Drop libupsclient1.post{inst,rm}: ldconfig call is added automatically by
+    debhelper
+  * debian/libupsclient1-dev.install: Do not ship /lib/libupsclient.la anymore
+  * debian/rules: Remove dpatch logic as we are using package source version
+    '3.0 (quilt)'
+  * debian/compat: Bump debhelper compatibility to 8
+
+ -- Laurent Bigonville <bigon@debian.org>  Fri, 24 Dec 2010 11:46:22 +0100
+
+nut (2.4.3-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * drivers/libhid.c: Apply r2407 from upstream to fix bug with some
+    low speed UPS devices. (Closes: #583371)
+
+ -- Tim Retout <diocles@debian.org>  Fri, 15 Oct 2010 19:31:39 +0100
+
+nut (2.4.3-1) unstable; urgency=low
+
+  * New upstream release (Closes: #544390, #528222, #539747, #526811,
+    #562064)
+  * debian/nut.install, debian/nut.manpages:
+    - remove cyberpower driver and manpage
+    - add bestfortress, clone and ivtscd drivers and manpages
+  * debian/rules:
+    - change udev dir to /lib/udev (Closes: #522327)
+    - replace deprecated calls to 'dh_clean -k' by dh_prep (Closes: #536599)
+  * debian/rules, debian/nut.install, debian/nut.install,
+    debian/nut.README.Debian: install configuration files, without the
+    sample suffix (Closes: #528641)
+  * debian/nut.links: restored (Closes: #522506)
+  * debian/nut.init:
+    - source nut.conf instead of default/nut for POWEROFF_WAIT(Closes:
+      #538173)
+    - fix status checking (Closes: #538785)
+    - improve detection of non configured system and beautify related
+      output (Closes: #563112)
+    - use 'invoke-rc.d' instead of calling the reboot script directly
+    - add $remote_fs to Required-Start and Required-Stop
+  * debian/nut.postrm: remove udev files and simplify cleanup (Closes:
+    #541629)
+  * debian/control:
+    - remove Luca Filipozzi from the Uploaders list (Closes: #568987)
+    - update Standards-Version to 3.8.4
+    - remove the debconf dependency
+    - bump debhelper version to (>= 7) in Build-Depends, for dh_prep
+    - add Breaks on nut-hal-drivers to ensure we have correct udev version
+  * Remove debconf support since it was related to really old nut
+    version (Closes: #518056):
+    - remove nut-cgi.config, nut.config, nut-cgi.templates, nut.templates,
+      and po/ directory
+    - update nut-cgi.postinst
+  * debian/nut.dirs: remove /var/run/nut to conform to Debian Policy
+  * debian/nut.postint:
+    - create /var/run/nut if needed
+    - improve security checks
+  * debian/nut.README.Debian: add a security note for ups.conf
+  * debian/watch: URL update
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 24 Feb 2010 22:58:53 +0100
+
+nut (2.4.1-3.2) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * nut.postinst: fix post-processing of nut.conf to avoid overriding
+    user settings (Closes: #531220)
+
+ -- Stefano Zacchiroli <zack@debian.org>  Thu, 26 Nov 2009 09:30:45 +0100
+
+nut (2.4.1-3.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Fix length of extended descriptions of packages
+    in debian/control
+  * Fix pending l10n issues. Debconf translations:
+    - Galician (marce villarino).  Closes: #524263
+    - Spanish (Noel David Torres Taño).  Closes: #525125
+    - Vietnamese (Clytie Siddall).  Closes: #548170
+
+ -- Christian Perrier <bubulle@debian.org>  Tue, 20 Oct 2009 21:45:21 +0200
+
+nut (2.4.1-3) unstable; urgency=low
+
+  * Debconf templates and debian/control reviewed by the debian-l10n-
+    english team as part of the Smith review project. Closes: #520591
+  * [Debconf translation updates]
+    - Japanese. Closes: #521350, #518602
+    - Czech. Closes: #521662
+    - German. Closes: #518005
+    - Basque. Closes: #522390
+    - French. Closes: #522677
+    - Finnish. Closes: #522837
+    - Swedish. Closes: #522973
+    - Italian. Closes: #522987
+    - Russian. Closes: #523122
+    - Portuguese. Closes: #523600
+
+ -- Christian Perrier <bubulle@debian.org>  Sat, 21 Mar 2009 08:08:59 +0100
+
+nut (2.4.1-2) unstable; urgency=low
+
+  * debian/control:
+    - add Build-Depends libwrap0-dev to enable TCP wrappers support,
+    - remove again dpatch from Build-Depends,
+    - move back debconf to Depends since we don't use it anymore in the preinst,
+    - add udev to nut-hal-drivers Depends so that it can use udevadm.
+  * debian/rules:
+    - pre merge the needed changes for Ubuntu (udev path and version),
+    - deactivate again dpatch rules
+    - move the nut-cgi HTML files off /var/www to /usr/share/nut/www
+    - set dh_installdocs to ignore Makefile
+    - remove dh_installexamples
+  * debian/patches/*: removed since it doesn't address the issue
+  * debian/nut-snmp.lintian-overrides: added to address NetSNMP overlinking
+  * debian/nut.install:
+    - add an precise list of the configuration files (Closes: #254355),
+    - use a wildcard to specify the udev rules installation path
+  * debian/nut-hal-drivers.install: use a wildcard to specify the udev rules
+    installation path (either /etc or /lib)    
+  * debian/nut-cgi.install: add an precise list of the configuration files
+  * debian/nut.preinst:
+    - remove previous udev rule if unchanged, otherwise move to new filename (ie
+      with a dash),
+    - don't call adduser or addgroup *at all*, since these operations should be
+      handled in the postinst,
+    -  migrate /etc/default/nut content to /etc/nut/nut.conf (part #1)
+  * debian/nut-cgi.preinst: removed since its content is addressed by postinst.
+  * debian/nut-hal-drivers.preinst:
+    - remove previous udev rule if unchanged, otherwise move to new filename (ie
+      with a dash),
+  * debian/nut-hal-drivers.postinst:
+     - reinstate since it was lost in the 2.2.2-10 merge,
+     - use the safe way to install udev rules (udevadm trigger --action=change).
+  * debian/nut.postinst:
+    - use the safe way to install udev rules, as for nut-hal-drivers.postinst
+      (udevadm trigger --action=change)
+    - rework the user/group creation, and a commented add to the dialout group,
+    - migrate /etc/default/nut content to /etc/nut/nut.conf (part #2)
+  * debian/nut-cgi.postinst: rework the user/group creation, and a commented add
+    to the dialout group.
+  * debian/nut.postinst: reactivate the nut user removal upon purge
+  * debian/nut.init:
+    - use nut.conf instead of /etc/default/nut to start the right component(s)
+    - enforce the configuration checking
+    - add basic support for the status option (as required per LSB)
+  * debian/nut.default: removed since its content has been incorporated into
+    nut.conf
+  * debian/{nut-cgi,nut}.examples: removed since the sample configuration files
+    are now installed.
+  * debian/nut.README.Debian: reworked with a lot of update and completion.
+  * debian/nut-cgi.README.Debian: reworked with a lot of update and completion.
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 20 Feb 2009 10:09:52 +0100
+
+nut (2.4.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Acknowledge the use of debhelpers (Closes: #506583)
+  * debian/copyright: authors and licensing (GPL2+ and GPL3+) completion
+  * debian/control:
+    - add a Pre-Depends on debconf for nut and nut-cgi, and remove the according
+      Depends
+    - add ${misc:Depends} to all Depends
+    - add libpowerman0-dev to the Build-Depends
+    - add a new nut-powerman-pdu package
+    - add a Recommends on bash-completion for nut
+    - remove Shaul Karl from the Uploaders as per his request
+  * debian/nut-powerman-pdu.install, debian/nut-powerman-pdu.manpages: added for
+    the nut-powerman-pdu package
+  * debian/nut.install:
+    - also list the bash_completion entry
+    - list update due to upstream changes
+  * debian/nut.manpages: list update due to upstream changes
+  * debian/rules:
+    - comment the patching rules
+    - install the nut.bash_completion script
+  * debian/patches/*: removed the previous patches since fixed upstream
+  * debian/patches/01_snmp_ups_no_lcrypto.dpatch: add a patch to fix snmp-ups
+    overlinking with lcrypto (lintian possible-gpl-code-linked-with-openssl)
+  * debian/po/es.po: added Spanish debconf template translation (Closes:
+    512494)
+  * debian/po/ja.po: added Japanese debconf template translation (Closes:
+    512865)
+  * debian/watch: updated for the new 2.4 tree
+  * debian/nut.prerm: replace the direct call to the init script by invoke-rc.d
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 17 Feb 2009 14:15:24 +0100
+
+nut (2.2.2-10) unstable; urgency=low
+
+  * Merge from Ubuntu (Morten Kjeldgaard):
+  * debian/compat: changed to 6
+  * debian/control:
+    - bump Build-Depends on debhelper to (>= 6.0.7~) since we are now using
+      dh_lintian.
+    - add hal to Build-Depends since configure attempts to locate /usr/lib/hal
+      in order to define callouts path and device information path
+  * debian/rules: --prefix is back to /usr, --exec-prefix=/ and --libdir=/lib
+    instead, which has the desired effect of moving the libraries to /lib.
+    The many shell commands in debian/rules, for moving files from the
+    install directory to the package directories have all been replaced by
+    dh_* calls and matching <package>.* files.
+  * debian/{libupsclient1-dev.install, libupsclient1-dev.manpages,
+    libupsclient1.install, nut-cgi.install, nut-cgi.manpages,
+    nut-hal-drivers.install, nut-snmp.install, nut-snmp.manpages,
+    nut-xml.install, nut-xml.manpages, nut.install, nut.lintian-overrides,
+    nut.manpages}: added debhelper files.
+  * debian/nut.dirs: modified debhelper files
+  * debian/libupsclient1-dev.links: added to provide a link from
+    /usr/lib/libupsclient.so -> /lib/libupsclient.so.1.0.0
+    This is a transitional measure, to salvage packages that have not yet
+    been updated to the new library location. Can be removed sometime in the 
+    future.
+  * debian/patches/03-configure.in.dpatch: patch to configure.in adding
+    AC_CONFIG_MACRO_DIR([m4])
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 27 Nov 2008 21:43:59 +0100
+
+nut (2.2.2-9) unstable; urgency=low
+
+  * debian/rules: also move libupsclient.so to /lib, otherwise the link is
+    broken (Closes: #505101)
+  * debian/nut-cgi.postinst: test if /etc/nut exists before chmod'ing (Closes:
+    #502757)
+  * debian/nut.TODO.Debian: some update and completion
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 15 Oct 2008 17:20:29 +0200
+
+nut (2.2.2-8) unstable; urgency=high
+
+  * debian/nut.links: restored since it's now handled by insserv (Closes:
+    #500190)
+  * debian/changelog: fix a typo error
+  * debian/rules: move libupsclient.so.1 from /usr/lib to /lib (Closes:
+    #491591)
+  * debian/nut-cgi.README.Debian: fix the permissions on /etc/nut (Closes:
+    #492277)
+  * debian/control: add Vcs-Browser and Vcs-Svn fields
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 30 Sep 2008 21:37:59 +0200
+
+nut (2.2.2-7) unstable; urgency=high
+
+  * debian/nut.links: removed to satisfy insserv (Closes: #492734)
+  * debian/po/it.po: add Italian debconf template translation (Closes:
+    #495781)
+  * debian/nut.preinst: force the nut user to be part of the extra group nut
+    (Closes: #493159)
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 15 Sep 2008 17:18:28 +0200
+
+nut (2.2.2-6) unstable; urgency=low
+
+  * tag this bug as closed by the 2.2.2 release (Closes: #490048)
+  * debian/nut.README.Debian:
+    - fix the serial udev advice (Closes: #490182)
+    - mention the UPS compatibility list (Closes: #447187)
+  * debian/po/de.po: update German debconf template translation (Closes:
+    #490128)
+  * debian/changelog: fix a typo on 2.2.2-2 release urgency
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 11 Jul 2008 11:30:55 +0200
+
+nut (2.2.2-5) unstable; urgency=low
+
+  * debian/po/eu.po: add Basque debconf template translation (Closes:
+    #489580)
+  * debian/control:
+    - add a Build-Depends on autoconfi, automake, libtool for the below patch
+    - bump Depends on udev to 0.124-1 to complete the fix of #489831
+  * debian/rules: call autoreconf after patches application
+  * debian/patches/02_g_timeout_add_seconds_patch.dpatch: fix compilation
+    issue in the nut-hal-drivers code, when using a Glib older than 2.14
+    (Closes: #489742)
+  * debian/nut.postint: replace the call to udevtrigger by udevadm trigger
+    (Closes: #489831)
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 07 Jul 2008 11:04:52 +0200
+
+nut (2.2.2-4) unstabl e; urgency=low
+
+  * debian/rules: fix a Lintian warning
+    (debian-rules-calls-debhelper-in-odd-order)
+  * debian/po/fi.po: add Finnish debconf template translation (Closes:
+    #489123)
+  * debian/po/ru.po: add Russian debconf template translation (Closes: 
+    #489285)
+  * debian/po/vi.po: update Vietnamese debconf template translation (Closes:
+    #489393)
+  * debian/nut.templates: remove nut/change_system_user since it is not used
+    anymore (Closes: #486783)
+
+ -- Arnaud Quette <aquette@debian.org>  Sat, 05 Jul 2008 22:56:35 +0200
+ 
+nut (2.2.2-3) unstable; urgency=low
+
+  * debian/rules: reactivate dpatch support
+  * debian/control: add dpatch back to Build-Depends
+  * debian/patches/00list: fix the matching of the NUT HAL .fdi file (Closes:
+    #471828)
+  * debian/po/fr.po: update French debconf template translation (Closes:
+    #486740)
+  * debian.po/de.po: update the German debconf template translation (Closes:
+    #487187)
+  * debian/po/sv.po: add Swedish debconf template translation (Closes: #488217)
+  * debian.po/cs.po: update the Czech debconf template translation (Closes:
+    #488355)
+  * debian/po/pt.po: update the Portuguese debconf template translation (Closes:
+    #488403)
+  * debian/po/sv.po: add Galician debconf template translation (Closes: #488380)
+  * debian/nut.config: fix a typo in comment
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 27 Jun 2008 16:18:29 +0200
+
+nut (2.2.2-2) unstable; urgency=low
+
+  * debian/rules: fix HAL files installation paths (Closes: #486362)
+  * debian/control:
+    - fix conflicts (Closes: #486704, #486705)
+    - update Standards-Version to 3.8.0
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 20 Jun 2008 21:29:31 +0200
+
+nut (2.2.2-1) unstable; urgency=low
+
+  * New upstream release (Closes: #471828, #462468, #334105, #463150)
+  * acknowledges NMUs (Closes: #469855)
+  * debian/control:
+    - add the new nut-xml package and its libneon dependency
+    - add the new libupsclient1 and libupsclient1-dev packages, with the latter
+      replacing nut-dev (Closes: #419684)
+    - remove dpatch dependency
+  * debian/rules: update according to upstream changes
+    - replace --with-lib by --with-dev
+    - update HAL integration
+    - update for the nut-xml package
+    - distribute the shared version of libupsclient
+    - comment dpatch calls
+  * debian/nut.postinst, debian/nut-hal-drivers.postinst: use udevtrigger to
+    refresh the devices permissions (Closes: #469601, #475262)
+  * debian/changelog: fix a typo
+  * debian/nut.templates: fix the short and long descriptions
+  * debian/libupsclient1.postinst, debian/libupsclient1.postrm: added to
+    handle the calls to ldconfig
+  * debian/nut.init: fix the call to /etc/init.d/reboot by adding the missing
+    "stop" parameter (Closes: 482022)
+  * debian/*.template: minor rework of the Debconf templates (Closes: 444151)
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 04 Jun 2008 13:35:41 +0200
+ 
+nut (2.2.1-2.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * Skip udev restart logic within chroots, closes: #469855.
+
+ -- Joe Nahmias <jello@debian.org>  Sun, 09 Mar 2008 13:12:12 -0400
+
+nut (2.2.1-2) unstable; urgency=low
+
+  * debian/po/de.po: update the German po-debconf translation (Closes:
+    #464466)
+  * nut-hal-drivers.preinst: created to add to HAL user to the NUT group
+    (Closes: #460392)
+  * debian/nut-hal-drivers.postinst: created to complete the above by
+    restarting udev after the rules file installation
+  * debian/changelog: Fix some Lintian reports (syntax and spelling errors)
+  * debian/nut.README.Debian: completed a bit more for #334105
+
+ -- Arnaud Quette <aquette@debian.org>  Fri,  8 Feb 2008 13:48:23 +0100
+ 
+nut (2.2.1-1) unstable; urgency=low
+
+  * New upstream release (Closes: #439986)
+  * acknowledges NMUs (Closes: #447961, #445000)
+  * debian/watch: update the URL to point the 2.2 tree
+  * debian/rules:
+    - force --udev-dir to remove udev from Build-Depends while
+      keeping the feature (complete #447961 fix)
+    - limit the above fix to linux systems not to break build on
+      bsd and hurd these architectures (Closes: #460732)
+    - fix lintian debian-rules-ignores-make-clean-error and do some more
+      cleanup
+    - remove the empty directories /usr/{include,lib} from the nut package
+  * debian/nut.postinst: call invoke-rc.d instead of the udev init script
+    (Closes: #442331)
+  * debian/control:
+    - remove udev from Build-Depends
+    - update Standards-Version to 3.7.3
+    - remove Homepage from description and add it as a tag
+    - add libsnmp-dev as an alternate Build-Depends to libsnmp9-dev
+  * debian/po/nl.po: update the Dutch po-debconf translation (Closes: #447720)
+  * debian/po/fr.po: update the French po-debconf translation (Closes: #442102)
+  * debian/patches/*: removed since these have been applied upstream
+  * debian/patches/00list: emptied but kept for future use
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 23 Jan 2008 17:13:13 +0100
+
+nut (2.2.0-2.1) unstable; urgency=low
+
+  * Non-maintainer upload with Arnaud's permission.
+  * debian/nut.postinst: restart udev only if it is running already
+    (Closes: #447961).
+  * debian/nut.preinst: ignore db_get errors for nut/remove_debian_conf,
+    thanks to Alexander Gerasiov for the patch (Closes: #445000).
+  * Fixed typo in the date of the 2.2.0-2 changelog entry (Augl -> Aug).
+
+ -- Sebastian Harl <sh@tokkee.org>  Tue,  8 Jan 2008 13:50:11 +0100
+
+nut (2.2.0-2) unstable; urgency=low
+
+  * debian/control: list udev as Build-Depends to allow the udev rules
+    inclusion (Closes: #437811)
+  * debian/nut.default: fix a typo error on UPSMON options comment (Closes:
+    #439407)
+  * debian/po/:
+    - add Brazilian Portuguese debconf templates translation (Closes:
+      #439793)
+    - update Portuguese debconf templates translation (Closes: 440369)
+    - update French debconf templates translation (Closes: 440524)
+  * debian/Makefile.am: update with the missing files
+  * debian/patches/03_libupsclient-config.dpatch: patch for the missing FLAGS
+    (Closes: #439985)
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 29 Aug 2007 16:14:11 +0200
+
+nut (2.2.0-1) unstable; urgency=low
+
+  * New upstream release (Closes: #432909, #420016, #426033)
+  * debian/control:
+    - merge the nut-usb package into nut, and update the various needed
+      fields (Depends, Provides, Conflicts, Suggests and Description)
+    - requires at least libhal-dev  0.5.8
+    - complete the nut-hal-drivers Description (Homepage)
+    - update to policy 3.7.2
+    - add po-debconf to Build-Depends
+  * debian/rules:
+    - general rewrite since the upstream now use automake
+    - force the evaluation of DEB_HOST_ARCH_OS for dh_gencontrol
+    - force udev to empty on non Linux system, for dh_gencontrol
+    - remove the DH_COMPAT export
+    - update the nut-usb specifics, not needed anymore
+    - nut-hal-drivers also needs the udev rules
+    - call debconf-updatepo to clean debconf translations
+  * debian/compat: creation
+  * debian/nut-usb.*: remove these files, and put the content in the
+    matching nut.* files
+  * debian/nut.preinst: remove the old udev rule file (025_nut...) which
+    was manually installed, and now addressed upstream and called 52_nut.
+  * debian/nut.postinst: restart udev to apply the USB rules to the
+    already plugged devices
+  * debian/nut-hal-drivers.preinst: created to add the HAL user to
+    the nut group
+  * debian/po/nl.po: added Dutch po-debconf translation (Closes: #414756)
+  * debian/po/pt.po: added Portuguese po-debconf translation (Closes: #415189)
+  * debian/patches/01_udev_rules_subsystem_usb.dpatch: update the patch
+  * debian/patches/02_libupsclient.dpatch: patch for the missing FLAGS
+  * debian/nut.templates: rewrite and simplification
+  * debian/nut.config: rewrite and simplification
+  * debian/rules: call dh_installinit with the priority set to 50 to (Closes:
+    #385694)
+  * debian/nut.default, debian/nut.init: allow to specify options for upsd and
+    upsmon (Closes: #420020, #434503)
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 17 Jul 2007 09:14:11 +0200
+ 
+nut (2.0.5-3) unstable; urgency=low
+
+  * debian/patches/01_udev_rules_subsystem_usb.dpatch: rework that
+  patch to be more generic
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 02 Feb 2007 15:38:59 +0100
+
+nut (2.0.5-2) unstable; urgency=low
+
+  * debian/patches/*: add a patch to fix the udev rule SUBSYSTEM from
+    usb_device to usb (thanks to Joey Hess) (Closes: #409080)
+  * debian/control:
+    - replace the udev substvar by udev
+    - nut Conflicts with nut-{usb,snmps} <= 2.0.4 and nut-{usb,snmp}
+    Depends upon 2.0.5 (Closes: #407882)
+  * debian/rules: dh_gencontrol no more calls -V for udev
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 01 Feb 2007 14:50:49 +0100
+
+nut (2.0.5-1) unstable; urgency=low
+
+  * New upstream release (Closes: #406045, #380304, #399741)
+  * debian/rules:
+    - replaces CHANGES by ChangeLog
+    - replace the dummycons installation by dummy-ups
+    - integrate the --with-htmlpath option
+  * debian/nut-cgi.docs: created to install data/html/README
+  * debian/nut.init: LSB compliance update
+  * debian/control: add lsb-base (>= 3.0-6) to Depends for LSB compliance
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 16 Jan 2007 10:42:36 +0100
+
+nut (2.0.4-3) unstable; urgency=high
+
+  * acknowledges NMUs (Closes: #396704, #389350)
+  * debian/nut-usb.postinst: remove the symlinking of the udev file since it's
+    not useful anymore (Closes: #400215)
+  * native udev rules are now used (Closes: #359802, #380304)
+  * debian/po/de.po: add German po-debconf template translation (Closes:
+    #400285)
+  * debian/nut.config: change the medium priorities to high (Closes: #388945)
+  * debian/nut.init: improve drivers startup report
+
+ -- Arnaud Quette <aquette@debian.org>  Wed, 20 Dec 2006 11:07:30 +0100
+
+nut (2.0.4-2.3) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * Some polish on top of the previous NMU.
+    * Remove the hotplug alternative; we no longer support it, so it's no
+      longer acceptable in place of udev. Correspondingly, rename the
+      substvar to ${udev}. (Closes: #396704)
+    * Drop debian/nut-usbups.rules and use upstream's rules instead. Modify
+      debian/rules correspondigly, patch from Arnaud Quette.
+
+ -- Steinar H. Gunderson <sesse@debian.org>  Fri, 17 Nov 2006 01:12:54 +0100
+
+nut (2.0.4-2.2) unstable; urgency=high
+
+  * Non-maintainer upload.
+  * In the udev script, replace the RUN actions by MODE and GROUP actions, as
+    per suggestion from the maintainer; should fix permission issues.
+    (Closes: #396704)
+
+ -- Steinar H. Gunderson <sesse@debian.org>  Thu, 16 Nov 2006 15:38:43 +0100
+
+nut (2.0.4-2.1) unstable; urgency=low
+
+  * NMU
+  * not removing nut user on purge (Closes: #389350)
+
+ -- Florian M. Weps <fmw@debian.org>  Thu, 12 Oct 2006 11:19:37 +0200
+ 
+nut (2.0.4-2) unstable; urgency=low
+
+  * debian/rules: replace $PWD by CURDIR to satisfy buildd
+  * debian/nut.default, debian/nut.init: make the bug 358696 workaround 
+    optional as it might be dangerous under some circumstances (closes:
+    #358696)
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 01 Aug 2006 08:50:26 +0200
+
+nut (2.0.4-1) unstable; urgency=low
+
+  * New upstream release
+    - driver do not use /var anymore when called for shutdown/poweroff
+    (closes: #332846)
+    - fixes the newhidups crash upon device reconnexion (closes: #354305,
+    #359769)
+  * debian/nut.preinst: syntax enhancement to avoid issue when the nut user
+    already exists (closes: #378970)
+  * debian/nut-cgi.postinst: fix wrong permissions (closes: #378818)
+  * debian/po/cs.po: update Czech translation of nut debconf messages (closes:
+    #366738)
+  * debian/nut.default, debian/nut.init: "poweroff" workaround to deal with
+    BIOS default of "On/Off state: Last state" and system halting itself
+    before the UPS cuts power (closes: #358696)
+  * debian/nut-usbups.rules: fix the broken udev rules (closes: #359801)
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 27 Jul 2006 15:20:46 +0200
+
+nut (2.0.3-4) unstable; urgency=low
+
+  * debian/nut-usb.postinst: generate the /etc/udev/rules/ file
+  * debian/rules:
+    - install the right udev rule file (not the upstream one)
+    - install the debian/hotplug file as libhidups, as it's compatible
+    with hotplug and udev styles
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 13 Mar 2006 08:52:25 +0100
+ 
+nut (2.0.3-3) unstable; urgency=low
+
+  * debian/rules:
+    - fix a wrong symlink for the udev rule files (closes: #354262)
+    - add a temporary workaround to clean drivers/tripplite_usb
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 27 Feb 2006 15:35:32 +0100
+ 
+nut (2.0.3-2) unstable; urgency=low
+
+  * debian/nut.init: fix the creation of the PID directory, as /var is now volative.
+    This bug has been identified in Ubuntu (Launchpad #6679)
+  * debian/nut-cgi.postrm: suppress the deletion of the nut user as it's not
+    needed (closes: #319395)
+  * debian/nut-cgi.preinst: suppress that file as we do not need to check and create
+    the nut user and group for nut-cgi
+  * debian/nut-cgi.postinst: enhanced to ensure the /etc/nut directory and nut-cgi
+    configuration files are readable by others
+  * debian/nut-cgi.README.Debian: improve the documentation about configuration
+    files permissions
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 24 Feb 2006 10:05:25 +0100
+
+nut (2.0.3-1) unstable; urgency=low
+
+  * New upstream release
+    - include the improved USB driver (closes: #300115)
+    - fix mge-utalk regression (closes: #315431)
+    - fix USB device claiming and logging (closes: #322901)
+  * debian/nut-cgi.config: complete the typo fixes from 2.0.2-1 and remove exit
+    calls (closes: #308215)
+  * debian/nut.config: remove exit calls
+  * debian/hotplug: add this file to manage hotplug and udev style permissions settings
+  * debian/nut-usbups.rules: embed a modified version of the upstream file
+  * debian/control:
+    - make hotplug | udev Depends conditionnal, from rules
+    - remove libusb-0.1-4 Depends as it is already listed with shlibs:Depends
+  * debian/rules:
+    - generate debian/control Depends for hotplug | udev
+    - also install udev files (closes: #338738, #332939)
+    - call the clean rule before distclean
+  * debian/nut.README.Debian:
+    - update the Installation §2 to reflect udev changes on serial port permissions.
+    Users need to manually add the nut group to the dialout group (closes: #325878,
+    #334105)
+    - some other minor update
+
+ -- Arnaud Quette <aquette@debian.org>  Tue, 21 Feb 2006 13:57:35 +0100
+
+nut (2.0.2-2) unstable; urgency=low
+
+  * debian/nut-cgi.postinst: load confmodule
+  * debian/nut-hidups/*: remove this unneeded directory
+  * debian/control:
+    - Update build dependency from libsnmp5-dev to libsnmp9-dev (closes:
+    #326410)
+    - Changes nut-usb wrong dependency from libusb-dev to libusb-0.1-4 (closes:
+    #320315)
+    - add debconf (>= 0.5.00) and adduser to nut/nut-cgi Depends
+  * debian/copyright: update the FSF address and the Authors
+  * debian/po/vi.po: add the Vietnamese translation for debconf, from Clytie
+    Siddall ((closes: #316327)
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 07 Oct 2005 23:35:55 +0200
+
+nut (2.0.2-1) unstable; urgency=low
+
+  * New upstream release:
+    - build respect LDFLAGS (closes: #265439)
+    - fix etapro brokeness (closes: #305730)
+    - fix shutdown/restart problems with mge-shut (closes: #302190)
+    - fix mge-utalk support for older units (closes: #315431)
+  * debian/po/fr.po: update the French debconf templates, thanks to Michel
+    Grentzinger (closes: #306541)
+  * debian/rules:
+    - install hotplug files for the newhidups USB driver
+    - suppress the snmp-ups.8 manpage workaround
+  * debian/nut-usb.prerm: created to remove hotplug files
+  * debian/control:
+    - add hotplug Depends for nut-usb
+    - upgrade Debian Policy to 3.6.2
+  * debian/patches/*: remove all patch and empty 00list as all has
+    been fixed upstream
+  * debian/nut-cgi.config: integrate the typo fixes that was blocking
+    upgrade from woody to sarge
+  * debian/nut-cgi.preinst: remove an unneeded blank line
+  * acknowledge NMU from Craig Small (closes: #302189)
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 27 Jun 2005 11:29:52 +0200
+
+nut (2.0.1-3) unstable; urgency=low
+
+  * debian/patches/01_cleanSourceFromlibupsclient.dpatch: removed as it
+    has been fixed upstream in 2.0.1
+  * debian/patches/00list: re enabled for the below patch
+  * debian/patches/01_upsstatsCgiNoHostCrash.dpatch: added while waiting
+    for the upstream fix (closes: #302902)
+  * debian/nut-cgi.templates: added nut-cgi/major_template_changes
+  * debian/nut-cgi.config: use nut-cgi/major_template_changes (closes:
+    #301184)
+  * debian/nut-cgi.README.Debian: reworked, and mention upgrade and
+    installation.
+  * debian/nut.README.Debian: mention the missing UPGRADING file, and complete
+    the upsmon.conf lines with the mandatory POWERDOWNFLAG and SHUTDOWNCMD
+    (closes: #302182)
+  * debian/nut.templates: add nut/2_0_upstream_changes to deal with the new
+    changes
+  * debian/nut.config: use the above nut/2_0_upstream_changes (closes:
+    #301060)
+  
+ -- Arnaud Quette <aquette@debian.org>  Fri, 15 Apr 2005 13:52:32 +0100
+  
+nut (2.0.1-2.1) unstable; urgency=low
+
+  * Non-maintainer upload
+  * NUT nows powersdown Closes: #302189
+
+ -- Craig Small <csmall@debian.org>  Thu,  7 Apr 2005 11:47:58 +1000
+ 
+nut (2.0.1-2) unstable; urgency=low
+
+  * debian/control: add missing Build-Depends for dpatch, thanks to Kurt
+    Roeckx (closes: #298218)
+
+ -- Arnaud Quette <aquette@debian.org>  Mon, 07 Mar 2005 16:29:32 +0100
+
+nut (2.0.1-1) unstable; urgency=low
+
+  * New upstream release (closes: #247671, #283539)
+  * debian/watch: update URL to match the current 2.0 stable tree
+  * debian/rules:
+    - change install-misc target to install-lib following the upstream rule
+    name change
+    - error reporting enhancements, thanks to Karl Shaul (inserted a set -e at
+    the start of every for loop ; from Debian Policy §4.5).
+    - workaround to include dummycons test driver and its manpage in nut-dev
+    while waiting for an upstream rule
+    - workaround to remove snmp-ups manpage from the nut package, to avoid a
+    file conflict with nut-snmp, while waiting for an upstream rule
+    - remove the workaround from 1.4.2-2 to suppress libupsclient.a and
+    newhidups upon make clean
+    - comment the "conf files workaround" as it's no more needed
+  * debian/control: 
+    - add nut-dev to nut Suggests
+    - complete nut-dev to include dummycons testing driver
+    - add libusb (>= 0.1.8) nut-usb Depends to benefit of the kernel driver
+    unbind feature (needed for USB models other than MGE UPSs)
+    - suppress libgd1 from Build-Depends to fix a DebCheck warning, as it
+    is listed in Section oldlibs
+  * debian/nut.README.Debian: add a section "(3) /etc/nut/upsd.conf"
+    and add references to sample config files and UPGRADING information
+    (closes: #269485)
+  * debian/nut.TODO.Debian: add this file to track planned and unfinished
+    tasks
+  * debian/nut-cgi.README.Debian: improve a bit the text
+  * debian/nut.init: test powerdown flag (upsmon -K) and use the new
+    upsdrvctl exit codes (thanks to Karl Shaul)
+  * debian/po/cs.po: add Czech translation of debconf templates (patch from
+      Miroslav Kure) (closes: #283225)
+  * debian/patches: add basic infrastructure for dpatch
+ 
+ -- Arnaud Quette <aquette@debian.org>  Fri, 04 Mar 2005 11:40:13 +0100
+
+nut (1.4.3-2) unstable; urgency=low
+
+  * debian/control: add nut-dev package with NUT lib and headers (closes:
+    #263937)
+  * debian/rules: change install-misc for the above nut-dev.
+  * debian/control: invert apache and httpd in nut-cgi Recommends to solve a
+    lintian warning
+
+ -- Arnaud Quette <aquette@debian.org>  Sun, 08 Aug 2004 16:07:04 +0200
+
+nut (1.4.3-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/control: change Homepage URL to "www" instead of "random" and
+    remove trailing slash / dot (closes: #254084)
+  * debian/control: add apache to nut-cgi Recommends to have a non-virtual
+    package alternative 
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 29 Jul 2004 22:58:03 +0200
+
+nut (1.4.2-3) unstable; urgency=low
+
+  * debian/control: add libusb-dev version in Build-Depends (closes: #248952)
+  * debian/copyright: update upstream URL and copyright owners (closes:
+    #242422)
+  * debian/po/ca.po: add Catalan translation of debconf templates (patch from
+    Aleix Badia i Bosch) (closes: #248741)
+  * debian/nut-cgi.README.Debian: added to describe nut-cgi configuration
+    (thanks to Marius Gedminas) (closes: #249825)
+  * debian/nut.README.Debian: minor change
+
+ -- Arnaud Quette <aquette@debian.org>  Fri, 28 May 2004 13:10:01 +0200
+ 
+nut (1.4.2-2) unstable; urgency=low
+
+  * debian/control: add libusb-dev to Build-Depends (closes: #240586) 
+  * debian/rules: workaround to clean libupsclient.a and newhidups (complete
+    the above)
+
+ -- Arnaud Quette <aquette@debian.org>  Sun, 28 Mar 2004 18:30:01 +0100
+ 
+nut (1.4.2-1) unstable; urgency=low
+
+  * New upstream release
+    * Fixes mge-shut settings and shutdown problems (closes: #232402, #234037)
+  * debian/nut.init: fixes powerdown rule to prevent from forced UPS shutoff 
+    upon normal shutdown, and add a warning when POWERDOWN flags isn't
+    defined, thanks to Loic Le Loarer (closes: #236092)
+  * debian/control: update nut-usb Description to reflect the add of newhidups
+    and energizerups drivers.
+  * debian/rules: update nut-usb build and install rules to match the new ones
+ 
+ -- Arnaud Quette <aquette@debian.org>  Thu, 25 Mar 2004 16:30:01 +0100
+
+nut (1.4.1-release-2) unstable; urgency=low
+
+  * recall previously malformed closed bug (closes: #227965, #227964)
+  * debian/control: Build-Depends to allow libgd*-noxpm (closes: #231153)
+  * debian/control: update Homepage address
+  * debian/watch: update target address
+
+ -- Arnaud Quette <aquette@debian.org>  Thu, 05 Feb 2004 19:19:56 +0100
+
+nut (1.4.1-release-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/po/*: add gettext support for debconf templates (patch from Michel
+    Grentzinger) (Close: #227965)
+  * debian/po/fr.po: add French translation of debconf templates (patch from
+    Michel Grentzinger) (Close: #227964)
+
+ -- Arnaud Quette <aquette@debian.org>  Sun, 18 Jan 2004 21:19:56 +0100
+
+nut (1.4.1-pre3-5) unstable; urgency=low
+
+  * debian/nut.postrm: fix inverted test with -z (fix a purge error)
+  * debian/nut.postrm: same as above
+  * debian/nut.postrm: suppress check_and_delete_group() as it is not useful
+  * debian/nut-cgi.postrm: same as above
+  * debian/nut.postinst: test if /etc/nut exists before chmod'ing (fix an
+    install error)
+
+ -- Arnaud Quette <aquette@debian.org>  Sat,  15 Nov 2003 22:10:23 +0100
+
+nut (1.4.1-pre3-4) unstable; urgency=low
+
+  * debian/nut.preinst: wider check for user/group creation (closes: #217980)
+  * debian/nut.postrm: rework purge rule for user/group deletion (2nd part of
+    the above fix)
+  * debian/nut-cgi.postrm: rework purge rule for user/group deletion (2nd part of
+    the above fix)
+  * debian/nut-cgi.preinst: wider check for user/group creation (same as
+    above)
+  * debian/rules: suppress {nut,nut-cgi}/etc/nut/*.sample that were wrongly
+    installed (linked to #172217)
+  * debian/nut.examples: created to complete above fix
+  * debian/nut-cgi.examples: created to complete above fix
+  * debian/nut.postrm: suppress /etc/nut/*.sample file (to correct above
+    problem)
+  * debian/nut-cgi.postrm: suppress /etc/nut/*.sample file (same as above)
+  * Maintainer upload (forgotten previously), closes: #200182, #203061 
+  
+ -- Arnaud Quette <aquette@debian.org>  Sat,  15 Nov 2003 10:10:23 +0100
+
+nut (1.4.1-pre3-3) unstable; urgency=low
+
+  * clients/Makefile.in: install parseconf.h to fix compilation error with wmnut
+  * man/Makefile.in: fix a broken upstream rule (hidups manpages installed two
+    times) that prevent from installing nut-usb package. This will be fixed in
+    the next upstream
+  
+ -- Arnaud Quette <aquette@debian.org>  Mon,  10 Nov 2003 17:10:23 +0100
+
+nut (1.4.1-pre3-2) unstable; urgency=low
+
+  * man/Makefile.in: fix a broken upstream rule (powernet and snmp-ups
+    manpages installed two times) that prevent from installing nut-snmp package
+  
+ -- Arnaud Quette <aquette@debian.org>  Mon,  10 Nov 2003 12:59:23 +0100
+ 
+nut (1.4.1-pre3-1) unstable; urgency=low
+
+  * New upstream release
+  * clients/Makefile.in: suppress the one line patch to install parseconf.o
+    (from 1.4.1-pre2-1). This is now cleanly addressed by the upstream source
+    by installing libupsclient.a (closes: #216496)
+  * debian/rules: change dh_shlibdeps's exclude from upsfetch.o to libupsclient.a
+  * debian/nut.preinst: fix install rule to catch all cases of nut user and group
+    needed creation. Previously, post purge install case was not (closes: #217980)
+  * debian/rules: suppress the work-around for nut-usb package following
+    the upstream correction (from 1.4.1-pre1-2)
+  * debian/control: Final package take over ; switch Luca Filipozzi as
+    co maintainer, and Arnaud Quette as new maintainer.
+  * debian/watch: point the authoritative download server (penguin.harrison)
+    and stable releases ("nut/release/1.4/" directory ; it won't work for
+    final 1.4.1, but for 1.4.2)
+  * debian/nut.postrm: rework purge rule to suppress a warning
+
+ -- Arnaud Quette <aquette@debian.org>  Sat,  8 Nov 2003 12:15:23 +0100
+
+nut (1.4.1-pre2-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/control: created package nut-usb for finer deps management
+  * debian/rules: added rules for nut-usb package, and a work-around
+    for install directories creation while waiting for upstream correction.
+  * drivers/Makefile.in: suppressed hidups from PROGS, thanks to the above
+  * debian/control: repeat Homepage for every sub-package
+  * debian/control: completed nut Suggests
+  * debian/control: changed Arnaud Quette address to the good Debian one
+  * debian/rules: suppress the work-around for nut-snmp package following
+    the upstream correction(from 1.4.1-pre1-1)
+  * debian/nut-cgi.preinst: always test if nut user exist as nut-cgi
+    can be installed without nut, so not having nut user created (closes:
+    Bug#213730)
+  * debian/nut-cgi.postinst: chown root:nut to address a potential security
+    issue (see 1.2.1-2)
+  * clients/Makefile.in: one line patch to install parseconf.o. This solve
+    a problem with wmnut package (can't build anymore due to unresolved
+    symbols). This point will be more cleanly address in next upstream
+
+ -- Arnaud Quette <aquette@debian.org>  Sat, 18 Oct 2003 09:05:01 +0200
+
+nut (1.4.1-pre1-2) unstable; urgency=low
+
+  * debian/control: rewrotte descriptions to follow Debian Policy. A
+    further enhancement will be to use debian/nut.substvars (thanks
+    to Shaul Karl) (closes: Bug#209569)
+  * drivers/Makefile.in: added back hidups to PROGS (closes: Bug#208248)
+  * debian/control: added libgd2-* to Build-Depends to allow more choices
+  * debian/control: added Shaul Karl as co-maintainer
+  * debian/control: changed Arnaud Quette address to Debian's one
+
+ -- Arnaud Quette <arnaud.quette@debian.org>  Sun, 14 Sep 2003 12:11:45 +0200
+
+nut (1.4.1-pre1-1) unstable; urgency=low
+
+  * New upstream release (closes: Bug#203856)
+  * recall ignored 1.4.0-2 changes (closes: Bug#204193, Bug#199895)
+  * debian/nut.preinst: already solved bug in 1.4.0-3 (closes:Bug#206229)
+  * debian/control: created package nut-snmp (closes: Bug#195645)
+  * debian/rules: added rules for nut-snmp package, and a work-around
+    for install directories creation while waiting for upstream correction.
+  * debian/control: change Build-Depends to "libgd-xpm-dev | libgd-dev" to
+    allow easy woody backport (thanks to Martin Maney)
+  * debian/nut.prerm: wait for upsd stop before calling the remove tempo
+
+ -- Arnaud Quette <arnaud.quette@free.fr>  Sat, 23 Aug 2003 13:55:32 +0200
+
+nut (1.4.0-3) unstable; urgency=low
+
+  * debian/nut.prerm: fix a post removal warning by adding a tempo
+    (1 sec) before removing /var/run/nut
+  * debian/nut.preinst: reworked install rule (thanks Shaul) (closes:Bug#204153)
+
+ -- Arnaud Quette <arnaud.quette@free.fr>  Fri,  8 Aug 2003 23:14:26 +0200
+
+nut (1.4.0-2) unstable; urgency=low
+
+  * debian/watch: update URL to point NUT 1.4 (thanks to Shaul Karl)
+  * debian/nut.dirs: add /var/run/nut (thanks Shaul) (closes: Bug#204193)
+  * debian/nut-cgi.preinst: created for allowing separate installation 
+    (without nut) (closes: Bug#199895)
+  * debian/rules: remove the "--with-group=nut" call to configure as it
+    is obsolete (thanks Shaul)
+  * debian/control: add Arnaud Quette as co-maintainer
+
+ -- Arnaud Quette <arnaud.quette@free.fr>  Thu,  7 Aug 2003 20:14:26 +0200
+
+nut (1.4.0-1) unstable; urgency=low
+
+  * New upstream release (closes: Bug#203061)
+  * debian/nut.init: change Init-script ordering (start_stop_server) to
+    address data stale warning (closes: Bug#200182)
+
+ -- Arnaud Quette <arnaud.quette@free.fr>  Fri,  1 Aug 2003 18:42:22 +0200
+
+nut (1.2.2-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/rules: gidNumber of group 'nobody' is 65534 not 65535
+    (thanks Shaul) (closes: Bug#180532)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Fri, 18 Apr 2003 20:12:17 -0700
+
+nut (1.2.1-2) unstable; urgency=low
+
+  * debian/nut.README.Debian: s/smartapc/apcsmart/ (closes: Bug#177713)
+  * debian/nut.postinst: chown root:nut instead of chown nut:nut for files
+    in /etc/nut/* and for the dirs /etc/nut, /var/run/nut, /var/lib/nut;
+    this addresses a potential security issue as described in the comments
+    contained in /etc/nut/upsmon.conf (closes: Bug#180059)
+  * debian/nut.init: sysadmins might modify POWERDOWNFLAG in
+    /etc/nut/upsmon.conf without realizing that it is hard coded in the
+    /etc/init.d/nut init script; fix the init script to parse the
+    configuration file for the value of POWERDOWNFLAG (closes: Bug#179686)
+  * debian/nut.init: print a message prior to shutdown (closes: Bug#180242)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sat,  8 Feb 2003 18:12:11 -0800
+
+nut (1.2.1-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/control: nut provides/conflicts ups-monitor (closes: Bug#170655)
+  * debian/nut.postinst and debian/nut-cgi.postinst:
+        test -f file before chown/chmod (closes: Bug#170553)
+  * debian/nut.postinst: fix permissions on /var/lib/nut (closes: Bug#173318)
+  * debian/nut.preinst: change how the 'nut' user/group are detected and
+    created (closes: Bug#173321)
+  * between 1.1.11-1 incorrectly installed conffiles into /etc/nut
+    with the extension .sample; fortunately, this release of the package
+    did not migrate to testing and since 1.1.11-2 the .sample extension
+    has not been used (closes: Bug#172217)
+  * debian/nut.preinst: change the way the nut user/group are detected
+    before adduser is called (closes: Bug#170653)
+  * debian/nut.README.Debian: fixed minor doc error (Closes: Bug#173673)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Wed, 11 Dec 2002 19:39:02 -0800
+
+nut (1.2.0-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/nut-cgi.postinst: fix permissions on /etc/nut/hosts.conf and
+    /etc/nut/upsset.conf so that they are world readable (Closes: Bug#167332)
+  * debian/nut.init: added sleep 5 to allow for an orderly restart (thanks
+    to Shaul Karl for pointing this out)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Tue, 19 Nov 2002 09:44:25 -0800
+
+nut (1.1.12-1) unstable; urgency=high
+
+  * New upstream release (urgency high due to SECURITY FIX)
+  * SECURITY FIX: a file permission problem potentially exposes
+    non-system usernames/passwords in /etc/nut/upsd.users that can be used
+    to DoS a machine running nut by contacting the nut daemon and instructing
+    it to power off the machine; fixed.
+  * debian/nut.postinst: change permissions of /etc/nut/upsd.users and
+    other conffiles to 640 (Closes: Bug#165445)
+  * debian/nut.config: use db_fset to reset the boolean question that prompts
+    users to accept whether to continue with the installation of this version
+    of nut should they answer no (Closes: Bug#165376)
+  * debian/control: make nut-cgi Replace nut so that conflicting files
+    can be installed (Closes: Bug#165049)
+  * drivers/Makefile.in: restored original version that doesn't build
+    hidups, snmp-ups or powernet; hidups doesn't build on m68k; snmp-ups
+    and powernet require libsnmp5-dev but libsnmp5-dev requires OpenSSL;
+    unfortunately, upstream's license doesn't have the OpenSSL exclusion
+    clause... work is proceeding on porting to gnutls
+  * drivers/Makefile.in + debian/rules: figured out a mechanism to build
+    hidups on those architectures that have /usr/include/linux/hiddev.h
+  * debian/control: build-depend on libgd-xpm-dev (really closes Bug#164832)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sat, 19 Oct 2002 16:47:35 -0700
+
+nut (1.1.11-2) unstable; urgency=low
+
+  * changed build dependencies to avoid depending on a pure-virtual package
+    without providing a default (thanks Junichi Uekawa) (Closes: Bug#164832)
+  * debian/rules calls $(MAKE) install-misc so that the header and the .o file
+    are released with the nut package (too small for a nut-dev package?)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Tue, 15 Oct 2002 08:50:18 -0700
+
+nut (1.1.11-1) unstable; urgency=low
+
+  * New upstream release
+    (Closes: Bug#151047, Bug#155943, Bug#153174, Bug#160178, Bug#164024)
+  * the "Hey Dorothy, you aren't in Kansas anymore" release
+  * warning: significant changes since nut 0.45.5; specifically:
+    - upsd listens on a different port (was 3305; now 3493 (IANA-assigned))
+    - configuration file formats have changed
+    - ups driver internals haved changed: 'common main.c' + upsdrvctl
+    - some ups drivers that were not ported to the new common model have
+      been dropped by the upstream author (submit a patch to rectify)
+    - the init script is significantly simpler
+    - the daemons will NOT restart on upgrade from from 0.45.5 or earlier
+    - there is an /etc/default/nut file that defines whether the daemons
+      will be started
+    - removed nut-doc package... far too small to merit being on its own
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Mon, 14 Oct 2002 13:33:58 -0700
+
+nut (0.45.5-rel-3) unstable; urgency=low
+
+  * "unlink .sock file before starting up; this was keeping the drivers down
+    after a system crash where the .sock files remained" -- upstream
+    (Closes: Bug#149150, Bug#139859)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Fri,  7 Jun 2002 22:34:53 -0700
+
+nut (0.45.5-rel-2) unstable; urgency=low
+ 
+  * debian/control: nut and nut-cgi suggest rather than recommend
+    the documentation package, nut-doc (Closes: Bug#144763)
+  * debian/nut-cgi.dirs: change absolute paths to relative (Closes: Bug#144746)
+  * debian/rules: remove upsdrvctl.8 from package (Closes: Bug#143099)
+ 
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun,  2 Jun 2002 21:39:14 -0700
+
+nut (0.45.5-rel-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/rules: moved model daemons to /lib/nut to reduce chance of
+                  namespace conflicts (Closes: Bug#141209)
+  * debian/rules: moved sample configuration files to
+                  /usr/share/doc/nut/examples (Closes: Bug#140472)
+  # debian/postinst: change mode and ownership of files in /etc/nut/ on
+                     configure to allow ready by nut/nut (Closes: Bug#142116)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 14 Apr 2002 13:37:13 -0700
+
+nut (0.45.4-rel-3) unstable; urgency=low
+
+  * added runtime dependency on adduser (Closes: Bug#137887) 
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sat, 16 Mar 2002 21:41:53 -0800
+
+nut (0.45.4-rel-2) unstable; urgency=low
+
+  * Changed debian/rules to call install-misc which installs the development
+    files upsfetch.[oh].  There are too few development files to merit a
+    nut-dev package.
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 24 Feb 2002 15:47:56 -0800
+
+nut (0.45.4-rel-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 24 Feb 2002 11:56:46 -0800
+
+nut (0.45.4-pre5-1) unstable; urgency=low
+
+  * New upstream release (Closes: Bug#131673)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 17 Feb 2002 17:31:32 -0800
+
+nut (0.45.1-release-2) unstable; urgency=low
+
+  * applied POWERDOWNFLAG upstream-patch (Closes: Bug#111979)
+  * applied apcsmart calibration user-patch (Closes: Bug#111978)
+  * modified models/main.c so that it does a forceshutdown *before*
+    attempting to chdir into /var/lib/nut (Closes: Bug#112540)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Tue, 23 Oct 2001 16:22:57 -0700
+
+nut (0.45.1-release-1) unstable; urgency=low
+
+  * New upstream release
+  * Fixed conffile problem with nut-cgi package (Closes: #108687)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sat, 18 Aug 2001 11:58:57 -0700
+
+nut (0.45.1-pre4-1) unstable; urgency=low
+
+  * New upstream release (Closes: #101105)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun,  5 Aug 2001 13:59:12 -0700
+
+nut (0.44.3-pre6-3) unstable; urgency=low
+
+  * Init script now poweroffs the UPS' correctly. (Closes: #96790) 
+  * Changed section of nut-doc to 'doc' (Closes: #94842)
+  * Not upgrading to new upstream source (0.45.0) until it is released.
+  * Not upgrading to upstream source (0.44.3) since (0.45.0) is coming soon.
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun,  3 Jun 2001 16:05:01 -0700
+
+nut (0.44.3-pre6-2) unstable; urgency=low
+
+  * init script follows policy (Closes: #90346) 
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Mon, 19 Mar 2001 15:21:44 -0800
+
+nut (0.44.3-pre6-1) unstable; urgency=low
+
+  * New upstream release
+  * modified configure.in so that it doesn't produce an error when it tests
+    for the existance of group "nut" (Closes: #88126)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 11 Mar 2001 11:48:54 -0800
+
+nut (0.44.3-pre4-1) unstable; urgency=low
+
+  * New upstream release
+  * create pidfile modifications reworked to use upstream's writepid() function
+  * modified init script to support these changes... note that users MUST
+    follow the convention for the UPS directives in the sample upsd.conf;
+    a warning has been placed in said file
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 25 Feb 2001 19:19:29 -0800
+
+nut (0.44.2-6) unstable; urgency=low
+
+  * modified prerm and postinst so that the daemon(s) is restarted only in the
+    postinst rather than stopped in prerm and started later in postinst thereby
+    stopping the daemon(s) shortest possible time (Closes: #83614)
+  * modified all the daemon(s)' source code so that they create pidfiles
+  * modified the init script so that it uses the pidfiles
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sun, 11 Feb 2001 18:23:44 -0800
+
+nut (0.44.2-5) unstable; urgency=low
+
+  * removed "function" keyword from init script (Closes: #83569)
+  * modified the pre and post scripts so that #DEBHELPER# is at the bottom
+  * modified debian/rules so that nut-doc is created (Closes: #85059)
+  * added support for MGE UPS (thanks to Ryan Murray) (Closes: #83743)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Sat, 10 Feb 2001 20:09:35 -0800
+
+nut (0.44.2-4) unstable; urgency=low
+
+  * control file changed such that arch=any for nut-doc (Closes: #83323)
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Tue, 23 Jan 2001 17:49:25 -0800
+
+nut (0.44.2-3) unstable; urgency=low
+
+  * Added a build conflict against libgd-gif1-dev because it provides
+    libgd-dev but does not have PNG support. (Closes: #82607)
+  * Fixed a path problem in debian/rules that had manpages installing 
+    in /share/man/man8 instead of /usr/share/man/man8.
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Wed, 17 Jan 2001 19:11:56 -0800
+
+nut (0.44.2-2) unstable; urgency=low
+
+  * Modified README.Debian to address bad doc path (Closes: #82460) 
+  * Slight improvements to README.Debian, as well.
+
+ -- Luca Filipozzi <lfilipoz@debian.org>  Mon, 15 Jan 2001 21:11:39 -0800
+
+nut (0.44.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Tue,  9 Jan 2001 08:33:56 -0800
+
+nut (0.44.1-4) unstable; urgency=low
+
+  * fixed path problem with cgi files; they *are* in /usr/lib/cgi-bin/nut now 
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Wed, 22 Nov 2000 08:47:54 -0800
+
+nut (0.44.1-3) unstable; urgency=low
+
+  * the following changes suggested by Patrik Rak (Closes: #77144, #77195)
+    * added better preinst(install) checks for group membership
+    * modified upstream upsd.conf to use correct paths in the UPS directives
+    * modified upstream upsd.conf to have better ACCESS directive examples
+    * modified upstream upsmon.conf to have better MONITOR directive examples
+    * modified upstream upsmon.conf to use a different POWERDOWNFLAG location
+      (location must be on the root filesystem... otherwise powerdownflag is
+       not found!)
+    * modified init script to parse upsmon.conf for the POWERDOWNFLAG location
+    * modified init script's poweroff section so that all args are recognized
+    * improved the documentation, primarily README.Debian
+  * installation scripts modified so that the dependency on adduser >= 3.14
+    can be removed; this allows for the creation of potato packages
+  * the nut user is no longer part of the dialout group; users will have to
+    manually change the permissions on the serial port devices;
+    a nut group is created at the same time as the nut user; users should use
+    the nut group for the serial port permissions: chown root.nut /dev/ttyS0
+    (suggested by Shaul Karl and Patrik Rak)
+  * the cgi scripts are moved to /usr/lib/cgi-bin/nut/*
+    (suggested by Shaul Karl)
+  * init script changed significantly to address argument passing problems
+    (reported by Shaul Karl)
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Thu, 16 Nov 2000 11:42:42 -0800
+
+nut (0.44.1-2) unstable; urgency=low
+
+  * removed else clause on detection of existing "nut" user (Closes: #76721) 
+    "install" creates the user nut; "remove" doesn't remove it, "purge" does;
+    a re-"install" would find an existing "nut" user and exit on error; fixed
+  * fixed a possible bashism (Closes: #72711)
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Fri, 10 Nov 2000 10:06:05 -0800
+
+nut (0.44.1-1) unstable; urgency=low
+
+  * New upstream release
+  * serious repurcussion to existing users of nut... the configuration files
+    have changed somewhat... a critical debconf warning informs the user of
+    this fact
+  * binaries are to remains in /sbin (Closes: #69525)
+  * init script no longer relies on /usr being mounted (Closes: #70033)
+  * 
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Fri, 10 Nov 2000 10:05:55 -0800
+
+nut (0.44.0-4) unstable; urgency=low
+
+  * Moved man pages from section 1 to section 8. (Closes: #68819)
+  * nut-doc suggest rather than recommends nut and nut-cgi. (Closes: #69400)
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Fri, 18 Aug 2000 23:15:18 -0700
+
+nut (0.44.0-3) unstable; urgency=low
+
+  * Minor fixes to packaging scripts (Closes: #67649).
+  * Created new doc package: nut-doc.
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Mon, 24 Jul 2000 10:18:19 -0700
+
+nut (0.44.0-2) unstable; urgency=low
+
+  * Minor fixes to init script and to list of undocumented binaries. 
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Sat, 22 Jul 2000 19:11:42 -0700
+
+nut (0.44.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Thu, 20 Jul 2000 09:26:04 -0700
+
+nut (0.43.2-2) unstable; urgency=low
+
+  * fixes: Bug#67316: nut: default permissions could reveal passwords
+    Files in /etc/nut are now 600 by default.
+  * fixes: Bug#67314: nut: uses old FHS directory /var/state 
+    Now uses /var/lib as per FHS guidelines.
+  * fixes: Bug#66988: nut_0.43.2-1(unstable): Missing build dependencies
+    Added debhelper to the build dependencies.
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Tue, 18 Jul 2000 14:55:03 -0700
+
+nut (0.43.2-1) unstable; urgency=low
+
+  * Initial Release.
+  * Modification to upstream source: configure.in, common/common.c,
+    and models/upscommon.c changed to support different configuration
+    options... --with-user and --with-group which accept a username
+    and a groupname (rather than a uid/gid as before).
+  * Modification to upstream source: /var/state/nut is used instead
+    of /var/state/ups in conf/upsd.conf.
+
+ -- Luca Filipozzi <lfilipoz@emyr.net>  Wed,  3 May 2000 20:50:30 -0700
+
+Local variables:
+mode: debian-changelog
+End:

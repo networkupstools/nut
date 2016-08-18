@@ -1,0 +1,6 @@
+debian/tmp/usr/share/man/man5/hosts.conf.5
+debian/tmp/usr/share/man/man5/upsset.conf.5
+debian/tmp/usr/share/man/man5/upsstats.html.5
+debian/tmp/usr/share/man/man8/upsimage.cgi.8
+debian/tmp/usr/share/man/man8/upsset.cgi.8
+debian/tmp/usr/share/man/man8/upsstats.cgi.8

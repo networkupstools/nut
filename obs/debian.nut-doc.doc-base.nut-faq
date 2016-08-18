@@ -1,0 +1,12 @@
+Document: nut-faq
+Title: NUT Frequently asked questions
+Author: Arnaud Quette
+Abstract: Frequently asked questions for Network UPS Tools (NUT)
+Section: Help/FAQ
+
+Format: PDF
+Files: /usr/share/doc/nut-doc/pdf/FAQ.pdf
+
+Format: HTML
+Index: /usr/share/doc/nut-doc/html/FAQ.html
+Files: /usr/share/doc/nut-doc/html/FAQ.html

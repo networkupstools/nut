@@ -1,0 +1,15 @@
+Document: nut-user-manual
+Title: Network UPS Tools User Manual
+Author: Russell Kroll, Arnaud Quette and Arjen de Korte
+Abstract: This document intend to describe how to install software support
+ for your Power Devices (UPS, PDU, …), and how to use the NUT project.
+ It is not intended to explain what are, nor distinguish the different technologies that exist.
+ For such information, have a look at the General Power Devices Information.
+Section: System/Administration
+
+Format: PDF
+Files: /usr/share/doc/nut-doc/pdf/user-manual.pdf
+
+Format: HTML
+Index: /usr/share/doc/nut-doc/html/user-manual/index.html
+Files: /usr/share/doc/nut-doc/html/user-manual/*.html

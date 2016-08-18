@@ -1,0 +1,2 @@
+lib/*/libnutscan.so.*
+usr/share/nut/dmfnutscan/*
