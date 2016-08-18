@@ -108,10 +108,11 @@ BuildRequires:  systemd-rpm-macros
 BuildRequires:  powerman-devel
 BuildRequires:  tcpd-devel
 # TODO: For doc build: move out of opensuse
-BuildRequires:  asciidoc
+###BuildRequires:  asciidoc
 BuildRequires:  dblatex
 BuildRequires:  libxslt-tools
 %endif
+BuildRequires:  asciidoc
 
 %if 0%{?centos_version}
 BuildRequires:  cppunit-devel
