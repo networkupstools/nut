@@ -1,4 +1,5 @@
 /*  snmp-ups.c - NUT Generic SNMP driver core (supports different MIBs)
+ *  Can be compiled with built-in or loadable (DMF) MIB-to-NUT mapping tables
  *
  *  Based on NetSNMP API (Simple Network Management Protocol v1-2c-3)
  *
@@ -42,8 +43,10 @@
 
 #if WITH_DMFMIB
 # include "dmfsnmp.h"
-# include "apc-iem-mib.h"
-#else
+# include "apc-iem-mib.h" // For static builds, this one is
+                          // included by "apc-mib.h", so there
+                          // is no explicit inclusion below
+#else /* not WITH_DMFMIB */
 /* include all known mib2nut lookup tables */
 #include "apc-mib.h"
 #include "mge-mib.h"
@@ -62,7 +65,7 @@
 #include "xppc-mib.h"
 #include "eaton-ats-mib.h"
 #include "apc-ats-mib.h"
-#endif
+#endif /* WITH_DMFMIB */
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -74,12 +77,12 @@
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 char *dmf_path = NULL;
-#else
+#else /* not WITH_DMFMIB */
 
-#ifdef WITH_DMF_LUA
-#undef WITH_DMF_LUA
-#endif
-#define WITH_DMF_LUA 0
+# ifdef WITH_DMF_LUA
+#  undef WITH_DMF_LUA
+# endif
+# define WITH_DMF_LUA 0
 
 static mib2nut_info_t *mib2nut[] = {
 	&apc,
@@ -113,12 +116,13 @@ static mib2nut_info_t *mib2nut[] = {
 	/* end of structure. */
 	NULL
 };
-#endif
+#endif /* WITH_DMFMIB */
 
 struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+int input_phases, output_phases, bypass_phases;
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
 int current_device_number = 0;      /* to handle daisychain iterations */
@@ -137,8 +141,8 @@ const char *mibvers;
 #define DRIVER_NAME	"Generic SNMP UPS driver (DMF)"
 #else
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#endif
-#define DRIVER_VERSION		"0.98"
+#endif /* WITH_DMFMIB */
+#define DRIVER_VERSION		"0.100"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -149,6 +153,8 @@ upsdrv_info_t	upsdrv_info = {
 	"Dmitry Frolov <frolov@riss-telecom.ru>\n" \
 	"J.W. Hoogervorst <jeroen@hoogervorst.net>\n" \
 	"Niels Baggesen <niels@baggesen.net>\n" \
+	"Jim Klimov <EvgenyKlimov@Eaton.com>\n" \
+	"Carlos Dominguez <CarlosDominguez@Eaton.com>\n" \
 	"Arjen de Korte <adkorte-guest@alioth.debian.org>",
 	DRV_STABLE,
 	{ NULL }
@@ -187,15 +193,17 @@ void upsdrv_initinfo(void)
 		su_info_p->flags |= SU_FLAG_OK;
 		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
 			&& !(su_info_p->flags & SU_OUTLET)
-			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+			&& !(su_info_p->flags & SU_OUTLET_GROUP))
+		{
 			/* first check that this OID actually exists */
 // FIXME: daisychain commands support!
-su_addcmd(su_info_p);
+			su_addcmd(su_info_p);
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
 				upsdebugx(1, "upsdrv_initinfo(): adding command '%s'", su_info_p->info_type);
-			}*/
+			}
+*/
 		}
 	}
 
@@ -230,8 +238,11 @@ void upsdrv_updateinfo(void)
 		else
 			dstate_datastale();
 
-		alarm_commit();
+		/* Commit status first, otherwise in daisychain mode, "device.0" may
+		 * clear the alarm count since it has an empty alarm buffer and if there
+		 * is only one device that has alarms! */
 		status_commit();
+		alarm_commit();
 
 		/* store timestamp */
 		lastpoll = time(NULL);
@@ -310,7 +321,8 @@ void upsdrv_makevartable(void)
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 #if WITH_DMFMIB
 	addvar(VAR_VALUE, SU_VAR_DMFPATH,
-		"Set the Data Mapping File to use");
+		"Set path to the Data Mapping File to use");
+// FIXME: Add support for custom DMF directory too
 #endif
 }
 
@@ -325,24 +337,26 @@ void upsdrv_initups(void)
 	upsdebugx(1, "SNMP UPS driver: entering %s()", __func__);
 
 #if WITH_DMFMIB
+	upsdebugx(1, "SNMP UPS driver: preparing to load dynamic MIB-to-NUT mappings from DMF");
+
 	dmp = mibdmf_parser_new();
 	if (!dmp)
 		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
 
 	/* FIXME: Add configurability of where we look for *.dmf files */
-#ifdef DEFAULT_DMFSNMP_DIR
+# ifdef DEFAULT_DMFSNMP_DIR
 	if(testvar(SU_VAR_DMFPATH)){
 		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
 	}else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
 	else mibdmf_parse_file(dmf_path, dmp);
-#else
+# else /* not defined DEFAULT_DMFSNMP_DIR */
 	if(testvar(SU_VAR_DMFPATH)){
 		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
 	}else if(!dmf_path){
 		if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
 			mibdmf_parse_dir("./", dmp);
 	}else mibdmf_parse_file(dmf_path, dmp);
-#endif
+# endif /* DEFAULT_DMFSNMP_DIR */
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )
 	{
@@ -368,7 +382,9 @@ void upsdrv_initups(void)
 			return;
 		}
 	} // scope the table loop vars
-#endif
+#else
+	upsdebugx(1, "SNMP UPS driver: using built-in MIB-to-NUT mappings");
+#endif /* WITH_DMFMIB */
 
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
@@ -388,7 +404,7 @@ void upsdrv_initups(void)
 		pollfreq = DEFAULT_POLLFREQ;
 
 	/* Get UPS Model node to see if there's a MIB */
-/* FIXME: extend and use match_model_OID(char *model) */
+// FIXME: extend and use match_model_OID(char *model)
 	su_info_p = su_find_info("ups.model");
 	/* Try to get device.model if ups.model is not available */
 	if (su_info_p == NULL)
@@ -412,6 +428,7 @@ void upsdrv_initups(void)
 			/* Otherwise, just point at what we found */
 			cur_info_p = su_info_p;
 		}
+
 		/* Actually get the data */
 		status = nut_snmp_get_str(cur_info_p->OID, model, sizeof(model), NULL);
 
@@ -425,6 +442,7 @@ void upsdrv_initups(void)
 				free((char*)cur_info_p);
 		}
 	}
+
 	if (status == TRUE)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
@@ -438,16 +456,16 @@ void upsdrv_initups(void)
 	/* Allocate / init the daisychain info structure (for phases only for now)
 	 * daisychain_info[0] is the whole chain! (added +1) */
 	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
-	for (curdev = 0 ; curdev > devices_count ; curdev++) {
+	for (curdev = 0 ; curdev <= devices_count ; curdev++) {
 		daisychain_info[curdev] = (daisychain_info_t*)malloc(sizeof(daisychain_info_t));
-		daisychain_info[curdev]->input_phases = -1;
-		daisychain_info[curdev]->output_phases = -1;
-		daisychain_info[curdev]->bypass_phases = -1;
+		daisychain_info[curdev]->input_phases = (long)-1;
+		daisychain_info[curdev]->output_phases = (long)-1;
+		daisychain_info[curdev]->bypass_phases = (long)-1;
 	}
 
 	/* FIXME: also need daisychain awareness (so init)!
 	 * i.e load.off.delay+load.off + device.1.load.off.delay+device.1.load.off + ... */
-/* FIXME: daisychain commands support! */
+// FIXME: daisychain commands support!
 	if (su_find_info("load.off.delay")) {
 		/* Adds default with a delay value of '0' (= immediate) */
 		dstate_addcmd("load.off");
@@ -473,7 +491,9 @@ void upsdrv_cleanup(void)
 
 	/* Net-SNMP specific cleanup */
 	nut_snmp_cleanup();
+
 #if WITH_DMFMIB
+	/* DMF specific cleanup */
 	mibdmf_parser_destroy(&dmp);
 	mib2nut = NULL;
 #endif
@@ -722,6 +742,7 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 			if (mibname == NULL) {
 				/* We are probing for proper mib - ignore errors */
 				snmp_free_pdu(response);
+				nut_snmp_free(ret_array);
 				return NULL;
 			}
 
@@ -1112,10 +1133,13 @@ static void disable_transfer_oids(void)
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
-	char info_type[128];
+	char info_type[128]; // We tweak incoming "su_info_p->info_type" value in some cases
+
+// FIXME: Replace hardcoded 128 with a macro above (use {SU_}LARGEBUF?), and same macro or sizeof(info_type) below?
 
 	upsdebugx(1, "entering %s(%s)", __func__, su_info_p->info_type);
 
+// FIXME: This 20 seems very wrong (should be "128", macro or sizeof? see above)
 	memset(info_type, 0, 20);
 	/* pre-fill with the device name for checking */
 	snprintf(info_type, 128, "device.%i", current_device_number);
@@ -1160,7 +1184,7 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 
 		/* Set enumerated values, only if the data has ST_FLAG_RW and there
 		 * are lookup values */
-/* FIXME: daisychain settings support: check if applicable */
+// FIXME: daisychain settings support: check if applicable
 		if ((su_info_p->info_flags & ST_FLAG_RW) && su_info_p->oid2info) {
 
 			upsdebugx(3, "%s: adding enumerated values", __func__);
@@ -1341,7 +1365,7 @@ mib2nut_info_t *match_sysoid()
 			upsdebugx(2, "%s: can't build device_sysOID %s: %s",
 				__func__, sysOID_buf, snmp_api_errstring(snmp_errno));
 
-			return FALSE;
+			return NULL;
 		}
 
 		/* Now, iterate on mib2nut definitions */
@@ -1364,6 +1388,7 @@ mib2nut_info_t *match_sysoid()
 				/* Try to continue anyway! */
 				continue;
 			}
+
 			/* Now compare these */
 			upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
 			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
@@ -1372,7 +1397,8 @@ mib2nut_info_t *match_sysoid()
 				/* Counter verify, using {ups,device}.model */
 				snmp_info = mib2nut[i]->snmp_info;
 
-				if (match_model_OID() != TRUE) {
+				if (match_model_OID() != TRUE)
+				{
 					upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
 					snmp_info = NULL;
 					continue;
@@ -1383,6 +1409,7 @@ mib2nut_info_t *match_sysoid()
 				return mib2nut[i];
 			}
 		}
+
 		/* Yell all to call for user report */
 		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
 			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
@@ -1408,8 +1435,18 @@ bool_t load_mib2nut(const char *mib)
 	 * (Note: sysOID points the device main MIB entry point) */
 	if (!strcmp(mib, "auto"))
 	{
-		upsdebugx(1, "trying the new match_sysoid() method");
-		m2n = match_sysoid();
+		upsdebugx(1, "load_mib2nut: trying the new match_sysoid() method with %s", mib);
+		/* Retry at most 3 times, to maximise chances */
+		for (i = 0; i < 3 ; i++) {
+			upsdebugx(2, "load_mib2nut: trying the new match_sysoid() method: attempt #%d", (i+1));
+			if ((m2n = match_sysoid()) != NULL)
+				break;
+
+			if (m2n == NULL)
+				upsdebugx(1, "load_mib2nut: failed with new match_sysoid() method");
+			else
+				upsdebugx(1, "load_mib2nut: found something with new match_sysoid() method");
+		}
 	}
 
 	/* Otherwise, revert to the classic method */
@@ -1418,14 +1455,16 @@ bool_t load_mib2nut(const char *mib)
 		for (i = 0; mib2nut[i] != NULL; i++) {
 			/* Is there already a MIB name provided? */
 			if (strcmp(mib, "auto") && strcmp(mib, mib2nut[i]->mib_name)) {
+				upsdebugx(2, "load_mib2nut: skip the "auto" entry");
 				continue;
 			}
-			upsdebugx(1, "load_mib2nut: trying classic method with '%s' mib", mib2nut[i]->mib_name);
+			upsdebugx(1, "load_mib2nut: trying classic sysOID matching method with '%s' mib", mib2nut[i]->mib_name);
 
 			/* Classic method: test an OID specific to this MIB */
 			snmp_info = mib2nut[i]->snmp_info;
 
-			if (match_model_OID() != TRUE) {
+			if (match_model_OID() != TRUE)
+			{
 				upsdebugx(2, "%s: testOID provided and doesn't match MIB '%s'!", __func__, mib2nut[i]->mib_name);
 				snmp_info = NULL;
 				continue;
@@ -1601,7 +1640,6 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 {
 	int base_index = template_index_base;
 	char test_OID[SU_INFOSIZE];
-
 	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
 
 	/* FIXME: differentiate between template types (SU_OUTLET | SU_OUTLET_GROUP)
@@ -1629,14 +1667,13 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 			else {
 				snprintf(test_OID, sizeof(test_OID), su_info_p->OID, base_index);
 			}
-
 			if (nut_snmp_get(test_OID) != NULL)
 				break;
 		}
 		/* Only store if it's a template for outlets or outlets groups,
 		 * not for daisychain (which has different index) */
 		if ((su_info_p->flags & SU_OUTLET) || (su_info_p->flags & SU_OUTLET_GROUP))
-			template_index_base = base_index;
+		template_index_base = base_index;
 	}
 	upsdebugx(3, "%s: %i", __func__, template_index_base);
 	return base_index;
@@ -1679,7 +1716,7 @@ static int guestimate_template_count(const char *OID_template)
 
 /* Process template definition, instantiate and get data or register
  * command
- * type: outlet, outlet.group */
+ * type: outlet, outlet.group, device */
 bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 {
 	/* Default to TRUE, and leave to get_and_process_data() to set
@@ -1699,7 +1736,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 	if ((strncmp(type, "device", 6)) && (devices_count > 1) && (current_device_number > 0))
 		snprintf(template_count_var, sizeof(template_count_var), "device.%i.%s.count", current_device_number, type);
 	else
-		snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
+	snprintf(template_count_var, sizeof(template_count_var), "%s.count", type);
 
 	if(dstate_getinfo(template_count_var) == NULL) {
 		/* FIXME: should we disable it?
@@ -1747,9 +1784,9 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				{
 					/* Device 1 ("device.0", whole daisychain) needs no
 					 * special processing */
-					cur_nut_index = cur_template_number + base_nut_template_offset();
-					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
-							su_info_p->info_type, cur_nut_index);
+			cur_nut_index = cur_template_number + base_nut_template_offset();
+			snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+					su_info_p->info_type, cur_nut_index);
 				}
 			}
 			else /* Outlet and outlet groups templates */
@@ -1813,7 +1850,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 						}
 					}
 					else {
-						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
+				snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
 					}
 				}
 
@@ -2008,6 +2045,7 @@ bool_t daisychain_init()
 			if ((su_info_p != NULL) && (su_info_p->dfl != NULL)) {
 				dstate_setinfo("device.model", "daisychain %s (1+%ld)",
 					su_info_p->dfl, devices_count - 1);
+				dstate_setinfo("device.model", "%s", su_info_p->dfl);
 			}
 			else {
 				dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
@@ -2033,7 +2071,8 @@ bool_t daisychain_init()
  * 
  * type: input, output, bypass
  * su_info_p: variable to process flags on
- * Return 0 if OK, if if the caller needs to "continue" the walk loop
+ * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
+ * skip the present data)
  */
 int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
 {
@@ -2074,17 +2113,17 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 		/* daisychain specifics... */
 		if ( (daisychain_enabled == TRUE) && (current_device_number > 0) ) {
 			/* Device(s) 2-N (slave(s)) need to append 'device.x' */
-			snprintf(tmpInfo, sizeof(SU_INFOSIZE),
+			snprintf(tmpInfo, SU_INFOSIZE,
 					"device.%i.%s.phases", current_device_number, type);
 		}
 		else {
-			snprintf(tmpInfo, sizeof(SU_INFOSIZE), "%s.phases", type);
+			snprintf(tmpInfo, SU_INFOSIZE, "%s.phases", type);
 		}
 
 		if (dstate_getinfo(tmpInfo) == NULL) {
 			/* {input,output,bypass}.phases is not yet published,
 			 * try to get the template for it */
-			snprintf(tmpInfo, sizeof(SU_INFOSIZE), "%s.phases", type);
+			snprintf(tmpInfo, SU_INFOSIZE, "%s.phases", type);
 			tmp_info_p = su_find_info(tmpInfo);
 			if (tmp_info_p != NULL) {
 				memset(tmpOID, 0, SU_INFOSIZE);
@@ -2105,13 +2144,13 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 					*nb_phases = tmpValue;
 				}
 				else {
-					upsdebugx(2, "Can't get input.bypass value. Defaulting to 1 %s.phase", type);
+					upsdebugx(2, "Can't get %s value. Defaulting to 1 %s.phase", tmpInfo, type);
 					*nb_phases = 1;
 					/* FIXME: return something or process using default?! */
 				}
 			}
 			else {
-				upsdebugx(2, "No input.bypass entry. Defaulting to 1 %s.phase", type);
+				upsdebugx(2, "No %s entry. Defaulting to 1 %s.phase", tmpInfo, type);
 				*nb_phases = 1;
 				/* FIXME: return something or process using default?! */
 			}
@@ -2121,6 +2160,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 		}
 		/* Publish the number of phase(s) */
 		dstate_setinfo(tmpInfo, "%ld", *nb_phases);
+		upsdebugx(2, "device %i has %ld %s.phases", current_device_number, *nb_phases, type);
 	}
 	/* FIXME: what to do here?
 	else if (*nb_phases == 0) {
@@ -2129,7 +2169,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 
 
 	/* Actual processing of phases related data */
-/* FIXME: don't clear SU_INPHASES in daisychain mode!!! ??? */
+// FIXME: don't clear SU_INPHASES in daisychain mode!!! ???
 	if (su_info_p->flags & single_phase_flag) {
 		if (*nb_phases == 1) {
 			upsdebugx(1, "%s_phases is 1", type);
@@ -2185,7 +2225,7 @@ int lua_C_gateway(lua_State *L){
 	free(buf);
 	return 1;
 }
-#endif
+#endif /* WITH_DMF_LUA */
 
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
@@ -2217,9 +2257,7 @@ bool_t snmp_ups_walk(int mode)
 					lua_pushnumber(su_info_p->luaContext, current_device_number);
 					lua_pcall(su_info_p->luaContext,1,1,0);
 					result = (char *) lua_tostring(su_info_p->luaContext, -1);
-#ifdef DEBUG
-	printf("Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
-#endif
+					upsdebugx(2, "Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
 					free(funcname);
 
 					if(result){
@@ -2238,12 +2276,13 @@ bool_t snmp_ups_walk(int mode)
 				}
 				continue;
 			}
-#endif
-			/* FIXME:
-			 * switch(current_device_number) {
-			 * case 0: devtype = "daisychain whole"
-			 * case 1: devtype = "daisychain master"
-			 * default: devtype = "daisychain slave" */
+#endif /* WITH_DMF_LUA */
+
+			// FIXME:
+			// switch(current_device_number) {
+			// case 0: devtype = "daisychain whole"
+			// case 1: devtype = "daisychain master"
+			// default: devtype = "daisychain slave"
 			if (daisychain_enabled == TRUE) {
 				upsdebugx(1, "%s: processing device %i (%s)", __func__,
 					current_device_number,
@@ -2262,66 +2301,71 @@ bool_t snmp_ups_walk(int mode)
 				continue;
 			}
 
-/* FIXME: daisychain-whole, what to do? */
+// FIXME: daisychain-whole, what to do?
 			/* skip the whole-daisychain for now */
 			if (current_device_number == 0) {
 				upsdebugx(1, "Skipping daisychain device.0 for now...");
 				continue;
 			}
 
-			/* skip instcmd, not linked to outlets */
-			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
-				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
-				upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
-				continue;
-			}
+		/* skip instcmd, not linked to outlets */
+		if ((SU_TYPE(su_info_p) == SU_TYPE_CMD)
+			&& !(su_info_p->flags & SU_OUTLET)
+			&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
+			upsdebugx(1, "SU_CMD_MASK => %s", su_info_p->OID);
+			continue;
+		}
 			/* skip elements we shouldn't show in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && !(su_info_p->flags & SU_FLAG_OK))
-				continue;
+			continue;
 
-			/* skip static elements in update mode */
+		/* skip static elements in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))
-				continue;
+			continue;
 
-			/* Set default value if we cannot fetch it */
-			/* and set static flag on this element.
-			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
-			if ((su_info_p->flags & SU_FLAG_ABSENT)
-				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP)) {
-				if (mode == SU_WALKMODE_INIT) {
-					if (su_info_p->dfl) {
-						if ((daisychain_enabled == TRUE) && (devices_count > 1)) {
-							if (current_device_number == 0)
-								su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
-							else
-								status = process_template(mode, "device", su_info_p);
-						}
-						else {
-							/* Set default value if we cannot fetch it from ups. */
-							su_setinfo(su_info_p, NULL);
-						}
+		/* Set default value if we cannot fetch it */
+		/* and set static flag on this element.
+		 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
+		if ((su_info_p->flags & SU_FLAG_ABSENT)
+			&& !(su_info_p->flags & SU_OUTLET)
+			&& !(su_info_p->flags & SU_OUTLET_GROUP))
+		{
+			if (mode == SU_WALKMODE_INIT)
+			{
+				if (su_info_p->dfl)
+				{
+					if ((daisychain_enabled == TRUE) && (devices_count > 1))
+					{
+						if (current_device_number == 0)
+							su_setinfo(su_info_p, NULL); // FIXME: daisychain-whole, what to do?
+						else
+							status = process_template(mode, "device", su_info_p);
 					}
-					su_info_p->flags |= SU_FLAG_STATIC;
+					else {
+						/* Set default value if we cannot fetch it from ups. */
+						su_setinfo(su_info_p, NULL);
+					}
 				}
-				continue;
+				su_info_p->flags |= SU_FLAG_STATIC;
 			}
+			continue;
+		}
 
-			/* check stale elements only on each PN_STALE_RETRY iteration. */
-	/*		if ((su_info_p->flags & SU_FLAG_STALE) &&
-					(iterations % SU_STALE_RETRY) != 0)
-				continue;
-	*/
-			/* Filter 1-phase Vs 3-phase according to {input,output,bypass}.phase.
-			 * Non matching items are disabled, and flags are cleared at init
-			 * time */
+		/* check stale elements only on each PN_STALE_RETRY iteration. */
+/*		if ((su_info_p->flags & SU_FLAG_STALE) &&
+				(iterations % SU_STALE_RETRY) != 0)
+			continue;
+*/
+		/* Filter 1-phase Vs 3-phase according to {input,output,bypass}.phase.
+		 * Non matching items are disabled, and flags are cleared at
+		 * init time */
+
 			/* Process input phases information */
 			input_phases = &daisychain_info[current_device_number]->input_phases;
 			if (su_info_p->flags & SU_INPHASES) {
 				upsdebugx(1, "Check input_phases (%ld)", *input_phases);
 				if (process_phase_data("input", input_phases, su_info_p) == 1)
-					continue;
+				continue;
 			}
 
 			/* Process output phases information */
@@ -2341,30 +2385,31 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 			/* process template (outlet, outlet group, inc. daisychain) definition */
-			if (su_info_p->flags & SU_OUTLET) {
-				/* Skip commands after init */
-				if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
-					continue;
-				else
-					status = process_template(mode, "outlet", su_info_p);
-			}
-			else if (su_info_p->flags & SU_OUTLET_GROUP) {
-				/* Skip commands after init */
-				if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
-					continue;
-				else
-					status = process_template(mode, "outlet.group", su_info_p);
-			}
-			else {
-/*				if (daisychain_enabled == TRUE) {
-					status = process_template(mode, "device", su_info_p);
-				}
-				else {
-*/					/* get and process this data, including daisychain adaptation */
+		if (su_info_p->flags & SU_OUTLET) {
+			/* Skip commands after init */
+			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+				continue;
+			else
+				status = process_template(mode, "outlet", su_info_p);
+		}
+		else if (su_info_p->flags & SU_OUTLET_GROUP) {
+			/* Skip commands after init */
+			if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+				continue;
+			else
+				status = process_template(mode, "outlet.group", su_info_p);
+		}
+		else {
+//				if (daisychain_enabled == TRUE) {
+//					status = process_template(mode, "device", su_info_p);
+//				}
+//				else {
+//
+					/* get and process this data, including daisychain adaptation */
 					status = get_and_process_data(mode, su_info_p);
 //				}
-			}
-		}	/* for (su_info_p... */
+		}
+	}	/* for (su_info_p... */
 
 		if (devices_count > 1) {
 			/* commit the device alarm buffer */
@@ -2411,16 +2456,19 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
 					current_device_number + daisychain_offset);
 			}
-			else
+			else {
+				free_info(tmp_info_p);
 				return FALSE;
+			}
 
 			/* adapt info_type */
 			if (su_info_p->info_type != NULL) {
 				snprintf((char *)tmp_info_p->info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
 			}
-			else
+			else {
+				free_info(tmp_info_p);
 				return FALSE;
-
+			}
 			su_info_p = tmp_info_p;
 		}
 		else {
@@ -2428,18 +2476,18 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			return FALSE;
 		}
 	}
-
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
-
-/* FIXME: daisychain status support! */
+// FIXME: daisychain status support!
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
 			su_status_set(su_info_p, value);
 			upsdebugx(2, "=> value: %ld", value);
 		}
-		else upsdebugx(2, "=> Failed");
+		else
+			upsdebugx(2, "=> Failed");
 
+		free_info(tmp_info_p);
 		return status;
 	}
 
@@ -2448,7 +2496,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	if (!strcmp(strrchr(su_info_p->info_type, '.'), ".alarm")) {
 
 		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
-/* FIXME: daisychain alarms support! */
+
+// FIXME: daisychain alarms support!
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
 		{
@@ -2457,6 +2506,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		}
 		else upsdebugx(2, "=> Failed");
 
+		free_info(tmp_info_p);
 		return status;
 	}
 
@@ -2508,6 +2558,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			upsdebugx(2, "=> Failed");
 		}
 
+		free_info(tmp_info_p);
 		return status;
 	}
 
@@ -2518,6 +2569,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 
 		if(status != TRUE) {
+			free_info(tmp_info_p);
 			return status;
 		}
 
@@ -2541,6 +2593,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		snprintf(buf, sizeof(buf), "%.1f", temp);
 		su_setinfo(su_info_p, buf);
 
+		free_info(tmp_info_p);
 		return TRUE;
 	}
 
@@ -2555,17 +2608,26 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 					disable_competition(su_info_p);
 					su_info_p->flags &= ~SU_FLAG_UNIQUE;
 				}
+				free_info(tmp_info_p);
 				return FALSE;
 			}
 			if (su_info_p->flags & SU_FLAG_SETINT) {
-			    	upsdebugx(1, "setvar %s", su_info_p->OID);
-			    	*su_info_p->setvar = value;
+					upsdebugx(1, "setvar %s", su_info_p->OID);
+					*su_info_p->setvar = value;
 			}
 			/* Check if there is a value to be looked up */
 			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 				snprintf(buf, sizeof(buf), "%s", strValue);
-			else
-				snprintf(buf, sizeof(buf), "%.2f", value * su_info_p->info_len);
+			else {
+				/* Check if there is a need to publish decimal too,
+				 * i.e. if switching to integer does not cause a
+				 * loss of precision */
+				value = value * su_info_p->info_len;
+				if ((int)value == value)
+					snprintf(buf, sizeof(buf), "%i", (int)value);
+				else
+					snprintf(buf, sizeof(buf), "%.2f", (float)value);
+			}
 		}
 	}
 
@@ -2576,26 +2638,44 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	else
 		upsdebugx(2, "=> Failed");
 
+	free_info(tmp_info_p);
 	return status;
 }
 
-/* set r/w INFO_ element to a value.
- * FIXME: make a common function with su_instcmd! */
-int su_setvar(const char *varname, const char *val)
+/* Common function for setting OIDs, from a NUT variable name,
+ * used by su_setvar() and su_instcmd()
+ * Params:
+ * @mode: SU_MODE_INSTCMD for instant commands, SU_MODE_SETVAR for settings
+ * @varname: name of variable or command to set the OID from
+ * @val: value for settings, NULL for commands
+
+ * Returns
+ *   STAT_SET_HANDLED if OK,
+ *   STAT_SET_INVALID or STAT_SET_UNKNOWN if the command / setting is not supported
+ *   STAT_SET_FAILED otherwise
+ */
+int su_setOID(int mode, const char *varname, const char *val)
 {
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
 	int retval = STAT_SET_FAILED;
+	int cmd_offset = 0;
 	long value = -1;
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = -1;
 	int daisychain_device_number = -1;
+	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */ 
+	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
 	char setOID[SU_INFOSIZE];
+	/* Used for potentially appending "device.X." to {outlet,outlet.group}.count */
+	char template_count_var[SU_BUFSIZE];
 
-	upsdebugx(2, "entering %s(%s, %s)", __func__, varname, val);
+	upsdebugx(2, "entering %s(%s, %s, %s)", __func__,
+		(mode==SU_MODE_INSTCMD)?"instcmd":"setvar", varname, val);
 
 	memset(setOID, 0, SU_INFOSIZE);
+	memset(template_count_var, 0, SU_BUFSIZE);
 
 	/* Check if it's a daisychain setting */
 	if (!strncmp(varname, "device", 6)) {
@@ -2603,9 +2683,11 @@ int su_setvar(const char *varname, const char *val)
 		daisychain_device_number = atoi(&varname[7]);
 		/* Point at the command, without the "device.x" prefix */
 		tmp_varname = strdup(&varname[9]);
+		snprintf(template_count_var, 10, "%s", varname);
 
-		upsdebugx(2, "%s: got a daisychain setting (%s) for device %i",
-			__func__, tmp_varname, daisychain_device_number);
+		upsdebugx(2, "%s: got a daisychain %s (%s) for device %i",
+			__func__, (mode==SU_MODE_INSTCMD)?"command":"setting",
+			tmp_varname, daisychain_device_number);
 
 		if (daisychain_device_number > devices_count)
 			upsdebugx(2, "%s: item is out of bound (%i / %ld)",
@@ -2613,19 +2695,19 @@ int su_setvar(const char *varname, const char *val)
 	}
 	else {
 		daisychain_device_number = 0;
+		OID_offset = 0;
 		tmp_varname = strdup(varname);
 	}
 
-	/* skip the whole-daisychain for now */
-/* FIXME: send the command to all devices */
-	if ((daisychain_enabled == TRUE) && (daisychain_device_number == 0)) {
-		upsdebugx(2, "daisychain setting for device.0 are not yet supported!");
+	/* skip the whole-daisychain for now:
+	 * will send the settings to all devices in the daisychain */
+	if ((daisychain_enabled == TRUE) && (devices_count > 1) && (daisychain_device_number == 0)) {
+		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
+			(mode==SU_MODE_INSTCMD)?"command":"setting");
 		return STAT_SET_INVALID;
 	}
 
-	vartype = get_template_type(tmp_varname);
-
-	/* Check if it is outlet / outlet.group */
+	/* Check if it is outlet / outlet.group, or standard variable */
 	if (strncmp(tmp_varname, "outlet", 6))
 		su_info_p = su_find_info(tmp_varname);
 	else {
@@ -2638,15 +2720,18 @@ int su_setvar(const char *varname, const char *val)
 		int total_items = -1;
 
 		/* Check if it is outlet / outlet.group */
+		vartype = get_template_type(tmp_varname);
 		if (vartype == SU_OUTLET_GROUP) {
-			total_items = atoi(dstate_getinfo("outlet.group.count"));
+			snprintfcat(template_count_var, SU_BUFSIZE, "outlet.group.count");
+			total_items = atoi(dstate_getinfo(template_count_var));
 			item_number_ptr = &tmp_varname[12];
 		}
 		else {
-			total_items = atoi(dstate_getinfo("outlet.count"));
+			snprintfcat(template_count_var, SU_BUFSIZE, "outlet.count");
+			total_items = atoi(dstate_getinfo(template_count_var));
 			item_number_ptr = &tmp_varname[6];
 		}
-
+		upsdebugx(3, "Using count variable '%s'", template_count_var);
 		item_number = atoi(++item_number_ptr);
 		upsdebugx(3, "%s: item %i / %i", __func__, item_number, total_items);
 
@@ -2679,6 +2764,15 @@ int su_setvar(const char *varname, const char *val)
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
+			if (mode==SU_MODE_INSTCMD) {
+				/* Workaround buggy Eaton Pulizzi implementation
+				 * which have different offsets index for data & commands! */
+				if (su_info_p->flags & SU_CMD_OFFSET) {
+					upsdebugx(3, "Adding command offset");
+					cmd_offset++;
+				}
+			}
+
 			/* Special processing for daisychain:
 			 * these outlet | outlet groups also include formatting info,
 			 * so we have to check if the daisychain is enabled, and if
@@ -2686,11 +2780,11 @@ int su_setvar(const char *varname, const char *val)
 			if (daisychain_enabled == TRUE) {
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number, item_number - base_nut_template_offset());
+						daisychain_device_number + OID_offset, item_number - base_nut_template_offset());
 				}
 				else {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number - base_nut_template_offset(), daisychain_device_number);
+						item_number - base_nut_template_offset(), daisychain_device_number + OID_offset);
 				}
 			}
 			else {
@@ -2698,92 +2792,112 @@ int su_setvar(const char *varname, const char *val)
 					item_number - base_nut_template_offset());
 			}
 		}
-		/* else, don't return STAT_SET_INVALID since we can be setting
-		 * a server side variable! */
-
-		/* adapt info_type */
-		if (su_info_p->info_type != NULL)
-			snprintf((char *)su_info_p->info_type, sizeof(su_info_p->info_type), "%s", tmp_varname);
+		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
+		 * can be setting a server side variable! */
+		else {
+			if (mode==SU_MODE_INSTCMD) {
+				free_info(su_info_p);
+				return STAT_INSTCMD_UNKNOWN;
+			}
+			else {
+				/* adapt info_type */
+				if (su_info_p->info_type != NULL)
+					snprintf((char *)su_info_p->info_type, SU_INFOSIZE, "%s", tmp_varname);
+			}
+		}
 	}
 
+	/* Sanity check */
 	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
-		upsdebugx(2, "%s: info element unavailable %s", __func__, tmp_varname);
+
+		upsdebugx(2, "%s: info element unavailable %s", __func__, varname);
 
 		/* Free template (outlet and outlet.group) */
-		if (vartype != 0)
-			free_info(su_info_p);
+		free_info(su_info_p);
+
+		if (tmp_varname != NULL)
+			free(tmp_varname);
 
 		return STAT_SET_UNKNOWN;
 	}
 
-	if (!(su_info_p->info_flags & ST_FLAG_RW) || su_info_p->OID == NULL) {
-		upsdebugx(2, "%s: not writable %s", __func__, tmp_varname);
-
-		/* Free template (outlet and outlet.group) */
-		if (vartype != 0)
-			free_info(su_info_p);
-
-		return STAT_SET_INVALID;
-	}
-
-	/* Adapt the OID in daisychain mode */
-	if (daisychain_enabled == TRUE)
-		snprintf(setOID, SU_INFOSIZE, su_info_p->OID, daisychain_device_number);
-	else
-		snprintf(setOID, SU_INFOSIZE, "%s", su_info_p->OID);
-
-	/* set value into the device */
+	/* set value into the device, using the provided one, or the default one otherwise */
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_set_str(setOID, val);
+		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
 	} else {
-		/* non string data may imply a value lookup */
-		if (su_info_p->oid2info) {
-			value = su_find_valinfo(su_info_p->oid2info, val);
+		if (mode==SU_MODE_INSTCMD) {
+			status = nut_snmp_set_int(su_info_p->OID, val ? atoi(val) : su_info_p->info_len);
 		}
 		else {
-			/* Convert value and apply multiplier */
-			value = atof(val) / su_info_p->info_len;
+			/* non string data may imply a value lookup */
+			if (su_info_p->oid2info) {
+				value = su_find_valinfo(su_info_p->oid2info, val);
+			}
+			else {
+				/* Convert value and apply multiplier */
+				value = atof(val) / su_info_p->info_len;
+			}
+			/* Actually apply the new value */
+			status = nut_snmp_set_int(su_info_p->OID, value);
 		}
-		/* Actually apply the new value */
-		status = nut_snmp_set_int(setOID, value);
 	}
 
-	if (status == FALSE)
-		upsdebugx(1, "%s: cannot set value %s for %s", __func__, val, setOID);
+	/* Process result */
+	if (status == FALSE) {
+		if (mode==SU_MODE_INSTCMD)
+			upsdebugx(1, "%s: cannot execute command '%s'", __func__, varname);
+		else
+			upsdebugx(1, "%s: cannot set value %s on OID %s", __func__, val, su_info_p->OID);
+
+		retval = STAT_SET_FAILED;
+	}
 	else {
 		retval = STAT_SET_HANDLED;
-		upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, varname, val);
+		if (mode==SU_MODE_INSTCMD)
+			upsdebugx(1, "%s: successfully sent command %s", __func__, varname);
+		else {
+			upsdebugx(1, "%s: successfully set %s to \"%s\"", __func__, varname, val);
 
-		/* update info array: call dstate_setinfo, since flags and aux are
-		 * already published, and this saves us some processing */
-		dstate_setinfo(varname, "%s", val);
+			/* update info array: call dstate_setinfo, since flags and aux are
+			 * already published, and this saves us some processing */
+			dstate_setinfo(varname, "%s", val);
+		}
 	}
-	/* Free template (outlet and outlet.group) */
-	if (vartype != 0)
-		free_info(su_info_p);
 
+	/* Free template (outlet and outlet.group) */
+	free_info(su_info_p);
 	free(tmp_varname);
 
 	return retval;
 }
 
-/* Daisychain-aware function to add instant commands */
+/* set r/w INFO_ element to a value. */
+int su_setvar(const char *varname, const char *val)
+{
+	return su_setOID(SU_MODE_SETVAR, varname, val);
+}
+
+/* Daisychain-aware function to add instant commands:
+ * Every command that is valid for a device has to be added for device.0
+ * This then allows to composite commands, called on device.0 and executed
+ * on all devices of the daisychain */
 int su_addcmd(snmp_info_t *su_info_p)
 {
 	upsdebugx(2, "entering %s(%s)", __func__, su_info_p->info_type);
 
-/* FIXME: daisychain */
-	for (current_device_number = 1 ; current_device_number <= devices_count ;
-		current_device_number++)
-	{
+	if (daisychain_enabled == TRUE) {
+		for (current_device_number = 1 ; current_device_number <= devices_count ;
+			current_device_number++)
+		{
 
-		process_template(SU_WALKMODE_INIT, "device", su_info_p);
-/*
+			process_template(SU_WALKMODE_INIT, "device", su_info_p);
+		}
+	}
+	else {
 		if (nut_snmp_get(su_info_p->OID) != NULL) {
 			dstate_addcmd(su_info_p->info_type);
 			upsdebugx(1, "%s: adding command '%s'", __func__, su_info_p->info_type);
 		}
-*/
 	}
 	return 0;
 }
@@ -2791,197 +2905,7 @@ int su_addcmd(snmp_info_t *su_info_p)
 /* process instant command and take action. */
 int su_instcmd(const char *cmdname, const char *extradata)
 {
-	snmp_info_t *su_info_p = NULL;
-	int status;
-	int retval = STAT_INSTCMD_FAILED;
-	int cmd_offset = 0;
-	/* normal (default), outlet, or outlet group variable */
-	int vartype = -1;
-	int daisychain_device_number = -1;
-	char *tmp_cmdname = NULL;
-
-	upsdebugx(2, "entering %s(%s, %s)", __func__, cmdname, extradata);
-
-	/* Check if it's a daisychain command */
-	if (!strncmp(cmdname, "device", 6)) {
-		/* Extract the device number */
-		daisychain_device_number = atoi(&cmdname[7]);
-		/* Point at the command, without the "device.x" prefix */
-		tmp_cmdname = strdup(&cmdname[9]);
-
-		upsdebugx(2, "%s: got a daisychain command (%s) for device %i",
-			__func__, tmp_cmdname, daisychain_device_number);
-
-		if (daisychain_device_number > devices_count)
-			upsdebugx(2, "%s: item is out of bound (%i / %ld)",
-				__func__, daisychain_device_number, devices_count);
-	}
-	else {
-		daisychain_device_number = 0;
-		tmp_cmdname = strdup(cmdname);
-	}
-
-	vartype = get_template_type(tmp_cmdname);
-
-	/* FIXME: this should only apply if strchr(%)! */
-	if (strncmp(tmp_cmdname, "outlet", 6)) {
-		su_info_p = su_find_info(tmp_cmdname);
-	}
-	else {
-/* FIXME: common with su_setvar(), apart from upsdebugx */
-		snmp_info_t *tmp_info_p;
-		/* Point the outlet or outlet group number in the string */
-		const char *item_number_ptr = NULL;
-		/* Store the target outlet or group number */
-		int item_number = extract_template_number_from_snmp_info_t(tmp_cmdname);
-		/* Store the total number of outlets or outlet groups */
-		int total_items = -1;
-
-		/* Check if it is outlet / outlet.group */
-		if (vartype == SU_OUTLET_GROUP) {
-			total_items = atoi(dstate_getinfo("outlet.group.count"));
-			item_number_ptr = &tmp_cmdname[12];
-		}
-		else {
-			total_items = atoi(dstate_getinfo("outlet.count"));
-			item_number_ptr = &tmp_cmdname[6];
-		}
-
-		item_number = atoi(++item_number_ptr);
-		upsdebugx(3, "%s: item %i / %i", __func__, item_number, total_items);
-
-		/* ensure the item number is supported (filtered upstream though)! */
-		if (item_number > total_items) {
-			/* out of bound item number */
-			upsdebugx(2, "%s: item is out of bound (%i / %i)",
-				__func__, item_number, total_items);
-			return STAT_SET_INVALID;
-		}
-		/* find back the item template */
-		char *item_varname = (char *)xmalloc(SU_INFOSIZE);
-		snprintf(item_varname, SU_INFOSIZE, "%s.%s%s",
-				(vartype == SU_OUTLET)?"outlet":"outlet.group",
-				"%i", strchr(item_number_ptr++, '.'));
-
-		upsdebugx(3, "%s: searching for template\"%s\"", __func__, item_varname);
-		tmp_info_p = su_find_info(item_varname);
-		free(item_varname);
-
-		/* for an snmp_info_t instance */
-		su_info_p = instantiate_info(tmp_info_p, su_info_p);
-
-		/* check if default value is also a template */
-		if ((su_info_p->dfl != NULL) &&
-			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
-			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
-			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
-				item_number - base_nut_template_offset());
-		}
-/* FIXME: </end> common with su_setvar(), apart from upsdebugx */
-
-		/* adapt the OID */
-		if (su_info_p->OID != NULL) {
-			/* Workaround buggy Eaton Pulizzi implementation
-			 * which have different offsets index for data & commands! */
-			if (su_info_p->flags & SU_CMD_OFFSET) {
-				upsdebugx(3, "Adding command offset");
-				cmd_offset++;
-			}
-
-			/* Special processing for daisychain:
-			 * these outlet | outlet groups also include formatting info,
-			 * so we have to check if the daisychain is enabled, and if
-			 * the formatting info for it are in 1rst or 2nd position */
-			if (daisychain_enabled == TRUE) {
-				if (su_info_p->flags & SU_TYPE_DAISY_1) {
-					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number, item_number - base_nut_template_offset() + cmd_offset);
-				}
-				else {
-					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number - base_nut_template_offset() + cmd_offset, daisychain_device_number);
-				}
-			}
-			else {
-				snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-					item_number - base_nut_template_offset() + cmd_offset);
-			}
-		} else {
-			free_info(su_info_p);
-			return STAT_INSTCMD_UNKNOWN;
-		}
-	}
-
-	/* Sanity check */
-	if (!su_info_p || !su_info_p->info_type || !(su_info_p->flags & SU_FLAG_OK)) {
-
-		/* Check for composite commands */
-		if (!strcasecmp(tmp_cmdname, "load.on")) {
-			return su_instcmd("load.on.delay", "0");
-		}
-
-		if (!strcasecmp(tmp_cmdname, "load.off")) {
-			return su_instcmd("load.off.delay", "0");
-		}
-
-		if (!strcasecmp(tmp_cmdname, "shutdown.return")) {
-			int	ret;
-
-			/* Ensure "ups.start.auto" is set to "yes", if supported */
-			if (dstate_getinfo("ups.start.auto")) {
-				su_setvar("ups.start.auto", "yes");
-			}
-
-			ret = su_instcmd("load.on.delay", dstate_getinfo("ups.delay.start"));
-			if (ret != STAT_INSTCMD_HANDLED) {
-				return ret;
-			}
-
-			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
-		}
-
-		if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-			int	ret;
-
-			/* Ensure "ups.start.auto" is set to "no", if supported */
-			if (dstate_getinfo("ups.start.auto")) {
-				su_setvar("ups.start.auto", "no");
-			}
-
-			ret = su_instcmd("load.on.delay", "-1");
-			if (ret != STAT_INSTCMD_HANDLED) {
-				return ret;
-			}
-
-			return su_instcmd("load.off.delay", dstate_getinfo("ups.delay.shutdown"));
-		}
-
-		upsdebugx(2, "%s: %s unavailable", __func__, cmdname);
-
-		if (!strncmp(cmdname, "outlet", 6))
-			free_info(su_info_p);
-
-		return STAT_INSTCMD_UNKNOWN;
-	}
-
-	/* set value, using the provided one, or the default one otherwise */
-	if (su_info_p->info_flags & ST_FLAG_STRING) {
-		status = nut_snmp_set_str(su_info_p->OID, extradata ? extradata : su_info_p->dfl);
-	} else {
-		status = nut_snmp_set_int(su_info_p->OID, extradata ? atoi(extradata) : su_info_p->info_len);
-	}
-
-	if (status == FALSE)
-		upsdebugx(1, "%s: cannot set value for %s", __func__, cmdname);
-	else {
-		retval = STAT_INSTCMD_HANDLED;
-		upsdebugx(1, "%s: successfully sent command %s", __func__, cmdname);
-	}
-
-	if (!strncmp(cmdname, "outlet", 6))
-		free_info(su_info_p);
-
-	return retval;
+	return su_setOID(SU_MODE_INSTCMD, cmdname, extradata);
 }
 
 /* FIXME: the below functions can be removed since these were for loading

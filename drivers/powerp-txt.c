@@ -5,7 +5,7 @@
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
  *	2007-2008   Arjen de Korte <adkorte-guest@alioth.debian.org>
- *	2012        Timothy Pearson <kb9vqf@pearsoncomputing.net>
+ *	2012-2016   Timothy Pearson <kb9vqf@pearsoncomputing.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ static struct {
 	const char	*command;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\r" },
+	{ "test.battery.start.deep", "TL\r" },
 	{ "test.battery.stop", "CT\r" },
 	{ "beeper.enable", "C7:1\r" },
 	{ "beeper.disable", "C7:0\r" },

@@ -434,6 +434,8 @@
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 
+"IBM"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
+"IBM"	"ups"	"5"	"Various"	"Serial port"	"mge-shut"
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"

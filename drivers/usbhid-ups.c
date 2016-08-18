@@ -1196,6 +1196,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 	double		value;
 	int		retcode;
 
+#ifndef SHUT_MODE
+	/* extract the VendorId for further testing */
+	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
+	int productID = usb_device((struct usb_dev_handle *)udev)->descriptor.idProduct;
+#endif
+
 	/* 3 modes: HU_WALKMODE_INIT, HU_WALKMODE_QUICK_UPDATE and HU_WALKMODE_FULL_UPDATE */
 
 	/* Device data walk ----------------------------- */
@@ -1275,6 +1281,15 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		default:
 			fatalx(EXIT_FAILURE, "hid_ups_walk: unknown update mode!");
 		}
+
+#ifndef SHUT_MODE
+		/* skip report 0x54 for Tripplite SU3000LCD2UHV due to firmware bug */
+		if ((vendorID == 0x09ae) && (productID == 0x1330)) {
+			if (item->hiddata && (item->hiddata->ReportID == 0x54)) {
+				continue;
+			}
+		}
+#endif
 
 		retcode = HIDGetDataValue(udev, item->hiddata, &value, poll_interval);
 
