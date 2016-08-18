@@ -324,6 +324,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{_sysconfdir}/bash_completion.d/*
 %{_sysconfdir}/logrotate.d/*
 %{_bindir}/*
+%exclude %{bindir}/nut-scanner-reindex-dmfsnmp
 %{_datadir}/nut
 %exclude %{_datadir}/nut/dmfnutscan
 %exclude %{_datadir}/nut/dmfsnmp
@@ -359,6 +360,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %defattr(-,root,root)
 %{MODELPATH}/snmp-ups
 %{MODELPATH}/netxml-ups
+%{bindir}/nut-scanner-reindex-dmfsnmp
 %{_mandir}/man8/netxml-ups*.*
 %{_mandir}/man8/snmp-ups*.*
 %dir %{_datadir}/nut/dmfnutscan
