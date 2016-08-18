@@ -51,6 +51,11 @@ static void (*xml_push_handler)(ne_xml_parser*,
 static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
 static void (*xml_destroy)(ne_xml_parser*);
 
+// These used to be needed as extern vars by some legacy code elsewhere...
+// also they are referenced below, but I'm not sure it is valid code!
+// FIXME: Inspect codebase to see if these are at all needed (used to be in snmp-ups.c/h)
+int input_phases, output_phases, bypass_phases;
+
 #if WITH_DMF_LUA
 	int functions_aux = 0;
 	char *luatext = NULL;

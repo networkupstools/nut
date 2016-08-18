@@ -122,7 +122,7 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
-int input_phases, output_phases, bypass_phases;
+
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
 int current_device_number = 0;      /* to handle daisychain iterations */
