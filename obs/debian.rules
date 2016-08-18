@@ -51,6 +51,7 @@ endif
 
 pre-build:: debian/compat
 	(cd tools; python nut-snmpinfo.py)
+	sh autogen.sh
 
 common-install-arch::
 	# install the bash completion script
