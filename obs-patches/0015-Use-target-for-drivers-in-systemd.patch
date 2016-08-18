@@ -99,6 +99,16 @@ index 0000000..b3533ac
 +
 +[Install]
 +WantedBy=multi-user.target nut-driver.target
+diff --git a/scripts/systemd/.gitignore b/scripts/systemd/.gitignore
+index 4164cd0..0faab65 100644
+--- a/scripts/systemd/.gitignore
++++ b/scripts/systemd/.gitignore
+@@ -1,4 +1,5 @@
+ /nut-driver.service
++/nut-driver@.service
+ /nut-monitor.service
+ /nut-server.service
+ /nutshutdown
 diff --git a/scripts/systemd/nut-server.service.in b/scripts/systemd/nut-server.service.in
 index fe20145..07b41ea 100644
 --- a/scripts/systemd/nut-server.service.in
