@@ -84,12 +84,18 @@ typedef struct nutscan_ipmi {
 #define IPMI_1_5		1
 #define IPMI_2_0		0
 
+/* XML HTTP structure */
+typedef struct nutscan_xml {
+    int port;       /* Port for xml http*/
+} nutscan_xml_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec);
 
 nutscan_device_t * nutscan_scan_usb();
 
 nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
+nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 

@@ -103,7 +103,9 @@ static void * run_snmp(void * arg)
 }
 static void * run_xml(void * arg)
 {
-	dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+    nutscan_xml_t * sec = (nutscan_xml_t *)arg;
+
+	dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, sec);
 	return NULL;
 }
 
@@ -153,6 +155,7 @@ int main(int argc, char *argv[])
 {
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
+    nutscan_xml_t  xml_sec;
 	int opt_ret;
 	char *	cidr = NULL;
 	int allow_all = 0;
@@ -169,11 +172,15 @@ int main(int argc, char *argv[])
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
+	memset(&xml_sec, 0, sizeof(xml_sec));
 	/* Set the default values for IPMI */
 	ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 	ipmi_sec.ipmi_version = IPMI_1_5; /* default to IPMI 1.5, if not otherwise specified */
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
+
+    /* Set the default values for XML HTTP*/
+    xml_sec.port = 4679;
 
 	nutscan_init();
 
@@ -486,11 +493,11 @@ display_help:
 	if( allow_xml && nutscan_avail_xml_http) {
 		printq(quiet,"Scanning XML/HTTP bus.\n");
 #ifdef HAVE_PTHREAD
-		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {
 			nutscan_avail_xml_http = 0;
 		}
 #else
-		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+		dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
 #endif /* HAVE_PTHREAD */
 	}
 
