@@ -1,0 +1,4 @@
+?package(nut-monitor): needs="X11" section="Applications/System/Monitoring"\
+  title="NUT Monitor" command="/usr/bin/NUT-Monitor"\
+  icon="/usr/share/pixmaps/nut-monitor.xpm"\
+  longtitle="Network UPS Tools GUI client"
