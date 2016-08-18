@@ -77,6 +77,8 @@ WARNING: this will probably power off your computers, so don't
 play around with this option.  Only use it when your systems are prepared
 to lose power.
 
+NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
+
 ENVIRONMENT VARIABLES
 ---------------------
 
