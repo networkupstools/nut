@@ -77,7 +77,7 @@
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
-"APC"	"pdu"	"3"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
+"APC"	"pdu"	"3"	"(various APxxxx)"	"SNMP monitoring card"	"snmp-ups"
 "APC"	"ats"	"3"	"ATS AP7724"	""	"snmp-ups (experimental)"
 
 "Aphel"	"pdu"	"3"	"various PDU"	""	"snmp-ups (experimental)"
