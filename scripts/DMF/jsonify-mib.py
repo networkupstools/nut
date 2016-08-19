@@ -480,7 +480,14 @@ if args.test:
         gcc = os.environ["CC"]
     except KeyError:
         gcc = "cc"
-    cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", prog_file, test_file]
+
+    # TODO: Consider multi-token CFLAGS with whitespace... split()?
+    try:
+        gcc_cflags = os.environ["CFLAGS"].split()
+    except KeyError:
+        gcc_cflags = [""]
+
+    cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir] + gcc_cflags + ["-o", prog_file, test_file]
     info ("COMPILE: " + " ".join (cmd))
     try:
         subprocess.check_call (cmd)
