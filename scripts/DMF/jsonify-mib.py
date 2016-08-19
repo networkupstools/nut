@@ -385,7 +385,7 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
-        fprintf (stderr, "[%%i] ", i);
+        fprintf (stderr, "[%%zi] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
         assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
@@ -396,7 +396,7 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
-        fprintf (stderr, "[%%i] ", i);
+        fprintf (stderr, "[%%zi] ", i);
         assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
@@ -442,12 +442,18 @@ args = p.parse_args (sys.argv[1:])
 drivers_dir = os.path.dirname (os.path.abspath (args.source))
 include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
 info ("CALL parse_file():")
+
+try:
+    gcc_cppflags = os.environ["CPPFLAGS"].split()
+except KeyError:
+    gcc_cppflags = []
+
 try:
     ast = parse_file (
         args.source,
         use_cpp=True,
         cpp_path=s_cpp_path (),
-        cpp_args=["-I"+drivers_dir, "-I"+include_dir]
+        cpp_args=["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags
         )
     if not isinstance(ast, c_ast.FileAST):
         raise RuntimeError("Got a not c_ast.FileAST instance after parsing")
@@ -481,13 +487,12 @@ if args.test:
     except KeyError:
         gcc = "cc"
 
-    # TODO: Consider multi-token CFLAGS with whitespace... split()?
     try:
         gcc_cflags = os.environ["CFLAGS"].split()
     except KeyError:
-        gcc_cflags = [""]
+        gcc_cflags = []
 
-    cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir] + gcc_cflags + ["-o", prog_file, test_file]
+    cmd = [gcc, "-std=c11", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file]
     info ("COMPILE: " + " ".join (cmd))
     try:
         subprocess.check_call (cmd)
