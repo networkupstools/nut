@@ -33,6 +33,7 @@ if WITH_DMF
         -I$(top_srcdir)/tools/nut-scanner \
         $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 $(LIBLTDL_LIBS)
 if WITH_DMF_LUA
+  LUA_INCLUDE ?= -I/usr/include/lua5.1
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
 else
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=0
