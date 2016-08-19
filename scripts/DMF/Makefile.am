@@ -44,7 +44,8 @@ dmfsnmp_DATA = $(dmfsnmp_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) dmfsnmp.xsd
 dmfnutscandir = @dmfnutscandir@
 dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 
-EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+# Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
+#EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
@@ -103,7 +104,7 @@ $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
 	mkdir -p $(@D)
-	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ]; then \
+	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
 		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
 			B="`basename "$$F"`"; \
 			[ "$$B" = '*.dmf' ] && exit 0 ; \
