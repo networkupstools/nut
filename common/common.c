@@ -670,7 +670,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] */
-char * search_paths[] = {
+const char * search_paths[] = {
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/lib64",
