@@ -231,7 +231,8 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf, lua, dmf_lua, snmp_dmf, snmp_dmf_lua]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf, snmp_dmf]),
+dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -247,10 +248,11 @@ AC_ARG_WITH(all,
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_dmf}"; then with_dmf="${withval}"; fi
-		if test -z "${with_lua}"; then with_lua="${withval}"; fi
-		if test -z "${with_dmf_lua}"; then with_dmf_lua="${withval}"; fi
 		if test -z "${with_snmp_dmf}"; then with_snmp_dmf="${withval}"; fi
-		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
+dnl NOTE: The LUA integration is experimental, so not forced as part of --with-all
+dnl		if test -z "${with_lua}"; then with_lua="${withval}"; fi
+dnl		if test -z "${with_dmf_lua}"; then with_dmf_lua="${withval}"; fi
+dnl		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -1412,16 +1414,32 @@ if test "${nut_have_lua}" = "no" ; then
 fi
 
 dnl Finally, if some settings remained at "auto" but can be enabled - do so
-if test "${nut_with_snmp_dmf}" = "auto" -a "${nut_with_snmp}" = yes -a "${nut_with_dmf}" = yes; then
-	nut_with_snmp_dmf=yes
+if test "${nut_with_lua}" != "no"; then
+	nut_with_lua="${nut_have_lua}"
 fi
 
-if test "${nut_with_dmf_lua}" = "auto" -a "${nut_with_dmf}" = yes -a "${nut_with_lua}" != no -a "${nut_have_lua}" = yes; then
-	nut_with_dmf_lua=yes
+if test "${nut_with_snmp_dmf}" = "auto" ; then
+	if test "${nut_with_snmp}" = yes -a "${nut_with_dmf}" = yes; then
+		nut_with_snmp_dmf=yes
+	else
+		nut_with_snmp_dmf=no
+	fi
 fi
 
-if test "${nut_with_snmp_dmf_lua}" = "auto" -a "${nut_with_snmp}" = yes -a "${nut_with_dmf_lua}" = yes ; then
-	nut_with_snmp_dmf_lua=yes
+if test "${nut_with_dmf_lua}" = "auto" ; then
+	if test "${nut_with_dmf}" = yes -a "${nut_with_lua}" = yes ; then
+		nut_with_dmf_lua=yes
+	else
+		nut_with_dmf_lua=no
+	fi
+fi
+
+if test "${nut_with_snmp_dmf_lua}" = "auto" ; then
+	if test "${nut_with_snmp_dmf}" = yes -a "${nut_with_dmf_lua}" = yes ; then
+		nut_with_snmp_dmf_lua=yes
+	else
+		nut_with_snmp_dmf_lua=no
+	fi
 fi
 
 dnl DMF_BUILD_OPTIONS is just a string for detailed report below
