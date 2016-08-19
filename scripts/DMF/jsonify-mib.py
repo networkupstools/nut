@@ -492,13 +492,13 @@ if args.test:
     try:
         subprocess.check_call (cmd)
     except subprocess.CalledProcessError as retcode:
-        warn ("COMPILE FAILED with code ", retcode.returncode)
+        warn ("COMPILE FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)
     info ("SELFTEST ./" + prog_file)
     try:
         subprocess.check_call ("./%s" % prog_file)
     except subprocess.CalledProcessError as retcode:
-        warn ("SELFTEST FAILED with code ", retcode.returncode)
+        warn ("SELFTEST FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)
     info ("SELFTEST %s PASSED" % prog_file)
 
