@@ -11,7 +11,9 @@ set -o pipefail
 
 echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $CPPFLAGS $* )" >&2
 
-$CPP $CFLAGS $CPPFLAGS "${@}" | sed \
+# tee temp-cpp-orig.tmp | \
+$CPP $CFLAGS $CPPFLAGS "${@}" | \
+sed \
     -e 's/ __asm(.*)$/;/' \
     -e 's/__asm__ (.*);/;/' \
     -e 's/__attribute__ ((visibility("default"))) //' \
@@ -30,14 +32,16 @@ $CPP $CFLAGS $CPPFLAGS "${@}" | sed \
     -e 's/__attribute__ ((__mode__ (__word__)));/;/' \
     -e 's/__attribute__ ((__nothrow__ , __leaf__));/;/' \
     -e 's/__attribute__ ((__nonnull__ ([0-9])));/;/' \
-    -e 's/__attribute__ ((__nothrow__ , __leaf__)) ;/;/' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) //' \
     -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__malloc__)) ;/;/' \
-    -e 's/__attribute__.*$/;/' \
+    -e 's/__attribute__ ((__const__))//' \
+    -e 's/__attribute__.*;/;/' \
     -e 's/static __inline/static/' \
     -e 's/__extern_inline/extern/' \
+    -e 's/extern __inline/extern/' \
     -e 's/__restrict//g' \
     -e 's/__extension__//' \
-    -e 's/__builtin_va_list/int/' # | tee temp-cpp.tmp
+    -e 's/__builtin_va_list/int/' #| tee temp-cpp-filt.tmp
 
 RET=$?
 [ "$RET" = 0 ] && echo "INFO: CPP+SED passed OK" >&2 || echo "ERROR: CPP+SED returned code $RET" >&2
