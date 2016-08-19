@@ -252,7 +252,7 @@ int sendsignalfn(const char *pidfn, int sig)
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
 		return -1;
-	}	
+	}
 
 	pid = strtol(buf, (char **)NULL, 10);
 
@@ -337,18 +337,18 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (nut_debug_level > 0) {
 		static struct timeval	start = { 0 };
 		struct timeval		now;
-	
+
 		gettimeofday(&now, NULL);
-	
+
 		if (start.tv_sec == 0) {
 			start = now;
 		}
-	
+
 		if (start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
-	
+
 		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
 	}
 
@@ -413,7 +413,7 @@ void upslogx(int priority, const char *fmt, ...)
 void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
 
@@ -425,7 +425,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
 
