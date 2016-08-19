@@ -1405,12 +1405,17 @@ if test "${nut_have_lua}" = "no" ; then
 	fi
 fi
 
-if test "${nut_with_dmf_lua}" = "auto"; then
-	nut_with_dmf_lua="${nut_have_lua}"
+dnl Finally, if some settings remained at "auto" but can be enabled - do so
+if test "${nut_with_snmp_dmf}" = "auto" -a "${nut_with_snmp}" = yes -a "${nut_with_dmf}" = yes; then
+	nut_with_snmp_dmf=yes
 fi
 
-if test "${nut_with_snmp_dmf_lua}" = "auto"; then
-	nut_with_snmp_dmf_lua="${nut_have_lua}"
+if test "${nut_with_dmf_lua}" = "auto" -a "${nut_with_dmf}" = yes -a "${nut_with_lua}" != no -a "${nut_have_lua}" = yes; then
+	nut_with_dmf_lua=yes
+fi
+
+if test "${nut_with_snmp_dmf_lua}" = "auto" -a "${nut_with_snmp}" = yes -a "${nut_with_dmf_lua}" = yes ; then
+	nut_with_snmp_dmf_lua=yes
 fi
 
 dnl DMF_BUILD_OPTIONS is just a string for detailed report below
