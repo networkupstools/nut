@@ -5,8 +5,12 @@
 
 # TODO: GNU Make syntax may be assumed below; fix this to be portable to other make's
 
-AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-    -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner
+# Note that some include files may be generated, so we prefer a builddir
+# and then srcdir - just in case these differ
+AM_CFLAGS = -I$(top_builddir) -I$(top_srcdir) \
+    -I$(top_builddir)/include -I$(top_srcdir)/include \
+    -I$(top_builddir)/drivers -I$(top_srcdir)/drivers \
+    -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEAN_FILES =
