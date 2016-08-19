@@ -7,10 +7,10 @@
 
 # Note that some include files may be generated, so we prefer a builddir
 # and then srcdir - just in case these differ
-AM_CFLAGS = -I$(top_builddir) -I$(top_srcdir) \
-    -I$(top_builddir)/include -I$(top_srcdir)/include \
-    -I$(top_builddir)/drivers -I$(top_srcdir)/drivers \
-    -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner
+AM_CFLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
+    -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
+    -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
+    -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEAN_FILES =
@@ -46,6 +46,7 @@ dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 
 # Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
 #EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
 DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
@@ -87,7 +88,7 @@ EXTRA_DIST += $(DMFGEN_DEPS)
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
-	    cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $< || exit; \
+	    cd $(@D) && CFLAGS="$(CFLAGS) $(AM_CFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
 	else echo "SKIP: NOT REBUILDING DMF file $< due to absence of prerequisites like Python or pycparser" >&2; \
 	fi; \
 	)
