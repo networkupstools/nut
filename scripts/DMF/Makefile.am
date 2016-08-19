@@ -81,7 +81,8 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
-DMFGEN_DEPS = dmfify-mib.sh jsonify-mib.py xmlify-mib.py nut_cpp
+DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
+EXTRA_DIST += $(DMFGEN_DEPS)
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
