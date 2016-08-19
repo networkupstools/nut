@@ -2,7 +2,8 @@
 # postprocessor of C preprocessor - removes __attribute__ declarations, which are not compatible for pycparser
 
 [ -n "${CPP-}" ] || CPP="cpp"
-[ -n "${CFLAGS-}" ] || CFLAGS="-I../../include"
+# Note that CWD may often be "DMF" or "DMF/somesubdir", so default for both
+[ -n "${CFLAGS-}" ] || CFLAGS="-I../../include -I../../../include"
 
 set -o pipefail
 #set -exv
