@@ -3,6 +3,7 @@ BUILT_SOURCES = nutscan-usb.h nutscan-snmp.c
 nutscan-usb.h nutscan-snmp.c:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
+LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
