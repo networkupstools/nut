@@ -33,6 +33,7 @@ $CPP $CFLAGS "${@}" | sed \
     -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__malloc__)) ;/;/' \
     -e 's/__attribute__.*$/;/' \
     -e 's/static __inline/static/' \
+    -e 's/__extern_inline/extern/' \
     -e 's/__restrict//g' \
     -e 's/__extension__//' \
     -e 's/__builtin_va_list/int/' # | tee temp-cpp.tmp
