@@ -2,7 +2,7 @@ Format: 1.0
 Source: nut
 Binary: nut, nut-server, nut-client, nut-cgi, nut-snmp, nut-ipmi, nut-xml, nut-powerman-pdu, nut-doc, libupsclient4, libupsclient-dev, libnutclient0, libnutclient-dev, python-nut, nut-monitor, libups-nut-perl
 Architecture: any all
-Version: 2.7.4-11
+Version: 2.7.4-12
 Maintainer: Arnaud Quette <aquette@debian.org>
 Uploaders: Laurent Bigonville <bigon@debian.org>
 Homepage: http://www.networkupstools.org/

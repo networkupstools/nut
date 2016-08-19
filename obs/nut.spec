@@ -37,7 +37,7 @@
 
 Name:           nut
 Version:        2.7.4
-Release:        11
+Release:        12
 Summary:        Network UPS Tools Core (Uninterruptible Power Supply Monitoring)
 License:        GPL-2.0+
 Group:          Hardware/UPS
