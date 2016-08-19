@@ -7,10 +7,10 @@
 
 # Note that some include files may be generated, so we prefer a builddir
 # and then srcdir - just in case these differ
-AM_CFLAGS = -I$(top_builddir) -I$(top_srcdir) \
-    -I$(top_builddir)/include -I$(top_srcdir)/include \
-    -I$(top_builddir)/drivers -I$(top_srcdir)/drivers \
-    -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner
+AM_CFLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
+    -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
+    -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
+    -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEAN_FILES =
@@ -44,7 +44,9 @@ dmfsnmp_DATA = $(dmfsnmp_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) dmfsnmp.xsd
 dmfnutscandir = @dmfnutscandir@
 dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
 
-EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+# Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
+#EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
 DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
@@ -81,11 +83,12 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
-DMFGEN_DEPS = dmfify-mib.sh jsonify-mib.py xmlify-mib.py nut_cpp
+DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
+EXTRA_DIST += $(DMFGEN_DEPS)
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
-	    cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $< || exit; \
+	    cd $(@D) && CFLAGS="$(CFLAGS) $(AM_CFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
 	else echo "SKIP: NOT REBUILDING DMF file $< due to absence of prerequisites like Python or pycparser" >&2; \
 	fi; \
 	)
@@ -102,7 +105,7 @@ $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
 	mkdir -p $(@D)
-	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ]; then \
+	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
 		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
 			B="`basename "$$F"`"; \
 			[ "$$B" = '*.dmf' ] && exit 0 ; \
@@ -179,6 +182,7 @@ else
   dmf: dmf-uptodate
 endif
 
+LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
