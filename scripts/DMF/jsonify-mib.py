@@ -39,7 +39,7 @@ def info (msg):
 
 def f2f(node):
     """convert c_ast node flags to list of numbers
-    (1, 2, 4) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT
+    (1, 2, 4, 8) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE
     """
     if  isinstance (node, c_ast.BinaryOp) and \
         node.op == "<<":

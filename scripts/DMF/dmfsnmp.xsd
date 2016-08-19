@@ -84,6 +84,7 @@
                       <xs:attribute type="xs:string" name="name" use="optional"/>
                       <xs:attribute type="xs:string" name="oid" use="optional"/>
                       <xs:attribute type="xs:string" name="static" use="optional"/>
+                      <xs:attribute type="xs:string" name="stale" use="optional"/>
                       <xs:attribute type="xs:string" name="string" use="optional"/>
                       <xs:attribute type="xs:string" name="positive" use="optional"/>
                       <xs:attribute type="xs:string" name="unique" use="optional"/>
