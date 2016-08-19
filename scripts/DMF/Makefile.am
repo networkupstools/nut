@@ -7,7 +7,7 @@
 
 # Note that some include files may be generated, so we prefer a builddir
 # and then srcdir - just in case these differ
-AM_CFLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
+DMFTOOLS_CPPFLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
     -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
     -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
     -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
@@ -88,7 +88,7 @@ EXTRA_DIST += $(DMFGEN_DEPS)
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
-	    cd $(@D) && CFLAGS="$(CFLAGS) $(AM_CFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
+	    cd $(@D) && CFLAGS="$(DMFTOOLS_CPPFLAGS) $(CFLAGS) $(AM_CFLAGS)" CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
 	else echo "SKIP: NOT REBUILDING DMF file $< due to absence of prerequisites like Python or pycparser" >&2; \
 	fi; \
 	)
@@ -202,7 +202,7 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
+	-lltdl $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	-DWITH_DMFMIB=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
@@ -210,7 +210,7 @@ dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str
 dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
+	-lltdl $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	-DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
@@ -221,7 +221,7 @@ if WITH_LUA
 dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) \
+	-lltdl $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
 	-DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
 	-DWITH_DMFMIB=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
