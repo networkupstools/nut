@@ -27,7 +27,7 @@
 
 #include "config.h"
 #include "common.h"
-#ifndef DMFREINDEXER_MAKECHECK
+#if (!DMFREINDEXER_MAKECHECK)
 # include "nut_version.h"
 #endif
 #include "dmf.h"
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'V':
 				printf("Network UPS Tools - %s\n",
-#ifdef DMFREINDEXER_MAKECHECK
+#if DMFREINDEXER_MAKECHECK
 					"private build for DMF 'make check'"
 #else
 					NUT_VERSION_MACRO
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 				ret_code = ERR_BAD_OPTION;
 			case 'h':
 			default:
-#ifdef DMFREINDEXER_MAKECHECK
+#if DMFREINDEXER_MAKECHECK
 				puts("dmf-reindex : a private build for DMF 'make check' of the tool to reindex existing DMF files into the subset needed by nut-scanner.\n");
 #else
 				puts("nut-scanner-reindex-dmfsnmp : a tool to reindex existing DMF files into the subset needed by nut-scanner.\n");
