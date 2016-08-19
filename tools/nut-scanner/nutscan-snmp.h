@@ -21,7 +21,7 @@
 #ifndef DEVSCAN_SNMP_H
 #define DEVSCAN_SNMP_H
 
-#include <stddef.h> //define NULL
+#include <stddef.h> /*define NULL */
 
 typedef struct {
         char *          oid;
@@ -62,11 +62,11 @@ typedef struct {
 # ifndef LIBNUTSCAN_SNMP_DMF
 #  ifdef DMF_SNMP_H
 #   define LIBNUTSCAN_SNMP_DMF
-    // Note: This requires types defined in "dmf.h"
-    // Variable implemented in scan_snmp.c
+    /* Note: This requires types defined in "dmf.h" */
+    /* Variable implemented in scan_snmp.c */
     extern char *dmfnutscan_snmp_dir;
     extern mibdmf_parser_t *dmfnutscan_snmp_dmp;
-    // Just reference this to NULLify when client quits and frees DMF stuff
+    /* Just reference this to NULLify when client quits and frees DMF stuff */
     void uninit_snmp_device_table();
 #  endif /* DMF_SNMP_H already included */
 # endif /* LIBNUTSCAN_SNMP_DMF */
