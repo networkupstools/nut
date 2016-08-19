@@ -1,5 +1,6 @@
-// Compatibility layer for renamed file and may later become home for common
-// DMF-related constructs reusable for other applications than current SNMP one
+/* Compatibility layer for renamed file and may later become home for common
+ * DMF-related constructs reusable for other applications than current SNMP one
+ */
 
 /* dmf.h - Header for (TODO:dmf.c) - the Network UPS Tools XML-driver-loader
  *

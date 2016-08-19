@@ -51,9 +51,10 @@ static void (*xml_push_handler)(ne_xml_parser*,
 static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
 static void (*xml_destroy)(ne_xml_parser*);
 
-// These used to be needed as extern vars by some legacy code elsewhere...
-// also they are referenced below, but I'm not sure it is valid code!
-// FIXME: Inspect codebase to see if these are at all needed (used to be in snmp-ups.c/h)
+/* These vars used to be needed as extern vars by some legacy code elsewhere...
+ * also they are referenced below, but I'm not sure it is valid code!
+ */
+/* FIXME: Inspect codebase to see if these are at all needed (used to be in snmp-ups.{c,h}) */
 int input_phases, output_phases, bypass_phases;
 
 #if WITH_DMF_LUA
@@ -738,7 +739,7 @@ mibdmf_parser_new()
 {
 	mibdmf_parser_t *self = (mibdmf_parser_t *) calloc (1, sizeof (mibdmf_parser_t));
 	assert (self);
-	// Preallocate the sentinel in tables
+	/* Preallocate the sentinel in tables */
 	self->device_table_counter = 1;
 	self->device_table = (snmp_device_id_t *)calloc(
 		self->device_table_counter, sizeof(snmp_device_id_t));
@@ -1410,7 +1411,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	}
 	if(!dl_handle_libneon){
 		falg_libneon = 1;
-		if(load_neon_lib() == ERR) return ERR; // Errors printed by that loader
+		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
 	}
 	ne_xml_parser *parser = xml_create ();
 	xml_push_handler (parser, xml_dict_start_cb,
@@ -1554,7 +1555,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) {
-		// Note: do not "die" from the library context; that's up to the caller
+		/* Note: do not "die" from the library context; that's up to the caller */
 		upslogx(0, "ERROR: can't load Neon library");
 		return ERR;
 	}
