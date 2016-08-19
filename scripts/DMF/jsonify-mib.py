@@ -385,7 +385,7 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
-        fprintf (stderr, "[%%i] ", i);
+        fprintf (stderr, "[%%zi] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
         assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
@@ -396,7 +396,7 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
-        fprintf (stderr, "[%%i] ", i);
+        fprintf (stderr, "[%%zi] ", i);
         assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
