@@ -30,7 +30,11 @@
 	on nut_version_macro.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
-#include "nut_version.h"
+#if DMFREINDEXER_MAKECHECK
+# define NUT_VERSION_MACRO "custom build"
+#else
+# include "nut_version.h"
+#endif
 
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
