@@ -42,12 +42,13 @@ dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
 dmfsnmp_DATA = $(dmfsnmp_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) dmfsnmp.xsd
 
 dmfnutscandir = @dmfnutscandir@
-dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
+DMFNUTSCAN_SYMLINK = $(DMFNUTSCAN_SUBDIR)/S95_dmfnutscan-snmp.dmf
+dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK) dmfnutscan.xsd
 
 # Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
 #EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
-DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK)
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
@@ -146,6 +147,14 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 	|| { echo "FAILED to sort generated $@ without losses!" >&2; \
 	     rm -f "$@.tmp"* ; exit 1; } ; exit 0
 	rm -f "$@.tmp"*
+	@cd "$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)" && \
+		for F in *.dmf ; do case "$$F" in \
+			S*|K*) ;; \
+			dmfnutscan-snmp.dmf)	echo "  LN     $$F => S95_$$F" >&2 && \
+				ln -fs "$$F" "S95_$$F" || exit ;; \
+			*)	echo "  LN     $$F => S10_$$F" >&2 && \
+				ln -fs "$$F" "S10_$$F" || exit ;; \
+		esac; done
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
