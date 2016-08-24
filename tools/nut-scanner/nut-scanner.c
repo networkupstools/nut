@@ -548,11 +548,15 @@ display_help:
 		printq(quiet,"Scanning USB bus.\n");
 #ifdef HAVE_PTHREAD
 		if(pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
+		upsdebugx(1,"USB SCAN: no pthread support, starting nutscan_scan_usb...");
 		dev[TYPE_USB] = nutscan_scan_usb();
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"USB SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_snmp && nutscan_avail_snmp ) {
@@ -567,24 +571,35 @@ display_help:
 			printq(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
 #endif
 #ifdef HAVE_PTHREAD
+			upsdebugx(1,"SNMP SCAN: starting pthread_create with run_snmp...");
 			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&snmp_sec)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 				nutscan_avail_snmp = 0;
 			}
 #else
+			upsdebugx(1,"SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
 			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&snmp_sec);
 #endif /* HAVE_PTHREAD */
 		}
+	} else {
+		upsdebugx(1,"SNMP SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_xml && nutscan_avail_xml_http) {
+/* TODO(?) Verify start_ip like in SNMP, NUTold, etc. */
 		printq(quiet,"Scanning XML/HTTP bus.\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
 		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_xml_http = 0;
 		}
 #else
+		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
 		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_oldnut && nutscan_avail_nut) {
@@ -595,98 +610,145 @@ display_help:
 		else {
 			printq(quiet,"Scanning NUT bus (old connect method).\n");
 #ifdef HAVE_PTHREAD
+			upsdebugx(1,"NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
 			if(pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 				nutscan_avail_nut = 0;
 			}
 #else
+			upsdebugx(1,"NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
 			dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
 #endif /* HAVE_PTHREAD */
 		}
+	} else {
+		upsdebugx(1,"NUT bus (old) SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_avahi && nutscan_avail_avahi) {
 		printq(quiet,"Scanning NUT bus (avahi method).\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
 		if(pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_avahi = 0;
 		}
 #else
+		upsdebugx(1,"NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
 		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"NUT bus (avahi) SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_ipmi  && nutscan_avail_ipmi) {
 		printq(quiet,"Scanning IPMI bus.\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"IPMI SCAN: starting pthread_create with run_ipmi...");
 		if(pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,&ipmi_sec)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_ipmi = 0;
 		}
 #else
+		upsdebugx(1,"IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
 		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,&ipmi_sec);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"IPMI SCAN: not requested, SKIPPED");
 	}
 
 	/* Eaton serial scan */
 	if (allow_eaton_serial) {
 		printq(quiet,"Scanning serial bus for Eaton devices.\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
 		pthread_create(&thread[TYPE_EATON_SERIAL], NULL, run_eaton_serial, serial_ports);
 		/* FIXME: check return code */
+		/* upsdebugx(1,"pthread_create returned an error; disabling this scan mode"); */
+		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
+		upsdebugx(1,"SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
 		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"SERIAL SCAN: not requested, SKIPPED");
 	}
 
 #ifdef HAVE_PTHREAD
 	if( allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
+		upsdebugx(1,"USB SCAN: join back the pthread");
 		pthread_join(thread[TYPE_USB], NULL);
 	}
 	if( allow_snmp && nutscan_avail_snmp && thread[TYPE_SNMP]) {
+		upsdebugx(1,"SNMP SCAN: join back the pthread");
 		pthread_join(thread[TYPE_SNMP], NULL);
 	}
 	if( allow_xml && nutscan_avail_xml_http && thread[TYPE_XML]) {
+		upsdebugx(1,"XML/HTTP SCAN: join back the pthread");
 		pthread_join(thread[TYPE_XML], NULL);
 	}
 	if( allow_oldnut && nutscan_avail_nut && thread[TYPE_NUT]) {
+		upsdebugx(1,"NUT bus (old) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_NUT], NULL);
 	}
 	if( allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
+		upsdebugx(1,"NUT bus (avahi) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_AVAHI], NULL);
 	}
 	if( allow_ipmi && nutscan_avail_ipmi && thread[TYPE_IPMI]) {
+		upsdebugx(1,"IPMI SCAN: join back the pthread");
 		pthread_join(thread[TYPE_IPMI], NULL);
 	}
 	if (allow_eaton_serial && thread[TYPE_EATON_SERIAL]) {
+		upsdebugx(1,"SERIAL SCAN: join back the pthread");
 		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
 	}
 #endif /* HAVE_PTHREAD */
 
+	upsdebugx(1,"SCANS DONE: display results");
+
+	upsdebugx(1,"SCANS DONE: display results: USB");
 	display_func(dev[TYPE_USB]);
+	upsdebugx(1,"SCANS DONE: free resources: USB");
 	nutscan_free_device(dev[TYPE_USB]);
 
+	upsdebugx(1,"SCANS DONE: display results: SNMP");
 	display_func(dev[TYPE_SNMP]);
+	upsdebugx(1,"SCANS DONE: free resources: SNMP");
 	nutscan_free_device(dev[TYPE_SNMP]);
 
+	upsdebugx(1,"SCANS DONE: display results: XML/HTTP");
 	display_func(dev[TYPE_XML]);
+	upsdebugx(1,"SCANS DONE: free resources: XML/HTTP");
 	nutscan_free_device(dev[TYPE_XML]);
 
+	upsdebugx(1,"SCANS DONE: display results: NUT bus (old)");
 	display_func(dev[TYPE_NUT]);
+	upsdebugx(1,"SCANS DONE: free resources: NUT bus (old)");
 	nutscan_free_device(dev[TYPE_NUT]);
 
+	upsdebugx(1,"SCANS DONE: display results: NUT bus (avahi)");
 	display_func(dev[TYPE_AVAHI]);
+	upsdebugx(1,"SCANS DONE: free resources: NUT bus (avahi)");
 	nutscan_free_device(dev[TYPE_AVAHI]);
 
+	upsdebugx(1,"SCANS DONE: display results: IPMI");
 	display_func(dev[TYPE_IPMI]);
+	upsdebugx(1,"SCANS DONE: free resources: IPMI");
 	nutscan_free_device(dev[TYPE_IPMI]);
 
+	upsdebugx(1,"SCANS DONE: display results: SERIAL");
 	display_func(dev[TYPE_EATON_SERIAL]);
+	upsdebugx(1,"SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
+	upsdebugx(1,"SCANS DONE: free common scanner resources");
 	nutscan_free();
 
 #if WITH_DMFMIB
+	upsdebugx(1,"SCANS DONE: free dynamic DMF-SNMP resources");
 	uninit_snmp_device_table();
 #endif
 
+	upsdebugx(1,"SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;
 }
