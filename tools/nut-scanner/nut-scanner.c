@@ -114,8 +114,8 @@ const struct option longopts[] =
 static nutscan_device_t *dev[TYPE_END];
 
 static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
-static char *	start_ip = NULL;
-static char *	end_ip = NULL;
+static char * start_ip = NULL;
+static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
 
@@ -317,10 +317,13 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				start_ip = strdup(optarg);
-				end_ip = start_ip;
+				if (end_ip == NULL)
+					end_ip = start_ip;
 				break;
 			case 'e':
 				end_ip = strdup(optarg);
+				if (start_ip == NULL)
+					start_ip = end_ip;
 				break;
 			case 'E':
 				serial_ports = strdup(optarg);
@@ -593,18 +596,23 @@ display_help:
 	}
 
 	if( allow_xml && nutscan_avail_xml_http) {
-/* TODO(?) Verify start_ip like in SNMP, NUTold, etc. */
-		printq(quiet,"Scanning XML/HTTP bus.\n");
-#ifdef HAVE_PTHREAD
-		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
-		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {
-			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
-			nutscan_avail_xml_http = 0;
+		if( start_ip == NULL ) {
+			printq(quiet,"No start IP, skipping XML/HTTP\n");
+			nutscan_avail_snmp = 0;
 		}
+		else {
+			printq(quiet,"Scanning XML/HTTP bus.\n");
+#ifdef HAVE_PTHREAD
+			upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
+			if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+				nutscan_avail_xml_http = 0;
+			}
 #else
-		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
-		dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
+			upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
+			dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 #endif /* HAVE_PTHREAD */
+		}
 	} else {
 		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
 	}
