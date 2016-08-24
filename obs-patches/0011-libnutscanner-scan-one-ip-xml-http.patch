@@ -26,13 +26,29 @@ diff --git a/tools/nut-scanner/nut-scan.h b/tools/nut-scanner/nut-scan.h
 index ce19726..0ded7aa 100644
 --- a/tools/nut-scanner/nut-scan.h
 +++ b/tools/nut-scanner/nut-scan.h
+@@ -2,6 +2,7 @@
+  *  Copyright (C)
+  *    2011 - EATON
+  *    2012 - Arnaud Quette <arnaud.quette@free.fr>
++ *    2016 - EATON - IP addressed XML scan
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+@@ -22,6 +23,7 @@
+     \brief general header for nut-scanner
+     \author Frederic Bohe <fredericbohe@eaton.com>
+     \author Arnaud Quette <arnaud.quette@free.fr>
++    \author Michal Vyskocil <MichalVyskocil@eaton.com>
+ */
+ 
+ #ifndef NUT_SCAN_H
 @@ -83,12 +83,18 @@ typedef struct nutscan_ipmi {
  #define IPMI_1_5		1
  #define IPMI_2_0		0
  
 +/* XML HTTP structure */
 +typedef struct nutscan_xml {
-+	int port;		/* Port for xml http*/
++	int port;		/* Port for xml http */
 +} nutscan_xml_t;
 +
  /* Scanning */
@@ -49,6 +65,21 @@ diff --git a/tools/nut-scanner/nut-scanner.c b/tools/nut-scanner/nut-scanner.c
 index 3cc1d20..18df658 100644
 --- a/tools/nut-scanner/nut-scanner.c
 +++ b/tools/nut-scanner/nut-scanner.c
+@@ -1,5 +1,6 @@
+ /*
+  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
++ *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+  *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+  *
+  *  This program is free software; you can redistribute it and/or modify
+@@ -20,6 +21,7 @@
+ /*! \file nut-scanner.c
+     \brief A tool to detect NUT supported devices
+     \author Arnaud Quette <arnaud.quette@free.fr>
++    \author Michal Vyskocil <MichalVyskocil@eaton.com>
+     \author Jim Klimov <EvgenyKlimov@eaton.com>
+ */
+ 
 @@ -102,7 +102,14 @@ static void * run_snmp(void * arg)
  }
  static void * run_xml(void * arg)
@@ -83,7 +114,7 @@ index 3cc1d20..18df658 100644
  	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
  	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
  
-+	/* Set the default values for XML HTTP*/
++	/* Set the default values for XML HTTP */
 +	xml_sec.port = 4679;
 +
  	nutscan_init();
@@ -111,6 +142,21 @@ diff --git a/tools/nut-scanner/scan_xml_http.c b/tools/nut-scanner/scan_xml_http
 index 0ca07e1..4bcd593 100644
 --- a/tools/nut-scanner/scan_xml_http.c
 +++ b/tools/nut-scanner/scan_xml_http.c
+@@ -1,5 +1,6 @@
+ /*
+  *  Copyright (C) 2011 - EATON
++ *  Copyright (C) 2016 - EATON - IP addressed XML scan
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License as published by
+@@ -19,6 +20,7 @@
+ /*! \file scan_xml_http.c
+     \brief detect NUT supported XML HTTP devices
+     \author Frederic Bohe <fredericbohe@eaton.com>
++    \author Michal Vyskocil <MichalVyskocil@eaton.com>
+ */
+ 
+ #include "common.h"
 @@ -237,9 +237,141 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
  
  	return nutscan_rewind_device(current_nut_dev);
