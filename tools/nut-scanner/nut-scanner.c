@@ -310,10 +310,13 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				start_ip = strdup(optarg);
-				end_ip = start_ip;
+				if (end_ip == NULL)
+					end_ip = start_ip;
 				break;
 			case 'e':
 				end_ip = strdup(optarg);
+				if (start_ip == NULL)
+					start_ip = end_ip;
 				break;
 			case 'E':
 				serial_ports = strdup(optarg);
