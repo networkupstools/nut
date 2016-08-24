@@ -136,7 +136,12 @@ static void * run_snmp(void * arg)
 }
 static void * run_xml(void * arg)
 {
-    nutscan_xml_t * sec = (nutscan_xml_t *)arg;
+/* Note: This routine is from EATON customized patch; the upstream code was:
+	dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+	return NULL;
+*/
+
+	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 
 	dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, sec);
 	return NULL;
@@ -184,11 +189,94 @@ int printq(int quiet,const char *fmt, ...)
 	return ret;
 }
 
+void show_usage()
+{
+/* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
+	puts("nut-scanner : utility for detection of available power devices.\n");
+	puts("OPTIONS:");
+	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
+	if( nutscan_avail_usb ) {
+		printf("  -U, --usb_scan: Scan USB devices.\n");
+	}
+	if( nutscan_avail_snmp ) {
+		printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
+#if WITH_DMFMIB
+		printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
+		printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
+		if( nutscan_avail_xml_http) {
+			printf("      (libneon will be used to work with dynamically loaded DMF MIB library).\n");
+		} else {
+			printf("      (libneon support seems missing, so built-in definitions will\n"
+			       "       be used rather than DMF MIB library).\n");
+		}
+#else
+		printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
+		printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
+#endif /* WITH_DMFMIB */
+	}
+	if( nutscan_avail_xml_http ) {
+		printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
+	}
+	printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
+	if( nutscan_avail_avahi ) {
+		printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
+	}
+	if( nutscan_avail_ipmi ) {
+		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
+	}
+
+	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
+
+	printf("\nNetwork specific options:\n");
+	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
+	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
+	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
+	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
+
+	if( nutscan_avail_snmp ) {
+		printf("\nSNMP specific options:\n");
+		printf("  -F, --fingerprints-file <filename>: provide an additional list of SNMP fingerprints\n");
+
+		printf("\nSNMP v1 specific options:\n");
+		printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
+
+		printf("\nSNMP v3 specific options:\n");
+		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
+		printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
+		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
+		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+		printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
+	}
+
+	if( nutscan_avail_ipmi ) {
+		printf("\nIPMI over LAN specific options:\n");
+		printf("  -b, --username <username>: Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default)\n");
+		/* Specify  the  username  to  use  when authenticating with the remote host.  If not specified, a null (i.e. anonymous) username is assumed. The user must have
+		 * at least ADMIN privileges in order for this tool to operate fully. */
+		printf("  -B, --password <password>: Specify the password to use when authenticationg with the remote host (mandatory for IPMI over LAN. No default)\n");
+		/* Specify the password to use when authenticationg with the remote host.  If not specified, a null password is assumed. Maximum password length is 16 for IPMI
+		 * 1.5 and 20 for IPMI 2.0. */
+		printf("  -d, --authType <authentication type>: Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\n");
+		printf("  -L, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
+	}
+
+	printf("\nNUT specific options:\n");
+	printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
+	printf("\ndisplay specific options:\n");
+	printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
+	printf("  -P, --disp_parsable: Display result in a parsable format\n");
+	printf("\nMiscellaneous options:\n");
+	printf("  -V, --version: Display NUT version\n");
+	printf("  -a, --available: Display available bus that can be scanned\n");
+	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
+	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+}
 int main(int argc, char *argv[])
 {
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
-    nutscan_xml_t  xml_sec;
+	nutscan_xml_t  xml_sec;
 	int opt_ret;
 	char *	cidr = NULL;
 	int allow_all = 0;
@@ -212,13 +300,14 @@ int main(int argc, char *argv[])
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
 
-    /* Set the default values for XML HTTP*/
-    xml_sec.port = 4679;
-
+	/* Set the default values for XML HTTP*/
+	xml_sec.port = 4679;
 	nutscan_init();
 
 	display_func = nutscan_display_ups_conf;
 
+	/* Note: the getopts print an error message about unknown arguments
+	 * or arguments which need a second token and that is missing now */
 	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
 
 		switch(opt_ret) {
@@ -433,88 +522,15 @@ int main(int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
+				/* Fall through to usage and error exit */
 			case 'h':
 			default:
 display_help:
-				puts("nut-scanner : detecting available power devices.\n");
-				puts("OPTIONS:");
-				printf("  -C, --complete_scan: Scan all available devices (default).\n");
-				if( nutscan_avail_usb ) {
-					printf("  -U, --usb_scan: Scan USB devices.\n");
-				}
-				if( nutscan_avail_snmp ) {
-					printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
-#if WITH_DMFMIB
-					printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
-					printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
-					if( nutscan_avail_xml_http) {
-						printf("      (libneon will be used to work with dynamically loaded DMF MIB library).\n");
-					} else {
-						printf("      (libneon support seems missing, so built-in definitions will\n"
-						       "       be used rather than DMF MIB library).\n");
-					}
-#else
-					printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
-					printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
-#endif /* WITH_DMFMIB */
-				}
-				if( nutscan_avail_xml_http ) {
-					printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
-				}
-				printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
-				if( nutscan_avail_avahi ) {
-					printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
-				}
-				if( nutscan_avail_ipmi ) {
-					printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
-				}
-
-				printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
-
-				printf("\nNetwork specific options:\n");
-				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
-				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
-				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
-				printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
-
-				if( nutscan_avail_snmp ) {
-					printf("\nSNMP specific options:\n");
-					printf("  -F, --fingerprints-file <filename>: provide an additional list of SNMP fingerprints\n");
-
-					printf("\nSNMP v1 specific options:\n");
-					printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
-
-					printf("\nSNMP v3 specific options:\n");
-					printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
-					printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
-					printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
-					printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
-					printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
-					printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
-				}
-
-				if( nutscan_avail_ipmi ) {
-					printf("\nIPMI over LAN specific options:\n");
-					printf("  -b, --username <username>: Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default)\n");
-					/* Specify  the  username  to  use  when authenticating with the remote host.  If not specified, a null (i.e. anonymous) username is assumed. The user must have
-					 * at least ADMIN privileges in order for this tool to operate fully. */
-					printf("  -B, --password <password>: Specify the password to use when authenticationg with the remote host (mandatory for IPMI over LAN. No default)\n");
-					/* Specify the password to use when authenticationg with the remote host.  If not specified, a null password is assumed. Maximum password length is 16 for IPMI
-					 * 1.5 and 20 for IPMI 2.0. */
-					printf("  -d, --authType <authentication type>: Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\n");
-					printf("  -L, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
-				}
-
-				printf("\nNUT specific options:\n");
-				printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
-				printf("\ndisplay specific options:\n");
-				printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
-				printf("  -P, --disp_parsable: Display result in a parsable format\n");
-				printf("\nMiscellaneous options:\n");
-				printf("  -V, --version: Display NUT version\n");
-				printf("  -a, --available: Display available bus that can be scanned\n");
-				printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
-				printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+				show_usage();
+				if ((opt_ret != 'h') || (ret_code != EXIT_SUCCESS))
+					fprintf(stderr,"\n\n"
+						"WARNING: Some error has occurred while processing 'nut-scanner' command-line\n"
+						"arguments, see more details above the usage help text.\n\n");
 				return ret_code;
 		}
 	}
@@ -542,11 +558,15 @@ display_help:
 		printq(quiet,"Scanning USB bus.\n");
 #ifdef HAVE_PTHREAD
 		if(pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_usb = 0;
 		}
 #else
+		upsdebugx(1,"USB SCAN: no pthread support, starting nutscan_scan_usb...");
 		dev[TYPE_USB] = nutscan_scan_usb();
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"USB SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_snmp && nutscan_avail_snmp ) {
@@ -561,24 +581,43 @@ display_help:
 			printq(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
 #endif
 #ifdef HAVE_PTHREAD
+			upsdebugx(1,"SNMP SCAN: starting pthread_create with run_snmp...");
 			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&snmp_sec)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 				nutscan_avail_snmp = 0;
 			}
 #else
+			upsdebugx(1,"SNMP SCAN: no pthread support, starting nutscan_scan_snmp...");
 			dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,&snmp_sec);
 #endif /* HAVE_PTHREAD */
 		}
+	} else {
+		upsdebugx(1,"SNMP SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_xml && nutscan_avail_xml_http) {
+/* TODO(?) Verify start_ip like in SNMP, NUTold, etc. */
 		printq(quiet,"Scanning XML/HTTP bus.\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
+		upsdebugx(1,"XML/HTTP SCAN: NOTE: Using ETN patch with support for IP address specification");
+/* Note: This routine is from EATON customized patch; the upstream code was:
+		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+*/
 		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_xml_http = 0;
 		}
 #else
+		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
+		upsdebugx(1,"XML/HTTP SCAN: NOTE: Using ETN patch with support for IP address specification");
+/* Note: This routine is from EATON customized patch; the upstream code was:
+		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+*/
 		dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_oldnut && nutscan_avail_nut) {
@@ -589,98 +628,145 @@ display_help:
 		else {
 			printq(quiet,"Scanning NUT bus (old connect method).\n");
 #ifdef HAVE_PTHREAD
+			upsdebugx(1,"NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
 			if(pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 				nutscan_avail_nut = 0;
 			}
 #else
+			upsdebugx(1,"NUT bus (old) SCAN: no pthread support, starting nutscan_scan_nut...");
 			dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
 #endif /* HAVE_PTHREAD */
 		}
+	} else {
+		upsdebugx(1,"NUT bus (old) SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_avahi && nutscan_avail_avahi) {
 		printq(quiet,"Scanning NUT bus (avahi method).\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
 		if(pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_avahi = 0;
 		}
 #else
+		upsdebugx(1,"NUT bus (avahi) SCAN: no pthread support, starting nutscan_scan_avahi...");
 		dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"NUT bus (avahi) SCAN: not requested, SKIPPED");
 	}
 
 	if( allow_ipmi  && nutscan_avail_ipmi) {
 		printq(quiet,"Scanning IPMI bus.\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"IPMI SCAN: starting pthread_create with run_ipmi...");
 		if(pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,&ipmi_sec)) {
+			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_ipmi = 0;
 		}
 #else
+		upsdebugx(1,"IPMI SCAN: no pthread support, starting nutscan_scan_ipmi...");
 		dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,&ipmi_sec);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"IPMI SCAN: not requested, SKIPPED");
 	}
 
 	/* Eaton serial scan */
 	if (allow_eaton_serial) {
 		printq(quiet,"Scanning serial bus for Eaton devices.\n");
 #ifdef HAVE_PTHREAD
+		upsdebugx(1,"SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
 		pthread_create(&thread[TYPE_EATON_SERIAL], NULL, run_eaton_serial, serial_ports);
 		/* FIXME: check return code */
+		/* upsdebugx(1,"pthread_create returned an error; disabling this scan mode"); */
+		/* nutscan_avail_eaton_serial(?) = 0; */
 #else
+		upsdebugx(1,"SERIAL SCAN: no pthread support, starting nutscan_scan_eaton_serial...");
 		dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
 #endif /* HAVE_PTHREAD */
+	} else {
+		upsdebugx(1,"SERIAL SCAN: not requested, SKIPPED");
 	}
 
 #ifdef HAVE_PTHREAD
 	if( allow_usb && nutscan_avail_usb && thread[TYPE_USB]) {
+		upsdebugx(1,"USB SCAN: join back the pthread");
 		pthread_join(thread[TYPE_USB], NULL);
 	}
 	if( allow_snmp && nutscan_avail_snmp && thread[TYPE_SNMP]) {
+		upsdebugx(1,"SNMP SCAN: join back the pthread");
 		pthread_join(thread[TYPE_SNMP], NULL);
 	}
 	if( allow_xml && nutscan_avail_xml_http && thread[TYPE_XML]) {
+		upsdebugx(1,"XML/HTTP SCAN: join back the pthread");
 		pthread_join(thread[TYPE_XML], NULL);
 	}
 	if( allow_oldnut && nutscan_avail_nut && thread[TYPE_NUT]) {
+		upsdebugx(1,"NUT bus (old) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_NUT], NULL);
 	}
 	if( allow_avahi && nutscan_avail_avahi && thread[TYPE_AVAHI]) {
+		upsdebugx(1,"NUT bus (avahi) SCAN: join back the pthread");
 		pthread_join(thread[TYPE_AVAHI], NULL);
 	}
 	if( allow_ipmi && nutscan_avail_ipmi && thread[TYPE_IPMI]) {
+		upsdebugx(1,"IPMI SCAN: join back the pthread");
 		pthread_join(thread[TYPE_IPMI], NULL);
 	}
 	if (allow_eaton_serial && thread[TYPE_EATON_SERIAL]) {
+		upsdebugx(1,"SERIAL SCAN: join back the pthread");
 		pthread_join(thread[TYPE_EATON_SERIAL], NULL);
 	}
 #endif /* HAVE_PTHREAD */
 
+	upsdebugx(1,"SCANS DONE: display results");
+
+	upsdebugx(1,"SCANS DONE: display results: USB");
 	display_func(dev[TYPE_USB]);
+	upsdebugx(1,"SCANS DONE: free resources: USB");
 	nutscan_free_device(dev[TYPE_USB]);
 
+	upsdebugx(1,"SCANS DONE: display results: SNMP");
 	display_func(dev[TYPE_SNMP]);
+	upsdebugx(1,"SCANS DONE: free resources: SNMP");
 	nutscan_free_device(dev[TYPE_SNMP]);
 
+	upsdebugx(1,"SCANS DONE: display results: XML/HTTP");
 	display_func(dev[TYPE_XML]);
+	upsdebugx(1,"SCANS DONE: free resources: XML/HTTP");
 	nutscan_free_device(dev[TYPE_XML]);
 
+	upsdebugx(1,"SCANS DONE: display results: NUT bus (old)");
 	display_func(dev[TYPE_NUT]);
+	upsdebugx(1,"SCANS DONE: free resources: NUT bus (old)");
 	nutscan_free_device(dev[TYPE_NUT]);
 
+	upsdebugx(1,"SCANS DONE: display results: NUT bus (avahi)");
 	display_func(dev[TYPE_AVAHI]);
+	upsdebugx(1,"SCANS DONE: free resources: NUT bus (avahi)");
 	nutscan_free_device(dev[TYPE_AVAHI]);
 
+	upsdebugx(1,"SCANS DONE: display results: IPMI");
 	display_func(dev[TYPE_IPMI]);
+	upsdebugx(1,"SCANS DONE: free resources: IPMI");
 	nutscan_free_device(dev[TYPE_IPMI]);
 
+	upsdebugx(1,"SCANS DONE: display results: SERIAL");
 	display_func(dev[TYPE_EATON_SERIAL]);
+	upsdebugx(1,"SCANS DONE: free resources: SERIAL");
 	nutscan_free_device(dev[TYPE_EATON_SERIAL]);
 
+	upsdebugx(1,"SCANS DONE: free common scanner resources");
 	nutscan_free();
 
 #if WITH_DMFMIB
+	upsdebugx(1,"SCANS DONE: free dynamic DMF-SNMP resources");
 	uninit_snmp_device_table();
 #endif
 
+	upsdebugx(1,"SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;
 }
