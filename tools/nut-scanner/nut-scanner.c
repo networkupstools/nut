@@ -589,18 +589,23 @@ display_help:
 	}
 
 	if( allow_xml && nutscan_avail_xml_http) {
-/* TODO(?) Verify start_ip like in SNMP, NUTold, etc. */
-		printq(quiet,"Scanning XML/HTTP bus.\n");
-#ifdef HAVE_PTHREAD
-		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
-		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
-			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
-			nutscan_avail_xml_http = 0;
+		if( start_ip == NULL ) {
+			printq(quiet,"No start IP, skipping XML/HTTP\n");
+			nutscan_avail_snmp = 0;
 		}
+		else {
+			printq(quiet,"Scanning XML/HTTP bus.\n");
+#ifdef HAVE_PTHREAD
+			upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
+			if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+				nutscan_avail_xml_http = 0;
+			}
 #else
-		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
-		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+			upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
+			dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 #endif /* HAVE_PTHREAD */
+		}
 	} else {
 		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
 	}
