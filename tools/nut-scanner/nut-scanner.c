@@ -182,6 +182,90 @@ int printq(int quiet,const char *fmt, ...)
 	return ret;
 }
 
+void show_usage()
+{
+/* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
+	puts("nut-scanner : utility for detection of available power devices.\n");
+	puts("OPTIONS:");
+	printf("  -C, --complete_scan: Scan all available devices (default).\n");
+	if( nutscan_avail_usb ) {
+		printf("  -U, --usb_scan: Scan USB devices.\n");
+	}
+	if( nutscan_avail_snmp ) {
+		printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
+#if WITH_DMFMIB
+		printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
+		printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
+		if( nutscan_avail_xml_http) {
+			printf("      (libneon will be used to work with dynamically loaded DMF MIB library).\n");
+		} else {
+			printf("      (libneon support seems missing, so built-in definitions will\n"
+			       "       be used rather than DMF MIB library).\n");
+		}
+#else
+		printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
+		printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
+#endif /* WITH_DMFMIB */
+	}
+	if( nutscan_avail_xml_http ) {
+		printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
+	}
+	printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
+	if( nutscan_avail_avahi ) {
+		printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
+	}
+	if( nutscan_avail_ipmi ) {
+		printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
+	}
+
+	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
+
+	printf("\nNetwork specific options:\n");
+	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
+	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
+	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
+	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
+
+	if( nutscan_avail_snmp ) {
+		printf("\nSNMP specific options:\n");
+		printf("  -F, --fingerprints-file <filename>: provide an additional list of SNMP fingerprints\n");
+
+		printf("\nSNMP v1 specific options:\n");
+		printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
+
+		printf("\nSNMP v3 specific options:\n");
+		printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
+		printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
+		printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
+		printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
+		printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
+		printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
+	}
+
+	if( nutscan_avail_ipmi ) {
+		printf("\nIPMI over LAN specific options:\n");
+		printf("  -b, --username <username>: Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default)\n");
+		/* Specify  the  username  to  use  when authenticating with the remote host.  If not specified, a null (i.e. anonymous) username is assumed. The user must have
+		 * at least ADMIN privileges in order for this tool to operate fully. */
+		printf("  -B, --password <password>: Specify the password to use when authenticationg with the remote host (mandatory for IPMI over LAN. No default)\n");
+		/* Specify the password to use when authenticationg with the remote host.  If not specified, a null password is assumed. Maximum password length is 16 for IPMI
+		 * 1.5 and 20 for IPMI 2.0. */
+		printf("  -d, --authType <authentication type>: Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\n");
+		printf("  -L, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
+	}
+
+	printf("\nNUT specific options:\n");
+	printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
+	printf("\ndisplay specific options:\n");
+	printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
+	printf("  -P, --disp_parsable: Display result in a parsable format\n");
+	printf("\nMiscellaneous options:\n");
+	printf("  -V, --version: Display NUT version\n");
+	printf("  -a, --available: Display available bus that can be scanned\n");
+	printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
+	printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+}
+
 int main(int argc, char *argv[])
 {
 	nutscan_snmp_t snmp_sec;
@@ -212,6 +296,8 @@ int main(int argc, char *argv[])
 
 	display_func = nutscan_display_ups_conf;
 
+	/* Note: the getopts print an error message about unknown arguments
+	 * or arguments which need a second token and that is missing now */
 	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
 
 		switch(opt_ret) {
@@ -426,88 +512,15 @@ int main(int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
+				/* Fall through to usage and error exit */
 			case 'h':
 			default:
 display_help:
-				puts("nut-scanner : detecting available power devices.\n");
-				puts("OPTIONS:");
-				printf("  -C, --complete_scan: Scan all available devices (default).\n");
-				if( nutscan_avail_usb ) {
-					printf("  -U, --usb_scan: Scan USB devices.\n");
-				}
-				if( nutscan_avail_snmp ) {
-					printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
-#if WITH_DMFMIB
-					printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
-					printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
-					if( nutscan_avail_xml_http) {
-						printf("      (libneon will be used to work with dynamically loaded DMF MIB library).\n");
-					} else {
-						printf("      (libneon support seems missing, so built-in definitions will\n"
-						       "       be used rather than DMF MIB library).\n");
-					}
-#else
-					printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
-					printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
-#endif /* WITH_DMFMIB */
-				}
-				if( nutscan_avail_xml_http ) {
-					printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
-				}
-				printf("  -O, --oldnut_scan: Scan NUT devices (old method).\n");
-				if( nutscan_avail_avahi ) {
-					printf("  -A, --avahi_scan: Scan NUT devices (avahi method).\n");
-				}
-				if( nutscan_avail_ipmi ) {
-					printf("  -I, --ipmi_scan: Scan IPMI devices.\n");
-				}
-
-				printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
-
-				printf("\nNetwork specific options:\n");
-				printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
-				printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
-				printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
-				printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
-
-				if( nutscan_avail_snmp ) {
-					printf("\nSNMP specific options:\n");
-					printf("  -F, --fingerprints-file <filename>: provide an additional list of SNMP fingerprints\n");
-
-					printf("\nSNMP v1 specific options:\n");
-					printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
-
-					printf("\nSNMP v3 specific options:\n");
-					printf("  -l, --secLevel <security level>: Set the securityLevel used for SNMPv3 messages (allowed values: noAuthNoPriv,authNoPriv,authPriv)\n");
-					printf("  -u, --secName <security name>: Set the securityName used for authenticated SNMPv3 messages (mandatory if you set secLevel. No default)\n");
-					printf("  -w, --authProtocol <authentication protocol>: Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)\n");
-					printf("  -W, --authPassword <authentication pass phrase>: Set the authentication pass phrase used for authenticated SNMPv3 messages (mandatory if you set secLevel to authNoPriv or authPriv)\n");
-					printf("  -x, --privProtocol <privacy protocol>: Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)\n");
-					printf("  -X, --privPassword <privacy pass phrase>: Set the privacy pass phrase used for encrypted SNMPv3 messages (mandatory if you set secLevel to authPriv)\n");
-				}
-
-				if( nutscan_avail_ipmi ) {
-					printf("\nIPMI over LAN specific options:\n");
-					printf("  -b, --username <username>: Set the username used for authenticating IPMI over LAN connections (mandatory for IPMI over LAN. No default)\n");
-					/* Specify  the  username  to  use  when authenticating with the remote host.  If not specified, a null (i.e. anonymous) username is assumed. The user must have
-					 * at least ADMIN privileges in order for this tool to operate fully. */
-					printf("  -B, --password <password>: Specify the password to use when authenticationg with the remote host (mandatory for IPMI over LAN. No default)\n");
-					/* Specify the password to use when authenticationg with the remote host.  If not specified, a null password is assumed. Maximum password length is 16 for IPMI
-					 * 1.5 and 20 for IPMI 2.0. */
-					printf("  -d, --authType <authentication type>: Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5)\n");
-					printf("  -L, --cipher_suite_id <cipher suite id>: Specify the IPMI 2.0 cipher suite ID to use, for authentication, integrity, and confidentiality (default=3)\n");
-				}
-
-				printf("\nNUT specific options:\n");
-				printf("  -p, --port <port number>: Port number of remote NUT upsd\n");
-				printf("\ndisplay specific options:\n");
-				printf("  -N, --disp_nut_conf: Display result in the ups.conf format\n");
-				printf("  -P, --disp_parsable: Display result in a parsable format\n");
-				printf("\nMiscellaneous options:\n");
-				printf("  -V, --version: Display NUT version\n");
-				printf("  -a, --available: Display available bus that can be scanned\n");
-				printf("  -q, --quiet: Display only scan result. No information on currently scanned bus is displayed.\n");
-				printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
+				show_usage();
+				if ((opt_ret != 'h') || (ret_code != EXIT_SUCCESS))
+					fprintf(stderr,"\n\n"
+						"WARNING: Some error has occurred while processing 'nut-scanner' command-line\n"
+						"arguments, see more details above the usage help text.\n\n");
 				return ret_code;
 		}
 	}
