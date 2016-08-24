@@ -69,17 +69,17 @@ index 3cc1d20..18df658 100644
  /*
   *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
 + *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-  *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
   *
   *  This program is free software; you can redistribute it and/or modify
-@@ -20,6 +21,7 @@
+  *  it under the terms of the GNU General Public License as published by
+@@ -19,6 +20,7 @@
  /*! \file nut-scanner.c
      \brief A tool to detect NUT supported devices
      \author Arnaud Quette <arnaud.quette@free.fr>
 +    \author Michal Vyskocil <MichalVyskocil@eaton.com>
-     \author Jim Klimov <EvgenyKlimov@eaton.com>
  */
  
+ #include <stdio.h>
 @@ -102,7 +102,14 @@ static void * run_snmp(void * arg)
  }
  static void * run_xml(void * arg)
