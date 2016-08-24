@@ -138,11 +138,12 @@ static void * run_snmp(void * arg)
 }
 static void * run_xml(void * arg)
 {
-/* Note: This routine is from EATON customized patch; the upstream code was:
 	dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
 	return NULL;
-*/
+}
 
+static void * ETN_run_xml(void * arg)
+{
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 
 	dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, sec);
@@ -608,24 +609,35 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
-			printq(quiet,"Scanning XML/HTTP bus.\n");
+			char singleIP = 0;
+			if ( (start_ip == end_ip) || (strncmp(start_ip,end_ip,128)==0)) {
+				singleIP = 1;
+				printq(quiet,"Scanning XML/HTTP bus for single IP.\n");
+			} else {
+				printq(quiet,"Scanning XML/HTTP bus.\n");
+			}
 #ifdef HAVE_PTHREAD
-			upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
-			upsdebugx(1,"XML/HTTP SCAN: NOTE: Using ETN patch with support for IP address specification");
-/* Note: This routine is from EATON customized patch; the upstream code was:
-			if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
-*/
-			if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {
-				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
-				nutscan_avail_xml_http = 0;
+			if (singleIP) {
+				upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with ETN_run_xml...");
+				if(pthread_create(&thread[TYPE_XML],NULL,ETN_run_xml,&xml_sec)) {
+					upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+					nutscan_avail_xml_http = 0;
+				}
+			} else {
+				upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
+				if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+					upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+					nutscan_avail_xml_http = 0;
+				}
 			}
 #else
-			upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
-			upsdebugx(1,"XML/HTTP SCAN: NOTE: Using ETN patch with support for IP address specification");
-/* Note: This routine is from EATON customized patch; the upstream code was:
-			dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
-*/
-			dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
+			if (singleIP) {
+				upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
+				dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
+			} else {
+				upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting ETN_nutscan_scan_xml_http...");
+				dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+			}
 #endif /* HAVE_PTHREAD */
 		}
 	} else {
