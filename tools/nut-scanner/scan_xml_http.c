@@ -142,9 +142,9 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 
-        if( !nutscan_avail_xml_http ) {
-                return NULL;
-        }
+	if( !nutscan_avail_xml_http ) {
+		return NULL;
+	}
 
 	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) != -1)
 	{
@@ -196,10 +196,10 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 					continue;
 				}
 
-			        if( getnameinfo(
+				if( getnameinfo(
 					(struct sockaddr *)&sockAddress,
-                               		sizeof(struct sockaddr_in),string,
-	                                sizeof(string),NULL,0,
+					sizeof(struct sockaddr_in),string,
+					sizeof(string),NULL,0,
 					NI_NUMERICHOST) != 0) {
 
 					fprintf(stderr,
@@ -208,14 +208,14 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 					continue;
 				}
 
-                                nut_dev = nutscan_new_device();
-                                if(nut_dev == NULL) {
-                                        fprintf(stderr,"Memory allocation \
-					error\n");
-                                        return NULL;
-                                }
+				nut_dev = nutscan_new_device();
+				if(nut_dev == NULL) {
+					fprintf(stderr,"Memory allocation \
+						error\n");
+					return NULL;
+				}
 
-                                nut_dev->type = TYPE_XML;
+				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
@@ -255,25 +255,25 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 	char buf[SMALLBUF];
 	char string[SMALLBUF];
 	ssize_t recv_size;
-    int i;
+	int i;
 
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 
-    if( !nutscan_avail_xml_http ) {
-        return NULL;
-    }
-	
-    if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        fprintf(stderr,"Error creating socket\n");
-        return NULL;
-    }
+	if( !nutscan_avail_xml_http ) {
+		return NULL;
+	}
+
+	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+		fprintf(stderr,"Error creating socket\n");
+		return NULL;
+	}
 #define MAX 3
-    for (i = 0; i != MAX && current_nut_dev == NULL; i++) {
+	for (i = 0; i != MAX && current_nut_dev == NULL; i++) {
 		/* Initialize socket */
 		sockAddress.sin_family = AF_INET;
-        //sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
-        inet_pton(AF_INET, start_ip, &(sockAddress.sin_addr));
+		//sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
+		inet_pton(AF_INET, start_ip, &(sockAddress.sin_addr));
 		sockAddress.sin_port = htons(port);
 		//setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
 		//		sizeof(sockopt_on));
@@ -284,8 +284,8 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 					sockAddressLength) <= 0)
 		{
 			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", i, MAX);
-            usleep(usec_timeout);
-            continue;
+			usleep(usec_timeout);
+			continue;
 		}
 		else
 		{
@@ -318,30 +318,30 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 					fprintf(stderr,
 						"Error reading \
 						socket: %d, #%d/%d\n",errno, i, MAX);
-                    usleep(usec_timeout);
+					usleep(usec_timeout);
 					continue;
 				}
 
-			        if( getnameinfo(
+				if( getnameinfo(
 					(struct sockaddr *)&sockAddress,
-                               		sizeof(struct sockaddr_in),string,
-	                                sizeof(string),NULL,0,
+									sizeof(struct sockaddr_in),string,
+									sizeof(string),NULL,0,
 					NI_NUMERICHOST) != 0) {
 
 					fprintf(stderr,
 						"Error converting IP address: %d\n",errno);
-                    usleep(usec_timeout);
+					usleep(usec_timeout);
 					continue;
 				}
 
-                                nut_dev = nutscan_new_device();
-                                if(nut_dev == NULL) {
-                                        fprintf(stderr,"Memory allocation \
-					error\n");
-                                        return NULL;
-                                }
+				nut_dev = nutscan_new_device();
+				if(nut_dev == NULL) {
+					fprintf(stderr,"Memory allocation \
+						error\n");
+					return NULL;
+				}
 
-                                nut_dev->type = TYPE_XML;
+				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
@@ -356,15 +356,15 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 				current_nut_dev = nutscan_add_device_to_device(
 						current_nut_dev,nut_dev);
 
-                //XXX: quick and dirty change - now we scanned exactly ONE IP address,
-                //     which is exactly the amount we wanted
-                goto end;
+				//XXX: quick and dirty change - now we scanned exactly ONE IP address,
+				//     which is exactly the amount we wanted
+				goto end;
 			}
 		}
 	}
 
 end:
-    close(peerSocket);
+	close(peerSocket);
 	return nutscan_rewind_device(current_nut_dev);
 }
 #else /* WITH_NEON */
@@ -374,6 +374,6 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 }
 nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_timeout, nutscan_xml_t * sec)
 {
-    return NULL;
+	return NULL;
 }
 #endif /* WITH_NEON */
