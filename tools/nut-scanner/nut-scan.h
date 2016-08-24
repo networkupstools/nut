@@ -2,6 +2,7 @@
  *  Copyright (C)
  *    2011 - EATON
  *    2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2016 - EATON - IP addressed XML scan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +23,7 @@
     \brief general header for nut-scanner
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Arnaud Quette <arnaud.quette@free.fr>
+    \author Michal Vyskocil <MichalVyskocil@eaton.com>
 */
 
 #ifndef NUT_SCAN_H
@@ -86,7 +88,7 @@ typedef struct nutscan_ipmi {
 
 /* XML HTTP structure */
 typedef struct nutscan_xml {
-	int port;		/* Port for xml http*/
+	int port;		/* Port for xml http */
 } nutscan_xml_t;
 
 /* Scanning */

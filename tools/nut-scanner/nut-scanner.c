@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +21,7 @@
 /*! \file nut-scanner.c
     \brief A tool to detect NUT supported devices
     \author Arnaud Quette <arnaud.quette@free.fr>
+    \author Michal Vyskocil <MichalVyskocil@eaton.com>
     \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
@@ -300,7 +302,7 @@ int main(int argc, char *argv[])
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
 
-	/* Set the default values for XML HTTP*/
+	/* Set the default values for XML HTTP */
 	xml_sec.port = 4679;
 	nutscan_init();
 

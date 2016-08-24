@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2016 - EATON - IP addressed XML scan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,6 +20,7 @@
 /*! \file scan_xml_http.c
     \brief detect NUT supported XML HTTP devices
     \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Michal Vyskocil <MichalVyskocil@eaton.com>
 */
 
 #include "common.h"
