@@ -187,7 +187,7 @@ void show_usage()
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
 	puts("OPTIONS:");
-	printf("  -C, --complete_scan: Scan all available devices (default).\n");
+	printf("  -C, --complete_scan: Scan all available devices except serial ports (default).\n");
 	if( nutscan_avail_usb ) {
 		printf("  -U, --usb_scan: Scan USB devices.\n");
 	}
