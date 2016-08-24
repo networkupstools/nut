@@ -547,6 +547,9 @@ display_help:
 		/* BEWARE: allow_all does not include allow_eaton_serial! */
 	}
 
+/* TODO/discuss : Should the #else...#endif code below for lack of pthreads
+ * during build also serve as a fallback for pthread failure at runtime?
+ */
 	if( allow_usb && nutscan_avail_usb ) {
 		printq(quiet,"Scanning USB bus.\n");
 #ifdef HAVE_PTHREAD
