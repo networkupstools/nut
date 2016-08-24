@@ -114,8 +114,8 @@ const struct option longopts[] =
 static nutscan_device_t *dev[TYPE_END];
 
 static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
-static char *	start_ip = NULL;
-static char *	end_ip = NULL;
+static char * start_ip = NULL;
+static char * end_ip = NULL;
 static char * port = NULL;
 static char * serial_ports = NULL;
 
