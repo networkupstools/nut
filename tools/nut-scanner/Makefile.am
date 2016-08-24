@@ -3,6 +3,7 @@ BUILT_SOURCES = nutscan-usb.h nutscan-snmp.c
 nutscan-usb.h nutscan-snmp.c:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
+LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
@@ -27,7 +28,8 @@ if WITH_DMF
     $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LDFLAGS_DMF_LUA)
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
-    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(CFLAGS_DMF_LUA)
+    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(CFLAGS_DMF_LUA) \
+    -DDMFREINDEXER_MAKECHECK=0
 endif
 endif
 endif

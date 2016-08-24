@@ -5,8 +5,12 @@
 
 # TODO: GNU Make syntax may be assumed below; fix this to be portable to other make's
 
-AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-    -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner
+# Note that some include files may be generated, so we prefer a builddir
+# and then srcdir - just in case these differ
+DMFTOOLS_CPPFLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
+    -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
+    -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
+    -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEAN_FILES =
@@ -38,10 +42,13 @@ dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
 dmfsnmp_DATA = $(dmfsnmp_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) dmfsnmp.xsd
 
 dmfnutscandir = @dmfnutscandir@
-dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
+DMFNUTSCAN_SYMLINK = $(DMFNUTSCAN_SUBDIR)/S95_dmfnutscan-snmp.dmf
+dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK) dmfnutscan.xsd
 
-EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
-DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+# Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
+#EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
+DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK)
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
@@ -77,11 +84,12 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
-DMFGEN_DEPS = dmfify-mib.sh jsonify-mib.py xmlify-mib.py nut_cpp
+DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
+EXTRA_DIST += $(DMFGEN_DEPS)
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
-	    cd $(@D) && $(abs_srcdir)/dmfify-mib.sh $< || exit; \
+	    cd $(@D) && CFLAGS="$(DMFTOOLS_CPPFLAGS) $(CFLAGS) $(AM_CFLAGS)" CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
 	else echo "SKIP: NOT REBUILDING DMF file $< due to absence of prerequisites like Python or pycparser" >&2; \
 	fi; \
 	)
@@ -98,7 +106,7 @@ $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
 	mkdir -p $(@D)
-	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ]; then \
+	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
 		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
 			B="`basename "$$F"`"; \
 			[ "$$B" = '*.dmf' ] && exit 0 ; \
@@ -139,6 +147,14 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 	|| { echo "FAILED to sort generated $@ without losses!" >&2; \
 	     rm -f "$@.tmp"* ; exit 1; } ; exit 0
 	rm -f "$@.tmp"*
+	@cd "$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)" && \
+		for F in *.dmf ; do case "$$F" in \
+			S*|K*) ;; \
+			dmfnutscan-snmp.dmf)	echo "  LN     $$F => S95_$$F" >&2 && \
+				ln -fs "$$F" "S95_$$F" || exit ;; \
+			*)	echo "  LN     $$F => S10_$$F" >&2 && \
+				ln -fs "$$F" "S10_$$F" || exit ;; \
+		esac; done
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
@@ -175,6 +191,7 @@ else
   dmf: dmf-uptodate
 endif
 
+LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
@@ -194,7 +211,7 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
+	-lltdl $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	-DWITH_DMFMIB=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
@@ -202,7 +219,7 @@ dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str
 dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
+	-lltdl $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	-DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	-o $@ $^
@@ -213,7 +230,7 @@ if WITH_LUA
 dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	-D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	-lltdl $(AM_CFLAGS) \
+	-lltdl $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
 	-DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
 	-DWITH_DMFMIB=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \

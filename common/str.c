@@ -25,7 +25,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>	// va_*
+#include <stdarg.h>	/* get the va_* routines */
 
 #include "str.h"
 
@@ -618,19 +618,19 @@ char *	str_concat(size_t count, ...)
 	size_t i, len, null_pos;
 	char* merged = NULL;
 
-	// Find required length to store merged string
+	/* Find required length to store merged string */
 	va_start(ap, count);
-	len = 1; // room for '\0' in the end
+	len = 1; /* room for '\0' in the end */
 	for(i=0 ; i<count ; i++)
 		len += strlen(va_arg(ap, char*));
 	va_end(ap);
 
-	// Allocate memory to concat strings
+	/* Allocate memory to concat strings */
 	merged = (char*)calloc(len,sizeof(char));
 	if (merged == NULL)
 		return merged;
 
-	// Actually concatenate strings
+	/* Actually concatenate strings */
 	va_start(ap, count);
 	null_pos = 0;
 	for(i=0 ; i<count ; i++)

@@ -30,7 +30,11 @@
 	on nut_version_macro.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
-#include "nut_version.h"
+#if DMFREINDEXER_MAKECHECK
+# define NUT_VERSION_MACRO "custom build"
+#else
+# include "nut_version.h"
+#endif
 
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
@@ -248,7 +252,7 @@ int sendsignalfn(const char *pidfn, int sig)
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
 		return -1;
-	}	
+	}
 
 	pid = strtol(buf, (char **)NULL, 10);
 
@@ -333,18 +337,18 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (nut_debug_level > 0) {
 		static struct timeval	start = { 0 };
 		struct timeval		now;
-	
+
 		gettimeofday(&now, NULL);
-	
+
 		if (start.tv_sec == 0) {
 			start = now;
 		}
-	
+
 		if (start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
-	
+
 		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
 	}
 
@@ -409,7 +413,7 @@ void upslogx(int priority, const char *fmt, ...)
 void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
 
@@ -421,7 +425,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
 
@@ -636,7 +640,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 
 
 /* FIXME: would be good to get more from /etc/ld.so.conf[.d] */
-char * search_paths[] = {
+const char * search_paths[] = {
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/lib64",
@@ -673,6 +677,7 @@ char * get_libname(const char* base_libname)
 		}
 		closedir(dp);
 	}
-	/* fprintf(stderr,"Looking for lib %s, found %s\n", base_libname, (libname_path!=NULL)?libname_path:"NULL");*/
+
+	upsdebugx(1,"Looking for lib %s, found %s\n", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
 }
