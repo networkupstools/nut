@@ -572,7 +572,11 @@ display_help:
 		}
 		else {
 #if WITH_DMFMIB
-			upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support if possible.");
+			if (dmfnutscan_snmp_dir != NULL) {
+				upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support, using '%s', if possible.", dmfnutscan_snmp_dir);
+			} else { /* Nuance for not-yet-firstclass-citizen code */
+				upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only, because DMF MIB run-time support was not enabled with '-z'.");
+			}
 #else
 			upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only.");
 #endif
