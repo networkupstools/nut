@@ -253,7 +253,7 @@ dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
 	 -DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
 	 -DWITH_DMFMIB=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/testdata\"" \
 	 -o $@ $^
 else
 dmf-lua-test:
@@ -270,7 +270,7 @@ run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
 
 if WITH_LUA
 run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
+	cd $(abs_top_builddir)/scripts/DMF/testdata && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
 else
 run-dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
