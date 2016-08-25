@@ -27,7 +27,15 @@
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
-#include <ltdl.h>
+
+#if WITH_LIBLTDL
+# include <ltdl.h>
+#else
+# ifdef WITH_NEON
+/* We are linked to LibNEON at compile-time */
+#  include <neon/ne_xml.h>
+# endif
+#endif
 
 #include "common.h"
 #include "dmfsnmp.h"
@@ -38,18 +46,30 @@
  *
  */
 
+#if WITH_LIBLTDL
 /* LTDL variables needed to load LibNEON */
 static lt_dlhandle dl_handle_libneon = NULL;
 static const char *dl_error = NULL;
 
+/* Pointers to dynamically-loaded LibNEON functions; do not mistake these
+ * with xml_*_cb callbacks that we implement below for actual parsing.
+ * If not loaded dynamically by LTDL, these should be available via LDD
+ * dynamic linking at compile-time.
+ */
 static ne_xml_parser *(*xml_create)(void);
 static void (*xml_push_handler)(ne_xml_parser*,
-			ne_xml_startelm_cb*, 
+			ne_xml_startelm_cb*,
 			ne_xml_cdata_cb*,
 			ne_xml_endelm_cb*,
 			void*);
 static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
 static void (*xml_destroy)(ne_xml_parser*);
+#else
+# define	xml_create		ne_xml_create
+# define	xml_push_handler	ne_xml_push_handler
+# define	xml_parse		ne_xml_parse
+# define	xml_destroy		ne_xml_destroy
+#endif
 
 /* These vars used to be needed as extern vars by some legacy code elsewhere...
  * also they are referenced below, but I'm not sure it is valid code!
@@ -161,6 +181,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 /* Based on nut-scanner/scan_xml_http.c code */
 int load_neon_lib(void){
 #ifdef WITH_NEON
+# if WITH_LIBLTDL
 	char *neon_libname_path = get_libname("libneon.so");
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
@@ -235,6 +256,10 @@ err:
 		dl_error ? dl_error : "No details passed");
 	free(neon_libname_path);
 	return ERR;
+# else /* not WITH_LIBLTDL */
+	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead\n");
+	return OK;
+# endif /* WITH_LIBLTDL */
 
 #else /* not WITH_NEON */
 	upslogx(0, "Error loading Neon library required for DMF: not enabled during compilation");
@@ -245,9 +270,11 @@ err:
 
 void unload_neon_lib(){
 #ifdef WITH_NEON
+#if WITH_LIBLTDL
 	lt_dlclose(dl_handle_libneon);
 	dl_handle_libneon = NULL;
-#endif
+#endif /* WITH_LIBLTDL */
+#endif /* WITH_NEON */
 }
 
 #if WITH_DMF_LUA
@@ -1393,7 +1420,9 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
 	FILE *f;
 	int result = 0;
-	int falg_libneon = 0;
+#if WITH_LIBLTDL
+	int flag_libneon = 0;
+#endif /* WITH_LIBLTDL */
 
 	assert (file_name);
 	assert (dmp);
@@ -1409,10 +1438,12 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
+#if WITH_LIBLTDL
 	if(!dl_handle_libneon){
-		falg_libneon = 1;
+		flag_libneon = 1;
 		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
 	}
+#endif /* WITH_LIBLTDL */
 	ne_xml_parser *parser = xml_create ();
 	xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
@@ -1448,8 +1479,10 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	if (!result) /* no errors, complete the parse with len==0 call */
 		xml_parse (parser, buffer, 0);
 	xml_destroy (parser);
-	if(falg_libneon == 1)
+#if WITH_LIBLTDL
+	if(flag_libneon == 1)
 		unload_neon_lib();
+#endif /* WITH_LIBLTDL */
 
 	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
 		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
