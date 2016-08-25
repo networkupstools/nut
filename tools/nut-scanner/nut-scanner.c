@@ -600,11 +600,11 @@ display_help:
 		char singleIP = 0;
 		if (start_ip != NULL ) {
 			singleIP = 1;
-			upsdebugx(quiet,"Scanning XML/HTTP bus for single IP (%s).\n", start_ip);
+			upsdebugx(quiet,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
 			if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) )
-				upsdebugx(quiet,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).\n", end_ip);
+				upsdebugx(quiet,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).", end_ip);
 		} else {
-			upsdebugx(quiet,"Scanning XML/HTTP bus using broadcast.\n");
+			upsdebugx(quiet,"Scanning XML/HTTP bus using broadcast.");
 		}
 #ifdef HAVE_PTHREAD
 		if (singleIP) {
