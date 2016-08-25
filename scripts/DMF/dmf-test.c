@@ -31,8 +31,9 @@
 #include "dmf.h"
 
 /* The test involves generation of DMF and comparison to existing data.
-   As a random pick, we use powerware-mib.c "as is" (with structures).
-   This causes macro-redefinition conflict (and -Werror dies on it).
+   As a random pick, we use eaton-mib.c "as is" (with structures).
+   This causes macro-redefinition conflict (and -Werror dies on it) -
+   so we undefine a few macros...
 */
 #undef PACKAGE_VERSION
 #undef PACKAGE_NAME
@@ -44,6 +45,7 @@
 int
 main ()
 {
+	int result;
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
@@ -58,10 +60,18 @@ main ()
 #endif
 
 #ifdef DEFAULT_DMFSNMP_DIR
-	mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+	printf("=== DMF-Test: Parsing data from %s...\n\n", DEFAULT_DMFSNMP_DIR);
+	result = mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
 #else
-	mibdmf_parse_dir("./", dmp);
+	printf("=== DMF-Test: Parsing data from %s...\n\n", "./");
+	result = mibdmf_parse_dir("./", dmp);
 #endif
+
+	if (result != 0) {
+		printf("=== DMF-Test: Error parsing data: %i\n\n", result);
+		mibdmf_parser_destroy(&dmp);
+		return result;
+	}
 
 	/*Debugging
 	 *mib2nut_info_t *m2n = get_mib2nut_table();
@@ -75,21 +85,29 @@ main ()
 	if(aux){
 		while(!(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))&&(iterator < mibdmf_get_list_size(dmp)))
 			iterator++;
-        
-		if(element)
+
+		if(element) {
+			printf("=== DMF-Test: Found an eaton_marlin element; iterator == %i \n\n", iterator);
 			print_mib2nut_memory_struct((mib2nut_info_t *) element->values[0]);
-	/*printf("\n\n");
-	 *printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
-	 *print_mib2nut_memory_struct(&eaton_marlin);
-	 *End debugging */
+			result = 0;
+		} else {
+			printf("=== DMF-Test: Error, did not find an eaton_marlin element; iterator == %i\n\n", iterator);
+			result = 1;
+		}
+
+		/*printf("\n\n");
+		 *printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
+		 *print_mib2nut_memory_struct(&eaton_marlin);
+		 *End debugging */
 
 		printf("=== DMF-Test: Freeing data...\n\n");
 		mibdmf_parser_destroy(&dmp);
 
 		printf("=== DMF-Test: All done\n\n");
-		return 0;
+		return result;
 	}
-	printf("**** Error, no DMF data loaded\n");
+
+	printf("=== DMF-Test: Error, no DMF data loaded\n");
 	mibdmf_parser_destroy(&dmp);
 	return -1;
 }

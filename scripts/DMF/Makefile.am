@@ -86,6 +86,7 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # removed, these DMF files would become redistributable contents by themselves.
 DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
 EXTRA_DIST += $(DMFGEN_DEPS)
+EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
@@ -159,7 +160,7 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 # TODO: Currently the recipe relies on the two files being really in same dir
 # Mostly it is here to make the Make happy (dependency for *_DATA above)
 $(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
-	@cd "$(@D)" && ln -fs "$(<F)" "$(@F)"
+	@cd "$(@D)" && ln -fs "`basename "$<"`" "$(@F)"
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
@@ -208,12 +209,12 @@ else
 endif
 
 if WITH_LIBLTDL
-  dmfsnmp_ltdlXneon_LDADD = $(LIBLTDL_LIBS)
-  dmfsnmp_ltdlXneon_CFLAGS = $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
+  LIBS_dmfsnmp_ltdlXneon = $(LIBLTDL_LIBS)
+  CFLAGS_dmfsnmp_ltdlXneon = $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
 else
 if WITH_NEON
-  dmfsnmp_ltdlXneon_LDADD = $(LIBNEON_LIBS)
-  dmfsnmp_ltdlXneon_CFLAGS = $(LIBNEON_CFLAGS) -DWITH_LIBLTDL=0
+  LIBS_dmfsnmp_ltdlXneon = $(LIBNEON_LIBS)
+  CFLAGS_dmfsnmp_ltdlXneon = $(LIBNEON_CFLAGS) -DWITH_LIBLTDL=0
 endif
 endif
 
@@ -225,18 +226,18 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 # Note: These recipes are explicit and do not use NUT libs,
 # so they can be built quickly without configuring NUT
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
-	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
+	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(dmfsnmp_ltdlXneon_LDADD) $(dmfsnmp_ltdlXneon_CFLAGS) \
+	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	 -DWITH_DMFMIB=1 -DDEBUG=1 \
 	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	 -o $@ $^
 
 dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
-	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
+	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(dmfsnmp_ltdlXneon_LDADD) $(dmfsnmp_ltdlXneon_CFLAGS) \
+	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
@@ -246,13 +247,13 @@ dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top
 # even if the general project does not want to build DMF+LUA at this moment
 if WITH_LUA
 dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
-	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
+	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(dmfsnmp_ltdlXneon_LDADD) $(dmfsnmp_ltdlXneon_CFLAGS) \
+	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
 	 -DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
 	 -DWITH_DMFMIB=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
+	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/testdata\"" \
 	 -o $@ $^
 else
 dmf-lua-test:
@@ -269,7 +270,7 @@ run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
 
 if WITH_LUA
 run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
+	cd $(abs_top_builddir)/scripts/DMF/testdata && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
 else
 run-dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2

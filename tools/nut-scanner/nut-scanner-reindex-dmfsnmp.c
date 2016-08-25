@@ -101,13 +101,15 @@ int main(int argc, char *argv[])
 				proceed_on_errors = 0;
 				break;
 			case 'V':
-				printf("Network UPS Tools - %s\n",
 #if DMFREINDEXER_MAKECHECK
+				printf("Network UPS Tools - %s\n",
 					"private build for DMF 'make check'"
-#else
-					NUT_VERSION_MACRO
-#endif
 					);
+#else
+				printf("Network UPS Tools - %s\n",
+					NUT_VERSION_MACRO
+					);
+#endif
 				exit(EXIT_SUCCESS);
 				break;
 			case '?':
