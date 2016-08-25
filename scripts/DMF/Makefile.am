@@ -86,6 +86,7 @@ check-experimental: progs-all check-local run-dmf-lua-test
 # removed, these DMF files would become redistributable contents by themselves.
 DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
 EXTRA_DIST += $(DMFGEN_DEPS)
+EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
