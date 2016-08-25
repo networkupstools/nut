@@ -209,12 +209,12 @@ else
 endif
 
 if WITH_LIBLTDL
-  dmfsnmp_ltdlXneon_LDADD = $(LIBLTDL_LIBS)
-  dmfsnmp_ltdlXneon_CFLAGS = $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
+  LIBS_dmfsnmp_ltdlXneon = $(LIBLTDL_LIBS)
+  CFLAGS_dmfsnmp_ltdlXneon = $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
 else
 if WITH_NEON
-  dmfsnmp_ltdlXneon_LDADD = $(LIBNEON_LIBS)
-  dmfsnmp_ltdlXneon_CFLAGS = $(LIBNEON_CFLAGS) -DWITH_LIBLTDL=0
+  LIBS_dmfsnmp_ltdlXneon = $(LIBNEON_LIBS)
+  CFLAGS_dmfsnmp_ltdlXneon = $(LIBNEON_CFLAGS) -DWITH_LIBLTDL=0
 endif
 endif
 
@@ -228,7 +228,7 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(dmfsnmp_ltdlXneon_LDADD) $(dmfsnmp_ltdlXneon_CFLAGS) \
+	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	 -DWITH_DMFMIB=1 -DDEBUG=1 \
 	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
@@ -237,7 +237,7 @@ dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str
 dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(dmfsnmp_ltdlXneon_LDADD) $(dmfsnmp_ltdlXneon_CFLAGS) \
+	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
 	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
@@ -249,7 +249,7 @@ if WITH_LUA
 dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c11 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(dmfsnmp_ltdlXneon_LDADD) $(dmfsnmp_ltdlXneon_CFLAGS) \
+	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
 	 -DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
 	 -DWITH_DMFMIB=1 -DDEBUG=1 \
