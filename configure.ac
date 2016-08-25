@@ -1322,10 +1322,10 @@ dnl ----------------------------------------------------------------------
 dnl Check for --with-dmf, --with-lua and/or --with-dmf_lua, --with-snmp_dmf and/or --with-snmp_dmf_lua
 dnl This MUST be after DATADIR has been processed!
 NUT_ARG_WITH([dmf], [enable DMF (data mapping file) generic support], [auto])
-NUT_ARG_WITH([lua], [enable LUA-5.1 scripting generic support], [auto])
-NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1 scripting], [auto])
+NUT_ARG_WITH([lua], [enable LUA-5.1+ scripting generic support], [auto])
+NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1+ scripting], [auto])
 NUT_ARG_WITH([snmp_dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
-NUT_ARG_WITH([snmp_dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1 scripting], [auto])
+NUT_ARG_WITH([snmp_dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1+ scripting], [auto])
 
 dnl If a higher-level toggle explicitly disables an option, abort the attempt to enable it at lower level
 if test "${nut_with_dmf}" = "no" -a "${nut_with_dmf_lua}" = "yes" ; then
@@ -1388,11 +1388,13 @@ if test "${nut_with_snmp_dmf}" = "yes"; then
 	nut_with_snmp=yes
 fi
 
-dnl Check for LUA-5.1 (mandatory if asked for, optional otherwise)
-dnl Note we currently require exactly 5.1 (in 5.2 some needed syntax is deprecated)
+dnl Check for LUA-5.1 or above (mandatory if asked for, optional otherwise)
+dnl Note we used to require exactly 5.1: in 5.2 some needed syntax has been
+dnl deprecated, but subsequently the DMF-LUA code was fixed in Git commit ID
+dnl 410139013fe951f8ec65066979a6b0b91e04f9fe. It's not tested with earler LUA.
 nut_have_lua=no
 if test "${nut_with_lua}" != "no"; then
-	AX_PROG_LUA([5.1], [5.2], [nut_have_lua=yes], [nut_have_lua=no])
+	AX_PROG_LUA([5.1], [], [nut_have_lua=yes], [nut_have_lua=no])
 	if test "${nut_have_lua}" = "yes"; then
 		AX_LUA_HEADERS([nut_have_lua=yes], [nut_have_lua=no])
 	fi
@@ -1403,7 +1405,7 @@ fi
 
 if test "${nut_have_lua}" = "no" ; then
 	if test "${nut_with_lua}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes" ; then
-		AC_MSG_ERROR([LUA-5.1 support was requested, but is missing on this system])
+		AC_MSG_ERROR([LUA-5.1+ support was requested, but is missing on this system])
 	fi
 fi
 
@@ -1479,8 +1481,8 @@ NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
 AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
 
-NUT_REPORT_FEATURE([enable LUA-5.1 scripting generic support], [${nut_with_lua}], [],
-					[WITH_LUA], [Define to enable LUA-5.1 scripting generic support])
+NUT_REPORT_FEATURE([enable LUA-5.1+ scripting generic support], [${nut_with_lua}], [],
+					[WITH_LUA], [Define to enable LUA-5.1+ scripting generic support])
 AM_CONDITIONAL([HAVE_LUA], [test "${nut_have_lua}" = "yes"])
 
 dnl NOTE that below there is a difference between WANT_* C macros and
