@@ -160,7 +160,7 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 # TODO: Currently the recipe relies on the two files being really in same dir
 # Mostly it is here to make the Make happy (dependency for *_DATA above)
 $(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
-	@cd "$(@D)" && ln -fs "$(<F)" "$(@F)"
+	@cd "$(@D)" && ln -fs "`basename "$<"`" "$(@F)"
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
