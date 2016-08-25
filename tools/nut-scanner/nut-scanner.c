@@ -606,43 +606,44 @@ display_help:
 		upsdebugx(1,"SNMP SCAN: not requested, SKIPPED");
 	}
 
+/* Note: The nutscan_scan_xml_http() (also called from run_xml())
+ * has a broadcast approach to network scanning, so does not care
+ * for proper start_ip and end_ip values (they may be NULL).
+ * So we can use this to differentiate - which routine to call.
+ */
 	if( allow_xml && nutscan_avail_xml_http) {
-		if( start_ip == NULL ) {
-			printq(quiet,"No start IP, skipping XML/HTTP\n");
-			nutscan_avail_snmp = 0;
+		char singleIP = 0;
+		if (start_ip != NULL ) {
+			singleIP = 1;
+			printq(quiet,"Scanning XML/HTTP bus for single IP (%s).\n", start_ip);
+			if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) )
+				printq(quiet,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).\n", end_ip);
+		} else {
+			printq(quiet,"Scanning XML/HTTP bus using broadcast.\n");
 		}
-		else {
-			char singleIP = 0;
-			if ( (start_ip == end_ip) || (strncmp(start_ip,end_ip,128)==0)) {
-				singleIP = 1;
-				printq(quiet,"Scanning XML/HTTP bus for single IP.\n");
-			} else {
-				printq(quiet,"Scanning XML/HTTP bus.\n");
-			}
 #ifdef HAVE_PTHREAD
-			if (singleIP) {
-				upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with ETN_run_xml...");
-				if(pthread_create(&thread[TYPE_XML],NULL,ETN_run_xml,&xml_sec)) {
-					upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
-					nutscan_avail_xml_http = 0;
-				}
-			} else {
-				upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
-				if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
-					upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
-					nutscan_avail_xml_http = 0;
-				}
+		if (singleIP) {
+			upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with ETN_run_xml...");
+			if(pthread_create(&thread[TYPE_XML],NULL,ETN_run_xml,&xml_sec)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+				nutscan_avail_xml_http = 0;
 			}
-#else
-			if (singleIP) {
-				upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
-				dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
-			} else {
-				upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting ETN_nutscan_scan_xml_http...");
-				dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+		} else {
+			upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
+			if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+				upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
+				nutscan_avail_xml_http = 0;
 			}
-#endif /* HAVE_PTHREAD */
 		}
+#else
+		if (singleIP) {
+			upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
+			dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, &xml_sec);
+		} else {
+			upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting ETN_nutscan_scan_xml_http...");
+			dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+		}
+#endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
 	}
