@@ -149,7 +149,6 @@ static void * ETN_run_xml(void * arg)
 	dev[TYPE_XML] = ETN_nutscan_scan_xml_http(start_ip, timeout, sec);
 	return NULL;
 }
-
 static void * run_nut_old(void * arg)
 {
 	dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
@@ -280,7 +279,7 @@ int main(int argc, char *argv[])
 {
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
-    nutscan_xml_t  xml_sec;
+	nutscan_xml_t  xml_sec;
 	int opt_ret;
 	char *	cidr = NULL;
 	int allow_all = 0;
@@ -304,7 +303,7 @@ int main(int argc, char *argv[])
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
 
-	/* Set the default values for XML HTTP */
+	/* Set the default values for XML HTTP (ETN_run_xml()) */
 	xml_sec.port = 4679;
 
 	nutscan_init();
