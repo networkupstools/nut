@@ -156,6 +156,11 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 				ln -fs "$$F" "S10_$$F" || exit ;; \
 		esac; done
 
+# TODO: Currently the recipe relies on the two files being really in same dir
+# Mostly it is here to make the Make happy (dependency for *_DATA above)
+$(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+	@cd "$(@D)" && ln -fs "$(<F)" "$(@F)"
+
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
