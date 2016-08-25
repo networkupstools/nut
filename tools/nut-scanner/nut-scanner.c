@@ -166,21 +166,6 @@ static void * run_eaton_serial(void * arg)
 }
 
 #endif /* HAVE_PTHREAD */
-int printq(int quiet,const char *fmt, ...)
-{
-	va_list ap;
-	int ret;
-
-	if(quiet) {
-		return 0;
-	}
-
-	va_start(ap, fmt);
-	ret = vprintf(fmt, ap);
-	va_end(ap);
-
-	return ret;
-}
 
 void show_usage()
 {
@@ -280,7 +265,7 @@ int main(int argc, char *argv[])
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
 	int allow_eaton_serial = 0; /* MUST be requested explicitely! */
-	int quiet = 0;
+	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
 
@@ -551,7 +536,7 @@ display_help:
  * during build also serve as a fallback for pthread failure at runtime?
  */
 	if( allow_usb && nutscan_avail_usb ) {
-		printq(quiet,"Scanning USB bus.\n");
+		upsdebugx(quiet,"Scanning USB bus.");
 #ifdef HAVE_PTHREAD
 		if(pthread_create(&thread[TYPE_USB],NULL,run_usb,NULL)) {
 			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
@@ -567,14 +552,14 @@ display_help:
 
 	if( allow_snmp && nutscan_avail_snmp ) {
 		if( start_ip == NULL ) {
-			printq(quiet,"No start IP, skipping SNMP\n");
+			upsdebugx(quiet,"No start IP, skipping SNMP");
 			nutscan_avail_snmp = 0;
 		}
 		else {
 #if WITH_DMFMIB
-			printq(quiet,"Scanning SNMP bus with DMF MIB support if possible.\n");
+			upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support if possible.");
 #else
-			printq(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
+			upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only.");
 #endif
 #ifdef HAVE_PTHREAD
 			upsdebugx(1,"SNMP SCAN: starting pthread_create with run_snmp...");
@@ -597,9 +582,9 @@ display_help:
  */
 	if( allow_xml && nutscan_avail_xml_http) {
 		if( start_ip != NULL ) {
-			printq(quiet,"Note: explicit IP addresses are not used in XML/HTTP broadcast scanning\n");
+			upsdebugx(quiet,"Note: explicit IP addresses are not used in XML/HTTP broadcast scanning");
 		}
-		printq(quiet,"Scanning XML/HTTP bus.\n");
+		upsdebugx(quiet,"Scanning XML/HTTP bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
 		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
@@ -616,11 +601,11 @@ display_help:
 
 	if( allow_oldnut && nutscan_avail_nut) {
 		if( start_ip == NULL ) {
-			printq(quiet,"No start IP, skipping NUT bus (old connect method)\n");
+			upsdebugx(quiet,"No start IP, skipping NUT bus (old connect method)");
 			nutscan_avail_nut = 0;
 		}
 		else {
-			printq(quiet,"Scanning NUT bus (old connect method).\n");
+			upsdebugx(quiet,"Scanning NUT bus (old connect method).");
 #ifdef HAVE_PTHREAD
 			upsdebugx(1,"NUT bus (old) SCAN: starting pthread_create with run_nut_old...");
 			if(pthread_create(&thread[TYPE_NUT],NULL,run_nut_old,NULL)) {
@@ -637,7 +622,7 @@ display_help:
 	}
 
 	if( allow_avahi && nutscan_avail_avahi) {
-		printq(quiet,"Scanning NUT bus (avahi method).\n");
+		upsdebugx(quiet,"Scanning NUT bus (avahi method).");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1,"NUT bus (avahi) SCAN: starting pthread_create with run_avahi...");
 		if(pthread_create(&thread[TYPE_AVAHI],NULL,run_avahi,NULL)) {
@@ -653,7 +638,7 @@ display_help:
 	}
 
 	if( allow_ipmi  && nutscan_avail_ipmi) {
-		printq(quiet,"Scanning IPMI bus.\n");
+		upsdebugx(quiet,"Scanning IPMI bus.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1,"IPMI SCAN: starting pthread_create with run_ipmi...");
 		if(pthread_create(&thread[TYPE_IPMI],NULL,run_ipmi,&ipmi_sec)) {
@@ -670,7 +655,7 @@ display_help:
 
 	/* Eaton serial scan */
 	if (allow_eaton_serial) {
-		printq(quiet,"Scanning serial bus for Eaton devices.\n");
+		upsdebugx(quiet,"Scanning serial bus for Eaton devices.");
 #ifdef HAVE_PTHREAD
 		upsdebugx(1,"SERIAL SCAN: starting pthread_create with run_eaton_serial (return not checked!)...");
 		pthread_create(&thread[TYPE_EATON_SERIAL], NULL, run_eaton_serial, serial_ports);
