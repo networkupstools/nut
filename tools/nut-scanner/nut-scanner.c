@@ -573,9 +573,9 @@ display_help:
 		}
 		else {
 #if WITH_DMFMIB
-			upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support if possible.\n");
+			upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support if possible.");
 #else
-			upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only.\n");
+			upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only.");
 #endif
 #ifdef HAVE_PTHREAD
 			upsdebugx(1,"SNMP SCAN: starting pthread_create with run_snmp...");
