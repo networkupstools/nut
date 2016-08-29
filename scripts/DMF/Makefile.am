@@ -180,14 +180,16 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodat
 	    echo " XMLLINT  $$F"; \
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
 	done
+	touch $@
 
 # TODO: Maybe per-DMF *.dmf.validated files would be better?
 $(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
-	@ERRCODE=0; cd $(@D) && for F in *.dmf ; do \
+	@cd $(@D) && for F in *.dmf ; do \
 	    echo " XMLLINT  $$F"; \
-	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfnutscan.xsd "$$F" || ERRCODE=1; \
-	done; exit $$ERRCODE
+	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfnutscan.xsd "$$F" || exit; \
+	done
+	touch $@
 
 # Make sure all generated DMFs are up to date vs. C sources and recipes
 dmf-uptodate: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
