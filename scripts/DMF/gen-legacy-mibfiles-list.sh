@@ -78,7 +78,7 @@ print_makefile_LEGACY_NUT_DMF_SYMLINKS() {
 print_makefile_LEGACY_NUT_DMF_DEPS() {
     echo "# NOTE: DMFSNMP_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD is defined in Makefile.am"
     for F in `list_LEGACY_NUT_C_MIBS | sort | uniq` ; do
-        printf '$(DMFSNMP_SUBDIR)/%s : $(abs_top_srcdir)/drivers/%s $(DMFGEN_DEPS)\n\t$(DMFGEN_CMD)\n\n' "`basename "$F" .c`".dmf "$F"
+        printf '$(DMFSNMP_SUBDIR)/%s : $(abs_top_srcdir)/drivers/%s $(DMFGEN_DEPS)\n\t@$(DMFGEN_CMD)\n\n' "`basename "$F" .c`".dmf "$F"
     done || return
     echo ""
     return 0
