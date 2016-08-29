@@ -117,6 +117,14 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 				cp -f "$$F" "$$N" || exit ; \
 		done; \
 	fi
+	@cd "$(abs_builddir)/$(DMFSNMP_SUBDIR)" && \
+		for F in *.dmf ; do case "$$F" in \
+			S*|K*) ;; \
+			ietf-mib.dmf)	echo "  LN     $$F => S90_$$F" >&2 && \
+				ln -fs "$$F" "S90_$$F" || exit ;; \
+			*)	echo "  LN     $$F => S10_$$F" >&2 && \
+				ln -fs "$$F" "S10_$$F" || exit ;; \
+		esac; done
 	touch $@
 
 # The recipe assumes we have separate opening and closing lines in the DMF file
@@ -127,20 +135,12 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 # TODO: The proper solution (sort, uniq) should be in the C code!
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
 	mkdir -p $(@D)
-	@cd "$(abs_builddir)/$(DMFSNMP_SUBDIR)" && \
-		for F in *.dmf ; do case "$$F" in \
-			S*|K*) ;; \
-			ietf-mib.dmf)	echo "  LN     $$F => S90_$$F" >&2 && \
-				ln -fs "$$F" "S90_$$F" || exit ;; \
-			*)	echo "  LN     $$F => S10_$$F" >&2 && \
-				ln -fs "$$F" "S10_$$F" || exit ;; \
-		esac; done
-	$(abs_builddir)/dmf-reindex > $@.tmp
+	$(abs_builddir)/dmf-reindex > "$@.tmp"
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
 	  grep '<mib2nut ' "$@.tmp" | sort | uniq ; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | tail -1 ; \
-	) > $@
+	) > "$@"
 	@LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
 	  sort "$@.tmp" | egrep -v '^$$' | uniq > "$@.tmp1" ; \
 	    sort "$@" | egrep -v '^$$' | uniq > "$@.tmp2" ; \
