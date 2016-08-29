@@ -132,13 +132,16 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 # randomly ordered set of mib2nut lines that we want consistent (to get no
 # `git diff` complaints).
 # Note that parsing a directory with DMF files only considers 'S*.dmf' names
-# TODO: The proper solution (sort, uniq) should be in the C code!
+# TODO: The proper solution (sort, uniq) should probably be in the C code!
+# NOTE: Sorting is a problem now that some MIBs must be last (e.g. ietf) -
+#       so we add them in desired order explicitly...
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
 	mkdir -p $(@D)
 	$(abs_builddir)/dmf-reindex > "$@.tmp"
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
-	  grep '<mib2nut ' "$@.tmp" | sort | uniq ; \
+	  grep '<mib2nut ' "$@.tmp" | sort | uniq | grep -v 'mib_name="ietf"'; \
+	  grep '<mib2nut ' "$@.tmp" | sort | uniq | grep 'mib_name="ietf"'; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | tail -1 ; \
 	) > "$@"
 	@LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
