@@ -74,8 +74,10 @@ check: check-local
 # Note: this is automake "if"
 if HAVE_XMLLINT
   check-local: progs run-dmf-test dmf-validate
+  dmf: dmf-validate
 else
   check-local: progs run-dmf-test
+  dmf: dmf-uptodate
 endif
 
 check-experimental: progs-all check-local run-dmf-lua-test
@@ -197,12 +199,6 @@ dmf-uptodate: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
 # Make sure all present DMFs are valid vs. XSD schema
 dmf-validate: dmf-uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
-# Note: this is automake "if"
-if HAVE_XMLLINT
-  dmf: dmf-validate
-else
-  dmf: dmf-uptodate
-endif
 
 LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
