@@ -119,6 +119,7 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	fi
 	@cd "$(abs_builddir)/$(DMFSNMP_SUBDIR)" && \
 		for F in *.dmf ; do case "$$F" in \
+			'*.dmf') echo "ERROR: No DMF files found while processing $@" >&2 ; exit 2 ;; \
 			S*|K*) ;; \
 			ietf-mib.dmf)	echo "  LN     $$F => S90_$$F" >&2 && \
 				ln -fs "$$F" "S90_$$F" || exit ;; \
@@ -153,6 +154,7 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 	rm -f "$@.tmp"*
 	@cd "$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)" && \
 		for F in *.dmf ; do case "$$F" in \
+			'*.dmf') echo "ERROR: No DMF files found while processing $@" >&2 ; exit 2 ;; \
 			S*|K*) ;; \
 			dmfnutscan-snmp.dmf)	echo "  LN     $$F => S95_$$F" >&2 && \
 				ln -fs "$$F" "S95_$$F" || exit ;; \
