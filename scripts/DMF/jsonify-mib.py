@@ -449,6 +449,9 @@ except KeyError:
     gcc_cppflags = []
 
 try:
+    ### NOTE: If 'nut-cpp' fails here and returns exit code != 0 alone,
+    ### there is no exception; so to abort pycparser we also print some
+    ### invalid C pragma so the parser does die early.
     ast = parse_file (
         args.source,
         use_cpp=True,
