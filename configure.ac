@@ -1572,6 +1572,208 @@ else
 fi
 AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
 
+
+dnl Ability to regenerate the DMF files from C sources depends on both
+dnl availability of a Python pycparser module and support in the filter
+dnl of "scripts/DMF/nut_cpp" script to make system headers parsable by
+dnl pycparser (it does not support many "extra" keywords).
+dnl Note: this test should be among the last in the configure script,
+dnl so it can provide reasonable features in "config.h" to the compiler.
+dnl NOTE: we populate a "config.h" with collected data matching this system,
+dnl using an implementation detail of autotools - storing the defined data
+dnl for C/C++ in a temporary "confdefs.h" file.
+AC_MSG_CHECKING([if we can regenerate DMF files from C sources])
+can_generate_dmf_snmp=no
+if test "${nut_with_dmf}" = "yes"; then
+( CURDIR="$(pwd)" && \
+  OUTDIR="$(mktemp -d --tmpdir="${CURDIR}" configure-test.dmfify.$$.XXXXXXX)" && \
+  test -d "$OUTDIR" && \
+  ( if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi; \
+    cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
+      ./dmfify-mib.sh --sanity-check && \
+    cd "$OUTDIR" && \
+      rm -rf "./ietf-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
+      CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/ietf-mib.c" && \
+      test -s "./ietf-mib.dmf" )
+  RES=$?; rm -rf "$OUTDIR"; exit $RES
+) >&5 2>&5 \
+	&& can_generate_dmf_snmp=yes
+fi
+
+AC_MSG_RESULT(${can_generate_dmf_snmp})
+
+
+dnl If the arg is not passed explicitly, we remain with "auto" to pick below
+with_regenerate_dmf_snmp=auto
+AC_MSG_CHECKING(whether to regenerate DMF SNMP mapping files from C sources)
+AC_ARG_WITH(dmfsnmp-regenerate,
+	AS_HELP_STRING([--with-dmfsnmp-regenerate], [use DMF SNMP mapping files from Git/Tarball, or regenerate them (auto = yes, if we can and if DMF is enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test "${can_generate_dmf_snmp}" = yes; then
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_snmp=yes
+		else
+			with_regenerate_dmf_snmp=no
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([Can not generate DMF SNMP mappings, but re-generation was requested])
+		fi
+		;;
+	auto) with_regenerate_dmf_snmp=auto ;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_regenerate_dmf_snmp=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfsnmp-regenerate : ${withval}])
+		;;
+	esac
+], [])
+
+if test "${with_regenerate_dmf_snmp}" = auto; then
+	if test "${can_generate_dmf_snmp}" = yes -a "${nut_with_dmf}" = "yes"; then
+		AC_MSG_RESULT(yes)
+		with_regenerate_dmf_snmp=yes
+	else
+		with_regenerate_dmf_snmp=no
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+AM_CONDITIONAL([WITH_REGENERATE_DMF_SNMP], [test "${with_regenerate_dmf_snmp}" = "yes"])
+
+dnl Some make programs complained about "very old" below being
+dnl start of Unix epoch, so use a more recent reasonable date.
+if test "${with_regenerate_dmf_snmp}" = yes; then
+	AC_MSG_NOTICE([Short of removing the tracked DMF SNMP mapping files, we can try to make them seem very old])
+	( cd "scripts/DMF/dmfsnmp" && ls -1d *-mib.dmf > /dev/null && touch -d 2000-01-01 *-mib.dmf ) || true
+fi
+
+dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
+dnl It does not directly rely on Python etc. It may also be skipped if
+dnl the build uses original files (then this reparse of those files is
+dnl expected to match as well, as all are in tarball or Git at once).
+dnl TODO: On some systems that custom build can fail. It is questionable if
+dnl we need it at all, or can use the binary built as part of nut-scanner.
+with_regenerate_dmf_nutscan=auto
+AC_MSG_CHECKING(whether to regenerate DMF collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-regenerate,
+	AS_HELP_STRING([--with-dmfnutscan-regenerate], [use DMF collection of mappings for nut-scanner SNMP mode from Git/Tarball, or regenerate them (auto = yes, if dmfsnmp-regenerate=yes)]),
+[
+	case "${withval}" in
+	yes)
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_nutscan=yes
+		;;
+	auto) with_regenerate_dmf_nutscan=auto ;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_regenerate_dmf_nutscan=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+
+if test "${with_regenerate_dmf_nutscan}" = auto; then
+	if test "${with_regenerate_dmf_snmp}" = yes ; then
+		AC_MSG_RESULT(yes)
+		with_regenerate_dmf_nutscan=yes
+	else
+		with_regenerate_dmf_nutscan=no
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
+
+dnl Some make programs complained about "very old" below being
+dnl start of Unix epoch, so use a more recent reasonable date.
+if test "${with_regenerate_dmf_nutscan}" = yes; then
+	AC_MSG_NOTICE([Short of removing the tracked files of DMF collection of mappings for nut-scanner SNMP mode, we can try to make them seem very old])
+	( cd "scripts/DMF/dmfnutscan" && ls -1d *.dmf > /dev/null && touch -d 2000-01-01 *.dmf ) || true
+fi
+
+
+with_xmllint_dmf_snmp=auto
+AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
+AC_ARG_WITH(dmfsnmp-validate,
+	AS_HELP_STRING([--with-dmfsnmp-validate], [validate schema of DMF SNMP mapping files (auto = yes, if dmfsnmp-regenerate=yes and xmllint is present)]),
+[
+	case "${withval}" in
+	yes)
+		if test -n "${XMLLINT}"; then
+			AC_MSG_RESULT(yes)
+			with_xmllint_dmf_snmp=yes
+		else
+			AC_MSG_RESULT([no (xmllint not available)])
+			AC_MSG_ERROR([Can not validate DMF schema: got the request, but got no tools])
+		fi
+		;;
+	auto) with_xmllint_dmf_snmp=auto ;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_xmllint_dmf_snmp=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+
+if test "${with_xmllint_dmf_snmp}" = auto; then
+	if test "${with_regenerate_dmf_snmp}" = yes -a -n "${XMLLINT}"; then
+		AC_MSG_RESULT(yes)
+		with_xmllint_dmf_snmp=yes
+	else
+		with_xmllint_dmf_snmp=no
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+AM_CONDITIONAL([WITH_VALIDATE_DMF_SNMP], [test "${with_xmllint_dmf_snmp}" = "yes"])
+
+
+with_xmllint_dmf_nutscan=auto
+AC_MSG_CHECKING(whether to validate DMF collection of mappings for nut-scanner SNMP mode against XML schema)
+AC_ARG_WITH(dmfnutscan-validate,
+	AS_HELP_STRING([--with-dmfnutscan-validate], [validate schema of DMF collection of mappings for nut-scanner SNMP mode (auto = yes, if dmfnutscan-regenerate=yes and xmllint is present)]),
+[
+	case "${withval}" in
+	yes)
+		if test -n "${XMLLINT}"; then
+			AC_MSG_RESULT(yes)
+			with_xmllint_dmf_nutscan=yes
+		else
+			AC_MSG_RESULT([no (xmllint not available)])
+			AC_MSG_ERROR([Can not validate DMF schema: got the request, but got no tools])
+		fi
+		;;
+	auto) with_xmllint_dmf_nutscan=auto ;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_xmllint_dmf_nutscan=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+
+if test "${with_xmllint_dmf_nutscan}" = auto; then
+	if test "${with_regenerate_dmf_nutscan}" = yes -a -n "${XMLLINT}"; then
+		AC_MSG_RESULT(yes)
+		with_xmllint_dmf_nutscan=yes
+	else
+		with_xmllint_dmf_nutscan=no
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+AM_CONDITIONAL([WITH_VALIDATE_DMF_NUTSCAN], [test "${with_xmllint_dmf_nutscan}" = "yes"])
+
 dnl ----------------------------------------------------------------------
 
 dnl Current date
