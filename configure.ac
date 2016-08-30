@@ -1637,13 +1637,6 @@ fi
 
 AM_CONDITIONAL([WITH_REGENERATE_DMF_SNMP], [test "${with_regenerate_dmf_snmp}" = "yes"])
 
-dnl Some make programs complained about "very old" below being
-dnl start of Unix epoch, so use a more recent reasonable date.
-if test "${with_regenerate_dmf_snmp}" = yes; then
-	AC_MSG_NOTICE([Short of removing the tracked DMF SNMP mapping files, we can try to make them seem very old])
-	( cd "scripts/DMF/dmfsnmp" && ls -1d *-mib.dmf > /dev/null && touch -d 2000-01-01 *-mib.dmf ) || true
-fi
-
 dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
 dnl It does not directly rely on Python etc. It may also be skipped if
 dnl the build uses original files (then this reparse of those files is
@@ -1682,14 +1675,6 @@ if test "${with_regenerate_dmf_nutscan}" = auto; then
 fi
 
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
-
-dnl Some make programs complained about "very old" below being
-dnl start of Unix epoch, so use a more recent reasonable date.
-if test "${with_regenerate_dmf_nutscan}" = yes; then
-	AC_MSG_NOTICE([Short of removing the tracked files of DMF collection of mappings for nut-scanner SNMP mode, we can try to make them seem very old])
-	( cd "scripts/DMF/dmfnutscan" && ls -1d *.dmf > /dev/null && touch -d 2000-01-01 *.dmf ) || true
-fi
-
 
 with_xmllint_dmf_snmp=auto
 AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
