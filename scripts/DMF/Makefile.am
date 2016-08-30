@@ -16,10 +16,16 @@ DISTCLEANDIRS =
 CLEAN_FILES =
 EXTRA_DIST =
 
+PROGS = dmf-test
+PROGS_EXPERIMENTAL = dmf-lua-test
+
 # Note: this causes a private build of dmf-reindex with debugging etc. which
 # may be slightly different from the distributed `nut-scanner-reindex-dmfsnmp`
-PROGS = dmf-test dmf-reindex
-PROGS_EXPERIMENTAL = dmf-lua-test
+if WITH_REGENERATE_DMF_SNMP
+  PROGS += dmf-reindex
+else
+  PROGS_EXPERIMENTAL += dmf-reindex
+endif
 
 DMFSNMP_SUBDIR = dmfsnmp
 DMFNUTSCAN_SUBDIR = dmfnutscan
@@ -35,7 +41,9 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
 # existing sources, use some filename pattern that does not end in "-mib.dmf"!
 dmfsnmpdir = @dmfsnmpdir@
-# Note that LEGACY_NUT_DMFS list includes the DMFSNMP_SUBDIR subdirectory.
+# Note that LEGACY_NUT_DMFS list defined in the included file lists the DMF
+# files generated from *-mib.c sources (both tracked in Git or tarballs), and
+# the make-variable value already includes the DMFSNMP_SUBDIR subdirectory.
 dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
 # dmfsnmp_DMFS += $(YOUR_CUSTOM_COMPILED_DMFS)
 # dmfsnmp_DMFS += $(YOUR_CUSTOM_VERBATIM_DMFS)
@@ -48,7 +56,7 @@ dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK)
 # Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
 #EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
 EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
-DISTCLEANFILES += $(LEGACY_NUT_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK)
+DISTCLEANFILES += $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SYMLINK)
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
 CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
@@ -71,16 +79,29 @@ clean-local:
 
 check: check-local
 
-# Note: this is automake "if"
-if HAVE_XMLLINT
-  check-local: progs run-dmf-test dmf-validate
-  dmf: dmf-validate
+# A bit of magic for the simpler "automake if" below
+# which can not process "if (A || B)" statements
+TGT_CHECK_LOCAL = progs run-dmf-test
+TGT_DMF = dmf-uptodate
+ADD_TGT_CHECK_LOCAL =
+ADD_TGT_DMF =
+
+if WITH_VALIDATE_DMF_SNMP
+  ADD_TGT_CHECK_LOCAL += dmf-validate
+  ADD_TGT_DMF += dmf-validate
 else
-  check-local: progs run-dmf-test
-  dmf: dmf-uptodate
+if WITH_VALIDATE_DMF_NUTSCAN
+  ADD_TGT_CHECK_LOCAL += dmf-validate
+  ADD_TGT_DMF += dmf-validate
+endif
 endif
 
+check-local: $(TGT_CHECK_LOCAL) $(ADD_TGT_CHECK_LOCAL)
+dmf: $(TGT_DMF) $(ADD_TGT_DMF)
+
+
 check-experimental: progs-all check-local run-dmf-lua-test
+check-all: check-experimental
 
 # Recipes to build DMF files with the sources and tools we have are defined
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
@@ -89,13 +110,23 @@ check-experimental: progs-all check-local run-dmf-lua-test
 DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
 EXTRA_DIST += $(DMFGEN_DEPS)
 EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
-DMFGEN_CMD = ( \
+
+if WITH_REGENERATE_DMF_SNMP
+  DISTCLEANFILES += $(LEGACY_NUT_DMFS)
+  DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
 	    cd $(@D) && CFLAGS="$(DMFTOOLS_CPPFLAGS) $(CFLAGS) $(AM_CFLAGS)" CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
-	else echo "SKIP: NOT REBUILDING DMF file $< due to absence of prerequisites like Python or pycparser" >&2; \
+	else echo "SKIP: NOT REBUILDING DMF file $@ from $< due to absence of prerequisites like Python or pycparser" >&2; \
 	fi; \
 	)
+else
+  EXTRA_DIST += $(dmfsnmp_DMFS)
+  DMFGEN_CMD = ( \
+	echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
+	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; \
+	)
+endif
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
 # that we use builddir for this final touch. The DMF files themselves may be
@@ -138,6 +169,8 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 # TODO: The proper solution (sort, uniq) should probably be in the C code!
 # NOTE: Sorting is a problem now that some MIBs must be last (e.g. ietf) -
 #       so we add them in desired order explicitly...
+if WITH_REGENERATE_DMF_NUTSCAN
+DISTCLEANFILES += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
 	mkdir -p $(@D)
 	$(abs_builddir)/dmf-reindex > "$@.tmp"
@@ -163,6 +196,21 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 			*)	echo "  LN     $$F => S10_$$F" >&2 && \
 				ln -fs "$$F" "S10_$$F" || exit ;; \
 		esac; done
+else
+EXTRA_DIST += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate
+	@echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfnutscan-regenerate option)"
+	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
+	mkdir -p $(@D)
+	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
+		F="$(abs_srcdir)/$(DMFNUTSCAN_SUBDIR)/$(@F)"; \
+		N="$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/$(@F)"; \
+		if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
+			echo "  CP    $$F => $$N" >&2 && \
+			cp -f "$$F" "$$N" || exit ; \
+		fi; \
+	fi
+endif
 
 # TODO: Currently the recipe relies on the two files being really in same dir
 # Mostly it is here to make the Make happy (dependency for *_DATA above)
@@ -177,21 +225,34 @@ $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
 $(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.validated
+if WITH_VALIDATE_DMF_SNMP
 $(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	@cd $(@D) && for F in *.dmf ; do \
 	    echo " XMLLINT  $$F"; \
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
 	done
 	touch $@
+else
+$(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
+	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
+	@echo "VALIDATION-SKIPPED" > $@
+endif
 
 # TODO: Maybe per-DMF *.dmf.validated files would be better?
 $(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
+if WITH_VALIDATE_DMF_SNMP
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 	@cd $(@D) && for F in *.dmf ; do \
 	    echo " XMLLINT  $$F"; \
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfnutscan.xsd "$$F" || exit; \
 	done
 	touch $@
+else
+$(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
+	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfnutscan-validate option)"
+	@echo "VALIDATION-SKIPPED" > $@
+endif
+
 
 # Make sure all generated DMFs are up to date vs. C sources and recipes
 dmf-uptodate: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
