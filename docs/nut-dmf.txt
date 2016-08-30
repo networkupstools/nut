@@ -2,42 +2,58 @@
 
 == Abstract
 
-The aim is to develop a solution allowing to modify or even add new NUT
-SNMP (only, right now) MIBs mappings without having to recompile the binary
-driver (`snmp-ups`) or the whole NUT source. Support for DMF requires linking
-with the `libneon` XML parser, already used in `netxml-ups` NUT driver.
+The aim of DMF is to develop a solution allowing to modify or even add new
+NUT features and ultimately device and/or protocol support without having
+to recompile the binary driver (such as `snmp-ups`) or the whole NUT source.
+Support for DMF requires linking with the `libneon` XML parser, which is
+already used in the `netxml-ups` NUT driver (so no new required dependencies
+are added). Currently the DMF technology was implemented only for SNMP MIB
+mappings, but it is expected to be used in other subsystems where the same
+typical framework of the driver logic is used with different variables to
+produce several (static) power device drivers for NUT.
 
 The present solution is a first iteration to read this information from an
 external file (XML formatted). The `*-mib.c` files present in the vanilla
-NUT sources at this time have been processed to produce `*.dmf` data files
+NUT sources at this time have been processed to produce `*-mib.dmf` data files
 ready for dynamic loading at end-user installations. Conversion tools are
 also distributed in this iteration, see their chapter below. They do bring
 some Python dependency requirements, but are not strict requirements for
-NUT (as common-case nor `distcheck` builds) -- the tools are only intended
-for manual usage by a few developers.
+NUT (neither as common-case nor `distcheck` builds) -- the tools are only
+intended for manual usage by a few developers. However, they have been
+integrated with the `configure` script, so one can enable re-generation
+and/or validation of the `*-mib.dmf` files from C source components of
+the `snmp-ups` driver.
 
 The source files and recipes related to DMF support are dispersed across the
 NUT codebase, while helpful resources (including the generation of DMF files)
 are distributed in `$NUTSRC/scripts/DMF/` subdirectory.
 
-As something between conversion tools and a sample program, the `dmf-reindex`
-code is provided to read the library of complete DMFs (and validate their
-contents along the way), and produce a DMF file that only contains truncated
-`mib2nut` entries as needed for the `nut-scanner`. This `dmf-reindex` program
-is expected to become an end-user tool, to help during updates of the DMF set.
-NOTE: In the current iteration the `dmf-reindex` program is not configurable,
-so it just scans all `*.dmf*` files in the current directory and prints XML
-DMF markup to `stdout` so you can redirect it to another file. To avoid later
-duplicate entries, consider naming that file with a different extension (may
-be uppercased `*.DMF` for example) or save it into a different directory.
+As something between end-user conversion tools and a sample program, the
+`nut-scanner-reindex-dmfsnmp` code is provided to read the library of
+complete DMFs (and validate their contents for parsability, along the way)
+from a directory, and produce a DMF file that only contains the truncated
+`mib2nut` entries as needed for the `nut-scanner`.
+As an end-user tool, this program can help during updates of the DMF set.
+A private build of this code as `dmf-reindex` is used in the makefile recipe
+for generation of the `dmfnutscan` contents.
+
+NOTE: In the current iteration the `nut-scanner-reindex-dmfsnmp` program
+is not very much configurable, so it just scans all `*.dmf` files in the
+current directory (or one specified with `-Z dirpath`) and prints the
+resulting XML DMF markup to `stdout` -- so you can redirect it to another
+file. To avoid later duplicate entries, if you must store this file with
+the original SNMP MIB mapping DMFs, consider saving the nut-scanner DMF
+file with a different extension (may be uppercased `*.DMF` for example)
+or if you can -- save it into a different directory.
 
 NOTE: If you provide your own DMF files that are not generated from existing
-`*-mib.c` sources, use some filename pattern that does not end in `-mib.dmf`!
+`*-mib.c` sources, use some `*.dmf` filename pattern that does not end in a
+`-mib.dmf` sequence specifically!
 
 Overview of DMF usage from C code is maintained in the `dmf.h` file, driver
 and application developers should look there for the "The big theory" details.
 It is expected that DMF will outgrow the initial SNMP use-case, so there is
-a separation of `dmf.h` and `dmfsnmp.h` already in place.
+a formal separation of `dmf.h` and `dmfsnmp.h` already in place.
 
 A second iteration is experimentally provided, but may be incomplete and is
 subject to change after some team discussions, which is to support not only
@@ -47,7 +63,7 @@ using an interpreted language. LUA is the first implementation in the works,
 so it would be the default option (given experimental status, it is not
 compilable by default unless you define `-DWITH_DMF_LUA=1` to the compiler
 command-line or `CFLAGS`; also the implementation is currently compatible
-with LUA-5.1 or *older* -- so the include-file path and library name should
+with LUA-5.1 or LUA-5.2 -- so the include-file path and library name should
 match your OS distribution's naming for this version).
 
 == DMF XML spec
@@ -93,11 +109,14 @@ attributes so the DMF file can refer to the currently applicable schema.
 
 == LUA FUNCTIONS
 
-Is possible to emulate non provide data by LUA, for example, the UPS provides
-current in Amperes and voltage, but not power in Watts, is possible to have
-a function for calculate this value and serve.
-A simple example:
+It is possible to emulate non provided data by LUA. For example, if the UPS
+provides current in Amperes and the Voltage, but not power in Watts, it is
+possible to add a function for calculation of this value to serve it in NUT.
 
+A simple example in DMF markup:
+
+----
+        ...
         <functions name="eaton_functions">
           <function name="device.amperes">
             function deviceamperes(device)
@@ -119,15 +138,14 @@ A simple example:
                       publish_Lua_dstate("device."..device..".outlet."..i..".wastePower", wastePower(device, i))
                     end
                 end
-                
+
                 return nil
             end
-            
-            
+
             function wastePower(device, outlet)
                 power = tonumber(lua_C_gateway("outlet."..outlet..".power", device))
                 realpower = tonumber(lua_C_gateway("outlet."..outlet..".realpower", device))
-                
+
                 return power - realpower
             end
           </function>
@@ -135,30 +153,37 @@ A simple example:
         <snmp name="eaton_marlin_mib">
                 <snmp_info flag_ok="yes" multiplier="128.0" name="device.amperes" string="yes" function="eaton_functions"/>
                 <snmp_info flag_ok="yes" multiplier="128.0" name="device.luaOutlet" string="yes" function="eaton_functions"/>
-   
-Functions block is the function collection for a driver (mib2nut)
+                ...
+----
 
-Function block is the function collection for one value (snmp_info)
-  -Attribute name should be the same as the "snmp" name.
-  -Have mandatory at least one function named with the same name of the "snmp", main function,
-      but without point (device.lua -> function devicelua(device))
-  -Could have more functions, but main fuction will be allways the mandatory one, unique,
-      and is the entry point.
-  -"device" parameter is mandatory for internal requerements.
-  -Main function can returns data, if returns, a new variable is going a be created by
-      the driver, named as (device.X.function_name) with the returned value, if not,
-      nothing is publish by the driver.
-  
-There is implemented two Lua - C functions bindings
+The `functions` block is the function collection for a driver (`mib2nut`).
 
-  lua_C_gateway(variable, device) - As a parameter recives the name of the requested variable
-    and number of device (string, integer), returns the value for this variable as string.
-    
-  publish_Lua_dstate(variable, value) - As a parameter recives the name of a variable and value
-    for this variable (string, string), this function create new variables and publish directly data
-    bypassing the driver, useful for publish multiple variables or publish in difren variable name,
-    no returns.
-                
+The `function` block is the function collection for one value (`snmp_info`).
+There are some rules to use it:
+
+  * Attribute name should be the same as the "snmp" name;
+  * Must have (mandatory) at least one function named with the same name
+      of the "snmp", main function, but without point in the name (e.g.
+      `device.lua` -> `function devicelua(device)`);
+  * Could have more functions, but main fuction will be always the mandatory
+      one, unique, and it is the entry point;
+  * the `device` parameter is mandatory due to internal requirements;
+  * Main function can return data; if it returns - a new variable is going
+      to be created by the driver, named as `device.X.function_name` with
+      the returned value; if not - nothing is published by the driver.
+
+Currently there are two Lua -- C function bindings implemented:
+
+  * `lua_C_gateway(variable, device)` - As a parameter it receives the name
+    of the requested variable and number of the device (`string`, `integer`),
+    and returns the value for this variable as string.
+
+  * `publish_Lua_dstate(variable, value)` - As a parameter it receives the
+    name of a variable and value for this variable (`string`, `string`);
+    this function creates new NUT variables and publishes data directly --
+    bypassing the driver. It is useful for publishing multiple variables,
+    or to publish in different variable names; no returns.
+
 == Tools
 
 For the sake of future temporary co-existence of legacy and DMF-enhanced
@@ -171,15 +196,20 @@ implementations to such external DMF files are also distributed here.
 Before using the scripts, make sure you have run `./autogen.sh && ./configure`
 in the root of NUT sources tree and generally can build NUT (the `pycparser`
 tries to compile instrumented sources, and requires the toolchain as well as
-the `config.h` file generated by `configure` script).
+the `config.h` file generated by `configure` script). Note that by default
+the `configure` script would detect if it can use this toolchain to generate
+DMF files, and if not - it wold fall back to using the files pre-generated
+and stored in the NUT source code repository.
 
-They are a mix of Python and shell scripts:
+The generation toolkit is a mix of Python and shell scripts:
 
  * `jsonify-mib.py`: process MIB mapping from C source and print it to stdout
     as JSON
 
  * `nut_cpp`: calls the C preprosessor and filters away GCC modifiers that are
-    not handled well by `pycparser` code
+    not handled well by `pycparser` code (can break on system headers that are
+    tuned for OSes, compilers and special keywords that this script does not
+    yet know)
 
  * `xmlify-mib.py`: process JSON output produced by `jsonify-mib.py` and output
     the final DMF XML format
