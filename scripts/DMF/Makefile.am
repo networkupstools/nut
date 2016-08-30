@@ -113,6 +113,7 @@ EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 
 if WITH_REGENERATE_DMF_SNMP
   DISTCLEANFILES += $(LEGACY_NUT_DMFS)
+  DMFGEN_DEPS += $(top_builddir)/Makefile
   DMFGEN_CMD = ( \
 	mkdir -p $(@D) || exit ; \
 	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
@@ -169,9 +170,11 @@ $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 # TODO: The proper solution (sort, uniq) should probably be in the C code!
 # NOTE: Sorting is a problem now that some MIBs must be last (e.g. ietf) -
 #       so we add them in desired order explicitly...
+DMFNUTSCAN_DEPS = $(DMFSNMP_SUBDIR)/.uptodate
 if WITH_REGENERATE_DMF_NUTSCAN
 DISTCLEANFILES += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
-$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reindex
+DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile
+$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	mkdir -p $(@D)
 	$(abs_builddir)/dmf-reindex > "$@.tmp"
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
@@ -198,7 +201,7 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate dmf-reinde
 		esac; done
 else
 EXTRA_DIST += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
-$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFSNMP_SUBDIR)/.uptodate
+$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	@echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
 	mkdir -p $(@D)
