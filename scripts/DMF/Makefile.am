@@ -289,12 +289,14 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 
 # Note: These recipes are explicit and do not use NUT libs,
 # so they can be built quickly without configuring NUT
+# Note: -DDMFREINDEXER_MAKECHECK=1 is needed to avoid inclusion
+# of "nut_version.h" in "common.c" (if project is not conf'ed).
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
 	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
-	 -DWITH_DMFMIB=1 -DDEBUG=1 \
+	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
 	 -o $@ $^
 
@@ -316,7 +318,7 @@ dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common
 	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
 	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
 	 -DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
-	 -DWITH_DMFMIB=1 -DDEBUG=1 \
+	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/testdata\"" \
 	 -o $@ $^
 else
