@@ -404,8 +404,8 @@ int main () {
         assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
-            fprintf (stderr, "%(k)s[%%d].oid2info=<%%p>\\n", i, %(k)s[i].oid2info);
-            fprintf (stderr, "%(k)s_TEST[%%d].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
+            fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, %(k)s[i].oid2info);
+            fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
             return 1;
         }
         assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
