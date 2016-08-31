@@ -159,8 +159,6 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 #endif
 
 	devcount = libusb_get_device_list(NULL, &devlist);
-	if (devcount <= 0)
-		fatal_with_errno(EXIT_FAILURE, "No USB device found");
 
 	for (i = 0; i < devcount; i++) {
 
