@@ -97,21 +97,16 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 			}
 		}
 		/* set default interface */
-#if 0 /* FIXME: need to investigate this point! */
-		upsdebugx(2, "%s: calling usb_set_altinterface(udev, %d)", __func__, altinterface);
-		ret = usb_set_altinterface(udev, altinterface);
+		upsdebugx(2, "%s: calling libusb_set_interface_alt_setting(udev, 0, %d)", __func__, altinterface);
+		ret = libusb_set_interface_alt_setting(udev, 0, altinterface);
 		if(ret != 0) {
-			upslogx(LOG_WARNING, "%s: usb_set_altinterface(udev, %d) returned %d (%s)",
+			upslogx(LOG_WARNING, "%s: libusb_set_interface_alt_setting(udev, 0, %d) returned %d (%s)",
 					__func__, altinterface, ret, libusb_strerror((enum libusb_error)ret) );
 		}
-		upslogx(LOG_NOTICE, "%s: usb_set_altinterface() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
+		upslogx(LOG_NOTICE, "%s: libusb_set_interface_alt_setting() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
 	} else {
-		upsdebugx(3, "%s: skipped usb_set_altinterface(udev, 0)", __func__);
+		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, 0, 0)", __func__);
 	}
-#else
-	}
-	upsdebugx(2, "%s is not implemented yet on libusb 1.0", __func__);
-#endif /* 0 */
 	return ret;
 }
 
