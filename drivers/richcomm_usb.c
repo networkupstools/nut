@@ -394,8 +394,14 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				}
 			}
-#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-			libusb_set_auto_detach_kernel_driver (handle, 1);
+#ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
+		/* First, try the auto-detach kernel driver method
+		 * This function is not available on FreeBSD 10.1-10.3 */
+		if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) < 0)
+			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s",
+				libusb_strerror((enum libusb_error)ret));
+		else
+			upsdebugx(2, "auto detached kernel driver from USB device");
 #endif
 
 			for (i = 0; i < 3; i++) {
@@ -411,6 +417,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				 * attached driver... From libhid */
 				if (usb_detach_kernel_driver_np(handle, 0) < 0) {
 					upsdebugx(4, "failed to detach kernel driver from USB device: %s", usb_strerror());
+				} else {
+					upsdebugx(4, "detached kernel driver from USB device...");
+				}
+#elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER
+				if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
+					upsdebugx(4, "failed to detach kernel driver from USB device: %s", nut_usb_strerror(ret));
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
