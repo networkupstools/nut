@@ -217,6 +217,13 @@ static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 		upsdebugx(5, "Can't set USB alternate interface");
 		return -1;
 	}
+#elif WITH_LIBUSB_1_0
+	int ret = 0;
+
+	if ((ret = libusb_set_interface_alt_setting(handle, 0, 0)) < 0) {
+		upsdebugx(5, "Can't set USB alternate interface: %s", nut_usb_strerror(ret));
+		return -1;
+	}
 #endif /* WITH_LIBUSB_1_0 */
 
 	if (usb_clear_halt(handle, 0x81) < 0) {
