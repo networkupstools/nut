@@ -1394,6 +1394,19 @@ if test "${nut_with_snmp_dmf}" = "yes"; then
 	nut_with_snmp=yes
 fi
 
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-snmp enabled on command-line or by DMF options above
+
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_libnetsnmp}"
+fi
+
+dnl ----------------------------------------------------------------------
 dnl Check for LUA-5.1 or above (mandatory if asked for, optional otherwise)
 dnl Note we used to require exactly 5.1: in 5.2 some needed syntax has been
 dnl deprecated, but subsequently the DMF-LUA code was fixed in Git commit ID
@@ -1415,6 +1428,7 @@ if test "${nut_have_lua}" = "no" ; then
 	fi
 fi
 
+dnl ----------------------------------------------------------------------
 dnl Finally, if some settings remained at "auto" but can be enabled - do so
 if test "${nut_with_lua}" != "no"; then
 	nut_with_lua="${nut_have_lua}"
@@ -1459,7 +1473,7 @@ fi
 AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}"])
 if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes"; then
 	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-	AC_MSG_CHECKING(whether to enable optional XML conformance validation on DMFs (data mapping files) during build)
+	AC_MSG_CHECKING(whether we can enable optional XML conformance validation on DMFs (data mapping files) during build)
 	if test "${XMLLINT}" != "no"; then
 		if test -n "${DMF_BUILD_OPTIONS}"; then
 			DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
@@ -1469,18 +1483,6 @@ if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_wit
 	else
 		AC_MSG_RESULT(no)
 	fi
-fi
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-snmp enabled on command-line or by DMF options above
-
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
-fi
-
-if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_libnetsnmp}"
 fi
 
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
@@ -1588,13 +1590,21 @@ if test "${nut_with_dmf}" = "yes"; then
 ( CURDIR="$(pwd)" && \
   OUTDIR="$(mktemp -d --tmpdir="${CURDIR}" configure-test.dmfify.$$.XXXXXXX)" && \
   test -d "$OUTDIR" && \
-  ( if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi; \
-    cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
+  if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
+  ( cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
+      echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
       ./dmfify-mib.sh --sanity-check && \
     cd "$OUTDIR" && \
+      echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
       rm -rf "./ietf-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
       CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/ietf-mib.c" && \
-      test -s "./ietf-mib.dmf" )
+      test -s "./ietf-mib.dmf" && \
+    for F in "${SRCDIR}/drivers/"*-mib.c ; do \
+      test -s "$F" || continue; \
+      echo "Test if we can nut_cpp parse '$F'" >&2; \
+      "$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null || exit $? ; \
+    done \
+  )
   RES=$?; rm -rf "$OUTDIR"; exit $RES
 ) >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
@@ -1641,6 +1651,8 @@ if test "${with_regenerate_dmf_snmp}" = auto; then
 	fi
 fi
 
+NUT_REPORT_FEATURE([enable regeneration of DMF SNMP mapping files from C sources], [${with_regenerate_dmf_snmp}], [],
+				[WITH_REGENERATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
 AM_CONDITIONAL([WITH_REGENERATE_DMF_SNMP], [test "${with_regenerate_dmf_snmp}" = "yes"])
 
 dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
@@ -1680,6 +1692,8 @@ if test "${with_regenerate_dmf_nutscan}" = auto; then
 	fi
 fi
 
+NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-scanner SNMP mode], [${with_regenerate_dmf_nutscan}], [],
+				[WITH_REGENERATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
 
 with_xmllint_dmf_snmp=auto
@@ -1718,6 +1732,8 @@ if test "${with_xmllint_dmf_snmp}" = auto; then
 	fi
 fi
 
+NUT_REPORT_FEATURE([enable validation of DMF SNMP mapping files against XML schema using XMLLINT], [${with_xmllint_dmf_snmp}], [],
+				[WITH_VALIDATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
 AM_CONDITIONAL([WITH_VALIDATE_DMF_SNMP], [test "${with_xmllint_dmf_snmp}" = "yes"])
 
 
@@ -1757,6 +1773,8 @@ if test "${with_xmllint_dmf_nutscan}" = auto; then
 	fi
 fi
 
+NUT_REPORT_FEATURE([enable validation of DMF collection of mappings for nut-scanner SNMP mode against XML schema using XMLLINT], [${with_xmllint_dmf_nutscan}], [],
+				[WITH_VALIDATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
 AM_CONDITIONAL([WITH_VALIDATE_DMF_NUTSCAN], [test "${with_xmllint_dmf_nutscan}" = "yes"])
 
 dnl ----------------------------------------------------------------------
