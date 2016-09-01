@@ -1388,6 +1388,19 @@ if test "${nut_with_snmp_dmf}" = "yes"; then
 	nut_with_snmp=yes
 fi
 
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-snmp enabled on command-line or by DMF options above
+
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_libnetsnmp}"
+fi
+
+dnl ----------------------------------------------------------------------
 dnl Check for LUA-5.1 or above (mandatory if asked for, optional otherwise)
 dnl Note we used to require exactly 5.1: in 5.2 some needed syntax has been
 dnl deprecated, but subsequently the DMF-LUA code was fixed in Git commit ID
@@ -1409,6 +1422,7 @@ if test "${nut_have_lua}" = "no" ; then
 	fi
 fi
 
+dnl ----------------------------------------------------------------------
 dnl Finally, if some settings remained at "auto" but can be enabled - do so
 if test "${nut_with_lua}" != "no"; then
 	nut_with_lua="${nut_have_lua}"
@@ -1453,7 +1467,7 @@ fi
 AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}"])
 if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes"; then
 	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-	AC_MSG_CHECKING(whether to enable optional XML conformance validation on DMFs (data mapping files) during build)
+	AC_MSG_CHECKING(whether we can enable optional XML conformance validation on DMFs (data mapping files) during build)
 	if test "${XMLLINT}" != "no"; then
 		if test -n "${DMF_BUILD_OPTIONS}"; then
 			DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
@@ -1463,18 +1477,6 @@ if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_wit
 	else
 		AC_MSG_RESULT(no)
 	fi
-fi
-
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-snmp enabled on command-line or by DMF options above
-
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
-fi
-
-if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_libnetsnmp}"
 fi
 
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
