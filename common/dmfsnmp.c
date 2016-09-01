@@ -1595,7 +1595,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	int c;
 	for (c = 0; c < n; c++)
 	{
-		upsdebugx (5, "%s: dir_ent[%d]->d_name=%s", __PRETTY_FUNCTION__, c, dir_ent[c]->d_name);
+		upsdebugx (5, "mibdmf_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
 		if ((strstr(dir_ent[c]->d_name, ".dmf")) && (dir_ent[c]->d_name[0] == 'S'))
 		{
 			i++;
