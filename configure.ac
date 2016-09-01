@@ -1590,13 +1590,21 @@ if test "${nut_with_dmf}" = "yes"; then
 ( CURDIR="$(pwd)" && \
   OUTDIR="$(mktemp -d --tmpdir="${CURDIR}" configure-test.dmfify.$$.XXXXXXX)" && \
   test -d "$OUTDIR" && \
-  ( if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi; \
-    cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
+  if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
+  ( cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
+      echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
       ./dmfify-mib.sh --sanity-check && \
     cd "$OUTDIR" && \
+      echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
       rm -rf "./ietf-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
       CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/ietf-mib.c" && \
-      test -s "./ietf-mib.dmf" )
+      test -s "./ietf-mib.dmf" && \
+    for F in "${SRCDIR}/drivers/"*-mib.c ; do \
+      test -s "$F" || continue; \
+      echo "Test if we can nut_cpp parse '$F'" >&2; \
+      "$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null || exit $? ; \
+    done \
+  )
   RES=$?; rm -rf "$OUTDIR"; exit $RES
 ) >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
