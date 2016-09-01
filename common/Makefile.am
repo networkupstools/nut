@@ -31,7 +31,7 @@ if WITH_DMF
   libnutdmfsnmp_la_SOURCES = dmfsnmp.c
   libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/drivers \
         -I$(top_srcdir)/tools/nut-scanner \
-        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1
+        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
   libnutdmfsnmp_la_LDFLAGS =
 
 if WITH_LIBLTDL
