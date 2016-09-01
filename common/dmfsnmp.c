@@ -23,19 +23,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include <neon/ne_xml.h>
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
 
 #if WITH_LIBLTDL
 # include <ltdl.h>
-#else
-# ifdef WITH_NEON
-/* We are linked to LibNEON at compile-time */
-#  include <neon/ne_xml.h>
-# endif
+/* else: We are linked to LibNEON at compile-time */
 #endif
+
+#ifndef WITH_NEON
+#error "LibNEON is required to build DMF"
+#endif
+
+#include <ne_xml.h>
 
 #include "common.h"
 #include "dmfsnmp.h"
