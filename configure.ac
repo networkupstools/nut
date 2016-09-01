@@ -1652,6 +1652,7 @@ if test "${with_regenerate_dmf_snmp}" = auto; then
 fi
 
 AM_CONDITIONAL([WITH_REGENERATE_DMF_SNMP], [test "${with_regenerate_dmf_snmp}" = "yes"])
+NUT_REPORT_FEATURE([enable regeneration of DMF SNMP mapping files from C sources], [${with_regenerate_dmf_snmp}], [], [], [])
 
 dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
 dnl It does not directly rely on Python etc. It may also be skipped if
@@ -1691,6 +1692,7 @@ if test "${with_regenerate_dmf_nutscan}" = auto; then
 fi
 
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
+NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-scanner SNMP mode], [${with_regenerate_dmf_nutscan}], [], [], [])
 
 with_xmllint_dmf_snmp=auto
 AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
@@ -1729,6 +1731,7 @@ if test "${with_xmllint_dmf_snmp}" = auto; then
 fi
 
 AM_CONDITIONAL([WITH_VALIDATE_DMF_SNMP], [test "${with_xmllint_dmf_snmp}" = "yes"])
+NUT_REPORT_FEATURE([enable validation of DMF SNMP mapping files against XML schema using XMLLINT], [${with_xmllint_dmf_snmp}], [], [], [])
 
 
 with_xmllint_dmf_nutscan=auto
@@ -1768,6 +1771,7 @@ if test "${with_xmllint_dmf_nutscan}" = auto; then
 fi
 
 AM_CONDITIONAL([WITH_VALIDATE_DMF_NUTSCAN], [test "${with_xmllint_dmf_nutscan}" = "yes"])
+NUT_REPORT_FEATURE([enable validation of DMF collection of mappings for nut-scanner SNMP mode against XML schema using XMLLINT], [${with_xmllint_dmf_nutscan}], [], [], [])
 
 dnl ----------------------------------------------------------------------
 
