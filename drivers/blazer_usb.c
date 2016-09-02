@@ -61,8 +61,10 @@ upsdrv_info_t upsdrv_info = {
  static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
         unsigned char *bytes, int size, int timeout)
  {
-		return libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-				size, &size, timeout);
+	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+			size, &size, timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
  #define usb_reset libusb_reset_device
  #define usb_clear_halt libusb_clear_halt
