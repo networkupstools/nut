@@ -85,14 +85,18 @@ TRielloData DevData;
  static inline  int usb_bulk_read(usb_dev_handle *dev, int ep,
         char *bytes, int size, int timeout)
  {
-		return libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-				size, &size, timeout);
+	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+			size, &size, timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
  static inline  int usb_bulk_write(usb_dev_handle *dev, int ep,
         char *bytes, int size, int timeout)
  {
-		return libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-				size, &size, timeout);
+	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+			size, &size, timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
 #else /* for libusb 0.1 */
  #define ERROR_PIPE -EPIPE
