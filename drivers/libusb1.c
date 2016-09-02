@@ -559,6 +559,11 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *b
 		ret = libusb_clear_halt(udev, 0x81);
 	}
 
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	if (ret == LIBUSB_SUCCESS) {
+		ret = bufsize;
+	}
+
 	return nut_libusb_strerror(ret, __func__);
 }
 

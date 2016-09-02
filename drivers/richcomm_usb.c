@@ -69,8 +69,10 @@ static usb_device_id_t richcomm_usb_id[] = {
  static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
         unsigned char *bytes, int size, int timeout)
  {
-		return libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-				size, &size, timeout);
+	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+			size, &size, timeout);
+	/* In case of success, return the operation size, as done with libusb 0.1 */
+	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
  #define usb_claim_interface libusb_claim_interface
  #define usb_close libusb_close
