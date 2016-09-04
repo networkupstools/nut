@@ -1580,7 +1580,8 @@ dnl availability of a Python pycparser module and support in the filter
 dnl of "scripts/DMF/nut_cpp" script to make system headers parsable by
 dnl pycparser (it does not support many "extra" keywords).
 dnl Note: this test should be among the last in the configure script,
-dnl so it can provide reasonable features in "config.h" to the compiler.
+dnl so it can provide reasonable features in "config.h" to the compiler
+dnl as we try to parse and test-build a C(original)->DMF->C(selftest) file.
 dnl NOTE: we populate a "config.h" with collected data matching this system,
 dnl using an implementation detail of autotools - storing the defined data
 dnl for C/C++ in a temporary "confdefs.h" file.
@@ -1596,9 +1597,9 @@ if test "${nut_with_dmf}" = "yes"; then
       ./dmfify-mib.sh --sanity-check && \
     cd "$OUTDIR" && \
       echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
-      rm -rf "./ietf-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
-      CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/ietf-mib.c" && \
-      test -s "./ietf-mib.dmf" && \
+      rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
+      CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
+      test -s "./apc-ats-mib.dmf" && \
     for F in "${SRCDIR}/drivers/"*-mib.c ; do \
       test -s "$F" || continue; \
       echo "Test if we can nut_cpp parse '$F'" >&2; \
