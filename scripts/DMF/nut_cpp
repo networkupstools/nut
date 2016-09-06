@@ -1,10 +1,19 @@
 #!/bin/bash
-# postprocessor of C preprocessor - removes __attribute__ declarations, which are not compatible for pycparser
+
+# The pipeline to convert legacy *-mib.c files with structures into new DMF
+# markup involves parsing the C code. The pycparser (Python module) used
+# for this is picky about what view of C it accepts as pre-processed input.
+# This script is a postprocessor of C preprocessor - removes __attribute__
+# declarations and other extended constructs, which are not compatible with
+# pycparser; also make sure to use no compiler optimizations (-O0 in gcc).
+#
+#    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+#
 
 [ -n "${CPP-}" ] || CPP="cpp"
 # Note that CWD may often be "DMF" or "DMF/somesubdir", so default for both
-[ -n "${CFLAGS-}" ] || CFLAGS=""
 [ -n "${CPPFLAGS-}" ] || CPPFLAGS="-I../../include -I../../../include"
+[ -n "${CFLAGS-}" ] || CFLAGS=""
 
 set -o pipefail
 #set -exv
