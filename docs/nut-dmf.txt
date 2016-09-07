@@ -180,7 +180,7 @@ There are some rules to use it:
       processing done for the mapping value;
   * Attribute `name` of the `function` block should be the same as the
       "snmp_info `name`" for the mapping variable;
-  * The `function` block must have (mandatory) at least one function
+  * The (LUA) `function` block must have (mandatory) at least one function
       named with the same name as the "snmp" mapping variable, but without
       the dot in the name (e.g. `device.lua` -> `function devicelua(device)`),
       which serves as the main function for the block;
@@ -193,7 +193,9 @@ There are some rules to use it:
 
 === LUA DYNAMIC FUNCTION BINDINGS
 
-Currently there are two Lua <=> C function bindings implemented:
+Currently there are two Lua <=> C function bindings implemented directly
+in `snmp-ups.c` (functions that use these bindings currently won't work
+in other contexts or drivers out of the box):
 
   * `lua_C_gateway(variable, device)` - As a parameter it receives the name
     of the requested variable and number of the device (`string`, `integer`),
