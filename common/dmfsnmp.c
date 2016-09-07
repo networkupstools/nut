@@ -968,17 +968,21 @@ lookup_info_node_handler(alist_t *list, const char **attrs)
 	free (arg);
 }
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 void
 function_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
-	char *arg = (char*) calloc (32, sizeof (char *));
-	arg = get_param_by_name(SNMP_NAME, attrs);
+	char *argname, *arglang; // = (char*) calloc (32, sizeof (char *));
 
-	if(arg)
-		alist_append(element, ((function_t *(*) (const char *)) element->new_element) (arg));
-	free(arg);
+	argname = get_param_by_name(SNMP_NAME, attrs);
+	arglang = get_param_by_name("language", attrs);
+	if(argname != NULL)
+		alist_append(element, ((function_t *(*) (const char *, const char *)) element->new_element) (argname, arglang));
+	if(argname != NULL)
+		free(argname);
+	if(arglang != NULL)
+		free(arglang);
 }
 #endif
 
