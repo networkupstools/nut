@@ -402,11 +402,18 @@ info_mib2nut_new (const char *name, const char *version,
 	return self;
 }
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 function_t *
-function_new (const char *name){
+function_new (const char *name, const char *language){
 	function_t *self = (function_t*) calloc(1, sizeof(function_t));
 	self->name = strdup (name);
+	if (language == NULL) {
+		self->language = strdup ("lua-5.1");
+		upsdebugx(1, "Language not specified for DMF function %s, assuming %s by default", self->name, self->language);
+	} else {
+		self->language = strdup (language);
+		upsdebugx(1, "Language was specified for DMF function %s : %s", self->name, self->language);
+	}
 	return self;
 }
 
@@ -419,6 +426,10 @@ function_destroy (void **self_p){
 			free(self->name);
 			self->name = NULL;
 		}
+		if(self->language){
+			free(self->language);
+			self->language = NULL;
+		}
 		if(self->code){
 			free(self->code);
 			self->code = NULL;
@@ -427,7 +438,7 @@ function_destroy (void **self_p){
 		self = NULL;
 	}
 }
-#endif /* WITH_DMF_LUA */
+#endif /* WITH_DMF_FUNCTIONS */
 
 /*Destroy full array of lookup elements*/
 void
