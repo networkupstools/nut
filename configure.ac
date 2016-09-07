@@ -1301,6 +1301,55 @@ AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
 dnl processor type
 AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
 
+dnl Can use valgrind for memory-leak testing, if present
+AC_PATH_PROGS([VALGRIND], [valgrind], [none])
+with_valgrind="auto"
+AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+AC_ARG_WITH(valgrind,
+	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
+[
+	case "${withval}" in
+	yes)
+		if test "x$VALGRIND" = "xnone"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["valgrind requested but not found"])
+		fi
+		with_valgrind="yes"
+		;;
+	auto)
+		with_valgrind="auto"
+		;;
+	no)
+		with_valgrind="no"
+		;;
+	*)
+		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
+		if test "x$VALGRIND" = "xnone"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["valgrind requested but not found"])
+		fi
+		with_valgrind="yes"
+		;;
+	esac
+], [])
+
+if test "${with_valgrind}" = auto; then
+	if test "x$VALGRIND" = "xnone"; then
+		with_valgrind="no"
+	else
+		with_valgrind="yes"
+	fi
+fi
+
+if test "${with_valgrind}" = yes; then
+	AC_MSG_RESULT(using ${VALGRIND})
+	AC_MSG_NOTICE([Do not forget to build with debug (e.g. pass '-g' in CFLAGS for GCC) for best results with valgrind tests])
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([HAVE_VALGRIND], [test "x$VALGRIND" != "xnone"])
+AM_CONDITIONAL([WITH_VALGRIND], [test "${with_valgrind}" = yes])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
