@@ -69,7 +69,11 @@ match your OS distribution's naming for this version).
 The dynamic-language support is experimental, but the code skeleton allows
 the community to implement support for other languages using the `language`
 attribute in each `function` tag of the DMF-SNMP markup (currently ignored,
-the interpretation defaults to harcoded `lua-5.1` support).
+the interpretation effectively defaults to harcoded `lua-5.1` support).
+When hacking your language of choice support into the code, look for the
+`WITH_DMF_FUNCTIONS` and `WITH_DMF_LUA` macros in the `Makefile.am` files,
+`dmf-snmp.c`, `snmp-ups.c` and their headers, and the `configure.ac` script
+template.
 
 == DMF XML spec
 

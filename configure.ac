@@ -1555,6 +1555,18 @@ NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with LUA], [${nut
 					[WANT_DMF_LUA], [Define to enable DMF (data mapping file) integration with LUA])
 AM_CONDITIONAL([WITH_DMF_LUA], [test "${nut_with_dmf_lua}" = "yes"])
 
+dnl This may later become a logical "or" of enabled supports for at least one
+dnl functional language in DMF, and/or a configure flag to disable this all.
+nut_with_dmf_functions=no
+if test \
+	"${nut_with_dmf_lua}" = "yes" \
+; then
+	nut_with_dmf_functions=yes
+fi
+NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with dynamic languages], [${nut_with_dmf_functions}], [],
+					[WANT_DMF_FUNCTIONS], [Define to enable DMF (data mapping file) integration with dynamic languages])
+AM_CONDITIONAL([WITH_DMF_FUNCTIONS], [test "${nut_with_dmf_functions}" = "yes"])
+
 NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [${nut_with_snmp_dmf}], [],
 					[WANT_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
 AM_CONDITIONAL([WITH_DMFMIB], [test "${nut_with_snmp_dmf}" = "yes"])
