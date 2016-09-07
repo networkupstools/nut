@@ -55,7 +55,7 @@
             <xs:attribute type="xs:string" name="name"/>
           </xs:complexType>
         </xs:element>
-        <xs:element name="functions" maxOccurs="1" minOccurs="0">
+        <xs:element name="functionset" maxOccurs="1" minOccurs="0">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="function" maxOccurs="unbounded" minOccurs="0">
@@ -107,7 +107,7 @@
                       <xs:attribute type="xs:string" name="setvar" use="optional"/>
                       <xs:attribute type="xs:string" name="command" use="optional"/>
                       <xs:attribute type="xs:string" name="type_daisy" use="optional"/>
-                      <xs:attribute type="xs:string" name="function" use="optional"/>
+                      <xs:attribute type="xs:string" name="functionset" use="optional"/>
                     </xs:extension>
                   </xs:simpleContent>
                 </xs:complexType>

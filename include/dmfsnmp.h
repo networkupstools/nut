@@ -159,7 +159,7 @@
 /* NOTE: Actual support for functions is optionally built so
  * it can be missing in a binary (with warning in DMF import)
  * Also it may be backed by various implementations (LUA for starters) */
-#define DMFTAG_FUNCTIONS "functions"
+#define DMFTAG_FUNCTIONSET "functionset"
 #define DMFTAG_FUNCTION "function"
 
 #define MIB2NUT_VERSION "version"
@@ -221,7 +221,8 @@
 #define TYPE_DAISY "type_daisy"
 
 #if WITH_DMF_FUNCTIONS
-#define TYPE_FUNCTION "function"
+/* Additional snmp_info attribute to reference dynamic functions to produce calculated values */
+#define TYPE_FUNCTIONSET "functionset"
 #endif
 /* "Auxiliary list" structure to store hierarchies
  * of lists with bits of data */
