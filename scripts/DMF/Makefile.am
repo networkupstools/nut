@@ -336,17 +336,23 @@ dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 endif
 
+if WITH_VALGRIND
+DMF_TEST_RUNNER = $(VALGRIND) --leak-check=full --track-origins=yes --show-leak-kinds=all -v
+else
+DMF_TEST_RUNNER =
+endif
+
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
 run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
+	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
 
 run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
+	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
 
 if WITH_LUA
 run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(abs_top_builddir)/scripts/DMF/testdata && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
+	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
 else
 run-dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
