@@ -256,7 +256,7 @@ static void sock_connect(int sock)
 		}	
 	}
 
-	conn = xcalloc(1, sizeof(*conn));
+	conn = (conn_t *)xcalloc(1, sizeof(*conn));
 	conn->fd = fd;
 
 	pconf_init(&conn->ctx, NULL);
