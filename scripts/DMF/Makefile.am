@@ -104,6 +104,7 @@ dmf: $(TGT_DMF) $(ADD_TGT_DMF)
 
 check-experimental: progs-all check-local run-dmf-lua-test
 check-all: check-experimental
+check-lua: run-dmf-lua-test
 
 # Recipes to build DMF files with the sources and tools we have are defined
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
@@ -302,6 +303,8 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 # so they can be built quickly without configuring NUT
 # Note: -DDMFREINDEXER_MAKECHECK=1 is needed to avoid inclusion
 # of "nut_version.h" in "common.c" (if project is not conf'ed).
+# Depending on project configuration, these tests may be built
+# with or without dmf+lua support.
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
