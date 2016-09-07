@@ -279,7 +279,7 @@ void unload_neon_lib(){
 #endif /* WITH_NEON */
 }
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 char *
 snmp_info_type_to_main_function_name(const char * info_type)
 {
@@ -296,7 +296,7 @@ snmp_info_type_to_main_function_name(const char * info_type)
 	}
 	return result;
 }
-#endif /* WITH_DMF_LUA */
+#endif /* WITH_DMF_FUNCTIONS */
 
 char *
 get_param_by_name (const char *name, const char **items)
@@ -995,7 +995,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 	
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 	arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
 	if(arg[6])
 	{
@@ -1044,13 +1044,13 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 				, char**
 #endif
 				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &input_phases
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 				, &buff
 #endif
 				));
@@ -1059,13 +1059,13 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 				, char**
 #endif
 				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &output_phases
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 				, &buff
 #endif
 				));
@@ -1074,13 +1074,13 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				(const char *, int, double, const char *,
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 				, char**
 #endif
 				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &bypass_phases
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 				, &buff
 #endif
 				));
@@ -1088,14 +1088,14 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
 			 const char *, unsigned long, info_lkp_t *, int *
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 			, char**
 #endif
 			))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
 			 arg[3], flags, lookup, NULL
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 			, &buff
 #endif
 			));
@@ -1210,7 +1210,7 @@ compile_flags(const char **attrs)
 	}
 	if(aux_flags)free(aux_flags);
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 	aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
 	if(aux_flags){
 		flags = flags | SU_FLAG_FUNCTION;
@@ -1288,24 +1288,24 @@ xml_dict_start_cb(void *userdata, int parent,
 	}
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 		alist_append(list, alist_new(auxname, function_destroy,
 				(void (*)(void)) function_new));
 		functions_aux = 1;
 #else
-		upsdebugx(5, "NUT was not compiled with Lua function feature, 'functions' DMF tag ignored.");
-		upslogx(2, "NUT was not compiled with Lua function feature, 'functions' DMF tag ignored.");
+		upsdebugx(5, "NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
+		upslogx(2, "NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
-#if WITH_DMF_LUA
-		upsdebugx(1, "LUA support COMPILED IN");
+#if WITH_DMF_FUNCTIONS
+		upsdebugx(1, "DMF function feature support COMPILED IN");
 		function_node_handler(list,attrs);
 #else
-		upsdebugx(1, "LUA support *NOT* COMPILED IN");
-		upsdebugx(5, "NUT was not compiled with Lua function feature, 'function' DMF tag ignored.");
-		upslogx(2, "NUT was not compiled with Lua function feature, 'function' DMF tag ignored.");
+		upsdebugx(1, "DMF function feature support *NOT* COMPILED IN");
+		upsdebugx(5, "NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
+		upslogx(2, "NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
