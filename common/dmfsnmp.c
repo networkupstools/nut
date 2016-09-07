@@ -113,24 +113,42 @@ print_snmp_memory_struct(snmp_info_t *self)
 	upsdebugx(5, "*-*-*-->Info_flags %d\n", self->info_flags);
 	upsdebugx(5, "*-*-*-->Flags %lu\n", self->flags);
 
-#if WITH_DMF_LUA
-	if(self->function){
-		lua_State *f_aux = luaL_newstate();
-		luaL_openlibs(f_aux);
-		if (luaL_loadstring(f_aux, self->function)){
-			upsdebugx(5, "Error loading LUA functions:\n%s\n", self->function);
-		} else {
-			upsdebugx(5, "***********-> Luatext:\n%s\n", self->function);
-			lua_pcall(f_aux,0,0,0);
-			char *funcname = snmp_info_type_to_main_function_name(self->info_type);
-			lua_getglobal(f_aux, funcname);
-			lua_pcall(f_aux,0,1,0);
-			upsdebugx(5, "==--> Result: %s\n\n", lua_tostring(f_aux, -1));
-			free(funcname);
-		}
-		lua_close(f_aux);
-	}
-#endif
+#if WITH_DMF_FUNCTIONS
+	if(self->function_code){
+		/* Compare also function_language and report if unknown, like in snmp-ups.c */
+		if( (self->function_language==NULL)
+			    || (self->function_language[0]=='\0')
+			    || (strcmp("lua-5.1", self->function_language)==0)
+			    || (strcmp("lua", self->function_language)==0)
+		) {
+# if WITH_DMF_LUA
+			upsdebugx(5, "Dumping SNMP_INFO entry backed by dynamic code in '%s' language",
+				self->function_language ? self->function_language : "LUA");
+			lua_State *f_aux = luaL_newstate();
+			luaL_openlibs(f_aux);
+			if (luaL_loadstring(f_aux, self->function_code)){
+				upsdebugx(5, "Error loading LUA functions:\n%s\n", self->function_code);
+			} else {
+				upsdebugx(5, "***********-> Luatext:\n%s\n", self->function_code);
+				lua_pcall(f_aux,0,0,0);
+				char *funcname = snmp_info_type_to_main_function_name(self->info_type);
+				lua_getglobal(f_aux, funcname);
+				lua_pcall(f_aux,0,1,0);
+				upsdebugx(5, "==--> Result: %s\n\n", lua_tostring(f_aux, -1));
+				free(funcname);
+			}
+			lua_close(f_aux);
+# else
+			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+				self->function_language ? self->function_language : "LUA");
+# endif /* WITH_DMF_LUA */
+		} /* if function_language resolved to "lua*" */
+		else {
+			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+				self->function_language);
+		} /* if language is recognized */
+	} /* if code is present */
+#endif /* WITH_DMF_FUNCTIONS */
 }
 
 void
@@ -345,8 +363,8 @@ snmp_info_t *
 info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
 	info_lkp_t *lookup, int *setvar
-#if WITH_DMF_LUA
-	, char **function
+#if WITH_DMF_FUNCTIONS
+	, char **function_language, char **function_code
 #endif
 )
 {
@@ -363,19 +381,58 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->flags = flags;
 	self->oid2info = lookup;
 	self->setvar = setvar;
-#if WITH_DMF_LUA
-	self->function = *function;
-	if(self->function){
-		self->luaContext = luaL_newstate();
-		luaL_openlibs(self->luaContext);
-		if(luaL_loadstring(self->luaContext, self->function)){
-			lua_close(self->luaContext);
+#if WITH_DMF_FUNCTIONS
+	/* Note: The DMF (XML) structure contains a "functionset" reference and
+	 * the "name" of the mapping field; these are looked up during parsing
+	 * and "converted" to function code and its language and passed here
+	 * from snmp_info_node_handler().
+	 */
+	self->function_code = *function_code;
+	self->function_language = *function_language;
+	if(self->function_code){
+		/* Compare also function_language and report if unknown, like in snmp-ups.c */
+		if( (self->function_language==NULL)
+			    || (self->function_language[0]=='\0')
+			    || (strcmp("lua-5.1", self->function_language)==0)
+			    || (strcmp("lua", self->function_language)==0)
+		) {
+# if WITH_DMF_LUA
+			self->luaContext = luaL_newstate();
+			luaL_openlibs(self->luaContext);
+			if(luaL_loadstring(self->luaContext, self->function_code)){
+				lua_close(self->luaContext);
+				self->luaContext = NULL;
+			}else
+				lua_pcall(self->luaContext,0,0,0);
+# else
+			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+				self->function_language ? self->function_language : "LUA");
+# endif /* WITH_DMF_LUA */
+		} /* if function_language resolved to "lua*" */
+		else {
+			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+				self->function_language);
+		} /* if language is recognized */
+	} /* if code is present */
+	else { /* No code - clean up */
+		if( (self->function_language==NULL)
+			    || (self->function_language[0]=='\0')
+			    || (strcmp("lua-5.1", self->function_language)==0)
+			    || (strcmp("lua", self->function_language)==0)
+		) {
+# if WITH_DMF_LUA
 			self->luaContext = NULL;
-		}else
-			lua_pcall(self->luaContext,0,0,0);
-	}else
-		self->luaContext = NULL;
-#endif /* WITH_DMF_LUA */
+# else
+			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+				self->function_language ? self->function_language : "LUA");
+# endif /* WITH_DMF_LUA */
+		} /* if function_language resolved to "lua*" */
+		else {
+			upsdebugx(5, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+				self->function_language);
+		} /* if language is recognized */
+	} /* no code is present */
+#endif /* WITH_DMF_FUNCTIONS */
 	return self;
 }
 
@@ -511,14 +568,21 @@ info_snmp_destroy (void **self_p)
 		free ((info_lkp_t*)self->oid2info);
 		self->oid2info = NULL;
 
-#if WITH_DMF_LUA
-		if(self->function){
-			self->function = NULL;
+#if WITH_DMF_FUNCTIONS
+		/* No freeing - these are references to another table's data */
+		if(self->function_code){
+			self->function_code = NULL;
 		}
+
+		if(self->function_language){
+			self->function_language = NULL;
+		}
+# if WITH_DMF_LUA
 		if(self->luaContext){
 			lua_close(self->luaContext);
 			self->luaContext = NULL;
 		}
+# endif
 #endif
 
 		free (self);
@@ -853,16 +917,23 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 					lkp->values[i])->oid2info;
 			else	snmp[i].oid2info = NULL;
 
-#if WITH_DMF_LUA
-			if( ((snmp_info_t*) lkp->values[i])->function )
-				snmp[i].function = ((snmp_info_t*)
-					lkp->values[i])->function;
-			else    snmp[i].function = NULL;
+#if WITH_DMF_FUNCTIONS
+			if( ((snmp_info_t*) lkp->values[i])->function_code )
+				snmp[i].function_code = ((snmp_info_t*)
+					lkp->values[i])->function_code;
+			else    snmp[i].function_code = NULL;
 
+			if( ((snmp_info_t*) lkp->values[i])->function_language )
+				snmp[i].function_language = ((snmp_info_t*)
+					lkp->values[i])->function_language;
+			else    snmp[i].function_language = NULL;
+
+# if WITH_DMF_LUA
 			if( ((snmp_info_t*) lkp->values[i])->luaContext )
 				snmp[i].luaContext = ((snmp_info_t*)
 					lkp->values[i])->luaContext;
 			else    snmp[i].luaContext = NULL;
+# endif
 #endif
 		}
 
@@ -875,9 +946,12 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		snmp[i].dfl = NULL;
 		snmp[i].setvar = NULL;
 		snmp[i].oid2info = NULL;
-#if WITH_DMF_LUA
-		snmp[i].function = NULL;
+#if WITH_DMF_FUNCTIONS
+		snmp[i].function_code = NULL;
+		snmp[i].function_language = NULL;
+# if WITH_DMF_LUA
 		snmp[i].luaContext = NULL;
+# endif
 #endif
 	}
 
@@ -989,8 +1063,9 @@ function_node_handler(alist_t *list, const char **attrs)
 void
 snmp_info_node_handler(alist_t *list, const char **attrs)
 {
-#if WITH_DMF_LUA
-	char *buff = NULL;
+#if WITH_DMF_FUNCTIONS
+	char *func_lang = NULL;
+	char *func_code = NULL;
 #endif
 	double multiplier = 128;
 	
@@ -1014,12 +1089,16 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[6] = get_param_by_name(TYPE_FUNCTIONSET, attrs);
 	if(arg[6])
 	{
+		/* Here we convert the DMF (XML) pair of "functionset+name" to
+		 * the practical pairing of "code+language it is written in" */
 		alist_t *funcs = alist_get_element_by_name(list, arg[6]);
 		if(funcs)
 		{
 			for (i = 0; i < funcs->size; i++)
-				if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0)
-					buff = ((function_t*)funcs->values[i])->code;
+				if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0) {
+					func_code = ((function_t*)funcs->values[i])->code;
+					func_lang = ((function_t*)funcs->values[i])->language;
+				}
 		}
 	}
 #endif
@@ -1060,13 +1139,13 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
 #if WITH_DMF_FUNCTIONS
-				, char**
+				, char**, char**
 #endif
 				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &input_phases
 #if WITH_DMF_FUNCTIONS
-				, &buff
+				, &func_lang, &func_code
 #endif
 				));
 		else if(strcmp(arg[5], SETVAR_OUTPUT_PHASES) == 0)
@@ -1075,13 +1154,13 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
 #if WITH_DMF_FUNCTIONS
-				, char**
+				, char**, char**
 #endif
 				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &output_phases
 #if WITH_DMF_FUNCTIONS
-				, &buff
+				, &func_lang, &func_code
 #endif
 				));
 		else if(strcmp(arg[5], SETVAR_BYPASS_PHASES) == 0)
@@ -1090,13 +1169,13 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				 const char *, unsigned long, info_lkp_t *,
 				 int *
 #if WITH_DMF_FUNCTIONS
-				, char**
+				, char**, char**
 #endif
 				)) element->new_element)
 				(arg[0], info_flags, multiplier, arg[2],
 				 arg[3], flags, lookup, &bypass_phases
 #if WITH_DMF_FUNCTIONS
-				, &buff
+				, &func_lang, &func_code
 #endif
 				));
 	} else
@@ -1104,14 +1183,14 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 			(const char *, int, double, const char *,
 			 const char *, unsigned long, info_lkp_t *, int *
 #if WITH_DMF_FUNCTIONS
-			, char**
+			, char**, char**
 #endif
 			))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
 			 arg[3], flags, lookup, NULL
 #if WITH_DMF_FUNCTIONS
-			, &buff
+			, &func_lang, &func_code
 #endif
 			));
 

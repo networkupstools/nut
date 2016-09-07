@@ -164,9 +164,12 @@ typedef struct {
 	unsigned long flags;		/* my flags */
 	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
-#if WITH_DMF_LUA
-	char *function;
+#if WITH_DMF_FUNCTIONS
+	char *function_language;
+	char *function_code;
+# if WITH_DMF_LUA
 	lua_State *luaContext;
+# endif
 #endif
 } snmp_info_t;
 

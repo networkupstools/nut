@@ -2242,41 +2242,57 @@ bool_t snmp_ups_walk(int mode)
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 			if(su_info_p->flags & SU_FLAG_FUNCTION){
-				if((su_info_p->function) && (su_info_p->luaContext)){
-					char *result = NULL;
+				if(su_info_p->function_code) {
+					if( (su_info_p->function_language==NULL)
+					    || (su_info_p->function_language[0]=='\0')
+					    || (strcmp("lua-5.1", su_info_p->function_language)==0)
+					    || (strcmp("lua", su_info_p->function_language)==0)
+					) {
+#if WITH_DMF_LUA
+						if (su_info_p->luaContext){
+							char *result = NULL;
 
-					lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
-					lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
+							lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
+							lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
 
-					char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
-					lua_getglobal(su_info_p->luaContext, funcname);
-					lua_pushnumber(su_info_p->luaContext, current_device_number);
-					lua_pcall(su_info_p->luaContext,1,1,0);
-					result = (char *) lua_tostring(su_info_p->luaContext, -1);
-#ifdef DEBUG
-	printf("Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
-#endif
-					free(funcname);
+							char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+							lua_getglobal(su_info_p->luaContext, funcname);
+							lua_pushnumber(su_info_p->luaContext, current_device_number);
+							lua_pcall(su_info_p->luaContext,1,1,0);
+							result = (char *) lua_tostring(su_info_p->luaContext, -1);
+							upsdebugx(2, "Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function_code, result);
+							free(funcname);
 
-					if(result){
-						char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
-						int i = 0;
-						while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
+							if(result){
+								char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
+								int i = 0;
+								while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
 
-						if(current_device_number > 0)
-							sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
-						else
-							sprintf(buf, "%s", su_info_p->info_type);
+								if(current_device_number > 0)
+									sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+								else
+									sprintf(buf, "%s", su_info_p->info_type);
 
-						dstate_setinfo(buf, "%s", result);
-						free(buf);
-					}
-				}
+								dstate_setinfo(buf, "%s", result);
+								free(buf);
+							}7
+						} /* if (su_info_p->luaContext) */
+#else
+						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+							su_info_p->function_language ? su_info_p->function_language : "LUA");
+#endif /* WITH_DMF_LUA */
+					} /* if function_language resolved to "lua*" */
+					else {
+						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+							su_info_p->function_language);
+					} /* no known function_language here */
+				} /* if(su_info_p->function_code) was present */
 				continue;
-			}
-#endif
+			} /* if(su_info_p->flags & SU_FLAG_FUNCTION) - otherwise fall through to static data */
+#endif /* WITH_DMF_FUNCTIONS */
+
 			/* FIXME:
 			 * switch(current_device_number) {
 			 * case 0: devtype = "daisychain whole"
