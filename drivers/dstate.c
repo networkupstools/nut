@@ -507,7 +507,7 @@ static void sock_connect(TYPE_FD sock)
 		upsdebugx(0, "%s: keeping default synchronous mode", __func__);
 	}
 
-	conn = xcalloc(1, sizeof(*conn));
+	conn = (conn_t *)xcalloc(1, sizeof(*conn));
 	conn->fd = fd;
 
 #else /* WIN32 */
