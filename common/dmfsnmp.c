@@ -1007,7 +1007,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
 	
 #if WITH_DMF_FUNCTIONS
-	arg[6] = get_param_by_name(TYPE_FUNCTION, attrs);
+	arg[6] = get_param_by_name(TYPE_FUNCTIONSET, attrs);
 	if(arg[6])
 	{
 		alist_t *funcs = alist_get_element_by_name(list, arg[6]);
@@ -1222,7 +1222,7 @@ compile_flags(const char **attrs)
 	if(aux_flags)free(aux_flags);
 
 #if WITH_DMF_FUNCTIONS
-	aux_flags = get_param_by_name(TYPE_FUNCTION, attrs);
+	aux_flags = get_param_by_name(TYPE_FUNCTIONSET, attrs);
 	if(aux_flags){
 		flags = flags | SU_FLAG_FUNCTION;
 	}
@@ -1297,7 +1297,7 @@ xml_dict_start_cb(void *userdata, int parent,
 	{
 		snmp_info_node_handler(list,attrs);
 	}
-	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
+	else if(strcmp(name,DMFTAG_FUNCTIONSET) == 0)
 	{
 #if WITH_DMF_FUNCTIONS
 		alist_append(list, alist_new(auxname, function_destroy,
@@ -1375,7 +1375,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
 #if WITH_DMF_FUNCTIONS
-	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
+	else if(strcmp(name,DMFTAG_FUNCTIONSET) == 0)
 	{
 		functions_aux = 0;
 		free(function_text);
