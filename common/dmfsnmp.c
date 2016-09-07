@@ -1293,8 +1293,8 @@ xml_dict_start_cb(void *userdata, int parent,
 				(void (*)(void)) function_new));
 		functions_aux = 1;
 #else
-		upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
-		upslogx(2, "NUT was not compiled with Lua function feature.\n");
+		upsdebugx(5, "NUT was not compiled with Lua function feature, 'functions' DMF tag ignored.");
+		upslogx(2, "NUT was not compiled with Lua function feature, 'functions' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
@@ -1304,13 +1304,13 @@ xml_dict_start_cb(void *userdata, int parent,
 		function_node_handler(list,attrs);
 #else
 		upsdebugx(1, "LUA support *NOT* COMPILED IN");
-		upsdebugx(5, "NUT was not compiled with Lua function feature.\n");
-		upslogx(2, "NUT was not compiled with Lua function feature.\n");
+		upsdebugx(5, "NUT was not compiled with Lua function feature, 'function' DMF tag ignored.");
+		upslogx(2, "NUT was not compiled with Lua function feature, 'function' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
-		upslogx(2, "WARN: The '%s' tag in DMF is not recognized!\n", name);
+		upslogx(2, "WARN: The '%s' tag in DMF is not recognized!", name);
 	}
 	free(auxname);
 	return DMF_NEON_CALLBACK_OK;
