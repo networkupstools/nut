@@ -132,6 +132,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 				upsdebugx(5, "***********-> Luatext:\n%s\n", self->function_code);
 				lua_pcall(f_aux,0,0,0);
 				char *funcname = snmp_info_type_to_main_function_name(self->info_type);
+				upsdebugx(5, "***********-> Going to call Lua funcname:\n%s\n", funcname ? funcname : "<null>" );
 				lua_getglobal(f_aux, funcname);
 				lua_pcall(f_aux,0,1,0);
 				upsdebugx(5, "==--> Result: %s\n\n", lua_tostring(f_aux, -1));

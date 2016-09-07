@@ -2258,11 +2258,13 @@ bool_t snmp_ups_walk(int mode)
 							lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
 
 							char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+							upsdebugx(4, "DMF-LUA: Going to call Lua funcname:\n%s\n", funcname ? funcname : "<null>" );
+							upsdebugx(5, "DMF-LUA: Lua code block being interpreted:\n%s\n", su_info_p->function_code );
 							lua_getglobal(su_info_p->luaContext, funcname);
 							lua_pushnumber(su_info_p->luaContext, current_device_number);
 							lua_pcall(su_info_p->luaContext,1,1,0);
 							result = (char *) lua_tostring(su_info_p->luaContext, -1);
-							upsdebugx(2, "Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function_code, result);
+							upsdebugx(4, "Executing LUA for SNMP_INFO: %s\n\nResult: %s\n", funcname, result);
 							free(funcname);
 
 							if(result){
