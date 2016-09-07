@@ -391,12 +391,19 @@ void
 #endif
 
 /* Same for snmp structure instances */
+/* Note: The DMF (XML) structure contains a "functionset" reference and
+ * the "name" of the mapping field; these are looked up during parsing
+ * and "converted" to function code and its language and passed from
+ * snmp_info_node_handler() to info_snmp_new() as such - not the original
+ * "functionset" string value.
+ */
+
 snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
 		info_lkp_t *lookup, int *setvar
-#if WITH_DMF_LUA
-,char **function
+#if WITH_DMF_FUNCTIONS
+,char **function_language, char **function_code
 #endif
 );
 
