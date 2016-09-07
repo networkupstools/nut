@@ -79,9 +79,9 @@ static void (*xml_destroy)(ne_xml_parser*);
 /* FIXME: Inspect codebase to see if these are at all needed (used to be in snmp-ups.{c,h}) */
 int input_phases, output_phases, bypass_phases;
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 	int functions_aux = 0;
-	char *luatext = NULL;
+	char *function_text = NULL;
 #endif
 
 /*DEBUGGING*/
@@ -1363,20 +1363,20 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 
 		(*mibdmf_get_device_table_counter_ptr(dmp))++;
 	}
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 	else if(strcmp(name,DMFTAG_FUNCTIONS) == 0)
 	{
 		functions_aux = 0;
-		free(luatext);
-		luatext = NULL;
+		free(function_text);
+		function_text = NULL;
 
 	}else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
 		alist_t *element = alist_get_last_element(list);
 		function_t *func =(function_t *) alist_get_last_element(element);
-		func->code = strdup(luatext);
-		free(luatext);
-		luatext = NULL;
+		func->code = strdup(function_text);
+		free(function_text);
+		function_text = NULL;
 	}
 #endif
 
@@ -1389,22 +1389,22 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	if(!userdata)
 		return ERR;
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 	if(len > 2)
 	{
 	/* NOTE: Child-tags are also CDATA when parent-tag processing starts,
 	 so we do not report "unsupported" errors when we it a CDATA process.*/
 		if(functions_aux)
 		{
-			if(!luatext)
+			if(!function_text)
 			{
-				luatext = (char*) calloc(len + 2, sizeof(char));
-				sprintf(luatext, "%.*s\n", (int) len, cdata);
+				function_text = (char*) calloc(len + 2, sizeof(char));
+				sprintf(function_text, "%.*s\n", (int) len, cdata);
 			} else {
-				luatext = (char*) realloc(luatext, (strlen(luatext) + len + 2) * sizeof(char));
+				function_text = (char*) realloc(function_text, (strlen(function_text) + len + 2) * sizeof(char));
 				char *aux_str = (char*) calloc(len + 2, sizeof(char));
 				sprintf(aux_str, "%.*s\n", (int) len, cdata);
-				strcat(luatext, aux_str);
+				strcat(function_text, aux_str);
 				free(aux_str);
 			}
 		}
