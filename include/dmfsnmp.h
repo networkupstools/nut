@@ -111,6 +111,21 @@
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
+#ifdef WANT_DMF_FUNCTIONS
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS WANT_DMF_FUNCTIONS
+# endif
+#endif
+
+#if WITH_DMF_LUA
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS 1
+# endif
+# if ! WITH_DMF_FUNCTIONS
+#  error "Explicitly not WITH_DMF_FUNCTIONS, but WITH_DMF_LUA - fatal conflict"
+# endif
+#endif
+
 #if WITH_DMF_LUA
 /* NOTE: This code uses deprecated lua_open() that is removed since lua5.2.
  * As of this initial code-drop, the implementation is experimental and is
@@ -206,7 +221,7 @@
 
 #define TYPE_DAISY "type_daisy"
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 #define TYPE_FUNCTION "function"
 #endif
 /* "Auxiliary list" structure to store hierarchies
@@ -241,9 +256,10 @@ typedef struct {
 	int device_table_counter;
 } mibdmf_parser_t;
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 typedef struct {
-	char *name;
+	char *name; 		/* Required for the DMF entry to be parsed */
+	char *language;		/* Practical default is "lua-5.1" */
 	char *code;
 } function_t;
 #endif
@@ -361,7 +377,7 @@ void
 	alarm_info_node_handler (alist_t *list, const char **attrs);
 
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 /* Create and initialize a function element */
 function_t *
 	function_new (const char *name);
@@ -470,7 +486,7 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 char *
 	snmp_info_type_to_main_function_name(const char * info_type);
 #endif

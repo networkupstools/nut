@@ -45,9 +45,10 @@ else
   libnutdmfsnmp_la_LDFLAGS += $(LIBNEON_LIBS)
 endif
 
+# Note: absence of LUA does not require to set -DWITH_DMF_FUNCTIONS=0
 if WITH_DMF_LUA
   LUA_INCLUDE ?= -I/usr/include/lua5.1
-  libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+  libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
 else
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=0
 endif
