@@ -62,13 +62,14 @@
                 <xs:complexType>
                   <xs:simpleContent>
                     <xs:extension base="xs:string">
-                      <xs:attribute type="xs:string" name="name" use="optional"/>
+                      <xs:attribute type="xs:string" name="name" use="required"/>
+                      <xs:attribute type="xs:string" name="language" use="optional"/>
                     </xs:extension>
                   </xs:simpleContent>
                 </xs:complexType>
               </xs:element>
             </xs:sequence>
-            <xs:attribute type="xs:string" name="name"/>
+            <xs:attribute type="xs:string" name="name" use="required"/>
           </xs:complexType>
         </xs:element>
         <xs:element name="snmp" maxOccurs="unbounded" minOccurs="0">

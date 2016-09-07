@@ -55,16 +55,21 @@ and application developers should look there for the "The big theory" details.
 It is expected that DMF will outgrow the initial SNMP use-case, so there is
 a formal separation of `dmf.h` and `dmfsnmp.h` already in place.
 
-A second iteration is experimentally provided, but may be incomplete and is
-subject to change after some team discussions, which is to support not only
+A second iteration is experimentally provided, which is to support not only
 static mappings of the first iteration (so as to be functionally and logically
 equivalent to the pre-DMF code), but also add support for dynamic mappings
-using an interpreted language. LUA is the first implementation in the works,
+using an interpreted language. It may be incomplete and is subject to change
+after some team discussions. LUA is the first implementation in the works,
 so it would be the default option (given experimental status, it is not
 compilable by default unless you define `-DWITH_DMF_LUA=1` to the compiler
 command-line or `CFLAGS`; also the implementation is currently compatible
 with LUA-5.1 or LUA-5.2 -- so the include-file path and library name should
 match your OS distribution's naming for this version).
+
+The dynamic-language support is experimental, but the code skeleton allows
+the community to implement support for other languages using the `language`
+attribute in each `function` tag of the DMF-SNMP markup (currently ignored,
+the interpretation defaults to harcoded `lua-5.1` support).
 
 == DMF XML spec
 
