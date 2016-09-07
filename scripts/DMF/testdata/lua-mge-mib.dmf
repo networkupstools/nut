@@ -64,15 +64,18 @@
 		<lookup_info oid="2" value="no"/>
 	</lookup>
 	<functionset name="mge_functions">
-		<function name="ups.mfr.x">
-			io.write(stderr, "ups.mfr - This is coming from lua\n")
-		</function>
-		<function name="ups.mfr" language="x">
-			return 5
+		<function name="ups.mfr">
+			function upsmfr(device)
+				io.write("ups.mfr - This is coming from lua\n")
+				outstring = "luaMfr"
+				return outstring
+			end
 		</function>
 		<function name="ups.model">
-			io.write(stderr, "ups.model - This is ALSO coming from lua\n")
-			return "ups.model - This is ALSO coming from lua"
+			function upsmodel(device)
+				io.write(stderr, "ups.model - This is ALSO coming from lua\n")
+				return "ups.model - This is ALSO coming from lua"
+			end
 		</function>
 	</functionset>
 	<snmp name="mge_mib">
