@@ -380,7 +380,7 @@ void
 #if WITH_DMF_FUNCTIONS
 /* Create and initialize a function element */
 function_t *
-	function_new (const char *name);
+	function_new (const char *name, const char *language);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
 void
