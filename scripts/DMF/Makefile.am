@@ -352,7 +352,26 @@ run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
 
 if WITH_LUA
-run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
+
+testdata/.validated: $(builddir)/testdata/.validated
+if WITH_VALIDATE_DMF_SNMP
+# $(abs_srcdir)/testdata/lua-example-mib.dmf
+$(builddir)/testdata/.validated: $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf
+	mkdir -p $(@D)
+	@cd $(@D) && for F in $^ ; do \
+	    echo " XMLLINT-LUA  $$F"; \
+	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
+	done
+	touch $@
+else
+$(builddir)/testdata/.validated:
+	mkdir -p $(@D)
+	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
+	@echo "VALIDATION-SKIPPED" > $@
+endif
+CLEAN_FILES += $(builddir)/testdata/.validated testdata/.validated
+
+run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
 	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
 else
 run-dmf-lua-test:
