@@ -47,8 +47,6 @@ main ()
 	nut_debug_level = 10;
 
 	int result;
-	// Array of pointers to singular instances of mib2nut_info_t
-	mib2nut_info_t **mib2nut = NULL;
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
@@ -105,7 +103,8 @@ main ()
 
 #if WITH_DMF_FUNCTIONS
 #if WITH_DMF_LUA
-		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
+		// Array of pointers to singular instances of mib2nut_info_t
+		mib2nut_info_t **mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
 		if ( mib2nut == NULL ) {
 			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
 			result = 1;
