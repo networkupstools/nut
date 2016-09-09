@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 				puts("nut-scanner-reindex-dmfsnmp : a tool to reindex existing DMF files into the subset needed by nut-scanner.\n");
 #endif
 				puts("OPTIONS:");
-				printf("  -Z, --dmf_dir: Directory where large DMF MIB mapping file which you want to index reside\n");
+				printf("  -Z, --dmf_dir: Directory where multiple DMF MIB mapping files which you want to index reside\n");
 				printf("\nMiscellaneous options:\n");
 				printf("  -V, --version: Display NUT version\n");
 				printf("  -D, --nut_debug_level: Raise the debugging level.  Use this multiple times to see more details.\n");
