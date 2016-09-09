@@ -17,7 +17,14 @@ SUPPORTED HARDWARE
 ------------------
 
 The `snmp-ups-dmf` driver automatically detects and supports a wide range
-of SNMP-capable devices by loading various MIBS:
+of SNMP-capable devices by loading various MIBS. Unlike the original legacy
+`snmp-ups` driver which had the mappings of SNMP MIB OIDs to NUT variables
+built-in statically, the `snmp-ups-dmf` driver allows to load such mappings
+from DMF resource files at load-time, so it no longer needs recompilation
+of the binary driver to add or update support for end-user power devices.
+Otherwise it is mostly the same driver (in code, behavior and parameters).
+
+The default list of mappings includes:
 
 *ietf*::
 UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert,
@@ -87,7 +94,7 @@ one that the device responds to.  Note that since NUT 2.6.2, `snmp-ups` drivers
 have a new method that uses sysObjectID (which is a pointer to the prefered MIB
 of the device) to detect supported devices.  This renders void the use of "mibs"
 option.
-   
+
 *community*='name'::
 Set community name (default = public).
 Note that a RW community name is required to change UPS settings (as for a
@@ -145,6 +152,9 @@ http://www.net-snmp.org/ before building this driver.
 
 SNMP v3 also requires OpenSSL support from http://www.openssl.org.
 
+DMF also requires LibNEON to parse XML data, and may benefit from LibLTDL
+to load the parser only when needed and unload it afterwards.
+
 LIMITATIONS
 -----------
 Shutdown
@@ -159,9 +169,9 @@ supported command.
 
 INSTALLATION
 ------------
-This driver is only built if the Net-SNMP development files are present at
-configuration time.  You can also force it to be built by using
-+configure --with-snmp=yes+ before calling make.
+This driver is only built if the Net-SNMP and LibNEON development files are
+present at configuration time.  You can also force it to be built by using
+`configure --with-dmf_snmp=yes` before calling `make`.
 
 EXAMPLES
 --------
@@ -175,7 +185,7 @@ The hostname of the UPS is specified with the "port" value in
 		snmp_version = v1
 		pollfreq = 15
 		desc = "Example SNMP v1 device"
-                dmfpath = /tmp/example-mib.dmf
+		dmfpath = /tmp/example-mib.dmf
 
 	[snmpv3]
 		driver = snmp-ups-dmf
@@ -186,10 +196,12 @@ The hostname of the UPS is specified with the "port" value in
 		authPassword = myauthenticationpassphrase
 		privPassword = myprivatepassphrase
 		desc = "Example SNMP v3 device, with the highest security level"
+		dmfdir = /usr/local/nut-custom/share/dmfsnmp-myOrg
 
 AUTHORS
 -------
-Arnaud Quette, Dmitry Frolov
+Original `snmp-ups` driver: Arnaud Quette, Dmitry Frolov
+Updates for DMF support: Carlos Dominguez, Jim Klimov, Michal Vyskocil
 
 
 SEE ALSO
