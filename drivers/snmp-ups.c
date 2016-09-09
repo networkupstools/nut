@@ -308,7 +308,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_AUTHPASSWD,
 		"Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_PRIVPASSWD,
-		"Set  the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
+		"Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
 	addvar(VAR_VALUE, SU_VAR_AUTHPROT,
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
