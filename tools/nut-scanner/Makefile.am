@@ -47,10 +47,15 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			../../drivers/serial.c \
 			../../drivers/bcmxcp_ser.c \
 			../../common/common.c ../../common/str.c
-libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS) $(LDFLAGS_DMF_LUA)
+libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
-			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers $(CFLAGS_DMF_LUA)
+			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+if WITH_DMF_LUA
+libnutscan_la_LIBADD += $(LDFLAGS_DMF_LUA)
+libnutscan_la_CFLAGS += $(CFLAGS_DMF_LUA)
+endif
+
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
@@ -60,8 +65,11 @@ if WITH_SNMP
 if WITH_NEON
 nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
 if WITH_DMF
-nut_scanner_CFLAGS += -DWITH_DMFMIB=1 $(CFLAGS_DMF_LUA)
+nut_scanner_CFLAGS += -DWITH_DMFMIB=1
+if WITH_DMF_LUA
+nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
 nut_scanner_LDADD += $(LDFLAGS_DMF_LUA)
+endif
 else
 nut_scanner_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
