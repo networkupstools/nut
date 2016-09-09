@@ -14,8 +14,9 @@ else
  LDFLAGS_DMF_LUA =
 endif
 
-# We optionally append valued to this below
+# We optionally append values to this below
 bin_PROGRAMS =
+
 if WITH_NEON
 if WITH_SNMP
 if WITH_DMF
