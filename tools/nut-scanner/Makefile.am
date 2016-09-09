@@ -26,11 +26,18 @@ if WITH_DMF
     $(top_srcdir)/include/dmfsnmp.h
  nut_scanner_reindex_dmfsnmp_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
     $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
-    $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LDFLAGS_DMF_LUA)
+    $(LIBNETSNMP_LIBS)
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
-    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(CFLAGS_DMF_LUA) \
+    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
     -DDMFREINDEXER_MAKECHECK=0
+if WITH_DMF_LUA
+ nut_scanner_reindex_dmfsnmp_LDADD += $(LDFLAGS_DMF_LUA)
+ nut_scanner_reindex_dmfsnmp_CFLAGS += $(CFLAGS_DMF_LUA)
+endif
+if ! WITH_LIBLTDL
+ nut_scanner_reindex_dmfsnmp_LDADD += $(LIBNEON_LIBS)
+endif
 endif
 endif
 endif
@@ -51,9 +58,16 @@ libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+if WITH_DMF
+libnutscan_la_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 libnutscan_la_LIBADD += $(LDFLAGS_DMF_LUA)
-libnutscan_la_CFLAGS += $(CFLAGS_DMF_LUA)
+libnutscan_la_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
+else
+libnutscan_la_CFLAGS += DWITH_DMF_LUA=0
+endif
+else
+libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
 
 
@@ -69,16 +83,20 @@ nut_scanner_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
 nut_scanner_LDADD += $(LDFLAGS_DMF_LUA)
+else
+nut_scanner_CFLAGS += -DWITH_DMF_LUA=0
 endif
 else
 nut_scanner_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
 libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
 #	$(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+if ! WITH_LIBLTDL
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
 #	$(LIBNETSNMP_LIBS)
 libnutscan_la_LIBADD += $(LIBNEON_LIBS)
+endif
 endif
 endif
 
