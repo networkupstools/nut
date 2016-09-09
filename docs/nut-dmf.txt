@@ -50,6 +50,17 @@ the original SNMP MIB mapping DMFs, consider saving the nut-scanner DMF
 file with a different extension (may be uppercased `*.DMF` for example)
 or if you can -- save it into a different directory.
 
+NOTE: In particular, keep in mind that some mappings are sensitive to load
+order, for example the IETF standard MIBs should be supported by all SNMP
+capable devices, so we want to load the `ietf-mib.dmf` after trying all
+other options. Similar situations may theoretically be the case with some
+vendor's common MIB as opposed to a device-specific MIB with more details
+(but such cases have not surfaced in common NUT codebase). Currently the
+loading of specifically `ietf-mib.dmf` after other options is hardcoded
+in the Makefile recipes which produce the directory with alphabetically
+sorted names of symlinks to DMF files intended for end-user consumption
+after installation.
+
 NOTE: If you provide your own DMF files that are not generated from existing
 `*-mib.c` sources, use some `*.dmf` filename pattern that does not end in a
 `-mib.dmf` sequence specifically!
