@@ -25,7 +25,9 @@ and/or validation of the `*-mib.dmf` files from C source components of
 the `snmp-ups` driver.
 
 The source files and recipes related to DMF support are dispersed across the
-NUT codebase, while helpful resources (including the generation of DMF files)
+NUT codebase, while helpful resources (including the generation of DMF files
+from C source structures, which may be needed for third-party projects or
+for some time as the legacy and DMF approaches co-exist in the NUT codebase)
 are distributed in `$NUTSRC/scripts/DMF/` subdirectory.
 
 As something between end-user conversion tools and a sample program, the
