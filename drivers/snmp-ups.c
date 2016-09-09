@@ -2279,7 +2279,7 @@ bool_t snmp_ups_walk(int mode)
 
 								dstate_setinfo(buf, "%s", result);
 								free(buf);
-							}7
+							}
 						} /* if (su_info_p->luaContext) */
 #else
 						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
