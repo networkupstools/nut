@@ -1500,33 +1500,6 @@ if test "${nut_with_snmp_dmf_lua}" = "auto" ; then
 	fi
 fi
 
-dnl DMF_BUILD_OPTIONS is just a string for detailed report below
-DMF_BUILD_OPTIONS=""
-if test "${nut_with_dmf_lua}" != "no" -o "${nut_with_snmp_dmf_lua}" != "no"; then
-	AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
-	if test "${nut_have_lua}" = "yes"; then
-		DMF_BUILD_OPTIONS="lua scripting"
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-	fi
-fi
-
-AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}"])
-if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes"; then
-	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-	AC_MSG_CHECKING(whether we can enable optional XML conformance validation on DMFs (data mapping files) during build)
-	if test "${XMLLINT}" != "no"; then
-		if test -n "${DMF_BUILD_OPTIONS}"; then
-			DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
-		fi
-		DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-	fi
-fi
-
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
 AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
@@ -1541,7 +1514,7 @@ dnl This is needed because same sources are built with different macro
 dnl setups for binaries that support DMF or legacy ones. Where and wen
 dnl needed, the makefile recipes will set same-named WITH_* macros to
 dnl equal 1 or 0, allowing CPP tests like "#if WITH_FEATURENAME".
-NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
+NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [],
 					[WANT_DMF], [Define to enable DMF (data mapping file) generic support])
 AM_CONDITIONAL([WITH_DMF], [test "${nut_with_dmf}" = "yes"])
 
