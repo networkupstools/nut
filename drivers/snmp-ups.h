@@ -253,7 +253,9 @@ typedef struct {
 #define SU_VAR_PRIVPASSWD	"privPassword"
 #define SU_VAR_AUTHPROT		"authProtocol"
 #define SU_VAR_PRIVPROT		"privProtocol"
-#define SU_VAR_DMFPATH          "dmfpath"
+/* DMF-SNMP related parameters */
+#define SU_VAR_DMFFILE		"dmffile"
+#define SU_VAR_DMFDIR		"dmfdir"
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32

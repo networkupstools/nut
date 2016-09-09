@@ -76,7 +76,7 @@
 // Array of pointers to singular instances of mib2nut_info_t
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
-char *dmf_path = NULL;
+char *dmf_dir = NULL;
 #else /* not WITH_DMFMIB */
 
 # ifdef WITH_DMF_LUA
@@ -320,9 +320,10 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 #if WITH_DMFMIB
-	addvar(VAR_VALUE, SU_VAR_DMFPATH,
-		"Set path to the Data Mapping File to use");
-// FIXME: Add support for custom DMF directory too
+	addvar(VAR_VALUE, SU_VAR_DMFFILE,
+		"Set path to the Data Mapping Format file to use");
+	addvar(VAR_VALUE, SU_VAR_DMFDIR,
+		"Set path to the directory of Data Mapping Format files to use");
 #endif
 }
 
@@ -343,19 +344,21 @@ void upsdrv_initups(void)
 	if (!dmp)
 		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
 
-	/* FIXME: Add configurability of where we look for *.dmf files */
+	/* NOTE: If both `dmffile` and `dmfdir` are specified, the `dmffile` wins */
+	if ( (dmf_dir == NULL) && (testvar(SU_VAR_DMFDIR)) )
+		dmf_dir = getval(SU_VAR_DMFDIR);
 # ifdef DEFAULT_DMFSNMP_DIR
-	if(testvar(SU_VAR_DMFPATH)){
-		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-	}else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
-	else mibdmf_parse_file(dmf_path, dmp);
+	if(testvar(SU_VAR_DMFFILE)){
+		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
+	}else if(!dmf_dir) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+	else mibdmf_parse_file(dmf_dir, dmp);
 # else /* not defined DEFAULT_DMFSNMP_DIR */
-	if(testvar(SU_VAR_DMFPATH)){
-		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-	}else if(!dmf_path){
+	if(testvar(SU_VAR_DMFFILE)){
+		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
+	}else if(!dmf_dir){ /* Use some reasonable hardcoded fallback default */
 		if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
 			mibdmf_parse_dir("./", dmp);
-	}else mibdmf_parse_file(dmf_path, dmp);
+	}else mibdmf_parse_file(dmf_dir, dmp);
 # endif /* DEFAULT_DMFSNMP_DIR */
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )

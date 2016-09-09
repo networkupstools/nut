@@ -140,10 +140,21 @@ messages (default=MD5)
 Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages
 (default=DES)
 
-*dmfpath*='path'::
-Specifies a single DMF file for this driver to load. In case this option is
-missing, the driver will load all DMF files starting with `S` and located
-in its default path (e.g. `/usr/share/nut/dmfsnmp/S*.dmf`).
+*dmffile*='path'::
+Specifies a single Data Mapping Format file for this driver to load.
+In case this option (and `dmfdir` below) is missing, the driver will
+load in alphabetic order all DMF files whose names start with `S` and
+are located in its default path (e.g. `/usr/share/nut/dmfsnmp/S*.dmf`).
+The `dmffile` option overrides `dmfdir` if both are present.
+
+*dmfdir*='path'::
+Specifies a directory with DMF files for this driver to load. If this option
+is present, the driver will load in alphabetic order all DMF files starting
+with `S` and located in the specified path instead of the default path (e.g.
+from `/usr/local/share/nut-custom/dmfsnmp/S*.dmf`).
+
+NOTE: the `mibs` option, if specified and pointing to a specific MIB mapping,
+should refer to a mapping named in one of the ultimately loaded DMF files.
 
 REQUIREMENTS
 ------------
