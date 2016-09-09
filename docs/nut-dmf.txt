@@ -34,8 +34,10 @@ complete DMFs (and validate their contents for parsability, along the way)
 from a directory, and produce a DMF file that only contains the truncated
 `mib2nut` entries as needed for the `nut-scanner`.
 As an end-user tool, this program can help during updates of the DMF set.
-A private build of this code as `dmf-reindex` is used in the makefile recipe
-for generation of the `dmfnutscan` contents.
+A private build of this code as `dmf-reindex` can be made in the makefile
+recipe for generation of the `dmfnutscan` contents; but this is currently
+disabled in the `configure.ac` script in favor of using a single common
+build (with the private one reserved for hacking to try different logic).
 
 NOTE: In the current iteration the `nut-scanner-reindex-dmfsnmp` program
 is not very much configurable, so it just scans all `*.dmf` files in the

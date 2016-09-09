@@ -1729,6 +1729,9 @@ fi
 NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-scanner SNMP mode], [${with_regenerate_dmf_nutscan}], [],
 				[WITH_REGENERATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
+dnl For simplicity we just want the common build of the tool.
+dnl Developers hacking on alternate codepaths may enable the custom build here.
+AM_CONDITIONAL([USE_CUSTOM_BUILD_OF_DMF_REINDEX], [false])
 
 with_xmllint_dmf_snmp=auto
 AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
