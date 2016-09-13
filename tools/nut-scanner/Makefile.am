@@ -64,7 +64,7 @@ if WITH_DMF_LUA
 libnutscan_la_LIBADD += $(LDFLAGS_DMF_LUA)
 libnutscan_la_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
 else
-libnutscan_la_CFLAGS += DWITH_DMF_LUA=0
+libnutscan_la_CFLAGS += -DWITH_DMF_LUA=0
 endif
 else
 libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
