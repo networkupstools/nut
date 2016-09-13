@@ -131,13 +131,23 @@ CLEAN_FILES += $(DMFGEN_SANITY_VALIDATED)
 if WITH_REGENERATE_DMF_SNMP
   DISTCLEANFILES += $(LEGACY_NUT_DMFS)
 # NOTE: a non-file target follows, not DISTed
+# NOTE: Tricks like MIBSRC are needed for portability to non-GNU make
+# (we can not use $< in this context); this approach is a hack that
+# relies on known/assumed fixed input filename location and relation
+# to output filenames - which we sort of guarantee in other places.
   DMFGEN_DEPS += $(top_builddir)/Makefile dmfgen-sanity
   DMFGEN_CMD = ( \
+	MIBSRC="`basename "$(@F)" .dmf`.c" || exit ; \
+	echo "  DMFIFY   '$(abs_top_srcdir)/drivers/$$MIBSRC' => '$@' (PWD = `pwd`)" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
-	    cd "$(@D)" && CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" $(abs_srcdir)/dmfify-mib.sh "$(<D)/$(<F)" || exit; \
-	fi; \
-	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Generated file $@ is missing" >&2; exit 2; fi; \
+	    ( cd "$(@D)" && \
+	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
+	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
+	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$(abs_top_srcdir)/drivers/$$MIBSRC" \
+	    ) || exit; \
+	fi ; \
+	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then echo "ERROR: Generated file $@ is missing" >&2; ls -la "$@" "$(abs_top_builddir)/$@" "$(abs_top_srcdir)/$@"; exit 2; fi; \
 	)
 
 dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
