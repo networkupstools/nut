@@ -139,7 +139,7 @@ if WITH_REGENERATE_DMF_SNMP
   DMFGEN_CMD = ( \
 	MIBSRC="`basename "$(@F)" .dmf`.c" || exit ; \
 	echo "  DMFIFY   '$(abs_top_srcdir)/drivers/$$MIBSRC' => '$@' (PWD = `pwd`)" >&2 ; \
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)" || exit ; \
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    ( cd "$(@D)" && \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
@@ -178,7 +178,7 @@ endif
 $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" = "`cd $(abs_srcdir) && pwd`" ]; then \
 		echo "INFO: Build was done in-place, no need to copy files around"; \
 	 else \
@@ -220,7 +220,7 @@ if WITH_REGENERATE_DMF_NUTSCAN
 DISTCLEANFILES += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	$(DMF_REINDEX) -Z "$(abs_builddir)/$(DMFSNMP_SUBDIR)" > "$@.tmp"
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
@@ -249,7 +249,7 @@ EXTRA_DIST += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	@echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
 		F="$(abs_srcdir)/$(DMFNUTSCAN_SUBDIR)/$(@F)"; \
 		N="$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/$(@F)"; \
@@ -268,7 +268,7 @@ $(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
 	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	touch "$@"
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
@@ -405,7 +405,7 @@ testdata/.validated: $(builddir)/testdata/.validated
 if WITH_VALIDATE_DMF_SNMP
 # $(abs_srcdir)/testdata/lua-example-mib.dmf
 $(builddir)/testdata/.validated: $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@cd "$(@D)" && for F in $^ ; do \
 	    echo " XMLLINT-LUA  $$F"; \
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
@@ -413,7 +413,7 @@ $(builddir)/testdata/.validated: $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_
 	touch "$@"
 else
 $(builddir)/testdata/.validated:
-	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
 	@echo "VALIDATION-SKIPPED" > "$@"
 endif
