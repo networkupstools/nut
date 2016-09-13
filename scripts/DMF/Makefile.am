@@ -110,8 +110,9 @@ check-lua: run-dmf-lua-test
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
-DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
-EXTRA_DIST += $(DMFGEN_DEPS)
+DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
+DMFGEN_DEPS = $(DMFGEN_DEPS_FILES)
+EXTRA_DIST += $(DMFGEN_DEPS_FILES)
 EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 
 # NOTE: In "dmfify-mib.sh" runs, the C preprocessor must be called without
@@ -129,6 +130,7 @@ CLEAN_FILES += $(DMFGEN_SANITY_VALIDATED)
 
 if WITH_REGENERATE_DMF_SNMP
   DISTCLEANFILES += $(LEGACY_NUT_DMFS)
+# NOTE: a non-file target follows, not DISTed
   DMFGEN_DEPS += $(top_builddir)/Makefile dmfgen-sanity
   DMFGEN_CMD = ( \
 	mkdir -p "$(@D)" || exit ; \
