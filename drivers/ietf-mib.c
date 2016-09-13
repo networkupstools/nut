@@ -31,6 +31,15 @@
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
 #define IETF_SYSOID			".1.3.6.1.2.1.33"
+
+/* NOTE: Currently the Tripplite UPSes await user-validation of their
+ * real SNMP OID tree, so temporarily the IETF tree is used as "tripplite".
+ * For more details see:
+ *    https://github.com/networkupstools/nut/issues/309
+ *    https://github.com/networkupstools/nut/issues/171
+ * Also related to:
+ *    https://github.com/networkupstools/nut/issues/270
+ */
 #define TRIPPLITE_SYSOID	".1.3.6.1.4.1.850.1"
 
 /* #define DEBUG */
@@ -276,4 +285,4 @@ static snmp_info_t ietf_mib[] = {
 };
 
 mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
-mib2nut_info_t	tripplite_ietf = { "ietf", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };
+mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };
