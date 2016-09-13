@@ -179,14 +179,21 @@ $(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
 	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
 	test -d "$(@D)" -a -w "$(@D)" || mkdir -p "$(@D)"
-	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
+	@if [ "`cd $(abs_builddir) && pwd`" = "`cd $(abs_srcdir) && pwd`" ]; then \
+		echo "INFO: Build was done in-place, no need to copy files around"; \
+	 else \
+		echo "INFO: Build was done out-of-tree, so will copy files from source dir if needed (if nothing got generated)"; \
 		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
 			B="`basename "$$F"`"; \
-			[ "$$B" = '*.dmf' ] && exit 0 ; \
-			N="$(abs_builddir)/$(DMFSNMP_SUBDIR)/$$B"; \
-			[ -s "$$F" ] && [ ! -s "$$N" ] && \
-				echo "  CP    $$F => $$N" >&2 && \
-				cp -f "$$F" "$$N" || exit ; \
+			case "$$B" in \
+				'*.dmf') exit 0 ;; \
+				S*|K*) ;; \
+				*) N="$(abs_builddir)/$(DMFSNMP_SUBDIR)/$$B"; \
+					if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
+						echo "  CP    $$F => $$N" >&2 ; \
+						cp -f "$$F" "$$N" || exit ; \
+					fi ;; \
+			esac ; \
 		done; \
 	fi
 	@cd "$(abs_builddir)/$(DMFSNMP_SUBDIR)" && \
