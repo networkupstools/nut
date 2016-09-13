@@ -28,18 +28,22 @@ _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
 [ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
 export CC
 
-# Here we only check basic prerequisites (a module provided with Python 2.7
-# and an extra module that end-user is expected to pre-install per README).
-# Other included modules will be checked when scripts are executed.
-echo "INFO: Validating some basics about your Python installation" >&2
-for PYMOD in argparse pycparser json; do
-    "${PYTHON}" -c "import $PYMOD; print $PYMOD" || \
-        { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
-done
+if [ "$1" == "--skip-sanity-check" ]; then
+    shift 1
+else
+    # Here we only check basic prerequisites (a module provided with Python 2.7
+    # and an extra module that end-user is expected to pre-install per README).
+    # Other included modules will be checked when scripts are executed.
+    echo "INFO: Validating some basics about your Python installation" >&2
+    for PYMOD in argparse pycparser json; do
+        "${PYTHON}" -c "import $PYMOD; print $PYMOD" || \
+            { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
+    done
 
-if [ "$1" = "--sanity-check" ]; then
-    # We are alive by now, so checks above have succeeded
-    exit 0
+    if [ "$1" = "--sanity-check" ]; then
+        # We are alive by now, so checks above have succeeded
+        exit 0
+    fi
 fi
 
 dmfify_c_file() {
