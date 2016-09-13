@@ -4,6 +4,7 @@
 # * build and run some test programs to verify that DMF code works
 
 # TODO: GNU Make syntax may be assumed below; fix this to be portable to other make's
+# TODO: Convert PROGS, explicit flag recipes, etc. to automake variable names
 
 # Note that some include files may be generated, so we prefer a builddir
 # and then srcdir - just in case these differ
