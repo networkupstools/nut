@@ -701,6 +701,9 @@ case "${nut_with_doc}" in
 	auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
+	skip)
+		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
+		;;
 	no)
 		nut_doc_build_list=""
 		;;
@@ -880,10 +883,20 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
 WITH_MANS=no
+SKIP_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
 	WITH_MANS=yes
 fi
+if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
+	SKIP_MANS=yes
+fi
+dnl Generally WITH_MANS=no is intentionally fatal for "make distcheck"
+dnl But some larger distcheck suites check mans once and then focus on
+dnl other aspects of the project, so they can explicitly skip docs (or
+dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
+dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
+AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
