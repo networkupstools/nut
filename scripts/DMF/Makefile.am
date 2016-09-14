@@ -380,18 +380,18 @@ dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneo
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
-if USE_CUSTOM_BUILD_OF_DMF_REINDEX
-DMF_REINDEX = $(abs_builddir)/dmf-reindex
-dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
-dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
-dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
-dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
-else
+#if USE_CUSTOM_BUILD_OF_DMF_REINDEX
+#DMF_REINDEX = $(abs_builddir)/dmf-reindex
+#dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
+#dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+#dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+#dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
+#else
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
 	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
 	$(LN_S) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
-endif
+#endif
 
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
