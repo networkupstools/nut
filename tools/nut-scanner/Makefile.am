@@ -50,11 +50,8 @@ endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
-			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
-			../../drivers/serial.c \
-			../../drivers/bcmxcp_ser.c \
-			../../common/common.c ../../common/str.c
-libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
+libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS) $(top_builddir)/drivers/libserial-nutscan.la
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
@@ -70,6 +67,12 @@ else
 libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
 
+if WITH_DMF
+libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
+else
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+endif
+#libnutscan_la_LIBADD += $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
@@ -89,8 +92,6 @@ endif
 else
 nut_scanner_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
-libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
-#	$(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 if ! WITH_LIBLTDL
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
