@@ -36,6 +36,8 @@ DISTCHECK_DMF_WITH_REGEN_YES_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) --with-dmfsnm
 # Enable all DMF-related options, including again generation and
 # validation of DMF files from C sources
 DISTCHECK_DMF_ALL = $(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS) --with-snmp_dmf_lua=yes --with-libltdl=yes
+# Also have a way to test legacy code structure with no DMF support built in
+DISTCHECK_DMF_NO = --with-all=auto --with-dmf=no --with-doc=skip --with-dev=yes -C
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
@@ -65,6 +67,10 @@ distcheck-dmf-features:
 # related to DMF at once
 distcheck-dmf-all-yes:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
+	echo "PASSED $@ suite!"
+
+distcheck-dmf-no:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
 	echo "PASSED $@ suite!"
 
 distcheck-dmf-warnings:
