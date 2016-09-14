@@ -208,7 +208,7 @@ DMFLNK_CMD = ( \
         $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
 $(DMFSNMP_RES_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
 $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
-	@echo "DMFSNMP_RES_SUBDIR content is now up to date, made of: $^" >&2
+	@echo "DMFSNMP_RES_SUBDIR content is now up to date, made of: $(dmfsnmpres_DMFS)" >&2
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" = "`cd $(abs_srcdir) && pwd`" ]; then \
 		echo "INFO: Build was done in-place, no need to copy files around"; \
@@ -279,10 +279,10 @@ $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 endif
 
 $(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
-	@DMFFILE="$^"; DMFLINK="$@"; $(DMFLNK_CMD)
+	@DMFFILE="$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf"; DMFLINK="$@"; $(DMFLNK_CMD)
 
 $(INSTALL_NUT_DMFNUTSCAN_SYMLINK): $(INSTALL_NUT_DMFNUTSCAN_FILE)
-	@DMFFILE="$^"; DMFLINK="$@"; $(DMFLNK_CMD)
+	@DMFFILE="$(INSTALL_NUT_DMFNUTSCAN_FILE)"; DMFLINK="$@"; $(DMFLNK_CMD)
 
 $(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
 $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
@@ -397,6 +397,7 @@ dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 #dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 #dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
 #else
+CLEAN_FILES += dmf-reindex
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
 	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
@@ -436,7 +437,7 @@ if WITH_VALIDATE_DMF_SNMP
 # $(abs_srcdir)/testdata/lua-example-mib.dmf
 $(builddir)/testdata/.validated: $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
-	@cd "$(@D)" && for F in $^ ; do \
+	@cd "$(@D)" && for F in $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf ; do \
 	    echo " XMLLINT-LUA  $$F"; \
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
 	done
