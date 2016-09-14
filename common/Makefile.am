@@ -64,5 +64,11 @@ endif
 
 # Note: Consumers of this lib will generally want the dependencies linked via:
 #  libnutdmfsnmp_consumer_LDADD += $(abs_top_builddir)/common/libnutdmfsnmp.la
+#  libnutdmfsnmp_consumer_CFLAGS += $(AM_CFLAGS) -I$(top_srcdir)/drivers \
+#     -I$(top_srcdir)/tools/nut-scanner $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
+#      -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
+#if WITH_DMF_LUA
+#  libnutdmfsnmp_consumer_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
+#endif
 endif
 endif

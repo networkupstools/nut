@@ -16,8 +16,12 @@ DISTCLEANDIRS =
 CLEAN_FILES =
 EXTRA_DIST =
 
+# A way to to relative symlinks, or hardlinks, or copies... depends on OS.
+LN_S_R = @LN_S_R@ -f
+
 check_PROGRAMS = dmf-test
 check_experimental = dmf-lua-test
+noinst_PROGRAMS = dmf-test dmf-lua-test
 
 # The dmf*resdir variables point to resources, original DMFs with their
 # original basenames same as *-mib.c files they were generated from.
@@ -96,7 +100,7 @@ CLEAN_FILES += $(check_PROGRAMS) $(check_experimental) $(DMFSNMP_RES_SUBDIR)/*.o
 		$(DMFSNMP_RES_SUBDIR)/*_TEST.c $(DMFSNMP_RES_SUBDIR)/*_TEST.exe
 
 clean-local:
-	$(RM) $(CLEAN_FILES)
+	$(RM) -f $(CLEAN_FILES)
 
 check: check-local
 
@@ -173,13 +177,13 @@ dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
 	    touch $(DMFGEN_SANITY_VALIDATED); \
 	else \
 	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
-	    $(RM) $(DMFGEN_SANITY_VALIDATED); \
+	    $(RM) -f $(DMFGEN_SANITY_VALIDATED); \
 	fi
 else
   EXTRA_DIST += $(dmfsnmpres_DMFS)
   DMFGEN_CMD = ( \
 	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
-	$(RM) $(DMFGEN_SANITY_VALIDATED); \
+	$(RM) -f $(DMFGEN_SANITY_VALIDATED); \
 	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; \
 	)
 endif
@@ -187,7 +191,7 @@ endif
 DMFLNK_CMD = ( \
 	echo "  LN     '$$DMFFILE' => '$@' (PWD = `pwd`)" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
-	$(LN_S) -f -r "$$DMFFILE" "$@" || exit ; \
+	$(LN_S_R) "$$DMFFILE" "$@" || exit ; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
@@ -366,6 +370,7 @@ progs-all: $(check_PROGRAMS) $(check_experimental)
 # with or without dmf+lua support.
 DMFTESTS_COMMON_CFLAGS = \
 	$(CFLAGS_dmfsnmp_ltdlXneon) $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
+	$(LIBNETSNMP_CFLAGS) \
 	-DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_builddir)/$(DMFSNMP_SUBDIR)\""
 
@@ -378,18 +383,19 @@ dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneo
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
-if USE_CUSTOM_BUILD_OF_DMF_REINDEX
-DMF_REINDEX = $(abs_builddir)/dmf-reindex
-dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
-dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
-dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
-dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
-else
+#if USE_CUSTOM_BUILD_OF_DMF_REINDEX
+#DMF_REINDEX = $(abs_builddir)/dmf-reindex
+#noinst_PROGRAMS += dmf-reindex
+#dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
+#dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+#dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+#dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
+#else
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
 	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
-	$(LN_S) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
-endif
+	$(LN_S_R) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
+#endif
 
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
