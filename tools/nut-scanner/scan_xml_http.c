@@ -39,7 +39,7 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libneon";
+static char * libname = "libneon"; /* Note: this is for info messages, not the SONAME */
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
