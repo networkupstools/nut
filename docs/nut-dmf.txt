@@ -25,7 +25,9 @@ and/or validation of the `*-mib.dmf` files from C source components of
 the `snmp-ups` driver.
 
 The source files and recipes related to DMF support are dispersed across the
-NUT codebase, while helpful resources (including the generation of DMF files)
+NUT codebase, while helpful resources (including the generation of DMF files
+from C source structures, which may be needed for third-party projects or
+for some time as the legacy and DMF approaches co-exist in the NUT codebase)
 are distributed in `$NUTSRC/scripts/DMF/` subdirectory.
 
 As something between end-user conversion tools and a sample program, the
@@ -34,8 +36,10 @@ complete DMFs (and validate their contents for parsability, along the way)
 from a directory, and produce a DMF file that only contains the truncated
 `mib2nut` entries as needed for the `nut-scanner`.
 As an end-user tool, this program can help during updates of the DMF set.
-A private build of this code as `dmf-reindex` is used in the makefile recipe
-for generation of the `dmfnutscan` contents.
+A private build of this code as `dmf-reindex` can be made in the makefile
+recipe for generation of the `dmfnutscan` contents; but this is currently
+disabled in the `configure.ac` script in favor of using a single common
+build (with the private one reserved for hacking to try different logic).
 
 NOTE: In the current iteration the `nut-scanner-reindex-dmfsnmp` program
 is not very much configurable, so it just scans all `*.dmf` files in the
@@ -46,6 +50,17 @@ the original SNMP MIB mapping DMFs, consider saving the nut-scanner DMF
 file with a different extension (may be uppercased `*.DMF` for example)
 or if you can -- save it into a different directory.
 
+NOTE: In particular, keep in mind that some mappings are sensitive to load
+order, for example the IETF standard MIBs should be supported by all SNMP
+capable devices, so we want to load the `ietf-mib.dmf` after trying all
+other options. Similar situations may theoretically be the case with some
+vendor's common MIB as opposed to a device-specific MIB with more details
+(but such cases have not surfaced in common NUT codebase). Currently the
+loading of specifically `ietf-mib.dmf` after other options is hardcoded
+in the Makefile recipes which produce the directory with alphabetically
+sorted names of symlinks to DMF files intended for end-user consumption
+after installation.
+
 NOTE: If you provide your own DMF files that are not generated from existing
 `*-mib.c` sources, use some `*.dmf` filename pattern that does not end in a
 `-mib.dmf` sequence specifically!
@@ -55,16 +70,25 @@ and application developers should look there for the "The big theory" details.
 It is expected that DMF will outgrow the initial SNMP use-case, so there is
 a formal separation of `dmf.h` and `dmfsnmp.h` already in place.
 
-A second iteration is experimentally provided, but may be incomplete and is
-subject to change after some team discussions, which is to support not only
+A second iteration is experimentally provided, which is to support not only
 static mappings of the first iteration (so as to be functionally and logically
 equivalent to the pre-DMF code), but also add support for dynamic mappings
-using an interpreted language. LUA is the first implementation in the works,
+using an interpreted language. It may be incomplete and is subject to change
+after some team discussions. LUA is the first implementation in the works,
 so it would be the default option (given experimental status, it is not
 compilable by default unless you define `-DWITH_DMF_LUA=1` to the compiler
 command-line or `CFLAGS`; also the implementation is currently compatible
 with LUA-5.1 or LUA-5.2 -- so the include-file path and library name should
 match your OS distribution's naming for this version).
+
+The dynamic-language support is experimental, but the code skeleton allows
+the community to implement support for other languages using the `language`
+attribute in each `function` tag of the DMF-SNMP markup (if unspecified,
+the interpretation effectively defaults to hardcoded `lua-5.1` support).
+When hacking your language of choice support into the code, look for the
+`WITH_DMF_FUNCTIONS` and `WITH_DMF_LUA` macros in the `Makefile.am` files,
+`dmf-snmp.c`, `snmp-ups.c` and their headers, and the `configure.ac` script
+template.
 
 == DMF XML spec
 
@@ -107,18 +131,21 @@ attributes so the DMF file can refer to the currently applicable schema.
 </nut>
 ----
 
-== LUA FUNCTIONS
+== DYNAMIC FUNCTIONS
 
-It is possible to emulate non provided data by LUA. For example, if the UPS
-provides current in Amperes and the Voltage, but not power in Watts, it is
-possible to add a function for calculation of this value to serve it in NUT.
+It is possible to emulate non-provided data by a supported dynamic lagnuage
+(only LUA-5.1/5.2 at this time).
+
+For example, if the UPS only provides current in Amperes and the Voltage,
+but not power in Watts, it is possible to add a function for calculation
+of this value to serve it as a NUT variable for the device.
 
 A simple example in DMF markup:
 
 ----
         ...
-        <functions name="eaton_functions">
-          <function name="device.amperes">
+        <functionset name="eaton_functions">
+          <function name="device.amperes" language="lua-5.1">
             function deviceamperes(device)
                 power = tonumber(lua_C_gateway("input.power", device))
                 voltage = tonumber(lua_C_gateway("input.voltage", device))
@@ -129,7 +156,7 @@ A simple example in DMF markup:
                 end
             end
           </function>
-          <function name="device.luaOutlet">
+          <function name="device.luaOutlet" language="lua">
             function deviceluaOutlet(device)
                 outlet = tonumber(lua_C_gateway("outlet.count", device))
                 if outlet ~= 0 then
@@ -149,30 +176,41 @@ A simple example in DMF markup:
                 return power - realpower
             end
           </function>
-        </functions>
+        </functionset>
         <snmp name="eaton_marlin_mib">
-                <snmp_info flag_ok="yes" multiplier="128.0" name="device.amperes" string="yes" function="eaton_functions"/>
-                <snmp_info flag_ok="yes" multiplier="128.0" name="device.luaOutlet" string="yes" function="eaton_functions"/>
+                <snmp_info flag_ok="yes" multiplier="128.0" name="device.amperes" string="yes" functionset="eaton_functions"/>
+                <snmp_info flag_ok="yes" multiplier="128.0" name="device.luaOutlet" string="yes" functionset="eaton_functions"/>
                 ...
 ----
 
-The `functions` block is the function collection for a driver (`mib2nut`).
+The `functionset` block is the function collection for a driver (`mib2nut`).
 
 The `function` block is the function collection for one value (`snmp_info`).
 There are some rules to use it:
 
-  * Attribute name should be the same as the "snmp" name;
-  * Must have (mandatory) at least one function named with the same name
-      of the "snmp", main function, but without point in the name (e.g.
-      `device.lua` -> `function devicelua(device)`);
+  * The optional `language` attribute can specify the interpreter for the
+      function code. Currently only Lua is supported, with no value, empty
+      value, `lua` and `lua-5.1` being hardcoded equivalents; other values
+      should yield a non-fatal parsing error (logged in debug mode) and no
+      processing done for the mapping value;
+  * Attribute `name` of the `function` block should be the same as the
+      "snmp_info `name`" for the mapping variable;
+  * The (LUA) `function` block must have (mandatory) at least one function
+      named with the same name as the "snmp" mapping variable, but without
+      the dot in the name (e.g. `device.lua` -> `function devicelua(device)`),
+      which serves as the main function for the block;
   * Could have more functions, but main fuction will be always the mandatory
-      one, unique, and it is the entry point;
-  * the `device` parameter is mandatory due to internal requirements;
-  * Main function can return data; if it returns - a new variable is going
-      to be created by the driver, named as `device.X.function_name` with
-      the returned value; if not - nothing is published by the driver.
+      one, unique, and it is the entry point (others are its helpers);
+  * The `device` parameter is mandatory due to internal requirements;
+  * Main function can return data; if it returns - a new driver-state variable
+      is going to be created by the driver, named as `device.X.function_name`
+      with the returned value; if not - nothing is published by the driver.
 
-Currently there are two Lua -- C function bindings implemented:
+=== LUA DYNAMIC FUNCTION BINDINGS
+
+Currently there are two Lua <=> C function bindings implemented directly
+in `snmp-ups.c` (functions that use these bindings currently won't work
+in other contexts or drivers out of the box):
 
   * `lua_C_gateway(variable, device)` - As a parameter it receives the name
     of the requested variable and number of the device (`string`, `integer`),

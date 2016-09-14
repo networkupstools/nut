@@ -76,7 +76,7 @@
 // Array of pointers to singular instances of mib2nut_info_t
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
-char *dmf_path = NULL;
+char *dmf_dir = NULL;
 #else /* not WITH_DMFMIB */
 
 # ifdef WITH_DMF_LUA
@@ -316,15 +316,16 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_AUTHPASSWD,
 		"Set the authentication pass phrase used for authenticated SNMPv3 messages (no default)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_PRIVPASSWD,
-		"Set  the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
+		"Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)");
 	addvar(VAR_VALUE, SU_VAR_AUTHPROT,
 		"Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3 messages (default=MD5)");
 	addvar(VAR_VALUE, SU_VAR_PRIVPROT,
 		"Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages (default=DES)");
 #if WITH_DMFMIB
-	addvar(VAR_VALUE, SU_VAR_DMFPATH,
-		"Set path to the Data Mapping File to use");
-// FIXME: Add support for custom DMF directory too
+	addvar(VAR_VALUE, SU_VAR_DMFFILE,
+		"Set path to the Data Mapping Format file to use");
+	addvar(VAR_VALUE, SU_VAR_DMFDIR,
+		"Set path to the directory of Data Mapping Format files to use");
 #endif
 }
 
@@ -345,19 +346,21 @@ void upsdrv_initups(void)
 	if (!dmp)
 		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
 
-	/* FIXME: Add configurability of where we look for *.dmf files */
+	/* NOTE: If both `dmffile` and `dmfdir` are specified, the `dmffile` wins */
+	if ( (dmf_dir == NULL) && (testvar(SU_VAR_DMFDIR)) )
+		dmf_dir = getval(SU_VAR_DMFDIR);
 # ifdef DEFAULT_DMFSNMP_DIR
-	if(testvar(SU_VAR_DMFPATH)){
-		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-	}else if(!dmf_path) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
-	else mibdmf_parse_file(dmf_path, dmp);
+	if(testvar(SU_VAR_DMFFILE)){
+		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
+	}else if(!dmf_dir) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+	else mibdmf_parse_file(dmf_dir, dmp);
 # else /* not defined DEFAULT_DMFSNMP_DIR */
-	if(testvar(SU_VAR_DMFPATH)){
-		mibdmf_parse_file(getval(SU_VAR_DMFPATH), dmp);
-	}else if(!dmf_path){
-		if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
+	if(testvar(SU_VAR_DMFFILE)){
+		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
+	}else if(!dmf_dir){ /* Use some reasonable hardcoded fallback default */
+		if (! mibdmf_parse_dir("/usr/share/nut/dmfsnmp.d/", dmp) )
 			mibdmf_parse_dir("./", dmp);
-	}else mibdmf_parse_file(dmf_path, dmp);
+	}else mibdmf_parse_file(dmf_dir, dmp);
 # endif /* DEFAULT_DMFSNMP_DIR */
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )
@@ -2241,39 +2244,58 @@ bool_t snmp_ups_walk(int mode)
 
 		/* Loop through all mapping entries */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
-#if WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 			if(su_info_p->flags & SU_FLAG_FUNCTION){
-				if((su_info_p->function) && (su_info_p->luaContext)){
-					char *result = NULL;
+				if(su_info_p->function_code) {
+					if( (su_info_p->function_language==NULL)
+					    || (su_info_p->function_language[0]=='\0')
+					    || (strcmp("lua-5.1", su_info_p->function_language)==0)
+					    || (strcmp("lua", su_info_p->function_language)==0)
+					) {
+#if WITH_DMF_LUA
+						if (su_info_p->luaContext){
+							char *result = NULL;
 
-					lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
-					lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
+							lua_register(su_info_p->luaContext, "lua_C_gateway", lua_C_gateway);
+							lua_register(su_info_p->luaContext, "publish_Lua_dstate", publish_Lua_dstate);
 
-					char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
-					lua_getglobal(su_info_p->luaContext, funcname);
-					lua_pushnumber(su_info_p->luaContext, current_device_number);
-					lua_pcall(su_info_p->luaContext,1,1,0);
-					result = (char *) lua_tostring(su_info_p->luaContext, -1);
-					upsdebugx(2, "Executing LUA for SNMP_INFO: %s\n-- Code:\n%s\n\nResult: %s\n", funcname, su_info_p->function, result);
-					free(funcname);
+							char *funcname = snmp_info_type_to_main_function_name(su_info_p->info_type);
+							upsdebugx(4, "DMF-LUA: Going to call Lua funcname:\n%s\n", funcname ? funcname : "<null>" );
+							upsdebugx(5, "DMF-LUA: Lua code block being interpreted:\n%s\n", su_info_p->function_code );
+							lua_getglobal(su_info_p->luaContext, funcname);
+							lua_pushnumber(su_info_p->luaContext, current_device_number);
+							lua_pcall(su_info_p->luaContext,1,1,0);
+							result = (char *) lua_tostring(su_info_p->luaContext, -1);
+							upsdebugx(4, "Executing LUA for SNMP_INFO: %s\n\nResult: %s\n", funcname, result);
+							free(funcname);
 
-					if(result){
-						char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
-						int i = 0;
-						while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
+							if(result){
+								char *buf = (char *) malloc((strlen(su_info_p->info_type)+3) * sizeof(char));
+								int i = 0;
+								while((su_info_p->info_type[i]) && (su_info_p->info_type[i]) != '.') i++;
 
-						if(current_device_number > 0)
-							sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
-						else
-							sprintf(buf, "%s", su_info_p->info_type);
+								if(current_device_number > 0)
+									sprintf(buf, "%.*s.%d%s",i , su_info_p->info_type, current_device_number, su_info_p->info_type + i);
+								else
+									sprintf(buf, "%s", su_info_p->info_type);
 
-						dstate_setinfo(buf, "%s", result);
-						free(buf);
-					}
-				}
-				continue;
-			}
+								dstate_setinfo(buf, "%s", result);
+								free(buf);
+							}
+						} /* if (su_info_p->luaContext) */
+#else
+						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+							su_info_p->function_language ? su_info_p->function_language : "LUA");
 #endif /* WITH_DMF_LUA */
+					} /* if function_language resolved to "lua*" */
+					else {
+						upsdebugx(1, "SNMP_INFO entry backed by dynamic code in '%s' was skipped because support for this language is not compiled in",
+							su_info_p->function_language);
+					} /* no known function_language here */
+				} /* if(su_info_p->function_code) was present */
+				continue;
+			} /* if(su_info_p->flags & SU_FLAG_FUNCTION) - otherwise fall through to static data */
+#endif /* WITH_DMF_FUNCTIONS */
 
 			// FIXME:
 			// switch(current_device_number) {

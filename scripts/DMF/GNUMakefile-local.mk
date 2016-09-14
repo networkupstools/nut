@@ -5,10 +5,15 @@
 # Note: then `bld=src=dir_of_makefile` is assumed below
 
 RM ?= /usr/bin/rm -f
+MKDIR_P ?= /usr/bin/mkdir -p
+LN_S ?= /usr/bin/ln -s
 # Take compiler from PATH, may be wrapped with ccache etc.
 CC ?= gcc
 CPP ?= gcc
 CXX ?= g++
+
+XMLLINT ?= xmllint
+VALGRIND ?= valgrind
 
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(patsubst %/,%,$(dir $(mkfile_path)))

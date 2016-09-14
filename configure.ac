@@ -109,6 +109,8 @@ AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
+AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
@@ -688,6 +690,9 @@ case "${nut_with_doc}" in
 	auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
+	skip)
+		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
+		;;
 	no)
 		nut_doc_build_list=""
 		;;
@@ -826,10 +831,20 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
 WITH_MANS=no
+SKIP_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
 	WITH_MANS=yes
 fi
+if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
+	SKIP_MANS=yes
+fi
+dnl Generally WITH_MANS=no is intentionally fatal for "make distcheck"
+dnl But some larger distcheck suites check mans once and then focus on
+dnl other aspects of the project, so they can explicitly skip docs (or
+dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
+dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
+AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -1289,6 +1304,54 @@ AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
 dnl processor type
 AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
 
+dnl Can use valgrind for memory-leak testing, if present
+AC_PATH_PROGS([VALGRIND], [valgrind], [none])
+with_valgrind="auto"
+AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+AC_ARG_WITH(valgrind,
+	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
+[
+	case "${withval}" in
+	yes)
+		if test "x$VALGRIND" = "xnone"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["valgrind requested but not found"])
+		fi
+		with_valgrind="yes"
+		;;
+	auto)
+		with_valgrind="auto"
+		;;
+	no)
+		with_valgrind="no"
+		;;
+	*)
+		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
+		if test "x$VALGRIND" = "xnone"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["valgrind requested but not found"])
+		fi
+		with_valgrind="yes"
+		;;
+	esac
+], [])
+
+if test "${with_valgrind}" = auto; then
+	if test "x$VALGRIND" = "xnone"; then
+		with_valgrind="no"
+	else
+		with_valgrind="yes"
+	fi
+fi
+
+if test "${with_valgrind}" = yes; then
+	AC_MSG_RESULT(using ${VALGRIND})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([HAVE_VALGRIND], [test "x$VALGRIND" != "xnone"])
+AM_CONDITIONAL([WITH_VALGRIND], [test "${with_valgrind}" = yes])
+
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
@@ -1458,33 +1521,6 @@ if test "${nut_with_snmp_dmf_lua}" = "auto" ; then
 	fi
 fi
 
-dnl DMF_BUILD_OPTIONS is just a string for detailed report below
-DMF_BUILD_OPTIONS=""
-if test "${nut_with_dmf_lua}" != "no" -o "${nut_with_snmp_dmf_lua}" != "no"; then
-	AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
-	if test "${nut_have_lua}" = "yes"; then
-		DMF_BUILD_OPTIONS="lua scripting"
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-	fi
-fi
-
-AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}"])
-if test "${nut_with_dmf}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes"; then
-	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-	AC_MSG_CHECKING(whether we can enable optional XML conformance validation on DMFs (data mapping files) during build)
-	if test "${XMLLINT}" != "no"; then
-		if test -n "${DMF_BUILD_OPTIONS}"; then
-			DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
-		fi
-		DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
-		AC_MSG_RESULT(yes)
-	else
-		AC_MSG_RESULT(no)
-	fi
-fi
-
 NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
 					[WITH_SNMP], [Define to enable SNMP support])
 AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
@@ -1499,7 +1535,7 @@ dnl This is needed because same sources are built with different macro
 dnl setups for binaries that support DMF or legacy ones. Where and wen
 dnl needed, the makefile recipes will set same-named WITH_* macros to
 dnl equal 1 or 0, allowing CPP tests like "#if WITH_FEATURENAME".
-NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
+NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [],
 					[WANT_DMF], [Define to enable DMF (data mapping file) generic support])
 AM_CONDITIONAL([WITH_DMF], [test "${nut_with_dmf}" = "yes"])
 
@@ -1507,26 +1543,76 @@ NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with LUA], [${nut
 					[WANT_DMF_LUA], [Define to enable DMF (data mapping file) integration with LUA])
 AM_CONDITIONAL([WITH_DMF_LUA], [test "${nut_with_dmf_lua}" = "yes"])
 
+dnl This may later become a logical "or" of enabled supports for at least one
+dnl functional language in DMF, and/or a configure flag to disable this all.
+nut_with_dmf_functions=no
+if test \
+	"${nut_with_dmf_lua}" = "yes" \
+; then
+	nut_with_dmf_functions=yes
+fi
+NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with dynamic languages], [${nut_with_dmf_functions}], [],
+					[WANT_DMF_FUNCTIONS], [Define to enable DMF (data mapping file) integration with dynamic languages])
+AM_CONDITIONAL([WITH_DMF_FUNCTIONS], [test "${nut_with_dmf_functions}" = "yes"])
+
 NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [${nut_with_snmp_dmf}], [],
 					[WANT_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
 AM_CONDITIONAL([WITH_DMFMIB], [test "${nut_with_snmp_dmf}" = "yes"])
 
+dnl The dmf*resdir variables point to resources, original DMFs with their
+dnl original basenames same as *-mib.c files they were generated from.
+dnl The dmf*dir variables are separate directories where filenames (symlinks)
+dnl are specially ordered so that some mappings are loaded and tried before
+dnl others (specifically, "ietf" standard fallback MIBs must be last); these
+dnl are the directories used by default in DMF binaries.
+dmfsnmpresdir=""
+dmfnutscanresdir=""
 dmfsnmpdir=""
 dmfnutscandir=""
 if test "${nut_with_dmf}" = yes -o "${nut_with_snmp_dmf}" = yes -o "${nut_with_snmp_dmf_lua}" = yes ; then
-	dmfsnmpdir="${DATADIR}/dmfsnmp"
-	dmfnutscandir="${DATADIR}/dmfnutscan"
+	dmfsnmpresdir="${DATADIR}/dmfsnmp"
+	dmfnutscanresdir="${DATADIR}/dmfnutscan"
+	dmfsnmpdir="${DATADIR}/dmfsnmp.d"
+	dmfnutscandir="${DATADIR}/dmfnutscan.d"
 fi
 
-AC_MSG_CHECKING(whether to install DMF collection of mappings for SNMP-UPS driver)
+AC_MSG_CHECKING(whether to install DMF resource collection of mappings for SNMP-UPS driver)
+AC_ARG_WITH(dmfsnmp-res-dir,
+	AS_HELP_STRING([--with-dmfsnmp-res-dir=PATH], [where to install DMF resource collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfsnmpresdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings resource directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfsnmpresdir=""
+		;;
+	*)
+		dmfsnmpresdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfsnmpresdir}"; then
+	AC_MSG_RESULT(using ${dmfsnmpresdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_RES_DIR, "${dmfsnmpresdir}", [Default path for DMF resource collection of mappings for SNMP-UPS driver])
+
+AC_MSG_CHECKING(whether to activate DMF collection of mappings for SNMP-UPS driver)
 AC_ARG_WITH(dmfsnmp-dir,
-	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF active collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${dmfsnmpdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory requested but not found"])
+			AC_MSG_ERROR(["DMF SNMP active mappings directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -1544,17 +1630,45 @@ if test -n "${dmfsnmpdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF collection of mappings for SNMP-UPS driver])
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF active collection of mappings for SNMP-UPS driver])
 
-AC_MSG_CHECKING(whether to install DMF collection of mappings for nut-scanner SNMP mode)
+AC_MSG_CHECKING(whether to install DMF resource collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-res-dir,
+	AS_HELP_STRING([--with-dmfnutscan-res-dir=PATH], [where to install DMF resourcecollection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfnutscanresdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings resource directory for nut-scanner requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfnutscanresdir=""
+		;;
+	*)
+		dmfnutscanresdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfnutscanresdir}"; then
+	AC_MSG_RESULT(using ${dmfnutscanresdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_RES_DIR, "${dmfnutscanresdir}", [Default path for DMF resource collection of mappings for SNMP mode of nut-scanner])
+
+AC_MSG_CHECKING(whether to activate DMF collection of mappings for nut-scanner SNMP mode)
 AC_ARG_WITH(dmfnutscan-dir,
-	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF active collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${dmfnutscandir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory for nut-scanner requested but not found"])
+			AC_MSG_ERROR(["DMF SNMP active mappings directory for nut-scanner requested but not found"])
 		fi
 		;;
 	auto)
@@ -1572,54 +1686,92 @@ if test -n "${dmfnutscandir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF active collection of mappings for SNMP mode of nut-scanner])
 
+
+dnl If the arg is not passed explicitly, we remain with "auto" to pick below
+want_regenerate_dmf_snmp=auto
+AC_MSG_CHECKING(whether we want to regenerate DMF SNMP mapping files from C sources)
+AC_ARG_WITH(dmfsnmp-regenerate,
+	AS_HELP_STRING([--with-dmfsnmp-regenerate], [use DMF SNMP mapping files from Git/Tarball, or regenerate them (auto = yes, if we can and if DMF is enabled)]),
+[
+	case "${withval}" in
+	yes|no|auto)	want_regenerate_dmf_snmp="${withval}" ;;
+	"") ;; dnl keep "auto"
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfsnmp-regenerate : ${withval}])
+		;;
+	esac
+], [])
+AC_MSG_RESULT([${want_regenerate_dmf_snmp}])
+
+want_regenerate_dmf_nutscan=auto
+AC_MSG_CHECKING(whether we want to regenerate DMF collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-regenerate,
+	AS_HELP_STRING([--with-dmfnutscan-regenerate], [use DMF collection of mappings for nut-scanner SNMP mode from Git/Tarball, or regenerate them (auto = yes, if dmfsnmp-regenerate=yes)]),
+[
+	case "${withval}" in
+	yes|no|auto)	want_regenerate_dmf_nutscan="${withval}" ;;
+	"") ;; dnl keep "auto"
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+AC_MSG_RESULT([${want_regenerate_dmf_nutscan}])
 
 dnl Ability to regenerate the DMF files from C sources depends on both
 dnl availability of a Python pycparser module and support in the filter
 dnl of "scripts/DMF/nut_cpp" script to make system headers parsable by
 dnl pycparser (it does not support many "extra" keywords).
 dnl Note: this test should be among the last in the configure script,
-dnl so it can provide reasonable features in "config.h" to the compiler.
+dnl so it can provide reasonable features in "config.h" to the compiler
+dnl as we try to parse and test-build a C(original)->DMF->C(selftest) file.
 dnl NOTE: we populate a "config.h" with collected data matching this system,
 dnl using an implementation detail of autotools - storing the defined data
 dnl for C/C++ in a temporary "confdefs.h" file.
-AC_MSG_CHECKING([if we can regenerate DMF files from C sources])
-can_generate_dmf_snmp=no
-if test "${nut_with_dmf}" = "yes"; then
-( CURDIR="$(pwd)" && \
-  OUTDIR="$(mktemp -d --tmpdir="${CURDIR}" configure-test.dmfify.$$.XXXXXXX)" && \
-  test -d "$OUTDIR" && \
-  if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
-  ( cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
-      echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
-      ./dmfify-mib.sh --sanity-check && \
-    cd "$OUTDIR" && \
-      echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
-      rm -rf "./ietf-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
-      CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/ietf-mib.c" && \
-      test -s "./ietf-mib.dmf" && \
-    for F in "${SRCDIR}/drivers/"*-mib.c ; do \
-      test -s "$F" || continue; \
-      echo "Test if we can nut_cpp parse '$F'" >&2; \
-      "$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null || exit $? ; \
-    done \
-  )
-  RES=$?; rm -rf "$OUTDIR"; exit $RES
-) >&5 2>&5 \
+can_generate_dmf_snmp=untested
+if test "${want_regenerate_dmf_snmp}" != no ; then
+	AC_MSG_CHECKING([if we can regenerate DMF files from C sources])
+	can_generate_dmf_snmp=no
+	if test "${nut_with_dmf}" = "yes"; then
+	(	CURDIR="$(pwd)" && \
+		OUTDIR="$(mktemp -d --tmpdir="${CURDIR}" configure-test.dmfify.$$.XXXXXXX)" && \
+		test -d "$OUTDIR" && \
+		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
+		(	cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
+				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
+				./dmfify-mib.sh --sanity-check && \
+			cd "$OUTDIR" && \
+				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
+				rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
+				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
+				test -s "./apc-ats-mib.dmf" && \
+			for F in "${SRCDIR}/drivers/"*-mib.c ; do \
+				test -s "$F" || continue; \
+				echo "Test if we can nut_cpp parse '$F'" >&2; \
+				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null || exit $? ; \
+			done \
+		)
+		RES=$?; rm -rf "$OUTDIR"; exit $RES
+	) >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
+	fi
+
+	AC_MSG_RESULT(${can_generate_dmf_snmp})
 fi
 
-AC_MSG_RESULT(${can_generate_dmf_snmp})
-
-
-dnl If the arg is not passed explicitly, we remain with "auto" to pick below
-with_regenerate_dmf_snmp=auto
-AC_MSG_CHECKING(whether to regenerate DMF SNMP mapping files from C sources)
-AC_ARG_WITH(dmfsnmp-regenerate,
-	AS_HELP_STRING([--with-dmfsnmp-regenerate], [use DMF SNMP mapping files from Git/Tarball, or regenerate them (auto = yes, if we can and if DMF is enabled)]),
-[
-	case "${withval}" in
+AC_MSG_CHECKING(whether we will regenerate DMF SNMP mapping files from C sources)
+with_regenerate_dmf_snmp=no
+case "${want_regenerate_dmf_snmp}" in
+	auto)
+		if test "${can_generate_dmf_snmp}" = yes -a "${nut_with_dmf}" = "yes"; then
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_snmp=yes
+		else
+			with_regenerate_dmf_snmp=no
+			AC_MSG_RESULT(no)
+		fi ;;
 	yes)
 		if test "${can_generate_dmf_snmp}" = yes; then
 			AC_MSG_RESULT(yes)
@@ -1630,26 +1782,14 @@ AC_ARG_WITH(dmfsnmp-regenerate,
 			AC_MSG_ERROR([Can not generate DMF SNMP mappings, but re-generation was requested])
 		fi
 		;;
-	auto) with_regenerate_dmf_snmp=auto ;;
 	no)
 		AC_MSG_RESULT([no (by request)])
 		with_regenerate_dmf_snmp=no
 		;;
 	*)
-		AC_MSG_ERROR([Unknown argument for --with-dmfsnmp-regenerate : ${withval}])
+		AC_MSG_ERROR([Unknown state for want_regenerate_dmf_snmp : ${want_regenerate_dmf_snmp}])
 		;;
-	esac
-], [])
-
-if test "${with_regenerate_dmf_snmp}" = auto; then
-	if test "${can_generate_dmf_snmp}" = yes -a "${nut_with_dmf}" = "yes"; then
-		AC_MSG_RESULT(yes)
-		with_regenerate_dmf_snmp=yes
-	else
-		with_regenerate_dmf_snmp=no
-		AC_MSG_RESULT(no)
-	fi
-fi
+esac
 
 NUT_REPORT_FEATURE([enable regeneration of DMF SNMP mapping files from C sources], [${with_regenerate_dmf_snmp}], [],
 				[WITH_REGENERATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
@@ -1659,42 +1799,41 @@ dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
 dnl It does not directly rely on Python etc. It may also be skipped if
 dnl the build uses original files (then this reparse of those files is
 dnl expected to match as well, as all are in tarball or Git at once).
-dnl TODO: On some systems that custom build can fail. It is questionable if
+dnl Note: On some systems that custom build can fail. It is questionable if
 dnl we need it at all, or can use the binary built as part of nut-scanner.
-with_regenerate_dmf_nutscan=auto
-AC_MSG_CHECKING(whether to regenerate DMF collection of mappings for nut-scanner SNMP mode)
-AC_ARG_WITH(dmfnutscan-regenerate,
-	AS_HELP_STRING([--with-dmfnutscan-regenerate], [use DMF collection of mappings for nut-scanner SNMP mode from Git/Tarball, or regenerate them (auto = yes, if dmfsnmp-regenerate=yes)]),
-[
-	case "${withval}" in
+dnl For simplicity we just want the common build of the tool.
+dnl Developers hacking on alternate codepaths may enable the custom build here.
+AM_CONDITIONAL([USE_CUSTOM_BUILD_OF_DMF_REINDEX], [false])
+
+with_regenerate_dmf_nutscan=no
+AC_MSG_CHECKING(whether we will regenerate DMF collection of mappings for nut-scanner SNMP mode)
+case "${want_regenerate_dmf_nutscan}" in
 	yes)
 			AC_MSG_RESULT(yes)
 			with_regenerate_dmf_nutscan=yes
 		;;
-	auto) with_regenerate_dmf_nutscan=auto ;;
+	auto)
+		if test "${with_regenerate_dmf_snmp}" = yes ; then
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_nutscan=yes
+		else
+			with_regenerate_dmf_nutscan=no
+			AC_MSG_RESULT(no)
+		fi
+		;;
 	no)
 		AC_MSG_RESULT([no (by request)])
 		with_regenerate_dmf_nutscan=no
 		;;
 	*)
-		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		AC_MSG_ERROR([Unknown state for want_regenerate_dmf_nutscan : ${want_regenerate_dmf_nutscan}])
 		;;
-	esac
-], [])
-
-if test "${with_regenerate_dmf_nutscan}" = auto; then
-	if test "${with_regenerate_dmf_snmp}" = yes ; then
-		AC_MSG_RESULT(yes)
-		with_regenerate_dmf_nutscan=yes
-	else
-		with_regenerate_dmf_nutscan=no
-		AC_MSG_RESULT(no)
-	fi
-fi
+esac
 
 NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-scanner SNMP mode], [${with_regenerate_dmf_nutscan}], [],
 				[WITH_REGENERATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
 AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
+
 
 with_xmllint_dmf_snmp=auto
 AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
@@ -1831,6 +1970,8 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(dmfsnmpresdir)
+AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
 AC_SUBST(dmfnutscandir)
 AC_SUBST(auglensdir)

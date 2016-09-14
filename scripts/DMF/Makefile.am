@@ -3,32 +3,40 @@
 # * generate the dmfnutscan-snmp.dmf from existing DMF files
 # * build and run some test programs to verify that DMF code works
 
-# TODO: GNU Make syntax may be assumed below; fix this to be portable to other make's
-
 # Note that some include files may be generated, so we prefer a builddir
 # and then srcdir - just in case these differ
-DMFTOOLS_CPPFLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
+DMFTOOLS_INCLUDE_FLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
     -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
     -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
     -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
+DMFTOOLS_CFLAGS = $(DMFTOOLS_INCLUDE_FLAGS)
+DMFTOOLS_CPPFLAGS = $(DMFTOOLS_INCLUDE_FLAGS)
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEAN_FILES =
 EXTRA_DIST =
 
-PROGS = dmf-test
-PROGS_EXPERIMENTAL = dmf-lua-test
+check_PROGRAMS = dmf-test
+check_experimental = dmf-lua-test
 
-# Note: this causes a private build of dmf-reindex with debugging etc. which
-# may be slightly different from the distributed `nut-scanner-reindex-dmfsnmp`
-if WITH_REGENERATE_DMF_SNMP
-  PROGS += dmf-reindex
-else
-  PROGS_EXPERIMENTAL += dmf-reindex
-endif
+# The dmf*resdir variables point to resources, original DMFs with their
+# original basenames same as *-mib.c files they were generated from.
+# The dmf*dir variables are separate directories where filenames (symlinks)
+# are specially ordered so that some mappings are loaded and tried before
+# others (specifically, "ietf" standard fallback MIBs must be last); these
+# are the directories used by default in DMF binaries.
 
-DMFSNMP_SUBDIR = dmfsnmp
-DMFNUTSCAN_SUBDIR = dmfnutscan
+# install dirs:
+dmfsnmpdir = @dmfsnmpdir@
+dmfsnmpresdir = @dmfsnmpresdir@
+dmfnutscandir = @dmfnutscandir@
+dmfnutscanresdir = @dmfnutscanresdir@
+
+# build dirs:
+DMFSNMP_RES_SUBDIR = dmfsnmp
+DMFNUTSCAN_RES_SUBDIR = dmfnutscan
+DMFSNMP_SUBDIR = dmfsnmp.d
+DMFNUTSCAN_SUBDIR = dmfnutscan.d
 
 # This generated file defines LEGACY_NUT_C_MIBS and LEGACY_NUT_DMFS lists
 # based on existing C sources for ../../drivers/*-mib.c
@@ -39,26 +47,39 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 
 # Automake installation
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
-# existing sources, use some filename pattern that does not end in "-mib.dmf"!
-dmfsnmpdir = @dmfsnmpdir@
+# existing sources, use some filename pattern that does not end in "-mib.dmf",
+# to avoid possible conflicts in the future!
+
 # Note that LEGACY_NUT_DMFS list defined in the included file lists the DMF
 # files generated from *-mib.c sources (both tracked in Git or tarballs), and
-# the make-variable value already includes the DMFSNMP_SUBDIR subdirectory.
-dmfsnmp_DMFS = $(LEGACY_NUT_DMFS)
-# dmfsnmp_DMFS += $(YOUR_CUSTOM_COMPILED_DMFS)
-# dmfsnmp_DMFS += $(YOUR_CUSTOM_VERBATIM_DMFS)
-dmfsnmp_DATA = $(dmfsnmp_DMFS) $(LEGACY_NUT_DMF_SYMLINKS) dmfsnmp.xsd
+# the make-variable value already includes the DMFSNMP_RES_SUBDIR subdirectory.
+dmfsnmpres_DMFS = $(LEGACY_NUT_DMFS)
+# dmfsnmpres_DMFS += $(YOUR_CUSTOM_COMPILED_DMFS)
+# dmfsnmpres_DMFS += $(YOUR_CUSTOM_VERBATIM_DMFS)
+dmfsnmpres_DATA = $(dmfsnmpres_DMFS) dmfsnmp.xsd
 
-dmfnutscandir = @dmfnutscandir@
 DMFNUTSCAN_SYMLINK = $(DMFNUTSCAN_SUBDIR)/S95_dmfnutscan-snmp.dmf
-dmfnutscan_DATA = $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf $(DMFNUTSCAN_SYMLINK) dmfnutscan.xsd
+dmfnutscanres_DATA = $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf dmfnutscan.xsd
+
+# Similar INSTALL_NUT_DMF_SYMLINKS is defined in the included generated makefile
+INSTALL_NUT_DMFNUTSCAN_SYMLINK = $(DESTDIR)$(dmfnutscandir)/S95_dmfnutscan-snmp.dmf
+INSTALL_NUT_DMFNUTSCAN_FILE = $(DESTDIR)$(dmfnutscanresdir)/dmfnutscan-snmp.dmf
+
+# These symlinks will be installed via automake hook below
+dmfnutscan_DATA =
+dmfsnmp_DATA =
+install_dmfsnmp_data:  $(INSTALL_NUT_DMF_SYMLINKS)
+install_dmfnutscan_data: $(INSTALL_NUT_DMFNUTSCAN_SYMLINK)
+
+install-data-hook: install_dmfsnmp_data install_dmfnutscan_data
 
 # Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
-#EXTRA_DIST += $(dmfsnmp_DATA) $(dmfnutscan_DATA)
+#EXTRA_DIST += $(dmfsnmpres_DATA) $(dmfnutscanres_DATA)
 EXTRA_DIST += dmfsnmp.xsd dmfnutscan.xsd
 DISTCLEANFILES += $(LEGACY_NUT_DMF_SYMLINKS) $(DMFNUTSCAN_SYMLINK)
 DISTCLEANDIRS += $(DMFSNMP_SUBDIR) $(DMFNUTSCAN_SUBDIR)
-CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
+CLEAN_FILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated \
+        $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
 
 # This does not rely on automake semantics, so this Makefile.am can be directly
 # used and changed during development without reconfiguring all of NUT sources
@@ -70,9 +91,9 @@ all: progs dmf
 
 clean: clean-local
 
-CLEAN_FILES += $(PROGS) $(PROGS_EXPERIMENTAL) $(DMFSNMP_SUBDIR)/*.o \
-		$(DMFSNMP_SUBDIR)/*.dmf.tmp $(DMFSNMP_SUBDIR)/*.json.tmp \
-		$(DMFSNMP_SUBDIR)/*_TEST.c $(DMFSNMP_SUBDIR)/*_TEST.exe
+CLEAN_FILES += $(check_PROGRAMS) $(check_experimental) $(DMFSNMP_RES_SUBDIR)/*.o \
+		$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp $(DMFSNMP_RES_SUBDIR)/*.json.tmp \
+		$(DMFSNMP_RES_SUBDIR)/*_TEST.c $(DMFSNMP_RES_SUBDIR)/*_TEST.exe
 
 clean-local:
 	$(RM) $(CLEAN_FILES)
@@ -102,32 +123,72 @@ dmf: $(TGT_DMF) $(ADD_TGT_DMF)
 
 check-experimental: progs-all check-local run-dmf-lua-test
 check-all: check-experimental
+check-lua: run-dmf-lua-test
 
 # Recipes to build DMF files with the sources and tools we have are defined
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
-DMFGEN_DEPS = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
-EXTRA_DIST += $(DMFGEN_DEPS)
+# The generation rules might stay, to help modernize third-party or in-house
+# packages that maintain their own C MIB structures not part of NUT upstream.
+DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
+DMFGEN_DEPS = $(DMFGEN_DEPS_FILES)
+EXTRA_DIST += $(DMFGEN_DEPS_FILES)
 EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
+
+# NOTE: In "dmfify-mib.sh" runs, the C preprocessor must be called without
+# optimization flags (or with explicit -O0 for gcc), otherwise the code
+# generated by C preprocessor may be incompatible with pycparser and so
+# fails the build (even if the simpler tests in configure script succeeded).
+# So we specifically do not include original makefile CFLAGS below.
+
+DMFGEN_SANITY_VALIDATED = $(abs_builddir)/.dmfgen-sanity-validated
+CLEAN_FILES += $(DMFGEN_SANITY_VALIDATED)
 
 if WITH_REGENERATE_DMF_SNMP
   DISTCLEANFILES += $(LEGACY_NUT_DMFS)
-  DMFGEN_DEPS += $(top_builddir)/Makefile
+# NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
+  DMFGEN_DEPS += $(top_builddir)/Makefile dmfgen-sanity
+# NOTE: Tricks like the externally-fed DMFFILE, CMIBFILE and DMFLINK
+# are needed for portability of the recipes to non-GNU make programs
+# (we can not use $< in this context); this approach is a hack that
+# relies on known/assumed fixed input filename location and relation
+# to output filenames - which we sort of guarantee in other places.
   DMFGEN_CMD = ( \
-	mkdir -p $(@D) || exit ; \
-	if $(abs_srcdir)/dmfify-mib.sh --sanity-check; then \
-	    cd $(@D) && CFLAGS="$(DMFTOOLS_CPPFLAGS) $(CFLAGS) $(AM_CFLAGS)" CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" $(abs_srcdir)/dmfify-mib.sh $< || exit; \
-	else echo "SKIP: NOT REBUILDING DMF file $@ from $< due to absence of prerequisites like Python or pycparser" >&2; \
-	fi; \
+	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD = `pwd`)" >&2 ; \
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
+	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
+	    ( cd "$(@D)" && \
+	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
+	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
+	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" \
+	    ) || exit; \
+	fi ; \
+	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then echo "ERROR: Generated file $@ is missing" >&2; ls -la "$@" "$(abs_top_builddir)/$@" "$(abs_top_srcdir)/$@"; exit 2; fi; \
 	)
+
+dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
+	@if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
+	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
+	    touch $(DMFGEN_SANITY_VALIDATED); \
+	else \
+	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
+	    $(RM) $(DMFGEN_SANITY_VALIDATED); \
+	fi
 else
-  EXTRA_DIST += $(dmfsnmp_DMFS)
+  EXTRA_DIST += $(dmfsnmpres_DMFS)
   DMFGEN_CMD = ( \
-	echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
+	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
+	$(RM) $(DMFGEN_SANITY_VALIDATED); \
 	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; \
 	)
 endif
+
+DMFLNK_CMD = ( \
+	echo "  LN     '$$DMFFILE' => '$@' (PWD = `pwd`)" >&2 ; \
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
+	$(LN_S) -f -r "$$DMFFILE" "$@" || exit ; \
+	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
 # that we use builddir for this final touch. The DMF files themselves may be
@@ -136,47 +197,49 @@ endif
 # We try to use the .PHONY target to quiesce the warnings below.
 # However, the dmf-reindexer is currently hardcoded to use only one directory,
 # so we copy stuff below just in case (if needed).
-.PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
-$(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
-$(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(dmfsnmp_DMFS)
-	@echo "DMFSNMP_SUBDIR content is now up to date, made of: $^" >&2
-	mkdir -p $(@D)
-	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
-		for F in "$(abs_srcdir)/$(DMFSNMP_SUBDIR)/"*.dmf ; do \
+.PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated \
+        $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
+$(DMFSNMP_RES_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
+$(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
+	@echo "DMFSNMP_RES_SUBDIR content is now up to date, made of: $^" >&2
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	@if [ "`cd $(abs_builddir) && pwd`" = "`cd $(abs_srcdir) && pwd`" ]; then \
+		echo "INFO: Build was done in-place, no need to copy files around"; \
+	 else \
+		echo "INFO: Build was done out-of-tree, so will copy files from source dir if needed (if nothing got generated)"; \
+		for F in "$(abs_srcdir)/$(DMFSNMP_RES_SUBDIR)/"*.dmf ; do \
 			B="`basename "$$F"`"; \
-			[ "$$B" = '*.dmf' ] && exit 0 ; \
-			N="$(abs_builddir)/$(DMFSNMP_SUBDIR)/$$B"; \
-			[ -s "$$F" ] && [ ! -s "$$N" ] && \
-				echo "  CP    $$F => $$N" >&2 && \
-				cp -f "$$F" "$$N" || exit ; \
+			case "$$B" in \
+				'*.dmf') exit 0 ;; \
+				S*|K*) ;; \
+				*) N="$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/$$B"; \
+					if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
+						echo "  CP    $$F => $$N" >&2 ; \
+						cp -f "$$F" "$$N" || exit ; \
+					fi ;; \
+			esac ; \
 		done; \
-	fi
-	@cd "$(abs_builddir)/$(DMFSNMP_SUBDIR)" && \
-		for F in *.dmf ; do case "$$F" in \
-			'*.dmf') echo "ERROR: No DMF files found while processing $@" >&2 ; exit 2 ;; \
-			S*|K*) ;; \
-			ietf-mib.dmf)	echo "  LN     $$F => S90_$$F" >&2 && \
-				ln -fs "$$F" "S90_$$F" || exit ;; \
-			*)	echo "  LN     $$F => S10_$$F" >&2 && \
-				ln -fs "$$F" "S10_$$F" || exit ;; \
-		esac; done
-	touch $@
+	 fi
+	touch "$@"
+
+$(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
+$(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(LEGACY_NUT_DMF_SYMLINKS)
+	touch "$@"
 
 # The recipe assumes we have separate opening and closing lines in the DMF file
 # just generated by reindexer (the "<?xml...>\n<nut>" and "</nut>" lines) and a
 # randomly ordered set of mib2nut lines that we want consistent (to get no
 # `git diff` complaints).
-# Note that parsing a directory with DMF files only considers 'S*.dmf' names
 # TODO: The proper solution (sort, uniq) should probably be in the C code!
 # NOTE: Sorting is a problem now that some MIBs must be last (e.g. ietf) -
 #       so we add them in desired order explicitly...
-DMFNUTSCAN_DEPS = $(DMFSNMP_SUBDIR)/.uptodate
+DMFNUTSCAN_DEPS = $(DMFSNMP_RES_SUBDIR)/.uptodate
 if WITH_REGENERATE_DMF_NUTSCAN
-DISTCLEANFILES += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+DISTCLEANFILES += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile
-$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
-	mkdir -p $(@D)
-	$(abs_builddir)/dmf-reindex > "$@.tmp"
+$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	$(DMF_REINDEX) -Z "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" > "$@.tmp"
 	( LANG=C; LC_ALL=C; TZ=UTC; export LANG LC_ALL TZ; \
 	  egrep -v '^$$|\<mib2nut ' "$@.tmp" | head -2 ; \
 	  grep '<mib2nut ' "$@.tmp" | sort | uniq | grep -v 'mib_name="ietf"'; \
@@ -190,94 +253,101 @@ $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	|| { echo "FAILED to sort generated $@ without losses!" >&2; \
 	     rm -f "$@.tmp"* ; exit 1; } ; exit 0
 	rm -f "$@.tmp"*
-	@cd "$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)" && \
-		for F in *.dmf ; do case "$$F" in \
-			'*.dmf') echo "ERROR: No DMF files found while processing $@" >&2 ; exit 2 ;; \
-			S*|K*) ;; \
-			dmfnutscan-snmp.dmf)	echo "  LN     $$F => S95_$$F" >&2 && \
-				ln -fs "$$F" "S95_$$F" || exit ;; \
-			*)	echo "  LN     $$F => S10_$$F" >&2 && \
-				ln -fs "$$F" "S10_$$F" || exit ;; \
-		esac; done
+	test -s "$@"
 else
-EXTRA_DIST += $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
-$(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
-	@echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfnutscan-regenerate option)"
+EXTRA_DIST += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
+$(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
+	@echo "SKIP: Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
-	mkdir -p $(@D)
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
-		F="$(abs_srcdir)/$(DMFNUTSCAN_SUBDIR)/$(@F)"; \
-		N="$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/$(@F)"; \
+		F="$(abs_srcdir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
+		N="$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/$(@F)"; \
 		if [ -s "$$F" ] && [ ! -s "$$N" ] ; then \
 			echo "  CP    $$F => $$N" >&2 && \
 			cp -f "$$F" "$$N" || exit ; \
 		fi; \
-	fi
+	 fi
+	test -s "$@"
 endif
 
-# TODO: Currently the recipe relies on the two files being really in same dir
-# Mostly it is here to make the Make happy (dependency for *_DATA above)
-$(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
-	@cd "$(@D)" && ln -fs "`basename "$<"`" "$(@F)"
+$(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
+	@DMFFILE="$^"; DMFLINK="$@"; $(DMFLNK_CMD)
+
+$(INSTALL_NUT_DMFNUTSCAN_SYMLINK): $(INSTALL_NUT_DMFNUTSCAN_FILE)
+	@DMFFILE="$^"; DMFLINK="$@"; $(DMFLNK_CMD)
+
+$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
+$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
+	@echo "DMFNUTSCAN_RES_SUBDIR is now up to date" >&2
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	touch "$@"
 
 $(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
-$(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SUBDIR)/dmfnutscan-snmp.dmf
+$(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SYMLINK)
 	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
-	mkdir -p $(@D)
-	touch $@
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	touch "$@"
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
+# TODO: Maybe per-DMF *.dmf.validated files would be better?
+$(DMFSNMP_RES_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.validated
 $(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.validated
+$(DMFNUTSCAN_RES_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated
+$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
+# The DMFLINT_XSD and DMFLINT_OPTION are fed by caller
 if WITH_VALIDATE_DMF_SNMP
-$(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
-	@cd $(@D) && for F in *.dmf ; do \
+  DMFLINT_CMD = ( \
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
+	cd "$(@D)" && for F in *.dmf ; do \
 	    echo " XMLLINT  $$F"; \
-	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
-	done
-	touch $@
+	    $(XMLLINT) --noout --schema "$$DMFLINT_XSD" "$$F" || exit; \
+	done; \
+	touch "$(@F)"; \
+	)
 else
-$(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
-	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
-	@echo "VALIDATION-SKIPPED" > $@
+  DMFLINT_CMD = ( \
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
+	echo "SKIP: Validation of $@ not enabled by the configure script ($$DMFLINT_OPTION option)" ; \
+	echo "VALIDATION-SKIPPED" > "$@" ; \
+	)
 endif
 
-# TODO: Maybe per-DMF *.dmf.validated files would be better?
-$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
-if WITH_VALIDATE_DMF_SNMP
+$(builddir)/$(DMFSNMP_RES_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
+	@DMFLINT_XSD="$(abs_srcdir)/dmfsnmp.xsd" ; DMFLINT_OPTION="--with-dmfsnmp-validate"; $(DMFLINT_CMD)
+
+$(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
+	@DMFLINT_XSD="$(abs_srcdir)/dmfsnmp.xsd" ; DMFLINT_OPTION="--with-dmfsnmp-validate"; $(DMFLINT_CMD)
+
+$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
+	@DMFLINT_XSD="$(abs_srcdir)/dmfnutscan.xsd" ; DMFLINT_OPTION="--with-dmfnutscan-validate"; $(DMFLINT_CMD)
+
 $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
-	@cd $(@D) && for F in *.dmf ; do \
-	    echo " XMLLINT  $$F"; \
-	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfnutscan.xsd "$$F" || exit; \
-	done
-	touch $@
-else
-$(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
-	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfnutscan-validate option)"
-	@echo "VALIDATION-SKIPPED" > $@
-endif
+	@DMFLINT_XSD="$(abs_srcdir)/dmfnutscan.xsd" ; DMFLINT_OPTION="--with-dmfnutscan-validate"; $(DMFLINT_CMD)
 
 
 # Make sure all generated DMFs are up to date vs. C sources and recipes
-dmf-uptodate: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
+dmf-uptodate: $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate
 
 # Make sure all present DMFs are valid vs. XSD schema
-dmf-validate: dmf-uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
+dmf-validate: dmf-uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated
 
 
 LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
- CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 $(CFLAGS_LUA)
+ CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
  LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)
 else
+# Note: absence of LUA does not require to set -DWITH_DMF_FUNCTIONS=0
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=0
  LDFLAGS_DMF_LUA =
 endif
 
 if WITH_LIBLTDL
   LIBS_dmfsnmp_ltdlXneon = $(LIBLTDL_LIBS)
-  CFLAGS_dmfsnmp_ltdlXneon = $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
+  CFLAGS_dmfsnmp_ltdlXneon = $(LIBNEON_CFLAGS) $(LIBLTDL_CFLAGS) -DWITH_LIBLTDL=1
 else
 if WITH_NEON
   LIBS_dmfsnmp_ltdlXneon = $(LIBNEON_LIBS)
@@ -286,60 +356,89 @@ endif
 endif
 
 
-progs: $(PROGS)
+progs: $(check_PROGRAMS)
 
-progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
+progs-all: $(check_PROGRAMS) $(check_experimental)
 
-# Note: These recipes are explicit and do not use NUT libs,
-# so they can be built quickly without configuring NUT
 # Note: -DDMFREINDEXER_MAKECHECK=1 is needed to avoid inclusion
 # of "nut_version.h" in "common.c" (if project is not conf'ed).
-dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
-	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
-	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
-	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
-	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
-	 -o $@ $^
+# Depending on project configuration, these tests may be built
+# with or without dmf+lua support.
+DMFTESTS_COMMON_CFLAGS = \
+	$(CFLAGS_dmfsnmp_ltdlXneon) $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
+	-DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
+	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_builddir)/$(DMFSNMP_SUBDIR)\""
 
-dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
-	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
-	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
-	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
-	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
-	 -o $@ $^
+# Some GCCisms... TODO: A configure flag variable like WITH_GCC
+DMFTESTS_COMMON_CFLAGS += \
+	-ggdb -std=c99 -Werror -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fstack-protector -O0
+
+dmf_test_SOURCES = $(DMFTEST_SRC)
+dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
+
+if USE_CUSTOM_BUILD_OF_DMF_REINDEX
+DMF_REINDEX = $(abs_builddir)/dmf-reindex
+dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
+dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
+else
+DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
+dmf-reindex:
+	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
+	$(LN_S) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
+endif
 
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
 if WITH_LUA
-dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
-	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
-	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
-	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
-	 -DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
-	 -DWITH_DMFMIB=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/testdata\"" \
-	 -o $@ $^
+dmf_lua_test_SOURCES = $(DMFTEST_SRC)
+dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
+dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 else
 dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 endif
 
+if WITH_VALGRIND
+DMF_TEST_RUNNER = $(VALGRIND) --leak-check=full --track-origins=yes --show-leak-kinds=all -v
+else
+DMF_TEST_RUNNER =
+endif
+
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
 run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
+	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
 run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && valgrind --leak-check=full $(abs_builddir)/$<
+	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(DMF_REINDEX)
 
 if WITH_LUA
-run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(abs_top_builddir)/scripts/DMF/testdata && valgrind --leak-check=full --track-origins=yes $(abs_builddir)/$<
+
+testdata/.validated: $(builddir)/testdata/.validated
+if WITH_VALIDATE_DMF_SNMP
+# $(abs_srcdir)/testdata/lua-example-mib.dmf
+$(builddir)/testdata/.validated: $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	@cd "$(@D)" && for F in $^ ; do \
+	    echo " XMLLINT-LUA  $$F"; \
+	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
+	done
+	touch "$@"
+else
+$(builddir)/testdata/.validated:
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
+	@echo "VALIDATION-SKIPPED" > "$@"
+endif
+CLEAN_FILES += $(builddir)/testdata/.validated testdata/.validated
+
+run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
+	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-lua-test
 else
 run-dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2

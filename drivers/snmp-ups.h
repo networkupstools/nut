@@ -49,15 +49,38 @@
 #ifndef SNMP_UPS_H
 #define SNMP_UPS_H
 
+/* Note: the snmp-ups.c code is built with legacy OR DMF mapping tables,
+ * and the build recipes explicitly disable DMF for one binary and enable
+ * it for another.
+ */
 #ifndef WITH_DMFMIB
 #define WITH_DMFMIB 0
+#endif
+
+#ifdef WANT_DMF_FUNCTIONS
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS WANT_DMF_FUNCTIONS
+# endif
 #endif
 
 #if (!WITH_DMFMIB)
 # ifdef WITH_DMF_LUA
 #  undef WITH_DMF_LUA
 # endif
-#define WITH_DMF_LUA 0
+# define WITH_DMF_LUA 0
+# ifdef WITH_DMF_FUNCTIONS
+#  undef WITH_DMF_FUNCTIONS
+# endif
+# define WITH_DMF_FUNCTIONS 0
+#endif
+
+#if WITH_DMF_LUA
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS 1
+# endif
+# if ! WITH_DMF_FUNCTIONS
+#  error "Explicitly not WITH_DMF_FUNCTIONS, but WITH_DMF_LUA - fatal conflict"
+# endif
 #endif
 
 #if WITH_DMF_LUA
@@ -141,9 +164,12 @@ typedef struct {
 	unsigned long flags;		/* my flags */
 	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
 	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
-#if WITH_DMF_LUA
-	char *function;
+#if WITH_DMF_FUNCTIONS
+	char *function_language;
+	char *function_code;
+# if WITH_DMF_LUA
 	lua_State *luaContext;
+# endif
 #endif
 } snmp_info_t;
 
@@ -160,8 +186,8 @@ typedef struct {
 #define SU_OUTLET			(1 << 7)	/* outlet template definition */
 #define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 
-#if WITH_DMF_LUA
-#define SU_FLAG_FUNCTION        (1 << 9)        /* TODO Pending to check if this flag have any incompatibility*/
+#if WITH_DMF_FUNCTIONS
+#define SU_FLAG_FUNCTION	(1 << 9)	/* TODO Pending to check if this flag have any incompatibility*/
 #endif
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
@@ -227,7 +253,9 @@ typedef struct {
 #define SU_VAR_PRIVPASSWD	"privPassword"
 #define SU_VAR_AUTHPROT		"authProtocol"
 #define SU_VAR_PRIVPROT		"privProtocol"
-#define SU_VAR_DMFPATH          "dmfpath"
+/* DMF-SNMP related parameters */
+#define SU_VAR_DMFFILE		"dmffile"
+#define SU_VAR_DMFDIR		"dmfdir"
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32

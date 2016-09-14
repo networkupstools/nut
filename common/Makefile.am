@@ -16,6 +16,11 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
 
+# several other Makefiles include these two helpers, so make them a library too
+noinst_LTLIBRARIES += libcommonstr.la
+libcommonstr_la_SOURCES = common.c str.c
+libcommonstr_la_LIBADD = @LTLIBOBJS@
+
 if WITH_NEON
 if WITH_SNMP
 if WITH_DMF
@@ -31,33 +36,33 @@ if WITH_DMF
   libnutdmfsnmp_la_SOURCES = dmfsnmp.c
   libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/drivers \
         -I$(top_srcdir)/tools/nut-scanner \
-        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1
+        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
   libnutdmfsnmp_la_LDFLAGS =
+  libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS) libcommonstr.la @LTLIBOBJS@
 
 if WITH_LIBLTDL
 # NOTE: the C macro WITH_LIBLTDL=1 will probably be defined by config.h
 # and unlike the DMF macros, we do not care much about this case.
 # We do care about it not defined when not enabled (so we define =0 below).
-  libnutdmfsnmp_la_LDFLAGS += $(LIBLTDL_LIBS)
+  libnutdmfsnmp_la_LIBADD += $(LIBLTDL_LIBS)
   libnutdmfsnmp_la_CFLAGS += -DWITH_LIBLTDL=1 $(LIBLTDL_CFLAGS)
 else
+  libnutdmfsnmp_la_LIBADD += $(LIBNEON_LIBS)
   libnutdmfsnmp_la_CFLAGS += -DWITH_LIBLTDL=0
-  libnutdmfsnmp_la_LDFLAGS += $(LIBNEON_LIBS)
 endif
 
+# Note: absence of LUA does not require to set -DWITH_DMF_FUNCTIONS=0
 if WITH_DMF_LUA
   LUA_INCLUDE ?= -I/usr/include/lua5.1
-  libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+  libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
+  libnutdmfsnmp_la_LIBADD += $(LUA_LIB)
 else
   libnutdmfsnmp_la_CFLAGS += -DWITH_DMF_LUA=0
 endif
 
 endif
 
-# Note: Consumers of this lib will generally want these linked in:
-#  libnutdmfsnmp_consumer_LDADD = $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LUA_LIB) libcommon.la
-#  if WITH_LIBLTDL
-#    libnutdmfsnmp_consumer_LDADD += $(LIBLTDL_LIBS)
-#  endif
+# Note: Consumers of this lib will generally want the dependencies linked via:
+#  libnutdmfsnmp_consumer_LDADD += $(abs_top_builddir)/common/libnutdmfsnmp.la
 endif
 endif

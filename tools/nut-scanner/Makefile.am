@@ -7,15 +7,16 @@ LUA_INCLUDE ?= -I/usr/include/lua5.1
 CFLAGS_LUA ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
- CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 $(CFLAGS_LUA)
+ CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
  LDFLAGS_DMF_LUA = $(LDFLAGS_LUA)
 else
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=0
  LDFLAGS_DMF_LUA =
 endif
 
-# We optionally append valued to this below
+# We optionally append values to this below
 bin_PROGRAMS =
+
 if WITH_NEON
 if WITH_SNMP
 if WITH_DMF
@@ -25,11 +26,18 @@ if WITH_DMF
     $(top_srcdir)/include/dmfsnmp.h
  nut_scanner_reindex_dmfsnmp_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
     $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
-    $(LIBNETSNMP_LIBS) $(LIBNEON_LIBS) $(LDFLAGS_DMF_LUA)
+    $(LIBNETSNMP_LIBS)
  nut_scanner_reindex_dmfsnmp_CFLAGS = -I$(top_srcdir)/include \
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
-    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) $(CFLAGS_DMF_LUA) \
+    $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
     -DDMFREINDEXER_MAKECHECK=0
+if WITH_DMF_LUA
+ nut_scanner_reindex_dmfsnmp_LDADD += $(LDFLAGS_DMF_LUA)
+ nut_scanner_reindex_dmfsnmp_CFLAGS += $(CFLAGS_DMF_LUA)
+endif
+if ! WITH_LIBLTDL
+ nut_scanner_reindex_dmfsnmp_LDADD += $(LIBNEON_LIBS)
+endif
 endif
 endif
 endif
@@ -42,14 +50,29 @@ endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
-			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
-			../../drivers/serial.c \
-			../../drivers/bcmxcp_ser.c \
-			../../common/common.c ../../common/str.c
-libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS) $(LDFLAGS_DMF_LUA)
+			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
+libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS) $(top_builddir)/drivers/libserial-nutscan.la
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
-			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers $(CFLAGS_DMF_LUA)
+			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
+if WITH_DMF
+libnutscan_la_CFLAGS += -DWITH_DMFMIB=1
+if WITH_DMF_LUA
+libnutscan_la_LIBADD += $(LDFLAGS_DMF_LUA)
+libnutscan_la_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
+else
+libnutscan_la_CFLAGS += -DWITH_DMF_LUA=0
+endif
+else
+libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
+endif
+
+if WITH_DMF
+libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
+else
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+endif
+#libnutscan_la_LIBADD += $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
@@ -59,17 +82,22 @@ if WITH_SNMP
 if WITH_NEON
 nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
 if WITH_DMF
-nut_scanner_CFLAGS += -DWITH_DMFMIB=1 $(CFLAGS_DMF_LUA)
+nut_scanner_CFLAGS += -DWITH_DMFMIB=1
+if WITH_DMF_LUA
+nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
 nut_scanner_LDADD += $(LDFLAGS_DMF_LUA)
+else
+nut_scanner_CFLAGS += -DWITH_DMF_LUA=0
+endif
 else
 nut_scanner_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
-libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
-#	$(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+if ! WITH_LIBLTDL
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
 #	$(LIBNETSNMP_LIBS)
 libnutscan_la_LIBADD += $(LIBNEON_LIBS)
+endif
 endif
 endif
 

@@ -5,7 +5,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 # subdirectories to build and distribute. The order matters, as
 # several subdirectories depend on stuff in "common" or tools being built first
-SUBDIRS = include common clients conf data tools docs drivers \
+SUBDIRS = include common clients conf data drivers tools docs \
   lib scripts server tests
 
 # COPYING is included automatically.
@@ -21,6 +21,24 @@ DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
 DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man
 
+# The checks for DMF builds involve several distinct combinations of options
+# that the recipes should accept as valid. We generally skip items tested
+# previously, since the rebuild-tests take a lot of time even so.
+DISTCHECK_DMF_COMMON_FLAGS =  --with-all=no --with-dmf=yes --with-snmp=yes --with-neon=yes --with-dev=yes --with-snmp_dmf=yes --with-doc=skip -C
+DISTCHECK_DMF_NOREGEN_FLAGS = --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
+DISTCHECK_DMF_WITH_LTDL_YES_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-libltdl=yes
+DISTCHECK_DMF_WITH_LTDL_NO_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-libltdl=no
+DISTCHECK_DMF_WITH_LUA_YES_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-lua=yes --with-snmp_dmf_lua=yes
+DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-lua=yes --with-snmp_dmf_lua=no --with-dmf_lua=no
+DISTCHECK_DMF_WITH_LUA_NO_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS) --with-lua=no --with-snmp_dmf_lua=no
+DISTCHECK_DMF_WITH_REGEN_NO_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) $(DISTCHECK_DMF_NOREGEN_FLAGS)
+DISTCHECK_DMF_WITH_REGEN_YES_FLAGS = $(DISTCHECK_DMF_COMMON_FLAGS) --with-dmfsnmp-regenerate=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes
+# Enable all DMF-related options, including again generation and
+# validation of DMF files from C sources
+DISTCHECK_DMF_ALL = $(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS) --with-snmp_dmf_lua=yes --with-libltdl=yes
+# Also have a way to test legacy code structure with no DMF support built in
+DISTCHECK_DMF_NO = --with-all=auto --with-dmf=no --with-doc=skip --with-dev=yes -C
+
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
  --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
@@ -33,6 +51,37 @@ distcheck-light:
 
 distcheck-light-man:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+
+# Intentionally done as one rule, to avoid parallelization and conflicts
+distcheck-dmf-features:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_YES_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_YES_FLAGS" >&2; exit $$RES; }
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LTDL_NO_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LTDL_NO_FLAGS" >&2; exit $$RES; }
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YES_FLAGS)" distcheck ||  	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YES_FLAGS" >&2; exit $$RES; }
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_YESNO_FLAGS" >&2; exit $$RES; }
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_LUA_NO_FLAGS)" distcheck ||   	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_LUA_NO_FLAGS" >&2; exit $$RES; }
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_YES_FLAGS)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_YES_FLAGS" >&2; exit $$RES; }
+	echo "PASSED $@ suite!"
+
+# Just test the common useful case of enabling (requiring) everything
+# related to DMF at once
+distcheck-dmf-all-yes:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_ALL" >&2; exit $$RES; }
+	echo "PASSED $@ suite!"
+
+distcheck-dmf-no:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_NO)" distcheck ||	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_NO" >&2; exit $$RES; }
+	echo "PASSED $@ suite!"
+
+distcheck-dmf-warnings:
+	$(MAKE) $(AM_MAKEFLAGS) CFLAGS="$(CFLAGS) -Werror -Wall" DISTCHECK_FLAGS="$(DISTCHECK_DMF_ALL)" distcheck
+	echo "PASSED $@ suite!"
+
+distcheck-dmf:
+	$(MAKE) $(AM_MAKEFLAGS) distcheck-light-man
+	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-features
+	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-warnings
+	echo "PASSED $@ suite!"
 
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
