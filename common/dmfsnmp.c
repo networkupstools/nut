@@ -200,6 +200,9 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 
 /* Returns OK if all went well, or ERR on error */
 /* Based on nut-scanner/scan_xml_http.c code */
+/* Note: names for popular libneon implementations are hard-coded at this
+ * time - and just one, so extra DLLs (if an OS requires several to load)
+ * are not supported. (TODO: link this to LIBNEON_LIBS from configure) */
 int load_neon_lib(void){
 #ifdef WITH_NEON
 # if WITH_LIBLTDL
@@ -207,8 +210,14 @@ int load_neon_lib(void){
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 	if(!neon_libname_path) {
-		upslogx(0, "Error loading Neon library required for DMF: libneon.so not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path");
-		return ERR;
+		upslogx(0, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
+
+		neon_libname_path = get_libname("libneon-gnutls.so");
+		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
+		if(!neon_libname_path) {
+			upslogx(0, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
+			return ERR;
+		}
 	}
 
 	if( lt_dlinit() != 0 ) {
