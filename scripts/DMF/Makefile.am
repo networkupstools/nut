@@ -16,6 +16,9 @@ DISTCLEANDIRS =
 CLEAN_FILES =
 EXTRA_DIST =
 
+# A way to to relative symlinks, or hardlinks, or copies... depends on OS.
+LN_S_R = @LN_S_R@ -f
+
 check_PROGRAMS = dmf-test
 check_experimental = dmf-lua-test
 noinst_PROGRAMS = dmf-test dmf-lua-test
@@ -188,7 +191,7 @@ endif
 DMFLNK_CMD = ( \
 	echo "  LN     '$$DMFFILE' => '$@' (PWD = `pwd`)" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
-	$(LN_S) -f -r "$$DMFFILE" "$@" || exit ; \
+	$(LN_S_R) "$$DMFFILE" "$@" || exit ; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
@@ -391,7 +394,7 @@ dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
 	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
-	$(LN_S) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
+	$(LN_S_R) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
 #endif
 
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build

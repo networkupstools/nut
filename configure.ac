@@ -125,6 +125,26 @@ AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
+AC_MSG_CHECKING([whether ln -sr works])
+dnl We need to relative-symlink some files. Or hardlink. Or copy...
+LN_S_R="cp -pR"
+if test "$as_ln_s" = "ln -s" ; then
+    LN_S_R="ln"
+    DIR1="$(mktemp -d "dir1.XXXXX")" && \
+    DIR2="$(mktemp -d "dir2.XXXXX")" && \
+    touch "${DIR1}/a" && \
+    $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
+    ls -la "${DIR2}/b" | grep '\.\./' && \
+    LN_S_R="$as_ln_s -r"
+    rm -rf "${DIR1}" "${DIR2}"
+fi
+AC_SUBST([LN_S_R], [${LN_S_R}])
+if test "$LN_S_R" = "ln -s -r" ; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no, using $LN_S_R])
+fi
+
 dnl the following may add stuff to LIBOBJS (is this still needed?)
 AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 	AC_LIBOBJ(snprintf)
