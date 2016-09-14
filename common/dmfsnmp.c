@@ -1538,6 +1538,8 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 		return ENOENT;
 	}
 #if WITH_LIBLTDL
+	/* Library could be loaded by the caller like the directory
+	 * parser - do not unload it then in the end of single-file work */
 	if(!dl_handle_libneon){
 		flag_libneon = 1;
 		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
@@ -1719,7 +1721,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 		free(dir_ent[c]);
 	}
 	free(dir_ent);
-	
+
 	unload_neon_lib();
 
 	if (i==0) {
