@@ -103,7 +103,7 @@ CLEAN_FILES += $(check_PROGRAMS) $(check_experimental) $(DMFSNMP_RES_SUBDIR)/*.o
 		$(DMFSNMP_RES_SUBDIR)/*_TEST.c $(DMFSNMP_RES_SUBDIR)/*_TEST.exe
 
 clean-local:
-	$(RM) -f $(CLEAN_FILES)
+	rm -f $(CLEAN_FILES)
 
 check: check-local
 
@@ -180,13 +180,13 @@ dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
 	    touch $(DMFGEN_SANITY_VALIDATED); \
 	else \
 	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
-	    $(RM) -f $(DMFGEN_SANITY_VALIDATED); \
+	    rm -f $(DMFGEN_SANITY_VALIDATED); \
 	fi
 else
   EXTRA_DIST += $(dmfsnmpres_DMFS)
   DMFGEN_CMD = ( \
 	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
-	$(RM) -f $(DMFGEN_SANITY_VALIDATED); \
+	rm -f $(DMFGEN_SANITY_VALIDATED); \
 	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; \
 	)
 endif
