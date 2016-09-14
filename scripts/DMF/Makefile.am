@@ -19,9 +19,11 @@ EXTRA_DIST =
 # A way to to relative symlinks, or hardlinks, or copies... depends on OS.
 LN_S_R = @LN_S_R@ -f
 
+if WITH_DMFMIB
 check_PROGRAMS = dmf-test
 check_experimental = dmf-lua-test
 noinst_PROGRAMS = dmf-test dmf-lua-test
+endif
 
 # The dmf*resdir variables point to resources, original DMFs with their
 # original basenames same as *-mib.c files they were generated from.
