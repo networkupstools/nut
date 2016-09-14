@@ -134,7 +134,7 @@ if test "$as_ln_s" = "ln -s" ; then
     DIR2="$(mktemp -d "dir2.XXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
-    ls -la "${DIR2}/b" | grep '\.\./' && \
+    ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
     LN_S_R="$as_ln_s -r"
     rm -rf "${DIR1}" "${DIR2}"
 fi
