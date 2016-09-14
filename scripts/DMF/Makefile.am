@@ -3,8 +3,6 @@
 # * generate the dmfnutscan-snmp.dmf from existing DMF files
 # * build and run some test programs to verify that DMF code works
 
-# TODO: Convert PROGS, explicit flag recipes, etc. to automake variable names
-
 # Note that some include files may be generated, so we prefer a builddir
 # and then srcdir - just in case these differ
 DMFTOOLS_INCLUDE_FLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
@@ -18,14 +16,8 @@ DISTCLEANDIRS =
 CLEAN_FILES =
 EXTRA_DIST =
 
-PROGS = dmf-test
-PROGS_EXPERIMENTAL = dmf-lua-test
-
-if WITH_REGENERATE_DMF_NUTSCAN
-  PROGS += dmf-reindex
-else
-  PROGS_EXPERIMENTAL += dmf-reindex
-endif
+check_PROGRAMS = dmf-test
+check_experimental = dmf-lua-test
 
 # The dmf*resdir variables point to resources, original DMFs with their
 # original basenames same as *-mib.c files they were generated from.
@@ -57,7 +49,6 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
 # existing sources, use some filename pattern that does not end in "-mib.dmf",
 # to avoid possible conflicts in the future!
-
 
 # Note that LEGACY_NUT_DMFS list defined in the included file lists the DMF
 # files generated from *-mib.c sources (both tracked in Git or tarballs), and
@@ -100,7 +91,7 @@ all: progs dmf
 
 clean: clean-local
 
-CLEAN_FILES += $(PROGS) $(PROGS_EXPERIMENTAL) $(DMFSNMP_RES_SUBDIR)/*.o \
+CLEAN_FILES += $(check_PROGRAMS) $(check_experimental) $(DMFSNMP_RES_SUBDIR)/*.o \
 		$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp $(DMFSNMP_RES_SUBDIR)/*.json.tmp \
 		$(DMFSNMP_RES_SUBDIR)/*_TEST.c $(DMFSNMP_RES_SUBDIR)/*_TEST.exe
 
@@ -365,55 +356,48 @@ endif
 endif
 
 
-progs: $(PROGS)
+progs: $(check_PROGRAMS)
 
-progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
+progs-all: $(check_PROGRAMS) $(check_experimental)
 
-# Note: These recipes are explicit and do not use NUT libs,
-# so they can be built quickly without configuring NUT
 # Note: -DDMFREINDEXER_MAKECHECK=1 is needed to avoid inclusion
 # of "nut_version.h" in "common.c" (if project is not conf'ed).
 # Depending on project configuration, these tests may be built
 # with or without dmf+lua support.
-# TODO: drop this complexity at some point.
-dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
-	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
-	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
-	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
-	 -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
-	 -o "$@" $^
+DMFTESTS_COMMON_CFLAGS = \
+	$(CFLAGS_dmfsnmp_ltdlXneon) $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
+	-DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
+	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_builddir)/$(DMFSNMP_SUBDIR)\""
+
+# Some GCCisms... TODO: A configure flag variable like WITH_GCC
+DMFTESTS_COMMON_CFLAGS += \
+	-ggdb -std=c99 -Werror -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fstack-protector -O0
+
+dmf_test_SOURCES = $(DMFTEST_SRC)
+dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
 if USE_CUSTOM_BUILD_OF_DMF_REINDEX
 DMF_REINDEX = $(abs_builddir)/dmf-reindex
-dmf-reindex: $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/common.c $(top_srcdir)/common/str.c 
-	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
-	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
-	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) $(CFLAGS_DMF_LUA) $(LDFLAGS_DMF_LUA) \
-	 -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/$(DMFSNMP_SUBDIR)\"" \
-	 -o "$@" $^
+dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
+dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
 else
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
 	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
-	ln -sfr $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
+	$(LN_S) $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp dmf-reindex
 endif
 
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
 if WITH_LUA
-dmf-lua-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
-	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
-	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
-	 $(LIBS_dmfsnmp_ltdlXneon) $(CFLAGS_dmfsnmp_ltdlXneon) \
-	 $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
-	 -DWITH_DMF_LUA=1 $(CFLAGS_LUA) $(LDFLAGS_LUA) \
-	 -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
-	 -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_top_builddir)/scripts/DMF/testdata\"" \
-	 -o "$@" $^
+dmf_lua_test_SOURCES = $(DMFTEST_SRC)
+dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
+dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 else
 dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
