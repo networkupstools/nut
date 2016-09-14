@@ -332,6 +332,8 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{_datadir}/nut
 %exclude %{_datadir}/nut/dmfnutscan
 %exclude %{_datadir}/nut/dmfsnmp
+%exclude %{_datadir}/nut/dmfnutscan.d
+%exclude %{_datadir}/nut/dmfsnmp.d
 %{_mandir}/man5/*.*
 %{_mandir}/man8/*.*
 %exclude %{_mandir}/man8/netxml-ups*.*
@@ -373,6 +375,10 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{_datadir}/nut/dmfsnmp/*.dmf
 %{_datadir}/nut/dmfnutscan/*.xsd
 %{_datadir}/nut/dmfsnmp/*.xsd
+%dir %{_datadir}/nut/dmfnutscan.d
+%dir %{_datadir}/nut/dmfsnmp.d
+%{_datadir}/nut/dmfnutscan.d/*.dmf
+%{_datadir}/nut/dmfsnmp.d/*.dmf
 
 %files -n libupsclient1
 %defattr(-,root,root)
