@@ -397,7 +397,7 @@ dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 #dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 #dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
 #else
-CLEANFILES += dmf-reindex
+CLEAN_FILES += dmf-reindex
 DMF_REINDEX = $(abs_top_builddir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp
 dmf-reindex:
 	cd $(abs_top_builddir)/tools/nut-scanner/ && $(MAKE) nut-scanner-reindex-dmfsnmp
