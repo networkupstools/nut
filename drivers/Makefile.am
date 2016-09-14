@@ -311,7 +311,4 @@ noinst_LTLIBRARIES = libserial-nutscan.la
 
 libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
 libserial_nutscan_la_LDFLAGS = $(SERLIBS)
-# ensure inclusion of local implementation of missing systems functions
-# using LTLIBOBJS. Refer to configure.in -> AC_REPLACE_FUNCS
-libserial_nutscan_la_LIBADD = @LTLIBOBJS@
 libserial_nutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers
