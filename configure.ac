@@ -1553,22 +1553,60 @@ NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [
 					[WANT_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
 AM_CONDITIONAL([WITH_DMFMIB], [test "${nut_with_snmp_dmf}" = "yes"])
 
+dnl The dmf*resdir variables point to resources, original DMFs with their
+dnl original basenames same as *-mib.c files they were generated from.
+dnl The dmf*dir variables are separate directories where filenames (symlinks)
+dnl are specially ordered so that some mappings are loaded and tried before
+dnl others (specifically, "ietf" standard fallback MIBs must be last); these
+dnl are the directories used by default in DMF binaries.
+dmfsnmpresdir=""
+dmfnutscanresdir=""
 dmfsnmpdir=""
 dmfnutscandir=""
 if test "${nut_with_dmf}" = yes -o "${nut_with_snmp_dmf}" = yes -o "${nut_with_snmp_dmf_lua}" = yes ; then
-	dmfsnmpdir="${DATADIR}/dmfsnmp"
-	dmfnutscandir="${DATADIR}/dmfnutscan"
+	dmfsnmpresdir="${DATADIR}/dmfsnmp"
+	dmfnutscanresdir="${DATADIR}/dmfnutscan"
+	dmfsnmpdir="${DATADIR}/dmfsnmp.d"
+	dmfnutscandir="${DATADIR}/dmfnutscan.d"
 fi
 
-AC_MSG_CHECKING(whether to install DMF collection of mappings for SNMP-UPS driver)
+AC_MSG_CHECKING(whether to install DMF resource collection of mappings for SNMP-UPS driver)
+AC_ARG_WITH(dmfsnmp-res-dir,
+	AS_HELP_STRING([--with-dmfsnmp-res-dir=PATH], [where to install DMF resource collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfsnmpresdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings resource directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfsnmpresdir=""
+		;;
+	*)
+		dmfsnmpresdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfsnmpresdir}"; then
+	AC_MSG_RESULT(using ${dmfsnmpresdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_RES_DIR, "${dmfsnmpresdir}", [Default path for DMF resource collection of mappings for SNMP-UPS driver])
+
+AC_MSG_CHECKING(whether to activate DMF collection of mappings for SNMP-UPS driver)
 AC_ARG_WITH(dmfsnmp-dir,
-	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF active collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${dmfsnmpdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory requested but not found"])
+			AC_MSG_ERROR(["DMF SNMP active mappings directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -1586,17 +1624,45 @@ if test -n "${dmfsnmpdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF collection of mappings for SNMP-UPS driver])
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF active collection of mappings for SNMP-UPS driver])
 
-AC_MSG_CHECKING(whether to install DMF collection of mappings for nut-scanner SNMP mode)
+AC_MSG_CHECKING(whether to install DMF resource collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-res-dir,
+	AS_HELP_STRING([--with-dmfnutscan-res-dir=PATH], [where to install DMF resourcecollection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfnutscanresdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings resource directory for nut-scanner requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfnutscanresdir=""
+		;;
+	*)
+		dmfnutscanresdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfnutscanresdir}"; then
+	AC_MSG_RESULT(using ${dmfnutscanresdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_RES_DIR, "${dmfnutscanresdir}", [Default path for DMF resource collection of mappings for SNMP mode of nut-scanner])
+
+AC_MSG_CHECKING(whether to activate DMF collection of mappings for nut-scanner SNMP mode)
 AC_ARG_WITH(dmfnutscan-dir,
-	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
+	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF active collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${dmfnutscandir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory for nut-scanner requested but not found"])
+			AC_MSG_ERROR(["DMF SNMP active mappings directory for nut-scanner requested but not found"])
 		fi
 		;;
 	auto)
@@ -1614,7 +1680,7 @@ if test -n "${dmfnutscandir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF active collection of mappings for SNMP mode of nut-scanner])
 
 
 dnl If the arg is not passed explicitly, we remain with "auto" to pick below
@@ -1898,6 +1964,8 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(dmfsnmpresdir)
+AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
 AC_SUBST(dmfnutscandir)
 AC_SUBST(auglensdir)
