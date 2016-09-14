@@ -649,6 +649,20 @@ const char * search_paths[] = {
 	"/lib",
 	"/usr/local/lib64",
 	"/usr/local/lib",
+#ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_TARGET_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_TARGET_SHORT_ALIAS,
+#else
+# ifdef AUTOTOOLS_HOST_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_HOST_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_HOST_SHORT_ALIAS,
+# else
+#  ifdef AUTOTOOLS_BUILD_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_BUILD_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_BUILD_SHORT_ALIAS,
+#  endif
+# endif
+#endif
 #ifdef AUTOTOOLS_TARGET_ALIAS
 	"/usr/lib/" AUTOTOOLS_TARGET_ALIAS,
 	"/usr/lib/gcc/" AUTOTOOLS_TARGET_ALIAS,
