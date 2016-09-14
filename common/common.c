@@ -684,6 +684,7 @@ char * get_libname(const char* base_libname)
 	int index = 0;
 	char *libname_path = NULL;
 	char current_test_path[LARGEBUF];
+	int base_libname_length = strlen(base_libname);
 
 	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
 	{
@@ -692,11 +693,15 @@ char * get_libname(const char* base_libname)
 		if ((dp = opendir(search_paths[index])) == NULL)
 			continue;
 
+		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, search_paths[index]);
 		while ((dirp = readdir(dp)) != NULL)
 		{
-			if(!strncmp(dirp->d_name, base_libname, strlen(base_libname))) {
+			upsdebugx(5,"Comparing lib %s with dirpath %s", base_libname, dirp->d_name);
+			int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
+			if(compres == 0) {
 				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
 				libname_path = realpath(current_test_path, NULL);
+				upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)", base_libname, current_test_path, (libname_path!=NULL)?libname_path:"NULL");
 				if (libname_path != NULL)
 					break;
 			}
