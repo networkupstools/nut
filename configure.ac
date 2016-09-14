@@ -1936,6 +1936,28 @@ NUT_REPORT_FEATURE([enable validation of DMF collection of mappings for nut-scan
 				[WITH_VALIDATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
 AM_CONDITIONAL([WITH_VALIDATE_DMF_NUTSCAN], [test "${with_xmllint_dmf_nutscan}" = "yes"])
 
+if test -n "${host_alias}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host OS spec we run on])
+else
+	if test -n "${host}" ; then
+		AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host}", [host OS spec we run on])
+	fi
+fi
+if test -n "${build_alias}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build_alias}", [host OS spec we built on])
+else
+	if test -n "${build}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build}", [host OS spec we built on])
+	fi
+fi
+if test -n "${target_alias}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target_alias}", [host OS spec we built for])
+else
+	if test -n "${target}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target}", [host OS spec we built for])
+	fi
+fi
+
 dnl ----------------------------------------------------------------------
 
 dnl Current date
