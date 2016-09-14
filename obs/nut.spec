@@ -240,18 +240,18 @@ sh autogen.sh
 %configure --disable-static --with-pic --libexecdir=%{_prefix}/lib\
 	--sysconfdir=%{CONFPATH}\
 	--datadir=%{_datadir}/nut\
-    --with-ssl --with-openssl\
-    --with-libltdl=yes\
+	--with-ssl --with-openssl\
+	--with-libltdl=yes\
 	--with-cgi=auto\
-    --with-serial\
-    --with-usb\
-    --with-snmp\
-    --with-neon\
-    --with-snmp_dmf_lua\
+	--with-serial\
+	--with-usb\
+	--with-snmp\
+	--with-neon\
+	--with-snmp_dmf_lua\
 	--with-dev\
-    --with-ipmi \
+	--with-ipmi \
 	--with-powerman=auto\
-    --with-doc=man=auto\
+	--with-doc=man=auto\
 	--with-htmlpath=%{HTMLPATH}\
 	--with-cgipath=%{CGIPATH}\
 	--with-statepath=%{STATEPATH}\
@@ -259,7 +259,7 @@ sh autogen.sh
 	--with-user=%{USER}\
 	--with-group=%{GROUP} \
 	--with-udev-dir=%{_sysconfdir}/udev \
-    --enable-option-checking=fatal
+	--enable-option-checking=fatal
 
 (cd tools; python nut-snmpinfo.py)
 
