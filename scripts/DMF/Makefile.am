@@ -164,7 +164,7 @@ EXTRA_DIST += $(dmfsnmpres_DMFS)
 
 if WITH_REGENERATE_DMF_SNMP
 # NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
-  DMFGEN_DEPS += $(top_builddir)/Makefile dmfgen-sanity
+  DMFGEN_DEPS += $(top_builddir)/Makefile $(builddir)/Makefile dmfgen-sanity
 # NOTE: Tricks like the externally-fed DMFFILE, CMIBFILE and DMFLINK
 # are needed for portability of the recipes to non-GNU make programs
 # (we can not use $< in this context); this approach is a hack that
@@ -254,7 +254,7 @@ DMFNUTSCAN_DEPS = $(DMFSNMP_RES_SUBDIR)/.uptodate
 EXTRA_DIST += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 
 if WITH_REGENERATE_DMF_NUTSCAN
-DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile
+DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile $(builddir)/Makefile
 $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	$(DMF_REINDEX) -Z "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" > "$@.tmp"
