@@ -21,9 +21,7 @@ EXTRA_DIST =
 PROGS = dmf-test
 PROGS_EXPERIMENTAL = dmf-lua-test
 
-# Note: this causes a private build of dmf-reindex with debugging etc. which
-# may be slightly different from the distributed `nut-scanner-reindex-dmfsnmp`
-if WITH_REGENERATE_DMF_SNMP
+if WITH_REGENERATE_DMF_NUTSCAN
   PROGS += dmf-reindex
 else
   PROGS_EXPERIMENTAL += dmf-reindex
@@ -57,7 +55,8 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 
 # Automake installation
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
-# existing sources, use some filename pattern that does not end in "-mib.dmf"!
+# existing sources, use some filename pattern that does not end in "-mib.dmf",
+# to avoid possible conflicts in the future!
 
 
 # Note that LEGACY_NUT_DMFS list defined in the included file lists the DMF
@@ -139,6 +138,8 @@ check-lua: run-dmf-lua-test
 # via $(DMFGEN_CMD) as used in legacy-mibfiles-list.mk for example.
 # NOTE: At a later stage, when the legacy ways are deprecated and %=*-mib.c are
 # removed, these DMF files would become redistributable contents by themselves.
+# The generation rules might stay, to help modernize third-party or in-house
+# packages that maintain their own C MIB structures not part of NUT upstream.
 DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
 DMFGEN_DEPS = $(DMFGEN_DEPS_FILES)
 EXTRA_DIST += $(DMFGEN_DEPS_FILES)
@@ -150,22 +151,18 @@ EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 # fails the build (even if the simpler tests in configure script succeeded).
 # So we specifically do not include original makefile CFLAGS below.
 
-# Note that in the current dmfify script code, the sanity checks are still
-# always done at startup. The DMFGEN_SANITY_VALIDATED helps avoid doing the
-# explicit test (or skip to avoid make-recipe fatality) for EACH file if
-# we process many at once.
 DMFGEN_SANITY_VALIDATED = $(abs_builddir)/.dmfgen-sanity-validated
 CLEAN_FILES += $(DMFGEN_SANITY_VALIDATED)
 
 if WITH_REGENERATE_DMF_SNMP
   DISTCLEANFILES += $(LEGACY_NUT_DMFS)
-# NOTE: a non-file target follows, not DISTed
+# NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
+  DMFGEN_DEPS += $(top_builddir)/Makefile dmfgen-sanity
 # NOTE: Tricks like the externally-fed DMFFILE, CMIBFILE and DMFLINK
 # are needed for portability of the recipes to non-GNU make programs
 # (we can not use $< in this context); this approach is a hack that
 # relies on known/assumed fixed input filename location and relation
 # to output filenames - which we sort of guarantee in other places.
-  DMFGEN_DEPS += $(top_builddir)/Makefile dmfgen-sanity
   DMFGEN_CMD = ( \
 	echo "  DMFIFY '$$CMIBFILE' => '$@' (PWD = `pwd`)" >&2 ; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
@@ -283,8 +280,6 @@ $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	test -s "$@"
 endif
 
-# TODO: Currently the recipe relies on the two files being really in same dir
-# Mostly it is here to make the Make happy (dependency for *_DATA above)
 $(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 	@DMFFILE="$^"; DMFLINK="$@"; $(DMFLNK_CMD)
 
@@ -380,6 +375,7 @@ progs-all: $(PROGS) $(PROGS_EXPERIMENTAL)
 # of "nut_version.h" in "common.c" (if project is not conf'ed).
 # Depending on project configuration, these tests may be built
 # with or without dmf+lua support.
+# TODO: drop this complexity at some point.
 dmf-test: $(DMFTEST_SRC) $(top_srcdir)/common/dmfsnmp.c $(top_srcdir)/common/str.c $(top_srcdir)/common/common.c
 	$(CC) -ggdb -std=c99 -std=gnu99 -Werror -Wall -pedantic -Wc++-compat \
 	 -D_FORTIFY_SOURCE=2 -O -fstack-protector \
