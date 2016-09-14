@@ -18,7 +18,7 @@ EXTRA_DIST =
 
 check_PROGRAMS = dmf-test
 check_experimental = dmf-lua-test
-EXTRA_PROGRAMS = dmf-test dmf-lua-test dmf-reindex
+noinst_PROGRAMS = dmf-test dmf-lua-test
 
 # The dmf*resdir variables point to resources, original DMFs with their
 # original basenames same as *-mib.c files they were generated from.
@@ -382,6 +382,7 @@ dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 
 #if USE_CUSTOM_BUILD_OF_DMF_REINDEX
 #DMF_REINDEX = $(abs_builddir)/dmf-reindex
+#noinst_PROGRAMS += dmf-reindex
 #dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
 #dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
 #dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
