@@ -267,6 +267,7 @@ int load_neon_lib(void){
 		goto err;
 	}
 	else {
+		upsdebugx(1, "load_neon_lib(): lt_dlerror() final succeeded, library loaded");
 		free(neon_libname_path);
 		return OK;
 	}
@@ -278,13 +279,13 @@ err:
 	free(neon_libname_path);
 	return ERR;
 # else /* not WITH_LIBLTDL */
-	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead\n");
+	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
 	return OK;
 # endif /* WITH_LIBLTDL */
 
 #else /* not WITH_NEON */
 	upslogx(0, "Error loading Neon library required for DMF: not enabled during compilation");
-	upsdebugx(1, "load_neon_lib(): not enabled during compilation\n");
+	upsdebugx(1, "load_neon_lib(): not enabled during compilation");
 	return ERR;
 #endif /* WITH_NEON */
 }
@@ -292,6 +293,7 @@ err:
 void unload_neon_lib(){
 #ifdef WITH_NEON
 #if WITH_LIBLTDL
+	upsdebugx(1, "unload_neon_lib(): unloading the library");
 	lt_dlclose(dl_handle_libneon);
 	dl_handle_libneon = NULL;
 #endif /* WITH_LIBLTDL */
@@ -1531,7 +1533,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	if ( (file_name == NULL ) || \
 	     ( (f = fopen(file_name, "r")) == NULL ) )
 	{
-		upsdebugx(1, "ERROR: DMF file '%s' not found or not readable\n",
+		upsdebugx(1, "ERROR: DMF file '%s' not found or not readable",
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
@@ -1557,7 +1559,7 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			fprintf(stderr, "ERROR parsing DMF from '%s'"
 				"(unexpected short read)\n", file_name);
 			upslogx(2, "ERROR parsing DMF from '%s'"
-				"(unexpected short read)\n", file_name);
+				"(unexpected short read)", file_name);
 			result = EIO;
 			break;
 		} else {
@@ -1620,7 +1622,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	     ( (len = strlen(dmf_string)) == 0 ) )
 	{
 		fprintf(stderr, "ERROR: DMF passed in a string is empty or NULL\n");
-		upslogx(1, "ERROR: DMF passed in a string is empty or NULL\n");
+		upslogx(1, "ERROR: DMF passed in a string is empty or NULL");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) return ERR;
@@ -1634,7 +1636,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 		fprintf(stderr, "ERROR parsing DMF from string "
 			"(unexpected markup?)\n");
 		upslogx(2, "ERROR parsing DMF from string "
-			"(unexpected markup?)\n");
+			"(unexpected markup?)");
 		result = ENOMSG;
 	}
 
@@ -1711,7 +1713,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 				free(file_path);
 			}else{
 				upsdebugx(5, "File path too long\n");
-				upslogx(2, "File path too long\n");
+				upslogx(2, "File path too long");
 			}
 		}
 		free(dir_ent[c]);
