@@ -796,7 +796,12 @@ dnl not fail if we have no tools to generate it.
 
 	man*)
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
+		can_build_doc_man=no
 		if test "${nut_have_asciidoc}" = yes ; then
+			( cd "docs/man" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
+			rm -f docs/man/snmp-ups.8
+		fi
+		if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
