@@ -48,46 +48,37 @@ sort_LEGACY_NUT_C_MIBS() {
     echo "$LEGACY_NUT_C_MIBS_LIST"
 }
 
-print_makefile_LEGACY_NUT_C_MIBS() {
-    printf "LEGACY_NUT_C_MIBS ="
-    for F in `sort_LEGACY_NUT_C_MIBS` ; do
-        printf ' \\\n\t%s' "$F"
-    done || return
-    echo ""
-    echo ""
-    return 0
-}
+print_makefile_LEGACY_NUT_DMF_RULES() {
+    echo "LEGACY_NUT_C_MIBS ="
+    echo "LEGACY_NUT_DMFS ="
+    echo 'LEGACY_NUT_DMF_SYMLINKS ='
+    echo 'INSTALL_NUT_DMF_SYMLINKS ='
 
-print_makefile_LEGACY_NUT_DMFS() {
-    echo "# NOTE: DMFSNMP_SUBDIR is defined in Makefile.am"
-    printf "LEGACY_NUT_DMFS ="
-    for F in `sort_LEGACY_NUT_C_MIBS` ; do
-        printf ' \\\n\t$(DMFSNMP_SUBDIR)/%s' "`basename "$F" .c`".dmf
-    done || return
-    echo ""
-    echo ""
-    return 0
-}
+    printf '\n# NOTE: DMFSNMP_SUBDIR, DMFSNMP_RES_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD,\n# and dmfsnmpdir and dmfsnmpresdir (for install) are defined in Makefile.am\n\n'
 
-print_makefile_LEGACY_NUT_DMF_SYMLINKS() {
-    echo "# NOTE: DMFSNMP_SUBDIR is defined in Makefile.am"
-    printf "LEGACY_NUT_DMF_SYMLINKS ="
-    for F in `sort_LEGACY_NUT_C_MIBS` ; do
-        case "$F" in
-            *ietf-mib.c*) DMF_PREFIX="S90_" ;;
-            *) DMF_PREFIX="S10_" ;;
+    for CMIBBASE in `sort_LEGACY_NUT_C_MIBS` ; do
+        case "$CMIBBASE" in
+            */*) CMIBFILE="$CMIBBASE"; CMIBBASE="`basename "$CMIBBASE"`" ;;
+            *)   CMIBFILE='$(abs_top_srcdir)/drivers/'"$CMIBBASE" ;;
         esac
-        printf ' \\\n\t$(DMFSNMP_SUBDIR)/%s' "${DMF_PREFIX}`basename "$F" .c`".dmf
-    done || return
-    echo ""
-    echo ""
-    return 0
-}
-
-print_makefile_LEGACY_NUT_DMF_DEPS() {
-    echo "# NOTE: DMFSNMP_SUBDIR, DMFGEN_DEPS and DMFGEN_CMD is defined in Makefile.am"
-    for F in `sort_LEGACY_NUT_C_MIBS` ; do
-        printf '$(DMFSNMP_SUBDIR)/%s : $(abs_top_srcdir)/drivers/%s $(DMFGEN_DEPS)\n\t@$(DMFGEN_CMD)\n\n' "`basename "$F" .c`".dmf "$F"
+        DMFBASE="`basename "$CMIBBASE" .c`".dmf
+        DMFFILE='$(DMFSNMP_RES_SUBDIR)/'"$DMFBASE"
+        case "$DMFBASE" in
+            ietf-mib.dmf) L="S90_${DMFBASE}" ;;
+            S*|K*) ;;
+            *) L="S10_${DMFBASE}" ;;
+        esac
+        DMFLINK='$(DMFSNMP_SUBDIR)/'"$L"
+        printf 'LEGACY_NUT_C_MIBS +=\t%s\n' "$CMIBFILE"
+        printf 'LEGACY_NUT_DMFS   +=\t%s\n' "$DMFFILE"
+        printf '%s : %s $(DMFGEN_DEPS)\n\t@DMFFILE="%s"; CMIBFILE="%s"; $(DMFGEN_CMD)\n\n' "$DMFFILE" "$CMIBFILE" "$DMFFILE" "$CMIBFILE"
+        printf 'LEGACY_NUT_DMF_SYMLINKS += %s\n' "$DMFLINK"
+        printf '%s : %s\n\t@DMFFILE="%s"; DMFLINK="%s"; $(DMFLNK_CMD)\n\n' "$DMFLINK" "$DMFFILE" "$DMFFILE" "$DMFLINK"
+        INSTFILE='$(DESTDIR)$(dmfsnmpresdir)/'"$DMFBASE"
+        INSTLINK='$(DESTDIR)$(dmfsnmpdir)/'"$L"
+        printf 'INSTALL_NUT_DMF_SYMLINKS += %s\n' "$INSTLINK"
+        #printf '%s : dmfsnmpres_DATA\n' "$INSTFILE"
+        printf '%s : %s\n\t@DMFFILE="%s"; DMFLINK="%s"; $(DMFLNK_CMD)\n\n\n' "$INSTLINK" "$INSTFILE" "$INSTFILE" "$INSTLINK"
     done || return
     echo ""
     return 0
@@ -96,10 +87,7 @@ print_makefile_LEGACY_NUT_DMF_DEPS() {
 print_makefile() {
     echo "### This file was automatically generated at `TZ=UTC date`"
     sort_LEGACY_NUT_C_MIBS > /dev/null || return $? # prepare cache
-    print_makefile_LEGACY_NUT_C_MIBS && \
-    print_makefile_LEGACY_NUT_DMFS && \
-    print_makefile_LEGACY_NUT_DMF_SYMLINKS && \
-    print_makefile_LEGACY_NUT_DMF_DEPS
+    print_makefile_LEGACY_NUT_DMF_RULES
 }
 
 rm -f "$OUTFILE"

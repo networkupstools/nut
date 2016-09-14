@@ -356,7 +356,7 @@ void upsdrv_initups(void)
 	if(testvar(SU_VAR_DMFFILE)){
 		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
 	}else if(!dmf_dir){ /* Use some reasonable hardcoded fallback default */
-		if (! mibdmf_parse_dir("/usr/share/nut/dmf/", dmp) )
+		if (! mibdmf_parse_dir("/usr/share/nut/dmfsnmp.d/", dmp) )
 			mibdmf_parse_dir("./", dmp);
 	}else mibdmf_parse_file(dmf_dir, dmp);
 # endif /* DEFAULT_DMFSNMP_DIR */
