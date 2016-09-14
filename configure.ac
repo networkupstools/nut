@@ -653,6 +653,14 @@ dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
 NUT_CHECK_ASCIIDOC
 
+AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
+AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
+AC_PATH_PROGS([A2X], [a2x], [none])
+
+dnl check for spell checking deps
+AC_PATH_PROGS([ASPELL], [aspell], [none])
+AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
+
 AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
 AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 	AC_MSG_RESULT(yes)
@@ -761,49 +769,69 @@ dnl not fail if we have no tools to generate it.
 
 	html-single*)
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+			( cd "docs" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file=./xhtml.xsl asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+			rm -f docs/asciidoc*.htm*
+		], [])
+		if test "${can_build_doc_html_single}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
+		fi
 		;;
 
 	html-chunked*)
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		can_build_doc_html_chunked=no
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+			( cd "docs" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file=./chunked.xsl FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+			rm -rf docs/FAQ*.chunked*
+		], [])
+		if test "${can_build_doc_html_chunked}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
+		fi
 		;;
 
 	pdf*)
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
+		can_build_doc_pdf=no
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+			( cd "docs" && ${A2X} --format=pdf asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
+			rm -f docs/asciidoc.pdf
+		], [])
+		if test "${can_build_doc_pdf}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
+		fi
 		;;
 
 	man*)
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
+		can_build_doc_man=no
 		if test "${nut_have_asciidoc}" = yes ; then
+			( cd "docs/man" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
+			rm -f docs/man/snmp-ups.8
+		fi
+		if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
@@ -1309,14 +1337,6 @@ fi
 AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
 dnl
-
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
-AC_PATH_PROGS([A2X], [a2x], [none])
-
-dnl check for spell checking deps
-AC_PATH_PROGS([ASPELL], [aspell], [none])
-AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
 
 dnl AIX system
 AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])

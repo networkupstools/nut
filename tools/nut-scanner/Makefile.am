@@ -17,13 +17,19 @@ endif
 # We optionally append values to this below
 bin_PROGRAMS =
 
+# Included dependencies
+$(top_builddir)/include/nut_version.h $(top_builddir)/common/libcommon.la \
+$(top_builddir)/common/libparseconf.la $(top_builddir)/common/libnutdmfsnmp.la \
+$(top_builddir)/drivers/libserial-nutscan.la:
+	cd $(@D) && $(MAKE) $(AM_MAKEFLAGS) $(@F)
+
 if WITH_NEON
 if WITH_SNMP
 if WITH_DMF
 # Note: this does not require WITH_DMFMIB specifically, just the abilities
  bin_PROGRAMS += nut-scanner-reindex-dmfsnmp
  nut_scanner_reindex_dmfsnmp_SOURCES = nut-scanner-reindex-dmfsnmp.c \
-    $(top_srcdir)/include/dmfsnmp.h
+    $(top_srcdir)/include/dmfsnmp.h $(top_builddir)/include/nut_version.h
  nut_scanner_reindex_dmfsnmp_LDADD = $(top_builddir)/common/libnutdmfsnmp.la \
     $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la \
     $(LIBNETSNMP_LIBS)
@@ -31,6 +37,7 @@ if WITH_DMF
     -I$(top_srcdir)/drivers -I$(top_srcdir)/tools/nut-scanner \
     $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
     -DDMFREINDEXER_MAKECHECK=0
+
 if WITH_DMF_LUA
  nut_scanner_reindex_dmfsnmp_LDADD += $(LDFLAGS_DMF_LUA)
  nut_scanner_reindex_dmfsnmp_CFLAGS += $(CFLAGS_DMF_LUA)
