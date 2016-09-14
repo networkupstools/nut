@@ -60,6 +60,9 @@ void nutscan_init(void)
 #endif
 #ifdef WITH_NEON
 	libname = get_libname("libneon.so");
+	if (!libname) {
+		libname = get_libname("libneon-gnutls.so");
+	}
 	if (libname) {
 		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
 		free(libname);
