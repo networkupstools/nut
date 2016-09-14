@@ -187,7 +187,7 @@ dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
 else
   EXTRA_DIST += $(dmfsnmpres_DMFS)
   DMFGEN_CMD = ( \
-	echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
+	echo "SKIP: Generation of $@ from $$CMIBFILE not enabled by the configure script (--with-dmfsnmp-regenerate option)"; \
 	$(RM) $(DMFGEN_SANITY_VALIDATED); \
 	if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; \
 	)
@@ -266,7 +266,7 @@ $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 else
 EXTRA_DIST += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
-	@echo "SKIP: Generation of $@ from $< not enabled by the configure script (--with-dmfnutscan-regenerate option)"
+	@echo "SKIP: Generation of $@ not enabled by the configure script (--with-dmfnutscan-regenerate option)"
 	@if test ! -s "$@" -a ! -s "$(abs_srcdir)/$@"; then echo "ERROR: Distributed file $@ is missing" >&2; exit 2; fi; true
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" != "`cd $(abs_srcdir) && pwd`" ]; then \
@@ -428,7 +428,7 @@ endif
 # Note: DMF dirs are currently hardcoded (above) so no big need to "cd" anywhere
 # But some data should be prepopulated there before we run leak tests etc.
 run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
+	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
 run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
 	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(DMF_REINDEX)
@@ -454,7 +454,7 @@ endif
 CLEAN_FILES += $(builddir)/testdata/.validated testdata/.validated
 
 run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
-	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/$<
+	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-lua-test
 else
 run-dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
