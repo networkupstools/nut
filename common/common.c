@@ -736,6 +736,7 @@ char * get_libname(const char* base_libname)
 		}
 		closedir(dp);
 	}
-	/* fprintf(stderr,"Looking for lib %s, found %s\n", base_libname, (libname_path!=NULL)?libname_path:"NULL");*/
+
+	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
 }
