@@ -636,6 +636,14 @@ dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
 NUT_CHECK_ASCIIDOC
 
+AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
+AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
+AC_PATH_PROGS([A2X], [a2x], [none])
+
+dnl check for spell checking deps
+AC_PATH_PROGS([ASPELL], [aspell], [none])
+AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
+
 AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
 AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
 	AC_MSG_RESULT(yes)
@@ -769,16 +777,21 @@ dnl not fail if we have no tools to generate it.
 
 	pdf*)
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
+		can_build_pdf=no
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+			( cd "docs" && ${A2X} --format=pdf asciidoc.txt && test -s asciidoc.pdf ) && can_build_pdf=yes
+			rm -f docs/asciidoc.pdf
+		], [])
+		if test "${can_build_pdf}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
+		fi
 		;;
 
 	man*)
@@ -1279,14 +1292,6 @@ fi
 AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
 dnl
-
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
-AC_PATH_PROGS([A2X], [a2x], [none])
-
-dnl check for spell checking deps
-AC_PATH_PROGS([ASPELL], [aspell], [none])
-AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
 
 dnl AIX system
 AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
