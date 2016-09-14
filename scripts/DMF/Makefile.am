@@ -78,7 +78,7 @@ install_dmfnutscan_data: $(INSTALL_NUT_DMFNUTSCAN_SYMLINK)
 install-data-hook: install_dmfsnmp_data install_dmfnutscan_data
 
 uninstall-hook:
-	-rm -f $(INSTALL_NUT_DMFNUTSCAN_SYMLINK) $(INSTALL_NUT_DMFNUTSCAN_FILE)
+	-rm -f $(INSTALL_NUT_DMFNUTSCAN_SYMLINK) $(INSTALL_NUT_DMF_SYMLINKS)
 
 # Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
 #EXTRA_DIST += $(dmfsnmpres_DATA) $(dmfnutscanres_DATA)
@@ -379,7 +379,10 @@ DMFTESTS_COMMON_CFLAGS = \
 
 # Some GCCisms... TODO: A configure flag variable like WITH_GCC
 DMFTESTS_COMMON_CFLAGS += \
-	-ggdb -std=c99 -Werror -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fstack-protector -O0
+	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fstack-protector -O0
+
+# For fans of suicide on obscure platforms ;)
+#DMFTESTS_COMMON_CFLAGS += -Werror
 
 dmf_test_SOURCES = $(DMFTEST_SRC)
 dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
