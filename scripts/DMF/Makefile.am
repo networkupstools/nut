@@ -18,6 +18,7 @@ EXTRA_DIST =
 
 check_PROGRAMS = dmf-test
 check_experimental = dmf-lua-test
+EXTRA_PROGRAMS = dmf-test dmf-lua-test dmf-reindex
 
 # The dmf*resdir variables point to resources, original DMFs with their
 # original basenames same as *-mib.c files they were generated from.
@@ -366,6 +367,7 @@ progs-all: $(check_PROGRAMS) $(check_experimental)
 # with or without dmf+lua support.
 DMFTESTS_COMMON_CFLAGS = \
 	$(CFLAGS_dmfsnmp_ltdlXneon) $(DMFTOOLS_CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) \
+	$(LIBNETSNMP_CFLAGS) \
 	-DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1 -DDMFREINDEXER_MAKECHECK=1 -DDEBUG=1 \
 	-DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"$(abs_builddir)/$(DMFSNMP_SUBDIR)\""
 
