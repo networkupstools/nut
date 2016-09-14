@@ -769,40 +769,50 @@ dnl not fail if we have no tools to generate it.
 
 	html-single*)
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+			( cd "docs" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file=./xhtml.xsl asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+			rm -f docs/asciidoc*.htm*
+		], [])
+		if test "${can_build_doc_html_single}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
+		fi
 		;;
 
 	html-chunked*)
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		can_build_doc_html_chunked=no
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+			( cd "docs" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file=./chunked.xsl FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+			rm -rf docs/FAQ*.chunked*
+		], [])
+		if test "${can_build_doc_html_chunked}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
+		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
+		fi
 		;;
 
 	pdf*)
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
-		can_build_pdf=no
+		can_build_doc_pdf=no
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
-			( cd "docs" && ${A2X} --format=pdf asciidoc.txt && test -s asciidoc.pdf ) && can_build_pdf=yes
+			( cd "docs" && ${A2X} --format=pdf asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
 			rm -f docs/asciidoc.pdf
 		], [])
-		if test "${can_build_pdf}" = yes ; then
+		if test "${can_build_doc_pdf}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
