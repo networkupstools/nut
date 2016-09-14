@@ -78,7 +78,7 @@ install_dmfnutscan_data: $(INSTALL_NUT_DMFNUTSCAN_SYMLINK)
 install-data-hook: install_dmfsnmp_data install_dmfnutscan_data
 
 uninstall-hook:
-	-rm -f $(INSTALL_NUT_DMFNUTSCAN_SYMLINK) $(INSTALL_NUT_DMFNUTSCAN_FILE)
+	-rm -f $(INSTALL_NUT_DMFNUTSCAN_SYMLINK) $(INSTALL_NUT_DMF_SYMLINKS)
 
 # Do not extra-dist these, to cause distcheck rebuilds and avoid copy-conflicts
 #EXTRA_DIST += $(dmfsnmpres_DATA) $(dmfnutscanres_DATA)
