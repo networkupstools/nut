@@ -1,6 +1,6 @@
 # Network UPS Tools: common
 
-AM_CFLAGS = -I$(top_srcdir)/include
+AM_CFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 
 noinst_LTLIBRARIES = libparseconf.la libcommon.la libcommonclient.la
 libparseconf_la_SOURCES = parseconf.c
@@ -34,8 +34,8 @@ if WITH_DMF
 # properly already.
   noinst_LTLIBRARIES += libnutdmfsnmp.la
   libnutdmfsnmp_la_SOURCES = dmfsnmp.c
-  libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/drivers \
-        -I$(top_srcdir)/tools/nut-scanner \
+  libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_builddir)/drivers -I$(top_srcdir)/drivers \
+        -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner \
         $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
   libnutdmfsnmp_la_LDFLAGS =
   libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS) libcommonstr.la @LTLIBOBJS@
