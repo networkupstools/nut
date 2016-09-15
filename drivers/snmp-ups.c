@@ -411,6 +411,7 @@ void upsdrv_initups(void)
 		}
 		printf("\nOverall this driver has loaded %d MIB-to-NUT mapping tables\n", i);
 		exit(EXIT_SUCCESS);
+		/* fatalx(EXIT_FAILURE, "Marking the exit code as failure since the driver is not started now"); */
 	}
 
 	/* init SNMP library, etc... */
