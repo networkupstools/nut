@@ -717,9 +717,19 @@ esac
 
 dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
 dnl to ensure that it is processed as several space-separated tokens
+if test -z "${abs_srcdir}" ; then
+	case "${srcdir}" in
+		/*) abs_srcdir="${srcdir}";;
+		"") AC_MSG_ERROR([Can not detect 'srcdir']) ;;
+		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
+	esac
+fi
+DOCTESTDIR="$(mktemp -d --tmpdir="`pwd`" configure-test.docbuild.$$.XXXXXXX)" && \
+DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target}" in
-	*=*=*) AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
+	*=*=*)	rm -rf "${DOCTESTDIR}"
+		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
 	*=*)
 		nut_doc_build_target_base="`echo "${nut_doc_build_target}" | sed 's,=.*$,,'`"
 		nut_doc_build_target_flag="`echo "${nut_doc_build_target}" | sed 's,^.*=,,'`"
@@ -732,7 +742,8 @@ for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target_flag}" in
 	yes|no|auto|skip) ;;
 	"") nut_doc_build_target_flag="yes" ;;
-	*)  AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
+	*)	rm -rf "${DOCTESTDIR}"
+		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
 	esac
 	AC_MSG_CHECKING([desire and ability to build ${nut_doc_build_target_base} documentation])
 	AC_MSG_RESULT([${nut_doc_build_target_flag}])
@@ -751,8 +762,8 @@ dnl not fail if we have no tools to generate it.
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
 		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-			( cd "docs" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file=./xhtml.xsl asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
-			rm -f docs/asciidoc*.htm*
+			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+			rm -f "$DOCTESTDIR"/asciidoc*.htm*
 		], [])
 		if test "${can_build_doc_html_single}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -760,6 +771,7 @@ dnl not fail if we have no tools to generate it.
 		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
+				rm -rf "${DOCTESTDIR}"
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
@@ -770,8 +782,8 @@ dnl not fail if we have no tools to generate it.
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
 		can_build_doc_html_chunked=no
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-			( cd "docs" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file=./chunked.xsl FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
-			rm -rf docs/FAQ*.chunked*
+			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
 		], [])
 		if test "${can_build_doc_html_chunked}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -779,6 +791,7 @@ dnl not fail if we have no tools to generate it.
 		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
+				rm -rf "${DOCTESTDIR}"
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
@@ -789,8 +802,8 @@ dnl not fail if we have no tools to generate it.
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
 		can_build_doc_pdf=no
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
-			( cd "docs" && ${A2X} --format=pdf asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
-			rm -f docs/asciidoc.pdf
+			( cd "$DOCTESTDIR" && ${A2X} --format=pdf "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
+			rm -f "${DOCTESTDIR}"/asciidoc.pdf
 		], [])
 		if test "${can_build_doc_pdf}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -798,6 +811,7 @@ dnl not fail if we have no tools to generate it.
 		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
+				rm -rf "${DOCTESTDIR}"
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
@@ -808,8 +822,8 @@ dnl not fail if we have no tools to generate it.
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
 		if test "${nut_have_asciidoc}" = yes ; then
-			( cd "docs/man" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
-			rm -f docs/man/snmp-ups.8
+			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
+			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
 		if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
@@ -817,16 +831,19 @@ dnl not fail if we have no tools to generate it.
 		else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target}" = "yes" ; then
+				rm -rf "${DOCTESTDIR}"
 				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			fi
 			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 		fi
 		;;
 
-	*) AC_MSG_ERROR([--with-doc option refers to unknown documentation format: $nut_doc_build_target]) ;;
+	*)	rm -rf "${DOCTESTDIR}"
+		AC_MSG_ERROR([--with-doc option refers to unknown documentation format: $nut_doc_build_target]) ;;
 
 	esac
 done
+rm -rf "${DOCTESTDIR}"
 
 case "${nut_with_doc}" in
 auto)
