@@ -294,6 +294,7 @@ void upsdrv_makevartable(void)
 	upsdebugx(1, "entering %s()", __func__);
 
 	addvar(VAR_VALUE, SU_VAR_MIBS,
+		"NOTE: You can run the driver binary with '-x mibs=--list' for an up to date listing)\n"
 		"Set MIB compliance (default=ietf, allowed: mge,apcc,netvision,pw,cpqpower,...)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_COMMUNITY,
 		"Set community name (default=public)");
@@ -391,6 +392,24 @@ void upsdrv_initups(void)
 
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
+	if (!strcmp(mibs, "--list")) {
+		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
+		       "and for 'mibs=auto'these mappings will be tried in the following order until\n"
+		       "the first one matches your device\n\n", mibs);
+		int i;
+		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
+			"NUMBER", "MAPPING NAME", "VERSION",
+			"ENTRY POINT OID", "AUTO CHECK OID");
+		for (i=0; mib2nut[i] != NULL; i++) {
+			printf(" %4d \t%-23s\t%7s\t%-31s\t%-s\n", (i+1),
+				mib2nut[i]->mib_name		? mib2nut[i]->mib_name : "<NULL>" ,
+				mib2nut[i]->mib_version 	? mib2nut[i]->mib_version : "<NULL>" ,
+				mib2nut[i]->sysOID  		? mib2nut[i]->sysOID : "<NULL>" ,
+				mib2nut[i]->oid_auto_check	? mib2nut[i]->oid_auto_check : "<NULL>" );
+		}
+		printf("\nOverall this driver has loaded %d MIB-to-NUT mapping tables\n", i);
+		fatalx(EXIT_FAILURE, "Marking the exit code as failure since the driver is not started now");
+	}
 
 	/* init SNMP library, etc... */
 	nut_snmp_init(progname, device_path);
