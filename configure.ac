@@ -744,7 +744,7 @@ if test -z "${abs_srcdir}" ; then
 		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
 	esac
 fi
-DOCTESTDIR="$(mktemp -d --tmpdir="`pwd`" configure-test.docbuild.$$.XXXXXXX)" && \
+DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target}" in
@@ -1793,7 +1793,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 	can_generate_dmf_snmp=no
 	if test "${nut_with_dmf}" = "yes"; then
 	(	CURDIR="$(pwd)" && \
-		OUTDIR="$(mktemp -d --tmpdir="${CURDIR}" configure-test.dmfify.$$.XXXXXXX)" && \
+		OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
 		test -d "$OUTDIR" && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		(	cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
