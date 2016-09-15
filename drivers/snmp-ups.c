@@ -304,7 +304,7 @@ void upsdrv_initups(void)
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
 	if (!strcmp(mibs, "--list")) {
 		printf("The 'mibs' argument is '%s', so just listing the mappings this driver knows,\n"
-		       "and for 'mibs=auto'these mappings will be tried in the following order until\n"
+		       "and for 'mibs=auto' these mappings will be tried in the following order until\n"
 		       "the first one matches your device\n\n", mibs);
 		int i;
 		printf("%7s\t%-23s\t%-7s\t%-31s\t%-s\n",
