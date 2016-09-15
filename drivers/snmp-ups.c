@@ -77,6 +77,7 @@
 mib2nut_info_t **mib2nut = NULL;
 mibdmf_parser_t *dmp = NULL;
 char *dmf_dir = NULL;
+char *dmf_file = NULL;
 #else /* not WITH_DMFMIB */
 
 # ifdef WITH_DMF_LUA
@@ -346,21 +347,28 @@ void upsdrv_initups(void)
 		fatalx(EXIT_FAILURE, "FATAL: Can not allocate the DMF parsing structures");
 
 	/* NOTE: If both `dmffile` and `dmfdir` are specified, the `dmffile` wins */
+	/* Otherwise try the built-in fallbacks (configure-time or hardcoded) */
 	if ( (dmf_dir == NULL) && (testvar(SU_VAR_DMFDIR)) )
 		dmf_dir = getval(SU_VAR_DMFDIR);
+	if ( (dmf_file == NULL) && (testvar(SU_VAR_DMFFILE)) )
+		dmf_file = getval(SU_VAR_DMFFILE);
+
+	if (dmf_file) {
+		mibdmf_parse_file(dmf_file, dmp);
+	} else {
+		if (dmf_dir) {
+			mibdmf_parse_dir(dmf_dir, dmp);
+		} else {
 # ifdef DEFAULT_DMFSNMP_DIR
-	if(testvar(SU_VAR_DMFFILE)){
-		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
-	}else if(!dmf_dir) mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
-	else mibdmf_parse_file(dmf_dir, dmp);
+			mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
 # else /* not defined DEFAULT_DMFSNMP_DIR */
-	if(testvar(SU_VAR_DMFFILE)){
-		mibdmf_parse_file(getval(SU_VAR_DMFFILE), dmp);
-	}else if(!dmf_dir){ /* Use some reasonable hardcoded fallback default */
-		if (! mibdmf_parse_dir("/usr/share/nut/dmfsnmp.d/", dmp) )
-			mibdmf_parse_dir("./", dmp);
-	}else mibdmf_parse_file(dmf_dir, dmp);
+			/* Use some reasonable hardcoded fallback default */
+			if (! mibdmf_parse_dir("/usr/share/nut/dmfsnmp.d/", dmp) )
+				mibdmf_parse_dir("./", dmp);
 # endif /* DEFAULT_DMFSNMP_DIR */
+		}
+	}
+
 	upsdebugx(2,"Trying to access the mib2nut table parsed from DMF library");
 	if ( !(mibdmf_get_mib2nut_table(dmp)) )
 	{
