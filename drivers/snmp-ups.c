@@ -150,7 +150,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.18"
+#define DRIVER_VERSION		"1.19"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -674,6 +674,19 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+
+	/* Publish sysContact and sysLocation for all subdrivers */
+	/* sysContact.0 */
+	if (nut_snmp_get_str(".1.3.6.1.2.1.1.4.0", model, sizeof(model), NULL) == TRUE)
+		dstate_setinfo("device.contact", "%s", model);
+	else
+		upsdebugx(2, "Can't get and publish sysContact for device.contact");
+
+	/* sysLocation.0 */
+	if (nut_snmp_get_str(".1.3.6.1.2.1.1.6.0", model, sizeof(model), NULL) == TRUE)
+		dstate_setinfo("device.location", "%s", model);
+	else
+		upsdebugx(2, "Can't get and publish sysLocation for device.location");
 
 	/* set shutdown and autostart delay */
 	set_delays();
