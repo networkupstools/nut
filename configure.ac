@@ -756,7 +756,7 @@ for nut_doc_build_target in $nut_doc_build_list; do
 dnl Notes: Document options below assume either no flag value (which
 dnl by default means "yes"), "yes" which is a requirement, or "auto"
 dnl to detect if we can build the wanted documentation format and yet
-dnl not fail if we have no tools to generate it.
+dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	html-single*)
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
@@ -770,11 +770,12 @@ dnl not fail if we have no tools to generate it.
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				rm -rf "${DOCTESTDIR}"
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 		fi
 		;;
 
@@ -790,11 +791,12 @@ dnl not fail if we have no tools to generate it.
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				rm -rf "${DOCTESTDIR}"
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 		fi
 		;;
 
@@ -810,11 +812,12 @@ dnl not fail if we have no tools to generate it.
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				rm -rf "${DOCTESTDIR}"
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 		fi
 		;;
 
@@ -830,11 +833,12 @@ dnl not fail if we have no tools to generate it.
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				rm -rf "${DOCTESTDIR}"
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 		fi
 		;;
 
