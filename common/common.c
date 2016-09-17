@@ -411,9 +411,31 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 	if (nut_debug_level < level)
 		return;
 
-	va_start(va, fmt);
-	vupslog(LOG_DEBUG, fmt, va, 1);
+// For debugging output, we want to prepend the debug level so the user can
+// e.g. lower the level (less -D's on command line) to retain just the amount
+// of logging info he needs to see at the moment. Using '-DDDDD' all the time
+// is too brutal and needed high-level overview can be lost. This [D#] prefix
+// can help limit this debug stream quicker, than experimentally picking ;)
+// Normally this code rightfully warns that we might pass a bad formatting
+// string (we know we don't); so we quiesce this with e.g. GCC pragmas below.
+//  warning: second parameter of 'va_start' not last named argument [-Wvarargs]
+	const char *fmtUse = fmt;
+	int ret;
+	char fmt2[LARGEBUF];
+	ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+	if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
+		syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
+			LARGEBUF);
+	} else {
+		fmtUse = (const char *)fmt2;
+	}
+
+// FIXME: Find equivalent code number for MSVC (if applicable at all)
+DISABLE_WARNING(varargs,varargs,42)
+	va_start(va, fmtUse);
+	vupslog(LOG_DEBUG, fmtUse, va, 1);
 	va_end(va);
+ENABLE_WARNING(varargs,varargs,42)
 }
 
 void upsdebugx(int level, const char *fmt, ...)
@@ -423,9 +445,24 @@ void upsdebugx(int level, const char *fmt, ...)
 	if (nut_debug_level < level)
 		return;
 
-	va_start(va, fmt);
-	vupslog(LOG_DEBUG, fmt, va, 0);
+// See comments above in upsdebug_with_errno() - they apply here too.
+	const char *fmtUse = fmt;
+	int ret;
+	char fmt2[LARGEBUF];
+	ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+	if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
+		syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
+			LARGEBUF);
+	} else {
+		fmtUse = (const char *)fmt2;
+	}
+
+// FIXME: Find equivalent code number for MSVC (if applicable at all)
+DISABLE_WARNING(varargs,varargs,42)
+	va_start(va, fmtUse);
+	vupslog(LOG_DEBUG, fmtUse, va, 0);
 	va_end(va);
+ENABLE_WARNING(varargs,varargs,42)
 }
 
 /* dump message msg and len bytes from buf to upsdebugx(level) in
