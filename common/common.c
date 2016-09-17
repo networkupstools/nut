@@ -51,7 +51,7 @@ static int xbit_test(int val, int flag)
 	return ((val & flag) == flag);
 }
 
-/* enable writing upslog_with_errno() and upslogx() type messages to 
+/* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
 {
@@ -126,7 +126,7 @@ void background(void)
 	close(1);
 	close(2);
 
-	if (pid != 0) 
+	if (pid != 0)
 		_exit(EXIT_SUCCESS);		/* parent */
 
 	/* child */
@@ -163,7 +163,7 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
-		
+
 	return NULL;  /* to make the compiler happy */
 }
 
@@ -246,7 +246,7 @@ int sendsignalfn(const char *pidfn, int sig)
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
 		return -1;
-	}	
+	}
 
 	pid = strtol(buf, (char **)NULL, 10);
 
@@ -331,18 +331,18 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (nut_debug_level > 0) {
 		static struct timeval	start = { 0 };
 		struct timeval		now;
-	
+
 		gettimeofday(&now, NULL);
-	
+
 		if (start.tv_sec == 0) {
 			start = now;
 		}
-	
+
 		if (start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
-	
+
 		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
 	}
 
@@ -353,7 +353,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 }
 
 /* Return the default path for the directory containing configuration files */
-const char * confpath(void) 
+const char * confpath(void)
 {
 	const char * path;
 
@@ -364,7 +364,7 @@ const char * confpath(void)
 }
 
 /* Return the default path for the directory containing state files */
-const char * dflt_statepath(void) 
+const char * dflt_statepath(void)
 {
 	const char * path;
 
@@ -375,7 +375,7 @@ const char * dflt_statepath(void)
 }
 
 /* Return the alternate path for pid files */
-const char * altpidpath(void) 
+const char * altpidpath(void)
 {
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
@@ -407,7 +407,7 @@ void upslogx(int priority, const char *fmt, ...)
 void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
 
@@ -419,7 +419,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
 
@@ -437,7 +437,7 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 	int n;	/* number of characters currently in line */
 	int i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len); 
+	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len);
 
 	for (i = 0; i < len; i++) {
 
