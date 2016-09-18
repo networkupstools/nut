@@ -210,12 +210,12 @@ int load_neon_lib(void){
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 	if(!neon_libname_path) {
-		upslogx(0, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
+		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
 
 		neon_libname_path = get_libname("libneon-gnutls.so");
 		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 		if(!neon_libname_path) {
-			upslogx(0, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
+			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
 			return ERR;
 		}
 	}
@@ -282,7 +282,7 @@ int load_neon_lib(void){
 	}
 
 err:
-	upslogx(0, "Error loading Neon library %s required for DMF: %s",
+	upslogx(LOG_ERR, "Error loading Neon library %s required for DMF: %s",
 		neon_libname_path,
 		dl_error ? dl_error : "No details passed");
 	free(neon_libname_path);
@@ -293,7 +293,7 @@ err:
 # endif /* WITH_LIBLTDL */
 
 #else /* not WITH_NEON */
-	upslogx(0, "Error loading Neon library required for DMF: not enabled during compilation");
+	upslogx(LOG_ERR, "Error loading Neon library required for DMF: not enabled during compilation");
 	upsdebugx(1, "load_neon_lib(): not enabled during compilation");
 	return ERR;
 #endif /* WITH_NEON */
@@ -1399,8 +1399,7 @@ xml_dict_start_cb(void *userdata, int parent,
 				(void (*)(void)) function_new));
 		functions_aux = 1;
 #else
-		upsdebugx(5, "NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
-		upslogx(2, "NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
+		upsdebugx(2, "WARN: NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
@@ -1409,14 +1408,12 @@ xml_dict_start_cb(void *userdata, int parent,
 		upsdebugx(1, "DMF function feature support COMPILED IN");
 		function_node_handler(list,attrs);
 #else
-		upsdebugx(1, "DMF function feature support *NOT* COMPILED IN");
-		upsdebugx(5, "NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
-		upslogx(2, "NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
+		upsdebugx(1, "WARN: NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
-		upslogx(2, "WARN: The '%s' tag in DMF is not recognized!", name);
+		upsdebugx(1, "WARN: The '%s' tag in DMF is not recognized!", name);
 	}
 	free(auxname);
 	return DMF_NEON_CALLBACK_OK;
@@ -1567,18 +1564,14 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
 		if (len == 0) /* Should not zero-read from a non-EOF file */
 		{
-			fprintf(stderr, "ERROR parsing DMF from '%s'"
-				"(unexpected short read)\n", file_name);
-			upslogx(2, "ERROR parsing DMF from '%s'"
+			upslogx(LOG_ERR, "ERROR parsing DMF from '%s' "
 				"(unexpected short read)", file_name);
 			result = EIO;
 			break;
 		} else {
 			if ((result = xml_parse (parser, buffer, len)))
 			{
-				fprintf(stderr, "ERROR parsing DMF from '%s'"
-					"(unexpected markup?)\n", file_name);
-				upslogx(2, "ERROR parsing DMF from '%s'"
+				upslogx(LOG_ERR, "ERROR parsing DMF from '%s' "
 					"(unexpected markup?)\n", file_name);
 				result = ENOMSG;
 				break;
@@ -1632,8 +1625,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	if ( (dmf_string == NULL ) || \
 	     ( (len = strlen(dmf_string)) == 0 ) )
 	{
-		fprintf(stderr, "ERROR: DMF passed in a string is empty or NULL\n");
-		upslogx(1, "ERROR: DMF passed in a string is empty or NULL");
+		upslogx(LOG_ERR, "ERROR: DMF passed in a string is empty or NULL");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) return ERR;
@@ -1644,9 +1636,7 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 
 	if ((result = xml_parse (parser, dmf_string, len)))
 	{
-		fprintf(stderr, "ERROR parsing DMF from string "
-			"(unexpected markup?)\n");
-		upslogx(2, "ERROR parsing DMF from string "
+		upslogx(LOG_ERR, "ERROR parsing DMF from string "
 			"(unexpected markup?)");
 		result = ENOMSG;
 	}
@@ -1693,13 +1683,13 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	if ( (dir_name == NULL ) || \
 	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
 	{
-		upslogx(0, "ERROR: DMF directory '%s' not found or not readable",
+		upslogx(LOG_ERR, "ERROR: DMF directory '%s' not found or not readable",
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
 	if(load_neon_lib() == ERR) {
 		/* Note: do not "die" from the library context; that's up to the caller */
-		upslogx(0, "ERROR: can't load Neon library");
+		upslogx(LOG_ERR, "ERROR: can't load Neon library");
 		return ERR;
 	}
 	int c;
@@ -1723,8 +1713,7 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 				}
 				free(file_path);
 			}else{
-				upsdebugx(5, "File path too long\n");
-				upslogx(2, "File path too long");
+				upslogx(LOG_ERR, "mibdmf_parse_dir(): File path too long");
 			}
 		}
 		free(dir_ent[c]);
