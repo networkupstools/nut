@@ -1463,14 +1463,19 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 			file_name ? file_name : "<NULL>");
 		return ENOENT;
 	}
+
 #if WITH_LIBLTDL
 	/* Library could be loaded by the caller like the directory
 	 * parser - do not unload it then in the end of single-file work */
 	if(!dl_handle_libneon){
-		flag_libneon = 1;
-		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
-	}
 #endif /* WITH_LIBLTDL */
+		/* Note: do not "die" from the library context; that's up to the caller */
+		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
+#if WITH_LIBLTDL
+		flag_libneon = 1;
+#endif /* WITH_LIBLTDL */
+	}
+
 	ne_xml_parser *parser = xml_create ();
 	xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
@@ -1502,10 +1507,11 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	if (!result) /* no errors, complete the parse with len==0 call */
 		xml_parse (parser, buffer, 0);
 	xml_destroy (parser);
+
 #if WITH_LIBLTDL
 	if(flag_libneon == 1)
-		unload_neon_lib();
 #endif /* WITH_LIBLTDL */
+		unload_neon_lib();
 
 	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
 		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
@@ -1536,6 +1542,9 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 {
 	int result = 0;
 	size_t len;
+#if WITH_LIBLTDL
+	int flag_libneon = 0;
+#endif /* WITH_LIBLTDL */
 
 	assert (dmf_string);
 	assert (dmp);
@@ -1548,7 +1557,19 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 		upslogx(LOG_ERR, "ERROR: DMF passed in a string is empty or NULL");
 		return ENOENT;
 	}
-	if(load_neon_lib() == ERR) return ERR;
+
+#if WITH_LIBLTDL
+	/* Library could be loaded by the caller - so do not unload it then in the
+	 * end of single-string work */
+	if(!dl_handle_libneon){
+#endif /* WITH_LIBLTDL */
+		/* Note: do not "die" from the library context; that's up to the caller */
+		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
+#if WITH_LIBLTDL
+		flag_libneon = 1;
+#endif /* WITH_LIBLTDL */
+	}
+
 	ne_xml_parser *parser = xml_create ();
 	xml_push_handler (parser, xml_dict_start_cb,
 		xml_cdata_cb
@@ -1564,7 +1585,11 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 	if (!result) /* no errors, complete the parse with len==0 call */
 		xml_parse (parser, dmf_string, 0);
 	xml_destroy (parser);
-	unload_neon_lib();
+
+#if WITH_LIBLTDL
+	if(flag_libneon == 1)
+#endif /* WITH_LIBLTDL */
+		unload_neon_lib();
 
 	upsdebugx(1, "%s DMF acquired from string (result = %d) %s",
 		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", result,
@@ -1596,6 +1621,9 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 {
 	struct dirent **dir_ent;
 	int i = 0, x = 0, result = 0, n = 0;
+#if WITH_LIBLTDL
+	int flag_libneon = 0;
+#endif /* WITH_LIBLTDL */
 
 	assert (dir_name);
 	assert (dmp);
@@ -1607,11 +1635,19 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 			dir_name ? dir_name : "<NULL>");
 		return ENOENT;
 	}
-	if(load_neon_lib() == ERR) {
+
+#if WITH_LIBLTDL
+	/* Library could be loaded by the caller - so do not unload it then in the
+	 * end of single-dir work */
+	if(!dl_handle_libneon){
+#endif /* WITH_LIBLTDL */
 		/* Note: do not "die" from the library context; that's up to the caller */
-		upslogx(LOG_ERR, "ERROR: can't load Neon library");
-		return ERR;
+		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
+#if WITH_LIBLTDL
+		flag_libneon = 1;
+#endif /* WITH_LIBLTDL */
 	}
+
 	int c;
 	for (c = 0; c < n; c++)
 	{
@@ -1640,7 +1676,10 @@ mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 	}
 	free(dir_ent);
 
-	unload_neon_lib();
+#if WITH_LIBLTDL
+	if(flag_libneon == 1)
+#endif /* WITH_LIBLTDL */
+		unload_neon_lib();
 
 	if (i==0) {
 		upsdebugx(1, "WARN: No '*.dmf' DMF files were found or readable in directory '%s'",
