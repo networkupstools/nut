@@ -239,7 +239,7 @@ typedef enum {
 	ERR = -1,
 	OK,
 	DMF_NEON_CALLBACK_OK = 1
-} state_t;
+} dmfparser_state_t;
 
 /* Aggregate the data storage and variables needed to
  * parse the DMF representation of MIB data for NUT */
