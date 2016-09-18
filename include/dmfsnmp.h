@@ -108,6 +108,7 @@
 
 #include <stdbool.h>
 #include "extstate.h"
+#include "alist.h"
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
@@ -142,7 +143,6 @@
  *
  */
 #define YES "yes"
-#define DEFAULT_CAPACITY 16
 
 #ifdef PATH_MAX
 #define PATH_MAX_SIZE PATH_MAX
@@ -224,16 +224,6 @@
 /* Additional snmp_info attribute to reference dynamic functions to produce calculated values */
 #define TYPE_FUNCTIONSET "functionset"
 #endif
-/* "Auxiliary list" structure to store hierarchies
- * of lists with bits of data */
-typedef struct {
-	void **values;
-	int size;
-	int capacity;
-	char *name;
-	void (*destroy)(void **self_p);
-	void (*new_element)(void);
-} alist_t;
 
 typedef enum {
 	ERR = -1,
@@ -426,38 +416,6 @@ void
 
 void
 	mib2nut_info_node_handler (alist_t *list, const char **attrs);
-
-
-
-
-/* Create new instance of alist_t with LOOKUP type,
- * for storage a list of collections
- *alist_t *
- *	alist_new ();
-
- * New generic list element (can be the root element) */
-alist_t *
-	alist_new (
-		const char *name,
-		void (*destroy)(void **self_p),
-		void (*new_element)(void)
-	);
-
-/* Destroy full array of generic list elements */
-void
-	alist_destroy (alist_t **self_p);
-
-/* Add a generic element at the end of the list */
-void
-	alist_append (alist_t *self, void *element);
-
-/* Return the last element of the list */
-alist_t *
-	alist_get_last_element (alist_t *self);
-
-/* Return the element which has `char* name` equal to the requested one */
-alist_t *
-	alist_get_element_by_name (alist_t *self, char *name);
 
 void
 	lookup_info_node_handler (alist_t *list, const char **attrs);
