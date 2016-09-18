@@ -426,14 +426,16 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 // string (we know we don't); so we quiesce this with e.g. GCC pragmas below.
 //  warning: second parameter of 'va_start' not last named argument [-Wvarargs]
 	const char *fmtUse = fmt;
-	int ret;
-	char fmt2[LARGEBUF];
-	ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
-	if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
-		syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
-			LARGEBUF);
-	} else {
-		fmtUse = (const char *)fmt2;
+	if (level > 0) {
+		int ret;
+		char fmt2[LARGEBUF];
+		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
+			syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
+				LARGEBUF);
+		} else {
+			fmtUse = (const char *)fmt2;
+		}
 	}
 
 // FIXME: Find equivalent code number for MSVC (if applicable at all)
@@ -453,14 +455,16 @@ void upsdebugx(int level, const char *fmt, ...)
 
 // See comments above in upsdebug_with_errno() - they apply here too.
 	const char *fmtUse = fmt;
-	int ret;
-	char fmt2[LARGEBUF];
-	ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
-	if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
-		syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
-			LARGEBUF);
-	} else {
-		fmtUse = (const char *)fmt2;
+	if (level > 0) {
+		int ret;
+		char fmt2[LARGEBUF];
+		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
+			syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
+				LARGEBUF);
+		} else {
+			fmtUse = (const char *)fmt2;
+		}
 	}
 
 // FIXME: Find equivalent code number for MSVC (if applicable at all)
