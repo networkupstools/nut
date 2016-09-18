@@ -472,9 +472,9 @@ info_mib2nut_new (const char *name, const char *version,
 }
 
 #if WITH_DMF_FUNCTIONS
-function_t *
+dmf_function_t *
 function_new (const char *name, const char *language){
-	function_t *self = (function_t*) calloc(1, sizeof(function_t));
+	dmf_function_t *self = (dmf_function_t*) calloc(1, sizeof(dmf_function_t));
 	self->name = strdup (name);
 	if (language == NULL) {
 		self->language = strdup ("lua-5.1");
@@ -490,7 +490,7 @@ void
 function_destroy (void **self_p){
 	if (*self_p)
 	{
-		function_t *self = (function_t*) *self_p;
+		dmf_function_t *self = (dmf_function_t*) *self_p;
 		if(self->name){
 			free(self->name);
 			self->name = NULL;
@@ -1064,7 +1064,7 @@ function_node_handler(alist_t *list, const char **attrs)
 	argname = get_param_by_name(SNMP_NAME, attrs);
 	arglang = get_param_by_name("language", attrs);
 	if(argname != NULL)
-		alist_append(element, ((function_t *(*) (const char *, const char *)) element->new_element) (argname, arglang));
+		alist_append(element, ((dmf_function_t *(*) (const char *, const char *)) element->new_element) (argname, arglang));
 	if(argname != NULL)
 		free(argname);
 	if(arglang != NULL)
@@ -1107,9 +1107,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 		if(funcs)
 		{
 			for (i = 0; i < funcs->size; i++)
-				if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0) {
-					func_code = ((function_t*)funcs->values[i])->code;
-					func_lang = ((function_t*)funcs->values[i])->language;
+				if(strcmp(((dmf_function_t*)funcs->values[i])->name, arg[0]) == 0) {
+					func_code = ((dmf_function_t*)funcs->values[i])->code;
+					func_lang = ((dmf_function_t*)funcs->values[i])->language;
 				}
 		}
 	}
@@ -1476,7 +1476,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	}else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
 		alist_t *element = alist_get_last_element(list);
-		function_t *func =(function_t *) alist_get_last_element(element);
+		dmf_function_t *func =(dmf_function_t *) alist_get_last_element(element);
 		func->code = strdup(function_text);
 		free(function_text);
 		function_text = NULL;
