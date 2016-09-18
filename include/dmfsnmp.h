@@ -261,7 +261,7 @@ typedef struct {
 	char *name; 		/* Required for the DMF entry to be parsed */
 	char *language;		/* Practical default is "lua-5.1" */
 	char *code;
-} function_t;
+} dmf_function_t;
 #endif
 
 /* Initialize the data for dmf.c */
@@ -379,7 +379,7 @@ void
 
 #if WITH_DMF_FUNCTIONS
 /* Create and initialize a function element */
-function_t *
+dmf_function_t *
 	function_new (const char *name, const char *language);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
