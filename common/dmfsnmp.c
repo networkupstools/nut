@@ -1295,13 +1295,13 @@ mibdmf_parse_begin_cb(void *parsed_data)
 {
 	mibdmf_parser_t *dmp = (mibdmf_parser_t *)parsed_data;
 	assert (dmp);
-	if (!dmp) {
-		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() called with parsed_data==NULL");
+	if (dmp==NULL) {
+		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() was called with parsed_data==NULL");
 		return ERR;
 	}
 	mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
-	if (mibdmf_get_aux_list(dmp)!=NULL) {
+	if (mibdmf_get_aux_list(dmp)==NULL) {
 		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() could not allocate new aux_list");
 		return ERR;
 	}
@@ -1313,8 +1313,8 @@ mibdmf_parse_finish_cb(void *parsed_data, int result)
 {
 	mibdmf_parser_t *dmp = (mibdmf_parser_t *)parsed_data;
 	assert (dmp);
-	if (!dmp) {
-		upslogx(LOG_ERR, "mibdmf_parse_finish_cb() called with parsed_data==NULL");
+	if (dmp==NULL) {
+		upslogx(LOG_ERR, "mibdmf_parse_finish_cb() was called with parsed_data==NULL");
 		return ECANCELED;
 	}
 
