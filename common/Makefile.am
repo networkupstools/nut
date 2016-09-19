@@ -33,7 +33,7 @@ if WITH_DMF
 # sometime later, but the libraries for consumers to bind to are named
 # properly already.
   noinst_LTLIBRARIES += libnutdmfsnmp.la
-  libnutdmfsnmp_la_SOURCES = dmfsnmp.c alist.c
+  libnutdmfsnmp_la_SOURCES = dmfsnmp.c dmfcore.c alist.c
   libnutdmfsnmp_la_CFLAGS = $(AM_CFLAGS) -I$(top_builddir)/drivers -I$(top_srcdir)/drivers \
         -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner \
         $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1

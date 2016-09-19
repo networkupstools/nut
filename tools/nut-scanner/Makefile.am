@@ -88,6 +88,7 @@ nut_scanner_LDADD = libnutscan.la
 if WITH_SNMP
 if WITH_NEON
 nut_scanner_CFLAGS += -I$(top_srcdir)/drivers
+nut_scanner_CFLAGS += $(LIBNEON_CFLAGS)
 if WITH_DMF
 nut_scanner_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA

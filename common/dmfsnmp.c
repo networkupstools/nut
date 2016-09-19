@@ -27,51 +27,15 @@
 #include <dirent.h>
 #include <assert.h>
 
-#if WITH_LIBLTDL
-# include <ltdl.h>
-/* else: We are linked to LibNEON at compile-time */
-#endif
-
-/* LibNEON is currently required to build DMF */
-#if WITH_NEON
-# include <ne_xml.h>
-#else
-#error "LibNEON is required to build DMF"
-#endif
-
 #include "common.h"
 #include "dmfsnmp.h"
+#include "dmfcore.h"
 
 /*
  *
  *  C FILE
  *
  */
-
-#if WITH_LIBLTDL
-/* LTDL variables needed to load LibNEON */
-static lt_dlhandle dl_handle_libneon = NULL;
-static const char *dl_error = NULL;
-
-/* Pointers to dynamically-loaded LibNEON functions; do not mistake these
- * with xml_*_cb callbacks that we implement below for actual parsing.
- * If not loaded dynamically by LTDL, these should be available via LDD
- * dynamic linking at compile-time.
- */
-static ne_xml_parser *(*xml_create)(void);
-static void (*xml_push_handler)(ne_xml_parser*,
-			ne_xml_startelm_cb*,
-			ne_xml_cdata_cb*,
-			ne_xml_endelm_cb*,
-			void*);
-static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
-static void (*xml_destroy)(ne_xml_parser*);
-#else
-# define	xml_create		ne_xml_create
-# define	xml_push_handler	ne_xml_push_handler
-# define	xml_parse		ne_xml_parse
-# define	xml_destroy		ne_xml_destroy
-#endif
 
 /* These vars used to be needed as extern vars by some legacy code elsewhere...
  * also they are referenced below, but I'm not sure it is valid code!
@@ -197,117 +161,6 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 	}
 }
 /*END DEBUGGING*/
-
-/* Returns OK if all went well, or ERR on error */
-/* Based on nut-scanner/scan_xml_http.c code */
-/* Note: names for popular libneon implementations are hard-coded at this
- * time - and just one, so extra DLLs (if an OS requires several to load)
- * are not supported. (TODO: link this to LIBNEON_LIBS from configure) */
-int load_neon_lib(void){
-#ifdef WITH_NEON
-# if WITH_LIBLTDL
-	char *neon_libname_path = get_libname("libneon.so");
-
-	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-	if(!neon_libname_path) {
-		upslogx(LOG_NOTICE, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
-
-		neon_libname_path = get_libname("libneon-gnutls.so");
-		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-		if(!neon_libname_path) {
-			upslogx(LOG_ERR, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
-			return ERR;
-		}
-	}
-
-	if( lt_dlinit() != 0 ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlinit() action failed");
-		goto err;
-	}
-
-	if( dl_handle_libneon != NULL ) {
-		/* if previous init failed */
-		if( dl_handle_libneon == (void *)1 ) {
-			upsdebugx(1, "load_neon_lib(): previous ltdl engine init had failed");
-			goto err;
-		}
-		/* init has already been done and not unloaded yet */
-		free(neon_libname_path);
-		return OK;
-	}
-
-	dl_handle_libneon = lt_dlopen(neon_libname_path);
-
-	if(!dl_handle_libneon) {
-		dl_error = lt_dlerror();
-		upsdebugx(1, "load_neon_lib(): lt_dlopen() action failed");
-		goto err;
-	}
-
-	lt_dlerror();      /* Clear any existing error */
-
-	*(void**) (&xml_create) = lt_dlsym(dl_handle_libneon, "ne_xml_create");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_create) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_create");
-		goto err;
-	}
-
-	*(void**) (&xml_push_handler) = lt_dlsym(dl_handle_libneon, "ne_xml_push_handler");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_push_handler) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_push_handler");
-		goto err;
-	}
-
-	*(void**) (&xml_parse) = lt_dlsym(dl_handle_libneon, "ne_xml_parse");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_parse) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_parse");
-		goto err;
-	}
-
-	*(void**) (&xml_destroy) = lt_dlsym(dl_handle_libneon, "ne_xml_destroy");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_destroy) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_destroy");
-		goto err;
-	}
-
-	dl_error = lt_dlerror();
-	if (dl_error) {
-		upsdebugx(1, "load_neon_lib(): lt_dlerror() final check failed");
-		goto err;
-	}
-	else {
-		upsdebugx(1, "load_neon_lib(): lt_dlerror() final succeeded, library loaded");
-		free(neon_libname_path);
-		return OK;
-	}
-
-err:
-	upslogx(LOG_ERR, "Error loading Neon library %s required for DMF: %s",
-		neon_libname_path,
-		dl_error ? dl_error : "No details passed");
-	free(neon_libname_path);
-	return ERR;
-# else /* not WITH_LIBLTDL */
-	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
-	return OK;
-# endif /* WITH_LIBLTDL */
-
-#else /* not WITH_NEON */
-	upslogx(LOG_ERR, "Error loading Neon library required for DMF: not enabled during compilation");
-	upsdebugx(1, "load_neon_lib(): not enabled during compilation");
-	return ERR;
-#endif /* WITH_NEON */
-}
-
-void unload_neon_lib(){
-#ifdef WITH_NEON
-#if WITH_LIBLTDL
-	upsdebugx(1, "unload_neon_lib(): unloading the library");
-	lt_dlclose(dl_handle_libneon);
-	dl_handle_libneon = NULL;
-#endif /* WITH_LIBLTDL */
-#endif /* WITH_NEON */
-}
 
 #if WITH_DMF_FUNCTIONS
 char *
@@ -1269,7 +1122,7 @@ compile_info_flags(const char **attrs)
 }
 
 int
-xml_dict_start_cb(void *userdata, int parent,
+mibdmf_xml_dict_start_cb(void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs)
 {
@@ -1340,7 +1193,7 @@ xml_dict_start_cb(void *userdata, int parent,
 }
 
 int
-xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
+mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
 	if(!userdata)return ERR;
 
@@ -1407,7 +1260,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 }
 
 int
-xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
+mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
 	if(!userdata)
 		return ERR;
@@ -1437,86 +1290,33 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	return OK;
 }
 
-/* Load DMF XML file into structure tree at *list (precreate with alist_new)
- Returns 0 on success, or an <errno> code on system or parsing errors*/
 int
-mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
+mibdmf_parse_begin_cb(void *parsed_data)
 {
-	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
-	FILE *f;
-	int result = 0;
-#if WITH_LIBLTDL
-	int flag_libneon = 0;
-#endif /* WITH_LIBLTDL */
-
-	assert (file_name);
+	mibdmf_parser_t *dmp = (mibdmf_parser_t *)parsed_data;
 	assert (dmp);
+	if (!dmp) {
+		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() called with parsed_data==NULL");
+		return ERR;
+	}
 	mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
-
-	upsdebugx(1, "%s(%s)", __func__, file_name);
-
-	if ( (file_name == NULL ) || \
-	     ( (f = fopen(file_name, "r")) == NULL ) )
-	{
-		upsdebugx(1, "ERROR: DMF file '%s' not found or not readable",
-			file_name ? file_name : "<NULL>");
-		return ENOENT;
+	if (mibdmf_get_aux_list(dmp)!=NULL) {
+		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() could not allocate new aux_list");
+		return ERR;
 	}
+	return OK;
+}
 
-#if WITH_LIBLTDL
-	/* Library could be loaded by the caller like the directory
-	 * parser - do not unload it then in the end of single-file work */
-	if(!dl_handle_libneon){
-#endif /* WITH_LIBLTDL */
-		/* Note: do not "die" from the library context; that's up to the caller */
-		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
-#if WITH_LIBLTDL
-		flag_libneon = 1;
-#endif /* WITH_LIBLTDL */
+int
+mibdmf_parse_finish_cb(void *parsed_data, int result)
+{
+	mibdmf_parser_t *dmp = (mibdmf_parser_t *)parsed_data;
+	assert (dmp);
+	if (!dmp) {
+		upslogx(LOG_ERR, "mibdmf_parse_finish_cb() called with parsed_data==NULL");
+		return ECANCELED;
 	}
-
-	ne_xml_parser *parser = xml_create ();
-	xml_push_handler (parser, xml_dict_start_cb,
-		xml_cdata_cb
-		, xml_end_cb, dmp);
-
-	/* The neon XML parser would get blocks from the DMF file and build
-	   the in-memory representation with our xml_dict_start_cb() callback.
-	   Any hiccup (FS, neon, callback) is failure. */
-	while (!feof (f))
-	{
-		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
-		if (len == 0) /* Should not zero-read from a non-EOF file */
-		{
-			upslogx(LOG_ERR, "ERROR parsing DMF from '%s' "
-				"(unexpected short read)", file_name);
-			result = EIO;
-			break;
-		} else {
-			if ((result = xml_parse (parser, buffer, len)))
-			{
-				upslogx(LOG_ERR, "ERROR parsing DMF from '%s' "
-					"(unexpected markup?)\n", file_name);
-				result = ENOMSG;
-				break;
-			}
-		}
-	}
-	fclose (f);
-	if (!result) /* no errors, complete the parse with len==0 call */
-		xml_parse (parser, buffer, 0);
-	xml_destroy (parser);
-
-#if WITH_LIBLTDL
-	if(flag_libneon == 1)
-#endif /* WITH_LIBLTDL */
-		unload_neon_lib();
-
-	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
-		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
-		( result == 0 ) ? "" : strerror(result)
-	);
 
 	/* Extend or truncate the tables to the current amount of known entries
 	   To be on the safe side, we do this even if current file hiccuped. */
@@ -1536,81 +1336,50 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	return result;
 }
 
+/* Load DMF XML file into structure tree at *list (precreate with alist_new)
+ Returns 0 on success, or an <errno> code on system or parsing errors*/
+int
+mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
+{
+	upsdebugx(1, "%s(%s)", __func__, file_name);
+	assert(file_name);
+	assert(dmp);
+
+	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+		(void*)dmp,
+		mibdmf_parse_begin_cb,
+		mibdmf_parse_finish_cb,
+		mibdmf_xml_dict_start_cb,
+		mibdmf_xml_cdata_cb,
+		mibdmf_xml_end_cb
+	);
+	assert(dcp);
+
+	int result = dmfcore_parse_file(file_name, dcp);
+	free(dcp);
+	return result;
+}
+
 /* Parse a buffer with complete DMF XML (from <nut> to </nut>)*/
 int
 mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 {
-	int result = 0;
-	size_t len;
-#if WITH_LIBLTDL
-	int flag_libneon = 0;
-#endif /* WITH_LIBLTDL */
+	upsdebugx(1, "%s(string)", __func__);
+	assert(dmf_string);
+	assert(dmp);
 
-	assert (dmf_string);
-	assert (dmp);
-	mibdmf_parser_new_list(dmp);
-	assert (mibdmf_get_aux_list(dmp)!=NULL);
-
-	if ( (dmf_string == NULL ) || \
-	     ( (len = strlen(dmf_string)) == 0 ) )
-	{
-		upslogx(LOG_ERR, "ERROR: DMF passed in a string is empty or NULL");
-		return ENOENT;
-	}
-
-#if WITH_LIBLTDL
-	/* Library could be loaded by the caller - so do not unload it then in the
-	 * end of single-string work */
-	if(!dl_handle_libneon){
-#endif /* WITH_LIBLTDL */
-		/* Note: do not "die" from the library context; that's up to the caller */
-		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
-#if WITH_LIBLTDL
-		flag_libneon = 1;
-#endif /* WITH_LIBLTDL */
-	}
-
-	ne_xml_parser *parser = xml_create ();
-	xml_push_handler (parser, xml_dict_start_cb,
-		xml_cdata_cb
-		, xml_end_cb, dmp);
-
-	if ((result = xml_parse (parser, dmf_string, len)))
-	{
-		upslogx(LOG_ERR, "ERROR parsing DMF from string "
-			"(unexpected markup?)");
-		result = ENOMSG;
-	}
-
-	if (!result) /* no errors, complete the parse with len==0 call */
-		xml_parse (parser, dmf_string, 0);
-	xml_destroy (parser);
-
-#if WITH_LIBLTDL
-	if(flag_libneon == 1)
-#endif /* WITH_LIBLTDL */
-		unload_neon_lib();
-
-	upsdebugx(1, "%s DMF acquired from string (result = %d) %s",
-		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", result,
-		( result == 0 ) ? "" : strerror(result)
+	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+		(void*)dmp,
+		mibdmf_parse_begin_cb,
+		mibdmf_parse_finish_cb,
+		mibdmf_xml_dict_start_cb,
+		mibdmf_xml_cdata_cb,
+		mibdmf_xml_end_cb
 	);
+	assert(dcp);
 
-	/* Extend or truncate the tables to the current amount of known entries
-	   To be on the safe side, we do this even if current file hiccuped. */
-	assert (mibdmf_get_device_table_counter(dmp)>=1); /* Avoid underflow in memset below */
-	*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
-		mibdmf_get_device_table_counter(dmp) * sizeof(snmp_device_id_t));
-	*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
-		mibdmf_get_device_table_counter(dmp) * sizeof(mib2nut_info_t *));
-	assert (mibdmf_get_device_table(dmp));
-	assert (mibdmf_get_mib2nut_table(dmp));
-
-	/* Make sure the last entry in the table is the zeroed-out sentinel */
-	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
-		sizeof (snmp_device_id_t));
-	*(*mibdmf_get_mib2nut_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
-
+	int result = dmfcore_parse_str(dmf_string, dcp);
+	free(dcp);
 	return result;
 }
 
@@ -1619,80 +1388,22 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 int
 mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 {
-	struct dirent **dir_ent;
-	int i = 0, x = 0, result = 0, n = 0;
-#if WITH_LIBLTDL
-	int flag_libneon = 0;
-#endif /* WITH_LIBLTDL */
+	upsdebugx(1, "%s(%s)", __func__, dir_name);
+	assert(dir_name);
+	assert(dmp);
 
-	assert (dir_name);
-	assert (dmp);
+	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+		(void*)dmp,
+		mibdmf_parse_begin_cb,
+		mibdmf_parse_finish_cb,
+		mibdmf_xml_dict_start_cb,
+		mibdmf_xml_cdata_cb,
+		mibdmf_xml_end_cb
+	);
+	assert(dcp);
 
-	if ( (dir_name == NULL ) || \
-	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
-	{
-		upslogx(LOG_ERR, "ERROR: DMF directory '%s' not found or not readable",
-			dir_name ? dir_name : "<NULL>");
-		return ENOENT;
-	}
-
-#if WITH_LIBLTDL
-	/* Library could be loaded by the caller - so do not unload it then in the
-	 * end of single-dir work */
-	if(!dl_handle_libneon){
-#endif /* WITH_LIBLTDL */
-		/* Note: do not "die" from the library context; that's up to the caller */
-		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
-#if WITH_LIBLTDL
-		flag_libneon = 1;
-#endif /* WITH_LIBLTDL */
-	}
-
-	int c;
-	for (c = 0; c < n; c++)
-	{
-		upsdebugx (5, "mibdmf_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
-		if (strstr(dir_ent[c]->d_name, ".dmf"))
-		{
-			i++;
-			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
-				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
-				sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
-				assert(file_path);
-				int res = mibdmf_parse_file(file_path, dmp);
-				upsdebugx (5, "mibdmf_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dmp, res);
-				if ( res != 0 )
-				{
-					x++;
-					result = res;
-					/* No debug: parse_file() did it if enabled*/
-				}
-				free(file_path);
-			}else{
-				upslogx(LOG_ERR, "mibdmf_parse_dir(): File path too long");
-			}
-		}
-		free(dir_ent[c]);
-	}
-	free(dir_ent);
-
-#if WITH_LIBLTDL
-	if(flag_libneon == 1)
-#endif /* WITH_LIBLTDL */
-		unload_neon_lib();
-
-	if (i==0) {
-		upsdebugx(1, "WARN: No '*.dmf' DMF files were found or readable in directory '%s'",
-			dir_name ? dir_name : "<NULL>");
-	} else {
-		upsdebugx(1, "INFO: %d '*.dmf' DMF files were inspected in directory '%s'",
-			i, dir_name ? dir_name : "<NULL>");
-	}
-	if (result!=0 || x>0) {
-		upsdebugx(1, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)",
-			x, dir_name ? dir_name : "<NULL>", result);
-	}
-
+	int result = dmfcore_parse_dir(dir_name, dcp);
+	free(dcp);
 	return result;
 }
 
