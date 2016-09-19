@@ -393,14 +393,23 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
 							NULL, NULL, nut_dev);
 				(*nut_ne_xml_parse)(parser, buf, recv_size);
+				int parserFailed = (*nut_ne_xml_failed)(parser); // 0 = ok, nonzero = fail
 				(*nut_ne_xml_destroy)(parser);
 
-				nut_dev->driver = strdup("netxml-ups");
-				sprintf(buf,"http://%s",string);
-				nut_dev->port = strdup(buf);
+				if (parserFailed == 0) {
+					nut_dev->driver = strdup("netxml-ups");
+					sprintf(buf,"http://%s",string);
+					nut_dev->port = strdup(buf);
 
-				current_nut_dev = nutscan_add_device_to_device(
+					current_nut_dev = nutscan_add_device_to_device(
 						current_nut_dev,nut_dev);
+				}
+				else
+				{
+					fprintf(stderr,"Device replied with NetXML but was not deemed compatible\n");
+					close(peerSocket);
+					return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
+				}
 
 				//XXX: quick and dirty change - now we scanned exactly ONE IP address,
 				//     which is exactly the amount we wanted
