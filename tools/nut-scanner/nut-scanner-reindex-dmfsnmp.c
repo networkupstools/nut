@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
 		"<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
 		"<nut version=\"%s\" xmlns=\"%s\">\n",
 		XSD_DMFNUTSCAN_VERSION, XSD_DMFNUTSCAN_XMLNS);
-	for (i=0; devtab[i].oid != NULL || devtab[i].mib != NULL || devtab[i].sysoid != NULL ; i++)
+	for (i=0; !is_sentinel__snmp_device_id_t(&(devtab[i])) ; i++)
 	{
 		upsdebugx(2,"[num=%zu (lenbefore=%zu)]", i, newdmf_len);
 
@@ -249,10 +249,10 @@ int main(int argc, char *argv[])
 	size_t j=-1, k=-1;
 	result=0;
 	/* Make sure that all values we've considered are present in re-parse */
-	for (k=0; devtab[k].oid != NULL || devtab[k].mib != NULL || devtab[k].sysoid != NULL ; k++)
+	for (k=0; !is_sentinel__snmp_device_id_t(&(devtab[k])) ; k++)
 	{
 		int r = 0;
-		for (j=0; newdevtab[j].oid != NULL || newdevtab[j].mib != NULL || newdevtab[j].sysoid != NULL ; j++)
+		for (j=0; !is_sentinel__snmp_device_id_t(&(newdevtab[j])) ; j++)
 		{ /* Note: OID attribute may be empty or NULL, these are assumed equal */
 			if ( (dmf_streq(newdevtab[j].oid, devtab[k].oid)
 			    ||dmf_streq(newdevtab[j].oid, "")
@@ -272,7 +272,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	for (j=0; newdevtab[j].oid != NULL || newdevtab[j].mib != NULL || newdevtab[j].sysoid != NULL ; j++) ;
+	/* Count them */
+	for (j=0; !is_sentinel__snmp_device_id_t(&(newdevtab[j])) ; j++) ;
 
 	if ( i!=j )
 	{

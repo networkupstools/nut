@@ -63,9 +63,12 @@ print_snmp_memory_struct(snmp_info_t *self)
 
 	if (self->oid2info)
 	{
+/*
 		while ( !( (self->oid2info[i].oid_value == 0)
 		        && (!self->oid2info[i].info_value)
 		) ) {
+*/
+		while ( !is_sentinel__info_lkp_t(&(self->oid2info[i])) ) {
 			upsdebugx(5, "Info_lkp_t-----------> %d",
 				self->oid2info[i].oid_value);
 			if(self->oid2info[i].info_value)
@@ -136,6 +139,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 
 	if (self->snmp_info)
 	{
+/*
 		while ( !( (!self->snmp_info[i].info_type)
 		        && (self->snmp_info[i].info_len == 0)
 		        && (!self->snmp_info[i].OID)
@@ -143,6 +147,8 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 		        && (self->snmp_info[i].flags == 0)
 		        && (!self->snmp_info[i].oid2info)
 		) ) {
+*/
+		while ( !is_sentinel__snmp_info_t(&(self->snmp_info[i])) ) {
 			print_snmp_memory_struct(self->snmp_info+i);
 			i++;
 		}
@@ -151,16 +157,20 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 	i = 0;
 	if (self->alarms_info)
 	{
+/*
 		while ( (self->alarms_info[i].alarm_value)
 		     || (self->alarms_info[i].OID)
 		     || (self->alarms_info[i].status_value)
 		) {
+*/
+		while ( !is_sentinel__alarms_info_t(&(self->alarms_info[i])) ) {
 			print_alarm_memory_struct(self->alarms_info+i);
 			i++;
 		}
 	}
 }
 /*END DEBUGGING*/
+
 
 #if WITH_DMF_FUNCTIONS
 char *
@@ -1440,4 +1450,47 @@ dmf_strneq (const char* x, const char* y)
 		upsdebugx(2, "\nDEBUG: strNEQ(): Strings are equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
 	}
 	return (cmp != 0);
+}
+
+bool
+is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct)
+{
+	assert(pstruct);
+	return ( pstruct->oid == NULL && pstruct->sysoid == NULL && pstruct->mib == NULL );
+}
+
+bool
+is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
+{
+	assert (pstruct);
+	return ( pstruct->info_type == NULL && pstruct->info_len == 0 && pstruct->OID == NULL
+	      && pstruct->dfl == NULL && pstruct->flags == 0 && pstruct->oid2info == NULL
+#if WITH_DMF_FUNCTIONS
+	      && pstruct->function_language == NULL
+	      && pstruct->function_code == NULL
+# if WITH_DMF_LUA
+	      && pstruct->luaContext == NULL
+# endif
+#endif
+	);
+}
+
+bool
+is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct) {
+	assert (pstruct);
+	return ( pstruct->mib_name == NULL && pstruct->mib_version == NULL && pstruct->oid_pwr_status == NULL
+	      && pstruct->oid_auto_check == NULL && pstruct->snmp_info == NULL && pstruct->sysOID == NULL
+	      && pstruct->alarms_info == NULL);
+}
+
+bool
+is_sentinel__alarms_info_t(const alarms_info_t *pstruct) {
+	assert (pstruct);
+	return ( pstruct->alarm_value == NULL && pstruct->OID == NULL && pstruct->status_value == NULL );
+}
+
+bool
+is_sentinel__info_lkp_t(const info_lkp_t *pstruct) {
+	assert (pstruct);
+	return ( pstruct->info_value == NULL && pstruct->oid_value == 0 );
 }
