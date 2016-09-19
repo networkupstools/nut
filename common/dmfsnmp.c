@@ -1,4 +1,4 @@
-/* dmf.c - Network UPS Tools XML-driver-loader
+/* dmfsnmp.c - Network UPS Tools XML-driver-loader for DMF MIB mappings
  *
  * This file implements procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
@@ -27,53 +27,15 @@
 #include <dirent.h>
 #include <assert.h>
 
-#if WITH_LIBLTDL
-# include <ltdl.h>
-/* else: We are linked to LibNEON at compile-time */
-#endif
-
-/* LibNEON is currently required to build DMF */
-#if WITH_NEON
-# include <ne_xml.h>
-#else
-#error "LibNEON is required to build DMF"
-#endif
-
-#include <ne_xml.h>
-
 #include "common.h"
 #include "dmfsnmp.h"
+#include "dmfcore.h"
 
 /*
  *
  *  C FILE
  *
  */
-
-#if WITH_LIBLTDL
-/* LTDL variables needed to load LibNEON */
-static lt_dlhandle dl_handle_libneon = NULL;
-static const char *dl_error = NULL;
-
-/* Pointers to dynamically-loaded LibNEON functions; do not mistake these
- * with xml_*_cb callbacks that we implement below for actual parsing.
- * If not loaded dynamically by LTDL, these should be available via LDD
- * dynamic linking at compile-time.
- */
-static ne_xml_parser *(*xml_create)(void);
-static void (*xml_push_handler)(ne_xml_parser*,
-			ne_xml_startelm_cb*,
-			ne_xml_cdata_cb*,
-			ne_xml_endelm_cb*,
-			void*);
-static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
-static void (*xml_destroy)(ne_xml_parser*);
-#else
-# define	xml_create		ne_xml_create
-# define	xml_push_handler	ne_xml_push_handler
-# define	xml_parse		ne_xml_parse
-# define	xml_destroy		ne_xml_destroy
-#endif
 
 /* These vars used to be needed as extern vars by some legacy code elsewhere...
  * also they are referenced below, but I'm not sure it is valid code!
@@ -101,9 +63,12 @@ print_snmp_memory_struct(snmp_info_t *self)
 
 	if (self->oid2info)
 	{
+/*
 		while ( !( (self->oid2info[i].oid_value == 0)
 		        && (!self->oid2info[i].info_value)
 		) ) {
+*/
+		while ( !is_sentinel__info_lkp_t(&(self->oid2info[i])) ) {
 			upsdebugx(5, "Info_lkp_t-----------> %d",
 				self->oid2info[i].oid_value);
 			if(self->oid2info[i].info_value)
@@ -174,6 +139,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 
 	if (self->snmp_info)
 	{
+/*
 		while ( !( (!self->snmp_info[i].info_type)
 		        && (self->snmp_info[i].info_len == 0)
 		        && (!self->snmp_info[i].OID)
@@ -181,6 +147,8 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 		        && (self->snmp_info[i].flags == 0)
 		        && (!self->snmp_info[i].oid2info)
 		) ) {
+*/
+		while ( !is_sentinel__snmp_info_t(&(self->snmp_info[i])) ) {
 			print_snmp_memory_struct(self->snmp_info+i);
 			i++;
 		}
@@ -189,10 +157,13 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 	i = 0;
 	if (self->alarms_info)
 	{
+/*
 		while ( (self->alarms_info[i].alarm_value)
 		     || (self->alarms_info[i].OID)
 		     || (self->alarms_info[i].status_value)
 		) {
+*/
+		while ( !is_sentinel__alarms_info_t(&(self->alarms_info[i])) ) {
 			print_alarm_memory_struct(self->alarms_info+i);
 			i++;
 		}
@@ -200,116 +171,6 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 }
 /*END DEBUGGING*/
 
-/* Returns OK if all went well, or ERR on error */
-/* Based on nut-scanner/scan_xml_http.c code */
-/* Note: names for popular libneon implementations are hard-coded at this
- * time - and just one, so extra DLLs (if an OS requires several to load)
- * are not supported. (TODO: link this to LIBNEON_LIBS from configure) */
-int load_neon_lib(void){
-#ifdef WITH_NEON
-# if WITH_LIBLTDL
-	char *neon_libname_path = get_libname("libneon.so");
-
-	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-	if(!neon_libname_path) {
-		upslogx(0, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon.so");
-
-		neon_libname_path = get_libname("libneon-gnutls.so");
-		upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
-		if(!neon_libname_path) {
-			upslogx(0, "Error loading Neon library required for DMF: %s not found by dynamic loader; please verify it is in your /usr/lib or some otherwise searched dynamic-library path", "libneon-gnutls.so");
-			return ERR;
-		}
-	}
-
-	if( lt_dlinit() != 0 ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlinit() action failed");
-		goto err;
-	}
-
-	if( dl_handle_libneon != NULL ) {
-		/* if previous init failed */
-		if( dl_handle_libneon == (void *)1 ) {
-			upsdebugx(1, "load_neon_lib(): previous ltdl engine init had failed");
-			goto err;
-		}
-		/* init has already been done and not unloaded yet */
-		free(neon_libname_path);
-		return OK;
-	}
-
-	dl_handle_libneon = lt_dlopen(neon_libname_path);
-
-	if(!dl_handle_libneon) {
-		dl_error = lt_dlerror();
-		upsdebugx(1, "load_neon_lib(): lt_dlopen() action failed");
-		goto err;
-	}
-
-	lt_dlerror();      /* Clear any existing error */
-
-	*(void**) (&xml_create) = lt_dlsym(dl_handle_libneon, "ne_xml_create");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_create) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_create");
-		goto err;
-	}
-
-	*(void**) (&xml_push_handler) = lt_dlsym(dl_handle_libneon, "ne_xml_push_handler");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_push_handler) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_push_handler");
-		goto err;
-	}
-
-	*(void**) (&xml_parse) = lt_dlsym(dl_handle_libneon, "ne_xml_parse");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_parse) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_parse");
-		goto err;
-	}
-
-	*(void**) (&xml_destroy) = lt_dlsym(dl_handle_libneon, "ne_xml_destroy");
-	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_destroy) ) {
-		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s()", "xml_destroy");
-		goto err;
-	}
-
-	dl_error = lt_dlerror();
-	if (dl_error) {
-		upsdebugx(1, "load_neon_lib(): lt_dlerror() final check failed");
-		goto err;
-	}
-	else {
-		upsdebugx(1, "load_neon_lib(): lt_dlerror() final succeeded, library loaded");
-		free(neon_libname_path);
-		return OK;
-	}
-
-err:
-	upslogx(0, "Error loading Neon library %s required for DMF: %s",
-		neon_libname_path,
-		dl_error ? dl_error : "No details passed");
-	free(neon_libname_path);
-	return ERR;
-# else /* not WITH_LIBLTDL */
-	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
-	return OK;
-# endif /* WITH_LIBLTDL */
-
-#else /* not WITH_NEON */
-	upslogx(0, "Error loading Neon library required for DMF: not enabled during compilation");
-	upsdebugx(1, "load_neon_lib(): not enabled during compilation");
-	return ERR;
-#endif /* WITH_NEON */
-}
-
-void unload_neon_lib(){
-#ifdef WITH_NEON
-#if WITH_LIBLTDL
-	upsdebugx(1, "unload_neon_lib(): unloading the library");
-	lt_dlclose(dl_handle_libneon);
-	dl_handle_libneon = NULL;
-#endif /* WITH_LIBLTDL */
-#endif /* WITH_NEON */
-}
 
 #if WITH_DMF_FUNCTIONS
 char *
@@ -474,9 +335,9 @@ info_mib2nut_new (const char *name, const char *version,
 }
 
 #if WITH_DMF_FUNCTIONS
-function_t *
+dmf_function_t *
 function_new (const char *name, const char *language){
-	function_t *self = (function_t*) calloc(1, sizeof(function_t));
+	dmf_function_t *self = (dmf_function_t*) calloc(1, sizeof(dmf_function_t));
 	self->name = strdup (name);
 	if (language == NULL) {
 		self->language = strdup ("lua-5.1");
@@ -492,7 +353,7 @@ void
 function_destroy (void **self_p){
 	if (*self_p)
 	{
-		function_t *self = (function_t*) *self_p;
+		dmf_function_t *self = (dmf_function_t*) *self_p;
 		if(self->name){
 			free(self->name);
 			self->name = NULL;
@@ -647,86 +508,6 @@ info_mib2nut_destroy (void **self_p)
 		free (self);
 		*self_p = NULL;
 	}
-}
-
-/*New generic list element (can be the root element)*/
-alist_t *
-alist_new ( const char *name,
-	void (*destroy)(void **self_p),
-	void (*new_element)(void) )
-{
-	alist_t *self = (alist_t*) calloc (1, sizeof (alist_t));
-	assert (self);
-	self->size = 0;
-	self->capacity = DEFAULT_CAPACITY;
-	self->values = (void**) calloc (self->capacity, sizeof (void*));
-	assert (self->values);
-	self->destroy = destroy;
-	self->new_element = new_element;
-	if(name)
-		self->name = strdup(name);
-	else
-		self->name = NULL;
-	return self;
-}
-
-/*Destroy full array of generic list elements*/
-void
-alist_destroy (alist_t **self_p)
-{
-	if (*self_p)
-	{
-		alist_t *self = *self_p;
-		for (;self->size > 0; self->size--)
-		{
-			if (self->destroy)
-				self->destroy(& self->values [self->size-1]);
-			else
-				free(self->values[self->size-1]);
-		}
-		if (self->name)
-			free(self->name);
-		free (self->values);
-		free (self);
-		*self_p = NULL;
-	}
-}
-
-/*Add a generic element at the end of the list*/
-void
-alist_append (alist_t *self, void *element)
-{
-	if (self->size + 1 == self->capacity)
-	{
-		self->capacity += DEFAULT_CAPACITY;
-		self->values = (void**) realloc (
-			self->values,
-			self->capacity * sizeof(void*) );
-	}
-	self->values[self->size] = element;
-	self->size++;
-	self->values[self->size] = NULL;
-}
-
-/*Return the last element of the list*/
-alist_t *
-alist_get_last_element (alist_t *self)
-{
-	if(self)
-		return (alist_t*)self->values[self->size-1];
-	return NULL;
-}
-
-alist_t *
-alist_get_element_by_name (alist_t *self, char *name)
-{
-	int i;
-	if (self)
-		for (i = 0; i < self->size; i++)
-			if ( ((alist_t*)self->values[i])->name )
-				if (strcmp(((alist_t*)self->values[i])->name, name) == 0)
-					return (alist_t*)self->values[i];
-	return NULL;
 }
 
 /* Accessors and lifecycle management for the structure that marries DMF and MIB*/
@@ -1066,7 +847,7 @@ function_node_handler(alist_t *list, const char **attrs)
 	argname = get_param_by_name(SNMP_NAME, attrs);
 	arglang = get_param_by_name("language", attrs);
 	if(argname != NULL)
-		alist_append(element, ((function_t *(*) (const char *, const char *)) element->new_element) (argname, arglang));
+		alist_append(element, ((dmf_function_t *(*) (const char *, const char *)) element->new_element) (argname, arglang));
 	if(argname != NULL)
 		free(argname);
 	if(arglang != NULL)
@@ -1109,9 +890,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 		if(funcs)
 		{
 			for (i = 0; i < funcs->size; i++)
-				if(strcmp(((function_t*)funcs->values[i])->name, arg[0]) == 0) {
-					func_code = ((function_t*)funcs->values[i])->code;
-					func_lang = ((function_t*)funcs->values[i])->language;
+				if(strcmp(((dmf_function_t*)funcs->values[i])->name, arg[0]) == 0) {
+					func_code = ((dmf_function_t*)funcs->values[i])->code;
+					func_lang = ((dmf_function_t*)funcs->values[i])->language;
 				}
 		}
 	}
@@ -1351,7 +1132,7 @@ compile_info_flags(const char **attrs)
 }
 
 int
-xml_dict_start_cb(void *userdata, int parent,
+mibdmf_xml_dict_start_cb(void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs)
 {
@@ -1401,8 +1182,7 @@ xml_dict_start_cb(void *userdata, int parent,
 				(void (*)(void)) function_new));
 		functions_aux = 1;
 #else
-		upsdebugx(5, "NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
-		upslogx(2, "NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
+		upsdebugx(2, "WARN: NUT was not compiled with DMF function feature, 'functions' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_FUNCTION) == 0)
@@ -1411,21 +1191,19 @@ xml_dict_start_cb(void *userdata, int parent,
 		upsdebugx(1, "DMF function feature support COMPILED IN");
 		function_node_handler(list,attrs);
 #else
-		upsdebugx(1, "DMF function feature support *NOT* COMPILED IN");
-		upsdebugx(5, "NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
-		upslogx(2, "NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
+		upsdebugx(1, "WARN: NUT was not compiled with DMF function feature, 'function' DMF tag ignored.");
 #endif
 	}
 	else if(strcmp(name,DMFTAG_NUT) != 0)
 	{
-		upslogx(2, "WARN: The '%s' tag in DMF is not recognized!", name);
+		upsdebugx(1, "WARN: The '%s' tag in DMF is not recognized!", name);
 	}
 	free(auxname);
 	return DMF_NEON_CALLBACK_OK;
 }
 
 int
-xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
+mibdmf_xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 {
 	if(!userdata)return ERR;
 
@@ -1481,7 +1259,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 	}else if(strcmp(name,DMFTAG_FUNCTION) == 0)
 	{
 		alist_t *element = alist_get_last_element(list);
-		function_t *func =(function_t *) alist_get_last_element(element);
+		dmf_function_t *func =(dmf_function_t *) alist_get_last_element(element);
 		func->code = strdup(function_text);
 		free(function_text);
 		function_text = NULL;
@@ -1492,7 +1270,7 @@ xml_end_cb(void *userdata, int state, const char *nspace, const char *name)
 }
 
 int
-xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
+mibdmf_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
 	if(!userdata)
 		return ERR;
@@ -1522,84 +1300,33 @@ xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 	return OK;
 }
 
-/* Load DMF XML file into structure tree at *list (precreate with alist_new)
- Returns 0 on success, or an <errno> code on system or parsing errors*/
 int
-mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
+mibdmf_parse_begin_cb(void *parsed_data)
 {
-	char buffer[4096]; /* Align with common cluster/FSblock size nowadays */
-	FILE *f;
-	int result = 0;
-#if WITH_LIBLTDL
-	int flag_libneon = 0;
-#endif /* WITH_LIBLTDL */
-
-	assert (file_name);
+	mibdmf_parser_t *dmp = (mibdmf_parser_t *)parsed_data;
 	assert (dmp);
+	if (dmp==NULL) {
+		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() was called with parsed_data==NULL");
+		return ERR;
+	}
 	mibdmf_parser_new_list(dmp);
 	assert (mibdmf_get_aux_list(dmp)!=NULL);
-
-	upsdebugx(1, "%s(%s)", __func__, file_name);
-
-	if ( (file_name == NULL ) || \
-	     ( (f = fopen(file_name, "r")) == NULL ) )
-	{
-		upsdebugx(1, "ERROR: DMF file '%s' not found or not readable",
-			file_name ? file_name : "<NULL>");
-		return ENOENT;
+	if (mibdmf_get_aux_list(dmp)==NULL) {
+		upslogx(LOG_ERR, "mibdmf_parse_begin_cb() could not allocate new aux_list");
+		return ERR;
 	}
-#if WITH_LIBLTDL
-	/* Library could be loaded by the caller like the directory
-	 * parser - do not unload it then in the end of single-file work */
-	if(!dl_handle_libneon){
-		flag_libneon = 1;
-		if(load_neon_lib() == ERR) return ERR; /* Errors printed by that loader */
-	}
-#endif /* WITH_LIBLTDL */
-	ne_xml_parser *parser = xml_create ();
-	xml_push_handler (parser, xml_dict_start_cb,
-		xml_cdata_cb
-		, xml_end_cb, dmp);
+	return OK;
+}
 
-	/* The neon XML parser would get blocks from the DMF file and build
-	   the in-memory representation with our xml_dict_start_cb() callback.
-	   Any hiccup (FS, neon, callback) is failure. */
-	while (!feof (f))
-	{
-		size_t len = fread(buffer, sizeof(char), sizeof(buffer), f);
-		if (len == 0) /* Should not zero-read from a non-EOF file */
-		{
-			fprintf(stderr, "ERROR parsing DMF from '%s'"
-				"(unexpected short read)\n", file_name);
-			upslogx(2, "ERROR parsing DMF from '%s'"
-				"(unexpected short read)", file_name);
-			result = EIO;
-			break;
-		} else {
-			if ((result = xml_parse (parser, buffer, len)))
-			{
-				fprintf(stderr, "ERROR parsing DMF from '%s'"
-					"(unexpected markup?)\n", file_name);
-				upslogx(2, "ERROR parsing DMF from '%s'"
-					"(unexpected markup?)\n", file_name);
-				result = ENOMSG;
-				break;
-			}
-		}
+int
+mibdmf_parse_finish_cb(void *parsed_data, int result)
+{
+	mibdmf_parser_t *dmp = (mibdmf_parser_t *)parsed_data;
+	assert (dmp);
+	if (dmp==NULL) {
+		upslogx(LOG_ERR, "mibdmf_parse_finish_cb() was called with parsed_data==NULL");
+		return ECANCELED;
 	}
-	fclose (f);
-	if (!result) /* no errors, complete the parse with len==0 call */
-		xml_parse (parser, buffer, 0);
-	xml_destroy (parser);
-#if WITH_LIBLTDL
-	if(flag_libneon == 1)
-		unload_neon_lib();
-#endif /* WITH_LIBLTDL */
-
-	upsdebugx(1, "%s DMF acquired from '%s' (result = %d) %s",
-		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", file_name, result,
-		( result == 0 ) ? "" : strerror(result)
-	);
 
 	/* Extend or truncate the tables to the current amount of known entries
 	   To be on the safe side, we do this even if current file hiccuped. */
@@ -1619,65 +1346,50 @@ mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
 	return result;
 }
 
+/* Load DMF XML file into structure tree at *list (precreate with alist_new)
+ Returns 0 on success, or an <errno> code on system or parsing errors*/
+int
+mibdmf_parse_file(char *file_name, mibdmf_parser_t *dmp)
+{
+	upsdebugx(1, "%s(%s)", __func__, file_name);
+	assert(file_name);
+	assert(dmp);
+
+	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+		(void*)dmp,
+		mibdmf_parse_begin_cb,
+		mibdmf_parse_finish_cb,
+		mibdmf_xml_dict_start_cb,
+		mibdmf_xml_cdata_cb,
+		mibdmf_xml_end_cb
+	);
+	assert(dcp);
+
+	int result = dmfcore_parse_file(file_name, dcp);
+	free(dcp);
+	return result;
+}
+
 /* Parse a buffer with complete DMF XML (from <nut> to </nut>)*/
 int
 mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 {
-	int result = 0;
-	size_t len;
+	upsdebugx(1, "%s(string)", __func__);
+	assert(dmf_string);
+	assert(dmp);
 
-	assert (dmf_string);
-	assert (dmp);
-	mibdmf_parser_new_list(dmp);
-	assert (mibdmf_get_aux_list(dmp)!=NULL);
-
-	if ( (dmf_string == NULL ) || \
-	     ( (len = strlen(dmf_string)) == 0 ) )
-	{
-		fprintf(stderr, "ERROR: DMF passed in a string is empty or NULL\n");
-		upslogx(1, "ERROR: DMF passed in a string is empty or NULL");
-		return ENOENT;
-	}
-	if(load_neon_lib() == ERR) return ERR;
-	ne_xml_parser *parser = xml_create ();
-	xml_push_handler (parser, xml_dict_start_cb,
-		xml_cdata_cb
-		, xml_end_cb, dmp);
-
-	if ((result = xml_parse (parser, dmf_string, len)))
-	{
-		fprintf(stderr, "ERROR parsing DMF from string "
-			"(unexpected markup?)\n");
-		upslogx(2, "ERROR parsing DMF from string "
-			"(unexpected markup?)");
-		result = ENOMSG;
-	}
-
-	if (!result) /* no errors, complete the parse with len==0 call */
-		xml_parse (parser, dmf_string, 0);
-	xml_destroy (parser);
-	unload_neon_lib();
-
-	upsdebugx(1, "%s DMF acquired from string (result = %d) %s",
-		( result == 0 ) ? "[--OK--]" : "[-FAIL-]", result,
-		( result == 0 ) ? "" : strerror(result)
+	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+		(void*)dmp,
+		mibdmf_parse_begin_cb,
+		mibdmf_parse_finish_cb,
+		mibdmf_xml_dict_start_cb,
+		mibdmf_xml_cdata_cb,
+		mibdmf_xml_end_cb
 	);
+	assert(dcp);
 
-	/* Extend or truncate the tables to the current amount of known entries
-	   To be on the safe side, we do this even if current file hiccuped. */
-	assert (mibdmf_get_device_table_counter(dmp)>=1); /* Avoid underflow in memset below */
-	*mibdmf_get_device_table_ptr(dmp) = (snmp_device_id_t *) realloc(*mibdmf_get_device_table_ptr(dmp),
-		mibdmf_get_device_table_counter(dmp) * sizeof(snmp_device_id_t));
-	*mibdmf_get_mib2nut_table_ptr(dmp) = (mib2nut_info_t **) realloc(*mibdmf_get_mib2nut_table_ptr(dmp),
-		mibdmf_get_device_table_counter(dmp) * sizeof(mib2nut_info_t *));
-	assert (mibdmf_get_device_table(dmp));
-	assert (mibdmf_get_mib2nut_table(dmp));
-
-	/* Make sure the last entry in the table is the zeroed-out sentinel */
-	memset (*mibdmf_get_device_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1, 0,
-		sizeof (snmp_device_id_t));
-	*(*mibdmf_get_mib2nut_table_ptr(dmp) + mibdmf_get_device_table_counter(dmp) - 1) = NULL;
-
+	int result = dmfcore_parse_str(dmf_string, dcp);
+	free(dcp);
 	return result;
 }
 
@@ -1686,67 +1398,22 @@ mibdmf_parse_str (const char *dmf_string, mibdmf_parser_t *dmp)
 int
 mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp)
 {
-	struct dirent **dir_ent;
-	int i = 0, x = 0, result = 0, n = 0;
+	upsdebugx(1, "%s(%s)", __func__, dir_name);
+	assert(dir_name);
+	assert(dmp);
 
-	assert (dir_name);
-	assert (dmp);
+	dmfcore_parser_t *dcp = dmfcore_parser_new_init(
+		(void*)dmp,
+		mibdmf_parse_begin_cb,
+		mibdmf_parse_finish_cb,
+		mibdmf_xml_dict_start_cb,
+		mibdmf_xml_cdata_cb,
+		mibdmf_xml_end_cb
+	);
+	assert(dcp);
 
-	if ( (dir_name == NULL ) || \
-	     ( (n = scandir(dir_name, &dir_ent, NULL, alphasort)) == 0 ) )
-	{
-		upslogx(0, "ERROR: DMF directory '%s' not found or not readable",
-			dir_name ? dir_name : "<NULL>");
-		return ENOENT;
-	}
-	if(load_neon_lib() == ERR) {
-		/* Note: do not "die" from the library context; that's up to the caller */
-		upslogx(0, "ERROR: can't load Neon library");
-		return ERR;
-	}
-	int c;
-	for (c = 0; c < n; c++)
-	{
-		upsdebugx (5, "mibdmf_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
-		if (strstr(dir_ent[c]->d_name, ".dmf"))
-		{
-			i++;
-			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
-				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
-				sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
-				assert(file_path);
-				int res = mibdmf_parse_file(file_path, dmp);
-				upsdebugx (5, "mibdmf_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dmp, res);
-				if ( res != 0 )
-				{
-					x++;
-					result = res;
-					/* No debug: parse_file() did it if enabled*/
-				}
-				free(file_path);
-			}else{
-				upsdebugx(5, "File path too long\n");
-				upslogx(2, "File path too long");
-			}
-		}
-		free(dir_ent[c]);
-	}
-	free(dir_ent);
-
-	unload_neon_lib();
-
-	if (i==0) {
-		upsdebugx(1, "WARN: No '*.dmf' DMF files were found or readable in directory '%s'",
-			dir_name ? dir_name : "<NULL>");
-	} else {
-		upsdebugx(1, "INFO: %d '*.dmf' DMF files were inspected in directory '%s'",
-			i, dir_name ? dir_name : "<NULL>");
-	}
-	if (result!=0 || x>0) {
-		upsdebugx(1, "WARN: Some %d DMF files were not readable in directory '%s' (last bad result %d)",
-			x, dir_name ? dir_name : "<NULL>", result);
-	}
-
+	int result = dmfcore_parse_dir(dir_name, dcp);
+	free(dcp);
 	return result;
 }
 
@@ -1756,7 +1423,9 @@ dmf_streq (const char* x, const char* y)
 	if (!x && !y)
 		return true;
 	if (!x || !y) {
-		upsdebugx(2, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n", x ? x : "<NULL>" , y ? y : "<NULL>");
+		upsdebugx(2, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n",
+			x ? x : "<NULL>" ,
+			y ? y : "<NULL>");
 		return false;
 		}
 	int cmp = strcmp (x, y);
@@ -1781,4 +1450,47 @@ dmf_strneq (const char* x, const char* y)
 		upsdebugx(2, "\nDEBUG: strNEQ(): Strings are equal (%i):\n\t%s\n\t%s\n\n", cmp, x, y);
 	}
 	return (cmp != 0);
+}
+
+bool
+is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct)
+{
+	assert(pstruct);
+	return ( pstruct->oid == NULL && pstruct->sysoid == NULL && pstruct->mib == NULL );
+}
+
+bool
+is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
+{
+	assert (pstruct);
+	return ( pstruct->info_type == NULL && pstruct->info_len == 0 && pstruct->OID == NULL
+	      && pstruct->dfl == NULL && pstruct->flags == 0 && pstruct->oid2info == NULL
+#if WITH_DMF_FUNCTIONS
+	      && pstruct->function_language == NULL
+	      && pstruct->function_code == NULL
+# if WITH_DMF_LUA
+	      && pstruct->luaContext == NULL
+# endif
+#endif
+	);
+}
+
+bool
+is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct) {
+	assert (pstruct);
+	return ( pstruct->mib_name == NULL && pstruct->mib_version == NULL && pstruct->oid_pwr_status == NULL
+	      && pstruct->oid_auto_check == NULL && pstruct->snmp_info == NULL && pstruct->sysOID == NULL
+	      && pstruct->alarms_info == NULL);
+}
+
+bool
+is_sentinel__alarms_info_t(const alarms_info_t *pstruct) {
+	assert (pstruct);
+	return ( pstruct->alarm_value == NULL && pstruct->OID == NULL && pstruct->status_value == NULL );
+}
+
+bool
+is_sentinel__info_lkp_t(const info_lkp_t *pstruct) {
+	assert (pstruct);
+	return ( pstruct->info_value == NULL && pstruct->oid_value == 0 );
 }

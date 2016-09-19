@@ -108,6 +108,7 @@
 
 #include <stdbool.h>
 #include "extstate.h"
+#include "alist.h"
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
@@ -142,13 +143,6 @@
  *
  */
 #define YES "yes"
-#define DEFAULT_CAPACITY 16
-
-#ifdef PATH_MAX
-#define PATH_MAX_SIZE PATH_MAX
-#else
-#define PATH_MAX_SIZE 1024
-#endif
 
 /* Recognized DMF XML tags */
 #define DMFTAG_NUT "nut"
@@ -224,22 +218,7 @@
 /* Additional snmp_info attribute to reference dynamic functions to produce calculated values */
 #define TYPE_FUNCTIONSET "functionset"
 #endif
-/* "Auxiliary list" structure to store hierarchies
- * of lists with bits of data */
-typedef struct {
-	void **values;
-	int size;
-	int capacity;
-	char *name;
-	void (*destroy)(void **self_p);
-	void (*new_element)(void);
-} alist_t;
 
-typedef enum {
-	ERR = -1,
-	OK,
-	DMF_NEON_CALLBACK_OK = 1
-} state_t;
 
 /* Aggregate the data storage and variables needed to
  * parse the DMF representation of MIB data for NUT */
@@ -261,7 +240,7 @@ typedef struct {
 	char *name; 		/* Required for the DMF entry to be parsed */
 	char *language;		/* Practical default is "lua-5.1" */
 	char *code;
-} function_t;
+} dmf_function_t;
 #endif
 
 /* Initialize the data for dmf.c */
@@ -304,6 +283,24 @@ int
 /* Load all `*.dmf` DMF XML files from specified directory */
 int
 	mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp);
+
+
+/* Generalize verification that a table entry is all-NULL */
+/* Maybe these belong in snmp-ups.c/.h - but so far used here, defined here */
+bool
+	is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct);
+
+bool
+	is_sentinel__snmp_info_t(const snmp_info_t *pstruct);
+
+bool
+	is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct);
+
+bool
+	is_sentinel__alarms_info_t(const alarms_info_t *pstruct);
+
+bool
+	is_sentinel__info_lkp_t(const info_lkp_t *pstruct);
 
 
 /* Debugging dumpers */
@@ -379,7 +376,7 @@ void
 
 #if WITH_DMF_FUNCTIONS
 /* Create and initialize a function element */
-function_t *
+dmf_function_t *
 	function_new (const char *name, const char *language);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
@@ -427,38 +424,6 @@ void
 void
 	mib2nut_info_node_handler (alist_t *list, const char **attrs);
 
-
-
-
-/* Create new instance of alist_t with LOOKUP type,
- * for storage a list of collections
- *alist_t *
- *	alist_new ();
-
- * New generic list element (can be the root element) */
-alist_t *
-	alist_new (
-		const char *name,
-		void (*destroy)(void **self_p),
-		void (*new_element)(void)
-	);
-
-/* Destroy full array of generic list elements */
-void
-	alist_destroy (alist_t **self_p);
-
-/* Add a generic element at the end of the list */
-void
-	alist_append (alist_t *self, void *element);
-
-/* Return the last element of the list */
-alist_t *
-	alist_get_last_element (alist_t *self);
-
-/* Return the element which has `char* name` equal to the requested one */
-alist_t *
-	alist_get_element_by_name (alist_t *self, char *name);
-
 void
 	lookup_info_node_handler (alist_t *list, const char **attrs);
 
@@ -468,20 +433,20 @@ char *
 
 /* The guts of XML parsing: callbacks that act on an instance of mibdmf_parser_t */
 int
-	xml_dict_start_cb (
+	mibdmf_xml_dict_start_cb (
 		void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs
 	);
 
 int
-	xml_end_cb (
+	mibdmf_xml_end_cb (
 		void *userdata, int state, const char *nspace,
 		const char *name
 	);
 
 int
-	xml_cdata_cb(
+	mibdmf_xml_cdata_cb(
 		void *userdata, int state, const char *cdata, size_t len
 	);
 
