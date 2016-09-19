@@ -166,7 +166,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 /* A NULL "ip" causes a broadcast scan; otherwise the ip address is queried directly */
 /* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
 	char *scanMsg = "<SCAN_REQUEST/>";
-	int port = sec->port;
+	int port = 4679;
 	int peerSocket;
 	int sockopt_on = 1;
 	struct sockaddr_in sockAddress;
@@ -182,6 +182,10 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
+	if(sec != NULL) {
+		if (sec->port > 0 && sec->port <= 65534)
+			port = sec->port;
+	}
 
 	if( !nutscan_avail_xml_http ) {
 		return NULL;
