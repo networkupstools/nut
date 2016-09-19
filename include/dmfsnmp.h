@@ -144,12 +144,6 @@
  */
 #define YES "yes"
 
-#ifdef PATH_MAX
-#define PATH_MAX_SIZE PATH_MAX
-#else
-#define PATH_MAX_SIZE 1024
-#endif
-
 /* Recognized DMF XML tags */
 #define DMFTAG_NUT "nut"
 #define DMFTAG_MIB2NUT "mib2nut"
@@ -225,11 +219,6 @@
 #define TYPE_FUNCTIONSET "functionset"
 #endif
 
-typedef enum {
-	ERR = -1,
-	OK,
-	DMF_NEON_CALLBACK_OK = 1
-} dmfparser_state_t;
 
 /* Aggregate the data storage and variables needed to
  * parse the DMF representation of MIB data for NUT */
@@ -426,20 +415,20 @@ char *
 
 /* The guts of XML parsing: callbacks that act on an instance of mibdmf_parser_t */
 int
-	xml_dict_start_cb (
+	mibdmf_xml_dict_start_cb (
 		void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs
 	);
 
 int
-	xml_end_cb (
+	mibdmf_xml_end_cb (
 		void *userdata, int state, const char *nspace,
 		const char *name
 	);
 
 int
-	xml_cdata_cb(
+	mibdmf_xml_cdata_cb(
 		void *userdata, int state, const char *cdata, size_t len
 	);
 
