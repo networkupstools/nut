@@ -285,7 +285,8 @@ int main(int argc, char *argv[])
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
 
 	/* Set the default values for XML HTTP (run_xml()) */
-	xml_sec.port = 4679;
+	xml_sec.port_http = 80;
+	xml_sec.port_udp = 4679;
 
 	nutscan_init();
 

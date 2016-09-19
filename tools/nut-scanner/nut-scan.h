@@ -88,7 +88,8 @@ typedef struct nutscan_ipmi {
 
 /* XML HTTP structure */
 typedef struct nutscan_xml {
-	int port;		/* Port for xml http */
+	int port_http;		/* Port for xml http (tcp) */
+	int port_udp;		/* Port for xml udp */
 } nutscan_xml_t;
 
 /* Scanning */

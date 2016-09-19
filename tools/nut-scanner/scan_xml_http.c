@@ -166,12 +166,13 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 /* A NULL "ip" causes a broadcast scan; otherwise the ip address is queried directly */
 /* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
 	char *scanMsg = "<SCAN_REQUEST/>";
-	int port = 4679;
+//	int port_http = 80;
+	int port_udp = 4679;
 	int peerSocket;
 	int sockopt_on = 1;
-	struct sockaddr_in sockAddress;
-	socklen_t sockAddressLength = sizeof(sockAddress);
-	memset(&sockAddress, 0, sizeof(sockAddress));
+	struct sockaddr_in sockAddress_udp;
+	socklen_t sockAddressLength = sizeof(sockAddress_udp);
+	memset(&sockAddress_udp, 0, sizeof(sockAddress_udp));
 	fd_set fds;
 	struct timeval timeout;
 	int ret;
@@ -183,8 +184,10 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 	if(sec != NULL) {
-		if (sec->port > 0 && sec->port <= 65534)
-			port = sec->port;
+//		if (sec->port_http > 0 && sec->port_http <= 65534)
+//			port_http = sec->port_http;
+		if (sec->port_udp > 0 && sec->port_udp <= 65534)
+			port_udp = sec->port_udp;
 	}
 
 	if( !nutscan_avail_xml_http ) {
@@ -199,15 +202,15 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 #define MAX_RETRIES 3
 	for (i = 0; i != MAX_RETRIES && current_nut_dev == NULL; i++) {
 		/* Initialize socket */
-		sockAddress.sin_family = AF_INET;
+		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
 			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning connected network segment(s) with a broadcast");
-			sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
+			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
 		} else {
 			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast", ip);
-			inet_pton(AF_INET, ip, &(sockAddress.sin_addr));
+			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
-		sockAddress.sin_port = htons(port);
+		sockAddress_udp.sin_port = htons(port_udp);
 		if (ip == NULL) {
 			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
 				sizeof(sockopt_on));
@@ -215,7 +218,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 
 		/* Send scan request */
 		if(sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
-					(struct sockaddr *)&sockAddress,
+					(struct sockaddr *)&sockAddress_udp,
 					sockAddressLength) <= 0)
 		{
 			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", i, MAX_RETRIES);
@@ -246,7 +249,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				sockAddressLength = sizeof(struct sockaddr_in);
 				recv_size = recvfrom(peerSocket,buf,
 						sizeof(buf),0,
-						(struct sockaddr *)&sockAddress,
+						(struct sockaddr *)&sockAddress_udp,
 						&sockAddressLength);
 
 				if(recv_size==-1) {
@@ -258,7 +261,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				}
 
 				if( getnameinfo(
-					(struct sockaddr *)&sockAddress,
+					(struct sockaddr *)&sockAddress_udp,
 									sizeof(struct sockaddr_in),string,
 									sizeof(string),NULL,0,
 					NI_NUMERICHOST) != 0) {
