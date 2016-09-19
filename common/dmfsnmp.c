@@ -1,4 +1,4 @@
-/* dmf.c - Network UPS Tools XML-driver-loader
+/* dmfsnmp.c - Network UPS Tools XML-driver-loader for DMF MIB mappings
  *
  * This file implements procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
@@ -1702,7 +1702,9 @@ dmf_streq (const char* x, const char* y)
 	if (!x && !y)
 		return true;
 	if (!x || !y) {
-		upsdebugx(2, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n", x ? x : "<NULL>" , y ? y : "<NULL>");
+		upsdebugx(2, "\nDEBUG: strEQ(): One compared string (but not both) is NULL:\n\t%s\n\t%s\n",
+			x ? x : "<NULL>" ,
+			y ? y : "<NULL>");
 		return false;
 		}
 	int cmp = strcmp (x, y);
