@@ -285,6 +285,24 @@ int
 	mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp);
 
 
+/* Generalize verification that a table entry is all-NULL */
+/* Maybe these belong in snmp-ups.c/.h - but so far used here, defined here */
+bool
+	is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct);
+
+bool
+	is_sentinel__snmp_info_t(const snmp_info_t *pstruct);
+
+bool
+	is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct);
+
+bool
+	is_sentinel__alarms_info_t(const alarms_info_t *pstruct);
+
+bool
+	is_sentinel__info_lkp_t(const info_lkp_t *pstruct);
+
+
 /* Debugging dumpers */
 void
 	print_snmp_memory_struct (snmp_info_t *self);
