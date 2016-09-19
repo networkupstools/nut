@@ -96,8 +96,10 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 nutscan_device_t * nutscan_scan_usb();
 
-nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
-nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_timeout, nutscan_xml_t * sec);
+/* If "ip" == NULL, do a broadcast scan */
+nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeout, nutscan_xml_t * sec);
+// FIXME: Add scanning of ranges or subnets (needs a way to iterate IP addresses)
+nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, long usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 

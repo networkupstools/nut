@@ -161,137 +161,14 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	return result;
 }
 
-nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
+nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeout, nutscan_xml_t * sec)
 {
+/* A NULL "ip" causes a broadcast scan; otherwise the ip address is queried directly */
+/* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
 	char *scanMsg = "<SCAN_REQUEST/>";
-	int port = 4679;
+	int port = sec->port;
 	int peerSocket;
 	int sockopt_on = 1;
-	struct sockaddr_in sockAddress;
-	socklen_t sockAddressLength = sizeof(sockAddress);
-	memset(&sockAddress, 0, sizeof(sockAddress));
-	fd_set fds;
-	struct timeval timeout;
-	int ret;
-	char buf[SMALLBUF];
-	char string[SMALLBUF];
-	ssize_t recv_size;
-
-	nutscan_device_t * nut_dev = NULL;
-	nutscan_device_t * current_nut_dev = NULL;
-
-	if( !nutscan_avail_xml_http ) {
-		return NULL;
-	}
-
-	if((peerSocket = socket(AF_INET, SOCK_DGRAM, 0)) != -1)
-	{
-		/* Initialize socket */
-		sockAddress.sin_family = AF_INET;
-		sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
-		sockAddress.sin_port = htons(port);
-		setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
-				sizeof(sockopt_on));
-
-		/* Send scan request */
-		if(sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
-					(struct sockaddr *)&sockAddress,
-					sockAddressLength) <= 0)
-		{
-			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>\n");
-		}
-		else
-		{
-			FD_ZERO(&fds);
-			FD_SET(peerSocket,&fds);
-
-			timeout.tv_sec = usec_timeout / 1000000;
-			timeout.tv_usec = usec_timeout % 1000000;
-
-			while ((ret=select(peerSocket+1,&fds,NULL,NULL,
-						&timeout) )) {
-
-				timeout.tv_sec = usec_timeout / 1000000;
-				timeout.tv_usec = usec_timeout % 1000000;
-
-				if( ret == -1 ) {
-					fprintf(stderr,
-						"Error waiting on \
-						socket: %d\n",errno);
-					break;
-				}
-
-				sockAddressLength = sizeof(struct sockaddr_in);
-				recv_size = recvfrom(peerSocket,buf,
-						sizeof(buf),0,
-						(struct sockaddr *)&sockAddress,
-						&sockAddressLength);
-
-				if(recv_size==-1) {
-					fprintf(stderr,
-						"Error reading \
-						socket: %d\n",errno);
-					continue;
-				}
-
-				if( getnameinfo(
-					(struct sockaddr *)&sockAddress,
-					sizeof(struct sockaddr_in),string,
-					sizeof(string),NULL,0,
-					NI_NUMERICHOST) != 0) {
-
-					fprintf(stderr,
-						"Error converting IP address \
-						: %d\n",errno);
-					continue;
-				}
-
-				nut_dev = nutscan_new_device();
-				if(nut_dev == NULL) {
-					fprintf(stderr,"Memory allocation \
-						error\n");
-					return NULL;
-				}
-
-				nut_dev->type = TYPE_XML;
-				/* Try to read device type */
-				ne_xml_parser *parser = (*nut_ne_xml_create)();
-				(*nut_ne_xml_push_handler)(parser, startelm_cb,
-							NULL, NULL, nut_dev);
-				(*nut_ne_xml_parse)(parser, buf, recv_size);
-				int parserFailed = (*nut_ne_xml_failed)(parser); // 0 = ok, nonzero = fail
-				(*nut_ne_xml_destroy)(parser);
-
-				if (parserFailed == 0) {
-					nut_dev->driver = strdup("netxml-ups");
-					sprintf(buf,"http://%s",string);
-					nut_dev->port = strdup(buf);
-
-					current_nut_dev = nutscan_add_device_to_device(
-						current_nut_dev,nut_dev);
-				}
-				else
-				{
-					fprintf(stderr,"Device replied with NetXML but was not deemed compatible\n");
-					return NULL;
-				}
-
-			}
-		}
-	}
-	else
-	{
-		fprintf(stderr,"Error creating socket\n");
-	}
-
-
-	return nutscan_rewind_device(current_nut_dev);
-}
-nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_timeout, nutscan_xml_t * sec)
-{
-	char *scanMsg = "<SCAN_REQUEST/>";
-	int port = 4679;
-	int peerSocket;
 	struct sockaddr_in sockAddress;
 	socklen_t sockAddressLength = sizeof(sockAddress);
 	memset(&sockAddress, 0, sizeof(sockAddress));
@@ -314,22 +191,30 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 		fprintf(stderr,"Error creating socket\n");
 		return NULL;
 	}
-#define MAX 3
-	for (i = 0; i != MAX && current_nut_dev == NULL; i++) {
+
+#define MAX_RETRIES 3
+	for (i = 0; i != MAX_RETRIES && current_nut_dev == NULL; i++) {
 		/* Initialize socket */
 		sockAddress.sin_family = AF_INET;
-		//sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
-		inet_pton(AF_INET, start_ip, &(sockAddress.sin_addr));
+		if (ip == NULL) {
+			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning connected network segment(s) with a broadcast");
+			sockAddress.sin_addr.s_addr = INADDR_BROADCAST;
+		} else {
+			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast", ip);
+			inet_pton(AF_INET, ip, &(sockAddress.sin_addr));
+		}
 		sockAddress.sin_port = htons(port);
-		//setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
-		//		sizeof(sockopt_on));
+		if (ip == NULL) {
+			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+				sizeof(sockopt_on));
+		}
 
 		/* Send scan request */
 		if(sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
 					(struct sockaddr *)&sockAddress,
 					sockAddressLength) <= 0)
 		{
-			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", i, MAX);
+			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", i, MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
 		}
@@ -363,7 +248,7 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 				if(recv_size==-1) {
 					fprintf(stderr,
 						"Error reading \
-						socket: %d, #%d/%d\n",errno, i, MAX);
+						socket: %d, #%d/%d\n",errno, i, MAX_RETRIES);
 					usleep(usec_timeout);
 					continue;
 				}
@@ -407,7 +292,8 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 				else
 				{
 					fprintf(stderr,"Device replied with NetXML but was not deemed compatible\n");
-					close(peerSocket);
+					if (ip != NULL)
+						close(peerSocket);
 					return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
 				}
 
@@ -419,15 +305,35 @@ nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_ti
 	}
 
 end:
-	close(peerSocket);
+	if (ip != NULL)
+		close(peerSocket);
 	return nutscan_rewind_device(current_nut_dev);
 }
+
+nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
+{
+	if (start_ip == NULL && end_ip != NULL) {
+		start_ip = end_ip;
+	}
+
+	if (start_ip != NULL ) {
+		upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
+		if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) )
+			upsdebugx(1,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).", end_ip);
+// FIXME: Add scanning of ranges or subnets (needs a way to iterate IP addresses)
+	} else {
+		upsdebugx(1,"Scanning XML/HTTP bus using broadcast.");
+	}
+
+	return nutscan_scan_xml_http_generic(start_ip, usec_timeout, sec);
+}
 #else /* WITH_NEON */
-nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
+nutscan_device_t * nutscan_scan_xml_http_generic(const char * ip, long usec_timeout, nutscan_xml_t * sec)
 {
 	return NULL;
 }
-nutscan_device_t * ETN_nutscan_scan_xml_http(const char * start_ip, long usec_timeout, nutscan_xml_t * sec)
+
+nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
 	return NULL;
 }
