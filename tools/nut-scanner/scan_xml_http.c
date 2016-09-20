@@ -299,9 +299,11 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				else
 				{
 					fprintf(stderr,"Device replied with NetXML but was not deemed compatible\n");
-					if (ip != NULL)
+					if (ip != NULL) {
 						close(peerSocket);
-					return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
+						return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
+					}
+					continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
 				}
 
 				//XXX: quick and dirty change - now we scanned exactly ONE IP address,
