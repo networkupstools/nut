@@ -404,6 +404,8 @@ void upslogx(int priority, const char *fmt, ...)
 	va_end(va);
 }
 
+// FIXME: Find equivalent code number for MSVC (if applicable at all)
+DISABLE_WARNING(varargs,varargs,42)
 void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
@@ -432,14 +434,14 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 		}
 	}
 
-// FIXME: Find equivalent code number for MSVC (if applicable at all)
-DISABLE_WARNING(varargs,varargs,42)
 	va_start(va, fmtUse);
 	vupslog(LOG_DEBUG, fmtUse, va, 1);
 	va_end(va);
-ENABLE_WARNING(varargs,varargs,42)
 }
+ENABLE_WARNING(varargs,varargs,42)
 
+// FIXME: Find equivalent code number for MSVC (if applicable at all)
+DISABLE_WARNING(varargs,varargs,42)
 void upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
@@ -461,13 +463,11 @@ void upsdebugx(int level, const char *fmt, ...)
 		}
 	}
 
-// FIXME: Find equivalent code number for MSVC (if applicable at all)
-DISABLE_WARNING(varargs,varargs,42)
 	va_start(va, fmtUse);
 	vupslog(LOG_DEBUG, fmtUse, va, 0);
 	va_end(va);
-ENABLE_WARNING(varargs,varargs,42)
 }
+ENABLE_WARNING(varargs,varargs,42)
 
 /* dump message msg and len bytes from buf to upsdebugx(level) in
    hexadecimal. (This function replaces Philippe Marzouk's original
