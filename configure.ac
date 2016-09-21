@@ -1751,7 +1751,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 	if test "${nut_with_dmf}" = "yes"; then
 	(	CURDIR="$(pwd)" && \
 		OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
-		test -d "$OUTDIR" && \
+		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		(	cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
 				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
