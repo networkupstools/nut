@@ -298,7 +298,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				}
 				else
 				{
-					fprintf(stderr,"Device replied with NetXML but was not deemed compatible\n");
+					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
 					if (ip != NULL) {
 						close(peerSocket);
 						return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
