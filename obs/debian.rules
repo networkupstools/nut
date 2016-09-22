@@ -48,6 +48,8 @@ endif
 ifneq ($(shell which asciidoc),)
 #  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=html-chunked,pdf
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man
+else
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=skip
 endif
 
 pre-build:: debian/compat
