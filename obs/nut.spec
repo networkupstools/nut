@@ -96,9 +96,10 @@ BuildRequires:  libusb-devel
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 BuildRequires:  python
-# TODO: Make sure how this is named
+# LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
+BuildRequires:  lua-devel
+# TODO: Make sure how this is named to use in CentOS/RHEL (may be not in core but EPEL repos)
 BuildRequires:  python-pycparser
-BuildRequires:  lua-devel == 5.1
 
 %if 0%{?suse_version}
 BuildRequires:  apache2-devel
