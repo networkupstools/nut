@@ -23,22 +23,22 @@ DEB_CONFIGURE_SYSCONFDIR  := /etc/nut
 DEB_CONFIGURE_INCLUDEDIR  := /usr/include
 DEB_CONFIGURE_MANDIR      := /usr/share/man
 DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
-	                     --with-ssl --with-openssl --with-libltdl=yes \
-	                     --with-cgi=auto --with-powerman=auto \
-                         --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
-                         --with-snmp_dmf_lua=yes \
+			     --with-ssl --with-openssl --with-libltdl=yes \
+			     --with-cgi=auto --with-powerman=auto \
+			     --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
+			     --with-snmp_dmf_lua=yes \
 			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
-	                     --with-dev \
-	                     --disable-static \
-	                     --with-statepath=/var/run/nut \
-	                     --with-altpidpath=/var/run/nut \
-	                     --with-drvpath=/lib/nut \
-	                     --with-cgipath=/usr/lib/cgi-bin/nut \
-	                     --with-htmlpath=/usr/share/nut/www \
-	                     --with-pidpath=/var/run/nut \
-	                     --datadir=/usr/share/nut \
-	                     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
-	                     --with-user=nut --with-group=nut
+			     --with-dev \
+			     --disable-static \
+			     --with-statepath=/var/run/nut \
+			     --with-altpidpath=/var/run/nut \
+			     --with-drvpath=/lib/nut \
+			     --with-cgipath=/usr/lib/cgi-bin/nut \
+			     --with-htmlpath=/usr/share/nut/www \
+			     --with-pidpath=/var/run/nut \
+			     --datadir=/usr/share/nut \
+			     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
+			     --with-user=nut --with-group=nut
 
 ifeq (linux,$(DEB_HOST_ARCH_OS))
   DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev --with-systemdsystemunitdir=/lib/systemd/system
