@@ -27,6 +27,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 	                     --with-cgi=auto --with-powerman=auto \
                          --with-serial --with-usb --with-snmp --with-neon --with-ipmi \
                          --with-snmp_dmf_lua=yes \
+			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
 	                     --with-dev \
 	                     --disable-static \
 	                     --with-statepath=/var/run/nut \
