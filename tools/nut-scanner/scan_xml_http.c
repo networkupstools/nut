@@ -21,6 +21,7 @@
     \brief detect NUT supported XML HTTP devices
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Michal Vyskocil <MichalVyskocil@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #include "common.h"
@@ -204,24 +205,22 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 		/* Initialize socket */
 		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
-			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning connected network segment(s) with a broadcast");
+			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning connected network segment(s) with a broadcast, attempt %d of %d with a timeout of %ld usec", (i+1), MAX_RETRIES, usec_timeout);
 			sockAddress_udp.sin_addr.s_addr = INADDR_BROADCAST;
+			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
+				sizeof(sockopt_on));
 		} else {
-			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast", ip);
+			upsdebugx(2, "nutscan_scan_xml_http_generic() : scanning IP '%s' with a unicast, attempt %d of %d with a timeout of %ld usec", ip, (i+1), MAX_RETRIES, usec_timeout);
 			inet_pton(AF_INET, ip, &(sockAddress_udp.sin_addr));
 		}
 		sockAddress_udp.sin_port = htons(port_udp);
-		if (ip == NULL) {
-			setsockopt(peerSocket, SOL_SOCKET, SO_BROADCAST, &sockopt_on,
-				sizeof(sockopt_on));
-		}
 
 		/* Send scan request */
 		if(sendto(peerSocket, scanMsg, strlen(scanMsg), 0,
 					(struct sockaddr *)&sockAddress_udp,
 					sockAddressLength) <= 0)
 		{
-			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", i, MAX_RETRIES);
+			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", (i+1), MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
 		}
@@ -255,7 +254,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				if(recv_size==-1) {
 					fprintf(stderr,
 						"Error reading \
-						socket: %d, #%d/%d\n",errno, i, MAX_RETRIES);
+						socket: %d, #%d/%d\n",errno, (i+1), MAX_RETRIES);
 					usleep(usec_timeout);
 					continue;
 				}
@@ -279,6 +278,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 					return NULL;
 				}
 
+				upsdebugx(5, "Some host at IP %s replied to UDP request on port %d, inspecting the response...", string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
