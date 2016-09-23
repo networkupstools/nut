@@ -200,6 +200,8 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 		return NULL;
 	}
 
+// FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
+// A single sendto() generates a single packet, so one must iterate all known interfaces...
 #define MAX_RETRIES 3
 	for (i = 0; i != MAX_RETRIES && current_nut_dev == NULL; i++) {
 		/* Initialize socket */
