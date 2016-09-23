@@ -96,9 +96,14 @@ BuildRequires:  libusb-devel
 BuildRequires:  net-snmp-devel
 BuildRequires:  pkg-config
 BuildRequires:  python
-# TODO: Make sure how this is named
-BuildRequires:  python-pycparser
-BuildRequires:  lua-devel == 5.1
+# LUA 5.1 or 5.2 is known ok for us, both are modern in current distros (201609xx)
+BuildRequires:  lua-devel
+# TODO: Make sure how this is named to use in CentOS/RHEL (may be not in core but EPEL repos)
+# The pycparser is required to rebuild DMF files, but those pre-built
+# copies in the git repo/tarball "should" be in sync with original
+# C files, so we don't require regeneration for packaging. Also the
+# Jenkins NUT-master job should have verified this.
+#BuildRequires:  python-pycparser
 
 %if 0%{?suse_version}
 BuildRequires:  apache2-devel
@@ -259,7 +264,8 @@ sh autogen.sh
 	--with-user=%{USER}\
 	--with-group=%{GROUP} \
 	--with-udev-dir=%{_sysconfdir}/udev \
-	--enable-option-checking=fatal
+	--enable-option-checking=fatal\
+	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 
 (cd tools; python nut-snmpinfo.py)
 
