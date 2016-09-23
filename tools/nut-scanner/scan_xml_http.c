@@ -275,6 +275,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				if(nut_dev == NULL) {
 					fprintf(stderr,"Memory allocation \
 						error\n");
+					nutscan_free_device(current_nut_dev);
 					return NULL;
 				}
 
@@ -299,6 +300,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 				else
 				{
 					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
+					nutscan_free_device(nut_dev);
 					if (ip != NULL) {
 						close(peerSocket);
 						return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
