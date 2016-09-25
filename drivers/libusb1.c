@@ -171,7 +171,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		/* open the device */
 		ret = libusb_open(device, udevp);
-		if (!*udevp) {
+		if (ret != 0) {
 			upsdebugx(2, "Failed to open device, skipping. (%s)",
 						libusb_strerror((enum libusb_error)ret));
 			continue;
