@@ -8,7 +8,8 @@ Wants=nut-driver.service
 Before=nut-monitor.service
 
 [Service]
-ExecStart=@SBINDIR@/upsd 
+ExecStart=@SBINDIR@/upsd
+ExecReload=@SBINDIR@/upsd -c reload
 Type=forking
 
 [Install]
