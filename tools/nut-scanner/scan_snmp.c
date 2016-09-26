@@ -810,6 +810,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 		try_SysOID((void *)tmp_sec);
 #endif
 		ip_str = nutscan_ip_iter_inc(&ip);
+		free(tmp_sec);
 	};
 
 #ifdef HAVE_PTHREAD
