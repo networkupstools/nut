@@ -270,8 +270,8 @@ nutscan_device_t * nutscan_scan_xml_http(long usec_timeout)
 				}
 				else
 				{
-					fprintf(stderr,"Device replied with NetXML but was not deemed compatible\n");
-					return NULL;
+					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
+					continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
 				}
 
 			}
