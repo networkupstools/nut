@@ -1748,31 +1748,37 @@ can_generate_dmf_snmp=untested
 if test "${want_regenerate_dmf_snmp}" != no ; then
 	AC_MSG_CHECKING([if we can regenerate DMF files from C sources])
 	can_generate_dmf_snmp=no
+	CURDIR="$(pwd)" && \
 	if test "${nut_with_dmf}" = "yes"; then
-	(	CURDIR="$(pwd)" && \
-		OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
+	{	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
-		(	cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
-				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
-				./dmfify-mib.sh --sanity-check && \
-			cd "$OUTDIR" && \
-				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
+		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
+		{	cd "${DMFDIR}" && \
+				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2 && \
+				./dmfify-mib.sh --sanity-check \
+				|| { can_generate_dmf_snmp="no: ERROR: Missing prerequisites for C to DMF parsing"; false; } && \
+			{ cd "${OUTDIR}" && \
+				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2 && \
 				rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
 				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
-				test -s "./apc-ats-mib.dmf" && \
-			for F in "${SRCDIR}/drivers/"*-mib.c ; do \
+				test -s "./apc-ats-mib.dmf" \
+				|| { can_generate_dmf_snmp="no: ERROR: Failed compilation of a test C to DMF parse run"; false; } && \
+			  for F in "${SRCDIR}/drivers/"*-mib.c ; do \
 				test -s "$F" || continue; \
 				echo "Test if we can nut_cpp parse '$F'" >&2; \
-				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null || exit $? ; \
-			done \
-		)
-		RES=$?; rm -rf "$OUTDIR"; exit $RES
-	) >&5 2>&5 \
+				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null \
+				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
+			  done ; } ; \
+		}
+		RES=$?; rm -rf "$OUTDIR"; test "${RES}" = 0
+	} >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
 	fi
+	if test -n "${CURDIR}" ; then cd "${CURDIR}" ; fi
 
 	AC_MSG_RESULT(${can_generate_dmf_snmp})
+	if test "${can_generate_dmf_snmp}" != yes ; then can_generate_dmf_snmp=no ; fi
 fi
 
 AC_MSG_CHECKING(whether we will regenerate DMF SNMP mapping files from C sources)
