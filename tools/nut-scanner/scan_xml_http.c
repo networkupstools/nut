@@ -221,7 +221,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 // FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
 // A single sendto() generates a single packet, so one must iterate all known interfaces...
 #define MAX_RETRIES 3
-	for (i = 0; i != MAX_RETRIES && nut_dev == NULL; i++) {
+	for (i = 0; i != MAX_RETRIES ; i++) {
 		/* Initialize socket */
 		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
@@ -318,6 +318,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf,"http://%s",string);
 					nut_dev->port = strdup(buf);
+					upsdebugx(3,"nutscan_scan_xml_http_generic(): Added configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
 						dev_ret,nut_dev);
 #ifdef HAVE_PTHREAD
@@ -328,6 +329,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				{
 					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
 					nutscan_free_device(nut_dev);
+					nut_dev = NULL;
 #ifdef HAVE_PTHREAD
 					pthread_mutex_unlock(&dev_mutex);
 #endif
@@ -348,13 +350,17 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			}
 		}
 	}
+	upsdebugx(2,"nutscan_scan_xml_http_generic(): no replies collected for %s, done", ip ? ip : "<broadcast>");
+	goto end;
 
 end_abort:
 	upsdebugx(1,"Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above", ip ? ip : "<broadcast>");
+/*
 	if (dev_ret != NULL) {
 		nutscan_free_device(dev_ret);
 		dev_ret = NULL;
 	}
+*/
 end:
 	if (ip != NULL) /* do not free "ip", it comes from caller */
 		close(peerSocket);
