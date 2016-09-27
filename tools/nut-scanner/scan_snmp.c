@@ -809,6 +809,7 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #else
 		try_SysOID((void *)tmp_sec);
 #endif
+		free(ip_str);
 		ip_str = nutscan_ip_iter_inc(&ip);
 		free(tmp_sec);
 	};
