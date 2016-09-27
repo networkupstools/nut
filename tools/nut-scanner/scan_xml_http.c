@@ -159,7 +159,7 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 // nut-scanner should not suggest netxml-ups configuration for ePDUs
 // at this time.
 		if(strcmp(atts[i],"class") == 0 && strcmp(atts[i+1],"DEV.PDU") == 0 ) {
-			upsdebugx(1, "XML v4 protocol is not supported by current NUT drivers, skipping device!");
+			upsdebugx(3, "startelm_cb() : XML v4 protocol is not supported by current NUT drivers, skipping device!");
 			return -1;
 		}
 		if(strcmp(atts[i],"type") == 0) {
