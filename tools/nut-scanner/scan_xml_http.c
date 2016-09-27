@@ -367,7 +367,9 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 		start_ip = end_ip;
 	}
 
-	if (start_ip != NULL ) {
+	if (start_ip == NULL ) {
+		upsdebugx(1,"Scanning XML/HTTP bus using broadcast.");
+	} else {
 		if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) ) {
 //			upsdebugx(1,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).", end_ip);
 // Cloned from nutscan_scan_snmp()
@@ -388,6 +390,11 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 			while(ip_str != NULL) {
 				tmp_sec = malloc(sizeof(nutscan_xml_t));
+				if (tmp_sec == NULL) {
+					fprintf(stderr,"Memory allocation \
+						error\n");
+					return NULL;
+				}
 				memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
 				tmp_sec->peername = ip_str;
 				if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
@@ -404,7 +411,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 #endif
 				free(ip_str);
 				ip_str = nutscan_ip_iter_inc(&ip);
-				free(tmp_sec); /* and peername first? */
+				free(tmp_sec);
 			};
 
 #ifdef HAVE_PTHREAD
@@ -421,13 +428,17 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 		} else {
 			upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
 		}
-	} else {
-		upsdebugx(1,"Scanning XML/HTTP bus using broadcast.");
 	}
 
 	tmp_sec = malloc(sizeof(nutscan_xml_t));
+	if (tmp_sec == NULL) {
+		fprintf(stderr,"Memory allocation \
+			error\n");
+		return NULL;
+	}
+
 	memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
-	tmp_sec->peername = strdup(start_ip);
+	tmp_sec->peername = start_ip; // no dup, no free()
 	if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
 	nutscan_scan_xml_http_generic(tmp_sec);
 	result = nutscan_rewind_device(dev_ret);
