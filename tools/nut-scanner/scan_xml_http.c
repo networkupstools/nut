@@ -240,7 +240,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					(struct sockaddr *)&sockAddress_udp,
 					sockAddressLength) <= 0)
 		{
-			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n", (i+1), MAX_RETRIES, ip ? ip : "<broadcast>");
+			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES);
 			usleep(usec_timeout);
 			continue;
 		}
@@ -256,7 +256,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			while ((ret=select(peerSocket+1,&fds,NULL,NULL,
 						&timeout) )) {
 				retNum ++;
-				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, loop #%d/%d, response #%d", (i+1), MAX_RETRIES, ip ? ip : "<broadcast>", retNum);
+				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, loop #%d/%d, response #%d", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES, retNum);
 
 				timeout.tv_sec = usec_timeout / 1000000;
 				timeout.tv_usec = usec_timeout % 1000000;
