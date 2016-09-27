@@ -370,10 +370,10 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	if (start_ip == NULL ) {
 		upsdebugx(1,"Scanning XML/HTTP bus using broadcast.");
 	} else {
-		if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) ) {
-//			upsdebugx(1,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).", end_ip);
-// Cloned from nutscan_scan_snmp()
-
+		if ( (start_ip == end_ip) || (end_ip == NULL) || (strncmp(start_ip,end_ip,128)==0) ) {
+			upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
+		} else {
+			// Iterate the range of IPs to scan
 			nutscan_ip_iter_t ip;
 			char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
@@ -424,9 +424,6 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			result = nutscan_rewind_device(dev_ret);
 			dev_ret = NULL;
 			return result;
-
-		} else {
-			upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
 		}
 	}
 
