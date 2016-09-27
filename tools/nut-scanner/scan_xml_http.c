@@ -449,7 +449,11 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 	}
 
 	memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
-	tmp_sec->peername = start_ip; // no dup, no free()
+	if (start_ip == NULL) {
+		tmp_sec->peername = NULL;
+	} else {
+		tmp_sec->peername = strdup(start_ip);
+	}
 	if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
 	nutscan_scan_xml_http_generic(tmp_sec);
 	result = nutscan_rewind_device(dev_ret);
