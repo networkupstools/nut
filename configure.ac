@@ -1802,16 +1802,17 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		(	cd "${SRCDIR}/scripts/DMF" && DMFDIR="$(pwd)" && \
 				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2; \
-				./dmfify-mib.sh --sanity-check && \
+				( ./dmfify-mib.sh --sanity-check || AC_MSG_ERROR([Missing prerequisites for C to DMF parsing]) ) && \
 			cd "$OUTDIR" && \
 				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2; \
 				rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
-				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
-				test -s "./apc-ats-mib.dmf" && \
+				( CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
+				  test -s "./apc-ats-mib.dmf" || AC_MSG_ERROR([Failed compilation of a test C to DMF parse run]) ) && \
 			for F in "${SRCDIR}/drivers/"*-mib.c ; do \
 				test -s "$F" || continue; \
 				echo "Test if we can nut_cpp parse '$F'" >&2; \
-				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null || exit $? ; \
+				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null \
+					|| AC_MSG_ERROR([Failed nut_cpp parse of a test C to DMF for '$F']) ; \
 			done \
 		)
 		RES=$?; rm -rf "$OUTDIR"; exit $RES
