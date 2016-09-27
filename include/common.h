@@ -149,57 +149,6 @@ extern int optind;
 #	define setegid(x) setresgid(-1,x,-1)    /* Works for HP-UX 10.20 */
 #endif
 
-/* This pragmatic code is courtesy of Martin Gerhardy posted on the web at
- *   http://stackoverflow.com/questions/3378560/how-to-disable-gcc-warnings-for-a-few-lines-of-code
- * and further integrated to NUT by Jim Klimov. From original post comments:
- * ...This should do the trick for gcc, clang and msvc
- * Can be called with e.g.:
-DISABLE_WARNING(unused-variable,unused-variable,42)
-[.... some code with warnings in here ....]
-ENABLE_WARNING(unused-variable,unused-variable,42)
- * see https://gcc.gnu.org/onlinedocs/cpp/Pragmas.html
- * and http://clang.llvm.org/docs/UsersManual.html#controlling-diagnostics-via-pragmas
- * and https://msdn.microsoft.com/de-DE/library/d9x1s805.aspx for more details
- * You need at least version 4.02 to use these kind of pragmas for gcc,
- * not sure about msvc and clang about the versions.
- */
-#if defined(__clang__) || defined(__GNUC__) || defined(_MSC_VER)
-# define DIAG_STR(s) #s
-# define DIAG_JOINSTR(x,y) DIAG_STR(x ## y)
-# ifdef _MSC_VER
-#  define DIAG_DO_PRAGMA(x) __pragma (#x)
-#  define DIAG_PRAGMA(compiler,x) DIAG_DO_PRAGMA(warning(x))
-# else
-#  define DIAG_DO_PRAGMA(x) _Pragma (#x)
-#  define DIAG_PRAGMA(compiler,x) DIAG_DO_PRAGMA(compiler diagnostic x)
-# endif
-#else
-# define DIAG_STR(S)
-# define DIAG_JOINSTR(x,y)
-# define DIAG_DO_PRAGMA(x)
-# define DIAG_PRAGMA(compiler,x)
-#endif
-
-#if defined(__clang__)
-# define DISABLE_WARNING(gcc_unused,clang_option,msvc_unused) DIAG_PRAGMA(clang,push) DIAG_PRAGMA(clang,ignored DIAG_JOINSTR(-W,clang_option))
-# define ENABLE_WARNING(gcc_unused,clang_option,msvc_unused) DIAG_PRAGMA(clang,pop)
-#elif defined(_MSC_VER)
-# define DISABLE_WARNING(gcc_unused,clang_unused,msvc_errorcode) DIAG_PRAGMA(msvc,push) DIAG_DO_PRAGMA(warning(disable:##msvc_errorcode))
-# define ENABLE_WARNING(gcc_unused,clang_unused,msvc_errorcode) DIAG_PRAGMA(msvc,pop)
-#elif defined(__GNUC__)
-# if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
-#  define DISABLE_WARNING(gcc_option,clang_unused,msvc_unused) DIAG_PRAGMA(GCC,push) DIAG_PRAGMA(GCC,ignored DIAG_JOINSTR(-W,gcc_option))
-#  define ENABLE_WARNING(gcc_option,clang_unused,msvc_unused) DIAG_PRAGMA(GCC,pop)
-# else
-#  define DISABLE_WARNING(gcc_option,clang_unused,msvc_unused) DIAG_PRAGMA(GCC,ignored DIAG_JOINSTR(-W,gcc_option))
-#  define ENABLE_WARNING(gcc_option,clang_option,msvc_unused) DIAG_PRAGMA(GCC,warning DIAG_JOINSTR(-W,gcc_option))
-# endif
-#else
-# define DISABLE_WARNING(gcc_option,clang_unused,msvc_unused) /* DISABLE_WARNING not supported for this compiler */
-# define ENABLE_WARNING(gcc_option,clang_unused,msvc_unused)  /* ENABLE_WARNING not supported for this compiler */
-#endif
-
-
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
