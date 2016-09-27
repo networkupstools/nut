@@ -301,6 +301,9 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					goto end_abort; //return NULL;
 				}
 
+#ifdef HAVE_PTHREAD
+				pthread_mutex_lock(&dev_mutex);
+#endif
 				upsdebugx(5, "Some host at IP %s replied to NetXML UDP request on port %d, inspecting the response...", string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
@@ -315,20 +318,19 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf,"http://%s",string);
 					nut_dev->port = strdup(buf);
-#ifdef HAVE_PTHREAD
-					pthread_mutex_lock(&dev_mutex);
-#endif
 					dev_ret = nutscan_add_device_to_device(
 						dev_ret,nut_dev);
 #ifdef HAVE_PTHREAD
 					pthread_mutex_unlock(&dev_mutex);
 #endif
-//					nutscan_free_device(nut_dev);
 				}
 				else
 				{
 					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
 					nutscan_free_device(nut_dev);
+#ifdef HAVE_PTHREAD
+					pthread_mutex_unlock(&dev_mutex);
+#endif
 					if (ip == NULL)
 						continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
 				}
