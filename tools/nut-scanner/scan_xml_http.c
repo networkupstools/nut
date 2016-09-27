@@ -196,7 +196,6 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	int i;
 
 	nutscan_device_t * nut_dev = NULL;
-	nutscan_device_t * current_nut_dev = dev_ret;
 	if(sec != NULL) {
 //		if (sec->port_http > 0 && sec->port_http <= 65534)
 //			port_http = sec->port_http;
@@ -222,7 +221,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 // FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
 // A single sendto() generates a single packet, so one must iterate all known interfaces...
 #define MAX_RETRIES 3
-	for (i = 0; i != MAX_RETRIES && current_nut_dev == NULL; i++) {
+	for (i = 0; i != MAX_RETRIES && nut_dev == NULL; i++) {
 		/* Initialize socket */
 		sockAddress_udp.sin_family = AF_INET;
 		if (ip == NULL) {
@@ -296,7 +295,6 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				if(nut_dev == NULL) {
 					fprintf(stderr,"Memory allocation \
 						error\n");
-					nutscan_free_device(current_nut_dev);
 					goto end_abort; //return NULL;
 				}
 
@@ -317,8 +315,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 #ifdef HAVE_PTHREAD
 					pthread_mutex_lock(&dev_mutex);
 #endif
-					current_nut_dev = nutscan_add_device_to_device(
-						current_nut_dev,nut_dev);
+					dev_ret = nutscan_add_device_to_device(
+						dev_ret,nut_dev);
 #ifdef HAVE_PTHREAD
 					pthread_mutex_unlock(&dev_mutex);
 #endif
@@ -344,13 +342,15 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	}
 
 end_abort:
-	upsdebugx(1,"Had to abort nutscan_scan_xml_http_generic() for %s, see details above", ip ? ip : "<broadcast>");
+	upsdebugx(1,"Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above", ip ? ip : "<broadcast>");
+	if (dev_ret != NULL) {
+		nutscan_free_device(dev_ret);
+		dev_ret = NULL;
+	}
 end:
 	if (ip != NULL) /* do not free "ip", it comes from caller */
 		close(peerSocket);
-	dev_ret = current_nut_dev;
 	return NULL;
-//	return nutscan_rewind_device(current_nut_dev);
 }
 
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
@@ -409,9 +409,9 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 #else
 				nutscan_scan_xml_http_generic((void *)tmp_sec);
 #endif
-				free(ip_str);
+//				free(ip_str); // One of these free()s seems to cause a double-free
 				ip_str = nutscan_ip_iter_inc(&ip);
-				free(tmp_sec);
+//				free(tmp_sec);
 			};
 
 #ifdef HAVE_PTHREAD
