@@ -287,6 +287,8 @@ int main(int argc, char *argv[])
 	/* Set the default values for XML HTTP (run_xml()) */
 	xml_sec.port_http = 80;
 	xml_sec.port_udp = 4679;
+	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
+	xml_sec.peername = NULL;
 
 	nutscan_init();
 
@@ -598,6 +600,7 @@ display_help:
  */
 	if( allow_xml && nutscan_avail_xml_http) {
 		upsdebugx(quiet,"Scanning XML/HTTP bus.");
+		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
 		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
 		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {

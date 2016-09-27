@@ -39,6 +39,10 @@
 #include <ne_xml.h>
 #include <ltdl.h>
 
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
+
 /* dynamic link library stuff */
 static char * libname = "libneon"; /* Note: this is for info messages, not the SONAME */
 static lt_dlhandle dl_handle = NULL;
@@ -53,6 +57,12 @@ static void (*nut_ne_xml_destroy)(ne_xml_parser *p);
 static int (*nut_ne_xml_failed)(ne_xml_parser *p);
 static ne_xml_parser * (*nut_ne_xml_create)(void);
 static int (*nut_ne_xml_parse)(ne_xml_parser *p, const char *block, size_t len);
+
+static nutscan_device_t * dev_ret = NULL;
+#ifdef HAVE_PTHREAD
+static pthread_mutex_t dev_mutex;
+#endif
+long g_usec_timeout ;
 
 /* return 0 on error */
 int nutscan_load_neon_library(const char *libname_path)
@@ -162,13 +172,16 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	return result;
 }
 
-nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeout, nutscan_xml_t * sec)
+static void * nutscan_scan_xml_http_generic(void * arg)
 {
-/* A NULL "ip" causes a broadcast scan; otherwise the ip address is queried directly */
-/* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
+	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 	char *scanMsg = "<SCAN_REQUEST/>";
+/* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
 //	int port_http = 80;
 	int port_udp = 4679;
+/* A NULL "ip" causes a broadcast scan; otherwise the single ip address is queried directly */
+	char *ip = NULL;
+	long usec_timeout = -1;
 	int peerSocket;
 	int sockopt_on = 1;
 	struct sockaddr_in sockAddress_udp;
@@ -183,13 +196,19 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 	int i;
 
 	nutscan_device_t * nut_dev = NULL;
-	nutscan_device_t * current_nut_dev = NULL;
+	nutscan_device_t * current_nut_dev = dev_ret;
 	if(sec != NULL) {
 //		if (sec->port_http > 0 && sec->port_http <= 65534)
 //			port_http = sec->port_http;
 		if (sec->port_udp > 0 && sec->port_udp <= 65534)
 			port_udp = sec->port_udp;
+		if (sec->usec_timeout > 0)
+			usec_timeout = sec->usec_timeout;
+		ip = sec->peername; /* NULL or not... */
 	}
+
+	if (usec_timeout <= 0)
+		usec_timeout = 5000000; /* Driver default : 5sec */
 
 	if( !nutscan_avail_xml_http ) {
 		return NULL;
@@ -278,7 +297,7 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 					fprintf(stderr,"Memory allocation \
 						error\n");
 					nutscan_free_device(current_nut_dev);
-					return NULL;
+					goto end_abort; //return NULL;
 				}
 
 				upsdebugx(5, "Some host at IP %s replied to UDP request on port %d, inspecting the response...", string, port_udp);
@@ -295,57 +314,128 @@ nutscan_device_t * nutscan_scan_xml_http_generic(const char *ip, long usec_timeo
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf,"http://%s",string);
 					nut_dev->port = strdup(buf);
-
+#ifdef HAVE_PTHREAD
+					pthread_mutex_lock(&dev_mutex);
+#endif
 					current_nut_dev = nutscan_add_device_to_device(
 						current_nut_dev,nut_dev);
+#ifdef HAVE_PTHREAD
+					pthread_mutex_unlock(&dev_mutex);
+#endif
+					nutscan_free_device(nut_dev);
 				}
 				else
 				{
 					fprintf(stderr,"Device at IP %s replied with NetXML but was not deemed compatible with 'netxml-ups' driver (unsupported protocol version, etc.)\n", string);
 					nutscan_free_device(nut_dev);
-					if (ip != NULL) {
-						close(peerSocket);
-						return NULL; // XXX: Perhaps revise when/if we learn to scan many devices
-					}
-					continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
+					if (ip == NULL)
+						continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
 				}
 
 				//XXX: quick and dirty change - now we scanned exactly ONE IP address,
 				//     which is exactly the amount we wanted
+				if (ip != NULL) goto end;
+			} // while select() responses
+			if (ip == NULL) {
+				upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one round of replies to broadcast with no errors, done");
 				goto end;
 			}
 		}
 	}
 
+end_abort:
+	upsdebugx(1,"Had to abort nutscan_scan_xml_http_generic() for %s, see details above", ip ? ip : "<broadcast>");
 end:
-	if (ip != NULL)
+	if (ip != NULL) /* do not free "ip", it comes from caller */
 		close(peerSocket);
-	return nutscan_rewind_device(current_nut_dev);
+	dev_ret = current_nut_dev;
+	return NULL;
+//	return nutscan_rewind_device(current_nut_dev);
 }
 
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
+	nutscan_xml_t * tmp_sec = NULL;
+	nutscan_device_t * result = NULL;
+	int i;
+
+	if( !nutscan_avail_xml_http ) {
+		return NULL;
+	}
+
 	if (start_ip == NULL && end_ip != NULL) {
 		start_ip = end_ip;
 	}
 
 	if (start_ip != NULL ) {
-		upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
-		if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) )
-			upsdebugx(1,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).", end_ip);
-// FIXME: Add scanning of ranges or subnets (needs a way to iterate IP addresses)
+		if ( (start_ip != end_ip) || (strncmp(start_ip,end_ip,128)!=0) ) {
+//			upsdebugx(1,"WARN: single IP scanning of XML/HTTP bus currently ignores range requests (will not iterate up to %s).", end_ip);
+// Cloned from nutscan_scan_snmp()
+
+			nutscan_ip_iter_t ip;
+			char * ip_str = NULL;
+#ifdef HAVE_PTHREAD
+			pthread_t thread;
+			pthread_t * thread_array = NULL;
+			int thread_count = 0;
+
+			pthread_mutex_init(&dev_mutex,NULL);
+#endif
+
+			g_usec_timeout = usec_timeout;
+
+			ip_str = nutscan_ip_iter_init(&ip, start_ip, end_ip);
+
+			while(ip_str != NULL) {
+				tmp_sec = malloc(sizeof(nutscan_xml_t));
+				memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
+				tmp_sec->peername = ip_str;
+				if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
+
+#ifdef HAVE_PTHREAD
+				if (pthread_create(&thread,NULL,nutscan_scan_xml_http_generic, (void *)tmp_sec)==0){
+					thread_count++;
+					thread_array = realloc(thread_array,
+								thread_count*sizeof(pthread_t));
+					thread_array[thread_count-1] = thread;
+				}
+#else
+				nutscan_scan_xml_http_generic((void *)tmp_sec);
+#endif
+				free(ip_str);
+				ip_str = nutscan_ip_iter_inc(&ip);
+				free(tmp_sec); /* and peername first? */
+			};
+
+#ifdef HAVE_PTHREAD
+			for ( i=0; i < thread_count ; i++) {
+				pthread_join(thread_array[i],NULL);
+			}
+			pthread_mutex_destroy(&dev_mutex);
+			free(thread_array);
+#endif
+			result = nutscan_rewind_device(dev_ret);
+			dev_ret = NULL;
+			return result;
+
+		} else {
+			upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
+		}
 	} else {
 		upsdebugx(1,"Scanning XML/HTTP bus using broadcast.");
 	}
 
-	return nutscan_scan_xml_http_generic(start_ip, usec_timeout, sec);
+	tmp_sec = malloc(sizeof(nutscan_xml_t));
+	memcpy(tmp_sec, sec, sizeof(nutscan_xml_t));
+	tmp_sec->peername = strdup(start_ip);
+	if (tmp_sec->usec_timeout < 0) tmp_sec->usec_timeout = usec_timeout;
+	nutscan_scan_xml_http_generic(tmp_sec);
+	result = nutscan_rewind_device(dev_ret);
+	dev_ret = NULL;
+	free(tmp_sec);
+	return result;
 }
 #else /* WITH_NEON */
-nutscan_device_t * nutscan_scan_xml_http_generic(const char * ip, long usec_timeout, nutscan_xml_t * sec)
-{
-	return NULL;
-}
-
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
 	return NULL;
