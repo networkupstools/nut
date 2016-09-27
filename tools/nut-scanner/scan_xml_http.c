@@ -240,12 +240,13 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					(struct sockaddr *)&sockAddress_udp,
 					sockAddressLength) <= 0)
 		{
-			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/>, #%d/%d\n", (i+1), MAX_RETRIES);
+			fprintf(stderr,"Error sending Eaton <SCAN_REQUEST/> to %s, #%d/%d\n", (i+1), MAX_RETRIES, ip ? ip : "<broadcast>");
 			usleep(usec_timeout);
 			continue;
 		}
 		else
 		{
+			int retNum = 0;
 			FD_ZERO(&fds);
 			FD_SET(peerSocket,&fds);
 
@@ -254,6 +255,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 			while ((ret=select(peerSocket+1,&fds,NULL,NULL,
 						&timeout) )) {
+				retNum ++;
+				upsdebugx(5, "nutscan_scan_xml_http_generic() : request to %s, loop #%d/%d, response #%d", (i+1), MAX_RETRIES, ip ? ip : "<broadcast>", retNum);
 
 				timeout.tv_sec = usec_timeout / 1000000;
 				timeout.tv_usec = usec_timeout % 1000000;
@@ -298,7 +301,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					goto end_abort; //return NULL;
 				}
 
-				upsdebugx(5, "Some host at IP %s replied to UDP request on port %d, inspecting the response...", string, port_udp);
+				upsdebugx(5, "Some host at IP %s replied to NetXML UDP request on port %d, inspecting the response...", string, port_udp);
 				nut_dev->type = TYPE_XML;
 				/* Try to read device type */
 				ne_xml_parser *parser = (*nut_ne_xml_create)();
@@ -320,7 +323,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 #ifdef HAVE_PTHREAD
 					pthread_mutex_unlock(&dev_mutex);
 #endif
-					nutscan_free_device(nut_dev);
+//					nutscan_free_device(nut_dev);
 				}
 				else
 				{
@@ -332,9 +335,12 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				//XXX: quick and dirty change - now we scanned exactly ONE IP address,
 				//     which is exactly the amount we wanted
-				if (ip != NULL) goto end;
+				if (ip != NULL) {
+					upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one reply to unicast for %s (repsponse from %s), done", ip, string);
+					goto end;
+				}
 			} // while select() responses
-			if (ip == NULL) {
+			if (ip == NULL && dev_ret != NULL) {
 				upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one round of replies to broadcast with no errors, done");
 				goto end;
 			}
