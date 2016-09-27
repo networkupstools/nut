@@ -1795,9 +1795,9 @@ can_generate_dmf_snmp=untested
 if test "${want_regenerate_dmf_snmp}" != no ; then
 	AC_MSG_CHECKING([if we can regenerate DMF files from C sources])
 	can_generate_dmf_snmp=no
+	CURDIR="$(pwd)" && \
 	if test "${nut_with_dmf}" = "yes"; then
-	{	CURDIR="$(pwd)" && \
-		OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
+	{	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
@@ -1822,6 +1822,7 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 	} >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
 	fi
+	if test -n "${CURDIR}" ; then cd "${CURDIR}" ; fi
 
 	AC_MSG_RESULT(${can_generate_dmf_snmp})
 	if test "${can_generate_dmf_snmp}" != yes ; then can_generate_dmf_snmp=no ; fi
