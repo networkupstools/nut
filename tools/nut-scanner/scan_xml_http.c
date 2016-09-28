@@ -134,24 +134,8 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	int i = 0;
 	int result = -1;
 	while( atts[i] != NULL ) {
-		/* netxml-ups currently only supports XML version 3 (for UPS),
-		 * and not version 4 (for UPS and PDU)! */
 		upsdebugx(5,"startelm_cb() : parent=%d nspace='%s' name='%s' atts[%d]='%s' atts[%d]='%s'",
 			parent, nspace, name, i, atts[i], (i+1), atts[i+1]);
-// This test from mge-xml.c works when parsing a product.xml file.
-// Unfortunately, different products serve it over different URIs
-// and over HTTP, so porting its support here would be complicated.
-// As an indirect way to detect the version, the XMLv4 devices serve
-// the "/product.xml" with protocol version in it, and XMLv3 ones
-// serve the "/mgeups/product.xml" without protocol info, by spec...
-/*
-		if (parent == NE_XML_STATEROOT && !strcasecmp(name, "PRODUCT_INFO") && !strcasecmp(atts[i], "protocol")) {
-			if (!strcasecmp(atts[i+1], "XML.V4")) {
-				fprintf(stderr, "ERROR: XML v4 protocol is not supported by current NUT drivers, skipping device!\n");
-				return -1;
-			}
-		}
-*/
 // The Eaton/MGE ePDUs almost exclusively support only XMLv4 protocol
 // (only the very first generation of G2/G3 NMCs supported an older
 // protocol, but all should have been FW upgraded by now), which NUT
@@ -160,6 +144,8 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 // at this time.
 		if(strcmp(atts[i],"class") == 0 && strcmp(atts[i+1],"DEV.PDU") == 0 ) {
 			upsdebugx(3, "startelm_cb() : XML v4 protocol is not supported by current NUT drivers, skipping device!");
+			/* netxml-ups currently only supports XML version 3 (for UPS),
+			 * and not version 4 (for UPS and PDU)! */
 			return -1;
 		}
 		if(strcmp(atts[i],"type") == 0) {
@@ -319,7 +305,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					nut_dev->driver = strdup("netxml-ups");
 					sprintf(buf,"http://%s",string);
 					nut_dev->port = strdup(buf);
-					upsdebugx(3,"nutscan_scan_xml_http_generic(): Added configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
+					upsdebugx(3,"nutscan_scan_xml_http_generic(): Adding configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
 						dev_ret,nut_dev);
 #ifdef HAVE_PTHREAD
@@ -338,8 +324,6 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 						continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
 				}
 
-				//XXX: quick and dirty change - now we scanned exactly ONE IP address,
-				//     which is exactly the amount we wanted
 				if (ip != NULL) {
 					upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one reply to unicast for %s (repsponse from %s), done", ip, string);
 					goto end;
@@ -356,12 +340,6 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 end_abort:
 	upsdebugx(1,"Had to abort nutscan_scan_xml_http_generic() for %s, see fatal details above", ip ? ip : "<broadcast>");
-/*
-	if (dev_ret != NULL) {
-		nutscan_free_device(dev_ret);
-		dev_ret = NULL;
-	}
-*/
 end:
 	if (ip != NULL) /* do not free "ip", it comes from caller */
 		close(peerSocket);
