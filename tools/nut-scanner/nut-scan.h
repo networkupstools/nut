@@ -24,6 +24,7 @@
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Arnaud Quette <arnaud.quette@free.fr>
     \author Michal Vyskocil <MichalVyskocil@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #ifndef NUT_SCAN_H

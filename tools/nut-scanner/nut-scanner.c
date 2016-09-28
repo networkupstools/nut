@@ -129,6 +129,7 @@ static void * run_usb(void * arg)
 	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
 }
+
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
@@ -144,6 +145,7 @@ static void * run_xml(void * arg)
 	dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, sec);
 	return NULL;
 }
+
 static void * run_nut_old(void * arg)
 {
 	dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
@@ -155,6 +157,7 @@ static void * run_avahi(void * arg)
 	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
 }
+
 static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
