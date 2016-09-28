@@ -116,12 +116,12 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 
 	if (libname_path == NULL) {
-		fprintf(stderr, "SNMP library not found. SNMP search disabled.\n");
+		upsdebugx(1, "SNMP library not found. SNMP search disabled");
 		return 0;
 	}
 
 	if( lt_dlinit() != 0 ) {
-		fprintf(stderr, "Error initializing lt_init\n");
+		upsdebugx(1, "Error initializing lt_init");
 		return 0;
 	}
 
