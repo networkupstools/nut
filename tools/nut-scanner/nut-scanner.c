@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2011 - 2012  Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  *  Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +21,7 @@
 /*! \file nut-scanner.c
     \brief A tool to detect NUT supported devices
     \author Arnaud Quette <arnaud.quette@free.fr>
+    \author Michal Vyskocil <MichalVyskocil@eaton.com>
     \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
@@ -127,6 +129,7 @@ static void * run_usb(void * arg)
 	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
 }
+
 static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
@@ -134,9 +137,12 @@ static void * run_snmp(void * arg)
 	dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,sec);
 	return NULL;
 }
+
 static void * run_xml(void * arg)
 {
-	dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
+
+	dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, sec);
 	return NULL;
 }
 
@@ -151,6 +157,7 @@ static void * run_avahi(void * arg)
 	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
 }
+
 static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
@@ -255,6 +262,7 @@ int main(int argc, char *argv[])
 {
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
+	nutscan_xml_t  xml_sec;
 	int opt_ret;
 	char *	cidr = NULL;
 	int allow_all = 0;
@@ -271,11 +279,19 @@ int main(int argc, char *argv[])
 
 	memset(&snmp_sec, 0, sizeof(snmp_sec));
 	memset(&ipmi_sec, 0, sizeof(ipmi_sec));
+	memset(&xml_sec, 0, sizeof(xml_sec));
+
 	/* Set the default values for IPMI */
 	ipmi_sec.authentication_type = IPMI_AUTHENTICATION_TYPE_MD5;
 	ipmi_sec.ipmi_version = IPMI_1_5; /* default to IPMI 1.5, if not otherwise specified */
 	ipmi_sec.cipher_suite_id = 3; /* default to HMAC-SHA1; HMAC-SHA1-96; AES-CBC-128 */
 	ipmi_sec.privilege_level = IPMI_PRIVILEGE_LEVEL_ADMIN; /* should be sufficient */
+
+	/* Set the default values for XML HTTP (run_xml()) */
+	xml_sec.port_http = 80;
+	xml_sec.port_udp = 4679;
+	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
+	xml_sec.peername = NULL;
 
 	nutscan_init();
 
@@ -585,19 +601,17 @@ display_help:
  * for proper start_ip and end_ip values (they may be NULL).
  */
 	if( allow_xml && nutscan_avail_xml_http) {
-		if( start_ip != NULL ) {
-			upsdebugx(quiet,"Note: explicit IP addresses are not used in XML/HTTP broadcast scanning");
-		}
 		upsdebugx(quiet,"Scanning XML/HTTP bus.");
+		xml_sec.usec_timeout = timeout;
 #ifdef HAVE_PTHREAD
 		upsdebugx(1,"XML/HTTP SCAN: starting pthread_create with run_xml...");
-		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,NULL)) {
+		if(pthread_create(&thread[TYPE_XML],NULL,run_xml,&xml_sec)) {
 			upsdebugx(1,"pthread_create returned an error; disabling this scan mode");
 			nutscan_avail_xml_http = 0;
 		}
 #else
-		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http...");
-		dev[TYPE_XML] = nutscan_scan_xml_http(timeout);
+		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
+		dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
 		upsdebugx(1,"XML/HTTP SCAN: not requested, SKIPPED");
