@@ -253,6 +253,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 			timeout.tv_sec = usec_timeout / 1000000;
 			timeout.tv_usec = usec_timeout % 1000000;
 
+			upsdebugx(5, "nutscan_scan_xml_http_generic() : sent request to %s, loop #%d/%d, waiting for responses", ip ? ip : "<broadcast>", (i+1), MAX_RETRIES);
 			while ((ret=select(peerSocket+1,&fds,NULL,NULL,
 						&timeout) )) {
 				retNum ++;
