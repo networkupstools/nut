@@ -596,11 +596,6 @@ display_help:
 		upsdebugx(1,"SNMP SCAN: not requested, SKIPPED");
 	}
 
-/* Note: The nutscan_scan_xml_http() (also called from run_xml())
- * has a broadcast approach to network scanning, so does not care
- * for proper start_ip and end_ip values (they may be NULL).
- * So we can use this to differentiate - which routine to call.
- */
 	if( allow_xml && nutscan_avail_xml_http) {
 		upsdebugx(quiet,"Scanning XML/HTTP bus.");
 		xml_sec.usec_timeout = timeout;
@@ -611,7 +606,7 @@ display_help:
 			nutscan_avail_xml_http = 0;
 		}
 #else
-		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_generic()...");
+		upsdebugx(1,"XML/HTTP SCAN: no pthread support, starting nutscan_scan_xml_http_range()...");
 		dev[TYPE_XML] = nutscan_scan_xml_http_range(start_ip, end_ip, timeout, &xml_sec);
 #endif /* HAVE_PTHREAD */
 	} else {
