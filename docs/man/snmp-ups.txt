@@ -15,7 +15,7 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS:
+The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS, such as:
 
 *ietf*::
 UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps others (default)
@@ -58,6 +58,11 @@ Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202 and
 
 *huawei*::
 Huawei UPS5000-E, perhaps others
+
+*tripplite*::
+TrippLite UPSes; at this time this is the IETF MIB mapping with just
+the Tripplite entry point OID to verify the device vendor, and a real
+hardware-specific configuration will be added in the future development.
 
 EXTRA ARGUMENTS
 ---------------
