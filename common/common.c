@@ -411,11 +411,11 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 	if (nut_debug_level < level)
 		return;
 
-// For debugging output, we want to prepend the debug level so the user can
-// e.g. lower the level (less -D's on command line) to retain just the amount
-// of logging info he needs to see at the moment. Using '-DDDDD' all the time
-// is too brutal and needed high-level overview can be lost. This [D#] prefix
-// can help limit this debug stream quicker, than experimentally picking ;)
+/* For debugging output, we want to prepend the debug level so the user can
+ * e.g. lower the level (less -D's on command line) to retain just the amount
+ * of logging info he needs to see at the moment. Using '-DDDDD' all the time
+ * is too brutal and needed high-level overview can be lost. This [D#] prefix
+ * can help limit this debug stream quicker, than experimentally picking ;) */
 	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
@@ -440,7 +440,7 @@ void upsdebugx(int level, const char *fmt, ...)
 	if (nut_debug_level < level)
 		return;
 
-// See comments above in upsdebug_with_errno() - they apply here too.
+/* See comments above in upsdebug_with_errno() - they apply here too. */
 	char fmt2[LARGEBUF];
 	if (level > 0) {
 		int ret;
