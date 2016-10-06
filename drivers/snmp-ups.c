@@ -417,7 +417,7 @@ void upsdrv_initups(void)
 				mib2nut[i]->oid_auto_check	? mib2nut[i]->oid_auto_check : "<NULL>" );
 		}
 		printf("\nOverall this driver has loaded %d MIB-to-NUT mapping tables\n", i);
-		fatalx(EXIT_FAILURE, "Marking the exit code as failure since the driver is not started now");
+		exit(EXIT_SUCCESS);
 	}
 
 	/* init SNMP library, etc... */
