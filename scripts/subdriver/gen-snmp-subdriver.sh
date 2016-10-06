@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.8
+# Version: 0.9
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -26,6 +26,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 # TODO:
+# - Prepend sysDescription (.1.3.6.1.2.1.1.1.0) to have some more visibility
 # - extend to SNMP v3 (auth.)
 
 usage() {
@@ -66,6 +67,7 @@ KEEP=""
 HOSTNAME=""
 MIBS_DIRLIST="+."
 COMMUNITY="public"
+DEVICE_SYSOID=""
 SYSOID=""
 MODE=0
 DMF=0
@@ -88,16 +90,29 @@ get_snmp_data() {
 	else
 		echo "Using the provided sysOID override ($SYSOID)"
 	fi
+	DEVICE_SYSOID=$SYSOID
 
-    # 2) get the content of the mfr specif MIB
-    # FIXME: test return value of the walk, and possibly ramp-up the path to get something.
-    # only works if we're pointed somehow in the right direction
-    # i.e. doesn't work if sysOID is .1.3.6.1.4.1.705.1 and data is at .1.3.6.1.4.1.534...
-    # Ex: sysOID = ".1.X.Y.Z"
-    # try with ".1.X.Y.Z", if fails try with .1.X.Y", if fails try with .1.X"...
-    echo "Retrieving SNMP information. This may take some time"
-    snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
-    snmpwalk -Os -v1 -m ALL -M$MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+	OID_COUNT=0
+	while (test $OID_COUNT -eq 0)
+	do
+		# 2) get the content of the mfr specif MIB
+		echo "Retrieving SNMP information. This may take some time"
+		snmpwalk -On -v1 -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_NUMWALKFILE
+		snmpwalk -Os -v1 -m ALL -M$MIBS_DIRLIST -c $COMMUNITY $HOSTNAME $SYSOID 2>/dev/null 1> $DFL_STRWALKFILE
+
+		# 3) test return value of the walk, and possibly ramp-up the path to get something.
+		# The sysOID mechanism only works if we're pointed somehow in the right direction
+		# i.e. doesn't work if sysOID is .1.3.6.1.4.1.705.1 and data is at .1.3.6.1.4.1.534...
+		# Ex: sysOID = ".1.X.Y.Z"
+		# try with ".1.X.Y.Z", if fails try with .1.X.Y", if fails try with .1.X"...
+		OID_COUNT="`cat $NUMWALKFILE | wc -l`"
+		if [ $OID_COUNT -eq 0 ]; then
+			# ramp-up the provided sysOID by removing the last .x part
+			SYSOID=${SYSOID%.*}
+			echo "Warning: sysOID provided no data! Trying with a level up using $SYSOID"
+		fi
+	done
+    return $OID_COUNT
 }
 
 generate_C() {
@@ -174,7 +189,7 @@ generate_C() {
 
 	#define ${UDRIVER}_MIB_VERSION  "0.1"
 
-	#define ${UDRIVER}_SYSOID       "${SYSOID}"
+	#define ${UDRIVER}_SYSOID       "${DEVICE_SYSOID}"
 
 	/* To create a value lookup structure (as needed on the 2nd line of the example
 	 * below), use the following kind of declaration, outside of the present snmp_info_t[]:
@@ -241,7 +256,7 @@ generate_C() {
 		{ NULL, 0, 0, NULL, NULL, 0, NULL }
 	};
 
-	mib2nut_info_t	${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_SYSOID };
+	mib2nut_info_t	${LDRIVER} = { "${LDRIVER}", ${UDRIVER}_MIB_VERSION, NULL, NULL, ${LDRIVER}_mib, ${UDRIVER}_DEVICE_SYSOID };
 	EOF
 }
 
@@ -331,7 +346,7 @@ generate_DMF() {
 
 	# append footer
 	# FIXME: missing license field in mib2nut
-	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n" >> "$DMFFILE"
+	printf "\t</snmp>\n\t<mib2nut auto_check=\"\" mib_name=\"${LDRIVER}_mib\" name=\"${LDRIVER}_mib\" oid=\"${DEVICE_SYSOID}\" snmp_info=\"${LDRIVER}_mib\" version=\"0.1\"/>\n" >> "$DMFFILE"
 
 	printf "\n\t<!-- Data format: -->\n" >> ${DMFFILE}
 	printf "\t<!-- To create a MIB mapping entry, use the following kind of declaration:\n" >> ${DMFFILE}
@@ -489,6 +504,6 @@ For C-style integration, do not forget to:
 * add ${LDRIVER}-mib.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "./autogen.sh && ./configure && make" from the top level directory
 
-If otherwise using DMF, ensure that MIB2NUT information are present in
+If otherwise using DMF, ensure that 'mib2nut' information are present in
 snmp-discovery.dmf
 EOF
