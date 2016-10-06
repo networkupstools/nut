@@ -293,6 +293,7 @@ mv %{buildroot}%{CGIPATH}/*.cgi %{buildroot}%{CGIPATH}/nut
 find %{buildroot} -type f -name "*.la" -delete -print
 mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d
 install -m0644 scripts/misc/nut.bash_completion %{buildroot}%{_sysconfdir}/bash_completion.d/
+install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
 
 %pre
 usr/sbin/useradd -r -g %{GROUP} -s /bin/false \
@@ -385,6 +386,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %dir %{_datadir}/nut/dmfsnmp.d
 %{_datadir}/nut/dmfnutscan.d/*.dmf
 %{_datadir}/nut/dmfsnmp.d/*.dmf
+%{_sbindir}/gen-snmp-subdriver.sh
 
 %files -n libupsclient1
 %defattr(-,root,root)
