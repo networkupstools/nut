@@ -1,3 +1,6 @@
 [Unit]
 Description=Network UPS Tools - power device driver controller
 After=local-fs.target network.target
+
+[Install]
+WantedBy=multi-user.target

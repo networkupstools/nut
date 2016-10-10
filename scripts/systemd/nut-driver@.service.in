@@ -9,4 +9,4 @@ ExecStop=@SBINDIR@/upsdrvctl stop %i
 Type=forking
 
 [Install]
-WantedBy=multi-user.target nut-driver.target
+WantedBy=nut-driver.target
