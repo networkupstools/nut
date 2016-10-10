@@ -1,6 +1,12 @@
 [Unit]
 Description=Network UPS Tools - power device monitor and shutdown controller
 After=local-fs.target network.target nut-server.service
+# Note: We do not specify Requires nut-server.service because
+# the `upsd` daemon(s) may be running on a different machine
+# (connected to the UPSes) than the `upsmon` shutdown protector.
+# The "Wants" directive would try to start the nut-server but
+# would not abort if that attempt fails for whatever reason.
+Wants=nut-server.service
 
 [Service]
 ExecStart=@SBINDIR@/upsmon

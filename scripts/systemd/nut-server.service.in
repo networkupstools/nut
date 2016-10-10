@@ -5,6 +5,9 @@ After=local-fs.target network.target nut-driver.target
 # a change of behavior compared to init SysV, and could prevent from
 # accessing successfully started, at least to audit a system.
 Wants=nut-driver.target
+# The `upsd` is a networked service (even if bound to a `localhost`)
+# so it requres that the OS has some notion of networking already.
+Requires=network.target
 Before=nut-monitor.service
 
 [Service]
