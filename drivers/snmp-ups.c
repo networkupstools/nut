@@ -702,6 +702,8 @@ void nut_snmp_free(struct snmp_pdu ** array_to_free)
 {
 	struct snmp_pdu ** current_element;
 
+	if (array_to_free == NULL) return;
+
 	current_element = array_to_free;
 
 	while (*current_element != NULL) {
