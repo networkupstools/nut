@@ -85,35 +85,43 @@ char *dmf_file = NULL;
 # endif
 # define WITH_DMF_LUA 0
 
+/* NOTE: In order for the DMF and non-DMF builds to match in behavior,
+ * members of this array should be sorted same as mib2nut items in the
+ * DMF files, including their end-user alphabetic sort in dmfsnmp.d/
+ * directory. You can use this scriptlet to generate the contents below:
+ *   grep '<mib2nut ' scripts/DMF/dmfsnmp.d/*dmf | \
+ *   sed 's,^.*S.._\(.*\)\.dmf:.* name="\([^"]*\).*$,\t\&\2\,\t// This struct comes from : \1.c,'
+ * (note to keep "ietf" entry as the last one, manually).
+ */
 static mib2nut_info_t *mib2nut[] = {
-	&apc,
-	&mge,
-	&netvision,
-	&powerware,
-	&pxgx_ups,
-	&aphel_genesisII,
-	&aphel_revelation,
-	&eaton_marlin,
-	&pulizzi_switched1,
-	&pulizzi_switched2,
-	&raritan,
-	&baytech,
-	&compaq,
-	&bestpower,
-	&cyberpower,
-	&delta_ups,
-	&xppc,
-	&huawei,
-	&tripplite_ietf,
-	&eaton_ats,
-	&apc_ats,
-	&raritan_px2,
+	&apc_ats,			/* This struct comes from : apc-ats-mib.c */
+	&apc,				/* This struct comes from : apc-mib.c */
+	&baytech,			/* This struct comes from : baytech-mib.c */
+	&bestpower,			/* This struct comes from : bestpower-mib.c */
+	&compaq,			/* This struct comes from : compaq-mib.c */
+	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
+	&delta_ups,			/* This struct comes from : delta_ups-mib.c */
+	&eaton_ats,			/* This struct comes from : eaton-ats-mib.c */
+	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
+	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
+	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
+	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
+	&pulizzi_switched2,	/* This struct comes from : eaton-mib.c */
+	&huawei,			/* This struct comes from : huawei-mib.c */
+	&mge,				/* This struct comes from : mge-mib.c */
+	&netvision,			/* This struct comes from : netvision-mib.c */
+	&powerware,			/* This struct comes from : powerware-mib.c */
+	&pxgx_ups,			/* This struct comes from : powerware-mib.c */
+	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
+	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
+	&xppc,				/* This struct comes from : xppc-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
 	 * the vendor specific one takes precedence (when mibs=auto)
 	 */
-	&ietf,
+	&ietf,				/* This struct comes from : ietf-mib.c */
+	&tripplite_ietf,	/* This struct comes from : ietf-mib.c */
 	/* end of structure. */
 	NULL
 };
