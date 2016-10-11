@@ -71,7 +71,7 @@ This option must be requested explicitely, even for a complete scan.
 'serial ports' can be expressed in various forms:
 
 - 'auto' to scan all serial ports.
-- a single charcater indicating a port number ('0' (zero) for /dev/ttyS0 and
+- a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
 /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
 ports using 'X-Y', where X and Y are characters refering to the port number.
