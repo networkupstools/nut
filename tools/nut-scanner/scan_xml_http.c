@@ -136,12 +136,12 @@ static int startelm_cb(void *userdata, int parent, const char *nspace, const cha
 	while( atts[i] != NULL ) {
 		upsdebugx(5,"startelm_cb() : parent=%d nspace='%s' name='%s' atts[%d]='%s' atts[%d]='%s'",
 			parent, nspace, name, i, atts[i], (i+1), atts[i+1]);
-// The Eaton/MGE ePDUs almost exclusively support only XMLv4 protocol
-// (only the very first generation of G2/G3 NMCs supported an older
-// protocol, but all should have been FW upgraded by now), which NUT
-// drivers don't yet support. To avoid failing drivers later, the
-// nut-scanner should not suggest netxml-ups configuration for ePDUs
-// at this time.
+		/* The Eaton/MGE ePDUs almost exclusively support only XMLv4 protocol
+		 * (only the very first generation of G2/G3 NMCs supported an older
+		 * protocol, but all should have been FW upgraded by now), which NUT
+		 * drivers don't yet support. To avoid failing drivers later, the
+		 * nut-scanner should not suggest netxml-ups configuration for ePDUs
+		 * at this time. */
 		if(strcmp(atts[i],"class") == 0 && strcmp(atts[i+1],"DEV.PDU") == 0 ) {
 			upsdebugx(3, "startelm_cb() : XML v4 protocol is not supported by current NUT drivers, skipping device!");
 			/* netxml-ups currently only supports XML version 3 (for UPS),
@@ -163,7 +163,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	nutscan_xml_t * sec = (nutscan_xml_t *)arg;
 	char *scanMsg = "<SCAN_REQUEST/>";
 /* Note: at this time the HTTP/XML scan is in fact not implemented - just the UDP part */
-//	int port_http = 80;
+/*	int port_http = 80; */
 	int port_udp = 4679;
 /* A NULL "ip" causes a broadcast scan; otherwise the single ip address is queried directly */
 	char *ip = NULL;
@@ -183,8 +183,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 	nutscan_device_t * nut_dev = NULL;
 	if(sec != NULL) {
-//		if (sec->port_http > 0 && sec->port_http <= 65534)
-//			port_http = sec->port_http;
+/*		if (sec->port_http > 0 && sec->port_http <= 65534)
+ *			port_http = sec->port_http; */
 		if (sec->port_udp > 0 && sec->port_udp <= 65534)
 			port_udp = sec->port_udp;
 		if (sec->usec_timeout > 0)
@@ -204,8 +204,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 		return NULL;
 	}
 
-// FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
-// A single sendto() generates a single packet, so one must iterate all known interfaces...
+/* FIXME : Per http://stackoverflow.com/questions/683624/udp-broadcast-on-all-interfaces
+ * A single sendto() generates a single packet, so one must iterate all known interfaces... */
 #define MAX_RETRIES 3
 	for (i = 0; i != MAX_RETRIES ; i++) {
 		/* Initialize socket */
@@ -283,9 +283,8 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				nut_dev = nutscan_new_device();
 				if(nut_dev == NULL) {
-					fprintf(stderr,"Memory allocation \
-						error\n");
-					goto end_abort; //return NULL;
+					fprintf(stderr,"Memory allocation error\n");
+					goto end_abort;
 				}
 
 #ifdef HAVE_PTHREAD
@@ -298,7 +297,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 				(*nut_ne_xml_push_handler)(parser, startelm_cb,
 							NULL, NULL, nut_dev);
 				(*nut_ne_xml_parse)(parser, buf, recv_size);
-				int parserFailed = (*nut_ne_xml_failed)(parser); // 0 = ok, nonzero = fail
+				int parserFailed = (*nut_ne_xml_failed)(parser); /* 0 = ok, nonzero = fail */
 				(*nut_ne_xml_destroy)(parser);
 
 				if (parserFailed == 0) {
@@ -321,14 +320,14 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 					pthread_mutex_unlock(&dev_mutex);
 #endif
 					if (ip == NULL)
-						continue; // skip this device; note that for broadcast scan there may be more in the loop's queue
+						continue; /* skip this device; note that for broadcast scan there may be more in the loop's queue */
 				}
 
 				if (ip != NULL) {
 					upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one reply to unicast for %s (repsponse from %s), done", ip, string);
 					goto end;
 				}
-			} // while select() responses
+			} /* while select() responses */
 			if (ip == NULL && dev_ret != NULL) {
 				upsdebugx(2,"nutscan_scan_xml_http_generic(): we collected one round of replies to broadcast with no errors, done");
 				goto end;
@@ -366,7 +365,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 		if ( (start_ip == end_ip) || (end_ip == NULL) || (strncmp(start_ip,end_ip,128)==0) ) {
 			upsdebugx(1,"Scanning XML/HTTP bus for single IP (%s).", start_ip);
 		} else {
-			// Iterate the range of IPs to scan
+			/* Iterate the range of IPs to scan */
 			nutscan_ip_iter_t ip;
 			char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
@@ -402,9 +401,9 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 #else
 				nutscan_scan_xml_http_generic((void *)tmp_sec);
 #endif
-//				free(ip_str); // One of these free()s seems to cause a double-free
+/*				free(ip_str); */ /* One of these free()s seems to cause a double-free */
 				ip_str = nutscan_ip_iter_inc(&ip);
-//				free(tmp_sec);
+/*				free(tmp_sec); */
 			};
 
 #ifdef HAVE_PTHREAD
