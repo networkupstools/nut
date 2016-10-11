@@ -285,8 +285,10 @@ static snmp_info_t ietf_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
-
 /* FIXME: Rename the structure here (or even relocate to new file)
  * and in snmp-ups.c when the real TrippLite mappings get defined. */
 mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };
+
+/* The "ietf" mapping must be listed last, as this also impacts
+ * the ordering in DMF and static versions of snmp-ups driver. */
+mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
