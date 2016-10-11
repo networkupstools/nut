@@ -71,7 +71,7 @@ This option must be requested explicitely, even for a complete scan.
 'serial ports' can be expressed in various forms:
 
 - 'auto' to scan all serial ports.
-- a single charcater indicating a port number ('0' (zero) for /dev/ttyS0 and
+- a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
 /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
 ports using 'X-Y', where X and Y are characters refering to the port number.
@@ -140,7 +140,7 @@ Specify the password to use when authenticating with the remote host (mandatory 
 Specify the IPMI 1.5 authentication type to use (NONE, STRAIGHT_PASSWORD_KEY, MD2, and MD5) with the remote host (default=MD5).
 This forces connection through the 'lan' IPMI interface , thus in IPMI 1.5 mode.
 
-*-D* | *--cipher_suite_id* 'cipher suite identifier'::
+*-L* | *--cipher_suite_id* 'cipher suite identifier'::
 Specify the IPMI 2.0 cipher suite ID to use. The Cipher Suite ID identifies a set of authentication, integrity, and
 confidentiality algorithms to use for IPMI 2.0  communication. The authentication algorithm identifies the algorithm
 to use for session setup, the integrity algorithm identifies the algorithm to use for session packet signatures, and the
@@ -172,6 +172,9 @@ Display available bus that can be scanned , depending on how the binary has been
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
+
+*-D* | *--nut_debug_level*::
+Raise the debugging level.  Use this multiple times to see more details.
 
 EXAMPLES
 --------
