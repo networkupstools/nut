@@ -104,7 +104,6 @@ const struct option longopts[] =
 	{ "help",no_argument,NULL,'h' },
 	{ "version",no_argument,NULL,'V' },
 	{ "available",no_argument,NULL,'a' },
-	{ "snmp_fingerprints_file",required_argument,NULL,'F' },
 	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
 	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
@@ -219,9 +218,6 @@ void show_usage()
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
 
 	if( nutscan_avail_snmp ) {
-		printf("\nSNMP specific options:\n");
-		printf("  -F, --fingerprints-file <filename>: provide an additional list of SNMP fingerprints\n");
-
 		printf("\nSNMP v1 specific options:\n");
 		printf("  -c, --community <community name>: Set SNMP v1 community name (default = public)\n");
 
@@ -486,12 +482,6 @@ int main(int argc, char *argv[])
 			case 'V':
 				printf("Network UPS Tools - %s\n", NUT_VERSION_MACRO);
 				exit(EXIT_SUCCESS);
-			case 'F':
-				if(!nutscan_avail_snmp) {
-					goto display_help;
-				}
-				snmp_sec.fingerprints_file = strdup(optarg);
-				break;
 			case 'a':
 				printf("OLDNUT\n");
 				if(nutscan_avail_usb) {
