@@ -1,0 +1,7 @@
+[Unit]
+Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances
+After=local-fs.target
+Before=nut-driver.target
+
+[Install]
+WantedBy=multi-user.target

@@ -12,6 +12,9 @@
 [ -z "${UPSCONF-}" ] && \
     UPSCONF="@sysconfdir@/ups.conf"
 
+# Start a freshly-registered unit?
+[ -z "${AUTO_START-}" ] && AUTO_START=yes
+
 if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
     [ -x /usr/sbin/svcadm ] && [ -x /usr/sbin/svccfg ] && [ -x /usr/bin/svcs ] && \
         SERVICE_FRAMEWORK="smf"
@@ -76,7 +79,10 @@ smf_listInstances() {
 }
 
 systemd_registerInstance() {
-    /bin/systemctl enable 'nut-driver@'"$1"
+    /bin/systemctl enable 'nut-driver@'"$1" || return
+    if [ "$AUTO_START" = yes ] ; then
+        /bin/systemctl start --no-block 'nut-driver@'"$1" || return
+    fi
 }
 systemd_unregisterInstance() {
     /bin/systemctl stop 'nut-driver@'"$1" || false
@@ -88,19 +94,25 @@ systemd_listInstances() {
 
 ################# MAIN PROGRAM
 
-if [ -s "$UPSCONF" ] ; then
+if [ -f "$UPSCONF" ] ; then
+    [ -s "$UPSCONF" ] && \
     UPSLIST_FILE="`egrep '^[ \t]*\[.*\][ \t]*$' "$UPSCONF" | sed 's,^[ \t]*\[\(.*\)\][ \t]*$,\1,' | sort -n`" || UPSLIST_FILE=""
     if [ -z "$UPSLIST_FILE" ] ; then
         echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
     fi
 else
-    echo "The '$UPSCONF' file does not exist or is empty" >&2
+    echo "FATAL: The '$UPSCONF' file does not exist" >&2
+    exit 2
 fi
 
 UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
 if [ -z "$UPSLIST_SVCS" ] ; then
     echo "Error reading the list of service instances for UPS drivers, or none are defined" >&2
 fi
+
+# Quickly exit if there's nothing to do; note the lists are pre-sorted
+# Otherwise a non-zero exit will be done below
+[ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && exit 0
 
 if [ -n "$UPSLIST_FILE" ]; then
     for UPSF in $UPSLIST_FILE ; do
@@ -137,3 +149,8 @@ if [ -n "$UPSLIST_FILE" ] ; then
     echo "=== The currently defined configurations in '$UPSCONF' are:"
     echo "$UPSLIST_FILE"
 fi
+
+# Return 42 if there was a change applied succesfully
+# (but e.g. some services should restart)
+[ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && return 42
+exit 13
