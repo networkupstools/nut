@@ -123,8 +123,8 @@ static mib2nut_info_t *mib2nut[] = {
 	 * if a device supports both IETF and vendor specific MIB,
 	 * the vendor specific one takes precedence (when mibs=auto)
 	 */
-	&ietf,				/* This struct comes from : ietf-mib.c */
 	&tripplite_ietf,	/* This struct comes from : ietf-mib.c */
+	&ietf,				/* This struct comes from : ietf-mib.c */
 	/* end of structure. */
 	NULL
 };
