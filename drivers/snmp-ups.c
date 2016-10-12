@@ -2721,7 +2721,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 			}
 			/* Actually apply the new value */
 			if (su_info_p->flags & SU_TYPE_TIME) {
-			status = nut_snmp_set_time(su_info_p->OID, value);
+				status = nut_snmp_set_time(su_info_p->OID, value);
 			}
 			else {
 				status = nut_snmp_set_int(su_info_p->OID, value);	
