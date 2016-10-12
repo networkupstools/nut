@@ -18,10 +18,12 @@ More and more appliances manufacturers are bundling NUT...
 Multiple manufacturer and device support
 ----------------------------------------
 
-- Monitors many UPS, PDU and SCD models from more than 100 manufacturers with a
-unified interface (link:stable-hcl.html[Hardware Compatibility List]).
+- Monitors many UPS, PDU, ATS, PSU and SCD models from more than 140
+manufacturers with a unified interface 
+(link:stable-hcl.html[Hardware Compatibility List]).
 
-- Various communication types are supported with the same common interface:
+- Various communication types and many protocols are supported with the same
+common interface:
 	* serial,
 	* USB,
 	* network (SNMP, Eaton / MGE XML/HTTP).

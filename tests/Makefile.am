@@ -8,9 +8,10 @@ check_PROGRAMS = $(TESTS)
 
 cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
+cppunittest_LDADD = ../clients/libnutclient.la
 
 # List of src files for CppUnit tests
-CPPUNITTESTSRC = example.cpp
+CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 
 cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 

@@ -47,4 +47,4 @@ manpage (man 8 snmp-ups).
 	
 References:
 - NUT SNMP Protocols Library Available at:
-http://random.networkupstools.org/protocols/snmp/
+http://www.networkupstools.org/ups-protocols.html#_snmp

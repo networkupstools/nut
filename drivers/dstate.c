@@ -653,6 +653,8 @@ int dstate_addrange(const char *var, const int min, const int max)
 
 	if (ret == 1) {
 		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+		/* Also set the "NUMBER" flag for ranges */
+		dstate_setflags(var, ST_FLAG_NUMBER);
 	}
 
 	return ret;
@@ -691,6 +693,10 @@ void dstate_setflags(const char *var, int flags)
 
 	if (flags & ST_FLAG_STRING) {
 		snprintfcat(flist, sizeof(flist), " STRING");
+	}
+
+	if (flags & ST_FLAG_NUMBER) {
+		snprintfcat(flist, sizeof(flist), " NUMBER");
 	}
 
 	/* update listeners */
@@ -901,7 +907,10 @@ void status_commit(void)
 
 void alarm_init(void)
 {
-	memset(alarm_buf, 0, sizeof(alarm_buf));
+	/* reinit global counter */
+	alarm_active = 0;
+
+	device_alarm_init();
 }
 
 void alarm_set(const char *buf)
@@ -922,5 +931,35 @@ void alarm_commit(void)
 	} else {
 		dstate_delinfo("ups.alarm");
 		alarm_active = 0;
+	}
+}
+
+void device_alarm_init(void)
+{
+	/* only clear the buffer, don't touch the alarms counter */
+	memset(alarm_buf, 0, sizeof(alarm_buf));
+}
+
+/* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
+void device_alarm_commit(const int device_number)
+{
+	char info_name[20];
+
+	memset(info_name, 0, 20);
+
+	if (device_number != 0) /* would then go into "device.%i.alarm" */
+		snprintf(info_name, 20, "device.%i.ups.alarm", device_number);
+	else /* would then go into "device.alarm" */
+		snprintf(info_name, 20, "ups.alarm");
+
+	/* Daisychain subdevices note:
+	 * increase the counter when alarms are present on a subdevice, but
+	 * don't decrease the count. Otherwise, we may not get the ALARM flag
+	 * in ups.status, while there are some alarms present on device.X */
+	if (strlen(alarm_buf) > 0) {
+		dstate_setinfo(info_name, "%s", alarm_buf);
+		alarm_active++;
+	} else {
+		dstate_delinfo(info_name);
 	}
 }

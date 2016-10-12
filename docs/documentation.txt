@@ -46,11 +46,13 @@ Offsite Links
 -------------
 
 [[general_powerdev_info]]
-These are general information about UPS and PDU.
+These are general information about UPS, PDU, ATS, PSU and SCD:
 
 - link:http://tldp.org/HOWTO/UPS-HOWTO/[UPS HOWTO] (The Linux Documentation Project)
 - link:http://en.wikipedia.org/wiki/Uninterruptible_power_supply[UPS on Wikipedia]
 - link:http://en.wikipedia.org/wiki/Power_distribution_unit[PDU on Wikipedia]
+- link:https://en.wikipedia.org/wiki/Transfer_switch[Automatic Transfer Switch]
+- link:https://en.wikipedia.org/wiki/Power_supply_unit_%28computer%29[Power Supply Units]
 - link:http://en.wikipedia.org/wiki/Solar_controller[Solar controller on Wikipedia]
 - link:http://www.pcguide.com/ref/power/ext/ups/over.htm[UPS on The PC Guide]
 

@@ -15,7 +15,7 @@ linkman:nutupsdrv[8].
 SUPPORTED HARDWARE
 ------------------
 
-The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS:
+The snmp-ups driver automatically detects and supports a wide range of devices by loading various MIBS, such as:
 
 *ietf*::
 UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert, perhaps others (default)
@@ -35,7 +35,6 @@ Powerware devices with ConnectUPS SNMP cards
 *pxgx_ups*::
 Eaton devices with Power Xpert Gateway UPS Card
 
-
 *aphel_genesisII*::
 Eaton Powerware ePDU Monitored
 
@@ -43,7 +42,10 @@ Eaton Powerware ePDU Monitored
 Eaton Powerware ePDU Managed
 
 *raritan*::
-Various Raritan PDUs
+Various Raritan PDUs (Dominion PX, PM, RPC)
+
+*raritan-px2*::
+Various Raritan PDUs (Dominion PX2)
 
 *baytech*::
 Various BayTech PDUs
@@ -57,11 +59,30 @@ Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202 and
 *huawei*::
 Huawei UPS5000-E, perhaps others
 
+*tripplite*::
+TrippLite UPSes; at this time this is the IETF MIB mapping with just
+the Tripplite entry point OID to verify the device vendor, and a real
+hardware-specific configuration will be added in the future development.
+
+For a complete and up-to-date listing, you can query the driver by passing
+the *mibs=--list* argument (see below).
+
 EXTRA ARGUMENTS
 ---------------
 
 This driver supports the following optional settings in the
 linkman:ups.conf[5]:
+
+*port*='hostname[:port]'::
+Set SNMP hostname, or IP address, and port number of the peer SNMP agent.
+There is no default for the hostname, but the default port is 161.
+
+*mibs*='--list'::
+A special option which allows to list the currently known MIB-to-NUT mappings
+and exit the driver binary, intended for command-line usage like this:
+----
+$ snmp-ups -a snmp-test -x mibs=--list
+----
 
 *mibs*='name'::
 Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE above).
@@ -142,7 +163,7 @@ configuration time.  You can also force it to be built by using
 EXAMPLES
 --------
 The hostname of the UPS is specified with the "port" value in
-`ups.conf`:
+`ups.conf`, and may include a non-standard (161) remote peer port:
 
 	[snmpv1]
 		driver = snmp-ups
@@ -154,7 +175,7 @@ The hostname of the UPS is specified with the "port" value in
 
 	[snmpv3]
 		driver = snmp-ups
-		port = 166.99.224.132
+		port = 166.99.224.132:170
 		snmp_version = v3
 		secLevel = authPriv
 		secName = mysecurityname
@@ -176,7 +197,7 @@ linkman:nutupsdrv[8]
 
 NUT SNMP Protocols Library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-Available at: http://www.networkupstools.org/protocols/snmp/
+Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

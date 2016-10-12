@@ -72,7 +72,7 @@ Raise log level threshold.  Use this multiple times to log more details.
 The debugging comment above also applies here.
  
 *-i* 'interval'::
-Set the poll interval for the device.
+Set the poll interval for the device.  The default value is 2 (in seconds).
 
 *-V*::
 Print only version information, then exit.

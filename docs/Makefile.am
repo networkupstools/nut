@@ -12,7 +12,7 @@ IMAGE_FILES = images/asciidoc.png \
 	images/old-cgi.png
 
 # Only track here the local deps
-SHARED_DEPS = nut-names.txt asciidoc.conf
+SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
@@ -100,6 +100,13 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
     --attribute=external_title \
     --attribute tree_version=@TREE_VERSION@ \
     -a toc -a numbered --destination-dir=.
+# NOTE: a2x newer than 8.6.8 says "--destination-dir" is only valid for HTML.
+# As of version 8.6.9 it lies, and the argument is required for our distcheck.
+# For more details see issues https://github.com/asciidoc/asciidoc/issues/44
+# and https://github.com/networkupstools/nut/pull/281 (in short, attempts
+# to "fix" this warning broke NUT build). If this is to be retried later, see
+# https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
+# and do not forget to fix up docs/man/Makefile.am too ;)
 
 .txt.html: common.xsl xhtml.xsl
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
@@ -111,18 +118,21 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
-# FIXME: also check ../{NEWS,README,UPGRADING}+other dirs
 # Non-interactively spell check all documentation source files.
 # This is useful for Buildbot and automated QA processing
 # FIXME: how to present output (std{out,err}, single file or per target)?
+SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
+	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
+	../tools/nut-scanner/README
+
 spellcheck: 
-	@for docsrc in $(ALL_TXT_SRC); do \
+	@for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
 		LANG=C $(ASPELL) -a -t -p $(NUT_SPELL_DICT) < $$docsrc | grep [^*]; \
 	done
 # Interactively spell check all documentation source files
 spellcheck-interactive: 
-	@for docsrc in $(ALL_TXT_SRC); do\
+	@for docsrc in $(SPELLCHECK_SRC); do\
 		echo "Spell checking on $$docsrc"; \
 		LANG=C $(ASPELL) check -p $(NUT_SPELL_DICT) $$docsrc; \
 	done

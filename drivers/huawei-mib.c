@@ -31,7 +31,7 @@
  * static info_lkp_t onbatt_info[] = {
  * 	{ 1, "OB" },
  * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * 	{ 0, NULL }
  * };
  */
 
@@ -43,7 +43,7 @@ static info_lkp_t supplymethod_info[] = {
 	{ 5, "" },		/* combined */
 	{ 6, "OL ECO" },
 	{ 7, "OB ECO" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t battstate_info[] = {
@@ -53,13 +53,13 @@ static info_lkp_t battstate_info[] = {
 	{ 4, "" },		/* float */
 	{ 5, "CHRG" },		/* equalized charging */
 	{ 6, "DISCHRG" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t phase_info[] = {
 	{ 1, "1" },
 	{ 2, "3" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t voltrating_info[] = {
@@ -72,13 +72,13 @@ static info_lkp_t voltrating_info[] = {
 	{ 7, "480" },
 	{ 8, "600" },
 	{ 9, "690" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t freqrating_info[] = {
 	{ 1, "50" },
 	{ 2, "60" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t pwrrating_info[] = {
@@ -94,7 +94,7 @@ static info_lkp_t pwrrating_info[] = {
 	{ 10, "2500000" },
 	{ 11, "2800000" },
 	{ 12, "3000000" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_test_result_info[] = {
@@ -104,7 +104,7 @@ static info_lkp_t ietf_test_result_info[] = {
 	{ 4, "aborted" },
 	{ 5, "in progress" },
 	{ 6, "no test initiated" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 
@@ -133,7 +133,7 @@ static snmp_info_t huawei_mib[] = {
 	 * static info_lkp_t onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
 

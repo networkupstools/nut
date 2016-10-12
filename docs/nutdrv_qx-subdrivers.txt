@@ -19,7 +19,7 @@ In order to develop a new subdriver for a specific UPS you have to know the idio
 
 This kind of devices speaks idioms that can be summed up as follows:
 
-- We send the UPS a query for one or more informations
+- We send the UPS a query for one or more information
 
  * If the query is supported by the device, we'll get a reply that is mostly of a fixed length, therefore, in most cases, each information starts and ends always at the same indexes
 
@@ -188,7 +188,7 @@ Command sent to the UPS to get answer/to execute a instant command/to set a vari
 *+answer+*::
 Answer from the UPS, filled at runtime.
 +
-NOTE: If you expect a nonvalid C string (e.g.: inner ++\0++s) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a +preprocess_answer()+ function.
+NOTE: If you expect a non-valid C string (e.g.: inner ++\0++s) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a +preprocess_answer()+ function.
 
 *+answer_len+*::
 Expected minimum length of the answer.
@@ -493,7 +493,7 @@ Since a +preprocess+ function is defined for this item, this could have been +NU
 +
 This function will be called *after* the +command+ has been sent to the UPS and we got back the +answer+ and stored the +value+ in order to process it to NUT standards: in this case we will check if the value is in the range and then publish the human readable form of it (i.e. +Li+, +Flooded+ or +AGM+).
 
-We also know that we can change battery type with the +PBTnn\r+ command; we are expecting either +(ACK\r+ if the command succeded or +(NAK\r+ if the command is rejected.
+We also know that we can change battery type with the +PBTnn\r+ command; we are expecting either +(ACK\r+ if the command succeeded or +(NAK\r+ if the command is rejected.
 
 ----
 > [PBTnn\r]		nn = 00/01/02
@@ -692,7 +692,7 @@ Not used for +QX_FLAG_ABSENT+
 +preprocess+::
 +voltronic_process_setvar+
 +
-This function will be called, in setvar, before the driver stores the value in the NUT var: here it's used to truncate the user-provided value to the neareset settable interval.
+This function will be called, in setvar, before the driver stores the value in the NUT var: here it's used to truncate the user-provided value to the nearest settable interval.
 
 
 Informations not yet available in NUT

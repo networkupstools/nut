@@ -7,6 +7,22 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.7.3 to 2.7.4
+---------------------------
+
+- scripts/systemd/nut-server.service.in: Restore systemd relationship since it
+  was preventing upsd from starting whenever one or more drivers, among several,
+  was failing to start
+
+- Fix UPower device matching for recent kernels, since hiddev* devices now have
+  class "usbmisc", rather than "usb"
+
+- macosx-ups: the "port" driver option no longer has any effect
+
+- Network protocol information: default to type NUMBER for variables that are
+  not flagged as STRING . This point is subject to improvements or change in
+  the next release 2.7.5.  Refer to docs/net-protocol.txt for more information
+
 Changes from 2.7.2 to 2.7.3
 ---------------------------
 
@@ -191,7 +207,7 @@ automake). Refer to packaging/debian/ for an example of migration.
 ie not using upsdrvctl.
 - Developers of external client application using libupsclient are
 encouraged to rename the "UPSCONN" client structure to "UPSCONN_t"
-since the former will disapear by the release of NUT 2.4.
+since the former will disappear by the release of NUT 2.4.
 
 Changes from 2.0.4 to 2.0.5
 ---------------------------

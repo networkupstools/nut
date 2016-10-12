@@ -225,9 +225,13 @@ below).
 
 - As an exception, drivers may set "FSD" when an imminent shutdown has been
 detected. In this case, the "on battery + low battery" condition should not be
-met. Otherwise, setting status to "OB LB" should be prefered.
+met. Otherwise, setting status to "OB LB" should be preferred.
 
 - the OL and OB flags are an indication of the input line status only.
+
+- the CHRG and DISCHRG flags are under replacement by battery.charger.status.
+See the linkdoc:user-manual[NUT command and variable naming scheme,nut-names]
+for more information.
 ================================================================================
 
 UPS alarms
@@ -254,6 +258,10 @@ flag in ups.status.
 
 There is no official list of alarm words as of this writing, so don't
 use these functions until you check with the upsdev list.
+
+Also refer to the <<daisychain,NUT daisychain support notes>> chapter
+of the user manual and developer guide for information related to alarms
+handling in daisychain mode.
 
 Staleness control
 -----------------

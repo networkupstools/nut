@@ -27,6 +27,7 @@ Makefile.in
 /ltmain.sh
 /missing
 /test-driver
+common/.dirstamp
 
 # Dist
 /nut-*.*.*/

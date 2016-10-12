@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.5"
+#define MGE_MIB_VERSION	"0.51"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -40,50 +40,50 @@
 static info_lkp_t mge_lowbatt_info[] = {
 	{ 1, "LB" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_onbatt_info[] = {
 	{ 1, "OB" },
 	{ 2, "OL" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_bypass_info[] = {
 	{ 1, "BYPASS" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_boost_info[] = {
 	{ 1, "BOOST" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_trim_info[] = {
 	{ 1, "TRIM" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_overload_info[] = {
 	{ 1, "OVER" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 
 static info_lkp_t mge_replacebatt_info[] = {
 	{ 1, "RB" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_output_util_off_info[] = {
 	{ 1, "OFF" },
 	{ 2, "" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t mge_transfer_reason_info[] = {
@@ -91,7 +91,7 @@ static info_lkp_t mge_transfer_reason_info[] = {
 	{ 2, "input voltage out of range" },
 	{ 3, "input frequency out of range" },
 	{ 4, "utility off" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_test_result_info[] = {
@@ -101,20 +101,20 @@ static info_lkp_t ietf_test_result_info[] = {
 	{ 4, "aborted" },
 	{ 5, "in progress" },
 	{ 6, "no test initiated" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
 	{ 1, "disabled" },
 	{ 2, "enabled" },
 	{ 3, "muted" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_yes_no_info[] = {
 	{ 1, "yes" },
 	{ 2, "no" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* FIXME: the below may introduce status redundancy, that needs to be
@@ -129,7 +129,7 @@ static info_lkp_t ietf_power_source_info[] = {
 	{ 5, "OB" /* battery */ },
 	{ 6, "BOOST" /* booster */ },
 	{ 7, "TRIM" /* reducer */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Parameters default values */
@@ -193,7 +193,7 @@ static snmp_info_t mge_mib[] = {
 	 */
 
 	/* Input page */
-	{ "input.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.6.1.0", "", SU_FLAG_SETINT, NULL, &input_phases },
+	{ "input.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.6.1.0", "", 0, NULL, NULL },
 	{ "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
 	{ "input.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_3, NULL },
 	{ "input.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.2", "", SU_INPUT_3, NULL },
@@ -217,7 +217,7 @@ static snmp_info_t mge_mib[] = {
 	{ "input.transfer.reason", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.705.1.6.4.0", "", SU_FLAG_OK, mge_transfer_reason_info },
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.7.1.0", "", SU_FLAG_SETINT, NULL, &output_phases },
+	{ "output.phases", 0, 1.0, ".1.3.6.1.4.1.705.1.7.1.0", "", 0, NULL, NULL },
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.2.1", "", SU_OUTPUT_1, NULL },
 	{ "output.L1-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.2.1", "", SU_OUTPUT_3, NULL },
 	{ "output.L2-N.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.7.2.1.2.2", "", SU_OUTPUT_3, NULL },
@@ -271,4 +271,4 @@ static snmp_info_t mge_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, "", MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID };
+mib2nut_info_t	mge = { "mge", MGE_MIB_VERSION, NULL, MGE_OID_MODEL_NAME, mge_mib, MGE_SYSOID };

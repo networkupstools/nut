@@ -26,11 +26,22 @@
 
 #include "ietf-mib.h"
 
-#define IETF_MIB_VERSION	"1.4"
+#define IETF_MIB_VERSION	"1.51"
 
 /* SNMP OIDs set */
 #define IETF_OID_UPS_MIB	"1.3.6.1.2.1.33.1."
 #define IETF_SYSOID			".1.3.6.1.2.1.33"
+
+/* NOTE: Currently the Tripplite UPSes await user-validation of their
+ * real SNMP OID tree, so temporarily the IETF tree is used as "tripplite"
+ * for the mapping purposes; the devices ave their entry point OID though.
+ * For more details see:
+ *    https://github.com/networkupstools/nut/issues/309
+ *    https://github.com/networkupstools/nut/issues/171
+ * Also related to:
+ *    https://github.com/networkupstools/nut/issues/270
+ */
+#define TRIPPLITE_SYSOID	".1.3.6.1.4.1.850.1"
 
 /* #define DEBUG */
 
@@ -39,7 +50,7 @@ static info_lkp_t ietf_battery_info[] = {
 	{ 2, ""   /* batteryNormal */},
 	{ 3, "LB" /* batteryLow */ },
 	{ 4, "LB" /* batteryDepleted */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_power_source_info[] = {
@@ -50,12 +61,12 @@ static info_lkp_t ietf_power_source_info[] = {
 	{ 5, "OB" /* battery */ },
 	{ 6, "OL BOOST" /* booster */ },
 	{ 7, "OL TRIM" /* reducer */ },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_overload_info[] = {
 	{ 1, "OVER" },	/* output overload */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_test_active_info[] = {
@@ -64,7 +75,7 @@ static info_lkp_t ietf_test_active_info[] = {
 	{ 3, "TEST" },	/* upsTestGeneralSystemsTest */
 	{ 4, "TEST" },	/* upsTestQuickBatteryTest */
 	{ 5, "CAL" },	/* upsTestDeepBatteryCalibration */
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_test_result_info[] = {
@@ -74,28 +85,28 @@ static info_lkp_t ietf_test_result_info[] = {
 	{ 4, "aborted" },
 	{ 5, "in progress" },
 	{ 6, "no test initiated" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 #ifdef DEBUG
 static info_lkp_t ietf_shutdown_type_info[] = {
 	{ 1, "output" },
 	{ 2, "system" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 #endif
 
 static info_lkp_t ietf_yes_no_info[] = {
 	{ 1, "yes" },
 	{ 2, "no" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
 	{ 1, "disabled" },
 	{ 2, "enabled" },
 	{ 3, "muted" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 /* Snmp2NUT lookup table info_type, info_flags, info_len, OID, dfl, flags, oid2info, setvar */
@@ -124,7 +135,7 @@ static snmp_info_t ietf_mib[] = {
 #ifdef DEBUG
 	{ "debug.upsInputLineBads", 0, 1.0, IETF_OID_UPS_MIB "3.1.0", "", 0, NULL }, /* upsInputLineBads */
 #endif
-	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", SU_FLAG_SETINT, NULL, &input_phases }, /* upsInputNumLines */
+	{ "input.phases", 0, 1.0, IETF_OID_UPS_MIB "3.2.0", "", 0, NULL, NULL }, /* upsInputNumLines */
 #ifdef DEBUG
 	{ "debug.upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_1, NULL }, /* upsInputLineIndex */
 	{ "debug.[1].upsInputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "3.3.1.1.1", "", SU_INPUT_3, NULL },
@@ -151,7 +162,7 @@ static snmp_info_t ietf_mib[] = {
 	/* Output Group */
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_UPS_MIB "4.1.0", "", SU_STATUS_PWR, ietf_power_source_info }, /* upsOutputSource */
 	{ "output.frequency", 0, 0.1, IETF_OID_UPS_MIB "4.2.0", "", 0, NULL }, /* upsOutputFrequency */
-	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", SU_FLAG_SETINT, NULL, &output_phases }, /* upsOutputNumLines */
+	{ "output.phases", 0, 1.0, IETF_OID_UPS_MIB "4.3.0", "", 0, NULL, NULL }, /* upsOutputNumLines */
 #ifdef DEBUG
 	{ "debug.upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_1, NULL }, /* upsOutputLineIndex */
 	{ "debug.[1].upsOutputLineIndex", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.1.1", "", SU_OUTPUT_3, NULL },
@@ -176,7 +187,7 @@ static snmp_info_t ietf_mib[] = {
 	{ "output.L3.power.percent", 0, 1.0, IETF_OID_UPS_MIB "4.4.1.5.3", "", SU_OUTPUT_3, NULL },
 
 	/* Bypass Group */
-	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", SU_FLAG_SETINT, NULL, &bypass_phases }, /* upsBypassNumLines */
+	{ "input.bypass.phases", 0, 1.0, IETF_OID_UPS_MIB "5.2.0", "", 0, NULL, NULL }, /* upsBypassNumLines */
 	{ "input.bypass.frequency", 0, 0.1, IETF_OID_UPS_MIB "5.1.0", "", SU_BYPASS_1 | SU_BYPASS_3, NULL }, /* upsBypassFrequency */
 #ifdef DEBUG
 	{ "debug.upsBypassLineIndex", 0, 1.0, IETF_OID_UPS_MIB "5.3.1.1.1", "", SU_BYPASS_1, NULL }, /* upsBypassLineIndex */
@@ -275,3 +286,7 @@ static snmp_info_t ietf_mib[] = {
 };
 
 mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
+
+/* FIXME: Rename the structure here (or even relocate to new file)
+ * and in snmp-ups.c when the real TrippLite mappings get defined. */
+mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };

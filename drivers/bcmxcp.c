@@ -117,7 +117,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.30"
+#define DRIVER_VERSION "0.31"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -1413,7 +1413,7 @@ void upsdrv_initinfo(void)
 	if (strstr(pTmp, power_rating) == NULL) {
 		snprintfcat(pTmp, len+10, " %s", power_rating);
 	}
-	dstate_setinfo("ups.model", "%s", rtrim(pTmp, ' '));
+	dstate_setinfo("ups.model", "%s", str_rtrim(pTmp, ' '));
 	free(pTmp);
 
 	/* Get meter map info from ups, and init our map */

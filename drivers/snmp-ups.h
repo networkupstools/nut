@@ -174,10 +174,20 @@ typedef struct {
 
 /* hints for su_ups_set, applicable only to rw vars */
 #define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
-#define SU_TYPE_STRING		(1 << 18)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
+/* Free slot                (1 << 18) */
 #define SU_TYPE_TIME		(2 << 18)	/* cast to int */
 #define SU_TYPE_CMD			(3 << 18)	/* instant command */
 #define SU_TYPE(t)			((t)->flags & (7 << 18))
+
+/* Daisychain template definition */
+/* the following 2 flags specify the position of the daisychain device index
+ * in the formatting string. This is useful when considering daisychain with
+ * templates, such as outlets / outlets groups, which already have a format
+ * string specifier */
+#define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY		((t)->flags & (7 << 19))
+#define SU_DAISY			(2 << 19) /* Daisychain template definition */
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
@@ -196,7 +206,6 @@ typedef struct {
 #define SU_VAR_ONDELAY		"ondelay"
 #define SU_VAR_OFFDELAY		"offdelay"
 
-
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
 #define SU_LARGEBUF		256
@@ -207,6 +216,10 @@ typedef struct {
 /* modes to snmp_ups_walk. */
 #define SU_WALKMODE_INIT	0
 #define SU_WALKMODE_UPDATE	1
+
+/* modes for su_setOID */
+#define SU_MODE_INSTCMD     1
+#define SU_MODE_SETVAR      2
 
 /* log spew limiters */
 #define SU_ERR_LIMIT 10	/* start limiting after this many errors in a row  */
@@ -271,6 +284,20 @@ extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
+
+/* Common daisychain structure and functions */
+
+bool_t daisychain_init();
+int su_addcmd(snmp_info_t *su_info_p);
+
+/* Structure containing info about each daisychain device, including phases
+ * for input, output and bypass */
+typedef struct {
+	long input_phases;
+	long output_phases;
+	long bypass_phases;
+} daisychain_info_t;
+
 
 #endif /* SNMP_UPS_H */
 

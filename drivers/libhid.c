@@ -276,6 +276,7 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 #ifndef SHUT_MODE
 	/* extract the VendorId for further testing */
 	int vendorID = usb_device((struct usb_dev_handle *)udev)->descriptor.idVendor;
+	int productID = usb_device((struct usb_dev_handle *)udev)->descriptor.idProduct;
 #endif
 
 	/* Do not go further if we already know nothing will be displayed.
@@ -302,6 +303,13 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 #else
 		if ((vendorID == 0x0463) || (vendorID == 0x047c)) {
 			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
+				continue;
+			}
+		}
+
+		/* skip report 0x54 for Tripplite SU3000LCD2UHV due to firmware bug */
+		if ((vendorID == 0x09ae) && (productID == 0x1330)) {
+			if (pData->ReportID == 0x54) {
 				continue;
 			}
 		}
@@ -409,7 +417,7 @@ char *HIDGetIndexString(hid_dev_handle_t udev, const int Index, char *buf, size_
 	if (comm_driver->get_string(udev, Index, buf, buflen) < 1)
 		buf[0] = '\0';
 
-	return rtrim(buf, '\n');
+	return str_rtrim(buf, '\n');
 }
 
 /* Return pointer to indexed string from HID path (empty if not found)

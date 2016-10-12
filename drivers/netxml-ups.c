@@ -40,7 +40,7 @@
 #include <ne_socket.h>
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.40"
+#define DRIVER_VERSION	"0.41"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -656,27 +656,28 @@ void upsdrv_cleanup(void)
 
 static int netxml_get_page(const char *page)
 {
-	int		ret;
+	int		ret = NE_ERROR;
 	ne_request	*request;
 	ne_xml_parser	*parser;
 
-	upsdebugx(2, "%s: %s", __func__, page);
+	upsdebugx(2, "%s: %s", __func__, (page != NULL)?page:"(null)");
 
-	request = ne_request_create(session, "GET", page);
+	if (page != NULL) {
+		request = ne_request_create(session, "GET", page);
 
-	parser = ne_xml_create();
+		parser = ne_xml_create();
 
-	ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
+		ne_xml_push_handler(parser, subdriver->startelm_cb, subdriver->cdata_cb, subdriver->endelm_cb, NULL);
 
-	ret = netxml_dispatch_request(request, parser);
+		ret = netxml_dispatch_request(request, parser);
 
-	if (ret) {
-		upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+		if (ret) {
+			upsdebugx(2, "%s: %s", __func__, ne_get_error(session));
+		}
+
+		ne_xml_destroy(parser);
+		ne_request_destroy(request);
 	}
-
-	ne_xml_destroy(parser);
-	ne_request_destroy(request);
-
 	return ret;
 }
 

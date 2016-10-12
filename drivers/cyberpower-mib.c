@@ -37,7 +37,7 @@ static info_lkp_t cyberpower_power_status[] = {
 	{ 7, "OL" },
 	{ 1, "NULL" },
 	{ 6, "NULL" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 } ;
 
 /* Snmp2NUT lookup table for CyberPower MIB */
@@ -77,5 +77,5 @@ static snmp_info_t cyberpower_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 } ;
 
-mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, "",
+mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
 	CYBERPOWER_OID_MODEL_NAME, cyberpower_mib, CYBERPOWER_SYSOID };

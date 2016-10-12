@@ -17,7 +17,7 @@
 SUBDIRS = . nut-scanner
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
-  gitlog2changelog.py nut-snmpinfo.py
+  gitlog2changelog.py nut-snmpinfo.py driver-list-format.sh
 
 all: nut-scanner-deps 
 
@@ -49,6 +49,7 @@ nut-scanner-deps:
 # call the USB info script upon "make dist", and if Perl is present
 # call the SNMP info script upon "make dist", and if Python is present
 # and call both for building nut-scanner
+# Also ensure that data/driver.list is well formatted
 dist-hook:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files."; \
@@ -69,5 +70,7 @@ dist-hook:
 		echo "Skipping the USB helper files regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
+
+	@$(distdir)/driver-list-format.sh;
 
 .PHONY: nut-scanner-deps nut-scanner-snmp-deps nut-scanner-usb-deps

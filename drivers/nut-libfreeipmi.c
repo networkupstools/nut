@@ -67,6 +67,7 @@ struct ipmi_monitoring_ipmi_config ipmi_config;
   ipmi_sdr_ctx_t sdr_ctx = NULL;
   ipmi_fru_ctx_t fru_ctx = NULL;
   #define SDR_PARSE_CTX sdr_ctx
+  #define NUT_IPMI_SDR_CACHE_DEFAULTS                              IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT
 #else
   ipmi_sdr_cache_ctx_t sdr_ctx = NULL;
   ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
@@ -99,6 +100,7 @@ struct ipmi_monitoring_ipmi_config ipmi_config;
   #define IPMI_FRU_AREA_TYPE_BOARD_INFO_AREA                       IPMI_FRU_PARSE_AREA_TYPE_BOARD_INFO_AREA
   #define IPMI_FRU_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION  IPMI_FRU_PARSE_AREA_TYPE_MULTIRECORD_POWER_SUPPLY_INFORMATION
   #define IPMI_FRU_AREA_STRING_MAX                                 IPMI_FRU_PARSE_AREA_STRING_MAX
+  #define NUT_IPMI_SDR_CACHE_DEFAULTS                              IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT, IPMI_SDR_CACHE_VALIDATION_FLAGS_DEFAULT
 #endif /* HAVE_FREEIPMI_11X_12X */
 
 /* FIXME: freeipmi auto selects a cache based on the hostname you are
@@ -342,8 +344,8 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 {
 	/* FIXME: directly use ipmi_dev fields */
 	unsigned int overall_capacity;
-	unsigned int low_end_input_voltage_range_1;
-	unsigned int high_end_input_voltage_range_1;
+	int low_end_input_voltage_range_1;
+	int high_end_input_voltage_range_1;
 	unsigned int low_end_input_frequency_range;
 	unsigned int high_end_input_frequency_range;
 	unsigned int voltage_1;
@@ -352,8 +354,8 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 	unsigned int peak_va;
 	unsigned int inrush_current;
 	unsigned int inrush_interval;
-	unsigned int low_end_input_voltage_range_2;
-	unsigned int high_end_input_voltage_range_2;
+	int low_end_input_voltage_range_2;
+	int high_end_input_voltage_range_2;
 	unsigned int ac_dropout_tolerance;
 	unsigned int predictive_fail_support;
 	unsigned int power_factor_correction;
@@ -554,10 +556,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 	{
 		if (ipmi_sdr_cache_create (sdr_ctx,
 				 ipmi_ctx, CACHE_LOCATION,
-				 IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT,
-#ifndef HAVE_FREEIPMI_11X_12X
-				 IPMI_SDR_CACHE_VALIDATION_FLAGS_DEFAULT,
-#endif
+				 NUT_IPMI_SDR_CACHE_DEFAULTS,
 				 NULL, NULL) < 0)
 		{
 			libfreeipmi_cleanup();

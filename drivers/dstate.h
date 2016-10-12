@@ -82,5 +82,7 @@ void status_commit(void);
 void alarm_init(void);
 void alarm_set(const char *buf);
 void alarm_commit(void);
+void device_alarm_init(void);
+void device_alarm_commit(const int device_number);
 
 #endif	/* DSTATE_H_SEEN */

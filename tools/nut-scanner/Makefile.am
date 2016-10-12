@@ -14,14 +14,14 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			../../drivers/serial.c \
 			../../drivers/bcmxcp_ser.c \
-			../../common/common.c
+			../../common/common.c ../../common/str.c
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = libnutscan.la ../../common/libcommon.la
+nut_scanner_LDADD = libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)

@@ -18,6 +18,7 @@
 #   "ups" for Uninterruptible Power Supply
 #   "pdu" for Power Distributions Unit
 #   "scd" for Solar Controlers Device
+#   "ats" for Automatic Transfer Switch
 #
 # - support level: a number from "1" to "5" (stars) meaning:
 #   *       protocol based on reverse engineering
@@ -47,6 +48,8 @@
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"	"Megatec M2501 cable"	"genericups upstype=21"
 
 "AEG Power Solutions"	"ups"	"2"	"PROTECT HOME"	""	"blazer_ser or blazer_usb"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT NAS"	""	"usbhid-ups"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT B"	""	"usbhid-ups"
 
 "APC"	"ups"	"2"	"Back-UPS 1200BR (Microsol)"	""	"solis"
 "APC"	"ups"	"2"	"Back-UPS BZ2200BI-BR (Microsol)"	""	"solis"
@@ -70,10 +73,12 @@
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
+"APC"	"ups"	"3"	"(various)"	"APCUPSD-controlled devices"	"apcupsd-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"3"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
+"APC"	"ats"	"3"	"ATS AP7724"	""	"snmp-ups (experimental)"
 
 "Aphel"	"pdu"	"3"	"various PDU"	""	"snmp-ups (experimental)"
 
@@ -313,6 +318,7 @@
 "Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
 "Eaton"	"ups"	"5"	"Powerware 3105"	"USB"	"bcmxcp_usb"	# http://powerquality.eaton.com/Products-services/Backup-Power-UPS/3105-eol.aspx
+"Eaton"	"ups"	"5"	"Powerware 9125"	"USB card"	"bcmxcp_usb"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
@@ -321,6 +327,7 @@
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Serial Pass-through mode"	"bcmxcp"
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Network port"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Management Card Contact"	"Config 3 - Cable 66033"	"genericups upstype=7"
+"Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
@@ -427,6 +434,8 @@
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 
+"IBM"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
+"IBM"	"ups"	"5"	"Various"	"Serial port"	"mge-shut"
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
@@ -487,6 +496,8 @@
 "Lacerda"	"ups"	"2"	"New Orion 800VA"	"USB"	"blazer_usb"
 
 "LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
+
+"Legrand"	"ups"	"2"	"Keor Multiplug"	""	"nutdrv_qx"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
@@ -736,6 +747,7 @@
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 8000"	""	"gamatronic"
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 10000"	""	"gamatronic"
 "NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 10000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Laser Senoidal 5000VA"	"USB"	"gamatronic"	# http://www.nhs.com.br/produtos_interna/id/T0RrPQ==
 
 "Nitram"	"ups"	"1"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
@@ -858,6 +870,7 @@
 "Raritan"	"pdu"	"3"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"pdu"	"3"	"Dominion PX2"	""	"snmp-ups"
 
 "REDi"	"ups"	"2"	"Blazer 400VA / 600VA / 800VA"	""	"blazer_ser"
 
@@ -949,6 +962,7 @@
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
 "Sweex"	"ups"	"1"	"1000"	"USB"	"richcomm_usb"
 "Sweex"	"ups"	"2"	"(various)"	""	"blazer_ser"
+"Sweex"	"ups"	"2"	"INTELLIGENT UPS 1500VA P220"	"USB"	"blazer_usb (USB ID 0665:5161)"	# http://www.sweex.com/en/notebook-pc-accessoires/ups/PP220/
 
 "Syndome"	"ups"	"2"	"Era 500VA"	"USB"	"blazer_usb"
 
@@ -1089,6 +1103,8 @@
 "Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"blazer_ser"
 "Trust"	"ups"	"2"	"UPS 1200VA Management PW-4120M"	""	"blazer_ser"
 "Trust"	"ups"	"2"	"UPS 1300VA Management PW-4130M"	""	"blazer_ser"
+
+"TS Shara"	"ups"	"4"	"(various)"	""	"nutdrv_qx"
 
 "UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"blazer_ser"

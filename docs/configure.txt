@@ -23,6 +23,13 @@ Note that you need to install the libusb development package or files.
 Build and install the SNMP drivers (default: auto-detect)
 Note that you need to install libsnmp development package or files.
 
+	--with-net-snmp-config
+
+In addition to the `--with-snmp` option above, this one allows to provide
+a custom program name (in `PATH`) or complete pathname to `net-snmp-config`.
+This may be needed on build systems which support multiple architectures,
+or in cases where your distribution names this program differently.
+
 	--with-neon
 
 Build and install the XML drivers (default: auto-detect)
@@ -39,10 +46,9 @@ Note that you need to install powerman development package or files.
 	--with-freeipmi
 
 Build and install IPMI PSU driver (default: auto-detect)
-This allows to monitor numerous Power Supply Units (PSU) found
-on servers.
-Note that you need to install freeipmi (0.8.5 or higher) development package or
-files.
+This allows to monitor numerous Power Supply Units (PSU) found on servers.
+Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner ; and
+1.0.1 or higher, for nut-ipmipsu) development package or files.
 
 	--with-linux_i2c
 
@@ -83,12 +89,39 @@ information on how to set up CGI programs.
 	--with-doc=<output-format(s)>  (default: no)
 
 Build and install NUT documentation file(s).
+
 The possible values are "html-single" for single page HTML, "html-chunked"
-for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
-possible previous documentation formats.
+for multi pages HTML, "pdf" for a PDF file, and "man" for the usual manpages.
+
+If the "--with-doc" argument is passed without a list, or lists just "=yes"
+or "=all", it enables all supported formats with a "=yes".
+
+An (explicit!) "--with-doc=auto" argument tries to enable all supported
+formats with an "=auto".
+
+A "--with-doc=no" quietly skips generation of all types of documentation,
+including manpages.
+
+Multiple documentation format values can be specified, separated with comma.
+Each such value can be suffixed with "=yes" to require building of the this
+documentation format (abort configuration if tools are missing), "=auto" to
+detect and enable if we can build it on this system (and not abort if we
+can not), and "=no" (or "=skip") to explicitly skip generation of this
+document format even if we do have the tools to build it.
+
+If a document format is mentioned in the list without a suffix, then it is
+treated as a "=yes" requirement.
+
 Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
+
+Example valid formats of this flag:
+* `--with-doc`
+* `--with-doc=` is a valid empty list, effectively same as `--with-doc=no`
+* `--with-doc=auto`
+* `--with-doc=pdf,html-chunked`
+* `--with-doc=man=no,pdf=auto,html-single`
 
 	--with-dev (default: no)
 
@@ -293,6 +326,23 @@ override this option.
 
 Use --without-udev-dir to disable this feature altogether. 
 
+	--with-systemdsystemunitdir=PATH
+
+Where to install Linux systemd unit definitions. Useless and harmless
+on other OSes, including Linux distributions without systemd, just adding
+a little noise to configure script output.
+
+Use --with-systemdsystemunitdir to detect the settings using pkg-config.
+
+Use --with-systemdsystemunitdir=no to disable this feature altogether.
+
+	--with-augeas-lenses-dir=PATH
+
+Where to install Augeas configuration-management lenses. Only useful and valid
+if you use Augeas to parse and modify configuration files. The default is
+/usr/share/augeas/lenses, if that directory exists, and not to install it
+otherwise.
+
 
 Directories used by NUT at run-time
 -----------------------------------
@@ -334,6 +384,13 @@ proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
 NOTE: the --with-gd switches are not necessary if you have gd 2.0.8
 or higher installed properly.  The gdlib-config script will be 
 detected and used by default in that situation.
+
+	--with-gdlib-config
+
+This option allows to provide a custom program name (in `PATH`) or
+a complete pathname to `gdlib-config`. This may be needed on build
+systems which support multiple architectures, or in cases where your
+distribution names this program differently.
 
 	--with-ssl-includes, --with-usb-includes, --with-snmp-includes,
 	--with-neon-includes, --with-libltdl-includes,

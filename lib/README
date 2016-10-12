@@ -116,7 +116,7 @@ Simply replace 'libupsclient' occurences in the above example, by the name
 of the desired library (for example, 'libnutscan').
 
 NOTE: this is an alternate method. Use of PKG_CHECK_MODULES macro should be
-prefered.
+preferred.
 
 
 Future consideration

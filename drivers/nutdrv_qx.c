@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.28"
 
 #include "main.h"
 
@@ -465,6 +465,75 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 			return ret;
 		}
+
+		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
+		upsdebug_hex(5, tmp, &buf[i], ret);
+
+	}
+
+	upsdebugx(3, "read: %.*s", (int)strcspn(buf, "\r"), buf);
+	return i;
+}
+
+/* SGS communication subdriver */
+static int	sgs_command(const char *cmd, char *buf, size_t buflen)
+{
+	char	tmp[SMALLBUF];
+	int	ret;
+	size_t  cmdlen, i;
+
+	/* Send command */
+	cmdlen = strlen(cmd);
+
+	for (i = 0; i < cmdlen; i += ret) {
+
+		memset(tmp, 0, sizeof(tmp));
+
+		ret = (cmdlen - i) < 7 ? (cmdlen - i) : 7;
+
+		tmp[0] = ret;
+		memcpy(&tmp[1], &cmd[i], ret);
+
+		/* Write data in 8-byte chunks */
+		ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0x09, 0x200, 0, tmp, 8, 5000);
+
+		if (ret <= 0) {
+			upsdebugx(3, "send: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			return ret;
+		}
+
+		ret--;
+
+	}
+
+	upsdebugx(3, "send: %.*s", (int)strcspn(cmd, "\r"), cmd);
+
+	/* Read reply */
+	memset(buf, 0, buflen);
+
+	for (i = 0; i <= buflen - 8; i += ret) {
+
+		memset(tmp, 0, sizeof(tmp));
+
+		/* Read data in 8-byte chunks */
+		ret = usb_interrupt_read(udev, 0x81, tmp, 8, 1000);
+
+		/* No error!!! */
+		if (ret == -110)
+			break;
+
+		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
+		if (ret <= 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
+			return ret;
+		}
+
+		/* Every call to read returns 8 bytes
+		 * -> actually returned bytes: */
+		ret = tmp[0] <= 7 ? tmp[0] : 7;
+
+		if (ret > 0)
+			memcpy(&buf[i], &tmp[1], ret);
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
 		upsdebug_hex(5, tmp, &buf[i], ret);
@@ -944,6 +1013,12 @@ static void	*cypress_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void	*sgs_subdriver(USBDevice_t *device)
+{
+	subdriver_command = &sgs_command;
+	return NULL;
+}
+
 static void	*ippon_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &ippon_command;
@@ -996,6 +1071,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x06da, 0x0601),	NULL,		NULL,			&phoenix_subdriver },	/* Online Zinto A */
 	{ USB_DEVICE(0x0f03, 0x0001),	NULL,		NULL,			&cypress_subdriver },	/* Unitek Alpha 1200Sx */
 	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
+	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
@@ -1848,6 +1924,7 @@ void	upsdrv_initups(void)
 			{ "krauler", &krauler_command },
 			{ "fabula", &fabula_command },
 			{ "fuji", &fuji_command },
+			{ "sgs", &sgs_command },
 			{ NULL }
 		};
 
@@ -2744,7 +2821,7 @@ int	ups_infoval_set(item_t *item)
 
 		/* Cover most of the cases: either left/right filled with hashes, spaces or a mix of both */
 		if (item->qxflags & QX_FLAG_TRIM)
-			rtrim_m(ltrim_m(value, "# "), "# ");
+			str_trim_m(value, "# ");
 
 		if (strcasecmp(item->dfl, "%s")) {
 
