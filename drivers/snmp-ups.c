@@ -86,9 +86,10 @@ char *dmf_file = NULL;
  * members of this array should be sorted same as mib2nut items in the
  * DMF files, including their end-user alphabetic sort in dmfsnmp.d/
  * directory. You can use this scriptlet to generate the contents below:
- *   grep '<mib2nut ' scripts/DMF/dmfsnmp.d/*dmf | \
+ *   cd scripts/DMF/dmfsnmp.d/ && grep '<mib2nut ' *.dmf | \
  *   sed 's,^.*S.._\(.*\)\.dmf:.* name="\([^"]*\).*$,\t\&\2\,\t// This struct comes from : \1.c,'
- * (note to keep "ietf" entry as the last one, manually).
+ * (note to keep "ietf" entry as the last one, manually) and copy-paste
+ * them here in that resulting order.
  */
 static mib2nut_info_t *mib2nut[] = {
 	&apc_ats,			/* This struct comes from : apc-ats-mib.c */
