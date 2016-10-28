@@ -1,13 +1,32 @@
 #!/bin/sh
-
-# This script allows to enumerate UPSes in order to produce the
-# individual service unit instances for each defined configuration.
-# It assumes the user has adequate permissions to inspect and create
-# services (e.g. is a root or has proper RBAC profiles to do so).
-# TODO: Complete the sample basic support for Solaris SMF (needs the
-# service definitions similar to systemd NUT units to be added first).
 #
-# \Author:  Jim Klimov <EvgenyKlimov@eaton.com>
+# Copyright (C) 2016 Eaton
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+#! \file    nut-driver-enumerator.sh(.in)
+#  \author  Jim Klimov <EvgenyKlimov@eaton.com>
+#  \brief   Enumerate NUT devices for service-unit instance configuration
+#  \details This script allows to enumerate UPSes in order to produce the
+#           individual service unit instances for each defined configuration.
+#           It assumes the user has adequate permissions to inspect and create
+#           services (e.g. is a root or has proper RBAC profiles to do so).
+#  \todo    Complete the sample basic support for Solaris SMF (needs support
+#           for the service definitions similar to systemd NUT units to be
+#           added to that platform first).
+#
 
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
     NUT_DRIVER_ENUMERATOR_CONF="@sysconfdir@/nut-driver-enumerator.conf"
