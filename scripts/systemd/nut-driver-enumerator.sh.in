@@ -9,6 +9,13 @@
 #
 # \Author:  Jim Klimov <EvgenyKlimov@eaton.com>
 
+[ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
+    NUT_DRIVER_ENUMERATOR_CONF="@sysconfdir@/nut-driver-enumerator.conf"
+
+[ -s "${NUT_DRIVER_ENUMERATOR_CONF}" ] && \
+    echo "Sourcing config file: ${NUT_DRIVER_ENUMERATOR_CONF}" && \
+    . "${NUT_DRIVER_ENUMERATOR_CONF}"
+
 [ -z "${UPSCONF-}" ] && \
     UPSCONF="@sysconfdir@/ups.conf"
 
