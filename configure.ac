@@ -1638,6 +1638,7 @@ AC_OUTPUT([
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
+ scripts/systemd/nut-driver-enumerator.sh
  scripts/systemd/nutshutdown
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
