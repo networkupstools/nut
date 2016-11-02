@@ -274,6 +274,7 @@
 "Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"USB cable"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"Ellipse PRO 650 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Evolution S 1250/1750/2500/3000 VA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"EX 700/1000/1500 VA"	"USB port"	"usbhid-ups"
