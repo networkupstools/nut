@@ -285,6 +285,7 @@
 "Eaton"	"ups"	"5"	"Nova AVR 625/1250"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5E650iUSB"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5E1100iUSB"	"USB port"	"usbhid-ups"	# http://powerquality.eaton.com/5E1100iUSB.aspx?CX&GUID=8D85FE66-3102-427C-8F33-B8D56BBDD4D3
+"Eaton"	"ups"	"4"	"5E2200"	"USB port"	"nutdrv_qx"
 "Eaton"	"ups"	"5"	"5S"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5SC"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5P"	"USB port"	"usbhid-ups"
