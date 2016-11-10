@@ -1,5 +1,5 @@
 /*!
- * @file libusb.c
+ * @file libusb0.c
  * @brief HID Library - Generic USB communication sub driver (using libusb 0.1)
  *
  * @author Copyright (C)
@@ -49,7 +49,7 @@ upsdrv_info_t comm_upsdrv_info = {
 
 static void libusb_close(usb_dev_handle *udev);
 
-/*! Add USB-related driver variables with addvar().
+/*! Add USB-related driver variables with addvar() and dstate_setinfo().
  * This removes some code duplication across the USB drivers.
  */
 void nut_usb_addvars(void)
@@ -64,6 +64,8 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
+
+	dstate_setinfo("driver.version.usb", "libusb-0.1 (or compat)");
 }
 
 /* From usbutils: workaround libusb API goofs:  "byte" should never be sign extended;

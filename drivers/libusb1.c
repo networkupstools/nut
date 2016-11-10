@@ -1,5 +1,5 @@
 /*!
- * @file libusb.c
+ * @file libusb1.c
  * @brief Generic USB communication backend (using libusb 1.0)
  *
  * @author Copyright (C) 2016 Eaton
@@ -46,7 +46,7 @@ upsdrv_info_t comm_upsdrv_info = {
 
 static void nut_libusb_close(libusb_device_handle *udev);
 
-/*! Add USB-related driver variables with addvar().
+/*! Add USB-related driver variables with addvar() and dstate_setinfo().
  * This removes some code duplication across the USB drivers.
  */
 void nut_usb_addvars(void)
@@ -61,6 +61,12 @@ void nut_usb_addvars(void)
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
+
+#ifdef LIBUSB_API_VERSION
+	dstate_setinfo("driver.version.usb", "libusb-1.0 (API: 0x%x)", LIBUSB_API_VERSION);
+#else  /* LIBUSB_API_VERSION */
+	dstate_setinfo("driver.version.usb", "libusb-1.0");
+#endif /* LIBUSB_API_VERSION */
 }
 
 /* invoke matcher against device */
