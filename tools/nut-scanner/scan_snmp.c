@@ -113,6 +113,12 @@ mibdmf_parser_t *dmfnutscan_snmp_dmp = NULL;
 // Caller of this library like nut-scanner.c should declare extern reference
 // to this variable and set it to non-NULL string in order to try loading DMFs
 char *dmfnutscan_snmp_dir = NULL;
+
+// The snmp-ups-dmf config file attribute for non-default directory
+#ifndef SU_VAR_DMFDIR
+#define SU_VAR_DMFDIR                "dmfdir"
+#endif
+
 #endif
 
 /* dynamic link library stuff */
@@ -364,6 +370,10 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	if (dmfnutscan_snmp_dmp!=NULL) {
 		/* DMF is loaded thus used, successfully */
 		dev->driver = strdup("snmp-ups-dmf");
+		if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
+			nutscan_add_option_to_device(dev,SU_VAR_DMFDIR,
+					dmfnutscan_snmp_dir);
+		}
 	} else {
 		dev->driver = strdup("snmp-ups");
 	}
