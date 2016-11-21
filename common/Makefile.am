@@ -17,6 +17,7 @@ libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
 
 # several other Makefiles include these two helpers, so make them a library too
+# note that LTLIBOBJS pulls in snprintf.c contents too
 noinst_LTLIBRARIES += libcommonstr.la
 libcommonstr_la_SOURCES = common.c str.c
 libcommonstr_la_LIBADD = @LTLIBOBJS@
@@ -38,7 +39,9 @@ if WITH_DMF
         -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner \
         $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
   libnutdmfsnmp_la_LDFLAGS =
-  libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS) libcommonstr.la @LTLIBOBJS@
+# Note: no LTLIBOBJS here, so we do not conflict when linked along with
+# other libraries we build (typically consumed with libcommonstr.la)
+  libnutdmfsnmp_la_LIBADD = $(LIBNETSNMP_LIBS)
 
 if WITH_LIBLTDL
 # NOTE: the C macro WITH_LIBLTDL=1 will probably be defined by config.h
@@ -64,6 +67,7 @@ endif
 
 # Note: Consumers of this lib will generally want the dependencies linked via:
 #  libnutdmfsnmp_consumer_LDADD += $(abs_top_builddir)/common/libnutdmfsnmp.la
+#  libnutdmfsnmp_consumer_LDADD += $(abs_top_builddir)/common/libcommonstr.la
 #  libnutdmfsnmp_consumer_CFLAGS += $(AM_CFLAGS) -I$(top_srcdir)/drivers \
 #     -I$(top_srcdir)/tools/nut-scanner $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) \
 #      -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1

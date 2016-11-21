@@ -76,14 +76,13 @@ endif
 
 if WITH_DMF
 libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
-else
-libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
 endif
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
 #libnutscan_la_LIBADD += $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = libnutscan.la
+nut_scanner_LDADD = libnutscan.la $(top_builddir)/common/libcommonstr.la
 
 if WITH_SNMP
 if WITH_NEON
