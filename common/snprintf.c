@@ -543,6 +543,7 @@ static void fmtint (char *buffer, size_t *currlen, size_t maxlen,
   }
 }
 
+#ifndef HAVE_ABS_VAL
 static LDOUBLE abs_val (LDOUBLE value)
 {
   LDOUBLE result = value;
@@ -552,7 +553,13 @@ static LDOUBLE abs_val (LDOUBLE value)
 
   return result;
 }
+#endif
 
+#ifndef HAVE_FCVT
+/* The two routines that may get defined below are only used if we also don't
+ * have a fcvt() in the system. Defining and not using the routines may be a
+ * warning (fatal with -Werror), so we hide them here. */
+# ifndef HAVE_POW10
 static LDOUBLE pow10 (int exp)
 {
   LDOUBLE result = 1;
@@ -565,7 +572,9 @@ static LDOUBLE pow10 (int exp)
   
   return result;
 }
+# endif
 
+# ifndef HAVE_ROUND
 static long round (LDOUBLE value)
 {
   long intpart;
@@ -577,6 +586,8 @@ static long round (LDOUBLE value)
 
   return intpart;
 }
+# endif
+#endif /* HAVE_FCVT */
 
 static void fmtfp (char *buffer, size_t *currlen, size_t maxlen,
 		   LDOUBLE fvalue, int min, int max, int flags)
@@ -602,10 +613,12 @@ static void fmtfp (char *buffer, size_t *currlen, size_t maxlen,
   int fplace = 0;
   int padlen = 0; /* amount to pad */
   int zpadlen = 0; 
+#ifndef HAVE_FCVT
   int caps = 0;
   long intpart;
   long fracpart;
-  
+#endif
+
   /* 
    * AIX manpage says the default is 0, but Solaris says the default
    * is 6, and sprintf on AIX defaults to 6
