@@ -400,7 +400,8 @@ $(top_builddir)/common/libnutdmfsnmp.la :
 noinst_PROGRAMS += dmf-test
 
 dmf_test_SOURCES = $(DMFTEST_SRC)
-dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+	$(top_builddir)/common/libcommonstr.la
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 endif
@@ -411,7 +412,8 @@ endif
 #DMF_REINDEX = $(abs_builddir)/dmf-reindex
 #noinst_PROGRAMS += dmf-reindex
 #dmf_reindex_SOURCES = $(top_srcdir)/tools/nut-scanner/nut-scanner-reindex-dmfsnmp.c
-#dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+#dmf_reindex_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+#	$(top_builddir)/common/libcommonstr.la
 #dmf_reindex_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 #dmf_reindex_LDFLAGS = $(LDFLAGS_DMF_LUA)
 #else
@@ -448,7 +450,8 @@ noinst_PROGRAMS += dmf-lua-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
 dmf_lua_test_SOURCES = $(DMFTEST_SRC)
-dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon)
+dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+	$(top_builddir)/common/libcommonstr.la
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
