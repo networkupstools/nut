@@ -146,6 +146,10 @@ behaviour quite a bit, depending on the model.
     Immediately before issuing *S*, "simulate power failure" is issued. The
     remaining behaviour is as in *S* case.
 +
+There's a delay between "simulate power failure" and *S* - by default set to
+3.5s. You can control it through *cshdelay* option (allowed values are from 0
+to 9.9).
++
 The name came from APC CS models, where such trick was used to power down
 UPSes in consistent fashion using only *S*. It\'s better to use *@nnn*
 command if your UPS supports it (and is not too old, see below).

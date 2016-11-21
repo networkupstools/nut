@@ -5,6 +5,7 @@
  *   2005      John Stamp <kinsayder@hotmail.com>
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -27,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.41"
+#define DRIVER_VERSION		"0.42"
 
 #include "main.h"
 #include "libhid.h"
@@ -554,6 +555,7 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Retrieve and check netvar & item_path */
 	hidups_item = find_nut_info(cmdname);
+	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
@@ -620,7 +622,7 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(5, "instcmd: SUCCEED\n");
+		upsdebugx(3, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
@@ -1329,6 +1331,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			item->hiddata->Offset, item->hiddata->Size, value);
 
 		if (item->hidflags & HU_TYPE_CMD) {
+			upsdebugx(3, "Adding command '%s' using Path '%s'",
+				item->info_type, item->hidpath);
 			dstate_addcmd(item->info_type);
 			continue;
 		}

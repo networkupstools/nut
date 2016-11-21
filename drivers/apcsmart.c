@@ -1441,10 +1441,14 @@ static int sdcmd_S(const void *foo)
 /* soft hibernate, hack version for CS 350 & co. */
 static int sdcmd_CS(const void *foo)
 {
-	int ret;
+	int ret, cshd = 3500000;
 	char temp[APC_SBUF];
+	const char *val;
 
-	debx(1, "issuing CS 'hack' [%s+%s]", prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN));
+	if ((val = getval("cshdelay")))
+		cshd = (int)(strtod(val, NULL) * 1000000);
+
+	debx(1, "issuing CS 'hack' [%s+%s] with %2.1f sec delay", prtchr(APC_CMD_SIMPWF), prtchr(APC_CMD_SOFTDOWN), (double)cshd / 1000000);
 	if (ups_status & APC_STAT_OL) {
 		apc_flush(0);
 		debx(1, "issuing [%s]", prtchr(APC_CMD_SIMPWF));
@@ -1457,6 +1461,7 @@ static int sdcmd_CS(const void *foo)
 		if (ret < 0) {
 			return STAT_INSTCMD_FAILED;
 		}
+		usleep(cshd);
 	}
 	/* continue with regular soft hibernate */
 	return sdcmd_S((void *)1);
@@ -2000,6 +2005,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, "awd", "hard hibernate's additional wakeup delay");
 	addvar(VAR_VALUE, "sdtype", "simple shutdown method");
 	addvar(VAR_VALUE, "advorder", "advanced shutdown control");
+	addvar(VAR_VALUE, "cshdelay", "CS hack delay");
 }
 
 void upsdrv_help(void)
@@ -2029,6 +2035,11 @@ void upsdrv_initups(void)
 	/* sanitize advorder */
 	if ((val = getval("advorder")) && !rexhlp(APC_ADVFMT, val)) {
 			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'advorder'", val);
+	}
+
+	/* sanitize cshdelay */
+	if ((val = getval("cshdelay")) && !rexhlp(APC_CSHDFMT, val)) {
+			fatalx(EXIT_FAILURE, "invalid value (%s) for option 'cshdelay'", val);
 	}
 
 	upsfd = extrafd = ser_open(device_path);
