@@ -137,9 +137,25 @@ static void dopr_outch (char *buffer, size_t *currlen, size_t maxlen, char c );
 
 /* Conversion Flags */
 #define DP_C_SHORT   1
+/* Note: Originally DP_C_SHORT converted to "short int" types, but modernish
+ * (C99+ or even earlier) standards require that the minimal type passed
+ * through variadic args '...' is an int, and smaller types are padded up
+ * to it - so value shifts in memory and erroneous access crashes can occur
+ * if smaller data is accessed blindly. Code below has been fixed to not pass
+ * "short int" anymore - it just casts the int to desired smaller type (and
+ * so drops the padding bits). */
 #define DP_C_LONG    2
 #define DP_C_LDOUBLE 3
 #define DP_C_LLONG   4
+
+#ifdef C89PLUS
+#undef C89PLUS
+#endif
+
+#if defined(__STDC__) || defined(__STDC_VERSION__)
+/* C89+ and C90+ code respectively */
+#define C89PLUS 1
+#endif
 
 #define char_to_int(p) ((p)- '0')
 #define MAX(p,q) (((p) >= (q)) ? (p) : (q))
@@ -275,7 +291,11 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       case 'd':
       case 'i':
 	if (cflags == DP_C_SHORT) 
+#ifdef C89PLUS
+	  value = (short int)va_arg (args, int);
+#else
 	  value = va_arg (args, short int);
+#endif
 	else if (cflags == DP_C_LONG)
 	  value = va_arg (args, long int);
 	else if (cflags == DP_C_LLONG)
@@ -287,7 +307,11 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       case 'o':
 	flags |= DP_F_UNSIGNED;
 	if (cflags == DP_C_SHORT)
+#ifdef C89PLUS
+	  value = (unsigned short int)va_arg (args, unsigned int);
+#else
 	  value = va_arg (args, unsigned short int);
+#endif
 	else if (cflags == DP_C_LONG)
 	  value = (long)va_arg (args, unsigned long int);
 	else if (cflags == DP_C_LLONG)
@@ -299,7 +323,11 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       case 'u':
 	flags |= DP_F_UNSIGNED;
 	if (cflags == DP_C_SHORT)
+#ifdef C89PLUS
+	  value = (unsigned short int)va_arg (args, unsigned int);
+#else
 	  value = va_arg (args, unsigned short int);
+#endif
 	else if (cflags == DP_C_LONG)
 	  value = (long)va_arg (args, unsigned long int);
 	else if (cflags == DP_C_LLONG)
@@ -313,7 +341,11 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
       case 'x':
 	flags |= DP_F_UNSIGNED;
 	if (cflags == DP_C_SHORT)
+#ifdef C89PLUS
+	  value = (unsigned short int)va_arg (args, unsigned int);
+#else
 	  value = va_arg (args, unsigned short int);
+#endif
 	else if (cflags == DP_C_LONG)
 	  value = (long)va_arg (args, unsigned long int);
 	else if (cflags == DP_C_LLONG)
@@ -365,7 +397,7 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
 	  short int *num;
 	  num = va_arg (args, short int *);
 	  *num = currlen;
-        } 
+	}
 	else if (cflags == DP_C_LONG) 
 	{
 	  long int *num;
