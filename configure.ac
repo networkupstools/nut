@@ -119,7 +119,7 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -744,7 +744,7 @@ if test -z "${abs_srcdir}" ; then
 		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
 	esac
 fi
-DOCTESTDIR="$(mktemp -d --tmpdir="`pwd`" configure-test.docbuild.$$.XXXXXXX)" && \
+DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target}" in
