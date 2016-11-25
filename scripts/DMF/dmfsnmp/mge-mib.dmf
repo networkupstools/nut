@@ -64,12 +64,14 @@
 		<lookup_info oid="2" value="no"/>
 	</lookup>
         <functions name="mge_functions">
+            <!-- ENABLE ONLY FOR DEBUG/DEVEL PURPOSES, otherwise output will pollute dmf nut-scanner generator
           <function name="ups.mfr">
               io.write("This is coming from lua\n")
           </function>
           <function name="ups.model">
               io.write("This is ALSO coming from lua\n")
           </function>
+          -->
         </functions>
 	<snmp name="mge_mib">
 		<snmp_info absent="yes" default="Eaton" flag_ok="yes" multiplier="128.0" name="ups.mfr" function="mge_functions" string="yes"/>
