@@ -49,6 +49,9 @@ Raise the debugging level.  upsmon will run in the foreground and prints
 information on stdout about the monitoring process.  Use this multiple
 times for more details.
 
+*-F*::
+upsmon will run in the foreground.
+
 *-K*::
 Test for the shutdown flag.  If it exists and contains the magic string
 from upsmon, then upsmon will exit with `EXIT_SUCCESS`.  Any other condition
