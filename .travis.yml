@@ -36,6 +36,8 @@ matrix:
         - libneon27-dev
         - libfreeipmi-dev
         - libfreeipmi10
+        - libipmimonitoring-dev
+        - libipmimonitoring4
         - libusb-dev
         - libpowerman0-dev
         - libavahi-common-dev
