@@ -22,8 +22,8 @@ env:
   matrix:
     - BUILD_TYPE=default-nodoc
     - BUILD_TYPE=default
-    - BUILD_TYPE=default-alldrv
 
+# Builds with customized setups
 matrix:
   include:
   - env: BUILD_TYPE=default-alldrv
