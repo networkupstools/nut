@@ -120,6 +120,8 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
             # those products. And also distcheck requires either skipped or
             # generated manpages.
             DO_DISTCHECK=no
+            # NOTE: At this time the required i2c routines are not found in
+            # the system headers, and configure skips that optional driver.
             CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
