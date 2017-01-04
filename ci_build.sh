@@ -204,6 +204,8 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
+    [ -n "$CI_TIME" ] && echo "`date`: listing files installed into the custom DESTDIR..." && \
+        find "$INST_PREFIX" -ls || true
 
     if [ "$DO_DISTCHECK" == "no" ] ; then
         echo "Skipping distcheck (doc generation is disabled, it would fail)"
