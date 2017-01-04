@@ -20,16 +20,14 @@ env:
     - CI_TIME=true
     - CI_TRACE=false
   matrix:
-    - BUILD_TYPE=default-nodoc
     - BUILD_TYPE=default
+    - BUILD_TYPE=default-nodoc
 
 # Builds with customized setups
 matrix:
   include:
   - env: BUILD_TYPE=default-alldrv
     os: linux
-    dist: trusty
-    sudo: required
     addons:
       apt:
         packages:
@@ -42,18 +40,32 @@ matrix:
         - libavahi-common-dev
         - libavahi-core-dev
         - libavahi-client-dev
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - asciidoc
+        - xsltproc
+        - libxml2-utils
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+#  - env: BUILD_TYPE=valgrind
+#    os: linux
+#    dist: trusty
+#    sudo: required
+#    addons:
+#      apt:
+#        packages:
+#        - valgrind
 
+# Common required packages for all scenarios
 addons:
   apt:
     packages:
     - git
     - ccache
-    - asciidoc
-    - xsltproc
-    - libxml2-utils
-    - dblatex
-    - docbook-xsl
-    - docbook-xsl-ns
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi

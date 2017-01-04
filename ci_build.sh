@@ -24,7 +24,7 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
-if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [ "$BUILD_TYPE" == "default-nodoc" ] ; then
+if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [ "$BUILD_TYPE" == "default-nodoc" ] || [ "$BUILD_TYPE" == "default-withdoc" ] ; then
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -103,12 +103,16 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
             ;;
+        "default-withdoc")
+            CONFIG_OPTS+=("--with-doc=yes")
+            ;;
         "default-alldrv")
             CONFIG_OPTS+=("--with-doc=skip")
             CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
-            CONFIG_OPTS+=("--with-doc=yes")
+            # Do not build the docs and tell distcheck it is okay
+            CONFIG_OPTS+=("--with-doc=skip")
             ;;
     esac
 
