@@ -99,6 +99,10 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
     CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
+    CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
+    CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
+    CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
+    CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
 
     DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
