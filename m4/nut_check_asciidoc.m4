@@ -1,5 +1,5 @@
 dnl Check for tools used in generation of documentation final-format files
-dnl such as the basically reqiured MAN, and optionan HTML (single or chunked).
+dnl such as the basically required MAN, and optional HTML (single or chunked).
 dnl On success, set nut_have_asciidoc="yes" (meaning we can do at least some
 dnl documentation generation) and lots of automake macros and configure vars.
 dnl On failure, set nut_have_asciidoc="no" (meaning we can't generate even a
