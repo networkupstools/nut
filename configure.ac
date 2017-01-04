@@ -601,7 +601,7 @@ fi
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
-dnl Explicitely report if we are building nut-scanner or not
+dnl Explicitly report if we are building nut-scanner or not
 dnl since it requires libltdl
 NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
 
@@ -634,65 +634,11 @@ dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
+dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
-
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
-AC_PATH_PROGS([A2X], [a2x], [none])
-
-dnl check for spell checking deps
-AC_PATH_PROGS([ASPELL], [aspell], [none])
-AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
-
-AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
-AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-	AC_MSG_RESULT(yes)
-	nut_have_asciidoc="yes"
-], [
-	AC_MSG_RESULT(no)
-	nut_have_asciidoc="no"
-])
-
-AC_MSG_CHECKING([if a2x version can build manpages (minimum required 8.6.3)])
-AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-	AC_MSG_RESULT(yes)
-], [
-	AC_MSG_RESULT(no)
-	nut_have_asciidoc="no"
-])
-
-dnl TODO: test for docbook-xsl files (maybe build a test man page?)
-dnl https://github.com/networkupstools/nut/issues/162
-AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
-if test -n "${XSLTPROC}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  nut_have_asciidoc="no"
-fi
-
-AC_MSG_CHECKING([if xmllint is present (mandatory for man page regeneration)])
-if test -n "${XMLLINT}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  nut_have_asciidoc="no"
-fi
-
-AC_MSG_CHECKING([if source-highlight is present (preferable for documentation generation)])
-if test -n "${SOURCE_HIGHLIGHT}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
 
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
-
-dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
-dnl building
-AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
-
 
 case "${nut_with_doc}" in
 	yes|all)
