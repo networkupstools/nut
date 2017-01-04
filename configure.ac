@@ -265,7 +265,10 @@ NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 dnl The NUT legacy option was --with-doc; however to simplify configuration
 dnl in some common packaging frameworks, we also allow --with-docs as
 dnl a second-class citizen (if both are set, the old option name wins).
-NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=yes])
+dnl Also note that the legacy default was "man=yes" due to requirements
+dnl of the "make distcheck", but it was reduced to "man=auto" so that
+dnl the usual builds can pass by default on systems without asciidoc.
+NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
 
 dnl ----------------------------------------------------------------------
