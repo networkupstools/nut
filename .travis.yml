@@ -44,6 +44,11 @@ matrix:
         - libavahi-common-dev
         - libavahi-core-dev
         - libavahi-client-dev
+        - libgd-dev
+        - libpng-dev
+        - libjpeg-dev
+        - libfreetype6-dev
+        - libxpm-dev
 #  - env: BUILD_TYPE=default-withdoc
 #    os: linux
 #    addons:
