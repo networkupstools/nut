@@ -40,6 +40,7 @@ matrix:
         - libipmimonitoring-dev
         - libipmimonitoring4
         - libusb-dev
+        - linux-libc-dev
         - libpowerman0-dev
         - libavahi-common-dev
         - libavahi-core-dev
