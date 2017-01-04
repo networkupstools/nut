@@ -99,18 +99,27 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
     CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
+
+    DO_DISTCHECK=yes
     case "$BUILD_TYPE" in
         "default-nodoc")
             CONFIG_OPTS+=("--with-doc=no")
+            DO_DISTCHECK=no
             ;;
         "default-withdoc")
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
         "default-alldrv")
-            # Do not build the docs and do not distcheckbelow
+            # Do not build the docs and do not distcheck below
             # TODO: "skip" will work after its PR is integrated
             #CONFIG_OPTS+=("--with-doc=skip")
             CONFIG_OPTS+=("--with-doc=no")
+            # TODO: can enable distcheck for alldrv but not sure it brings
+            # extra value for the consumed time; this may change e.g. after
+            # DMF integration which can regenerate the *.dmf files and redist
+            # those products. And also distcheck requires either skipped or
+            # generated manpages.
+            DO_DISTCHECK=no
             CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
@@ -190,10 +199,7 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
 
-    # TODO: can enable distcheck alldrv but not sure it brings extra value
-    # for the consumed time; this may change e.g. after DMF integration
-    # which can regenerate the *.dmf files and redist those products.
-    if [ "$BUILD_TYPE" == "default-nodoc" ] || [ "$BUILD_TYPE" == "default-alldrv" ] ; then
+    if [ "$DO_DISTCHECK" == "no" ] ; then
         echo "Skipping distcheck (doc generation is disabled, it would fail)"
     else
         [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
