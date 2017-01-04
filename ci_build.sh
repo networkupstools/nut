@@ -178,7 +178,10 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
     export CCACHE_BASEDIR
     $CI_TIME ./autogen.sh 2> /dev/null
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
-    $CI_TIME make VERBOSE=1 all
+    ( echo "`date`: Starting the parallel build attempt..."; \
+      $CI_TIME make VERBOSE=1 -k -j8 all; ) || \
+    ( echo "`date`: Starting the sequential build attempt..."; \
+      $CI_TIME make VERBOSE=1 all )
 
     echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
     git status -s || true
