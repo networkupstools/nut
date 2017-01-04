@@ -263,8 +263,8 @@ NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
 dnl The NUT legacy option was --with-doc; however to simplify configuration
-dnl in some common packaging frameworks, we also allow --with-docs as a
-dnl second-class citizen (if both are set, the old option name wins)
+dnl in some common packaging frameworks, we also allow --with-docs as
+dnl a second-class citizen (if both are set, the old option name wins).
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=yes])
 NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
 
