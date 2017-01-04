@@ -107,12 +107,17 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
         "default-alldrv")
-            CONFIG_OPTS+=("--with-doc=all=skip")
+            # Do not build the docs and do not distcheckbelow
+            # TODO: "skip" will work after its PR is integrated
+            #CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--with-doc=no")
             CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
             # Do not build the docs and tell distcheck it is okay
-            CONFIG_OPTS+=("--with-doc=all=skip")
+            # TODO: "skip" will work after its PR is integrated
+            #CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--with-doc=man")
             ;;
     esac
 
