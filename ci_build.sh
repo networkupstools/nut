@@ -24,7 +24,7 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
-if [ "$BUILD_TYPE" == "default" ] ; then
+if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [ "$BUILD_TYPE" == "default-nodoc" ] ; then
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -99,7 +99,18 @@ if [ "$BUILD_TYPE" == "default" ] ; then
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
     CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
-    CONFIG_OPTS+=("--with-doc=yes")
+    case "$BUILD_TYPE" in
+        "default-nodoc")
+            CONFIG_OPTS+=("--with-doc=no")
+            ;;
+        "default-alldrv")
+            CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--with-all=yes")
+            ;;
+        "default"|*)
+            CONFIG_OPTS+=("--with-doc=yes")
+            ;;
+    esac
 
     if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC ]; then
         PATH="/usr/lib/ccache:$PATH"
@@ -167,15 +178,22 @@ if [ "$BUILD_TYPE" == "default" ] ; then
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
 
-    [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
-    (
+    # TODO: can enable distcheck alldrv but not sure it brings extra value
+    # for the consumed time; this may change e.g. after DMF integration
+    # which can regenerate the *.dmf files and redist those products.
+    if [ "$BUILD_TYPE" == "default-nodoc" ] || [ "$BUILD_TYPE" == "default-alldrv" ] ; then
+        echo "Skipping distcheck (doc generation is disabled, it would fail)"
+    else
+        [ -z "$CI_TIME" ] || echo "`date`: Starting distcheck of currently tested project..."
+        (
         export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
         $CI_TIME make VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" distcheck
 
         echo "=== Are GitIgnores good after 'make distcheck'? (should have no output below)"
         git status -s || true
         echo "==="
-    )
+        )
+    fi
 
     if [ "$HAVE_CCACHE" = yes ]; then
         echo "CCache stats after build:"

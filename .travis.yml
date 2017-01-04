@@ -20,7 +20,28 @@ env:
     - CI_TIME=true
     - CI_TRACE=false
   matrix:
+    - BUILD_TYPE=default-nodoc
     - BUILD_TYPE=default
+    - BUILD_TYPE=default-alldrv
+
+matrix:
+  include:
+  - env: BUILD_TYPE=default-alldrv
+    os: linux
+    dist: trusty
+    sudo: required
+    addons:
+      apt:
+        packages:
+        - libsnmp-dev
+        - libltdl-dev
+        - libneon27-dev
+        - libfreeipmi-dev
+        - libusb-dev
+        - libpowerman0-dev
+        - libavahi-common-dev
+        - libavahi-core-dev
+        - libavahi-client-dev
 
 addons:
   apt:
