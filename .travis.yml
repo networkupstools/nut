@@ -22,7 +22,6 @@ env:
   matrix:
     - BUILD_TYPE=default
     - BUILD_TYPE=default-nodoc
-    - BUILD_TYPE=default-withdoc
 
 # Builds with customized setups
 matrix:
@@ -50,17 +49,17 @@ matrix:
         - libjpeg-dev
         - libfreetype6-dev
         - libxpm-dev
-#  - env: BUILD_TYPE=default-withdoc
-#    os: linux
-#    addons:
-#      apt:
-#        packages:
-#        - asciidoc
-#        - xsltproc
-#        - libxml2-utils
-#        - dblatex
-#        - docbook-xsl
-#        - docbook-xsl-ns
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - asciidoc
+        - xsltproc
+        - libxml2-utils
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
 #  - env: BUILD_TYPE=valgrind
 #    os: linux
 #    dist: trusty
@@ -79,12 +78,6 @@ addons:
     packages:
     - git
     - ccache
-    - asciidoc
-    - xsltproc
-    - libxml2-utils
-    - dblatex
-    - docbook-xsl
-    - docbook-xsl-ns
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi

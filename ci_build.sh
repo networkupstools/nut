@@ -110,25 +110,15 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
         "default-alldrv")
-            # Do not build the docs and do not distcheck below
-            # TODO: "skip" will work after its PR is integrated
-            #CONFIG_OPTS+=("--with-doc=skip")
-            CONFIG_OPTS+=("--with-doc=no")
-            # TODO: can enable distcheck for alldrv but not sure it brings
-            # extra value for the consumed time; this may change e.g. after
-            # DMF integration which can regenerate the *.dmf files and redist
-            # those products. And also distcheck requires either skipped or
-            # generated manpages.
-            DO_DISTCHECK=no
+            # Do not build the docs and make possible a distcheck below
+            CONFIG_OPTS+=("--with-doc=skip")
             # NOTE: At this time the required i2c routines are not found in
             # the system headers, and configure skips that optional driver.
             CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
             # Do not build the docs and tell distcheck it is okay
-            # TODO: "skip" will work after its PR is integrated
-            #CONFIG_OPTS+=("--with-doc=skip")
-            CONFIG_OPTS+=("--with-doc=man")
+            CONFIG_OPTS+=("--with-doc=skip")
             ;;
     esac
 
