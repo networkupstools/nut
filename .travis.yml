@@ -44,7 +44,7 @@ matrix:
         - libavahi-common-dev
         - libavahi-core-dev
         - libavahi-client-dev
-        - libgd-dev
+        - libgd2-xpm-dev
         - libpng-dev
         - libjpeg-dev
         - libfreetype6-dev
