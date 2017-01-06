@@ -703,6 +703,42 @@ void dstate_setflags(const char *var, int flags)
 	send_to_all("SETFLAGS %s\n", flist);
 }
 
+void dstate_addflags(const char *var, const int addflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already set */
+	if ((flags & addflags) == addflags)
+		return;
+
+	flags |= addflags;
+
+	dstate_setflags(var, flags);
+}
+
+void dstate_delflags(const char *var, const int delflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already not set */
+	if (!(flags & delflags))
+		return;
+
+	flags &= ~delflags;
+
+	dstate_setflags(var, flags);
+}
+
 void dstate_setaux(const char *var, int aux)
 {
 	st_tree_t	*sttmp;
