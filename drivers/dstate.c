@@ -653,8 +653,8 @@ int dstate_addrange(const char *var, const int min, const int max)
 
 	if (ret == 1) {
 		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
-		/* Also set the "NUMBER" flag for ranges */
-		dstate_setflags(var, ST_FLAG_NUMBER);
+		/* Also add the "NUMBER" flag for ranges */
+		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
 
 	return ret;
