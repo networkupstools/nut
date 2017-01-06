@@ -327,6 +327,9 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		if (node->flags & ST_FLAG_STRING) {
 			snprintfcat(flist, sizeof(flist), " STRING");
 		}
+		if (node->flags & ST_FLAG_NUMBER) {
+			snprintfcat(flist, sizeof(flist), " NUMBER");
+		}
 
 		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
 			return 0;
