@@ -70,7 +70,7 @@
 #define ERR_BAD_OPTION	(-1)
 
 // TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDF:zZ:";
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -105,7 +105,6 @@ const struct option longopts[] =
 	{ "version",no_argument,NULL,'V' },
 	{ "available",no_argument,NULL,'a' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
-	{ "snmp_fingerprints_file",required_argument,NULL,'F' },
 	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
 	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
 	{NULL,0,NULL,0}};
