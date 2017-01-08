@@ -1,4 +1,5 @@
 /*  snmp-ups.c - NUT Generic SNMP driver core (supports different MIBs)
+ *  Can be compiled with built-in or loadable (DMF) MIB-to-NUT mapping tables
  *
  *  Based on NetSNMP API (Simple Network Management Protocol v1-2c-3)
  *
