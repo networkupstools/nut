@@ -925,7 +925,19 @@ void alarm_set(const char *buf)
 /* write the status_buf into the info array for "ups.alarm" */
 void alarm_commit(void)
 {
-	device_alarm_commit(0);
+	/* Note this is a bit different from `device_alarm_commit(0);`
+	 * because here we also increase AND zero out the alarm count.
+	 *		alarm_active = 0; device_alarm_commit(0);
+	 * would be equivalent, but too intimate for later maintenance.
+	 */
+
+	if (strlen(alarm_buf) > 0) {
+		dstate_setinfo("ups.alarm", "%s", alarm_buf);
+		alarm_active = 1;
+	} else {
+		dstate_delinfo("ups.alarm");
+		alarm_active = 0;
+	}
 }
 
 void device_alarm_init(void)

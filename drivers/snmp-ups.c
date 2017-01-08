@@ -2205,11 +2205,6 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 				*nb_phases = 1;
 				/* FIXME: return something or process using default?! */
 			}
-			else {
-				upsdebugx(2, "No input.bypass entry. Defaulting to 1 %s.phase", type);
-				*nb_phases = 1;
-				/* FIXME: return something or process using default?! */
-			}
 		}
 		else {
 			*nb_phases = atoi(dstate_getinfo(tmpInfo));
@@ -2477,15 +2472,15 @@ bool_t snmp_ups_walk(int mode)
 			}
 			else {
 /*
-				if (daisychain_enabled == TRUE) {
-					status = process_template(mode, "device", su_info_p);
-				}
-				else {
+//				if (daisychain_enabled == TRUE) {
+//					status = process_template(mode, "device", su_info_p);
+//				}
+//				else {
 */
 					/* get and process this data, including daisychain adaptation */
 					status = get_and_process_data(mode, su_info_p);
 /*
-				}
+//				}
 */
 			}
 		}	/* for (su_info_p... */
@@ -2558,7 +2553,6 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	}
 
 	if (!strcasecmp(su_info_p->info_type, "ups.status")) {
-
 /* FIXME: daisychain status support! */
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
@@ -2953,8 +2947,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	return retval;
 }
 
-/* set r/w INFO_ element to a value.
- * FIXME: make a common function with su_instcmd! */
+/* set r/w INFO_ element to a value. */
 int su_setvar(const char *varname, const char *val)
 {
 	return su_setOID(SU_MODE_SETVAR, varname, val);
