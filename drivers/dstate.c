@@ -948,7 +948,7 @@ void device_alarm_init(void)
 
 /* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
 /* Note that 20 chars below just allow for a 2-digit "X" */
-// FIXME? Shouldn't this be changed to be a LARGEBUF aka sizeof(alarm_buf) ?
+/* FIXME? Shouldn't this be changed to be a LARGEBUF aka sizeof(alarm_buf) ? */
 void device_alarm_commit(const int device_number)
 {
 	char info_name[20];

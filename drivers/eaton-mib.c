@@ -32,7 +32,7 @@
 
 /* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
  * per file */
-#define EATON_APHEL_MIB_VERSION	"0.49"
+#define EATON_APHEL_MIB_VERSION	"0.50"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
@@ -129,6 +129,7 @@ static info_lkp_t revelation_outlet_switchability_info[] = {
 	{ 2, "yes" },
 	{ 0, NULL }
 };
+
 #define DO_OFF		0
 #define DO_ON		1
 #define DO_CYCLE	2
@@ -281,6 +282,7 @@ static info_lkp_t eaton_outlet_type_info[] = {
 	{ 30, "rf203p277" },
 	{ 0, NULL }
 };
+
 static info_lkp_t marlin_ambient_presence_info[] = {
 	{ -1, "unknown" },
 	{ 0, "no" },  /* disconnected */
@@ -580,6 +582,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_status_info[0], NULL },
+
 	/* FIXME: or use ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.0.1", though it's related to groups! */
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
@@ -662,7 +665,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.5.5.1.3.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL, NULL },
 	/* groupVA.0.1 = Integer: 3132 */
 	{ "outlet.group.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.5.5.1.2.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL, NULL },
-
 
 	/* instant commands. */
 	/* Notes:
