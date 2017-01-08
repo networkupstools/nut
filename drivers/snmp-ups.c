@@ -400,7 +400,6 @@ void upsdrv_initups(void)
 			upsdebugx(1,"mib2nut not NULL when expected to be...");
 			free(mib2nut);
 		}
-		/* mib2nut = mibdmf_get_mib2nut_table(dmp); */
 		mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
 		if ( mib2nut == NULL ) {
 			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
