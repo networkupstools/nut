@@ -32,7 +32,7 @@
 
 /* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
  * per file */
-#define EATON_APHEL_MIB_VERSION	"0.48"
+#define EATON_APHEL_MIB_VERSION	"0.50"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
@@ -428,6 +428,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* inputCount.0; Value (Integer): 1
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases }, */
 	/* Note: for daisychain mode, we must handle phase(s) per device, not as a whole */
+	/* OLDER FIXME: to be implemented
+	 * inputType.0.1	iso.3.6.1.4.1.534.6.6.7.3.1.1.2.0.1
+	 * singlePhase  (1), ... split phase, three phase delta, or three phase wye
+	 */
 	/* inputType.%i.1 = INTEGER: singlePhase (1) */
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1", NULL, SU_FLAG_STATIC, &marlin_input_type_info[0], NULL },
 
@@ -606,8 +610,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.7.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &outlet_switchability_info[0], NULL },
-	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET, &eaton_outlet_type_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &eaton_outlet_switchability_info[0], NULL },
+	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, &eaton_outlet_type_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1

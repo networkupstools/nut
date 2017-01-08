@@ -70,7 +70,7 @@
 #define ERR_BAD_OPTION	(-1)
 
 // TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDFzZ:";
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDF:zZ:";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =

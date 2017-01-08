@@ -922,36 +922,10 @@ void alarm_set(const char *buf)
 	}
 }
 
-/* write the status_buf into the info array */
+/* write the status_buf into the info array for "ups.alarm" */
 void alarm_commit(void)
 {
 	device_alarm_commit(0);
-}
-
-/* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
-void device_alarm_commit(const int device_number)
-{
-	char info_name[20];
-
-	memset(info_name, 0, 20);
-
-	if (device_number != 0) /* would then go into "device.%i.alarm" */
-		snprintf(info_name, 20, "device.%i.ups.alarm", device_number);
-	else /* would then go into "device.alarm" */
-		snprintf(info_name, 20, "ups.alarm");
-
-	if (strlen(alarm_buf) > 0) {
-		dstate_setinfo(info_name, "%s", alarm_buf);
-		alarm_active++;
-	} else {
-		dstate_delinfo(info_name);
-		/* Address subdevices, which would otherwise be cleared
-		 * from "ups.status==ALARM"
-		 * Also ensure that we don't underflow (get -1) which would cause the
-		 * ALARM flag to be falsely published */
-		if (alarm_active > 0)
-			alarm_active--;
-	}
 }
 
 void device_alarm_init(void)
@@ -961,6 +935,8 @@ void device_alarm_init(void)
 }
 
 /* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
+/* Note that 20 chars below just allow for a 2-digit "X" */
+/* FIXME? Shouldn't this be changed to be a LARGEBUF aka sizeof(alarm_buf) ? */
 void device_alarm_commit(const int device_number)
 {
 	char info_name[20];
