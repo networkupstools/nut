@@ -1957,7 +1957,7 @@ bool_t daisychain_init()
 			if ((su_info_p != NULL) && (su_info_p->dfl != NULL)) {
 				dstate_setinfo("device.model", "daisychain %s (1+%ld)",
 					su_info_p->dfl, devices_count - 1);
-				dstate_setinfo("device.model", "%s", su_info_p->dfl);
+				dstate_setinfo("device.type", "%s", su_info_p->dfl);
 			}
 			else {
 				dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
