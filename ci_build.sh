@@ -177,6 +177,10 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
         CONFIG_OPTS+=("CPP=${CPP}")
     fi
 
+( echo "Report on LUA"
+dpkg -l | grep -i lua
+find / -type f -ls | egrep '/(lua|liblua)' ) || true
+
     # Build and check this project; note that zprojects always have an autogen.sh
     [ -z "$CI_TIME" ] || echo "`date`: Starting build of currently tested project..."
     CCACHE_BASEDIR=${PWD}
