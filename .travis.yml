@@ -51,7 +51,6 @@ matrix:
         packages:
         - asciidoc
         - xsltproc
-        - libxml2-utils
         - dblatex
         - docbook-xsl
         - docbook-xsl-ns
@@ -92,6 +91,7 @@ addons:
     - libjpeg-dev
     - libfreetype6-dev
     - libxpm-dev
+    - libxml2-utils
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
