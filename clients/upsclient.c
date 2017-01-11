@@ -37,6 +37,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 #include "upsclient.h"
 #include "common.h"

@@ -1,0 +1,86 @@
+# Travis CI script
+################################################################################
+# This file is based on a template used by zproject, but isn't auto-generated. #
+################################################################################
+
+language: c
+
+cache: ccache
+
+os:
+- linux
+
+sudo: false
+
+services:
+- docker
+
+env:
+  global:
+    - CI_TIME=true
+    - CI_TRACE=false
+  matrix:
+    - BUILD_TYPE=default
+    - BUILD_TYPE=default-nodoc
+
+# Builds with customized setups
+matrix:
+  include:
+  - env: BUILD_TYPE=default-alldrv
+    os: linux
+    addons:
+      apt:
+        packages:
+        - libsnmp-dev
+        - libltdl-dev
+        - libneon27-dev
+        - libfreeipmi-dev
+        - libfreeipmi10
+        - libipmimonitoring-dev
+        - libipmimonitoring4
+        - libusb-dev
+        - linux-libc-dev
+        - libpowerman0-dev
+        - libavahi-common-dev
+        - libavahi-core-dev
+        - libavahi-client-dev
+        - libgd2-xpm-dev
+        - libpng-dev
+        - libjpeg-dev
+        - libfreetype6-dev
+        - libxpm-dev
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - asciidoc
+        - xsltproc
+        - libxml2-utils
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+#  - env: BUILD_TYPE=valgrind
+#    os: linux
+#    dist: trusty
+#    sudo: required
+#    addons:
+#      apt:
+#        packages:
+#        - valgrind
+
+# Common required packages for all scenarios
+# TODO: Remove doc-generation packages from common set and uncomment the
+# BUILD_TYPE=default-withdoc matrix settings above after integrating the
+# support for --with-doc=skip which allows distcheck to pass
+addons:
+  apt:
+    packages:
+    - git
+    - ccache
+
+before_install:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+# Hand off to generated script for each BUILD_TYPE
+script: ./ci_build.sh

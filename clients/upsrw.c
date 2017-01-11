@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 
 #include "upsclient.h"
+#include "extstate.h"
 
 static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
@@ -218,7 +219,27 @@ static void do_string(const char *varname, const int len)
 	printf("Value: %s\n", val);
 }
 
-static void do_enum(const char *varname)
+static void do_number(const char *varname)
+{
+	const char	*val;
+
+	val = get_data("VAR", varname);
+
+	if (!val) {
+		fatalx(EXIT_FAILURE, "do_number: can't get current value of %s", varname);
+	}
+
+	printf("Type: NUMBER\n");
+	printf("Value: %s\n", val);
+}
+
+/**
+ * Display ENUM information
+ * @param varname the name of the NUT variable
+ * @param vartype the type of the NUT variable (ST_FLAG_STRING, ST_FLAG_NUMBER
+ * @param len the length of the NUT variable, if type == ST_FLAG_STRING
+ */
+static void do_enum(const char *varname, const int vartype, const int len)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -247,7 +268,14 @@ static void do_enum(const char *varname)
 
 	ret = upscli_list_next(ups, numq, query, &numa, &answer);
 
-	printf("Type: ENUM\n");
+	/* Fallback for older upsd versions */
+	if (vartype != ST_FLAG_NONE)
+		printf("Type: ENUM %s\n", (vartype == ST_FLAG_STRING)?"STRING":"NUMBER");
+	else
+		printf("Type: ENUM\n");
+
+	if (vartype == ST_FLAG_STRING)
+		printf("Maximum length: %d\n", len);
 
 	while (ret == 1) {
 
@@ -299,7 +327,8 @@ static void do_range(const char *varname)
 
 	ret = upscli_list_next(ups, numq, query, &numa, &answer);
 
-	printf("Type: RANGE\n");
+	/* Ranges implies a type "NUMBER" */
+	printf("Type: RANGE NUMBER\n");
 
 	while (ret == 1) {
 
@@ -327,6 +356,7 @@ static void do_range(const char *varname)
 static void do_type(const char *varname)
 {
 	int	ret;
+	int is_enum = 0; /* 1 if ENUM; FIXME: add a boolean type in common.h */
 	unsigned int	i, numq, numa;
 	char	**answer;
 	const char	*query[4];
@@ -346,9 +376,11 @@ static void do_type(const char *varname)
 	/* TYPE <upsname> <varname> <type>... */
 	for (i = 3; i < numa; i++) {
 
+		/* ENUM can be NUMBER or STRING
+		 * just flag it for latter processing */
 		if (!strcasecmp(answer[i], "ENUM")) {
-			do_enum(varname);
-			return;
+			is_enum = 1;
+			continue;
 		}
 
 		if (!strcasecmp(answer[i], "RANGE")) {
@@ -361,13 +393,19 @@ static void do_type(const char *varname)
 			char	*len = answer[i] + 7;
 			int	length = strtol(len, NULL, 10);
 
-			do_string(varname, length);
+			if (is_enum == 1)
+				do_enum(varname, ST_FLAG_STRING, length);
+			else
+				do_string(varname, length);
 			return;
 
 		}
 
 		if (!strcasecmp(answer[i], "NUMBER")) {
-			printf("Type: NUMBER\n");
+			if (is_enum == 1)
+				do_enum(varname, ST_FLAG_NUMBER, 0);
+			else
+				do_number(varname);
 			return;
 		}
 
@@ -378,6 +416,10 @@ static void do_type(const char *varname)
 
 		printf("Type: %s (unrecognized)\n", answer[i]);
 	}
+	/* Fallback for older upsd versions, where STRING|NUMBER is not
+	 * appended to ENUM */
+	if (is_enum == 1)
+		do_enum(varname, ST_FLAG_NONE, 0);
 }
 
 static void print_rw(const char *varname)

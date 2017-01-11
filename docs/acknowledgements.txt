@@ -36,7 +36,7 @@ Active members
 - Antoine Colombier: trainee
 
 For an up to date list of NUT developers, refer to
-link:https://github.com/orgs/networkupstools/members[GitHub].
+link:https://github.com/networkupstools/nut/graphs/contributors[GitHub].
 
 Retired members
 ~~~~~~~~~~~~~~~

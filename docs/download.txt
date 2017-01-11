@@ -110,6 +110,7 @@ Mandriva,
 link:https://apps.fedoraproject.org/packages/nut[Red Hat / Fedora],
 link:http://software.opensuse.org/package/nut[Novell Suse / openSUSE],
 link:https://github.com/openwrt/packages/tree/master/net/nut[OpenWrt],
+link:http://sotirov-bg.net/slackpack/search.cgi?q=nut[Slackware],
 link:http://packages.ubuntu.com/nut[Ubuntu],
 link:https://github.com/voidlinux/xbps-packages/blob/master/srcpkgs/network-ups-tools/template[Void Linux].
 
@@ -144,7 +145,7 @@ Virtualization packages
 VMware
 ~~~~~~
 
-- NUT client 2.7.2 for ESXi 5.x (offsite, René Garcia)
+- NUT client 2.7.4 for ESXi 5.0, 5.1, 5.5 and 6.0 (offsite, René Garcia)
 
   * link:http://rene.margar.fr/2012/05/client-nut-pour-esxi-5-0/[blog entry (French)]
-  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.3.0.tar.gz[VIB package (v1.3.0)]
+  * link:http://rene.margar.fr/downloads/NutClient-ESXi500-1.4.0.tar.gz[VIB package (v1.4.0)]

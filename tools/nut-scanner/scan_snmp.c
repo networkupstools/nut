@@ -420,8 +420,8 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 
 static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
 {
-        size_t name_len;
-        oid name[MAX_OID_LEN];
+	size_t name_len;
+	oid name[MAX_OID_LEN];
 	struct snmp_pdu *pdu, *response = NULL;
 	int status;
 	int index = 0;

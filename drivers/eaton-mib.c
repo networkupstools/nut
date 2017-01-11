@@ -30,6 +30,8 @@
 
 #include "eaton-mib.h"
 
+/* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
+ * per file */
 #define EATON_APHEL_MIB_VERSION	"0.48"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
@@ -110,11 +112,21 @@ static snmp_info_t eaton_aphel_genesisII_mib[] = {
 #define AR_OID_OUTLET_NAME				AR_BASE_OID ".1.2.2.1.2"
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
-static info_lkp_t eaton_outlet_status_info[] = {
+static info_lkp_t outlet_status_info[] = {
 	{ -1, "error" },
 	{ 0, "off" },
 	{ 1, "on" },
 	{ 2, "cycling" }, /* transitional status */
+	{ 0, NULL }
+};
+
+/* Ugly hack: having the matching OID present means that the outlet is
+ * switchable. So, it should not require this value lookup */
+static info_lkp_t revelation_outlet_switchability_info[] = {
+	{ -1, "yes" },
+	{ 0, "yes" },
+	{ 1, "yes" },
+	{ 2, "yes" },
 	{ 0, NULL }
 };
 
@@ -143,6 +155,10 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_UNIT_MACADDR, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	/* hardwareRev.0 = Integer: 26 */
+	/* FIXME: not compliant! to be RFC'ed */
+	{ "device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.6.1.1.7.0",
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
 	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
@@ -172,10 +188,10 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	/* outlet template definition
 	 * Caution: the index of the data start at 0, while the name is +1
 	 * ie outlet.1 => <OID>.0 */
-	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_INDEX ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_STATUS ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &revelation_outlet_switchability_info[0], NULL },
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &eaton_outlet_status_info[0], NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &outlet_status_info[0], NULL },
 	{ "outlet.%i.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".%i", NULL, SU_OUTLET, NULL, NULL },
@@ -217,7 +233,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.39"
+#define EATON_MARLIN_MIB_VERSION	"0.40"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -239,31 +255,9 @@ static info_lkp_t marlin_outletgroups_status_info[] = {
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
-static info_lkp_t eaton_outlet_switchability_info[] = {
+static info_lkp_t outlet_switchability_info[] = {
 	{ -1, "yes" },
 	{ 0, "yes" },
-	{ 0, NULL }
-};
-
-/* The physical type of outlet */
-static info_lkp_t eaton_outlet_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "iecC13" },
-	{ 2, "iecC19" },
-	{ 10, "uk" },
-	{ 11, "french" },
-	{ 12, "schuko" },
-	{ 20, "nema515" },
-	{ 21, "nema51520" },
-	{ 22, "nema520" },
-	{ 23, "nemaL520" },
-	{ 24, "nemaL530" },
-	{ 25, "nema615" },
-	{ 26, "nema620" },
-	{ 27, "nemaL620" },
-	{ 28, "nemaL630" },
-	{ 29, "nemaL715" },
-	{ 30, "rf203p277" },
 	{ 0, NULL }
 };
 
@@ -436,161 +430,161 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 *   This is depending on OID inputVoltageMeasType
 	 *   INTEGER {singlePhase (1),phase1toN (2),phase2toN (3),phase3toN (4),phase1to2 (5),phase2to3 (6),phase3to1 (7)
 	 * 		=> RFC input.Lx.voltage.context */
-	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
-	{ "input.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
-	{ "input.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
-	{ "input.L1.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "L1.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
-	{ "input.L1.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.2", NULL, 0, NULL, NULL },
-	{ "input.L2.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.2", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "L2.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.2", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
-	{ "input.L2.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.3", NULL, 0, NULL, NULL },
-	{ "input.L3.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.3", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "L3.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.0.1.3", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
-	{ "input.L3.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1", NULL, 0, NULL, NULL },
+	{ "input.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
+	{ "input.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1", NULL, 0, NULL, NULL },
+	{ "input.L1.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "L1.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
+	{ "input.L1.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.2", NULL, 0, NULL, NULL },
+	{ "input.L2.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.2", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "L2.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.2", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
+	{ "input.L2.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.3", NULL, 0, NULL, NULL },
+	{ "input.L3.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.3", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "L3.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.2.1.4.%i.1.3", NULL, SU_FLAG_OK, &marlin_threshold_voltage_alarms_info[0], NULL },
+	{ "input.L3.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.5.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.6.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.7.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.8.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	/* FIXME:
 	 * - input.current is mapped on input.L1.current for both single and 3phase !!! */
-	{ "input.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
-	{ "input.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.1", NULL, 0, NULL, NULL },
-	{ "input.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
-	{ "input.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.1", NULL, 0, NULL, NULL },
+	{ "input.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.%i.1.1", NULL, 0, NULL, NULL },
+	{ "input.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
+	{ "input.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	{ "input.L1.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
-	{ "input.L1.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.1", NULL, 0, NULL, NULL },
-	{ "input.L1.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "L1.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.1", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
-	{ "input.L1.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L1.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.2", NULL, 0, NULL, NULL },
-	{ "input.L2.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.2", NULL, 0, NULL, NULL },
-	{ "input.L2.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.2", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "L2.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.2", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
-	{ "input.L2.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L2.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.3", NULL, 0, NULL, NULL },
-	{ "input.L3.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.0.1.3", NULL, 0, NULL, NULL },
-	{ "input.L3.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.3", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "L3.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.0.1.3", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
-	{ "input.L3.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "input.L3.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.0.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.%i.1.1", NULL, 0, NULL, NULL },
+	{ "input.L1.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "L1.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.1", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
+	{ "input.L1.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L1.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.%i.1.1", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.2", NULL, 0, NULL, NULL },
+	{ "input.L2.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.%i.1.2", NULL, 0, NULL, NULL },
+	{ "input.L2.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.2", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "L2.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.2", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
+	{ "input.L2.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L2.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.%i.1.2", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.3", NULL, 0, NULL, NULL },
+	{ "input.L3.current.nominal", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.3.%i.1.3", NULL, 0, NULL, NULL },
+	{ "input.L3.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.3", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "L3.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.3.1.5.%i.1.3", NULL, SU_FLAG_OK, &marlin_threshold_current_alarms_info[0], NULL },
+	{ "input.L3.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.6.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.7.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.8.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
+	{ "input.L3.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.3.1.9.%i.1.3", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
 	/* Sum of all phases realpower, valid for Shark 1ph/3ph only */
-	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.4.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
+	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.4.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
 	/* Fallback 1: Sum of all phases realpower, valid for Marlin 3ph only */
-	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.4", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
+	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.4", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
 	/* Fallback 2: Sum of the phase realpower, valid for Marlin 1ph only */
-	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "input.L1.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "input.L2.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "input.L3.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L1.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L2.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L3.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	/* Sum of all phases apparent power, valid for Shark 1ph/3ph only */
-	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.3.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
+	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.3.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
 	/* Fallback 1: Sum of all phases realpower, valid for Marlin 3ph only */
-	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.4", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
+	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4", NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL, NULL },
 	/* Fallback 2: Sum of the phase realpower, valid for Marlin 1ph only */
-	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "input.L1.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "input.L2.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L1.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L2.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.2", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.3", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 
 	/* Ambient collection */
-	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.3.0.1", NULL, SU_FLAG_OK, &marlin_ambient_presence_info[0], NULL },
-	{ "ambient.temperature.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_temperature_alarms_info[0], NULL },
-	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.3.%i.1", NULL, SU_FLAG_OK, &marlin_ambient_presence_info[0], NULL },
+	{ "ambient.temperature.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.%i.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.1.1.5.%i.1", NULL, SU_FLAG_OK, &marlin_threshold_temperature_alarms_info[0], NULL },
+	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.4.%i.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* Low and high threshold use the respective critical levels */
-	{ "ambient.temperature.low", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.6.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.high", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.8.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
-	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.2.1.5.0.1", NULL, SU_FLAG_OK, &marlin_threshold_humidity_alarms_info[0], NULL },
-	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.4.0.1", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.low", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.7.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.7.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.6.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.high", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.9.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.8.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.1.1.9.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.2.1.5.%i.1", NULL, SU_FLAG_OK, &marlin_threshold_status_info[0], NULL },
+	{ "ups.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.2.1.5.%i.1", NULL, SU_FLAG_OK, &marlin_threshold_humidity_alarms_info[0], NULL },
+	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.4.%i.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* Low and high threshold use the respective critical levels */
-	{ "ambient.humidity.low", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.6.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.7.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.high", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.8.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.0.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.low", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.7.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.low.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.6.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.low.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.7.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.high", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.high.warning", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.8.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity.high.critical", ST_FLAG_RW, 0.1, ".1.3.6.1.4.1.534.6.6.7.7.2.1.9.%i.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
 	/* Dry contacts on TH module */
-	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.1", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
-	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.0.2", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.%i.1", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.7.3.1.4.%i.2", NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0], NULL },
 
 	/* Outlet collection */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.0", "0", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i", "0", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	/* The below ones are the same as the input.* equivalent */
 	/* FIXME: transition period, TO BE REMOVED, moved to input.* */
-	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.0.1", NULL, 0, NULL, NULL },
-	{ "outlet.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.0.1.1", NULL, 0, NULL, NULL },
-	{ "outlet.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.0.1.1", NULL, 0, NULL, NULL },
-	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.0.1.4", NULL, 0, NULL, NULL },
-	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.0.1.4", NULL, 0, NULL, NULL },
+	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1", NULL, 0, NULL, NULL },
+	{ "outlet.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1", NULL, 0, NULL, NULL },
+	{ "outlet.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.1", NULL, 0, NULL, NULL },
+	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.4", NULL, 0, NULL, NULL },
+	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4", NULL, 0, NULL, NULL },
 
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.0.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.0.%i",
-		NULL, SU_FLAG_OK | SU_OUTLET, &marlin_outlet_status_info[0], NULL },
+	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
+		NULL, SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_status_info[0], NULL },
+
 	/* FIXME: or use ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.0.1", though it's related to groups! */
-	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
 	 * Need to address that, without multiple declaration (%i.%i, SU_OUTLET | SU_OUTLET_GROUP)? */
-	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.1", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.2", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.3", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.4", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.5", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.0.%i.6", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.4.1.4.0.%i", NULL, SU_OUTLET, &marlin_threshold_status_info[0], NULL },
-	{ "outlet.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.4.1.4.0.%i", NULL, SU_OUTLET, &marlin_threshold_current_alarms_info[0], NULL },
-	{ "outlet.%i.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.5.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.6.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.7.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.8.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.3.1.3.0.%i", NULL, SU_OUTLET, &marlin_threshold_status_info[0], NULL },
-	{ "outlet.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.3.1.3.0.%i", NULL, SU_OUTLET, &marlin_threshold_voltage_alarms_info[0], NULL },
-	{ "outlet.%i.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.4.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.5.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.6.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.7.0.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.0.%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.1", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.2", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.3", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.4", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.5", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.6", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.current.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.4.1.4.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, &marlin_threshold_status_info[0], NULL },
+	{ "outlet.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.4.1.4.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, &marlin_threshold_current_alarms_info[0], NULL },
+	{ "outlet.%i.current.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.5.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.current.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.6.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.current.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.7.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.current.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.8.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.3.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.2.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.voltage.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.3.1.3.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, &marlin_threshold_status_info[0], NULL },
+	{ "outlet.%i.alarm", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.3.1.3.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, &marlin_threshold_voltage_alarms_info[0], NULL },
+	{ "outlet.%i.voltage.low.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.4.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.voltage.low.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.5.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.voltage.high.warning", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.6.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.7.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.0.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &eaton_outlet_switchability_info[0], NULL },
-	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.0.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET, &eaton_outlet_type_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &outlet_switchability_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1
