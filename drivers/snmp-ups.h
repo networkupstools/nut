@@ -314,19 +314,5 @@ typedef struct {
 } daisychain_info_t;
 
 
-/* Common daisychain structure and functions */
-
-bool_t daisychain_init();
-int su_addcmd(snmp_info_t *su_info_p);
-
-/* Structure containing info about each daisychain device, including phases
- * for input, output and bypass */
-typedef struct {
-	long input_phases;
-	long output_phases;
-	long bypass_phases;
-} daisychain_info_t;
-
-
 #endif /* SNMP_UPS_H */
 
