@@ -203,8 +203,11 @@ endif
 
 DMFLNK_CMD = ( \
 	echo "  LN     '$$DMFFILE' => '$@' (PWD = `pwd`)" >&2 ; \
+	echo "BEFORE:"; ls -la "$$DMFFILE" "$@" || true; \
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
+	echo "$(LN_S_R) '$$DMFFILE' '$@' || exit"; \
 	$(LN_S_R) "$$DMFFILE" "$@" || exit ; \
+	echo "AFTER:"; ls -la "$$DMFFILE" "$@" || true; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
