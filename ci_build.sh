@@ -179,7 +179,8 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
 
 ( echo "Report on LUA"
 dpkg -l | grep -i lua
-find / -type f -ls | egrep '/(lua|liblua)' ) || true
+#find /usr /var -type f -ls | egrep '/(lua|liblua)'
+ ) || true
 
     # Build and check this project; note that zprojects always have an autogen.sh
     [ -z "$CI_TIME" ] || echo "`date`: Starting build of currently tested project..."
