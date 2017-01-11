@@ -22,35 +22,13 @@ env:
   matrix:
     - BUILD_TYPE=default
     - BUILD_TYPE=default-nodoc
+    - BUILD_TYPE=default-alldrv
     - BUILD_TYPE=default-tgt:distcheck-light
     - BUILD_TYPE=default-tgt:distcheck-light-man
 
 # Builds with customized setups
 matrix:
   include:
-  - env: BUILD_TYPE=default-alldrv
-    os: linux
-    addons:
-      apt:
-        packages:
-        - libsnmp-dev
-        - libltdl-dev
-        - libneon27-dev
-        - libfreeipmi-dev
-        - libfreeipmi10
-        - libipmimonitoring-dev
-        - libipmimonitoring4
-        - libusb-dev
-        - linux-libc-dev
-        - libpowerman0-dev
-        - libavahi-common-dev
-        - libavahi-core-dev
-        - libavahi-client-dev
-        - libgd2-xpm-dev
-        - libpng-dev
-        - libjpeg-dev
-        - libfreetype6-dev
-        - libxpm-dev
   - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:
@@ -62,6 +40,8 @@ matrix:
         - dblatex
         - docbook-xsl
         - docbook-xsl-ns
+        - aspell
+        - source-highlight
 #  - env: BUILD_TYPE=valgrind
 #    os: linux
 #    dist: trusty
@@ -83,6 +63,23 @@ addons:
     - libltdl-dev
     - lua5.1
     - liblua5.1-0-dev
+    - libsnmp-dev
+    - libfreeipmi-dev
+    - libfreeipmi10
+    - libipmimonitoring-dev
+    - libipmimonitoring4
+    - libusb-dev
+    - linux-libc-dev
+    - libpowerman0-dev
+    - libavahi-common-dev
+    - libavahi-core-dev
+    - libavahi-client-dev
+    - libgd2-xpm-dev
+    - libpng-dev
+    - libjpeg-dev
+    - libfreetype6-dev
+    - libxpm-dev
+    - python-pycparser
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi

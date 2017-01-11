@@ -193,7 +193,7 @@ dpkg -l | grep -i lua
 
     case "$BUILD_TYPE" in
         default-tgt:*) # Hook for matrix of custom distchecks primarily
-            BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`" ;;
+            BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
             export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
             $CI_TIME make VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" "$BUILD_TGT"
