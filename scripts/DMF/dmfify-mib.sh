@@ -25,6 +25,12 @@ _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
 
 # The pycparser uses GCC-compatible flags
 [ -n "${CC-}" ] || CC="`which gcc`"
+[ -n "${CC-}" ] && \
+case "$CC" in
+    /*) ;;
+    *) # No support for CLI args as part of "$CC" right now
+        CC="`which "$CC"`" ;;
+esac
 [ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
 export CC
 
