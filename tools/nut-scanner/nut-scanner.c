@@ -258,6 +258,7 @@ int main(int argc, char *argv[])
 {
 	nutscan_snmp_t snmp_sec;
 	nutscan_ipmi_t ipmi_sec;
+	nutscan_xml_t  xml_sec;
 	int opt_ret;
 	char *	cidr = NULL;
 	int allow_all = 0;
