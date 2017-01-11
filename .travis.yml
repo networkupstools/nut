@@ -70,9 +70,6 @@ matrix:
 #        - valgrind
 
 # Common required packages for all scenarios
-# TODO: Remove doc-generation packages from common set and uncomment the
-# BUILD_TYPE=default-withdoc matrix settings above after integrating the
-# support for --with-doc=skip which allows distcheck to pass
 addons:
   apt:
     packages:
