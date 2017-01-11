@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="delta_ups_pwr_info">
+		<lookup_info oid="0" value="OL"/>
+		<lookup_info oid="1" value="OB"/>
+		<lookup_info oid="2" value="BYPASS"/>
+		<lookup_info oid="3" value="TRIM"/>
+		<lookup_info oid="4" value="BOOST"/>
+		<lookup_info oid="5" value="BYPASS"/>
+		<lookup_info oid="7" value="OFF"/>
+	</lookup>
+	<lookup name="delta_ups_upstype_info">
+		<lookup_info oid="1" value="on-line"/>
+		<lookup_info oid="2" value="off-line"/>
+		<lookup_info oid="3" value="line-interactive"/>
+		<lookup_info oid="4" value="3phase"/>
+		<lookup_info oid="5" value="splite-phase"/>
+	</lookup>
+	<snmp name="delta_ups_mib">
+		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.mfr" oid=".1.3.6.1.4.1.2254.2.4.1.1.0" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.2254.2.4.1.2.0" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.2254.2.4.1.4.0" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.firmware.aux" oid=".1.3.6.1.4.1.2254.2.4.1.3.0" string="yes"/>
+		<snmp_info flag_ok="yes" lookup="delta_ups_upstype_info" multiplier="1.0" name="ups.type" oid=".1.3.6.1.4.1.2254.2.4.1.19.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.load" oid=".1.3.6.1.4.1.2254.2.4.5.7.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.power" oid=".1.3.6.1.4.1.2254.2.4.1.7.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="output.voltage.nominal" oid=".1.3.6.1.4.1.2254.2.4.1.8.0"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.2254.2.4.5.4.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="output.frequency.nominal" oid=".1.3.6.1.4.1.2254.2.4.1.9.0"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.2254.2.4.5.5.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="input.voltage.nominal" oid=".1.3.6.1.4.1.2254.2.4.1.10.0"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.voltage" oid=".1.3.6.1.4.1.2254.2.4.4.3.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="input.frequency.nominal" oid=".1.3.6.1.4.1.2254.2.4.1.11.0"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.2254.2.4.4.2.0"/>
+		<snmp_info flag_ok="yes" lookup="delta_ups_pwr_info" multiplier="1.0" name="ups.status" oid=".1.3.6.1.4.1.2254.2.4.5.1.0"/>
+	</snmp>
+	<mib2nut mib_name="delta_ups" name="delta_ups" oid=".1.3.6.1.4.1.2254.2.4" snmp_info="delta_ups_mib" version="0.2"/>
+</nut>
+

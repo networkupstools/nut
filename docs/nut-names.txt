@@ -537,6 +537,7 @@ of the user manual.
 | outlet.n.crestfactor           | Crest Factor (dimensionless,
                                    equal to or greater than 1) | 1.41
 | outlet.n.power                 | Apparent power (VA)         | 46
+| outlet.n.type                  | Physical outlet type        | french
 |===============================================================================
 
 outlet.group: groups of smart outlets
