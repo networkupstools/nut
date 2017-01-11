@@ -202,12 +202,13 @@ else
 endif
 
 DMFLNK_CMD = ( \
-	echo "  LN     '$$DMFFILE' => '$@' (PWD = `pwd`)" >&2 ; \
-	echo "BEFORE:"; ls -la "$$DMFFILE" "$@" || true; \
-	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
-	echo "$(LN_S_R) '$$DMFFILE' '$@' || exit"; \
-	$(LN_S_R) "$$DMFFILE" "$@" || exit ; \
-	echo "AFTER:"; ls -la "$$DMFFILE" "$@" || true; \
+	echo "  LN     '$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
+	echo "BEFORE:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
+	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
+	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
+	echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
+	$(LN_S_R) "$$DMFFILE" "$$DMFLINK" || exit ; \
+	echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
