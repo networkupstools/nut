@@ -77,6 +77,8 @@ addons:
     - ccache
     - libneon27
     - libneon27-dev
+    - libltdl7
+    - libltdl-dev
     - lua5.1
     - liblua5.1-0-dev
 
