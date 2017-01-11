@@ -3,7 +3,12 @@
 # This file is based on a template used by zproject, but isn't auto-generated. #
 ################################################################################
 
-language: c
+language:
+- c
+- python
+
+python:
+- '2.7'
 
 cache: ccache
 
@@ -77,10 +82,12 @@ addons:
     - libjpeg-dev
     - libfreetype6-dev
     - libxpm-dev
-    - python-pycparser
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+install:
+- pip install pycparser
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh
