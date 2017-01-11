@@ -434,10 +434,10 @@ endif
 # But some data should be prepopulated there before we run leak tests etc.
 if WITH_DMF
 run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
+	cd $(DMFSNMP_SUBDIR) && ls -la && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
 run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(DMF_REINDEX)
+	cd $(DMFSNMP_SUBDIR) && ls -la && $(DMF_TEST_RUNNER) $(DMF_REINDEX)
 else
 run-dmf-test run-dmf-reindex:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
