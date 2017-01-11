@@ -1,0 +1,41 @@
+# Travis CI script
+################################################################################
+# This file is based on a template used by zproject, but isn't auto-generated. #
+################################################################################
+
+language: c
+
+cache: ccache
+
+os:
+- linux
+
+sudo: false
+
+services:
+- docker
+
+env:
+  global:
+    - CI_TIME=true
+    - CI_TRACE=false
+  matrix:
+    - BUILD_TYPE=default
+
+addons:
+  apt:
+    packages:
+    - git
+    - ccache
+    - asciidoc
+    - xsltproc
+    - libxml2-utils
+    - dblatex
+    - docbook-xsl
+    - docbook-xsl-ns
+
+before_install:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+# Hand off to generated script for each BUILD_TYPE
+script: ./ci_build.sh
