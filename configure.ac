@@ -1355,6 +1355,7 @@ fi
 
 DMF_BUILD_OPTIONS=""
 AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
+dnl TODO: Not sure the PROG is really used, so maybe configure test should change later on
 AX_PROG_LUA([5.1], [], [nut_have_lua=yes])
 AX_LUA_HEADERS
 AX_LUA_LIBS
