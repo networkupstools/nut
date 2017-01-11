@@ -22,6 +22,8 @@ env:
   matrix:
     - BUILD_TYPE=default
     - BUILD_TYPE=default-nodoc
+    - BUILD_TYPE=default-tgt:distcheck-light
+    - BUILD_TYPE=default-tgt:distcheck-light-man
 
 # Builds with customized setups
 matrix:
