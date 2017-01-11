@@ -75,6 +75,8 @@ addons:
     packages:
     - git
     - ccache
+    - libneon27
+    - libneon27-dev
     - lua5.1
     - liblua5.1-0-dev
 
