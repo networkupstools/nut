@@ -594,10 +594,13 @@ EXTRA_DIST = \
 	asciidoc.conf
 
 if ! WITH_MANS
-# Cause "make dist" to fail
+if ! SKIP_MANS
+# Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
+# runs ./configure --with-doc=skip (or --with-man=skip specifically)
 EXTRA_DIST += dist
 dist:
-	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+	echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+endif
 endif
 
 HTML_MANS = \
