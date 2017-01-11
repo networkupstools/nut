@@ -65,9 +65,7 @@ addons:
     - liblua5.1-0-dev
     - libsnmp-dev
     - libfreeipmi-dev
-    - libfreeipmi10
     - libipmimonitoring-dev
-    - libipmimonitoring4
     - libusb-dev
     - linux-libc-dev
     - libpowerman0-dev
