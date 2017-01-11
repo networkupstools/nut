@@ -1490,6 +1490,7 @@ dnl deprecated, but subsequently the DMF-LUA code was fixed in Git commit ID
 dnl 410139013fe951f8ec65066979a6b0b91e04f9fe. It's not tested with earler LUA.
 nut_have_lua=no
 if test "${nut_with_lua}" != "no"; then
+	dnl TODO: Not sure the PROG is really used, so maybe configure test should change later on
 	AX_PROG_LUA([5.1], [], [nut_have_lua=yes], [nut_have_lua=no])
 	if test "${nut_have_lua}" = "yes"; then
 		AX_LUA_HEADERS([nut_have_lua=yes], [nut_have_lua=no])
