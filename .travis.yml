@@ -78,6 +78,7 @@ addons:
     packages:
     - git
     - ccache
+    - liblua5.1-0-dev
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
