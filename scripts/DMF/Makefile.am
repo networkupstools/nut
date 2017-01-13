@@ -206,6 +206,7 @@ DMFLNK_CMD = ( \
 	echo "BEFORE:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
 	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
 	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
+	test -f "$$DMFFILE" || { echo "File '$$DMFFILE' not found"; exit 22; } ; \
 	echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
 	$(LN_S_R) "$$DMFFILE" "$$DMFLINK" || exit ; \
 	echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
