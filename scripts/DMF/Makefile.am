@@ -208,6 +208,7 @@ DMFLNK_CMD = ( \
 	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
 	test -f "$$DMFFILE" || { echo "File '$$DMFFILE' not found"; exit 22; } ; \
 	echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
+	rm -f "$$DMFLINK" || true ; \
 	$(LN_S_R) "$$DMFFILE" "$$DMFLINK" || exit ; \
 	echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
 	)
