@@ -195,7 +195,10 @@ default|default-alldrv|default-nodoc|default-withdoc|"default-tgt:"*)
             echo "=== Are GitIgnores good after 'make $BUILD_TGT'? (should have no output below)"
             git status -s || true
             echo "==="
-            git status -s | egrep '\.dmf$' && { echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2; exit 1; }
+            if git status -s | egrep '\.dmf$' ; then
+                echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+                exit 1
+            fi
             if [ "$HAVE_CCACHE" = yes ]; then
                 echo "CCache stats after build:"
                 ccache -s
@@ -213,7 +216,10 @@ default|default-alldrv|default-nodoc|default-withdoc|"default-tgt:"*)
     echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
     git status -s || true
     echo "==="
-    git status -s | egrep '\.dmf$' && { echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2; exit 1; }
+    if git status -s | egrep '\.dmf$' ; then
+        echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+        exit 1
+    fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
@@ -231,7 +237,10 @@ default|default-alldrv|default-nodoc|default-withdoc|"default-tgt:"*)
         echo "=== Are GitIgnores good after 'make distcheck'? (should have no output below)"
         git status -s || true
         echo "==="
-        git status -s | egrep '\.dmf$' && { echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2; exit 1; }
+        if git status -s | egrep '\.dmf$' ; then
+            echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+            exit 1
+        fi
         )
     fi
 
