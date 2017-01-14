@@ -97,7 +97,7 @@ before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
 
 install:
-- pip install pycparser
+- if [ "$BUILD_TYPE" != default-withdoc ] ; then pip install pycparser ; fi
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh
