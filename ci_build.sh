@@ -192,13 +192,14 @@ default|default-alldrv|default-nodoc|default-withdoc|"default-tgt:"*)
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
             export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
             $CI_TIME make VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" "$BUILD_TGT"
-            echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
+            echo "=== Are GitIgnores good after 'make $BUILD_TGT'? (should have no output below)"
             git status -s || true
             echo "==="
             if [ "$HAVE_CCACHE" = yes ]; then
                 echo "CCache stats after build:"
                 ccache -s
             fi
+            echo "=== Exiting after the custom-build target 'make $BUILD_TGT' succeeded OK"
             exit 0
             ;;
     esac
