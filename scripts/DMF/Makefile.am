@@ -203,14 +203,14 @@ endif
 
 DMFLNK_CMD = ( \
 	echo "  LN     '$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
-	echo "BEFORE:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
+	[ "$(V)" = 1 ] && echo "BEFORE:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
 	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
 	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
-	test -f "$$DMFFILE" || { echo "File '$$DMFFILE' not found"; exit 22; } ; \
-	echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
+	test -f "$$DMFFILE" || { echo "File '$$DMFFILE' not found" >&2; exit 22; } ; \
+	[ "$(V)" = 1 ] && echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
 	rm -f "$$DMFLINK" || true ; \
 	$(LN_S_R) "$$DMFFILE" "$$DMFLINK" || exit ; \
-	echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
+	[ "$(V)" = 1 ] && echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
