@@ -8,6 +8,7 @@
 # pycparser; also make sure to use no compiler optimizations (-O0 in gcc).
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+#    Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 [ -n "${CPP-}" ] || CPP="cpp"
