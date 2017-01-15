@@ -147,6 +147,7 @@ def mk_snmp (inp, root):
                     ("flag_ok", SU_FLAG_OK, "yes"),
                     ("static", SU_FLAG_STATIC, "yes"),
                     ("absent", SU_FLAG_ABSENT, "yes"),
+                    ("stale", SU_FLAG_STALE, "yes"),
                     ("positive", SU_FLAG_NEGINVALID, "yes"),
                     ("unique", SU_FLAG_UNIQUE, "yes"),
                     ("power_status", SU_STATUS_PWR, "yes"),
