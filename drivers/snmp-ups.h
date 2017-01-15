@@ -222,7 +222,6 @@ typedef struct {
 #define SU_VAR_PRIVPROT		"privProtocol"
 #define SU_VAR_DMFPATH          "dmfpath"
 
-
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
 #define SU_LARGEBUF		256
@@ -233,6 +232,10 @@ typedef struct {
 /* modes to snmp_ups_walk. */
 #define SU_WALKMODE_INIT	0
 #define SU_WALKMODE_UPDATE	1
+
+/* modes for su_setOID */
+#define SU_MODE_INSTCMD     1
+#define SU_MODE_SETVAR      2
 
 /* log spew limiters */
 #define SU_ERR_LIMIT 10	/* start limiting after this many errors in a row  */

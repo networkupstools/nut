@@ -327,6 +327,9 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		if (node->flags & ST_FLAG_STRING) {
 			snprintfcat(flist, sizeof(flist), " STRING");
 		}
+		if (node->flags & ST_FLAG_NUMBER) {
+			snprintfcat(flist, sizeof(flist), " NUMBER");
+		}
 
 		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
 			return 0;
@@ -653,6 +656,8 @@ int dstate_addrange(const char *var, const int min, const int max)
 
 	if (ret == 1) {
 		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+		/* Also add the "NUMBER" flag for ranges */
+		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
 
 	return ret;
@@ -693,8 +698,48 @@ void dstate_setflags(const char *var, int flags)
 		snprintfcat(flist, sizeof(flist), " STRING");
 	}
 
+	if (flags & ST_FLAG_NUMBER) {
+		snprintfcat(flist, sizeof(flist), " NUMBER");
+	}
+
 	/* update listeners */
 	send_to_all("SETFLAGS %s\n", flist);
+}
+
+void dstate_addflags(const char *var, const int addflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already set */
+	if ((flags & addflags) == addflags)
+		return;
+
+	flags |= addflags;
+
+	dstate_setflags(var, flags);
+}
+
+void dstate_delflags(const char *var, const int delflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already not set */
+	if (!(flags & delflags))
+		return;
+
+	flags &= ~delflags;
+
+	dstate_setflags(var, flags);
 }
 
 void dstate_setaux(const char *var, int aux)
@@ -907,12 +952,6 @@ void alarm_init(void)
 	device_alarm_init();
 }
 
-void device_alarm_init(void)
-{
-	/* only clear the buffer */
-	memset(alarm_buf, 0, sizeof(alarm_buf));
-}
-
 void alarm_set(const char *buf)
 {
 	if (strlen(alarm_buf) > 0) {
@@ -925,7 +964,19 @@ void alarm_set(const char *buf)
 /* write the status_buf into the info array */
 void alarm_commit(void)
 {
-	device_alarm_commit(0);
+	if (strlen(alarm_buf) > 0) {
+		dstate_setinfo("ups.alarm", "%s", alarm_buf);
+		alarm_active = 1;
+	} else {
+		dstate_delinfo("ups.alarm");
+		alarm_active = 0;
+	}
+}
+
+void device_alarm_init(void)
+{
+	/* only clear the buffer, don't touch the alarms counter */
+	memset(alarm_buf, 0, sizeof(alarm_buf));
 }
 
 /* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
@@ -940,16 +991,14 @@ void device_alarm_commit(const int device_number)
 	else /* would then go into "device.alarm" */
 		snprintf(info_name, 20, "ups.alarm");
 
+	/* Daisychain subdevices note:
+	 * increase the counter when alarms are present on a subdevice, but
+	 * don't decrease the count. Otherwise, we may not get the ALARM flag
+	 * in ups.status, while there are some alarms present on device.X */
 	if (strlen(alarm_buf) > 0) {
 		dstate_setinfo(info_name, "%s", alarm_buf);
 		alarm_active++;
 	} else {
 		dstate_delinfo(info_name);
-		/* Address subdevices, which would otherwise be cleared
-		 * from "ups.status==ALARM"
-		 * Also ensure that we don't underflow (get -1) which would cause the
-		 * ALARM flag to be falsely published */
-		if (alarm_active > 0)
-			alarm_active--;
 	}
 }

@@ -236,7 +236,7 @@ Power distribution unit management
 
 NUT also provides an advanced support for power distribution units.
 
-You should read the <<Outlets_PDU_notes,NUT outlets management and PDU notes>>
+You should read the <<outlet_management,NUT outlets management and PDU notes>>
 chapter to learn more about when to use this feature. 
 
 Network Server

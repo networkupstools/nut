@@ -80,7 +80,7 @@ for line in fin:
             else:
                 message = message + " " + line.strip()
     # If this line is hit all of the files have been stored for this commit
-    elif re.search('files? changed', line) >= 0:
+    elif re.search('files? changed', line):
         filesFound = True
         continue
     # Collect the files for this commit. FIXME: Still need to add +/- to files

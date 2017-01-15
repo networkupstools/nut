@@ -2,6 +2,7 @@
  *  Copyright (C)
  *    2011 - EATON
  *    2012 - Arnaud Quette <arnaud.quette@free.fr>
+ *    2016 - EATON - IP addressed XML scan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,6 +23,8 @@
     \brief general header for nut-scanner
     \author Frederic Bohe <fredericbohe@eaton.com>
     \author Arnaud Quette <arnaud.quette@free.fr>
+    \author Michal Vyskocil <MichalVyskocil@eaton.com>
+    \author Jim Klimov <EvgenyKlimov@eaton.com>
 */
 
 #ifndef NUT_SCAN_H
@@ -52,7 +55,6 @@ typedef struct nutscan_snmp {
 	char * privProtocol;
 	char * peername;
 	void * handle;
-	char * fingerprints_file;
 } nutscan_snmp_t;
 
 /* IPMI structure */
@@ -84,12 +86,22 @@ typedef struct nutscan_ipmi {
 #define IPMI_1_5		1
 #define IPMI_2_0		0
 
+/* XML HTTP structure */
+typedef struct nutscan_xml {
+	int port_http;		/* Port for xml http (tcp) */
+	int port_udp;		/* Port for xml udp */
+	long usec_timeout;	/* Wait this long for a response */
+	char *peername;		/* Hostname or NULL for broadcast mode */
+} nutscan_xml_t;
+
 /* Scanning */
 nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip, long usec_timeout, nutscan_snmp_t * sec);
 
 nutscan_device_t * nutscan_scan_usb();
 
-nutscan_device_t * nutscan_scan_xml_http(long usec_timeout);
+/* If "ip" == NULL, do a broadcast scan */
+/* If sec->usec_timeout < 0 then the common usec_timeout arg overrides it */
+nutscan_device_t * nutscan_scan_xml_http_range(const char *start_ip, const char *end_ip, long usec_timeout, nutscan_xml_t * sec);
 
 nutscan_device_t * nutscan_scan_nut(const char * startIP, const char * stopIP, const char * port, long usec_timeout);
 

@@ -116,7 +116,7 @@ void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char
 
 	*opt = (nutscan_options_t *)malloc(sizeof(nutscan_options_t));
 
-	// TBD: A gracefull way to propagate memory failure would be nice
+	/* TBD: A gracefull way to propagate memory failure would be nice */
 	assert(NULL != *opt);
 
 	memset(*opt, 0, sizeof(nutscan_options_t));

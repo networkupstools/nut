@@ -139,6 +139,6 @@ package:
 	elif test `uname -s` = "AIX"; then \
 		make dist; \
 		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \
-		cp scripts/Aix/nut.init nut-*.tar.gz /usr/src/packages/SOURCES; \
+		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES; \
 		rpm -ba /usr/src/packages/SPECS/nut-aix.spec; \
 	fi;

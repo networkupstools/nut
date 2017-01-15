@@ -81,6 +81,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1008), battery_scale_0dot1 },
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1009), battery_scale_0dot1 },
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1010), battery_scale_0dot1 },
+	/* e.g. TrippLite SU3000LCD2UHV */
+	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x1330), battery_scale_1dot0 },
 	/* e.g. TrippLite OMNI1000LCD */
 	{ USB_DEVICE(TRIPPLITE_VENDORID, 0x2005), battery_scale_0dot1 },
 	/* e.g. TrippLite OMNI900LCD */
