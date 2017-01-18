@@ -1,0 +1,65 @@
+#!/bin/bash
+
+# The pipeline to convert legacy *-mib.c files with structures into new DMF
+# markup involves parsing the C code. The pycparser (Python module) used
+# for this is picky about what view of C it accepts as pre-processed input.
+# This script is a postprocessor of C preprocessor - removes __attribute__
+# declarations and other extended constructs, which are not compatible with
+# pycparser; also make sure to use no compiler optimizations (-O0 in gcc).
+#
+#    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+#    Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+#
+
+[ -n "${CPP-}" ] || CPP="cpp"
+# Note that CWD may often be "DMF" or "DMF/somesubdir", so default for both
+[ -n "${CPPFLAGS-}" ] || CPPFLAGS="-I../../include -I../../../include"
+[ -n "${CFLAGS-}" ] || CFLAGS=""
+
+set -o pipefail
+#set -exv
+
+echo "PREPROCESS: ( cd `pwd` && $CPP $CFLAGS $CPPFLAGS $* )" >&2
+
+# tee temp-cpp-orig.tmp | \
+$CPP $CFLAGS $CPPFLAGS "${@}" | \
+sed \
+    -e 's/ __asm(.*)$/;/' \
+    -e 's/__asm__ (.*);/;/' \
+    -e 's/__attribute__ ((visibility("default"))) //' \
+    -e 's/__attribute__((unused))//' \
+    -e 's/__attribute__((aligned(8)));/;/' \
+    -e 's/__attribute__((availability(.*)));/;/' \
+    -e 's/__attribute__((availability(.*)))//' \
+    -e 's/__attribute__((format.*)));$/;/' \
+    -e 's/__inline__/inline/' \
+    -e 's/__THROW;$/;/' \
+    -e 's/__END_DECLS//' \
+    -e 's/__BEGIN_DECLS//' \
+    -e 's/void (\*signal(int, void (\*)(int)))(int);//' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__const__));/;/' \
+    -e 's/__attribute__ ((__mode__ (__[A-Z][A-Z]__)));/;/' \
+    -e 's/__attribute__ ((__mode__ (__word__)));/;/' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__));/;/' \
+    -e 's/__attribute__ ((__nonnull__ ([0-9])));/;/' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) //' \
+    -e 's/__attribute__ ((__nothrow__ , __leaf__)) __attribute__ ((__malloc__)) ;/;/' \
+    -e 's/__attribute__ ((__const__))//' \
+    -e 's/__attribute__.*;/;/' \
+    -e 's/static __inline/static/' \
+    -e 's/__extern_inline/extern/' \
+    -e 's/extern __inline/extern/' \
+    -e 's/__restrict//g' \
+    -e 's/__extension__//' \
+    -e 's/__builtin_va_list/int/' #| tee temp-cpp-filt.tmp
+
+RET=$?
+if [ "$RET" = 0 ]; then
+    echo "INFO: CPP+SED passed OK" >&2
+else
+    echo "ERROR: CPP+SED returned code $RET" >&2
+    # Invalidate the C code so pycparser detects the problem early
+    echo '#invalid-pragma-error FAILED TO PARSE CPP+SED'
+fi
+
+exit $RET

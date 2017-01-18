@@ -29,7 +29,7 @@
 #define BAYTECH_OID_MIB			".1.3.6.1.4.1.4779"
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
-static info_lkp_t outlet_status_info[] = {
+static info_lkp_t baytech_outlet_status_info[] = {
 	{ -1, "error" },
 	{ 0, "off" },
 	{ 1, "on" },
@@ -75,7 +75,7 @@ static snmp_info_t baytech_mib[] = {
 	{ "outlet.voltage", 0, 0.1, ".1.3.6.1.4.1.4779.1.3.5.5.1.8.2.1", NULL, 0, NULL, NULL },
 
 	/* outlet template definition */
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &outlet_status_info[0], NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.3.1.%i", NULL, SU_OUTLET, &baytech_outlet_status_info[0], NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.4779.1.3.5.3.1.4.1.%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.6.1.3.2.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_OUTLET | SU_FLAG_OK, NULL, NULL },
 	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.4779.1.3.5.3.1.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, NULL, NULL },
