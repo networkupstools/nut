@@ -39,7 +39,7 @@ def info (msg):
 
 def f2f(node):
     """convert c_ast node flags to list of numbers
-    (1, 2, 4) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT
+    (1, 2, 4, 8) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE
     """
     if  isinstance (node, c_ast.BinaryOp) and \
         node.op == "<<":
@@ -385,7 +385,7 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].oid_value != 0 && %(k)s_TEST [i].info_value != NULL; i++) {
-        fprintf (stderr, "[%%i] ", i);
+        fprintf (stderr, "[%%zi] ", i);
         assert (%(k)s [i].oid_value == %(k)s_TEST [i].oid_value);
         assert (%(k)s [i].info_value && %(k)s_TEST [i].info_value);
         assert (streq (%(k)s [i].info_value, %(k)s_TEST [i].info_value));
@@ -396,7 +396,7 @@ int main () {
         print ("""
     fprintf (stderr, "Test %(k)s: ");
     for (i = 0; %(k)s_TEST [i].info_type != NULL; i++) {
-        fprintf (stderr, "[%%i] ", i);
+        fprintf (stderr, "[%%zi] ", i);
         assert (streq (%(k)s [i].info_type, %(k)s_TEST [i].info_type));
         assert (%(k)s [i].info_flags == %(k)s_TEST [i].info_flags);
         assert (%(k)s [i].info_len == %(k)s_TEST [i].info_len);
@@ -404,8 +404,8 @@ int main () {
         assert (streq (%(k)s [i].dfl, %(k)s_TEST [i].dfl));
         assert (%(k)s [i].flags == %(k)s_TEST [i].flags);
         if (%(k)s [i].oid2info != %(k)s_TEST [i].oid2info) {
-            fprintf (stderr, "%(k)s[%%d].oid2info=<%%p>\\n", i, %(k)s[i].oid2info);
-            fprintf (stderr, "%(k)s_TEST[%%d].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
+            fprintf (stderr, "%(k)s[%%zi].oid2info     =<%%p>\\n", i, %(k)s[i].oid2info);
+            fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
             return 1;
         }
         assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
@@ -442,12 +442,21 @@ args = p.parse_args (sys.argv[1:])
 drivers_dir = os.path.dirname (os.path.abspath (args.source))
 include_dir = os.path.abspath (os.path.join (drivers_dir, "../include"))
 info ("CALL parse_file():")
+
 try:
+    gcc_cppflags = os.environ["CPPFLAGS"].split()
+except KeyError:
+    gcc_cppflags = []
+
+try:
+    ### NOTE: If 'nut-cpp' fails here and returns exit code != 0 alone,
+    ### there is no exception; so to abort pycparser we also print some
+    ### invalid C pragma so the parser does die early.
     ast = parse_file (
         args.source,
         use_cpp=True,
         cpp_path=s_cpp_path (),
-        cpp_args=["-I"+drivers_dir, "-I"+include_dir]
+        cpp_args=["-I"+drivers_dir, "-I"+include_dir] + gcc_cppflags
         )
     if not isinstance(ast, c_ast.FileAST):
         raise RuntimeError("Got a not c_ast.FileAST instance after parsing")
@@ -480,18 +489,24 @@ if args.test:
         gcc = os.environ["CC"]
     except KeyError:
         gcc = "cc"
-    cmd = [gcc, "-std=c11", "-ggdb", "-I", drivers_dir, "-I", include_dir, "-o", prog_file, test_file]
+
+    try:
+        gcc_cflags = os.environ["CFLAGS"].split()
+    except KeyError:
+        gcc_cflags = []
+
+    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file]
     info ("COMPILE: " + " ".join (cmd))
     try:
         subprocess.check_call (cmd)
     except subprocess.CalledProcessError as retcode:
-        warn ("COMPILE FAILED with code ", retcode.returncode)
+        warn ("COMPILE FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)
     info ("SELFTEST ./" + prog_file)
     try:
         subprocess.check_call ("./%s" % prog_file)
     except subprocess.CalledProcessError as retcode:
-        warn ("SELFTEST FAILED with code ", retcode.returncode)
+        warn ("SELFTEST FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)
     info ("SELFTEST %s PASSED" % prog_file)
 

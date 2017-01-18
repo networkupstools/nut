@@ -23,7 +23,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-//#include <neon/ne_xml.h>
 #include <errno.h>
 #include <dirent.h>
 #include <assert.h>
@@ -31,8 +30,9 @@
 #include "dmf.h"
 
 /* The test involves generation of DMF and comparison to existing data.
-   As a random pick, we use powerware-mib.c "as is" (with structures).
-   This causes macro-redefinition conflict (and -Werror dies on it).
+   As a random pick, we use eaton-mib.c "as is" (with structures).
+   This causes macro-redefinition conflict (and -Werror dies on it) -
+   so we undefine a few macros...
 */
 #undef PACKAGE_VERSION
 #undef PACKAGE_NAME
@@ -44,6 +44,9 @@
 int
 main ()
 {
+	nut_debug_level = 10;
+
+	int result;
 	mibdmf_parser_t * dmp = mibdmf_parser_new();
 	if (!dmp) {
 		fprintf(stderr,"FATAL: Can not allocate the DMF parsing structures\n");
@@ -58,10 +61,18 @@ main ()
 #endif
 
 #ifdef DEFAULT_DMFSNMP_DIR
-	mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
+	printf("=== DMF-Test: Parsing data from %s...\n\n", DEFAULT_DMFSNMP_DIR);
+	result = mibdmf_parse_dir(DEFAULT_DMFSNMP_DIR, dmp);
 #else
-	mibdmf_parse_dir("./", dmp);
+	printf("=== DMF-Test: Parsing data from %s...\n\n", "./");
+	result = mibdmf_parse_dir("./", dmp);
 #endif
+
+	if (result != 0) {
+		printf("=== DMF-Test: Error parsing data: %i\n\n", result);
+		mibdmf_parser_destroy(&dmp);
+		return result;
+	}
 
 	/*Debugging
 	 *mib2nut_info_t *m2n = get_mib2nut_table();
@@ -75,21 +86,60 @@ main ()
 	if(aux){
 		while(!(element = alist_get_element_by_name(aux[iterator], "eaton_marlin"))&&(iterator < mibdmf_get_list_size(dmp)))
 			iterator++;
-        
-		if(element)
+
+		if(element) {
+			printf("=== DMF-Test: Found an eaton_marlin element; iterator == %i \n\n", iterator);
 			print_mib2nut_memory_struct((mib2nut_info_t *) element->values[0]);
-	/*printf("\n\n");
-	 *printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
-	 *print_mib2nut_memory_struct(&eaton_marlin);
-	 *End debugging */
+			result = 0;
+		} else {
+			printf("=== DMF-Test: Error, did not find an eaton_marlin element; iterator == %i\n\n", iterator);
+			result = 1;
+		}
+
+		/* printf("\n\n");
+		 * printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
+		 * print_mib2nut_memory_struct(&eaton_marlin);
+		 * End debugging */
+
+#if WITH_DMF_FUNCTIONS
+#if WITH_DMF_LUA
+		// Array of pointers to singular instances of mib2nut_info_t
+		mib2nut_info_t **mib2nut = *(mibdmf_get_mib2nut_table_ptr)(dmp);
+		if ( mib2nut == NULL ) {
+			upsdebugx(1,"FATAL: Could not access the mib2nut index table");
+			result = 1;
+		} else {
+			int i;
+/* Note: the tests are lax: they rely on two first items in both test DMFs
+ * being function-interpreted. Normally we'd search and match that... */
+			for (i = 0; mib2nut[i] != NULL; i++) {
+				if (strcmp("mge", mib2nut[i]->mib_name)==0) {
+					printf("=== DMF-Test: Found an mge MIB mapping, dumping snmp_info; iterator == %i \n\n", i);
+					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[0]));
+					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[1]));
+					break;
+				}
+			}
+			for (i = 0; mib2nut[i] != NULL; i++) {
+				if (strcmp("eaton_epdu", mib2nut[i]->mib_name)==0) {
+					printf("=== DMF-Test: Found an eaton_epdu MIB mapping, dumping snmp_info (note: the gateway routines manipulate driver state (snmp-ups) and do not make sense here, not linked, return error as expected); iterator == %i \n\n", i);
+					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[0]));
+					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[1]));
+					break;
+				}
+			}
+		}
+#endif
+#endif
 
 		printf("=== DMF-Test: Freeing data...\n\n");
 		mibdmf_parser_destroy(&dmp);
 
 		printf("=== DMF-Test: All done\n\n");
-		return 0;
+		return result;
 	}
-	printf("**** Error, no DMF data loaded\n");
+
+	printf("=== DMF-Test: Error, no DMF data loaded\n");
 	mibdmf_parser_destroy(&dmp);
 	return -1;
 }

@@ -1,5 +1,6 @@
-// Compatibility layer for renamed file and may later become home for common
-// DMF-related constructs reusable for other applications than current SNMP one
+/* Compatibility layer for renamed file and may later become home for common
+ * DMF-related constructs reusable for other applications than current SNMP one
+ */
 
 /* dmf.h - Header for (TODO:dmf.c) - the Network UPS Tools XML-driver-loader
  *
@@ -26,5 +27,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/* Note: code that includes this must be built with $(LIBNEON_CFLAGS) */
+#ifndef DMF_H
+#define DMF_H
+
+#include "dmfcore.h"
 #include "dmfsnmp.h"
 
+#endif /* DMF_H */

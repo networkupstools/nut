@@ -114,8 +114,12 @@
 													    
 													    writable = "no"
 													    string = "no"/>
+	</snmp>
+</nut>
+
 <!--
 <snmp name = "name">
+
     <info
         name = "<string>"
         multiplier = "0.2" or constant if string = "yes"
@@ -124,16 +128,19 @@
         lookup = "<string>" or NUUL
         ?setvar? = "(input_phases|output_phases|bypass_phases)"
         ^^^ implies SU_FLAG_SETINT if setvar is not NULL
+
         // flags
         SU_FLAG_STATIC ->
         static = "1"
         absent = "1"
+
         optimize: check the ( value[0] == 'y' || value[0] == '1')
+
         // info_flags
         0   - no attribute
         ST_FLAG_RW - readwrite/writtable="yes"
         ST_FLAG_STRING - string = "yes"
-    /> -->
-    
-	</snmp>
-</nut>
+
+    />
+</snmp>
+-->

@@ -37,12 +37,8 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser	\
  nutdrv_qx
 SNMP_DRIVERLIST = snmp-ups
-if WITH_SNMP
-if WITH_NEON
-if WITH_DMF
+if WITH_DMFMIB
   SNMP_DRIVERLIST += snmp-ups-dmf
-endif
-endif
 endif
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
@@ -210,16 +206,22 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats-mib.c apc-ats-mib.c raritan-px2-mib.c
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
-snmp_ups_CFLAGS = $(AM_CFLAGS) -UWITH_DMFMIB -UWITH_DMF_LUA
+snmp_ups_CFLAGS = $(AM_CFLAGS) -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0 -DWITH_DMF_FUNCTIONS=0
 
-# DMF SNMP
+# DMF SNMP - ok to define this in the open, it is only built if enabled above
 snmp_ups_dmf_SOURCES = snmp-ups.c
 snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
- $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) $(LUA_LIB) \
+ $(top_builddir)/common/libnutdmfsnmp.la $(LIBNEON_LIBS) \
  $(top_builddir)/common/libcommon.la
-snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) -I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
-if HAVE_DMF_LUA
-snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=1 $(LUA_INCLUDE)
+snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) \
+	-I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
+if WITH_DMF_LUA
+LUA_INCLUDE ?= -I/usr/include/lua5.1
+snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
+snmp_ups_dmf_LDADD += $(LUA_LIB)
+else
+# Note: absence of LUA does not require to set -DWITH_DMF_FUNCTIONS=0
+snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=0
 endif
 
 if WITH_SSL
@@ -303,3 +305,10 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
 # corresponding object files.  This library is not actually built,
 EXTRA_LIBRARIES = libdummy.a
 libdummy_a_SOURCES = main.c dstate.c serial.c
+
+# Also define a library with serial-port UPS routines needed for nut-scanner
+noinst_LTLIBRARIES = libserial-nutscan.la
+
+libserial_nutscan_la_SOURCES = serial.c bcmxcp_ser.c
+libserial_nutscan_la_LDFLAGS = $(SERLIBS)
+libserial_nutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include -I$(top_srcdir)/drivers

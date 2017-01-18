@@ -105,6 +105,7 @@ long g_usec_timeout ;
 // Pointer to the array we ultimately use (builtin or dynamic)
 snmp_device_id_t *snmp_device_table = NULL;
 
+#if WITH_DMFMIB
 // This would point to DMF data loaded to by this library, if loaded
 snmp_device_id_t *snmp_device_table_dmf = NULL;
 mibdmf_parser_t *dmfnutscan_snmp_dmp = NULL;
@@ -112,6 +113,13 @@ mibdmf_parser_t *dmfnutscan_snmp_dmp = NULL;
 // Caller of this library like nut-scanner.c should declare extern reference
 // to this variable and set it to non-NULL string in order to try loading DMFs
 char *dmfnutscan_snmp_dir = NULL;
+
+// The snmp-ups-dmf config file attribute for non-default directory
+#ifndef SU_VAR_DMFDIR
+#define SU_VAR_DMFDIR                "dmfdir"
+#endif
+
+#endif
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -142,12 +150,14 @@ static oid * (*nut_usmHMACSHA1AuthProtocol);
 static oid * (*nut_usmDESPrivProtocol);
 
 void uninit_snmp_device_table() {
+#if WITH_DMFMIB
 	if (snmp_device_table == snmp_device_table_dmf)
 		snmp_device_table = NULL;
 	if (dmfnutscan_snmp_dmp!=NULL)
 		mibdmf_parser_destroy(&dmfnutscan_snmp_dmp);
 	snmp_device_table_dmf = NULL;
 	dmfnutscan_snmp_dmp = NULL;
+#endif
 }
 
 /* return 0 on error */
@@ -157,6 +167,7 @@ int init_snmp_device_table()
 	if (snmp_device_table != NULL)
 		return 1;
 
+#if WITH_DMFMIB
 	if (dmfnutscan_snmp_dir != NULL) {
 		// parse_dir, check success, assign var
 		upsdebugx(1, "init_snmp_device_table() trying to load DMF from %s",
@@ -180,6 +191,7 @@ int init_snmp_device_table()
 			}
 		}
 	}
+#endif
 
 #ifdef DEVSCAN_SNMP_BUILTIN
 	if (snmp_device_table == NULL && snmp_device_table_builtin!=NULL) {
@@ -354,12 +366,20 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	/* SNMP device found */
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
+#if WITH_DMFMIB
 	if (dmfnutscan_snmp_dmp!=NULL) {
 		/* DMF is loaded thus used, successfully */
 		dev->driver = strdup("snmp-ups-dmf");
+		if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
+			nutscan_add_option_to_device(dev,SU_VAR_DMFDIR,
+					dmfnutscan_snmp_dir);
+		}
 	} else {
 		dev->driver = strdup("snmp-ups");
 	}
+#else
+	dev->driver = strdup("snmp-ups");
+#endif
 	dev->port = strdup(session->peername);
 	buf = malloc( response->variables->val_len + 1 );
 	if( buf ) {
@@ -420,8 +440,8 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 
 static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
 {
-        size_t name_len;
-        oid name[MAX_OID_LEN];
+	size_t name_len;
+	oid name[MAX_OID_LEN];
 	struct snmp_pdu *pdu, *response = NULL;
 	int status;
 	int index = 0;

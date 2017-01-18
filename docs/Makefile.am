@@ -12,7 +12,7 @@ IMAGE_FILES = images/asciidoc.png \
 	images/old-cgi.png
 
 # Only track here the local deps
-SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf
+SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
@@ -41,7 +41,7 @@ ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
- common.xsl xhtml.xsl chunked.xsl
+ common.xsl xhtml.xsl chunked.xsl asciidoc.txt
 
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \

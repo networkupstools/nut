@@ -3,7 +3,7 @@ dnl | Network UPS Tools: configure.ac                                  |
 dnl +------------------------------------------------------------------+
 
 dnl NUT version number is defined here, with a Git suffix in include/nut_version.h
-AC_INIT(nut, 2.7.4.1, [https://github.com/networkupstools/nut/issues])
+AC_INIT([nut], [2.7.4.1], [https://github.com/networkupstools/nut/issues])
 AC_CONFIG_AUX_DIR([.])
 AC_CONFIG_SRCDIR(server/upsd.c)
 AC_CONFIG_MACRO_DIR([m4])
@@ -109,6 +109,8 @@ AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
+AC_PROG_LN_S
 AC_PROG_EGREP
 AC_PATH_PROG(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
@@ -117,11 +119,31 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val)
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
+
+AC_MSG_CHECKING([whether ln -sr works])
+dnl We need to relative-symlink some files. Or hardlink. Or copy...
+LN_S_R="cp -pR"
+if test "$as_ln_s" = "ln -s" ; then
+    LN_S_R="ln"
+    DIR1="$(mktemp -d "dir1.XXXXX")" && \
+    DIR2="$(mktemp -d "dir2.XXXXX")" && \
+    touch "${DIR1}/a" && \
+    $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
+    ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
+    LN_S_R="$as_ln_s -r"
+    rm -rf "${DIR1}" "${DIR2}"
+fi
+AC_SUBST([LN_S_R], [${LN_S_R}])
+if test "$LN_S_R" = "ln -s -r" ; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no, using $LN_S_R])
+fi
 
 dnl the following may add stuff to LIBOBJS (is this still needed?)
 AC_CHECK_FUNCS(vsnprintf snprintf, [], [
@@ -231,7 +253,8 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c, dmf, snmp_dmf]),
+dnl ### Not forced:   lua, dmf_lua, snmp_dmf_lua
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -247,6 +270,11 @@ AC_ARG_WITH(all,
 		if test -z "${with_ipmi}"; then with_ipmi="${withval}"; fi
 		if test -z "${with_linux_i2c}"; then with_linux_i2c="${withval}"; fi
 		if test -z "${with_dmf}"; then with_dmf="${withval}"; fi
+		if test -z "${with_snmp_dmf}"; then with_snmp_dmf="${withval}"; fi
+dnl NOTE: The LUA integration is experimental, so not forced as part of --with-all
+dnl		if test -z "${with_lua}"; then with_lua="${withval}"; fi
+dnl		if test -z "${with_dmf_lua}"; then with_dmf_lua="${withval}"; fi
+dnl		if test -z "${with_snmp_dmf_lua}"; then with_snmp_dmf_lua="${withval}"; fi
 		AC_MSG_RESULT("${withval}")
 	else
 		AC_MSG_RESULT(not given)
@@ -262,8 +290,16 @@ dnl they are listed near the top by "./configure --help"
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([doc], [build and install documentation], [man=yes])
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
+dnl The NUT legacy option was --with-doc; however to simplify configuration
+dnl in some common packaging frameworks, we also allow --with-docs as
+dnl a second-class citizen (if both are set, the old option name wins).
+dnl Also note that the legacy default was "man=yes" due to requirements
+dnl of the "make distcheck", but it was reduced to "man=auto" so that
+dnl the usual builds can pass by default on systems without asciidoc.
+NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
+NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
+
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -328,20 +364,6 @@ fi
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
 					[WITH_USB], [Define to enable USB support])
 
-dnl ----------------------------------------------------------------------
-dnl checks related to --with-snmp
-
-dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
-fi
-
-if test "${nut_with_snmp}" != "no"; then
-   nut_with_snmp="${nut_have_libnetsnmp}"
-fi
-
-NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
-					[WITH_SNMP], [Define to enable SNMP support])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neon
@@ -357,6 +379,7 @@ fi
 
 NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
+AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
@@ -602,7 +625,7 @@ fi
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
-dnl Explicitely report if we are building nut-scanner or not
+dnl Explicitly report if we are building nut-scanner or not
 dnl since it requires libltdl
 NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
 
@@ -635,57 +658,11 @@ dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
+dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
-
-AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
-AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-	AC_MSG_RESULT(yes)
-	nut_have_asciidoc="yes"
-], [
-	AC_MSG_RESULT(no)
-	nut_have_asciidoc="no"
-])
-
-AC_MSG_CHECKING([if a2x version can build manpages (minimum required 8.6.3)])
-AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-	AC_MSG_RESULT(yes)
-], [
-	AC_MSG_RESULT(no)
-	nut_have_asciidoc="no"
-])
-
-dnl TODO: test for docbook-xsl files (maybe build a test man page?)
-dnl https://github.com/networkupstools/nut/issues/162
-AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
-if test -n "${XSLTPROC}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  nut_have_asciidoc="no"
-fi
-
-AC_MSG_CHECKING([if xmllint is present (mandatory for man page regeneration)])
-if test -n "${XMLLINT}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  nut_have_asciidoc="no"
-fi
-
-AC_MSG_CHECKING([if source-highlight is present (preferable for documentation generation)])
-if test -n "${SOURCE_HIGHLIGHT}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
 
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
-
-dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
-dnl building
-AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
-
 
 case "${nut_with_doc}" in
 	yes|all)
@@ -693,6 +670,9 @@ case "${nut_with_doc}" in
 		;;
 	auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
+		;;
+	skip)
+		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
 	no)
 		nut_doc_build_list=""
@@ -710,9 +690,19 @@ esac
 
 dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
 dnl to ensure that it is processed as several space-separated tokens
+if test -z "${abs_srcdir}" ; then
+	case "${srcdir}" in
+		/*) abs_srcdir="${srcdir}";;
+		"") AC_MSG_ERROR([Can not detect 'srcdir']) ;;
+		*)  abs_srcdir="$(cd "${srcdir}" && pwd)" ;;
+	esac
+fi
+DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
+DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
 for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target}" in
-	*=*=*) AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
+	*=*=*)	rm -rf "${DOCTESTDIR}"
+		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
 	*=*)
 		nut_doc_build_target_base="`echo "${nut_doc_build_target}" | sed 's,=.*$,,'`"
 		nut_doc_build_target_flag="`echo "${nut_doc_build_target}" | sed 's,^.*=,,'`"
@@ -725,7 +715,8 @@ for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target_flag}" in
 	yes|no|auto|skip) ;;
 	"") nut_doc_build_target_flag="yes" ;;
-	*)  AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
+	*)	rm -rf "${DOCTESTDIR}"
+		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
 	esac
 	AC_MSG_CHECKING([desire and ability to build ${nut_doc_build_target_base} documentation])
 	AC_MSG_RESULT([${nut_doc_build_target_flag}])
@@ -738,68 +729,98 @@ for nut_doc_build_target in $nut_doc_build_list; do
 dnl Notes: Document options below assume either no flag value (which
 dnl by default means "yes"), "yes" which is a requirement, or "auto"
 dnl to detect if we can build the wanted documentation format and yet
-dnl not fail if we have no tools to generate it.
+dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	html-single*)
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
-			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
-			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
-		;;
-
-	html-chunked*)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
-			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
-			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
-		;;
-
-	pdf*)
-		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
-		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
-			AC_MSG_RESULT(yes)
-			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		], [
-			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
-			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
-		])
-		;;
-
-	man*)
-		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
-		if test "${nut_have_asciidoc}" = yes ; then
+			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+			rm -f "$DOCTESTDIR"/asciidoc*.htm*
+		], [])
+		if test "${can_build_doc_html_single}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
 		else
 			AC_MSG_RESULT(no)
-			if test "${nut_doc_build_target}" = "yes" ; then
-				AC_MSG_ERROR([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			fi
-			DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 		fi
 		;;
 
-	*) AC_MSG_ERROR([--with-doc option refers to unknown documentation format: $nut_doc_build_target]) ;;
+	html-chunked*)
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		can_build_doc_html_chunked=no
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
+		], [])
+		if test "${can_build_doc_html_chunked}" = yes ; then
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		else
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+			fi
+		fi
+		;;
+
+	pdf*)
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
+		can_build_doc_pdf=no
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+			( cd "$DOCTESTDIR" && ${A2X} --format=pdf --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
+			rm -f "${DOCTESTDIR}"/asciidoc.pdf
+		], [])
+		if test "${can_build_doc_pdf}" = yes ; then
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		else
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+			fi
+		fi
+		;;
+
+	man*)
+		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
+		can_build_doc_man=no
+		if test "${nut_have_asciidoc}" = yes ; then
+			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
+			rm -f "${DOCTESTDIR}"/snmp-ups.8
+		fi
+		if test "${can_build_doc_man}" = yes ; then
+			AC_MSG_RESULT(yes)
+			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
+		else
+			AC_MSG_RESULT(no)
+			if test "${nut_doc_build_target_flag}" = "yes" ; then
+				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
+				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
+			else
+				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+			fi
+		fi
+		;;
+
+	*)	rm -rf "${DOCTESTDIR}"
+		AC_MSG_ERROR([--with-doc option refers to unknown documentation format: $nut_doc_build_target]) ;;
 
 	esac
 done
+rm -rf "${DOCTESTDIR}"
 
 case "${nut_with_doc}" in
 auto)
@@ -832,10 +853,20 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
 WITH_MANS=no
+SKIP_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
 	WITH_MANS=yes
 fi
+if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
+	SKIP_MANS=yes
+fi
+dnl Generally WITH_MANS=no is intentionally fatal for "make distcheck"
+dnl But some larger distcheck suites check mans once and then focus on
+dnl other aspects of the project, so they can explicitly skip docs (or
+dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
+dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
+AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
@@ -1281,19 +1312,59 @@ AM_CONDITIONAL(WITH_DEVD, test -n "${devddir}")
 
 dnl
 
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
-AC_PATH_PROGS([A2X], [a2x], [none])
-
-dnl check for spell checking deps
-AC_PATH_PROGS([ASPELL], [aspell], [none])
-AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
-
 dnl AIX system
 AM_CONDITIONAL([SYSTEM_AIX], [test "xAIX" = "x`uname -s 2>/dev/null`"])
 
 dnl processor type
 AC_DEFINE_UNQUOTED(CPU_TYPE, $target_cpu, [Define processor type])
+
+dnl Can use valgrind for memory-leak testing, if present
+AC_PATH_PROGS([VALGRIND], [valgrind], [none])
+with_valgrind="auto"
+AC_MSG_CHECKING(whether to use valgrind for memory-leak testing)
+AC_ARG_WITH(valgrind,
+	AS_HELP_STRING([--with-valgrind=PATH], [whether to use valgrind for memory-leak testing]),
+[
+	case "${withval}" in
+	yes)
+		if test "x$VALGRIND" = "xnone"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["valgrind requested but not found"])
+		fi
+		with_valgrind="yes"
+		;;
+	auto)
+		with_valgrind="auto"
+		;;
+	no)
+		with_valgrind="no"
+		;;
+	*)
+		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
+		if test "x$VALGRIND" = "xnone"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["valgrind requested but not found"])
+		fi
+		with_valgrind="yes"
+		;;
+	esac
+], [])
+
+if test "${with_valgrind}" = auto; then
+	if test "x$VALGRIND" = "xnone"; then
+		with_valgrind="no"
+	else
+		with_valgrind="yes"
+	fi
+fi
+
+if test "${with_valgrind}" = yes; then
+	AC_MSG_RESULT(using ${VALGRIND})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL([HAVE_VALGRIND], [test "x$VALGRIND" != "xnone"])
+AM_CONDITIONAL([WITH_VALGRIND], [test "${with_valgrind}" = yes])
 
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
@@ -1331,64 +1402,232 @@ LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
 
 dnl ----------------------------------------------------------------------
-dnl Check for --with-dmf
+dnl Check for --with-dmf, --with-lua and/or --with-dmf_lua, --with-snmp_dmf and/or --with-snmp_dmf_lua
 dnl This MUST be after DATADIR has been processed!
+NUT_ARG_WITH([dmf], [enable DMF (data mapping file) generic support], [auto])
+NUT_ARG_WITH([lua], [enable LUA-5.1+ scripting generic support], [auto])
+NUT_ARG_WITH([dmf_lua], [enable DMF (data mapping file) support including LUA-5.1+ scripting], [auto])
+NUT_ARG_WITH([snmp_dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
+NUT_ARG_WITH([snmp_dmf_lua], [enable DMF (data mapping file) support for snmp-ups including LUA-5.1+ scripting], [auto])
 
-NUT_ARG_WITH([dmf], [enable DMF (data mapping file) support for snmp-ups], [auto])
+dnl If a higher-level toggle explicitly disables an option, abort the attempt to enable it at lower level
+if test "${nut_with_dmf}" = "no" -a "${nut_with_dmf_lua}" = "yes" ; then
+	AC_MSG_ERROR([Contradicting requests: --with-dmf=$nut_with_dmf and --with-dmf_lua=$nut_with_dmf_lua])
+fi
+
+if test "${nut_with_neon}" = "no" -a "${nut_with_dmf}" = "yes" \
+|| test "${nut_with_neon}" = "no" -a "${nut_with_dmf_lua}" = "yes" \
+|| test "${nut_with_neon}" = "no" -a "${nut_with_snmp_dmf}" = "yes" \
+|| test "${nut_with_neon}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-neon=no (required for DMF) and --with-dmf=$nut_with_dmf and --with-dmf_lua=$nut_with_dmf_lua and --with-snmp_dmf=$nut_with_snmp_dmf and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
+fi
+
+if test "${nut_with_lua}" = "no" -a "${nut_with_dmf_lua}" = "yes" \
+|| test "${nut_with_lua}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+|| test "${nut_with_dmf_lua}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-lua=$nut_with_lua and --with-dmf_lua=$nut_with_dmf_lua and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
+fi
+
+if test "${nut_with_dmf}" = "no" -a "${nut_with_snmp_dmf}" = "yes" \
+|| test "${nut_with_dmf}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-dmf=$nut_with_dmf and --with-snmp_dmf=$nut_with_snmp_dmf and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
+fi
+
+if test "${nut_with_snmp}" = "no" -a "${nut_with_snmp_dmf}" = "yes" \
+|| test "${nut_with_snmp}" = "no" -a "${nut_with_snmp_dmf_lua}" = "yes" \
+; then
+	AC_MSG_ERROR([Contradicting requests: --with-snmp=$nut_with_snmp and --with-snmp_dmf=$nut_with_snmp_dmf and --with-snmp_dmf_lua=$nut_with_snmp_dmf_lua])
+fi
+dnl If we got here, assume that the DMF, LUA and SNMP desires do not contradict
 
 dnl ${nut_with_dmf}: any value except "yes" or "no" is treated as "auto".
 dnl Check for Neon (mandatory)
 if test "${nut_with_dmf}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for DMF (data mapping file) support for snmp-ups"])
+	AC_MSG_ERROR(["neon libraries not found, required for DMF (data mapping file) support for snmp-ups"])
 fi
 
 if test "${nut_with_dmf}" != "no"; then
-   nut_with_dmf="${nut_have_neon}"
+	nut_with_dmf="${nut_have_neon}"
 fi
 
-DMF_BUILD_OPTIONS=""
-AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
-AX_PROG_LUA([5.1], [], [nut_have_lua=yes])
-AX_LUA_HEADERS
-AX_LUA_LIBS
-AM_CONDITIONAL(HAVE_DMF_LUA, test "${nut_have_lua}" = "yes")
-if test "${nut_with_dmf}" = "yes"; then
-   AC_MSG_CHECKING(whether to enable LUA scripting for DMF (data mapping file))
-   if test "${nut_have_lua}" != "no"; then
-      DMF_BUILD_OPTIONS="lua scripting"
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT(no)
-   fi
-
-   dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMFs
-   AC_MSG_CHECKING(whether to enable XML conformance validation on DMFs (data mapping files))
-   if test "${XMLLINT}" != "no"; then
-      if test -n "${DMF_BUILD_OPTIONS}"; then
-        DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}, "
-      fi
-      DMF_BUILD_OPTIONS="${DMF_BUILD_OPTIONS}xml validation"
-      AC_MSG_RESULT(yes)
-   else
-      AC_MSG_RESULT(no)
-   fi
+dnl Now make sure that definitive desires (withXXX==yes) of lower-level
+dnl settings enable undecided (withYYY==auto) higher-level settings
+if test "${nut_with_snmp_dmf_lua}" = "yes"; then
+	nut_with_dmf=yes
+	nut_with_snmp=yes
+	nut_with_lua=yes
 fi
 
-NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups], [${nut_with_dmf}], [(${DMF_BUILD_OPTIONS})],
-					[WITH_DMF], [Define to enable DMF (data mapping file) support for snmp-ups])
+if test "${nut_with_dmf_lua}" = "yes"; then
+	nut_with_dmf=yes
+	nut_with_lua=yes
+fi
 
-dmfsnmpdir="${DATADIR}/dmfsnmp"
-dmfnutscandir="${DATADIR}/dmfnutscan"
+if test "${nut_with_snmp_dmf}" = "yes"; then
+	nut_with_dmf=yes
+	nut_with_snmp=yes
+fi
 
-AC_MSG_CHECKING(whether to install DMF collection of mappings for SNMP-UPS driver)
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-snmp enabled on command-line or by DMF options above
+
+dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
+   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+fi
+
+if test "${nut_with_snmp}" != "no"; then
+   nut_with_snmp="${nut_have_libnetsnmp}"
+fi
+
+dnl ----------------------------------------------------------------------
+dnl Check for LUA-5.1 or above (mandatory if asked for, optional otherwise)
+dnl Note we used to require exactly 5.1: in 5.2 some needed syntax has been
+dnl deprecated, but subsequently the DMF-LUA code was fixed in Git commit ID
+dnl 410139013fe951f8ec65066979a6b0b91e04f9fe. It's not tested with earler LUA.
+nut_have_lua=no
+if test "${nut_with_lua}" != "no"; then
+	dnl TODO: Not sure the PROG is really used, so maybe configure test should change later on
+	AX_PROG_LUA([5.1], [], [nut_have_lua=yes], [nut_have_lua=no])
+	if test "${nut_have_lua}" = "yes"; then
+		AX_LUA_HEADERS([nut_have_lua=yes], [nut_have_lua=no])
+	fi
+	if test "${nut_have_lua}" = "yes"; then
+		AX_LUA_LIBS([nut_have_lua=yes], [nut_have_lua=no])
+	fi
+fi
+
+if test "${nut_have_lua}" = "no" ; then
+	if test "${nut_with_lua}" = "yes" -o "${nut_with_dmf_lua}" = "yes" -o "${nut_with_snmp_dmf_lua}" = "yes" ; then
+		AC_MSG_ERROR([LUA-5.1+ support was requested, but is missing on this system])
+	fi
+fi
+
+dnl ----------------------------------------------------------------------
+dnl Finally, if some settings remained at "auto" but can be enabled - do so
+if test "${nut_with_lua}" != "no"; then
+	nut_with_lua="${nut_have_lua}"
+fi
+
+if test "${nut_with_snmp_dmf}" = "auto" ; then
+	if test "${nut_with_snmp}" = yes -a "${nut_with_dmf}" = yes; then
+		nut_with_snmp_dmf=yes
+	else
+		nut_with_snmp_dmf=no
+	fi
+fi
+
+if test "${nut_with_dmf_lua}" = "auto" ; then
+	if test "${nut_with_dmf}" = yes -a "${nut_with_lua}" = yes ; then
+		nut_with_dmf_lua=yes
+	else
+		nut_with_dmf_lua=no
+	fi
+fi
+
+if test "${nut_with_snmp_dmf_lua}" = "auto" ; then
+	if test "${nut_with_snmp_dmf}" = yes -a "${nut_with_dmf_lua}" = yes ; then
+		nut_with_snmp_dmf_lua=yes
+	else
+		nut_with_snmp_dmf_lua=no
+	fi
+fi
+
+NUT_REPORT_FEATURE([build SNMP drivers], [${nut_with_snmp}], [],
+					[WITH_SNMP], [Define to enable SNMP support])
+AM_CONDITIONAL([HAVE_SNMP], [test "${nut_have_libsnmp}" = "yes"])
+
+NUT_REPORT_FEATURE([enable LUA-5.1+ scripting generic support], [${nut_with_lua}], [],
+					[WITH_LUA], [Define to enable LUA-5.1+ scripting generic support])
+AM_CONDITIONAL([HAVE_LUA], [test "${nut_have_lua}" = "yes"])
+
+dnl NOTE that below there is a difference between WANT_* C macros and
+dnl the WITH_* automake variables to control the Makefile workflows.
+dnl This is needed because same sources are built with different macro
+dnl setups for binaries that support DMF or legacy ones. Where and wen
+dnl needed, the makefile recipes will set same-named WITH_* macros to
+dnl equal 1 or 0, allowing CPP tests like "#if WITH_FEATURENAME".
+NUT_REPORT_FEATURE([enable DMF (data mapping file) generic support], [${nut_with_dmf}], [],
+					[WANT_DMF], [Define to enable DMF (data mapping file) generic support])
+AM_CONDITIONAL([WITH_DMF], [test "${nut_with_dmf}" = "yes"])
+
+NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with LUA], [${nut_with_dmf_lua}], [],
+					[WANT_DMF_LUA], [Define to enable DMF (data mapping file) integration with LUA])
+AM_CONDITIONAL([WITH_DMF_LUA], [test "${nut_with_dmf_lua}" = "yes"])
+
+dnl This may later become a logical "or" of enabled supports for at least one
+dnl functional language in DMF, and/or a configure flag to disable this all.
+nut_with_dmf_functions=no
+if test \
+	"${nut_with_dmf_lua}" = "yes" \
+; then
+	nut_with_dmf_functions=yes
+fi
+NUT_REPORT_FEATURE([enable DMF (data mapping file) integration with dynamic languages], [${nut_with_dmf_functions}], [],
+					[WANT_DMF_FUNCTIONS], [Define to enable DMF (data mapping file) integration with dynamic languages])
+AM_CONDITIONAL([WITH_DMF_FUNCTIONS], [test "${nut_with_dmf_functions}" = "yes"])
+
+NUT_REPORT_FEATURE([enable DMF (data mapping file) support for snmp-ups MIBs], [${nut_with_snmp_dmf}], [],
+					[WANT_DMFMIB], [Define to enable DMF (data mapping file) support for snmp-ups MIBs])
+AM_CONDITIONAL([WITH_DMFMIB], [test "${nut_with_snmp_dmf}" = "yes"])
+
+dnl The dmf*resdir variables point to resources, original DMFs with their
+dnl original basenames same as *-mib.c files they were generated from.
+dnl The dmf*dir variables are separate directories where filenames (symlinks)
+dnl are specially ordered so that some mappings are loaded and tried before
+dnl others (specifically, "ietf" standard fallback MIBs must be last); these
+dnl are the directories used by default in DMF binaries.
+dmfsnmpresdir=""
+dmfnutscanresdir=""
+dmfsnmpdir=""
+dmfnutscandir=""
+if test "${nut_with_dmf}" = yes -o "${nut_with_snmp_dmf}" = yes -o "${nut_with_snmp_dmf_lua}" = yes ; then
+	dmfsnmpresdir="${DATADIR}/dmfsnmp"
+	dmfnutscanresdir="${DATADIR}/dmfnutscan"
+	dmfsnmpdir="${DATADIR}/dmfsnmp.d"
+	dmfnutscandir="${DATADIR}/dmfnutscan.d"
+fi
+
+AC_MSG_CHECKING(whether to install DMF resource collection of mappings for SNMP-UPS driver)
+AC_ARG_WITH(dmfsnmp-res-dir,
+	AS_HELP_STRING([--with-dmfsnmp-res-dir=PATH], [where to install DMF resource collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp if DMF+SNMP are enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfsnmpresdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings resource directory requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfsnmpresdir=""
+		;;
+	*)
+		dmfsnmpresdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfsnmpresdir}"; then
+	AC_MSG_RESULT(using ${dmfsnmpresdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_RES_DIR, "${dmfsnmpresdir}", [Default path for DMF resource collection of mappings for SNMP-UPS driver])
+
+AC_MSG_CHECKING(whether to activate DMF collection of mappings for SNMP-UPS driver)
 AC_ARG_WITH(dmfsnmp-dir,
-	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp)]),
+	AS_HELP_STRING([--with-dmfsnmp-dir=PATH], [where to install DMF active collection of mappings for SNMP-UPS driver (DATADIR/dmfsnmp.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${dmfsnmpdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory requested but not found"])
+			AC_MSG_ERROR(["DMF SNMP active mappings directory requested but not found"])
 		fi
 		;;
 	auto)
@@ -1406,18 +1645,45 @@ if test -n "${dmfsnmpdir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF collection of mappings for SNMP-UPS driver])
-AM_CONDITIONAL(WITH_DMF, test -n "${dmfsnmpdir}")
+AC_DEFINE_UNQUOTED(DEFAULT_DMFSNMP_DIR, "${dmfsnmpdir}", [Default path for DMF active collection of mappings for SNMP-UPS driver])
 
-AC_MSG_CHECKING(whether to install DMF collection of mappings for nut-scanner SNMP mode)
+AC_MSG_CHECKING(whether to install DMF resource collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-res-dir,
+	AS_HELP_STRING([--with-dmfnutscan-res-dir=PATH], [where to install DMF resourcecollection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan if DMF+SNMP are enabled)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dmfnutscanresdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR(["DMF SNMP mappings resource directory for nut-scanner requested but not found"])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dmfnutscanresdir=""
+		;;
+	*)
+		dmfnutscanresdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dmfnutscanresdir}"; then
+	AC_MSG_RESULT(using ${dmfnutscanresdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_RES_DIR, "${dmfnutscanresdir}", [Default path for DMF resource collection of mappings for SNMP mode of nut-scanner])
+
+AC_MSG_CHECKING(whether to activate DMF collection of mappings for nut-scanner SNMP mode)
 AC_ARG_WITH(dmfnutscan-dir,
-	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan)]),
+	AS_HELP_STRING([--with-dmfnutscan-dir=PATH], [where to install DMF active collection of mappings for nut-scanner SNMP mode (DATADIR/dmfnutscan.d if DMF+SNMP are enabled)]),
 [
 	case "${withval}" in
 	yes)
 		if test -z "${dmfnutscandir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["DMF SNMP mappings directory for nut-scanner requested but not found"])
+			AC_MSG_ERROR(["DMF SNMP active mappings directory for nut-scanner requested but not found"])
 		fi
 		;;
 	auto)
@@ -1435,8 +1701,273 @@ if test -n "${dmfnutscandir}"; then
 else
 	AC_MSG_RESULT(no)
 fi
-AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF collection of mappings for SNMP mode of nut-scanner])
-AM_CONDITIONAL(WITH_DMF, test -n "${dmfnutscandir}")
+AC_DEFINE_UNQUOTED(DEFAULT_DMFNUTSCAN_DIR, "${dmfnutscandir}", [Default path for DMF active collection of mappings for SNMP mode of nut-scanner])
+
+
+dnl If the arg is not passed explicitly, we remain with "auto" to pick below
+want_regenerate_dmf_snmp=auto
+AC_MSG_CHECKING(whether we want to regenerate DMF SNMP mapping files from C sources)
+AC_ARG_WITH(dmfsnmp-regenerate,
+	AS_HELP_STRING([--with-dmfsnmp-regenerate], [use DMF SNMP mapping files from Git/Tarball, or regenerate them (auto = yes, if we can and if DMF is enabled)]),
+[
+	case "${withval}" in
+	yes|no|auto)	want_regenerate_dmf_snmp="${withval}" ;;
+	"") ;; dnl keep "auto"
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfsnmp-regenerate : ${withval}])
+		;;
+	esac
+], [])
+AC_MSG_RESULT([${want_regenerate_dmf_snmp}])
+
+want_regenerate_dmf_nutscan=auto
+AC_MSG_CHECKING(whether we want to regenerate DMF collection of mappings for nut-scanner SNMP mode)
+AC_ARG_WITH(dmfnutscan-regenerate,
+	AS_HELP_STRING([--with-dmfnutscan-regenerate], [use DMF collection of mappings for nut-scanner SNMP mode from Git/Tarball, or regenerate them (auto = yes, if dmfsnmp-regenerate=yes)]),
+[
+	case "${withval}" in
+	yes|no|auto)	want_regenerate_dmf_nutscan="${withval}" ;;
+	"") ;; dnl keep "auto"
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+AC_MSG_RESULT([${want_regenerate_dmf_nutscan}])
+
+dnl Ability to regenerate the DMF files from C sources depends on both
+dnl availability of a Python pycparser module and support in the filter
+dnl of "scripts/DMF/nut_cpp" script to make system headers parsable by
+dnl pycparser (it does not support many "extra" keywords).
+dnl Note: this test should be among the last in the configure script,
+dnl so it can provide reasonable features in "config.h" to the compiler
+dnl as we try to parse and test-build a C(original)->DMF->C(selftest) file.
+dnl NOTE: we populate a "config.h" with collected data matching this system,
+dnl using an implementation detail of autotools - storing the defined data
+dnl for C/C++ in a temporary "confdefs.h" file.
+can_generate_dmf_snmp=untested
+if test "${want_regenerate_dmf_snmp}" != no ; then
+	AC_MSG_CHECKING([if we can regenerate DMF files from C sources])
+	can_generate_dmf_snmp=no
+	CURDIR="$(pwd)" && \
+	if test "${nut_with_dmf}" = "yes"; then
+	{	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
+		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
+		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
+		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
+		{	cd "${DMFDIR}" && \
+				echo "Test if we can use dmfify-mib.sh (got suitable environment)" >&2 && \
+				./dmfify-mib.sh --sanity-check \
+				|| { can_generate_dmf_snmp="no: ERROR: Missing prerequisites for C to DMF parsing"; false; } && \
+			{ cd "${OUTDIR}" && \
+				echo "Test if we can to a full run of dmfify-mib.sh on one file" >&2 && \
+				rm -rf "./apc-ats-mib.dmf" && cat "${CURDIR}/confdefs.h" > config.h && \
+				CFLAGS="-I${OUTDIR}" "$DMFDIR/dmfify-mib.sh" "${SRCDIR}/drivers/apc-ats-mib.c" && \
+				test -s "./apc-ats-mib.dmf" \
+				|| { can_generate_dmf_snmp="no: ERROR: Failed compilation of a test C to DMF parse run"; false; } && \
+			  for F in "${SRCDIR}/drivers/"*-mib.c ; do \
+				test -s "$F" || continue; \
+				echo "Test if we can nut_cpp parse '$F'" >&2; \
+				"$DMFDIR/nut_cpp" "-I${OUTDIR}" "-I${SRCDIR}/drivers" "-I${SRCDIR}/include" "$F" > /dev/null \
+				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
+			  done ; } ; \
+		}
+		RES=$?; rm -rf "$OUTDIR"; test "${RES}" = 0
+	} >&5 2>&5 \
+	&& can_generate_dmf_snmp=yes
+	fi
+	if test -n "${CURDIR}" ; then cd "${CURDIR}" ; fi
+
+	AC_MSG_RESULT(${can_generate_dmf_snmp})
+	if test "${can_generate_dmf_snmp}" != yes ; then can_generate_dmf_snmp=no ; fi
+fi
+
+AC_MSG_CHECKING(whether we will regenerate DMF SNMP mapping files from C sources)
+with_regenerate_dmf_snmp=no
+case "${want_regenerate_dmf_snmp}" in
+	auto)
+		if test "${can_generate_dmf_snmp}" = yes -a "${nut_with_dmf}" = "yes"; then
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_snmp=yes
+		else
+			with_regenerate_dmf_snmp=no
+			AC_MSG_RESULT(no)
+		fi ;;
+	yes)
+		if test "${can_generate_dmf_snmp}" = yes; then
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_snmp=yes
+		else
+			with_regenerate_dmf_snmp=no
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([Can not generate DMF SNMP mappings, but re-generation was requested])
+		fi
+		;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_regenerate_dmf_snmp=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown state for want_regenerate_dmf_snmp : ${want_regenerate_dmf_snmp}])
+		;;
+esac
+
+NUT_REPORT_FEATURE([enable regeneration of DMF SNMP mapping files from C sources], [${with_regenerate_dmf_snmp}], [],
+				[WITH_REGENERATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
+AM_CONDITIONAL([WITH_REGENERATE_DMF_SNMP], [test "${with_regenerate_dmf_snmp}" = "yes"])
+
+dnl Note: this regeneration is done by a custom-built dmf-reindexer tool
+dnl It does not directly rely on Python etc. It may also be skipped if
+dnl the build uses original files (then this reparse of those files is
+dnl expected to match as well, as all are in tarball or Git at once).
+dnl Note: On some systems that custom build can fail. It is questionable if
+dnl we need it at all, or can use the binary built as part of nut-scanner.
+dnl For simplicity we just want the common build of the tool.
+dnl Developers hacking on alternate codepaths may enable the custom build here.
+AM_CONDITIONAL([USE_CUSTOM_BUILD_OF_DMF_REINDEX], [false])
+
+with_regenerate_dmf_nutscan=no
+AC_MSG_CHECKING(whether we will regenerate DMF collection of mappings for nut-scanner SNMP mode)
+case "${want_regenerate_dmf_nutscan}" in
+	yes)
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_nutscan=yes
+		;;
+	auto)
+		if test "${with_regenerate_dmf_snmp}" = yes ; then
+			AC_MSG_RESULT(yes)
+			with_regenerate_dmf_nutscan=yes
+		else
+			with_regenerate_dmf_nutscan=no
+			AC_MSG_RESULT(no)
+		fi
+		;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_regenerate_dmf_nutscan=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown state for want_regenerate_dmf_nutscan : ${want_regenerate_dmf_nutscan}])
+		;;
+esac
+
+NUT_REPORT_FEATURE([enable regeneration of DMF collection of mappings for nut-scanner SNMP mode], [${with_regenerate_dmf_nutscan}], [],
+				[WITH_REGENERATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
+AM_CONDITIONAL([WITH_REGENERATE_DMF_NUTSCAN], [test "${with_regenerate_dmf_nutscan}" = "yes"])
+
+
+with_xmllint_dmf_snmp=auto
+AC_MSG_CHECKING(whether to validate DMF SNMP mapping files against XML schema)
+AC_ARG_WITH(dmfsnmp-validate,
+	AS_HELP_STRING([--with-dmfsnmp-validate], [validate schema of DMF SNMP mapping files (auto = yes, if dmfsnmp-regenerate=yes and xmllint is present)]),
+[
+	case "${withval}" in
+	yes)
+		if test -n "${XMLLINT}"; then
+			AC_MSG_RESULT(yes)
+			with_xmllint_dmf_snmp=yes
+		else
+			AC_MSG_RESULT([no (xmllint not available)])
+			AC_MSG_ERROR([Can not validate DMF schema: got the request, but got no tools])
+		fi
+		;;
+	auto) with_xmllint_dmf_snmp=auto ;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_xmllint_dmf_snmp=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+
+if test "${with_xmllint_dmf_snmp}" = auto; then
+	if test "${with_regenerate_dmf_snmp}" = yes -a -n "${XMLLINT}"; then
+		AC_MSG_RESULT(yes)
+		with_xmllint_dmf_snmp=yes
+	else
+		with_xmllint_dmf_snmp=no
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+NUT_REPORT_FEATURE([enable validation of DMF SNMP mapping files against XML schema using XMLLINT], [${with_xmllint_dmf_snmp}], [],
+				[WITH_VALIDATE_DMF_SNMP], [enable validation of DMF for snmp-ups])
+AM_CONDITIONAL([WITH_VALIDATE_DMF_SNMP], [test "${with_xmllint_dmf_snmp}" = "yes"])
+
+
+with_xmllint_dmf_nutscan=auto
+AC_MSG_CHECKING(whether to validate DMF collection of mappings for nut-scanner SNMP mode against XML schema)
+AC_ARG_WITH(dmfnutscan-validate,
+	AS_HELP_STRING([--with-dmfnutscan-validate], [validate schema of DMF collection of mappings for nut-scanner SNMP mode (auto = yes, if dmfnutscan-regenerate=yes and xmllint is present)]),
+[
+	case "${withval}" in
+	yes)
+		if test -n "${XMLLINT}"; then
+			AC_MSG_RESULT(yes)
+			with_xmllint_dmf_nutscan=yes
+		else
+			AC_MSG_RESULT([no (xmllint not available)])
+			AC_MSG_ERROR([Can not validate DMF schema: got the request, but got no tools])
+		fi
+		;;
+	auto) with_xmllint_dmf_nutscan=auto ;;
+	no)
+		AC_MSG_RESULT([no (by request)])
+		with_xmllint_dmf_nutscan=no
+		;;
+	*)
+		AC_MSG_ERROR([Unknown argument for --with-dmfnutscan-regenerate : ${withval}])
+		;;
+	esac
+], [])
+
+if test "${with_xmllint_dmf_nutscan}" = auto; then
+	if test "${with_regenerate_dmf_nutscan}" = yes -a -n "${XMLLINT}"; then
+		AC_MSG_RESULT(yes)
+		with_xmllint_dmf_nutscan=yes
+	else
+		with_xmllint_dmf_nutscan=no
+		AC_MSG_RESULT(no)
+	fi
+fi
+
+NUT_REPORT_FEATURE([enable validation of DMF collection of mappings for nut-scanner SNMP mode against XML schema using XMLLINT], [${with_xmllint_dmf_nutscan}], [],
+				[WITH_VALIDATE_DMF_NUTSCAN], [enable validation of DMF for nut-scanner])
+AM_CONDITIONAL([WITH_VALIDATE_DMF_NUTSCAN], [test "${with_xmllint_dmf_nutscan}" = "yes"])
+
+if test -n "${host_alias}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host_alias}", [host env spec we run on])
+else
+	if test -n "${host}" ; then
+		AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_ALIAS, "${host}", [host env spec we run on])
+	fi
+fi
+if test -n "${build_alias}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build_alias}", [host env spec we built on])
+else
+	if test -n "${build}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_ALIAS, "${build}", [host env spec we built on])
+	fi
+fi
+if test -n "${target_alias}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target_alias}", [host env spec we built for])
+else
+	if test -n "${target}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_ALIAS, "${target}", [host env spec we built for])
+	fi
+fi
+
+if test -n "${host_cpu}" -a -n "${host_os}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_HOST_SHORT_ALIAS, "${host_cpu}-${host_os}", [host OS short spec we run on])
+fi
+if test -n "${build_cpu}" -a -n "${build_os}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_BUILD_SHORT_ALIAS, "${build_cpu}-${build_os}", [host OS short spec we built on])
+fi
+if test -n "${target_cpu}" -a -n "${target_os}" ; then
+	AC_DEFINE_UNQUOTED(AUTOTOOLS_TARGET_SHORT_ALIAS, "${target_cpu}-${target_os}", [host OS short spec we built for])
+fi
 
 dnl ----------------------------------------------------------------------
 
@@ -1492,6 +2023,8 @@ AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
 AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(dmfsnmpresdir)
+AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
 AC_SUBST(dmfnutscandir)
 AC_SUBST(auglensdir)
@@ -1542,6 +2075,7 @@ AC_OUTPUT([
  scripts/systemd/nut-server.service
  scripts/systemd/nutshutdown
  scripts/DMF/Makefile
+ scripts/DMF/legacy-mibfiles-list.mk
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
  scripts/Solaris/postinstall

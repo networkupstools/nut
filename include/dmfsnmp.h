@@ -108,15 +108,30 @@
 
 #include <stdbool.h>
 #include "extstate.h"
+#include "alist.h"
 #include "snmp-ups.h"
 #include "nutscan-snmp.h"
 
-#ifdef WITH_DMF_LUA
-/* NOTE: This code uses deprecated lua_open() that is removed since lua5.2.
- * As of this initial code-drop, the implementation is experimental and is
- * incomplete and very likely buggy. Developers of LUA integration should
- * explicitly reconfigure and rebuild NUT with `-DWITH_DMF_LUA=1` in their
- * CFLAGS - it is not exposed otherwise.
+#ifdef WANT_DMF_FUNCTIONS
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS WANT_DMF_FUNCTIONS
+# endif
+#endif
+
+#if WITH_DMF_LUA
+# ifndef WITH_DMF_FUNCTIONS
+#  define WITH_DMF_FUNCTIONS 1
+# endif
+# if ! WITH_DMF_FUNCTIONS
+#  error "Explicitly not WITH_DMF_FUNCTIONS, but WITH_DMF_LUA - fatal conflict"
+# endif
+#endif
+
+#if WITH_DMF_LUA
+/* NOTE: as of this initial code-drop, the DMF+LUA implementation is
+ * experimental and may be incomplete and very likely buggy. Developers
+ * of LUA integration should explicitly reconfigure and rebuild NUT with
+ * `-DWITH_DMF_LUA=1` in their CFLAGS - or configure --with-dmf_lua=yes.
  */
 # include <lua.h>
 # include <lauxlib.h>
@@ -128,13 +143,6 @@
  *
  */
 #define YES "yes"
-#define DEFAULT_CAPACITY 16
-
-#ifdef PATH_MAX
-#define PATH_MAX_SIZE PATH_MAX
-#else
-#define PATH_MAX_SIZE 1024
-#endif
 
 /* Recognized DMF XML tags */
 #define DMFTAG_NUT "nut"
@@ -145,7 +153,7 @@
 /* NOTE: Actual support for functions is optionally built so
  * it can be missing in a binary (with warning in DMF import)
  * Also it may be backed by various implementations (LUA for starters) */
-#define DMFTAG_FUNCTIONS "functions"
+#define DMFTAG_FUNCTIONSET "functionset"
 #define DMFTAG_FUNCTION "function"
 
 #define MIB2NUT_VERSION "version"
@@ -206,25 +214,11 @@
 
 #define TYPE_DAISY "type_daisy"
 
-#ifdef WITH_DMF_LUA
-#define TYPE_FUNCTION "function"
+#if WITH_DMF_FUNCTIONS
+/* Additional snmp_info attribute to reference dynamic functions to produce calculated values */
+#define TYPE_FUNCTIONSET "functionset"
 #endif
-/* "Auxiliary list" structure to store hierarchies
- * of lists with bits of data */
-typedef struct {
-	void **values;
-	int size;
-	int capacity;
-	char *name;
-	void (*destroy)(void **self_p);
-	void (*new_element)(void);
-} alist_t;
 
-typedef enum {
-	ERR = -1,
-	OK,
-	DMF_NEON_CALLBACK_OK = 1
-} state_t;
 
 /* Aggregate the data storage and variables needed to
  * parse the DMF representation of MIB data for NUT */
@@ -241,12 +235,14 @@ typedef struct {
 	int device_table_counter;
 } mibdmf_parser_t;
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 typedef struct {
-	char *name;
+	char *name; 		/* Required for the DMF entry to be parsed */
+	char *language;		/* Practical default is "lua-5.1" */
 	char *code;
-} function_t;
+} dmf_function_t;
 #endif
+
 /* Initialize the data for dmf.c */
 mibdmf_parser_t *
 	mibdmf_parser_new();
@@ -289,6 +285,24 @@ int
 	mibdmf_parse_dir (char *dir_name, mibdmf_parser_t *dmp);
 
 
+/* Generalize verification that a table entry is all-NULL */
+/* Maybe these belong in snmp-ups.c/.h - but so far used here, defined here */
+bool
+	is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct);
+
+bool
+	is_sentinel__snmp_info_t(const snmp_info_t *pstruct);
+
+bool
+	is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct);
+
+bool
+	is_sentinel__alarms_info_t(const alarms_info_t *pstruct);
+
+bool
+	is_sentinel__info_lkp_t(const info_lkp_t *pstruct);
+
+
 /* Debugging dumpers */
 void
 	print_snmp_memory_struct (snmp_info_t *self);
@@ -323,7 +337,7 @@ alist_t *
  * be validly reallocated, freed, etc. */
 alist_t **
 	mibdmf_get_aux_list_ptr(mibdmf_parser_t *dmp);
-        
+
 alist_t **
 	mibdmf_get_initial_list_ptr(mibdmf_parser_t *dmp);
 
@@ -360,26 +374,33 @@ void
 	alarm_info_node_handler (alist_t *list, const char **attrs);
 
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 /* Create and initialize a function element */
-function_t *
-	function_new (const char *name);
+dmf_function_t *
+	function_new (const char *name, const char *language);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
 void
 	function_destroy (void **self_p);
-        
+
 void
 	function_node_handler(alist_t *list, const char **attrs);
 #endif
 
 /* Same for snmp structure instances */
+/* Note: The DMF (XML) structure contains a "functionset" reference and
+ * the "name" of the mapping field; these are looked up during parsing
+ * and "converted" to function code and its language and passed from
+ * snmp_info_node_handler() to info_snmp_new() as such - not the original
+ * "functionset" string value.
+ */
+
 snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
 		info_lkp_t *lookup, int *setvar
-#ifdef WITH_DMF_LUA
-,char **function
+#if WITH_DMF_FUNCTIONS
+,char **function_language, char **function_code
 #endif
 );
 
@@ -403,38 +424,6 @@ void
 void
 	mib2nut_info_node_handler (alist_t *list, const char **attrs);
 
-
-
-
-/* Create new instance of alist_t with LOOKUP type,
- * for storage a list of collections
- *alist_t *
- *	alist_new ();
-
- * New generic list element (can be the root element) */
-alist_t *
-	alist_new (
-		const char *name,
-		void (*destroy)(void **self_p),
-		void (*new_element)(void)
-	);
-
-/* Destroy full array of generic list elements */
-void
-	alist_destroy (alist_t **self_p);
-
-/* Add a generic element at the end of the list */
-void
-	alist_append (alist_t *self, void *element);
-
-/* Return the last element of the list */
-alist_t *
-	alist_get_last_element (alist_t *self);
-
-/* Return the element which has `char* name` equal to the requested one */
-alist_t *
-	alist_get_element_by_name (alist_t *self, char *name);
-
 void
 	lookup_info_node_handler (alist_t *list, const char **attrs);
 
@@ -444,20 +433,20 @@ char *
 
 /* The guts of XML parsing: callbacks that act on an instance of mibdmf_parser_t */
 int
-	xml_dict_start_cb (
+	mibdmf_xml_dict_start_cb (
 		void *userdata, int parent,
 		const char *nspace, const char *name,
 		const char **attrs
 	);
 
 int
-	xml_end_cb (
+	mibdmf_xml_end_cb (
 		void *userdata, int state, const char *nspace,
 		const char *name
 	);
 
 int
-	xml_cdata_cb(
+	mibdmf_xml_cdata_cb(
 		void *userdata, int state, const char *cdata, size_t len
 	);
 
@@ -469,7 +458,7 @@ unsigned long
 int
 	compile_info_flags (const char **attrs);
 
-#ifdef WITH_DMF_LUA
+#if WITH_DMF_FUNCTIONS
 char *
 	snmp_info_type_to_main_function_name(const char * info_type);
 #endif
