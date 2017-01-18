@@ -46,6 +46,10 @@ void nutscan_init(void)
 	char *libname = NULL;
 #ifdef WITH_USB
 	libname = get_libname("libusb-0.1.so");
+	if (!libname) {
+		/* We can also use libusb-compat from newer libusb-1.0 releases */
+		libname = get_libname("libusb.so");
+	}
 	if (libname) {
 		nutscan_avail_usb = nutscan_load_usb_library(libname);
 		free(libname);
