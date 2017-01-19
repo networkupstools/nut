@@ -32,7 +32,7 @@ Active members
 - Jean Perriault: web consultant
 - Eric S. Raymond: Documentation consultant
 - Oden Eriksson: Mandriva packager
-- Stanislav Brabec: Novell / Suse packager
+- Stanislav Brabec: Novell / SUSE packager
 - Michal Hlavinka: Redhat packager
 - Antoine Colombier: trainee
 

@@ -55,7 +55,7 @@ NUT promotes and uses many standards, such as:
 QA tools and metrics
 ~~~~~~~~~~~~~~~~~~~~
 
-NUT's quality is constently monitored using many tools, like:
+NUT's quality is constantly monitored using many tools, like:
 
 - a Revision Control System (link:https://github.com/networkupstools/nut[Git]) to
 track development and ease regression fixes.
@@ -78,7 +78,7 @@ link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list, and fixed quickly.
 ////////////////////////////////////////////////////////////////////////////////
 
-- a project portal with trackers for bugs, feature request, patchs and tasks
+- a project portal with trackers for bugs, feature request, patches and tasks
 
 - Static code analysis:
   * link:https://scan.coverity.com/projects/networkupstools-nut[Coverity Scan overview of NUT]
