@@ -51,7 +51,22 @@ matrix:
         - libxpm-dev
         - libcppunit-dev
         - libcppunit-subunit-dev
-  - env: BUILD_TYPE=default-withdoc
+  - env:
+        - BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages:
+        - asciidoc
+        - xsltproc
+        - libxml2-utils
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+        - aspell
+        - aspell-en
+  - env:
+        - BUILD_TYPE=default-withdoc
     os: linux
     addons:
       apt:

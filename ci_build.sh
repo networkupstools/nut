@@ -24,7 +24,7 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
-if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [ "$BUILD_TYPE" == "default-nodoc" ] || [ "$BUILD_TYPE" == "default-withdoc" ] ; then
+if [ "$BUILD_TYPE" == "default" ] || [ "$BUILD_TYPE" == default-spellcheck ] || [ "$BUILD_TYPE" == "default-alldrv" ] || [ "$BUILD_TYPE" == "default-nodoc" ] || [ "$BUILD_TYPE" == "default-withdoc" ] ; then
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -110,6 +110,12 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
             CONFIG_OPTS+=("--with-doc=no")
             DO_DISTCHECK=no
             ;;
+        "default-spellcheck")
+            CONFIG_OPTS+=("--with-all=no")
+            CONFIG_OPTS+=("--with-libltdl=no")
+            CONFIG_OPTS+=("--with-doc=man=skip")
+            DO_DISTCHECK=no
+            ;;
         "default-withdoc")
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
@@ -183,6 +189,15 @@ if [ "$BUILD_TYPE" == "default" ] ||  [ "$BUILD_TYPE" == "default-alldrv" ] || [
     export CCACHE_BASEDIR
     $CI_TIME ./autogen.sh 2> /dev/null
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+
+    case "$BUILD_TYPE" in
+        "default-spellcheck")
+            [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
+            ( cd docs/ && $CI_TIME make VERBOSE=1 spellcheck )
+            exit 0
+            ;;
+    esac
+
     ( echo "`date`: Starting the parallel build attempt..."; \
       $CI_TIME make VERBOSE=1 -k -j8 all; ) || \
     ( echo "`date`: Starting the sequential build attempt..."; \
