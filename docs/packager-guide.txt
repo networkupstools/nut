@@ -188,10 +188,10 @@ the packaging system. Each package's description is composed of a
 paragraph common to all NUT packages, and a part that is specific to the
 package. The common part (further referenced by *COMMON DESC*) is:
 ________________________________________________________________________
- Network UPS Tools (NUT) is a client/server monitoring system that allows computers to share
- uninterruptible power supply (UPS) and power distribution unit (PDU)
- hardware. Clients access the hardware through the server, and are notified
- whenever the power status changes.
+ Network UPS Tools (NUT) is a client/server monitoring system that allows
+ computers to share uninterruptible power supply (UPS) and power distribution
+ unit (PDU) hardware. Clients access the hardware through the server, and are
+ notified whenever the power status changes.
 ________________________________________________________________________
 - The *Files* field lists the content of the package.
 - The mentioned *Size* is a rough estimation of packaged and installed
