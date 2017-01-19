@@ -572,12 +572,13 @@ for root privileges when testing new NUT code, you may wish to use
 compilation times down by only building the driver you are currently working
 on: `--with-drivers=driver1,dummy-ups`.
 
-Before pushing your commits upstream, please run +make distcheck-light+. This
-checks that the Makefiles are not broken, that all the
-relevant files are distributed, and that there are no compilation or
-installation errors. Note that this requires all of the dependencies necessary
-to build the documentation, including asciidoc, a2x, xsltproc, dblatex and any
-additional XSL stylesheets.
+Before pushing your commits upstream, please run +make distcheck-light+.
+This checks that the Makefiles are not broken, that all the relevant files
+are distributed, and that there are no compilation or installation errors.
+Note that unless you specifically pass `--with-doc=skip` to `configure`,
+this requires all of the dependencies necessary to build the documentation
+to be locally installed on your system, including asciidoc, a2x, xsltproc,
+dblatex and any additional XSL stylesheets.
 
 Running +make distcheck-light+ is especially important if you have added or
 removed files, or updated configure.in or some Makefile.am.  Remember: simply
