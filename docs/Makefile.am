@@ -139,7 +139,7 @@ spellcheck:
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
 		echo "  ASPELL   Spell checking on $$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t -p $(srcdir)/$(NUT_SPELL_DICT) 2>&1`" && \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -d en --lang=en --ignore-accents -a -t -p $(srcdir)/$(NUT_SPELL_DICT) 2>&1`" && \
 			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -a -v '(^[ \t]*[\*\@]|^$$)' 2>/dev/null | grep -v 'Binary file (standard input) matches'`" ; fi; \
 			  test -z "$$OUT" ; } || \
 			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
@@ -165,7 +165,7 @@ spellcheck:
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
-		LANG=C LC_ALL=C $(ASPELL) check -p $(srcdir)/$(NUT_SPELL_DICT) $$docsrc || \
+		LANG=C LC_ALL=C $(ASPELL) check -d en --ignore-accents --lang=en -p $(srcdir)/$(NUT_SPELL_DICT) $$docsrc || \
 			FAILED="$$FAILED $$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
