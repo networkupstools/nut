@@ -49,6 +49,8 @@ matrix:
         - libjpeg-dev
         - libfreetype6-dev
         - libxpm-dev
+        - libcppunit-dev
+        - libcppunit-subunit-dev
   - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:
@@ -60,6 +62,8 @@ matrix:
         - dblatex
         - docbook-xsl
         - docbook-xsl-ns
+        - libcppunit-dev
+        - libcppunit-subunit-dev
 #  - env: BUILD_TYPE=valgrind
 #    os: linux
 #    dist: trusty
@@ -75,6 +79,8 @@ addons:
     packages:
     - git
     - ccache
+    - libcppunit-dev
+    - libcppunit-subunit-dev
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
