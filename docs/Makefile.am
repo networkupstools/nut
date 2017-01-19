@@ -133,14 +133,20 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 # We also must indent the input, because certain piped-in characters are
 # interpreted as commands, and seems this feature can not be turned off.
 # See also http://aspell.net/man-html/Through-A-Pipe.html
-# TODO: Is "grep -a" (treat input as ascii) portable enough?
+# TODO: Is "grep -a" or "grep -b" (treat input as ascii/bin) portable enough?
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
+# TODO: Define a custom language in-repo or during build, that is english
+# plus accents for contributor names that need it?
+# http://unix.stackexchange.com/questions/45128/gedit-or-an-other-non-commandline-editor-with-the-ability-to-spell-check-two-lan
+# TODO: When the issue with accents is solved, change this to "yes" so
+# Travis CI tests do hunt for spelling errors (failing the CI builds):
+SPELLCHECK_ERROR_FATAL = no
 spellcheck: 
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
 		echo "  ASPELL   Spell checking on $$docsrc"; \
 		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -d en --lang=en --ignore-accents -a -t -p $(srcdir)/$(NUT_SPELL_DICT) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -a -v '(^[ \t]*[\*\@]|^$$)' 2>/dev/null | grep -v 'Binary file (standard input) matches'`" ; fi; \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '(^[ \t]*[\*\@]|^$$)' `" ; fi; \
 			  test -z "$$OUT" ; } || \
 			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
 			  FAILED="$$FAILED $$docsrc"; } ; \
@@ -155,7 +161,9 @@ spellcheck:
 		echo "Either way, please follow up by posting a pull request or a patch"; \
 		echo "to integrate your fixes into the common NUT codebase."; \
 		echo "=====================================================================" ; \
-		exit 1; \
+		test x"$(SPELLCHECK_ERROR_FATAL)" = xno || exit 1; \
+		echo "NOTE: SPELLCHECK_ERROR_FATAL == no so this make does not break the build!"; \
+		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
 
 # Interactively spell check all documentation source files (so a human
