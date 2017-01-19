@@ -589,6 +589,14 @@ There is also +make distcheck+, which runs an even stricter set of
 tests than +make distcheck-light+, but will not work unless you have all the
 optional libraries and features installed.
 
+Finally note, that since 2017 the GitHub upstream project is monitored by
+Travis CI (in addition to multi-platform buildbots which occasionally do not
+work). This means that if your posted improvements are based on current NUT
+master branch, the resulting pull request should get tested for a number of
+scenarios automatically. If your code adds a substantial feature, consider
+extending the `.travis.yml` and/or `ci_build.sh` scripts in the workspace
+root to add another `BUILD_TYPE` to the matrix of tests run in parallel.
+
 Even if you do not use your distribution's packages of NUT, installing the
 distribution's list of build dependencies for NUT can reduce the amount of
 trial-and-error when installing dependencies. For instance, in Debian, you can
