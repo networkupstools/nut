@@ -38,6 +38,11 @@ distcheck-light:
 distcleancheck:
 	@:
 
+# Hook the documentation building and validating recipes
+# Note: these are optionally available (as determined during configure runs)
+spellcheck spellcheck-interactive doc:
+	cd $(srcdir)/docs && $(MAKE) $@
+
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
