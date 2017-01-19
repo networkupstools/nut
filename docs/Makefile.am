@@ -125,17 +125,53 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
 	../tools/nut-scanner/README
 
+# Note: de-facto our documentation is beyond ASCII (at least in names of
+# international committers). The grep tests below look if the aspell output
+# contained something other than the OK lines (tagged with asterisk) and
+# aspell's version (tagged with @) and if it did - those lines must be the
+# spellcheck complaints. Empty OUT is ok.
+# We also must indent the input, because certain piped-in characters are
+# interpreted as commands, and seems this feature can not be turned off.
+# See also http://aspell.net/man-html/Through-A-Pipe.html
+# TODO: Is "grep -a" (treat input as ascii) portable enough?
+# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
 spellcheck: 
-	@for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $$docsrc"; \
-		LANG=C $(ASPELL) -a -t -p $(NUT_SPELL_DICT) < $$docsrc | grep [^*]; \
-	done
-# Interactively spell check all documentation source files
+	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 for docsrc in $(SPELLCHECK_SRC); do \
+		echo "  ASPELL   Spell checking on $$docsrc"; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t -p $(srcdir)/$(NUT_SPELL_DICT) 2>&1`" && \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -a -v '(^[ \t]*[\*\@]|^$$)' 2>/dev/null | grep -v 'Binary file (standard input) matches'`" ; fi; \
+			  test -z "$$OUT" ; } || \
+			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
+			  FAILED="$$FAILED $$docsrc"; } ; \
+	 done ; \
+	 if test -n "$$FAILED" ; then \
+		echo "=====================================================================" ; \
+		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
+		echo "=====================================================================" ; \
+		echo "Please 'cd $(abs_srcdir) && make spellcheck-interactive'"; \
+		echo "to either fix document sources or update the dictionary of accepted"; \
+		echo "words and spellings listed in the '$(NUT_SPELL_DICT)' file there."; \
+		echo "Either way, please follow up by posting a pull request or a patch"; \
+		echo "to integrate your fixes into the common NUT codebase."; \
+		echo "=====================================================================" ; \
+		exit 1; \
+	 fi >&2 ; exit 0
+
+# Interactively spell check all documentation source files (so a human
+# can edit the documentation errors and/or add words to custom dictionary).
+# Note that here we do not restrain reported issues, so this might catch more
+# than the automated test above.
 spellcheck-interactive: 
-	@for docsrc in $(SPELLCHECK_SRC); do\
+	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
-		LANG=C $(ASPELL) check -p $(NUT_SPELL_DICT) $$docsrc; \
-	done
+		LANG=C LC_ALL=C $(ASPELL) check -p $(srcdir)/$(NUT_SPELL_DICT) $$docsrc || \
+			FAILED="$$FAILED $$docsrc"; \
+	done ; \
+	if test -n "$$FAILED" ; then \
+		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
+		exit 1; \
+	fi ; exit 0
 else !HAVE_ASPELL
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
