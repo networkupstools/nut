@@ -23,6 +23,7 @@ Active members
 - Charles Lepple: senior lieutenant
 - Emilien Kia: senior developer
 - Daniele Pezzini: senior developer
+- Jim Klimov: senior developer
 - Václav Krpec: junior developer
 - Kjell Claesson: senior developer
 - Alexander Gordeev: junior developer

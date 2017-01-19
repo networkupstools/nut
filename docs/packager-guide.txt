@@ -120,8 +120,7 @@ The following packagers should be interested in working on this subject:
 - OpenBSD: <>
 - PLD: Andrzej Zawadzki <zawadaa@wp.pl>
 - E-Smith: Charlie Brady <charlieb-nut-upsdev@e-smith.com>
-- openSolaris: <> 
-
+- Solaris, OpenSolaris, OpenIndiana and related illumos distributions: Jim Klimov <jimklimov@gmail.com>
 - Windows: check with WinNUT author?!
 - MacOS: <> => Charles Lepple? <>
 - HP-UX: <>
