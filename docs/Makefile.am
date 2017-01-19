@@ -141,12 +141,24 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 # TODO: When the issue with accents is solved, change this to "yes" so
 # Travis CI tests do hunt for spelling errors (failing the CI builds):
 SPELLCHECK_ERROR_FATAL = no
+SPELLCHECK_ENV_DEBUG = no
+ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
+ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
+ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 spellcheck: 
+	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+		echo "ASPELL DEBUG : information about the setup follows:"; \
+		LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+		$(ASPELL) --help || true; \
+		dpkg -l |grep -i aspell || true ; \
+		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | egrep -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "ASPELL proceeding to spellchecking job..."; \
+	 else true; fi
 	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	 for docsrc in $(SPELLCHECK_SRC); do \
 		echo "  ASPELL   Spell checking on $$docsrc"; \
-		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -d en --lang=en --ignore-accents -a -t -p $(srcdir)/$(NUT_SPELL_DICT) 2>&1`" && \
-			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '(^[ \t]*[\*\@]|^$$)' `" ; fi; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
 			  test -z "$$OUT" ; } || \
 			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
 			  FAILED="$$FAILED $$docsrc"; } ; \
@@ -173,7 +185,7 @@ spellcheck:
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
-		LANG=C LC_ALL=C $(ASPELL) check -d en --ignore-accents --lang=en -p $(srcdir)/$(NUT_SPELL_DICT) $$docsrc || \
+		LANG=C LC_ALL=C $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
 			FAILED="$$FAILED $$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
