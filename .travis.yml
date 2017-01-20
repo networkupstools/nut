@@ -3,9 +3,11 @@
 # This file is based on a template used by zproject, but isn't auto-generated. #
 ################################################################################
 
-language: c
+language:
+- c
 
-cache: ccache
+cache:
+- ccache
 
 os:
 - linux
@@ -79,6 +81,7 @@ matrix:
         - docbook-xsl-ns
         - libcppunit-dev
         - libcppunit-subunit-dev
+        - source-highlight
 #  - env: BUILD_TYPE=valgrind
 #    os: linux
 #    dist: trusty

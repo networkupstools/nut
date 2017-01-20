@@ -24,7 +24,8 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
-if [ "$BUILD_TYPE" == "default" ] || [ "$BUILD_TYPE" == default-spellcheck ] || [ "$BUILD_TYPE" == "default-alldrv" ] || [ "$BUILD_TYPE" == "default-nodoc" ] || [ "$BUILD_TYPE" == "default-withdoc" ] ; then
+case "$BUILD_TYPE" in
+default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -191,6 +192,25 @@ if [ "$BUILD_TYPE" == "default" ] || [ "$BUILD_TYPE" == default-spellcheck ] || 
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
 
     case "$BUILD_TYPE" in
+        default-tgt:*) # Hook for matrix of custom distchecks primarily
+            BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
+            echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
+            export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
+            $CI_TIME make VERBOSE=1 DISTCHECK_CONFIGURE_FLAGS="$DISTCHECK_CONFIGURE_FLAGS" "$BUILD_TGT"
+            echo "=== Are GitIgnores good after 'make $BUILD_TGT'? (should have no output below)"
+            git status -s || true
+            echo "==="
+            if git status -s | egrep '\.dmf$' ; then
+                echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+                exit 1
+            fi
+            if [ "$HAVE_CCACHE" = yes ]; then
+                echo "CCache stats after build:"
+                ccache -s
+            fi
+            echo "=== Exiting after the custom-build target 'make $BUILD_TGT' succeeded OK"
+            exit 0
+            ;;
         "default-spellcheck")
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
             # Note: we currently do not abort CI testing if spellcheck fails,
@@ -234,9 +254,11 @@ if [ "$BUILD_TYPE" == "default" ] || [ "$BUILD_TYPE" == default-spellcheck ] || 
         echo "CCache stats after build:"
         ccache -s
     fi
-
-elif [ "$BUILD_TYPE" == "bindings" ]; then
+    ;;
+bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
-else
+    ;;
+*)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
-fi
+    ;;
+esac
