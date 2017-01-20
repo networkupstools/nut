@@ -17,6 +17,40 @@ sudo: false
 services:
 - docker
 
+# Common required packages for all common scenarios
+# Note that YAML lists may be named with & and referenced with * characters;
+# but without such links, every list is complete and unique (meaning that
+# matrix special cases define their own settings, not append to common ones).
+# See https://github.com/travis-ci/travis-ci/issues/3505
+addons:
+  apt:
+    packages: &deps_driverlibs
+    - git
+    - ccache
+    - libcppunit-dev
+    - libcppunit-subunit-dev
+    - libneon27
+    - libneon27-dev
+    - libltdl7
+    - libltdl-dev
+    - lua5.1
+    - liblua5.1-0-dev
+    - libsnmp-dev
+    - libfreeipmi-dev
+    - libipmimonitoring-dev
+    - libusb-dev
+    - linux-libc-dev
+    - libpowerman0-dev
+    - libavahi-common-dev
+    - libavahi-core-dev
+    - libavahi-client-dev
+    - libgd2-xpm-dev
+    - libpng-dev
+    - libjpeg-dev
+    - libfreetype6-dev
+    - libxpm-dev
+    - libxml2-utils
+
 env:
   global:
     - CI_TIME=true
@@ -24,64 +58,31 @@ env:
   matrix:
     - BUILD_TYPE=default
     - BUILD_TYPE=default-nodoc
+    - BUILD_TYPE=default-alldrv
+    - BUILD_TYPE=default-tgt:distcheck-light
 
 # Builds with customized setups
 matrix:
   include:
-  - env: BUILD_TYPE=default-alldrv
+  - env: BUILD_TYPE=default-spellcheck
     os: linux
     addons:
       apt:
-        packages:
-        - libsnmp-dev
-        - libltdl-dev
-        - libneon27-dev
-        - libfreeipmi-dev
-        - libfreeipmi10
-        - libipmimonitoring-dev
-        - libipmimonitoring4
-        - libusb-dev
-        - linux-libc-dev
-        - libpowerman0-dev
-        - libavahi-common-dev
-        - libavahi-core-dev
-        - libavahi-client-dev
-        - libgd2-xpm-dev
-        - libpng-dev
-        - libjpeg-dev
-        - libfreetype6-dev
-        - libxpm-dev
-        - libcppunit-dev
-        - libcppunit-subunit-dev
-  - env:
-        - BUILD_TYPE=default-spellcheck
-    os: linux
-    addons:
-      apt:
-        packages:
-        - asciidoc
-        - xsltproc
-        - libxml2-utils
-        - dblatex
-        - docbook-xsl
-        - docbook-xsl-ns
+        packages: &deps_aspell
         - aspell
         - aspell-en
-  - env:
-        - BUILD_TYPE=default-withdoc
+  - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:
       apt:
-        packages:
+        packages: &deps_gendocs
         - asciidoc
         - xsltproc
-        - libxml2-utils
         - dblatex
         - docbook-xsl
         - docbook-xsl-ns
-        - libcppunit-dev
-        - libcppunit-subunit-dev
         - source-highlight
+        - libxml2-utils
 #  - env: BUILD_TYPE=valgrind
 #    os: linux
 #    dist: trusty
@@ -89,16 +90,8 @@ matrix:
 #    addons:
 #      apt:
 #        packages:
+#        - *deps_driverlibs
 #        - valgrind
-
-# Common required packages for all scenarios
-addons:
-  apt:
-    packages:
-    - git
-    - ccache
-    - libcppunit-dev
-    - libcppunit-subunit-dev
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
