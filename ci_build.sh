@@ -215,7 +215,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             # because there is a problem with accented words like contributor
             # names (which for aspell are not part of acceptable english, even
             # for a custom dictionary of accepted words).
-            ( cd docs/ && $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=no spellcheck )
+            ( cd docs/ && $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
             exit 0
             ;;
     esac
