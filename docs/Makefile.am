@@ -144,11 +144,13 @@ SPELLCHECK_ERROR_FATAL = no
 SPELLCHECK_ENV_DEBUG = no
 ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
+ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
+ASPELL_ENV_LANG = en.UTF-8
 ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 spellcheck: 
 	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
 		echo "ASPELL DEBUG : information about the setup follows:"; \
-		LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
 		$(ASPELL) --help || true; \
 		dpkg -l |grep -i aspell || true ; \
 		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | egrep -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
@@ -185,7 +187,7 @@ spellcheck:
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
-		LANG=C LC_ALL=C $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
 			FAILED="$$FAILED $$docsrc"; \
 	done ; \
 	if test -n "$$FAILED" ; then \
