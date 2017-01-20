@@ -123,8 +123,6 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
-            # NOTE: At this time the required i2c routines are not found in
-            # the system headers, and configure skips that optional driver.
             CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
