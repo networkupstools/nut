@@ -67,14 +67,14 @@ Scan NUT compatible power supplies available via IPMI on the current host, or ov
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
-This option must be requested explicitely, even for a complete scan.
+This option must be requested explicitly, even for a complete scan.
 'serial ports' can be expressed in various forms:
 
 - 'auto' to scan all serial ports.
 - a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
 /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
-ports using 'X-Y', where X and Y are characters refering to the port number.
+ports using 'X-Y', where X and Y are characters referring to the port number.
 - a single port name.
 - a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
 

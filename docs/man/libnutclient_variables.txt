@@ -40,7 +40,7 @@ The *nutclient_has_device_variable* function test if the specified variable is s
 Return 1 is supported and 0 if not.
 
 The *nutclient_get_device_variable_description* function retrieve the variable description, if any.
-The resturned string must be freed.
+The returned string must be freed.
 
 The *nutclient_get_device_variable_values* returns variable values (generally only one).
 The returned strarr must be freed by 'strarr_free'.

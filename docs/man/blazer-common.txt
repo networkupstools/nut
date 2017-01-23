@@ -144,7 +144,7 @@ Examples:
 
 *bus =* 'regex'::
 
-Select a UPS on a specific USB bus or group of busses. The argument is
+Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]").
 

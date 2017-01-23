@@ -67,7 +67,7 @@ CMDSCRIPT.
 +
 Example:
 +
-Start a timer that'll execute when any UPS (*) has been
+Start a timer that will execute when any UPS (*) has been
 gone for 10 seconds
 
 	AT COMMBAD * START-TIMER upsgone 10
