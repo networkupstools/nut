@@ -157,7 +157,7 @@ static item_t	bestups_qx2nut[] = {
 
 	{ "battery.packs",	0,		bestups_r_batt_packs,	"BP%.0f\r",	"",	0,	0,	"",	0,	0,	NULL,	QX_FLAG_SETVAR | QX_FLAG_RANGE | QX_FLAG_SKIP,		NULL,	NULL,	bestups_process_setvar },
 
-	/* Query UPS for shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059)
+	/* Query UPS for shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059)
 	 * > [SS?\r]
 	 * < [0\r]
 	 *    01
@@ -166,7 +166,7 @@ static item_t	bestups_qx2nut[] = {
 
 	{ "pins_shutdown_mode",	ST_FLAG_RW,	bestups_r_pins_shutdown_mode,	"SS?\r",	"",	2,	0,	"",	0,	0,	"%.0f",	QX_FLAG_SEMI_STATIC | QX_FLAG_RANGE | QX_FLAG_NONUT,			NULL,	NULL,	bestups_get_pins_shutdown_mode },
 
-	/* Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) to n (integer, 0-6)
+	/* Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059) to n (integer, 0-6)
 	 * > [SSn\r]
 	 * < []
 	 */
@@ -287,7 +287,7 @@ static void	bestups_initups(void)
 /* Subdriver-specific flags/vars */
 static void	bestups_makevartable(void)
 {
-	addvar(VAR_VALUE, "pins_shutdown_mode", "Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) to n (integer, 0-6)");
+	addvar(VAR_VALUE, "pins_shutdown_mode", "Set shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059) to n (integer, 0-6)");
 
 	blazer_makevartable_light();
 }
@@ -555,7 +555,7 @@ static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 	return 0;
 }
 
-/* *NONUT* Get shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power’s EPS-0059) as set in the UPS */
+/* *NONUT* Get shutdown mode functionality of Pin 1 and Pin 7 on the UPS DB9 communication port (Per Best Power's EPS-0059) as set in the UPS */
 static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
