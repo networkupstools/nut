@@ -135,12 +135,10 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 # See also http://aspell.net/man-html/Through-A-Pipe.html
 # TODO: Is "grep -a" or "grep -b" (treat input as ascii/bin) portable enough?
 # Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
-# TODO: Define a custom language in-repo or during build, that is english
-# plus accents for contributor names that need it?
-# http://unix.stackexchange.com/questions/45128/gedit-or-an-other-non-commandline-editor-with-the-ability-to-spell-check-two-lan
-# TODO: When the issue with accents is solved, change this to "yes" so
-# Travis CI tests do hunt for spelling errors (failing the CI builds):
-SPELLCHECK_ERROR_FATAL = no
+# Set SPELLCHECK_ERROR_FATAL=no if there are some unavoidable issues
+# due to spellchecking, to temporarily not fail builds due to this.
+# For Travis CI in particular, see ci_build.sh in NUT codebase root.
+SPELLCHECK_ERROR_FATAL = yes
 SPELLCHECK_ENV_DEBUG = no
 ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
 ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
