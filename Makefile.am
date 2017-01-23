@@ -45,7 +45,11 @@ distcleancheck:
 
 # Hook the documentation building and validating recipes
 # Note: these are optionally available (as determined during configure runs)
-spellcheck spellcheck-interactive doc:
+spellcheck spellcheck-interactive:
+	cd $(srcdir)/docs && $(MAKE) $@
+	cd $(srcdir)/docs/man && $(MAKE) $@
+
+doc:
 	cd $(srcdir)/docs && $(MAKE) $@
 
 # ----------------------------------------------------------------------

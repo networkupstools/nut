@@ -211,11 +211,9 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             ;;
         "default-spellcheck")
             [ -z "$CI_TIME" ] || echo "`date`: Trying to spellcheck documentation of the currently tested project..."
-            # Note: we currently do not abort CI testing if spellcheck fails,
-            # because there is a problem with accented words like contributor
-            # names (which for aspell are not part of acceptable english, even
-            # for a custom dictionary of accepted words).
-            ( cd docs/ && $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
+            # Note: use the root Makefile's spellcheck recipe which goes into
+            # sub-Makefiles known to check corresponding directory's doc files.
+            ( $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
             exit 0
             ;;
     esac

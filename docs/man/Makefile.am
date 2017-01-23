@@ -576,7 +576,7 @@ endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-EXTRA_DIST = \
+SRC_ALL_PAGES = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
@@ -589,7 +589,10 @@ EXTRA_DIST = \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
-	$(SRC_LINUX_I2C_PAGES) \
+	$(SRC_LINUX_I2C_PAGES)
+
+EXTRA_DIST = \
+	$(SRC_ALL_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
@@ -704,3 +707,6 @@ else !HAVE_ASCIIDOC
 	fi
 
 endif !HAVE_ASCIIDOC
+
+spellcheck spellcheck-interactive:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" $@
