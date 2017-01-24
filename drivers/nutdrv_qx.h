@@ -73,7 +73,7 @@ typedef struct item_t {
 
 	char		answer[SMALLBUF];	/* Answer from the UPS, filled at runtime.
 						 * If you expect a nonvalid C string (e.g.: inner '\0's) or need to perform actions before the answer is used (and treated as a null-terminated string), you should set a preprocess_answer() function */
-	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there’s no minimum length to look after. */
+	const int	answer_len;		/* Expected min length of the answer. Set it to 0 if there's no minimum length to look after. */
 	const char	leading;		/* Expected leading character of the answer (optional) */
 
 	char		value[SMALLBUF];	/* Value from the answer, filled at runtime (i.e. answer between from and to) */
@@ -112,7 +112,7 @@ typedef struct item_t {
 #define QX_FLAG_SEMI_STATIC	4	/* Retrieve info smartly, i.e. only when a command/setvar is executed and we expect that data could have been changed. */
 #define QX_FLAG_ABSENT		8	/* Data is absent in the device, use default value. */
 #define QX_FLAG_QUICK_POLL	16	/* Mandatory vars, polled also in QX_WALKMODE_QUICK_UPDATE.
-					 * If there’s a problem with a var not flagged as QX_FLAG_QUICK_POLL in QX_WALKMODE_INIT, the driver will automagically set QX_FLAG_SKIP on it and then it’ll skip that item in QX_WALKMODE_{QUICK,FULL}_UPDATE.
+					 * If there's a problem with a var not flagged as QX_FLAG_QUICK_POLL in QX_WALKMODE_INIT, the driver will automagically set QX_FLAG_SKIP on it and then it'll skip that item in QX_WALKMODE_{QUICK,FULL}_UPDATE.
 					 * Otherwise, if the item has the flag QX_FLAG_QUICK_POLL set, in case of errors in QX_WALKMODE_INIT the driver will set datastale. */
 #define QX_FLAG_CMD		32	/* Instant command. */
 #define QX_FLAG_SETVAR		64	/* The var is settable and the actual item stores info on how to set it. */
@@ -120,7 +120,7 @@ typedef struct item_t {
 #define QX_FLAG_ENUM		256	/* Enum values exist and are stored in info_rw. */
 #define QX_FLAG_RANGE		512	/* Ranges for this var available and are stored in info_rw. */
 #define QX_FLAG_NONUT		1024	/* This var doesn't have a corresponding var in NUT. */
-#define QX_FLAG_SKIP		2048	/* Skip this var: this item won’t be processed. */
+#define QX_FLAG_SKIP		2048	/* Skip this var: this item won't be processed. */
 
 #define MAXTRIES		3	/* Max number of retries */
 
@@ -146,7 +146,7 @@ typedef struct {
 	void		(*makevartable)(void);	/* Subdriver specific ups.conf flags/vars */
 	const char	*accepted;		/* String to match if the driver is expecting a reply from the UPS on instcmd/setvar.
 						 * This comparison is done after the answer we got back from the UPS has been processed to get the value we are searching:
-						 *  - you don’t have to include the trailing carriage return (\r)
+						 *  - you don't have to include the trailing carriage return (\r)
 						 *  - you can decide at which index of the answer the value should start or end setting the appropriate from and to in the item_t */
 	const char	*rejected;		/* String to match if the driver is expecting a reply from the UPS in case of error.
 						 * This comparison is done on the answer we got back from the UPS before it has been processed:

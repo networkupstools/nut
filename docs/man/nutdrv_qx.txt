@@ -140,7 +140,7 @@ The acceptable range is +60..599940+ seconds.
 The acceptable range is +12..5940+ seconds.
 
 *pins_shutdown_mode =* 'value'::
-Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power’s EPS-0059) to 'value' [+0..6+].
+Set http://www.networkupstools.org/protocols/sola.html#_shutdown_set_command[shutdown mode functionality of Pin 1 and Pin 7] on the UPS DB9 communication port (Per Best Power's EPS-0059) to 'value' [+0..6+].
 
 
 Q1 PROTOCOL
@@ -192,7 +192,7 @@ Reset capability options and their voltage and frequency limits to safe default 
 +
 Note that setting this option will reset also *ups.start.auto*, *battery.protection*, *battery.energysave*, *ups.start.battery*, *outlet.0.switchable*, *input.transfer.high*, *input.transfer.low*, *input.frequency.high* and *input.frequency.low*.
 
-These UPSes can be fine-tuned to suit your needs enabling or disabling the following options (the driver should tell you which one the UPS is capable of on startup: the settable ones will be reported either ar 'enabled' or 'disabled' in the logs):
+These UPSes can be fine-tuned to suit your needs enabling or disabling the following options (the driver should tell you which one the UPS is capable of on startup: the settable ones will be reported either are 'enabled' or 'disabled' in the logs):
 
 *alarm_control =* 'string'::
 Enable or disable alarm (BEEP!) [+enabled+/+disabled+].
@@ -279,7 +279,7 @@ TESTING
 ^^^^^^^
 
 This protocol comes with a couple of functions that are not enabled by default because of the lack of knowledge of some part of the communication protocol used by these UPSes by your friendly neighborhood developer.
-Since these functions are supposed to be queries to the UPS for some kind of informations, they _should_ not make your UPS go boom.
+Since these functions are supposed to be queries to the UPS for some kind of information, they _should_ not make your UPS go boom.
 So if you are brave enough to risk your UPS and attached devices' life to help the developers, this will be very appreciated..
 *Do it at your own risk*.
 
@@ -317,7 +317,7 @@ Examples:
  - `-x product=".*(Smart|Back)-?UPS.*"`
 
 *bus =* 'regex'::
-Select a UPS on a specific USB bus or group of busses.
+Select a UPS on a specific USB bus or group of buses.
 The argument is a regular expression that must match the bus name where the UPS is connected (e.g. +bus="002"+, +bus="00[2-3]"+).
 
 *subdriver =* 'string'::
@@ -577,22 +577,22 @@ If disabled, the UPS will provide continuous power to programmable outlets until
 *max_eco_volt*:: -> *input.transfer.high*
 +
 Maximum voltage for ECO Mode (V).
-If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it's enabled).
 
 *min_eco_volt*:: -> *input.transfer.low*
 +
 Minimum voltage for ECO Mode (V).
-If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+If AC voltage is within acceptable range, ECO mode will be used (If the UPS is capable of and it's enabled).
 
 *max_eco_freq*:: -> *input.frequency.high*
 +
 Maximum frequency for ECO Mode (Hz).
-If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it's enabled).
 
 *min_eco_freq*:: -> *input.frequency.low*
 +
 Minimum frequency for ECO Mode (Hz).
-If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it’s enabled).
+If AC frequency is within acceptable range, ECO mode will be used (If the UPS is capable of and it's enabled).
 
 *outlet1_delay*:: -> *outlet.1.delay.shutdown*
 +

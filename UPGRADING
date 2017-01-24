@@ -171,7 +171,7 @@ Changes from 2.2.1 to 2.2.2
 This enable the additional build and distribution of the static
 version of libupsclient, along with the pkg-config helper and manual
 pages. The default configure option is to distribute only the shared
-version of libupsclient. This can be overriden by using the
+version of libupsclient. This can be overridden by using the
 "--disable-shared" configure option (distribute static only binaries).
 - The UPS poweroff handling of the usbhid-ups driver has been reworked.
 Though regression is not expected, users of this driver are
@@ -182,7 +182,7 @@ Changes from 2.2.0 to 2.2.1
 ---------------------------
 
 - nothing that affects upgraded systems.
-(The below message is repetead due to previous omission)
+(The below message is repeated due to previous omission)
 - Developers of external client application using libupsclient are
 encouraged to rename their "UPSCONN" client structure to "UPSCONN_t"
 since the former will disappear by the release of NUT 2.4.
