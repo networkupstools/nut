@@ -56,6 +56,7 @@
 #include "xppc-mib.h"
 #include "eaton-ats-mib.h"
 #include "apc-ats-mib.h"
+#include "eaton-ats30-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -85,6 +86,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&eaton_ats,
 	&apc_ats,
 	&raritan_px2,
+        &eaton_ats30,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
