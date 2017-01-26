@@ -1,0 +1,182 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="apcc_transfer_reasons">
+		<lookup_info oid="1" value="noTransfer"/>
+		<lookup_info oid="2" value="highLineVoltage"/>
+		<lookup_info oid="3" value="brownout"/>
+		<lookup_info oid="4" value="blackout"/>
+		<lookup_info oid="5" value="smallMomentarySag"/>
+		<lookup_info oid="6" value="deepMomentarySag"/>
+		<lookup_info oid="7" value="smallMomentarySpike"/>
+		<lookup_info oid="8" value="largeMomentarySpike"/>
+		<lookup_info oid="9" value="selfTest"/>
+		<lookup_info oid="10" value="rateOfVoltageChange"/>
+	</lookup>
+	<lookup name="apcc_battrepl_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="RB"/>
+	</lookup>
+	<lookup name="apcc_testdiag_results">
+		<lookup_info oid="1" value="Ok"/>
+		<lookup_info oid="2" value="Failed"/>
+		<lookup_info oid="3" value="InvalidTest"/>
+		<lookup_info oid="4" value="TestInProgress"/>
+	</lookup>
+	<lookup name="apcc_sensitivity_modes">
+		<lookup_info oid="1" value="auto"/>
+		<lookup_info oid="2" value="low"/>
+		<lookup_info oid="3" value="medium"/>
+		<lookup_info oid="4" value="high"/>
+	</lookup>
+	<lookup name="apcc_batt_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value="LB"/>
+	</lookup>
+	<lookup name="apcc_cal_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value="CAL"/>
+	</lookup>
+	<lookup name="apcc_pwr_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="OL"/>
+		<lookup_info oid="3" value="OB"/>
+		<lookup_info oid="4" value="OL BOOST"/>
+		<lookup_info oid="5" value="OFF"/>
+		<lookup_info oid="6" value="OFF"/>
+		<lookup_info oid="7" value="OFF"/>
+		<lookup_info oid="8" value=""/>
+		<lookup_info oid="9" value="BYPASS"/>
+		<lookup_info oid="10" value="BYPASS"/>
+		<lookup_info oid="11" value="OFF"/>
+		<lookup_info oid="12" value="OL TRIM"/>
+	</lookup>
+	<snmp name="apcc_mib">
+		<snmp_info absent="yes" default="APC" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Generic Powernet SNMP device" flag_ok="yes" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.318.1.1.1.1.1.1.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.318.1.1.1.1.2.3.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.mfr.date" oid=".1.3.6.1.4.1.318.1.1.1.1.2.2.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.voltage" oid=".1.3.6.1.4.1.318.1.1.1.3.3.1.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.voltage.maximum" oid=".1.3.6.1.4.1.318.1.1.1.3.3.2.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.voltage.minimum" oid=".1.3.6.1.4.1.318.1.1.1.3.3.3.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.voltage" oid=".1.3.6.1.4.1.318.1.1.1.3.2.1.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.voltage.maximum" oid=".1.3.6.1.4.1.318.1.1.1.3.2.2.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.voltage.minimum" oid=".1.3.6.1.4.1.318.1.1.1.3.2.3.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="2.0" name="input.phases" oid=".1.3.6.1.4.1.318.1.1.1.9.2.2.1.2.1" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L1-L2.voltage" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L2-L3.voltage" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L3-L1.voltage" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.3.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L1-L2.voltage.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.4.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L2-L3.voltage.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.4.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L3-L1.voltage.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.4.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L1-L2.voltage.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.5.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L2-L3.voltage.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.5.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.L3-L1.voltage.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.5.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L1.current" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.6.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L2.current" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.6.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L3.current" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.6.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L1.current.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.7.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L2.current.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.7.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L3.current.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.7.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L1.current.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L2.current.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.L3.current.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.2.3.1.8.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.318.1.1.1.9.2.2.1.4.1" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.318.1.1.1.3.3.4.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="input.frequency" oid=".1.3.6.1.4.1.318.1.1.1.3.2.4.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="input.transfer.low" oid=".1.3.6.1.4.1.318.1.1.1.5.2.3.0" power_status="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="input.transfer.high" oid=".1.3.6.1.4.1.318.1.1.1.5.2.2.0" power_status="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" lookup="apcc_transfer_reasons" multiplier="1.0" name="input.transfer.reason" oid="1.3.6.1.4.1.318.1.1.1.3.2.5.0" power_status="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" lookup="apcc_sensitivity_modes" multiplier="1.0" name="input.sensitivity" oid=".1.3.6.1.4.1.318.1.1.1.5.2.7.0" power_status="yes" string="yes" writable="yes"/>
+		<snmp_info default="OFF" flag_ok="yes" lookup="apcc_pwr_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.318.1.1.1.4.1.1.0" power_status="yes" string="yes"/>
+		<snmp_info battery_status="yes" default="" flag_ok="yes" lookup="apcc_batt_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.318.1.1.1.2.1.1.0" string="yes"/>
+		<snmp_info calibration="yes" default="" flag_ok="yes" lookup="apcc_cal_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.318.1.1.1.7.2.6.0" string="yes"/>
+		<snmp_info default="" flag_ok="yes" lookup="apcc_battrepl_info" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.318.1.1.1.2.2.4.0" replace_battery="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="ups.temperature" oid=".1.3.6.1.4.1.318.1.1.1.2.3.2.0" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.temperature" oid=".1.3.6.1.4.1.318.1.1.1.2.2.2.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="ups.load" oid=".1.3.6.1.4.1.318.1.1.1.4.3.3.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ups.load" oid=".1.3.6.1.4.1.318.1.1.1.4.2.3.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="16.0" name="ups.firmware" oid=".1.3.6.1.4.1.318.1.1.1.1.2.1.0" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="ups.delay.shutdown" oid=".1.3.6.1.4.1.318.1.1.1.5.2.10.0" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="ups.delay.start" oid=".1.3.6.1.4.1.318.1.1.1.5.2.9.0" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="battery.charge" oid=".1.3.6.1.4.1.318.1.1.1.2.3.1.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.charge" oid=".1.3.6.1.4.1.318.1.1.1.2.2.1.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="battery.charge.restart" oid=".1.3.6.1.4.1.318.1.1.1.5.2.6.0" power_status="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.runtime" oid=".1.3.6.1.4.1.318.1.1.1.2.2.3.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="battery.runtime.low" oid=".1.3.6.1.4.1.318.1.1.1.5.2.8.0" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.4.1.318.1.1.1.2.3.4.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.voltage" oid=".1.3.6.1.4.1.318.1.1.1.2.2.8.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.voltage.nominal" oid=".1.3.6.1.4.1.318.1.1.1.2.2.7.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="battery.current" oid=".1.3.6.1.4.1.318.1.1.1.2.3.5.0" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.current" oid=".1.3.6.1.4.1.318.1.1.1.2.2.9.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="battery.current.total" oid=".1.3.6.1.4.1.318.1.1.1.2.3.6.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.packs" oid=".1.3.6.1.4.1.318.1.1.1.2.2.5.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="battery.packs.bad" oid=".1.3.6.1.4.1.318.1.1.1.2.2.6.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="8.0" name="battery.date" oid=".1.3.6.1.4.1.318.1.1.1.2.1.3.0" static="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="8.0" name="ups.id" oid=".1.3.6.1.4.1.318.1.1.1.1.1.2.0" static="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" lookup="apcc_testdiag_results" multiplier="128.0" name="ups.test.result" oid=".1.3.6.1.4.1.318.1.1.1.7.2.3.0" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="8.0" name="ups.test.date" oid=".1.3.6.1.4.1.318.1.1.1.7.2.4.0" static="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.318.1.1.1.4.3.1.0" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.voltage" oid=".1.3.6.1.4.1.318.1.1.1.4.2.1.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="2.0" name="output.phases" oid=".1.3.6.1.4.1.318.1.1.1.9.3.2.1.2.1" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.frequency" oid=".1.3.6.1.4.1.318.1.1.1.9.3.2.1.4.1" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.frequency" oid=".1.3.6.1.4.1.318.1.1.1.4.3.2.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.frequency" oid=".1.3.6.1.4.1.318.1.1.1.4.2.2.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.318.1.1.1.4.3.4.0" positive="yes" unique="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.current" oid=".1.3.6.1.4.1.318.1.1.1.4.2.4.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1-L2.voltage" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2-L3.voltage" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3-L1.voltage" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.3.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L1.current" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.4.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L2.current" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.4.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L3.current" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.4.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L1.current.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.5.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L2.current.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.5.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L3.current.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.5.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L1.current.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.6.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L2.current.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.6.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="output.L3.current.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.6.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1.power" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.7.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2.power" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.7.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3.power" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.7.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1.power.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.8.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2.power.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.8.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3.power.maximum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.8.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1.power.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.9.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2.power.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.9.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3.power.minimum" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.9.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1.power.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.10.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2.power.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.10.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3.power.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.10.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1.power.maximum.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.11.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2.power.maximum.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.11.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3.power.maximum.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.11.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L1.power.minimum.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.1" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L2.power.minimum.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.2" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="output.L3.power.minimum.percent" oid=".1.3.6.1.4.1.318.1.1.1.9.3.3.1.12.1.1.3" positive="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="3.0" name="output.voltage.nominal" oid=".1.3.6.1.4.1.318.1.1.1.5.2.1.0" power_status="yes" string="yes" writable="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.temperature" oid=".1.3.6.1.4.1.318.1.1.2.1.1.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.1.temperature.alarm.high" oid=".1.3.6.1.4.1.318.1.1.10.1.2.2.1.3.1"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.1.temperature.alarm.low" oid=".1.3.6.1.4.1.318.1.1.10.1.2.2.1.4.1"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.humidity" oid=".1.3.6.1.4.1.318.1.1.2.1.2.0"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.1.humidity.alarm.high" oid=".1.3.6.1.4.1.318.1.1.10.1.2.2.1.6.1"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.1.humidity.alarm.low" oid=".1.3.6.1.4.1.318.1.1.10.1.2.2.1.7.1"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.temperature" oid=".1.3.6.1.4.1.318.1.1.10.2.3.2.1.4.1"/>
+		<snmp_info default="" flag_ok="yes" multiplier="1.0" name="ambient.humidity" oid=".1.3.6.1.4.1.318.1.1.10.2.3.2.1.6.1"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="load.off" oid=".1.3.6.1.4.1.318.1.1.1.6.2.1.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="load.on" oid=".1.3.6.1.4.1.318.1.1.1.6.2.6.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="3.0" name="shutdown.stayoff" oid=".1.3.6.1.4.1.318.1.1.1.6.2.1.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="shutdown.return" oid=".1.3.6.1.4.1.318.1.1.1.6.1.1.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="test.failure.start" oid=".1.3.6.1.4.1.318.1.1.1.6.2.4.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="test.panel.start" oid=".1.3.6.1.4.1.318.1.1.1.6.2.5.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="bypass.start" oid=".1.3.6.1.4.1.318.1.1.1.6.2.7.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="3.0" name="bypass.stop" oid=".1.3.6.1.4.1.318.1.1.1.6.2.7.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="test.battery.start" oid=".1.3.6.1.4.1.318.1.1.1.7.2.2.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="calibrate.start" oid=".1.3.6.1.4.1.318.1.1.1.7.2.5.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="3.0" name="calibrate.stop" oid=".1.3.6.1.4.1.318.1.1.1.7.2.5.0"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="2.0" name="reset.input.minmax" oid=".1.3.6.1.4.1.318.1.1.1.9.1.1.0"/>
+	</snmp>
+	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.1.1.1.1.0" mib_name="apcc" name="apc" power_status=".1.3.6.1.4.1.318.1.1.1.4.1.1.0" snmp_info="apcc_mib" version="1.2"/>
+</nut>
+

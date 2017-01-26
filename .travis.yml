@@ -5,6 +5,10 @@
 
 language:
 - c
+- python
+
+python:
+- '2.7'
 
 cache:
 - ccache
@@ -61,6 +65,17 @@ env:
     - BUILD_TYPE=default-nodoc
     - BUILD_TYPE=default-alldrv
     - BUILD_TYPE=default-tgt:distcheck-light
+    - BUILD_TYPE=default-tgt:distcheck-light-man
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_NO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_YES
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_NO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YES
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YESNO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_NO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_YES
+    - BUILD_TYPE=default-tgt:distcheck-dmf-all-yes
+    - BUILD_TYPE=default-tgt:distcheck-dmf-no
+    - BUILD_TYPE=default-tgt:distcheck-dmf-warnings
 
 # Builds with customized setups
 matrix:
@@ -96,6 +111,9 @@ matrix:
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+install:
+- if [ "$BUILD_TYPE" != default-withdoc ] && [ "$BUILD_TYPE" != default-spellcheck ] ; then pip install pycparser ; fi
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh

@@ -118,6 +118,9 @@ if test -z "${nut_have_asciidoc_seen}"; then
 	dnl building
 	AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
 
+	dnl The HAVE_XMLLINT flag is used to decide if we want to validate DMF XMLs
+	AM_CONDITIONAL([HAVE_XMLLINT], [test -n "${XMLLINT}" ])
+
 	AC_MSG_CHECKING([if we have all the tools mandatory for man page regeneration])
 	AC_MSG_RESULT([${nut_have_asciidoc}])
 

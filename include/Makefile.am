@@ -1,5 +1,5 @@
 dist_noinst_HEADERS = attribute.h common.h extstate.h parseconf.h proto.h	\
- state.h str.h timehead.h upsconf.h nut_stdint.h nut_platform.h
+ state.h str.h timehead.h upsconf.h nut_stdint.h nut_platform.h dmf.h alist.h dmfsnmp.h dmfcore.h
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h

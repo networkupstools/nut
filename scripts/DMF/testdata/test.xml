@@ -1,0 +1,146 @@
+<?xml version="1.0" ?>
+<nut>
+	<lookup name="pw_alarm_lb">
+		<lookup_info oid="1" value="LB"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
+	<lookup name="pw_mode_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value=""/>
+		<lookup_info oid="3" value="normal"/>
+		<lookup_info oid="4" value=""/>
+		<lookup_info oid="5" value=""/>
+		<lookup_info oid="6" value=""/>
+		<lookup_info oid="7" value=""/>
+		<lookup_info oid="8" value="parallel capacity"/>
+		<lookup_info oid="9" value="parallel redundancy"/>
+		<lookup_info oid="10" value="high efficiency"/>
+		<lookup_info oid="240" value=""/>
+		<lookup_info oid="100" value=""/>
+		<lookup_info oid="96" value=""/>
+		<lookup_info oid="81" value="high efficiency"/>
+		<lookup_info oid="80" value="normal"/>
+		<lookup_info oid="64" value=""/>
+		<lookup_info oid="16" value=""/>
+	</lookup>
+	<lookup name="pw_batt_test_info">
+		<lookup_info oid="1" value="Unknown"/>
+		<lookup_info oid="2" value="Done and passed"/>
+		<lookup_info oid="3" value="Done and error"/>
+		<lookup_info oid="4" value="In progress"/>
+		<lookup_info oid="5" value="Not supported"/>
+		<lookup_info oid="6" value="Inhibited"/>
+		<lookup_info oid="7" value="Scheduled"/>
+	</lookup>
+	<lookup name="pw_alarm_ob">
+		<lookup_info oid="1" value="OB"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
+	<lookup name="eaton_abm_status_info">
+		<lookup_info oid="1" value="charging"/>
+		<lookup_info oid="2" value="discharging"/>
+		<lookup_info oid="3" value="floating"/>
+		<lookup_info oid="4" value="resting"/>
+		<lookup_info oid="5" value="unknown"/>
+		<lookup_info oid="6" value="disabled"/>
+	</lookup>
+	<lookup name="ietf_yes_no_info">
+		<lookup_info oid="1" value="yes"/>
+		<lookup_info oid="2" value="no"/>
+	</lookup>
+	<lookup name="pw_battery_abm_status">
+		<lookup_info oid="1" value="CHRG"/>
+		<lookup_info oid="2" value="DISCHRG"/>
+	</lookup>
+	<lookup name="pw_pwr_info">
+		<lookup_info oid="1" value=""/>
+		<lookup_info oid="2" value="OFF"/>
+		<lookup_info oid="3" value="OL"/>
+		<lookup_info oid="4" value="BYPASS"/>
+		<lookup_info oid="5" value="OB"/>
+		<lookup_info oid="6" value="OL BOOST"/>
+		<lookup_info oid="7" value="OL TRIM"/>
+		<lookup_info oid="8" value="OL"/>
+		<lookup_info oid="9" value="OL"/>
+		<lookup_info oid="10" value="OL"/>
+		<lookup_info oid="240" value="OB"/>
+		<lookup_info oid="100" value="BYPASS"/>
+		<lookup_info oid="96" value="BYPASS"/>
+		<lookup_info oid="81" value="OL"/>
+		<lookup_info oid="80" value="OL"/>
+		<lookup_info oid="64"/>
+		<lookup_info oid="16" value="OFF"/>
+	</lookup>
+	<alarm name="pw_alarms">
+		<info_alarm alarm="None" status="LB"/>
+		<info_alarm alarm="Output overload!" oid=".1.3.6.1.4.1.534.1.7.7" status="OVER"/>
+		<info_alarm alarm="Internal failure!" oid=".1.3.6.1.4.1.534.1.7.8"/>
+		<info_alarm alarm="Battery discharged!" oid=".1.3.6.1.4.1.534.1.7.9" status="None"/>
+		<info_alarm alarm="Inverter failure!" oid=".1.3.6.1.4.1.534.1.7.10" status="None"/>
+		<info_alarm alarm="On bypass!" oid=".1.3.6.1.4.1.534.1.7.11" status="BYPASS"/>
+		<info_alarm alarm="Bypass not available!" oid=".1.3.6.1.4.1.534.1.7.12" status="None"/>
+		<info_alarm alarm="Output off!" oid=".1.3.6.1.4.1.534.1.7.13" status="OFF"/>
+		<info_alarm alarm="Input failure!" oid=".1.3.6.1.4.1.534.1.7.14" status="None"/>
+		<info_alarm alarm="Building alarm!" oid=".1.3.6.1.4.1.534.1.7.15" status="None"/>
+		<info_alarm alarm="Shutdown imminent!" oid=".1.3.6.1.4.1.534.1.7.16" status="None"/>
+		<info_alarm alarm="On inverter!" oid=".1.3.6.1.4.1.534.1.7.17" status="None"/>
+		<info_alarm alarm="Breaker open!" oid=".1.3.6.1.4.1.534.1.7.20" status="None"/>
+		<info_alarm alarm="Battery bad!" oid=".1.3.6.1.4.1.534.1.7.23" status="RB"/>
+		<info_alarm alarm="Output off as requested!" oid=".1.3.6.1.4.1.534.1.7.24" status="OFF"/>
+		<info_alarm alarm="Diagnostic test failure!" oid=".1.3.6.1.4.1.534.1.7.25" status="None"/>
+		<info_alarm alarm="Communication with UPS lost!" oid=".1.3.6.1.4.1.534.1.7.26" status="None"/>
+		<info_alarm alarm="Shutdown pending!" oid=".1.3.6.1.4.1.534.1.7.27" status="None"/>
+		<info_alarm alarm="Bad ambient temperature!" oid=".1.3.6.1.4.1.534.1.7.29" status="None"/>
+		<info_alarm alarm="Redundancy lost!" oid=".1.3.6.1.4.1.534.1.7.30" status="None"/>
+		<info_alarm alarm="Bad temperature!" oid=".1.3.6.1.4.1.534.1.7.31" status="None"/>
+		<info_alarm alarm="Charger failure!" oid=".1.3.6.1.4.1.534.1.7.32" status="None"/>
+		<info_alarm alarm="Fan failure!" oid=".1.3.6.1.4.1.534.1.7.33" status="None"/>
+		<info_alarm alarm="Fuse failure!" oid=".1.3.6.1.4.1.534.1.7.34" status="None"/>
+		<info_alarm alarm="Powerswitch failure!" oid=".1.3.6.1.4.1.534.1.7.35" status="None"/>
+		<info_alarm alarm="Parallel or composite module failure!" oid=".1.3.6.1.4.1.534.1.7.36" status="None"/>
+		<info_alarm alarm="Using alternative power source!" oid=".1.3.6.1.4.1.534.1.7.37" status="None"/>
+		<info_alarm alarm="Alternative power source unavailable!" oid=".1.3.6.1.4.1.534.1.7.38" status="None"/>
+		<info_alarm alarm="Bad remote temperature!" oid=".1.3.6.1.4.1.534.1.7.40" status="None"/>
+		<info_alarm alarm="Bad remote humidity!" oid=".1.3.6.1.4.1.534.1.7.41" status="None"/>
+		<info_alarm alarm="Bad output condition!" oid=".1.3.6.1.4.1.534.1.7.42" status="None"/>
+		<info_alarm alarm="Awaiting power!" oid=".1.3.6.1.4.1.534.1.7.43" status="None"/>
+		<info_alarm alarm="On maintenance bypass!" oid=".1.3.6.1.4.1.534.1.7.44" status="BYPASS"/>
+		<info_alarm alarm="None" status="None"/>
+	</alarm>
+	<snmp name = "name">
+		<snmp_info name = "output.frequency" multiplier = "0.1" oid = "1.3.6.1.4.1.534.1.4.2.0" default = "" lookup = "pw_pwr_info" setvar = "input_phases"
+													    static = "yes"
+													    absent = "yes"
+													    
+													    writable = "no"
+													    string = "no"/>
+	</snmp>
+</nut>
+
+<!--
+<snmp name = "name">
+
+    <info
+        name = "<string>"
+        multiplier = "0.2" or constant if string = "yes"
+        oid = "<string>" or NULL
+        default = "<string>" or NULL
+        lookup = "<string>" or NUUL
+        ?setvar? = "(input_phases|output_phases|bypass_phases)"
+        ^^^ implies SU_FLAG_SETINT if setvar is not NULL
+
+        // flags
+        SU_FLAG_STATIC ->
+        static = "1"
+        absent = "1"
+
+        optimize: check the ( value[0] == 'y' || value[0] == '1')
+
+        // info_flags
+        0   - no attribute
+        ST_FLAG_RW - readwrite/writtable="yes"
+        ST_FLAG_STRING - string = "yes"
+
+    />
+</snmp>
+-->

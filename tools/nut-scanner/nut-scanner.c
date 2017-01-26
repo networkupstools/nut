@@ -38,11 +38,39 @@
 
 #include "nut-scan.h"
 
+#if WITH_DMFMIB
+# ifdef WANT_LIBNUTSCAN_SNMP_DMF
+#  undef WANT_LIBNUTSCAN_SNMP_DMF
+# endif
+
+// This chains to also include nutscan-snmp.h and the desired
+// variables need structures defined lower in the dmf.h file.
+// But there is protection in nutscan-snmp.h to only declare
+// those vars if dmf.h was already completely imported.
+# include "dmf.h"
+
+// Now we may "want" the variables from libnutscan with types from dmf.h
+# define WANT_LIBNUTSCAN_SNMP_DMF 1
+# include "nutscan-snmp.h"
+#endif /* WITH_DMFMIB */
+
+#ifdef DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
+# ifdef DEFAULT_DMFNUTSCAN_DIR
+#  undef DEFAULT_DMFNUTSCAN_DIR
+# endif
+# define DEFAULT_DMFNUTSCAN_DIR DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
+#endif
+
+#ifndef DEFAULT_DMFNUTSCAN_DIR
+# define DEFAULT_DMFNUTSCAN_DIR "./"
+#endif
+
 #define DEFAULT_TIMEOUT 5
 
 #define ERR_BAD_OPTION	(-1)
 
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+// TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -77,6 +105,8 @@ const struct option longopts[] =
 	{ "version",no_argument,NULL,'V' },
 	{ "available",no_argument,NULL,'a' },
 	{ "nut_debug_level", no_argument, NULL, 'D' },
+	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
+	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -154,6 +184,19 @@ void show_usage()
 	}
 	if( nutscan_avail_snmp ) {
 		printf("  -S, --snmp_scan: Scan SNMP devices using built-in mapping definitions.\n");
+#if WITH_DMFMIB
+		printf("  -z, --snmp_scan_dmf: Scan SNMP devices using DMF files in default directory (" DEFAULT_DMFNUTSCAN_DIR ").\n");
+		printf("  -Z, --snmp_scan_dmf_dir: Scan SNMP devices using DMF files in specified directory.\n");
+		if( nutscan_avail_xml_http) {
+			printf("      (libneon will be used to work with dynamically loaded DMF MIB library).\n");
+		} else {
+			printf("      (libneon support seems missing, so built-in definitions will\n"
+			       "       be used rather than DMF MIB library).\n");
+		}
+#else
+		printf("  -z, --snmp_scan_dmf: Not implemented in this build.\n");
+		printf("  -Z, --snmp_scan_dmf_dir: Not implemented in this build.\n");
+#endif /* WITH_DMFMIB */
 	}
 	if( nutscan_avail_xml_http ) {
 		printf("  -M, --xml_scan: Scan XML/HTTP devices.\n");
@@ -279,6 +322,30 @@ int main(int argc, char *argv[])
 			case 'm':
 				cidr = strdup(optarg);
 				break;
+
+#if WITH_DMFMIB
+			case 'z':
+				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
+					goto display_help;
+				}
+				dmfnutscan_snmp_dir = DEFAULT_DMFNUTSCAN_DIR;
+				allow_snmp = 1;
+				break;
+			case 'Z':
+				if(!nutscan_avail_snmp || !nutscan_avail_xml_http) {
+					goto display_help;
+				}
+				dmfnutscan_snmp_dir = strdup(optarg);
+				allow_snmp = 1;
+				break;
+#else
+			case 'z':
+			case 'Z':
+				fprintf(stderr,"DMF SNMP support not built in, option (-%c) ignored (only enabling built-in SNMP).\n", opt_ret);
+				allow_snmp = 1;
+				break;
+#endif /* WITH_DMFMIB */
+
 			case 'D':
 				nut_debug_level++;
 				break;
@@ -421,6 +488,9 @@ int main(int argc, char *argv[])
 					printf("USB\n");
 				}
 				if(nutscan_avail_snmp) {
+					if(nutscan_avail_xml_http) {
+						printf("SNMP_DMF\n");
+					}
 					printf("SNMP\n");
 				}
 				if(nutscan_avail_xml_http) {
@@ -492,7 +562,15 @@ display_help:
 			nutscan_avail_snmp = 0;
 		}
 		else {
-			upsdebugx(quiet,"Scanning SNMP bus.");
+#if WITH_DMFMIB
+			if (dmfnutscan_snmp_dir != NULL) {
+				upsdebugx(quiet,"Scanning SNMP bus with DMF MIB support, using '%s', if possible.", dmfnutscan_snmp_dir);
+			} else { /* Nuance for not-yet-firstclass-citizen code */
+				upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only, because DMF MIB run-time support was not enabled with '-z'.");
+			}
+#else
+			upsdebugx(quiet,"Scanning SNMP bus with built-in MIBs only.");
+#endif
 #ifdef HAVE_PTHREAD
 			upsdebugx(1,"SNMP SCAN: starting pthread_create with run_snmp...");
 			if( pthread_create(&thread[TYPE_SNMP],NULL,run_snmp,&snmp_sec)) {
@@ -666,6 +744,11 @@ display_help:
 
 	upsdebugx(1,"SCANS DONE: free common scanner resources");
 	nutscan_free();
+
+#if WITH_DMFMIB
+	upsdebugx(1,"SCANS DONE: free dynamic DMF-SNMP resources");
+	uninit_snmp_device_table();
+#endif
 
 	upsdebugx(1,"SCANS DONE: EXIT_SUCCESS");
 	return EXIT_SUCCESS;
