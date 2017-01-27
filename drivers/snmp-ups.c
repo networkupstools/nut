@@ -54,7 +54,7 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats-mib.h"
+#include "eaton-ats16-mib.h"
 #include "apc-ats-mib.h"
 #include "eaton-ats30-mib.h"
 
@@ -83,7 +83,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&xppc,
 	&huawei,
 	&tripplite_ietf,
-	&eaton_ats,
+	&eaton_ats16,
 	&apc_ats,
 	&raritan_px2,
 	&eaton_ats30,
