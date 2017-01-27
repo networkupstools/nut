@@ -28,7 +28,7 @@
 #define EATON_ATS30_SYSOID       ".1.3.6.1.4.1.534.10.1"
 #define EATON_ATS30_MODEL        ".1.3.6.1.4.1.534.10.1.2.1.0"
 
-static info_lkp_t ats30_source_info[] = {
+static info_lkp_t eaton_ats30_source_info[] = {
 	{ 1, "init" },
 	{ 2, "diagnosis" },
 	{ 3, "off" },
@@ -39,7 +39,7 @@ static info_lkp_t ats30_source_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t ats30_input_sensitivity[] = {
+static info_lkp_t eaton_ats30_input_sensitivity[] = {
 	{ 1, "high" },
 	{ 2, "low" },
 	{ 0, NULL }
@@ -53,7 +53,7 @@ static info_lkp_t ats30_input_sensitivity[] = {
  * 3 atsFailureOutputOC OVER
  * 4 atsFailureOverTemperature N/A
  */
-static info_lkp_t ats30_status_info[] = {
+static info_lkp_t eaton_ats30_status_info[] = {
     { 0, "OL" },
     { 1, "OL" }, /* SwitchFault */
     { 2, "OFF" }, /* NoOutput */
@@ -127,7 +127,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* enterprises.534.10.1.3.6.0 = INTEGER: 284 */
 	/* { "unmapped.atsMessureTransferedTimes", 0, 1, ".1.3.6.1.4.1.534.10.1.3.6.0", NULL, SU_FLAG_OK, NULL, NULL }, */
 	/* enterprises.534.10.1.3.7.0 = INTEGER: 4 */
-	{ "input.source", 0, 1, ".1.3.6.1.4.1.534.10.1.3.7.0", NULL, SU_FLAG_OK, ats30_source_info, NULL },
+	{ "input.source", 0, 1, ".1.3.6.1.4.1.534.10.1.3.7.0", NULL, SU_FLAG_OK, eaton_ats30_source_info, NULL },
     
     /* atsStatus */
     /* ========= */
@@ -200,7 +200,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 #endif /* 0 */
 
 	/* enterprises.atsFailureIndicator = INTEGER: 0 */
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.1.4.5.0", NULL, SU_FLAG_OK, ats30_status_info, NULL },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.1.4.5.0", NULL, SU_FLAG_OK, eaton_ats30_status_info, NULL },
 
 #if 0
 	/* enterprises.534.10.1.4.6.1.0 = INTEGER: 2 -- atsFailure start */
@@ -347,7 +347,7 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* enterprises.534.10.1.6.5.0 = INTEGER: 1 */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.1.6.5.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* enterprises.534.10.1.6.6.0 = INTEGER: 2 */
-	{ "input.sensitivity", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.1.6.6.0", NULL, SU_FLAG_OK, ats30_input_sensitivity, NULL },
+	{ "input.sensitivity", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.1.6.6.0", NULL, SU_FLAG_OK, eaton_ats30_input_sensitivity, NULL },
 
 	/* enterprises.534.10.1.6.7.0 = INTEGER: 2 */
 	/* { "unmapped.atsConfigTest", 0, 1, ".1.3.6.1.4.1.534.10.1.6.7.0", NULL, SU_FLAG_OK, NULL, NULL }, */
