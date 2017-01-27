@@ -48,6 +48,7 @@ distcleancheck:
 spellcheck spellcheck-interactive:
 	cd $(srcdir)/docs && $(MAKE) $@
 	cd $(srcdir)/docs/man && $(MAKE) $@
+	cd $(srcdir)/data && $(MAKE) $@
 
 doc:
 	cd $(srcdir)/docs && $(MAKE) $@
