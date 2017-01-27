@@ -1,9 +1,6 @@
 Network UPS Tools Overview
 ===========================
 
-image:https://travis-ci.org/networkupstools/nut.svg?branch=master["Build Status: Master", link="https://travis-ci.org/networkupstools/nut"]
-image:https://travis-ci.org/networkupstools/nut.svg?branch=DMF["Build Status: DMF", link="https://travis-ci.org/networkupstools/nut/branches"]
-
 Description
 -----------
 
