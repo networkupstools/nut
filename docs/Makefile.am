@@ -185,26 +185,26 @@ spellcheck:
 # can edit the documentation errors and/or add words to custom dictionary).
 # Note that here we do not restrain reported issues, so this might catch more
 # than the automated test above.
-spellcheck-sortdict: $(abs_builddir)/.$(NUT_SPELL_DICT).sorted
+spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
 
 # Note that the source file may be not overwritable (distcheck, cdrom, ...),
 # so we'd ignore that failure. But the practical use-case is a developer's
 # in-tree workspace, so we want the working copy of the dictionary fixed up
 # for easy `git diff`ing if possible.
-$(abs_builddir)/.$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
+# Note also that "$(<F)" is not POSIX portable, so we spell out the name var :(
+$(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
 	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
 	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
 	    echo "$$WORDLIST"; \
-	 ) > "$(abs_builddir)/$(<F).sorted"
-	@cp -f "$(abs_builddir)/$(<F).sorted" "$(abs_builddir)/$(<F)"
+	 ) > "$@"
+	@cp -f "$@" "$(abs_builddir)/$(NUT_SPELL_DICT)"
 	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
-	    cp -f "$(abs_builddir)/$(<F).sorted" "$<" || true ; \
-	    cp -f "$(abs_builddir)/$(<F).bak-pre-sorting" "$<.bak-pre-sorting" || true ; \
+	    cp -f "$@" "$<" || true ; \
+	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
 	 fi
-	@touch $@
 
 DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
