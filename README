@@ -1,6 +1,8 @@
 Network UPS Tools Overview
 ===========================
 
+image:https://travis-ci.org/networkupstools/nut.svg?branch=master["Build Status", link="https://travis-ci.org/networkupstools/nut"]
+
 Description
 -----------
 
