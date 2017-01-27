@@ -66,6 +66,7 @@
 #include "eaton-ats-mib.h"
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
+#include "eaton-ats30-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -119,6 +120,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&raritan,			/* This struct comes from : raritan-pdu-mib.c */
 	&raritan_px2,		/* This struct comes from : raritan-px2-mib.c */
 	&xppc,				/* This struct comes from : xppc-mib.c */
+	&eaton_ats30,			/* This struct comes from: eaton-ats30-mib.c */
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
