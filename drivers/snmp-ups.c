@@ -4,7 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2016	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *	2015 - 2016	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -607,14 +607,16 @@ void nut_snmp_free(struct snmp_pdu ** array_to_free)
 {
 	struct snmp_pdu ** current_element;
 
-	current_element = array_to_free;
+	if (array_to_free != NULL) {
+		current_element = array_to_free;
 
-	while (*current_element != NULL) {
-		snmp_free_pdu(*current_element);
-		current_element++;
+		while (*current_element != NULL) {
+			snmp_free_pdu(*current_element);
+			current_element++;
+		}
+
+		free( array_to_free );
 	}
-
-	free( array_to_free );
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
