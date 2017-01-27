@@ -101,8 +101,6 @@ matrix:
         - libxml2-utils
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
-#    dist: trusty
-#    sudo: required
     addons:
       apt:
         packages:
@@ -113,7 +111,7 @@ before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
 
 install:
-- if [ "$BUILD_TYPE" != default-withdoc ] && [ "$BUILD_TYPE" != default-spellcheck ] ; then pip install pycparser ; fi
+- if [ "$BUILD_TYPE" != default-spellcheck ] ; then pip install pycparser ; fi
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh
