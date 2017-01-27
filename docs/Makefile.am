@@ -1,4 +1,5 @@
-DISTCLEANFILES ?=
+DISTCLEANFILES =
+EXTRA_DIST =
 
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
@@ -42,7 +43,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt
 
 NUT_SPELL_DICT = nut.dict
-EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
+EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  common.xsl xhtml.xsl chunked.xsl asciidoc.txt
 
