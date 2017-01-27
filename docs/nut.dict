@@ -1,4 +1,4 @@
-personal_ws-1.1 en 1771 utf-8
+personal_ws-1.1 en 1770 utf-8
 uninstall
 HB
 ACPI
@@ -1566,7 +1566,6 @@ killall
 pconf
 varname
 Waldie
-Øpetveit
 PBTnn
 NetBSD
 SMALLBUF
