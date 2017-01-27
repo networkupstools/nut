@@ -25,7 +25,7 @@ EXTRA ARGUMENTS
 ----------------
 *port*=auto::
 Due to changes in the way that Mac OS X lists power sources, the *port*
-parameter no longer has any effect. The rest of NUT still requres a value here,
+parameter no longer has any effect. The rest of NUT still requires a value here,
 and our traditional "don't care" value is `auto`.
 
 *model*='regex'::

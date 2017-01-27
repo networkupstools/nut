@@ -113,6 +113,6 @@ and https://alioth.debian.org/tracker/?atid=411545&group_id=30602&func=browse[fe
 solar panel driver, and the powerman internal approach of a generic engine with
 a scripting interface is a cool idea.
 Ref http://powerman.svn.sourceforge.net/viewvc/powerman/trunk/etc/apcpdu.dev?revision=969&view=markup
-- integrate the (future) new powerman LUA engine (maybe/mustbe used for the driver above?)
+- integrate the (future) new powerman LUA engine (maybe/must-be used for the driver above?)
 for native PDU support
 - see how we can help and collaborate with DeviceKit-power

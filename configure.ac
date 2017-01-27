@@ -290,9 +290,15 @@ dnl they are listed near the top by "./configure --help"
 NUT_ARG_WITH([dev], [build and install the development files], [no])
 NUT_ARG_WITH([serial], [build and install serial drivers], [yes])
 NUT_ARG_WITH([usb], [build and install USB drivers], [auto])
-NUT_ARG_WITH([doc], [build and install documentation], [man=yes])
 NUT_ARG_WITH([avahi], [build and install Avahi support], [auto])
-
+dnl The NUT legacy option was --with-doc; however to simplify configuration
+dnl in some common packaging frameworks, we also allow --with-docs as
+dnl a second-class citizen (if both are set, the old option name wins).
+dnl Also note that the legacy default was "man=yes" due to requirements
+dnl of the "make distcheck", but it was reduced to "man=auto" so that
+dnl the usual builds can pass by default on systems without asciidoc.
+NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
+NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -356,7 +362,6 @@ fi
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
 					[WITH_USB], [Define to enable USB support])
-
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neon
@@ -618,7 +623,7 @@ fi
 NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
 					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
 
-dnl Explicitely report if we are building nut-scanner or not
+dnl Explicitly report if we are building nut-scanner or not
 dnl since it requires libltdl
 NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
 
@@ -651,65 +656,11 @@ dnl checks related to --with-doc
 
 dnl Always check for AsciiDoc prerequisites, since even if --with-doc
 dnl is set to 'no', we may still want to build some doc targets manually
+dnl (so enable the Makefile recipes for those targets if tools are available)
 NUT_CHECK_ASCIIDOC
-
-AC_PATH_PROGS([ASCIIDOC], [asciidoc], [none])
-AM_CONDITIONAL([MANUALUPDATE], [test "x$ASCIIDOC" != "xnone"])
-AC_PATH_PROGS([A2X], [a2x], [none])
-
-dnl check for spell checking deps
-AC_PATH_PROGS([ASPELL], [aspell], [none])
-AM_CONDITIONAL([HAVE_ASPELL], [test "x$ASPELL" != "xnone"])
-
-AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
-AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-	AC_MSG_RESULT(yes)
-	nut_have_asciidoc="yes"
-], [
-	AC_MSG_RESULT(no)
-	nut_have_asciidoc="no"
-])
-
-AC_MSG_CHECKING([if a2x version can build manpages (minimum required 8.6.3)])
-AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-	AC_MSG_RESULT(yes)
-], [
-	AC_MSG_RESULT(no)
-	nut_have_asciidoc="no"
-])
-
-dnl TODO: test for docbook-xsl files (maybe build a test man page?)
-dnl https://github.com/networkupstools/nut/issues/162
-AC_MSG_CHECKING([if xsltproc is present (mandatory for man page regeneration)])
-if test -n "${XSLTPROC}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  nut_have_asciidoc="no"
-fi
-
-AC_MSG_CHECKING([if xmllint is present (mandatory for man page regeneration)])
-if test -n "${XMLLINT}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  nut_have_asciidoc="no"
-fi
-
-AC_MSG_CHECKING([if source-highlight is present (preferable for documentation generation)])
-if test -n "${SOURCE_HIGHLIGHT}"; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
 
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
-
-dnl Notes: we also keep HAVE_ASCIIDOC for implicit targets, such as manpage
-dnl building
-AM_CONDITIONAL([HAVE_ASCIIDOC], [test "${nut_have_asciidoc}" = "yes"])
-
 
 case "${nut_with_doc}" in
 	yes|all)
@@ -782,7 +733,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
 		can_build_doc_html_single=no
 		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
-			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
+			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
 			rm -f "$DOCTESTDIR"/asciidoc*.htm*
 		], [])
 		if test "${can_build_doc_html_single}" = yes ; then
@@ -803,7 +754,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
 		can_build_doc_html_chunked=no
 		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
-			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
+			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
 			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
 		], [])
 		if test "${can_build_doc_html_chunked}" = yes ; then
@@ -824,7 +775,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
 		can_build_doc_pdf=no
 		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
-			( cd "$DOCTESTDIR" && ${A2X} --format=pdf "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
+			( cd "$DOCTESTDIR" && ${A2X} --format=pdf --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
 			rm -f "${DOCTESTDIR}"/asciidoc.pdf
 		], [])
 		if test "${can_build_doc_pdf}" = yes ; then
@@ -1397,7 +1348,7 @@ AC_ARG_WITH(valgrind,
 	esac
 ], [])
 
-if test "${with_valgrind}" = auto; then
+if test "x${with_valgrind}" = xauto; then
 	if test "x$VALGRIND" = "xnone"; then
 		with_valgrind="no"
 	else
@@ -1405,13 +1356,14 @@ if test "${with_valgrind}" = auto; then
 	fi
 fi
 
-if test "${with_valgrind}" = yes; then
+if test "x${with_valgrind}" = xyes; then
 	AC_MSG_RESULT(using ${VALGRIND})
+	AC_MSG_NOTICE([Do not forget to build with debug (e.g. pass '-g' in CFLAGS for GCC) for best results with valgrind tests])
 else
 	AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL([HAVE_VALGRIND], [test "x$VALGRIND" != "xnone"])
-AM_CONDITIONAL([WITH_VALGRIND], [test "${with_valgrind}" = yes])
+AM_CONDITIONAL([HAVE_VALGRIND], [test "x${VALGRIND}" != "xnone"])
+AM_CONDITIONAL([WITH_VALGRIND], [test "x${with_valgrind}" = "xyes"])
 
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
@@ -1537,6 +1489,7 @@ dnl deprecated, but subsequently the DMF-LUA code was fixed in Git commit ID
 dnl 410139013fe951f8ec65066979a6b0b91e04f9fe. It's not tested with earler LUA.
 nut_have_lua=no
 if test "${nut_with_lua}" != "no"; then
+	dnl TODO: Not sure the PROG is really used, so maybe configure test should change later on
 	AX_PROG_LUA([5.1], [], [nut_have_lua=yes], [nut_have_lua=no])
 	if test "${nut_have_lua}" = "yes"; then
 		AX_LUA_HEADERS([nut_have_lua=yes], [nut_have_lua=no])

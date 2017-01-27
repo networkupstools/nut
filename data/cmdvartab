@@ -84,7 +84,7 @@ VARDESC input.load "Load on (ePDU) input (percent of full)"
 VARDESC input.realpower "Current sum value of all (ePDU) phases real power (W)"
 VARDESC input.power "Current sum value of all (ePDU) phases apparent power (VA)"
 VARDESC input.source "The current input power source"
-VARDESC input.source.preferred "The prefered input power source"
+VARDESC input.source.preferred "The preferred input power source"
 
 VARDESC output.voltage "Output voltage (V)"
 VARDESC output.voltage.nominal "Nominal output voltage (V)"
@@ -145,7 +145,7 @@ VARDESC ambient.present "Ambient sensor presence"
 VARDESC ambient.contacts.1.status "State of the dry contact sensor 1"
 VARDESC ambient.contacts.2.status "State of the dry contact sensor 2"
 
-# FIXME: the outlet collection is indexed - solve with regexs?
+# FIXME: the outlet collection is indexed - solve with regexps?
 #
 # VARDESC outlet.[[:digit:]]+.id "Outlet system identifier (<index>)"
 

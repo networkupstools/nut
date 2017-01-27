@@ -7,6 +7,8 @@ dmf-lua-test
 */S*_*.dmf
 */.uptodate
 */.validated
+.dmfgen-sanity-validated
+*/.dmfgen-sanity-validated
 *_TEST.c
 *_TEST.exe
 *-mib.c

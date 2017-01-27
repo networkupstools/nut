@@ -18,6 +18,8 @@
 # This program extracts all drivers specific variables, declared
 # using 'addvar()' and output a complete ups.conf lens for Augeas
 
+from __future__ import print_function
+
 import sys
 import re
 import glob
@@ -69,7 +71,7 @@ if __name__ == '__main__':
 
 	if (len(sys.argv) == 2):
 		dirPrefix = sys.argv[1]
-		print dirPrefix
+		print(dirPrefix)
 
 	# 1/ Extract all specific drivers parameters, in a sorted list with unique entries
 	# 1.1/ List all drivers implementation files

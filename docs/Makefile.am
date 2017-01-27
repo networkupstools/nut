@@ -1,3 +1,6 @@
+DISTCLEANFILES =
+EXTRA_DIST =
+
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
@@ -12,7 +15,7 @@ IMAGE_FILES = images/asciidoc.png \
 	images/old-cgi.png
 
 # Only track here the local deps
-SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf
+SHARED_DEPS = nut-names.txt daisychain.txt asciidoc.conf asciidoc.txt
 
 USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
  configure.txt download.txt documentation.txt features.txt history.txt	\
@@ -35,11 +38,12 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
  images/cables/mge-usb-rj45.jpg \
  images/cables/SOLA-330.png
 
-ALL_TXT_SRC = nut-names.txt $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
+ALL_TXT_SRC = nut-names.txt daisychain.txt \
+ $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
  $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt
 
 NUT_SPELL_DICT = nut.dict
-EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
+EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  common.xsl xhtml.xsl chunked.xsl asciidoc.txt
 
@@ -125,17 +129,97 @@ SPELLCHECK_SRC = $(ALL_TXT_SRC) ../README ../INSTALL.nut ../UPGRADING  ../NEWS \
 	../TODO ../scripts/ufw/README ../scripts/augeas/README ../lib/README \
 	../tools/nut-scanner/README
 
+# Note: de-facto our documentation is beyond ASCII (at least in names of
+# international committers). The grep tests below look if the aspell output
+# contained something other than the OK lines (tagged with asterisk) and
+# aspell's version (tagged with @) and if it did - those lines must be the
+# spellcheck complaints. Empty OUT is ok.
+# We also must indent the input, because certain piped-in characters are
+# interpreted as commands, and seems this feature can not be turned off.
+# See also http://aspell.net/man-html/Through-A-Pipe.html
+# TODO: Is "grep -a" or "grep -b" (treat input as ascii/bin) portable enough?
+# Is "egrep == grep -E" always valid? (maybe all a job for configure.ac)
+# Set SPELLCHECK_ERROR_FATAL=no if there are some unavoidable issues
+# due to spellchecking, to temporarily not fail builds due to this.
+# For Travis CI in particular, see ci_build.sh in NUT codebase root.
+SPELLCHECK_ERROR_FATAL = yes
+SPELLCHECK_ENV_DEBUG = no
+ASPELL_NUT_COMMON_ARGS = -p $(abs_srcdir)/$(NUT_SPELL_DICT)
+ASPELL_NUT_COMMON_ARGS += -d en --lang=en --ignore-accents
+ASPELL_NUT_COMMON_ARGS += --encoding=utf-8
+ASPELL_ENV_LANG = en.UTF-8
+ASPELL_OUT_NOTERRORS = (^[ \t]*[\*\@]|^$$)
 spellcheck: 
-	@for docsrc in $(SPELLCHECK_SRC); do \
-		echo "Spell checking on $$docsrc"; \
-		LANG=C $(ASPELL) -a -t -p $(NUT_SPELL_DICT) < $$docsrc | grep [^*]; \
-	done
-# Interactively spell check all documentation source files
+	@if test "$(SPELLCHECK_ENV_DEBUG)" != no ; then \
+		echo "ASPELL DEBUG : information about the setup follows:"; \
+		LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; \
+		$(ASPELL) --help || true; \
+		dpkg -l |grep -i aspell || true ; \
+		echo "ASPELL automatic execution line is : ( sed 's,^\(.*\)$$, \1,' < docfile.txt | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) | egrep -b -v '$(ASPELL_OUT_NOTERRORS)' )" ; \
+		echo "ASPELL proceeding to spellchecking job..."; \
+	 else true; fi
+	@FAILED="" ; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	 for docsrc in $(SPELLCHECK_SRC); do \
+		echo "  ASPELL   Spell checking on $$docsrc"; \
+		OUT="`sed 's,^\(.*\)$$, \1,' < $$docsrc | $(ASPELL) -a -t $(ASPELL_NUT_COMMON_ARGS) 2>&1`" && \
+			{ if test -n "$$OUT" ; then OUT="`echo "$$OUT" | grep -E -b -v '$(ASPELL_OUT_NOTERRORS)' `" ; fi; \
+			  test -z "$$OUT" ; } || \
+			{ echo "FAILED : Aspell reported errors here:" >&2 && echo "----- vvv" >&2 && echo "$$OUT" >&2 && echo "----- ^^^" >&2 && \
+			  FAILED="$$FAILED $$docsrc"; } ; \
+	 done ; \
+	 if test -n "$$FAILED" ; then \
+		echo "=====================================================================" ; \
+		echo "FAILED automatic spellcheck for the following sources: $$FAILED" ; \
+		echo "=====================================================================" ; \
+		echo "Please 'cd $(abs_srcdir) && make spellcheck-interactive'"; \
+		echo "to either fix document sources or update the dictionary of accepted"; \
+		echo "words and spellings listed in the '$(NUT_SPELL_DICT)' file there."; \
+		echo "Either way, please follow up by posting a pull request or a patch"; \
+		echo "to integrate your fixes into the common NUT codebase."; \
+		echo "=====================================================================" ; \
+		test x"$(SPELLCHECK_ERROR_FATAL)" = xno || exit 1; \
+		echo "NOTE: SPELLCHECK_ERROR_FATAL == no so this make does not break the build!"; \
+		echo "=====================================================================" ; \
+	 fi >&2 ; exit 0
+
+# Interactively spell check all documentation source files below (so a human
+# can edit the documentation errors and/or add words to custom dictionary).
+# Note that here we do not restrain reported issues, so this might catch more
+# than the automated test above.
+spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
+
+# Note that the source file may be not overwritable (distcheck, cdrom, ...),
+# so we'd ignore that failure. But the practical use-case is a developer's
+# in-tree workspace, so we want the working copy of the dictionary fixed up
+# for easy `git diff`ing if possible.
+# Note also that "$(<F)" is not POSIX portable, so we spell out the name var :(
+$(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
+	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
+	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
+	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
+	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
+	    echo "$$WORDLIST"; \
+	 ) > "$@"
+	@cp -f "$@" "$(abs_builddir)/$(NUT_SPELL_DICT)"
+	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
+	    cp -f "$@" "$<" || true ; \
+	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
+	 fi
+
+DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+
 spellcheck-interactive: 
-	@for docsrc in $(SPELLCHECK_SRC); do\
+	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
-		LANG=C $(ASPELL) check -p $(NUT_SPELL_DICT) $$docsrc; \
-	done
+		LANG=$(ASPELL_ENV_LANG) LC_ALL=$(ASPELL_ENV_LANG) $(ASPELL) check $(ASPELL_NUT_COMMON_ARGS) $$docsrc || \
+			FAILED="$$FAILED $$docsrc"; \
+	done ; \
+	if test -n "$$FAILED" ; then \
+		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
+		exit 1; \
+	fi ; exit 0
+	$(MAKE) spellcheck-sortdict
 else !HAVE_ASPELL
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."

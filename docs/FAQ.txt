@@ -526,7 +526,7 @@ Either find the pid of the background process and send it a SIGHUP,
 or just start it again with '-c reload'.
 
 If you send the signals yourself instead of using -c, be sure you
-hit the right process.  There are usually two upsmons, and you
+hit the right process.  There are usually two upsmon processes, and you
 should only send signals to one of them.  To be safe, read the pid
 file.
 
@@ -539,7 +539,7 @@ There are several driver to support USB models.
 - bcmxcp_usb supports various Powerware units,
 - nutdrv_qx and blazer_usb support various manufacturers that use the Megatec / Q1 protocol.
 
-Refer to the 'driver-name' (8) manpage for more information.
+Refer to the 'driver-name' (8) man page for more information.
 
 You can also consult the Hardware Compatibility List (HCL) and filter on USB:
 http://www.networkupstools.org/stable-hcl.html?connection=USB
@@ -567,7 +567,7 @@ Instead of unplugging, you might also be able to run `udevadm trigger
 There was a mistake in the naming of the NUT udev rules file which resulted in
 the rules being overridden by another udev configuration file. While this has
 been fixed in the Git master branch, your distribution may still be affected.
-Details are available in the following Github issue:
+Details are available in the following GitHub issue:
 https://github.com/networkupstools/nut/issues/140
 
 == Why do you not use the Linux kernel HID driver when communicating with USB UPSes?
@@ -657,8 +657,8 @@ version out there.
 
 If you are not actively developing a driver, can you use a snapshot instead?
 The NUT instance of Buildbot generates tar files of the latest NUT source
-after each successful build, and these snapshots include a prebuilt version of
-the `./configure` script.
+after each successful build, and these snapshots include a pre-built version
+of the `./configure` script.
 
 Otherwise, you will need recent versions of autoconf, automake, libtool,
 asciidoc, a2x and its dependencies for DocBook/dblatex. Rather than publish a

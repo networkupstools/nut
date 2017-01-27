@@ -327,6 +327,9 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		if (node->flags & ST_FLAG_STRING) {
 			snprintfcat(flist, sizeof(flist), " STRING");
 		}
+		if (node->flags & ST_FLAG_NUMBER) {
+			snprintfcat(flist, sizeof(flist), " NUMBER");
+		}
 
 		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
 			return 0;
@@ -653,8 +656,8 @@ int dstate_addrange(const char *var, const int min, const int max)
 
 	if (ret == 1) {
 		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
-		/* Also set the "NUMBER" flag for ranges */
-		dstate_setflags(var, ST_FLAG_NUMBER);
+		/* Also add the "NUMBER" flag for ranges */
+		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
 
 	return ret;
@@ -701,6 +704,42 @@ void dstate_setflags(const char *var, int flags)
 
 	/* update listeners */
 	send_to_all("SETFLAGS %s\n", flist);
+}
+
+void dstate_addflags(const char *var, const int addflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already set */
+	if ((flags & addflags) == addflags)
+		return;
+
+	flags |= addflags;
+
+	dstate_setflags(var, flags);
+}
+
+void dstate_delflags(const char *var, const int delflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already not set */
+	if (!(flags & delflags))
+		return;
+
+	flags &= ~delflags;
+
+	dstate_setflags(var, flags);
 }
 
 void dstate_setaux(const char *var, int aux)
@@ -948,7 +987,7 @@ void device_alarm_init(void)
 
 /* same as above, but writes to "device.X.ups.alarm" or "ups.alarm" */
 /* Note that 20 chars below just allow for a 2-digit "X" */
-// FIXME? Shouldn't this be changed to be a LARGEBUF aka sizeof(alarm_buf) ?
+/* FIXME? Shouldn't this be changed to be a LARGEBUF aka sizeof(alarm_buf) ? */
 void device_alarm_commit(const int device_number)
 {
 	char info_name[20];

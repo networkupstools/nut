@@ -40,29 +40,29 @@
 
 #if WITH_DMFMIB
 # ifdef WANT_LIBNUTSCAN_SNMP_DMF
-# undef WANT_LIBNUTSCAN_SNMP_DMF
+#  undef WANT_LIBNUTSCAN_SNMP_DMF
 # endif
 
 // This chains to also include nutscan-snmp.h and the desired
 // variables need structures defined lower in the dmf.h file.
 // But there is protection in nutscan-snmp.h to only declare
 // those vars if dmf.h was already completely imported.
-#include "dmf.h"
+# include "dmf.h"
 
 // Now we may "want" the variables from libnutscan with types from dmf.h
-#define WANT_LIBNUTSCAN_SNMP_DMF 1
-#include "nutscan-snmp.h"
+# define WANT_LIBNUTSCAN_SNMP_DMF 1
+# include "nutscan-snmp.h"
 #endif /* WITH_DMFMIB */
 
 #ifdef DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
 # ifdef DEFAULT_DMFNUTSCAN_DIR
-# undef DEFAULT_DMFNUTSCAN_DIR
+#  undef DEFAULT_DMFNUTSCAN_DIR
 # endif
-#define DEFAULT_DMFNUTSCAN_DIR DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
+# define DEFAULT_DMFNUTSCAN_DIR DEFAULT_DMFNUTSCAN_DIR_OVERRIDE
 #endif
 
 #ifndef DEFAULT_DMFNUTSCAN_DIR
-#define DEFAULT_DMFNUTSCAN_DIR "./"
+# define DEFAULT_DMFNUTSCAN_DIR "./"
 #endif
 
 #define DEFAULT_TIMEOUT 5
@@ -70,7 +70,7 @@
 #define ERR_BAD_OPTION	(-1)
 
 // TODO : #if WITH_DMFMIB for options to set up path(s) to the DMFs to load
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVazZ:D";
+const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:";
 
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
@@ -104,9 +104,9 @@ const struct option longopts[] =
 	{ "help",no_argument,NULL,'h' },
 	{ "version",no_argument,NULL,'V' },
 	{ "available",no_argument,NULL,'a' },
+	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{ "snmp_scan_dmf", no_argument, NULL, 'z' },
 	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
-	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{NULL,0,NULL,0}};
 #else
 #define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
@@ -322,9 +322,6 @@ int main(int argc, char *argv[])
 			case 'm':
 				cidr = strdup(optarg);
 				break;
-			case 'D':
-				nut_debug_level++;
-				break;
 
 #if WITH_DMFMIB
 			case 'z':
@@ -349,6 +346,9 @@ int main(int argc, char *argv[])
 				break;
 #endif /* WITH_DMFMIB */
 
+			case 'D':
+				nut_debug_level++;
+				break;
 			case 'c':
 				if(!nutscan_avail_snmp) {
 					goto display_help;

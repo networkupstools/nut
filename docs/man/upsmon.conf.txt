@@ -330,7 +330,7 @@ together, i.e.:
 When compiled with SSL support, you can enter the certificate path here.
 +
   With NSS:;;
-    Certificates are stored in a dedicated database (splitted in 3 files).
+    Certificates are stored in a dedicated database (data split in 3 files).
     Specify the path of the database directory.
   With OpenSSL:;;
     Directory containing CA certificates in PEM format, used to verify
@@ -364,7 +364,7 @@ This effectively forces the use of SSL, so don't use this unless
 all of your upsd hosts are ready for SSL and have their certificates
 in order.
 +
-When compiled with NSS support of SSL, can be overriden for host 
+When compiled with NSS support of SSL, can be overridden for host 
 specified with a CERTHOST directive.
 
 *FORCESSL* '0 | 1'::
@@ -377,7 +377,7 @@ that nobody can sniff your sessions without a large effort. Setting
 this will make upsmon drop connections if the remote upsd doesn't
 support SSL, so don't use it unless all of them have it running.
 +
-When compiled with NSS support of SSL, can be overriden for host 
+When compiled with NSS support of SSL, can be overridden for host 
 specified with a CERTHOST directive.
 
 SEE ALSO

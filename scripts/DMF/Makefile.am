@@ -202,9 +202,15 @@ else
 endif
 
 DMFLNK_CMD = ( \
-	echo "  LN     '$$DMFFILE' => '$@' (PWD = `pwd`)" >&2 ; \
-	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)" || exit ; \
-	$(LN_S_R) "$$DMFFILE" "$@" || exit ; \
+	echo "  LN     '$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
+	[ "$(V)" = 1 ] && echo "BEFORE:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
+	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
+	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
+	test -f "$$DMFFILE" || { echo "File '$$DMFFILE' not found" >&2; exit 22; } ; \
+	[ "$(V)" = 1 ] && echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
+	rm -f "$$DMFLINK" || true ; \
+	$(LN_S_R) "$$DMFFILE" "$$DMFLINK" || exit ; \
+	[ "$(V)" = 1 ] && echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
@@ -434,10 +440,10 @@ endif
 # But some data should be prepopulated there before we run leak tests etc.
 if WITH_DMF
 run-dmf-test: dmf-test $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
+	cd $(DMFSNMP_SUBDIR) && ls -la && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-test
 
 run-dmf-reindex: dmf-reindex $(DMFSNMP_SUBDIR)/.uptodate
-	cd $(DMFSNMP_SUBDIR) && $(DMF_TEST_RUNNER) $(DMF_REINDEX)
+	cd $(DMFSNMP_SUBDIR) && ls -la && $(DMF_TEST_RUNNER) $(DMF_REINDEX)
 else
 run-dmf-test run-dmf-reindex:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2

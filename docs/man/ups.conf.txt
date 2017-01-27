@@ -154,7 +154,7 @@ This may be needed on Mac OS X systems.
 
 Optional.  When you specify this, the driver ignores a low battery condition
 flag that is reported by the UPS (some devices will switch off almost
-immediately after setting this flag, or will report this as soons as the
+immediately after setting this flag, or will report this as soon as the
 mains fails).  Instead it will use either of the following conditions to
 determine when the battery is low:
 

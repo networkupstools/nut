@@ -391,8 +391,8 @@
 		<snmp_info battery_status="yes" command="yes" multiplier="3.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.20677.2.6.2.%i.0" outlet="yes"/>
 	</snmp>
 	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.41"/>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" mib_name="aphel_revelation" name="aphel_revelation" oid=".1.3.6.1.4.1.534.6.6.6" snmp_info="eaton_aphel_revelation_mib" version="0.49"/>
-	<mib2nut auto_check=".1.3.6.1.4.1.17373.3.1.1.0" mib_name="aphel_genesisII" name="aphel_genesisII" oid=".1.3.6.1.4.1.17373" snmp_info="eaton_aphel_genesisII_mib" version="0.49"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" mib_name="aphel_revelation" name="aphel_revelation" oid=".1.3.6.1.4.1.534.6.6.6" snmp_info="eaton_aphel_revelation_mib" version="0.50"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.17373.3.1.1.0" mib_name="aphel_genesisII" name="aphel_genesisII" oid=".1.3.6.1.4.1.17373" snmp_info="eaton_aphel_genesisII_mib" version="0.50"/>
 	<mib2nut auto_check=".1.3.6.1.4.1.20677.1" mib_name="pulizzi_switched1" name="pulizzi_switched1" oid=".1.3.6.1.4.1.20677.1" snmp_info="eaton_pulizzi_switched_mib" version="0.2"/>
 	<mib2nut auto_check=".1.3.6.1.4.1.20677.1" mib_name="pulizzi_switched2" name="pulizzi_switched2" oid=".1.3.6.1.4.1.20677.2" snmp_info="eaton_pulizzi_switched_mib" version="0.2"/>
 </nut>

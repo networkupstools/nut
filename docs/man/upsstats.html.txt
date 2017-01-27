@@ -101,7 +101,7 @@ the current temperature scale.
 Insert the designation of the host being monitored, like `myups@localhost`.
 
 *@HOSTDESC@*::
-Insert the hout's description from linkman:hosts.conf[5].
+Insert the host's description from linkman:hosts.conf[5].
 
 *@HOSTLINK@*::
 Insert a link to upsstats.cgi with the "host" variable set to the

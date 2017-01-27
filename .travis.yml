@@ -1,0 +1,123 @@
+# Travis CI script
+################################################################################
+# This file is based on a template used by zproject, but isn't auto-generated. #
+################################################################################
+
+language:
+- c
+- python
+
+python:
+- '2.7'
+
+cache:
+- ccache
+
+os:
+- linux
+
+sudo: false
+
+services:
+- docker
+
+# Common required packages for all common scenarios
+# Note that YAML lists may be named with & and referenced with * characters;
+# but without such links, every list is complete and unique (meaning that
+# matrix special cases define their own settings, not append to common ones).
+# See https://github.com/travis-ci/travis-ci/issues/3505
+addons:
+  apt:
+    packages: &deps_driverlibs
+    - git
+    - ccache
+    - libcppunit-dev
+    - libcppunit-subunit-dev
+    - libneon27
+    - libneon27-dev
+    - libltdl7
+    - libltdl-dev
+    - libi2c-dev
+    - lua5.1
+    - liblua5.1-0-dev
+    - libsnmp-dev
+    - libfreeipmi-dev
+    - libipmimonitoring-dev
+    - libusb-dev
+    - linux-libc-dev
+    - libpowerman0-dev
+    - libavahi-common-dev
+    - libavahi-core-dev
+    - libavahi-client-dev
+    - libgd2-xpm-dev
+    - libpng-dev
+    - libjpeg-dev
+    - libfreetype6-dev
+    - libxpm-dev
+    - libxml2-utils
+
+env:
+  global:
+    - CI_TIME=true
+    - CI_TRACE=false
+  matrix:
+    - BUILD_TYPE=default
+    - BUILD_TYPE=default-nodoc
+    - BUILD_TYPE=default-alldrv
+    - BUILD_TYPE=default-tgt:distcheck-light
+    - BUILD_TYPE=default-tgt:distcheck-light-man
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_NO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_YES
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_NO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YES
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YESNO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_NO
+    - BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_YES
+    - BUILD_TYPE=default-tgt:distcheck-dmf-all-yes
+    - BUILD_TYPE=default-tgt:distcheck-dmf-no
+    - BUILD_TYPE=default-tgt:distcheck-dmf-warnings
+
+# Builds with customized setups
+matrix:
+  include:
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages: &deps_gendocs
+        - asciidoc
+        - xsltproc
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+        - source-highlight
+        - libxml2-utils
+  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - valgrind
+
+before_install:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+install:
+- if [ "$BUILD_TYPE" != default-spellcheck ] ; then pip install pycparser ; fi
+
+# Hand off to generated script for each BUILD_TYPE
+script: ./ci_build.sh

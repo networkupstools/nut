@@ -191,7 +191,7 @@ subdrivers are written.:
 Shutting down the UPS
 ~~~~~~~~~~~~~~~~~~~~~
 
-It is desireable to support shutting down the UPS. Usually (for
+It is desirable to support shutting down the UPS. Usually (for
 devices that follow the HID Power Device Class specification), this
 requires sending the UPS two commands. One for shutting down the UPS
 (with an 'offdelay') and one for restarting it (with an 'ondelay'),

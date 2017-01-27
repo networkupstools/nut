@@ -4,38 +4,55 @@ Creating a new driver to support another device
 This chapter will present the process of creating a new driver to support
 another device.
 
-Since NUT already supports many major power devices protocols through
+Since NUT already supports many major power device protocols through
 several generic drivers (genericups, usbhid-ups, snmp-ups, blazer_* and
 nutdrv_qx), creation of new drivers has become rare.
 
-So most of the time, it will be limited to completing one of these
+So most of the time, this process will be limited to completing one of these
 generic drivers.
 
 Smart vs. Contact-closure
 -------------------------
 
-If your UPS only does contact closure readings, then go straight to the
-<<contact-closure, Contact closure hardware>> chapter for information on
-adding support.  It's a lot easier to add a few lines to a header file
-than it is to create a whole new driver.
+If your UPS only does contact closure readings over an RS-232 serial port, then
+go straight to the <<contact-closure, Contact closure hardware>> chapter for
+information on adding support.  It's a lot easier to add a few lines to a
+header file than it is to create a whole new driver.
 
 Serial vs. USB vs. SNMP and more
 --------------------------------
 
-If your UPS connects to your computer via a USB port, then go straight
-to the <<hid-subdrivers, HID subdrivers>> chapter. You can probably add
-support for your device by writing a new subdriver to the existing
-usbhid-ups driver, which is easier than writing an entire new driver.
+If your UPS connects to your computer via a USB port, then it most likely
+appears as a USB HID device (this is the simplest way for the vendor to write
+a Windows control program for it). What comes next depends on whether the
+vendor implemented the HID PDC (Power Device Class) specification, or simply
+used the HID protocol to transport serial data to the UPS microcontroller.
+
+A rough heuristic is to check the length of the HID Descriptor length
+(`wDescriptorLength` in `lsusb -v` output). If it is less than 200 bytes long,
+the UPS probably has a glorified USB-to-serial converter built in. Since the
+query strings often start with the letter `Q`, this family of protocols is
+often referred to as `Q*` in the NUT documentation. See the
+<<nutdrv_qx-subdrivers,Q* UPS>> chapter for more details.
+
+Otherwise, if the HID Descriptor is longer, you can go to the
+<<hid-subdrivers, HID subdrivers>> chapter. You can probably add support for
+your device by writing a new subdriver to the existing usbhid-ups driver,
+which is easier (and more maintainable) than writing an entire new driver.
+
+If your USB UPS does not appear to fall into either of these two categories,
+feel free to contact the `nut-upsdev` mailing list with details of your
+device.
 
 Similarly, if your UPS connects to your computer via an SNMP network
-card, you can probably add support for your device by writing a new
+card, you can probably add support for your device by adding a new
 subdriver to the existing snmp-ups driver. Instructions are provided
 in the <<snmp-subdrivers, SNMP subdrivers>> chapter.
 
 Overall concept
 ---------------
 
-The basic design of drivers is simple.  main.c handles most of the work
+The basic design of drivers is simple.  `main.c` handles most of the work
 for you.  You don't have to worry about arguments, config files, or
 anything else like that.  Your only concern is talking to the hardware
 and providing data to the outside world.
@@ -43,8 +60,8 @@ and providing data to the outside world.
 Skeleton driver
 ---------------
 
-Familiarize yourself with the design of skel.c in the drivers directory.
-It shows a few examples of the functions that main will call to obtain
+Familiarize yourself with the design of `skel.c` in the drivers directory.
+It shows a few examples of the functions that `main.c` will call to obtain
 updated information from the hardware.
 
 Essential structure
@@ -87,7 +104,7 @@ Essential functions
 upsdrv_initups
 ~~~~~~~~~~~~~~
 
-Open the port (device_path) and do any low-level things that it may need
+Open the port (`device_path`) and do any low-level things that it may need
 to start using that port.  If you have to set DTR or RTS on a serial
 port, do it here.
 
@@ -102,14 +119,14 @@ possible for your hardware.  If there is a way to detect that hardware
 and it doesn't appear to be connected, display an error and exit. This
 is the last time your driver is allowed to bail out.
 
-This is usually a good place to create variables like ups.mfr,
-ups.model, ups.serial, and other "one time only" items.
+This is usually a good place to create variables like `ups.mfr`,
+`ups.model`, `ups.serial`, and other "one time only" items.
 
 upsdrv_updateinfo
 ~~~~~~~~~~~~~~~~~
 
 Poll the hardware, and update any variables that you care about
-monitoring.  Use dstate_setinfo() to store the new values.
+monitoring.  Use `dstate_setinfo()` to store the new values.
 
 Do at most one pass of the variables.  You MUST return from this
 function or upsd will be unable to read data from your driver.  main
@@ -125,7 +142,7 @@ answer the next time it is called.
 You must never abort from upsdrv_updateinfo(), even when the UPS doesn't
 seem to be attached anymore. If the connection with the UPS is lost, the
 driver should retry to re-establish communication for as long as it is
-running. Calling exit() or any of the fatal*() functions is specifically
+running. Calling `exit()` or any of the `fatal*()` functions is specifically
 not allowed anymore.
 
 upsdrv_shutdown
@@ -144,15 +161,15 @@ process.
 Data types
 ----------
 
-To be of any use, you must supply data in ups.status.  That is the
+To be of any use, you must supply data in `ups.status`.  That is the
 minimum needed to let upsmon do its job.  Whenever possible, you should
 also provide anything else that can be monitored by the driver.  Some
 obvious things are the manufacturer name and model name, voltage data,
 and so on.
 
-If you can't figure out some value automatically, use the ups.conf
+If you can't figure out some value automatically, use the `ups.conf`
 options to let the user tell you.  This can be useful when a driver
-needs to support many similar hardware models but can't probe to see
+needs to support many similar hardware models, but can't probe to see
 what is actually attached.
 
 Manipulating the data
@@ -219,19 +236,19 @@ duplication and ugliness otherwise.
 [NOTE]
 ================================================================================
 
-- upsd injects "FSD" by itself following that command by a master upsmon
+- upsd injects `FSD` by itself following that command by a master upsmon
 process.  Drivers must not set that value, apart from specific cases (see
 below).
 
-- As an exception, drivers may set "FSD" when an imminent shutdown has been
+- As an exception, drivers may set `FSD` when an imminent shutdown has been
 detected. In this case, the "on battery + low battery" condition should not be
-met. Otherwise, setting status to "OB LB" should be preferred.
+met. Otherwise, setting status to `OB LB` should be preferred.
 
-- the OL and OB flags are an indication of the input line status only.
+- the `OL` and `OB` flags are an indication of the input line status only.
 
-- the CHRG and DISCHRG flags are under replacement by battery.charger.status.
-See the linkdoc:user-manual[NUT command and variable naming scheme,nut-names]
-for more information.
+- the `CHRG` and `DISCHRG` flags are being replaced with
+`battery.charger.status`.  See the linkdoc:user-manual[NUT command and
+variable naming scheme,nut-names] for more information.
 ================================================================================
 
 UPS alarms

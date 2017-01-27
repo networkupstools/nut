@@ -60,6 +60,7 @@
 
 /* IBM */
 #define IBM_VENDORID 0x04b3
+
 #ifndef SHUT_MODE
 #include "usb-common.h"
 
@@ -158,10 +159,10 @@ static char		mge_scratch_buf[20];
  * annunciate float mode until the charger power starts falling from the maximum
  * level indicating the battery is truly at the float voltage or in float mode.
  * The %charge level is based on battery voltage and the charge mode timer
- * (should be 48 hours) and some UPSs add in a value that’s related to charger
+ * (should be 48 hours) and some UPSs add in a value that's related to charger
  * power output.  So you can have UPS that enters float mode with anywhere
  * from 80% or greater battery capacity.
- * float mode is not important from the software’s perspective, it’s there to
+ * float mode is not important from the software's perspective, it's there to
  * help determine if the charger is advancing correctly.
  * So in float mode, the charger is charging the battery, so by definition you
  * can assert the CHRG flag in NUT when in “float” mode or “charge” mode.

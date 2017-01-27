@@ -67,14 +67,14 @@ Scan NUT compatible power supplies available via IPMI on the current host, or ov
 
 *-E* | *--eaton_serial* 'serial ports'::
 Scan Eaton devices (XCP and SHUT) available via serial bus on the current host.
-This option must be requested explicitely, even for a complete scan.
+This option must be requested explicitly, even for a complete scan.
 'serial ports' can be expressed in various forms:
 
 - 'auto' to scan all serial ports.
 - a single character indicating a port number ('0' (zero) for /dev/ttyS0 and
 /dev/ttyUSB0 on Linux, '1' for COM1 on Windows, 'a' for /dev/ttya on Solaris...)
 - a range of N characters, hyphen separated, describing the range of
-ports using 'X-Y', where X and Y are characters refering to the port number.
+ports using 'X-Y', where X and Y are characters referring to the port number.
 - a single port name.
 - a list of ports name, coma separated, like '/dev/ttyS1,/dev/ttyS4'.
 
@@ -168,17 +168,18 @@ MISCELLANEOUS OPTIONS
 Display NUT version.
 
 *-a* | *--available*::
-Display available bus that can be scanned , depending on how the binary has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+Display available buses that can be scanned, depending on how the binary has
+been compiled. (e.g. OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
 
 *-D* | *--nut_debug_level*::
 Raise the debugging level.  Use this multiple times to see more details.
-+
-The level of debugging needed depends both on nut-scanner and the
+
+NOTE: The level of debugging needed depends both on nut-scanner and the
 problem you're trying to diagnose.  Therefore, first explain the problem you
-have with nut-scanner to a developer/maintainer, before sending them debugging
+have with `nut-scanner` to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 

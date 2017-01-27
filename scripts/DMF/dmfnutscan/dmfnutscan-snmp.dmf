@@ -3,6 +3,7 @@
 	<mib2nut auto_check="" mib_name="apc_ats" oid=".1.3.6.1.4.1.318.1.3.11" />
 	<mib2nut auto_check="" mib_name="delta_ups" oid=".1.3.6.1.4.1.2254.2.4" />
 	<mib2nut auto_check="" mib_name="huawei" oid=".1.3.6.1.4.1.8072.3.2.10" />
+	<mib2nut auto_check="" mib_name="tripplite" oid=".1.3.6.1.4.1.850.1" />
 	<mib2nut auto_check="" mib_name="xppc" oid=".1.3.6.1.4.1.935" />
 	<mib2nut auto_check=".1.3.6.1.4.1.13742.1.1.12.0" mib_name="raritan" oid=".1.3.6.1.4.1.13742" />
 	<mib2nut auto_check=".1.3.6.1.4.1.13742.6.3.2.1.1.3.1" mib_name="raritan-px2" oid=".1.3.6.1.4.1.13742.6" />
@@ -18,12 +19,12 @@
 	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" oid=".1.3.6.1.4.1.3808" />
 	<mib2nut auto_check=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" mib_name="netvision" oid=".1.3.6.1.4.1.4555.1.1.1" />
 	<mib2nut auto_check=".1.3.6.1.4.1.4779.1.3.5.2.1.24.1" mib_name="baytech" />
-	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats" oid=".1.3.6.1.4.1.705.1" />
+	<mib2nut auto_check=".1.3.6.1.4.1.534.10.1.2.1.0" mib_name="eaton_ats30" oid=".1.3.6.1.4.1.534.10.1" />
+	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16" oid=".1.3.6.1.4.1.705.1" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" mib_name="aphel_revelation" oid=".1.3.6.1.4.1.534.6.6.6" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" oid=".1.3.6.1.4.1.534.6.6.7" />
 	<mib2nut auto_check=".1.3.6.1.4.1.705.1.1.1.0" mib_name="mge" oid=".1.3.6.1.4.1.705.1" />
 	<mib2nut auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" oid=".1.3.6.1.4.1.534.1" />
 	<mib2nut auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" />
-	<mib2nut auto_check="" mib_name="ietf" oid=".1.3.6.1.4.1.850.1" />
 	<mib2nut auto_check="1.3.6.1.2.1.33.1.1.1.0" mib_name="ietf" oid=".1.3.6.1.2.1.33" />
 </nut>

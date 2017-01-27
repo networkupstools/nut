@@ -20,6 +20,7 @@ EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
 DISTCHECK_LIGHT_MAN_FLAGS = --with-all=auto --with-ssl=auto --with-doc=man
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g'
 
 # The checks for DMF builds involve several distinct combinations of options
 # that the recipes should accept as valid. We generally skip items tested
@@ -51,6 +52,10 @@ distcheck-light:
 
 distcheck-light-man:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_MAN_FLAGS)" distcheck
+
+# Make a distcheck (and check in particular) with enabled valgrind and debug info
+memcheck distcheck-valgrind:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
 
 distcheck-dmf-features-REGEN_NO:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_DMF_WITH_REGEN_NO_FLAGS)" distcheck || 	{ RES=$$? ; echo "FAILED with DISTCHECK_DMF_WITH_REGEN_NO_FLAGS" >&2; exit $$RES; }
@@ -118,6 +123,18 @@ distcheck-dmf:
 #	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 distcleancheck:
 	@:
+
+# Hook the documentation building and validating recipes
+# Note: these are optionally available (as determined during configure runs)
+spellcheck spellcheck-interactive:
+	@RES=0; \
+	(cd $(srcdir)/docs && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/docs/man && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/data && $(MAKE) $@) || RES=$$? ; \
+	exit $$RES
+
+doc spellcheck-sortdict:
+	cd $(srcdir)/docs && $(MAKE) $@
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
