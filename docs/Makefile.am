@@ -1,3 +1,5 @@
+DISTCLEANFILES ?=
+
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
@@ -190,7 +192,7 @@ spellcheck-sortdict: $(abs_builddir)/.$(NUT_SPELL_DICT).sorted
 # in-tree workspace, so we want the working copy of the dictionary fixed up
 # for easy `git diff`ing if possible.
 $(abs_builddir)/.$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
-	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_srcdir)/$(NUT_SPELL_DICT).bak-pre-sorting
+	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
 	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
 	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
 	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
@@ -199,9 +201,12 @@ $(abs_builddir)/.$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
 	 ) > "$(abs_builddir)/$(<F).sorted"
 	@cp -f "$(abs_builddir)/$(<F).sorted" "$(abs_builddir)/$(<F)"
 	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
-	    cp -f "$(abs_builddir)/$(<F).sorted" "$(abs_srcdir)/$(NUT_SPELL_DICT)" || true ; \
+	    cp -f "$(abs_builddir)/$(<F).sorted" "$<" || true ; \
+	    cp -f "$(abs_builddir)/$(<F).bak-pre-sorting" "$<.bak-pre-sorting" || true ; \
 	 fi
 	@touch $@
+
+DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
 
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
