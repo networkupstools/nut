@@ -63,8 +63,9 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats-mib.h"
+#include "eaton-ats16-mib.h"
 #include "apc-ats-mib.h"
+#include "eaton-ats30-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -102,7 +103,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
 	&delta_ups,			/* This struct comes from : delta_ups-mib.c */
-	&eaton_ats,			/* This struct comes from : eaton-ats-mib.c */
+	&eaton_ats16,		/* This struct comes from : eaton-ats16-mib.c */
+	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
 	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
@@ -2940,7 +2942,8 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Free template (outlet and outlet.group) */
-	free_info(su_info_p);
+	if (!strncmp(tmp_varname, "outlet", 6))
+		free_info(su_info_p);
 	free(tmp_varname);
 
 	return retval;

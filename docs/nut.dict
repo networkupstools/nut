@@ -2,6 +2,10 @@ personal_ws-1.1 en 1811 utf-8
 ACFAIL
 ACFREQ
 ACK
+ACFAIL
+ACFREQ
+ACK
+ACPI
 ACPresent
 ADDR
 ADDRCONFIG
@@ -263,6 +267,7 @@ Grafenthal
 Gtec
 GuideBook
 Guillen
+HB
 HEADs
 HFILE
 HIDIOCINITREPORT
@@ -313,6 +318,7 @@ Invensys
 Ioannou
 JAWAN
 JBus
+JSON
 JW
 Jageson
 Jarosch
@@ -351,6 +357,7 @@ LDLC
 LDRIVER
 LH
 LIBGD
+LIBNEON
 LIBNETSNMP
 LIBOPENSSL
 LIBPOWERMAN

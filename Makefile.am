@@ -130,6 +130,7 @@ spellcheck spellcheck-interactive:
 	@RES=0; \
 	(cd $(srcdir)/docs && $(MAKE) $@) || RES=$$? ; \
 	(cd $(srcdir)/docs/man && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/data && $(MAKE) $@) || RES=$$? ; \
 	exit $$RES
 
 doc spellcheck-sortdict:
