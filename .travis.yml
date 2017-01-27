@@ -89,6 +89,9 @@ matrix:
         - aspell-en
   - env: BUILD_TYPE=default-withdoc
     os: linux
+    sudo: false
+    services:
+        - docker
     addons:
       apt:
         packages: &deps_gendocs
@@ -101,6 +104,9 @@ matrix:
         - libxml2-utils
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
+    sudo: false
+    services:
+        - docker
     addons:
       apt:
         packages:
