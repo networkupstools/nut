@@ -91,7 +91,7 @@ Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE
 above).
 With "auto", the driver will try a select set of SNMP objects until it finds
 one that the device responds to.  Note that since NUT 2.6.2, `snmp-ups` drivers
-have a new method that uses sysObjectID (which is a pointer to the prefered MIB
+have a new method that uses sysObjectID (which is a pointer to the preferred MIB
 of the device) to detect supported devices.  This renders void the use of "mibs"
 option.
 
