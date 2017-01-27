@@ -2709,7 +2709,8 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Free template (outlet and outlet.group) */
-	free_info(su_info_p);
+	if (!strncmp(tmp_varname, "outlet", 6))
+		free_info(su_info_p);
 	free(tmp_varname);
 
 	return retval;
