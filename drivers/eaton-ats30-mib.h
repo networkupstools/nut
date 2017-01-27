@@ -1,7 +1,7 @@
 /* eaton_ats30-mib.h - subdriver to monitor eaton_ats30 SNMP devices with NUT
  *
- *  Copyright (C)
- *  2011 - 2017	Tomas Halman <TomasHalman@eaton.com>
+ *  Copyright (C) 2017 Eaton
+ *  Author: Tomas Halman <TomasHalman@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
