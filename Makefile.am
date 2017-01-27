@@ -132,7 +132,7 @@ spellcheck spellcheck-interactive:
 	(cd $(srcdir)/docs/man && $(MAKE) $@) || RES=$$? ; \
 	exit $$RES
 
-doc:
+doc spellcheck-sortdict:
 	cd $(srcdir)/docs && $(MAKE) $@
 
 # ----------------------------------------------------------------------

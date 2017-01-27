@@ -179,10 +179,30 @@ spellcheck:
 		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
 
-# Interactively spell check all documentation source files (so a human
+# Interactively spell check all documentation source files below (so a human
 # can edit the documentation errors and/or add words to custom dictionary).
 # Note that here we do not restrain reported issues, so this might catch more
 # than the automated test above.
+spellcheck-sortdict: $(abs_builddir)/.$(NUT_SPELL_DICT).sorted
+
+# Note that the source file may be not overwritable (distcheck, cdrom, ...),
+# so we'd ignore that failure. But the practical use-case is a developer's
+# in-tree workspace, so we want the working copy of the dictionary fixed up
+# for easy `git diff`ing if possible.
+$(abs_builddir)/.$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_srcdir)/$(NUT_SPELL_DICT).bak-pre-sorting
+	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
+	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
+	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
+	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
+	    echo "$$WORDLIST"; \
+	 ) > "$(abs_builddir)/$(<F).sorted"
+	@cp -f "$(abs_builddir)/$(<F).sorted" "$(abs_builddir)/$(<F)"
+	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
+	    cp -f "$(abs_builddir)/$(<F).sorted" "$(abs_srcdir)/$(NUT_SPELL_DICT)" || true ; \
+	 fi
+	@touch $@
+
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
@@ -193,6 +213,7 @@ spellcheck-interactive:
 		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
+	$(MAKE) spellcheck-sortdict
 else !HAVE_ASPELL
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
