@@ -45,7 +45,7 @@ To get LD_FLAGS, use:
 
 References: linkman:libupsclient-config[1] manual page,
 
-NOTE: this feature may evolve (name change), or even disapear in the future.
+NOTE: this feature may evolve (name change), or even disappear in the future.
 
 pkgconfig support
 -----------------
@@ -112,7 +112,7 @@ to libupsclient-config if not available. It will issue an error if none is
 found!
 
 The same is also valid for other NUT libraries, such as libnutscan.
-Simply replace 'libupsclient' occurences in the above example, by the name
+Simply replace 'libupsclient' occurrences in the above example, by the name
 of the desired library (for example, 'libnutscan').
 
 NOTE: this is an alternate method. Use of PKG_CHECK_MODULES macro should be

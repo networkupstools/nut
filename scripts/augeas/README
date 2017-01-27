@@ -57,7 +57,7 @@ These are the *.aug files in the present directory.
 
 You can either install the files to the right location on your system,
 generally in '/usr/share/augeas/lenses/', or use these from NUT
-source directory ('nut/scripts/augeas'). The latter is to be prefered for
+source directory ('nut/scripts/augeas'). The latter is to be preferred for
 the time being.
 
 

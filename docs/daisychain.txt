@@ -57,7 +57,7 @@ only see the whole daisychain, as it would normally see, and not nothing at all.
 
 Moreover, this solution is generic, and not specific to the PDU use case
 currently considered. It thus support both the current NUT scope, along with
-other use cases (parallel / serial UPS setups), and potential evolutions and
+other use cases (parallel / serial UPS setups), and potential evolution and
 technology change (hybrid chain with UPS and PDU for example).
 
 

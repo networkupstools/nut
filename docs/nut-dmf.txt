@@ -36,7 +36,7 @@ complete DMFs (and validate their contents for parsability, along the way)
 from a directory, and produce a DMF file that only contains the truncated
 `mib2nut` entries as needed for the `nut-scanner`.
 As an end-user tool, this program can help during updates of the DMF set.
-A private build of this code as `dmf-reindex` can be made in the makefile
+A private build of this code as `dmf-reindex` can be made in the Makefile
 recipe for generation of the `dmfnutscan` contents; but this is currently
 disabled in the `configure.ac` script in favor of using a single common
 build (with the private one reserved for hacking to try different logic).
@@ -47,7 +47,7 @@ current directory (or one specified with `-Z dirpath`) and prints the
 resulting XML DMF markup to `stdout` -- so you can redirect it to another
 file. To avoid later duplicate entries, if you must store this file with
 the original SNMP MIB mapping DMFs, consider saving the nut-scanner DMF
-file with a different extension (may be uppercased `*.DMF` for example)
+file with a different extension (may be upper-cased `*.DMF` for example)
 or if you can -- save it into a different directory.
 
 NOTE: In particular, keep in mind that some mappings are sensitive to load
@@ -75,11 +75,12 @@ static mappings of the first iteration (so as to be functionally and logically
 equivalent to the pre-DMF code), but also add support for dynamic mappings
 using an interpreted language. It may be incomplete and is subject to change
 after some team discussions. LUA is the first implementation in the works,
-so it would be the default option (given experimental status, it is not
-compilable by default unless you define `-DWITH_DMF_LUA=1` to the compiler
+so it would be the default option. Given experimental status, it is not
+forced to build by default unless you define `-DWITH_DMF_LUA=1` to the compiler
 command-line or `CFLAGS`; also the implementation is currently compatible
 with LUA-5.1 or LUA-5.2 -- so the include-file path and library name should
-match your OS distribution's naming for this version).
+match your OS distribution's naming for this version (the `configure` script
+tries to streamline this though).
 
 The dynamic-language support is experimental, but the code skeleton allows
 the community to implement support for other languages using the `language`
@@ -133,7 +134,7 @@ attributes so the DMF file can refer to the currently applicable schema.
 
 == DYNAMIC FUNCTIONS
 
-It is possible to emulate non-provided data by a supported dynamic lagnuage
+It is possible to emulate non-provided data by a supported dynamic language
 (only LUA-5.1/5.2 at this time).
 
 For example, if the UPS only provides current in Amperes and the Voltage,
@@ -199,7 +200,7 @@ There are some rules to use it:
       named with the same name as the "snmp" mapping variable, but without
       the dot in the name (e.g. `device.lua` -> `function devicelua(device)`),
       which serves as the main function for the block;
-  * Could have more functions, but main fuction will be always the mandatory
+  * Could have more functions, but main function will be always the mandatory
       one, unique, and it is the entry point (others are its helpers);
   * The `device` parameter is mandatory due to internal requirements;
   * Main function can return data; if it returns - a new driver-state variable
@@ -244,7 +245,7 @@ The generation toolkit is a mix of Python and shell scripts:
  * `jsonify-mib.py`: process MIB mapping from C source and print it to stdout
     as JSON
 
- * `nut_cpp`: calls the C preprosessor and filters away GCC modifiers that are
+ * `nut_cpp`: calls the C preprocessor and filters away GCC modifiers that are
     not handled well by `pycparser` code (can break on system headers that are
     tuned for OSes, compilers and special keywords that this script does not
     yet know)
@@ -338,7 +339,7 @@ Usage is then like this:
 
 === xmlify-mib.py
 
-Assming you have installed Python e.g. using instructions above, you can
+Assuming you have installed Python e.g. using instructions above, you can
 produce final DMF XML markup from the intermediate JSON by simply piping
 it to the standard input of this script:
 

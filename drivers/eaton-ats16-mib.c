@@ -1,8 +1,8 @@
-/* eaton_ats-mib.c - subdriver to monitor eaton_ats SNMP devices with NUT
+/* eaton_ats16-mib.c - subdriver to monitor Eaton ATS16 SNMP devices with NUT
  *
  *  Copyright (C)
- *  2011 - 2012	Arnaud Quette <arnaud.quette@free.fr>
- *  2016 Arnaud Quette <ArnaudQuette@Eaton.com>
+ *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
+ *    2016-2017 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver script. It must be customized!
@@ -22,14 +22,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#include "eaton-ats-mib.h"
+#include "eaton-ats16-mib.h"
 
-#define EATON_ATS_MIB_VERSION  "0.11"
+#define EATON_ATS16_MIB_VERSION  "0.12"
 
-#define EATON_ATS_SYSOID       ".1.3.6.1.4.1.534.10"
-#define EATON_ATS_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
+#define EATON_ATS16_SYSOID       ".1.3.6.1.4.1.534.10"
+#define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
 
-static info_lkp_t eaton_ats_source_info[] = {
+static info_lkp_t eaton_ats16_source_info[] = {
 	{ 1, "init" },
 	{ 2, "diagnosis" },
 	{ 3, "off" },
@@ -40,20 +40,20 @@ static info_lkp_t eaton_ats_source_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t eaton_ats_sensitivity_info[] = {
+static info_lkp_t eaton_ats16_sensitivity_info[] = {
 	{ 1, "normal" },
 	{ 2, "high" },
 	{ 3, "low" },
 	{ 0, NULL }
 };
 
-static info_lkp_t eaton_ats_input_frequency_status_info[] = {
+static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
 	{ 1, "good" },          /* No threshold triggered */
 	{ 2, "out-of-range" },  /* Frequency out of range triggered */
 	{ 0, NULL }
 };
 
-static info_lkp_t eaton_ats_input_voltage_status_info[] = {
+static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
 	{ 1, "good" },          /* No threshold triggered */
 	{ 2, "derated-range" }, /* Voltage derated */
 	{ 3, "out-of-range" },  /* Voltage out of range triggered */
@@ -61,7 +61,7 @@ static info_lkp_t eaton_ats_input_voltage_status_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t eaton_ats_test_result_info[] = {
+static info_lkp_t eaton_ats16_test_result_info[] = {
 	{ 1, "done and passed" },
 	{ 2, "done and warning" },
 	{ 3, "done and error" },
@@ -71,14 +71,14 @@ static info_lkp_t eaton_ats_test_result_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t eaton_ats_output_status_info[] = {
+static info_lkp_t eaton_ats16_output_status_info[] = {
 	{ 1, "OFF" }, /* Output not powered */
 	{ 2, "OL" },  /* Output powered */
 	{ 0, NULL }
 };
 
 /* EATON_ATS Snmp2NUT lookup table */
-static snmp_info_t eaton_ats_mib[] = {
+static snmp_info_t eaton_ats16_mib[] = {
 
 	/* Device collection */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
@@ -111,21 +111,21 @@ static snmp_info_t eaton_ats_mib[] = {
 	/* ats2InputVoltage.source2 = INTEGER: 2432 0.1 V */
 	{ "input.2.voltage", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.2.2", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2InputStatusVoltage.source1 = INTEGER: normalRange(1) */
-	{ "input.1.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.1", NULL, SU_FLAG_OK, eaton_ats_input_voltage_status_info, NULL },
+	{ "input.1.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.1", NULL, SU_FLAG_OK, eaton_ats16_input_voltage_status_info, NULL },
 	/* ats2InputStatusVoltage.source2 = INTEGER: normalRange(1) */
-	{ "input.2.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.2", NULL, SU_FLAG_OK, eaton_ats_input_voltage_status_info, NULL },
+	{ "input.2.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.2", NULL, SU_FLAG_OK, eaton_ats16_input_voltage_status_info, NULL },
 	/* ats2InputFrequency.source1 = INTEGER: 500 0.1 Hz */
 	{ "input.1.frequency", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.3.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2InputFrequency.source2 = INTEGER: 500 0.1 Hz */
 	{ "input.2.frequency", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.3.2", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2InputStatusFrequency.source1 = INTEGER: good(1) */
-	{ "input.1.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.1", NULL, SU_FLAG_OK, eaton_ats_input_frequency_status_info, NULL },
+	{ "input.1.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.1", NULL, SU_FLAG_OK, eaton_ats16_input_frequency_status_info, NULL },
 	/* ats2InputStatusFrequency.source2 = INTEGER: good(1) */
-	{ "input.2.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.2", NULL, SU_FLAG_OK, eaton_ats_input_frequency_status_info, NULL },
+	{ "input.2.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.2", NULL, SU_FLAG_OK, eaton_ats16_input_frequency_status_info, NULL },
 	/* ats2ConfigSensitivity.0 = INTEGER: normal(1) */
-	{ "input.sensitivity", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.4.6.0", NULL, SU_FLAG_OK, &eaton_ats_sensitivity_info[0], NULL },
+	{ "input.sensitivity", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.4.6.0", NULL, SU_FLAG_OK, &eaton_ats16_sensitivity_info[0], NULL },
 	/* ats2OperationMode.0 = INTEGER: source1(4) */
-	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, eaton_ats_source_info, NULL },
+	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, eaton_ats16_source_info, NULL },
 	/* ats2ConfigPreferred.0 = INTEGER: source1(1) */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.4.5.0", NULL, SU_FLAG_OK, NULL, NULL },
 
@@ -140,10 +140,10 @@ static snmp_info_t eaton_ats_mib[] = {
 	/* UPS collection */
 	/* FIXME: RFC for device.test.result! */
 	/* ats2ConfigTransferTest.0 = INTEGER: noTestInitiated(6) */
-	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.534.10.2.4.8.0", NULL, SU_FLAG_OK, eaton_ats_test_result_info, NULL },
+	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.534.10.2.4.8.0", NULL, SU_FLAG_OK, eaton_ats16_test_result_info, NULL },
 	/* FIXME: RFC for device.status! */
 	/* ats2StatusOutput.0 = INTEGER: outputPowered(2) */
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.2.3.3.2.0", NULL, SU_FLAG_OK, eaton_ats_output_status_info, NULL },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.2.3.3.2.0", NULL, SU_FLAG_OK, eaton_ats16_output_status_info, NULL },
 
 	/* Ambient collection */
 	/* ats2EnvRemoteTemp.0 = INTEGER: 0 degrees Centigrade */
@@ -240,6 +240,6 @@ static snmp_info_t eaton_ats_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	eaton_ats = { "eaton_ats", EATON_ATS_MIB_VERSION, NULL, EATON_ATS_MODEL, eaton_ats_mib, ".1.3.6.1.4.1.705.1" };
+mib2nut_info_t	eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, ".1.3.6.1.4.1.705.1" };
 /* FIXME: Eaton ATS need to be fixed for the sysOID (currently .1.3.6.1.4.1.705.1!) */
-/* mib2nut_info_t	eaton_ats = { "eaton_ats", EATON_ATS_MIB_VERSION, NULL, EATON_ATS_MODEL, eaton_ats_mib, EATON_ATS_SYSOID }; */
+/* mib2nut_info_t	eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID }; */

@@ -46,7 +46,7 @@ was issued.  Defaults to 120 seconds.
 
 *ondelay*='num'::
 Set the timer (in seconds) for the outlet to switch on in case the power
-returns after the oulet has been switched off.  Defaults to 30 seconds.
+returns after the outlet has been switched off.  Defaults to 30 seconds.
 
 *mincharge*='value'::
 Set the remaining battery level when the clone UPS switches to LB

@@ -114,7 +114,7 @@ Answer length:
 - if set to +-1+ -> auto calculate answer length (treat +answer+ as a null-terminated string),
 - otherwise -> use the provided length (if reasonable) and preserve inner ++\0++s (treat +answer+ as a sequence of bytes till the +item_t+'s +preprocess_answer()+ function gets called).
 
-For more informations, see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>.
+For more information, see <<_mapping_an_idiom_to_nut,Mapping an idiom to NUT>>.
 --
 
 
@@ -629,8 +629,8 @@ Not used for +QX_FLAG_CMD+
 This function will be called *before* the +command+ is sent to the UPS so that we can fill +command+ with the value provided by the user: in this case the function will check if the value is in the accepted range and then fill +value+ (the second argument passed to the +preprocess+ function) with +command+ and the given value.
 
 
-Informations absent in the device
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Information absent in the device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to set the server-side var +ups.delay.start+, that will be then used by the driver, we have to provide the following +item_t+:
 
@@ -695,10 +695,10 @@ Not used for +QX_FLAG_ABSENT+
 This function will be called, in setvar, before the driver stores the value in the NUT var: here it's used to truncate the user-provided value to the nearest settable interval.
 
 
-Informations not yet available in NUT
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Information not yet available in NUT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If your UPS reports some informations that are not yet available as NUT variables and you need to process them, you can add them in +item_t+ data structure adding the +QX_FLAG_NONUT+ flag to its +qxflags+: the info will then be printed to the logs.
+If your UPS reports some data items that are not yet available as NUT variables and you need to process them, you can add them in +item_t+ data structure adding the +QX_FLAG_NONUT+ flag to its +qxflags+: the info will then be printed to the logs.
 
 So we know that the UPS reports actual input/output phase angles when queried for +QPD\r+:
 
@@ -957,20 +957,20 @@ Return +-1+ on failure, +0+ for a status update and +1+ in all other cases.
 Return the currently processed status so that it can be checked with one of the +status_bit_t+ passed to the +STATUS()+ macro (see +nutdrv_qx.h+).
 
 *+void	update_status(const char *nutvalue)+*::
-If you need to edit the current status call this function with one of the NUT status (all but +OB+ are supported, simply set it as not +OL+); preceed them with an exclamation mark if you want to clear them from the status (e.g. +!OL+).
+If you need to edit the current status call this function with one of the NUT status (all but +OB+ are supported, simply set it as not +OL+); prefix them with an exclamation mark if you want to clear them from the status (e.g. +!OL+).
 
 
 Notes
 ~~~~~
 
 You must put the generated files into the +drivers/+ subdirectory, with the name of your subdriver preceded by +nutdrv_qx_+, and update +nutdrv_qx.c+ by adding the appropriate +#include+ line and by updating the definition of +subdriver_list+.
-Please, make sure to add your driver in that list in a smart way: if your device supports also the basic commands used by the other subdrivers to claim a device, add something that is unique (i.e. not supported by the other subdrivers) to your device in your claim function and then add it on top of the slighty supported ones in that list.
+Please, make sure to add your driver in that list in a smart way: if your device supports also the basic commands used by the other subdrivers to claim a device, add something that is unique (i.e. not supported by the other subdrivers) to your device in your claim function and then add it on top of the slightly supported ones in that list.
 
 You must also add the subdriver to +NUTDRV_QX_SUBDRIVERS+ in +drivers/Makefile.am+ and call "++autoreconf++" and/or "++./configure++" from the top level NUT directory.
 
 You can then recompile +nutdrv_qx+, and start experimenting with the new subdriver.
 
-For more informations, have a look at the currently available subdrivers:
+For more details, have a look at the currently available subdrivers:
 
 - +nutdrv_qx_bestups.+{+c+,+h+}
 - +nutdrv_qx_mecer.+{+c+,+h+}

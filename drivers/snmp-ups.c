@@ -5,7 +5,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2016	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *	2015 - 2016	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -63,8 +63,9 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats-mib.h"
+#include "eaton-ats16-mib.h"
 #include "apc-ats-mib.h"
+#include "eaton-ats30-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -102,7 +103,8 @@ static mib2nut_info_t *mib2nut[] = {
 	&compaq,			/* This struct comes from : compaq-mib.c */
 	&cyberpower,		/* This struct comes from : cyberpower-mib.c */
 	&delta_ups,			/* This struct comes from : delta_ups-mib.c */
-	&eaton_ats,			/* This struct comes from : eaton-ats-mib.c */
+	&eaton_ats16,		/* This struct comes from : eaton-ats16-mib.c */
+	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
 	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
@@ -724,16 +726,16 @@ void nut_snmp_free(struct snmp_pdu ** array_to_free)
 {
 	struct snmp_pdu ** current_element;
 
-	if (array_to_free == NULL) return;
+	if (array_to_free != NULL) {
+		current_element = array_to_free;
 
-	current_element = array_to_free;
+		while (*current_element != NULL) {
+			snmp_free_pdu(*current_element);
+			current_element++;
+		}
 
-	while (*current_element != NULL) {
-		snmp_free_pdu(*current_element);
-		current_element++;
+		free( array_to_free );
 	}
-
-	free( array_to_free );
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
@@ -2940,7 +2942,8 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Free template (outlet and outlet.group) */
-	free_info(su_info_p);
+	if (!strncmp(tmp_varname, "outlet", 6))
+		free_info(su_info_p);
 	free(tmp_varname);
 
 	return retval;
