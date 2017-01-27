@@ -132,6 +132,7 @@ static snmp_info_t eaton_ats30_mib[] = {
     /* atsStatus */
     /* ========= */
 #if 0
+	/* NOTE: Unused OIDs are left as comments for potential future improvements
 	/* enterprises.534.10.1.4.1.0 = INTEGER: 7 */
 	{ "unmapped.atsInputFlowIndicator", 0, 1, ".1.3.6.1.4.1.534.10.1.4.1.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* enterprises.534.10.1.4.2.1.1.1 = INTEGER: 1 -- atsInputFlowTable start */
