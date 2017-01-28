@@ -55,7 +55,7 @@ NUT promotes and uses many standards, such as:
 QA tools and metrics
 ~~~~~~~~~~~~~~~~~~~~
 
-NUT's quality is constently monitored using many tools, like:
+NUT's quality is constantly monitored using many tools, like:
 
 - a Revision Control System (link:https://github.com/networkupstools/nut[Git]) to
 track development and ease regression fixes.
@@ -66,8 +66,11 @@ trees are reported on the link:http://lists.alioth.debian.org/mailman/listinfo/n
 mailing list.
 ////////////////////////////////////////////////////////////////////////////////
 
-- link:http://buildbot.networkupstools.org/public/nut/[Buildbot] to automate the compile/test
-cycle. Any build failure is caught early, and fixed quickly.
+- link:http://buildbot.networkupstools.org/public/nut/[Buildbot] and
+link:https://travis-ci.org/networkupstools/nut/builds[Travis CI] to automate the
+compile/test cycle. Any build failure is caught early, and fixed quickly. Also
+we get to see if incoming pull requests (as well as Git branch HEADs) do not have
+code (or recipe) that is instantly faulty and can not build on even one platform.
 
 ////////////////////////////////////////////////////////////////////////////////
  reported through the
@@ -75,7 +78,7 @@ link:http://lists.alioth.debian.org/mailman/listinfo/nut-commits[NUT Commits]
 mailing list, and fixed quickly.
 ////////////////////////////////////////////////////////////////////////////////
 
-- a project portal with trackers for bugs, feature request, patchs and tasks
+- a project portal with trackers for bugs, feature request, patches and tasks
 
 - Static code analysis:
   * link:https://scan.coverity.com/projects/networkupstools-nut[Coverity Scan overview of NUT]

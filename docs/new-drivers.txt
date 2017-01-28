@@ -32,7 +32,7 @@ A rough heuristic is to check the length of the HID Descriptor length
 (`wDescriptorLength` in `lsusb -v` output). If it is less than 200 bytes long,
 the UPS probably has a glorified USB-to-serial converter built in. Since the
 query strings often start with the letter `Q`, this family of protocols is
-often refered to as `Q*` in the NUT documentation. See the
+often referred to as `Q*` in the NUT documentation. See the
 <<nutdrv_qx-subdrivers,Q* UPS>> chapter for more details.
 
 Otherwise, if the HID Descriptor is longer, you can go to the

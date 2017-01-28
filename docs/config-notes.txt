@@ -25,7 +25,7 @@ Generalities
 All configuration files within this package are parsed with a common
 state machine, which means they all can use a number of extras described here.
 
-First, most of the programs use an uppercase word to declare a
+First, most of the programs use an upper-case word to declare a
 configuration directive.  This may be something like MONITOR, NOTIFYCMD,
 or ACCESS.  The case does matter here.  "monitor" won't be recognized.
 
@@ -139,7 +139,7 @@ NOTE: USB drivers (usbhid-ups, bcmxcp_usb, tripplite_usb, blazer_usb and
 richcomm_usb) are special cases and ignore the 'port' value.
 You must still set this value, but it does not matter what you set
 it to; a common and good practice is to set 'port' to *auto*, but you can
-put whatever you like. If you only own one UBS UPS, the driver will
+put whatever you like. If you only own one USB UPS, the driver will
 find it automatically. If you own more than one, refer to the driver's
 manual page for more information on matching a specific device.
 

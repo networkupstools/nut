@@ -300,7 +300,6 @@ dnl the usual builds can pass by default on systems without asciidoc.
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
 NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
 
-
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
 
@@ -363,7 +362,6 @@ fi
 
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [],
 					[WITH_USB], [Define to enable USB support])
-
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-neon
@@ -1350,7 +1348,7 @@ AC_ARG_WITH(valgrind,
 	esac
 ], [])
 
-if test "${with_valgrind}" = auto; then
+if test "x${with_valgrind}" = xauto; then
 	if test "x$VALGRIND" = "xnone"; then
 		with_valgrind="no"
 	else
@@ -1358,13 +1356,14 @@ if test "${with_valgrind}" = auto; then
 	fi
 fi
 
-if test "${with_valgrind}" = yes; then
+if test "x${with_valgrind}" = xyes; then
 	AC_MSG_RESULT(using ${VALGRIND})
+	AC_MSG_NOTICE([Do not forget to build with debug (e.g. pass '-g' in CFLAGS for GCC) for best results with valgrind tests])
 else
 	AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL([HAVE_VALGRIND], [test "x$VALGRIND" != "xnone"])
-AM_CONDITIONAL([WITH_VALGRIND], [test "${with_valgrind}" = yes])
+AM_CONDITIONAL([HAVE_VALGRIND], [test "x${VALGRIND}" != "xnone"])
+AM_CONDITIONAL([WITH_VALGRIND], [test "x${with_valgrind}" = "xyes"])
 
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"

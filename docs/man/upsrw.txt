@@ -90,7 +90,7 @@ VALUE FORMAT
 When using *upsrw* to modify a numeric float value, that values must be given
 using decimal (base 10) english-based representation, so using a dot, in
 non-scientific notation.  So hexadecimal, exponents, and comma for thousands
-separator are forbiden.
+separator are forbidden.
 For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
 
 HISTORY

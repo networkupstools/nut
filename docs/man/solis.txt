@@ -37,7 +37,7 @@ linkman:ups.conf[5].
 
 *battext = n* - (default = 0, no extra battery, where n = Ampere*hour )
 
-*prgshut = 1* - (default = 0, no programable shutdown )
+*prgshut = 1* - (default = 0, no programmable shutdown )
 
 COMMANDS
 --------

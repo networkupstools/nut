@@ -51,7 +51,7 @@ TODO LIST
 *Report UPS alarm status*::
 BCM/XCP supports reporting a wide range of UPS alarm conditions.
 
-*Report UPS statistics informations*::
+*Report UPS statistics information*::
 BCM/XCP supports reporting of UPS statistics data.
 
 EXPERIMENTAL DRIVER
