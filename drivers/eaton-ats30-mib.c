@@ -54,35 +54,35 @@ static info_lkp_t eaton_ats30_input_sensitivity[] = {
  * 4 atsFailureOverTemperature N/A
  */
 static info_lkp_t eaton_ats30_status_info[] = {
-    { 0, "OL" },
-    { 1, "OL" }, /* SwitchFault */
-    { 2, "OFF" }, /* NoOutput */
-    { 3, "OFF" }, /* SwitchFault + NoOutput */
-    { 4, "OL OVER" }, /* OutputOC */
-    { 5, "OL OVER" }, /* OutputOC + SwitchFault */
-    { 6, "OFF OVER" }, /* OutputOC + NoOutput */
-    { 7, "OFF OVER" }, /* OutputOC + SwitchFault + NoOutput */
-    { 8, "OL" }, /* OverTemperature */
-    { 9, "OL" }, /* OverTemperature + SwitchFault */
-    { 10, "OFF" }, /* OverTemperature + NoOutput */
-    { 11, "OFF" }, /* OverTemperature + SwitchFault + NoOutput */
-    { 12, "OL OVER" }, /* OverTemperature + OutputOC */
-    { 13, "OL OVER" }, /* OverTemperature + OutputOC + SwitchFault */
-    { 14, "OFF OVER" }, /* OverTemperature + OutputOC + NoOutput */
-    { 15, "OFF OVER" }, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
+	{ 0, "OL" },
+	{ 1, "OL" }, /* SwitchFault */
+	{ 2, "OFF" }, /* NoOutput */
+	{ 3, "OFF" }, /* SwitchFault + NoOutput */
+	{ 4, "OL OVER" }, /* OutputOC */
+	{ 5, "OL OVER" }, /* OutputOC + SwitchFault */
+	{ 6, "OFF OVER" }, /* OutputOC + NoOutput */
+	{ 7, "OFF OVER" }, /* OutputOC + SwitchFault + NoOutput */
+	{ 8, "OL" }, /* OverTemperature */
+	{ 9, "OL" }, /* OverTemperature + SwitchFault */
+	{ 10, "OFF" }, /* OverTemperature + NoOutput */
+	{ 11, "OFF" }, /* OverTemperature + SwitchFault + NoOutput */
+	{ 12, "OL OVER" }, /* OverTemperature + OutputOC */
+	{ 13, "OL OVER" }, /* OverTemperature + OutputOC + SwitchFault */
+	{ 14, "OFF OVER" }, /* OverTemperature + OutputOC + NoOutput */
+	{ 15, "OFF OVER" }, /* OverTemperature + OutputOC + SwitchFault + NoOutput */
 	{ 0, NULL }
 };
 
 /* EATON_ATS30 Snmp2NUT lookup table */
 static snmp_info_t eaton_ats30_mib[] = {
-    /* device type: ats */
+	/* device type: ats */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ats", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-    
-    /* standard MIB items */
+
+	/* standard MIB items */
 	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL, NULL },
 	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL, NULL },
 	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL, NULL },
-    
+
 	/* enterprises.534.10.1.1.1.0 = STRING: "Eaton" */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.1.1.1.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	/* enterprises.534.10.1.1.2.0 = STRING: "01.12.13b" -- SNMP agent version */
@@ -99,9 +99,9 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.1.2.4.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* enterprises.534.10.1.2.5.0 = STRING: "                    " -- Device ID codes */
 	/* { "unmapped.enterprises", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.1.2.5.0", NULL, SU_FLAG_OK, NULL, NULL }, */
-    
-    /* ats measure */
-    /* =========== */
+
+	/* ats measure */
+	/* =========== */
 	/* enterprises.534.10.1.3.1.1.1.1 = INTEGER: 1 */
 	{ "input.1.id", 0, 1, ".1.3.6.1.4.1.534.10.1.3.1.1.1.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* enterprises.534.10.1.3.1.1.1.2 = INTEGER: 2 */
@@ -128,9 +128,9 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* { "unmapped.atsMessureTransferedTimes", 0, 1, ".1.3.6.1.4.1.534.10.1.3.6.0", NULL, SU_FLAG_OK, NULL, NULL }, */
 	/* enterprises.534.10.1.3.7.0 = INTEGER: 4 */
 	{ "input.source", 0, 1, ".1.3.6.1.4.1.534.10.1.3.7.0", NULL, SU_FLAG_OK, eaton_ats30_source_info, NULL },
-    
-    /* atsStatus */
-    /* ========= */
+
+	/* atsStatus */
+	/* ========= */
 #if 0
 	/* NOTE: Unused OIDs are left as comments for potential future improvements */
 	/* enterprises.534.10.1.4.1.0 = INTEGER: 7 */
@@ -212,12 +212,12 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* enterprises.534.10.1.4.6.4.0 = INTEGER: 2 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.4.6.4.0", NULL, SU_FLAG_OK, NULL, NULL },
 #endif /* 0 */
-    
-    /* atsLog */
-    /* ====== */
+
+	/* atsLog */
+	/* ====== */
 #if 0
-    /* We are not interested for log */
-    /* enterprises.534.10.1.5.1.0 = INTEGER: 272 */
+	/* We are not interested in log */
+	/* enterprises.534.10.1.5.1.0 = INTEGER: 272 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.5.1.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* enterprises.534.10.1.5.2.1.1.1 = INTEGER: 1 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.5.2.1.1.1", NULL, SU_FLAG_OK, NULL, NULL },
@@ -300,9 +300,9 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* enterprises.534.10.1.5.2.1.4.10 = STRING: "07:31:28 05/12/2016" */
 	{ "unmapped.enterprises", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.1.5.2.1.4.10", NULL, SU_FLAG_OK, NULL, NULL },
 #endif /* 0 */
-    
-    /* atsConfig */
-    /* ========= */
+
+	/* atsConfig */
+	/* ========= */
 #if 0
 	/* enterprises.534.10.1.6.1.1.0 = INTEGER: 538562409 */
 	{ "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.6.1.1.0", NULL, SU_FLAG_OK, NULL, NULL },
@@ -352,18 +352,18 @@ static snmp_info_t eaton_ats30_mib[] = {
 	/* enterprises.534.10.1.6.7.0 = INTEGER: 2 */
 	/* { "unmapped.atsConfigTest", 0, 1, ".1.3.6.1.4.1.534.10.1.6.7.0", NULL, SU_FLAG_OK, NULL, NULL }, */
 
-    /* atsUpgrade */
-    /* ========== */
+	/* atsUpgrade */
+	/* ========== */
 #if 0
-    /* We are not interested in atsUpgrade */
+	/* We are not interested in atsUpgrade */
 	/* enterprises.534.10.1.7.1.0 = INTEGER: 1 */
-    /* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.1.0", NULL, SU_FLAG_OK, NULL, NULL }, */
+	/* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.1.0", NULL, SU_FLAG_OK, NULL, NULL }, */
 	/* enterprises.534.10.1.7.2.0 = INTEGER: 1 */
 	/* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.2.0", NULL, SU_FLAG_OK, NULL, NULL }, */
 	/* enterprises.534.10.1.7.3.0 = INTEGER: 0 */
 	/* { "unmapped.enterprises", 0, 1, ".1.3.6.1.4.1.534.10.1.7.3.0", NULL, SU_FLAG_OK, NULL, NULL }, */
 #endif /* 0 */
-    
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
