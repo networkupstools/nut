@@ -54,15 +54,16 @@
 # If the ups.conf on host "doghouse" has a section called "snoopy", the
 # identifier for it would be "snoopy@doghouse".
 #
-# <powervalue> is an integer - the number of power supplies that this UPS 
-# feeds on this system.  Most computers only have one power supply, so this 
-# is normally set to 1.  You need a pretty big or special box to have any 
-# other value here.
+# <powervalue> is an integer - the number of power supplies that this UPS
+# feeds on this system.  Most personal computers only have one power supply,
+# so this value is normally set to 1, while most modern servers have at least
+# two.  You need a pretty big or special box to have any other value here.
 #
-# You can also set this to 0 for a system that doesn't supply any power,
-# but you still want to monitor.  Use this when you want to hear about
-# changes for a given UPS without shutting down when it goes critical,
-# unless <powervalue> is 0.
+# You can also set this to 0 for a system that doesn't take any power
+# from the MONITORed supply, which you still want to monitor (e.g. for an
+# administrative workstation fed from a different circuit than the datacenter
+# servers it monitors). Use <powervalue> if 0 when you want to hear about
+# changes for a given UPS without shutting down when it goes critical.
 #
 # <username> and <password> must match an entry in that system's
 # upsd.users.  If your username is "monmaster" and your password is
@@ -77,7 +78,27 @@
 #
 # "slave" means this system shuts down immediately when power goes critical.
 #
-# Examples: 
+# The general assumption is that the "master" system is the one with direct
+# connection to an UPS (such as serial or USB cable), so the master system
+# can manage the device, and would often tell the UPS to completely power
+# itself off as a step in power-race avoidance (see POWERDOWNFLAG for details).
+# Also, since the master system stays up the longest, it suffers higher risks
+# of ungraceful shutdown if the estimation of remaining runtime (or of the
+# time it takes to shut down this system) was guessed wrong. By consequence,
+# the "slave" systems typically monitor the power environment state through
+# the 'upsd' processes running on the "master" systems and do not directly
+# interact with an UPS (no local NUT drivers are running on slaves). As such,
+# slaves typically shut down as soon as there is a sufficiently long power
+# outage, or a low-battery alert from the UPS, or a loss of connection to
+# the master while the power was last known to be missing.
+#
+# This assumption and configuration can also make sense for networked UPSes,
+# where a rack full of servers might overload the communications capacity
+# of the networked management card on the UPS - in this case you might either
+# reduce the 'snmp-ups' or 'netxml-ups' driver polling rate, or dedicate a
+# "master" server and set up the rest as "slave" systems.
+#
+# Examples:
 #
 # MONITOR myups@bigserver 1 monmaster blah master
 # MONITOR su700@server.example.com 1 upsmon secretpass slave
@@ -106,7 +127,15 @@ MINSUPPLIES 1
 #
 # upsmon runs this command when the system needs to be brought down.
 #
-# This should work just about everywhere ... if it doesn't, well, change it.
+# This should work just about everywhere ... if it doesn't, well, change it,
+# perhaps to a more complicated custom script.
+#
+# Note that while you experiment with the initial setup and want to test how
+# your configuration reacts to power state changes and ultimately when power
+# is reported to go critical, but do not want your system to actually turn
+# off, consider setting the SHUTDOWNCMD temporarily to do something benign -
+# such as posting a message with 'logger' or 'wall' or 'mailx'. Do be careful
+# to plug the UPS back into the wall in a timely fashion.
 
 SHUTDOWNCMD "/sbin/shutdown -h +0"
 

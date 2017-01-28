@@ -70,3 +70,6 @@
 # The matching MONITOR line in your upsmon.conf would look like this:
 #
 # MONITOR myups@localhost 1 upsmon pass master	(or slave)
+#
+# See comments in the upsmon.conf(.sample) file for details about this
+# keyword and the difference of NUT slave and master systems.
