@@ -1,3 +1,6 @@
+DISTCLEANFILES =
+EXTRA_DIST =
+
 IMAGE_FILES = images/asciidoc.png \
 	images/hostedby.png \
 	images/nut_layering.png \
@@ -40,7 +43,7 @@ ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt
 
 NUT_SPELL_DICT = nut.dict
-EXTRA_DIST = $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
+EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
  $(CABLES_IMAGES) $(NUT_SPELL_DICT) \
  common.xsl xhtml.xsl chunked.xsl asciidoc.txt
 
@@ -179,10 +182,33 @@ spellcheck:
 		echo "=====================================================================" ; \
 	 fi >&2 ; exit 0
 
-# Interactively spell check all documentation source files (so a human
+# Interactively spell check all documentation source files below (so a human
 # can edit the documentation errors and/or add words to custom dictionary).
 # Note that here we do not restrain reported issues, so this might catch more
 # than the automated test above.
+spellcheck-sortdict: $(abs_builddir)/$(NUT_SPELL_DICT).sorted
+
+# Note that the source file may be not overwritable (distcheck, cdrom, ...),
+# so we'd ignore that failure. But the practical use-case is a developer's
+# in-tree workspace, so we want the working copy of the dictionary fixed up
+# for easy `git diff`ing if possible.
+# Note also that "$(<F)" is not POSIX portable, so we spell out the name var :(
+$(abs_builddir)/$(NUT_SPELL_DICT).sorted: $(abs_srcdir)/$(NUT_SPELL_DICT)
+	@cp -pf $(abs_srcdir)/$(NUT_SPELL_DICT) $(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting
+	@LANG=$(ASPELL_ENV_LANG); LC_ALL=$(ASPELL_ENV_LANG); export LANG; export LC_ALL; ( \
+	    WORDLIST="`tail -n +2 < "$<" | sort | uniq`"; \
+	    WORDCOUNT="`echo "$$WORDLIST" | wc -l`"; \
+	    head -1 < "$<" | while read P L C E ; do echo "$$P $$L $$WORDCOUNT $$E"; break; done ; \
+	    echo "$$WORDLIST"; \
+	 ) > "$@"
+	@cp -f "$@" "$(abs_builddir)/$(NUT_SPELL_DICT)"
+	@if [ "$(abs_builddir)" != "$(abs_srcdir)" ] ; then \
+	    cp -f "$@" "$<" || true ; \
+	    cp -f "$(abs_builddir)/$(NUT_SPELL_DICT).bak-pre-sorting" "$(abs_srcdir)/" || true ; \
+	 fi
+
+DISTCLEANFILES += $(NUT_SPELL_DICT).bak-pre-sorting .$(NUT_SPELL_DICT).sorted $(NUT_SPELL_DICT).sorted
+
 spellcheck-interactive: 
 	@FAILED="" ; for docsrc in $(SPELLCHECK_SRC); do \
 		echo "Spell checking on $$docsrc"; \
@@ -193,6 +219,7 @@ spellcheck-interactive:
 		echo "FAILED interactive spellcheck for the following sources: $$FAILED" >&2 ; \
 		exit 1; \
 	fi ; exit 0
+	$(MAKE) spellcheck-sortdict
 else !HAVE_ASPELL
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
