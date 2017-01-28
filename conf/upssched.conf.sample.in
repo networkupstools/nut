@@ -83,7 +83,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   argument.
 #
 #   Example:
-#   Start a timer that'll execute when any UPS (*) has been gone 10 seconds
+#   Start a timer that will execute when any UPS (*) has been gone 10 seconds
 #
 #   AT COMMBAD * START-TIMER upsgone 10
 

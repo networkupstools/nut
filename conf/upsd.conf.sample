@@ -74,7 +74,7 @@
 #
 # When compiled with SSL support with NSS backend,
 # you can enter the certificate path here.
-# Certificates are stored in a dedicated database (splitted in 3 files).
+# Certificates are stored in a dedicated database (split into 3 files).
 # Specify the path of the database directory.
 #
 # See 'docs/security.txt' or the Security chapter of NUT user manual
