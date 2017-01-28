@@ -73,6 +73,7 @@
 #ifndef usmAESPrivProtocol
 #define usmAESPrivProtocol usmAES128PrivProtocol
 #endif
+
 #if WITH_DMFMIB
 // Array of pointers to singular instances of mib2nut_info_t
 mib2nut_info_t **mib2nut = NULL;
@@ -137,6 +138,7 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
 int current_device_number = 0;      /* to handle daisychain iterations */
@@ -211,7 +213,7 @@ void upsdrv_initinfo(void)
 		{
 			/* first check that this OID actually exists */
 // FIXME: daisychain commands support!
-su_addcmd(su_info_p);
+			su_addcmd(su_info_p);
 /*
 			if (nut_snmp_get(su_info_p->OID) != NULL) {
 				dstate_addcmd(su_info_p->info_type);
@@ -413,6 +415,7 @@ void upsdrv_initups(void)
 #else
 	upsdebugx(1, "SNMP UPS driver: using built-in MIB-to-NUT mappings");
 #endif /* WITH_DMFMIB */
+
 	/* Retrieve user's parameters */
 	mibs = testvar(SU_VAR_MIBS) ? getval(SU_VAR_MIBS) : "auto";
 	if (!strcmp(mibs, "--list")) {
@@ -474,6 +477,7 @@ void upsdrv_initups(void)
 			/* Otherwise, just point at what we found */
 			cur_info_p = su_info_p;
 		}
+
 		/* Actually get the data */
 		status = nut_snmp_get_str(cur_info_p->OID, model, sizeof(model), NULL);
 
@@ -487,6 +491,7 @@ void upsdrv_initups(void)
 				free((char*)cur_info_p);
 		}
 	}
+
 	if (status == TRUE)
 		upslogx(0, "Detected %s on host %s (mib: %s %s)",
 			 model, device_path, mibname, mibvers);
@@ -496,7 +501,7 @@ void upsdrv_initups(void)
 
 	/* Init daisychain and check if support is required */
 	daisychain_init();
-	
+
 	/* Allocate / init the daisychain info structure (for phases only for now)
 	 * daisychain_info[0] is the whole chain! (added +1) */
 	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
@@ -535,6 +540,7 @@ void upsdrv_cleanup(void)
 
 	/* Net-SNMP specific cleanup */
 	nut_snmp_cleanup();
+
 #if WITH_DMFMIB
 	/* DMF specific cleanup */
 	mibdmf_parser_destroy(&dmp);
@@ -1434,6 +1440,7 @@ mib2nut_info_t *match_sysoid()
 				/* Try to continue anyway! */
 				continue;
 			}
+
 			/* Now compare these */
 			upsdebugx(1, "%s: comparing %s with %s", __func__, sysOID_buf, mib2nut[i]->sysOID);
 			if (!netsnmp_oid_equals(device_sysOID, device_sysOID_len, mib2nut_sysOID, mib2nut_sysOID_len))
@@ -1454,6 +1461,7 @@ mib2nut_info_t *match_sysoid()
 				return mib2nut[i];
 			}
 		}
+
 		/* Yell all to call for user report */
 		upslogx(LOG_ERR, "No matching MIB found for sysOID '%s'!\n" \
 			"Please report it to NUT developers, with an 'upsc' output for your device.\n" \
@@ -1485,6 +1493,7 @@ bool_t load_mib2nut(const char *mib)
 			upsdebugx(2, "load_mib2nut: trying the new match_sysoid() method: attempt #%d", (i+1));
 			if ((m2n = match_sysoid()) != NULL)
 				break;
+
 			if (m2n == NULL)
 				upsdebugx(1, "load_mib2nut: failed with new match_sysoid() method");
 			else
@@ -2568,6 +2577,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	if (!strcmp(strrchr(su_info_p->info_type, '.'), ".alarm")) {
 
 		upsdebugx(2, "Processing alarm: %s", su_info_p->info_type);
+
 /* FIXME: daisychain alarms support! */
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE)
