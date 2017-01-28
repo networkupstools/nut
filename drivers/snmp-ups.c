@@ -594,7 +594,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
-	
+
 	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
 		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
@@ -2124,7 +2124,7 @@ bool_t daisychain_init()
  * 3phases related data are disabled if the unit is 1ph, and conversely.
  * If the related phases data (input, output, bypass) is not yet valued,
  * retrieve it first.
- * 
+ *
  * type: input, output, bypass
  * su_info_p: variable to process flags on
  * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
@@ -2157,7 +2157,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	else {
 		upsdebugx(2, "%s: unknown type '%s'", __func__, type);
 		return 1;
-	}	
+	}
 
 	/* Init the phase(s) info for this device, if not already done */
 	if (*nb_phases == -1) {
@@ -2745,7 +2745,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = -1;
 	int daisychain_device_number = -1;
-	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */ 
+	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
 	char setOID[SU_INFOSIZE];
