@@ -1,6 +1,7 @@
 [Unit]
 Description=Network UPS Tools - device driver for %I
-After=local-fs.target network.target
+After=local-fs.target network.target systemd-udev-settle.service
+Wants=systemd-udev-settle.service
 PartOf=nut-driver.target
 # Note: The choice of "network.target" allows to schedule this unit
 # roughly when the network stack of this OS is ready (e.g. that the
