@@ -1090,7 +1090,7 @@ Release notes for NUT 2.0.2 - what's new since 2.0.1:
    [Thanos Chatziathanassiou, Olli Salvia]
 
  - The bcmxcp driver is back with support for Powerware UPSs.
-   [Tore Øpetveit, Kjell Claesson]
+   [Tore Ørpetveit, Kjell Claesson]
 
  - The cyberpower driver now supports CyberPower 1000AVR.
    [Dave Huang]
