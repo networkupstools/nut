@@ -25,7 +25,7 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # normal users can't create the file, due to the possibility of symlinking
 # and other evil.
 #
-# Note: if you are running Solaris or similar, the permissions that 
+# Note: if you are running Solaris or similar, the permissions that
 # upssched sets on this file *are not enough* to keep you safe.  If
 # your OS ignores the permissions on a FIFO, then you MUST put this in
 # a protected directory!
@@ -67,9 +67,9 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 # <upsname> can be the special value * to apply this handler to every
 # possible value of <upsname>.
 #
-# Run the command <command> via your CMDSCRIPT when it happens. 
+# Run the command <command> via your CMDSCRIPT when it happens.
 #
-# Note that any AT that matches both the <notifytype> and the <upsname> 
+# Note that any AT that matches both the <notifytype> and the <upsname>
 # for the current event will be used.
 
 # ============================================================================
@@ -95,9 +95,9 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   has passed then pass the optional argument <cmd> to CMDSCRIPT.
 #
 #   Example:
-#   If a specific UPS (myups@localhost) comes back online, then stop the 
+#   If a specific UPS (myups@localhost) comes back online, then stop the
 #   timer before it triggers
-# 
+#
 #   AT COMMOK myups@localhost CANCEL-TIMER upsgone
 
 #   -----------------------------------------------------------------------

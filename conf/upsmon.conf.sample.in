@@ -9,9 +9,9 @@
 # waits to run the SHUTDOWNCMD.  The other one switches to another userid
 # and does everything else.
 #
-# The default nonprivileged user is set at compile-time with
-# 	'configure --with-user=...'.  
-# 
+# The default nonprivileged user is set at compile-time with the option
+#   'configure --with-user=...'
+#
 # You can override it with '-u <user>' when starting upsmon, or just
 # define it here for convenience.
 #
@@ -35,14 +35,14 @@
 # List systems you want to monitor.  Not all of these may supply power
 # to the system running upsmon, but if you want to watch it, it has to
 # be in this section.
-# 
+#
 # You must have at least one of these declared.
 #
 # <system> is a UPS identifier in the form <upsname>@<hostname>[:<port>]
 # like ups@localhost, su700@mybox, etc.
-# 
+#
 # Examples:
-# 
+#
 #  - "su700@mybox" means a UPS called "su700" on a system called "mybox"
 #
 #  - "fenton@bigbox:5678" is a UPS called "fenton" on a system called
@@ -65,13 +65,13 @@
 # unless <powervalue> is 0.
 #
 # <username> and <password> must match an entry in that system's
-# upsd.users.  If your username is "monmaster" and your password is 
+# upsd.users.  If your username is "monmaster" and your password is
 # "blah", the upsd.users would look like this:
 #
 #	[monmaster]
 #		password  = blah
 #		upsmon master 	(or slave)
-# 
+#
 # "master" means this system will shutdown last, allowing the slaves
 # time to shutdown first.
 #
@@ -129,11 +129,11 @@ SHUTDOWNCMD "/sbin/shutdown -h +0"
 # NOTIFYCMD @BINDIR@/notifyme
 
 # --------------------------------------------------------------------------
-# POLLFREQ <n> 
+# POLLFREQ <n>
 #
 # Polling frequency for normal activities, measured in seconds.
 #
-# Adjust this to keep upsmon from flooding your network, but don't make 
+# Adjust this to keep upsmon from flooding your network, but don't make
 # it too high or it may miss certain short-lived power events.
 
 POLLFREQ 5
@@ -144,8 +144,8 @@ POLLFREQ 5
 # Polling frequency in seconds while UPS on battery.
 #
 # You can make this number lower than POLLFREQ, which will make updates
-# faster when any UPS is running on battery.  This is a good way to tune 
-# network load if you have a lot of these things running.  
+# faster when any UPS is running on battery.  This is a good way to tune
+# network load if you have a lot of these things running.
 #
 # The default is 5 seconds for both this and POLLFREQ.
 
@@ -158,7 +158,7 @@ POLLFREQALERT 5
 # disconnect once it has set the forced shutdown (FSD) flag.  If they
 # don't disconnect after this many seconds, it goes on without them.
 #
-# Similarly, upsmon slave processes wait up to this interval for the 
+# Similarly, upsmon slave processes wait up to this interval for the
 # master upsmon to set FSD when a UPS they are monitoring goes critical -
 # that is, on battery and low battery.  If the master doesn't do its job,
 # the slaves will shut down anyway to avoid damage to the file systems.
@@ -255,7 +255,7 @@ POWERDOWNFLAG /etc/killpower
 #
 # Possible values for the flags:
 #
-# SYSLOG - Write the message in the syslog 
+# SYSLOG - Write the message in the syslog
 # WALL   - Write the message to all users on the system
 # EXEC   - Execute NOTIFYCMD (see above) with the message
 # IGNORE - Don't do anything
@@ -269,7 +269,7 @@ POWERDOWNFLAG /etc/killpower
 # every 43200 seconds, which is 12 hours.  It does this by triggering a
 # NOTIFY_REPLBATT which is then handled by the usual notify structure
 # you've defined above.
-# 
+#
 # If this number is not to your liking, override it here.
 
 RBWARNTIME 43200
@@ -279,7 +279,7 @@ RBWARNTIME 43200
 #
 # upsmon will let you know through the usual notify system if it can't
 # talk to any of the UPS entries that are defined in this file.  It will
-# trigger a NOTIFY_NOCOMM by default every 300 seconds unless you 
+# trigger a NOTIFY_NOCOMM by default every 300 seconds unless you
 # change the interval with this directive.
 
 NOCOMMWARNTIME 300
@@ -289,7 +289,7 @@ NOCOMMWARNTIME 300
 #
 # On a master, upsmon will wait this long after sending the NOTIFY_SHUTDOWN
 # before executing your SHUTDOWNCMD.  If you need to do something in between
-# those events, increase this number.  Remember, at this point your UPS is 
+# those events, increase this number.  Remember, at this point your UPS is
 # almost depleted, so don't make this too high.
 #
 # Alternatively, you can set this very low so you don't wait around when
@@ -309,7 +309,7 @@ FINALDELAY 5
 # With NSS:
 # Certificates are stored in a dedicated database (splitted in 3 files).
 # Specify the path of the database directory.
-# 
+#
 # CERTPATH @CONFPATH@/cert/upsmon
 #
 # With OpenSSL:
@@ -319,7 +319,7 @@ FINALDELAY 5
 # name hash value, which must hence be available.
 #
 # CERTPATH /usr/ssl/certs
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -332,7 +332,7 @@ FINALDELAY 5
 # required to access certificate related private key.
 #
 # CERTIDENT "my nut monitor" "MyPasSw0rD"
-# 
+#
 # See 'docs/security.txt' or the Security chapter of NUT user manual
 # for more information on the SSL support in NUT.
 
@@ -355,14 +355,14 @@ FINALDELAY 5
 # CERTVERIFY - make upsmon verify all connections with certificates
 # CERTVERIFY 1
 #
-# When compiled with SSL support, make upsmon verify all connections with 
+# When compiled with SSL support, make upsmon verify all connections with
 # certificates.
 # Without this, there is no guarantee that the upsd is the right host.
 # Enabling this greatly reduces the risk of man in the middle attacks.
 # This effectively forces the use of SSL, so don't use this unless
 # all of your upsd hosts are ready for SSL and have their certificates
 # in order.
-# When compiled with NSS support of SSL, can be overriden for host 
+# When compiled with NSS support of SSL, can be overriden for host
 # specified with a CERTHOST directive.
 
 
@@ -376,5 +376,5 @@ FINALDELAY 5
 # that nobody can sniff your sessions without a large effort.  Setting
 # this will make upsmon drop connections if the remote upsd doesn't
 # support SSL, so don't use it unless all of them have it running.
-# When compiled with NSS support of SSL, can be overriden for host 
+# When compiled with NSS support of SSL, can be overriden for host
 # specified with a CERTHOST directive.
