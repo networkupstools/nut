@@ -1,4 +1,4 @@
-personal_ws-1.1 en 1770 utf-8
+personal_ws-1.1 en 1771 utf-8
 ACFAIL
 ACFREQ
 ACK
@@ -1348,6 +1348,7 @@ notifyme
 notifytype
 notransferoids
 novendor
+nowait
 nowarn
 np
 nss
