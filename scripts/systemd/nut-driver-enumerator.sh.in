@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2016 Eaton
+# Copyright (C) 2016-2017 Eaton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,10 @@
 #           individual service unit instances for each defined configuration.
 #           It assumes the user has adequate permissions to inspect and create
 #           services (e.g. is a root or has proper RBAC profiles to do so).
+#           It helps service frameworks such as Linux systemd and Solaris SMF.
 #  \todo    Complete the sample basic support for Solaris SMF (needs support
 #           for the service definitions similar to systemd NUT units to be
-#           added to that platform first).
+#           added to that platform first). Parts in this script are finished.
 #
 
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
@@ -95,12 +96,18 @@ common_isRegistered() {
 }
 
 smf_registerInstance() {
-    echo "Solaris SMF support was recognized but currently is not implemented" >&2
+    /usr/sbin/svccfg -s nut-driver add "$1" || return
+    /usr/sbin/svcadm refresh 'nut-driver@'"$1" || return
+    if [ "$AUTO_START" = yes ] ; then
+        /usr/sbin/svcadm enable 'nut-driver@'"$1" || return
+    fi
 }
 smf_unregisterInstance() {
-    echo "Solaris SMF support was recognized but currently is not implemented" >&2
+    /usr/sbin/svcadm disable -ts 'nut-driver@'"$1" || false
+    /usr/sbin/svccfg -s nut-driver delete "$1"
 }
 smf_listInstances() {
+    # Newer versions have pattern matching; older SMF might not have this luxury
     /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:' | sed 's/^.*://' | sort -n
 }
 
