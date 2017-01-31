@@ -98,6 +98,9 @@ char *dmf_file = NULL;
  */
 static mib2nut_info_t *mib2nut[] = {
 	&apc_ats,			/* This struct comes from : apc-ats-mib.c */
+	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
+	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
 	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */

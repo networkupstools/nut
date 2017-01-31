@@ -50,7 +50,7 @@
 #              this option, since it can impact the time taken by your system to
 #              start.
 #
-#              The default is 1 attempt.
+#              The built-in default is 1 attempt.
 #
 #  retrydelay: Optional.  Specify the delay between each restart attempt of the
 #              driver(s), as specified by 'maxretry'. Caution should be taken
@@ -58,7 +58,11 @@
 #              system to start.
 #
 #              The default is 5 seconds.
-# 
+#
+
+# Set maxretry to 3 by default, this should mitigate race with slow devices:
+maxretry = 3
+
 # These directives are common to all drivers that support ups.conf:
 #
 #  driver: REQUIRED.  Specify the program to run to talk to this UPS.  
@@ -135,6 +139,3 @@
 #
 # To find out if your driver supports any extra settings, start it with
 # the -h option and/or read the driver's documentation.
-
-# Set maxretry to 3 by default, this should mitigate race with slow devices:
-maxretry = 3
