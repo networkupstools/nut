@@ -104,6 +104,7 @@ static void help_msg(void)
 	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -D             - raise debugging level\n");
 	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
+	printf("  -F             - run in foreground\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -499,6 +500,7 @@ int main(int argc, char **argv)
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
 	int	update_count = 0;
+	int	foreground = 0;
 
 	atexit(exit_cleanup);
 
@@ -518,7 +520,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kDd:hx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kDFd:hx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -535,6 +537,9 @@ int main(int argc, char **argv)
 				break;
 			case 'D':
 				nut_debug_level++;
+				break;
+			case 'F':
+				foreground = 1;
 				break;
 			case 'd':
 				dump_data = atoi(optarg);
@@ -573,6 +578,9 @@ int main(int argc, char **argv)
 					"Error: unknown option -%c. Try -h for help.", i);
 		}
 	}
+
+	if(nut_debug_level > 0 || dump_data)
+		foreground = 1;
 
 	argc -= optind;
 	argv += optind;
@@ -711,7 +719,7 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if ( (nut_debug_level == 0) && (!dump_data) ) {
+	if (!foreground) {
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
