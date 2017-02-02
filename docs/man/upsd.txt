@@ -46,6 +46,9 @@ are:
 *-D*::
 Raise the debug level.  Use this multiple times for additional details.
 
+*-F*::
+Run in foreground.
+
 *-h*::
 Display the help text.
 

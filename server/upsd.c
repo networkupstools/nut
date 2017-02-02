@@ -827,6 +827,7 @@ static void help(const char *progname)
 	printf("		 - reload: reread configuration files\n");
 	printf("		 - stop: stop process and exit\n");
 	printf("  -D		raise debugging level\n");
+	printf("  -F		run in foreground\n");
 	printf("  -h		display this help\n");
 	printf("  -r <dir>	chroots to <dir>\n");
 	printf("  -q		raise log level threshold\n");
@@ -890,7 +891,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i, cmd = 0, foreground = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -906,7 +907,7 @@ int main(int argc, char **argv)
 
 	printf("Network UPS Tools %s %s\n", progname, UPS_VERSION);
 
-	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
+	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:DF")) != -1) {
 		switch (i) {
 			case 'h':
 				help(progname);
@@ -942,8 +943,11 @@ int main(int argc, char **argv)
 
 			case 'D':
 				nut_debug_level++;
+				foreground = 1;
 				break;
-
+			case 'F':
+				foreground = 1;
+				break;
 			case '4':
 				opt_af = AF_INET;
 				break;
@@ -1028,7 +1032,7 @@ int main(int argc, char **argv)
 	/* handle upsd.users */
 	user_load();
 
-	if (!nut_debug_level) {
+	if (!foreground) {
 		background();
 		writepid(pidfn);
 	} else {
