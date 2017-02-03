@@ -17,6 +17,8 @@ EXTRA_DIST = README \
     RedHat/upsd.in \
     RedHat/upsmon \
     RedHat/upsmon.in \
+    QA/testlib.py \
+    QA/test-nut.py \
     Solaris8/S99upsmon \
     subdriver/gen-usbhid-subdriver.sh \
     subdriver/gen-snmp-subdriver.sh \
