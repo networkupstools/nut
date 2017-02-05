@@ -7,3 +7,8 @@
 /developer-guide.xml
 /docinfo.xml
 /FAQ.xml
+/nut-dmf.xml
+/nut-names.xml
+nut.dict.sorted
+/*.bak
+/*.bak-*
