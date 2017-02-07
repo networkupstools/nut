@@ -99,6 +99,7 @@ CCCC
 CERTHOST
 CERTIDENT
 CERTREQUEST
+CERTVERIF
 CEST
 CHRG
 CMDDESC
@@ -1233,6 +1234,7 @@ linkdoc
 linux
 littleguy
 lm
+ln
 loadPercentage
 localhost
 localtime
