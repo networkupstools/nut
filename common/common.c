@@ -30,7 +30,12 @@
 	on nut_version_macro.h), and also to prevent all sources from
 	having to be recompiled each time the version changes (they only
 	need to be re-linked). */
-#include "nut_version.h"
+#if DMFREINDEXER_MAKECHECK
+# define NUT_VERSION_MACRO "custom build"
+#else
+# include "nut_version.h"
+#endif
+
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
@@ -737,6 +742,7 @@ char * get_libname(const char* base_libname)
 		closedir(dp);
 	}
 
-	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
+	upsdebugx(1,"Looking for lib %s, found %s",
+		base_libname, (libname_path!=NULL)?libname_path:"NULL");
 	return libname_path;
 }

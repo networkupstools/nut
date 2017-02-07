@@ -1,0 +1,23 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="bestpower_power_status">
+		<lookup_info oid="1" value="OL"/>
+		<lookup_info oid="2" value="OB"/>
+	</lookup>
+	<snmp name="bestpower_mib">
+		<snmp_info absent="yes" default="ups" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
+		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
+		<snmp_info default="Best Ferrups" multiplier="128.0" name="ups.model" oid=".1.3.6.1.4.1.2947.1.1.2.0" static="yes" string="yes"/>
+		<snmp_info default="" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.2947.1.1.5.0" static="yes" string="yes"/>
+		<snmp_info default="" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.2947.1.1.7.0" static="yes" string="yes"/>
+		<snmp_info default="" multiplier="1.0" name="ups.power" oid=".1.3.6.1.4.1.2947.1.1.3.0" power_status="yes"/>
+		<snmp_info default="" multiplier="128.0" name="ups.mfr.date" oid=".1.3.6.1.4.1.2947.1.1.8.0" power_status="yes" string="yes"/>
+		<snmp_info default="" lookup="bestpower_power_status" multiplier="128.0" name="ups.status" oid=".1.3.6.1.4.1.2947.1.2.1.0" power_status="yes" string="yes"/>
+		<snmp_info default="" multiplier="60.0" name="battery.runtime" oid=".1.3.6.1.4.1.2947.1.2.3.0" power_status="yes"/>
+		<snmp_info default="" multiplier="1.0" name="battery.runtime.elapsed" oid=".1.3.6.1.4.1.2947.1.2.2.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.4.1.2947.1.2.4.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="battery.current" oid=".1.3.6.1.4.1.2947.1.2.5.0" power_status="yes"/>
+	</snmp>
+	<mib2nut auto_check=".1.3.6.1.4.1.2947.1.1.2.0" mib_name="bestpower" name="bestpower" snmp_info="bestpower_mib" version="0.1"/>
+</nut>
+

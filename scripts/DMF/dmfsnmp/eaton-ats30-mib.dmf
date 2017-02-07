@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="eaton_ats30_status_info">
+		<lookup_info oid="0" value="OL"/>
+		<lookup_info oid="1" value="OL"/>
+		<lookup_info oid="2" value="OFF"/>
+		<lookup_info oid="3" value="OFF"/>
+		<lookup_info oid="4" value="OL OVER"/>
+		<lookup_info oid="5" value="OL OVER"/>
+		<lookup_info oid="6" value="OFF OVER"/>
+		<lookup_info oid="7" value="OFF OVER"/>
+		<lookup_info oid="8" value="OL"/>
+		<lookup_info oid="9" value="OL"/>
+		<lookup_info oid="10" value="OFF"/>
+		<lookup_info oid="11" value="OFF"/>
+		<lookup_info oid="12" value="OL OVER"/>
+		<lookup_info oid="13" value="OL OVER"/>
+		<lookup_info oid="14" value="OFF OVER"/>
+		<lookup_info oid="15" value="OFF OVER"/>
+	</lookup>
+	<lookup name="eaton_ats30_input_sensitivity">
+		<lookup_info oid="1" value="high"/>
+		<lookup_info oid="2" value="low"/>
+	</lookup>
+	<lookup name="eaton_ats30_source_info">
+		<lookup_info oid="1" value="init"/>
+		<lookup_info oid="2" value="diagnosis"/>
+		<lookup_info oid="3" value="off"/>
+		<lookup_info oid="4" value="1"/>
+		<lookup_info oid="5" value="2"/>
+		<lookup_info oid="6" value="safe"/>
+		<lookup_info oid="7" value="fault"/>
+	</lookup>
+	<snmp name="eaton_ats30_mib">
+		<snmp_info absent="yes" default="ats" flag_ok="yes" multiplier="128.0" name="device.type" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.description" oid=".1.3.6.1.2.1.1.1.0" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.contact" oid=".1.3.6.1.2.1.1.4.0" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.location" oid=".1.3.6.1.2.1.1.6.0" string="yes" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.mfr" oid=".1.3.6.1.4.1.534.10.1.1.1.0" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.model" oid=".1.3.6.1.4.1.534.10.1.2.1.0" static="yes" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.534.10.1.2.2.0" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="128.0" name="device.serial" oid=".1.3.6.1.4.1.534.10.1.2.4.0" string="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="input.1.id" oid=".1.3.6.1.4.1.534.10.1.3.1.1.1.1"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="input.2.id" oid=".1.3.6.1.4.1.534.10.1.3.1.1.1.2"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.1.voltage" oid=".1.3.6.1.4.1.534.10.1.3.1.1.2.1"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.2.voltage" oid=".1.3.6.1.4.1.534.10.1.3.1.1.2.2"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.1.frequency" oid=".1.3.6.1.4.1.534.10.1.3.1.1.3.1"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="input.2.frequency" oid=".1.3.6.1.4.1.534.10.1.3.1.1.3.2"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.534.10.1.3.2.1.0"/>
+		<snmp_info flag_ok="yes" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.534.10.1.3.2.2.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="ups.temperature" oid=".1.3.6.1.4.1.534.10.1.3.3.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="device.uptime" oid=".1.3.6.1.4.1.534.10.1.3.5.0"/>
+		<snmp_info flag_ok="yes" lookup="eaton_ats30_source_info" multiplier="1.0" name="input.source" oid=".1.3.6.1.4.1.534.10.1.3.7.0"/>
+		<snmp_info flag_ok="yes" lookup="eaton_ats30_status_info" multiplier="1.0" name="ups.status" oid=".1.3.6.1.4.1.534.10.1.4.5.0"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="input.source.preferred" oid=".1.3.6.1.4.1.534.10.1.6.5.0" writable="yes"/>
+		<snmp_info flag_ok="yes" lookup="eaton_ats30_input_sensitivity" multiplier="1.0" name="input.sensitivity" oid=".1.3.6.1.4.1.534.10.1.6.6.0" writable="yes"/>
+	</snmp>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.10.1.2.1.0" mib_name="eaton_ats30" name="eaton_ats30" oid=".1.3.6.1.4.1.534.10.1" snmp_info="eaton_ats30_mib" version="0.01"/>
+</nut>
+

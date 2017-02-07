@@ -124,6 +124,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
             CONFIG_OPTS+=("--with-all=yes")
+            CONFIG_OPTS+=("--with-dmf=yes")
             ;;
         "default"|*)
             # Do not build the docs and tell distcheck it is okay
@@ -226,6 +227,10 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
     echo "=== Are GitIgnores good after 'make all'? (should have no output below)"
     git status -s || true
     echo "==="
+    if git status -s | egrep '\.dmf$' ; then
+        echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+        exit 1
+    fi
 
     [ -z "$CI_TIME" ] || echo "`date`: Trying to install the currently tested project into the custom DESTDIR..."
     $CI_TIME make VERBOSE=1 DESTDIR="$INST_PREFIX" install
@@ -243,6 +248,10 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
         echo "=== Are GitIgnores good after 'make distcheck'? (should have no output below)"
         git status -s || true
         echo "==="
+        if git status -s | egrep '\.dmf$' ; then
+            echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+            exit 1
+        fi
         )
     fi
 

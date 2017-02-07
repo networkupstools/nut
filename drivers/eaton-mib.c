@@ -32,7 +32,7 @@
 
 /* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
  * per file */
-#define EATON_APHEL_MIB_VERSION	"0.48"
+#define EATON_APHEL_MIB_VERSION	"0.50"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
  * *************************************
@@ -112,7 +112,7 @@ static snmp_info_t eaton_aphel_genesisII_mib[] = {
 #define AR_OID_OUTLET_NAME				AR_BASE_OID ".1.2.2.1.2"
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
-static info_lkp_t outlet_status_info[] = {
+static info_lkp_t eaton_outlet_status_info[] = {
 	{ -1, "error" },
 	{ 0, "off" },
 	{ 1, "on" },
@@ -191,7 +191,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_STATUS ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &revelation_outlet_switchability_info[0], NULL },
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &outlet_status_info[0], NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &eaton_outlet_status_info[0], NULL },
 	{ "outlet.%i.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
 	{ "outlet.%i.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".%i", NULL, SU_OUTLET, NULL, NULL },
@@ -233,7 +233,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.40"
+#define EATON_MARLIN_MIB_VERSION	"0.41"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -255,9 +255,31 @@ static info_lkp_t marlin_outletgroups_status_info[] = {
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
-static info_lkp_t outlet_switchability_info[] = {
+static info_lkp_t eaton_outlet_switchability_info[] = {
 	{ -1, "yes" },
 	{ 0, "yes" },
+	{ 0, NULL }
+};
+
+/* The physical type of outlet */
+static info_lkp_t eaton_outlet_type_info[] = {
+	{ 0, "unknown" },
+	{ 1, "iecC13" },
+	{ 2, "iecC19" },
+	{ 10, "uk" },
+	{ 11, "french" },
+	{ 12, "schuko" },
+	{ 20, "nema515" },
+	{ 21, "nema51520" },
+	{ 22, "nema520" },
+	{ 23, "nemaL520" },
+	{ 24, "nemaL530" },
+	{ 25, "nema615" },
+	{ 26, "nema620" },
+	{ 27, "nemaL620" },
+	{ 28, "nemaL630" },
+	{ 29, "nemaL715" },
+	{ 30, "rf203p277" },
 	{ 0, NULL }
 };
 
@@ -406,6 +428,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* inputCount.0; Value (Integer): 1
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases }, */
 	/* Note: for daisychain mode, we must handle phase(s) per device, not as a whole */
+	/* OLDER FIXME: to be implemented
+	 * inputType.0.1	iso.3.6.1.4.1.534.6.6.7.3.1.1.2.0.1
+	 * singlePhase  (1), ... split phase, three phase delta, or three phase wye
+	 */
 	/* inputType.%i.1 = INTEGER: singlePhase (1) */
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1", NULL, SU_FLAG_STATIC, &marlin_input_type_info[0], NULL },
 
@@ -584,7 +610,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.7.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &outlet_switchability_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &eaton_outlet_switchability_info[0], NULL },
+	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, &eaton_outlet_type_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1

@@ -120,6 +120,10 @@ int	str_to_ulong_strict(const char *string, unsigned long *number, const int bas
 int	str_to_double(const char *string, double *number, const int base);
 int	str_to_double_strict(const char *string, double *number, const int base);
 
+/* Concatenates "count" strings into a dynamically allocated object which
+ * the caller can use and must free() later on */
+char *	str_concat(size_t count, ...);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }
