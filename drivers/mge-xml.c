@@ -1446,7 +1446,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		if (!inited_phaseinfo_in) {
 			const char *v1,  *v2, *v3,
 			           *v1n, *v2n, *v3n,
-			           *v12, *v23, *v31;
+			           *v12, *v23, *v31,
+			           *c1,  *c2,  *c3;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
 			if ((v1 = dstate_getinfo("input.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
@@ -1458,14 +1459,23 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			if ((v12 = dstate_getinfo("input.L1-L2.voltage")))  { if (v12[0] == '0') { v12 = NULL; } }
 			if ((v23 = dstate_getinfo("input.L2-L3.voltage")))  { if (v23[0] == '0') { v23 = NULL; } }
 			if ((v31 = dstate_getinfo("input.L3-L1.voltage")))  { if (v31[0] == '0') { v31 = NULL; } }
+			if ((c1 = dstate_getinfo("input.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
+			if ((c2 = dstate_getinfo("input.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
+			if ((c3 = dstate_getinfo("input.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
+			     (c1 && (c2 || c3)) ||
+			     (c2 && (c1 || c3)) ||
+			     (c3 && (c1 || c2)) ||
 			     v12 || v23 || v31 ) {
 				num_inphases = 3;
 				inited_phaseinfo_in = 1;
 			} else if ( /* We definitely have only one non-zero line */
 			     !v12 && !v23 && !v31 && (
+			     (c1 && !c2 && !c3) ||
+			     (!c1 && c2 && !c3) ||
+			     (!c1 && !c2 && c3) ||
 			     (v1 && !v2 && !v3) ||
 			     (!v1 && v2 && !v3) ||
 			     (!v1 && !v2 && v3) ||
@@ -1486,7 +1496,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		if (!inited_phaseinfo_bypass) {
 			const char *v1,  *v2, *v3,
 			           *v1n, *v2n, *v3n,
-			           *v12, *v23, *v31;
+			           *v12, *v23, *v31,
+			           *c1,  *c2,  *c3;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
 			if ((v1 = dstate_getinfo("bypass.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
@@ -1498,14 +1509,23 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			if ((v12 = dstate_getinfo("bypass.L1-L2.voltage")))  { if (v12[0] == '0') { v12 = NULL; } }
 			if ((v23 = dstate_getinfo("bypass.L2-L3.voltage")))  { if (v23[0] == '0') { v23 = NULL; } }
 			if ((v31 = dstate_getinfo("bypass.L3-L1.voltage")))  { if (v31[0] == '0') { v31 = NULL; } }
+			if ((c1 = dstate_getinfo("bypass.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
+			if ((c2 = dstate_getinfo("bypass.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
+			if ((c3 = dstate_getinfo("bypass.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
+			     (c1 && (c2 || c3)) ||
+			     (c2 && (c1 || c3)) ||
+			     (c3 && (c1 || c2)) ||
 			     v12 || v23 || v31 ) {
 				num_bypassphases = 3;
 				inited_phaseinfo_bypass = 1;
 			} else if ( /* We definitely have only one non-zero line */
 			     !v12 && !v23 && !v31 && (
+			     (c1 && !c2 && !c3) ||
+			     (!c1 && c2 && !c3) ||
+			     (!c1 && !c2 && c3) ||
 			     (v1 && !v2 && !v3) ||
 			     (!v1 && v2 && !v3) ||
 			     (!v1 && !v2 && v3) ||
@@ -1528,7 +1548,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		if (!inited_phaseinfo_out) {
 			const char *v1,  *v2, *v3,
 			           *v1n, *v2n, *v3n,
-			           *v12, *v23, *v31;
+			           *v12, *v23, *v31,
+			           *c1,  *c2,  *c3;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
 			if ((v1 = dstate_getinfo("output.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
@@ -1540,14 +1561,23 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			if ((v12 = dstate_getinfo("output.L1-L2.voltage")))  { if (v12[0] == '0') { v12 = NULL; } }
 			if ((v23 = dstate_getinfo("output.L2-L3.voltage")))  { if (v23[0] == '0') { v23 = NULL; } }
 			if ((v31 = dstate_getinfo("output.L3-L1.voltage")))  { if (v31[0] == '0') { v31 = NULL; } }
+			if ((c1 = dstate_getinfo("output.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
+			if ((c2 = dstate_getinfo("output.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
+			if ((c3 = dstate_getinfo("output.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
+			     (c1 && (c2 || c3)) ||
+			     (c2 && (c1 || c3)) ||
+			     (c3 && (c1 || c2)) ||
 			     v12 || v23 || v31 ) {
 				num_outphases = 3;
 				inited_phaseinfo_out = 1;
 			} else if ( /* We definitely have only one non-zero line */
 			     !v12 && !v23 && !v31 && (
+			     (c1 && !c2 && !c3) ||
+			     (!c1 && c2 && !c3) ||
+			     (!c1 && !c2 && c3) ||
 			     (v1 && !v2 && !v3) ||
 			     (!v1 && v2 && !v3) ||
 			     (!v1 && !v2 && v3) ||
