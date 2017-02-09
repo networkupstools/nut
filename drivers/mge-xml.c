@@ -1444,11 +1444,11 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		 * it stays this way for the rest of the driver run/life-time. */
 		/* To change this behavior just flip the maychange flag to "1" */
 
-		dstate_detect_phasecount("input.",
+		dstate_detect_phasecount("input.", 1,
 			&inited_phaseinfo_in, &num_inphases, 0);
-		dstate_detect_phasecount("input.bypass.",
+		dstate_detect_phasecount("input.bypass.", 1,
 			&inited_phaseinfo_bypass, &num_bypassphases, 0);
-		dstate_detect_phasecount("output.",
+		dstate_detect_phasecount("output.", 1,
 			&inited_phaseinfo_out, &num_outphases, 0);
 
 		break;
