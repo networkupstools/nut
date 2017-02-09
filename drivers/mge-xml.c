@@ -1444,10 +1444,10 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		 * it stays this way for the rest of the driver run/life-time. */
 
 		if (!inited_phaseinfo_in) {
-			const char *v1,  *v2, *v3,
+			const char *v1,  *v2,  *v3,  *v0,
 			           *v1n, *v2n, *v3n,
 			           *v12, *v23, *v31,
-			           *c1,  *c2,  *c3;
+			           *c1,  *c2,  *c3,  *c0;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
 			if ((v1 = dstate_getinfo("input.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
@@ -1462,6 +1462,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			if ((c1 = dstate_getinfo("input.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
 			if ((c2 = dstate_getinfo("input.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
 			if ((c3 = dstate_getinfo("input.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
+			if ((v0 = dstate_getinfo("input.voltage")))         { if (v0[0]  == '0') { v0  = NULL; } }
+			if ((c0 = dstate_getinfo("input.current")))         { if (c0[0]  == '0') { c0  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
@@ -1473,6 +1475,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 				inited_phaseinfo_in = 1;
 			} else if ( /* We definitely have only one non-zero line */
 			     !v12 && !v23 && !v31 && (
+			     (c0 && !c1 && !c2 && !c3) ||
+			     (v0 && !v1 && !v2 && !v3) ||
 			     (c1 && !c2 && !c3) ||
 			     (!c1 && c2 && !c3) ||
 			     (!c1 && !c2 && c3) ||
@@ -1494,10 +1498,10 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		}
 
 		if (!inited_phaseinfo_bypass) {
-			const char *v1,  *v2, *v3,
+			const char *v1,  *v2,  *v3,  *v0,
 			           *v1n, *v2n, *v3n,
 			           *v12, *v23, *v31,
-			           *c1,  *c2,  *c3;
+			           *c1,  *c2,  *c3,  *c0;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
 			if ((v1 = dstate_getinfo("bypass.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
@@ -1512,6 +1516,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			if ((c1 = dstate_getinfo("bypass.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
 			if ((c2 = dstate_getinfo("bypass.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
 			if ((c3 = dstate_getinfo("bypass.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
+			if ((v0 = dstate_getinfo("bypass.voltage")))         { if (v0[0]  == '0') { v0  = NULL; } }
+			if ((c0 = dstate_getinfo("bypass.current")))         { if (c0[0]  == '0') { c0  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
@@ -1523,6 +1529,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 				inited_phaseinfo_bypass = 1;
 			} else if ( /* We definitely have only one non-zero line */
 			     !v12 && !v23 && !v31 && (
+			     (c0 && !c1 && !c2 && !c3) ||
+			     (v0 && !v1 && !v2 && !v3) ||
 			     (c1 && !c2 && !c3) ||
 			     (!c1 && c2 && !c3) ||
 			     (!c1 && !c2 && c3) ||
@@ -1546,10 +1554,10 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		}
 
 		if (!inited_phaseinfo_out) {
-			const char *v1,  *v2, *v3,
+			const char *v1,  *v2,  *v3,  *v0,
 			           *v1n, *v2n, *v3n,
 			           *v12, *v23, *v31,
-			           *c1,  *c2,  *c3;
+			           *c1,  *c2,  *c3,  *c0;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
 			if ((v1 = dstate_getinfo("output.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
@@ -1564,6 +1572,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			if ((c1 = dstate_getinfo("output.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
 			if ((c2 = dstate_getinfo("output.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
 			if ((c3 = dstate_getinfo("output.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
+			if ((v0 = dstate_getinfo("output.voltage")))         { if (v0[0]  == '0') { v0  = NULL; } }
+			if ((c0 = dstate_getinfo("output.current")))         { if (c0[0]  == '0') { c0  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
@@ -1575,6 +1585,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 				inited_phaseinfo_out = 1;
 			} else if ( /* We definitely have only one non-zero line */
 			     !v12 && !v23 && !v31 && (
+			     (c0 && !c1 && !c2 && !c3) ||
+			     (v0 && !v1 && !v2 && !v3) ||
 			     (c1 && !c2 && !c3) ||
 			     (!c1 && c2 && !c3) ||
 			     (!c1 && !c2 && c3) ||
