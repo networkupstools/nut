@@ -1002,3 +1002,153 @@ void device_alarm_commit(const int device_number)
 		dstate_delinfo(info_name);
 	}
 }
+
+/* For devices where we do not have phase-count info (no mapping provided
+ * above), nor in the XML, we can guesstimate and report a value. This may
+ * also replace an existing value, if we've found new data, hence the bool.
+ * It is up to callers to decide if they already have data they want to keep.
+ * The "xput_prefix" is e.g. "input." or "input.bypass." or "output." with
+ * the trailing dot where applicable - we use this string verbatim below.
+ * The "inited_phaseinfo" and "num_phases" are addresses of caller's own
+ * variables to store the flag (if we have successfully inited) and the
+ * discovered amount of phases, or NULL if caller does not want to track it.
+ * Returns:
+ *   -1     Runtime/input error (non fatal, but routine was skipped)
+ *    0     Nothing changed: could not determine a value
+ *    1     A phase value was just determined and set
+ *    2     Nothing changed: already inited (and maychange==false)
+ */
+int dstate_detect_phasecount(
+		const char *xput_prefix,
+		int *inited_phaseinfo,
+		int *num_phases,
+		const int maychange
+) {
+	/* If caller does not want either of these back - loopback the values below */
+	int local_inited_phaseinfo = 0, local_num_phases = -1;
+	/* Temporary local value storage */
+	int old_num_phases = -1, detected_phaseinfo = 0;
+
+	if (!inited_phaseinfo)
+		inited_phaseinfo = &local_inited_phaseinfo;
+	if (!num_phases)
+		num_phases = &local_num_phases;
+	old_num_phases = *num_phases;
+
+	upsdebugx(3, "Entering set_phasecount(%i, %i, '%s', %i)", *inited_phaseinfo, *num_phases, xput_prefix, maychange);
+
+	if (!(*inited_phaseinfo) || maychange) {
+		const char *v1,  *v2,  *v3,  *v0,
+		           *v1n, *v2n, *v3n,
+		           *v12, *v23, *v31,
+		           *c1,  *c2,  *c3,  *c0;
+		char buf[80]; /* For concatenation of "xput_prefix" with items we want to query */
+		if (!xput_prefix) {
+			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is NULL - function skipped");
+			return -1;
+		}
+
+		size_t xput_prefix_len = strlen(xput_prefix);
+		if (xput_prefix_len < 1) {
+			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is empty - function skipped");
+			return -1;
+		}
+
+		int bufrw_max = sizeof(buf) - xput_prefix_len;
+		if (bufrw_max <= 15) {
+			/* We need to append max ~13 chars per below, so far */
+			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is too long - function skipped");
+			return -1;
+		}
+		strncpy(buf, xput_prefix, sizeof(buf));
+		char *bufrw_ptr = buf + xput_prefix_len ;
+
+		/* We either have defined and non-zero (numeric) values below, or NULLs */
+		strncpy(bufrw_ptr, "L1.voltage", bufrw_max);
+		if ((v1 = dstate_getinfo(buf)))    { if (v1[0]  == '0') { v1  = NULL; } }
+		strncpy(bufrw_ptr, "L2.voltage", bufrw_max);
+		if ((v2 = dstate_getinfo(buf)))    { if (v2[0]  == '0') { v2  = NULL; } }
+		strncpy(bufrw_ptr, "L3.voltage", bufrw_max);
+		if ((v3 = dstate_getinfo(buf)))    { if (v3[0]  == '0') { v3  = NULL; } }
+		strncpy(bufrw_ptr, "L1-N.voltage", bufrw_max);
+		if ((v1n = dstate_getinfo(buf)))   { if (v1n[0] == '0') { v1n = NULL; } }
+		strncpy(bufrw_ptr, "L2-N.voltage", bufrw_max);
+		if ((v2n = dstate_getinfo(buf)))   { if (v2n[0] == '0') { v2n = NULL; } }
+		strncpy(bufrw_ptr, "L3-N.voltage", bufrw_max);
+		if ((v3n = dstate_getinfo(buf)))   { if (v3n[0] == '0') { v3n = NULL; } }
+		strncpy(bufrw_ptr, "L1-L2.voltage", bufrw_max);
+		if ((v12 = dstate_getinfo(buf)))   { if (v12[0] == '0') { v12 = NULL; } }
+		strncpy(bufrw_ptr, "L2-L3.voltage", bufrw_max);
+		if ((v23 = dstate_getinfo(buf)))   { if (v23[0] == '0') { v23 = NULL; } }
+		strncpy(bufrw_ptr, "L3-L1.voltage", bufrw_max);
+		if ((v31 = dstate_getinfo(buf)))   { if (v31[0] == '0') { v31 = NULL; } }
+		strncpy(bufrw_ptr, "L3.current", bufrw_max);
+		if ((c1 = dstate_getinfo(buf)))    { if (c1[0]  == '0') { c1  = NULL; } }
+		strncpy(bufrw_ptr, "L2.current", bufrw_max);
+		if ((c2 = dstate_getinfo(buf)))    { if (c2[0]  == '0') { c2  = NULL; } }
+		strncpy(bufrw_ptr, "L3.current", bufrw_max);
+		if ((c3 = dstate_getinfo(buf)))    { if (c3[0]  == '0') { c3  = NULL; } }
+		strncpy(bufrw_ptr, "voltage", bufrw_max);
+		if ((v0 = dstate_getinfo(buf)))    { if (v0[0]  == '0') { v0  = NULL; } }
+		strncpy(bufrw_ptr, "current", bufrw_max);
+		if ((c0 = dstate_getinfo(buf)))    { if (c0[0]  == '0') { c0  = NULL; } }
+
+		if ( (v1 && v2 && v3) ||
+		     (v1n && v2n && v3n) ||
+		     (c1 && (c2 || c3)) ||
+		     (c2 && (c1 || c3)) ||
+		     (c3 && (c1 || c2)) ||
+		     v12 || v23 || v31 ) {
+			upsdebugx(5, "set_phasecount(): determined a 3-phase case");
+			*num_phases = 3;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+		} else if ( /* We definitely have only one non-zero line */
+		     !v12 && !v23 && !v31 && (
+		     (c0 && !c1 && !c2 && !c3) ||
+		     (v0 && !v1 && !v2 && !v3) ||
+		     (c1 && !c2 && !c3) ||
+		     (!c1 && c2 && !c3) ||
+		     (!c1 && !c2 && c3) ||
+		     (v1 && !v2 && !v3) ||
+		     (!v1 && v2 && !v3) ||
+		     (!v1 && !v2 && v3) ||
+		     (v1n && !v2n && !v3n) ||
+		     (!v1n && v2n && !v3n) ||
+		     (!v1n && !v2n && v3n) ) ) {
+			*num_phases = 1;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+			upsdebugx(5, "set_phasecount(): determined a 1-phase case");
+		} else{
+			upsdebugx(5, "set_phasecount(): could not determine the phase case");
+		}
+
+		if (detected_phaseinfo) {
+			const char *oldphases;
+			strncpy(bufrw_ptr, "phases", bufrw_max);
+			oldphases = dstate_getinfo(buf);
+
+			if (oldphases) {
+				if (atoi(oldphases) == *num_phases) {
+					/* Technically, a bit has changed: we have set the flag which may have been missing before */
+					upsdebugx(5, "set_phasecount(): Nothing changed, with a valid reason; dstate already published with the same value: %s=%s (detected %d)", buf, oldphases, *num_phases);
+					return 2;
+				}
+			}
+
+			if ( (*num_phases != old_num_phases) || (!oldphases) ) {
+				dstate_setinfo(buf, "%d", *num_phases);
+				upsdebugx(3, "-> calculated non-XML value for NUT variable %s was set to %d",
+					buf, *num_phases);
+				return 1;
+			}
+		}
+
+		upsdebugx(5, "set_phasecount(): Nothing changed: could not determine a value");
+		return 0;
+	}
+
+	upsdebugx(5, "set_phasecount(): Nothing changed, with a valid reason; already inited");
+	return 2;
+}
