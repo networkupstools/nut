@@ -50,9 +50,9 @@ static int
 	inited_phaseinfo_in = 0,
 	inited_phaseinfo_bypass = 0,
 	inited_phaseinfo_out = 0,
-	num_inphases = 1,
-	num_bypassphases = 1,
-	num_outphases = 1;
+	num_inphases = -1,
+	num_bypassphases = -1,
+	num_outphases = -1;
 
 static char	mge_scratch_buf[256];
 
@@ -1548,9 +1548,12 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		 * it stays this way for the rest of the driver run/life-time. */
 		/* To change this behavior just flip the maychange flag to "1" */
 
-		set_phasecount(&inited_phaseinfo_in, &num_inphases, "input.", 0);
-		set_phasecount(&inited_phaseinfo_bypass, &num_bypassphases, "input.bypass.", 0);
-		set_phasecount(&inited_phaseinfo_out, &num_outphases, "output.", 0);
+		dstate_detect_phasecount("input.", 1,
+			&inited_phaseinfo_in, &num_inphases, 0);
+		dstate_detect_phasecount("input.bypass.", 1,
+			&inited_phaseinfo_bypass, &num_bypassphases, 0);
+		dstate_detect_phasecount("output.", 1,
+			&inited_phaseinfo_out, &num_outphases, 0);
 
 		break;
 	}

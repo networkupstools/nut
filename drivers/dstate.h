@@ -87,4 +87,11 @@ void alarm_commit(void);
 void device_alarm_init(void);
 void device_alarm_commit(const int device_number);
 
+int dstate_detect_phasecount(
+        const char *xput_prefix,
+        const int may_change_dstate,
+        int *inited_phaseinfo,
+        int *num_phases,
+        const int may_reevaluate);
+
 #endif	/* DSTATE_H_SEEN */
