@@ -1504,20 +1504,20 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 			           *c1,  *c2,  *c3,  *c0;
 
 			/* We either have defined and non-zero (numeric) values below, or NULLs */
-			if ((v1 = dstate_getinfo("bypass.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
-			if ((v2 = dstate_getinfo("bypass.L2.voltage")))      { if (v2[0]  == '0') { v2  = NULL; } }
-			if ((v3 = dstate_getinfo("bypass.L3.voltage")))      { if (v3[0]  == '0') { v3  = NULL; } }
-			if ((v1n = dstate_getinfo("bypass.L1-N.voltage")))   { if (v1n[0] == '0') { v1n = NULL; } }
-			if ((v2n = dstate_getinfo("bypass.L2-N.voltage")))   { if (v2n[0] == '0') { v2n = NULL; } }
-			if ((v3n = dstate_getinfo("bypass.L3-N.voltage")))   { if (v3n[0] == '0') { v3n = NULL; } }
-			if ((v12 = dstate_getinfo("bypass.L1-L2.voltage")))  { if (v12[0] == '0') { v12 = NULL; } }
-			if ((v23 = dstate_getinfo("bypass.L2-L3.voltage")))  { if (v23[0] == '0') { v23 = NULL; } }
-			if ((v31 = dstate_getinfo("bypass.L3-L1.voltage")))  { if (v31[0] == '0') { v31 = NULL; } }
-			if ((c1 = dstate_getinfo("bypass.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
-			if ((c2 = dstate_getinfo("bypass.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
-			if ((c3 = dstate_getinfo("bypass.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
-			if ((v0 = dstate_getinfo("bypass.voltage")))         { if (v0[0]  == '0') { v0  = NULL; } }
-			if ((c0 = dstate_getinfo("bypass.current")))         { if (c0[0]  == '0') { c0  = NULL; } }
+			if ((v1 = dstate_getinfo("input.bypass.L1.voltage")))      { if (v1[0]  == '0') { v1  = NULL; } }
+			if ((v2 = dstate_getinfo("input.bypass.L2.voltage")))      { if (v2[0]  == '0') { v2  = NULL; } }
+			if ((v3 = dstate_getinfo("input.bypass.L3.voltage")))      { if (v3[0]  == '0') { v3  = NULL; } }
+			if ((v1n = dstate_getinfo("input.bypass.L1-N.voltage")))   { if (v1n[0] == '0') { v1n = NULL; } }
+			if ((v2n = dstate_getinfo("input.bypass.L2-N.voltage")))   { if (v2n[0] == '0') { v2n = NULL; } }
+			if ((v3n = dstate_getinfo("input.bypass.L3-N.voltage")))   { if (v3n[0] == '0') { v3n = NULL; } }
+			if ((v12 = dstate_getinfo("input.bypass.L1-L2.voltage")))  { if (v12[0] == '0') { v12 = NULL; } }
+			if ((v23 = dstate_getinfo("input.bypass.L2-L3.voltage")))  { if (v23[0] == '0') { v23 = NULL; } }
+			if ((v31 = dstate_getinfo("input.bypass.L3-L1.voltage")))  { if (v31[0] == '0') { v31 = NULL; } }
+			if ((c1 = dstate_getinfo("input.bypass.L1.current")))      { if (c1[0]  == '0') { c1  = NULL; } }
+			if ((c2 = dstate_getinfo("input.bypass.L2.current")))      { if (c2[0]  == '0') { c2  = NULL; } }
+			if ((c3 = dstate_getinfo("input.bypass.L3.current")))      { if (c3[0]  == '0') { c3  = NULL; } }
+			if ((v0 = dstate_getinfo("input.bypass.voltage")))         { if (v0[0]  == '0') { v0  = NULL; } }
+			if ((c0 = dstate_getinfo("input.bypass.current")))         { if (c0[0]  == '0') { c0  = NULL; } }
 
 			if ( (v1 && v2 && v3) ||
 			     (v1n && v2n && v3n) ||
@@ -1546,9 +1546,9 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 
 
 			if (inited_phaseinfo_bypass) {
-				dstate_setinfo("bypass.phases", "%d", num_bypassphases);
+				dstate_setinfo("input.bypass.phases", "%d", num_bypassphases);
 				upsdebugx(3, "-> calculated non-XML value for NUT variable %s was set to %d",
-					"bypass.phases", num_bypassphases);
+					"input.bypass.phases", num_bypassphases);
 			}
 
 		}
