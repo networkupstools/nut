@@ -1039,7 +1039,7 @@ int dstate_detect_phasecount(
 		num_phases = &local_num_phases;
 	old_num_phases = *num_phases;
 
-	upsdebugx(3, "Entering set_phasecount('%s', %i, %i, %i, %i)",
+	upsdebugx(3, "Entering %s('%s', %i, %i, %i, %i)", __func__,
 		xput_prefix, may_change_dstate, *inited_phaseinfo, *num_phases, may_reevaluate);
 
 	if (!(*inited_phaseinfo) || may_reevaluate) {
@@ -1049,20 +1049,20 @@ int dstate_detect_phasecount(
 		           *c1,  *c2,  *c3,  *c0;
 		char buf[80]; /* For concatenation of "xput_prefix" with items we want to query */
 		if (!xput_prefix) {
-			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is NULL - function skipped");
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is NULL - function skipped", __func__);
 			return -1;
 		}
 
 		size_t xput_prefix_len = strlen(xput_prefix);
 		if (xput_prefix_len < 1) {
-			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is empty - function skipped");
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is empty - function skipped", __func__);
 			return -1;
 		}
 
 		int bufrw_max = sizeof(buf) - xput_prefix_len;
 		if (bufrw_max <= 15) {
 			/* We need to append max ~13 chars per below, so far */
-			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is too long - function skipped");
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is too long - function skipped", __func__);
 			return -1;
 		}
 		strncpy(buf, xput_prefix, sizeof(buf));
@@ -1104,7 +1104,7 @@ int dstate_detect_phasecount(
 		     (c2 && (c1 || c3)) ||
 		     (c3 && (c1 || c2)) ||
 		     v12 || v23 || v31 ) {
-			upsdebugx(5, "set_phasecount(): determined a 3-phase case");
+			upsdebugx(5, "%s(): determined a 3-phase case", __func__);
 			*num_phases = 3;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
@@ -1124,9 +1124,9 @@ int dstate_detect_phasecount(
 			*num_phases = 1;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
-			upsdebugx(5, "set_phasecount(): determined a 1-phase case");
-		} else{
-			upsdebugx(5, "set_phasecount(): could not determine the phase case");
+			upsdebugx(5, "%s(): determined a 1-phase case", __func__);
+		} else {
+			upsdebugx(5, "%s(): could not determine the phase case", __func__);
 		}
 
 		if (detected_phaseinfo) {
@@ -1137,7 +1137,8 @@ int dstate_detect_phasecount(
 			if (oldphases) {
 				if (atoi(oldphases) == *num_phases) {
 					/* Technically, a bit has changed: we have set the flag which may have been missing before */
-					upsdebugx(5, "set_phasecount(): Nothing changed, with a valid reason; dstate already published with the same value: %s=%s (detected %d)", buf, oldphases, *num_phases);
+					upsdebugx(5, "%s(): Nothing changed, with a valid reason; dstate already published with the same value: %s=%s (detected %d)",
+						__func__, buf, oldphases, *num_phases);
 					return 3;
 				}
 			}
@@ -1155,10 +1156,10 @@ int dstate_detect_phasecount(
 			}
 		}
 
-		upsdebugx(5, "set_phasecount(): Nothing changed: could not determine a value");
+		upsdebugx(5, "%s(): Nothing changed: could not determine a value", __func__);
 		return 0;
 	}
 
-	upsdebugx(5, "set_phasecount(): Nothing changed, with a valid reason; already inited");
+	upsdebugx(5, "%s(): Nothing changed, with a valid reason; already inited", __func__);
 	return 2;
 }
