@@ -1012,9 +1012,13 @@ void device_alarm_commit(const int device_number)
 }
 
 /* For devices where we do not have phase-count info (no mapping provided
- * above), nor in the XML, we can guesstimate and report a value. This may
- * also replace an existing value, if we've found new data, hence the bools
- * "may_reevaluate" and the readonly flag "may_change_dstate".
+ * in the tables), nor in the device data/protocol, we can still guesstimate
+ * and report a value. This routine may also replace an existing value, e.g.
+ * if we've found new data disproving old one (e.g. if the 3-phase UPS was
+ * disbalanced when the driver was started, so we thought it is 1-phase in
+ * practice, and then the additional lines came up loaded, hence the bools
+ * "may_reevaluate" and the readonly flag "may_change_dstate" (so the caller
+ * can query the current apparent situation, without changing any dstates).
  * It is up to callers to decide if they already have data they want to keep.
  * The "xput_prefix" is e.g. "input." or "input.bypass." or "output." with
  * the trailing dot where applicable - we use this string verbatim below.
@@ -1047,7 +1051,7 @@ int dstate_detect_phasecount(
 		num_phases = &local_num_phases;
 	old_num_phases = *num_phases;
 
-	upsdebugx(3, "Entering set_phasecount('%s', %i, %i, %i, %i)",
+	upsdebugx(3, "Entering %s('%s', %i, %i, %i, %i)", __func__,
 		xput_prefix, may_change_dstate, *inited_phaseinfo, *num_phases, may_reevaluate);
 
 	if (!(*inited_phaseinfo) || may_reevaluate) {
@@ -1056,55 +1060,55 @@ int dstate_detect_phasecount(
 		           *v12, *v23, *v31,
 		           *c1,  *c2,  *c3,  *c0;
 		char buf[80]; /* For concatenation of "xput_prefix" with items we want to query */
+		size_t xput_prefix_len;
+		int bufrw_max;
+		char *bufrw_ptr = NULL;
+
 		if (!xput_prefix) {
-			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is NULL - function skipped");
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is NULL - function skipped", __func__);
 			return -1;
 		}
 
-		size_t xput_prefix_len = strlen(xput_prefix);
+		xput_prefix_len = strlen(xput_prefix);
 		if (xput_prefix_len < 1) {
-			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is empty - function skipped");
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is empty - function skipped", __func__);
 			return -1;
 		}
 
-		int bufrw_max = sizeof(buf) - xput_prefix_len;
+		bufrw_max = sizeof(buf) - xput_prefix_len;
 		if (bufrw_max <= 15) {
 			/* We need to append max ~13 chars per below, so far */
-			upsdebugx(0, "set_phasecount(): Bad xput_prefix was passed: it is too long - function skipped");
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is too long - function skipped", __func__);
 			return -1;
 		}
 		strncpy(buf, xput_prefix, sizeof(buf));
-		char *bufrw_ptr = buf + xput_prefix_len ;
+		bufrw_ptr = buf + xput_prefix_len ;
 
 		/* We either have defined and non-zero (numeric) values below, or NULLs */
-		strncpy(bufrw_ptr, "L1.voltage", bufrw_max);
-		if ((v1 = dstate_getinfo(buf)))    { if (v1[0]  == '0') { v1  = NULL; } }
-		strncpy(bufrw_ptr, "L2.voltage", bufrw_max);
-		if ((v2 = dstate_getinfo(buf)))    { if (v2[0]  == '0') { v2  = NULL; } }
-		strncpy(bufrw_ptr, "L3.voltage", bufrw_max);
-		if ((v3 = dstate_getinfo(buf)))    { if (v3[0]  == '0') { v3  = NULL; } }
-		strncpy(bufrw_ptr, "L1-N.voltage", bufrw_max);
-		if ((v1n = dstate_getinfo(buf)))   { if (v1n[0] == '0') { v1n = NULL; } }
-		strncpy(bufrw_ptr, "L2-N.voltage", bufrw_max);
-		if ((v2n = dstate_getinfo(buf)))   { if (v2n[0] == '0') { v2n = NULL; } }
-		strncpy(bufrw_ptr, "L3-N.voltage", bufrw_max);
-		if ((v3n = dstate_getinfo(buf)))   { if (v3n[0] == '0') { v3n = NULL; } }
-		strncpy(bufrw_ptr, "L1-L2.voltage", bufrw_max);
-		if ((v12 = dstate_getinfo(buf)))   { if (v12[0] == '0') { v12 = NULL; } }
-		strncpy(bufrw_ptr, "L2-L3.voltage", bufrw_max);
-		if ((v23 = dstate_getinfo(buf)))   { if (v23[0] == '0') { v23 = NULL; } }
-		strncpy(bufrw_ptr, "L3-L1.voltage", bufrw_max);
-		if ((v31 = dstate_getinfo(buf)))   { if (v31[0] == '0') { v31 = NULL; } }
-		strncpy(bufrw_ptr, "L3.current", bufrw_max);
-		if ((c1 = dstate_getinfo(buf)))    { if (c1[0]  == '0') { c1  = NULL; } }
-		strncpy(bufrw_ptr, "L2.current", bufrw_max);
-		if ((c2 = dstate_getinfo(buf)))    { if (c2[0]  == '0') { c2  = NULL; } }
-		strncpy(bufrw_ptr, "L3.current", bufrw_max);
-		if ((c3 = dstate_getinfo(buf)))    { if (c3[0]  == '0') { c3  = NULL; } }
-		strncpy(bufrw_ptr, "voltage", bufrw_max);
-		if ((v0 = dstate_getinfo(buf)))    { if (v0[0]  == '0') { v0  = NULL; } }
-		strncpy(bufrw_ptr, "current", bufrw_max);
-		if ((c0 = dstate_getinfo(buf)))    { if (c0[0]  == '0') { c0  = NULL; } }
+#define dstate_getinfo_nonzero(var, suffix) \
+		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
+		  if ( (var = dstate_getinfo(buf)) ) { \
+		    if (var[0] == '0') { \
+		      var = NULL; \
+		    } \
+		  } \
+		} ;
+
+		dstate_getinfo_nonzero(v1,  "L1.voltage");
+		dstate_getinfo_nonzero(v2,  "L2.voltage");
+		dstate_getinfo_nonzero(v3,  "L3.voltage");
+		dstate_getinfo_nonzero(v1n, "L1-N.voltage");
+		dstate_getinfo_nonzero(v2n, "L2-N.voltage");
+		dstate_getinfo_nonzero(v3n, "L3-N.voltage");
+		dstate_getinfo_nonzero(v1n, "L1-N.voltage");
+		dstate_getinfo_nonzero(v12, "L1-L2.voltage");
+		dstate_getinfo_nonzero(v23, "L2-L3.voltage");
+		dstate_getinfo_nonzero(v31, "L3-L1.voltage");
+		dstate_getinfo_nonzero(c1,  "L1.current");
+		dstate_getinfo_nonzero(c2,  "L2.current");
+		dstate_getinfo_nonzero(c3,  "L3.current");
+		dstate_getinfo_nonzero(v0,  "voltage");
+		dstate_getinfo_nonzero(c0,  "current");
 
 		if ( (v1 && v2 && v3) ||
 		     (v1n && v2n && v3n) ||
@@ -1112,7 +1116,7 @@ int dstate_detect_phasecount(
 		     (c2 && (c1 || c3)) ||
 		     (c3 && (c1 || c2)) ||
 		     v12 || v23 || v31 ) {
-			upsdebugx(5, "set_phasecount(): determined a 3-phase case");
+			upsdebugx(5, "%s(): determined a 3-phase case", __func__);
 			*num_phases = 3;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
@@ -1132,9 +1136,9 @@ int dstate_detect_phasecount(
 			*num_phases = 1;
 			*inited_phaseinfo = 1;
 			detected_phaseinfo = 1;
-			upsdebugx(5, "set_phasecount(): determined a 1-phase case");
-		} else{
-			upsdebugx(5, "set_phasecount(): could not determine the phase case");
+			upsdebugx(5, "%s(): determined a 1-phase case", __func__);
+		} else {
+			upsdebugx(5, "%s(): could not determine the phase case", __func__);
 		}
 
 		if (detected_phaseinfo) {
@@ -1145,7 +1149,8 @@ int dstate_detect_phasecount(
 			if (oldphases) {
 				if (atoi(oldphases) == *num_phases) {
 					/* Technically, a bit has changed: we have set the flag which may have been missing before */
-					upsdebugx(5, "set_phasecount(): Nothing changed, with a valid reason; dstate already published with the same value: %s=%s (detected %d)", buf, oldphases, *num_phases);
+					upsdebugx(5, "%s(): Nothing changed, with a valid reason; dstate already published with the same value: %s=%s (detected %d)",
+						__func__, buf, oldphases, *num_phases);
 					return 3;
 				}
 			}
@@ -1163,10 +1168,10 @@ int dstate_detect_phasecount(
 			}
 		}
 
-		upsdebugx(5, "set_phasecount(): Nothing changed: could not determine a value");
+		upsdebugx(5, "%s(): Nothing changed: could not determine a value", __func__);
 		return 0;
 	}
 
-	upsdebugx(5, "set_phasecount(): Nothing changed, with a valid reason; already inited");
+	upsdebugx(5, "%s(): Nothing changed, with a valid reason; already inited", __func__);
 	return 2;
 }
