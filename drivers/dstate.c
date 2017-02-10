@@ -1158,11 +1158,11 @@ int dstate_detect_phasecount(
 			if ( (*num_phases != old_num_phases) || (!oldphases) ) {
 				if (may_change_dstate) {
 					dstate_setinfo(buf, "%d", *num_phases);
-					upsdebugx(3, "-> calculated non-XML value for NUT variable %s was set to %d",
-						buf, *num_phases);
+					upsdebugx(3, "%s(): calculated non-XML value for NUT variable %s was set to %d",
+						__func__, buf, *num_phases);
 				} else {
-					upsdebugx(3, "-> calculated non-XML value for NUT variable %s=%d but did not set its dstate (read-only request)",
-						buf, *num_phases);
+					upsdebugx(3, "%s(): calculated non-XML value for NUT variable %s=%d but did not set its dstate (read-only request)",
+						__func__, buf, *num_phases);
 				}
 				return 1;
 			}
