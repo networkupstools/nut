@@ -1077,34 +1077,30 @@ int dstate_detect_phasecount(
 		bufrw_ptr = buf + xput_prefix_len ;
 
 		/* We either have defined and non-zero (numeric) values below, or NULLs */
-		strncpy(bufrw_ptr, "L1.voltage", bufrw_max);
-		if ((v1 = dstate_getinfo(buf)))    { if (v1[0]  == '0') { v1  = NULL; } }
-		strncpy(bufrw_ptr, "L2.voltage", bufrw_max);
-		if ((v2 = dstate_getinfo(buf)))    { if (v2[0]  == '0') { v2  = NULL; } }
-		strncpy(bufrw_ptr, "L3.voltage", bufrw_max);
-		if ((v3 = dstate_getinfo(buf)))    { if (v3[0]  == '0') { v3  = NULL; } }
-		strncpy(bufrw_ptr, "L1-N.voltage", bufrw_max);
-		if ((v1n = dstate_getinfo(buf)))   { if (v1n[0] == '0') { v1n = NULL; } }
-		strncpy(bufrw_ptr, "L2-N.voltage", bufrw_max);
-		if ((v2n = dstate_getinfo(buf)))   { if (v2n[0] == '0') { v2n = NULL; } }
-		strncpy(bufrw_ptr, "L3-N.voltage", bufrw_max);
-		if ((v3n = dstate_getinfo(buf)))   { if (v3n[0] == '0') { v3n = NULL; } }
-		strncpy(bufrw_ptr, "L1-L2.voltage", bufrw_max);
-		if ((v12 = dstate_getinfo(buf)))   { if (v12[0] == '0') { v12 = NULL; } }
-		strncpy(bufrw_ptr, "L2-L3.voltage", bufrw_max);
-		if ((v23 = dstate_getinfo(buf)))   { if (v23[0] == '0') { v23 = NULL; } }
-		strncpy(bufrw_ptr, "L3-L1.voltage", bufrw_max);
-		if ((v31 = dstate_getinfo(buf)))   { if (v31[0] == '0') { v31 = NULL; } }
-		strncpy(bufrw_ptr, "L1.current", bufrw_max);
-		if ((c1 = dstate_getinfo(buf)))    { if (c1[0]  == '0') { c1  = NULL; } }
-		strncpy(bufrw_ptr, "L2.current", bufrw_max);
-		if ((c2 = dstate_getinfo(buf)))    { if (c2[0]  == '0') { c2  = NULL; } }
-		strncpy(bufrw_ptr, "L3.current", bufrw_max);
-		if ((c3 = dstate_getinfo(buf)))    { if (c3[0]  == '0') { c3  = NULL; } }
-		strncpy(bufrw_ptr, "voltage", bufrw_max);
-		if ((v0 = dstate_getinfo(buf)))    { if (v0[0]  == '0') { v0  = NULL; } }
-		strncpy(bufrw_ptr, "current", bufrw_max);
-		if ((c0 = dstate_getinfo(buf)))    { if (c0[0]  == '0') { c0  = NULL; } }
+#define dstate_getinfo_nonzero(var, suffix) \
+		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
+		  if ( (var = dstate_getinfo(buf)) ) { \
+		    if (var[0] == '0') { \
+		      var = NULL; \
+		    } \
+		  } \
+		} ;
+
+		dstate_getinfo_nonzero(v1,  "L1.voltage");
+		dstate_getinfo_nonzero(v2,  "L2.voltage");
+		dstate_getinfo_nonzero(v3,  "L3.voltage");
+		dstate_getinfo_nonzero(v1n, "L1-N.voltage");
+		dstate_getinfo_nonzero(v2n, "L2-N.voltage");
+		dstate_getinfo_nonzero(v3n, "L3-N.voltage");
+		dstate_getinfo_nonzero(v1n, "L1-N.voltage");
+		dstate_getinfo_nonzero(v12, "L1-L2.voltage");
+		dstate_getinfo_nonzero(v23, "L2-L3.voltage");
+		dstate_getinfo_nonzero(v31, "L3-L1.voltage");
+		dstate_getinfo_nonzero(c1,  "L1.current");
+		dstate_getinfo_nonzero(c2,  "L2.current");
+		dstate_getinfo_nonzero(c3,  "L3.current");
+		dstate_getinfo_nonzero(v0,  "voltage");
+		dstate_getinfo_nonzero(c0,  "current");
 
 		if ( (v1 && v2 && v3) ||
 		     (v1n && v2n && v3n) ||
