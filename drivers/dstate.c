@@ -1004,9 +1004,13 @@ void device_alarm_commit(const int device_number)
 }
 
 /* For devices where we do not have phase-count info (no mapping provided
- * above), nor in the XML, we can guesstimate and report a value. This may
- * also replace an existing value, if we've found new data, hence the bools
- * "may_reevaluate" and the readonly flag "may_change_dstate".
+ * in the tables), nor in the device data/protocol, we can still guesstimate
+ * and report a value. This routine may also replace an existing value, e.g.
+ * if we've found new data disproving old one (e.g. if the 3-phase UPS was
+ * disbalanced when the driver was started, so we thought it is 1-phase in
+ * practice, and then the additional lines came up loaded, hence the bools
+ * "may_reevaluate" and the readonly flag "may_change_dstate" (so the caller
+ * can query the current apparent situation, without changing any dstates).
  * It is up to callers to decide if they already have data they want to keep.
  * The "xput_prefix" is e.g. "input." or "input.bypass." or "output." with
  * the trailing dot where applicable - we use this string verbatim below.
