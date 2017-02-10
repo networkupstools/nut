@@ -1095,7 +1095,7 @@ int dstate_detect_phasecount(
 		if ((v23 = dstate_getinfo(buf)))   { if (v23[0] == '0') { v23 = NULL; } }
 		strncpy(bufrw_ptr, "L3-L1.voltage", bufrw_max);
 		if ((v31 = dstate_getinfo(buf)))   { if (v31[0] == '0') { v31 = NULL; } }
-		strncpy(bufrw_ptr, "L3.current", bufrw_max);
+		strncpy(bufrw_ptr, "L1.current", bufrw_max);
 		if ((c1 = dstate_getinfo(buf)))    { if (c1[0]  == '0') { c1  = NULL; } }
 		strncpy(bufrw_ptr, "L2.current", bufrw_max);
 		if ((c2 = dstate_getinfo(buf)))    { if (c2[0]  == '0') { c2  = NULL; } }
