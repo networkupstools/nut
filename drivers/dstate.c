@@ -1048,25 +1048,29 @@ int dstate_detect_phasecount(
 		           *v12, *v23, *v31,
 		           *c1,  *c2,  *c3,  *c0;
 		char buf[80]; /* For concatenation of "xput_prefix" with items we want to query */
+		size_t xput_prefix_len;
+		int bufrw_max;
+		char *bufrw_ptr = NULL;
+
 		if (!xput_prefix) {
 			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is NULL - function skipped", __func__);
 			return -1;
 		}
 
-		size_t xput_prefix_len = strlen(xput_prefix);
+		xput_prefix_len = strlen(xput_prefix);
 		if (xput_prefix_len < 1) {
 			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is empty - function skipped", __func__);
 			return -1;
 		}
 
-		int bufrw_max = sizeof(buf) - xput_prefix_len;
+		bufrw_max = sizeof(buf) - xput_prefix_len;
 		if (bufrw_max <= 15) {
 			/* We need to append max ~13 chars per below, so far */
 			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is too long - function skipped", __func__);
 			return -1;
 		}
 		strncpy(buf, xput_prefix, sizeof(buf));
-		char *bufrw_ptr = buf + xput_prefix_len ;
+		bufrw_ptr = buf + xput_prefix_len ;
 
 		/* We either have defined and non-zero (numeric) values below, or NULLs */
 		strncpy(bufrw_ptr, "L1.voltage", bufrw_max);
