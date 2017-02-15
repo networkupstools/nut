@@ -7,6 +7,8 @@ systemdsystemunit_DATA = \
         nut-monitor.service \
         nut-server.service
 
+EXTRA_DIST += nut-driver.target
+
 systemdsystemshutdown_SCRIPTS = nutshutdown
 
 else
