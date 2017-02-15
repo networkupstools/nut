@@ -9,6 +9,8 @@ systemdsystemunit_DATA = \
         nut-server.service  \
         nut-driver.target
 
+EXTRA_DIST += nut-driver.target
+
 systemdshutdown_SCRIPTS = nutshutdown
 
 libexec_SCRIPTS = nut-driver-enumerator.sh
