@@ -1084,11 +1084,21 @@ int dstate_detect_phasecount(
 		strncpy(buf, xput_prefix, sizeof(buf));
 		bufrw_ptr = buf + xput_prefix_len ;
 
-		/* We either have defined and non-zero (numeric) values below, or NULLs */
+		/* We either have defined and non-zero (numeric) values below, or NULLs.
+		 * Note that as "zero" we should expect any valid numeric representation
+		 * of a zero value as some drivers may save strangely formatted values.
+		 * For now, we limit the level of paranoia with missing dstate entries,
+		 * empty entries, and actual single zero character as contents of the
+		 * string. Other obscure cases (string of multiple zeroes, a floating
+		 * point zero, surrounding whitespace etc. may be solved if the need
+		 * does arise in the future. Arguably, drivers' translation/mapping
+		 * tables should take care of this with converion routine and numeric
+		 * data type flags. */
 #define dstate_getinfo_nonzero(var, suffix) \
 		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
 		  if ( (var = dstate_getinfo(buf)) ) { \
-		    if (var[0] == '0') { \
+		    if ( (var[0] == '0' && var[1] == '\0') || \
+		         (var[0] == '\0') ) { \
 		      var = NULL; \
 		    } \
 		  } \
