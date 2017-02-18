@@ -406,9 +406,22 @@ static const char *on_off_info(const char *val)
 
 static const char *convert_deci(const char *val)
 {
+	/* Note: this routine was needed for original MGE devices, before the company
+	 * was bought out and split in 200x's. Those firmwares apparently served 10x
+	 * the measured values. Not sure if any are in service now (and with same FW).
+	 * For currently known NetXML servers, the value served is good without more
+	 * conversions. If older devices pop up in the field, we can add an estimation
+	 * by e.g. reported voltage and amps (to be an order of magnitude for power).
+	 * Alternately we can look at model names and/or firmware versions or release
+	 * dates, if we get those and if we know enough to map them to either logic. */
+	return val;
+
+/* Old code for old devices: */
+/*
 	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
 
 	return mge_scratch_buf;
+*/
 }
 
 /* Ignore a zero value if the UPS is not switched off */
