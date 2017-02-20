@@ -32,7 +32,7 @@
 #include "netxml-ups.h"
 #include "mge-xml.h"
 
-#define MGE_XML_VERSION		"MGEXML/0.27"
+#define MGE_XML_VERSION		"MGEXML/0.28"
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
@@ -426,6 +426,7 @@ static const char *convert_deci(const char *val)
 	 * by e.g. reported voltage and amps (to be an order of magnitude for power).
 	 * Alternately we can look at model names and/or firmware versions or release
 	 * dates, if we get those and if we know enough to map them to either logic. */
+	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the GitHub issue tracker with details about your hardware and firmware versions", __func__, val);
 	return val;
 
 /* Old code for old devices: */
