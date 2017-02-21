@@ -50,6 +50,9 @@ static char	val[128];
 
 static int	mge_shutdown_pending = 0;
 
+/* This flag flips to 0 when/if we post the detailed deprecation message */
+static int	mge_report_deprecation__convert_deci = 1;
+
 typedef enum {
 	ROOTPARENT = NE_XML_STATEROOT,
 
@@ -415,7 +418,11 @@ static const char *convert_deci(const char *val)
 	 * by e.g. reported voltage and amps (to be an order of magnitude for power).
 	 * Alternately we can look at model names and/or firmware versions or release
 	 * dates, if we get those and if we know enough to map them to either logic. */
-	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the GitHub issue tracker with details about your hardware and firmware versions", __func__, val);
+	if (mge_report_deprecation__convert_deci) {
+		upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the issue tracker at %s with details about your hardware and firmware versions.", __func__, PACKAGE_BUGREPORT );
+		mge_report_deprecation__convert_deci = 0;
+	}
+	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If this change broke your setup, please see details logged above.", __func__, val);
 	return val;
 
 /* Old code for old devices: */
