@@ -5,6 +5,9 @@
  * and to request a parse of an in-memory string, a single file, or of
  * all '*.dmf' files in a named directory.
  *
+ * For general developer reference on LTDL see
+ * https://www.gnu.org/software/libtool/manual/html_node/Libltdl-interface.html
+ *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
@@ -77,6 +80,7 @@ int load_neon_lib(void){
 #ifdef WITH_NEON
 # if WITH_LIBLTDL
 	char *neon_libname_path = get_libname("libneon.so");
+	int lt_dlinit_succeeded = 0;
 
 	upsdebugx(1, "load_neon_lib(): neon_libname_path = %s", neon_libname_path);
 	if(!neon_libname_path) {
@@ -94,6 +98,7 @@ int load_neon_lib(void){
 		upsdebugx(1, "load_neon_lib(): lt_dlinit() action failed");
 		goto err;
 	}
+	lt_dlinit_succeeded = 1;
 
 	if( dl_handle_libneon != NULL ) {
 		/* if previous init failed */
@@ -156,6 +161,8 @@ err:
 		neon_libname_path,
 		dl_error ? dl_error : "No details passed");
 	free(neon_libname_path);
+	if (lt_dlinit_succeeded)
+		lt_dlexit();
 	return ERR;
 # else /* not WITH_LIBLTDL */
 	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
@@ -175,6 +182,7 @@ void unload_neon_lib(){
 	upsdebugx(1, "unload_neon_lib(): unloading the library");
 	lt_dlclose(dl_handle_libneon);
 	dl_handle_libneon = NULL;
+	lt_dlexit();
 #endif /* WITH_LIBLTDL */
 #endif /* WITH_NEON */
 }
