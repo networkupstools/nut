@@ -556,7 +556,7 @@ void upsdrv_initups(void)
 		shutdown_timer = atoi(val);
 
 		if (shutdown_timer < 0) {
-			fatalx(EXIT_FAILURE, "shutdwon timer must be greater than or equal to 0");
+			fatalx(EXIT_FAILURE, "shutdown timer must be greater than or equal to 0");
 		}
 	}
 
