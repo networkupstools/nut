@@ -565,11 +565,12 @@ void upsdrv_initups(void)
 	}
 
 	val = getval("do_convert_deci");
+	upsdebugx(5, "incoming do_convert_deci = '%s'", val?val:"<null>");
 	if (val) {
 		do_convert_deci = -1;
-		if ( strcasecmp(val, "on") || strcasecmp(val, "true") || strcasecmp(val, "yes") ) {
+		if ( strcasecmp(val, "on") == 0 || strcasecmp(val, "true") == 0 || strcasecmp(val, "yes") == 0 ) {
 			do_convert_deci = 1;
-		} else if ( strcasecmp(val, "off") || strcasecmp(val, "false") || strcasecmp(val, "no") ) {
+		} else if ( strcasecmp(val, "off") == 0 || strcasecmp(val, "false") == 0 || strcasecmp(val, "no") == 0 ) {
 			do_convert_deci = 0;
 		} else {
 			do_convert_deci = atoi(val);
@@ -580,6 +581,8 @@ void upsdrv_initups(void)
 		}
 		if (do_convert_deci > 1)
 			do_convert_deci = 1;
+
+		upsdebugx(5, "resulting do_convert_deci = '%d'", do_convert_deci);
 	}
 
 	if (nut_debug_level > 5) {
