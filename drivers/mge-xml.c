@@ -1437,6 +1437,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 
 			if (info->convert) {
 				value = info->convert(val);
+				upsdebugx(4, "-> XML variable %s [%s] which maps to NUT variable %s was converted to value %s for the NUT driver state", var, val, info->nutname, value);
 			} else {
 				value = val;
 			}
