@@ -39,7 +39,8 @@
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
 
-extern int 	shutdown_duration;
+extern int	shutdown_duration;
+extern int	do_convert_deci;
 
 static int	mge_ambient_value = 0;
 
@@ -420,19 +421,23 @@ static const char *convert_deci(const char *val)
 	 * by e.g. reported voltage and amps (to be an order of magnitude for power).
 	 * Alternately we can look at model names and/or firmware versions or release
 	 * dates, if we get those and if we know enough to map them to either logic. */
+
+	if (do_convert_deci == 1) {
+		/* Old code for old devices: */
+		if (mge_report_deprecation__convert_deci) {
+			upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are normally not decimated. This driver instance has however configured do_convert_deci=1 in your ups.conf, so behavior for old MGE NetXML-capable devices is preserved.", __func__);
+			mge_report_deprecation__convert_deci = 0;
+		}
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
+		return mge_scratch_buf;
+	}
+
 	if (mge_report_deprecation__convert_deci) {
-		upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the issue tracker at %s with details about your hardware and firmware versions.", __func__, PACKAGE_BUGREPORT );
+		upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the issue tracker at %s with details about your hardware and firmware versions. Also try to enable do_convert_deci=1 in your ups.conf", __func__, PACKAGE_BUGREPORT );
 		mge_report_deprecation__convert_deci = 0;
 	}
 	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If this change broke your setup, please see details logged above.", __func__, val);
 	return val;
-
-/* Old code for old devices: */
-/*
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
-
-	return mge_scratch_buf;
-*/
 }
 
 /* Ignore a zero value if the UPS is not switched off */

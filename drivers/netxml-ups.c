@@ -230,6 +230,7 @@ uint32_t		ups_status = 0;
 static int		timeout = 5;
 int			shutdown_duration = 120;
 static int		shutdown_timer = 0;
+int			do_convert_deci = 0; /* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
 static time_t		lastheard = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
@@ -513,6 +514,9 @@ void upsdrv_makevartable(void)
 		snprintf(buf, sizeof(buf), "shutdown timer in second (default: none)");
 	}
 	addvar(VAR_VALUE, "shutdown_timer", buf);
+
+	snprintf(buf, sizeof(buf), "enable legacy convert_deci() for certain measurements 10x too large (default: %d)", do_convert_deci);
+	addvar(VAR_VALUE, "do_convert_deci", buf);
 }
 
 void upsdrv_initups(void)
@@ -558,6 +562,24 @@ void upsdrv_initups(void)
 		if (shutdown_timer < 0) {
 			fatalx(EXIT_FAILURE, "shutdown timer must be greater than or equal to 0");
 		}
+	}
+
+	val = getval("do_convert_deci");
+	if (val) {
+		do_convert_deci = -1;
+		if ( strcasecmp(val, "on") || strcasecmp(val, "true") || strcasecmp(val, "yes") ) {
+			do_convert_deci = 1;
+		} else if ( strcasecmp(val, "off") || strcasecmp(val, "false") || strcasecmp(val, "no") ) {
+			do_convert_deci = 0;
+		} else {
+			do_convert_deci = atoi(val);
+		}
+
+		if (do_convert_deci < 0) {
+			fatalx(EXIT_FAILURE, "do_convert_deci must be a boolean (no|yes / false|true / off|on) or numeric (0|1) value");
+		}
+		if (do_convert_deci > 1)
+			do_convert_deci = 1;
 	}
 
 	if (nut_debug_level > 5) {
