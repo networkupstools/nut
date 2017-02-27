@@ -1,0 +1,69 @@
+This package was debianized by Luca Filipozzi <lfilipoz@debian.org> on
+Wed Jun 28 19:48:05 PDT 2000
+
+It was downloaded from http://www.networkupstools.org/
+
+Upstream Authors:
+
+  Russell Kroll <rkroll@exploits.org>
+  Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
+  Arjen de Korte <arjen@de-korte.org>
+  Charles Lepple <clepple@gmail.com>
+  Kjell Claesson <kjell.claesson@epost.tidanet.se>
+  David Goncalves <david@lestat.st>
+  and the NUT Team
+
+Copyright:
+
+  Copyright (C) 2000-2008 Russell Kroll, Arnaud Quette and the NUT Team
+
+Licenses:
+
+  Most files are licensed under the GNU General Public License (GPL) version 2,
+  or (at your option) any later version.
+
+  The files in the scripts/python/ directory are released under GNU General
+  Public License (GPL) version 3, or (at your option) any later version.
+
+  GPL-2
+  -----
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  On Debian systems, the full text of the GNU General Public License v2
+  may be found in /usr/share/common-licenses/GPL-2.
+
+  GPL-3
+  -----
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+  On Debian systems, the full text of the GNU General Public License v3
+  may be found in /usr/share/common-licenses/GPL-3.
+
+
+The Debian packaging is Copyright (C) 2008, Arnaud Quette <aquette@debian.org>
+and is licensed under the GPL, see `/usr/share/common-licenses/GPL'.

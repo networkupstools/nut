@@ -1,0 +1,15 @@
+Subject: Fix systemd service file for Debian
+From: Laurent Bigonville <bigon@debian.org>
+Forwarded: not-needed
+
+--- a/scripts/systemd/nut-driver.service.in
++++ b/scripts/systemd/nut-driver.service.in
+@@ -1,6 +1,7 @@
+ [Unit]
+ Description=Network UPS Tools - power device driver controller
+-After=local-fs.target network.target
++After=local-fs.target network.target systemd-udev-settle.service
++Wants=systemd-udev-settle.service
+ StopWhenUnneeded=yes
+ 
+ [Service]

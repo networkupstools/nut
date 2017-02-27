@@ -55,6 +55,12 @@ Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner ; and
 Build and install i2c drivers (default: auto-detect)
 Note that you need to install libi2c development package or files.
 
+	--with-dmf
+
+Build and install DMF (data mapping file) support for snmp-ups (default: auto-detect)
+Note that you need to install libneon (mandatory) and xmllint / lua development
+package or files.
+
 	--with-drivers=<driver>,<driver>,...
 
 Specify exactly which driver or drivers to build and install (this

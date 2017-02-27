@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+<nut>
+	<lookup name="source">
+		<info_lookup oid="1" value="LB"/>
+		<info_lookup oid="2" value=""/>
+		<info_lookup oid="3" value="LB"/>
+		<info_lookup oid="4" value="OB"/>
+		<info_lookup oid="5" value="LO"/>
+		<info_lookup oid="6" value=""/>
+	</lookup>
+	<lookup name="sensitivity">
+		<info_lookup oid="1" value="LB"/>
+		<info_lookup oid="2" value=""/>
+		<info_lookup oid="3" value="LB"/>
+	</lookup>
+	<alarm name="pw_alarm_lb">
+		<info_alarm oid=".1.3.6.1.4.1.534.1.7.7" status="OVER" alarm="Output overload!"/>
+		<info_alarm oid=".1.3.6.1.4.1.534.1.7.8" status="NULL" alarm="Internal failure!"/>
+		<info_alarm oid=".1.3.6.1.4.1.534.1.7.9" status="BYPASS" alarm="On bypass!"/>
+	</alarm>
+	<alarm name="temp_alarm">
+		<info_alarm oid=".1.3.6.1.4.1.534.1.3.7" status="OVER" alarm="Burning"/>
+		<info_alarm oid=".1.3.6.1.4.1.534.1.3.8" status="NULL" alarm="No data"/>
+	</alarm>
+</nut>
+<!--
+<snmp name = "name">
+    <info
+        name = "<string>"
+        multiplier = "0.2" or constant if string = "yes"
+        oid = "<string>" or NULL
+        default = "<string>" or NULL
+        lookup = "<string>" or NUUL
+        ?setvar? = "(input_phases|output_phases|bypass_phases)"
+        ^^^ implies SU_FLAG_SETINT if setvar is not NULL
+        // flags
+        SU_FLAG_STATIC ->
+        static = "1"
+        absent = "1"
+        optimize: check the ( value[0] == 'y' || value[0] == '1')
+        // info_flags
+        0   - no attribute
+        ST_FLAG_RW - readwrite/writtable="yes"
+        ST_FLAG_STRING - string = "yes"
+    />
+</snmp>
+     -->

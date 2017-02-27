@@ -44,6 +44,17 @@ extern int	do_convert_deci;
 
 static int	mge_ambient_value = 0;
 
+/* The number of phases is not present in XML data as a separate node,
+ * but we can infer it from presence of non-zero data on several
+ * per-line nodes. */
+static int
+	inited_phaseinfo_in = 0,
+	inited_phaseinfo_bypass = 0,
+	inited_phaseinfo_out = 0,
+	num_inphases = -1,
+	num_bypassphases = -1,
+	num_outphases = -1;
+
 static char	mge_scratch_buf[256];
 
 static char	var[128];
@@ -1450,6 +1461,25 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		}
 
 		upsdebugx(3, "-> XML variable %s [%s] doesn't map to any NUT variable", var, val);
+		break;
+
+	case PI_GET_OBJECT:
+	case GET_OBJECT:
+		/* We've just got a snapshot of all runtime data, saved well into
+		 * dstate's already, so can estimate missing values if needed. */
+
+		/* For phase setup, we assume it does not change during run-time.
+		 * Essentially this means that once we've detected it is N-phase,
+		 * it stays this way for the rest of the driver run/life-time. */
+		/* To change this behavior just flip the maychange flag to "1" */
+
+		dstate_detect_phasecount("input.", 1,
+			&inited_phaseinfo_in, &num_inphases, 0);
+		dstate_detect_phasecount("input.bypass.", 1,
+			&inited_phaseinfo_bypass, &num_bypassphases, 0);
+		dstate_detect_phasecount("output.", 1,
+			&inited_phaseinfo_out, &num_outphases, 0);
+
 		break;
 	}
 

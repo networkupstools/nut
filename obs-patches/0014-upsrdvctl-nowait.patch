@@ -1,0 +1,91 @@
+From 81284ba4bd37604096b7f3fe5978cdeeef03d4f0 Mon Sep 17 00:00:00 2001
+From: Arnaud Quette <arnaud.quette@free.fr>
+Date: Sat, 7 Jun 2014 02:27:15 +0200
+Subject: [PATCH] Add 'nowait' option for upsdrvctl in ups.conf
+
+The nowait flag allow to tell upsdrvctl to not wait at all for the
+driver(s) to execute the request command. The default behavior, when
+this variable is omitted, is to wait 'maxstartdelay' seconds
+---
+ docs/man/ups.conf.txt  |  6 ++++++
+ docs/man/upsdrvctl.txt |  2 ++
+ drivers/upsdrvctl.c    | 15 ++++++++++++++-
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
+diff --git a/docs/man/ups.conf.txt b/docs/man/ups.conf.txt
+index 4877852..186f1be 100644
+--- a/docs/man/ups.conf.txt
++++ b/docs/man/ups.conf.txt
+@@ -66,6 +66,12 @@ impact the time taken by your system to start.
+ +
+ The default is 1 attempt.
+ 
++*nowait*::
++Optional.  Specify to upsdrvctl to not wait at all for the driver(s) to
++execute the request command.
+++
++The default (omission) is to wait.
++
+ *retrydelay*::
+ Optional.  Specify the delay between each restart attempt of the driver(s),
+ as specified by 'maxretry'. Caution should be taken when using this option,
+diff --git a/docs/man/upsdrvctl.txt b/docs/man/upsdrvctl.txt
+index 52e5509..68a4b8c 100644
+--- a/docs/man/upsdrvctl.txt
++++ b/docs/man/upsdrvctl.txt
+@@ -77,6 +77,8 @@ WARNING: this will probably power off your computers, so don't
+ play around with this option.  Only use it when your systems are prepared
+ to lose power.
+ 
++NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
++
+ ENVIRONMENT VARIABLES
+ ---------------------
+ 
+diff --git a/drivers/upsdrvctl.c b/drivers/upsdrvctl.c
+index 0cdaa2c..116fe69 100644
+--- a/drivers/upsdrvctl.c
++++ b/drivers/upsdrvctl.c
+@@ -42,6 +42,9 @@ static ups_t	*upstable = NULL;
+ 
+ static int	maxsdorder = 0, testmode = 0, exec_error = 0;
+ 
++	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
++static int	waitfordrivers = 1;
++
+ 	/* timer - keeps us from getting stuck if a driver hangs */
+ static int	maxstartdelay = 45;
+ 
+@@ -77,6 +80,9 @@ void do_upsconf_args(char *upsname, char *var, char *val)
+ 		if (!strcmp(var, "retrydelay"))
+ 			retrydelay = atoi(val);
+ 
++		if (!strcmp(var, "nowait"))
++			waitfordrivers = 0;
++
+ 		/* ignore anything else - it's probably for main */
+ 
+ 		return;
+@@ -203,14 +209,21 @@ static void forkexec(char *const argv[], const ups_t *ups)
+ 		int	wstat;
+ 		struct sigaction	sa;
+ 
++		/* Handle "parallel" drivers startup */
++		if (waitfordrivers == 0) {
++			upsdebugx(2, "'nowait' set, continuing...");
++			return;
++		}
++
+ 		sigemptyset(&sa.sa_mask);
+ 		sa.sa_flags = 0;
+ 		sa.sa_handler = waitpid_timeout;
+ 		sigaction(SIGALRM, &sa, NULL);
+ 
++		/* Use the local maxstartdelay, if available */
+ 		if (ups->maxstartdelay != -1)
+ 			alarm(ups->maxstartdelay);
+-		else
++		else /* Otherwise, use the global (or default) value */
+ 			alarm(maxstartdelay);
+ 
+ 		ret = waitpid(pid, &wstat, 0);

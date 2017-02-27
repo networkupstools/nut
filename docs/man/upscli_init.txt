@@ -21,8 +21,19 @@ SSL-related properties: 'certverify' to 1 makes certificate verification
 required for all SSL connections and 'certpath' is the location of
 certificate database.
 
-If compiled with OpenSSL, certpath refers to a .pem file containing
-certificates and if compiled with NSS, certpath refers to a directory
+If compiled with OpenSSL, certpath refers to directory containing
+certificates where the certificates must be named according to their
+hash values ending in a ".0" extension. If two certificates result in
+the same hash value (thus file name), the ".0" can be incremented to ".1"
+and so on, as needed. The bash command for creating links in this manner would be
+
+ln -s ca.pem ./$(openssl x509 -hash -noout -in ca.pem).0
+
+Alternatively, the c_rehash utility (provided by openssl-perl) can take a
+directory and iteratively link all certificates found in said directory in
+the manner described above.
+
+If compiled with NSS, certpath refers to a directory
 containing database files.
 
 If compiled with NSS and using SSL, you can specify 'certname' the name

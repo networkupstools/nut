@@ -24,7 +24,7 @@ USER_MANUAL_DEPS = acknowledgements.txt cables.txt config-notes.txt	\
 DEVELOPER_GUIDE_DEPS = contact-closure.txt design.txt developers.txt	\
  developer-guide.txt hid-subdrivers.txt macros.txt new-clients.txt	\
  new-drivers.txt net-protocol.txt nutdrv_qx-subdrivers.txt	\
- snmp-subdrivers.txt sock-protocol.txt
+ snmp-subdrivers.txt sock-protocol.txt nut-dmf.txt
 
 CABLES_DEPS = cables/apc-rs500-serial.txt	\
  cables/apc.txt cables/ge-imv-victron.txt cables/imv.txt		\

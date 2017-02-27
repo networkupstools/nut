@@ -1,0 +1,231 @@
+snmp-ups-dmf(8)
+===============
+
+NAME
+----
+
+snmp-ups-dmf - Multi-MIB Driver for SNMP UPS equipment with support for
+dynamic mapping file (DMF)
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+snmp-ups-dmf driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+The `snmp-ups-dmf` driver automatically detects and supports a wide range
+of SNMP-capable devices by loading various MIBS. Unlike the original legacy
+`snmp-ups` driver which had the mappings of SNMP MIB OIDs to NUT variables
+built-in statically, the `snmp-ups-dmf` driver allows to load such mappings
+from DMF resource files at load-time, so it no longer needs recompilation
+of the binary driver to add or update support for end-user power devices.
+Otherwise it is mostly the same driver (in code, behavior and parameters).
+
+The default list of mappings includes:
+
+*ietf*::
+UPS that is RFC 1628 (UPS MIB) compliant, e.g. MGE UPS SYSTEMS, Liebert,
+perhaps others (default)
+
+*mge*::
+MGE UPS SYSTEMS and MGE Office Protection Systems devices with SNMP cards
+(ref 66062, 66045, 66074 and 66244)
+
+*apcc*::
+APC AP9605, AP9606, AP9617, and AP9618 APC network management cards,
+as well as any others supporting the APC POWERNET MIB
+
+*netvision*::
+Socomec Sicon UPS with Netvision Web/SNMP management card/external box
+
+*pw*::
+Powerware devices with ConnectUPS SNMP cards
+
+*pxgx_ups*::
+Eaton devices with Power Xpert Gateway UPS Card
+
+*aphel_genesisII*::
+Eaton Powerware ePDU Monitored
+
+*aphel_revelation*::
+Eaton Powerware ePDU Managed
+
+*raritan*::
+Various Raritan PDUs (Dominion PX, PM, RPC)
+
+*raritan-px2*::
+Various Raritan PDUs (Dominion PX2)
+
+*baytech*::
+Various BayTech PDUs
+
+*cpqpower*::
+HP/Compaq AF401A management card, perhaps others
+
+*cyberpower*::
+Cyberpower RMCARD201. Should also support RMCARD100 (net version), RMCARD202
+and RMCARD301
+
+*huawei*::
+Huawei UPS5000-E, perhaps others
+
+Unlike the legacy `snmp-ups` driver which mapped MIB data to NUT variables
+using tables built into the driver binary during compilation, the new
+`snmp-ups-dmf` uses equivalent tables loaded at run-time from DMF files
+(XML documents which correspond to the DMF-SNMP schema, provided with the
+NUT sources). This means that to extend NUT support to a new SNMP UPS or
+to experiment during development, users no longer have to recompile NUT --
+it suffices to just provide a new DMF file and restart the driver.
+
+EXTRA ARGUMENTS
+---------------
+
+This driver supports the following optional settings in the
+linkman:ups.conf[5]:
+
+*mibs*='name'::
+Set MIB compliance (default=auto, allowed entries: refer to SUPPORTED HARDWARE
+above).
+With "auto", the driver will try a select set of SNMP objects until it finds
+one that the device responds to.  Note that since NUT 2.6.2, `snmp-ups` drivers
+have a new method that uses sysObjectID (which is a pointer to the preferred MIB
+of the device) to detect supported devices.  This renders void the use of "mibs"
+option.
+
+*community*='name'::
+Set community name (default = public).
+Note that a RW community name is required to change UPS settings (as for a
+powerdown).
+
+*snmp_version*='version'::
+Set SNMP version (default = v1, allowed: v2c, v3)
+
+*snmp_retries*='retries'::
+Specifies the number of Net-SNMP retries to be used in the requests (default=5)
+
+*snmp_timeout*='timeout'::
+Specifies the Net-SNMP timeout in seconds between retries (default=1)
+
+*pollfreq*='value'::
+Set polling frequency in seconds, to reduce network flow (default=30)
+
+*notransferoids*::
+Disable the monitoring of the low and high voltage transfer OIDs in
+the hardware.  This will remove input.transfer.low and input.transfer.high
+from the list of variables.  This should only be used on APCC Symmetra
+equipment which has strangeness in the three-phase power reporting.
+
+*secLevel*='value'::
+Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv,
+allowed: authNoPriv,authPriv)
+
+*secName*='value'::
+Set the securityName used for authenticated SNMPv3 messages (no default)
+
+*authPassword*='value'::
+Set the authentication pass phrase used for authenticated SNMPv3 messages
+(no default)
+
+*privPassword*='value'::
+Set the privacy pass phrase used for encrypted SNMPv3 messages (no default)
+
+*authProtocol*='value'::
+Set the authentication protocol (MD5 or SHA) used for authenticated SNMPv3
+messages (default=MD5)
+
+*privProtocol*='value'::
+Set the privacy protocol (DES or AES) used for encrypted SNMPv3 messages
+(default=DES)
+
+*dmffile*='path'::
+Specifies a single Data Mapping Format file for this driver to load.
+In case this option (and `dmfdir` below) is missing, the driver will
+load in alphabetic order all DMF files which are located in its default
+path (e.g. `/usr/share/nut/dmfsnmp.d/S*.dmf`).
+The `dmffile` option overrides `dmfdir` if both are present.
+
+*dmfdir*='path'::
+Specifies a directory with DMF files for this driver to load. If this option
+is present, the driver will load in alphabetic order all DMF files located
+in the specified path instead of the default path (e.g. from
+`/usr/local/share/nut/dmfsnmp.custom/*.dmf`).
+
+NOTE: the `mibs` option, if specified and pointing to a specific MIB mapping,
+should refer to a mapping named in one of the ultimately loaded DMF files.
+
+REQUIREMENTS
+------------
+You will need to install the Net-SNMP package from
+http://www.net-snmp.org/ before building this driver.
+
+SNMP v3 also requires OpenSSL support from http://www.openssl.org.
+
+DMF also requires LibNEON to parse XML data, and may benefit from LibLTDL
+to load the parser only when needed and unload it afterwards.
+
+LIMITATIONS
+-----------
+Shutdown
+~~~~~~~~
+
+The shutdown sequence should be tested before relying on NUT to send a
+shutdown command to the UPS. The problem is that the host network stack may
+have been torn down by the time the driver is invoked to send the shutdown
+command. The driver attempts to send +shutdown.return+, +shutdown.reboot+,
+and +load.off.delay+ commands to the UPS in sequence, stopping after the first
+supported command.
+
+INSTALLATION
+------------
+This driver is only built if the Net-SNMP and LibNEON development files are
+present at configuration time.  You can also force it to be built by using
+`configure --with-dmf_snmp=yes` before calling `make`.
+
+EXAMPLES
+--------
+The hostname of the UPS is specified with the "port" value in
+`ups.conf`:
+
+	[snmpv1]
+		driver = snmp-ups-dmf
+		port = snmp-ups.example.com
+		community = public
+		snmp_version = v1
+		pollfreq = 15
+		desc = "Example SNMP v1 device"
+		dmfpath = /tmp/example-mib.dmf
+
+	[snmpv3]
+		driver = snmp-ups-dmf
+		port = 166.99.224.132
+		snmp_version = v3
+		secLevel = authPriv
+		secName = mysecurityname
+		authPassword = myauthenticationpassphrase
+		privPassword = myprivatepassphrase
+		desc = "Example SNMP v3 device, with the highest security level"
+		dmfdir = /usr/local/nut-custom/share/dmfsnmp-myOrg
+
+AUTHORS
+-------
+Original `snmp-ups` driver: Arnaud Quette, Dmitry Frolov
+Updates for DMF support: Carlos Dominguez, Jim Klimov, Michal Vyskocil
+
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+NUT SNMP Protocols Library
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+Available at: http://www.networkupstools.org/ups-protocols.html#_snmp
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

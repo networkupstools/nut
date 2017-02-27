@@ -1,4 +1,4 @@
-personal_ws-1.1 en 1771 utf-8
+personal_ws-1.1 en 1819 utf-8
 ACFAIL
 ACFREQ
 ACK
@@ -99,6 +99,7 @@ CCCC
 CERTHOST
 CERTIDENT
 CERTREQUEST
+CERTVERIF
 CEST
 CHRG
 CMDDESC
@@ -151,6 +152,8 @@ DELRANGE
 DES
 DESTDIR
 DISCHRG
+DMF
+DMFs
 DN
 DOCTYPE
 DOMAINs
@@ -377,11 +380,14 @@ Laventhol
 Legrand
 Lepple
 Levente
+LibLTDL
+LibNEON
 LineA
 LineB
 Lintian
 Lite's
 Loyer
+Lua
 Lygre
 Lynge
 MANPATH
@@ -461,6 +467,7 @@ NOTIFYMSG
 NQA
 NTP
 NUT's
+NUTSRC
 Nadav
 Nagios
 NaturalDocs
@@ -618,6 +625,7 @@ Rodríguez
 Rucelf
 RxD
 SAI
+SCHEMADIR
 SCM
 SCO
 SELFTEST
@@ -705,6 +713,8 @@ Szady
 TBR
 TEMPC
 TEMPF
+TESTEDFILE
+TESTEDINDEX
 TIMELEFT
 TIOCM
 TLS
@@ -772,6 +782,7 @@ VendorID
 Viewpower
 Viewsonic
 Viktor
+Vyskocil
 Václav
 WALKMODE
 WELI
@@ -839,6 +850,7 @@ apctest
 apcupsd
 aphel
 argc
+argparse
 args
 argv
 asapm
@@ -960,6 +972,7 @@ const
 cout
 coverity
 cp
+cpp
 cpqpower
 cpsups
 crestfactor
@@ -1002,15 +1015,26 @@ desde
 dev
 devd
 devel
+deviceamperes
+devicelua
+deviceluaOutlet
 devscan
 dfl
 dir
+dirpath
 disp
 distcheck
 distro
 dll
 dlopen
 dmesg
+dmf
+dmfdir
+dmffile
+dmfify
+dmfnutscan
+dmfpath
+dmfsnmp
 dnl
 docs
 dod
@@ -1080,6 +1104,7 @@ frob
 frontends
 fsd
 fuji
+functionset
 futher
 gamatronic
 gcc
@@ -1188,6 +1213,8 @@ ivtscd
 jNut
 jNutWebAPI
 jpg
+json
+jsonify
 kVA
 kadets
 kde
@@ -1213,6 +1240,7 @@ libhid
 libhidups
 libi
 libltdl
+libneon
 libnss
 libnut
 libnutclient
@@ -1233,7 +1261,9 @@ linevoltage
 linkdoc
 linux
 littleguy
+lkp
 lm
+ln
 loadPercentage
 localhost
 localtime
@@ -1248,6 +1278,8 @@ lookup
 loopback
 lowbatt
 lsusb
+lua
+luaOutlet
 lxyz
 mDNS
 macaddr
@@ -1298,6 +1330,7 @@ multimeter
 multimon
 mustek
 mv
+myOrg
 myauthenticationpassphrase
 mybox
 mydev
@@ -1349,6 +1382,7 @@ notifyme
 notifytype
 notransferoids
 novendor
+nowait
 nowarn
 np
 nss
@@ -1368,6 +1402,7 @@ nutvalue
 odette
 offdelay
 offsite
+oid
 ok
 ol
 oldmac
@@ -1384,6 +1419,7 @@ opensolaris
 openssl
 optiups
 oq
+parsability
 parsable
 parseconf
 passname
@@ -1432,6 +1468,7 @@ powerware
 pprint
 ppro
 pre
+prepend
 prepended
 preprocess
 preprocessing
@@ -1450,6 +1487,7 @@ pw
 px
 pxgx
 py
+pycparser
 pydoc
 pynut
 qa
@@ -1472,6 +1510,7 @@ reconnection
 reentrancy
 refactoring
 regex
+reindex
 reposurgeon
 repotec
 req
@@ -1500,6 +1539,7 @@ safenet
 sbin
 sbindir
 scd
+schemas
 screenshot
 screenshots
 scriptname
@@ -1625,6 +1665,7 @@ th
 timehead
 timername
 tmp
+tonumber
 toolchain
 topbot
 tport
@@ -1733,11 +1774,14 @@ varvalue
 vendorid
 verifySourceSig
 versa
+versioned
 victron
 victronups
+virtualenv
 virtualization
 voltronic
 wDescriptorLength
+wastePower
 webserver
 whitespace
 wiki
@@ -1758,8 +1802,12 @@ xff
 xhtml
 xmalloc
 xml
+xmlify
+xmllint
+xmlns
 xr
 xrealloc
+xsd
 xsltproc
 xstrdup
 xu

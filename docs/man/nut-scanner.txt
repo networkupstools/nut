@@ -168,13 +168,20 @@ MISCELLANEOUS OPTIONS
 Display NUT version.
 
 *-a* | *--available*::
-Display available bus that can be scanned , depending on how the binary has been compiled. (OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
+Display available buses that can be scanned, depending on how the binary has
+been compiled. (e.g. OLDNUT, USB, SNMP, XML, AVAHI, IPMI).
 
 *-q* | *--quiet*::
 Display only scan result. No information on currently scanned bus is displayed.
 
 *-D* | *--nut_debug_level*::
 Raise the debugging level.  Use this multiple times to see more details.
+
+NOTE: The level of debugging needed depends both on nut-scanner and the
+problem you're trying to diagnose.  Therefore, first explain the problem you
+have with `nut-scanner` to a developer/maintainer, before sending them debugging
+output.  More often than not, if you just pick a level, the output may be
+either too limited or too verbose to be of any use.
 
 EXAMPLES
 --------
