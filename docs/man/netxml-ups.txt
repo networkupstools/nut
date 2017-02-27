@@ -66,6 +66,14 @@ Set the shutdown timer, in seconds. After 'value' seconds running on battery,
 the local system will receive a notification to shutdown.
 Defaults to "none" (disabled).
 
+*do_convert_deci*='value'::
+Set this flag value as a Boolean (yes|no or true|false or on|off or 1|0) if
+you have a very old MGE UPS (or rather an old network management card firmware)
+which serves certain measurements 10x too big in the XML markup. Originally
+such measurements were decimated by the driver -- but this is wrong for newer
+more sane devices, so this behavior was deprecated and is disabled by default.
+Enabling this flag restores the old behavior for those measurements.
+
 IMPLEMENTATION
 --------------
 The hostname of the UPS is specified with the "port" value in
