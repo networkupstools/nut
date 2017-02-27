@@ -411,8 +411,10 @@ static const char *on_off_info(const char *val)
 static const char *convert_deci(const char *val)
 {
 	/* Note: this routine was needed for original MGE devices, before the company
-	 * was bought out and split in 200x's. Those firmwares apparently served 10x
-	 * the measured values. Not sure if any are in service now (and with same FW).
+	 * was bought out and split in 2007 between Eaton (1ph devices) and Schneider
+	 * (3ph devices). Those firmwares back when the driver was written apparently
+	 * served 10x the measured values. Not sure if any such units are in service
+	 * now (with same FW, and with no upgrade path). Reign of XML/PDC is waning.
 	 * For currently known NetXML servers, the value served is good without more
 	 * conversions. If older devices pop up in the field, we can add an estimation
 	 * by e.g. reported voltage and amps (to be an order of magnitude for power).
