@@ -2148,7 +2148,7 @@ bool_t snmp_ups_walk(int mode)
 		if (devices_count > 1)
 			device_alarm_init();
 
-		/* Loop through all mapping entries */
+		/* Loop through all mapping entries for the current_device_number */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 
 			// FIXME:
@@ -2175,6 +2175,7 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 // FIXME: daisychain-whole, what to do?
+// Note that when addressing the FIXME above, if (current_device_number == 0 && daisychain_enabled == FALSE) then we'd skip it still (unitary device is at current_device_number == 1)...
 			/* skip the whole-daisychain for now */
 			if (current_device_number == 0) {
 				upsdebugx(1, "Skipping daisychain device.0 for now...");
