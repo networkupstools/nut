@@ -1017,6 +1017,13 @@ void device_alarm_commit(const int device_number)
  * The "inited_phaseinfo" and "num_phases" are addresses of caller's own
  * variables to store the flag (if we have successfully inited) and the
  * discovered amount of phases, or NULL if caller does not want to track it.
+ *
+ * NOTE: At this time the code below, like elsewhere in the NUT codebase,
+ * assumes there are either 1 or 3 phases, when/if it has to guess (rather
+ * than use a value reported by the device). There was recently a discussion
+ * in NUT issues that 2-phase devices (aka "split phase") exist on the market,
+ * so (TODO) support for these may have to be added at some point.
+ *
  * Returns:
  *   -1     Runtime/input error (non fatal, but routine was skipped)
  *    0     Nothing changed: could not determine a value
