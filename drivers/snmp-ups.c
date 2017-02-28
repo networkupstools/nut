@@ -2124,6 +2124,21 @@ bool_t snmp_ups_walk(int mode)
 	bool_t status = FALSE;
 
 	/* Loop through all device(s) */
+	/* Note: considering "unitary" and "daisy-chained" devices, we have
+	 * several variables (and their values) that can come into play:
+	 *  devices_count == 1 (default) AND daisychain_enabled == FALSE => unitary
+	 *  devices_count > 1 (AND/OR?) daisychain_enabled == TRUE => a daisy-chain
+	 * The current_device_number == 0 in context of daisy-chain means the
+	 * "whole device" with composite or summary values that refer to the
+	 * chain as a virtual power device (e.g. might be a sum of outlet counts).
+	 * If daisychain_enabled == TRUE and current_device_number == 1 then we
+	 * are looking at the "master" device (one that we have direct/networked
+	 * connectivity to; the current_device_number > 1 is a slave (chained by
+	 * some proprietary link not visible from the outside) and represented
+	 * through the master - the slaves are not addressable directly. If the
+	 * master dies/reboots, connection to the whole chain is interrupted.
+	 */
+
 	for (current_device_number = 0 ; current_device_number <= devices_count ; current_device_number++)
 	{
 		/* reinit the alarm buffer, before */
