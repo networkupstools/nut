@@ -2163,8 +2163,10 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
-			if (exit_flag != 0)
+			if (exit_flag != 0) {
+				upsdebugx(1, "%s: aborting because exit_flag was set", __func__);
 				return TRUE;
+			}
 
 			/* Skip daisychain data count */
 			if (mode == SU_WALKMODE_INIT &&
