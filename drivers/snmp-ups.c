@@ -2137,6 +2137,9 @@ bool_t snmp_ups_walk(int mode)
 	 * some proprietary link not visible from the outside) and represented
 	 * through the master - the slaves are not addressable directly. If the
 	 * master dies/reboots, connection to the whole chain is interrupted.
+	 * The dstate string names for daisychained sub-devices have the prefix
+	 * "device." and number embedded (e.g. "device.3.input.phases") except
+	 * for the whole (#0) virtual device, so it *seems* similar to unitary.
 	 */
 
 	for (current_device_number = 0 ; current_device_number <= devices_count ; current_device_number++)
