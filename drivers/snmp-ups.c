@@ -1687,7 +1687,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 			 * whole daisychain ("device.0") */
 			if (!strncmp(type, "device", 6))
 			{
-				/* Device(s) 2-N (master + slave(s)) need to append 'device.x' */
+				/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 				if (current_device_number > 0) {
 					char *ptr = NULL;
 					/* Another special processing for daisychain
