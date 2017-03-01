@@ -1,7 +1,7 @@
 netxml-ups(8)
 =============
 
-NAME  
+NAME
 ----
 netxml-ups - Driver for Eaton / MGE Network Management Card / Proxy
 (XML/HTTP Protocol) equipment
@@ -9,7 +9,7 @@ netxml-ups - Driver for Eaton / MGE Network Management Card / Proxy
 NOTE
 ----
 This man page only documents the hardware-specific features of the
-netxml-ups driver.  For information about the core driver, see  
+netxml-ups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
@@ -24,7 +24,7 @@ Supported card and proxy models are:
  * NMC Transverse (Ref 66074),
  * NMC & Modbus/JBus (Ref 66103),
  * Network Management Proxy,
- * ePDU Monitored (newer version). 
+ * ePDU Monitored (newer version).
 
 Older models, such as SNMP card (Ref 66062 and Ref 66045), use the SNMP
 protocol and should use the linkman:snmp-ups[8] driver with the "mibs=mge"
@@ -32,7 +32,7 @@ parameter.
 
 EXTRA ARGUMENTS
 ---------------
-This driver supports the following optional settings in the 
+This driver supports the following optional settings in the
 linkman:ups.conf[5]:
 
 *timeout*='value'::
@@ -65,6 +65,15 @@ shutdown. Defaults to 120 seconds.
 Set the shutdown timer, in seconds. After 'value' seconds running on battery,
 the local system will receive a notification to shutdown.
 Defaults to "none" (disabled).
+
+*do_convert_deci*::
+If this flag value is present, the driver assumes you have a very old
+MGE networked UPS (or rather an old network management card firmware)
+which serves certain measurements spelled 10x too big in the XML markup.
+Originally such measurements were decimated by the driver -- but this is
+wrong for newer, more sane, devices -- so this behavior was deprecated
+and is now disabled by default. Enabling this flag in configuration of a
+particular driver instance restores the old behavior for those measurements.
 
 IMPLEMENTATION
 --------------

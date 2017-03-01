@@ -31,6 +31,10 @@
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
 
+#ifndef MAX_STRING_SIZE
+#define MAX_STRING_SIZE	128
+#endif
+
 /* track client connections */
 typedef struct conn_s {
 	int     fd;

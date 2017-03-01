@@ -220,6 +220,10 @@ spellcheck-interactive:
 		exit 1; \
 	fi ; exit 0
 	$(MAKE) spellcheck-sortdict
+	@echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
+	 echo "Use 'git add -p $(NUT_SPELL_DICT) && git checkout -- $(NUT_SPELL_DICT) && make spellcheck-sortdict'"; \
+	 echo "to review changes (please do not remove lines that aspell chose to drop,"; \
+	 echo "because other systems might not know these words in their system dictionaries)"
 else !HAVE_ASPELL
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."
