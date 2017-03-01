@@ -5,6 +5,7 @@
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2016	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -2013,7 +2014,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 		single_phase_flag = SU_OUTPUT_1;
 		three_phase_flag = SU_OUTPUT_3;
 	}
-	else if (!strncmp(type, "bypass", 6)) {
+	else if (!strncmp(type, "input.bypass", 12)) {
 		phases_flag = SU_BYPPHASES;
 		single_phase_flag = SU_BYPASS_1;
 		three_phase_flag = SU_BYPASS_3;
