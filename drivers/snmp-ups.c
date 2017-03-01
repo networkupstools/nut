@@ -107,8 +107,8 @@ int g_pwr_battery;
 int pollfreq; /* polling frequency */
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
-int current_device_number = 0;      /* to handle daisychain iterations */
-bool_t daisychain_enabled = FALSE;
+int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
+bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
 daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
