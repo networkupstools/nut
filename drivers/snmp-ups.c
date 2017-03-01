@@ -56,6 +56,7 @@
 #include "xppc-mib.h"
 #include "eaton-ats16-mib.h"
 #include "apc-ats-mib.h"
+#include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
 
 /* Address API change */
@@ -87,6 +88,9 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_ats,
 	&raritan_px2,
 	&eaton_ats30,
+	&apc_pdu_rpdu,
+	&apc_pdu_rpdu2,
+	&apc_pdu_msp,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -384,7 +388,7 @@ void upsdrv_initups(void)
 
 	/* Init daisychain and check if support is required */
 	daisychain_init();
-	
+
 	/* Allocate / init the daisychain info structure (for phases only for now)
 	 * daisychain_info[0] is the whole chain! (added +1) */
 	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
@@ -471,7 +475,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
-	
+
 	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
 		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
@@ -1984,7 +1988,7 @@ bool_t daisychain_init()
  * 3phases related data are disabled if the unit is 1ph, and conversely.
  * If the related phases data (input, output, bypass) is not yet valued,
  * retrieve it first.
- * 
+ *
  * type: input, output, bypass
  * su_info_p: variable to process flags on
  * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
@@ -2017,7 +2021,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	else {
 		upsdebugx(2, "%s: unknown type '%s'", __func__, type);
 		return 1;
-	}	
+	}
 
 	/* Init the phase(s) info for this device, if not already done */
 	if (*nb_phases == -1) {
@@ -2510,7 +2514,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = -1;
 	int daisychain_device_number = -1;
-	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */ 
+	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
 	char setOID[SU_INFOSIZE];

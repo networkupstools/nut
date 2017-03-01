@@ -22,6 +22,12 @@ the given 'port'.
 'flags' may be either `UPSCLI_CONN_TRYSSL` to try a SSL
 connection, or `UPSCLI_CONN_REQSSL` to require a SSL connection. 
 
+Introduced in version 2.7, an additional flag `UPSCLI_CONN_CERTVERIF`
+now exists to verify the signature offered during the SSL handshake.
+This flag should be used in conjunction with linkman:upscli_init[3]
+and/or linkman:upscli_add_host_cert[3] calls before connecting in
+order to define a CA certificate with which to verify.
+
 If SSL mode is required, this function will only return successfully if
 it is able to establish a SSL connection with the server.  Possible
 reasons for failure include no SSL support on the server, and if
