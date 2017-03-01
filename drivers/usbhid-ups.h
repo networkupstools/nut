@@ -52,7 +52,9 @@ extern bool_t	 	use_interrupt_pipe;	/* Set to FALSE if interrupt reports should 
 					/* The driver will wait for Interrupt */
 					/* and do "light poll" in the meantime */
 
-#define MAX_STRING_SIZE    	128
+#ifndef MAX_STRING_SIZE
+#define MAX_STRING_SIZE	128
+#endif
 
 
 /* --------------------------------------------------------------- */

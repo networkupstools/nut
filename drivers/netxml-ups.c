@@ -515,8 +515,8 @@ void upsdrv_makevartable(void)
 	}
 	addvar(VAR_VALUE, "shutdown_timer", buf);
 
-	snprintf(buf, sizeof(buf), "enable legacy convert_deci() for certain measurements 10x too large (default: %d)", do_convert_deci);
-	addvar(VAR_VALUE, "do_convert_deci", buf);
+	/* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
+	addvar(VAR_FLAG, "do_convert_deci", "enable legacy convert_deci() for certain measurements 10x too large");
 }
 
 void upsdrv_initups(void)

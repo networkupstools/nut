@@ -1,4 +1,4 @@
-personal_ws-1.1 en 1819 utf-8
+personal_ws-1.1 en 1834 utf-8
 ACFAIL
 ACFREQ
 ACK
@@ -28,6 +28,7 @@ AVRLCD
 AWG
 Ablerex
 ActivePower
+AdMiN
 Agrain
 Albanese
 Alexey
@@ -92,6 +93,7 @@ Brownell
 Bs
 Buildbot
 Bxx
+CA's
 CABAC
 CAs
 CCC
@@ -402,6 +404,7 @@ MINLINEV
 MINSUPPLIES
 MINTIMEL
 MLH
+MONITORed
 MPSU
 MSI
 MacKenzie's
@@ -442,6 +445,7 @@ Moskovitch
 Mozilla
 Multiplug
 MyCompany
+MyPasSw
 MyState
 NAK
 NAS
@@ -460,6 +464,7 @@ NOMOUTV
 NOMPOWER
 NONBLOCK
 NONUT
+NOPARENT
 NOTIFYCMD
 NOTIFYFLAG
 NOTIFYFLAGS
@@ -992,6 +997,7 @@ d'un
 da
 daisychain
 daisychained
+datacenter
 datadir
 datagrams
 dataok
@@ -1041,6 +1047,7 @@ dod
 dpkg
 dq
 driverexec
+drivername
 driverpath
 drv
 drvctl
@@ -1284,6 +1291,7 @@ lxyz
 mDNS
 macaddr
 macosx
+mailx
 maintainer's
 maj
 makevartable
@@ -1452,6 +1460,7 @@ pollfreq
 pollinterval
 pollonly
 popa
+portname
 powercom
 powerdev
 powerdown
@@ -1461,6 +1470,7 @@ powermand
 powermust
 powernet
 poweroff
+powerpal
 powerpanel
 powerup
 powervalue
@@ -1496,6 +1506,7 @@ queequeg
 qx
 qx's
 qxflags
+rD
 raritan
 readline
 readonly
@@ -1552,6 +1563,7 @@ se
 searchable
 secLevel
 secName
+secretpass
 securityLevel
 securityName
 sed
@@ -1661,6 +1673,7 @@ tcsetattr
 tdriver
 testime
 testtime
+testuser
 th
 timehead
 timername
@@ -1733,6 +1746,7 @@ upslog
 upslogx
 upsmon
 upsmon's
+upsmonuser
 upsname
 upsonbatt
 upspasswd
@@ -1752,6 +1766,7 @@ usbmisc
 usbups
 usd
 usec
+userid
 usermap
 username
 usernames

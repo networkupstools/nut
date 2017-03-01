@@ -1025,6 +1025,13 @@ void device_alarm_commit(const int device_number)
  * The "inited_phaseinfo" and "num_phases" are addresses of caller's own
  * variables to store the flag (if we have successfully inited) and the
  * discovered amount of phases, or NULL if caller does not want to track it.
+ *
+ * NOTE: At this time the code below, like elsewhere in the NUT codebase,
+ * assumes there are either 1 or 3 phases, when/if it has to guess (rather
+ * than use a value reported by the device). There was recently a discussion
+ * in NUT issues that 2-phase devices (aka "split phase") exist on the market,
+ * so (TODO) support for these may have to be added at some point.
+ *
  * Returns:
  *   -1     Runtime/input error (non fatal, but routine was skipped)
  *    0     Nothing changed: could not determine a value
@@ -1059,7 +1066,7 @@ int dstate_detect_phasecount(
 		           *v1n, *v2n, *v3n,
 		           *v12, *v23, *v31,
 		           *c1,  *c2,  *c3,  *c0;
-		char buf[80]; /* For concatenation of "xput_prefix" with items we want to query */
+		char buf[MAX_STRING_SIZE]; /* For concatenation of "xput_prefix" with items we want to query */
 		size_t xput_prefix_len;
 		int bufrw_max;
 		char *bufrw_ptr = NULL;
@@ -1081,6 +1088,7 @@ int dstate_detect_phasecount(
 			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is too long - function skipped", __func__);
 			return -1;
 		}
+		memset(buf, 0, sizeof(buf));
 		strncpy(buf, xput_prefix, sizeof(buf));
 		bufrw_ptr = buf + xput_prefix_len ;
 
