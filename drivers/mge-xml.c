@@ -31,6 +31,7 @@
 
 #include "netxml-ups.h"
 #include "mge-xml.h"
+#include "main.h" /* for testvar() */
 
 #define MGE_XML_VERSION		"MGEXML/0.28"
 
