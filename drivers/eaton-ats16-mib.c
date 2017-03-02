@@ -24,7 +24,7 @@
 
 #include "eaton-ats16-mib.h"
 
-#define EATON_ATS16_MIB_VERSION  "0.12"
+#define EATON_ATS16_MIB_VERSION  "0.13"
 
 #define EATON_ATS16_SYSOID       ".1.3.6.1.4.1.534.10"
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -147,13 +147,13 @@ static snmp_info_t eaton_ats16_mib[] = {
 
 	/* Ambient collection */
 	/* ats2EnvRemoteTemp.0 = INTEGER: 0 degrees Centigrade */
-	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.534.10.2.5.1.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.10.2.5.1.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteTempLowerLimit.0 = INTEGER: 5 degrees Centigrade */
 	{ "ambient.temperature.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.5.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteTempUpperLimit.0 = INTEGER: 40 degrees Centigrade */
 	{ "ambient.temperature.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.6.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteHumidity.0 = INTEGER: 0 percent */
-	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.534.10.2.5.2.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.10.2.5.2.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteHumidityLowerLimit.0 = INTEGER: 5 percent */
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.7.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */
