@@ -10,6 +10,8 @@ systemdsystemunit_DATA = \
 
 EXTRA_DIST += nut-driver.target
 
+EXTRA_DIST += nut-driver.target
+
 systemdsystemshutdown_SCRIPTS = nutshutdown
 
 else
