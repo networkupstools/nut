@@ -6,9 +6,7 @@ systemdsystemunit_DATA = \
         nut-driver@.service \
         nut-monitor.service \
         nut-server.service  \
-	nut-driver.target
-
-EXTRA_DIST += nut-driver.target
+        nut-driver.target
 
 EXTRA_DIST += nut-driver.target
 
