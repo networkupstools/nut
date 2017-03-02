@@ -3,6 +3,7 @@
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2009		Arnaud Quette <ArnaudQuette@Eaton.com>
+	2017		Jim Klimov <EvgenyKlimov@Eaton.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,17 +31,30 @@
 
 #include "netxml-ups.h"
 #include "mge-xml.h"
+#include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.26"
+#define MGE_XML_VERSION		"MGEXML/0.28"
+
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
 
 #define ST_FLAG_RW		0x0001
 #define ST_FLAG_STATIC		0x0002
 
-extern int 	shutdown_duration;
+extern int	shutdown_duration;
 
 static int	mge_ambient_value = 0;
+
+/* The number of phases is not present in XML data as a separate node,
+ * but we can infer it from presence of non-zero data on several
+ * per-line nodes. */
+static int
+	inited_phaseinfo_in = 0,
+	inited_phaseinfo_bypass = 0,
+	inited_phaseinfo_out = 0,
+	num_inphases = -1,
+	num_bypassphases = -1,
+	num_outphases = -1;
 
 static char	mge_scratch_buf[256];
 
@@ -48,6 +62,9 @@ static char	var[128];
 static char	val[128];
 
 static int	mge_shutdown_pending = 0;
+
+/* This flag flips to 0 when/if we post the detailed deprecation message */
+static int	mge_report_deprecation__convert_deci = 1;
 
 typedef enum {
 	ROOTPARENT = NE_XML_STATEROOT,
@@ -406,9 +423,33 @@ static const char *on_off_info(const char *val)
 
 static const char *convert_deci(const char *val)
 {
-	snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
+	/* Note: this routine was needed for original MGE devices, before the company
+	 * was bought out and split in 2007 between Eaton (1ph devices) and Schneider
+	 * (3ph devices). Those firmwares back when the driver was written apparently
+	 * served 10x the measured values. Not sure if any such units are in service
+	 * now (with same FW, and with no upgrade path). Reign of XML/PDC is waning.
+	 * For currently known NetXML servers, the value served is good without more
+	 * conversions. If older devices pop up in the field, we can add an estimation
+	 * by e.g. reported voltage and amps (to be an order of magnitude for power).
+	 * Alternately we can look at model names and/or firmware versions or release
+	 * dates, if we get those and if we know enough to map them to either logic. */
 
-	return mge_scratch_buf;
+	if (testvar("do_convert_deci")) {
+		/* Old code for old devices: */
+		if (mge_report_deprecation__convert_deci) {
+			upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are normally not decimated. This driver instance has however configured do_convert_deci in your ups.conf, so this behavior for old MGE NetXML-capable devices is preserved.", __func__);
+			mge_report_deprecation__convert_deci = 0;
+		}
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.1f", 0.1 * (float)atoi(val));
+		return mge_scratch_buf;
+	}
+
+	if (mge_report_deprecation__convert_deci) {
+		upslogx(LOG_NOTICE, "%s() is now deprecated, so values from XML are not decimated. If you happen to have an old MGE NetXML-capable device that now shows measurements 10x too big, and a firmware update does not solve this, please inform NUT devs via the issue tracker at %s with details about your hardware and firmware versions. Also try to enable do_convert_deci in your ups.conf", __func__, PACKAGE_BUGREPORT );
+		mge_report_deprecation__convert_deci = 0;
+	}
+	upsdebugx(5, "%s() is now deprecated, so value '%s' is not decimated. If this change broke your setup, please see details logged above.", __func__, val);
+	return val;
 }
 
 /* Ignore a zero value if the UPS is not switched off */
@@ -1408,6 +1449,7 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 
 			if (info->convert) {
 				value = info->convert(val);
+				upsdebugx(4, "-> XML variable %s [%s] which maps to NUT variable %s was converted to value %s for the NUT driver state", var, val, info->nutname, value);
 			} else {
 				value = val;
 			}
@@ -1420,6 +1462,25 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 		}
 
 		upsdebugx(3, "-> XML variable %s [%s] doesn't map to any NUT variable", var, val);
+		break;
+
+	case PI_GET_OBJECT:
+	case GET_OBJECT:
+		/* We've just got a snapshot of all runtime data, saved well into
+		 * dstate's already, so can estimate missing values if needed. */
+
+		/* For phase setup, we assume it does not change during run-time.
+		 * Essentially this means that once we've detected it is N-phase,
+		 * it stays this way for the rest of the driver run/life-time. */
+		/* To change this behavior just flip the maychange flag to "1" */
+
+		dstate_detect_phasecount("input.", 1,
+			&inited_phaseinfo_in, &num_inphases, 0);
+		dstate_detect_phasecount("input.bypass.", 1,
+			&inited_phaseinfo_bypass, &num_bypassphases, 0);
+		dstate_detect_phasecount("output.", 1,
+			&inited_phaseinfo_out, &num_outphases, 0);
+
 		break;
 	}
 

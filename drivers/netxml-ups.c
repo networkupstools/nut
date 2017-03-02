@@ -513,6 +513,9 @@ void upsdrv_makevartable(void)
 		snprintf(buf, sizeof(buf), "shutdown timer in second (default: none)");
 	}
 	addvar(VAR_VALUE, "shutdown_timer", buf);
+
+	/* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
+	addvar(VAR_FLAG, "do_convert_deci", "enable legacy convert_deci() for certain measurements 10x too large");
 }
 
 void upsdrv_initups(void)
@@ -556,7 +559,7 @@ void upsdrv_initups(void)
 		shutdown_timer = atoi(val);
 
 		if (shutdown_timer < 0) {
-			fatalx(EXIT_FAILURE, "shutdwon timer must be greater than or equal to 0");
+			fatalx(EXIT_FAILURE, "shutdown timer must be greater than or equal to 0");
 		}
 	}
 
