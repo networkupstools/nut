@@ -186,28 +186,41 @@ upsconf_getPort() {
 upsconf_getDriverMedia() {
     # "$1" = name of ups.conf section; return (echo) name and type of driver as
     # needed for dependency evaluation (what services we must depend on for this
-    # unit), tab-separated (drivername<TAB>type). Empty type for unclassified
+    # unit), newline-separated (drvname<EOL>type). Empty type for unclassified
     # results, assuming no known special dependencies (note that depending on
     # particular system's physics, both serial and network media may need USB).
     CURR_DRV="`upsconf_getDriver "$1"`" || return $?
     case "$CURR_DRV" in
         *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*|*apcsmart*|*apcupsd*)
-            printf '%s\t%s\n' "$CURR_DRV" "network" ; return ;;
+            printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
         *usb*)
-            printf '%s\t%s\n' "$CURR_DRV" "usb" ; return ;;
+            printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
         *dummy*|*clone*) # May be networked (proxy to remote NUT)
             CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *@localhost|*@|*@127.0.0.1|*@::1)
-                    printf '%s\t%s\n' "$CURR_DRV" "network-localhost" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "network-localhost" ; return ;;
                 *@*)
-                    printf '%s\t%s\n' "$CURR_DRV" "network" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
                 *)
-                    printf '%s\t%s\n' "$CURR_DRV" "" ; return ;;
+                    printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
             esac
             ;;
-        *)  printf '%s\t%s\n' "$CURR_DRV" "" ; return ;;
+        *)  printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
     esac
+}
+
+upsconf_getMedia() {
+    _DRVMED="`upsconf_getDriverMedia "$1"`" || return
+    echo "$_DRVMED" | tail -n +2
+    return 0
+}
+
+upsconf_debug() {
+    _DRV="`upsconf_getDriver "$1"`"
+    _PRT="`upsconf_getPort "$1"`"
+    _MED="`upsconf_getMedia "$1"`"
+    echo "INST: [$1]: DRV='$_DRV' PORT='$_PRT' MEDIA='$_MED'"
 }
 
 smf_registerInstance() {
@@ -270,6 +283,12 @@ upslist_readSvcs() {
     fi
 }
 
+upslist_debug() {
+    for UPSF in $UPSLIST_FILE ; do
+        upsconf_debug "$UPSF"
+    done
+}
+
 upslist_addSvcs() {
     for UPSF in $UPSLIST_FILE ; do
         if ! common_isRegistered "$UPSF" ; then
@@ -291,6 +310,7 @@ upslist_delSvcs() {
 ################# MAIN PROGRAM
 
 upslist_readFile || exit $?
+upslist_debug
 upslist_readSvcs "before manipulations"
 
 # Quickly exit if there's nothing to do; note the lists are pre-sorted
