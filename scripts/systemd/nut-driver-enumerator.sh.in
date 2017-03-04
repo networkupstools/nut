@@ -45,6 +45,21 @@
 # Set at package configuration, compiled into daemons and drivers
 [ -n "${NUT_CONF_DIR-}" ] || NUT_CONF_DIR="@sysconfdir@"
 
+# Third-party services to depend on (can be overridden by config file)
+### Note that for systemd+udev integration, it may be better to set up
+### triggers in udev, see e.g.
+###   http://stackoverflow.com/questions/18463755/linux-start-daemon-on-connected-usb-serial-dongle
+DEPSVC_USB_SYSTEMD="systemd-udev.service"
+DEPSVC_NET_FULL_SYSTEMD="network-online.target"
+DEPSVC_NET_LOCAL_SYSTEMD="network.target"
+
+# Some or all of these FMRIs may be related to dynamically changing hardware
+DEPSVC_USB_SMF="svc:/system/hotplug:default svc:/system/dbus:default svc:/system/hal:default svc:/milestone/devices:default"
+# By default there are several physical network FMRIs shipped and at most
+# only one is enabled on a particular system (e.g. :default or :nwam)
+DEPSVC_NET_FULL_SMF="svc:/network/physical"
+DEPSVC_NET_LOCAL_SMF="svc:/network/loopback:default"
+
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
     NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONF_DIR}/nut-driver-enumerator.conf"
 
@@ -169,7 +184,7 @@ upsconf_getDriverMedia() {
             CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
             case "$CURR_PORT" in
                 *@localhost|*@|*@127.0.0.1|*@::1)
-                    printf '%s\t%s\n' "$CURR_DRV" "" ; return ;;
+                    printf '%s\t%s\n' "$CURR_DRV" "network-localhost" ; return ;;
                 *@*)
                     printf '%s\t%s\n' "$CURR_DRV" "network" ; return ;;
                 *)
