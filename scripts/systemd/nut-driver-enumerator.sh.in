@@ -141,62 +141,73 @@ systemd_listInstances() {
     /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
 }
 
-################# MAIN PROGRAM
-
-if [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
-    # Read the ups.conf file and find all defined sections (names of
-    # configuration blocks for drivers that connect to a certain device
-    # using specified protocol and media)
-    [ -s "$UPSCONF" ] && \
-    UPSLIST_FILE="`egrep '^[ \t]*\[.*\][ \t]*$' "$UPSCONF" | sed 's,^[ \t]*\[\(.*\)\][ \t]*$,\1,' | sort -n`" || UPSLIST_FILE=""
-    if [ -z "$UPSLIST_FILE" ] ; then
-        echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
-        # Ok to continue - we may end up removing all instances
+upslist_readFile() {
+    if [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
+        # Read the ups.conf file and find all defined sections (names of
+        # configuration blocks for drivers that connect to a certain device
+        # using specified protocol and media)
+        [ -s "$UPSCONF" ] && \
+        UPSLIST_FILE="`egrep '^[ \t]*\[.*\][ \t]*$' "$UPSCONF" | sed 's,^[ \t]*\[\(.*\)\][ \t]*$,\1,' | sort -n`" || UPSLIST_FILE=""
+        if [ -z "$UPSLIST_FILE" ] ; then
+            echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
+            # Ok to continue - we may end up removing all instances
+        fi
+    else
+        echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
+        return 2
     fi
-else
-    echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
-    exit 2
-fi
+}
 
-UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
-if [ -z "$UPSLIST_SVCS" ] ; then
-    echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined - before manipulations" >&2
-    # Ok to continue - we may end up defining new instances
-fi
+upslist_readSvcs() {
+    UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
+    if [ -z "$UPSLIST_SVCS" ] && [ "$1" != "-" ] ; then
+        EXPLAIN=""
+        [ -z "$1" ] || EXPLAIN=" - $1"
+        echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined${EXPLAIN}" >&2
+        # Ok to continue - we may end up defining new instances
+    fi
+}
 
-# Quickly exit if there's nothing to do; note the lists are pre-sorted
-# Otherwise a non-zero exit will be done below
-[ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && exit 0
-
-if [ -n "$UPSLIST_FILE" ]; then
+upslist_addSvcs() {
     for UPSF in $UPSLIST_FILE ; do
         if ! common_isRegistered "$UPSF" ; then
             echo "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..." >&2
             $hook_registerInstance "$UPSF"
         fi
     done
+}
 
-    UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
-    if [ -z "$UPSLIST_SVCS" ] ; then
-        echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined - after checking for new config sections to define service instances" >&2
-    fi
-fi
-
-if [ -n "$UPSLIST_SVCS" ]; then
+upslist_delSvcs() {
     for UPSS in $UPSLIST_SVCS ; do
         if ! common_isFiled "$UPSS" ; then
             echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] which is no longer in config file..." >&2
             $hook_unregisterInstance "$UPSS"
         fi
     done
+}
+
+################# MAIN PROGRAM
+
+upslist_readFile || exit $?
+upslist_readSvcs "before manipulations"
+
+# Quickly exit if there's nothing to do; note the lists are pre-sorted
+# Otherwise a non-zero exit will be done below
+[ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && exit 0
+
+if [ -n "$UPSLIST_FILE" ]; then
+    upslist_addSvcs
+    upslist_readSvcs "after checking for new config sections to define service instances"
 fi
 
-UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
+if [ -n "$UPSLIST_SVCS" ]; then
+    upslist_delSvcs
+fi
+
+upslist_readSvcs
 if [ -n "$UPSLIST_SVCS" ] ; then
     echo "=== The currently defined service instances are:"
     echo "$UPSLIST_SVCS"
-else
-    echo "Error reading the list of service instances for UPS drivers, or none are defined" >&2
 fi
 
 if [ -n "$UPSLIST_FILE" ] ; then
