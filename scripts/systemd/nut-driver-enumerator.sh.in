@@ -111,8 +111,78 @@ common_isRegistered() {
     return 1
 }
 
+upsconf_getDriver() {
+    # "$1" = name of ups.conf section; return (echo) the driver name used there
+    # In the context this function is used, UPSCONF exists and section is there
+    [ -n "$1" ] || return $?
+    CURR_SECTION=""
+    while read LINE ; do
+        case "$LINE" in
+            \#*) ;;
+            \["$1"\]) CURR_SECTION="$1" ;;
+            \[*\]) CURR_SECTION="other" ;;
+            *driver*=*) if [ "$CURR_SECTION" = "$1" ]; then
+                CURR_DRV="$(echo "$LINE" | sed -e 's,\#.*$' -e 's,^[\t\ ]*,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,' -e 's,driver=\([^\t\ ]*\)[\t\ ]*.*$,\1,')" || CURR_DRV=""
+                [ -z "$CURR_DRV" ] || { echo "$CURR_DRV"; return 0; }
+                fi
+                ;;
+            *) ;;
+        esac
+    done
+    return 1
+}
+
+upsconf_getPort() {
+    # "$1" = name of ups.conf section; return (echo) the "port" name used there
+    # In the context this function is used, UPSCONF exists and section is there
+    [ -n "$1" ] || return $?
+    CURR_SECTION=""
+    while read LINE ; do
+        case "$LINE" in
+            \#*) ;;
+            \["$1"\]) CURR_SECTION="$1" ;;
+            \[*\]) CURR_SECTION="other" ;;
+            *port*=*) if [ "$CURR_SECTION" = "$1" ]; then
+                CURR_PORT="$(echo "$LINE" | sed -e 's,\#.*$' -e 's,^[\t\ ]*,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,' -e 's,port=\([^\t\ ]*\)[\t\ ]*.*$,\1,')" || CURR_PORT=""
+                [ -z "$CURR_PORT" ] || { echo "$CURR_PORT"; return 0; }
+                fi
+                ;;
+            *) ;;
+        esac
+    done
+    return 1
+}
+
+upsconf_getDriverMedia() {
+    # "$1" = name of ups.conf section; return (echo) name and type of driver as
+    # needed for dependency evaluation (what services we must depend on for this
+    # unit), tab-separated (drivername<TAB>type). Empty type for unclassified
+    # results, assuming no known special dependencies (note that depending on
+    # particular system's physics, both serial and network media may need USB).
+    CURR_DRV="`upsconf_getDriver "$1"`" || return $?
+    case "$CURR_DRV" in
+        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*|*apcsmart*|*apcupsd*)
+            printf '%s\t%s\n' "$CURR_DRV" "network" ; return ;;
+        *usb*)
+            printf '%s\t%s\n' "$CURR_DRV" "usb" ; return ;;
+        *dummy*|*clone*) # May be networked (proxy to remote NUT)
+            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            case "$CURR_PORT" in
+                *@localhost|*@|*@127.0.0.1|*@::1)
+                    printf '%s\t%s\n' "$CURR_DRV" "" ; return ;;
+                *@*)
+                    printf '%s\t%s\n' "$CURR_DRV" "network" ; return ;;
+                *)
+                    printf '%s\t%s\n' "$CURR_DRV" "" ; return ;;
+            esac
+            ;;
+        *)  printf '%s\t%s\n' "$CURR_DRV" "" ; return ;;
+    esac
+}
+
 smf_registerInstance() {
     /usr/sbin/svccfg -s nut-driver add "$1" || return
+    # TODO: Add dependencies based on upsconf_getDriverMedia()
     /usr/sbin/svcadm refresh 'nut-driver@'"$1" || return
     if [ "$AUTO_START" = yes ] ; then
         /usr/sbin/svcadm enable 'nut-driver@'"$1" || return
@@ -129,6 +199,7 @@ smf_listInstances() {
 
 systemd_registerInstance() {
     /bin/systemctl enable 'nut-driver@'"$1" || return
+    # TODO: Add dependencies based on upsconf_getDriverMedia()
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$1" || return
     fi
@@ -136,6 +207,7 @@ systemd_registerInstance() {
 systemd_unregisterInstance() {
     /bin/systemctl stop 'nut-driver@'"$1" || false
     /bin/systemctl disable 'nut-driver@'"$1"
+    # TODO: Remove dir with custom dependencies if present
 }
 systemd_listInstances() {
     /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
