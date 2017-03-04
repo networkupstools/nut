@@ -213,13 +213,13 @@ upsconf_getDriverMedia() {
 smf_registerInstance() {
     /usr/sbin/svccfg -s nut-driver add "$1" || return
     # TODO: Add dependencies based on upsconf_getDriverMedia()
-    /usr/sbin/svcadm refresh 'nut-driver@'"$1" || return
+    /usr/sbin/svcadm refresh 'nut-driver:'"$1" || return
     if [ "$AUTO_START" = yes ] ; then
-        /usr/sbin/svcadm enable 'nut-driver@'"$1" || return
+        /usr/sbin/svcadm enable 'nut-driver:'"$1" || return
     fi
 }
 smf_unregisterInstance() {
-    /usr/sbin/svcadm disable -ts 'nut-driver@'"$1" || false
+    /usr/sbin/svcadm disable -ts 'nut-driver:'"$1" || false
     /usr/sbin/svccfg -s nut-driver delete "$1"
 }
 smf_listInstances() {
