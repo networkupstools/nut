@@ -1,6 +1,6 @@
 <!-- upsstats template file -->
 
-<!-- 
+<!--
 	This (upsstats.html) is the default template file which is used
 	when upsstats.cgi is loaded with no arguments.
 
@@ -24,7 +24,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 @REFRESH@
 <title>
-Network UPS Tools upsstats 
+Network UPS Tools upsstats
 @VERSION@
 : UPS Status
 </title>
