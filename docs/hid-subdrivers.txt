@@ -144,7 +144,7 @@ You should save this information to a file, e.g.
 
 You can create an initial "stub" subdriver for your device by using
 script scripts/subdriver/gen-usbhid-subdriver.sh. Note: this only creates
-a "stub" and needs to be futher customized to be useful (see
+a "stub" and needs to be further customized to be useful (see
 CUSTOMIZATION below).
 
 Use the script as follows:
