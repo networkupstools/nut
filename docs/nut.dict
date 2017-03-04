@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2395 utf-8
+personal_ws-1.1 en 2399 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -173,6 +173,7 @@ ChangeLog
 ChargdV
 Chatziathanassiou
 CheckUPS
+Checksum
 Chiou
 Chu
 Cichowski
@@ -1054,6 +1055,7 @@ Ulf
 Unices
 Unitek
 Upsonic
+Ut
 V'ger
 VARDESC
 VARTYPE
@@ -1300,6 +1302,7 @@ chargedvbattery
 chargermode
 chargetime
 charset
+checksum
 chgrp
 chmod
 chown
@@ -2205,6 +2208,7 @@ testtime
 testuser
 th
 timehead
+timeline
 timername
 tiocm
 tios
