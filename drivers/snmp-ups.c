@@ -2231,7 +2231,7 @@ bool_t snmp_ups_walk(int mode)
 			bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
 			if (su_info_p->flags & SU_BYPPHASES) {
 				upsdebugx(1, "Check bypass_phases (%ld)", *bypass_phases);
-				if (process_phase_data("bypass", bypass_phases, su_info_p) == 1)
+				if (process_phase_data("input.bypass", bypass_phases, su_info_p) == 1)
 					continue;
 			}
 
