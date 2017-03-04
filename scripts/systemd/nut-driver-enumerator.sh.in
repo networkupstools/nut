@@ -96,6 +96,10 @@ if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
         SERVICE_FRAMEWORK="systemd"
 fi
 
+# Cache needed bits of ups.conf to speed up later parsing. Note that these
+# data are needed for most operations, and populated by upslist_readFile()
+UPSCONF_DATA=""
+
 # List of configured UPSes in the config-file
 UPSLIST_FILE=""
 # List of configured service instances for UPS drivers
@@ -141,46 +145,46 @@ common_isRegistered() {
     return 1
 }
 
-upsconf_getDriver() {
-    # "$1" = name of ups.conf section; return (echo) the driver name used there
-    # In the context this function is used, UPSCONF exists and section is there
+upsconf_getValue() {
+    # "$1" = name of ups.conf section; $2 = name of config key; echo the value
     [ -n "$1" ] || return $?
+    [ -n "$2" ] || return $?
     CURR_SECTION=""
+    echo "$UPSCONF_DATA" | \
     while read LINE ; do
         case "$LINE" in
-            \#*) ;;
             \["$1"\]) CURR_SECTION="$1" ;;
-            \[*\]) CURR_SECTION="other" ;;
-            *driver*=*) if [ "$CURR_SECTION" = "$1" ]; then
-                CURR_DRV="$(echo "$LINE" | sed -e 's,\#.*$' -e 's,^[\t\ ]*,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,' -e 's,driver=\([^\t\ ]*\)[\t\ ]*.*$,\1,')" || CURR_DRV=""
-                [ -z "$CURR_DRV" ] || { echo "$CURR_DRV"; return 0; }
+            \[*\])
+                [ "$CURR_SECTION" = "$1" ] && break
+                CURR_SECTION="other"
+                ;;
+            "$2"=*) if [ "$CURR_SECTION" = "$1" ]; then
+#                    VALUE="$(echo "$LINE" | sed -e 's,\#.*$,,' -e 's,^[\t\ ]*,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,' -e 's,'"$2"'=\([^\t\ ]*\)[\t\ ]*.*$,\1,')"
+                    VALUE="$(echo "$LINE" | sed -e 's,^'"$2"'=\([^\t\ ]*\)[\t\ ]*.*$,\1,')"
+                    RES=$?
+                    echo "$VALUE"
+                    return $RES
                 fi
                 ;;
             *) ;;
         esac
     done
+    # Nothing matched
     return 1
+}
+
+upsconf_getDriver() {
+    # "$1" = name of ups.conf section; return (echo) the driver name used there
+    # In the context this function is used, UPSCONF exists and section is there
+    upsconf_getValue "$1" "driver"
+    return $?
 }
 
 upsconf_getPort() {
     # "$1" = name of ups.conf section; return (echo) the "port" name used there
     # In the context this function is used, UPSCONF exists and section is there
-    [ -n "$1" ] || return $?
-    CURR_SECTION=""
-    while read LINE ; do
-        case "$LINE" in
-            \#*) ;;
-            \["$1"\]) CURR_SECTION="$1" ;;
-            \[*\]) CURR_SECTION="other" ;;
-            *port*=*) if [ "$CURR_SECTION" = "$1" ]; then
-                CURR_PORT="$(echo "$LINE" | sed -e 's,\#.*$' -e 's,^[\t\ ]*,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,' -e 's,port=\([^\t\ ]*\)[\t\ ]*.*$,\1,')" || CURR_PORT=""
-                [ -z "$CURR_PORT" ] || { echo "$CURR_PORT"; return 0; }
-                fi
-                ;;
-            *) ;;
-        esac
-    done
-    return 1
+    upsconf_getValue "$1" "port"
+    return $?
 }
 
 upsconf_getDriverMedia() {
@@ -225,7 +229,27 @@ upsconf_debug() {
 
 smf_registerInstance() {
     /usr/sbin/svccfg -s nut-driver add "$1" || return
-    # TODO: Add dependencies based on upsconf_getDriverMedia()
+
+    DEPSVC=""
+    DEPREQ=""
+    _MED="`upsconf_getMedia "$1"`"
+    case "$_MED" in
+        usb)
+            DEPSVC="$DEPSVC_USB_SMF"
+            DEPREQ="$DEPREQ_USB_SMF" ;;
+        network-localhost)
+            DEPSVC="$DEPSVC_NET_LOCAL_SMF"
+            DEPREQ="$DEPREQ_NET_LOCAL_SMF" ;;
+        network)
+            DEPSVC="$DEPSVC_NET_FULL_SMF"
+            DEPREQ="$DEPREQ_NET_FULL_SMF" ;;
+        '') ;;
+        *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
+    esac
+    if [ -n "$DEPSVC" ]; then
+        echo "Adding '$DEPREQ' dependency for '$1' on '$DEPSVC'..."
+    fi
+
     /usr/sbin/svcadm refresh 'nut-driver:'"$1" || return
     if [ "$AUTO_START" = yes ] ; then
         /usr/sbin/svcadm enable 'nut-driver:'"$1" || return
@@ -242,7 +266,27 @@ smf_listInstances() {
 
 systemd_registerInstance() {
     /bin/systemctl enable 'nut-driver@'"$1" || return
-    # TODO: Add dependencies based on upsconf_getDriverMedia()
+
+    DEPSVC=""
+    DEPREQ=""
+    _MED="`upsconf_getMedia "$1"`"
+    case "$_MED" in
+        usb)
+            DEPSVC="$DEPSVC_USB_SYSTEMD"
+            DEPREQ="$DEPREQ_USB_SYSTEMD" ;;
+        network-localhost)
+            DEPSVC="$DEPSVC_NET_LOCAL_SYSTEMD"
+            DEPREQ="$DEPREQ_NET_LOCAL_SYSTEMD" ;;
+        network)
+            DEPSVC="$DEPSVC_NET_FULL_SYSTEMD"
+            DEPREQ="$DEPREQ_NET_FULL_SYSTEMD" ;;
+        '') ;;
+        *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
+    esac
+    if [ -n "$DEPSVC" ]; then
+        echo "Adding '$DEPREQ' dependency for '$1' on '$DEPSVC'..."
+    fi
+
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$1" || return
     fi
@@ -257,19 +301,23 @@ systemd_listInstances() {
 }
 
 upslist_readFile() {
-    if [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
-        # Read the ups.conf file and find all defined sections (names of
-        # configuration blocks for drivers that connect to a certain device
-        # using specified protocol and media)
+    # Read the ups.conf file and find all defined sections (names of
+    # configuration blocks for drivers that connect to a certain device
+    # using specified protocol and media)
+    if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
         [ -s "$UPSCONF" ] && \
-        UPSLIST_FILE="`egrep '^[ \t]*\[.*\][ \t]*$' "$UPSCONF" | sed 's,^[ \t]*\[\(.*\)\][ \t]*$,\1,' | sort -n`" || UPSLIST_FILE=""
-        if [ -z "$UPSLIST_FILE" ] ; then
-            echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
-            # Ok to continue - we may end up removing all instances
-        fi
+        UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^[\t\ ]*,,' -e 's,^\#.*$,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,g' -e 's,=\"\([^\ \t]*\)\"$,=\1,' | egrep '^(\[.*\]|driver=|port=)')" || \
+        UPSCONF_DATA=""
     else
         echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
         return 2
+    fi
+
+    [ -n "$UPSCONF_DATA" ] && \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" || UPSLIST_FILE=""
+    if [ -z "$UPSLIST_FILE" ] ; then
+        echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
+        # Ok to continue - we may end up removing all instances
     fi
 }
 
