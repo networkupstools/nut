@@ -43,7 +43,7 @@
 
 # Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
 # Set at package configuration, compiled into daemons and drivers
-NUT_CONF_DIR="@sysconfdir@"
+[ -n "${NUT_CONF_DIR-}" ] || NUT_CONF_DIR="@sysconfdir@"
 
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
     NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONF_DIR}/nut-driver-enumerator.conf"
