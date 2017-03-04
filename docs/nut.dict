@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2399 utf-8
+personal_ws-1.1 en 2404 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -388,6 +388,7 @@ Håvard
 IANA
 IDEN
 IDentifiers
+ID's
 IFBETWEEN
 IFSUPP
 IGN
@@ -427,6 +428,7 @@ Jageson
 Jarosch
 Jasuny
 Javadoc
+JavaScript
 Javascript
 Joon
 Jumpered
@@ -681,6 +683,8 @@ OvrLds
 PBT
 PBTn
 PBTnn
+PC
+PC's
 PDC
 PDUs
 PDX
@@ -2202,6 +2206,7 @@ tcpdump
 tcsetattr
 td
 tdriver
+terminal's
 termios
 testime
 testtime
