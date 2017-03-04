@@ -24,20 +24,36 @@
 #           It assumes the user has adequate permissions to inspect and create
 #           services (e.g. is a root or has proper RBAC profiles to do so).
 #           It helps service frameworks such as Linux systemd and Solaris SMF.
+#           When executed, this script looks for all configured ups.conf
+#           sections and registered service instances, and makes these two
+#           lists match up. No arguments ATM. Returns exit codes:
+#               0   Sections and services already match up
+#               42  Sections and services differed, but now match up -
+#                   now the caller should likely restart some services.
+#                   Note that the drivers' service instances were started or
+#                   stopped as required (by AUTO_START=yes) - but maybe the
+#                   upsd or upsmon services should restart.
+#               13  Sections and services differed, and still do not match up
+#               1   Bad inputs, e.g. unrecognized service management framework
+#               2   Absent or unreadable ups.conf file
 #  \todo    Complete the sample basic support for Solaris SMF (needs support
 #           for the service definitions similar to systemd NUT units to be
 #           added to that platform first). Parts in this script are finished.
 #
 
+# Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
+# Set at package configuration, compiled into daemons and drivers
+NUT_CONF_DIR="@sysconfdir@"
+
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
-    NUT_DRIVER_ENUMERATOR_CONF="@sysconfdir@/nut-driver-enumerator.conf"
+    NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONF_DIR}/nut-driver-enumerator.conf"
 
 [ -s "${NUT_DRIVER_ENUMERATOR_CONF}" ] && \
     echo "Sourcing config file: ${NUT_DRIVER_ENUMERATOR_CONF}" && \
     . "${NUT_DRIVER_ENUMERATOR_CONF}"
 
 [ -z "${UPSCONF-}" ] && \
-    UPSCONF="@sysconfdir@/ups.conf"
+    UPSCONF="${NUT_CONF_DIR}/ups.conf"
 
 # Start a freshly-registered unit?
 [ -z "${AUTO_START-}" ] && AUTO_START=yes
@@ -127,20 +143,25 @@ systemd_listInstances() {
 
 ################# MAIN PROGRAM
 
-if [ -f "$UPSCONF" ] ; then
+if [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
+    # Read the ups.conf file and find all defined sections (names of
+    # configuration blocks for drivers that connect to a certain device
+    # using specified protocol and media)
     [ -s "$UPSCONF" ] && \
     UPSLIST_FILE="`egrep '^[ \t]*\[.*\][ \t]*$' "$UPSCONF" | sed 's,^[ \t]*\[\(.*\)\][ \t]*$,\1,' | sort -n`" || UPSLIST_FILE=""
     if [ -z "$UPSLIST_FILE" ] ; then
         echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
+        # Ok to continue - we may end up removing all instances
     fi
 else
-    echo "FATAL: The '$UPSCONF' file does not exist" >&2
+    echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
     exit 2
 fi
 
 UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
 if [ -z "$UPSLIST_SVCS" ] ; then
-    echo "Error reading the list of service instances for UPS drivers, or none are defined" >&2
+    echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined - before manipulations" >&2
+    # Ok to continue - we may end up defining new instances
 fi
 
 # Quickly exit if there's nothing to do; note the lists are pre-sorted
@@ -157,7 +178,7 @@ if [ -n "$UPSLIST_FILE" ]; then
 
     UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
     if [ -z "$UPSLIST_SVCS" ] ; then
-        echo "Error reading the list of service instances for UPS drivers, or none are defined" >&2
+        echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined - after checking for new config sections to define service instances" >&2
     fi
 fi
 
@@ -184,6 +205,6 @@ if [ -n "$UPSLIST_FILE" ] ; then
 fi
 
 # Return 42 if there was a change applied succesfully
-# (but e.g. some services should restart)
+# (but e.g. some services should restart - upsd, maybe upsmon)
 [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && return 42
 exit 13
