@@ -302,7 +302,7 @@ might look like this:
 
 	if (test -f /etc/killpower)
 	then
-		/usr/local/ups/sbin/upsdrvctl shutdown
+		/sbin/upsdrvctl shutdown
 
 		sleep 600	# this should never return
 
@@ -404,7 +404,7 @@ For my development system this yields the following /dev entries:
 
 - Switch to root, then start the drivers:
 
-	# /usr/local/ups/sbin/upsdrvctl -u nutdev start
+	# upsdrvctl -u nutdev start
 
 - The listing for /var/state/ups then looks like this:
 
@@ -428,7 +428,7 @@ make the files owned by root.nut, with mode 0640.
 
 Once the config files are ready, start upsd:
 
-	# /usr/local/ups/sbin/upsd -u nutsrv
+	# upsd -u nutsrv
 
 Check your syslog to be sure everything's happy, then be sure to
 update your startup scripts so it uses this procedure on your next
@@ -840,7 +840,7 @@ Implement this by modifying your shutdown script like this:
 
 	if (test -f /etc/killpower)
 	then
-		/usr/local/ups/sbin/upsdrvctl shutdown
+		/sbin/upsdrvctl shutdown
 
 		sleep 120
 

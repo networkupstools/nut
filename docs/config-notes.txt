@@ -116,7 +116,11 @@ image:images/simple.png[]
 Driver configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-Create one section per UPS in /usr/local/ups/etc/ups.conf
+Create one section per UPS in ups.conf
+
+NOTE: The default path for a source installation is /usr/local/ups/etc, while
+packaged installation will vary. For example, /etc/nut is used on Debian and
+derivatives, while /etc/upsd is used on RedHat and derivatives.
 
 To find out which driver to use, check the <<HCL,Hardware Compatibility List>>,
 or data/driver.list.
@@ -158,14 +162,14 @@ Starting the driver(s)
 
 Start the driver(s) for your hardware:
 
-	/usr/local/ups/sbin/upsdrvctl start
+	upsdrvctl start
 
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
 should get back to the command prompt a few seconds later.  For
 reference, a successful start of the `usbhid-ups` driver looks like this:
 
-	# /usr/local/ups/sbin/upsdrvctl start
+	# upsdrvctl start
 	Network UPS Tools - Generic HID driver 0.34 (2.4.1)
 	USB communication driver 0.31
 	Using subdriver: MGE HID 1.12
@@ -227,12 +231,12 @@ Starting the data server
 
 Start the network data server:
 
-	/usr/local/ups/sbin/upsd
+	upsd
 
 Make sure it is able to connect to the driver(s) on your system.
 A successful run looks like this:
 
-	# /usr/local/ups/sbin/upsd
+	# upsd
 	Network UPS Tools upsd 2.4.1
 	listening on 127.0.0.1 port 3493
 	listening on ::1 port 3493
@@ -257,7 +261,7 @@ Status data
 
 Make sure that the UPS is providing good status data.
 
-	/usr/local/ups/bin/upsc myupsname@localhost ups.status
+	upsc myupsname@localhost ups.status
 
 You should see just one line in response:
 
@@ -277,7 +281,7 @@ All data
 
 Look at all of the status data which is being monitored.
 
-	/usr/local/ups/bin/upsc myupsname@localhost
+	upsc myupsname@localhost
 
 What happens now depends on the kind of device and driver you have.
 In the list, you should see ups.status with the same value you got
@@ -436,12 +440,12 @@ Reloading the data server
 Reload upsd.  Depending on your configuration, you may be able to
 do this without stopping upsd:
 
-	/usr/local/ups/sbin/upsd -c reload
+	upsd -c reload
 
 If that doesn't work (check the syslog), just restart it:
 
-	/usr/local/ups/sbin/upsd -c stop
-	/usr/local/ups/sbin/upsd
+	upsd -c stop
+	upsd
 
 NOTE: if you want to make reloading work later, see the entry in the
 link:FAQ.html[FAQ] about starting upsd as a different user.
@@ -518,7 +522,7 @@ does local shutdown tasks before calling init.
 Start upsmon
 ^^^^^^^^^^^^
 
-	/usr/local/ups/sbin/upsmon
+	upsmon
 
 If it complains about something, then check your configuration.
 
@@ -569,7 +573,7 @@ linkman:upsmon.conf[5]), using this as an example:
 	if (test -f /etc/killpower)
 	then
 		echo "Killing the power, bye!"
-		/usr/local/ups/bin/upsdrvctl shutdown
+		/sbin/upsdrvctl shutdown
 
 		sleep 120
 
@@ -605,14 +609,14 @@ restarts when power returns.
 The first step is to see how upsdrvctl will behave without actually turning off
 power. To do so, use the '-t' argument:
 
-	/usr/local/ups/bin/upsdrvctl -t shutdown
+	upsdrvctl -t shutdown
 
 It will display the sequence without actually calling the drivers.
 
 
 You can finally test a forced shutdown sequence (FSD) using:
 
-	/usr/local/ups/sbin/upsmon -c fsd
+	upsmon -c fsd
 
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.

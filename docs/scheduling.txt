@@ -245,7 +245,11 @@ make upsmon set the "forced shutdown" (FSD) flag on the upsd so your
 slave systems shut down early too.  Just do something like this in your
 CMDSCRIPT:
 
-	/usr/local/ups/sbin/upsmon -c fsd
+	/sbin/upsmon -c fsd
+
+NOTE: the path to upsmon must be provided. The default for a source installation
+is /usr/local/ups (so /usr/local/ups/sbin/upsmon), while packaged installation
+will generally comply to FHS (so /sbin/upsmon).
 
 It's not a good idea to call your system's shutdown routine directly 
 from the CMDSCRIPT, since there's no synchronization with the slave
