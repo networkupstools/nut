@@ -1,7 +1,22 @@
 [Unit]
+# This unit starts early in system lifecycle to set up nut-driver instances.
+# End-user may also restart this unit after editing ups.conf to automatically
+# un-register or add new instances as appropriate.
 Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances
 After=local-fs.target
 Before=nut-driver.target
+
+[Service]
+### Script needs privileges to restart units
+#User=@RUN_AS_USER@
+#Group=@RUN_AS_GROUP@
+User=root
+# it is expected that the process has to exit before systemd starts follow-up units
+Type=oneshot
+# the service shall be considered active even when all its processes exited
+RemainAfterExit=yes
+ExecStart=@libexecdir@/nut-driver-enumerator.sh
+ExecReload=@libexecdir@/nut-driver-enumerator.sh
 
 [Install]
 WantedBy=multi-user.target
