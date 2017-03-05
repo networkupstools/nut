@@ -1714,6 +1714,7 @@ AC_OUTPUT([
  scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/Aix/nut.init
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
  scripts/python/Makefile
