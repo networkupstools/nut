@@ -9,6 +9,7 @@
 .deps/
 .libs/
 .inst/
+/_install_pkgprotodir/
 Makefile
 Makefile.in
 ## Parent directory only
