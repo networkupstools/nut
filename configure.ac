@@ -1535,7 +1535,9 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-dnl expand ${sysconfdir} and write it out
+dnl expand ${sysconfdir} and write it out - note that most packages
+dnl override it to be /etc/nut, /etc/ups or similar, while the
+dnl autotools default would be $prefix/etc
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
