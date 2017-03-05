@@ -1,5 +1,19 @@
 EXTRA_DIST = makelocal.sh 
 
+if WITH_SOLARIS_SMF
+solarissmfmethoddir = /lib/svc/method
+solarissmfmanifestdir = /var/svc/manifest/application
+solarissmfmethod_SCRIPTS = \
+	../systemd/nut-driver-enumerator.sh \
+	svc-nut \
+	svc-nut-client
+solarissmfmanifest_DATA = \
+	nut.xml \
+	nut-client.xml \
+	nut-driver.xml \
+	nut-driver-enumerator.xml
+endif
+
 package: makelocal.sh pkginfo
 	$ cd @prefix@; $ find . -print | pkgproto > prototype1
 	$ cp makelocal.sh precheck.py pkginfo nut preinstall postinstall preremove postremove preproto.pl @prefix@ 

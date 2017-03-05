@@ -1181,6 +1181,34 @@ fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
 PKG_PROG_PKG_CONFIG
+AC_MSG_CHECKING(whether to install Solaris SMF files)
+solarissmf="auto"
+AC_ARG_WITH([solaris-smf],
+	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarissmf="auto"
+		;;
+	yes|no)
+		solarissmf="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarissmf" = xauto ; then
+	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+		solarissmf="yes"
+	else
+		solarissmf="no"
+	fi
+fi
+AC_MSG_RESULT([${solarissmf}])
+AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
+
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
@@ -1640,6 +1668,12 @@ AC_OUTPUT([
  scripts/systemd/nut-driver-enumerator.service
  scripts/systemd/nut-driver-enumerator.sh
  scripts/systemd/nutshutdown
+ scripts/Solaris/nut-driver-enumerator.xml
+ scripts/Solaris/nut-driver.xml
+ scripts/Solaris/nut-client.xml
+ scripts/Solaris/nut.xml
+ scripts/Solaris/svc-nut
+ scripts/Solaris/svc-nut-client
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
  scripts/Solaris/postinstall

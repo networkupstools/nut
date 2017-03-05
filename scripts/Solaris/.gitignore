@@ -1,4 +1,12 @@
 /nut
 /pkginfo
+/preinstall
 /postinstall
 /preremove
+/postremove
+/svc-nut
+/svc-nut-client
+/nut-driver.xml
+/nut-driver-enumerator.xml
+/nut-client.xml
+/nut.xml
