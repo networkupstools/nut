@@ -139,7 +139,7 @@ setver:
 	@echo "Error: 'make setver' no longer exists."
 	@echo "Edit configure.in to set version number."
 package:
-	if test -z "$$DESTDIR" ; then DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; fi ; export DESTDIR; \
+	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	if test `uname -s` = "HP-UX"; then \
 		cd scripts/HP-UX; \
 		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package; \
