@@ -34,9 +34,13 @@ package: $(SOLARIS_PACKAGE_TARGETS)
 # NOTE: This assumes the rest of the product has already been built
 #       and installed under PROTOTYPE_DIR, but declares no explicit
 #       dependency on that
-package-solaris-svr4: makelocal.sh pkginfo
+SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS = makelocal.sh precheck.py preproto.pl
+SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremove nut
+SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
+package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
 	cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1
-	cp makelocal.sh precheck.py pkginfo nut preinstall postinstall preremove postremove preproto.pl $(PROTOTYPE_DIR)
+	cp $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA) $(PROTOTYPE_DIR)
+	cd $(PROTOTYPE_DIR) && chmod +x $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS)
 	cd $(PROTOTYPE_DIR) && perl preproto.pl
 	cd $(PROTOTYPE_DIR) && python precheck.py
 	cd $(PROTOTYPE_DIR) && rm -f prototype1
