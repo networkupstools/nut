@@ -9,14 +9,19 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	# Unconfigure SMF services
 	for S in nut-client nut-driver-enumerator nut ; do
 		/usr/sbin/svcadm disable -s "$S"
+		/usr/sbin/svccfg delete "$S" || \
 		/usr/sbin/svccfg -s "$S" delete || \
 		/usr/sbin/svccfg -s "$S" delete default
 	done
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
 		/usr/sbin/svcadm disable -s "$S"
-		/usr/sbin/svccfg -s "nut-driver" delete "`echo "$S" | sed 's,^.*:\([^:]*\)$,\1,'`"
+	done
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
+		/usr/sbin/svccfg -s "nut-driver" delete "$S" || \
+		/usr/sbin/svccfg delete "$S"
 	done
 	S="nut-driver" && \
+		/usr/sbin/svccfg delete "$S" || \
 		/usr/sbin/svccfg -s "$S" delete || \
 		/usr/sbin/svccfg -s "$S" delete default
 else
