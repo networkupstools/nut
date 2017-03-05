@@ -14,12 +14,18 @@ solarissmfmanifest_DATA = \
 	nut-driver-enumerator.xml
 endif
 
+SOLARIS_PACKAGE_TARGETS =
+
 # TODO: Define support for IPS packaging
-if WITH_SOLARIS_IPS
-package: package-ips
-else
-package: package-svr4
+if WITH_SOLARIS_PKG_IPS
+SOLARIS_PACKAGE_TARGETS += package-ips
 endif
+
+if WITH_SOLARIS_PKG_SVR4
+SOLARIS_PACKAGE_TARGETS += package-svr4
+endif
+
+package: $(SOLARIS_PACKAGE_TARGETS)
 
 package-svr4: makelocal.sh pkginfo
 	cd @prefix@ && find . -print | pkgproto > prototype1
@@ -33,3 +39,6 @@ package-svr4: makelocal.sh pkginfo
 		i386|sparc) \
 			mv NUT_solaris_package.local.gz NUT_solaris_$${UNAME_P}_package@PACKAGE_VERSION@.local.gz;; \
 	esac
+
+package-ips:
+	@echo "Target $@ is not implemented yet"

@@ -1209,6 +1209,62 @@ fi
 AC_MSG_RESULT([${solarissmf}])
 AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
 
+AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
+solarispkg_svr4="auto"
+AC_ARG_WITH([solaris-pkg-svr4],
+	AS_HELP_STRING([--with-solaris-pkg-svr4=(yes|auto|no)], [Enable construction of Solaris SVR4 packages (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarispkg_svr4="auto"
+		;;
+	yes|no)
+		solarispkg_svr4="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-svr4=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarispkg_svr4" = xauto ; then
+	if test -x /usr/bin/pkgtrans && test -x /usr/bin/pkgmk && test -x /usr/bin/pkgproto ; then
+		solarispkg_svr4="yes"
+	else
+		solarispkg_svr4="no"
+	fi
+fi
+AC_MSG_RESULT([${solarispkg_svr4}])
+AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
+
+AC_MSG_CHECKING(whether to make Solaris IPS packages)
+solarispkg_ips="auto"
+AC_ARG_WITH([solaris-pkg-ips],
+	AS_HELP_STRING([--with-solaris-pkg-ips=(yes|auto|no)], [Enable construction of Solaris IPS packages (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarispkg_ips="auto"
+		;;
+	yes|no)
+		solarispkg_ips="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-ips=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarispkg_ips" = xauto ; then
+	if test -x /usr/bin/pkg && test -x /usr/bin/pkgmogrify && test -x /usr/bin/pkgdepend ; then
+		solarispkg_ips="yes"
+	else
+		solarispkg_ips="no"
+	fi
+fi
+AC_MSG_RESULT([${solarispkg_ips}])
+AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
+
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
