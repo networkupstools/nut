@@ -246,13 +246,25 @@ smf_registerInstance() {
         '') ;;
         *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
     esac
+
+    TARGET_FMRI="nut-driver:$1"
     if [ -n "$DEPSVC" ]; then
+        [ -n "$DEPREQ" ] || DEPREQ="optional_all"
         echo "Adding '$DEPREQ' dependency for '$1' on '$DEPSVC'..."
+
+        DEPPG="nut-driver-enumerator-generated"
+        RESTARTON="refresh"
+        svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
+        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
+        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
+        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
+        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "($DEPSVC)" && \
+        echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
-    /usr/sbin/svcadm refresh 'nut-driver:'"$1" || return
+    /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
-        /usr/sbin/svcadm enable 'nut-driver:'"$1" || return
+        /usr/sbin/svcadm enable "${TARGET_FMRI}" || return
     fi
 }
 smf_unregisterInstance() {
