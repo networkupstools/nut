@@ -4,6 +4,7 @@
 /postinstall
 /preremove
 /postremove
+/preproto.pl
 /svc-nut
 /svc-nut-client
 /nut-driver.xml

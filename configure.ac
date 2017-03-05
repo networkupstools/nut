@@ -1736,6 +1736,7 @@ AC_OUTPUT([
  scripts/Solaris/postinstall
  scripts/Solaris/preremove
  scripts/Solaris/postremove
+ scripts/Solaris/preproto.pl
  scripts/Solaris/nut
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
