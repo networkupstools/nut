@@ -63,7 +63,7 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='@DATADIR@/solaris-smf/method/nut-driver-enumerator.sh'
+		exec='@datadir@/solaris-smf/method/nut-driver-enumerator.sh'
 		timeout_seconds='0'/>
 
 		<exec_method

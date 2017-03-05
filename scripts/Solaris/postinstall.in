@@ -56,11 +56,11 @@ fi
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	# Register SMF services
 	for S in nut-client nut-driver-enumerator nut-driver nut ; do
-		/usr/sbin/svccfg import "@DATADIR@/solaris-smf/$S.xml"
+		/usr/sbin/svccfg import "@datadir@/solaris-smf/$S.xml"
 	done
 else
 	# Put init script in /etc/init.d
-	cp -pf "@DATADIR@/solaris-init/nut" /etc/init.d
+	cp -pf "@datadir@/solaris-init/nut" /etc/init.d
 	chown root:bin /etc/init.d/nut
 	chmod 744 /etc/init.d/nut
 

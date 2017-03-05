@@ -101,7 +101,7 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='@DATADIR@/solaris-smf/method/svc-nut %m'
+		exec='@datadir@/solaris-smf/method/svc-nut %m'
 		timeout_seconds='60'/>
 
 		<exec_method
