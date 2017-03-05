@@ -5,15 +5,16 @@
 # Adaptation copyright (C) 2016-2017 Jim Klimov
 
 if [ -z "$SMF_FMRI" ]; then
-    echo "$0 must be called in SMF context!" &>2
-    exit 1
+	echo "$0 must be called in SMF context!" >&2
+	exit 1
 fi
 
 # smf(5)
 . /lib/svc/share/smf_include.sh || exit
 
 NUT_DIR="@prefix@"
-NUT_SBIN_DIR="$NUT_DIR/sbin"
+NUT_SBIN_DIR="${NUT_DIR}/sbin"
+NUT_LIB_DIR="${NUT_DIR}/lib"
 NUT_RUN_DIR="@PIDPATH@/nut"
 CONFIG="@CONFPATH@/nut.conf"
 NUTUSER="@RUN_AS_USER@"
@@ -25,7 +26,7 @@ fi
 
 ups_start () {
 	if [ "$MODE" = "none" ];then
-		echo "No NUT mode set" >&2
+		echo "No NUT mode set, not starting anything" >&2
 		exit $SMF_EXIT_ERR_CONFIG
 	fi
 
@@ -35,7 +36,7 @@ ups_start () {
 	chmod 770 "$NUT_RUN_DIR" \
 	|| exit $SMF_EXIT_ERR_FATAL
 
-	"${NUT_SBIN_DIR}"/upsmon #> /dev/null 2>&1
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsmon #> /dev/null 2>&1
 }
 
 case "$1" in
