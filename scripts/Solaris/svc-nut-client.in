@@ -14,9 +14,9 @@ fi
 
 NUT_DIR="@prefix@"
 NUT_SBIN_DIR="$NUT_DIR/sbin"
-NUT_RUN_DIR="/var/run/nut"
-NUTUSER="nut"
-NUTGROUP="nut"
+NUT_RUN_DIR="@PIDPATH@/nut"
+NUTUSER="@RUN_AS_USER@"
+NUTGROUP="@RUN_AS_GROUP@"
 
 ups_start () {
 	if [ "$MODE" = "none" ];then
