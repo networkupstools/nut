@@ -40,10 +40,10 @@ package-svr4: makelocal.sh pkginfo
 	cd $(PROTOTYPE_DIR) && python precheck.py
 	cd $(PROTOTYPE_DIR) && rm -f prototype1
 	cd $(PROTOTYPE_DIR) && ./makelocal.sh
-	cp $(PROTOTYPE_DIR)/*.gz $(srcdir)
+	cp $(PROTOTYPE_DIR)/*.gz $(builddir)
 	UNAME_P="`uname -p`" && case "$${UNAME_P}" in \
 		i386|sparc) \
-			mv NUT_solaris_package.local.gz "NUT_solaris_$${UNAME_P}_package@PACKAGE_VERSION@.local.gz" ;; \
+			mv -f NUT_solaris_package.local.gz "NUT_solaris_$${UNAME_P}_package@PACKAGE_VERSION@.local.gz" ;; \
 	esac
 
 package-ips:
