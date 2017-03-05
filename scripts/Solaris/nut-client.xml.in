@@ -38,6 +38,14 @@
 		value='svc:/system/filesystem/usr:default'/>
 		</dependency>
 
+		<dependency
+		name='config-files'
+		type='path'
+		grouping='require_all'
+		restart_on='refresh'>
+			<service_fmri value='file://localhost@CONFPATH@/upsmon.conf' />
+		</dependency>
+
 	<!--
 	  Wait for syslog to be started in order to write system
 	  messages from the kernel.

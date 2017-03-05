@@ -38,6 +38,24 @@
 		value='svc:/system/filesystem/usr:default'/>
 		</dependency>
 
+		<dependency
+		name='config-files'
+		type='path'
+		grouping='require_all'
+		restart_on='refresh'>
+			<service_fmri value='file://localhost@CONFPATH@/ups.conf' />
+		</dependency>
+
+	<!--
+	  Prerequisite for NUT upsd to be started, if it's enabled
+	-->
+		<dependent
+		name='nut-service'
+		grouping='require_all'
+		restart_on='refresh'>
+			<service_fmri value='svc:/system/power/nut' />
+		</dependent>
+
 	<!--
 	  The nut start/stop methods.
 	-->
