@@ -1,20 +1,27 @@
 EXTRA_DIST = makelocal.sh
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
+SOLARIS_CHECK_TARGETS =
+
+SOLARIS_SMF_MANIFESTS = \
+	nut.xml \
+	nut-client.xml \
+	nut-driver.xml \
+	nut-driver-enumerator.xml
+
+SOLARIS_SMF_METHODSCRIPTS = \
+	../systemd/nut-driver-enumerator.sh \
+	svc-nut \
+	svc-nut-client
 
 if WITH_SOLARIS_SMF
 # OS equivalent of /lib/svc/method and /var/svc/manifest/application
 # but we can just use then from this location
 solarissmfmethoddir = @datadir@/solaris-smf/method
 solarissmfmanifestdir = @datadir@/solaris-smf/manifest
-solarissmfmethod_SCRIPTS = \
-	../systemd/nut-driver-enumerator.sh \
-	svc-nut \
-	svc-nut-client
-solarissmfmanifest_DATA = \
-	nut.xml \
-	nut-client.xml \
-	nut-driver.xml \
-	nut-driver-enumerator.xml
+solarissmfmethod_SCRIPTS = $(SOLARIS_SMF_METHODSCRIPTS)
+solarissmfmanifest_DATA = $(SOLARIS_SMF_MANIFESTS)
+
+SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
 
 solarisinitscriptdir = @datadir@/solaris-init
@@ -61,3 +68,12 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 # TODO: Define support for IPS packaging (provide p5m files and make rules)
 package-solaris-ips:
 	@echo "SKIPPED : Target $@ is not implemented yet"
+
+check-local: $(SOLARIS_CHECK_TARGETS)
+
+check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)
+	@[ -x /usr/sbin/svccfg ] || { echo "WARNING : Target $@ skipped due to absent /usr/sbin/svccfg" >&2; return 0; } ; \
+	 RES=0 ; for F in $^ ; do \
+	    echo "  SVCCFG-VALIDATE  $$F"; \
+	    /usr/sbin/svccfg validate "$$F" || RES=$$? ; \
+	 done; exit $$RES
