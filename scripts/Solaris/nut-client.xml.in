@@ -80,7 +80,7 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/svc-nut-client %m'
+		exec='@DATADIR@/solaris-smf/method/svc-nut-client %m'
 		timeout_seconds='60'/>
 
 		<exec_method

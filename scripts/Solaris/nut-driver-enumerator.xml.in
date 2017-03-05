@@ -45,7 +45,7 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='/lib/svc/method/nut-driver-enumerator.sh'
+		exec='@DATADIR@/solaris-smf/method/nut-driver-enumerator.sh'
 		timeout_seconds='0'/>
 
 		<exec_method

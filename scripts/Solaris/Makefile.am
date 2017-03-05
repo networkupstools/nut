@@ -2,8 +2,10 @@ EXTRA_DIST = makelocal.sh
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 
 if WITH_SOLARIS_SMF
-solarissmfmethoddir = /lib/svc/method
-solarissmfmanifestdir = /var/svc/manifest/application
+# OS equivalent of /lib/svc/method and /var/svc/manifest/application
+# but we can just use then from this location
+solarissmfmethoddir = @datadir@/solaris-smf/method
+solarissmfmanifestdir = @datadir@/solaris-smf/manifest
 solarissmfmethod_SCRIPTS = \
 	../systemd/nut-driver-enumerator.sh \
 	svc-nut \
