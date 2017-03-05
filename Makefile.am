@@ -145,7 +145,7 @@ package:
 	"HP-UX") \
 		( cd scripts/HP-UX && \
 		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package && \
-		  mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot ) ;; \
+		  mv NUT_HPUX_package.depot $(abs_top_builddir)/NUT_HPUX_package@PACKAGE_VERSION@.depot ) ;; \
 	"SunOS") \
 		$(MAKE) $(AM_MAKEFLAGS) && \
 		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install && \
@@ -160,6 +160,7 @@ package:
 		$(MAKE) $(AM_MAKEFLAGS) dist && \
 		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS && \
 		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES && \
-		rpm -ba /usr/src/packages/SPECS/nut-aix.spec;; \
+		rpm -ba /usr/src/packages/SPECS/nut-aix.spec && \
+		mv /usr/src/packages/RPMS/nut*rpm $(abs_top_builddir)/ ;; \
 	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
 	esac

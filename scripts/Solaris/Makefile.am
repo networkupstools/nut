@@ -51,7 +51,7 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 	cp $(PROTOTYPE_DIR)/*.gz $(builddir)
 	UNAME_P="`uname -p`" && case "$${UNAME_P}" in \
 		i386|sparc) \
-			mv -f NUT_solaris_package.local.gz "NUT_solaris_$${UNAME_P}_package@PACKAGE_VERSION@.local.gz" ;; \
+			mv -f NUT_solaris_package.local.gz "$(abs_top_builddir)/NUT_solaris_$${UNAME_P}_package@PACKAGE_VERSION@.local.gz" ;; \
 	esac
 
 # TODO: Define support for IPS packaging (provide p5m files and make rules)
