@@ -31,10 +31,19 @@ failure() {
 SERVER="no"
 CLIENT="no"
 
-if [ -f /usr/local/ups/etc/nut.conf ]; then
-	. /usr/local/ups/etc/nut.conf
+NUT_DIR="@prefix@"
+NUT_SBIN_DIR="${NUT_DIR}/sbin"
+NUT_LIB_DIR="${NUT_DIR}/lib"
+NUT_RUN_DIR="@PIDPATH@/nut"
+CONFIG="@CONFPATH@/nut.conf"
+NUTUSER="@RUN_AS_USER@"
+NUTGROUP="@RUN_AS_GROUP@"
+NUT_VAR_LOCK="/var/locks/ups"
 
-	case $MODE in
+if [ -f "$CONFIG" ] ; then
+	. "$CONFIG"
+
+	case "$MODE" in
 		standalone|netserver)
 			SERVER="yes"
 			;;
@@ -44,80 +53,79 @@ if [ -f /usr/local/ups/etc/nut.conf ]; then
 fi
 
 do_start() {
+	RETVAL=0
+
+	if [ ! -d "$NUT_RUN_DIR" ]; then
+		mkdir -p "$NUT_RUN_DIR" && \
+		chown "root:$NUTGROUP" "$NUT_RUN_DIR" && \
+		chmod 770 "$NUT_RUN_DIR"
+		RETVAL=$?
+	fi
+
 	if [ "$SERVER" = "yes" ]; then
 		echo "Starting UPS driver controller: \c"
-		/usr/local/ups/sbin/upsdrvctl start >/dev/null 2>&1 && success || failure
-		RETVAL=$?
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsdrvctl start >/dev/null 2>&1 && success || { RETVAL=$?; failure; }
 
 		echo "Starting upsd: \c"
-		/usr/local/ups/sbin/upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || failure
-		if [ "$RETVAL" = 0 ]; then
-			RETVAL=$?
-		fi
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || { RETVAL=$?; failure; }
 	fi
 
 	if [ "$CLIENT" = "yes" ]; then
 		echo "Starting UPS monitor: \c"
-		/usr/local/ups/sbin/upsmon >/dev/null 2>&1 && success || failure
-		if [ "$RETVAL" = 0 ]; then
-			RETVAL=$?
-		fi
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsmon >/dev/null 2>&1 && success || { RETVAL=$?; failure; }
 	fi
 
-	[ "$RETVAL" = 0 ] && touch /var/locks/ups
+	[ "$RETVAL" = 0 ] && touch "${NUT_VAR_LOCK}"
+	return $RETVAL
 }
 
 do_stop() {
-	if test -e /var/run/nut/upsmon.pid; then
+	RETVAL=0
+	if test -e "${NUT_RUN_DIR}"/upsmon.pid; then
 		echo "Stopping UPS monitor: \c"
-		PID=`cat /var/run/nut/upsmon.pid`
-		kill $PID && success || failure
-		rm /var/run/nut/upsmon.pid
+		PID="`cat "${NUT_RUN_DIR}"/upsmon.pid`"
+		kill -15 $PID && success || { RETVAL=$?; failure; }
+		rm "${NUT_RUN_DIR}"/upsmon.pid
 	fi
 
 	if [ "$SERVER" = "yes" ]; then
-		if test -e /var/run/nut/upsd.pid; then
+		if test -e "${NUT_RUN_DIR}"/upsd.pid; then
 			echo "Stopping upsd: \c"
-			PID=`cat /var/run/nut/upsd.pid`
-			kill -9 $PID && success || failure
-			rm /var/run/nut/upsd.pid
+			PID="`cat "${NUT_RUN_DIR}"/upsd.pid`"
+			kill -15 $PID && success || { RETVAL=$?; failure; }
+			rm "${NUT_RUN_DIR}"/upsd.pid
 		fi
-		RETVAL=$?
 
 		echo "Shutting down UPS driver controller: \c"
-		/usr/local/ups/sbin/upsdrvctl stop > /dev/null 2>&1 && success || failure
-		if [ "$RETVAL" = 0 ]; then
-			RETVAL=$?
-		fi
+		"${NUT_SBIN_DIR}"/upsdrvctl stop > /dev/null 2>&1 && success || { RETVAL=$?; failure; }
 	fi
-	[ "$RETVAL" = 0 ] && rm -f /var/locks/ups
+	[ "$RETVAL" = 0 ] && rm -f "${NUT_VAR_LOCK}"
+	return $RETVAL
 }
 
 do_restart() {
 	do_stop
-        waitmore=5
-        while [ -n "$(ls /var/run/nut/)" -a $waitmore -ge 1 ]
-        do
-          sleep 1
-          waitmore=$((waitmore-1))
-        done
+	waitmore=5
+	while [ -n "$(ls "${NUT_RUN_DIR}"/)" -a $waitmore -ge 1 ]
+	do
+	  sleep 1
+	  waitmore="$(expr $waitmore - 1)"
+	done
 	do_start
 }
 
 do_reload() {
 	# FIXME: upsd and upsmon always return 0
 	# => can't tell if reload was successful
+	RETVAL=0
 	if [ "$SERVER" = "yes" ]; then
 		echo "Reloading upsd"
-		/usr/local/ups/sbin/upsd -c reload
-		RETVAL=$?
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsd -c reload && success || { RETVAL=$?; failure; }
 	fi
 
 	echo "Reloading upsmon"
-	/usr/local/ups/sbin/upsmon -c reload
-	if [ "$RETVAL" = 0 ]; then
-		RETVAL=$?
-	fi
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsmon -c reload && success || { RETVAL=$?; failure; }
+	return $RETVAL
 }
 
 # See how we are called.
@@ -132,7 +140,7 @@ case "$1" in
 		do_restart ;;
 
 	try-restart)
-		[ -f /var/locks/ups ] && do_restart || true
+		[ -f "${NUT_VAR_LOCK}" ] && do_restart || true
 		;;
 
 	reload)
@@ -143,13 +151,13 @@ case "$1" in
 
 	status)
 		if [ "$SERVER" = "yes" ]; then
-			if test -f /var/locks/ups; then
-				echo "upsd is running with PID" `cat /var/run/nut/upsd.pid`
+			if test -f "${NUT_VAR_LOCK}"; then
+				echo "upsd is running with PID" `cat "${NUT_RUN_DIR}"/upsd.pid`
 			fi
 		fi
 
-		if test -e /var/run/nut/upsmon.pid; then
-			echo "upsmon is running with PID" `cat /var/run/nut/upsmon.pid`
+		if test -e "${NUT_RUN_DIR}"/upsmon.pid; then
+			echo "upsmon is running with PID" `cat "${NUT_RUN_DIR}"/upsmon.pid`
 		elif rpm -q nut-client >/dev/null 2>&1; then
 			echo "upsmon isn't running"
 		fi
