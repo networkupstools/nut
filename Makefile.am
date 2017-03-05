@@ -142,15 +142,15 @@ package:
 	if test -z "$$DESTDIR" ; then DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; fi ; export DESTDIR; \
 	if test `uname -s` = "HP-UX"; then \
 		cd scripts/HP-UX; \
-		$(MAKE) $(AM_MAKEFLAGS) package; \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package; \
 		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
 	elif test `uname -s` = "SunOS"; then \
 		$(MAKE) $(AM_MAKEFLAGS); \
 		rm -rf $(DESTDIR)@prefix@; \
-		$(MAKE) $(AM_MAKEFLAGS) install; \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install; \
 		cd scripts/Solaris; \
-		$(MAKE) $(AM_MAKEFLAGS) package; \
-		$(MAKE) $(AM_MAKEFLAGS) uninstall; \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package; \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" uninstall; \
 		rm -rf $(DESTDIR)@prefix@; \
 	elif test `uname -s` = "AIX"; then \
 		$(MAKE) $(AM_MAKEFLAGS) dist; \
