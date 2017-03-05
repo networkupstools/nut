@@ -121,7 +121,7 @@ install-dirs:
 	@echo "Warning: 'make install-dirs' is deprecated."
 	@echo "Use 'make installdirs' instead."
 	@echo $(WARN)
-	make installdirs
+	$(MAKE) installdirs
 cgi build-cgi install-cgi install-cgi-dir install-cgi-bin \
 install-cgi-man install-cgi-conf install-cgi-html: 
 	@echo "Error: 'make $@' no longer exists."
@@ -141,18 +141,18 @@ setver:
 package:
 	if test `uname -s` = "HP-UX"; then \
 		cd scripts/HP-UX; \
-		make package; \
+		$(MAKE) $(AM_MAKEFLAGS) package; \
 		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
 	elif test `uname -s` = "SunOS"; then \
-		make; \
+		$(MAKE) $(AM_MAKEFLAGS); \
 		rm -rf $(DESTDIR)@prefix@; \
-		make install; \
+		$(MAKE) $(AM_MAKEFLAGS) install; \
 		cd scripts/Solaris; \
-		make package; \
-		make uninstall; \
+		$(MAKE) $(AM_MAKEFLAGS) package; \
+		$(MAKE) $(AM_MAKEFLAGS) uninstall; \
 		rm -rf $(DESTDIR)@prefix@; \
 	elif test `uname -s` = "AIX"; then \
-		make dist; \
+		$(MAKE) $(AM_MAKEFLAGS) dist; \
 		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \
 		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES; \
 		rpm -ba /usr/src/packages/SPECS/nut-aix.spec; \
