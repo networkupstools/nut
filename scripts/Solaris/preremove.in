@@ -1,4 +1,4 @@
-#!bin/sh
+#!/bin/sh
 
 # Stop all nut services
 
@@ -7,3 +7,7 @@ NUT_DIR="@prefix@"
 #$NUT_DIR/sbin/upsdrvctl stop
 
 # TODO: Unconfigure SMF services
+
+if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lenses" ] ; then
+	( cd "@datadir@/augeas-lenses" && find . -type f -exec rm -f "@auglensdir@"/'{}' \; )
+fi

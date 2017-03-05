@@ -41,6 +41,10 @@ SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS = makelocal.sh precheck.py preproto.pl
 SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremove
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
+	if test -n "@auglensdir@" && test -d "$(DESTDIR)@auglensdir@" ; then \
+		mkdir -p "$(DESTDIR)@datadir@/augeas-lenses" && \
+		cd "$(DESTDIR)@auglensdir@" && \
+		cp -prf ./ "$(DESTDIR)@datadir@/augeas-lenses/" ; fi
 	cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1
 	cp $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA) $(PROTOTYPE_DIR)
 	cd $(PROTOTYPE_DIR) && chmod +x $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS)

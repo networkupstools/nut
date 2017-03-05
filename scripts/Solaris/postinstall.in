@@ -48,6 +48,10 @@ if [ -d "@STATEPATH@" ] ; then
 	chmod 770 "@STATEPATH@"
 fi
 
+if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lenses" ] ; then
+	( cd "@datadir@/augeas-lenses" && cp -prf ./ "@auglensdir@"/ )
+fi
+
 # Put init script in /etc/init.d
 
 cp -pf "@DATADIR@/solaris-init/nut" /etc/init.d
