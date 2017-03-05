@@ -380,7 +380,7 @@ upslist_delSvcs() {
 ################# MAIN PROGRAM
 
 upslist_readFile || exit $?
-upslist_debug
+#upslist_debug
 upslist_readSvcs "before manipulations"
 
 # Quickly exit if there's nothing to do; note the lists are pre-sorted
