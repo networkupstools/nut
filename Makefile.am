@@ -145,12 +145,12 @@ package:
 		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
 	elif test `uname -s` = "SunOS"; then \
 		make; \
-		rm -rf @prefix@; \
+		rm -rf $(DESTDIR)@prefix@; \
 		make install; \
 		cd scripts/Solaris; \
 		make package; \
 		make uninstall; \
-		rm -rf @prefix@; \
+		rm -rf $(DESTDIR)@prefix@; \
 	elif test `uname -s` = "AIX"; then \
 		make dist; \
 		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \

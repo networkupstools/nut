@@ -32,7 +32,11 @@
 #                   now the caller should likely restart some services.
 #                   Note that the drivers' service instances were started or
 #                   stopped as required (by AUTO_START=yes) - but maybe the
-#                   upsd or upsmon services should restart.
+#                   upsd or upsmon services should restart. If you pass envvar
+#                   REPORT_RESTART_42=no then this codepath would return 0.
+#                   In default mode, such non-null reconfiguration should cause
+#                   the nut-driver-enumerator service to restart and this would
+#                   propagate to other NUT services that depend on it.
 #               13  Sections and services differed, and still do not match up
 #               1   Bad inputs, e.g. unrecognized service management framework
 #               2   Absent or unreadable ups.conf file
@@ -409,5 +413,7 @@ fi
 
 # Return 42 if there was a change applied succesfully
 # (but e.g. some services should restart - upsd, maybe upsmon)
-[ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && return 42
+if [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] ; then
+    [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
+fi
 exit 13
