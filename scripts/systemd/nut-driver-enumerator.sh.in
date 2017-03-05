@@ -284,7 +284,17 @@ systemd_registerInstance() {
         *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
     esac
     if [ -n "$DEPSVC" ]; then
-        echo "Adding '$DEPREQ' dependency for '$1' on '$DEPSVC'..."
+        [ -n "$DEPREQ" ] || DEPREQ="#Wants"
+        echo "Adding '$DEPREQ'+After dependency for '$1' on '$DEPSVC'..."
+        mkdir -p "/etc/systemd/system/nut-driver@$1.service.d" && \
+        cat > "/etc/systemd/system/nut-driver@$1.service.d/nut-driver-enumerator-generated.conf" <<EOF
+# Customization generated `date -u` by nut-driver-enumerator
+# DO NOT EDIT: This file would be removed or overwritten by that service
+[Unit]
+${DEPREQ}=${DEPSVC}
+After=${DEPSVC}
+EOF
+        [ $? = 0 ] && echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
     if [ "$AUTO_START" = yes ] ; then
@@ -294,7 +304,7 @@ systemd_registerInstance() {
 systemd_unregisterInstance() {
     /bin/systemctl stop 'nut-driver@'"$1" || false
     /bin/systemctl disable 'nut-driver@'"$1"
-    # TODO: Remove dir with custom dependencies if present
+    rm -rf "/etc/systemd/system/nut-driver@$1.service.d"
 }
 systemd_listInstances() {
     /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
