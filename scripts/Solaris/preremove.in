@@ -4,9 +4,23 @@
 
 NUT_DIR="@prefix@"
 
-#$NUT_DIR/sbin/upsdrvctl stop
-
-# TODO: Unconfigure SMF services
+if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+	# Unconfigure SMF services
+	for S in nut-client nut-driver-enumerator nut ; do
+		/usr/sbin/svcadm disable -s "$S"
+		/usr/sbin/svccfg -s "$S" delete || \
+		/usr/sbin/svccfg -s "$S" delete default
+	done
+	for S in `/usr/bin/svcs -H -o fmri 'nut-driver*'` ; do
+		/usr/sbin/svcadm disable -s "$S"
+		/usr/sbin/svccfg -s "nut-driver" delete "`echo "$S" | sed 's,^.*:\([^:]*\)$,\1,'`"
+	done
+	S="nut-driver" && \
+		/usr/sbin/svccfg -s "$S" delete || \
+		/usr/sbin/svccfg -s "$S" delete default
+else
+	[ -x /etc/init.d/nut ] && /etc/init.d/nut stop
+fi
 
 if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lenses" ] ; then
 	( cd "@datadir@/augeas-lenses" && find . -type f -exec rm -f "@auglensdir@"/'{}' \; )

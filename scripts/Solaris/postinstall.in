@@ -52,14 +52,20 @@ if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lens
 	( cd "@datadir@/augeas-lenses" && cp -prf ./ "@auglensdir@"/ )
 fi
 
-# Put init script in /etc/init.d
+if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+	# Register SMF services
+	for S in nut-client nut-driver-enumerator nut-driver nut ; do
+		/usr/sbin/svccfg import "@DATADIR@/solaris-smf/$S.xml"
+	done
+else
+	# Put init script in /etc/init.d
+	cp -pf "@DATADIR@/solaris-init/nut" /etc/init.d
+	chown root:bin /etc/init.d/nut
+	chmod 744 /etc/init.d/nut
 
-cp -pf "@DATADIR@/solaris-init/nut" /etc/init.d
-chown root:bin /etc/init.d/nut
-chmod 744 /etc/init.d/nut
-
-ln -s ../init.d/nut /etc/rc3.d/S90nut > /dev/null 2>&1
-ln -s ../init.d/nut /etc/rc3.d/K10nut > /dev/null 2>&1
+	ln -s ../init.d/nut /etc/rc3.d/S90nut > /dev/null 2>&1
+	ln -s ../init.d/nut /etc/rc3.d/K10nut > /dev/null 2>&1
+fi
 
 # Start nut services
 
