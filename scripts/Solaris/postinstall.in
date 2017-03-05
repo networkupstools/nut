@@ -58,6 +58,18 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	for S in nut-client nut-driver-enumerator nut-driver nut ; do
 		/usr/sbin/svccfg import "@datadir@/solaris-smf/manifest/$S.xml"
 	done
+	# Enable services if the system already has a configuration (e.g. upgrade)
+	if test -s "@CONFPATH@/ups.conf" ; then
+		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
+		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
+		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
+	fi
+	if test -s "@CONFPATH@/ups.conf" -a test -s "@CONFPATH@/upsd.conf" -a test -s "@CONFPATH@/upsd.users" ; then
+		/usr/sbin/svcadm enable -s nut
+	fi
+	if test -s "@CONFPATH@/upsmon.conf" ; then
+		/usr/sbin/svcadm enable -s nut-client
+	fi
 else
 	# Put init script in /etc/init.d
 	cp -pf "@datadir@/solaris-init/nut" /etc/init.d
@@ -66,11 +78,11 @@ else
 
 	ln -s ../init.d/nut /etc/rc3.d/S90nut > /dev/null 2>&1
 	ln -s ../init.d/nut /etc/rc3.d/K10nut > /dev/null 2>&1
+
+	# Start nut services
+
+	#echo "Starting nut services"
+	#$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
+	#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
+	#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
 fi
-
-# Start nut services
-
-#echo "Starting nut services"
-#$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
-#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
-#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
