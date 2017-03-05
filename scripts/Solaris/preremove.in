@@ -6,3 +6,4 @@ NUT_DIR="@prefix@"
 
 #$NUT_DIR/sbin/upsdrvctl stop
 
+# TODO: Unconfigure SMF services

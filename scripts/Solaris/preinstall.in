@@ -1,0 +1,22 @@
+#!/bin/sh
+
+NUT_DIR="@prefix@"
+
+# Create group nut
+
+grep -w "@RUN_AS_GROUP@" /etc/group
+if [ "$?" != 0 ]; then
+	/usr/sbin/groupadd "@RUN_AS_GROUP@"
+fi
+
+# Create user for installing "Network UPS Tools"
+
+grep -w "@RUN_AS_USER@" /etc/passwd
+if [ "$?" != 0 ]; then
+	/usr/sbin/useradd -c "Network UPS Tools" -g "@RUN_AS_GROUP@" -G root -d "@STATEPATH@" -s /bin/false "@RUN_AS_USER@"
+fi
+
+res="`groups "@RUN_AS_GROUP@" | grep -w "@RUN_AS_USER@"`" || res=""
+if [ -z "$res" ]; then
+	/usr/sbin/usermod -g "@RUN_AS_GROUP@" -G root "@RUN_AS_USER@"
+fi

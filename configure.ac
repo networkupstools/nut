@@ -1676,9 +1676,11 @@ AC_OUTPUT([
  scripts/Solaris/svc-nut-client
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
+ scripts/Solaris/preinstall
  scripts/Solaris/postinstall
  scripts/Solaris/preremove
- scripts/Solaris/nut 
+ scripts/Solaris/postremove
+ scripts/Solaris/nut
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules
