@@ -15,8 +15,13 @@ fi
 NUT_DIR="/usr"
 NUT_SBIN_DIR="$NUT_DIR/sbin"
 NUT_RUN_DIR="@PIDPATH@/nut"
+CONFIG="@CONFPATH@/nut.conf"
 NUTUSER="@RUN_AS_USER@"
 NUTGROUP="@RUN_AS_GROUP@"
+
+if [ -f "$CONFIG" ] ; then
+	. "$CONFIG"
+fi
 
 ups_start () {
 	# Default rights inspired by NUT scripts/Solaris/postinstall.in
