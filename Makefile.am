@@ -140,21 +140,26 @@ setver:
 	@echo "Edit configure.in to set version number."
 package:
 	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
-	if test `uname -s` = "HP-UX"; then \
-		cd scripts/HP-UX; \
-		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package; \
-		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
-	elif test `uname -s` = "SunOS"; then \
-		$(MAKE) $(AM_MAKEFLAGS); \
-		rm -rf $(DESTDIR)@prefix@; \
-		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install; \
-		cd scripts/Solaris; \
-		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package; \
-		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" uninstall; \
-		rm -rf $(DESTDIR)@prefix@; \
-	elif test `uname -s` = "AIX"; then \
-		$(MAKE) $(AM_MAKEFLAGS) dist; \
-		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \
-		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES; \
-		rpm -ba /usr/src/packages/SPECS/nut-aix.spec; \
-	fi;
+	rm -rf "$$DESTDIR"; \
+	case "`uname -s`" in \
+	"HP-UX") \
+		( cd scripts/HP-UX && \
+		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package && \
+		  mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot ) ;; \
+	"SunOS") \
+		$(MAKE) $(AM_MAKEFLAGS) && \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install && \
+		( cd scripts/Solaris && \
+		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package ) && \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" uninstall && \
+		rm -rf "$$DESTDIR" || \
+		{ echo "FAILED to produce SunOS packages, inspect '$$DESTDIR' for clues" >&2 ; exit 1; } ;; \
+	"AIX") \
+		if test -d /usr/src/packages/SPECS -a -w /usr/src/packages/SPECS ; then : ; else echo "Can not write to /usr/src/packages/SPECS" >&2 ; exit 1; fi ; \
+		if test -d /usr/src/packages/SOURCES -a -w /usr/src/packages/SOURCES ; then : ; else echo "Can not write to /usr/src/packages/SOURCES" >&2 ; exit 1; fi ; \
+		$(MAKE) $(AM_MAKEFLAGS) dist && \
+		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS && \
+		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES && \
+		rpm -ba /usr/src/packages/SPECS/nut-aix.spec;; \
+	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
+	esac
