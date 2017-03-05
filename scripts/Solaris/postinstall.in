@@ -50,7 +50,8 @@ fi
 
 # Put init script in /etc/init.d
 
-cp "$NUT_DIR/nut" /etc/init.d
+cp -pf "@DATADIR@/solaris-init/nut" /etc/init.d
+chown root:bin /etc/init.d/nut
 chmod 744 /etc/init.d/nut
 
 ln -s ../init.d/nut /etc/rc3.d/S90nut > /dev/null 2>&1

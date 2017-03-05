@@ -17,6 +17,9 @@ solarissmfmanifest_DATA = \
 	nut-driver-enumerator.xml
 endif
 
+solarisinitscriptdir = @datadir@/solaris-init
+solarisinitscript_SCRIPTS = nut
+
 SOLARIS_PACKAGE_TARGETS =
 
 if WITH_SOLARIS_PKG_IPS
@@ -35,7 +38,7 @@ package: $(SOLARIS_PACKAGE_TARGETS)
 #       and installed under PROTOTYPE_DIR, but declares no explicit
 #       dependency on that
 SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS = makelocal.sh precheck.py preproto.pl
-SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremove nut
+SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS = preinstall postinstall preremove postremove
 SOLARIS_PACKAGE_SVR4_INSTALLDATA = pkginfo
 package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLSCRIPTS) $(SOLARIS_PACKAGE_SVR4_INSTALLDATA)
 	cd $(PROTOTYPE_DIR) && find . -print | pkgproto > prototype1
