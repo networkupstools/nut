@@ -12,7 +12,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		/usr/sbin/svccfg -s "$S" delete || \
 		/usr/sbin/svccfg -s "$S" delete default
 	done
-	for S in `/usr/bin/svcs -H -o fmri 'nut-driver*'` ; do
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
 		/usr/sbin/svcadm disable -s "$S"
 		/usr/sbin/svccfg -s "nut-driver" delete "`echo "$S" | sed 's,^.*:\([^:]*\)$,\1,'`"
 	done
