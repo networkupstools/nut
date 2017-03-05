@@ -3,6 +3,7 @@
 #Postinstall script
 
 NUT_DIR="@prefix@"
+prefix="@prefix@" # expanded as part of some autoconf macros below
 
 # make sure the nut user exists and has correct memberships
 res="`getent group @RUN_AS_GROUP@`" || res=""
