@@ -24,12 +24,12 @@
 
 #include "eaton-ats16-mib.h"
 
-#define EATON_ATS16_MIB_VERSION  "0.12"
+#define EATON_ATS16_MIB_VERSION  "0.13"
 
 #define EATON_ATS16_SYSOID       ".1.3.6.1.4.1.534.10"
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
 
-static info_lkp_t ats16_source_info[] = {
+static info_lkp_t eaton_ats16_source_info[] = {
 	{ 1, "init" },
 	{ 2, "diagnosis" },
 	{ 3, "off" },
@@ -40,20 +40,20 @@ static info_lkp_t ats16_source_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t ats16_sensitivity_info[] = {
+static info_lkp_t eaton_ats16_sensitivity_info[] = {
 	{ 1, "normal" },
 	{ 2, "high" },
 	{ 3, "low" },
 	{ 0, NULL }
 };
 
-static info_lkp_t ats16_input_frequency_status_info[] = {
+static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
 	{ 1, "good" },          /* No threshold triggered */
 	{ 2, "out-of-range" },  /* Frequency out of range triggered */
 	{ 0, NULL }
 };
 
-static info_lkp_t ats16_input_voltage_status_info[] = {
+static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
 	{ 1, "good" },          /* No threshold triggered */
 	{ 2, "derated-range" }, /* Voltage derated */
 	{ 3, "out-of-range" },  /* Voltage out of range triggered */
@@ -61,7 +61,7 @@ static info_lkp_t ats16_input_voltage_status_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t ats16_test_result_info[] = {
+static info_lkp_t eaton_ats16_test_result_info[] = {
 	{ 1, "done and passed" },
 	{ 2, "done and warning" },
 	{ 3, "done and error" },
@@ -71,7 +71,7 @@ static info_lkp_t ats16_test_result_info[] = {
 	{ 0, NULL }
 };
 
-static info_lkp_t ats16_output_status_info[] = {
+static info_lkp_t eaton_ats16_output_status_info[] = {
 	{ 1, "OFF" }, /* Output not powered */
 	{ 2, "OL" },  /* Output powered */
 	{ 0, NULL }
@@ -111,21 +111,21 @@ static snmp_info_t eaton_ats16_mib[] = {
 	/* ats2InputVoltage.source2 = INTEGER: 2432 0.1 V */
 	{ "input.2.voltage", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.2.2", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2InputStatusVoltage.source1 = INTEGER: normalRange(1) */
-	{ "input.1.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.1", NULL, SU_FLAG_OK, ats16_input_voltage_status_info, NULL },
+	{ "input.1.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.1", NULL, SU_FLAG_OK, eaton_ats16_input_voltage_status_info, NULL },
 	/* ats2InputStatusVoltage.source2 = INTEGER: normalRange(1) */
-	{ "input.2.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.2", NULL, SU_FLAG_OK, ats16_input_voltage_status_info, NULL },
+	{ "input.2.voltage.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.5.2", NULL, SU_FLAG_OK, eaton_ats16_input_voltage_status_info, NULL },
 	/* ats2InputFrequency.source1 = INTEGER: 500 0.1 Hz */
 	{ "input.1.frequency", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.3.1", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2InputFrequency.source2 = INTEGER: 500 0.1 Hz */
 	{ "input.2.frequency", 0, 0.1, ".1.3.6.1.4.1.534.10.2.2.2.1.3.2", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2InputStatusFrequency.source1 = INTEGER: good(1) */
-	{ "input.1.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.1", NULL, SU_FLAG_OK, ats16_input_frequency_status_info, NULL },
+	{ "input.1.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.1", NULL, SU_FLAG_OK, eaton_ats16_input_frequency_status_info, NULL },
 	/* ats2InputStatusFrequency.source2 = INTEGER: good(1) */
-	{ "input.2.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.2", NULL, SU_FLAG_OK, ats16_input_frequency_status_info, NULL },
+	{ "input.2.frequency.status", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.3.2.1.2.2", NULL, SU_FLAG_OK, eaton_ats16_input_frequency_status_info, NULL },
 	/* ats2ConfigSensitivity.0 = INTEGER: normal(1) */
-	{ "input.sensitivity", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.4.6.0", NULL, SU_FLAG_OK, &ats16_sensitivity_info[0], NULL },
+	{ "input.sensitivity", ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.4.6.0", NULL, SU_FLAG_OK, &eaton_ats16_sensitivity_info[0], NULL },
 	/* ats2OperationMode.0 = INTEGER: source1(4) */
-	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, ats16_source_info, NULL },
+	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, eaton_ats16_source_info, NULL },
 	/* ats2ConfigPreferred.0 = INTEGER: source1(1) */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.4.5.0", NULL, SU_FLAG_OK, NULL, NULL },
 
@@ -140,20 +140,20 @@ static snmp_info_t eaton_ats16_mib[] = {
 	/* UPS collection */
 	/* FIXME: RFC for device.test.result! */
 	/* ats2ConfigTransferTest.0 = INTEGER: noTestInitiated(6) */
-	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.534.10.2.4.8.0", NULL, SU_FLAG_OK, ats16_test_result_info, NULL },
+	{ "ups.test.result", 0, 1, ".1.3.6.1.4.1.534.10.2.4.8.0", NULL, SU_FLAG_OK, eaton_ats16_test_result_info, NULL },
 	/* FIXME: RFC for device.status! */
 	/* ats2StatusOutput.0 = INTEGER: outputPowered(2) */
-	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.2.3.3.2.0", NULL, SU_FLAG_OK, ats16_output_status_info, NULL },
+	{ "ups.status", 0, 1, ".1.3.6.1.4.1.534.10.2.3.3.2.0", NULL, SU_FLAG_OK, eaton_ats16_output_status_info, NULL },
 
 	/* Ambient collection */
 	/* ats2EnvRemoteTemp.0 = INTEGER: 0 degrees Centigrade */
-	{ "ambient.temperature", 0, 1, ".1.3.6.1.4.1.534.10.2.5.1.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.temperature", 0, 0.1, ".1.3.6.1.4.1.534.10.2.5.1.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteTempLowerLimit.0 = INTEGER: 5 degrees Centigrade */
 	{ "ambient.temperature.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.5.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteTempUpperLimit.0 = INTEGER: 40 degrees Centigrade */
 	{ "ambient.temperature.high", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.6.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteHumidity.0 = INTEGER: 0 percent */
-	{ "ambient.humidity", 0, 1, ".1.3.6.1.4.1.534.10.2.5.2.0", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "ambient.humidity", 0, 0.1, ".1.3.6.1.4.1.534.10.2.5.2.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteHumidityLowerLimit.0 = INTEGER: 5 percent */
 	{ "ambient.humidity.low", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.5.7.0", NULL, SU_FLAG_OK, NULL, NULL },
 	/* ats2EnvRemoteHumidityUpperLimit.0 = INTEGER: 90 percent */
