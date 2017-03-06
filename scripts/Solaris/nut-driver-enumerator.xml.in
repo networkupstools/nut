@@ -50,7 +50,7 @@
 	  Prerequisite for NUT upsd to be started, if it's enabled
 	-->
 		<dependent
-		name='nut-service'
+		name='nut-daemon-service'
 		grouping='require_all'
 		restart_on='refresh'>
 			<service_fmri value='svc:/system/power/nut' />
