@@ -55,12 +55,14 @@ fi
 
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	echo "Register SMF services..."
-	for S in nut-client nut-driver-enumerator nut-driver nut ; do
+	for S in nut-driver-enumerator nut-driver nut nut-client ; do
+		echo "Importing NUT service manifest: $S..."
 		/usr/sbin/svccfg import "@datadir@/solaris-smf/manifest/$S.xml"
 	done
 	# Enable services if the system already has a configuration (e.g. upgrade)
 	if test -s "@CONFPATH@/ups.conf" ; then
 		echo "Enable NUT drivers (if any)..."
+		"@datadir@/solaris-smf/method/nut-driver-enumerator.sh"
 		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
 		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
 		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
