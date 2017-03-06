@@ -69,6 +69,12 @@ package-solaris-svr4: $(SOLARIS_PACKAGE_SVR4_HELPERSCRIPTS) $(SOLARIS_PACKAGE_SV
 package-solaris-ips:
 	@echo "SKIPPED : Target $@ is not implemented yet"
 
+# Fix up autotools expansion of default values (e.g. datadir="${prefix}/share" verbatim)
+$(SOLARIS_SMF_MANIFESTS): Makefile.am
+	sed -e 's,\$\{prefix\}/,@prefix@/,g' \
+	    -e 's,\$\{exec_prefix\}/,@exec_prefix@/,g' \
+	    -i "$@"
+
 check-local: $(SOLARIS_CHECK_TARGETS)
 
 check-local-solaris-smf: $(SOLARIS_SMF_MANIFESTS)

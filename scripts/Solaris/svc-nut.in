@@ -12,6 +12,7 @@ fi
 # smf(5)
 . /lib/svc/share/smf_include.sh || exit
 
+prefix="@prefix@"
 NUT_DIR="@prefix@"
 NUT_SBIN_DIR="$NUT_DIR/sbin"
 NUT_LIB_DIR="${NUT_DIR}/lib"
