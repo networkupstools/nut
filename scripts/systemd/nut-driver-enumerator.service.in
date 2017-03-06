@@ -15,8 +15,8 @@ User=root
 Type=oneshot
 # the service shall be considered active even when all its processes exited
 RemainAfterExit=yes
-ExecStart=@libexecdir@/nut-driver-enumerator.sh
-ExecReload=@libexecdir@/nut-driver-enumerator.sh
+ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh
+ExecReload=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh
 
 [Install]
 WantedBy=multi-user.target

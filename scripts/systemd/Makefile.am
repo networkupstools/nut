@@ -9,12 +9,6 @@ systemdsystemunit_DATA = \
         nut-server.service  \
         nut-driver.target
 
-# Fix up autotools expansion of default values (e.g. datadir="${prefix}/share" verbatim)
-$(systemdsystemunit_DATA): Makefile.am
-	sed -e 's,\$\{prefix\}/,@prefix@/,g' \
-	    -e 's,\$\{exec_prefix\}/,@exec_prefix@/,g' \
-	    -i "$@"
-
 EXTRA_DIST += nut-driver.target
 
 systemdshutdown_SCRIPTS = nutshutdown

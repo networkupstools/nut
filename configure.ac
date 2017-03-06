@@ -1550,6 +1550,7 @@ conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 DATADIR=${conftemp}
+NUT_DATADIR=${conftemp}
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
@@ -1572,6 +1573,13 @@ eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
+
+dnl same for libexecdir
+conftemp="${libexecdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+LIBEXECDIR=${conftemp}
+AC_DEFINE_UNQUOTED(LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
 
 
 dnl checks related to --with-snmp enabled on command-line
@@ -1664,6 +1672,8 @@ AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
+AC_SUBST(NUT_DATADIR, [`eval echo "${DATADIR}"`])
+AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
