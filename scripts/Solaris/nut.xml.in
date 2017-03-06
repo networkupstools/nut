@@ -74,10 +74,12 @@
 
 	<!--
 	  Wait for drivers to be wrapped in service instances
+	  Note that drivers are optional: if one fails to start or get configured,
+	  do not block the upsd from publishing others.
 	-->
 		<dependency
 		name='nut-driver-enumerator'
-		grouping='require_all'
+		grouping='optional_all'
 		restart_on='none'
 		type='service'>
 			<service_fmri value='svc:/system/power/nut-driver-enumerator' />
