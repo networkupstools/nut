@@ -45,6 +45,27 @@
 #           added to that platform first). Parts in this script are finished.
 #
 
+# NOTE: Currently found caveats that might be solved later but require
+# considerable effort:
+# * Solaris SMF constrains the syntax of valid strings for instance names
+#   (e.g. not starting with a digit, no period chars) which blocks creation
+#   of some UPS driver instances. This might be worked around by hashing
+#   the device name e.g. to base64 (and un-hashing instance name when calling
+#   upsdrvctl), but is not quite user-friendly. Also can store device name
+#   in a service attribute while mangling the instance name to a valid subset.
+#   Comparisons (if devices are already wrapped) becomes more complicated in
+#   the script in either case, as well as in the service startup method.
+# ** The `+` `/` `=` characters from base64 are also invalid for SMF instance
+#    name, but the first two can be sed'ed to `-` `_`  and back, for example.
+#    Some prefix word is also needed (avoid starting with a digit).
+#    The trailing padding `=` can be dropped, and added until we get a
+#    non-empty decode. Conversions can be done by
+#    `echo "$string" | openssl base64 -e|-d`
+# * Dummy-UPS services that "proxy" another locally defined section are
+#   essentially a circular dependency for upsd. While the system might
+#   start-up lacking a driver, there should be some timer to re-enable
+#   failed not-disabled drivers (would be useful in any case though).
+
 # Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
 # Set at package configuration, compiled into daemons and drivers
 prefix="@prefix@"
