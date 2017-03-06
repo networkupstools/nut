@@ -5,4 +5,5 @@ These files are automatically installed, upon detection (at configure time)
 of a systemd enabled system.
 
 Contributed by Michal Hlavinka <mhlavink@redhat.com>
+Updated 2016-2017 by Michal Hrusecky and Jim Klimov <EvgenyKlimov@eaton.com>
 
