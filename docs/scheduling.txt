@@ -249,7 +249,9 @@ CMDSCRIPT:
 
 NOTE: the path to `upsmon` must be provided. The default for an installation
 built from sources is `/usr/local/ups` (so `/usr/local/ups/sbin/upsmon`),
-while packaged installations will generally comply to FHS (so `/sbin/upsmon`).
+while packaged installations will generally comply to
+link:http://refspecs.linuxfoundation.org/fhs.shtml[FHS -- Filesystem Hierarchy Standard]
+(so `/sbin/upsmon`).
 
 It's not a good idea to call your system's shutdown routine directly
 from the CMDSCRIPT, since there's no synchronization with the slave
