@@ -18,37 +18,27 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
- * TODO list:
- * - everything...
- * - create the format for the "NUT Modbus definition file"
- * - complete initups
- * - create initinfo
- * - create updateinfo
- * 
- * "NUT Modbus definition file"		xxx.modbus
- * # A comment header may contain information such as
- * # - author and device information
- * # - default communication settings (baudrate, parity, data_bit, stop_bit)
- * device.type: <ups,meter,...>
- * [device.mfr: <Manufacturer name>]
- * [device.model: <Model name>]
- * <nut varname>: <modbus address>, <modbus register>, ..., <convertion function name>
  */
 
 #include "main.h"
 #include <modbus.h>
 
-#define DRIVER_NAME	"NUT Modbus driver"
+#define DRIVER_NAME	"NUT PhoenixContact Modbus driver"
 #define DRIVER_VERSION	"0.01"
+
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 /* Variables */
 modbus_t *ctx = NULL;
+int errcount = 0;
+
+int mrir(modbus_t *ctx, int addr, int nb, uint16_t *dest) ;
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Arnaud Quette <arnaud.quette@gmail.com>\n",
+	"Spiros Ioannou <sivann@inaccess.com>\n",
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
@@ -57,15 +47,8 @@ void upsdrv_initinfo(void)
 {
 	upsdebugx(2, "upsdrv_initinfo");
 
-	/* try to detect the device here - call fatal_with_errno(EXIT_FAILURE, ) if it fails */
-
-	/* 1/ Open the NUT Modbus definition file and load the data
-	 * 2/ Iterate through these data and call dstate_setinfo */
-
-	/* dstate_setinfo("device.mfr", "skel manufacturer"); */
-	/* dstate_setinfo("device.model", "longrun 15000"); */
-	/* dstate_setinfo("device.type", "longrun 15000"); */
-	/* ... */
+	dstate_setinfo("device.mfr", "Phoenix Contact");
+	dstate_setinfo("device.model", "QUINT-UPS 2320461");
 
 	/* upsh.instcmd = instcmd; */
 	/* upsh.setvar = setvar; */
@@ -74,67 +57,64 @@ void upsdrv_initinfo(void)
 void upsdrv_updateinfo(void)
 {
 	upsdebugx(2, "upsdrv_updateinfo");
+    
+    uint16_t tab_reg[64];
 
-	/* int flags; */
-	/* char temp[256]; */
+    mrir(ctx, 29697, 3, tab_reg);
 
-	/* ser_sendchar(upsfd, 'A'); */
-	/* ser_send(upsfd, "foo%d", 1234); */
-	/* ser_send_buf(upsfd, bincmd, 12); */
+    status_init(); 
 
-	/* 
-	 * ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS);
-	 *
-	 * if (ret < STATUS_LEN) {
-	 * 	upslogx(LOG_ERR, "Short read from UPS");
-	 *	dstate_datastale();
-	 *	return;
-	 * }
-	 */
+    if (tab_reg[0])
+        status_set("OB");
+    else
+        status_set("OL");
 
-	/* dstate_setinfo("var.name", ""); */
+    if (tab_reg[2]) {
+        status_set("CHRG");
+    }
 
-	/* if (ioctl(upsfd, TIOCMGET, &flags)) {
-	 *	upslog_with_errno(LOG_ERR, "TIOCMGET");
-	 *	dstate_datastale();
-	 *	return;
-	 * }
-	 */
+    if (tab_reg[1]) {
+        status_set("LB"); //LB is actually called "shutdown event" on this ups
+    }
 
-	/* status_init();
-	 *
-	 * if (ol)
-	 * 	status_set("OL");
-	 * else
-	 * 	status_set("OB");
-	 * ...
-	 *
-	 * status_commit();
-	 *
-	 * dstate_dataok();
-	 */
+    mrir(ctx, 29745, 1, tab_reg);
+    dstate_setinfo("output.voltage","%d",(int)(tab_reg[0]/1000));
 
-	/*
-	 * poll_interval = 2;
-	 */
+    mrir(ctx,29749,5,tab_reg);
+    dstate_setinfo("battery.charge","%d",tab_reg[0]);
+    //dstate_setinfo("battery.runtime",tab_reg[1]*60);
+
+    mrir(ctx,29792,10,tab_reg);
+    dstate_setinfo("battery.voltage","%f",(float)(tab_reg[0])/1000.0);
+    dstate_setinfo("battery.temperature","%d",tab_reg[1]-273);
+    dstate_setinfo("battery.runtime","%d",tab_reg[3]);
+    dstate_setinfo("battery.capacity","%d",tab_reg[8]*10);
+    dstate_setinfo("output.current","%f",(float)(tab_reg[6])/1000.0);
+
+    //ALARMS
+    mrir(ctx,29840,1,tab_reg);
+    alarm_init();
+    if (CHECK_BIT(tab_reg[0], 4) && CHECK_BIT(tab_reg[0], 5)) alarm_set("End of life (Resistance)");
+    if (CHECK_BIT(tab_reg[0], 6)) alarm_set("End of life (Time)");
+    if (CHECK_BIT(tab_reg[0], 7)) alarm_set("End of life (Voltage)");
+    if (CHECK_BIT(tab_reg[0], 9)) alarm_set("No Battery");
+    if (CHECK_BIT(tab_reg[0], 10)) alarm_set("Inconsistent technology");
+    if (CHECK_BIT(tab_reg[0], 11)) alarm_set("Overload Cutoff");
+    if (CHECK_BIT(tab_reg[0], 12)) alarm_set("Low Battery (Voltage)");
+    if (CHECK_BIT(tab_reg[0], 13)) alarm_set("Low Battery (Charge)");
+    if (CHECK_BIT(tab_reg[0], 14)) alarm_set("Low Battery (Time)");
+    if (CHECK_BIT(tab_reg[0], 16)) alarm_set("Low Battery (Service)");
+    alarm_commit();
+
+    status_commit();
+    if (errcount == 0)
+        dstate_dataok();
+
 }
 
 void upsdrv_shutdown(void)
 {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-
-	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
-
-	/* replace with a proper shutdown function */
 	fatalx(EXIT_FAILURE, "shutdown not supported");
-
-	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
-
-	/* OL: this must power cycle the load if possible */
-
-	/* OB: the load must remain off until the power returns */
 }
 
 /*
@@ -179,42 +159,42 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+    int r;
 	upsdebugx(2, "upsdrv_initups");
 
-	/* Determine if it's a RTU (serial) or ethernet (TCP) connection */
-	/* FIXME: need to address windows COM port too!
-	 * || !strncmp(device_path[0], "COM", 3) */
-	if (device_path[0] == '/') {
-		upsdebugx(2, "upsdrv_initups: RTU (serial) device");
+    ctx = modbus_new_rtu(device_path, 115200, 'E', 8, 1);
+    if (ctx == NULL)
+        fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
-		/* FIXME: handle serial comm. params (params in ups.conf
-		 * and/or definition file) */
-		ctx = modbus_new_rtu(device_path, 115200, 'N', 8, 1);
-		if (ctx == NULL)
-			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
-	}
-	/* else {
-		 * upscli_splitaddr(device_path[0] ? device_path[0] : "localhost", &hostname, &port
-		upsdebugx(2, "upsdrv_initups: TCP (network) device");
-		ctx = modbus_new_tcp(device_path, 1502); 
-		if (ctx == NULL)
-			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
+    r = modbus_set_slave(ctx, 192);
+    if (r < 0) {
+        modbus_free(ctx);
+        fatalx(EXIT_FAILURE, "Invalid slave ID 192");
+    }
 
-		if (modbus_connect(ctx) == -1) {
-			modbus_free(ctx);
-			fatalx(EXIT_FAILURE, "Connection failed: %s\n", modbus_strerror(errno));
-		}
-	}
-	*/
+    if (modbus_connect(ctx) == -1) {
+        modbus_free(ctx);
+        fatalx(EXIT_FAILURE, "modbus_connect: unable to connect: %s", modbus_strerror(errno));
+    }
 
-	/* don't try to detect the device here */
 }
+
 
 void upsdrv_cleanup(void)
 {
-	/* free(dynamic_mem); */
 	if (ctx != NULL) {
 		modbus_close(ctx);
 		modbus_free(ctx);
 	}
+}
+
+int mrir(modbus_t *ctx, int addr, int nb, uint16_t *dest) {
+    int r;
+    r =  modbus_read_input_registers(ctx, addr, nb, dest);
+    if (r == -1) {
+        upslogx(LOG_ERR, "mrir: modbus_read_input_registers: %s", modbus_strerror(errno));
+        errcount ++;
+    }
+    errcount = 0;
+    return r;
 }
