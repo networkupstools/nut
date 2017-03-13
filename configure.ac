@@ -253,7 +253,7 @@ dnl check for --with-all (or --without-all, or --with-all=auto) flag
 
 AC_MSG_CHECKING(for --with-all)
 AC_ARG_WITH(all,
-	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, cgi, dev, avahi, linux_i2c]),
+	AS_HELP_STRING([--with-all], [enable serial, usb, snmp, neon, ipmi, powerman, modbus, cgi, dev, avahi, linux_i2c]),
 [
 	if test -n "${withval}"; then
 		dnl Note: we allow "no" as a positive value, because
@@ -263,6 +263,7 @@ AC_ARG_WITH(all,
 		if test -z "${with_snmp}"; then with_snmp="${withval}"; fi
 		if test -z "${with_neon}"; then with_neon="${withval}"; fi
 		if test -z "${with_powerman}"; then with_powerman="${withval}"; fi
+		if test -z "${with_modbus}"; then with_modbus="${withval}"; fi
 		if test -z "${with_cgi}"; then with_cgi="${withval}"; fi
 		if test -z "${with_dev}"; then with_dev="${withval}"; fi
 		if test -z "${with_avahi}"; then with_avahi="${withval}"; fi
@@ -308,6 +309,8 @@ NUT_ARG_WITH([neon], [build and install neon based XML/HTTP driver], [auto])
 NUT_CHECK_LIBNEON
 NUT_ARG_WITH([powerman], [build and install Powerman PDU client driver], [auto])
 NUT_CHECK_LIBPOWERMAN
+NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
+NUT_CHECK_LIBMODBUS
 NUT_CHECK_LIBAVAHI
 
 dnl ----------------------------------------------------------------------
@@ -403,6 +406,20 @@ fi
 NUT_REPORT_FEATURE([build Powerman PDU client driver], [${nut_with_powerman}], [],
 					[WITH_LIBPOWERMAN], [Define to enable Powerman PDU support])
 
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-modbus
+
+dnl ${nut_with_modbus}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_modbus}" = "yes" -a "${nut_have_libmodbus}" != "yes"; then
+   AC_MSG_ERROR(["modbus library not found, required for Modbus driver"])
+fi
+
+if test "${nut_with_modbus}" != "no"; then
+   nut_with_modbus="${nut_have_libmodbus}"
+fi
+
+NUT_REPORT_FEATURE([build Modbus driver], [${nut_with_modbus}], [],
+                                       [WITH_MODBUS], [Define to enable Modbus support])
 dnl ----------------------------------------------------------------------
 dnl Check for with-ipmi, and --with-freeipmi (or --with-openipmi)
 dnl Only one can be enabled at a time, with a preference for FreeIPMI
@@ -1465,6 +1482,8 @@ AC_SUBST(LIBAVAHI_CFLAGS)
 AC_SUBST(LIBAVAHI_LIBS)
 AC_SUBST(LIBPOWERMAN_CFLAGS)
 AC_SUBST(LIBPOWERMAN_LIBS)
+AC_SUBST(LIBMODBUS_CFLAGS)
+AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
