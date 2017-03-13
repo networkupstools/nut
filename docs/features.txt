@@ -19,7 +19,7 @@ Multiple manufacturer and device support
 ----------------------------------------
 
 - Monitors many UPS, PDU, ATS, PSU and SCD models from more than 140
-manufacturers with a unified interface 
+manufacturers with a unified interface
 (link:stable-hcl.html[Hardware Compatibility List]).
 
 - Various communication types and many protocols are supported with the same
@@ -70,7 +70,7 @@ simultaneously.
 source UPSes becomes critical (on battery and low battery).
 
 - You can lose a UPS completely as long as you still have at least the minimum
-number of sources available. The minimum value is configurable. 
+number of sources available. The minimum value is configurable.
 
 Security and access control
 ---------------------------
@@ -92,7 +92,7 @@ This was inspired by the auth mechanism in Solar Designer's excellent popa3d.
 
 - The drivers and network server may be run in a chroot jail for further
 security benefits. This is supported directly since version 1.4 and beyond with
-the 'chroot=' configuration directive. 
+the 'chroot=' configuration directive.
 
 - IP-based access control relies on the local firewall and
 link:http://en.wikipedia.org/wiki/TCP_Wrapper[TCP Wrapper].
@@ -108,7 +108,7 @@ management, including graphical status displays.
 
 - Custom status web pages may be generated with the CGI programs, since they use
 templates to create the pages. This allows you to have status pages which fit
-the look and feel of the rest of your site. 
+the look and feel of the rest of your site.
 
 Free software
 -------------
@@ -117,7 +117,7 @@ Free software
 License version 2 or later.
 
 - Know your systems - all source code is available for inspection, so there are
-no mysteries or secrets in your critical monitoring tools. 
+no mysteries or secrets in your critical monitoring tools.
 
 UPS management and control
 --------------------------
@@ -139,7 +139,7 @@ as easy as starting ten: 'upsdrvctl start'.
 
 - Shutdowns and other procedures may be tested without stressing actual UPS
 hardware by simulating status values with the dummy-ups pseudo-driver. Anything
-which can happen in a driver can be replicated with dummy-ups. 
+which can happen in a driver can be replicated with dummy-ups.
 
 Monitoring diagrams
 -------------------
@@ -179,13 +179,13 @@ UPSes or "sharing" hardware, since this software will handle the sharing for you
 
 - Multiple systems may monitor a single UPS using only their network connections - no special "UPS sharing" hardware is required.
 
-- "Slave and master" monitoring design synchronizes shutdowns so that slaves can bring down their operating systems cleanly before the master switches off the power. 
+- "Slave and master" monitoring design synchronizes shutdowns so that slaves can bring down their operating systems cleanly before the master switches off the power.
 
 === Many UPSes, many clients ===
 
 - Each upsd process can serve status data for multiple UPSes to many clients.
 
-- Each upsmon process can monitor multiple UPSes for status data. 
+- Each upsmon process can monitor multiple UPSes for status data.
 
 ////////////////////////////////////////////////////////////////////////////////
 

@@ -44,7 +44,7 @@ For a complete list of outlet data and commands, refer to the
 An example upsc output (data/epdu-managed.dev) is available in the source
 archive.
 
-NOTE: The variables supported depend on the exact device type. 
+NOTE: The variables supported depend on the exact device type.
 
 
 Outlets on PDU

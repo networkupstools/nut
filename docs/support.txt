@@ -82,15 +82,15 @@ Post a patch, ask a development question, ...
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
 mailing list.
 
-Refer to the 
+Refer to the
 ifdef::website[]
 link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
-for more information, and the chapter on how to 
+for more information, and the chapter on how to
 link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
 linkdoc:developer-guide[NUT Developer Guide]
-for more information, and the chapter on how to 
+for more information, and the chapter on how to
 link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 
@@ -101,7 +101,7 @@ Discuss packaging and related topics
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
 mailing list.
 
-Refer to the 
+Refer to the
 ifdef::website[]
 link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
 endif::website[]

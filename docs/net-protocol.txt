@@ -25,7 +25,7 @@ an older version of the software.
 Command reference
 -----------------
 
-Multi-word elements are contained within "quotes" for easier parsing.  
+Multi-word elements are contained within "quotes" for easier parsing.
 Embedded quotes are escaped with backslashes.  Embedded backslashes are
 also escaped by representing them as \\.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
@@ -473,7 +473,7 @@ power disappears.
 Setting this flag makes "FSD" appear in a STATUS request for this UPS.
 Finding "FSD" in a status request should be treated just like a "OB LB".
 
-It should be noted that FSD is currently a latch - once set, there is  
+It should be noted that FSD is currently a latch - once set, there is
 no way to clear it short of restarting upsd or dropping then re-adding
 it in the ups.conf.  This may cause issues when upsd is running on a
 system that is not shut down due to the UPS event.
@@ -587,13 +587,13 @@ sending a valid command like GET with an invalid subcommand.
 
 - 'INSTCMD-FAILED'
 +
-upsd failed to deliver the instant command request to the driver. 
+upsd failed to deliver the instant command request to the driver.
 No further information is available to the client.  This typically
 indicates a dead or broken driver.
 
 - 'SET-FAILED'
 +
-upsd failed to deliver the set request to the driver.  This is 
+upsd failed to deliver the set request to the driver.  This is
    just like INSTCMD-FAILED above.
 
 - 'READONLY'
@@ -622,7 +622,7 @@ start it again.
 - 'DRIVER-NOT-CONNECTED'
 +
 upsd can't perform the requested command, since the driver for that
-UPS is not connected.  This usually means that the driver is not 
+UPS is not connected.  This usually means that the driver is not
 running, or if it is, the ups.conf is misconfigured.
 
 - 'DATA-STALE'
@@ -679,7 +679,7 @@ receiving this response.
 
 - 'INVALID-VALUE'
 +
-The value specified in the request is not valid.  This usually 
+The value specified in the request is not valid.  This usually
 applies to a SET of an ENUM type which is using a value which is
 not in the list of allowed values.
 

@@ -279,7 +279,7 @@ At that time, the development process was still centralized. There was no
 revision control system (like the current Subversion repository), nor trackers
 to interact with NUT development.
 Russell was receiving all the patches and requests, and doing all the work on
-his own, including releases. 
+his own, including releases.
 
 Russell was more and more thinking about giving the project leadership to
 Arnaud Quette, which finally happened with the 2.0.1 release in February 2005.
@@ -290,7 +290,7 @@ First, Arnaud aimed at opening up the development by creating a project on the
 http://www.debian.org/[Debian] http://alioth.debian.org/projects/nut/[Alioth Forge].
 This allowed to build the team of hackers that Russell dreamed about.
 It also allows to ensure NUT's continuation, whatever happens to
-the leader. And that would most of all boost the projects contributions. 
+the leader. And that would most of all boost the projects contributions.
 
 
 ////////////////////////////////////////////////////////////////////////

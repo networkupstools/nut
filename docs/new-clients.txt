@@ -55,7 +55,7 @@ For more information, refer to the linkman:libnutclient[3] manual page.
   #include <nutclient.h>
   using namespace nut;
   using namespace std;
-  
+
   int main(int argc, char** argv)
   {
     try

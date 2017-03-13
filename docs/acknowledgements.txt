@@ -53,7 +53,7 @@ blazer_ser and blazer_usb
 - Martin Loyer: has worked a bit on mge-utalk
 - Jonathan Dion: MGE internship (summer 2006), who has worked on configuration
 - Doug Reynolds: has worked on CyberPower support (powerpanel driver)
-- Jon Gough: has worked on porting the megatec driver to USB (megatec_usb) 
+- Jon Gough: has worked on porting the megatec driver to USB (megatec_usb)
 - Dominique Lallement: Consultant (chairman of the USB/HID PDC Forum)
 - Julius Malkiewicz: junior developer
 - Tomas Smetana: former Redhat packager (2007-2008)
@@ -144,13 +144,13 @@ the libhid projects, ... through Arnaud Quette (who was also an MGE employee).
 All the MGE supporters have gone with Eaton (through MGE Office Protection
 Systems), which was temporarily the new NUT sponsor.
 
-- Fenton Technologies contributed a PowerPal 660 to the project.  Their open 
-stance and quick responses to technical inquiries were appreciated for 
+- Fenton Technologies contributed a PowerPal 660 to the project.  Their open
+stance and quick responses to technical inquiries were appreciated for
 making the development of the fentonups driver possible.
-Fenton has since been acquired by link:http://www.metapo.com[Metapo]. 
+Fenton has since been acquired by link:http://www.metapo.com[Metapo].
 
 - Bo Kersey of link:http://www.vircio.com[VirCIO] provided a Best Power Fortress
-750 to facilitate the bestups driver.  
+750 to facilitate the bestups driver.
 
 - Invensys Energy Systems provided the SOLA/Best "Phoenixtec" protocol
 document. SOLA has since been acquired by Eaton.

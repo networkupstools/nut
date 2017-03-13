@@ -270,7 +270,7 @@ Spaghetti
 If you use a goto, expect us to drop it when our head stops spinning.
 It gives us flashbacks to the very old code we wrote.
 We've tried to clean up our act, and you should make the effort
-as well.  
+as well.
 
 We're not making a blanket statement about gotos, since everything
 probably has at least one good use.  There are a few cases where a goto

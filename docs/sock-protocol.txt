@@ -198,7 +198,7 @@ Requests
 ~~~~~~~~
 
 There is no way to request just one variable.  This was done on purpose
-to limit the complexity of the drivers.  Their job is to send out  
+to limit the complexity of the drivers.  Their job is to send out
 updates and handle a few simple requests.  DUMPALL is provided to give
 the server a known foundation.
 
