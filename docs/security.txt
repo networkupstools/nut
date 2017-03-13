@@ -652,7 +652,7 @@ strange readings in your syslog.  You'll know you have this problem if
 	mkdir -p /chroot/nut/etc
 	cp /etc/localtime /chroot/nut/etc
 
-Note that this is not `cp -a`,since we want to copy the *content*, not
+Note that this is not `cp -a`, since we want to copy the *content*, not
 the symlink that it may be on some systems.
 
 Finally, create a tiny bit of `/dev` so the programs can enter the
