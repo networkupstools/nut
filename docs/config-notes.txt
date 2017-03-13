@@ -118,15 +118,15 @@ Driver configuration
 
 Create one section per UPS in ups.conf
 
-NOTE: The default path for a source installation is /usr/local/ups/etc, while
-packaged installation will vary. For example, /etc/nut is used on Debian and
-derivatives, while /etc/upsd is used on RedHat and derivatives.
+NOTE: The default path for a source installation is `/usr/local/ups/etc`, while
+packaged installation will vary. For example, `/etc/nut` is used on Debian and
+derivatives, while `/etc/ups` or `/etc/upsd` is used on RedHat and derivatives.
 
 To find out which driver to use, check the <<HCL,Hardware Compatibility List>>,
-or data/driver.list.
+or `data/driver.list`.
 
 Once you have picked a driver, create a section for your UPS in
-ups.conf.  You must supply values for "driver" and "port".
+`ups.conf`.  You must supply values for "driver" and "port".
 
 Some drivers may require other flags or settings.  The "desc" value
 is optional, but is recommended to provide a better description of
@@ -268,7 +268,7 @@ You should see just one line in response:
 	OL
 
 OL means your system is running on line power.  If it says something
-else (like OB - on battery, or LB - low battery), your driver was
+else (like OB -- on battery, or LB -- low battery), your driver was
 probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use `upsdrvctl stop` to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
@@ -376,7 +376,7 @@ The exact behavior depends on the specific device, and is related to:
    - battery.charge and battery.charge.low
    - battery.runtime and battery.runtime.low
 
-3. The upsmon master notices and sets "FSD" - the "forced shutdown"
+3. The upsmon master notices and sets "FSD" -- the "forced shutdown"
    flag to tell all slave systems that it will soon power down the load.
 +
 (If you have no slaves, skip to step 6)
@@ -384,7 +384,7 @@ The exact behavior depends on the specific device, and is related to:
 4. upsmon slave systems see "FSD" and:
 
    - generate a NOTIFY_SHUTDOWN event
-   - wait FINALDELAY seconds - typically 5
+   - wait FINALDELAY seconds -- typically 5
    - call their SHUTDOWNCMD
    - disconnect from upsd
 
@@ -396,8 +396,8 @@ The exact behavior depends on the specific device, and is related to:
 6. The upsmon master:
 
    - generates a NOTIFY_SHUTDOWN event
-   - waits FINALDELAY seconds - typically 5
-   - creates the POWERDOWNFLAG file - usually /etc/killpower
+   - waits FINALDELAY seconds -- typically 5
+   - creates the POWERDOWNFLAG file -- usually `/etc/killpower`
    - calls the SHUTDOWNCMD
 
 7. On most systems, init takes over, kills your processes, syncs and
@@ -732,7 +732,7 @@ programs need to be run for monitoring:
 To further complicate things, you can have a system that is hooked to
 multiple UPSes, but only depends on one for power.  This particular
 situation makes it an "A" relative to one UPS, and a "C" relative to the
-other.  The software can handle this - you just have to tell it what to do.
+other.  The software can handle this -- you just have to tell it what to do.
 
 NOTE: NUT can also serve as a data proxy to increase the number of clients,
 or share the communication load between several upsd instances.
