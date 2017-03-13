@@ -258,17 +258,17 @@ Example: `input.L1.current`
 Valid CONTEXTs
 ^^^^^^^^^^^^^^
 
- L1-L2  \
- L2-L3   \
- L3-L1    for voltage measurements
- L1-N    /
- L2-N   /
- L3-N  /
+    L1-L2  \
+    L2-L3   \
+    L3-L1    for voltage measurements
+    L1-N    /
+    L2-N   /
+    L3-N  /
 
- L1  \
- L2  for current and power measurements
- L3  /
- N  - for current measurement
+    L1  \
+    L2  for current and power measurements
+    L3  /
+    N  - for current measurement
 
 Valid SPECs
 ^^^^^^^^^^^
@@ -323,7 +323,7 @@ Valid without context (i.e. aggregation of all phases):
 EXAMPLES
 ~~~~~~~~
 
-Partial Three phase - Three phase example:
+Partial Three phase -- Three phase example:
 
 	input.phases: 3
 	input.frequency: 50.0
@@ -333,7 +333,7 @@ Partial Three phase - Three phase example:
 	output.L1.power: 35700
 	output.powerfactor: 0.82
 
-Partial Three phase - One phase example:
+Partial Three phase -- One phase example:
 
 	input.phases: 3
 	input.L2.current: 48.2

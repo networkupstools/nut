@@ -31,7 +31,7 @@ common interface:
 Multiple architecture support
 -----------------------------
 
-- Cross-platform - different flavors of Unix can be managed together with a
+- Cross-platform -- different flavors of Unix can be managed together with a
 common set of tools, even crossing architectures.
 
 - This software has been reported to run on Linux distributions, the BSDs, Apple's
@@ -60,8 +60,8 @@ WARNING: Be sure to plug your network's physical hardware (switches, hubs,
 routers, bridges, ...) into the UPS!
 
 
-Redundancy support - Hot swap/high availability power supplies
---------------------------------------------------------------
+Redundancy support -- Hot swap/high availability power supplies
+---------------------------------------------------------------
 
 - upsmon can handle high-end servers which receive power from multiple UPSes
 simultaneously.
@@ -116,7 +116,7 @@ Free software
 - That's free beer and free speech. Licensed under the GNU General Public
 License version 2 or later.
 
-- Know your systems - all source code is available for inspection, so there are
+- Know your systems -- all source code is available for inspection, so there are
 no mysteries or secrets in your critical monitoring tools.
 
 UPS management and control
@@ -177,7 +177,7 @@ UPSes or "sharing" hardware, since this software will handle the sharing for you
 *FIXME* remainder
 === One UPS, many clients ===
 
-- Multiple systems may monitor a single UPS using only their network connections - no special "UPS sharing" hardware is required.
+- Multiple systems may monitor a single UPS using only their network connections -- no special "UPS sharing" hardware is required.
 
 - "Slave and master" monitoring design synchronizes shutdowns so that slaves can bring down their operating systems cleanly before the master switches off the power.
 
@@ -200,13 +200,13 @@ run multiple drivers (one per UPS), a single upsd, and a single upsmon (as
 master for both UPS 1 and UPS 2)
 
 This software understands that some of these servers can also run with some of
-the supplies gone. For this reason, every UPS is assigned a "power value" - the
-quantity of power supplies that it feeds on a system.
+the supplies gone. For this reason, every UPS is assigned a "power value" --
+the quantity of power supplies that it feeds on a system.
 The total available "power value" is compared to the minimum that is required
 for that hardware. For example, if you have 3 power supplies and 3 UPSes, but
 only 2 supplies must be running at any given moment, the minimum would be 2.
-This means that you can safely lose any one UPS and the software will handle it
-properly by remaining online.
+This means that you can safely lose any one UPS and the software will handle
+it properly by remaining online.
 
 "Bizarre" configuration
 ~~~~~~~~~~~~~~~~~~~~~~~

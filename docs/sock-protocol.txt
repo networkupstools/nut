@@ -30,7 +30,7 @@ SETINFO
 
 	SETINFO ups.status "OB LB"
 
-There is no "ADDINFO" - if a given variable does not exist, it is
+There is no "ADDINFO" -- if a given variable does not exist, it is
 created upon receiving the first SETINFO command.
 
 DELINFO

@@ -206,28 +206,28 @@ UPS status flags like on line (OL) and on battery (OB) live in
 ups.status.  Don't manipulate this by hand.  There are functions which
 will do this for you.
 
-	status_init() - before doing anything else
+	status_init() -- before doing anything else
 
-	status_set(val) - add a status word (OB, OL, etc)
+	status_set(val) -- add a status word (OB, OL, etc)
 
-	status_commit() - push out the update
+	status_commit() -- push out the update
 
 Possible values for status_set:
 
-	OL      - On line (mains is present)
-	OB      - On battery (mains is not present)
-	LB      - Low battery
-	HB      - High battery
-	RB      - The battery needs to be replaced
-	CHRG    - The battery is charging
-	DISCHRG - The battery is discharging (inverter is providing load power)
-	BYPASS  - UPS bypass circuit is active - no battery protection is available
-	CAL     - UPS is currently performing runtime calibration (on battery)
-	OFF     - UPS is offline and is not supplying power to the load
-	OVER    - UPS is overloaded
-	TRIM    - UPS is trimming incoming voltage (called "buck" in some hardware)
-	BOOST   - UPS is boosting incoming voltage
-	FSD     - Forced Shutdown (restricted use, see the note below)
+	OL      -- On line (mains is present)
+	OB      -- On battery (mains is not present)
+	LB      -- Low battery
+	HB      -- High battery
+	RB      -- The battery needs to be replaced
+	CHRG    -- The battery is charging
+	DISCHRG -- The battery is discharging (inverter is providing load power)
+	BYPASS  -- UPS bypass circuit is active -- no battery protection is available
+	CAL     -- UPS is currently performing runtime calibration (on battery)
+	OFF     -- UPS is offline and is not supplying power to the load
+	OVER    -- UPS is overloaded
+	TRIM    -- UPS is trimming incoming voltage (called "buck" in some hardware)
+	BOOST   -- UPS is boosting incoming voltage
+	FSD     -- Forced Shutdown (restricted use, see the note below)
 
 Anything else will not be recognized by the usual clients.  Coordinate
 with the nut-upsdev list before creating something new, since there will be
@@ -257,11 +257,11 @@ UPS alarms
 These work like ups.status, and have three special functions which you
 must use to manage them.
 
-	alarm_init() - before doing anything else
+	alarm_init() -- before doing anything else
 
-	alarm_set() - add an alarm word
+	alarm_set() -- add an alarm word
 
-	alarm_commit() - push the value into ups.alarm
+	alarm_commit() -- push the value into ups.alarm
 
 NOTE: the ALARM flag in ups.status is automatically set whenever you use
 alarm_set.  To remove that flag from ups.status, call alarm_init and
@@ -434,18 +434,18 @@ failure and 0 on a timeout.
 
 If the character matches the ignset with strchr(), it will not be added
 to the buffer.  If you don't need to ignore any characters, just pass it
-an empty string - "".
+an empty string -- `""`.
 
-The buffer is always cleared and is always null-terminated.  It does
-this by reading at most (buflen - 1) bytes.
+The buffer is always cleared and is always `null`-terminated.  It does
+this by reading at most `(buflen - 1)` bytes.
 
 NOTE: any other data which is read after the endchar in the serial
 buffer will be lost forever.  As a result, you should not use this
 unless your UPS uses a polled protocol.
 
-Let's say your endchar is \n and your UPS sends "OK\n1234\nabcd\n".
-This function will read() all of that, find the first \n, and stop
-there.  Your driver will get "OK", and the rest is gone forever.
+Let's say your endchar is `\n` and your UPS sends `"OK\n1234\nabcd\n"`.
+This function will `read()` all of that, find the first `\n`, and stop
+there.  Your driver will get `"OK"`, and the rest is gone forever.
 
 This also means that you should not "pipeline" commands to the UPS.
 Send a query, then read the response, then send the next query.
@@ -598,8 +598,8 @@ my_ups_set(), then you'd do this to add the pointer:
 
 my_ups_set() will receive two parameters:
 
-	const char * - the variable being changed
-	const char * - the new value
+	const char * -- the variable being changed
+	const char * -- the new value
 
 You should return either STAT_SET_HANDLED if your driver recognizes the
 command, or STAT_SET_UNKNOWN if it doesn't.  Other possibilities will be
@@ -615,8 +615,8 @@ arriving from the server.
 
 Your function will receive two args:
 
-	const char * - the command name
-	const char * - (reserved)
+	const char * -- the command name
+	const char * -- (reserved)
 
 You should return either STAT_INSTCMD_HANDLED or STAT_INSTCMD_UNKNOWN
 depending on whether your driver can handle the requested command.

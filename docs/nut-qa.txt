@@ -103,7 +103,7 @@ FIXME (POST):
      the installation, upgrade and removal testing processes.
 
 - a runtime testing suite, which automates the inter-layer communication testing
-(driver - upsd - upsmon / clients), that is part of Ubuntu.
+(driver -- upsd -- upsmon / clients), that is part of Ubuntu.
 link:http://bazaar.launchpad.net/~ubuntu-bugcontrol/qa-regression-testing/master/view/head:/scripts/test-nut.py[The NUT testing script]
 is available in the link:https://code.edge.launchpad.net/qa-regression-testing[Ubuntu QA Regression Testing suite].
 It installs NUT, configures it with the dummy-ups driver, changes a few data and

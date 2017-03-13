@@ -402,11 +402,11 @@ Filled at runtime
 +dfl+::
 +%s+
 +
-Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
+Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want -- like here -, we can use it in our +preprocess+ function.
 
 +qxflags+::
 +QX_FLAG_QUICK_POLL+ -> this item will be polled every time the driver will check for updates.
-Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it an it'll set +datastale+.
+Since this item is mandatory to run the driver, if a problem arises in +QX_WALKMODE_INIT+ the driver won't skip it and it will set +datastale+.
 
 +preprocess_command+::
 +NULL+
@@ -475,10 +475,10 @@ Filled at runtime
 +dfl+::
 +%s+
 +
-Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want - like here -, we can use it in our +preprocess+ function.
+Since a +preprocess+ function is defined for this item, this could have been +NULL+, however, if we want -- like here -, we can use it in our +preprocess+ function.
 
 +qxflags+::
-+QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
++QX_FLAG_SEMI_STATIC+ -> this item changes -- and will therefore updated -- only when we send a command/setvar to the UPS
 +
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_batt_type+)
 
@@ -519,7 +519,7 @@ Here's the +item_t+:
 +info_rw+::
 +voltronic_e_batt_type+
 +
-The value provided by the user will be automagically checked by the core nutdrv_qx driver against the enumerated values already set by the non setvar item (i.e. +Li+, +Flooded+ or +AGM+), so this could have been +NULL+, however if we want - like here - we can use it in our +preprocess+ function.
+The value provided by the user will be automagically checked by the core nutdrv_qx driver against the enumerated values already set by the non setvar item (i.e. +Li+, +Flooded+ or +AGM+), so this could have been +NULL+, however if we want -- like here -- we can use it in our +preprocess+ function.
 
 +command+::
 +PBT%02.0f\r+
@@ -704,7 +704,7 @@ So we know that the UPS reports actual input/output phase angles when queried fo
 
 ----
 > [QPD\r]
-< [(000 120\r]	<- Input Phase Angle - Output Phase Angle
+< [(000 120\r]	<- Input Phase Angle -- Output Phase Angle
    012345678
    0
 ----
@@ -787,7 +787,7 @@ This information will be used to print the value we got back from the UPS in the
 +info_flags+::
 +ST_FLAG_RW+
 +
-This could also be +0+ (it's not really used by the driver), but it's set to +ST_FLAG_RW+ for cohesion with other rw vars - also, if ever a NUT variable would become available for this item, it'll be easier to change this item and its +QX_FLAG_SETVAR+ counterpart to use it.
+This could also be +0+ (it's not really used by the driver), but it's set to +ST_FLAG_RW+ for cohesion with other rw vars -- also, if ever a NUT variable would become available for this item, it'll be easier to change this item and its +QX_FLAG_SETVAR+ counterpart to use it.
 
 +info_rw+::
 +voltronic_e_phase+
@@ -823,7 +823,7 @@ If there's no +preprocess+ function, the format is used to print the value to th
 Here instead it's used by the +preprocess+ function.
 
 +qxflags+::
-+QX_FLAG_SEMI_STATIC+ -> this item changes - and will therefore updated - only when we send a command/setvar to the UPS
++QX_FLAG_SEMI_STATIC+ -> this item changes -- and will therefore updated -- only when we send a command/setvar to the UPS
 +
 +QX_FLAG_ENUM+ -> this r/w variable is of the enumerated type and the enumerated values are listed in the +info_rw+ structure (i.e. +voltronic_e_phase+).
 +

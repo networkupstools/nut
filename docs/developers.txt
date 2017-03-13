@@ -4,8 +4,8 @@ Information for developers
 This document is intended to explain some of the more useful things
 within the tree, and provide a standard for working on the code.
 
-General stuff - common subdirectory
------------------------------------
+General stuff -- common subdirectory
+------------------------------------
 
 String handling
 ~~~~~~~~~~~~~~~
@@ -81,8 +81,8 @@ hardware support to a driver without recompiling.
 This is already handled by autoconf, so just include "timehead.h" and you
 will get the right headers on every system.
 
-Device drivers - main.c
------------------------
+Device drivers -- main.c
+------------------------
 
 The device drivers use main.c as their core.
 
@@ -183,7 +183,7 @@ used in that file will probably be dropped.  If it's something we really
 need, it will be grudgingly reformatted before being included.
 
 When in doubt, have a look at Linus's take on this topic in the Linux
-kernel - Documentation/CodingStyle.  He's done a far better job of
+kernel -- Documentation/CodingStyle.  He's done a far better job of
 explaining this.
 
 Line breaks
@@ -285,7 +285,7 @@ There are parts of the source tree that do not yet conform to these
 specs.  Part of this is due to the fact that the coding style has been
 evolving slightly over the course of the project.  Some of the code you
 see in these directories is 5 years old, and things have gotten cleaner
-since then.  Don't worry - it'll get cleaned up the next time something
+since then.  Don't worry -- it'll get cleaned up the next time something
 in the vicinity gets a visit.
 
 Memory leak checking
@@ -338,7 +338,7 @@ evaluated separately, assuming the core developers care enough to do that
 instead of just dropping it.
 
 If you have to make big changes in lots of places, send multiple
-patches - one per item.
+patches -- one per item.
 
 The finishing touches: manual pages and device entry in HCL
 -----------------------------------------------------------

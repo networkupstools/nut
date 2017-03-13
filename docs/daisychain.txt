@@ -32,7 +32,7 @@ General specification
 ~~~~~~~~~~~~~~~~~~~~~
 
 The daisychain support uses the device collection to extend the historical NUT
-scope (1 driver - 1 device), and provide data from the additional devices.
+scope (1 driver -- 1 device), and provide data from the additional devices.
 
 A new variable was introduced to provide the number of devices exposed: device.count
 

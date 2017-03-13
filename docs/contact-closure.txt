@@ -74,7 +74,7 @@ When editing the genericups.h, the values have the following meanings:
 
 Outgoing lines:
 
-- line_norm = what to set to make the line "normal" - i.e. cable power
+- line_norm = what to set to make the line "normal" -- i.e. cable power
 - line_sd   = what to set to make the UPS shut down the load
 
 Incoming lines:

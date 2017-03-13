@@ -97,4 +97,5 @@ power management services.
 This way, you can control remotely each blade server as if it were a PDU
 outlet.
 
-This category of devices is generally called Remote Power Controls - RPC in NUT.
+This category of devices is generally called Remote Power Controls --
+or "RPC" in NUT.

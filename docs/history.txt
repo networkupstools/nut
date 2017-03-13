@@ -8,7 +8,7 @@ This page is an attempt to document how everything came together.
 The Network UPS Tools team would like to warmly thank Russell Kroll.
 
 Russell initially started this project, maintaining and improving it for
-over 8 years (1996 - mid 2005).
+over 8 years (1996 -- mid 2005).
 
 Prototypes and experiments
 --------------------------
@@ -214,7 +214,7 @@ April 2003: new naming scheme, better driver glue, and an overhauled protocol
 
 Following an extended period with no development tree, 1.3.0 got things moving again on April 13, 2003. The focus of this tree was to rewrite the driver-server communication layer and replace the static naming scheme for variables and commands.
 
-Up to this point, all variables had names like STATUS, UTILITY, and OUTVOLT. They had been created as drivers were added to the tree, and there was little consistency. For example, it probably should have been INVOLT and OUTVOLT, but there was no OUTVOLT originally, so UTILITY was all we had. This same pattern repeated with ACFREQ - is it incoming or outgoing? - and many more.
+Up to this point, all variables had names like STATUS, UTILITY, and OUTVOLT. They had been created as drivers were added to the tree, and there was little consistency. For example, it probably should have been INVOLT and OUTVOLT, but there was no OUTVOLT originally, so UTILITY was all we had. This same pattern repeated with ACFREQ -- is it incoming or outgoing? -- and many more.
 
 To solve this problem, all variables and commands were renamed to a hierarchical scheme that had obvious grouping. STATUS became ups.status. UTILITY turned into input.voltage, and OUTVOLT is output.voltage. ACFREQ is input.frequency, and the new output.frequency is also now supported. Every other variable or command was renamed in this fashion.
 

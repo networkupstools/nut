@@ -251,7 +251,7 @@ to bindir. The defaults are <exec_prefix>/bin and <exec_prefix>/sbin.
 Change the data directory, i.e., where architecture independent
 read-only data is installed.  By default this is <prefix>/share,
 i.e., /usr/local/ups/share.  At the moment, this directory only
-holds two files - the optional cmdvartab and driver.list.
+holds two files -- the optional cmdvartab and driver.list.
 
 	--mandir=PATH
 
