@@ -71,66 +71,71 @@ void upsdrv_updateinfo(void)
 		if (r_start >= sizeof(line))
 			r_start = 0;
 		memset(line + r_start, 0, sizeof(line) - r_start);
-		int nred = ser_get_buf(upsfd, line + r_start, sizeof(line) - r_start, 1, 0);
+		int nred = ser_get_buf(upsfd, line + r_start, sizeof(line) - r_start, 0, 200);
 		if (nred < 0)
 			break;
 		if (nred == 0)
 			continue;
-		upsdebugx (3, "%s: buf '%s'", __func__, line);
 		r_start += nred;
-		// find checksum, verify checksum
-		char *checksum = strstr(line, "Checksum\t");
-		if (checksum == NULL || checksum + 9 >= line + r_start)
-			continue;
 
-		// calculate checksum
-		char ch = 0;
-		for (v_name = line; v_name <= checksum + 8; v_name++)
-			ch += *v_name;
-		ch = ~ch + 1;
-		if (ch != checksum[9])
+		while (1)
 		{
-			upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
-			r_start = 0;
-			continue;
-		}
-
-		checksum[9] = '\0';
-		upsdebugx(2, "buffer: %s", line);
-
-		// parse what is in buffer..
-		v_name = line;
-		while (v_name < checksum)
-		{
-			if (v_name[0] != '\r' || v_name[1] != '\n')
+			upsdebugx (3, "%s: buf '%s'", __func__, line);
+			// find checksum, verify checksum
+			char *checksum = strstr(line, "Checksum\t");
+			if (checksum == NULL || checksum + 9 >= line + r_start)
 				break;
-			v_name += 2;
-			v_value = v_name;
-			while (*v_value != '\t' && *v_value != '\0')
+
+			// calculate checksum
+			char ch = 0;
+			for (v_name = line; v_name <= checksum + 8; v_name++)
+				ch += *v_name;
+			ch = ~ch + 1;
+			if (ch != checksum[9])
+			{
+				upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
+				r_start = 0;
+				break;
+			}
+
+			checksum[9] = '\0';
+			upsdebugx(2, "buffer: %s", line);
+
+			// parse what is in buffer..
+			v_name = line;
+			while (v_name < checksum)
+			{
+				if (v_name[0] != '\r' || v_name[1] != '\n')
+					break;
+				v_name += 2;
+				v_value = v_name;
+				while (*v_value != '\t' && *v_value != '\0')
+					v_value++;
+				if (v_value >= checksum)
+					break;
+				*v_value = '\0';
 				v_value++;
-			if (v_value >= checksum)
-				break;
-			*v_value = '\0';
-			v_value++;
-			char *end = v_value;
-			while (*end != '\r' && *end != '\0')
-				end++;
-			if (*end != '\r')
-				break;
-			*end = '\0';
+				char *end = v_value;
+				while (*end != '\r' && *end != '\0')
+					end++;
+				if (*end != '\r')
+					break;
+				*end = '\0';
 
-			snprintf(vn, sizeof(vn), "ve-direct.%s", v_name);
-			upsdebugx(1, "name %s value %s", vn, v_value);
-			dstate_setinfo(vn, "%s", v_value);
+				snprintf(vn, sizeof(vn), "ve-direct.%s", v_name);
+				upsdebugx(1, "name %s value %s", vn, v_value);
+				dstate_setinfo(vn, "%s", v_value);
 
-			v_name = end;
-			*v_name = '\r';
+				v_name = end;
+				*v_name = '\r';
+			}
+			size_t left = (line + r_start) - (checksum + 9);
+			if (left > 0)
+				memmove(line, checksum + 10, left);
+
+			r_start = left;
 		}
-		size_t left = (line + r_start) - (checksum + 9);
-		if (left > 0)
-			memmove(line, checksum + 10, left);
 
-		r_start = left;
 		break;
 	}
 
@@ -152,6 +157,7 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+	poll_interval = 1;
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B19200);
 }
