@@ -51,6 +51,7 @@ addons:
     - libfreetype6-dev
     - libxpm-dev
     - libxml2-utils
+    - libmodbus-dev
 
 env:
   global:
