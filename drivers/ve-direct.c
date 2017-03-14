@@ -22,7 +22,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Victron Energy Direct UPS and solar controller driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -33,32 +33,105 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-#define ENDCHAR	'\r'
-#define IGNCHARS "\n"
+char line[500];
+size_t r_start = 0;
+
+int ve_command(const char ve_cmd, const char *ve_extra)
+{
+	unsigned char ch = ve_cmd - '0';
+	ch = ch ^ 0x55;
+	upsdebugx(2, "sending command %c checksum %02X", ve_cmd, ch);
+	ser_send(upsfd, ":%c%02X\n", ve_cmd, ch);
+	int ret = ser_get_buf(upsfd, line + r_start, sizeof(line) - r_start, 0, 500);
+	if (ret <= 0)
+		return STAT_INSTCMD_FAILED;
+	upsdebugx(3, "reply to command: %s", line);
+
+	return 0;
+}
 
 static int instcmd(const char *cmdname, const char *extra)
 {
+	if (!strcasecmp(cmdname, "ve-direct.ping"))
+		return ve_command('1',NULL);
 	upsdebugx(1, "instcmd: unknown command: %s", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
 	
 void upsdrv_initinfo(void)
 {
+	dstate_addcmd("ve-direct.ping");
+
 	upsh.instcmd = instcmd;
 }
 
-
-void upsdrv_updateinfo(void)
+int process_text_buffer()
 {
-	/* ups.status */ 
-	char line[2000];
 	char vn[50];
 
 	char *v_name;
 	char *v_value;
 
-	size_t r_start = 0;
+	upsdebugx (3, "%s: buf '%s'", __func__, line);
+	// find checksum, verify checksum
+	char *checksum = strstr(line, "Checksum\t");
+	if (checksum == NULL || checksum + 9 >= line + r_start)
+		return -1;
 
+	// calculate checksum
+	char ch = 0;
+	for (v_name = line; v_name <= checksum + 8; v_name++)
+		ch += *v_name;
+	ch = ~ch + 1;
+	if (ch != checksum[9])
+	{
+		upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
+		r_start = 0;
+		return -1;
+	}
+
+	checksum[9] = '\0';
+	upsdebugx(2, "buffer: %s", line);
+
+	// parse what is in buffer..
+	v_name = line;
+	while (v_name < checksum)
+	{
+		if (v_name[0] != '\r' || v_name[1] != '\n')
+			break;
+		v_name += 2;
+		v_value = v_name;
+		while (*v_value != '\t' && *v_value != '\0')
+			v_value++;
+		if (v_value >= checksum)
+			break;
+		*v_value = '\0';
+		v_value++;
+		char *end = v_value;
+		while (*end != '\r' && *end != '\0')
+			end++;
+		if (*end != '\r')
+			break;
+		*end = '\0';
+
+		snprintf(vn, sizeof(vn), "ve-direct.%s", v_name);
+		upsdebugx(1, "name %s value %s", vn, v_value);
+		dstate_setinfo(vn, "%s", v_value);
+
+		v_name = end;
+		*v_name = '\r';
+	}
+	size_t left = (line + r_start) - (checksum + 9);
+	if (left > 0)
+		memmove(line, checksum + 10, left);
+
+	r_start = left;
+	return 0;
+}
+
+void upsdrv_updateinfo(void)
+{
+	/* ups.status */ 
 	status_init();
 	status_set("OL");
 	status_commit();
@@ -80,60 +153,7 @@ void upsdrv_updateinfo(void)
 
 		while (1)
 		{
-			upsdebugx (3, "%s: buf '%s'", __func__, line);
-			// find checksum, verify checksum
-			char *checksum = strstr(line, "Checksum\t");
-			if (checksum == NULL || checksum + 9 >= line + r_start)
-				break;
-
-			// calculate checksum
-			char ch = 0;
-			for (v_name = line; v_name <= checksum + 8; v_name++)
-				ch += *v_name;
-			ch = ~ch + 1;
-			if (ch != checksum[9])
-			{
-				upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
-				r_start = 0;
-				break;
-			}
-
-			checksum[9] = '\0';
-			upsdebugx(2, "buffer: %s", line);
-
-			// parse what is in buffer..
-			v_name = line;
-			while (v_name < checksum)
-			{
-				if (v_name[0] != '\r' || v_name[1] != '\n')
-					break;
-				v_name += 2;
-				v_value = v_name;
-				while (*v_value != '\t' && *v_value != '\0')
-					v_value++;
-				if (v_value >= checksum)
-					break;
-				*v_value = '\0';
-				v_value++;
-				char *end = v_value;
-				while (*end != '\r' && *end != '\0')
-					end++;
-				if (*end != '\r')
-					break;
-				*end = '\0';
-
-				snprintf(vn, sizeof(vn), "ve-direct.%s", v_name);
-				upsdebugx(1, "name %s value %s", vn, v_value);
-				dstate_setinfo(vn, "%s", v_value);
-
-				v_name = end;
-				*v_name = '\r';
-			}
-			size_t left = (line + r_start) - (checksum + 9);
-			if (left > 0)
-				memmove(line, checksum + 10, left);
-
-			r_start = left;
+			process_text_buffer();
 		}
 
 		break;
@@ -148,6 +168,7 @@ void upsdrv_shutdown(void)
 
 void upsdrv_help(void)
 {
+	printf("Read The Fine Manual ('man 8 ve-direct')\n");
 }
 
 /* list flags and values that you want to receive via -x */
@@ -157,12 +178,16 @@ void upsdrv_makevartable(void)
 
 void upsdrv_initups(void)
 {
+#ifndef TESTING
 	poll_interval = 1;
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B19200);
+#endif
 }
 
 void upsdrv_cleanup(void)
 {
+#ifndef TESTING
 	ser_close(upsfd, device_path);
+#endif
 }

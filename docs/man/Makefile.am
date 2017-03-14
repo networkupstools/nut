@@ -351,7 +351,8 @@ SRC_SERIAL_PAGES = \
 	tripplitesu.txt	\
 	upscode2.txt	\
 	victronups.txt	\
-	apcupsd-ups.txt
+	apcupsd-ups.txt \
+	ve-direct.txt
 
 if WITH_MANS
 MAN_SERIAL_PAGES = \
@@ -394,7 +395,8 @@ MAN_SERIAL_PAGES = \
 	tripplitesu.8	\
 	upscode2.8	\
 	victronups.8	\
-	apcupsd-ups.8
+	apcupsd-ups.8   \
+	ve-direct.8
 endif
 
 if WITH_SERIAL
@@ -441,7 +443,8 @@ HTML_SERIAL_MANS = \
 	tripplitesu.html	\
 	upscode2.html	\
 	victronups.html	\
-	apcupsd-ups.html
+	apcupsd-ups.html \
+	ve-direct.html
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
