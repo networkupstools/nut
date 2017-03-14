@@ -192,7 +192,7 @@ int mrir(modbus_t *ctx, int addr, int nb, uint16_t *dest) {
     int r;
     r =  modbus_read_input_registers(ctx, addr, nb, dest);
     if (r == -1) {
-        upslogx(LOG_ERR, "mrir: modbus_read_input_registers: %s", modbus_strerror(errno));
+        upslogx(LOG_ERR, "mrir: modbus_read_input_registers(addr:%d, count:%d): %s (%s)", addr,nb,modbus_strerror(errno),device_path);
         errcount ++;
     }
     errcount = 0;
