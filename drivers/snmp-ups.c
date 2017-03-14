@@ -2576,6 +2576,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	if ((daisychain_enabled == TRUE) && (devices_count > 1) && (daisychain_device_number == 0)) {
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
+		free(tmp_varname);
 		return STAT_SET_INVALID;
 	}
 
