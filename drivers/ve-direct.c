@@ -151,9 +151,8 @@ void upsdrv_updateinfo(void)
 			continue;
 		r_start += nred;
 
-		while (1)
+		while (process_text_buffer() >= 0)
 		{
-			process_text_buffer();
 		}
 
 		break;
