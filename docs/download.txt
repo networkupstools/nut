@@ -131,7 +131,8 @@ link:http://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[Wi
 Java packages
 -------------
 
-The jNut package has been split into its own link:https://github.com/networkupstools/jNut[GitHub repository].
+The jNut package has been split into its own
+link:https://github.com/networkupstools/jNut[GitHub repository].
 
 - NUT Java support (client side, Beta)
 link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]
