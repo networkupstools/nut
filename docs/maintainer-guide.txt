@@ -58,7 +58,7 @@ message explaining the reason. The following can serve as a base:
 	NUT maintainers
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 !! DRAFT !!
 
 Release process
@@ -80,13 +80,13 @@ process.
 
 SANDBOX (to be completed and pushed)
 
-• update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
-• create a GPG-signed tag v<incremented version> (ex: v2.7.3)
-• make dist
-• maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
-• push commits and tag
-• update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
-• add download hashes for tarball
+* update version to <incremented version> (ex: 2.7.3) in nut/configure.ac
+* create a GPG-signed tag v<incremented version> (ex: v2.7.3)
+* `make dist`
+* maybe update nut/configure.ac version to <incremented version>.1 (ex: 2.7.3.1)
+* push commits and tag
+* update nut/ and ddl/ submodules in nut-website/ (this should update the website's version as well)
+* add download hashes for tarball
 
 
-///////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
