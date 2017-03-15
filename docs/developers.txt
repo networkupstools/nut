@@ -10,37 +10,37 @@ General stuff -- common subdirectory
 String handling
 ~~~~~~~~~~~~~~~
 
-Use snprintf().  It's even provided with a compatibility module if the
+Use `snprintf()`.  It's even provided with a compatibility module if the
 target system doesn't have it natively.
 
-If you use snprintf() to load some value into a buffer, make sure you
+If you use `snprintf()` to load some value into a buffer, make sure you
 provide the format string.  Don't use user-provided format strings,
 since that's an easy way to open yourself up to an exploit.
 
-Don't use strcat().  We have a neat wrapper for snprintf() called snprintfcat()
-that allows you to append to char * with a format string and all the usual
-string length checking of snprintf().
+Don't use `strcat()`.  We have a neat wrapper for `snprintf()` called
+`snprintfcat()` that allows you to append to `char *` with a format
+string and all the usual string length checking of `snprintf()` routine.
 
 Error reporting
 ~~~~~~~~~~~~~~~
 
-Don't call syslog() directly.  Use upslog_with_errno() and upslogx().
+Don't call `syslog()` directly.  Use `upslog_with_errno()` and `upslogx()`.
 They may write to the syslog, stderr, or both as appropriate.  This
 means you don't have to worry about whether you're running in the
 background or not.
 
-upslog_with_errno prints your message plus the string expansion of
-errno.  upslogx just prints the message.
+The `upslog_with_errno()` routine prints your message plus the string
+expansion of `errno`. The `upslogx()` just prints the message.
 
-fatal_with_errno and fatalx work the same way, but they
-exit(EXIT_FAILURE) afterwards. Don't call exit() directly.
+`fatal_with_errno()` and `fatalx()` work the same way, but they
+also `exit(EXIT_FAILURE)` afterwards. Don't call `exit()` directly.
 
 Debugging information
 ~~~~~~~~~~~~~~~~~~~~~
 
-upsdebug_with_errno(), upsdebugx(), upsdebug_hex() and upsdebug_ascii()
-use the global `nut_debug_level` so you don't have to mess around with
-printf()s yourself.  Use them.
+The `upsdebug_with_errno()`, `upsdebugx()`, `upsdebug_hex()` and
+`upsdebug_ascii()` routines use the global `nut_debug_level`, so you
+don't have to mess around with `printf()`s yourself.  Use them.
 
 Memory allocation
 ~~~~~~~~~~~~~~~~~
@@ -66,7 +66,7 @@ handled by the state machine.  Using the same code for all config files
 avoids code duplication.
 
 NOTE: this does not apply to drivers.  Driver authors should use the
-upsdrv_makevartable() scheme to pick up values from ups.conf.  Drivers
+`upsdrv_makevartable()` scheme to pick up values from ups.conf.  Drivers
 should not have their own config files.
 
 Drivers may have their own data files, such as lists of hardware,
@@ -110,7 +110,7 @@ There are still older systems out there that don't do C++ style comments.
 Newer versions of gcc allow you to declare a variable inside a function
 somewhat like the way C++ operates, like this:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 function do_stuff(void)
 {
 	check_something();
@@ -119,7 +119,7 @@ function do_stuff(void)
 
 	a = do_something_else();
 }
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 While this will compile and run on these newer versions, it will fail
 miserably for anyone on an older system.  That means you must not use
@@ -130,7 +130,7 @@ Coding style
 
 This is how we do things:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 int open_subspace(char *ship, int privacy)
 {
 	if (!privacy)
@@ -141,7 +141,7 @@ int open_subspace(char *ship, int privacy)
 
 	return secure_channel(ship);
 }
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 The basic idea is that we try to group things into functions, and then
 find ways to drop out of them when we can't go any further.  There's
@@ -200,17 +200,17 @@ long when there is a better alternative (see the note on
 pretentiousVariableNamingSchemes above).  Certainly there should not
 be more than one statement per line. Please do not use
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 if (condition) break;
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 but use the following:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 if (condition) {
 	break;
 }
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Miscellaneous coding style tools
 --------------------------------
@@ -233,7 +233,7 @@ rendered on screen). It is even possible to set this on a
 per-directory basis, by putting something like this into your .emacs
 file:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 ;; NUT style
 
 (defun nut-c-mode ()
@@ -248,7 +248,7 @@ file:
 
 (setq auto-mode-alist (cons '(".*/nut/.*\\.[ch]$". nut-c-mode)
                        auto-mode-alist))
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 Finishing touches
 ~~~~~~~~~~~~~~~~~
@@ -360,32 +360,34 @@ HTML and dynamic searchable HTML for the website.
 Source code management
 ----------------------
 
-We currently use a Git repository hosted at GitHub (with a mirror at Alioth) to track
-changes to the NUT source code. This allows you to clone the repository (or
-fork, in GitHub parlance), make changes, and post them online for review prior
-to integration.
+We currently use a Git repository hosted at GitHub (with a mirror at
+Alioth) to track changes to the NUT source code. This allows you to
+clone the repository (or fork, in GitHub parlance), make changes, and
+post them online for review prior to integration.
 
-To obtain permission to commit directly to the master NUT repository, you must
-be prepared to spend a fair amount of time contributing to the NUT codebase.
-Most developers will be well served by committing to their own Git repository,
-and having the NUT team merge their changes.
+To obtain permission to commit directly to the master NUT repository,
+you must be prepared to spend a fair amount of time contributing to the
+NUT codebase. Most developers will be well served by committing to their
+own Git repository, and having the NUT team merge their changes.
 
-Git offers a little more flexibility than the +svn update+ command. You may
-fetch other developers' changes into your repository, but hold off on
-actually combining them with your branch until you have compared the two
-branches (for instance, with `gitk --all`). Git also allows you to accumulate
-more than one commit worth of changes before pushing to another repository.
-This allows development to continue without a constant network connection.
+Git offers a little more flexibility than the +svn update+ command.
+You may fetch other developers' changes into your repository, but hold
+off on actually combining them with your branch until you have compared
+the two branches (for instance, with `gitk --all`). Git also allows you
+to accumulate more than one commit worth of changes before pushing to
+another repository. This allows development to continue without a constant
+network connection.
 
-For a quick change to a file in the Git working copy, you can use `git diff` to
-generate a patch to send to the nut-upsdev mailing list.  If you have more
+For a quick change to a file in the Git working copy, you can use `git diff`
+to generate a patch to send to the nut-upsdev mailing list.  If you have more
 extensive changes, you can use `git format-patch` on a complete commit or
 branch, and send the resulting series of patches to the list.
 
-If you use GitHub's web-based editor to make changes, it tends to create lots
-of small commits, one per change per file. Unless there is reason to keep the
-intermediate history, we will probably collapse the entire branch into one
-commit with `git rebase -i` before merging.
+If you use GitHub's web-based editor to make changes, it tends to create
+lots of small commits, one per change per file. Unless there is reason to
+keep the intermediate history, we will probably collapse (or "squash" in
+Git parlance) the entire branch into one commit with a `git rebase -i`
+before merging.
 
 The link:https://git.wiki.kernel.org/index.php/GitSvnCrashCourse[GitSvnCrashCourse]
 wiki page has some useful information for long-time users of Subversion.
@@ -499,7 +501,8 @@ back into master once they are complete.
 You are encouraged to use `git rebase -i` on your private Git branches to
 separate your changes into <<_patch_cohesion,logical changes>>.
 
-From there, you can generate patches for the issue tracker, or the nut-upsdev list.
+From there, you can generate patches for the issue tracker, or the nut-upsdev
+mailing list.
 
 Note that once you rebase a branch, anyone else who has a copy of this branch
 will need to rebase on top of your rebased branch. Obviously, this hinders
@@ -516,7 +519,7 @@ stash pop+ to apply your saved changes.
 
 Here is an example workflow:
 
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 	git clone -o central git://github.com/networkupstools/nut.git
 
 	cd nut
@@ -543,7 +546,7 @@ Here is an example workflow:
 	# Publish your branch to your GitHub repository:
 
 	git push username my-new-feature
---------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 If you are new to Git, but are familiar with SVN, the
 link:http://git-scm.com/course/svn.html[following link] may be of use.
