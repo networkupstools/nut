@@ -3,8 +3,9 @@ Configure options
 =================
 endif::website[]
 
-There are a few options that can be given to configure to tweak compiles.
-See also "./configure --help" for a current and complete listing.
+There are a few options reviewed below that can be given to `configure`
+script to tweak your compilations. See also `./configure --help` for a
+current and complete listing for the current version of the codebase.
 
 Driver selection
 ----------------
