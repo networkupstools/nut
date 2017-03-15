@@ -36,6 +36,15 @@ upsdrv_info_t upsdrv_info = {
 char line[500];
 size_t r_start = 0;
 
+void ve_copy(const char *endl)
+{
+	size_t left = (line + r_start) - endl;
+	if (left > 0)
+		memmove(line, endl, left);
+
+	r_start = left;
+}
+
 int process_text_buffer()
 {
 	char vn[50];
@@ -43,7 +52,7 @@ int process_text_buffer()
 	char *v_name;
 	char *v_value;
 
-	upsdebugx (3, "%s: r_start %d buf '%s'", __func__, r_start, line);
+	upsdebugx (3, "%s: buf '%s'", __func__, line);
 	// find checksum, verify checksum
 	char *checksum = strstr(line, "Checksum\t");
 	if (checksum == NULL || checksum + 9 >= line + r_start)
@@ -57,11 +66,11 @@ int process_text_buffer()
 	if (ch != checksum[9])
 	{
 		upslogx(1, "invalid checksum: %d %d", ch, checksum[9]);
-		goto endprocess;
+		ve_copy(checksum + 10);
+		return 0;
 	}
 
 	checksum[9] = '\0';
-	upsdebugx(2, "buffer: %s", line);
 
 	// parse what is in buffer..
 	v_name = line;
@@ -92,21 +101,28 @@ int process_text_buffer()
 		*v_name = '\r';
 	}
 
-endprocess:
-	{
-		size_t left = (line + r_start) - (checksum + 10);
-		if (left > 0)
-			memmove(line, checksum + 10, left);
-
-		r_start = left;
-	}
+	ve_copy(checksum + 10);
 	return 0;
 }
 
+// calculates checksum for VE.Direct HEX command/reply
 unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 {
 	unsigned char ch = ve_cmd - '0';
-	ch = ch ^ 0x55;
+	if (ve_extra != NULL)
+	{
+		for (const char *ve = ve_extra; *ve != '\0'; ve++)
+		{
+			if (ve[1] != '\0')
+			{
+				unsigned int a;
+				sscanf (ve, "%02X", &a);
+				ch += (unsigned char) a;
+				ve++;
+			}
+		}
+	}
+	ch = 0x55 - ch;
 	return ch;
 }
 
@@ -131,29 +147,41 @@ int ve_command(const char ve_cmd, const char *ve_extra)
 		if (reply != NULL)
 			endl = strchr(reply, '\n');
 		// already seen start of command reply
-		if (reply != NULL)
+		if (reply != NULL && endl != NULL)
 			break;
 
-		if (process_text_buffer() < 0)
-			break;
+		process_text_buffer();
 	}
 
 	// process what's left
-	while (strncmp(line, "\r\n:", 3))
+	while (line[0] != ':')
 	{
 		if (process_text_buffer() < 0)
 			break;
 	}
 
 	endl = NULL;
-	reply = line + 2;
+	reply = line;
 	endl = strchr(reply, '\n');
-
-	upsdebugx(1, "reply to command: %ld %s", r_start, line);
 
 	if (reply != NULL && endl != NULL)
 	{
-		upsdebugx(1, "reply to command: %ld %s", r_start, line);
+		*endl = '\0';
+		upsdebugx(2, "reply to command: %s", line);
+		int checksum = -1;
+		sscanf(endl - 2, "%02X", &checksum);
+		endl[-2] = '\0';
+
+		if (checksum == ve_checksum(reply[1], reply + 2))
+		{
+			upsdebugx(3, "correct checksum on reply to command %c", reply[1]);
+		}
+		else
+		{
+			upslogx(1, "invalid checksum on reply to command %c", reply[1]);
+		}
+
+		ve_copy (endl + 1);
 	}
 
 	return 0;
