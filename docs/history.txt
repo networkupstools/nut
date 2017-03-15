@@ -144,15 +144,15 @@ September 1999: new name, new URL
 
 Several visitors to the web page and subscribers to the mailing lists provided
 suggestions to rename the project. The old name no longer accurately described
-it, and it was perilously close to APC's "Smart-UPS" trademark. Rather than risk
-problems in the future, the name was changed. Kern Sibbald provided the winner:
-Network UPS Tools, which captures the essence of the project and makes for great
-short tarball filenames: nut-x.y.z.tar.gz.
+it, and it was perilously close to APC's "Smart-UPS" trademark. Rather than
+risk problems in the future, the name was changed. Kern Sibbald provided the
+winner: Network UPS Tools, which captures the essence of the project and makes
+for great short tarball filenames: nut-x.y.z.tar.gz.
 
-The new name was first applied to 0.42.0, released October 31, 1999. This is
-also when the web pages moved from the old `http://www.exploits.org/~rkroll/smartupstools/`
-URL to the replacement at `http://www.exploits.org/nut/` to coincide with the
-name change.
+The new name was first applied to 0.42.0, released October 31, 1999.
+This is also when the web pages moved from the old
+`http://www.exploits.org/~rkroll/smartupstools/` URL to the replacement
+at `http://www.exploits.org/nut/` to coincide with the name change.
 
 More drivers were written and the hardware support continued to grow. upsmon
 picked up the concepts of "master" and "slave", and could now handle
@@ -165,28 +165,52 @@ June 2001: common driver core
 
 Up to this point, all of the drivers compiled into freestanding programs, each
 providing their own implementation of main(). This meant they all had to check
-the incoming arguments and act uniformly. Unfortunately, not all of the programs
-behaved the same way, and it was hard to document and use consistently. It also
-meant that startup scripts had to be edited depending on what kind of hardware
-was attached.
+the incoming arguments and act uniformly. Unfortunately, not all of the
+programs behaved the same way, and it was hard to document and use consistently.
+It also meant that startup scripts had to be edited depending on what kind of
+hardware was attached.
 
-Starting in 0.45.0, released June 11, 2001, there was a new common core for all drivers called main.c. It provided the main function and called back to the upsdrv_* functions provided by the hardware-specific part of the drivers. This allowed driver authors to focus on the UPS hardware without worrying about the housekeeping stuff that needs to happen.
+Starting in 0.45.0, released June 11, 2001, there was a new common core for
+all drivers called `main.c`. It provided the main function and called back to
+the `upsdrv_*` functions provided by the hardware-specific part of the drivers.
+This allowed driver authors to focus on the UPS hardware without worrying about
+the housekeeping stuff that needs to happen.
 
-This new design provided an obvious way to configure drivers from one file, and ups.conf was born. This eventually spawned upsdrvctl, and now all drivers based on this common core could be started or stopped with one command. Startup scripts now could contain "upsdrvctl start", and it didn't matter what kind of hardware or how many UPSes you had on one system.
+This new design provided an obvious way to configure drivers from one file, and
+so `ups.conf` was born. This eventually spawned upsdrvctl, and now all drivers
+based on this common core could be started or stopped with one command. Startup
+scripts now could contain "upsdrvctl start", and it didn't matter what kind of
+hardware or how many UPSes you had on one system.
 
-Interestingly, at the end of this month, Arnaud Quette entered the UPS world, as a subcontractor of the now defunct MGE UPS SYSTEMS.
-This marks the start of a future successful collaboration.
+Interestingly, at the end of this month, Arnaud Quette entered the UPS world,
+as a subcontractor of the now defunct MGE UPS SYSTEMS. This marked the start of
+a future successful collaboration.
 
 May 2002: casting off old drivers, IANA port, towards 1.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-During the 0.45.x series, both the old standalone drivers and the ones which had been converted to the common core were released together. Before the release of 0.50.0 on May 24, 2002, all of the old drivers were removed. While this shrank the list of supported hardware, it set the precedent for removing code which isn't receiving regular maintenance. The assumption is that the code will be brought back up to date by someone if they actually need it. Otherwise, it's just dead weight in the tree.
+During the 0.45.x series, both the old standalone drivers and the ones which
+had been converted to the common core were released together. Before the
+release of 0.50.0 on May 24, 2002, all of the old drivers were removed.
+While this shrank the list of supported hardware, it set the precedent for
+removing code which isn't receiving regular maintenance. The assumption is
+that the code will be brought back up to date by someone if they actually
+need it. Otherwise, it's just dead weight in the tree.
 
-This change meant that all drivers could be controlled with upsdrvctl and ups.conf, allowing the documentation to be greatly simplified. There was no longer any reason to say "do this, unless you have this driver, then do this".
+This change meant that all remaining drivers could be controlled with the
+`upsdrvctl` and `ups.conf`, allowing the documentation to be greatly
+simplified. There was no longer any reason to say "do this, unless you
+have this driver, then do this".
 
-IANA granted an official port number to the project, and the network code switched to port 3493. It had previously been on 3305 which is assigned to odette-ftp. 3305 was probably picked in 1997 because it was the fifth project to spawn from some common UDP server code.
+IANA granted an official port number to the project, and the network code
+switched to port 3493. It had previously been on 3305 which is assigned to
+`odette-ftp`. 3305 was probably picked in 1997 because it was the fifth
+project to spawn from some common UDP server code.
 
-After 0.50.1, the 0.99 tree was created to provide a tree which would receive nothing but bug fixes in preparation for the release of 1.0. As it turned out, very few things required fixing, and there were only three releases in this tree.
+After 0.50.1, the 0.99 tree was created to provide a tree which would receive
+nothing but bug fixes in preparation for the release of 1.0. As it turned out,
+very few things required fixing, and there were only three releases in this
+tree.
 
 Leaving 0.x territory
 ---------------------
@@ -194,51 +218,119 @@ Leaving 0.x territory
 August 2002: first stable tree: NUT 1.0.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After nearly 5 years of having a 0.x version number, 1.0.0 was released on August 19, 2002. This milestone meant that all of the base features that you would expect to find were intact: good hardware support, a network server with security controls, and system shutdowns that worked.
+After nearly 5 years of having a 0.x version number, 1.0.0 was released on
+August 19, 2002. This milestone meant that all of the base features that
+you would expect to find were intact: good hardware support, a network
+server with security controls, and system shutdowns that worked.
 
-The design was showing signs of wear from the rapid expansion, but this was intentionally ignored for the moment. The focus was on getting a good version out that would provide a reasonable base while the design issues could be addressed in the future, and I'm confident that we succeeded.
+The design was showing signs of wear from the rapid expansion, but this was
+intentionally ignored for the moment. The focus was on getting a good version
+out that would provide a reasonable base while the design issues could be
+addressed in the future, and I'm confident that we succeeded.
 
 November 2002: second stable tree: NUT 1.2.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One day after the release of 1.0.0, 1.1.0 started the new development tree. During that development cycle, the CGI programs were rewritten to use templates instead of hard-coded HTML, thus bringing back the flexibility of the original unreleased prototype from 5 years before. multimon was removed from the tree, as the new upsstats could do both jobs by loading different templates.
+One day after the release of 1.0.0, 1.1.0 started the new development tree.
+During that development cycle, the CGI programs were rewritten to use template
+files instead of hard-coded HTML, thus bringing back the flexibility of the
+original unreleased prototype from 5 years before. The `multimon` was removed
+from the tree, as the new `upsstats` could do both jobs by loading different
+templates.
 
-A new client library called upsclient was created, and it replaced upsfetch. This new library only supported TCP connections, and used an opaque context struct to keep state for each connection. As a result, client programs could now do things that used multiple connections without any conflicts. This was done primarily to allow OpenSSL support, but there were other benefits from the redesign.
+A new client library called upsclient was created, and it replaced upsfetch.
+This new library only supported TCP connections, and used an opaque context
+struct to keep state for each connection. As a result, client programs could
+now do things that used multiple connections without any conflicts. This was
+done primarily to allow OpenSSL support, but there were other benefits from
+the redesign.
 
-upsd and the clients could now use OpenSSL for basic authentication and encryption, but this was not included by default. This was provided as a bonus feature for those users who cared to read about it and enable the option, as the initial setup was complex.
+upsd and the clients could now use OpenSSL for basic authentication and
+encryption, but this was not included by default. This was provided as
+a bonus feature for those users who cared to read about it and enable
+the option, as the initial setup was complex.
 
-After the 1.1 tree was frozen and deemed complete, it became the second stable tree with the release of 1.2.0 on November 5, 2002.
+After the 1.1 tree was frozen and deemed complete, it became the second
+stable tree with the release of 1.2.0 on November 5, 2002.
 
 April 2003: new naming scheme, better driver glue, and an overhauled protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Following an extended period with no development tree, 1.3.0 got things moving again on April 13, 2003. The focus of this tree was to rewrite the driver-server communication layer and replace the static naming scheme for variables and commands.
+Following an extended period with no development tree, 1.3.0 got things
+moving again on April 13, 2003. The focus of this tree was to rewrite
+the driver-server communication layer and replace the static naming
+scheme for variables and commands.
 
-Up to this point, all variables had names like STATUS, UTILITY, and OUTVOLT. They had been created as drivers were added to the tree, and there was little consistency. For example, it probably should have been INVOLT and OUTVOLT, but there was no OUTVOLT originally, so UTILITY was all we had. This same pattern repeated with ACFREQ -- is it incoming or outgoing? -- and many more.
+Up to this point, all variables had names like STATUS, UTILITY, and OUTVOLT.
+They had been created as drivers were added to the tree, and there was little
+consistency. For example, it probably should have been INVOLT and OUTVOLT,
+but there was no OUTVOLT originally, so UTILITY was all we had. This same
+pattern repeated with ACFREQ -- is it incoming or outgoing? -- and many more.
 
-To solve this problem, all variables and commands were renamed to a hierarchical scheme that had obvious grouping. STATUS became ups.status. UTILITY turned into input.voltage, and OUTVOLT is output.voltage. ACFREQ is input.frequency, and the new output.frequency is also now supported. Every other variable or command was renamed in this fashion.
+To solve this problem, all variables and commands were renamed to a
+hierarchical scheme that had obvious grouping. STATUS became ups.status.
+UTILITY turned into input.voltage, and OUTVOLT is output.voltage.
+ACFREQ is input.frequency, and the new output.frequency is also now
+supported. Every other variable or command was renamed in this fashion.
 
-These variables had been shared between the drivers and upsd as values. That is, for each name like STATUS, there was a #define somewhere in the tree with an INFO_ prefix that gave it a number. INFO_STATUS was 0x0006, INFO_UTILITY was 0x0004, and so on, with each name having a matching number. This number was stored in an int within a structure which was part of the array that was either written to disk or shared memory.
+These variables had been shared between the drivers and upsd as values.
+That is, for each name like STATUS, there was a #define somewhere in the
+tree with an INFO_ prefix that gave it a number. INFO_STATUS was 0x0006,
+INFO_UTILITY was 0x0004, and so on, with each name having a matching number.
+This number was stored in an int within a structure which was part of the
+array that was either written to disk or shared memory.
 
-That structure had several restrictions on expansion and was dropped as the data sharing method between the drivers and the server. It was replaced by a new system of text-based messages over Unix domain sockets. Drivers now accepted a short list of commands from upsd, and would push out updates asynchronously. upsd no longer had to poll the state files or shared memory. It could just select all of the driver and client fds and act on events.
+That structure had several restrictions on expansion and was dropped as the
+data sharing method between the drivers and the server. It was replaced by
+a new system of text-based messages over Unix domain sockets. Drivers now
+accepted a short list of commands from upsd, and would push out updates
+asynchronously. upsd no longer had to poll the state files or shared memory.
+It could just select all of the driver and client fds and act on events.
 
-At the same time, the network protocol on port 3493 was overhauled to take advantage of the new naming scheme. The existing "REQ STATUS@su700", "ANS STATUS@su700 OL" scheme was showing signs of age, and it really only supported the UPS name (@su700) as an afterthought. The new protocol would now use commands like GET and LIST, leading to exchanges like "GET VAR su700 ups.status" and "VAR su700 ups.status OL". The responses contain enough data to stand alone, so clients can now handle them asynchronously.
+At the same time, the network protocol on port 3493 was overhauled to take
+advantage of the new naming scheme. The existing "REQ STATUS@su700",
+"ANS STATUS@su700 OL" scheme was showing signs of age, and it really
+only supported the UPS name (@su700) as an afterthought. The new protocol
+would now use commands like GET and LIST, leading to exchanges like
+"GET VAR su700 ups.status" and "VAR su700 ups.status OL". These responses
+contain enough data to stand alone, so clients can now handle them
+asynchronously.
 
 July 2003: third stable tree: NUT 1.4.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-On July 25, 2003, 1.4.0 was released. It contained support for both the old "REQ" style protocol (with names like STATUS), and the new "GET" style protocol (with names like ups.status). This tree is provided to bridge the gap between all of the old releases and the upcoming 2.0.
+On July 25, 2003, 1.4.0 was released. It contained support for both the
+old "REQ" style protocol (with names like STATUS), and the new "GET" style
+protocol (with names like ups.status). This tree is provided to bridge the
+gap between all of the old releases and the upcoming 2.0.
 
-2.0 will be released without support for the old REQ/STATUS protocol. The hope is that client authors and those who have implemented their own monitoring software will use the 1.4 cycle to change to the new protocol. The 1.4 releases contain a lot of compatibility code to make sure both work at the same time.
+2.0 will be released without support for the old REQ/STATUS protocol.
+The hope is that client authors and those who have implemented their own
+monitoring software will use the 1.4 cycle to change to the new protocol.
+The 1.4 releases contain a lot of compatibility code to make sure both
+work at the same time.
 
 July 2003: pushing towards 2.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1.5.0 forked from 1.4.0 and was released on July 29, 2003. The first changes were to throw out anything which was providing compatibility with the older versions of the software. This means that 1.5 and the eventual 2.0 will not talk to anything older than 1.4.
+1.5.0 forked from 1.4.0 and was released on July 29, 2003. The first changes
+were to throw out anything which was providing compatibility with the older
+versions of the software. This means that 1.5 and the eventual 2.0 will not
+talk to anything older than 1.4.
 
-This tree continues to evolve with new serial routines for the drivers which are intended to replace the aging upscommon code which dates back to the early 0.x releases. The original routines would call alarm and read in a tight loop while fetching characters. The new functions are much cleaner, and wait for data with select. This makes for much cleaner code and easier strace/ktrace logs, since the number of syscalls has been greatly reduced.
+This tree continues to evolve with new serial routines for the drivers which
+are intended to replace the aging upscommon code which dates back to the early
+0.x releases. The original routines would call alarm and read in a tight loop
+while fetching characters. The new functions are much cleaner, and wait for
+data with select. This makes for much cleaner code and easier strace/ktrace
+logs, since the number of syscalls has been greatly reduced.
 
-There has also been a push to make sure the data from the UPS is well-formed and is actually usable before sending updates out to upsd. This started during 1.3 as drivers were adapted to use the dstate functions and the new variable/command names. Some drivers which were not converted to the new naming scheme or didn't do sanity checks on the incoming UPS data from the serial port were dropped from the tree.
+There has also been a push to make sure the data from the UPS is well-formed
+and is actually usable before sending updates out to upsd. This started
+during 1.3 as drivers were adapted to use the dstate functions and the
+new variable/command names. Some drivers which were not converted to the
+new naming scheme or didn't do sanity checks on the incoming UPS data from
+the serial port were dropped from the tree.
 
 This tree was released as 2.0.0.
 
@@ -248,11 +340,23 @@ networkupstools.org
 November 2003: a new URL
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The bandwidth demands of a project like this have slowly been forcing me to offload certain parts to other servers. The download links have pointed offsite for many months, and other large things like certain UPS protocols have followed. As the traffic grows, it's clear that having the project attached to exploits.org is not going to work.
+The bandwidth demands of a project like this have slowly been forcing me to
+offload certain parts to other servers. The download links have pointed
+offsite for many months, and other large things like certain UPS protocols
+have followed. As the traffic grows, it's clear that having the project
+attached to exploits.org is not going to work.
 
-The solution was to register a new domain and set up mirrors. There are two initial web servers, with more on the way. The main project URL has changed from `http://www.exploits.org/nut/` to http://www.networkupstools.org. The actual content is hosted on various mirrors which are updated regularly with rsync, so the days of dribbling bits through my DSL should be over.
+The solution was to register a new domain and set up mirrors. There are two
+initial web servers, with more on the way. The main project URL has changed
+from `http://www.exploits.org/nut/` to http://www.networkupstools.org.
+The actual content is hosted on various mirrors which are updated regularly
+with rsync, so the days of dribbling bits through my DSL should be over.
 
-This is also when all of the web pages were redesigned to have a simpler look with fewer links on the left side. The old web pages used to have 30 or more links on the top page, and most of them vanished when you dropped down one level. The links are now constant on the entire site, and the old links now live in their own groups in separate directories.
+This is also when all of the web pages were redesigned to have a simpler
+look with fewer links on the left side. The old web pages used to have 30
+or more links on the top page, and most of them vanished when you dropped
+down one level. The links are now constant on the entire site, and the old
+links now live in their own groups in separate directories.
 
 Second major version
 --------------------
@@ -287,7 +391,8 @@ Arnaud Quette, which finally happened with the 2.0.1 release in February 2005.
 This marked a new era for NUT...
 
 First, Arnaud aimed at opening up the development by creating a project on the
-http://www.debian.org/[Debian] http://alioth.debian.org/projects/nut/[Alioth Forge].
+http://www.debian.org/[Debian]
+http://alioth.debian.org/projects/nut/[Alioth Forge].
 This allowed to build the team of hackers that Russell dreamed about.
 It also allows to ensure NUT's continuation, whatever happens to
 the leader. And that would most of all boost the projects contributions.
