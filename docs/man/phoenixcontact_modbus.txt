@@ -30,7 +30,7 @@ How to configure the UPS
 
 Note: this UPS and its manual refers to Low-Batt as "Shutdown Event".
 
-You need the IFS-RS232-DATACABLE to communicate with the UPS in linux as the IFS-USB cable doesn't seem to be supported.
+You need the IFS-RS232-DATACABLE to communicate with the UPS in linux as the IFS-USB cable doesn't seem to be supported. FYI communication parameters are: 115200,E,8,1.
 You also need the UPS-CONF windows software (free, download from their site), to configure the UPS signals and timers. 
 1) Run the UPS-CONF
 2) Go to Settings->Time Setting
