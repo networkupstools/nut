@@ -40,14 +40,15 @@ Debugging information
 
 The `upsdebug_with_errno()`, `upsdebugx()`, `upsdebug_hex()` and
 `upsdebug_ascii()` routines use the global `nut_debug_level`, so you
-don't have to mess around with `printf()`s yourself.  Use them.
+don't have to mess around with `printf()`s and `if`s yourself.
+Use them.
 
 Memory allocation
 ~~~~~~~~~~~~~~~~~
 
-xmalloc, xcalloc, xrealloc and xstrdup all check the results of the base
-calls before continuing, so you don't have to.  Don't use the raw calls
-directly.
+`xmalloc()`, `xcalloc()`, `xrealloc()` and `xstrdup()` all check the
+results of the base calls before continuing, so you don't have to.
+Don't use the raw calls directly.
 
 Config file parsing
 ~~~~~~~~~~~~~~~~~~~
@@ -66,8 +67,8 @@ handled by the state machine.  Using the same code for all config files
 avoids code duplication.
 
 NOTE: this does not apply to drivers.  Driver authors should use the
-`upsdrv_makevartable()` scheme to pick up values from ups.conf.  Drivers
-should not have their own config files.
+`upsdrv_makevartable()` scheme to pick up values from ups.conf.
+Drivers should not have their own config files.
 
 Drivers may have their own data files, such as lists of hardware,
 mapping tables, or similar.  The difference between a data file and a
@@ -292,11 +293,11 @@ Memory leak checking
 ~~~~~~~~~~~~~~~~~~~~
 
 We can't say enough good things about valgrind.  If you do anything with
-dynamic memory in your code, you need to use this.  Just compile with -g
-and start the program inside valgrind.  Run it through the suspected
-area and then exit cleanly.  valgrind will tell you if you've done
-anything dodgy like freeing regions twice, reading uninitialized memory,
-or if you've leaked memory anywhere.
+dynamic memory in your code, you need to use this.  Just compile with
+`gcc -g` and start the program inside `valgrind`.  Run it through the
+suspected area and then exit cleanly.  valgrind will tell you if you've
+done anything dodgy like freeing regions twice, reading uninitialized
+memory, or if you've leaked memory anywhere.
 
 For more information, refer to the link:http://valgrind.kde.org[Valgrind]
 project.
@@ -310,19 +311,21 @@ and many people have put a lot of time and energy to improve it.
 Submitting patches
 ------------------
 
-Small patches that arrive in unified format (diff -u) as plain text attachments
-with no HTML and a brief summary at the top are the easiest to handle.
+Small patches that arrive in unified format (diff -u) as plain text
+attachments with no HTML and a brief summary at the top are the easiest
+to handle.
 
-If a patch is sent to the nut-upsdev mailing list, it stands a better chance of
-being seen immediately. However, it is likely to be dropped if any issues
-cannot be resolved quickly. If your code might not work for others, or if it is
-a large change, your best bet is to submit a pull request or create an
+If a patch is sent to the nut-upsdev mailing list, it stands a better
+chance of being seen immediately. However, it is likely to be dropped
+if any issues cannot be resolved quickly. If your code might not work
+for others, or if it is a large change, your best bet is to submit a
+pull request or create an
 link:https://github.com/networkupstools/nut/issues[issue on GitHub].
 
-The issue tracker allows us to track the patches over a longer period of time,
-and it is less likely that a patch will fall through the cracks. Posting a
-reminder to the developers (via the nut-upsdev list) about a patch on GitHub is
-fair game.
+The issue tracker allows us to track the patches over a longer period
+of time, and it is less likely that a patch will fall through the cracks.
+Posting a reminder to the developers (via the nut-upsdev list) about a
+patch on GitHub is fair game.
 
 Patch cohesion
 --------------
@@ -378,10 +381,11 @@ to accumulate more than one commit worth of changes before pushing to
 another repository. This allows development to continue without a constant
 network connection.
 
-For a quick change to a file in the Git working copy, you can use `git diff`
-to generate a patch to send to the nut-upsdev mailing list.  If you have more
-extensive changes, you can use `git format-patch` on a complete commit or
-branch, and send the resulting series of patches to the list.
+For a quick change to a file in the Git working copy, you can use
+`git diff` to generate a patch to send to the nut-upsdev mailing list.
+If you have more extensive changes, you can use `git format-patch` on
+a complete commit or branch, and send the resulting series of patches
+to the list.
 
 If you use GitHub's web-based editor to make changes, it tends to create
 lots of small commits, one per change per file. Unless there is reason to
@@ -403,18 +407,18 @@ or
 
 	git clone https://github.com/networkupstools/nut.git
 
-if it is necessary to get around a pesky firewall that blocks the native Git
-protocol.
+if it is necessary to get around a pesky firewall that blocks the native
+Git protocol.
 
 For a quicker checkout (when you don't need the entire repository history),
 you can limit the depth of the clone:
 
 	git clone --depth 1 git://github.com/networkupstools/nut.git
 
-In case the GitHub repository is temporarily unavailable for any reason, we
-also plan to push to Alioth's
-link:https://alioth.debian.org/scm/?group_id=30602[Git server] as well. You can
-add a remote reference to your local repository:
+In case the GitHub repository is temporarily unavailable for any reason,
+we also plan to push to Alioth's
+link:https://alioth.debian.org/scm/?group_id=30602[Git server] as well.
+You can add a remote reference to your local repository:
 
 	cd path/to/nut
 	git remote add -f alioth git://anonscm.debian.org/nut/nut.git
@@ -422,27 +426,27 @@ add a remote reference to your local repository:
 Mercurial (hg) access
 ~~~~~~~~~~~~~~~~~~~~~
 
-There are those who prefer the simplicity and self-consistency of the Mercurial
-SCM client over the hodgepodge of unique commands which make up Git. Rather
-than debate the merits of each system, we will gently guide you towards the
-link:http://hg-git.github.com/[hg-git project] which would theoretically be a
-transparent bridge between the central Git repository, and your local Mercurial
-working copy.
+There are those who prefer the simplicity and self-consistency of the
+Mercurial SCM client over the hodgepodge of unique commands which make
+up Git. Rather than debate the merits of each system, we will gently
+guide you towards the link:http://hg-git.github.com/[hg-git project]
+which would theoretically be a transparent bridge between the central
+Git repository, and your local Mercurial working copy.
 
-Other tools for hg/git interoperability are sure to exist. We would welcome any
-feedback about this process on the nut-upsdev mailing list.
+Other tools for hg/git interoperability are sure to exist. We would
+welcome any feedback about this process on the nut-upsdev mailing list.
 
 Subversion (SVN) access
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 If you prefer to check out the NUT source code using an SVN client, GitHub
 has a link:https://github.com/blog/966-improved-subversion-client-support[SVN
-interface to Git repositories] hosted on their servers. You can fork a copy of
-the NUT repository and commit to your fork with SVN.
+interface to Git repositories] hosted on their servers. You can fork a copy
+of the NUT repository and commit to your fork with SVN.
 
-Be aware that the examples in the GitHub blog post might result in a checkout
-that includes all of the current branches, as well as the trunk. You are most
-likely interested in a command line similar to the following:
+Be aware that the examples in the GitHub blog post might result in a
+checkout that includes all of the current branches, as well as the trunk.
+You are most likely interested in a command line similar to the following:
 
 	svn co https://github.com/networkupstools/nut/trunk nut-trunk-svn
 
@@ -453,12 +457,13 @@ The NUT repository generally only holds files which are not generated from
 other files. This prevents spurious differences from being recorded in the
 repository history.
 
-If you add a driver, it is recommended that you add the driver executable name
-to the .gitignore file in that directory. Similarly, files generated from *.in
-and *.am sources should be ignored as well. We try to include a number of
-generated files in the tarball releases with `make dist` hooks in order to
-minimize the number of dependencies for end users, but the assumption is that
-a developer can install the packages needed to regenerate those files.
+If you add a driver, it is recommended that you add the driver executable
+name to the `.gitignore` file in that directory. Similarly, files generated
+from `*.in` and `*.am` source templates should be ignored as well.
+We try to include a number of generated files in the tarball releases with
+`make dist` hooks in order to minimize the number of dependencies for end
+users, but the assumption is that a developer can install the packages
+needed to regenerate those files.
 
 Commit message formatting
 -------------------------
@@ -466,11 +471,11 @@ Commit message formatting
 From the `git commit` man page:
 
 [quote]
-Though not required, it's a good idea to begin the commit message with a single
-short (less than 50 character) line summarizing the change, followed by a blank
-line and then a more thorough description. The text up to the first blank line
-in a commit message is treated as the commit title, and that title is used
-throughout git.
+Though not required, it's a good idea to begin the commit message with a
+single short (less than 50 character) line summarizing the change, followed
+by a blank line and then a more thorough description. The text up to the
+first blank line in a commit message is treated as the commit title, and
+that title is used throughout git.
 
 If your commit is just a change to one component, such as the HCL, upsd or a
 specific driver, prefix your commit message in a way that matches similar
@@ -519,7 +524,7 @@ stash pop+ to apply your saved changes.
 
 Here is an example workflow:
 
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 	git clone -o central git://github.com/networkupstools/nut.git
 
 	cd nut
@@ -546,7 +551,7 @@ Here is an example workflow:
 	# Publish your branch to your GitHub repository:
 
 	git push username my-new-feature
--------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 If you are new to Git, but are familiar with SVN, the
 link:http://git-scm.com/course/svn.html[following link] may be of use.
