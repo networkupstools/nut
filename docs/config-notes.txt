@@ -344,7 +344,8 @@ NOTE: This step is not necessary if you installed from packages.
 Edit your startup scripts, and make sure `upsdrvctl` and `upsd` are run
 every time your system starts. In newer versions of NUT, you may have a
 `nut.conf` file which sets the `MODE` variable for bundled init-scripts,
-to facilitate enablement of certain features in the end-user deployment.
+to facilitate enabling of certain features in the specific end-user
+deployments.
 
 [[UPS_shutdown]]
 Configuring automatic shutdowns for low battery events
