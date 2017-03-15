@@ -132,12 +132,14 @@ Response:
 - 'RW': this variable may be set to another value with SET
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
-- 'RANGE': this is an numeric, either integer or float, comprised in the range (see LIST RANGE)
+- 'RANGE': this is an numeric, either integer or float, comprised in the
+range (see LIST RANGE)
 - 'NUMBER': this is a simple numeric value, either integer or float
 
 ENUM, STRING and RANGE are usually associated with RW, but not always.
-The default <type>, when omitted, is numeric, so either integer or float.  Each
-driver is then responsible for handling values as either integer or float.
+The default <type>, when omitted, is numeric, so either integer or float.
+Each driver is then responsible for handling values as either integer or
+float.
 
 Note that float values are expressed using decimal (base 10) english-based
 representation, so using a dot, in non-scientific notation.  So hexadecimal,
