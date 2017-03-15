@@ -4,8 +4,8 @@ NUT Frequently Asked Questions
 endif::external_title[]
 
 == I just upgraded, and ...
-You have read link:UPGRADING[UPGRADING] in the base directory of the distribution,
-right?
+You have read link:UPGRADING[UPGRADING] in the base directory of the
+distribution, right?
 
 If not, go read it now, then come back to this file if your
 question wasn't answered in there.
@@ -88,16 +88,16 @@ Refer to the upsd(8) and upsd.conf(5) manpages for more information.
 
 == I get a 'not listening on...' error from upsd.
 
-Verify your LISTEN directive. It should be one of the valid IP addresses for
-the computer running upsd (or 0.0.0.0, which is INADDR_ANY), not an address for
-a client.
+Verify your LISTEN directive. It should be one of the valid IP addresses
+for the computer running `upsd` (or `0.0.0.0`, which is `INADDR_ANY`), not
+an address for a client.
 
-The LISTEN directive lets you pick which interface upsd listens on. If you are
-trying to limit the clients which can connect to upsd, you either need to use
-tcp-wrappers or kernel firewall rules.
+The LISTEN directive lets you pick which interface `upsd` listens on.
+If you are trying to limit the clients which can connect to `upsd`,
+you either need to use tcp-wrappers or kernel firewall rules.
 
-This isn't a NUT-specific limitation -- it applies equally to your web server or
-mailer daemon.
+This isn't a NUT-specific limitation -- it applies equally to your web server
+or mailer daemon.
 
 == Which UPS should I buy?
 
@@ -140,7 +140,8 @@ these come with the UPS and are black.  If your smart cable has
 wandered off, one can be built rather easily with some connectors and
 cable -- there's no fancy wiring or resistors.
 
-See this URL for a handy diagram: http://www.networkupstools.org/cables/940-0024C.jpg
+See this URL for a handy diagram:
+http://www.networkupstools.org/cables/940-0024C.jpg
 
 There is also a text version of that diagram in the docs/cables
 directory of the NUT source distribution.  Either one should allow
@@ -546,8 +547,9 @@ http://www.networkupstools.org/stable-hcl.html?connection=USB
 
 == My USB UPS is supported but doesn't work!
 
-On Linux, udev rules are provided to set the correct permissions on device file.
-This allows the NUT driver to communicate with the UPS, through this device file.
+On Linux, udev rules are provided to set the correct permissions on device
+file. This allows the NUT driver to communicate with the UPS, through this
+device file.
 
 However, the driver may still fail to start and support the device, with a
 message like:
@@ -812,8 +814,8 @@ where there's not enough battery capacity left for upsmon to do its thing.
 Exactly how long to wait is a function of your UPS hardware, and will require
 careful testing.
 
-If this is too evil for you, buy another kind of UPS that will either wait for a
-minimum amount of charge, a minimum amount of time, or both.
+If this is too evil for you, buy another kind of UPS that will either wait for
+a minimum amount of charge, a minimum amount of time, or both.
 
 == I'm facing a power race
 Or a variation like...
