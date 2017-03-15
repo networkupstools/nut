@@ -37,8 +37,8 @@ OmniGuard F6C***-RKM
 
 *From "Daniel"*
 
-A straight-through RS-232 cable (with pins 2-7 connected through) should work
-with the following models:
+A straight-through RS-232 cable (with pins 2-7 connected through) should
+work with the following models:
 
 - F6C110-RKM-2U
 - F6C150-RKM-2U
@@ -143,8 +143,8 @@ Contributed by Kjell Claesson and Arnaud Quette.
 Phoenixtec (Best Power)
 -----------------------
 
-Many Best Power units (including the Patriot Pro II) have a female DB-9 socket
-with a non-standard pinout.
+Many Best Power units (including the Patriot Pro II) have a female DB-9
+socket with a non-standard pinout.
 
 |====
 |Signal  | PC      |    UPS
@@ -166,7 +166,7 @@ Tripp-Lite
 
 *From Tripp-Lite, via Bryan Kolodziej*
 
-This cable (black 73-0844 cable) is used on various models, using the "Lan 2.2 interface"
-and the genericups driver (upstype=5).
+This cable (black 73-0844 cable) is used on various models, using the
+"Lan 2.2 interface" and the genericups driver (upstype=5).
 
 image::images/cables/73-0724.png[73-0724 cable]
