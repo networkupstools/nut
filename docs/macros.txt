@@ -44,9 +44,9 @@ directory.
 - NUT_CHECK_OS
 
 	Check for the exact system name and type.
-	This was only used in the past to determine the packaging rule to be used
-	through the OS_NAME variable, but may be useful for other purposes in the
-	future.
+	This was only used in the past to determine the packaging rule to be
+	used through the OS_NAME variable, but may be useful for other purposes
+	in the future.
 
 - NUT_REPORT_FEATURE(FEATURE, VALUE, VARIABLE, DESCRIPTION)
 
