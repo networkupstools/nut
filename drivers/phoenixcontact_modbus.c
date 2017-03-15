@@ -27,6 +27,7 @@
 #define DRIVER_VERSION	"0.01"
 
 #define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
+#define MODBUS_SLAVE_ID 192
 
 /* Variables */
 modbus_t *ctx = NULL;
@@ -145,10 +146,10 @@ void upsdrv_initups(void)
 	if (ctx == NULL)
 		fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
-	r = modbus_set_slave(ctx, 192);	/* slave ID */
+	r = modbus_set_slave(ctx, MODBUS_SLAVE_ID);	/* slave ID */
 	if (r < 0) {
 		modbus_free(ctx);
-		fatalx(EXIT_FAILURE, "Invalid slave ID 192");
+		fatalx(EXIT_FAILURE, "Invalid slave ID %d",MODBUS_SLAVE_ID);
 	}
 
 	if (modbus_connect(ctx) == -1) {
