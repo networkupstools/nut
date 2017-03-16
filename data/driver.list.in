@@ -794,6 +794,8 @@
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 
+"PhoenixContact"	"ups"	"4"	"QUINT-UPS/24DC"	"2320461"	"phoenixcontact_modbus" #https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461
+
 "Plexus"	"ups"	"2"	"500VA"	"USB"	"blazer_usb"
 "Plexus"	"ups"	"2"	"1000VA Pro"	"USB"	"blazer_usb"
 "Plexus"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"

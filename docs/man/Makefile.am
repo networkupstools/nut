@@ -341,6 +341,7 @@ SRC_SERIAL_PAGES = \
 	microdowell.txt	\
 	nutdrv_qx.txt	\
 	optiups.txt	\
+	phoenixcontact_modbus.txt \
 	powercom.txt 	\
 	powerpanel.txt	\
 	rhino.txt		\
@@ -386,6 +387,7 @@ MAN_SERIAL_PAGES = \
 	optiups.8	\
 	powercom.8 	\
 	powerpanel.8	\
+	phoenixcontact_modbus.8 \
 	rhino.8		\
 	riello_ser.8	\
 	safenet.8	\
@@ -433,6 +435,7 @@ HTML_SERIAL_MANS = \
 	optiups.html	\
 	powercom.html 	\
 	powerpanel.html	\
+	phoenixcontact_modbus.html	\
 	rhino.html		\
 	riello_ser.html	\
 	safenet.html	\
