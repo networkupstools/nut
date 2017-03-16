@@ -24,6 +24,9 @@
 #define DRIVER_NAME	"Victron Energy Direct UPS and solar controller driver"
 #define DRIVER_VERSION	"0.20"
 
+#define VE_GET          7
+#define VE_SET          8
+
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -126,11 +129,14 @@ unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 	return ch;
 }
 
-int ve_command(const char ve_cmd, const char *ve_extra)
+int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t ret_lenght)
 {
 	int ret;
 
-	ser_send(upsfd, ":%c%02X\n", ve_cmd, ve_checksum(ve_cmd, ve_extra));
+	if (ve_extra != NULL)
+		ser_send(upsfd, ":%c%s%02X\n", ve_cmd, ve_extra, ve_checksum(ve_cmd, ve_extra));
+	else
+		ser_send(upsfd, ":%c%02X\n", ve_cmd, ve_checksum(ve_cmd, ve_extra));
 
 	char *reply = NULL;
 	char *endl = NULL;
@@ -161,10 +167,9 @@ int ve_command(const char ve_cmd, const char *ve_extra)
 	}
 
 	endl = NULL;
-	reply = line;
-	endl = strchr(reply, '\n');
+	endl = strchr(line, '\n');
 
-	if (reply != NULL && endl != NULL)
+	if (endl != NULL)
 	{
 		*endl = '\0';
 		upsdebugx(2, "reply to command: %s", line);
@@ -172,25 +177,47 @@ int ve_command(const char ve_cmd, const char *ve_extra)
 		sscanf(endl - 2, "%02X", &checksum);
 		endl[-2] = '\0';
 
-		if (checksum == ve_checksum(reply[1], reply + 2))
+
+		if (checksum == ve_checksum(line[1], line + 2))
 		{
-			upsdebugx(3, "correct checksum on reply to command %c", reply[1]);
+			upsdebugx(3, "correct checksum on reply to command %c", line[1]);
 		}
 		else
 		{
-			upslogx(1, "invalid checksum on reply to command %c", reply[1]);
+			upslogx(1, "invalid checksum on reply to command %c", line[1]);
+			return STAT_INSTCMD_FAILED;
+		}
+
+
+		if (ve_return != NULL)
+		{
+			memset(ve_return, 9, ret_lenght);
+
+			size_t r_len = endl - line - 4;
+			if (r_len > 0)
+			{
+				strncpy(ve_return, line + 2, r_len > ret_lenght ? ret_lenght : r_len);
+			}
 		}
 
 		ve_copy (endl + 1);
 	}
 
-	return 0;
+	return STAT_INSTCMD_HANDLED;
 }
 
 static int instcmd(const char *cmdname, const char *extra)
 {
 	if (!strcasecmp(cmdname, "ve-direct.ping"))
-		return ve_command('1',NULL);
+		return ve_command('1',NULL,NULL,0);
+	if (!strcasecmp(cmdname, "ve-direct.get"))
+		return ve_command(VE_GET,extra,NULL,0);
+	if (!strcasecmp(cmdname, "ve-direct.set"))
+		return ve_command(VE_SET,extra,NULL,0);
+	if (!strcasecmp(cmdname, "beeper.disable"))
+		return ve_command(VE_SET,"FCEE0000",NULL,0);
+	if (!strcasecmp(cmdname, "beeper.enable"))
+		return ve_command(VE_SET, "FCEE0001",NULL,0);
 	upsdebugx(1, "instcmd: unknown command: %s", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
@@ -198,6 +225,11 @@ static int instcmd(const char *cmdname, const char *extra)
 void upsdrv_initinfo(void)
 {
 	dstate_addcmd("ve-direct.ping");
+	dstate_addcmd("ve-direct.set");
+	dstate_addcmd("ve-direct.get");
+
+	dstate_addcmd("beeper.disable");
+	dstate_addcmd("beeper.enable");
 
 	upsh.instcmd = instcmd;
 }
