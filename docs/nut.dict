@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2404 utf-8
+personal_ws-1.1 en     2409 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -194,6 +194,7 @@ Cuvellard
 Cyber
 CyberPower
 Cygwin
+DATACABLE
 DATAPATH
 DCE
 DDD
@@ -386,9 +387,9 @@ Hough
 Hurd
 Håvard
 IANA
+ID's
 IDEN
 IDentifiers
-ID's
 IFBETWEEN
 IFSUPP
 IGN
@@ -427,8 +428,8 @@ JW
 Jageson
 Jarosch
 Jasuny
-Javadoc
 JavaScript
+Javadoc
 Javascript
 Joon
 Jumpered
@@ -735,6 +736,7 @@ Petter
 Pezzini
 Phasak
 PhaseWin
+PhoenixContact
 PhoenixTec
 Phoenixtec
 Plesser
@@ -1675,6 +1677,7 @@ libhid
 libhidups
 libi
 libltdl
+libmodbus
 libnss
 libnut
 libnutclient
@@ -1784,6 +1787,7 @@ mkdir
 mmap
 mmddyyyy
 mn
+modbus
 modelname
 monmaster
 monpasswd
@@ -1925,6 +1929,7 @@ perl
 pfy
 ph
 phasewindow
+phoenixcontact
 pid
 pidpath
 pinout
@@ -2403,8 +2408,3 @@ zwfa
 zzz
 Åstrand
 Ørpetveit
-modbus
-phoenixcontact
-PhoenixContact
-libmodbus
-DATACABLE
