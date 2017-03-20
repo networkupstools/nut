@@ -52,6 +52,7 @@ addons:
     - libxpm-dev
     - libxml2-utils
     - libmodbus-dev
+    - libmosquitto-dev
 
 env:
   global:
