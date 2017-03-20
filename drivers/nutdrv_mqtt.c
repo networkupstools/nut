@@ -19,13 +19,16 @@
  *
  * TODO list:
  * - everything
+ * - data mapping + use in mqtt_message_callback()
+ * - driver completion as per drivers/skel.c and others (shutdown, instcmd,
+ *   setvar, ...)
  */
 
 #include "main.h"
 #include <mosquitto.h>
 
 #define DRIVER_NAME	"MQTT driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -46,7 +49,7 @@ typedef struct {
 struct mosquitto *mosq = NULL;
 topic_info_t *topics[10] = { NULL }; /* Max of 10 topics! */
 char *client_id = NULL;
-bool clean_session = false; //true;
+bool clean_session = false; /* true; */
 
 /* Callbacks */
 void mqtt_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos);
@@ -68,18 +71,6 @@ void upsdrv_initinfo(void)
 		if (rc == MOSQ_ERR_CONN_LOST)
 			mqtt_reconnect();
 	}
-
-	/* try to detect the UPS here - call fatal_with_errno(EXIT_FAILURE, ...)
-	 * or fatalx(EXIT_FAILURE, ...) if it fails */
-
-	/* dstate_setinfo("ups.mfr", "skel manufacturer"); */
-	/* dstate_setinfo("ups.model", "longrun 15000"); */
-	/* note: for a transition period, these data are redundant! */
-	/* dstate_setinfo("device.mfr", "skel manufacturer"); */
-	/* dstate_setinfo("device.model", "longrun 15000"); */
-
-
-	/* upsh.instcmd = instcmd; */
 }
 
 void upsdrv_updateinfo(void)
@@ -94,93 +85,13 @@ void upsdrv_updateinfo(void)
 		if (rc == MOSQ_ERR_CONN_LOST)
 			mqtt_reconnect();
 	}
-	/* int flags; */
-	/* char temp[256]; */
-
-	/* ser_sendchar(upsfd, 'A'); */
-	/* ser_send(upsfd, "foo%d", 1234); */
-	/* ser_send_buf(upsfd, bincmd, 12); */
-
-	/* 
-	 * ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS);
-	 *
-	 * if (ret < STATUS_LEN) {
-	 * 	upslogx(LOG_ERR, "Short read from UPS");
-	 *	dstate_datastale();
-	 *	return;
-	 * }
-	 */
-
-	/* dstate_setinfo("var.name", ""); */
-
-	/* if (ioctl(upsfd, TIOCMGET, &flags)) {
-	 *	upslog_with_errno(LOG_ERR, "TIOCMGET");
-	 *	dstate_datastale();
-	 *	return;
-	 * }
-	 */
-
-	/* status_init();
-	 *
-	 * if (ol)
-	 * 	status_set("OL");
-	 * else
-	 * 	status_set("OB");
-	 * ...
-	 *
-	 * status_commit();
-	 *
-	 * dstate_dataok();
-	 */
-
-	/*
-	 * poll_interval = 2;
-	 */
 }
 
 void upsdrv_shutdown(void)
 {
-	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-
-	/* maybe try to detect the UPS here, but try a shutdown even if
-	   it doesn't respond at first if possible */
-
 	/* replace with a proper shutdown function */
 	fatalx(EXIT_FAILURE, "shutdown not supported");
-
-	/* you may have to check the line status since the commands
-	   for toggling power are frequently different for OL vs. OB */
-
-	/* OL: this must power cycle the load if possible */
-
-	/* OB: the load must remain off until the power returns */
 }
-
-/*
-static int instcmd(const char *cmdname, const char *extra)
-{
-	if (!strcasecmp(cmdname, "test.battery.stop")) {
-		ser_send_buf(upsfd, ...);
-		return STAT_INSTCMD_HANDLED;
-	}
-
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
-	return STAT_INSTCMD_UNKNOWN;
-}
-*/
-
-/*
-static int setvar(const char *varname, const char *val)
-{
-	if (!strcasecmp(varname, "ups.test.interval")) {
-		ser_send_buf(upsfd, ...);
-		return STAT_SET_HANDLED;
-	}
-
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
-	return STAT_SET_UNKNOWN;
-}
-*/
 
 void upsdrv_help(void)
 {
