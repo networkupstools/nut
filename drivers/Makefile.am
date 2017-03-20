@@ -28,6 +28,9 @@ endif
 if WITH_IPMI
   AM_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
+if WITH_MODBUS
+  AM_CFLAGS += $(LIBMODBUS_CFLAGS)
+endif
 
 SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
@@ -47,6 +50,7 @@ USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
+MODBUS_DRIVERLIST = phoenixcontact_modbus
 LINUX_I2C_DRIVERLIST = asem
 
 # distribute all drivers, even ones that are not built by default
@@ -80,6 +84,9 @@ if WITH_MACOSX
 endif
 if WITH_LINUX_I2C
    driverexec_PROGRAMS += $(LINUX_I2C_DRIVERLIST)
+endif
+if WITH_MODBUS
+  driverexec_PROGRAMS += $(MODBUS_DRIVERLIST)
 endif
 else
    driverexec_PROGRAMS += skel
@@ -258,6 +265,10 @@ nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 macosx_ups_LDADD = $(LDADD_DRIVERS)
 macosx_ups_LDFLAGS = $(LDFLAGS) -framework IOKit -framework CoreFoundation
 macosx_ups_SOURCES = macosx-ups.c
+
+# Modbus driver
+phoenixcontact_modbus_SOURCES = phoenixcontact_modbus.c
+phoenixcontact_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 
 # Asem
 asem_LDADD = $(LDADD_DRIVERS)
