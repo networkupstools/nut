@@ -1,2 +1,16 @@
 #!/bin/sh
-@SBINDIR@/upsmon -K >/dev/null 2>&1 && @SBINDIR@/upsdrvctl shutdown
+
+if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
+  wait_delay=`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`
+
+  @SBINDIR@/upsdrvctl shutdown
+
+  if [ -n "$wait_delay" ] ; then
+    /bin/sleep $wait_delay
+    # We need to pass --force twice here to bypass systemd and execute the
+    # reboot directly ourself.
+    /bin/systemctl reboot --force --force
+  fi
+fi
+
+exit 0
