@@ -48,7 +48,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  #define USB_STRERROR_SYMBOL "libusb_strerror"
  static int (*nut_usb_open)(libusb_device *dev, libusb_device_handle **handle);
  static int (*nut_usb_init)(libusb_context **ctx);
- static void (*nut_usb_exit)(libusb_context *ctx); 
+ static void (*nut_usb_exit)(libusb_context *ctx);
  static char * (*nut_usb_strerror)(enum libusb_error errcode);
  static ssize_t (*nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);

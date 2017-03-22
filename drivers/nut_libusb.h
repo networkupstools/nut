@@ -3,7 +3,7 @@
  * @brief HID Library - Generic USB backend for Generic HID Access (using MGE HIDParser)
  *
  * @author Copyright (C)
- *	    2003 - 2016 Arnaud Quette <aquette.dev@gmail.com>
+ *      2003 - 2016 Arnaud Quette <aquette.dev@gmail.com>
  *      2005 Peter Selinger <selinger@users.sourceforge.net>
  *
  * This program is sponsored by MGE UPS SYSTEMS - opensource.mgeups.com
@@ -44,7 +44,7 @@
 typedef usb_dev_handle libusb_device_handle;
 #endif
 
-extern upsdrv_info_t comm_upsdrv_info; 
+extern upsdrv_info_t comm_upsdrv_info;
 
 /*!
  * usb_communication_subdriver_s: structure to describe the communication routines

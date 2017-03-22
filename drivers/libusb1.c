@@ -367,7 +367,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		/* we can now free the config descriptor */
 		libusb_free_config_descriptor(conf_desc);
-		
+
 		if (rdlen2 < -1) {
 			upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 		}
@@ -465,7 +465,7 @@ static int nut_libusb_strerror(const int ret, const char *desc)
 	case LIBUSB_ERROR_NOT_FOUND: /** Entity not found */
 	case LIBUSB_ERROR_PIPE:	     /** Pipe error */
 	/** Operation not supported or unimplemented on this platform */
-	case LIBUSB_ERROR_NOT_SUPPORTED: 
+	case LIBUSB_ERROR_NOT_SUPPORTED:
 		upslogx(LOG_DEBUG, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
 		return ret;
 	case LIBUSB_ERROR_TIMEOUT:	 /** Operation timed out */
