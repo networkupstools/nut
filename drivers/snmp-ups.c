@@ -705,7 +705,14 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		struct snmp_pdu ** new_ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		if (new_ret_array == NULL) {
+			upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			break;
+		}
+		else {
+			ret_array = new_ret_array;
+		}
 		ret_array[nb_iteration-1] = response;
 		ret_array[nb_iteration]=NULL;
 
