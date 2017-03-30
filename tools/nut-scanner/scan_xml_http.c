@@ -414,11 +414,13 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			};
 
 #ifdef HAVE_PTHREAD
-			for ( i=0; i < thread_count ; i++) {
-				pthread_join(thread_array[i],NULL);
+			if (thread_array != NULL) {
+				for ( i=0; i < thread_count ; i++) {
+						pthread_join(thread_array[i],NULL);
+				}
+				free(thread_array);
 			}
 			pthread_mutex_destroy(&dev_mutex);
-			free(thread_array);
 #endif
 			result = nutscan_rewind_device(dev_ret);
 			dev_ret = NULL;
