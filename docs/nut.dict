@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2452 utf-8
+personal_ws-1.1 en 2454 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1834,7 +1834,9 @@ myauthenticationpassphrase
 mybox
 mydev
 mydevice
+mydomain
 mydriver
+myhostname
 mypass
 mypassword
 myprivatepassphrase
