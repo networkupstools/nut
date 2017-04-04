@@ -66,6 +66,7 @@ int sec_upsrecv (char *buf)
 		return(0);
 		case SEC_DATAMSG:
 		strncpy(lenbuf,buf+2,3);
+		lenbuf[3] = '\0';
 		ret = atoi(lenbuf);
 		if (ret > 0){
 		strcpy(buf,buf+5);
