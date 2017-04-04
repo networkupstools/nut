@@ -33,6 +33,7 @@ struct {
 	{ "OL",		"ONLINE",		0	},
 	{ "OB",		"ON BATTERY",		2	},
 	{ "LB",		"LOW BATTERY",		2	},
+	{ "ALARM",	"ALARM",		2	},
 	{ "RB",		"REPLACE BATTERY",	2	},
 	{ "OVER",	"OVERLOAD",		2	},
 	{ "TRIM",	"VOLTAGE TRIM",		1	},
