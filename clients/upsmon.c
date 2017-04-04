@@ -2,7 +2,8 @@
 
    Copyright (C)
      1998  Russell Kroll <rkroll@exploits.org>
-     2012  Arnaud Quette <arnaud.quette.free.fr>
+     2012  Arnaud Quette <arnaud.quette@free.fr>
+     2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -741,6 +742,22 @@ static void upsreplbatt(utype_t *ups)
 	}
 }
 
+static void device_on_alarm(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_ALARM)) { 	/* potentially no change */
+		/* TODO: add device.alarm.count */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !ALARM to ALARM, so notify */
+
+	do_notify(ups, NOTIFY_ALARM);
+	setflag(&ups->status, ST_ALARM);
+}
+
 static void ups_fsd(utype_t *ups)
 {
 	if (flag_isset(ups->status, ST_FSD)) {		/* no change */
@@ -1468,6 +1485,8 @@ static void parse_status(utype_t *ups, char *status)
 		clearflag(&ups->status, ST_LOWBATT);
 	if (!strstr(status, "FSD"))
 		clearflag(&ups->status, ST_FSD);
+	if (!strstr(status, "ALARM"))
+		clearflag(&ups->status, ST_ALARM);
 
 	statword = status;
 
@@ -1487,6 +1506,8 @@ static void parse_status(utype_t *ups, char *status)
 			ups_low_batt(ups);
 		if (!strcasecmp(statword, "RB"))
 			upsreplbatt(ups);
+		if (!strcasecmp(statword, "ALARM"))
+			device_on_alarm(ups);
 
 		/* do it last to override any possible OL */
 		if (!strcasecmp(statword, "FSD"))
@@ -1502,6 +1523,7 @@ static void parse_status(utype_t *ups, char *status)
 static void pollups(utype_t *ups)
 {
 	char	status[SMALLBUF];
+	char	*alarms;
 
 	/* try a reconnect here */
 	if (!flag_isset(ups->status, ST_CONNECTED))

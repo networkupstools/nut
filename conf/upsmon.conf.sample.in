@@ -240,6 +240,7 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYMSG ONLINE	"UPS %s on line power"
 # NOTIFYMSG ONBATT	"UPS %s on battery"
 # NOTIFYMSG LOWBATT	"UPS %s battery is low"
+# NOTIFYMSG ALARM	"UPS %s has one or more alarms (check ups.alarm)"
 # NOTIFYMSG FSD		"UPS %s: forced shutdown in progress"
 # NOTIFYMSG COMMOK	"Communications with UPS %s established"
 # NOTIFYMSG COMMBAD	"Communications with UPS %s lost"
@@ -255,6 +256,7 @@ POWERDOWNFLAG /etc/killpower
 # ONLINE   : UPS is back online
 # ONBATT   : UPS is on battery
 # LOWBATT  : UPS has a low battery (if also on battery, it's "critical")
+# ALARM    : UPS has one or more alarms (look at "ups.alarm" for details)
 # FSD      : UPS is being shutdown by the master (FSD = "Forced Shutdown")
 # COMMOK   : Communications established with the UPS
 # COMMBAD  : Communications lost to the UPS
@@ -274,6 +276,7 @@ POWERDOWNFLAG /etc/killpower
 # NOTIFYFLAG ONLINE	SYSLOG+WALL
 # NOTIFYFLAG ONBATT	SYSLOG+WALL
 # NOTIFYFLAG LOWBATT	SYSLOG+WALL
+# NOTIFYFLAG ALARM	SYSLOG+WALL
 # NOTIFYFLAG FSD	SYSLOG+WALL
 # NOTIFYFLAG COMMOK	SYSLOG+WALL
 # NOTIFYFLAG COMMBAD	SYSLOG+WALL

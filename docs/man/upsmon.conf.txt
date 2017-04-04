@@ -201,6 +201,8 @@ ONBATT;; UPS is on battery
 
 LOWBATT;; UPS is on battery and has a low battery (is critical)
 
+ALARM;; UPS has one or more alarms (check ups.alarm)
+
 FSD;; UPS is being shutdown by the master (FSD = "Forced Shutdown")
 
 COMMOK;; Communications established with the UPS

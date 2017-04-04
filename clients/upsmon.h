@@ -1,6 +1,8 @@
 /* upsmon.h - headers and other useful things for upsmon.h
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     2000  Russell Kroll <rkroll@exploits.org>
+     2017  Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -22,10 +24,11 @@
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
 #define ST_ONBATT      (1 << 1)       /* UPS is on battery (OB)               */
 #define ST_LOWBATT     (1 << 2)       /* UPS has a low battery (LB)           */
-#define ST_FSD         (1 << 3)       /* master has set forced shutdown flag  */
-#define ST_MASTER      (1 << 4)       /* we are the master on this UPS        */
-#define ST_LOGIN       (1 << 5)       /* we are logged into this UPS          */
-#define ST_CONNECTED   (1 << 6)       /* upscli_connect returned OK           */
+#define ST_ALARM       (1 << 3)       /* UPS has alarm(s) (ALARM)             */
+#define ST_FSD         (1 << 4)       /* master has set forced shutdown flag  */
+#define ST_MASTER      (1 << 5)       /* we are the master on this UPS        */
+#define ST_LOGIN       (1 << 6)       /* we are logged into this UPS          */
+#define ST_CONNECTED   (1 << 7)       /* upscli_connect returned OK           */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"  
@@ -39,7 +42,7 @@ extern "C" {
 /* UPS tracking structure */
 
 typedef struct {
-	UPSCONN_t	conn;			/* upsclient state descriptor	*/
+	UPSCONN_t	conn;		/* upsclient state descriptor	*/
 
 	char	*sys;			/* raw system name from .conf	*/
 	char	*upsname;		/* just upsname			*/
@@ -75,6 +78,7 @@ typedef struct {
 #define NOTIFY_REPLBATT	7	/* UPS battery needs to be replaced	*/
 #define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in awhile	*/
 #define NOTIFY_NOPARENT	9	/* privileged parent process died	*/
+#define NOTIFY_ALARM	10	/* UPS has 1 or more alarm(s)		*/
 
 /* notify flag values */
 
@@ -97,7 +101,8 @@ struct {
 	{ NOTIFY_ONLINE,   "ONLINE",   NULL, "UPS %s on line power", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_ONBATT,   "ONBATT",   NULL, "UPS %s on battery", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_LOWBATT,  "LOWBATT",  NULL, "UPS %s battery is low", NOTIFY_SYSLOG | NOTIFY_WALL },
-	{ NOTIFY_FSD,	   "FSD",      NULL, "UPS %s: forced shutdown in progress", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_ALARM,    "ALARM",    NULL, "UPS %s has one or more alarms (check ups.alarm)", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_FSD,      "FSD",      NULL, "UPS %s: forced shutdown in progress", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_COMMOK,   "COMMOK",   NULL, "Communications with UPS %s established", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_COMMBAD,  "COMMBAD",  NULL, "Communications with UPS %s lost", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_SHUTDOWN, "SHUTDOWN", NULL, "Auto logout and shutdown proceeding", NOTIFY_SYSLOG | NOTIFY_WALL },

@@ -127,6 +127,9 @@ The UPS is on battery.
 *LOWBATT*::
 The UPS battery is low (as determined by the driver).
 
+*ALARM*::
+The UPS has one or more alarms (look at "ups.alarm" for details).
+
 *FSD*::
 The UPS has been commanded into the "forced shutdown" mode.
 
