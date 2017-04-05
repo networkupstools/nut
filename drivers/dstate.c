@@ -1018,11 +1018,8 @@ void device_alarm_commit(const int device_number)
  * variables to store the flag (if we have successfully inited) and the
  * discovered amount of phases, or NULL if caller does not want to track it.
  *
- * NOTE: At this time the code below, like elsewhere in the NUT codebase,
- * assumes there are either 1 or 3 phases, when/if it has to guess (rather
- * than use a value reported by the device). There was recently a discussion
- * in NUT issues that 2-phase devices (aka "split phase") exist on the market,
- * so (TODO) support for these may have to be added at some point.
+ * NOTE: The code below can detect if the device is 1, 2 (split phase) or 3
+ * phases.
  *
  * Returns:
  *   -1     Runtime/input error (non fatal, but routine was skipped)
@@ -1120,7 +1117,15 @@ int dstate_detect_phasecount(
 		dstate_getinfo_nonzero(v0,  "voltage");
 		dstate_getinfo_nonzero(c0,  "current");
 
-		if ( (v1 && v2 && v3) ||
+		if ( (v1 && v2 && !v3) ||
+		     (v1n && v2n && !v3n) ||
+		     (c1 && c2 && !c2) ||
+		     (v12 && !v23 && !v31) ) {
+			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
+			*num_phases = 2;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+		} else if ( (v1 && v2 && v3) ||
 		     (v1n && v2n && v3n) ||
 		     (c1 && (c2 || c3)) ||
 		     (c2 && (c1 || c3)) ||
