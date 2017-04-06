@@ -224,7 +224,7 @@ upsconf_getDriverMedia() {
     # particular system's physics, both serial and network media may need USB).
     CURR_DRV="`upsconf_getDriver "$1"`" || return $?
     case "$CURR_DRV" in
-        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*|*apcsmart*|*apcupsd*)
+        *netxml*|*snmp*|*ipmi*|*powerman*|*-mib*|*avahi*|*apcupsd*)
             printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
