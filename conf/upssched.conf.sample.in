@@ -83,9 +83,15 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   argument.
 #
 #   Example:
-#   Start a timer that will execute when any UPS (*) has been gone 10 seconds
+#   1) Start a timer that will execute when communication with any UPS (*) has
+#   been gone for 10 seconds
 #
 #   AT COMMBAD * START-TIMER upsgone 10
+#
+#   2) Start a timer that will execute when any UPS (*) has been running
+#   on battery for 30 seconds
+#
+#   AT ONBATT * START-TIMER onbattwarn 30
 
 #   -----------------------------------------------------------------------
 #
@@ -95,10 +101,15 @@ CMDSCRIPT @BINDIR@/upssched-cmd
 #   has passed then pass the optional argument <cmd> to CMDSCRIPT.
 #
 #   Example:
-#   If a specific UPS (myups@localhost) comes back online, then stop the
-#   timer before it triggers
+#   1) If a specific UPS (myups@localhost) communication is restored, then stop
+#   the timer before it triggers
 #
 #   AT COMMOK myups@localhost CANCEL-TIMER upsgone
+#
+#   2) If any UPS (*) reverts to utility power, then stop the timer before it
+#   triggers
+#
+#   AT ONLINE * CANCEL-TIMER onbattwarn
 
 #   -----------------------------------------------------------------------
 #

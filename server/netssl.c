@@ -240,10 +240,11 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	}
 	
 #ifdef WITH_OPENSSL	
-	if (!ssl_ctx) {
+	if (!ssl_ctx)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	if (!NSS_IsInitialized()) {
+	if (!NSS_IsInitialized())
 #endif /* WITH_OPENSSL | WITH_NSS */
+	{
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		ssl_initialized = 0;
 		return;

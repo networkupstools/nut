@@ -57,37 +57,23 @@ addons:
     - libxml2-utils
     - libmodbus-dev
 
+# Define one job in the matrix, to avoid a failing job
+# with "no environment variables set"; but others are
+# listed below to prioritize the longer jobs to start first.
 env:
   global:
     - CI_TIME=true
     - CI_TRACE=false
   matrix:
     - BUILD_TYPE=default
-    - BUILD_TYPE=default-nodoc
-    - BUILD_TYPE=default-alldrv
-    - BUILD_TYPE=default-tgt:distcheck-light
-    - BUILD_TYPE=default-tgt:distcheck-light-man
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_NO
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_YES
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_NO
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YES
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YESNO
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_NO
-    - BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_YES
-    - BUILD_TYPE=default-tgt:distcheck-dmf-all-yes
-    - BUILD_TYPE=default-tgt:distcheck-dmf-no
-    - BUILD_TYPE=default-tgt:distcheck-dmf-warnings
 
 # Builds with customized setups
+# Note that doc-related builds take the longest, and Travis CI cloud
+# runs only a few sub-jobs in parallel, so we want the withdoc and
+# perhaps spellcheck jobs to start first, and while they are still in
+# progress, others are spawned and finished - reducing overall job TTL.
 matrix:
   include:
-  - env: BUILD_TYPE=default-spellcheck
-    os: linux
-    addons:
-      apt:
-        packages: &deps_aspell
-        - aspell
-        - aspell-en
   - env: BUILD_TYPE=default-withdoc
     os: linux
     sudo: false
@@ -103,6 +89,13 @@ matrix:
         - docbook-xsl-ns
         - source-highlight
         - libxml2-utils
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
     sudo: false
@@ -113,6 +106,134 @@ matrix:
         packages:
         - *deps_driverlibs
         - valgrind
+# These jobs also take quite a while so we start them earlier
+  - env: BUILD_TYPE=default-tgt:distcheck-light-man
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_NO
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_YES
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_NO
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YES
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YESNO
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_NO
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_YES
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-all-yes
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-no
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-dmf-warnings
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+# Other quicker builds in standard env follow:
+  - env: BUILD_TYPE=default-nodoc
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-alldrv
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-light
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
