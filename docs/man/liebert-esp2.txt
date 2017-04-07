@@ -12,9 +12,24 @@ This man page only documents the hardware-specific features of the
 liebert-esp2 driver.  For information about the core driver, see  
 linkman:nutupsdrv[8].
 
+SPECIAL CABLING NOTE
+--------------------
+Be aware that an RS-232 cable with ONLY the RX, TX and ground pin
+must be used when interfacing with GXT2 series UPS units (and possibly others),
+since the handshaking lines are used for purposes other than RS-232 flow control.
+Use of a standard RS-232 cable with full handshaking may result in
+undesired operation and/or shutdown. It is therefore advisable to confirm
+the proper cable/wiring with the diagram provided in the manual with your UPS.
+
 SUPPORTED HARDWARE
 ------------------
+Tested to work on the following units:
+Liebert GXT2-6000RT208
+
 This is an experimental driver.  You have been warned.
+
+This driver currently does not support modification of configuration parameters,
+such as the low battery warning time and automatic restart policy.
 
 EXTRA ARGUMENTS
 ---------------
@@ -26,7 +41,7 @@ Set the speed of the serial connection - 1200, 2400 (default), 4800, 9600 or 192
 
 AUTHOR
 ------
-Richard Gregory <R.Gregory at liverpool.ac.uk>, Arjen de Korte <adkorte-guest at alioth.debian.org>
+Richard Gregory <R.Gregory at liverpool.ac.uk>, Arjen de Korte <adkorte-guest at alioth.debian.org>, Nash Kaminski <nashkaminski at kaminski.io>
 
 SEE ALSO
 --------
