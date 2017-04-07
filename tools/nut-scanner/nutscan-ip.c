@@ -230,14 +230,15 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	cidr_tok = strdup(cidr);
 	first_ip = strdup(strtok_r(cidr_tok,"/",&saveptr));
+	free(cidr_tok);
 	if( first_ip == NULL) {
 		return 0;
 	}
 	mask = strtok_r(NULL,"/",&saveptr);
 	if( mask == NULL ) {
+		free (first_ip);
 		return 0;
 	}
-	free(cidr_tok);
 
 	mask_val = atoi(mask);
 

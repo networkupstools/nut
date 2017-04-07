@@ -40,7 +40,7 @@
 #include <ne_socket.h>
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.41"
+#define DRIVER_VERSION	"0.42"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
