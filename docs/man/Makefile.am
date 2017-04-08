@@ -176,43 +176,14 @@ SRC_DEV_PAGES = \
 
 if WITH_MANS
 # NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
-MAN3_DEV_PAGES_libnutclient = \
-	libnutclient.3 \
-	libnutclient_commands.3 \
-	libnutclient_devices.3 \
-	libnutclient_general.3 \
-	libnutclient_misc.3 \
-	libnutclient_tcp.3 \
-	libnutclient_variables.3
 
-MAN3_DEV_PAGES_nutclient = \
+LIBNUTCLIENT_MISC_DEPS=
 	nutclient_authenticate.3 \
-	nutclient_destroy.3 \
-	nutclient_device_forced_shutdown.3 \
-	nutclient_device_login.3 \
-	nutclient_device_master.3 \
-	nutclient_execute_device_command.3 \
-	nutclient_get_device_command_description.3 \
-	nutclient_get_device_commands.3 \
-	nutclient_get_device_description.3 \
-	nutclient_get_device_num_logins.3 \
-	nutclient_get_device_rw_variables.3 \
-	nutclient_get_devices.3 \
-	nutclient_get_device_variable_description.3 \
-	nutclient_get_device_variables.3 \
-	nutclient_get_device_variable_values.3 \
-	nutclient_has_device.3 \
-	nutclient_has_device_command.3 \
-	nutclient_has_device_variable.3 \
 	nutclient_logout.3 \
-	nutclient_set_device_variable_value.3 \
-	nutclient_set_device_variable_values.3 \
-	nutclient_tcp_create_client.3 \
-	nutclient_tcp_disconnect.3 \
-	nutclient_tcp_get_timeout.3 \
-	nutclient_tcp_is_connected.3 \
-	nutclient_tcp_reconnect.3 \
-	nutclient_tcp_set_timeout.3
+	nutclient_device_login.3 \
+	nutclient_get_device_num_logins.3 \
+	nutclient_device_master.3 \
+	nutclient_device_forced_shutdown.3
 
 MAN3_DEV_PAGES = \
 	upsclient.3 \
@@ -232,8 +203,35 @@ MAN3_DEV_PAGES = \
 	upscli_ssl.3 \
 	upscli_strerror.3 \
 	upscli_upserror.3 \
-	$(MAN3_DEV_PAGES_libnutclient) \
-	$(MAN3_DEV_PAGES_nutclient) \
+	libnutclient.3 \
+	libnutclient_commands.3 \
+	libnutclient_devices.3 \
+	libnutclient_general.3 \
+	libnutclient_misc.3 \
+	libnutclient_tcp.3 \
+	libnutclient_variables.3 \
+	$(LIBNUTCLIENT_MISC_DEPS)
+	nutclient_destroy.3 \
+	nutclient_execute_device_command.3 \
+	nutclient_get_device_command_description.3 \
+	nutclient_get_device_commands.3 \
+	nutclient_get_device_description.3 \
+	nutclient_get_device_rw_variables.3 \
+	nutclient_get_devices.3 \
+	nutclient_get_device_variable_description.3 \
+	nutclient_get_device_variables.3 \
+	nutclient_get_device_variable_values.3 \
+	nutclient_has_device.3 \
+	nutclient_has_device_command.3 \
+	nutclient_has_device_variable.3 \
+	nutclient_set_device_variable_value.3 \
+	nutclient_set_device_variable_values.3 \
+	nutclient_tcp_create_client.3 \
+	nutclient_tcp_disconnect.3 \
+	nutclient_tcp_get_timeout.3 \
+	nutclient_tcp_is_connected.3 \
+	nutclient_tcp_reconnect.3 \
+	nutclient_tcp_set_timeout.3 \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
@@ -252,7 +250,8 @@ MAN3_DEV_PAGES = \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
-$(MAN3_DEV_PAGES_nutclient): $(MAN3_DEV_PAGES_libnutclient)
+$(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.3
+	touch $@
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
