@@ -673,16 +673,16 @@ NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
 case "${nut_with_doc}" in
-	yes|all)
+	yes|all|all=yes)
 		nut_doc_build_list="man html-single html-chunked pdf"
 		;;
-	auto)
+	auto|all=auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
-	skip)
+	skip|all=skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
-	no)
+	no|all=no)
 		nut_doc_build_list=""
 		;;
 dnl If user passed --with-doc='' they they want nothing, right?
