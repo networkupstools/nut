@@ -55,7 +55,7 @@ ASCIIDOC_HTML_SINGLE = user-manual.html \
 ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
-	FAQ.html
+	FAQ.chunked
 
 ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
