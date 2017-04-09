@@ -656,9 +656,9 @@ check-man: check-man-txt check-man-pages check-html-man
 # the "for" loops might better use $^ but it might be not portable
 check-man-html: check-html-man
 
-check-html-man: $(HTML_MANS) index.html
+check-html-man: $(HTML_MANS)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
-	for F in $(HTML_MANS) index.html ; do \
+	for F in $(HTML_MANS) ; do \
 	    test -s "$$F" && { file "$$F" | egrep '(XML|HTML).*document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
