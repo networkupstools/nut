@@ -860,6 +860,15 @@ esac
 NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
 					[WITH_DOCS], [Define to enable overall documentation generation])
 
+# To cater for less portable make's, precalculate the target list
+# for "make check" in "docs/" here...
+DOC_CHECK_LIST=""
+if test "${nut_with_doc}" = yes ; then
+    for V in $DOC_BUILD_LIST ; do
+	DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+    done
+fi
+
 WITH_MANS=no
 SKIP_MANS=no
 if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
@@ -1487,6 +1496,7 @@ AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
+AC_SUBST(DOC_CHECK_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)

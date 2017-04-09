@@ -639,6 +639,52 @@ all:
 
 html-man: $(HTML_MANS) index.html
 
+if WITH_MANS
+if ! SKIP_MANS
+check-local: check-man
+else
+check-local: check-man-txt check-man-pages
+	echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&@
+endif
+else
+check-local: check-man-txt check-man-pages
+	echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&@
+endif
+
+check-man: check-man-txt check-man-pages check-html-man
+
+# the "for" loops might better use $^ but it might be not portable
+check-man-html: check-html-man
+
+check-html-man: $(HTML_MANS) index.html
+	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(HTML_MANS) index.html ; do \
+	    test -s "$$F" && { file "$$F" | egrep '(XML|HTML).*document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED HTML-man sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED HTML-man sanity check"; exit 0
+
+# Note: many man-pages here have code samples and are mis-identified as C code
+check-man-page: check-man-pages
+
+check-man-pages: $(MAN_MANS)
+	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(MAN_MANS) ; do \
+	    test -s "$$F" && { file "$$F" | egrep '(troff.* input|C source, ASCII text)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED man-page sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED man-page sanity check"; exit 0
+
+check-man-source: check-man-txt
+
+check-man-txt: $(SRC_ALL_PAGES)
+	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	for F in $(SRC_ALL_PAGES) ; do \
+	    test -s "$$F" && { file "$$F" | egrep '(ASCII|UTF-8|Unicode).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	done; if test -n "$$FAILED" ; then \
+	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	fi; echo "PASSED man-source sanity check"; exit 0
+
 CLEANFILES = *.xml *.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
