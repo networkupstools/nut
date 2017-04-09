@@ -667,12 +667,18 @@ check-html-man: $(HTML_MANS) index.html
 # Note: many man-pages here have code samples and are mis-identified as C code
 check-man-page: check-man-pages
 
+# Man-pages may be pre-generated (srcdir), or re-built (builddir)
 check-man-pages: $(MAN_MANS)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
-	    test -s "$$F" && { file "$$F" | egrep '(troff.* input|C source, ASCII text)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    ( test -s "$(abs_srcdir)/$$F" && { file "$(abs_srcdir)/$$F" | egrep '(troff.* input|C source, ASCII text)' > /dev/null ; } ) || \
+	    ( test -s "$(abs_builddir)/$$F" && { file "$(abs_builddir)/$$F" | egrep '(troff.* input|C source, ASCII text)' > /dev/null ; } ) || \
+	    FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
-	    echo "FAILED man-page sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
+	    echo "FAILED man-page sanity check for:$$FAILED" >&2 ; \
+	    ( echo "SRCDIR:"; cd "$(abs_srcdir)/" && file $$FAILED ; \
+	      echo "BUILDDIR:"; cd "$(abs_builddir)/" && file $$FAILED ; \
+	    ) >&2 ; exit 1; \
 	fi; echo "PASSED man-page sanity check"; exit 0
 
 check-man-source: check-man-txt
