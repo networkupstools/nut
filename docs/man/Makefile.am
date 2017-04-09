@@ -246,7 +246,7 @@ MAN3_DEV_PAGES = \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
-$(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.3:
+$(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.3
 	touch $@
 
 MAN1_DEV_PAGES = \
