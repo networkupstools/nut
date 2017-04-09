@@ -679,6 +679,7 @@ check-man-source: check-man-txt
 
 check-man-txt: $(SRC_ALL_PAGES)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
+	cd $(abs_srcdir) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
 	    test -s "$$F" && { file "$$F" | egrep '(ASCII|UTF-8|Unicode).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
