@@ -89,7 +89,7 @@ check-pdf: $(ASCIIDOC_PDF)
 check-html-single: $(ASCIIDOC_HTML_SINGLE)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(ASCIIDOC_HTML_SINGLE) ; do \
-	    test -s "$$F" && { file "$$F" | egrep '(XML|HTML).*document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    test -s "$$F" && { file "$$F" | egrep '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED HTML-single sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED HTML-single sanity check"; exit 0
@@ -98,7 +98,7 @@ check-html-chunked: $(ASCIIDOC_HTML_CHUNKED)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for D in $(ASCIIDOC_HTML_CHUNKED); do \
 	    for F in "$$D"/*.html ; do \
-	        test -s "$$F" && { file "$$F" | egrep '(XML|HTML).*document' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	        test -s "$$F" && { file "$$F" | egrep '(XML|HTML.*document)' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	    done; \
 	    for F in "$$D"/*.css ; do \
 	        test -s "$$F" && { egrep 'CSS stylesheet' "$$F" > /dev/null ; } || FAILED="$$FAILED $$F" ; \
