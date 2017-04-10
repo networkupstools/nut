@@ -671,8 +671,8 @@ check-man-page: check-man-pages
 check-man-pages: $(MAN_MANS)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	for F in $(MAN_MANS) ; do \
-	    ( test -s "$(abs_srcdir)/$$F" && { file "$(abs_srcdir)/$$F" | egrep '(troff.* input|C source, ASCII text)' > /dev/null ; } ) || \
-	    ( test -s "$(abs_builddir)/$$F" && { file "$(abs_builddir)/$$F" | egrep '(troff.* input|C source, ASCII text)' > /dev/null ; } ) || \
+	    ( test -s "$(abs_srcdir)/$$F" && { file "$(abs_srcdir)/$$F" | egrep '(troff.* input|C source|ASCII text)' > /dev/null ; } ) || \
+	    ( test -s "$(abs_builddir)/$$F" && { file "$(abs_builddir)/$$F" | egrep '(troff.* input|C source|ASCII text)' > /dev/null ; } ) || \
 	    FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-page sanity check for:$$FAILED" >&2 ; \
