@@ -687,7 +687,7 @@ check-man-txt: $(SRC_ALL_PAGES)
 	@FAILED=""; LANG=C; LC_ALL=C; export LANG; export LC_ALL; \
 	cd $(abs_srcdir) || exit; \
 	for F in $(SRC_ALL_PAGES) ; do \
-	    test -s "$$F" && { file "$$F" | egrep '(ASCII|UTF-8|Unicode).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
+	    test -s "$$F" && { file "$$F" | egrep '(ASCII|UTF-8|Unicode|ISO-8859|English).* text' > /dev/null ; } || FAILED="$$FAILED $$F" ; \
 	done; if test -n "$$FAILED" ; then \
 	    echo "FAILED man-source sanity check for:$$FAILED" >&2 ; file $$FAILED >&2 ; exit 1; \
 	fi; echo "PASSED man-source sanity check"; exit 0
