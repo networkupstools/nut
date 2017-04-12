@@ -344,6 +344,7 @@ Release notes for NUT 2.6.5 - what's new since 2.6.4:
 
  - mge-shut driver has been replaced by a new implementation (newmge-shut).
    In case of issue with this new version, users can revert to oldmge-shut.
+   UPDATE: oldmge-shut was dropped between 2.7.4 and 2.7.5 releases.
 
  - First NUT virtualization package: NUT now supports integration with
    VMware ESXI 5.0, through a native VIB package. This is, for the time

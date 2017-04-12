@@ -91,6 +91,7 @@ Changes from 2.6.4 to 2.6.5
 upssched.
 - mge-shut driver has been replaced by a new implementation (newmge-shut).
 In case of issue with this new version, users can revert to oldmge-shut.
+UPDATE: oldmge-shut was dropped between 2.7.4 and 2.7.5 releases.
 
 Changes from 2.6.3 to 2.6.4
 ---------------------------
