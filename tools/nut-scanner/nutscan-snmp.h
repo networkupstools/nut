@@ -42,6 +42,10 @@ typedef struct {
  * structure instances they would not need.
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if WANT_DEVSCAN_SNMP_BUILTIN == 1
 # ifndef DEVSCAN_SNMP_BUILTIN
 #  define DEVSCAN_SNMP_BUILTIN
@@ -71,3 +75,7 @@ typedef struct {
 #  endif /* DMF_SNMP_H already included */
 # endif /* LIBNUTSCAN_SNMP_DMF */
 #endif /* WANT_LIBNUTSCAN_SNMP_DMF */
+
+#ifdef __cplusplus
+}
+#endif
