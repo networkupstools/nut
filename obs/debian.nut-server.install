@@ -28,7 +28,6 @@ debian/tmp/lib/nut/tripplite_usb
 debian/tmp/lib/nut/bcmxcp
 debian/tmp/lib/nut/bestuferrups
 debian/tmp/lib/nut/gamatronic
-debian/tmp/lib/nut/oldmge-shut
 debian/tmp/lib/nut/safenet
 debian/tmp/lib/nut/isbmex
 debian/tmp/lib/nut/masterguard
