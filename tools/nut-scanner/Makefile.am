@@ -4,7 +4,7 @@ nutscan-usb.h nutscan-snmp.c:
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 LUA_INCLUDE ?= -I/usr/include/lua5.1
-CFLAGS_LUA ?= $(LUA_INCLUDE)
+CFLAGS_LUA  ?= $(LUA_INCLUDE)
 LDFLAGS_LUA ?= $(LUA_LIB)
 if WITH_DMF_LUA
  CFLAGS_DMF_LUA = -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(CFLAGS_LUA)
@@ -50,7 +50,7 @@ endif
 endif
 endif
 
-# Only build nut-scanner, and its library, if libltdl was found (required!)
+# Only build nut-scanner, and its library, if libltdl was found (required ATM!)
 if WITH_LIBLTDL
  bin_PROGRAMS += nut-scanner
  lib_LTLIBRARIES += libnutscan.la
@@ -59,9 +59,9 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c nutscan-snmp.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
 			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c
-libnutscan_la_LDADD = $(NETLIBS) $(top_builddir)/drivers/libserial-nutscan.la
+libnutscan_la_LIBADD = $(NETLIBS) $(top_builddir)/drivers/libserial-nutscan.la
 if WITH_LIBLTDL
-libnutscan_la_LDADD += $(LIBLTDL_LIBS)
+libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
@@ -69,7 +69,7 @@ libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 if WITH_DMF
 libnutscan_la_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
-libnutscan_la_LDADD  += $(LDFLAGS_DMF_LUA)
+libnutscan_la_LDFLAGS += $(LDFLAGS_DMF_LUA)
 libnutscan_la_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
 else
 libnutscan_la_CFLAGS += -DWITH_DMF_LUA=0
@@ -79,10 +79,10 @@ libnutscan_la_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0
 endif
 
 if WITH_DMF
-libnutscan_la_LDADD += $(top_builddir)/common/libnutdmfsnmp.la
+libnutscan_la_LIBADD += $(top_builddir)/common/libnutdmfsnmp.la
 endif
-libnutscan_la_LDADD += $(top_builddir)/common/libcommonstr.la
-#libnutscan_la_LDADD += $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
+libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
+#libnutscan_la_LIBADD += $(top_builddir)/common/libcommon.la $(top_builddir)/common/libparseconf.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
@@ -96,7 +96,7 @@ if WITH_DMF
 nut_scanner_CFLAGS += -DWITH_DMFMIB=1
 if WITH_DMF_LUA
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=1 $(CFLAGS_DMF_LUA)
-nut_scanner_LDADD += $(LDFLAGS_DMF_LUA)
+nut_scanner_LDFLAGS = $(LDFLAGS_DMF_LUA)
 else
 nut_scanner_CFLAGS += -DWITH_DMF_LUA=0
 endif
@@ -107,14 +107,14 @@ if ! WITH_LIBLTDL
 # The libs needed to handle XML parsing and usage of DMF SNMP are ltdl()'ed
 # but without this builds fail (TODO: Revise responsible code? LTDL in DMF?)
 #	$(LIBNETSNMP_LIBS)
-libnutscan_la_LDADD += $(LIBNEON_LIBS)
+libnutscan_la_LIBADD += $(LIBNEON_LIBS)
 endif
 endif
 endif
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
-  libnutscan_la_LDADD += $(LIBSSL_LIBS)
+  libnutscan_la_LIBADD += $(LIBSSL_LIBS)
 endif
 if WITH_USB
   libnutscan_la_CFLAGS += $(LIBUSB_CFLAGS)
