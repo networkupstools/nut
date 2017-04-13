@@ -1197,7 +1197,12 @@ dnl Override installation directory, with the local installation
 dnl prefix. This is needed for 'distcheck*' targets, otherwise
 dnl files will try to get intalled to the actual system directories
 if test -n "${systemdsystemunitdir}"; then
-	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
+	systemdutildir=`$PKG_CONFIG --variable=systemdutildir systemd`
+	if test -n "${systemdutildir}"; then
+		systemdsystemshutdowndir="${systemdutildir}/system-shutdown"
+	else
+		systemdsystemshutdowndir="${systemdsystemunitdir}/system-shutdown"
+	fi
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
 	AC_MSG_RESULT(no)
