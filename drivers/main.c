@@ -1,6 +1,8 @@
 /* main.c - Network UPS Tools driver core
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+   1999 Russell Kroll <rkroll@exploits.org>
+   2017 Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -87,10 +89,14 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	printf("\nusage: %s -a <id> [OPTIONS]\n", progname);
+	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
 	printf("                 - note: -x after -a overrides ups.conf settings\n\n");
+
+	printf("  -s <id>        - configure directly from cmd line arguments\n");
+	printf("                 - note: must specify all driver parameters with successive -x\n");
+	printf("                 - note: at least 'port' variable should be set\n\n");
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
@@ -508,7 +514,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kDhx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -518,6 +524,10 @@ int main(int argc, char **argv)
 				if (!upsname_found)
 					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf",
 						optarg);
+				break;
+			case 's':
+				upsname = optarg;
+				upsname_found = 1;
 				break;
 			case 'D':
 				nut_debug_level++;
@@ -567,13 +577,14 @@ int main(int argc, char **argv)
 
 	if (!upsname_found) {
 		fatalx(EXIT_FAILURE,
-			"Error: specifying '-a id' is now mandatory. Try -h for help.");
+			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
 
 	/* we need to get the port from somewhere */
 	if (!device_path) {
 		fatalx(EXIT_FAILURE,
-			"Error: you must specify a port name in ups.conf. Try -h for help.");
+			"Error: you must specify a port name in ups.conf or in '-x port=...' argument.\n"
+			"Try -h for help.");
 	}
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
