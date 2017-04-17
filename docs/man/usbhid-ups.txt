@@ -68,7 +68,7 @@ a power failure.
 +
 The default value is 30 (in seconds). Usually this *must be greater*
 than offdelay, but the driver will *not* warn you upon startup if it
-isn't. Some UPS'es will restart no matter what, even if the power is
+isn't. Some UPSes will restart no matter what, even if the power is
 (still) out at the moment this timer elapses. In that case, you could try
 if setting 'ondelay = -1' in *ups.conf* helps.
 
@@ -105,7 +105,7 @@ Examples:
 
 *bus*='regex'::
 
-Select a UPS on a specific USB bus or group of busses. The argument is
+Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
 

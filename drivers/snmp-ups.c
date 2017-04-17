@@ -4,7 +4,8 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2016	Arnaud Quette <ArnaudQuette@Eaton.com>
+ *	2015 - 2016	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
@@ -54,8 +55,10 @@
 #include "huawei-mib.h"
 #include "ietf-mib.h"
 #include "xppc-mib.h"
-#include "eaton-ats-mib.h"
+#include "eaton-ats16-mib.h"
 #include "apc-ats-mib.h"
+#include "apc-pdu-mib.h"
+#include "eaton-ats30-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -82,9 +85,13 @@ static mib2nut_info_t *mib2nut[] = {
 	&xppc,
 	&huawei,
 	&tripplite_ietf,
-	&eaton_ats,
+	&eaton_ats16,
 	&apc_ats,
 	&raritan_px2,
+	&eaton_ats30,
+	&apc_pdu_rpdu,
+	&apc_pdu_rpdu2,
+	&apc_pdu_msp,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -101,8 +108,8 @@ int g_pwr_battery;
 int pollfreq; /* polling frequency */
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
-int current_device_number = 0;      /* to handle daisychain iterations */
-bool_t daisychain_enabled = FALSE;
+int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
+bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
 daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
@@ -382,7 +389,7 @@ void upsdrv_initups(void)
 
 	/* Init daisychain and check if support is required */
 	daisychain_init();
-	
+
 	/* Allocate / init the daisychain info structure (for phases only for now)
 	 * daisychain_info[0] is the whole chain! (added +1) */
 	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
@@ -469,7 +476,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 
 	/* Retrieve user parameters */
 	version = testvar(SU_VAR_VERSION) ? getval(SU_VAR_VERSION) : "v1";
-	
+
 	if ((strcmp(version, "v1") == 0) || (strcmp(version, "v2c") == 0)) {
 		g_snmp_sess.version = (strcmp(version, "v1") == 0) ? SNMP_VERSION_1 : SNMP_VERSION_2c;
 		community = testvar(SU_VAR_COMMUNITY) ? getval(SU_VAR_COMMUNITY) : "public";
@@ -605,14 +612,16 @@ void nut_snmp_free(struct snmp_pdu ** array_to_free)
 {
 	struct snmp_pdu ** current_element;
 
-	current_element = array_to_free;
+	if (array_to_free != NULL) {
+		current_element = array_to_free;
 
-	while (*current_element != NULL) {
-		snmp_free_pdu(*current_element);
-		current_element++;
+		while (*current_element != NULL) {
+			snmp_free_pdu(*current_element);
+			current_element++;
+		}
+
+		free( array_to_free );
 	}
-
-	free( array_to_free );
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
@@ -696,7 +705,14 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		struct snmp_pdu ** new_ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		if (new_ret_array == NULL) {
+			upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			break;
+		}
+		else {
+			ret_array = new_ret_array;
+		}
 		ret_array[nb_iteration-1] = response;
 		ret_array[nb_iteration]=NULL;
 
@@ -1679,7 +1695,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 			 * whole daisychain ("device.0") */
 			if (!strncmp(type, "device", 6))
 			{
-				/* Device(s) 2-N (master + slave(s)) need to append 'device.x' */
+				/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 				if (current_device_number > 0) {
 					char *ptr = NULL;
 					/* Another special processing for daisychain
@@ -1957,7 +1973,7 @@ bool_t daisychain_init()
 			if ((su_info_p != NULL) && (su_info_p->dfl != NULL)) {
 				dstate_setinfo("device.model", "daisychain %s (1+%ld)",
 					su_info_p->dfl, devices_count - 1);
-				dstate_setinfo("device.model", "%s", su_info_p->dfl);
+				dstate_setinfo("device.type", "%s", su_info_p->dfl);
 			}
 			else {
 				dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
@@ -1980,7 +1996,7 @@ bool_t daisychain_init()
  * 3phases related data are disabled if the unit is 1ph, and conversely.
  * If the related phases data (input, output, bypass) is not yet valued,
  * retrieve it first.
- * 
+ *
  * type: input, output, bypass
  * su_info_p: variable to process flags on
  * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
@@ -2005,7 +2021,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 		single_phase_flag = SU_OUTPUT_1;
 		three_phase_flag = SU_OUTPUT_3;
 	}
-	else if (!strncmp(type, "bypass", 6)) {
+	else if (!strncmp(type, "input.bypass", 12)) {
 		phases_flag = SU_BYPPHASES;
 		single_phase_flag = SU_BYPASS_1;
 		three_phase_flag = SU_BYPASS_3;
@@ -2013,7 +2029,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 	else {
 		upsdebugx(2, "%s: unknown type '%s'", __func__, type);
 		return 1;
-	}	
+	}
 
 	/* Init the phase(s) info for this device, if not already done */
 	if (*nb_phases == -1) {
@@ -2043,7 +2059,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 				/* Daisychain specific: we may have a template (including
 				 * formatting string) that needs to be adapted! */
 				if (strchr(tmp_info_p->OID, '%') != NULL) {
-					upsdebugx(2, "Found template, need to be adapted");										
+					upsdebugx(2, "Found template, need to be adapted");
 					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number - 1);
 				}
 				else {
@@ -2116,13 +2132,31 @@ bool_t snmp_ups_walk(int mode)
 	bool_t status = FALSE;
 
 	/* Loop through all device(s) */
+	/* Note: considering "unitary" and "daisy-chained" devices, we have
+	 * several variables (and their values) that can come into play:
+	 *  devices_count == 1 (default) AND daisychain_enabled == FALSE => unitary
+	 *  devices_count > 1 (AND/OR?) daisychain_enabled == TRUE => a daisy-chain
+	 * The current_device_number == 0 in context of daisy-chain means the
+	 * "whole device" with composite or summary values that refer to the
+	 * chain as a virtual power device (e.g. might be a sum of outlet counts).
+	 * If daisychain_enabled == TRUE and current_device_number == 1 then we
+	 * are looking at the "master" device (one that we have direct/networked
+	 * connectivity to; the current_device_number > 1 is a slave (chained by
+	 * some proprietary link not visible from the outside) and represented
+	 * through the master - the slaves are not addressable directly. If the
+	 * master dies/reboots, connection to the whole chain is interrupted.
+	 * The dstate string names for daisychained sub-devices have the prefix
+	 * "device." and number embedded (e.g. "device.3.input.phases") except
+	 * for the whole (#0) virtual device, so it *seems* similar to unitary.
+	 */
+
 	for (current_device_number = 0 ; current_device_number <= devices_count ; current_device_number++)
 	{
 		/* reinit the alarm buffer, before */
 		if (devices_count > 1)
 			device_alarm_init();
 
-		/* Loop through all mapping entries */
+		/* Loop through all mapping entries for the current_device_number */
 		for (su_info_p = &snmp_info[0]; su_info_p->info_type != NULL ; su_info_p++) {
 
 			// FIXME:
@@ -2137,8 +2171,10 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 			/* Check if we are asked to stop (reactivity++) */
-			if (exit_flag != 0)
+			if (exit_flag != 0) {
+				upsdebugx(1, "%s: aborting because exit_flag was set", __func__);
 				return TRUE;
+			}
 
 			/* Skip daisychain data count */
 			if (mode == SU_WALKMODE_INIT &&
@@ -2149,6 +2185,7 @@ bool_t snmp_ups_walk(int mode)
 			}
 
 // FIXME: daisychain-whole, what to do?
+// Note that when addressing the FIXME above, if (current_device_number == 0 && daisychain_enabled == FALSE) then we'd skip it still (unitary device is at current_device_number == 1)...
 			/* skip the whole-daisychain for now */
 			if (current_device_number == 0) {
 				upsdebugx(1, "Skipping daisychain device.0 for now...");
@@ -2222,7 +2259,7 @@ bool_t snmp_ups_walk(int mode)
 			bypass_phases = &daisychain_info[current_device_number]->bypass_phases;
 			if (su_info_p->flags & SU_BYPPHASES) {
 				upsdebugx(1, "Check bypass_phases (%ld)", *bypass_phases);
-				if (process_phase_data("bypass", bypass_phases, su_info_p) == 1)
+				if (process_phase_data("input.bypass", bypass_phases, su_info_p) == 1)
 					continue;
 			}
 
@@ -2506,7 +2543,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = -1;
 	int daisychain_device_number = -1;
-	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */ 
+	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
 	char setOID[SU_INFOSIZE];
@@ -2546,6 +2583,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	if ((daisychain_enabled == TRUE) && (devices_count > 1) && (daisychain_device_number == 0)) {
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
+		free(tmp_varname);
 		return STAT_SET_INVALID;
 	}
 
@@ -2707,7 +2745,8 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* Free template (outlet and outlet.group) */
-	free_info(su_info_p);
+	if (!strncmp(tmp_varname, "outlet", 6))
+		free_info(su_info_p);
 	free(tmp_varname);
 
 	return retval;

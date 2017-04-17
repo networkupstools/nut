@@ -19,6 +19,7 @@ EXTRA_DIST = INSTALL.nut LICENSE-GPL2 LICENSE-GPL3 MAINTAINERS UPGRADING
 
 DISTCHECK_FLAGS = --with-all --with-ssl --with-doc=auto
 DISTCHECK_LIGHT_FLAGS = --with-all=auto --with-ssl=auto --with-doc=auto
+DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --with-valgrind CXXFLAGS='$(CXXFLAGS) -g' CFLAGS='$(CFLAGS) -g'
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
@@ -30,6 +31,10 @@ DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
 distcheck-light:
 	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_LIGHT_FLAGS)" distcheck
 
+# Make a distcheck (and check in particular) with enabled valgrind and debug info
+memcheck distcheck-valgrind:
+	$(MAKE) $(AM_MAKEFLAGS) DISTCHECK_FLAGS="$(DISTCHECK_VALGRIND_FLAGS)" distcheck
+
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
 # solution, that do not break older unix systems
@@ -37,6 +42,19 @@ distcheck-light:
 #	find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 distcleancheck:
 	@:
+
+# Hook the documentation building and validating recipes
+# Note: these are optionally available (as determined during configure runs)
+spellcheck spellcheck-interactive:
+	@RES=0; \
+	(cd $(srcdir)/docs && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/docs/man && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/conf && $(MAKE) $@) || RES=$$? ; \
+	(cd $(srcdir)/data && $(MAKE) $@) || RES=$$? ; \
+	exit $$RES
+
+doc spellcheck-sortdict:
+	cd $(srcdir)/docs && $(MAKE) $@
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:

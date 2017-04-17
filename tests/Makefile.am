@@ -6,6 +6,11 @@ TESTS = cppunittest
 
 check_PROGRAMS = $(TESTS)
 
+if WITH_VALGRIND
+check-local: $(check_PROGRAMS)
+	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
+endif
+
 cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = ../clients/libnutclient.la

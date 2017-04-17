@@ -627,6 +627,10 @@ int main(int argc, char **argv)
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
 
+	/* note: device.type is set early to be overriden by the driver
+	 * when its a pdu! */
+	dstate_setinfo("device.type", "ups");
+
 	upsdrv_initups();
 
 	/* UPS is detected now, cleanup upon exit */
@@ -639,10 +643,6 @@ int main(int argc, char **argv)
 
 	if (do_forceshutdown)
 		forceshutdown();
-
-	/* note: device.type is set early to be overriden by the driver
-	 * when its a pdu! */
-	dstate_setinfo("device.type", "ups");
 
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);

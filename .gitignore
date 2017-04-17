@@ -8,6 +8,7 @@
 *.l[oa]
 .deps/
 .libs/
+.inst/
 Makefile
 Makefile.in
 ## Parent directory only

@@ -33,7 +33,7 @@ The *nutscan_add_device_to_device()* concatenates 'first' and 'second' devices t
 RETURN VALUE
 ------------
 
-The *nutscan_add_device_to_device()* functions returns a pointer to a device containg both passed devices. Note that it's not a new device, so it is either 'first' or 'second' which is returned.
+The *nutscan_add_device_to_device()* functions returns a pointer to a device containing both passed devices. Note that it's not a new device, so it is either 'first' or 'second' which is returned.
 
 SEE ALSO
 --------

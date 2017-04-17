@@ -23,6 +23,7 @@ Active members
 - Charles Lepple: senior lieutenant
 - Emilien Kia: senior developer
 - Daniele Pezzini: senior developer
+- Jim Klimov: senior developer
 - Václav Krpec: junior developer
 - Kjell Claesson: senior developer
 - Alexander Gordeev: junior developer
@@ -31,7 +32,7 @@ Active members
 - Jean Perriault: web consultant
 - Eric S. Raymond: Documentation consultant
 - Oden Eriksson: Mandriva packager
-- Stanislav Brabec: Novell / Suse packager
+- Stanislav Brabec: Novell / SUSE packager
 - Michal Hlavinka: Redhat packager
 - Antoine Colombier: trainee
 

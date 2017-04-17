@@ -78,7 +78,7 @@ Set the poll interval for the device.  The default value is 2 (in seconds).
 Print only version information, then exit.
 
 *-L*::
-Print a parseable list of driver variables. Mostly useful for configuration
+Print a parsable list of driver variables. Mostly useful for configuration
 wizard programs.
 
 *-k*::
@@ -181,7 +181,6 @@ linkman:metasys[8],
 linkman:mge-shut[8],
 linkman:mge-utalk[8],
 linkman:mge-xml[8],
-linkman:newmge-shut[8],
 linkman:nitram[8],
 linkman:nutdrv_qx[8],
 linkman:oneac[8],

@@ -1,0 +1,125 @@
+# Travis CI script
+################################################################################
+# This file is based on a template used by zproject, but isn't auto-generated. #
+################################################################################
+
+language:
+- c
+
+cache:
+- ccache
+
+os:
+- linux
+
+sudo: false
+
+services:
+- docker
+
+# Common required packages for all common scenarios
+# Note that YAML lists may be named with & and referenced with * characters;
+# but without such links, every list is complete and unique (meaning that
+# matrix special cases define their own settings, not append to common ones).
+# See https://github.com/travis-ci/travis-ci/issues/3505
+addons:
+  apt:
+    packages: &deps_driverlibs
+    - git
+    - ccache
+    - libcppunit-dev
+    - libcppunit-subunit-dev
+    - libneon27
+    - libneon27-dev
+    - libltdl7
+    - libltdl-dev
+    - libi2c-dev
+    - lua5.1
+    - liblua5.1-0-dev
+    - libsnmp-dev
+    - libfreeipmi-dev
+    - libipmimonitoring-dev
+    - libusb-dev
+    - linux-libc-dev
+    - libpowerman0-dev
+    - libavahi-common-dev
+    - libavahi-core-dev
+    - libavahi-client-dev
+    - libgd2-xpm-dev
+    - libpng-dev
+    - libjpeg-dev
+    - libfreetype6-dev
+    - libxpm-dev
+    - libxml2-utils
+    - libmodbus-dev
+
+# Define one job in the matrix, to avoid a failing job
+# with "no environment variables set"; but others are
+# listed below to prioritize the longer jobs to start first.
+env:
+  global:
+    - CI_TIME=true
+    - CI_TRACE=false
+  matrix:
+    - BUILD_TYPE=default
+
+# Builds with customized setups
+# Note that doc-related builds take the longest, and Travis CI cloud
+# runs only a few sub-jobs in parallel, so we want the withdoc and
+# perhaps spellcheck jobs to start first, and while they are still in
+# progress, others are spawned and finished - reducing overall job TTL.
+matrix:
+  include:
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages: &deps_gendocs
+        - asciidoc
+        - xsltproc
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+        - source-highlight
+        - libxml2-utils
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
+  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
+    os: linux
+#    dist: trusty
+#    sudo: required
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - valgrind
+# Other quicker builds in standard env follow:
+  - env: BUILD_TYPE=default-nodoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-alldrv
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-light
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+before_install:
+- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+# Hand off to generated script for each BUILD_TYPE
+script: ./ci_build.sh

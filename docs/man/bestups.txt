@@ -92,7 +92,7 @@ You can confirm from the `battery.voltage` readings that this is a problem
 with the UPS and not this driver. 
 
 Similarly, the float from the charger in some models forces the battery
-charge percentage back up to 100% immedately after the UPS goes back
+charge percentage back up to 100% immediately after the UPS goes back
 on-line, so you can't tell when it is really recharged.
 
 Finally, some models give one value for the battery's nominal voltage and

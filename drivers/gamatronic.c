@@ -66,6 +66,7 @@ int sec_upsrecv (char *buf)
 		return(0);
 		case SEC_DATAMSG:
 		strncpy(lenbuf,buf+2,3);
+		lenbuf[3] = '\0';
 		ret = atoi(lenbuf);
 		if (ret > 0){
 		strcpy(buf,buf+5);
@@ -358,11 +359,12 @@ void setup_serial(const char *port)
     if (i == 5) {
 	printf("Can't talk to UPS on port %s!\n",port);
 	printf("Check the cabling and portname and try again\n");
-	printf("Please note that this driver only support UPS Models with SEC Protorol\n");
+	printf("Please note that this driver only support UPS Models with SEC Protocol\n");
 	ser_close(upsfd, device_path);
 	exit (1);
     }
-printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
+    else
+      printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
 }
 
 void upsdrv_initups(void)

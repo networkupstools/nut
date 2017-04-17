@@ -31,6 +31,10 @@
 #define DS_LISTEN_BACKLOG 16
 #define DS_MAX_READ 256		/* don't read forever from upsd */
 
+#ifndef MAX_STRING_SIZE
+#define MAX_STRING_SIZE	128
+#endif
+
 /* track client connections */
 typedef struct conn_s {
 	int     fd;
@@ -53,6 +57,8 @@ int dstate_addenum(const char *var, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 int dstate_addrange(const char *var, const int min, const int max);
 void dstate_setflags(const char *var, int flags);
+void dstate_addflags(const char *var, const int addflags);
+void dstate_delflags(const char *var, const int delflags);
 void dstate_setaux(const char *var, int aux);
 const char *dstate_getinfo(const char *var);
 void dstate_addcmd(const char *cmdname);
@@ -84,5 +90,12 @@ void alarm_set(const char *buf);
 void alarm_commit(void);
 void device_alarm_init(void);
 void device_alarm_commit(const int device_number);
+
+int dstate_detect_phasecount(
+        const char *xput_prefix,
+        const int may_change_dstate,
+        int *inited_phaseinfo,
+        int *num_phases,
+        const int may_reevaluate);
 
 #endif	/* DSTATE_H_SEEN */

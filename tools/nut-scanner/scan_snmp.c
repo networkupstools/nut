@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2011-2017 Eaton
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,8 @@
 
 /*! \file scan_snmp.c
     \brief detect NUT supported SNMP devices
-    \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Frederic Bohe <FredericBohe@Eaton.com>
+    \author Arnaud Quette <ArnaudQuette@Eaton.com>
 */
 
 #include "common.h"
@@ -96,6 +97,7 @@ static int (*nut_snmp_oid_compare) (const oid *in_name1, size_t len1,
 static void (*nut_snmp_free_pdu) (netsnmp_pdu *pdu);
 static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
 			u_char * P, size_t pplen, u_char * Ku, size_t * kulen);
+static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
 static int (*nut_snmp_errno);
 static oid * (*nut_usmAESPrivProtocol);
@@ -197,6 +199,12 @@ int nutscan_load_snmp_library(const char *libname_path)
 	}
 
 	*(void **) (&nut_generate_Ku) = lt_dlsym(dl_handle, "generate_Ku");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+		goto err;
+	}
+
+	*(void **) (&nut_snmp_out_toggle_options) = lt_dlsym(dl_handle,
+							"snmp_out_toggle_options");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 		goto err;
 	}
@@ -673,6 +681,12 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 	g_usec_timeout = usec_timeout;
 
+	/* Force numeric OIDs resolution (ie, do not resolve to textual names)
+	 * This is mostly for the convenience of debug output */
+	if (nut_snmp_out_toggle_options("n") != NULL) {
+		upsdebugx(1, "Failed to enable numeric OIDs resolution");
+	}
+
 	/* Initialize the SNMP library */
 	(*nut_init_snmp)("nut-scanner");
 
@@ -686,8 +700,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread,NULL,try_SysOID,(void*)tmp_sec)==0){
 			thread_count++;
-			thread_array = realloc(thread_array,
+			pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
+			if (new_thread_array == NULL) {
+				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				break;
+			}
+			else {
+				thread_array = new_thread_array;
+			}
 			thread_array[thread_count-1] = thread;
 		}
 #else

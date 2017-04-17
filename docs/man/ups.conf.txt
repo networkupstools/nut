@@ -66,6 +66,12 @@ impact the time taken by your system to start.
 +
 The default is 1 attempt.
 
+*nowait*::
+Optional.  Specify to upsdrvctl to not wait at all for the driver(s) to
+execute the request command.
++
+The default (omission) is to wait.
+
 *retrydelay*::
 Optional.  Specify the delay between each restart attempt of the driver(s),
 as specified by 'maxretry'. Caution should be taken when using this option,
@@ -148,7 +154,7 @@ This may be needed on Mac OS X systems.
 
 Optional.  When you specify this, the driver ignores a low battery condition
 flag that is reported by the UPS (some devices will switch off almost
-immediately after setting this flag, or will report this as soons as the
+immediately after setting this flag, or will report this as soon as the
 mains fails).  Instead it will use either of the following conditions to
 determine when the battery is low:
 

@@ -464,7 +464,7 @@ Commit message formatting
 From the `git commit` man page:
 
 [quote]
-Though not required, it’s a good idea to begin the commit message with a single
+Though not required, it's a good idea to begin the commit message with a single
 short (less than 50 character) line summarizing the change, followed by a blank
 line and then a more thorough description. The text up to the first blank line
 in a commit message is treated as the commit title, and that title is used
@@ -572,12 +572,13 @@ for root privileges when testing new NUT code, you may wish to use
 compilation times down by only building the driver you are currently working
 on: `--with-drivers=driver1,dummy-ups`.
 
-Before pushing your commits upstream, please run +make distcheck-light+. This
-checks that the Makefiles are not broken, that all the
-relevant files are distributed, and that there are no compilation or
-installation errors. Note that this requires all of the dependencies necessary
-to build the documentation, including asciidoc, a2x, xsltproc, dblatex and any
-additional XSL stylesheets.
+Before pushing your commits upstream, please run +make distcheck-light+.
+This checks that the Makefiles are not broken, that all the relevant files
+are distributed, and that there are no compilation or installation errors.
+Note that unless you specifically pass `--with-doc=skip` to `configure`,
+this requires all of the dependencies necessary to build the documentation
+to be locally installed on your system, including asciidoc, a2x, xsltproc,
+dblatex and any additional XSL stylesheets.
 
 Running +make distcheck-light+ is especially important if you have added or
 removed files, or updated configure.in or some Makefile.am.  Remember: simply
@@ -587,6 +588,14 @@ file, you must update the corresponding Makefile.am.
 There is also +make distcheck+, which runs an even stricter set of
 tests than +make distcheck-light+, but will not work unless you have all the
 optional libraries and features installed.
+
+Finally note, that since 2017 the GitHub upstream project is monitored by
+Travis CI (in addition to multi-platform buildbots which occasionally do not
+work). This means that if your posted improvements are based on current NUT
+master branch, the resulting pull request should get tested for a number of
+scenarios automatically. If your code adds a substantial feature, consider
+extending the `.travis.yml` and/or `ci_build.sh` scripts in the workspace
+root to add another `BUILD_TYPE` to the matrix of tests run in parallel.
 
 Even if you do not use your distribution's packages of NUT, installing the
 distribution's list of build dependencies for NUT can reduce the amount of

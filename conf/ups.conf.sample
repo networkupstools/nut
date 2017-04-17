@@ -2,7 +2,7 @@
 #
 # --- SECURITY NOTE ---
 #
-# If you use snmp-ups and set a community string in here, you 
+# If you use snmp-ups and set a community string in here, you
 # will have to secure this file to keep other users from obtaining
 # that string.  It needs to be readable by upsdrvctl and any drivers,
 # and by upsd.
@@ -14,39 +14,61 @@
 # USB devices and SNMP devices are also supported.
 #
 # This file is used by upsdrvctl to start and stop your driver(s), and
-# is also used by upsd to determine which drivers to monitor.  The 
+# is also used by upsd to determine which drivers to monitor.  The
 # drivers themselves also read this file for configuration directives.
 #
 # The general form is:
-# 
+#
 # [upsname]
 #       driver = <drivername>
 #         port = <portname>
-#	< any other directives here >
+#       < any other directives here >
 #
 # The section header ([upsname]) can be just about anything as long as
-# it is a single word inside brackets.  upsd uses this to uniquely 
+# it is a single word inside brackets.  upsd uses this to uniquely
 # identify a UPS on this system.
 #
 # If you have a UPS called snoopy, your section header would be "[snoopy]".
 # On a system called "doghouse", the line in your upsmon.conf to monitor
 # it would look something like this:
 #
-# 	MONITOR snoopy@doghouse 1 upsmonuser mypassword master
+#   MONITOR snoopy@doghouse 1 upsmonuser mypassword master
 #
 # It might look like this if monitoring in slave mode:
 #
-# 	MONITOR snoopy@doghouse 1 upsmonuser mypassword slave
+#   MONITOR snoopy@doghouse 1 upsmonuser mypassword slave
 #
 # Configuration directives
 # ------------------------
-# 
+#
+# These directives are used by upsdrvctl only and should be specified outside
+# of a driver definition:
+#
+#    maxretry: Optional.  Specify the number of attempts to start the driver(s),
+#              in case of failure, before giving up. A delay of 'retrydelay' is
+#              inserted between each attempt. Caution should be taken when using
+#              this option, since it can impact the time taken by your system to
+#              start.
+#
+#              The built-in default is 1 attempt.
+#
+#  retrydelay: Optional.  Specify the delay between each restart attempt of the
+#              driver(s), as specified by 'maxretry'. Caution should be taken
+#              when using this option, since it can impact the time taken by your
+#              system to start.
+#
+#              The default is 5 seconds.
+#
+
+# Set maxretry to 3 by default, this should mitigate race with slow devices:
+maxretry = 3
+
 # These directives are common to all drivers that support ups.conf:
 #
-#  driver: REQUIRED.  Specify the program to run to talk to this UPS.  
+#  driver: REQUIRED.  Specify the program to run to talk to this UPS.
 #          apcsmart, bestups, and sec are some examples.
 #
-#    port: REQUIRED.  The serial port where your UPS is connected.  
+#    port: REQUIRED.  The serial port where your UPS is connected.
 #          /dev/ttyS0 is usually the first port on Linux boxes, for example.
 #
 # sdorder: optional.  When you have multiple UPSes on your system, you
@@ -59,8 +81,8 @@
 #  nolock: optional, and not recommended for use in this file.
 #
 #          If you put nolock in here, the driver will not lock the
-#          serial port every time it starts.  This may allow other 
-#          processes to seize the port if you start more than one by 
+#          serial port every time it starts.  This may allow other
+#          processes to seize the port if you start more than one by
 #          mistake.
 #
 #          This is only intended to be used on systems where locking
@@ -93,7 +115,7 @@
 #
 # Anything else is passed through to the hardware-specific part of
 # the driver.
-# 
+#
 # Examples
 # --------
 #
@@ -101,19 +123,19 @@
 # driver on /dev/ttyS0 is:
 #
 # [powerpal]
-#	driver = blazer_ser
-#	port = /dev/ttyS0
-#	desc = "Web server"
+#   driver = blazer_ser
+#   port = /dev/ttyS0
+#   desc = "Web server"
 #
 # If your UPS driver requires additional settings, you can specify them
 # here.  For example, if it supports a setting of "1234" for the
 # variable "cable", it would look like this:
-# 
+#
 # [myups]
-# 	driver = mydriver
-#	port = /dev/ttyS1
-#	cable = 1234
-#	desc = "Something descriptive"
+#   driver = mydriver
+#   port = /dev/ttyS1
+#   cable = 1234
+#   desc = "Something descriptive"
 #
 # To find out if your driver supports any extra settings, start it with
 # the -h option and/or read the driver's documentation.

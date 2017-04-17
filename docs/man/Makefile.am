@@ -543,6 +543,17 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
+SRC_MODBUS_PAGES = phoenixcontact_modbus.txt
+if WITH_MANS
+MAN_MODBUS_PAGES = phoenixcontact_modbus.8
+endif
+
+if WITH_MODBUS
+   man8_MANS += $(MAN_MODBUS_PAGES)
+endif
+
+HTML_MODBUS_MANS = phoenixcontact_modbus.html
+
 SRC_LINUX_I2C_PAGES = asem.txt
 if WITH_MANS
 MAN_LINUX_I2C_PAGES = asem.8
@@ -574,12 +585,13 @@ MAN_MANS += \
 	$(MAN_POWERMAN_PAGES) \
 	$(MAN_IPMIPSU_PAGES) \
 	$(MAN_MACOSX_PAGES) \
+	$(MAN_MODBUS_PAGES) \
 	$(MAN_LINUX_I2C_PAGES)
 endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-EXTRA_DIST = \
+SRC_ALL_PAGES = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
@@ -592,15 +604,22 @@ EXTRA_DIST = \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
-	$(SRC_LINUX_I2C_PAGES) \
+	$(SRC_MODBUS_PAGES) \
+	$(SRC_LINUX_I2C_PAGES)
+
+EXTRA_DIST = \
+	$(SRC_ALL_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
 
 if ! WITH_MANS
-# Cause "make dist" to fail
+if ! SKIP_MANS
+# Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
+# runs ./configure --with-doc=skip (or --with-man=skip specifically)
 EXTRA_DIST += dist
 dist:
-	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+	echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+endif
 endif
 
 HTML_MANS = \
@@ -616,6 +635,7 @@ HTML_MANS = \
 	$(HTML_POWERMAN_MANS) \
 	$(HTML_IPMIPSU_MANS) \
 	$(HTML_MACOSX_MANS) \
+	$(HTML_MODBUS_MANS) \
 	$(HTML_LINUX_I2C_MANS)
 
 all:
@@ -704,3 +724,6 @@ else !HAVE_ASCIIDOC
 	fi
 
 endif !HAVE_ASCIIDOC
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" $@

@@ -16,12 +16,12 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-The *nutscan_cidr_to_ip()* function converts a range of IP address in the CIDR format given as a string in 'cidr', to two IPs in strings pointed by 'start_ip' and 'stop_ip' which can be used as input paramters in the scanning functions of the libnutscan API. It is the caller's responsability to free 'start_ip' and 'stop_ip' strings.
+The *nutscan_cidr_to_ip()* function converts a range of IP address in the CIDR format given as a string in 'cidr', to two IPs in strings pointed by 'start_ip' and 'stop_ip' which can be used as input parameters in the scanning functions of the libnutscan API. It is the caller's responsibility to free 'start_ip' and 'stop_ip' strings.
 
 RETURN VALUE
 ------------
 
-The *nutscan_cidr_to_ip()* function returns 0 if an error occured (invalid 'cidr' address) or 1 if successful.
+The *nutscan_cidr_to_ip()* function returns 0 if an error occurred (invalid 'cidr' address) or 1 if successful.
 
 SEE ALSO
 --------
