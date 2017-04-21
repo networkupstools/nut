@@ -236,7 +236,7 @@ static const char *openups_scale_cdischarge_fun(double value)
 static const char *openups_temperature_fun(double value)
 {
 	int i;
-	int pos = -1;
+	int pos = 0;
 	unsigned int thermistor = value * 100;
 
 	if (thermistor <= therm_tbl[0]) {

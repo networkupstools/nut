@@ -554,6 +554,17 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
+SRC_MODBUS_PAGES = phoenixcontact_modbus.txt
+if WITH_MANS
+MAN_MODBUS_PAGES = phoenixcontact_modbus.8
+endif
+
+if WITH_MODBUS
+   man8_MANS += $(MAN_MODBUS_PAGES)
+endif
+
+HTML_MODBUS_MANS = phoenixcontact_modbus.html
+
 SRC_LINUX_I2C_PAGES = asem.txt
 if WITH_MANS
 MAN_LINUX_I2C_PAGES = asem.8
@@ -586,6 +597,7 @@ MAN_MANS += \
 	$(MAN_POWERMAN_PAGES) \
 	$(MAN_IPMIPSU_PAGES) \
 	$(MAN_MACOSX_PAGES) \
+	$(MAN_MODBUS_PAGES) \
 	$(MAN_LINUX_I2C_PAGES)
 endif
 
@@ -605,6 +617,7 @@ SRC_ALL_PAGES = \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
+	$(SRC_MODBUS_PAGES) \
 	$(SRC_LINUX_I2C_PAGES)
 
 EXTRA_DIST = \
@@ -636,6 +649,7 @@ HTML_MANS = \
 	$(HTML_POWERMAN_MANS) \
 	$(HTML_IPMIPSU_MANS) \
 	$(HTML_MACOSX_MANS) \
+	$(HTML_MODBUS_MANS) \
 	$(HTML_LINUX_I2C_MANS)
 
 all:
