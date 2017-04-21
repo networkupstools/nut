@@ -50,17 +50,19 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
+	cables.html \
 	FAQ.html
 
 ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
+	cables.chunked \
 	FAQ.chunked
 
 ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
-	cables.pdf	\
+	cables.pdf \
 	FAQ.pdf
 
 SUBDIRS = man
