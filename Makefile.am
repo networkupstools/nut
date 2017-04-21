@@ -23,7 +23,8 @@ DISTCHECK_VALGRIND_FLAGS = --with-all=auto --with-ssl=auto --with-doc=skip --wit
 
 DISTCHECK_CONFIGURE_FLAGS = ${DISTCHECK_FLAGS}		\
  --with-systemdsystemunitdir='$${prefix}/lib/systemd/system' \
- --with-augeas-lenses-dir='$${prefix}/usr/share/augeas/lenses'		\
+ --with-systemdsystemshutdowndir='$${prefix}/lib/systemd/system-shutdown' \
+ --with-augeas-lenses-dir='$${prefix}/share/augeas/lenses'		\
  --with-hotplug-dir='$${prefix}/etc/hotplug'		\
  --with-udev-dir='$${prefix}/etc/udev'			\
  --with-devd-dir='$${prefix}/etc/devd'

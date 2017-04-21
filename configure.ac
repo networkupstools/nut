@@ -1177,37 +1177,69 @@ fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
 PKG_PROG_PKG_CONFIG
-AC_MSG_CHECKING(whether to install systemd files)
+
+dnl Note: the Makefile.am overrides this installation directory for
+dnl 'distcheck*' targets, with a value including the local installation
+dnl '${prefix}' rather than whatever maybe detected from the OS --
+dnl otherwise the files will try to get installed to the actual system
+dnl directories (and fail for non-root, or break stuff for a root).
+AC_MSG_CHECKING(whether to install systemd unit files)
+systemdsystemunitdir=""
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
-[
-	case "${withval}" in
+[systemdsystemunitdir="${withval}"], [])
+case "${systemdsystemunitdir}" in
 	yes|auto|"")
-		systemdsystemunitdir=`$PKG_CONFIG --variable=systemdsystemunitdir systemd`
+		systemdsystemunitdir="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`" || \
+			systemdsystemunitdir=""
 		;;
 	no)
 		systemdsystemunitdir=""
 		;;
-	*)
-		systemdsystemunitdir="${withval}"
+	*) # Keep what the caller gave us
 		;;
-	esac
-], [])
-dnl Override installation directory, with the local installation
-dnl prefix. This is needed for 'distcheck*' targets, otherwise
-dnl files will try to get intalled to the actual system directories
+esac
 if test -n "${systemdsystemunitdir}"; then
-	systemdutildir=`$PKG_CONFIG --variable=systemdutildir systemd`
-	if test -n "${systemdutildir}"; then
-		systemdsystemshutdowndir="${systemdutildir}/system-shutdown"
-	else
-		systemdsystemshutdowndir="${systemdsystemunitdir}/system-shutdown"
-	fi
-	AC_MSG_RESULT(using ${systemdsystemunitdir})
+	AC_MSG_RESULT(using ${systemdsystemunitdir} for unit files)
 else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
+
+dnl The systemd integrated shutdown handler is stored separately
+AC_MSG_CHECKING(whether to install systemd shutdown handler)
+systemdsystemshutdowndir=""
+AC_ARG_WITH([systemdsystemshutdowndir],
+	AS_HELP_STRING([--with-systemdsystemshutdowndir=DIR], [Directory for systemd service files (auto)]),
+[systemdsystemshutdowndir="${withval}"], [])
+case "${systemdsystemshutdowndir}" in
+	yes|auto|"")
+		if test -n "${systemdsystemunitdir}"; then
+			systemdutildir="`$PKG_CONFIG --variable=systemdutildir systemd`" || \
+				systemdutildir=""
+			if test -n "${systemdutildir}"; then
+				systemdsystemshutdowndir="${systemdutildir}/system-shutdown"
+			else
+				systemdsystemshutdowndir="${systemdsystemunitdir}/system-shutdown"
+			fi
+		else
+			systemdsystemshutdowndir=""
+		fi
+		;;
+	no)
+		systemdsystemshutdowndir=""
+		;;
+	*) # Keep what the caller gave us
+		;;
+esac
+if test -n "${systemdsystemshutdowndir}"; then
+	AC_MSG_RESULT(using ${systemdsystemshutdowndir} for shutdown handler)
+	if test -z "${systemdsystemunitdir}"; then
+		AC_MSG_NOTICE(note that without systemd unit files, the shutdown handler will not be installed either)
+	fi
+else
+	AC_MSG_RESULT(no)
+fi
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
