@@ -112,13 +112,23 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
 # and do not forget to fix up docs/man/Makefile.am too ;)
 
+# NOTE: a2x tends to copy some files into its working area, preserving original
+# permissions. If those files are read-only in origin (e.g. packaged stylesheet
+# or our resources coming from EXTRA_DIST) the next a2x can not overwrite it.
+# Also note that such hoarding of files has potential to break parallel builds
+# (or cause them to produce undefined results if some bad timing happens).
+# As a brutal workaround for the former problem, we chmod. For second one we
+# might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 .txt.html: common.xsl xhtml.xsl
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
 .txt.chunked: common.xsl chunked.xsl
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
 .txt.pdf: docinfo.xml
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
