@@ -823,6 +823,8 @@
 "Powercom"	"ups"	"5"	"BNT-xxxAP"	"USB (product id: 0004)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"1"	"BNT-xxxAP"	"USB (product id: 0001)"	"usbhid-ups (experimental)"
 
+"Powercool"	"ups"	"1"	"350VA to 1600VA"	"USB"	"nutdrv_atcl_usb"
+
 "POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
 
 "PowerGuard"	"ups"	"2"	"PG-600"	""	"blazer_ser"
