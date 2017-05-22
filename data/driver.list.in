@@ -221,6 +221,7 @@
 "Cyber Power Systems"	"ups"	"3"	"CP1500EPFCLCD"	"USB"	"usbhid-ups"	# http://www.cyberpower-eu.com/products/ups_systems/pfc-sinewave/cp1500epfclcd.htm
 "Cyber Power Systems"	"ups"	"3"	"CP825AVR-G / LE825G"	"USB"	"usbhid-ups"	# http://www.cyberpowersystems.com/products/ups-systems/retail-products/LE825G.html
 "Cyber Power Systems"	"ups"	"3"	"EC350G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/ecologic/ec350g
+"Cyber Power Systems"	"ups"	"3"	"EC750G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/desktop/ec750g
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
