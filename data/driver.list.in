@@ -224,6 +224,7 @@
 "Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"PR2200LCDRT2U"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
