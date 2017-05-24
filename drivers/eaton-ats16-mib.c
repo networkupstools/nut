@@ -24,7 +24,7 @@
 
 #include "eaton-ats16-mib.h"
 
-#define EATON_ATS16_MIB_VERSION  "0.13"
+#define EATON_ATS16_MIB_VERSION  "0.14"
 
 #define EATON_ATS16_SYSOID       ".1.3.6.1.4.1.534.10"
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -128,6 +128,8 @@ static snmp_info_t eaton_ats16_mib[] = {
 	{ "input.source", ST_FLAG_STRING, 1, ".1.3.6.1.4.1.534.10.2.2.4.0", NULL, SU_FLAG_OK, eaton_ats16_source_info, NULL },
 	/* ats2ConfigPreferred.0 = INTEGER: source1(1) */
 	{ "input.source.preferred", ST_FLAG_RW, 1, ".1.3.6.1.4.1.534.10.2.4.5.0", NULL, SU_FLAG_OK, NULL, NULL },
+	/* ats2InputDephasing = INTEGER: 181 */
+	{ "input.phase.shift", 0, 1, ".1.3.6.1.4.1.534.10.2.2.1.1.0", NULL, SU_FLAG_OK, NULL, NULL },
 
 	/* Output collection */
 	/* ats2OutputVoltage.0 = INTEGER: 2304 0.1 V */
