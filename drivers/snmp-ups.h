@@ -189,6 +189,12 @@ typedef struct {
 #define SU_TYPE_DAISY		((t)->flags & (7 << 19))
 #define SU_DAISY			(2 << 19) /* Daisychain template definition */
 
+/* Multiple input template definition */
+/* the following flag specifies that this entry may be instanciated for
+ * device that have multiple inputs. The input.count is used to determine
+ * the iteration loop and indexes in such cases */
+#define SU_MULTI_INPUT		(2 << 19)
+
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
@@ -288,6 +294,7 @@ int su_addcmd(snmp_info_t *su_info_p);
 /* Structure containing info about each daisychain device, including phases
  * for input, output and bypass */
 typedef struct {
+	long input_count;
 	long input_phases;
 	long output_phases;
 	long bypass_phases;

@@ -197,6 +197,19 @@ input: Incoming line/power information
 | input.source.preferred      | The preferred power source         | 1
 |=================================================================================
 
+Dual-input additions
+~~~~~~~~~~~~~~~~~~~~
+
+Some devices have 2 inputs, which can be single or three-phase. In such case,
+the input collection is refined using indexes, with 'input.n', where the 'n' is
+for 1 or 2.
+
+All of the data published for input also apply to input.n.
+
+A specific data also exists for such cases: input.count, which lists the number
+of input(s). This defaults to 1 if the data is absent.
+
+
 output: Outgoing power/inverter information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

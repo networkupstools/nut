@@ -144,6 +144,9 @@ time_t lastpoll = 0;
  * automatically guessed at the first pass */
 int template_index_base = -1;
 
+/* Device with multiple inputs are exception to the above rule! */
+int input_template_index_base = -1;
+
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
 
@@ -395,6 +398,7 @@ void upsdrv_initups(void)
 	daisychain_info = (daisychain_info_t**)malloc(sizeof(daisychain_info_t) * (devices_count + 1));
 	for (curdev = 0 ; curdev <= devices_count ; curdev++) {
 		daisychain_info[curdev] = (daisychain_info_t*)malloc(sizeof(daisychain_info_t));
+		daisychain_info[curdev]->input_count = (long)-1;
 		daisychain_info[curdev]->input_phases = (long)-1;
 		daisychain_info[curdev]->output_phases = (long)-1;
 		daisychain_info[curdev]->bypass_phases = (long)-1;
@@ -1572,7 +1576,9 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 	/* FIXME: differentiate between template types (SU_OUTLET | SU_OUTLET_GROUP)
 	 * which may have different indexes ; and store it to not redo it again */
 // FIXME: for now, process every time the index, if it's a "device" template!
-	if (!(su_info_p->flags & SU_OUTLET) && !(su_info_p->flags & SU_OUTLET_GROUP))
+	if (!(su_info_p->flags & SU_OUTLET)
+		&& !(su_info_p->flags & SU_OUTLET_GROUP)
+		&& !(su_info_p->flags & SU_MULTI_INPUT))
 		template_index_base = -1;
 
 	if (template_index_base == -1)
@@ -1598,12 +1604,14 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 			if (nut_snmp_get(test_OID) != NULL)
 				break;
 		}
-		/* Only store if it's a template for outlets or outlets groups,
+		/* Only store if it's a template for outlets / outlets groups or inputs,
 		 * not for daisychain (which has different index) */
 		if ((su_info_p->flags & SU_OUTLET) || (su_info_p->flags & SU_OUTLET_GROUP))
 			template_index_base = base_index;
+		if (su_info_p->flags & SU_MULTI_INPUT)
+			input_template_index_base = base_index;
 	}
-	upsdebugx(3, "%s: %i", __func__, template_index_base);
+	upsdebugx(3, "%s: %i", __func__, base_index);
 	return base_index;
 }
 
@@ -1717,18 +1725,38 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 							su_info_p->info_type, cur_nut_index);
 				}
 			}
-			else /* Outlet and outlet groups templates */
+			else /* Outlet / outlet groups and input templates */
 			{
 				/* Get the index of the current template instance */
 				cur_nut_index = cur_template_number + base_nut_template_offset();
 
+/* Special case: replace "input." with "input.%i."
+ * Must be processed before device templating */
+//HERE
+if (su_info_p->flags & SU_MULTI_INPUT) {
+	upsdebugx(1, "SU_MULTI_INPUT: cur_nut_index = %i", cur_nut_index);
+	memset(&tmp_buf[0], 0, SU_INFOSIZE);
+	strcat(&tmp_buf[0], "input.%i");
+	strcat(&tmp_buf[0], strchr(su_info_p->info_type, '.'));
+	upsdebugx(1, "FORMATTING STRING = %s", &tmp_buf[0]);
+		snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+			&tmp_buf[0], current_device_number, cur_nut_index);
+	upsdebugx(1, "FORMATTED STRING = %s", cur_info_p.info_type);
+
+}
+else
+	snprintf((char*)cur_info_p.info_type, SU_INFOSIZE, "%s", su_info_p->info_type);
+
+	upsdebugx(1, "FORMATTED STRING 2 = %s", cur_info_p.info_type);
+
 				/* Special processing for daisychain */
 				if (daisychain_enabled == TRUE) {
+	upsdebugx(1, "FORMATTED STRING 2.1 = %s", cur_info_p.info_type);
 					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
 					if ((devices_count > 1) && (current_device_number > 0)) {
 						memset(&tmp_buf[0], 0, SU_INFOSIZE);
 						strcat(&tmp_buf[0], "device.%i.");
-						strcat(&tmp_buf[0], su_info_p->info_type);
+						strcat(&tmp_buf[0], cur_info_p.info_type); //su_info_p->info_type);
 
 						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
 							snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
@@ -1736,15 +1764,20 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 					}
 					else {
 						// FIXME: daisychain-whole, what to do?
-						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
-							su_info_p->info_type, cur_nut_index);
+//						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+//							cur_info_p.info_type /*su_info_p->info_type*/, cur_nut_index);
 					}
+	upsdebugx(1, "FORMATTED STRING 2.2 = %s", cur_info_p.info_type);
 				}
 				else {
+	upsdebugx(1, "FORMATTED STRING 2 = %s", cur_info_p.info_type);
 					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
-						su_info_p->info_type, cur_nut_index);
+						cur_info_p.info_type /*su_info_p->info_type*/, cur_nut_index);
+	upsdebugx(1, "FORMATTED STRING 3 = %s", cur_info_p.info_type);
 				}
 			}
+
+	upsdebugx(1, "FORMATTED STRING 4 = %s", cur_info_p.info_type);
 
 			/* check if default value is also a template */
 			if ((cur_info_p.dfl != NULL) &&
@@ -2126,7 +2159,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 /* walk ups variables and set elements of the info array. */
 bool_t snmp_ups_walk(int mode)
 {
-	long *input_phases, *output_phases, *bypass_phases;
+	long *input_count, *input_phases, *output_phases, *bypass_phases;
 	static unsigned long iterations = 0;
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
@@ -2262,6 +2295,8 @@ bool_t snmp_ups_walk(int mode)
 				if (process_phase_data("input.bypass", bypass_phases, su_info_p) == 1)
 					continue;
 			}
+//FIXME: store input_count for this device
+input_count = &daisychain_info[current_device_number]->input_count;
 
 			/* process template (outlet, outlet group, inc. daisychain) definition */
 			if (su_info_p->flags & SU_OUTLET) {
@@ -2277,6 +2312,13 @@ bool_t snmp_ups_walk(int mode)
 					continue;
 				else
 					status = process_template(mode, "outlet.group", su_info_p);
+			}
+			else if (su_info_p->flags & SU_MULTI_INPUT) {
+				/* Skip commands after init */
+				if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+					continue;
+				else
+					status = process_template(mode, "input", su_info_p);
 			}
 			else {
 /*				if (daisychain_enabled == TRUE) {

@@ -233,7 +233,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.40"
+#define EATON_MARLIN_MIB_VERSION	"0.42"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -376,7 +376,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
+	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
 		"Eaton Powerware ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 
 	/*	FIXME: use unitName.0	(ePDU)?
@@ -402,12 +402,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * outlet.{realpower,...}
 	 * However, it's more suitable and logic to have these on input.{...}
 	 */
+	/* This variable is used for device that have multiple inputs */
+	{ "input.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.%i", "1", SU_FLAG_STATIC, NULL, NULL },
+
 	/* Note: the below gives the number of input, not the number of phase(s)! */
 	/* inputCount.0; Value (Integer): 1
 	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0", NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases }, */
 	/* Note: for daisychain mode, we must handle phase(s) per device, not as a whole */
 	/* inputType.%i.1 = INTEGER: singlePhase (1) */
-	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1", NULL, SU_FLAG_STATIC, &marlin_input_type_info[0], NULL },
+	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.%i", NULL, SU_FLAG_STATIC | SU_MULTI_INPUT | SU_TYPE_DAISY_1, &marlin_input_type_info[0], NULL },
 
 	/* Frequency is measured globally */
 	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1", NULL, 0, NULL, NULL },
