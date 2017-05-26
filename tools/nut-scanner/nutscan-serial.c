@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "nut_platform.h"
+#include "common.h"
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */
@@ -102,7 +103,8 @@ static char ** add_port(char ** list, char * port)
 	/*+1 for the terminal NULL */
 	res = realloc(list,(count+1+1)*sizeof(char*));
 	if( res == NULL ) {
-		return NULL;
+		upsdebugx(1, "%s: Failed to realloc port list", __func__);
+		return list;
 	}
 	res[count] = strdup(port);
 	res[count+1] = NULL;

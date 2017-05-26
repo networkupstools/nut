@@ -121,7 +121,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"0.99"
+#define DRIVER_VERSION		"1.00"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -705,7 +705,14 @@ struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 
 		nb_iteration++;
 		/* +1 is for the terminating NULL */
-		ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		struct snmp_pdu ** new_ret_array = realloc(ret_array,sizeof(struct snmp_pdu*)*(nb_iteration+1));
+		if (new_ret_array == NULL) {
+			upsdebugx(1, "%s: Failed to realloc thread", __func__);
+			break;
+		}
+		else {
+			ret_array = new_ret_array;
+		}
 		ret_array[nb_iteration-1] = response;
 		ret_array[nb_iteration]=NULL;
 
@@ -772,8 +779,10 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			if((str=su_find_infoval(oid2info, *pdu->variables->val.integer))) {
 				strncpy(buf, str, buf_len-1);
 			}
+			/* when oid2info returns NULL, don't publish the variable! */
 			else {
-				strncpy(buf, "UNKNOWN", buf_len-1);
+				/* strncpy(buf, "UNKNOWN", buf_len-1); */
+				return FALSE;
 			}
 			buf[buf_len-1]='\0';
 		}
@@ -2576,6 +2585,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	if ((daisychain_enabled == TRUE) && (devices_count > 1) && (daisychain_device_number == 0)) {
 		upsdebugx(2, "daisychain %s for device.0 are not yet supported!",
 			(mode==SU_MODE_INSTCMD)?"command":"setting");
+		free(tmp_varname);
 		return STAT_SET_INVALID;
 	}
 

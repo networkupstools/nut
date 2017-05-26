@@ -558,6 +558,9 @@ Some specific data to outlet groups exists:
 | Name                           | Description                    | Example value
 | outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
 | outlet.group.n.count           | Number of outlets in the group | 12
+| outlet.group.n.phase           | Electrical phase to which the
+                                   physical outlet group (Gang) is
+                                   connected to                   | L1
 |=================================================================================
 
 Example:
@@ -570,6 +573,7 @@ Example:
 	outlet.group.1.current.status: good
 	outlet.group.1.id: 1
 	outlet.group.1.name: Branch Circuit A
+	outlet.group.1.phase: L1
 	outlet.group.1.status: on
 	outlet.group.1.voltage: 244.23
 	outlet.group.1.voltage.high.critical: 265.00

@@ -5,6 +5,8 @@
 # It should only be readable by the user that upsd becomes.  See the FAQ.
 #
 # Each entry below provides usage and default value.
+#
+# For more information, refer to upsd.conf manual page.
 
 # =======================================================================
 # MAXAGE <seconds>
@@ -27,15 +29,17 @@
 # than the default that was compiled into the program.
 
 # =======================================================================
-# LISTEN <address> [<port>]
+# LISTEN <IP address or name> [<port>]
 # LISTEN 127.0.0.1 3493
 # LISTEN ::1 3493
+# LISTEN myhostname 83493
+# LISTEN myhostname.mydomain
 #
 # This defaults to the localhost listening addresses and port 3493.
 # In case of IP v4 or v6 disabled kernel, only the available one will be used.
 #
-# You may specify each interface you want upsd to listen on for connections,
-# optionally with a port number.
+# You may specify each interface IP address or name that you want upsd to
+# listen on for connections, optionally with a port number.
 #
 # You may need this if you have multiple interfaces on your machine and
 # you don't want upsd to listen to all interfaces (for instance on a

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2406 utf-8
+personal_ws-1.1 en 2417 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -194,6 +194,7 @@ Cuvellard
 Cyber
 CyberPower
 Cygwin
+DATACABLE
 DATAPATH
 DCE
 DDD
@@ -387,9 +388,9 @@ Hough
 Hurd
 Håvard
 IANA
+ID's
 IDEN
 IDentifiers
-ID's
 IFBETWEEN
 IFSUPP
 IGN
@@ -428,8 +429,8 @@ JW
 Jageson
 Jarosch
 Jasuny
-Javadoc
 JavaScript
+Javadoc
 Javascript
 Joon
 Jumpered
@@ -437,6 +438,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+Kaminski
 Kain
 Kanji
 Kazutoshi
@@ -617,6 +619,7 @@ NVA
 NX
 Nadav
 Nagios
+Nash
 NaturalDocs
 Necedah
 NetBSD
@@ -736,6 +739,7 @@ Petter
 Pezzini
 Phasak
 PhaseWin
+PhoenixContact
 PhoenixTec
 Phoenixtec
 Plesser
@@ -1653,6 +1657,7 @@ jpgraph
 json
 kVA
 kadets
+kaminski
 kde
 keyclick
 keyout
@@ -1677,6 +1682,7 @@ libhid
 libhidups
 libi
 libltdl
+libmodbus
 libnss
 libnut
 libnutclient
@@ -1786,6 +1792,7 @@ mkdir
 mmap
 mmddyyyy
 mn
+modbus
 modelname
 monmaster
 monpasswd
@@ -1802,7 +1809,9 @@ myauthenticationpassphrase
 mybox
 mydev
 mydevice
+mydomain
 mydriver
+myhostname
 mypass
 mypassword
 myprivatepassphrase
@@ -1812,6 +1821,7 @@ myupsname
 nabcd
 namespace
 nanosleep
+nashkaminski
 natively
 nb
 nbr
@@ -1927,6 +1937,7 @@ perl
 pfy
 ph
 phasewindow
+phoenixcontact
 pid
 pidpath
 pinout

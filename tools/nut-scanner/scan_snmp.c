@@ -700,8 +700,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread,NULL,try_SysOID,(void*)tmp_sec)==0){
 			thread_count++;
-			thread_array = realloc(thread_array,
+			pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
+			if (new_thread_array == NULL) {
+				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				break;
+			}
+			else {
+				thread_array = new_thread_array;
+			}
 			thread_array[thread_count-1] = thread;
 		}
 #else

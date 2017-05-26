@@ -33,22 +33,26 @@ than the default that was compiled into the program.
 
 "LISTEN 'interface' 'port'"::
 
-Bind a listening port to the interface specified by its Internet
-address.  This may be useful on hosts with multiple interfaces.
-You should not rely exclusively on this for security, as it can be
-subverted on many systems.
+Bind a listening port to the interface specified by its Internet address or
+name.  This may be useful on hosts with multiple interfaces.
+You should not rely exclusively on this for security, as it can be subverted
+on many systems.
 +
-Listen on TCP port 'port' instead of the default value which was
-compiled into the code.  This overrides any value you may have set
-with 'configure --with-port'.  If you don't change it with configure
-or this value, upsd will listen on port 3493 for this interface.
+Optionally listen on TCP port 'port' instead of the default value which was
+compiled into the code.  This overrides any value you may have set with
+'configure --with-port'.  If you don't change it with configure or this value,
+upsd will listen on port 3493 for this interface.
 +
 Multiple LISTEN addresses may be specified.  The default is to bind to
 127.0.0.1 if no LISTEN addresses are specified (and ::1 if IPv6 support is
 compiled in).
++
+To listen on all available interfaces, you may also use '0.0.0.0' for IPv4 and
+and '::' for IPv6.
 
 	LISTEN 127.0.0.1
 	LISTEN 192.168.50.1
+	LISTEN myhostname.mydomain
 	LISTEN ::1
 	LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
 +

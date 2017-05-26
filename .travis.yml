@@ -51,27 +51,25 @@ addons:
     - libfreetype6-dev
     - libxpm-dev
     - libxml2-utils
+    - libmodbus-dev
 
+# Define one job in the matrix, to avoid a failing job
+# with "no environment variables set"; but others are
+# listed below to prioritize the longer jobs to start first.
 env:
   global:
     - CI_TIME=true
     - CI_TRACE=false
   matrix:
     - BUILD_TYPE=default
-    - BUILD_TYPE=default-nodoc
-    - BUILD_TYPE=default-alldrv
-    - BUILD_TYPE=default-tgt:distcheck-light
 
 # Builds with customized setups
+# Note that doc-related builds take the longest, and Travis CI cloud
+# runs only a few sub-jobs in parallel, so we want the withdoc and
+# perhaps spellcheck jobs to start first, and while they are still in
+# progress, others are spawned and finished - reducing overall job TTL.
 matrix:
   include:
-  - env: BUILD_TYPE=default-spellcheck
-    os: linux
-    addons:
-      apt:
-        packages: &deps_aspell
-        - aspell
-        - aspell-en
   - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:
@@ -84,6 +82,13 @@ matrix:
         - docbook-xsl-ns
         - source-highlight
         - libxml2-utils
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
 #    dist: trusty
@@ -93,6 +98,25 @@ matrix:
         packages:
         - *deps_driverlibs
         - valgrind
+# Other quicker builds in standard env follow:
+  - env: BUILD_TYPE=default-nodoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-alldrv
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+  - env: BUILD_TYPE=default-tgt:distcheck-light
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
