@@ -233,7 +233,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.40"
+#define EATON_MARLIN_MIB_VERSION	"0.41"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -347,6 +347,34 @@ static info_lkp_t marlin_input_type_info[] = {
 	{ 2, "2" }, /* splitPhase      */
 	{ 3, "3" }, /* threePhaseDelta */
 	{ 4, "3" }, /* threePhaseWye   */
+	{ 0, NULL }
+};
+/* Ugly trick which limits input phase to electrical groups */
+static info_lkp_t marlin_outlet_group_phase1_info[] = {
+	/* { 0, NULL },  unknown      */
+	{ 1, "L1" },  /* breaker1pole */
+	{ 2, "L1" },  /* breaker2pole */
+	{ 3, "L1" },  /* breaker3pole */
+	/* { 4, NULL },  outlet-section */
+	/* { 5, NULL },  user-defined */
+	{ 0, NULL }
+};
+static info_lkp_t marlin_outlet_group_phase2_info[] = {
+	/* { 0, NULL },  unknown      */
+	{ 1, "L2" },  /* breaker1pole */
+	{ 2, "L2" },  /* breaker2pole */
+	{ 3, "L2" },  /* breaker3pole */
+	/* { 4, NULL },  outlet-section */
+	/* { 5, NULL },  user-defined */
+	{ 0, NULL }
+};
+static info_lkp_t marlin_outlet_group_phase3_info[] = {
+	/* { 0, NULL },  unknown      */
+	{ 1, "L3" },  /* breaker1pole */
+	{ 2, "L3" },  /* breaker2pole */
+	{ 3, "L3" },  /* breaker3pole */
+	/* { 4, NULL },  outlet-section */
+	/* { 5, NULL },  user-defined */
 	{ 0, NULL }
 };
 
@@ -603,6 +631,14 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL, NULL },
 	/* groupType.0.1 = Integer: outletSection  (4) */
 	{ "outlet.group.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, &marlin_outlet_group_type_info[0], NULL },
+	/* ugly trick which limits input phase to electrical groups only (not outlet-section nor user-defined!)
+	 * For now, there is a maximum of 6 gangs (electrical groups) */
+	{ "outlet.group.1.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.1", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase1_info[0], NULL },
+	{ "outlet.group.2.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.2", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase2_info[0], NULL },
+	{ "outlet.group.3.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.3", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase3_info[0], NULL },
+	{ "outlet.group.4.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.4", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase1_info[0], NULL },
+	{ "outlet.group.5.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.5", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase2_info[0], NULL },
+	{ "outlet.group.6.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.6", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase3_info[0], NULL },
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, &marlin_outletgroups_status_info[0], NULL },
