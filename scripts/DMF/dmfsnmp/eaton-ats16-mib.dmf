@@ -57,6 +57,7 @@
 		<snmp_info flag_ok="yes" lookup="eaton_ats16_sensitivity_info" multiplier="128.0" name="input.sensitivity" oid=".1.3.6.1.4.1.534.10.2.4.6.0" writable="yes"/>
 		<snmp_info flag_ok="yes" lookup="eaton_ats16_source_info" multiplier="1.0" name="input.source" oid=".1.3.6.1.4.1.534.10.2.2.4.0" string="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="input.source.preferred" oid=".1.3.6.1.4.1.534.10.2.4.5.0" writable="yes"/>
+		<snmp_info flag_ok="yes" multiplier="1.0" name="input.phase.shift" oid=".1.3.6.1.4.1.534.10.2.2.1.1.0"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.534.10.2.2.3.1.0"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="output.voltage.nominal" oid=".1.3.6.1.4.1.534.10.2.4.4.0" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="0.1" name="output.current" oid=".1.3.6.1.4.1.534.10.2.2.3.2.0"/>
@@ -69,6 +70,6 @@
 		<snmp_info flag_ok="yes" multiplier="1.0" name="ambient.humidity.low" oid=".1.3.6.1.4.1.534.10.2.5.7.0" writable="yes"/>
 		<snmp_info flag_ok="yes" multiplier="1.0" name="ambient.humidity.high" oid=".1.3.6.1.4.1.534.10.2.5.8.0" writable="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16" name="eaton_ats16" oid=".1.3.6.1.4.1.705.1" snmp_info="eaton_ats16_mib" version="0.13"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16" name="eaton_ats16" oid=".1.3.6.1.4.1.705.1" snmp_info="eaton_ats16_mib" version="0.14"/>
 </nut>
 
