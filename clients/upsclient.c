@@ -27,6 +27,11 @@
 #include <pthread.h>
 #endif 
 
+#ifdef HAVE_PTHREAD
+/* this include is needed on AIX to have errno stored in thread local storage */
+#include <pthread.h>
+#endif 
+
 #include <errno.h>
 #include <netdb.h>
 #include <stdio.h>
