@@ -65,6 +65,8 @@ static usb_device_id_t belkin_usb_device_table[] = {
 	/* F6C1100-UNV, F6C1200-UNV */
 	{ USB_DEVICE(BELKIN_VENDORID, 0x1100), NULL },
 
+	/* Liebert GXT4 UPS */
+	{ USB_DEVICE(LIEBERT_VENDORID, 0x0004), NULL },
 	/* Liebert PowerSure PSA UPS */
 	{ USB_DEVICE(LIEBERT_VENDORID, 0x0001), NULL },
 	/* Liebert PowerSure PSI 1440 */
