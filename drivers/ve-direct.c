@@ -114,7 +114,8 @@ unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 	unsigned char ch = ve_cmd - '0';
 	if (ve_extra != NULL)
 	{
-		for (const char *ve = ve_extra; *ve != '\0'; ve++)
+		const char *ve;
+		for (ve = ve_extra; *ve != '\0'; ve++)
 		{
 			if (ve[1] != '\0')
 			{
