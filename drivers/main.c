@@ -498,7 +498,7 @@ int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
-	int update_count = 0;
+	int	update_count = 0;
 
 	atexit(exit_cleanup);
 
