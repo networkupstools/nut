@@ -2,7 +2,7 @@
 
    Copyright (C)
 	2003	Russell Kroll <rkroll@exploits.org>
-	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2012-2017	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -97,5 +97,7 @@ int dstate_detect_phasecount(
         int *inited_phaseinfo,
         int *num_phases,
         const int may_reevaluate);
+
+void dstate_dump(void);
 
 #endif	/* DSTATE_H_SEEN */

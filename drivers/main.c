@@ -1,8 +1,9 @@
 /* main.c - Network UPS Tools driver core
 
    Copyright (C)
-   1999 Russell Kroll <rkroll@exploits.org>
-   2017 Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
+   1999			Russell Kroll <rkroll@exploits.org>
+   2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+   2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -50,6 +51,7 @@
 
 	/* everything else */
 	static char	*pidfn = NULL;
+	int	dump_data = 0;
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -101,6 +103,7 @@ static void help_msg(void)
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -D             - raise debugging level\n");
+	printf("  -d             - dump data (upsc-like) to stdout and exit\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -495,6 +498,7 @@ int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
+	int update_count = 0;
 
 	atexit(exit_cleanup);
 
@@ -514,7 +518,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kDhx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kDdhx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -531,6 +535,9 @@ int main(int argc, char **argv)
 				break;
 			case 'D':
 				nut_debug_level++;
+				break;
+			case 'd':
+				dump_data = 1;
 				break;
 			case 'i':
 				poll_interval = atoi(optarg);
@@ -704,7 +711,7 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if (nut_debug_level == 0) {
+	if ( (nut_debug_level == 0) && (!dump_data) ) {
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
@@ -718,13 +725,26 @@ int main(int argc, char **argv)
 
 		upsdrv_updateinfo();
 
+		/* Dump the data tree (in upsc-like format) to stdout and exit */
+		if (dump_data) {
+			/* Wait for 2 update loops to ensure data completion */
+			if (update_count == 2) { /* FIXME: may be transformed into a param! */
+				dstate_dump();
+				exit_flag = 1;
+			}
+			else
+				update_count++;
+		}
+
 		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 			/* repeat until time is up or extrafd has data */
 		}
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
-	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	/* however, avoid to "pollute" data dump output! */
+	if (!dump_data)
+		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 
 	exit(EXIT_SUCCESS);
 }
