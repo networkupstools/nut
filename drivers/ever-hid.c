@@ -210,18 +210,21 @@ static const char* ever_messages_fun(double value)
 
 	int n = 0;	/* number of characters currently in line */
 
+	/* duplicate of ups.status: OB LB*/
+	/*
 	if(messages & 0x01)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "OVERLOAD");
 	if(messages & 0x02)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BATTERY_LOW");
+		*/
 	if(messages & 0x04)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BOOST");
 	if(messages & 0x08)
-		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "TRIM");
+		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BUCK");
 	if(messages & 0x10)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BOOST_BLOCKED");
 	if(messages & 0x20)
-		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "TRIM_BLOCKED");
+		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "BUCK_BLOCKED");
 	if(messages & 0x40)	
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "CHARGING");
 	if(messages & 0x80)	
@@ -257,7 +260,7 @@ static const char* ever_alarms_fun(double value)
 	if(alarms & 0x01)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "OVERLOAD");
 	if(alarms & 0x02)
-		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "SHORTCUT");
+		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "SHORT-CIRCUIT");
 	if(alarms & 0x04 || alarms & 0x08)
 		n = snprintfcat(line, sizeof(line), n ? " %s" : "%s", "OVERHEAT");
 	if(alarms & 0x10)
@@ -459,7 +462,8 @@ static hid_info_t ever_hid2nut[] = {
   { "battery.input_id", 0, 0, "UPS.BatterySystem.Input.InputID", NULL, "%.0f", 0, NULL },
   { "battery.output_flowid", 0, 0, "UPS.BatterySystem.Output.FlowID", NULL, "%.0f", 0, NULL },
   { "battery.output_id", 0, 0, "UPS.BatterySystem.Output.OutputID", NULL, "%.0f", 0, NULL },
-  /*{ "id.ups_type", 0, 0, "UPS.EVER1.EVER12", NULL, "%s", 0, ever_format_model },*/
+  /* not implemented*/
+  /*{ "id.ups_type", 0, 0, "UPS.EVER1.EVER12", NULL, "%s", 0, ever_format_model },*/   
   { "id.firmware_version_inverter", 0, 0, "UPS.EVER1.EVER13", NULL, "%s", 0, ever_format_version },
   { "id.firmware_version_interfaces", 0, 0, "UPS.EVER1.EVER14", NULL, "%s", 0, ever_format_version },
   { "id.hardware_version", 0, 0, "UPS.EVER1.EVER15", NULL, "%s", 0, ever_format_hardware },
@@ -476,6 +480,7 @@ static hid_info_t ever_hid2nut[] = {
   { "control.button_sound", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER52", NULL, "%.0f", 0, NULL },
   { "control.audible_alarm", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER49.EVER53", NULL, "%.0f", 0, NULL },
   { "config.output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER54", NULL, "%.0f", 0, NULL },
+  /* not implemented*/
   /*{ "config.min_output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER55", NULL, "%.0f", 0, NULL },
   { "config.max_output_voltage", ST_FLAG_RW | ST_FLAG_STRING, 3, "UPS.EVER1.EVER56", NULL, "%.0f", 0, NULL },
   { "config.min_output_frequency", ST_FLAG_RW | ST_FLAG_NUMBER, 0, "UPS.EVER1.EVER57", NULL, "%.1f", 0, NULL },
@@ -550,21 +555,25 @@ static hid_info_t ever_hid2nut[] = {
   { "powersummary.run_time_to_empty", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "powersummary.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.0f", 0, NULL },
   { "powersummary.delay_before_shutdown", 0, 0, "UPS.PowerSummary.DelayBeforeShutdown", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL },
+  /* not implemented*/
   /*{ "unmapped.ups.powersummary.powersummaryid", 0, 0, "UPS.PowerSummary.PowerSummaryID", NULL, "%.0f", 0, NULL },*/
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.AwaitingPower", NULL, NULL, HU_FLAG_QUICK_POLL, awaitingpower_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, 0, nobattery_info },
+  /* not implemented*/
   /* { "ups.presentstatus.belowremainingcapacitylimit", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, "%.0f", 0, NULL }, */
   /*{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Boost", NULL, NULL, 0, boost_info }, */
   /*{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Buck", NULL, NULL, 0, trim_info }, */
   /*{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging",  NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },*/
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.CommunicationLost", NULL, NULL, 0, commfault_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
+  /* not implemented*/
   /* { "ups.powersummary.presentstatus.good", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, "%.0f", 0, NULL }, */
   /* { "ups.powersummary.presentstatus.internalfailure", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, "%.0f", 0, NULL }, */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Overload", NULL, NULL, HU_FLAG_QUICK_POLL, overload_info },
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.OverTemperature", NULL, NULL, 0, overheat_info },
+  /* not implemented*/
   /* { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.RemainingTimeLimitExpired", NULL, NULL, 0, lowbatt_info }, */
   { "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ShutdownImminent", NULL, NULL, 0, shutdownimm_info },
 
