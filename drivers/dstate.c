@@ -1,9 +1,9 @@
 /* dstate.c - Network UPS Tools driver-side state management
 
    Copyright (C)
-	2003	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2003		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012 - 2017	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1197,4 +1197,42 @@ int dstate_detect_phasecount(
 
 	upsdebugx(5, "%s(): Nothing changed, with a valid reason; already inited", __func__);
 	return 2;
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Actual implementation */
+static int dstate_tree_dump(st_tree_t *node)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = dstate_tree_dump(node->left);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	printf("%s: %s\n", node->var, node->val);
+
+	if (node->right) {
+		return dstate_tree_dump(node->right);
+	}
+
+	return 1;	/* everything's OK here ... */
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Public interface */
+void dstate_dump(void)
+{
+	upsdebugx(3, "Entering %s", __func__);
+
+	st_tree_t *node = (st_tree_t *)dstate_getroot();
+
+	dstate_tree_dump(node);
 }
