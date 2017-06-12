@@ -74,8 +74,9 @@ have with a driver to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 
-*-d*::
-Dump the data tree (in upsc-like format) to stdout and exit.
+*-d* 'update_count'::
+Dump the data tree (in upsc-like format) to stdout after running the driver
+update loop for 'update_count' times and exit.
 Note that the driver banner will be printed too, so when using this option in
 scripts, don't forget to trim the first line.
 

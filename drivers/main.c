@@ -51,7 +51,7 @@
 
 	/* everything else */
 	static char	*pidfn = NULL;
-	int	dump_data = 0;
+	int	dump_data = 0; /* Store the update_count requested */
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -518,7 +518,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:s:kDdhx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kDd:hx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -537,7 +537,7 @@ int main(int argc, char **argv)
 				nut_debug_level++;
 				break;
 			case 'd':
-				dump_data = 1;
+				dump_data = atoi(optarg);
 				break;
 			case 'i':
 				poll_interval = atoi(optarg);
@@ -727,8 +727,8 @@ int main(int argc, char **argv)
 
 		/* Dump the data tree (in upsc-like format) to stdout and exit */
 		if (dump_data) {
-			/* Wait for 2 update loops to ensure data completion */
-			if (update_count == 2) { /* FIXME: may be transformed into a param! */
+			/* Wait for 'dump_data' update loops to ensure data completion */
+			if (update_count == dump_data) {
 				dstate_dump();
 				exit_flag = 1;
 			}
