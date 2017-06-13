@@ -52,9 +52,12 @@ for line in fin:
     # Match the date line
     elif 'Date:' in line:
         dateList = re.split(':   ', line, 1)
-        date = dateList[1]
-        date = date[0:len(date)-1]
-        dateFound = True
+        try:
+            date = dateList[1]
+            date = date[0:len(date)-1]
+            dateFound = True
+        except:
+            print ("Could not parse dateList = '%s' - maybe that text is not part of Git markup" % (line))
     # The Fossil-IDs are ignored:
     elif line.startswith('    Fossil-ID:') or line.startswith('    [[SVN:'):
         continue
