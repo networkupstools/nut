@@ -170,6 +170,7 @@
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.L2.realpower" oid="1.3.6.1.4.1.534.1.3.4.1.4.2"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.L3.realpower" oid="1.3.6.1.4.1.534.1.3.4.1.4.3"/>
 		<snmp_info default="" multiplier="1.0" name="input.quality" oid="1.3.6.1.4.1.534.1.3.2.0" power_status="yes"/>
+		<snmp_info default="" multiplier="0.1" name="input.bypass.frequency" oid="1.3.6.1.4.1.534.1.5.1.0" power_status="yes"/>
 		<snmp_info default="" input_1_phase="yes" multiplier="1.0" name="input.bypass.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.0"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L1-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.1"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L2-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.2"/>
@@ -189,7 +190,7 @@
 		<snmp_info command="yes" default="" flag_ok="yes" multiplier="20.0" name="load.on.delay" oid="1.3.6.1.4.1.534.1.9.2"/>
 		<snmp_info default="" multiplier="1.0" name="ups.alarms" oid="1.3.6.1.4.1.534.1.7.1.0" power_status="yes"/>
 	</snmp>
-	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" name="powerware" oid=".1.3.6.1.4.1.534.1" snmp_info="pw_mib" version="0.89"/>
-	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" snmp_info="pw_mib" version="0.89"/>
+	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" name="powerware" oid=".1.3.6.1.4.1.534.1" snmp_info="pw_mib" version="0.90"/>
+	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" snmp_info="pw_mib" version="0.90"/>
 </nut>
 
