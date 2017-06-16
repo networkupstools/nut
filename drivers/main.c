@@ -103,7 +103,7 @@ static void help_msg(void)
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -D             - raise debugging level\n");
-	printf("  -d             - dump data (upsc-like) to stdout and exit\n");
+	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");

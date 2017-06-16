@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.89"
+#define PW_MIB_VERSION "0.90"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -335,6 +335,7 @@ static snmp_info_t pw_mib[] = {
 
 	/* FIXME: this segfaults! do we assume the same number of bypass phases as input phases?
 	{ "input.bypass.phases", 0, 1.0, PW_OID_BY_LINES, "", 0, NULL }, */
+	{ "input.bypass.frequency", 0, 0.1, PW_OID_BY_FREQUENCY, "", 0, NULL },
 	{ "input.bypass.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
 	{ "input.bypass.L1-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".1", "",
