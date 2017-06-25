@@ -44,13 +44,14 @@ for line in fin:
         files = ""
         continue
     # Match the author line and extract the part we want
+    # (Don't use startswith to allow Author override inside commit message.)
     elif 'Author:' in line:
         authorList = re.split(': ', line, 1)
         author = authorList[1]
         author = author[0:len(author)-1]
         authorFound = True
     # Match the date line
-    elif 'Date:' in line:
+    elif line.startswith('Date:'):
         dateList = re.split(':   ', line, 1)
         date = dateList[1]
         date = date[0:len(date)-1]
