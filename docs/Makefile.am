@@ -113,12 +113,15 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # and do not forget to fix up docs/man/Makefile.am too ;)
 
 .txt.html: common.xsl xhtml.xsl
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod +w "${builddir}/docbook-xsl.css" ; fi
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
 .txt.chunked: common.xsl chunked.xsl
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod +w "${builddir}/docbook-xsl.css" ; fi
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
 .txt.pdf: docinfo.xml
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod +w "${builddir}/docbook-xsl.css" ; fi
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
