@@ -673,6 +673,8 @@ NUT_CHECK_ASCIIDOC
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
+DOC_INSTALL_DISTED_MANS=no
+
 case "${nut_with_doc}" in
 	yes|all)
 		nut_doc_build_list="man html-single html-chunked pdf"
@@ -821,6 +823,15 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+				if test "${nut_doc_build_target_flag}" = "auto" ; then
+dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
+						DOC_INSTALL_DISTED_MANS="yes"
+					else
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built dist'ed copies because they are absent])
+					fi
+				fi  # Other variants include "no", "skip"...
 			fi
 		fi
 		;;
@@ -864,7 +875,7 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 
 WITH_MANS=no
 SKIP_MANS=no
-if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
+if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
 	WITH_MANS=yes
 fi
 if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
@@ -877,6 +888,7 @@ dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
 dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
+AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
