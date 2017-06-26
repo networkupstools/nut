@@ -742,9 +742,9 @@ dnl to detect if we can build the wanted documentation format and yet
 dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	html-single*)
-		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
 		can_build_doc_html_single=no
-		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
 			rm -f "$DOCTESTDIR"/asciidoc*.htm*
 		], [])
@@ -763,9 +763,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	html-chunked*)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
 		can_build_doc_html_chunked=no
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
 			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
 		], [])
@@ -784,9 +784,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	pdf*)
-		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required ${DBLATEX_MIN_VERSION})])
 		can_build_doc_pdf=no
-		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [${DBLATEX_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --format=pdf --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
 			rm -f "${DOCTESTDIR}"/asciidoc.pdf
 		], [])
