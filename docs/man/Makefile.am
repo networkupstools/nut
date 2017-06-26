@@ -697,7 +697,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -706,7 +706,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.1:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -715,7 +715,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.3:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -724,7 +724,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.5:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -733,7 +733,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.8:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
