@@ -47,15 +47,22 @@ for line in fin:
     # (Don't use startswith to allow Author override inside commit message.)
     elif 'Author:' in line:
         authorList = re.split(': ', line, 1)
-        author = authorList[1]
-        author = author[0:len(author)-1]
-        authorFound = True
+        try:
+            author = authorList[1]
+            author = author[0:len(author)-1]
+            authorFound = True
+        except:
+            print ("Could not parse authorList = '%s'" % (line))
+
     # Match the date line
     elif line.startswith('Date:'):
         dateList = re.split(':   ', line, 1)
-        date = dateList[1]
-        date = date[0:len(date)-1]
-        dateFound = True
+        try:
+            date = dateList[1]
+            date = date[0:len(date)-1]
+            dateFound = True
+        except:
+            print ("Could not parse dateList = '%s'" % (line))
     # The Fossil-IDs are ignored:
     elif line.startswith('    Fossil-ID:') or line.startswith('    [[SVN:'):
         continue
