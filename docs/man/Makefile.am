@@ -639,7 +639,6 @@ dist:
 endif
 endif
 
-if ! DOC_INSTALL_DISTED_MANS
 # For builds done from dist'ed sources, there may be a conflict of timestamps
 # between original *.txt files and pre-built manpages etc. leading to skipping
 # of manpage re-generation even if that activity is possible and requested.
@@ -647,7 +646,6 @@ if ! DOC_INSTALL_DISTED_MANS
 # generated files to long ago. Current solution assumes good valid clocks :)
 dist-hook:
 	@echo "Fix up manpage source timestamps" && cd $(distdir) && touch $(SRC_ALL_PAGES)
-endif
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
