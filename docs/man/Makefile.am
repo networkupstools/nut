@@ -672,6 +672,16 @@ CLEANFILES = *.xml *.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
 
+# For builds with allowed installation of prebuild man pages, check that
+# they exist in sources (make would pull them automatically as a fallback
+# from failed lookup in build products). For builds that require rebuild
+# of man pages, abort with error if build product is missing.
+if DOC_INSTALL_DISTED_MANS
+SRC_PREBUILT_CLAUSE=|| [ -r "$(srcdir)/`basename $@`" ]
+else
+SRC_PREBUILT_CLAUSE=
+endif
+
 if HAVE_ASCIIDOC
 
 .txt.html:
@@ -705,7 +715,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -714,7 +724,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.1:
-	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -723,7 +733,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.3:
-	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -732,7 +742,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.5:
-	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -741,7 +751,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.8:
-	@if [ -r "$@" ] || [ -r "$(srcdir)/`basename $@`" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
