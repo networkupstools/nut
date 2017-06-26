@@ -4,13 +4,17 @@
 # Notes:
 # - sources (.txt) and groff formats are both distributed,
 # - only sources are versioned ; groff files are generated at worst
-#   during 'make dist'
+#   during 'make dist' (while preparing a release tarball)
 # - HTML files are built upon request, if AsciiDoc is available,
 # - groff update will only happen if AsciiDoc is available too,
 # - all this can probably (and hopefully) be improved, but I've not
 #   found a way to do pattern replacement on the fly for target deps!
 #   FIXME: investigate an autogen.sh hook
 # - Ref: http://www.gnu.org/software/hello/manual/automake/Man-pages.html
+# - WITH_MANS can be enabled if either we are building man-pages, or if
+#   the --with-doc=man=auto detected an inability to build the man-pages
+#   but enabled the DOC_INSTALL_DISTED_MANS toggle so we deliver disted
+#   files from source tree
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
