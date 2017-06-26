@@ -703,8 +703,6 @@ dnl If user passed --with-doc='' they they want nothing, right?
 		;;
 esac
 
-dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
-dnl to ensure that it is processed as several space-separated tokens
 if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
 		/*) abs_srcdir="${srcdir}";;
@@ -714,6 +712,9 @@ if test -z "${abs_srcdir}" ; then
 fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
+
+dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
+dnl to ensure that it is processed as several space-separated tokens
 for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target}" in
 	*=*=*)	rm -rf "${DOCTESTDIR}"
