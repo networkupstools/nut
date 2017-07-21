@@ -211,15 +211,16 @@ else
 endif
 
 DMFLNK_CMD = ( \
-	echo "  LN     '$(DMFFILE_DIR)$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
-	[ "$(V)" = 1 ] && echo "BEFORE:"; ls -la "$(DMFFILE_DIR)$$DMFFILE" "$$DMFLINK" || true; \
+	case "$$DMFFILE" in /*) DMFFILE_DIR="" ;; *) DMFFILE_DIR="$(DMFFILE_DIR)" ;; esac; \
+	echo "  LN     '$$DMFFILE_DIR$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
+	[ "$(V)" = 1 ] && echo "BEFORE:"; ls -la "$$DMFFILE_DIR$$DMFFILE" "$$DMFLINK" || true; \
 	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
 	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
-	test -f "$(DMFFILE_DIR)$$DMFFILE" || { echo "File '$(DMFFILE_DIR)$$DMFFILE' not found" >&2; exit 22; } ; \
-	[ "$(V)" = 1 ] && echo "$(LN_S_R) '$(DMFFILE_DIR)$$DMFFILE' '$$DMFLINK' || exit"; \
+	test -f "$$DMFFILE_DIR$$DMFFILE" || { echo "File '$$DMFFILE_DIR$$DMFFILE' not found" >&2; exit 22; } ; \
+	[ "$(V)" = 1 ] && echo "$(LN_S_R) '$$DMFFILE_DIR$$DMFFILE' '$$DMFLINK' || exit"; \
 	rm -f "$$DMFLINK" || true ; \
-	$(LN_S_R) "$(DMFFILE_DIR)$$DMFFILE" "$$DMFLINK" || exit ; \
-	[ "$(V)" = 1 ] && echo "AFTER:"; ls -la "$(DMFFILE_DIR)$$DMFFILE" "$$DMFLINK" || true; \
+	$(LN_S_R) "$$DMFFILE_DIR$$DMFFILE" "$$DMFLINK" || exit ; \
+	[ "$(V)" = 1 ] && echo "AFTER:"; ls -la "$$DMFFILE_DIR$$DMFFILE" "$$DMFLINK" || true; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
