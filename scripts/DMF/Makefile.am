@@ -201,16 +201,25 @@ else
 	)
 endif
 
+# For regenerated files, we link from `pwd` (e.g. .../_build/scripts/DMF during
+# distcheck) and fail if it did not go well (generation failed); but when the
+# caller explicitly does not regenerate DMFs from Cs, we use pre-generated ones.
+if WITH_REGENERATE_DMF_SNMP
+  DMFFILE_DIR=
+else
+  DMFFILE_DIR=$(abs_srcdir)/
+endif
+
 DMFLNK_CMD = ( \
-	echo "  LN     '$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
-	[ "$(V)" = 1 ] && echo "BEFORE:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
+	echo "  LN     '$(DMFFILE_DIR)$$DMFFILE' => '$$DMFLINK' (PWD = `pwd`)" >&2 ; \
+	[ "$(V)" = 1 ] && echo "BEFORE:"; ls -la "$(DMFFILE_DIR)$$DMFFILE" "$$DMFLINK" || true; \
 	DMFLINK_DIR="`dirname "$$DMFLINK"`"; \
 	test -d "$$DMFLINK_DIR" -a -w "$$DMFLINK_DIR" || $(MKDIR_P) "$$DMFLINK_DIR" || exit ; \
-	test -f "$$DMFFILE" || { echo "File '$$DMFFILE' not found" >&2; exit 22; } ; \
-	[ "$(V)" = 1 ] && echo "$(LN_S_R) '$$DMFFILE' '$$DMFLINK' || exit"; \
+	test -f "$(DMFFILE_DIR)$$DMFFILE" || { echo "File '$(DMFFILE_DIR)$$DMFFILE' not found" >&2; exit 22; } ; \
+	[ "$(V)" = 1 ] && echo "$(LN_S_R) '$(DMFFILE_DIR)$$DMFFILE' '$$DMFLINK' || exit"; \
 	rm -f "$$DMFLINK" || true ; \
-	$(LN_S_R) "$$DMFFILE" "$$DMFLINK" || exit ; \
-	[ "$(V)" = 1 ] && echo "AFTER:"; ls -la "$$DMFFILE" "$$DMFLINK" || true; \
+	$(LN_S_R) "$(DMFFILE_DIR)$$DMFFILE" "$$DMFLINK" || exit ; \
+	[ "$(V)" = 1 ] && echo "AFTER:"; ls -la "$(DMFFILE_DIR)$$DMFFILE" "$$DMFLINK" || true; \
 	)
 
 # We can not touch read-only source dirs (e.g. during distcheck) so make sure
