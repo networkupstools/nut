@@ -144,7 +144,9 @@ MAINTAINERCLEAN_FILES = ChangeLog
 # Older boundary of the ChangeLog commits range
 # It can be a tag ('v2.2.0'), a commit hash, a date, ...
 # See gitrevisions for more information on specifying ranges
-GITLOG_START_POINT=v2.6.0
+#GITLOG_START_POINT=v2.6.0
+# For the FTY NUT fork, the interesting list is differences from common master
+GITLOG_START_POINT=master
 
 # Force ChangeLog regeneration upon make dist (due to nonexistant 'dummy-stamp'),
 # in case it has already been generated previously
