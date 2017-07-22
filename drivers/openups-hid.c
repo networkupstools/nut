@@ -303,7 +303,7 @@ static hid_info_t openups_hid2nut[] = {
 
 	/* Battery */
 	{"battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
-	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion},
+	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
 	{"battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", HU_FLAG_QUICK_POLL, NULL},
 	/* { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info }, */
 	{"battery.current", 0, 0, "UPS.PowerSummary.Current", NULL, "%.3f", HU_FLAG_QUICK_POLL, NULL},
