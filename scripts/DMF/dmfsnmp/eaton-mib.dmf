@@ -285,7 +285,7 @@
 		<snmp_info multiplier="0.001" name="outlet.%i.voltage.high.critical" oid=".1.3.6.1.4.1.534.6.6.7.6.3.1.7.%i.%i" outlet="yes" positive="yes" type_daisy="1" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.power" oid=".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i" outlet="yes" type_daisy="1"/>
 		<snmp_info default="no" flag_ok="yes" lookup="eaton_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i" outlet="yes" static="yes" string="yes" type_daisy="1"/>
-		<snmp_info default="unknown" lookup="eaton_outlet_type_info" multiplier="128.0" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i" outlet="yes" static="yes" string="yes" type_daisy="1"/>
+		<snmp_info default="unknown" lookup="eaton_outlet_type_info" multiplier="128.0" name="outlet.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.6.1.1.5.%i.%i" outlet="yes" static="yes" string="yes" type_daisy="1"/>
 		<snmp_info default="0" multiplier="1.0" name="outlet.group.count" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.21.%i" static="yes"/>
 		<snmp_info multiplier="128.0" name="outlet.group.%i.id" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1"/>
 		<snmp_info multiplier="128.0" name="outlet.group.%i.name" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1" writable="yes"/>
