@@ -32,6 +32,7 @@
 
 /* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
  * per file */
+
 #define EATON_APHEL_MIB_VERSION	"0.50"
 
 /* APHEL-GENESIS-II-MIB (monitored ePDU)
@@ -233,7 +234,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.41"
+#define EATON_MARLIN_MIB_VERSION	"0.42"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
