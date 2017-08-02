@@ -640,7 +640,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
 	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &eaton_outlet_switchability_info[0], NULL },
-	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, &eaton_outlet_type_info[0], NULL },
+	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.5.%i.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, &eaton_outlet_type_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1
