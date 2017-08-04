@@ -235,7 +235,7 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.43"
+#define EATON_MARLIN_MIB_VERSION	"0.44"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -608,12 +608,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
+	/* outletName: Outlet friendly name, which can be modified by the user */
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_status_info[0], NULL },
-
-	/* FIXME: or use ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.0.1", though it's related to groups! */
+	/* Numeric identifier of the outlet, tied to the whole unit */
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	/* outletID: Outlet physical name, related to its number in the group
+	   ex: 1rst outlet of the second group (B) is B1 */
+	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
 	 * Need to address that, without multiple declaration (%i.%i, SU_OUTLET | SU_OUTLET_GROUP)? */
 	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.1", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
