@@ -1,4 +1,4 @@
-oifndef::external_title[]
+ifndef::external_title[]
 NUT command and variable naming scheme
 ======================================
 endif::external_title[]
