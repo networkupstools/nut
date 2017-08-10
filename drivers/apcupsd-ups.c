@@ -54,9 +54,8 @@ static void process(char *item,char *data)
 	{
 	case DU_FLAG_STATUS:
 		status_init();
-		if(!strcmp(data,"COMMLOST")||!strcmp(data,"SHUTTING DOWN")||
-			!strcmp(data,"NETWORK ERROR")||!strcmp(data,"ERROR"))
-				status_set("OFF");
+		if(!strcmp(data,"COMMLOST")||!strcmp(data,"NETWORK ERROR")||
+		   !strcmp(data,"ERROR"))status_set("OFF");
 		else if(!strcmp(data,"SELFTEST"))status_set("OB");
 		else for(;(data=strtok(data," "));data=NULL)
 		{
@@ -66,7 +65,8 @@ static void process(char *item,char *data)
 			else if(!strcmp(data,"ONLINE"))status_set("OL");
 			else if(!strcmp(data,"ONBATT"))status_set("OB");
 			else if(!strcmp(data,"OVERLOAD"))status_set("OVER");
-			else if(!strcmp(data,"LOWBATT"))status_set("LB");
+			else if(!strcmp(data,"SHUTTING DOWN")||
+				!strcmp(data,"LOWBATT"))status_set("LB");
 			else if(!strcmp(data,"REPLACEBATT"))status_set("RB");
 			else if(!strcmp(data,"NOBATT"))status_set("BYPASS");
 		}
