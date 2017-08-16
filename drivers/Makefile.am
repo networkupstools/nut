@@ -16,9 +16,6 @@ AM_CFLAGS = -I$(top_srcdir)/include
 if WITH_USB
   AM_CFLAGS += $(LIBUSB_CFLAGS)
 endif
-if WITH_SNMP
-  AM_CFLAGS += $(LIBNETSNMP_CFLAGS)
-endif
 if WITH_NEON
   AM_CFLAGS += $(LIBNEON_CFLAGS)
 endif
@@ -209,6 +206,8 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats16-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
  apc-pdu-mib.c
+snmp_ups_CFLAGS = $(AM_CFLAGS)
+snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
 
 # NEON XML/HTTP
