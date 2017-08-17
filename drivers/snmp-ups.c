@@ -162,6 +162,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
+#define DRIVER_VERSION         "1.02"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
