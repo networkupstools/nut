@@ -30,7 +30,8 @@
 #include "dmf.h"
 
 /* The test involves generation of DMF and comparison to existing data.
-   As a random pick, we use eaton-mib.c "as is" (with structures).
+   As a random pick, we use eaton-pdu-marlin-mib.c "as is" (with structures
+   and referenced conviersion/lookup functions).
    This causes macro-redefinition conflict (and -Werror dies on it) -
    so we undefine a few macros...
 */
@@ -39,7 +40,7 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_BUGREPORT
-#include "eaton-mib.c"
+#include "eaton-pdu-marlin-mib.c"
 
 int
 main ()
