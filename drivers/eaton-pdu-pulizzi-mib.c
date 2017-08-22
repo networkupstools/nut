@@ -28,7 +28,6 @@
  */
 
 #include "eaton-pdu-pulizzi-mib.h"
-#include "dstate.h"
 
 /* Pulizzi Monitored ePDU (Basic model, SNMP only)
  * FIXME: to be completed
