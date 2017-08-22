@@ -207,7 +207,9 @@ mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 mge_shut_LDADD = $(LDADD)
 
 # SNMP
-snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c eaton-mib.c \
+snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
+ eaton-pdu-genesis2-mib.c eaton-pdu-marlin-mib.c \
+ eaton-pdu-pulizzi-mib.c eaton-pdu-revelation-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats16-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
@@ -299,7 +301,7 @@ nutdrv_qx_SOURCES += $(NUTDRV_QX_SUBDRIVERS)
 
 dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  bcmxcp_io.h belkin.h belkin-hid.h bestpower-mib.h blazer.h cps-hid.h dstate.h \
- dummy-ups.h eaton-mib.h explore-hid.h gamatronic.h genericups.h	\
+ dummy-ups.h explore-hid.h gamatronic.h genericups.h	\
  hidparser.h hidtypes.h ietf-mib.h libhid.h libshut.h libusb.h liebert-hid.h	\
  main.h mge-hid.h mge-mib.h mge-utalk.h		\
  mge-xml.h microdowell.h netvision-mib.h netxml-ups.h nut-ipmi.h oneac.h		\
@@ -311,7 +313,9 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  nutdrv_qx_megatec.h nutdrv_qx_megatec-old.h nutdrv_qx_mustek.h nutdrv_qx_q1.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
- apc-pdu-mib.h
+ apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h \
+ eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h
+
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
