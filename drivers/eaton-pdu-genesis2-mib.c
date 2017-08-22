@@ -28,7 +28,6 @@
  */
 
 #include "eaton-pdu-genesis2-mib.h"
-#include "dstate.h"
 
 #define EATON_APHEL_GENESIS2_MIB_VERSION	"0.49"
 

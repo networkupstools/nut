@@ -28,7 +28,6 @@
  */
 
 #include "eaton-pdu-revelation-mib.h"
-#include "dstate.h"
 
 #define EATON_APHEL_REVELATION_MIB_VERSION	"0.49"
 
