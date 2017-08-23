@@ -337,6 +337,9 @@ int input_phases, output_phases, bypass_phases;
 #endif
 #include "%s.c"
 
+// Replicate what drivers/main.c exports
+int do_synchronous = 0;
+
 static inline bool streq (const char* x, const char* y)
 {
     if (!x && !y)
@@ -495,7 +498,12 @@ if args.test:
     except KeyError:
         gcc_cflags = []
 
-    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file]
+    try:
+        gcc_ldflags = os.environ["LDFLAGS"].split()
+    except KeyError:
+        gcc_ldflags = []
+
+    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + gcc_ldflags + ["-o", prog_file, test_file]
     info ("COMPILE: " + " ".join (cmd))
     try:
         subprocess.check_call (cmd)

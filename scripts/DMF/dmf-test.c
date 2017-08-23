@@ -42,6 +42,9 @@
 #undef PACKAGE_BUGREPORT
 #include "eaton-pdu-marlin-mib.c"
 
+// Replicate what drivers/main.c exports
+int do_synchronous = 0;
+
 int
 main ()
 {
