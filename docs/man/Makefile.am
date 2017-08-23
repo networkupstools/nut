@@ -4,13 +4,17 @@
 # Notes:
 # - sources (.txt) and groff formats are both distributed,
 # - only sources are versioned ; groff files are generated at worst
-#   during 'make dist'
+#   during 'make dist' (while preparing a release tarball)
 # - HTML files are built upon request, if AsciiDoc is available,
 # - groff update will only happen if AsciiDoc is available too,
 # - all this can probably (and hopefully) be improved, but I've not
 #   found a way to do pattern replacement on the fly for target deps!
 #   FIXME: investigate an autogen.sh hook
 # - Ref: http://www.gnu.org/software/hello/manual/automake/Man-pages.html
+# - WITH_MANS can be enabled if either we are building man-pages, or if
+#   the --with-doc=man=auto detected an inability to build the man-pages
+#   but enabled the DOC_INSTALL_DISTED_MANS toggle so we deliver disted
+#   files from source tree
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -628,12 +632,20 @@ EXTRA_DIST = \
 if ! WITH_MANS
 if ! SKIP_MANS
 # Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
-# runs ./configure --with-doc=skip (or --with-man=skip specifically)
+# runs ./configure --with-doc=skip (or --with-doc=man=skip specifically)
 EXTRA_DIST += dist
 dist:
 	echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
 endif
 endif
+
+# For builds done from dist'ed sources, there may be a conflict of timestamps
+# between original *.txt files and pre-built manpages etc. leading to skipping
+# of manpage re-generation even if that activity is possible and requested.
+# Possibly a cleaner, but less portable, solution would be to touch the
+# generated files to long ago. Current solution assumes good valid clocks :)
+dist-hook:
+	@echo "Fix up manpage source timestamps" && cd $(distdir) && touch $(SRC_ALL_PAGES)
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
@@ -659,6 +671,16 @@ html-man: $(HTML_MANS) index.html
 CLEANFILES = *.xml *.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
+
+# For builds with allowed installation of prebuild man pages, check that
+# they exist in sources (make would pull them automatically as a fallback
+# from failed lookup in build products). For builds that require rebuild
+# of man pages, abort with error if build product is missing.
+if DOC_INSTALL_DISTED_MANS
+SRC_PREBUILT_CLAUSE=|| [ -r "$(srcdir)/`basename $@`" ]
+else
+SRC_PREBUILT_CLAUSE=
+endif
 
 if HAVE_ASCIIDOC
 
@@ -693,7 +715,7 @@ A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -702,7 +724,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.1:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -711,7 +733,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.3:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -720,7 +742,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.5:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
@@ -729,7 +751,7 @@ else !HAVE_ASCIIDOC
 	fi
 
 .txt.8:
-	@if [ -r "$@" ]; then \
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
 		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
 	else \
 		echo "Could not find prebuilt $@ manual page." ; \
