@@ -1,7 +1,10 @@
-/* apcats-mib.h - subdriver to monitor apcats SNMP devices with NUT
+/* eaton-pdu-revelation-mib.h - subdriver to monitor Eaton ePDU SNMP devices with NUT
  *
  *  Copyright (C)
- *  2011 - 2012	Arnaud Quette <arnaud.quette@free.fr>
+ *  2010        Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2011 - 2012 Arnaud Quette <arnaud.quette@free.fr>
+ *  2017        Arnaud Quette <ArnaudQuette@eaton.com>
+ *  2017        Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,12 +21,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef APCATS_MIB_H
-#define APCATS_MIB_H
+#ifndef EATON_EPDU_REVELATION_MIB_H
+#define EATON_EPDU_REVELATION_MIB_H
 
 #include "main.h"
 #include "snmp-ups.h"
 
-extern mib2nut_info_t apc_ats;
+extern mib2nut_info_t	aphel_revelation;
 
-#endif /* APCATS_MIB_H */
+#endif /* EATON_EPDU_REVELATION_MIB_H */

@@ -15,6 +15,10 @@ AC_DEFUN([NUT_CHECK_ASCIIDOC],
 [
 if test -z "${nut_have_asciidoc_seen}"; then
 	nut_have_asciidoc_seen=yes
+	# Note: this is for both asciidoc and a2x at this time
+	ASCIIDOC_MIN_VERSION="8.6.3"
+	# Note: this is checked in the configure script if PDF is of interest at all
+	DBLATEX_MIN_VERSION="0.2.5"
 
 	AC_PATH_PROGS([ASCIIDOC], [asciidoc])
 	if test -n "${ASCIIDOC}"; then
@@ -79,8 +83,8 @@ if test -z "${nut_have_asciidoc_seen}"; then
 	dnl Note that a common "nut_have_asciidoc" variable is in fact a flag
 	dnl that we have several tools needed for the documentation generation
 	dnl TODO? Rename the script variable and makefile flags to reflect this?
-	AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required 8.6.3)])
-	AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+	AC_MSG_CHECKING([if asciidoc version can build manpages (minimum required ${ASCIIDOC_MIN_VERSION})])
+	AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
 		AC_MSG_RESULT(yes)
 		nut_have_asciidoc="yes"
 	], [
@@ -88,8 +92,8 @@ if test -z "${nut_have_asciidoc_seen}"; then
 		nut_have_asciidoc="no"
 	])
 
-	AC_MSG_CHECKING([if a2x version can build manpages (minimum required 8.6.3)])
-	AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+	AC_MSG_CHECKING([if a2x version can build manpages (minimum required ${ASCIIDOC_MIN_VERSION})])
+	AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
 		AC_MSG_RESULT(yes)
 	], [
 		AC_MSG_RESULT(no)

@@ -205,14 +205,14 @@ you must examine the NUT variables of the form "unmapped.*" in the
 hid_info_t data structure, and map them to actual NUT variables and
 instant commands. There are currently no step-by-step instructions for
 how to do this. Please look at the files to see how the currently implemented
-subdrivers are written.:
+subdrivers are written:
 
 - apc-mib.c/h
 - baytech-mib.c/h
 - bestpower-mib.c/h
 - compaq-mib.c/h
 - cyberpower-mib.c/h
-- eaton-mib.c/h
+- eaton-*-mib.c/h
 - ietf-mib.c/h
 - mge-mib.c/h
 - netvision-mib.c/h
