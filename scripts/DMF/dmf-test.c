@@ -27,11 +27,16 @@
 #include <dirent.h>
 #include <assert.h>
 
+/* For experiments in development of DMF+lookup function support,
+ * uncomment this line; for currently stable codebase keep it off...
+ */
+//#define WITH_SNMP_LKP_FUN 1
+
 #include "dmf.h"
 
 /* The test involves generation of DMF and comparison to existing data.
    As a random pick, we use eaton-pdu-marlin-mib.c "as is" (with structures
-   and referenced conviersion/lookup functions).
+   and referenced conversion/lookup functions, if enabled by macros).
    This causes macro-redefinition conflict (and -Werror dies on it) -
    so we undefine a few macros...
 */
