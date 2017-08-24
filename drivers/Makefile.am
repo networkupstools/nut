@@ -223,7 +223,7 @@ snmp_ups_dmf_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS) \
  $(top_builddir)/common/libcommon.la
 snmp_ups_dmf_CFLAGS = $(AM_CFLAGS) \
 	-I$(top_srcdir)/tools/nut-scanner -DWITH_DMFMIB=1
-snmp_ups_dmf_CFLAGS += $(LIBNETSNMP_CFLAGS) 
+snmp_ups_dmf_CFLAGS += $(LIBNETSNMP_CFLAGS)
 if WITH_DMF_LUA
 LUA_INCLUDE ?= -I/usr/include/lua5.1
 snmp_ups_dmf_CFLAGS += -DWITH_DMF_LUA=1 -DWITH_DMF_FUNCTIONS=1 $(LUA_INCLUDE)
