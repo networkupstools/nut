@@ -181,7 +181,11 @@ if WITH_REGENERATE_DMF_SNMP
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" \
 	    ) || exit; \
 	fi ; \
-	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then echo "ERROR: Generated file $@ is missing" >&2; ls -la "$@" "$(abs_top_builddir)/$@" "$(abs_top_srcdir)/$@"; exit 2; fi; \
+	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then \
+	    echo "ERROR: Generated file $@ is missing" >&2; \
+	    ls -la "$@" "$(abs_top_builddir)/$@" "$(abs_top_srcdir)/$@"; \
+	    exit 2; \
+	fi; \
 	)
 
 dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
