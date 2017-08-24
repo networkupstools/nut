@@ -23,9 +23,6 @@
 #ifndef EATON_EPDU_MARLIN_HELPERS_H
 #define EATON_EPDU_MARLIN_HELPERS_H
 
-#include "main.h"
-#include "snmp-ups.h"
-
-static const char *marlin_outlet_group_phase_fun(int outlet_group_nb);
+const char *marlin_outlet_group_phase_fun(int outlet_group_nb);
 
 #endif /* EATON_EPDU_MARLIN_HELPERS_H */

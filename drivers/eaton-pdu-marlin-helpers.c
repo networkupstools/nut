@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "eaton-pdu-marlin-helpers.h"
 #include "dstate.h"
 
 static char marlin_scratch_buf[20];
@@ -44,7 +45,7 @@ static char marlin_scratch_buf[20];
  * (not outlet-section nor user-defined!), and for now, there
  * is a maximum of 6 gangs (electrical groups).
  */
-static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 {
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
