@@ -503,7 +503,7 @@ if args.test:
     except KeyError:
         gcc_ldflags = []
 
-    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + gcc_ldflags + ["-o", prog_file, test_file]
+    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file] + gcc_ldflags
     info ("COMPILE: " + " ".join (cmd))
     try:
         subprocess.check_call (cmd)
