@@ -9,8 +9,8 @@ DMFTOOLS_INCLUDE_FLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
     -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
     -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
     -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
-DMFTOOLS_CFLAGS = $(DMFTOOLS_INCLUDE_FLAGS)
-DMFTOOLS_CPPFLAGS = $(DMFTOOLS_INCLUDE_FLAGS)
+DMFTOOLS_CFLAGS = $(DMFTOOLS_INCLUDE_FLAGS) -DWITH_DMFMIB=1
+DMFTOOLS_CPPFLAGS = $(DMFTOOLS_INCLUDE_FLAGS) -DWITH_DMFMIB=1
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEANFILES =
