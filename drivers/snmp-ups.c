@@ -1586,7 +1586,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 {
 	info_lkp_t *info_lkp;
 
-#ifdef WITH_SNMP_LKP_FUN
+#if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
