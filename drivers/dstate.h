@@ -22,6 +22,7 @@
 #ifndef DSTATE_H_SEEN
 #define DSTATE_H_SEEN 1
 
+#include "timehead.h"
 #include "state.h"
 #include "attribute.h"
 
