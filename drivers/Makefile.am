@@ -316,7 +316,6 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
  eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h
 
-
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
 EXTRA_LIBRARIES = libdummy.a
