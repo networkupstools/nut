@@ -176,7 +176,7 @@ if WITH_REGENERATE_DMF_SNMP
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    ( cd "$(@D)" && \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
-	      LDFLAGS="$(abs_top_builddir)/common/.libs/libcommon.a $(abs_top_builddir)/drivers/dstate.o" \
+	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" \
 	    ) || exit; \
@@ -412,7 +412,8 @@ noinst_PROGRAMS += dmf-test
 
 dmf_test_SOURCES = $(DMFTEST_SRC)
 dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
+	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 endif
@@ -462,7 +463,8 @@ noinst_PROGRAMS += dmf-lua-test
 # even if the general project does not want to build DMF+LUA at this moment
 dmf_lua_test_SOURCES = $(DMFTEST_SRC)
 dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
-	$(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
+	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
