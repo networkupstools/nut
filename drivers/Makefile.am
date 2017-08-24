@@ -214,7 +214,7 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
-snmp_ups_CFLAGS = $(AM_CFLAGS) -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0 -DWITH_DMF_FUNCTIONS=0
+snmp_ups_CFLAGS += -DWITH_DMFMIB=0 -DWITH_DMF_LUA=0 -DWITH_DMF_FUNCTIONS=0
 
 # DMF SNMP - ok to define this in the open, it is only built if enabled above
 snmp_ups_dmf_SOURCES = snmp-ups.c
