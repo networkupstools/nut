@@ -109,10 +109,30 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+#ifndef WITH_SNMP_LKP_FUN
+/* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
+ * all corners of the codebase, e.g. not by DMF. So at least until that
+ * is fixed, (TODO) we enable those bits of code only optionally during
+ * a build for particular usage. Conversely, experimenters can define
+ * this macro to a specific value while building the codebase and see
+ * what happens under different conditions ;)
+ */
+# if WITH_DMFMIB
+#  define WITH_SNMP_LKP_FUN 0
+# else
+#  define WITH_SNMP_LKP_FUN 1
+# endif
+#endif
+
 /* for lookup between OID values and INFO_ value */
 typedef struct {
 	int oid_value;                      /* SNMP OID value */
 	const char *info_value;             /* NUT INFO_* value */
+#if WITH_SNMP_LKP_FUN
+/* FIXME: Currently we do not have a way to provide custom C code
+ * via DMF - keep old approach until we get the ability, e.g. by
+ * requiring a LUA implementation to be passed alongside C lookups.
+ */
 /*
  * Currently there are a few cases using a "fun_vp2s" type of lookup
  * function, while the "nuf_s2l" type was added for completeness but
@@ -124,6 +144,7 @@ typedef struct {
  */
 	const char *(*fun_vp2s)(void *snmp_value);  /* optional SNMP to NUT mapping function, converting a pointer to SNMP data (e.g. numeric or string) into a NUT string */
 	long (*nuf_s2l)(const char *nut_value);     /* optional NUT to SNMP mapping function, converting a NUT string into SNMP numeric data */
+#endif /* WITH_SNMP_LKP_FUN */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
