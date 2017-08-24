@@ -3,8 +3,11 @@
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
- *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
+ *  2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
+ *  2015 - 2017	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *  2016 - 2017	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *  2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
+ *  2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
