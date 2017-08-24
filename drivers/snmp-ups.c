@@ -1587,6 +1587,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 {
 	info_lkp_t *info_lkp;
 
+#ifdef WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
 	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
 		upsdebugx(2, "%s: using generic lookup function", __func__);
@@ -1594,6 +1595,7 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
+#endif // WITH_SNMP_LKP_FUN
 
 	/* Otherwise, use the simple values mapping */
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
