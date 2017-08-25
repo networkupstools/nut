@@ -194,7 +194,9 @@ input: Incoming line/power information
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
-| input.source.preferred      | The preferred power source         | 1
+| input.source.preferred      | The preferred power source        | 1
+| input.phase.shift           | Voltage dephasing between input
+                                sources (degrees)                 | 181
 |=================================================================================
 
 output: Outgoing power/inverter information
@@ -486,7 +488,8 @@ of the user manual.
 | outlet.count                   | Total number of outlets     | 12
 | outlet.n.id                    | Outlet system identifier
                                    (opaque string)             | 1
-| outlet.n.desc                  | Outlet name / description
+| outlet.n.name                  | Outlet name (opaque string) | A1
+| outlet.n.desc                  | Outlet description
                                    (opaque string)             | Main outlet
 | outlet.n.groupid               | Identifier of the group to
                                    which the outlet belongs to | 1
