@@ -9,8 +9,8 @@ DMFTOOLS_INCLUDE_FLAGS = -I$(abs_top_builddir) -I$(abs_top_srcdir) \
     -I$(abs_top_builddir)/include -I$(abs_top_srcdir)/include \
     -I$(abs_top_builddir)/drivers -I$(abs_top_srcdir)/drivers \
     -I$(abs_top_builddir)/tools/nut-scanner -I$(abs_top_srcdir)/tools/nut-scanner
-DMFTOOLS_CFLAGS = $(DMFTOOLS_INCLUDE_FLAGS)
-DMFTOOLS_CPPFLAGS = $(DMFTOOLS_INCLUDE_FLAGS)
+DMFTOOLS_CFLAGS = $(DMFTOOLS_INCLUDE_FLAGS) -DWITH_DMFMIB=1
+DMFTOOLS_CPPFLAGS = $(DMFTOOLS_INCLUDE_FLAGS) -DWITH_DMFMIB=1
 DISTCLEANFILES =
 DISTCLEANDIRS =
 CLEANFILES =
@@ -176,11 +176,16 @@ if WITH_REGENERATE_DMF_SNMP
 	if test -f "$(DMFGEN_SANITY_VALIDATED)" ; then \
 	    ( cd "$(@D)" && \
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
+	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
 	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" \
 	    ) || exit; \
 	fi ; \
-	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then echo "ERROR: Generated file $@ is missing" >&2; ls -la "$@" "$(abs_top_builddir)/$@" "$(abs_top_srcdir)/$@"; exit 2; fi; \
+	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then \
+	    echo "ERROR: Generated file $@ is missing" >&2; \
+	    ls -la "$@" "$(abs_top_builddir)/$@" "$(abs_top_srcdir)/$@"; \
+	    exit 2; \
+	fi; \
 	)
 
 dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
@@ -418,6 +423,7 @@ noinst_PROGRAMS += dmf-test
 dmf_test_SOURCES = $(DMFTEST_SRC)
 dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 endif
@@ -468,6 +474,7 @@ noinst_PROGRAMS += dmf-lua-test
 dmf_lua_test_SOURCES = $(DMFTEST_SRC)
 dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 

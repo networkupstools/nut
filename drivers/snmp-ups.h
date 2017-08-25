@@ -3,8 +3,11 @@
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
- *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
+ *  2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
+ *  2015 - 2017	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *  2016 - 2017	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *  2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
+ *  2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
@@ -143,10 +146,33 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+#ifndef WITH_SNMP_LKP_FUN
+/* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
+ * all corners of the codebase, e.g. not by DMF. So at least until that
+ * is fixed, (TODO) we enable those bits of code only optionally during
+ * a build for particular usage. Conversely, experimenters can define
+ * this macro to a specific value while building the codebase and see
+ * what happens under different conditions ;)
+ */
+# if WITH_DMFMIB
+#  define WITH_SNMP_LKP_FUN 0
+# else
+#  define WITH_SNMP_LKP_FUN 1
+# endif
+#endif
+
 /* for lookup between OID values and INFO_ value */
 typedef struct {
-	int oid_value;			/* OID value */
-	const char *info_value;	/* INFO_* value */
+	int oid_value;                      /* SNMP OID value */
+	const char *info_value;             /* NUT INFO_* value */
+#if WITH_SNMP_LKP_FUN
+/* FIXME: Currently we do not have a way to provide custom C code
+ * via DMF - keep old approach until we get the ability, e.g. by
+ * requiring a LUA implementation to be passed alongside C lookups.
+ */
+	const char *(*fun)(int snmp_value); /* optional SNMP to NUT mapping function */
+	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
+#endif
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested

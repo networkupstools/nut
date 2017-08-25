@@ -25,7 +25,7 @@
 #ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
 #include <pthread.h>
-#endif 
+#endif
 
 #include <errno.h>
 #include <netdb.h>
@@ -37,7 +37,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <sys/time.h>
 
 #include "upsclient.h"
 #include "common.h"
