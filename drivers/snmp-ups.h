@@ -145,8 +145,10 @@ typedef int bool_t;
 
 /* for lookup between OID values and INFO_ value */
 typedef struct {
-	int oid_value;			/* OID value */
-	const char *info_value;	/* INFO_* value */
+	int oid_value;                      /* SNMP OID value */
+	const char *info_value;             /* NUT INFO_* value */
+	const char *(*fun)(int snmp_value); /* optional SNMP to NUT mapping function */
+	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
