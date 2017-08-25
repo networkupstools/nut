@@ -5,14 +5,13 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2016	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2015 - 2017	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2016 - 2017	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *			Niels Baggesen <niels@baggesen.net>
  *	2009 - 2010	Arjen de Korte <adkorte-guest@alioth.debian.org>
- *	2016	Jim Klimov <EvgenyKlimov@Eaton.com>
- *	2016	Carlos Dominguez <CarlosDominguez@Eaton.com>
  *
  *  Sponsored by Eaton <http://www.eaton.com>
  *   and originally by MGE UPS SYSTEMS <http://www.mgeups.com/>
@@ -53,7 +52,10 @@
 #include "mge-mib.h"
 #include "netvision-mib.h"
 #include "powerware-mib.h"
-#include "eaton-mib.h"
+#include "eaton-pdu-genesis2-mib.h"
+#include "eaton-pdu-marlin-mib.h"
+#include "eaton-pdu-pulizzi-mib.h"
+#include "eaton-pdu-revelation-mib.h"
 #include "raritan-pdu-mib.h"
 #include "raritan-px2-mib.h"
 #include "baytech-mib.h"
@@ -162,7 +164,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION         "1.02"
+#define DRIVER_VERSION		"1.02"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1587,6 +1589,17 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 {
 	info_lkp_t *info_lkp;
 
+#if WITH_SNMP_LKP_FUN
+	/* First test if we have a generic lookup function */
+	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
+		upsdebugx(2, "%s: using generic lookup function", __func__);
+		const char * retvalue = oid2info->fun(value);
+		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
+		return retvalue;
+	}
+#endif // WITH_SNMP_LKP_FUN
+
+	/* Otherwise, use the simple values mapping */
 	for (info_lkp = oid2info; (info_lkp != NULL) &&
 		 (info_lkp->info_value != NULL) && (strcmp(info_lkp->info_value, "NULL")); info_lkp++) {
 
