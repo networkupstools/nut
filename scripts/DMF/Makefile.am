@@ -507,7 +507,7 @@ dmf_lua_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
-dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) \
+dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
@@ -519,7 +519,7 @@ dmf_fun_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
-dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \
+dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
 
