@@ -71,6 +71,8 @@ testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -D
 testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
 testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
+$(abs_srcdir)/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
+	@true
 
 $(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf : $(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c $(DMFGEN_DEPS)
 	@DMFFILE="$(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf"; \
@@ -156,9 +158,10 @@ check-local: $(TGT_CHECK_LOCAL) $(ADD_TGT_CHECK_LOCAL)
 dmf: $(TGT_DMF) $(ADD_TGT_DMF)
 
 if WITH_DMF
-check-experimental: progs check-local run-dmf-lua-test
+check-experimental: progs check-local run-dmf-lua-test run-dmf-fun-test
 check-all: check-experimental
 check-lua: run-dmf-lua-test
+check-fun: run-dmf-fun-test
 endif
 
 # Recipes to build DMF files with the sources and tools we have are defined
@@ -489,9 +492,20 @@ dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdl
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
+noinst_PROGRAMS += dmf-fun-test
+# Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
+# even if the general project does not want to build DMF+LUA at this moment
+dmf_fun_test_SOURCES = $(DMFTEST_SRC)
+dmf_fun_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
+dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) $(DMFSNMP_LKP_FUN_FLAGS)
+dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
+
 testdata/.validated: $(builddir)/testdata/.validated
 if WITH_VALIDATE_DMF_SNMP
 LUA_EXAMPLE_DMFS = $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf
+LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 # LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata/lua-example-mib.dmf
 $(builddir)/testdata/.validated: $(LUA_EXAMPLE_DMFS)
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
@@ -510,17 +524,32 @@ CLEANFILES += $(builddir)/testdata/.validated testdata/.validated
 
 run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
 	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-lua-test
+
+run-dmf-fun-test: dmf-fun-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
+	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-fun-test
 else
 dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 
 run-dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-lua-test" >&2
+
+dmf-fun-test:
+	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-fun-test program" >&2
+
+run-dmf-fun-test:
+	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not run-dmf-fun-test" >&2
 endif
 else
 dmf-lua-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
 
 run-dmf-lua-test:
+	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
+
+dmf-fun-test:
+	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not build dmf-fun-test program" >&2
+
+run-dmf-fun-test:
 	@echo "  SKIP   DMF support was not enabled or detected during project configuration, can not run test programs" >&2
 endif
