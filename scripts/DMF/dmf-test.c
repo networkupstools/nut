@@ -144,7 +144,7 @@ main ()
 		printf("=== DMF-Test: Freeing data...\n\n");
 		mibdmf_parser_destroy(&dmp);
 
-		printf("=== DMF-Test: All done\n\n");
+		printf("=== DMF-Test: All done (code %d)\n\n", result);
 		return result;
 	}
 

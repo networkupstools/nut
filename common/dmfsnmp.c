@@ -897,7 +897,7 @@ void
 function_node_handler(alist_t *list, const char **attrs)
 {
 	alist_t *element = alist_get_last_element(list);
-	char *argname, *arglang; // = (char*) calloc (32, sizeof (char *));
+	char *argname = NULL, *arglang = NULL; // = (char*) calloc (32, sizeof (char *));
 
 	argname = get_param_by_name(SNMP_NAME, attrs);
 	arglang = get_param_by_name("language", attrs);

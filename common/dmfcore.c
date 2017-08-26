@@ -464,17 +464,22 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 			i++;
 			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
 				char *file_path = (char *) calloc(PATH_MAX_SIZE, sizeof(char));
-				sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
-				assert(file_path);
-				int res = dmfcore_parse_file(file_path, dcp);
-				upsdebugx (5, "dmfcore_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dcp, res);
-				if ( res != 0 )
+				if (!file_path)
 				{
-					x++;
-					result = res;
-					/* No debug: parse_file() did it if enabled*/
+					upslogx(LOG_ERR, "dmfcore_parse_dir(): calloc() failed");
+				} else {
+					sprintf(file_path, "%s/%s", dir_name, dir_ent[c]->d_name);
+					assert(file_path);
+					int res = dmfcore_parse_file(file_path, dcp);
+					upsdebugx (5, "dmfcore_parse_file (\"%s\", <%p>)=%d", file_path, (void*)dcp, res);
+					if ( res != 0 )
+					{
+						x++;
+						result = res;
+						/* No debug: parse_file() did it if enabled*/
+					}
+					free(file_path);
 				}
-				free(file_path);
 			}else{
 				upslogx(LOG_ERR, "dmfcore_parse_dir(): File path too long");
 			}
