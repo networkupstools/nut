@@ -456,7 +456,10 @@ dmfcore_parse_dir (char *dir_name, dmfcore_parser_t *dcp)
 	for (c = 0; c < n; c++)
 	{
 		upsdebugx (5, "dmfcore_parse_dir(): dir_ent[%d]->d_name=%s", c, dir_ent[c]->d_name);
-		if (strstr(dir_ent[c]->d_name, ".dmf"))
+		size_t fname_len = strlen(dir_ent[c]->d_name);
+		if ( (fname_len > 4) &&
+		     (strstr(dir_ent[c]->d_name + fname_len - 4, ".dmf") ||
+		      strstr(dir_ent[c]->d_name + fname_len - 4, ".DMF") ) )
 		{
 			i++;
 			if(strlen(dir_name) + strlen(dir_ent[c]->d_name) < PATH_MAX_SIZE){
