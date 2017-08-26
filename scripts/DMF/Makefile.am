@@ -127,7 +127,18 @@ CLEANFILES += $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSN
 # This does not rely on automake semantics, so this Makefile.am can be directly
 # used and changed during development without reconfiguring all of NUT sources
 DMFTEST_SRC = dmf-test.c
+DMFTEST_SRC_ADD = dmfcore.c dmfsnmp.c alist.c
 EXTRA_DIST += $(DMFTEST_SRC)
+
+dmfsnmp.c : $(top_srcdir)/common/dmfsnmp.c
+	@ln -fs $< $@
+
+dmfcore.c : $(top_srcdir)/common/dmfcore.c
+	@ln -fs $< $@
+
+alist.c : $(top_srcdir)/common/alist.c
+	@ln -fs $< $@
+
 
 CLEANFILES += $(noinst_PROGRAMS) $(DMFSNMP_RES_SUBDIR)/*.o \
 		$(DMFSNMP_RES_SUBDIR)/*.dmf.tmp $(DMFSNMP_RES_SUBDIR)/*.json.tmp \
@@ -434,11 +445,15 @@ $(top_builddir)/common/libnutdmfsnmp.la :
 
 noinst_PROGRAMS += dmf-test
 
-dmf_test_SOURCES = $(DMFTEST_SRC)
-dmf_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+dmf_test_SOURCES = $(DMFTEST_SRC) $(DMFTEST_SRC_ADD)
+dmf_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_DMF_LUA)
+#dmf_test_CFLAGS += $(AM_CFLAGS) -I$(top_builddir)/drivers -I$(top_srcdir)/drivers \
+#        -I$(top_builddir)/tools/nut-scanner -I$(top_srcdir)/tools/nut-scanner \
+#        $(LIBNETSNMP_CFLAGS) $(LIBNEON_CFLAGS) -DWITH_DMFMIB=1 -DWITH_SNMP=1 -DWITH_NEON=1
 dmf_test_LDFLAGS = $(LDFLAGS_DMF_LUA)
 endif
 
@@ -485,9 +500,10 @@ if WITH_LUA
 noinst_PROGRAMS += dmf-lua-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
-dmf_lua_test_SOURCES = $(DMFTEST_SRC)
-dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+dmf_lua_test_SOURCES = $(DMFTEST_SRC) $(DMFTEST_SRC_ADD)
+dmf_lua_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
@@ -496,9 +512,10 @@ dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 noinst_PROGRAMS += dmf-fun-test
 # Note: This uses CFLAGS_LUA not CFLAGS_DMF_LUA so the test bits can build
 # even if the general project does not want to build DMF+LUA at this moment
-dmf_fun_test_SOURCES = $(DMFTEST_SRC)
-dmf_fun_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
+dmf_fun_test_SOURCES = $(DMFTEST_SRC) $(DMFTEST_SRC_ADD)
+dmf_fun_test_LDADD = $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
+# $(top_builddir)/common/libnutdmfsnmp.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
 dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \
 	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
