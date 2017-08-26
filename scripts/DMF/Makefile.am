@@ -198,8 +198,7 @@ CLEANFILES += $(DMFGEN_SANITY_VALIDATED)
 EXTRA_DIST += $(dmfsnmpres_DMFS)
 
 if WITH_REGENERATE_DMF_SNMP
-# NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
-  DMFGEN_DEPS += $(abs_top_builddir)/Makefile $(abs_builddir)/Makefile dmfgen-sanity
+  DMFGEN_DEPS += $(abs_top_builddir)/Makefile $(abs_builddir)/Makefile $(DMFGEN_SANITY_VALIDATED)
 # NOTE: Tricks like the externally-fed DMFFILE, CMIBFILE and DMFLINK
 # are needed for portability of the recipes to non-GNU make programs
 # (we can not use $< in this context); this approach is a hack that
@@ -223,10 +222,13 @@ if WITH_REGENERATE_DMF_SNMP
 	fi; \
 	)
 
+# NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
+$(DMFGEN_SANITY_VALIDATED): dmfgen-sanity
+
 dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
 	@if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
-	    touch $(DMFGEN_SANITY_VALIDATED); \
+	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
 	else \
 	    echo "SKIP: NOT REBUILDING DMF files due to absence of prerequisites like Python or pycparser" >&2; \
 	    rm -f $(DMFGEN_SANITY_VALIDATED); \
@@ -523,11 +525,25 @@ dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
 
 testdata-lua/.validated: $(abs_builddir)/testdata-lua/.validated
 testdata-fun/.validated: $(abs_builddir)/testdata-fun/.validated
-if WITH_VALIDATE_DMF_SNMP
+
 LUA_EXAMPLE_DMFS = $(abs_srcdir)/testdata-lua/lua-eaton-mib.dmf $(abs_srcdir)/testdata-lua/lua-mge-mib.dmf
 # LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata-lua/lua-example-mib.dmf
 FUN_EXAMPLE_DMFS = $(abs_srcdir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
-$(abs_builddir)/testdata-lua/.validated: $(LUA_EXAMPLE_DMFS)
+
+testdata-lua/.uptodate: $(abs_builddir)/testdata-lua/.uptodate
+$(abs_builddir)/testdata-lua/.uptodate: $(LUA_EXAMPLE_DMFS)
+	@echo "testdata-lua is now up to date" >&2
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	touch "$@"
+
+testdata-fun/.uptodate: $(abs_builddir)/testdata-fun/.uptodate
+$(abs_builddir)/testdata-fun/.uptodate: $(FUN_EXAMPLE_DMFS)
+	@echo "testdata-fun is now up to date" >&2
+	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	touch "$@"
+
+if WITH_VALIDATE_DMF_SNMP
+$(abs_builddir)/testdata-lua/.validated: testdata-lua/.uptodate
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@cd "$(@D)" && for F in $(LUA_EXAMPLE_DMFS) ; do \
 	    echo " XMLLINT-LUA  $$F"; \
@@ -535,7 +551,7 @@ $(abs_builddir)/testdata-lua/.validated: $(LUA_EXAMPLE_DMFS)
 	done
 	touch "$@"
 
-$(abs_builddir)/testdata-fun/.validated: $(FUN_EXAMPLE_DMFS)
+$(abs_builddir)/testdata-fun/.validated: testdata-fun/.uptodate
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@cd "$(@D)" && for F in $(FUN_EXAMPLE_DMFS) ; do \
 	    echo " XMLLINT-LUA  $$F"; \
