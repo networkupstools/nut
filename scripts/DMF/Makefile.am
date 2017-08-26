@@ -66,16 +66,16 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 -include legacy-mibfiles-list.mk
 
 # Support development experiments for lookup with functions
-testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
-testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
-testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
-testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
+testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
-$(abs_srcdir)/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
+$(abs_srcdir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
 
-$(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf : $(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c $(DMFGEN_DEPS)
-	@DMFFILE="$(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf"; \
+$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
+$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf : $(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c $(DMFGEN_DEPS)
+	@DMFFILE="$(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf"; \
 	 CMIBFILE="$(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c"; export DEBUG; \
 	 $(DMFGEN_CMD)
 
@@ -170,10 +170,10 @@ endif
 # removed, these DMF files would become redistributable contents by themselves.
 # The generation rules might stay, to help modernize third-party or in-house
 # packages that maintain their own C MIB structures not part of NUT upstream.
-DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
+DMFGEN_DEPS_FILES = $(abs_srcdir)/dmfify-mib.sh $(abs_srcdir)/jsonify-mib.py $(abs_srcdir)/xmlify-mib.py $(abs_srcdir)/nut_cpp
 DMFGEN_DEPS = $(DMFGEN_DEPS_FILES)
 EXTRA_DIST += $(DMFGEN_DEPS_FILES)
-EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
+EXTRA_DIST += $(abs_srcdir)/gen-legacy-mibfiles-list.sh
 
 # NOTE: In "dmfify-mib.sh" runs, the C preprocessor must be called without
 # optimization flags (or with explicit -O0 for gcc), otherwise the code
@@ -188,7 +188,7 @@ EXTRA_DIST += $(dmfsnmpres_DMFS)
 
 if WITH_REGENERATE_DMF_SNMP
 # NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
-  DMFGEN_DEPS += $(top_builddir)/Makefile $(builddir)/Makefile dmfgen-sanity
+  DMFGEN_DEPS += $(abs_top_builddir)/Makefile $(abs_builddir)/Makefile dmfgen-sanity
 # NOTE: Tricks like the externally-fed DMFFILE, CMIBFILE and DMFLINK
 # are needed for portability of the recipes to non-GNU make programs
 # (we can not use $< in this context); this approach is a hack that
@@ -251,8 +251,8 @@ DMFLNK_CMD = ( \
 # so we copy stuff below just in case (if needed).
 .PHONY: $(DMFSNMP_SUBDIR)/.uptodate $(DMFNUTSCAN_SUBDIR)/.uptodate $(DMFSNMP_SUBDIR)/.validated $(DMFNUTSCAN_SUBDIR)/.validated \
         $(DMFSNMP_RES_SUBDIR)/.uptodate $(DMFNUTSCAN_RES_SUBDIR)/.uptodate $(DMFSNMP_RES_SUBDIR)/.validated $(DMFNUTSCAN_RES_SUBDIR)/.validated
-$(DMFSNMP_RES_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
-$(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
+$(DMFSNMP_RES_SUBDIR)/.uptodate: $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 	@echo "DMFSNMP_RES_SUBDIR content is now up to date, made of: $(dmfsnmpres_DMFS)" >&2
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@if [ "`cd $(abs_builddir) && pwd`" = "`cd $(abs_srcdir) && pwd`" ]; then \
@@ -274,8 +274,8 @@ $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate: $(dmfsnmpres_DMFS)
 	 fi
 	touch "$@"
 
-$(DMFSNMP_SUBDIR)/.uptodate: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
-$(builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(LEGACY_NUT_DMF_SYMLINKS)
+$(DMFSNMP_SUBDIR)/.uptodate: $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate: $(LEGACY_NUT_DMF_SYMLINKS)
 	touch "$@"
 
 # The recipe assumes we have separate opening and closing lines in the DMF file
@@ -289,7 +289,7 @@ DMFNUTSCAN_DEPS = $(DMFSNMP_RES_SUBDIR)/.uptodate
 EXTRA_DIST += $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 
 if WITH_REGENERATE_DMF_NUTSCAN
-DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile $(builddir)/Makefile
+DMFNUTSCAN_DEPS += dmf-reindex $(top_builddir)/Makefile $(abs_builddir)/Makefile
 $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf: $(DMFNUTSCAN_DEPS)
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	$(DMF_REINDEX) -Z "$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)" > "$@.tmp"
@@ -329,24 +329,24 @@ $(DMFNUTSCAN_SYMLINK): $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 $(INSTALL_NUT_DMFNUTSCAN_SYMLINK): $(INSTALL_NUT_DMFNUTSCAN_FILE)
 	@DMFFILE="$(INSTALL_NUT_DMFNUTSCAN_FILE)"; DMFLINK="$@"; $(DMFLNK_CMD)
 
-$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
-$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
+$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate: $(DMFNUTSCAN_RES_SUBDIR)/dmfnutscan-snmp.dmf
 	@echo "DMFNUTSCAN_RES_SUBDIR is now up to date" >&2
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	touch "$@"
 
-$(DMFNUTSCAN_SUBDIR)/.uptodate: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
-$(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SYMLINK)
+$(DMFNUTSCAN_SUBDIR)/.uptodate: $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate: $(DMFNUTSCAN_SYMLINK)
 	@echo "DMFNUTSCAN_SUBDIR is now up to date" >&2
 	@test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	touch "$@"
 
 # Validation requires xmllint, which we have if we succeed with asciidoc usage
 # TODO: Maybe per-DMF *.dmf.validated files would be better?
-$(DMFSNMP_RES_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.validated
-$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.validated
-$(DMFNUTSCAN_RES_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated
-$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
+$(DMFSNMP_RES_SUBDIR)/.validated: $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.validated
+$(DMFSNMP_SUBDIR)/.validated: $(abs_builddir)/$(DMFSNMP_SUBDIR)/.validated
+$(DMFNUTSCAN_RES_SUBDIR)/.validated: $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated
+$(DMFNUTSCAN_SUBDIR)/.validated: $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.validated
 # The DMFLINT_XSD and DMFLINT_OPTION are fed by caller
 if WITH_VALIDATE_DMF_SNMP
   DMFLINT_CMD = ( \
@@ -365,16 +365,16 @@ else
 	)
 endif
 
-$(builddir)/$(DMFSNMP_RES_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.validated: $(abs_builddir)/$(DMFSNMP_RES_SUBDIR)/.uptodate
 	@DMFLINT_XSD="$(abs_srcdir)/dmfsnmp.xsd" ; DMFLINT_OPTION="--with-dmfsnmp-validate"; $(DMFLINT_CMD)
 
-$(builddir)/$(DMFSNMP_SUBDIR)/.validated: $(builddir)/$(DMFSNMP_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFSNMP_SUBDIR)/.validated: $(abs_builddir)/$(DMFSNMP_SUBDIR)/.uptodate
 	@DMFLINT_XSD="$(abs_srcdir)/dmfsnmp.xsd" ; DMFLINT_OPTION="--with-dmfsnmp-validate"; $(DMFLINT_CMD)
 
-$(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.validated: $(abs_builddir)/$(DMFNUTSCAN_RES_SUBDIR)/.uptodate
 	@DMFLINT_XSD="$(abs_srcdir)/dmfnutscan.xsd" ; DMFLINT_OPTION="--with-dmfnutscan-validate"; $(DMFLINT_CMD)
 
-$(builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
+$(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.validated: $(abs_builddir)/$(DMFNUTSCAN_SUBDIR)/.uptodate
 	@DMFLINT_XSD="$(abs_srcdir)/dmfnutscan.xsd" ; DMFLINT_OPTION="--with-dmfnutscan-validate"; $(DMFLINT_CMD)
 
 
@@ -489,7 +489,8 @@ dmf_lua_test_SOURCES = $(DMFTEST_SRC)
 dmf_lua_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
-dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA)
+dmf_lua_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) \
+	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_lua_test_LDFLAGS = $(LDFLAGS_LUA)
 
 noinst_PROGRAMS += dmf-fun-test
@@ -499,34 +500,46 @@ dmf_fun_test_SOURCES = $(DMFTEST_SRC)
 dmf_fun_test_LDADD = $(top_builddir)/common/libnutdmfsnmp.la $(LIBS_dmfsnmp_ltdlXneon) \
 	$(top_builddir)/common/libcommonstr.la
 # $(top_builddir)/common/libcommon.la $(top_builddir)/drivers/dstate.o
-dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) $(DMFSNMP_LKP_FUN_FLAGS)
+dmf_fun_test_CFLAGS = $(DMFTESTS_COMMON_CFLAGS) $(CFLAGS_LUA) $(DMFSNMP_LKP_FUN_FLAGS) \
+	-UDEFAULT_DMFSNMP_DIR_OVERRIDE -DDEFAULT_DMFSNMP_DIR_OVERRIDE="\"./\""
 dmf_fun_test_LDFLAGS = $(LDFLAGS_LUA)
 
-testdata/.validated: $(builddir)/testdata/.validated
+testdata-lua/.validated: $(abs_builddir)/testdata-lua/.validated
+testdata-fun/.validated: $(abs_builddir)/testdata-fun/.validated
 if WITH_VALIDATE_DMF_SNMP
-LUA_EXAMPLE_DMFS = $(abs_srcdir)/testdata/lua-eaton-mib.dmf $(abs_srcdir)/testdata/lua-mge-mib.dmf
-LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
-# LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata/lua-example-mib.dmf
-$(builddir)/testdata/.validated: $(LUA_EXAMPLE_DMFS)
+LUA_EXAMPLE_DMFS = $(abs_srcdir)/testdata-lua/lua-eaton-mib.dmf $(abs_srcdir)/testdata-lua/lua-mge-mib.dmf
+# LUA_EXAMPLE_DMFS += $(abs_srcdir)/testdata-lua/lua-example-mib.dmf
+FUN_EXAMPLE_DMFS = $(abs_srcdir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
+$(abs_builddir)/testdata-lua/.validated: $(LUA_EXAMPLE_DMFS)
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@cd "$(@D)" && for F in $(LUA_EXAMPLE_DMFS) ; do \
 	    echo " XMLLINT-LUA  $$F"; \
 	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
 	done
 	touch "$@"
+
+$(abs_builddir)/testdata-fun/.validated: $(FUN_EXAMPLE_DMFS)
+	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
+	@cd "$(@D)" && for F in $(FUN_EXAMPLE_DMFS) ; do \
+	    echo " XMLLINT-LUA  $$F"; \
+	    $(XMLLINT) --noout --schema $(abs_srcdir)/dmfsnmp.xsd "$$F" || exit; \
+	done
+	touch "$@"
 else
-$(builddir)/testdata/.validated:
+$(abs_builddir)/testdata-lua/.validated $(abs_builddir)/testdata-fun/.validated:
 	test -d "$(@D)" -a -w "$(@D)" || $(MKDIR_P) "$(@D)"
 	@echo "SKIP: Validation of $@ not enabled by the configure script (--with-dmfsnmp-validate option)"
 	@echo "VALIDATION-SKIPPED" > "$@"
 endif
-CLEANFILES += $(builddir)/testdata/.validated testdata/.validated
+CLEANFILES += $(abs_builddir)/testdata-lua/.validated testdata-lua/.validated
+CLEANFILES += $(abs_builddir)/testdata-fun/.validated testdata-fun/.validated
 
-run-dmf-lua-test: dmf-lua-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
-	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-lua-test
+#$(DMFSNMP_SUBDIR)/.uptodate 
+run-dmf-lua-test: dmf-lua-test testdata-lua/.validated
+	cd $(abs_top_builddir)/scripts/DMF/testdata-lua && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-lua-test
 
-run-dmf-fun-test: dmf-fun-test $(DMFSNMP_SUBDIR)/.uptodate testdata/.validated
-	cd $(abs_top_builddir)/scripts/DMF/testdata && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-fun-test
+run-dmf-fun-test: dmf-fun-test testdata-fun/.validated
+	cd $(abs_top_builddir)/scripts/DMF/testdata-fun && $(DMF_TEST_RUNNER) $(abs_builddir)/dmf-fun-test
 else
 dmf-lua-test:
 	@echo "  SKIP   LUA support was not enabled or detected during project configuration, can not build dmf-lua-test program" >&2
