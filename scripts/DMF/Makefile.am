@@ -435,7 +435,7 @@ DMFTESTS_COMMON_CFLAGS = \
 
 # Some GCCisms... TODO: A configure flag variable like WITH_GCC
 DMFTESTS_COMMON_CFLAGS += \
-	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fstack-protector -O0
+	-ggdb -std=c99 -Wall -pedantic -Wc++-compat -D_FORTIFY_SOURCE=2 -fno-stack-check -fno-omit-frame-pointer -fstack-protector -ggdb3 -O0
 
 # For fans of suicide on obscure platforms ;)
 #DMFTESTS_COMMON_CFLAGS += -Werror
