@@ -14,9 +14,11 @@ DMFTOOLS_CPPFLAGS = $(DMFTOOLS_INCLUDE_FLAGS) -DWITH_DMFMIB=1
 
 # For experiments with lookup fun/nuf: enable the structure and have
 # a no-op compiled in for the sake of selftests:
-#   make WITH_SNMP_LKP_FUN_DUMMY=1 dmfsnmp/eaton-pdu-{genesis2,marlin}-mib.dmf
-###DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
-###DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+#   make DMFTOOLS_ADD_FLAGS='$(DMFSNMP_LKP_FUN_FLAGS)' dmfsnmp/eaton-pdu-{genesis2,marlin}-mib.dmf
+#   make DMFTOOLS_ADD_FLAGS='$(DMFSNMP_LKP_FUN_FLAGS)' dmf-test
+DMFSNMP_LKP_FUN_FLAGS = -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+DMFTOOLS_CFLAGS += $(DMFTOOLS_ADD_FLAGS)
+DMFTOOLS_CPPFLAGS += $(DMFTOOLS_ADD_FLAGS)
 
 DISTCLEANFILES =
 DISTCLEANDIRS =
