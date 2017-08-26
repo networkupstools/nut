@@ -74,6 +74,12 @@ print_snmp_memory_struct(snmp_info_t *self)
 			if(self->oid2info[i].info_value)
 				upsdebugx(5, "  value---> %s\n",
 					self->oid2info[i].info_value);
+#if WITH_SNMP_LKP_FUN
+			upsdebugx(5, "  fun  ---> %s\n",
+				self->oid2info[i].fun ? "defined" : "N/A");
+			upsdebugx(5, "  nuf  ---> %s\n",
+				self->oid2info[i].nuf ? "defined" : "N/A");
+#endif // WITH_SNMP_LKP_FUN
 			i++;
 		}
 	}
@@ -209,13 +215,26 @@ get_param_by_name (const char *name, const char **items)
 
 /*Create a lookup element*/
 info_lkp_t *
-info_lkp_new (int oid, const char *value)
+info_lkp_new (int oid, const char *value
+#if WITH_SNMP_LKP_FUN
+	, const char *(*fun)(int snmp_value)
+	, int (*nuf)(const char *nut_value)
+#endif // WITH_SNMP_LKP_FUN
+)
 {
 	info_lkp_t *self = (info_lkp_t*) calloc (1, sizeof (info_lkp_t));
 	assert (self);
 	self->oid_value = oid;
 	if (value)
 		self->info_value = strdup (value);
+#if WITH_SNMP_LKP_FUN
+// consider WITH_DMF_FUNCTIONS too?
+	if (fun || nuf) {
+		upsdebugx(1, "DMF does not support lookup functions at this time, value ignored");
+	}
+	self->fun = NULL;
+	self->nuf = NULL;
+#endif // WITH_SNMP_LKP_FUN
 	return self;
 }
 
