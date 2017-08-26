@@ -164,14 +164,18 @@
 #define MIB2NUT_SNMP "snmp_info"
 #define MIB2NUT_ALARMS "alarms_info"
 
+/* How many attrs can there be for certain tags in DMF (XML) markup? */
 #define INFO_MIB2NUT_MAX_ATTRS 14
-#define INFO_LOOKUP_MAX_ATTRS 4
+#define INFO_LOOKUP_MAX_ATTRS 7
 #define INFO_SNMP_MAX_ATTRS 14
 #define INFO_ALARM_MAX_ATTRS 6
 
 #define DMFTAG_INFO_LOOKUP "lookup_info"
 #define LOOKUP_OID "oid"
 #define LOOKUP_VALUE "value"
+#define LOOKUP_FUN "fun"
+#define LOOKUP_NUF "nuf"
+#define LOOKUP_FUNCTIONSET "functionset"
 
 #define DMFTAG_INFO_SNMP "snmp_info"
 #define SNMP_NAME "name"
@@ -353,7 +357,12 @@ void
 
 /* Create and initialize info_lkp_t, a lookup element */
 info_lkp_t *
-	info_lkp_new (int oid, const char *value);
+	info_lkp_new (int oid, const char *value
+#if WITH_SNMP_LKP_FUN
+	, const char *(*fun)(int snmp_value)
+	, int (*nuf)(const char *nut_value)
+#endif // WITH_SNMP_LKP_FUN
+	);
 
 /* Destroy and NULLify the reference to alist_t, list of collections */
 void
