@@ -63,6 +63,18 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 # in builddir at this moment)
 -include legacy-mibfiles-list.mk
 
+# Support development experiments for lookup with functions
+testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
+testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DMFTOOLS_CPPFLAGS += -DWITH_SNMP_LKP_FUN_DUMMY=1 -DWITH_SNMP_LKP_FUN=1
+testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
+	@true
+
+$(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf : $(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c $(DMFGEN_DEPS)
+	@DMFFILE="$(abs_top_builddir)/scripts/DMF/testdata/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf"; \
+	 CMIBFILE="$(abs_top_srcdir)/drivers/eaton-pdu-marlin-mib.c"; export DEBUG; \
+	 $(DMFGEN_CMD)
+
 # Automake installation - currently only if built WITH_DMF (we don't have the
 # directory names otherwise)
 # NOTE: If you provide your own DMF files that are not generated from "*-mib.c"
@@ -185,7 +197,7 @@ if WITH_REGENERATE_DMF_SNMP
 	      CFLAGS="$(DMFTOOLS_CFLAGS) $(AM_CFLAGS)" \
 	      LDFLAGSx="$(abs_top_builddir)/common/libcommon.la $(abs_top_builddir)/drivers/dstate.o" \
 	      CPPFLAGS="$(DMFTOOLS_CPPFLAGS) $(CPPFLAGS) $(AM_CPPFLAGS)" \
-	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" \
+	      $(abs_srcdir)/dmfify-mib.sh --skip-sanity-check "$$CMIBFILE" "$@" \
 	    ) || exit; \
 	fi ; \
 	if test ! -s "$@" -a ! -s "$(abs_top_builddir)/$@" -a ! -s "$(abs_top_srcdir)/$@"; then \
