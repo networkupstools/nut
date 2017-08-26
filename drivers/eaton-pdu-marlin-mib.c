@@ -179,6 +179,11 @@ static info_lkp_t marlin_input_type_info[] = {
 /* Note: marlin_outlet_group_phase_fun() is defined in eaton-pdu-marlin-helpers.c
  * Future work for DMF might provide a same-named routine via LUA-C gateway.
  */
+
+#if WITH_SNMP_LKP_FUN_DUMMY
+const char * marlin_outlet_group_phase_fun(int outlet_group_nb){ return NULL; }
+#endif // WITH_SNMP_LKP_FUN_DUMMY
+
 static info_lkp_t marlin_outlet_group_phase_info[] = {
 	{ 1, "dummy", marlin_outlet_group_phase_fun },
 	{ 0, NULL }
