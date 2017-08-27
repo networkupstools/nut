@@ -68,7 +68,7 @@ DISTCLEANFILES += legacy-mibfiles-list.mk legacy-mibfiles-list.mk.in
 # Support development experiments for lookup with functions
 testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
-$(abs_srcdir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
+$(abs_builddir)/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf
 	@true
 
 $(abs_top_builddir)/scripts/DMF/testdata-fun/eaton-pdu-marlin-mib_WITH_SNMP_LKP_FUN_DUMMY.dmf: DEBUG=yes
@@ -181,10 +181,10 @@ endif
 # removed, these DMF files would become redistributable contents by themselves.
 # The generation rules might stay, to help modernize third-party or in-house
 # packages that maintain their own C MIB structures not part of NUT upstream.
-DMFGEN_DEPS_FILES = $(abs_srcdir)/dmfify-mib.sh $(abs_srcdir)/jsonify-mib.py $(abs_srcdir)/xmlify-mib.py $(abs_srcdir)/nut_cpp
+DMFGEN_DEPS_FILES = $(srcdir)/dmfify-mib.sh $(srcdir)/jsonify-mib.py $(srcdir)/xmlify-mib.py $(srcdir)/nut_cpp
 DMFGEN_DEPS = $(DMFGEN_DEPS_FILES)
 EXTRA_DIST += $(DMFGEN_DEPS_FILES)
-EXTRA_DIST += $(abs_srcdir)/gen-legacy-mibfiles-list.sh
+EXTRA_DIST += $(srcdir)/gen-legacy-mibfiles-list.sh
 
 # NOTE: In "dmfify-mib.sh" runs, the C preprocessor must be called without
 # optimization flags (or with explicit -O0 for gcc), otherwise the code
@@ -225,7 +225,7 @@ if WITH_REGENERATE_DMF_SNMP
 # NOTE: a non-file target "dmfgen-sanity" follows, which is not DISTed
 $(DMFGEN_SANITY_VALIDATED): dmfgen-sanity
 
-dmfgen-sanity: $(abs_srcdir)/dmfify-mib.sh
+dmfgen-sanity: $(srcdir)/dmfify-mib.sh
 	@if $(abs_srcdir)/dmfify-mib.sh --sanity-check ; then \
 	    echo "Sanity-checked the low-level ability to generate DMF files - OK" >&2; \
 	    test -f "$(DMFGEN_SANITY_VALIDATED)" || touch $(DMFGEN_SANITY_VALIDATED); \
