@@ -9,6 +9,12 @@ systemdsystemunit_DATA = \
 
 EXTRA_DIST += nut-driver.target
 
+# Oops, we mis-picked provisioning of nut-driver.target from another
+# branch some time ago. FIXME: Remove this dummy line when the real
+# branch with this file is merged in the same codebase!
+nut-driver.target:
+	@touch "$@"
+
 systemdsystemshutdown_SCRIPTS = nutshutdown
 
 else
