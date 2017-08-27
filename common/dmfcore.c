@@ -10,7 +10,7 @@
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,32 @@
 #include <dirent.h>
 #include <assert.h>
 
+#ifdef HAVE_LIBXML_PARSER_FUNC
+#undef HAVE_LIBXML_PARSER_FUNC
+#endif
+#ifdef HAVE_LIBXML_ENCODING_FUNC
+#undef HAVE_LIBXML_ENCODING_FUNC
+#endif
+
 #if WITH_LIBLTDL
 # include <ltdl.h>
+#else
 /* else: We are linked to LibNEON at compile-time */
+# if HAVE_LIBXML_PARSER_H
+#    include <libxml/parser.h>
+#    define HAVE_LIBXML_PARSER_FUNC 1
+# endif
+# if HAVE_LIBXML_ENCODING_H
+#    include <libxml/encoding.h>
+#    define HAVE_LIBXML_ENCODING_FUNC 1
+# endif
+#endif
+
+#ifndef HAVE_LIBXML_PARSER_FUNC
+#define HAVE_LIBXML_PARSER_FUNC 0
+#endif
+#ifndef HAVE_LIBXML_ENCODING_FUNC
+#define HAVE_LIBXML_ENCODING_FUNC 0
 #endif
 
 #include "common.h"
@@ -63,11 +86,26 @@ static void (*xml_push_handler)(ne_xml_parser*,
 			void*);
 static int (*xml_parse)(ne_xml_parser*, const char*, size_t);
 static void (*xml_destroy)(ne_xml_parser*);
+static void (*xml_init)(void);
+static void (*xml_uninit)(void);
+static void (*xml_uninitenc)(void);
 #else
 # define	xml_create		ne_xml_create
 # define	xml_push_handler	ne_xml_push_handler
 # define	xml_parse		ne_xml_parse
 # define	xml_destroy		ne_xml_destroy
+# if HAVE_LIBXML_PARSER_FUNC
+#  define	xml_init		xmlInitParser
+#  define	xml_uninit		xmlCleanupParser
+# else
+#  define	xml_init		((void (*)(void))NULL)
+#  define	xml_uninit		((void (*)(void))NULL)
+# endif
+# if HAVE_LIBXML_ENCODING_FUNC
+#  define	xml_uninitenc	xmlCleanupCharEncodingHandlers
+# else
+#  define	xml_uninitenc	((void (*)(void))NULL)
+# endif
 #endif
 
 /* Library-loader returns OK if all went well, or ERR on error (including
@@ -145,6 +183,31 @@ int load_neon_lib(void){
 		goto err;
 	}
 
+	/* These three are not in libneon, but in libxml2 through it. We only need
+	 * them for graceful cleanup, so no big deal if missing (minor leak in case
+	 * of libxml, unknown effect if neon is backed by something else). These
+	 * are also usually not needed explicitly when linked persistently, since
+	 * the shared library unload should free these resources; for the headers
+	 * and func pointers to do work, consumers may have to link with "-lxml2".
+	 */
+	*(void**) (&xml_init) = lt_dlsym(dl_handle_libneon, "xmlInitParser");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_init) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s() - SKIPPED", "xml_init");
+		xml_init = NULL;
+	}
+
+	*(void**) (&xml_uninit) = lt_dlsym(dl_handle_libneon, "xmlCleanupParser");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_uninit) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s() - SKIPPED", "xml_uninit");
+		xml_uninit = NULL;
+	}
+
+	*(void**) (&xml_uninitenc) = lt_dlsym(dl_handle_libneon, "xmlCleanupCharEncodingHandlers");
+	if ( ((dl_error = lt_dlerror()) != NULL) || (!xml_uninitenc) ) {
+		upsdebugx(1, "load_neon_lib(): lt_dlsym() action failed to find %s() - SKIPPED", "xml_uninitenc");
+		xml_uninitenc = NULL;
+	}
+
 	dl_error = lt_dlerror();
 	if (dl_error) {
 		upsdebugx(1, "load_neon_lib(): lt_dlerror() final check failed");
@@ -153,6 +216,10 @@ int load_neon_lib(void){
 	else {
 		upsdebugx(1, "load_neon_lib(): lt_dlerror() final succeeded, library loaded");
 		free(neon_libname_path);
+		if (xml_init != NULL) {
+			upsdebugx(1, "load_neon_lib(): calling xmlInitParser()");
+			xml_init();
+		}
 		return OK;
 	}
 
@@ -166,6 +233,10 @@ err:
 	return ERR;
 # else /* not WITH_LIBLTDL */
 	upsdebugx(1, "load_neon_lib(): no-op because ltdl was not enabled during compilation,\nusual dynamic linking should be in place instead");
+	if (xml_init != NULL) {
+		upsdebugx(1, "load_neon_lib(): calling xmlInitParser()");
+		xml_init();
+	}
 	return OK;
 # endif /* WITH_LIBLTDL */
 
@@ -178,6 +249,14 @@ err:
 
 void unload_neon_lib(){
 #ifdef WITH_NEON
+	if (xml_uninitenc != NULL) {
+		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupCharEncodingHandlers()");
+		xml_uninitenc();
+	}
+	if (xml_uninit != NULL) {
+		upsdebugx(1, "unload_neon_lib(): calling xmlCleanupParser()");
+		xml_uninit();
+	}
 #if WITH_LIBLTDL
 	upsdebugx(1, "unload_neon_lib(): unloading the library");
 	lt_dlclose(dl_handle_libneon);
