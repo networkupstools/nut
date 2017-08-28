@@ -244,7 +244,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	 /* FIXME: needs a date reformating callback
 	 *   2011-8-29,16:27:25.0,+1:0
-	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00 
+	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00
 	 * { "ups.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.8.0",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	 * { "ups.time", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.8.0",
@@ -500,7 +500,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 
 	/* instant commands. */
 	/* Notes:
-	 * - load.cycle might be replaced by / mapped on shutdown.reboot 
+	 * - load.cycle might be replaced by / mapped on shutdown.reboot
 	 * - outletControl{Off,On,Reboot}Cmd values:
 	 * 		0-n : Timer
 	 * 		-1 : Cancel

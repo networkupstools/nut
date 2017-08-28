@@ -14,6 +14,10 @@ os:
 
 sudo: false
 
+# Tests for cppunit require C++11 which requires gcc-4.8 or newer
+# This is available in either "trusty" or newer distros, or in "docker" envs
+#dist: trusty
+
 services:
 - docker
 
@@ -91,8 +95,9 @@ matrix:
         - aspell-en
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
-#    dist: trusty
-#    sudo: required
+    sudo: false
+    services:
+        - docker
     addons:
       apt:
         packages:
@@ -107,12 +112,18 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-alldrv
     os: linux
+    sudo: false
+    services:
+        - docker
     addons:
       apt:
         packages:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-light
     os: linux
+    sudo: false
+    services:
+        - docker
     addons:
       apt:
         packages:
