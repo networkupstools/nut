@@ -375,14 +375,26 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
 #if WITH_DMFMIB
-	if (dmfnutscan_snmp_dmp!=NULL) {
+	dev->driver = NULL;
+	if (dmfnutscan_snmp_dmp != NULL) {
 		/* DMF is loaded thus used, successfully */
-		dev->driver = strdup("snmp-ups-dmf");
-		if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
-			nutscan_add_option_to_device(dev,SU_VAR_DMFDIR,
+		if (mib && strcmp(mib, "eaton_epdu")==0) {
+			// FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
+			// in DMF is fixed, this clause has to be amended back, too.
+			// Also note that currently this suggestion concerns just one
+			// mapping table (for Eaton Marlin ePDUs), and that developers
+			// or validators are not forbidden to configure any driver they
+			// want to explicitly -- this failsafe is just for nut-scanner.
+			upslogx(1, "This device mapping uses lookup functions which is not yet supported by DMF driver");
+		} else {
+			dev->driver = strdup("snmp-ups-dmf");
+			if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
+				nutscan_add_option_to_device(dev,SU_VAR_DMFDIR,
 					dmfnutscan_snmp_dir);
+			}
 		}
-	} else {
+	}
+	if (dev->driver == NULL) {
 		dev->driver = strdup("snmp-ups");
 	}
 #else
