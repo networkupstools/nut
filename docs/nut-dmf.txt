@@ -132,6 +132,32 @@ attributes so the DMF file can refer to the currently applicable schema.
 </nut>
 ----
 
+=== LOOKUP FUNCTIONS
+
+Recent additions to NUT master branch have added the notion of lookup
+functions: while the original `info_lkp_t` structure allows to map a single
+OID positional digit to a string -- statically -- to get e.g. a plug type
+name from its SNMP number, this new feature allows to calculate such strings
+using some other data, logic (including `dstate` values for other information
+known about the device) or knowledge of developers. This technology allows
+for example to work around known issues in the UPS/ePDU firmware, or to
+provide values which older models of the firmware or hardware did not serve
+natively.
+
+Unfortunately, this mechanism "as is" happens to be in conflict with DMF,
+which is an engine for loading text data files (the DMF XML markup) into
+the `snmp-ups-dmf` driver with its predefined capabilities. Compilation
+of arbitrary C functions falls far out of scope and purpose of DMF format.
+
+While a compromise suitable for the DMF branch is being worked out, probably
+using technology similar to DYNAMIC FUNCTIONS detailed below, the DMF code
+to generate and parse the data files has been extended with support for the
+new concepts, but so far the stub stops here: if usage of lookup functions
+is detected, a message is logged that this is currently not supported in
+practice. Developers that would experiment with adding this support, can
+take a look at `WITH_SNMP_LKP_FUN` and `WITH_SNMP_LKP_FUN_DUMMY` macros
+in the codebase and Makefiles.
+
 == DYNAMIC FUNCTIONS
 
 It is possible to emulate non-provided data by a supported dynamic language
