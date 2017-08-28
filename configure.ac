@@ -383,6 +383,12 @@ NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
+if test "${nut_have_neon}" = "yes" ; then
+    myCFLAGS="$CFLAGS `xml2-config --cflags`" || myCFLAGS="$CFLAGS -I/usr/include/libxml2"
+    CFLAGS="$myCFLAGS"
+    AC_CHECK_HEADERS(libxml/encoding.h libxml/parser.h, [], [], [AC_INCLUDES_DEFAULT])
+fi
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
 
