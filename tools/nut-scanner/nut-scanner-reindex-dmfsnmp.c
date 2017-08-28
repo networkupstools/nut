@@ -296,6 +296,7 @@ int main(int argc, char *argv[])
 
 	upsdebugx(1, "=== DMF-Reindex: Checks succeeded - printing generated DMF to stdout...\n\n");
 	printf("%s", newdmf);
+	fflush(stdout);
 
 	upsdebugx(2, "=== DMF-Reindex: Freeing data...\n\n");
 	mibdmf_parser_destroy(&newdmp);
