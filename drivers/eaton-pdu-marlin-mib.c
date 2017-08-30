@@ -483,12 +483,12 @@ static snmp_info_t eaton_marlin_mib[] = {
 #else // not WITH_SNMP_LKP_FUN
 	/* ugly trick which limits input phase to electrical groups only (not outlet-section nor user-defined!)
 	 * For now, there is a maximum of 6 gangs (electrical groups) */
-	{ "outlet.group.1.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.1", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase1_info[0], NULL },
-	{ "outlet.group.2.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.2", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase2_info[0], NULL },
-	{ "outlet.group.3.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.3", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase3_info[0], NULL },
-	{ "outlet.group.4.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.4", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase1_info[0], NULL },
-	{ "outlet.group.5.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.5", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase2_info[0], NULL },
-	{ "outlet.group.6.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.6", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase3_info[0], NULL },
+	{ "outlet.group.1.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.1", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase1_info[0], NULL },
+	{ "outlet.group.2.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.2", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase2_info[0], NULL },
+	{ "outlet.group.3.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.3", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase3_info[0], NULL },
+	{ "outlet.group.4.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.4", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase1_info[0], NULL },
+	{ "outlet.group.5.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.5", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase2_info[0], NULL },
+	{ "outlet.group.6.phase", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.6", NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1, &marlin_outlet_group_phase3_info[0], NULL },
 #endif // WITH_SNMP_LKP_FUN
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.6.1.2.%i.%i",
