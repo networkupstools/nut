@@ -30,7 +30,6 @@
  */
 
 /* TODO list:
-- add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
 - optimize network flow by:
