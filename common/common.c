@@ -374,7 +374,8 @@ const char * dflt_statepath(void)
 {
 	const char * path;
 
-	if ((path = getenv("NUT_STATEPATH")) == NULL)
+	path = getenv("NUT_STATEPATH");
+	if ( (path == NULL) || (*path == '\0') )
 		path = STATEPATH;
 
 	return path;
@@ -390,10 +391,11 @@ const char * altpidpath(void)
 {
 	const char * path;
 
-	if ((path = getenv("NUT_ALTPIDPATH")) == NULL)
+	path = getenv("NUT_ALTPIDPATH");
+	if ( (path == NULL) || (*path == '\0') )
 		path = getenv("NUT_STATEPATH");
 
-	if (path != NULL)
+	if ( (path != NULL) && (*path != '\0') )
 		return path;
 
 #ifdef ALTPIDPATH
