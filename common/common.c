@@ -375,13 +375,27 @@ const char * dflt_statepath(void)
 	return path;
 }
 
-/* Return the alternate path for pid files */
+/* Return the alternate path for pid files, for processes running as non-root
+ * Per documentation and configure script, the fallback value is the
+ * state-file path as the daemon and drivers can write there too.
+ * Note that this differs from PIDPATH that higher-privileged daemons, such
+ * as upsmon, tend to use.
+ */
 const char * altpidpath(void)
 {
+	const char * path;
+
+	if ((path = getenv("NUT_ALTPIDPATH")) == NULL)
+		path = getenv("NUT_STATEPATH");
+
+	if (path != NULL)
+		return path;
+
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-	return dflt_statepath();
+/* We assume, here and elsewhere, that at least STATEPATH is always defined */
+	return STATEPATH;
 #endif
 }
 
