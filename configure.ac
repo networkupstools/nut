@@ -104,10 +104,12 @@ AC_CONFIG_LIBOBJ_DIR([common])
 dnl +-------------------------------------------------------------------
 
 AC_PROG_CC
+AC_PROG_CC_C99
 dnl Needed for per-target flags
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
+AC_PROG_CXX_C_O
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
@@ -1207,16 +1209,61 @@ fi
 AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
 
 dnl
-dnl Tests for CppUnit availability and usability
+dnl Tests for CppUnit availability and usability (will be built if we can,
+dnl and if valgrind is enabled for this configuration - reported below).
 dnl Using CppUnit implies C++ support!
 dnl Theoretically, libcppunit-dev will pull up to g++, through libstdc++...
 dnl AM_PATH_CPPUNIT(1.9.6)
 
-PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
-if test "${have_cppunit}" != "yes" ; then
-	AC_MSG_WARN([libcppunit not found.])
-fi
+dnl # Tests with gcc-4.8 require this C++11 option to be provided explicitly
+dnl # gcc-4.6 does not support this yet; newer gcc's should be ok by default.
+dnl # Could use `AX_CXX_COMPILE_STDCXX_11([noext], [optional])` if it were
+dnl # available everywhere. Or AX_CHECK_COMPILE_FLAG if it was ubiquitous:
+dnl ###AX_CHECK_COMPILE_FLAG([-std=c++11],
+dnl ###    [CXXFLAGS="$CXXFLAGS -std=c++11"
+dnl ###     HAVE_CXX11=1],
+dnl ###    [HAVE_CXX11=0])
+
+AC_MSG_CHECKING(for C++11 support in current compiler)
+my_CXXFLAGS="$CXXFLAGS"
+AC_LANG_PUSH([C++])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
+]], [[printf("%ld\n", __cplusplus);]])
+],
+    [AC_MSG_RESULT([yes, out of the box])
+     HAVE_CXX11=1],
+    [CXXFLAGS="$CXXFLAGS -std=c++11"
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <stdio.h>
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
+        ]], [[printf("%ld\n", __cplusplus);]])
+        ],
+        [AC_MSG_RESULT([yes, GCC-style])
+         HAVE_CXX11=1],
+            [AC_MSG_RESULT([no])
+             CXXFLAGS="$my_CXXFLAGS"
+             HAVE_CXX11=0])])
+AC_LANG_POP([C++])
+
+have_cppunit="no"
+CPPUNIT_NUT_CXXFLAGS=""
+AS_IF([test "${HAVE_CXX11}" = 1],
+    [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+     if test "${have_cppunit}" != "yes" ; then
+        AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
+     else
+     AS_IF([test -n "$CXX"],[AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+        [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+     fi])
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
+AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -1388,6 +1435,13 @@ else
 fi
 AM_CONDITIONAL([HAVE_VALGRIND], [test "x${VALGRIND}" != "xnone"])
 AM_CONDITIONAL([WITH_VALGRIND], [test "x${with_valgrind}" = "xyes"])
+
+AC_MSG_CHECKING([whether to build cppunit tests using valgrind support])
+if test "x${with_valgrind}" = xyes && test "x${have_cppunit}" = xyes ; then
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
 
 dnl expand ${sysconfdir} and write it out
 conftemp="${sysconfdir}"
