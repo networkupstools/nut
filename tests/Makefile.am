@@ -1,7 +1,5 @@
 # Network UPS Tools: tests
 
-CPPUNIT_NUT_CFLAGS = -g -O0 -std=c++11
-
 if HAVE_CPPUNIT
 
 TESTS = cppunittest
@@ -13,7 +11,7 @@ check-local: $(check_PROGRAMS)
 	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
 endif
 
-cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) $(CPPUNIT_NUT_CFLAGS)
+cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = ../clients/libnutclient.la
 
