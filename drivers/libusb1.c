@@ -183,7 +183,8 @@ static int nut_libusb_open(libusb_device_handle **udevp,
 		/* open the device */
 		ret = libusb_open(device, udevp);
 		if (ret != 0) {
-			upsdebugx(2, "Failed to open device, skipping. (%s)",
+			upsdebugx(1, "Failed to open device (%04X/%04X), skipping: %s",
+				dev_desc.idVendor, dev_desc.idProduct,
 				libusb_strerror((enum libusb_error)ret));
 			continue;
 		}

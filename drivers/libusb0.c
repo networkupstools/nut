@@ -192,7 +192,9 @@ static int libusb_open(usb_dev_handle **udevp,
 			/* open the device */
 			*udevp = udev = usb_open(dev);
 			if (!udev) {
-				upsdebugx(2, "Failed to open device, skipping. (%s)", usb_strerror());
+				upsdebugx(1, "Failed to open device (%04X/%04X), skipping: %s",
+					dev->descriptor.idVendor, dev->descriptor.idProduct,
+					usb_strerror());
 				continue;
 			}
 
