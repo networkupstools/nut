@@ -156,18 +156,6 @@ AC_REPLACE_FUNCS(setenv strerror atexit)
 
 
 dnl
-dnl Tests for CppUnit availability and usability
-dnl Using CppUnit implies C++ support!
-dnl Theoretically, libcppunit-dev will pull up to g++, through libstdc++...
-dnl AM_PATH_CPPUNIT(1.9.6)
-
-PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
-if test "${have_cppunit}" != "yes" ; then
-	AC_MSG_WARN([libcppunit not found.])
-fi
-AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
-
-dnl
 dnl Only use these when compiling with gcc
 dnl
 if ( test "${GCC}" = "yes" )
@@ -1238,6 +1226,18 @@ if test -n "${systemdsystemunitdir}"; then
 		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
 	esac
 fi
+
+dnl
+dnl Tests for CppUnit availability and usability
+dnl Using CppUnit implies C++ support!
+dnl Theoretically, libcppunit-dev will pull up to g++, through libstdc++...
+dnl AM_PATH_CPPUNIT(1.9.6)
+
+PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+if test "${have_cppunit}" != "yes" ; then
+	AC_MSG_WARN([libcppunit not found.])
+fi
+AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
