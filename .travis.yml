@@ -16,7 +16,13 @@ cache:
 os:
 - linux
 
+# Note: now "sudo" seems required to pass "pip install", and so we say
+# here and below in the matrix.
 sudo: required
+
+# Tests for cppunit require C++11 which requires gcc-4.8 or newer
+# This is available in either "trusty" or newer distros, or in "docker" envs
+#dist: trusty
 
 services:
 - docker
