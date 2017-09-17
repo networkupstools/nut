@@ -12,7 +12,9 @@ cache:
 os:
 - linux
 
-sudo: false
+# Note: now "sudo" seems required to pass "pip install", and so we say
+# here and below in the matrix.
+sudo: required
 
 # Tests for cppunit require C++11 which requires gcc-4.8 or newer
 # This is available in either "trusty" or newer distros, or in "docker" envs
@@ -76,6 +78,9 @@ matrix:
   include:
   - env: BUILD_TYPE=default-withdoc
     os: linux
+    sudo: required
+    services:
+        - docker
     addons:
       apt:
         packages: &deps_gendocs
@@ -95,7 +100,7 @@ matrix:
         - aspell-en
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -106,13 +111,16 @@ matrix:
 # Other quicker builds in standard env follow:
   - env: BUILD_TYPE=default-nodoc
     os: linux
+    sudo: required
+    services:
+        - docker
     addons:
       apt:
         packages:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-alldrv
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -121,7 +129,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-light
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -131,6 +139,9 @@ matrix:
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+
+install:
+- if [ "$BUILD_TYPE" != default-spellcheck ] ; then sudo pip install pycparser ; fi
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh
