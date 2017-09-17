@@ -16,7 +16,7 @@ cache:
 os:
 - linux
 
-sudo: false
+sudo: required
 
 services:
 - docker
@@ -76,7 +76,7 @@ matrix:
   include:
   - env: BUILD_TYPE=default-withdoc
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -98,7 +98,7 @@ matrix:
         - aspell-en
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -109,7 +109,7 @@ matrix:
 # These jobs also take quite a while so we start them earlier
   - env: BUILD_TYPE=default-tgt:distcheck-light-man
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -118,7 +118,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_NO
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -127,7 +127,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_YES
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -136,7 +136,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LTDL_NO
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -145,7 +145,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YES
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -154,7 +154,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_YESNO
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -163,7 +163,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-LUA_NO
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -172,7 +172,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-features-REGEN_YES
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -181,7 +181,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-all-yes
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -190,7 +190,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-no
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -199,7 +199,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-dmf-warnings
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -209,7 +209,7 @@ matrix:
 # Other quicker builds in standard env follow:
   - env: BUILD_TYPE=default-nodoc
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -218,7 +218,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-alldrv
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -227,7 +227,7 @@ matrix:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-tgt:distcheck-light
     os: linux
-    sudo: false
+    sudo: required
     services:
         - docker
     addons:
@@ -239,7 +239,7 @@ before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
 
 install:
-- if [ "$BUILD_TYPE" != default-spellcheck ] ; then pip install pycparser ; fi
+- if [ "$BUILD_TYPE" != default-spellcheck ] ; then sudo pip install pycparser ; fi
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh
