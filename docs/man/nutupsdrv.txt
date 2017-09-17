@@ -1,7 +1,7 @@
 NUTUPSDRV(8)
 ============
 
-NAME  
+NAME
 ----
 
 nutupsdrv - generic manual for unified NUT drivers
@@ -54,6 +54,14 @@ driver's author may have provided.
 Autoconfigure this driver using the 'id' section of linkman:ups.conf[5].
 *This argument is mandatory when calling the driver directly.*
 
+*-s* 'id'::
+Configure this driver only with command line arguments instead of reading
+linkman:ups.conf[5]. To be used instead of *-a* option when need to run
+a driver not present in driver configuration file. Instead, driver
+configuration have to be set with *-x* options directly in the command line.
+As the driver instance cannot be controlled by linkman:upsdrvctl[8],
+this option should be used for specific needs only.
+
 *-D*::
 Raise the debugging level.  Use this multiple times to see more details.
 Running a driver in debug mode will prevent it from backgrounding after
@@ -66,11 +74,17 @@ have with a driver to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 
+*-d* 'update_count'::
+Dump the data tree (in upsc-like format) to stdout after running the driver
+update loop for 'update_count' times and exit.
+Note that the driver banner will be printed too, so when using this option in
+scripts, don't forget to trim the first line.
+
 *-q*::
 Raise log level threshold.  Use this multiple times to log more details.
 +
 The debugging comment above also applies here.
- 
+
 *-i* 'interval'::
 Set the poll interval for the device.  The default value is 2 (in seconds).
 
@@ -99,7 +113,7 @@ the jail.  In fact, it is somewhat safer if you do not.
 
 *-u* 'username'::
 If started as root, the driver will setuid(2) to the user id
-associated with 'username'.  
+associated with 'username'.
 +
 If you do not specify this value and start it as root, the driver will
 switch to the default value that was compiled into the code.  This is
@@ -108,7 +122,7 @@ typically 'nobody', and is far from ideal.
 *-x* 'var'='val'::
 Define a variable called 'var' with the value of 'var' in the
 driver.  This varies from driver to driver - see the specific man pages
-for more information.  
+for more information.
 +
 This is like setting 'var'='val' in linkman:ups.conf[5], but
 *-x* overrides any settings from that file.
@@ -181,7 +195,6 @@ linkman:metasys[8],
 linkman:mge-shut[8],
 linkman:mge-utalk[8],
 linkman:mge-xml[8],
-linkman:newmge-shut[8],
 linkman:nitram[8],
 linkman:nutdrv_qx[8],
 linkman:oneac[8],

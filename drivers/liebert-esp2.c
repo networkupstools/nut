@@ -2,6 +2,7 @@
  *
  *  Copyright (C)
  *  2009	Richard Gregory <r.gregory liverpool ac uk>
+ *  2017	Nash Kaminski <nashkaminski at kaminski dot io>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,7 +28,7 @@
 #define IsBitSet(val, bit) ((val) & (1 << (bit)))
 
 #define DRIVER_NAME	"Liebert ESP-II serial UPS driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 #define UPS_SHUTDOWN_DELAY 12 /* it means UPS will be shutdown 120 sec */
 #define SHUTDOWN_CMD_LEN  8
 
@@ -84,7 +85,8 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Richard Gregory <r.gregory liv ac uk>\n" \
-	"Robert Jobbagy <jobbagy.robert at gmail dot com",
+	"Robert Jobbagy <jobbagy.robert at gmail dot com\n" \
+	"Nash Kaminski <nashkaminski at kaminski dot io>",
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
@@ -248,7 +250,8 @@ void upsdrv_initinfo(void)
 		switch (reply[6]) {
 		case 1: /* GXT-2 */
 			multi[M_FREQUENCY]=0.1;
-			multi[M_VOLT_DC]=1.0;
+			/* Confirmed correct on a Liebert GXT2-6000RT208 */
+			multi[M_VOLT_DC]=0.1;
 			multi[M_POWER]=1.0;
 			multi[M_NOMPOWER]=1.0;
 			break;
@@ -310,22 +313,44 @@ void upsdrv_updateinfo(void)
 		{ { 0 }, NULL, NULL, 0 }
 	};
 
+	static cmd_s vartab2o[] = { /*split-phase out, only V line-line is reported*/
+		{ { 1,144,2,1,24,172 },	"output.L1.power.percent", "%.0f", M_LOADPERC },
+		{ { 1,145,2,1,24,173 },	"output.L2.power.percent", "%.0f", M_LOADPERC },
+		{ { 1,144,2,1,22,170 },	"output.L1.power", "%.0f", M_POWER },
+		{ { 1,145,2,1,22,171 },	"output.L2.power", "%.0f", M_POWER },
+		{ { 1,144,2,1,21,169 },	"output.L1.realpower", "%.0f", M_POWER },
+		{ { 1,145,2,1,21,170 },	"output.L2.realpower", "%.0f", M_POWER },
+		{ { 1,144,2,1,3,151 },	"output.voltage", "%.1f", M_VOLTAGE_O },
+		{ { 0 }, NULL, NULL, 0 }
+	};
+
 	static cmd_s vartab3o[] = { /*3-phase out */
-		{ { 1,144,2,1,24,172 },	"ups.L1.load", "%.0f", M_LOADPERC },
-		{ { 1,145,2,1,24,173 },	"ups.L2.load", "%.0f", M_LOADPERC },
-		{ { 1,146,2,1,24,174 },	"ups.L3.load", "%.0f", M_LOADPERC },
-		{ { 1,144,2,1,22,170 },	"ups.L1.power", "%.0f", M_POWER },
-		{ { 1,145,2,1,22,171 },	"ups.L2.power", "%.0f", M_POWER },
-		{ { 1,146,2,1,22,172 },	"ups.L3.power", "%.0f", M_POWER },
-		{ { 1,144,2,1,21,169 },	"ups.L1.realpower", "%.0f", M_POWER },
-		{ { 1,145,2,1,21,170 },	"ups.L2.realpower", "%.0f", M_POWER },
-		{ { 1,146,2,1,21,171 },	"ups.L3.realpower", "%.0f", M_POWER },
+		{ { 1,144,2,1,24,172 },	"output.L1.power.percent", "%.0f", M_LOADPERC },
+		{ { 1,145,2,1,24,173 },	"output.L2.power.percent", "%.0f", M_LOADPERC },
+		{ { 1,146,2,1,24,174 },	"output.L3.power.percent", "%.0f", M_LOADPERC },
+		{ { 1,144,2,1,22,170 },	"output.L1.power", "%.0f", M_POWER },
+		{ { 1,145,2,1,22,171 },	"output.L2.power", "%.0f", M_POWER },
+		{ { 1,146,2,1,22,172 },	"output.L3.power", "%.0f", M_POWER },
+		{ { 1,144,2,1,21,169 },	"output.L1.realpower", "%.0f", M_POWER },
+		{ { 1,145,2,1,21,170 },	"output.L2.realpower", "%.0f", M_POWER },
+		{ { 1,146,2,1,21,171 },	"output.L3.realpower", "%.0f", M_POWER },
 		{ { 1,144,2,1,3,151 },	"output.L1-N.voltage", "%.1f", M_VOLTAGE_O },
 		{ { 1,145,2,1,3,152 },	"output.L2-N.voltage", "%.1f", M_VOLTAGE_O },
 		{ { 1,146,2,1,3,153 },	"output.L3-N.voltage", "%.1f", M_VOLTAGE_O },
 		{ { 1,144,2,1,14,162 },	"output.L1.crestfactor", "%.1f", M_0_1 },
 		{ { 1,145,2,1,14,163 },	"output.L2.crestfactor", "%.1f", M_0_1 },
 		{ { 1,146,2,1,14,164 },	"output.L3.crestfactor", "%.1f", M_0_1 },
+		{ { 0 }, NULL, NULL, 0 }
+	};
+
+	static cmd_s vartab2i[] = { /*split-phase in, only reports V L-L */
+		{ { 1,144,2,1,1,149 },	"input.voltage", "%.1f", M_VOLTAGE_I },
+
+		{ { 1,144,2,1,5,153 },	"input.bypass.voltage", "%.1f", M_VOLTAGE_B },
+
+		{ { 1,144,2,1,6,154 },	"input.bypass.current", "%.1f", M_CURRENT_B },
+
+		{ { 1,144,2,1,2,150 },	"input.current", "%.1f", M_CURRENT_I },
 		{ { 0 }, NULL, NULL, 0 }
 	};
 
@@ -367,15 +392,21 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo(vartab[i].var, vartab[i].fmt, val * multi[vartab[i].multindex]);
 	}
 
-	if (num_inphases>1){
+	if (num_inphases==3){
 		cmdin_p=vartab3i;
+	}
+	else if(num_inphases==2){
+		cmdin_p=vartab2i;
 	}
 	else {
 		cmdin_p=vartab1i;
 	}
 
-	if (num_outphases>1){
+	if (num_outphases==3){
 		cmdout_p=vartab3o;
+	}
+	else if(num_outphases==2){
+		cmdout_p=vartab2o;
 	}
 	else {
 		cmdout_p=vartab1o;

@@ -194,7 +194,9 @@ input: Incoming line/power information
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
-| input.source.preferred      | The preferred power source         | 1
+| input.source.preferred      | The preferred power source        | 1
+| input.phase.shift           | Voltage dephasing between input
+                                sources (degrees)                 | 181
 |=================================================================================
 
 output: Outgoing power/inverter information
@@ -486,7 +488,8 @@ of the user manual.
 | outlet.count                   | Total number of outlets     | 12
 | outlet.n.id                    | Outlet system identifier
                                    (opaque string)             | 1
-| outlet.n.desc                  | Outlet name / description
+| outlet.n.name                  | Outlet name (opaque string) | A1
+| outlet.n.desc                  | Outlet description
                                    (opaque string)             | Main outlet
 | outlet.n.groupid               | Identifier of the group to
                                    which the outlet belongs to | 1
@@ -537,6 +540,7 @@ of the user manual.
 | outlet.n.crestfactor           | Crest Factor (dimensionless,
                                    equal to or greater than 1) | 1.41
 | outlet.n.power                 | Apparent power (VA)         | 46
+| outlet.n.type                  | Physical outlet type        | french
 |===============================================================================
 
 outlet.group: groups of smart outlets
@@ -558,6 +562,9 @@ Some specific data to outlet groups exists:
 | Name                           | Description                    | Example value
 | outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
 | outlet.group.n.count           | Number of outlets in the group | 12
+| outlet.group.n.phase           | Electrical phase to which the
+                                   physical outlet group (Gang) is
+                                   connected to                   | L1
 |=================================================================================
 
 Example:
@@ -570,6 +577,7 @@ Example:
 	outlet.group.1.current.status: good
 	outlet.group.1.id: 1
 	outlet.group.1.name: Branch Circuit A
+	outlet.group.1.phase: L1
 	outlet.group.1.status: on
 	outlet.group.1.voltage: 244.23
 	outlet.group.1.voltage.high.critical: 265.00

@@ -50,17 +50,19 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
+	cables.html \
 	FAQ.html
 
 ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
-	FAQ.html
+	cables.chunked \
+	FAQ.chunked
 
 ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
-	cables.pdf	\
+	cables.pdf \
 	FAQ.pdf
 
 SUBDIRS = man
@@ -112,13 +114,26 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
 # and do not forget to fix up docs/man/Makefile.am too ;)
 
+# NOTE: a2x tends to copy some files into its working area, preserving original
+# permissions. If those files are read-only in origin (e.g. packaged stylesheet
+# or our resources coming from EXTRA_DIST) the next a2x can not overwrite it.
+# Also note that such hoarding of files has potential to break parallel builds
+# (or cause them to produce undefined results if some bad timing happens).
+# As a brutal workaround for the former problem, we chmod. For second one we
+# might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 .txt.html: common.xsl xhtml.xsl
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
 .txt.chunked: common.xsl chunked.xsl
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
 .txt.pdf: docinfo.xml
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
@@ -220,10 +235,12 @@ spellcheck-interactive:
 		exit 1; \
 	fi ; exit 0
 	$(MAKE) spellcheck-sortdict
-	@echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
-	 echo "Use 'git add -p $(NUT_SPELL_DICT) && git checkout -- $(NUT_SPELL_DICT) && make spellcheck-sortdict'"; \
-	 echo "to review changes (please do not remove lines that aspell chose to drop,"; \
-	 echo "because other systems might not know these words in their system dictionaries)"
+	@echo "------------------------------------------------------------------------"; \
+	 echo "Custom dictionary file $(NUT_SPELL_DICT) may have been updated now."; \
+	 echo "Use 'git add -p docs/$(NUT_SPELL_DICT) && git checkout -- docs/$(NUT_SPELL_DICT) && make spellcheck-sortdict && git add -p docs/$(NUT_SPELL_DICT)'"; \
+	 echo "to review changes (please DO NOT REMOVE LINES that aspell chose to drop,"; \
+	 echo "because other systems might not know these words in their system dictionaries)"; \
+	 echo "------------------------------------------------------------------------"
 else !HAVE_ASPELL
 spellcheck:
 	@echo "Documentation spell check not available since 'aspell' was not found."

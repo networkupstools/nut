@@ -1,9 +1,9 @@
 /* dstate.c - Network UPS Tools driver-side state management
 
    Copyright (C)
-	2003	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2003		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012 - 2017	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1018,11 +1018,8 @@ void device_alarm_commit(const int device_number)
  * variables to store the flag (if we have successfully inited) and the
  * discovered amount of phases, or NULL if caller does not want to track it.
  *
- * NOTE: At this time the code below, like elsewhere in the NUT codebase,
- * assumes there are either 1 or 3 phases, when/if it has to guess (rather
- * than use a value reported by the device). There was recently a discussion
- * in NUT issues that 2-phase devices (aka "split phase") exist on the market,
- * so (TODO) support for these may have to be added at some point.
+ * NOTE: The code below can detect if the device is 1, 2 (split phase) or 3
+ * phases.
  *
  * Returns:
  *   -1     Runtime/input error (non fatal, but routine was skipped)
@@ -1120,7 +1117,15 @@ int dstate_detect_phasecount(
 		dstate_getinfo_nonzero(v0,  "voltage");
 		dstate_getinfo_nonzero(c0,  "current");
 
-		if ( (v1 && v2 && v3) ||
+		if ( (v1 && v2 && !v3) ||
+		     (v1n && v2n && !v3n) ||
+		     (c1 && c2 && !c2) ||
+		     (v12 && !v23 && !v31) ) {
+			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
+			*num_phases = 2;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+		} else if ( (v1 && v2 && v3) ||
 		     (v1n && v2n && v3n) ||
 		     (c1 && (c2 || c3)) ||
 		     (c2 && (c1 || c3)) ||
@@ -1184,4 +1189,42 @@ int dstate_detect_phasecount(
 
 	upsdebugx(5, "%s(): Nothing changed, with a valid reason; already inited", __func__);
 	return 2;
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Actual implementation */
+static int dstate_tree_dump(st_tree_t *node)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = dstate_tree_dump(node->left);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	printf("%s: %s\n", node->var, node->val);
+
+	if (node->right) {
+		return dstate_tree_dump(node->right);
+	}
+
+	return 1;	/* everything's OK here ... */
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Public interface */
+void dstate_dump(void)
+{
+	upsdebugx(3, "Entering %s", __func__);
+
+	st_tree_t *node = (st_tree_t *)dstate_getroot();
+
+	dstate_tree_dump(node);
 }

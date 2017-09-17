@@ -25,7 +25,7 @@
 #ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
 #include <pthread.h>
-#endif 
+#endif
 
 #include <errno.h>
 #include <netdb.h>
@@ -37,7 +37,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <sys/time.h>
 
 #include "upsclient.h"
 #include "common.h"
@@ -570,7 +569,7 @@ static int upscli_select_read(const int fd, void *buf, const size_t buflen, cons
 /* internal: abstract the SSL calls for the other functions */
 static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 {
-	int	ret;
+	int	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
@@ -631,7 +630,7 @@ static int upscli_select_write(const int fd, const void *buf, const size_t bufle
 /* internal: abstract the SSL calls for the other functions */
 static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 {
-	int	ret;
+	int	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {

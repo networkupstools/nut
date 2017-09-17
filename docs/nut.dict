@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2409 utf-8
+personal_ws-1.1 en 2412 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -437,6 +437,7 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
+Kaminski
 Kain
 Kanji
 Kazutoshi
@@ -617,6 +618,7 @@ NVA
 NX
 Nadav
 Nagios
+Nash
 NaturalDocs
 Necedah
 NetBSD
@@ -1399,6 +1401,7 @@ decrement
 decrypt
 defun
 dep
+dephasing
 deps
 desc
 deschis
@@ -1653,6 +1656,7 @@ jpgraph
 json
 kVA
 kadets
+kaminski
 kde
 keyclick
 keyout
@@ -1804,7 +1808,9 @@ myauthenticationpassphrase
 mybox
 mydev
 mydevice
+mydomain
 mydriver
+myhostname
 mypass
 mypassword
 myprivatepassphrase
@@ -1814,6 +1820,7 @@ myupsname
 nabcd
 namespace
 nanosleep
+nashkaminski
 natively
 nb
 nbr

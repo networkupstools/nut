@@ -291,8 +291,9 @@ dnl a second-class citizen (if both are set, the old option name wins).
 dnl Also note that the legacy default was "man=yes" due to requirements
 dnl of the "make distcheck", but it was reduced to "man=auto" so that
 dnl the usual builds can pass by default on systems without asciidoc.
+nut_with_docs="man=auto"
 NUT_ARG_WITH([docs], [build and install documentation (alias to --with-doc)], [man=auto])
-NUT_ARG_WITH([doc], [build and install documentation], [${nut_with_docs}])
+NUT_ARG_WITH([doc], [build and install documentation (see docs/configure.txt for many variants of the option)], [${nut_with_docs}])
 
 dnl ----------------------------------------------------------------------
 dnl Check for presence and compiler flags of various libraries
@@ -676,6 +677,8 @@ NUT_CHECK_ASCIIDOC
 NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 					[WITH_ASCIIDOC], [Define to enable Asciidoc support])
 
+DOC_INSTALL_DISTED_MANS=no
+
 case "${nut_with_doc}" in
 	yes|all)
 		nut_doc_build_list="man html-single html-chunked pdf"
@@ -700,8 +703,6 @@ dnl If user passed --with-doc='' they they want nothing, right?
 		;;
 esac
 
-dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
-dnl to ensure that it is processed as several space-separated tokens
 if test -z "${abs_srcdir}" ; then
 	case "${srcdir}" in
 		/*) abs_srcdir="${srcdir}";;
@@ -711,6 +712,9 @@ if test -z "${abs_srcdir}" ; then
 fi
 DOCTESTDIR="$(mktemp -d configure-test.docbuild.$$.XXXXXXX)" && \
 DOCTESTDIR="$(cd "$DOCTESTDIR" && pwd)"
+
+dnl Note: Do not cover ${nut_doc_build_list} in braces or quotes here,
+dnl to ensure that it is processed as several space-separated tokens
 for nut_doc_build_target in $nut_doc_build_list; do
 	case "${nut_doc_build_target}" in
 	*=*=*)	rm -rf "${DOCTESTDIR}"
@@ -744,9 +748,9 @@ dnl to detect if we can build the wanted documentation format and yet
 dnl not fail if we have no tools to generate it (so add to SKIP list).
 
 	html-single*)
-		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		AC_MSG_CHECKING([if asciidoc version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
 		can_build_doc_html_single=no
-		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [8.6.3], [
+		AX_COMPARE_VERSION([${ASCIIDOC_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --attribute=xhtml11_format --format=xhtml --xsl-file="${abs_srcdir}"/docs/xhtml.xsl --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.html ) && can_build_doc_html_single=yes
 			rm -f "$DOCTESTDIR"/asciidoc*.htm*
 		], [])
@@ -765,9 +769,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	html-chunked*)
-		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required 8.6.3)])
+		AC_MSG_CHECKING([if a2x version can build ${nut_doc_build_target_base} (minimum required ${ASCIIDOC_MIN_VERSION})])
 		can_build_doc_html_chunked=no
-		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [8.6.3], [
+		AX_COMPARE_VERSION([${A2X_VERSION}], [ge], [${ASCIIDOC_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --attribute=chunked_format --format=chunked --xsl-file="${abs_srcdir}"/docs/chunked.xsl --destination-dir=. "${abs_srcdir}"/docs/FAQ.txt && test -s FAQ.chunked/index.html ) && can_build_doc_html_chunked=yes
 			rm -rf "${DOCTESTDIR}"/FAQ*.chunked*
 		], [])
@@ -786,9 +790,9 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	pdf*)
-		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required 0.2.5)])
+		AC_MSG_CHECKING([if dblatex version can build ${nut_doc_build_target_base} (minimum required ${DBLATEX_MIN_VERSION})])
 		can_build_doc_pdf=no
-		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [0.2.5], [
+		AX_COMPARE_VERSION([${DBLATEX_VERSION}], [ge], [${DBLATEX_MIN_VERSION}], [
 			( cd "$DOCTESTDIR" && ${A2X} --format=pdf --destination-dir=. "${abs_srcdir}"/docs/asciidoc.txt && test -s asciidoc.pdf ) && can_build_doc_pdf=yes
 			rm -f "${DOCTESTDIR}"/asciidoc.pdf
 		], [])
@@ -823,6 +827,15 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+				if test "${nut_doc_build_target_flag}" = "auto" ; then
+dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
+						DOC_INSTALL_DISTED_MANS="yes"
+					else
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built dist'ed copies because they are absent])
+					fi
+				fi  # Other variants include "no", "skip"...
 			fi
 		fi
 		;;
@@ -866,7 +879,7 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 
 WITH_MANS=no
 SKIP_MANS=no
-if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null ; then
+if echo "${DOC_BUILD_LIST}" | grep -w "man" >/dev/null || test "${DOC_INSTALL_DISTED_MANS}" = "yes" ; then
 	WITH_MANS=yes
 fi
 if echo "${DOC_SKIPBUILD_LIST}" | grep -w "man" >/dev/null ; then
@@ -879,6 +892,7 @@ dnl just mans) instead. Note that for WITH_MANS=yes the SKIP_MANS value
 dnl is effectively ignored by docs/man/Makefile.am at this time.
 AM_CONDITIONAL(WITH_MANS, test "${WITH_MANS}" = "yes")
 AM_CONDITIONAL(SKIP_MANS, test "${SKIP_MANS}" = "yes")
+AM_CONDITIONAL(DOC_INSTALL_DISTED_MANS, test "${DOC_INSTALL_DISTED_MANS}" = "yes")
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
