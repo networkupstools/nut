@@ -40,7 +40,7 @@ upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
 	"Spiros Ioannou <sivann@inaccess.com>\n",
-	DRV_EXPERIMENTAL,
+	DRV_BETA,
 	{NULL}
 };
 
@@ -57,6 +57,8 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
+	errcount = 0;
+
 	upsdebugx(2, "upsdrv_updateinfo");
 
 	uint16_t tab_reg[64];
@@ -107,6 +109,9 @@ void upsdrv_updateinfo(void)
 		alarm_set("Inconsistent technology");
 	if (CHECK_BIT(tab_reg[0], 11))
 		alarm_set("Overload Cutoff");
+	/* We don't use those low-battery indicators below.
+	 * No info or configuration exists for those alarm low-bat
+	 */
 	if (CHECK_BIT(tab_reg[0], 12))
 		alarm_set("Low Battery (Voltage)");
 	if (CHECK_BIT(tab_reg[0], 13))
@@ -115,11 +120,14 @@ void upsdrv_updateinfo(void)
 		alarm_set("Low Battery (Time)");
 	if (CHECK_BIT(tab_reg[0], 16))
 		alarm_set("Low Battery (Service)");
-	alarm_commit();
 
-	status_commit();
-	if (errcount == 0)
+	if (errcount == 0) {
+		alarm_commit();
+		status_commit();
 		dstate_dataok();
+	}
+	else
+		dstate_datastale();
 
 }
 
@@ -168,6 +176,7 @@ void upsdrv_cleanup(void)
 	}
 }
 
+/* Modbus Read Input Registers */
 static int mrir(modbus_t * ctx, int addr, int nb, uint16_t * dest)
 {
 	int r;
@@ -176,6 +185,5 @@ static int mrir(modbus_t * ctx, int addr, int nb, uint16_t * dest)
 		upslogx(LOG_ERR, "mrir: modbus_read_input_registers(addr:%d, count:%d): %s (%s)", addr, nb, modbus_strerror(errno), device_path);
 		errcount++;
 	}
-	errcount = 0;
 	return r;
 }
