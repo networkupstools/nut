@@ -32,7 +32,7 @@ if test -z "${nut_have_libusb_seen}"; then
 			if test "$?" = "0" -a -n "${LIBUSB_VERSION}"; then
 				CFLAGS="`libusb-config --cflags 2>/dev/null`"
 				LIBS="`libusb-config --libs 2>/dev/null`"
-				AC_DEFINE(HAVE_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
+				AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
 				nut_usb_lib="(libusb-0.1)"
 			else
 				LIBUSB_VERSION="none"
