@@ -1,12 +1,12 @@
-/*  eaton-mib.c - data to monitor Eaton ePDUs:
- *                G1 Aphel based ePDUs (Basic and Complex)
- *                G1 Pulizzi Monitored and Switched ePDUs
+/*  eaton-pdu-marlin-mib.c - data to monitor Eaton ePDUs branded as:
  *                G2 Marlin SW / MI / MO / MA
  *                G3 Shark SW / MI / MO / MA
  *
- *  Copyright (C) 2008 - 2015
+ *  Copyright (C) 2008 - 2017
  * 		Arnaud Quette <arnaud.quette@gmail.com>
  * 		Arnaud Quette <ArnaudQuette@Eaton.com>
+ *  Copyright (C) 2015 - 2017
+ * 		Jim Klimov <EvgenyKlimov@Eaton.com>
  *
  *  Supported by Eaton <http://www.eaton.com>
  *   and previously MGE Office Protection Systems <http://www.mgeops.com>
@@ -28,212 +28,13 @@
  *
  */
 
-#include "eaton-mib.h"
-
-/* FIXME: split into multiple files (1 per snmp_info_t) and have XX_VERSION
- * per file */
-#define EATON_APHEL_MIB_VERSION	"0.48"
-
-/* APHEL-GENESIS-II-MIB (monitored ePDU)
- * *************************************
- * Note: There is also a basic XML interface, but not worth
- * implementing in netxml-ups!
- */
-
-#define APHEL1_OID_MIB						".1.3.6.1.4.1.17373"
-#define APHEL1_SYSOID						APHEL1_OID_MIB
-#define APHEL1_OID_MODEL_NAME				".1.3.6.1.4.1.17373.3.1.1.0"
-#define APHEL1_OID_FIRMREV					".1.3.6.1.4.1.17373.3.1.2.0"
-#define APHEL1_OID_DEVICE_NAME				".1.3.6.1.4.1.17373.3.1.3.0"
-#define APHEL1_OID_UNIT_MACADDR				".1.3.6.1.4.1.17373.3.1.4.0"
-/* needs concat .<outlet-index>.0 */
-#define APHEL1_OID_OUTLET_CURRENT			".1.3.6.1.4.1.17373.3.2"
-
-/* Snmp2NUT lookup table for GenesisII MIB */
-static snmp_info_t eaton_aphel_genesisII_mib[] = {
-	/* Device page */
-	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, APHEL1_OID_MODEL_NAME,
-		"Eaton Powerware ePDU Monitored", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, APHEL1_OID_UNIT_MACADDR, "unknown",
-		0, NULL, NULL },
-
-	/* UPS page */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, APHEL1_OID_MODEL_NAME,
-		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, APHEL1_OID_DEVICE_NAME,
-		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, APHEL1_OID_FIRMREV, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-
-	/* Outlet page */
-	/* we can't use template since there is no counterpart to outlet.count */
-	{ "outlet.1.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".1.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.2.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".2.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.3.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".3.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.4.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".4.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.5.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".5.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.6.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".6.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.7.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".7.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-	{ "outlet.8.current", 0, 0.1, APHEL1_OID_OUTLET_CURRENT ".8.0", NULL, SU_FLAG_NEGINVALID, NULL, NULL },
-
-	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
-};
-
-
-/* APHEL PDU-MIB - Revelation MIB (Managed ePDU)
- * ********************************************* */
-
-#define AR_BASE_OID						".1.3.6.1.4.1.534.6.6.6"
-#define APHEL2_SYSOID					AR_BASE_OID
-#define APHEL2_OID_MODEL_NAME			AR_OID_MODEL_NAME
-
-#define AR_OID_MODEL_NAME				AR_BASE_OID ".1.1.12.0"
-#define AR_OID_DEVICE_NAME				AR_BASE_OID ".1.1.13.0"
-#define AR_OID_FIRMREV					AR_BASE_OID ".1.1.1.0"
-#define AR_OID_SERIAL					AR_BASE_OID ".1.1.2.0"
-#define AR_OID_UNIT_MACADDR				AR_BASE_OID ".1.1.6.0"
-
-#define AR_OID_UNIT_CURRENT				AR_BASE_OID ".1.3.1.1"
-#define AR_OID_UNIT_VOLTAGE				AR_BASE_OID ".1.3.1.2"
-#define AR_OID_UNIT_ACTIVEPOWER			AR_BASE_OID ".1.3.1.3"
-#define AR_OID_UNIT_APPARENTPOWER		AR_BASE_OID ".1.3.1.4"
-#define AR_OID_UNIT_CPUTEMPERATURE		AR_BASE_OID ".1.3.1.5.0"
-
-#define AR_OID_OUTLET_INDEX				AR_BASE_OID ".1.2.2.1.1"
-#define AR_OID_OUTLET_NAME				AR_BASE_OID ".1.2.2.1.2"
-#define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
-
-static info_lkp_t outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
-};
-
-/* Ugly hack: having the matching OID present means that the outlet is
- * switchable. So, it should not require this value lookup */
-static info_lkp_t revelation_outlet_switchability_info[] = {
-	{ -1, "yes" },
-	{ 0, "yes" },
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
-};
-
-#define DO_OFF		0
-#define DO_ON		1
-#define DO_CYCLE	2
-
-#define AR_OID_OUTLET_COUNT				AR_BASE_OID ".1.2.1.0"
-#define AR_OID_OUTLET_CURRENT			AR_BASE_OID ".1.2.2.1.4"
-#define AR_OID_OUTLET_MAXCURRENT		AR_BASE_OID ".1.2.2.1.5"
-#define AR_OID_OUTLET_VOLTAGE			AR_BASE_OID ".1.2.2.1.6"
-#define AR_OID_OUTLET_ACTIVEPOWER		AR_BASE_OID ".1.2.2.1.7"
-#define AR_OID_OUTLET_APPARENTPOWER		AR_BASE_OID ".1.2.2.1.8"
-#define AR_OID_OUTLET_POWERFACTOR		AR_BASE_OID ".1.2.2.1.9"
-
-/* Snmp2NUT lookup table for Eaton Revelation MIB */
-static snmp_info_t eaton_aphel_revelation_mib[] = {
-	/* Device collection */
-	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
-		"Eaton Powerware ePDU Managed", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_SERIAL, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_UNIT_MACADDR, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	/* hardwareRev.0 = Integer: 26 */
-	/* FIXME: not compliant! to be RFC'ed */
-	{ "device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.6.1.1.7.0",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-
-	/* UPS collection */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_MODEL_NAME,
-		"Generic SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_DEVICE_NAME,
-		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_SERIAL, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_FIRMREV, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.temperature", 0, 1, AR_OID_UNIT_CPUTEMPERATURE, NULL, 0, NULL, NULL },
-
-	/* Outlet collection */
-	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.count", 0, 1, AR_OID_OUTLET_COUNT, "0", 0, NULL },
-	{ "outlet.current", 0, 0.001, AR_OID_UNIT_CURRENT ".0", NULL, 0, NULL, NULL },
-	{ "outlet.voltage", 0, 0.001, AR_OID_UNIT_VOLTAGE ".0", NULL, 0, NULL, NULL },
-	{ "outlet.realpower", 0, 1.0, AR_OID_UNIT_ACTIVEPOWER ".0", NULL, 0, NULL, NULL },
-	{ "outlet.power", 0, 1.0, AR_OID_UNIT_APPARENTPOWER ".0", NULL, 0, NULL, NULL },
-
-	/* outlet template definition
-	 * Caution: the index of the data start at 0, while the name is +1
-	 * ie outlet.1 => <OID>.0 */
-	{ "outlet.%i.switchable", 0, 1, AR_OID_OUTLET_STATUS ".%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &revelation_outlet_switchability_info[0], NULL },
-	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_FLAG_OK | SU_OUTLET, &outlet_status_info[0], NULL },
-	{ "outlet.%i.current", 0, 0.001, AR_OID_OUTLET_CURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.current.maximum", 0, 0.001, AR_OID_OUTLET_MAXCURRENT ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.realpower", 0, 1.0, AR_OID_OUTLET_ACTIVEPOWER ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.voltage", 0, 1.0, AR_OID_OUTLET_VOLTAGE ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.powerfactor", 0, 0.01, AR_OID_OUTLET_POWERFACTOR ".%i", NULL, SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.power", 0, 1.0, AR_OID_OUTLET_APPARENTPOWER ".%i", NULL, SU_OUTLET, NULL, NULL },
-
-	/* FIXME:
-	 * - delay for startup/shutdown sequence
-	 * - support for multiple Ambient sensors ( max. 8), starting at index '0'
-	 * 		ambient.%i.temperature => .1.3.6.1.4.1.534.6.6.6.2.2.1.3.%i
-	 * 		ambient.%i.humidity => .1.3.6.1.4.1.534.6.6.6.2.4.1.3.%i
-	 */
-
-	/* Ambient collection */
-	/* We use critical levels, for both temperature and humidity,
-	 * since warning levels are also available! */
-	{ "ambient.temperature", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.2.1.3.0", NULL, SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.low", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.6.0", NULL, SU_FLAG_OK, NULL, NULL },
-	{ "ambient.temperature.high", 0, 1.0, "1.3.6.1.4.1.534.6.6.6.2.2.1.7.0", NULL, SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.3.0", NULL, SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.low", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.6.0", NULL, SU_FLAG_OK, NULL, NULL },
-	{ "ambient.humidity.high", 0, 1.0, ".1.3.6.1.4.1.534.6.6.6.2.4.1.7.0", NULL, SU_FLAG_OK, NULL, NULL },
-
-	/* instant commands. */
-	/* Note that load.cycle might be replaced by / mapped on shutdown.reboot */
-	/* no counterpart found!
-	{ "outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0", NULL, SU_TYPE_CMD, NULL, NULL }, */
-	{ "outlet.%i.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
-
-	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
-};
+#include "eaton-pdu-marlin-mib.h"
+#include "dstate.h"
 
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.40"
+#define EATON_MARLIN_MIB_VERSION	"0.44"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -255,9 +56,31 @@ static info_lkp_t marlin_outletgroups_status_info[] = {
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
-static info_lkp_t outlet_switchability_info[] = {
+static info_lkp_t marlin_outlet_switchability_info[] = {
 	{ -1, "yes" },
 	{ 0, "yes" },
+	{ 0, NULL }
+};
+
+/* The physical type of outlet */
+static info_lkp_t marlin_outlet_type_info[] = {
+	{ 0, "unknown" },
+	{ 1, "iecC13" },
+	{ 2, "iecC19" },
+	{ 10, "uk" },
+	{ 11, "french" },
+	{ 12, "schuko" },
+	{ 20, "nema515" },
+	{ 21, "nema51520" },
+	{ 22, "nema520" },
+	{ 23, "nemaL520" },
+	{ 24, "nemaL530" },
+	{ 25, "nema615" },
+	{ 26, "nema620" },
+	{ 27, "nemaL620" },
+	{ 28, "nemaL630" },
+	{ 29, "nemaL715" },
+	{ 30, "rf203p277" },
 	{ 0, NULL }
 };
 
@@ -350,6 +173,37 @@ static info_lkp_t marlin_input_type_info[] = {
 	{ 0, NULL }
 };
 
+static char marlin_scratch_buf[20];
+
+/* Compute the phase to which an outlet group is connected
+ * WRT the number of phase(s) and the outlet group number.
+ * Note that the group type (marlin_outlet_group_type_info) is
+ *  not considered since this applies to any kind of group */
+static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+{
+	const char* str_phases_nb = dstate_getinfo("input.phases");
+	int phases_nb = 1;
+	if (str_phases_nb) {
+		phases_nb = atoi(str_phases_nb);
+		if (phases_nb == 1) {
+			return "L1";
+		}
+		else { /* 3ph assumed, 2ph PDU don't exist! */
+			if (outlet_group_nb > 3)
+				snprintf(marlin_scratch_buf, 3, "L%i", (outlet_group_nb -3));
+			else
+				snprintf(marlin_scratch_buf, 3, "L%i", outlet_group_nb);
+
+			return marlin_scratch_buf;
+		}
+	}
+	return NULL;
+}
+static info_lkp_t marlin_outlet_group_phase_info[] = {
+	{ 1, "dummy", marlin_outlet_group_phase_fun },
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
 static snmp_info_t eaton_marlin_mib[] = {
 
@@ -390,7 +244,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
 	 /* FIXME: needs a date reformating callback
 	 *   2011-8-29,16:27:25.0,+1:0
-	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00 
+	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00
 	 * { "ups.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.8.0",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
 	 * { "ups.time", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.8.0",
@@ -553,12 +407,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
+	/* outletName: Outlet friendly name, which can be modified by the user */
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.3.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_status_info[0], NULL },
-
-	/* FIXME: or use ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.0.1", though it's related to groups! */
+	/* Numeric identifier of the outlet, tied to the whole unit */
 	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	/* outletID: Outlet physical name, related to its number in the group
+	   ex: 1rst outlet of the second group (B) is B1 */
+	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
 	 * Need to address that, without multiple declaration (%i.%i, SU_OUTLET | SU_OUTLET_GROUP)? */
 	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.2.1.3.%i.%i.1", NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
@@ -584,7 +441,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.voltage.high.critical", ST_FLAG_RW, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.3.1.7.%i.%i", NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	{ "outlet.%i.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.6.5.1.2.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 	/* FIXME: handle non switchable units (only measurements), which do not expose this OID */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &outlet_switchability_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK | SU_TYPE_DAISY_1, &marlin_outlet_switchability_info[0], NULL },
+	{ "outlet.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.6.1.1.5.%i.%i", "unknown", SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_type_info[0], NULL },
 
 	/* TODO: handle statistics
 	 * outletWh.0.1
@@ -592,7 +450,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 
 	/* Outlet groups collection */
-	{ "outlet.group.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.21.%i", "0", SU_FLAG_STATIC, NULL, NULL },
+	{ "outlet.group.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.21.%i", "0", SU_FLAG_STATIC | SU_TYPE_DAISY_1, NULL, NULL },
 	/* outlet groups template definition
 	 * Indexes start from 1, ie outlet.group.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
@@ -603,6 +461,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL, NULL },
 	/* groupType.0.1 = Integer: outletSection  (4) */
 	{ "outlet.group.%i.type", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, &marlin_outlet_group_type_info[0], NULL },
+	{ "outlet.group.%i.phase", 0, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i", NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, &marlin_outlet_group_phase_info[0], NULL },
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.5.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, &marlin_outletgroups_status_info[0], NULL },
@@ -641,7 +500,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 
 	/* instant commands. */
 	/* Notes:
-	 * - load.cycle might be replaced by / mapped on shutdown.reboot 
+	 * - load.cycle might be replaced by / mapped on shutdown.reboot
 	 * - outletControl{Off,On,Reboot}Cmd values:
 	 * 		0-n : Timer
 	 * 		-1 : Cancel
@@ -672,112 +531,5 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
 };
 
-/* Pulizzi Monitored ePDU (Basic model, SNMP only)
- * FIXME: to be completed
- * 
- * Warning: there are 2 versions:
- * - SA built MI.mib (old MIB)
- * 		#define PULIZZI1_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
- * 		#define PULIZZI1_OID_MODEL_NAME		".1.3.6.1.4.1.20677.3.1.1.1.2.0"
- * - Eaton-Powerware-Monitored-ePDU_1.0.E.mib (new MIB) Vertical SW
- */
 
-
-/* Pulizzi Switched ePDU */
-
-#define EATON_PULIZZI_SW_MIB_VERSION	"0.2"
-
-#define PULIZZI_SW_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"
-#define PULIZZI_SW_OID_MODEL_NAME		".1.3.6.1.4.1.20677.2.1.1.0"
-
-/* Some buggy FW also report sysOID = ".1.3.6.1.4.1.20677.1" */
-#define EATON_PULIZZI_SWITCHED1_SYSOID			".1.3.6.1.4.1.20677.1"
-#define EATON_PULIZZI_SWITCHED2_SYSOID			".1.3.6.1.4.1.20677.2"
-
-
-static info_lkp_t pulizzi_sw_outlet_status_info[] = {
-	{ 1, "on" },
-	{ 2, "off" },
-	{ 0, NULL }
-};
-
-/* simply remap the above status to "yes" */
-static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
-};
-
-/* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
-static snmp_info_t eaton_pulizzi_switched_mib[] = {
-	/* Device page */
-	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON | Powerware",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, PULIZZI_SW_OID_MODEL_NAME,
-		"Switched ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.2.6.0",
-		"unknown", 0, NULL, NULL },
-
-	/* UPS page */
-	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
-	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, PULIZZI_SW_OID_MODEL_NAME,
-		"Switched ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	 /* FIXME: to be moved to the device collection! */
-	{ "ups.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.1.4.0",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "ups.time", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.1.3.0",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-
-	/* Outlet page */
-	/* Note: outlet.count is deduced, with guestimate_outlet_count() */
-	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-
-	{ "outlet.current", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.2.0", NULL, 0, NULL, NULL },
-	{ "outlet.voltage", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.1.0", NULL, 0, NULL, NULL },
-	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.20677.2.8.6.4.3.0", NULL, 0, NULL, NULL },
-
-	/* outlet template definition
-	 * Notes:
-	 * - indexes start from 1, ie outlet.1 => <OID>.1
-	 * - the first definition is used to determine the base index (ie 0 or 1)
-	 * - outlet.count is estimated, based on the below OID iteration capabilities */
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.1.%i.1.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.3.%i.0",
-		NULL, SU_FLAG_OK | SU_OUTLET, &pulizzi_sw_outlet_status_info[0], NULL },
-	{ "outlet.%i.id", 0, 1, NULL, "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
-	/* we use the same OID as outlet.n.status..., to expose switchability */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.20677.2.6.3.%i.0", "yes", SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET, &pulizzi_sw_outlet_switchability_info[0], NULL },
-	/* FIXME: need to be added to the namespace! */
-	{ "outlet.%i.delay.reboot", ST_FLAG_RW, 1, ".1.3.6.1.4.1.20677.2.6.1.%i.5.0", NULL, SU_OUTLET, NULL, NULL },
-	/* "outlet1SequenceTime" is used for global sequence */
-	{ "outlet.%i.delay.start", ST_FLAG_RW, 1, ".1.3.6.1.4.1.20677.2.6.1.%i.4.0", NULL, SU_OUTLET, NULL, NULL },
-
-	/* instant commands. */
-	/* FIXME: not exposed as "outlet.load...", or otherwise specific processing applies (template instanciation) */
-	{ "load.on", 0, 1, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "load.off", 0, 2, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "load.on.delay", 0, 3, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
-	{ "load.off.delay", 0, 4, ".1.3.6.1.4.1.20677.2.6.2.1.0", NULL, SU_TYPE_CMD, NULL, NULL },
-
-	/* WARNING: outlet 1 => index 2! */
-	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.20677.2.6.2.%i.0", NULL, SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL, NULL },
-	{ "outlet.%i.load.off", 0, 2, ".1.3.6.1.4.1.20677.2.6.2.%i.0", NULL, SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL, NULL },
-	{ "outlet.%i.load.cycle", 0, 3, ".1.3.6.1.4.1.20677.2.6.2.%i.0", NULL, SU_TYPE_CMD | SU_OUTLET | SU_CMD_OFFSET, NULL, NULL },
-
-	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
-};
-
-
-mib2nut_info_t	aphel_genesisII = { "aphel_genesisII", EATON_APHEL_MIB_VERSION, NULL, APHEL1_OID_MODEL_NAME, eaton_aphel_genesisII_mib, APHEL1_SYSOID };
-mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_MIB_VERSION, NULL, APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID };
 mib2nut_info_t	eaton_marlin = { "eaton_epdu", EATON_MARLIN_MIB_VERSION, NULL, EATON_MARLIN_OID_MODEL_NAME, eaton_marlin_mib, EATON_MARLIN_SYSOID };
-
-/*mib2nut_info_t	pulizzi_monitored = { "pulizzi_monitored", EATON_PULIZZI_MIB_VERSION, NULL, PULIZZI1_OID_MODEL_NAME, eaton_pulizzi_monitored_mib, PULIZZI1_OID_MIB };*/
-mib2nut_info_t	pulizzi_switched1 = { "pulizzi_switched1", EATON_PULIZZI_SW_MIB_VERSION, NULL, EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED1_SYSOID };
-mib2nut_info_t	pulizzi_switched2 = { "pulizzi_switched2", EATON_PULIZZI_SW_MIB_VERSION, NULL, EATON_PULIZZI_SWITCHED1_SYSOID, eaton_pulizzi_switched_mib, EATON_PULIZZI_SWITCHED2_SYSOID };
