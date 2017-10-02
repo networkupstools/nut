@@ -18,7 +18,9 @@ Build and install the serial drivers (default: yes)
 Build and install the USB drivers (default: auto-detect)
 Note that you need to install the libusb development package or files, and that
 both libusb 0.1 and 1.0 are supported. In case both are available, libusb 1.0
-takes precedence, and will be used.
+takes precedence, and will be used (unless `--with-usb-includes` and
+`--with-usb-libs` are appropriately used to specify
+libusb 0.1/libusb-compat-only settings).
 
 	--with-snmp
 
