@@ -74,7 +74,7 @@ if test -z "${nut_have_libusb_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if libusb is usable
-	if test -n "${LIBUSB_VERSION}"; then
+	if test "${LIBUSB_VERSION}" != "none"; then
 		pkg-config --silence-errors --atleast-version=1.0 libusb-1.0 2>/dev/null
 		if test "$?" = "0"; then
 			dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
