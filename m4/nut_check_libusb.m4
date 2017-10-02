@@ -1,4 +1,5 @@
-dnl Check for LIBUSB 1.0 or 0.1 compiler flags. On success, set
+dnl Check for LIBUSB 1.0 or 0.1 (and, if found, fill 'nut_usb_lib' with its
+dnl approximate version) and its compiler flags. On success, set
 dnl nut_have_libusb="yes" and set LIBUSB_CFLAGS and LIBUSB_LIBS. On failure, set
 dnl nut_have_libusb="no". This macro can be run multiple times, but will
 dnl do the checking only once.
