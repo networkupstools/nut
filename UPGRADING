@@ -7,6 +7,49 @@ This file lists changes that affect users who installed older versions
 of this software.  When upgrading from an older version, be sure to
 check this file to see if you need to make changes to your system.
 
+Changes from 2.7.4 to 2.7.5
+---------------------------
+
+- libusb-1.0: NUT now defaults to building against libusb-1.0 if the configure
+  script finds the development headers, falling back to libusb-0.1 if not.
+  Please report any regressions.
+
+- apcupsd-ups: When monitoring a remote apcupsd server, interpret "SHUTTING
+  DOWN" as a NUT "LB" status. If you were relying on the previous behavior
+  (for instance, in a monitor-only situation), please adjust your upsmon
+  settings. Reference: https://github.com/networkupstools/nut/issues/460
+
+- Packagers: the AsciiDoc detection has been reworked to allow NUT to be built
+  from source without requiring asciidoc/a2x (using prebuilt man pages from
+  the distribution tarball, for instance). Please double-check that we did not
+  break anything (see docs/configure.txt for options).
+
+- Driver core: options added for standalone mode (scanning for devices without
+  requiring ups.conf) - see docs/man/nutupsdrv.txt for details.
+
+- oldmge-shut has been removed, and replaced by mge-shut.
+
+- liebert-esp2: some multi-phase variable names have been updated to match the
+  rest of NUT.
+
+- netxml-ups: if you have old firmware, or were relying on values being off by
+  a factor of 10, consider the `do_convert_deci` flag. See
+  docs/man/netxml-ups.txt for details.
+
+- nut-scanner: Packagers, take note of the changes to the library
+  search code in common/common.c. Please file an issue if this does not work
+  with your platform.
+
+- Python: scripts have been updated to work with Python 3 as well as 2.
+
+- apcsmart: updates to CS "hack" (see docs/man/apcsmart.txt for details)
+
+- upsdebugx(): add `[Dx]` prefix to log entries with level > 0
+
+- upsrw: display the variable type beside ENUM / RANGE
+
+- Augeas: new `--with-augeas-lenses-dir` configure option.
+
 Changes from 2.7.3 to 2.7.4
 ---------------------------
 

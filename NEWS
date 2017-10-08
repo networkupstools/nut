@@ -1,7 +1,68 @@
 If you're upgrading from an earlier version, see the UPGRADING file.
 
 For a complete and more detailed list of changes, please refer to the
-ChangeLog file.
+ChangeLog file, or the Git version control history.
+
+---------------------------------------------------------------------------
+Release notes for NUT 2.7.5 - what's new since 2.7.4:
+
+ - libusb-1.0 API support in addition to libusb-0.1 API
+
+ - Travis CI in addition to Buildbot build testing
+   * spellcheck target with a custom NUT dictionary
+   * cppunit testing with valgrind
+
+ - support for new devices:
+   * IBM 6000 VA LCD 4U Rack UPS; 5396-1Kx (USB)
+   * Phoenix Contact QUINT-UPS model 2320461 (Modbus)
+   * Tripp-Lite SU3000LCD2UHV (USB; protocol 1330)
+
+ - add devices to HCL/DDL:
+   * APC Back-UPS CS (USB)
+   * CPS CP1500EPFCLCD (USB)
+   * CPS EC350G, EC750G (USB)
+   * CPS PR2200LCDRT2U (SNMP)
+   * Eaton 5E2200VA (USB)
+   * Eaton 9PX Split Phase 6/8/10 kVA (XML/USB/SHUT)
+   * Eaton Ellipse PRO 650 VA (USB)
+   * Numeric Digital 800 (USB)
+   * Powercool 350VA to 1600VA (USB)
+
+ - C++11 support in nutclient library and cppunit tests
+
+ - Python 3 compatibility in development scripts
+
+ - usbhid-ups:
+   * CPS HID: add input.frequency and output.frequency
+   * openups2: only check iOEMInformation once (fewer log messages)
+   * Liebert GXT4 USB VID:PID [10AF:0000]
+   * fix Eaton/MGE mapping for beeper handling
+   * add IBM USB VID
+   * add deep battery test for CyberPower OL3000RMXL2U
+
+ - snmp-ups:
+   * APC ePDU MIB support
+   * add `input.phase.shift` variable
+   * outlet groups
+   * fix the rounding / truncation of some values
+   * add outlet.N.name for Eaton ePDU
+   * add input.bypass.frequency for Eaton 3ph
+   * fix support for 2-phase ("split phase") devices
+   * add flag to list currently loaded MIB-to-NUT mappings
+   * fix input.L2.voltage on Eaton G2/G3 PDU
+   * update Eaton Aphel Revelation MIB
+   * support Raritan Dominion PX2 PDU
+
+ - systemd support improvements:
+   * POWEROFF_WAIT
+   * reload support for upsd
+
+ - upsrw: display the variable type beside ENUM / RANGE
+
+ - new protocol variables:
+   * `input.phase.shift`
+   * `outlet.N.name`
+   * `outlet.N.type`
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.7.5 (brewing) - what's new since 2.7.4:
