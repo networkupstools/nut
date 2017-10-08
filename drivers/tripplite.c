@@ -287,7 +287,7 @@ void upsdrv_initinfo(void)
 	const char *model;
 	char w_value[16], l_value[16], v_value[16], x_value[16];
 	int  va;
-	long w, l;
+	long w, l, v, x;
 
 	get_letter_cmd(":W\r", w_value, sizeof w_value);
 	get_letter_cmd(":L\r", l_value, sizeof l_value);
@@ -298,6 +298,13 @@ void upsdrv_initinfo(void)
 
 	w = hex2d(w_value, 2);
 	l = hex2d(l_value, 2);
+	v = hex2d(v_value, 2);
+	x = hex2d(x_value, 4);
+
+	upsdebugx(1, "W value = 0x%02x", (unsigned int)w);
+	upsdebugx(1, "L value = 0x%02x", (unsigned int)l);
+	upsdebugx(1, "V value = 0x%02x", (unsigned int)v);
+	upsdebugx(1, "X value = 0x%04x", (unsigned int)x);
 
 	model = "Smart %d";
 	if (w & 0x40)
