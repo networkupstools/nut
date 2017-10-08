@@ -34,7 +34,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
 
  - usbhid-ups:
    * CPS HID: add input.frequency and output.frequency
-   * openups2: only check iOEMInformation once (fewer log messages)
+   * OpenUPS2: only check OEM Information string once (fewer log messages)
    * Liebert GXT4 USB VID:PID [10AF:0000]
    * fix Eaton/MGE mapping for beeper handling
    * add IBM USB VID

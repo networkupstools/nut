@@ -20,7 +20,7 @@ Changes from 2.7.4 to 2.7.5
   settings. Reference: https://github.com/networkupstools/nut/issues/460
 
 - Packagers: the AsciiDoc detection has been reworked to allow NUT to be built
-  from source without requiring asciidoc/a2x (using prebuilt man pages from
+  from source without requiring asciidoc/a2x (using pre-built man pages from
   the distribution tarball, for instance). Please double-check that we did not
   break anything (see docs/configure.txt for options).
 
@@ -44,7 +44,7 @@ Changes from 2.7.4 to 2.7.5
 
 - apcsmart: updates to CS "hack" (see docs/man/apcsmart.txt for details)
 
-- upsdebugx(): add `[Dx]` prefix to log entries with level > 0
+- upsdebugx(): add `[D#]` prefix to log entries with level > 0
 
 - upsrw: display the variable type beside ENUM / RANGE
 
