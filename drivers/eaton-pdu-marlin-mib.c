@@ -204,6 +204,11 @@ static info_lkp_t marlin_outlet_group_phase_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t marlin_device_count_info[] = {
+	{ 1, "dummy", NULL, marlin_device_count_fun },
+	{ 0, NULL, NULL, NULL }
+};
+
 #else /* if not WITH_SNMP_LKP_FUN: */
 
 /* FIXME: For now, DMF codebase falls back to old implementation with static
@@ -274,20 +279,27 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * daisy-chained devices, outlet counts, etc. cause restart/reinit of
 	 * this running driver instance?
 	 */
+#if WITH_SNMP_LKP_FUN
 	/* Number of daisychained units is processed according to present units
 	 * in the chain with new G3 firmware (02.00.0051, since autumn 2017):
 	 * Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
 	 * of "," separators+1 using an inline function */
 	/* FIXME: inline func */
-	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.1.0",
+	{ "device.count", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.1.1.0",
 		"1", SU_FLAG_STATIC | SU_FLAG_UNIQUE,
-		NULL, NULL /* devices_count */ },
+		&marlin_device_count_info[0] /* devices_count */ },
+#endif
 	/* Notes: this older/fallback definition is used to:
 	 * - estimate the number of devices, based on the below OID iteration capabilities
 	 * - determine the base index of the SNMP OID (ie 0 or 1) */
-	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
-		"1", SU_FLAG_STATIC | SU_FLAG_UNIQUE, NULL,
-		NULL /* devices_count */ },
+	{ "device.count", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
+		"1", SU_FLAG_STATIC
+#if WITH_SNMP_LKP_FUN
+		 | SU_FLAG_UNIQUE
+#endif
+		, NULL /* devices_count */ },
 
 	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
