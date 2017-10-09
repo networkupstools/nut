@@ -200,6 +200,7 @@ static info_lkp_t marlin_input_type_info[] = {
  */
 static info_lkp_t marlin_outlet_group_phase_info[] = {
 	{ 1, "dummy", marlin_outlet_group_phase_fun, NULL },
+	{ 2, "dummytwoo", marlin_outlet_group_phase_prefix_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -838,11 +839,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * groupPhaseID // FIXME-Check on real device
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags (daisy?) */
-	/* FIXME: inline func */
 	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.10.%i.%i",
 		NULL, SU_FLAG_UNIQUE | SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
-		NULL, NULL },
+		&marlin_outlet_group_phase_info[1], NULL },
 	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i",
 		NULL, SU_FLAG_UNIQUE | SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,

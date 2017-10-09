@@ -65,3 +65,13 @@ const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 	}
 	return NULL;
 }
+
+/* Take the value received from MIB, convert to string and add a prefix */
+const char *marlin_outlet_group_phase_prefix_fun(int outlet_group_input_phase)
+{
+	if (outlet_group_input_phase >= 1 && outlet_group_input_phase <= 3) {
+		snprintf(marlin_scratch_buf, 3, "L%i", outlet_group_input_phase);
+		return marlin_scratch_buf;
+	}
+	return NULL;
+}
