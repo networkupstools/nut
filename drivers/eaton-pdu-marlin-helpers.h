@@ -24,5 +24,6 @@
 #define EATON_EPDU_MARLIN_HELPERS_H
 
 const char *marlin_outlet_group_phase_fun(int outlet_group_nb);
+const char *marlin_outlet_group_phase_prefix_fun(int outlet_group_input_phase);
 
 #endif /* EATON_EPDU_MARLIN_HELPERS_H */
