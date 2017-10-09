@@ -632,6 +632,8 @@ Some specific data to outlet groups exists:
 |=================================================================================
 | Name                           | Description                    | Example value
 | outlet.group.n.type            | Type of outlet group (OPAQUE)  | outlet-section
+| outlet.group.n.color           | Color-coding of the outlets
+                                   in this group (OPAQUE)         | yellow
 | outlet.group.n.count           | Number of outlets in the group | 12
 | outlet.group.n.phase           | Electrical phase to which the
                                    physical outlet group (Gang) is

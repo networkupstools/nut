@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.59"
+#define EATON_MARLIN_MIB_VERSION	"0.60"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -265,12 +265,28 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* For daisychain, there is only 1 physical interface! */
 	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	/* Daisychained devices support
-	 * Notes: this definition is used to:
+
+	/* Daisychained devices support */
+	/* FIXME : Should this be a static value, or can we expect the amount of
+	 * daisy-chained devices to change without restart of the driver by user?
+	 * If this is a critical matter, should a detected change of amount of
+	 * daisy-chained devices, outlet counts, etc. cause restart/reinit of
+	 * this running driver instance?
+	 */
+	/* Number of daisychained units is processed according to present units
+	 * in the chain with new G3 firmware (02.00.0051, since autumn 2017):
+	 * Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
+	 * of "," separators+1 using an inline function */
+	/* FIXME: inline func */
+	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.1.0",
+		"1", SU_FLAG_STATIC | SU_FLAG_UNIQUE,
+		NULL, NULL /* devices_count */ },
+	/* Notes: this older/fallback definition is used to:
 	 * - estimate the number of devices, based on the below OID iteration capabilities
 	 * - determine the base index of the SNMP OID (ie 0 or 1) */
 	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
-		"1", SU_FLAG_STATIC, NULL },
+		"1", SU_FLAG_STATIC | SU_FLAG_UNIQUE, NULL,
+		NULL /* devices_count */ },
 
 	/* UPS collection */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
@@ -558,6 +574,27 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
+	/* Feed to which the ePDU is connected
+	 * ??? // FIXME-Check on real device
+	 */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags */
+	/* { "input.feed.%i.id", 0, 1, "???.%i.%i", NULL, SU_FLAG_NEGINVALID, NULL }, */
+	/* Feed name
+	 * inputFeedName.0.1 = Value (OctetString): A1 // FIXME-Check on real device
+	 */
+	{ "input.feed.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	/* Feed A / B color
+	 * inputFeedColor.0.1 = Value (OctetString): 0A8B9C // FIXME-Check on real device
+	 */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
+	{ "input.feed.%i.color", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	/* ePDU "nominal power", inputPowerCapacity with .1.3.6.1.4.1.534.6.6.7.3.4.1.9.x.1.y using "input.power.nominal" (need RFC on NUT)
+	 * TODO: sample says of ...x.1.y and no %i in the key name...
+	 * inputPowerCapacity // FIXME-Check on real device
+	 */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
+	{ "input.power.nominal", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.9.%i.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
+
 	/* Ambient collection */
 	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.7.1.1.3.%i.1",
@@ -669,9 +706,18 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* outletID: Outlet physical name, related to its number in the group
 	 * ex: first outlet of the second group (B) is B1 */
+	/* Outlet physical name OID in new G3 firmware (02.00.0051)
+	 * outletPhysicalName.0.1 = Value (OctetString): A1 // FIXME-Check on real device
+	 */
+	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.6.1.1.6.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL, NULL },
+	/* Fallback in firmwares issued before Sep 2017: */
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL, NULL },
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
 	 * Need to address that, without multiple declaration (%i.%i, SU_OUTLET | SU_OUTLET_GROUP)? */
 	{ "outlet.%i.groupid", ST_FLAG_STRING, SU_INFOSIZE,
@@ -765,8 +811,22 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
 	/* groupName.0.1 = OctetString: Factory Group 1 */
 	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
-	{ "outlet.group.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+	/* User-friendly (writeable) description of the outlet group: */
+	{ "outlet.group.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+	/* Outlet-group physical name
+	 * groupPhysicalName.0.1 = Value (OctetString): GRP1 // FIXME-Check on real device
+	 */
+	{ "outlet.group.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.5.1.1.8.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+	/* Outlet-group color
+	 * groupBkgColor.0.1 = Value (OctetString): 0A8B9C // FIXME-Check on real device
+	 */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
+	{ "outlet.group.%i.color", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.5.1.1.7.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
 	/* groupType.0.1 = Integer: outletSection  (4) */
 	{ "outlet.group.%i.type", ST_FLAG_STRING, SU_INFOSIZE,
@@ -774,9 +834,18 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
 		&marlin_outlet_group_type_info[0], NULL },
 #if WITH_SNMP_LKP_FUN
+	/* Phase to which an outlet-group is connected (Caution: the value is numeric, and need to append "L" -- TODO)
+	 * groupPhaseID // FIXME-Check on real device
+	 */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags (daisy?) */
+	/* FIXME: inline func */
+	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.5.1.1.10.%i.%i",
+		NULL, SU_FLAG_UNIQUE | SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL, NULL },
 	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
+		NULL, SU_FLAG_UNIQUE | SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
 		&marlin_outlet_group_phase_info[0], NULL },
 #else /* not WITH_SNMP_LKP_FUN */
 	/* ugly trick which limits input phase to electrical groups only (not outlet-section nor user-defined!)
@@ -885,6 +954,13 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.power", 0, 1.0,
 		".1.3.6.1.4.1.534.6.6.7.5.5.1.2.%i.%i",
 		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+	/* Input to which an outlet-group is connected
+	 * groupInputID // FIXME-Check on real device
+	 */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags (daisy?) */
+	{ "outlet.group.%i.input", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.5.1.1.9.%i.%i",
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
 
 	/* instant commands. */
 	/* Notes:
@@ -895,11 +971,11 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 * 		we currently use "0", so instant On | Off | Reboot... */
 	/* no counterpart found!
 	{ "outlet.load.off", 0, DO_OFF, AR_OID_OUTLET_STATUS ".0",
-		NULL, SU_TYPE_CMD, NULL, NULL },
+		NULL, SU_TYPE_CMD, NULL },
 	{ "outlet.load.on", 0, DO_ON, AR_OID_OUTLET_STATUS ".0",
-		NULL, SU_TYPE_CMD, NULL, NULL },
+		NULL, SU_TYPE_CMD, NULL },
 	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0",
-		NULL, SU_TYPE_CMD, NULL, NULL }, */
+		NULL, SU_TYPE_CMD, NULL }, */
 
 	/* Delays handling:
 	 * 0-n :Time in seconds until the group command is issued
@@ -918,7 +994,18 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.%i.load.cycle.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
 		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
-	/* Delays handling:
+	/* Per outlet shutdown / startup delay (configuration point, not the timers)
+	 * outletControlShutoffDelay // FIXME-Check on real device
+	 * outletControlSequenceDelay // FIXME-Check on real device ; verify OID is one component shorter?
+	 */
+	{ "outlet.%i.delay.shutdown", ST_FLAG_RW, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.10.%i.%i",
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.delay.start", ST_FLAG_RW, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.1.7.%i.%i",
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+
+	/* TODO: handle delays
 	 * 0-n :Time in seconds until the group command is issued
 	 * -1:Cancel a pending group-level Off/On/Reboot command */
 	/* groupControlOffCmd.0.1 = Integer: -1 */
