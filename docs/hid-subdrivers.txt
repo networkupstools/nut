@@ -9,9 +9,9 @@ different classes (audio, imaging, mass storage etc). Almost all UPS
 devices belong to the "HID" class, which means "Human Interface
 Device", and also includes things like keyboards and mice. What HID
 devices have in common is a particular (and very flexible) interface
-for reading and writing information (such as x/y coordinates and
-button states, in case of a mouse, or voltages and status information,
-in case of a UPS).
+for reading and writing information (such as X/Y coordinates and
+button states, in the case of a mouse, or voltages and status information,
+in the case of a UPS).
 
 The NUT "usbhid-ups" driver is a meta-driver that handles all HID UPS
 devices. It consists of a core driver that handles most of the work of
@@ -20,13 +20,14 @@ specific UPS manufacturers (MGE, APC, and Belkin are currently
 supported).  Adding support for a new HID UPS device is easy, because
 it requires only the creation of a new sub-driver.
 
-There are a few USB UPS devices that are not HID devices. These
+There are a few USB UPS devices that are not true HID devices. These
 devices typically implement some version of the manufacturer's serial
 protocol over USB (which is a really dumb idea, by the way). An
-example is the Tripplite USB. Such devices are *not* supported by the
-usbhid-ups driver, and are not covered in this document. If you need to
-add support for such a device, read new-drivers.txt and see the
-tripplite_usb driver for inspiration.
+example is the original Tripplite USB interface (USB idProduct = 0001). Its HID
+descriptor is only 52 bytes long (compared to several hundred bytes for a true
+PDC HID UPS).  Such devices are *not* supported by the usbhid-ups driver, and
+are not covered in this document. If you need to add support for such a device,
+read new-drivers.txt and see the "tripplite_usb" driver for inspiration.
 
 HID Usage Tree
 ~~~~~~~~~~~~~~
