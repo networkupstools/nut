@@ -75,3 +75,21 @@ const char *marlin_outlet_group_phase_prefix_fun(int outlet_group_input_phase)
 	}
 	return NULL;
 }
+
+/* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
+ * of "," separators+1 using an inline function */
+const int marlin_device_count_fun(const char *daisy_dev_list)
+{
+	int count = 0, i;
+	for (i=0; daisy_dev_list[i] != '\0'; i++) {
+		if (daisy_dev_list[i] == ',') {
+			/* Each comma means a new device in the list */
+			count ++;
+		}
+	}
+	if (i>0) {
+		/* Non-empty string => at least one device */
+		count ++;
+	}
+	return count;
+}
