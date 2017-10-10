@@ -250,26 +250,35 @@ static info_lkp_t marlin_outlet_group_phase3_info[] = {
 static snmp_info_t eaton_marlin_mib[] = {
 
 	/* standard MIB items */
-	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },
-	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.6.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE,
+		".1.3.6.1.2.1.1.1.0",
+		NULL, SU_FLAG_OK, NULL },
+	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE,
+		".1.3.6.1.2.1.1.4.0",
+		NULL, SU_FLAG_OK, NULL },
+	{ "device.location", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE,
+		".1.3.6.1.2.1.1.6.0",
+		NULL, SU_FLAG_OK, NULL },
 
 	/* Device collection */
-	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE,
+		NULL,
+		"EATON", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i",
 		"Eaton Powerware ePDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.4.%i",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE,
+		NULL,
+		"pdu", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "device.part", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.3.%i",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* For daisychain, there is only 1 physical interface! */
-	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.2.1.2.2.1.6.2",
+	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.2.1.2.2.1.6.2",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* Daisychained devices support */
@@ -287,7 +296,7 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* FIXME: inline func */
 	{ "device.count", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.1.1.0",
-		"1", SU_FLAG_STATIC | SU_FLAG_UNIQUE,
+		"0", SU_FLAG_STATIC | SU_FLAG_UNIQUE,
 		&marlin_device_count_info[0] /* devices_count */ },
 #endif
 	/* Notes: this older/fallback definition is used to:
@@ -318,8 +327,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.5.%i",
 		"", SU_FLAG_OK, NULL },
-	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE,
+		NULL,
+		"pdu", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	 /* FIXME: needs a date reformating callback
 	 *   2011-8-29,16:27:25.0,+1:0
 	 *   Hex-STRING: 07 DB 08 1D 10 0C 36 00 2B 01 00 00
@@ -338,15 +348,18 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 	/* Note: the below gives the number of input, not the number of phase(s)! */
 	/* inputCount.0; Value (Integer): 1
-	{ "input.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0",
+	{ "input.count", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0",
 		NULL, SU_FLAG_STATIC, NULL }, */
 	/* Note: for daisychain mode, we must handle phase(s) per device, not as a whole */
 	/* inputType.%i.1 = INTEGER: singlePhase (1) */
-	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1",
+	{ "input.phases", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1",
 		NULL, SU_FLAG_STATIC, &marlin_input_type_info[0] },
 
 	/* Frequency is measured globally */
-	{ "input.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
+	{ "input.frequency", 0, 0.1,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
 		NULL, 0, NULL },
 	{ "input.frequency.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.4.%i.1",
@@ -358,13 +371,17 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* inputCurrentPercentLoad (measured globally)
 	 * Current percent load, based on the rated current capacity */
 	/* FIXME: input.load is mapped on input.L1.load for both single and 3phase !!! */
-	{ "input.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.1",
+	{ "input.load", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L1.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.1",
+	{ "input.L1.load", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L2.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.2",
+	{ "input.L2.load", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.2",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L3.load", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.3",
+	{ "input.L3.load", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.3.1.11.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
 	/* FIXME:
@@ -557,53 +574,85 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.3.3.1.9.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID, NULL },
 	/* Sum of all phases realpower, valid for Shark 1ph/3ph only */
-	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.4.%i.1",
+	{ "input.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.5.1.4.%i.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL },
 	/* Fallback 1: Sum of all phases realpower, valid for Marlin 3ph only */
-	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.4",
+	{ "input.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.4",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL },
 	/* Fallback 2: Sum of the phase realpower, valid for Marlin 1ph only */
-	{ "input.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.2",
+	{ "input.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.2",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L1.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.1",
+	{ "input.L1.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L2.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.2",
+	{ "input.L2.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.2",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L3.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.3",
+	{ "input.L3.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 	/* Sum of all phases apparent power, valid for Shark 1ph/3ph only */
-	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.3.%i.1",
+	{ "input.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.5.1.3.%i.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL },
 	/* Fallback 1: Sum of all phases realpower, valid for Marlin 3ph only */
-	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4",
+	{ "input.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_UNIQUE | SU_FLAG_OK, NULL },
 	/* Fallback 2: Sum of the phase realpower, valid for Marlin 1ph only */
-	{ "input.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.2",
+	{ "input.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.2",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L1.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.1",
+	{ "input.L1.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L2.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.2",
+	{ "input.L2.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.2",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
-	{ "input.L3.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.3",
+	{ "input.L3.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
-	/* Feed to which the ePDU is connected
-	 * ??? // FIXME-Check on real device
+	/* Input feeds need 2 static declarations with last %i in [1,2]:
+	 * iterators are currently available for daisychain devs, outlets,
+	 * and groups - but not for inputs nor feeds. */
+	/* Feed ID to which the ePDU is connected
+	 * ??? // FIXME: Numeric value not provided by FW at this time
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags */
 	/* { "input.feed.%i.id", 0, 1, "???.%i.%i", NULL, SU_FLAG_NEGINVALID, NULL }, */
-	/* Feed name
-	 * inputFeedName.0.1 = Value (OctetString): A1 // FIXME-Check on real device
+	/* Feed name(s) of the ePDU power input(s), can be set by user (FIXME: rename to .desc?)
+	 * inputFeedName.0.1 = Value (OctetString): Feed A
 	 */
-	{ "input.feed.%i.name", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	/* Feed A / B color
-	 * inputFeedColor.0.1 = Value (OctetString): 0A8B9C // FIXME-Check on real device
+	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
+/*	{ "input.feed.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+ *		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i",
+ *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+ */
+	{ "input.feed.1.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.1",
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+	{ "input.feed.2.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.2",
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+	/* Feed A / B color (integer RGB)
+	 * inputFeedColor.0.1 = Gauge32: 0   (black)
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
-	{ "input.feed.%i.color", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	/* ePDU "nominal power", inputPowerCapacity with .1.3.6.1.4.1.534.6.6.7.3.4.1.9.x.1.y using "input.power.nominal" (need RFC on NUT)
+/*	{ "input.feed.%i.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i",
+ *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+ */
+	{ "input.feed.1.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.1",
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+	{ "input.feed.2.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.2",
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+	/* ePDU "nominal power", inputPowerCapacity with .1.3.6.1.4.1.534.6.6.7.3.4.1.9.x.1.y
+	 * using "input.power.nominal" (need RFC on NUT)
 	 * TODO: sample says of ...x.1.y and no %i in the key name...
-	 * inputPowerCapacity // FIXME-Check on real device
+	 * inputPowerCapacity = INTEGER: -1 // FIXME: Test on HW that provides it
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "input.power.nominal", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.9.%i.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
@@ -675,11 +724,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0] },
 
 	/* Outlet collection */
-	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i",
+	{ "outlet.count", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i",
 		"0", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
-	{ "outlet.id", 0, 1, NULL,
+	{ "outlet.id", 0, 1,
+		NULL,
 		"0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
+	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20,
+		NULL,
+		"All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/* UnitType
 	 * used to depict the overall outlets switchability of the unit on G3 and newer ePDU*/
@@ -692,15 +745,20 @@ static snmp_info_t eaton_marlin_mib[] = {
 		"no", SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_TYPE_DAISY_1, &g2_unit_outlet_switchability_info[0] },
 	/* The below ones are the same as the input.* equivalent */
 	/* FIXME: transition period, TO BE REMOVED, moved to input.* */
-	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
+	{ "outlet.frequency", 0, 0.1,
+		".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
 		NULL, 0, NULL },
-	{ "outlet.voltage", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1",
+	{ "outlet.voltage", 0, 0.001,
+		".1.3.6.1.4.1.534.6.6.7.3.2.1.3.%i.1.1",
 		NULL, 0, NULL },
-	{ "outlet.current", 0, 0.01, ".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.1",
+	{ "outlet.current", 0, 0.01,
+		".1.3.6.1.4.1.534.6.6.7.3.3.1.4.%i.1.1",
 		NULL, 0, NULL },
-	{ "outlet.realpower", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.4",
+	{ "outlet.realpower", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.4.%i.1.4",
 		NULL, 0, NULL },
-	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4",
+	{ "outlet.power", 0, 1.0,
+		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4",
 		NULL, 0, NULL },
 
 	/* outlet template definition
@@ -828,14 +886,16 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.3.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
-	/* Outlet-group physical name
-	 * groupPhysicalName.0.1 = Value (OctetString): GRP1 // FIXME-Check on real device
+	/* Outlet-group physical name, a read-only string,
+	 * is named groupDesignator (other MIBs groupPhysicalName)
+	 * groupPhysicalName.0.1 = Value (OctetString): A
+	 * groupDesignator.0.2 = Value (OctetString): B
 	 */
 	{ "outlet.group.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.8.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
-	/* Outlet-group color
-	 * groupBkgColor.0.1 = Value (OctetString): 0A8B9C // FIXME-Check on real device
+	/* Outlet-group color: groupColor (other MIBs groupBkgColor)
+	 * groupColor.0.1 = Value (Gauge32): 16051527    (0xF4ED47)
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "outlet.group.%i.color", ST_FLAG_STRING, SU_INFOSIZE,
@@ -847,8 +907,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
 		&marlin_outlet_group_type_info[0], NULL },
 #if WITH_SNMP_LKP_FUN
-	/* Phase to which an outlet-group is connected (Caution: the value is numeric, and need to append "L" -- TODO)
-	 * groupPhaseID // FIXME-Check on real device
+	/* Phase to which an outlet-group is connected
+	 * (Caution: the value is numeric, and need to append "L" -- TODO)
+	 * groupPhaseID:  // FIXME-Check on real device
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags (daisy?) */
 	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
@@ -967,9 +1028,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.5.5.1.2.%i.%i",
 		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
 	/* Input to which an outlet-group is connected
-	 * groupInputID // FIXME-Check on real device
+	 * groupInputIndex.0.1 = Integer: 1
 	 */
-	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags (daisy?) */
+	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "outlet.group.%i.input", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.9.%i.%i",
 		NULL, SU_FLAG_NEGINVALID | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
@@ -992,29 +1053,36 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* Delays handling:
 	 * 0-n :Time in seconds until the group command is issued
 	 * -1:Cancel a pending group-level Off/On/Reboot command */
-	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
+	{ "outlet.%i.load.off", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
+	{ "outlet.%i.load.on", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	{ "outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
+	{ "outlet.%i.load.cycle", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
-	{ "outlet.%i.load.off.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
+	{ "outlet.%i.load.off.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
 		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	{ "outlet.%i.load.on.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
+	{ "outlet.%i.load.on.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
 		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
-	{ "outlet.%i.load.cycle.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
+	{ "outlet.%i.load.cycle.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
 		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
-	/* Per outlet shutdown / startup delay (configuration point, not the timers)
-	 * outletControlShutoffDelay // FIXME-Check on real device
-	 * outletControlSequenceDelay // FIXME-Check on real device ; verify OID is one component shorter?
+	/* Per-outlet shutdown / startup delay (configuration point, not the timers)
+	 * outletControlShutoffDelay.0.3 = INTEGER: 120
+	 * outletControlSequenceDelay.0.8 = INTEGER: 8
+	 * (by default each output socket startup is delayed by its number in seconds)
 	 */
 	{ "outlet.%i.delay.shutdown", ST_FLAG_RW, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.10.%i.%i",
 		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	{ "outlet.%i.delay.start", ST_FLAG_RW, 1,
-		".1.3.6.1.4.1.534.6.6.7.6.1.7.%i.%i",
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
 		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
 	/* TODO: handle delays
