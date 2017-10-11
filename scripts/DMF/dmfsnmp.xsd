@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <xs:schema
- version="1.0.1"
+ version="1.0.3"
  attributeFormDefault="unqualified" elementFormDefault="qualified"
  xmlns:xs="http://www.w3.org/2001/XMLSchema"
  targetNamespace="http://www.networkupstools.org/dmf/snmp/snmp-ups"
@@ -29,8 +29,10 @@
                     <xs:extension base="xs:string">
                       <xs:attribute type="xs:string" name="oid" use="optional"/>
                       <xs:attribute type="xs:string" name="value" use="optional"/>
-                      <xs:attribute type="xs:string" name="fun" use="optional"/>
-                      <xs:attribute type="xs:string" name="nuf" use="optional"/>
+                      <xs:attribute type="xs:string" name="fun_l2s" use="optional"/>
+                      <xs:attribute type="xs:string" name="nuf_s2l" use="optional"/>
+                      <xs:attribute type="xs:string" name="fun_s2l" use="optional"/>
+                      <xs:attribute type="xs:string" name="nuf_l2s" use="optional"/>
                       <xs:attribute type="xs:string" name="functionset" use="optional"/>
                     </xs:extension>
                   </xs:simpleContent>
@@ -88,6 +90,7 @@
                       <xs:attribute type="xs:string" name="name" use="optional"/>
                       <xs:attribute type="xs:string" name="oid" use="optional"/>
                       <xs:attribute type="xs:string" name="static" use="optional"/>
+                      <xs:attribute type="xs:string" name="semistatic" use="optional"/>
                       <xs:attribute type="xs:string" name="stale" use="optional"/>
                       <xs:attribute type="xs:string" name="string" use="optional"/>
                       <xs:attribute type="xs:string" name="positive" use="optional"/>

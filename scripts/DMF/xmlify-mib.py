@@ -64,6 +64,8 @@ SU_TYPE_CMD = (3 << 18)		#/* instant command */
 SU_TYPE_DAISY_1 = (1 << 19)
 SU_TYPE_DAISY_2 = (2 << 19)
 
+SU_FLAG_SEMI_STATIC = (1 << 20)	#/* retrieve info every few update walks. */
+
 def die (msg):
     print ("E: " + msg, file=sys.stderr)
     sys.exit (1)
@@ -103,15 +105,15 @@ def mk_lookup (inp, root):
 
         # We can have variable-length C structures, with trailing entries
         # assumed to be NULLified by the compiler if unspecified explicitly.
-        for (oid, value, fun, nuf) in widen_tuples(lookup, 4):
-            debug ("Lookup '%s'[%d] = '%s' '%s' '%s'" %(name, oid, value, fun, nuf))
-            if fun is not None or nuf is not None:
+        for (oid, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s) in widen_tuples(lookup, 6):
+            debug ("Lookup '%s'[%d] = '%s' '%s' '%s' '%s' '%s'" %(name, oid, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s))
+            if fun_l2s is not None or nuf_s2l is not None or fun_s2l is not None or nuf_l2s is not None:
                 # TODO: Provide equivalent LUA under special comments
                 # markup in the C file, so we can copy-paste it in DMF?
                 # The functionset can then be used to define the block
                 # of LUA-C gateway functions used in these lookups.
                 warn("BIG WARNING: DMF does not currently support lookup functions in original C code")
-                info_el = mkElement ("lookup_info", oid=oid, value="dummy", fun=fun, nuf=nuf, functionset="lkp_func__"+name)
+                info_el = mkElement ("lookup_info", oid=oid, value="dummy", fun_l2s=fun_l2s, nuf_s2l=nuf_s2l, fun_s2l=fun_s2l, nuf_l2s=nuf_l2s, functionset="lkp_func__"+name)
             else:
                 info_el = mkElement ("lookup_info", oid=oid, value=value)
             lookup_el.appendChild (info_el)
@@ -174,6 +176,7 @@ def mk_snmp (inp, root):
             for name, flag, value in (
                     ("flag_ok", SU_FLAG_OK, "yes"),
                     ("static", SU_FLAG_STATIC, "yes"),
+                    ("semistatic", SU_FLAG_SEMI_STATIC, "yes"),
                     ("absent", SU_FLAG_ABSENT, "yes"),
                     ("stale", SU_FLAG_STALE, "yes"),
                     ("positive", SU_FLAG_NEGINVALID, "yes"),

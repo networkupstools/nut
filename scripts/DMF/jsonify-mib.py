@@ -44,7 +44,7 @@ def debug (msg):
 
 def f2f(node):
     """convert c_ast node flags to list of numbers
-    (1, 2, 4, 8) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE
+    (1, 2, 4, 8, 1048576) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE | SU_FLAG_SEMI_STATIC
     """
     if  isinstance (node, c_ast.BinaryOp) and \
         node.op == "<<":
@@ -173,8 +173,8 @@ class Visitor(c_ast.NodeVisitor):
 
     def _visit_info_lkp_t (self, node):
         # Depending on version of NUT and presence of WITH_SNMP_LKP_FUN macro,
-        # the source code structure can have 2 fields (oid, value) or 4 fields
-        # adding (fun, nuf) pointers to lookup processing functions.
+        # the source code structure can have 2 fields (oid, value) or 6 fields
+        # adding (fun_l2s, nuf_s2l, fun_s2l, nuf_l2s) pointers to lookup processing functions.
         ret = []
         for _, ilist in node.init.children ():
             key_node = ilist.exprs [0]
@@ -199,30 +199,54 @@ class Visitor(c_ast.NodeVisitor):
             # See https://stackoverflow.com/questions/21728808/extracting-input-parameters-and-its-identifier-type-while-parsing-a-c-file-using
             # for a bigger example of function introspection
             try:
-                fun = ilist.exprs [2]
-                if fun is not None:
-                    debug("fun : %s" % (fun))
-                    debug("fun.name : %s" % (fun.name))
-                    if fun.name is None:
-                        fun = '"' + fun + '"'
+                fun_l2s = ilist.exprs [2]
+                if fun_l2s is not None:
+                    debug("fun_l2s : %s" % (fun_l2s))
+                    debug("fun_l2s.name : %s" % (fun_l2s.name))
+                    if fun_l2s.name is None:
+                        fun_l2s = '"' + fun_l2s + '"'
                     else:
-                        fun = str(fun.name)
+                        fun_l2s = str(fun_l2s.name)
             except IndexError:
-                fun = None
+                fun_l2s = None
 
             try:
-                nuf = ilist.exprs [3]
-                if nuf is not None:
-                    debug("nuf : %s" % (nuf))
-                    debug("nuf.name : %s" % (nuf.name))
-                    if nuf.name is None:
-                        nuf = '"' + nuf + '"'
+                nuf_s2l = ilist.exprs [3]
+                if nuf_s2l is not None:
+                    debug("nuf_s2l : %s" % (nuf_s2l))
+                    debug("nuf_s2l.name : %s" % (nuf_s2l.name))
+                    if nuf_s2l.name is None:
+                        nuf_s2l = '"' + nuf_s2l + '"'
                     else:
-                        nuf = str(nuf.name)
+                        nuf_s2l = str(nuf_s2l.name)
             except IndexError:
-                nuf = None
+                nuf_s2l = None
 
-            ret.append ((key, ilist.exprs [1].value.strip ('"'), fun, nuf))
+            try:
+                fun_s2l = ilist.exprs [4]
+                if fun_s2l is not None:
+                    debug("fun_s2l : %s" % (fun_s2l))
+                    debug("fun_s2l.name : %s" % (fun_s2l.name))
+                    if fun_s2l.name is None:
+                        fun_s2l = '"' + fun_s2l + '"'
+                    else:
+                        fun_s2l = str(fun_s2l.name)
+            except IndexError:
+                fun_s2l = None
+
+            try:
+                nuf_l2s = ilist.exprs [5]
+                if nuf_l2s is not None:
+                    debug("nuf_l2s : %s" % (nuf_l2s))
+                    debug("nuf_l2s.name : %s" % (nuf_l2s.name))
+                    if nuf_l2s.name is None:
+                        nuf_l2s = '"' + nuf_l2s + '"'
+                    else:
+                        nuf_l2s = str(nuf_l2s.name)
+            except IndexError:
+                nuf_l2s = None
+
+            ret.append ((key, ilist.exprs [1].value.strip ('"'), fun_l2s, nuf_s2l, fun_s2l, nuf_l2s))
         return ret
 
     def _visit_mib2nut_info_t (self, node):
@@ -316,23 +340,31 @@ def s_info2c (fout, jsinfo):
     for key in jsinfo.keys ():
         print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
         gotfun = 0
-        for key, value, fun, nuf in widen_tuples(jsinfo [key],4):
-            if nuf is None:
-                if fun is None:
-                    # No NULLs in the end, because depending on macro value
-                    # WITH_SNMP_LKP_FUN info_lkp_t can have more or less fields
-                    print ("    { %d, \"%s\" }," % (key, value), file=fout)
+        for key, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s in widen_tuples(jsinfo [key],6):
+            if nuf_l2s is None:
+                if fun_s2l is None:
+                    if nuf_s2l is None:
+                        if fun_l2s is None:
+                            # No NULLs in the end, because depending on macro value
+                            # WITH_SNMP_LKP_FUN info_lkp_t can have more or less fields
+                            print ("    { %d, \"%s\" }," % (key, value), file=fout)
+                        else:
+                            # No quotation for fun/nuf names!
+                            print ("    { %d, \"%s\", %s }," % (key, value, fun_l2s), file=fout)
+                            gotfun = 1
+                    else:
+                            print ("    { %d, \"%s\", %s, %s }," % (key, value, fun_l2s, nuf_s2l), file=fout)
+                            gotfun = 1
                 else:
-                    # No quotation for fun/nuf names!
-                    print ("    { %d, \"%s\", %s }," % (key, value, fun), file=fout)
-                    gotfun = 1
+                            print ("    { %d, \"%s\", %s, %s, %s }," % (key, value, fun_l2s, nuf_s2l, fun_s2l), file=fout)
+                            gotfun = 1
             else:
-                print ("    { %d, \"%s\", %s, %s }," % (key, value, fun, nuf), file=fout)
+                print ("    { %d, \"%s\", %s, %s, %s, %s }," % (key, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s), file=fout)
                 gotfun = 1
         if gotfun == 0:
             print ("    { 0, NULL }\n};\n", file=fout)
         else:
-            print ("    { 0, NULL, NULL, NULL }\n};\n", file=fout)
+            print ("    { 0, NULL, NULL, NULL, NULL, NULL }\n};\n", file=fout)
 
 def s_snmp2c (fout, js, name):
     print ("\nstatic snmp_info_t %s_TEST[] = {" % name, file=fout)
