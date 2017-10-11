@@ -286,6 +286,7 @@ void upsdrv_initinfo(void)
 {
 	const char *model;
 	char w_value[16], l_value[16], v_value[16], x_value[16];
+	char d_value[22];
 	int  va;
 	long w, l, v, x;
 
@@ -293,6 +294,7 @@ void upsdrv_initinfo(void)
 	get_letter_cmd(":L\r", l_value, sizeof l_value);
 	get_letter_cmd(":V\r", v_value, sizeof v_value);
 	get_letter_cmd(":X\r", x_value, sizeof x_value);
+	get_letter_cmd(":D\r", d_value, sizeof d_value);
 
 	dstate_setinfo("ups.mfr", "%s", "Tripp Lite");
 
@@ -305,6 +307,7 @@ void upsdrv_initinfo(void)
 	upsdebugx(1, "L value = 0x%02x", (unsigned int)l);
 	upsdebugx(1, "V value = 0x%02x", (unsigned int)v);
 	upsdebugx(1, "X value = 0x%04x", (unsigned int)x);
+	upsdebugx(1, "D value: %s", d_value);
 
 	model = "Smart %d";
 	if (w & 0x40)
