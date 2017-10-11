@@ -64,6 +64,8 @@ SU_TYPE_CMD = (3 << 18)		#/* instant command */
 SU_TYPE_DAISY_1 = (1 << 19)
 SU_TYPE_DAISY_2 = (2 << 19)
 
+SU_FLAG_SEMI_STATIC = (1 << 20)	#/* retrieve info every few update walks. */
+
 def die (msg):
     print ("E: " + msg, file=sys.stderr)
     sys.exit (1)
@@ -174,6 +176,7 @@ def mk_snmp (inp, root):
             for name, flag, value in (
                     ("flag_ok", SU_FLAG_OK, "yes"),
                     ("static", SU_FLAG_STATIC, "yes"),
+                    ("semistatic", SU_FLAG_SEMI_STATIC, "yes"),
                     ("absent", SU_FLAG_ABSENT, "yes"),
                     ("stale", SU_FLAG_STALE, "yes"),
                     ("positive", SU_FLAG_NEGINVALID, "yes"),
