@@ -133,6 +133,9 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+int semistaticfreq; /* semistatic entry update frequency */
+static int semistatic_countdown = 0;
+
 static int quirk_symmetra_threephase = 0;
 
 /* Number of device(s): standard is "1", but talking
@@ -368,6 +371,8 @@ void upsdrv_makevartable(void)
 		"Set SNMP version (default=v1, allowed: v2c,v3)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
+	addvar(VAR_VALUE, SU_VAR_SEMISTATICFREQ,
+		"Set semistatic value update frequency in update cycles, to reduce network flow (default=10)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
 		"Specifies the number of Net-SNMP retries to be used in the requests (default=5)");
 	addvar(VAR_VALUE, SU_VAR_TIMEOUT,
@@ -596,6 +601,17 @@ void upsdrv_initups(void)
 		pollfreq = atoi(getval(SU_VAR_POLLFREQ));
 	else
 		pollfreq = DEFAULT_POLLFREQ;
+
+	/* init semistatic update frequency */
+	if (getval(SU_VAR_SEMISTATICFREQ))
+		semistaticfreq = atoi(getval(SU_VAR_SEMISTATICFREQ));
+	else
+		semistaticfreq = DEFAULT_SEMISTATICFREQ;
+	if (semistaticfreq < 1) {
+		upsdebugx(1, "Bad %s value provided, setting to default", SU_VAR_SEMISTATICFREQ);
+		semistaticfreq = DEFAULT_SEMISTATICFREQ;
+	}
+	semistatic_countdown = semistaticfreq;
 
 	/* Get UPS Model node to see if there's a MIB */
 /* FIXME: extend and use match_model_OID(char *model) */
@@ -2956,6 +2972,12 @@ bool_t snmp_ups_walk(int mode)
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
 
+	if (mode == SU_WALKMODE_UPDATE) {
+		semistatic_countdown--;
+		if (semistatic_countdown < 0)
+			semistatic_countdown = semistaticfreq;
+	}
+
 	/* Loop through all device(s) */
 	/* Note: considering "unitary" and "daisy-chained" devices, we have
 	 * several variables (and their values) that can come into play:
@@ -3062,6 +3084,13 @@ bool_t snmp_ups_walk(int mode)
 			/* skip elements we shouldn't show in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && !(su_info_p->flags & SU_FLAG_OK))
 				continue;
+
+			/* skip semi-static elements in update mode: only parse when countdown reaches 0 */
+			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_SEMI_STATIC)) {
+				if (semistatic_countdown != 0)
+					continue;
+				upsdebugx(1, "Refreshing semi-static entry %s", su_info_p->OID);
+			}
 
 			/* skip static elements in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))
