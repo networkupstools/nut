@@ -1082,6 +1082,11 @@ compile_flags(const char **attrs)
 			flags = flags | SU_FLAG_STATIC;
 
 	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_FLAG_SEMI_STATIC, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_FLAG_SEMI_STATIC;
+
+	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_FLAG_ABSENT, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_FLAG_ABSENT;

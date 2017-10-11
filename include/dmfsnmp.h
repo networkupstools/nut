@@ -192,6 +192,7 @@
 /* Flags */
 #define SNMP_FLAG_OK "flag_ok"
 #define SNMP_FLAG_STATIC "static"
+#define SNMP_FLAG_SEMI_STATIC "semistatic"
 #define SNMP_FLAG_ABSENT "absent"
 #define SNMP_FLAG_NEGINVALID "positive"
 #define SNMP_FLAG_UNIQUE "unique"
