@@ -2132,6 +2132,15 @@ bool_t daisychain_init()
 		}
 
 		/* Sanity check before data publication */
+/* FIXME: Should this check be in place? Or is a single device able to grow
+ * with more chained devices on the fly (without driver re-init)? */
+/*
+ *		if (devices_count == 1) {
+ *			daisychain_enabled = FALSE;
+ *			upsdebugx(1, "Devices count is exactly 1, disabling daisychain support!");
+ *		}
+ */
+
 		if (devices_count < 1) {
 			devices_count = 1;
 			daisychain_enabled = FALSE;
