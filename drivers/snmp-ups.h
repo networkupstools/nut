@@ -127,6 +127,7 @@
 #define DEFAULT_POLLFREQ          30   /* in seconds */
 #define DEFAULT_NETSNMP_RETRIES   5
 #define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
+#define DEFAULT_SEMISTATICFREQ    10   /* in snmpwalk update cycles */
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -267,10 +268,14 @@ typedef struct {
 #define SU_TYPE_DAISY		((t)->flags & (7 << 19))
 #define SU_DAISY			(2 << 19) /* Daisychain template definition */
 
+#define SU_FLAG_SEMI_STATIC	(1 << 20) /* Refresh this entry once in several walks
+ * (for R/W values user can set on device, like descriptions or contacts) */
+
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
 #define SU_VAR_TIMEOUT		"snmp_timeout"
+#define SU_VAR_SEMISTATICFREQ	"semistaticfreq"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */
@@ -359,6 +364,7 @@ extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
+extern int semistaticfreq; /* semistatic entry update frequency */
 
 /* Common daisychain structure and functions */
 
