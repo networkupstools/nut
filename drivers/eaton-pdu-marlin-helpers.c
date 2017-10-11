@@ -49,8 +49,8 @@ long marlin_device_count_fun(const char *daisy_dev_list)
 			count ++;
 		}
 	}
-	if (i>0) {
-		/* Non-empty string => at least one device */
+	if (i>0 && (daisy_dev_list[i-1] != ',') ) {
+		/* Non-empty string => at least one device, and no trailing commas */
 		count ++;
 	}
 	return count;
