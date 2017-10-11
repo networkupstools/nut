@@ -182,23 +182,23 @@ static info_lkp_t marlin_input_type_info[] = {
 
 #if WITH_SNMP_LKP_FUN_DUMMY
 const char * marlin_outlet_group_phase_str = "L1";
-const char * marlin_outlet_group_phase_fun(int outlet_group_nb)
+const char * marlin_outlet_group_phase_fun(long outlet_group_nb)
 		{ return marlin_outlet_group_phase_str; }
-const char * marlin_outlet_group_phase_prefix_fun(int outlet_group_input_phase)
+const char * marlin_outlet_group_phase_prefix_fun(long outlet_group_input_phase)
 		{ return marlin_outlet_group_phase_str; }
-const int marlin_device_count_fun(const char *daisy_dev_list)
+long marlin_device_count_fun(const char *daisy_dev_list)
 		{ return 1; }
 #endif // WITH_SNMP_LKP_FUN_DUMMY
 
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 1, "dummy", marlin_outlet_group_phase_fun },
-	{ 2, "dummytwoo", marlin_outlet_group_phase_prefix_fun },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "dummy", marlin_outlet_group_phase_fun, NULL, NULL, NULL },
+	{ 2, "dummytwoo", marlin_outlet_group_phase_prefix_fun, NULL, NULL, NULL },
+	{ 0, NULL, NULL, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_device_count_info[] = {
-	{ 1, "dummy", marlin_device_count_fun },
-	{ 0, NULL, NULL, NULL }
+	{ 1, "dummy", NULL, NULL, marlin_device_count_fun, NULL },
+	{ 0, NULL, NULL, NULL, NULL, NULL }
 };
 
 #else // if not WITH_SNMP_LKP_FUN:
