@@ -45,7 +45,7 @@ static char marlin_scratch_buf[20];
  * (not outlet-section nor user-defined!), and for now, there
  * is a maximum of 6 gangs (electrical groups).
  */
-const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+const char *marlin_outlet_group_phase_fun(long outlet_group_nb)
 {
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
@@ -56,9 +56,9 @@ const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 		}
 		else { /* 3ph assumed, 2ph PDU don't exist - at least not in Eaton Marlin lineup! */
 			if (outlet_group_nb > 3)
-				snprintf(marlin_scratch_buf, 3, "L%i", (outlet_group_nb - 3)); /* FIXME: For more than 6 ports, maybe "nb % 3"? */
+				snprintf(marlin_scratch_buf, 3, "L%li", (outlet_group_nb - 3)); /* FIXME: For more than 6 ports, maybe "nb % 3"? */
 			else
-				snprintf(marlin_scratch_buf, 3, "L%i", outlet_group_nb);
+				snprintf(marlin_scratch_buf, 3, "L%li", outlet_group_nb);
 
 			return marlin_scratch_buf;
 		}
@@ -67,10 +67,10 @@ const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 }
 
 /* Take the value received from MIB, convert to string and add a prefix */
-const char *marlin_outlet_group_phase_prefix_fun(int outlet_group_input_phase)
+const char *marlin_outlet_group_phase_prefix_fun(long outlet_group_input_phase)
 {
 	if (outlet_group_input_phase >= 1 && outlet_group_input_phase <= 3) {
-		snprintf(marlin_scratch_buf, 3, "L%i", outlet_group_input_phase);
+		snprintf(marlin_scratch_buf, 3, "L%li", outlet_group_input_phase);
 		return marlin_scratch_buf;
 	}
 	return NULL;
@@ -78,9 +78,9 @@ const char *marlin_outlet_group_phase_prefix_fun(int outlet_group_input_phase)
 
 /* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
  * of "," separators+1 using an inline function */
-const int marlin_device_count_fun(const char *daisy_dev_list)
+long marlin_device_count_fun(const char *daisy_dev_list)
 {
-	int count = 0, i;
+	long count = 0, i;
 	for (i=0; daisy_dev_list[i] != '\0'; i++) {
 		if (daisy_dev_list[i] == ',') {
 			/* Each comma means a new device in the list */
