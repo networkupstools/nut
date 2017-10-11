@@ -1603,9 +1603,9 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 
 #if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
-	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
-		upsdebugx(2, "%s: using generic lookup function", __func__);
-		const char * retvalue = oid2info->fun(value);
+	if ( (oid2info != NULL) && (oid2info->fun_l2s != NULL) ) {
+		upsdebugx(2, "%s: using generic long-to-string lookup function", __func__);
+		const char * retvalue = oid2info->fun_l2s(value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2096,6 +2096,21 @@ bool_t daisychain_init()
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
 		{
+#if WITH_SNMP_LKP_FUN
+			devices_count = -1;
+			/* First test if we have a generic lookup function */
+			if ( (su_info_p->oid2info != NULL) && (su_info_p->oid2info->fun_s2l != NULL) ) {
+				char buf[1024];
+				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
+				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
+					devices_count = su_info_p->oid2info->fun_s2l(buf);
+					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+				}
+			}
+
+			if (devices_count == -1) {
+#endif // WITH_SNMP_LKP_FUN
+
 			if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
 				upsdebugx(1, "There are %ld device(s) present", devices_count);
 			else
@@ -2104,6 +2119,9 @@ bool_t daisychain_init()
 				upsdebugx(1, "Falling back to 1 device!");
 				devices_count = 1;
 			}
+#if WITH_SNMP_LKP_FUN
+			}
+#endif // WITH_SNMP_LKP_FUN
 		}
 		/* Otherwise (template), use the guesstimation function to get
 		 * the number of devices present */
