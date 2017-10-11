@@ -2841,10 +2841,9 @@ bool_t daisychain_init()
 			daisychain_enabled = FALSE;
 			upsdebugx(1, "Devices count is less than 1!");
 			upsdebugx(1, "Falling back to 1 device and disabling daisychain support!");
-		}
-
-		/* Publish the device(s) count */
-		if (devices_count > 1) {
+		} else {
+			/* Publish the device(s) count - even if just one
+			 * device was recognized at this moment */
 			dstate_setinfo("device.count", "%ld", devices_count);
 
 			/* Also publish the default value for mfr and a forged model
