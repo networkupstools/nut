@@ -726,16 +726,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
 		NULL, NULL },
 
-	/* Outlet physical name OID in new G3 firmware (02.00.0051)
-	 * is named outletDesignator (other MIBs outletPhysicalName)
-	 * and is a read-only string provided by firmware
-	 * outletDesignator.0.1 = Value (OctetString): "A1"
-	 * outletPhysicalName.0.16 = Value (OctetString): "A16"
-	 */
-	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.6.1.1.6.%i.%i",
-		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
-		NULL, NULL },
+	/* NOTE: For daisychain devices ATM the last listed value presented by
+	 * the SNMP device is kept by the driver - no SU_FLAG_UNIQUE here yet.
+	 * Verified that a non-implemented OID does not publish empty values. */
 	/* Fallback in firmwares issued before Sep 2017 is to use the
 	 * outletID: Outlet physical name, related to its number in the group
 	 * ex: first outlet of the second group (B) is B1, or can default to
@@ -744,6 +737,16 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.2.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
+		NULL, NULL },
+	/* Preferred: Outlet physical name OID in new G3 firmware (02.00.0051)
+	 * is named outletDesignator (other MIBs outletPhysicalName)
+	 * and is a read-only string provided by firmware
+	 * outletDesignator.0.1 = Value (OctetString): "A1"
+	 * outletPhysicalName.0.16 = Value (OctetString): "A16"
+	 */
+	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.6.6.7.6.1.1.6.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
 		NULL, NULL },
 
