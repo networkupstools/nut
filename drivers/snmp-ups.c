@@ -2147,24 +2147,15 @@ bool_t daisychain_init()
 		}
 
 		/* Sanity check before data publication */
-/* FIXME: Should this check be in place? Or is a single device able to grow
- * with more chained devices on the fly (without driver re-init)? */
-/*
- *		if (devices_count == 1) {
- *			daisychain_enabled = FALSE;
- *			upsdebugx(1, "Devices count is exactly 1, disabling daisychain support!");
- *		}
- */
 
 		if (devices_count < 1) {
 			devices_count = 1;
 			daisychain_enabled = FALSE;
 			upsdebugx(1, "Devices count is less than 1!");
 			upsdebugx(1, "Falling back to 1 device and disabling daisychain support!");
-		}
-
-		/* Publish the device(s) count */
-		if (devices_count > 1) {
+		} else {
+			/* Publish the device(s) count - even if just one
+			 * device was recognized at this moment */
 			dstate_setinfo("device.count", "%ld", devices_count);
 
 			/* Also publish the default value for mfr and a forged model
