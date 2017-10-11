@@ -173,8 +173,10 @@
 #define DMFTAG_INFO_LOOKUP "lookup_info"
 #define LOOKUP_OID "oid"
 #define LOOKUP_VALUE "value"
-#define LOOKUP_FUN "fun"
-#define LOOKUP_NUF "nuf"
+#define LOOKUP_FUN_L2S "fun_l2s"
+#define LOOKUP_NUF_S2L "nuf_s2l"
+#define LOOKUP_FUN_S2L "fun_s2l"
+#define LOOKUP_NUF_L2S "nuf_l2s"
 #define LOOKUP_FUNCTIONSET "functionset"
 
 #define DMFTAG_INFO_SNMP "snmp_info"
@@ -359,8 +361,10 @@ void
 info_lkp_t *
 	info_lkp_new (int oid, const char *value
 #if WITH_SNMP_LKP_FUN
-	, const char *(*fun)(int snmp_value)
-	, int (*nuf)(const char *nut_value)
+	, const char *(*fun_l2s)(long snmp_value)
+	, long (*nuf_s2l)(const char *nut_value)
+	, long (*fun_s2l)(const char *snmp_value)
+	, const char *(*nuf_l2s)(long nut_value)
 #endif // WITH_SNMP_LKP_FUN
 	);
 
