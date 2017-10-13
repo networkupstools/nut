@@ -616,48 +616,32 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
-	/* Input feeds need 2 static declarations with last %i in [1,2]:
+	/* Input feed: a feed (A or B) is tied to an input.
 	 * iterators are currently available for daisychain devs, outlets,
-	 * and groups - but not for inputs nor feeds. */
-	/* Feed ID to which the ePDU is connected
-	 * ??? // FIXME: Numeric value not provided by FW at this time
-	 */
+	 * and groups - but not for inputs. */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags */
 	/* { "input.feed.%i.id", 0, 1, "???.%i.%i", NULL, SU_FLAG_NEGINVALID, NULL }, */
 	/* Feed name(s) of the ePDU power input(s), can be set by user (FIXME: rename to .desc?)
 	 * inputFeedName.0.1 = Value (OctetString): Feed A
 	 */
 	/* FIXME: SU_FLAG_SEMI_STATIC or SU_FLAG_SETTING => refreshed from time to time or upon call to setvar */
-/*	{ "input.feed.%i.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+/*	{ "input.%i.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
  *		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.%i",
  *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
  */
-	{ "input.feed.1.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
+	{ "input.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.1",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
-	{ "input.feed.2.name", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.2",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
-	/* Feed A / B color (integer RGB)
+		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+	/* Feed color (integer RGB)
 	 * inputFeedColor.0.1 = Gauge32: 0   (black)
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
-/*	{ "input.feed.%i.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i",
- *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
+/*	{ "input.%i.feed.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.%i",
+ *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL},
  */
-	{ "input.feed.1.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.1",
+	{ "input.feed.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.1",
 		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
-	{ "input.feed.2.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.2",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL },
-	/* ePDU "nominal power", inputPowerCapacity with .1.3.6.1.4.1.534.6.6.7.3.4.1.9.x.1.y
-	 * using "input.power.nominal" (need RFC on NUT)
-	 * TODO: sample says of ...x.1.y and no %i in the key name...
-	 * TODO: is this daisy-chainable? Are there more values for multi-input
-	 *       devices? How to name it "right" then?
-	 * inputPowerCapacity.0.1 = INTEGER: -1
-	 * $ snmpwalk -O0n -v1 -c public EMAB33.localdomain .1.3.6.1.4.1.534.6.6.7.3.5.1.9
-	 * .1.3.6.1.4.1.534.6.6.7.3.5.1.9.0.1 = INTEGER: 2300
-	 */
+	/* inputPowerCapacity.0.1 = INTEGER: 2300 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "input.power.nominal", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.9.%i.1",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
