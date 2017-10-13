@@ -652,10 +652,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* ePDU "nominal power", inputPowerCapacity with .1.3.6.1.4.1.534.6.6.7.3.4.1.9.x.1.y
 	 * using "input.power.nominal" (need RFC on NUT)
 	 * TODO: sample says of ...x.1.y and no %i in the key name...
-	 * inputPowerCapacity = INTEGER: -1 // FIXME: Test on HW that provides it
+	 * TODO: is this daisy-chainable? Are there more values for multi-input
+	 *       devices? How to name it "right" then?
+	 * inputPowerCapacity.0.1 = INTEGER: -1
+	 * $ snmpwalk -O0n -v1 -c public EMAB33.localdomain .1.3.6.1.4.1.534.6.6.7.3.5.1.9
+	 * .1.3.6.1.4.1.534.6.6.7.3.5.1.9.0.1 = INTEGER: 2300
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
-	{ "input.power.nominal", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.9.%i.1.1", NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
+	{ "input.power.nominal", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.9.%i.1",
+		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
 	/* Ambient collection */
 	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE,
