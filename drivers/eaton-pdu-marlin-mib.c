@@ -342,16 +342,27 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 
 	/* Input collection */
+	/* Note: a larger ePDU can have several inputs. The "%i" iterators
+	 * in key names are currently available for daisychain devs, outlets,
+	 * and groups - but not for inputs. These would likely evolve later
+	 * to "input.%i.something" with default (non-%i) same as .1 instance.
+	 * At this time only a single-input (or first of several inputs) is
+	 * supported by this mapping.
+	 */
 	/* Historically, some of these data were previously published as
 	 * outlet.{realpower,...}
 	 * However, it's more suitable and logic to have these on input.{...}
 	 */
 	/* Note: the below gives the number of input, not the number of phase(s)! */
 	/* inputCount.0; Value (Integer): 1
-	{ "input.count", 0, 1,
+	{ "input.phases", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0",
-		NULL, SU_FLAG_STATIC, NULL }, */
-	/* Note: for daisychain mode, we must handle phase(s) per device, not as a whole */
+		NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases }, */
+	/* Note: for daisychain mode, we must handle phase(s) per device,
+	 * not as a whole. In case of daisychain, support of the UNIQUE
+	 * field is not yet implemented (FIXME) so the last resolved OID
+	 * value wins. If a more-preferable OID is not implemented by device,
+	 * this is ok - the previous available value remains in place. */
 	/* inputType.%i.1 = INTEGER: singlePhase (1) */
 	{ "input.phases", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1",
@@ -616,9 +627,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.3",
 		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL },
 
-	/* Input feed: a feed (A or B) is tied to an input.
-	 * iterators are currently available for daisychain devs, outlets,
-	 * and groups - but not for inputs. */
+	/* Input feed: a feed (A or B) is tied to an input, and this
+	 * sub-collection describes the properties of an actual cable.
+	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags */
 	/* { "input.feed.%i.id", 0, 1, "???.%i.%i", NULL, SU_FLAG_NEGINVALID, NULL }, */
 	/* Feed name(s) of the ePDU power input(s), can be set by user (FIXME: rename to .desc?)
