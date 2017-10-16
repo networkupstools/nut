@@ -3,8 +3,11 @@
  *  Based on NET-SNMP API (Simple Network Management Protocol V1-2)
  *
  *  Copyright (C)
- *   2002-2010  Arnaud Quette <arnaud.quette@free.fr>
- *   2002-2006	Dmitry Frolov <frolov@riss-telecom.ru>
+ *  2002 - 2010	Arnaud Quette <arnaud.quette@free.fr>
+ *  2015 - 2017	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *  2016 - 2017	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *  2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
+ *  2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *  			J.W. Hoogervorst <jeroen@hoogervorst.net>
  *  			Niels Baggesen <niels@baggesen.net>
  *
@@ -27,7 +30,6 @@
  */
 
 /* TODO list:
-- add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
 - optimize network flow by:
@@ -125,6 +127,7 @@
 #define DEFAULT_POLLFREQ          30   /* in seconds */
 #define DEFAULT_NETSNMP_RETRIES   5
 #define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
+#define DEFAULT_SEMISTATICFREQ    10   /* in snmpwalk update cycles */
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -143,10 +146,35 @@ typedef int bool_t;
 
 /* typedef void (*interpreter)(char *, char *, int); */
 
+#ifndef WITH_SNMP_LKP_FUN
+/* Recent addition of fun/nuf hooks in info_lkp_t is not well handled by
+ * all corners of the codebase, e.g. not by DMF. So at least until that
+ * is fixed, (TODO) we enable those bits of code only optionally during
+ * a build for particular usage. Conversely, experimenters can define
+ * this macro to a specific value while building the codebase and see
+ * what happens under different conditions ;)
+ */
+# if WITH_DMFMIB
+#  define WITH_SNMP_LKP_FUN 0
+# else
+#  define WITH_SNMP_LKP_FUN 1
+# endif
+#endif
+
 /* for lookup between OID values and INFO_ value */
 typedef struct {
-	int oid_value;			/* OID value */
-	const char *info_value;	/* INFO_* value */
+	int oid_value;                      /* SNMP OID value */
+	const char *info_value;             /* NUT INFO_* value */
+#if WITH_SNMP_LKP_FUN
+/* FIXME: Currently we do not have a way to provide custom C code
+ * via DMF - keep old approach until we get the ability, e.g. by
+ * requiring a LUA implementation to be passed alongside C lookups.
+ */
+	const char *(*fun_l2s)(long snmp_value);  /* optional SNMP to NUT mapping function */
+	long (*nuf_s2l)(const char *nut_value);   /* optional NUT to SNMP mapping function */
+	long (*fun_s2l)(const char *snmp_value);  /* optional SNMP to NUT mapping function */
+	const char *(*nuf_l2s)(long nut_value);   /* optional NUT to SNMP mapping function */
+#endif
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
@@ -240,10 +268,14 @@ typedef struct {
 #define SU_TYPE_DAISY		((t)->flags & (7 << 19))
 #define SU_DAISY			(2 << 19) /* Daisychain template definition */
 
+#define SU_FLAG_SEMI_STATIC	(1 << 20) /* Refresh this entry once in several walks
+ * (for R/W values user can set on device, like descriptions or contacts) */
+
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
 #define SU_VAR_RETRIES		"snmp_retries"
 #define SU_VAR_TIMEOUT		"snmp_timeout"
+#define SU_VAR_SEMISTATICFREQ	"semistaticfreq"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */
@@ -332,6 +364,7 @@ extern struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
+extern int semistaticfreq; /* semistatic entry update frequency */
 
 /* Common daisychain structure and functions */
 

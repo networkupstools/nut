@@ -5,6 +5,9 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/class/python-module.mk
 
 include /usr/share/cdbs/1/rules/autoreconf.mk
+
+export DH_OPTIONS
+
 # We cannot call autoreconf -f -i as it updates INSTALL which is used for doc
 # generation
 DEB_DH_AUTORECONF_ARGS = --as-needed
@@ -146,3 +149,6 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
 # for Ubuntu
 # DEB_DH_GENCONTROL_ARGS := -- -Vudev="udev (>= 136-1)"
 endif
+
+all check dist distcheck install:
+	dh $@ --parallel

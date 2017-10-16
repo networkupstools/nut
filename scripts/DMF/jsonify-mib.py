@@ -6,6 +6,7 @@
 # by anyone interested.
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
+#    Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 from __future__ import print_function
@@ -37,9 +38,13 @@ def warn (msg):
 def info (msg):
     print ("I: %s" % msg, file=sys.stderr)
 
+def debug (msg):
+    if os.environ.get("DEBUG") == "yes":
+        print ("D: %s" % msg, file=sys.stderr)
+
 def f2f(node):
     """convert c_ast node flags to list of numbers
-    (1, 2, 4, 8) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE
+    (1, 2, 4, 8, 1048576) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE | SU_FLAG_SEMI_STATIC
     """
     if  isinstance (node, c_ast.BinaryOp) and \
         node.op == "<<":
@@ -51,6 +56,15 @@ def f2f(node):
         r.extend (f2f (node.left))
         r.extend (f2f (node.right))
     return r
+
+def widen_tuples(iter, width, default=None):
+    for item in iter:
+        if len(item) < width:
+            item = list(item)
+            while len(item) < width:
+                item.append(default)
+            item = tuple(item)
+        yield item
 
 class Visitor(c_ast.NodeVisitor):
 
@@ -158,6 +172,9 @@ class Visitor(c_ast.NodeVisitor):
         return tuple (ret)
 
     def _visit_info_lkp_t (self, node):
+        # Depending on version of NUT and presence of WITH_SNMP_LKP_FUN macro,
+        # the source code structure can have 2 fields (oid, value) or 6 fields
+        # adding (fun_l2s, nuf_s2l, fun_s2l, nuf_l2s) pointers to lookup processing functions.
         ret = []
         for _, ilist in node.init.children ():
             key_node = ilist.exprs [0]
@@ -166,18 +183,70 @@ class Visitor(c_ast.NodeVisitor):
             else:
                 key = int (key_node.value)
 
-            # array ends with {0, NULL}
+            # array ends with {0, NULL} or {0, NULL, NULL, NULL}
             if isinstance (ilist.exprs [1], c_ast.Cast):
                 continue
 
             # in some pycparser versions this check for {0, NULL} works instead
             if ( key == 0 ):
                 if ( ilist.exprs [1].value.strip ('"') == "0" ):
+                    # No quoted string for value
                     continue
                 elif ( ilist.exprs [1] == "0" ):
+                    # Numeric null pointer for value
                     continue
 
-            ret.append ((key, ilist.exprs [1].value.strip ('"')))
+            # See https://stackoverflow.com/questions/21728808/extracting-input-parameters-and-its-identifier-type-while-parsing-a-c-file-using
+            # for a bigger example of function introspection
+            try:
+                fun_l2s = ilist.exprs [2]
+                if fun_l2s is not None:
+                    debug("fun_l2s : %s" % (fun_l2s))
+                    debug("fun_l2s.name : %s" % (fun_l2s.name))
+                    if fun_l2s.name is None:
+                        fun_l2s = '"' + fun_l2s + '"'
+                    else:
+                        fun_l2s = str(fun_l2s.name)
+            except IndexError:
+                fun_l2s = None
+
+            try:
+                nuf_s2l = ilist.exprs [3]
+                if nuf_s2l is not None:
+                    debug("nuf_s2l : %s" % (nuf_s2l))
+                    debug("nuf_s2l.name : %s" % (nuf_s2l.name))
+                    if nuf_s2l.name is None:
+                        nuf_s2l = '"' + nuf_s2l + '"'
+                    else:
+                        nuf_s2l = str(nuf_s2l.name)
+            except IndexError:
+                nuf_s2l = None
+
+            try:
+                fun_s2l = ilist.exprs [4]
+                if fun_s2l is not None:
+                    debug("fun_s2l : %s" % (fun_s2l))
+                    debug("fun_s2l.name : %s" % (fun_s2l.name))
+                    if fun_s2l.name is None:
+                        fun_s2l = '"' + fun_s2l + '"'
+                    else:
+                        fun_s2l = str(fun_s2l.name)
+            except IndexError:
+                fun_s2l = None
+
+            try:
+                nuf_l2s = ilist.exprs [5]
+                if nuf_l2s is not None:
+                    debug("nuf_l2s : %s" % (nuf_l2s))
+                    debug("nuf_l2s.name : %s" % (nuf_l2s.name))
+                    if nuf_l2s.name is None:
+                        nuf_l2s = '"' + nuf_l2s + '"'
+                    else:
+                        nuf_l2s = str(nuf_l2s.name)
+            except IndexError:
+                nuf_l2s = None
+
+            ret.append ((key, ilist.exprs [1].value.strip ('"'), fun_l2s, nuf_s2l, fun_s2l, nuf_l2s))
         return ret
 
     def _visit_mib2nut_info_t (self, node):
@@ -270,9 +339,32 @@ def s_cpp_path ():
 def s_info2c (fout, jsinfo):
     for key in jsinfo.keys ():
         print ("\nstatic info_lkp_t %s_TEST[] = {" % key, file=fout)
-        for key, value in jsinfo [key]:
-            print ("    { %d, \"%s\" }," % (key, value), file=fout)
-        print ("    { 0, NULL }\n};\n", file=fout)
+        gotfun = 0
+        for key, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s in widen_tuples(jsinfo [key],6):
+            if nuf_l2s is None:
+                if fun_s2l is None:
+                    if nuf_s2l is None:
+                        if fun_l2s is None:
+                            # No NULLs in the end, because depending on macro value
+                            # WITH_SNMP_LKP_FUN info_lkp_t can have more or less fields
+                            print ("    { %d, \"%s\" }," % (key, value), file=fout)
+                        else:
+                            # No quotation for fun/nuf names!
+                            print ("    { %d, \"%s\", %s }," % (key, value, fun_l2s), file=fout)
+                            gotfun = 1
+                    else:
+                            print ("    { %d, \"%s\", %s, %s }," % (key, value, fun_l2s, nuf_s2l), file=fout)
+                            gotfun = 1
+                else:
+                            print ("    { %d, \"%s\", %s, %s, %s }," % (key, value, fun_l2s, nuf_s2l, fun_s2l), file=fout)
+                            gotfun = 1
+            else:
+                print ("    { %d, \"%s\", %s, %s, %s, %s }," % (key, value, fun_l2s, nuf_s2l, fun_s2l, nuf_l2s), file=fout)
+                gotfun = 1
+        if gotfun == 0:
+            print ("    { 0, NULL }\n};\n", file=fout)
+        else:
+            print ("    { 0, NULL, NULL, NULL, NULL, NULL }\n};\n", file=fout)
 
 def s_snmp2c (fout, js, name):
     print ("\nstatic snmp_info_t %s_TEST[] = {" % name, file=fout)
@@ -336,6 +428,9 @@ int input_phases, output_phases, bypass_phases;
 #undef PACKAGE_BUGREPORT
 #endif
 #include "%s.c"
+
+// Replicate what drivers/main.c exports
+int do_synchronous = 0;
 
 static inline bool streq (const char* x, const char* y)
 {
@@ -495,7 +590,12 @@ if args.test:
     except KeyError:
         gcc_cflags = []
 
-    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file]
+    try:
+        gcc_ldflags = os.environ["LDFLAGS"].split()
+    except KeyError:
+        gcc_ldflags = []
+
+    cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file] + gcc_ldflags
     info ("COMPILE: " + " ".join (cmd))
     try:
         subprocess.check_call (cmd)

@@ -176,31 +176,16 @@ SRC_DEV_PAGES = \
 
 if WITH_MANS
 # NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
-MAN3_DEV_PAGES = \
-	upsclient.3 \
-	upscli_add_host_cert.3 \
-	upscli_cleanup.3 \
-	upscli_connect.3 \
-	upscli_disconnect.3 \
-	upscli_fd.3 \
-	upscli_get.3 \
-	upscli_init.3 \
-	upscli_list_next.3 \
-	upscli_list_start.3 \
-	upscli_readline.3 \
-	upscli_sendline.3 \
-	upscli_splitaddr.3 \
-	upscli_splitname.3 \
-	upscli_ssl.3 \
-	upscli_strerror.3 \
-	upscli_upserror.3 \
+MAN3_DEV_PAGES_libnutclient = \
 	libnutclient.3 \
 	libnutclient_commands.3 \
 	libnutclient_devices.3 \
 	libnutclient_general.3 \
 	libnutclient_misc.3 \
 	libnutclient_tcp.3 \
-	libnutclient_variables.3 \
+	libnutclient_variables.3
+
+MAN3_DEV_PAGES_nutclient = \
 	nutclient_authenticate.3 \
 	nutclient_destroy.3 \
 	nutclient_device_forced_shutdown.3 \
@@ -227,7 +212,28 @@ MAN3_DEV_PAGES = \
 	nutclient_tcp_get_timeout.3 \
 	nutclient_tcp_is_connected.3 \
 	nutclient_tcp_reconnect.3 \
-	nutclient_tcp_set_timeout.3 \
+	nutclient_tcp_set_timeout.3
+
+MAN3_DEV_PAGES = \
+	upsclient.3 \
+	upscli_add_host_cert.3 \
+	upscli_cleanup.3 \
+	upscli_connect.3 \
+	upscli_disconnect.3 \
+	upscli_fd.3 \
+	upscli_get.3 \
+	upscli_init.3 \
+	upscli_list_next.3 \
+	upscli_list_start.3 \
+	upscli_readline.3 \
+	upscli_sendline.3 \
+	upscli_splitaddr.3 \
+	upscli_splitname.3 \
+	upscli_ssl.3 \
+	upscli_strerror.3 \
+	upscli_upserror.3 \
+	$(MAN3_DEV_PAGES_libnutclient) \
+	$(MAN3_DEV_PAGES_nutclient) \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
@@ -245,6 +251,8 @@ MAN3_DEV_PAGES = \
 	nutscan_add_device_to_device.3 \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
+
+$(MAN3_DEV_PAGES_nutclient): $(MAN3_DEV_PAGES_libnutclient)
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1

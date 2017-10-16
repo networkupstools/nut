@@ -383,6 +383,12 @@ NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
+if test "${nut_have_neon}" = "yes" ; then
+    myCFLAGS="$CFLAGS `xml2-config --cflags`" || myCFLAGS="$CFLAGS -I/usr/include/libxml2"
+    CFLAGS="$myCFLAGS"
+    AC_CHECK_HEADERS(libxml/encoding.h libxml/parser.h, [], [], [AC_INCLUDES_DEFAULT])
+fi
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
 
@@ -1781,8 +1787,9 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 	can_generate_dmf_snmp=no
 	CURDIR="$(pwd)" && \
 	if test "${nut_with_dmf}" = "yes"; then
-	{	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
+	(	OUTDIR="$(mktemp -d configure-test.dmfify.$$.XXXXXXX)" && \
 		test -d "$OUTDIR" && OUTDIR="$(cd "${OUTDIR}" && pwd)" && \
+		trap "cd '${CURDIR}' && rm -rf '${OUTDIR}'" 0 1 2 3 15 && \
 		if test -z "${srcdir}" -o "${srcdir}" = . ; then SRCDIR="${CURDIR}"; else SRCDIR="$(cd "${srcdir}" && pwd)"; fi && \
 		DMFDIR="$(cd "${SRCDIR}/scripts/DMF" && pwd)" && \
 		{	cd "${DMFDIR}" && \
@@ -1802,8 +1809,8 @@ if test "${want_regenerate_dmf_snmp}" != no ; then
 				|| { can_generate_dmf_snmp="no: ERROR: Failed nut_cpp parse of a test C to DMF for '$F'"; false ; break; } \
 			  done ; } ; \
 		}
-		RES=$?; rm -rf "$OUTDIR"; test "${RES}" = 0
-	} >&5 2>&5 \
+		RES=$?; cd "${CURDIR}"; rm -rf "${OUTDIR}"; test "${RES}" = 0
+	) >&5 2>&5 \
 	&& can_generate_dmf_snmp=yes
 	fi
 	if test -n "${CURDIR}" ; then cd "${CURDIR}" ; fi

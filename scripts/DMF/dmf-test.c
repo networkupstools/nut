@@ -27,10 +27,16 @@
 #include <dirent.h>
 #include <assert.h>
 
+/* For experiments in development of DMF+lookup function support,
+ * uncomment this line; for currently stable codebase keep it off...
+ */
+//#define WITH_SNMP_LKP_FUN 1
+
 #include "dmf.h"
 
 /* The test involves generation of DMF and comparison to existing data.
-   As a random pick, we use eaton-mib.c "as is" (with structures).
+   As a random pick, we use eaton-pdu-marlin-mib.c "as is" (with structures
+   and referenced conversion/lookup functions, if enabled by macros).
    This causes macro-redefinition conflict (and -Werror dies on it) -
    so we undefine a few macros...
 */
@@ -39,7 +45,10 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_BUGREPORT
-#include "eaton-mib.c"
+#include "eaton-pdu-marlin-mib.c"
+
+// Replicate what drivers/main.c exports
+int do_synchronous = 0;
 
 int
 main ()
@@ -54,10 +63,10 @@ main ()
 	}
 
 #ifdef DEFAULT_DMFSNMP_DIR_OVERRIDE
-#ifdef DEFAULT_DMFSNMP_DIR
-#undef DEFAULT_DMFSNMP_DIR
-#endif
-#define DEFAULT_DMFSNMP_DIR DEFAULT_DMFSNMP_DIR_OVERRIDE
+# ifdef DEFAULT_DMFSNMP_DIR
+#  undef DEFAULT_DMFSNMP_DIR
+# endif
+# define DEFAULT_DMFSNMP_DIR DEFAULT_DMFSNMP_DIR_OVERRIDE
 #endif
 
 #ifdef DEFAULT_DMFSNMP_DIR
@@ -135,7 +144,7 @@ main ()
 		printf("=== DMF-Test: Freeing data...\n\n");
 		mibdmf_parser_destroy(&dmp);
 
-		printf("=== DMF-Test: All done\n\n");
+		printf("=== DMF-Test: All done (code %d)\n\n", result);
 		return result;
 	}
 
