@@ -194,15 +194,27 @@ static info_lkp_t marlin_input_type_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-#if WITH_SNMP_LKP_FUN
-/* Note: marlin_outlet_group_phase_fun() is defined in eaton-pdu-marlin-helpers.c
- * Future work for DMF might provide a same-named routine via LUA-C gateway.
- */
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 1, "dummy", marlin_outlet_group_phase_fun, NULL },
-	{ 2, "dummytwoo", marlin_outlet_group_phase_prefix_fun, NULL },
+	{ 0, "unknown", NULL, NULL }, /* unknown     */
+	{ 1, "1", NULL, NULL },       /* singlePhase */
+	{ 2, "1-N", NULL, NULL },     /* phase1toN   */
+	{ 3, "2-N", NULL, NULL },     /* phase2toN   */
+	{ 4, "3-N", NULL, NULL },     /* phase3toN   */
+	{ 5, "1-2", NULL, NULL },     /* phase1to2   */
+	{ 6, "2-3", NULL, NULL },     /* phase2to3   */
+	{ 7, "3-1", NULL, NULL },     /* phase3to1   */
 	{ 0, NULL, NULL, NULL }
 };
+
+#if WITH_SNMP_LKP_FUN
+/* Note: marlin_device_count_fun() is defined in eaton-pdu-marlin-helpers.c
+ * Future work for DMF might provide a same-named routine via LUA-C gateway.
+ */
+
+# if WITH_SNMP_LKP_FUN_DUMMY
+long marlin_device_count_fun(const char *daisy_dev_list)
+		{ return 1; }
+# endif /* WITH_SNMP_LKP_FUN_DUMMY */
 
 static info_lkp_t marlin_device_count_info[] = {
 	{ 1, "dummy", NULL, marlin_device_count_fun },
@@ -214,34 +226,6 @@ static info_lkp_t marlin_device_count_info[] = {
 /* FIXME: For now, DMF codebase falls back to old implementation with static
  * lookup/mapping tables for this, which can easily go into the DMF XML file.
  */
-
-/* Ugly trick which limits input phase to electrical groups */
-static info_lkp_t marlin_outlet_group_phase1_info[] = {
-	/* { 0, NULL },  unknown      */
-	{ 1, "L1" },  /* breaker1pole */
-	{ 2, "L1" },  /* breaker2pole */
-	{ 3, "L1" },  /* breaker3pole */
-	/* { 4, NULL },  outlet-section */
-	/* { 5, NULL },  user-defined */
-	{ 0, NULL }
-};
-static info_lkp_t marlin_outlet_group_phase2_info[] = {
-	/* { 0, NULL },  unknown      */
-	{ 1, "L2" },  /* breaker1pole */
-	{ 2, "L2" },  /* breaker2pole */
-	{ 3, "L2" },  /* breaker3pole */
-	/* { 4, NULL },  outlet-section */
-	/* { 5, NULL },  user-defined */
-	{ 0, NULL }
-};
-static info_lkp_t marlin_outlet_group_phase3_info[] = {
-	/* { 0, NULL },  unknown      */
-	{ 1, "L3" },  /* breaker1pole */
-	{ 2, "L3" },  /* breaker2pole */
-	{ 3, "L3" },  /* breaker3pole */
-	/* { 4, NULL },  outlet-section */
-	/* { 5, NULL },  user-defined */
-};
 
 #endif /* WITH_SNMP_LKP_FUN */
 
@@ -906,48 +890,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
 		&marlin_outlet_group_type_info[0], NULL },
-#if WITH_SNMP_LKP_FUN
-	/* Phase to which an outlet-group is connected
-	 * (Caution: the value is numeric, and need to append "L" -- TODO)
-	 * groupPhaseID:  // FIXME-Check on real device
+	/* Phase to which an outlet-group is connected:
+	 * We use the following OID, which gives the voltage measurement type
+	 * groupVoltageMeasType.0.1; Value (Integer): singlePhase  (1)
 	 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream ; check type (number? string?) and flags (daisy?) */
 	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.10.%i.%i",
+		".1.3.6.1.4.1.534.6.6.7.5.3.1.2.%i.%i",
 		NULL, SU_FLAG_UNIQUE | SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
 		&marlin_outlet_group_phase_info[1], NULL },
-	{ "outlet.group.%i.phase", 0, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i",
-		NULL, SU_FLAG_UNIQUE | SU_FLAG_STATIC | SU_OUTLET_GROUP | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase_info[0], NULL },
-#else /* not WITH_SNMP_LKP_FUN */
-	/* ugly trick which limits input phase to electrical groups only (not outlet-section nor user-defined!)
-	 * For now, there is a maximum of 6 gangs (electrical groups) */
-	{ "outlet.group.1.phase", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.1",
-		NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase1_info[0], NULL },
-	{ "outlet.group.2.phase", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.2",
-		NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase2_info[0], NULL },
-	{ "outlet.group.3.phase", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.3",
-		NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase3_info[0], NULL },
-	{ "outlet.group.4.phase", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.4",
-		NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase1_info[0], NULL },
-	{ "outlet.group.5.phase", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.5",
-		NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase2_info[0], NULL },
-	{ "outlet.group.6.phase", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.6",
-		NULL, SU_FLAG_STATIC | SU_TYPE_DAISY_1,
-		&marlin_outlet_group_phase3_info[0], NULL },
-#endif // WITH_SNMP_LKP_FUN
 	/* groupControlStatus.0.1 = Integer: on  (1) */
 	{ "outlet.group.%i.status", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.5.6.1.2.%i.%i",
