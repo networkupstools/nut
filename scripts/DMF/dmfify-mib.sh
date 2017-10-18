@@ -34,6 +34,16 @@ esac
 [ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
 export CC
 
+[ -n "${CPP-}" ] || CPP="`which cpp`"
+[ -n "${CPP-}" ] && \
+case "$CPP" in
+    /*) ;;
+    *) # No support for CLI args as part of "$CPP" right now
+        CPP="`which "$CPP"`" ;;
+esac
+[ -n "${CPP}" ] && [ -x "$CPP" ] || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
+export CPP
+
 if [ "$1" == "--skip-sanity-check" ]; then
     shift 1
 else
@@ -45,6 +55,9 @@ else
         "${PYTHON}" -c "import $PYMOD; print $PYMOD" || \
             { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
     done
+
+    "$CPP" --help > /dev/null || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
+    "$CC" --help > /dev/null || { echo "ERROR: Can not find a C compiler: '$CC'" >&2; exit 2; }
 
     if [ "$1" = "--sanity-check" ]; then
         # We are alive by now, so checks above have succeeded
