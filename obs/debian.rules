@@ -8,6 +8,10 @@ include /usr/share/cdbs/1/rules/autoreconf.mk
 
 export DH_OPTIONS
 
+# This is the debhelper compatibility version to use.
+# JIM: 10+ enables parallel builds by default
+export DH_COMPAT=10
+
 # We cannot call autoreconf -f -i as it updates INSTALL which is used for doc
 # generation
 DEB_DH_AUTORECONF_ARGS = --as-needed
