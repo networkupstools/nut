@@ -176,15 +176,51 @@ static info_lkp_t marlin_input_type_info[] = {
 };
 
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 0, "unknown", NULL, NULL, NULL, NULL }, /* unknown     */
-	{ 1, "1", NULL, NULL, NULL, NULL },       /* singlePhase */
-	{ 2, "1-N", NULL, NULL, NULL, NULL },     /* phase1toN   */
-	{ 3, "2-N", NULL, NULL, NULL, NULL },     /* phase2toN   */
-	{ 4, "3-N", NULL, NULL, NULL, NULL },     /* phase3toN   */
-	{ 5, "1-2", NULL, NULL, NULL, NULL },     /* phase1to2   */
-	{ 6, "2-3", NULL, NULL, NULL, NULL },     /* phase2to3   */
-	{ 7, "3-1", NULL, NULL, NULL, NULL },     /* phase3to1   */
-	{ 0, NULL, NULL, NULL, NULL, NULL }
+	{ 0, "unknown"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		}, /* unknown     */
+	{ 1, "1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},       /* singlePhase */
+	{ 2, "1-N"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},     /* phase1toN   */
+	{ 3, "2-N"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},     /* phase2toN   */
+	{ 4, "3-N"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},     /* phase3toN   */
+	{ 5, "1-2"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},     /* phase1to2   */
+	{ 6, "2-3"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},     /* phase2to3   */
+	{ 7, "3-1"
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		},     /* phase3to1   */
+	{ 0, NULL
+#if WITH_SNMP_LKP_FUN
+		, NULL, NULL, NULL, NULL
+#endif
+		}
 };
 
 #if WITH_SNMP_LKP_FUN
