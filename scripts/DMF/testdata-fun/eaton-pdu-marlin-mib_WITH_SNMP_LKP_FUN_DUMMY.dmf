@@ -86,7 +86,14 @@
 		<lookup_info oid="0" value="yes"/>
 	</lookup>
 	<lookup name="marlin_outlet_group_phase_info">
-		<lookup_info fun="marlin_outlet_group_phase_fun" functionset="lkp_func__marlin_outlet_group_phase_info" oid="1" value="dummy"/>
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="1" value="1"/>
+		<lookup_info oid="2" value="1-N"/>
+		<lookup_info oid="3" value="2-N"/>
+		<lookup_info oid="4" value="3-N"/>
+		<lookup_info oid="5" value="1-1"/>
+		<lookup_info oid="6" value="2-3"/>
+		<lookup_info oid="7" value="3-1"/>
 	</lookup>
 	<lookup name="marlin_threshold_humidity_alarms_info">
 		<lookup_info oid="0" value=""/>
