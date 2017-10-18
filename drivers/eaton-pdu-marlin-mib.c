@@ -176,15 +176,15 @@ static info_lkp_t marlin_input_type_info[] = {
 };
 
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 0, "unknown", NULL, NULL, NULL, NULL }, /* unknown     */
-	{ 1, "1", NULL, NULL, NULL, NULL },       /* singlePhase */
-	{ 2, "1-N", NULL, NULL, NULL, NULL },     /* phase1toN   */
-	{ 3, "2-N", NULL, NULL, NULL, NULL },     /* phase2toN   */
-	{ 4, "3-N", NULL, NULL, NULL, NULL },     /* phase3toN   */
-	{ 5, "1-2", NULL, NULL, NULL, NULL },     /* phase1to2   */
-	{ 6, "2-3", NULL, NULL, NULL, NULL },     /* phase2to3   */
-	{ 7, "3-1", NULL, NULL, NULL, NULL },     /* phase3to1   */
-	{ 0, NULL, NULL, NULL, NULL, NULL }
+	{ 0, "unknown" }, /* unknown     */
+	{ 1, "1" },       /* singlePhase */
+	{ 2, "1-N" },     /* phase1toN   */
+	{ 3, "2-N" },     /* phase2toN   */
+	{ 4, "3-N" },     /* phase3toN   */
+	{ 5, "1-2" },     /* phase1to2   */
+	{ 6, "2-3" },     /* phase2to3   */
+	{ 7, "3-1" },     /* phase3to1   */
+	{ 0, NULL }
 };
 
 #if WITH_SNMP_LKP_FUN
