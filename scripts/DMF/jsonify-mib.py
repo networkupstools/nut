@@ -202,48 +202,52 @@ class Visitor(c_ast.NodeVisitor):
                 fun_l2s = ilist.exprs [2]
                 if fun_l2s is not None:
                     debug("fun_l2s : %s" % (fun_l2s))
-                    debug("fun_l2s.name : %s" % (fun_l2s.name))
                     if fun_l2s.name is None:
+                        debug("fun_l2s.name : None")
                         fun_l2s = '"' + fun_l2s + '"'
                     else:
+                        debug("fun_l2s.name : %s" % (fun_l2s.name))
                         fun_l2s = str(fun_l2s.name)
-            except IndexError:
+            except (IndexError, NameError, AttributeError):
                 fun_l2s = None
 
             try:
                 nuf_s2l = ilist.exprs [3]
                 if nuf_s2l is not None:
                     debug("nuf_s2l : %s" % (nuf_s2l))
-                    debug("nuf_s2l.name : %s" % (nuf_s2l.name))
                     if nuf_s2l.name is None:
+                        debug("nuf_s2l.name : None")
                         nuf_s2l = '"' + nuf_s2l + '"'
                     else:
+                        debug("nuf_s2l.name : %s" % (nuf_s2l.name))
                         nuf_s2l = str(nuf_s2l.name)
-            except IndexError:
+            except (IndexError, NameError, AttributeError):
                 nuf_s2l = None
 
             try:
                 fun_s2l = ilist.exprs [4]
                 if fun_s2l is not None:
                     debug("fun_s2l : %s" % (fun_s2l))
-                    debug("fun_s2l.name : %s" % (fun_s2l.name))
                     if fun_s2l.name is None:
+                        debug("fun_s2l.name : None")
                         fun_s2l = '"' + fun_s2l + '"'
                     else:
+                        debug("fun_s2l.name : %s" % (fun_s2l.name))
                         fun_s2l = str(fun_s2l.name)
-            except IndexError:
+            except (IndexError, NameError, AttributeError):
                 fun_s2l = None
 
             try:
                 nuf_l2s = ilist.exprs [5]
                 if nuf_l2s is not None:
                     debug("nuf_l2s : %s" % (nuf_l2s))
-                    debug("nuf_l2s.name : %s" % (nuf_l2s.name))
                     if nuf_l2s.name is None:
+                        debug("nuf_l2s.name : None")
                         nuf_l2s = '"' + nuf_l2s + '"'
                     else:
+                        debug("nuf_l2s.name : %s" % (nuf_l2s.name))
                         nuf_l2s = str(nuf_l2s.name)
-            except IndexError:
+            except (IndexError, NameError, AttributeError):
                 nuf_l2s = None
 
             ret.append ((key, ilist.exprs [1].value.strip ('"'), fun_l2s, nuf_s2l, fun_s2l, nuf_l2s))

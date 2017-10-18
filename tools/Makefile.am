@@ -25,10 +25,11 @@ all: nut-scanner-deps
 # always be rebuilt!  None of that is ever the right way to use make,
 # and especially not Automake.  Explicit filenames and their exact
 # dependencies need to be properly listed.
-nut-scanner-deps:
+nut-scanner-deps: nut-scanner-deps-snmpinfo nut-scanner-deps-usb
+
+nut-scanner-deps-snmpinfo:
 	@if python -c 1; then \
-		echo "Regenerating the SNMP helper files."; \
-		$(top_srcdir)/tools/nut-snmpinfo.py; \
+		$(MAKE) $(top_builddir)/tools/nut-scanner/nutscan-snmp.c; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
@@ -36,15 +37,23 @@ nut-scanner-deps:
 		echo "----------------------------------------------------------------------"; \
 	fi
 
+$(top_builddir)/tools/nut-scanner/nutscan-snmp.c: $(top_srcdir)/drivers/*-mib.c
+	@echo "Regenerating the SNMP helper files."; \
+		$(top_srcdir)/tools/nut-snmpinfo.py
+
+nut-scanner-deps-usb:
 	@if perl -e 1; then \
-		echo "Regenerating the USB helper files."; \
-		$(top_srcdir)/tools/nut-usbinfo.pl; \
+		$(MAKE) $(top_builddir)/tools/nut-scanner/nutscan-usb.h; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
 		echo "Skipping the USB helper files regeneration."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
+
+$(top_builddir)/tools/nut-scanner/nutscan-usb.h: $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c $(top_srcdir)/drivers/nutdrv_qx.c
+	@echo "Regenerating the USB helper files."; \
+		$(top_srcdir)/tools/nut-usbinfo.pl
 
 # call the USB info script upon "make dist", and if Perl is present
 # call the SNMP info script upon "make dist", and if Python is present
