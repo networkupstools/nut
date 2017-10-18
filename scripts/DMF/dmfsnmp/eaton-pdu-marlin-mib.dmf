@@ -1,15 +1,5 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
-	<lookup name="marlin_outlet_group_phase_info">
-		<lookup_info oid="0" value="unknown"/>
-		<lookup_info oid="1" value="1"/>
-		<lookup_info oid="2" value="1-N"/>
-		<lookup_info oid="3" value="2-N"/>
-		<lookup_info oid="4" value="3-N"/>
-		<lookup_info oid="5" value="1-1"/>
-		<lookup_info oid="6" value="2-3"/>
-		<lookup_info oid="7" value="3-1"/>
-	</lookup>
 	<lookup name="marlin_threshold_voltage_alarms_info">
 		<lookup_info oid="0" value=""/>
 		<lookup_info oid="1" value="low voltage warning!"/>
@@ -85,15 +75,25 @@
 		<lookup_info oid="3" value="warning-high"/>
 		<lookup_info oid="4" value="critical-high"/>
 	</lookup>
-	<lookup name="marlin_outlet_switchability_info">
-		<lookup_info oid="-1" value="yes"/>
-		<lookup_info oid="0" value="yes"/>
-	</lookup>
 	<lookup name="marlin_outletgroups_status_info">
 		<lookup_info oid="0" value="off"/>
 		<lookup_info oid="1" value="on"/>
 		<lookup_info oid="2" value="rebooting"/>
 		<lookup_info oid="3" value="mixed"/>
+	</lookup>
+	<lookup name="marlin_outlet_switchability_info">
+		<lookup_info oid="-1" value="yes"/>
+		<lookup_info oid="0" value="yes"/>
+	</lookup>
+	<lookup name="marlin_outlet_group_phase_info">
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="1" value="1"/>
+		<lookup_info oid="2" value="1-N"/>
+		<lookup_info oid="3" value="2-N"/>
+		<lookup_info oid="4" value="3-N"/>
+		<lookup_info oid="5" value="1-2"/>
+		<lookup_info oid="6" value="2-3"/>
+		<lookup_info oid="7" value="3-1"/>
 	</lookup>
 	<lookup name="marlin_threshold_humidity_alarms_info">
 		<lookup_info oid="0" value=""/>
@@ -272,7 +272,7 @@
 		<snmp_info multiplier="128.0" name="outlet.group.%i.name" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.8.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1"/>
 		<snmp_info multiplier="128.0" name="outlet.group.%i.color" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.7.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1"/>
 		<snmp_info lookup="marlin_outlet_group_type_info" multiplier="128.0" name="outlet.group.%i.type" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.4.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1"/>
-		<snmp_info lookup="marlin_outlet_group_phase_info" multiplier="128.0" name="outlet.group.%i.phase" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.2.%i.%i" outlet_group="yes" static="yes" string="yes" type_daisy="1"/>
+		<snmp_info lookup="marlin_outlet_group_phase_info" multiplier="128.0" name="outlet.group.%i.phase" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.2.%i.%i" outlet_group="yes" static="yes" type_daisy="1"/>
 		<snmp_info flag_ok="yes" lookup="marlin_outletgroups_status_info" multiplier="128.0" name="outlet.group.%i.status" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.2.%i.%i" outlet_group="yes" string="yes" type_daisy="1"/>
 		<snmp_info multiplier="1.0" name="outlet.group.%i.count" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.6.%i.%i" outlet_group="yes" type_daisy="1"/>
 		<snmp_info multiplier="0.001" name="outlet.group.%i.voltage" oid=".1.3.6.1.4.1.534.6.6.7.5.3.1.3.%i.%i" outlet_group="yes" type_daisy="1"/>
