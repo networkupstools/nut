@@ -44,15 +44,21 @@
 
 #ifdef HAVE_PTHREAD
 # include <pthread.h>
-# ifdef HAVE_PTHREAD_TRYJOIN
+
+# ifdef HAVE_SEMAPHORE
+#  include <semaphore.h>
+# endif
+
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
 extern pthread_mutex_t threadcount_mutex;
 # endif
+
 typedef struct nutscan_thread {
 	pthread_t	thread;
 	int		active;	/* true if the thread was created, false if joined (to not join twice) */
 } nutscan_thread_t;
-#endif
+#endif /* HAVE_PTHREAD */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -126,6 +132,13 @@ nutscan_device_t * nutscan_scan_avahi(long usec_timeout);
 nutscan_device_t * nutscan_scan_ipmi(const char * startIP, const char * stopIP, nutscan_ipmi_t * sec);
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
+
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+extern sem_t semaphore;
+sem_t * nutscan_semaphore();
+# endif
+#endif
 
 /* Display functions */
 void nutscan_display_ups_conf(nutscan_device_t * device);
