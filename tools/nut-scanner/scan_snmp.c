@@ -59,6 +59,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
+#include <semaphore.h>
 #endif
 
 // Cause the header to also declare the external reference to pre-generated
@@ -800,7 +801,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
+        bool pass = true;
 #ifdef HAVE_PTHREAD
+        sem_t *semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -831,6 +834,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
 	while(ip_str != NULL) {
+#ifdef HAVE_PTHREAD
+            if(thread_array == NULL) {
+                sem_wait(semaphore);
+                pass=true;
+            } else {
+                pass = (sem_trywait(semaphore) == 0);
+            }
+#endif
+            if(pass) {
 		tmp_sec = malloc(sizeof(nutscan_snmp_t));
 		memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
 		tmp_sec->peername = ip_str;
@@ -855,6 +867,17 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 //		free(ip_str); // Do not free() here - seems to cause a double-free instead
 		ip_str = nutscan_ip_iter_inc(&ip);
 //		free(tmp_sec);
+            } else {
+#ifdef HAVE_PTHREAD
+                for ( i=0; i < thread_count ; i++) {
+                        pthread_join(thread_array[i],NULL);
+                        sem_post(semaphore);
+                }
+                thread_count = 0;
+                free(thread_array);
+                thread_array = NULL;
+#endif
+            }
 	};
 
 #ifdef HAVE_PTHREAD

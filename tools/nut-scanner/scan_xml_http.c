@@ -347,6 +347,7 @@ end:
 
 nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char * end_ip, long usec_timeout, nutscan_xml_t * sec)
 {
+        int pass = 1;
 	nutscan_xml_t * tmp_sec = NULL;
 	nutscan_device_t * result = NULL;
 	int i;
@@ -369,6 +370,7 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			nutscan_ip_iter_t ip;
 			char * ip_str = NULL;
 #ifdef HAVE_PTHREAD
+                        sem_t *semaphore = nutscan_semaphore();
 			pthread_t thread;
 			pthread_t * thread_array = NULL;
 			int thread_count = 0;
@@ -381,6 +383,15 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 			ip_str = nutscan_ip_iter_init(&ip, start_ip, end_ip);
 
 			while(ip_str != NULL) {
+#ifdef HAVE_PTHREAD
+                            if(thread_array == NULL) {
+                                sem_wait(semaphore);
+                                pass=1;
+                            } else {
+                                pass = (sem_trywait(semaphore) == 0);
+                            }
+#endif
+                            if(pass) {
 				tmp_sec = malloc(sizeof(nutscan_xml_t));
 				if (tmp_sec == NULL) {
 					fprintf(stderr,"Memory allocation \
@@ -411,6 +422,19 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 /*				free(ip_str); */ /* One of these free()s seems to cause a double-free */
 				ip_str = nutscan_ip_iter_inc(&ip);
 /*				free(tmp_sec); */
+                            } else {
+#ifdef HAVE_PTHREAD
+                                if (thread_array != NULL) {
+                                    for ( i=0; i < thread_count ; i++) {
+                                        pthread_join(thread_array[i],NULL);
+                                        sem_post(semaphore);
+                                    }
+                                    thread_count = 0;
+                                    free(thread_array);
+                                    thread_array = NULL;
+                                }
+#endif
+                            }
 			};
 
 #ifdef HAVE_PTHREAD
