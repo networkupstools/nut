@@ -77,7 +77,7 @@ const char optstring[] = "?ht:T:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaDzZ:
 #ifdef HAVE_GETOPT_LONG
 const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
-        { "thread", required_argument, NULL, 'T' },
+	{ "thread", required_argument, NULL, 'T' },
 	{ "start_ip",required_argument,NULL,'s' },
 	{ "end_ip",required_argument,NULL,'e' },
 	{ "eaton_serial",required_argument,NULL,'E' },
@@ -220,7 +220,7 @@ void show_usage()
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 #ifdef HAVE_PTHREAD
-        printf("  -T, --thread <max number of threads>: max number of simultaneaous threads (default %d). \n", DEFAULT_THREAD);
+	printf("  -T, --thread <max number of threads>: max number of simultaneous threads (default %d).\n", DEFAULT_THREAD);
 #endif
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
@@ -316,15 +316,16 @@ int main(int argc, char *argv[])
 					timeout = DEFAULT_TIMEOUT*1000*1000;
 				}
 				break;
-                        case 'T' :
+			case 'T' : ;
 #ifdef HAVE_PTHREAD
-                                thread_number = atol(optarg);
-                                if( thread_number <= 0 ) {
-                                    fprintf(stderr, "Illegal thread number, using default %d\n", DEFAULT_THREAD);
-                                    thread_number = DEFAULT_THREAD;
-                                }
+				char* endptr;
+				thread_number = strtol(optarg, &endptr, 10);
+				if (!*endptr || thread_number <= 0) {
+					fprintf(stderr, "Illegal thread number, using default %d\n", DEFAULT_THREAD);
+					thread_number = DEFAULT_THREAD;
+				}
 #endif
-                                break;
+				break;
 			case 's':
 				start_ip = strdup(optarg);
 				if (end_ip == NULL)
@@ -540,7 +541,7 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
-        sem_init(&semaphore, 0 , thread_number);
+	sem_init(&semaphore, 0, thread_number);
 #endif
 
 	if( cidr ) {

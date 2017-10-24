@@ -867,15 +867,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 //		free(ip_str); // Do not free() here - seems to cause a double-free instead
 		ip_str = nutscan_ip_iter_inc(&ip);
 //		free(tmp_sec);
-            } else {
 #ifdef HAVE_PTHREAD
-                for ( i=0; i < thread_count ; i++) {
-                        pthread_join(thread_array[i],NULL);
-                        sem_post(semaphore);
-                }
-                thread_count = 0;
-                free(thread_array);
-                thread_array = NULL;
+            } else {
+		for (i=0; i < thread_count; i++) {
+			pthread_join(thread_array[i],NULL);
+			sem_post(semaphore);
+		}
+		thread_count = 0;
+		free(thread_array);
+		thread_array = NULL;
 #endif
             }
 	};

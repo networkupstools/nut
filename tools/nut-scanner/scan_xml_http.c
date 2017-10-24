@@ -422,17 +422,17 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 /*				free(ip_str); */ /* One of these free()s seems to cause a double-free */
 				ip_str = nutscan_ip_iter_inc(&ip);
 /*				free(tmp_sec); */
-                            } else {
 #ifdef HAVE_PTHREAD
-                                if (thread_array != NULL) {
-                                    for ( i=0; i < thread_count ; i++) {
-                                        pthread_join(thread_array[i],NULL);
-                                        sem_post(semaphore);
-                                    }
-                                    thread_count = 0;
-                                    free(thread_array);
-                                    thread_array = NULL;
-                                }
+                            } else {
+				if (thread_array != NULL) {
+					for (i=0; i < thread_count; i++) {
+						pthread_join(thread_array[i],NULL);
+						sem_post(semaphore);
+					}
+					thread_count = 0;
+					free(thread_array);
+					thread_array = NULL;
+				}
 #endif
                             }
 			};

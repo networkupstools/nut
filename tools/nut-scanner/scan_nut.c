@@ -291,17 +291,17 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 		free(ip_str);
 		ip_str = nutscan_ip_iter_inc(&ip);
-            } else {
 #ifdef HAVE_PTHREAD
-                if(thread_array != NULL) {
-                    for ( i=0; i < thread_count ; i++) {
-                            pthread_join(thread_array[i],NULL);
-                            sem_post(semaphore);
-                    }
-                    thread_count = 0;
-                    free(thread_array);
-                    thread_array = NULL;
-                }
+            } else {
+		if(thread_array != NULL) {
+			for (i=0; i < thread_count; i++) {
+				pthread_join(thread_array[i],NULL);
+				sem_post(semaphore);
+			}
+			thread_count = 0;
+			free(thread_array);
+			thread_array = NULL;
+		}
 #endif
             }
 	}
