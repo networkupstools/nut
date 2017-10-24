@@ -219,8 +219,9 @@ void show_usage()
 	}
 
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
+#ifdef HAVE_PTHREAD
         printf("  -T, --thread <max number of threads>: max number of simultaneaous threads (default %d). \n", DEFAULT_THREAD);
-
+#endif
 	printf("\nNetwork specific options:\n");
 	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
@@ -316,13 +317,12 @@ int main(int argc, char *argv[])
 				}
 				break;
                         case 'T' :
+#ifdef HAVE_PTHREAD
                                 thread_number = atol(optarg);
-                                if( thread_number == 0 ) {
+                                if( thread_number <= 0 ) {
                                     fprintf(stderr, "Illegal thread number, using default %d\n", DEFAULT_THREAD);
                                     thread_number = DEFAULT_THREAD;
                                 }
-#ifdef HAVE_PTHREAD
-                                sem_init(&semaphore, 0 , thread_number);
 #endif
                                 break;
 			case 's':
@@ -538,6 +538,10 @@ display_help:
 				return ret_code;
 		}
 	}
+
+#ifdef HAVE_PTHREAD
+        sem_init(&semaphore, 0 , thread_number);
+#endif
 
 	if( cidr ) {
 		nutscan_cidr_to_ip(cidr, &start_ip, &end_ip);
