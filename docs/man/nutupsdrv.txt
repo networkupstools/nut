@@ -112,8 +112,8 @@ opened before the chroot call, so you do not need to create them inside
 the jail.  In fact, it is somewhat safer if you do not.
 
 *-u* 'username'::
-If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+The driver will setuid(2) to the user id associated with 'username',
+as opposed to its current effective user id.
 +
 If you do not specify this value and start it as root, the driver will
 switch to the default value that was compiled into the code.  This is
