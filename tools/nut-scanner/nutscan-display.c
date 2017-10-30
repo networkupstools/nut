@@ -26,14 +26,14 @@
 #include "nutscan-device.h"
 
 char * nutscan_device_type_string[TYPE_END]= {
-        "NONE",
-        "USB",
-        "SNMP",
-        "XML",
-        "NUT",
-        "IPMI",
-        "AVAHI",
-        "EATON_SERIAL" };
+	"NONE",
+	"USB",
+	"SNMP",
+	"XML",
+	"NUT",
+	"IPMI",
+	"AVAHI",
+	"EATON_SERIAL" };
 
 void nutscan_display_ups_conf(nutscan_device_t * device)
 {

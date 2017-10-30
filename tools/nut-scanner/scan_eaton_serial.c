@@ -51,8 +51,8 @@
 /* BCMXCP header */
 extern unsigned char AUT[4];
 extern struct pw_baud_rate {
-        int rate;
-        int name;
+	int rate;
+	int name;
 } pw_baud_rates[];
 
 /* Local list of found devices */

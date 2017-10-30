@@ -115,58 +115,58 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 	}
 
 	/* Compute stop IP */
-        if( ip->type == IPv4 ) {
+	if( ip->type == IPv4 ) {
 		hints.ai_family = AF_INET;
 		if(getaddrinfo(stopIP,NULL,&hints,&res) != 0) {
-                        fprintf(stderr,"Invalid address : %s\n",stopIP);
-                        return NULL;
-                }
+			fprintf(stderr,"Invalid address : %s\n",stopIP);
+			return NULL;
+		}
 
 		s_in = (struct sockaddr_in *)res->ai_addr;
 		ip->stop = s_in->sin_addr;
 		freeaddrinfo(res);
-        }
-        else {
+	}
+	else {
 		hints.ai_family = AF_INET6;
 		if(getaddrinfo(stopIP,NULL,&hints,&res) != 0) {
-                        fprintf(stderr,"Invalid address : %s\n",stopIP);
-                        return NULL;
-                }
+			fprintf(stderr,"Invalid address : %s\n",stopIP);
+			return NULL;
+		}
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
 		memcpy(&ip->stop6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);
-        }
+	}
 
-        /* Make sure start IP is lesser than stop IP */
-        if( ip->type == IPv4 ) {
-                if( ntohl(ip->start.s_addr) > ntohl(ip->stop.s_addr) ) {
-                        addr = ip->start.s_addr;
-                        ip->start.s_addr = ip->stop.s_addr;
-                        ip->stop.s_addr = addr;
-                }
+	/* Make sure start IP is lesser than stop IP */
+	if( ip->type == IPv4 ) {
+		if( ntohl(ip->start.s_addr) > ntohl(ip->stop.s_addr) ) {
+			addr = ip->start.s_addr;
+			ip->start.s_addr = ip->stop.s_addr;
+			ip->stop.s_addr = addr;
+		}
 
 		if( ntop(&ip->start, host, sizeof(host)) != 0 ) {
 			return NULL;
 		}
 
 		return strdup(host);
-        }
-        else { /* IPv6 */
-                for( i=0; i<16; i++ ) {
-                        if( ip->start6.s6_addr[i] !=ip->stop6.s6_addr[i] ) {
-                                if(ip->start6.s6_addr[i]>ip->stop6.s6_addr[i]){
-                                        invert_IPv6(&ip->start6,&ip->stop6);
-                                }
-                                break;
-                        }
-                }
+	}
+	else { /* IPv6 */
+		for( i=0; i<16; i++ ) {
+			if( ip->start6.s6_addr[i] !=ip->stop6.s6_addr[i] ) {
+				if(ip->start6.s6_addr[i]>ip->stop6.s6_addr[i]){
+					invert_IPv6(&ip->start6,&ip->stop6);
+				}
+				break;
+			}
+		}
 
 		if( ntop6(&ip->start6, host, sizeof(host)) != 0 ) {
 			return NULL;
 		}
 
 		return strdup(host);
-        }
+	}
 
 
 }
@@ -242,7 +242,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 
 	mask_val = atoi(mask);
 
-        /* Detecting IPv4 vs IPv6 */
+	/* Detecting IPv4 vs IPv6 */
 	memset(&hints,0,sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
 

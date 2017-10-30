@@ -49,10 +49,10 @@ static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
 static void (*nut_ne_xml_push_handler)(ne_xml_parser *p,
-                         ne_xml_startelm_cb *startelm,
-                         ne_xml_cdata_cb *cdata,
-                         ne_xml_endelm_cb *endelm,
-                         void *userdata);
+                            ne_xml_startelm_cb *startelm,
+                            ne_xml_cdata_cb *cdata,
+                            ne_xml_endelm_cb *endelm,
+                            void *userdata);
 static void (*nut_ne_xml_destroy)(ne_xml_parser *p);
 static int (*nut_ne_xml_failed)(ne_xml_parser *p);
 static ne_xml_parser * (*nut_ne_xml_create)(void);
