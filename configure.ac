@@ -1197,11 +1197,8 @@ AC_ARG_WITH([systemdsystemunitdir],
 		;;
 	esac
 ], [])
-dnl Override installation directory, with the local installation
-dnl prefix. This is needed for 'distcheck*' targets, otherwise
-dnl files will try to get intalled to the actual system directories
 if test -n "${systemdsystemunitdir}"; then
-	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
+	systemdsystemshutdowndir=`dirname "${systemdsystemunitdir}"`/system-shutdown
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
 	AC_MSG_RESULT(no)
