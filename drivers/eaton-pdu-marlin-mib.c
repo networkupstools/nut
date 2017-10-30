@@ -1092,6 +1092,17 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
 		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
+	/* Per-outlet shutdown / startup timers
+	 * outletControlOffCmd.0.1 = INTEGER: -1
+	 * outletControlOnCmd.0.1 = INTEGER: -1
+	 */
+	{ "outlet.%i.timer.shutdown", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.timer.start", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+
 	/* Delays handling:
 	 * 0-n :Time in seconds until the group command is issued
 	 * -1:Cancel a pending group-level Off/On/Reboot command */
