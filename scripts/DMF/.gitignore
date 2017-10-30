@@ -14,3 +14,6 @@ dmf-lua-test
 *-mib.c
 legacy-mibfiles-list.mk.in
 legacy-mibfiles-list.mk
+dmfcore.c
+dmfsnmp.c
+alist.c

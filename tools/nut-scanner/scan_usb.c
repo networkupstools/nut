@@ -154,9 +154,9 @@ nutscan_device_t * nutscan_scan_usb()
 	nutscan_device_t * nut_dev = NULL;
 	nutscan_device_t * current_nut_dev = NULL;
 
-        if( !nutscan_avail_usb ) {
-                return NULL;
-        }
+	if( !nutscan_avail_usb ) {
+		return NULL;
+	}
 
 	/* libusb base init */
 	(*nut_usb_init)();

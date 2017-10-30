@@ -64,12 +64,12 @@ static const char *dl_error = NULL;
   /* Functions symbols remapping */
   #define IPMI_FRU_CLOSE_DEVICE_ID                     "ipmi_fru_parse_close_device_id"
   #define IPMI_FRU_CTX_DESTROY                         "ipmi_fru_parse_ctx_destroy"
-  #define IPMI_FRU_CTX_CREATE                            "ipmi_fru_parse_ctx_create"
-  #define IPMI_FRU_CTX_SET_FLAGS                         "ipmi_fru_parse_ctx_set_flags"
-  #define IPMI_FRU_OPEN_DEVICE_ID                        "ipmi_fru_parse_open_device_id"
-  #define IPMI_FRU_CTX_ERRORMSG                          "ipmi_fru_parse_ctx_errormsg"
-  #define IPMI_FRU_READ_DATA_AREA                        "ipmi_fru_parse_read_data_area"
-  #define IPMI_FRU_PARSE_NEXT                            "ipmi_fru_parse_next"
+  #define IPMI_FRU_CTX_CREATE                          "ipmi_fru_parse_ctx_create"
+  #define IPMI_FRU_CTX_SET_FLAGS                       "ipmi_fru_parse_ctx_set_flags"
+  #define IPMI_FRU_OPEN_DEVICE_ID                      "ipmi_fru_parse_open_device_id"
+  #define IPMI_FRU_CTX_ERRORMSG                        "ipmi_fru_parse_ctx_errormsg"
+  #define IPMI_FRU_READ_DATA_AREA                      "ipmi_fru_parse_read_data_area"
+  #define IPMI_FRU_PARSE_NEXT                          "ipmi_fru_parse_next"
   /* Functions remapping */
   static void (*nut_ipmi_sdr_cache_ctx_destroy) (ipmi_sdr_cache_ctx_t ctx);
   static void (*nut_ipmi_sdr_parse_ctx_destroy) (ipmi_sdr_parse_ctx_t ctx);
@@ -90,23 +90,23 @@ static int (*nut_ipmi_fru_read_data_area) (ipmi_fru_parse_ctx_t ctx,
 static int (*nut_ipmi_fru_next) (ipmi_fru_parse_ctx_t ctx);
 static ipmi_ctx_t (*nut_ipmi_ctx_create) (void);
 static int (*nut_ipmi_ctx_find_inband) (ipmi_ctx_t ctx,
-                          ipmi_driver_type_t *driver_type,
-                          int disable_auto_probe,
-                          uint16_t driver_address,
-                          uint8_t register_spacing,
-                          const char *driver_device,
-                          unsigned int workaround_flags,
-                          unsigned int flags);
+                            ipmi_driver_type_t *driver_type,
+                            int disable_auto_probe,
+                            uint16_t driver_address,
+                            uint8_t register_spacing,
+                            const char *driver_device,
+                            unsigned int workaround_flags,
+                            unsigned int flags);
 static int (*nut_ipmi_ctx_open_outofband) (ipmi_ctx_t ctx,
-                             const char *hostname,
-                             const char *username,
-                             const char *password,
-                             uint8_t authentication_type,
-                             uint8_t privilege_level,
-                             unsigned int session_timeout,
-                             unsigned int retransmission_timeout,
-                             unsigned int workaround_flags,
-                             unsigned int flags);
+                            const char *hostname,
+                            const char *username,
+                            const char *password,
+                            uint8_t authentication_type,
+                            uint8_t privilege_level,
+                            unsigned int session_timeout,
+                            unsigned int retransmission_timeout,
+                            unsigned int workaround_flags,
+                            unsigned int flags);
 static int (*nut_ipmi_ctx_errnum) (ipmi_ctx_t ctx);
 static char * (*nut_ipmi_ctx_errormsg) (ipmi_ctx_t ctx);
 static int (*nut_ipmi_ctx_close) (ipmi_ctx_t ctx);
