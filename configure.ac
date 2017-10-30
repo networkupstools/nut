@@ -1240,16 +1240,24 @@ AC_ARG_WITH([systemdsystemunitdir],
 		;;
 	esac
 ], [])
-dnl Override installation directory, with the local installation
-dnl prefix. This is needed for 'distcheck*' targets, otherwise
-dnl files will try to get intalled to the actual system directories
 if test -n "${systemdsystemunitdir}"; then
-	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
+dnl This option is only provided so that make distcheck can override it,
+dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
+dnl given
+AC_ARG_WITH([systemdshutdowndir],
+	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
+	[systemdshutdowndir=${withval}])
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdshutdowndir}" in
+	yes|auto|"")
+		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+	esac
+fi
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -2081,7 +2089,7 @@ AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
-AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(systemdshutdowndir)
 AC_SUBST(dmfsnmpresdir)
 AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
