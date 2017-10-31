@@ -115,6 +115,7 @@ nutscan_device_t *  nutscan_scan_ipmi(const char * startIP, const char * stopIP,
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_list);
 
 #ifdef HAVE_PTHREAD
+extern sem_t semaphore;
 sem_t * nutscan_semaphore();
 #endif
 

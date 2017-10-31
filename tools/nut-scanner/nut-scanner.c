@@ -67,7 +67,6 @@
 #endif
 
 #define DEFAULT_TIMEOUT 5
-#define DEFAULT_THREAD  512
 
 #define ERR_BAD_OPTION	(-1)
 
@@ -126,11 +125,6 @@ static char * serial_ports = NULL;
 
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
-sem_t semaphore;
-
-sem_t * nutscan_semaphore() {
-    return &semaphore;
-}
 
 static void * run_usb(void * arg)
 {
@@ -541,7 +535,12 @@ display_help:
 	}
 
 #ifdef HAVE_PTHREAD
-	sem_init(&semaphore, 0, thread_number);
+	/* FIXME: Currently sem_init already done on nutscan-init for lib need.
+	   We need to destroy it before re-init. We currently can't change "sem value"
+	   on lib (need to be thread safe). */
+	sem_t *current_sem = nutscan_semaphore();
+	sem_destroy(current_sem);
+	sem_init(current_sem, 0, thread_number);
 #endif
 
 	if( cidr ) {
