@@ -51,6 +51,9 @@
 
 # if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
 extern size_t max_threads, curr_threads, max_threads_netxml, max_threads_oldnut, max_threads_netsnmp;
+# endif
+
+# ifdef HAVE_PTHREAD_TRYJOIN
 extern pthread_mutex_t threadcount_mutex;
 # endif
 

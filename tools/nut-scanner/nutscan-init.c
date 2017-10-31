@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 - EATON
+ *  Copyright (C) 2011-2021 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include "nut-scan.h"
 
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
@@ -42,8 +43,55 @@ int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path);
 
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+sem_t semaphore;
+
+sem_t * nutscan_semaphore(void)
+{
+	return &semaphore;
+}
+# endif /* HAVE_SEMAPHORE */
+
+# ifdef HAVE_PTHREAD_TRYJOIN
+pthread_mutex_t threadcount_mutex;
+# endif
+
+# if (defined HAVE_PTHREAD_TRYJOIN) || (defined HAVE_SEMAPHORE)
+/* We have 3 networked scan types: nut, snmp, xml,
+ * and users typically give their /24 subnet as "-m" arg.
+ * With some systems having a 1024 default (u)limit to
+ * file descriptors, this should fit if those are involved.
+ * On some systems tested, a large amount of not-joined
+ * pthreads did cause various crashes; also RAM is limited.
+ * Note that each scan may be time consuming to query an
+ * IP address and wait for (no) reply, so while these threads
+ * are usually not resource-intensive (nor computationally),
+ * they spend much wallclock time each so parallelism helps.
+ */
+size_t max_threads = DEFAULT_THREAD;
+size_t curr_threads = 0;
+
+size_t max_threads_netxml = 1021; /* experimental finding, see PR#1158 */
+size_t max_threads_oldnut = 1021;
+size_t max_threads_netsnmp = 0; // 10240;
+	/* per reports in PR#1158, some versions of net-snmp could be limited
+	 * to 1024 threads in the past; this was not found in practice.
+	 * Still, some practical limit can be useful (configurable?)
+	 * Here 0 means to not apply any special limit (beside max_threads).
+	 */
+
+# endif  /* HAVE_PTHREAD_TRYJOIN || HAVE_SEMAPHORE */
+
+#endif /* HAVE_PTHREAD */
+
 void nutscan_init(void)
 {
+#ifdef HAVE_PTHREAD
+# ifdef HAVE_SEMAPHORE
+	sem_init(&semaphore, 0, max_threads);
+# endif
+#endif
 	char *libname = NULL;
 #ifdef WITH_USB
 	libname = get_libname("libusb-0.1.so");
