@@ -1,6 +1,7 @@
 dmf-test
 dmf-reindex
 dmf-lua-test
+dmf-fun-test
 *.o
 */*.json.tmp
 */*.dmf.tmp
