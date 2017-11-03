@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.95"
+#define PW_MIB_VERSION "0.96"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -365,6 +365,12 @@ static snmp_info_t pw_mib[] = {
 	{ "ambient.humidity.low", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.11.0", "", 0, NULL },
 	/* XUPS-MIB::xupsEnvRemoteHumidityUpperLimit.0 */
 	{ "ambient.humidity.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.12.0", "", 0, NULL },
+	/* XUPS-MIB::xupsContactState.1 */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.1.6.8.1.3.1", "", 0, &pw_ambient_drycontacts_info[0] },
+	/* XUPS-MIB::xupsContactState.2 */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
+		".1.3.6.1.4.1.534.1.6.8.1.3.2", "", 0, &pw_ambient_drycontacts_info[0] },
 
 	/* instant commands */
 	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
