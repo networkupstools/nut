@@ -73,9 +73,12 @@ isn't. Some UPSes will restart no matter what, even if the power is
 if setting 'ondelay = -1' in *ups.conf* helps.
 
 *pollfreq*='num'::
-Set polling frequency, in seconds, to reduce the USB data flow.
-Between two polling requests, the driver will wait for interrupts (aka UPS
-notifications), which are data changes returned by the UPS by itself.
+Set polling frequency, in seconds, to reduce the USB data flow due to the
+generic calls to request driver updates every "pollinterval", as per
+linkman:ups.conf[5].
+Between two polling requests with *pollfreq*, the driver will wait for
+interrupts (aka UPS notifications), which are data changes returned by the
+UPS by itself.
 This mechanism allow to avoid or reduce staleness message, due to the UPS
 being temporarily overloaded with too much polling requests.
 The default value is 30 (in seconds).

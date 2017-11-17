@@ -29,9 +29,9 @@ the rest of this package.
 
 The core has two modes of operation which are determined by the
 command line switches.  In the normal mode, the driver will periodically
-poll the UPS for its state and parameters.  The results of this command
-is presented to upsd.  The driver will also handle setting variables and
-instant commands if available.
+poll the UPS for its state and parameters, as per the *pollinterval* parameter
+in linkman:ups.conf[5].  The results of this command is presented to upsd.
+The driver will also handle setting variables and instant commands if available.
 
 The driver can also instruct the UPS to shut down the load, possibly
 after some delay.  This mode of operation is intended for cases when it is
