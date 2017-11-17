@@ -22,8 +22,10 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * CPS CP1500EPFCLCD (USB)
    * CPS EC350G, EC750G (USB)
    * CPS PR2200LCDRT2U (SNMP)
+   * Eaton ATS 16 and 30 (SNMP)
    * Eaton 5E2200VA (USB)
    * Eaton 9PX Split Phase 6/8/10 kVA (XML/USB/SHUT)
+   * Eaton 9PX (XML/USB/SHUT)
    * Eaton Ellipse PRO 650 VA (USB)
    * Numeric Digital 800 (USB)
    * Powercool 350VA to 1600VA (USB)
@@ -47,11 +49,15 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * fix the rounding / truncation of some values
    * add outlet.N.name for Eaton ePDU
    * add input.bypass.frequency for Eaton 3ph
-   * fix support for 2-phase ("split phase") devices
+   * fix support for Eaton 2-phase ("split phase") UPS
    * add flag to list currently loaded MIB-to-NUT mappings
    * fix input.L2.voltage on Eaton G2/G3 PDU
    * update Eaton Aphel Revelation MIB
    * support Raritan Dominion PX2 PDU
+
+ - all drivers: add support for dumping the data tree (in upsc-like format)
+   after running the driver update loop for 'update_count' times and exit.
+   This complements the nut-scanner for finding and identifying devices.
 
  - systemd support improvements:
    * POWEROFF_WAIT
