@@ -338,6 +338,7 @@
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Network port"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Management Card Contact"	"Config 3 - Cable 66033"	"genericups upstype=7"
 "Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
+"Eaton"	"ats"	"5"	"Eaton ATS30"	""	"snmp-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
