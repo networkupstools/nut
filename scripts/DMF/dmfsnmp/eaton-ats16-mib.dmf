@@ -30,9 +30,9 @@
 	</lookup>
 	<lookup name="eaton_ats16_ambient_drycontacts_info">
 		<lookup_info oid="-1" value="unknown"/>
-		<lookup_info oid="1" value="open"/>
+		<lookup_info oid="1" value="opened"/>
 		<lookup_info oid="2" value="closed"/>
-		<lookup_info oid="3" value="open"/>
+		<lookup_info oid="3" value="opened"/>
 		<lookup_info oid="4" value="closed"/>
 	</lookup>
 	<lookup name="eaton_ats16_output_status_info">
@@ -79,6 +79,6 @@
 		<snmp_info flag_ok="yes" lookup="eaton_ats16_ambient_drycontacts_info" multiplier="128.0" name="ambient.contacts.1.status" oid=".1.3.6.1.4.1.534.10.2.5.4.1.3.1" string="yes"/>
 		<snmp_info flag_ok="yes" lookup="eaton_ats16_ambient_drycontacts_info" multiplier="128.0" name="ambient.contacts.2.status" oid=".1.3.6.1.4.1.534.10.2.5.4.1.3.2" string="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16" name="eaton_ats16" oid=".1.3.6.1.4.1.705.1" snmp_info="eaton_ats16_mib" version="0.15"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16" name="eaton_ats16" oid=".1.3.6.1.4.1.705.1" snmp_info="eaton_ats16_mib" version="0.16"/>
 </nut>
 

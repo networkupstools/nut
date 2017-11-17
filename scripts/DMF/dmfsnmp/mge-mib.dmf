@@ -49,7 +49,7 @@
 	<lookup name="mge_ambient_drycontacts_info">
 		<lookup_info oid="-1" value="unknown"/>
 		<lookup_info oid="1" value="closed"/>
-		<lookup_info oid="2" value="open"/>
+		<lookup_info oid="2" value="opened"/>
 	</lookup>
 	<lookup name="mge_beeper_status_info">
 		<lookup_info oid="1" value="disabled"/>
@@ -149,6 +149,6 @@
 		<snmp_info command="yes" default="" multiplier="20.0" name="load.off.delay" oid="1.3.6.1.2.1.33.1.8.2.0"/>
 		<snmp_info command="yes" default="" multiplier="30.0" name="load.on.delay" oid="1.3.6.1.2.1.33.1.8.3.0"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.705.1.1.1.0" mib_name="mge" name="mge" oid=".1.3.6.1.4.1.705.1" snmp_info="mge_mib" version="0.52"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.705.1.1.1.0" mib_name="mge" name="mge" oid=".1.3.6.1.4.1.705.1" snmp_info="mge_mib" version="0.53"/>
 </nut>
 
