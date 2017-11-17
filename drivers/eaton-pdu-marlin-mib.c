@@ -129,7 +129,7 @@ static info_lkp_t marlin_threshold_frequency_status_info[] = {
 
 static info_lkp_t marlin_ambient_drycontacts_info[] = {
 	{ -1, "unknown", NULL, NULL },
-	{ 0, "open", NULL, NULL },
+	{ 0, "opened", NULL, NULL },
 	{ 1, "closed", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };

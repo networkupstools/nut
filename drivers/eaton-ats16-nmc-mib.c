@@ -78,9 +78,17 @@ static info_lkp_t eaton_ats16_nmc_output_status_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "opened", NULL, NULL },
+	{ 2, "closed", NULL, NULL },
+	{ 3, "opened", NULL, NULL },   /* openWithNotice   */
+	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
+	{ 0, NULL, NULL, NULL }
+};
+
 /* EATON_ATS_NMC Snmp2NUT lookup table */
 static snmp_info_t eaton_ats16_nmc_mib[] = {
-
 	/* standard MIB items */
 	{ "device.description", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.1.0", NULL, SU_FLAG_OK, NULL },
 	{ "device.contact", ST_FLAG_STRING | ST_FLAG_RW, SU_INFOSIZE, ".1.3.6.1.2.1.1.4.0", NULL, SU_FLAG_OK, NULL },

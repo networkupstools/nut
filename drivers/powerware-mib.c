@@ -194,6 +194,15 @@ static info_lkp_t pw_yes_no_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t pw_ambient_drycontacts_info[] = {
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "opened", NULL, NULL },
+	{ 2, "closed", NULL, NULL },
+	{ 3, "opened", NULL, NULL },   /* openWithNotice   */
+	{ 4, "closed", NULL, NULL }, /* closedWithNotice */
+	{ 0, NULL, NULL, NULL }
+};
+
 /* Snmp2NUT lookup table */
 
 static snmp_info_t pw_mib[] = {

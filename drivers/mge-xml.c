@@ -35,7 +35,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.33"
+#define MGE_XML_VERSION		"MGEXML/0.34"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -588,7 +588,7 @@ static const char *mge_drycontact_info(const char *val)
 	switch (atoi(val))
 	{
 	case 0:
-		return "open";
+		return "opened";
 	case 1:
 		return "closed";
 	default:

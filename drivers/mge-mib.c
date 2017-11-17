@@ -135,7 +135,7 @@ static info_lkp_t mge_power_source_info[] = {
 static info_lkp_t mge_ambient_drycontacts_info[] = {
 	{ -1, "unknown", NULL, NULL },
 	{ 1, "closed", NULL, NULL },
-	{ 2, "open", NULL, NULL },
+	{ 2, "opened", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
