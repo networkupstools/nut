@@ -173,7 +173,7 @@ USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  openups-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c libusb.c hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c libusb.c usb-common.c
 tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
@@ -198,7 +198,7 @@ riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
 mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
 # per-target CFLAGS are necessary here
 mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
-mge_shut_LDADD = $(LDADD)
+mge_shut_LDADD = $(LDADD) -lm
 
 # SNMP
 snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
