@@ -24,7 +24,7 @@
 
 #include "eaton-ats16-mib.h"
 
-#define EATON_ATS16_MIB_VERSION  "0.15"
+#define EATON_ATS16_MIB_VERSION  "0.16"
 
 #define EATON_ATS16_SYSOID       ".1.3.6.1.4.1.534.10"
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -79,9 +79,9 @@ static info_lkp_t eaton_ats16_output_status_info[] = {
 
 static info_lkp_t eaton_ats16_ambient_drycontacts_info[] = {
 	{ -1, "unknown" },
-	{ 1, "open" },
+	{ 1, "opened" },
 	{ 2, "closed" },
-	{ 3, "open" },   /* openWithNotice   */
+	{ 3, "opened" },   /* openWithNotice   */
 	{ 4, "closed" }, /* closedWithNotice */
 	{ 0, NULL }
 };

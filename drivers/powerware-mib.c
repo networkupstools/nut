@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.91"
+#define PW_MIB_VERSION "0.92"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -196,9 +196,9 @@ static info_lkp_t pw_yes_no_info[] = {
 
 static info_lkp_t pw_ambient_drycontacts_info[] = {
 	{ -1, "unknown" },
-	{ 1, "open" },
+	{ 1, "opened" },
 	{ 2, "closed" },
-	{ 3, "open" },   /* openWithNotice   */
+	{ 3, "opened" },   /* openWithNotice   */
 	{ 4, "closed" }, /* closedWithNotice */
 	{ 0, NULL }
 };

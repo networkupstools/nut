@@ -27,7 +27,7 @@
 
 #include "mge-mib.h"
 
-#define MGE_MIB_VERSION	"0.52"
+#define MGE_MIB_VERSION	"0.53"
 
 /* TODO:
  * - MGE PDU MIB and sysOID (".1.3.6.1.4.1.705.2") */
@@ -139,7 +139,7 @@ static info_lkp_t mge_power_source_info[] = {
 static info_lkp_t mge_ambient_drycontacts_info[] = {
 	{ -1, "unknown" },
 	{ 1, "closed" },
-	{ 2, "open" },
+	{ 2, "opened" },
 	{ 0, NULL }
 };
 
