@@ -84,6 +84,7 @@ DEPSVC_NET_FULL_SYSTEMD="network-online.target"
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
 DEPREQ_NET_LOCAL_SYSTEMD="Wants"
+SVCNAME_SYSTEMD="nut-driver"
 
 # Some or all of these FMRIs may be related to dynamically changing hardware
 #   require_all) ;; # All cited services are running (online or degraded)
@@ -100,6 +101,7 @@ DEPSVC_NET_FULL_SMF="svc:/network/physical"
 DEPREQ_NET_FULL_SMF="optional_all"
 DEPSVC_NET_LOCAL_SMF="svc:/network/loopback:default"
 DEPREQ_NET_LOCAL_SMF="optional_all"
+SVCNAME_SMF="svc:/system/power/nut-driver"
 
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
     NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONF_DIR}/nut-driver-enumerator.conf"
@@ -136,17 +138,26 @@ UPSLIST_SVCS=""
 hook_registerInstance=""
 hook_unregisterInstance=""
 hook_listInstances=""
+hook_listInstances_raw=""
+hook_validInstanceName=""
+hook_validFullUnitName=""
 
 case "${SERVICE_FRAMEWORK-}" in
     smf)
         hook_registerInstance="smf_registerInstance"
         hook_unregisterInstance="smf_unregisterInstance"
         hook_listInstances="smf_listInstances"
+        hook_listInstances_raw="smf_listInstances_raw"
+        hook_validInstanceName="smf_validInstanceName"
+        hook_validFullUnitName="smf_validFullUnitName"
         ;;
     systemd)
         hook_registerInstance="systemd_registerInstance"
         hook_unregisterInstance="systemd_unregisterInstance"
         hook_listInstances="systemd_listInstances"
+        hook_listInstances_raw="systemd_listInstances_raw"
+        hook_validInstanceName="systemd_validInstanceName"
+        hook_validFullUnitName="systemd_validFullUnitName"
         ;;
     "")
         echo "Error detecting the service-management framework on this OS" >&2
@@ -256,8 +267,15 @@ upsconf_debug() {
     echo "INST: [$1]: DRV='$_DRV' PORT='$_PRT' MEDIA='$_MED'"
 }
 
+smf_validFullUnitName() {
+    echo "$SVCNAME_SMF:$1"
+}
+smf_validInstanceName() {
+    echo "`echo "$1" | md5sum | awk '{print $1}'`_"
+}
 smf_registerInstance() {
-    /usr/sbin/svccfg -s nut-driver add "$1" || return
+    /usr/sbin/svccfg -s nut-driver add "$1" || \
+    /usr/sbin/svccfg -s nut-driver add "`smf_validInstanceName "$1"`" || return
 
     DEPSVC=""
     DEPREQ=""
@@ -300,13 +318,23 @@ smf_unregisterInstance() {
     /usr/sbin/svcadm disable -ts 'nut-driver:'"$1" || false
     /usr/sbin/svccfg -s nut-driver delete "$1"
 }
-smf_listInstances() {
+smf_listInstances_raw() {
     # Newer versions have pattern matching; older SMF might not have this luxury
-    /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:' | sed 's/^.*://' | sort -n
+    /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:'
+}
+smf_listInstances() {
+    smf_listInstances_raw | sed 's/^.*://' | sort -n
 }
 
+systemd_validFullUnitName() {
+    echo "$SVCNAME_SYSTEMD@$1.service"
+}
+systemd_validInstanceName() {
+    echo "`echo "$1" | md5sum | awk '{print $1}'`_"
+}
 systemd_registerInstance() {
-    /bin/systemctl enable 'nut-driver@'"$1" || return
+    /bin/systemctl enable 'nut-driver@'"$1" || \
+    /bin/systemctl enable 'nut-driver@'"`systemd_validInstanceName "$1"`" || return
 
     DEPSVC=""
     DEPREQ=""
@@ -347,8 +375,11 @@ systemd_unregisterInstance() {
     /bin/systemctl disable 'nut-driver@'"$1"
     rm -rf "/etc/systemd/system/nut-driver@$1.service.d"
 }
+systemd_listInstances_raw() {
+    /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed 's,^Id=,,'
+}
 systemd_listInstances() {
-    /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
+    systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
 }
 
 upslist_readFile() {
@@ -357,15 +388,16 @@ upslist_readFile() {
     # using specified protocol and media)
     if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
         [ -s "$UPSCONF" ] && \
-        UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' | egrep '^(\[.*\]|driver=|port=)')" || \
-        UPSCONF_DATA=""
+        UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' | egrep '^(\[.*\]|driver=|port=)')" \
+            || UPSCONF_DATA=""
     else
         echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
         return 2
     fi
 
     [ -n "$UPSCONF_DATA" ] && \
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" || UPSLIST_FILE=""
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+            || UPSLIST_FILE=""
     if [ -z "$UPSLIST_FILE" ] ; then
         echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
         # Ok to continue - we may end up removing all instances
@@ -406,7 +438,7 @@ upslist_delSvcs() {
     done
 }
 
-nut-driver-enumerator-main() {
+nut_driver_enumerator_main() {
     ################# MAIN PROGRAM by default
 
     upslist_readFile || exit $?
@@ -447,5 +479,89 @@ nut-driver-enumerator-main() {
 
 # By default, update wrapping of devices into services
 if [ $# = 0 ]; then
-    nut-driver-enumerator-main ; exit $?
+    nut_driver_enumerator_main ; exit $?
 fi
+
+usage() {
+    cat << EOF
+$0 (no args)        Update wrapping of devices into services
+$0 --get-service-framework  Print the detected service
+        management framework in this OS
+$0 --list-devices   Print list of devices in NUT config
+$0 --list-services  Print list of service instances
+        which wrap registered NUT devices (full name of service unit)
+$0 --list-instances Print list of service instances
+        which wrap registered NUT devices (just instance suffix)
+$0 --get-service-for-device DEV    Print the full name of
+        service unit which wraps a NUT device named "DEV"
+EOF
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --help|-h|-help) usage; exit 0 ;;
+        --get-service-framework) echo "${SERVICE_FRAMEWORK}" ; exit 0 ;;
+        --list-devices)
+            upslist_readFile && \
+            if [ -n "$UPSLIST_FILE" ] ; then
+                echo "=== The currently defined configurations in '$UPSCONF' are:"
+                echo "$UPSLIST_FILE"
+                exit 0
+            fi
+            echo "No devices detected in '$UPSCONF'" >&2
+            exit 1
+            ;;
+        --list-services)
+            UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && \
+            if [ -n "$UPSLIST_SVCS_RAW" ] ; then
+                echo "=== The currently defined service units are:"
+                echo "$UPSLIST_SVCS_RAW"
+                exit 0
+            fi
+            echo "No service units detected" >&2
+            exit 1
+            ;;
+        --list-instances)
+            upslist_readSvcs "by user request" && \
+            if [ -n "$UPSLIST_SVCS" ] ; then
+                echo "=== The currently defined service instances are:"
+                echo "$UPSLIST_SVCS"
+                exit 0
+            fi
+            echo "No service instances detected" >&2
+            exit 1
+            ;;
+        --get-service-for-device) [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
+                || { echo "No service instances detected" >&2 ; exit 1; }
+            UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
+                || { echo "No service units detected" >&2 ; exit 1; }
+            # First pass over simple verbatim names
+            for INST in $UPSLIST_SVCS ; do
+                if [ "$INST" = "$2" ] ; then
+                    for UNIT in $UPSLIST_SVCS_RAW ; do
+                        if [ "$UNIT" = "`$hook_validFullUnitName "$INST"`" ] ; then
+                            echo "$UNIT"
+                            exit 0
+                        fi
+                    done
+                fi
+            done
+            for INST in $UPSLIST_SVCS ; do
+                vINST="`$hook_validInstanceName "$INST"`"
+                if [ "$vINST" = "$2" ] ; then
+                    for UNIT in $UPSLIST_SVCS_RAW ; do
+                        if [ "$UNIT" = "`$hook_validFullUnitName "$vINST"`" ] ; then
+                            echo "$UNIT"
+                            exit 0
+                        fi
+                    done
+                fi
+            done
+            echo "No service instances detected that match device '$2'" >&2
+            exit 1
+            ;;
+        *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
+    esac
+    shift
+done
