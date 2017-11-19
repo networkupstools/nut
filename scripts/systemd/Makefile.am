@@ -15,9 +15,12 @@ systemdshutdown_SCRIPTS = nutshutdown
 
 libexec_SCRIPTS = nut-driver-enumerator.sh
 
+sbin_SCRIPTS = upsdrvsvcctl
+
 else
 EXTRA_DIST += nut-driver@.service.in nut-monitor.service.in \
 	nut-server.service.in nutshutdown.in nut-driver.target \
-	nut-driver-enumerator.sh.in nut-driver-enumerator.service.in
+	nut-driver-enumerator.sh.in nut-driver-enumerator.service.in \
+	upsdrvsvcctl.in
 endif
 

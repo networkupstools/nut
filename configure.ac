@@ -1738,6 +1738,7 @@ AC_OUTPUT([
  scripts/systemd/nut-driver-enumerator.service
  scripts/systemd/nut-driver-enumerator.sh
  scripts/systemd/nutshutdown
+ scripts/systemd/upsdrvsvcctl
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
  scripts/Solaris/nut-client.xml

@@ -21,6 +21,8 @@ solarissmfmanifestdir = @datadir@/solaris-smf/manifest
 solarissmfmethod_SCRIPTS = $(SOLARIS_SMF_METHODSCRIPTS)
 solarissmfmanifest_DATA = $(SOLARIS_SMF_MANIFESTS)
 
+sbin_SCRIPTS = ../systemd/upsdrvsvcctl
+
 SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
 
