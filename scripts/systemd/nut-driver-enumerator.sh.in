@@ -287,11 +287,19 @@ upsconf_debug() {
     echo "INST: [$1]: DRV='$_DRV' PORT='$_PRT' MEDIA='$_MED'"
 }
 
+calc_md5() {
+    _MD5=""
+    _MD5="`echo "$1" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "$_MD5" ] || \
+    { _MD5="`echo "$1" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "$_MD5" ]; } || \
+    return 1
+    echo "$_MD5"
+}
+
 smf_validFullUnitName() {
     echo "$SVCNAME_SMF:$1"
 }
 smf_validInstanceName() {
-    echo "`echo "$1" | md5sum | awk '{print $1}'`_"
+    echo "MD5_`calc_md5 "$1"`"
 }
 smf_registerInstance() {
     DEVICE="$1"
@@ -353,7 +361,7 @@ systemd_validFullUnitName() {
     echo "$SVCNAME_SYSTEMD@$1.service"
 }
 systemd_validInstanceName() {
-    echo "`echo "$1" | md5sum | awk '{print $1}'`_"
+    echo "MD5_`calc_md5 "$1"`"
 }
 systemd_registerInstance() {
     DEVICE="$1"
