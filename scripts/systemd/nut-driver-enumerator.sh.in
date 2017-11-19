@@ -173,6 +173,7 @@ common_isFiled() {
     [ -n "$UPSLIST_FILE" ] && \
     for UPSF in $UPSLIST_FILE ; do
         [ "$1" = "$UPSF" ] && return 0
+        [ "`$hook_validInstanceName "$UPSF"`" = "$1" ] && return 0
     done
     return 1
 }
@@ -181,8 +182,27 @@ common_isRegistered() {
     [ -n "$UPSLIST_SVCS" ] && \
     for UPSS in $UPSLIST_SVCS ; do
         [ "$1" = "$UPSS" ] && return 0
+        [ "`$hook_validInstanceName "$1"`" = "$UPSS" ] && return 0
     done
     return 1
+}
+
+upslist_equals() {
+    # Compare list of DEVICES ($1) and SVCINSTs ($2) including mangling
+    [ "$1" = "$2" ] && return 0
+    [ "`echo "$1" | wc -l`" = "`echo "$2" | wc -l`" ] || return $?
+
+    _TMP_DEV_SVC=""
+    for _DEV in $1 ; do
+        for _SVC in $2 ; do
+            [ "$_DEV" = "$_SVC" ] \
+            || [ "`$hook_validInstanceName "$_DEV"`" = "$_SVC" ] \
+            && { [ -z "$_TMP_DEV_SVC" ] \
+                 && _TMP_DEV_SVC="$_DEV = $_SVC" \
+                 || _TMP_DEV_SVC="$_TMP_DEV_SVC
+$_DEV = $_SVC" ; }
+        done
+    done
 }
 
 upsconf_getValue() {
@@ -274,12 +294,15 @@ smf_validInstanceName() {
     echo "`echo "$1" | md5sum | awk '{print $1}'`_"
 }
 smf_registerInstance() {
-    /usr/sbin/svccfg -s nut-driver add "$1" || \
-    /usr/sbin/svccfg -s nut-driver add "`smf_validInstanceName "$1"`" || return
+    DEVICE="$1"
+    SVCINST="$1"
+    /usr/sbin/svccfg -s nut-driver add "$DEVICE" || \
+    { SVCINST="`smf_validInstanceName "$1"`" && \
+      /usr/sbin/svccfg -s nut-driver add "$SVCINST" || return ; }
 
     DEPSVC=""
     DEPREQ=""
-    _MED="`upsconf_getMedia "$1"`"
+    _MED="`upsconf_getMedia "$DEVICE"`"
     case "$_MED" in
         usb)
             DEPSVC="$DEPSVC_USB_SMF"
@@ -294,10 +317,10 @@ smf_registerInstance() {
         *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
     esac
 
-    TARGET_FMRI="nut-driver:$1"
+    TARGET_FMRI="nut-driver:$SVCINST"
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="optional_all"
-        echo "Adding '$DEPREQ' dependency for '$1' on '$DEPSVC'..."
+        echo "Adding '$DEPREQ' dependency for '$SVCINST' on '$DEPSVC'..."
 
         DEPPG="nut-driver-enumerator-generated"
         RESTARTON="refresh"
@@ -333,12 +356,15 @@ systemd_validInstanceName() {
     echo "`echo "$1" | md5sum | awk '{print $1}'`_"
 }
 systemd_registerInstance() {
-    /bin/systemctl enable 'nut-driver@'"$1" || \
-    /bin/systemctl enable 'nut-driver@'"`systemd_validInstanceName "$1"`" || return
+    DEVICE="$1"
+    SVCINST="$1"
+    /bin/systemctl enable 'nut-driver@'"$DEVICE" || \
+    { SVCINST="`systemd_validInstanceName "$1"`" && \
+      /bin/systemctl enable 'nut-driver@'"$SVCINST" || return ; }
 
     DEPSVC=""
     DEPREQ=""
-    _MED="`upsconf_getMedia "$1"`"
+    _MED="`upsconf_getMedia "$DEVICE"`"
     case "$_MED" in
         usb)
             DEPSVC="$DEPSVC_USB_SYSTEMD"
@@ -354,10 +380,10 @@ systemd_registerInstance() {
     esac
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="#Wants"
-        echo "Adding '$DEPREQ'+After dependency for '$1' on '$DEPSVC'..."
+        echo "Adding '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'..."
         mkdir -p "/etc/systemd/system/nut-driver@$1.service.d" && \
-        cat > "/etc/systemd/system/nut-driver@$1.service.d/nut-driver-enumerator-generated.conf" <<EOF
-# Customization generated `date -u` by nut-driver-enumerator
+        cat > "/etc/systemd/system/nut-driver@$SVCINST.service.d/nut-driver-enumerator-generated.conf" <<EOF
+# Customization generated `date -u` by nut-driver-enumerator for NUT device '$DEVICE'
 # DO NOT EDIT: This file would be removed or overwritten by that service
 [Unit]
 ${DEPREQ}=${DEPSVC}
@@ -367,7 +393,7 @@ EOF
     fi
 
     if [ "$AUTO_START" = yes ] ; then
-        /bin/systemctl start --no-block 'nut-driver@'"$1" || return
+        /bin/systemctl start --no-block 'nut-driver@'"$SVCINST" || return
     fi
 }
 systemd_unregisterInstance() {
@@ -447,7 +473,7 @@ nut_driver_enumerator_main() {
 
     # Quickly exit if there's nothing to do; note the lists are pre-sorted
     # Otherwise a non-zero exit will be done below
-    [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && return 0
+    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" && return 0
 
     if [ -n "$UPSLIST_FILE" ]; then
         upslist_addSvcs
@@ -471,7 +497,7 @@ nut_driver_enumerator_main() {
 
     # Return 42 if there was a change applied succesfully
     # (but e.g. some services should restart - upsd, maybe upsmon)
-    if [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] ; then
+    if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
     return 13
