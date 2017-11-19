@@ -70,8 +70,15 @@
 
 		<exec_method
 		type='method'
+		name='refresh'
+		exec='@NUT_DATADIR@/solaris-smf/method/nut-driver-enumerator.sh'
+		timeout_seconds='0'/>
+
+<!-- a :KILL does not really apply to a transient service... -->
+		<exec_method
+		type='method'
 		name='stop'
-		exec=':kill'
+		exec='/bin/true'
 		timeout_seconds='60' />
 
 		<property_group name='startd' type='framework'>
