@@ -406,39 +406,46 @@ upslist_delSvcs() {
     done
 }
 
-################# MAIN PROGRAM
+nut-driver-enumerator-main() {
+    ################# MAIN PROGRAM by default
 
-upslist_readFile || exit $?
-#upslist_debug
-upslist_readSvcs "before manipulations"
+    upslist_readFile || exit $?
+    #upslist_debug
+    upslist_readSvcs "before manipulations"
 
-# Quickly exit if there's nothing to do; note the lists are pre-sorted
-# Otherwise a non-zero exit will be done below
-[ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && exit 0
+    # Quickly exit if there's nothing to do; note the lists are pre-sorted
+    # Otherwise a non-zero exit will be done below
+    [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] && return 0
 
-if [ -n "$UPSLIST_FILE" ]; then
-    upslist_addSvcs
-    upslist_readSvcs "after checking for new config sections to define service instances"
+    if [ -n "$UPSLIST_FILE" ]; then
+        upslist_addSvcs
+        upslist_readSvcs "after checking for new config sections to define service instances"
+    fi
+
+    if [ -n "$UPSLIST_SVCS" ]; then
+        upslist_delSvcs
+    fi
+
+    upslist_readSvcs
+    if [ -n "$UPSLIST_SVCS" ] ; then
+        echo "=== The currently defined service instances are:"
+        echo "$UPSLIST_SVCS"
+    fi
+
+    if [ -n "$UPSLIST_FILE" ] ; then
+        echo "=== The currently defined configurations in '$UPSCONF' are:"
+        echo "$UPSLIST_FILE"
+    fi
+
+    # Return 42 if there was a change applied succesfully
+    # (but e.g. some services should restart - upsd, maybe upsmon)
+    if [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] ; then
+        [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
+    fi
+    return 13
+}
+
+# By default, update wrapping of devices into services
+if [ $# = 0 ]; then
+    nut-driver-enumerator-main ; exit $?
 fi
-
-if [ -n "$UPSLIST_SVCS" ]; then
-    upslist_delSvcs
-fi
-
-upslist_readSvcs
-if [ -n "$UPSLIST_SVCS" ] ; then
-    echo "=== The currently defined service instances are:"
-    echo "$UPSLIST_SVCS"
-fi
-
-if [ -n "$UPSLIST_FILE" ] ; then
-    echo "=== The currently defined configurations in '$UPSCONF' are:"
-    echo "$UPSLIST_FILE"
-fi
-
-# Return 42 if there was a change applied succesfully
-# (but e.g. some services should restart - upsd, maybe upsmon)
-if [ "$UPSLIST_FILE" = "$UPSLIST_SVCS" ] ; then
-    [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
-fi
-exit 13
