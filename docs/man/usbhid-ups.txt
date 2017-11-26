@@ -19,9 +19,9 @@ which only supported Linux systems.
 SUPPORTED HARDWARE
 ------------------
 
-*usbhid-ups* brings USB/HID UPS monitoring to NUT on all platform supporting
-USB through libusb. It should detect any UPS that uses the HID power device
-class, but the amount of data will vary depending on the manufacturer and
+*usbhid-ups* brings USB/HID UPS monitoring to NUT on all platforms supporting
+USB through libusb. It should detect any UPS that uses the HID Power Device
+Class, but the amount of data will vary depending on the manufacturer and
 model.
 
 At the present time, usbhid-ups supports:
@@ -66,19 +66,19 @@ immediately after NUT sends the shutdown command to the UPS.
  
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
-kill power command had been sent but before the actual switch off. This
+kill power command had been sent, but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
 +
 The default value is 30 (in seconds). Usually this *must be greater*
 than offdelay, but the driver will *not* warn you upon startup if it
 isn't. Some UPSes will restart no matter what, even if the power is
-(still) out at the moment this timer elapses. In that case, you could try
-if setting 'ondelay = -1' in *ups.conf* helps.
+(still) out at the moment this timer elapses. In that case, you could see
+whether setting `ondelay = -1` in *ups.conf* helps.
 +
 Note that many CPS models tend to divide this delay by 60 and round down, so
-the minimum advisable value is 60 to avoid powering on immediately after the
-power returns.
+the minimum advisable value is 120 to allow a short delay between when the UPS
+shuts down, and when the power returns.
 
 *pollfreq*='num'::
 Set polling frequency, in seconds, to reduce the USB data flow due to the
@@ -102,7 +102,7 @@ UPS (not recommended, but needed if these reports are broken on your UPS).
 *productid*='regex'::
 
 Select a specific UPS, in case there is more than one connected via
-USB Each option specifies an extended regular expression (see
+USB. Each option specifies an extended regular expression (see
 regex(7)) that must match the UPS's entire vendor/product/serial
 string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try *-DD* for
