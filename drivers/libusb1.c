@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.02"
+#define USB_DRIVER_VERSION	"0.3"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -265,28 +265,44 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		/* Now we have matched the device we wanted. Claim it. */
 
-#ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
-		/* First, try the auto-detach kernel driver method
-		 * This function is not available on FreeBSD 10.1-10.3 */
-		if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) < 0)
-			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s",
-				libusb_strerror((enum libusb_error)ret));
-		else
-			upsdebugx(2, "auto detached kernel driver from USB device");
+#if defined(HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE) && defined(HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER)
+		/* Due to the way FreeBSD implements libusb_set_auto_detach_kernel_driver(),
+		 * check to see if the kernel driver is active before setting
+		 * the auto-detach flag. Otherwise, libusb_claim_interface()
+		 * with the auto-detach flag only works if the driver is
+		 * running as root.
+		 *
+		 * Is the kernel driver active? Consider the unimplemented
+		 * return code to be equivalent to inactive here.
+		 */
+		if((ret = libusb_kernel_driver_active(udev, 0)) == 1) {
+			upsdebugx(3, "libusb_kernel_driver_active() returned 1 (driver active)");
+			/* Try the auto-detach kernel driver method.
+			 * This function is not available on FreeBSD 10.1-10.3 */
+			if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) != LIBUSB_SUCCESS) {
+				upsdebugx(1, "failed to set kernel driver auto-detach driver flag for USB device: %s",
+						libusb_strerror((enum libusb_error)ret));
+			} else {
+				upsdebugx(2, "successfully set kernel driver auto-detach flag");
+			}
+		} else {
+			upsdebugx(3, "libusb_kernel_driver_active() returned %d", ret);
+		}
 #endif
+
 #if HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-		/* Then, try to explicit detach method
+		/* Then, try the explicit detach method.
 		 * This function is available on FreeBSD 10.1-10.3 */
 		retries = 3;
-		while ((ret = libusb_claim_interface(udev, 0)) < 0) {
+		while ((ret = libusb_claim_interface(udev, 0)) != LIBUSB_SUCCESS) {
 			upsdebugx(2, "failed to claim USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 
-			if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
+			if ((ret = libusb_detach_kernel_driver(udev, 0)) != LIBUSB_SUCCESS) {
 				if (ret == LIBUSB_ERROR_NOT_FOUND)
 					upsdebugx(2, "Kernel driver already detached");
 				else
-					upsdebugx(2, "failed to detach kernel driver from USB device: %s",
+					upsdebugx(1, "failed to detach kernel driver from USB device: %s",
 						libusb_strerror((enum libusb_error)ret));
 			} else {
 				upsdebugx(2, "detached kernel driver from USB device...");
@@ -300,7 +316,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 				libusb_strerror((enum libusb_error)ret));
 		}
 #else
-		if ((ret = libusb_claim_interface(udev, 0)) < 0 ) {
+		if ((ret = libusb_claim_interface(udev, 0)) != LIBUSB_SUCCESS ) {
 			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s",
 				curDevice->VendorID, curDevice->ProductID,
 				libusb_strerror((enum libusb_error)ret));
