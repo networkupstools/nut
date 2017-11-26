@@ -137,6 +137,12 @@ int nutscan_load_usb_library(const char *libname_path)
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
 	}
+
+	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
+					"libusb_get_string_descriptor_ascii");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 #else /* for libusb 0.1 */
 	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle, "usb_find_busses");
 	if ((dl_error = lt_dlerror()) != NULL)  {
@@ -152,15 +158,16 @@ int nutscan_load_usb_library(const char *libname_path)
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
 	}
-#endif /* WITH_LIBUSB_1_0 */
 
 	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
 					"usb_get_string_simple");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
 	}
+#endif /* WITH_LIBUSB_1_0 */
 
 	return 1;
+
 err:
 	fprintf(stderr, "Cannot load USB library (%s) : %s. USB search disabled.\n", libname_path, dl_error);
 	dl_handle = (void *)1;
@@ -289,7 +296,7 @@ nutscan_device_t * nutscan_scan_usb()
 				/* get serial number */
 				if (iSerialNumber) {
 					ret = (*nut_usb_get_string_simple)(udev,
-						iSerialNumber, string, sizeof(string));
+						iSerialNumber, (char *)string, sizeof(string));
 					if (ret > 0) {
 						serialnumber = strdup(str_rtrim(string, ' '));
 					}
@@ -297,7 +304,7 @@ nutscan_device_t * nutscan_scan_usb()
 				/* get product name */
 				if (iProduct) {
 					ret = (*nut_usb_get_string_simple)(udev,
-						iProduct, string, sizeof(string));
+						iProduct, (char *)string, sizeof(string));
 					if (ret > 0) {
 						device_name = strdup(str_rtrim(string, ' '));
 					}
@@ -306,7 +313,7 @@ nutscan_device_t * nutscan_scan_usb()
 				/* get vendor name */
 				if (iManufacturer) {
 					ret = (*nut_usb_get_string_simple)(udev,
-						iManufacturer, string, sizeof(string));
+						iManufacturer, (char *)string, sizeof(string));
 					if (ret > 0) {
 						vendor_name = strdup(str_rtrim(string, ' '));
 					}
