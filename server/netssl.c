@@ -388,7 +388,11 @@ void ssl_init(void)
 #ifdef WITH_OPENSSL
 
 	SSL_load_error_strings();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_library_init();
+#else
+	OPENSSL_init_ssl(0, NULL);
+#endif
 
 	if ((ssl_method = TLSv1_server_method()) == NULL) {
 		ssl_debug();

@@ -57,8 +57,9 @@ if test -z "${nut_have_libopenssl_seen}"; then
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if openssl is usable
-	AC_CHECK_HEADERS(openssl/ssl.h, [nut_have_openssl=yes], [nut_have_openssl=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(SSL_library_init, [], [nut_have_openssl=no])
+	AC_CHECK_FUNCS(OPENSSL_init_ssl, [nut_have_openssl=yes], [nut_have_openssl=no])
+	AC_CHECK_FUNCS(SSL_library_init, [nut_have_openssl=yes], [])
+	AC_CHECK_HEADERS(openssl/ssl.h, [], [nut_have_openssl=no], [AC_INCLUDES_DEFAULT])
 
 	if test "${nut_have_openssl}" = "yes"; then
 		nut_with_ssl="yes"
