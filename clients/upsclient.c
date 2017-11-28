@@ -299,11 +299,6 @@ int upscli_init(int certverify, const char *certpath,
 {
 #ifdef WITH_OPENSSL
 	int ret, ssl_mode = SSL_VERIFY_NONE;
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-	const SSL_METHOD	*ssl_method;
-#else
-	SSL_METHOD	*ssl_method;
-#endif
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -315,26 +310,35 @@ int upscli_init(int certverify, const char *certpath,
 	}
 	
 #ifdef WITH_OPENSSL
+
+	SSL_load_error_strings();
 	
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_library_init();
+
+	ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 #else
 	OPENSSL_init_ssl(0, NULL);
+
+	ssl_ctx = SSL_CTX_new(TLS_client_method());
 #endif
-	SSL_load_error_strings();
 
-	ssl_method = TLSv1_client_method();
-
-	if (!ssl_method) {
-		return 0;
-	}
-
-	ssl_ctx = SSL_CTX_new(ssl_method);
 	if (!ssl_ctx) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
 	}
 	
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	/* set minimum protocol TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#else
+	ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
+	if (ret != 1) {
+		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
+		return -1;
+	}
+#endif
+
 	if (!certpath) {
 		if (certverify == 1) {
 			upslogx(LOG_ERR, "Can not verify certificate if any is specified");
