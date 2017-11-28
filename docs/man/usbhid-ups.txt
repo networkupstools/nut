@@ -82,7 +82,7 @@ shuts down, and when the power returns.
 
 *pollfreq*='num'::
 Set polling frequency, in seconds, to reduce the USB data flow due to the
-generic calls to request driver updates every "pollinterval", as per
+generic calls to request driver updates every *pollinterval*, as per
 linkman:ups.conf[5].
 Between two polling requests with *pollfreq*, the driver will wait for
 interrupts (aka UPS notifications), which are data changes returned by the
