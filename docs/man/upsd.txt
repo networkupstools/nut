@@ -126,10 +126,15 @@ ENVIRONMENT VARIABLES
 `upsd.conf` and other configuration files.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
 
-*NUT_STATEPATH* is the path name of the directory in which 
+*NUT_STATEPATH* is the path name of the directory in which
 *upsd* keeps state information.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/var/state/ups`.
 The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
+
+*NUT_ALTPIDPATH* is the path name of the directory in which
+*upsd* and drivers store .pid files.  If this variable is not set,
+*upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
+or otherwise the built-in default *STATEPATH*.
 
 SEE ALSO
 --------
