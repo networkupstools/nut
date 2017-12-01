@@ -275,7 +275,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	{
 	case 1:
 		client->ssl_connected = 1;
-		upsdebugx(3, "SSL connected");
+		upsdebugx(3, "SSL connected (%s)", SSL_get_version(client->ssl));
 		break;
 		
 	case 0:

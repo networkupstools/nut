@@ -745,7 +745,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	switch(res)
 	{
 	case 1:
-		upsdebugx(3, "SSL connected");
+		upsdebugx(3, "SSL connected (%s)", SSL_get_version(ups->ssl));
 		break;
 	case 0:
 		upslog_with_errno(1, "SSL_connect do not accept handshake.");
