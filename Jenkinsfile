@@ -23,7 +23,7 @@ pipeline {
             description: 'If the deployment is done, should THIS job wait for it to complete and include its success or failure as the build result (true), or should it schedule the job and exit quickly to free up the executor (false)',
             name: 'DEPLOY_REPORT_RESULT')
         booleanParam (
-            defaultValue: false,
+            defaultValue: true,
             description: 'Attempt "make check" in this run?',
             name: 'DO_TEST_CHECK')
         booleanParam (
@@ -31,7 +31,7 @@ pipeline {
             description: 'Attempt "make memcheck" in this run?',
             name: 'DO_TEST_MEMCHECK')
         booleanParam (
-            defaultValue: true,
+            defaultValue: false,
             description: 'Attempt "make distcheck" in this run?',
             name: 'DO_TEST_DISTCHECK')
         booleanParam (
