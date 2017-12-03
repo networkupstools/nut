@@ -98,7 +98,11 @@ static void help_msg(void)
 
 	printf("  -s <id>        - configure directly from cmd line arguments\n");
 	printf("                 - note: must specify all driver parameters with successive -x\n");
-	printf("                 - note: at least 'port' variable should be set\n\n");
+	printf("                 - note: at least 'port' variable should be set\n");
+	printf("                 - note: to explore the current values on a device from an\n");
+	printf("                   unprivileged user account (with sufficient media access in\n");
+	printf("                   the OS - e.g. to query networked devices), you can specify\n");
+	printf("                   '-d 1' argument and `export NUT_STATEPATH=/tmp` beforehand\n\n");
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
