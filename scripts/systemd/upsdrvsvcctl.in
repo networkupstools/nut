@@ -32,8 +32,9 @@ Starts and stops UPS drivers via system service instances, see
 the $ENUMERATOR
 script for more details.
 
-usage: ./drivers/upsdrvctl [OPTIONS] (start | stop | shutdown) [<ups>]
+usage: $0 [OPTIONS] (start | stop | shutdown) [<ups>]
 
+Options:
   -h            	display this help
   -t            	testing mode - prints actions without doing them
   -D            	raise debugging level
@@ -41,6 +42,9 @@ usage: ./drivers/upsdrvctl [OPTIONS] (start | stop | shutdown) [<ups>]
   start <ups>   	only start driver for UPS <ups>
   stop          	stop all UPS drivers in ups.conf
   stop <ups>    	only stop driver for UPS <ups>
+
+Note: the "shutdown" options from original upsdrvctl are not currently
+supported by this service management framework wrapper:
 # shutdown      	shutdown all UPS drivers in ups.conf
 # shutdown <ups>	only shutdown UPS <ups>
 EOF
@@ -90,7 +94,8 @@ case "$SERVICE_FRAMEWORK" in
     *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
 esac
 
-# TODO: Support shutdown of one or all UPSes by stopping its service and calling upsdrvctl on it
+# TODO: Support shutdown of one or all UPSes by stopping its service
+# and then calling the original upsdrvctl on it?
 case "$ACTION" in
     start)
         VERB="Starting"
