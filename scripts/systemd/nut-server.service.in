@@ -22,4 +22,4 @@ ExecReload=@SBINDIR@/upsd -c reload
 Type=forking
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=nut.target

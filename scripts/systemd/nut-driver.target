@@ -4,4 +4,4 @@ After=local-fs.target
 # network.target
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=nut.target

@@ -20,4 +20,4 @@ PIDFile=@PIDPATH@/upsmon.pid
 Type=forking
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=nut.target

@@ -7,7 +7,8 @@ systemdsystemunit_DATA = \
         nut-driver@.service \
         nut-monitor.service \
         nut-server.service  \
-        nut-driver.target
+        nut-driver.target   \
+        nut.target
 
 EXTRA_DIST += nut-driver.target
 
@@ -19,7 +20,7 @@ sbin_SCRIPTS = upsdrvsvcctl
 
 else
 EXTRA_DIST += nut-driver@.service.in nut-monitor.service.in \
-	nut-server.service.in nutshutdown.in nut-driver.target \
+	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
 	nut-driver-enumerator.sh.in nut-driver-enumerator.service.in \
 	upsdrvsvcctl.in
 endif
