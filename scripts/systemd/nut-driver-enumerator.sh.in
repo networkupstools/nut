@@ -540,6 +540,9 @@ $0 --list-instances
 $0 --get-service-for-device DEV
         Print the full name of service unit which wraps a NUT
         device named "DEV"
+$0 --list-services-for-devices
+        Print a TAB-separated list of service units and corresponding
+        NUT device names which each such unit wraps
 EOF
 }
 
@@ -578,15 +581,19 @@ while [ $# -gt 0 ]; do
             exit 1
             ;;
         --get-service-for-device) [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            DEV="$2"
             upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
                 || { echo "No service instances detected" >&2 ; exit 1; }
             UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
                 || { echo "No service units detected" >&2 ; exit 1; }
+            vINST="`$hook_validInstanceName "$DEV"`"
+            vUNITD="`$hook_validFullUnitName "$DEV"`"
+            vUNITI="`$hook_validFullUnitName "$vINST"`"
             # First pass over simple verbatim names
             for INST in $UPSLIST_SVCS ; do
-                if [ "$INST" = "$2" ] ; then
+                if [ "$INST" = "$DEV" ] ; then
                     for UNIT in $UPSLIST_SVCS_RAW ; do
-                        if [ "$UNIT" = "`$hook_validFullUnitName "$INST"`" ] ; then
+                        if [ "$UNIT" = "$vUNITD" ] ; then
                             echo "$UNIT"
                             exit 0
                         fi
@@ -594,10 +601,9 @@ while [ $# -gt 0 ]; do
                 fi
             done
             for INST in $UPSLIST_SVCS ; do
-                vINST="`$hook_validInstanceName "$INST"`"
-                if [ "$vINST" = "$2" ] ; then
+                if [ "$INST" = "$vINST" ] ; then
                     for UNIT in $UPSLIST_SVCS_RAW ; do
-                        if [ "$UNIT" = "`$hook_validFullUnitName "$vINST"`" ] ; then
+                        if [ "$UNIT" = "$vUNITI" ] ; then
                             echo "$UNIT"
                             exit 0
                         fi
@@ -606,6 +612,44 @@ while [ $# -gt 0 ]; do
             done
             echo "No service instances detected that match device '$2'" >&2
             exit 1
+            ;;
+        --list-services-for-devices)
+            FINAL_RES=0
+            upslist_readFile && [ -n "$UPSLIST_FILE" ] \
+                || { echo "No devices detected in '$UPSCONF'" >&2 ; exit 1 ; }
+            upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
+                || { echo "No service instances detected" >&2 ; exit 1; }
+            UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
+                || { echo "No service units detected" >&2 ; exit 1; }
+            for DEV in $UPSLIST_FILE ; do
+                vINST="`$hook_validInstanceName "$DEV"`"
+                vUNITD="`$hook_validFullUnitName "$DEV"`"
+                vUNITI="`$hook_validFullUnitName "$vINST"`"
+                # First pass over simple verbatim names
+                for INST in $UPSLIST_SVCS ; do
+                    if [ "$INST" = "$DEV" ] ; then
+                        for UNIT in $UPSLIST_SVCS_RAW ; do
+                            if [ "$UNIT" = "$vUNITD" ] ; then
+                                printf '%s\t%s\n' "$UNIT" "$DEV"
+                                continue 3
+                            fi
+                        done
+                    fi
+                done
+                for INST in $UPSLIST_SVCS ; do
+                    if [ "$INST" = "$vINST" ] ; then
+                        for UNIT in $UPSLIST_SVCS_RAW ; do
+                            if [ "$UNIT" = "$vUNITI" ] ; then
+                                printf '%s\t%s\n' "$UNIT" "$DEV"
+                                continue 3
+                            fi
+                        done
+                    fi
+                done
+                echo "WARNING: no service instances detected that match device '$DEV'" >&2
+                FINAL_RES=1
+            done
+            exit $FINAL_RES
             ;;
         *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
     esac

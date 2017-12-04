@@ -234,10 +234,13 @@ their instances as needed on particular deployments.
 
 This solution also adds the `upsdrvsvcctl` script to manage NUT drivers as
 system service instances, whose CLI mimics that of `upsdrvctl` program.
-One addition is the `resync` argument to trigger `nut-driver-enumerator`.
-Also, arguments such as the `-u` (user to run the driver as) do not make
-sense in the service context -- the accounts to use are part of service
-setup (and an administrator can manage it there).
+One addition is the `resync` argument to trigger `nut-driver-enumerator`,
+another is a `list` argument to display current mappings of service
+instances to NUT driver sections. Also, original tool's arguments such
+as the `-u` (user to run the driver as) or `-D` (debug of the driver)
+do not make sense in the service context -- the accounts to use and
+other arguments to the driver process are part of service setup (and
+an administrator can manage it there).
 
 Note that while this solution tries to register service instances with same
 names as NUT configuration sections for the devices, this can not always be
