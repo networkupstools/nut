@@ -58,11 +58,16 @@ EOF
 ACTION=""
 SVCINST=""
 DRYRUN=""
-DEBUG=0 # UNUSED_PARAM so far
+DEBUG=0
+# Note: DEBUG is UNUSED_PARAM so far
 while [ $# -gt 0 ]; do
     case "$1" in
         resync) eval $DRYRUN $ENUMERATOR ; exit $? ;;
-        start|stop) if [ -n "$2" ] ; then SVCINST="`$ENUMERATOR --get-service-for-device "$2"`" || exit ; shift ; fi
+        start|stop)
+            if [ -n "$2" ] ; then
+                SVCINST="`$ENUMERATOR --get-service-for-device "$2"`" || exit
+                shift
+            fi
             ACTION="$1" ;;
         shutdown)   echo "Action '$1' is not implemented via services currently" >&2 ; exit 1 ;;
         -t) DRYRUN="echo" ;;
