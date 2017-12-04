@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2412 utf-8
+personal_ws-1.1 en 2419 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -145,6 +145,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLI
 CLOCAL
 CMDDESC
 CMDSCRIPT
@@ -437,8 +438,8 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
-Kaminski
 Kain
+Kaminski
 Kanji
 Kazutoshi
 Kebo
@@ -897,6 +898,7 @@ SKU
 SL
 SMALLBUF
 SMBUS
+SMF
 SMK
 SMT
 SMTP
@@ -2298,6 +2300,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvsvcctl
 upserror
 upsfetch
 upsgone
