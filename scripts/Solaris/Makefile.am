@@ -1,4 +1,4 @@
-EXTRA_DIST = makelocal.sh
+EXTRA_DIST = makelocal.sh README
 PROTOTYPE_DIR = $(DESTDIR)@prefix@
 SOLARIS_CHECK_TARGETS =
 
