@@ -4,14 +4,15 @@ SOLARIS_CHECK_TARGETS =
 
 SOLARIS_SMF_MANIFESTS = \
 	nut.xml \
-	nut-client.xml \
+	nut-server.xml \
+	nut-monitor.xml \
 	nut-driver.xml \
 	nut-driver-enumerator.xml
 
 SOLARIS_SMF_METHODSCRIPTS = \
 	../systemd/nut-driver-enumerator.sh \
-	svc-nut \
-	svc-nut-client
+	svc-nut-server \
+	svc-nut-monitor
 
 if WITH_SOLARIS_SMF
 # OS equivalent of /lib/svc/method and /var/svc/manifest/application

@@ -55,7 +55,7 @@ fi
 
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	echo "Register SMF services..."
-	for S in nut-driver-enumerator nut-driver nut nut-client ; do
+	for S in nut-driver-enumerator nut-driver nut-server nut-monitor nut ; do
 		echo "Importing NUT service manifest: $S..."
 		/usr/sbin/svccfg import "@datadir@/solaris-smf/manifest/$S.xml"
 	done
@@ -68,13 +68,15 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
 	fi
 	if test -s "@CONFPATH@/ups.conf" && test -s "@CONFPATH@/upsd.conf" && test -s "@CONFPATH@/upsd.users" ; then
-		echo "Enable NUT upsd server..."
-		/usr/sbin/svcadm enable -s nut
+		echo "Enable NUT upsd data server..."
+		/usr/sbin/svcadm enable -s nut-server
 	fi
 	if test -s "@CONFPATH@/upsmon.conf" ; then
 		echo "Enable NUT upsmon client..."
-		/usr/sbin/svcadm enable -s nut-client
+		/usr/sbin/svcadm enable -s nut-monitor
 	fi
+	echo "Enable NUT umbrella service..."
+	/usr/sbin/svcadm enable -s nut
 else
 	echo "Put init script in /etc/init.d..."
 	cp -pf "@datadir@/solaris-init/nut" /etc/init.d

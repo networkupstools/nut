@@ -307,6 +307,7 @@ smf_registerInstance() {
     /usr/sbin/svccfg -s nut-driver add "$DEVICE" || \
     { SVCINST="`smf_validInstanceName "$1"`" && \
       /usr/sbin/svccfg -s nut-driver add "$SVCINST" || return ; }
+    echo "Added instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'" >&2
 
     DEPSVC=""
     DEPREQ=""
@@ -343,9 +344,11 @@ smf_registerInstance() {
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
         /usr/sbin/svcadm enable "${TARGET_FMRI}" || return
+        echo "Started instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
 }
 smf_unregisterInstance() {
+    echo "Removing instance: 'nut-driver:$1' ..." >&2
     /usr/sbin/svcadm disable -ts 'nut-driver:'"$1" || false
     /usr/sbin/svccfg -s nut-driver delete "$1"
 }
@@ -369,6 +372,7 @@ systemd_registerInstance() {
     /bin/systemctl enable 'nut-driver@'"$DEVICE" || \
     { SVCINST="`systemd_validInstanceName "$1"`" && \
       /bin/systemctl enable 'nut-driver@'"$SVCINST" || return ; }
+    echo "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
 
     DEPSVC=""
     DEPREQ=""
@@ -402,9 +406,11 @@ EOF
 
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$SVCINST" || return
+        echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
 }
 systemd_unregisterInstance() {
+    echo "Removing instance: 'nut-driver@$1' ..." >&2
     /bin/systemctl stop 'nut-driver@'"$1" || false
     /bin/systemctl disable 'nut-driver@'"$1"
     rm -rf "/etc/systemd/system/nut-driver@$1.service.d"

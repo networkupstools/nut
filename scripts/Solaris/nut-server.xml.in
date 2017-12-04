@@ -3,13 +3,13 @@
 <!--
 #
 # Copyright 2016-2017 Jim Klimov
-# Service for NUT upsmon
+# Service for the upsd daemon (and drivers, if available)
 #
 -->
 
-<service_bundle type='manifest' name='nut-client'>
+<service_bundle type='manifest' name='nut-server'>
 
-	<service name='system/power/nut-client' type='service' version='1'>
+	<service name='system/power/nut-server' type='service' version='1'>
 
 	<!--
 	  Configure a default instance for the service since it doesn't
@@ -43,7 +43,9 @@
 		type='path'
 		grouping='require_all'
 		restart_on='refresh'>
-			<service_fmri value='file://localhost@CONFPATH@/upsmon.conf' />
+			<service_fmri value='file://localhost@CONFPATH@/ups.conf' />
+			<service_fmri value='file://localhost@CONFPATH@/upsd.conf' />
+			<service_fmri value='file://localhost@CONFPATH@/upsd.users' />
 		</dependency>
 
 	<!--
@@ -71,15 +73,28 @@
 		</dependency>
 
 	<!--
-	  Wait for NUT upsd to be started, if it's enabled
+	  Wait for drivers to be wrapped in service instances
+	  Note that drivers are optional: if one fails to start or get configured,
+	  do not block the upsd from publishing others.
 	-->
 		<dependency
-		name='nut-service'
+		name='nut-driver-enumerator'
 		grouping='optional_all'
 		restart_on='none'
 		type='service'>
-			<service_fmri value='svc:/system/power/nut' />
+			<service_fmri value='svc:/system/power/nut-driver-enumerator' />
 		</dependency>
+
+	<!--
+	  Prerequisite for NUT upsmon to be started, if it's enabled
+	  Although it may also be a client to some other server...
+	-->
+		<dependent
+		name='nut-monitor-service'
+		grouping='optional_all'
+		restart_on='refresh'>
+			<service_fmri value='svc:/system/power/nut-monitor' />
+		</dependent>
 
 	<!--
 	  The nut start/stop methods.
@@ -88,7 +103,7 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='@NUT_DATADIR@/solaris-smf/method/svc-nut-client %m'
+		exec='@NUT_DATADIR@/solaris-smf/method/svc-nut-server %m'
 		timeout_seconds='60'/>
 
 		<exec_method
@@ -112,13 +127,19 @@
 		<template>
 			<common_name>
 				<loctext xml:lang='C'>
-				NUT ups monitoring service
+				NUT data server
 				</loctext>
 			</common_name>
 			<documentation>
-				<manpage title='upsmon' section='8'
+				<manpage title='upsdrvctl' section='8'
 				manpath='/usr/share/man' />
-				<manpage title='upsmon.conf' section='5'
+				<manpage title='upsd' section='8'
+				manpath='/usr/share/man' />
+				<manpage title='ups.conf' section='5'
+				manpath='/usr/share/man' />
+				<manpage title='upsd.conf' section='5'
+				manpath='/usr/share/man' />
+				<manpage title='upsd.users' section='5'
 				manpath='/usr/share/man' />
 			</documentation>
 		</template>

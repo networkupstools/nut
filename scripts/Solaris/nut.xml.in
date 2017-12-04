@@ -3,7 +3,7 @@
 <!--
 #
 # Copyright 2016-2017 Jim Klimov
-# Service for the upsd daemon (and drivers, if available)
+# Service for common startup of NUT-related services
 #
 -->
 
@@ -15,102 +15,39 @@
 	  Configure a default instance for the service since it doesn't
 	  require additional configuration intervention before it starts.
 	-->
-		<create_default_instance enabled='false' />
+		<create_default_instance enabled='true' />
 
 	<!--
-	  Wait for all local and usr filesystem to be mounted - project is
-	  usually located in /usr/sbin.
-	-->
-		<dependency
-		name='fs-local'
-		type='service'
-		grouping='require_all'
-		restart_on='none'>
-			<service_fmri value='svc:/system/filesystem/local' />
-		</dependency>
-
-		<dependency
-		name='filesystem-usr'
-		grouping='require_all'
-		restart_on='none'
-		type='service'>
-			<service_fmri
-		value='svc:/system/filesystem/usr:default'/>
-		</dependency>
-
-		<dependency
-		name='config-files'
-		type='path'
-		grouping='require_all'
-		restart_on='refresh'>
-			<service_fmri value='file://localhost@CONFPATH@/ups.conf' />
-			<service_fmri value='file://localhost@CONFPATH@/upsd.conf' />
-			<service_fmri value='file://localhost@CONFPATH@/upsd.users' />
-		</dependency>
-
-	<!--
-	  Wait for syslog to be started in order to write system
-	  messages from the kernel.
+	  Not all deployments have both the drivers+data server and client
+	  on the same box, so this service only triggers whatever is enabled
+	  and waits for other system resources according to dependencies of
+	  those actual services.
 	-->
 		<dependency
 		name='syslog'
 		grouping='optional_all'
-		restart_on='none'
+		restart_on='refresh'
 		type='service'>
-			<service_fmri
-		value='svc:/system/system-log:default'/>
+			<service_fmri value='svc:/system/power/nut-server:default'/>
+			<service_fmri value='svc:/system/power/nut-monitor:default'/>
 		</dependency>
-
-	<!--
-	  Wait for network to be started in order to reach remote hosts.
-	-->
-		<dependency
-		name='network-service'
-		grouping='optional_all'
-		restart_on='none'
-		type='service'>
-			<service_fmri value='svc:/network/service' />
-		</dependency>
-
-	<!--
-	  Wait for drivers to be wrapped in service instances
-	  Note that drivers are optional: if one fails to start or get configured,
-	  do not block the upsd from publishing others.
-	-->
-		<dependency
-		name='nut-driver-enumerator'
-		grouping='optional_all'
-		restart_on='none'
-		type='service'>
-			<service_fmri value='svc:/system/power/nut-driver-enumerator' />
-		</dependency>
-
-	<!--
-	  Prerequisite for NUT upsmon to be started, if it's enabled
-	  Although it may also be a client to some other server...
-	-->
-		<dependent
-		name='nut-client-service'
-		grouping='optional_all'
-		restart_on='refresh'>
-			<service_fmri value='svc:/system/power/nut-client' />
-		</dependent>
 
 	<!--
 	  The nut start/stop methods.
 	-->
 
+		<!-- The startup is expected to trigger enabled dependency services -->
 		<exec_method
 		type='method'
 		name='start'
-		exec='@NUT_DATADIR@/solaris-smf/method/svc-nut %m'
+		exec='/bin/true'
 		timeout_seconds='60'/>
 
 		<exec_method
 		type='method'
 		name='stop'
-		exec=':kill'
-		timeout_seconds='60' />
+		exec='/usr/sbin/svcadm disable -ts svc:/system/power/nut-monitor:default ; /usr/sbin/svcadm disable -ts svc:/system/power/nut-server:default ; @sbindir@/upsdrvsvcctl stop'
+		timeout_seconds='120' />
 
 		<property_group name='startd' type='framework'>
 		<!--

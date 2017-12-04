@@ -1741,10 +1741,11 @@ AC_OUTPUT([
  scripts/systemd/upsdrvsvcctl
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
- scripts/Solaris/nut-client.xml
+ scripts/Solaris/nut-monitor.xml
+ scripts/Solaris/nut-server.xml
  scripts/Solaris/nut.xml
- scripts/Solaris/svc-nut
- scripts/Solaris/svc-nut-client
+ scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-monitor
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
  scripts/Solaris/preinstall

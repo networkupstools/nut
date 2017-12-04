@@ -7,7 +7,7 @@ prefix="@prefix@" # expanded as part of some autoconf macros below
 
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	# Unconfigure SMF services
-	for S in nut-client nut-driver-enumerator nut ; do
+	for S in nut-monitor nut-driver-enumerator nut-server nut ; do
 		echo "Stopping NUT service: $S..."
 		/usr/sbin/svcadm disable -s "$S"
 		echo "Removing NUT service: $S..."
