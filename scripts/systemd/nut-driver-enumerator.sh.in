@@ -524,16 +524,22 @@ fi
 
 usage() {
     cat << EOF
-$0 (no args)        Update wrapping of devices into services
-$0 --get-service-framework  Print the detected service
+$0 (no args)
+        Update wrapping of devices into services
+$0 --get-service-framework
+        Print the detected service
         management framework in this OS
-$0 --list-devices   Print list of devices in NUT config
-$0 --list-services  Print list of service instances
-        which wrap registered NUT devices (full name of service unit)
-$0 --list-instances Print list of service instances
-        which wrap registered NUT devices (just instance suffix)
-$0 --get-service-for-device DEV    Print the full name of
-        service unit which wraps a NUT device named "DEV"
+$0 --list-devices
+        Print list of devices in NUT config
+$0 --list-services
+        Print list of service instances which wrap registered
+        NUT devices (full name of service unit)
+$0 --list-instances
+        Print list of service instances which wrap registered
+        NUT devices (just instance suffix)
+$0 --get-service-for-device DEV
+        Print the full name of service unit which wraps a NUT
+        device named "DEV"
 EOF
 }
 

@@ -21,7 +21,28 @@
 #  \brief   Manage NUT devices registered as service-unit instances
 #
 
-ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
+    [ -x /usr/sbin/svcadm ] && [ -x /usr/sbin/svccfg ] && [ -x /usr/bin/svcs ] && \
+        SERVICE_FRAMEWORK="smf"
+    [ -z "${SERVICE_FRAMEWORK-}" ] && \
+        [ -x /bin/systemctl ] && \
+        SERVICE_FRAMEWORK="systemd"
+fi
+
+VERB=""
+CMD=""
+CMDARG=""
+ENUMERATOR=""
+case "$SERVICE_FRAMEWORK" in
+    smf) CMD="/usr/sbin/svcadm"
+        ENUMERATOR="@NUT_DATADIR@/solaris-smf/method/nut-driver-enumerator.sh"
+        ;;
+    systemd) CMD="/bin/systemctl"
+        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        ;;
+    *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
+esac
+
 
 usage() {
     # Note: version header differs from UPS_VERSION in binaries that
@@ -79,6 +100,11 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+if [ -z "$ENUMERATOR" ] || [ ! -s "$ENUMERATOR" ] || [ ! -x "$ENUMERATOR" ] ; then
+    echo "ENUMERATOR script (nut-driver-enumerator.sh) not found!" >&2
+    exit 1
+fi
+
 if [ -z "$ACTION" ]; then
     echo "No action was requested!" >&2
     exit 1
@@ -87,23 +113,6 @@ fi
 if [ -z "$SVCINST" ]; then
     SVCINST="`$ENUMERATOR --list-services`" || exit
 fi
-
-if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
-    [ -x /usr/sbin/svcadm ] && [ -x /usr/sbin/svccfg ] && [ -x /usr/bin/svcs ] && \
-        SERVICE_FRAMEWORK="smf"
-    [ -z "${SERVICE_FRAMEWORK-}" ] && \
-        [ -x /bin/systemctl ] && \
-        SERVICE_FRAMEWORK="systemd"
-fi
-
-VERB=""
-CMD=""
-CMDARG=""
-case "$SERVICE_FRAMEWORK" in
-    smf) CMD="/usr/sbin/svcadm" ;;
-    systemd) CMD="/bin/systemctl" ;;
-    *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
-esac
 
 # TODO: Support shutdown of one or all UPSes by stopping its service
 # and then calling the original upsdrvctl on it?
