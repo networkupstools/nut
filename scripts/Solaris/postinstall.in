@@ -66,14 +66,20 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
 		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
 		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
+	else
+		echo "NOT ENABLING nut-driver-enumerator at this time : missing @CONFPATH@/ups.conf" >&2
 	fi
 	if test -s "@CONFPATH@/ups.conf" && test -s "@CONFPATH@/upsd.conf" && test -s "@CONFPATH@/upsd.users" ; then
 		echo "Enable NUT upsd data server..."
 		/usr/sbin/svcadm enable -s nut-server
+	else
+		echo "NOT ENABLING nut-server at this time : missing at least one of : @CONFPATH@/ups.conf @CONFPATH@/upsd.conf @CONFPATH@/upsd.users" >&2
 	fi
 	if test -s "@CONFPATH@/upsmon.conf" ; then
 		echo "Enable NUT upsmon client..."
 		/usr/sbin/svcadm enable -s nut-monitor
+	else
+		echo "NOT ENABLING nut-monitor at this time : missing @CONFPATH@/upsmon.conf" >&2
 	fi
 	echo "Enable NUT umbrella service..."
 	/usr/sbin/svcadm enable -s nut
