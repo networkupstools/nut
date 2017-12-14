@@ -398,6 +398,7 @@ systemd_registerInstance() {
 # Customization generated `date -u` by nut-driver-enumerator for NUT device '$DEVICE'
 # DO NOT EDIT: This file would be removed or overwritten by that service
 [Unit]
+Description=Network UPS Tools - device driver for NUT device '$DEVICE'
 ${DEPREQ}=${DEPSVC}
 After=${DEPSVC}
 EOF
