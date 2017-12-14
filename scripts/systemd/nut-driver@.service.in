@@ -28,6 +28,15 @@ PartOf=nut-driver.target
 ExecStart=@SBINDIR@/upsdrvctl start %i
 ExecStop=@SBINDIR@/upsdrvctl stop %i
 Type=forking
+# Note: If you customize the "maxstartdelay" in ups.conf or in your
+# NUT compilation defaults, so it exceeds the default systemd unit
+# startup timeout (typically 90 sec), then make sure to set a slightly
+# longer systemd timeout for the nut-driver unit instances. You can
+# do this by populating a drop-in configuration, so it is not later
+# overwritten by updates to your NUT package -- create a dir+file:
+# /etc/systemd/system/nut-driver@.service.d/timeout.conf with lines:
+# [Service]
+# TimeoutStartSec=190s
 
 [Install]
 WantedBy=nut-driver.target
