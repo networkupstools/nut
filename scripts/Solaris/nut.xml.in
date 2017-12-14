@@ -3,7 +3,7 @@
 <!--
 #
 # Copyright 2016-2017 Jim Klimov
-# Service for common startup of NUT-related services
+# Service for common startup or shutdown of NUT-related services
 #
 -->
 
@@ -36,13 +36,16 @@
 	  The nut start/stop methods.
 	-->
 
-		<!-- The startup is expected to trigger enabled dependency services -->
+		<!-- The startup is expected to trigger enabled dependency services
+		     and not-trigger those which were not administratively enabled -->
 		<exec_method
 		type='method'
 		name='start'
 		exec='/bin/true'
 		timeout_seconds='60'/>
 
+		<!-- The shutdown temporarily-disables all components (if they were
+		     enabled and running in the first place, no-op otherwise) -->
 		<exec_method
 		type='method'
 		name='stop'
@@ -64,7 +67,7 @@
 		<template>
 			<common_name>
 				<loctext xml:lang='C'>
-				NUT ups information service
+				Service for common startup or shutdown of NUT-related services
 				</loctext>
 			</common_name>
 			<documentation>
