@@ -2840,6 +2840,8 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
 			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			DOC_INSTALL_DISTED_MANS="yes"
+			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
+			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
 		else
 		  if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
