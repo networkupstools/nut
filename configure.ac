@@ -2686,6 +2686,9 @@ case "${nut_with_doc}" in
 	skip|all=skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
+	dist-auto) # Experimental, currently only for MANs: prefer disted files if present, auto otherwise
+		nut_doc_build_list="man=dist-auto html-single=dist-auto html-chunked=dist-auto pdf=dist-auto"
+		;;
 	no|all=no)
 		nut_doc_build_list=""
 		;;
@@ -2726,7 +2729,7 @@ for nut_doc_build_target in $nut_doc_build_list; do
 		;;
 	esac
 	case "${nut_doc_build_target_flag}" in
-	yes|no|auto|skip) ;;
+	yes|no|auto|skip|dist-auto) ;;
 	"") nut_doc_build_target_flag="yes" ;;
 	*)	rm -rf "${DOCTESTDIR}"
 		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
@@ -2817,25 +2820,39 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	man*)
+		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
+		have_disted_doc_man=no
+		want_disted_doc_man=no
+		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+			dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+			have_disted_doc_man=yes
+		fi
+		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
+			want_disted_doc_man=yes
+		fi
 		if test "${nut_have_asciidoc}" = yes ; then
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts="--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
-		if test "${can_build_doc_man}" = yes ; then
+		if test "${want_disted_doc_man}" = yes && test "${have_disted_doc_man}" = yes ; then
+			AC_MSG_NOTICE([Requested, and can, install pre-built dist'ed copies of ${nut_doc_build_target_base} documentation])
+			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+			DOC_INSTALL_DISTED_MANS="yes"
+		else
+		  if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		else
+		  else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
-				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from distributed tarball, not git repo)
-					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+				if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
+					if test "${have_disted_doc_man}" = yes ; then
 						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 						DOC_INSTALL_DISTED_MANS="yes"
 					else
@@ -2843,6 +2860,7 @@ dnl Test that groff files exist (building from distributed tarball, not git repo
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
+		  fi
 		fi
 		;;
 
