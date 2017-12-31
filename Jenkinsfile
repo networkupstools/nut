@@ -97,14 +97,14 @@ pipeline {
                             }
                         }
                     }
-                stage ('dist') {
+        }
+        stage ('dist') {
                     when { expression { return ( params.DO_DIST_DOCS ) } }
                     steps {
                                 sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make dist-gzip || exit ; DISTFILE="`ls -1tc *.tar.gz | head -1`" && [ -n "$DISTFILE" ] && [ -s "$DISTFILE" ] || exit ; mv -f "$DISTFILE" __dist.tar.gz'
                                 archiveArtifacts artifacts: '__dist.tar.gz'
                                 sh "rm -f __dist.tar.gz"
                     }
-                }
         }
         stage ('check') {
             parallel {
