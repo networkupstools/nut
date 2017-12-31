@@ -52,12 +52,14 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
 endif
 
 # only build documentation if asciidoc is installed
-ifneq ($(shell which asciidoc),)
+#ifneq ($(shell which asciidoc),)
 #  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=html-chunked,pdf
-  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man
-else
-  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=skip
-endif
+#else
+#  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=skip
+#endif
+
+# Try to use dist'ed docs if available, fall back to auto in other cases
+DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
 
 pre-build:: debian/compat
 	(cd tools; python nut-snmpinfo.py)
