@@ -61,9 +61,11 @@ endif
 # Try to use dist'ed docs if available, fall back to auto in other cases
 DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
 
-pre-build:: debian/compat
+configure: configure.ac
 	(cd tools; python nut-snmpinfo.py)
 	sh autogen.sh
+
+pre-build:: debian/compat configure
 
 common-install-arch::
 	# install the bash completion script
