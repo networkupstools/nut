@@ -34,6 +34,7 @@
 %define USBNONHIDDRIVERS %(zcat %{SOURCE0} | tr a-z A-Z | fgrep -a -A1 _USB       | sed -n 's/.*ATTR{IDVENDOR}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, ATTR{IDPRODUCT}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, MODE=.*/modalias%{LBRACE}usb:v%{BACKSLASH}1p%{BACKSLASH}2d*dc*dsc*dp*ic*isc*ip*%{RBRACE}/p' | tr '%{BACKSLASH}n' ' ')
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
+%define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
 Name:           nut
 Version:        2.7.4
@@ -365,9 +366,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %exclude %{MODELPATH}/netxml-ups
 %attr(700,%{USER},%{GROUP}) %{STATEPATH}
 %{systemdsystemunitdir}/*
-%dir %{_libdir}/systemd/
-%dir %{_libdir}/systemd/system-shutdown/
-%{_libdir}/systemd/system-shutdown/nutshutdown
+%{systemdshutdowndir}/nutshutdown
 
 %files drivers-net
 %defattr(-,root,root)
