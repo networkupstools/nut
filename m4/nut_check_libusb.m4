@@ -123,6 +123,10 @@ if test -z "${nut_have_libusb_seen}"; then
 				dnl libusb 1.0: libusb_set_auto_detach_kernel_driver
 				AC_CHECK_HEADERS(libusb.h, [], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 				AC_CHECK_FUNCS(libusb_init, [], [nut_have_libusb=no])
+				AC_CHECK_FUNCS(libusb_strerror, [], [nut_have_libusb=no; nut_have_libusb_strerror=no])
+				if test "${nut_have_libusb_strerror}" = "no"; then
+					AC_MSG_WARN([libusb_strerror() not found; install libusbx to use libusb 1.0 API. See https://github.com/networkupstools/nut/issues/509])
+				fi
 				dnl This function is fairly old, but check for it anyway:
 				AC_CHECK_FUNCS(libusb_kernel_driver_active)
 				dnl Check for libusb "force driver unbind" availability
