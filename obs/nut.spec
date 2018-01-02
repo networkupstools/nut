@@ -368,6 +368,19 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %attr(700,%{USER},%{GROUP}) %{STATEPATH}
 %{systemdsystemunitdir}/*
 %{systemdshutdowndir}/nutshutdown
+%{_datadir}/augeas/lenses/dist/nuthostsconf.aug
+%{_datadir}/augeas/lenses/dist/nutnutconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsdconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsdusers.aug
+%{_datadir}/augeas/lenses/dist/nutupsmonconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsschedconf.aug
+%{_datadir}/augeas/lenses/dist/nutupssetconf.aug
+%{_datadir}/augeas/lenses/dist/tests/test_nut.aug
+%dir %{_datadir}/augeas
+%dir %{_datadir}/augeas/lenses
+%dir %{_datadir}/augeas/lenses/dist
+%dir %{_datadir}/augeas/lenses/dist/tests
 
 %files drivers-net
 %defattr(-,root,root)
