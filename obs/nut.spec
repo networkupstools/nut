@@ -82,7 +82,9 @@ Requires:       %{_bindir}/pgrep
 Requires:       %{_bindir}/pkill
 Requires:       %{_bindir}/readlink
 Requires:       usbutils
-#Requires(post): udev
+%if 0%{?suse_version}
+Requires(post): udev
+%endif
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 BuildRequires:  avahi-devel
