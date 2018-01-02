@@ -2,7 +2,7 @@
 # spec file for package nut.spec
 #
 # Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
-# Copyright (c) 2016 Eaton EEIC.
+# Copyright (c) 2016-2018 Eaton EEIC.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -335,7 +335,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{_sysconfdir}/bash_completion.d/*
 %{_sysconfdir}/logrotate.d/*
 %{_bindir}/*
-%exclude %{bindir}/nut-scanner-reindex-dmfsnmp
+%exclude %{_bindir}/nut-scanner-reindex-dmfsnmp
 %{_datadir}/nut
 %exclude %{_datadir}/nut/dmfnutscan
 %exclude %{_datadir}/nut/dmfsnmp
@@ -373,7 +373,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %defattr(-,root,root)
 %{MODELPATH}/snmp-ups
 %{MODELPATH}/netxml-ups
-%{bindir}/nut-scanner-reindex-dmfsnmp
+%{_bindir}/nut-scanner-reindex-dmfsnmp
 %{_mandir}/man8/netxml-ups*.*
 %{_mandir}/man8/snmp-ups*.*
 %dir %{_datadir}/nut/dmfnutscan
