@@ -266,6 +266,7 @@ sh autogen.sh
 	--with-group=%{GROUP} \
 	--with-udev-dir=%{_sysconfdir}/udev \
 	--enable-option-checking=fatal\
+	--with-systemdsystemunitdir --with-systemdshutdowndir \
 	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 
 (cd tools; python nut-snmpinfo.py)
