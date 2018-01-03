@@ -1287,6 +1287,12 @@ else
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
 
+if test -n "${auglensdir}"; then
+    auglenstestsdir="${auglensdir}/tests"
+else
+    auglenstestsdir=''
+fi
+
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
 	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
@@ -2095,6 +2101,7 @@ AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
 AC_SUBST(dmfnutscandir)
 AC_SUBST(auglensdir)
+AC_SUBST(auglenstestsdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 
