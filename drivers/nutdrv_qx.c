@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 #include "main.h"
 
@@ -116,6 +116,15 @@ upsdrv_info_t	upsdrv_info = {
  #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
  #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
  #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
+ /* errno/return codes */
+ #define ERROR_ACCESS		LIBUSB_ERROR_ACCESS
+ #define ERROR_BUSY		LIBUSB_ERROR_BUSY
+ #define ERROR_IO		LIBUSB_ERROR_IO
+ #define ERROR_NO_DEVICE	LIBUSB_ERROR_NO_DEVICE
+ #define ERROR_NOT_FOUND	LIBUSB_ERROR_NOT_FOUND
+ #define ERROR_OVERFLOW		LIBUSB_ERROR_OVERFLOW
+ #define ERROR_PIPE		LIBUSB_ERROR_PIPE
+ #define ERROR_TIMEOUT		LIBUSB_ERROR_TIMEOUT
  /* Structures */
  #define usb_dev_handle libusb_device_handle
  typedef unsigned char* usb_ctrl_char;
@@ -143,6 +152,15 @@ upsdrv_info_t	upsdrv_info = {
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
 #else /* for libusb 0.1 */
+ /* errno/return codes */
+ #define ERROR_ACCESS		-EACCES
+ #define ERROR_BUSY		-EBUSY
+ #define ERROR_IO		-EIO
+ #define ERROR_NO_DEVICE	-ENODEV
+ #define ERROR_NOT_FOUND	-ENOENT
+ #define ERROR_OVERFLOW		-EOVERFLOW
+ #define ERROR_PIPE		-EPIPE
+ #define ERROR_TIMEOUT		-ETIMEDOUT
  /* Structures */
  typedef char* usb_ctrl_char;
  /* Functions */
@@ -602,9 +620,9 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 		 * In order to read correct replies we need to flush the output buffers of the converter until we get no more data (ie, it times out). */
 		switch (ret)
 		{
-		case -EPIPE:		/* Broken pipe */
+		case ERROR_PIPE:	/* Broken pipe */
 			usb_clear_halt(udev, 0x81);
-		case -ETIMEDOUT:	/* Connection timed out */
+		case ERROR_TIMEOUT:	/* Connection timed out */
 			break;
 		}
 
@@ -676,7 +694,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x2, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", (ret != -ETIMEDOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
+			upsdebugx(3, "send: %s (%d)", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
 			return ret;
 		}
 
@@ -689,7 +707,7 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 
 	/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", (ret != -ETIMEDOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
+		upsdebugx(3, "read: %s (%d)", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
 		return ret;
 	}
 
@@ -2165,38 +2183,42 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 
 		switch (ret)
 		{
-		case -EBUSY:		/* Device or resource busy */
+		case ERROR_BUSY:	/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
 
+	#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+	#endif	/* WITH_LIBUSB_0_1 */
 
-		case -EPIPE:		/* Broken pipe */
+		case ERROR_PIPE:	/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
 				upsdebugx(1, "Stall condition cleared");
 				break;
 			}
-	#ifdef ETIME
+	#if ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -ETIME:		/* Timer expired */
-	#endif	/* ETIME */
+	#endif	/* ETIME && WITH_LIBUSB_0_1 */
 			if (usb_reset(udev) == 0) {
 				upsdebugx(1, "Device reset handled");
 			}
-		case -ENODEV:		/* No such device */
-		case -EACCES:		/* Permission denied */
-		case -EIO:		/* I/O error */
+		case ERROR_NO_DEVICE:	/* No such device */
+		case ERROR_ACCESS:	/* Permission denied */
+		case ERROR_IO:		/* I/O error */
+	#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
 		case -ENXIO:		/* No such device or address */
-		case -ENOENT:		/* No such file or directory */
+	#endif	/* WITH_LIBUSB_0_1 */
+		case ERROR_NOT_FOUND:	/* No such file or directory */
 			/* Uh oh, got to reconnect! */
 			usb->close(udev);
 			udev = NULL;
 			break;
 
-		case -ETIMEDOUT:	/* Connection timed out */
-		case -EOVERFLOW:	/* Value too large for defined data type */
-#ifdef EPROTO
+		case ERROR_TIMEOUT:	/* Connection timed out */
+		case ERROR_OVERFLOW:	/* Value too large for defined data type */
+	#if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
 		case -EPROTO:		/* Protocol error */
-#endif
+	#endif
 		default:
 			break;
 		}
