@@ -44,14 +44,21 @@ if test -z "${nut_have_libusb_seen}"; then
 			libusb0_LIBS="`pkg-config --silence-errors --libs libusb 2>/dev/null`"
 			nut_have_libusb=yes
 		else
-			AC_MSG_CHECKING(via libusb-config)
-			libusb0_VERSION="`libusb-config --version 2>/dev/null`"
+			libusb0_VERSION="`pkg-config --silence-errors --modversion libusb-0.1 2>/dev/null`"
 			if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
-				libusb0_CFLAGS="`libusb-config --cflags 2>/dev/null`"
-				libusb0_LIBS="`libusb-config --libs 2>/dev/null`"
+				libusb0_CFLAGS="`pkg-config --silence-errors --cflags libusb-0.1 2>/dev/null`"
+				libusb0_LIBS="`pkg-config --silence-errors --libs libusb-0.1 2>/dev/null`"
 				nut_have_libusb=yes
 			else
-				libusb0_VERSION="none"
+				AC_MSG_CHECKING(via libusb-config)
+				libusb0_VERSION="`libusb-config --version 2>/dev/null`"
+				if test "$?" = "0" -a -n "${libusb0_VERSION}"; then
+					libusb0_CFLAGS="`libusb-config --cflags 2>/dev/null`"
+					libusb0_LIBS="`libusb-config --libs 2>/dev/null`"
+					nut_have_libusb=yes
+				else
+					libusb0_VERSION="none"
+				fi
 			fi
 		fi
 		AC_MSG_RESULT(${libusb0_VERSION} found)
