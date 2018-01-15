@@ -368,6 +368,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{MODELPATH}/*
 %exclude %{MODELPATH}/snmp-ups
 %exclude %{MODELPATH}/netxml-ups
+%exclude %{_sbindir}/gen-snmp-subdriver.sh
 %attr(700,%{USER},%{GROUP}) %{STATEPATH}
 %{systemdsystemunitdir}/*
 %{systemdshutdowndir}/nutshutdown
