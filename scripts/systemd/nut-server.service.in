@@ -8,6 +8,14 @@ Wants=nut-driver.target
 Before=nut-monitor.service
 
 [Service]
+# A busy server can be monitoring a lot of devices as well as replying
+# to many clients. The "infinity" definition is actually capped by OS
+# settings and hardcoded defaults; typically can be 65535+ nowadays.
+# On 64-bit distros this can well be set into hundreds of thousands
+# as well (though note each connnection has a CPU and RAM overhead
+# so one can strike physical limits upon deployment and/or bring the
+# poorly sized system to a crawl, or worse).
+LimitNOFILE=infinity
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
 Type=forking
