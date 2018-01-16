@@ -16,7 +16,13 @@ Before=nut-monitor.service
 # so one can strike physical limits upon deployment and/or bring the
 # poorly sized system to a crawl, or worse). On a running system you
 # can check /proc/$MAINPID/limits for active ulimits of the process.
-LimitNOFILE=infinity
+# From my experiments, up to 1048576 can be set, but any larger value
+# falls back to 65536. The systemd definition of "infinity" is 65536
+# too (or maybe it falls back to that); though this may be OS/distro
+# limitation and not systemd fault specifically.
+#LimitNOFILE=infinity
+#LimitNOFILE=65535
+LimitNOFILE=1048576
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
 ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
