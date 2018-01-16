@@ -8,8 +8,24 @@ Wants=nut-driver.target
 Before=nut-monitor.service
 
 [Service]
+# A busy server can be monitoring a lot of devices as well as replying
+# to many clients. The "infinity" definition is actually capped by OS
+# settings and hardcoded defaults; typically can be 65535+ nowadays.
+# On 64-bit distros this can well be set into hundreds of thousands
+# as well (though note each connnection has a CPU and RAM overhead
+# so one can strike physical limits upon deployment and/or bring the
+# poorly sized system to a crawl, or worse). On a running system you
+# can check /proc/$MAINPID/limits for active ulimits of the process.
+# From my experiments, up to 1048576 can be set, but any larger value
+# falls back to 65536. The systemd definition of "infinity" is 65536
+# too (or maybe it falls back to that); though this may be OS/distro
+# limitation and not systemd fault specifically.
+#LimitNOFILE=infinity
+#LimitNOFILE=65535
+LimitNOFILE=1048576
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
+ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
 Type=forking
 
 [Install]
