@@ -14,10 +14,12 @@ Before=nut-monitor.service
 # On 64-bit distros this can well be set into hundreds of thousands
 # as well (though note each connnection has a CPU and RAM overhead
 # so one can strike physical limits upon deployment and/or bring the
-# poorly sized system to a crawl, or worse).
+# poorly sized system to a crawl, or worse). On a running system you
+# can check /proc/$MAINPID/limits for active ulimits of the process.
 LimitNOFILE=infinity
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
+ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
 Type=forking
 
 [Install]
