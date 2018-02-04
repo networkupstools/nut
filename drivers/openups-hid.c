@@ -42,6 +42,8 @@ static double vin_scale = 1;
 static double vout_scale= 1;
 static double ccharge_scale = 1;
 static double cdischarge_scale = 1;
+static double v_in, v_bat, v_out, i_ltc;
+static int on_input;
 
 static char openups_scratch_buf[20];
 
@@ -129,9 +131,9 @@ static const char *openups_off_fun(double value);
 
 static const char *openups_scale_vin_fun(double value);
 static const char *openups_scale_vout_fun(double value);
-/* static const char *openups_scale_vbat_fun(double value); */
-static const char *openups_scale_ccharge_fun(double value);
-static const char *openups_scale_cdischarge_fun(double value);
+static const char *openups_scale_vbat_fun(double value);
+static const char *openups_scale_input_current_fun(double value);
+static const char *openups_scale_output_current_fun(double value);
 static const char *openups_temperature_fun(double value);
 
 static info_lkp_t openups_charging_info[] = {
@@ -162,16 +164,16 @@ static info_lkp_t openups_vout_info[] = {
 	{0, NULL, openups_scale_vout_fun}
 };
 
-/* static info_lkp_t openups_vbat_info[] = {
+static info_lkp_t openups_vbat_info[] = {
 	{0, NULL, openups_scale_vbat_fun}
-};*/
-
-static info_lkp_t openups_ccharge_info[] = {
-	{0, NULL, openups_scale_ccharge_fun}
 };
 
-static info_lkp_t openups_cdischarge_info[] = {
-	{0, NULL, openups_scale_cdischarge_fun}
+static info_lkp_t openups_input_current_info[] = {
+	{0, NULL, openups_scale_input_current_fun}
+};
+
+static info_lkp_t openups_output_current_info[] = {
+	{0, NULL, openups_scale_output_current_fun}
 };
 
 static info_lkp_t openups_temperature_info[] = {
@@ -190,6 +192,8 @@ static const char *openups_discharging_fun(double value)
 
 static const char *openups_online_fun(double value)
 {
+	/* Save charging status for input current calculation */
+	on_input = value != 0;
 	return value ? "online" : "!online";
 }
 
@@ -205,31 +209,65 @@ static const char *openups_off_fun(double value)
 
 static const char *openups_scale_vin_fun(double value)
 {
-	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", value * vin_scale);
+	/* Save v_in for input current calculation */
+	v_in = value * vin_scale;
+	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", v_in);
 	return openups_scratch_buf;
 }
 
 static const char *openups_scale_vout_fun(double value)
 {
-	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", value * vout_scale);
+	v_out = value * vout_scale;
+	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", v_out);
 	return openups_scratch_buf;
 }
 
-/* static const char *openups_scale_vbat_fun(double value)
+static const char *openups_scale_vbat_fun(double value)
 {
-	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", value * vbat_scale);
-	return openups_scratch_buf;
-}*/
-
-static const char *openups_scale_ccharge_fun(double value)
-{
-	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.3f", value * ccharge_scale);
+	/* Save v_bat for input current calculation */
+	v_bat = value;
+	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", value);
 	return openups_scratch_buf;
 }
 
-static const char *openups_scale_cdischarge_fun(double value)
+/* Input.Current is not the line in current but seems to be the charge
+ * current into the battery terminals.  The real line input current is
+ * determined from the charger power plus the current fed to the LTC3780
+ * buck/boost.
+ */
+static const char *openups_scale_input_current_fun(double value)
 {
-	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.3f", value * cdischarge_scale);
+	double i_in;
+
+	if (on_input && v_in != 0)
+		i_in = (v_bat * value * ccharge_scale) / (v_in * .9) + i_ltc;
+	else
+		i_in = 0;
+
+	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.3f", i_in);
+	return openups_scratch_buf;
+}
+
+/* Output.Current is not the current flowing out of the terminals of the
+ * board, but is the current flowing into the LTC3780 buck/boost converter.
+ * Hence, in order to calculate the output current, we need to calculate the
+ * power into the LTC3780, take account of its efficiency, and then calculate
+ * the output current.
+ */
+static const char *openups_scale_output_current_fun(double value)
+{
+	double v_ltc, i_out;
+
+ 	/* Voltage supplied to the LTC3780 */
+	v_ltc = on_input ? v_in : v_bat;
+
+	/* Current drawn by the LTC3780, save for input current calculation */
+	i_ltc = value * cdischarge_scale;
+
+	/* Output current = Power-in * Efficiency / Vout */
+	i_out = v_ltc * i_ltc * .965 / v_out;
+
+	snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.3f", i_out);
 	return openups_scratch_buf;
 }
 
@@ -304,7 +342,7 @@ static hid_info_t openups_hid2nut[] = {
 	/* Battery */
 	{"battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
 	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
-	{"battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", HU_FLAG_QUICK_POLL, NULL},
+	{"battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info },
 	/* { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info }, */
 	{"battery.current", 0, 0, "UPS.PowerSummary.Current", NULL, "%.3f", HU_FLAG_QUICK_POLL, NULL},
 	{"battery.capacity", 0, 0, "UPS.PowerSummary.DesignCapacity", NULL, "%.0f", HU_FLAG_STATIC, NULL},
@@ -320,14 +358,6 @@ static hid_info_t openups_hid2nut[] = {
 	{"battery.cell5.voltage", 0, 0, "UPS.PowerSummary.Battery.Cell5", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info},
 	{"battery.cell6.voltage", 0, 0, "UPS.PowerSummary.Battery.Cell6", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info},
 */
-	/* Output */
-	{"output.voltage", 0, 0, "UPS.PowerSummary.Output.Voltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vout_info},
-	{"output.current", 0, 0, "UPS.PowerSummary.Output.Current", NULL, NULL, HU_FLAG_QUICK_POLL, openups_cdischarge_info},
-
-	/* Input */
-	{"input.voltage", 0, 0, "UPS.PowerSummary.Input.Voltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vin_info},
-	{"input.current", 0, 0, "UPS.PowerSummary.Input.Current", NULL, NULL, HU_FLAG_QUICK_POLL, openups_ccharge_info},
-
 	/* Status */
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, HU_FLAG_QUICK_POLL, openups_off_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.InternalFailure", NULL, NULL, HU_FLAG_QUICK_POLL, commfault_info},
@@ -341,6 +371,22 @@ static hid_info_t openups_hid2nut[] = {
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.NeedReplacement", NULL, NULL, 0, replacebatt_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, openups_online_info},
 	{"BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BatteryPresent", NULL, NULL, HU_FLAG_QUICK_POLL, openups_nobattery_info},
+
+	/* Output/Input voltages */
+	{"output.voltage", 0, 0, "UPS.PowerSummary.Output.Voltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vout_info},
+	{"input.voltage", 0, 0, "UPS.PowerSummary.Input.Voltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vin_info},
+
+
+	/* Output/Input currents */
+	/* UPS.PowerSummary.PresentStatus.ACPresent, UPS.PowerSummary.Voltage,
+	 * and UPS.PowerSummary.Output.Voltage must precede this.
+	 */
+	{"output.current", 0, 0, "UPS.PowerSummary.Output.Current", NULL, NULL, HU_FLAG_QUICK_POLL, openups_output_current_info},
+	/* UPS.PowerSummary.PresentStatus.ACPresent, UPS.PowerSummary.Voltage,
+	 * UPS.PowerSummary.Output.Current, and
+	 * UPS.PowerSummary.Input.Voltage must precede this.
+	 */
+	{"input.current", 0, 0, "UPS.PowerSummary.Input.Current", NULL, NULL, HU_FLAG_QUICK_POLL, openups_input_current_info},
 
 	/* end of structure. */
 	{NULL, 0, 0, NULL, NULL, NULL, 0, NULL}
