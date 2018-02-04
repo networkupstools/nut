@@ -301,6 +301,13 @@ void HIDDumpTree(hid_dev_handle_t udev, usage_tables_t *utab)
 			continue;
 		}
 #else
+		/* Skip non-feature reports, primarily for OpenUPS - but
+		 * as HIDGetItemData() only cares about feature items,
+		 * do it for all.
+		 */
+		if (pData->Type != ITEM_FEATURE)
+			continue;
+
 		if ((vendorID == 0x0463) || (vendorID == 0x047c)) {
 			if ((pData->ReportID == 254) || (pData->ReportID == 255)) {
 				continue;
