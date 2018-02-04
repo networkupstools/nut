@@ -748,6 +748,8 @@ void upsdrv_makevartable(void)
 #else
 	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
 #endif
+
+	addvar(VAR_VALUE, "hid_descriptor", "Replacement HID descriptor file");
 }
 
 #define	MAX_EVENT_NUM	32
@@ -1093,16 +1095,52 @@ static void process_boolean_info(const char *nutvalue)
 static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
-	const char *mfr = NULL, *model = NULL, *serial = NULL;
+	const char *mfr = NULL, *model = NULL, *serial = NULL, *descfile;
 #ifndef SHUT_MODE
 	int ret;
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
 
+	/* Check whether we have an override descriptor */
+	descfile = getval("hid_descriptor");
+	if (descfile) {
+		unsigned char *buf;
+		size_t size;
+		FILE *f;
+
+		f = fopen(descfile, "r");
+		if (!f) {
+			upslog_with_errno(LOG_ERR, "Can't open %s", descfile);
+			return 0;
+		}
+
+		fseek(f, 0, SEEK_END);
+		size = ftell(f);
+
+		fseek(f, 0, SEEK_SET);
+
+		buf = xmalloc(size);
+
+		if (fread(buf, size, 1, f) != 1) {
+			upslog_with_errno(LOG_CRIT, "Short read of %s", descfile);
+			fclose(f);
+			free(buf);
+			return 0;
+		}
+		fclose(f);
+
+		rdbuf = buf;
+		rdlen = size;
+	}
+
 	/* Parse Report Descriptor */
 	Free_ReportDesc(pDesc);
 	pDesc = Parse_ReportDesc(rdbuf, rdlen);
+
+	if (descfile)
+		free(rdbuf);
+
 	if (!pDesc) {
 		upsdebug_with_errno(1, "Failed to parse report descriptor!");
 		return 0;
