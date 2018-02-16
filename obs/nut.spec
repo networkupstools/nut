@@ -2,7 +2,7 @@
 # spec file for package nut.spec
 #
 # Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
-# Copyright (c) 2016 Eaton EEIC.
+# Copyright (c) 2016-2018 Eaton EEIC.
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -34,6 +34,7 @@
 %define USBNONHIDDRIVERS %(zcat %{SOURCE0} | tr a-z A-Z | fgrep -a -A1 _USB       | sed -n 's/.*ATTR{IDVENDOR}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, ATTR{IDPRODUCT}==%{QUOTE}%{BACKSLASH}%{LBRACE}[^%{QUOTE}]*%{BACKSLASH}%{RBRACE}%{QUOTE}, MODE=.*/modalias%{LBRACE}usb:v%{BACKSLASH}1p%{BACKSLASH}2d*dc*dsc*dp*ic*isc*ip*%{RBRACE}/p' | tr '%{BACKSLASH}n' ' ')
 %define systemdsystemunitdir %(pkg-config --variable=systemdsystemunitdir systemd)
 %define systemdsystemdutildir %(pkg-config --variable=systemdutildir systemd)
+%define systemdshutdowndir %(pkg-config --variable=systemdshutdowndir systemd)
 
 Name:           nut
 Version:        2.7.4
@@ -81,7 +82,9 @@ Requires:       %{_bindir}/pgrep
 Requires:       %{_bindir}/pkill
 Requires:       %{_bindir}/readlink
 Requires:       usbutils
-#Requires(post): udev
+%if 0%{?suse_version}
+Requires(post): udev
+%endif
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 BuildRequires:  avahi-devel
@@ -256,7 +259,7 @@ sh autogen.sh
 	--with-dev\
 	--with-ipmi \
 	--with-powerman=auto\
-	--with-doc=man=auto\
+	--with-doc=man=dist-auto\
 	--with-htmlpath=%{HTMLPATH}\
 	--with-cgipath=%{CGIPATH}\
 	--with-statepath=%{STATEPATH}\
@@ -265,6 +268,8 @@ sh autogen.sh
 	--with-group=%{GROUP} \
 	--with-udev-dir=%{_sysconfdir}/udev \
 	--enable-option-checking=fatal\
+	--with-systemdsystemunitdir --with-systemdshutdowndir \
+	--with-augeas-lenses-dir=/usr/share/augeas/lenses/dist \
 	--with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no
 
 (cd tools; python nut-snmpinfo.py)
@@ -335,7 +340,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{_sysconfdir}/bash_completion.d/*
 %{_sysconfdir}/logrotate.d/*
 %{_bindir}/*
-%exclude %{bindir}/nut-scanner-reindex-dmfsnmp
+%exclude %{_bindir}/nut-scanner-reindex-dmfsnmp
 %{_datadir}/nut
 %exclude %{_datadir}/nut/dmfnutscan
 %exclude %{_datadir}/nut/dmfsnmp
@@ -363,17 +368,29 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %{MODELPATH}/*
 %exclude %{MODELPATH}/snmp-ups
 %exclude %{MODELPATH}/netxml-ups
+%exclude %{_sbindir}/gen-snmp-subdriver.sh
 %attr(700,%{USER},%{GROUP}) %{STATEPATH}
 %{systemdsystemunitdir}/*
-%dir %{_libdir}/systemd/
-%dir %{_libdir}/systemd/system-shutdown/
-%{_libdir}/systemd/system-shutdown/nutshutdown
+%{systemdshutdowndir}/nutshutdown
+%{_datadir}/augeas/lenses/dist/nuthostsconf.aug
+%{_datadir}/augeas/lenses/dist/nutnutconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsdconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsdusers.aug
+%{_datadir}/augeas/lenses/dist/nutupsmonconf.aug
+%{_datadir}/augeas/lenses/dist/nutupsschedconf.aug
+%{_datadir}/augeas/lenses/dist/nutupssetconf.aug
+%{_datadir}/augeas/lenses/dist/tests/test_nut.aug
+%dir %{_datadir}/augeas
+%dir %{_datadir}/augeas/lenses
+%dir %{_datadir}/augeas/lenses/dist
+%dir %{_datadir}/augeas/lenses/dist/tests
 
 %files drivers-net
 %defattr(-,root,root)
 %{MODELPATH}/snmp-ups
 %{MODELPATH}/netxml-ups
-%{bindir}/nut-scanner-reindex-dmfsnmp
+%{_bindir}/nut-scanner-reindex-dmfsnmp
 %{_mandir}/man8/netxml-ups*.*
 %{_mandir}/man8/snmp-ups*.*
 %dir %{_datadir}/nut/dmfnutscan

@@ -35,33 +35,20 @@
 #include "eaton-pdu-marlin-helpers.h"
 #include "dstate.h"
 
-static char marlin_scratch_buf[20];
-
-/* Compute the phase to which an outlet group is connected
- * WRT the number of phase(s) and the outlet group number.
- * Note that the group type (marlin_outlet_group_type_info)
- * is not considered since this applies to any kind of group.
- * This trick limits input phase to electrical groups only
- * (not outlet-section nor user-defined!), and for now, there
- * is a maximum of 6 gangs (electrical groups).
- */
-const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
+/* Take string "unitsPresent" (ex: "0,3,4,5"), and count the amount
+ * of "," separators+1 using an inline function */
+long marlin_device_count_fun(const char *daisy_dev_list)
 {
-	const char* str_phases_nb = dstate_getinfo("input.phases");
-	int phases_nb = 1;
-	if (str_phases_nb) {
-		phases_nb = atoi(str_phases_nb);
-		if (phases_nb == 1) {
-			return "L1";
-		}
-		else { /* 3ph assumed, 2ph PDU don't exist - at least not in Eaton Marlin lineup! */
-			if (outlet_group_nb > 3)
-				snprintf(marlin_scratch_buf, 3, "L%i", (outlet_group_nb - 3)); /* FIXME: For more than 6 ports, maybe "nb % 3"? */
-			else
-				snprintf(marlin_scratch_buf, 3, "L%i", outlet_group_nb);
-
-			return marlin_scratch_buf;
+	long count = 0, i;
+	for (i=0; daisy_dev_list[i] != '\0'; i++) {
+		if (daisy_dev_list[i] == ',') {
+			/* Each comma means a new device in the list */
+			count ++;
 		}
 	}
-	return NULL;
+	if (i>0 && (daisy_dev_list[i-1] != ',') ) {
+		/* Non-empty string => at least one device, and no trailing commas */
+		count ++;
+	}
+	return count;
 }

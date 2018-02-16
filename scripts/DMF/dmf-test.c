@@ -63,10 +63,10 @@ main ()
 	}
 
 #ifdef DEFAULT_DMFSNMP_DIR_OVERRIDE
-#ifdef DEFAULT_DMFSNMP_DIR
-#undef DEFAULT_DMFSNMP_DIR
-#endif
-#define DEFAULT_DMFSNMP_DIR DEFAULT_DMFSNMP_DIR_OVERRIDE
+# ifdef DEFAULT_DMFSNMP_DIR
+#  undef DEFAULT_DMFSNMP_DIR
+# endif
+# define DEFAULT_DMFSNMP_DIR DEFAULT_DMFSNMP_DIR_OVERRIDE
 #endif
 
 #ifdef DEFAULT_DMFSNMP_DIR
@@ -144,7 +144,7 @@ main ()
 		printf("=== DMF-Test: Freeing data...\n\n");
 		mibdmf_parser_destroy(&dmp);
 
-		printf("=== DMF-Test: All done\n\n");
+		printf("=== DMF-Test: All done (code %d)\n\n", result);
 		return result;
 	}
 

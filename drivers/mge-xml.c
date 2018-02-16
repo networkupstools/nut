@@ -2,7 +2,7 @@
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2009		Arnaud Quette <ArnaudQuette@Eaton.com>
+	2009-2017	Arnaud Quette <ArnaudQuette@Eaton.com>
 	2017		Jim Klimov <EvgenyKlimov@Eaton.com>
 
    This program is free software; you can redistribute it and/or modify
@@ -33,7 +33,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.28"
+#define MGE_XML_VERSION		"MGEXML/0.30"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -575,6 +575,27 @@ static const char *mge_ambient_info(const char *val)
 	}
 }
 
+static const char *mge_drycontact_info(const char *val)
+{
+	/* these values should theoretically be obtained through
+	 * Environment.Input[1].State[x].Description
+	 * Examples:
+	 * <OBJECT name="Environment.Input[1].State[0].Description">open</OBJECT>
+	 * <OBJECT name="Environment.Input[1].State[1].Description">closed</OBJECT>
+	 */
+	switch (atoi(val))
+	{
+	case 0:
+		return "opened";
+	case 1:
+		return "closed";
+	default:
+		return NULL;
+	}
+}
+
+
+
 static const char *mge_timer_shutdown(const char *delay_before_shutoff)
 {
 	if (atoi(delay_before_shutoff) > -1 ) {
@@ -1059,6 +1080,8 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ambient.temperature.low", ST_FLAG_RW, 0, "Environment.Temperature.LowThreshold", 0, 0, NULL },
 	{ "ambient.temperature.maximum", 0, 0, "Environment.PresentStatus.HighTemperature", 0, 0, mge_ambient_info },
 	{ "ambient.temperature.minimum", 0, 0, "Environment.PresentStatus.LowTemperature", 0, 0, mge_ambient_info },
+	{ "ambient.contacts.1.status", 0, 0, "Environment.Input[1].PresentStatus.State", 0, 0, mge_drycontact_info },
+	{ "ambient.contacts.2.status", 0, 0, "Environment.Input[2].PresentStatus.State", 0, 0, mge_drycontact_info },
 
 	/* Outlet page (using MGE UPS SYSTEMS - PowerShare technology) */
 	{ "outlet.id", 0, 0, "UPS.OutletSystem.Outlet[1].OutletID", 0, 0, NULL },

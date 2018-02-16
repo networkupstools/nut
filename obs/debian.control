@@ -19,7 +19,8 @@ Build-Depends: debhelper (>= 8.1.3),
                libipmimonitoring-dev (>= 1.1.5-2) [!hurd-i386],
                libnss3-dev, libtool, libltdl-dev,
                liblua5.1-0-dev,
-               lua5.1
+               lua5.1,
+               pkg-config
 Build-Depends-Indep: asciidoc (>= 8.6.3),
                      docbook-xsl,
                      dblatex (>= 0.2.5),

@@ -51,8 +51,8 @@
 /* BCMXCP header */
 extern unsigned char AUT[4];
 extern struct pw_baud_rate {
-        int rate;
-        int name;
+	int rate;
+	int name;
 } pw_baud_rates[];
 
 /* Local list of found devices */
@@ -375,6 +375,7 @@ static void * nutscan_scan_eaton_serial_device(void * port_arg)
 
 nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 {
+        int pass = 1;
 	struct sigaction oldact;
 	int change_action_handler = 0;
 	char *current_port_name = NULL;
@@ -382,6 +383,7 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	int  current_port_nb;
 	int i;
 #ifdef HAVE_PTHREAD
+        sem_t * semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -406,6 +408,15 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 	/* port(s) iterator */
 	current_port_nb = 0;
 	while(serial_ports_list[current_port_nb] != NULL) {
+#ifdef HAVE_PTHREAD
+            if(thread_array == NULL) {
+                sem_wait(semaphore);
+                pass=1;
+            } else {
+                pass = (sem_trywait(semaphore) == 0);
+            }
+#endif
+            if(pass) {
 		current_port_name = serial_ports_list[current_port_nb];
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0){
@@ -425,6 +436,19 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 		nutscan_scan_eaton_serial_device(current_port_name);
 #endif
 		current_port_nb++;
+#ifdef HAVE_PTHREAD
+            } else {
+		if (thread_array != NULL) {
+			for (i=0; i < thread_count; i++) {
+				pthread_join(thread_array[i],NULL);
+				sem_post(semaphore);
+			}
+			thread_count = 0;
+			free(thread_array);
+			thread_array = NULL;
+		}
+#endif
+            }
 	}
 
 #ifdef HAVE_PTHREAD

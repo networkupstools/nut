@@ -34,16 +34,16 @@ extern "C" {
 #endif
 
 enum network_type {
-        IPv4,
-        IPv6
+	IPv4,
+	IPv6
 };
 
 typedef struct nutscan_ip_iter {
 	enum network_type	type;
-        struct in_addr		start;
-        struct in_addr		stop;
-        struct in6_addr		start6;
-        struct in6_addr		stop6;
+	struct in_addr		start;
+	struct in_addr		stop;
+	struct in6_addr		start6;
+	struct in6_addr		stop6;
 } nutscan_ip_iter_t;
 
 char * nutscan_ip_iter_init(nutscan_ip_iter_t *, const char * startIP, const char * stopIP);

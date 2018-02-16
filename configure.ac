@@ -383,6 +383,12 @@ NUT_REPORT_FEATURE([build neon based XML driver], [${nut_with_neon}], [],
 					[WITH_NEON], [Define to enable Neon HTTP support])
 AM_CONDITIONAL([HAVE_NEON], [test "${nut_have_neon}" = "yes"])
 
+if test "${nut_have_neon}" = "yes" ; then
+    myCFLAGS="$CFLAGS `xml2-config --cflags`" || myCFLAGS="$CFLAGS -I/usr/include/libxml2"
+    CFLAGS="$myCFLAGS"
+    AC_CHECK_HEADERS(libxml/encoding.h libxml/parser.h, [], [], [AC_INCLUDES_DEFAULT])
+fi
+
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-avahi
 
@@ -692,6 +698,9 @@ case "${nut_with_doc}" in
 	skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
+	dist-auto) # Experimental, currently only for MANs: prefer disted files if present, auto otherwise
+		nut_doc_build_list="man=dist-auto html-single=dist-auto html-chunked=dist-auto pdf=dist-auto"
+		;;
 	no)
 		nut_doc_build_list=""
 		;;
@@ -732,7 +741,7 @@ for nut_doc_build_target in $nut_doc_build_list; do
 		;;
 	esac
 	case "${nut_doc_build_target_flag}" in
-	yes|no|auto|skip) ;;
+	yes|no|auto|skip|dist-auto) ;;
 	"") nut_doc_build_target_flag="yes" ;;
 	*)	rm -rf "${DOCTESTDIR}"
 		AC_MSG_ERROR([Invalid documentation format option: ${nut_doc_build_target}]) ;;
@@ -814,25 +823,41 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		;;
 
 	man*)
+		dnl Experimental support for --with-doc=man=dist-auto to prefer pre-disted docs if available, below
 		AC_MSG_CHECKING([if we can build ${nut_doc_build_target_base}])
 		can_build_doc_man=no
+		have_disted_doc_man=no
+		want_disted_doc_man=no
+		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+			dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+			have_disted_doc_man=yes
+		fi
+		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
+			want_disted_doc_man=yes
+		fi
 		if test "${nut_have_asciidoc}" = yes ; then
 			( cd "$DOCTESTDIR" && ${A2X} --format manpage --destination-dir=. --xsltproc-opts "--nonet" "${abs_srcdir}"/docs/man/snmp-ups.txt && test -s snmp-ups.8 ) && can_build_doc_man=yes
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
-		if test "${can_build_doc_man}" = yes ; then
+		if test "${want_disted_doc_man}" = yes && test "${have_disted_doc_man}" = yes ; then
+			AC_MSG_NOTICE([Requested, and can, install pre-built dist'ed copies of ${nut_doc_build_target_base} documentation])
+			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
+			DOC_INSTALL_DISTED_MANS="yes"
+			dnl Avoid rebuilding existing build products due to their timestamp dependencies:
+			touch -r "${abs_srcdir}"/docs/man/Makefile.am "${abs_srcdir}"/docs/man/*.{1,2,3,4,5,6,7,8,9}* "${abs_srcdir}"/docs/man/*.{txt,xml,html,pdf} || true
+		else
+		  if test "${can_build_doc_man}" = yes ; then
 			AC_MSG_RESULT(yes)
 			DOC_BUILD_LIST="${DOC_BUILD_LIST} ${nut_doc_build_target_base}"
-		else
+		  else
 			AC_MSG_RESULT(no)
 			if test "${nut_doc_build_target_flag}" = "yes" ; then
 				DOC_CANNOTBUILD_LIST="${DOC_CANNOTBUILD_LIST} ${nut_doc_build_target_base}"
 				AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation which you requested])
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
-				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from dist'ed tarball, not git repo)
-					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
+				if test "${nut_doc_build_target_flag}" = "auto" || test "${nut_doc_build_target_flag}" = "dist-auto" ; then
+					if test "${have_disted_doc_man}" = yes ; then
 						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
 						DOC_INSTALL_DISTED_MANS="yes"
 					else
@@ -840,6 +865,7 @@ dnl Test that groff files exist (building from dist'ed tarball, not git repo)
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
+		  fi
 		fi
 		;;
 
@@ -1214,16 +1240,24 @@ AC_ARG_WITH([systemdsystemunitdir],
 		;;
 	esac
 ], [])
-dnl Override installation directory, with the local installation
-dnl prefix. This is needed for 'distcheck*' targets, otherwise
-dnl files will try to get intalled to the actual system directories
 if test -n "${systemdsystemunitdir}"; then
-	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
+dnl This option is only provided so that make distcheck can override it,
+dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
+dnl given
+AC_ARG_WITH([systemdshutdowndir],
+	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
+	[systemdshutdowndir=${withval}])
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdshutdowndir}" in
+	yes|auto|"")
+		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+	esac
+fi
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -1252,6 +1286,12 @@ else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
+
+if test -n "${auglensdir}"; then
+    auglenstestsdir="${auglensdir}/tests"
+else
+    auglenstestsdir=''
+fi
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
@@ -2055,12 +2095,13 @@ AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
-AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(systemdshutdowndir)
 AC_SUBST(dmfsnmpresdir)
 AC_SUBST(dmfnutscanresdir)
 AC_SUBST(dmfsnmpdir)
 AC_SUBST(dmfnutscandir)
 AC_SUBST(auglensdir)
+AC_SUBST(auglenstestsdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
 

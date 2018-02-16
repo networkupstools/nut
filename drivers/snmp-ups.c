@@ -144,6 +144,8 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+int semistaticfreq; /* semistatic entry update frequency */
+int semistatic_countdown = 0;
 
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
@@ -324,6 +326,8 @@ void upsdrv_makevartable(void)
 		"Set SNMP version (default=v1, allowed v2c)");
 	addvar(VAR_VALUE, SU_VAR_POLLFREQ,
 		"Set polling frequency in seconds, to reduce network flow (default=30)");
+	addvar(VAR_VALUE, SU_VAR_SEMISTATICFREQ,
+		"Set semistatic value update frequency in update cycles, to reduce network flow (default=10)");
 	addvar(VAR_VALUE, SU_VAR_RETRIES,
 		"Specifies the number of Net-SNMP retries to be used in the requests (default=5)");
 	addvar(VAR_VALUE, SU_VAR_TIMEOUT,
@@ -458,6 +462,17 @@ void upsdrv_initups(void)
 	else
 		pollfreq = DEFAULT_POLLFREQ;
 
+	/* init semistatic update frequency */
+	if (getval(SU_VAR_SEMISTATICFREQ))
+		semistaticfreq = atoi(getval(SU_VAR_SEMISTATICFREQ));
+	else
+		semistaticfreq = DEFAULT_SEMISTATICFREQ;
+	if (semistaticfreq < 1) {
+		upsdebugx(1, "Bad %s value provided, setting to default", SU_VAR_SEMISTATICFREQ);
+		semistaticfreq = DEFAULT_SEMISTATICFREQ;
+	}
+	semistatic_countdown = semistaticfreq;
+
 	/* Get UPS Model node to see if there's a MIB */
 /* FIXME: extend and use match_model_OID(char *model) */
 	su_info_p = su_find_info("ups.model");
@@ -536,6 +551,18 @@ void upsdrv_initups(void)
 		dstate_addcmd("shutdown.return");
 		dstate_addcmd("shutdown.stayoff");
 	}
+	/* Publish sysContact and sysLocation for all subdrivers */  
+	/* sysContact.0 */  
+	if (nut_snmp_get_str(".1.3.6.1.2.1.1.4.0", model, sizeof(model), NULL) == TRUE)  
+		dstate_setinfo("device.contact", "%s", model);  
+	else  
+		upsdebugx(2, "Can't get and publish sysContact for device.contact");  
+  
+	/* sysLocation.0 */  
+	if (nut_snmp_get_str(".1.3.6.1.2.1.1.6.0", model, sizeof(model), NULL) == TRUE)  
+		dstate_setinfo("device.location", "%s", model);  
+	else  
+		upsdebugx(2, "Can't get and publish sysLocation for device.location");  
 }
 
 void upsdrv_cleanup(void)
@@ -1591,9 +1618,9 @@ const char *su_find_infoval(info_lkp_t *oid2info, long value)
 
 #if WITH_SNMP_LKP_FUN
 	/* First test if we have a generic lookup function */
-	if ( (oid2info != NULL) && (oid2info->fun != NULL) ) {
-		upsdebugx(2, "%s: using generic lookup function", __func__);
-		const char * retvalue = oid2info->fun(value);
+	if ( (oid2info != NULL) && (oid2info->fun_l2s != NULL) ) {
+		upsdebugx(2, "%s: using generic long-to-string lookup function", __func__);
+		const char * retvalue = oid2info->fun_l2s(value);
 		upsdebugx(2, "%s: got value '%s'", __func__, retvalue);
 		return retvalue;
 	}
@@ -2084,6 +2111,21 @@ bool_t daisychain_init()
 		if ((su_info_p->OID != NULL) &&
 			(strstr(su_info_p->OID, "%i") == NULL))
 		{
+#if WITH_SNMP_LKP_FUN
+			devices_count = -1;
+			/* First test if we have a generic lookup function */
+			if ( (su_info_p->oid2info != NULL) && (su_info_p->oid2info->fun_s2l != NULL) ) {
+				char buf[1024];
+				upsdebugx(2, "%s: using generic string-to-long lookup function", __func__);
+				if (TRUE == nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info)) {
+					devices_count = su_info_p->oid2info->fun_s2l(buf);
+					upsdebugx(2, "%s: got value '%ld'", __func__, devices_count);
+				}
+			}
+
+			if (devices_count == -1) {
+#endif // WITH_SNMP_LKP_FUN
+
 			if (nut_snmp_get_int(su_info_p->OID, &devices_count) == TRUE)
 				upsdebugx(1, "There are %ld device(s) present", devices_count);
 			else
@@ -2092,6 +2134,9 @@ bool_t daisychain_init()
 				upsdebugx(1, "Falling back to 1 device!");
 				devices_count = 1;
 			}
+#if WITH_SNMP_LKP_FUN
+			}
+#endif // WITH_SNMP_LKP_FUN
 		}
 		/* Otherwise (template), use the guesstimation function to get
 		 * the number of devices present */
@@ -2102,15 +2147,15 @@ bool_t daisychain_init()
 		}
 
 		/* Sanity check before data publication */
+
 		if (devices_count < 1) {
 			devices_count = 1;
 			daisychain_enabled = FALSE;
 			upsdebugx(1, "Devices count is less than 1!");
 			upsdebugx(1, "Falling back to 1 device and disabling daisychain support!");
-		}
-
-		/* Publish the device(s) count */
-		if (devices_count > 1) {
+		} else {
+			/* Publish the device(s) count - even if just one
+			 * device was recognized at this moment */
 			dstate_setinfo("device.count", "%ld", devices_count);
 
 			/* Also publish the default value for mfr and a forged model
@@ -2317,6 +2362,12 @@ bool_t snmp_ups_walk(int mode)
 	snmp_info_t *su_info_p;
 	bool_t status = FALSE;
 
+	if (mode == SU_WALKMODE_UPDATE) {
+		semistatic_countdown--;
+		if (semistatic_countdown < 0)
+			semistatic_countdown = semistaticfreq;
+	}
+
 	/* Loop through all device(s) */
 	/* Note: considering "unitary" and "daisy-chained" devices, we have
 	 * several variables (and their values) that can come into play:
@@ -2440,6 +2491,13 @@ bool_t snmp_ups_walk(int mode)
 			/* skip elements we shouldn't show in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && !(su_info_p->flags & SU_FLAG_OK))
 				continue;
+
+			/* skip semi-static elements in update mode: only parse when countdown reaches 0 */
+			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_SEMI_STATIC)) {
+				if (semistatic_countdown != 0)
+					continue;
+				upsdebugx(1, "Refreshing semi-static entry %s", su_info_p->OID);
+			}
 
 			/* skip static elements in update mode */
 			if ((mode == SU_WALKMODE_UPDATE) && (su_info_p->flags & SU_FLAG_STATIC))

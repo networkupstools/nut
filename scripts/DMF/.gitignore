@@ -1,6 +1,7 @@
 dmf-test
 dmf-reindex
 dmf-lua-test
+dmf-fun-test
 *.o
 */*.json.tmp
 */*.dmf.tmp
@@ -14,3 +15,6 @@ dmf-lua-test
 *-mib.c
 legacy-mibfiles-list.mk.in
 legacy-mibfiles-list.mk
+dmfcore.c
+dmfsnmp.c
+alist.c

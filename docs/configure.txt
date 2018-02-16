@@ -364,6 +364,8 @@ Programs that normally don't have root powers, like the drivers and
 upsd, write their pid files here.  By default this is whatever the
 statepath is, as those programs should be able to write there.
 
+The NUT_ALTPIDPATH environment variable overrides this at run time.
+
 	--with-statepath=PATH
 
 Change the default location of the state sockets created by the

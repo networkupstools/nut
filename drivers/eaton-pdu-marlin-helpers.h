@@ -23,6 +23,6 @@
 #ifndef EATON_EPDU_MARLIN_HELPERS_H
 #define EATON_EPDU_MARLIN_HELPERS_H
 
-const char *marlin_outlet_group_phase_fun(int outlet_group_nb);
+long marlin_device_count_fun(const char *daisy_dev_list);
 
 #endif /* EATON_EPDU_MARLIN_HELPERS_H */

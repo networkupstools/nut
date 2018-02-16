@@ -208,6 +208,7 @@ static void * list_nut_devices(void * arg)
 
 nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, const char* port,long usec_timeout)
 {
+        int pass = 1;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
 	char * ip_dest = NULL;
@@ -217,6 +218,7 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	int i;
 	struct scan_nut_arg *nut_arg;
 #ifdef HAVE_PTHREAD
+        sem_t * semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -224,9 +226,9 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 	pthread_mutex_init(&dev_mutex,NULL);
 #endif
 
-        if( !nutscan_avail_nut ) {
-                return NULL;
-        }
+	if( !nutscan_avail_nut ) {
+		return NULL;
+	}
 
 	/* Ignore SIGPIPE if the caller hasn't set a handler for it yet */
 	if( sigaction(SIGPIPE, NULL, &oldact) == 0 ) {
@@ -240,6 +242,15 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 
 	while( ip_str != NULL )
 	{
+#ifdef HAVE_PTHREAD
+            if(thread_array == NULL) {
+                sem_wait(semaphore);
+                pass = 1;
+            } else {
+                pass = (sem_trywait(semaphore) == 0);
+            }
+#endif
+            if(pass) {
 		if( port ) {
 			if( ip.type == IPv4 ) {
 				snprintf(buf,sizeof(buf),"%s:%s",ip_str,port);
@@ -280,6 +291,19 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #endif
 		free(ip_str);
 		ip_str = nutscan_ip_iter_inc(&ip);
+#ifdef HAVE_PTHREAD
+            } else {
+		if(thread_array != NULL) {
+			for (i=0; i < thread_count; i++) {
+				pthread_join(thread_array[i],NULL);
+				sem_post(semaphore);
+			}
+			thread_count = 0;
+			free(thread_array);
+			thread_array = NULL;
+		}
+#endif
+            }
 	}
 
 #ifdef HAVE_PTHREAD

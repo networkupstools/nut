@@ -22,10 +22,15 @@
 */
 
 #include "common.h"
+#include "nutscan-init.h"
 #include <ltdl.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAVE_PTHREAD
+#include <semaphore.h>
+#endif
 
 int nutscan_avail_avahi = 0;
 int nutscan_avail_ipmi = 0;
@@ -41,8 +46,20 @@ int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path);
 
+#ifdef HAVE_PTHREAD
+sem_t semaphore;
+
+sem_t * nutscan_semaphore(void)
+{
+	return &semaphore;
+}
+#endif
+
 void nutscan_init(void)
 {
+#ifdef HAVE_PTHREAD
+	sem_init(&semaphore, 0, DEFAULT_THREAD);
+#endif
 	char *libname = NULL;
 #ifdef WITH_USB
 	libname = get_libname("libusb-0.1.so");

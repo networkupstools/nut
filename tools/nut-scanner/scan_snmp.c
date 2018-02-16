@@ -59,6 +59,7 @@
 #include <net-snmp/net-snmp-includes.h>
 #ifdef HAVE_PTHREAD
 #include <pthread.h>
+#include <semaphore.h>
 #endif
 
 // Cause the header to also declare the external reference to pre-generated
@@ -375,14 +376,26 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev = nutscan_new_device();
 	dev->type = TYPE_SNMP;
 #if WITH_DMFMIB
-	if (dmfnutscan_snmp_dmp!=NULL) {
+	dev->driver = NULL;
+	if (dmfnutscan_snmp_dmp != NULL) {
 		/* DMF is loaded thus used, successfully */
-		dev->driver = strdup("snmp-ups-dmf");
-		if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
-			nutscan_add_option_to_device(dev,SU_VAR_DMFDIR,
+		if (mib && strcmp(mib, "eaton_epdu")==0) {
+			// FIXME (WITH_SNMP_LKP_FUN): When support for lookup functions
+			// in DMF is fixed, this clause has to be amended back, too.
+			// Also note that currently this suggestion concerns just one
+			// mapping table (for Eaton Marlin ePDUs), and that developers
+			// or validators are not forbidden to configure any driver they
+			// want to explicitly -- this failsafe is just for nut-scanner.
+			upslogx(1, "This device mapping uses lookup functions which is not yet supported by DMF driver");
+		} else {
+			dev->driver = strdup("snmp-ups-dmf");
+			if (dmfnutscan_snmp_dir!=NULL && strcmp(DEFAULT_DMFNUTSCAN_DIR, dmfnutscan_snmp_dir) != 0) {
+				nutscan_add_option_to_device(dev,SU_VAR_DMFDIR,
 					dmfnutscan_snmp_dir);
+			}
 		}
-	} else {
+	}
+	if (dev->driver == NULL) {
 		dev->driver = strdup("snmp-ups");
 	}
 #else
@@ -788,7 +801,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
+        bool pass = true;
 #ifdef HAVE_PTHREAD
+        sem_t *semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -819,6 +834,15 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	ip_str = nutscan_ip_iter_init(&ip, start_ip, stop_ip);
 
 	while(ip_str != NULL) {
+#ifdef HAVE_PTHREAD
+            if(thread_array == NULL) {
+                sem_wait(semaphore);
+                pass=true;
+            } else {
+                pass = (sem_trywait(semaphore) == 0);
+            }
+#endif
+            if(pass) {
 		tmp_sec = malloc(sizeof(nutscan_snmp_t));
 		memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
 		tmp_sec->peername = ip_str;
@@ -843,6 +867,17 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 //		free(ip_str); // Do not free() here - seems to cause a double-free instead
 		ip_str = nutscan_ip_iter_inc(&ip);
 //		free(tmp_sec);
+#ifdef HAVE_PTHREAD
+            } else {
+		for (i=0; i < thread_count; i++) {
+			pthread_join(thread_array[i],NULL);
+			sem_post(semaphore);
+		}
+		thread_count = 0;
+		free(thread_array);
+		thread_array = NULL;
+#endif
+            }
 	};
 
 #ifdef HAVE_PTHREAD

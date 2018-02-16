@@ -5,11 +5,23 @@ include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/class/python-module.mk
 
 include /usr/share/cdbs/1/rules/autoreconf.mk
+
+export DH_OPTIONS
+
+# This is the debhelper compatibility version to use.
+# JIM: 10+ enables parallel builds by default
+export DH_COMPAT=10
+
 # We cannot call autoreconf -f -i as it updates INSTALL which is used for doc
 # generation
 DEB_DH_AUTORECONF_ARGS = --as-needed
 
 DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS 2>/dev/null)
+
+# echoed fallbacks are for Ubuntu primarily
+systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir systemd || echo /lib/systemd/system)
+systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
+systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
 
 # List any files which are not installed
 include /usr/share/cdbs/1/rules/utils.mk
@@ -41,20 +53,28 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-user=nut --with-group=nut
 
 ifeq (linux,$(DEB_HOST_ARCH_OS))
-  DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev --with-systemdsystemunitdir=/lib/systemd/system
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-udev-dir=/lib/udev
+###  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir
+###  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=/lib/systemd/system
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdsystemunitdir=$(systemdsystemunitdir)
+  DEB_CONFIGURE_EXTRA_FLAGS+=--with-systemdshutdowndir=$(systemdshutdowndir)
 endif
 
 # only build documentation if asciidoc is installed
-ifneq ($(shell which asciidoc),)
+#ifneq ($(shell which asciidoc),)
 #  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=html-chunked,pdf
-  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man
-else
-  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=skip
-endif
+#else
+#  DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=skip
+#endif
 
-pre-build:: debian/compat
+# Try to use dist'ed docs if available, fall back to auto in other cases
+DEB_CONFIGURE_EXTRA_FLAGS+=--with-doc=man=dist-auto
+
+configure: configure.ac
 	(cd tools; python nut-snmpinfo.py)
 	sh autogen.sh
+
+pre-build:: debian/compat configure
 
 common-install-arch::
 	# install the bash completion script
@@ -92,17 +112,17 @@ common-install-arch::
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
 
 	# Install systemd files only on systems where it's supported
-	install -m 644 -D $(CURDIR)/debian/tmp/lib/systemd/system/nut-monitor.service \
-		$(CURDIR)/debian/nut-client/lib/systemd/system/nut-monitor.service
-	install -D $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/systemd/system-shutdown/nutshutdown \
-		$(CURDIR)/debian/nut-server/lib/systemd/system-shutdown/nutshutdown
-	install -m 644 -D $(CURDIR)/debian/tmp/lib/systemd/system/nut-server.service \
-		$(CURDIR)/debian/nut-server/lib/systemd/system/nut-server.service
-	install -m 644 -t $(CURDIR)/debian/nut-server/lib/systemd/system \
-	  $(CURDIR)/debian/tmp/lib/systemd/system/nut-driver*
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-monitor.service \
+		$(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-monitor.service
+	install -D $(CURDIR)/debian/tmp/$(systemdshutdowndir)/nutshutdown \
+		$(CURDIR)/debian/nut-server/$(systemdshutdowndir)/nutshutdown
+	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-server.service \
+		$(CURDIR)/debian/nut-server/$(systemdsystemunitdir)/nut-server.service
+	install -m 644 -t $(CURDIR)/debian/nut-server/$(systemdsystemunitdir) \
+	  $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-driver*
 
 	# Add a symlink to mask the LSB initscript
-	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/lib/systemd/system/nut-client.service
+	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-client.service
 
 	# Install tmpfiles config file to create /run/nut directory
 	install -m 644 -D $(CURDIR)/debian/nut-client.tmpfiles \
@@ -146,3 +166,6 @@ ifeq (linux,$(DEB_HOST_ARCH_OS))
 # for Ubuntu
 # DEB_DH_GENCONTROL_ARGS := -- -Vudev="udev (>= 136-1)"
 endif
+
+all check dist distcheck install:
+	dh $@ --parallel

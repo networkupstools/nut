@@ -34,6 +34,16 @@ esac
 [ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
 export CC
 
+[ -n "${CPP-}" ] || CPP="`which cpp`"
+[ -n "${CPP-}" ] && \
+case "$CPP" in
+    /*) ;;
+    *) # No support for CLI args as part of "$CPP" right now
+        CPP="`which "$CPP"`" ;;
+esac
+[ -n "${CPP}" ] && [ -x "$CPP" ] || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
+export CPP
+
 if [ "$1" == "--skip-sanity-check" ]; then
     shift 1
 else
@@ -46,6 +56,9 @@ else
             { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
     done
 
+    "$CPP" --help > /dev/null || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
+    "$CC" --help > /dev/null || { echo "ERROR: Can not find a C compiler: '$CC'" >&2; exit 2; }
+
     if [ "$1" = "--sanity-check" ]; then
         # We are alive by now, so checks above have succeeded
         exit 0
@@ -53,9 +66,17 @@ else
 fi
 
 dmfify_c_file() {
-    # One argument: path to a `*-mib.c` filename
+    # One reqiured argument: path to a `*-mib.c` filename
+    # Optional second one names the output file (and temporary files)
     local cmib="$1"
-    local mib="$(basename "${cmib}" .c)"
+    local mib="$2"
+    if [ -z "${mib}" ] ; then
+        mib="$(basename "${cmib}" .c)"
+    else
+        # Note/FIXME: dirname is dropped, files land into current dir
+        # as prepared by Makefile
+        mib="$(basename "${mib}" .dmf)"
+    fi
 
     [ -n "${cmib}" ] && [ -s "${cmib}" ] || \
         { echo "ERROR: dmfify_c_file() can not process argument '${cmib}'!" >&2
@@ -99,7 +120,15 @@ dmfify_NUT_drivers() {
 if [[ "$#" -gt 0 ]]; then
     echo "INFO: Got some arguments, assuming they are NUT filenames for parsing" >&2
     while [[ "$#" -gt 0 ]]; do
-        dmfify_c_file "$1" || exit
+        case "${2-}" in
+            *.dmf)
+                dmfify_c_file "$1" "$2" || exit
+                shift
+                ;;
+            *)
+                dmfify_c_file "$1" || exit
+                ;;
+        esac
         shift
     done
 else
