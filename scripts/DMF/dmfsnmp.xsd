@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <xs:schema
- version="1.0.1"
+ version="1.0.2"
  attributeFormDefault="unqualified" elementFormDefault="qualified"
  xmlns:xs="http://www.w3.org/2001/XMLSchema"
  targetNamespace="http://www.networkupstools.org/dmf/snmp/snmp-ups"
@@ -8,7 +8,7 @@
 <!--
   // This is an XSD schema for NUT DMF files intended for snmp-ups usage
   // with SNMP MIB references.
-  // Copyright (C) 2016 - 2017 by Eaton
+  // Copyright (C) 2016 - 2018 by Eaton
   // Authors:
   //    Jim Klimov <EvgenyKlimov@eaton.com>
   //    Carlos Dominguez <CarlosDominguez@eaton.com>
@@ -110,6 +110,8 @@
                       <xs:attribute type="xs:string" name="setvar" use="optional"/>
                       <xs:attribute type="xs:string" name="command" use="optional"/>
                       <xs:attribute type="xs:string" name="type_daisy" use="optional"/>
+                      <xs:attribute type="xs:string" name="zero_invalid" use="optional"/>
+                      <xs:attribute type="xs:string" name="na_invalid" use="optional"/>
                       <xs:attribute type="xs:string" name="functionset" use="optional"/>
                     </xs:extension>
                   </xs:simpleContent>
