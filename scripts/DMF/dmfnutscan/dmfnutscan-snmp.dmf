@@ -5,6 +5,7 @@
 	<mib2nut auto_check="" mib_name="huawei" oid=".1.3.6.1.4.1.8072.3.2.10" />
 	<mib2nut auto_check="" mib_name="tripplite" oid=".1.3.6.1.4.1.850.1" />
 	<mib2nut auto_check="" mib_name="xppc" oid=".1.3.6.1.4.1.935" />
+	<mib2nut auto_check=".1.3.6.1.4.1.10418.17.2.1.2.0" mib_name="emerson_avocent_pdu" oid=".1.3.6.1.4.1.10418.17.1.7" />
 	<mib2nut auto_check=".1.3.6.1.4.1.13742.1.1.12.0" mib_name="raritan" oid=".1.3.6.1.4.1.13742" />
 	<mib2nut auto_check=".1.3.6.1.4.1.13742.6.3.2.1.1.3.1" mib_name="raritan-px2" oid=".1.3.6.1.4.1.13742.6" />
 	<mib2nut auto_check=".1.3.6.1.4.1.17373.3.1.1.0" mib_name="aphel_genesisII" oid=".1.3.6.1.4.1.17373" />

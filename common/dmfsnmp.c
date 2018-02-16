@@ -1176,6 +1176,16 @@ compile_flags(const char **attrs)
 	}
 	if(aux_flags)free(aux_flags);
 
+	aux_flags = get_param_by_name(SNMP_FLAG_ZEROINVALID, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_FLAG_ZEROINVALID;
+	if(aux_flags)free(aux_flags);
+
+	aux_flags = get_param_by_name(SNMP_FLAG_NAINVALID, attrs);
+		if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_FLAG_NAINVALID;
+	if(aux_flags)free(aux_flags);
+
 #if WITH_DMF_FUNCTIONS
 	aux_flags = get_param_by_name(TYPE_FUNCTIONSET, attrs);
 	if(aux_flags){

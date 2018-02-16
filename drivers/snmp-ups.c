@@ -5,8 +5,8 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2017	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2016 - 2017	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2015 - 2018	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2016 - 2018	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -70,6 +70,7 @@
 #include "apc-ats-mib.h"
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
+#include "emerson-avocent-pdu-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -116,6 +117,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&eaton_ats16,		/* This struct comes from : eaton-ats16-mib.c */
 	&eaton_ats30,		/* This struct comes from : eaton-ats30-mib.c */
 	&eaton_marlin,		/* This struct comes from : eaton-mib.c */
+	&emerson_avocent_pdu,	/* This struct comes from : emerson-avocent-pdu-mib.c */
 	&aphel_revelation,	/* This struct comes from : eaton-mib.c */
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
@@ -166,7 +168,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.02"
+#define DRIVER_VERSION		"1.04"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -190,6 +192,11 @@ time_t lastpoll = 0;
 /* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
 int template_index_base = -1;
+/* Not that stable in the end... */
+int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
+int outlet_template_index_base = -1;
+int outletgroup_template_index_base = -1;
+int device_template_offset = -1;
 
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
@@ -198,6 +205,7 @@ int template_index_base = -1;
 static void disable_transfer_oids(void);
 bool_t get_and_process_data(int mode, snmp_info_t *su_info_p);
 int extract_template_number(int template_type, const char* varname);
+int get_template_type(const char* varname);
 
 /* ---------------------------------------------
  * driver functions implementations
@@ -271,6 +279,8 @@ void upsdrv_updateinfo(void)
 		/* store timestamp */
 		lastpoll = time(NULL);
 	}
+	else /* Just tell everything is ok to upsd */
+		dstate_dataok();
 }
 
 void upsdrv_shutdown(void)
@@ -1743,16 +1753,25 @@ void free_info(snmp_info_t *su_info_p)
  * the MIB, based on a test using a template OID */
 int base_snmp_template_index(const snmp_info_t *su_info_p)
 {
-	int base_index = template_index_base;
+	int base_index = -1;
 	char test_OID[SU_INFOSIZE];
+	int template_type = get_template_type(su_info_p->info_type);
 
 	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
 
-	/* FIXME: differentiate between template types (SU_OUTLET | SU_OUTLET_GROUP)
-	 * which may have different indexes ; and store it to not redo it again */
-// FIXME: for now, process every time the index, if it's a "device" template!
-	if (!(su_info_p->flags & SU_OUTLET) && !(su_info_p->flags & SU_OUTLET_GROUP))
-		template_index_base = -1;
+	/* Try to differentiate between template types which may have
+	 * different indexes ; and store it to not redo it again */
+	switch (template_type) {
+		case SU_OUTLET:
+			template_index_base = outlet_template_index_base;
+			break;
+		case SU_OUTLET_GROUP:
+			template_index_base = outletgroup_template_index_base;
+			break;
+		case SU_DAISY:
+			template_index_base = device_template_index_base;
+	}
+	base_index = template_index_base;
 
 	if (template_index_base == -1)
 	{
@@ -1763,52 +1782,74 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 			if (is_multiple_template(su_info_p->OID) == TRUE) {
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf(test_OID, sizeof(test_OID), su_info_p->OID,
-						current_device_number - 1, base_index);
+						current_device_number + device_template_offset, base_index);
 				}
 				else {
 					snprintf(test_OID, sizeof(test_OID), su_info_p->OID,
-						base_index, current_device_number - 1);
+						base_index, current_device_number + device_template_offset);
 				}
 			}
 			else {
 				snprintf(test_OID, sizeof(test_OID), su_info_p->OID, base_index);
 			}
 
-			if (nut_snmp_get(test_OID) != NULL)
-				break;
+			if (nut_snmp_get(test_OID) != NULL) {
+				if (su_info_p->flags & SU_FLAG_ZEROINVALID) {
+					long value;
+					if ((nut_snmp_get_int(test_OID, &value)) && (value!=0)) {
+						break;
+					}
+				}
+				else if (su_info_p->flags & SU_FLAG_NAINVALID) {
+					char value[SU_BUFSIZE];
+					if ((nut_snmp_get_str(test_OID, value, SU_BUFSIZE, NULL))
+						&& (strncmp(value, "N/A", 3))) {
+						break;
+					}
+				}
+				else {
+					break;
+				}
+			}
 		}
 		/* Only store if it's a template for outlets or outlets groups,
 		 * not for daisychain (which has different index) */
-		if ((su_info_p->flags & SU_OUTLET) || (su_info_p->flags & SU_OUTLET_GROUP))
-			template_index_base = base_index;
+		if (su_info_p->flags & SU_OUTLET)
+			outlet_template_index_base = base_index;
+		else if (su_info_p->flags & SU_OUTLET_GROUP)
+			outletgroup_template_index_base = base_index;
+		else
+			device_template_index_base = base_index;
 	}
-	upsdebugx(3, "%s: %i", __func__, template_index_base);
+	upsdebugx(3, "%s: template_index_base = %i", __func__, base_index);
 	return base_index;
-}
-
-/* return the NUT offset (increment) based on template_index_base
- * ie (template_index_base == 0) => increment +1
- *    (template_index_base == 1) => increment +0 */
-int base_nut_template_offset(void)
-{
-	return (template_index_base==0)?1:0;
 }
 
 /* Try to determine the number of items (outlets, outlet groups, ...),
  * using a template definition. Walk through the template until we can't
  * get anymore values. I.e., if we can iterate up to 8 item, return 8 */
-static int guestimate_template_count(const char *OID_template)
+static int guestimate_template_count(snmp_info_t *su_info_p)
 {
 	int base_index = 0;
 	char test_OID[SU_INFOSIZE];
 	int base_count;
+	const char *OID_template = su_info_p->OID;
 
 	upsdebugx(1, "%s(%s)", __func__, OID_template);
 
 	/* Determine if OID index starts from 0 or 1? */
 	snprintf(test_OID, sizeof(test_OID), OID_template, base_index);
-	if (nut_snmp_get(test_OID) == NULL)
+	if (nut_snmp_get(test_OID) == NULL) {
 		base_index++;
+	}
+	else {
+		if (su_info_p->flags & SU_FLAG_ZEROINVALID) {
+			long value;
+			if ((nut_snmp_get_int(test_OID, &value)) && (value==0)) {
+				base_index++;
+			}
+		}
+	}
 
 	/* Now, actually iterate */
 	for (base_count = 0 ;  ; base_count++) {
@@ -1850,7 +1891,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 		/* FIXME: should we disable it?
 		 * su_info_p->flags &= ~SU_FLAG_OK;
 		 * or rely on guestimation? */
-		template_count = guestimate_template_count(su_info_p->OID);
+		template_count = guestimate_template_count(su_info_p);
 		/* Publish the count estimation */
 		if (template_count > 0) {
 			dstate_setinfo(template_count_var, "%i", template_count);
@@ -1893,7 +1934,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				{
 					/* Device 1 ("device.0", whole daisychain) needs no
 					 * special processing */
-					cur_nut_index = cur_template_number + base_nut_template_offset();
+					cur_nut_index = cur_template_number;
 					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
 							su_info_p->info_type, cur_nut_index);
 				}
@@ -1901,7 +1942,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 			else /* Outlet and outlet groups templates */
 			{
 				/* Get the index of the current template instance */
-				cur_nut_index = cur_template_number + base_nut_template_offset();
+				cur_nut_index = cur_template_number;
 
 				/* Special processing for daisychain */
 				if (daisychain_enabled == TRUE) {
@@ -1938,7 +1979,7 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 				/* Special processing for daisychain */
 				if (!strncmp(type, "device", 6)) {
 					if (current_device_number > 0) {
-						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, current_device_number - 1);
+						snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, current_device_number + device_template_offset);
 					}
 					//else
 					// FIXME: daisychain-whole, what to do?
@@ -1951,11 +1992,11 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 					if (daisychain_enabled == TRUE) {
 						if (su_info_p->flags & SU_TYPE_DAISY_1) {
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
-								su_info_p->OID, current_device_number - 1, cur_template_number);
+								su_info_p->OID, current_device_number + device_template_offset, cur_template_number);
 						}
 						else {
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
-								su_info_p->OID, cur_template_number - 1, current_device_number - 1);
+								su_info_p->OID, cur_template_number + device_template_offset, current_device_number - device_template_offset);
 						}
 					}
 					else {
@@ -1996,14 +2037,16 @@ bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
  * Return: SU_OUTLET_GROUP, SU_OUTLET or 0 if not a template */
 int get_template_type(const char* varname)
 {
-	/* Check if it is outlet / outlet.group */
 	if (!strncmp(varname, "outlet.group", 12)) {
+		upsdebugx(4, "outlet.group template");
 		return SU_OUTLET_GROUP;
 	}
 	else if (!strncmp(varname, "outlet", 6)) {
+		upsdebugx(4, "outlet template");
 		return SU_OUTLET;
 	}
 	else if (!strncmp(varname, "device", 6)) {
+		upsdebugx(4, "device template");
 		return SU_DAISY;
 	}
 	else {
@@ -2142,7 +2185,7 @@ bool_t daisychain_init()
 		 * the number of devices present */
 		else
 		{
-			devices_count = guestimate_template_count(su_info_p->OID);
+			devices_count = guestimate_template_count(su_info_p);
 			upsdebugx(1, "Guesstimation: there are %ld device(s) present", devices_count);
 		}
 
@@ -2183,6 +2226,12 @@ bool_t daisychain_init()
 		daisychain_enabled = FALSE;
 		upsdebugx(1, "No device.count entry found, daisychain support not needed");
 	}
+
+	/* Finally, compute and store the base OID index and NUT offset */
+	device_template_index_base = base_snmp_template_index(su_find_info("device.model"));
+	upsdebugx(1, "%s: device_template_index_base = %i", __func__, device_template_index_base);
+	device_template_offset = device_template_index_base - 1;
+	upsdebugx(1, "%s: device_template_offset = %i", __func__, device_template_offset);
 
 	return daisychain_enabled;
 }
@@ -2259,7 +2308,7 @@ int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p
 				 * formatting string) that needs to be adapted! */
 				if (strchr(tmp_info_p->OID, '%') != NULL) {
 					upsdebugx(2, "Found template, need to be adapted");
-					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number - 1);
+					snprintf((char*)tmpOID, SU_INFOSIZE, tmp_info_p->OID, current_device_number + device_template_offset);
 				}
 				else {
 					/* Otherwise, just point at what we found */
@@ -2620,17 +2669,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	int index = 0;
 	char *format_char = NULL;
 	snmp_info_t *tmp_info_p = NULL;
-	int daisychain_offset = 0;
 
 	upsdebugx(2, "%s: %s %s", __func__, su_info_p->info_type, su_info_p->OID);
-
-	if (daisychain_enabled == TRUE) {
-		/* Only apply the "-1" offset for master and slaves! */
-		if (current_device_number > 0)
-			daisychain_offset = -1;
-	}
-	else
-		daisychain_offset = -1;
 
 	/* Check if this is a daisychain template */
 	if ((format_char = strchr(su_info_p->OID, '%')) != NULL) {
@@ -2639,7 +2679,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 			/* adapt the OID */
 			if (su_info_p->OID != NULL) {
 				snprintf((char *)tmp_info_p->OID, SU_INFOSIZE, su_info_p->OID,
-					current_device_number + daisychain_offset);
+					current_device_number + device_template_offset);
 			}
 			else {
 				free_info(tmp_info_p);
@@ -2789,7 +2829,8 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 	} else {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {
-			if (su_info_p->flags&SU_FLAG_NEGINVALID && value<0) {
+			if ((su_info_p->flags&SU_FLAG_NEGINVALID && value<0)
+				|| (su_info_p->flags&SU_FLAG_ZEROINVALID && value==0)) {
 				su_info_p->flags &= ~SU_FLAG_OK;
 				if(su_info_p->flags&SU_FLAG_UNIQUE) {
 					disable_competition(su_info_p);
@@ -2851,7 +2892,6 @@ int su_setOID(int mode, const char *varname, const char *val)
 	/* normal (default), outlet, or outlet group variable */
 	int vartype = -1;
 	int daisychain_device_number = -1;
-	int OID_offset = 0; /* Set to "-1" for daisychain devices > 0, 0 otherwise */
 	/* variable without the potential "device.X" prefix, to find the template */
 	char *tmp_varname = NULL;
 	char setOID[SU_INFOSIZE];
@@ -2882,7 +2922,6 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 	else {
 		daisychain_device_number = 0;
-		OID_offset = 0;
 		tmp_varname = strdup(varname);
 	}
 
@@ -2948,7 +2987,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 			(strstr(tmp_info_p->dfl, "%i") != NULL)) {
 			su_info_p->dfl = (char *)xmalloc(SU_INFOSIZE);
 			snprintf((char *)su_info_p->dfl, sizeof(su_info_p->dfl), tmp_info_p->dfl,
-				item_number - base_nut_template_offset());
+				item_number);
 		}
 		/* adapt the OID */
 		if (su_info_p->OID != NULL) {
@@ -2968,16 +3007,15 @@ int su_setOID(int mode, const char *varname, const char *val)
 			if (daisychain_enabled == TRUE) {
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number + OID_offset, item_number - base_nut_template_offset());
+						daisychain_device_number, item_number);
 				}
 				else {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number - base_nut_template_offset(), daisychain_device_number + OID_offset);
+						item_number, daisychain_device_number);
 				}
 			}
 			else {
-				snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-					item_number - base_nut_template_offset());
+				snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID, item_number);
 			}
 		}
 		/* else, don't return STAT_SET_INVALID for mode==SU_MODE_SETVAR since we
