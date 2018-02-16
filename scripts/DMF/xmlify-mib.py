@@ -66,7 +66,7 @@ SU_TYPE_DAISY_2 = (2 << 19)
 SU_FLAG_ZEROINVALID = (1 << 20)	#/* Invalid if "0" value */
 SU_FLAG_NAINVALID = (1 << 21)	#/* Invalid if "N/A" value */
 
-SU_FLAG_SEMI_STATIC = (1 << 20)	#/* retrieve info every few update walks. */
+SU_FLAG_SEMI_STATIC = (1 << 22)	#/* retrieve info every few update walks. */
 
 def die (msg):
     print ("E: " + msg, file=sys.stderr)

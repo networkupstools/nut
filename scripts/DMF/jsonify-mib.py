@@ -44,7 +44,7 @@ def debug (msg):
 
 def f2f(node):
     """convert c_ast node flags to list of numbers
-    (1, 2, 4, 8, 1048576) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE | SU_FLAG_SEMI_STATIC
+    (1, 2, 4, 8, 4194304) == SU_FLAG_OK | SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_STALE | SU_FLAG_SEMI_STATIC
     """
     if  isinstance (node, c_ast.BinaryOp) and \
         node.op == "<<":
