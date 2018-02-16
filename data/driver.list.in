@@ -344,6 +344,8 @@
 
 "Electrys"	"ups"	"2"	"UPS 2500"	""	"nutdrv_qx or blazer_ser"
 
+"Emerson"	"pdu"	"3"	"PM3000 metered & switched"	""	"snmp-ups"
+
 "Energy Sistem"	"ups"	"2"	"(various)"	""	"blazer_ser"
 
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
