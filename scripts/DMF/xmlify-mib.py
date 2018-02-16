@@ -63,6 +63,8 @@ SU_TYPE_TIME = (2 << 18)	#/* cast to int */
 SU_TYPE_CMD = (3 << 18)		#/* instant command */
 SU_TYPE_DAISY_1 = (1 << 19)
 SU_TYPE_DAISY_2 = (2 << 19)
+SU_FLAG_ZEROINVALID = (1 << 20)	#/* Invalid if "0" value */
+SU_FLAG_NAINVALID = (1 << 21)	#/* Invalid if "N/A" value */
 
 def die (msg):
     print ("E: " + msg, file=sys.stderr)
@@ -193,6 +195,8 @@ def mk_snmp (inp, root):
                     ("bypass_3_phase", SU_BYPASS_3, "yes"),
                     ("type_daisy", SU_TYPE_DAISY_1, "1"),
                     ("type_daisy", SU_TYPE_DAISY_2, "2"),
+                    ("zero_invalid", SU_FLAG_ZEROINVALID, "yes"),
+                    ("na_invalid", SU_FLAG_NAINVALID, "yes"),
                     ):
                 if not flag in info ["flags"]:
                     continue
