@@ -267,6 +267,8 @@ typedef struct {
 #define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
 #define SU_TYPE_DAISY		((t)->flags & (7 << 19))
 #define SU_DAISY			(2 << 19) /* Daisychain template definition */
+#define SU_FLAG_ZEROINVALID    (1 << 20)       /* Invalid if "0" value */
+#define SU_FLAG_NAINVALID      (1 << 21)       /* Invalid if "N/A" value */
 
 #define SU_FLAG_SEMI_STATIC	(1 << 20) /* Refresh this entry once in several walks
  * (for R/W values user can set on device, like descriptions or contacts) */
