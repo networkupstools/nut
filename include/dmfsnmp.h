@@ -1,5 +1,6 @@
 /* dmfsnmp.h - Header for dmfsnmp.c - the Network UPS Tools XML-driver-loader
  *   for the snmp-ups and nut-scanner SNMP MIB support.
+ * Do not forget to update the XSD files if changing anything here!
  *
  * This file declares procedures to manipulate and load MIB structures
  * for NUT snmp-ups drivers dynamically, rather than as statically linked
@@ -7,7 +8,7 @@
  *
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
- * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2016-2018 Jim Klimov <EvgenyKlimov@eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -193,6 +194,8 @@
 #define SNMP_FLAG_ABSENT "absent"
 #define SNMP_FLAG_NEGINVALID "positive"
 #define SNMP_FLAG_UNIQUE "unique"
+#define SNMP_FLAG_ZEROINVALID "zero_invalid"
+#define SNMP_FLAG_NAINVALID "na_invalid"
 #define SNMP_STATUS_PWR "power_status"
 #define SNMP_STATUS_BATT "battery_status"
 #define SNMP_STATUS_CAL "calibration"
