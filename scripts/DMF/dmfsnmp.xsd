@@ -16,6 +16,7 @@
   // Adapted from markup generated from de-facto DMF files with online tool:
   //    http://www.freeformatter.com/xsd-generator.html
   // as a superset of all DMFs we have initially generated from *-mib.c files.
+  // Do not forget to update dmfsnmp.h if changing anything here!
   -->
   <xs:element name="nut">
     <xs:complexType>
