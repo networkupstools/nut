@@ -2039,7 +2039,6 @@ bool_t daisychain_init()
 				dstate_setinfo("device.model", "daisychain (1+%ld)", devices_count - 1);
 			}
 		}
-
     }
 	else {
 		daisychain_enabled = FALSE;
@@ -2054,8 +2053,9 @@ bool_t daisychain_init()
         device_template_offset = device_template_index_base - 1;
         upsdebugx(1, "%s: device_template_offset = %i", __func__, device_template_offset);
     }
-
-
+    else {
+        upsdebugx(1, "%s: No device.model entry found.", __func__);
+    }
 
 	return daisychain_enabled;
 }
