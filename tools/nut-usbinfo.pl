@@ -76,7 +76,7 @@ my %vendorName;
 
 ################# MAIN #################
 
-find(\&find_usbdevs,$scanPath);
+find({wanted=>\&find_usbdevs, preprocess=>sub{sort @_}}, $scanPath);
 &gen_usb_files;
 
 ################# SUB METHOD #################
