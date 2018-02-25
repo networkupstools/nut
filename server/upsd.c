@@ -40,6 +40,7 @@
 #include "sstate.h"
 #include "desc.h"
 #include "neterr.h"
+#include "dbus.h"
 
 #ifdef HAVE_WRAP
 #include <tcpd.h>
@@ -1009,7 +1010,7 @@ static void mainloop(void)
 
 	upsdebugx(2, "%s: polling %d filedescriptors", __func__, nfds);
 
-	ret = poll(fds, nfds, 2000);
+	ret = poll(fds, nfds, 200);
 
 	if (ret == 0) {
 		upsdebugx(2, "%s: no data available", __func__);
@@ -1289,10 +1290,15 @@ int main(int argc, char **argv)
 	/* initialize SSL (keyfile must be readable by nut user) */
 	ssl_init();
 
+	/* initialize dbus connection. */
+	dbus_init();
+
 	while (!exit_flag) {
 		mainloop();
+		dbus_loop();
 	}
 
+	dbus_cleanup();
 	ssl_cleanup();
 
 	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);

@@ -18,13 +18,16 @@ if WITH_SSL
    LDADD += $(LIBSSL_LIBS)
 endif
 
+AM_CFLAGS += -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include
+LDADD += -ldbus-1
+
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug
 
-upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c		\
- netget.c netmisc.c netlist.c netuser.c netset.c netinstcmd.c		\
+upsd_SOURCES = upsd.c user.c conf.c netssl.c sstate.c desc.c 		\
+ netget.c netmisc.c netlist.c netuser.c netset.c netinstcmd.c dbus.c	\
  conf.h nut_ctype.h desc.h netcmds.h neterr.h netget.h netinstcmd.h		\
  netlist.h netmisc.h netset.h netuser.h netssl.h sstate.h stype.h upsd.h   \
- upstype.h user-data.h user.h
+ upstype.h user-data.h user.h dbus.h
 
 sockdebug_SOURCES = sockdebug.c
