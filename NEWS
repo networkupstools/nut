@@ -16,6 +16,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * IBM 6000 VA LCD 4U Rack UPS; 5396-1Kx (USB)
    * Phoenix Contact QUINT-UPS model 2320461 (Modbus)
    * Tripp-Lite SU3000LCD2UHV (USB; protocol 1330)
+   * Emerson Avocent PM3000 PDU (SNMP)
 
  - add devices to HCL/DDL:
    * APC Back-UPS CS (USB)
@@ -57,6 +58,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * fix input.L2.voltage on Eaton G2/G3 PDU
    * update Eaton Aphel Revelation MIB
    * support Raritan Dominion PX2 PDU
+   * support Emerson Avocent PM3000 PDU
 
  - all drivers: add support for dumping the data tree (in upsc-like format)
    after running the driver update loop for 'update_count' times and exit.
