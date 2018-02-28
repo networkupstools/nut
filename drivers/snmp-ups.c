@@ -163,7 +163,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.04"
+#define DRIVER_VERSION		"1.05"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1723,6 +1723,9 @@ void free_info(snmp_info_t *su_info_p)
  * the MIB, based on a test using a template OID */
 int base_snmp_template_index(const snmp_info_t *su_info_p)
 {
+	if (!su_info_p)
+		return -1;
+
 	int base_index = -1;
 	char test_OID[SU_INFOSIZE];
 	int template_type = get_template_type(su_info_p->info_type);
@@ -2180,10 +2183,16 @@ bool_t daisychain_init()
 	}
 
 	/* Finally, compute and store the base OID index and NUT offset */
-	device_template_index_base = base_snmp_template_index(su_find_info("device.model"));
-	upsdebugx(1, "%s: device_template_index_base = %i", __func__, device_template_index_base);
-	device_template_offset = device_template_index_base - 1;
-	upsdebugx(1, "%s: device_template_offset = %i", __func__, device_template_offset);
+	su_info_p = su_find_info("device.model");
+	if (su_info_p != NULL) {
+		device_template_index_base = base_snmp_template_index(su_info_p);
+		upsdebugx(1, "%s: device_template_index_base = %i", __func__, device_template_index_base);
+		device_template_offset = device_template_index_base - 1;
+		upsdebugx(1, "%s: device_template_offset = %i", __func__, device_template_offset);
+	}
+	else {
+		upsdebugx(1, "%s: No device.model entry found.", __func__);
+	}
 
 	return daisychain_enabled;
 }
