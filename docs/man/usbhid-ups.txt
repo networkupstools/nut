@@ -133,6 +133,14 @@ INPUT flagged objects. Some Powercom units need this option.
 Limit the number of bytes to read from interrupt pipe. For some Powercom units
 this option should be equal to 8.
 
+*hid_descriptor*='filename'::
+This option allows you to replace the contents of the HID Report Descriptor
+with a patched version. The filename specifies a binary file, and the
+descriptor retrieved from the UPS is ignored. Use this option with caution,
+and please contact one of the NUT mailing lists so we are aware of the problem
+which you are trying to patch around. Further instructions on creating a
+replacement descriptor file are beyond the scope of this document.
+
 INSTALLATION
 ------------
 
