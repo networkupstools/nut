@@ -25,11 +25,14 @@
 #include "extstate.h"
 #include "state.h"
 #include "upsd.h"
+#include "netset.h"
 
 #include <dbus/dbus.h>
 #include <string.h>
 #include <stdlib.h>
 
+
+static const char* empty_string = "";
 
 /* Optimized building of string by multiple appending.
  */
@@ -95,6 +98,16 @@ static void dbus_send_error_reply(DBusConnection *connection, DBusMessage *reque
     reply = dbus_message_new_error(request, errname, errdesc);
     dbus_connection_send(connection, reply, NULL);
     dbus_message_unref(reply);
+}
+
+static void dbus_read_arg_basic (DBusMessageIter* iter, void* value) {
+    DBusMessageIter variant;
+    if(dbus_message_iter_get_arg_type(iter)==DBUS_TYPE_VARIANT) {
+	dbus_message_iter_recurse (iter, &variant);
+	dbus_message_iter_get_basic (&variant, value);
+    } else {
+	dbus_message_iter_get_basic (iter, value);
+    }
 }
 
 static void dbus_add_variant_string(DBusMessageIter* iter, const char* value) {
@@ -256,21 +269,24 @@ static void dbus_respond_to_device_introspect(DBusConnection *connection, DBusMe
 static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *request, const char* device) {
     DBusMessage *reply;
     DBusMessageIter value;
+
+    upstype_t* ups;
+    st_tree_t *var;
     
     char *interface, *name;
     const char* val;
     
-    upstype_t* ups = get_ups_ptr(device);
+    ups = get_ups_ptr(device);
     if (ups==NULL)
     {
-	dbus_send_error_reply(connection, request, "unknwon_device", "Device name is not known");
+	dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
 	return;
     }
 
     /* Read parameters. */
     dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
     if (dbus_error_is_set(&upsd_dbus_err)) {
-	dbus_send_error_reply(connection, request, "wrong_arguments", "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
 	return;
     }
 
@@ -286,8 +302,14 @@ static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *
     } else if (0==strcmp(name, "desc")) {
 	dbus_add_variant_string(&value, ups->desc);
     } else {
-	val = state_getinfo(ups->inforoot, name);
-	dbus_add_variant_string(&value, val);
+	/* Verify var presence. */
+	var = state_tree_find(ups->inforoot, name);
+	if (var==NULL) {
+	    dbus_message_unref(reply);
+	    dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_PROPERTY, "Unknown property name for " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+	    return;
+	}
+	dbus_add_variant_string(&value, var->val ? var->val : empty_string);
     }
 
     dbus_connection_send(connection, reply, NULL);
@@ -296,33 +318,74 @@ static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *
 
 static void dbus_respond_to_device_set(DBusConnection *connection, DBusMessage *request, const char* device) {
     DBusMessage *reply;
-    DBusMessageIter value;
+    DBusMessageIter args;
     
-    char *interface, *name;
-    const char* val;
+    char *interface, *name, *val;
     
-    st_tree_t* info;
-    upstype_t* ups = get_ups_ptr(device);
+    upstype_t* ups;
+
+    ups = get_ups_ptr(device);
     if (ups==NULL)
     {
-	dbus_send_error_reply(connection, request, "unknwon_device", "Device name is not known");
+	dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
 	return;
     }
 
     /* Read parameters. */
-/*    dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
-    if (dbus_error_is_set(&upsd_dbus_err)) {
-	dbus_send_error_reply(connection, request, "wrong_arguments", "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+    if (!dbus_message_iter_init (request, &args)) {
+	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
 	return;
     }
-*/
+    
+    dbus_message_iter_get_basic (&args, &interface);
+    
+    if (!dbus_message_iter_next (&args)) {
+	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments count to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+	return;
+    }
 
-    /* Create reply message. */
-    dbus_send_error_reply(connection, request, "not_implemented_yet", DBUS_INTERFACE_PROPERTIES "::Set(s,s,v) is not implemented.");
-/*    reply = dbus_message_new_method_return(request);
+    dbus_message_iter_get_basic (&args, &name);
+
+    if (!dbus_message_iter_next (&args)) {
+	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments count to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+	return;
+    }
+
+    dbus_read_arg_basic (&args, &val);
+
+	/* Check variable new value. */
+	switch(set_var_check_val(ups, name, val))
+	{
+		case SET_VAR_CHECK_VAL_VAR_NOT_SUPPORTED:
+			dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_PROPERTY, "Property not supported for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+			return;
+		case SET_VAR_CHECK_VAL_READONLY:
+			dbus_send_error_reply(connection, request, DBUS_ERROR_PROPERTY_READ_ONLY, "Property is read-only for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+			return;
+		case SET_VAR_CHECK_VAL_SET_FAILED:
+			dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Property value is malformed for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+			return;
+		case SET_VAR_CHECK_VAL_TOO_LONG:
+			dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Property value is too long for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+			return;
+		case SET_VAR_CHECK_VAL_INVALID_VALUE:
+			dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Property value is not valid enum value for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+			return;
+		default:
+			/* Do nothing, continue. */
+			break;
+	}
+
+	/* Really do the set operation. */
+
+	if (!do_set_var(ups, name, val)) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_FAILED , "Failed to set new value for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+		return;
+	}
+
+    reply = dbus_message_new_method_return(request);
     dbus_connection_send(connection, reply, NULL);
     dbus_message_unref(reply);
-*/
 }
 
 static void dbus_respond_to_device_getall(DBusConnection *connection, DBusMessage *request, const char* device) {
@@ -335,14 +398,14 @@ static void dbus_respond_to_device_getall(DBusConnection *connection, DBusMessag
     upstype_t* ups = get_ups_ptr(device);
     if (ups==NULL)
     {
-	dbus_send_error_reply(connection, request, "unknwon_device", "Device name is not known");
+	dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
 	return;
     }
 
     /* Read parameters. */
     dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_INVALID);
     if (dbus_error_is_set(&upsd_dbus_err)) {
-	dbus_send_error_reply(connection, request, "wrong_arguments", "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::GetAll(s)->a{sv}");
+	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::GetAll(s)->a{sv}");
 	return;
     }
 
@@ -409,7 +472,7 @@ static void dbus_dump_message(DBusMessage* msg) {
 
 
 static DBusHandlerResult dbus_messages(DBusConnection *connection, DBusMessage *message, void *user_data) {
-	dbus_dump_message(message);
+	// dbus_dump_message(message);
 	
 	const char *path = dbus_message_get_path(message);
 	const char *interface_name = dbus_message_get_interface(message);
