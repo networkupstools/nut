@@ -94,77 +94,76 @@ DBusConnection* upsd_dbus_conn;
 
 
 static void dbus_send_error_reply(DBusConnection *connection, DBusMessage *request, const char* errname, const char* errdesc) {
-    DBusMessage *reply;
-    reply = dbus_message_new_error(request, errname, errdesc);
-    dbus_connection_send(connection, reply, NULL);
-    dbus_message_unref(reply);
+	DBusMessage *reply;
+	reply = dbus_message_new_error(request, errname, errdesc);
+	dbus_connection_send(connection, reply, NULL);
+	dbus_message_unref(reply);
 }
 
 static void dbus_read_arg_basic (DBusMessageIter* iter, void* value) {
-    DBusMessageIter variant;
-    if(dbus_message_iter_get_arg_type(iter)==DBUS_TYPE_VARIANT) {
-	dbus_message_iter_recurse (iter, &variant);
-	dbus_message_iter_get_basic (&variant, value);
-    } else {
-	dbus_message_iter_get_basic (iter, value);
-    }
+	DBusMessageIter variant;
+	if (dbus_message_iter_get_arg_type(iter)==DBUS_TYPE_VARIANT) {
+		dbus_message_iter_recurse (iter, &variant);
+		dbus_message_iter_get_basic (&variant, value);
+	} else {
+		dbus_message_iter_get_basic (iter, value);
+	}
 }
 
 static void dbus_add_variant_string(DBusMessageIter* iter, const char* value) {
-    DBusMessageIter variant;
-    
-    if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "s", &variant)) {
-	printf("ERROR: dbus_add_variant_string dbus_message_iter_open_container (variant(s))");
-	return;
-    }
-    if(!dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value)) {
-	printf("ERROR: dbus_add_variant_string dbus_message_iter_append_basic(string)");
-	return;
-    }
-    dbus_message_iter_close_container(iter, &variant);
+	DBusMessageIter variant;
+	if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "s", &variant)) {
+		printf("ERROR: dbus_add_variant_string dbus_message_iter_open_container (variant(s))");
+		return;
+	}
+	if (!dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value)) {
+		printf("ERROR: dbus_add_variant_string dbus_message_iter_append_basic(string)");
+		return;
+	}
+	dbus_message_iter_close_container(iter, &variant);
 }
 
 static void dbus_add_dict_entry_string_variant_string(DBusMessageIter* iter, const char* name, const char* value) {
-    DBusMessageIter entry, variant;
-    
-    /* Dict entry */
-    if(!dbus_message_iter_open_container(iter, DBUS_TYPE_DICT_ENTRY, NULL, &entry)) {
-	printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container entry");
-	return;
-    }
+	DBusMessageIter entry, variant;
 
-    /* Entry name */
-    if(!dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &name)) {
-	printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic name");
-	// TODO close container
-	return;
-    }
+	/* Dict entry */
+	if (!dbus_message_iter_open_container(iter, DBUS_TYPE_DICT_ENTRY, NULL, &entry)) {
+		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container entry");
+		return;
+	}
 
-    /* Entry value variant. */
-    if(!dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "s", &variant)) {
-	printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container variant");
-	// TODO close container
-	return;
-    }
-    
-    /* Entry value variant value. */
-    if(!dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value)) {
-	printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic value");
-	// TODO close containers
-	return;
-    }
-    
-    dbus_message_iter_close_container(&entry, &variant);
-    dbus_message_iter_close_container(iter, &entry);
+	/* Entry name */
+	if (!dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &name)) {
+		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic name");
+		// TODO close container
+		return;
+	}
+
+	/* Entry value variant. */
+	if (!dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "s", &variant)) {
+		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container variant");
+		// TODO close container
+		return;
+	}
+
+	/* Entry value variant value. */
+	if (!dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value)) {
+		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic value");
+		// TODO close containers
+		return;
+	}
+
+	dbus_message_iter_close_container(&entry, &variant);
+	dbus_message_iter_close_container(iter, &entry);
 }
 
 static const char *server_introspection_data_begin =
-" <!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" \n"
-"\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
-" <node>\n"
-"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
-"     <method name=\"Introspect\"><arg name=\"data\" direction=\"out\" type=\"s\" /></method>\n"
-"   </interface>\n";
+	" <!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" \n"
+	"\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
+	" <node>\n"
+	"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
+	"     <method name=\"Introspect\"><arg name=\"data\" direction=\"out\" type=\"s\" /></method>\n"
+	"   </interface>\n";
 static const char *server_introspection_node_data = "   <node name=\"%s\" />\n";
 static const char *server_introspection_data_end = " </node>\n";
 
@@ -227,134 +226,130 @@ static const char *device_introspection_data_end =
 
 
 static void dbus_respond_to_device_introspect(DBusConnection *connection, DBusMessage *request, const char* device) {
-    DBusMessage *reply;
-    str_builder buffer;
-    st_tree_t* info;
-    upstype_t* ups = get_ups_ptr(device);
-    if (ups==NULL) {
-	dbus_send_error_reply(connection, request, "unknwon_device", "Device name is not known");
-	return;
-    }
-    
-    str_builder_init_str(&buffer, device_introspection_data_begin);
-    
-    if(ups->inforoot!=NULL)
-    {
-	for (info = ups->inforoot; info!=NULL; info = info->left) {
-	    if (info->flags & ST_FLAG_RW) {
-		str_builder_append_args(&buffer, device_introspection_prop_rw, info->var);
-	    } else {
-		str_builder_append_args(&buffer, device_introspection_prop_read, info->var);
-	    }
+	DBusMessage *reply;
+	str_builder buffer;
+	st_tree_t* info;
+	upstype_t* ups = get_ups_ptr(device);
+	if (ups==NULL) {
+		dbus_send_error_reply(connection, request, "unknwon_device", "Device name is not known");
+		return;
 	}
-	for (info = ups->inforoot->right; info!=NULL; info = info->right) {
-	    if (info->flags & ST_FLAG_RW) {
-		str_builder_append_args(&buffer, device_introspection_prop_rw, info->var);
-	    } else {
-		str_builder_append_args(&buffer, device_introspection_prop_read, info->var);
-	    }
+
+	str_builder_init_str(&buffer, device_introspection_data_begin);
+
+	if (ups->inforoot!=NULL) {
+		for (info = ups->inforoot; info!=NULL; info = info->left) {
+			if (info->flags & ST_FLAG_RW) {
+				str_builder_append_args(&buffer, device_introspection_prop_rw, info->var);
+			} else {
+				str_builder_append_args(&buffer, device_introspection_prop_read, info->var);
+			}
+		}
+		for (info = ups->inforoot->right; info!=NULL; info = info->right) {
+			if (info->flags & ST_FLAG_RW) {
+				str_builder_append_args(&buffer, device_introspection_prop_rw, info->var);
+			} else {
+				str_builder_append_args(&buffer, device_introspection_prop_read, info->var);
+			}
+		}
 	}
-    }
-    str_builder_append(&buffer, device_introspection_data_end);
-    
-    reply = dbus_message_new_method_return(request);
-    dbus_message_append_args(reply,
-                 DBUS_TYPE_STRING, &buffer.str,
-                 DBUS_TYPE_INVALID);
-    dbus_connection_send(connection, reply, NULL);
-    dbus_message_unref(reply);
-    str_builder_free(&buffer);
+	str_builder_append(&buffer, device_introspection_data_end);
+
+	reply = dbus_message_new_method_return(request);
+	dbus_message_append_args(reply, DBUS_TYPE_STRING, &buffer.str, DBUS_TYPE_INVALID);
+	dbus_connection_send(connection, reply, NULL);
+	dbus_message_unref(reply);
+	str_builder_free(&buffer);
 }
 
 static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *request, const char* device) {
-    DBusMessage *reply;
-    DBusMessageIter value;
+	DBusMessage *reply;
+	DBusMessageIter value;
 
-    upstype_t* ups;
-    st_tree_t *var;
-    
-    char *interface, *name;
-    const char* val;
-    
-    ups = get_ups_ptr(device);
-    if (ups==NULL)
-    {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
-	return;
-    }
+	upstype_t* ups;
+	st_tree_t *var;
 
-    /* Read parameters. */
-    dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
-    if (dbus_error_is_set(&upsd_dbus_err)) {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
-	return;
-    }
+	char *interface, *name;
+	const char* val;
 
-    /* Create reply message. */
-    reply = dbus_message_new_method_return(request);
-    
-    dbus_message_iter_init_append(reply, &value);
-    
-    if (0==strcmp(name, "name")) {
-	dbus_add_variant_string(&value, ups->name);
-    } else if (0==strcmp(name, "fn")) {
-	dbus_add_variant_string(&value, ups->fn);
-    } else if (0==strcmp(name, "desc")) {
-	dbus_add_variant_string(&value, ups->desc);
-    } else {
-	/* Verify var presence. */
-	var = state_tree_find(ups->inforoot, name);
-	if (var==NULL) {
-	    dbus_message_unref(reply);
-	    dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_PROPERTY, "Unknown property name for " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
-	    return;
+	ups = get_ups_ptr(device);
+	if (ups==NULL) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
+		return;
 	}
-	dbus_add_variant_string(&value, var->val ? var->val : empty_string);
-    }
 
-    dbus_connection_send(connection, reply, NULL);
-    dbus_message_unref(reply);
+	/* Read parameters. */
+	dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
+	if (dbus_error_is_set(&upsd_dbus_err)) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+		return;
+	}
+
+	/* Create reply message. */
+	reply = dbus_message_new_method_return(request);
+
+	dbus_message_iter_init_append(reply, &value);
+
+	if (0==strcmp(name, "name")) {
+		dbus_add_variant_string(&value, ups->name);
+	} else if (0==strcmp(name, "fn")) {
+		dbus_add_variant_string(&value, ups->fn);
+	} else if (0==strcmp(name, "desc")) {
+		dbus_add_variant_string(&value, ups->desc);
+	} else {
+		/* Verify var presence. */
+		var = state_tree_find(ups->inforoot, name);
+		if (var==NULL) {
+			dbus_message_unref(reply);
+			dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_PROPERTY, "Unknown property name for " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+			return;
+		}
+		dbus_add_variant_string(&value, var->val ? var->val : empty_string);
+	}
+
+	dbus_connection_send(connection, reply, NULL);
+	dbus_message_unref(reply);
 }
 
 static void dbus_respond_to_device_set(DBusConnection *connection, DBusMessage *request, const char* device) {
-    DBusMessage *reply;
-    DBusMessageIter args;
-    
-    char *interface, *name, *val;
-    
-    upstype_t* ups;
+	DBusMessage *reply;
+	DBusMessageIter args;
 
-    ups = get_ups_ptr(device);
-    if (ups==NULL)
-    {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
-	return;
-    }
+	char *interface, *name, *val;
 
-    /* Read parameters. */
-    if (!dbus_message_iter_init (request, &args)) {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
-	return;
-    }
-    
-    dbus_message_iter_get_basic (&args, &interface);
-    
-    if (!dbus_message_iter_next (&args)) {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments count to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
-	return;
-    }
+	upstype_t* ups;
 
-    dbus_message_iter_get_basic (&args, &name);
+	ups = get_ups_ptr(device);
+	if (ups==NULL)
+	{
+		dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
+		return;
+	}
 
-    if (!dbus_message_iter_next (&args)) {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments count to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
-	return;
-    }
+	/* Read parameters. */
+	if (!dbus_message_iter_init (request, &args)) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+		return;
+	}
 
-    dbus_read_arg_basic (&args, &val);
+	dbus_message_iter_get_basic (&args, &interface);
+
+	if (!dbus_message_iter_next (&args)) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments count to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+		return;
+	}
+
+	dbus_message_iter_get_basic (&args, &name);
+
+	if (!dbus_message_iter_next (&args)) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments count to " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
+		return;
+	}
+
+	dbus_read_arg_basic (&args, &val);
 
 	/* Check variable new value. */
-	switch(set_var_check_val(ups, name, val))
+	switch (set_var_check_val(ups, name, val))
 	{
 		case SET_VAR_CHECK_VAL_VAR_NOT_SUPPORTED:
 			dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_PROPERTY, "Property not supported for " DBUS_INTERFACE_PROPERTIES "::Set(s,s,v)");
@@ -383,60 +378,59 @@ static void dbus_respond_to_device_set(DBusConnection *connection, DBusMessage *
 		return;
 	}
 
-    reply = dbus_message_new_method_return(request);
-    dbus_connection_send(connection, reply, NULL);
-    dbus_message_unref(reply);
+	reply = dbus_message_new_method_return(request);
+	dbus_connection_send(connection, reply, NULL);
+	dbus_message_unref(reply);
 }
 
 static void dbus_respond_to_device_getall(DBusConnection *connection, DBusMessage *request, const char* device) {
-    DBusMessage *reply;
-    DBusMessageIter args, array;
-    
-    char *interface;
-    
-    st_tree_t* info;
-    upstype_t* ups = get_ups_ptr(device);
-    if (ups==NULL)
-    {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
-	return;
-    }
+	DBusMessage *reply;
+	DBusMessageIter args, array;
 
-    /* Read parameters. */
-    dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_INVALID);
-    if (dbus_error_is_set(&upsd_dbus_err)) {
-	dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::GetAll(s)->a{sv}");
-	return;
-    }
+	char *interface;
 
-    /* Create reply message. */
-    reply = dbus_message_new_method_return(request);
-    dbus_message_iter_init_append(reply, &args);
-    if(!dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &array)) {
-	printf("ERROR: dbus_respond_to_device_getall dbus_message_iter_open_container arr");
-	return;
-    }
-    
-    if(ups->inforoot!=NULL)
-    {
-	for (info = ups->inforoot; info!=NULL; info = info->left) {
-	    dbus_add_dict_entry_string_variant_string(&array, info->var, info->val);
-	    // TODO handle errors
+	st_tree_t* info;
+	upstype_t* ups = get_ups_ptr(device);
+	if (ups==NULL) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_OBJECT, "Device name is not known");
+		return;
 	}
-	for (info = ups->inforoot->right; info!=NULL; info = info->right) {
-	    dbus_add_dict_entry_string_variant_string(&array, info->var, info->val);
-	    // TODO handle errors
+
+	/* Read parameters. */
+	dbus_message_get_args(request, &upsd_dbus_err, DBUS_TYPE_STRING, &interface, DBUS_TYPE_INVALID);
+	if (dbus_error_is_set(&upsd_dbus_err)) {
+		dbus_send_error_reply(connection, request, DBUS_ERROR_INVALID_ARGS, "Illegal arguments to " DBUS_INTERFACE_PROPERTIES "::GetAll(s)->a{sv}");
+		return;
 	}
-    }
-    
-    dbus_message_iter_close_container(&args, &array);
-    dbus_connection_send(connection, reply, NULL);
-    dbus_message_unref(reply);
+
+	/* Create reply message. */
+	reply = dbus_message_new_method_return(request);
+	dbus_message_iter_init_append(reply, &args);
+	if (!dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &array)) {
+		printf("ERROR: dbus_respond_to_device_getall dbus_message_iter_open_container arr");
+		return;
+	}
+
+	if (ups->inforoot!=NULL)
+	{
+		for (info = ups->inforoot; info!=NULL; info = info->left) {
+			dbus_add_dict_entry_string_variant_string(&array, info->var, info->val);
+			// TODO handle errors
+		}
+		for (info = ups->inforoot->right; info!=NULL; info = info->right) {
+			dbus_add_dict_entry_string_variant_string(&array, info->var, info->val);
+			// TODO handle errors
+		}
+	}
+
+	dbus_message_iter_close_container(&args, &array);
+	dbus_connection_send(connection, reply, NULL);
+	dbus_message_unref(reply);
 
 }
 
 static void dbus_dump_message(DBusMessage* msg) {
-	switch(dbus_message_get_type(msg))
+	switch (dbus_message_get_type(msg))
 	{
 		case DBUS_MESSAGE_TYPE_METHOD_CALL:
 			printf("method call : ");
@@ -455,9 +449,9 @@ static void dbus_dump_message(DBusMessage* msg) {
 			break;
 	}
 	char ** path;
-	if(dbus_message_get_path_decomposed(msg, &path)) {
+	if (dbus_message_get_path_decomposed(msg, &path)) {
 		printf(" path=");
-		for(char** p = path; *p != NULL; ++p) {
+		for (char** p = path; *p != NULL; ++p) {
 			printf("%s/", *p);
 		}
 		dbus_free_string_array(path);
@@ -488,7 +482,7 @@ static DBusHandlerResult dbus_messages(DBusConnection *connection, DBusMessage *
 	} else {
 		/* Request on Upsd sub object (device). */
 		char ** splitpath;
-		if(dbus_message_get_path_decomposed(message, &splitpath)) {
+		if (dbus_message_get_path_decomposed(message, &splitpath)) {
 			/* TODO Test splitpath */
 			if (0==strcmp(DBUS_INTERFACE_INTROSPECTABLE, interface_name) &&
 				0==strcmp("Introspect", member_name)) {
