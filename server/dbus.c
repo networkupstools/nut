@@ -157,9 +157,7 @@ static void dbus_add_dict_entry_string_variant_string(DBusMessageIter* iter, con
 	dbus_message_iter_close_container(iter, &entry);
 }
 
-static const char *server_introspection_data_begin =
-	" <!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" \n"
-	"\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
+static const char *server_introspection_data_begin = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
 	" <node>\n"
 	"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
 	"     <method name=\"Introspect\"><arg name=\"data\" direction=\"out\" type=\"s\" /></method>\n"
@@ -188,9 +186,7 @@ static void dbus_respond_to_server_introspect(DBusConnection *connection, DBusMe
 	str_builder_free(&buffer);
 }
 
-static const char *device_introspection_data_begin =
-	" <!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\" \n"
-	"\"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
+static const char *device_introspection_data_begin = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE 
 	" <node>\n"
 	"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
 	"     <method name=\"Introspect\"><arg name=\"data\" direction=\"out\" type=\"s\" /></method>\n"
@@ -265,12 +261,9 @@ static void dbus_respond_to_device_introspect(DBusConnection *connection, DBusMe
 static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *request, const char* device) {
 	DBusMessage *reply;
 	DBusMessageIter value;
-
 	upstype_t* ups;
 	st_tree_t *var;
-
 	char *interface, *name;
-	const char* val;
 
 	ups = get_ups_ptr(device);
 	if (ups==NULL) {
@@ -467,34 +460,27 @@ static void dbus_dump_message(DBusMessage* msg) {
 
 static DBusHandlerResult dbus_messages(DBusConnection *connection, DBusMessage *message, void *user_data) {
 	// dbus_dump_message(message);
-	
 	const char *path = dbus_message_get_path(message);
-	const char *interface_name = dbus_message_get_interface(message);
-	const char *member_name = dbus_message_get_member(message);
 
 	if (0==strcmp("/org/networkupstools/Upsd", path)) {
 		/* Request on Upsd object itself. */
-		if (0==strcmp(DBUS_INTERFACE_INTROSPECTABLE, interface_name) &&
-			0==strcmp("Introspect", member_name)) {
+		if (dbus_message_is_method_call(message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect")) {
 			dbus_respond_to_server_introspect(connection, message);
 			return DBUS_HANDLER_RESULT_HANDLED;
 		}
 	} else {
 		/* Request on Upsd sub object (device). */
 		char ** splitpath;
-		if (dbus_message_get_path_decomposed(message, &splitpath)) {
-			/* TODO Test splitpath */
-			if (0==strcmp(DBUS_INTERFACE_INTROSPECTABLE, interface_name) &&
-				0==strcmp("Introspect", member_name)) {
+		if (dbus_message_get_path_decomposed(message, &splitpath) && splitpath!=NULL &&
+		 splitpath[0]!=NULL && splitpath[1]!=NULL && splitpath[2]!=NULL && splitpath[3]!=NULL) {
+			if (dbus_message_is_method_call(message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect")) {
 				dbus_respond_to_device_introspect(connection, message, splitpath[3]);
-			} else if (0==strcmp(DBUS_INTERFACE_PROPERTIES, interface_name)) {
-				if (0==strcmp("Get", member_name)) {
-				    dbus_respond_to_device_get(connection, message, splitpath[3]);
-				} else if (0==strcmp("GetAll", member_name)) {
-				    dbus_respond_to_device_getall(connection, message, splitpath[3]);
-				} else if (0==strcmp("Set", member_name)) {
-				    dbus_respond_to_device_set(connection, message, splitpath[3]);
-				}
+			} else if (dbus_message_is_method_call(message, DBUS_INTERFACE_PROPERTIES, "Get")) {
+				dbus_respond_to_device_get(connection, message, splitpath[3]);
+			} else if (dbus_message_is_method_call(message, DBUS_INTERFACE_PROPERTIES, "GetAll")) {
+				dbus_respond_to_device_getall(connection, message, splitpath[3]);
+			} else if (dbus_message_is_method_call(message, DBUS_INTERFACE_PROPERTIES, "Set")) {
+				dbus_respond_to_device_set(connection, message, splitpath[3]);
 			}
 			dbus_free_string_array(splitpath);
 			return DBUS_HANDLER_RESULT_HANDLED;
