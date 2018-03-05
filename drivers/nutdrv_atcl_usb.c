@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.11"
+#define DRIVER_VERSION	"1.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -80,7 +80,7 @@ upsdrv_info_t upsdrv_info = {
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
  }
- static int usb_interrupt_write(usb_dev_handle *dev, int ep, const char *bytes, int size,
+ static inline  int usb_interrupt_write(usb_dev_handle *dev, int ep, const char *bytes, int size,
         int timeout)
  {
 	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
