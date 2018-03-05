@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.3"
+#define USB_DRIVER_VERSION	"0.4"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -167,7 +167,8 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
-	nut_libusb_close(*udevp);
+	if (*udevp)
+		libusb_close(*udevp);
 #endif
 
 	devcount = libusb_get_device_list(NULL, &devlist);
