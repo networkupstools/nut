@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.05"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -85,7 +85,7 @@ TRielloData DevData;
  static inline  int usb_bulk_read(usb_dev_handle *dev, int ep,
         char *bytes, int size, int timeout)
  {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+	int ret = libusb_bulk_transfer(dev, ep, (unsigned char *) bytes,
 			size, &size, timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
@@ -93,7 +93,7 @@ TRielloData DevData;
  static inline  int usb_bulk_write(usb_dev_handle *dev, int ep,
         char *bytes, int size, int timeout)
  {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
+	int ret = libusb_bulk_transfer(dev, ep, (unsigned char *) bytes,
 			size, &size, timeout);
 	/* In case of success, return the operation size, as done with libusb 0.1 */
 	return (ret == LIBUSB_SUCCESS)?size:ret;
