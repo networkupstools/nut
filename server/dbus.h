@@ -32,7 +32,7 @@ extern "C" {
 
 typedef struct upstype_s upstype_t;
 
-void dbus_init();
+int dbus_init();
 void dbus_cleanup();
 void dbus_loop();
 

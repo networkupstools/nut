@@ -42,12 +42,14 @@ typedef struct {
 	size_t len; /* Length of string. */
 } str_builder;
 
+#if 0 /* Unused */
 static void str_builder_init(str_builder* strbld, unsigned char size)
 {
 	strbld->str  = (char*)xmalloc(size);
 	strbld->size = size;
 	strbld->len  = 0;
 }
+#endif  /* Unsed str_builder_init */
 
 static void str_builder_init_str(str_builder* strbld, const char* str)
 {
@@ -110,52 +112,58 @@ static void dbus_read_arg_basic (DBusMessageIter* iter, void* value) {
 	}
 }
 
-static void dbus_add_variant_string(DBusMessageIter* iter, const char* value) {
+static int dbus_add_variant_string(DBusMessageIter* iter, const char* value) {
 	DBusMessageIter variant;
 	if (!dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, "s", &variant)) {
-		printf("ERROR: dbus_add_variant_string dbus_message_iter_open_container (variant(s))");
-		return;
+		upsdebugx(1, "dbus_add_variant_string dbus_message_iter_open_container (variant(s))");
+		return 0;
 	}
 	if (!dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value)) {
-		printf("ERROR: dbus_add_variant_string dbus_message_iter_append_basic(string)");
-		return;
+		upsdebugx(1, "dbus_add_variant_string dbus_message_iter_append_basic(string)");
+		return 0;
 	}
 	dbus_message_iter_close_container(iter, &variant);
+	return 1;
 }
 
-static void dbus_add_dict_entry_string_variant_string(DBusMessageIter* iter, const char* name, const char* value) {
+static int dbus_add_dict_entry_string_variant_string(DBusMessageIter* iter, const char* name, const char* value) {
 	DBusMessageIter entry, variant;
 
 	/* Dict entry */
 	if (!dbus_message_iter_open_container(iter, DBUS_TYPE_DICT_ENTRY, NULL, &entry)) {
-		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container entry");
-		return;
+		upsdebugx(1, "dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container entry");
+		return 0;
 	}
 
 	/* Entry name */
 	if (!dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &name)) {
-		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic name");
-		// TODO close container
-		return;
+		upsdebugx(1, "dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic name");
+		dbus_message_iter_abandon_container(iter, &entry);
+		return 0;
 	}
 
 	/* Entry value variant. */
 	if (!dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "s", &variant)) {
-		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container variant");
-		// TODO close container
-		return;
+		upsdebugx(1, "dbus_add_dict_entry_string_variant_string dbus_message_iter_open_container variant");
+		dbus_message_iter_abandon_container(iter, &entry);
+		return 0;
 	}
 
 	/* Entry value variant value. */
 	if (!dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value)) {
-		printf("ERROR: dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic value");
-		// TODO close containers
-		return;
+		upsdebugx(1, "dbus_add_dict_entry_string_variant_string dbus_message_iter_append_basic value");
+		dbus_message_iter_abandon_container(&entry, &variant);
+		dbus_message_iter_abandon_container(iter, &entry);
+		return 0;
 	}
 
 	dbus_message_iter_close_container(&entry, &variant);
 	dbus_message_iter_close_container(iter, &entry);
+	return 1;
 }
+
+/* HERE */
+
 
 static const char* dbus_nut_device_interface_name = DBUS_INTERFACE_NUT_DEVICE;
 
@@ -262,16 +270,19 @@ static void dbus_respond_to_device_introspect(DBusConnection *connection, DBusMe
 	str_builder_free(&buffer);
 }
 
-static void dbus_respond_to_device_getall_var(st_tree_t* node, DBusMessageIter* iter) {
+static int dbus_respond_to_device_getall_var(st_tree_t* node, DBusMessageIter* iter) {
 	if (node!=NULL && iter!=NULL) {
 		if (node->left!=NULL) {
-			dbus_respond_to_device_getall_var(node->left, iter);
+			return dbus_respond_to_device_getall_var(node->left, iter);
 		}
-		dbus_add_dict_entry_string_variant_string(iter, node->var, node->val);
+		if(!dbus_add_dict_entry_string_variant_string(iter, node->var, node->val)) {
+			return 0;
+		}
 		if (node->right!=NULL) {
-			dbus_respond_to_device_getall_var(node->right, iter);
+			return dbus_respond_to_device_getall_var(node->right, iter);
 		}
 	}
+	return 1;
 }
 
 static void dbus_respond_to_device_getall(DBusConnection *connection, DBusMessage *request, const char* device) {
@@ -297,11 +308,17 @@ static void dbus_respond_to_device_getall(DBusConnection *connection, DBusMessag
 	reply = dbus_message_new_method_return(request);
 	dbus_message_iter_init_append(reply, &args);
 	if (!dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &array)) {
-		printf("ERROR: dbus_respond_to_device_getall dbus_message_iter_open_container arr");
+		upsdebugx(LOG_ERR, "dbus_respond_to_device_getall dbus_message_iter_open_container arr");
+		dbus_message_unref(reply);
 		return;
 	}
 
-	dbus_respond_to_device_getall_var(ups->inforoot, &array);
+	if(!dbus_respond_to_device_getall_var(ups->inforoot, &array)) {
+		upsdebugx(LOG_ERR, "dbus_respond_to_device_getall dbus_respond_to_device_getall_var");
+		dbus_message_iter_abandon_container(&args, &array);
+		dbus_message_unref(reply);
+		return;
+	}
 
 	dbus_message_iter_close_container(&args, &array);
 	dbus_connection_send(connection, reply, NULL);
@@ -334,11 +351,23 @@ static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *
 	dbus_message_iter_init_append(reply, &value);
 
 	if (0==strcmp(name, "name")) {
-		dbus_add_variant_string(&value, ups->name);
+		if(!dbus_add_variant_string(&value, ups->name)) {
+			dbus_message_unref(reply);
+			dbus_send_error_reply(connection, request, DBUS_ERROR_FAILED, "System error in invocation of " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+			return;
+		}
 	} else if (0==strcmp(name, "fn")) {
-		dbus_add_variant_string(&value, ups->fn);
+		if(!dbus_add_variant_string(&value, ups->fn)) {
+			dbus_message_unref(reply);
+			dbus_send_error_reply(connection, request, DBUS_ERROR_FAILED, "System error in invocation of " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+			return;
+		}
 	} else if (0==strcmp(name, "desc")) {
-		dbus_add_variant_string(&value, ups->desc);
+		if(!dbus_add_variant_string(&value, ups->desc)) {
+			dbus_message_unref(reply);
+			dbus_send_error_reply(connection, request, DBUS_ERROR_FAILED, "System error in invocation of " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+			return;
+		}
 	} else {
 		/* Verify var presence. */
 		var = state_tree_find(ups->inforoot, name);
@@ -347,7 +376,11 @@ static void dbus_respond_to_device_get(DBusConnection *connection, DBusMessage *
 			dbus_send_error_reply(connection, request, DBUS_ERROR_UNKNOWN_PROPERTY, "Unknown property name for " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
 			return;
 		}
-		dbus_add_variant_string(&value, var->val ? var->val : empty_string);
+		if(!dbus_add_variant_string(&value, var->val ? var->val : empty_string)) {
+			dbus_message_unref(reply);
+			dbus_send_error_reply(connection, request, DBUS_ERROR_FAILED, "System error in invocation of " DBUS_INTERFACE_PROPERTIES "::Get(s,s)->v");
+			return;
+		}
 	}
 
 	dbus_connection_send(connection, reply, NULL);
@@ -449,7 +482,12 @@ void dbus_notify_property_change(upstype_t* ups, const char* name, const char* v
 			dbus_message_unref(signal);
 			return;
 		}
-		dbus_add_dict_entry_string_variant_string(&array, name, value);
+		if(!dbus_add_dict_entry_string_variant_string(&array, name, value)) {
+			upslogx(LOG_ERR, "Cannot construct DBus property change notification, out of memory.");
+			dbus_message_iter_abandon_container(&args, &array);
+			dbus_message_unref(signal);
+			return;
+		}
 		dbus_message_iter_close_container(&args, &array);
 
 		/* Invalidated properties (as). Just add the array without any content (for now). */
@@ -460,7 +498,7 @@ void dbus_notify_property_change(upstype_t* ups, const char* name, const char* v
 		}
 		dbus_message_iter_close_container(&args, &array);
 
-		// send the message and flush the connection
+		/* send the message and flush the connection */
 		if (!dbus_connection_send(upsd_dbus_conn, signal, NULL)) {
 			upslogx(LOG_ERR, "Cannot send DBus property change notification.");
 		}
@@ -469,6 +507,7 @@ void dbus_notify_property_change(upstype_t* ups, const char* name, const char* v
 	}
 }
 
+#if 0 /* Unused debug code */
 static void dbus_dump_message(DBusMessage* msg) {
 	switch (dbus_message_get_type(msg))
 	{
@@ -503,10 +542,10 @@ static void dbus_dump_message(DBusMessage* msg) {
 	printf(" signature=%s", dbus_message_get_signature(msg));
 	printf("\n");
 }
-
+#endif /* 0 : Unused dbus_dump_message */
 
 static DBusHandlerResult dbus_messages(DBusConnection *connection, DBusMessage *message, void *user_data) {
-	// dbus_dump_message(message);
+	/* dbus_dump_message(message); */
 	const char *path = dbus_message_get_path(message);
 
 	if (0==strcmp(DBUS_NUT_UPSD_PATH, path)) {
@@ -536,7 +575,7 @@ static DBusHandlerResult dbus_messages(DBusConnection *connection, DBusMessage *
 	return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
-void dbus_init()
+int dbus_init()
 {
 	int ret;
 	DBusObjectPathVTable vtable;
@@ -547,21 +586,21 @@ void dbus_init()
 	/* connect to the bus */
 	upsd_dbus_conn = dbus_bus_get(DBUS_BUS_SYSTEM, &upsd_dbus_err);
 	if (dbus_error_is_set(&upsd_dbus_err)) {
-		fprintf(stderr, "Connection Error (%s)\n", upsd_dbus_err.message); 
+		upslogx(LOG_WARNING, "DBus connection error (%s)\n", upsd_dbus_err.message); 
 		dbus_error_free(&upsd_dbus_err); 
 	}
 	if (NULL == upsd_dbus_conn) {
-		exit(1); 
+		return 0;
 	}
 	
 	ret = dbus_bus_request_name(upsd_dbus_conn, DBUS_NUT_UPSD_NAME,
 		DBUS_NAME_FLAG_REPLACE_EXISTING , &upsd_dbus_err);
 	if (dbus_error_is_set(&upsd_dbus_err)) {
-		fprintf(stderr, "Name Error (%s)\n", upsd_dbus_err.message);
+		upslogx(LOG_WARNING, "DBus name error (%s)\n", upsd_dbus_err.message);
 		dbus_error_free(&upsd_dbus_err);
 	}
 	if (DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER != ret) {
-		exit(1);
+		return 0;
 	}
 	
 	vtable.message_function = dbus_messages;
@@ -569,11 +608,11 @@ void dbus_init()
 	dbus_connection_try_register_fallback(upsd_dbus_conn,
 		DBUS_NUT_UPSD_PATH, &vtable, NULL, &upsd_dbus_err);
 	if (dbus_error_is_set(&upsd_dbus_err)) {
-		fprintf(stderr, "Object Error (%s)\n", upsd_dbus_err.message);
+		upslogx(LOG_WARNING, "DBus object error (%s)\n", upsd_dbus_err.message);
 		dbus_error_free(&upsd_dbus_err);
-		exit(1);
+		return 0;
 	}
-
+	return 1;
 }
 
 void dbus_cleanup()
