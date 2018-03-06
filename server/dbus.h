@@ -26,6 +26,10 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+#define DBUS_INTERFACE_NUT_DEVICE "org.networkupstools.Device"
+#define DBUS_NUT_UPSD_PATH "/org/networkupstools/Upsd"
+#define DBUS_NUT_UPSD_NAME "org.networkupstools.Upsd"
+
 typedef struct upstype_s upstype_t;
 
 void dbus_init();

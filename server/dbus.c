@@ -157,13 +157,11 @@ static void dbus_add_dict_entry_string_variant_string(DBusMessageIter* iter, con
 	dbus_message_iter_close_container(iter, &entry);
 }
 
-#define DBUS_INTERFACE_NUT_DEVICE "org.networkupstools.Device"
-
 static const char* dbus_nut_device_interface_name = DBUS_INTERFACE_NUT_DEVICE;
 
 static const char *server_introspection_data_begin = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
 	" <node>\n"
-	"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
+	"   <interface name=\""DBUS_INTERFACE_INTROSPECTABLE"\">\n"
 	"     <method name=\"Introspect\"><arg name=\"data\" direction=\"out\" type=\"s\" /></method>\n"
 	"   </interface>\n";
 static const char *server_introspection_node_data = "   <node name=\"%s\" />\n";
@@ -192,10 +190,10 @@ static void dbus_respond_to_server_introspect(DBusConnection *connection, DBusMe
 
 static const char *device_introspection_data_begin = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE 
 	" <node>\n"
-	"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
+	"   <interface name=\""DBUS_INTERFACE_INTROSPECTABLE"\">\n"
 	"     <method name=\"Introspect\"><arg name=\"data\" direction=\"out\" type=\"s\" /></method>\n"
 	"   </interface>\n"
-	"   <interface name=\"org.freedesktop.DBus.Properties\">\n"
+	"   <interface name=\""DBUS_INTERFACE_PROPERTIES"\">\n"
 	"     <method name=\"Get\">\n"
 	"       <arg name=\"interface_name\" direction=\"in\" type=\"s\" />\n"
 	"       <arg name=\"property_name\" direction=\"in\" type=\"s\" />\n"
@@ -432,7 +430,7 @@ void dbus_notify_property_change(upstype_t* ups, const char* name, const char* v
 	DBusMessage *signal;
 	DBusMessageIter args, array;
 	char buffer[SMALLBUF];
-	snprintf(buffer, SMALLBUF-1, "/org/networkupstools/Upsd/%s", ups->name);
+	snprintf(buffer, SMALLBUF-1, DBUS_NUT_UPSD_PATH"/%s", ups->name);
 
 	if (ups!=NULL) {
 		signal = dbus_message_new_signal(buffer, DBUS_INTERFACE_PROPERTIES, "PropertiesChanged");
@@ -511,7 +509,7 @@ static DBusHandlerResult dbus_messages(DBusConnection *connection, DBusMessage *
 	// dbus_dump_message(message);
 	const char *path = dbus_message_get_path(message);
 
-	if (0==strcmp("/org/networkupstools/Upsd", path)) {
+	if (0==strcmp(DBUS_NUT_UPSD_PATH, path)) {
 		/* Request on Upsd object itself. */
 		if (dbus_message_is_method_call(message, DBUS_INTERFACE_INTROSPECTABLE, "Introspect")) {
 			dbus_respond_to_server_introspect(connection, message);
@@ -556,7 +554,7 @@ void dbus_init()
 		exit(1); 
 	}
 	
-	ret = dbus_bus_request_name(upsd_dbus_conn, "org.networkupstools.Upsd",
+	ret = dbus_bus_request_name(upsd_dbus_conn, DBUS_NUT_UPSD_NAME,
 		DBUS_NAME_FLAG_REPLACE_EXISTING , &upsd_dbus_err);
 	if (dbus_error_is_set(&upsd_dbus_err)) {
 		fprintf(stderr, "Name Error (%s)\n", upsd_dbus_err.message);
@@ -569,7 +567,7 @@ void dbus_init()
 	vtable.message_function = dbus_messages;
 	vtable.unregister_function = NULL;
 	dbus_connection_try_register_fallback(upsd_dbus_conn,
-		"/org/networkupstools/Upsd", &vtable, NULL, &upsd_dbus_err);
+		DBUS_NUT_UPSD_PATH, &vtable, NULL, &upsd_dbus_err);
 	if (dbus_error_is_set(&upsd_dbus_err)) {
 		fprintf(stderr, "Object Error (%s)\n", upsd_dbus_err.message);
 		dbus_error_free(&upsd_dbus_err);
