@@ -157,6 +157,10 @@ static void dbus_add_dict_entry_string_variant_string(DBusMessageIter* iter, con
 	dbus_message_iter_close_container(iter, &entry);
 }
 
+#define DBUS_INTERFACE_NUT_DEVICE "org.networkupstools.Device"
+
+static const char* dbus_nut_device_interface_name = DBUS_INTERFACE_NUT_DEVICE;
+
 static const char *server_introspection_data_begin = DBUS_INTROSPECT_1_0_XML_DOCTYPE_DECL_NODE
 	" <node>\n"
 	"   <interface name=\"org.freedesktop.DBus.Introspectable\">\n"
@@ -206,8 +210,13 @@ static const char *device_introspection_data_begin = DBUS_INTROSPECT_1_0_XML_DOC
 	"       <arg name=\"property_name\" direction=\"in\" type=\"s\" />\n"
 	"       <arg name=\"value\" direction=\"in\" type=\"v\" />\n"
 	"     </method>\n"
+	"     <signal name=\"PropertiesChanged\">\n"
+	"       <arg type=\"s\" name=\"interface_name\"/>\n"
+	"       <arg type=\"a{sv}\" name=\"changed_properties\"/>\n"
+	"       <arg type=\"as\" name=\"invalidated_properties\"/>\n"
+	"     </signal>\n"
 	"   </interface>\n"
-	"   <interface name=\"org.networkupstools.Device\">\n"
+	"   <interface name=\""DBUS_INTERFACE_NUT_DEVICE"\">\n"
 	"      <property name=\"name\" type=\"s\" access=\"read\" />\n"
 	"      <property name=\"fn\" type=\"s\" access=\"read\" />\n"
 	"      <property name=\"desc\" type=\"s\" access=\"read\" />\n";
@@ -417,6 +426,49 @@ static void dbus_respond_to_device_set(DBusConnection *connection, DBusMessage *
 	reply = dbus_message_new_method_return(request);
 	dbus_connection_send(connection, reply, NULL);
 	dbus_message_unref(reply);
+}
+
+void dbus_notify_property_change(upstype_t* ups, const char* name, const char* value) {
+	DBusMessage *signal;
+	DBusMessageIter args, array;
+	char buffer[SMALLBUF];
+	snprintf(buffer, SMALLBUF-1, "/org/networkupstools/Upsd/%s", ups->name);
+
+	if (ups!=NULL) {
+		signal = dbus_message_new_signal(buffer, DBUS_INTERFACE_PROPERTIES, "PropertiesChanged");
+		dbus_message_iter_init_append(signal, &args);
+
+		/* Interface name */
+		if (!dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &dbus_nut_device_interface_name)) {
+			upslogx(LOG_ERR, "Cannot construct DBus property change notification, out of memory.");
+			dbus_message_unref(signal);
+			return;
+		}
+
+		/* Changed properties (a{sv}). */
+		if (!dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &array)) {
+			upslogx(LOG_ERR, "Cannot construct DBus property change notification, out of memory.");
+			dbus_message_unref(signal);
+			return;
+		}
+		dbus_add_dict_entry_string_variant_string(&array, name, value);
+		dbus_message_iter_close_container(&args, &array);
+
+		/* Invalidated properties (as). Just add the array without any content (for now). */
+		if (!dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "s", &array)) {
+			upslogx(LOG_ERR, "Cannot construct DBus property change notification, out of memory.");
+			dbus_message_unref(signal);
+			return;
+		}
+		dbus_message_iter_close_container(&args, &array);
+
+		// send the message and flush the connection
+		if (!dbus_connection_send(upsd_dbus_conn, signal, NULL)) {
+			upslogx(LOG_ERR, "Cannot send DBus property change notification.");
+		}
+		dbus_connection_flush(upsd_dbus_conn);
+		dbus_message_unref(signal);
+	}
 }
 
 static void dbus_dump_message(DBusMessage* msg) {

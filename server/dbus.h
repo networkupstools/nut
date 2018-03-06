@@ -26,9 +26,13 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+typedef struct upstype_s upstype_t;
+
 void dbus_init();
 void dbus_cleanup();
 void dbus_loop();
+
+void dbus_notify_property_change(upstype_t* ups, const char* name, const char* value);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
