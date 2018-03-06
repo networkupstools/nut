@@ -58,6 +58,7 @@ addons:
     - libxpm-dev
     - libxml2-utils
     - libmodbus-dev
+    - libdbus-1-dev
 
 # Common settings for jobs in the matrix built below
 env:
