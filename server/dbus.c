@@ -19,6 +19,8 @@
 
 #include "dbus.h"
 
+#ifdef WITH_DBUS
+
 #include "common.h"
 #include "timehead.h"
 #include "upstype.h"
@@ -624,3 +626,24 @@ void dbus_loop()
 {
 	dbus_connection_read_write_dispatch(upsd_dbus_conn, 100);
 }
+
+#else /* WITH_DBUS */
+
+int dbus_init()
+{
+	return 1;
+}
+
+void dbus_cleanup()
+{
+}
+
+void dbus_loop()
+{
+}
+
+void dbus_notify_property_change(upstype_t* ups, const char* name, const char* value)
+{
+}
+
+#endif /* WITH_DBUS */

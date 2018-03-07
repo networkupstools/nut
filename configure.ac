@@ -319,6 +319,8 @@ NUT_CHECK_LIBPOWERMAN
 NUT_ARG_WITH([modbus], [build and install modbus drivers], [auto])
 NUT_CHECK_LIBMODBUS
 NUT_CHECK_LIBAVAHI
+NUT_ARG_WITH([dbus], [build and install dbus support], [auto])
+NUT_CHECK_LIBDBUS
 
 dnl ----------------------------------------------------------------------
 dnl additional USB-related checks
@@ -560,6 +562,23 @@ NUT_REPORT_FEATURE(
     [WITH_LINUX_I2C],
     [Define to enable I2C support]
 )
+
+dnl ----------------------------------------------------------------------
+dnl checks related to --with-dbus
+
+dnl ${nut_with_dbus}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_dbus}" = "yes" -a "${nut_have_dbus}" != "yes"; then
+   AC_MSG_ERROR([dbus-1 libraries not found, required for dbus support])
+fi
+
+if test "${nut_with_dbus}" != "no"; then
+   nut_with_dbus="${nut_have_dbus}"
+fi
+
+NUT_REPORT_FEATURE([build dbus support], [${nut_with_dbus}], [],
+					[WITH_DBUS], [Define to enable dbus support])
+AM_CONDITIONAL([HAVE_DBUS], [test "${nut_have_dbus}" = "yes"])
+
 
 dnl ----------------------------------------------------------------------
 dnl Check for with-ssl, and --with-nss or --with-openssl
@@ -1715,6 +1734,8 @@ AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
 AC_SUBST(LIBLTDL_LIBS)
+AC_SUBST(LIBDBUS_CFLAGS)
+AC_SUBST(LIBDBUS_LIBS)
 AC_SUBST(DRIVER_BUILD_LIST)
 AC_SUBST(DRIVER_MAN_LIST)
 AC_SUBST(DRIVER_INSTALL_TARGET)

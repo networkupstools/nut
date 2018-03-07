@@ -10,6 +10,9 @@ endif
 if WITH_SSL
   AM_CFLAGS += $(LIBSSL_CFLAGS)
 endif
+if WITH_DBUS
+  AM_CFLAGS += $(LIBDBUS_CFLAGS)
+endif
 LDADD = ../common/libcommon.la ../common/libparseconf.la $(NETLIBS)
 if WITH_WRAP
    LDADD += $(LIBWRAP_LIBS)
@@ -17,9 +20,9 @@ endif
 if WITH_SSL
    LDADD += $(LIBSSL_LIBS)
 endif
-
-AM_CFLAGS += -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include
-LDADD += -ldbus-1
+if WITH_DBUS
+  LDADD += $(LIBDBUS_LIBS)
+endif
 
 sbin_PROGRAMS = upsd
 EXTRA_PROGRAMS = sockdebug

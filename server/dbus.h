@@ -20,6 +20,8 @@
 #ifndef DBUS_H_SEEN
 #define DBUS_H_SEEN
 
+#include "common.h"
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {

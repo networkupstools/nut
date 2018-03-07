@@ -1010,7 +1010,12 @@ static void mainloop(void)
 
 	upsdebugx(2, "%s: polling %d filedescriptors", __func__, nfds);
 
-	ret = poll(fds, nfds, 200);
+#ifdef WITH_DBUS
+	/* Poll less longuer to process dbus more frequently.*/
+	ret = poll(fds, nfds, 100);
+#else /* WITH_DBUS */
+	ret = poll(fds, nfds, 2000);
+#endif /* WITH_DBUS */
 
 	if (ret == 0) {
 		upsdebugx(2, "%s: no data available", __func__);
