@@ -1,0 +1,30 @@
+Desc: DBus access descriptor
+File: scripts/dbus/README
+Date: 8 March 2018
+Auth: Emilien Kia <emilien.kia+dev@gmail.com>
+
+This document introduces the DBus right rules for NUT.
+It describes how upsd cn register names and paths on system bus and
+how client can send requests to methods of objects.
+
+Installation
+------------
+
+For most users, these files will be automatically installed in
+/etc/dbus-1 upon "make install", if that directory exists and if
+the feature (DBus) has been enabled at configure time. You can
+specify an alternate directory with ./configure --with-dbus-dir=DIR.
+
+Manual installation
+-------------------
+
+To install them manually, copy the rules file(s) to /etc/dbus-1/system.d
+using the command(s):
+
+$ cp -f nut-dbus.conf /etc/dbus-1/system.d/nut-dbus.conf
+
+You will need to refresh the bus to avoid a reboot for these rules to be
+active. You can do so using:
+
+$ systemctl reload dbus.service
+

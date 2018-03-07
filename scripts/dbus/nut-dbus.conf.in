@@ -1,0 +1,36 @@
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+
+  <!-- Only Nut user or root can own Upsd and do everything. -->
+  <policy user="@RUN_AS_USER@">
+    <allow own="org.networkupstools.Upsd"/>
+  </policy>
+  <policy user="root">
+    <allow own="org.networkupstools.Upsd"/>
+  </policy>
+
+  <!-- Default user can only request in read-only (enumerate and get). -->
+  <policy context="default">
+    <allow send_destination="org.networkupstools.Upsd"
+           send_interface="org.freedesktop.DBus.Introspectable" />
+
+    <allow send_destination="org.networkupstools.Upsd"
+           send_interface="org.freedesktop.DBus.Properties"
+           send_type="method_call" send_member="Get" />
+
+    <allow send_destination="org.networkupstools.Upsd"
+           send_interface="org.freedesktop.DBus.Properties"
+           send_type="method_call" send_member="GetAll" />
+  </policy>
+
+  <!-- Members of Nut group can set writable properties. -->
+  <policy group="@RUN_AS_GROUP@">
+    <allow send_destination="org.networkupstools.Upsd"
+           send_interface="org.freedesktop.DBus.Properties"
+           send_type="method_call" send_member="Set" />
+
+  </policy>
+
+
+</busconfig>

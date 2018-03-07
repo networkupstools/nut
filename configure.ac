@@ -102,6 +102,11 @@ if test ! -d "${udevdir}"; then
    fi
 fi
 
+dbusdir='/etc/dbus-1'
+if test ! -d "${dbusdir}"; then
+   dbusdir=''
+fi
+
 devddir='/usr/local/etc/devd'
 if test ! -d "${devddir}"; then
    devddir='/etc/devd'
@@ -1513,6 +1518,34 @@ else
 fi
 AM_CONDITIONAL(WITH_UDEV, test -n "${udevdir}")
 
+AC_MSG_CHECKING(whether to install dbus rules)
+AC_ARG_WITH(dbus-dir,
+	AS_HELP_STRING([--with-dbus-dir=PATH], [where to install dbus rules (/etc/dbus-1)]),
+[
+	case "${withval}" in
+	yes)
+		if test -z "${dbusdir}"; then
+			AC_MSG_RESULT(no)
+			AC_MSG_ERROR([dbus directory requested but not found])
+		fi
+		;;
+	auto)
+		;;
+	no)
+		dbusdir=""
+		;;
+	*)
+		dbusdir="${withval}"
+		;;
+	esac
+], [])
+if test -n "${dbusdir}"; then
+	AC_MSG_RESULT(using ${dbusdir})
+else
+	AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(WITH_DBUS, test -n "${dbusdir}")
+
 dnl FreeBSD devd support:
 
 AC_MSG_CHECKING(whether to install FreeBSD devd.conf file)
@@ -1765,6 +1798,7 @@ AC_SUBST(systemdshutdowndir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
+AC_SUBST(dbusdir)
 
 AC_OUTPUT([
  clients/Makefile
@@ -1797,6 +1831,8 @@ AC_OUTPUT([
  scripts/augeas/nuthostsconf.aug
  scripts/augeas/nutupssetconf.aug
  scripts/avahi/nut.service
+ scripts/dbus/Makefile
+ scripts/dbus/nut-dbus.conf
  scripts/devd/Makefile
  scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
