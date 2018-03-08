@@ -51,6 +51,7 @@ SRC_CLIENT_PAGES = \
 	upscmd.txt \
 	upsd.txt \
 	upsdrvctl.txt \
+	upsdrvsvcctl.txt \
 	upslog.txt \
 	upsmon.txt \
 	upsrw.txt \
@@ -63,6 +64,7 @@ MAN_CLIENT_PAGES = \
 	upscmd.8 \
 	upsd.8 \
 	upsdrvctl.8 \
+	upsdrvsvcctl.8 \
 	upslog.8 \
 	upsmon.8 \
 	upsrw.8 \
@@ -77,6 +79,7 @@ HTML_CLIENT_MANS = \
 	upscmd.html \
 	upsd.html \
 	upsdrvctl.html \
+	upsdrvsvcctl.html \
 	upslog.html \
 	upsmon.html \
 	upsrw.html \
