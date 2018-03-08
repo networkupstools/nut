@@ -85,7 +85,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	/usr/sbin/svcadm enable -s nut
 else
 	echo "Put init script in /etc/init.d..."
-	cp -pf "@datadir@/solaris-init/nut" /etc/init.d
+	cp -pf "@NUT_DATADIR@/solaris-init/nut" /etc/init.d
 	chown root:bin /etc/init.d/nut
 	chmod 744 /etc/init.d/nut
 
