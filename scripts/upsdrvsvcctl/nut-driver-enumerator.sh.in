@@ -559,6 +559,9 @@ $0 --list-instances
 $0 --get-service-for-device DEV
         Print the full name of service unit which wraps a NUT
         device named "DEV"
+$0 --get-device-for-service SVC
+        Print the NUT device name for full or instance-suffix name of
+        a service unit which wraps it
 $0 --list-services-for-devices
         Print a TAB-separated list of service units and corresponding
         NUT device names which each such unit wraps
@@ -630,6 +633,25 @@ while [ $# -gt 0 ]; do
                 fi
             done
             echo "No service instances detected that match device '$2'" >&2
+            exit 1
+            ;;
+        --get-device-for-service) [ -z "$2" ] && echo "Service (instance) name argument required" >&2 && exit 1
+            # Instance name can be a hash or "native" NUT section name
+            SVC="`$hook_validInstanceSuffixName "$2"`"
+            case "$SVC" in
+                MD5_*) ;; # fall through to the bulk of code
+                *) echo "$SVC" ; exit 0 ;;
+            esac
+            FINAL_RES=0
+            OUT="`"$0" --list-services-for-devices`" && [ -n "$OUT" ] || FINAL_RES=$?
+            if [ "$FINAL_RES" = 0 ]; then
+                echo "$OUT" | grep "$SVC" | ( \
+                    while read _SVC _DEV ; do
+                        _SVC="`$hook_validInstanceSuffixName "${_SVC}"`" || exit
+                        [ "${_SVC}" = "${SVC}" ] && echo "$_DEV" && exit 0
+                    done ; exit 1 ) && exit 0
+            fi
+            echo "No service instance '$2' was detected that matches a NUT device" >&2
             exit 1
             ;;
         --list-services-for-devices)
