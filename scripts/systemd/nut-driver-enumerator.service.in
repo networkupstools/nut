@@ -19,4 +19,4 @@ ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh
 ExecReload=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=nut.target
