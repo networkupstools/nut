@@ -15,3 +15,10 @@ libcommonclient_la_SOURCES = common.c state.c str.c
 # using LTLIBOBJS. Refer to configure.in -> AC_REPLACE_FUNCS
 libcommon_la_LIBADD = libparseconf.la @LTLIBOBJS@
 libcommonclient_la_LIBADD = libparseconf.la @LTLIBOBJS@
+
+if WITH_LIBUSB_0_1
+  noinst_LTLIBRARIES += libusb-compat-1.0.la
+  libusb_compat_1_0_la_SOURCES = libusb-compat-1.0.c common.c str.c
+  libusb_compat_1_0_la_LIBADD = $(LIBUSB_LIBS) @LTLIBOBJS@
+  libusb_compat_1_0_la_CFLAGS = $(AM_CFLAGS) $(LIBUSB_CFLAGS)
+endif

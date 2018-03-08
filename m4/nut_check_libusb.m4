@@ -155,7 +155,8 @@ if test -z "${nut_have_libusb_seen}"; then
 			AC_CHECK_HEADERS(usb.h, [nut_have_libusb=yes], [nut_have_libusb=no], [AC_INCLUDES_DEFAULT])
 			AC_CHECK_FUNCS(usb_init, [], [nut_have_libusb=no])
 			dnl Check for libusb "force driver unbind" availability
-			AC_CHECK_FUNCS(usb_detach_kernel_driver_np)
+			dnl Also define 'HAVE_LIBUSB_DETACH_KERNEL_DRIVER' for libusb-compat-1.0
+			AC_CHECK_FUNCS(usb_detach_kernel_driver_np, [AC_DEFINE(HAVE_LIBUSB_DETACH_KERNEL_DRIVER, HAVE_USB_DETACH_KERNEL_DRIVER_NP,)])
 			if test "${nut_have_libusb}" = "yes"; then
 				AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
 				nut_usb_lib="(libusb-0.1)"
