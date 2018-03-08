@@ -152,6 +152,30 @@ while performing the desired operation.  This will also happen if a
 driver takes longer than the 'maxstartdelay' period to enter the
 background.
 
+Any messages issued by the *upsdrvctl* program used to start the NUT
+drivers as part of the service instances' implementations, or by the
+drivers themselves, will be logged by the service management framework
+facilities and will not appear in your interactive terminal used to
+manage the driver. Use 'upsdrvsvcctl list' to find out the service
+instance name for the NUT driver (section name) you are interested in.
+Then look up the service logs (where the outputs of the service
+implementation program as well as the framework messages about
+this service are stored), as suggested below:
+
+*Linux systemd*::
+Messages will normally be kept in the service journal, so:
+
+	journalctl -lu nut-driver@instancename
+
+Note that your local system configuration may be impacted by such
+nuances as passing the journal data to a standard syslog server,
+and/or by having a small cache for locally stored journal messages
+(so older entries would disappear). There may also be or not be a
+copy of the journals stored in the filesystem.
+
+*Solaris SMF*::
+Look for `/var/svc/log/system-power-nut-driver:instancename.log` file.
+
 SEE ALSO
 --------
 linkman:upsdrvctl[8], linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
