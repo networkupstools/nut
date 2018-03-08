@@ -35,7 +35,7 @@ CMDARG=""
 ENUMERATOR=""
 case "$SERVICE_FRAMEWORK" in
     smf) CMD="/usr/sbin/svcadm"
-        ENUMERATOR="@NUT_DATADIR@/solaris-smf/method/nut-driver-enumerator.sh"
+        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
         ;;
     systemd) CMD="/bin/systemctl"
         ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
