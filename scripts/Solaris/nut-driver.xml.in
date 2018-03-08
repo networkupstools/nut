@@ -84,13 +84,13 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='@SBINDIR@/upsdrvctl %m %i'
+		exec='@SBINDIR@/upsdrvctl %m `@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`'
 		timeout_seconds='0'/>
 
 		<exec_method
 		type='method'
 		name='stop'
-		exec='@SBINDIR@/upsdrvctl %m %i'
+		exec='@SBINDIR@/upsdrvctl %m `@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`'
 		timeout_seconds='60' />
 
 		<property_group name='startd' type='framework'>
