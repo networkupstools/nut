@@ -70,6 +70,7 @@ usage: $0 [OPTIONS] resync
                 	NUT drivers to device sections in 'ups.conf'
   list          	call $ENUMERATOR
                 	to list the mapping of service instances to device sections
+  list <ups>    	(optionally return the service instance name for one device)
 
 Note: the "shutdown" options from original upsdrvctl are not currently
 supported by this service management framework wrapper:
@@ -86,7 +87,13 @@ DEBUG=0
 while [ $# -gt 0 ]; do
     case "$1" in
         resync) eval $DRYRUN $ENUMERATOR ; exit $? ;;
-        list) eval $ENUMERATOR --list-services-for-devices ; exit $? ;;
+        list)
+            if [ -n "$2" ] ; then
+                eval $ENUMERATOR --get-service-for-device "$2" ; exit $?
+            else
+                eval $ENUMERATOR --list-services-for-devices ; exit $?
+            fi
+            ;;
         start|stop)
             if [ -n "$2" ] ; then
                 SVCINST="`$ENUMERATOR --get-service-for-device "$2"`" || exit

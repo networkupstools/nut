@@ -156,10 +156,12 @@ Any messages issued by the *upsdrvctl* program used to start the NUT
 drivers as part of the service instances' implementations, or by the
 drivers themselves, will be logged by the service management framework
 facilities and will not appear in your interactive terminal used to
-manage the driver. Use 'upsdrvsvcctl list' to find out the service
-instance name for the NUT driver (section name) you are interested in.
-Then look up the service logs (where the outputs of the service
-implementation program as well as the framework messages about
+manage the driver.
+
+Use `upsdrvsvcctl list` or `upsdrvsvcctl list NUTdevice` to find out
+the service instance name for the NUT driver (section name) you are
+interested in. Then look up the service logs (where the outputs of the
+service implementation program as well as the framework messages about
 this service are stored), as suggested below:
 
 *Linux systemd*::
