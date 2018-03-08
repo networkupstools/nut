@@ -97,12 +97,16 @@ details.
 COMMANDS
 --------
 
-*upsdrvsvcctl* supports two of the commands processed by *upsdrvctl* --
-start and stop (Note: shutdown is not currently supported; it may be better
-to use *upsdrvctl* directly for that, at this time).
-They take an optional argument which is a UPS name from linkman:ups.conf[5].
-Without that argument, they operate on every UPS that is currently
-configured.
+*upsdrvsvcctl* supports three of the commands processed by *upsdrvctl* --
+start, stop and shutdown. They take an optional argument which is a UPS
+name from linkman:ups.conf[5]. Without that argument, they operate on
+every UPS that is currently configured.
+
+Note: shutdown is currently supported by stopping the driver service
+instances to release the potentially held ports etc., calling the
+*upsdrvctl* directly for issuing the shutdown command, and restarting
+the driver service instances to reconnect when the device comes back
+online.
 
 *start*::
 Start the UPS driver(s). In case of failure, further attempts may be executed

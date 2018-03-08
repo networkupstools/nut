@@ -64,6 +64,13 @@ Options:
   stop          	stop all UPS drivers in ups.conf
   stop <ups>    	only stop driver for UPS <ups>
 
+Note: the "shutdown" options from original upsdrvctl are not currently
+directly supported by this service management framework wrapper; instead
+they are passed to the native upsdrvctl binary (your current user account
+should have sufficient permissions to do that all):
+  shutdown      	shutdown all UPS drivers in ups.conf
+  shutdown <ups>	only shutdown UPS <ups>
+
 usage: $0 [OPTIONS] resync
   resync        	call $ENUMERATOR
                 	to update the mapping of service instances for
@@ -71,11 +78,6 @@ usage: $0 [OPTIONS] resync
   list          	call $ENUMERATOR
                 	to list the mapping of service instances to device sections
   list <ups>    	(optionally return the service instance name for one device)
-
-Note: the "shutdown" options from original upsdrvctl are not currently
-supported by this service management framework wrapper:
-# shutdown      	shutdown all UPS drivers in ups.conf
-# shutdown <ups>	only shutdown UPS <ups>
 EOF
 }
 
@@ -100,7 +102,16 @@ while [ $# -gt 0 ]; do
                 shift
             fi
             ACTION="$1" ;;
-        shutdown)   echo "Action '$1' is not implemented via services currently" >&2 ; exit 1 ;;
+        shutdown)
+            echo "NOTE: Action '$1' is not implemented via services currently, will call upsdrvctl" >&2
+            echo "Stopping the driver service instance(s) to release exclusive resources, if any..." >&2
+            RES=0
+            $0 stop $2
+            @SBINDIR@/upsdrvctl $2 || RES=$?
+            echo "Starting the driver service instance(s) so they can reconnect when the UPS returns..." >&2
+            $0 start $2
+            exit $RES
+            ;;
         -t) DRYRUN="echo" ;;
         -h) usage; exit 0 ;;
         -d) DEBUG="`expr $DEBUG + 1`" ;;
