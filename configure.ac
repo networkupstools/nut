@@ -1731,14 +1731,14 @@ AC_OUTPUT([
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
  scripts/python/Makefile
+ scripts/upsdrvsvcctl/nut-driver-enumerator.sh
+ scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
  scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
- scripts/systemd/nut-driver-enumerator.sh
  scripts/systemd/nutshutdown
- scripts/systemd/upsdrvsvcctl
  scripts/Solaris/nut-driver-enumerator.xml
  scripts/Solaris/nut-driver.xml
  scripts/Solaris/nut-monitor.xml

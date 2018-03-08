@@ -14,9 +14,9 @@ EXTRA_DIST += nut-driver.target
 
 systemdshutdown_SCRIPTS = nutshutdown
 
-libexec_SCRIPTS = nut-driver-enumerator.sh
+libexec_SCRIPTS = ../upsdrvsvcctl/nut-driver-enumerator.sh
 
-sbin_SCRIPTS = upsdrvsvcctl
+sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
 else
 EXTRA_DIST += nut-driver@.service.in nut-monitor.service.in \

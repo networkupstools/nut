@@ -21,9 +21,9 @@ solarissmfmanifestdir = @datadir@/solaris-smf/manifest
 solarissmfmethod_SCRIPTS = $(SOLARIS_SMF_METHODSCRIPTS)
 solarissmfmanifest_DATA = $(SOLARIS_SMF_MANIFESTS)
 
-libexec_SCRIPTS = ../systemd/nut-driver-enumerator.sh
+libexec_SCRIPTS = ../upsdrvsvcctl/nut-driver-enumerator.sh
 
-sbin_SCRIPTS = ../systemd/upsdrvsvcctl
+sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 
 SOLARIS_CHECK_TARGETS += check-local-solaris-smf
 endif
