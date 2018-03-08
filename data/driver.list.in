@@ -348,6 +348,8 @@
 
 "Electrys"	"ups"	"2"	"UPS 2500"	""	"nutdrv_qx or blazer_ser"
 
+"Emerson"	"pdu"	"3"	"PM3000 metered & switched"	""	"snmp-ups"
+
 "Energy Sistem"	"ups"	"2"	"(various)"	""	"blazer_ser"
 
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
@@ -898,8 +900,8 @@
 
 "Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"5"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
-"Riello"	"ups"	"5"	"IPG 600/800"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IPG 600/800"	""	"riello_usb"
 "Riello"	"ups"	"5"	"WPG 400/600/800"	""	"riello_usb"
 "Riello"	"ups"	"5"	"NPW 600/800/1000/1500/2000"	""	"riello_usb"
 "Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	""	"riello_usb"
