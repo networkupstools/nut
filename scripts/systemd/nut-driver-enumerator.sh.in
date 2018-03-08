@@ -69,7 +69,7 @@
 # Directory where NUT configs are located, e.g. /etc/nut or /etc/ups
 # Set at package configuration, compiled into daemons and drivers
 prefix="@prefix@"
-[ -n "${NUT_CONF_DIR-}" ] || NUT_CONF_DIR="@sysconfdir@"
+[ -n "${NUT_CONFPATH-}" ] || NUT_CONFPATH="@sysconfdir@"
 
 # Third-party services to depend on (can be overridden by config file)
 ### Note that for systemd+udev integration, it may be better to set up
@@ -104,14 +104,14 @@ DEPREQ_NET_LOCAL_SMF="optional_all"
 SVCNAME_SMF="svc:/system/power/nut-driver"
 
 [ -z "${NUT_DRIVER_ENUMERATOR_CONF-}" ] && \
-    NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONF_DIR}/nut-driver-enumerator.conf"
+    NUT_DRIVER_ENUMERATOR_CONF="${NUT_CONFPATH}/nut-driver-enumerator.conf"
 
 [ -s "${NUT_DRIVER_ENUMERATOR_CONF}" ] && \
     echo "Sourcing config file: ${NUT_DRIVER_ENUMERATOR_CONF}" && \
     . "${NUT_DRIVER_ENUMERATOR_CONF}"
 
 [ -z "${UPSCONF-}" ] && \
-    UPSCONF="${NUT_CONF_DIR}/ups.conf"
+    UPSCONF="${NUT_CONFPATH}/ups.conf"
 
 # Start a freshly-registered unit?
 [ -z "${AUTO_START-}" ] && AUTO_START=yes
