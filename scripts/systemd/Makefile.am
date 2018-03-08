@@ -4,6 +4,7 @@ if HAVE_SYSTEMD
 
 systemdsystemunit_DATA = \
         nut-driver-enumerator.service \
+        nut-driver-enumerator.path \
         nut-driver@.service \
         nut-monitor.service \
         nut-server.service  \
@@ -22,6 +23,6 @@ else
 EXTRA_DIST += nut-driver@.service.in nut-monitor.service.in \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
 	nut-driver-enumerator.sh.in nut-driver-enumerator.service.in \
-	upsdrvsvcctl.in
+	nut-driver-enumerator.path.in upsdrvsvcctl.in
 endif
 

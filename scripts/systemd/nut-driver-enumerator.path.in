@@ -1,0 +1,7 @@
+# Trigger restart of nut-driver-enumerator.service whenever ups.conf is edited
+
+[Path]
+PathModified=@CONFDIR@/ups.conf
+
+[Install]
+WantedBy=nut.target
