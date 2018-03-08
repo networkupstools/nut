@@ -45,7 +45,7 @@ It was also not easy to strike a pre-packaged balance between early
 UPS protection for USB/serial home setups vs. waiting for network
 on larger ones.
 
-*upsdrvsvcctl* is a script which mimicks the operation of *upsdrvctl*
+*upsdrvsvcctl* is a script which mimics the operation of *upsdrvctl*
 program (where possible) to provide similar end-user experience when
 manipulating drivers wrapped into service instances rather than as
 directly executed daemons. It relies on *nut-driver-enumerator.sh*
@@ -167,7 +167,7 @@ drivers themselves, will be logged by the service management framework
 facilities and will not appear in your interactive terminal used to
 manage the driver.
 
-Use `upsdrvsvcctl list` or `upsdrvsvcctl list NUTdevice` to find out
+Use `upsdrvsvcctl list` or `upsdrvsvcctl list NUT-device` to find out
 the service instance name for the NUT driver (section name) you are
 interested in. Then look up the service logs (where the outputs of the
 service implementation program as well as the framework messages about
@@ -176,7 +176,7 @@ this service are stored), as suggested below:
 *Linux systemd*::
 Messages will normally be kept in the service journal, so:
 
-	journalctl -lu nut-driver@instancename
+	journalctl -lu nut-driver@instance-name
 
 Note that your local system configuration may be impacted by such
 nuances as passing the journal data to a standard syslog server,
@@ -185,7 +185,7 @@ and/or by having a small cache for locally stored journal messages
 copy of the journals stored in the filesystem.
 
 *Solaris SMF*::
-Look for `/var/svc/log/system-power-nut-driver:instancename.log` file.
+Look for `/var/svc/log/system-power-nut-driver:instance-name.log` file.
 
 SEE ALSO
 --------

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2419 utf-8
+personal_ws-1.1 en 2423 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1653,6 +1653,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+journalctl
 jpg
 jpgraph
 json
@@ -1730,6 +1731,7 @@ lowruntime
 lowvoltsout
 lr
 lsusb
+lu
 lvo
 lxml
 lxyz
@@ -2187,6 +2189,7 @@ sudo
 suid
 superset
 sv
+svc
 svn
 sw
 symlink
@@ -2201,6 +2204,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+systemctl
 systemd
 systemdsystemunitdir
 systemhours

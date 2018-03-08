@@ -276,7 +276,7 @@ On operating systems with a supported service management framework,
 you might wrap your NUT drivers into individual services instances
 with 'upsdrvsvcctl resync' and then manage those with commands like
 'upsdrvsvcctl stop' and 'upsdrvsvcctl start' (note that on other
-systems this tool may be not preinstalled via packaging).
+systems this tool may be not pre-installed via packaging).
 
 == Why don't the pathnames in your documentation match the package I installed?
 
