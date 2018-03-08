@@ -299,7 +299,10 @@ calc_md5() {
 }
 
 smf_validFullUnitName() {
-    echo "$SVCNAME_SMF:$1"
+    case "$1" in
+        *:*) echo "$1" ;;
+        *)   echo "$SVCNAME_SMF:$1" ;;
+    esac
 }
 smf_validInstanceName() {
     echo "MD5_`calc_md5 "$1"`"
@@ -370,7 +373,10 @@ smf_listInstances() {
 }
 
 systemd_validFullUnitName() {
-    echo "$SVCNAME_SYSTEMD@$1.service"
+    case "$1" in
+        *@*) echo "$1" ;;
+        *)   echo "$SVCNAME_SYSTEMD@$1.service" ;;
+    esac
 }
 systemd_validInstanceName() {
     echo "MD5_`calc_md5 "$1"`"
