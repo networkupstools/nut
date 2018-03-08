@@ -140,6 +140,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
     CONFIG_OPTS+=("--with-devd-dir=${BUILD_PREFIX}/etc/devd")
     CONFIG_OPTS+=("--with-hotplug-dir=${BUILD_PREFIX}/etc/hotplug")
+    CONFIG_OPTS+=("--with-dbus-dir=${BUILD_PREFIX}/etc/dbus-1")
 
     DO_DISTCHECK=yes
     case "$BUILD_TYPE" in

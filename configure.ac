@@ -102,7 +102,7 @@ if test ! -d "${udevdir}"; then
    fi
 fi
 
-dbusdir='/etc/dbus-1'
+dbusdir="/etc/dbus-1"
 if test ! -d "${dbusdir}"; then
    dbusdir=''
 fi
