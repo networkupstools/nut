@@ -120,9 +120,9 @@ The entry in `ups.conf` looks like this:
 		driver = apcsmart
 		port = /dev/ttyS1
 
-To start and stop drivers, use upsdrvctl of upsdrvsvcctl (on operating
-systems with a supported service management framework).  By default,
-it will start or stop every UPS in the config file:
+To start and stop drivers, use upsdrvctl of upsdrvsvcctl (installed on
+operating systems with a service management framework supported by NUT).
+By default, it will start or stop every UPS in the config file:
 
 	/usr/local/ups/sbin/upsdrvctl start
 	/usr/local/ups/sbin/upsdrvctl stop

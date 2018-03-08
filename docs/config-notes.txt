@@ -207,12 +207,15 @@ which monitor a datacenter full of UPSes.
 
 For this reason, NUT starting with version 2.7.5 supports startup of its
 drivers as independent instances of a `nut-driver` service under the Linux
-systemd and Solaris/illumos SMF service-management frameworks. Such service
-instances have their own and independent life-cycle, including parallel
-driver start and stop processing, and retries of startup in case of failure
-as implemented by the service framework in the OS. The systemd solution also
-includes a `nut-driver.target` as a checkpoint that all defined drivers have
-indeed started up.
+systemd and Solaris/illumos SMF service-management frameworks (corresponding
+files and scripts may be not preinstalled in packaging for other systems).
+
+Such service instances have their own and independent life-cycle, including
+parallel driver start and stop processing, and retries of startup in case of
+failure as implemented by the service framework in the OS. The Linux systemd
+solution also includes a `nut-driver.target` as a checkpoint that all defined
+drivers have indeed started up (as well as being a singular way to enable or
+disable startup of drivers).
 
 In both cases, a service named `nut-driver-enumerator` is registered, and
 when it is (re-)started it scans the currently defined device sections in

@@ -20,13 +20,18 @@ drivers wrapped into service instances on platforms which support that
 (currently this covers Linux distributions with systemd and systems
 derived from Solaris 10 codebase, including proprietary Sun/Oracle
 Solaris and numerous open-source illumos distributions with SMF).
+It may be not installed in packaging for other operating systems.
 
 When used properly, upsdrvsvcctl lets you maintain identical startup
 scripts across multiple systems with different UPS configurations.
+
 The goal of this solution is to allow the services of *upsd* data
 server to start up even if some of the power devices are currently
 not accessible, and for NUT drivers to be automatically restarted
 by the system in case of problems (driver bug, startup failure).
+It also allows for faster startup of systems which monitor several
+devices, by letting each driver to start in parallel with others,
+and not with a sequential loop like was done previously.
 
 Independent service instances for each NUT driver also allow one
 to configure further dependencies, such as that networking must be
