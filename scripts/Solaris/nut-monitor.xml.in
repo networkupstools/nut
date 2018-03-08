@@ -78,7 +78,7 @@
 		grouping='optional_all'
 		restart_on='none'
 		type='service'>
-			<service_fmri value='svc:/system/power/nut' />
+			<service_fmri value='svc:/system/power/nut-server' />
 		</dependency>
 
 	<!--
