@@ -13,6 +13,7 @@ Wants=nut-server.service
 #   [Unit]
 #   Requires=network-online.target
 #   After=network-online.target
+PartOf=nut.target
 
 [Service]
 ExecStart=@SBINDIR@/upsmon

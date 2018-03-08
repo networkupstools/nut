@@ -5,6 +5,7 @@
 Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances
 After=local-fs.target
 Before=nut-driver.target
+PartOf=nut.target
 
 [Service]
 ### Script needs privileges to restart units

@@ -15,6 +15,7 @@ Wants=nut-driver.target
 #   After=network-online.target
 Requires=network.target
 Before=nut-monitor.service
+PartOf=nut.target
 
 [Service]
 ExecStart=@SBINDIR@/upsd
