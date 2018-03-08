@@ -62,7 +62,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	# Enable services if the system already has a configuration (e.g. upgrade)
 	if test -s "@CONFPATH@/ups.conf" ; then
 		echo "Enable NUT drivers (if any)..."
-		"@datadir@/solaris-smf/method/nut-driver-enumerator.sh"
+		"@libexecdir@/nut-driver-enumerator.sh"
 		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
 		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
 		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }

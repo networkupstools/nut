@@ -10,7 +10,6 @@ SOLARIS_SMF_MANIFESTS = \
 	nut-driver-enumerator.xml
 
 SOLARIS_SMF_METHODSCRIPTS = \
-	../systemd/nut-driver-enumerator.sh \
 	svc-nut-server \
 	svc-nut-monitor
 
@@ -21,6 +20,8 @@ solarissmfmethoddir = @datadir@/solaris-smf/method
 solarissmfmanifestdir = @datadir@/solaris-smf/manifest
 solarissmfmethod_SCRIPTS = $(SOLARIS_SMF_METHODSCRIPTS)
 solarissmfmanifest_DATA = $(SOLARIS_SMF_MANIFESTS)
+
+libexec_SCRIPTS = ../systemd/nut-driver-enumerator.sh
 
 sbin_SCRIPTS = ../systemd/upsdrvsvcctl
 

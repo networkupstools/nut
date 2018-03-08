@@ -2,7 +2,7 @@
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 <!--
 #
-# Copyright 2016-2017 Jim Klimov
+# Copyright 2016-2018 Jim Klimov
 # Template manifest for instantiated NUT drivers
 #
 -->
@@ -65,13 +65,13 @@
 		<exec_method
 		type='method'
 		name='start'
-		exec='@NUT_DATADIR@/solaris-smf/method/nut-driver-enumerator.sh'
+		exec='@LIBEXECDIR@/nut-driver-enumerator.sh'
 		timeout_seconds='0'/>
 
 		<exec_method
 		type='method'
 		name='refresh'
-		exec='@NUT_DATADIR@/solaris-smf/method/nut-driver-enumerator.sh'
+		exec='@LIBEXECDIR@/nut-driver-enumerator.sh'
 		timeout_seconds='0'/>
 
 <!-- a :KILL does not really apply to a transient service... -->
