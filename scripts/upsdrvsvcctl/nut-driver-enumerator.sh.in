@@ -141,6 +141,7 @@ hook_listInstances=""
 hook_listInstances_raw=""
 hook_validInstanceName=""
 hook_validFullUnitName=""
+hook_validInstanceSuffixName=""
 
 case "${SERVICE_FRAMEWORK-}" in
     smf)
@@ -150,6 +151,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_listInstances_raw="smf_listInstances_raw"
         hook_validInstanceName="smf_validInstanceName"
         hook_validFullUnitName="smf_validFullUnitName"
+        hook_validInstanceSuffixName="smf_validInstanceSuffixName"
         ;;
     systemd)
         hook_registerInstance="systemd_registerInstance"
@@ -158,6 +160,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_listInstances_raw="systemd_listInstances_raw"
         hook_validInstanceName="systemd_validInstanceName"
         hook_validFullUnitName="systemd_validFullUnitName"
+        hook_validInstanceSuffixName="systemd_validInstanceSuffixName"
         ;;
     "")
         echo "Error detecting the service-management framework on this OS" >&2
@@ -301,6 +304,12 @@ smf_validFullUnitName() {
 smf_validInstanceName() {
     echo "MD5_`calc_md5 "$1"`"
 }
+smf_validInstanceSuffixName() {
+    case "$1" in
+        *:*) echo "$1" | sed 's,^.*:\([^:]*\)$,\1,' ;;
+        *)   echo "$1" ;;
+    esac
+}
 smf_registerInstance() {
     DEVICE="$1"
     SVCINST="$1"
@@ -365,6 +374,9 @@ systemd_validFullUnitName() {
 }
 systemd_validInstanceName() {
     echo "MD5_`calc_md5 "$1"`"
+}
+systemd_validInstanceSuffixName() {
+    echo "$1" | sed -e 's,^.*@,,' -e 's,\.service$,,'
 }
 systemd_registerInstance() {
     DEVICE="$1"
