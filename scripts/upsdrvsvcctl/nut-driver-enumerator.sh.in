@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2016-2017 Eaton
+# Copyright (C) 2016-2018 Eaton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -194,8 +194,13 @@ common_isRegistered() {
 }
 
 upslist_equals() {
-    # Compare list of DEVICES ($1) and SVCINSTs ($2) including mangling
+    # Compare pre-sorted list of DEVICES ($1) and SVCINSTs ($2) including
+    # the possible mangling for service names. Return 0 if lists describe
+    # exactly same set of devices and their services.
+
+    # Trivial case 1: equal strings
     [ "$1" = "$2" ] && return 0
+    # Trivial case 2: different amount of entries
     [ "`echo "$1" | wc -l`" = "`echo "$2" | wc -l`" ] || return $?
 
     _TMP_DEV_SVC=""
@@ -209,6 +214,9 @@ upslist_equals() {
 $_DEV = $_SVC" ; }
         done
     done
+
+    # Exit code : is the built mapping as long as the source list(s)?
+    [ "`echo "$1" | wc -l`" = "`echo "$_TMP_DEV_SVC" | wc -l`" ]
 }
 
 upsconf_getValue() {
