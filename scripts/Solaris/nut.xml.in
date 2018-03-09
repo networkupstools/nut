@@ -50,7 +50,7 @@
 		<exec_method
 		type='method'
 		name='stop'
-		exec='/usr/sbin/svcadm disable -ts svc:/system/power/nut-monitor:default ; /usr/sbin/svcadm disable -ts svc:/system/power/nut-server:default ; @SBINDIR@/upsdrvsvcctl stop'
+		exec='/usr/sbin/svcadm disable -ts svc:/system/power/nut-monitor:default ; /usr/sbin/svcadm disable -ts svc:/system/power/nut-server:default ; @SBINDIR@/upsdrvsvcctl stop ; /bin/true'
 		timeout_seconds='120' />
 
 		<property_group name='startd' type='framework'>
