@@ -1,10 +1,10 @@
-NUT-DRIVER-ENUMERATOR(8)
+NUT-DRIVER-ENUMERATOR(8) 
 ========================
 
 NAME
 ----
 
-nut-driver-enumerator.sh - tool to map NUT device entries to service instances
+nut-driver-enumerator - tool to map NUT device entries to service instances
 
 SYNOPSIS
 --------
