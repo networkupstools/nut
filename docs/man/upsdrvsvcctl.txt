@@ -189,7 +189,8 @@ Look for `/var/svc/log/system-power-nut-driver:instance-name.log` file.
 
 SEE ALSO
 --------
-linkman:upsdrvctl[8], linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
+linkman:upsdrvctl[8], linkman:nutupsdrv[8], linkman:upsd[8],
+linkman:nut-driver-enumerator[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

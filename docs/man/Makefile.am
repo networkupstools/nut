@@ -47,6 +47,7 @@ HTML_CONF_MANS = \
 
 SRC_CLIENT_PAGES = \
 	nutupsdrv.txt \
+	nut-driver-enumerator.txt \
 	upsc.txt \
 	upscmd.txt \
 	upsd.txt \
@@ -60,6 +61,7 @@ SRC_CLIENT_PAGES = \
 if WITH_MANS
 MAN_CLIENT_PAGES = \
 	nutupsdrv.8 \
+	nut-driver-enumerator.8 \
 	upsc.8 \
 	upscmd.8 \
 	upsd.8 \
@@ -75,6 +77,7 @@ man8_MANS = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
 	nutupsdrv.html \
+	nut-driver-enumerator.html \
 	upsc.html \
 	upscmd.html \
 	upsd.html \
