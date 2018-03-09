@@ -142,6 +142,7 @@ hook_listInstances_raw=""
 hook_validInstanceName=""
 hook_validFullUnitName=""
 hook_validInstanceSuffixName=""
+hook_restart_upsd=""
 
 case "${SERVICE_FRAMEWORK-}" in
     smf)
@@ -152,6 +153,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="smf_validInstanceName"
         hook_validFullUnitName="smf_validFullUnitName"
         hook_validInstanceSuffixName="smf_validInstanceSuffixName"
+        hook_restart_upsd="smf_restart_upsd"
         ;;
     systemd)
         hook_registerInstance="systemd_registerInstance"
@@ -161,6 +163,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="systemd_validInstanceName"
         hook_validFullUnitName="systemd_validFullUnitName"
         hook_validInstanceSuffixName="systemd_validInstanceSuffixName"
+        hook_restart_upsd="systemd_restart_upsd"
         ;;
     "")
         echo "Error detecting the service-management framework on this OS" >&2
@@ -355,6 +358,7 @@ smf_registerInstance() {
 
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
+        /usr/sbin/svcadm clear "${TARGET_FMRI}" 2>/dev/null || true
         /usr/sbin/svcadm enable "${TARGET_FMRI}" || return
         echo "Started instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
@@ -370,6 +374,11 @@ smf_listInstances_raw() {
 }
 smf_listInstances() {
     smf_listInstances_raw | sed 's/^.*://' | sort -n
+}
+smf_restart_upsd() {
+    echo "Restarting NUT data server to make sure it knows new configuration..."
+    /usr/sbin/svcadm clear "nut-server" 2>/dev/null
+    /usr/sbin/svcadm restart "nut-server"
 }
 
 systemd_validFullUnitName() {
@@ -439,6 +448,10 @@ systemd_listInstances_raw() {
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
+}
+systemd_restart_upsd() {
+    echo "Restarting NUT data server to make sure it knows new configuration..."
+    /bin/systemctl restart "nut-server"
 }
 
 upslist_readFile() {
@@ -526,6 +539,11 @@ nut_driver_enumerator_main() {
     if [ -n "$UPSLIST_FILE" ] ; then
         echo "=== The currently defined configurations in '$UPSCONF' are:"
         echo "$UPSLIST_FILE"
+    fi
+
+    # We had some changes to the config file; upsd must be made aware
+    if [ "$AUTO_START" = yes ] ; then
+        $hook_restart_upsd
     fi
 
     # Return 42 if there was a change applied succesfully
