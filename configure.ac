@@ -1731,6 +1731,7 @@ AC_OUTPUT([
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
  scripts/python/Makefile
+ scripts/upsdrvsvcctl/Makefile
  scripts/upsdrvsvcctl/nut-driver-enumerator.sh
  scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile

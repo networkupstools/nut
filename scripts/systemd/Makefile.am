@@ -22,7 +22,6 @@ sbin_SCRIPTS = ../upsdrvsvcctl/upsdrvsvcctl
 else
 EXTRA_DIST += nut-driver@.service.in nut-monitor.service.in \
 	nut-server.service.in nutshutdown.in nut-driver.target nut.target \
-	nut-driver-enumerator.sh.in nut-driver-enumerator.service.in \
-	nut-driver-enumerator.path.in upsdrvsvcctl.in
+	nut-driver-enumerator.path.in nut-driver-enumerator.service.in
 endif
 
