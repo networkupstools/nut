@@ -9,6 +9,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	# Unconfigure SMF services
 	for S in nut-monitor nut-driver-enumerator nut-server nut ; do
 		echo "Stopping NUT service: $S..."
+		/usr/sbin/svcadm clear "$S"
 		/usr/sbin/svcadm disable -s "$S"
 		echo "Removing NUT service: $S..."
 		/usr/sbin/svccfg delete "$S" || \
@@ -17,6 +18,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	done
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
 		echo "Stopping NUT service: $S..."
+		/usr/sbin/svcadm clear "$S"
 		/usr/sbin/svcadm disable -s "$S"
 	done
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` ; do
