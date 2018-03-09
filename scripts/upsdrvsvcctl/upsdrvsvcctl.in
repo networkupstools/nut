@@ -159,9 +159,18 @@ esac
 for INST in $SVCINST ; do
     echo "$VERB $INST ..." >&2
     $DRYRUN $CMD $CMDARG "$INST" &
-    case "$SERVICE_FRAMEWORK" in
-        smf) sleep 1 ; $DRYRUN $CMD clear "$INST" 2>/dev/null || true ;;
-    esac
 done
+wait
+
+case "$SERVICE_FRAMEWORK" in
+    smf)
+        sleep 1
+        echo "Post-process clearing services that failed early..." >&2
+        for INST in $SVCINST ; do
+            echo "Clearing $INST (if it got broken) ..." >&2
+            $DRYRUN $CMD clear "$INST" &
+        done
+        ;;
+esac
 
 wait
