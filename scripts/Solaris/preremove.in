@@ -16,13 +16,15 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		/usr/sbin/svccfg -s "$S" delete || \
 		/usr/sbin/svccfg -s "$S" delete default
 	done
+	echo "Stopping NUT drivers, if any..."
+	@NUT_SBINDIR@/upsdrvsvcctl stop
+	@NUT_SBINDIR@/upsdrvctl -DDDDD stop
+	sleep 5
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
 		echo "Stopping NUT service: $S..."
 		/usr/sbin/svcadm clear "$S"
 		/usr/sbin/svcadm disable "$S"
 	done
-	@sbindir@/upsdrvsvcctl stop
-	@sbindir@/upsdrvctl -DDDDD stop
 	sleep 5
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` ; do
 		echo "Removing NUT service: $S..."
