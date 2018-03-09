@@ -593,7 +593,7 @@ while [ $# -gt 0 ]; do
         --list-devices)
             upslist_readFile && \
             if [ -n "$UPSLIST_FILE" ] ; then
-                echo "=== The currently defined configurations in '$UPSCONF' are:"
+                echo "=== The currently defined configurations in '$UPSCONF' are:" >&2
                 echo "$UPSLIST_FILE"
                 exit 0
             fi
@@ -603,7 +603,7 @@ while [ $# -gt 0 ]; do
         --list-services)
             UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && \
             if [ -n "$UPSLIST_SVCS_RAW" ] ; then
-                echo "=== The currently defined service units are:"
+                echo "=== The currently defined service units are:" >&2
                 echo "$UPSLIST_SVCS_RAW"
                 exit 0
             fi
@@ -613,7 +613,7 @@ while [ $# -gt 0 ]; do
         --list-instances)
             upslist_readSvcs "by user request" && \
             if [ -n "$UPSLIST_SVCS" ] ; then
-                echo "=== The currently defined service instances are:"
+                echo "=== The currently defined service instances are:" >&2
                 echo "$UPSLIST_SVCS"
                 exit 0
             fi
