@@ -5,4 +5,4 @@
 /nut-server.service
 /nutshutdown
 /nut-driver-enumerator.service
-/nut-driver-enumerator.sh
+/nut-driver-enumerator.path
