@@ -55,12 +55,13 @@
 
 	<!--
 	  Wait for enumerator to have ensured that all configured sections
-	  have a corresponding SMF instance
+	  have a corresponding SMF instance. Do not restart all driver
+	  instances if there was just a reconfiguration of enumerator.
 	-->
 		<dependency
 		name='nut-driver-enumerator'
 		grouping='optional_all'
-		restart_on='refresh'
+		restart_on='error'
 		type='service'>
 			<service_fmri value='svc:/system/power/nut-driver-enumerator' />
 		</dependency>
@@ -73,8 +74,8 @@
 		<dependent
 		name='nut-service'
 		grouping='optional_all'
-		restart_on='refresh'>
-			<service_fmri value='svc:/system/power/nut' />
+		restart_on='none'>
+			<service_fmri value='svc:/system/power/nut-server' />
 		</dependent>
 
 	<!--

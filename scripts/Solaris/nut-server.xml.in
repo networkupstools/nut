@@ -87,12 +87,12 @@
 
 	<!--
 	  Prerequisite for NUT upsmon to be started, if it's enabled
-	  Although it may also be a client to some other server...
+	  Although that may (also) be a client to some other server...
 	-->
 		<dependent
 		name='nut-monitor-service'
 		grouping='optional_all'
-		restart_on='refresh'>
+		restart_on='none'>
 			<service_fmri value='svc:/system/power/nut-monitor' />
 		</dependent>
 

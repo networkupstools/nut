@@ -49,13 +49,16 @@
 	<!--
 	  Prerequisite for NUT upsd to be started, if it's enabled
 	  Note that drivers are optional: if one fails to start, do not block
-	  the upsd from publishing others.
+	  the upsd from publishing others. While this script will start and
+	  stop (and define/undefine) services for the drivers, based on the
+	  changes in ups.conf, such changes also need to reflect in nut-server
+	  so it would know that it republishes a changed list of drivers.
 	-->
 		<dependent
 		name='nut-daemon-service'
 		grouping='optional_all'
-		restart_on='refresh'>
-			<service_fmri value='svc:/system/power/nut' />
+		restart_on='error'>
+			<service_fmri value='svc:/system/power/nut-server' />
 		</dependent>
 
 	<!--

@@ -26,7 +26,7 @@
 		<dependency
 		name='syslog'
 		grouping='optional_all'
-		restart_on='refresh'
+		restart_on='error'
 		type='service'>
 			<service_fmri value='svc:/system/power/nut-server:default'/>
 			<service_fmri value='svc:/system/power/nut-monitor:default'/>
