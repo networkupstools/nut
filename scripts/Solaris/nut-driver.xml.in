@@ -72,7 +72,7 @@
 	  the upsd from publishing others.
 	-->
 		<dependent
-		name='nut-service'
+		name='nut-service_needs_drivers'
 		grouping='optional_all'
 		restart_on='none'>
 			<service_fmri value='svc:/system/power/nut-server' />
