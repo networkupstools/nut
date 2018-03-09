@@ -79,7 +79,7 @@ ENVIRONMENT VARIABLES
 By default *nut-driver-enumerator.sh* executed without arguments would
 automatically start any newly registered service instances wrapping the
 NUT devices, and would also restart the `nut-server` service if the
-configuration was changed. Enviroment variable `AUTO_START=no` disables
+configuration was changed. Environment variable `AUTO_START=no` disables
 this default part of the action.
 
 Also see below for environment variable `REPORT_RESTART_42=no` value.
@@ -91,7 +91,7 @@ DIAGNOSTICS
 to do (all currently defined drivers match all of the currently defined
 service instances, one-to-one) and if it had no errors in its operation.
 
-Other codes can be returned as a result of resynchronization of mappings:
+Other codes can be returned as a result of re-synchronization of mappings:
 
 *42*::
 NUT device sections and system service instances differed before, but

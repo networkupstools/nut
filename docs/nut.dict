@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2423 utf-8
+personal_ws-1.1 en 2425 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1340,6 +1340,7 @@ cmdname
 cmds
 cmdvartab
 codebase
+codepath
 coldstarts
 collectd
 colspan
@@ -1680,6 +1681,7 @@ libaugeas
 libc
 libcommon
 libdir
+libexec
 libhid
 libhidups
 libi
