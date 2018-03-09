@@ -37,7 +37,8 @@
 	-->
 
 		<!-- The startup is expected to trigger enabled dependency services
-		     and not-trigger those which were not administratively enabled -->
+		     and not-trigger those which were not administratively enabled.
+		     There is nothing to do by itself, so it is not-persistent. -->
 		<exec_method
 		type='method'
 		name='start'
@@ -59,6 +60,11 @@
 			-->
 			<propval name='ignore_error' type='astring'
 			 value='core,signal' />
+		<!--
+		  A transient service executes the start method once and does
+		  not execute it again if the method exits with $SMF_EXIT_OK.
+			-->
+			<propval name='duration' type='astring' value='transient' />
 		</property_group>
 
 	<!-- Really unstable - this service should be evolved! -->
