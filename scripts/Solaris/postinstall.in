@@ -61,8 +61,10 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	done
 	# Enable services if the system already has a configuration (e.g. upgrade)
 	if test -s "@CONFPATH@/ups.conf" ; then
+		echo "Register NUT drivers (if any)..."
+		AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+		sleep 2
 		echo "Enable NUT drivers (if any)..."
-		"@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
 		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
 		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
 		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
