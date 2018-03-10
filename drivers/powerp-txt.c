@@ -372,7 +372,7 @@ static int powpan_status(status_t *status)
 	/*
 	 * WRITE D\r
 	 * READ #I119.0O119.0L000B100T027F060.0S..\r
-     *      #I118.0O118.0L029B100F060.0R0218S..\r
+	 *      #I118.0O118.0L029B100F060.0R0218S..\r
 	 *      01234567890123456789012345678901234
 	 *      0         1         2         3
 	 */
