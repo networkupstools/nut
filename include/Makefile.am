@@ -1,6 +1,6 @@
 dist_noinst_HEADERS = attribute.h common.h extstate.h parseconf.h proto.h	\
  state.h str.h timehead.h upsconf.h nut_stdint.h nut_platform.h \
- libusb-compat-1.0.h
+ libusb-compat-1.0.h dl_libusb-0.1.h
 
 # http://www.gnu.org/software/automake/manual/automake.html#Clean
 BUILT_SOURCES = nut_version.h
