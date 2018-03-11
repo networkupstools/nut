@@ -27,7 +27,7 @@
 #include <libusb.h>
 #endif
 #ifdef WITH_LIBUSB_0_1
-#include <usb.h>
+#include "libusb-compat-1.0.h"
 #endif
 
 /* USB standard timeout [ms] */

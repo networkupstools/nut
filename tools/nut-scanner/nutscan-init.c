@@ -35,7 +35,8 @@ int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
-int nutscan_load_usb_library(const char *libname_path);
+int	nutscan_load_usb_library(void);
+void	nutscan_unload_usb_library(void);
 int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path);
@@ -46,20 +47,8 @@ void nutscan_init(void)
 {
 	char *libname = NULL;
 #ifdef WITH_USB
- #ifdef WITH_LIBUSB_1_0
-	libname = get_libname("libusb-1.0.so");
- #else
-	libname = get_libname("libusb-0.1.so");
-	if (!libname) {
-		/* We can also use libusb-compat from newer libusb-1.0 releases */
-		libname = get_libname("libusb.so");
-	}
- #endif
-	if (libname) {
-		nutscan_avail_usb = nutscan_load_usb_library(libname);
-		free(libname);
-	}
-#endif
+	nutscan_avail_usb = nutscan_load_usb_library();
+#endif	/* WITH_USB */
 #ifdef WITH_SNMP
 	libname = get_libname("libnetsnmp.so");
 	if (libname) {
@@ -100,9 +89,11 @@ void nutscan_init(void)
 
 void nutscan_free(void)
 {
+#ifdef WITH_USB
 	if( nutscan_avail_usb ) {
-		lt_dlexit();
+		nutscan_unload_usb_library();
 	}
+#endif	/* WITH_USB */
 	if( nutscan_avail_snmp ) {
 		lt_dlexit();
 	}

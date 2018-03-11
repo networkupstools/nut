@@ -39,9 +39,7 @@
 #include <libusb.h>
 #endif
 #ifdef WITH_LIBUSB_0_1
-#include <usb.h>
-/* simple remap to avoid bloating structures */
-typedef usb_dev_handle libusb_device_handle;
+#include "libusb-compat-1.0.h"
 #endif
 
 extern upsdrv_info_t comm_upsdrv_info;

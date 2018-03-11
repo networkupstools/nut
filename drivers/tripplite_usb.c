@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.31"
+#define DRIVER_VERSION	"0.32"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -149,19 +149,6 @@ upsdrv_info_t	upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
-
-/* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- #define ERROR_BUSY	LIBUSB_ERROR_BUSY
- #define ERROR_PIPE LIBUSB_ERROR_PIPE
- typedef libusb_device_handle usb_dev_handle;
- #define nut_usb_strerror(a) libusb_strerror(a)
-#else /* for libusb 0.1 */
- #define ERROR_BUSY	-EBUSY
- #define ERROR_PIPE -EPIPE
- #define nut_usb_strerror(a) usb_strerror()
-#endif
 
 /* TrippLite */
 #define TRIPPLITE_VENDORID 0x09ae 
@@ -260,7 +247,7 @@ static USBDevice_t *hd = NULL;
 static USBDevice_t curDevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
-static usb_dev_handle *udev;
+static libusb_device_handle *udev;
 static usb_communication_subdriver_t	*comm_driver = &usb_subdriver;
 
 /* We calculate battery charge (q) as a function of voltage (V).
@@ -512,13 +499,13 @@ void usb_comm_fail(int res, const char *msg)
 	static int try = 0;
 
 	switch(res) {
-		case ERROR_BUSY:
+		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
-			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
+			fatalx(EXIT_FAILURE, "Terminating: %s.", libusb_strerror(res));
 			break;
 
 		default:
-			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, nut_usb_strerror(res));
+			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, libusb_strerror(res));
 
 			upslogx(LOG_NOTICE, "Reconnect attempt #%d", ++try);
 			hd = NULL;
@@ -920,7 +907,7 @@ void upsdrv_initinfo(void)
 	if(tl_model != TRIPP_LITE_SMARTPRO ) {
 		ret = send_cmd(w_msg, sizeof(w_msg), w_value, sizeof(w_value)-1);
 		if(ret <= 0) {
-			if(ret == ERROR_PIPE) {
+			if(ret == LIBUSB_ERROR_PIPE) {
 				fatalx(EXIT_FAILURE, "Could not reset watchdog. Please check and"
 						"see if usbhid-ups(8) works with this UPS.");
 			} else {

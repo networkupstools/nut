@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.43"
+#define DRIVER_VERSION		"0.44"
 
 #include "main.h"
 #include "libhid.h"
@@ -93,25 +93,18 @@ typedef enum {
 	HU_WALKMODE_FULL_UPDATE
 } walkmode_t;
 
-/* Compatibility layer between libusb 0.1 and 1.0, for errno/return codes */
-#if WITH_LIBUSB_0_1 || SHUT_MODE
- #define ERROR_BUSY	-EBUSY
- #define ERROR_NO_DEVICE -ENODEV
- #define ERROR_ACCESS -EACCES
- #define ERROR_IO -EIO
- #define ERROR_NOT_FOUND -ENOENT
- #define ERROR_TIMEOUT -ETIMEDOUT
- #define ERROR_OVERFLOW -EOVERFLOW
- #define ERROR_PIPE -EPIPE
-#else /* for libusb 1.0 */
- #define ERROR_BUSY	LIBUSB_ERROR_BUSY
- #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
- #define ERROR_ACCESS LIBUSB_ERROR_ACCESS
- #define ERROR_IO LIBUSB_ERROR_IO
- #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
- #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
- #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
- #define ERROR_PIPE LIBUSB_ERROR_PIPE
+#ifdef SHUT_MODE
+ #define ERROR_BUSY		-EBUSY
+ #define ERROR_NO_DEVICE	-ENODEV
+ #define ERROR_ACCESS		-EACCES
+ #define ERROR_IO		-EIO
+ #define ERROR_NOT_FOUND	-ENOENT
+#else
+ #define ERROR_BUSY		LIBUSB_ERROR_BUSY
+ #define ERROR_NO_DEVICE	LIBUSB_ERROR_NO_DEVICE
+ #define ERROR_ACCESS		LIBUSB_ERROR_ACCESS
+ #define ERROR_IO		LIBUSB_ERROR_IO
+ #define ERROR_NOT_FOUND	LIBUSB_ERROR_NOT_FOUND
 #endif
 
 /* pointer to the active subdriver object (changed in callback() function) */
@@ -819,13 +812,13 @@ void upsdrv_updateinfo(void)
 		{
 		case ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+#ifdef SHUT_MODE
 		case -EPERM:          /* Operation not permitted */
 #endif
 		case ERROR_NO_DEVICE: /* No such device */
 		case ERROR_ACCESS:    /* Permission denied */
 		case ERROR_IO:        /* I/O error */
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+#ifdef SHUT_MODE
 		case -ENXIO:          /* No such device or address */
 #endif
 		case ERROR_NOT_FOUND: /* No such file or directory */
@@ -1326,32 +1319,23 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		{
 		case ERROR_BUSY:      /* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+#ifdef SHUT_MODE
 		case -EPERM:          /* Operation not permitted */
 #endif
 		case ERROR_NO_DEVICE: /* No such device */
 		case ERROR_ACCESS:    /* Permission denied */
 		case ERROR_IO:        /* I/O error */
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
+#ifdef SHUT_MODE
 		case -ENXIO:          /* No such device or address */
 #endif
 		case ERROR_NOT_FOUND: /* No such file or directory */
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
-
 		case 1:
 			break;	/* Found! */
-
 		case 0:
 			continue;
-
-		case ERROR_TIMEOUT:   /* Connection timed out */
-		case ERROR_OVERFLOW:  /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
-		case -EPROTO:         /* Protocol error */
-#endif
-		case ERROR_PIPE:      /* Broken pipe */
 		default:
 			/* Don't know what happened, try again later... */
 			continue;

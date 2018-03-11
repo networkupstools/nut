@@ -6,6 +6,13 @@
 LDADD_COMMON = ../common/libcommon.la ../common/libparseconf.la
 LDADD_DRIVERS = $(LDADD_COMMON) main.o dstate.o
 LDADD_DRIVERS_SERIAL = $(LDADD_DRIVERS) $(SERLIBS) serial.o
+LDADD_DRIVERS_USB = $(LDADD_DRIVERS)
+if WITH_LIBUSB_1_0
+  LDADD_DRIVERS_USB += $(LIBUSB_LIBS)
+endif
+if WITH_LIBUSB_0_1
+  LDADD_DRIVERS_USB += ../common/libusb-compat-1.0.la
+endif
 
 # most targets are drivers, so make this the default
 LDADD = $(LDADD_DRIVERS_SERIAL)
@@ -168,36 +175,31 @@ skel_SOURCES = skel.c
 skel_LDADD = $(LDADD_DRIVERS)
 
 # USB
-if WITH_LIBUSB_0_1
-LIBUSB_IMPL = libusb0.c
-endif
-if WITH_LIBUSB_1_0
-LIBUSB_IMPL = libusb1.c
-endif
+LIBUSB_IMPL = nut_libusb.c
 USBHID_UPS_SUBDRIVERS = apc-hid.c belkin-hid.c cps-hid.c explore-hid.c \
  liebert-hid.c mge-hid.c powercom-hid.c tripplite-hid.c idowell-hid.c \
  openups-hid.c
 usbhid_ups_SOURCES = usbhid-ups.c libhid.c $(LIBUSB_IMPL) hidparser.c	\
  usb-common.c $(USBHID_UPS_SUBDRIVERS)
-usbhid_ups_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+usbhid_ups_LDADD = $(LDADD_DRIVERS_USB) -lm
 
 tripplite_usb_SOURCES = tripplite_usb.c $(LIBUSB_IMPL) usb-common.c
-tripplite_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+tripplite_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 
 bcmxcp_usb_SOURCES = bcmxcp_usb.c bcmxcp.c usb-common.c
-bcmxcp_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+bcmxcp_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 
 blazer_usb_SOURCES = blazer.c blazer_usb.c $(LIBUSB_IMPL) usb-common.c
-blazer_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+blazer_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 
 nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
-nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS_USB)
 
 richcomm_usb_SOURCES = richcomm_usb.c usb-common.c
-richcomm_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS)
+richcomm_usb_LDADD = $(LDADD_DRIVERS_USB)
 
 riello_usb_SOURCES = riello.c riello_usb.c $(LIBUSB_IMPL) usb-common.c
-riello_usb_LDADD = $(LDADD_DRIVERS) $(LIBUSB_LIBS) -lm
+riello_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 
 
 # HID-over-serial
@@ -257,7 +259,12 @@ endif
 if WITH_USB
 nutdrv_qx_CFLAGS += -DQX_USB
 nutdrv_qx_SOURCES += $(LIBUSB_IMPL) usb-common.c
+if WITH_LIBUSB_1_0
 nutdrv_qx_LDADD += $(LIBUSB_LIBS)
+endif
+if WITH_LIBUSB_0_1
+nutdrv_qx_LDADD += ../common/libusb-compat-1.0.la
+endif
 endif
 NUTDRV_QX_SUBDRIVERS = nutdrv_qx_bestups.c nutdrv_qx_blazer-common.c	\
  nutdrv_qx_mecer.c nutdrv_qx_megatec.c nutdrv_qx_megatec-old.c	\

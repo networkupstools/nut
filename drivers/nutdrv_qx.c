@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.31"
+#define DRIVER_VERSION	"0.32"
 
 #include "main.h"
 
@@ -108,64 +108,6 @@ upsdrv_info_t	upsdrv_info = {
 #endif	/* QX_USB */
 };
 
-/* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- /* defines */
- #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
- #define USB_ENDPOINT_IN LIBUSB_ENDPOINT_IN
- #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
- #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
- /* errno/return codes */
- #define ERROR_ACCESS		LIBUSB_ERROR_ACCESS
- #define ERROR_BUSY		LIBUSB_ERROR_BUSY
- #define ERROR_IO		LIBUSB_ERROR_IO
- #define ERROR_NO_DEVICE	LIBUSB_ERROR_NO_DEVICE
- #define ERROR_NOT_FOUND	LIBUSB_ERROR_NOT_FOUND
- #define ERROR_OVERFLOW		LIBUSB_ERROR_OVERFLOW
- #define ERROR_PIPE		LIBUSB_ERROR_PIPE
- #define ERROR_TIMEOUT		LIBUSB_ERROR_TIMEOUT
- /* Structures */
- #define usb_dev_handle libusb_device_handle
- typedef unsigned char* usb_ctrl_char;
- /* Functions */
- #define usb_control_msg libusb_control_transfer
- #define nut_usb_strerror(a) libusb_strerror(a)
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define usb_get_string libusb_get_string_descriptor
- #define usb_get_string_simple libusb_get_string_descriptor_ascii
- static inline  int usb_interrupt_read(libusb_device_handle *dev, int ep,
-        unsigned char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
- static inline  int usb_interrupt_write(libusb_device_handle *dev, int ep,
-        const char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
-#else /* for libusb 0.1 */
- /* errno/return codes */
- #define ERROR_ACCESS		-EACCES
- #define ERROR_BUSY		-EBUSY
- #define ERROR_IO		-EIO
- #define ERROR_NO_DEVICE	-ENODEV
- #define ERROR_NOT_FOUND	-ENOENT
- #define ERROR_OVERFLOW		-EOVERFLOW
- #define ERROR_PIPE		-EPIPE
- #define ERROR_TIMEOUT		-ETIMEDOUT
- /* Structures */
- typedef char* usb_ctrl_char;
- /* Functions */
- #define nut_usb_strerror(a) usb_strerror()
-#endif
 
 /* == Data walk modes == */
 typedef enum {
@@ -476,7 +418,7 @@ static void	qx_initbattery(void)
 /* == USB communication subdrivers == */
 #if defined(QX_USB) && !defined(TESTING)
 static usb_communication_subdriver_t	*usb = &usb_subdriver;
-static usb_dev_handle			*udev = NULL;
+static libusb_device_handle		*udev = NULL;
 static USBDevice_t			usbdevice;
 static USBDeviceMatcher_t		*reopen_matcher = NULL;
 static USBDeviceMatcher_t		*regex_matcher = NULL;
@@ -488,7 +430,7 @@ static int	(*subdriver_command)(const char *cmd, char *buf, size_t buflen) = NUL
 static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
-	int	ret;
+	int	ret, transferred;
 	size_t	i;
 
 	/* Send command */
@@ -498,11 +440,19 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; i < strlen(tmp); i += ret) {
 
 		/* Write data in 8-byte chunks */
-		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, (usb_ctrl_char)&tmp[i], 8, 5000);
+		ret = libusb_control_transfer(
+			udev,
+			LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+			0x09,
+			0x200,
+			0,
+			(unsigned char *)&tmp[i],
+			8,
+			5000
+		);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -513,20 +463,19 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += transferred) {
 
 		/* Read data in 8-byte chunks */
-		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&buf[i], 8, 1000);
+		ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN | 1, (unsigned char *)&buf[i], 8, &transferred, 1000);
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
-		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		if (ret != LIBUSB_SUCCESS || transferred == 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], transferred);
 
 	}
 
@@ -538,7 +487,7 @@ static int	cypress_command(const char *cmd, char *buf, size_t buflen)
 static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
-	int	ret;
+	int	ret, transferred;
 	size_t  cmdlen, i;
 
 	/* Send command */
@@ -554,10 +503,19 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		memcpy(&tmp[1], &cmd[i], ret);
 
 		/* Write data in 8-byte chunks */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE, 0x09, 0x200, 0, (usb_ctrl_char)tmp, 8, 5000);
+		ret = libusb_control_transfer(
+			udev,
+			LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+			0x09,
+			0x200,
+			0,
+			(unsigned char *)tmp,
+			8,
+			5000
+		);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -575,15 +533,15 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		memset(tmp, 0, sizeof(tmp));
 
 		/* Read data in 8-byte chunks */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)tmp, 8, 1000);
+		ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN | 1, (unsigned char *)tmp, 8, &transferred, 1000);
 
 		/* No error!!! */
-		if (ret == ERROR_TIMEOUT)
+		if (ret == LIBUSB_ERROR_TIMEOUT)
 			break;
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
-		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		if (ret != LIBUSB_SUCCESS || transferred == 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -607,31 +565,26 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[SMALLBUF];
-	int	ret;
+	int	ret, transferred;
 	size_t	i;
 
 	for (i = 0; i < 8; i++) {
 
 		/* Read data in 8-byte chunks */
-		/* ret = usb->get_interrupt(udev, (unsigned char *)tmp, 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)tmp, 8, 1000);
+		ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN | 1, (unsigned char *)tmp, 8, &transferred, 1000);
 
 		/* This USB to serial implementation is crappy.
 		 * In order to read correct replies we need to flush the output buffers of the converter until we get no more data (ie, it times out). */
-		switch (ret)
-		{
-		case ERROR_PIPE:	/* Broken pipe */
-			usb_clear_halt(udev, 0x81);
-		case ERROR_TIMEOUT:	/* Connection timed out */
-			break;
+		if (ret == LIBUSB_SUCCESS) {
+			upsdebug_hex(4, "dump", tmp, transferred);
+			continue;
 		}
 
-		if (ret < 0) {
-			upsdebugx(3, "flush: %s (%d)", nut_usb_strerror(ret), ret);
-			break;
-		}
+		if (ret == LIBUSB_ERROR_PIPE)
+			libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1);
 
-		upsdebug_hex(4, "dump", tmp, ret);
+		upsdebugx(3, "flush: %s (%d)", libusb_strerror(ret), ret);
+		break;
 
 	}
 
@@ -642,11 +595,19 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; i < strlen(tmp); i += ret) {
 
 		/* Write data in 8-byte chunks */
-		/* ret = usb->set_report(udev, 0, (unsigned char *)&tmp[i], 8); */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x200, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
+		ret = libusb_control_transfer(
+			udev,
+			LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+			0x09,
+			0x200,
+			0,
+			(unsigned char *)&tmp[i],
+			8,
+			1000
+		);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+			upsdebugx(3, "send: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -657,20 +618,19 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 	/* Read reply */
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen-8) && (memchr(buf, '\r', buflen) == NULL); i += transferred) {
 
 		/* Read data in 8-byte chunks */
-		/* ret = usb->get_interrupt(udev, (unsigned char *)&buf[i], 8, 1000); */
-		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)&buf[i], 8, 1000);
+		ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN | 1, (unsigned char *)&buf[i], 8, &transferred, 1000);
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
-		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		if (ret != LIBUSB_SUCCESS || transferred == 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
 		snprintf(tmp, sizeof(tmp), "read [% 3d]", (int)i);
-		upsdebug_hex(5, tmp, &buf[i], ret);
+		upsdebug_hex(5, tmp, &buf[i], transferred);
 
 	}
 
@@ -682,7 +642,7 @@ static int	phoenix_command(const char *cmd, char *buf, size_t buflen)
 static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 {
 	char	tmp[64];
-	int	ret;
+	int	ret, transferred;
 	size_t	i, len;
 
 	/* Send command */
@@ -691,10 +651,19 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	for (i = 0; i < strlen(tmp); i += ret) {
 
 		/* Write data in 8-byte chunks */
-		ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, 0x09, 0x2, 0, (usb_ctrl_char)&tmp[i], 8, 1000);
+		ret = libusb_control_transfer(
+			udev,
+			LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+			0x09,
+			0x2,
+			0,
+			(unsigned char *)&tmp[i],
+			8,
+			1000
+		);
 
 		if (ret <= 0) {
-			upsdebugx(3, "send: %s (%d)", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
+			upsdebugx(3, "send: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
@@ -703,18 +672,18 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(3, "send: %.*s", (int)strcspn(tmp, "\r"), tmp);
 
 	/* Read all 64 bytes of the reply in one large chunk */
-	ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)tmp, sizeof(tmp), 1000);
+	ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN | 1, (unsigned char *)tmp, sizeof(tmp), &transferred, 1000);
 
 	/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
-	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", (ret != ERROR_TIMEOUT) ? nut_usb_strerror(ret) : "Connection timed out", ret);
+	if (ret != LIBUSB_SUCCESS || transferred == 0) {
+		upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
 	/* As Ippon will always return 64 bytes in response, we have to calculate and return length of actual response data here.
 	 * Empty response will look like 0x00 0x0D, otherwise it will be data string terminated by 0x0D. */
 
-	for (i = 0, len = 0; i < (size_t)ret; i++) {
+	for (i = 0, len = 0; i < (size_t)transferred; i++) {
 
 		if (tmp[i] != '\r')
 			continue;
@@ -779,13 +748,13 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 
 			if (langid_fix != -1) {
 				/* Apply langid_fix value */
-				ret = usb_get_string(udev, command[i].index, langid_fix, (usb_ctrl_char)buf, buflen);
+				ret = libusb_get_string_descriptor(udev, command[i].index, langid_fix, (unsigned char *)buf, buflen);
 			} else {
-				ret = usb_get_string_simple(udev, command[i].index, (usb_ctrl_char)buf, buflen);
+				ret = libusb_get_string_descriptor_ascii(udev, command[i].index, (unsigned char *)buf, buflen);
 			}
 
 			if (ret <= 0) {
-				upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+				upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 				return ret;
 			}
 
@@ -919,10 +888,10 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	upsdebugx(4, "command index: 0x%02x", index);
 
 	/* Send command/Read reply */
-	ret = usb_get_string_simple(udev, index, (usb_ctrl_char)buf, buflen);
+	ret = libusb_get_string_descriptor_ascii(udev, index, (unsigned char *)buf, buflen);
 
 	if (ret <= 0) {
-		upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
@@ -948,7 +917,7 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	unsigned char	tmp[8];
 	char		command[SMALLBUF] = "",
 			read[SMALLBUF] = "";
-	int		ret, answer_len, val2;
+	int		ret, answer_len, val2, transferred;
 	double		val1;
 	size_t		i;
 	const struct {
@@ -1031,10 +1000,10 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	upsdebug_hex(4, "command", (char *)tmp, 8);
 
 	/* Write data */
-	ret = usb_interrupt_write(udev, USB_ENDPOINT_OUT | 2, (char *)tmp, 8, USB_TIMEOUT);
+	ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_OUT | 2, tmp, 8, &transferred, USB_TIMEOUT);
 
-	if (ret <= 0) {
-		upsdebugx(3, "send: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+	if (ret != LIBUSB_SUCCESS || transferred == 0) {
+		upsdebugx(3, "send: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 		return ret;
 	}
 
@@ -1044,19 +1013,19 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 
 	memset(buf, 0, buflen);
 
-	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += ret) {
+	for (i = 0; (i <= buflen - 8) && (memchr(buf, '\r', buflen) == NULL); i += transferred) {
 
 		/* Read data in 8-byte chunks */
-		ret = usb_interrupt_read(udev, USB_ENDPOINT_IN | 1, (usb_ctrl_char)&buf[i], 8, 1000);
+		ret = libusb_interrupt_transfer(udev, LIBUSB_ENDPOINT_IN | 1, (unsigned char *)&buf[i], 8, &transferred, 1000);
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
-		if (ret <= 0) {
-			upsdebugx(3, "read: %s (%d)", ret ? nut_usb_strerror(ret) : "timeout", ret);
+		if (ret != LIBUSB_SUCCESS || transferred == 0) {
+			upsdebugx(3, "read: %s (%d)", ret ? libusb_strerror(ret) : "timeout", ret);
 			return ret;
 		}
 
 		snprintf(read, sizeof(read), "read [%3d]", (int)i);
-		upsdebug_hex(5, read, &buf[i], ret);
+		upsdebug_hex(5, read, &buf[i], transferred);
 
 	}
 
@@ -1987,8 +1956,7 @@ void	upsdrv_initups(void)
 			{ NULL }
 		};
 
-		int	ret, langid;
-		char	tbuf[255];	/* Some devices choke on size > 255 */
+		int	 ret;
 		char	*regex_array[6];
 
 		char	*subdrv = getval("subdriver");
@@ -2077,13 +2045,16 @@ void	upsdrv_initups(void)
 
 		/* Check for language ID workaround (#2) */
 		if (langid_fix != -1) {
+			int		langid;
+			unsigned char	tbuf[255];	/* Some devices choke on size > 255 */
+
 			/* Future improvement:
 			 *   Asking for the zero'th index is special - it returns a string descriptor that contains all the language IDs supported by the device.
 			 *   Typically there aren't many - often only one.
 			 *   The language IDs are 16 bit numbers, and they start at the third byte in the descriptor.
 			 *   See USB 2.0 specification, section 9.6.7, for more information on this.
 			 * This should allow automatic application of the workaround */
-			ret = usb_get_string(udev, 0, 0, (usb_ctrl_char)tbuf, sizeof(tbuf));
+			ret = libusb_get_string_descriptor(udev, 0, 0, tbuf, sizeof(tbuf));
 			if (ret >= 4) {
 				langid = tbuf[2] | (tbuf[3] << 8);
 				upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
@@ -2183,42 +2154,23 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 
 		switch (ret)
 		{
-		case ERROR_BUSY:	/* Device or resource busy */
-			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
-
-	#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
-		case -EPERM:		/* Operation not permitted */
-			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
-	#endif	/* WITH_LIBUSB_0_1 */
-
-		case ERROR_PIPE:	/* Broken pipe */
-			if (usb_clear_halt(udev, 0x81) == 0) {
+		case LIBUSB_ERROR_BUSY:
+			fatalx(EXIT_FAILURE, "Got disconnected by another driver (%s).", libusb_strerror(ret));
+		case LIBUSB_ERROR_PIPE:
+			if (libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1) == LIBUSB_SUCCESS) {
 				upsdebugx(1, "Stall condition cleared");
 				break;
 			}
-	#if ETIME && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
-		case -ETIME:		/* Timer expired */
-	#endif	/* ETIME && WITH_LIBUSB_0_1 */
-			if (usb_reset(udev) == 0) {
+			if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
 				upsdebugx(1, "Device reset handled");
-			}
-		case ERROR_NO_DEVICE:	/* No such device */
-		case ERROR_ACCESS:	/* Permission denied */
-		case ERROR_IO:		/* I/O error */
-	#if WITH_LIBUSB_0_1			/* limit to libusb 0.1 implementation */
-		case -ENXIO:		/* No such device or address */
-	#endif	/* WITH_LIBUSB_0_1 */
-		case ERROR_NOT_FOUND:	/* No such file or directory */
+		case LIBUSB_ERROR_NO_DEVICE:
+		case LIBUSB_ERROR_ACCESS:
+		case LIBUSB_ERROR_IO:
+		case LIBUSB_ERROR_NOT_FOUND:
 			/* Uh oh, got to reconnect! */
 			usb->close(udev);
 			udev = NULL;
 			break;
-
-		case ERROR_TIMEOUT:	/* Connection timed out */
-		case ERROR_OVERFLOW:	/* Value too large for defined data type */
-	#if EPROTO && WITH_LIBUSB_0_1		/* limit to libusb 0.1 implementation */
-		case -EPROTO:		/* Protocol error */
-	#endif
 		default:
 			break;
 		}

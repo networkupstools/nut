@@ -1,5 +1,5 @@
 /*!
- * @file libusb1.c
+ * @file
  * @brief Generic USB communication backend (using libusb 1.0)
  *
  * @author Copyright (C) 2016 Eaton

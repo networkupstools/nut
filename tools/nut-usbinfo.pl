@@ -128,9 +128,7 @@ sub gen_usb_files
 	print $outputDevScanner " #include <libusb.h>\n";
 	print $outputDevScanner "#endif\n";
 	print $outputDevScanner "#ifdef WITH_LIBUSB_0_1\n";
-	print $outputDevScanner " #include <usb.h>\n";
-	print $outputDevScanner " /* simple remap to avoid bloating structures */\n";
-	print $outputDevScanner " typedef usb_dev_handle libusb_device_handle;\n";
+	print $outputDevScanner " #include \"libusb-compat-1.0.h\"\n";
 	print $outputDevScanner "#endif\n";
 	print $outputDevScanner "#include \"nut_stdint.h\"\t/* for uint16_t */\n\n";
 	# vid, pid, driver

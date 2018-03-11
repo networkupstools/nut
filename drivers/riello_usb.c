@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.05"
+#define DRIVER_VERSION	"0.06"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -62,57 +62,8 @@ extern uint8_t requestSENTR;
 
 TRielloData DevData;
 
-/* Compatibility layer between libusb 0.1 and 1.0 */
-#ifdef WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- #define USB_TYPE_CLASS LIBUSB_REQUEST_TYPE_CLASS
- #define USB_RECIP_INTERFACE LIBUSB_RECIPIENT_INTERFACE
- #define ERROR_PIPE LIBUSB_ERROR_PIPE
- #define ERROR_TIMEOUT LIBUSB_ERROR_TIMEOUT
- #define ERROR_BUSY	LIBUSB_ERROR_BUSY
- #define ERROR_NO_DEVICE LIBUSB_ERROR_NO_DEVICE
- #define ERROR_ACCESS LIBUSB_ERROR_ACCESS
- #define ERROR_IO LIBUSB_ERROR_IO
- #define ERROR_OVERFLOW LIBUSB_ERROR_OVERFLOW
- #define ERROR_NOT_FOUND LIBUSB_ERROR_NOT_FOUND
- typedef libusb_device_handle usb_dev_handle;
- typedef unsigned char* usb_ctrl_char;
- #define usb_control_msg libusb_control_transfer
- #define usb_claim_interface libusb_claim_interface
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define nut_usb_strerror(a) libusb_strerror(a)
- static inline  int usb_bulk_read(usb_dev_handle *dev, int ep,
-        char *bytes, int size, int timeout)
- {
-	int ret = libusb_bulk_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
- static inline  int usb_bulk_write(usb_dev_handle *dev, int ep,
-        char *bytes, int size, int timeout)
- {
-	int ret = libusb_bulk_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
-#else /* for libusb 0.1 */
- #define ERROR_PIPE -EPIPE
- #define ERROR_TIMEOUT -ETIMEDOUT
- #define ERROR_BUSY	-EBUSY
- #define ERROR_NO_DEVICE -ENODEV
- #define ERROR_ACCESS -EACCES
- #define ERROR_IO -EIO
- #define ERROR_OVERFLOW -EOVERFLOW
- #define ERROR_NOT_FOUND -ENOENT
- typedef char* usb_ctrl_char;
- #define nut_usb_strerror(a) usb_strerror()
-#endif
-
 static usb_communication_subdriver_t *usb = &usb_subdriver;
-static usb_dev_handle *udev = NULL;
+static libusb_device_handle *udev = NULL;
 static USBDevice_t usbdevice;
 static USBDeviceMatcher_t *reopen_matcher = NULL;
 static USBDeviceMatcher_t *regex_matcher = NULL;
@@ -141,13 +92,19 @@ static int cypress_setfeatures()
 	bufOut[4] = 0x3;
 
 	/* Write features report */
-	ret = usb_control_msg(udev, USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE,
-								0x09,						/* HID_REPORT_SET = 0x09 */
-								0 + (0x03 << 8),		/* HID_REPORT_TYPE_FEATURE */
-								0, (usb_ctrl_char) bufOut, 0x5, 1000);
+	ret = libusb_control_transfer(
+		udev,
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
+		0x09,			/* HID_REPORT_SET */
+		(0x03 << 8) | 0,	/* HID_REPORT_TYPE_FEATURE */
+		0,
+		(unsigned char *)bufOut,
+		0x5,
+		1000
+	);
 
 	if (ret <= 0) {
-		upsdebugx(3, "send: %s", ret ? nut_usb_strerror(ret) : "error");
+		upsdebugx(3, "send: %s", ret ? libusb_strerror(ret) : "error");
 		return ret;
 	}
 
@@ -158,7 +115,7 @@ static int cypress_setfeatures()
 int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 {
 	uint8_t USB_buff_pom[10];
-	int i, err, size, errno;
+	int i, ret, size, transferred;
 
 	/* is input correct ? */
 	if ((!send_str) || (!numbytes))
@@ -177,11 +134,11 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		USB_buff_pom[6] = send_str[(i*7)+5];
 		USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char *)USB_buff_pom, 8, 1000);
+		ret = libusb_bulk_transfer(udev, LIBUSB_ENDPOINT_OUT | 2, (unsigned char *)USB_buff_pom, 8, &transferred, 1000);
 
-		if (err < 0) {
-			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
-			return err;
+		if (ret != LIBUSB_SUCCESS) {
+			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", ret, libusb_strerror(ret));
+			return ret;
 		}
 		ussleep(USB_WRITE_DELAY);
 	}
@@ -207,11 +164,11 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 		if (((i*7)+6)<numbytes)
 			USB_buff_pom[7] = send_str[(i*7)+6];
 
-		err = usb_bulk_write(udev, 0x2, (char *)USB_buff_pom, 8, 1000);
+		ret = libusb_bulk_transfer(udev, LIBUSB_ENDPOINT_OUT | 2, (unsigned char *)USB_buff_pom, 8, &transferred, 1000);
 
-		if (err < 0) {
-			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
-			return err;
+		if (ret != LIBUSB_SUCCESS) {
+			upsdebugx(3, "USB: Send_USB_Packet: send_usb_packet, err = %d %s ", ret, libusb_strerror(ret));
+			return ret;
 		}
 		ussleep(USB_WRITE_DELAY);
 	}
@@ -220,22 +177,21 @@ int Send_USB_Packet(uint8_t *send_str, uint16_t numbytes)
 
 int Get_USB_Packet(uint8_t *buffer)
 {
-	char inBuf[10];
-	int err, size, errno, ep;
+	unsigned char	inBuf[10];
+	int		ret, size, transferred;
 
 	/* note: this function stop until some byte(s) is not arrived */
 	size = 8;
 
-	ep = 0x81 | USB_ENDPOINT_IN;
-	err = usb_bulk_read(udev, ep, inBuf, size, 1000);
+	ret = libusb_bulk_transfer(udev, LIBUSB_ENDPOINT_IN | 1, inBuf, size, &transferred, 1000);
 
-	if (err > 0)
-		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
-	
-	if (err < 0){
-		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
-		return err;
+	if (ret != LIBUSB_SUCCESS){
+		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", ret, libusb_strerror(ret));
+		return ret;
 	}
+
+	if (transferred > 0)
+		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
 
 	/* copy to buffer */
 	size = inBuf[0] & 0x07;
@@ -350,17 +306,17 @@ static USBDeviceMatcher_t device_matcher = {
  * caller, don't do this here. Return < 0 on error, 0 or higher on
  * success.
  */
-static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
+static int driver_callback(libusb_device_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
 {
-	int ret = 0;
+	int ret;
 
-	/*if (usb_set_configuration(handle, 1) < 0) {
-		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
+	/*if ((ret = libusb_set_configuration(handle, 1)) != LIBUSB_SUCCESS) {
+		upslogx(LOG_WARNING, "Can't set USB configuration: %s", libusb_strerror(ret));
 		return -1;
 	} */
 
-	if ((ret = usb_claim_interface(handle, 0)) < 0) {
-		upslogx(LOG_WARNING, "Can't claim USB interface: %s", nut_usb_strerror(ret));
+	if ((ret = libusb_claim_interface(handle, 0)) != LIBUSB_SUCCESS) {
+		upslogx(LOG_WARNING, "Can't claim USB interface: %s", libusb_strerror(ret));
 		return -1;
 	}
 
@@ -398,44 +354,25 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 
 	switch (ret)
 	{
-	case ERROR_BUSY:		/* Device or resource busy */
-		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
-
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
-	case -EPERM:		/* Operation not permitted */
-		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
-#endif
-	case ERROR_PIPE:		/* Broken pipe */
-		if (usb_clear_halt(udev, 0x81) == 0) {
+	case LIBUSB_ERROR_BUSY:
+		fatalx(EXIT_FAILURE, "Got disconnected by another driver (%s).", libusb_strerror(ret));
+	case LIBUSB_ERROR_PIPE:
+		if (libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1) == LIBUSB_SUCCESS) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-#if ETIME && WITH_LIBUSB_0_1
-	case -ETIME:		/* Timer expired */
-#endif
-		if (usb_reset(udev) == 0) {
+		if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
 			upsdebugx(1, "Device reset handled");
-		}
-	case ERROR_NO_DEVICE: /* No such device */
-	case ERROR_ACCESS:    /* Permission denied */
-	case ERROR_IO:        /* I/O error */
-#if WITH_LIBUSB_0_1 /* limit to libusb 0.1 implementation */
-	case -ENXIO:		/* No such device or address */
-#endif
-	case ERROR_NOT_FOUND:		/* No such file or directory */
+	case LIBUSB_ERROR_NO_DEVICE:
+	case LIBUSB_ERROR_ACCESS:
+	case LIBUSB_ERROR_IO:
+	case LIBUSB_ERROR_NOT_FOUND:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
 		break;
-
-	case ERROR_TIMEOUT:  /* Connection timed out */
+	case LIBUSB_ERROR_TIMEOUT:
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
-		break;
-
-	case ERROR_OVERFLOW: /* Value too large for defined data type */
-#if EPROTO && WITH_LIBUSB_0_1
-	case -EPROTO:		/* Protocol error */
-#endif
 		break;
 	default:
 		break;

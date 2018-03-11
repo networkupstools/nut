@@ -14,11 +14,11 @@
 #include <libusb.h>
 #endif
 #ifdef WITH_LIBUSB_0_1
-#include <usb.h>
+#include "libusb-compat-1.0.h"
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.26"
+#define SUBDRIVER_VERSION "0.27"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -42,52 +42,23 @@ upsdrv_info_t comm_upsdrv_info = {
 
 USBDevice_t curDevice;
 
-#ifdef WITH_LIBUSB_1_0
- /* Simply remap libusb functions/structures from 0.1 to 1.0 */
- /* Structures */
- #define usb_dev_handle libusb_device_handle
- /* defines */
- #define USB_DT_STRING LIBUSB_DT_STRING
- #define USB_ENDPOINT_OUT LIBUSB_ENDPOINT_OUT
- #define USB_REQ_SET_DESCRIPTOR LIBUSB_REQUEST_SET_DESCRIPTOR
- #define USB_CLASS_PER_INTERFACE LIBUSB_CLASS_PER_INTERFACE
- /* Functions */
- #define usb_control_msg libusb_control_transfer
- static inline  int usb_interrupt_read(usb_dev_handle *dev, int ep,
-        char *bytes, int size, int timeout)
- {
-	int ret = libusb_interrupt_transfer(dev, ep, (unsigned char *) bytes,
-			size, &size, timeout);
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	return (ret == LIBUSB_SUCCESS)?size:ret;
- }
-
- #define usb_claim_interface libusb_claim_interface
- #define usb_release_interface libusb_release_interface
- #define usb_reset libusb_reset_device
- #define usb_clear_halt libusb_clear_halt
- #define nut_usb_strerror(a) libusb_strerror(a)
-#else
- #define nut_usb_strerror(a) usb_strerror()
-#endif /* #ifdef WITH_LIBUSB_1_0 */
-
 /* USB functions */
-usb_dev_handle *nutusb_open(const char *port);
-int nutusb_close(usb_dev_handle *dev_h, const char *port);
+libusb_device_handle *nutusb_open(const char *port);
+void nutusb_close(libusb_device_handle *dev_h);
 /* unified failure reporting: call these often */
 void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
 void nutusb_comm_good(void);
 /* function pointer, set depending on which device is used */
-int (*usb_set_descriptor)(usb_dev_handle *udev, unsigned char type,
+int (*usb_set_descriptor)(libusb_device_handle *udev, unsigned char type,
 	unsigned char index, void *buf, int size);
 
 
 
 /* usb_set_descriptor() for Powerware devices */
-static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
+static int usb_set_powerware(libusb_device_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
-	return usb_control_msg(udev, USB_ENDPOINT_OUT, USB_REQ_SET_DESCRIPTOR, (type << 8) + index, 0, buf, size, 1000);
+	return libusb_control_transfer(udev, LIBUSB_ENDPOINT_OUT, LIBUSB_REQUEST_SET_DESCRIPTOR, (type << 8) | index, 0, buf, size, 1000);
 }
 
 static void *powerware_ups(USBDevice_t *device) {
@@ -96,9 +67,9 @@ static void *powerware_ups(USBDevice_t *device) {
 }
 
 /* usb_set_descriptor() for Phoenixtec devices */
-static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
+static int usb_set_phoenixtec(libusb_device_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
-	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
+	return libusb_control_transfer(udev, 0x42, 0x0d, (0x00 << 8) | 0x0, 0, buf, size, 1000);
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
@@ -129,7 +100,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 #define XCP_USB_TIMEOUT 5000
 
 /* global variables */
-usb_dev_handle *upsdev = NULL;
+libusb_device_handle *upsdev = NULL;
 extern int exit_flag;
 static unsigned int comm_failures = 0;
 
@@ -144,7 +115,7 @@ void send_read_command(unsigned char command)
 		buf[2] = command;                 /* command to send */
 		buf[3] = calc_checksum(buf);      /* checksum */
 		upsdebug_hex (3, "send_read_command", buf, 4);
-		usb_set_descriptor(upsdev, USB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
+		usb_set_descriptor(upsdev, LIBUSB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
 	}
 }
 
@@ -163,7 +134,7 @@ void send_write_command(unsigned char *command, int command_length)
 		sbuf[command_length] = calc_checksum(sbuf);
 		command_length += 1;
 		upsdebug_hex (3, "send_write_command", sbuf, command_length);
-		usb_set_descriptor(upsdev, USB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
+		usb_set_descriptor(upsdev, LIBUSB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
 	}
 }
 
@@ -173,8 +144,8 @@ void send_write_command(unsigned char *command, int command_length)
 int get_answer(unsigned char *data, unsigned char command)
 {
 	unsigned char buf[PW_CMD_BUFSIZE], *my_buf = buf;
-	int length, end_length, res, endblock, bytes_read, ellapsed_time, need_data;
-	int tail;
+	int length, end_length, ret, endblock, bytes_read, ellapsed_time, need_data;
+	int tail, transferred;
 	unsigned char block_number, sequence, seq_num;
 	struct timeval start_time, now;
 
@@ -185,7 +156,7 @@ int get_answer(unsigned char *data, unsigned char command)
 	end_length = 0;    /* total length of sequence(s), not counting header(s) */
 	endblock = 0;      /* signal the last sequence in the block */
 	bytes_read = 0;    /* total length of data read, including XCP header */
-	res = 0;
+	transferred = 0;
 	ellapsed_time = 0;
 	seq_num = 1;       /* current theoric sequence */
 
@@ -199,9 +170,8 @@ int get_answer(unsigned char *data, unsigned char command)
 
 		/* Get (more) data if needed */
 		if (need_data > 0) {
-			res = usb_interrupt_read(upsdev, 0x81, (char *) buf + bytes_read,
-				128,
-				(XCP_USB_TIMEOUT - ellapsed_time));
+
+			ret = libusb_interrupt_transfer(upsdev, LIBUSB_ENDPOINT_IN | 1, buf + bytes_read, 128, &transferred, XCP_USB_TIMEOUT - ellapsed_time);
 
 			/* Update time */
 			gettimeofday(&now, NULL);
@@ -209,23 +179,21 @@ int get_answer(unsigned char *data, unsigned char command)
 					(now.tv_usec - start_time.tv_usec)/1000;
 
 			/* Check libusb return value */
-			if (res < 0)
-			{
+			if (ret != LIBUSB_SUCCESS) {
 				/* Clear any possible endpoint stalls */
-				usb_clear_halt(upsdev, 0x81);
+				libusb_clear_halt(upsdev, LIBUSB_ENDPOINT_IN | 1);
 				/* continue; */ /* FIXME: seems a break would be better! */
 				break;
 			}
 
 			/* this seems to occur on XSlot USB card */
-			if (res == 0)
-			{
+			if (transferred == 0) {
 				/* FIXME: */
 				continue;
 			}
 			/* Else, we got some input bytes */
-			bytes_read += res;
-			need_data -= res;
+			bytes_read += transferred;
+			need_data -= transferred;
 			upsdebug_hex(1, "get_answer", buf, bytes_read);
 		}
 
@@ -365,7 +333,7 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	upslogx(LOG_ERR, "CLOSING\n");
-	nutusb_close(upsdev, "USB");
+	nutusb_close(upsdev);
 	free(curDevice.Vendor);
 	free(curDevice.Product);
 	free(curDevice.Serial);
@@ -378,7 +346,7 @@ void upsdrv_reconnect(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	nutusb_close(upsdev, "USB");
+	nutusb_close(upsdev);
 	upsdev = NULL;
 	upsdrv_initups();
 }
@@ -397,9 +365,8 @@ static void nutusb_open_error(const char *port)
 }
 
 /* FIXME: this part of the opening can go into common... */
-static usb_dev_handle *open_powerware_usb(void)
+static libusb_device_handle *open_powerware_usb(void)
 {
-#ifdef WITH_LIBUSB_1_0
 	libusb_device **devlist;
 	ssize_t devcount = 0;
 	libusb_device_handle *udev;
@@ -409,7 +376,7 @@ static usb_dev_handle *open_powerware_usb(void)
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0)
-		fatal_with_errno(EXIT_FAILURE, "No USB device found");
+		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
 
 	for (i = 0; i < devcount; i++) {
 
@@ -444,59 +411,22 @@ static usb_dev_handle *open_powerware_usb(void)
 		}
 	}
 	libusb_free_device_list(devlist, 1);
-#else
-	struct usb_bus *busses = usb_get_busses();  
-	struct usb_bus *bus;
-
-	for (bus = busses; bus; bus = bus->next)
-	{
-		struct usb_device *dev;
-    
-		for (dev = bus->devices; dev; dev = dev->next)
-		{
-			if (dev->descriptor.bDeviceClass != USB_CLASS_PER_INTERFACE) {
-				continue;
-			}
-
-			curDevice.VendorID = dev->descriptor.idVendor;
-			curDevice.ProductID = dev->descriptor.idProduct;
-			curDevice.Bus = xstrdup(bus->dirname);
-
-			/* FIXME: we should also retrieve
-			 * dev->descriptor.iManufacturer
-			 * dev->descriptor.iProduct
-			 * dev->descriptor.iSerialNumber
-			 * as in libusb.c->libusb_open()
-			 * This is part of the things to put in common... */
-
-			if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
-				return usb_open(dev);
-			}
-		}
-	}
-#endif
 	return 0;
 }
 
-usb_dev_handle *nutusb_open(const char *port)
+libusb_device_handle *nutusb_open(const char *port)
 {
 	int            dev_claimed = 0;
-	usb_dev_handle *dev_h = NULL;
+	libusb_device_handle *dev_h = NULL;
 	int            retry, errout = 0, ret;
 
 	upsdebugx(1, "entering nutusb_open()");
 
 	/* Initialize Libusb */
-#ifdef WITH_LIBUSB_1_0
-	if (libusb_init(NULL) < 0) {
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
 		libusb_exit(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
 	}
-#else
-	usb_init();
-	usb_find_busses();
-	usb_find_devices();
-#endif /* WITH_LIBUSB_1_0 */
 
 	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
@@ -509,9 +439,8 @@ usb_dev_handle *nutusb_open(const char *port)
 			upsdebugx(1, "device %s opened successfully", curDevice.Bus);
 			errout = 0;
 
-			if ((ret = usb_claim_interface(dev_h, 0)) < 0)
-			{
-				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", nut_usb_strerror(ret));
+			if ((ret = libusb_claim_interface(dev_h, 0)) != LIBUSB_SUCCESS) {
+				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", libusb_strerror(ret));
 				errout = 1;
 			}
 			else {
@@ -520,12 +449,11 @@ usb_dev_handle *nutusb_open(const char *port)
 			}
 /* FIXME: the above part of the opening can go into common... up to here at least */
 
-			if ((ret = usb_clear_halt(dev_h, 0x81)) < 0)
-			{
-				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", nut_usb_strerror(ret));
+			if ((ret = libusb_clear_halt(dev_h, LIBUSB_ENDPOINT_IN | 1)) != LIBUSB_SUCCESS) {
+				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", libusb_strerror(ret));
 				if (dev_claimed)
-				    usb_release_interface(dev_h, 0);
-				usb_reset(dev_h);
+					libusb_release_interface(dev_h, 0);
+				libusb_reset_device(dev_h);
 				sleep(5);	/* Wait reconnect */
 				errout = 1;
 			}
@@ -548,9 +476,9 @@ usb_dev_handle *nutusb_open(const char *port)
 		return dev_h;
 
 	if (dev_h && dev_claimed)
-		usb_release_interface(dev_h, 0);
+		libusb_release_interface(dev_h, 0);
 
-	nutusb_close(dev_h, port);
+	nutusb_close(dev_h);
 
 	if (errout == 1)
 		nutusb_open_error(port);
@@ -559,21 +487,14 @@ usb_dev_handle *nutusb_open(const char *port)
 }
 
 /* FIXME: this part can go into common... */
-int nutusb_close(usb_dev_handle *dev_h, const char *port)
+void nutusb_close(libusb_device_handle *dev_h)
 {
-	int ret = 0;
+	if (!dev_h)
+		return;
 
-	if (dev_h)
-	{
-		usb_release_interface(dev_h, 0);
-#ifdef WITH_LIBUSB_1_0
-		libusb_close(dev_h);
-		libusb_exit(NULL);
-#else
-		ret = usb_close(dev_h);
-#endif
-	}
-	return ret;
+	libusb_release_interface(dev_h, 0);
+	libusb_close(dev_h);
+	libusb_exit(NULL);
 }
 
 void nutusb_comm_fail(const char *fmt, ...)
