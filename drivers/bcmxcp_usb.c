@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.23"
+#define SUBDRIVER_VERSION "0.24"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -366,6 +366,10 @@ void upsdrv_cleanup(void)
 {
 	upslogx(LOG_ERR, "CLOSING\n");
 	nutusb_close(upsdev, "USB");
+	free(curDevice.Vendor);
+	free(curDevice.Product);
+	free(curDevice.Serial);
+	free(curDevice.Bus);
 }
 
 void upsdrv_reconnect(void)
