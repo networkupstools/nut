@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.24"
+#define SUBDRIVER_VERSION "0.25"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -435,9 +435,11 @@ static usb_dev_handle *open_powerware_usb(void)
 
 		if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
 			libusb_open(device, &udev);
+			libusb_free_device_list(devlist, 1);
 			return udev;
 		}
 	}
+	libusb_free_device_list(devlist, 1);
 #else
 	struct usb_bus *busses = usb_get_busses();  
 	struct usb_bus *bus;

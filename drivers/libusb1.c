@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.4"
+#define USB_DRIVER_VERSION	"0.5"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -174,7 +174,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	devcount = libusb_get_device_list(NULL, &devlist);
 
 	for (i = 0; i < devcount; i++) {
-
+		/* int	if_claimed = 0; */
 		libusb_device *device = devlist[i];
 		libusb_get_device_descriptor(device, &dev_desc);
 		upsdebugx(2, "Checking device (%04X/%04X)",
@@ -254,8 +254,8 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 				upsdebugx(2, "Device does not match - skipping");
 				goto next_device;
 			} else if (ret==-1) {
+				libusb_free_device_list(devlist, 1);
 				fatal_with_errno(EXIT_FAILURE, "matcher");
-				goto next_device;
 			} else if (ret==-2) {
 				upsdebugx(2, "matcher: unspecified error");
 				goto next_device;
@@ -318,22 +318,29 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 			if (retries-- > 0) {
 				continue;
 			}
+			libusb_free_config_descriptor(conf_desc);
+			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s",
 				curDevice->VendorID, curDevice->ProductID,
 				libusb_strerror((enum libusb_error)ret));
 		}
 #else
 		if ((ret = libusb_claim_interface(udev, usb_if_num)) != LIBUSB_SUCCESS ) {
+			libusb_free_config_descriptor(conf_desc);
+			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s",
 				curDevice->VendorID, curDevice->ProductID,
 				libusb_strerror((enum libusb_error)ret));
 		}
 #endif
+		/* if_claimed = 1; */
 		upsdebugx(2, "Claimed interface 0 successfully");
 
 		nut_usb_set_altinterface(udev);
 
 		if (!callback) {
+			libusb_free_config_descriptor(conf_desc);
+			libusb_free_device_list(devlist, 1);
 			return 1;
 		}
 
@@ -447,14 +454,20 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
 		upsdebugx(2, "Found HID device");
 		fflush(stdout);
+		libusb_free_device_list(devlist, 1);
 
 		return rdlen;
 
 		next_device:
+			/* usb_release_interface() sometimes blocks and goes
+			into uninterruptible sleep.  So don't do it. */
+			/* if (if_claimed)
+				libusb_release_interface(udev, usb_if_num); */
 			libusb_close(udev);
 	}
 
 	*udevp = NULL;
+	libusb_free_device_list(devlist, 1);
 	upsdebugx(2, "No appropriate HID device found");
 	fflush(stdout);
 

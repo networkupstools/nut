@@ -51,6 +51,7 @@ static int (*nut_usb_get_string_simple)(libusb_device_handle *dev, int index,
  static void (*nut_usb_exit)(libusb_context *ctx);
  static char * (*nut_usb_strerror)(enum libusb_error errcode);
  static ssize_t (*nut_usb_get_device_list)(libusb_context *ctx,	libusb_device ***list);
+ static void (*nut_usb_free_device_list)(libusb_device **list, int unref_devices);
  static uint8_t (*nut_usb_get_bus_number)(libusb_device *dev);
  static int (*nut_usb_get_device_descriptor)(libusb_device *dev,
 	struct libusb_device_descriptor *desc);
@@ -124,6 +125,11 @@ int nutscan_load_usb_library(const char *libname_path)
 	}
 
 	*(void **) (&nut_usb_get_device_list) = lt_dlsym(dl_handle, "libusb_get_device_list");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+	*(void **) (&nut_usb_free_device_list) = lt_dlsym(dl_handle, "libusb_free_device_list");
 	if ((dl_error = lt_dlerror()) != NULL)  {
 			goto err;
 	}
@@ -241,8 +247,10 @@ nutscan_device_t * nutscan_scan_usb()
 	int i;
 
 	devcount = (*nut_usb_get_device_list)(NULL, &devlist);
-	if (devcount <= 0)
+	if (devcount <= 0) {
+		(*nut_usb_exit)(NULL);
 		fatal_with_errno(EXIT_FAILURE, "No USB device found");
+	}
 
 	for (i = 0; i < devcount; i++) {
 
@@ -327,6 +335,11 @@ nutscan_device_t * nutscan_scan_usb()
 					free(serialnumber);
 					free(device_name);
 					free(vendor_name);
+					(*nut_usb_close)(udev);
+#ifdef WITH_LIBUSB_1_0
+					(*nut_usb_free_device_list)(devlist, 1);
+					(*nut_usb_exit)(NULL);
+#endif	/* WITH_LIBUSB_1_0 */
 					return NULL;
 				}
 
@@ -374,6 +387,7 @@ nutscan_device_t * nutscan_scan_usb()
 	}
 
 #ifdef WITH_LIBUSB_1_0
+	(*nut_usb_free_device_list)(devlist, 1);
 	(*nut_usb_exit)(NULL);
 #endif
 
