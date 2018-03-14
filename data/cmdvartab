@@ -177,6 +177,7 @@ VARDESC outlet.2.delay.start "Interval to wait before restarting this outlet (se
 VARDESC driver.name "Driver name"
 VARDESC driver.version "Driver version - NUT release"
 VARDESC driver.version.internal "Internal driver version"
+VARDESC driver.version.usb "USB library version"
 
 VARDESC device.part "Device Part Number"
 
