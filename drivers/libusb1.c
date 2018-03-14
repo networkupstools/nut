@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.7"
+#define USB_DRIVER_VERSION	"0.8"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -57,6 +57,8 @@ static void nut_libusb_close(libusb_device_handle *udev);
  */
 void nut_usb_addvars(void)
 {
+	const struct libusb_version	*v = libusb_get_version();
+
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
 	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
@@ -69,9 +71,9 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
 
 #ifdef LIBUSB_API_VERSION
-	dstate_setinfo("driver.version.usb", "libusb-1.0 (API: 0x%x)", LIBUSB_API_VERSION);
+	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
 #else  /* LIBUSB_API_VERSION */
-	dstate_setinfo("driver.version.usb", "libusb-1.0");
+	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
 #endif /* LIBUSB_API_VERSION */
 }
 
