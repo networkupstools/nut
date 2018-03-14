@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.5"
+#define USB_DRIVER_VERSION	"0.6"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -109,15 +109,15 @@ static int nut_usb_set_altinterface(libusb_device_handle *udev)
 			}
 		}
 		/* set default interface */
-		upsdebugx(2, "%s: calling libusb_set_interface_alt_setting(udev, 0, %d)", __func__, altinterface);
+		upsdebugx(2, "%s: calling libusb_set_interface_alt_setting(udev, %d, %d)", __func__, usb_if_num, altinterface);
 		ret = libusb_set_interface_alt_setting(udev, usb_if_num, altinterface);
 		if(ret != 0) {
-			upslogx(LOG_WARNING, "%s: libusb_set_interface_alt_setting(udev, 0, %d) returned %d (%s)",
-					__func__, altinterface, ret, libusb_strerror((enum libusb_error)ret) );
+			upslogx(LOG_WARNING, "%s: libusb_set_interface_alt_setting(udev, %d, %d) returned %d (%s)",
+					__func__, usb_if_num, altinterface, ret, libusb_strerror((enum libusb_error)ret) );
 		}
 		upslogx(LOG_NOTICE, "%s: libusb_set_interface_alt_setting() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
 	} else {
-		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, 0, 0)", __func__);
+		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, %d, 0)", __func__, usb_if_num);
 	}
 	return ret;
 }
@@ -334,7 +334,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		}
 #endif
 		/* if_claimed = 1; */
-		upsdebugx(2, "Claimed interface 0 successfully");
+		upsdebugx(2, "Claimed interface %d successfully", usb_if_num);
 
 		nut_usb_set_altinterface(udev);
 
