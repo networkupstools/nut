@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.07"
+#define DRIVER_VERSION	"0.08"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -409,7 +409,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
 		/* First, try the auto-detach kernel driver method
 		 * This function is not available on FreeBSD 10.1-10.3 */
-		if ((ret = libusb_set_auto_detach_kernel_driver (udev, 1)) < 0)
+		if ((ret = libusb_set_auto_detach_kernel_driver(handle, 1)) < 0)
 			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s",
 				libusb_strerror((enum libusb_error)ret));
 		else
@@ -436,7 +436,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					upsdebugx(4, "detached kernel driver from USB device...");
 				}
 #elif HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-				if ((ret = libusb_detach_kernel_driver(udev, 0)) < 0) {
+				if ((ret = libusb_detach_kernel_driver(handle, 0)) < 0) {
 					upsdebugx(4, "failed to detach kernel driver from USB device: %s", nut_usb_strerror(ret));
 				} else {
 					upsdebugx(4, "detached kernel driver from USB device...");
