@@ -34,7 +34,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.33"
+#define USB_DRIVER_VERSION	"0.34"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -177,6 +177,8 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 	for (bus = usb_busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
+			/* int	if_claimed = 0; */
+
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
 
@@ -251,7 +253,6 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 					goto next_device;
 				} else if (ret==-1) {
 					fatal_with_errno(EXIT_FAILURE, "matcher");
-					goto next_device;
 				} else if (ret==-2) {
 					upsdebugx(2, "matcher: unspecified error");
 					goto next_device;
@@ -287,6 +288,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				fatalx(EXIT_FAILURE, "Can't claim USB device [%04x:%04x]: %s", curDevice->VendorID, curDevice->ProductID, usb_strerror());
 			}
 #endif
+			/* if_claimed = 1; */
 
 			nut_usb_set_altinterface(udev);
 
@@ -407,6 +409,10 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 			return rdlen;
 
 		next_device:
+			/* usb_release_interface() sometimes blocks and goes
+			into uninterruptible sleep.  So don't do it. */
+			/* if (if_claimed)
+				usb_release_interface(udev, 0); */
 			usb_close(udev);
 		}
 	}

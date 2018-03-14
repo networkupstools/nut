@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.06"
+#define DRIVER_VERSION	"0.07"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -397,8 +397,10 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					upsdebugx(4, "Device does not match - skipping");
 					goto next_device;
 				case -1:
+#ifdef WITH_LIBUSB_1_0
+					libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 					fatal_with_errno(EXIT_FAILURE, "matcher");
-					goto next_device;
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
 					goto next_device;
@@ -419,6 +421,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 				ret = callback(handle, device);
 				if (ret >= 0) {
 					upsdebugx(4, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
+#ifdef WITH_LIBUSB_1_0
+					libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 					return ret;
 				}
 #ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
@@ -439,6 +444,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #endif
 			}
 
+#ifdef WITH_LIBUSB_1_0
+			libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 			fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
 				device->VendorID, device->ProductID, nut_usb_strerror(ret));
 
@@ -450,6 +458,9 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 	}
 
 	*handlep = NULL;
+#ifdef WITH_LIBUSB_1_0
+	libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
 	upsdebugx(4, "No matching USB device found");
 
 	return -1;
