@@ -264,7 +264,12 @@ nutscan_device_t * nutscan_scan_usb()
 		iProduct = dev_desc.iProduct;
 		iSerialNumber = dev_desc.iSerialNumber;
 		bus = (*nut_usb_get_bus_number)(dev);
-		busname = (char *)xmalloc(4);
+		busname = (char *)malloc(4);
+		if (busname == NULL) {
+			(*nut_usb_free_device_list)(devlist, 1);
+			(*nut_usb_exit)(NULL);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
 		snprintf(busname, 4, "%03d", bus);
 #else
 	for (bus = (*nut_usb_busses); bus; bus = bus->next) {
@@ -307,6 +312,15 @@ nutscan_device_t * nutscan_scan_usb()
 						iSerialNumber, (char *)string, sizeof(string));
 					if (ret > 0) {
 						serialnumber = strdup(str_rtrim(string, ' '));
+						if (serialnumber == NULL) {
+							(*nut_usb_close)(udev);
+#ifdef WITH_LIBUSB_1_0
+							free(busname);
+							(*nut_usb_free_device_list)(devlist, 1);
+							(*nut_usb_exit)(NULL);
+#endif	/* WITH_LIBUSB_1_0 */
+							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+						}
 					}
 				}
 				/* get product name */
@@ -315,6 +329,16 @@ nutscan_device_t * nutscan_scan_usb()
 						iProduct, (char *)string, sizeof(string));
 					if (ret > 0) {
 						device_name = strdup(str_rtrim(string, ' '));
+						if (device_name == NULL) {
+							free(serialnumber);
+							(*nut_usb_close)(udev);
+#ifdef WITH_LIBUSB_1_0
+							free(busname);
+							(*nut_usb_free_device_list)(devlist, 1);
+							(*nut_usb_exit)(NULL);
+#endif	/* WITH_LIBUSB_1_0 */
+							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+						}
 					}
 				}
 
@@ -324,6 +348,17 @@ nutscan_device_t * nutscan_scan_usb()
 						iManufacturer, (char *)string, sizeof(string));
 					if (ret > 0) {
 						vendor_name = strdup(str_rtrim(string, ' '));
+						if (vendor_name == NULL) {
+							free(serialnumber);
+							free(device_name);
+							(*nut_usb_close)(udev);
+#ifdef WITH_LIBUSB_1_0
+							free(busname);
+							(*nut_usb_free_device_list)(devlist, 1);
+							(*nut_usb_exit)(NULL);
+#endif	/* WITH_LIBUSB_1_0 */
+							fatal_with_errno(EXIT_FAILURE, "Out of memory");
+						}
 					}
 				}
 
