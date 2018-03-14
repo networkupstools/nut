@@ -372,6 +372,7 @@ nutscan_device_t * nutscan_scan_usb()
 					free(vendor_name);
 					(*nut_usb_close)(udev);
 #ifdef WITH_LIBUSB_1_0
+					free(busname);
 					(*nut_usb_free_device_list)(devlist, 1);
 					(*nut_usb_exit)(NULL);
 #endif	/* WITH_LIBUSB_1_0 */
@@ -421,13 +422,14 @@ nutscan_device_t * nutscan_scan_usb()
 			}
 #ifdef WITH_LIBUSB_0_1
 		}
-#endif
+	}
+#else	/* WITH_LIBUSB_0_1 */
+		free(busname);
 	}
 
-#ifdef WITH_LIBUSB_1_0
 	(*nut_usb_free_device_list)(devlist, 1);
 	(*nut_usb_exit)(NULL);
-#endif
+#endif	/* WITH_LIBUSB_0_1 */
 
 	return nutscan_rewind_device(current_nut_dev);
 }
