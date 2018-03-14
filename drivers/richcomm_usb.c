@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -341,7 +341,11 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev_desc.idVendor;
 			device->ProductID = dev_desc.idProduct;
 			bus = libusb_get_bus_number(dev);
-			device->Bus = (char *)xmalloc(4);
+			device->Bus = (char *)malloc(4);
+			if (device->Bus == NULL) {
+				libusb_free_device_list(devlist, 1);
+				fatal_with_errno(EXIT_FAILURE, "Out of memory");
+			}
 			sprintf(device->Bus, "%03d", bus);
 			iManufacturer = dev_desc.iManufacturer;
 			iProduct = dev_desc.iProduct;
@@ -349,7 +353,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 #else
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
-			device->Bus = strdup(bus->dirname);
+			device->Bus = xstrdup(bus->dirname);
 			iManufacturer = dev->descriptor.iManufacturer;
 			iProduct = dev->descriptor.iProduct;
 			iSerialNumber = dev->descriptor.iSerialNumber;
@@ -361,6 +365,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					(usb_ctrl_char)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Vendor = strdup(buf);
+					if (device->Vendor == NULL) {
+#ifdef WITH_LIBUSB_1_0
+						libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
 				}
 			}
 
@@ -370,6 +380,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					(usb_ctrl_char)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Product = strdup(buf);
+					if (device->Product == NULL) {
+#ifdef WITH_LIBUSB_1_0
+						libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
 				}
 			}
 
@@ -379,6 +395,12 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					(usb_ctrl_char)buf, sizeof(buf));
 				if (ret > 0) {
 					device->Serial = strdup(buf);
+					if (device->Serial == NULL) {
+#ifdef WITH_LIBUSB_1_0
+						libusb_free_device_list(devlist, 1);
+#endif	/* WITH_LIBUSB_1_0 */
+						fatal_with_errno(EXIT_FAILURE, "Out of memory");
+					}
 				}
 			}
 

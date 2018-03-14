@@ -34,7 +34,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 0.1)"
-#define USB_DRIVER_VERSION	"0.34"
+#define USB_DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -206,14 +206,14 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 
 			curDevice->VendorID = dev->descriptor.idVendor;
 			curDevice->ProductID = dev->descriptor.idProduct;
-			curDevice->Bus = strdup(bus->dirname);
+			curDevice->Bus = xstrdup(bus->dirname);
 			curDevice->bcdDevice = dev->descriptor.bcdDevice;
 
 			if (dev->descriptor.iManufacturer) {
 				ret = usb_get_string_simple(udev, dev->descriptor.iManufacturer,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Vendor = strdup(string);
+					curDevice->Vendor = xstrdup(string);
 				}
 			}
 
@@ -221,7 +221,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				ret = usb_get_string_simple(udev, dev->descriptor.iProduct,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Product = strdup(string);
+					curDevice->Product = xstrdup(string);
 				}
 			}
 
@@ -229,7 +229,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 				ret = usb_get_string_simple(udev, dev->descriptor.iSerialNumber,
 					string, sizeof(string));
 				if (ret > 0) {
-					curDevice->Serial = strdup(string);
+					curDevice->Serial = xstrdup(string);
 				}
 			}
 

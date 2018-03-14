@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.6"
+#define USB_DRIVER_VERSION	"0.7"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -204,7 +204,11 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		memset(curDevice, '\0', sizeof(*curDevice));
 
 		bus = libusb_get_bus_number(device);
-		curDevice->Bus = (char *)xmalloc(4);
+		curDevice->Bus = (char *)malloc(4);
+		if (curDevice->Bus == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
 		sprintf(curDevice->Bus, "%03d", bus);
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
@@ -215,6 +219,10 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 				(unsigned char*)string, sizeof(string));
 			if (ret > 0) {
 				curDevice->Vendor = strdup(string);
+				if (curDevice->Vendor == NULL) {
+					libusb_free_device_list(devlist, 1);
+					fatal_with_errno(EXIT_FAILURE, "Out of memory");
+				}
 			}
 		}
 
@@ -223,6 +231,10 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 				(unsigned char*)string, sizeof(string));
 			if (ret > 0) {
 				curDevice->Product = strdup(string);
+				if (curDevice->Product == NULL) {
+					libusb_free_device_list(devlist, 1);
+					fatal_with_errno(EXIT_FAILURE, "Out of memory");
+				}
 			}
 		}
 
@@ -231,6 +243,10 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 				(unsigned char*)string, sizeof(string));
 			if (ret > 0) {
 				curDevice->Serial = strdup(string);
+				if (curDevice->Serial == NULL) {
+					libusb_free_device_list(devlist, 1);
+					fatal_with_errno(EXIT_FAILURE, "Out of memory");
+				}
 			}
 		}
 

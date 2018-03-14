@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.25"
+#define SUBDRIVER_VERSION "0.26"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -423,7 +423,11 @@ static usb_dev_handle *open_powerware_usb(void)
 		curDevice.VendorID = dev_desc.idVendor;
 		curDevice.ProductID = dev_desc.idProduct;
 		bus = libusb_get_bus_number(device);
-		curDevice.Bus = (char *)xmalloc(4);
+		curDevice.Bus = (char *)malloc(4);
+		if (curDevice.Bus == NULL) {
+			libusb_free_device_list(devlist, 1);
+			fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		}
 		sprintf(curDevice.Bus, "%03d", bus);
 
 		/* FIXME: we should also retrieve
@@ -456,7 +460,7 @@ static usb_dev_handle *open_powerware_usb(void)
 
 			curDevice.VendorID = dev->descriptor.idVendor;
 			curDevice.ProductID = dev->descriptor.idProduct;
-			curDevice.Bus = strdup(bus->dirname);
+			curDevice.Bus = xstrdup(bus->dirname);
 
 			/* FIXME: we should also retrieve
 			 * dev->descriptor.iManufacturer
