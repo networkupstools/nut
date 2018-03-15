@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.8"
+#define USB_DRIVER_VERSION	"0.9"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -141,7 +141,8 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
-	ssize_t devcount = 0;
+	ssize_t	devcount = 0,
+		devnum;
 	struct libusb_device_descriptor dev_desc;
 	struct libusb_config_descriptor *conf_desc = NULL;
 	const struct libusb_interface_descriptor *if_desc;
@@ -151,7 +152,6 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	unsigned char buf[20];
 	const unsigned char *p;
 	char string[256];
-	int i;
 	/* All devices use HID descriptor at index 0. However, some newer
 	 * Eaton units have a light HID descriptor at index 0, and the full
 	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
@@ -175,12 +175,14 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 
-	for (i = 0; i < devcount; i++) {
-		/* int	if_claimed = 0; */
-		libusb_device *device = devlist[i];
+	for (devnum = 0; devnum < devcount; devnum++) {
+		/* int		if_claimed = 0; */
+		int		i;
+		libusb_device	*device = devlist[devnum];
+
 		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device (%04X/%04X)",
-					dev_desc.idVendor, dev_desc.idProduct);
+		upsdebugx(2, "Checking device %lu of %lu (%04X/%04X)",
+				devnum + 1, devcount, dev_desc.idVendor, dev_desc.idProduct);
 
 		/* supported vendors are now checked by the supplied matcher */
 
