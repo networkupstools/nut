@@ -246,6 +246,8 @@ int main(int argc, char *argv[])
 	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
 	xml_sec.peername = NULL;
 
+	nutscan_init();
+
 	display_func = nutscan_display_ups_conf;
 
 	/* Note: the getopts print an error message about unknown arguments
@@ -465,12 +467,6 @@ display_help:
 		allow_ipmi = 1;
 		/* BEWARE: allow_all does not include allow_eaton_serial! */
 	}
-
-	/* TODO: nutscan_init() should consider (via args? shared global vars?)
-	 * which scan types we desire at this run, and not try to load irrelevant
-	 * libraries.
-	 */
-	nutscan_init();
 
 /* TODO/discuss : Should the #else...#endif code below for lack of pthreads
  * during build also serve as a fallback for pthread failure at runtime?
