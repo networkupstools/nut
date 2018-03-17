@@ -491,7 +491,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
-	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size:sizeof(buf), 250);
+	buflen = comm_driver->get_interrupt(udev, buf, interrupt_size ? interrupt_size:sizeof(buf), 750);
 	if (buflen <= 0) {
 		return buflen;	/* propagate "error" or "no event" code */
 	}
