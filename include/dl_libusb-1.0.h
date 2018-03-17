@@ -131,10 +131,15 @@ static inline int	dl_libusb10_init(
 
 	libname = get_libname("libusb-1.0.so");
 	if (!libname) {
-		snprintf(error, errorlen, "USB library not found.");
-		dl_libusb10_handle = (void *)1;
-		return 0;
+		/* Sometimes (e.g. in FreeBSD) only this one is available. */
+		libname = get_libname("libusb.so");
+		if (!libname) {
+			snprintf(error, errorlen, "USB library not found.");
+			dl_libusb10_handle = (void *)1;
+			return 0;
+		}
 	}
+
 
 	if (lt_dlinit() != 0) {
 		snprintf(error, errorlen, "Error initializing libltdl: %s.", lt_dlerror());
