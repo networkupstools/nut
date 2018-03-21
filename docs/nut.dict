@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2412 utf-8
+personal_ws-1.1 en 2422 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -397,6 +397,7 @@ IMG
 INADDR
 INFOSIZE
 INIGO
+INNO
 INSTCMDDESC
 INTERNETOFFICE
 INTL
@@ -1509,6 +1510,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmwares
 flts
 fmt
 footnoteref
@@ -2261,6 +2263,7 @@ uc
 udev
 udevadm
 ufw
+ugen
 ukUNV
 ul
 un
@@ -2323,10 +2326,12 @@ upsuser
 uptime
 urpmi
 usb
+usbconfig
 usbfs
 usbhid
 usbmisc
 usbups
+usbus
 usd
 usec
 userid
@@ -2338,6 +2343,7 @@ usleep
 usr
 utalk
 uu
+uucp
 va
 valgrind
 validationSequence
