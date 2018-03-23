@@ -33,7 +33,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
- safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
+ safenet siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
@@ -135,6 +135,7 @@ powerpanel_LDADD = $(LDADD) -lm
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
+siemens_sitop_SOURCES = siemens-sitop.c
 solis_SOURCES = solis.c
 solis_LDADD = $(LDADD) -lm
 tripplite_SOURCES = tripplite.c
@@ -227,7 +228,7 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 # IPMI PSU
 nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
-  nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
+  nut_ipmipsu_SOURCES += nut-libfreeipmi.c
 endif
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 
