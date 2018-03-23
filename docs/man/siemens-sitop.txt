@@ -59,7 +59,7 @@ but can still be used with the normal ftdi_sio driver.
 
 Note: the following hints may be specific to GNU/Linux.
 Use *lsusb* to figure out which product ID is used in your model, and
-replace all occurences of e0e3 in the following examples with the actual
+replace all occurrences of e0e3 in the following examples with the actual
 Product ID.
 
 # modprobe ftdi_sio
