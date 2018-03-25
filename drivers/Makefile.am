@@ -292,7 +292,8 @@ dist_noinst_HEADERS = apc-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h \
- eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h
+ eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h \
+ hiddefs.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,
