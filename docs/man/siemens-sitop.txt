@@ -20,7 +20,8 @@ so as far as this driver is concerned, all models are serial models.
 This driver should work with all models in the SITOP UPS500 series,
 as long as your kernel has support for the serial port device
 (see section *USB driver* below).
-Note: this driver has only been tested with the SITOP UPS500S-2.5
+
+NOTE: This driver has only been tested with the SITOP UPS500S-2.5
 with USB port (Siemens product number 6EP1933-2EC41).
 
 DEVICE SETTINGS
@@ -32,8 +33,8 @@ to the following:
 *switch 1-4*::
 Choose whatever suits your situation. Any combination will work with NUT.
 
-*switch 5* ('=>' / 't')::
-Set to OFF ('t'). This ensures that the UPS will not cut power unless NUT
+*switch 5* (=> / t)::
+Set to OFF (t). This ensures that the UPS will not cut power unless NUT
 tells it to do so (or unless the batteries are exhausted).
 
 *switch 6-10* (delay)::
@@ -54,26 +55,33 @@ supply power from its batteries.
 USB driver
 ----------
 The USB-versions of the UPS contain an FTDI USB-to-serial converter chip.
-They are programmed with a non-standard product ID (for example 0403:e0e3),
+It is programmed with a non-standard product ID (for example _0403:e0e3_),
 but can still be used with the normal ftdi_sio driver.
 
-Note: the following hints may be specific to GNU/Linux.
+NOTE: The following hints may be specific to GNU/Linux.
+
 Use *lsusb* to figure out which product ID is used in your model, and
-replace all occurrences of e0e3 in the following examples with the actual
+replace all occurrences of _e0e3_ in the following examples with the actual
 Product ID.
 
-# modprobe ftdi_sio
-# echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id
+....
+modprobe ftdi_sio
+echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id
+....
 
 If your system uses *udev*, this can be automated via a udev rule:
+
+----
 ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3", \
   RUN+="/sbin/modprobe ftdi_sio", \
   RUN+="/bin/sh -c 'echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+----
 
 You can use the following udev rule to obtain a predictable device name,
-for example /dev/ttyUPS:
+for example _/dev/ttyUPS_:
+----
 SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="ttyUPS"
-
+----
 
 EXTRA ARGUMENTS
 ---------------
@@ -81,9 +89,9 @@ This driver supports the following optional settings:
 
 *max_polls_without_data*='num'::
 According to the specifications, the UPS should emit a new status update
-every 75 msec. The serial port is polled every second for new data. If there
-is no valid new data after 'num' polls, it is assumed that communication with
-the UPS is lost.
+every 75 msec. The serial port is polled periodically for new data (recommended
+setting: every second). If there is no valid new data after 'num' polls, it is
+assumed that communication with the UPS is lost.
 The default value is 2. Lower values may cause spurious 'Data stale' messages,
 especially at startup.
 
@@ -92,19 +100,21 @@ INSTANT COMMANDS
 
 *shutdown.return*::
 The behavior of this command depends on the line state:
-*on line*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
+
+* *on line*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
 the UPS will shut off its output. After another 5 seconds, the output is
 activated again.
-*on battery*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
+* *on battery*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
 the UPS will shut off its output. The output will stay off, until the
 line voltage has returned.
 
 *shutdown.stayoff*::
 The behavior of this command depends on the line state:
-*on line*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
+
+* *on line*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
 the UPS will shut off its output. The output stays off, until the line voltage
 has been removed for at least 1 second, and has been re-applied.
-*on battery*: this command behaves the same as *shutdown.return*.
+* *on battery*: this command behaves the same as *shutdown.return*.
 
 INSTALLATION
 ------------
@@ -120,15 +130,21 @@ DIAGNOSTICS
 -----------
 You can verify the correct functioning of the hardware, by monitoring the
 serial port with a terminal program, for example picocom:
-$ picocom -b 9600 -d 8 -p n /dev/ttyUPS
+
+....
+picocom -b 9600 -d 8 -p n /dev/ttyUPS
+....
+
 NUT must not be running when you do this.
 You should now see a continuous stream of 5-character texts coming in,
 for example:
+
+....
 BUFRD
 BA>85
 DC_OK
-etc
-(note: exit picocom with Ctrl-A Ctrl-X)
+....
+To exit picocom, use Ctrl-A Ctrl-X.
 
 KNOWN ISSUES AND BUGS
 ---------------------
@@ -162,3 +178,4 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
