@@ -59,8 +59,6 @@
 #define DRIVER_VERSION	"0.01"
 
 #define RX_BUFFER_SIZE 100
-/* The number of delimiter characters between two strings from the UPS: */
-#define NR_DELIMITER_CHARS 2
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -113,6 +111,8 @@ static int check_for_new_data() {
 		if (num_received < 0) {
 			/* comm error */
 			ser_comm_fail("error %d while reading", num_received);
+			/* discard any remaining old data from the receive buffer: */
+			rx_count = 0;
 			/* try to re-open the serial port: */
 			if (upsfd) {
 				ser_close(upsfd, device_path);
@@ -128,43 +128,30 @@ static int check_for_new_data() {
 			rx_count += num_received;
 			
 			/* parse received input data: */
-			while (rx_count >= (5 + NR_DELIMITER_CHARS)) { /* all input data are strings of 5 characters plus 1 or more delimiter characters */
+			while (rx_count >= 5) { /* all valid input messages are strings of 5 characters */
 				if (strncmp(rx_buffer, "BUFRD", 5) == 0) {
 					current_ups_status.battery_alarm = 0;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "ALARM", 5) == 0) {
 					current_ups_status.battery_alarm = 1;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "DC_OK", 5) == 0) {
 					current_ups_status.dc_input_low = 0;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "DC_LO", 5) == 0) {
 					current_ups_status.dc_input_low = 1;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "*****", 5) == 0) {
 					current_ups_status.on_battery = 0;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "*BAT*", 5) == 0) {
 					current_ups_status.on_battery = 1;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "BA>85", 5) == 0) {
 					current_ups_status.battery_above_85_percent = 1;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else if (strncmp(rx_buffer, "BA<85", 5) == 0) {
 					current_ups_status.battery_above_85_percent = 0;
-					rm_buffer_head(5 + NR_DELIMITER_CHARS);
-					new_data_received = 1;
 				} else {
 					/* nothing sensible found at the start of the rx_buffer. */
 					rm_buffer_head(1);
+					continue; /* skip the code below */
 				}
+				rm_buffer_head(5);
+				new_data_received = 1;
 			}
 		}
 	}
@@ -173,7 +160,13 @@ static int check_for_new_data() {
 
 
 static int instcmd(const char *cmdname, const char *extra) {
-	/* See the remarks in upsdrv_shutdown() */
+	/* Note: the UPS does not really like to receive data.
+	 * For example, sending an "R" without \n hangs the serial port.
+	 * In that situation, the UPS will no longer send any status updates.
+	 * For this reason, an additional \n is appended here.
+	 * The commands are sent twice, because the first command is sometimes
+	 * lost as well.
+	 */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		upslogx(LOG_NOTICE, "instcmd: sending command R");
 		ser_send_pace(upsfd, 200000, "\n\nR\n\n");
@@ -196,18 +189,17 @@ void upsdrv_initinfo(void) {
 	int max_attempts = 5;
 	int found = 0;
 	while (!found && max_attempts > 0) {
-		if (check_for_new_data())
+		if (check_for_new_data()) {
 			found = 1;
-		else
+		} else {
 			sleep(1); /* Sleep a while, then try again */
+		}
 		max_attempts--;
 	}
-	if (!found)
+	if (!found) {
 		fatalx(EXIT_FAILURE, "No data received from the UPS");
+	}
 	
-	dstate_setinfo("ups.mfr", "Siemens");
-	dstate_setinfo("ups.model", "SITOP UPS500 series");
-	/* note: for a transition period, these data are redundant! */
 	dstate_setinfo("device.mfr", "Siemens");
 	dstate_setinfo("device.model", "SITOP UPS500 series");
 	
@@ -220,9 +212,9 @@ void upsdrv_initinfo(void) {
 
 
 void upsdrv_updateinfo(void) {
-	if (check_for_new_data())
+	if (check_for_new_data()) {
 		nr_polls_without_data = 0;
-	else {
+	} else {
 		nr_polls_without_data++;
 		if (nr_polls_without_data < 0)
 			nr_polls_without_data = INT_MAX;
@@ -252,28 +244,11 @@ void upsdrv_updateinfo(void) {
 	status_commit();
 	dstate_dataok();
 	ser_comm_good();
-
-	/*
-	 * Fast polling is preferred, because
-	 * A) the UPS spits out new data every 75 msec,
-	 * B) some models in this SITOP series have a _very_ small capacity
-	 *    (< 10sec runtime), so every second might count.
-	 */
-	poll_interval = 1;
 }
 
 void upsdrv_shutdown(void) {
 	/* tell the UPS to shut down, then return - DO NOT SLEEP HERE */
-	upslogx(LOG_NOTICE, "instcmd: sending command R");
-
-	/* Note: the UPS does not really like to receive data.
-	 * For example, sending an "R" without \n hangs the serial port.
-	 * In that situation, the UPS will no longer send any status updates.
-	 * For this reason, an additional \n is appended here.
-	 * The command is sent twice, because the first command is sometimes lost as well.
-	 */
-	ser_send_pace(upsfd, 200000, "\n\nR\n\n");
-	ser_send_pace(upsfd, 200000, "R\n\n");
+	instcmd("shutdown.return", NULL);
 }
 
 
@@ -288,27 +263,33 @@ void upsdrv_makevartable(void) {
 
 void upsdrv_initups(void) {
 	char * maxPollsString;
-	int parsed;
+	unsigned int parsed;
 	
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
+
+	/*
+	 * Fast polling is preferred, because
+	 * A) the UPS spits out new data every 75 msec,
+	 * B) some models in this SITOP series have a _very_ small capacity
+	 *    (< 10sec runtime), so every second might count.
+	 */
+	if (poll_interval > 5) {
+		upslogx(LOG_NOTICE, "Option poll_interval is recommended to be lower than 5 (found: %d)", poll_interval);
+	}
 
 	/* option max_polls_without_data: */
 	max_polls_without_data = 2;
 	maxPollsString = getval("max_polls_without_data");
 	if (maxPollsString) {
-		if (sscanf(maxPollsString, "%d", &parsed) == 1) {
-			if (parsed >= 0)
-				max_polls_without_data = parsed;
-			else
-				upslogx(LOG_ERR, "Option max_polls_without_data cannot be negative");
+		if (str_to_uint(maxPollsString, &parsed, 10) == 1) {
+			max_polls_without_data = parsed;
+		} else {
+			upslog_with_errno(LOG_ERR, "Cannot parse option max_polls_without_data");
 		}
-		else
-			upslogx(LOG_ERR, "Cannot parse option max_polls_without_data");
 	}
 }
 
 void upsdrv_cleanup(void) {
-	/* free(dynamic_mem); */
 	ser_close(upsfd, device_path);
 }
