@@ -33,7 +33,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.86"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.87"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -1376,6 +1376,15 @@ static int	libshut_get_interrupt(
 	return bufsize;
 }
 
+/** @brief See shut_communication_subdriver_t::strerror(). */
+static const char	*libshut_strerror(
+	enum shut_error	errcode
+) {
+	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d)", __func__, errcode);
+
+	return shut_strerror(errcode);
+}
+
 shut_communication_subdriver_t	shut_subdriver = {
 	SHUT_DRIVER_NAME,
 	SHUT_DRIVER_VERSION,
@@ -1384,7 +1393,8 @@ shut_communication_subdriver_t	shut_subdriver = {
 	libshut_get_report,
 	libshut_set_report,
 	libshut_get_string,
-	libshut_get_interrupt
+	libshut_get_interrupt,
+	libshut_strerror
 };
 
 /** @} ************************************************************************/

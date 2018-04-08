@@ -68,9 +68,9 @@ enum shut_error {
 
 /** @brief Structure/type describing the SHUT communication routines. */
 typedef struct shut_communication_subdriver_s {
-	const char	 *name;			/**< @brief Name of this subdriver. */
-	const char	 *version;		/**< @brief Version of this subdriver. */
-	int		(*open)			/** @brief (Re)Open a device.
+	const char	  *name;		/**< @brief Name of this subdriver. */
+	const char	  *version;		/**< @brief Version of this subdriver. */
+	int		 (*open)		/** @brief (Re)Open a device.
 						 *
 						 * If *fd* refers to an already opened device, it is closed before attempting the reopening.
 						 *
@@ -102,11 +102,11 @@ typedef struct shut_communication_subdriver_s {
 			int		 rdlen
 		)
 	);
-	void		(*close)		/** @brief Close the opened device *fd* refers to. */
+	void		 (*close)		/** @brief Close the opened device *fd* refers to. */
 	(
 		int		fd			/**< [in] file descriptor of an opened device */
 	);
-	int		(*get_report)		/** @brief Retrieve a HID report from a device.
+	int		 (*get_report)		/** @brief Retrieve a HID report from a device.
 						 * @return length of the retrieved data, on success,
 						 * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
 	(
@@ -115,7 +115,7 @@ typedef struct shut_communication_subdriver_s {
 		unsigned char	*raw_buf,		/**< [out] storage location for the retrieved data */
 		int		 ReportSize		/**< [in] size of the report (*raw_buf* should be at least this size) */
 	);
-	int		(*set_report)		/** @brief Set a HID report in a device.
+	int		 (*set_report)		/** @brief Set a HID report in a device.
 						 * @return the number of bytes sent to the device, on success,
 						 * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
 	(
@@ -124,7 +124,7 @@ typedef struct shut_communication_subdriver_s {
 		unsigned char	*raw_buf,		/**< [in] data that has to be set */
 		int		 ReportSize		/**< [in] size of the report (*raw_buf* should be at least this size) */
 	);
-	int		(*get_string)		/** @brief Retrieve a string descriptor from a device.
+	int		 (*get_string)		/** @brief Retrieve a string descriptor from a device.
 						 * @return the number of bytes read and stored in *buf*, on success,
 						 * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
 	(
@@ -133,7 +133,7 @@ typedef struct shut_communication_subdriver_s {
 		char		*buf,			/**< [out] storage location for the retrieved string */
 		size_t		 buflen			/**< [in] size of *buf* */
 	);
-	int		(*get_interrupt)	/** @brief Retrieve data from an interrupt endpoint of a device.
+	int		 (*get_interrupt)	/** @brief Retrieve data from an interrupt endpoint of a device.
 						 * @note At the moment, this function actually does nothing and it always returns @ref SHUT_ERROR_NOT_SUPPORTED, if *fd* is not invalid.
 						 * @return the number of bytes read and stored in *buf*, on success,
 						 * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
@@ -142,6 +142,11 @@ typedef struct shut_communication_subdriver_s {
 		unsigned char	*buf,			/**< [out] storage location for the retrieved data */
 		int		 bufsize,		/**< [in] size of *buf* */
 		int		 timeout		/**< [in] allowed timeout (ms) for the operation */
+	);
+	const char	*(*strerror)		/** @brief Return a constant string with a short description of *errcode*.
+						 * @return a short description of *errcode*. */
+	(
+		enum shut_error	errcode			/**< [in] the @ref shut_error code whose description is desired */
 	);
 } shut_communication_subdriver_t;
 
