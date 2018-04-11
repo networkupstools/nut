@@ -400,7 +400,6 @@ SRC_SERIAL_PAGES = \
 	rhino.txt		\
 	riello_ser.txt	\
 	safenet.txt	\
-	siemens-sitop.txt	\
 	solis.txt		\
 	tripplite.txt	\
 	tripplitesu.txt	\
@@ -443,7 +442,6 @@ MAN_SERIAL_PAGES = \
 	rhino.8		\
 	riello_ser.8	\
 	safenet.8	\
-	siemens-sitop.8	\
 	solis.8		\
 	tripplite.8	\
 	tripplitesu.8	\
@@ -490,7 +488,6 @@ HTML_SERIAL_MANS = \
 	rhino.html		\
 	riello_ser.html	\
 	safenet.html	\
-	siemens-sitop.html	\
 	solis.html		\
 	tripplite.html	\
 	tripplitesu.html	\

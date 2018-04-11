@@ -1,5 +1,5 @@
 /*
- * siemens-sitop.c - model specific routines for the Siemens SITOP UPS500 series
+ * nutdrv_siemens_sitop.c - model specific routines for the Siemens SITOP UPS500 series
  *
  *
  * Copyright (C) 2018 Matthijs H. ten Berge <m.tenberge@awl.nl>

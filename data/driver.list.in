@@ -943,8 +943,8 @@
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
 
-"Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"siemens-sitop (experimental, untested)"
-"Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"siemens-sitop (experimental)"
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
