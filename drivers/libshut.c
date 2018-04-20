@@ -33,7 +33,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.87"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.88"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -1385,6 +1385,14 @@ static const char	*libshut_strerror(
 	return shut_strerror(errcode);
 }
 
+/** @brief See shut_communication_subdriver_t::add_nutvars(). */
+static void	libshut_add_nutvars(void)
+{
+	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s()", __func__);
+
+	addvar(VAR_VALUE, "notification", "Set notification type (ignored, only for backward compatibility).");
+}
+
 shut_communication_subdriver_t	shut_subdriver = {
 	SHUT_DRIVER_NAME,
 	SHUT_DRIVER_VERSION,
@@ -1394,7 +1402,8 @@ shut_communication_subdriver_t	shut_subdriver = {
 	libshut_set_report,
 	libshut_get_string,
 	libshut_get_interrupt,
-	libshut_strerror
+	libshut_strerror,
+	libshut_add_nutvars
 };
 
 /** @} ************************************************************************/

@@ -148,6 +148,10 @@ typedef struct shut_communication_subdriver_s {
 	(
 		enum shut_error	errcode			/**< [in] the @ref shut_error code whose description is desired */
 	);
+	void		 (*add_nutvars)		/** @brief Add SHUT-related driver variables with addvar(). */
+	(
+		void
+	);
 } shut_communication_subdriver_t;
 
 /** @brief Actual SHUT communication subdriver. */

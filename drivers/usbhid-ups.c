@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.44"
+#define DRIVER_VERSION		"0.45"
 
 #include "main.h"
 #include "libhid.h"
@@ -762,7 +762,7 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
 	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
 #else
-	addvar(VAR_VALUE, "notification", "Set notification type, (ignored, only for backward compatibility)");
+	comm_driver->add_nutvars();
 #endif
 }
 
