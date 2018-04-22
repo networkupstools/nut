@@ -134,7 +134,6 @@ typedef struct shut_communication_subdriver_s {
 		size_t		 buflen			/**< [in] size of *buf* */
 	);
 	int		 (*get_interrupt)	/** @brief Retrieve data from an interrupt endpoint of a device.
-						 * @note At the moment, this function actually does nothing and it always returns @ref SHUT_ERROR_NOT_SUPPORTED, if *fd* is not invalid.
 						 * @return the number of bytes read and stored in *buf*, on success,
 						 * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
 	(

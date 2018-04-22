@@ -64,7 +64,7 @@ Make sure you use the correct unit in your configuration.
 *notification*='num'::
 Set notification type to 1 (no), 2 (light) or 3 (yes).
 +
-This argument is ignored. It is only here for backward compatibility.
+The default value is 1 (no).
 
 KNOWN ISSUES
 ------------

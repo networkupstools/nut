@@ -26,14 +26,14 @@
 #include "common.h"	/* for xstrdup(), upsdebug*() */
 #include "hiddefs.h"
 #include "serial.h"
-/*	#include "str.h"	*/
+#include "str.h"
 #include "timehead.h"
 
 /** @name Driver info
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.88"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.89"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -207,15 +207,16 @@ typedef struct shut_data_s {
 	unsigned char				*data;				/**< @brief Data bytes. */
 } shut_data_t;
 
-/** @brief Notification levels.
- * @note These are not processed currently. */
+/** @brief Notification levels. */
 enum shut_notification_level {
 	SHUT_NOTIFICATION_OFF			= 1,				/**< Notification off */
 	SHUT_NOTIFICATION_LIGHT			= 2,				/**< Light notification */
 	SHUT_NOTIFICATION_COMPLETE		= 3,				/**< Complete notification for devices which don't support disabling it
 										 * (like some early Ellipse models). */
-	SHUT_NOTIFICATION_DEFAULT		= SHUT_NOTIFICATION_COMPLETE	/**< Default notification level. */
+	SHUT_NOTIFICATION_DEFAULT		= SHUT_NOTIFICATION_OFF		/**< Default notification level. */
 };
+
+#define SHUT_NOTIFICATION_VAR			"notification"			/**< @brief Driver variable to set the @ref shut_notification_level "notification level". */
 
 #define SHUT_MAX_TRIES				   4				/**< @brief Maximum number of attempts before raising a comm fault. */
 #define SHUT_TIMEOUT				3000				/**< @brief Default timeout (ms) for SHUT I/O operations. */
@@ -473,9 +474,6 @@ static void	shut_setline(
 }
 
 /** @brief Initiate/Restore communication with a device, while setting a @ref shut_notification_level.
- * @note At the moment, notification is always set to @ref SHUT_NOTIFICATION_OFF.
- * @todo Re-enable notification support.
- * @todo Process any notification unexpectedly received while attempting a synchronisation.
  * @return @ref SHUT_SUCCESS, on success,
  * @return @ref SHUT_ERROR_TIMEOUT, if no errors occurred while communicating with the device but synchronisation could not be performed in @ref SHUT_MAX_TRIES attempts,
  * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
@@ -484,20 +482,16 @@ static int	shut_synchronise(
 	int	fd	/**< [in] file descriptor of an already opened device */
 ) {
 	int		ret,
-			try,
-			notification_level = SHUT_NOTIFICATION_OFF;
-#if 0
+			try;
 	static int	notification_level = SHUT_NOTIFICATION_DEFAULT,
 			user_notification_level = 0;
-#endif
 	uint8_t		sync_type;
 
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d)", __func__, fd);
 
-#if 0
 	/* Get user-provided value for notification level, if not already done */
 	if (!user_notification_level) {
-		const char	*notification_string = getval("notification");
+		const char	*notification_string = getval(SHUT_NOTIFICATION_VAR);
 
 		if (notification_string) {
 			if (!str_to_int(notification_string, &user_notification_level, 10))
@@ -511,7 +505,6 @@ static int	shut_synchronise(
 		/* Done, don't do this again */
 		user_notification_level = notification_level;
 	}
-#endif
 
 	switch (notification_level)
 	{
@@ -553,7 +546,6 @@ static int	shut_synchronise(
 			return SHUT_SUCCESS;
 		}
 
-		/* TODO: process any notification */
 		upsdebugx(SHUT_DBG_SHUT, "%s: unexpectedly got a %s from the device.", __func__, shut_strpackettype(shut_data.type));
 		free(shut_data.data);
 	}
@@ -745,8 +737,6 @@ static int	shut_receive_data(
  *
  * The direction of the transfer is inferred from the *bmRequestType* field of the setup packet.
  *
- * @todo Process any notification unexpectedly received while waiting for an ACK after sending data to the device.
- *
  * @return the number of bytes actually transferred, on success,
  * @return @ref SHUT_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
  * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
@@ -874,7 +864,6 @@ static int	shut_control_transfer(
 					goto send_retry;
 				case SHUT_PKT_MB_NOTIFY:
 					upsdebugx(SHUT_DBG_SHUT, "%s: unexpected notification from the device.", __func__);
-					/* TODO: process any notification */
 					free(shut_data.data);
 					goto resync_and_restart;
 				default:
@@ -961,13 +950,14 @@ static int	shut_control_transfer(
 /** @brief Take care of SHUT interrupt transfers.
  *
  * The direction of the transfer is inferred from the direction bits of the *endpoint* address.
+ * And, speaking of the latter, *endpoint* is actually used only for that: all the remaining info it carries is ignored.
  *
- * @note This function is not implemented yet and, as such, it always returns @ref SHUT_ERROR_NOT_SUPPORTED, without doing anything.
- * @todo Actually implement this function.
+ * @warning Interrupt OUT transactions are not supported by SHUT, use a control transfer instead.
  *
  * @return @ref SHUT_SUCCESS, with *transferred* filled, on success,
  * @return @ref SHUT_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
  * @return @ref SHUT_ERROR_OVERFLOW, if the received data exceeds *data*'s size (*length*),
+ * @return @ref SHUT_ERROR_NOT_SUPPORTED, for interrupt OUT transactions (i.e. *endpoint* has the @ref USB_ENDPOINT_OUT direction),
  * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
 static int	shut_interrupt_transfer(
 	int		 fd,		/**< [in] file descriptor of an already opened device */
@@ -977,9 +967,72 @@ static int	shut_interrupt_transfer(
 	int		*transferred,	/**< [out] storage location for the number of bytes actually transferred (or `NULL`, if not desired) */
 	unsigned int	 timeout	/**< [in] allowed timeout (ms) for the operation (for an unlimited timeout, use value 0) */
 ) {
+	int		try;
+	struct timeval	exp;
+
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %x, %p, %d, %p, %u)", __func__, fd, endpoint, data, length, (void *)transferred, timeout);
 
-	return SHUT_ERROR_NOT_SUPPORTED;
+	if ((endpoint & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT) {
+		upsdebugx(SHUT_DBG_SHUT, "%s: interrupt OUT transactions are not supported by SHUT.", __func__);
+		return SHUT_ERROR_NOT_SUPPORTED;
+	}
+
+	if (length < 0)
+		return SHUT_ERROR_INVALID_PARAM;
+
+	if (timeout) {
+		gettimeofday(&exp, NULL);
+		exp.tv_sec += timeout / 1000;
+		exp.tv_usec += (timeout % 1000) * 1000;
+		while (exp.tv_usec >= 1000000) {
+			exp.tv_usec -= 1000000;
+			exp.tv_sec++;
+		}
+	}
+
+	for (try = 1; try <= SHUT_MAX_TRIES; try++) {
+		int		ret;
+		shut_data_t	shut_data = { 0 };
+
+		if (timeout) {
+			struct timeval	now;
+
+			gettimeofday(&now, NULL);
+			if (
+				exp.tv_sec > now.tv_sec ||
+				(exp.tv_sec == now.tv_sec && exp.tv_usec > now.tv_usec)
+			) {
+				upsdebugx(SHUT_DBG_SHUT, "%s: could not perform the requested transfer in the allowed time.", __func__);
+				return SHUT_ERROR_TIMEOUT;
+			}
+		}
+
+		if ((ret = shut_receive_data(fd, &shut_data)) != SHUT_SUCCESS) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, shut_strerror(ret));
+			return ret;
+		}
+
+		if (shut_data.type != SHUT_PKT_MB_NOTIFY) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: unexpected reply from the device (type: %s).", __func__, shut_strpackettype(shut_data.type));
+			free(shut_data.data);
+			continue;
+		}
+
+		if (shut_data.length > (size_t)length) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: received data (%lu bytes) exceeds provided buffer's size (%d).", __func__, shut_data.length, length);
+			free(shut_data.data);
+			return SHUT_ERROR_OVERFLOW;
+		}
+
+		memcpy(data, shut_data.data, shut_data.length);
+		free(shut_data.data);
+		if (transferred)
+			*transferred = shut_data.length;
+		return SHUT_SUCCESS;
+	}
+
+	upsdebugx(SHUT_DBG_SHUT, "%s: could not perform the requested transfer.", __func__);
+	return SHUT_ERROR_TIMEOUT;
 }
 
 /** @brief Retrieve a string descriptor in C style ASCII using the first language supported by a device.
@@ -1367,7 +1420,7 @@ static int	libshut_get_interrupt(
 	if (fd < 1)
 		return SHUT_ERROR_INVALID_PARAM;
 
-	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
+	/* Symbolic standard EP (we only need the direction bits, here) */
 	ret = shut_interrupt_transfer(fd, USB_ENDPOINT_IN | 1, buf, bufsize, &bufsize, timeout);
 
 	if (ret != SHUT_SUCCESS)
@@ -1388,9 +1441,12 @@ static const char	*libshut_strerror(
 /** @brief See shut_communication_subdriver_t::add_nutvars(). */
 static void	libshut_add_nutvars(void)
 {
+	char	msg[SHUT_MAX_STRING_SIZE];
+
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s()", __func__);
 
-	addvar(VAR_VALUE, "notification", "Set notification type (ignored, only for backward compatibility).");
+	snprintf(msg, sizeof(msg), "Set notification type to 1 (no), 2 (light) or 3 (yes) (default=%d).", SHUT_NOTIFICATION_DEFAULT);
+	addvar(VAR_VALUE, SHUT_NOTIFICATION_VAR, msg);
 }
 
 shut_communication_subdriver_t	shut_subdriver = {
