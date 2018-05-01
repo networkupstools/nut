@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 
 #include "main.h"
 
@@ -578,7 +578,7 @@ static int	sgs_command(const char *cmd, char *buf, size_t buflen)
 		ret = usb_interrupt_read(udev, 0x81, (usb_ctrl_char)tmp, 8, 1000);
 
 		/* No error!!! */
-		if (ret == -110)
+		if (ret == ERROR_TIMEOUT)
 			break;
 
 		/* Any errors here mean that we are unable to read a reply (which will happen after successfully writing a command to the UPS) */
