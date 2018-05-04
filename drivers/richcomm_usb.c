@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -323,7 +323,7 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		upsdebugx(4, "- Manufacturer : %s", device->Vendor ? device->Vendor : "unknown");
 		upsdebugx(4, "- Product      : %s", device->Product ? device->Product : "unknown");
 		upsdebugx(4, "- Serial Number: %s", device->Serial ? device->Serial : "unknown");
-		upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
+		upsdebugx(4, "- Bus          : %s", device->Bus);
 
 		for (m = matcher; m; m = m->next) {
 			switch (m->match_function(device, m->privdata))

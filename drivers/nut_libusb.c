@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.15"
+#define USB_DRIVER_VERSION	"0.16"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -296,7 +296,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
 		upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
 		upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
-		upsdebugx(2, "- Bus: %s", curDevice->Bus ? curDevice->Bus : "unknown");
+		upsdebugx(2, "- Bus: %s", curDevice->Bus);
 		upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
 		/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
