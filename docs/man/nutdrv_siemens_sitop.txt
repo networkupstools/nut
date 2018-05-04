@@ -85,7 +85,7 @@ SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="tty
 
 POLLING
 -------
-The UPS does not have a special 'get status' command. Instead, it continously
+The UPS does not have a special 'get status' command. Instead, it continuously
 sends out status update messages (tens of messages per second).
 Every *pollinterval*, these messages are read from the serial port buffer.
 In order to react quickly on status changes from the UPS, and to prevent the serial buffer
