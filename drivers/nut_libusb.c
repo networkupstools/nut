@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.10"
+#define USB_DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -494,51 +494,35 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	return -1;
 }
 
-/*
- * Error handler for usb_get/set_* functions. Return value > 0 success,
- * 0 unknown or temporary failure (ignored), < 0 permanent failure (reconnect)
- */
-static int nut_libusb_strerror(const int ret, const char *desc)
-{
-	if (ret > 0) {
+/** @brief Log errors, if any, of nut_libusb_get_report(), nut_libusb_set_report(), nut_libusb_get_string(), nut_libusb_get_interrupt().
+ * @return *ret*. */
+static int	nut_usb_logerror(
+	const int	 ret,	/**< [in] a libusb return code (negative, possibly a @ref libusb_error "LIBUSB_ERROR" code, on errors) */
+	const char	*desc	/**< [in] text to print alongside the short description of the error */
+) {
+	if (ret >= 0)
 		return ret;
-	}
 
-	switch(ret)
+	switch (ret)
 	{
-#if 0
-	/* FIXME: not sure how to map these ones! */
-	case LIBUSB_ERROR_INVALID_PARAM: /** Invalid parameter */
-	/** System call interrupted (perhaps due to signal) */
+	case LIBUSB_ERROR_INVALID_PARAM:
 	case LIBUSB_ERROR_INTERRUPTED:
-	/** Insufficient memory */
 	case LIBUSB_ERROR_NO_MEM:
-#endif
-	case LIBUSB_ERROR_BUSY:	     /** Resource busy */
-	case LIBUSB_ERROR_NO_DEVICE: /** No such device (it may have been disconnected) */
-	case LIBUSB_ERROR_ACCESS:    /** Access denied (insufficient permissions) */
-	case LIBUSB_ERROR_IO:        /** Input/output error */
-	case LIBUSB_ERROR_NOT_FOUND: /** Entity not found */
-	case LIBUSB_ERROR_PIPE:	     /** Pipe error */
-	/** Operation not supported or unimplemented on this platform */
-	case LIBUSB_ERROR_NOT_SUPPORTED:
-		upslogx(LOG_DEBUG, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
+	case LIBUSB_ERROR_TIMEOUT:
+	case LIBUSB_ERROR_OVERFLOW:
+		upsdebugx(2, "%s: %s.", desc, libusb_strerror(ret));
 		return ret;
-	case LIBUSB_ERROR_TIMEOUT:	 /** Operation timed out */
-		upsdebugx(2, "%s: Connection timed out", desc);
-		return 0;
-	case LIBUSB_ERROR_OVERFLOW:	 /** Overflow */
-#ifdef EPROTO
-/* FIXME: not sure how to map this one! */
-	case -EPROTO:	/* Protocol error */
-#endif
-		upsdebugx(2, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
-		return 0;
-
-	case LIBUSB_ERROR_OTHER:     /** Other error */
-	default:                     /** Undetermined, log only */
-		upslogx(LOG_DEBUG, "%s: %s", desc, libusb_strerror((enum libusb_error)ret));
-		return 0;
+	case LIBUSB_ERROR_BUSY:
+	case LIBUSB_ERROR_NO_DEVICE:
+	case LIBUSB_ERROR_ACCESS:
+	case LIBUSB_ERROR_IO:
+	case LIBUSB_ERROR_NOT_FOUND:
+	case LIBUSB_ERROR_PIPE:
+	case LIBUSB_ERROR_NOT_SUPPORTED:
+	case LIBUSB_ERROR_OTHER:
+	default:
+		upslogx(LOG_DEBUG, "%s: %s.", desc, libusb_strerror(ret));
+		return ret;
 	}
 }
 
@@ -567,7 +551,7 @@ static int nut_libusb_get_report(libusb_device_handle *udev, int ReportId, unsig
 		return 0;
 	}
 
-	return nut_libusb_strerror(ret, __func__);
+	return nut_usb_logerror(ret, __func__);
 }
 
 static int nut_libusb_set_report(libusb_device_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
@@ -589,7 +573,7 @@ static int nut_libusb_set_report(libusb_device_handle *udev, int ReportId, unsig
 		return 0;
 	}
 
-	return nut_libusb_strerror(ret, __func__);
+	return nut_usb_logerror(ret, __func__);
 }
 
 static int nut_libusb_get_string(libusb_device_handle *udev, int StringIdx, char *buf, size_t buflen)
@@ -602,7 +586,7 @@ static int nut_libusb_get_string(libusb_device_handle *udev, int StringIdx, char
 	ret = libusb_get_string_descriptor_ascii(udev, StringIdx,
 		(unsigned char*)buf, buflen);
 
-	return nut_libusb_strerror(ret, __func__);
+	return nut_usb_logerror(ret, __func__);
 }
 
 static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *buf, int bufsize, int timeout)
@@ -626,7 +610,7 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *b
 		ret = bufsize;
 	}
 
-	return nut_libusb_strerror(ret, __func__);
+	return nut_usb_logerror(ret, __func__);
 }
 
 static void nut_libusb_close(libusb_device_handle *udev)
