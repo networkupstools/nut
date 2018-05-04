@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.9"
+#define USB_DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -162,9 +162,9 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	int		rdlen;
 
 	/* libusb base init */
-	if (libusb_init(NULL) < 0) {
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
 		libusb_exit(NULL);
-		fatal_with_errno(EXIT_FAILURE, "Failed to init libusb 1.0");
+		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
 	}
 
 #ifndef __linux__ /* SUN_LIBUSB (confirmed to work on Solaris and FreeBSD) */
@@ -455,7 +455,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		if (res < 0)
 		{
-			upsdebug_with_errno(2, "Unable to get Report descriptor");
+			upsdebugx(2, "Unable to get Report descriptor (%s)", libusb_strerror(res));
 			goto next_device;
 		}
 
