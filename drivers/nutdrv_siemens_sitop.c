@@ -228,7 +228,7 @@ void upsdrv_updateinfo(void) {
 
 	/* This is all we know about the charge level... */
 	dstate_setinfo("battery.charge.indication",
-		(current_ups_status.battery_above_85_percent) ? ">85%%" : "<85%%");
+		(current_ups_status.battery_above_85_percent) ? ">85" : "<85");
 
 	status_init();
 
