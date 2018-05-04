@@ -46,7 +46,7 @@
  * ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3", \
  *   RUN+="/sbin/modprobe ftdi_sio", \
  *   RUN+="/bin/sh -c 'echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
- * 
+ *
  * Use the following udev rule to create a persistent device name, for example /dev/ttyUPS:
  * SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="ttyUPS"
  */
@@ -102,7 +102,7 @@ static int check_for_new_data() {
 	int new_data_received = 0;
 	int done = 0;
 	int num_received;
-	
+
 	while (!done) {
 		/* Get new data from the serial port.
 		 * No extra delay, just get the chars that were already buffered.
@@ -126,7 +126,7 @@ static int check_for_new_data() {
 			done = 1;
 		} else {
 			rx_count += num_received;
-			
+
 			/* parse received input data: */
 			while (rx_count >= 5) { /* all valid input messages are strings of 5 characters */
 				if (strncmp(rx_buffer, "BUFRD", 5) == 0) {
@@ -199,10 +199,10 @@ void upsdrv_initinfo(void) {
 	if (!found) {
 		fatalx(EXIT_FAILURE, "No data received from the UPS");
 	}
-	
+
 	dstate_setinfo("device.mfr", "Siemens");
 	dstate_setinfo("device.model", "SITOP UPS500 series");
-	
+
 	/* supported commands: */
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.return");
@@ -219,19 +219,19 @@ void upsdrv_updateinfo(void) {
 		if (nr_polls_without_data < 0)
 			nr_polls_without_data = INT_MAX;
 	}
-	
+
 	if (nr_polls_without_data > max_polls_without_data) {
 		/* data is stale */
 		dstate_datastale();
 		return;
 	}
-	
+
 	/* This is all we know about the charge level... */
 	dstate_setinfo("battery.charge.indication",
 		(current_ups_status.battery_above_85_percent) ? ">85%%" : "<85%%");
-	
+
 	status_init();
-	
+
 	if (current_ups_status.dc_input_low || current_ups_status.on_battery) {
 		status_set("OB");
 	} else {
@@ -240,7 +240,7 @@ void upsdrv_updateinfo(void) {
 	if (current_ups_status.battery_alarm) {
 		status_set("LB");
 	}
-	
+
 	status_commit();
 	dstate_dataok();
 	ser_comm_good();
@@ -264,7 +264,7 @@ void upsdrv_makevartable(void) {
 void upsdrv_initups(void) {
 	char * maxPollsString;
 	unsigned int parsed;
-	
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B9600);
 
