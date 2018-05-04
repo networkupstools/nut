@@ -83,15 +83,23 @@ for example _/dev/ttyUPS_:
 SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="ttyUPS"
 ----
 
+POLLING
+-------
+The UPS does not have a special 'get status' command. Instead, it continously
+sends out status update messages (tens of messages per second).
+Every *pollinterval*, these messages are read from the serial port buffer.
+In order to react quickly on status changes from the UPS, and to prevent the serial buffer
+from overflowing, *pollinterval* should be set to a relatively low value. The recommended
+value is 1 (second).
+
 EXTRA ARGUMENTS
 ---------------
 This driver supports the following optional settings:
 
 *max_polls_without_data*='num'::
-According to the specifications, the UPS should emit a new status update
-every 75 msec. The serial port is polled periodically for new data (recommended
-setting: every second). If there is no valid new data after 'num' polls, it is
-assumed that communication with the UPS is lost.
+The serial port is polled periodically for new data (see *Polling*).
+If there is no valid new data after 'num' polls, it is assumed that communication
+with the UPS is lost.
 The default value is 2. Lower values may cause spurious 'Data stale' messages,
 especially at startup.
 
@@ -178,4 +186,3 @@ linkman:nutupsdrv[8]
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
 The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
-
