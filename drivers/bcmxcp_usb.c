@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.27"
+#define SUBDRIVER_VERSION "0.28"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -372,7 +372,7 @@ static libusb_device_handle *open_powerware_usb(void)
 	libusb_device_handle *udev;
 	struct libusb_device_descriptor dev_desc;
 	uint8_t bus;
-	int i;
+	int i, ret;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0)
@@ -381,7 +381,12 @@ static libusb_device_handle *open_powerware_usb(void)
 	for (i = 0; i < devcount; i++) {
 
 		libusb_device *device = devlist[i];
-		libusb_get_device_descriptor(device, &dev_desc);
+
+		ret = libusb_get_device_descriptor(device, &dev_desc);
+		if (ret != LIBUSB_SUCCESS) {
+			upsdebugx(2, "Unable to get DEVICE descriptor (%s).", libusb_strerror(ret));
+			continue;
+		}
 
 		if (dev_desc.bDeviceClass != LIBUSB_CLASS_PER_INTERFACE) {
 			continue;

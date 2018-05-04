@@ -124,7 +124,12 @@ nutscan_device_t * nutscan_scan_usb()
 	for (i = 0; i < devcount; i++) {
 
 		dev = devlist[i];
-		libusb_get_device_descriptor(dev, &dev_desc);
+
+		ret = libusb_get_device_descriptor(dev, &dev_desc);
+		if (ret != LIBUSB_SUCCESS) {
+			fprintf(stderr, "Unable to get DEVICE descriptor (%s).\n", libusb_strerror(ret));
+			continue;
+		}
 
 		VendorID = dev_desc.idVendor;
 		ProductID = dev_desc.idProduct;

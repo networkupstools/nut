@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -260,7 +260,13 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 
 		USBDeviceMatcher_t	*m;
 		libusb_device *dev = devlist[i];
-		libusb_get_device_descriptor(dev, &dev_desc);
+
+		ret = libusb_get_device_descriptor(dev, &dev_desc);
+		if (ret != LIBUSB_SUCCESS) {
+			upsdebugx(2, "Unable to get DEVICE descriptor (%s).", libusb_strerror(ret));
+			continue;
+		}
+
 		ret = libusb_open(dev, &handle);
 		if (ret != LIBUSB_SUCCESS) {
 			upsdebugx(4, "Failed to open USB device, skipping: %s", libusb_strerror(ret));

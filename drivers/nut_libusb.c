@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.12"
+#define USB_DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -180,17 +180,19 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		int		i;
 		libusb_device	*device = devlist[devnum];
 
-		libusb_get_device_descriptor(device, &dev_desc);
-		upsdebugx(2, "Checking device %lu of %lu (%04X/%04X)",
-				devnum + 1, devcount, dev_desc.idVendor, dev_desc.idProduct);
+		upsdebugx(2, "Checking device %lu of %lu.", devnum + 1, devcount);
 
-		/* supported vendors are now checked by the supplied matcher */
+		/* Get DEVICE descriptor */
+		ret = libusb_get_device_descriptor(device, &dev_desc);
+		if (ret != LIBUSB_SUCCESS) {
+			upsdebugx(2, "Unable to get DEVICE descriptor (%s).", libusb_strerror(ret));
+			continue;
+		}
 
 		/* open the device */
 		ret = libusb_open(device, udevp);
 		if (ret != 0) {
-			upsdebugx(2, "Failed to open device, skipping. (%s)",
-						libusb_strerror((enum libusb_error)ret));
+			upsdebugx(2, "Failed to open device %04X:%04X (%s), skipping.", dev_desc.idVendor, dev_desc.idProduct, libusb_strerror(ret));
 			continue;
 		}
 		udev = *udevp;
