@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.13"
+#define USB_DRIVER_VERSION	"0.14"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -210,50 +210,29 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		memset(curDevice, '\0', sizeof(*curDevice));
 
 		bus = libusb_get_bus_number(device);
-		curDevice->Bus = (char *)malloc(4);
-		if (curDevice->Bus == NULL) {
-			libusb_free_device_list(devlist, 1);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
-		}
+		if ((curDevice->Bus = (char *)malloc(4)) == NULL)
+			goto oom_error;
 		sprintf(curDevice->Bus, "%03d", bus);
 		curDevice->VendorID = dev_desc.idVendor;
 		curDevice->ProductID = dev_desc.idProduct;
 		curDevice->bcdDevice = dev_desc.bcdDevice;
 
 		if (dev_desc.iManufacturer) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer,
-				(unsigned char*)string, sizeof(string));
-			if (ret > 0) {
-				curDevice->Vendor = strdup(string);
-				if (curDevice->Vendor == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
-				}
-			}
+			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer, (unsigned char*)string, sizeof(string));
+			if (ret > 0 && (curDevice->Vendor = strdup(string)) == NULL)
+				goto oom_error;
 		}
 
 		if (dev_desc.iProduct) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct,
-				(unsigned char*)string, sizeof(string));
-			if (ret > 0) {
-				curDevice->Product = strdup(string);
-				if (curDevice->Product == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
-				}
-			}
+			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct, (unsigned char*)string, sizeof(string));
+			if (ret > 0 && (curDevice->Product = strdup(string)) == NULL)
+				goto oom_error;
 		}
 
 		if (dev_desc.iSerialNumber) {
-			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber,
-				(unsigned char*)string, sizeof(string));
-			if (ret > 0) {
-				curDevice->Serial = strdup(string);
-				if (curDevice->Serial == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
-				}
-			}
+			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber, (unsigned char*)string, sizeof(string));
+			if (ret > 0 && (curDevice->Serial = strdup(string)) == NULL)
+				goto oom_error;
 		}
 
 		upsdebugx(2, "- VendorID: %04x", curDevice->VendorID);
@@ -480,12 +459,18 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		return rdlen;
 
-		next_device:
-			/* usb_release_interface() sometimes blocks and goes
-			into uninterruptible sleep.  So don't do it. */
-			/* if (if_claimed)
-				libusb_release_interface(udev, usb_if_num); */
-			libusb_close(udev);
+	next_device:
+		/* usb_release_interface() sometimes blocks and goes
+		into uninterruptible sleep.  So don't do it. */
+		/* if (if_claimed)
+			libusb_release_interface(udev, usb_if_num); */
+		libusb_close(udev);
+		continue;
+
+	oom_error:
+		libusb_free_device_list(devlist, 1);
+		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+
 	}
 
 	*udevp = NULL;

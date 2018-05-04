@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.17"
+#define DRIVER_VERSION	"1.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -288,11 +288,8 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		device->VendorID = dev_desc.idVendor;
 		device->ProductID = dev_desc.idProduct;
 		bus = libusb_get_bus_number(dev);
-		device->Bus = (char *)malloc(4);
-		if (device->Bus == NULL) {
-			libusb_free_device_list(devlist, 1);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
-		}
+		if ((device->Bus = (char *)malloc(4)) == NULL)
+			goto oom_error;
 		sprintf(device->Bus, "%03d", bus);
 		iManufacturer = dev_desc.iManufacturer;
 		iProduct = dev_desc.iProduct;
@@ -301,37 +298,22 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		if (iManufacturer) {
 			char	buf[SMALLBUF];
 			ret = libusb_get_string_descriptor_ascii(handle, iManufacturer, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0) {
-				device->Vendor = strdup(buf);
-				if (device->Vendor == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
-				}
-			}
+			if (ret > 0 && (device->Vendor = strdup(buf)) == NULL)
+				goto oom_error;
 		}
 
 		if (iProduct) {
 			char	buf[SMALLBUF];
 			ret = libusb_get_string_descriptor_ascii(handle, iProduct, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0) {
-				device->Product = strdup(buf);
-				if (device->Product == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
-				}
-			}
+			if (ret > 0 && (device->Product = strdup(buf)) == NULL)
+				goto oom_error;
 		}
 
 		if (iSerialNumber) {
 			char	buf[SMALLBUF];
 			ret = libusb_get_string_descriptor_ascii(handle, iSerialNumber, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0) {
-				device->Serial = strdup(buf);
-				if (device->Serial == NULL) {
-					libusb_free_device_list(devlist, 1);
-					fatal_with_errno(EXIT_FAILURE, "Out of memory");
-				}
-			}
+			if (ret > 0 && (device->Serial = strdup(buf)) == NULL)
+				goto oom_error;
 		}
 
 		upsdebugx(4, "- VendorID     : %04x", device->VendorID);
@@ -389,6 +371,12 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 
 	next_device:
 		libusb_close(handle);
+		continue;
+
+	oom_error:
+		libusb_free_device_list(devlist, 1);
+		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+
 	}
 
 	*handlep = NULL;

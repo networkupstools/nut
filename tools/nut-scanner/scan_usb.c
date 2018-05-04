@@ -96,7 +96,7 @@ nutscan_device_t * nutscan_scan_usb()
 	libusb_device *dev;
 	libusb_device **devlist;
 	uint8_t bus;
-	libusb_device_handle *udev;
+	libusb_device_handle *udev = NULL;
 	ssize_t devcount = 0;
 	struct libusb_device_descriptor dev_desc;
 	int i;
@@ -138,12 +138,8 @@ nutscan_device_t * nutscan_scan_usb()
 		iProduct = dev_desc.iProduct;
 		iSerialNumber = dev_desc.iSerialNumber;
 		bus = libusb_get_bus_number(dev);
-		busname = (char *)malloc(4);
-		if (busname == NULL) {
-			libusb_free_device_list(devlist, 1);
-			libusb_exit(NULL);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
-		}
+		if ((busname = (char *)malloc(4)) == NULL)
+			goto oom_error;
 		snprintf(busname, 4, "%03d", bus);
 
 		if ((driver_name =
@@ -160,63 +156,26 @@ nutscan_device_t * nutscan_scan_usb()
 			/* get serial number */
 			if (iSerialNumber) {
 				ret = libusb_get_string_descriptor_ascii(udev, iSerialNumber, (unsigned char *)string, sizeof(string));
-				if (ret > 0) {
-					serialnumber = strdup(str_rtrim(string, ' '));
-					if (serialnumber == NULL) {
-						libusb_close(udev);
-						free(busname);
-						libusb_free_device_list(devlist, 1);
-						libusb_exit(NULL);
-						fatal_with_errno(EXIT_FAILURE, "Out of memory");
-					}
-				}
+				if (ret > 0 && (serialnumber = strdup(str_rtrim(string, ' '))) == NULL)
+					goto oom_error;
 			}
 			/* get product name */
 			if (iProduct) {
 				ret = libusb_get_string_descriptor_ascii(udev, iProduct, (unsigned char *)string, sizeof(string));
-				if (ret > 0) {
-					device_name = strdup(str_rtrim(string, ' '));
-					if (device_name == NULL) {
-						free(serialnumber);
-						libusb_close(udev);
-						free(busname);
-						libusb_free_device_list(devlist, 1);
-						libusb_exit(NULL);
-						fatal_with_errno(EXIT_FAILURE, "Out of memory");
-					}
-				}
+				if (ret > 0 && (device_name = strdup(str_rtrim(string, ' '))) == NULL)
+					goto oom_error;
 			}
 
 			/* get vendor name */
 			if (iManufacturer) {
 				ret = libusb_get_string_descriptor_ascii(udev, iManufacturer, (unsigned char *)string, sizeof(string));
-				if (ret > 0) {
-					vendor_name = strdup(str_rtrim(string, ' '));
-					if (vendor_name == NULL) {
-						free(serialnumber);
-						free(device_name);
-						libusb_close(udev);
-						free(busname);
-						libusb_free_device_list(devlist, 1);
-						libusb_exit(NULL);
-						fatal_with_errno(EXIT_FAILURE, "Out of memory");
-					}
-				}
+				if (ret > 0 && (vendor_name = strdup(str_rtrim(string, ' '))) == NULL)
+					goto oom_error;
 			}
 
 			nut_dev = nutscan_new_device();
-			if(nut_dev == NULL) {
-				fprintf(stderr,"Memory allocation error\n");
-				nutscan_free_device(current_nut_dev);
-				free(serialnumber);
-				free(device_name);
-				free(vendor_name);
-				libusb_close(udev);
-				free(busname);
-				libusb_free_device_list(devlist, 1);
-				libusb_exit(NULL);
-				return NULL;
-			}
+			if (nut_dev == NULL)
+				goto oom_error;
 
 			nut_dev->type = TYPE_USB;
 			if(driver_name) {
@@ -258,8 +217,23 @@ nutscan_device_t * nutscan_scan_usb()
 			memset (string, 0, sizeof(string));
 
 			libusb_close(udev);
+			udev = NULL;
 		}
 		free(busname);
+		continue;
+
+	oom_error:
+		if (udev)
+			libusb_close(udev);
+		libusb_free_device_list(devlist, 1);
+		libusb_exit(NULL);
+		nutscan_free_device(current_nut_dev);
+		free(busname);
+		free(serialnumber);
+		free(device_name);
+		free(vendor_name);
+		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+
 	}
 
 	libusb_free_device_list(devlist, 1);
