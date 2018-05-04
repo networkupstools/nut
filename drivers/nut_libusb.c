@@ -31,7 +31,7 @@
 #include "nut_libusb.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.11"
+#define USB_DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -600,14 +600,12 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *b
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */
 	ret = libusb_interrupt_transfer(udev, 0x81, buf, bufsize, &bufsize, timeout);
 
+	if (ret == LIBUSB_SUCCESS)
+		return bufsize;
+
 	/* Clear stall condition */
 	if (ret == LIBUSB_ERROR_PIPE) {
 		ret = libusb_clear_halt(udev, 0x81);
-	}
-
-	/* In case of success, return the operation size, as done with libusb 0.1 */
-	if (ret == LIBUSB_SUCCESS) {
-		ret = bufsize;
 	}
 
 	return nut_usb_logerror(ret, __func__);
