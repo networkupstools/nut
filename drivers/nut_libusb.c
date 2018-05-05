@@ -29,9 +29,10 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
+#include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.16"
+#define USB_DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -144,44 +145,46 @@ static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
 	return matcher->match_function(device, matcher->privdata);
 }
 
-/*! If needed, set the USB alternate interface.
+/** @brief Set the USB alternate interface, if needed.
  *
- * In NUT 2.7.2 and earlier, the following call was made unconditionally:
- *   usb_set_altinterface(udev, 0);
+ * In NUT 2.7.2 and earlier, the following (libusb-0.1) call was made unconditionally:
  *
- * Although harmless on Linux and *BSD, this extra call prevents old Tripp Lite
- * devices from working on Mac OS X (presumably the OS is already setting
- * altinterface to 0).
- */
-static int nut_usb_set_altinterface(libusb_device_handle *udev)
-{
-	int altinterface = 0, ret = 0;
-	char *alt_string, *endp = NULL;
+ *     usb_set_altinterface(udev, 0);
+ *
+ * Although harmless on Linux and *BSD, this extra call prevents old Tripp Lite devices from working on Mac OS X
+ * (presumably the OS is already setting altinterface to 0).
+ *
+ * @return @ref LIBUSB_SUCCESS, on success,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
+static int	nut_usb_set_altinterface(
+	libusb_device_handle	*udev	/**< [in] handle of an already opened device */
+) {
+	int		 ret,
+			 altinterface = 0;
+	const char	*alt_string;
 
-	if(testvar("usb_set_altinterface")) {
-		alt_string = getval("usb_set_altinterface");
-		if(alt_string) {
-			altinterface = (int)strtol(alt_string, &endp, 10);
-			if(endp && !(endp[0] == 0)) {
-				upslogx(LOG_WARNING, "%s: '%s' is not a valid number", __func__, alt_string);
-			}
-			if(altinterface < 0 || altinterface > 255) {
-				upslogx(LOG_WARNING, "%s: setting bAlternateInterface to %d will probably not work", __func__, altinterface);
-			}
-		}
-		/* set default interface */
-		upsdebugx(2, "%s: calling libusb_set_interface_alt_setting(udev, %d, %d)", __func__, usb_if_num, altinterface);
-		ret = libusb_set_interface_alt_setting(udev, usb_if_num, altinterface);
-		if(ret != 0) {
-			upslogx(LOG_WARNING, "%s: libusb_set_interface_alt_setting(udev, %d, %d) returned %d (%s)",
-					__func__, usb_if_num, altinterface, ret, libusb_strerror((enum libusb_error)ret) );
-		}
-		upslogx(LOG_NOTICE, "%s: libusb_set_interface_alt_setting() should not be necessary - please email the nut-upsdev list with information about your UPS.", __func__);
-	} else {
-		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, %d, 0)", __func__, usb_if_num);
+	if (!testvar("usb_set_altinterface")) {
+		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, %d, 0).", __func__, usb_if_num);
+		return LIBUSB_SUCCESS;
 	}
+
+	alt_string = getval("usb_set_altinterface");
+	if (alt_string && !str_to_int(alt_string, &altinterface, 10))
+		upslogx(LOG_WARNING, "%s: could not convert to an int the provided value (%s) for 'usb_set_altinterface' (%s).", __func__, alt_string, strerror(errno));
+	else if (altinterface < 0 || altinterface > 255)
+		upslogx(LOG_WARNING, "%s: setting bAlternateInterface to %d will probably not work.", __func__, altinterface);
+
+	/* Set default interface */
+	upsdebugx(2, "%s: calling libusb_set_interface_alt_setting(udev, %d, %d).", __func__, usb_if_num, altinterface);
+	ret = libusb_set_interface_alt_setting(udev, usb_if_num, altinterface);
+	if (ret != LIBUSB_SUCCESS)
+		upslogx(LOG_WARNING, "%s: libusb_set_interface_alt_setting(udev, %d, %d) error (%s).", __func__, usb_if_num, altinterface, libusb_strerror(ret));
+
+	upslogx(LOG_NOTICE, "%s: libusb_set_interface_alt_setting() should not be necessary - please email the nut-upsdev list with information about your device.", __func__);
+
 	return ret;
 }
+
 
 /* On success, fill in the curDevice structure and return the report
  * descriptor length. On failure, return -1.
@@ -337,6 +340,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	/*	if_claimed = 1;	*/
 		upsdebugx(2, "Claimed interface %d successfully", usb_if_num);
 
+		/* Set the USB alternate setting for the interface, if needed. */
 		nut_usb_set_altinterface(udev);
 
 		if (!callback) {
