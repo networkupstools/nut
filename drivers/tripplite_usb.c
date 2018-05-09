@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -192,6 +192,7 @@ static enum tl_model_t {
 	TRIPP_LITE_OMNIVS_2001,
 	TRIPP_LITE_SMARTPRO,
 	TRIPP_LITE_SMART_0004,
+	TRIPP_LITE_SMART_0005,
 	TRIPP_LITE_SMART_3005
 } tl_model = TRIPP_LITE_UNKNOWN;
 
@@ -216,6 +217,7 @@ static int is_smart_protocol()
 	switch(tl_model) {
 	case TRIPP_LITE_SMARTPRO:
 	case TRIPP_LITE_SMART_0004:
+	case TRIPP_LITE_SMART_0005:
 	case TRIPP_LITE_SMART_3005:
 		return 1;
 	default:
@@ -413,6 +415,9 @@ enum tl_model_t decode_protocol(unsigned int proto)
 		case 0x0004:
 			upslogx(3, "Using older SMART protocol (%04x)", proto);
 			return TRIPP_LITE_SMART_0004;
+		case 0x0005:
+			upslogx(3, "Using older SMART protocol (%04x)", proto);
+			return TRIPP_LITE_SMART_0005;
 		case 0x1001:
 			upslogx(3, "Using OMNIVS protocol (%x)", proto);
 			return TRIPP_LITE_OMNIVS;
@@ -719,6 +724,7 @@ static int control_outlet(int outlet_id, int state)
 	switch(tl_model) {
 		case TRIPP_LITE_SMARTPRO:   /* tested */
 		case TRIPP_LITE_SMART_0004: /* untested */
+		case TRIPP_LITE_SMART_0005: /* untested */
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%02X", 5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
 			snprintf(k_cmd, sizeof(k_cmd)-1, "K%d%d", outlet_id, state & 1);
@@ -932,9 +938,10 @@ void upsdrv_initinfo(void)
 	ret = send_cmd(p_msg, sizeof(p_msg), p_value, sizeof(p_value)-1);
 	va = strtol((char *)(p_value+1), NULL, 10);
 
-	if(tl_model == TRIPP_LITE_SMART_0004) {
+	if(tl_model == TRIPP_LITE_SMART_0004 ||
+	   tl_model == TRIPP_LITE_SMART_0005) {
 		dstate_setinfo("ups.debug.P","%s", hexascdump(p_value+1, 7));
-		va *= 10; /* TODO: confirm? */
+		va *= 10; /* Seems to be true for protocol 0005 */
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
@@ -1022,10 +1029,6 @@ void upsdrv_initinfo(void)
 		} else {
 			unit_id = (int)((unsigned)(u_value[1]) << 8) 
 				| (unsigned)(u_value[2]);
-		}
-
-		if(tl_model == TRIPP_LITE_SMART_0004) {
-			debug_message("U", 2);
 		}
 	}
 
@@ -1300,7 +1303,7 @@ void upsdrv_updateinfo(void)
 			return;
 		}
 
-		if( tl_model == TRIPP_LITE_SMARTPRO ) {
+		if( tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0005 ) {
 			freq = hex2d(t_value + 3, 3);
 			dstate_setinfo("input.frequency", "%.1f", freq / 10.0);
 
@@ -1330,7 +1333,8 @@ void upsdrv_updateinfo(void)
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
-	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ) {
+	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ||
+	    tl_model == TRIPP_LITE_SMART_0005) {
 		/* dq ~= sqrt(dV) is a reasonable approximation
 		 * Results fit well against the discrete function used in the Tripp Lite
 		 * source, but give a continuous result. */
@@ -1363,6 +1367,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			break;
 		case TRIPP_LITE_SMART_0004:
+		case TRIPP_LITE_SMART_0005:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
