@@ -280,27 +280,9 @@ sub find_usbdevs
 			if($nameFile=~/(.+)-hid\.c/) {
 				$driver="usbhid-ups";
 			}
-			# FIXME: make a generic matching rule *.c => *
-			elsif ($nameFile eq "bcmxcp_usb.c") {
-				$driver="bcmxcp_usb";
-			}
-			elsif ($nameFile eq "tripplite_usb.c") {
-				$driver="tripplite_usb";
-			}
-			elsif ($nameFile eq "blazer_usb.c") {
-				$driver="blazer_usb";
-			}
-			elsif ($nameFile eq "richcomm_usb.c") {
-				$driver="richcomm_usb";
-			}
-			elsif ($nameFile eq "nutdrv_atcl_usb.c") {
-				$driver="nutdrv_atcl_usb";
-			}
-			elsif ($nameFile eq "riello_usb.c") {
-				$driver="riello_usb";
-			}
-			elsif ($nameFile eq "nutdrv_qx.c") {
-				$driver="nutdrv_qx";
+			# generic matching rule *.c => *
+			elsif ($nameFile =~ /(.+)\.c$/) {
+				$driver=$1;
 			}
 			else {
 				die "Unknown driver type: $nameFile";
