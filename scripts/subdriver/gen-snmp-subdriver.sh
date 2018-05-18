@@ -3,7 +3,7 @@
 # an auxiliary script to produce a "stub" snmp-ups subdriver from
 # SNMP data from a real agent or from dump files
 #
-# Version: 0.9-dmf
+# Version: 0.10-dmf
 #
 # See also: docs/snmp-subdrivers.txt
 #
@@ -75,6 +75,7 @@ DMF=0
 # constants
 NAME=gen-snmp-subdriver
 TMPDIR="${TEMPDIR:-/tmp}"
+SYSOID_NUMBER=".1.3.6.1.2.1.1.2.0"
 DEBUG=`mktemp "$TMPDIR/$NAME-DEBUG.XXXXXX"`
 DFL_NUMWALKFILE=`mktemp "$TMPDIR/$NAME-NUMWALK.XXXXXX"`
 DFL_STRWALKFILE=`mktemp "$TMPDIR/$NAME-STRWALK.XXXXXX"`
@@ -85,7 +86,7 @@ get_snmp_data() {
 	# 1) get the sysOID (points the mfr specif MIB), apart if there's an override
 	if [ -z "$SYSOID" ]
 	then
-		SYSOID=`snmpget -On -v1 -c $COMMUNITY -Ov $HOSTNAME .1.3.6.1.2.1.1.2.0 | cut -d' ' -f2`
+		SYSOID=`snmpget -On -v1 -c $COMMUNITY -Ov $HOSTNAME $SYSOID_NUMBER | cut -d' ' -f2`
 		echo "sysOID retrieved: ${SYSOID}"
 	else
 		echo "Using the provided sysOID override ($SYSOID)"
@@ -439,7 +440,7 @@ else
 	while [ -z "$SYSOID" ]; do
 		echo "
 Please enter the value of sysOID, as displayed by snmp-ups. For example '.1.3.6.1.4.1.2254.2.4'.
-You can get it using: snmpget -v1 -c XXX <host> .1.3.6.1.2.1.1.2.0"
+You can get it using: snmpget -v1 -c XXX <host> $SYSOID_NUMBER"
 		read -p "Value of sysOID: " SYSOID < /dev/tty
 		if echo $SYSOID | egrep -q '[^0-9.]'; then
 			echo "Please use only the numeric form, with dots and digits"
