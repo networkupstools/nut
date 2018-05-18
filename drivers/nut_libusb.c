@@ -1,39 +1,37 @@
-/*!
+/**
  * @file
- * @brief Generic USB communication backend (using libusb 1.0)
+ * @brief	HID Library - USB communication subdriver.
+ * @copyright	@parblock
+ * Copyright (C):
+ * - 2003-2016 -- Arnaud Quette (<aquette.dev@gmail.com>), for MGE UPS SYSTEMS and Eaton
+ * - 2005-2007 -- Peter Selinger (<selinger@users.sourceforge.net>)
+ * - 2018      -- Daniele Pezzini (<hyouko@gmail.com>)
  *
- * @author Copyright (C) 2016 Eaton
- *         Copyright (C) 2016 Arnaud Quette <aquette.dev@gmail.com>
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
  *
- *      The logic of this file is ripped from mge-shut driver (also from
- *      Arnaud Quette), which is a "HID over serial link" UPS driver for
- *      Network UPS Tools <http://www.networkupstools.org/>
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      This program is free software; you can redistribute it and/or modify
- *      it under the terms of the GNU General Public License as published by
- *      the Free Software Foundation; either version 2 of the License, or
- *      (at your option) any later version.
- *
- *      This program is distributed in the hope that it will be useful,
- *      but WITHOUT ANY WARRANTY; without even the implied warranty of
- *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *      GNU General Public License for more details.
- *
- *      You should have received a copy of the GNU General Public License
- *      along with this program; if not, write to the Free Software
- *      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * -------------------------------------------------------------------------- */
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *		@endparblock
+ */
 
-#include "config.h" /* for HAVE_LIBUSB_DETACH_KERNEL_DRIVER flag */
-#include "common.h" /* for xmalloc, upsdebugx prototypes */
-#include "usb-common.h"
 #include "nut_libusb.h"
+
+#include "config.h"	/* for HAVE_LIBUSB_* flags */
+#include "common.h"	/* for upsdebug*() */
+#include "dstate.h"	/* for dstate_setinfo() */
 #include "nut_stdint.h"	/* for uint*_t */
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.20"
+#define USB_DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -186,15 +184,7 @@ static int	nut_usb_set_altinterface(
 	return ret;
 }
 
-
-/* On success, fill in the curDevice structure and return the report
- * descriptor length. On failure, return -1.
- * Note: When callback is not NULL, the report descriptor will be
- * passed to this function together with the udev and USBDevice_t
- * information. This callback should return a value > 0 if the device
- * is accepted, or < 1 if not. If it isn't accepted, the next device
- * (if any) will be tried, until there are no more devices left.
- */
+/** @brief See usb_communication_subdriver_t::open(). */
 static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(libusb_device_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
@@ -517,10 +507,7 @@ static int	nut_usb_logerror(
 	}
 }
 
-/* return the report of ID=type in report
- * return -1 on failure, report length on success
- */
-
+/** @brief See usb_communication_subdriver_t::get_report(). */
 static int nut_libusb_get_report(libusb_device_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	int	ret;
@@ -545,6 +532,7 @@ static int nut_libusb_get_report(libusb_device_handle *udev, int ReportId, unsig
 	return nut_usb_logerror(ret, __func__);
 }
 
+/** @brief See usb_communication_subdriver_t::set_report(). */
 static int nut_libusb_set_report(libusb_device_handle *udev, int ReportId, unsigned char *raw_buf, int ReportSize )
 {
 	int	ret;
@@ -567,6 +555,7 @@ static int nut_libusb_set_report(libusb_device_handle *udev, int ReportId, unsig
 	return nut_usb_logerror(ret, __func__);
 }
 
+/** @brief See usb_communication_subdriver_t::get_string(). */
 static int nut_libusb_get_string(libusb_device_handle *udev, int StringIdx, char *buf, size_t buflen)
 {
 	int ret;
@@ -580,6 +569,7 @@ static int nut_libusb_get_string(libusb_device_handle *udev, int StringIdx, char
 	return nut_usb_logerror(ret, __func__);
 }
 
+/** @brief See usb_communication_subdriver_t::get_interrupt(). */
 static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *buf, int bufsize, int timeout)
 {
 	int ret;
@@ -602,6 +592,7 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *b
 	return nut_usb_logerror(ret, __func__);
 }
 
+/** @brief See usb_communication_subdriver_t::close(). */
 static void nut_libusb_close(libusb_device_handle *udev)
 {
 	if (!udev) {
