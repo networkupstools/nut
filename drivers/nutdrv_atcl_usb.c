@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.19"
+#define DRIVER_VERSION	"1.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -227,16 +227,10 @@ static void usb_device_close(libusb_device_handle *handle)
 static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, USBDeviceMatcher_t *matcher,
 	int (*callback)(libusb_device_handle *handle, USBDevice_t *device))
 {
-	libusb_device			**devlist;
-	ssize_t				  devcount = 0;
-	libusb_device_handle		 *handle;
-	struct libusb_device_descriptor	  dev_desc;
-	int				  i,
-					  ret = 0;
-	uint8_t				  bus,
-					  iManufacturer = 0,
-					  iProduct = 0,
-					  iSerialNumber = 0;
+	int		  ret;
+	libusb_device	**devlist;
+	ssize_t		  devcount,
+			  devnum;
 
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
@@ -254,10 +248,14 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 	if (devcount <= 0)
 		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
 
-	for (i = 0; i < devcount; i++) {
+	for (devnum = 0; devnum < devcount; devnum++) {
 
-		USBDeviceMatcher_t	*m;
-		libusb_device *dev = devlist[i];
+		libusb_device			*dev = devlist[devnum];
+		libusb_device_handle		*handle;
+		USBDeviceMatcher_t		*m;
+		struct libusb_device_descriptor	 dev_desc;
+		int				 i;
+		uint8_t				 bus;
 
 		ret = libusb_get_device_descriptor(dev, &dev_desc);
 		if (ret != LIBUSB_SUCCESS) {
@@ -282,7 +280,6 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		free(device->Product);
 		free(device->Serial);
 		free(device->Bus);
-
 		memset(device, 0, sizeof(*device));
 
 		device->VendorID = dev_desc.idVendor;
@@ -291,27 +288,24 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		if ((device->Bus = (char *)malloc(4)) == NULL)
 			goto oom_error;
 		sprintf(device->Bus, "%03d", bus);
-		iManufacturer = dev_desc.iManufacturer;
-		iProduct = dev_desc.iProduct;
-		iSerialNumber = dev_desc.iSerialNumber;
 
-		if (iManufacturer) {
+		if (dev_desc.iManufacturer) {
 			char	buf[SMALLBUF];
-			ret = libusb_get_string_descriptor_ascii(handle, iManufacturer, (unsigned char *)buf, sizeof(buf));
+			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iManufacturer, (unsigned char *)buf, sizeof(buf));
 			if (ret > 0 && (device->Vendor = strdup(buf)) == NULL)
 				goto oom_error;
 		}
 
-		if (iProduct) {
+		if (dev_desc.iProduct) {
 			char	buf[SMALLBUF];
-			ret = libusb_get_string_descriptor_ascii(handle, iProduct, (unsigned char *)buf, sizeof(buf));
+			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iProduct, (unsigned char *)buf, sizeof(buf));
 			if (ret > 0 && (device->Product = strdup(buf)) == NULL)
 				goto oom_error;
 		}
 
-		if (iSerialNumber) {
+		if (dev_desc.iSerialNumber) {
 			char	buf[SMALLBUF];
-			ret = libusb_get_string_descriptor_ascii(handle, iSerialNumber, (unsigned char *)buf, sizeof(buf));
+			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iSerialNumber, (unsigned char *)buf, sizeof(buf));
 			if (ret > 0 && (device->Serial = strdup(buf)) == NULL)
 				goto oom_error;
 		}

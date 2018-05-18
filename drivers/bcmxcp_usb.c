@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.28"
+#define SUBDRIVER_VERSION "0.29"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -367,20 +367,21 @@ static void nutusb_open_error(const char *port)
 /* FIXME: this part of the opening can go into common... */
 static libusb_device_handle *open_powerware_usb(void)
 {
-	libusb_device **devlist;
-	ssize_t devcount = 0;
-	libusb_device_handle *udev;
-	struct libusb_device_descriptor dev_desc;
-	uint8_t bus;
-	int i, ret;
+	libusb_device	**devlist;
+	ssize_t		  devcount,
+			  devnum;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0)
 		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
 
-	for (i = 0; i < devcount; i++) {
+	for (devnum = 0; devnum < devcount; devnum++) {
 
-		libusb_device *device = devlist[i];
+		libusb_device			*device = devlist[devnum];
+		libusb_device_handle		*udev;
+		struct libusb_device_descriptor	 dev_desc;
+		uint8_t				 bus;
+		int				 ret;
 
 		ret = libusb_get_device_descriptor(device, &dev_desc);
 		if (ret != LIBUSB_SUCCESS) {
@@ -414,6 +415,7 @@ static libusb_device_handle *open_powerware_usb(void)
 			libusb_free_device_list(devlist, 1);
 			return udev;
 		}
+
 	}
 	libusb_free_device_list(devlist, 1);
 	return 0;

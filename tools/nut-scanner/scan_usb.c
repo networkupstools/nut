@@ -83,26 +83,11 @@ static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 /* return NULL if error */
 nutscan_device_t * nutscan_scan_usb()
 {
-	int ret;
-	char string[256];
-	char *driver_name = NULL;
-	char *serialnumber = NULL;
-	char *device_name = NULL;
-	char *vendor_name = NULL;
-	uint8_t iManufacturer = 0, iProduct = 0, iSerialNumber = 0;
-	uint16_t VendorID;
-	uint16_t ProductID;
-	char *busname;
-	libusb_device *dev;
-	libusb_device **devlist;
-	uint8_t bus;
-	libusb_device_handle *udev = NULL;
-	ssize_t devcount = 0;
-	struct libusb_device_descriptor dev_desc;
-	int i;
-
-	nutscan_device_t * nut_dev = NULL;
-	nutscan_device_t * current_nut_dev = NULL;
+	int			  ret;
+	libusb_device		**devlist;
+	ssize_t			  devcount,
+				  devnum;
+	nutscan_device_t	 *current_nut_dev = NULL;
 
 	if( !nutscan_avail_usb ) {
 		return NULL;
@@ -121,9 +106,21 @@ nutscan_device_t * nutscan_scan_usb()
 		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
 	}
 
-	for (i = 0; i < devcount; i++) {
+	for (devnum = 0; devnum < devcount; devnum++) {
 
-		dev = devlist[i];
+		libusb_device			*dev = devlist[devnum];
+		libusb_device_handle		*udev = NULL;
+
+		char				 string[256];
+		uint8_t				 bus;
+		char				*busname = NULL;
+		char				*serialnumber = NULL;
+		char				*device_name = NULL;
+		char				*vendor_name = NULL;
+		char				*driver_name = NULL;
+		struct libusb_device_descriptor	 dev_desc;
+
+		nutscan_device_t		*nut_dev = NULL;
 
 		ret = libusb_get_device_descriptor(dev, &dev_desc);
 		if (ret != LIBUSB_SUCCESS) {
@@ -131,12 +128,6 @@ nutscan_device_t * nutscan_scan_usb()
 			continue;
 		}
 
-		VendorID = dev_desc.idVendor;
-		ProductID = dev_desc.idProduct;
-
-		iManufacturer = dev_desc.iManufacturer;
-		iProduct = dev_desc.iProduct;
-		iSerialNumber = dev_desc.iSerialNumber;
 		bus = libusb_get_bus_number(dev);
 		if ((busname = (char *)malloc(4)) == NULL)
 			goto oom_error;
@@ -144,7 +135,7 @@ nutscan_device_t * nutscan_scan_usb()
 
 		if ((driver_name =
 			is_usb_device_supported(usb_device_table,
-				VendorID, ProductID)) != NULL) {
+				dev_desc.idVendor, dev_desc.idProduct)) != NULL) {
 
 			/* open the device */
 			ret = libusb_open(dev, &udev);
@@ -154,21 +145,21 @@ nutscan_device_t * nutscan_scan_usb()
 			}
 
 			/* get serial number */
-			if (iSerialNumber) {
-				ret = libusb_get_string_descriptor_ascii(udev, iSerialNumber, (unsigned char *)string, sizeof(string));
+			if (dev_desc.iSerialNumber) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber, (unsigned char *)string, sizeof(string));
 				if (ret > 0 && (serialnumber = strdup(str_rtrim(string, ' '))) == NULL)
 					goto oom_error;
 			}
 			/* get product name */
-			if (iProduct) {
-				ret = libusb_get_string_descriptor_ascii(udev, iProduct, (unsigned char *)string, sizeof(string));
+			if (dev_desc.iProduct) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct, (unsigned char *)string, sizeof(string));
 				if (ret > 0 && (device_name = strdup(str_rtrim(string, ' '))) == NULL)
 					goto oom_error;
 			}
 
 			/* get vendor name */
-			if (iManufacturer) {
-				ret = libusb_get_string_descriptor_ascii(udev, iManufacturer, (unsigned char *)string, sizeof(string));
+			if (dev_desc.iManufacturer) {
+				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer, (unsigned char *)string, sizeof(string));
 				if (ret > 0 && (vendor_name = strdup(str_rtrim(string, ' '))) == NULL)
 					goto oom_error;
 			}
@@ -182,30 +173,27 @@ nutscan_device_t * nutscan_scan_usb()
 				nut_dev->driver = strdup(driver_name);
 			}
 			nut_dev->port = strdup("auto");
-			sprintf(string,"%04X", VendorID);
+			sprintf(string,"%04X", dev_desc.idVendor);
 			nutscan_add_option_to_device(nut_dev,"vendorid", string);
-			sprintf(string,"%04X", ProductID);
+			sprintf(string,"%04X", dev_desc.idProduct);
 			nutscan_add_option_to_device(nut_dev,"productid", string);
 			if(device_name) {
 				nutscan_add_option_to_device(nut_dev,
 							"product",
 							device_name);
 				free(device_name);
-				device_name = NULL;
 			}
 			if(serialnumber) {
 				nutscan_add_option_to_device(nut_dev,
 							"serial",
 							serialnumber);
 				free(serialnumber);
-				serialnumber = NULL;
 			}
 			if(vendor_name) {
 				nutscan_add_option_to_device(nut_dev,
 							"vendor",
 							vendor_name);
 				free(vendor_name);
-				vendor_name = NULL;
 			}
 			nutscan_add_option_to_device(nut_dev,"bus",
 							busname);
@@ -214,10 +202,7 @@ nutscan_device_t * nutscan_scan_usb()
 							current_nut_dev,
 							nut_dev);
 
-			memset (string, 0, sizeof(string));
-
 			libusb_close(udev);
-			udev = NULL;
 		}
 		free(busname);
 		continue;

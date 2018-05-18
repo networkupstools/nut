@@ -33,7 +33,7 @@
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.18"
+#define USB_DRIVER_VERSION	"0.19"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -198,25 +198,10 @@ static int	nut_usb_set_altinterface(
 static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(libusb_device_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
-	uint16_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
-	USBDeviceMatcher_t *m;
-	libusb_device **devlist;
-	ssize_t	devcount = 0,
-		devnum;
-	struct libusb_device_descriptor dev_desc;
-	libusb_device_handle *udev;
-	uint8_t bus;
-	int ret, res;
-	unsigned char buf[20];
-	char string[256];
-	/* All devices use HID descriptor at index 0. However, some newer
-	 * Eaton units have a light HID descriptor at index 0, and the full
-	 * version is at index 1 (in which case, bcdDevice == 0x0202) */
-	int hid_desc_index = 0;
-
-	/* report descriptor */
-	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	uint16_t	rdlen;
+	int		  ret;
+	libusb_device	**devlist;
+	ssize_t		  devcount,
+			  devnum;
 
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
@@ -233,10 +218,34 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	devcount = libusb_get_device_list(NULL, &devlist);
 
 	for (devnum = 0; devnum < devcount; devnum++) {
-		/* int		if_claimed = 0; */
-		libusb_device	*device = devlist[devnum];
-		int		got_rdlen1 = 0,
-				got_rdlen2 = 0;
+
+	/*	int				 if_claimed = 0;	*/
+
+		libusb_device			*device = devlist[devnum];
+		libusb_device_handle		*udev;
+
+		char				 string[256];
+		uint8_t				 bus;
+
+		USBDeviceMatcher_t		*m;
+
+		/* DEVICE descriptor */
+		struct libusb_device_descriptor	 dev_desc;
+
+		/* HID descriptor */
+		unsigned char			 buf[20];
+		/* All devices use HID descriptor at index 0.
+		 * However, some newer Eaton units have a light HID descriptor at index 0,
+		 * and the full version is at index 1 (in which case, bcdDevice == 0x0202). */
+		int				 hid_desc_index = 0;
+
+		/* REPORT descriptor */
+		unsigned char			 rdbuf[MAX_REPORT_SIZE];
+		uint16_t			 rdlen,
+						 rdlen1,
+						 rdlen2;
+		int				 got_rdlen1 = 0,
+						 got_rdlen2 = 0;
 
 		upsdebugx(2, "Checking device %lu of %lu.", devnum + 1, devcount);
 
@@ -344,13 +353,13 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		/* Get HID descriptor */
 
 		/* FIRST METHOD: ask for HID descriptor directly. */
-		res = libusb_control_transfer(udev, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
+		ret = libusb_control_transfer(udev, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
 			LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_HID<<8) + hid_desc_index, usb_if_num, buf, 0x9, USB_TIMEOUT);
 
-		if (res < 0) {
-			upsdebugx(2, "Unable to get HID descriptor (%s)", libusb_strerror((enum libusb_error)res));
-		} else if (res < 9) {
-			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
+		if (ret < 0) {
+			upsdebugx(2, "Unable to get HID descriptor (%s)", libusb_strerror((enum libusb_error)ret));
+		} else if (ret < 9) {
+			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, ret);
 		} else {
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
 			rdlen1 = buf[7] | (buf[8] << 8);
@@ -426,23 +435,23 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 			goto next_device;
 		}
 
-		res = libusb_control_transfer(udev, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
+		ret = libusb_control_transfer(udev, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
 			LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_REPORT<<8) + hid_desc_index, usb_if_num, rdbuf, rdlen, USB_TIMEOUT);
 
-		if (res < 0)
+		if (ret < 0)
 		{
-			upsdebugx(2, "Unable to get Report descriptor (%s)", libusb_strerror(res));
+			upsdebugx(2, "Unable to get Report descriptor (%s)", libusb_strerror(ret));
 			goto next_device;
 		}
 
-		if (res < rdlen)
+		if (ret < rdlen)
 		{
-			upsdebugx(2, "Warning: report descriptor too short (expected %u, got %d)", rdlen, res);
-			rdlen = res; /* correct rdlen if necessary */
+			upsdebugx(2, "Warning: report descriptor too short (expected %u, got %d)", rdlen, ret);
+			rdlen = ret; /* correct rdlen if necessary */
 		}
 
-		res = callback(udev, curDevice, rdbuf, rdlen);
-		if (res < 1) {
+		ret = callback(udev, curDevice, rdbuf, rdlen);
+		if (ret < 1) {
 			upsdebugx(2, "Caller doesn't like this device");
 			goto next_device;
 		}
