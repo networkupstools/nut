@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.32"
+#define DRIVER_VERSION	"0.33"
 
 #include "main.h"
 
@@ -2018,7 +2018,7 @@ void	upsdrv_initups(void)
 		regex_matcher->next = &device_matcher;
 
 		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
-		if (ret < 0) {
+		if (ret != LIBUSB_SUCCESS) {
 			fatalx(EXIT_FAILURE,
 				"No supported devices found. Please check your device availability with 'lsusb'\n"
 				"and make sure you have an up-to-date version of NUT. If this does not help,\n"
@@ -2140,10 +2140,8 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 
 		if (udev == NULL) {
 			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
-
-			if (ret < 1) {
+			if (ret != LIBUSB_SUCCESS)
 				return ret;
-			}
 		}
 
 		ret = (*subdriver_command)(cmd, buf, buflen);

@@ -143,7 +143,8 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
    the report is not yet in the buffer, or if it is older than "age"
    seconds, then the report is freshly read from the USB
    device. Otherwise, it is unchanged.
-   Return 0 on success, -1 on error with errno set. */
+   Return 1 on success.
+   On failure, return 0 on ignored errors, <0 (COMM_DRIVER_() code) otherwise. */
 /* because buggy firmwares from APC return wrong report size, we either
    ask the report with the found report size or with the whole buffer size
    depending on the max_report_size flag */
@@ -155,15 +156,14 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	if (interrupt_only || rbuf->ts[id] + age > time(NULL)) {
 		/* buffered report is still good; nothing to do */
 		upsdebug_hex(3, "Report[buf]", rbuf->data[id], rbuf->len[id]);
-		return 0;
+		return 1;
 	}
 
 	r = comm_driver->get_report(udev, id, rbuf->data[id],
 		max_report_size ? (int)sizeof(rbuf->data[id]):rbuf->len[id]);
 
-	if (r <= 0) {
-		return -1;
-	}
+	if (r <= 0)
+		return r;
 
 	if (rbuf->len[id] != r) {
 		upsdebugx(2, "%s: expected %d bytes, but got %d instead", __func__, rbuf->len[id], r);
@@ -175,31 +175,32 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
 	/* have (valid) report */
 	time(&rbuf->ts[id]);
 
-	return 0;
+	return 1;
 }
 
 /* read the logical value for the given pData. No logical to physical
    conversion is performed. If age>0, the read operation is buffered
-   if the item's age is less than "age". On success, return 0 and
-   store the answer in *value. On failure, return -1 and set errno. */
+   if the item's age is less than "age". On success, return 1 and
+   store the answer in *value. On failure, return 0 on ignored errors,
+   <0 (COMM_DRIVER_() code) otherwise. */
 static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, int age)
 {
 	int id = pData->ReportID;
 	int r;
 
 	r = refresh_report_buffer(rbuf, udev, pData, age);
-	if (r<0) {
-		return -1;
-	}
+	if (r != 1)
+		return r;
 
 	GetValue(rbuf->data[id], pData, Value);
 
-	return 0;
+	return 1;
 }
 
 /* set the logical value for the given pData. No physical to logical
-   conversion is performed. On success, return 0, and failure, return
-   -1 and set errno. The updated value is sent to the device. */
+   conversion is performed. On success, return 1, on failure, return
+   0 on ignored errors, <0 (COMM_DRIVER_() code) otherwise.
+   The updated value is sent to the device. */
 static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long Value)
 {
 	int id = pData->ReportID;
@@ -208,16 +209,15 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 	SetValue(pData, rbuf->data[id], Value);
 
 	r = comm_driver->set_report(udev, id, rbuf->data[id], rbuf->len[id]);
-	if (r <= 0) {
-		return -1;
-	}
+	if (r <= 0)
+		return r;
 
 	upsdebug_hex(3, "Report[set]", rbuf->data[id], rbuf->len[id]);
 
 	/* expire report */
 	rbuf->ts[id] = 0;
 
-	return 0;
+	return 1;
 }
 
 /* file a given report in the report buffer. This is used when the
@@ -374,7 +374,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
 }
 
 /* Return the physical value associated with the given HIDData path.
- * return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
+ * return 1 if OK, 0 on fail, <0 (COMM_DRIVER_() code) otherwise (ie disconnect).
  */
 int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age)
 {
@@ -386,9 +386,9 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 	}
 
 	r = get_item_buffered(reportbuf, udev, hiddata, &hValue, age);
-	if (r<0) {
+	if (r != 1) {
 		upsdebug_with_errno(1, "Can't retrieve Report %02x", hiddata->ReportID);
-		return -errno;
+		return r;
 	}
 
 	*Value = hValue;
@@ -403,7 +403,7 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 }
 
 /* Return the physical value associated with the given path.
- * return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
+ * return 1 if OK, 0 on fail, <0 (COMM_DRIVER_() code) otherwise (ie disconnect).
  */
 int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, usage_tables_t *utab)
 {
@@ -435,7 +435,7 @@ char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, si
 }
 
 /* Set the given physical value for the variable associated with
- * path. return 1 if OK, 0 on fail, -errno otherwise (ie disconnect).
+ * path. return 1 if OK, 0 on fail, <0 (COMM_DRIVER_() code) otherwise (ie disconnect).
  */
 int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 {
@@ -460,9 +460,9 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 	hValue = physical_to_logical(hiddata, Value);
 
 	r = set_item_buffered(reportbuf, udev, hiddata, hValue);
-	if (r<0) {
+	if (r != 1) {
 		upsdebug_with_errno(1, "Can't set Report %02x", hiddata->ReportID);
-		return -errno;
+		return r;
 	}
 
 	/* flush the report buffer (data may have changed) */

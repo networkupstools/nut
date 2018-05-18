@@ -33,7 +33,7 @@
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.19"
+#define USB_DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -341,7 +341,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		/* Done, if no callback is provided */
 		if (!callback) {
 			libusb_free_device_list(devlist, 1);
-			return 1;
+			return LIBUSB_SUCCESS;
 		}
 
 		/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
@@ -461,7 +461,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		fflush(stdout);
 		libusb_free_device_list(devlist, 1);
 
-		return rdlen;
+		return LIBUSB_SUCCESS;
 
 	next_device:
 		/* usb_release_interface() sometimes blocks and goes
@@ -482,7 +482,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 	upsdebugx(2, "No appropriate HID device found");
 	fflush(stdout);
 
-	return -1;
+	return LIBUSB_ERROR_NOT_FOUND;
 }
 
 /** @brief Log errors, if any, of nut_libusb_get_report(), nut_libusb_set_report(), nut_libusb_get_string(), nut_libusb_get_interrupt().
@@ -528,7 +528,7 @@ static int nut_libusb_get_report(libusb_device_handle *udev, int ReportId, unsig
 	upsdebugx(4, "Entering libusb_get_report");
 
 	if (!udev) {
-		return 0;
+		return LIBUSB_ERROR_INVALID_PARAM;
 	}
 
 	ret = libusb_control_transfer(udev,
@@ -550,7 +550,7 @@ static int nut_libusb_set_report(libusb_device_handle *udev, int ReportId, unsig
 	int	ret;
 
 	if (!udev) {
-		return 0;
+		return LIBUSB_ERROR_INVALID_PARAM;
 	}
 
 	ret = libusb_control_transfer(udev,
@@ -572,7 +572,7 @@ static int nut_libusb_get_string(libusb_device_handle *udev, int StringIdx, char
 	int ret;
 
 	if (!udev) {
-		return -1;
+		return LIBUSB_ERROR_INVALID_PARAM;
 	}
 	ret = libusb_get_string_descriptor_ascii(udev, StringIdx,
 		(unsigned char*)buf, buflen);
@@ -585,7 +585,7 @@ static int nut_libusb_get_interrupt(libusb_device_handle *udev, unsigned char *b
 	int ret;
 
 	if (!udev) {
-		return -1;
+		return LIBUSB_ERROR_INVALID_PARAM;
 	}
 
 	/* FIXME: hardcoded interrupt EP => need to get EP descr for IF descr */

@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.45"
+#define DRIVER_VERSION		"0.46"
 
 #include "main.h"
 #include "libhid.h"
@@ -92,20 +92,6 @@ typedef enum {
 	HU_WALKMODE_QUICK_UPDATE,
 	HU_WALKMODE_FULL_UPDATE
 } walkmode_t;
-
-#ifdef SHUT_MODE
- #define ERROR_BUSY		-EBUSY
- #define ERROR_NO_DEVICE	-ENODEV
- #define ERROR_ACCESS		-EACCES
- #define ERROR_IO		-EIO
- #define ERROR_NOT_FOUND	-ENOENT
-#else
- #define ERROR_BUSY		LIBUSB_ERROR_BUSY
- #define ERROR_NO_DEVICE	LIBUSB_ERROR_NO_DEVICE
- #define ERROR_ACCESS		LIBUSB_ERROR_ACCESS
- #define ERROR_IO		LIBUSB_ERROR_IO
- #define ERROR_NOT_FOUND	LIBUSB_ERROR_NOT_FOUND
-#endif
 
 /* pointer to the active subdriver object (changed in callback() function) */
 static subdriver_t *subdriver = NULL;
@@ -810,18 +796,12 @@ void upsdrv_updateinfo(void)
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		switch (evtCount)
 		{
-		case ERROR_BUSY:      /* Device or resource busy */
+		case COMM_DRIVER_(ERROR_BUSY):
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
-#ifdef SHUT_MODE
-		case -EPERM:          /* Operation not permitted */
-#endif
-		case ERROR_NO_DEVICE: /* No such device */
-		case ERROR_ACCESS:    /* Permission denied */
-		case ERROR_IO:        /* I/O error */
-#ifdef SHUT_MODE
-		case -ENXIO:          /* No such device or address */
-#endif
-		case ERROR_NOT_FOUND: /* No such file or directory */
+		case COMM_DRIVER_(ERROR_NO_DEVICE):
+		case COMM_DRIVER_(ERROR_ACCESS):
+		case COMM_DRIVER_(ERROR_IO):
+		case COMM_DRIVER_(ERROR_NOT_FOUND):
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return;
@@ -984,7 +964,7 @@ void upsdrv_initups(void)
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
-	if (ret < 1)
+	if (ret != COMM_DRIVER_(SUCCESS))
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
 	hd = &curDevice;
@@ -1317,18 +1297,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		switch (retcode)
 		{
-		case ERROR_BUSY:      /* Device or resource busy */
+		case COMM_DRIVER_(ERROR_BUSY):
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
-#ifdef SHUT_MODE
-		case -EPERM:          /* Operation not permitted */
-#endif
-		case ERROR_NO_DEVICE: /* No such device */
-		case ERROR_ACCESS:    /* Permission denied */
-		case ERROR_IO:        /* I/O error */
-#ifdef SHUT_MODE
-		case -ENXIO:          /* No such device or address */
-#endif
-		case ERROR_NOT_FOUND: /* No such file or directory */
+		case COMM_DRIVER_(ERROR_NO_DEVICE):
+		case COMM_DRIVER_(ERROR_ACCESS):
+		case COMM_DRIVER_(ERROR_IO):
+		case COMM_DRIVER_(ERROR_NOT_FOUND):
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
@@ -1396,9 +1370,8 @@ static int reconnect_ups(void)
 
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
 
-	if (ret > 0) {
+	if (ret == COMM_DRIVER_(SUCCESS))
 		return 1;
-	}
 
 	return 0;
 }
