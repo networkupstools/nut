@@ -416,8 +416,10 @@ static void	qx_initbattery(void)
 
 
 /* == USB communication subdrivers == */
-#if defined(QX_USB) && !defined(TESTING)
+#ifdef QX_USB
 static usb_communication_subdriver_t	*usb = &usb_subdriver;
+
+#ifndef TESTING
 static libusb_device_handle		*udev = NULL;
 static USBDevice_t			usbdevice;
 static USBDeviceMatcher_t		*reopen_matcher = NULL;
@@ -1163,7 +1165,10 @@ static USBDeviceMatcher_t	device_matcher = {
 	NULL,
 	NULL
 };
-#endif	/* QX_USB && !TESTING */
+
+#endif	/* !TESTING */
+
+#endif	/* QX_USB */
 
 
 /* == Driver functions implementations == */
@@ -1675,8 +1680,8 @@ void	upsdrv_makevartable(void)
 
 #ifdef QX_USB
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	nut_usb_addvars();
+
+	usb->add_nutvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
 #endif	/* QX_USB */

@@ -740,16 +740,13 @@ void upsdrv_makevartable(void)
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
 #ifndef SHUT_MODE
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
-	nut_usb_addvars();
-
 	addvar(VAR_FLAG, "explore", "Diagnostic matching of unsupported UPS");
 	addvar(VAR_FLAG, "maxreport", "Activate tweak for buggy APC Back-UPS firmware");
 	addvar(VAR_FLAG, "interruptonly", "Don't use polling, only use interrupt pipe");
 	addvar(VAR_VALUE, "interruptsize", "Number of bytes to read from interrupt pipe");
-#else
-	comm_driver->add_nutvars();
 #endif
+
+	comm_driver->add_nutvars();
 }
 
 #define	MAX_EVENT_NUM	32

@@ -31,7 +31,7 @@
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.21"
+#define USB_DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -52,14 +52,11 @@ static const int usb_if_num = 0;
 
 static void nut_libusb_close(libusb_device_handle *udev);
 
-/*! Add USB-related driver variables with addvar() and dstate_setinfo().
- * This removes some code duplication across the USB drivers.
- */
-void nut_usb_addvars(void)
+/** @brief See usb_communication_subdriver_t::add_nutvars(). */
+void	nut_libusb_add_nutvars(void)
 {
 	const struct libusb_version	*v = libusb_get_version();
 
-	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
 	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
 	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
@@ -68,7 +65,7 @@ void nut_usb_addvars(void)
 	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
 
 	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
-	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to usb_set_altinterface() (value=bAlternateSetting; default=0)");
+	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to libusb_set_interface_alt_setting() (value=bAlternateSetting; default=0)");
 
 #ifdef LIBUSB_API_VERSION
 	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
@@ -614,5 +611,6 @@ usb_communication_subdriver_t usb_subdriver = {
 	nut_libusb_get_report,
 	nut_libusb_set_report,
 	nut_libusb_get_string,
-	nut_libusb_get_interrupt
+	nut_libusb_get_interrupt,
+	nut_libusb_add_nutvars
 };

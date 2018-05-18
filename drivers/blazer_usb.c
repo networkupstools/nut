@@ -41,9 +41,11 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-#ifndef TESTING
 
 static usb_communication_subdriver_t	*usb = &usb_subdriver;
+
+#ifndef TESTING
+
 static libusb_device_handle		*udev = NULL;
 static USBDevice_t			usbdevice;
 static USBDeviceMatcher_t		*reopen_matcher = NULL;
@@ -483,7 +485,8 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "subdriver", "Serial-over-USB subdriver selection");
-	nut_usb_addvars();
+
+	usb->add_nutvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
 

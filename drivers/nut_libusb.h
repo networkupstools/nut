@@ -120,6 +120,10 @@ typedef struct usb_communication_subdriver_s {
 		int			 bufsize,		/**< [in] size of *buf* */
 		int			 timeout		/**< [in] allowed timeout (ms) for the operation */
 	);
+	void		(*add_nutvars)			/** @brief Add USB-related driver variables with addvar() and dstate_setinfo(). */
+	(
+		void
+	);
 } usb_communication_subdriver_t;
 
 /** @brief Actual USB communication subdriver. */

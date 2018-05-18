@@ -192,13 +192,17 @@ for a specific device.
 
 *usb_set_altinterface*[='altinterface']::
 
-Optional.  Force the USB code to call `usb_set_altinterface(0)`, as was done in
-NUT 2.7.2 and earlier.  This should not be necessary, since the default for
-`bAlternateSetting` (as shown in lsusb) is zero on all USB devices seen to
-date.  However, this redundant call to `usb_set_altinterface()` prevents
-certain UPSes from working on Mac OS X. If your UPS requires explicitly setting
-the alternate interface, include this flag, and email the nut-upsdev list with
-details about your UPS and operating system.
+Optional.  Force the USB code to call `libusb_set_interface_alt_setting(0)`, as
+was done in NUT 2.7.2 and earlier.  This should not be necessary, since the
+default for `bAlternateSetting` (as shown in lsusb) is zero on all USB devices
+seen to date.  However, this redundant call to
+`libusb_set_interface_alt_setting()` prevents certain UPSes from working on Mac
+OS X. If your UPS requires explicitly setting the alternate interface, include
+this flag, and email the nut-upsdev list with details about your UPS and
+operating system.
++
+If a value is provided ('altinterface'), it is used instead of the default zero
+value (i.e. `libusb_set_interface_alt_setting(altinterface)` is called).
 
 *default.<variable>*::
 
