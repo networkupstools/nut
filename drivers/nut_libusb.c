@@ -29,10 +29,11 @@
 #include "common.h" /* for xmalloc, upsdebugx prototypes */
 #include "usb-common.h"
 #include "nut_libusb.h"
+#include "nut_stdint.h"	/* for uint*_t */
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.17"
+#define USB_DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -197,19 +198,16 @@ static int	nut_usb_set_altinterface(
 static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice, USBDeviceMatcher_t *matcher,
 	int (*callback)(libusb_device_handle *udev, USBDevice_t *hd, unsigned char *rdbuf, int rdlen))
 {
-	int rdlen1, rdlen2; /* report descriptor length, method 1+2 */
+	uint16_t rdlen1, rdlen2; /* report descriptor length, method 1+2 */
 	USBDeviceMatcher_t *m;
 	libusb_device **devlist;
 	ssize_t	devcount = 0,
 		devnum;
 	struct libusb_device_descriptor dev_desc;
-	struct libusb_config_descriptor *conf_desc = NULL;
-	const struct libusb_interface_descriptor *if_desc;
 	libusb_device_handle *udev;
 	uint8_t bus;
 	int ret, res;
 	unsigned char buf[20];
-	const unsigned char *p;
 	char string[256];
 	/* All devices use HID descriptor at index 0. However, some newer
 	 * Eaton units have a light HID descriptor at index 0, and the full
@@ -218,7 +216,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
-	int		rdlen;
+	uint16_t	rdlen;
 
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
@@ -236,8 +234,9 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 	for (devnum = 0; devnum < devcount; devnum++) {
 		/* int		if_claimed = 0; */
-		int		i;
 		libusb_device	*device = devlist[devnum];
+		int		got_rdlen1 = 0,
+				got_rdlen2 = 0;
 
 		upsdebugx(2, "Checking device %lu of %lu.", devnum + 1, devcount);
 
@@ -302,11 +301,6 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		upsdebugx(2, "- Bus: %s", curDevice->Bus);
 		upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
 
-		/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
-		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
-			hid_desc_index = 1;
-		}
-
 		upsdebugx(2, "Trying to match device");
 		for (m = matcher; m; m=m->next) {
 			ret = matches(m, curDevice);
@@ -323,17 +317,9 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		}
 		upsdebugx(2, "Device matches");
 
-
-		upsdebugx(2, "Reading first configuration descriptor");
-		ret = libusb_get_config_descriptor(device, /* config */ 0, &conf_desc);
-		/*ret = libusb_get_active_config_descriptor(device, &conf_desc);*/
-		if (ret < 0)
-			upsdebugx(2, "result: %i (%s)", ret, libusb_strerror((enum libusb_error)ret));
-
 		/* Now that we have matched the device we wanted, claim it. */
 		ret = nut_usb_claim_interface(udev);
 		if (ret != LIBUSB_SUCCESS) {
-			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			fatalx(EXIT_FAILURE, "Can't claim USB device %04x:%04x (%s).", curDevice->VendorID, curDevice->ProductID, libusb_strerror(ret));
 		}
@@ -343,21 +329,20 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		/* Set the USB alternate setting for the interface, if needed. */
 		nut_usb_set_altinterface(udev);
 
+		/* Done, if no callback is provided */
 		if (!callback) {
-			libusb_free_config_descriptor(conf_desc);
 			libusb_free_device_list(devlist, 1);
 			return 1;
 		}
 
-		if (!conf_desc) { /* ?? this should never happen */
-			upsdebugx(2, "  Couldn't retrieve descriptors");
-			goto next_device;
+		/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
+		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
+			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+			hid_desc_index = 1;
 		}
 
-		rdlen1 = -1;
-		rdlen2 = -1;
-
 		/* Get HID descriptor */
+
 		/* FIRST METHOD: ask for HID descriptor directly. */
 		res = libusb_control_transfer(udev, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_STANDARD|LIBUSB_RECIPIENT_INTERFACE,
 			LIBUSB_REQUEST_GET_DESCRIPTOR, (LIBUSB_DT_HID<<8) + hid_desc_index, usb_if_num, buf, 0x9, USB_TIMEOUT);
@@ -367,16 +352,13 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 		} else if (res < 9) {
 			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
 		} else {
-
 			upsdebug_hex(3, "HID descriptor, method 1", buf, 9);
-
 			rdlen1 = buf[7] | (buf[8] << 8);
+			got_rdlen1 = 1;
+			upsdebugx(3, "HID descriptor length (method 1) %u", rdlen1);
 		}
-
-		if (rdlen1 < -1) {
+		if (!got_rdlen1)
 			upsdebugx(2, "Warning: HID descriptor, method 1 failed");
-		}
-		upsdebugx(3, "HID descriptor length (method 1) %d", rdlen1);
 
 		/* SECOND METHOD: find HID descriptor among "extra" bytes of
 		   interface descriptor, i.e., bytes tucked onto the end of
@@ -384,54 +366,63 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		/* Note: on some broken UPS's (e.g. Tripp Lite Smart1000LCD),
 			only this second method gives the correct result */
+		if ((curDevice->VendorID != 0x463) && (curDevice->bcdDevice != 0x0202)) {
+			upsdebugx(2, "Eaton device v2.02. Skipping method 2 for retrieving HID descriptor.");
+		} else {
+			struct libusb_config_descriptor	*conf_desc;
 
-		/* for now, we always assume configuration 0, interface 0,
-		   altsetting 0, as above. */
+			/* For now, we always assume configuration 0, interface 0, altsetting 0. */
+			ret = libusb_get_config_descriptor(device, 0, &conf_desc);
+			if (ret != LIBUSB_SUCCESS) {
+				upsdebugx(2, "%s: unable to get the first configuration descriptor (%s).", __func__, libusb_strerror(ret));
+			} else {
+				const struct libusb_interface_descriptor	*if_desc = &(conf_desc->interface[0].altsetting[0]);
+				int						 i;
 
-		if_desc = &(conf_desc->interface[0].altsetting[0]);
-		for (i=0; i<if_desc->extra_length; i+=if_desc->extra[i]) {
-			upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i,
-				if_desc->extra[i], if_desc->extra[i+1]);
-			if (i+9 <= if_desc->extra_length && if_desc->extra[i] >= 9 && if_desc->extra[i+1] == 0x21) {
-				p = &if_desc->extra[i];
-				upsdebug_hex(3, "HID descriptor, method 2", p, 9);
-				rdlen2 = p[7] | (p[8] << 8);
-				break;
+				for (i = 0; i <= if_desc->extra_length - 9; i += if_desc->extra[i]) {
+					const unsigned char	*hid_desc_ptr;
+
+					upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i, if_desc->extra[i], if_desc->extra[i+1]);
+
+					/* Not big enough to be a HID descriptor... */
+					if (if_desc->extra[i] < 9)
+						continue;
+					/* Definitely not a HID descriptor... */
+					if (if_desc->extra[i + 1] != LIBUSB_DT_HID)
+						continue;
+
+					/* HID descriptor found! */
+					hid_desc_ptr = &if_desc->extra[i];
+					upsdebug_hex(4, "HID descriptor, method 2", hid_desc_ptr, 9);
+					rdlen2 = hid_desc_ptr[7] | (hid_desc_ptr[8] << 8);
+					got_rdlen2 = 1;
+					upsdebugx(3, "HID descriptor length (method 2) %u", rdlen2);
+					break;
+				}
+				/* We can now free the config descriptor. */
+				libusb_free_config_descriptor(conf_desc);
 			}
+			if (!got_rdlen2)
+				upsdebugx(2, "Warning: HID descriptor, method 2 failed");
 		}
 
-		/* we can now free the config descriptor */
-		libusb_free_config_descriptor(conf_desc);
-
-		if (rdlen2 < -1) {
-			upsdebugx(2, "Warning: HID descriptor, method 2 failed");
+		if (!got_rdlen1 && !got_rdlen2) {
+			upsdebugx(2, "Unable to retrieve any HID descriptor");
+			goto next_device;
 		}
-		upsdebugx(3, "HID descriptor length (method 2) %d", rdlen2);
+
+		if (got_rdlen1 && got_rdlen2 && rdlen1 != rdlen2)
+			upsdebugx(2, "Warning: two different HID descriptors retrieved (Reportlen = %u vs. %u)", rdlen1, rdlen2);
 
 		/* when available, always choose the second value, as it
 			seems to be more reliable (it is the one reported e.g. by
 			lsusb). Note: if the need arises, can change this to use
 			the maximum of the two values instead. */
-		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
-			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
-			rdlen = rdlen1;
-		}
-		else {
-			rdlen = rdlen2 >= 0 ? rdlen2 : rdlen1;
-		}
-
-		if (rdlen < 0) {
-			upsdebugx(2, "Unable to retrieve any HID descriptor");
-			goto next_device;
-		}
-		if (rdlen1 >= 0 && rdlen2 >= 0 && rdlen1 != rdlen2) {
-			upsdebugx(2, "Warning: two different HID descriptors retrieved (Reportlen = %d vs. %d)", rdlen1, rdlen2);
-		}
-
+		rdlen = got_rdlen2 ? rdlen2 : rdlen1;
 		upsdebugx(2, "HID descriptor length %d", rdlen);
 
-		if (rdlen > (int)sizeof(rdbuf)) {
-			upsdebugx(2, "HID descriptor too long %d (max %d)", rdlen, (int)sizeof(rdbuf));
+		if (rdlen > sizeof(rdbuf)) {
+			upsdebugx(2, "HID descriptor too long %u (max %lu)", rdlen, sizeof(rdbuf));
 			goto next_device;
 		}
 
@@ -446,7 +437,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		if (res < rdlen)
 		{
-			upsdebugx(2, "Warning: report descriptor too short (expected %d, got %d)", rdlen, res);
+			upsdebugx(2, "Warning: report descriptor too short (expected %u, got %d)", rdlen, res);
 			rdlen = res; /* correct rdlen if necessary */
 		}
 
@@ -456,7 +447,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 			goto next_device;
 		}
 
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %d)", rdlen);
+		upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", rdlen);
 		upsdebugx(2, "Found HID device");
 		fflush(stdout);
 		libusb_free_device_list(devlist, 1);
