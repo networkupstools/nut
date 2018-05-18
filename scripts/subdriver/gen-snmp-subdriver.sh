@@ -49,9 +49,17 @@ usage() {
 	echo "                        file1: numeric SNMP walk (snmpwalk -On ... <sysOID>)"
 	echo "                        file2: string SNMP walk (snmpwalk -Os ... <sysOID>)"
 	echo ""
+	echo "mode 3: get data from 1 file (numeric snmpwalk dump of the whole SNMP tree)"
+	echo "        The sysOID is extracted from the dump, and only the pointed subtree is used"
+	echo "        A MIB file MUST be provided, and is used to produce the string SNMP walk"
+	echo " file1               -- read from file instead of an host (using Net SNMP)"
+	echo "                        file1: numeric SNMP walk (snmpwalk -On ... <sysOID>)"
+	echo ""
+
 	echo "Notes:"
 	echo " For both modes, prefer to copy the specific MIB file(s) for your device in the $0 script directory"
-	echo " In such case, for mode 2, also add \"-M.\" to allow the name resolution of OIDs"
+	echo " So that it is automatically taken into account for the string name resolution of OIDs"
+	echo " Otherwise, use \"-M.\" option"
 	echo ""
 	echo "Example:"
 	echo "mode 1: $0 -H 192.168.0.1 -n mibname -c mycommunity"
@@ -59,6 +67,13 @@ usage() {
 	echo " snmpwalk -On -v1 -c mycommunity 192.168.0.1 .1.3.6.1.4.1.534.6.6.7 2>/dev/null 1> numeric-walk-file"
 	echo " snmpwalk -Os -v1 -m ALL -M+. -c mycommunity 192.168.0.1 .1.3.6.1.4.1.534.6.6.7 2>/dev/null 1> string-walk-file"
 	echo " $0 -s .1.3.6.1.4.1.534.6.6.7 numeric-walk-file string-walk-file"
+	echo "mode 3:"
+	echo " snmpwalk -On -v1 -c mycommunity 192.168.0.1 .1 2>/dev/null 1> numeric-walk-file"
+	echo " $0 numeric-walk-file"
+	echo ""
+	echo " You may alos need to install additional packages:"
+	echo " - 'snmp' package (on Debian) for the base commands (snmpget, snmpwalk, snmptranslate)"
+	echo " - 'snmp-mibs-downloader' package (on Debian) to get all standard MIBs"
 }
 
 # variables
@@ -397,8 +412,10 @@ while [ $# -gt 0 ]; do
 			STRWALKFILE="$1"
 			shift
 		else
-			usage
-			exit 1
+			NUMWALKFILE="$1"
+			shift
+			#usage
+			#exit 1
 		fi
 	elif [ "$1" = "--help" -o "$1" = "-h" ]; then
 		usage
@@ -412,6 +429,7 @@ done
 # check that the needed parameters are provided, depending on the mode
 if [ -z "$NUMWALKFILE" ]; then
 	# mode 1: directly get SNMP data from a real agent
+	echo "Mode 1 selected"
 	MODE=1
 	NUMWALKFILE=$DFL_NUMWALKFILE
 	STRWALKFILE=$DFL_STRWALKFILE
@@ -433,24 +451,68 @@ if [ -z "$NUMWALKFILE" ]; then
 	# get data from the agent
 	get_snmp_data
 else
-	# mode 2: get data from files
-	MODE=2
+	# no string walk provided, so mode 3
+	if [ -z "$STRWALKFILE" ]; then
+		# mode 3: get data from 1 file,
+		# Filter according to sysOID on the specific subtree
+		# Generate the numeric SNMP walk using this output
+		# then use snmptranslate to get the string OIDs and generated the string SNMP walk
+		echo "Mode 3 selected"
+		MODE=3
+		RAWWALKFILE=$NUMWALKFILE
+		NUMWALKFILE=$DFL_NUMWALKFILE
+		STRWALKFILE=$DFL_STRWALKFILE
 
-	# get sysOID value from command line, if needed
-	while [ -z "$SYSOID" ]; do
-		echo "
+		# check for actual file existence
+		if [ ! -f "$RAWWALKFILE" ]; then
+			echo "SNMP walk dump file is missing on disk. Try --help for more info." >&2
+			exit 1
+		fi
+		# Extract the sysOID
+		# Format is "1.3.6.1.2.1.1.2.0 = OID: 1.3.6.1.4.1.4555.1.1.1"
+		DEVICE_SYSOID=`grep 1.3.6.1.2.1.1.2.0 $RAWWALKFILE | cut -d' ' -f4`
+		if [ -n "$DEVICE_SYSOID" ]; then
+			echo "Found sysOID $DEVICE_SYSOID"
+		else
+			echo "SNMP sysOID is missing in file. Try --help for more info." >&2
+			exit 1
+		fi
+
+		# Switch to the entry point, and extract the subtree
+		# Extract the numeric walk
+		echo -n "Extracting numeric SNMP walk..."
+		grep $DEVICE_SYSOID $RAWWALKFILE | egrep -v "1.3.6.1.2.1.1.2.0" 2>/dev/null 1> $NUMWALKFILE
+		echo " done"
+
+		# Create the string walk from a translation of the numeric one
+		echo -n "Converting string SNMP walk..."
+		while IFS=' = ' read NUM_OID OID_VALUE
+		do
+			STR_OID=`snmptranslate -Os  -m ALL -M+. $NUM_OID 2>/dev/null`
+			echo "$STR_OID = $OID_VALUE" >> $STRWALKFILE
+		done < $NUMWALKFILE
+		echo " done"
+	else
+		# mode 2: get data from files
+		echo "Mode 2 selected"
+		MODE=2
+
+		# get sysOID value from command line, if needed
+		while [ -z "$SYSOID" ]; do
+			echo "
 Please enter the value of sysOID, as displayed by snmp-ups. For example '.1.3.6.1.4.1.2254.2.4'.
 You can get it using: snmpget -v1 -c XXX <host> $SYSOID_NUMBER"
-		read -p "Value of sysOID: " SYSOID < /dev/tty
-		if echo $SYSOID | egrep -q '[^0-9.]'; then
-			echo "Please use only the numeric form, with dots and digits"
-			SYSOID=""
+			read -p "Value of sysOID: " SYSOID < /dev/tty
+			if echo $SYSOID | egrep -q '[^0-9.]'; then
+				echo "Please use only the numeric form, with dots and digits"
+				SYSOID=""
+			fi
+		done
+		# check for actual files existence
+		if [ ! -f "$NUMWALKFILE" -o  ! -f "$STRWALKFILE" ]; then
+			echo "SNMP walk dump files are missing on disk. Try --help for more info." >&2
+			exit 1
 		fi
-	done
-	# check for actual files existence
-	if [ ! -f "$NUMWALKFILE" -o  ! -f "$STRWALKFILE" ]; then
-		echo "SNMP walk dump files are missing on disk. Try --help for more info." >&2
-		exit 1
 	fi
 fi
 
