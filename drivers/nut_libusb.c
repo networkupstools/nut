@@ -31,7 +31,7 @@
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.25"
+#define USB_DRIVER_VERSION	"0.26"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -451,7 +451,7 @@ static int	nut_libusb_open(
 
 		upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", report_desc_len);
 
-		if (callback(udev, curDevice, report_desc_buf, report_desc_len) < 1) {
+		if (!callback(udev, curDevice, report_desc_buf, report_desc_len)) {
 			upsdebugx(2, "Caller doesn't like this device");
 			goto next_device;
 		}
