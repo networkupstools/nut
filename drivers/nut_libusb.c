@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.29"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.30"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -59,6 +59,22 @@ upsdrv_info_t	comm_upsdrv_info = {
  * Let's make this a constant rather than a magic number. */
 static const int	nut_usb_if_num = 0;
 
+/** @brief Debug levels for upsdebugx()/upsdebug_hex() calls.
+ * @todo Actually make sense out of these and/or standardise the use of debug levels in all the tree
+ * (see also https://github.com/networkupstools/nut/issues/211). */
+enum nut_usb_debug_level {
+	NUT_USB_DBG_DEVICE		=  2,					/**< Any debuggingly useful info about a device.
+										 * - > "my device is not recognised by the driver."
+										 * - < "i feel for you... let's see..." */
+	NUT_USB_DBG_LIBUSB		=  3,					/**< Very interesting libusb-related things.
+										 * - < "hmm... why can't we get that piece of info there or that command done?" */
+	NUT_USB_DBG_DEEP		=  5,					/**< Debug low level (e.g. bytes) things.
+										 * - < "oh wait, maybe it's just that we're sending the wrong thing! let's see it unadorned..." */
+	NUT_USB_DBG_FUNCTION_CALLS	= 10					/**< Debug function calls (arguments).
+										 * - > "no, more simply, your driver is badly broken. full stop."
+										 * - < [crying] "well. beep-" */
+};
+
 /** @} ************************************************************************/
 
 
@@ -76,6 +92,8 @@ static int	nut_usb_claim_interface(
 	int	retries;
 #endif	/* HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
 
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p)", __func__, (void *)udev);
+
 #if defined(HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE) && defined(HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER)
 	/* Due to the way FreeBSD implements libusb_set_auto_detach_kernel_driver(),
 	 * check to see if the kernel driver is active before setting the auto-detach flag.
@@ -83,16 +101,16 @@ static int	nut_usb_claim_interface(
 	ret = libusb_kernel_driver_active(udev, nut_usb_if_num);
 	/* Is the kernel driver active? Consider the unimplemented return code to be equivalent to inactive here. */
 	if (ret == 1) {
-		upsdebugx(3, "%s: libusb_kernel_driver_active() returned 1 (driver active).", __func__);
+		upsdebugx(NUT_USB_DBG_LIBUSB, "%s: libusb_kernel_driver_active() returned 1 (driver active).", __func__);
 		/* Try the auto-detach kernel driver method.
 		 * This function is not available on FreeBSD 10.1-10.3. */
 		ret = libusb_set_auto_detach_kernel_driver(udev, 1);
 		if (ret != LIBUSB_SUCCESS)
-			upsdebugx(1, "%s: failed to set kernel driver auto-detach driver flag for USB device (%s).", __func__, libusb_strerror(ret));
+			upsdebugx(NUT_USB_DBG_LIBUSB, "%s: failed to set kernel driver auto-detach driver flag for USB device (%s).", __func__, libusb_strerror(ret));
 		else
-			upsdebugx(2, "%s: successfully set kernel driver auto-detach flag.", __func__);
+			upsdebugx(NUT_USB_DBG_LIBUSB, "%s: successfully set kernel driver auto-detach flag.", __func__);
 	} else {
-		upsdebugx(3, "%s: libusb_kernel_driver_active() returned %d (%s).", __func__, ret, ret ? libusb_strerror(ret) : "no driver active");
+		upsdebugx(NUT_USB_DBG_LIBUSB, "%s: libusb_kernel_driver_active() returned %d (%s).", __func__, ret, ret ? libusb_strerror(ret) : "no driver active");
 	}
 #endif	/* HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE + HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER */
 
@@ -102,18 +120,18 @@ static int	nut_usb_claim_interface(
 	retries = 3;
 	while ((ret = libusb_claim_interface(udev, nut_usb_if_num)) != LIBUSB_SUCCESS) {
 
-		upsdebugx(2, "%s: failed to claim USB device (%s).", __func__, libusb_strerror(ret));
+		upsdebugx(NUT_USB_DBG_LIBUSB, "%s: failed to claim USB device (%s).", __func__, libusb_strerror(ret));
 
 		if (retries-- == 0)
 			return ret;
 
 		ret = libusb_detach_kernel_driver(udev, nut_usb_if_num);
 		if (ret == LIBUSB_SUCCESS)
-			upsdebugx(2, "%s: detached kernel driver from USB device...", __func__);
+			upsdebugx(NUT_USB_DBG_LIBUSB, "%s: detached kernel driver from USB device...", __func__);
 		else if (ret == LIBUSB_ERROR_NOT_FOUND)
-			upsdebugx(2, "%s: kernel driver already detached.", __func__);
+			upsdebugx(NUT_USB_DBG_LIBUSB, "%s: kernel driver already detached.", __func__);
 		else
-			upsdebugx(1, "%s: failed to detach kernel driver from USB device (%s).", __func__, libusb_strerror(ret));
+			upsdebugx(NUT_USB_DBG_LIBUSB, "%s: failed to detach kernel driver from USB device (%s).", __func__, libusb_strerror(ret));
 
 	}
 #else	/* HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
@@ -142,8 +160,10 @@ static int	nut_usb_set_altinterface(
 			 altinterface = 0;
 	const char	*alt_string;
 
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p)", __func__, (void *)udev);
+
 	if (!testvar("usb_set_altinterface")) {
-		upsdebugx(3, "%s: skipped libusb_set_interface_alt_setting(udev, %d, 0).", __func__, nut_usb_if_num);
+		upsdebugx(NUT_USB_DBG_LIBUSB, "%s: skipped libusb_set_interface_alt_setting(udev, %d, 0).", __func__, nut_usb_if_num);
 		return LIBUSB_SUCCESS;
 	}
 
@@ -154,7 +174,7 @@ static int	nut_usb_set_altinterface(
 		upslogx(LOG_WARNING, "%s: setting bAlternateInterface to %d will probably not work.", __func__, altinterface);
 
 	/* Set default interface */
-	upsdebugx(2, "%s: calling libusb_set_interface_alt_setting(udev, %d, %d).", __func__, nut_usb_if_num, altinterface);
+	upsdebugx(NUT_USB_DBG_LIBUSB, "%s: calling libusb_set_interface_alt_setting(udev, %d, %d).", __func__, nut_usb_if_num, altinterface);
 	ret = libusb_set_interface_alt_setting(udev, nut_usb_if_num, altinterface);
 	if (ret != LIBUSB_SUCCESS)
 		upslogx(LOG_WARNING, "%s: libusb_set_interface_alt_setting(udev, %d, %d) error (%s).", __func__, nut_usb_if_num, altinterface, libusb_strerror(ret));
@@ -170,6 +190,8 @@ static int	nut_usb_logerror(
 	const int	 ret,	/**< [in] a libusb return code (negative, possibly a @ref libusb_error "LIBUSB_ERROR" code, on errors) */
 	const char	*desc	/**< [in] text to print alongside the short description of the error */
 ) {
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%d, %p)", __func__, ret, desc);
+
 	if (ret >= 0)
 		return ret;
 
@@ -180,7 +202,7 @@ static int	nut_usb_logerror(
 	case LIBUSB_ERROR_NO_MEM:
 	case LIBUSB_ERROR_TIMEOUT:
 	case LIBUSB_ERROR_OVERFLOW:
-		upsdebugx(2, "%s: %s.", desc, libusb_strerror(ret));
+		upsdebugx(NUT_USB_DBG_LIBUSB, "%s: %s.", desc, libusb_strerror(ret));
 		return ret;
 	case LIBUSB_ERROR_BUSY:
 	case LIBUSB_ERROR_NO_DEVICE:
@@ -218,6 +240,8 @@ static int	nut_libusb_open(
 	libusb_device	**devlist;
 	ssize_t		  devcount,
 			  devnum;
+
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %p, %p, %p)", __func__, (void *)udevp, (void *)curDevice, (void *)matcher, (void *)callback);
 
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
@@ -264,19 +288,19 @@ static int	nut_libusb_open(
 		int				 got_rdlen1 = 0,
 						 got_rdlen2 = 0;
 
-		upsdebugx(2, "Checking device %lu of %lu.", devnum + 1, devcount);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: checking device %ld of %ld.", __func__, devnum + 1, devcount);
 
 		/* Get DEVICE descriptor */
 		ret = libusb_get_device_descriptor(device, &device_desc);
 		if (ret != LIBUSB_SUCCESS) {
-			upsdebugx(2, "Unable to get DEVICE descriptor (%s).", libusb_strerror(ret));
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: unable to get DEVICE descriptor (%s).", __func__, libusb_strerror(ret));
 			continue;
 		}
 
 		/* Open the device */
 		ret = libusb_open(device, udevp);
 		if (ret != LIBUSB_SUCCESS) {
-			upsdebugx(2, "Failed to open device %04X:%04X (%s), skipping.", device_desc.idVendor, device_desc.idProduct, libusb_strerror(ret));
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: failed to open device %04X:%04X (%s), skipping.", __func__, device_desc.idVendor, device_desc.idProduct, libusb_strerror(ret));
 			continue;
 		}
 		udev = *udevp;
@@ -317,20 +341,20 @@ static int	nut_libusb_open(
 				goto oom_error;
 		}
 
-		upsdebugx(2, "- VendorID: %04x", curDevice->VendorID);
-		upsdebugx(2, "- ProductID: %04x", curDevice->ProductID);
-		upsdebugx(2, "- Manufacturer: %s", curDevice->Vendor ? curDevice->Vendor : "unknown");
-		upsdebugx(2, "- Product: %s", curDevice->Product ? curDevice->Product : "unknown");
-		upsdebugx(2, "- Serial Number: %s", curDevice->Serial ? curDevice->Serial : "unknown");
-		upsdebugx(2, "- Bus: %s", curDevice->Bus);
-		upsdebugx(2, "- Device release number: %04x", curDevice->bcdDevice);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - VendorID: %04x.", __func__, curDevice->VendorID);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - ProductID: %04x.", __func__, curDevice->ProductID);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - Manufacturer: %s.", __func__, curDevice->Vendor ? curDevice->Vendor : "unknown");
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - Product: %s.", __func__, curDevice->Product ? curDevice->Product : "unknown");
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - Serial Number: %s.", __func__, curDevice->Serial ? curDevice->Serial : "unknown");
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - Bus: %s.", __func__, curDevice->Bus);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: - Device release number: %04x.", __func__, curDevice->bcdDevice);
 
 		/* Check device against the supplied matcher */
-		upsdebugx(2, "Trying to match device");
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: trying to match device...", __func__);
 		for (match = matcher; match; match = match->next) {
 			ret = match->match_function(curDevice, match->privdata);
 			if (ret == 0) {
-				upsdebugx(2, "Device does not match - skipping");
+				upsdebugx(NUT_USB_DBG_DEVICE, "%s: device does not match - skipping.", __func__);
 				goto next_device;
 			}
 			if (ret == -1) {
@@ -338,11 +362,11 @@ static int	nut_libusb_open(
 				fatal_with_errno(EXIT_FAILURE, "matcher");
 			}
 			if (ret == -2) {
-				upsdebugx(2, "matcher: unspecified error");
+				upsdebugx(NUT_USB_DBG_DEVICE, "%s: unspecified matcher error.", __func__);
 				goto next_device;
 			}
 		}
-		upsdebugx(2, "Device matches");
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: device matches.", __func__);
 
 		/* Now that we have matched the device we wanted, claim it. */
 		ret = nut_usb_claim_interface(udev);
@@ -351,7 +375,7 @@ static int	nut_libusb_open(
 			fatalx(EXIT_FAILURE, "Can't claim USB device %04x:%04x (%s).", curDevice->VendorID, curDevice->ProductID, libusb_strerror(ret));
 		}
 	/*	if_claimed = 1;	*/
-		upsdebugx(2, "Claimed interface %d successfully", nut_usb_if_num);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: claimed interface %d successfully.", __func__, nut_usb_if_num);
 
 		/* Set the USB alternate setting for the interface, if needed. */
 		nut_usb_set_altinterface(udev);
@@ -364,7 +388,7 @@ static int	nut_libusb_open(
 
 		/* FIXME: extend to Eaton OEMs (HP, IBM, ...) */
 		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
-			upsdebugx(1, "Eaton device v2.02. Using full report descriptor");
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: Eaton device v2.02. Using full report descriptor.", __func__);
 			hid_desc_index = 1;
 		}
 
@@ -382,29 +406,29 @@ static int	nut_libusb_open(
 			USB_TIMEOUT
 		);
 		if (ret < 0) {
-			upsdebugx(2, "Unable to get HID descriptor (%s)", libusb_strerror((enum libusb_error)ret));
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: unable to get HID descriptor (%s).", __func__, libusb_strerror(ret));
 		} else if ((size_t)ret < sizeof(hid_desc_buf)) {
-			upsdebugx(2, "HID descriptor too short (expected %lu, got %d)", sizeof(hid_desc_buf), ret);
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: HID descriptor too short (expected %lu bytes, only got %d).", __func__, sizeof(hid_desc_buf), ret);
 		} else {
-			upsdebug_hex(3, "HID descriptor, method 1", hid_desc_buf, sizeof(hid_desc_buf));
+			upsdebug_hex(NUT_USB_DBG_DEEP, "HID descriptor, method 1", hid_desc_buf, sizeof(hid_desc_buf));
 			rdlen1 = hid_desc_buf[7] | (hid_desc_buf[8] << 8);
 			got_rdlen1 = 1;
-			upsdebugx(3, "HID descriptor length (method 1) %u", rdlen1);
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: HID descriptor retrieved with method 1 (REPORT descriptor length: %u).", __func__, rdlen1);
 		}
 		if (!got_rdlen1)
-			upsdebugx(2, "Warning: HID descriptor, method 1 failed");
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: warning! Couldn't retrieve HID descriptor with method 1.", __func__);
 
 		/* SECOND METHOD: find HID descriptor among "extra" bytes of interface descriptor, i.e., bytes tucked onto the end of descriptor 2.
 		 * Note: on some broken devices (e.g. Tripp Lite Smart1000LCD), only this second method gives the correct result. */
 		if ((curDevice->VendorID != 0x463) && (curDevice->bcdDevice != 0x0202)) {
-			upsdebugx(2, "Eaton device v2.02. Skipping method 2 for retrieving HID descriptor.");
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: Eaton device v2.02. Skipping method 2 for retrieving HID descriptor.", __func__);
 		} else {
 			struct libusb_config_descriptor	*conf_desc;
 
 			/* For now, we always assume configuration 0, interface 0, altsetting 0. */
 			ret = libusb_get_config_descriptor(device, 0, &conf_desc);
 			if (ret != LIBUSB_SUCCESS) {
-				upsdebugx(2, "%s: unable to get the first configuration descriptor (%s).", __func__, libusb_strerror(ret));
+				upsdebugx(NUT_USB_DBG_DEVICE, "%s: unable to get the first configuration descriptor (%s).", __func__, libusb_strerror(ret));
 			} else {
 				const struct libusb_interface_descriptor	*if_desc = &(conf_desc->interface[0].altsetting[0]);
 				int						 i;
@@ -412,7 +436,7 @@ static int	nut_libusb_open(
 				for (i = 0; i <= if_desc->extra_length - HID_DT_HID_SIZE; i += if_desc->extra[i]) {
 					const unsigned char	*hid_desc_ptr;
 
-					upsdebugx(4, "i=%d, extra[i]=%02x, extra[i+1]=%02x", i, if_desc->extra[i], if_desc->extra[i+1]);
+					upsdebugx(NUT_USB_DBG_DEEP, "%s: interface descriptor 'extra' bytes: #%d = %02x, #%d = %02x.", __func__, i, if_desc->extra[i], i + 1, if_desc->extra[i + 1]);
 
 					/* Not big enough to be a HID descriptor... */
 					if (if_desc->extra[i] < HID_DT_HID_SIZE)
@@ -423,35 +447,35 @@ static int	nut_libusb_open(
 
 					/* HID descriptor found! */
 					hid_desc_ptr = &if_desc->extra[i];
-					upsdebug_hex(4, "HID descriptor, method 2", hid_desc_ptr, HID_DT_HID_SIZE);
+					upsdebug_hex(NUT_USB_DBG_DEEP, "HID descriptor, method 2", hid_desc_ptr, HID_DT_HID_SIZE);
 					rdlen2 = hid_desc_ptr[7] | (hid_desc_ptr[8] << 8);
 					got_rdlen2 = 1;
-					upsdebugx(3, "HID descriptor length (method 2) %u", rdlen2);
+					upsdebugx(NUT_USB_DBG_DEVICE, "%s: HID descriptor retrieved with method 2 (REPORT descriptor length: %u).", __func__, rdlen2);
 					break;
 				}
 				/* We can now free the config descriptor. */
 				libusb_free_config_descriptor(conf_desc);
 			}
 			if (!got_rdlen2)
-				upsdebugx(2, "Warning: HID descriptor, method 2 failed");
+				upsdebugx(NUT_USB_DBG_DEVICE, "%s: warning! Couldn't retrieve HID descriptor with method 2.", __func__);
 		}
 
 		if (!got_rdlen1 && !got_rdlen2) {
-			upsdebugx(2, "Unable to retrieve any HID descriptor");
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: unable to retrieve any HID descriptor.", __func__);
 			goto next_device;
 		}
 
 		if (got_rdlen1 && got_rdlen2 && rdlen1 != rdlen2)
-			upsdebugx(2, "Warning: two different HID descriptors retrieved (Reportlen = %u vs. %u)", rdlen1, rdlen2);
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: warning! Two different HID descriptors retrieved.", __func__);
 
 		/* When available, always choose the second value, as it seems to be more reliable
 		 * (it is the one reported e.g. by lsusb).
 		 * Note: if the need arises, we can change this to use the maximum of the two values instead. */
 		report_desc_len = got_rdlen2 ? rdlen2 : rdlen1;
-		upsdebugx(2, "HID descriptor length %d", report_desc_len);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: REPORT descriptor length: %u.", __func__, report_desc_len);
 
 		if (report_desc_len > sizeof(report_desc_buf)) {
-			upsdebugx(2, "HID descriptor too long %u (max %lu)", report_desc_len, sizeof(report_desc_buf));
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: REPORT descriptor too long (max %lu).", __func__, sizeof(report_desc_buf));
 			goto next_device;
 		}
 
@@ -468,24 +492,24 @@ static int	nut_libusb_open(
 		);
 
 		if (ret < 0) {
-			upsdebugx(2, "Unable to get Report descriptor (%s)", libusb_strerror(ret));
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: unable to get REPORT descriptor (%s).", __func__, libusb_strerror(ret));
 			goto next_device;
 		}
 
 		if (ret < report_desc_len) {
-			upsdebugx(2, "Warning: report descriptor too short (expected %u, got %d)", report_desc_len, ret);
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: warning! REPORT descriptor too short (only got %d bytes).", __func__, ret);
 			/* Correct length, if necessary */
 			report_desc_len = ret;
 		}
 
-		upsdebugx(2, "Report descriptor retrieved (Reportlen = %u)", report_desc_len);
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: REPORT descriptor retrieved (length: %u bytes).", __func__, report_desc_len);
 
 		if (!callback(udev, curDevice, report_desc_buf, report_desc_len)) {
-			upsdebugx(2, "Caller doesn't like this device");
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: caller doesn't like this device.", __func__);
 			goto next_device;
 		}
 
-		upsdebugx(2, "Found HID device");
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: HID device found.", __func__);
 		fflush(stdout);
 		libusb_free_device_list(devlist, 1);
 
@@ -506,7 +530,7 @@ static int	nut_libusb_open(
 
 	*udevp = NULL;
 	libusb_free_device_list(devlist, 1);
-	upsdebugx(2, "No appropriate HID device found");
+	upsdebugx(NUT_USB_DBG_DEVICE, "%s: no appropriate HID device found.", __func__);
 	fflush(stdout);
 
 	return LIBUSB_ERROR_NOT_FOUND;
@@ -516,6 +540,8 @@ static int	nut_libusb_open(
 static void	nut_libusb_close(
 	libusb_device_handle	*udev
 ) {
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p)", __func__, (void *)udev);
+
 	if (!udev)
 		return;
 
@@ -534,7 +560,7 @@ static int	nut_libusb_get_report(
 ) {
 	int	ret;
 
-	upsdebugx(4, "Entering libusb_get_report");
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %x, %p, %d)", __func__, (void *)udev, ReportId, raw_buf, ReportSize);
 
 	if (!udev)
 		return LIBUSB_ERROR_INVALID_PARAM;
@@ -566,6 +592,8 @@ static int	nut_libusb_set_report(
 ) {
 	int	ret;
 
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %x, %p, %d)", __func__, (void *)udev, ReportId, raw_buf, ReportSize);
+
 	if (!udev)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
@@ -596,6 +624,8 @@ static int	nut_libusb_get_string(
 ) {
 	int	ret;
 
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %d, %p, %lu)", __func__, (void *)udev, StringIdx, buf, buflen);
+
 	if (!udev)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
@@ -612,6 +642,8 @@ static int	nut_libusb_get_interrupt(
 	int			 timeout
 ) {
 	int	ret;
+
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %p, %d, %d)", __func__, (void *)udev, buf, bufsize, timeout);
 
 	if (!udev)
 		return LIBUSB_ERROR_INVALID_PARAM;
@@ -633,6 +665,8 @@ static int	nut_libusb_get_interrupt(
 void	nut_libusb_add_nutvars(void)
 {
 	const struct libusb_version	*v = libusb_get_version();
+
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s()", __func__);
 
 	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
 	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
