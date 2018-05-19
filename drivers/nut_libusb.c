@@ -31,7 +31,7 @@
 #include "str.h"
 
 #define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.23"
+#define USB_DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -131,14 +131,6 @@ static int	nut_usb_claim_interface(
 #endif	/* HAVE_LIBUSB_DETACH_KERNEL_DRIVER */
 
 	return LIBUSB_SUCCESS;
-}
-
-/* invoke matcher against device */
-static inline int matches(USBDeviceMatcher_t *matcher, USBDevice_t *device) {
-	if (!matcher) {
-		return 1;
-	}
-	return matcher->match_function(device, matcher->privdata);
 }
 
 /** @brief Set the USB alternate interface, if needed.
@@ -299,7 +291,7 @@ static int nut_libusb_open(libusb_device_handle **udevp, USBDevice_t *curDevice,
 
 		upsdebugx(2, "Trying to match device");
 		for (m = matcher; m; m=m->next) {
-			ret = matches(m, curDevice);
+			ret = m->match_function(curDevice, m->privdata);
 			if (ret==0) {
 				upsdebugx(2, "Device does not match - skipping");
 				goto next_device;
