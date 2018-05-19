@@ -34,7 +34,7 @@
  * @{ *************************************************************************/
 
 #define USB_DRIVER_NAME		"USB communication driver"			/**< @brief Name of this driver. */
-#define USB_DRIVER_VERSION	"0.27"						/**< @brief Version of this driver. */
+#define USB_DRIVER_VERSION	"0.28"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	USB_DRIVER_NAME,
@@ -249,7 +249,7 @@ static int	nut_libusb_open(
 		struct libusb_device_descriptor	 device_desc;
 
 		/* HID descriptor */
-		unsigned char			 hid_desc_buf[20];
+		unsigned char			 hid_desc_buf[9];
 		/* All devices use HID descriptor at index 0.
 		 * However, some newer Eaton units have a light HID descriptor at index 0,
 		 * and the full version is at index 1 (in which case, bcdDevice == 0x0202). */
@@ -377,15 +377,15 @@ static int	nut_libusb_open(
 			(LIBUSB_DT_HID << 8) | hid_desc_index,
 			usb_if_num,
 			hid_desc_buf,
-			0x9,
+			sizeof(hid_desc_buf),
 			USB_TIMEOUT
 		);
 		if (ret < 0) {
 			upsdebugx(2, "Unable to get HID descriptor (%s)", libusb_strerror((enum libusb_error)ret));
-		} else if (ret < 9) {
-			upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, ret);
+		} else if ((size_t)ret < sizeof(hid_desc_buf)) {
+			upsdebugx(2, "HID descriptor too short (expected %lu, got %d)", sizeof(hid_desc_buf), ret);
 		} else {
-			upsdebug_hex(3, "HID descriptor, method 1", hid_desc_buf, 9);
+			upsdebug_hex(3, "HID descriptor, method 1", hid_desc_buf, sizeof(hid_desc_buf));
 			rdlen1 = hid_desc_buf[7] | (hid_desc_buf[8] << 8);
 			got_rdlen1 = 1;
 			upsdebugx(3, "HID descriptor length (method 1) %u", rdlen1);
