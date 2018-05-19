@@ -219,7 +219,9 @@ static int match_regex(regex_t *preg, char *str)
 	}
 
 	if (!str) {
-		string = xstrdup("");
+		string = strdup("");
+		if (string == NULL)
+			return -1;
 	} else {
 		/* skip leading whitespace */
 		for (len = 0; len < strlen(str); len++) {
@@ -229,7 +231,9 @@ static int match_regex(regex_t *preg, char *str)
 			}
 		}
 
-		string = xstrdup(str+len);
+		string = strdup(str+len);
+		if (string == NULL)
+			return -1;
 
 		/* skip trailing whitespace */
 		for (len = strlen(string); len > 0; len--) {
