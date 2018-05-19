@@ -30,11 +30,13 @@
 #include "nut_stdint.h"	/* for uint*_t */
 #include "str.h"
 
-#define USB_DRIVER_NAME		"USB communication driver (libusb 1.0)"
-#define USB_DRIVER_VERSION	"0.26"
+/** @name Driver info
+ * @{ *************************************************************************/
 
-/* driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+#define USB_DRIVER_NAME		"USB communication driver"			/**< @brief Name of this driver. */
+#define USB_DRIVER_VERSION	"0.27"						/**< @brief Version of this driver. */
+
+upsdrv_info_t	comm_upsdrv_info = {
 	USB_DRIVER_NAME,
 	USB_DRIVER_VERSION,
 	NULL,
@@ -42,37 +44,25 @@ upsdrv_info_t comm_upsdrv_info = {
 	{ NULL }
 };
 
+/** @} ************************************************************************/
+
+
+/** @name Common useful stuff
+ * @{ *************************************************************************/
+
 #define MAX_REPORT_SIZE         0x1800
 
-/*! USB interface number.
- * So far, all of the supported UPS models use interface 0. Let's make this a
- * constant rather than a magic number.
- */
-static const int usb_if_num = 0;
+/** @brief USB interface number.
+ *
+ * So far, all of the supported devices use interface 0.
+ * Let's make this a constant rather than a magic number. */
+static const int	usb_if_num = 0;
 
-static void nut_libusb_close(libusb_device_handle *udev);
+/** @} ************************************************************************/
 
-/** @brief See usb_communication_subdriver_t::add_nutvars(). */
-void	nut_libusb_add_nutvars(void)
-{
-	const struct libusb_version	*v = libusb_get_version();
 
-	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
-	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
-	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
-
-	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
-	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
-
-	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
-	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to libusb_set_interface_alt_setting() (value=bAlternateSetting; default=0)");
-
-#ifdef LIBUSB_API_VERSION
-	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
-#else  /* LIBUSB_API_VERSION */
-	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
-#endif /* LIBUSB_API_VERSION */
-}
+/** @name Support functions
+ * @{ *************************************************************************/
 
 /** @brief Claim the @ref usb_if_num interface on a given device handle, trying to detach the kernel driver (if the operation is supported and the driver active).
  * @return @ref LIBUSB_SUCCESS, on success,
@@ -172,6 +162,44 @@ static int	nut_usb_set_altinterface(
 
 	return ret;
 }
+
+/** @brief Log errors, if any, of nut_libusb_get_report(), nut_libusb_set_report(), nut_libusb_get_string(), nut_libusb_get_interrupt().
+ * @return *ret*. */
+static int	nut_usb_logerror(
+	const int	 ret,	/**< [in] a libusb return code (negative, possibly a @ref libusb_error "LIBUSB_ERROR" code, on errors) */
+	const char	*desc	/**< [in] text to print alongside the short description of the error */
+) {
+	if (ret >= 0)
+		return ret;
+
+	switch (ret)
+	{
+	case LIBUSB_ERROR_INVALID_PARAM:
+	case LIBUSB_ERROR_INTERRUPTED:
+	case LIBUSB_ERROR_NO_MEM:
+	case LIBUSB_ERROR_TIMEOUT:
+	case LIBUSB_ERROR_OVERFLOW:
+		upsdebugx(2, "%s: %s.", desc, libusb_strerror(ret));
+		return ret;
+	case LIBUSB_ERROR_BUSY:
+	case LIBUSB_ERROR_NO_DEVICE:
+	case LIBUSB_ERROR_ACCESS:
+	case LIBUSB_ERROR_IO:
+	case LIBUSB_ERROR_NOT_FOUND:
+	case LIBUSB_ERROR_PIPE:
+	case LIBUSB_ERROR_NOT_SUPPORTED:
+	case LIBUSB_ERROR_OTHER:
+	default:
+		upslogx(LOG_DEBUG, "%s: %s.", desc, libusb_strerror(ret));
+		return ret;
+	}
+}
+
+/** @} ************************************************************************/
+
+
+/** @name Communication subdriver implementation
+ * @{ *************************************************************************/
 
 /** @brief See usb_communication_subdriver_t::open(). */
 static int	nut_libusb_open(
@@ -483,36 +511,17 @@ static int	nut_libusb_open(
 	return LIBUSB_ERROR_NOT_FOUND;
 }
 
-/** @brief Log errors, if any, of nut_libusb_get_report(), nut_libusb_set_report(), nut_libusb_get_string(), nut_libusb_get_interrupt().
- * @return *ret*. */
-static int	nut_usb_logerror(
-	const int	 ret,	/**< [in] a libusb return code (negative, possibly a @ref libusb_error "LIBUSB_ERROR" code, on errors) */
-	const char	*desc	/**< [in] text to print alongside the short description of the error */
+/** @brief See usb_communication_subdriver_t::close(). */
+static void	nut_libusb_close(
+	libusb_device_handle	*udev
 ) {
-	if (ret >= 0)
-		return ret;
+	if (!udev)
+		return;
 
-	switch (ret)
-	{
-	case LIBUSB_ERROR_INVALID_PARAM:
-	case LIBUSB_ERROR_INTERRUPTED:
-	case LIBUSB_ERROR_NO_MEM:
-	case LIBUSB_ERROR_TIMEOUT:
-	case LIBUSB_ERROR_OVERFLOW:
-		upsdebugx(2, "%s: %s.", desc, libusb_strerror(ret));
-		return ret;
-	case LIBUSB_ERROR_BUSY:
-	case LIBUSB_ERROR_NO_DEVICE:
-	case LIBUSB_ERROR_ACCESS:
-	case LIBUSB_ERROR_IO:
-	case LIBUSB_ERROR_NOT_FOUND:
-	case LIBUSB_ERROR_PIPE:
-	case LIBUSB_ERROR_NOT_SUPPORTED:
-	case LIBUSB_ERROR_OTHER:
-	default:
-		upslogx(LOG_DEBUG, "%s: %s.", desc, libusb_strerror(ret));
-		return ret;
-	}
+	/* libusb_release_interface() sometimes blocks and goes into uninterruptible sleep. So don't do it. */
+/*	libusb_release_interface(udev, usb_if_num);	*/
+	libusb_close(udev);
+	libusb_exit(NULL);
 }
 
 /** @brief See usb_communication_subdriver_t::get_report(). */
@@ -619,17 +628,26 @@ static int	nut_libusb_get_interrupt(
 	return nut_usb_logerror(ret, __func__);
 }
 
-/** @brief See usb_communication_subdriver_t::close(). */
-static void	nut_libusb_close(
-	libusb_device_handle	*udev
-) {
-	if (!udev)
-		return;
+/** @brief See usb_communication_subdriver_t::add_nutvars(). */
+void	nut_libusb_add_nutvars(void)
+{
+	const struct libusb_version	*v = libusb_get_version();
 
-	/* libusb_release_interface() sometimes blocks and goes into uninterruptible sleep. So don't do it. */
-/*	libusb_release_interface(udev, usb_if_num);	*/
-	libusb_close(udev);
-	libusb_exit(NULL);
+	addvar(VAR_VALUE, "vendor", "Regular expression to match UPS Manufacturer string");
+	addvar(VAR_VALUE, "product", "Regular expression to match UPS Product string");
+	addvar(VAR_VALUE, "serial", "Regular expression to match UPS Serial number");
+
+	addvar(VAR_VALUE, "vendorid", "Regular expression to match UPS Manufacturer numerical ID (4 digits hexadecimal)");
+	addvar(VAR_VALUE, "productid", "Regular expression to match UPS Product numerical ID (4 digits hexadecimal)");
+
+	addvar(VAR_VALUE, "bus", "Regular expression to match USB bus name");
+	addvar(VAR_VALUE, "usb_set_altinterface", "Force redundant call to libusb_set_interface_alt_setting() (value=bAlternateSetting; default=0)");
+
+#ifdef LIBUSB_API_VERSION
+	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u (API: 0x%x)", v->major, v->minor, v->micro, LIBUSB_API_VERSION);
+#else  /* LIBUSB_API_VERSION */
+	dstate_setinfo("driver.version.usb", "libusb-%u.%u.%u", v->major, v->minor, v->micro);
+#endif /* LIBUSB_API_VERSION */
 }
 
 usb_communication_subdriver_t	usb_subdriver = {
@@ -643,3 +661,5 @@ usb_communication_subdriver_t	usb_subdriver = {
 	nut_libusb_get_interrupt,
 	nut_libusb_add_nutvars
 };
+
+/** @} ************************************************************************/
