@@ -33,7 +33,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.89"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.90"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -216,6 +216,7 @@ enum shut_notification_level {
 	SHUT_NOTIFICATION_DEFAULT		= SHUT_NOTIFICATION_OFF		/**< Default notification level. */
 };
 
+static int	notification_level		= SHUT_NOTIFICATION_DEFAULT;	/**< @brief Actually used @ref shut_notification_level "notification level". */
 #define SHUT_NOTIFICATION_VAR			"notification"			/**< @brief Driver variable to set the @ref shut_notification_level "notification level". */
 
 #define SHUT_MAX_TRIES				   4				/**< @brief Maximum number of attempts before raising a comm fault. */
@@ -473,7 +474,8 @@ static void	shut_setline(
 	}
 }
 
-/** @brief Initiate/Restore communication with a device, while setting a @ref shut_notification_level.
+/** @brief Initiate/Restore communication with a device, while setting a @ref shut_notification_level
+ * and updating @ref notification_level according to the user-provided value for it (if any).
  * @return @ref SHUT_SUCCESS, on success,
  * @return @ref SHUT_ERROR_TIMEOUT, if no errors occurred while communicating with the device but synchronisation could not be performed in @ref SHUT_MAX_TRIES attempts,
  * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
@@ -483,8 +485,7 @@ static int	shut_synchronise(
 ) {
 	int		ret,
 			try;
-	static int	notification_level = SHUT_NOTIFICATION_DEFAULT,
-			user_notification_level = 0;
+	static int	user_notification_level = 0;
 	uint8_t		sync_type;
 
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d)", __func__, fd);
@@ -958,6 +959,7 @@ static int	shut_control_transfer(
  * @return @ref SHUT_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
  * @return @ref SHUT_ERROR_OVERFLOW, if the received data exceeds *data*'s size (*length*),
  * @return @ref SHUT_ERROR_NOT_SUPPORTED, for interrupt OUT transactions (i.e. *endpoint* has the @ref USB_ENDPOINT_OUT direction),
+ * @return @ref SHUT_ERROR_OTHER, if valid/supported parameters are passed but @ref notification_level is set to @ref SHUT_NOTIFICATION_OFF (no I/O is performed),
  * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
 static int	shut_interrupt_transfer(
 	int		 fd,		/**< [in] file descriptor of an already opened device */
@@ -979,6 +981,11 @@ static int	shut_interrupt_transfer(
 
 	if (length < 0)
 		return SHUT_ERROR_INVALID_PARAM;
+
+	if (notification_level == SHUT_NOTIFICATION_OFF) {
+		upsdebugx(SHUT_DBG_SHUT, "%s: interrupt transactions cannot be performed, since notifications are disabled.", __func__);
+		return SHUT_ERROR_OTHER;
+	}
 
 	if (timeout) {
 		gettimeofday(&exp, NULL);
