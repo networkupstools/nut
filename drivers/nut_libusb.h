@@ -41,9 +41,9 @@ extern upsdrv_info_t	comm_upsdrv_info;
 
 /** @brief Structure/type describing the USB communication routines. */
 typedef struct usb_communication_subdriver_s {
-	const char	 *name;				/**< @brief Name of this subdriver. */
-	const char	 *version;			/**< @brief Version of this subdriver. */
-	int		(*open)				/** @brief Init libusb and (re)open a device matching *matcher*.
+	const char	  *name;			/**< @brief Name of this subdriver. */
+	const char	  *version;			/**< @brief Version of this subdriver. */
+	int		 (*open)			/** @brief Init libusb and (re)open a device matching *matcher*.
 							 *
 							 * If *sdevp* refers to an already opened device, it is closed before attempting the reopening, if it safe to do so.
 							 *
@@ -80,11 +80,11 @@ typedef struct usb_communication_subdriver_s {
 			int			 rdlen
 		)
 	);
-	void		(*close)			/** @brief Close the opened device *sdev* refers to and call libusb_exit(). */
+	void		 (*close)			/** @brief Close the opened device *sdev* refers to and call libusb_exit(). */
 	(
 		libusb_device_handle	*sdev			/**< [in] handle of an opened device */
 	);
-	int		(*get_report)			/** @brief Retrieve a HID report from a device.
+	int		 (*get_report)			/** @brief Retrieve a HID report from a device.
 							 * @return length of the retrieved data, on success,
 							 * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
 	(
@@ -93,7 +93,7 @@ typedef struct usb_communication_subdriver_s {
 		unsigned char		*raw_buf,		/**< [out] storage location for the retrieved data */
 		int			 ReportSize		/**< [in] size of the report (*raw_buf* should be at least this size) */
 	);
-	int		(*set_report)			/** @brief Set a HID report in a device.
+	int		 (*set_report)			/** @brief Set a HID report in a device.
 							 * @return the number of bytes sent to the device, on success,
 							 * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
 	(
@@ -102,7 +102,7 @@ typedef struct usb_communication_subdriver_s {
 		unsigned char		*raw_buf,		/**< [in] data that has to be set */
 		int			 ReportSize		/**< [in] size of the report (*raw_buf* should be at least this size) */
 	);
-	int		(*get_string)			/** @brief Retrieve a string descriptor from a device.
+	int		 (*get_string)			/** @brief Retrieve a string descriptor from a device.
 							 * @return the number of bytes read and stored in *buf*, on success,
 							 * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
 	(
@@ -111,7 +111,7 @@ typedef struct usb_communication_subdriver_s {
 		char			*buf,			/**< [out] storage location for the retrieved string */
 		size_t			 buflen			/**< [in] size of *buf* */
 	);
-	int		(*get_interrupt)		/** @brief Retrieve data from an interrupt endpoint of a device.
+	int		 (*get_interrupt)		/** @brief Retrieve data from an interrupt endpoint of a device.
 							 * @return the number of bytes read and stored in *buf*, on success,
 							 * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
 	(
@@ -120,7 +120,12 @@ typedef struct usb_communication_subdriver_s {
 		int			 bufsize,		/**< [in] size of *buf* */
 		int			 timeout		/**< [in] allowed timeout (ms) for the operation */
 	);
-	void		(*add_nutvars)			/** @brief Add USB-related driver variables with addvar() and dstate_setinfo(). */
+	const char	*(*strerror)			/** @brief Return a constant string with a short description of *errcode*.
+							 * @return a short description of *errcode*. */
+	(
+		enum libusb_error	errcode			/**< [in] the @ref libusb_error code whose description is desired */
+	);
+	void		 (*add_nutvars)			/** @brief Add USB-related driver variables with addvar() and dstate_setinfo(). */
 	(
 		void
 	);

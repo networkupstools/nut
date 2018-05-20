@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.46"
+#define DRIVER_VERSION		"0.47"
 
 #include "main.h"
 #include "libhid.h"
@@ -794,7 +794,7 @@ void upsdrv_updateinfo(void)
 		switch (evtCount)
 		{
 		case COMM_DRIVER_(ERROR_BUSY):
-			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+			upslogx(LOG_CRIT, "Got disconnected by another driver (%s).", comm_driver->strerror(evtCount));
 		case COMM_DRIVER_(ERROR_NO_DEVICE):
 		case COMM_DRIVER_(ERROR_ACCESS):
 		case COMM_DRIVER_(ERROR_IO):
@@ -1295,7 +1295,7 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		switch (retcode)
 		{
 		case COMM_DRIVER_(ERROR_BUSY):
-			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+			upslogx(LOG_CRIT, "Got disconnected by another driver (%s).", comm_driver->strerror(retcode));
 		case COMM_DRIVER_(ERROR_NO_DEVICE):
 		case COMM_DRIVER_(ERROR_ACCESS):
 		case COMM_DRIVER_(ERROR_IO):

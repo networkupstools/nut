@@ -387,7 +387,7 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 
 	r = get_item_buffered(reportbuf, udev, hiddata, &hValue, age);
 	if (r != 1) {
-		upsdebug_with_errno(1, "Can't retrieve Report %02x", hiddata->ReportID);
+		upsdebugx(1, "Can't retrieve Report %02x (%s).", hiddata->ReportID, r ? comm_driver->strerror(r) : "other -possibly ignored- error");
 		return r;
 	}
 
@@ -461,7 +461,7 @@ int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 
 	r = set_item_buffered(reportbuf, udev, hiddata, hValue);
 	if (r != 1) {
-		upsdebug_with_errno(1, "Can't set Report %02x", hiddata->ReportID);
+		upsdebugx(1, "Can't set Report %02x (%s).", hiddata->ReportID, r ? comm_driver->strerror(r) : "other -possibly ignored- error");
 		return r;
 	}
 

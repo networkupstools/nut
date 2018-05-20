@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.30"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.31"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -661,6 +661,15 @@ static int	nut_libusb_get_interrupt(
 	return nut_usb_logerror(ret, __func__);
 }
 
+/** @brief See usb_communication_subdriver_t::strerror(). */
+static const char	*nut_libusb_strerror(
+	enum libusb_error	errcode
+) {
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%d)", __func__, errcode);
+
+	return libusb_strerror(errcode);
+}
+
 /** @brief See usb_communication_subdriver_t::add_nutvars(). */
 void	nut_libusb_add_nutvars(void)
 {
@@ -694,6 +703,7 @@ usb_communication_subdriver_t	usb_subdriver = {
 	nut_libusb_set_report,
 	nut_libusb_get_string,
 	nut_libusb_get_interrupt,
+	nut_libusb_strerror,
 	nut_libusb_add_nutvars
 };
 
