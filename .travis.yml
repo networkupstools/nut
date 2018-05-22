@@ -252,7 +252,6 @@ matrix:
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
-- if [ "$NO_PKG_CONFIG" == "true" ] ; then echo "BUTCHER pkg-config for this test case" >&2; sudo dpkg -r --force all pkg-config ; fi
 
 install:
 - if [ "$BUILD_TYPE" != default-spellcheck ] ; then sudo pip install pycparser ; fi
