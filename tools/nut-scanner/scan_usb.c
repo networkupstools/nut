@@ -181,8 +181,10 @@ nutscan_device_t	*nutscan_scan_usb(void)
 			goto oom_error;
 
 		nut_dev->type = TYPE_USB;
-		nut_dev->driver = strdup(driver_name);
-		nut_dev->port = strdup("auto");
+		if ((nut_dev->driver = strdup(driver_name)) == NULL)
+			goto oom_error;
+		if ((nut_dev->port = strdup("auto")) == NULL)
+			goto oom_error;
 		snprintf(string, sizeof(string), "%04X", dev_desc.idVendor);
 		nutscan_add_option_to_device(nut_dev,"vendorid", string);
 		snprintf(string, sizeof(string), "%04X", dev_desc.idProduct);
@@ -211,6 +213,7 @@ nutscan_device_t	*nutscan_scan_usb(void)
 		libusb_free_device_list(devlist, 1);
 		libusb_exit(NULL);
 		nutscan_free_device(current_nut_dev);
+		nutscan_free_device(nut_dev);
 		free(busname);
 		free(serialnumber);
 		free(device_name);
