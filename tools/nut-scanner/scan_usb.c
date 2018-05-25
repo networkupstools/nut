@@ -1,26 +1,26 @@
-/*
- *  Copyright (C) 2011-2016 EATON
+/**
+ * @file
+ * @brief	Detect NUT supported USB devices.
+ * @copyright	@parblock
+ * Copyright (C):
+ * - 2011-2013 -- Frédéric Bohe (<fredericbohe@eaton.com>), for Eaton
+ * - 2011-2017 -- Arnaud Quette (<ArnaudQuette@Eaton.com>), for Eaton
+ * - 2018      -- Daniele Pezzini (<hyouko@gmail.com>)
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *		@endparblock
  */
-
-/*! \file scan_usb.c
-    \brief detect NUT supported USB devices
-    \author Frederic Bohe <fredericbohe@eaton.com>
-    \author Arnaud Quette <ArnaudQuette@Eaton.com>
-*/
 
 #include "common.h"
 #include "nut-scan.h"
@@ -35,7 +35,6 @@
 #include "dl_libusb-1.0.h"
 #endif	/* WITH_LIBUSB_1_0 */
 
-/* return 0 on error */
 int	nutscan_load_usb_library(void)
 {
 #ifdef WITH_LIBUSB_1_0
@@ -64,24 +63,28 @@ void	nutscan_unload_usb_library(void)
 #endif	/* WITH_LIBUSB_1_0 */
 }
 
-static char* is_usb_device_supported(usb_device_id_t *usb_device_id_list,
-					int dev_VendorID, int dev_ProductID)
-{
-	usb_device_id_t *usbdev;
+/** @brief Tell which driver listed in *usb_device_id_list* supports the device *dev_VendorID*:*dev_ProductID*.
+ * @return the name of the first driver in *usb_device_id_list* that supports the device,
+ * @return NULL, if the device is not supported. */
+static char	*is_usb_device_supported(
+	usb_device_id_t	*usb_device_id_list,	/**< List of USB VID:PID pairs coupled with the name of the driver by which that device should be supported. */
+	int		 dev_VendorID,		/**< Vendor ID of the device that has to be checked. */
+	int		 dev_ProductID		/**< Product ID of the device that has to be checked. */
+) {
+	usb_device_id_t	*usbdev;
 
-	for (usbdev=usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
-		if ( (usbdev->vendorID == dev_VendorID)
-				&& (usbdev->productID == dev_ProductID) ) {
-
+	for (usbdev = usb_device_id_list; usbdev->driver_name != NULL; usbdev++) {
+		if (
+			(usbdev->vendorID == dev_VendorID) &&
+			(usbdev->productID == dev_ProductID)
+		)
 			return usbdev->driver_name;
-		}
 	}
 
 	return NULL;
 }
 
-/* return NULL if error */
-nutscan_device_t * nutscan_scan_usb()
+nutscan_device_t	*nutscan_scan_usb(void)
 {
 	int			  ret;
 	libusb_device		**devlist;
@@ -89,12 +92,10 @@ nutscan_device_t * nutscan_scan_usb()
 				  devnum;
 	nutscan_device_t	 *current_nut_dev = NULL;
 
-	if( !nutscan_avail_usb ) {
+	if (!nutscan_avail_usb)
 		return NULL;
-	}
 
 	/* libusb base init */
-	/* Initialize Libusb */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
 		libusb_exit(NULL);
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
@@ -128,83 +129,80 @@ nutscan_device_t * nutscan_scan_usb()
 			continue;
 		}
 
+		/* Let's see if this device is supported by a NUT driver... */
+		driver_name = is_usb_device_supported(usb_device_table, dev_desc.idVendor, dev_desc.idProduct);
+		if (driver_name == NULL)
+			continue;
+
+		/* Open the device */
+		ret = libusb_open(dev, &udev);
+		if (ret != LIBUSB_SUCCESS) {
+			fprintf(stderr, "Failed to open device %04X:%04X (%s), skipping.\n", dev_desc.idVendor, dev_desc.idProduct, libusb_strerror(ret));
+			continue;
+		}
+
+		/* Get device info */
+
+		/* Get bus */
 		bus = libusb_get_bus_number(dev);
 		if ((busname = (char *)malloc(4)) == NULL)
 			goto oom_error;
 		snprintf(busname, 4, "%03d", bus);
 
-		if ((driver_name =
-			is_usb_device_supported(usb_device_table,
-				dev_desc.idVendor, dev_desc.idProduct)) != NULL) {
-
-			/* open the device */
-			ret = libusb_open(dev, &udev);
-			if (ret != LIBUSB_SUCCESS) {
-				fprintf(stderr,"Failed to open device, skipping. (%s)\n", libusb_strerror(ret));
-				continue;
-			}
-
-			/* get serial number */
-			if (dev_desc.iSerialNumber) {
-				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber, (unsigned char *)string, sizeof(string));
-				if (ret > 0 && (serialnumber = strdup(str_rtrim(string, ' '))) == NULL)
-					goto oom_error;
-			}
-			/* get product name */
-			if (dev_desc.iProduct) {
-				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct, (unsigned char *)string, sizeof(string));
-				if (ret > 0 && (device_name = strdup(str_rtrim(string, ' '))) == NULL)
-					goto oom_error;
-			}
-
-			/* get vendor name */
-			if (dev_desc.iManufacturer) {
-				ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer, (unsigned char *)string, sizeof(string));
-				if (ret > 0 && (vendor_name = strdup(str_rtrim(string, ' '))) == NULL)
-					goto oom_error;
-			}
-
-			nut_dev = nutscan_new_device();
-			if (nut_dev == NULL)
+		/* Get serial number */
+		if (dev_desc.iSerialNumber) {
+			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber, (unsigned char *)string, sizeof(string));
+			if (ret > 0 && (serialnumber = strdup(str_rtrim(string, ' '))) == NULL)
 				goto oom_error;
-
-			nut_dev->type = TYPE_USB;
-			if(driver_name) {
-				nut_dev->driver = strdup(driver_name);
-			}
-			nut_dev->port = strdup("auto");
-			sprintf(string,"%04X", dev_desc.idVendor);
-			nutscan_add_option_to_device(nut_dev,"vendorid", string);
-			sprintf(string,"%04X", dev_desc.idProduct);
-			nutscan_add_option_to_device(nut_dev,"productid", string);
-			if(device_name) {
-				nutscan_add_option_to_device(nut_dev,
-							"product",
-							device_name);
-				free(device_name);
-			}
-			if(serialnumber) {
-				nutscan_add_option_to_device(nut_dev,
-							"serial",
-							serialnumber);
-				free(serialnumber);
-			}
-			if(vendor_name) {
-				nutscan_add_option_to_device(nut_dev,
-							"vendor",
-							vendor_name);
-				free(vendor_name);
-			}
-			nutscan_add_option_to_device(nut_dev,"bus",
-							busname);
-
-			current_nut_dev = nutscan_add_device_to_device(
-							current_nut_dev,
-							nut_dev);
-
-			libusb_close(udev);
 		}
+
+		/* Get product name */
+		if (dev_desc.iProduct) {
+			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct, (unsigned char *)string, sizeof(string));
+			if (ret > 0 && (device_name = strdup(str_rtrim(string, ' '))) == NULL)
+				goto oom_error;
+		}
+
+		/* Get vendor name */
+		if (dev_desc.iManufacturer) {
+			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer, (unsigned char *)string, sizeof(string));
+			if (ret > 0 && (vendor_name = strdup(str_rtrim(string, ' '))) == NULL)
+				goto oom_error;
+		}
+
+		/* Done with libusb, for this device */
+		libusb_close(udev);
+		udev = NULL;
+
+		/* Store device info, now */
+
+		nut_dev = nutscan_new_device();
+		if (nut_dev == NULL)
+			goto oom_error;
+
+		nut_dev->type = TYPE_USB;
+		nut_dev->driver = strdup(driver_name);
+		nut_dev->port = strdup("auto");
+		snprintf(string, sizeof(string), "%04X", dev_desc.idVendor);
+		nutscan_add_option_to_device(nut_dev,"vendorid", string);
+		snprintf(string, sizeof(string), "%04X", dev_desc.idProduct);
+		nutscan_add_option_to_device(nut_dev,"productid", string);
+		if (device_name) {
+			nutscan_add_option_to_device(nut_dev, "product", device_name);
+			free(device_name);
+		}
+		if (serialnumber) {
+			nutscan_add_option_to_device(nut_dev, "serial", serialnumber);
+			free(serialnumber);
+		}
+		if (vendor_name) {
+			nutscan_add_option_to_device(nut_dev, "vendor", vendor_name);
+			free(vendor_name);
+		}
+		nutscan_add_option_to_device(nut_dev, "bus", busname);
 		free(busname);
+
+		current_nut_dev = nutscan_add_device_to_device(current_nut_dev, nut_dev);
 		continue;
 
 	oom_error:
@@ -226,10 +224,9 @@ nutscan_device_t * nutscan_scan_usb()
 
 	return nutscan_rewind_device(current_nut_dev);
 }
-#else /* WITH_USB */
-nutscan_device_t * nutscan_scan_usb()
+#else	/* WITH_USB */
+nutscan_device_t	*nutscan_scan_usb(void)
 {
 	return NULL;
 }
-#endif /* WITH_USB */
-
+#endif	/* WITH_USB */

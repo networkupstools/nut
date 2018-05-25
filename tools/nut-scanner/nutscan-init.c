@@ -35,8 +35,14 @@ int nutscan_avail_snmp = 0;
 int nutscan_avail_usb = 0;
 int nutscan_avail_xml_http = 0;
 
+/** @brief Load USB library.
+ * @return 1, on success,
+ * @return 0, on errors. */
 int	nutscan_load_usb_library(void);
+
+/** @brief Unload USB library. */
 void	nutscan_unload_usb_library(void);
+
 int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path);
