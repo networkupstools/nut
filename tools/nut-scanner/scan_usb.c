@@ -98,13 +98,15 @@ nutscan_device_t	*nutscan_scan_usb(void)
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
 		libusb_exit(NULL);
-		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
+		fprintf(stderr, "Failed to init libusb (%s).\n", libusb_strerror(ret));
+		return NULL;
 	}
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0) {
 		libusb_exit(NULL);
-		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
+		fprintf(stderr, "No USB device found (%s).\n", devcount ? libusb_strerror(devcount) : "no error");
+		return NULL;
 	}
 
 	for (devnum = 0; devnum < devcount; devnum++) {
@@ -218,7 +220,8 @@ nutscan_device_t	*nutscan_scan_usb(void)
 		free(serialnumber);
 		free(device_name);
 		free(vendor_name);
-		fatal_with_errno(EXIT_FAILURE, "Out of memory");
+		fprintf(stderr, "Out of memory (%s).\n", strerror(errno));
+		return NULL;
 
 	}
 
