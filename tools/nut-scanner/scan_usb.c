@@ -97,7 +97,6 @@ nutscan_device_t	*nutscan_scan_usb(void)
 
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
-		libusb_exit(NULL);
 		fprintf(stderr, "Failed to init libusb (%s).\n", libusb_strerror(ret));
 		return NULL;
 	}

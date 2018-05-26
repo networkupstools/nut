@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.29"
+#define SUBDRIVER_VERSION "0.30"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -430,10 +430,8 @@ libusb_device_handle *nutusb_open(const char *port)
 	upsdebugx(1, "entering nutusb_open()");
 
 	/* Initialize Libusb */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
-		libusb_exit(NULL);
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-	}
 
 	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
@@ -485,7 +483,10 @@ libusb_device_handle *nutusb_open(const char *port)
 	if (dev_h && dev_claimed)
 		libusb_release_interface(dev_h, 0);
 
-	nutusb_close(dev_h);
+	if (dev_h)
+		nutusb_close(dev_h);
+	else
+		libusb_exit(NULL);
 
 	if (errout == 1)
 		nutusb_open_error(port);

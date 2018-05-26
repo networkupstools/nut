@@ -28,7 +28,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.14"
+#define DRIVER_VERSION	"0.15"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -235,10 +235,8 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 			  devnum;
 
 	/* libusb base init */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
-		libusb_exit(NULL);
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-	}
 
 #ifndef __linux__	/* (confirmed to work on Solaris and FreeBSD) */
 	/* Causes a double free corruption in linux if device is detached! */
@@ -377,6 +375,7 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 
 	*handlep = NULL;
 	libusb_free_device_list(devlist, 1);
+	libusb_exit(NULL);
 	upsdebugx(4, "No matching USB device found");
 
 	return -1;
