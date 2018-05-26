@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.48"
+#define DRIVER_VERSION		"0.49"
 
 #include "main.h"
 #include "libhid.h"
@@ -1033,12 +1033,11 @@ void upsdrv_cleanup(void)
 #ifndef SHUT_MODE
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
-
+#endif	/* SHUT_MODE */
 	free(curDevice.Vendor);
 	free(curDevice.Product);
 	free(curDevice.Serial);
 	free(curDevice.Bus);
-#endif
 }
 
 /**********************************************************************
