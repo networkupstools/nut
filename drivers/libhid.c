@@ -222,9 +222,8 @@ static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 
 /* file a given report in the report buffer. This is used when the
    report has been obtained without having been explicitly requested,
-   e.g., it arrived through an interrupt transfer. Returns 0 on
-   success, -1 on error with errno set. */
-static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
+   e.g., it arrived through an interrupt transfer. */
+static void	file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 {
 	int id = buf[0];
 
@@ -240,8 +239,6 @@ static int file_report_buffer(reportbuf_t *rbuf, unsigned char *buf, int buflen)
 
 	/* have (valid) report */
 	time(&rbuf->ts[id]);
-
-	return 0;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -487,7 +484,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 {
 	unsigned char	buf[SMALLBUF];
 	int		itemCount = 0;
-	int		buflen, r, i;
+	int		buflen, i;
 	HIDData_t	*pData;
 
 	/* needs libusb-0.1.8 to work => use ifdef and autoconf */
@@ -496,11 +493,7 @@ int HIDGetEvents(hid_dev_handle_t udev, HIDData_t **event, int eventsize)
 		return buflen;	/* propagate "error" or "no event" code */
 	}
 
-	r = file_report_buffer(reportbuf, buf, buflen);
-	if (r < 0) {
-		upsdebug_with_errno(1, "%s: failed to buffer report", __func__);
-		return -errno;
-	}
+	file_report_buffer(reportbuf, buf, buflen);
 
 	/* now read all items that are part of this report */
 	for (i=0; i<pDesc->nitems; i++) {
