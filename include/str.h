@@ -1,12 +1,14 @@
-/* str.h - Common string-related functions
+/**
+ * @file
+ * @brief	Common string-related functions.
+ * @copyright	@parblock
+ * Copyright (C):
+ * - 2000      -- Russell Kroll (<rkroll@exploits.org>)
+ * - 2015-2018 -- Daniele Pezzini (<hyouko@gmail.com>)
  *
- * Copyright (C)
- *   2000 Russell Kroll <rkroll@exploits.org>
- *   2015 Daniele Pezzini <hyouko@gmail.com>
- *
- * This program is free software; you can redistribute it and/or modify
+ * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -15,9 +17,8 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- *
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *		@endparblock
  */
 
 #ifndef STR_H
@@ -29,48 +30,66 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-/* Remove all
+/** @name Character trimming
+ * Remove all
+ *
  * - leading and trailing (str_trim[_m]())
  * - leading (str_ltrim[_m]())
- * - trailing (str_rtrim[_m]))
+ * - trailing (str_rtrim[_m]())
+ *
  * instances of
+ *
  * - *character* (plain versions)
  * - each character in *characters* ('_m' versions)
+ *
  * from a string.
- * - *string*: null-terminated byte string from which characters are to be removed;
- * - *character*: character that has to be removed from *string*;
- * - *characters*: null-terminated byte string of characters to be removed from string.
- * Return:
- * - NULL, if *string* is NULL, otherwise
- * - *string* without the specified characters (upto an empty string). */
+ *
+ * @param[in,out]	string		null-terminated byte string from which characters are to be removed.
+ * @param[in]		character	character that has to be removed from *string*.
+ * @param[in]		characters	null-terminated byte string of characters to be removed from string.
+ * @return		`NULL`, if *string* is `NULL`,
+ * @return		*string* without the specified characters (upto an empty string), otherwise.
+ * @{ */
 char	*str_trim(char *string, const char character);
 char	*str_trim_m(char *string, const char *characters);
 char	*str_ltrim(char *string, const char character);
 char	*str_ltrim_m(char *string, const char *characters);
 char	*str_rtrim(char *string, const char character);
 char	*str_rtrim_m(char *string, const char *characters);
+/** @} */
 
-/* Remove all
+/** @name Space trimming
+ * Remove all
+ *
  * - leading and trailing (str_trim_space())
  * - leading (str_ltrim_space())
  * - trailing (str_rtrim_space())
+ *
  * spaces (as identified by isspace()) from a string.
- * - *string*: null-terminated byte string from which spaces are to be removed.
- * Return:
- * - NULL, if *string* is NULL, otherwise
- * - *string* without the specified spaces (upto an empty string). */
+ *
+ * @param[in,out]	string	null-terminated byte string from which spaces are to be removed.
+ *
+ * @return		`NULL`, if *string* is `NULL`,
+ * @return		*string* without the specified spaces (upto an empty string), otherwise.
+ * @{ */
 char	*str_trim_space(char *string);
 char	*str_ltrim_space(char *string);
 char	*str_rtrim_space(char *string);
+/** @} */
 
-/* Tell whether a string can be converted to a number of type str_is_<type>[_strict]().
- * - *string*: the null-terminated byte string to check;
- * - *base*: the base the string must conform to.
- * The same restrictions of the corresponding str_to_<type>[_strict]() functions apply.
- * If *string* can be converted to a valid number of type <type>, return 1.
- * Otherwise, return 0 with errno set to:
- * - EINVAL, if the value of *base* is not supported or no conversion could be performed;
- * - ERANGE, if the converted value would be out of the acceptable range of <type>. */
+/** @name String-is-number? tests
+ * Tell whether a string can be converted to a number of type str_is_<type>[_strict]().
+ *
+ * @param[in]	string	the null-terminated byte string to check.
+ * @param[in]	base	the base the string must conform to.
+ *
+ * @note	The same restrictions of the corresponding str_to_<type>[_strict]() functions apply.
+ *
+ * @return	1, if *string* can be converted to a valid number of type <type>,
+ * @return	0, otherwise, with `errno` set to:
+ *		- `EINVAL`, if the value of *base* is not supported or no conversion could be performed;
+ *		- `ERANGE`, if the converted value would be out of the acceptable range of <type>.
+ * @{ */
 int	str_is_short(const char *string, const int base);
 int	str_is_short_strict(const char *string, const int base);
 int	str_is_ushort(const char *string, const int base);
@@ -85,24 +104,29 @@ int	str_is_ulong(const char *string, const int base);
 int	str_is_ulong_strict(const char *string, const int base);
 int	str_is_double(const char *string, const int base);
 int	str_is_double_strict(const char *string, const int base);
+/** @} */
 
-/* Convert a string to a number of type str_to_<type>[_strict]().
- * - *string*: the null-terminated byte string to convert,
- *   'strict' versions' strings shall not contain spaces (as identified by isspace()),
- *   - short, int, long: strtol()'s restrictions apply,
- *   - ushort, uint, ulong: strtoul()'s restrictions apply, plus:
- *     - plus ('+') and minus ('-') signs (and hence negative values) are not supported,
- *   - double: strtod()'s restrictions apply, plus:
- *     - infinity and nan are not supported,
- *     - radix character (decimal point character) must be a period ('.');
- * - *number*: a pointer to a <type> that will be filled upon execution;
- * - *base*: the base the string must conform to,
- *   - short, ushort, int, uint, long, ulong: acceptable values as in strtol()/strtoul(),
- *   - double: 0 for auto-select, 10 or 16.
- * On success, return 1 with *number* being the result of the conversion of *string*.
- * On failure, return 0 with *number* being 0 and errno set to:
- * - EINVAL, if the value of *base* is not supported or no conversion can be performed;
- * - ERANGE, if the converted value is out of the acceptable range of <type>. */
+/** @name String-to-number conversions
+ * Convert a string to a number of type str_to_<type>[_strict]().
+ *
+ * @param[in]	string	the null-terminated byte string to convert:
+ *			- 'strict' versions' strings shall not contain spaces (as identified by isspace()),
+ *			- short, int, long: strtol()'s restrictions apply,
+ *			- ushort, uint, ulong: strtoul()'s restrictions apply, plus:
+ *			  - plus (`+`) and minus (`-`) signs (and hence negative values) are not supported,
+ *			- double: strtod()'s restrictions apply, plus:
+ *			  - infinity and nan are not supported,
+ *			  - radix character (decimal point character) must be a period (`.`).
+ * @param[out]	number	storage location of the appropriate <type> for the converted string, that will be filled upon execution.
+ * @param[in]	base	the base the string must conform to:
+ *			- short, ushort, int, uint, long, ulong: acceptable values as in strtol()/strtoul(),
+ *			- double: 0 for auto-select, 10 or 16.
+ *
+ * @return	1, on success, with *number* being the result of the conversion of *string*,
+ * @return	0, on failure, with *number* being 0 and `errno` set to:
+ *		- `EINVAL`, if the value of *base* is not supported or no conversion can be performed;
+ *		- `ERANGE`, if the converted value is out of the acceptable range of <type>.
+ * @{ */
 int	str_to_short(const char *string, short *number, const int base);
 int	str_to_short_strict(const char *string, short *number, const int base);
 int	str_to_ushort(const char *string, unsigned short *number, const int base);
@@ -117,6 +141,7 @@ int	str_to_ulong(const char *string, unsigned long *number, const int base);
 int	str_to_ulong_strict(const char *string, unsigned long *number, const int base);
 int	str_to_double(const char *string, double *number, const int base);
 int	str_to_double_strict(const char *string, double *number, const int base);
+/** @} */
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
