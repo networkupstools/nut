@@ -393,7 +393,8 @@ int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 
 int	str_to_long(const char *string, long *number, const int base)
 {
-	char	*str;
+	char		*ptr = NULL;
+	const char	*end;
 
 	*number = 0;
 
@@ -405,32 +406,14 @@ int	str_to_long(const char *string, long *number, const int base)
 		return 0;
 	}
 
-	str = strdup(string);
-	if (str == NULL)
-		return 0;
+	end = string + strlen(string);
+	while (
+		end > string &&
+		isspace(*(end - 1))
+	)
+		end--;
 
-	str_trim_space(str);
-
-	if (!str_to_long_strict(str, number, base)) {
-		free(str);
-		return 0;
-	}
-
-	free(str);
-	return 1;
-}
-
-int	str_to_long_strict(const char *string, long *number, const int base)
-{
-	char	*ptr = NULL;
-
-	*number = 0;
-
-	if (
-		string == NULL ||
-		*string == '\0' ||
-		isspace(*string)
-	) {
+	if (end == string) {
 		errno = EINVAL;
 		return 0;
 	}
@@ -440,7 +423,7 @@ int	str_to_long_strict(const char *string, long *number, const int base)
 
 	if (
 		errno == EINVAL ||
-		*ptr != '\0'
+		ptr != end
 	) {
 		*number = 0;
 		errno = EINVAL;
@@ -455,9 +438,9 @@ int	str_to_long_strict(const char *string, long *number, const int base)
 	return 1;
 }
 
-int	str_to_ulong(const char *string, unsigned long *number, const int base)
+int	str_to_long_strict(const char *string, long *number, const int base)
 {
-	char	*str;
+	const char	*str;
 
 	*number = 0;
 
@@ -469,34 +452,40 @@ int	str_to_ulong(const char *string, unsigned long *number, const int base)
 		return 0;
 	}
 
-	str = strdup(string);
-	if (str == NULL)
-		return 0;
+	for (str = string; *str != '\0'; str++)
+		if (isspace(*str)) {
+			errno = EINVAL;
+			return 0;
+		}
 
-	str_trim_space(str);
-
-	if (!str_to_ulong_strict(str, number, base)) {
-		free(str);
-		return 0;
-	}
-
-	free(str);
-	return 1;
+	return str_to_long(string, number, base);
 }
 
-int	str_to_ulong_strict(const char *string, unsigned long *number, const int base)
+int	str_to_ulong(const char *string, unsigned long *number, const int base)
 {
-	char	*ptr = NULL;
+	char		*ptr = NULL;
+	const char	*end;
 
 	*number = 0;
 
 	if (
 		string == NULL ||
 		*string == '\0' ||
-		*string == '+' ||
-		*string == '-' ||
-		isspace(*string)
+		strchr(string, '+') != NULL ||
+		strchr(string, '-') != NULL
 	) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	end = string + strlen(string);
+	while (
+		end > string &&
+		isspace(*(end - 1))
+	)
+		end--;
+
+	if (end == string) {
 		errno = EINVAL;
 		return 0;
 	}
@@ -506,7 +495,7 @@ int	str_to_ulong_strict(const char *string, unsigned long *number, const int bas
 
 	if (
 		errno == EINVAL ||
-		*ptr != '\0'
+		ptr != end
 	) {
 		*number = 0;
 		errno = EINVAL;
@@ -521,9 +510,9 @@ int	str_to_ulong_strict(const char *string, unsigned long *number, const int bas
 	return 1;
 }
 
-int	str_to_double(const char *string, double *number, const int base)
+int	str_to_ulong_strict(const char *string, unsigned long *number, const int base)
 {
-	char	*str;
+	const char	*str;
 
 	*number = 0;
 
@@ -535,32 +524,49 @@ int	str_to_double(const char *string, double *number, const int base)
 		return 0;
 	}
 
-	str = strdup(string);
-	if (str == NULL)
-		return 0;
+	for (str = string; *str != '\0'; str++)
+		if (isspace(*str)) {
+			errno = EINVAL;
+			return 0;
+		}
 
-	str_trim_space(str);
-
-	if (!str_to_double_strict(str, number, base)) {
-		free(str);
-		return 0;
-	}
-
-	free(str);
-	return 1;
+	return str_to_ulong(string, number, base);
 }
 
-int	str_to_double_strict(const char *string, double *number, const int base)
+int	str_to_double(const char *string, double *number, const int base)
 {
-	char	*ptr = NULL;
+	char		*ptr = NULL;
+	const char	*start,
+			*end;
+	size_t		 length;
 
 	*number = 0;
 
 	if (
 		string == NULL ||
-		*string == '\0' ||
-		isspace(*string)
+		*string == '\0'
 	) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	start = string;
+	while (
+		*start != '\0' &&
+		isspace(*start)
+	)
+		start++;
+
+	end = start + strlen(start);
+	while (
+		end > start &&
+		isspace(*(end - 1))
+	)
+		end--;
+
+	length = end - start;
+
+	if (!length) {
 		errno = EINVAL;
 		return 0;
 	}
@@ -570,13 +576,13 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 	case  0:
 		break;
 	case 10:
-		if (strlen(string) != strspn(string, "-+.0123456789Ee")) {
+		if (length != strspn(start, "-+.0123456789Ee")) {
 			errno = EINVAL;
 			return 0;
 		}
 		break;
 	case 16:
-		if (strlen(string) != strspn(string, "-+.0123456789ABCDEFabcdefXxPp")) {
+		if (length != strspn(start, "-+.0123456789ABCDEFabcdefXxPp")) {
 			errno = EINVAL;
 			return 0;
 		}
@@ -587,11 +593,11 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 	}
 
 	errno = 0;
-	*number = strtod(string, &ptr);
+	*number = strtod(start, &ptr);
 
 	if (
 		errno == EINVAL ||
-		*ptr != '\0'
+		ptr != end
 	) {
 		*number = 0;
 		errno = EINVAL;
@@ -604,4 +610,27 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 	}
 
 	return 1;
+}
+
+int	str_to_double_strict(const char *string, double *number, const int base)
+{
+	const char	*str;
+
+	*number = 0;
+
+	if (
+		string == NULL ||
+		*string == '\0'
+	) {
+		errno = EINVAL;
+		return 0;
+	}
+
+	for (str = string; *str != '\0'; str++)
+		if (isspace(*str)) {
+			errno = EINVAL;
+			return 0;
+		}
+
+	return str_to_double(string, number, base);
 }

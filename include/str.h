@@ -69,7 +69,6 @@ char	*str_rtrim_space(char *string);
  * The same restrictions of the corresponding str_to_<type>[_strict]() functions apply.
  * If *string* can be converted to a valid number of type <type>, return 1.
  * Otherwise, return 0 with errno set to:
- * - ENOMEM, if available memory is insufficient;
  * - EINVAL, if the value of *base* is not supported or no conversion could be performed;
  * - ERANGE, if the converted value would be out of the acceptable range of <type>. */
 int	str_is_short(const char *string, const int base);
@@ -102,7 +101,6 @@ int	str_is_double_strict(const char *string, const int base);
  *   - double: 0 for auto-select, 10 or 16.
  * On success, return 1 with *number* being the result of the conversion of *string*.
  * On failure, return 0 with *number* being 0 and errno set to:
- * - ENOMEM, if available memory is insufficient;
  * - EINVAL, if the value of *base* is not supported or no conversion can be performed;
  * - ERANGE, if the converted value is out of the acceptable range of <type>. */
 int	str_to_short(const char *string, short *number, const int base);
