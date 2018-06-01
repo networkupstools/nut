@@ -387,12 +387,15 @@ void ssl_init(void)
 
 #ifdef WITH_OPENSSL
 
+# if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
 	SSL_library_init();
+#  define TLS_server_method TLSv1_server_method
+# endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
 
-	if ((ssl_method = TLSv1_server_method()) == NULL) {
+	if ((ssl_method = TLS_server_method()) == NULL) {
 		ssl_debug();
-		fatalx(EXIT_FAILURE, "TLSv1_server_method failed");
+		fatalx(EXIT_FAILURE, "TLS_server_method failed");
 	}
 
 	if ((ssl_ctx = SSL_CTX_new(ssl_method)) == NULL) {

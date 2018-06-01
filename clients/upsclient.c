@@ -316,10 +316,13 @@ int upscli_init(int certverify, const char *certpath,
 	
 #ifdef WITH_OPENSSL
 	
+# if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_library_init();
 	SSL_load_error_strings();
+#  define TLS_client_method TLSv1_client_method
+# endif /* OPENSSL_VERSION_NUMBER < 0x10100000L */
 
-	ssl_method = TLSv1_client_method();
+	ssl_method = TLS_client_method();
 
 	if (!ssl_method) {
 		return 0;
