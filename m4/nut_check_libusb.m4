@@ -1,8 +1,12 @@
 dnl Check for LIBUSB 1.0 or 0.1 (and, if found, fill 'nut_usb_lib' with its
-dnl approximate version) and its compiler flags. On success, set
-dnl nut_have_libusb="yes" and set LIBUSB_CFLAGS and LIBUSB_LIBS. On failure, set
-dnl nut_have_libusb="no". This macro can be run multiple times, but will
-dnl do the checking only once.
+dnl approximate version) and its compiler flags.
+dnl On success, set:
+dnl - nut_have_libusb="yes"
+dnl - LIBUSB_CFLAGS and LIBUSB_LIBS,
+dnl - if libusb 0.1 is found, nut_cv_libusb0_needs_dl to "yes" or "no".
+dnl On failure, set:
+dnl - nut_have_libusb="no".
+dnl This macro can be run multiple times, but will do the checking only once.
 dnl By default, if both libusb 1.0 and libusb 0.1 are available and appear to be
 dnl usable, libusb 1.0 takes precedence.
 dnl An optional argument with value 'libusb-1.0' or 'libusb-0.1' can be used to
@@ -160,6 +164,94 @@ if test -z "${nut_have_libusb_seen}"; then
 			if test "${nut_have_libusb}" = "yes"; then
 				AC_DEFINE(WITH_LIBUSB_0_1, 1, [Define to 1 for version 0.1 of the libusb.])
 				nut_usb_lib="(libusb-0.1)"
+			fi
+			dnl Check if libusb-0.1 is actually a libusb-compat-0.1 version implemented in such a way that would cause name clashes with our libusb-compat-1.0
+			AC_CACHE_CHECK(
+				[if libusb-0.1 needs to be dynamically loaded],
+				[nut_cv_libusb0_needs_dl],
+				[
+					nut_cv_libusb0_needs_dl=yes
+					AC_RUN_IFELSE(
+						[AC_LANG_PROGRAM(
+							[[
+								/**
+								 * @file
+								 * @brief	Test whether libusb[-compat]-0.1 would clash with libusb-1.0.
+								 * @copyright	@parblock
+								 * Copyright (C):
+								 * - 2018 -- Daniele Pezzini (<hyouko@gmail.com>)
+								 *
+								 * This program is free software: you can redistribute it and/or modify
+								 * it under the terms of the GNU General Public License as published by
+								 * the Free Software Foundation, either version 2 of the License, or
+								 * (at your option) any later version.
+								 *
+								 * This program is distributed in the hope that it will be useful,
+								 * but WITHOUT ANY WARRANTY; without even the implied warranty of
+								 * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+								 * GNU General Public License for more details.
+								 *
+								 * You should have received a copy of the GNU General Public License
+								 * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+								 *		@endparblock
+								 *
+								 * @details
+								 * When run, this little thing will return:
+								 * - 0, if libusb[-compat]-0.1 appears to happily coexist with libusb-1.0,
+								 * - 1, if not.
+								 */
+
+								#include <usb.h>
+
+								/** @brief Possible clever answers to our @ref would_libusb0_clash_with_libusb1 question. */
+								enum would_clash {
+									PROBABLY_NOT		=  0,	/**< We can't be sure, but the tea leaves seem to indicate so. */
+									SO_IT_SEEMS		=  1	/**< The oh so mighty stars disagree, try coffee grounds the next time. */
+								};
+
+								/** @brief Our ultimate question. */
+								static enum would_clash		would_libusb0_clash_with_libusb1 = PROBABLY_NOT;
+
+								/** @brief Error codes returned by libusb functions on failure. */
+								enum libusb_error {
+									/* ==8<------------------------------------------ */
+									LIBUSB_ERROR_OTHER	= -99	/**< Other error. */
+								};
+
+								/** @brief A libusb context... (ignored) */
+								typedef struct libusb_context	libusb_context;
+
+								/** @brief Set @ref would_libusb0_clash_with_libusb1 and error out.
+								 * @note This function is here just to see if usb_init() calls it... so don't static it! (Monsieur de La Palice told me)
+								 * @return @ref LIBUSB_ERROR_OTHER, as we don't want usb_init() to do anything else. */
+								int	libusb_init(
+									libusb_context	**ctx	/**< ignored */
+								) {
+									would_libusb0_clash_with_libusb1 = SO_IT_SEEMS;
+									return LIBUSB_ERROR_OTHER;
+								}
+							]],
+							[[
+								/* Let's see if usb_init() attempts to call our libusb_init()... */
+								usb_init();
+
+								/* ...we got an answer, apparently... */
+								if (would_libusb0_clash_with_libusb1 == SO_IT_SEEMS)
+									return 1;
+								return 0;
+							]]
+						)],
+						[nut_cv_libusb0_needs_dl=no],
+						[],
+						[]
+					)
+				]
+			)
+			if test "${cross_compiling}" = "yes"; then
+				AC_MSG_WARN([(using default value, since cross-compiling, if you want to override it, enable caching and edit the value of nut_cv_libusb0_needs_dl var)])
+			fi
+			if test "${nut_cv_libusb0_needs_dl}" = "yes"; then
+				AC_DEFINE(DYNAMICALLY_LOAD_LIBUSB_0_1, 1, [Define to 1 to dynamically load libusb 0.1.])
 			fi
 		fi
 	fi

@@ -315,6 +315,32 @@ NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
 
 dnl ----------------------------------------------------------------------
+dnl Check for --with-libltdl
+
+NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
+
+dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
+if test "${nut_with_libltdl}" != "no"; then
+   dnl check for libltdl compiler flags
+   NUT_CHECK_LIBLTDL
+fi
+
+if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
+   AC_MSG_ERROR([libltdl not found])
+fi
+
+if test "${nut_with_libltdl}" != "no"; then
+   nut_with_libltdl="${nut_have_libltdl}"
+fi
+
+NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
+					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
+
+dnl Explicitly report if we are building nut-scanner or not
+dnl since it requires libltdl
+NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
+
+dnl ----------------------------------------------------------------------
 dnl checks related to --with-usb
 
 nut_usb_lib=""
@@ -327,6 +353,11 @@ if test "${nut_with_usb}" != "no"; then
 	else
 		NUT_CHECK_LIBUSB
 	fi
+	dnl Make sure our libusb-compat-1.0 will work
+	if test "${nut_cv_libusb0_needs_dl}" = "yes" -a "${nut_with_libltdl}" != "yes"; then
+		AC_MSG_WARN([Detected a libusb-compat-0.1 version that would cause name clashes if not dynamically loaded, enable libltdl support to use it.])
+		nut_have_libusb=no
+	fi
 	dnl Any other value not implying 'yes' is treated as 'auto'.
 	if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
 		AC_MSG_ERROR([USB drivers requested, but libusb not found.])
@@ -336,6 +367,7 @@ fi
 
 AM_CONDITIONAL(WITH_LIBUSB_0_1, test "${nut_usb_lib}" = "(libusb-0.1)")
 AM_CONDITIONAL(WITH_LIBUSB_1_0, test "${nut_usb_lib}" = "(libusb-1.0)")
+AM_CONDITIONAL(DYNAMICALLY_LOAD_LIBUSB_0_1, test "${nut_cv_libusb0_needs_dl}" = "yes" -a "${nut_with_libltdl}" = "yes")
 NUT_REPORT_FEATURE([build USB drivers], [${nut_with_usb}], [${nut_usb_lib}],
 					[WITH_USB], [Define to enable USB support])
 
@@ -609,32 +641,6 @@ fi
 NUT_REPORT_FEATURE([enable libwrap (tcp-wrappers) support], [${nut_with_wrap}], [],
 					[WITH_WRAP], [Define to enable libwrap (tcp-wrappers) support])
 
-
-dnl ----------------------------------------------------------------------
-dnl Check for --with-libltdl
-
-NUT_ARG_WITH([libltdl], [enable libltdl (Libtool dlopen abstraction) support], [auto])
-
-dnl ${nut_with_libltdl}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_libltdl}" != "no"; then
-   dnl check for libltdl compiler flags
-   NUT_CHECK_LIBLTDL
-fi
-
-if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
-   AC_MSG_ERROR([libltdl not found])
-fi
-
-if test "${nut_with_libltdl}" != "no"; then
-   nut_with_libltdl="${nut_have_libltdl}"
-fi
-
-NUT_REPORT_FEATURE([enable libltdl (Libtool dlopen abstraction) support], [${nut_with_libltdl}], [],
-					[WITH_LIBLTDL], [Define to enable libltdl (Libtool dlopen abstraction) support])
-
-dnl Explicitly report if we are building nut-scanner or not
-dnl since it requires libltdl
-NUT_REPORT([build nut-scanner], [${nut_with_libltdl}])
 
 dnl ----------------------------------------------------------------------
 dnl checks related to --with-cgi

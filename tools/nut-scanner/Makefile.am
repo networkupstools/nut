@@ -33,6 +33,8 @@ if WITH_LIBUSB_1_0
 endif
 if WITH_LIBUSB_0_1
   libnutscan_la_SOURCES += ../../common/libusb-compat-1.0.c
+  # make sure libusb-0.1 is dynamically loaded
+  libnutscan_la_CFLAGS += -DDYNAMICALLY_LOAD_LIBUSB_0_1
   # don't export libusb_* symbols to avoid name clashes with libusb-compat-0.1
   libnutscan_la_LDFLAGS += -export-symbols-regex '^(([^l].*)|(l([^i].*|))|(li([^b].*|))|(lib([^u].*|))|(libu([^s].*|))|(libus([^b].*|))|(libusb([^_].*|))|(libusb_))$$'
 endif

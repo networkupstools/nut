@@ -29,12 +29,12 @@
 #include <usb.h>
 
 #include "common.h"	/* for upsdebugx() (and SMALLBUF) */
-#include "config.h"	/* for HAVE_USB_DETACH_KERNEL_DRIVER_NP/WITH_LIBLTDL flags */
+#include "config.h"	/* for HAVE_USB_DETACH_KERNEL_DRIVER_NP/DYNAMICALLY_LOAD_LIBUSB_0_1/WITH_LIBLTDL flags */
 #include "str.h"
 
-#ifdef WITH_LIBLTDL
+#if defined(DYNAMICALLY_LOAD_LIBUSB_0_1) && defined(WITH_LIBLTDL)
 #include "dl_libusb-0.1.h"
-#endif	/* WITH_LIBLTDL */
+#endif	/* DYNAMICALLY_LOAD_LIBUSB_0_1 + WITH_LIBLTDL */
 
 /** @name Globals
  * @{ *************************************************************************/
@@ -46,7 +46,7 @@
 static const struct libusb_version	libusb_version_internal = {
 	0,	/* major	*/
 	1,	/* minor	*/
-	2,	/* micro: *we*	*/
+	3,	/* micro: *we*	*/
 	0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
@@ -163,14 +163,14 @@ int	libusb_init(
 ) {
 	const char	*debug_level_str = getenv("LIBUSB_DEBUG");
 	int		 debug_level;
-#ifdef WITH_LIBLTDL
+#if defined(DYNAMICALLY_LOAD_LIBUSB_0_1) && defined(WITH_LIBLTDL)
 	char		 error[SMALLBUF];
 
 	if (!dl_libusb01_init(error, sizeof(error))) {
 		dbg("%s", error);
 		return LIBUSB_ERROR_OTHER;
 	}
-#endif	/* WITH_LIBLTDL */
+#endif	/* DYNAMICALLY_LOAD_LIBUSB_0_1 + WITH_LIBLTDL */
 
 	if (str_to_int(debug_level_str, &debug_level, 10))
 		usb_set_debug(debug_level);
@@ -183,9 +183,9 @@ int	libusb_init(
 void	libusb_exit(
 	libusb_context	*ctx
 ) {
-#ifdef WITH_LIBLTDL
+#if defined(DYNAMICALLY_LOAD_LIBUSB_0_1) && defined(WITH_LIBLTDL)
 	dl_libusb01_exit();
-#endif	/* WITH_LIBLTDL */
+#endif	/* DYNAMICALLY_LOAD_LIBUSB_0_1 + WITH_LIBLTDL */
 	return;
 }
 
