@@ -574,14 +574,13 @@ int	str_to_double(const char *string, double *number, const int base)
 
 	switch (base)
 	{
-	case  0:
-		break;
 	case 10:
 		if (length != strspn(start, "-+.0123456789Ee")) {
 			errno = EINVAL;
 			return 0;
 		}
 		break;
+	case  0:
 	case 16:
 		if (length != strspn(start, "-+.0123456789ABCDEFabcdefXxPp")) {
 			errno = EINVAL;
