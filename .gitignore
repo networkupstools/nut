@@ -15,6 +15,7 @@ Makefile.in
 /aclocal.m4
 /autom4te.cache/
 /ChangeLog
+/config.cache
 /config.guess
 /config.log
 /config.status
