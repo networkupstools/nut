@@ -25,10 +25,11 @@
 
 #include "main.h"
 #include "usb-common.h"
+#include "str.h"
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.21"
+#define DRIVER_VERSION	"1.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -290,21 +291,21 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		if (dev_desc.iManufacturer) {
 			char	buf[SMALLBUF];
 			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iManufacturer, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0 && (device->Vendor = strdup(buf)) == NULL)
+			if (ret > 0 && *str_trim_space(buf) && (device->Vendor = strdup(buf)) == NULL)
 				goto oom_error;
 		}
 
 		if (dev_desc.iProduct) {
 			char	buf[SMALLBUF];
 			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iProduct, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0 && (device->Product = strdup(buf)) == NULL)
+			if (ret > 0 && *str_trim_space(buf) && (device->Product = strdup(buf)) == NULL)
 				goto oom_error;
 		}
 
 		if (dev_desc.iSerialNumber) {
 			char	buf[SMALLBUF];
 			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iSerialNumber, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0 && (device->Serial = strdup(buf)) == NULL)
+			if (ret > 0 && *str_trim_space(buf) && (device->Serial = strdup(buf)) == NULL)
 				goto oom_error;
 		}
 

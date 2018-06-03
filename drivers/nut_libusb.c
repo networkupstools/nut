@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.32"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.33"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -323,19 +323,19 @@ static int	nut_libusb_open(
 
 		if (device_desc.iManufacturer) {
 			ret = libusb_get_string_descriptor_ascii(udev, device_desc.iManufacturer, (unsigned char*)string, sizeof(string));
-			if (ret > 0 && (curDevice->Vendor = strdup(string)) == NULL)
+			if (ret > 0 && *str_trim_space(string) && (curDevice->Vendor = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
 		if (device_desc.iProduct) {
 			ret = libusb_get_string_descriptor_ascii(udev, device_desc.iProduct, (unsigned char*)string, sizeof(string));
-			if (ret > 0 && (curDevice->Product = strdup(string)) == NULL)
+			if (ret > 0 && *str_trim_space(string) && (curDevice->Product = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
 		if (device_desc.iSerialNumber) {
 			ret = libusb_get_string_descriptor_ascii(udev, device_desc.iSerialNumber, (unsigned char*)string, sizeof(string));
-			if (ret > 0 && (curDevice->Serial = strdup(string)) == NULL)
+			if (ret > 0 && *str_trim_space(string) && (curDevice->Serial = strdup(string)) == NULL)
 				goto oom_error;
 		}
 

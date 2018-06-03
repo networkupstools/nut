@@ -30,6 +30,7 @@
 #include "nutscan-usb.h"
 #include <stdio.h>
 #include <string.h>
+#include "str.h"
 
 #ifdef WITH_LIBUSB_1_0
 #include "dl_libusb-1.0.h"
@@ -153,21 +154,21 @@ nutscan_device_t	*nutscan_scan_usb(void)
 		/* Get serial number */
 		if (dev_desc.iSerialNumber) {
 			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iSerialNumber, (unsigned char *)string, sizeof(string));
-			if (ret > 0 && (serialnumber = strdup(str_rtrim(string, ' '))) == NULL)
+			if (ret > 0 && *str_trim_space(string) && (serialnumber = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
 		/* Get product name */
 		if (dev_desc.iProduct) {
 			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iProduct, (unsigned char *)string, sizeof(string));
-			if (ret > 0 && (device_name = strdup(str_rtrim(string, ' '))) == NULL)
+			if (ret > 0 && *str_trim_space(string) && (device_name = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
 		/* Get vendor name */
 		if (dev_desc.iManufacturer) {
 			ret = libusb_get_string_descriptor_ascii(udev, dev_desc.iManufacturer, (unsigned char *)string, sizeof(string));
-			if (ret > 0 && (vendor_name = strdup(str_rtrim(string, ' '))) == NULL)
+			if (ret > 0 && *str_trim_space(string) && (vendor_name = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
