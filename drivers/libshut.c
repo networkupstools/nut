@@ -33,7 +33,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.90"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.91"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -1222,7 +1222,7 @@ static int	libshut_open(
 		ret = shut_get_string_descriptor_ascii(*fd, device_desc->iManufacturer, (unsigned char *)string, sizeof(string));
 		if (ret == SHUT_ERROR_NO_MEM)
 			goto oom_error;
-		if (ret > 0)
+		if (ret > 0 && *str_trim_space(string))
 			curDevice->Vendor = xstrdup(string);
 	}
 
@@ -1230,7 +1230,7 @@ static int	libshut_open(
 		ret = shut_get_string_descriptor_ascii(*fd, device_desc->iProduct, (unsigned char *)string, sizeof(string));
 		if (ret == SHUT_ERROR_NO_MEM)
 			goto oom_error;
-		if (ret > 0)
+		if (ret > 0 && *str_trim_space(string))
 			curDevice->Product = xstrdup(string);
 	}
 
@@ -1238,7 +1238,7 @@ static int	libshut_open(
 		ret = shut_get_string_descriptor_ascii(*fd, device_desc->iSerialNumber, (unsigned char *)string, sizeof(string));
 		if (ret == SHUT_ERROR_NO_MEM)
 			goto oom_error;
-		if (ret > 0)
+		if (ret > 0 && *str_trim_space(string))
 			curDevice->Serial = xstrdup(string);
 	}
 
