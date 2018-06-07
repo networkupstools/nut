@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.30"
+#define DRIVER_VERSION	"0.31"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -941,7 +941,7 @@ void upsdrv_initinfo(void)
 	if(tl_model == TRIPP_LITE_SMART_0004 ||
 	   tl_model == TRIPP_LITE_SMART_0005) {
 		dstate_setinfo("ups.debug.P","%s", hexascdump(p_value+1, 7));
-		va *= 10; /* Seems to be true for protocol 0005 */
+		va *= 10;
 	}
 
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
@@ -1333,8 +1333,7 @@ void upsdrv_updateinfo(void)
 	/* - * - * - * - * - * - * - * - * - * - * - * - * - * - * - */
 
 	if( tl_model == TRIPP_LITE_OMNIVS || tl_model == TRIPP_LITE_OMNIVS_2001 ||
-	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004 ||
-	    tl_model == TRIPP_LITE_SMART_0005) {
+	    tl_model == TRIPP_LITE_SMARTPRO || tl_model == TRIPP_LITE_SMART_0004) {
 		/* dq ~= sqrt(dV) is a reasonable approximation
 		 * Results fit well against the discrete function used in the Tripp Lite
 		 * source, but give a continuous result. */
@@ -1369,6 +1368,7 @@ void upsdrv_updateinfo(void)
 		case TRIPP_LITE_SMART_0004:
 		case TRIPP_LITE_SMART_0005:
 			dstate_setinfo("ups.load", "%d", hex2d(l_value+1, 2));
+			dstate_setinfo("battery.charge", "%3d", hex2d(l_value+3, 2));
 			dstate_setinfo("ups.debug.L","%s", hexascdump(l_value+1, 7));
 			break;
 		default:
