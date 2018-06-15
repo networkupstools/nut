@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.30"
+#define SUBDRIVER_VERSION "0.31"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -43,7 +43,7 @@ upsdrv_info_t comm_upsdrv_info = {
 USBDevice_t curDevice;
 
 /* USB functions */
-libusb_device_handle *nutusb_open(const char *port);
+libusb_device_handle *nutusb_open(void);
 void nutusb_close(libusb_device_handle *dev_h);
 /* unified failure reporting: call these often */
 void nutusb_comm_fail(const char *fmt, ...)
@@ -327,7 +327,7 @@ void upsdrv_comm_good(void)
 
 void upsdrv_initups(void)
 {
-	upsdev = nutusb_open("USB");
+	upsdev = nutusb_open();
 }
 
 void upsdrv_cleanup(void)
@@ -352,9 +352,9 @@ void upsdrv_reconnect(void)
 }
 
 /* USB functions */
-static void nutusb_open_error(const char *port)
+static void nutusb_open_error(void)
 {
-	printf("Unable to find POWERWARE UPS device on USB bus (%s)\n\n", port);
+	printf("Unable to find an USB POWERWARE UPS device.\n\n");
 
 	printf("Things to try:\n\n");
 	printf(" - Connect UPS device to USB bus\n\n");
@@ -380,7 +380,6 @@ static libusb_device_handle *open_powerware_usb(void)
 		libusb_device			*device = devlist[devnum];
 		libusb_device_handle		*udev;
 		struct libusb_device_descriptor	 dev_desc;
-		uint8_t				 bus;
 		int				 ret;
 
 		ret = libusb_get_device_descriptor(device, &dev_desc);
@@ -395,13 +394,6 @@ static libusb_device_handle *open_powerware_usb(void)
 
 		curDevice.VendorID = dev_desc.idVendor;
 		curDevice.ProductID = dev_desc.idProduct;
-		bus = libusb_get_bus_number(device);
-		curDevice.Bus = (char *)malloc(4);
-		if (curDevice.Bus == NULL) {
-			libusb_free_device_list(devlist, 1);
-			fatal_with_errno(EXIT_FAILURE, "Out of memory");
-		}
-		sprintf(curDevice.Bus, "%03d", bus);
 
 		/* FIXME: we should also retrieve
 		 * dev->descriptor.iManufacturer
@@ -421,7 +413,7 @@ static libusb_device_handle *open_powerware_usb(void)
 	return 0;
 }
 
-libusb_device_handle *nutusb_open(const char *port)
+libusb_device_handle *nutusb_open(void)
 {
 	int            dev_claimed = 0;
 	libusb_device_handle *dev_h = NULL;
@@ -441,7 +433,7 @@ libusb_device_handle *nutusb_open(const char *port)
 			errout = 1;
 		}
 		else {
-			upsdebugx(1, "device %s opened successfully", curDevice.Bus);
+			upsdebugx(1, "device %04X:%04X opened successfully", curDevice.VendorID, curDevice.ProductID);
 			errout = 0;
 
 			if ((ret = libusb_claim_interface(dev_h, 0)) != LIBUSB_SUCCESS) {
@@ -489,7 +481,7 @@ libusb_device_handle *nutusb_open(const char *port)
 		libusb_exit(NULL);
 
 	if (errout == 1)
-		nutusb_open_error(port);
+		nutusb_open_error();
 
 	return NULL;
 }
