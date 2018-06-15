@@ -147,9 +147,9 @@ nutscan_device_t	*nutscan_scan_usb(void)
 
 		/* Get bus */
 		bus = libusb_get_bus_number(dev);
-		if ((busname = (char *)malloc(4)) == NULL)
+		snprintf(string, sizeof(string), "%03u", bus);
+		if ((busname = strdup(string)) == NULL)
 			goto oom_error;
-		snprintf(busname, 4, "%03d", bus);
 
 		/* Get serial number */
 		if (dev_desc.iSerialNumber) {

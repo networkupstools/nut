@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.33"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.34"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -313,13 +313,14 @@ static int	nut_libusb_open(
 		free(curDevice->Bus);
 		memset(curDevice, 0, sizeof(*curDevice));
 
-		bus = libusb_get_bus_number(device);
-		if ((curDevice->Bus = (char *)malloc(4)) == NULL)
-			goto oom_error;
-		sprintf(curDevice->Bus, "%03d", bus);
 		curDevice->VendorID = device_desc.idVendor;
 		curDevice->ProductID = device_desc.idProduct;
 		curDevice->bcdDevice = device_desc.bcdDevice;
+
+		bus = libusb_get_bus_number(device);
+		snprintf(string, sizeof(string), "%03u", bus);
+		if ((curDevice->Bus = strdup(string)) == NULL)
+			goto oom_error;
 
 		if (device_desc.iManufacturer) {
 			ret = libusb_get_string_descriptor_ascii(udev, device_desc.iManufacturer, (unsigned char*)string, sizeof(string));

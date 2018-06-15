@@ -29,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -256,6 +256,7 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		USBDeviceMatcher_t		*m;
 		struct libusb_device_descriptor	 dev_desc;
 		int				 i;
+		char				 string[SMALLBUF];
 		uint8_t				 bus;
 
 		ret = libusb_get_device_descriptor(dev, &dev_desc);
@@ -285,29 +286,27 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 
 		device->VendorID = dev_desc.idVendor;
 		device->ProductID = dev_desc.idProduct;
+
 		bus = libusb_get_bus_number(dev);
-		if ((device->Bus = (char *)malloc(4)) == NULL)
+		snprintf(string, sizeof(string), "%03u", bus);
+		if ((device->Bus = strdup(string)) == NULL)
 			goto oom_error;
-		sprintf(device->Bus, "%03d", bus);
 
 		if (dev_desc.iManufacturer) {
-			char	buf[SMALLBUF];
-			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iManufacturer, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0 && *str_trim_space(buf) && (device->Vendor = strdup(buf)) == NULL)
+			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iManufacturer, (unsigned char *)string, sizeof(string));
+			if (ret > 0 && *str_trim_space(string) && (device->Vendor = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
 		if (dev_desc.iProduct) {
-			char	buf[SMALLBUF];
-			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iProduct, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0 && *str_trim_space(buf) && (device->Product = strdup(buf)) == NULL)
+			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iProduct, (unsigned char *)string, sizeof(string));
+			if (ret > 0 && *str_trim_space(string) && (device->Product = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
 		if (dev_desc.iSerialNumber) {
-			char	buf[SMALLBUF];
-			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iSerialNumber, (unsigned char *)buf, sizeof(buf));
-			if (ret > 0 && *str_trim_space(buf) && (device->Serial = strdup(buf)) == NULL)
+			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iSerialNumber, (unsigned char *)string, sizeof(string));
+			if (ret > 0 && *str_trim_space(string) && (device->Serial = strdup(string)) == NULL)
 				goto oom_error;
 		}
 
