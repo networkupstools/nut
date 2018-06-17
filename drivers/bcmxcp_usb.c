@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.31"
+#define SUBDRIVER_VERSION "0.32"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -372,8 +372,8 @@ static libusb_device_handle *open_powerware_usb(void)
 			  devnum;
 
 	devcount = libusb_get_device_list(NULL, &devlist);
-	if (devcount <= 0)
-		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
+	if (devcount < 0)
+		upsdebugx(2, "Could not get the list of USB devices (%s).", libusb_strerror(devcount));
 
 	for (devnum = 0; devnum < devcount; devnum++) {
 

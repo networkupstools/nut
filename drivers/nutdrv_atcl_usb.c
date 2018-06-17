@@ -29,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.24"
+#define DRIVER_VERSION	"1.25"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -247,8 +247,8 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
 
 	devcount = libusb_get_device_list(NULL, &devlist);
-	if (devcount <= 0)
-		fatalx(EXIT_FAILURE, "No USB device found (%s).", devcount ? libusb_strerror(devcount) : "no error");
+	if (devcount < 0)
+		upsdebugx(2, "Could not get the list of USB devices (%s).", libusb_strerror(devcount));
 
 	for (devnum = 0; devnum < devcount; devnum++) {
 

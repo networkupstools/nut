@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.35"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.36"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -256,8 +256,11 @@ static int	nut_libusb_open(
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
 
-	/* Process available devices (if any) until we get a match */
 	devcount = libusb_get_device_list(NULL, &devlist);
+	if (devcount < 0)
+		upsdebugx(NUT_USB_DBG_DEVICE, "%s: could not get the list of USB devices (%s).", __func__, libusb_strerror(devcount));
+
+	/* Process available devices (if any) until we get a match */
 	for (devnum = 0; devnum < devcount; devnum++) {
 
 	/*	int				 if_claimed = 0;	*/
