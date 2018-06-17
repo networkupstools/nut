@@ -29,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.23"
+#define DRIVER_VERSION	"1.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -233,15 +233,18 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 	ssize_t		  devcount,
 			  devnum;
 
+	/* If device is still open, close it. */
+	if (*handlep) {
+		libusb_close(*handlep);
+		/* Also, reset the handle now, to avoid possible problems
+		 * (e.g. in case we exit() before the reset at the end of this function takes place,
+		 * upsdrv_cleanup() may attempt to libusb_close() the device again, if not nullified) */
+		*handlep = NULL;
+	}
+
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-
-#ifndef __linux__	/* (confirmed to work on Solaris and FreeBSD) */
-	/* Causes a double free corruption in linux if device is detached! */
-	if (*handlep)
-		libusb_close(*handlep);
-#endif
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount <= 0)

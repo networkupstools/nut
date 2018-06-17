@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.34"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.35"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -243,16 +243,18 @@ static int	nut_libusb_open(
 
 	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %p, %p, %p)", __func__, (void *)udevp, (void *)curDevice, (void *)matcher, (void *)callback);
 
+	/* If device is still open, close it. */
+	if (*udevp) {
+		libusb_close(*udevp);
+		/* Also, reset the handle now, to avoid possible problems
+		 * (e.g. in case we exit() before the reset at the end of this function takes place,
+		 * upsdrv_cleanup() may attempt to libusb_close() the device again, if not nullified) */
+		*udevp = NULL;
+	}
+
 	/* libusb base init */
 	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-
-#ifndef __linux__	/* (confirmed to work on Solaris and FreeBSD) */
-	/* If device is still open, close it.
-	 * Note: causes a double free corruption in linux if device is detached! */
-	if (*udevp)
-		libusb_close(*udevp);
-#endif	/* __linux__ */
 
 	/* Process available devices (if any) until we get a match */
 	devcount = libusb_get_device_list(NULL, &devlist);
