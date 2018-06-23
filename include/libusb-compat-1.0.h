@@ -301,12 +301,11 @@ int	libusb_release_interface(
 	int			 interface_number
 );
 
-/** Because of how libusb 0.1 handles the interface claiming/releasing
- * (only the most recently successfully claimed interface is tracked,
- * and, on it, is performed the changing of the `bAlternateSetting` value),
- * *interface_number* is ignored and, on a given *dev_handle*,
- * the setting is done only on the most recently successfully claimed interface,
- * and it may not work if any of its interfaces has been released ever since. */
+/** For this function to correctly work as expected and not error out,
+ * *interface_number* must be the most recently successfully claimed,
+ * and not yet released, interface on a given *dev_handle*, and,
+ * depending on the platform and/or libusb 0.1 implementation,
+ * this may not work, if any of its interfaces has been released ever since. */
 int	libusb_set_interface_alt_setting(
 	libusb_device_handle	*dev_handle,
 	int			 interface_number,

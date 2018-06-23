@@ -46,7 +46,7 @@
 static const struct libusb_version	libusb_version_internal = {
 	0,	/* major	*/
 	1,	/* minor	*/
-	3,	/* micro: *we*	*/
+	4,	/* micro: *we*	*/
 	0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
@@ -62,6 +62,40 @@ static const int	trust_libusb01_error_codes = 1;
 #else	/* __FreeBSD__ */
 static const int	trust_libusb01_error_codes = 0;
 #endif	/* __FreeBSD__ */
+
+/** @} ************************************************************************/
+
+
+/** @name libusb 1.0 opaque types and friends
+ * @{ *************************************************************************/
+
+/** @brief Handle for libusb_open()'d devices. */
+struct libusb_device_handle {
+	/** @brief Corresponding libusb 0.1 device handle. */
+	usb_dev_handle	*libusb01_dev_handle;
+
+	/** @brief Most recently successfully claimed (and not yet released) interface.
+	 *
+	 * Since libusb 0.1 only tracks the most recently successfully claimed interface and, on it, performs the changing of the `bAlternateSetting` value,
+	 * we need to do it ourselves, to avoid setting the value on a wrong interface (i.e. on the most recently claimed one),
+	 * when, for example, libusb_set_interface_alt_setting() is called with an interface other than the most recently claimed one.
+	 *
+	 * Because of that, this field should be given a value of @ref NONE_OR_UNKNOWN_INTERFACE
+	 * - when no interface has been successfully claimed yet,
+	 * - or **the most recently claimed one** has been successfully released.
+	 *
+	 * On the other hand, this field should not be touched when libusb_release()'ing another interface (i.e. not the last one):
+	 * - while most implementations alter the tracked interface on every successfull operation (i.e. both claiming *and* releasing),
+	 *   putting their internally tracked interface in an unusable status after any release, and making our libusb_set_interface_alt_setting() fail
+	 *   (so, we don't need to set this to @ref NONE_OR_UNKNOWN_INTERFACE ourselves, as the function will fail anyway when called after any release),
+	 * - some implementations (e.g. FreeBSD's) don't alter the tracked interface when releasing, but only when claiming:
+	 *   a subsequent call to libusb_set_interface_alt_setting() should succeed and be executed on the right interface,
+	 *   if done on the most recently claimed one, even if another interface has been released since the last claiming. */
+	int		 last_claimed_interface;
+};
+
+/** @brief Default value for libusb_device_handle::last_claimed_interface. */
+#define NONE_OR_UNKNOWN_INTERFACE	-1
 
 /** @} ************************************************************************/
 
@@ -305,22 +339,31 @@ int	libusb_open(
 	libusb_device		 *dev,
 	libusb_device_handle	**dev_handle
 ) {
+	*dev_handle = calloc(1, sizeof(**dev_handle));
+	if (!*dev_handle)
+		return LIBUSB_ERROR_NO_MEM;
+
 	errno = 0;
-	*dev_handle = (libusb_device_handle *)usb_open((struct usb_device *)dev);
+	(*dev_handle)->libusb01_dev_handle = usb_open((struct usb_device *)dev);
 
-	if (*dev_handle)
-		return LIBUSB_SUCCESS;
+	if (!(*dev_handle)->libusb01_dev_handle) {
+		free(*dev_handle);
+		*dev_handle = NULL;
+		if (errno)
+			return libusb01_ret_to_libusb10_ret(-errno);
+		return LIBUSB_ERROR_OTHER;
+	}
 
-	if (errno)
-		return libusb01_ret_to_libusb10_ret(-errno);
+	(*dev_handle)->last_claimed_interface = NONE_OR_UNKNOWN_INTERFACE;
 
-	return LIBUSB_ERROR_OTHER;
+	return LIBUSB_SUCCESS;
 }
 
 void	libusb_close(
 	libusb_device_handle	*dev_handle
 ) {
-	usb_close((usb_dev_handle *)dev_handle);
+	usb_close(dev_handle->libusb01_dev_handle);
+	free(dev_handle);
 }
 
 int	libusb_set_configuration(
@@ -331,7 +374,7 @@ int	libusb_set_configuration(
 
 	errno = 0;
 	ret = usb_set_configuration(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		configuration
 	);
 
@@ -344,13 +387,20 @@ int	libusb_claim_interface(
 ) {
 	int	ret;
 
+	if (interface_number < 0)
+		return LIBUSB_ERROR_INVALID_PARAM;
+
 	errno = 0;
 	ret = usb_claim_interface(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		interface_number
 	);
 
-	return libusb01_ret_to_libusb10_ret(ret);
+	if (ret < 0)
+		return libusb01_ret_to_libusb10_ret(ret);
+
+	dev_handle->last_claimed_interface = interface_number;
+	return LIBUSB_SUCCESS;
 }
 
 int	libusb_release_interface(
@@ -359,13 +409,22 @@ int	libusb_release_interface(
 ) {
 	int	ret;
 
+	if (interface_number < 0)
+		return LIBUSB_ERROR_INVALID_PARAM;
+
 	errno = 0;
 	ret = usb_release_interface(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		interface_number
 	);
 
-	return libusb01_ret_to_libusb10_ret(ret);
+	if (ret < 0)
+		return libusb01_ret_to_libusb10_ret(ret);
+
+	if (dev_handle->last_claimed_interface == interface_number)
+		dev_handle->last_claimed_interface = NONE_OR_UNKNOWN_INTERFACE;
+
+	return LIBUSB_SUCCESS;
 }
 
 int	libusb_set_interface_alt_setting(
@@ -375,9 +434,15 @@ int	libusb_set_interface_alt_setting(
 ) {
 	int	ret;
 
+	if (
+		interface_number < 0 ||
+		interface_number != dev_handle->last_claimed_interface
+	)
+		return LIBUSB_ERROR_INVALID_PARAM;
+
 	errno = 0;
 	ret = usb_set_altinterface(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		alternate_setting
 	);
 
@@ -392,7 +457,7 @@ int	libusb_clear_halt(
 
 	errno = 0;
 	ret = usb_clear_halt(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		endpoint
 	);
 
@@ -406,7 +471,7 @@ int	libusb_reset_device(
 
 	errno = 0;
 	ret = usb_reset(
-		(usb_dev_handle *)dev_handle
+		dev_handle->libusb01_dev_handle
 	);
 
 	return libusb01_ret_to_libusb10_ret(ret);
@@ -416,14 +481,19 @@ int	libusb_detach_kernel_driver(
 	libusb_device_handle	*dev_handle,
 	int			 interface_number
 ) {
+#ifdef HAVE_USB_DETACH_KERNEL_DRIVER_NP
+	int	ret;
+#endif	/* HAVE_USB_DETACH_KERNEL_DRIVER_NP */
+
+	if (interface_number < 0)
+		return LIBUSB_ERROR_INVALID_PARAM;
+
 #ifndef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	return LIBUSB_ERROR_NOT_SUPPORTED;
 #else	/* HAVE_USB_DETACH_KERNEL_DRIVER_NP */
-	int	ret;
-
 	errno = 0;
 	ret = usb_detach_kernel_driver_np(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		interface_number
 	);
 
@@ -445,7 +515,7 @@ int	libusb_control_transfer(
 
 	errno = 0;
 	ret = usb_control_msg(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		bmRequestType,
 		bRequest,
 		wValue,
@@ -471,7 +541,7 @@ int	libusb_bulk_transfer(
 	errno = 0;
 	if (endpoint & LIBUSB_ENDPOINT_IN)
 		ret = usb_bulk_read(
-			(usb_dev_handle *)dev_handle,
+			dev_handle->libusb01_dev_handle,
 			endpoint,
 			(char *)data,
 			length,
@@ -479,7 +549,7 @@ int	libusb_bulk_transfer(
 		);
 	else
 		ret = usb_bulk_write(
-			(usb_dev_handle *)dev_handle,
+			dev_handle->libusb01_dev_handle,
 			endpoint,
 			(char *)data,
 			length,
@@ -507,7 +577,7 @@ int	libusb_interrupt_transfer(
 	errno = 0;
 	if (endpoint & LIBUSB_ENDPOINT_IN)
 		ret = usb_interrupt_read(
-			(usb_dev_handle *)dev_handle,
+			dev_handle->libusb01_dev_handle,
 			endpoint,
 			(char *)data,
 			length,
@@ -515,7 +585,7 @@ int	libusb_interrupt_transfer(
 		);
 	else
 		ret = usb_interrupt_write(
-			(usb_dev_handle *)dev_handle,
+			dev_handle->libusb01_dev_handle,
 			endpoint,
 			(char *)data,
 			length,
@@ -720,7 +790,7 @@ int	libusb_get_string_descriptor(
 
 	errno = 0;
 	ret = usb_get_string(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		desc_index,
 		langid,
 		(char *)data,
@@ -740,7 +810,7 @@ int	libusb_get_string_descriptor_ascii(
 
 	errno = 0;
 	ret = usb_get_string_simple(
-		(usb_dev_handle *)dev_handle,
+		dev_handle->libusb01_dev_handle,
 		desc_index,
 		(char *)data,
 		length
