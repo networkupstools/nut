@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2016-2017 Eaton
+# Copyright (C) 2016-2018 Eaton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,6 +78,7 @@ usage: $0 [OPTIONS] resync
   list          	call $ENUMERATOR
                 	to list the mapping of service instances to device sections
   list <ups>    	(optionally return the service instance name for one device)
+  show-config <ups>     output config section from ups.conf for device <ups>
 EOF
 }
 
@@ -94,6 +95,13 @@ while [ $# -gt 0 ]; do
                 eval $ENUMERATOR --get-service-for-device "$2" ; exit $?
             else
                 eval $ENUMERATOR --list-services-for-devices ; exit $?
+            fi
+            ;;
+        show-config)
+            if [ -n "$2" ] ; then
+                eval $ENUMERATOR --show-device-config "$2" ; exit $?
+            else
+                echo "ERROR: Argument required" >&2; exit 1
             fi
             ;;
         start|stop)

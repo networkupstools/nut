@@ -219,6 +219,40 @@ $_DEV = $_SVC" ; }
     [ "`echo "$1" | wc -l`" = "`echo "$_TMP_DEV_SVC" | wc -l`" ]
 }
 
+upsconf_getSection() {
+    # "$1" = name of ups.conf section to display in whole
+    [ -n "$1" ] || return $?
+    CURR_SECTION=""
+    RES=1
+
+    if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
+        [ ! -s "$UPSCONF" ] \
+        && echo "WARNING: The '$UPSCONF' file exists but is empty" >&2 \
+        && return 3
+    else
+        echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
+        return 2
+    fi
+
+    while read LINE ; do
+        case "$LINE" in
+            \["$1"\]) CURR_SECTION="$1" ; echo "$LINE"; RES=0 ;;
+            \[*\])
+                [ "$CURR_SECTION" = "$1" ] && break
+                CURR_SECTION="other"
+                ;;
+            "") ;;
+            *)  if [ "$CURR_SECTION" = "$1" ]; then
+                    echo "$LINE"
+                fi
+                ;;
+        esac
+    done < "$UPSCONF"
+
+    [ "$RES" = 0 ] || echo "ERROR: Section [$1] was not found in the '$UPSCONF' file" >&2
+    return $RES
+}
+
 upsconf_getValue() {
     # "$1" = name of ups.conf section; $2 = name of config key; echo the value
     [ -n "$1" ] || return $?
@@ -591,6 +625,9 @@ $0 --get-device-for-service SVC
 $0 --list-services-for-devices
         Print a TAB-separated list of service units and corresponding
         NUT device names which each such unit wraps
+$0 --show-config DEV
+$0 --show-device-config DEV
+        Show configuration block of the specified NUT device
 EOF
 }
 
@@ -717,6 +754,12 @@ while [ $# -gt 0 ]; do
                 FINAL_RES=1
             done
             exit $FINAL_RES
+            ;;
+        --show-config|--show-device-config)
+            [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            DEV="$2"
+            upsconf_getSection "$DEV"
+            exit $?
             ;;
         *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
     esac
