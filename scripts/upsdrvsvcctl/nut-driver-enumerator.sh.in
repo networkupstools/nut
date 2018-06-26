@@ -631,6 +631,8 @@ $0 --list-services-for-devices
 $0 --show-config DEV
 $0 --show-device-config DEV
         Show configuration block of the specified NUT device
+$0 --show-device-config-value DEV KEY
+        Show single configuration key of the specified NUT device
 EOF
 }
 
@@ -762,6 +764,15 @@ while [ $# -gt 0 ]; do
             [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
             DEV="$2"
             upsconf_getSection "$DEV"
+            exit $?
+            ;;
+        --show-config-value|--show-device-config-value)
+            [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            [ -z "$3" ] && echo "Configuration key name argument required" >&2 && exit 1
+            DEV="$2"
+            KEY="$3"
+            upslist_readFile && \
+            upsconf_getValue "$DEV" "$KEY"
             exit $?
             ;;
         *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
