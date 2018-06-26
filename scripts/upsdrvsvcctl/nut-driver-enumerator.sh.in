@@ -259,7 +259,7 @@ upsconf_getValue() {
     [ -n "$2" ] || return $?
     CURR_SECTION=""
     echo "$UPSCONF_DATA" | \
-    while read LINE ; do
+    ( while read LINE ; do
         case "$LINE" in
             \["$1"\]) CURR_SECTION="$1" ;;
             \[*\])
@@ -276,9 +276,12 @@ upsconf_getValue() {
                 ;;
             *) ;;
         esac
-    done
-    # Nothing matched
-    return 1
+      done
+      # Nothing matched
+      return 1 )
+    RES=$?
+    [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
+    return $RES
 }
 
 upsconf_getDriver() {
