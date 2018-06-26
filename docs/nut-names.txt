@@ -172,6 +172,9 @@ input: Incoming line/power information
 | input.current.low.critical  | Low critical threshold (A)        | 2
 | input.current.high.warning  | High warning threshold (A)        | 10
 | input.current.high.critical | High critical threshold (A)       | 12
+| input.feed.color            | Color of the input feed
+                                (opaque string)                   | 3831236
+| input.feed.desc             | Description of the input feed     | Feed A
 | input.frequency             | Input line frequency (Hz)         | 60.00
 | input.frequency.nominal     | Nominal input line
                                 frequency (Hz)                    | 60
@@ -191,6 +194,8 @@ input: Incoming line/power information
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
                                 phases real power (W)             | 300
+| input.realpower.nominal     | Typical power capacity of the
+                                ePDU input (W)                    | 2000
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
@@ -552,8 +557,9 @@ outlet collection apply to outlet.group, especially for the indexing 'n'
 and "outlet.group.count". 
 
 Most of the data published for outlets also apply to outlet.group,
-including: id, name (similar as outlet "desc"), status, current and
-voltage (including status, alarm and thresholds).
+including: id, name (similar as outlet "desc"), color, status, current and
+voltage (including status, alarm and thresholds). Other actions and settings
+also apply ({delay,timer}.{shutdown,start})
 
 Some specific data to outlet groups exists:
 
@@ -565,6 +571,8 @@ Some specific data to outlet groups exists:
 | outlet.group.n.phase           | Electrical phase to which the
                                    physical outlet group (Gang) is
                                    connected to                   | L1
+| outlet.group.n.input           | Input to which an outlet group
+                                   is connected                   | 1
 |=================================================================================
 
 Example:
