@@ -241,6 +241,8 @@ input: Incoming line/power information
                                 of full)                          | 25
 | input.realpower             | Current sum value of all (ePDU)
                                 phases real power (W)             | 300
+| input.realpower.nominal     | Nominal sum value of all (ePDU)
+                                phases real power (W)             | 850
 | input.power                 | Current sum value of all (ePDU)
                                 phases apparent power (VA)        | 500
 | input.source                | The current input power source    | 1
