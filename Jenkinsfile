@@ -88,7 +88,7 @@ pipeline {
         stage ('compile') {
                     steps {
                         sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make -k -j4 all || make all'
-                        sh 'echo "Are GitIgnores good after make? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                        sh 'echo "Are GitIgnores good after make? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
@@ -132,7 +132,7 @@ pipeline {
                                 timeout (time: 5, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make check'
                                 }
-                                sh 'echo "Are GitIgnores good after make check? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make check? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                                 script {
                                     if ( params.DO_CLEANUP_AFTER_BUILD ) {
                                         deleteDir()
@@ -143,7 +143,7 @@ pipeline {
                                 timeout (time: 5, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make check'
                                 }
-                                sh 'echo "Are GitIgnores good after make check? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make check? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                           }
                         }
                     }
@@ -161,7 +161,7 @@ pipeline {
                                 timeout (time: 5, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make memcheck && exit 0 ; echo "Re-running failed ($?) memcheck with greater verbosity" >&2 ; make VERBOSE=1 memcheck-verbose'
                                 }
-                                sh 'echo "Are GitIgnores good after make memcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make memcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                                 script {
                                     if ( params.DO_CLEANUP_AFTER_BUILD ) {
                                         deleteDir()
@@ -172,7 +172,7 @@ pipeline {
                                 timeout (time: 5, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make memcheck && exit 0 ; echo "Re-running failed ($?) memcheck with greater verbosity" >&2 ; make VERBOSE=1 memcheck-verbose'
                                 }
-                                sh 'echo "Are GitIgnores good after make memcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make memcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                           }
                       }
                     }
@@ -190,7 +190,7 @@ pipeline {
                                 timeout (time: 10, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes" distcheck'
                                 }
-                                sh 'echo "Are GitIgnores good after make distcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make distcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                                 script {
                                     if ( params.DO_CLEANUP_AFTER_BUILD ) {
                                         deleteDir()
@@ -201,7 +201,7 @@ pipeline {
                                 timeout (time: 10, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes" distcheck'
                                 }
-                                sh 'echo "Are GitIgnores good after make distcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make distcheck? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                             }
                         }
                     }
@@ -219,7 +219,7 @@ pipeline {
                                 timeout (time: 10, unit: 'MINUTES') {
                                     sh """CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DESTDIR="${params.USE_TEST_INSTALL_DESTDIR}" install"""
                                 }
-                                sh 'echo "Are GitIgnores good after make install? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make install? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                                 script {
                                     if ( params.DO_CLEANUP_AFTER_BUILD ) {
                                         deleteDir()
@@ -230,7 +230,7 @@ pipeline {
                                 timeout (time: 10, unit: 'MINUTES') {
                                     sh """CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DESTDIR="${params.USE_TEST_INSTALL_DESTDIR}" install"""
                                 }
-                                sh 'echo "Are GitIgnores good after make install? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; exit 1; fi'
+                                sh 'echo "Are GitIgnores good after make install? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
                             }
                         }
                     }
