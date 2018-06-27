@@ -226,9 +226,15 @@ $_DEV = $_SVC" ; }
 
 upsconf_getSection() {
     # "$1" = name of ups.conf section to display in whole
+    #
+    # NOTE (TODO?): This routine finds the one NUT device section, prints it
+    # and returns when the section is over. It currently does not cover (in
+    # a way allowing to do it efficiently) selection of several sections,
+    # or storing each section content in some array or dynamic variables
+    # (as would be better fit for portable shells) to later address them
+    # quickly without re-parsing the file or big envvar many times.
+    #
     [ -n "$1" ] || return $?
-    CURR_SECTION=""
-    RES=1
 
     if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
         [ ! -s "$UPSCONF" ] \
@@ -239,9 +245,17 @@ upsconf_getSection() {
         return 2
     fi
 
+    CURR_SECTION=""
+    RES=1
     while read LINE ; do
         case "$LINE" in
-            \["$1"\]) CURR_SECTION="$1" ; echo "$LINE"; RES=0 ;;
+            \["$1"\])
+                if [ "$RES" = 0 ]; then
+                    # We have already displayed a section, here is a new one,
+                    # and this routine only displays one (TODO: toggle?)
+                    return 0
+                fi
+                CURR_SECTION="$1" ; echo "$LINE"; RES=0 ;;
             \[*\])
                 [ "$CURR_SECTION" = "$1" ] && break
                 CURR_SECTION="other"
