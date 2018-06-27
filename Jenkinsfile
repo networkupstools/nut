@@ -138,6 +138,8 @@ pipeline {
                              ) {
                             dir("tmp/test-check") {
                                 deleteDir()
+                            }
+                            dir("tmp/test-check") {
                                 unstash 'built'
                                 timeout (time: 5, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make check'
@@ -170,6 +172,8 @@ pipeline {
                              ) {
                               dir("tmp/test-memcheck") {
                                 deleteDir()
+                              }
+                              dir("tmp/test-memcheck") {
                                 unstash 'built'
                                 timeout (time: 5, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make memcheck && exit 0 ; echo "Re-running failed ($?) memcheck with greater verbosity" >&2 ; make VERBOSE=1 memcheck-verbose'
@@ -202,6 +206,8 @@ pipeline {
                              ) {
                               dir("tmp/test-distcheck") {
                                 deleteDir()
+                              }
+                              dir("tmp/test-distcheck") {
                                 unstash 'built'
                                 timeout (time: 10, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DISTCHECK_CONFIGURE_FLAGS="--with-neon=yes --with-lua=yes --with-snmp=yes --with-snmp_dmf_lua=yes --with-dev --with-doc=html-single=auto,man=yes --with-dmfnutscan-regenerate=yes --with-dmfsnmp-regenerate=auto --with-dmfsnmp-validate=yes --with-dmfnutscan-validate=yes" distcheck'
@@ -234,6 +240,8 @@ pipeline {
                              ) {
                               dir("tmp/test-distcheck-dmf-all-yes") {
                                 deleteDir()
+                              }
+                              dir("tmp/test-distcheck-dmf-all-yes") {
                                 unstash 'built'
                                 timeout (time: 30, unit: 'MINUTES') {
                                     sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make distcheck-dmf-all-yes'
@@ -266,6 +274,8 @@ pipeline {
                              ) {
                               dir("tmp/test-install-check") {
                                 deleteDir()
+                              }
+                              dir("tmp/test-install-check") {
                                 unstash 'built'
                                 timeout (time: 10, unit: 'MINUTES') {
                                     sh """CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make DESTDIR="${params.USE_TEST_INSTALL_DESTDIR}" install"""
