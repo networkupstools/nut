@@ -277,28 +277,13 @@ upsconf_getValue() {
     [ -n "$1" ] || return $?
     [ -n "$2" ] || return $?
     CURR_SECTION=""
-    echo "$UPSCONF_DATA" | \
-    ( while read LINE ; do
-        case "$LINE" in
-            \["$1"\]) CURR_SECTION="$1" ;;
-            \[*\])
-                [ "$CURR_SECTION" = "$1" ] && break
-                CURR_SECTION="other"
-                ;;
-            "$2"=*) if [ "$CURR_SECTION" = "$1" ]; then
-#                    VALUE="$(echo "$LINE" | sed -e 's,\#.*$,,' -e 's,^[\t\ ]*,,' -e 's,[\t\ ]*$,,' -e 's,[\t\ ]*=[\t\ ]*,=,' -e 's,'"$2"'=\([^\t\ ]*\)[\t\ ]*.*$,\1,')"
-                    VALUE="$(echo "$LINE" | sed -e 's,^'"$2"'=\([^'"$TABCHAR"'\ ]*\)['"$TABCHAR"'\ ]*.*$,\1,')"
-                    RES=$?
-                    echo "$VALUE"
-                    return $RES
-                fi
-                ;;
-            *) ;;
-        esac
-      done
-      # Nothing matched
-      return 1 )
-    RES=$?
+    RES=0
+    LINE="`upsconf_getSection "$1" | egrep '^[ \t]*'"$2"'[ \t]*='`" || RES=$?
+    [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
+
+    VALUE="$(echo "$LINE" | sed -e 's,^[ '"$TABCHAR"']*'"$2[ $TABCHAR]"'*=[ '"$TABCHAR"']*\(.*\)['"$TABCHAR"'\ ]*.*$,\1,' -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" || RES=$?
+    echo "$VALUE"
+
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
     return $RES
 }
