@@ -39,6 +39,10 @@ pipeline {
             description: 'Attempt "make distcheck" in this run?',
             name: 'DO_TEST_DISTCHECK')
         booleanParam (
+            defaultValue: true,
+            description: 'Attempt "make distcheck-dmf-all-yes" in this run?',
+            name: 'DO_TEST_DISTCHECK_DMF_ALL_YES')
+        booleanParam (
             defaultValue: false,
             description: 'Attempt a "make install" check in this run?',
             name: 'DO_TEST_INSTALL')
@@ -92,6 +96,9 @@ pipeline {
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
+                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                                 stash (name: 'built', includes: '**/*')
                             }
@@ -125,6 +132,9 @@ pipeline {
                       script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
+                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                             dir("tmp/test-check") {
                                 deleteDir()
@@ -154,6 +164,9 @@ pipeline {
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
+                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                               dir("tmp/test-memcheck") {
                                 deleteDir()
@@ -183,6 +196,9 @@ pipeline {
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
+                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                               dir("tmp/test-distcheck") {
                                 deleteDir()
@@ -206,12 +222,47 @@ pipeline {
                         }
                     }
                 }
+                stage ('make distcheck-dmf-all-yes') {
+                    when { expression { return ( params.DO_TEST_DISTCHECK_DMF_ALL_YES ) } }
+                    steps {
+                        script {
+                          if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
+                               (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
+                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                             ) {
+                              dir("tmp/test-distcheck-dmf-all-yes") {
+                                deleteDir()
+                                unstash 'built'
+                                timeout (time: 30, unit: 'MINUTES') {
+                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make distcheck-dmf-all-yes'
+                                }
+                                sh 'echo "Are GitIgnores good after make distcheck-dmf-all-yes? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
+                                script {
+                                    if ( params.DO_CLEANUP_AFTER_BUILD ) {
+                                        deleteDir()
+                                    }
+                                }
+                              }
+                            } else {
+                                timeout (time: 30, unit: 'MINUTES') {
+                                    sh 'CCACHE_BASEDIR="`pwd`" ; export CCACHE_BASEDIR; make distcheck-dmf-all-yes'
+                                }
+                                sh 'echo "Are GitIgnores good after make distcheck-dmf-all-yes? (should have no output below)"; git status -s || if [ "${params.REQUIRE_GOOD_GITIGNORE}" = false ]; then echo "WARNING GitIgnore tests found newly changed or untracked files" >&2 ; exit 0 ; else echo "FAILED GitIgnore tests" >&2 ; git diff; exit 1; fi'
+                            }
+                        }
+                    }
+                }
                 stage ('make install check') {
                     when { expression { return ( params.DO_TEST_INSTALL ) } }
                     steps {
                         script {
                           if ( (params.DO_TEST_CHECK && params.DO_TEST_MEMCHECK) || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK) || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK) ||
                                (params.DO_TEST_INSTALL && params.DO_TEST_MEMCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK) || (params.DO_TEST_INSTALL && params.DO_TEST_CHECK)
+                               || (params.DO_TEST_CHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_MEMCHECK && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
+                               || (params.DO_TEST_INSTALL && params.DO_TEST_DISTCHECK_DMF_ALL_YES)
                              ) {
                               dir("tmp/test-install-check") {
                                 deleteDir()
