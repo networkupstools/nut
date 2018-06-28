@@ -201,6 +201,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             echo "==="
             if git status -s | egrep '\.dmf$' ; then
                 echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+                git diff -- '*.dmf'
                 exit 1
             fi
             if [ "$HAVE_CCACHE" = yes ]; then
@@ -229,6 +230,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
     echo "==="
     if git status -s | egrep '\.dmf$' ; then
         echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+        git diff -- '*.dmf'
         exit 1
     fi
 
@@ -250,6 +252,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
         echo "==="
         if git status -s | egrep '\.dmf$' ; then
             echo "FATAL: There are changes in DMF files listed above - tracked sources should be updated!" >&2
+            git diff -- '*.dmf'
             exit 1
         fi
         )
