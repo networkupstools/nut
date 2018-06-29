@@ -42,7 +42,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.65"
+#define DRIVER_VERSION	"0.66"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -53,8 +53,6 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-#define false 0
-#define true 1
 #define RESP_END    0xFE
 #define ENDCHAR 13	/* replies end with CR */
 /* solis commands */
@@ -671,17 +669,17 @@ static void ScanReceivePack( void )
 	}
 
 	if( SourceFail && SourceLast ) /* first time failure */
-		FailureFlag = true;
+		FailureFlag = TRUE;
 
 	/* source return */
 	if( !( SourceFail ) && !( SourceLast ) ) {
-		SourceReturn = true;
+		SourceReturn = TRUE;
 		ser_flush_in(upsfd,"",0);    /* clean port */
 	}
 
 	if( !( SourceFail ) == SourceLast ) {
-		SourceReturn = false;
-		FailureFlag = false;
+		SourceReturn = FALSE;
+		FailureFlag = FALSE;
 	}
 
 	SourceLast = !( SourceFail );
@@ -689,9 +687,9 @@ static void ScanReceivePack( void )
 	/* Autonomy */
 
 	if( Autonomy < 5 )
-		LowBatt = true;
+		LowBatt = TRUE;
 	else
-		LowBatt = false;
+		LowBatt = FALSE;
 
 	UpsPowerFactor = 700;
 
@@ -749,7 +747,7 @@ static void ScanReceivePack( void )
 	/* verify Inversor */
 	if( Flag_inversor ) {
 		InversorOnLast = InversorOn;
-		Flag_inversor = false;
+		Flag_inversor = FALSE;
 	}
 
 	OutputEvents = 0;
@@ -837,7 +835,7 @@ CommReceive(const char *bufptr,  int size)
 				else
 					imodel = SolisModel - 11; /* 13 = 2, 14 = 3, 15 = 4 */
 
-				detected = true;
+				detected = TRUE;
 
 			}
 

@@ -614,12 +614,4 @@ typedef struct {
 	double (*nuf)(const char *nut_value); /* optional NUT to HID mapping */
 } info_lkp_t;
 
-/* use explicit booleans */
-#ifndef FALSE
-typedef enum ebool { FALSE, TRUE } bool_t;
-#else
-typedef int bool_t;
-#endif
-
 #endif /*_POWERWARE_H */
-

@@ -34,8 +34,9 @@
  *
  */
 
-#define DRIVER_VERSION	"0.33"
+#define DRIVER_VERSION	"0.34"
 
+#include "bool.h"
 #include "main.h"
 
 #include <math.h>

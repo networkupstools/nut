@@ -45,12 +45,6 @@
 #define DEFAULT_OFFDELAY	"30"	/* Delay before power off, in seconds */
 #define DEFAULT_POLLFREQ	30	/* Polling interval between full updates, in seconds; the driver will do quick polls in the meantime */
 
-#ifndef TRUE
-typedef enum { FALSE, TRUE } bool_t;
-#else
-typedef int bool_t;
-#endif
-
 /* Structure for rw vars */
 typedef struct {
 	char	value[SMALLBUF];				/* Value for enum/range, or length for ST_FLAG_STRING */

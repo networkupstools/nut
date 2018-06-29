@@ -28,6 +28,8 @@
  *
  */
 
+#include "bool.h"
+
 /* --------------------------------------------------------------- */
 /*                 Default Values for UPS Variables                */
 /* --------------------------------------------------------------- */
@@ -163,20 +165,6 @@ static const double multiplier[4][8] = {
   { 0.01, 0.01, 1  ,    1,    1, 1,    60,   1 },
   { 1  , 0.01, 0.1 ,    1,    1, 1,    60,   1 }
 };
-
-/* --------------------------------------------------------------- */
-/*                       Explicit Booleans                         */
-/* --------------------------------------------------------------- */
-
-/* use explicit booleans */
-#ifdef FALSE
-	#undef FALSE
-#endif /* FALSE */
-#ifdef TRUE
-	#undef TRUE
-#endif /* TRUE */
-typedef enum ebool { FALSE=0, TRUE } bool_t;
-
 
 /* --------------------------------------------------------------- */
 /*      Query Commands and their Mapping to INFO_ Variables        */

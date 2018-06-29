@@ -78,6 +78,8 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
+#include "bool.h"
+
 /* Force numeric OIDs by disabling MIB loading */
 #define DISABLE_MIB_LOADING 1
 
@@ -85,13 +87,6 @@
 #define DEFAULT_POLLFREQ          30   /* in seconds */
 #define DEFAULT_NETSNMP_RETRIES   5
 #define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
-
-/* use explicit booleans */
-#ifndef FALSE
-typedef enum ebool { FALSE, TRUE } bool_t;
-#else
-typedef int bool_t;
-#endif
 
 /* Common SNMP data and lookup definitions */
 /* special functions to interpret items:

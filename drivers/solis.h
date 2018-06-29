@@ -30,7 +30,7 @@
 #ifndef INCLUDED_SOLIS_H
 #define INCLUDED_SOLIS_H
 
-typedef int bool_t;
+#include "bool.h"
 
 /* autonomy constants */
 

@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include "hidtypes.h"
 
+#include "bool.h"
 #include "timehead.h"
 #ifdef SHUT_MODE
 	#include "libshut.h"
@@ -50,13 +51,6 @@
 	typedef usb_communication_subdriver_t	communication_subdriver_t;
 	#define COMM_DRIVER_(item)		LIBUSB_##item			/**< @brief Alias for @ref libusb_error codes. */
 #endif	/* SHUT_MODE */
-
-/* use explicit booleans */
-#ifndef FALSE
-typedef enum ebool { FALSE, TRUE } bool_t;
-#else
-typedef int bool_t;
-#endif
 
 /* Device open modes */
 #define MODE_OPEN	0	/* open a HID device for the first time */

@@ -30,12 +30,13 @@
 #include <stdio.h>
 #include <math.h>
 
+#include "bool.h"
 #include "main.h"
 #include "serial.h"
 #include "timehead.h"
 
 #define DRIVER_NAME		"Microsol Rhino UPS driver"
-#define DRIVER_VERSION	"0.51"
+#define DRIVER_VERSION	"0.52"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -47,11 +48,6 @@ upsdrv_info_t upsdrv_info = {
 };
 
 #define UPSDELAY 500 /* 0.5 ms delay */
-
-typedef int bool_t;
-
-#define false 0
-#define true 1
 
 /* rhino commands */
 #define CMD_INON    0x0001
@@ -294,21 +290,21 @@ ScanReceivePack( void )
   /* model independent data */
   
   if(  ( BattVoltage < LimInfBattInv ) )
-    CriticBatt = true;
+    CriticBatt = TRUE;
   
   if(  BypassOn )
     OutVoltage = ( InVoltage * 1.0 / 2 ) + 5;
   
   if(  SourceFail && RedeAnterior ) /* falha pela primeira vez */
-    OcorrenciaDeFalha = true;
+    OcorrenciaDeFalha = TRUE;
   
   if(  !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
-    RetornoDaRede = true;
+    RetornoDaRede = TRUE;
   
   if( !( SourceFail ) == RedeAnterior )
     {
-      RetornoDaRede = false;
-      OcorrenciaDeFalha = false;
+      RetornoDaRede = FALSE;
+      OcorrenciaDeFalha = FALSE;
     }
   
   RedeAnterior = !( SourceFail );
@@ -357,7 +353,7 @@ ScanReceivePack( void )
   if(  Flag_inversor )
     {
       oldInversorOn = InputOn;
-      Flag_inversor = false;
+      Flag_inversor = FALSE;
     }
 
   EventosSaida = 0;
@@ -434,7 +430,7 @@ CommReceive(const unsigned char *bufptr,  int size)
 		 if(!(detected))
 		   {
 		     RhinoModel = RecPack[0];
-		     detected = true;
+		     detected = TRUE;
 		   }
 
 		 switch( RhinoModel )
