@@ -28,6 +28,7 @@
 
 #include <usb.h>
 
+#include "bool.h"
 #include "common.h"	/* for upsdebugx() (and SMALLBUF) */
 #include "config.h"	/* for HAVE_USB_DETACH_KERNEL_DRIVER_NP/DYNAMICALLY_LOAD_LIBUSB_0_1/WITH_LIBLTDL flags */
 #include "str.h"
@@ -46,21 +47,21 @@
 static const struct libusb_version	libusb_version_internal = {
 	0,	/* major	*/
 	1,	/* minor	*/
-	4,	/* micro: *we*	*/
+	5,	/* micro: *we*	*/
 	0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
 };
 
-/** @brief Whether (non-zero) or not (zero) this lib should trust libusb 0.1 error codes.
+/** @brief Whether (@ref TRUE) or not (@ref FALSE) this lib should trust libusb 0.1 error codes.
  *
  * Some libusb 0.1 implementations don't return `-errno` on errors, but `-1`
  * (and, at least on FreeBSD, usb_strerror() is not of any utility).
  * In such cases we'll try to go deeper and see if an `errno` is set. */
 #ifndef __FreeBSD__
-static const int	trust_libusb01_error_codes = 1;
+static const bool_t	trust_libusb01_error_codes = TRUE;
 #else	/* __FreeBSD__ */
-static const int	trust_libusb01_error_codes = 0;
+static const bool_t	trust_libusb01_error_codes = FALSE;
 #endif	/* __FreeBSD__ */
 
 /** @} ************************************************************************/
@@ -125,7 +126,7 @@ struct libusb_device_handle {
  *
  * As such, if *ret* is not negative, we assume a no-error condition and it is returned untouched and unmolested.
  * Otherwise, we assume an error condition and, as libusb 0.1 error code, is used:
- * - if @ref trust_libusb01_error_codes evaluates to true (i.e. it's not `0`) or *ret* is not `-1`, *ret* (negated),
+ * - if @ref trust_libusb01_error_codes is @ref TRUE or *ret* is not `-1`, *ret* (negated),
  * - otherwise, `errno`, if it is set.
  *
  * @return *ret*, when it is not negative,

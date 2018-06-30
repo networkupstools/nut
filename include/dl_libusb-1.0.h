@@ -36,6 +36,7 @@
 
 #include <libusb.h>
 
+#include "bool.h"
 #include "common.h"	/* for get_libname() */
 
 /** @name libusb 1.0 symbols
@@ -111,9 +112,9 @@ static lt_dlhandle	dl_libusb10_handle = NULL;
  * - a previous successful call will make it succeed,
  * - errors on a previous call will error out.
  *
- * @return 1, on success,
- * @return 0, on errors, with the reason of the failure stored in *error* and @ref dl_libusb10_handle set to `(void *)1`. */
-static inline int	dl_libusb10_init(
+ * @return @ref TRUE, on success,
+ * @return @ref FALSE, on errors, with the reason of the failure stored in *error* and @ref dl_libusb10_handle set to `(void *)1`. */
+static inline bool_t	dl_libusb10_init(
 	char		*error,		/**< [out] string to hold a short description of any error. */
 	const size_t	 errorlen	/**< [in]  size of *error*. */
 ) {
