@@ -30,6 +30,8 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+#include "bool.h"
+
 /** @name Character trimming
  * Remove all
  *
@@ -85,25 +87,25 @@ char	*str_rtrim_space(char *string);
  *
  * @note	The same restrictions of the corresponding str_to_<type>[_strict]() functions apply.
  *
- * @return	1, if *string* can be converted to a valid number of type <type>,
- * @return	0, otherwise, with `errno` set to:
+ * @return	@ref TRUE, if *string* can be converted to a valid number of type <type>,
+ * @return	@ref FALSE, otherwise, with `errno` set to:
  *		- `EINVAL`, if the value of *base* is not supported or no conversion could be performed;
  *		- `ERANGE`, if the converted value would be out of the acceptable range of <type>.
  * @{ */
-int	str_is_short(const char *string, const int base);
-int	str_is_short_strict(const char *string, const int base);
-int	str_is_ushort(const char *string, const int base);
-int	str_is_ushort_strict(const char *string, const int base);
-int	str_is_int(const char *string, const int base);
-int	str_is_int_strict(const char *string, const int base);
-int	str_is_uint(const char *string, const int base);
-int	str_is_uint_strict(const char *string, const int base);
-int	str_is_long(const char *string, const int base);
-int	str_is_long_strict(const char *string, const int base);
-int	str_is_ulong(const char *string, const int base);
-int	str_is_ulong_strict(const char *string, const int base);
-int	str_is_double(const char *string, const int base);
-int	str_is_double_strict(const char *string, const int base);
+bool_t	str_is_short(const char *string, const int base);
+bool_t	str_is_short_strict(const char *string, const int base);
+bool_t	str_is_ushort(const char *string, const int base);
+bool_t	str_is_ushort_strict(const char *string, const int base);
+bool_t	str_is_int(const char *string, const int base);
+bool_t	str_is_int_strict(const char *string, const int base);
+bool_t	str_is_uint(const char *string, const int base);
+bool_t	str_is_uint_strict(const char *string, const int base);
+bool_t	str_is_long(const char *string, const int base);
+bool_t	str_is_long_strict(const char *string, const int base);
+bool_t	str_is_ulong(const char *string, const int base);
+bool_t	str_is_ulong_strict(const char *string, const int base);
+bool_t	str_is_double(const char *string, const int base);
+bool_t	str_is_double_strict(const char *string, const int base);
 /** @} */
 
 /** @name String-to-number conversions
@@ -122,25 +124,25 @@ int	str_is_double_strict(const char *string, const int base);
  *			- short, ushort, int, uint, long, ulong: acceptable values as in strtol()/strtoul(),
  *			- double: 0 for auto-select, 10 or 16.
  *
- * @return	1, on success, with *number* being the result of the conversion of *string*,
- * @return	0, on failure, with *number* being 0 and `errno` set to:
+ * @return	@ref TRUE, on success, with *number* being the result of the conversion of *string*,
+ * @return	@ref FALSE, on failure, with *number* being 0 and `errno` set to:
  *		- `EINVAL`, if the value of *base* is not supported or no conversion can be performed;
  *		- `ERANGE`, if the converted value is out of the acceptable range of <type>.
  * @{ */
-int	str_to_short(const char *string, short *number, const int base);
-int	str_to_short_strict(const char *string, short *number, const int base);
-int	str_to_ushort(const char *string, unsigned short *number, const int base);
-int	str_to_ushort_strict(const char *string, unsigned short *number, const int base);
-int	str_to_int(const char *string, int *number, const int base);
-int	str_to_int_strict(const char *string, int *number, const int base);
-int	str_to_uint(const char *string, unsigned int *number, const int base);
-int	str_to_uint_strict(const char *string, unsigned int *number, const int base);
-int	str_to_long(const char *string, long *number, const int base);
-int	str_to_long_strict(const char *string, long *number, const int base);
-int	str_to_ulong(const char *string, unsigned long *number, const int base);
-int	str_to_ulong_strict(const char *string, unsigned long *number, const int base);
-int	str_to_double(const char *string, double *number, const int base);
-int	str_to_double_strict(const char *string, double *number, const int base);
+bool_t	str_to_short(const char *string, short *number, const int base);
+bool_t	str_to_short_strict(const char *string, short *number, const int base);
+bool_t	str_to_ushort(const char *string, unsigned short *number, const int base);
+bool_t	str_to_ushort_strict(const char *string, unsigned short *number, const int base);
+bool_t	str_to_int(const char *string, int *number, const int base);
+bool_t	str_to_int_strict(const char *string, int *number, const int base);
+bool_t	str_to_uint(const char *string, unsigned int *number, const int base);
+bool_t	str_to_uint_strict(const char *string, unsigned int *number, const int base);
+bool_t	str_to_long(const char *string, long *number, const int base);
+bool_t	str_to_long_strict(const char *string, long *number, const int base);
+bool_t	str_to_ulong(const char *string, unsigned long *number, const int base);
+bool_t	str_to_ulong_strict(const char *string, unsigned long *number, const int base);
+bool_t	str_to_double(const char *string, double *number, const int base);
+bool_t	str_to_double_strict(const char *string, double *number, const int base);
 /** @} */
 
 #ifdef __cplusplus

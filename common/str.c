@@ -138,261 +138,261 @@ char	*str_rtrim_space(char *string)
 	return string;
 }
 
-int	str_is_short(const char *string, const int base)
+bool_t	str_is_short(const char *string, const int base)
 {
 	short	number;
 
 	return str_to_short(string, &number, base);
 }
 
-int	str_is_short_strict(const char *string, const int base)
+bool_t	str_is_short_strict(const char *string, const int base)
 {
 	short	number;
 
 	return str_to_short_strict(string, &number, base);
 }
 
-int	str_is_ushort(const char *string, const int base)
+bool_t	str_is_ushort(const char *string, const int base)
 {
 	unsigned short	number;
 
 	return str_to_ushort(string, &number, base);
 }
 
-int	str_is_ushort_strict(const char *string, const int base)
+bool_t	str_is_ushort_strict(const char *string, const int base)
 {
 	unsigned short	number;
 
 	return str_to_ushort_strict(string, &number, base);
 }
 
-int	str_is_int(const char *string, const int base)
+bool_t	str_is_int(const char *string, const int base)
 {
 	int	number;
 
 	return str_to_int(string, &number, base);
 }
 
-int	str_is_int_strict(const char *string, const int base)
+bool_t	str_is_int_strict(const char *string, const int base)
 {
 	int	number;
 
 	return str_to_int_strict(string, &number, base);
 }
 
-int	str_is_uint(const char *string, const int base)
+bool_t	str_is_uint(const char *string, const int base)
 {
 	unsigned int	number;
 
 	return str_to_uint(string, &number, base);
 }
 
-int	str_is_uint_strict(const char *string, const int base)
+bool_t	str_is_uint_strict(const char *string, const int base)
 {
 	unsigned int	number;
 
 	return str_to_uint_strict(string, &number, base);
 }
 
-int	str_is_long(const char *string, const int base)
+bool_t	str_is_long(const char *string, const int base)
 {
 	long	number;
 
 	return str_to_long(string, &number, base);
 }
 
-int	str_is_long_strict(const char *string, const int base)
+bool_t	str_is_long_strict(const char *string, const int base)
 {
 	long	number;
 
 	return str_to_long_strict(string, &number, base);
 }
 
-int	str_is_ulong(const char *string, const int base)
+bool_t	str_is_ulong(const char *string, const int base)
 {
 	unsigned long	number;
 
 	return str_to_ulong(string, &number, base);
 }
 
-int	str_is_ulong_strict(const char *string, const int base)
+bool_t	str_is_ulong_strict(const char *string, const int base)
 {
 	unsigned long	number;
 
 	return str_to_ulong_strict(string, &number, base);
 }
 
-int	str_is_double(const char *string, const int base)
+bool_t	str_is_double(const char *string, const int base)
 {
 	double	number;
 
 	return str_to_double(string, &number, base);
 }
 
-int	str_is_double_strict(const char *string, const int base)
+bool_t	str_is_double_strict(const char *string, const int base)
 {
 	double	number;
 
 	return str_to_double_strict(string, &number, base);
 }
 
-int	str_to_short(const char *string, short *number, const int base)
+bool_t	str_to_short(const char *string, short *number, const int base)
 {
 	long	num;
 
 	*number = 0;
 
 	if (!str_to_long(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (
 		num < SHRT_MIN ||
 		num > SHRT_MAX
 	) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_short_strict(const char *string, short *number, const int base)
+bool_t	str_to_short_strict(const char *string, short *number, const int base)
 {
 	long	num;
 
 	*number = 0;
 
 	if (!str_to_long_strict(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (
 		num < SHRT_MIN ||
 		num > SHRT_MAX
 	) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_ushort(const char *string, unsigned short *number, const int base)
+bool_t	str_to_ushort(const char *string, unsigned short *number, const int base)
 {
 	unsigned long	num;
 
 	*number = 0;
 
 	if (!str_to_ulong(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (num > USHRT_MAX) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_ushort_strict(const char *string, unsigned short *number, const int base)
+bool_t	str_to_ushort_strict(const char *string, unsigned short *number, const int base)
 {
 	unsigned long	num;
 
 	*number = 0;
 
 	if (!str_to_ulong_strict(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (num > USHRT_MAX) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_int(const char *string, int *number, const int base)
+bool_t	str_to_int(const char *string, int *number, const int base)
 {
 	long	num;
 
 	*number = 0;
 
 	if (!str_to_long(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (
 		num < INT_MIN ||
 		num > INT_MAX
 	) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_int_strict(const char *string, int *number, const int base)
+bool_t	str_to_int_strict(const char *string, int *number, const int base)
 {
 	long	num;
 
 	*number = 0;
 
 	if (!str_to_long_strict(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (
 		num < INT_MIN ||
 		num > INT_MAX
 	) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_uint(const char *string, unsigned int *number, const int base)
+bool_t	str_to_uint(const char *string, unsigned int *number, const int base)
 {
 	unsigned long	num;
 
 	*number = 0;
 
 	if (!str_to_ulong(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (num > UINT_MAX) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_uint_strict(const char *string, unsigned int *number, const int base)
+bool_t	str_to_uint_strict(const char *string, unsigned int *number, const int base)
 {
 	unsigned long	num;
 
 	*number = 0;
 
 	if (!str_to_ulong_strict(string, &num, base))
-		return 0;
+		return FALSE;
 
 	if (num > UINT_MAX) {
 		errno = ERANGE;
-		return 0;
+		return FALSE;
 	}
 
 	*number = num;
-	return 1;
+	return TRUE;
 }
 
-int	str_to_long(const char *string, long *number, const int base)
+bool_t	str_to_long(const char *string, long *number, const int base)
 {
 	char		*ptr = NULL;
 	const char	*end;
@@ -404,7 +404,7 @@ int	str_to_long(const char *string, long *number, const int base)
 		*string == '\0'
 	) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	end = string + strlen(string);
@@ -416,7 +416,7 @@ int	str_to_long(const char *string, long *number, const int base)
 
 	if (end == string) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	errno = 0;
@@ -428,18 +428,18 @@ int	str_to_long(const char *string, long *number, const int base)
 	) {
 		*number = 0;
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	if (errno == ERANGE) {
 		*number = 0;
-		return 0;
+		return FALSE;
 	}
 
-	return 1;
+	return TRUE;
 }
 
-int	str_to_long_strict(const char *string, long *number, const int base)
+bool_t	str_to_long_strict(const char *string, long *number, const int base)
 {
 	const char	*str;
 
@@ -450,19 +450,19 @@ int	str_to_long_strict(const char *string, long *number, const int base)
 		*string == '\0'
 	) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	for (str = string; *str != '\0'; str++)
 		if (isspace(*str)) {
 			errno = EINVAL;
-			return 0;
+			return FALSE;
 		}
 
 	return str_to_long(string, number, base);
 }
 
-int	str_to_ulong(const char *string, unsigned long *number, const int base)
+bool_t	str_to_ulong(const char *string, unsigned long *number, const int base)
 {
 	char		*ptr = NULL;
 	const char	*end;
@@ -476,7 +476,7 @@ int	str_to_ulong(const char *string, unsigned long *number, const int base)
 		strchr(string, '-') != NULL
 	) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	end = string + strlen(string);
@@ -488,7 +488,7 @@ int	str_to_ulong(const char *string, unsigned long *number, const int base)
 
 	if (end == string) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	errno = 0;
@@ -500,18 +500,18 @@ int	str_to_ulong(const char *string, unsigned long *number, const int base)
 	) {
 		*number = 0;
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	if (errno == ERANGE) {
 		*number = 0;
-		return 0;
+		return FALSE;
 	}
 
-	return 1;
+	return TRUE;
 }
 
-int	str_to_ulong_strict(const char *string, unsigned long *number, const int base)
+bool_t	str_to_ulong_strict(const char *string, unsigned long *number, const int base)
 {
 	const char	*str;
 
@@ -522,19 +522,19 @@ int	str_to_ulong_strict(const char *string, unsigned long *number, const int bas
 		*string == '\0'
 	) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	for (str = string; *str != '\0'; str++)
 		if (isspace(*str)) {
 			errno = EINVAL;
-			return 0;
+			return FALSE;
 		}
 
 	return str_to_ulong(string, number, base);
 }
 
-int	str_to_double(const char *string, double *number, const int base)
+bool_t	str_to_double(const char *string, double *number, const int base)
 {
 	char		*ptr = NULL;
 	const char	*start,
@@ -548,7 +548,7 @@ int	str_to_double(const char *string, double *number, const int base)
 		*string == '\0'
 	) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	start = string;
@@ -569,7 +569,7 @@ int	str_to_double(const char *string, double *number, const int base)
 
 	if (!length) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	switch (base)
@@ -577,19 +577,19 @@ int	str_to_double(const char *string, double *number, const int base)
 	case 10:
 		if (length != strspn(start, "-+.0123456789Ee")) {
 			errno = EINVAL;
-			return 0;
+			return FALSE;
 		}
 		break;
 	case  0:
 	case 16:
 		if (length != strspn(start, "-+.0123456789ABCDEFabcdefXxPp")) {
 			errno = EINVAL;
-			return 0;
+			return FALSE;
 		}
 		break;
 	default:
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	errno = 0;
@@ -601,18 +601,18 @@ int	str_to_double(const char *string, double *number, const int base)
 	) {
 		*number = 0;
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	if (errno == ERANGE) {
 		*number = 0;
-		return 0;
+		return FALSE;
 	}
 
-	return 1;
+	return TRUE;
 }
 
-int	str_to_double_strict(const char *string, double *number, const int base)
+bool_t	str_to_double_strict(const char *string, double *number, const int base)
 {
 	const char	*str;
 
@@ -623,13 +623,13 @@ int	str_to_double_strict(const char *string, double *number, const int base)
 		*string == '\0'
 	) {
 		errno = EINVAL;
-		return 0;
+		return FALSE;
 	}
 
 	for (str = string; *str != '\0'; str++)
 		if (isspace(*str)) {
 			errno = EINVAL;
-			return 0;
+			return FALSE;
 		}
 
 	return str_to_double(string, number, base);
