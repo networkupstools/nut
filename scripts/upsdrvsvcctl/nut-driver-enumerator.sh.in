@@ -31,7 +31,8 @@
 #           It helps service frameworks such as Linux systemd and Solaris SMF.
 #           When executed, this script looks for all configured ups.conf
 #           sections and registered service instances, and makes these two
-#           lists match up. No arguments ATM. Returns exit codes:
+#           lists match up. Does not track changes inside sections ATM.
+#           Returns exit codes:
 #               0   Sections and services already match up
 #               42  Sections and services differed, but now match up -
 #                   now the caller should likely restart some services.
