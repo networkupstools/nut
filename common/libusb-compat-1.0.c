@@ -23,6 +23,7 @@
 #include "libusb-compat-1.0.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -47,7 +48,7 @@
 static const struct libusb_version	libusb_version_internal = {
 	0,	/* major	*/
 	1,	/* minor	*/
-	5,	/* micro: *we*	*/
+	6,	/* micro: *we*	*/
 	0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
@@ -64,16 +65,86 @@ static const bool_t	trust_libusb01_error_codes = TRUE;
 static const bool_t	trust_libusb01_error_codes = FALSE;
 #endif	/* __FreeBSD__ */
 
+/** @brief Whether (@ref TRUE) or not (@ref FALSE) the underlying libusb 0.1 implementation duplicates (possibily dead) usb_device's.
+ *
+ * Original libusb 0.1 (and libusb-compat-0.1) keeps discovered devices' usb_device's alive until a subsequent call to usb_find_devices() doesn't find them:
+ * only then all (not even usb_open()'d, usb_open()'d and usb_close()'d or not usb_close()'d) no longer available devices' usb_device's are destroyed,
+ * while all still available ones are kept in the list of devices untouched, with only the newly found ones added to the list on top of them.
+ *
+ * Other libusb 0.1 implementations (e.g. FreeBSD's, possibly others), instead, freshly allocate usb_device's for all available devices at each scan,
+ * but also keep the old ones with at least a handle on them that was not usb_close()'d, even if they are no longer available,
+ * while all the other (not even usb_open()'d, usb_open()'d and then usb_close()'d) old ones (still available or not) are destroyed. */
+#ifdef __FreeBSD__
+static const bool_t	libusb01_loves_double_zombies = TRUE;
+#else	/* __FreeBSD__ */
+static const bool_t	libusb01_loves_double_zombies = FALSE;
+#endif	/* __FreeBSD__ */
+
+/** @brief Linked list of still referenced devices -- populated by libusb_ref_device(), decimated by libusb_unref_device(). */
+static libusb_device	*refdev_list = NULL;
+
 /** @} ************************************************************************/
 
 
 /** @name libusb 1.0 opaque types and friends
  * @{ *************************************************************************/
 
+/** @brief Structure for discovered devices. */
+struct libusb_device {
+	/** @brief Corresponding libusb 0.1 device. */
+	struct usb_device		*libusb01_dev;
+
+	/** @brief Linked list of handles associated with this device -- populated by libusb_open(), decimated by libusb_close().
+	 *
+	 * Since certain libusb 0.1 implementations (e.g. FreeBSD's) reuse usb_dev_handle's on subsequent calls to usb_open()
+	 * (once a usb_device is usb_open()'d, if you don't usb_close() the handle first, and usb_open() the device anew, you'll get the same usb_dev_handle),
+	 * we need to cope with that in order to avoid:
+	 * 1. being left with a destroyed handle
+	 *    (which will happen, on the first call to usb_close() with that handle, followed by a call to usb_find_devices()),
+	 * 2. that libusb 0.1 ends up doing things behind our back
+	 *    (e.g. if we claim an interface on the first handle, also the second one will get it without us knowing and we won't be able to address that).
+	 *
+	 * Also, by tracking handles associated with a device, we can avoid destroying them accidentally, if they're still in use. */
+	libusb_device_handle		*handles;
+
+	/** @brief Device bus (as in usb_bus::dirname).*/
+	char				*bus_dirname;
+
+	/** @brief Device name (as in usb_device::filename). */
+	char				*dev_filename;
+
+	/** @brief Device descriptor. */
+	struct libusb_device_descriptor	 dev_descriptor;
+
+	/** @brief Whether this device is still attached to the system (and @ref libusb01_dev still valid) or not.
+	 *
+	 * Since libusb 0.1, when scanning for new devices, may destroy old devices' usb_device's (see also @ref libusb01_loves_double_zombies),
+	 * while libusb 1.0 let users keep (referenced) devices alive ad libitum, we need to track which ones can still be used and which are now gone,
+	 * so that we can bail out cleanly from functions, rather than let libusb 0.1 try to access a destroyed usb_device.
+	 *
+	 * To keep things simple, once a device is gone and its libusb_device is marked as no longer attached, it's not marked as attached anew,
+	 * even if the device appears to *magically* come back to life (and maybe it's not even the same device as before, who knows...).
+	 *
+	 * On an unattached libusb_device, no operation should be performed.
+	 * Actually, even libusb_close()'ing a libusb_device_handle associated with it may not be always safe,
+	 * as, on certain platforms/implementations (for example, look no further than original libusb 0.1's Darwin support),
+	 * libusb 0.1's usb_close() (which we call in libusb_close()) may attempt to access the underlying (destroyed) usb_device. */
+	bool_t				 attached;
+
+	/** @brief Number of times this device has been referenced: when it reaches 0 this libusb_device will be destroyed. */
+	unsigned long			 refcnt;
+
+	/** @brief Next item in a list of devices. */
+	libusb_device			*next;
+};
+
 /** @brief Handle for libusb_open()'d devices. */
 struct libusb_device_handle {
 	/** @brief Corresponding libusb 0.1 device handle. */
-	usb_dev_handle	*libusb01_dev_handle;
+	usb_dev_handle		*libusb01_dev_handle;
+
+	/** @brief Device this handle refers to. */
+	libusb_device		*dev;
 
 	/** @brief Most recently successfully claimed (and not yet released) interface.
 	 *
@@ -92,7 +163,10 @@ struct libusb_device_handle {
 	 * - some implementations (e.g. FreeBSD's) don't alter the tracked interface when releasing, but only when claiming:
 	 *   a subsequent call to libusb_set_interface_alt_setting() should succeed and be executed on the right interface,
 	 *   if done on the most recently claimed one, even if another interface has been released since the last claiming. */
-	int		 last_claimed_interface;
+	int			 last_claimed_interface;
+
+	/** @brief Next item in a list of handles. */
+	libusb_device_handle	*next;
 };
 
 /** @brief Default value for libusb_device_handle::last_claimed_interface. */
@@ -187,6 +261,37 @@ static int	libusb01_ret_to_libusb10_ret(
 	}
 }
 
+/** @brief Tell whether two device descriptors match or not.
+ * @return @ref TRUE, if *a* and *b* match,
+ * @return @ref FALSE, if *a* and *b* don't match (or either one, or both, is `NULL`). */
+static bool_t	device_descriptors_match(
+	struct libusb_device_descriptor	*a,	/**< [in] 1st descriptor to compare. */
+	struct libusb_device_descriptor	*b	/**< [in] 2nd descriptor to compare. */
+) {
+	if (!a || !b)
+		return FALSE;
+
+	if (
+		a->bLength		!= b->bLength		||
+		a->bDescriptorType	!= b->bDescriptorType	||
+		a->bcdUSB		!= b->bcdUSB		||
+		a->bDeviceClass		!= b->bDeviceClass	||
+		a->bDeviceSubClass	!= b->bDeviceSubClass	||
+		a->bDeviceProtocol	!= b->bDeviceProtocol	||
+		a->bMaxPacketSize0	!= b->bMaxPacketSize0	||
+		a->idVendor		!= b->idVendor		||
+		a->idProduct		!= b->idProduct		||
+		a->bcdDevice		!= b->bcdDevice		||
+		a->iManufacturer	!= b->iManufacturer	||
+		a->iProduct		!= b->iProduct		||
+		a->iSerialNumber	!= b->iSerialNumber	||
+		a->bNumConfigurations	!= b->bNumConfigurations
+	)
+		return FALSE;
+
+	return TRUE;
+}
+
 /** @} ************************************************************************/
 
 
@@ -218,6 +323,28 @@ int	libusb_init(
 void	libusb_exit(
 	libusb_context	*ctx
 ) {
+	libusb_device	*refdev;
+
+	if (refdev_list)
+		dbg("some libusb_device's were leaked.");
+
+	for (refdev = refdev_list; refdev; refdev = refdev->next) {
+		unsigned long		 handles = 0;
+		libusb_device_handle	*handle;
+
+		for (handle = refdev->handles; handle; handle = handle->next)
+			handles++;
+
+		dbg(
+			"device %p (%04X:%04X // %s::%s) left referenced %lu times and open %lu times.",
+			(void *)refdev,
+			refdev->dev_descriptor.idVendor, refdev->dev_descriptor.idProduct,
+			refdev->bus_dirname, refdev->dev_filename,
+			refdev->refcnt,
+			handles
+		);
+	}
+
 #if defined(DYNAMICALLY_LOAD_LIBUSB_0_1) && defined(WITH_LIBLTDL)
 	dl_libusb01_exit();
 #endif	/* DYNAMICALLY_LOAD_LIBUSB_0_1 + WITH_LIBLTDL */
@@ -271,8 +398,9 @@ ssize_t	libusb_get_device_list(
 	libusb_context	  *ctx,
 	libusb_device	***list
 ) {
-	struct usb_device	 *dev,
-				**devlist;
+	struct usb_device	 *dev;
+	libusb_device		**devlist,
+				 *refdev;
 	struct usb_bus		 *bus;
 	ssize_t			  i,
 				  len;
@@ -285,8 +413,91 @@ ssize_t	libusb_get_device_list(
 		return libusb01_ret_to_libusb10_ret(ret);
 
 	for (bus = usb_get_busses(), len = 0; bus; bus = bus->next)
-		for (dev = bus->devices; dev; dev = dev->next)
+		for (dev = bus->devices; dev; dev = dev->next) {
+			if (libusb01_loves_double_zombies) {
+				/* Ignore old usb_open()'d and not yet usb_close()'d devices */
+				for (refdev = refdev_list; refdev; refdev = refdev->next) {
+					if (!refdev->handles)
+						continue;
+					if (refdev->libusb01_dev != dev)
+						continue;
+					break;
+				}
+				if (refdev)
+					continue;
+			}
 			len++;
+		}
+
+	/* Update the attached status of referenced devices.
+	 * Do this before creating the new list to do it always (even on memory allocation errors). */
+	for (refdev = refdev_list; refdev; refdev = refdev->next) {
+		/* This referenced device is already not attached: don't waste time here */
+		if (!refdev->attached)
+			continue;
+
+		/* Walk the new list and see if the referenced device is still attached... */
+		for (bus = usb_get_busses(); bus; bus = bus->next)
+			for (dev = bus->devices; dev; dev = dev->next) {
+				libusb_device	*inlist;
+
+				if (strcmp(refdev->bus_dirname, bus->dirname))
+					break;
+				if (strcmp(refdev->dev_filename, dev->filename))
+					continue;
+				if (!device_descriptors_match(&refdev->dev_descriptor, (struct libusb_device_descriptor *)&dev->descriptor))
+					continue;
+
+				if (!libusb01_loves_double_zombies) {
+					if (refdev->libusb01_dev != dev)
+						continue;
+					/* Still attached! */
+					goto next_refdev;
+				}
+
+				/* This device is the old one we already know of and with still a handle on it:
+				 * just because it's there, it doesn't guarantee that the device is still attached, too...
+				 * actually, this could be a zombie, by now */
+				if (refdev->handles && refdev->libusb01_dev == dev)
+					continue;
+
+				/* Even if the device we're checking now is not the same we have referenced,
+				 * we have to make sure it's really new and not another one with a handle not usb_close()'d on it */
+				for (inlist = refdev_list; inlist; inlist = inlist->next) {
+					if (!inlist->handles)
+						continue;
+					if (inlist->libusb01_dev != dev)
+						continue;
+					break;
+				}
+				/* Definitely another old device, not a new one */
+				if (inlist)
+					continue;
+
+				/* Our referenced device is still attached to the system!
+				 * ...or, between calls to usb_find_devices(), it has been detached and reattached (it or a very similar device),
+				 * but even then:
+				 * - if it was usb_open()'d and not yet usb_close()'d,
+				 *   the old usb_device is still there and we can use it safely (but, obviously, most of the functions will fail),
+				 * - otherwise, it should be safe to update an old device's usb_device when it has no handles on it,
+				 *   as the worst thing that could happen would be that, when the new device is not exactly the same as the old one,
+				 *   we could possibly invalidate some previous assumptions made by the user (which we forewarned). */
+
+				/* So, stop here, if it has already handles on it */
+				if (refdev->handles)
+					goto next_refdev;
+
+				/* Otherwise, update our usb_device */
+				refdev->libusb01_dev = dev;
+				goto next_refdev;
+			}
+
+		/* ...we've reached the end of the list without finding it:
+		 * anything not in the new list is no longer attached. */
+		refdev->attached = FALSE;
+	next_refdev:
+		continue;
+	}
 
 	devlist = calloc(len + 1, sizeof(*devlist));
 	if (!devlist)
@@ -294,10 +505,58 @@ ssize_t	libusb_get_device_list(
 
 	devlist[len] = NULL;
 	for (bus = usb_get_busses(), i = 0; bus; bus = bus->next)
-		for (dev = bus->devices; dev && i < len; dev = dev->next, i++)
-			devlist[i] = dev;
+		for (dev = bus->devices; dev && i < len; dev = dev->next) {
+			/* Let's see if we've already referenced this device
+			 * and, if it's still alive (attached) and if it's safe to do so, reuse it... */
+			for (refdev = refdev_list; refdev; refdev = refdev->next) {
+				if (strcmp(refdev->bus_dirname, bus->dirname))
+					continue;
+				if (strcmp(refdev->dev_filename, dev->filename))
+					continue;
+				if (!device_descriptors_match(&refdev->dev_descriptor, (struct libusb_device_descriptor *)&dev->descriptor))
+					continue;
 
-	*list = (libusb_device **)devlist;
+				/* This is an old usb_open()'d and not yet usb_close()'d device:
+				 * skip it and don't even think to reuse it
+				 * (as the device may be gone and returned between calls to usb_find_devices()) */
+				if (libusb01_loves_double_zombies && refdev->handles && refdev->libusb01_dev == dev)
+					goto next_dev;
+
+				if (!refdev->attached)
+					continue;
+				if (refdev->libusb01_dev != dev)
+					continue;
+				/* ...found! Reuse it. */
+				break;
+			}
+
+			/* ...well, it turns out that's not the case... create it now. */
+			if (!refdev) {
+				if (
+					(refdev = calloc(1, sizeof(*refdev))) == NULL ||
+					(refdev->bus_dirname = strdup(bus->dirname)) == NULL ||
+					(refdev->dev_filename = strdup(dev->filename)) == NULL
+				) {
+					libusb_free_device_list(devlist, 1);
+					return LIBUSB_ERROR_NO_MEM;
+				}
+				memcpy(
+					(unsigned char *)&refdev->dev_descriptor,
+					(unsigned char *)&dev->descriptor,
+					sizeof(dev->descriptor)
+				);
+				refdev->attached = TRUE;
+				refdev->libusb01_dev = dev;
+			}
+
+			/* Increase reference count of device
+			 * and, if new, add it to the list of referenced devices */
+			devlist[i++] = libusb_ref_device(refdev);
+		next_dev:
+			continue;
+		}
+
+	*list = devlist;
 	return len;
 }
 
@@ -307,18 +566,77 @@ void	libusb_free_device_list(
 ) {
 	if (!list)
 		return;
+	if (unref_devices) {
+		libusb_device	*dev;
+		size_t		 i = 0;
+
+		while ((dev = list[i++]) != NULL)
+			libusb_unref_device(dev);
+	}
 	free(list);
+}
+
+libusb_device	*libusb_ref_device(
+	libusb_device	*dev
+) {
+	/* Don't wrap */
+	if (dev->refcnt < ULONG_MAX)
+		dev->refcnt++;
+
+	/* If new, add it at the start of the list of referenced devices */
+	if (dev->refcnt == 1) {
+		dev->next = refdev_list;
+		refdev_list = dev;
+	}
+
+	return dev;
+}
+
+void	libusb_unref_device(
+	libusb_device	*dev
+) {
+	libusb_device	**inlist;
+
+	/* Don't wrap */
+	if (dev->refcnt > 0)
+		dev->refcnt--;
+
+	/* If still referenced, stop here */
+	if (dev->refcnt > 0)
+		return;
+
+	/* Don't destroy a device with handles still associated with it (i.e. not yet libusb_close()'d) */
+	if (dev->handles) {
+		/* This can only happen if someone is playing with libusb_unref_device(),
+		 * so correct reference count, too */
+		dev->refcnt++;
+		return;
+	}
+
+	/* Otherwise, remove it from the list of referenced devices and destroy it */
+	inlist = &refdev_list;
+	while (*inlist) {
+		if (*inlist != dev) {
+			inlist = &(*inlist)->next;
+			continue;
+		}
+
+		*inlist = dev->next;
+		break;
+	}
+	free(dev->bus_dirname);
+	free(dev->dev_filename);
+	free(dev);
 }
 
 uint8_t	libusb_get_bus_number(
 	libusb_device	*dev
 ) {
-	unsigned short		 bus_number;
-	int			 length = 0;
-	struct usb_device	*device = (struct usb_device *)dev;
+	unsigned short	bus_number;
+	int		length = 0;
 
 	if (
-		str_to_ushort_strict(device->bus->dirname, &bus_number, 10) &&
+		str_to_ushort_strict(dev->bus_dirname, &bus_number, 10) &&
 		bus_number <= UINT8_MAX
 	)
 		return bus_number;
@@ -326,8 +644,8 @@ uint8_t	libusb_get_bus_number(
 	/* In FreeBSD (possibly elsewhere), dirname is hardcoded to '/dev/usb',
 	 * try filename (on FreeBSD "/dev/ugen<bus-number>.<dev-number>") */
 	if (
-		sscanf(device->filename, "/dev/ugen%hu.%*u%n", &bus_number, &length) == 1 &&
-		(size_t)length == strlen(device->filename) &&
+		sscanf(dev->dev_filename, "/dev/ugen%hu.%*u%n", &bus_number, &length) == 1 &&
+		(size_t)length == strlen(dev->dev_filename) &&
 		bus_number <= UINT8_MAX
 	)
 		return bus_number;
@@ -340,12 +658,17 @@ int	libusb_open(
 	libusb_device		 *dev,
 	libusb_device_handle	**dev_handle
 ) {
+	libusb_device	*refdev;
+
+	if (!dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
 	*dev_handle = calloc(1, sizeof(**dev_handle));
 	if (!*dev_handle)
 		return LIBUSB_ERROR_NO_MEM;
 
 	errno = 0;
-	(*dev_handle)->libusb01_dev_handle = usb_open((struct usb_device *)dev);
+	(*dev_handle)->libusb01_dev_handle = usb_open(dev->libusb01_dev);
 
 	if (!(*dev_handle)->libusb01_dev_handle) {
 		free(*dev_handle);
@@ -355,7 +678,35 @@ int	libusb_open(
 		return LIBUSB_ERROR_OTHER;
 	}
 
+	(*dev_handle)->dev = libusb_ref_device(dev);
 	(*dev_handle)->last_claimed_interface = NONE_OR_UNKNOWN_INTERFACE;
+
+	/* If we have already handles for the underlying usb_device (i.e. it was already usb_open()'d and the handle not yet usb_close()'d),
+	 * which may be used in more than one libusb_device as a consequence of subsequent calls to libusb_get_device_list(),
+	 * and in case libusb 0.1 is reusing handles, inherit the status of the old handle */
+	for (refdev = refdev_list; refdev; refdev = refdev->next) {
+		libusb_device_handle	*oldhandle;
+
+		if (!refdev->attached)
+			continue;
+		if (!refdev->handles)
+			continue;
+		if (refdev->libusb01_dev != dev->libusb01_dev)
+			continue;
+
+		for (oldhandle = refdev->handles; oldhandle; oldhandle = oldhandle->next) {
+			if (oldhandle->libusb01_dev_handle != (*dev_handle)->libusb01_dev_handle)
+				continue;
+			(*dev_handle)->last_claimed_interface = oldhandle->last_claimed_interface;
+			break;
+		}
+		if (oldhandle)
+			break;
+	}
+
+	/* Finally, add the new handle at the start of the list of handles associated with this device */
+	(*dev_handle)->next = dev->handles;
+	dev->handles = *dev_handle;
 
 	return LIBUSB_SUCCESS;
 }
@@ -363,7 +714,57 @@ int	libusb_open(
 void	libusb_close(
 	libusb_device_handle	*dev_handle
 ) {
-	usb_close(dev_handle->libusb01_dev_handle);
+	libusb_device		 *dev,
+				 *refdev;
+	libusb_device_handle	**inlist;
+
+	dev = dev_handle->dev;
+	if (!dev->attached)
+		dbg(
+			"warning! Closing device %p (%04X:%04X // %s::%s), which is not attached!",
+			(void *)dev,
+			dev->dev_descriptor.idVendor, dev->dev_descriptor.idProduct,
+			dev->bus_dirname, dev->dev_filename
+		);
+
+
+	/* Only destroy the underlying usb_dev_handle if it's not still used elsewhere */
+	for (refdev = refdev_list; refdev; refdev = refdev->next) {
+		libusb_device_handle	*handle;
+
+		if (!refdev->handles)
+			continue;
+		if (refdev->libusb01_dev != dev->libusb01_dev)
+			continue;
+
+		for (handle = refdev->handles; handle; handle = handle->next) {
+			/* Self */
+			if (handle == dev_handle)
+				continue;
+			if (handle->libusb01_dev_handle != dev_handle->libusb01_dev_handle)
+				continue;
+			break;
+		}
+		if (handle)
+			break;
+	}
+	if (!refdev)
+		usb_close(dev_handle->libusb01_dev_handle);
+
+	/* Remove it from the list of handles of the associated device */
+	inlist = &dev->handles;
+	while (*inlist) {
+		if (*inlist != dev_handle) {
+			inlist = &(*inlist)->next;
+			continue;
+		}
+
+		*inlist = dev_handle->next;
+
+		libusb_unref_device(dev);
+		break;
+	}
+
 	free(dev_handle);
 }
 
@@ -372,6 +773,9 @@ int	libusb_set_configuration(
 	int			 configuration
 ) {
 	int	ret;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 	errno = 0;
 	ret = usb_set_configuration(
@@ -386,10 +790,14 @@ int	libusb_claim_interface(
 	libusb_device_handle	*dev_handle,
 	int			 interface_number
 ) {
-	int	ret;
+	int		 ret;
+	libusb_device	*refdev;
 
 	if (interface_number < 0)
 		return LIBUSB_ERROR_INVALID_PARAM;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 	errno = 0;
 	ret = usb_claim_interface(
@@ -400,7 +808,24 @@ int	libusb_claim_interface(
 	if (ret < 0)
 		return libusb01_ret_to_libusb10_ret(ret);
 
-	dev_handle->last_claimed_interface = interface_number;
+	/* Update the status of any handle on the same underlying usb_device using the same usb_device_handle */
+	for (refdev = refdev_list; refdev; refdev = refdev->next) {
+		libusb_device_handle	*handle;
+
+		if (!refdev->attached)
+			continue;
+		if (!refdev->handles)
+			continue;
+		if (refdev->libusb01_dev != dev_handle->dev->libusb01_dev)
+			continue;
+
+		for (handle = refdev->handles; handle; handle = handle->next) {
+			if (handle->libusb01_dev_handle != dev_handle->libusb01_dev_handle)
+				continue;
+			handle->last_claimed_interface = interface_number;
+		}
+	}
+
 	return LIBUSB_SUCCESS;
 }
 
@@ -408,10 +833,14 @@ int	libusb_release_interface(
 	libusb_device_handle	*dev_handle,
 	int			 interface_number
 ) {
-	int	ret;
+	int		 ret;
+	libusb_device	*refdev;
 
 	if (interface_number < 0)
 		return LIBUSB_ERROR_INVALID_PARAM;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 	errno = 0;
 	ret = usb_release_interface(
@@ -422,8 +851,24 @@ int	libusb_release_interface(
 	if (ret < 0)
 		return libusb01_ret_to_libusb10_ret(ret);
 
-	if (dev_handle->last_claimed_interface == interface_number)
-		dev_handle->last_claimed_interface = NONE_OR_UNKNOWN_INTERFACE;
+	/* Update the status of any handle on the same underlying usb_device using the same usb_device_handle */
+	for (refdev = refdev_list; refdev; refdev = refdev->next) {
+		libusb_device_handle	*handle;
+
+		if (!refdev->attached)
+			continue;
+		if (!refdev->handles)
+			continue;
+		if (refdev->libusb01_dev != dev_handle->dev->libusb01_dev)
+			continue;
+
+		for (handle = refdev->handles; handle; handle = handle->next) {
+			if (handle->libusb01_dev_handle != dev_handle->libusb01_dev_handle)
+				continue;
+			if (handle->last_claimed_interface == interface_number)
+				handle->last_claimed_interface = NONE_OR_UNKNOWN_INTERFACE;
+		}
+	}
 
 	return LIBUSB_SUCCESS;
 }
@@ -441,6 +886,9 @@ int	libusb_set_interface_alt_setting(
 	)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
 	errno = 0;
 	ret = usb_set_altinterface(
 		dev_handle->libusb01_dev_handle,
@@ -456,6 +904,9 @@ int	libusb_clear_halt(
 ) {
 	int	ret;
 
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
 	errno = 0;
 	ret = usb_clear_halt(
 		dev_handle->libusb01_dev_handle,
@@ -469,6 +920,9 @@ int	libusb_reset_device(
 	libusb_device_handle	*dev_handle
 ) {
 	int	ret;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 	errno = 0;
 	ret = usb_reset(
@@ -488,6 +942,9 @@ int	libusb_detach_kernel_driver(
 
 	if (interface_number < 0)
 		return LIBUSB_ERROR_INVALID_PARAM;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 #ifndef HAVE_USB_DETACH_KERNEL_DRIVER_NP
 	return LIBUSB_ERROR_NOT_SUPPORTED;
@@ -514,6 +971,9 @@ int	libusb_control_transfer(
 ) {
 	int	ret;
 
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
 	errno = 0;
 	ret = usb_control_msg(
 		dev_handle->libusb01_dev_handle,
@@ -538,6 +998,9 @@ int	libusb_bulk_transfer(
 	unsigned int		 timeout
 ) {
 	int	ret;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 	errno = 0;
 	if (endpoint & LIBUSB_ENDPOINT_IN)
@@ -575,6 +1038,9 @@ int	libusb_interrupt_transfer(
 ) {
 	int	ret;
 
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
 	errno = 0;
 	if (endpoint & LIBUSB_ENDPOINT_IN)
 		ret = usb_interrupt_read(
@@ -605,12 +1071,10 @@ int	libusb_get_device_descriptor(
 	libusb_device			*dev,
 	struct libusb_device_descriptor	*desc
 ) {
-	struct usb_device	*device = (struct usb_device *)dev;
-
 	memcpy(
 		(unsigned char *)desc,
-		(unsigned char *)&device->descriptor,
-		sizeof(device->descriptor)
+		(unsigned char *)&dev->dev_descriptor,
+		sizeof(dev->dev_descriptor)
 	);
 	return LIBUSB_SUCCESS;
 }
@@ -620,18 +1084,20 @@ int	libusb_get_config_descriptor(
 	uint8_t				  config_index,
 	struct libusb_config_descriptor	**config
 ) {
-	struct usb_device		*device = (struct usb_device *)dev;
 	struct usb_config_descriptor	*l01_config;
 	struct libusb_config_descriptor	*l10_config;
 	int				 iface;
 
-	if (config_index >= device->descriptor.bNumConfigurations)
+	if (!dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
+	if (config_index >= dev->dev_descriptor.bNumConfigurations)
 		return LIBUSB_ERROR_NOT_FOUND;
 
-	if (!device->config)
+	if (!dev->libusb01_dev->config)
 		return LIBUSB_ERROR_OTHER;
 
-	l01_config = &device->config[config_index];
+	l01_config = &dev->libusb01_dev->config[config_index];
 
 	l10_config = calloc(1, sizeof(*l10_config));
 	if (!l10_config)
@@ -789,6 +1255,9 @@ int	libusb_get_string_descriptor(
 ) {
 	int	ret;
 
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
+
 	errno = 0;
 	ret = usb_get_string(
 		dev_handle->libusb01_dev_handle,
@@ -808,6 +1277,9 @@ int	libusb_get_string_descriptor_ascii(
 	int			 length
 ) {
 	int	ret;
+
+	if (!dev_handle->dev->attached)
+		return LIBUSB_ERROR_NO_DEVICE;
 
 	errno = 0;
 	ret = usb_get_string_simple(

@@ -205,18 +205,19 @@ struct libusb_config_descriptor {
 /** The whole *libusb_context* concept is not supported/implemented. */
 typedef struct libusb_context				libusb_context;
 
-/** Because of how libusb 0.1 handles device discovery and enumeration,
- * *libusb_device*'s cannot be kept alive ad libitum (and are not ref-counted):
- * a subsequent call to libusb_get_device_list() is likely to zombify them,
- * so they should only be considered valid between calls to that function.
- *
- * It's highly advisable to not perform any action on previously found devices,
- * after calling libusb_get_device_list(), as they may be gone and destroyed,
- * and to libusb_close() any @ref libusb_device_handle, before calling it
- * (as libusb_close() may attempt to access the underlying *libusb_device*). */
+/** Because of how libusb 0.1 handles device discovery and enumeration
+ * on certain platforms and/or libusb 0.1 implementations,
+ * after a subsequent call to libusb_get_device_list(),
+ * a still attached previously returned *libusb_device* with no handles on it
+ * (i.e. not even libusb_open()'d or all handles on it already libusb_close()'d)
+ * cannot be guaranteed to be exactly the same device as before the call
+ * (it could be a very similar one): so don't assume it to be. */
 typedef struct libusb_device				libusb_device;
 
-/** See @ref libusb_device, for limitations on the expected life of a handle. */
+/** It's highly advisable to libusb_close() any *libusb_device_handle*,
+ * before calling libusb_get_device_list() anew,
+ * since, on certain platforms and/or libusb 0.1 implementations,
+ * it may not be always safe to do it after. */
 typedef struct libusb_device_handle			libusb_device_handle;
 
 /* Structure providing the version of the libusb runtime. */
@@ -274,6 +275,12 @@ ssize_t	libusb_get_device_list(
 void	libusb_free_device_list(
 	libusb_device	**list,
 	int		  unref_devices
+);
+libusb_device	*libusb_ref_device(
+	libusb_device	*dev
+);
+void	libusb_unref_device(
+	libusb_device	*dev
 );
 
 uint8_t	libusb_get_bus_number(
