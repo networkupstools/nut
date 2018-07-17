@@ -216,8 +216,9 @@ NOCOMM;; A UPS is unavailable (can't be contacted for monitoring)
 *NOTIFYFLAG* 'type' 'flag'[\+'flag'][+'flag']...::
 
 By default, upsmon sends walls global messages to all logged in users)
-via /bin/wall and writes to the syslog when things happen.  You can
-change this. 
+via /bin/wall and writes to the syslog when things happen.
+Except for Windows where upsmon only writes to the syslog by default.
+You can change this. 
 +
 Examples:
 +

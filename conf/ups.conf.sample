@@ -46,8 +46,10 @@
 #  driver: REQUIRED.  Specify the program to run to talk to this UPS.  
 #          apcsmart, bestups, and sec are some examples.
 #
-#    port: REQUIRED.  The serial port where your UPS is connected.  
-#          /dev/ttyS0 is usually the first port on Linux boxes, for example.
+#    port: REQUIRED.  The serial port where your UPS is connected.
+#          For example:
+#            /dev/ttyS0 is usually the first port on Linux boxes.
+#            "\\\\.\\COM1" is the first port on Windows boxes.
 #
 # sdorder: optional.  When you have multiple UPSes on your system, you
 #          usually need to turn them off in a certain order.  upsdrvctl

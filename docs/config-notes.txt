@@ -143,6 +143,9 @@ put whatever you like. If you only own one UBS UPS, the driver will
 find it automatically. If you own more than one, refer to the driver's
 manual page for more information on matching a specific device.
 
+NOTE: On Windows systems, the second serial port (COM2), equivalent to
+"/dev/ttyS1" on Linux, would be "\\\\.\\COM2".
+
 References: linkman:ups.conf[5],
 linkman:nutupsdrv[8],
 linkman:bcmxcp_usb[8],
