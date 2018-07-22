@@ -48,7 +48,7 @@
 static const struct libusb_version	libusb_version_internal = {
 	0,	/* major	*/
 	1,	/* minor	*/
-	7,	/* micro: *we*	*/
+	8,	/* micro: *we*	*/
 	0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
@@ -82,6 +82,11 @@ static const bool_t	libusb01_loves_double_zombies = FALSE;
 
 /** @brief Linked list of still referenced devices -- populated by libusb_ref_device(), decimated by libusb_unref_device(). */
 static libusb_device	*refdev_list = NULL;
+
+/** @brief Number of times this library has been libusb_init()'d without being libusb_exit()'d - incremented by libusb_init(), decremented by libusb_exit().
+ *
+ * Initialisation and deinitialisation are actually done only when this counter is/reaches zero. */
+static unsigned long	initcnt = 0;
 
 /** @} ************************************************************************/
 
@@ -301,17 +306,25 @@ static bool_t	device_descriptors_match(
 int	libusb_init(
 	libusb_context	**ctx
 ) {
-	const char	*debug_level_str = getenv("LIBUSB_DEBUG");
+	const char	*debug_level_str;
 	int		 debug_level;
 #if defined(DYNAMICALLY_LOAD_LIBUSB_0_1) && defined(WITH_LIBLTDL)
 	char		 error[SMALLBUF];
 
-	if (!dl_libusb01_init(error, sizeof(error))) {
+	if (!initcnt && !dl_libusb01_init(error, sizeof(error))) {
 		dbg("%s", error);
 		return LIBUSB_ERROR_OTHER;
 	}
 #endif	/* DYNAMICALLY_LOAD_LIBUSB_0_1 + WITH_LIBLTDL */
 
+	/* Don't wrap */
+	if (initcnt < ULONG_MAX)
+		initcnt++;
+
+	if (initcnt > 1)
+		return LIBUSB_SUCCESS;
+
+	debug_level_str = getenv("LIBUSB_DEBUG");
 	if (str_to_int(debug_level_str, &debug_level, 10))
 		usb_set_debug(debug_level);
 
@@ -324,6 +337,12 @@ void	libusb_exit(
 	libusb_context	*ctx
 ) {
 	libusb_device	*refdev;
+
+	if (!initcnt)
+		return;
+
+	if (--initcnt)
+		return;
 
 	if (refdev_list)
 		dbg("some libusb_device's were leaked.");
