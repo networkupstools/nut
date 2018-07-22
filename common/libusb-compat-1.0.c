@@ -48,7 +48,7 @@
 static const struct libusb_version	libusb_version_internal = {
 	0,	/* major	*/
 	1,	/* minor	*/
-	6,	/* micro: *we*	*/
+	7,	/* micro: *we*	*/
 	0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
@@ -406,11 +406,9 @@ ssize_t	libusb_get_device_list(
 				  len;
 	int			  ret;
 
-	if (
-		(ret = usb_find_busses()) < 0 ||
-		(ret = usb_find_devices()) < 0
-	)
-		return libusb01_ret_to_libusb10_ret(ret);
+	/* Don't bail out here, first update the status of old still referenced devices */
+	if ((ret = usb_find_busses()) >= 0)
+		ret = usb_find_devices();
 
 	for (bus = usb_get_busses(), len = 0; bus; bus = bus->next)
 		for (dev = bus->devices; dev; dev = dev->next) {
@@ -498,6 +496,10 @@ ssize_t	libusb_get_device_list(
 	next_refdev:
 		continue;
 	}
+
+	/* usb_find_busses() / usb_find_devices() errors */
+	if (ret < 0)
+		return libusb01_ret_to_libusb10_ret(ret);
 
 	devlist = calloc(len + 1, sizeof(*devlist));
 	if (!devlist)
