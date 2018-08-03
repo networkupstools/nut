@@ -90,6 +90,10 @@ enum libusb_descriptor_type {
 #define LIBUSB_DT_BOS_SIZE				 5
 #define LIBUSB_DT_DEVICE_CAPABILITY_SIZE		 3
 
+/* Masks to get the direction/address bits from a `bEndpointAddress` value. */
+#define LIBUSB_ENDPOINT_ADDRESS_MASK			0x0F
+#define LIBUSB_ENDPOINT_DIR_MASK			0x80
+
 /* Endpoint direction. */
 enum libusb_endpoint_direction {
 	LIBUSB_ENDPOINT_IN				= 0x80,
@@ -199,6 +203,18 @@ struct libusb_config_descriptor {
 	const unsigned char				*extra;
 	int						 extra_length;
 };
+
+/* A structure representing the setup packet for control transfers. */
+struct libusb_control_setup {
+	uint8_t						bmRequestType;
+	uint8_t						bRequest;
+	uint16_t					wValue;
+	uint16_t					wIndex;
+	uint16_t					wLength;
+};
+
+/* Size of the setup packet for control transfers. */
+#define LIBUSB_CONTROL_SETUP_SIZE			(sizeof(struct libusb_control_setup))
 
 /* libusb --------------------------------------------------------------------*/
 

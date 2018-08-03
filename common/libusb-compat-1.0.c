@@ -46,10 +46,10 @@
  * We're not really libusb 1.0, don't pretend to be it.
  * @note increment *micro* on changes. */
 static const struct libusb_version	libusb_version_internal = {
-	0,	/* major	*/
-	1,	/* minor	*/
-	9,	/* micro: *we*	*/
-	0,	/* nano		*/
+	 0,	/* major	*/
+	 1,	/* minor	*/
+	10,	/* micro: *we*	*/
+	 0,	/* nano		*/
 	"",	/* rc		*/
 	""	/* describe	*/
 };
