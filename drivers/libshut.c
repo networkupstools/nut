@@ -33,7 +33,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.91"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.92"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -42,115 +42,6 @@ upsdrv_info_t	comm_upsdrv_info = {
 	0,
 	{ NULL }
 };
-
-/** @} ************************************************************************/
-
-
-/** @name USB stuff
- * (sync'd with --ripped from-- libusb 1.0)
- * @{ *************************************************************************/
-
-/** @brief Descriptor types as defined by the USB specification. */
-enum usb_descriptor_type {
-	USB_DT_DEVICE				= 0x01,
-	USB_DT_CONFIG				= 0x02,
-	USB_DT_STRING				= 0x03,
-	USB_DT_INTERFACE			= 0x04,
-	USB_DT_ENDPOINT				= 0x05,
-	USB_DT_BOS				= 0x0F,
-	USB_DT_DEVICE_CAPABILITY		= 0x10,
-	USB_DT_HID				= 0x21,
-	USB_DT_REPORT				= 0x22,
-	USB_DT_PHYSICAL				= 0x23,
-	USB_DT_HUB				= 0x29,
-	USB_DT_SUPERSPEED_HUB			= 0x2A,
-	USB_DT_SS_ENDPOINT_COMPANION		= 0x30
-};
-
-/* Descriptor sizes per descriptor type. */
-#define USB_DT_DEVICE_SIZE			18
-#define USB_DT_CONFIG_SIZE			 9
-#define USB_DT_INTERFACE_SIZE			 9
-#define USB_DT_ENDPOINT_SIZE			 7
-#define USB_DT_ENDPOINT_AUDIO_SIZE		 9
-#define USB_DT_HUB_NONVAR_SIZE			 7
-#define USB_DT_SS_ENDPOINT_COMPANION_SIZE	 6
-#define USB_DT_BOS_SIZE				 5
-#define USB_DT_DEVICE_CAPABILITY_SIZE		 3
-
-/** @brief Endpoint direction. */
-enum usb_endpoint_direction {
-	USB_ENDPOINT_IN				= 0x80,
-	USB_ENDPOINT_OUT			= 0x00
-};
-
-/** @brief Mask to get the endpoint direction from a value. */
-#define USB_ENDPOINT_DIR_MASK			0x80
-
-/** @brief Standard requests, as defined in table 9-5 of the USB 3.0 specifications. */
-enum usb_standard_request {
-	USB_REQUEST_GET_STATUS			= 0x00,
-	USB_REQUEST_CLEAR_FEATURE		= 0x01,
-						/* 0x02 is reserved */
-	USB_REQUEST_SET_FEATURE			= 0x03,
-						/* 0x04 is reserved */
-	USB_REQUEST_SET_ADDRESS			= 0x05,
-	USB_REQUEST_GET_DESCRIPTOR		= 0x06,
-	USB_REQUEST_SET_DESCRIPTOR		= 0x07,
-	USB_REQUEST_GET_CONFIGURATION		= 0x08,
-	USB_REQUEST_SET_CONFIGURATION		= 0x09,
-	USB_REQUEST_GET_INTERFACE		= 0x0A,
-	USB_REQUEST_SET_INTERFACE		= 0x0B,
-	USB_REQUEST_SYNCH_FRAME			= 0x0C,
-	USB_REQUEST_SET_SEL			= 0x30,
-	USB_SET_ISOCH_DELAY			= 0x31
-};
-
-/** @brief Request type bits of the "bmRequestType" field in control transfers. */
-enum usb_request_type {
-	USB_REQUEST_TYPE_STANDARD		= (0x00 << 5),
-	USB_REQUEST_TYPE_CLASS			= (0x01 << 5),
-	USB_REQUEST_TYPE_VENDOR			= (0x02 << 5),
-	USB_REQUEST_TYPE_RESERVED		= (0x03 << 5)
-};
-
-/** @brief Recipient bits of the "bmRequestType" field in control transfers. */
-enum usb_request_recipient {
-	USB_RECIPIENT_DEVICE			= 0x00,
-	USB_RECIPIENT_INTERFACE			= 0x01,
-	USB_RECIPIENT_ENDPOINT			= 0x02,
-	USB_RECIPIENT_OTHER			= 0x03
-};
-
-/** @brief Structure/type representing the standard USB device descriptor. */
-typedef struct usb_device_descriptor_s {
-	uint8_t					bLength;
-	uint8_t					bDescriptorType;
-	uint16_t				bcdUSB;
-	uint8_t					bDeviceClass;
-	uint8_t					bDeviceSubClass;
-	uint8_t					bDeviceProtocol;
-	uint8_t					bMaxPacketSize0;
-	uint16_t				idVendor;
-	uint16_t				idProduct;
-	uint16_t				bcdDevice;
-	uint8_t					iManufacturer;
-	uint8_t					iProduct;
-	uint8_t					iSerialNumber;
-	uint8_t					bNumConfigurations;
-} usb_device_descriptor_t;
-
-/** @brief Structure/type representing the setup packet for control transfers. */
-typedef struct usb_control_setup_s {
-	uint8_t					bmRequestType;
-	uint8_t					bRequest;
-	uint16_t				wValue;
-	uint16_t				wIndex;
-	uint16_t				wLength;
-} usb_control_setup_t;
-
-/** @brief Size of the setup packet for control transfers. */
-#define USB_CONTROL_SETUP_SIZE			(sizeof(usb_control_setup_t))
 
 /** @} ************************************************************************/
 
@@ -184,7 +75,7 @@ enum shut_pkt_type {
 
 #define SHUT_PKT_MB_LAST_MASK			0x80				/**< @brief End of transmission mask (added to one of the MB @ref shut_pkt_type's). */
 
-#define SHUT_PKT_MAX_DATA_SIZE			USB_CONTROL_SETUP_SIZE		/**< @brief Maximum amount of data that a SHUT data packet can carry. */
+#define SHUT_PKT_MAX_DATA_SIZE			LIBUSB_CONTROL_SETUP_SIZE	/**< @brief Maximum amount of data that a SHUT data packet can carry. */
 
 /** @brief Structure/type representing a SHUT data packet. */
 typedef struct shut_packet_s {
@@ -249,10 +140,9 @@ enum shut_debug_level {
  * @{ *************************************************************************/
 
 static int		 shut_error_from_errno(int errcode);
-static const char	*shut_strerror(enum shut_error errcode);
 static const char	*shut_strpackettype(uint8_t type);
 
-static void		 shut_align_request(usb_control_setup_t *ctrl);
+static void		 shut_align_request(struct libusb_control_setup *ctrl);
 static unsigned char	 shut_checksum(const unsigned char *data, size_t datasize);
 
 static void		 shut_setline(int fd, int reverse);
@@ -287,13 +177,13 @@ static int		 shut_get_string_descriptor_ascii(
 	int		 length
 );
 
-/** @brief Morph an error condition into a @ref shut_error "SHUT_ERROR" code.
+/** @brief Morph an error condition into a @ref libusb_error "LIBUSB_ERROR" code.
  * @note A value of zero for *errcode* is considered akin to a timeout.
  * @return *errcode*, when it is positive (i.e. no errors),
- * @return @ref SHUT_ERROR_TIMEOUT, if *errcode* is zero,
- * @return a @ref shut_error "SHUT_ERROR" code mapping the error code. */
+ * @return @ref LIBUSB_ERROR_TIMEOUT, if *errcode* is zero,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code mapping the error code. */
 static int	shut_error_from_errno(
-	int	errcode	/**< [in] the negative value (`-errno`) or 0, that has to be mapped to a @ref shut_error "SHUT_ERROR" code */
+	int	errcode	/**< [in] the negative value (`-errno`) or 0, that has to be mapped to a @ref libusb_error "LIBUSB_ERROR" code */
 ) {
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d)", __func__, errcode);
 
@@ -303,76 +193,34 @@ static int	shut_error_from_errno(
 	switch (-errcode)
 	{
 	case EIO:
-		return SHUT_ERROR_IO;
+		return LIBUSB_ERROR_IO;
 	case EINVAL:
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 	case EACCES:
 	case EPERM:
-		return SHUT_ERROR_ACCESS;
+		return LIBUSB_ERROR_ACCESS;
 	case ENODEV:
 	case ENXIO:
-		return SHUT_ERROR_NO_DEVICE;
+		return LIBUSB_ERROR_NO_DEVICE;
 	case ENOENT:
-		return SHUT_ERROR_NOT_FOUND;
+		return LIBUSB_ERROR_NOT_FOUND;
 	case EBUSY:
-		return SHUT_ERROR_BUSY;
+		return LIBUSB_ERROR_BUSY;
 	case 0:
 	case ETIMEDOUT:
-		return SHUT_ERROR_TIMEOUT;
+		return LIBUSB_ERROR_TIMEOUT;
 	case EOVERFLOW:
-		return SHUT_ERROR_OVERFLOW;
+		return LIBUSB_ERROR_OVERFLOW;
 	case EPIPE:
-		return SHUT_ERROR_PIPE;
+		return LIBUSB_ERROR_PIPE;
 	case EINTR:
-		return SHUT_ERROR_INTERRUPTED;
+		return LIBUSB_ERROR_INTERRUPTED;
 	case ENOMEM:
-		return SHUT_ERROR_NO_MEM;
+		return LIBUSB_ERROR_NO_MEM;
 	case ENOSYS:
-		return SHUT_ERROR_NOT_SUPPORTED;
+		return LIBUSB_ERROR_NOT_SUPPORTED;
 	default:
-		return SHUT_ERROR_OTHER;
-	}
-}
-
-/** @brief Return a constant string with a short description of *errcode*.
- * @return a short description of *errcode*. */
-static const char	*shut_strerror(
-	enum shut_error	errcode	/**< [in] the @ref shut_error code whose description is desired */
-) {
-	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d)", __func__, errcode);
-
-	switch (errcode)
-	{
-	case SHUT_SUCCESS:
-		return "Success";
-	case SHUT_ERROR_IO:
-		return "Input/Output Error";
-	case SHUT_ERROR_INVALID_PARAM:
-		return "Invalid parameter";
-	case SHUT_ERROR_ACCESS:
-		return "Access denied (insufficient permissions)";
-	case SHUT_ERROR_NO_DEVICE:
-		return "No such device (it may have been disconnected)";
-	case SHUT_ERROR_NOT_FOUND:
-		return "Entity not found";
-	case SHUT_ERROR_BUSY:
-		return "Resource busy";
-	case SHUT_ERROR_TIMEOUT:
-		return "Operation timed out";
-	case SHUT_ERROR_OVERFLOW:
-		return "Overflow";
-	case SHUT_ERROR_PIPE:
-		return "Pipe error";
-	case SHUT_ERROR_INTERRUPTED:
-		return "System call interrupted (perhaps due to signal)";
-	case SHUT_ERROR_NO_MEM:
-		return "Insufficient memory";
-	case SHUT_ERROR_NOT_SUPPORTED:
-		return "Operation not supported or unimplemented on this platform";
-	case SHUT_ERROR_OTHER:
-		return "Other error";
-	default:
-		return "Unknown error";
+		return LIBUSB_ERROR_OTHER;
 	}
 }
 
@@ -426,7 +274,7 @@ static const char	*shut_strpackettype(
 
 /** @brief Realign *ctrl* according to endianness. */
 static void	shut_align_request(
-	usb_control_setup_t	*ctrl	/**< [in,out] control setup packet that has to be realigned */
+	struct libusb_control_setup	*ctrl	/**< [in,out] control setup packet that has to be realigned */
 ) {
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%p)", __func__, (void *)ctrl);
 #if WORDS_BIGENDIAN
@@ -476,10 +324,10 @@ static void	shut_setline(
 
 /** @brief Initiate/Restore communication with a device, while setting a @ref shut_notification_level
  * and updating @ref notification_level according to the user-provided value for it (if any).
- * @return @ref SHUT_SUCCESS, on success,
- * @return @ref SHUT_ERROR_TIMEOUT, if no errors occurred while communicating with the device but synchronisation could not be performed in @ref SHUT_MAX_TRIES attempts,
- * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
- * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
+ * @return @ref LIBUSB_SUCCESS, on success,
+ * @return @ref LIBUSB_ERROR_TIMEOUT, if no errors occurred while communicating with the device but synchronisation could not be performed in @ref SHUT_MAX_TRIES attempts,
+ * @return @ref LIBUSB_ERROR_NO_MEM, on memory allocation errors,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on other errors. */
 static int	shut_synchronise(
 	int	fd	/**< [in] file descriptor of an already opened device */
 ) {
@@ -528,14 +376,14 @@ static int	shut_synchronise(
 
 		upsdebugx(SHUT_DBG_SHUT, "%s: sync'ing communication (try #%d/%d).", __func__, try, SHUT_MAX_TRIES);
 
-		if ((ret = shut_send_one(fd, sync_type)) != SHUT_SUCCESS) {
-			upsdebugx(SHUT_DBG_SHUT, "%s: error while sending packet to the device (%s).", __func__, shut_strerror(ret));
+		if ((ret = shut_send_one(fd, sync_type)) != LIBUSB_SUCCESS) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: error while sending packet to the device (%s).", __func__, libusb_strerror(ret));
 			continue;
 		}
 
-		if ((ret = shut_receive_data(fd, &shut_data)) != SHUT_SUCCESS) {
-			upsdebugx(SHUT_DBG_SHUT, "%s: error while receiving packet from the device (%s).", __func__, shut_strerror(ret));
-			if (ret == SHUT_ERROR_NO_MEM)
+		if ((ret = shut_receive_data(fd, &shut_data)) != LIBUSB_SUCCESS) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: error while receiving packet from the device (%s).", __func__, libusb_strerror(ret));
+			if (ret == LIBUSB_ERROR_NO_MEM)
 				return ret;
 			continue;
 		}
@@ -544,7 +392,7 @@ static int	shut_synchronise(
 			upsdebugx(SHUT_DBG_SHUT, "%s: sync'ing and notification setting done.", __func__);
 			/* There should be no data, but still... */
 			free(shut_data.data);
-			return SHUT_SUCCESS;
+			return LIBUSB_SUCCESS;
 		}
 
 		upsdebugx(SHUT_DBG_SHUT, "%s: unexpectedly got a %s from the device.", __func__, shut_strpackettype(shut_data.type));
@@ -552,14 +400,14 @@ static int	shut_synchronise(
 	}
 
 	upsdebugx(SHUT_DBG_SHUT, "%s: could not perform sync'ing and notification setting.", __func__);
-	if (ret != SHUT_SUCCESS)
+	if (ret != LIBUSB_SUCCESS)
 		return ret;
-	return SHUT_ERROR_TIMEOUT;
+	return LIBUSB_ERROR_TIMEOUT;
 }
 
 /** @brief Send one byte of data to a device.
- * @return @ref SHUT_SUCCESS, on success,
- * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
+ * @return @ref LIBUSB_SUCCESS, on success,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
 static int	shut_send_one(
 	int		fd,	/**< [in] file descriptor of an already opened device */
 	unsigned char	byte	/**< [in] data that has to be sent */
@@ -573,12 +421,12 @@ static int	shut_send_one(
 		return shut_error_from_errno(errno);
 	}
 
-	return SHUT_SUCCESS;
+	return LIBUSB_SUCCESS;
 }
 
 /** @brief Send one or more bytes of data to a device.
- * @return @ref SHUT_SUCCESS, on success,
- * @return a @ref shut_error "SHUT_ERROR" code, on errors. */
+ * @return @ref LIBUSB_SUCCESS, on success,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on errors. */
 static int	shut_send_more(
 	int			 fd,	/**< [in] file descriptor of an already opened device */
 	const unsigned char	*bytes,	/**< [in] data that has to be sent */
@@ -593,14 +441,14 @@ static int	shut_send_more(
 		return shut_error_from_errno(errno);
 	}
 
-	return SHUT_SUCCESS;
+	return LIBUSB_SUCCESS;
 }
 
 /** @brief Receive data from a device and store it in *data*.
- * @return @ref SHUT_SUCCESS with *data* filled (don't forget to free() *data*'s shut_data_t::data, when done with it), on success,
- * @return @ref SHUT_ERROR_TIMEOUT, if data could not be received in @ref SHUT_MAX_TRIES attempts,
- * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
- * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
+ * @return @ref LIBUSB_SUCCESS with *data* filled (don't forget to free() *data*'s shut_data_t::data, when done with it), on success,
+ * @return @ref LIBUSB_ERROR_TIMEOUT, if data could not be received in @ref SHUT_MAX_TRIES attempts,
+ * @return @ref LIBUSB_ERROR_NO_MEM, on memory allocation errors,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on other errors. */
 static int	shut_receive_data(
 	int		 fd,	/**< [in] file descriptor of an already opened device */
 	shut_data_t	*data	/**< [out] storage location for the retrieved data */
@@ -665,7 +513,7 @@ static int	shut_receive_data(
 		if (buf.length > SIZE_MAX - size) {
 			upsdebugx(SHUT_DBG_IO, "%s: receiving data would cause an overflow (%lu + %lu > %lu).", __func__, buf.length, size, SIZE_MAX);
 			free(buf.data);
-			return SHUT_ERROR_OVERFLOW;
+			return LIBUSB_ERROR_OVERFLOW;
 		}
 
 		/* Data */
@@ -692,7 +540,7 @@ static int	shut_receive_data(
 		/* Store our precious data */
 		buf.data = realloc(buf.data, buf.length + size);
 		if (buf.data == NULL)
-			return SHUT_ERROR_NO_MEM;
+			return LIBUSB_ERROR_NO_MEM;
 		memcpy(&buf.data[buf.length], packet.data, size);
 		buf.length += size;
 
@@ -716,7 +564,7 @@ static int	shut_receive_data(
 		data->type = packet.bType & ~SHUT_PKT_MB_LAST_MASK;
 		data->length = buf.length;
 		data->data = buf.data;
-		return SHUT_SUCCESS;
+		return LIBUSB_SUCCESS;
 
 	packet_error:
 		try++;
@@ -731,7 +579,7 @@ static int	shut_receive_data(
 
 	upsdebugx(SHUT_DBG_IO, "%s: failed to retrieve data from the device.", __func__);
 	free(buf.data);
-	return SHUT_ERROR_TIMEOUT;
+	return LIBUSB_ERROR_TIMEOUT;
 }
 
 /** @brief Take care of SHUT control transfers.
@@ -739,10 +587,10 @@ static int	shut_receive_data(
  * The direction of the transfer is inferred from the *bmRequestType* field of the setup packet.
  *
  * @return the number of bytes actually transferred, on success,
- * @return @ref SHUT_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
- * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
- * @return @ref SHUT_ERROR_OVERFLOW, if the received data exceeds *data*'s size (*wLength*),
- * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
+ * @return @ref LIBUSB_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
+ * @return @ref LIBUSB_ERROR_NO_MEM, on memory allocation errors,
+ * @return @ref LIBUSB_ERROR_OVERFLOW, if the received data exceeds *data*'s size (*wLength*),
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on other errors. */
 static int	shut_control_transfer(
 	int		 fd,		/**< [in] file descriptor of an already opened device */
 	uint8_t		 bmRequestType,	/**< [in] request type field for the setup packet */
@@ -786,18 +634,18 @@ static int	shut_control_transfer(
 				(exp.tv_sec == now.tv_sec && exp.tv_usec > now.tv_usec)
 			) {
 				upsdebugx(SHUT_DBG_SHUT, "%s: could not perform the requested transfer in the allowed time.", __func__);
-				return SHUT_ERROR_TIMEOUT;
+				return LIBUSB_ERROR_TIMEOUT;
 			}
 		}
 
 		/* Send request/all data */
 		do {
 
-			unsigned char		 shut_pkt[SHUT_PKT_MAX_PKT_SIZE],
-						*pkt_data;
-			size_t			 pkt_data_size,
-						 shut_pkt_size;
-			usb_control_setup_t	 ctrl;
+			unsigned char			 shut_pkt[SHUT_PKT_MAX_PKT_SIZE],
+							*pkt_data;
+			size_t				 pkt_data_size,
+							 shut_pkt_size;
+			struct libusb_control_setup	 ctrl;
 
 			if (packet == 1) {
 				/* Build the control request */
@@ -814,7 +662,7 @@ static int	shut_control_transfer(
 
 				/* For SET requests, this is an additional initial SHUT packet for the request,
 				 * while data will follow in subsequent packet(s) */
-				if ((bmRequestType & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT)
+				if ((bmRequestType & LIBUSB_ENDPOINT_DIR_MASK) == LIBUSB_ENDPOINT_OUT)
 					remaining_size = wLength + pkt_data_size;
 				/* For GET requests, we don't have to send any other data */
 				else
@@ -834,8 +682,8 @@ static int	shut_control_transfer(
 			upsdebug_hex(SHUT_DBG_DEEP, "SHUT packet to be sent", shut_pkt, shut_pkt_size);
 
 			/* Send packet. */
-			if ((ret = shut_send_more(fd, shut_pkt, shut_pkt_size)) != SHUT_SUCCESS) {
-				upsdebugx(SHUT_DBG_SHUT, "%s: could not send packet to the device (%s).", __func__, shut_strerror(ret));
+			if ((ret = shut_send_more(fd, shut_pkt, shut_pkt_size)) != LIBUSB_SUCCESS) {
+				upsdebugx(SHUT_DBG_SHUT, "%s: could not send packet to the device (%s).", __func__, libusb_strerror(ret));
 				return ret;
 			}
 
@@ -843,8 +691,8 @@ static int	shut_control_transfer(
 			for (read_try = 1; read_try <= SHUT_MAX_TRIES; read_try++) {
 				shut_data_t	shut_data = { 0 };
 
-				if ((ret = shut_receive_data(fd, &shut_data)) != SHUT_SUCCESS) {
-					upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, shut_strerror(ret));
+				if ((ret = shut_receive_data(fd, &shut_data)) != LIBUSB_SUCCESS) {
+					upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, libusb_strerror(ret));
 					return ret;
 				}
 
@@ -871,9 +719,9 @@ static int	shut_control_transfer(
 					upsdebugx(SHUT_DBG_SHUT, "%s: unexpected reply from the device (type: %s).", __func__, shut_strpackettype(shut_data.type));
 					free(shut_data.data);
 					/* At this point, it's likely a misread mistaken for a SB packet (token): try sending a NAK to get a resend from the device */
-					if ((ret = shut_send_one(fd, SHUT_PKT_SB_NAK)) == SHUT_SUCCESS)
+					if ((ret = shut_send_one(fd, SHUT_PKT_SB_NAK)) == LIBUSB_SUCCESS)
 						continue;
-					upsdebugx(SHUT_DBG_SHUT, "%s: could not send NAK to the device (%s).", __func__, shut_strerror(ret));
+					upsdebugx(SHUT_DBG_SHUT, "%s: could not send NAK to the device (%s).", __func__, libusb_strerror(ret));
 					return ret;
 				}
 			}
@@ -892,11 +740,11 @@ static int	shut_control_transfer(
 
 		if (remaining_size) {
 			upsdebugx(SHUT_DBG_SHUT, "%s: failed to send request to the device.", __func__);
-			return SHUT_ERROR_TIMEOUT;
+			return LIBUSB_ERROR_TIMEOUT;
 		}
 
 		/* Done for SET requests: return the length of the provided data sent to the device */
-		if ((bmRequestType & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT)
+		if ((bmRequestType & LIBUSB_ENDPOINT_DIR_MASK) == LIBUSB_ENDPOINT_OUT)
 			return wLength;
 
 		/* Now receive data */
@@ -905,8 +753,8 @@ static int	shut_control_transfer(
 
 			shut_data_t	shut_data = { 0 };
 
-			if ((ret = shut_receive_data(fd, &shut_data)) != SHUT_SUCCESS) {
-				upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, shut_strerror(ret));
+			if ((ret = shut_receive_data(fd, &shut_data)) != LIBUSB_SUCCESS) {
+				upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, libusb_strerror(ret));
 				return ret;
 			}
 
@@ -914,7 +762,7 @@ static int	shut_control_transfer(
 				if (shut_data.length > wLength) {
 					upsdebugx(SHUT_DBG_SHUT, "%s: received data (%lu bytes) exceeds provided buffer's size (%u).", __func__, shut_data.length, wLength);
 					free(shut_data.data);
-					return SHUT_ERROR_OVERFLOW;
+					return LIBUSB_ERROR_OVERFLOW;
 				}
 
 				memcpy(data, shut_data.data, shut_data.length);
@@ -925,9 +773,9 @@ static int	shut_control_transfer(
 			upsdebugx(SHUT_DBG_SHUT, "%s: unexpected reply from the device (type: %s).", __func__, shut_strpackettype(shut_data.type));
 			free(shut_data.data);
 			/* At this point, it's likely a misread mistaken for a SB packet (token): try sending a NAK to get a resend from the device */
-			if ((ret = shut_send_one(fd, SHUT_PKT_SB_NAK)) == SHUT_SUCCESS)
+			if ((ret = shut_send_one(fd, SHUT_PKT_SB_NAK)) == LIBUSB_SUCCESS)
 				continue;
-			upsdebugx(SHUT_DBG_SHUT, "%s: could not send NAK to the device (%s).", __func__, shut_strerror(ret));
+			upsdebugx(SHUT_DBG_SHUT, "%s: could not send NAK to the device (%s).", __func__, libusb_strerror(ret));
 			return ret;
 
 		}
@@ -935,8 +783,8 @@ static int	shut_control_transfer(
 
 	resync_and_restart:
 		upsdebugx(SHUT_DBG_SHUT, "%s: trying to resync and restarting over.", __func__);
-		if ((ret = shut_synchronise(fd)) != SHUT_SUCCESS) {
-			upsdebugx(SHUT_DBG_SHUT, "%s: could not synchronise with the device (%s).", __func__, shut_strerror(ret));
+		if ((ret = shut_synchronise(fd)) != LIBUSB_SUCCESS) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: could not synchronise with the device (%s).", __func__, libusb_strerror(ret));
 			return ret;
 		}
 		try++;
@@ -945,7 +793,7 @@ static int	shut_control_transfer(
 	}
 
 	upsdebugx(SHUT_DBG_SHUT, "%s: could not perform the requested transfer.", __func__);
-	return SHUT_ERROR_TIMEOUT;
+	return LIBUSB_ERROR_TIMEOUT;
 }
 
 /** @brief Take care of SHUT interrupt transfers.
@@ -955,12 +803,12 @@ static int	shut_control_transfer(
  *
  * @warning Interrupt OUT transactions are not supported by SHUT, use a control transfer instead.
  *
- * @return @ref SHUT_SUCCESS, with *transferred* filled, on success,
- * @return @ref SHUT_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
- * @return @ref SHUT_ERROR_OVERFLOW, if the received data exceeds *data*'s size (*length*),
- * @return @ref SHUT_ERROR_NOT_SUPPORTED, for interrupt OUT transactions (i.e. *endpoint* has the @ref USB_ENDPOINT_OUT direction),
- * @return @ref SHUT_ERROR_OTHER, if valid/supported parameters are passed but @ref notification_level is set to @ref SHUT_NOTIFICATION_OFF (no I/O is performed),
- * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
+ * @return @ref LIBUSB_SUCCESS, with *transferred* filled, on success,
+ * @return @ref LIBUSB_ERROR_TIMEOUT, if the transfer could not be performed in the given *timeout* or in @ref SHUT_MAX_TRIES attempts,
+ * @return @ref LIBUSB_ERROR_OVERFLOW, if the received data exceeds *data*'s size (*length*),
+ * @return @ref LIBUSB_ERROR_NOT_SUPPORTED, for interrupt OUT transactions (i.e. *endpoint* has the @ref LIBUSB_ENDPOINT_OUT direction),
+ * @return @ref LIBUSB_ERROR_OTHER, if valid/supported parameters are passed but @ref notification_level is set to @ref SHUT_NOTIFICATION_OFF (no I/O is performed),
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on other errors. */
 static int	shut_interrupt_transfer(
 	int		 fd,		/**< [in] file descriptor of an already opened device */
 	unsigned char	 endpoint,	/**< [in] address of a valid endpoint to communicate with */
@@ -974,17 +822,17 @@ static int	shut_interrupt_transfer(
 
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %x, %p, %d, %p, %u)", __func__, fd, endpoint, data, length, (void *)transferred, timeout);
 
-	if ((endpoint & USB_ENDPOINT_DIR_MASK) == USB_ENDPOINT_OUT) {
+	if ((endpoint & LIBUSB_ENDPOINT_DIR_MASK) == LIBUSB_ENDPOINT_OUT) {
 		upsdebugx(SHUT_DBG_SHUT, "%s: interrupt OUT transactions are not supported by SHUT.", __func__);
-		return SHUT_ERROR_NOT_SUPPORTED;
+		return LIBUSB_ERROR_NOT_SUPPORTED;
 	}
 
 	if (length < 0)
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 
 	if (notification_level == SHUT_NOTIFICATION_OFF) {
 		upsdebugx(SHUT_DBG_SHUT, "%s: interrupt transactions cannot be performed, since notifications are disabled.", __func__);
-		return SHUT_ERROR_OTHER;
+		return LIBUSB_ERROR_OTHER;
 	}
 
 	if (timeout) {
@@ -1010,12 +858,12 @@ static int	shut_interrupt_transfer(
 				(exp.tv_sec == now.tv_sec && exp.tv_usec > now.tv_usec)
 			) {
 				upsdebugx(SHUT_DBG_SHUT, "%s: could not perform the requested transfer in the allowed time.", __func__);
-				return SHUT_ERROR_TIMEOUT;
+				return LIBUSB_ERROR_TIMEOUT;
 			}
 		}
 
-		if ((ret = shut_receive_data(fd, &shut_data)) != SHUT_SUCCESS) {
-			upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, shut_strerror(ret));
+		if ((ret = shut_receive_data(fd, &shut_data)) != LIBUSB_SUCCESS) {
+			upsdebugx(SHUT_DBG_SHUT, "%s: could not receive packet from the device (%s).", __func__, libusb_strerror(ret));
 			return ret;
 		}
 
@@ -1028,24 +876,24 @@ static int	shut_interrupt_transfer(
 		if (shut_data.length > (size_t)length) {
 			upsdebugx(SHUT_DBG_SHUT, "%s: received data (%lu bytes) exceeds provided buffer's size (%d).", __func__, shut_data.length, length);
 			free(shut_data.data);
-			return SHUT_ERROR_OVERFLOW;
+			return LIBUSB_ERROR_OVERFLOW;
 		}
 
 		memcpy(data, shut_data.data, shut_data.length);
 		free(shut_data.data);
 		if (transferred)
 			*transferred = shut_data.length;
-		return SHUT_SUCCESS;
+		return LIBUSB_SUCCESS;
 	}
 
 	upsdebugx(SHUT_DBG_SHUT, "%s: could not perform the requested transfer.", __func__);
-	return SHUT_ERROR_TIMEOUT;
+	return LIBUSB_ERROR_TIMEOUT;
 }
 
 /** @brief Retrieve a string descriptor in C style ASCII using the first language supported by a device.
  * @return the number of bytes returned in data, on success,
- * @return @ref SHUT_ERROR_NO_MEM, on memory allocation errors,
- * @return a @ref shut_error "SHUT_ERROR" code, on other errors. */
+ * @return @ref LIBUSB_ERROR_NO_MEM, on memory allocation errors,
+ * @return a @ref libusb_error "LIBUSB_ERROR" code, on other errors. */
 static int	shut_get_string_descriptor_ascii(
 	int		 fd,		/**< [in] file descriptor of an already opened device */
 	uint8_t		 desc_index,	/**< [in] index of the descriptor to retrieve */
@@ -1064,14 +912,14 @@ static int	shut_get_string_descriptor_ascii(
 	 * There's also no point in trying to read descriptor 0 with this function.
 	 * See USB 2.0 specification section 9.6.7 for more information. */
 	if (desc_index == 0)
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 
 	/* Get language ID */
 	ret = shut_control_transfer(
 		fd,
-		USB_ENDPOINT_IN,
-		USB_REQUEST_GET_DESCRIPTOR,
-		(USB_DT_STRING << 8) | 0,
+		LIBUSB_ENDPOINT_IN,
+		LIBUSB_REQUEST_GET_DESCRIPTOR,
+		(LIBUSB_DT_STRING << 8) | 0,
 		0,
 		tbuf,
 		sizeof(tbuf),
@@ -1080,15 +928,15 @@ static int	shut_get_string_descriptor_ascii(
 	if (ret < 0)
 		return ret;
 	if (ret < 4)
-		return SHUT_ERROR_IO;
+		return LIBUSB_ERROR_IO;
 	langid = tbuf[2] | (tbuf[3] << 8);
 
 	/* Get string */
 	ret = shut_control_transfer(
 		fd,
-		USB_ENDPOINT_IN,
-		USB_REQUEST_GET_DESCRIPTOR,
-		(USB_DT_STRING << 8) | desc_index,
+		LIBUSB_ENDPOINT_IN,
+		LIBUSB_REQUEST_GET_DESCRIPTOR,
+		(LIBUSB_DT_STRING << 8) | desc_index,
 		langid,
 		tbuf,
 		sizeof(tbuf),
@@ -1096,10 +944,10 @@ static int	shut_get_string_descriptor_ascii(
 	);
 	if (ret < 0)
 		return ret;
-	if (tbuf[1] != USB_DT_STRING)
-		return SHUT_ERROR_IO;
+	if (tbuf[1] != LIBUSB_DT_STRING)
+		return LIBUSB_ERROR_IO;
 	if (tbuf[0] > ret)
-		return SHUT_ERROR_IO;
+		return LIBUSB_ERROR_IO;
 
 	/* Convert from unicode (UTF-16LE) to ASCII */
 	for (di = 0, si = 2; si < tbuf[0]; si += 2) {
@@ -1136,23 +984,23 @@ static int	libshut_open(
 		int		 rdlen
 	)
 ) {
-	int			 ret;
-	char			 string[SHUT_MAX_STRING_SIZE];
+	int				 ret;
+	char				 string[SHUT_MAX_STRING_SIZE];
 
 	/* DEVICE descriptor */
-	unsigned char		 device_desc_buf[USB_DT_DEVICE_SIZE];
-	usb_device_descriptor_t	*device_desc;
+	unsigned char			 device_desc_buf[LIBUSB_DT_DEVICE_SIZE];
+	struct libusb_device_descriptor	*device_desc;
 
 	/* HID descriptor */
-	unsigned char		 hid_desc_buf[HID_DT_HID_SIZE];
+	unsigned char			 hid_desc_buf[HID_DT_HID_SIZE];
 	/* All devices use HID descriptor at index 0.
 	 * However, some newer Eaton units have a light HID descriptor at index 0,
 	 * and the full version is at index 1 (in which case, bcdDevice == 0x0202). */
-	int			 hid_desc_index = 0;
+	int				 hid_desc_index = 0;
 
 	/* REPORT descriptor */
-	unsigned char		 report_desc_buf[HID_DT_REPORT_SIZE_MAX];
-	uint16_t		 report_desc_len;
+	unsigned char			 report_desc_buf[HID_DT_REPORT_SIZE_MAX];
+	uint16_t			 report_desc_len;
 
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%p, %p, %s, %p)", __func__, (void *)fd, (void *)curDevice, device_path, (void *)callback);
 	upsdebugx(SHUT_DBG_DEVICE, "%s: using port '%s'.", __func__, device_path);
@@ -1168,25 +1016,25 @@ static int	libshut_open(
 	shut_setline(*fd, 0);
 
 	/* Initialise communication */
-	if ((ret = shut_synchronise(*fd)) != SHUT_SUCCESS) {
-		if (ret == SHUT_ERROR_NO_MEM)
+	if ((ret = shut_synchronise(*fd)) != LIBUSB_SUCCESS) {
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
-		upsdebugx(SHUT_DBG_DEVICE, "%s: no communication with device (%s).", __func__, shut_strerror(ret));
+		upsdebugx(SHUT_DBG_DEVICE, "%s: no communication with device (%s).", __func__, libusb_strerror(ret));
 		goto no_device;
 	}
 	upsdebugx(SHUT_DBG_DEVICE, "%s: communication with device established.", __func__);
 
 	/* Done, if no callback is provided */
 	if (!callback)
-		return SHUT_SUCCESS;
+		return LIBUSB_SUCCESS;
 
 	/* Get DEVICE descriptor */
-	device_desc = (usb_device_descriptor_t *)device_desc_buf;
+	device_desc = (struct libusb_device_descriptor *)device_desc_buf;
 	ret = shut_control_transfer(
 		*fd,
-		USB_ENDPOINT_IN | USB_REQUEST_TYPE_STANDARD | USB_RECIPIENT_DEVICE,
-		USB_REQUEST_GET_DESCRIPTOR,
-		(USB_DT_DEVICE << 8) | 0,
+		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_RECIPIENT_DEVICE,
+		LIBUSB_REQUEST_GET_DESCRIPTOR,
+		(LIBUSB_DT_DEVICE << 8) | 0,
 		0,
 		device_desc_buf,
 		sizeof(device_desc_buf),
@@ -1194,9 +1042,9 @@ static int	libshut_open(
 	);
 
 	if (ret < 0) {
-		if (ret == SHUT_ERROR_NO_MEM)
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
-		upsdebugx(SHUT_DBG_DEVICE, "%s: unable to get DEVICE descriptor (%s).", __func__, shut_strerror(ret));
+		upsdebugx(SHUT_DBG_DEVICE, "%s: unable to get DEVICE descriptor (%s).", __func__, libusb_strerror(ret));
 		goto no_device;
 	}
 
@@ -1220,7 +1068,7 @@ static int	libshut_open(
 
 	if (device_desc->iManufacturer) {
 		ret = shut_get_string_descriptor_ascii(*fd, device_desc->iManufacturer, (unsigned char *)string, sizeof(string));
-		if (ret == SHUT_ERROR_NO_MEM)
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
 		if (ret > 0 && *str_trim_space(string))
 			curDevice->Vendor = xstrdup(string);
@@ -1228,7 +1076,7 @@ static int	libshut_open(
 
 	if (device_desc->iProduct) {
 		ret = shut_get_string_descriptor_ascii(*fd, device_desc->iProduct, (unsigned char *)string, sizeof(string));
-		if (ret == SHUT_ERROR_NO_MEM)
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
 		if (ret > 0 && *str_trim_space(string))
 			curDevice->Product = xstrdup(string);
@@ -1236,7 +1084,7 @@ static int	libshut_open(
 
 	if (device_desc->iSerialNumber) {
 		ret = shut_get_string_descriptor_ascii(*fd, device_desc->iSerialNumber, (unsigned char *)string, sizeof(string));
-		if (ret == SHUT_ERROR_NO_MEM)
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
 		if (ret > 0 && *str_trim_space(string))
 			curDevice->Serial = xstrdup(string);
@@ -1259,9 +1107,9 @@ static int	libshut_open(
 	/* Get HID descriptor */
 	ret = shut_control_transfer(
 		*fd,
-		USB_ENDPOINT_IN | USB_REQUEST_TYPE_STANDARD | USB_RECIPIENT_INTERFACE,
-		USB_REQUEST_GET_DESCRIPTOR,
-		(USB_DT_HID << 8) | hid_desc_index,
+		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_RECIPIENT_INTERFACE,
+		LIBUSB_REQUEST_GET_DESCRIPTOR,
+		(LIBUSB_DT_HID << 8) | hid_desc_index,
 		SHUT_INTERFACE_NUMBER,
 		hid_desc_buf,
 		sizeof(hid_desc_buf),
@@ -1269,9 +1117,9 @@ static int	libshut_open(
 	);
 
 	if (ret < 0) {
-		if (ret == SHUT_ERROR_NO_MEM)
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
-		upsdebugx(SHUT_DBG_DEVICE, "%s: unable to get HID descriptor (%s).", __func__, shut_strerror(ret));
+		upsdebugx(SHUT_DBG_DEVICE, "%s: unable to get HID descriptor (%s).", __func__, libusb_strerror(ret));
 		goto no_device;
 	}
 
@@ -1285,16 +1133,16 @@ static int	libshut_open(
 
 	if (report_desc_len > sizeof(report_desc_buf)) {
 		upsdebugx(SHUT_DBG_DEVICE, "%s: REPORT descriptor too long (max %lu).", __func__, sizeof(report_desc_buf));
-		ret = SHUT_ERROR_OVERFLOW;
+		ret = LIBUSB_ERROR_OVERFLOW;
 		goto no_device;
 	}
 
 	/* Get REPORT descriptor */
 	ret = shut_control_transfer(
 		*fd,
-		USB_ENDPOINT_IN | USB_REQUEST_TYPE_STANDARD | USB_RECIPIENT_INTERFACE,
-		USB_REQUEST_GET_DESCRIPTOR,
-		(USB_DT_REPORT << 8) | hid_desc_index,
+		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_STANDARD | LIBUSB_RECIPIENT_INTERFACE,
+		LIBUSB_REQUEST_GET_DESCRIPTOR,
+		(LIBUSB_DT_REPORT << 8) | hid_desc_index,
 		SHUT_INTERFACE_NUMBER,
 		report_desc_buf,
 		report_desc_len,
@@ -1302,9 +1150,9 @@ static int	libshut_open(
 	);
 
 	if (ret < 0) {
-		if (ret == SHUT_ERROR_NO_MEM)
+		if (ret == LIBUSB_ERROR_NO_MEM)
 			goto oom_error;
-		upsdebugx(SHUT_DBG_DEVICE, "%s: unable to get REPORT descriptor (%s).", __func__, shut_strerror(ret));
+		upsdebugx(SHUT_DBG_DEVICE, "%s: unable to get REPORT descriptor (%s).", __func__, libusb_strerror(ret));
 		goto no_device;
 	}
 
@@ -1324,15 +1172,15 @@ static int	libshut_open(
 	upsdebugx(SHUT_DBG_DEVICE, "%s: HID device found.", __func__);
 	fflush(stdout);
 
-	return SHUT_SUCCESS;
+	return LIBUSB_SUCCESS;
 
-no_device:	/* Return 'ret', if it is negative (it must contain the shut_error code to return), or SHUT_ERROR_OTHER, if not. */
+no_device:	/* Return 'ret', if it is negative (it must contain the libusb_error code to return), or LIBUSB_ERROR_OTHER, if not. */
 	upsdebugx(SHUT_DBG_DEVICE, "%s: no appropriate HID device found.", __func__);
 	fflush(stdout);
 
 	if (ret < 0)
 		return ret;
-	return SHUT_ERROR_OTHER;
+	return LIBUSB_ERROR_OTHER;
 
 oom_error:
 	fatalx(EXIT_FAILURE, "Out of memory.");
@@ -1360,11 +1208,11 @@ static int	libshut_get_report(
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %x, %p, %d)", __func__, fd, ReportId, raw_buf, ReportSize);
 
 	if (fd < 1)
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 
 	return shut_control_transfer(
 		fd,
-		USB_ENDPOINT_IN | USB_REQUEST_TYPE_CLASS | USB_RECIPIENT_INTERFACE,
+		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
 		HID_REQUEST_GET_REPORT,
 		(HID_RT_FEATURE << 8) | ReportId,
 		SHUT_INTERFACE_NUMBER,
@@ -1384,11 +1232,11 @@ static int	libshut_set_report(
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %x, %p, %d)", __func__, fd, ReportId, raw_buf, ReportSize);
 
 	if (fd < 1)
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 
 	return shut_control_transfer(
 		fd,
-		USB_ENDPOINT_OUT | USB_REQUEST_TYPE_CLASS | USB_RECIPIENT_INTERFACE,
+		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
 		HID_REQUEST_SET_REPORT,
 		(HID_RT_FEATURE << 8) | ReportId,
 		SHUT_INTERFACE_NUMBER,
@@ -1408,7 +1256,7 @@ static int	libshut_get_string(
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %d, %p, %lu)", __func__, fd, StringIdx, buf, buflen);
 
 	if (fd < 1)
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 
 	return shut_get_string_descriptor_ascii(fd, StringIdx, (unsigned char *)buf, buflen);
 }
@@ -1425,12 +1273,12 @@ static int	libshut_get_interrupt(
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %p, %d, %d)", __func__, fd, buf, bufsize, timeout);
 
 	if (fd < 1)
-		return SHUT_ERROR_INVALID_PARAM;
+		return LIBUSB_ERROR_INVALID_PARAM;
 
 	/* Symbolic standard EP (we only need the direction bits, here) */
-	ret = shut_interrupt_transfer(fd, USB_ENDPOINT_IN | 1, buf, bufsize, &bufsize, timeout);
+	ret = shut_interrupt_transfer(fd, LIBUSB_ENDPOINT_IN | 1, buf, bufsize, &bufsize, timeout);
 
-	if (ret != SHUT_SUCCESS)
+	if (ret != LIBUSB_SUCCESS)
 		return ret;
 
 	return bufsize;
@@ -1438,11 +1286,11 @@ static int	libshut_get_interrupt(
 
 /** @brief See shut_communication_subdriver_t::strerror(). */
 static const char	*libshut_strerror(
-	enum shut_error	errcode
+	enum libusb_error	errcode
 ) {
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d)", __func__, errcode);
 
-	return shut_strerror(errcode);
+	return libusb_strerror(errcode);
 }
 
 /** @brief See shut_communication_subdriver_t::add_nutvars(). */

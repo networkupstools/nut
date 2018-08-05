@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.50"
+#define DRIVER_VERSION		"0.51"
 
 #include "main.h"
 #include "libhid.h"
@@ -793,12 +793,12 @@ void upsdrv_updateinfo(void)
 		evtCount = HIDGetEvents(udev, event, MAX_EVENT_NUM);
 		switch (evtCount)
 		{
-		case COMM_DRIVER_(ERROR_BUSY):
+		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_CRIT, "Got disconnected by another driver (%s).", comm_driver->strerror(evtCount));
-		case COMM_DRIVER_(ERROR_NO_DEVICE):
-		case COMM_DRIVER_(ERROR_ACCESS):
-		case COMM_DRIVER_(ERROR_IO):
-		case COMM_DRIVER_(ERROR_NOT_FOUND):
+		case LIBUSB_ERROR_NO_DEVICE:
+		case LIBUSB_ERROR_ACCESS:
+		case LIBUSB_ERROR_IO:
+		case LIBUSB_ERROR_NOT_FOUND:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return;
@@ -961,7 +961,7 @@ void upsdrv_initups(void)
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
-	if (ret != COMM_DRIVER_(SUCCESS))
+	if (ret != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
 	hd = &curDevice;
@@ -1293,12 +1293,12 @@ static bool_t hid_ups_walk(walkmode_t mode)
 
 		switch (retcode)
 		{
-		case COMM_DRIVER_(ERROR_BUSY):
+		case LIBUSB_ERROR_BUSY:
 			upslogx(LOG_CRIT, "Got disconnected by another driver (%s).", comm_driver->strerror(retcode));
-		case COMM_DRIVER_(ERROR_NO_DEVICE):
-		case COMM_DRIVER_(ERROR_ACCESS):
-		case COMM_DRIVER_(ERROR_IO):
-		case COMM_DRIVER_(ERROR_NOT_FOUND):
+		case LIBUSB_ERROR_NO_DEVICE:
+		case LIBUSB_ERROR_ACCESS:
+		case LIBUSB_ERROR_IO:
+		case LIBUSB_ERROR_NOT_FOUND:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
@@ -1366,7 +1366,7 @@ static int reconnect_ups(void)
 
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
 
-	if (ret == COMM_DRIVER_(SUCCESS))
+	if (ret == LIBUSB_SUCCESS)
 		return 1;
 
 	return 0;

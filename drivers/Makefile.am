@@ -203,7 +203,8 @@ riello_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 
 
 # HID-over-serial
-mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c
+mge_shut_SOURCES = usbhid-ups.c libshut.c libhid.c hidparser.c mge-hid.c \
+ ../common/libusb_strerror.c
 # per-target CFLAGS are necessary here
 mge_shut_CFLAGS = $(AM_CFLAGS) -DSHUT_MODE
 mge_shut_LDADD = $(LDADD) -lm

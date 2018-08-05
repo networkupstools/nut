@@ -144,7 +144,7 @@ reportbuf_t *new_report_buffer(HIDDesc_t *pDesc)
    seconds, then the report is freshly read from the USB
    device. Otherwise, it is unchanged.
    Return 1 on success.
-   On failure, return 0 on ignored errors, <0 (COMM_DRIVER_() code) otherwise. */
+   On failure, return 0 on ignored errors, <0 (LIBUSB_ERROR code) otherwise. */
 /* because buggy firmwares from APC return wrong report size, we either
    ask the report with the found report size or with the whole buffer size
    depending on the max_report_size flag */
@@ -182,7 +182,7 @@ static int refresh_report_buffer(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDDa
    conversion is performed. If age>0, the read operation is buffered
    if the item's age is less than "age". On success, return 1 and
    store the answer in *value. On failure, return 0 on ignored errors,
-   <0 (COMM_DRIVER_() code) otherwise. */
+   <0 (LIBUSB_ERROR code) otherwise. */
 static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long *Value, int age)
 {
 	int id = pData->ReportID;
@@ -199,7 +199,7 @@ static int get_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t
 
 /* set the logical value for the given pData. No physical to logical
    conversion is performed. On success, return 1, on failure, return
-   0 on ignored errors, <0 (COMM_DRIVER_() code) otherwise.
+   0 on ignored errors, <0 (LIBUSB_ERROR code) otherwise.
    The updated value is sent to the device. */
 static int set_item_buffered(reportbuf_t *rbuf, hid_dev_handle_t udev, HIDData_t *pData, long Value)
 {
@@ -371,7 +371,7 @@ char *HIDGetDataItem(const HIDData_t *hiddata, usage_tables_t *utab)
 }
 
 /* Return the physical value associated with the given HIDData path.
- * return 1 if OK, 0 on fail, <0 (COMM_DRIVER_() code) otherwise (ie disconnect).
+ * return 1 if OK, 0 on fail, <0 (LIBUSB_ERROR code) otherwise (ie disconnect).
  */
 int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, int age)
 {
@@ -400,7 +400,7 @@ int HIDGetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double *Value, in
 }
 
 /* Return the physical value associated with the given path.
- * return 1 if OK, 0 on fail, <0 (COMM_DRIVER_() code) otherwise (ie disconnect).
+ * return 1 if OK, 0 on fail, <0 (LIBUSB_ERROR code) otherwise (ie disconnect).
  */
 int HIDGetItemValue(hid_dev_handle_t udev, const char *hidpath, double *Value, usage_tables_t *utab)
 {
@@ -432,7 +432,7 @@ char *HIDGetItemString(hid_dev_handle_t udev, const char *hidpath, char *buf, si
 }
 
 /* Set the given physical value for the variable associated with
- * path. return 1 if OK, 0 on fail, <0 (COMM_DRIVER_() code) otherwise (ie disconnect).
+ * path. return 1 if OK, 0 on fail, <0 (LIBUSB_ERROR code) otherwise (ie disconnect).
  */
 int HIDSetDataValue(hid_dev_handle_t udev, HIDData_t *hiddata, double Value)
 {

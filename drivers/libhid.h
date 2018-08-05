@@ -42,14 +42,12 @@
 	typedef char				HIDDeviceMatcher_t;
 	typedef int				hid_dev_handle_t;
 	typedef shut_communication_subdriver_t	communication_subdriver_t;
-	#define COMM_DRIVER_(item)		SHUT_##item			/**< @brief Alias for @ref shut_error codes. */
 #else	/* SHUT_MODE */
 	#include "nut_libusb.h"
 	typedef USBDevice_t			HIDDevice_t;
 	typedef USBDeviceMatcher_t		HIDDeviceMatcher_t;
 	typedef libusb_device_handle *		hid_dev_handle_t;
 	typedef usb_communication_subdriver_t	communication_subdriver_t;
-	#define COMM_DRIVER_(item)		LIBUSB_##item			/**< @brief Alias for @ref libusb_error codes. */
 #endif	/* SHUT_MODE */
 
 /* Device open modes */
