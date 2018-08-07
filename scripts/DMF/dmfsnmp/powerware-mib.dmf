@@ -4,25 +4,6 @@
 		<lookup_info oid="1" value="LB"/>
 		<lookup_info oid="2" value=""/>
 	</lookup>
-	<lookup name="pw_mode_info">
-		<lookup_info oid="1" value=""/>
-		<lookup_info oid="2" value=""/>
-		<lookup_info oid="3" value="normal"/>
-		<lookup_info oid="4" value=""/>
-		<lookup_info oid="5" value=""/>
-		<lookup_info oid="6" value=""/>
-		<lookup_info oid="7" value=""/>
-		<lookup_info oid="8" value="parallel capacity"/>
-		<lookup_info oid="9" value="parallel redundancy"/>
-		<lookup_info oid="10" value="high efficiency"/>
-		<lookup_info oid="240" value=""/>
-		<lookup_info oid="100" value=""/>
-		<lookup_info oid="96" value=""/>
-		<lookup_info oid="81" value="high efficiency"/>
-		<lookup_info oid="80" value="normal"/>
-		<lookup_info oid="64" value=""/>
-		<lookup_info oid="16" value=""/>
-	</lookup>
 	<lookup name="pw_ambient_drycontacts_info">
 		<lookup_info oid="-1" value="unknown"/>
 		<lookup_info oid="1" value="opened"/>
@@ -66,14 +47,6 @@
 		<lookup_info oid="6" value="Inhibited"/>
 		<lookup_info oid="7" value="Scheduled"/>
 	</lookup>
-	<lookup name="pw_battery_abm_status">
-		<lookup_info oid="1" value="CHRG"/>
-		<lookup_info oid="2" value="DISCHRG"/>
-	</lookup>
-	<lookup name="pw_alarm_ob">
-		<lookup_info oid="1" value="OB"/>
-		<lookup_info oid="2" value=""/>
-	</lookup>
 	<lookup name="pw_abm_status_info">
 		<lookup_info oid="1" value="charging"/>
 		<lookup_info oid="2" value="discharging"/>
@@ -81,6 +54,14 @@
 		<lookup_info oid="4" value="resting"/>
 		<lookup_info oid="5" value="unknown"/>
 		<lookup_info oid="6" value="disabled"/>
+	</lookup>
+	<lookup name="pw_alarm_ob">
+		<lookup_info oid="1" value="OB"/>
+		<lookup_info oid="2" value=""/>
+	</lookup>
+	<lookup name="pw_battery_abm_status">
+		<lookup_info oid="1" value="CHRG"/>
+		<lookup_info oid="2" value="DISCHRG"/>
 	</lookup>
 	<lookup name="pw_pwr_info">
 		<lookup_info oid="1" value=""/>
