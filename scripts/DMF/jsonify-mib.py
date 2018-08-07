@@ -181,7 +181,7 @@ class Visitor(c_ast.NodeVisitor):
             if isinstance (key_node, c_ast.UnaryOp):
                 key = -1 * int (key_node.expr.value)
             else:
-                key = int (key_node.value)
+                key = int (key_node.value, 0)
 
             # array ends with {0, NULL} or {0, NULL, NULL, NULL}
             if isinstance (ilist.exprs [1], c_ast.Cast):
