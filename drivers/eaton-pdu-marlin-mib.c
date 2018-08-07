@@ -671,7 +671,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.power", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.4.1.3.%i.1.4",
 		NULL, 0, NULL, NULL },
 
-
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
@@ -715,7 +714,6 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.6.1.1.6.%i.%i",
 		NULL, SU_FLAG_STATIC | SU_FLAG_UNIQUE | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1,
 		NULL, NULL },
-
 
 	/* FIXME: the last part of the OID gives the group number (i.e. %i.1 means "group 1")
 	 * Need to address that, without multiple declaration (%i.%i, SU_OUTLET | SU_OUTLET_GROUP)? */

@@ -236,18 +236,21 @@ nutscan_device_t * nutscan_scan_usb()
 								"product",
 								device_name);
 					free(device_name);
+					device_name = NULL;
 				}
 				if(serialnumber) {
 					nutscan_add_option_to_device(nut_dev,
 								"serial",
 								serialnumber);
 					free(serialnumber);
+					serialnumber = NULL;
 				}
 				if(vendor_name) {
 					nutscan_add_option_to_device(nut_dev,
 								"vendor",
 								vendor_name);
 					free(vendor_name);
+					vendor_name = NULL;
 				}
 				nutscan_add_option_to_device(nut_dev,"bus",
 							bus->dirname);

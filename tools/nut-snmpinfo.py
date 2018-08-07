@@ -89,7 +89,7 @@ output_file.write( "\n" )
 output_file.write( "/* SNMP IDs device table, not used in this file itself - silence the warning if we can */\n" )
 output_file.write( "snmp_device_id_t snmp_device_table_builtin[] UNUSED_PARAM = {\n" )
 
-for filename in glob.glob('../drivers/*-mib.c'):
+for filename in sorted(glob.glob('../drivers/*-mib.c')):
 	list_of_line = open(filename,'r').read().split(';')
 	for line in list_of_line:
 		if "mib2nut_info_t" in line:
