@@ -330,8 +330,7 @@ if [ -z "$NUMWALKFILE" ]; then
 	fi
 	# hostname is also mandatory
 	while [ -z "$HOSTNAME" ]; do
-		echo "
-		Please enter the SNMP host IP address or name."
+		printf "\n\tPlease enter the SNMP host IP address or name.\n"
 		read -p "SNMP host IP name or address: " HOSTNAME < /dev/tty
 		if echo $HOSTNAME | egrep -q '[^a-zA-Z0-9]'; then
 			echo "Please use only letters and digits"
