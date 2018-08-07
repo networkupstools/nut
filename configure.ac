@@ -347,7 +347,7 @@ dnl checks related to --with-usb
 
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
+   AC_MSG_ERROR([USB drivers requested, but libusb not found.])
 fi
 
 if test "${nut_with_usb}" != "no"; then
@@ -362,7 +362,7 @@ dnl checks related to --with-neon
 
 dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
+   AC_MSG_ERROR([neon libraries not found, required for neon based XML/HTTP driver])
 fi
 
 if test "${nut_with_neon}" != "no"; then
@@ -384,7 +384,7 @@ dnl checks related to --with-avahi
 
 dnl ${nut_with_avahi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_avahi}" = "yes" -a "${nut_have_avahi}" != "yes"; then
-   AC_MSG_ERROR(["avahi libraries not found"])
+   AC_MSG_ERROR([avahi libraries not found])
 fi
 
 if test "${nut_with_avahi}" != "no"; then
@@ -400,7 +400,7 @@ dnl checks related to --with-powerman
 
 dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
-   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
+   AC_MSG_ERROR([Powerman client libraries not found, required for Powerman PDU client driver])
 fi
 
 if test "${nut_with_powerman}" != "no"; then
@@ -415,7 +415,7 @@ dnl checks related to --with-modbus
 
 dnl ${nut_with_modbus}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_modbus}" = "yes" -a "${nut_have_libmodbus}" != "yes"; then
-   AC_MSG_ERROR(["modbus library not found, required for Modbus driver"])
+   AC_MSG_ERROR([modbus library not found, required for Modbus driver])
 fi
 
 if test "${nut_with_modbus}" != "no"; then
@@ -441,15 +441,15 @@ if test "${nut_with_ipmi}" != "no"; then
    if test "${nut_with_freeipmi}" = "yes"; then
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
-         AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+         AC_MSG_ERROR([FreeIPMI not found, required for IPMI support])
       fi
       dnl Implies --with-ipmi
       nut_with_ipmi="yes"
    dnl elif test "${nut_with_openipmi}" = "yes"; then
-      dnl AC_MSG_ERROR(["OpenIPMI is not yet supported"])
+      dnl AC_MSG_ERROR([OpenIPMI is not yet supported])
       dnl NUT_CHECK_LIBOPENIPMI
       dnl if test "${nut_have_openipmi}" != "yes"; then
-      dnl    AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
+      dnl    AC_MSG_ERROR([OpenIPMI not found, required for IPMI support])
       dnl fi
       dnl    Implies --with-ipmi
       dnl    nut_with_ipmi="yes"
@@ -459,13 +459,13 @@ if test "${nut_with_ipmi}" != "no"; then
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
          if test "${nut_with_ipmi}" = "yes"; then
-            AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+            AC_MSG_ERROR([FreeIPMI not found, required for IPMI support])
          fi
          nut_with_ipmi="no"
          dnl NUT_CHECK_OPENIPMI
          dnl if test "${nut_have_openipmi}" != "yes"; then
          dnl    if test "${nut_with_ipmi}" = "yes"; then
-         dnl       AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
+         dnl       AC_MSG_ERROR([Neither GNU FreeIPMI nor OpenIPMI was found (required for IPMI support)])
          dnl    fi
          dnl    nut_with_ipmi="no"
          dnl else
@@ -557,12 +557,12 @@ if test "${nut_with_ssl}" != "no"; then
    if test "${nut_with_nss}" = "yes"; then
       NUT_CHECK_LIBNSS
       if test "${nut_have_libnss}" != "yes"; then
-         AC_MSG_ERROR(["Mozilla NSS not found, required for SSL support"])
+         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
       fi
    elif test "${nut_with_openssl}" = "yes"; then
       NUT_CHECK_LIBOPENSSL
       if test "${nut_have_openssl}" != "yes"; then
-         AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
+         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
       fi
    else
       dnl Prefer OpenSSL over NSS otherwise
@@ -572,9 +572,9 @@ if test "${nut_with_ssl}" != "no"; then
          if test "${nut_have_libnss}" != "yes"; then
             dnl Only abort if SSL has been explicitly requested by the user
             if test "${nut_with_ssl}" = "yes"; then
-               AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, but are needed for the requested SSL support"])
+               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
             else
-               AC_MSG_WARN(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
             fi
             nut_with_ssl="no"
          else
@@ -604,7 +604,7 @@ if test "${nut_with_wrap}" != "no"; then
 fi
 
 if test "${nut_with_wrap}" = "yes" -a "${nut_have_libwrap}" != "yes"; then
-   AC_MSG_ERROR(["libwrap not found"])
+   AC_MSG_ERROR([libwrap not found])
 fi
 
 if test "${nut_with_wrap}" != "no"; then
@@ -627,7 +627,7 @@ if test "${nut_with_libltdl}" != "no"; then
 fi
 
 if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
-   AC_MSG_ERROR(["libltdl not found"])
+   AC_MSG_ERROR([libltdl not found])
 fi
 
 if test "${nut_with_libltdl}" != "no"; then
@@ -1104,9 +1104,9 @@ AC_MSG_RESULT(${RUN_AS_GROUP})
 
 dnl check that --with-user is given if --with-group is given.
 if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
-	AC_MSG_ERROR(["If you specify --with-user, you also must specify --with-group"])
+	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
 elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
-	AC_MSG_ERROR(["If you specify --with-group, you also must specify --with-user"])
+	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
 fi
 
 AC_MSG_CHECKING(facility for syslog)
@@ -1314,7 +1314,7 @@ AC_ARG_WITH(augeas-lenses-dir,
 	yes)
 		if test -z "${auglensdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["augeas lenses directory requested but not found in default location"])
+			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
 		fi
 		;;
 	auto)
@@ -1348,7 +1348,7 @@ AC_ARG_WITH(hotplug-dir,
 	yes)
 		if test -z "${hotplugdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["hotplug directory requested but not found"])
+			AC_MSG_ERROR([hotplug directory requested but not found])
 		fi
 		;;
 	auto)
@@ -1376,7 +1376,7 @@ AC_ARG_WITH(udev-dir,
 	yes)
 		if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["udev directory requested but not found"])
+			AC_MSG_ERROR([udev directory requested but not found])
 		fi
 		;;
 	auto)
@@ -1406,7 +1406,7 @@ AC_ARG_WITH(devd-dir,
 	yes)
 		if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["devd directory requested but not found"])
+			AC_MSG_ERROR([devd directory requested but not found])
 		fi
 		;;
 	auto)
@@ -1445,7 +1445,7 @@ AC_ARG_WITH(valgrind,
 	yes)
 		if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["valgrind requested but not found"])
+			AC_MSG_ERROR([valgrind requested but not found])
 		fi
 		with_valgrind="yes"
 		;;
@@ -1459,7 +1459,7 @@ AC_ARG_WITH(valgrind,
 		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
 		if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["valgrind requested but not found"])
+			AC_MSG_ERROR([valgrind requested but not found])
 		fi
 		with_valgrind="yes"
 		;;
@@ -1600,7 +1600,7 @@ dnl checks related to --with-snmp enabled on command-line or by DMF options abov
 
 dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+   AC_MSG_ERROR([Net-SNMP libraries not found, required for SNMP drivers])
 fi
 
 if test "${nut_with_snmp}" != "no"; then

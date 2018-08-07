@@ -636,7 +636,7 @@ int main(int argc, char **argv)
 				break;
 			}
 
-			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
 
 			/* Allow driver some time to quit */
 			sleep(5);

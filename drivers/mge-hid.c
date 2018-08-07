@@ -36,8 +36,9 @@
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
+#include <math.h>
 
-#define MGE_HID_VERSION		"MGE HID 1.42"
+#define MGE_HID_VERSION		"MGE HID 1.43"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -653,6 +654,39 @@ static info_lkp_t eaton_check_country_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* When UPS.PowerConverter.Output.ActivePower is not present,
+ * compute a realpower approximation using available data */
+static const char *eaton_compute_realpower_fun(double value)
+{
+	const char *str_ups_load = dstate_getinfo("ups.load");
+	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
+	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
+	float powerfactor = 0.80;
+	int power_nominal = 0;
+	int ups_load = 0;
+	double realpower = 0;
+	if (str_power_nominal && str_ups_load) {
+		/* Extract needed values */
+		ups_load = atoi(str_ups_load);
+		power_nominal = atoi(str_power_nominal);
+		if (str_powerfactor)
+			powerfactor = atoi(str_powerfactor);
+		/* Compute the value */
+		realpower = round(ups_load * 0.01 * power_nominal * powerfactor);
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", realpower);
+		upsdebugx(1, "eaton_compute_realpower_fun(%s)", mge_scratch_buf);
+		return mge_scratch_buf;
+	}
+	/* else can't process */
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_compute_realpower_info[] = {
+	{ 0, "dummy", eaton_compute_realpower_fun },
+	{ 0, NULL, NULL }
+};
+
 /* Limit nominal output voltage according to HV or LV models */
 static const char *nominal_output_voltage_fun(double value)
 {
@@ -1153,6 +1187,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase.[3].ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.power.nominal", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
+	/* When not available, process an approximation from other data,
+	 * but map to apparent power to be called */
+	{ "ups.realpower", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "-1", 0, eaton_compute_realpower_info },
 	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase.[1].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase.[2].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase.[3].ActivePower", NULL, "%.0f", 0, NULL },
