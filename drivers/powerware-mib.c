@@ -135,9 +135,20 @@ static info_lkp_t pw_pwr_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-/* FIXME: mapped to ups.type, but should be output.source or ups.mode (need RFC)
+/* FIXME: mapped to (experimental.)ups.type, but
+ * should be output.source or ups.mode (need RFC)
  * to complement the above ups.status
  * along with having ups.type as described hereafter*/
+/* FIXME: should be used by ups.mode or output.source (need RFC);
+ * Note: this define is not set via project options; code was hidden with
+ * original commit to "snmp-ups: support newer Genepi management cards";
+ * un-hidden to make it "experimental.*" namespace during backporting
+ */
+#ifndef USE_PW_MODE_INFO
+# define USE_PW_MODE_INFO 1
+#endif
+
+#if USE_PW_MODE_INFO
 static info_lkp_t pw_mode_info[] = {
 	{   1, "", NULL, NULL },
 	{   2, "", NULL, NULL },
@@ -160,6 +171,7 @@ static info_lkp_t pw_mode_info[] = {
 	{  16, ""                /* none (0x10) */, NULL, NULL },
 	{   0, NULL, NULL, NULL }
 };
+#endif /* USE_PW_MODE_INFO */
 
 /* FIXME: may be standardized
  * extracted from bcmxcp.c->BCMXCP_TOPOLOGY_*, Make some common definitions */
@@ -275,9 +287,13 @@ static snmp_info_t pw_mib[] = {
 		SU_STATUS_BATT, &pw_alarm_lb[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &pw_battery_abm_status[0] },
+#if USE_PW_MODE_INFO
 	/* FIXME: should be ups.mode or output.source (need RFC) */
+	/* Note: this define is not set via project options; code hidden with
+	 * commit to "snmp-ups: support newer Genepi management cards" */
 	{ "experimental.ups.type", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "",
 		SU_FLAG_STATIC | SU_FLAG_OK, &pw_mode_info[0] },
+#endif /* USE_PW_MODE_INFO */
 	/* xupsTopologyType.0; Value (Integer): 32 */
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.13.1.0", "",
 		SU_FLAG_STATIC | SU_FLAG_OK, &pw_topology_info[0] },
