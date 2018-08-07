@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.92"
+#define PW_MIB_VERSION "0.93"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -35,7 +35,8 @@
  * 		PXGX 1000 cards (PDU/RPP/RPM): Get pduNumPanels ".1.3.6.1.4.1.534.6.6.4.1.1.1.4.0"
  */
 
-/* Powerware UPS (Ingrasys X-SLOT and BD-SLOT) */
+/* Powerware UPS (Ingrasys X-SLOT and BD-SLOT)
+ * Eaton Gigabit Network Card (Genepi) */
 #define POWERWARE_SYSOID	".1.3.6.1.4.1.534.1"
 /* Powerware UPS newer PXGX UPS cards (BladeUPS, ...) */
 #define EATON_PXGX_SYSOID	".1.3.6.1.4.1.534.2.12"
@@ -78,7 +79,6 @@
 #define PW_OID_CONT_ONT_DEL	"1.3.6.1.4.1.534.1.9.4"		/* XUPS-MIB::xupsControlOutputOnTrapDelay */
 #define PW_OID_CONT_LOAD_SHED_AND_RESTART	"1.3.6.1.4.1.534.1.9.6"		/* XUPS-MIB::xupsLoadShedSecsWithRestart */
 
-#define PW_OID_CONF_OVOLTAGE	"1.3.6.1.4.1.534.1.10.1.0"	/* XUPS-MIB::xupsConfigOutputVoltage.0 */
 #define PW_OID_CONF_IVOLTAGE	"1.3.6.1.4.1.534.1.10.2.0"	/* XUPS-MIB::xupsConfigInputVoltage.0 */
 #define PW_OID_CONF_POWER	"1.3.6.1.4.1.534.1.10.3.0"	/* XUPS-MIB::xupsConfigOutputWatts.0 */
 #define PW_OID_CONF_FREQ	"1.3.6.1.4.1.534.1.10.4.0"	/* XUPS-MIB::xupsConfigOutputFreq.0 */
@@ -135,6 +135,9 @@ static info_lkp_t pw_pwr_info[] = {
 	{ 0, NULL }
 };
 
+/* FIXME: mapped to ups.type, but should be output.source or ups.mode (need RFC)
+ * to complement the above ups.status
+ * along with having ups.type as described hereafter*/
 static info_lkp_t pw_mode_info[] = {
 	{   1, ""  },
 	{   2, ""  },
@@ -146,7 +149,8 @@ static info_lkp_t pw_mode_info[] = {
 	{   8, "parallel capacity" },
 	{   9, "parallel redundancy" },
 	{  10, "high efficiency" },
-	/* Extended status values */
+	/* Extended status values,
+	 * FIXME: check for source and completion */
 	{ 240, ""                /* battery (0xF0) */ },
 	{ 100, ""                /* maintenanceBypass (0x64) */ },
 	{  96, ""                /* Bypass (0x60) */ },
@@ -155,6 +159,33 @@ static info_lkp_t pw_mode_info[] = {
 	{  64, ""                /* UPS supporting load, normal degraded mode (0x40) */ },
 	{  16, ""                /* none (0x10) */ },
 	{   0, NULL }
+};
+
+/* FIXME: may be standardized
+ * extracted from bcmxcp.c->BCMXCP_TOPOLOGY_*, Make some common definitions */
+static info_lkp_t pw_topology_info[] = {
+	{ 0x0000, "" }, /* None; use the Table of Elements */
+	{ 0x0010, "Off-line switcher, Single Phase" },
+	{ 0x0020, "Line-Interactive UPS, Single Phase" },
+	{ 0x0021, "Line-Interactive UPS, Two Phase" },
+	{ 0x0022, "Line-Interactive UPS, Three Phase" },
+	{ 0x0030, "Dual AC Input, On-Line UPS, Single Phase" },
+	{ 0x0031, "Dual AC Input, On-Line UPS, Two Phase" },
+	{ 0x0032, "Dual AC Input, On-Line UPS, Three Phase" },
+	{ 0x0040, "On-Line UPS, Single Phase" },
+	{ 0x0041, "On-Line UPS, Two Phase" },
+	{ 0x0042, "On-Line UPS, Three Phase" },
+	{ 0x0050, "Parallel Redundant On-Line UPS, Single Phase" },
+	{ 0x0051, "Parallel Redundant On-Line UPS, Two Phase" },
+	{ 0x0052, "Parallel Redundant On-Line UPS, Three Phase" },
+	{ 0x0060, "Parallel for Capacity On-Line UPS, Single Phase" },
+	{ 0x0061, "Parallel for Capacity On-Line UPS, Two Phase" },
+	{ 0x0062, "Parallel for Capacity On-Line UPS, Three Phase" },
+	{ 0x0102, "System Bypass Module, Three Phase" },
+	{ 0x0122, "Hot-Tie Cabinet, Three Phase" },
+	{ 0x0200, "Outlet Controller, Single Phase" },
+	{ 0x0222, "Dual AC Input Static Switch Module, 3 Phase" },
+	{ 0, NULL }
 };
 
 /* Legacy implementation */
@@ -198,7 +229,7 @@ static info_lkp_t pw_ambient_drycontacts_info[] = {
 	{ -1, "unknown" },
 	{ 1, "opened" },
 	{ 2, "closed" },
-	{ 3, "opened" },   /* openWithNotice   */
+	{ 3, "opened" }, /* openWithNotice   */
 	{ 4, "closed" }, /* closedWithNotice */
 	{ 0, NULL }
 };
@@ -221,8 +252,14 @@ static snmp_info_t pw_mib[] = {
 		SU_FLAG_STATIC, NULL },
 	{ "ups.load", 0, 1.0, PW_OID_OUT_LOAD, "",
 		SU_OUTPUT_1, NULL },
+	/* FIXME: should be removed in favor of output.power */
 	{ "ups.power", 0, 1.0, PW_OID_OUT_POWER ".1", "",
 		0, NULL },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* xupsOutputWatts.1.0; Value (Integer): 300 */
+	{ "ups.power", 0, 1.0, "1.3.6.1.4.1.534.1.4.4.1.4.1.0", "",
+		0, NULL },
+
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "OFF",
 		SU_STATUS_PWR, &pw_pwr_info[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_ALARM_OB, "",
@@ -231,10 +268,16 @@ static snmp_info_t pw_mib[] = {
 		SU_STATUS_BATT, &pw_alarm_lb[0] },
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_BATT_STATUS, "",
 		SU_STATUS_BATT, &pw_battery_abm_status[0] },
+	/* FIXME: should be ups.mode or output.source (need RFC)
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_POWER_STATUS, "",
-		SU_FLAG_STATIC | SU_FLAG_OK, &pw_mode_info[0] },
+		SU_FLAG_STATIC | SU_FLAG_OK, &pw_mode_info[0] }, */
+	/* xupsTopologyType.0; Value (Integer): 32 */
+	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, "1.3.6.1.4.1.534.1.13.1.0", "",
+		SU_FLAG_STATIC | SU_FLAG_OK, &pw_topology_info[0] },
+	/* FIXME: should be removed in favor of their output. equivalent! */
 	{ "ups.realpower.nominal", 0, 1.0, PW_OID_CONF_POWER, "",
 		0, NULL },
+	/* FIXME: should be removed in favor of output.power.nominal */
 	{ "ups.power.nominal", 0, 1.0, IETF_OID_CONF_OUT_VA, "",
 		0, NULL },
 	/* XUPS-MIB::xupsEnvAmbientTemp.0 */
@@ -271,7 +314,10 @@ static snmp_info_t pw_mib[] = {
 	/* XUPS-MIB::xupsConfigOutputFreq.0 */
 	{ "output.frequency.nominal", 0, 0.1, "1.3.6.1.4.1.534.1.10.4.0", "", 0, NULL },
 	/* XUPS-MIB::xupsOutputVoltage.1 */
-	{ "output.voltage", 0, 1.0, ".1.3.6.1.4.1.534.1.4.4.1.2.1", "", SU_OUTPUT_1, NULL },
+	{ "output.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.4.4.1.2.1", "", SU_OUTPUT_1, NULL },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* xupsOutputVoltage.1.0; Value (Integer): 230 */
+	{ "output.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.4.4.1.2.1.0", "", SU_OUTPUT_1, NULL },
 	/* XUPS-MIB::xupsConfigOutputVoltage.0 */
 	{ "output.voltage.nominal", 0, 1.0, "1.3.6.1.4.1.534.1.10.1.0", "", 0, NULL },
 	/* XUPS-MIB::xupsConfigLowOutputVoltageLimit.0 */
@@ -280,8 +326,20 @@ static snmp_info_t pw_mib[] = {
 	{ "output.voltage.high", 0, 1.0, ".1.3.6.1.4.1.534.1.10.7.0", "", 0, NULL },
 	{ "output.current", 0, 1.0, PW_OID_OUT_CURRENT ".1", "",
 		SU_OUTPUT_1, NULL },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* xupsOutputCurrent.1.0; Value (Integer): 0 */
+	{ "output.current", 0, 1.0, "1.3.6.1.4.1.534.1.4.4.1.3.1.0", "",
+		SU_OUTPUT_1, NULL },
 	{ "output.realpower", 0, 1.0, PW_OID_OUT_POWER ".1", "",
 		SU_OUTPUT_1, NULL },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* Name/OID: xupsOutputWatts.1.0; Value (Integer): 1200 */
+	{ "output.realpower", 0, 1.0, "1.3.6.1.4.1.534.1.4.4.1.4.1.0", "",
+		0, NULL },
+	/* Duplicate of "ups.realpower.nominal"
+	 * FIXME: map either ups or output, but not both (or have an auto-remap) */
+	{ "output.realpower.nominal", 0, 1.0, PW_OID_CONF_POWER, "",
+		0, NULL },
 	{ "output.L1-N.voltage", 0, 1.0, PW_OID_OUT_VOLTAGE ".1", "",
 		SU_OUTPUT_3, NULL },
 	{ "output.L2-N.voltage", 0, 1.0, PW_OID_OUT_VOLTAGE ".2", "",
@@ -307,8 +365,6 @@ static snmp_info_t pw_mib[] = {
 		SU_OUTPUT_3, NULL },
 	{ "output.L3.power.percent", 0, 1.0, IETF_OID_LOAD_LEVEL ".3", "",
 		SU_OUTPUT_3, NULL },
-	{ "output.voltage.nominal", 0, 1.0, PW_OID_CONF_OVOLTAGE, "",
-		0, NULL },
 
 	/* Input page */
 	{ "input.phases", 0, 1.0, PW_OID_IN_LINES, "",
@@ -317,6 +373,12 @@ static snmp_info_t pw_mib[] = {
 		0, NULL },
 	{ "input.voltage", 0, 1.0, PW_OID_IN_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* xupsInputVoltage.1.0; Value (Integer): 245 */
+	{ "input.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.3.4.1.2.1.0", "",
+		SU_INPUT_1, NULL },
+
+
 	/* XUPS-MIB::xupsConfigInputVoltage.0 */
 	{ "input.voltage.nominal", 0, 1.0, "1.3.6.1.4.1.534.1.10.2.0", "", 0, NULL },
 	{ "input.current", 0, 0.1, PW_OID_IN_CURRENT ".0", "",
@@ -347,6 +409,10 @@ static snmp_info_t pw_mib[] = {
 	{ "input.bypass.frequency", 0, 0.1, PW_OID_BY_FREQUENCY, "", 0, NULL },
 	{ "input.bypass.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* xupsBypassVoltage.1.0; Value (Integer): 244 */
+	{ "input.bypass.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.5.3.1.2.1.0", "",
+		SU_INPUT_1, NULL },
 	{ "input.bypass.L1-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".1", "",
 		SU_INPUT_3, NULL },
 	{ "input.bypass.L2-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".2", "",
@@ -369,10 +435,17 @@ static snmp_info_t pw_mib[] = {
 	{ "ambient.humidity.high", ST_FLAG_RW, 1.0, "1.3.6.1.4.1.534.1.6.12.0", "", 0, NULL },
 	/* XUPS-MIB::xupsContactState.1 */
 	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.1.6.8.1.3.1", "", 0, &pw_ambient_drycontacts_info[0] },
+		"1.3.6.1.4.1.534.1.6.8.1.3.1", "", 0, &pw_ambient_drycontacts_info[0] },
+	/* Duplicate of the above entry, but pointing at the first index */
+	/* FIXME: check snmp-ups->get_oid() for the walk/check on ".0" */
+	{ "ambient.contacts.1.status", ST_FLAG_STRING, SU_INFOSIZE,
+		"1.3.6.1.4.1.534.1.6.8.1.3.1.0", "", 0, &pw_ambient_drycontacts_info[0] },
 	/* XUPS-MIB::xupsContactState.2 */
 	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.534.1.6.8.1.3.2", "", 0, &pw_ambient_drycontacts_info[0] },
+		"1.3.6.1.4.1.534.1.6.8.1.3.2", "", 0, &pw_ambient_drycontacts_info[0] },
+	/* Duplicate of the above entry, but pointing at the first index */
+	{ "ambient.contacts.2.status", ST_FLAG_STRING, SU_INFOSIZE,
+		"1.3.6.1.4.1.534.1.6.8.1.3.2.0", "", 0, &pw_ambient_drycontacts_info[0] },
 
 	/* instant commands */
 	{ "test.battery.start.quick", 0, 1, PW_OID_BATTEST_START, "",
