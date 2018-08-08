@@ -106,9 +106,6 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
 	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
 	&apc,				/* This struct comes from : apc-mib.c */
-	&apc_pdu_msp,		/* This struct comes from : apc-pdu-mib.c */
-	&apc_pdu_rpdu2,		/* This struct comes from : apc-pdu-mib.c */
-	&apc_pdu_rpdu,		/* This struct comes from : apc-pdu-mib.c */
 	&baytech,			/* This struct comes from : baytech-mib.c */
 	&bestpower,			/* This struct comes from : bestpower-mib.c */
 	&compaq,			/* This struct comes from : compaq-mib.c */
