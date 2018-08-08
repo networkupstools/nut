@@ -85,6 +85,11 @@ Optional.  The status of the UPS will be refreshed after a maximum
 delay which is controlled by this setting.  This is normally 2 seconds.  This
 may be useful if the driver is creating too much of a load on your system or
 network.
++
+Note that some drivers (such as linkman:usbhid-ups[8], linkman:snmp-ups[8] and
+linkman:nutdrv_qx[8]) also have an option called *pollfreq* which controls how
+frequently some of the less critical parameters are polled. Details are
+provided in the respective driver man pages.
 
 *synchronous*::
 
