@@ -177,7 +177,7 @@ SRC_DEV_PAGES = \
 if WITH_MANS
 # NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
 
-LIBNUTCLIENT_MISC_DEPS=
+LIBNUTCLIENT_MISC_DEPS= \
 	nutclient_authenticate.3 \
 	nutclient_logout.3 \
 	nutclient_device_login.3 \
@@ -210,7 +210,7 @@ MAN3_DEV_PAGES = \
 	libnutclient_misc.3 \
 	libnutclient_tcp.3 \
 	libnutclient_variables.3 \
-	$(LIBNUTCLIENT_MISC_DEPS)
+	$(LIBNUTCLIENT_MISC_DEPS) \
 	nutclient_destroy.3 \
 	nutclient_execute_device_command.3 \
 	nutclient_get_device_command_description.3 \
