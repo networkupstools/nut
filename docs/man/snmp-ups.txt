@@ -104,8 +104,11 @@ Specifies the number of Net-SNMP retries to be used in the requests (default=5)
 *snmp_timeout*='timeout'::
 Specifies the Net-SNMP timeout in seconds between retries (default=1)
 
-*pollfreq*='value'::
-Set polling frequency in seconds, to reduce network flow (default=30)
+*pollfreq*='num'::
+Set polling interval for full updates, in seconds, to reduce SNMP network
+traffic relative to the quick updates performed every "pollinterval" (the
+latter option is described in linkman:ups.conf[5]). The default value is 30 (in
+seconds).
 
 *notransferoids*::
 Disable the monitoring of the low and high voltage transfer OIDs in

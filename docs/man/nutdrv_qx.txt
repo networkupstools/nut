@@ -56,9 +56,11 @@ Supported values: 'bestups', 'mecer', 'megatec', 'megatec/old', 'mustek', 'q1', 
 +
 Note that if you end up using the 'q1' protocol, you may want to give a try to the 'mecer', 'megatec' and 'zinto' ones setting the <<old-blazer-protocols-options,*novendor*/*norating* flags>> (only one, or both).
 
-*pollfreq =* 'value'::
-Set polling frequency, in seconds, to reduce the data flow.
-Between two polling requests the driver will do `quick polls' dealing just with ups.status.
+*pollfreq =* 'num'::
+Set polling interval for full updates, in seconds, to reduce the message traffic.
+Between two polling requests, the driver will do 'quick polls' dealing just
+with *ups.status* at an interval specified by the *pollinterval* driver option
+(details in linkman:ups.conf[5]).
 The default value is 30 (in seconds).
 
 If your UPS doesn't report either *battery.charge* or *battery.runtime* you may want to add the following ones in order to have guesstimated values:
