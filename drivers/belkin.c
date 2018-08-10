@@ -28,7 +28,7 @@
 #include "belkin.h"
 
 #define DRIVER_NAME	"Belkin Smart protocol driver"
-#define DRIVER_VERSION	"0.24"
+#define DRIVER_VERSION	"0.25"
 
 static int init_communication(void);
 static int get_belkin_reply(char *buf);
@@ -537,5 +537,6 @@ void upsdrv_initinfo(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	if (upsfd != -1)
+		ser_close(upsfd, device_path);
 }

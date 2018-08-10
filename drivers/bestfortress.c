@@ -34,7 +34,7 @@
 #endif
 
 #define DRIVER_NAME     "Best Fortress UPS driver"
-#define DRIVER_VERSION  "0.05"
+#define DRIVER_VERSION  "0.06"
 
 /* driver description structure */
 upsdrv_info_t   upsdrv_info = {
@@ -451,4 +451,6 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	if (upsfd != -1)
+		ser_close(upsfd, device_path);
 }

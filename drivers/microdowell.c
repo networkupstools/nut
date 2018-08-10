@@ -43,7 +43,7 @@
 #define MAX_SHUTDOWN_DELAY_LEN 5
 
 #define DRIVER_NAME	"MICRODOWELL UPS driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -975,5 +975,6 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	/* free(dynamic_mem); */
-	ser_close(upsfd, device_path) ;
+	if (upsfd != -1)
+		ser_close(upsfd, device_path) ;
 }

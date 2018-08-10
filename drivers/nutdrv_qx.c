@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.34"
+#define DRIVER_VERSION	"0.35"
 
 #include "bool.h"
 #include "main.h"
@@ -2097,8 +2097,10 @@ void	upsdrv_cleanup(void)
 	if (!is_usb) {
 	#endif	/* QX_USB */
 
-		ser_set_dtr(upsfd, 0);
-		ser_close(upsfd, device_path);
+		if (upsfd != -1) {
+			ser_set_dtr(upsfd, 0);
+			ser_close(upsfd, device_path);
+		}
 
 	#ifdef QX_USB
 	} else {	/* is_usb */

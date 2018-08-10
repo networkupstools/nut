@@ -47,7 +47,7 @@ int setcmd(const char* varname, const char* setvalue);
 int instcmd(const char *cmdname, const char *extra);
 
 #define DRIVER_NAME	"Oneac EG/ON/OZ/OB UPS driver"
-#define DRIVER_VERSION	"0.80"
+#define DRIVER_VERSION	"0.81"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -798,7 +798,8 @@ void upsdrv_help(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	if (upsfd != -1)
+		ser_close(upsfd, device_path);
 }
 
 void upsdrv_makevartable(void)

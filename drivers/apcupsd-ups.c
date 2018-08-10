@@ -26,7 +26,7 @@
 #include "apcupsd-ups.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.5"
+#define DRIVER_VERSION	"0.6"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {

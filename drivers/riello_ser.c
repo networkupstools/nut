@@ -37,7 +37,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello serial driver"
-#define DRIVER_VERSION	"0.03"
+#define DRIVER_VERSION	"0.04"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -1012,7 +1012,8 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	/* free(dynamic_mem); */
-	ser_close(upsfd, device_path);
+	if (upsfd != -1)
+		ser_close(upsfd, device_path);
 }
 
 void riello_comm_setup(const char *port)

@@ -189,5 +189,6 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	/* free(dynamic_mem); */
-	/* ser_close(upsfd, device_path); */
+	/* if (upsfd != -1)
+		ser_close(upsfd, device_path); */
 }

@@ -26,7 +26,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol serial driver"
-#define DRIVER_VERSION	"1.57"
+#define DRIVER_VERSION	"1.58"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -195,6 +195,9 @@ void upsdrv_initinfo(void)
 void upsdrv_cleanup(void)
 {
 #ifndef TESTING
+	if (upsfd == -1)
+		return;
+
 	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 #endif

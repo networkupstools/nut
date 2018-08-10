@@ -27,7 +27,7 @@
 #include "IOKit/ps/IOPSKeys.h"
 
 #define DRIVER_NAME	"Mac OS X UPS meta-driver"
-#define DRIVER_VERSION	"1.2"
+#define DRIVER_VERSION	"1.3"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -455,7 +455,8 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "Cleanup: release references");
-	CFRelease(g_power_source_name);
+	if (g_power_source_name)
+		CFRelease(g_power_source_name);
 
 	/* free(dynamic_mem); */
 	/* ser_close(upsfd, device_path); */

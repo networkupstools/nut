@@ -24,7 +24,7 @@
 #include "apcsmart-old.h"
 
 #define DRIVER_NAME	"APC Smart protocol driver"
-#define DRIVER_VERSION	"2.1"
+#define DRIVER_VERSION	"2.2"
 
 static upsdrv_info_t table_info = {
 	"APC command table",
@@ -1494,6 +1494,9 @@ void upsdrv_updateinfo(void)
 
 void upsdrv_cleanup(void)
 {
+	if (upsfd == -1)
+		return;
+
 	/* try to bring the UPS out of smart mode */
 	ser_send_char(upsfd, APC_GODUMB);
 

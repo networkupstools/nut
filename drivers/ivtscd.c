@@ -22,7 +22,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"IVT Solar Controller driver"
-#define DRIVER_VERSION	"0.02"
+#define DRIVER_VERSION	"0.03"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -254,6 +254,9 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	if (upsfd == -1)
+		return;
+
 	ser_set_dtr(upsfd, 0);
 	ser_close(upsfd, device_path);
 }

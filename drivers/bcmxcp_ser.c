@@ -5,7 +5,7 @@
 
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
-#define SUBDRIVER_VERSION "0.20"
+#define SUBDRIVER_VERSION "0.21"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -331,7 +331,8 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	/* free(dynamic_mem); */
-	ser_close(upsfd, device_path);
+	if (upsfd != -1)
+		ser_close(upsfd, device_path);
 }
 
 void upsdrv_reconnect(void)

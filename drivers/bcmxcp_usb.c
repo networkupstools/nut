@@ -18,7 +18,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.32"
+#define SUBDRIVER_VERSION "0.33"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {

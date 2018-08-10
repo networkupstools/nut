@@ -44,7 +44,7 @@
 #include <math.h>
 
 #define DRIVER_NAME	"UPScode II UPS driver"
-#define DRIVER_VERSION	"0.89"
+#define DRIVER_VERSION	"0.90"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -956,7 +956,8 @@ void upsdrv_makevartable(void)
 
 void upsdrv_cleanup(void)
 {
-	ser_close(upsfd, device_path);
+	if (upsfd != -1)
+		ser_close(upsfd, device_path);
 }
 
 

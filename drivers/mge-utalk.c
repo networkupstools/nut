@@ -64,7 +64,7 @@
 /* --------------------------------------------------------------- */
 
 #define DRIVER_NAME	"MGE UPS SYSTEMS/U-Talk driver"
-#define DRIVER_VERSION	"0.94"
+#define DRIVER_VERSION	"0.95"
 
 
 /* driver description structure */
@@ -927,6 +927,14 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 void upsdrv_cleanup(void)
 {
 	upsdebugx(1, "cleaning up");
+
+	if (upsfd == -1)
+		return;
+
 	disable_ups_comm();
 	ser_close(upsfd, device_path);
+
+	/* FIXME: this function is also called by upsdrv_shutdown()/shutdown.{return,stayoff}, and it shouldn't.
+	 * For now don't change that, but at least reset the file descriptor, to bail out cleanly the next time it is called (e.g. atexit()). */
+	upsfd = -1;
 }

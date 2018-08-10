@@ -463,6 +463,8 @@ static void vartab_free(void)
 
 static void exit_cleanup(void)
 {
+	upsdrv_cleanup();
+
 	free(chroot_path);
 	free(device_path);
 	free(user);
@@ -654,9 +656,6 @@ int main(int argc, char **argv)
 	dstate_setinfo("device.type", "ups");
 
 	upsdrv_initups();
-
-	/* UPS is detected now, cleanup upon exit */
-	atexit(upsdrv_cleanup);
 
 	/* now see if things are very wrong out there */
 	if (upsdrv_info.status == DRV_BROKEN) {
