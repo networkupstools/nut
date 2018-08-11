@@ -24,12 +24,13 @@
  */
 
 #include "main.h"
+#include "bool.h"
 #include "usb-common.h"
 #include "str.h"
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.20"
+#define DRIVER_VERSION	"0.21"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -40,6 +41,9 @@ upsdrv_info_t upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
+
+/** @brief Whether libusb has been successfully initialised or not. */
+static bool_t	inited_libusb = FALSE;
 
 #define STATUS_REQUESTTYPE	(LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE)
 #define REPLY_ENDPOINT		(LIBUSB_ENDPOINT_IN | 1)
@@ -224,7 +228,6 @@ static void usb_device_close(libusb_device_handle *handle)
 	/* libusb_release_interface() sometimes blocks and goes into uninterruptible sleep. So don't do it. */
 /*	libusb_release_interface(handle, 0);	*/
 	libusb_close(handle);
-	libusb_exit(NULL);
 }
 
 static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, USBDeviceMatcher_t *matcher,
@@ -243,10 +246,6 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 		 * upsdrv_cleanup() may attempt to libusb_close() the device again, if not nullified) */
 		*handlep = NULL;
 	}
-
-	/* libusb base init */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
-		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount < 0)
@@ -378,7 +377,6 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 
 	*handlep = NULL;
 	libusb_free_device_list(devlist, 1);
-	libusb_exit(NULL);
 	upsdebugx(4, "No matching USB device found");
 
 	return -1;
@@ -390,7 +388,13 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 void upsdrv_initups(void)
 {
 	char	reply[REPLY_PACKETSIZE];
-	int	i;
+	int	i,
+		ret;
+
+	/* libusb base init */
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
+		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
+	inited_libusb = TRUE;
 
 	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
 
@@ -422,7 +426,11 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
+	if (!inited_libusb)
+		return;
+
 	usb_device_close(udev);
+	libusb_exit(NULL);
 
 	free(usbdevice.Vendor);
 	free(usbdevice.Product);

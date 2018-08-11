@@ -24,6 +24,8 @@
 
 #include "nut_libusb.h"
 
+#include <limits.h>
+
 #include "config.h"	/* for HAVE_LIBUSB_* flags */
 #include "common.h"	/* for upsdebug*() */
 #include "dstate.h"	/* for dstate_setinfo() */
@@ -35,7 +37,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.36"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.37"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -58,6 +60,11 @@ upsdrv_info_t	comm_upsdrv_info = {
  * So far, all of the supported devices use interface 0.
  * Let's make this a constant rather than a magic number. */
 static const int	nut_usb_if_num = 0;
+
+/** @brief Number of times this subdriver has been initialised without being deinitialised - incremented by nut_libusb_init(), decremented by nut_libusb_deinit().
+ *
+ * Initialisation and deinitialisation (of libusb, i.e. libusb_init() and libusb_exit(), and of other bits and pieces) are actually done only when this counter is/reaches zero. */
+static unsigned long	nut_usb_initcnt = 0;
 
 /** @brief Debug levels for upsdebugx()/upsdebug_hex() calls.
  * @todo Actually make sense out of these and/or standardise the use of debug levels in all the tree
@@ -224,6 +231,41 @@ static int	nut_usb_logerror(
 /** @name Communication subdriver implementation
  * @{ *************************************************************************/
 
+/** @brief See usb_communication_subdriver_t::init(). */
+static void	nut_libusb_init(void)
+{
+	int	ret;
+
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s()", __func__);
+
+	/* Don't wrap */
+	if (nut_usb_initcnt < ULONG_MAX)
+		nut_usb_initcnt++;
+
+	if (nut_usb_initcnt > 1)
+		return;
+
+	/* libusb base init */
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS) {
+		nut_usb_initcnt--;
+		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
+	}
+}
+
+/** @brief See usb_communication_subdriver_t::deinit(). */
+static void	nut_libusb_deinit(void)
+{
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s()", __func__);
+
+	if (!nut_usb_initcnt)
+		return;
+
+	if (--nut_usb_initcnt)
+		return;
+
+	libusb_exit(NULL);
+}
+
 /** @brief See usb_communication_subdriver_t::open(). */
 static int	nut_libusb_open(
 	libusb_device_handle	**udevp,
@@ -243,6 +285,9 @@ static int	nut_libusb_open(
 
 	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %p, %p, %p)", __func__, (void *)udevp, (void *)curDevice, (void *)matcher, (void *)callback);
 
+	if (!nut_usb_initcnt)
+		return LIBUSB_ERROR_OTHER;
+
 	/* If device is still open, close it. */
 	if (*udevp) {
 		libusb_close(*udevp);
@@ -251,10 +296,6 @@ static int	nut_libusb_open(
 		 * upsdrv_cleanup() may attempt to libusb_close() the device again, if not nullified) */
 		*udevp = NULL;
 	}
-
-	/* libusb base init */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
-		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
 
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount < 0)
@@ -534,7 +575,6 @@ static int	nut_libusb_open(
 
 	*udevp = NULL;
 	libusb_free_device_list(devlist, 1);
-	libusb_exit(NULL);
 	upsdebugx(NUT_USB_DBG_DEVICE, "%s: no appropriate HID device found.", __func__);
 	fflush(stdout);
 
@@ -553,7 +593,6 @@ static void	nut_libusb_close(
 	/* libusb_release_interface() sometimes blocks and goes into uninterruptible sleep. So don't do it. */
 /*	libusb_release_interface(udev, nut_usb_if_num);	*/
 	libusb_close(udev);
-	libusb_exit(NULL);
 }
 
 /** @brief See usb_communication_subdriver_t::get_report(). */
@@ -702,6 +741,8 @@ void	nut_libusb_add_nutvars(void)
 usb_communication_subdriver_t	usb_subdriver = {
 	NUT_USB_DRIVER_VERSION,
 	NUT_USB_DRIVER_NAME,
+	nut_libusb_init,
+	nut_libusb_deinit,
 	nut_libusb_open,
 	nut_libusb_close,
 	nut_libusb_get_report,

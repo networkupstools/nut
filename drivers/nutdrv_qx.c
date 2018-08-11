@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 #include "bool.h"
 #include "main.h"
@@ -2023,6 +2023,9 @@ void	upsdrv_initups(void)
 		/* Link the matchers */
 		regex_matcher->next = &device_matcher;
 
+		/* Initialise the communication subdriver */
+		usb->init();
+
 		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
 		if (ret != LIBUSB_SUCCESS) {
 			fatalx(EXIT_FAILURE,
@@ -2111,8 +2114,11 @@ void	upsdrv_cleanup(void)
 #ifdef QX_USB
 
 		usb->close(udev);
+		usb->deinit();
+
 		USBFreeExactMatcher(reopen_matcher);
 		USBFreeRegexMatcher(regex_matcher);
+
 		free(usbdevice.Vendor);
 		free(usbdevice.Product);
 		free(usbdevice.Serial);

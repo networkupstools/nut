@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.34"
+#define DRIVER_VERSION	"0.35"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1450,6 +1450,9 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &subdriver_matcher;
 
+	/* Initialise the communication subdriver */
+	comm_driver->init();
+
 	/* Search for the first supported UPS matching the regular
 	 *            expression */
 	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
@@ -1500,8 +1503,11 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	comm_driver->close(udev);
+	comm_driver->deinit();
+
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
+
 	free(curDevice.Vendor);
 	free(curDevice.Product);
 	free(curDevice.Serial);

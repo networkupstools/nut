@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -833,6 +833,9 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
+	/* Initialise the communication subdriver */
+	usb->init();
+
 	ret = usb->open(&udev, &usbdevice, regex_matcher, &driver_callback);
 	if (ret != LIBUSB_SUCCESS) {
 		fatalx(EXIT_FAILURE,
@@ -1141,8 +1144,11 @@ void upsdrv_updateinfo(void)
 void upsdrv_cleanup(void)
 {
 	usb->close(udev);
+	usb->deinit();
+
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
+
 	free(usbdevice.Vendor);
 	free(usbdevice.Product);
 	free(usbdevice.Serial);

@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.52"
+#define DRIVER_VERSION		"0.53"
 
 #include "main.h"
 #include "libhid.h"
@@ -958,6 +958,9 @@ void upsdrv_initups(void)
 	subdriver_matcher->next = regex_matcher;
 #endif /* SHUT_MODE */
 
+	/* Initialise the communication subdriver */
+	comm_driver->init();
+
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
 	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
@@ -1028,12 +1031,16 @@ void upsdrv_cleanup(void)
 	upsdebugx(1, "upsdrv_cleanup...");
 
 	comm_driver->close(udev);
+	comm_driver->deinit();
+
 	Free_ReportDesc(pDesc);
 	free_report_buffer(reportbuf);
+
 #ifndef SHUT_MODE
 	USBFreeExactMatcher(exact_matcher);
 	USBFreeRegexMatcher(regex_matcher);
 #endif	/* SHUT_MODE */
+
 	free(curDevice.Vendor);
 	free(curDevice.Product);
 	free(curDevice.Serial);

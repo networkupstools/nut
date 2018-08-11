@@ -43,7 +43,32 @@ extern upsdrv_info_t	comm_upsdrv_info;
 typedef struct usb_communication_subdriver_s {
 	const char	  *name;			/**< @brief Name of this subdriver. */
 	const char	  *version;			/**< @brief Version of this subdriver. */
-	int		 (*open)			/** @brief Init libusb and (re)open a device matching *matcher*.
+	void		 (*init)			/** @brief Initialise the communication subdriver.
+							 *
+							 * This function must be called before any other function this subdriver provides
+							 * (except add_nutvars() and strerror()):
+							 * it allocates any needed resource and initialise the communication subdriver.
+							 *
+							 * Initialisation is actually only done if not yet performed,
+							 * or when deinit() has been called the same number of times as init().
+							 *
+							 * @warning This function calls exit() on fatal errors. */
+	(
+		void
+	);
+	void		 (*deinit)			/** @brief Deinitialise the communication subdriver.
+							 *
+							 * Call this function when done with the communication subdriver,
+							 * so that it can release any resource previously allocated in init(),
+							 * and perform any step needed to cleanly deinitialise the subdriver without leftovers.
+							 *
+							 * Deinitialisation is actually only done when deinit() has been called the same number of times as init().
+							 *
+							 * @note Any previously open()'d device should be close()'d before calling this function. */
+	(
+		void
+	);
+	int		 (*open)			/** @brief (Re)Open a device matching *matcher*.
 							 *
 							 * If *sdevp* refers to an already opened device, it is closed before attempting the reopening, if it safe to do so.
 							 *
@@ -80,7 +105,7 @@ typedef struct usb_communication_subdriver_s {
 			int			 rdlen
 		)
 	);
-	void		 (*close)			/** @brief Close the opened device *sdev* refers to and call libusb_exit(). */
+	void		 (*close)			/** @brief Close the opened device *sdev* refers to. */
 	(
 		libusb_device_handle	*sdev			/**< [in] handle of an opened device */
 	);

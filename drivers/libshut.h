@@ -52,6 +52,31 @@ typedef struct SHUTDevice_s {
 typedef struct shut_communication_subdriver_s {
 	const char	  *name;			/**< @brief Name of this subdriver. */
 	const char	  *version;			/**< @brief Version of this subdriver. */
+	void		 (*init)			/** @brief Initialise the communication subdriver.
+							 *
+							 * This function must be called before any other function this subdriver provides
+							 * (except add_nutvars() and strerror()):
+							 * it allocates any needed resource and initialise the communication subdriver.
+							 *
+							 * Initialisation is actually only done if not yet performed,
+							 * or when deinit() has been called the same number of times as init().
+							 *
+							 * @warning This function calls exit() on fatal errors. */
+	(
+		void
+	);
+	void		 (*deinit)			/** @brief Deinitialise the communication subdriver.
+							 *
+							 * Call this function when done with the communication subdriver,
+							 * so that it can release any resource previously allocated in init(),
+							 * and perform any step needed to cleanly deinitialise the subdriver without leftovers.
+							 *
+							 * Deinitialisation is actually only done when deinit() has been called the same number of times as init().
+							 *
+							 * @note Any previously open()'d device should be close()'d before calling this function. */
+	(
+		void
+	);
 	int		 (*open)			/** @brief (Re)Open a device.
 							 *
 							 * If *fd* refers to an already opened device, it is closed before attempting the reopening.

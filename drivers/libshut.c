@@ -23,6 +23,8 @@
 
 #include "libshut.h"
 
+#include <limits.h>
+
 #include "common.h"	/* for xstrdup(), upsdebug*() */
 #include "hiddefs.h"
 #include "serial.h"
@@ -33,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.92"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.93"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -971,6 +973,32 @@ static int	shut_get_string_descriptor_ascii(
 /** @name Communication subdriver implementation
  * @{ *************************************************************************/
 
+/** @brief Number of times this subdriver has been initialised without being deinitialised - incremented by libshut_init(), decremented by libshut_deinit().
+ *
+ * Initialisation and deinitialisation are actually done only when this counter is/reaches zero. */
+static unsigned long	libshut_initcnt = 0;
+
+/** @brief See shut_communication_subdriver_t::init(). */
+static void	libshut_init(void)
+{
+	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s()", __func__);
+
+	/* Don't wrap */
+	if (libshut_initcnt < ULONG_MAX)
+		libshut_initcnt++;
+}
+
+/** @brief See shut_communication_subdriver_t::deinit(). */
+static void	libshut_deinit(void)
+{
+	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s()", __func__);
+
+	if (!libshut_initcnt)
+		return;
+
+	libshut_initcnt--;
+}
+
 /** @brief See shut_communication_subdriver_t::open().
  * @todo Add variable baudrate detection/negotiation. */
 static int	libshut_open(
@@ -1003,6 +1031,10 @@ static int	libshut_open(
 	uint16_t			 report_desc_len;
 
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%p, %p, %s, %p)", __func__, (void *)fd, (void *)curDevice, device_path, (void *)callback);
+
+	if (!libshut_initcnt)
+		return LIBUSB_ERROR_OTHER;
+
 	upsdebugx(SHUT_DBG_DEVICE, "%s: using port '%s'.", __func__, device_path);
 
 	/* If device is still open, close it */
@@ -1307,6 +1339,8 @@ static void	libshut_add_nutvars(void)
 shut_communication_subdriver_t	shut_subdriver = {
 	SHUT_DRIVER_NAME,
 	SHUT_DRIVER_VERSION,
+	libshut_init,
+	libshut_deinit,
 	libshut_open,
 	libshut_close,
 	libshut_get_report,

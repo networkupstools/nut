@@ -1,6 +1,7 @@
 #include "main.h"
 #include "bcmxcp.h"
 #include "bcmxcp_io.h"
+#include "bool.h"
 #include "common.h"
 #include "usb-common.h"
 #include "timehead.h"
@@ -18,7 +19,7 @@
 #endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.33"
+#define SUBDRIVER_VERSION "0.34"
 
 /* communication driver description structure */
 upsdrv_info_t comm_upsdrv_info = {
@@ -28,6 +29,9 @@ upsdrv_info_t comm_upsdrv_info = {
 	0,
 	{ NULL }
 };
+
+/** @brief Whether libusb has been successfully initialised or not. */
+static bool_t	inited_libusb = FALSE;
 
 #define MAX_TRY 4
 
@@ -327,13 +331,26 @@ void upsdrv_comm_good(void)
 
 void upsdrv_initups(void)
 {
+	int	ret;
+
+	/* libusb base init */
+	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
+		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
+	inited_libusb = TRUE;
+
 	upsdev = nutusb_open();
 }
 
 void upsdrv_cleanup(void)
 {
 	upslogx(LOG_ERR, "CLOSING\n");
+
+	if (!inited_libusb)
+		return;
+
 	nutusb_close(upsdev);
+	libusb_exit(NULL);
+
 	free(curDevice.Vendor);
 	free(curDevice.Product);
 	free(curDevice.Serial);
@@ -348,7 +365,7 @@ void upsdrv_reconnect(void)
 
 	nutusb_close(upsdev);
 	upsdev = NULL;
-	upsdrv_initups();
+	upsdev = nutusb_open();
 }
 
 /* USB functions */
@@ -421,10 +438,6 @@ libusb_device_handle *nutusb_open(void)
 
 	upsdebugx(1, "entering nutusb_open()");
 
-	/* Initialize Libusb */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
-		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-
 	for (retry = 0; retry < MAX_TRY ; retry++)
 	{
 		dev_h = open_powerware_usb();
@@ -477,8 +490,6 @@ libusb_device_handle *nutusb_open(void)
 
 	if (dev_h)
 		nutusb_close(dev_h);
-	else
-		libusb_exit(NULL);
 
 	if (errout == 1)
 		nutusb_open_error();
@@ -494,7 +505,6 @@ void nutusb_close(libusb_device_handle *dev_h)
 
 	libusb_release_interface(dev_h, 0);
 	libusb_close(dev_h);
-	libusb_exit(NULL);
 }
 
 void nutusb_comm_fail(const char *fmt, ...)

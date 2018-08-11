@@ -29,7 +29,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.16"
+#define DRIVER_VERSION	"0.17"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -569,6 +569,9 @@ void upsdrv_initups(void)
 	/* link the matchers */
 	regex_matcher->next = &device_matcher;
 
+	/* Initialise the communication subdriver */
+	usb->init();
+
 	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
 	if (ret != LIBUSB_SUCCESS) {
 		fatalx(EXIT_FAILURE,
@@ -629,8 +632,11 @@ void upsdrv_cleanup(void)
 {
 #ifndef TESTING
 	usb->close(udev);
+	usb->deinit();
+
 	USBFreeExactMatcher(reopen_matcher);
 	USBFreeRegexMatcher(regex_matcher);
+
 	free(usbdevice.Vendor);
 	free(usbdevice.Product);
 	free(usbdevice.Serial);
