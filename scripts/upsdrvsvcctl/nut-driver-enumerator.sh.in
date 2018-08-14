@@ -31,7 +31,8 @@
 #           It helps service frameworks such as Linux systemd and Solaris SMF.
 #           When executed, this script looks for all configured ups.conf
 #           sections and registered service instances, and makes these two
-#           lists match up. Does not track changes inside sections ATM.
+#           lists match up.
+#           FIXME: Does not track changes inside sections ATM.
 #           Returns exit codes:
 #               0   Sections and services already match up
 #               42  Sections and services differed, but now match up -
@@ -203,6 +204,12 @@ upslist_equals() {
     # Compare pre-sorted list of DEVICES ($1) and SVCINSTs ($2) including
     # the possible mangling for service names. Return 0 if lists describe
     # exactly same set of devices and their services.
+    # FIXME: This currently only checks the names, not the contents of
+    # the sections, so re-definitions of an existing device configuration
+    # would not trigger a service restart at this time. Such deeper check
+    # belongs in a different routine really, and requires a way to track
+    # old and new state of configs (maybe hashed upsconf_getSection output
+    # as a service configuration variable?) on all supported frameworks.
 
     # Trivial case 1: equal strings
     [ "$1" = "$2" ] && return 0
@@ -543,6 +550,7 @@ upslist_debug() {
 }
 
 upslist_addSvcs() {
+    # FIXME: Support redefined pre-existing sections - update state data...
     for UPSF in $UPSLIST_FILE ; do
         if ! common_isRegistered "$UPSF" ; then
             echo "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..." >&2
@@ -569,6 +577,9 @@ nut_driver_enumerator_main() {
 
     # Quickly exit if there's nothing to do; note the lists are pre-sorted
     # Otherwise a non-zero exit will be done below
+    # FIXME: Implement testing in detail whether section definitions were
+    # changed since last run, as a second step after checking that name
+    # lists are still the same.
     upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" && return 0
 
     if [ -n "$UPSLIST_FILE" ]; then
