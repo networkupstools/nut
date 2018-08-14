@@ -47,10 +47,12 @@ HTML_CONF_MANS = \
 
 SRC_CLIENT_PAGES = \
 	nutupsdrv.txt \
+	nut-driver-enumerator.txt \
 	upsc.txt \
 	upscmd.txt \
 	upsd.txt \
 	upsdrvctl.txt \
+	upsdrvsvcctl.txt \
 	upslog.txt \
 	upsmon.txt \
 	upsrw.txt \
@@ -59,10 +61,12 @@ SRC_CLIENT_PAGES = \
 if WITH_MANS
 MAN_CLIENT_PAGES = \
 	nutupsdrv.8 \
+	nut-driver-enumerator.8 \
 	upsc.8 \
 	upscmd.8 \
 	upsd.8 \
 	upsdrvctl.8 \
+	upsdrvsvcctl.8 \
 	upslog.8 \
 	upsmon.8 \
 	upsrw.8 \
@@ -73,10 +77,12 @@ man8_MANS = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
 	nutupsdrv.html \
+	nut-driver-enumerator.html \
 	upsc.html \
 	upscmd.html \
 	upsd.html \
 	upsdrvctl.html \
+	upsdrvsvcctl.html \
 	upslog.html \
 	upsmon.html \
 	upsrw.html \
@@ -177,7 +183,7 @@ SRC_DEV_PAGES = \
 if WITH_MANS
 # NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
 
-LIBNUTCLIENT_MISC_DEPS=
+LIBNUTCLIENT_MISC_DEPS= \
 	nutclient_authenticate.3 \
 	nutclient_logout.3 \
 	nutclient_device_login.3 \
@@ -210,7 +216,7 @@ MAN3_DEV_PAGES = \
 	libnutclient_misc.3 \
 	libnutclient_tcp.3 \
 	libnutclient_variables.3 \
-	$(LIBNUTCLIENT_MISC_DEPS)
+	$(LIBNUTCLIENT_MISC_DEPS) \
 	nutclient_destroy.3 \
 	nutclient_execute_device_command.3 \
 	nutclient_get_device_command_description.3 \

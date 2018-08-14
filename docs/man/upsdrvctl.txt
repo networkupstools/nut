@@ -22,6 +22,9 @@ whenever possible.
 When used properly, upsdrvctl lets you maintain identical startup
 scripts across multiple systems with different UPS configurations.
 
+Note: For operating systems with service management frameworks, such as
+Solaris SMF or Linux systemd, the *upsdrvsvcctl* may be a better choice.
+
 OPTIONS
 -------
 
@@ -97,7 +100,7 @@ background.
 
 SEE ALSO
 --------
-linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
+linkman:upsdrvsvcctl[8], linkman:nutupsdrv[8], linkman:upsd[8], linkman:ups.conf[5]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~

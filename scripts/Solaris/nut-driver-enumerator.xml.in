@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+#
+# Copyright 2016-2018 Jim Klimov
+# Template manifest for instantiated NUT drivers
+#
+-->
+
+<service_bundle type='manifest' name='nut-driver-enumerator'>
+
+	<service name='system/power/nut-driver-enumerator' type='service' version='1'>
+
+	<!--
+	  Configure a default instance for the service since it doesn't
+	  require additional configuration intervention before it starts.
+	-->
+		<create_default_instance enabled='false' />
+
+	<!--
+	  Wait for all local and usr filesystem to be mounted - project is
+	  usually located in /usr/sbin.
+	-->
+		<dependency
+		name='fs-local'
+		type='service'
+		grouping='require_all'
+		restart_on='none'>
+			<service_fmri value='svc:/system/filesystem/local' />
+		</dependency>
+
+		<dependency
+		name='filesystem-usr'
+		grouping='require_all'
+		restart_on='none'
+		type='service'>
+			<service_fmri
+		value='svc:/system/filesystem/usr:default'/>
+		</dependency>
+
+		<dependency
+		name='config-files'
+		type='path'
+		grouping='require_all'
+		restart_on='refresh'>
+			<service_fmri value='file://localhost@CONFPATH@/ups.conf' />
+		</dependency>
+
+	<!--
+	  Prerequisite for NUT upsd to be started, if it's enabled
+	  Note that drivers are optional: if one fails to start, do not block
+	  the upsd from publishing others. While this script will start and
+	  stop (and define/undefine) services for the drivers, based on the
+	  changes in ups.conf, such changes also need to reflect in nut-server
+	  so it would know that it republishes a changed list of drivers.
+	-->
+		<dependent
+		name='nut-daemon-service'
+		grouping='optional_all'
+		restart_on='error'>
+			<service_fmri value='svc:/system/power/nut-server' />
+		</dependent>
+
+	<!--
+	  The nut start/stop methods.
+	-->
+
+		<exec_method
+		type='method'
+		name='start'
+		exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+		timeout_seconds='0'/>
+
+		<exec_method
+		type='method'
+		name='refresh'
+		exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh'
+		timeout_seconds='0'/>
+
+<!-- a :KILL does not really apply to a transient service... -->
+		<exec_method
+		type='method'
+		name='stop'
+		exec='/bin/true'
+		timeout_seconds='60' />
+
+		<property_group name='startd' type='framework'>
+		<!--
+		  Sub-process core dumps and external kill signals are not
+		  considered errors, so the service should be restarted.
+			-->
+			<propval name='ignore_error' type='astring'
+			 value='core,signal' />
+			<propval name='duration' type='astring' value='transient' />
+		</property_group>
+
+	<!-- Really unstable - this service should be evolved! -->
+		<stability value='Unstable' />
+
+		<template>
+			<common_name>
+				<loctext xml:lang='C'>
+				NUT power device driver instance enumerator (generates nut-driver:* instances)
+				</loctext>
+			</common_name>
+			<documentation>
+				<manpage title='upsdrvctl' section='8'
+				manpath='/usr/share/man' />
+				<manpage title='ups.conf' section='5'
+				manpath='/usr/share/man' />
+			</documentation>
+		</template>
+	</service>
+
+</service_bundle>

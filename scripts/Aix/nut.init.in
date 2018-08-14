@@ -1,0 +1,171 @@
+#! /bin/sh
+#
+# ups: Starts the Network UPS Tools
+#
+# chkconfig: - 26 74
+# description: Network UPS Tools is a collection of programs which provide a common \
+#		interface for monitoring and administering UPS hardware.
+# processname: upsd
+# config: /usr/local/ups/etc
+# config: /etc/rc.ups
+#
+### BEGIN INIT INFO
+# Provides: ups
+# Required-Start: $syslog $network $named
+# Required-Stop: $local_fs
+# Default-Stop: 0 1 6
+# Short-Description: Starts the Network UPS tools
+# Description: Network UPS Tools is a collection of programs which provide a common \
+#		interface for monitoring and administering UPS hardware. 
+### END INIT INFO
+
+success() {
+	echo OK
+}
+
+failure() {
+	echo FAILED
+}
+
+# Resolve what processes should run
+SERVER="no"
+CLIENT="no"
+
+NUT_DIR="@prefix@"
+NUT_SBIN_DIR="${NUT_DIR}/sbin"
+NUT_LIB_DIR="${NUT_DIR}/lib"
+NUT_RUN_DIR="@PIDPATH@/nut"
+CONFIG="@CONFPATH@/nut.conf"
+NUTUSER="@RUN_AS_USER@"
+NUTGROUP="@RUN_AS_GROUP@"
+NUT_VAR_LOCK="/var/locks/ups"
+
+if [ -f "$CONFIG" ] ; then
+	. "$CONFIG"
+
+	case "$MODE" in
+		standalone|netserver)
+			SERVER="yes"
+			;;
+	esac
+
+	rpm -q nut-client >/dev/null 2>&1 && CLIENT="yes"
+fi
+
+do_start() {
+	RETVAL=0
+
+	if [ ! -d "$NUT_RUN_DIR" ]; then
+		mkdir -p "$NUT_RUN_DIR" && \
+		chown "root:$NUTGROUP" "$NUT_RUN_DIR" && \
+		chmod 770 "$NUT_RUN_DIR"
+		RETVAL=$?
+	fi
+
+	if [ "$SERVER" = "yes" ]; then
+		echo "Starting UPS driver controller: \c"
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsdrvctl start >/dev/null 2>&1 && success || { RETVAL=$?; failure; }
+
+		echo "Starting upsd: \c"
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsd $UPSD_OPTIONS >/dev/null 2>&1 && success || { RETVAL=$?; failure; }
+	fi
+
+	if [ "$CLIENT" = "yes" ]; then
+		echo "Starting UPS monitor: \c"
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsmon >/dev/null 2>&1 && success || { RETVAL=$?; failure; }
+	fi
+
+	[ "$RETVAL" = 0 ] && touch "${NUT_VAR_LOCK}"
+	return $RETVAL
+}
+
+do_stop() {
+	RETVAL=0
+	if test -e "${NUT_RUN_DIR}"/upsmon.pid; then
+		echo "Stopping UPS monitor: \c"
+		PID="`cat "${NUT_RUN_DIR}"/upsmon.pid`"
+		kill -15 $PID && success || { RETVAL=$?; failure; }
+		rm "${NUT_RUN_DIR}"/upsmon.pid
+	fi
+
+	if [ "$SERVER" = "yes" ]; then
+		if test -e "${NUT_RUN_DIR}"/upsd.pid; then
+			echo "Stopping upsd: \c"
+			PID="`cat "${NUT_RUN_DIR}"/upsd.pid`"
+			kill -15 $PID && success || { RETVAL=$?; failure; }
+			rm "${NUT_RUN_DIR}"/upsd.pid
+		fi
+
+		echo "Shutting down UPS driver controller: \c"
+		"${NUT_SBIN_DIR}"/upsdrvctl stop > /dev/null 2>&1 && success || { RETVAL=$?; failure; }
+	fi
+	[ "$RETVAL" = 0 ] && rm -f "${NUT_VAR_LOCK}"
+	return $RETVAL
+}
+
+do_restart() {
+	do_stop
+	waitmore=5
+	while [ -n "$(ls "${NUT_RUN_DIR}"/)" -a $waitmore -ge 1 ]
+	do
+	  sleep 1
+	  waitmore="$(expr $waitmore - 1)"
+	done
+	do_start
+}
+
+do_reload() {
+	# FIXME: upsd and upsmon always return 0
+	# => can't tell if reload was successful
+	RETVAL=0
+	if [ "$SERVER" = "yes" ]; then
+		echo "Reloading upsd"
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsd -c reload && success || { RETVAL=$?; failure; }
+	fi
+
+	echo "Reloading upsmon"
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}"/upsmon -c reload && success || { RETVAL=$?; failure; }
+	return $RETVAL
+}
+
+# See how we are called.
+case "$1" in
+	start)
+		do_start ;;
+
+	stop)
+		do_stop ;;
+
+	restart)
+		do_restart ;;
+
+	try-restart)
+		[ -f "${NUT_VAR_LOCK}" ] && do_restart || true
+		;;
+
+	reload)
+		do_reload ;;
+
+	force-reload)
+		do_restart ;;
+
+	status)
+		if [ "$SERVER" = "yes" ]; then
+			if test -f "${NUT_VAR_LOCK}"; then
+				echo "upsd is running with PID" `cat "${NUT_RUN_DIR}"/upsd.pid`
+			fi
+		fi
+
+		if test -e "${NUT_RUN_DIR}"/upsmon.pid; then
+			echo "upsmon is running with PID" `cat "${NUT_RUN_DIR}"/upsmon.pid`
+		elif rpm -q nut-client >/dev/null 2>&1; then
+			echo "upsmon isn't running"
+		fi
+		;;
+
+	*)
+		echo "Usage: $0 {start|stop|restart|try-restart|reload|force-reload|status}"
+		RETVAL=3
+esac
+
+exit $RETVAL

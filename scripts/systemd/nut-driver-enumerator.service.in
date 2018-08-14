@@ -1,0 +1,29 @@
+[Unit]
+# This unit starts early in system lifecycle to set up nut-driver instances.
+# End-user may also restart this unit after editing ups.conf to automatically
+# un-register or add new instances as appropriate.
+Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances
+After=local-fs.target
+Before=nut-driver.target
+PartOf=nut.target
+
+[Service]
+### Script needs privileges to restart units
+#User=@RUN_AS_USER@
+#Group=@RUN_AS_GROUP@
+User=root
+# it is expected that the process has to exit before systemd starts follow-up units
+Type=oneshot
+# the service shall be considered active even when all its processes exited
+RemainAfterExit=yes
+# Currently systemd does not support restarting of oneshot services, and does
+# not seem to guarantee that other services would only start after the script
+# completes, for a non-oneshot case. The script itself handles restarting of
+# nut-server which is the primary concerned dependency at the moment, so we
+# don't want it to fail the unit (when it can't restart).
+Environment=REPORT_RESTART_42=no
+ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh
+ExecReload=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh
+
+[Install]
+WantedBy=nut.target

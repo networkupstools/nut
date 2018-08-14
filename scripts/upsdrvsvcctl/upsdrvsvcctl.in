@@ -1,0 +1,184 @@
+#!/bin/sh
+#
+# Copyright (C) 2016-2018 Eaton
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+#! \file    upsdrvsvcctl(.in)
+#  \author  Jim Klimov <EvgenyKlimov@eaton.com>
+#  \brief   Manage NUT devices registered as service-unit instances
+#
+
+if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
+    [ -x /usr/sbin/svcadm ] && [ -x /usr/sbin/svccfg ] && [ -x /usr/bin/svcs ] && \
+        SERVICE_FRAMEWORK="smf"
+    [ -z "${SERVICE_FRAMEWORK-}" ] && \
+        [ -x /bin/systemctl ] && \
+        SERVICE_FRAMEWORK="systemd"
+fi
+
+VERB=""
+CMD=""
+CMDARG=""
+ENUMERATOR=""
+case "$SERVICE_FRAMEWORK" in
+    smf) CMD="/usr/sbin/svcadm"
+        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        ;;
+    systemd) CMD="/bin/systemctl"
+        ENUMERATOR="@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+        ;;
+    *)  echo "Unrecognized SERVICE_FRAMEWORK: $SERVICE_FRAMEWORK" >&2 ; exit ;;
+esac
+
+
+usage() {
+    # Note: version header differs from UPS_VERSION in binaries that
+    # might also have the git-version suffixed during build time
+    cat << EOF
+Network UPS Tools - UPS driver controller ${PACKAGE_VERSION}
+Starts and stops UPS drivers via system service instances, see
+the $ENUMERATOR
+script for more details.
+
+usage: $0 [OPTIONS] (start | stop | shutdown) [<ups>]
+
+Options:
+  -h            	display this help
+  -t            	testing mode - prints actions without doing them
+  -D            	raise debugging level
+  start         	start all UPS drivers in ups.conf
+  start <ups>   	only start driver for UPS <ups>
+  stop          	stop all UPS drivers in ups.conf
+  stop <ups>    	only stop driver for UPS <ups>
+
+Note: the "shutdown" options from original upsdrvctl are not currently
+directly supported by this service management framework wrapper; instead
+they are passed to the native upsdrvctl binary (your current user account
+should have sufficient permissions to do that all):
+  shutdown      	shutdown all UPS drivers in ups.conf
+  shutdown <ups>	only shutdown UPS <ups>
+
+usage: $0 [OPTIONS] resync
+  resync        	call $ENUMERATOR
+                	to update the mapping of service instances for
+                	NUT drivers to device sections in 'ups.conf'
+  list          	call $ENUMERATOR
+                	to list the mapping of service instances to device sections
+  list <ups>    	(optionally return the service instance name for one device)
+  show-config <ups>     output config section from ups.conf for device <ups>
+EOF
+}
+
+ACTION=""
+SVCINST=""
+DRYRUN=""
+DEBUG=0
+# Note: DEBUG is UNUSED_PARAM so far
+while [ $# -gt 0 ]; do
+    case "$1" in
+        resync) eval $DRYRUN $ENUMERATOR ; exit $? ;;
+        list)
+            if [ -n "$2" ] ; then
+                eval $ENUMERATOR --get-service-for-device "$2" ; exit $?
+            else
+                eval $ENUMERATOR --list-services-for-devices ; exit $?
+            fi
+            ;;
+        show-config)
+            if [ -n "$2" ] ; then
+                eval $ENUMERATOR --show-device-config "$2" ; exit $?
+            else
+                echo "ERROR: Argument required" >&2; exit 1
+            fi
+            ;;
+        start|stop)
+            ACTION="$1"
+            if [ -n "$2" ] ; then
+                SVCINST="`$ENUMERATOR --get-service-for-device "$2"`" || exit
+                shift
+            fi
+            ;;
+        shutdown)
+            echo "NOTE: Action '$1' is not implemented via services currently, will call upsdrvctl" >&2
+            echo "Stopping the driver service instance(s) to release exclusive resources, if any..." >&2
+            RES=0
+            $0 stop $2
+            @SBINDIR@/upsdrvctl shutdown $2 || RES=$?
+            echo "Starting the driver service instance(s) so they can reconnect when the UPS returns..." >&2
+            $0 start $2
+            exit $RES
+            ;;
+        -t) DRYRUN="echo" ;;
+        -h) usage; exit 0 ;;
+        -d) DEBUG="`expr $DEBUG + 1`" ;;
+        -r|-u) echo "Option '$1 $2' is not implemented via services currently" >&2 ; shift;;
+        *)  echo "Unrecognized argument: $1" >&2 ; exit ;;
+    esac
+    shift
+done
+
+if [ -z "$ENUMERATOR" ] || [ ! -s "$ENUMERATOR" ] || [ ! -x "$ENUMERATOR" ] ; then
+    echo "ENUMERATOR script (nut-driver-enumerator.sh) not found!" >&2
+    exit 1
+fi
+
+if [ -z "$ACTION" ]; then
+    echo "No action was requested!" >&2
+    exit 1
+fi
+
+if [ -z "$SVCINST" ]; then
+    SVCINST="`$ENUMERATOR --list-services`" || exit
+fi
+
+# TODO: Support shutdown of one or all UPSes by stopping its service
+# and then calling the original upsdrvctl on it?
+case "$ACTION" in
+    start)
+        VERB="Starting"
+        case "$SERVICE_FRAMEWORK" in
+            smf) CMDARG="enable -t" ;;
+            systemd) CMDARG="start" ;;
+        esac
+        ;;
+    stop)
+        VERB="Stopping"
+        case "$SERVICE_FRAMEWORK" in
+            smf) CMDARG="disable -t" ;;
+            systemd) CMDARG="stop" ;;
+        esac
+        ;;
+    *)  echo "Unrecognized ACTION: $ACTION" >&2 ; exit ;;
+esac
+
+for INST in $SVCINST ; do
+    echo "$VERB $INST ..." >&2
+    $DRYRUN $CMD $CMDARG "$INST" &
+done
+wait
+
+case "$SERVICE_FRAMEWORK" in
+    smf)
+        sleep 1
+        echo "Post-process clearing services that failed early..." >&2
+        for INST in $SVCINST ; do
+            echo "Clearing $INST (if it got broken) ..." >&2
+            $DRYRUN $CMD clear "$INST" &
+        done
+        ;;
+esac
+
+wait

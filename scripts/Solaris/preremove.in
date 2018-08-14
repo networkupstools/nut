@@ -1,8 +1,45 @@
-#!bin/sh
+#!/bin/sh
 
 # Stop all nut services
 
 NUT_DIR="@prefix@"
+prefix="@prefix@" # expanded as part of some autoconf macros below
 
-#$NUT_DIR/sbin/upsdrvctl stop
+if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+	# Unconfigure SMF services
+	for S in nut nut-monitor nut-driver-enumerator nut-server ; do
+		echo "Stopping NUT service: $S..."
+		/usr/sbin/svcadm clear "$S"
+		/usr/sbin/svcadm disable -s "$S"
+		echo "Removing NUT service: $S..."
+		/usr/sbin/svccfg delete "$S" || \
+		/usr/sbin/svccfg -s "$S" delete || \
+		/usr/sbin/svccfg -s "$S" delete default
+	done
+	echo "Stopping NUT drivers, if any..."
+	@SBINDIR@/upsdrvsvcctl stop
+	@SBINDIR@/upsdrvctl -DDDDD stop
+	sleep 5
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
+		echo "Stopping NUT service: $S..."
+		/usr/sbin/svcadm clear "$S"
+		/usr/sbin/svcadm disable "$S"
+	done
+	sleep 5
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` ; do
+		echo "Removing NUT service: $S..."
+		/usr/sbin/svccfg -s "nut-driver" delete -f "$S" || \
+		/usr/sbin/svccfg delete "$S"
+	done
+	S="nut-driver" && \
+		echo "Removing NUT service: $S..." && \
+		/usr/sbin/svccfg delete "$S" || \
+		/usr/sbin/svccfg -s "$S" delete || \
+		/usr/sbin/svccfg -s "$S" delete default
+else
+	[ -x /etc/init.d/nut ] && /etc/init.d/nut stop
+fi
 
+if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lenses" ] ; then
+	( cd "@datadir@/augeas-lenses" && find . -type f -exec rm -f "@auglensdir@"/'{}' \; )
+fi
