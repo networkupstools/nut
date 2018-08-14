@@ -27,7 +27,24 @@ dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
-dnl PKG_PROG_PKG_CONFIG
+dnl Some systems have older autotools without direct macro support for PKG_CONF*
+have_PKG_CONFIG=yes
+AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
+AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
+    [have_PKG_CONFIG=no],
+    [AC_MSG_CHECKING([for autoconf macro support of pkg-config])
+     PKG_PROG_PKG_CONFIG
+     dummy_RES=$?
+     AS_IF([test $dummy_RES = 0],
+        [AC_MSG_RESULT(ok)
+         AC_MSG_CHECKING([for autoconf macro support of pkg-config module checker])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
+            [AC_MSG_RESULT([ok])], [have_PKG_CONFIG=no])
+        ], [have_PKG_CONFIG=no])]
+)
+AS_IF([test x"$have_PKG_CONFIG" = xno],
+    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+
 
 dnl Various version related processing
 dnl ----------------------------------
@@ -1180,7 +1197,6 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
-PKG_PROG_PKG_CONFIG
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
@@ -1262,14 +1278,20 @@ AC_LANG_POP([C++])
 
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
-AS_IF([test "${HAVE_CXX11}" = 1],
-    [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
-     if test "${have_cppunit}" != "yes" ; then
-        AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
-     else
-     AS_IF([test -n "$CXX"],[AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
-        [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
-     fi])
+AS_IF([test x"$have_PKG_CONFIG" = xyes],
+    [AS_IF([test "${HAVE_CXX11}" = 1],
+        [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+         AS_IF([test "${have_cppunit}" != "yes"],
+            [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
+             have_cppunit=no],
+            [AS_IF([test -n "$CXX"],
+                [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+                    [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+            ])
+        ])
+    ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
+        have_cppunit=no]
+)
 AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 

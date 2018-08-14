@@ -128,6 +128,15 @@ matrix:
       apt:
         packages:
         - *deps_driverlibs
+  - env:
+    - BUILD_TYPE=default-tgt:distcheck-light
+    - NO_PKG_CONFIG=true
+    os: linux
+    sudo: true
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
 
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
