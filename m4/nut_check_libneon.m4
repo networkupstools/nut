@@ -13,6 +13,7 @@ if test -z "${nut_have_neon_seen}"; then
 	LIBS_ORIG="${LIBS}"
 
 	dnl See which version of the neon library (if any) is installed
+	dnl FIXME : Support detection of cflags/ldflags below by legacy discovery if pkgconfig is not there
 	AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
 	NEON_VERSION="`pkg-config --silence-errors --modversion neon 2>/dev/null`"
 	if test "$?" != "0" -o -z "${NEON_VERSION}"; then
