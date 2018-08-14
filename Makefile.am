@@ -137,7 +137,7 @@ snmp build-snmp install-snmp install-snmp-mgr install-snmp-man:
 	@echo "Use './configure --with-snmp' instead."
 setver:
 	@echo "Error: 'make setver' no longer exists."
-	@echo "Edit configure.in to set version number."
+	@echo "Edit configure.ac to set version number."
 package:
 	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
 	rm -rf "$$DESTDIR"; \
