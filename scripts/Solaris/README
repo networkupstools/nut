@@ -1,0 +1,10 @@
+This directory contains init-scripts and SMF manifests and methods
+for integration of NUT services with Solaris and descendant OSes.
+
+This also includes the nut-driver-enumerator.sh (service and implementation
+method) and upsdrvsvcctl (tool) to manage NUT drivers as service instances,
+which are stored in `../systemd/` subdirectory (portable codebase shared
+with Linux systemd).
+
+Init-script solution contributed by numerous authors
+SMF solution contributed by Jim Klimov <jimklimov@gmail.com>

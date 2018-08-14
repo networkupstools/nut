@@ -3,3 +3,5 @@
 /nut-monitor.service
 /nut-server.service
 /nutshutdown
+/nut-driver-enumerator.service
+/nut-driver-enumerator.path

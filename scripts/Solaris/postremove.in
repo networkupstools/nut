@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Remove init script from /etc/init.d - created by scripts not packaging
+
+rm -f /etc/init.d/nut
+rm -f /etc/rc3.d/S90nut
+rm -f /etc/rc3.d/K10nut
+
+# Remove nut group and user
+
+/usr/sbin/userdel "@RUN_AS_USER@"
+
+/usr/sbin/groupdel "@RUN_AS_GROUP@"
+
+# Remove /var/run/nut
+
+rm -rf "@PIDPATH@/nut"

@@ -1,3 +1,8 @@
 [Unit]
-Description=Network UPS Tools - power device driver controller
-After=local-fs.target network.target
+Description=Network UPS Tools - target for power device drivers on this system
+After=local-fs.target
+# network.target
+PartOf=nut.target
+
+[Install]
+WantedBy=nut.target
