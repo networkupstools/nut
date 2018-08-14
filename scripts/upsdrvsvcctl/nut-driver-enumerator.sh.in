@@ -398,11 +398,11 @@ smf_registerInstance() {
 
         DEPPG="nut-driver-enumerator-generated"
         RESTARTON="refresh"
-        svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
-        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
-        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
-        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
-        svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "($DEPSVC)" && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$DEPPG" dependency && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/grouping = astring: "$DEPREQ" && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/restart_on = astring: "$RESTARTON" && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/type = astring: service && \
+        /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$DEPPG"/entities = fmri: "($DEPSVC)" && \
         echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
