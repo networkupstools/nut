@@ -1,0 +1,123 @@
+NUT-DRIVER-ENUMERATOR(8) 
+========================
+
+NAME
+----
+
+nut-driver-enumerator - tool to map NUT device entries to service instances
+
+SYNOPSIS
+--------
+*nut-driver-enumerator.sh* -h
+
+*nut-driver-enumerator.sh*  (no args)
+
+*nut-driver-enumerator.sh*  [--COMMAND]
+
+
+DESCRIPTION
+-----------
+
+*nut-driver-enumerator.sh* implements the set-up and querying of the
+mapping between NUT driver configuration sections for each individual
+monitored device, and the operating system service management framework
+service instances into which such drivers are wrapped for independent
+execution and management (on platforms where NUT currently supports
+this integration -- currently this covers Linux distributions with
+systemd and systems derived from Solaris 10 codebase, including
+proprietary Sun/Oracle Solaris and numerous open-source illumos
+distributions with SMF). It may be not installed in packaging for
+other operating systems.
+
+This script provides a uniform interface for further NUT tools
+such as linkman:upsdrvsvcctl[8] to implement their logic as
+platform-independently as was possible and practical. It is not
+currently intended for end-user consumption (and so is located in
+the 'libexec' directory), with *upsdrvsvcctl* exposing the most
+useful data and actions with its 'list' and 'resync' arguments.
+
+One part of the platform complexity that *nut-driver-enumerator.sh*
+hides is the difference of rules for valid service instance names
+in various frameworks, as well as system tools and naming patterns
+involved.
+
+COMMANDS
+--------
+
+*nut-driver-enumerator.sh  (no args)*::
+Update wrapping of devices into services
+
+*nut-driver-enumerator.sh  --get-service-framework*::
+Print the detected service management framework in this OS
+
+*nut-driver-enumerator.sh  --list-devices*::
+Print list of devices in NUT config
+
+*nut-driver-enumerator.sh  --list-services*::
+Print list of service instances which wrap registered
+NUT devices (full name of service unit)
+
+*nut-driver-enumerator.sh  --list-instances*::
+Print list of service instances which wrap registered
+NUT devices (just instance suffix)
+
+*nut-driver-enumerator.sh  --get-service-for-device DEV*::
+Print the full name of service unit which wraps a NUT
+device named `DEV`
+
+*nut-driver-enumerator.sh  --get-device-for-service SVC*::
+Print the NUT device name for full or instance-suffix name of
+a service unit `SVC` which wraps it
+
+*nut-driver-enumerator.sh  --list-services-for-devices*::
+Print a TAB-separated list of service units and corresponding
+NUT device names which each such unit wraps
+
+ENVIRONMENT VARIABLES
+---------------------
+
+By default *nut-driver-enumerator.sh* executed without arguments would
+automatically start any newly registered service instances wrapping the
+NUT devices, and would also restart the `nut-server` service if the
+configuration was changed. Environment variable `AUTO_START=no` disables
+this default part of the action.
+
+Also see below for environment variable `REPORT_RESTART_42=no` value.
+
+DIAGNOSTICS
+-----------
+
+*nut-driver-enumerator.sh* will return a zero exit code if it had nothing
+to do (all currently defined drivers match all of the currently defined
+service instances, one-to-one) and if it had no errors in its operation.
+
+Other codes can be returned as a result of re-synchronization of mappings:
+
+*42*::
+NUT device sections and system service instances differed before, but
+now match up -- so now the caller should likely restart some services.
+Note that the drivers' service instances may have been started or stopped
+as required (by `AUTO_START=yes`) -- but maybe the upsmon or upssched
+services should restart.
+If you pass environment variable `REPORT_RESTART_42=no` then
+this codepath would return 0 (as a non-error exit code).
+In default mode, such non-null reconfiguration should cause
+the nut-driver-enumerator service to restart and this would
+propagate to other NUT services that depend on it.
+
+*13*::
+Sections and services differed, and still do not match up
+
+*1*::
+Bad inputs, e.g. unrecognized service management framework
+
+*2*::
+Absent or unreadable `ups.conf` file
+
+SEE ALSO
+--------
+linkman:upsdrvsvcctl[8], linkman:ups.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

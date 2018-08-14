@@ -47,7 +47,7 @@ NUT network protocol, over the time:
 |===============================================================================
 
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
-in *configure.in*.
+in *configure.ac*.
 
 
 GET

@@ -121,7 +121,7 @@ install-dirs:
 	@echo "Warning: 'make install-dirs' is deprecated."
 	@echo "Use 'make installdirs' instead."
 	@echo $(WARN)
-	make installdirs
+	$(MAKE) installdirs
 cgi build-cgi install-cgi install-cgi-dir install-cgi-bin \
 install-cgi-man install-cgi-conf install-cgi-html: 
 	@echo "Error: 'make $@' no longer exists."
@@ -137,23 +137,30 @@ snmp build-snmp install-snmp install-snmp-mgr install-snmp-man:
 	@echo "Use './configure --with-snmp' instead."
 setver:
 	@echo "Error: 'make setver' no longer exists."
-	@echo "Edit configure.in to set version number."
+	@echo "Edit configure.ac to set version number."
 package:
-	if test `uname -s` = "HP-UX"; then \
-		cd scripts/HP-UX; \
-		make package; \
-		mv NUT_HPUX_package.depot NUT_HPUX_package@PACKAGE_VERSION@.depot; \
-	elif test `uname -s` = "SunOS"; then \
-		make; \
-		rm -rf @prefix@; \
-		make install; \
-		cd scripts/Solaris; \
-		make package; \
-		make uninstall; \
-		rm -rf @prefix@; \
-	elif test `uname -s` = "AIX"; then \
-		make dist; \
-		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS; \
-		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES; \
-		rpm -ba /usr/src/packages/SPECS/nut-aix.spec; \
-	fi;
+	DESTDIR="$(abs_builddir)/_install_pkgprotodir" ; export DESTDIR; \
+	rm -rf "$$DESTDIR"; \
+	case "`uname -s`" in \
+	"HP-UX") \
+		( cd scripts/HP-UX && \
+		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package && \
+		  mv NUT_HPUX_package.depot $(abs_top_builddir)/NUT_HPUX_package@PACKAGE_VERSION@.depot ) ;; \
+	"SunOS") \
+		$(MAKE) $(AM_MAKEFLAGS) && \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" install && \
+		( cd scripts/Solaris && \
+		  $(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" package ) && \
+		$(MAKE) $(AM_MAKEFLAGS) DESTDIR="$$DESTDIR" uninstall && \
+		rm -rf "$$DESTDIR" || \
+		{ echo "FAILED to produce SunOS packages, inspect '$$DESTDIR' for clues" >&2 ; exit 1; } ;; \
+	"AIX") \
+		if test -d /usr/src/packages/SPECS -a -w /usr/src/packages/SPECS ; then : ; else echo "Can not write to /usr/src/packages/SPECS" >&2 ; exit 1; fi ; \
+		if test -d /usr/src/packages/SOURCES -a -w /usr/src/packages/SOURCES ; then : ; else echo "Can not write to /usr/src/packages/SOURCES" >&2 ; exit 1; fi ; \
+		$(MAKE) $(AM_MAKEFLAGS) dist && \
+		cp scripts/Aix/nut-aix.spec /usr/src/packages/SPECS && \
+		cp scripts/Aix/nut.init nut-@PACKAGE_VERSION@.tar.gz /usr/src/packages/SOURCES && \
+		rpm -ba /usr/src/packages/SPECS/nut-aix.spec && \
+		mv /usr/src/packages/RPMS/nut*rpm $(abs_top_builddir)/ ;; \
+	*)	echo "Unsupported OS for 'make $@' (no recipe bound)" >&2; exit 1;; \
+	esac

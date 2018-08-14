@@ -3,63 +3,106 @@
 #Postinstall script
 
 NUT_DIR="@prefix@"
+prefix="@prefix@" # expanded as part of some autoconf macros below
 
 # make sure the nut user exists and has correct memberships
-res=`getent group nut`
+res="`getent group @RUN_AS_GROUP@`" || res=""
 if [ -z "$res" ]; then
-	groupadd nut
+	/usr/sbin/groupadd "@RUN_AS_GROUP@"
 fi
-res=`getent passwd nut`
+res="`getent passwd @RUN_AS_USER@`" || res=""
 if [ -z "$res" ]; then
-	useradd -g nut -G root -d ${NUT_DIR}/bin nut
+	/usr/sbin/useradd -c "Network UPS Tools" -g "@RUN_AS_GROUP@" -G root -d "@STATEPATH@" -s /bin/false @RUN_AS_USER@
 fi
 
-res=`groups nut | grep -w nut`
+res="`groups "@RUN_AS_GROUP@" | grep -w "@RUN_AS_USER@"`" || res=""
 if [ -z "$res" ]; then
-	usermod -g nut -G root nut
+	/usr/sbin/usermod -g "@RUN_AS_GROUP@" -G root "@RUN_AS_USER@"
 fi
 
 # make sure that conffiles are secured and have the correct ownerships
-if [ -d @CONFPATH@ ] ; then
-	chown root:nut @CONFPATH@
+if [ -d "@CONFPATH@" ] ; then
+	chown "root:@RUN_AS_GROUP@" "@CONFPATH@"
 fi
-for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf; do
-	if [ -f @CONFPATH@/$file ] ; then
-		chown root:nut @CONFPATH@/$file
-		chmod 640 @CONFPATH@/$file
+for file in nut.conf ups.conf upsd.conf upsmon.conf upsd.users upssched.conf nut-driver-enumerator.conf; do
+	if [ -f "@CONFPATH@/$file" ] ; then
+		chown "root:@RUN_AS_GROUP@" "@CONFPATH@/$file"
+		chmod 640 "@CONFPATH@/$file"
 	fi
 done
 
 # make sure that /var/run/nut exists and has the correct ownerships
-if [ ! -d @PIDPATH@/nut ] ; then
-	mkdir -p @PIDPATH@/nut
+if [ ! -d "@PIDPATH@/nut" ] ; then
+	mkdir -p "@PIDPATH@/nut"
 fi
-if [ -d @PIDPATH@/nut ] ; then
-	chown root:nut @PIDPATH@/nut
-	chmod 770 @PIDPATH@/nut
+if [ -d "@PIDPATH@/nut" ] ; then
+	chown "root:@RUN_AS_GROUP@" "@PIDPATH@/nut"
+	chmod 770 "@PIDPATH@/nut"
 fi
 
 # make sure that /var/state/ups exists and has the correct ownerships
-if [ ! -d @STATEPATH@ ] ; then
-	mkdir -p @STATEPATH@
+if [ ! -d "@STATEPATH@" ] ; then
+	mkdir -p "@STATEPATH@"
 fi
-if [ -d @STATEPATH@ ] ; then
-	chown root:nut @STATEPATH@
-	chmod 770 @STATEPATH@
+if [ -d "@STATEPATH@" ] ; then
+	chown "root:@RUN_AS_GROUP@" "@STATEPATH@"
+	chmod 770 "@STATEPATH@"
 fi
 
-# Put init script in /etc/init.d
+if [ -n "@auglensdir@" ] && [ -d "@auglensdir@" ] && [ -d "@datadir@/augeas-lenses" ] ; then
+	( cd "@datadir@/augeas-lenses" && cp -prf ./ "@auglensdir@"/ )
+fi
 
-cp $NUT_DIR/nut /etc/init.d
-chmod 744 /etc/init.d/nut
+if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+	echo "Register SMF services..."
+	for S in nut-driver-enumerator nut-driver nut-server nut-monitor nut ; do
+		echo "Importing NUT service manifest: $S..."
+		/usr/sbin/svccfg import "@datadir@/solaris-smf/manifest/$S.xml"
+	done
+	# Enable services if the system already has a configuration (e.g. upgrade)
+	if test -s "@CONFPATH@/ups.conf" ; then
+		echo "Stopping NUT drivers, if any (in case of upgrade)..."
+		@SBINDIR@/upsdrvsvcctl stop
+		@SBINDIR@/upsdrvctl -DDDDD stop
+		sleep 5
+		echo "Register NUT drivers (if any)..."
+		AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+		sleep 2
+		echo "Enable NUT drivers (if any)..."
+		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
+		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
+		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
+		@SBINDIR@/upsdrvsvcctl start
+	else
+		echo "NOT ENABLING nut-driver-enumerator at this time : missing @CONFPATH@/ups.conf" >&2
+	fi
+	if test -s "@CONFPATH@/ups.conf" && test -s "@CONFPATH@/upsd.conf" && test -s "@CONFPATH@/upsd.users" ; then
+		echo "Enable NUT upsd data server..."
+		/usr/sbin/svcadm enable -s nut-server
+	else
+		echo "NOT ENABLING nut-server at this time : missing at least one of : @CONFPATH@/ups.conf @CONFPATH@/upsd.conf @CONFPATH@/upsd.users" >&2
+	fi
+	if test -s "@CONFPATH@/upsmon.conf" ; then
+		echo "Enable NUT upsmon client..."
+		/usr/sbin/svcadm enable -s nut-monitor
+	else
+		echo "NOT ENABLING nut-monitor at this time : missing @CONFPATH@/upsmon.conf" >&2
+	fi
+	echo "Enable NUT umbrella service..."
+	/usr/sbin/svcadm enable -s nut
+else
+	echo "Put init script in /etc/init.d..."
+	cp -pf "@NUT_DATADIR@/solaris-init/nut" /etc/init.d
+	chown root:bin /etc/init.d/nut
+	chmod 744 /etc/init.d/nut
 
-ln -s /etc/init.d/nut /etc/rc3.d/S100nut > /dev/null 2>&1
-ln -s /etc/init.d/nut /etc/rc3.d/K100nut > /dev/null 2>&1
+	ln -s ../init.d/nut /etc/rc3.d/S90nut > /dev/null 2>&1
+	ln -s ../init.d/nut /etc/rc3.d/K10nut > /dev/null 2>&1
 
-# Start nut services
+	# Start nut services
 
-#echo "Starting nut services"
-#$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
-#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
-#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
-
+	#echo "Starting nut services"
+	#$NUT_DIR/sbin/upsdrvctl start #> /dev/null 2>&1
+	#$NUT_DIR/sbin/upsd #> /dev/null 2>&1
+	#$NUT_DIR/sbin/upsmon #> /dev/null 2>&1
+fi

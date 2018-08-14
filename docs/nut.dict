@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2422 utf-8
+personal_ws-1.1 en 2431 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -145,6 +145,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLI
 CLOCAL
 CMDDESC
 CMDSCRIPT
@@ -438,8 +439,8 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
-Kaminski
 Kain
+Kaminski
 Kanji
 Kazutoshi
 Kebo
@@ -898,6 +899,7 @@ SKU
 SL
 SMALLBUF
 SMBUS
+SMF
 SMK
 SMT
 SMTP
@@ -1339,6 +1341,7 @@ cmdname
 cmds
 cmdvartab
 codebase
+codepath
 coldstarts
 collectd
 colspan
@@ -1653,6 +1656,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+journalctl
 jpg
 jpgraph
 json
@@ -1679,6 +1683,7 @@ libaugeas
 libc
 libcommon
 libdir
+libexec
 libhid
 libhidups
 libi
@@ -1730,6 +1735,7 @@ lowruntime
 lowvoltsout
 lr
 lsusb
+lu
 lvo
 lxml
 lxyz
@@ -2187,6 +2193,7 @@ sudo
 suid
 superset
 sv
+svc
 svn
 sw
 symlink
@@ -2201,6 +2208,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+systemctl
 systemd
 systemdsystemunitdir
 systemhours
@@ -2301,6 +2309,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvsvcctl
 upserror
 upsfetch
 upsgone
