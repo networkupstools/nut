@@ -279,6 +279,11 @@ static int main_arg(char *var, char *val)
 		return 1;	/* handled */
 	}
 
+	if (!strcmp(var, "nobt")) {
+		dstate_setinfo("driver.flag.nobt", "enabled");
+		return 1;	/*handled */
+	}
+
 	/* any other flags are for the driver code */
 	if (!val)
 		return 0;
