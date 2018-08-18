@@ -588,7 +588,7 @@ MAN_LINUX_I2C_PAGES = asem.8
 endif
 
 if WITH_LINUX_I2C
-   man8_MANS += $(LINUX_I2C_PAGES)
+   man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif
 
 HTML_LINUX_I2C_MANS = asem.html
