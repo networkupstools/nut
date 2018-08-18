@@ -34,21 +34,21 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
  safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
- blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser	\
- nutdrv_qx
+ blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
  blazer_usb richcomm_usb riello_usb \
- nutdrv_atcl_usb \
- nutdrv_qx
+ nutdrv_atcl_usb
 USB_DRIVERLIST = $(USB_LIBUSB_DRIVERLIST)
+SERIAL_USB_DRIVERLIST = \
+	nutdrv_qx
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus
 LINUX_I2C_DRIVERLIST = asem
 
 # distribute all drivers, even ones that are not built by default
-EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
+EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
 
 # construct the list of drivers to build
 if SOME_DRIVERS
@@ -56,7 +56,11 @@ if SOME_DRIVERS
 else
  driverexec_PROGRAMS =
 if WITH_SERIAL
-  driverexec_PROGRAMS += $(SERIAL_DRIVERLIST)
+  driverexec_PROGRAMS += $(SERIAL_DRIVERLIST) $(SERIAL_USB_DRIVERLIST)
+else
+if WITH_USB
+  driverexec_PROGRAMS += $(SERIAL_USB_DRIVERLIST)
+endif
 endif
 if WITH_SNMP
   driverexec_PROGRAMS += $(SNMP_DRIVERLIST)

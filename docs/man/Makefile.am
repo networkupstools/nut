@@ -356,7 +356,6 @@ SRC_SERIAL_PAGES = \
 	mge-utalk.txt	\
 	oneac.txt		\
 	microdowell.txt	\
-	nutdrv_qx.txt	\
 	optiups.txt	\
 	powercom.txt 	\
 	powerpanel.txt	\
@@ -397,7 +396,6 @@ MAN_SERIAL_PAGES = \
 	metasys.8	\
 	mge-shut.8	\
 	mge-utalk.8	\
-	nutdrv_qx.8	\
 	oneac.8		\
 	microdowell.8	\
 	optiups.8	\
@@ -444,7 +442,6 @@ HTML_SERIAL_MANS = \
 	metasys.html	\
 	mge-shut.html	\
 	mge-utalk.html	\
-	nutdrv_qx.html	\
 	oneac.html		\
 	microdowell.html	\
 	optiups.html	\
@@ -478,7 +475,6 @@ SRC_USB_LIBUSB_PAGES = \
 	blazer-common.txt	\
 	blazer_usb.txt	\
 	nutdrv_atcl_usb.txt \
-	nutdrv_qx.txt	\
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
@@ -489,7 +485,6 @@ MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
 	nutdrv_atcl_usb.8 \
-	nutdrv_qx.8	\
 	richcomm_usb.8 \
 	riello_usb.8	\
 	tripplite_usb.8 \
@@ -503,12 +498,31 @@ endif
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
 	blazer_usb.html	\
-	nutdrv_qx.html	\
 	nutdrv_atcl_usb.html \
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
 	usbhid-ups.html
+
+# (--with-serial / --with-usb)
+SRC_SERIAL_USB_PAGES = \
+	nutdrv_qx.txt
+
+if WITH_MANS
+MAN_SERIAL_USB_PAGES = \
+	nutdrv_qx.8
+endif
+
+if WITH_SERIAL
+ man8_MANS += $(MAN_SERIAL_USB_PAGES)
+else
+if WITH_USB
+ man8_MANS += $(MAN_SERIAL_USB_PAGES)
+endif
+endif
+
+HTML_SERIAL_USB_MANS = \
+	nutdrv_qx.html
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
@@ -595,6 +609,7 @@ MAN_MANS += \
 	$(MAN_SERIAL_PAGES) \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
+	$(MAN_SERIAL_USB_PAGES) \
 	$(MAN_NETXML_PAGES) \
 	$(MAN_POWERMAN_PAGES) \
 	$(MAN_IPMIPSU_PAGES) \
@@ -614,6 +629,7 @@ SRC_ALL_PAGES = \
 	$(SRC_SERIAL_PAGES) \
 	$(SRC_SNMP_PAGES) \
 	$(SRC_USB_LIBUSB_PAGES) \
+	$(SRC_SERIAL_USB_PAGES) \
 	$(SRC_NETXML_PAGES) \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
@@ -653,6 +669,7 @@ HTML_MANS = \
 	$(HTML_SERIAL_MANS) \
 	$(HTML_SNMP_MANS) \
 	$(HTML_USB_LIBUSB_MANS) \
+	$(HTML_SERIAL_USB_MANS) \
 	$(HTML_NETXML_MANS) \
 	$(HTML_POWERMAN_MANS) \
 	$(HTML_IPMIPSU_MANS) \
