@@ -13,9 +13,11 @@ if test -z "${nut_have_neon_seen}"; then
 	LIBS_ORIG="${LIBS}"
 
 	dnl See which version of the neon library (if any) is installed
+	dnl FIXME : Support detection of cflags/ldflags below by legacy discovery if pkgconfig is not there
 	AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
 	NEON_VERSION="`pkg-config --silence-errors --modversion neon 2>/dev/null`"
 	if test "$?" != "0" -o -z "${NEON_VERSION}"; then
+		AC_MSG_WARN([could not get pkg-config information for libneon version, using fallback defaults])
 		NEON_VERSION="none"
 	fi
 	AC_MSG_RESULT(${NEON_VERSION} found)
@@ -32,7 +34,11 @@ if test -z "${nut_have_neon_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`pkg-config --silence-errors --cflags neon 2>/dev/null`"])
+	], [CFLAGS="`pkg-config --silence-errors --cflags neon 2>/dev/null`"
+		if test "$?" != 0 ; then
+			AC_MSG_WARN([could not get pkg-config information for libneon cflags, using fallback defaults])
+			CFLAGS="-I/usr/include/neon"
+		fi])
 	AC_MSG_RESULT([${CFLAGS}])
 
 	AC_MSG_CHECKING(for libneon ldflags)
@@ -47,7 +53,11 @@ if test -z "${nut_have_neon_seen}"; then
 			LIBS="${withval}"
 			;;
 		esac
-	], [LIBS="`pkg-config --silence-errors --libs neon 2>/dev/null`"])
+	], [LIBS="`pkg-config --silence-errors --libs neon 2>/dev/null`"
+		if test "$?" != 0 ; then
+			AC_MSG_WARN([could not get pkg-config information for libneon libs, using fallback defaults])
+			LIBS="-lneon"
+		fi])
 	AC_MSG_RESULT([${LIBS}])
 
 	dnl check if neon is usable

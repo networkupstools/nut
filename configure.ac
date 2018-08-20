@@ -32,14 +32,13 @@ have_PKG_CONFIG=yes
 AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
     [have_PKG_CONFIG=no],
-    [AC_MSG_CHECKING([for autoconf macro support of pkg-config])
+    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
      PKG_PROG_PKG_CONFIG
      dummy_RES=$?
      AS_IF([test $dummy_RES = 0],
-        [AC_MSG_RESULT(ok)
-         AC_MSG_CHECKING([for autoconf macro support of pkg-config module checker])
+        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
          PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
-            [AC_MSG_RESULT([ok])], [have_PKG_CONFIG=no])
+            [], [have_PKG_CONFIG=no])
         ], [have_PKG_CONFIG=no])]
 )
 AS_IF([test x"$have_PKG_CONFIG" = xno],
