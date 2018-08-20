@@ -37,7 +37,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.37"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.38"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -465,7 +465,7 @@ static int	nut_libusb_open(
 
 		/* SECOND METHOD: find HID descriptor among "extra" bytes of interface descriptor, i.e., bytes tucked onto the end of descriptor 2.
 		 * Note: on some broken devices (e.g. Tripp Lite Smart1000LCD), only this second method gives the correct result. */
-		if ((curDevice->VendorID != 0x463) && (curDevice->bcdDevice != 0x0202)) {
+		if ((curDevice->VendorID == 0x463) && (curDevice->bcdDevice == 0x0202)) {
 			upsdebugx(NUT_USB_DBG_DEVICE, "%s: Eaton device v2.02. Skipping method 2 for retrieving HID descriptor.", __func__);
 		} else {
 			struct libusb_config_descriptor	*conf_desc;
