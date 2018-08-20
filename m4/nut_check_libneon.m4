@@ -26,7 +26,7 @@ if test -z "${nut_have_neon_seen}"; then
 	fi
 	AC_MSG_RESULT(${NEON_VERSION} found)
 
-	if test "${nut_defaulted_neon_version}" = "yes" ]; then
+	if test "${nut_defaulted_neon_version}" = "yes" ; then
 		AC_MSG_WARN([could not get pkg-config information for libneon version, using fallback defaults])
 	fi
 
@@ -49,7 +49,7 @@ if test -z "${nut_have_neon_seen}"; then
 		fi])
 	AC_MSG_RESULT([${CFLAGS}])
 
-	if test "${nut_defaulted_neon_cflags}" = "yes" ]; then
+	if test "${nut_defaulted_neon_cflags}" = "yes" ; then
 		AC_MSG_WARN([could not get pkg-config information for libneon cflags, using fallback defaults])
 	fi
 
@@ -72,7 +72,7 @@ if test -z "${nut_have_neon_seen}"; then
 		fi])
 	AC_MSG_RESULT([${LIBS}])
 
-	if test "${nut_defaulted_neon_libs}" = "yes" ]; then
+	if test "${nut_defaulted_neon_libs}" = "yes" ; then
 		AC_MSG_WARN([could not get pkg-config information for libneon libs, using fallback defaults])
 	fi
 
