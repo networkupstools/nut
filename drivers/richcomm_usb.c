@@ -30,7 +30,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.21"
+#define DRIVER_VERSION	"0.22"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -333,14 +333,27 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
 				goto next_device;
 			}
 		}
-#ifdef HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER
-		/* First, try the auto-detach kernel driver method
-		 * This function is not available on FreeBSD 10.1-10.3 */
-		if ((ret = libusb_set_auto_detach_kernel_driver(handle, 1)) != LIBUSB_SUCCESS)
-			upsdebugx(2, "failed to auto detach kernel driver from USB device: %s", libusb_strerror(ret));
-		else
-			upsdebugx(2, "auto detached kernel driver from USB device");
-#endif
+
+#if defined(HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE) && defined(HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER)
+		ret = libusb_kernel_driver_active(handle, 0);
+		/* Is the kernel driver active? Consider the unimplemented return code to be equivalent to inactive here. */
+		if (ret == 1) {
+			upsdebugx(2, "%s: libusb_kernel_driver_active() returned 1 (driver active).", __func__);
+			/* In FreeBSD, currently (FreeBSD from 10.2 to 11.2, at least), it is not necessary to detach the kernel driver.
+			 * Further, the detaching can only be done with root privileges.
+			 * So, don't set the auto-detach flag, or libusb_claim_interface() will fail if the driver is not running as root. */
+#ifndef __FreeBSD__
+			/* Try the auto-detach kernel driver method. */
+			ret = libusb_set_auto_detach_kernel_driver(handle, 1);
+			if (ret != LIBUSB_SUCCESS)
+				upsdebugx(2, "%s: failed to set kernel driver auto-detach driver flag for USB device (%s).", __func__, libusb_strerror(ret));
+			else
+				upsdebugx(2, "%s: successfully set kernel driver auto-detach flag.", __func__);
+#endif	/* __FreeBSD__ */
+		} else {
+			upsdebugx(2, "%s: libusb_kernel_driver_active() returned %d (%s).", __func__, ret, ret ? libusb_strerror(ret) : "no driver active");
+		}
+#endif	/* HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE + HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER */
 
 		for (i = 0; i < 3; i++) {
 
