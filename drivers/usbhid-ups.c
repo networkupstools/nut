@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.42"
+#define DRIVER_VERSION		"0.43"
 
 #include "main.h"
 #include "libhid.h"
@@ -49,6 +49,7 @@
 	#include "tripplite-hid.h"
 	#include "idowell-hid.h"
 	#include "openups-hid.h"
+	#include "legrand-hid.h"
 #endif
 
 /* master list of avaiable subdrivers */
@@ -66,6 +67,7 @@ static subdriver_t *subdriver_list[] = {
 	&tripplite_subdriver,
 	&idowell_subdriver,
 	&openups_subdriver,
+	&legrand_subdriver,
 #endif
 	NULL
 };

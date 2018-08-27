@@ -518,6 +518,8 @@
 "Legrand"	"ups"	"2"	"Daker DK Plus"	"Serial"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Daker DK Plus"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor Multiplug"	""	"nutdrv_qx"
+"Legrand"	"ups"	"2"	"Keor PDU"	"USB"	"usbhid-ups"
+"Legrand"	"ups"	"2"	"Keor SP"	"USB"	"usbhid-ups"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
