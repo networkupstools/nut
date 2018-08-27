@@ -1,4 +1,4 @@
-/* metasys.c - driver for Meta System UPS
+/* metasys.c - driver for Meta System and Legrand devices
 
    Copyright (C)
      2004  Fabio Di Niro <fabio.diniro@email.it>
@@ -27,8 +27,8 @@
 #include "main.h"
 #include "serial.h"
 
-#define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_NAME	"Meta System / Legrand UPS driver"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -330,7 +330,7 @@ void upsdrv_initinfo(void)
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
 	/* the manufacturer is hard coded into the driver, the model type is in the second 
 		byte of the answer, the third byte identifies the model version */
-	dstate_setinfo("ups.mfr", "Meta System");
+	dstate_setinfo("ups.mfr", "Meta System / Legrand");
 	i = my_answer[1] * 10 + my_answer[2];
 	switch (i) {	
 		case 11:
@@ -540,6 +540,50 @@ void upsdrv_initinfo(void)
 		case 158:
 			dstate_setinfo("ups.model", "%s", "Megaline 10000 / 2");
 			nominal_power = 7000;
+			break;
+		case 171:
+			dstate_setinfo("ups.model", "%s", "WHAD 800");
+			nominal_power = 560;
+			break;
+		case 181:
+			dstate_setinfo("ups.model", "%s", "WHAD 1000");
+			nominal_power = 700;
+			break;
+		case 191:
+			dstate_setinfo("ups.model", "%s", "WHAD 1500");
+			nominal_power = 1050;
+			break;
+		case 201:
+			dstate_setinfo("ups.model", "%s", "DHEA 1000");
+			nominal_power = 700;
+			break;
+		case 211:
+			dstate_setinfo("ups.model", "%s", "DHEA 1500");
+			nominal_power = 1050;
+			break;
+		case 272:
+			dstate_setinfo("ups.model", "%s", "WHAD 2000");
+			nominal_power = 1400;
+			break;
+		case 281:
+			dstate_setinfo("ups.model", "%s", "WHAD / WHAD CAB 1250");
+			nominal_power = 875;
+			break;
+		case 282:
+			dstate_setinfo("ups.model", "%s", "WHAD / WHAD CAB 2500");
+			nominal_power = 1750;
+			break;
+		case 311:
+			dstate_setinfo("ups.model", "%s", "WHAD HE 800");
+			nominal_power = 800;
+			break;
+		case 321:
+			dstate_setinfo("ups.model", "%s", "WHAD HE 1000");
+			nominal_power = 1000;
+			break;
+		case 331:
+			dstate_setinfo("ups.model", "%s", "WHAD HE 1500");
+			nominal_power = 1500;
 			break;
 
 		default:
