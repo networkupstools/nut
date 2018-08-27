@@ -28,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.08"
+#define DRIVER_VERSION	"0.09"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -814,7 +814,7 @@ void upsdrv_updateinfo(void)
 				break;
 			case 0x03:			/* bypass engaged */
 			case 0x04:			/* manual bypass engaged */
-				status_set("BY");
+				status_set("BYPASS");
 				break;
 			default:
 				printf("status unknown \n");
