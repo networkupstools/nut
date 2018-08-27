@@ -28,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Metasystem UPS driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -551,6 +551,10 @@ void upsdrv_initinfo(void)
 	memcpy(serial, my_answer + 7, res - 7);
 	/* serial number start from the 8th byte */
 	serial[12]=0;		/* terminate string */
+	for (i = 0; i < 12; i++) {
+		if (serial[i] == 0)
+			serial[i] = '0';
+	}
 	dstate_setinfo("ups.serial", "%s", serial);
 	
 	/* get the ups firmware. The major number is in the 5th byte, the minor is in the 6th */
