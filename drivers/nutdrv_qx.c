@@ -33,7 +33,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.29"
+#define DRIVER_VERSION	"0.30"
 
 #include "main.h"
 
@@ -1102,6 +1102,7 @@ typedef struct {
 static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x05b8, 0x0000),	NULL,		NULL,			&cypress_subdriver },	/* Agiler UPS */
 	{ USB_DEVICE(0xffff, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Ablerex 625L USB */
+	{ USB_DEVICE(0x1cb0, 0x0035),	NULL,		NULL,			&krauler_subdriver },	/* Legrand Daker DK / DK Plus */
 	{ USB_DEVICE(0x0665, 0x5161),	NULL,		NULL,			&cypress_subdriver },	/* Belkin F6C1200-UNV/Voltronic Power UPSes */
 	{ USB_DEVICE(0x06da, 0x0002),	NULL,		NULL,			&cypress_subdriver },	/* Online Yunto YQ450 */
 	{ USB_DEVICE(0x06da, 0x0003),	NULL,		NULL,			&ippon_subdriver },	/* Mustek Powermust */

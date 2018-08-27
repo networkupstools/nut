@@ -513,6 +513,10 @@
 
 "LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
 
+"Legrand"	"ups"	"2"	"Daker DK"	"Serial"	"nutdrv_qx"
+"Legrand"	"ups"	"2"	"Daker DK"	"USB"	"nutdrv_qx"
+"Legrand"	"ups"	"2"	"Daker DK Plus"	"Serial"	"nutdrv_qx"
+"Legrand"	"ups"	"2"	"Daker DK Plus"	"USB"	"nutdrv_qx"
 "Legrand"	"ups"	"2"	"Keor Multiplug"	""	"nutdrv_qx"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
