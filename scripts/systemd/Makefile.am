@@ -11,7 +11,7 @@ systemdsystemunit_DATA = \
         nut-driver.target   \
         nut.target
 
-EXTRA_DIST += nut-driver.target
+EXTRA_DIST += nut-driver.target nut.target
 
 EXTRA_DIST += nut-driver.target
 
