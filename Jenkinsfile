@@ -70,16 +70,32 @@ pipeline {
     triggers {
         pollSCM 'H/5 * * * *'
     }
+    options {
+        disableConcurrentBuilds()
+        skipDefaultCheckout()
+    }
 // Note: your Jenkins setup may benefit from similar setup on side of agents:
 //        PATH="/usr/lib64/ccache:/usr/lib/ccache:/usr/bin:/bin:${PATH}"
     stages {
-        stage ('prepare') {
+        stage ('pre-clean') {
+                    milestone ordinal: 20, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     steps {
                         dir("tmp") {
                             sh 'if [ -s Makefile ]; then make -k distclean || true ; fi'
                             sh 'chmod -R u+w .'
                             deleteDir()
                         }
+                    }
+        }
+        stage ('git') {
+                    steps {
+                        retry(3) {
+                            checkout scm
+                        }
+                    }
+        }
+        stage ('prepare') {
+                    steps {
                         sh './autogen.sh'
                         stash (name: 'prepped', includes: '**/*', excludes: '**/cppcheck.xml')
                     }
