@@ -1,6 +1,7 @@
 debian/tmp/bin/nut-scanner
 debian/tmp/sbin/upsd
 debian/tmp/sbin/upsdrvctl
+debian/tmp/sbin/upsdrvsvcctl
 debian/tmp/usr/share/nut/cmdvartab
 debian/tmp/usr/share/nut/driver.list
 debian/tmp/*/udev/rules.d/[0-9][0-9]-*.rules
@@ -8,6 +9,7 @@ debian/tmp/etc/avahi/services/nut.service
 debian/tmp/etc/nut/ups.conf
 debian/tmp/etc/nut/upsd.conf
 debian/tmp/etc/nut/upsd.users
+debian/tmp/lib/nut/nut-driver-enumerator.sh
 debian/tmp/lib/nut/genericups
 debian/tmp/lib/nut/mge-shut
 debian/tmp/lib/nut/rhino
