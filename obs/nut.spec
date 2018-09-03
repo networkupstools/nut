@@ -304,7 +304,7 @@ install -m0755 scripts/subdriver/gen-snmp-subdriver.sh %{buildroot}%{_sbindir}/
 usr/sbin/useradd -r -g %{GROUP} -s /bin/false \
   -c "UPS daemon" -d /sbin %{USER} 2>/dev/null || :
 %if %{defined opensuse_version}
-%service_add_pre nut-driver.service nut-server.service nut-monitor.service
+%service_add_pre nut-driver@.service nut-server.service nut-monitor.service nut-driver.target nut.target
 %endif
 
 %post
@@ -316,17 +316,17 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 # And finally trigger udev to set permissions according to newly installed rules files.
 /sbin/udevadm trigger --subsystem-match=usb --property-match=DEVTYPE=usb_device
 %if %{defined opensuse_version}
-%service_add_post nut-driver.service nut-server.service nut-monitor.service
+%service_add_post nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
 %endif
 
 %preun
 %if %{defined opensuse_version}
-%service_del_preun nut-driver.service nut-server.service nut-monitor.service
+%service_del_preun nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
 %endif
 
 %postun
 %if %{defined opensuse_version}
-%service_del_postun nut-driver.service nut-server.service nut-monitor.service
+%service_del_postun nut-driver@.service nut-server.service nut-monitor.service nut-driver-enumerator.service nut-driver.target nut.target
 %endif
 
 %post -n libupsclient1 -p /sbin/ldconfig
@@ -385,6 +385,7 @@ bin/chmod 600 %{CONFPATH}/upsd.conf %{CONFPATH}/upsmon.conf %{CONFPATH}/upsd.use
 %dir %{_datadir}/augeas/lenses
 %dir %{_datadir}/augeas/lenses/dist
 %dir %{_datadir}/augeas/lenses/dist/tests
+%{_libexecdir}/nut-driver-enumerator.sh
 
 %files drivers-net
 %defattr(-,root,root)
