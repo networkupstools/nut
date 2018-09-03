@@ -1,0 +1,60 @@
+#!/sbin/sh
+
+# Trivial (better is yet to come) SMF method script to start nut services
+# Adapted for OpenIndiana userland from init.d script template in NUT sources
+# Adaptation copyright (C) 2016 Jim Klimov
+
+if [ -z "$SMF_FMRI" ]; then
+	echo "$0 must be called in SMF context!" >&2
+	exit 1
+fi
+
+# smf(5)
+. /lib/svc/share/smf_include.sh || exit
+
+prefix="@prefix@"
+NUT_DIR="@prefix@"
+NUT_SBIN_DIR="$NUT_DIR/sbin"
+NUT_LIB_DIR="${NUT_DIR}/lib"
+NUT_RUN_DIR="@PIDPATH@/nut"
+CONFIG="@CONFPATH@/nut.conf"
+NUTUSER="@RUN_AS_USER@"
+NUTGROUP="@RUN_AS_GROUP@"
+
+if [ -f "$CONFIG" ] ; then
+	. "$CONFIG"
+fi
+
+ups_start () {
+	# Default rights inspired by NUT scripts/Solaris/postinstall.in
+	mkdir -p "$NUT_RUN_DIR" && \
+	chown "root:$NUTGROUP" "$NUT_RUN_DIR" && \
+	chmod 770 "$NUT_RUN_DIR" \
+	|| exit $SMF_EXIT_ERR_FATAL
+
+	if [ "$MODE" = "none" ];then
+		echo "No NUT mode set, not starting anything" >&2
+		exit 1
+	fi
+
+	if [ "$MODE" != "netclient" ] ; then
+		# In this distribution, UPS drivers are wrapped by service instances
+		#LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsdrvctl" start #> /dev/null 2>&1
+		LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsd" #> /dev/null 2>&1
+	fi
+}
+
+case "$1" in
+'start')
+	ups_start
+	;;
+
+*)
+	echo ""
+	echo "Usage: '$0' {start}"
+	echo ""
+	exit $SMF_EXIT_ERR_CONFIG
+	;;
+esac
+
+exit $?

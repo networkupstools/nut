@@ -581,7 +581,7 @@ to be locally installed on your system, including asciidoc, a2x, xsltproc,
 dblatex and any additional XSL stylesheets.
 
 Running +make distcheck-light+ is especially important if you have added or
-removed files, or updated configure.in or some Makefile.am.  Remember: simply
+removed files, or updated configure.ac or some Makefile.am.  Remember: simply
 adding a file to Git does not mean it will be distributed. To distribute a
 file, you must update the corresponding Makefile.am.
 

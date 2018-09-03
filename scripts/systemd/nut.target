@@ -1,0 +1,8 @@
+[Unit]
+Description=Network UPS Tools - target for power device drivers, data server and monitoring client (if enabled) on this system
+After=local-fs.target nut-driver.target nut-server.service nut-monitor.service
+Wants=local-fs.target nut-driver.target nut-server.service nut-monitor.service
+# network.target
+
+[Install]
+WantedBy=multi-user.target
