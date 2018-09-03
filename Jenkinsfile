@@ -78,8 +78,8 @@ pipeline {
 //        PATH="/usr/lib64/ccache:/usr/lib/ccache:/usr/bin:/bin:${PATH}"
     stages {
         stage ('pre-clean') {
-                    milestone ordinal: 20, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                     steps {
+                        milestone ordinal: 20, label: "${env.JOB_NAME}@${env.BRANCH_NAME}"
                         dir("tmp") {
                             sh 'if [ -s Makefile ]; then make -k distclean || true ; fi'
                             sh 'chmod -R u+w .'
