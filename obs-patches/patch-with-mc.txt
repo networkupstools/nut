@@ -1,2 +1,0 @@
-gpatch -d .. -p1 < %d/%s && git commit -a -m 'OBS PATCH integrated: %s'
-
