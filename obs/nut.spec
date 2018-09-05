@@ -20,8 +20,8 @@
 %define apache_serverroot %(%{_sbindir}/apxs2 -q datadir 2>/dev/null || %{_sbindir}/apxs -q PREFIX)
 %define CGIPATH		%{apache_serverroot}/cgi-bin
 %define HTMLPATH	%{apache_serverroot}/htdocs
-%define MODELPATH       %{_libexecdir}/ups/driver
-%define STATEPATH       %{_localstatedir}/lib/ups
+%define MODELPATH	%{_libexecdir}/ups/driver
+%define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
 %define USER		upsd
 %define GROUP		daemon
