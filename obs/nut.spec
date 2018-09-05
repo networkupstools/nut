@@ -43,38 +43,7 @@ Summary:        Network UPS Tools Core (Uninterruptible Power Supply Monitoring)
 License:        GPL-2.0+
 Group:          Hardware/UPS
 Url:            http://www.networkupstools.org/
-#Source:         http://www.networkupstools.org/source/2.7/%{name}-%{version}.tar.gz
-
-# git clone https://github.com/vyskocilm/nut daisychain+DMF
-# git archive --prefix nut-2.7.4/ -o ~/work/BIOS/ROZ-OBS/Pool\:master/nut/nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz HEAD
 Source0:        %{name}-%{version}.tar.gz
-#Source:         nut-2.7.4-DMF+daisychain-cb7c7ea8b0d.tar.gz
-#Patch2:         0002-nut-monitor-paths.patch
-#Patch3:         0003-install-dev-files-in-usr.patch
-#Patch4:         0004-fix-systemd-service.patch
-#Patch6:         0006-ups-conf-maxretry.patch
-#Patch8:         0008-drop-w3c-icons.patch
-#Patch11:        0011-libnutscanner-scan-one-ip-xml-http.patch
-#Patch14:        0014-upsrdvctl-nowait.patch
-#Patch15:        0015-Use-target-for-drivers-in-systemd.patch
-#Patch16:        0021-xml_scan_3tries.patch
-### already upstream
-###Patch17:        0024-snmp-ups-Eaton-3ph-UPS-improvements.patch
-###Patch18:        0025-Fix-nut-scanner-compilation-in-some-environments.patch
-###Patch19:        0026-snmp-ups-support-Raritan-Dominion-PX2-PDU.patch
-#Patch20:        0027-snmp-ups-support-APC-PDU.patch
-### can't be merged, upstream change
-###Patch21:        0028-nut-scanner-additional-search-path.patch
-### can't be merged, upstream change
-###Patch29:        0029-netvision-mib-uses-0-as-dfl.patch
-### daisy chain is upstream
-### Patch30:        0030-daisychain.patch
-### Patch31:        0031-daisychain-complement.patch
-### Patch32:        0032-snmp-ups-fix-some-regression-due-to-daisychain.patch
-### Patch33:        0033-snmp-ups-fix-memory-leaks.patch
-#Patch34:        0034-fix_xmlv4_segfault.patch
-###Patch35:        0035-daisychain+DMF.patch
-###Patch36:        0036-post-carlos-dmf-fixes.patch
 
 Requires:       %{_bindir}/fgrep
 Requires:       %{_bindir}/grep
@@ -220,28 +189,6 @@ Detailed information about supported hardware can be found in
 
 %prep
 %setup -q
-#%patch2 -p1
-#%patch3 -p1
-#%patch4 -p1
-#%patch6 -p1
-#%patch8 -p1
-#%patch11 -p1
-#%patch14 -p1
-#%patch15 -p1
-#%patch16 -p1
-### % patch17 -p1
-### % patch18 -p1
-### % patch19 -p1
-#%patch20 -p1
-### % patch21 -p1
-### % patch29 -p1
-### % patch30 -p1
-### % patch31 -p1
-### % patch32 -p1
-### % patch33 -p1
-#%patch34 -p1
-### % patch35 -p1
-### % patch36 -p1
 
 %build
 sh autogen.sh
