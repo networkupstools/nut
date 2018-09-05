@@ -28,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Meta System / Legrand UPS driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -268,63 +268,6 @@ void upsdrv_initinfo(void)
 	char serial[13];
 	int res, i;
 
-	/* Initial setup of variables */
-#ifdef EXTRADATA
-	 dstate_setinfo("output.power", "%d", -1);
-	dstate_setflags("output.power", ST_FLAG_RW);
-#endif
-	 dstate_setinfo("output.voltage", "%d", -1);
-	dstate_setflags("output.voltage", ST_FLAG_RW);
-	 dstate_setinfo("output.current", "%d", -1);
-	dstate_setflags("output.current", ST_FLAG_RW);
-#ifdef EXTRADATA
-	 dstate_setinfo("output.current.peak", "%2.2f", -1);	
-	dstate_setflags("output.current.peak", ST_FLAG_RW);
-	 dstate_setinfo("input.power", "%d", -1);
-	dstate_setflags("input.power", ST_FLAG_RW);
-#endif
-	 dstate_setinfo("input.voltage", "%d", -1);
-	dstate_setflags("input.voltage", ST_FLAG_RW);
-#ifdef EXTRADATA
-	 dstate_setinfo("input.current", "%2.2f", -1);
-	dstate_setflags("input.current", ST_FLAG_RW);
-	 dstate_setinfo("input.current.peak", "%2.2f", -1);	
-	dstate_setflags("input.current.peak", ST_FLAG_RW);
-#endif
-	 dstate_setinfo("battery.voltage", "%d", -1);
-	dstate_setflags("battery.voltage", ST_FLAG_RW);
-#ifdef EXTRADATA
-	 dstate_setinfo("battery.voltage.low", "%2.2f", -1);
-	dstate_setflags("battery.voltage.low", ST_FLAG_RW);
-	 dstate_setinfo("battery.voltage.exhaust", "%2.2f", -1);
-	dstate_setflags("battery.voltage.exhaust", ST_FLAG_RW);
-	 dstate_setinfo("ups.total.runtime", "retrieving...");
-	dstate_setflags("ups.total.runtime", ST_FLAG_STRING | ST_FLAG_RW);
-	  dstate_setaux("ups.total.runtime", 20);
-	 dstate_setinfo("ups.inverter.runtime", "retrieving...");
-	dstate_setflags("ups.inverter.runtime", ST_FLAG_STRING | ST_FLAG_RW);
-	  dstate_setaux("ups.inverter.runtime", 20);
-	 dstate_setinfo("ups.inverter.interventions", "%d", -1);
-	dstate_setflags("ups.inverter.interventions", ST_FLAG_RW);
-	 dstate_setinfo("battery.full.discharges", "%d", -1);
-	dstate_setflags("battery.full.discharges", ST_FLAG_RW);
-	 dstate_setinfo("ups.bypass.interventions", "%d", -1);
-	dstate_setflags("ups.bypass.interventions", ST_FLAG_RW);
-	 dstate_setinfo("ups.overheatings", "%d", -1);
-	dstate_setflags("ups.overheatings", ST_FLAG_RW);
-#endif
-	 dstate_setinfo("ups.load", "%d", -1);
-	dstate_setflags("ups.load", ST_FLAG_RW);
-	 dstate_setinfo("ups.delay.shutdown", "%d", -1);
-	dstate_setflags("ups.delay.shutdown", ST_FLAG_RW);
-	 dstate_setinfo("ups.delay.start", "%d", -1);
-	dstate_setflags("ups.delay.start", ST_FLAG_RW);
-	 dstate_setinfo("ups.temperature", "%d", -1);
-	dstate_setflags("ups.temperature", ST_FLAG_RW);
-	 dstate_setinfo("ups.test.result", "not yet done...");
-	dstate_setflags("ups.test.result", ST_FLAG_STRING | ST_FLAG_RW);
-	  dstate_setaux("ups.test.result", 20);
-	
 	/* UPS INFO READ */
 	res = command_read_sequence(UPS_INFO, my_answer);
 	if (res < 0) fatal_with_errno(EXIT_FAILURE, "Could not communicate with the ups");
