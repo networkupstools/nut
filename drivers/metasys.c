@@ -28,7 +28,7 @@
 #include "serial.h"
 
 #define DRIVER_NAME	"Meta System / Legrand UPS driver"
-#define DRIVER_VERSION	"0.12"
+#define DRIVER_VERSION	"0.13"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -45,12 +45,16 @@ int autorestart = 0;
 /* Nominal Active Power (W) of the UPS */
 int nominal_power = 0;
 
+/* Battery SOC Data discrimation variable */
+static int batt_soc = 0;
+
 /* ups commands */
 #define UPS_INFO 			0x00
 #define UPS_OUTPUT_DATA 		0x01
 #define UPS_INPUT_DATA 			0x02
 #define UPS_STATUS 			0x03
 #define UPS_BATTERY_DATA 		0x04
+#define UPS_BATTERY_SOC_DATA	        0x25
 #define UPS_HISTORY_DATA		0x05
 #define UPS_GET_SCHEDULING		0x06
 #define UPS_EVENT_LIST			0x07
@@ -451,82 +455,102 @@ void upsdrv_initinfo(void)
 		case 141:
 			dstate_setinfo("ups.model", "%s", "Megaline 1250");
 			nominal_power = 875;
+			batt_soc = 1;
 			break;
 		case 142:
 			dstate_setinfo("ups.model", "%s", "Megaline 2500");
 			nominal_power = 1750;
+			batt_soc = 1;
 			break;
 		case 143:
 			dstate_setinfo("ups.model", "%s", "Megaline 3750");
 			nominal_power = 2625;
+			batt_soc = 1;
 			break;
 		case 144:
 			dstate_setinfo("ups.model", "%s", "Megaline 5000");
 			nominal_power = 3500;
+			batt_soc = 1;
 			break;
 		case 154:
 			dstate_setinfo("ups.model", "%s", "Megaline 5000 / 2");
 			nominal_power = 3500;
+			batt_soc = 1;
 			break;
 		case 155:
 			dstate_setinfo("ups.model", "%s", "Megaline 6250 / 2");
 			nominal_power = 4375;
+			batt_soc = 1;
 			break;
 		case 156:
 			dstate_setinfo("ups.model", "%s", "Megaline 7500 / 2");
 			nominal_power = 5250;
+			batt_soc = 1;
 			break;
 		case 157:
 			dstate_setinfo("ups.model", "%s", "Megaline 8750 / 2");
 			nominal_power = 6125;
+			batt_soc = 1;
 			break;
 		case 158:
 			dstate_setinfo("ups.model", "%s", "Megaline 10000 / 2");
 			nominal_power = 7000;
+			batt_soc = 1;
 			break;
 		case 171:
 			dstate_setinfo("ups.model", "%s", "WHAD 800");
 			nominal_power = 560;
+			batt_soc = 1;
 			break;
 		case 181:
 			dstate_setinfo("ups.model", "%s", "WHAD 1000");
 			nominal_power = 700;
+			batt_soc = 1;
 			break;
 		case 191:
 			dstate_setinfo("ups.model", "%s", "WHAD 1500");
 			nominal_power = 1050;
+			batt_soc = 1;
 			break;
 		case 201:
 			dstate_setinfo("ups.model", "%s", "DHEA 1000");
 			nominal_power = 700;
+			batt_soc = 1;
 			break;
 		case 211:
 			dstate_setinfo("ups.model", "%s", "DHEA 1500");
 			nominal_power = 1050;
+			batt_soc = 1;
 			break;
 		case 272:
 			dstate_setinfo("ups.model", "%s", "WHAD 2000");
 			nominal_power = 1400;
+			batt_soc = 1;
 			break;
 		case 281:
 			dstate_setinfo("ups.model", "%s", "WHAD / WHAD CAB 1250");
 			nominal_power = 875;
+			batt_soc = 1;
 			break;
 		case 282:
 			dstate_setinfo("ups.model", "%s", "WHAD / WHAD CAB 2500");
 			nominal_power = 1750;
+			batt_soc = 1;
 			break;
 		case 311:
 			dstate_setinfo("ups.model", "%s", "WHAD HE 800");
 			nominal_power = 800;
+			batt_soc = 1;
 			break;
 		case 321:
 			dstate_setinfo("ups.model", "%s", "WHAD HE 1000");
 			nominal_power = 1000;
+			batt_soc = 1;
 			break;
 		case 331:
 			dstate_setinfo("ups.model", "%s", "WHAD HE 1500");
 			nominal_power = 1500;
+			batt_soc = 1;
 			break;
 
 		default:
@@ -675,7 +699,21 @@ void upsdrv_updateinfo(void)
 		}
 #endif
 	}
-	
+
+	/* GET Battery SOC data */
+	if (batt_soc) {
+		res = command_read_sequence(UPS_BATTERY_SOC_DATA, my_answer);
+		if (res < 0) {
+			printf("Could not communicate with the UPS");
+			dstate_datastale();
+		} else {
+			int_num = get_word(&my_answer[2]);
+			dstate_setinfo("battery.runtime", "%u", int_num);
+			int_num = my_answer[4];
+			dstate_setinfo("battery.charge", "%u", int_num);
+		}
+	}
+
 	/* GET Battery data */
 	res = command_read_sequence(UPS_BATTERY_DATA, my_answer);
 	if (res < 0) {
