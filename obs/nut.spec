@@ -23,6 +23,9 @@
 %define MODELPATH	%{_libexecdir}/ups/driver
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
+### Note: this is /etc/nut in Debian version
+%define _sysconfdir	/etc/ups
+%define _datadir	%{_datadir}/nut
 %define USER		upsd
 %define GROUP		daemon
 %define LBRACE (
@@ -192,9 +195,7 @@ Detailed information about supported hardware can be found in
 
 %build
 sh autogen.sh
-%configure --disable-static --with-pic --libexecdir=%{_prefix}/lib\
-	--sysconfdir=%{CONFPATH}\
-	--datadir=%{_datadir}/nut\
+%configure --disable-static --with-pic \
 	--with-ssl --with-openssl\
 	--with-libltdl=yes\
 	--with-cgi=auto\
