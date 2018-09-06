@@ -24,8 +24,6 @@
 %define STATEPATH	%{_localstatedir}/lib/ups
 %define CONFPATH	%{_sysconfdir}/ups
 ### Note: this is /etc/nut in Debian version
-%define _sysconfdir	/etc/ups
-%define _datadir	%{_datadir}/nut
 %define USER		upsd
 %define GROUP		daemon
 %define LBRACE (
@@ -193,9 +191,19 @@ Detailed information about supported hardware can be found in
 %prep
 %setup -q
 
+# Note: NOT configure macro, due to override of --sysconfdir and --datadir
+# values just for the recipe part but not for whole specfile
 %build
 sh autogen.sh
-%configure --disable-static --with-pic \
+./configure --disable-static --with-pic \
+	--prefix=%{_prefix}\
+	--execdir=%{_prefix}\
+	--bindir=%{_bindir}\
+	--sbindir=%{_sbindir}\
+	--libdir=%{_libdir}\
+	--libexecdir=%{_libexecdir}\
+	--sysconfdir=%{CONFPATH}\
+	--datadir=%{_datadir}/nut\
 	--with-ssl --with-openssl\
 	--with-libltdl=yes\
 	--with-cgi=auto\
