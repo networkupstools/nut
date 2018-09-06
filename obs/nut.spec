@@ -197,7 +197,6 @@ Detailed information about supported hardware can be found in
 sh autogen.sh
 ./configure --disable-static --with-pic \
 	--prefix=%{_prefix}\
-	--execdir=%{_prefix}\
 	--bindir=%{_bindir}\
 	--sbindir=%{_sbindir}\
 	--libdir=%{_libdir}\
