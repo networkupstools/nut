@@ -920,13 +920,13 @@ void upsdrv_initups(void)
 	 * SHUT is a serial protocol, so it needs
 	 * only the device path
 	 */
-	upsdebugx(1, "upsdrv_initups...");
+	upsdebugx(1, "upsdrv_initups (SHUT)...");
 
 	subdriver_matcher = device_path;
 #else
 	char *regex_array[6];
 
-	upsdebugx(1, "upsdrv_initups...");
+	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 
 	subdriver_matcher = &subdriver_matcher_struct;
 

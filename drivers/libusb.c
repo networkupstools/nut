@@ -173,6 +173,8 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	libusb_close(*udevp);
 #endif
 
+	upsdebugx(3, "usb_busses=%p", usb_busses);
+
 	for (bus = usb_busses; bus; bus = bus->next) {
 		for (dev = bus->devices; dev; dev = dev->next) {
 			upsdebugx(2, "Checking device (%04X/%04X) (%s/%s)", dev->descriptor.idVendor,
@@ -410,7 +412,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	}
 
 	*udevp = NULL;
-	upsdebugx(2, "No appropriate HID device found");
+	upsdebugx(2, "libusb: No appropriate HID device found");
 	fflush(stdout);
 
 	return -1;
