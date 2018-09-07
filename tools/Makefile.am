@@ -41,7 +41,7 @@ all: nut-scanner-deps $(GENERATED_USB_FILES)
 # dependencies need to be properly listed.
 nut-scanner-deps: nut-scanner/nutscan-snmp.h nut-scanner/nutscan-usb.h
 
-nut-scanner/nutscan-snmp.h: ../drivers/*-mib.c
+nut-scanner/nutscan-snmp.h: $(top_srcdir)/drivers/*-mib.c
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files in SRC dir."; \
 		$(top_srcdir)/tools/nut-snmpinfo.py; \
@@ -52,7 +52,7 @@ nut-scanner/nutscan-snmp.h: ../drivers/*-mib.c
 		echo "----------------------------------------------------------------------"; \
 	fi
 
-$(GENERATED_USB_FILES): ../drivers/*-hid.c ../drivers/*usb*.c
+$(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb*.c
 	@if perl -e 1; then \
 		echo "Regenerating the USB helper files in SRC dir."; \
 		$(top_srcdir)/tools/nut-usbinfo.pl; \
