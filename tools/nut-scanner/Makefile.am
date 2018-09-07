@@ -1,6 +1,12 @@
-BUILT_SOURCES = nutscan-usb.h nutscan-snmp.h
+# Headers re-generated for nut-scanner in the parent dir
+NUT_SCANNER_DEPS_H = nutscan-usb.h nutscan-snmp.h
 
-nutscan-usb.h nutscan-snmp.h:
+# General set of nut-scanner dependencies generated in the parent dir
+NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H)
+
+BUILT_SOURCES = $(NUT_SCANNER_DEPS)
+
+$(NUT_SCANNER_DEPS):
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 # Only build nut-scanner, and its library, if libltdl was found (required!)
@@ -43,7 +49,7 @@ if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
 
-dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.h
+dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H)
 
 if WITH_DEV
  include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h
@@ -51,5 +57,5 @@ else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
-CLEANFILES = nutscan-usb.h nutscan-snmp.h
+CLEANFILES = $(BUILT_SOURCES)
 
