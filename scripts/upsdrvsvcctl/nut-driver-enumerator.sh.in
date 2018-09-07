@@ -434,6 +434,7 @@ smf_listInstances() {
 }
 smf_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
+    /usr/sbin/svcadm enable "nut-server" 2>/dev/null
     /usr/sbin/svcadm clear "nut-server" 2>/dev/null
     /usr/sbin/svcadm restart "nut-server"
 }
