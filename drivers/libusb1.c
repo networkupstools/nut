@@ -643,8 +643,8 @@ static void nut_libusb_close(libusb_device_handle *udev)
 }
 
 usb_communication_subdriver_t usb_subdriver = {
-	USB_DRIVER_VERSION,
 	USB_DRIVER_NAME,
+	USB_DRIVER_VERSION,
 	nut_libusb_open,
 	nut_libusb_close,
 	nut_libusb_get_report,
