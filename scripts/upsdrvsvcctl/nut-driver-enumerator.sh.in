@@ -211,6 +211,11 @@ upslist_equals() {
     # old and new state of configs (maybe hashed upsconf_getSection output
     # as a service configuration variable?) on all supported frameworks.
 
+    # Trivial case 0: one string is empty, another is not
+    # Note: `echo '' | wc -l` == "1" not "0"!
+    [ -n "$1" -a -z "$2" ] && return 1
+    [ -z "$1" -a -n "$2" ] && return 1
+
     # Trivial case 1: equal strings
     [ "$1" = "$2" ] && return 0
     # Trivial case 2: different amount of entries
@@ -227,6 +232,9 @@ upslist_equals() {
 $_DEV = $_SVC" ; }
         done
     done
+
+    # Input was not empty; did anything in output fit?
+    [ -z "$_TMP_DEV_SVC" ] && return 1
 
     # Exit code : is the built mapping as long as the source list(s)?
     [ "`echo "$1" | wc -l`" = "`echo "$_TMP_DEV_SVC" | wc -l`" ]
