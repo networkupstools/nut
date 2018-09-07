@@ -19,30 +19,47 @@ SUBDIRS = . nut-scanner
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
   gitlog2changelog.py nut-snmpinfo.py driver-list-format.sh
 
-all: nut-scanner-deps 
+GENERATED_USB_FILES = nut-scanner/nutscan-usb.h
+
+# Hotplug output file
+GENERATED_USB_FILES += ../scripts/hotplug/libhid.usermap
+
+# udev output file
+GENERATED_USB_FILES += ../scripts/udev/nut-usbups.rules.in
+
+# BSD devd output file
+GENERATED_USB_FILES += ../scripts/devd/nut-usb.conf.in
+
+# UPower output file
+GENERATED_USB_FILES += ../scripts/upower/95-upower-hid.rules
+
+all: nut-scanner-deps $(GENERATED_USB_FILES)
 
 # XXX these rules are all bogus!  They cause un-named target files to
 # always be rebuilt!  None of that is ever the right way to use make,
 # and especially not Automake.  Explicit filenames and their exact
 # dependencies need to be properly listed.
-nut-scanner-deps:
+nut-scanner-deps: nut-scanner/nutscan-snmp.h nut-scanner/nutscan-usb.h
+
+nut-scanner/nutscan-snmp.h: ../drivers/*-mib.c
 	@if python -c 1; then \
-		echo "Regenerating the SNMP helper files."; \
+		echo "Regenerating the SNMP helper files in SRC dir."; \
 		$(top_srcdir)/tools/nut-snmpinfo.py; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
-		echo "Skipping the SNMP helper files regeneration."; \
+		echo "Skipping the SNMP helper files regeneration in SRC dir."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 
+$(GENERATED_USB_FILES): ../drivers/*-hid.c ../drivers/*usb*.c
 	@if perl -e 1; then \
-		echo "Regenerating the USB helper files."; \
+		echo "Regenerating the USB helper files in SRC dir."; \
 		$(top_srcdir)/tools/nut-usbinfo.pl; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
-		echo "Skipping the USB helper files regeneration."; \
+		echo "Skipping the USB helper files regeneration in SRC dir."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 
@@ -52,22 +69,22 @@ nut-scanner-deps:
 # Also ensure that data/driver.list is well formatted
 dist-hook:
 	@if python -c 1; then \
-		echo "Regenerating the SNMP helper files."; \
-		$(distdir)/nut-snmpinfo.py; \
+		echo "Regenerating the SNMP helper files in DIST dir."; \
+		cd $(distdir) && ./nut-snmpinfo.py; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
-		echo "Skipping the SNMP helper files regeneration."; \
+		echo "Skipping the SNMP helper files regeneration in DIST dir."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 
 	@if perl -e 1; then \
-		echo "Regenerating the USB helper files."; \
-		$(distdir)/nut-usbinfo.pl; \
+		echo "Regenerating the USB helper files in DIST dir."; \
+		cd $(distdir) && ./nut-usbinfo.pl; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
-		echo "Skipping the USB helper files regeneration."; \
+		echo "Skipping the USB helper files regeneration in DIST dir."; \
 		echo "----------------------------------------------------------------------"; \
 	fi
 
