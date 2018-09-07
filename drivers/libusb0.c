@@ -418,7 +418,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	}
 
 	*udevp = NULL;
-	upsdebugx(2, "No appropriate HID device found");
+	upsdebugx(2, "libusb0: No appropriate HID device found");
 	fflush(stdout);
 
 	return -1;
