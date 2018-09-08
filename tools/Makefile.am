@@ -19,6 +19,8 @@ SUBDIRS = . nut-scanner
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
   gitlog2changelog.py nut-snmpinfo.py driver-list-format.sh
 
+GENERATED_SNMP_FILES = nut-scanner/nutscan-snmp.h
+
 GENERATED_USB_FILES = nut-scanner/nutscan-usb.h
 
 # Hotplug output file
@@ -41,7 +43,7 @@ all: nut-scanner-deps $(GENERATED_USB_FILES)
 # dependencies need to be properly listed.
 nut-scanner-deps: nut-scanner/nutscan-snmp.h nut-scanner/nutscan-usb.h
 
-nut-scanner/nutscan-snmp.h: $(top_srcdir)/drivers/*-mib.c
+$(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files in SRC dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
