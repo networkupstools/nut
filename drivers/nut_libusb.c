@@ -739,8 +739,8 @@ void	nut_libusb_add_nutvars(void)
 }
 
 usb_communication_subdriver_t	usb_subdriver = {
-	NUT_USB_DRIVER_VERSION,
 	NUT_USB_DRIVER_NAME,
+	NUT_USB_DRIVER_VERSION,
 	nut_libusb_init,
 	nut_libusb_deinit,
 	nut_libusb_open,
