@@ -74,9 +74,12 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
 		@SBINDIR@/upsdrvsvcctl start
 	else
-		echo "NOT ENABLING nut-driver-enumerator at this time : missing @CONFPATH@/ups.conf" >&2
+		echo "NOT ENABLING nut-driver-enumerator at this time : missing or empty @CONFPATH@/ups.conf" >&2
 	fi
-	if test -s "@CONFPATH@/ups.conf" && test -s "@CONFPATH@/upsd.conf" && test -s "@CONFPATH@/upsd.users" ; then
+	if test -s "@CONFPATH@/ups.conf" && test -e "@CONFPATH@/upsd.conf" && test -e "@CONFPATH@/upsd.users" ; then
+		# Note on the mix of "-s" and "-e" in tests above:
+		# it is a valid use-case for an admin to have just touched an
+		# empty upsd.conf and so use default settings for the daemon
 		echo "Enable NUT upsd data server..."
 		/usr/sbin/svcadm enable -s nut-server
 	else
@@ -86,7 +89,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		echo "Enable NUT upsmon client..."
 		/usr/sbin/svcadm enable -s nut-monitor
 	else
-		echo "NOT ENABLING nut-monitor at this time : missing @CONFPATH@/upsmon.conf" >&2
+		echo "NOT ENABLING nut-monitor at this time : missing or empty @CONFPATH@/upsmon.conf" >&2
 	fi
 	echo "Enable NUT umbrella service..."
 	/usr/sbin/svcadm enable -s nut
