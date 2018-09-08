@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Postremove script for Network UPS Tools package
+
 # Remove init script from /etc/init.d - created by scripts not packaging
 
 rm -f /etc/init.d/nut

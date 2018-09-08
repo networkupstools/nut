@@ -1,5 +1,6 @@
 #!/bin/sh
 
+# Preinstall script for Network UPS Tools package
 NUT_DIR="@prefix@"
 
 # Create group nut
