@@ -71,12 +71,15 @@ $(GENERATED_USB_FILES): $(top_srcdir)/drivers/*-hid.c $(top_srcdir)/drivers/*usb
 # call the SNMP info script upon "make dist", and if Python is present
 # and call both for building nut-scanner
 # Also ensure that data/driver.list is well formatted
+# NOTE: Beware that current working directory for the script should be builddir
+# so it may write the files in "dist" case (read-only sources), but the script
+# is called from the distdir where its copy is present.
 dist-hook:
 	@if python -c 1; then \
 		echo "Regenerating the SNMP helper files in DIST dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
-		cd $(distdir) && ./nut-snmpinfo.py; \
+		$(distdir)/nut-snmpinfo.py; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Python is not available."; \
@@ -88,7 +91,7 @@ dist-hook:
 		echo "Regenerating the USB helper files in DIST dir."; \
 		TOP_SRCDIR="$(top_srcdir)" ; export TOP_SRCDIR; \
 		TOP_BUILDDIR="$(top_builddir)" ; export TOP_BUILDDIR; \
-		cd $(distdir) && ./nut-usbinfo.pl; \
+		$(distdir)/nut-usbinfo.pl; \
 	else \
 		echo "----------------------------------------------------------------------"; \
 		echo "Warning: Perl is not available."; \
