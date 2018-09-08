@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Preremove script for Network UPS Tools package
+
 # Stop all nut services
 
 NUT_DIR="@prefix@"

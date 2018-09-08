@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#Postinstall script
+# Postinstall script for Network UPS Tools package
 
 NUT_DIR="@prefix@"
 prefix="@prefix@" # expanded as part of some autoconf macros below
