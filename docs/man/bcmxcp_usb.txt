@@ -28,6 +28,28 @@ linkman:ups.conf[5].
 The number of seconds that the UPS should wait between receiving the 
 shutdown command and actually shutting off.
 
+*vendorid* = 'regex'::
+*productid* = 'regex'::
+*vendor* = 'regex'::
+*product* = 'regex'::
+*serial* = 'regex'::
+Select a specific UPS, in case there is more than one connected via USB.
+Each option specifies an extended regular expression (see *regex(7)*) that must
+match the UPS's entire vendor/product/serial string (minus any surrounding
+whitespace), or the whole 4-digit hexadecimal code for vendorid and productid.
+Try *-DD* for finding out the strings to match.
++
+Examples:
+
+- `-x vendor="Foo.Corporation.*"`
+- `-x vendorid=051d*` (APC)
+- `-x product=".*(Smart|Back)-?UPS.*"`
+
+*bus* = 'regex'::
+Select a UPS on a specific USB bus or group of buses.
+The argument is a regular expression that must match the bus name where the UPS
+is connected (e.g. `bus="002"`, `bus="00[2-3]"`).
+
 DEFAULT VALUES FOR THE EXTRA ARGUMENTS
 --------------------------------------
 *shutdown_delay =*'120'
@@ -74,12 +96,29 @@ must have execution flag set (ie using chmod +x ...).
 
 IMPLEMENTATION
 --------------
-bcmxcp_usb only supports 1 UPS at this time. You can put the
-"auto" value for port in `ups.conf`, i.e.:
+Selecting a specific UPS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The driver ignores the "port" value in *ups.conf*. Unlike previous versions of
+this driver, it is now possible to control multiple UPS units simultaneously
+with this driver, provided they can be distinguished by setting some combination
+of the "vendor", "product", "serial", "vendorid", "productid" and "bus" options.
+For instance:
 
 	[pw3105]
 		driver = bcmxcp_usb
 		port = auto
+		vendorid = 0592
+	[hp-t500]
+		driver = bcmxcp_usb
+		port = auto
+		vendorid = 03f0
+		productid = 1f01
+	[hp-t750]
+		driver = bcmxcp_usb
+		port = auto
+		vendorid = 03f0
+		productid = 1f02
 
 KNOWN ISSUES AND BUGS
 ---------------------

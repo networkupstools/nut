@@ -5,10 +5,10 @@
 
 
 #define SUBDRIVER_NAME    "RS-232 communication subdriver"
-#define SUBDRIVER_VERSION "0.21"
+#define SUBDRIVER_VERSION "0.22"
 
 /* communication driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+upsdrv_info_t bcmxcp_comm_upsdrv_info = {
 	SUBDRIVER_NAME,
 	SUBDRIVER_VERSION,
 	NULL,
@@ -339,3 +339,7 @@ void upsdrv_reconnect(void)
 {
 }
 
+void	bcmxcp_comm_upsdrv_makevartable(void)
+{
+	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
+}

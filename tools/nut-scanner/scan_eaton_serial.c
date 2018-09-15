@@ -60,6 +60,7 @@ static nutscan_device_t * dev_ret = NULL;
 
 /* Remap some functions to avoid undesired behavior (drivers/main.c) */
 char *getval(const char *var) { return NULL; }
+void addvar(int vartype, const char *name, const char *desc) { return; }
 
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;

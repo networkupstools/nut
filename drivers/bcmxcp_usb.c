@@ -3,26 +3,19 @@
 #include "bcmxcp_io.h"
 #include "bool.h"
 #include "common.h"
-#include "usb-common.h"
+#include "nut_libusb.h"
 #include "timehead.h"
 #include "nut_stdint.h" /* for uint16_t */
 #include <ctype.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
-/* libusb header file */
-#ifdef WITH_LIBUSB_1_0
-#include <libusb.h>
-#endif
-#ifdef WITH_LIBUSB_0_1
-#include "libusb-compat-1.0.h"
-#endif
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.34"
+#define SUBDRIVER_VERSION "0.35"
 
 /* communication driver description structure */
-upsdrv_info_t comm_upsdrv_info = {
+upsdrv_info_t bcmxcp_comm_upsdrv_info = {
 	SUBDRIVER_NAME,
 	SUBDRIVER_VERSION,
 	NULL,
@@ -30,10 +23,8 @@ upsdrv_info_t comm_upsdrv_info = {
 	{ NULL }
 };
 
-/** @brief Whether libusb has been successfully initialised or not. */
-static bool_t	inited_libusb = FALSE;
-
-#define MAX_TRY 4
+/** @brief Maximum number of attempts done when trying to (re-)open a device. */
+#define MAX_TRY	5
 
 /* Powerware */
 #define POWERWARE 0x0592
@@ -44,11 +35,11 @@ static bool_t	inited_libusb = FALSE;
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
 
-USBDevice_t curDevice;
+/** @brief Currently used device. */
+static USBDevice_t		 curDevice;
 
 /* USB functions */
-libusb_device_handle *nutusb_open(void);
-void nutusb_close(libusb_device_handle *dev_h);
+static bool_t	open_device(void);
 /* unified failure reporting: call these often */
 void nutusb_comm_fail(const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 1, 2)));
@@ -97,6 +88,37 @@ static usb_device_id_t pw_usb_device_table[] = {
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
+
+/** @brief Actual matching function for @ref device_matcher.
+ *
+ * By calling is_usb_device_supported() on @ref pw_usb_device_table, this also sets @ref usb_set_descriptor as per *device*. */
+static int	device_match_func(USBDevice_t *device, void *privdata)
+{
+	switch (is_usb_device_supported(pw_usb_device_table, device))
+	{
+	case SUPPORTED:
+		return 1;
+	case POSSIBLY_SUPPORTED:
+	case NOT_SUPPORTED:
+	default:
+		return 0;
+	}
+}
+
+/** @brief Matcher to test available devices.
+ *
+ * This is used as the starting point for (re-)matching a device when initialising (alongside @ref regex_matcher) or when reconnecting (alongside @ref regex_matcher and @ref exact_matcher). */
+static USBDeviceMatcher_t	device_matcher = {
+	&device_match_func,
+	NULL,
+	NULL
+};
+
+/** @brief Regex matcher compiled starting from user-provided values that has to be matched by a USB device to be accepted. */
+static USBDeviceMatcher_t	*regex_matcher = NULL;
+
+/** @brief Exact matcher compiled starting from the discovered device for later reopening it. */
+static USBDeviceMatcher_t	*exact_matcher = NULL;
 
 /* limit the amount of spew that goes in the syslog when we lose the UPS */
 #define USB_ERR_LIMIT 10 /* start limiting after 10 in a row  */
@@ -329,27 +351,108 @@ void upsdrv_comm_good(void)
 	nutusb_comm_good();
 }
 
-void upsdrv_initups(void)
+void	upsdrv_initups(void)
 {
-	int	ret;
+	int	 ret;
+	char	*regex_array[6];
 
-	/* libusb base init */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
-		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-	inited_libusb = TRUE;
+	upsdebugx(1, "%s()", __func__);
 
-	upsdev = nutusb_open();
+	/* Get user-provided values... */
+	regex_array[0] = getval("vendorid");
+	regex_array[1] = getval("productid");
+	regex_array[2] = getval("vendor");
+	regex_array[3] = getval("product");
+	regex_array[4] = getval("serial");
+	regex_array[5] = getval("bus");
+
+	/* ...and create a regex matcher from them */
+	ret = USBNewRegexMatcher(&regex_matcher, regex_array, REG_ICASE | REG_EXTENDED);
+	switch (ret)
+	{
+	case  0:
+		break;	/* All is well */
+	case -1:
+		fatal_with_errno(EXIT_FAILURE, "USBNewRegexMatcher");
+	default:
+		fatalx(EXIT_FAILURE, "Invalid regular expression: %s", regex_array[ret]);
+	}
+
+	/* Link the matchers */
+	device_matcher.next = regex_matcher;
+
+	/* Initialise the communication subdriver */
+	usb_subdriver.init();
+
+	/* Try to open the device */
+	if (!open_device())
+		fatalx(
+			EXIT_FAILURE,
+			"Unable to find a USB POWERWARE device.\n\n"
+
+			"Things to try:\n"
+			" - Connect the device to a USB bus\n"
+			" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n"
+			"   See upsdrvctl(8) and ups.conf(5).\n\n"
+
+			"Fatal error: unusable configuration."
+		);
+
+	/* Create a new exact matcher for later reopening */
+	ret = USBNewExactMatcher(&exact_matcher, &curDevice);
+	if (ret)
+		fatal_with_errno(EXIT_FAILURE, "USBNewExactMatcher");
+
+	/* Link the matchers */
+	regex_matcher->next = exact_matcher;
+
+	dstate_setinfo("ups.vendorid", "%04x", curDevice.VendorID);
+	dstate_setinfo("ups.productid", "%04x", curDevice.ProductID);
 }
 
-void upsdrv_cleanup(void)
+/** @brief Try to open a USB device matching @ref device_matcher.
+ *
+ * If @ref upsdev refers to an already opened device (i.e. it is not `NULL`), it is closed before attempting the reopening.
+ *
+ * @return @ref TRUE, with @ref upsdev being the handle of the opened device, and with @ref curDevice filled, on success,
+ * @return @ref FALSE, with @ref upsdev being `NULL`, on failure. */
+static bool_t	open_device(void)
 {
-	upslogx(LOG_ERR, "CLOSING\n");
+	size_t	try;
 
-	if (!inited_libusb)
-		return;
+	for (try = 1; try <= MAX_TRY; try++) {
+		int	ret;
 
-	nutusb_close(upsdev);
-	libusb_exit(NULL);
+		ret = usb_subdriver.open(&upsdev, &curDevice, &device_matcher, NULL);
+		if (ret != LIBUSB_SUCCESS)
+			continue;
+
+		ret = libusb_clear_halt(upsdev, LIBUSB_ENDPOINT_IN | 1);
+		if (ret != LIBUSB_SUCCESS) {
+			upsdebugx(1, "%s: can't reset POWERWARE USB endpoint: %s.", __func__, libusb_strerror(ret));
+			libusb_reset_device(upsdev);
+			usb_subdriver.close(upsdev);
+			upsdev = NULL;
+			/* Wait reconnect */
+			sleep(5);
+			continue;
+		}
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+void	upsdrv_cleanup(void)
+{
+	upsdebugx(1, "%s()", __func__);
+
+	usb_subdriver.close(upsdev);
+	usb_subdriver.deinit();
+
+	USBFreeExactMatcher(exact_matcher);
+	USBFreeRegexMatcher(regex_matcher);
 
 	free(curDevice.Vendor);
 	free(curDevice.Product);
@@ -357,154 +460,21 @@ void upsdrv_cleanup(void)
 	free(curDevice.Bus);
 }
 
-void upsdrv_reconnect(void)
+void	upsdrv_reconnect(void)
 {
 	upsdebugx(4, "==================================================");
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	nutusb_close(upsdev);
-	upsdev = NULL;
-	upsdev = nutusb_open();
-}
-
-/* USB functions */
-static void nutusb_open_error(void)
-{
-	printf("Unable to find an USB POWERWARE UPS device.\n\n");
-
-	printf("Things to try:\n\n");
-	printf(" - Connect UPS device to USB bus\n\n");
-	printf(" - Run this driver as another user (upsdrvctl -u or 'user=...' in ups.conf).\n");
-	printf("   See upsdrvctl(8) and ups.conf(5).\n\n");
-
-	fatalx(EXIT_FAILURE, "Fatal error: unusable configuration");
-}
-
-/* FIXME: this part of the opening can go into common... */
-static libusb_device_handle *open_powerware_usb(void)
-{
-	libusb_device	**devlist;
-	ssize_t		  devcount,
-			  devnum;
-
-	devcount = libusb_get_device_list(NULL, &devlist);
-	if (devcount < 0)
-		upsdebugx(2, "Could not get the list of USB devices (%s).", libusb_strerror(devcount));
-
-	for (devnum = 0; devnum < devcount; devnum++) {
-
-		libusb_device			*device = devlist[devnum];
-		libusb_device_handle		*udev;
-		struct libusb_device_descriptor	 dev_desc;
-		int				 ret;
-
-		ret = libusb_get_device_descriptor(device, &dev_desc);
-		if (ret != LIBUSB_SUCCESS) {
-			upsdebugx(2, "Unable to get DEVICE descriptor (%s).", libusb_strerror(ret));
-			continue;
-		}
-
-		if (dev_desc.bDeviceClass != LIBUSB_CLASS_PER_INTERFACE) {
-			continue;
-		}
-
-		curDevice.VendorID = dev_desc.idVendor;
-		curDevice.ProductID = dev_desc.idProduct;
-
-		/* FIXME: we should also retrieve
-		 * dev->descriptor.iManufacturer
-		 * dev->descriptor.iProduct
-		 * dev->descriptor.iSerialNumber
-		 * as in libusb.c->libusb_open()
-		 * This is part of the things to put in common... */
-
-		if (is_usb_device_supported(pw_usb_device_table, &curDevice) == SUPPORTED) {
-			libusb_open(device, &udev);
-			libusb_free_device_list(devlist, 1);
-			return udev;
-		}
-
-	}
-	libusb_free_device_list(devlist, 1);
-	return 0;
-}
-
-libusb_device_handle *nutusb_open(void)
-{
-	int            dev_claimed = 0;
-	libusb_device_handle *dev_h = NULL;
-	int            retry, errout = 0, ret;
-
-	upsdebugx(1, "entering nutusb_open()");
-
-	for (retry = 0; retry < MAX_TRY ; retry++)
-	{
-		dev_h = open_powerware_usb();
-		if (!dev_h) {
-			upsdebugx(1, "Can't open POWERWARE USB device");
-			errout = 1;
-		}
-		else {
-			upsdebugx(1, "device %04X:%04X opened successfully", curDevice.VendorID, curDevice.ProductID);
-			errout = 0;
-
-			if ((ret = libusb_claim_interface(dev_h, 0)) != LIBUSB_SUCCESS) {
-				upsdebugx(1, "Can't claim POWERWARE USB interface: %s", libusb_strerror(ret));
-				errout = 1;
-			}
-			else {
-				dev_claimed = 1;
-				errout = 0;
-			}
-/* FIXME: the above part of the opening can go into common... up to here at least */
-
-			if ((ret = libusb_clear_halt(dev_h, LIBUSB_ENDPOINT_IN | 1)) != LIBUSB_SUCCESS) {
-				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", libusb_strerror(ret));
-				if (dev_claimed)
-					libusb_release_interface(dev_h, 0);
-				libusb_reset_device(dev_h);
-				sleep(5);	/* Wait reconnect */
-				errout = 1;
-			}
-			else
-				errout = 0;
-		}
-
-		/* Test if we succeeded */
-		if ( (dev_h != NULL) && dev_claimed && (errout == 0) )
-			break;
-		else {
-			/* Clear errors, and try again */
-			errout = 0;
-		}
-	}
-
-	if (!dev_h && !dev_claimed && retry == MAX_TRY)
-		errout = 1;
+	if (open_device())
+		upsdebugx(4, "%s: successfully reconnected to device %04x:%04x.", __func__, curDevice.VendorID, curDevice.ProductID);
 	else
-		return dev_h;
-
-	if (dev_h && dev_claimed)
-		libusb_release_interface(dev_h, 0);
-
-	if (dev_h)
-		nutusb_close(dev_h);
-
-	if (errout == 1)
-		nutusb_open_error();
-
-	return NULL;
+		upsdebugx(4, "%s: cannot reconnect to device %04x:%04x.", __func__, curDevice.VendorID, curDevice.ProductID);
 }
 
-/* FIXME: this part can go into common... */
-void nutusb_close(libusb_device_handle *dev_h)
+void	bcmxcp_comm_upsdrv_makevartable(void)
 {
-	if (!dev_h)
-		return;
-
-	libusb_release_interface(dev_h, 0);
-	libusb_close(dev_h);
+	usb_subdriver.add_nutvars();
 }
 
 void nutusb_comm_fail(const char *fmt, ...)

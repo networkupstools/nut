@@ -118,7 +118,7 @@ TODO List:
 #include "bcmxcp.h"
 
 #define DRIVER_NAME    "BCMXCP UPS driver"
-#define DRIVER_VERSION "0.32"
+#define DRIVER_VERSION "0.33"
 
 #define MAX_NUT_NAME_LENGTH 128
 #define NUT_OUTLET_POSITION   7
@@ -137,7 +137,7 @@ upsdrv_info_t upsdrv_info = {
         "Alf Høgemark <alf@i100>\n" \
         "Gavrilov Igor",
         DRV_STABLE,
-        { &comm_upsdrv_info, NULL }
+        { &bcmxcp_comm_upsdrv_info, NULL }
 };
 
 static int get_word(const unsigned char*);
@@ -2133,7 +2133,8 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "shutdown_delay", "Specify shutdown delay (seconds)");
-	addvar(VAR_VALUE, "baud_rate", "Specify communication speed (ex: 9600)");
+
+	bcmxcp_comm_upsdrv_makevartable();
 }
 
 int setvar (const char *varname, const char *val)
