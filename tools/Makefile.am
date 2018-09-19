@@ -1,9 +1,3 @@
-# TODO: remove redundancies!
-
-# XXX this does not work with Automake!!!
-#
-# In fact the very concept is entirely antithetical to Automake.
-#
 # SUBDIRS are explicitly a listing of all the directories that make
 # must recurse into BEFORE processing the current directory.
 #
@@ -13,7 +7,8 @@
 #
 # Anyway, for the time being, we force build in ./ before nut-scanner,
 # to have nutscan-{usb,snmp}.h built before going into the nut-scanner
-# sub-directory
+# sub-directory. For good measure we also call this from nut-scanner's
+# make, to handle developer workflow (editing the *.c sources this uses).
 SUBDIRS = . nut-scanner
 
 EXTRA_DIST = nut-usbinfo.pl nut-recorder.sh nut-ddl-dump.sh \
@@ -37,10 +32,7 @@ GENERATED_USB_FILES += ../scripts/upower/95-upower-hid.rules
 
 all: nut-scanner-deps $(GENERATED_USB_FILES)
 
-# XXX these rules are all bogus!  They cause un-named target files to
-# always be rebuilt!  None of that is ever the right way to use make,
-# and especially not Automake.  Explicit filenames and their exact
-# dependencies need to be properly listed.
+# This target is called from the making of nut-scanner to ensure its bits
 nut-scanner-deps: nut-scanner/nutscan-snmp.h nut-scanner/nutscan-usb.h
 
 $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
