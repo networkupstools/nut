@@ -939,8 +939,10 @@ void upsdrv_initups(void)
 	int ret;
 	char *val;
 
-	upsdebugx(2, "Initializing an USB-connected UPS with library %s (name='%s' ver='%s')",
-		dstate_getinfo("driver.version.usb"), comm_driver->name, comm_driver->version );
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+		"(NUT subdriver name='%s' ver='%s')",
+		dstate_getinfo("driver.version.usb"),
+		comm_driver->name, comm_driver->version );
 
 #ifdef SHUT_MODE
 	/*!
