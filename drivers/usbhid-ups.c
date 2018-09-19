@@ -910,6 +910,9 @@ void upsdrv_initups(void)
 {
 	int ret;
 	char *val;
+
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s", dstate_getinfo("driver.version.usb") );
+
 #ifdef SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
