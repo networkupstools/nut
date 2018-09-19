@@ -338,6 +338,7 @@ case ${target_os} in
       ;;
     hpux11*)
       CFLAGS="${CFLAGS} -lpthread"
+      ;;
 esac
 
 
