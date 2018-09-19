@@ -890,7 +890,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i, cmd = 0, cmdret = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -959,8 +959,8 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
-		sendsignalfn(pidfn, cmd);
-		exit(EXIT_SUCCESS);
+		cmdret = sendsignalfn(pidfn, cmd);
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
