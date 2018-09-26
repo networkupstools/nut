@@ -30,6 +30,9 @@ case "$1" in
 
     /bin/systemctl daemon-reload
     /bin/systemctl enable nut-monitor.service
+    if [ -s /etc/nut/upsmon.conf ] ; then
+        /bin/systemctl start nut-monitor.service
+    fi
 
     ;;
 

@@ -42,8 +42,24 @@ case "$1" in
 
     /bin/systemctl daemon-reload
     /bin/systemctl enable nut-driver.target
-    /bin/systemctl enable nut-driver-enumerator.service
+    /bin/systemctl start nut-driver.target
+
+    # Watch *changes* to /etc/nut/ups.conf and trigger nut-driver-enumerator.service then
     /bin/systemctl enable nut-driver-enumerator.path
+    /bin/systemctl start nut-driver-enumerator.path
+
+    # The nut-driver-enumerator.path reacts to changes of /etc/nut/ups.conf
+    # but does not execute the service handler (to add or remove nut-driver
+    # service instances) initially, whether the configuration exists or not.
+    # Running the script allows to handle that properly.
+    /bin/systemctl enable nut-driver-enumerator.service
+    /bin/systemctl start nut-driver-enumerator.service
+
+    /bin/systemctl enable nut-server.service
+    # upsd accounts must be defined (if existed before) to start the service
+    if [ -s /etc/nut/upsd.conf ] && [ -s /etc/nut/ups.conf ]; then
+        /bin/systemctl start nut-server.service
+    fi
 
     ;;
 
