@@ -46,6 +46,22 @@ Description: network UPS tools - metapackage
  This package is a metapackage that installs both nut-server and nut-client,
  in most cases it is sufficient for a basic UPS monitoring system.
 
+Package: nut-common
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6)
+Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
+Conflicts: nut-hal-drivers
+Replaces: nut (<< 2.7.4-11~)
+Breaks: nut (<< 2.6.1-2~)
+Description: network UPS tools - core system
+ Network UPS Tools (NUT) is a client/server monitoring system that
+ allows computers to share uninterruptible power supply (UPS) and
+ power distribution unit (PDU) hardware. Clients access the hardware
+ through the server, and are notified whenever the power status
+ changes.
+ .
+ This package provides shared files for NUT's core system.
+
 Package: nut-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6), ${udev}, nut-common (= ${binary:Version}), nut-client (= ${binary:Version})
