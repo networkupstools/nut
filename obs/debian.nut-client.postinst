@@ -27,6 +27,10 @@ case "$1" in
         fi
         update-rc.d nut remove >/dev/null
     fi
+
+    /bin/systemctl daemon-reload
+    /bin/systemctl enable nut-monitor.service
+
     ;;
 
   abort-upgrade)

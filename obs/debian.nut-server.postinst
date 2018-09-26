@@ -39,6 +39,12 @@ case "$1" in
         fi
         update-rc.d nut remove >/dev/null
     fi
+
+    /bin/systemctl daemon-reload
+    /bin/systemctl enable nut-driver.target
+    /bin/systemctl enable nut-driver-enumerator.service
+    /bin/systemctl enable nut-driver-enumerator.path
+
     ;;
 
   abort-upgrade)
