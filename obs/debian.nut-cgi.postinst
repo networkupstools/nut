@@ -1,27 +1,11 @@
 #!/bin/sh -e
 
+# Note: nut-common should be installed first and it delivers
+# the user accounts and the sysconfdir (/etc/nut)
+
 case "$1" in
 
   configure)
-
-    # make sure the nut user exists and has correct memberships
-    if ! getent group nut >/dev/null; then
-	addgroup --quiet --system nut
-    fi
-    if ! getent passwd nut >/dev/null; then
-	adduser --quiet --system --ingroup nut --home /var/lib/nut --no-create-home nut
-    elif ! groups nut | grep -qw nut; then
-	adduser nut nut
-    fi
-# for Ubuntu, while waiting for a proper debconf
-#    if ! groups nut | grep -qw dialout; then
-#    adduser nut dialout
-#    fi
-
-    # Ensure /etc/nut is readable/crossable for others
-    if [ -d /etc/nut/ ] ; then
-        chmod 755 /etc/nut
-    fi
 
     # Ensure nut-cgi configuration files are readable by others
     for file in upsset.conf hosts.conf upsstats.html upsstats-single.html ; do

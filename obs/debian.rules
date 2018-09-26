@@ -112,21 +112,27 @@ common-install-arch::
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
 
 	# Install systemd files only on systems where it's supported
+	### Package files for nut-client:
 	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-monitor.service \
 		$(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-monitor.service
+	### Package files for nut-server:
 	install -D $(CURDIR)/debian/tmp/$(systemdshutdowndir)/nutshutdown \
 		$(CURDIR)/debian/nut-server/$(systemdshutdowndir)/nutshutdown
 	install -m 644 -D $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-server.service \
 		$(CURDIR)/debian/nut-server/$(systemdsystemunitdir)/nut-server.service
+	# This should cover nut-driver.target, nut-driver@.service,
+	# nut-driver-enumerator.path, nut-driver-enumerator.service
 	install -m 644 -t $(CURDIR)/debian/nut-server/$(systemdsystemunitdir) \
-	  $(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-driver*
+		$(CURDIR)/debian/tmp/$(systemdsystemunitdir)/nut-driver*
 
-	# Add a symlink to mask the LSB initscript
+	# Add a symlink to mask the LSB initscript for nut-client:
 	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-client.service
 
 	# Install tmpfiles config file to create /run/nut directory
+	### Package files for nut-client:
 	install -m 644 -D $(CURDIR)/debian/nut-client.tmpfiles \
 		$(CURDIR)/debian/nut-client/usr/lib/tmpfiles.d/nut-client.conf
+	### Package files for nut-server:
 	install -m 644 -D $(CURDIR)/debian/nut-server.tmpfiles \
 		$(CURDIR)/debian/nut-server/usr/lib/tmpfiles.d/nut-server.conf
 

@@ -1,47 +1,21 @@
 #!/bin/sh -e
 
+# Note: nut-common should be installed first and it delivers
+# the user accounts and the sysconfdir (/etc/nut)
+
 case "$1" in
 
   configure)
 
-    # make sure the nut user exists and has correct memberships
-    if ! getent group nut >/dev/null; then
-      addgroup --quiet --system nut
-    fi
-    if ! getent passwd nut >/dev/null; then
-      adduser --quiet --system --ingroup nut --home /var/lib/nut --no-create-home nut
-    elif ! groups nut | grep -qw nut; then
-      adduser nut nut
-    fi
-# for Ubuntu, while waiting for a proper debconf
-#    if ! groups nut | grep -qw dialout; then
-#	adduser nut dialout
-#    fi
-
-    # make sure that conffiles are secured and have the correct ownerships
-    # on first install
+    # make sure that nut-server conffiles are secured and have
+    # the correct ownerships on first install
     if [ -z "$2" ] ; then
-        if [ -d /etc/nut/ ] ; then
-          chown root:nut /etc/nut/
-        fi
         for file in ups.conf upsd.conf upsd.users ; do
             if [ -f /etc/nut/$file ] ; then
                 chown root:nut /etc/nut/$file
                 chmod 640 /etc/nut/$file
             fi
         done
-    fi
-
-    # make sure that /var/run/nut exists and has the correct ownerships
-    if [ ! -d /var/run/nut ] ; then
-        mkdir -p /var/run/nut
-    fi
-    if [ -d /var/run/nut ] ; then
-        chown root:nut /var/run/nut
-        chmod 770 /var/run/nut
-        if which restorecon >/dev/null 2>&1; then
-	    restorecon /var/run/nut
-        fi
     fi
 
     # make sure that /var/lib/nut has the correct permissions and ownerships
