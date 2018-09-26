@@ -80,7 +80,7 @@ Description: network UPS tools - clients
  changes.
  .
  This package provides NUT's clients that allows the user to control
- and monitor the UPS.
+ and monitor the UPS by connecting to a local or remote NUT server.
 
 Package: nut-cgi
 Architecture: any
@@ -96,6 +96,8 @@ Description: network UPS tools - web interface
  .
  This package provides an HTTP interface for Network UPS Tools which makes
  it possible to monitor the core NUT system with a web browser.
+ Note that the CGI script would connect from web-server context to its local
+ or remote NUT server.
 
 Package: nut-snmp
 Architecture: any
@@ -282,7 +284,8 @@ Description: network UPS tools - GUI application to monitor UPS status
  through the server, and are notified whenever the power status
  changes.
  .
- This package provides nut-monitor, a GUI application to monitor UPS status.
+ This package provides nut-monitor, a GUI application to monitor the
+ UPS status on a local or remote NUT server.
 
 Package: libups-nut-perl
 Section: perl
