@@ -48,7 +48,7 @@ Description: network UPS tools - metapackage
 
 Package: nut-server
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6), ${udev}, nut-client (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6), ${udev}, nut-common (= ${binary:Version}), nut-client (= ${binary:Version})
 Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
 Conflicts: nut-hal-drivers
 Replaces: nut (<< 2.7.4-11~)
@@ -65,7 +65,7 @@ Description: network UPS tools - core system
 
 Package: nut-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6)
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6), nut-common (= ${binary:Version})
 Provides: ups-monitor
 Conflicts: ups-monitor
 Recommends: bash-completion
@@ -84,7 +84,7 @@ Description: network UPS tools - clients
 
 Package: nut-cgi
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, adduser
+Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, nut-common (= ${binary:Version})
 Recommends: apache2 | httpd-cgi
 Suggests: nut
 Description: network UPS tools - web interface
