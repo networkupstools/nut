@@ -7,12 +7,9 @@
 case "$1" in
 
   remove)
-    # Packaging assumes that this package is removed last
-    # of all its dependencies, so remove what we created
-    /bin/systemctl stop nut.target
-    /bin/systemctl disable nut.target
+    /bin/systemctl stop nut-client.service
+    /bin/systemctl disable nut-client.service
 
-    [ -d /var/run/nut ] && rm -rf /var/run/nut/
     ;;
 
   upgrade)
