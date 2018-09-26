@@ -129,12 +129,8 @@ common-install-arch::
 	ln -s nut-monitor.service $(CURDIR)/debian/nut-client/$(systemdsystemunitdir)/nut-client.service
 
 	# Install tmpfiles config file to create /run/nut directory
-	### Package files for nut-client:
-	install -m 644 -D $(CURDIR)/debian/nut-client.tmpfiles \
-		$(CURDIR)/debian/nut-client/usr/lib/tmpfiles.d/nut-client.conf
-	### Package files for nut-server:
-	install -m 644 -D $(CURDIR)/debian/nut-server.tmpfiles \
-		$(CURDIR)/debian/nut-server/usr/lib/tmpfiles.d/nut-server.conf
+	install -m 644 -D $(CURDIR)/debian/nut-common.tmpfiles \
+		$(CURDIR)/debian/nut-common/usr/lib/tmpfiles.d/nut-common.conf
 
 	# Install gen-snmp-subdriver.sh for nut-snmp
 	install -m 755 -D $(CURDIR)/scripts/subdriver/gen-snmp-subdriver.sh \
