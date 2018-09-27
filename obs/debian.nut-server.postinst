@@ -85,6 +85,6 @@ case "$1" in
 
 esac
 
-#DEBHELPER#
+# Skip DEBHELPER because in this case we handle systemd in target OS better by ourselves #
 
 exit 0
