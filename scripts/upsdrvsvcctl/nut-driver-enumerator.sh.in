@@ -517,7 +517,7 @@ systemd_listInstances() {
 }
 systemd_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
-    /bin/systemctl restart "nut-server"
+    /bin/systemctl reload-or-restart "nut-server"
 }
 
 upslist_readFile() {
