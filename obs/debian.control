@@ -35,7 +35,7 @@ XS-Testsuite: autopkgtest
 Package: nut
 Architecture: all
 Section: metapackages
-Depends: ${misc:Depends}, nut-server (= ${binary:Version}), nut-client (= ${binary:Version})
+Depends: ${misc:Depends}, nut-common (= ${binary:Version}), nut-server (= ${binary:Version}), nut-client (= ${binary:Version})
 Description: network UPS tools - metapackage
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
