@@ -108,6 +108,12 @@
 
 		<exec_method
 		type='method'
+		name='refresh'
+		exec='@NUT_DATADIR@/solaris-smf/method/svc-nut-server %m'
+		timeout_seconds='60'/>
+
+		<exec_method
+		type='method'
 		name='stop'
 		exec=':kill'
 		timeout_seconds='60' />

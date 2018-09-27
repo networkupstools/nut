@@ -49,6 +49,10 @@ case "$1" in
 	ups_start
 	;;
 
+'refresh'|'reload')
+	LD_LIBRARY_PATH="${NUT_LIB_DIR}:$LD_LIBRARY_PATH" "${NUT_SBIN_DIR}/upsd" -c reload
+	;;
+
 *)
 	echo ""
 	echo "Usage: '$0' {start}"
