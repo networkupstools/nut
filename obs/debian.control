@@ -50,7 +50,6 @@ Package: nut-common
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser, lsb-base (>= 3.0-6)
 Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
-Conflicts: nut-hal-drivers
 Replaces: nut (<< 2.7.4-11~)
 Breaks: nut (<< 2.6.1-2~)
 Description: network UPS tools - core system
