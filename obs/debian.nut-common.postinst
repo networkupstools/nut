@@ -47,10 +47,12 @@ case "$1" in
         fi
     fi
 
-    /bin/systemctl daemon-reload
-    /bin/systemctl enable nut.target
-    /bin/systemctl start nut.target
-
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl daemon-reload
+        /bin/systemctl enable nut.target
+        /bin/systemctl start --no-block nut.target
+    fi
     ;;
 
   abort-upgrade)

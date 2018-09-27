@@ -14,23 +14,26 @@ case "$1" in
     [ -L /usr/doc/nut ] && rm -f /usr/doc/nut
 
     # do stop the daemons on remove
-    /bin/systemctl stop nut-driver.target
-    /bin/systemctl disable nut-driver.target
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl stop nut-driver.target
+        /bin/systemctl disable nut-driver.target
 
-    /bin/systemctl stop nut-driver-enumerator.path
-    /bin/systemctl disable nut-driver-enumerator.path
+        /bin/systemctl stop nut-driver-enumerator.path
+        /bin/systemctl disable nut-driver-enumerator.path
 
-    /bin/systemctl stop nut-driver-enumerator.service
-    /bin/systemctl disable nut-driver-enumerator.service
+        /bin/systemctl stop nut-driver-enumerator.service
+        /bin/systemctl disable nut-driver-enumerator.service
 
-    /bin/systemctl stop nut-server.service
-    /bin/systemctl disable nut-server.service
+        /bin/systemctl stop nut-server.service
+        /bin/systemctl disable nut-server.service
 
-    if [ -x /lib/nut/nut-driver-enumerator.sh ] ; then
-        for DRV in `/lib/nut/nut-driver-enumerator.sh --list-services 2>/dev/null` ; do
-            /bin/systemctl stop "$DRV"
-            /bin/systemctl disable "$DRV"
-        done
+        if [ -x /lib/nut/nut-driver-enumerator.sh ] ; then
+            for DRV in `/lib/nut/nut-driver-enumerator.sh --list-services 2>/dev/null` ; do
+                /bin/systemctl stop "$DRV"
+                /bin/systemctl disable "$DRV"
+            done
+        fi
     fi
 
     invoke-rc.d nut stop && sleep 1

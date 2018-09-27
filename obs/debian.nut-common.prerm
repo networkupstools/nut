@@ -9,8 +9,11 @@ case "$1" in
   remove)
     # Packaging assumes that this package is removed last
     # of all its dependencies, so remove what we created
-    /bin/systemctl stop nut.target
-    /bin/systemctl disable nut.target
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl stop nut.target
+        /bin/systemctl disable nut.target
+    fi
 
     [ -d /var/run/nut ] && rm -rf /var/run/nut/
     ;;
