@@ -7,9 +7,11 @@
 case "$1" in
 
   remove)
-    /bin/systemctl stop nut-client.service
-    /bin/systemctl disable nut-client.service
-
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl stop nut-client.service
+        /bin/systemctl disable nut-client.service
+    fi
     ;;
 
   upgrade)
