@@ -518,7 +518,11 @@ systemd_listInstances() {
 }
 systemd_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
-    /bin/systemctl reload-or-restart "nut-server"
+    # Note: reload is a better way to go about this, so the
+    # data service is not interrupted by re-initialization
+    # of the daemon. But systemd/systemctl sometimes stalls...
+    /bin/systemctl reload-or-restart "nut-server" || \
+    /bin/systemctl restart "nut-server"
 }
 
 upslist_readFile() {
