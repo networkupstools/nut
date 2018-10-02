@@ -418,7 +418,7 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 	}
 
 	*udevp = NULL;
-	upsdebugx(2, "No appropriate HID device found");
+	upsdebugx(2, "libusb0: No appropriate HID device found");
 	fflush(stdout);
 
 	return -1;
@@ -560,8 +560,8 @@ static void libusb_close(usb_dev_handle *udev)
 }
 
 usb_communication_subdriver_t usb_subdriver = {
-	USB_DRIVER_VERSION,
 	USB_DRIVER_NAME,
+	USB_DRIVER_VERSION,
 	libusb_open,
 	libusb_close,
 	libusb_get_report,
