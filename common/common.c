@@ -680,14 +680,25 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 }
 
 
-/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or LD_LIBRARY_PATH */
+/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
+ * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
+ * note that different OSes can have their pathnames set up differently
+ * with regard to default/preferred bitness (maybe a "32" in the name
+ * should also be searched explicitly - again, IFF our build is 32-bit).
+ */
 const char * search_paths[] = {
+	// Use the library path (and bitness) provided during ./configure first
 	LIBDIR,
 	"/usr"LIBDIR,
+	"/usr/local"LIBDIR,
+	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	"/usr/lib/64",
 	"/usr/lib64",
-	"/lib64",
 	"/usr/lib",
+	"/lib/64",
+	"/lib64",
 	"/lib",
+	"/usr/local/lib/64",
 	"/usr/local/lib64",
 	"/usr/local/lib",
 #ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
