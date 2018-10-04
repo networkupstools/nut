@@ -463,9 +463,9 @@ systemd_validInstanceSuffixName() {
 systemd_registerInstance() {
     DEVICE="$1"
     SVCINST="$1"
-    /bin/systemctl enable 'nut-driver@'"$DEVICE" || \
+    /bin/systemctl enable 'nut-driver@'"$DEVICE".service || \
     { SVCINST="`systemd_validInstanceName "$1"`" && \
-      /bin/systemctl enable 'nut-driver@'"$SVCINST" || return ; }
+      /bin/systemctl enable 'nut-driver@'"$SVCINST".service || return ; }
     echo "Enabled instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
 
     DEPSVC=""
@@ -500,14 +500,14 @@ EOF
     fi
 
     if [ "$AUTO_START" = yes ] ; then
-        /bin/systemctl start --no-block 'nut-driver@'"$SVCINST" || return
+        /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
         echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
 }
 systemd_unregisterInstance() {
     echo "Removing instance: 'nut-driver@$1' ..." >&2
-    /bin/systemctl stop 'nut-driver@'"$1" || false
-    /bin/systemctl disable 'nut-driver@'"$1"
+    /bin/systemctl stop 'nut-driver@'"$1".service || false
+    /bin/systemctl disable 'nut-driver@'"$1".service
     rm -rf "/etc/systemd/system/nut-driver@$1.service.d"
 }
 systemd_listInstances_raw() {
