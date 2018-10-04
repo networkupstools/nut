@@ -639,6 +639,10 @@ usage() {
     cat << EOF
 $0 (no args)
         Update wrapping of devices into services
+$0 --reconfigure
+        Stop and unregister all service instances and recreate
+        (e.g. if new dependency template was defined in a new
+        version)
 $0 --get-service-framework
         Print the detected service
         management framework in this OS
@@ -671,6 +675,45 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --help|-h|-help) usage; exit 0 ;;
         --get-service-framework) echo "${SERVICE_FRAMEWORK}" ; exit 0 ;;
+        --reconfigure)
+            upslist_readFile || exit $?
+            upslist_readSvcs "before manipulations"
+
+            if [ -n "$UPSLIST_SVCS" ]; then
+                for UPSS in $UPSLIST_SVCS ; do
+                    echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] which is no longer in config file..." >&2
+                    $hook_unregisterInstance "$UPSS"
+                fi
+                upslist_readSvcs "after dropping"
+            done
+
+            if [ -n "$UPSLIST_FILE" ]; then
+                upslist_addSvcs
+                upslist_readSvcs "after checking for new config sections to define service instances"
+            fi
+
+            if [ -n "$UPSLIST_SVCS" ] ; then
+                echo "=== The currently defined service instances are:"
+                echo "$UPSLIST_SVCS"
+            fi
+
+            if [ -n "$UPSLIST_FILE" ] ; then
+                echo "=== The currently defined configurations in '$UPSCONF' are:"
+                echo "$UPSLIST_FILE"
+            fi
+
+            # We had some changes to the config file; upsd must be made aware
+            if [ "$AUTO_START" = yes ] ; then
+                $hook_restart_upsd
+            fi
+
+            # Return 42 if there was a change applied succesfully
+            # (but e.g. some services should restart - upsd, maybe upsmon)
+            if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
+                [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
+            fi
+            return 13
+            ;;
         --list-devices)
             upslist_readFile && \
             if [ -n "$UPSLIST_FILE" ] ; then
