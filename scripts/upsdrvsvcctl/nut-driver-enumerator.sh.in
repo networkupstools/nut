@@ -509,6 +509,7 @@ systemd_unregisterInstance() {
     /bin/systemctl stop 'nut-driver@'"$1".service || false
     /bin/systemctl disable 'nut-driver@'"$1".service
     rm -rf "/etc/systemd/system/nut-driver@$1.service.d"
+    /bin/systemctl reset-failed 'nut-driver@'"$1".service
 }
 systemd_listInstances_raw() {
     /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed 's,^Id=,,'
