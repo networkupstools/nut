@@ -12,12 +12,6 @@
 	<service name='system/power/nut-driver-enumerator' type='service' version='1.1'>
 
 	<!--
-	  Configure a default instance for the service since it doesn't
-	  require additional configuration intervention before it starts.
-	-->
-		<create_default_instance enabled='false' />
-
-	<!--
 	  Wait for all local and usr filesystem to be mounted - project is
 	  usually located in /usr/sbin.
 	-->
@@ -62,7 +56,9 @@
 		</dependent>
 
 		<instance name='default' enabled='false'>
-
+			<!--
+			  There can be only one...
+			-->
 			<dependency name='enumerator_daemon' grouping='exclude_all' restart_on='none' type='service'>
 				<service_fmri value='svc:/system/power/nut-driver-enumerator:daemon'/>
 			</dependency>
@@ -118,6 +114,9 @@
 		</instance>
 
 		<instance name='daemon' enabled='false'>
+			<!--
+			  There can be only one...
+			-->
 			<dependency name='enumerator_default' grouping='exclude_all' restart_on='none' type='service'>
 				<service_fmri value='svc:/system/power/nut-driver-enumerator:default'/>
 			</dependency>
