@@ -66,7 +66,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		@SBINDIR@/upsdrvctl -DDDDD stop
 		sleep 5
 		echo "Register NUT drivers (if any)..."
-		AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+		AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh" --reconfigure
 		sleep 2
 		echo "Enable NUT drivers (if any)..."
 		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
