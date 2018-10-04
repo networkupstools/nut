@@ -42,6 +42,9 @@ case "$1" in
 
     # SystemD-specific actions
     if [ -x /bin/systemctl ] ; then
+        echo "Register NUT drivers (if any)..."
+        AUTO_START=no /lib/nut/nut-driver-enumerator.sh --reconfigure
+
         /bin/systemctl daemon-reload
 
         # Watch *changes* to /etc/nut/ups.conf and trigger nut-driver-enumerator.service then
