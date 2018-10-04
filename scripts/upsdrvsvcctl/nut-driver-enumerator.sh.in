@@ -87,7 +87,7 @@ prefix="@prefix@"
 ### "Requires" that (would cause that to start).
 DEPSVC_USB_SYSTEMD="systemd-udev.service systemd-udev-settle.service"
 DEPREQ_USB_SYSTEMD="Wants"
-DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service"
+DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service ifplugd.service"
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
 DEPREQ_NET_LOCAL_SYSTEMD="Wants"
