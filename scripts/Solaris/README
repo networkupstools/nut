@@ -3,7 +3,7 @@ for integration of NUT services with Solaris and descendant OSes.
 
 This also includes the nut-driver-enumerator.sh (service and implementation
 method) and upsdrvsvcctl (tool) to manage NUT drivers as service instances,
-which are stored in `../systemd/` subdirectory (portable codebase shared
+which are stored in ../upsdrvsvcctl/ subdirectory (portable codebase shared
 with Linux systemd).
 
 Init-script solution contributed by numerous authors
