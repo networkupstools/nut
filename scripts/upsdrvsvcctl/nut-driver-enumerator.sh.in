@@ -87,7 +87,7 @@ prefix="@prefix@"
 ### "Requires" that (would cause that to start).
 DEPSVC_USB_SYSTEMD="systemd-udev.service systemd-udev-settle.service"
 DEPREQ_USB_SYSTEMD="Wants"
-DEPSVC_NET_FULL_SYSTEMD="network-online.target"
+DEPSVC_NET_FULL_SYSTEMD="network-online.target systemd-resolved.service"
 DEPREQ_NET_FULL_SYSTEMD="Wants"
 DEPSVC_NET_LOCAL_SYSTEMD="network.target"
 DEPREQ_NET_LOCAL_SYSTEMD="Wants"
@@ -104,7 +104,7 @@ DEPSVC_USB_SMF="svc:/system/hotplug:default svc:/system/dbus:default svc:/system
 DEPREQ_USB_SMF="optional_all"
 # By default there are several physical network FMRIs shipped and at most
 # only one is enabled on a particular system (e.g. :default or :nwam)
-DEPSVC_NET_FULL_SMF="svc:/network/physical"
+DEPSVC_NET_FULL_SMF="svc:/network/physical svc:/milestone/name-services"
 DEPREQ_NET_FULL_SMF="optional_all"
 DEPSVC_NET_LOCAL_SMF="svc:/network/loopback:default"
 DEPREQ_NET_LOCAL_SMF="optional_all"
