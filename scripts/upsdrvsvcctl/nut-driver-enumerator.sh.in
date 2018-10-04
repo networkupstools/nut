@@ -641,8 +641,12 @@ if [ $# = 1 ] ; then
         --daemon=*)
             DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;& # Fall through
         --daemon)
+            trap '-' 1
             while nut_driver_enumerator_main ; do
-                sleep $DAEMON_SLEEP
+                sleep $DAEMON_SLEEP &
+                trap "kill $! ; echo 'Sleep interrupted, processing configs now!'>&2" 1
+                wait $!
+                trap '-' 1
             done
             exit $?
         ;;
