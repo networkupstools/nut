@@ -635,10 +635,27 @@ if [ $# = 0 ]; then
     nut_driver_enumerator_main ; exit $?
 fi
 
+if [ $# = 1 ] ; then
+    [ -n "$DAEMON_SLEEP" ] || DAEMON_SLEEP=60
+    case "$1" in
+        --daemon=*)
+            DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;& # Fall through
+        --daemon)
+            while nut_driver_enumerator_main ; do
+                sleep $DAEMON_SLEEP
+            done
+            exit $?
+        ;;
+    esac
+fi
+
 usage() {
     cat << EOF
 $0 (no args)
         Update wrapping of devices into services
+$0 --daemon(=freq)
+        Update wrapping of devices into services in an infinite loop
+        Default freq is 60 sec; NOTE: process stays in foreground!
 $0 --reconfigure
         Stop and unregister all service instances and recreate
         (e.g. if new dependency template was defined in a new
