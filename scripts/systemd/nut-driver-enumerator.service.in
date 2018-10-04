@@ -12,10 +12,9 @@ PartOf=nut.target
 #User=@RUN_AS_USER@
 #Group=@RUN_AS_GROUP@
 User=root
-# it is expected that the process has to exit before systemd starts follow-up units
+# it is expected that the process has to exit before systemd starts follow-up
+# units; it should not be a problem for those
 Type=oneshot
-# the service shall be considered active even when all its processes exited
-RemainAfterExit=yes
 # Currently systemd does not support restarting of oneshot services, and does
 # not seem to guarantee that other services would only start after the script
 # completes, for a non-oneshot case. The script itself handles restarting of
