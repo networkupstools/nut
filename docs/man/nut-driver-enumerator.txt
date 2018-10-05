@@ -52,7 +52,7 @@ Update wrapping of devices into services in an infinite loop;
 Default freq is 60 sec.
 
 *nut-driver-enumerator.sh --reconfigure*::
-Stop and unregister all service instances and recreate them
+Stop and un-register all service instances and recreate them
 (e.g. if new dependency template was defined in a new
 version of the script or package)
 
