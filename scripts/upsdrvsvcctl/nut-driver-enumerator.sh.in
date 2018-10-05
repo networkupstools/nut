@@ -648,10 +648,12 @@ fi
 
 if [ $# = 1 ] ; then
     [ -n "$DAEMON_SLEEP" ] || DAEMON_SLEEP=60
+    # Note: Not all shells have 'case ... ;&' support
     case "$1" in
-        --daemon=*)
-            DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;& # Fall through
-        --daemon)
+        --daemon=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;;
+    esac
+    case "$1" in
+        --daemon|--daemon=*)
             daemonize &
             exit $?
             ;;
