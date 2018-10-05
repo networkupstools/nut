@@ -711,7 +711,7 @@ while [ $# -gt 0 ]; do
                     $hook_unregisterInstance "$UPSS"
                 done
                 upslist_readSvcs "after dropping"
-            done
+            fi
 
             if [ -n "$UPSLIST_FILE" ]; then
                 upslist_addSvcs
