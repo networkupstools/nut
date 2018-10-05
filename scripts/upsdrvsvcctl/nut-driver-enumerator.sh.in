@@ -668,9 +668,9 @@ $0 --daemon(=freq)
         Update wrapping of devices into services in an infinite loop
         Default freq is 60 sec
 $0 --reconfigure
-        Stop and unregister all service instances and recreate
+        Stop and un-register all service instances and recreate them
         (e.g. if new dependency template was defined in a new
-        version)
+        version of this script and/or NUT package)
 $0 --get-service-framework
         Print the detected service
         management framework in this OS
