@@ -47,6 +47,15 @@ COMMANDS
 *nut-driver-enumerator.sh  (no args)*::
 Update wrapping of devices into services
 
+*nut-driver-enumerator.sh --daemon(=freq)*::
+Update wrapping of devices into services in an infinite loop;
+Default freq is 60 sec.
+
+*nut-driver-enumerator.sh --reconfigure*::
+Stop and unregister all service instances and recreate them
+(e.g. if new dependency template was defined in a new
+version of the script or package)
+
 *nut-driver-enumerator.sh  --get-service-framework*::
 Print the detected service management framework in this OS
 
@@ -72,6 +81,12 @@ a service unit `SVC` which wraps it
 *nut-driver-enumerator.sh  --list-services-for-devices*::
 Print a TAB-separated list of service units and corresponding
 NUT device names which each such unit wraps
+
+*nut-driver-enumerator.sh --show-device-config DEV*::
+Show configuration block of the specified NUT device
+
+*nut-driver-enumerator.sh --show-device-config-value DEV KEY*::
+Show single configuration key of the specified NUT device
 
 ENVIRONMENT VARIABLES
 ---------------------
