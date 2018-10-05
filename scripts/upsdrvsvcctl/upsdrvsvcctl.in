@@ -75,9 +75,13 @@ usage: $0 [OPTIONS] resync
   resync        	call $ENUMERATOR
                 	to update the mapping of service instances for
                 	NUT drivers to device sections in 'ups.conf'
+
+usage: $0 [OPTIONS] list [<ups>]
   list          	call $ENUMERATOR
                 	to list the mapping of service instances to device sections
   list <ups>    	(optionally return the service instance name for one device)
+
+usage: $0 [OPTIONS] show-config
   show-config <ups>     output config section from ups.conf for device <ups>
 EOF
 }
