@@ -76,6 +76,12 @@ usage: $0 [OPTIONS] resync
                 	to update the mapping of service instances for
                 	NUT drivers to device sections in 'ups.conf'
 
+usage: $0 [OPTIONS] reconfigure
+  reconfigure   	call $ENUMERATOR
+                	to remove and re-create the mapping of all service
+                	instances for NUT drivers to device sections in
+                	'ups.conf' e.g. after a NUT package upgrade
+
 usage: $0 [OPTIONS] list [<ups>]
   list          	call $ENUMERATOR
                 	to list the mapping of service instances to device sections
@@ -94,6 +100,7 @@ DEBUG=0
 while [ $# -gt 0 ]; do
     case "$1" in
         resync) eval $DRYRUN $ENUMERATOR ; exit $? ;;
+        reconf|reconfigure) eval $DRYRUN $ENUMERATOR --reconfigure ; exit $? ;;
         list)
             if [ -n "$2" ] ; then
                 eval $ENUMERATOR --get-service-for-device "$2" ; exit $?
