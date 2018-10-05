@@ -709,7 +709,7 @@ while [ $# -gt 0 ]; do
 
             if [ -n "$UPSLIST_SVCS" ]; then
                 for UPSS in $UPSLIST_SVCS ; do
-                    echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] which is no longer in config file..." >&2
+                    echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] to reconfigure the service unit..." >&2
                     $hook_unregisterInstance "$UPSS"
                 done
                 upslist_readSvcs "after dropping"
