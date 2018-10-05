@@ -43,7 +43,7 @@ case "$1" in
     # SystemD-specific actions
     if [ -x /bin/systemctl ] ; then
         echo "Register NUT drivers (if any)..."
-        AUTO_START=no /lib/nut/nut-driver-enumerator.sh --reconfigure
+        REPORT_RESTART_42=no AUTO_START=no /lib/nut/nut-driver-enumerator.sh --reconfigure
 
         /bin/systemctl daemon-reload
 
