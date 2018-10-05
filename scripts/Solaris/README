@@ -6,20 +6,30 @@ method) and upsdrvsvcctl (tool) to manage NUT drivers as service instances,
 which are stored in ../upsdrvsvcctl/ subdirectory (portable codebase shared
 with Linux systemd).
 
+The default implementation (runs once) can be enabled with:
+
+    svcadm enable nut-driver-enumerator:default
+
 Note that at the moment there is no out-of-the-box integration for triggering
-a restart/refresh of the nut-driver-enumerator SMF service when the `ups.conf`
-file is modified, like there is with systemd path unit type. Due to this, the
-systems administrator is expected to `svcadm refresh nut-driver-enumerator`
-after changing the NUT configuration or wait until the daemonized mode picks up
-the change (should within a minute). However, a DTrace script or a tool like
+a restart/refresh of the nut-driver-enumerator SMF service at the very instant
+when the `ups.conf` file is modified, like there is with systemd path unit type.
+Due to this, the systems administrator is expected to either invoke
+`svcadm refresh nut-driver-enumerator` after changing the NUT configuration
+or wait until the daemonized mode, if enabled, picks up the change (should do
+so within a minute by default). However, a DTrace script or a tool like
 https://github.com/emcrisostomo/fswatch wrapped into a service might be used
 for equivalent effect.
 
-Alternatively, but somewhat more expensively, the same nut-driver-enumerator.sh
+Alternatively, but somewhat more expensively, the same `nut-driver-enumerator.sh`
 script can be executed in a loop as the payload of the SMF service to keep
 inspecting the configuration and apply changes to the running system. It is
 not a common use-case to keep changing device setups, so this solution is not
 enforced by default ;) although a service variant is provided...
+
+Note that only one of these can be enabled at the same time:
+
+    svcadm disable nut-driver-enumerator:default
+    svcadm enable nut-driver-enumerator:daemon
 
 Init-script solution contributed by numerous authors
 SMF solution contributed by Jim Klimov <jimklimov@gmail.com>
