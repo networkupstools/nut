@@ -150,7 +150,7 @@
 				-->
 				<propval name='ignore_error' type='astring'
 				 value='core,signal' />
-				<propval name='duration' type='astring' value='wait' />
+				<propval name='duration' type='astring' value='contract' />
 			</property_group>
 			<property_group name='general' type='framework'>
 				<propval name='package' type='astring' value='NUT'/>
