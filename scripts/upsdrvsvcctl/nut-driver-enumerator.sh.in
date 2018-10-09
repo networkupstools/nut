@@ -373,7 +373,9 @@ upsconf_debug() {
     _DRV="`upsconf_getDriver "$1"`"
     _PRT="`upsconf_getPort "$1"`"
     _MED="`upsconf_getMedia "$1"`"
-    echo "INST: [$1]: DRV='$_DRV' PORT='$_PRT' MEDIA='$_MED'"
+    _MD5="`upsconf_getSection_MD5 "$1"`"
+    NAME_MD5="`calc_md5 "$1"`"
+    echo "INST: ${NAME_MD5}~[$1]: DRV='$_DRV' PORT='$_PRT' MEDIA='$_MED' SECTIONMD5='$_MD5'"
 }
 
 calc_md5() {
