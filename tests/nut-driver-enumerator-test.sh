@@ -156,16 +156,16 @@ port=file#1.dev' \
 
 testcase_upslist_debug() {
     # We expect a list of names, ports and decided MEDIA type (for dependencies)
-    run_testcase "List decided MEDIA for all devices" 0 \
-"INST: [dummy-proxy]: DRV='dummy-ups' PORT='remoteUPS@RemoteHost.local' MEDIA='network'
-INST: [dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA=''
-INST: [epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network'
-INST: [epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network'
-INST: [serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA=''
-INST: [usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb'
-INST: [valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key=val, right?' MEDIA=''
-INST: [valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA=''
-INST: [valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA=''" \
+    run_testcase "List decided MEDIA and config checksums for all devices" 0 \
+"INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='b71d979c46c3c0fea461136369b75384'
+INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='9e0a326b67e00d455494f8b4258a01f1'
+INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='0d9a0147dcf87c7c720e341170f69ed4'
+INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
+INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='b9433819b80ffa3f723ca9109fa82276'
+INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
+INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key=val, right?' MEDIA='' SECTIONMD5='4057d826c79ef96744a3e07c41bd588c'
+INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
+INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='af59c3c0caaa68dcd796d7145ae403ee'" \
         upslist_debug
 }
 
