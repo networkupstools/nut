@@ -526,26 +526,70 @@ systemd_restart_upsd() {
     /bin/systemctl restart "nut-server"
 }
 
-upslist_readFile() {
+upslist_normalizeFile() {
     # Read the ups.conf file and find all defined sections (names of
     # configuration blocks for drivers that connect to a certain device
-    # using specified protocol and media)
+    # using specified protocol and media); normalize section contents
+    # as detailed below, to simplify subsequent parsing and comparison.
+
+    # File contents
+    UPSCONF_DATA=""
     if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
-        [ -s "$UPSCONF" ] && \
-        UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' | egrep '^(\[.*\]|driver=|port=)')" \
-            || UPSCONF_DATA=""
+        [ ! -s "$UPSCONF" ] \
+        && echo "WARNING: The '$UPSCONF' file exists but is empty" >&2 \
+        && return 0
+        # Ok to continue - we may end up removing all instances
     else
         echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
         return 2
     fi
 
-    [ -n "$UPSCONF_DATA" ] && \
+    # Pick the lines which contain a bracket or assignment character,
+    # trim leading and trailing whitespace, comment-only lines, and in
+    # assignment lines trim the spaces around equality character and
+    # quoting characters around assignment values.
+    UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' | egrep '^(\[.*\]|driver=|port=)')" \
+        ||  { echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization" >&2
+              UPSCONF_DATA=""
+            }
+}
+
+upslist_normalizeFile_once() {
+    # Wrapper that ensures that the parsing is only done once
+    # (will re-parse if there were no devices listed on the
+    # first time, though)
+    [ -z "$UPSCONF_DATA" ] || return 0
+    upslist_normalizeFile
+}
+
+upslist_readFile() {
+    # Use the routine above (unconditionally) to get or update the
+    # listing of device sections known at this moment.
+
+    # List of devices from the config file
+    UPSLIST_FILE=""
+    if [ "$DO_NORMALIZE_ONCE" = yes ]; then
+        upslist_normalizeFile_once || return    # Propagate errors upwards
+    else
+        upslist_normalizeFile || return    # Propagate errors upwards
+    fi
+
+    if [ -n "$UPSCONF_DATA" ] ; then
         UPSLIST_FILE="$(echo "$UPSCONF_DATA" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
-    if [ -z "$UPSLIST_FILE" ] ; then
-        echo "Error reading the '$UPSCONF' file or it does not declare any device configurations" >&2
-        # Ok to continue - we may end up removing all instances
+        if [ -z "$UPSLIST_FILE" ] ; then
+            echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
+        fi
     fi
+    # Ok to continue with empty results - we may end up removing all instances
+}
+
+upslist_readFile_once() {
+    # Wrapper that ensures that the parsing is only done once
+    # (will re-parse if there were no devices listed on the
+    # first time, though)
+    [ -z "$UPSLIST_FILE" ] || return 0
+    DO_NORMALIZE_ONCE=yes upslist_readFile
 }
 
 upslist_readSvcs() {
@@ -586,6 +630,8 @@ upslist_delSvcs() {
 nut_driver_enumerator_main() {
     ################# MAIN PROGRAM by default
 
+    # Note: do not use the read..._once() here, to ensure that the
+    # looped daemon sees the whole picture, which can be new every time
     upslist_readFile || exit $?
     #upslist_debug
     upslist_readSvcs "before manipulations"
