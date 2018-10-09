@@ -137,6 +137,8 @@ fi
 # Cache needed bits of ups.conf to speed up later parsing. Note that these
 # data are needed for most operations, and populated by upslist_readFile()
 UPSCONF_DATA=""
+# Subset of normalized data above that only has sections, drivers and ports
+UPSCONF_DATA_SDP=""
 
 # List of configured UPSes in the config-file
 UPSLIST_FILE=""
@@ -240,8 +242,9 @@ $_DEV = $_SVC" ; }
     [ "`echo "$1" | wc -l`" = "`echo "$_TMP_DEV_SVC" | wc -l`" ]
 }
 
-upsconf_getSection() {
-    # "$1" = name of ups.conf section to display in whole
+upsconf_getSection_content() {
+    # "$1" = name of ups.conf section to display in whole, from whatever
+    # comes on stdin (file or a pre-made normalized variable)
     #
     # NOTE (TODO?): This routine finds the one NUT device section, prints it
     # and returns when the section is over. It currently does not cover (in
@@ -251,7 +254,6 @@ upsconf_getSection() {
     # quickly without re-parsing the file or big envvar many times.
     #
     [ -n "$1" ] || return $?
-    upslist_normalizeFile_once || return    # Propagate errors upwards
 
     CURR_SECTION=""
     RES=1
@@ -274,21 +276,36 @@ upsconf_getSection() {
                 fi
                 ;;
         esac
-    done << EOF
-${UPSCONF_DATA}
-EOF
+    done
 
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] was not found in the '$UPSCONF' file" >&2
     return $RES
+}
+
+upsconf_getSection() {
+    # Use the whole output of normalization parser
+    upslist_normalizeFile_once || return    # Propagate errors upwards
+    upsconf_getSection_content "$@" << EOF
+${UPSCONF_DATA}
+EOF
+}
+
+upsconf_getSection_SDP() {
+    # Use the section-driver-port subset
+    upslist_normalizeFile_once || return    # Propagate errors upwards
+    upsconf_getSection_content "$@" << EOF
+${UPSCONF_DATA_SDP}
+EOF
 }
 
 upsconf_getValue() {
     # "$1" = name of ups.conf section; $2 = name of config key; echo the value
     [ -n "$1" ] || return $?
     [ -n "$2" ] || return $?
+    [ -n "$GETSECTION" ] || GETSECTION="upsconf_getSection"
     CURR_SECTION=""
     RES=0
-    LINE="`upsconf_getSection "$1" | egrep '^[ \t]*'"$2"'[ \t]*='`" || RES=$?
+    LINE="`$GETSECTION "$1" | egrep '^[ \t]*'"$2"'[ \t]*='`" || RES=$?
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
 
     VALUE="$(echo "$LINE" | sed -e 's,^[ '"$TABCHAR"']*'"$2[ $TABCHAR]"'*=[ '"$TABCHAR"']*\(.*\)['"$TABCHAR"'\ ]*.*$,\1,' -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" || RES=$?
@@ -301,14 +318,14 @@ upsconf_getValue() {
 upsconf_getDriver() {
     # "$1" = name of ups.conf section; return (echo) the driver name used there
     # In the context this function is used, UPSCONF exists and section is there
-    upsconf_getValue "$1" "driver"
+    GETSECTION="upsconf_getSection_SDP" upsconf_getValue "$1" "driver"
     return $?
 }
 
 upsconf_getPort() {
     # "$1" = name of ups.conf section; return (echo) the "port" name used there
     # In the context this function is used, UPSCONF exists and section is there
-    upsconf_getValue "$1" "port"
+    GETSECTION="upsconf_getSection_SDP" upsconf_getValue "$1" "port"
     return $?
 }
 
@@ -528,6 +545,7 @@ upslist_normalizeFile() {
 
     # File contents
     UPSCONF_DATA=""
+    UPSCONF_DATA_SDP=""
     if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
         [ ! -s "$UPSCONF" ] \
         && echo "WARNING: The '$UPSCONF' file exists but is empty" >&2 \
@@ -542,9 +560,16 @@ upslist_normalizeFile() {
     # trim leading and trailing whitespace, comment-only lines, and in
     # assignment lines trim the spaces around equality character and
     # quoting characters around assignment values.
-    UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' | egrep '^(\[.*\]|driver=|port=)')" \
+    # Also use a subset with just section, driver and port info for
+    # faster parsing when determining driver required media etc.
+    UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,')" \
+        && [ -n "$UPSCONF_DATA" ] \
+        && UPSCONF_DATA_SDP="`egrep '^(\[.*\]|driver=|port=)' << EOF
+$UPSCONF_DATA
+EOF`" \
         ||  { echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: nothing left after normalization" >&2
               UPSCONF_DATA=""
+              UPSCONF_DATA_SDP=""
             }
 }
 
@@ -552,7 +577,7 @@ upslist_normalizeFile_once() {
     # Wrapper that ensures that the parsing is only done once
     # (will re-parse if there were no devices listed on the
     # first time, though)
-    [ -z "$UPSCONF_DATA" ] || return 0
+    [ -z "$UPSCONF_DATA" ] && [ -z "$UPSCONF_DATA_SDP" ] || return 0
     upslist_normalizeFile
 }
 
@@ -569,7 +594,7 @@ upslist_readFile() {
     fi
 
     if [ -n "$UPSCONF_DATA" ] ; then
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
         if [ -z "$UPSLIST_FILE" ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
