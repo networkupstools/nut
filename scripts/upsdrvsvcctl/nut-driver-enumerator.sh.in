@@ -464,7 +464,8 @@ smf_restart_upsd() {
 
 systemd_validFullUnitName() {
     case "$1" in
-        *@*) echo "$1" ;;
+        *@*.*) echo "$1" ;;
+        *@*) echo "$1.service" ;;
         *)   echo "$SVCNAME_SYSTEMD@$1.service" ;;
     esac
 }
