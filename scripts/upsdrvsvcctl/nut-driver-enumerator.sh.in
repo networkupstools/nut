@@ -251,15 +251,7 @@ upsconf_getSection() {
     # quickly without re-parsing the file or big envvar many times.
     #
     [ -n "$1" ] || return $?
-
-    if [ -n "$UPSCONF" ] && [ -f "$UPSCONF" ] && [ -r "$UPSCONF" ]; then
-        [ ! -s "$UPSCONF" ] \
-        && echo "WARNING: The '$UPSCONF' file exists but is empty" >&2 \
-        && return 3
-    else
-        echo "FATAL: The '$UPSCONF' file does not exist or is not readable" >&2
-        return 2
-    fi
+    upslist_normalizeFile_once || return    # Propagate errors upwards
 
     CURR_SECTION=""
     RES=1
@@ -282,7 +274,9 @@ upsconf_getSection() {
                 fi
                 ;;
         esac
-    done < "$UPSCONF"
+    done << EOF
+${UPSCONF_DATA}
+EOF
 
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] was not found in the '$UPSCONF' file" >&2
     return $RES
