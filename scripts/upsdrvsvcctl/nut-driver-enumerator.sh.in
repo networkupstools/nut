@@ -258,6 +258,7 @@ $_DEV = $_SVC" ; }
 upsconf_getSection_content() {
     # "$1" = name of ups.conf section to display in whole, from whatever
     # comes on stdin (file or a pre-made normalized variable)
+    # empty "$1" means the global config (before any sections)
     #
     # NOTE (TODO?): This routine finds the one NUT device section, prints it
     # and returns when the section is over. It currently does not cover (in
@@ -266,10 +267,10 @@ upsconf_getSection_content() {
     # (as would be better fit for portable shells) to later address them
     # quickly without re-parsing the file or big envvar many times.
     #
-    [ -n "$1" ] || return $?
 
     CURR_SECTION=""
     RES=1
+    [ -n "$1" ] || RES=0
     while read LINE ; do
         case "$LINE" in
             \["$1"\])
@@ -316,8 +317,9 @@ EOF
 }
 
 upsconf_getValue() {
-    # "$1" = name of ups.conf section; $2 = name of config key; echo the value
-    [ -n "$1" ] || return $?
+    # "$1" = name of ups.conf section, may be empty for global config
+    # "$2" = name of config key; we will echo its value
+###    [ -n "$1" ] || return $?
     [ -n "$2" ] || return $?
     [ -n "$GETSECTION" ] || GETSECTION="upsconf_getSection"
     CURR_SECTION=""
@@ -968,14 +970,14 @@ while [ $# -gt 0 ]; do
             exit $RES
             ;;
         --show-config|--show-device-config)
-            [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            [ -z "$2" ] && echo "WARNING: Device name argument empty, will show global config" >&2
             DEV="$2"
             upsconf_getSection "$DEV"
             exit $?
             ;;
         --show-config-value|--show-device-config-value)
-            [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
             [ -z "$3" ] && echo "Configuration key name argument required" >&2 && exit 1
+            [ -z "$2" ] && echo "WARNING: Device name argument empty, will show global config" >&2
             DEV="$2"
             KEY="$3"
             upsconf_getValue "$DEV" "$KEY"
