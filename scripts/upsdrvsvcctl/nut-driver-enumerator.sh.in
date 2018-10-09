@@ -691,6 +691,8 @@ $0 --get-device-for-service SVC
 $0 --list-services-for-devices
         Print a TAB-separated list of service units and corresponding
         NUT device names which each such unit wraps
+$0 --show-configs|--show-all-configs
+        Show the complete normalized list of device configuration blocks
 $0 --show-config DEV
 $0 --show-device-config DEV
         Show configuration block of the specified NUT device
@@ -861,6 +863,15 @@ while [ $# -gt 0 ]; do
                 FINAL_RES=1
             done
             exit $FINAL_RES
+            ;;
+        --show-configs|--show-device-configs|--show-all-configs|--show-all-device-configs)
+            RES=0
+            upslist_readFile || RES=$?
+            [ "$RES" != 0 ] && { echo "ERROR: upslist_readFile () failed with code $RES" >&2; exit $RES; }
+            [ -n "$UPSLIST_FILE" ] \
+                || { echo "WARNING: No devices detected in '$UPSCONF'" >&2 ; RES=1 ; }
+            echo "$UPSCONF_DATA"
+            exit $RES
             ;;
         --show-config|--show-device-config)
             [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
