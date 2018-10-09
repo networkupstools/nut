@@ -746,7 +746,7 @@ while [ $# -gt 0 ]; do
         --help|-h|-help) usage; exit 0 ;;
         --get-service-framework) echo "${SERVICE_FRAMEWORK}" ; exit 0 ;;
         --reconfigure)
-            upslist_readFile || exit $?
+            upslist_readFile_once || exit $?
             upslist_readSvcs "before manipulations"
 
             if [ -n "$UPSLIST_SVCS" ]; then
@@ -785,7 +785,7 @@ while [ $# -gt 0 ]; do
             return 13
             ;;
         --list-devices)
-            upslist_readFile && \
+            upslist_readFile_once && \
             if [ -n "$UPSLIST_FILE" ] ; then
                 echo "=== The currently defined configurations in '$UPSCONF' are:" >&2
                 echo "$UPSLIST_FILE"
@@ -868,7 +868,7 @@ while [ $# -gt 0 ]; do
             ;;
         --list-services-for-devices)
             FINAL_RES=0
-            upslist_readFile && [ -n "$UPSLIST_FILE" ] \
+            upslist_readFile_once && [ -n "$UPSLIST_FILE" ] \
                 || { echo "No devices detected in '$UPSCONF'" >&2 ; exit 1 ; }
             upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
                 || { echo "No service instances detected" >&2 ; exit 1; }
@@ -906,8 +906,8 @@ while [ $# -gt 0 ]; do
             ;;
         --show-configs|--show-device-configs|--show-all-configs|--show-all-device-configs)
             RES=0
-            upslist_readFile || RES=$?
-            [ "$RES" != 0 ] && { echo "ERROR: upslist_readFile () failed with code $RES" >&2; exit $RES; }
+            upslist_readFile_once || RES=$?
+            [ "$RES" != 0 ] && { echo "ERROR: upslist_readFile_once () failed with code $RES" >&2; exit $RES; }
             [ -n "$UPSLIST_FILE" ] \
                 || { echo "WARNING: No devices detected in '$UPSCONF'" >&2 ; RES=1 ; }
             echo "$UPSCONF_DATA"
@@ -924,7 +924,6 @@ while [ $# -gt 0 ]; do
             [ -z "$3" ] && echo "Configuration key name argument required" >&2 && exit 1
             DEV="$2"
             KEY="$3"
-            upslist_readFile && \
             upsconf_getValue "$DEV" "$KEY"
             exit $?
             ;;
