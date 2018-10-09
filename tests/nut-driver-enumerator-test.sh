@@ -29,6 +29,7 @@
 [ -n "${USE_SHELLS-}" ] || USE_SHELLS="/bin/sh"
 case "${DEBUG-}" in
     [Yy]|[Yy][Ee][Ss]) DEBUG=yes ;;
+    [Tt][Rr][Aa][Cc][Ee]) DEBUG=trace ;;
     *) DEBUG="" ;;
 esac
 
@@ -49,11 +50,11 @@ export UPSCONF
 FAIL_COUNT=0
 GOOD_COUNT=0
 callNDE() {
-    if [ "$DEBUG" = yes ]; then
-        time $USE_SHELL $NDE "$@"
-    else
-        $USE_SHELL $NDE "$@" 2>/dev/null
-    fi
+    case "$DEBUG" in
+        yes)   time $USE_SHELL $NDE "$@" ;;
+        trace) time $USE_SHELL -x $NDE "$@" ;;
+        *)     $USE_SHELL $NDE "$@" 2>/dev/null ;;
+    esac
 }
 
 run_testcase() {
@@ -87,7 +88,7 @@ run_testcase() {
         FAIL_COUNT="`expr $FAIL_COUNT + 1`"
         RES="`expr $RES + 2`"
     fi
-    if [ "$RES" != 0 ] || [ "$DEBUG" = yes ] ; then echo "" ; fi
+    if [ "$RES" != 0 ] || [ -n "$DEBUG" ] ; then echo "" ; fi
     return $RES
 }
 
