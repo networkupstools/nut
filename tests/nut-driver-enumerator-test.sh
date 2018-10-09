@@ -121,7 +121,8 @@ valueHasQuotedHashtag" \
 testcase_show_all_configs() {
     # We expect whitespace trimmed, comment-only lines removed
     run_testcase "Show all configs" 0 \
-'[dummy1]
+'maxstartdelay=180
+[dummy1]
 driver=dummy-ups
 port=file1.dev
 desc="This is ups-1"
@@ -183,6 +184,17 @@ testcase_getValue() {
         --show-device-config-value dummy1 desc
 }
 
+testcase_globalSection() {
+    run_testcase "Display global config" 0 \
+        "maxstartdelay=180" \
+        --show-config ''
+
+    run_testcase "Query a configuration key (global)" 0 \
+        "180" \
+        --show-config-value '' maxstartdelay
+}
+
+
 # Combine the cases above into a stack
 testsuite() {
     testcase_bogus_args
@@ -190,6 +202,7 @@ testsuite() {
     testcase_show_all_configs
     testcase_upslist_debug
     testcase_getValue
+    testcase_globalSection
 }
 
 # If no args...
