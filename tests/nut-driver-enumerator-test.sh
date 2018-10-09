@@ -107,6 +107,7 @@ testcase_list_all_devices() {
     # Note: unlike other outputs, this list is alphabetically sorted
     run_testcase "List all device names from sections" 0 \
 "dummy-proxy
+dummy-proxy-localhost
 dummy1
 epdu-2
 epdu-2-snmp
@@ -141,8 +142,11 @@ port=auto
 driver=serial-ups
 port=/dev/ttyS1 # some path
 [dummy-proxy]
-driver=dummy-ups
+driver="dummy-ups  "
 port=remoteUPS@RemoteHost.local
+[dummy-proxy-localhost]
+driver='"'dummy-ups  '"'
+port=localUPS@127.0.0.1
 [valueHasEquals]
 driver=dummy=ups
 port=file1.dev # key=val, right?
@@ -158,7 +162,8 @@ port=file#1.dev' \
 testcase_upslist_debug() {
     # We expect a list of names, ports and decided MEDIA type (for dependencies)
     run_testcase "List decided MEDIA and config checksums for all devices" 0 \
-"INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='b71d979c46c3c0fea461136369b75384'
+"INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups  ' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='aff543fc07d7fbf83e81001b181c8b97'
+INST: 1ea79c6eea3681ba73cc695f3253e605~[dummy-proxy-localhost]: DRV='dummy-ups  ' PORT='localUPS@127.0.0.1' MEDIA='network-localhost' SECTIONMD5='73e6b7e3e3b73558dc15253d8cca51b2'
 INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='9e0a326b67e00d455494f8b4258a01f1'
 INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='0d9a0147dcf87c7c720e341170f69ed4'
 INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
