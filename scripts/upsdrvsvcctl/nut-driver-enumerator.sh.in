@@ -654,7 +654,7 @@ nut_driver_enumerator_main() {
 
     # Note: do not use the read..._once() here, to ensure that the
     # looped daemon sees the whole picture, which can be new every time
-    upslist_readFile || exit $?
+    upslist_readFile || return $?
     #upslist_debug
     upslist_readSvcs "before manipulations"
 
@@ -700,6 +700,12 @@ nut_driver_enumerator_main() {
 
 daemonize() (
     trap '-' 1
+    # Note: this loop would die on errors with config file or
+    # inability to ensure that it matches the list of services.
+    # If caller did not `export REPORT_RESTART_42=no` then the
+    # loop would exit with code 42, and probably trigger restart
+    # of the service which wraps this daemon do topple others that
+    # depend on it.
     while nut_driver_enumerator_main ; do
         sleep $DAEMON_SLEEP &
         trap "kill $! ; echo 'Sleep interrupted, processing configs now!'>&2" 1
