@@ -150,7 +150,7 @@ driver='"'dummy-ups  '"'
 port=localUPS@127.0.0.1
 [valueHasEquals]
 driver=dummy=ups
-port=file1.dev # key=val, right?
+port=file1.dev # key = val, right?
 [valueHasHashtag]
 driver=dummy-ups
 port=file#1.dev
@@ -170,7 +170,7 @@ INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://1
 INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
 INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='b9433819b80ffa3f723ca9109fa82276'
 INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
-INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key=val, right?' MEDIA='' SECTIONMD5='4057d826c79ef96744a3e07c41bd588c'
+INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key = val, right?' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'
 INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
 INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='af59c3c0caaa68dcd796d7145ae403ee'" \
         upslist_debug
