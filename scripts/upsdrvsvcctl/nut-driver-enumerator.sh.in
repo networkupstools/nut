@@ -581,10 +581,10 @@ upslist_normalizeFile() {
     # Pick the lines which contain a bracket or assignment character,
     # trim leading and trailing whitespace, comment-only lines, and in
     # assignment lines trim the spaces around equality character and
-    # quoting characters around assignment values.
+    # quoting characters around assignment of values without whitespaces.
     # Also use a subset with just section, driver and port info for
     # faster parsing when determining driver required media etc.
-    UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,')" \
+    UPSCONF_DATA="$(egrep '[\[\=]' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,')" \
         && [ -n "$UPSCONF_DATA" ] \
         && UPSCONF_DATA_SDP="`egrep '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
