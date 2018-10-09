@@ -815,9 +815,9 @@ while [ $# -gt 0 ]; do
             # Return 42 if there was a change applied succesfully
             # (but e.g. some services should restart - upsd, maybe upsmon)
             if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
-                [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
+                [ "${REPORT_RESTART_42-}" = no ] && exit 0 || exit 42
             fi
-            return 13
+            exit 13
             ;;
         --list-devices)
             upslist_readFile_once && \
@@ -887,7 +887,10 @@ while [ $# -gt 0 ]; do
             SVC="`$hook_validInstanceSuffixName "$2"`"
             case "$SVC" in
                 MD5_*) ;; # fall through to the bulk of code
-                *) echo "$SVC" ; exit 0 ;;
+                *)  upslist_readFile_once || exit $?
+                    echo "$UPSLIST_FILE" | egrep "^$SVC\$"
+                    exit $?
+                    ;;
             esac
             FINAL_RES=0
             OUT="`"$0" --list-services-for-devices`" && [ -n "$OUT" ] || FINAL_RES=$?
