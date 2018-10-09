@@ -961,6 +961,16 @@ while [ $# -gt 0 ]; do
             upsconf_getValue "$DEV" "$KEY"
             exit $?
             ;;
+        upsconf_debug) # Not public, not in usage()
+            [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
+            upsconf_debug "$2"
+            exit $?
+            ;;
+        upslist_debug) # Not public, not in usage()
+            upslist_readFile_once || exit
+            upslist_debug
+            exit $?
+            ;;
         *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
     esac
     shift
