@@ -177,6 +177,10 @@ testcase_getValue() {
     run_testcase "Query a configuration key (other)" 0 \
         "yes" \
         --show-device-config-value epdu-2 synchronous
+
+    run_testcase "Query a configuration key (originally quoted)" 0 \
+        'This is ups-1' \
+        --show-device-config-value dummy1 desc
 }
 
 # Combine the cases above into a stack
