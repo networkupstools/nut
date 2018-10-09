@@ -271,6 +271,7 @@ upsconf_getSection_content() {
     #
 
     CURR_SECTION=""
+    SECTION_CONTENT=""
     RES=1
     [ -n "$1" ] || RES=0
     while read LINE ; do
@@ -281,18 +282,28 @@ upsconf_getSection_content() {
                     # and this routine only displays one (TODO: toggle?)
                     return 0
                 fi
-                CURR_SECTION="$1" ; echo "$LINE"; RES=0 ;;
+                SECTION_CONTENT="$LINE"
+                CURR_SECTION="$1" ; RES=0 ;;
             \[*\])
                 [ "$CURR_SECTION" = "$1" ] && break
                 CURR_SECTION="other"
                 ;;
             "") ;;
             *)  if [ "$CURR_SECTION" = "$1" ]; then
-                    echo "$LINE"
+                    if [ -n "$SECTION_CONTENT" ]; then
+                        SECTION_CONTENT="$SECTION_CONTENT
+$LINE"
+                    else
+                        SECTION_CONTENT="$LINE"
+                    fi
                 fi
                 ;;
         esac
     done
+
+    if [ -n "$SECTION_CONTENT" ]; then
+        echo "$SECTION_CONTENT"
+    fi
 
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] was not found in the '$UPSCONF' file" >&2
     return $RES
