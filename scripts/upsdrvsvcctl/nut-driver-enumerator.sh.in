@@ -81,6 +81,16 @@ prefix="@prefix@"
 # during package build. But everyone has it the same from systemd defaults:
 [ -n "${SYSTEMD_CONFPATH-}" ] || SYSTEMD_CONFPATH="/etc/systemd/system"
 
+if [ -n "$ZSH_VERSION" ]; then
+    ### Problem: loops like `for UPS in $UPSLIST` do not separate
+    ### the UPSLIST into many tokens but use it as one string.
+    echo "FATAL: zsh is not supported in this script" >&2
+    exit 1
+#    setopt noglob
+#    setopt +F
+#    IFS="`printf ' \t\r\n'`" ; export IFS
+fi
+
 # Third-party services to depend on (can be overridden by config file)
 ### Note that for systemd+udev integration, it may be better to set up
 ### triggers in udev, see e.g.
