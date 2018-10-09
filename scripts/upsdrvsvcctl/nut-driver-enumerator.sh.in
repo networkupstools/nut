@@ -293,6 +293,10 @@ ${UPSCONF_DATA}
 EOF
 }
 
+upsconf_getSection_MD5() {
+    calc_md5 "`upsconf_getSection "$@"`"
+}
+
 upsconf_getSection_SDP() {
     # Use the section-driver-port subset
     upslist_normalizeFile_once || return    # Propagate errors upwards
