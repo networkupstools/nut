@@ -324,10 +324,10 @@ upsconf_getValue() {
     [ -n "$GETSECTION" ] || GETSECTION="upsconf_getSection"
     CURR_SECTION=""
     RES=0
-    LINE="`$GETSECTION "$1" | egrep '^[ \t]*'"$2"'[ \t]*='`" || RES=$?
+    LINE="`$GETSECTION "$1" | egrep "^$2="`" || RES=$?
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
 
-    VALUE="$(echo "$LINE" | sed -e 's,^[ '"$TABCHAR"']*'"$2[ $TABCHAR]"'*=[ '"$TABCHAR"']*\(.*\)['"$TABCHAR"'\ ]*.*$,\1,' -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" || RES=$?
+    VALUE="$(echo "$LINE" | sed -e "s,^$2=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" || RES=$?
     echo "$VALUE"
 
     [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
