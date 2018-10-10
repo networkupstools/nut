@@ -5,6 +5,10 @@
 NUT_DIR="@prefix@"
 prefix="@prefix@" # expanded as part of some autoconf macros below
 
+# TODO/FIXME : Should "/var/run" be a configure variable?
+# Note that "/var/run" is transient tmpfs, so upgrade has to be done during same uptime.
+ACTIVE_ENUMERATOR_FMRI_FILE="/var/run/nut-driver-enumerator-fmri.prev"
+
 # make sure the nut user exists and has correct memberships
 res="`getent group @RUN_AS_GROUP@`" || res=""
 if [ -z "$res" ]; then
@@ -73,9 +77,16 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		# the config for changes and a default one that should be refreshed
 		# manually to reconfigure nut-driver instances - and is "cheaper".
 		# This may still fail if the daemon instance is somehow enabled (admin)
-		/usr/sbin/svcadm enable -s nut-driver-enumerator:default || \
-		{ /usr/sbin/svcadm clear nut-driver-enumerator:default 2>/dev/null ; \
-		  /usr/sbin/svcadm enable -s nut-driver-enumerator:default ; } || true
+		PREV_ACTIVE_ENUMERATOR=""
+		if test -s "${ACTIVE_ENUMERATOR_FMRI_FILE}" ; then
+			PREV_ACTIVE_ENUMERATOR="`head -1 "${ACTIVE_ENUMERATOR_FMRI_FILE}"`"
+		fi
+		[ x"nut-driver-enumerator:default" = x"${PREV_ACTIVE_ENUMERATOR}" ] && PREV_ACTIVE_ENUMERATOR=""
+		for ACTIVE_ENUMERATOR in ${PREV_ACTIVE_ENUMERATOR} nut-driver-enumerator:default ; do
+			/usr/sbin/svcadm enable -s ${ACTIVE_ENUMERATOR} || \
+			{ /usr/sbin/svcadm clear ${ACTIVE_ENUMERATOR} 2>/dev/null ; \
+			  /usr/sbin/svcadm enable -s ${ACTIVE_ENUMERATOR} ; } && break || true
+		done
 		@SBINDIR@/upsdrvsvcctl start
 	else
 		echo "NOT ENABLING nut-driver-enumerator at this time : missing or empty @CONFPATH@/ups.conf" >&2

@@ -7,8 +7,24 @@
 NUT_DIR="@prefix@"
 prefix="@prefix@" # expanded as part of some autoconf macros below
 
+# TODO/FIXME : Should "/var/run" be a configure variable?
+# Note that "/var/run" is transient tmpfs, so upgrade has to be done during same uptime.
+ACTIVE_ENUMERATOR_FMRI_FILE="/var/run/nut-driver-enumerator-fmri.prev"
+
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	# Unconfigure SMF services
+	# First detect the first active (online, maintenance, etc.)
+	# instance of nut-driver-enumerator so we can pass it to the
+	# next lifetime in case of re-install of NUT and keep the
+	# user's previously declared preference.
+	ACTIVE_ENUMERATOR="`/usr/bin/svcs -H -o state,fmri '*/nut-driver-enumerator:*' | while read S F ; do [ "$S" != "disabled" ] && [ "$S" != "offline" ] && echo "$F" && break ; done`"
+	if [ -n "$ACTIVE_ENUMERATOR" ]; then
+		rm -f "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		touch "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		chmod 600 "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		chown 0:0 "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+		echo "${ACTIVE_ENUMERATOR}" > "${ACTIVE_ENUMERATOR_FMRI_FILE}"
+	fi
 	# First tell the automagic to stop, so it does not interfere; diligently clean it out below
 	/usr/sbin/svcadm disable nut-driver-enumerator:default || true
 	/usr/sbin/svcadm disable nut-driver-enumerator:daemon || true
