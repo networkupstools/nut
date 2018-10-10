@@ -48,9 +48,6 @@
 #               13  Sections and services differed, and still do not match up
 #               1   Bad inputs, e.g. unrecognized service management framework
 #               2   Absent or unreadable ups.conf file
-#  \todo    Complete the sample basic support for Solaris SMF (needs support
-#           for the service definitions similar to systemd NUT units to be
-#           added to that platform first). Parts in this script are finished.
 #
 
 # NOTE: Currently found caveats that might be solved later but require
