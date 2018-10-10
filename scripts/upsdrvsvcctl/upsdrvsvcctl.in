@@ -162,14 +162,14 @@ case "$ACTION" in
     start)
         VERB="Starting"
         case "$SERVICE_FRAMEWORK" in
-            smf) CMDARG="enable -t" ;;
+            smf) CMDARG="enable -ts" ;;
             systemd) CMDARG="start" ;;
         esac
         ;;
     stop)
         VERB="Stopping"
         case "$SERVICE_FRAMEWORK" in
-            smf) CMDARG="disable -t" ;;
+            smf) CMDARG="disable -ts" ;;
             systemd) CMDARG="stop" ;;
         esac
         ;;
