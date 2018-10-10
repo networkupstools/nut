@@ -246,9 +246,10 @@ upslist_equals() {
 
     _TMP_DEV_SVC=""
     for _DEV in $1 ; do
+        DEVINST="`$hook_validInstanceName "$_DEV"`"
         for _SVC in $2 ; do
             [ "$_DEV" = "$_SVC" ] \
-            || [ "`$hook_validInstanceName "$_DEV"`" = "$_SVC" ] \
+            || [ "$DEVINST" = "$_SVC" ] \
             && { [ -z "$_TMP_DEV_SVC" ] \
                  && _TMP_DEV_SVC="$_DEV = $_SVC" \
                  || _TMP_DEV_SVC="$_TMP_DEV_SVC
@@ -278,9 +279,10 @@ upslist_checksums_unchanged() {
     # reconfigured.
     _TMP_SVC=""
     for _DEV in $1 ; do
+        DEVINST="`$hook_validInstanceName "$_DEV"`"
         for _SVC in $2 ; do
             if [ "$_DEV" = "$_SVC" ] \
-            || [ "`$hook_validInstanceName "$_DEV"`" = "$_SVC" ] \
+            || [ "$DEVINST" = "$_SVC" ] \
             ; then
                 upssvcconf_checksum_unchanged "$_DEV" "$_SVC" || \
                 { [ -z "$_TMP_SVC" ] \
