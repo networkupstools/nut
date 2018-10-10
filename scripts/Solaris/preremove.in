@@ -9,7 +9,10 @@ prefix="@prefix@" # expanded as part of some autoconf macros below
 
 if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
 	# Unconfigure SMF services
-	for S in nut nut-monitor nut-driver-enumerator nut-server ; do
+	# First tell the automagic to stop, so it does not interfere; diligently clean it out below
+	/usr/sbin/svcadm disable nut-driver-enumerator:default || true
+	/usr/sbin/svcadm disable nut-driver-enumerator:daemon || true
+	for S in nut nut-monitor nut-server ; do
 		echo "Stopping NUT service: $S..."
 		/usr/sbin/svcadm clear "$S"
 		/usr/sbin/svcadm disable -s "$S"
@@ -22,22 +25,27 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	@SBINDIR@/upsdrvsvcctl stop
 	@SBINDIR@/upsdrvctl -DDDDD stop
 	sleep 5
-	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` ; do
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` `/usr/bin/svcs -H -o fmri '*/nut-driver-enumerator:*'` ; do
 		echo "Stopping NUT service: $S..."
 		/usr/sbin/svcadm clear "$S"
-		/usr/sbin/svcadm disable "$S"
+		/usr/sbin/svcadm disable -s "$S"
 	done
 	sleep 5
-	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` ; do
+	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*' | grep -wv default` `/usr/bin/svcs -H -o fmri '*/nut-driver-enumerator:*' | grep -wv default` ; do
 		echo "Removing NUT service: $S..."
-		/usr/sbin/svccfg -s "nut-driver" delete -f "$S" || \
+		# Note: S here is a full FMRI URL
+		SB="`echo "$S" | sed 's,:[^:]*$,,'`"
+		SI="`echo "$S" | sed 's,^.*:\([^:]*\)$,\1,'`"
+		/usr/sbin/svcadm disable -s "$S"
+		/usr/sbin/svccfg -s "$SB" delete -f "$SI" || \
 		/usr/sbin/svccfg delete "$S"
 	done
-	S="nut-driver" && \
+	for S in nut-driver-enumerator nut-driver ; do
 		echo "Removing NUT service: $S..." && \
 		/usr/sbin/svccfg delete "$S" || \
 		/usr/sbin/svccfg -s "$S" delete || \
 		/usr/sbin/svccfg -s "$S" delete default
+	done
 else
 	[ -x /etc/init.d/nut ] && /etc/init.d/nut stop
 fi

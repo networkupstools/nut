@@ -65,13 +65,16 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		@SBINDIR@/upsdrvsvcctl stop
 		@SBINDIR@/upsdrvctl -DDDDD stop
 		sleep 5
-		echo "Register NUT drivers (if any)..."
+		echo "(Re-)register NUT drivers (if any)..."
 		REPORT_RESTART_42=no AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh" --reconfigure
 		sleep 2
 		echo "Enable NUT drivers (if any)..."
-		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
-		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
-		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
+		# Note: we now provide two services, a daemon that keeps checking
+		# the config for changes and a default one that should be refreshed
+		# manually to reconfigure nut-driver instances - and is "cheaper".
+		/usr/sbin/svcadm enable -s nut-driver-enumerator:default || \
+		{ /usr/sbin/svcadm clear nut-driver-enumerator:default ; \
+		  /usr/sbin/svcadm enable -s nut-driver-enumerator:default ; }
 		@SBINDIR@/upsdrvsvcctl start
 	else
 		echo "NOT ENABLING nut-driver-enumerator at this time : missing or empty @CONFPATH@/ups.conf" >&2
