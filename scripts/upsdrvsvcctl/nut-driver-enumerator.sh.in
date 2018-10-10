@@ -276,6 +276,7 @@ upslist_checksums_unchanged() {
     # configuration section from the file and the stashed configuration in
     # a service instance. Prints a list of mismatching service names that
     # should get reconfigured.
+    [ -z "$1" -o -z "$2" ] && return 1
 
     _TMP_SVC=""
     for _DEV in $1 ; do
