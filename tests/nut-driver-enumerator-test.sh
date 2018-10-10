@@ -206,9 +206,10 @@ testsuite() {
     testcase_bogus_args
     testcase_list_all_devices
     testcase_show_all_configs
-    testcase_upslist_debug
     testcase_getValue
     testcase_globalSection
+    # This one can take a while, put it last
+    testcase_upslist_debug
 }
 
 # If no args...
