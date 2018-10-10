@@ -174,6 +174,14 @@ INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='f
 INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
 INST: d50c3281f9b68a94bf9df72a115fbb5c~[valueHasQuotedHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='af59c3c0caaa68dcd796d7145ae403ee'" \
         upslist_debug
+
+    # FIXME : in [valueHasEquals] and [serial.4] the PORT value is quite bogus
+    # with its embedded comments. Check vs. binary config parser, whether in
+    # unquoted case only first token is the valid value, and how comments are
+    # handled in general?
+    # FIXME : in [valueHasHashtag] the line after "#" should likely be dropped
+    # (check in binary config parser first) while in [valueHasQuotedHashtag]
+    # it should stay.
 }
 
 testcase_getValue() {
