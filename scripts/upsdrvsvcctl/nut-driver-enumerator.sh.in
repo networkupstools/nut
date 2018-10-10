@@ -522,7 +522,7 @@ systemd_registerInstance() {
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="#Wants"
         echo "Adding '$DEPREQ'+After dependency for '$SVCINST' on '$DEPSVC'..."
-        mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
+        mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d" && \
         cat > "${SYSTEMD_CONFPATH}/nut-driver@$SVCINST.service.d/nut-driver-enumerator-generated.conf" <<EOF
 # Customization generated `date -u` by nut-driver-enumerator for NUT device '$DEVICE'
 # DO NOT EDIT: This file would be removed or overwritten by that service
