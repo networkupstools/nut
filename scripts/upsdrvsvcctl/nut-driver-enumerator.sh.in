@@ -140,7 +140,7 @@ SVCNAME_SMF="svc:/system/power/nut-driver"
 TABCHAR="`printf '\t'`" || TABCHAR='	'
 
 if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
-    [ -x /usr/sbin/svcadm ] && [ -x /usr/sbin/svccfg ] && [ -x /usr/bin/svcs ] && \
+    [ -x /usr/sbin/svcadm ] && [ -x /usr/sbin/svccfg ] && [ -x /usr/bin/svcs ] && [ -x /usr/bin/svcprop ] && \
         SERVICE_FRAMEWORK="smf"
     [ -z "${SERVICE_FRAMEWORK-}" ] && \
         [ -x /bin/systemctl ] && \
@@ -166,6 +166,8 @@ hook_listInstances_raw=""
 hook_validInstanceName=""
 hook_validFullUnitName=""
 hook_validInstanceSuffixName=""
+hook_getSavedMD5=""
+hook_setSavedMD5=""
 hook_restart_upsd=""
 
 case "${SERVICE_FRAMEWORK-}" in
@@ -177,6 +179,8 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="smf_validInstanceName"
         hook_validFullUnitName="smf_validFullUnitName"
         hook_validInstanceSuffixName="smf_validInstanceSuffixName"
+        hook_getSavedMD5="smf_getSavedMD5"
+        hook_setSavedMD5="smf_setSavedMD5"
         hook_restart_upsd="smf_restart_upsd"
         ;;
     systemd)
@@ -187,6 +191,8 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="systemd_validInstanceName"
         hook_validFullUnitName="systemd_validFullUnitName"
         hook_validInstanceSuffixName="systemd_validInstanceSuffixName"
+        hook_getSavedMD5="systemd_getSavedMD5"
+        hook_setSavedMD5="systemd_setSavedMD5"
         hook_restart_upsd="systemd_restart_upsd"
         ;;
     "")
@@ -255,6 +261,38 @@ $_DEV = $_SVC" ; }
 
     # Exit code : is the built mapping as long as the source list(s)?
     [ "`echo "$1" | wc -l`" = "`echo "$_TMP_DEV_SVC" | wc -l`" ]
+}
+
+upssvcconf_checksum_unchanged() {
+    # $1 = dev, $2 = svc
+    # compare checksums of the configuration section from the file and the
+    # stashed configuration in a service instance (if any).
+    # FIXME : optimize by caching, we likely have quite a few requests
+    [ "`upsconf_getSection_MD5 "$1"`" = "`$hook_getSavedMD5 "$2"`" ]
+}
+
+upslist_checksums_unchanged() {
+    # For each device and its corresponding unit, compare checksums of the
+    # configuration section from the file and the stashed configuration in
+    # a service instance. Prints a list of mismatching items that should get
+    # reconfigured.
+    _TMP_SVC=""
+    for _DEV in $1 ; do
+        for _SVC in $2 ; do
+            if [ "$_DEV" = "$_SVC" ] \
+            || [ "`$hook_validInstanceName "$_DEV"`" = "$_SVC" ] \
+            ; then
+                upssvcconf_checksum_unchanged "$_DEV" "$_SVC" || \
+                { [ -z "$_TMP_SVC" ] \
+                  && _TMP_SVC="$_SVC" \
+                  || _TMP_SVC="$_TMP_SVC
+$_SVC" ; }
+            fi
+        done
+    done
+    [ -z "$_TMP_SVC" ] && return 0
+    echo "$_TMP_SVC"
+    return 1
 }
 
 upsconf_getSection_content() {
@@ -465,6 +503,8 @@ smf_registerInstance() {
         echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
+    smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
+
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
         /usr/sbin/svcadm clear "${TARGET_FMRI}" 2>/dev/null || true
@@ -483,6 +523,22 @@ smf_listInstances_raw() {
 }
 smf_listInstances() {
     smf_listInstances_raw | sed 's/^.*://' | sort -n
+}
+smf_getSavedMD5() {
+    # Query service instance $1
+    TARGET_FMRI="nut-driver:$1"
+    PG="nut-driver-enumerator-generated-checksum"
+    /usr/bin/svcprop -p "$PG/SECTION_CHECKSUM" "$TARGET_FMRI"
+}
+smf_setSavedMD5() {
+    # Save checksum value $2 into service instance $1
+    TARGET_FMRI="nut-driver:$1"
+    PG="nut-driver-enumerator-generated-checksum"
+    /usr/sbin/svccfg -s "$TARGET_FMRI" delprop "$PG" || true
+    /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$PG" application && \
+    /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$PG/SECTION_CHECKSUM" = astring: "$2"
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
+    /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
 }
 smf_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
@@ -545,6 +601,8 @@ EOF
         [ $? = 0 ] && echo "OK" || echo "FAILED to define the dependency" >&2
     fi
 
+    systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
+
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
         echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
@@ -562,6 +620,22 @@ systemd_listInstances_raw() {
 }
 systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
+}
+systemd_getSavedMD5() {
+    # Query service instance $1
+    [ -s "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" ] \
+    && grep "Environment='SECTION_CHECKSUM=" "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" | sed -e "s,^Environment='SECTION_CHECKSUM=,," -e "s,'\$,," \
+    || { echo "Did not find '${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf' with a SECTION_CHECKSUM" ; return 1; }
+}
+systemd_setSavedMD5() {
+    # Save checksum value $2 into service instance $1
+    mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
+    cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" << EOF
+[Unit]
+Environment='SECTION_CHECKSUM=$2'
+EOF
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
+    /bin/systemctl daemon-reload
 }
 systemd_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
@@ -695,7 +769,18 @@ nut_driver_enumerator_main() {
     # FIXME: Implement testing in detail whether section definitions were
     # changed since last run, as a second step after checking that name
     # lists are still the same.
-    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" && return 0
+    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
+    && NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
+    && [ -z "$NEW_CHECKSUM" ] \
+    && return 0
+
+    if [ -n "$NEW_CHECKSUM" ]; then
+        for UPSS in $NEW_CHECKSUM ; do
+            echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
+            $hook_unregisterInstance "$UPSS"
+        done
+        upslist_readSvcs "after updating for new config section checksums"
+    fi
 
     if [ -n "$UPSLIST_FILE" ]; then
         upslist_addSvcs
