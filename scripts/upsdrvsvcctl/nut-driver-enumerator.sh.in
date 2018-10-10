@@ -31,8 +31,9 @@
 #           It helps service frameworks such as Linux systemd and Solaris SMF.
 #           When executed, this script looks for all configured ups.conf
 #           sections and registered service instances, and makes these two
-#           lists match up.
-#           FIXME: Does not track changes inside sections ATM.
+#           lists match up. It has also a mode to do this in a loop, to keep
+#           checking for differences and applying them, on systems where it's
+#           problematic to trigger it in response to FS event notifications.
 #           Returns exit codes:
 #               0   Sections and services already match up
 #               42  Sections and services differed, but now match up -
@@ -227,12 +228,10 @@ upslist_equals() {
     # Compare pre-sorted list of DEVICES ($1) and SVCINSTs ($2) including
     # the possible mangling for service names. Return 0 if lists describe
     # exactly same set of devices and their services.
-    # FIXME: This currently only checks the names, not the contents of
-    # the sections, so re-definitions of an existing device configuration
-    # would not trigger a service restart at this time. Such deeper check
-    # belongs in a different routine really, and requires a way to track
-    # old and new state of configs (maybe hashed upsconf_getSection output
-    # as a service configuration variable?) on all supported frameworks.
+    # Note: This logic only checks the names, not the contents of device
+    # sections, so re-definitions of an existing device configuration
+    # would not trigger a service restart by itself. Such deeper check
+    # belongs in a different routine, see upssvcconf_checksum_unchanged().
 
     # Trivial case 0: one string is empty, another is not
     # Note: `echo '' | wc -l` == "1" not "0"!
@@ -275,8 +274,9 @@ upssvcconf_checksum_unchanged() {
 upslist_checksums_unchanged() {
     # For each device and its corresponding unit, compare checksums of the
     # configuration section from the file and the stashed configuration in
-    # a service instance. Prints a list of mismatching items that should get
-    # reconfigured.
+    # a service instance. Prints a list of mismatching service names that
+    # should get reconfigured.
+
     _TMP_SVC=""
     for _DEV in $1 ; do
         DEVINST="`$hook_validInstanceName "$_DEV"`"
@@ -739,7 +739,11 @@ upslist_debug() {
 }
 
 upslist_addSvcs() {
-    # FIXME: Support redefined pre-existing sections - update state data...
+    # Note: This routine registers service instances for device config sections
+    # that are not wrapped currently. Support for redefined previously existing
+    # sections - is attained by removing the old service instance elsewhere and
+    # recreating it here, since any data could change including the dependency
+    # list, etc.
     for UPSF in $UPSLIST_FILE ; do
         if ! common_isRegistered "$UPSF" ; then
             echo "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..." >&2
