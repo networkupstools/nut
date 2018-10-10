@@ -87,8 +87,9 @@ usage: $0 [OPTIONS] list [<ups>]
                 	to list the mapping of service instances to device sections
   list <ups>    	(optionally return the service instance name for one device)
 
-usage: $0 [OPTIONS] show-config
-  show-config <ups>     output config section from ups.conf for device <ups>
+usage: $0 [OPTIONS] show-config [<ups>]
+  show-config <ups>	output config section from ups.conf for device <ups>
+  show-config   	...or all devices if no <ups> argument was passed
 EOF
 }
 
@@ -112,7 +113,7 @@ while [ $# -gt 0 ]; do
             if [ -n "$2" ] ; then
                 eval $ENUMERATOR --show-device-config "$2" ; exit $?
             else
-                echo "ERROR: Argument required" >&2; exit 1
+                eval $ENUMERATOR --show-all-configs ; exit $?
             fi
             ;;
         start|stop)

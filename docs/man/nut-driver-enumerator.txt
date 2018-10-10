@@ -82,6 +82,10 @@ a service unit `SVC` which wraps it
 Print a TAB-separated list of service units and corresponding
 NUT device names which each such unit wraps
 
+*nut-driver-enumerator.sh --show-all-configs*::
+Show the complete normalized list of device configuration blocks
+(same as used later by the parser in the script to make decisions)
+
 *nut-driver-enumerator.sh --show-device-config DEV*::
 Show configuration block of the specified NUT device
 
