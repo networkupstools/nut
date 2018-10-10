@@ -780,7 +780,9 @@ nut_driver_enumerator_main() {
     NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
     && [ -z "$NEW_CHECKSUM" ] \
     && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
-    && echo "OK: No changes to reconciliate between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" \
+    && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
+        echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
+       fi \
     && return 0
 
     if [ -n "$NEW_CHECKSUM" ]; then
@@ -819,7 +821,7 @@ nut_driver_enumerator_main() {
     # Return 42 if there was a change applied succesfully
     # (but e.g. some services should restart - upsd, maybe upsmon)
     if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
-        echo "OK: No more changes to reconciliate between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
+        echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
     return 13
@@ -860,6 +862,7 @@ if [ $# = 1 ] ; then
             ;;
     esac
 fi
+unset DAEMON_SLEEP
 
 usage() {
     cat << EOF
@@ -941,7 +944,7 @@ while [ $# -gt 0 ]; do
             # Return 42 if there was a change applied succesfully
             # (but e.g. some services should restart - upsd, maybe upsmon)
             if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
-                echo "OK: No more changes to reconciliate between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
+                echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
                 [ "${REPORT_RESTART_42-}" = no ] && exit 0 || exit 42
             fi
             exit 13
