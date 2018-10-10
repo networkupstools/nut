@@ -157,6 +157,8 @@ UPSCONF_DATA_SDP=""
 UPSLIST_FILE=""
 # List of configured service instances for UPS drivers
 UPSLIST_SVCS=""
+
+# Framework-specific implementations are generally hooked here:
 hook_registerInstance=""
 hook_unregisterInstance=""
 hook_listInstances=""
@@ -493,6 +495,7 @@ systemd_validInstanceSuffixName() {
     echo "$1" | sed -e 's,^.*@,,' -e 's,\.service$,,'
 }
 systemd_registerInstance() {
+    # Instance is registered by device section name; ultimate name in systemd may differ
     DEVICE="$1"
     SVCINST="$1"
     /bin/systemctl enable 'nut-driver@'"$DEVICE".service || \
