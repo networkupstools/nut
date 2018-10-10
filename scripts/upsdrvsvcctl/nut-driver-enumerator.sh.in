@@ -773,12 +773,16 @@ nut_driver_enumerator_main() {
 
     # Quickly exit if there's nothing to do; note the lists are pre-sorted
     # Otherwise a non-zero exit will be done below
-    # FIXME: Implement testing in detail whether section definitions were
-    # changed since last run, as a second step after checking that name
-    # lists are still the same.
-    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
-    && NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
+    # Note: We implement testing in detail whether section definitions were
+    # changed since last run, as a first step before checking that name
+    # lists are still equivalent, because we need to always have the result
+    # of the "has it changed?" check as a hit-list of something to remove,
+    # while the check for no new device section definitions is just boolean.
+    # We can only exit quickly if both there are no changed sections and no
+    # new or removed sections since last run.
+    NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
     && [ -z "$NEW_CHECKSUM" ] \
+    && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
     && return 0
 
     if [ -n "$NEW_CHECKSUM" ]; then
