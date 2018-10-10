@@ -391,7 +391,6 @@ upsconf_debug() {
 }
 
 calc_md5() {
-    _MD5=""
     _MD5="`echo "$1" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "$_MD5" ] || \
     { _MD5="`echo "$1" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "$_MD5" ]; } || \
     return 1
