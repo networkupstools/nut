@@ -14,7 +14,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	/usr/sbin/svcadm disable nut-driver-enumerator:daemon || true
 	for S in nut nut-monitor nut-server ; do
 		echo "Stopping NUT service: $S..."
-		/usr/sbin/svcadm clear "$S"
+		/usr/sbin/svcadm clear "$S" 2>/dev/null
 		/usr/sbin/svcadm disable -s "$S"
 		echo "Removing NUT service: $S..."
 		/usr/sbin/svccfg delete "$S" || \
@@ -27,7 +27,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 	sleep 5
 	for S in `/usr/bin/svcs -H -o fmri '*/nut-driver:*'` `/usr/bin/svcs -H -o fmri '*/nut-driver-enumerator:*'` ; do
 		echo "Stopping NUT service: $S..."
-		/usr/sbin/svcadm clear "$S"
+		/usr/sbin/svcadm clear "$S" 2>/dev/null
 		/usr/sbin/svcadm disable -s "$S"
 	done
 	sleep 5
