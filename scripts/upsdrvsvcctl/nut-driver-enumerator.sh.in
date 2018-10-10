@@ -31,8 +31,9 @@
 #           It helps service frameworks such as Linux systemd and Solaris SMF.
 #           When executed, this script looks for all configured ups.conf
 #           sections and registered service instances, and makes these two
-#           lists match up.
-#           FIXME: Does not track changes inside sections ATM.
+#           lists match up. It has also a mode to do this in a loop, to keep
+#           checking for differences and applying them, on systems where it's
+#           problematic to trigger it in response to FS event notifications.
 #           Returns exit codes:
 #               0   Sections and services already match up
 #               42  Sections and services differed, but now match up -
@@ -47,9 +48,6 @@
 #               13  Sections and services differed, and still do not match up
 #               1   Bad inputs, e.g. unrecognized service management framework
 #               2   Absent or unreadable ups.conf file
-#  \todo    Complete the sample basic support for Solaris SMF (needs support
-#           for the service definitions similar to systemd NUT units to be
-#           added to that platform first). Parts in this script are finished.
 #
 
 # NOTE: Currently found caveats that might be solved later but require
@@ -227,12 +225,10 @@ upslist_equals() {
     # Compare pre-sorted list of DEVICES ($1) and SVCINSTs ($2) including
     # the possible mangling for service names. Return 0 if lists describe
     # exactly same set of devices and their services.
-    # FIXME: This currently only checks the names, not the contents of
-    # the sections, so re-definitions of an existing device configuration
-    # would not trigger a service restart at this time. Such deeper check
-    # belongs in a different routine really, and requires a way to track
-    # old and new state of configs (maybe hashed upsconf_getSection output
-    # as a service configuration variable?) on all supported frameworks.
+    # Note: This logic only checks the names, not the contents of device
+    # sections, so re-definitions of an existing device configuration
+    # would not trigger a service restart by itself. Such deeper check
+    # belongs in a different routine, see upssvcconf_checksum_unchanged().
 
     # Trivial case 0: one string is empty, another is not
     # Note: `echo '' | wc -l` == "1" not "0"!
@@ -275,8 +271,10 @@ upssvcconf_checksum_unchanged() {
 upslist_checksums_unchanged() {
     # For each device and its corresponding unit, compare checksums of the
     # configuration section from the file and the stashed configuration in
-    # a service instance. Prints a list of mismatching items that should get
-    # reconfigured.
+    # a service instance. Prints a list of mismatching service names that
+    # should get reconfigured.
+    [ -z "$1" -o -z "$2" ] && return 1
+
     _TMP_SVC=""
     for _DEV in $1 ; do
         DEVINST="`$hook_validInstanceName "$_DEV"`"
@@ -739,7 +737,11 @@ upslist_debug() {
 }
 
 upslist_addSvcs() {
-    # FIXME: Support redefined pre-existing sections - update state data...
+    # Note: This routine registers service instances for device config sections
+    # that are not wrapped currently. Support for redefined previously existing
+    # sections - is attained by removing the old service instance elsewhere and
+    # recreating it here, since any data could change including the dependency
+    # list, etc.
     for UPSF in $UPSLIST_FILE ; do
         if ! common_isRegistered "$UPSF" ; then
             echo "Adding new ${SERVICE_FRAMEWORK} service instance for power device [${UPSF}]..." >&2
@@ -768,12 +770,17 @@ nut_driver_enumerator_main() {
 
     # Quickly exit if there's nothing to do; note the lists are pre-sorted
     # Otherwise a non-zero exit will be done below
-    # FIXME: Implement testing in detail whether section definitions were
-    # changed since last run, as a second step after checking that name
-    # lists are still the same.
-    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
-    && NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
+    # Note: We implement testing in detail whether section definitions were
+    # changed since last run, as a first step before checking that name
+    # lists are still equivalent, because we need to always have the result
+    # of the "has it changed?" check as a hit-list of something to remove,
+    # while the check for no new device section definitions is just boolean.
+    # We can only exit quickly if both there are no changed sections and no
+    # new or removed sections since last run.
+    NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
     && [ -z "$NEW_CHECKSUM" ] \
+    && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
+    && echo "OK: No changes to reconciliate between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" \
     && return 0
 
     if [ -n "$NEW_CHECKSUM" ]; then
@@ -812,6 +819,7 @@ nut_driver_enumerator_main() {
     # Return 42 if there was a change applied succesfully
     # (but e.g. some services should restart - upsd, maybe upsmon)
     if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
+        echo "OK: No more changes to reconciliate between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
     return 13
@@ -933,6 +941,7 @@ while [ $# -gt 0 ]; do
             # Return 42 if there was a change applied succesfully
             # (but e.g. some services should restart - upsd, maybe upsmon)
             if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
+                echo "OK: No more changes to reconciliate between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
                 [ "${REPORT_RESTART_42-}" = no ] && exit 0 || exit 42
             fi
             exit 13
