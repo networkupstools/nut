@@ -63,15 +63,17 @@ addons:
     - libxml2-utils
     - libmodbus-dev
 
-# Define one job in the matrix, to avoid a failing job
-# with "no environment variables set"; but others are
-# listed below to prioritize the longer jobs to start first.
+# Define at least two jobs in the matrix, to avoid a failing job
+# with "no environment variables set" and have them built (one
+# is too few); but others are listed below to prioritize the
+# longer jobs to start first as faster ones complete in parallel.
 env:
   global:
     - CI_TIME=true
     - CI_TRACE=false
   matrix:
     - BUILD_TYPE=default
+    - BUILD_TYPE=default-tgt:distcheck-light
 
 # Builds with customized setups
 # Note that doc-related builds take the longest, and Travis CI cloud
@@ -258,15 +260,6 @@ matrix:
         packages:
         - *deps_driverlibs
   - env: BUILD_TYPE=default-alldrv
-    os: linux
-    sudo: required
-    services:
-        - docker
-    addons:
-      apt:
-        packages:
-        - *deps_driverlibs
-  - env: BUILD_TYPE=default-tgt:distcheck-light
     os: linux
     sudo: required
     services:
