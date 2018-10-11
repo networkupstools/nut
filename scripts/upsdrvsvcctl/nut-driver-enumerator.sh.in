@@ -193,6 +193,18 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_setSavedMD5="systemd_setSavedMD5"
         hook_restart_upsd="systemd_restart_upsd"
         ;;
+    selftest)
+        hook_registerInstance="selftest_NOOP"
+        hook_unregisterInstance="selftest_NOOP"
+        hook_listInstances="selftest_NOOP"
+        hook_listInstances_raw="selftest_NOOP"
+        hook_validInstanceName="selftest_NOOP"
+        hook_validFullUnitName="selftest_NOOP"
+        hook_validInstanceSuffixName="selftest_NOOP"
+        hook_getSavedMD5="selftest_NOOP"
+        hook_setSavedMD5="selftest_NOOP"
+        hook_restart_upsd="selftest_NOOP"
+        ;;
     "")
         echo "Error detecting the service-management framework on this OS" >&2
         exit 1
@@ -202,6 +214,11 @@ case "${SERVICE_FRAMEWORK-}" in
         exit 1
         ;;
 esac
+
+selftest_NOOP() {
+    echo "NO-OP: Self-testing context does not do systems configuration" >&2
+    return 0
+}
 
 common_isFiled() {
     [ -n "$UPSLIST_FILE" ] && \
