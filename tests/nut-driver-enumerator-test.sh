@@ -24,6 +24,8 @@
 #           for regression and compatibility tests as well as for TDD
 #           fueled by pre-decided expected outcomes.
 
+### Note: These are relative to where the selftest script lives,
+### not the NUT top_srcdir etc. They can be exported by a Makefile.
 [ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname $0`"
 [ -n "${SRCDIR-}" ] || SRCDIR="`dirname $0`"
 [ -n "${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh"
@@ -40,9 +42,16 @@ NUT_CONFPATH="${BUILDDIR}/selftest-rw/nut"
 export NUT_CONFPATH
 
 [ -n "${UPSCONF-}" ] || UPSCONF="${SRCDIR}/nut-driver-enumerator-test--ups.conf"
+[ ! -s "${UPSCONF-}" ] && echo "FATAL : testing ups.conf not found as '$UPSCONF'" >&2 && exit 1
 export UPSCONF
 
-[ -n "${NDE-}" ] || NDE="${SRCDIR}/../scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in"
+if [ ! -n "${NDE-}" ] ; then
+    for NDE in \
+        "${BUILDDIR}/../scripts/upsdrvsvcctl/nut-driver-enumerator.sh" \
+        "${SRCDIR}/../scripts/upsdrvsvcctl/nut-driver-enumerator.sh.in" \
+    ; do [ -s "$NDE" ] && break ; done
+fi
+[ ! -s "${NDE-}" ] && echo "FATAL : testing nut-driver-enumerator.sh implementation not found as '$NDE'" >&2 && exit 1
 
 # TODO : Add tests that generate configuration files for units
 #mkdir -p "${NUT_CONFPATH}" "${SYSTEMD_CONFPATH}" || exit
