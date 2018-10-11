@@ -10,8 +10,10 @@ export BUILDDIR SRCDIR
 
 # Travis uses Ubuntu 14.04 which does not yet have systemd (16.04 should)
 # The self-tests do not (yet) use the actual OS framework, so just let them run
-SERVICE_FRAMEWORK="systemd"
-export SERVICE_FRAMEWORK
+if [ ! -x /bin/systemctl ] ; then
+    SERVICE_FRAMEWORK="selftest"
+    export SERVICE_FRAMEWORK
+fi
 
 printf "\n=== `date -u` : Will test nut-driver-enumerator interpreted by: "
 if [ -n "${SHELL_PROGS}" ] ; then
