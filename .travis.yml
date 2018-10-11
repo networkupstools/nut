@@ -77,6 +77,36 @@ env:
 # (ksh) and Linux (bash, dash, etc.) common distros.
 matrix:
   include:
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages: &deps_gendocs
+        - asciidoc
+        - xsltproc
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+        - source-highlight
+        - libxml2-utils
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
+  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - valgrind
+# Other quicker builds in standard env follow:
   - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=bash
     os: linux
     services:
@@ -109,36 +139,6 @@ matrix:
       apt:
         packages:
         - ash
-  - env: BUILD_TYPE=default-withdoc
-    os: linux
-    addons:
-      apt:
-        packages: &deps_gendocs
-        - asciidoc
-        - xsltproc
-        - dblatex
-        - docbook-xsl
-        - docbook-xsl-ns
-        - source-highlight
-        - libxml2-utils
-  - env: BUILD_TYPE=default-spellcheck
-    os: linux
-    addons:
-      apt:
-        packages: &deps_aspell
-        - aspell
-        - aspell-en
-  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
-    os: linux
-    sudo: false
-    services:
-        - docker
-    addons:
-      apt:
-        packages:
-        - *deps_driverlibs
-        - valgrind
-# Other quicker builds in standard env follow:
   - env: BUILD_TYPE=default-nodoc
     os: linux
     addons:
