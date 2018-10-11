@@ -12,4 +12,12 @@ else
     echo "default system '/bin/sh'"
 fi
 
-./nut-driver-enumerator-test.sh
+# Set this to enable verbose tracing
+case "${CI_TRACE-}" in
+    [Yy][Ee][Ss]|[Oo][Nn]|[Tt][Rr][Uu][Ee])
+        ls -la
+        DEBUG=trace ; export DEBUG
+        ;;
+esac
+
+$CI_TIME ./nut-driver-enumerator-test.sh
