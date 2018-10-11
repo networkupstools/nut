@@ -24,6 +24,12 @@
 #           for regression and compatibility tests as well as for TDD
 #           fueled by pre-decided expected outcomes.
 
+### Use a standard locale setup so sorting in expected results is not confused
+LANG=C
+LC_ALL=C
+TZ=UTC
+export LANG LC_ALL TZ
+
 ### Note: These are relative to where the selftest script lives,
 ### not the NUT top_srcdir etc. They can be exported by a Makefile.
 [ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname $0`"
