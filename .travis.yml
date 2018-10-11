@@ -72,8 +72,43 @@ env:
 # runs only a few sub-jobs in parallel, so we want the withdoc and
 # perhaps spellcheck jobs to start first, and while they are still in
 # progress, others are spawned and finished - reducing overall job TTL.
+# Note that the nut-driver-enumerator tests should be tried in at least
+# the shell interpreters reasonable for default setups of Solaris/illumos
+# (ksh) and Linux (bash, dash, etc.) common distros.
 matrix:
   include:
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=bash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - bash
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=ksh
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - ksh
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=dash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - dash
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=ash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - ash
   - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:

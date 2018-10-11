@@ -20,13 +20,13 @@
 #  \author  Jim Klimov <EvgenyKlimov@eaton.com>
 #  \brief   Self-test for nut-driver-enumerator.sh utility
 #  \details Automated sanity test for nut-driver-enumerator.sh(.in)
-#           using different shells (per $USE_SHELLS) and CLI requests
+#           using different shells (per $SHELL_PROGS) and CLI requests
 #           for regression and compatibility tests as well as for TDD
 #           fueled by pre-decided expected outcomes.
 
 [ -n "${BUILDDIR-}" ] || BUILDDIR="`dirname $0`"
 [ -n "${SRCDIR-}" ] || SRCDIR="`dirname $0`"
-[ -n "${USE_SHELLS-}" ] || USE_SHELLS="/bin/sh"
+[ -n "${SHELL_PROGS-}" ] || SHELL_PROGS="/bin/sh"
 case "${DEBUG-}" in
     [Yy]|[Yy][Ee][Ss]) DEBUG=yes ;;
     [Tt][Rr][Aa][Cc][Ee]) DEBUG=trace ;;
@@ -221,7 +221,7 @@ testsuite() {
 }
 
 # If no args...
-for USE_SHELL in $USE_SHELLS ; do
+for USE_SHELL in $SHELL_PROGS ; do
     testsuite
 done
 # End of loop over shells
