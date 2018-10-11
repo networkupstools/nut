@@ -28,6 +28,10 @@ pipeline {
             name: 'DO_DIST_DOCS')
         booleanParam (
             defaultValue: true,
+            description: 'Attempt nut-driver-enumerator-test in this run?',
+            name: 'DO_TEST_NDE')
+        booleanParam (
+            defaultValue: true,
             description: 'Attempt "make check" in this run?',
             name: 'DO_TEST_CHECK')
         booleanParam (
@@ -140,6 +144,25 @@ pipeline {
                         sh 'cppcheck --std=c++11 --enable=all --inconclusive --xml --xml-version=2 . 2>cppcheck.xml'
                         archiveArtifacts artifacts: '**/cppcheck.xml'
                         sh 'rm -f cppcheck.xml'
+                    }
+                }
+                stage ('nut-driver-enumerator-test') {
+                    when { expression { return ( params.DO_TEST_NDE ) } }
+                    steps {
+                        dir("tmp/test-nde") {
+                            deleteDir()
+                        }
+                        dir("tmp/test-nde") {
+                            unstash 'prepped'
+                            timeout (time: 5, unit: 'MINUTES') {
+                                sh 'SHELL_PROGS="/bin/sh bash ash dash" ./tests/nut-driver-enumerator-test.sh'
+                            }
+                            script {
+                                if ( params.DO_CLEANUP_AFTER_BUILD ) {
+                                    deleteDir()
+                                }
+                            }
+                        }
                     }
                 }
                 stage ('make check') {
