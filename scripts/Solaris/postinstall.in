@@ -1,9 +1,13 @@
 #!/bin/sh
 
-#Postinstall script
+# Postinstall script for Network UPS Tools package
 
 NUT_DIR="@prefix@"
 prefix="@prefix@" # expanded as part of some autoconf macros below
+
+# TODO/FIXME : Should "/var/run" be a configure variable?
+# Note that "/var/run" is transient tmpfs, so upgrade has to be done during same uptime.
+ACTIVE_ENUMERATOR_FMRI_FILE="/var/run/nut-driver-enumerator-fmri.prev"
 
 # make sure the nut user exists and has correct memberships
 res="`getent group @RUN_AS_GROUP@`" || res=""
@@ -65,18 +69,32 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		@SBINDIR@/upsdrvsvcctl stop
 		@SBINDIR@/upsdrvctl -DDDDD stop
 		sleep 5
-		echo "Register NUT drivers (if any)..."
-		AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh"
+		echo "(Re-)register NUT drivers (if any)..."
+		REPORT_RESTART_42=no AUTO_START=no "@NUT_LIBEXECDIR@/nut-driver-enumerator.sh" --reconfigure
 		sleep 2
 		echo "Enable NUT drivers (if any)..."
-		/usr/sbin/svcadm enable -s nut-driver-enumerator || \
-		{ /usr/sbin/svcadm clear nut-driver-enumerator ; \
-		  /usr/sbin/svcadm enable -s nut-driver-enumerator; }
+		# Note: we now provide two services, a daemon that keeps checking
+		# the config for changes and a default one that should be refreshed
+		# manually to reconfigure nut-driver instances - and is "cheaper".
+		# This may still fail if the daemon instance is somehow enabled (admin)
+		PREV_ACTIVE_ENUMERATOR=""
+		if test -s "${ACTIVE_ENUMERATOR_FMRI_FILE}" ; then
+			PREV_ACTIVE_ENUMERATOR="`head -1 "${ACTIVE_ENUMERATOR_FMRI_FILE}"`"
+		fi
+		[ x"nut-driver-enumerator:default" = x"${PREV_ACTIVE_ENUMERATOR}" ] && PREV_ACTIVE_ENUMERATOR=""
+		for ACTIVE_ENUMERATOR in ${PREV_ACTIVE_ENUMERATOR} nut-driver-enumerator:default ; do
+			/usr/sbin/svcadm enable -s ${ACTIVE_ENUMERATOR} || \
+			{ /usr/sbin/svcadm clear ${ACTIVE_ENUMERATOR} 2>/dev/null ; \
+			  /usr/sbin/svcadm enable -s ${ACTIVE_ENUMERATOR} ; } && break || true
+		done
 		@SBINDIR@/upsdrvsvcctl start
 	else
-		echo "NOT ENABLING nut-driver-enumerator at this time : missing @CONFPATH@/ups.conf" >&2
+		echo "NOT ENABLING nut-driver-enumerator at this time : missing or empty @CONFPATH@/ups.conf" >&2
 	fi
-	if test -s "@CONFPATH@/ups.conf" && test -s "@CONFPATH@/upsd.conf" && test -s "@CONFPATH@/upsd.users" ; then
+	if test -s "@CONFPATH@/ups.conf" && test -e "@CONFPATH@/upsd.conf" && test -e "@CONFPATH@/upsd.users" ; then
+		# Note on the mix of "-s" and "-e" in tests above:
+		# it is a valid use-case for an admin to have just touched an
+		# empty upsd.conf and so use default settings for the daemon
 		echo "Enable NUT upsd data server..."
 		/usr/sbin/svcadm enable -s nut-server
 	else
@@ -86,7 +104,7 @@ if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs
 		echo "Enable NUT upsmon client..."
 		/usr/sbin/svcadm enable -s nut-monitor
 	else
-		echo "NOT ENABLING nut-monitor at this time : missing @CONFPATH@/upsmon.conf" >&2
+		echo "NOT ENABLING nut-monitor at this time : missing or empty @CONFPATH@/upsmon.conf" >&2
 	fi
 	echo "Enable NUT umbrella service..."
 	/usr/sbin/svcadm enable -s nut

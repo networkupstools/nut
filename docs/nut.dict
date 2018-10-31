@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2474 utf-8
+personal_ws-1.1 en 2475 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1361,6 +1361,7 @@ commandlen
 compat
 conf
 config
+configs
 configureaz
 configureaza
 confpath

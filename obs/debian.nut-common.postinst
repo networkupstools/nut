@@ -1,0 +1,79 @@
+#!/bin/sh -e
+
+# This package is a common prerequisite for nut-server, nut-client, nut-cgi
+# and other NUT packages that deliver running programs. It creates the user
+# accounts and delivers some common files (e.g. the sysconfdir /etc/nut and
+# systemd nut.target) that are not quite attributable to any one particular
+# package.
+
+case "$1" in
+
+  configure)
+
+    # make sure the nut user exists and has correct memberships
+    if ! getent group nut >/dev/null; then
+        addgroup --quiet --system nut
+    fi
+    if ! getent passwd nut >/dev/null; then
+        adduser --quiet --system --ingroup nut --home /var/lib/nut --no-create-home nut
+    elif ! groups nut | grep -qw nut; then
+        adduser nut nut
+    fi
+# for Ubuntu, while waiting for a proper debconf
+#    if ! groups nut | grep -qw dialout; then
+#        adduser nut dialout
+#    fi
+
+    # Ensure /etc/nut is readable/crossable for others
+    # If the (old) config directory exists, retain existing rights
+    # that the user might have set up for their local system needs
+    if [ ! -d /etc/nut ] ; then
+        mkdir -p /etc/nut/
+        chown root:nut /etc/nut/
+        chmod 755 /etc/nut/
+    fi
+
+    # make sure that /var/run/nut exists and has the correct ownerships
+    # (note that on newer systems, after reboot, the /run/nut is created
+    # by systemd using the tmpfiles configuration snippet)
+    if [ ! -d /var/run/nut ] ; then
+        mkdir -p /var/run/nut
+    fi
+    if [ -d /var/run/nut ] ; then
+        chown root:nut /var/run/nut
+        chmod 770 /var/run/nut
+        if which restorecon >/dev/null 2>&1; then
+            restorecon /var/run/nut
+        fi
+    fi
+
+    # SystemD-specific actions
+    if [ -x /bin/systemctl ] ; then
+        /bin/systemctl daemon-reload
+        /bin/systemctl enable nut.target
+        /bin/systemctl start --no-block nut.target || true
+    fi
+    ;;
+
+  abort-upgrade)
+    # do nothing
+    ;;
+
+  abort-remove)
+    # do nothing
+    ;;
+
+  abort-deconfigure)
+    # do nothing
+    ;;
+
+  *)
+    echo "$0: incorrect arguments: $*" >&2
+    exit 1
+    ;;
+
+esac
+
+# Skip DEBHELPER because in this case we handle systemd in target OS better by ourselves #
+
+exit 0
