@@ -655,6 +655,9 @@ EOF
     /bin/systemctl daemon-reload
 }
 systemd_restart_upsd() {
+    # Do not restart/reload if not already running
+    /bin/systemctl is-active "nut-server" || return 0
+
     echo "Restarting NUT data server to make sure it knows new configuration..."
     # Note: reload is a better way to go about this, so the
     # data service is not interrupted by re-initialization
