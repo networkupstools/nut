@@ -662,8 +662,15 @@ systemd_restart_upsd() {
     # Note: reload is a better way to go about this, so the
     # data service is not interrupted by re-initialization
     # of the daemon. But systemd/systemctl sometimes stalls...
-    /bin/systemctl reload-or-restart "nut-server" || \
-    /bin/systemctl restart "nut-server"
+    # Coreutils timeout
+    TIMEOUT=""
+    if which timeout 2>/dev/null >/dev/null ; then
+        # Systemd default timeout for unit start/stop
+        TIMEOUT="timeout 90s "
+    fi
+
+    $TIMEOUT /bin/systemctl reload-or-restart "nut-server" || \
+    $TIMEOUT /bin/systemctl restart "nut-server"
 }
 
 upslist_normalizeFile() {
