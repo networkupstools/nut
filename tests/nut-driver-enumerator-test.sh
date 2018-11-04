@@ -127,6 +127,9 @@ dummy-proxy-localhost
 dummy1
 epdu-2
 epdu-2-snmp
+qx-serial
+qx-usb1
+qx-usb2
 serial.4
 usb_3
 valueHasEquals
@@ -173,7 +176,16 @@ driver=dummy-ups
 port=file#1.dev
 [valueHasQuotedHashtag]
 driver=dummy-ups
-port=file#1.dev' \
+port=file#1.dev
+[qx-serial]
+driver=nutdrv_qx
+port=/dev/ttyb
+[qx-usb1]
+driver=nutdrv_qx
+port=auto
+[qx-usb2]
+driver=nutdrv_qx
+port=/dev/usb/8' \
         --show-all-configs
 }
 
@@ -186,6 +198,9 @@ INST: 1ea79c6eea3681ba73cc695f3253e605~[dummy-proxy-localhost]: DRV='dummy-ups  
 INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='9e0a326b67e00d455494f8b4258a01f1'
 INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='0d9a0147dcf87c7c720e341170f69ed4'
 INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
+INST: 16adbdafb22d9fdff1d09038520eb32e~[qx-serial]: DRV='nutdrv_qx' PORT='/dev/ttyb' MEDIA='serial' SECTIONMD5='e3e6e586fbe5b3c0a89432f4b993f4ad'
+INST: a21bd2b786228b9619f6adba6db8fa83~[qx-usb1]: DRV='nutdrv_qx' PORT='auto' MEDIA='usb' SECTIONMD5='a6139c5da35bef89dc5b96e2296f5369'
+INST: 0066605e07c66043a17eccecbeea1ac5~[qx-usb2]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='5722dd9c21d07a1f5bcb516dbc458deb'
 INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='9c485f733aa6d6c85c1724f162929443'
 INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
 INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key = val, right?' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'

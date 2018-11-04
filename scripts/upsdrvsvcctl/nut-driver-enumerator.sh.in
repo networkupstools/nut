@@ -436,6 +436,24 @@ upsconf_getDriverMedia() {
             printf '%s\n%s\n' "$CURR_DRV" "network" ; return ;;
         *usb*)
             printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
+        nutdrv_qx) # May be direct serial or USB
+            CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
+            case "$CURR_PORT" in
+                auto|/dev/*usb*|/dev/*hid*)
+                    printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
+                /dev/*)
+                    if [ -n "`upsconf_getValue "$1" 'vendorid'`" ] \
+                    || [ -n "`upsconf_getValue "$1" 'productid'`" ] \
+                    ; then
+                        printf '%s\n%s\n' "$CURR_DRV" "usb" ; return
+                    else
+                        printf '%s\n%s\n' "$CURR_DRV" "serial" ; return
+                    fi
+                    ;;
+                *)
+                    printf '%s\n%s\n' "$CURR_DRV" "" ; return ;;
+            esac
+            ;;
         *dummy*|*clone*) # May be networked (proxy to remote NUT)
             CURR_PORT="`upsconf_getPort "$1"`" || CURR_PORT=""
             case "$CURR_PORT" in
@@ -509,6 +527,7 @@ smf_registerInstance() {
         network)
             DEPSVC="$DEPSVC_NET_FULL_SMF"
             DEPREQ="$DEPREQ_NET_FULL_SMF" ;;
+        serial) ;;
         '') ;;
         *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
     esac
@@ -633,6 +652,7 @@ systemd_registerInstance() {
         network)
             DEPSVC="$DEPSVC_NET_FULL_SYSTEMD"
             DEPREQ="$DEPREQ_NET_FULL_SYSTEMD" ;;
+        serial) ;;
         '') ;;
         *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
     esac
