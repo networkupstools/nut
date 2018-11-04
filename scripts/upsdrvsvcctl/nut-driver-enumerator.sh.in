@@ -167,6 +167,7 @@ hook_validInstanceSuffixName=""
 hook_getSavedMD5=""
 hook_setSavedMD5=""
 hook_restart_upsd=""
+hook_restart_drv=""
 
 case "${SERVICE_FRAMEWORK-}" in
     smf)
@@ -180,6 +181,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_getSavedMD5="smf_getSavedMD5"
         hook_setSavedMD5="smf_setSavedMD5"
         hook_restart_upsd="smf_restart_upsd"
+        hook_restart_drv="smf_restart_drv"
         ;;
     systemd)
         hook_registerInstance="systemd_registerInstance"
@@ -192,6 +194,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_getSavedMD5="systemd_getSavedMD5"
         hook_setSavedMD5="systemd_setSavedMD5"
         hook_restart_upsd="systemd_restart_upsd"
+        hook_restart_drv="systemd_restart_drv"
         ;;
     selftest)
         hook_registerInstance="selftest_NOOP"
@@ -204,6 +207,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_getSavedMD5="selftest_NOOP"
         hook_setSavedMD5="selftest_NOOP"
         hook_restart_upsd="selftest_NOOP"
+        hook_restart_drv="selftest_NOOP"
         ;;
     "")
         echo "Error detecting the service-management framework on this OS" >&2
@@ -547,17 +551,35 @@ smf_listInstances() {
 }
 smf_getSavedMD5() {
     # Query service instance $1
-    TARGET_FMRI="nut-driver:$1"
     PG="nut-driver-enumerator-generated-checksum"
-    /usr/bin/svcprop -p "$PG/SECTION_CHECKSUM" "$TARGET_FMRI"
+    PROP="SECTION_CHECKSUM"
+
+    if [ -n "$1" ]; then
+        TARGET_FMRI="nut-driver:$1"
+    else
+        # Global section
+        TARGET_FMRI="nut-driver"
+        PROP="SECTION_CHECKSUM_GLOBAL"
+    fi
+
+    /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI"
 }
 smf_setSavedMD5() {
     # Save checksum value $2 into service instance $1
-    TARGET_FMRI="nut-driver:$1"
     PG="nut-driver-enumerator-generated-checksum"
+    PROP="SECTION_CHECKSUM"
+
+    if [ -n "$1" ]; then
+        TARGET_FMRI="nut-driver:$1"
+    else
+        # Global section
+        TARGET_FMRI="nut-driver"
+        PROP="SECTION_CHECKSUM_GLOBAL"
+    fi
+
     /usr/sbin/svccfg -s "$TARGET_FMRI" delprop "$PG" || true
     /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$PG" application && \
-    /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$PG/SECTION_CHECKSUM" = astring: "$2"
+    /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$PG/$PROP" = astring: "$2"
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
 }
@@ -567,6 +589,13 @@ smf_restart_upsd() {
     /usr/sbin/svcadm clear "nut-server" 2>/dev/null
     /usr/sbin/svcadm refresh "nut-server" || \
     /usr/sbin/svcadm restart "nut-server"
+}
+smf_restart_drv() {
+    echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    /usr/sbin/svcadm enable "nut-driver:$1" 2>/dev/null
+    /usr/sbin/svcadm clear "nut-driver:$1" 2>/dev/null
+    /usr/sbin/svcadm refresh "nut-driver:$1" || \
+    /usr/sbin/svcadm restart "nut-driver:$1"
 }
 
 systemd_validFullUnitName() {
@@ -643,17 +672,21 @@ systemd_listInstances() {
     systemd_listInstances_raw | sed -e 's/^.*@//' -e 's/\.service$//' | sort -n
 }
 systemd_getSavedMD5() {
-    # Query service instance $1
+    # Query service instance $1 or global section
+    PROP="SECTION_CHECKSUM"
+    [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     [ -s "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" ] \
-    && grep "Environment='SECTION_CHECKSUM=" "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" | sed -e "s,^Environment='SECTION_CHECKSUM=,," -e "s,'\$,," \
-    || { echo "Did not find '${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf' with a SECTION_CHECKSUM" ; return 1; }
+    && grep "Environment='$PROP=" "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    || { echo "Did not find '${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf' with a $PROP" ; return 1; }
 }
 systemd_setSavedMD5() {
     # Save checksum value $2 into service instance $1
+    PROP="SECTION_CHECKSUM"
+    [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" << EOF
 [Unit]
-Environment='SECTION_CHECKSUM=$2'
+Environment='$PROP=$2'
 EOF
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
     /bin/systemctl daemon-reload
@@ -675,6 +708,21 @@ systemd_restart_upsd() {
 
     $TIMEOUT /bin/systemctl reload-or-restart "nut-server" || \
     $TIMEOUT /bin/systemctl restart "nut-server"
+}
+
+systemd_restart_drv() {
+    # Do not restart/reload if not already running
+    /bin/systemctl is-active "nut-driver:$1" || return 0
+
+    echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
+    TIMEOUT=""
+    if which timeout 2>/dev/null >/dev/null ; then
+        # Systemd default timeout for unit start/stop
+        TIMEOUT="timeout 90s "
+    fi
+
+    # Full restart, e.g. in case we changed the user= in configs
+    $TIMEOUT /bin/systemctl restart "nut-driver:$1"
 }
 
 upslist_normalizeFile() {
@@ -791,6 +839,14 @@ upslist_delSvcs() {
     done
 }
 
+upslist_restartSvcs() {
+    for UPSS in $UPSLIST_SVCS ; do
+        if common_isFiled "$UPSS" ; then
+            $hook_restart_drv "$UPSS"
+        fi
+    done
+}
+
 nut_driver_enumerator_main() {
     ################# MAIN PROGRAM by default
 
@@ -799,6 +855,10 @@ nut_driver_enumerator_main() {
     upslist_readFile || return $?
     #upslist_debug
     upslist_readSvcs "before manipulations"
+
+    # Test if global config has changed since last run
+    RESTART_ALL=no
+    upssvcconf_checksum_unchanged "" || { echo "`date -u` : Detected changes in global section of '$UPSCONF', will restart all drivers"; RESTART_ALL=yes; }
 
     # Quickly exit if there's nothing to do; note the lists are pre-sorted
     # Otherwise a non-zero exit will be done below
@@ -815,7 +875,7 @@ nut_driver_enumerator_main() {
     && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
         echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
        fi \
-    && return 0
+    && [ "$RESTART_ALL" = no ] && return 0
 
     if [ -n "$NEW_CHECKSUM" ]; then
         for UPSS in $NEW_CHECKSUM ; do
@@ -825,13 +885,26 @@ nut_driver_enumerator_main() {
         upslist_readSvcs "after updating for new config section checksums"
     fi
 
-    if [ -n "$UPSLIST_FILE" ]; then
-        upslist_addSvcs
-        upslist_readSvcs "after checking for new config sections to define service instances"
+    if [ -n "$UPSLIST_SVCS" ]; then
+        # Drop services that are not in config file (any more?)
+        upslist_delSvcs
+
+        if [ "$RESTART_ALL" = yes ] && [ "$AUTO_START" = yes ] ; then
+            # Here restart only existing services; new ones will (try to)
+            # start soon after creation and upsd is handled below
+            upslist_restartSvcs
+        fi
     fi
 
-    if [ -n "$UPSLIST_SVCS" ]; then
-        upslist_delSvcs
+    if [ "$RESTART_ALL" = yes ] ; then
+        # Save new checksum of global config
+        $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
+    fi
+
+    if [ -n "$UPSLIST_FILE" ]; then
+        # Add services for sections that are in config file but not yet wrapped
+        upslist_addSvcs
+        upslist_readSvcs "after checking for new config sections to define service instances"
     fi
 
     upslist_readSvcs
@@ -957,6 +1030,9 @@ while [ $# -gt 0 ]; do
                 upslist_addSvcs
                 upslist_readSvcs "after checking for new config sections to define service instances"
             fi
+
+            # Save new checksum of global config
+            $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
 
             if [ -n "$UPSLIST_SVCS" ] ; then
                 echo "=== The currently defined service instances are:"
