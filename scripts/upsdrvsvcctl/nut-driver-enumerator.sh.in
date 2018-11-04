@@ -713,7 +713,10 @@ EOF
 }
 systemd_restart_upsd() {
     # Do not restart/reload if not already running
-    /bin/systemctl is-active "nut-server" || return 0
+    case "`/bin/systemctl is-active "nut-server"`" in
+        active|unknown) ;; # unknown meant "starting" in our testing...
+        *) return 0 ;;
+    esac
 
     echo "Restarting NUT data server to make sure it knows new configuration..."
     # Note: reload is a better way to go about this, so the
@@ -732,7 +735,10 @@ systemd_restart_upsd() {
 
 systemd_restart_drv() {
     # Do not restart/reload if not already running
-    /bin/systemctl is-active "nut-driver:$1" || return 0
+    case "`/bin/systemctl is-active "nut-driver@$1"`" in
+        active|unknown) ;;
+        *) return 0 ;;
+    esac
 
     echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
     TIMEOUT=""
@@ -742,7 +748,7 @@ systemd_restart_drv() {
     fi
 
     # Full restart, e.g. in case we changed the user= in configs
-    $TIMEOUT /bin/systemctl restart "nut-driver:$1"
+    $TIMEOUT /bin/systemctl restart "nut-driver@$1"
 }
 
 upslist_normalizeFile() {
