@@ -341,7 +341,8 @@ upsconf_getSection_content() {
                 CURR_SECTION="$1" ; RES=0 ;;
             \[*\])
                 [ "$CURR_SECTION" = "$1" ] && break
-                CURR_SECTION="other"
+                # Use a value that can not be a section name here:
+                CURR_SECTION="[]"
                 ;;
             "") ;;
             *)  if [ "$CURR_SECTION" = "$1" ]; then
