@@ -763,7 +763,7 @@ upslist_readSvcs() {
 }
 
 upslist_debug() {
-    for UPSF in $UPSLIST_FILE ; do
+    for UPSF in "" $UPSLIST_FILE ; do
         upsconf_debug "$UPSF"
     done
 }
