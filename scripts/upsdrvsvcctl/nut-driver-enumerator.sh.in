@@ -335,7 +335,7 @@ upsconf_getSection_content() {
                 if [ "$RES" = 0 ]; then
                     # We have already displayed a section, here is a new one,
                     # and this routine only displays one (TODO: toggle?)
-                    return 0
+                    break
                 fi
                 SECTION_CONTENT="$LINE"
                 CURR_SECTION="$1" ; RES=0 ;;
