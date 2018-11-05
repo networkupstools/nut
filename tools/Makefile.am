@@ -37,7 +37,7 @@ all: nut-scanner-deps $(GENERATED_USB_OS_FILES)
 # This target is called from the making of nut-scanner to ensure its bits
 nut-scanner-deps: $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
 
-# DMF recipe add-ons (aliases):
+# Aliases for particular files, if someone has a need:
 nut-scanner-deps-snmpinfo: $(GENERATED_SNMP_FILES)
 nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 

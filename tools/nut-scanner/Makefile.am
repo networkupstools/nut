@@ -1,4 +1,5 @@
-# Headers re-generated for nut-scanner in the parent dir
+# Generally, list headers and/or sources which are re-generated
+# for nut-scanner in the parent dir
 NUT_SCANNER_DEPS_H = nutscan-usb.h
 NUT_SCANNER_DEPS_C = nutscan-snmp.c
 
