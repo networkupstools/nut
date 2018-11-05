@@ -135,7 +135,7 @@ while [ $# -gt 0 ]; do
             ;;
         -t) DRYRUN="echo" ;;
         -h) usage; exit 0 ;;
-        -d) DEBUG="`expr $DEBUG + 1`" ;;
+        -D) DEBUG="`expr $DEBUG + 1`" ;;
         -r|-u) echo "Option '$1 $2' is not implemented via services currently" >&2 ; shift;;
         *)  echo "Unrecognized argument: $1" >&2 ; exit ;;
     esac

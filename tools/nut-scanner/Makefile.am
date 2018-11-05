@@ -1,6 +1,15 @@
-BUILT_SOURCES = nutscan-usb.h nutscan-snmp.c
+# Headers re-generated for nut-scanner in the parent dir
+NUT_SCANNER_DEPS_H = nutscan-usb.h
+NUT_SCANNER_DEPS_C = nutscan-snmp.c
 
-nutscan-usb.h nutscan-snmp.c:
+# General set of nut-scanner dependencies generated in the parent dir
+NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
+
+BUILT_SOURCES = $(NUT_SCANNER_DEPS)
+
+# Make sure we have the freshest files (no-op if built earlier and then
+# no driver sources and other dependencies were edited by a developer)
+$(NUT_SCANNER_DEPS):
 	cd ..; $(MAKE) $(AM_MAKEFLAGS) nut-scanner-deps
 
 LUA_INCLUDE ?= -I/usr/include/lua5.1
@@ -133,7 +142,7 @@ if WITH_IPMI
 endif
 
 # C is not a header, but there is no dist_noinst_SOURCES
-dist_noinst_HEADERS = nutscan-usb.h nutscan-snmp.c
+dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 if WITH_DEV
  include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
@@ -141,5 +150,4 @@ else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h nutscan-snmp.h
 endif
 
-CLEANFILES = nutscan-usb.h nutscan-snmp.c
-
+CLEANFILES = $(BUILT_SOURCES)

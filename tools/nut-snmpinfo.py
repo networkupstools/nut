@@ -22,8 +22,17 @@
 import glob
 import re
 import sys
+import os
 
-output_file_name="./nut-scanner/nutscan-snmp.c"
+TOP_SRCDIR = os.getenv('TOP_SRCDIR');
+if TOP_SRCDIR is None:
+    TOP_SRCDIR="..";
+
+TOP_BUILDDIR = os.getenv('TOP_BUILDDIR');
+if TOP_BUILDDIR is None:
+    TOP_BUILDDIR="..";
+
+output_file_name = TOP_BUILDDIR + "/tools/nut-scanner/nutscan-snmp.c"
 output_file = open(output_file_name,'w')
 
 #expand #define constant
@@ -89,7 +98,7 @@ output_file.write( "\n" )
 output_file.write( "/* SNMP IDs device table, not used in this file itself - silence the warning if we can */\n" )
 output_file.write( "snmp_device_id_t snmp_device_table_builtin[] UNUSED_PARAM = {\n" )
 
-for filename in sorted(glob.glob('../drivers/*-mib.c')):
+for filename in sorted(glob.glob(TOP_SRCDIR + '/drivers/*-mib.c')):
 	list_of_line = open(filename,'r').read().split(';')
 	for line in list_of_line:
 		if "mib2nut_info_t" in line:
