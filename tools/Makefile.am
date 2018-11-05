@@ -19,21 +19,25 @@ GENERATED_SNMP_FILES = nut-scanner/nutscan-snmp.h
 GENERATED_USB_FILES = nut-scanner/nutscan-usb.h
 
 # Hotplug output file
-GENERATED_USB_FILES += ../scripts/hotplug/libhid.usermap
+GENERATED_USB_OS_FILES = ../scripts/hotplug/libhid.usermap
 
 # udev output file
-GENERATED_USB_FILES += ../scripts/udev/nut-usbups.rules.in
+GENERATED_USB_OS_FILES += ../scripts/udev/nut-usbups.rules.in
 
 # BSD devd output file
-GENERATED_USB_FILES += ../scripts/devd/nut-usb.conf.in
+GENERATED_USB_OS_FILES += ../scripts/devd/nut-usb.conf.in
 
 # UPower output file
-GENERATED_USB_FILES += ../scripts/upower/95-upower-hid.rules
+GENERATED_USB_OS_FILES += ../scripts/upower/95-upower-hid.rules
 
-all: nut-scanner-deps $(GENERATED_USB_FILES)
+all: nut-scanner-deps $(GENERATED_USB_OS_FILES)
 
 # This target is called from the making of nut-scanner to ensure its bits
-nut-scanner-deps: nut-scanner/nutscan-snmp.h nut-scanner/nutscan-usb.h
+nut-scanner-deps: $(GENERATED_SNMP_FILES) $(GENERATED_USB_FILES)
+
+# Aliases for particular files, if someone has a need:
+nut-scanner-deps-snmpinfo: $(GENERATED_SNMP_FILES)
+nut-scanner-deps-usb: $(GENERATED_USB_FILES)
 
 $(GENERATED_SNMP_FILES): $(top_srcdir)/drivers/*-mib.c
 	@if python -c 1; then \
