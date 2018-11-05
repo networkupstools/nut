@@ -127,6 +127,9 @@ dummy-proxy-localhost
 dummy1
 epdu-2
 epdu-2-snmp
+qx-serial
+qx-usb1
+qx-usb2
 serial.4
 usb_3
 valueHasEquals
@@ -139,6 +142,7 @@ testcase_show_all_configs() {
     # We expect whitespace trimmed, comment-only lines removed
     run_testcase "Show all configs" 0 \
 'maxstartdelay=180
+globalflag
 [dummy1]
 driver=dummy-ups
 port=file1.dev
@@ -156,6 +160,7 @@ driver=usbhid-ups
 port=auto
 [serial.4]
 driver=serial-ups
+driverflag
 port=/dev/ttyS1 # some path
 [dummy-proxy]
 driver="dummy-ups  "
@@ -171,19 +176,32 @@ driver=dummy-ups
 port=file#1.dev
 [valueHasQuotedHashtag]
 driver=dummy-ups
-port=file#1.dev' \
+port=file#1.dev
+[qx-serial]
+driver=nutdrv_qx
+port=/dev/ttyb
+[qx-usb1]
+driver=nutdrv_qx
+port=auto
+[qx-usb2]
+driver=nutdrv_qx
+port=/dev/usb/8' \
         --show-all-configs
 }
 
 testcase_upslist_debug() {
     # We expect a list of names, ports and decided MEDIA type (for dependencies)
     run_testcase "List decided MEDIA and config checksums for all devices" 0 \
-"INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups  ' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='aff543fc07d7fbf83e81001b181c8b97'
+"INST: 68b329da9893e34099c7d8ad5cb9c940~[]: DRV='' PORT='' MEDIA='' SECTIONMD5='9a1f372a850f1ee3ab1fc08b185783e0'
+INST: 010cf0aed6dd49865bb49b70267946f5~[dummy-proxy]: DRV='dummy-ups  ' PORT='remoteUPS@RemoteHost.local' MEDIA='network' SECTIONMD5='aff543fc07d7fbf83e81001b181c8b97'
 INST: 1ea79c6eea3681ba73cc695f3253e605~[dummy-proxy-localhost]: DRV='dummy-ups  ' PORT='localUPS@127.0.0.1' MEDIA='network-localhost' SECTIONMD5='73e6b7e3e3b73558dc15253d8cca51b2'
 INST: 76b645e28b0b53122b4428f4ab9eb4b9~[dummy1]: DRV='dummy-ups' PORT='file1.dev' MEDIA='' SECTIONMD5='9e0a326b67e00d455494f8b4258a01f1'
 INST: a293d65e62e89d6cc3ac6cb88bc312b8~[epdu-2]: DRV='netxml-ups' PORT='http://172.16.1.2' MEDIA='network' SECTIONMD5='0d9a0147dcf87c7c720e341170f69ed4'
 INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.16.1.2' MEDIA='network' SECTIONMD5='2631b6c21140cea0dd30bb88b942ce3f'
-INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='b9433819b80ffa3f723ca9109fa82276'
+INST: 16adbdafb22d9fdff1d09038520eb32e~[qx-serial]: DRV='nutdrv_qx' PORT='/dev/ttyb' MEDIA='serial' SECTIONMD5='e3e6e586fbe5b3c0a89432f4b993f4ad'
+INST: a21bd2b786228b9619f6adba6db8fa83~[qx-usb1]: DRV='nutdrv_qx' PORT='auto' MEDIA='usb' SECTIONMD5='a6139c5da35bef89dc5b96e2296f5369'
+INST: 0066605e07c66043a17eccecbeea1ac5~[qx-usb2]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='5722dd9c21d07a1f5bcb516dbc458deb'
+INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='9c485f733aa6d6c85c1724f162929443'
 INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
 INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key = val, right?' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'
 INST: 99da99b1e301e84f34f349443aac545b~[valueHasHashtag]: DRV='dummy-ups' PORT='file#1.dev' MEDIA='' SECTIONMD5='6029bda216de0cf1e81bd55ebd4a0fff'
@@ -211,16 +229,33 @@ testcase_getValue() {
     run_testcase "Query a configuration key (originally quoted)" 0 \
         'This is ups-1' \
         --show-device-config-value dummy1 desc
+
+    run_testcase "Query a configuration flag (driver)" 0 \
+        "driverflag" \
+        --show-config-value 'serial.4' driverflag
+
+    run_testcase "Query a missing configuration flag (driver)" 1 \
+        "" \
+        --show-config-value 'valueHasQuotedHashtag' nosuchflag
 }
 
 testcase_globalSection() {
     run_testcase "Display global config" 0 \
-        "maxstartdelay=180" \
+        "maxstartdelay=180
+globalflag" \
         --show-config ''
 
     run_testcase "Query a configuration key (global)" 0 \
         "180" \
         --show-config-value '' maxstartdelay
+
+    run_testcase "Query a configuration flag (global)" 0 \
+        "globalflag" \
+        --show-config-value '' globalflag
+
+    run_testcase "Query a missing configuration flag (global)" 1 \
+        "" \
+        --show-config-value '' nosuchflag
 }
 
 
