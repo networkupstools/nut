@@ -1,8 +1,10 @@
-# Headers re-generated for nut-scanner in the parent dir
+# Generally, list headers and/or sources which are re-generated
+# for nut-scanner in the parent dir
 NUT_SCANNER_DEPS_H = nutscan-usb.h nutscan-snmp.h
+NUT_SCANNER_DEPS_C =
 
 # General set of nut-scanner dependencies generated in the parent dir
-NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H)
+NUT_SCANNER_DEPS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 BUILT_SOURCES = $(NUT_SCANNER_DEPS)
 
@@ -18,7 +20,7 @@ if WITH_LIBLTDL
 endif
 libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			nutscan-device.c nutscan-ip.c nutscan-display.c \
-			nutscan-init.c  scan_usb.c scan_snmp.c scan_xml_http.c \
+			nutscan-init.c scan_usb.c scan_snmp.c scan_xml_http.c \
 			scan_avahi.c scan_eaton_serial.c nutscan-serial.c \
 			../../drivers/serial.c \
 			../../drivers/bcmxcp_ser.c \
@@ -51,13 +53,13 @@ if WITH_IPMI
   libnutscan_la_CFLAGS += $(LIBIPMI_CFLAGS)
 endif
 
-dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H)
+# C is not a header, but there is no dist_noinst_SOURCES
+dist_noinst_HEADERS = $(NUT_SCANNER_DEPS_H) $(NUT_SCANNER_DEPS_C)
 
 if WITH_DEV
- include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h
+ include_HEADERS = nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 else
  dist_noinst_HEADERS += nut-scan.h nutscan-device.h nutscan-ip.h nutscan-init.h nutscan-serial.h
 endif
 
 CLEANFILES = $(BUILT_SOURCES)
-
