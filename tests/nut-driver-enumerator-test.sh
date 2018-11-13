@@ -100,8 +100,12 @@ run_testcase() {
     else
         printf "STATUS_TEXT='MISMATCH'\n"
         printf '\t--- expected ---\n%s\n\t--- received ---\n%s\n\t--- MISMATCH ABOVE\n\n' "$EXPECT_TEXT" "$OUT" >&2
-        # Give a nice output if the shell suppports the syntax:
-        ( diff -u <(echo "$EXPECT_TEXT") <(echo "$OUT") 2>/dev/null ) || true
+        # Give a nice output to help track the problem:
+        ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
+            && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
+            && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
+            && diff -u "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" ) 2>/dev/null || true
+        rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
         FAIL_COUNT="`expr $FAIL_COUNT + 1`"
         RES="`expr $RES + 2`"
     fi
