@@ -4,6 +4,9 @@
 #       with the aim and hope to work in different interpreters, so it is a
 #       bit dumber and less efficient than could be achieved with the more
 #       featured shells in the spectrum.
+# NOTE ALSO: The configuration parser in this script is not meant to be a
+#       reference or 100% compliant with what the binary code uses; its aim
+#       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2018 Eaton
 #
