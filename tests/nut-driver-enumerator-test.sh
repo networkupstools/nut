@@ -100,6 +100,8 @@ run_testcase() {
     else
         printf "STATUS_TEXT='MISMATCH'\n"
         printf '\t--- expected ---\n%s\n\t--- received ---\n%s\n\t--- MISMATCH ABOVE\n\n' "$EXPECT_TEXT" "$OUT" >&2
+        # Give a nice output if the shell suppports the syntax:
+        ( diff -u <(echo "$EXPECT_TEXT") <(echo "$OUT") 2>/dev/null ) || true
         FAIL_COUNT="`expr $FAIL_COUNT + 1`"
         RES="`expr $RES + 2`"
     fi
