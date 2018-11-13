@@ -254,6 +254,17 @@ testcase_getValue() {
     run_testcase "Query a missing configuration flag (driver)" 1 \
         "" \
         --show-config-value 'valueHasQuotedHashtag' nosuchflag
+
+    run_testcase "Query multiple configuration keys (originally quoted)" 0 \
+        'This is ups-1
+file1.dev' \
+        --show-device-config-value dummy1 desc port
+
+    run_testcase "Query multiple configuration keys with some missing (originally quoted)" 1 \
+        'This is ups-1
+
+file1.dev' \
+        --show-device-config-value dummy1 desc unknownkey port
 }
 
 testcase_globalSection() {

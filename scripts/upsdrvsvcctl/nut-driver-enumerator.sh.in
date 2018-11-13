@@ -394,22 +394,34 @@ EOF
 
 upsconf_getValue() {
     # "$1" = name of ups.conf section, may be empty for global config
-    # "$2" = name of config key; we will echo its value
+    # "$2..$N" = name of config key; we will echo its value
 ###    [ -n "$1" ] || return $?
     [ -n "$2" ] || return $?
     [ -n "$GETSECTION" ] || GETSECTION="upsconf_getSection"
-    CURR_SECTION=""
+    CURR_SECTION="" # Gets set by a GETSECTION implementation
     RES=0
 
     # Note: Primary aim of this egrep is to pick either assignments or flags
     # As a by-product it can be used to test if a particular value is set ;)
-    LINE="`$GETSECTION "$1" | egrep '(^'"$2"'=|^'"$2"'$)'`" || RES=$?
-    [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
+    SECTION_CONTENT="`$GETSECTION "$1"`" || return
+    shift
+    KEYS="$*"
 
-    VALUE="$(echo "$LINE" | sed -e "s,^$2=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" || RES=$?
-    echo "$VALUE"
+    while [ "$#" -gt 0 ] ; do
+        RES_L=0
+        VALUE=""
 
-    [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
+        LINE="`echo "$SECTION_CONTENT" | egrep '(^'"$1"'=|^'"$1"'$)'`" \
+        && VALUE="$(echo "$LINE" | sed -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" \
+        || RES_L=$?
+
+        [ "$RES_L" = 0 ] || { RES="$RES_L" ; echo "ERROR: Section [$CURR_SECTION] or key '$1' in it was not found in the '$UPSCONF' file" >&2 ; }
+
+        echo "$VALUE"
+        shift
+    done
+
+    [ "$RES" = 0 ] || echo "ERROR: Section [$CURR_SECTION] or key(s) '$KEYS' in it was not found in the '$UPSCONF' file" >&2
     return $RES
 }
 
@@ -1036,8 +1048,12 @@ $0 --show-configs|--show-all-configs
 $0 --show-config DEV
 $0 --show-device-config DEV
         Show configuration block of the specified NUT device
-$0 --show-device-config-value DEV KEY
-        Show single configuration key of the specified NUT device
+$0 --show-device-config-value DEV KEY [KEY...]
+        Show single configuration key value of the specified NUT device
+        For flags, shows the flag name if present in the section
+        If several keys or flags are requested, their values are reported
+        one per line in the same order (including empty lines for missing
+        values); any missing value yields a non-zero exit code.
 EOF
 }
 
@@ -1227,11 +1243,11 @@ while [ $# -gt 0 ]; do
             exit $?
             ;;
         --show-config-value|--show-device-config-value)
-            [ -z "$3" ] && echo "Configuration key name argument required" >&2 && exit 1
+            [ -z "$3" ] && echo "At least one configuration key name argument is required" >&2 && exit 1
             [ -z "$2" ] && echo "WARNING: Device name argument empty, will show global config" >&2
             DEV="$2"
-            KEY="$3"
-            upsconf_getValue "$DEV" "$KEY"
+            shift 2
+            upsconf_getValue "$DEV" "$@"
             exit $?
             ;;
         upsconf_debug) # Not public, not in usage()
