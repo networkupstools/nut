@@ -345,34 +345,31 @@ upsconf_getSection_content() {
                     break
                 fi
                 SECTION_CONTENT="$LINE"
-                CURR_SECTION="$1" ; RES=0 ;;
+                CURR_SECTION="$1"
+                RES=0
+                continue
+                ;;
             \[*\ *\]|\[*"$TABCHAR"*\])
                 # Note that section-name brackets should contain a single token
-                if [ "$CURR_SECTION" = "$1" ]; then
-                    if [ -n "$SECTION_CONTENT" ]; then
-                        SECTION_CONTENT="$SECTION_CONTENT
-$LINE"
-                    else
-                        SECTION_CONTENT="$LINE"
-                    fi
-                fi
+                # Fall through to add the line to contents of existing section
                 ;;
             \[*\])
                 [ "$CURR_SECTION" = "$1" ] && break
                 # Use a value that can not be a section name here:
                 CURR_SECTION="[]"
+                continue
                 ;;
-            "") ;;
-            *)  if [ "$CURR_SECTION" = "$1" ]; then
-                    if [ -n "$SECTION_CONTENT" ]; then
-                        SECTION_CONTENT="$SECTION_CONTENT
-$LINE"
-                    else
-                        SECTION_CONTENT="$LINE"
-                    fi
-                fi
-                ;;
+            "") continue ;;
+            *)  ;; # Fall through to add the line to contents of existing section
         esac
+        if [ "$CURR_SECTION" = "$1" ]; then
+            if [ -n "$SECTION_CONTENT" ]; then
+                SECTION_CONTENT="$SECTION_CONTENT
+$LINE"
+            else
+                SECTION_CONTENT="$LINE"
+            fi
+        fi
     done
 
     if [ -n "$SECTION_CONTENT" ]; then
