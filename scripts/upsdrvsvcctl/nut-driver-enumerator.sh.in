@@ -346,6 +346,17 @@ upsconf_getSection_content() {
                 fi
                 SECTION_CONTENT="$LINE"
                 CURR_SECTION="$1" ; RES=0 ;;
+            \[*\ *\]|\[*"$TABCHAR"*\])
+                # Note that section-name brackets should contain a single token
+                if [ "$CURR_SECTION" = "$1" ]; then
+                    if [ -n "$SECTION_CONTENT" ]; then
+                        SECTION_CONTENT="$SECTION_CONTENT
+$LINE"
+                    else
+                        SECTION_CONTENT="$LINE"
+                    fi
+                fi
+                ;;
             \[*\])
                 [ "$CURR_SECTION" = "$1" ] && break
                 # Use a value that can not be a section name here:
@@ -776,14 +787,18 @@ upslist_normalizeFile_filter() {
     # trim leading and trailing whitespace, comment-only lines, and in
     # assignment lines trim the spaces around equality character and
     # quoting characters around assignment of values without whitespaces.
-    # Any characters around a section name (enclosed in brackets) are dropped.
+    # Any whitespace characters around a section name (single token that
+    # starts the line and is enclosed in brackets) and a trailing comment
+    # are dropped. Note that brackets with spaces inside, and brackets
+    # that do not start the non-whitespace payload of the line, are not
+    # sections.
     egrep -v '(^$|^#)' | \
     sed -e 's,^['"$TABCHAR"'\ ]*,,' \
         -e 's,^\#.*$,,' \
         -e 's,['"$TABCHAR"'\ ]*$,,' \
         -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' \
         -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
-        -e 's,^[^[]*\(\[[^]]*\]\).*$,\1,' \
+        -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
     | egrep -v '^$' \
     | egrep '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
 }
@@ -842,7 +857,8 @@ upslist_readFile() {
     fi
 
     if [ -n "$UPSCONF_DATA" ] ; then
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        # Note that section-name brackets should contain a single token
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
         if [ -z "$UPSLIST_FILE" ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
