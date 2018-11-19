@@ -729,7 +729,7 @@ systemd_setSavedMD5() {
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" << EOF
-[Unit]
+[Service]
 Environment='$PROP=$2'
 EOF
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
