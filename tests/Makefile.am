@@ -1,5 +1,7 @@
 # Network UPS Tools: tests
 
+EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
+
 if HAVE_CPPUNIT
 
 TESTS = cppunittest
@@ -22,6 +24,6 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 
 else !HAVE_CPPUNIT
 
-EXTRA_DIST = example.cpp cpputest.cpp
+EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CPPUNIT
