@@ -100,6 +100,12 @@ run_testcase() {
     else
         printf "STATUS_TEXT='MISMATCH'\n"
         printf '\t--- expected ---\n%s\n\t--- received ---\n%s\n\t--- MISMATCH ABOVE\n\n' "$EXPECT_TEXT" "$OUT" >&2
+        # Give a nice output to help track the problem:
+        ( rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" \
+            && echo "$EXPECT_TEXT" > "/tmp/.nde.text.expected.$$" \
+            && echo "$OUT" > "/tmp/.nde.text.actual.$$" \
+            && diff -u "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$" ) 2>/dev/null || true
+        rm -f "/tmp/.nde.text.expected.$$" "/tmp/.nde.text.actual.$$"
         FAIL_COUNT="`expr $FAIL_COUNT + 1`"
         RES="`expr $RES + 2`"
     fi
@@ -130,6 +136,8 @@ epdu-2-snmp
 qx-serial
 qx-usb1
 qx-usb2
+sectionWithComment
+sectionWithCommentWhitespace
 serial.4
 usb_3
 valueHasEquals
@@ -185,7 +193,16 @@ driver=nutdrv_qx
 port=auto
 [qx-usb2]
 driver=nutdrv_qx
-port=/dev/usb/8' \
+port=/dev/usb/8
+[sectionWithComment]
+driver=nutdrv_qx#comment
+port=/dev/usb/8
+desc="value with [brackets]"
+[brackets with spaces are not sections] # but rather an invalid mess as binary parser may think
+[sectionWithCommentWhitespace]
+driver=nutdrv_qx	# comment
+port=/dev/usb/8 #	comment
+commentedDriverFlag # This flag gotta mean something' \
         --show-all-configs
 }
 
@@ -201,6 +218,8 @@ INST: 9a5561464ff8c78dd7cb544740ce2adc~[epdu-2-snmp]: DRV='snmp-ups' PORT='172.1
 INST: 16adbdafb22d9fdff1d09038520eb32e~[qx-serial]: DRV='nutdrv_qx' PORT='/dev/ttyb' MEDIA='serial' SECTIONMD5='e3e6e586fbe5b3c0a89432f4b993f4ad'
 INST: a21bd2b786228b9619f6adba6db8fa83~[qx-usb1]: DRV='nutdrv_qx' PORT='auto' MEDIA='usb' SECTIONMD5='a6139c5da35bef89dc5b96e2296f5369'
 INST: 0066605e07c66043a17eccecbeea1ac5~[qx-usb2]: DRV='nutdrv_qx' PORT='/dev/usb/8' MEDIA='usb' SECTIONMD5='5722dd9c21d07a1f5bcb516dbc458deb'
+INST: 1280a731e03116f77290e51dd2a2f37e~[sectionWithComment]: DRV='nutdrv_qx#comment' PORT='/dev/usb/8' MEDIA='' SECTIONMD5='be30e15e17d0579c85eecaf176b4a064'
+INST: 770abd5659061a29ed3ae4f7c0b00915~[sectionWithCommentWhitespace]: DRV='nutdrv_qx	# comment' PORT='/dev/usb/8 #	comment' MEDIA='' SECTIONMD5='c757822a331521cdc97310d0241eba28'
 INST: efdb1b4698215fdca36b9bc06d24661d~[serial.4]: DRV='serial-ups' PORT='/dev/ttyS1 # some path' MEDIA='' SECTIONMD5='9c485f733aa6d6c85c1724f162929443'
 INST: f4a1c33db201c2ca897a3337993c10fc~[usb_3]: DRV='usbhid-ups' PORT='auto' MEDIA='usb' SECTIONMD5='1f6a24becde9bd31c9852610658ef84a'
 INST: 8e5686f92a5ba11901996c813e7bb23d~[valueHasEquals]: DRV='dummy=ups' PORT='file1.dev # key = val, right?' MEDIA='' SECTIONMD5='2f04d65da53e3b13771bb65422f0f4c0'
@@ -237,6 +256,17 @@ testcase_getValue() {
     run_testcase "Query a missing configuration flag (driver)" 1 \
         "" \
         --show-config-value 'valueHasQuotedHashtag' nosuchflag
+
+    run_testcase "Query multiple configuration keys (originally quoted)" 0 \
+        'This is ups-1
+file1.dev' \
+        --show-device-config-value dummy1 desc port
+
+    run_testcase "Query multiple configuration keys with some missing (originally quoted)" 1 \
+        'This is ups-1
+
+file1.dev' \
+        --show-device-config-value dummy1 desc unknownkey port
 }
 
 testcase_globalSection() {
@@ -278,4 +308,4 @@ done
 
 echo "Test suite for nut-driver-enumerator has completed with $FAIL_COUNT failed cases and $GOOD_COUNT good cases" >&2
 
-[ "$FAIL_COUNT" = 0 ] || exit 1
+[ "$FAIL_COUNT" = 0 ] || { echo "As a developer, you may want to export DEBUG=trace or export DEBUG=yes and re-run the test; also make sure you meant the nut-driver-enumerator.sh implementation as NDE='$NDE'" >&2 ; exit 1; }

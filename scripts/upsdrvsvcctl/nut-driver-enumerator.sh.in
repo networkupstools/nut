@@ -4,6 +4,9 @@
 #       with the aim and hope to work in different interpreters, so it is a
 #       bit dumber and less efficient than could be achieved with the more
 #       featured shells in the spectrum.
+# NOTE ALSO: The configuration parser in this script is not meant to be a
+#       reference or 100% compliant with what the binary code uses; its aim
+#       is to just pick out some strings relevant for tracking config changes.
 #
 # Copyright (C) 2016-2018 Eaton
 #
@@ -342,23 +345,31 @@ upsconf_getSection_content() {
                     break
                 fi
                 SECTION_CONTENT="$LINE"
-                CURR_SECTION="$1" ; RES=0 ;;
+                CURR_SECTION="$1"
+                RES=0
+                continue
+                ;;
+            \[*\ *\]|\[*"$TABCHAR"*\])
+                # Note that section-name brackets should contain a single token
+                # Fall through to add the line to contents of existing section
+                ;;
             \[*\])
                 [ "$CURR_SECTION" = "$1" ] && break
                 # Use a value that can not be a section name here:
                 CURR_SECTION="[]"
+                continue
                 ;;
-            "") ;;
-            *)  if [ "$CURR_SECTION" = "$1" ]; then
-                    if [ -n "$SECTION_CONTENT" ]; then
-                        SECTION_CONTENT="$SECTION_CONTENT
-$LINE"
-                    else
-                        SECTION_CONTENT="$LINE"
-                    fi
-                fi
-                ;;
+            "") continue ;;
+            *)  ;; # Fall through to add the line to contents of existing section
         esac
+        if [ "$CURR_SECTION" = "$1" ]; then
+            if [ -n "$SECTION_CONTENT" ]; then
+                SECTION_CONTENT="$SECTION_CONTENT
+$LINE"
+            else
+                SECTION_CONTENT="$LINE"
+            fi
+        fi
     done
 
     if [ -n "$SECTION_CONTENT" ]; then
@@ -391,22 +402,34 @@ EOF
 
 upsconf_getValue() {
     # "$1" = name of ups.conf section, may be empty for global config
-    # "$2" = name of config key; we will echo its value
+    # "$2..$N" = name of config key; we will echo its value
 ###    [ -n "$1" ] || return $?
     [ -n "$2" ] || return $?
     [ -n "$GETSECTION" ] || GETSECTION="upsconf_getSection"
-    CURR_SECTION=""
+    CURR_SECTION="" # Gets set by a GETSECTION implementation
     RES=0
 
     # Note: Primary aim of this egrep is to pick either assignments or flags
     # As a by-product it can be used to test if a particular value is set ;)
-    LINE="`$GETSECTION "$1" | egrep '(^'"$2"'=|^'"$2"'$)'`" || RES=$?
-    [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
+    SECTION_CONTENT="`$GETSECTION "$1"`" || return
+    shift
+    KEYS="$*"
 
-    VALUE="$(echo "$LINE" | sed -e "s,^$2=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" || RES=$?
-    echo "$VALUE"
+    while [ "$#" -gt 0 ] ; do
+        RES_L=0
+        VALUE=""
 
-    [ "$RES" = 0 ] || echo "ERROR: Section [$1] or key '$2' in it was not found in the '$UPSCONF' file" >&2
+        LINE="`echo "$SECTION_CONTENT" | egrep '(^'"$1"'=|^'"$1"'$)'`" \
+        && VALUE="$(echo "$LINE" | sed -e "s,^$1=,," -e 's,^\"\(.*\)\"$,\1,' -e "s,^'\(.*\)'$,\1,")" \
+        || RES_L=$?
+
+        [ "$RES_L" = 0 ] || { RES="$RES_L" ; echo "ERROR: Section [$CURR_SECTION] or key '$1' in it was not found in the '$UPSCONF' file" >&2 ; }
+
+        echo "$VALUE"
+        shift
+    done
+
+    [ "$RES" = 0 ] || echo "ERROR: Section [$CURR_SECTION] or key(s) '$KEYS' in it was not found in the '$UPSCONF' file" >&2
     return $RES
 }
 
@@ -442,8 +465,8 @@ upsconf_getDriverMedia() {
                 auto|/dev/*usb*|/dev/*hid*)
                     printf '%s\n%s\n' "$CURR_DRV" "usb" ; return ;;
                 /dev/*)
-                    if [ -n "`upsconf_getValue "$1" 'vendorid'`" ] \
-                    || [ -n "`upsconf_getValue "$1" 'productid'`" ] \
+                    # See drivers/nutdrv_qx.c :: upsdrv_initups() for a list
+                    if [ -n "`upsconf_getValue "$1" 'subdriver' 'vendorid' 'productid' 'vendor' 'product' 'serial' 'bus' 'langid_fix'`" ] \
                     ; then
                         printf '%s\n%s\n' "$CURR_DRV" "usb" ; return
                     else
@@ -706,7 +729,7 @@ systemd_setSavedMD5() {
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" << EOF
-[Unit]
+[Service]
 Environment='$PROP=$2'
 EOF
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
@@ -752,6 +775,31 @@ systemd_restart_drv() {
     $TIMEOUT /bin/systemctl restart "nut-driver@$1"
 }
 
+upslist_normalizeFile_filter() {
+    # See upslist_normalizeFile() detailed comments below; this routine
+    # is a pipe worker to prepare the text into a simpler expected form.
+
+    # Pick the lines which contain a bracket or assignment character,
+    # or a single token (certain keywords come as just NUT "flags"),
+    # trim leading and trailing whitespace, comment-only lines, and in
+    # assignment lines trim the spaces around equality character and
+    # quoting characters around assignment of values without whitespaces.
+    # Any whitespace characters around a section name (single token that
+    # starts the line and is enclosed in brackets) and a trailing comment
+    # are dropped. Note that brackets with spaces inside, and brackets
+    # that do not start the non-whitespace payload of the line, are not
+    # sections.
+    egrep -v '(^$|^#)' | \
+    sed -e 's,^['"$TABCHAR"'\ ]*,,' \
+        -e 's,^\#.*$,,' \
+        -e 's,['"$TABCHAR"'\ ]*$,,' \
+        -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' \
+        -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' \
+        -e 's,^\(\[[^]'"$TABCHAR"'\ ]*\]\)['"$TABCHAR"'\ ]*\(#.*\)*$,\1,' \
+    | egrep -v '^$' \
+    | egrep '([\[\=]|^[^ '"$TABCHAR"']*$|^[^ '"$TABCHAR"']*[ '"$TABCHAR"']*\#.*$)'
+}
+
 upslist_normalizeFile() {
     # Read the ups.conf file and find all defined sections (names of
     # configuration blocks for drivers that connect to a certain device
@@ -771,14 +819,10 @@ upslist_normalizeFile() {
         return 2
     fi
 
-    # Pick the lines which contain a bracket or assignment character,
-    # or a single token (certain keywords come as just NUT "flags"),
-    # trim leading and trailing whitespace, comment-only lines, and in
-    # assignment lines trim the spaces around equality character and
-    # quoting characters around assignment of values without whitespaces.
-    # Also use a subset with just section, driver and port info for
-    # faster parsing when determining driver required media etc.
-    UPSCONF_DATA="$(egrep -v '(^$|^#)' < "$UPSCONF" | sed -e 's,^['"$TABCHAR"'\ ]*,,' -e 's,^\#.*$,,' -e 's,['"$TABCHAR"'\ ]*$,,' -e 's,^\([^=\ '"$TABCHAR"']*\)['"$TABCHAR"'\ ]*=['"$TABCHAR"'\ ]*,\1=,g' -e 's,=\"\([^\ '"$TABCHAR"']*\)\"$,=\1,' | egrep -v '^$' | egrep '([\[\=]|^[^ \t]*$)')" \
+    # Store a normalized version of NUT configuration file contents.
+    # Also use a SDP subset with just section, driver and port info
+    # for faster parsing when determining driver-required media etc.
+    UPSCONF_DATA="$(upslist_normalizeFile_filter < "$UPSCONF")" \
         && [ -n "$UPSCONF_DATA" ] \
         && UPSCONF_DATA_SDP="`egrep '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
@@ -810,7 +854,8 @@ upslist_readFile() {
     fi
 
     if [ -n "$UPSCONF_DATA" ] ; then
-        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[.*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
+        # Note that section-name brackets should contain a single token
+        UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
         if [ -z "$UPSLIST_FILE" ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
@@ -1032,8 +1077,12 @@ $0 --show-configs|--show-all-configs
 $0 --show-config DEV
 $0 --show-device-config DEV
         Show configuration block of the specified NUT device
-$0 --show-device-config-value DEV KEY
-        Show single configuration key of the specified NUT device
+$0 --show-device-config-value DEV KEY [KEY...]
+        Show single configuration key value of the specified NUT device
+        For flags, shows the flag name if present in the section
+        If several keys or flags are requested, their values are reported
+        one per line in the same order (including empty lines for missing
+        values); any missing value yields a non-zero exit code.
 EOF
 }
 
@@ -1223,11 +1272,11 @@ while [ $# -gt 0 ]; do
             exit $?
             ;;
         --show-config-value|--show-device-config-value)
-            [ -z "$3" ] && echo "Configuration key name argument required" >&2 && exit 1
+            [ -z "$3" ] && echo "At least one configuration key name argument is required" >&2 && exit 1
             [ -z "$2" ] && echo "WARNING: Device name argument empty, will show global config" >&2
             DEV="$2"
-            KEY="$3"
-            upsconf_getValue "$DEV" "$KEY"
+            shift 2
+            upsconf_getValue "$DEV" "$@"
             exit $?
             ;;
         upsconf_debug) # Not public, not in usage()
