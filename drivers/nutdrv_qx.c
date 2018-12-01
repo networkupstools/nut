@@ -63,6 +63,7 @@
 /* == Subdrivers == */
 /* Include all known subdrivers */
 #include "nutdrv_qx_bestups.h"
+#include "nutdrv_qx_hunnox.h"
 #include "nutdrv_qx_mecer.h"
 #include "nutdrv_qx_megatec.h"
 #include "nutdrv_qx_megatec-old.h"
@@ -84,6 +85,7 @@ static subdriver_t	*subdriver_list[] = {
 	&mecer_subdriver,
 	&megatec_subdriver,
 	&zinto_subdriver,
+	&hunnox_subdriver,
 	/* Fallback Q1 subdriver */
 	&q1_subdriver,
 	NULL
@@ -125,6 +127,8 @@ static int	ups_status = 0;
 static bool_t	data_has_changed = FALSE;	/* for SEMI_STATIC data polling */
 
 static time_t	lastpoll;	/* Timestamp the last polling */
+
+static int	hunnox_step = 0;
 
 #if defined(QX_USB) && defined(QX_SERIAL)
 static int	is_usb = 0;	/* Whether the device is connected through USB (1) or serial (0) */
@@ -680,6 +684,53 @@ static int	ippon_command(const char *cmd, char *buf, size_t buflen)
 	return (int)len;
 }
 
+static int 	hunnox_protocol(int asking_for) 
+{
+	char	buf[1030];
+
+	int langid_fix_local = 0x0409;
+
+	if (langid_fix != -1) {
+		langid_fix_local = langid_fix;
+	}
+
+	switch (hunnox_step) {
+		case 0:
+			upsdebugx(3, "asking for: %02X", 0x00);
+			usb_get_string(udev, 0x00, langid_fix_local, buf, 1026);
+			usb_get_string(udev, 0x00, langid_fix_local, buf, 1026);
+			usb_get_string(udev, 0x01, langid_fix_local, buf, 1026);
+			usleep(10000);
+			break;
+		case 1:
+			if (asking_for != 0x0d) {
+				upsdebugx(3, "asking for: %02X", 0x0d);
+	            		usb_get_string(udev, 0x0d, langid_fix_local, buf, 102);
+			}
+		        break;
+		case 2:
+			if (asking_for != 0x03) {
+				upsdebugx(3, "asking for: %02X", 0x03);
+				usb_get_string(udev, 0x03, langid_fix_local, buf, 102);
+			}
+			break;
+		case 3:
+			if (asking_for != 0x0c) {
+				upsdebugx(3, "asking for: %02X", 0x0c);
+				usb_get_string(udev, 0x0c, langid_fix_local, buf, 102);
+			}
+			break;
+		default:
+			hunnox_step = 0;
+	}
+	hunnox_step++;
+	if (hunnox_step > 3) {
+		hunnox_step = 1;
+	}
+
+	return 0;
+}
+
 /* Krauler communication subdriver */
 static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 {
@@ -790,7 +841,7 @@ static int	krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 /* Fabula communication subdriver */
-static int	fabula_command(const char *cmd, char *buf, size_t buflen)
+static int	_fabula_command(const char *cmd, char *buf, size_t buflen, char hunnox_patch)
 {
 	const struct {
 		const char	*str;	/* Megatec command */
@@ -859,12 +910,57 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 
 	upsdebugx(4, "command index: 0x%02x", index);
 
+	if (hunnox_patch) {
+		// Enable lock-step protocol for Hunnox
+		if  (hunnox_protocol(index) != 0) {
+			return 0;
+		}
+
+		// Seems that if we inform a large buffer, the USB locks.
+		// This value was captured from the Windows "official" client.
+		if (buflen > 102) {
+			buflen = 102;
+		}
+	}
+
 	/* Send command/Read reply */
-	ret = usb_get_string_simple(udev, index, buf, buflen);
+	if (langid_fix != -1) {
+		ret = usb_get_string(udev, index, langid_fix, buf, buflen);
+	} else {
+		ret = usb_get_string_simple(udev, index, buf, buflen);
+	}
 
 	if (ret <= 0) {
 		upsdebugx(3, "read: %s (%d)", ret ? usb_strerror() : "timeout", ret);
 		return ret;
+	}
+
+	if (hunnox_patch) {
+		if (langid_fix != -1) {
+			/* Limit this check, at least for now */
+			/* Invalid receive size - message corrupted */
+			if (ret != buf[0]) {
+				upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
+				return 0;
+			}
+
+			/* Simple unicode -> ASCII inplace conversion
+			 * FIXME: this code is at least shared with mge-shut/libshut
+			 * Create a common function? */
+			unsigned int	di, si, size = buf[0];
+			for (di = 0, si = 2; si < size; si += 2) {
+				if (di >= (buflen - 1))
+					break;
+
+				if (buf[si + 1])	/* high byte */
+					buf[di++] = '?';
+				else
+					buf[di++] = buf[si];
+			}
+
+			buf[di] = 0;
+			ret = di;
+		}
 	}
 
 	upsdebug_hex(5, "read", buf, ret);
@@ -881,6 +977,16 @@ static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 	}
 
 	return ret;
+}
+
+static int      fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
+{
+        return _fabula_command(cmd, buf, buflen, TRUE);
+}
+
+static int      fabula_command(const char *cmd, char *buf, size_t buflen)
+{
+        return _fabula_command(cmd, buf, buflen, FALSE);
 }
 
 /* Fuji communication subdriver */
@@ -1043,6 +1149,12 @@ static void	*fabula_subdriver(USBDevice_t *device)
 	return NULL;
 }
 
+static void *fabula_hunnox_subdriver(USBDevice_t *device)
+{
+	subdriver_command = &fabula_command_hunnox;
+	return NULL;
+}
+
 static void	*fuji_subdriver(USBDevice_t *device)
 {
 	subdriver_command = &fuji_command;
@@ -1073,6 +1185,7 @@ static qx_usb_device_id_t	qx_usb_id[] = {
 	{ USB_DEVICE(0x14f0, 0x00c9),	NULL,		NULL,			&phoenix_subdriver },	/* GE EP series */
 	{ USB_DEVICE(0x0483, 0x0035),	NULL,		NULL,			&sgs_subdriver },	/* TS Shara UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	"MEC",		"MEC0003",		&fabula_subdriver },	/* Fideltronik/MEC LUPUS 500 USB */
+	{ USB_DEVICE(0x0001, 0x0000),	NULL,		"MEC0003",		&fabula_hunnox_subdriver },	/* Hunnox HNX 850 */
 	{ USB_DEVICE(0x0001, 0x0000),	"ATCL FOR UPS",	"ATCL FOR UPS",		&fuji_subdriver },	/* Fuji UPSes */
 	{ USB_DEVICE(0x0001, 0x0000),	NULL,		NULL,			&krauler_subdriver },	/* Krauler UP-M500VA */
 	/* End of list */
@@ -1651,6 +1764,7 @@ void	upsdrv_makevartable(void)
 	nut_usb_addvars();
 
 	addvar(VAR_VALUE, "langid_fix", "Apply the language ID workaround to the krauler subdriver (0x409 or 0x4095)");
+	addvar(VAR_FLAG, "noscanlangid", "Don't autoscan valid range for langid");
 #endif	/* QX_USB */
 
 #ifdef QX_SERIAL
@@ -1923,6 +2037,7 @@ void	upsdrv_initups(void)
 			{ "ippon", &ippon_command },
 			{ "krauler", &krauler_command },
 			{ "fabula", &fabula_command },
+			{ "fabula-hunnox", &fabula_command_hunnox },
 			{ "fuji", &fuji_command },
 			{ "sgs", &sgs_command },
 			{ NULL }
@@ -2017,7 +2132,7 @@ void	upsdrv_initups(void)
 		dstate_setinfo("ups.productid", "%04x", usbdevice.ProductID);
 
 		/* Check for language ID workaround (#2) */
-		if (langid_fix != -1) {
+		if ((langid_fix != -1) && (!getval("noscanlangid"))) {
 			/* Future improvement:
 			 *   Asking for the zero'th index is special - it returns a string descriptor that contains all the language IDs supported by the device.
 			 *   Typically there aren't many - often only one.
