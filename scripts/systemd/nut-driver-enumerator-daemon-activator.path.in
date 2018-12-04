@@ -1,0 +1,15 @@
+# Trigger restart of nut-driver-enumerator-daemon-activator.service
+# whenever ups.conf is edited, which would cause reload-or-restart
+# of the nut-driver-enumerator-daemon.service for actual reconfig.
+[Unit]
+Description=Network UPS Tools - Trigger restart of nut-driver-enumerator-daemon.service whenever ups.conf is edited
+Conflicts=nut-driver-enumerator.service nut-driver-enumerator.path
+After=local-fs.target
+Before=nut-driver.target
+PartOf=nut.target
+
+[Path]
+PathModified=@CONFPATH@/ups.conf
+
+[Install]
+WantedBy=nut.target
