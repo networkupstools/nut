@@ -162,6 +162,7 @@ UPSLIST_SVCS=""
 # Framework-specific implementations are generally hooked here:
 hook_registerInstance=""
 hook_unregisterInstance=""
+hook_refreshSupervizor=""
 hook_listInstances=""
 hook_listInstances_raw=""
 hook_validInstanceName=""
@@ -176,6 +177,7 @@ case "${SERVICE_FRAMEWORK-}" in
     smf)
         hook_registerInstance="smf_registerInstance"
         hook_unregisterInstance="smf_unregisterInstance"
+        hook_refreshSupervizor="smf_refreshSupervizor"
         hook_listInstances="smf_listInstances"
         hook_listInstances_raw="smf_listInstances_raw"
         hook_validInstanceName="smf_validInstanceName"
@@ -189,6 +191,7 @@ case "${SERVICE_FRAMEWORK-}" in
     systemd)
         hook_registerInstance="systemd_registerInstance"
         hook_unregisterInstance="systemd_unregisterInstance"
+        hook_refreshSupervizor="systemd_refreshSupervizor"
         hook_listInstances="systemd_listInstances"
         hook_listInstances_raw="systemd_listInstances_raw"
         hook_validInstanceName="systemd_validInstanceName"
@@ -202,6 +205,7 @@ case "${SERVICE_FRAMEWORK-}" in
     selftest)
         hook_registerInstance="selftest_NOOP"
         hook_unregisterInstance="selftest_NOOP"
+        hook_refreshSupervizor="selftest_NOOP"
         hook_listInstances="selftest_NOOP"
         hook_listInstances_raw="selftest_NOOP"
         hook_validInstanceName="selftest_NOOP"
@@ -597,6 +601,9 @@ smf_unregisterInstance() {
     /usr/sbin/svcadm disable -ts 'nut-driver:'"$1" || false
     /usr/sbin/svccfg -s nut-driver delete "$1"
 }
+smf_refreshSupervizor() {
+    :
+}
 smf_listInstances_raw() {
     # Newer versions have pattern matching; older SMF might not have this luxury
     /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:'
@@ -722,6 +729,9 @@ systemd_unregisterInstance() {
     rm -rf "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d"
     /bin/systemctl reset-failed 'nut-driver@'"$1".service
 }
+systemd_refreshSupervizor() {
+    /bin/systemctl daemon-reload
+}
 systemd_listInstances_raw() {
     /bin/systemctl show 'nut-driver@*' -p Id | egrep '=nut-driver' | sed 's,^Id=,,'
 }
@@ -746,7 +756,6 @@ systemd_setSavedMD5() {
 Environment='$PROP=$2'
 EOF
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
-    /bin/systemctl daemon-reload
 }
 systemd_restart_upsd() {
     # Do not restart/reload if not already running
@@ -989,6 +998,7 @@ nut_driver_enumerator_main() {
     if [ -n "$UPSLIST_FILE" ]; then
         # Add services for sections that are in config file but not yet wrapped
         upslist_addSvcs
+        $hook_refreshSupervizor
         upslist_readSvcs "after checking for new config sections to define service instances"
     fi
 
@@ -1145,6 +1155,10 @@ while [ $# -gt 0 ]; do
 
             # Save new checksum of global config
             $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
+
+            # Service units were manipulated, including saving of checksums;
+            # refresh the service management daemon if needed
+            $hook_refreshSupervizor
 
             if [ -n "$UPSLIST_SVCS" ] ; then
                 echo "=== The currently defined service instances are:"
