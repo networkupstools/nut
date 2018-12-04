@@ -1062,6 +1062,10 @@ daemonize() (
     # loop would exit with code 42, and probably trigger restart
     # of the service which wraps this daemon do topple others that
     # depend on it.
+    # Note: do not quickly skip the "main" based on full-file
+    # checksum refresh, to ensure that whatever is configured
+    # gets applied (e.g. if user disabled some services or they
+    # died, or some config was not applied due to coding error).
     while nut_driver_enumerator_main ; do
         if $RECONFIGURE_ASAP ; then
             echo "`date -u` : Trapped a SIGHUP during last run of nut_driver_enumerator_main, repeating reconfiguration quickly" >&2
