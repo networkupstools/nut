@@ -508,9 +508,22 @@ upsconf_debug() {
 }
 
 calc_md5() {
+    # Tries several ways to produce an MD5 of the "$1" argument
     _MD5="`echo "$1" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "$_MD5" ] || \
     { _MD5="`echo "$1" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "$_MD5" ]; } || \
     return 1
+
+    echo "$_MD5"
+}
+
+calc_md5_file() {
+    # Tries several ways to produce an MD5 of the file named by "$1" argument
+    [ -s "$1" ] || return 2
+
+    _MD5="`md5sum 2>/dev/null < "$1" | awk '{print $1}'`" && [ -n "$_MD5" ] || \
+    { _MD5="`openssl dgst -md5 2>/dev/null < "$1" | awk '{print $NF}'`" && [ -n "$_MD5" ]; } || \
+    return 1
+
     echo "$_MD5"
 }
 
