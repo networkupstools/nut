@@ -6,3 +6,6 @@
 /nutshutdown
 /nut-driver-enumerator.service
 /nut-driver-enumerator.path
+/nut-driver-enumerator-daemon-activator.path
+/nut-driver-enumerator-daemon-activator.service
+/nut-driver-enumerator-daemon.service

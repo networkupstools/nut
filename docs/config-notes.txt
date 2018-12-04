@@ -227,6 +227,17 @@ at its startup. This helper service should be triggered whenever your system
 (re-)starts the `nut-server` service, so that it runs against an up-to-date
 list of NUT driver processes.
 
+Two service bundles are provided for this feature: a set of
+`nut-driver-enumerator-daemon*` units starts the script as a daemon
+to regularly inspect and apply the NUT configuration to OS service unit
+wrappings (mainly intended for monitoring systems with a dynamic set of
+monitored power devices, or for systems where filesystem events monitoring
+is not a clockwork-reliable mechanism to 100% rely on); while the other
+`nut-driver-enumerator.*` units run the script once per triggering of
+the service (usually during boot-up; configuration file changes can be
+detected and propagated by systemd most of the time, but not by SMF out
+of the box).
+
 A service-oriented solution also allows to consider that different drivers
 have different dependencies -- such as that networked drivers should begin
 startup after IP addresses have been assigned, while directly-connected

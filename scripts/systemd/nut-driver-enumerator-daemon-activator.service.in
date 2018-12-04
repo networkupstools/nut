@@ -1,0 +1,25 @@
+[Unit]
+# This unit starts via nut-driver-enumerator-daemon-activator.path
+# activation due to changes in ups.conf file, and triggers a reload
+# of the nut-driver-enumerator-daemon.service so that one quickly
+# re-processes the new configuration state.
+Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances (FS event-based activator for daemonized mode)
+Conflicts=nut-driver-enumerator.service nut-driver-enumerator.path
+After=local-fs.target
+Before=nut-driver.target
+PartOf=nut.target
+
+[Service]
+### Script needs privileges to restart units
+#User=@RUN_AS_USER@
+#Group=@RUN_AS_GROUP@
+User=root
+Type=simple
+# Non-blocking systemd message posting should not take long,
+# or should be aborted and retried if it does (system bugs)
+TimeoutStartSec=10s
+Restart=always
+ExecStart=/bin/systemctl reload-or-restart --no-block nut-driver-enumerator-daemon.service
+
+[Install]
+WantedBy=nut.target
