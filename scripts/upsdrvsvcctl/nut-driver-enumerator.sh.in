@@ -1034,6 +1034,9 @@ nut_driver_enumerator_main() {
         # can be configured into an uncomfortably long lag, so
         # we should re-sync the system config in any case.
         echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
+        # Make sure the cycle does not repeat itself due to diffs
+        # from an ages-old state of the file from when we started.
+        UPSCONF_CHECKSUM_START="$UPSCONF_CHECKSUM_END"
         ( nut_driver_enumerator_main ) ; return $?
         # The "main" routine at the end of recursions will
         # do REPORT_RESTART_42 logic or the error exit-code
