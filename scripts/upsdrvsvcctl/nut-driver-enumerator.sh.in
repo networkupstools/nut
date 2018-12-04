@@ -1010,7 +1010,26 @@ nut_driver_enumerator_main() {
 
     # Return 42 if there was a change applied succesfully
     # (but e.g. some services should restart - upsd, maybe upsmon)
-    if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
+    UPSLIST_EQ_RES=0
+    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" || UPSLIST_EQ_RES=$?
+
+    # File processing and service startups take a while;
+    # make sure upsconf did not change while we worked...
+    # NOTE: Check this at the last moment to minimize
+    # the chance of still not noticing the change made
+    # at just the wrong moment.
+    UPSCONF_CHECKSUM_END="`calc_md5_file "$UPSCONF"`" || true
+    if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
+        # NOTE: even if daemonized, the sleep between iterations
+        # can be configured into an uncomfortably long lag, so
+        # we should re-sync the system config in any case.
+        echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
+        ( nut_driver_enumerator_main ) ; return $?
+        # The "main" routine at the end of recursions will
+        # do REPORT_RESTART_42 logic or the error exit-code
+    fi
+
+    if [ "$UPSLIST_EQ_RES" = 0 ] ; then
         echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
         [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
     fi
@@ -1033,6 +1052,10 @@ daemonize() (
     done
     exit $?
 )
+
+# Save the checksum of ups.conf as early as possible,
+# to test in the end that it is still the same file.
+UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
 
 # By default, update wrapping of devices into services
 if [ $# = 0 ]; then
@@ -1140,10 +1163,26 @@ while [ $# -gt 0 ]; do
 
             # Return 42 if there was a change applied succesfully
             # (but e.g. some services should restart - upsd, maybe upsmon)
-            if upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" ; then
+            UPSLIST_EQ_RES=0
+            upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" || UPSLIST_EQ_RES=$?
+
+            # File processing and service startups take a while;
+            # make sure upsconf did not change while we worked...
+            # NOTE: Check this at the last moment to minimize
+            # the chance of still not noticing the change made
+            # at just the wrong moment.
+            UPSCONF_CHECKSUM_END="`calc_md5_file "$UPSCONF"`" || true
+            if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
+                echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
+                $0 ; exit $?
+                # The "main" routine will do REPORT_RESTART_42 logic too
+            fi
+
+            if [ "$UPSLIST_EQ_RES" = 0 ] ; then
                 echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
                 [ "${REPORT_RESTART_42-}" = no ] && exit 0 || exit 42
             fi
+
             exit 13
             ;;
         --list-devices)
