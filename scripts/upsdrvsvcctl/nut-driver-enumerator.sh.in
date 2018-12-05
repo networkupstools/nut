@@ -1094,8 +1094,14 @@ if [ $# = 1 ] ; then
     # Note: Not all shells have 'case ... ;&' support
     case "$1" in
         --daemon=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;;
+        --daemon-after=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon-after=,,'`" ;;
     esac
     case "$1" in
+        --daemon-after|--daemon-after=*)
+            REPORT_RESTART_42=no nut_driver_enumerator_main || exit $?
+            daemonize &
+            exit $?
+            ;;
         --daemon|--daemon=*)
             daemonize &
             exit $?
@@ -1110,6 +1116,10 @@ $0 (no args)
         Update wrapping of devices into services
 $0 --daemon(=freq)
         Update wrapping of devices into services in an infinite loop
+        Default freq is 60 sec
+$0 --daemon-after(=freq)
+        Update wrapping of devices into services in an infinite loop
+        First do one run of the loop though
         Default freq is 60 sec
 $0 --reconfigure
         Stop and un-register all service instances and recreate them
