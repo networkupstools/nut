@@ -16,13 +16,10 @@ After=local-fs.target
 #User=@RUN_AS_USER@
 #Group=@RUN_AS_GROUP@
 User=root
-Type=simple
+Type=oneshot
 # Non-blocking systemd message posting should not take long,
 # or should be aborted and retried if it does (system bugs)
 TimeoutStartSec=10s
-Restart=always
-StartLimitInterval=15s
-StartLimitBurst=3
 ExecStart=/bin/systemctl reload-or-restart --no-block nut-driver-enumerator-daemon.service
 
 [Install]
