@@ -948,12 +948,18 @@ TERMINATION_SIGNALS="2 3 15"
 RECONFIGURATION_SIGNALS="1"
 
 TERMINATE_ASAP=false
+trap_handle_interruption_exit() {
+    # Handle SIGINT, SIGQUIT, SIGTERM with a message
+    echo "`date -u` : Received an interruption signal, terminating the script now" >&2
+    exit 0
+}
+
 trap_handle_interruption() {
     # Handle SIGINT, SIGQUIT, SIGTERM gracefully - tell the main
     # iteration to complete and just then abort
     echo "`date -u` : Received an interruption signal, will terminate the script after ending the main routine. Repeat the signal if urgent!" >&2
     TERMINATE_ASAP=true
-    trap '-' $TERMINATION_SIGNALS
+    trap 'trap_handle_interruption_exit' $TERMINATION_SIGNALS
 }
 
 nut_driver_enumerator_main() {
@@ -1109,7 +1115,7 @@ daemonize() {
     # gets applied (e.g. if user disabled some services or they
     # died, or some config was not applied due to coding error).
     while nut_driver_enumerator_main ; do
-        trap '-' $TERMINATION_SIGNALS
+        trap 'trap_handle_interruption_exit' $TERMINATION_SIGNALS
         if $TERMINATE_ASAP ; then
             echo "`date -u` : Trapped a SIGTERM/SIGINT/SIGQUIT during last run of nut_driver_enumerator_main, terminating gracefully now" >&2
             exit 0
