@@ -1049,7 +1049,10 @@ nut_driver_enumerator_main() {
     return 13
 }
 
-daemonize() (
+daemonize() {
+    # Note: do not further sub-shell this routine, so systemd
+    # is not confused whom to signal.
+
     # Support (SIG)HUP == signal code 1 to quickly reconfigure,
     # e.g. to request it while the sleep is happening or while
     # "main" is processing an earlier change of the file.
@@ -1078,7 +1081,7 @@ daemonize() (
         trap 'RECONFIGURE_ASAP=true' 1
     done
     exit $?
-)
+}
 
 # Save the checksum of ups.conf as early as possible,
 # to test in the end that it is still the same file.
