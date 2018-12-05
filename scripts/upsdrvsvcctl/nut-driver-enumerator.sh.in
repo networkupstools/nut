@@ -941,8 +941,25 @@ upslist_restartSvcs() {
     done
 }
 
+# FIXME : process via kill -l?
+# Different shells use a SIG prefix or not to signal names
+# so standard numbers are in fact more portable :\
+TERMINATION_SIGNALS="2 3 15"
+RECONFIGURATION_SIGNALS="1"
+
+TERMINATE_ASAP=false
+trap_handle_interruption() {
+    # Handle SIGINT, SIGQUIT, SIGTERM gracefully - tell the main
+    # iteration to complete and just then abort
+    echo "`date -u` : Received an interruption signal, will terminate the script after ending the main routine. Repeat the signal if urgent!" >&2
+    TERMINATE_ASAP=true
+    trap '-' $TERMINATION_SIGNALS
+}
+
 nut_driver_enumerator_main() {
     ################# MAIN PROGRAM by default
+    TERMINATE_ASAP=false
+    trap 'trap_handle_interruption' $TERMINATION_SIGNALS
 
     # Note: do not use the read..._once() here, to ensure that the
     # looped daemon sees the whole picture, which can be new every time
@@ -1072,7 +1089,7 @@ daemonize() {
     # e.g. to request it while the sleep is happening or while
     # "main" is processing an earlier change of the file.
     RECONFIGURE_ASAP=false
-    trap 'trap_handle_hup_main' 1
+    trap 'trap_handle_hup_main' $RECONFIGURATION_SIGNALS
 
     # Note: this loop would die on errors with config file or
     # inability to ensure that it matches the list of services.
@@ -1085,15 +1102,21 @@ daemonize() {
     # gets applied (e.g. if user disabled some services or they
     # died, or some config was not applied due to coding error).
     while nut_driver_enumerator_main ; do
+        trap '-' $TERMINATION_SIGNALS
+        if $TERMINATE_ASAP ; then
+            echo "`date -u` : Trapped a SIGTERM/SIGINT/SIGQUIT during last run of nut_driver_enumerator_main, terminating gracefully now" >&2
+            exit 0
+        fi
+
         if $RECONFIGURE_ASAP ; then
             echo "`date -u` : Trapped a SIGHUP during last run of nut_driver_enumerator_main, repeating reconfiguration quickly" >&2
         else
             sleep $DAEMON_SLEEP &
-            trap "trap_handle_hup_sleep $!" 1
+            trap "trap_handle_hup_sleep $!" $RECONFIGURATION_SIGNALS
             wait $!
         fi
         RECONFIGURE_ASAP=false
-        trap 'trap_handle_hup_main' 1
+        trap 'trap_handle_hup_main' $RECONFIGURATION_SIGNALS
     done
     exit $?
 }
