@@ -68,7 +68,7 @@ Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
 Conflicts: nut-hal-drivers
 Replaces: nut (<< 2.7.4-11~)
 Breaks: nut (<< 2.6.1-2~)
-Description: network UPS tools - core system
+Description: network UPS tools - data server, serial and USB drivers
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
  power distribution unit (PDU) hardware. Clients access the hardware
