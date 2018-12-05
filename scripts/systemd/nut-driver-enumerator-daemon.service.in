@@ -20,7 +20,7 @@ User=root
 Type=forking
 Restart=always
 Environment=REPORT_RESTART_42=no
-ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon
+ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after
 # Note: this is an async event, actual reconfiguration may take some time to
 # complete after this signal.
 ExecReload=/bin/kill -HUP $MAINPID
