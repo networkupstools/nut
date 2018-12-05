@@ -1097,6 +1097,7 @@ trap_handle_hup_sleep() {
 daemonize() {
     # Note: do not further sub-shell this routine, so systemd
     # is not confused whom to signal.
+    echo "`date -u` : Daemonizing $0 with config re-evaluation frequency $DAEMON_SLEEP" >&2
 
     # Support (SIG)HUP == signal code 1 to quickly reconfigure,
     # e.g. to request it while the sleep is happening or while
