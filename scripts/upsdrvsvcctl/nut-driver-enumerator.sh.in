@@ -1069,11 +1069,18 @@ nut_driver_enumerator_main() {
 RECONFIGURE_ASAP=false
 trap_handle_hup_main() {
     echo "`date -u` : Received a HUP during processing, scheduling reconfiguration to repeat ASAP (after the current iteration is done)" >&2
+    # Note: in the worst case the reconfig would run twice;
+    # we do not update UPSCONF_CHECKSUM_START in this case
+    # to avoid corrupting decisions of the currently running
+    # processing.
     RECONFIGURE_ASAP=true
 }
 
 trap_handle_hup_sleep() {
     echo "`date -u` : Received a HUP in my sleep, reprocessing reconfigs right now!" >&2
+    # Avoid re-parsing main twice, though don't recalculate
+    # checksums needlessly on every loop cycle, either...
+    UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
     RECONFIGURE_ASAP=true
     if [ -n "$1" ] ; then
         # Kill the sleeper PID
