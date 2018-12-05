@@ -15,14 +15,9 @@ PartOf=nut.target
 #User=@RUN_AS_USER@
 #Group=@RUN_AS_GROUP@
 User=root
-# it is expected that the process has to exit before systemd starts follow-up
-# units; it should not be a problem for those
-Type=simple
-# Currently systemd does not support restarting of oneshot services, and does
-# not seem to guarantee that other services would only start after the script
-# completes, for a non-oneshot case. The script itself handles restarting of
-# nut-server which is the primary concerned dependency at the moment, so we
-# don't want it to fail the unit (when it can't restart).
+# it is expected that this process has to fork the daemon before systemd
+# starts follow-up units; it should not be a problem for those
+Type=forking
 Restart=always
 Environment=REPORT_RESTART_42=no
 ExecStart=@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon
