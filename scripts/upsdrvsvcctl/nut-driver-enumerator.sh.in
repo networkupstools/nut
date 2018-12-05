@@ -1049,6 +1049,21 @@ nut_driver_enumerator_main() {
     return 13
 }
 
+RECONFIGURE_ASAP=false
+trap_handle_hup_main() {
+    echo "`date -u` : Received a HUP during processing, scheduling reconfiguration to repeat ASAP (after the current iteration is done)" >&2
+    RECONFIGURE_ASAP=true
+}
+
+trap_handle_hup_sleep() {
+    echo "`date -u` : Received a HUP in my sleep, reprocessing reconfigs right now!" >&2
+    RECONFIGURE_ASAP=true
+    if [ -n "$1" ] ; then
+        # Kill the sleeper PID
+        kill "$1"
+    fi
+}
+
 daemonize() {
     # Note: do not further sub-shell this routine, so systemd
     # is not confused whom to signal.
@@ -1057,7 +1072,7 @@ daemonize() {
     # e.g. to request it while the sleep is happening or while
     # "main" is processing an earlier change of the file.
     RECONFIGURE_ASAP=false
-    trap 'RECONFIGURE_ASAP=true' 1
+    trap 'trap_handle_hup_main' 1
 
     # Note: this loop would die on errors with config file or
     # inability to ensure that it matches the list of services.
@@ -1074,11 +1089,11 @@ daemonize() {
             echo "`date -u` : Trapped a SIGHUP during last run of nut_driver_enumerator_main, repeating reconfiguration quickly" >&2
         else
             sleep $DAEMON_SLEEP &
-            trap "kill $! ; echo 'Sleep interrupted, processing configs now!'>&2" 1
+            trap "trap_handle_hup_sleep $!" 1
             wait $!
         fi
         RECONFIGURE_ASAP=false
-        trap 'RECONFIGURE_ASAP=true' 1
+        trap 'trap_handle_hup_main' 1
     done
     exit $?
 }
