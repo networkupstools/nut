@@ -2326,6 +2326,9 @@ AC_OUTPUT([
  scripts/systemd/nut-server.service
  scripts/systemd/nut-driver-enumerator.service
  scripts/systemd/nut-driver-enumerator.path
+ scripts/systemd/nut-driver-enumerator-daemon.service
+ scripts/systemd/nut-driver-enumerator-daemon-activator.service
+ scripts/systemd/nut-driver-enumerator-daemon-activator.path
  scripts/systemd/nutshutdown
  scripts/DMF/Makefile
  scripts/DMF/legacy-mibfiles-list.mk

@@ -941,8 +941,31 @@ upslist_restartSvcs() {
     done
 }
 
+# FIXME : process via kill -l?
+# Different shells use a SIG prefix or not to signal names
+# so standard numbers are in fact more portable :\
+TERMINATION_SIGNALS="2 3 15"
+RECONFIGURATION_SIGNALS="1"
+
+TERMINATE_ASAP=false
+trap_handle_interruption_exit() {
+    # Handle SIGINT, SIGQUIT, SIGTERM with a message
+    echo "`date -u` : Received an interruption signal, terminating the script now" >&2
+    exit 0
+}
+
+trap_handle_interruption() {
+    # Handle SIGINT, SIGQUIT, SIGTERM gracefully - tell the main
+    # iteration to complete and just then abort
+    echo "`date -u` : Received an interruption signal, will terminate the script after ending the main routine. Repeat the signal if urgent!" >&2
+    TERMINATE_ASAP=true
+    trap 'trap_handle_interruption_exit' $TERMINATION_SIGNALS
+}
+
 nut_driver_enumerator_main() {
     ################# MAIN PROGRAM by default
+    TERMINATE_ASAP=false
+    trap 'trap_handle_interruption' $TERMINATION_SIGNALS
 
     # Note: do not use the read..._once() here, to ensure that the
     # looped daemon sees the whole picture, which can be new every time
@@ -1034,6 +1057,9 @@ nut_driver_enumerator_main() {
         # can be configured into an uncomfortably long lag, so
         # we should re-sync the system config in any case.
         echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
+        # Make sure the cycle does not repeat itself due to diffs
+        # from an ages-old state of the file from when we started.
+        UPSCONF_CHECKSUM_START="$UPSCONF_CHECKSUM_END"
         ( nut_driver_enumerator_main ) ; return $?
         # The "main" routine at the end of recursions will
         # do REPORT_RESTART_42 logic or the error exit-code
@@ -1046,22 +1072,68 @@ nut_driver_enumerator_main() {
     return 13
 }
 
-daemonize() (
-    trap '-' 1
+RECONFIGURE_ASAP=false
+trap_handle_hup_main() {
+    echo "`date -u` : Received a HUP during processing, scheduling reconfiguration to repeat ASAP (after the current iteration is done)" >&2
+    # Note: in the worst case the reconfig would run twice;
+    # we do not update UPSCONF_CHECKSUM_START in this case
+    # to avoid corrupting decisions of the currently running
+    # processing.
+    RECONFIGURE_ASAP=true
+}
+
+trap_handle_hup_sleep() {
+    echo "`date -u` : Received a HUP in my sleep, reprocessing configs right now!" >&2
+    # Avoid re-parsing main twice, though don't recalculate
+    # checksums needlessly on every loop cycle, either...
+    UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
+    RECONFIGURE_ASAP=true
+    if [ -n "$1" ] ; then
+        # Kill the sleeper PID
+        kill "$1"
+    fi
+}
+
+daemonize() {
+    # Note: do not further sub-shell this routine, so systemd
+    # is not confused whom to signal.
+    echo "`date -u` : Daemonizing $0 with config re-evaluation frequency $DAEMON_SLEEP" >&2
+
+    # Support (SIG)HUP == signal code 1 to quickly reconfigure,
+    # e.g. to request it while the sleep is happening or while
+    # "main" is processing an earlier change of the file.
+    RECONFIGURE_ASAP=false
+    trap 'trap_handle_hup_main' $RECONFIGURATION_SIGNALS
+
     # Note: this loop would die on errors with config file or
     # inability to ensure that it matches the list of services.
     # If caller did not `export REPORT_RESTART_42=no` then the
     # loop would exit with code 42, and probably trigger restart
     # of the service which wraps this daemon do topple others that
     # depend on it.
+    # Note: do not quickly skip the "main" based on full-file
+    # checksum refresh, to ensure that whatever is configured
+    # gets applied (e.g. if user disabled some services or they
+    # died, or some config was not applied due to coding error).
     while nut_driver_enumerator_main ; do
-        sleep $DAEMON_SLEEP &
-        trap "kill $! ; echo 'Sleep interrupted, processing configs now!'>&2" 1
-        wait $!
-        trap '-' 1
+        trap 'trap_handle_interruption_exit' $TERMINATION_SIGNALS
+        if $TERMINATE_ASAP ; then
+            echo "`date -u` : Trapped a SIGTERM/SIGINT/SIGQUIT during last run of nut_driver_enumerator_main, terminating gracefully now" >&2
+            exit 0
+        fi
+
+        if $RECONFIGURE_ASAP ; then
+            echo "`date -u` : Trapped a SIGHUP during last run of nut_driver_enumerator_main, repeating reconfiguration quickly" >&2
+        else
+            sleep $DAEMON_SLEEP &
+            trap "trap_handle_hup_sleep $!" $RECONFIGURATION_SIGNALS
+            wait $!
+        fi
+        RECONFIGURE_ASAP=false
+        trap 'trap_handle_hup_main' $RECONFIGURATION_SIGNALS
     done
     exit $?
-)
+}
 
 # Save the checksum of ups.conf as early as possible,
 # to test in the end that it is still the same file.
@@ -1077,8 +1149,14 @@ if [ $# = 1 ] ; then
     # Note: Not all shells have 'case ... ;&' support
     case "$1" in
         --daemon=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon=,,'`" ;;
+        --daemon-after=*) DAEMON_SLEEP="`echo "$1" | sed 's,^--daemon-after=,,'`" ;;
     esac
     case "$1" in
+        --daemon-after|--daemon-after=*)
+            REPORT_RESTART_42=no nut_driver_enumerator_main || exit $?
+            daemonize &
+            exit $?
+            ;;
         --daemon|--daemon=*)
             daemonize &
             exit $?
@@ -1093,6 +1171,10 @@ $0 (no args)
         Update wrapping of devices into services
 $0 --daemon(=freq)
         Update wrapping of devices into services in an infinite loop
+        Default freq is 60 sec
+$0 --daemon-after(=freq)
+        Update wrapping of devices into services in an infinite loop
+        First do one run of the loop though
         Default freq is 60 sec
 $0 --reconfigure
         Stop and un-register all service instances and recreate them

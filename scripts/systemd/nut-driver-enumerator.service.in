@@ -3,6 +3,7 @@
 # End-user may also restart this unit after editing ups.conf to automatically
 # un-register or add new instances as appropriate.
 Description=Network UPS Tools - enumeration of configure-file devices into systemd unit instances
+Conflicts=nut-driver-enumerator-daemon.service nut-driver-enumerator-daemon-activator.path nut-driver-enumerator-daemon-activator.service
 After=local-fs.target
 Before=nut-driver.target
 PartOf=nut.target

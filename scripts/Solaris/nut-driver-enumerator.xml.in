@@ -128,7 +128,7 @@
 			<exec_method
 			type='method'
 			name='start'
-			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon'
+			exec='@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --daemon-after'
 			timeout_seconds='0'/>
 
 			<exec_method
