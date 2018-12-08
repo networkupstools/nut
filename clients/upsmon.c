@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "upsclient.h"
 #include "upsmon.h"
@@ -1432,6 +1434,9 @@ static int try_connect(utype_t *ups)
 	/* we're definitely connected now */
 	setflag(&ups->status, ST_CONNECTED);
 
+	/* prevent connection leaking to NOTIFYCMD */
+	fcntl(upscli_fd(&ups->conn), F_SETFD, FD_CLOEXEC);
+
 	/* now try to authenticate to upsd */
 
 	ret = do_upsd_auth(ups);
@@ -1714,6 +1719,9 @@ static void start_pipe(void)
 	}
 
 	close(pipefd[0]);
+
+	/* prevent pipe leaking to NOTIFYCMD */
+	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
 }
 
 static void delete_ups(utype_t *target)
