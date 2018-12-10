@@ -68,7 +68,7 @@ Suggests: nut-cgi, nut-snmp, nut-ipmi, nut-xml
 Conflicts: nut-hal-drivers
 Replaces: nut (<< 2.7.4-11~)
 Breaks: nut (<< 2.6.1-2~)
-Description: network UPS tools - core system
+Description: network UPS tools - data server, serial and USB drivers
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
  power distribution unit (PDU) hardware. Clients access the hardware
@@ -130,7 +130,7 @@ Description: network UPS tools - SNMP driver
 
 Package: nut-ipmi
 Architecture: linux-any kfreebsd-any
-Depends: ${shlibs:Depends}, ${misc:Depends}, nut-server (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, nut-server (= ${binary:Version}), libfreeipmi (>= 0.8.5) [!hurd-i386], libipmimonitoring (>= 1.1.5-2) [!hurd-i386]
 Description: network UPS tools - IPMI driver
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
