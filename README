@@ -171,7 +171,7 @@ For example, it is available on Debian systems as:
 
 	/usr/share/nut/driver.list
 
-This table is also available link:http://www.networkupstools.org/stable-hcl.html[online].
+This table is also available link:http://www.networkupstools.org/stable-hcl.html [online].
 
 
 If your driver has vanished, see the link:FAQ.html[FAQ] and
