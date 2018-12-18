@@ -67,6 +67,12 @@ Enable testing mode. Testing mode makes upsdrvsvcctl display the actions
 it would execute without actually doing them.
 
 
+*--timeout-cmd <prog>* and *--timeout-args <arg>*::
+Service management calls will be time-limited by calling the specified
+program with its args. By default, if coreutils timeout is found, it
+would be used to limit service calls by 90 sec, to avoid/work around
+certain hangs that happen in some systemd version under stress.
+
 
 OPTIONS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
 ---------------------------------------------------------------
