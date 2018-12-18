@@ -148,6 +148,20 @@ if [ -z "${SERVICE_FRAMEWORK-}" ] ; then
         SERVICE_FRAMEWORK="systemd"
 fi
 
+# Optionally use Coreutils timeout to limit the
+# (potentially hanging) calls to systemd tools...
+# Should not hurt with SMF too, if it ever misbehaves.
+if [ -z "${TIMEOUT_CMD+x}" ]; then
+    # Envvar not set at all (set but empty is okay, caller wants that then)
+    TIMEOUT_CMD=""
+    TIMEOUT_ARGS=""
+    if which timeout 2>/dev/null >/dev/null ; then
+        # Systemd default timeout for unit start/stop
+        TIMEOUT_CMD="timeout"
+        TIMEOUT_ARGS="90s"
+    fi
+fi
+
 # Cache needed bits of ups.conf to speed up later parsing. Note that these
 # data are needed for most operations, and populated by upslist_readFile()
 UPSCONF_DATA=""
@@ -718,13 +732,16 @@ EOF
     systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
 
     if [ "$AUTO_START" = yes ] ; then
-        /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
+        $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
         echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
 }
 systemd_unregisterInstance() {
     echo "Removing instance: 'nut-driver@$1' ..." >&2
-    /bin/systemctl stop 'nut-driver@'"$1".service || false
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl stop 'nut-driver@'"$1".service || \
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl stop 'nut-driver@'"$1".service || \
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl stop 'nut-driver@'"$1".service || false
+
     /bin/systemctl disable 'nut-driver@'"$1".service
     rm -rf "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d"
     /bin/systemctl reset-failed 'nut-driver@'"$1".service
@@ -768,15 +785,9 @@ systemd_restart_upsd() {
     # Note: reload is a better way to go about this, so the
     # data service is not interrupted by re-initialization
     # of the daemon. But systemd/systemctl sometimes stalls...
-    # Coreutils timeout
-    TIMEOUT=""
-    if which timeout 2>/dev/null >/dev/null ; then
-        # Systemd default timeout for unit start/stop
-        TIMEOUT="timeout 90s "
-    fi
 
-    $TIMEOUT /bin/systemctl reload-or-restart "nut-server" || \
-    $TIMEOUT /bin/systemctl restart "nut-server"
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl reload-or-restart "nut-server" || \
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl restart "nut-server"
 }
 
 systemd_restart_drv() {
@@ -787,14 +798,9 @@ systemd_restart_drv() {
     esac
 
     echo "Restarting NUT driver instance '$1' to make sure it knows new configuration..."
-    TIMEOUT=""
-    if which timeout 2>/dev/null >/dev/null ; then
-        # Systemd default timeout for unit start/stop
-        TIMEOUT="timeout 90s "
-    fi
 
     # Full restart, e.g. in case we changed the user= in configs
-    $TIMEOUT /bin/systemctl restart "nut-driver@$1"
+    $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl restart "nut-driver@$1"
 }
 
 upslist_normalizeFile_filter() {
