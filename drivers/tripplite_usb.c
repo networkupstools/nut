@@ -136,7 +136,7 @@
 #include "usb-common.h"
 
 #define DRIVER_NAME		"Tripp Lite OMNIVS / SMARTPRO driver"
-#define DRIVER_VERSION	"0.35"
+#define DRIVER_VERSION	"0.36"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -290,7 +290,7 @@ static int reconnect_ups(void)
 	upsdebugx(2, "= device has been disconnected, try to reconnect =");
 	upsdebugx(2, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, NULL);
+	ret = comm_driver->open(&udev, &curDevice, reopen_matcher, COMM_CONFIG_SKIP, NULL);
 	if (ret != LIBUSB_SUCCESS) {
 		upslogx(LOG_INFO, "Reconnecting to UPS failed; will retry later...");
 		dstate_datastale();
@@ -1455,7 +1455,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the regular
 	 *            expression */
-	r = comm_driver->open(&udev, &curDevice, regex_matcher, NULL);
+	r = comm_driver->open(&udev, &curDevice, regex_matcher, COMM_CONFIG_SKIP, NULL);
 	if (r != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "No matching USB/HID UPS found");
 

@@ -28,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.53"
+#define DRIVER_VERSION		"0.54"
 
 #include "main.h"
 #include "libhid.h"
@@ -969,7 +969,7 @@ void upsdrv_initups(void)
 
 	/* Search for the first supported UPS matching the
 	   regular expression (USB) or device_path (SHUT) */
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, &callback);
+	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, COMM_CONFIG_SKIP, &callback);
 	if (ret != LIBUSB_SUCCESS)
 		fatalx(EXIT_FAILURE, "No matching HID UPS found");
 
@@ -1377,7 +1377,7 @@ static int reconnect_ups(void)
 	upsdebugx(4, "= device has been disconnected, try to reconnect =");
 	upsdebugx(4, "==================================================");
 
-	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, NULL);
+	ret = comm_driver->open(&udev, &curDevice, subdriver_matcher, COMM_CONFIG_SKIP, NULL);
 
 	if (ret == LIBUSB_SUCCESS)
 		return 1;

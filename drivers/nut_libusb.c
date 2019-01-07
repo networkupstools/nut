@@ -37,7 +37,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.39"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.40"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -271,6 +271,7 @@ static int	nut_libusb_open(
 	libusb_device_handle	**udevp,
 	USBDevice_t		 *curDevice,
 	USBDeviceMatcher_t	 *matcher,
+	int			  configuration,
 	int			(*callback)(
 		libusb_device_handle	*udev,
 		USBDevice_t		*hd,
@@ -283,7 +284,7 @@ static int	nut_libusb_open(
 	ssize_t		  devcount,
 			  devnum;
 
-	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %p, %p, %p)", __func__, (void *)udevp, (void *)curDevice, (void *)matcher, (void *)callback);
+	upsdebugx(NUT_USB_DBG_FUNCTION_CALLS, "%s(%p, %p, %p, %d, %p)", __func__, (void *)udevp, (void *)curDevice, (void *)matcher, configuration, (void *)callback);
 
 	if (!nut_usb_initcnt)
 		return LIBUSB_ERROR_OTHER;
@@ -413,7 +414,17 @@ static int	nut_libusb_open(
 		}
 		upsdebugx(NUT_USB_DBG_DEVICE, "%s: device matches.", __func__);
 
-		/* Now that we have matched the device we wanted, claim it. */
+		/* Set USB configuration, if required to do so. */
+		if (configuration == COMM_CONFIG_SKIP) {
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: skipped setting USB configuration on device.", __func__);
+		} else if ((ret = libusb_set_configuration(udev, configuration)) != LIBUSB_SUCCESS) {
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: can't set USB configuration #%d on device (%s).", __func__, configuration, libusb_strerror(ret));
+			goto next_device;
+		} else {
+			upsdebugx(NUT_USB_DBG_DEVICE, "%s: successfully set USB configuration #%d on device.", __func__, configuration);
+		}
+
+		/* Now that we have matched (and configured) the device we wanted, claim it. */
 		ret = nut_usb_claim_interface(udev);
 		if (ret != LIBUSB_SUCCESS) {
 			libusb_free_device_list(devlist, 1);

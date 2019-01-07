@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.09"
+#define DRIVER_VERSION	"0.10"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -335,7 +335,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	int ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
+		ret = usb->open(&udev, &usbdevice, reopen_matcher, COMM_CONFIG_SKIP, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
 		if (ret != LIBUSB_SUCCESS)
@@ -836,7 +836,7 @@ void upsdrv_initups(void)
 	/* Initialise the communication subdriver */
 	usb->init();
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, &driver_callback);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, COMM_CONFIG_SKIP, &driver_callback);
 	if (ret != LIBUSB_SUCCESS) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"

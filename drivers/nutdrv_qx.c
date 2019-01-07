@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.36"
+#define DRIVER_VERSION	"0.37"
 
 #include "bool.h"
 #include "main.h"
@@ -2026,7 +2026,7 @@ void	upsdrv_initups(void)
 		/* Initialise the communication subdriver */
 		usb->init();
 
-		ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+		ret = usb->open(&udev, &usbdevice, regex_matcher, COMM_CONFIG_SKIP, NULL);
 		if (ret != LIBUSB_SUCCESS) {
 			fatalx(EXIT_FAILURE,
 				"No supported devices found. Please check your device availability with 'lsusb'\n"
@@ -2153,7 +2153,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 	#endif	/* QX_SERIAL */
 
 		if (udev == NULL) {
-			ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+			ret = usb->open(&udev, &usbdevice, reopen_matcher, COMM_CONFIG_SKIP, NULL);
 			if (ret != LIBUSB_SUCCESS)
 				return ret;
 		}

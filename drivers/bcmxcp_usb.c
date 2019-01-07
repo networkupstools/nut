@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.35"
+#define SUBDRIVER_VERSION "0.36"
 
 /* communication driver description structure */
 upsdrv_info_t bcmxcp_comm_upsdrv_info = {
@@ -423,7 +423,7 @@ static bool_t	open_device(void)
 	for (try = 1; try <= MAX_TRY; try++) {
 		int	ret;
 
-		ret = usb_subdriver.open(&upsdev, &curDevice, &device_matcher, NULL);
+		ret = usb_subdriver.open(&upsdev, &curDevice, &device_matcher, COMM_CONFIG_SKIP, NULL);
 		if (ret != LIBUSB_SUCCESS)
 			continue;
 

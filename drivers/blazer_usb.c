@@ -29,7 +29,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.17"
+#define DRIVER_VERSION	"0.18"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -413,7 +413,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	int	ret;
 
 	if (udev == NULL) {
-		ret = usb->open(&udev, &usbdevice, reopen_matcher, NULL);
+		ret = usb->open(&udev, &usbdevice, reopen_matcher, COMM_CONFIG_SKIP, NULL);
 		if (ret != LIBUSB_SUCCESS)
 			return ret;
 	}
@@ -572,7 +572,7 @@ void upsdrv_initups(void)
 	/* Initialise the communication subdriver */
 	usb->init();
 
-	ret = usb->open(&udev, &usbdevice, regex_matcher, NULL);
+	ret = usb->open(&udev, &usbdevice, regex_matcher, COMM_CONFIG_SKIP, NULL);
 	if (ret != LIBUSB_SUCCESS) {
 		fatalx(EXIT_FAILURE,
 			"No supported devices found. Please check your device availability with 'lsusb'\n"

@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.93"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.94"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -1005,6 +1005,7 @@ static int	libshut_open(
 	int		 *fd,
 	SHUTDevice_t	 *curDevice,
 	char		 *device_path,
+	int		  configuration,
 	int		(*callback)(
 		int		 fd,
 		SHUTDevice_t	*hd,
@@ -1030,7 +1031,7 @@ static int	libshut_open(
 	unsigned char			 report_desc_buf[HID_DT_REPORT_SIZE_MAX];
 	uint16_t			 report_desc_len;
 
-	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%p, %p, %s, %p)", __func__, (void *)fd, (void *)curDevice, device_path, (void *)callback);
+	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%p, %p, %s, %d, %p)", __func__, (void *)fd, (void *)curDevice, device_path, configuration, (void *)callback);
 
 	if (!libshut_initcnt)
 		return LIBUSB_ERROR_OTHER;
