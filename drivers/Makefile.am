@@ -192,7 +192,7 @@ bcmxcp_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 blazer_usb_SOURCES = blazer.c blazer_usb.c $(LIBUSB_IMPL) usb-common.c
 blazer_usb_LDADD = $(LDADD_DRIVERS_USB) -lm
 
-nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c usb-common.c
+nutdrv_atcl_usb_SOURCES = nutdrv_atcl_usb.c $(LIBUSB_IMPL) usb-common.c
 nutdrv_atcl_usb_LDADD = $(LDADD_DRIVERS_USB)
 
 richcomm_usb_SOURCES = richcomm_usb.c $(LIBUSB_IMPL) usb-common.c

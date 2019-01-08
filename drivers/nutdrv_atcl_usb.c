@@ -25,12 +25,11 @@
 
 #include "main.h"
 #include "bool.h"
-#include "usb-common.h"
-#include "str.h"
+#include "nut_libusb.h"
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.28"
+#define DRIVER_VERSION	"1.29"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -40,9 +39,6 @@ upsdrv_info_t upsdrv_info = {
 	DRV_EXPERIMENTAL,
 	{ NULL }
 };
-
-/** @brief Whether libusb has been successfully initialised or not. */
-static bool_t	inited_libusb = FALSE;
 
 #define STATUS_ENDPOINT		(LIBUSB_ENDPOINT_IN  | 1)
 #define SHUTDOWN_ENDPOINT	(LIBUSB_ENDPOINT_OUT | 2)
@@ -192,205 +188,23 @@ static void usb_comm_good(void)
 	comm_failures = 0;
 }
 
-/*
- * Callback that is called by usb_device_open() that handles USB device
- * settings prior to accepting the devide. At the very least claim the
- * device here. Detaching the kernel driver will be handled by the
- * caller, don't do this here. Return < 0 on error, 0 or higher on
- * success.
- */
-static int driver_callback(libusb_device_handle *handle, USBDevice_t *device)
+/** @brief Try to open a USB device matching @ref device_matcher.
+ *
+ * If @ref udev refers to an already opened device (i.e. it is not `NULL`), it is closed before attempting the reopening.
+ *
+ * @return @ref TRUE, with @ref udev being the handle of the opened device, and with @ref usbdevice filled, on success,
+ * @return @ref FALSE, with @ref udev being `NULL`, on failure. */
+static bool_t	open_device(void)
 {
-	int ret;
+	int	ret;
 
-	if ((ret = libusb_set_configuration(handle, 1)) != LIBUSB_SUCCESS) {
-		upslogx(LOG_WARNING, "Can't set USB configuration: %s", libusb_strerror(ret));
-		return -1;
-	}
-
-	if ((ret = libusb_claim_interface(handle, 0)) != LIBUSB_SUCCESS) {
-		upslogx(LOG_WARNING, "Can't claim USB interface: %s", libusb_strerror(ret));
-		return -1;
-	}
+	ret = usb_subdriver.open(&udev, &usbdevice, &device_matcher, 1, NULL);
+	if (ret != LIBUSB_SUCCESS)
+		return FALSE;
 
 	/* TODO: HID SET_IDLE to 0 (not necessary?) */
 
-	return 1;
-}
-
-static void usb_device_close(libusb_device_handle *handle)
-{
-	if (!handle)
-		return;
-
-	/* libusb_release_interface() sometimes blocks and goes into uninterruptible sleep. So don't do it. */
-/*	libusb_release_interface(handle, 0);	*/
-	libusb_close(handle);
-}
-
-static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, USBDeviceMatcher_t *matcher,
-	int (*callback)(libusb_device_handle *handle, USBDevice_t *device))
-{
-	int		  ret;
-	libusb_device	**devlist;
-	ssize_t		  devcount,
-			  devnum;
-
-	/* If device is still open, close it. */
-	if (*handlep) {
-		libusb_close(*handlep);
-		/* Also, reset the handle now, to avoid possible problems
-		 * (e.g. in case we exit() before the reset at the end of this function takes place,
-		 * upsdrv_cleanup() may attempt to libusb_close() the device again, if not nullified) */
-		*handlep = NULL;
-	}
-
-	devcount = libusb_get_device_list(NULL, &devlist);
-	if (devcount < 0)
-		upsdebugx(2, "Could not get the list of USB devices (%s).", libusb_strerror(devcount));
-
-	for (devnum = 0; devnum < devcount; devnum++) {
-
-		libusb_device			*dev = devlist[devnum];
-		libusb_device_handle		*handle;
-		USBDeviceMatcher_t		*m;
-		struct libusb_device_descriptor	 dev_desc;
-		int				 i;
-		char				 string[SMALLBUF];
-		uint8_t				 bus;
-
-		ret = libusb_get_device_descriptor(dev, &dev_desc);
-		if (ret != LIBUSB_SUCCESS) {
-			upsdebugx(2, "Unable to get DEVICE descriptor (%s).", libusb_strerror(ret));
-			continue;
-		}
-
-		ret = libusb_open(dev, &handle);
-		if (ret != LIBUSB_SUCCESS) {
-			upsdebugx(4, "Failed to open USB device, skipping: %s", libusb_strerror(ret));
-			continue;
-		}
-		*handlep = handle;
-
-		/* collect the identifying information of this
-		   device. Note that this is safe, because
-		   there's no need to claim an interface for
-		   this (and therefore we do not yet need to
-		   detach any kernel drivers). */
-
-		free(device->Vendor);
-		free(device->Product);
-		free(device->Serial);
-		free(device->Bus);
-		memset(device, 0, sizeof(*device));
-
-		device->VendorID = dev_desc.idVendor;
-		device->ProductID = dev_desc.idProduct;
-
-		bus = libusb_get_bus_number(dev);
-		snprintf(string, sizeof(string), "%03u", bus);
-		if ((device->Bus = strdup(string)) == NULL)
-			goto oom_error;
-
-		if (dev_desc.iManufacturer) {
-			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iManufacturer, (unsigned char *)string, sizeof(string));
-			if (ret > 0 && *str_trim_space(string) && (device->Vendor = strdup(string)) == NULL)
-				goto oom_error;
-		}
-
-		if (dev_desc.iProduct) {
-			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iProduct, (unsigned char *)string, sizeof(string));
-			if (ret > 0 && *str_trim_space(string) && (device->Product = strdup(string)) == NULL)
-				goto oom_error;
-		}
-
-		if (dev_desc.iSerialNumber) {
-			ret = libusb_get_string_descriptor_ascii(handle, dev_desc.iSerialNumber, (unsigned char *)string, sizeof(string));
-			if (ret > 0 && *str_trim_space(string) && (device->Serial = strdup(string)) == NULL)
-				goto oom_error;
-		}
-
-		upsdebugx(4, "- VendorID     : %04x", device->VendorID);
-		upsdebugx(4, "- ProductID    : %04x", device->ProductID);
-		upsdebugx(4, "- Manufacturer : %s", device->Vendor ? device->Vendor : "unknown");
-		upsdebugx(4, "- Product      : %s", device->Product ? device->Product : "unknown");
-		upsdebugx(4, "- Serial Number: %s", device->Serial ? device->Serial : "unknown");
-		upsdebugx(4, "- Bus          : %s", device->Bus);
-
-		for (m = matcher; m; m = m->next) {
-			switch (m->match_function(device, m->privdata))
-			{
-			case 0:
-				upsdebugx(4, "Device does not match - skipping");
-				goto next_device;
-			case -1:
-				libusb_free_device_list(devlist, 1);
-				fatal_with_errno(EXIT_FAILURE, "matcher");
-			case -2:
-				upsdebugx(4, "matcher: unspecified error");
-				goto next_device;
-			}
-		}
-
-#if defined(HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE) && defined(HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER)
-		ret = libusb_kernel_driver_active(udev, 0);
-		/* Is the kernel driver active? Consider the unimplemented return code to be equivalent to inactive here. */
-		if (ret == 1) {
-			upsdebugx(2, "%s: libusb_kernel_driver_active() returned 1 (driver active).", __func__);
-			/* In FreeBSD, currently (FreeBSD from 10.2 to 11.2, at least), it is not necessary to detach the kernel driver.
-			 * Further, the detaching can only be done with root privileges.
-			 * So, don't set the auto-detach flag, or libusb_claim_interface() will fail if the driver is not running as root. */
-#ifndef __FreeBSD__
-			/* Try the auto-detach kernel driver method. */
-			ret = libusb_set_auto_detach_kernel_driver(udev, 1);
-			if (ret != LIBUSB_SUCCESS)
-				upsdebugx(2, "%s: failed to set kernel driver auto-detach driver flag for USB device (%s).", __func__, libusb_strerror(ret));
-			else
-				upsdebugx(2, "%s: successfully set kernel driver auto-detach flag.", __func__);
-#endif	/* __FreeBSD__ */
-		} else {
-			upsdebugx(2, "%s: libusb_kernel_driver_active() returned %d (%s).", __func__, ret, ret ? libusb_strerror(ret) : "no driver active");
-		}
-#endif	/* HAVE_LIBUSB_KERNEL_DRIVER_ACTIVE + HAVE_LIBUSB_SET_AUTO_DETACH_KERNEL_DRIVER */
-
-		for (i = 0; i < 3; i++) {
-
-			ret = callback(handle, device);
-			if (ret >= 0) {
-				upsdebugx(3, "USB device [%04x:%04x] opened", device->VendorID, device->ProductID);
-				libusb_free_device_list(devlist, 1);
-				return ret;
-			}
-#ifdef HAVE_LIBUSB_DETACH_KERNEL_DRIVER
-			/* this method forces device claiming by unbinding
-			 * attached driver... From libhid */
-			if ((ret = libusb_detach_kernel_driver(udev, 0)) != LIBUSB_SUCCESS) {
-				upsdebugx(4, "failed to detach kernel driver from USB device: %s", libusb_strerror(ret));
-			} else {
-				upsdebugx(4, "detached kernel driver from USB device...");
-			}
-#endif
-		}
-
-		libusb_free_device_list(devlist, 1);
-		fatalx(EXIT_FAILURE, "USB device [%04x:%04x] matches, but driver callback failed: %s",
-			device->VendorID, device->ProductID, libusb_strerror(ret));
-
-	next_device:
-		libusb_close(handle);
-		continue;
-
-	oom_error:
-		libusb_free_device_list(devlist, 1);
-		fatal_with_errno(EXIT_FAILURE, "Out of memory");
-
-	}
-
-	*handlep = NULL;
-	libusb_free_device_list(devlist, 1);
-	upsdebugx(3, "No matching USB device found");
-
-	return -1;
+	return TRUE;
 }
 
 /*
@@ -398,17 +212,16 @@ static int usb_device_open(libusb_device_handle **handlep, USBDevice_t *device, 
  */
 void upsdrv_initups(void)
 {
-	int	i,
-		ret;
+	int	i;
 
 	upsdebugx(1, "Searching for USB device...");
 
-	/* libusb base init */
-	if ((ret = libusb_init(NULL)) != LIBUSB_SUCCESS)
-		fatalx(EXIT_FAILURE, "Failed to init libusb (%s).", libusb_strerror(ret));
-	inited_libusb = TRUE;
+	/* Initialise the communication subdriver */
+	usb_subdriver.init();
 
-	for (i = 0; usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback) < 0; i++) {
+	/* Try to open the device */
+
+	for (i = 0; !open_device(); i++) {
 
 		if ((i < 3) && (sleep(5) == 0)) {
 			usb_comm_fail("Can't open USB device, retrying ...");
@@ -430,11 +243,8 @@ void upsdrv_initups(void)
 
 void upsdrv_cleanup(void)
 {
-	if (!inited_libusb)
-		return;
-
-	usb_device_close(udev);
-	libusb_exit(NULL);
+	usb_subdriver.close(udev);
+	usb_subdriver.deinit();
 
 	free(usbdevice.Vendor);
 	free(usbdevice.Product);
@@ -460,13 +270,8 @@ void upsdrv_updateinfo(void)
 	char	reply[STATUS_PACKETSIZE];
 	int	ret;
 
-	if (!udev) {
-		ret = usb_device_open(&udev, &usbdevice, &device_matcher, &driver_callback);
-
-		if (ret < 0) {
-			return;
-		}
-	}
+	if (!udev && !open_device())
+		return;
 
 	ret = query_ups(reply);
 
@@ -474,7 +279,7 @@ void upsdrv_updateinfo(void)
 		usb_comm_fail("Query to UPS failed");
 		dstate_datastale();
 
-		usb_device_close(udev);
+		usb_subdriver.close(udev);
 		udev = NULL;
 
 		return;
