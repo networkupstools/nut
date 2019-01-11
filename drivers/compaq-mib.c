@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.61"
+#define CPQPOWER_MIB_VERSION	"1.62"
 
 #define DEFAULT_ONDELAY			30
 #define DEFAULT_OFFDELAY		20
@@ -82,6 +82,7 @@
 #define CPQPOWER_OID_ALARM_OB         ".1.3.6.1.4.1.232.165.3.7.3.0"     /* UPS-MIB::upsOnBattery */
 #define CPQPOWER_OID_ALARM_LB         ".1.3.6.1.4.1.232.165.3.7.4.0"     /* UPS-MIB::upsLowBattery */
 
+#define IETF_OID_AGENTREV             ".1.3.6.1.2.1.33.1.1.4.0"          /* UPS-MIB::upsIdentAgentSoftwareVersion.0 */
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
@@ -184,6 +185,7 @@ static snmp_info_t cpqpower_mib[] = {
 	 * UPS Firmware Revision :	00.01.0004
 	 * Communication Board Firmware Revision :	00.01.0019 */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", SU_FLAG_STATIC, NULL },
+	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", SU_FLAG_STATIC, NULL },
 	{ "ups.load", 0, 1.0, CPQPOWER_OID_LOAD_LEVEL, "", 0, NULL },
 	{ "ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER, "", SU_OUTPUT_1, NULL },
 	{ "ups.realpower", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL },
