@@ -126,7 +126,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.07"
+#define DRIVER_VERSION		"1.08"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -227,8 +227,11 @@ void upsdrv_updateinfo(void)
 		/* Commit status first, otherwise in daisychain mode, "device.0" may
 		 * clear the alarm count since it has an empty alarm buffer and if there
 		 * is only one device that has alarms! */
+		if (daisychain_enabled == FALSE)
+			alarm_commit();
 		status_commit();
-		alarm_commit();
+		if (daisychain_enabled == TRUE)
+			alarm_commit();
 
 		/* store timestamp */
 		lastpoll = time(NULL);
