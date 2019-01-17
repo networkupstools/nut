@@ -165,7 +165,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.06"
+#define DRIVER_VERSION		"1.07"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3018,11 +3018,11 @@ int su_setOID(int mode, const char *varname, const char *val)
 			if (daisychain_enabled == TRUE) {
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number, item_number);
+						daisychain_device_number -1, item_number);
 				}
 				else {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number, daisychain_device_number);
+						item_number, daisychain_device_number -1);
 				}
 			}
 			else {
