@@ -63,6 +63,7 @@
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
+#include "hpe-pdu-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -97,6 +98,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_rpdu2,
 	&apc_pdu_msp,
 	&emerson_avocent_pdu,
+	&hpe_pdu,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -126,7 +128,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.06"
+#define DRIVER_VERSION		"1.07"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -2728,11 +2730,11 @@ int su_setOID(int mode, const char *varname, const char *val)
 			if (daisychain_enabled == TRUE) {
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number, item_number);
+						daisychain_device_number -1, item_number);
 				}
 				else {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number, daisychain_device_number);
+						item_number, daisychain_device_number -1);
 				}
 			}
 			else {
