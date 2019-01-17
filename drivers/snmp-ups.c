@@ -5,7 +5,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2018	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2015 - 2019	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2016 - 2018	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
@@ -165,7 +165,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.05"
+#define DRIVER_VERSION		"1.06"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -919,14 +919,19 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_OPAQUE:
 		len = pdu->variables->val_len > buf_len - 1 ?
 			buf_len - 1 : pdu->variables->val_len;
-		if (len > 0) {
-			/* Test for hexadecimal values */
-			if (!isprint(pdu->variables->val.string[0]))
-				snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
-			else {
-				memcpy(buf, pdu->variables->val.string, len);
-				buf[len] = '\0';
+		/* Test for hexadecimal values */
+		int hex = 0, x;
+		char *cp;
+		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
+			if (!(isprint(*cp) || isspace(*cp))) {
+				hex = 1;
 			}
+		}
+		if (hex)
+			snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
+		else {
+			memcpy(buf, pdu->variables->val.string, len);
+			buf[len] = '\0';
 		}
 		break;
 	case ASN_INTEGER:
