@@ -165,7 +165,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.08"
+#define DRIVER_VERSION		"1.09"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -2247,6 +2247,9 @@ bool_t daisychain_init()
 		upsdebugx(1, "%s: No device.model entry found.", __func__);
 	}
 
+	upsdebugx(1, "%s: daisychain support is %s", __func__,
+		(daisychain_enabled==TRUE)?"enabled":"disabled");
+
 	return daisychain_enabled;
 }
 
@@ -3019,13 +3022,25 @@ int su_setOID(int mode, const char *varname, const char *val)
 			 * so we have to check if the daisychain is enabled, and if
 			 * the formatting info for it are in 1rst or 2nd position */
 			if (daisychain_enabled == TRUE) {
+				/* Note: daisychain_enabled == TRUE means that we have
+				 * daisychain template. However:
+				 * * when there are multiple devices, offset "-1" applies
+				 *   since device.0 is a fake and actual devices start at
+				 *   index 1
+				 * * when there is only 1 device, offset doesn't apply since
+				 *   the device index is "0"
+				 */
+				int daisychain_offset = 0;
+				if (devices_count > 1)
+					daisychain_offset = -1;
+
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number -1, item_number);
+						daisychain_device_number - daisychain_offset, item_number);
 				}
 				else {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number, daisychain_device_number -1);
+						item_number, daisychain_device_number - daisychain_offset);
 				}
 			}
 			else {
