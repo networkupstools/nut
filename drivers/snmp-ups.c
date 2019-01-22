@@ -71,6 +71,7 @@
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
+#include "hpe-pdu-mib.h"
 #endif /* WITH_DMFMIB */
 
 /* Address API change */
@@ -119,6 +120,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&aphel_genesisII,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched1,	/* This struct comes from : eaton-mib.c */
 	&pulizzi_switched2,	/* This struct comes from : eaton-mib.c */
+	&hpe_pdu,			/* This struct comes from : hpe-pdu-mib.c */
 	&huawei,			/* This struct comes from : huawei-mib.c */
 	&mge,				/* This struct comes from : mge-mib.c */
 	&netvision,			/* This struct comes from : netvision-mib.c */
