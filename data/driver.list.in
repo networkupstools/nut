@@ -448,6 +448,8 @@
 "HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
+"HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 
 "IBM"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
