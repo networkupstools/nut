@@ -37,7 +37,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.40"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.41"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -586,7 +586,7 @@ static int	nut_libusb_open(
 
 	*udevp = NULL;
 	libusb_free_device_list(devlist, 1);
-	upsdebugx(NUT_USB_DBG_DEVICE, "%s: no appropriate HID device found.", __func__);
+	upsdebugx(NUT_USB_DBG_DEVICE, "%s: no appropriate USB device found.", __func__);
 	fflush(stdout);
 
 	return LIBUSB_ERROR_NOT_FOUND;
