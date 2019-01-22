@@ -33,7 +33,7 @@
 #include "mge-xml.h"
 #include "main.h" /* for testvar() */
 
-#define MGE_XML_VERSION		"MGEXML/0.30"
+#define MGE_XML_VERSION		"MGEXML/0.31"
 
 #define MGE_XML_INITUPS		"/"
 #define MGE_XML_INITINFO	"/mgeups/product.xml /product.xml /ws/product.xml"
@@ -544,6 +544,7 @@ static const char *mge_sensitivity_info(const char *val)
 
 static const char *mge_test_result_info(const char *val)
 {
+	STATUS_CLR(CAL);
 	switch (atoi(val))
 	{
 	case 1:
@@ -555,6 +556,7 @@ static const char *mge_test_result_info(const char *val)
 	case 4:
 		return "aborted";
 	case 5:
+		STATUS_SET(CAL);
 		return "in progress";
 	case 6:
 		return "no test initiated";
