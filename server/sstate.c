@@ -25,6 +25,7 @@
 #include "timehead.h"
 
 #include "sstate.h"
+#include "poller.h"
 #include "upstype.h"
 
 #include <fcntl.h>
@@ -218,6 +219,7 @@ int sstate_connect(upstype_t *ups)
 	}
 
 	pconf_init(&ups->sock_ctx, NULL);
+	poller_register_fd(fd, HANDLER_DRIVER, ups);
 
 	ups->dumpdone = 0;
 	ups->stale = 0;
@@ -244,6 +246,7 @@ void sstate_disconnect(upstype_t *ups)
 
 	pconf_finish(&ups->sock_ctx);
 
+	poller_unregister_fd(ups->sock_fd);
 	close(ups->sock_fd);
 	ups->sock_fd = -1;
 }
