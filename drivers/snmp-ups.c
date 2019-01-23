@@ -2744,7 +2744,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 				 */
 				int daisychain_offset = 0;
 				if (devices_count > 1)
-					daisychain_offset = -1;
+					daisychain_offset = 1;
 
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
