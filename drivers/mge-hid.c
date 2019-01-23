@@ -38,7 +38,7 @@
 #include "mge-hid.h"
 #include <math.h>
 
-#define MGE_HID_VERSION		"MGE HID 1.43"
+#define MGE_HID_VERSION		"MGE HID 1.44"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
