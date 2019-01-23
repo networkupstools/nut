@@ -926,7 +926,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			buf_len - 1 : pdu->variables->val_len;
 		/* Test for hexadecimal values */
 		int hex = 0, x;
-		char *cp;
+		u_char *cp;
 		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
 			if (!(isprint(*cp) || isspace(*cp))) {
 				hex = 1;
@@ -1488,7 +1488,7 @@ mib2nut_info_t *match_sysoid()
 				continue;
 
 			/* Clear variables */
-			memset(mib2nut_sysOID, 0, MAX_OID_LEN);
+			memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
 			mib2nut_sysOID_len = MAX_OID_LEN;
 
 			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
