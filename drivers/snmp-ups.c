@@ -1571,7 +1571,6 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 	new_instance->dfl = info_template->dfl;
 	new_instance->flags = info_template->flags;
 	new_instance->oid2info = info_template->oid2info;
-	new_instance->setvar = info_template->setvar;
 
 	upsdebugx(2, "instantiate_info: template instantiated");
 	return new_instance;
@@ -2567,10 +2566,6 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				}
 				free_info(tmp_info_p);
 				return FALSE;
-			}
-			if (su_info_p->flags & SU_FLAG_SETINT) {
-			    	upsdebugx(1, "setvar %s", su_info_p->OID);
-			    	*su_info_p->setvar = value;
 			}
 			/* Check if there is a value to be looked up */
 			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
