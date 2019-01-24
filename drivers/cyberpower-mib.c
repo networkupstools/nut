@@ -24,7 +24,7 @@
 
 #include "cyberpower-mib.h"
 
-#define CYBERPOWER_MIB_VERSION		"0.1"
+#define CYBERPOWER_MIB_VERSION		"0.2"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808"
@@ -44,17 +44,17 @@ static info_lkp_t cyberpower_power_status[] = {
 static snmp_info_t cyberpower_mib[] = {
 	/* Device page */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ups",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "CYBERPOWER",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, CYBERPOWER_OID_MODEL_NAME,
-		"CyberPower", SU_FLAG_STATIC, NULL, NULL },
+		"CyberPower", SU_FLAG_STATIC, NULL },
 
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.1.2.3.0",
 		"", SU_FLAG_STATIC, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.1.2.1.0",
-		"", SU_FLAG_STATIC,   NULL },
+		"", SU_FLAG_STATIC, NULL },
 	{ "ups.mfr.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.1.2.2.0", "",
 		0, NULL },
 
@@ -85,9 +85,8 @@ static snmp_info_t cyberpower_mib[] = {
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.1.0", "",
 		0, NULL },
 
-
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
+	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 } ;
 
 mib2nut_info_t	cyberpower = { "cyberpower", CYBERPOWER_MIB_VERSION, NULL,
