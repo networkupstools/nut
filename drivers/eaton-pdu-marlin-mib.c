@@ -302,8 +302,8 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 	/* Note: the below gives the number of input, not the number of phase(s)! */
 	/* inputCount.0; Value (Integer): 1
-	{ "input.phases", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0",
-		NULL, SU_FLAG_STATIC | SU_FLAG_SETINT, NULL, &input_phases }, */
+	{ "input.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.20.0",
+		NULL, SU_FLAG_STATIC, NULL, NULL }, */
 	/* Note: for daisychain mode, we must handle phase(s) per device,
 	 * not as a whole. In case of daisychain, support of the UNIQUE
 	 * field is not yet implemented (FIXME) so the last resolved OID
