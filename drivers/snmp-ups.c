@@ -128,7 +128,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.09"
+#define DRIVER_VERSION		"1.10"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -1094,7 +1094,7 @@ static void disable_transfer_oids(void)
 }
 
 /* Universal function to add or update info element.
- * If value is NULL, use the default one (su_info_p->dfl) */
+ * If value is NULL, use the default one (su_info_p->dfl) if provided */
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
@@ -1138,8 +1138,12 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	{
 		if (value != NULL)
 			dstate_setinfo(info_type, "%s", value);
-		else
+		else if (su_info_p->dfl != NULL)
 			dstate_setinfo(info_type, "%s", su_info_p->dfl);
+		else {
+			upsdebugx(3, "%s: no value nor default provided, aborting...", __func__);
+			return;
+		}
 
 		dstate_setflags(info_type, su_info_p->info_flags);
 		dstate_setaux(info_type, su_info_p->info_len);
@@ -2788,7 +2792,14 @@ int su_setOID(int mode, const char *varname, const char *val)
 		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
 	} else {
 		if (mode==SU_MODE_INSTCMD) {
-			status = nut_snmp_set_int(su_info_p->OID, val ? atoi(val) : su_info_p->info_len);
+			/* Sanity check: commands should either have a value or a default */
+			if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
+				upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
+				retval = STAT_SET_INVALID;
+			}
+			/* FIXME: switch to a generic nut_snmp_set(oid, char *value)
+			 * to simplify handling and avoid atoi(NULL) */
+			status = nut_snmp_set_int(su_info_p->OID, val ? atoi(val) : atoi(su_info_p->dfl));
 		}
 		else {
 			/* non string data may imply a value lookup */

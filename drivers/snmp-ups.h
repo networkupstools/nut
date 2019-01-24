@@ -119,8 +119,7 @@ typedef struct {
 typedef struct {
 	const char   *info_type;  /* INFO_ or CMD_ element */
 	int           info_flags; /* flags to set in addinfo */
-	double        info_len;   /* length of strings if ST_FLAG_STRING,
-	                           * cmd value if CMD, multiplier otherwise. */
+	double        info_len;   /* length of strings if ST_FLAG_STRING, multiplier otherwise. */
 	const char   *OID;        /* SNMP OID or NULL */
 	const char   *dfl;        /* default value */
 	unsigned long flags;      /* snmp-ups internal flags */

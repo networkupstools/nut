@@ -222,8 +222,7 @@ generate_C() {
 		 *
 		 *	info_type:	NUT INFO_ or CMD_ element name
 		 *	info_flags:	flags to set in addinfo
-		 *	info_len:	length of strings if STR
-		 *				cmd value if CMD, multiplier otherwise
+		 *	info_len:	length of strings if ST_FLAG_STRING, multiplier otherwise
 		 *	OID: SNMP OID or NULL
 		 *	dfl: default value
 		 *	flags: snmp-ups internal flags (FIXME: ...)
