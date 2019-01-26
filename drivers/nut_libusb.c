@@ -37,7 +37,7 @@
  * @{ *************************************************************************/
 
 #define NUT_USB_DRIVER_NAME	"USB communication driver"			/**< @brief Name of this driver. */
-#define NUT_USB_DRIVER_VERSION	"0.41"						/**< @brief Version of this driver. */
+#define NUT_USB_DRIVER_VERSION	"0.42"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	NUT_USB_DRIVER_NAME,
@@ -65,6 +65,14 @@ static const int	nut_usb_if_num = 0;
  *
  * Initialisation and deinitialisation (of libusb, i.e. libusb_init() and libusb_exit(), and of other bits and pieces) are actually done only when this counter is/reaches zero. */
 static unsigned long	nut_usb_initcnt = 0;
+
+/** @brief List of available USB devices.
+ *
+ * We define this as a global, in case we can't control the exact point of exit from nut_libusb_open()
+ * (e.g. exit() called by the caller in usb_communication_subdriver_t::open()'s *callback*).
+ *
+ * Once free()'d, it shall be reset to `NULL`. */
+static libusb_device	**nut_usb_devlist = NULL;
 
 /** @brief Debug levels for upsdebugx()/upsdebug_hex() calls.
  * @todo Actually make sense out of these and/or standardise the use of debug levels in all the tree
@@ -225,6 +233,16 @@ static int	nut_usb_logerror(
 	}
 }
 
+/** @brief free() @ref nut_usb_devlist (and make it `NULL`). */
+static void	nut_usb_free_devlist(void)
+{
+	if (!nut_usb_devlist)
+		return;
+
+	libusb_free_device_list(nut_usb_devlist, 1);
+	nut_usb_devlist = NULL;
+}
+
 /** @} ************************************************************************/
 
 
@@ -263,6 +281,10 @@ static void	nut_libusb_deinit(void)
 	if (--nut_usb_initcnt)
 		return;
 
+	/* free() the list of USB devices, if not already done. */
+	if (nut_usb_devlist)
+		nut_usb_free_devlist();
+
 	libusb_exit(NULL);
 }
 
@@ -298,9 +320,14 @@ static int	nut_libusb_open(
 		*udevp = NULL;
 	}
 
+	/* This should not happen */
+	if (nut_usb_devlist)
+		return LIBUSB_ERROR_OTHER;
+
 	devcount = libusb_get_device_list(NULL, &devlist);
 	if (devcount < 0)
 		upsdebugx(NUT_USB_DBG_DEVICE, "%s: could not get the list of USB devices (%s).", __func__, libusb_strerror(devcount));
+	nut_usb_devlist = devlist;
 
 	/* Process available devices (if any) until we get a match */
 	for (devnum = 0; devnum < devcount; devnum++) {
@@ -404,7 +431,7 @@ static int	nut_libusb_open(
 				goto next_device;
 			}
 			if (ret == -1) {
-				libusb_free_device_list(devlist, 1);
+				nut_usb_free_devlist();
 				fatal_with_errno(EXIT_FAILURE, "matcher");
 			}
 			if (ret == -2) {
@@ -427,7 +454,7 @@ static int	nut_libusb_open(
 		/* Now that we have matched (and configured) the device we wanted, claim it. */
 		ret = nut_usb_claim_interface(udev);
 		if (ret != LIBUSB_SUCCESS) {
-			libusb_free_device_list(devlist, 1);
+			nut_usb_free_devlist();
 			fatalx(EXIT_FAILURE, "Can't claim USB device %04x:%04x (%s).", curDevice->VendorID, curDevice->ProductID, libusb_strerror(ret));
 		}
 	/*	if_claimed = 1;	*/
@@ -438,7 +465,7 @@ static int	nut_libusb_open(
 
 		/* Done, if no callback is provided */
 		if (!callback) {
-			libusb_free_device_list(devlist, 1);
+			nut_usb_free_devlist();
 			return LIBUSB_SUCCESS;
 		}
 
@@ -567,7 +594,7 @@ static int	nut_libusb_open(
 
 		upsdebugx(NUT_USB_DBG_DEVICE, "%s: HID device found.", __func__);
 		fflush(stdout);
-		libusb_free_device_list(devlist, 1);
+		nut_usb_free_devlist();
 
 		return LIBUSB_SUCCESS;
 
@@ -579,13 +606,13 @@ static int	nut_libusb_open(
 		continue;
 
 	oom_error:
-		libusb_free_device_list(devlist, 1);
+		nut_usb_free_devlist();
 		fatal_with_errno(EXIT_FAILURE, "Out of memory");
 
 	}
 
 	*udevp = NULL;
-	libusb_free_device_list(devlist, 1);
+	nut_usb_free_devlist();
 	upsdebugx(NUT_USB_DBG_DEVICE, "%s: no appropriate USB device found.", __func__);
 	fflush(stdout);
 
