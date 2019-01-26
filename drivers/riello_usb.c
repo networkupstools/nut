@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.10"
+#define DRIVER_VERSION	"0.11"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -363,6 +363,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 		}
 		if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
 			upsdebugx(1, "Device reset handled");
+		/* FALLTHRU */
 	case LIBUSB_ERROR_NO_DEVICE:
 	case LIBUSB_ERROR_ACCESS:
 	case LIBUSB_ERROR_IO:

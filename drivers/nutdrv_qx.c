@@ -34,7 +34,7 @@
  *
  */
 
-#define DRIVER_VERSION	"0.37"
+#define DRIVER_VERSION	"0.38"
 
 #include "bool.h"
 #include "main.h"
@@ -2175,6 +2175,7 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 			}
 			if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
 				upsdebugx(1, "Device reset handled");
+			/* FALLTHRU */
 		case LIBUSB_ERROR_NO_DEVICE:
 		case LIBUSB_ERROR_ACCESS:
 		case LIBUSB_ERROR_IO:

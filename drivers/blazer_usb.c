@@ -29,7 +29,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.18"
+#define DRIVER_VERSION	"0.19"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -434,6 +434,7 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 		}
 		if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
 			upsdebugx(1, "Device reset handled");
+		/* FALLTHRU */
 	case LIBUSB_ERROR_NO_DEVICE:
 	case LIBUSB_ERROR_ACCESS:
 	case LIBUSB_ERROR_IO:
