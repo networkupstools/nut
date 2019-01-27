@@ -35,7 +35,7 @@
  * @{ *************************************************************************/
 
 #define SHUT_DRIVER_NAME	"SHUT communication driver"			/**< @brief Name of this driver. */
-#define SHUT_DRIVER_VERSION	"0.94"						/**< @brief Version of this driver. */
+#define SHUT_DRIVER_VERSION	"0.95"						/**< @brief Version of this driver. */
 
 upsdrv_info_t	comm_upsdrv_info = {
 	SHUT_DRIVER_NAME,
@@ -978,6 +978,44 @@ static int	shut_get_string_descriptor_ascii(
  * Initialisation and deinitialisation are actually done only when this counter is/reaches zero. */
 static unsigned long	libshut_initcnt = 0;
 
+/** @brief Log errors, if any, of libshut_get_report(), libshut_set_report(), libshut_get_string(), libshut_get_interrupt().
+ *
+ * In case of fatal errors, exit() is called.
+ *
+ * @return *ret*. */
+static int	libshut_logerror(
+	const int	 ret,	/**< [in] a shut_*() function return code (negative, possibly a @ref libusb_error "LIBUSB_ERROR" code, on errors) */
+	const char	*desc	/**< [in] text to print alongside the short description of the error */
+) {
+	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %p)", __func__, ret, desc);
+
+	if (ret >= 0)
+		return ret;
+
+	switch (ret)
+	{
+	case LIBUSB_ERROR_NO_MEM:
+		fatalx(EXIT_FAILURE, "Out of memory.");
+	case LIBUSB_ERROR_INVALID_PARAM:
+	case LIBUSB_ERROR_INTERRUPTED:
+	case LIBUSB_ERROR_TIMEOUT:
+	case LIBUSB_ERROR_OVERFLOW:
+		upsdebugx(SHUT_DBG_SHUT, "%s: %s.", desc, libusb_strerror(ret));
+		return ret;
+	case LIBUSB_ERROR_BUSY:
+	case LIBUSB_ERROR_NO_DEVICE:
+	case LIBUSB_ERROR_ACCESS:
+	case LIBUSB_ERROR_IO:
+	case LIBUSB_ERROR_NOT_FOUND:
+	case LIBUSB_ERROR_PIPE:
+	case LIBUSB_ERROR_NOT_SUPPORTED:
+	case LIBUSB_ERROR_OTHER:
+	default:
+		upslogx(LOG_DEBUG, "%s: %s.", desc, libusb_strerror(ret));
+		return ret;
+	}
+}
+
 /** @brief See shut_communication_subdriver_t::init(). */
 static void	libshut_init(void)
 {
@@ -1238,12 +1276,14 @@ static int	libshut_get_report(
 	unsigned char	*raw_buf,
 	int		 ReportSize
 ) {
+	int	ret;
+
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %x, %p, %d)", __func__, fd, ReportId, raw_buf, ReportSize);
 
 	if (fd < 1)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
-	return shut_control_transfer(
+	ret = shut_control_transfer(
 		fd,
 		LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
 		HID_REQUEST_GET_REPORT,
@@ -1253,6 +1293,8 @@ static int	libshut_get_report(
 		ReportSize,
 		SHUT_TIMEOUT
 	);
+
+	return libshut_logerror(ret, __func__);
 }
 
 /** @brief See shut_communication_subdriver_t::set_report(). */
@@ -1262,12 +1304,14 @@ static int	libshut_set_report(
 	unsigned char	*raw_buf,
 	int		 ReportSize
 ) {
+	int	ret;
+
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %x, %p, %d)", __func__, fd, ReportId, raw_buf, ReportSize);
 
 	if (fd < 1)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
-	return shut_control_transfer(
+	ret = shut_control_transfer(
 		fd,
 		LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_CLASS | LIBUSB_RECIPIENT_INTERFACE,
 		HID_REQUEST_SET_REPORT,
@@ -1277,6 +1321,8 @@ static int	libshut_set_report(
 		ReportSize,
 		SHUT_TIMEOUT
 	);
+
+	return libshut_logerror(ret, __func__);
 }
 
 /** @brief See shut_communication_subdriver_t::get_string(). */
@@ -1286,12 +1332,16 @@ static int	libshut_get_string(
 	char	*buf,
 	size_t	 buflen
 ) {
+	int	ret;
+
 	upsdebugx(SHUT_DBG_FUNCTION_CALLS, "%s(%d, %d, %p, %lu)", __func__, fd, StringIdx, buf, buflen);
 
 	if (fd < 1)
 		return LIBUSB_ERROR_INVALID_PARAM;
 
-	return shut_get_string_descriptor_ascii(fd, StringIdx, (unsigned char *)buf, buflen);
+	ret = shut_get_string_descriptor_ascii(fd, StringIdx, (unsigned char *)buf, buflen);
+
+	return libshut_logerror(ret, __func__);
 }
 
 /** @brief See shut_communication_subdriver_t::get_interrupt(). */
@@ -1312,7 +1362,7 @@ static int	libshut_get_interrupt(
 	ret = shut_interrupt_transfer(fd, LIBUSB_ENDPOINT_IN | 1, buf, bufsize, &bufsize, timeout);
 
 	if (ret != LIBUSB_SUCCESS)
-		return ret;
+		return libshut_logerror(ret, __func__);
 
 	return bufsize;
 }
