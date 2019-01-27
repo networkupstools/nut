@@ -29,7 +29,7 @@
 #include "blazer.h"
 
 #define DRIVER_NAME	"Megatec/Q1 protocol USB driver"
-#define DRIVER_VERSION	"0.19"
+#define DRIVER_VERSION	"0.20"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -122,8 +122,11 @@ static int phoenix_command(const char *cmd, char *buf, size_t buflen)
 			continue;
 		}
 
-		if (ret == LIBUSB_ERROR_PIPE)
-			libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1);
+		if (ret == LIBUSB_ERROR_NO_MEM)
+			return ret;
+
+		if (ret == LIBUSB_ERROR_PIPE && libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1) == LIBUSB_ERROR_NO_MEM)
+			return LIBUSB_ERROR_NO_MEM;
 
 		upsdebugx(3, "flush: %s", libusb_strerror(ret));
 		break;
@@ -428,11 +431,15 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 	case LIBUSB_ERROR_BUSY:
 		fatalx(EXIT_FAILURE, "Got disconnected by another driver (%s).", libusb_strerror(ret));
 	case LIBUSB_ERROR_PIPE:
-		if (libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1) == LIBUSB_SUCCESS) {
+		if ((ret = libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1)) == LIBUSB_SUCCESS) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-		if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
+		/* FALLTHRU */
+	case LIBUSB_ERROR_NO_MEM:
+		if (ret == LIBUSB_ERROR_NO_MEM || (ret = libusb_reset_device(udev)) == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
+		if (ret == LIBUSB_SUCCESS)
 			upsdebugx(1, "Device reset handled");
 		/* FALLTHRU */
 	case LIBUSB_ERROR_NO_DEVICE:
@@ -613,6 +620,8 @@ void upsdrv_initups(void)
 		 *   more information on this.
 		 * This should allow automatic application of the workaround */
 		ret = libusb_get_string_descriptor(udev, 0, 0, tbuf, sizeof(tbuf));
+		if (ret == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
 		if (ret >= 4) {
 			langid = tbuf[2] | (tbuf[3] << 8);
 			upsdebugx(1, "First supported language ID: 0x%x (please report to the NUT maintainer!)", langid);
