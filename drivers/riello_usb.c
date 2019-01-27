@@ -34,7 +34,7 @@
 #include "riello.h"
 
 #define DRIVER_NAME	"Riello USB driver"
-#define DRIVER_VERSION	"0.11"
+#define DRIVER_VERSION	"0.12"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -317,6 +317,8 @@ static int driver_callback(libusb_device_handle *handle, USBDevice_t *device, un
 
 	if ((ret = libusb_claim_interface(handle, 0)) != LIBUSB_SUCCESS) {
 		upslogx(LOG_WARNING, "Can't claim USB interface: %s", libusb_strerror(ret));
+		if (ret == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
 		return -1;
 	}
 
@@ -357,11 +359,15 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	case LIBUSB_ERROR_BUSY:
 		fatalx(EXIT_FAILURE, "Got disconnected by another driver (%s).", libusb_strerror(ret));
 	case LIBUSB_ERROR_PIPE:
-		if (libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1) == LIBUSB_SUCCESS) {
+		if ((ret = libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1)) == LIBUSB_SUCCESS) {
 			upsdebugx(1, "Stall condition cleared");
 			break;
 		}
-		if (libusb_reset_device(udev) == LIBUSB_SUCCESS)
+		/* FALLTHRU */
+	case LIBUSB_ERROR_NO_MEM:
+		if (ret == LIBUSB_ERROR_NO_MEM || (ret = libusb_reset_device(udev)) == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
+		if (ret == LIBUSB_SUCCESS)
 			upsdebugx(1, "Device reset handled");
 		/* FALLTHRU */
 	case LIBUSB_ERROR_NO_DEVICE:
@@ -737,7 +743,9 @@ int start_ups_comm()
 
 	upsdebugx (2, "entering start_ups_comm()\n");
 
-	cypress_setfeatures();
+	/* FIXME: why cypress_setfeatures() return code was always ignored? */
+	if (cypress_setfeatures() == LIBUSB_ERROR_NO_MEM)
+		fatalx(EXIT_FAILURE, "Out of memory.");
 
 	length = riello_prepare_gi(&bufOut[0]);
 
