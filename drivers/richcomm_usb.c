@@ -29,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"Richcomm dry-contact to USB driver"
-#define DRIVER_VERSION	"0.23"
+#define DRIVER_VERSION	"0.24"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -103,6 +103,9 @@ static int execute_and_retrieve_query(char *query, char *reply)
 		1000
 	);
 
+	if (ret == LIBUSB_ERROR_NO_MEM)
+		fatalx(EXIT_FAILURE, "Out of memory.");
+
 	if (ret <= 0) {
 		upsdebugx(3, "send: %s", ret ? libusb_strerror(ret) : "timeout");
 		return 0;
@@ -111,6 +114,9 @@ static int execute_and_retrieve_query(char *query, char *reply)
 	upsdebug_hex(3, "send", query, ret);
 
 	ret = libusb_interrupt_transfer(udev, REPLY_ENDPOINT, (unsigned char *)reply, REPLY_PACKETSIZE, &transferred, 1000);
+
+	if (ret == LIBUSB_ERROR_NO_MEM)
+		fatalx(EXIT_FAILURE, "Out of memory.");
 
 	if (ret != LIBUSB_SUCCESS || transferred == 0) {
 		upsdebugx(3, "read: %s", ret ? libusb_strerror(ret) : "timeout");
@@ -197,6 +203,8 @@ static bool_t	open_device(void)
 		return FALSE;
 
 	ret = libusb_clear_halt(udev, LIBUSB_ENDPOINT_IN | 1);
+	if (ret == LIBUSB_ERROR_NO_MEM)
+		fatalx(EXIT_FAILURE, "Out of memory.");
 	if (ret != LIBUSB_SUCCESS) {
 		upsdebugx(1, "%s: can't reset USB endpoint: %s.", __func__, libusb_strerror(ret));
 		usb_subdriver.close(udev);
