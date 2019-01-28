@@ -29,7 +29,7 @@
 
 /* driver version */
 #define DRIVER_NAME	"'ATCL FOR UPS' USB driver"
-#define DRIVER_VERSION	"1.29"
+#define DRIVER_VERSION	"1.30"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -129,6 +129,9 @@ static int query_ups(char *reply)
 	int	ret, transferred;
 
 	ret = libusb_interrupt_transfer(udev, STATUS_ENDPOINT, (unsigned char *)reply, STATUS_PACKETSIZE, &transferred, ATCL_USB_TIMEOUT);
+
+	if (ret == LIBUSB_ERROR_NO_MEM)
+		fatalx(EXIT_FAILURE, "Out of memory.");
 
 	if (ret != LIBUSB_SUCCESS || transferred == 0) {
 		upsdebugx(2, "status interrupt read: %s", ret ? libusb_strerror(ret) : "timeout");
@@ -319,23 +322,24 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	const char	shutdown_packet[SHUTDOWN_PACKETSIZE] = { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-	int		ret, transferred;
+	int		i, ret, transferred;
 
 	upslogx(LOG_DEBUG, "%s: attempting to call libusb_interrupt_transfer(01 00 00 00 00 00 00 00)", __func__);
 
-	ret = libusb_interrupt_transfer(udev, SHUTDOWN_ENDPOINT, (unsigned char *)shutdown_packet, SHUTDOWN_PACKETSIZE, &transferred, ATCL_USB_TIMEOUT);
+	for (i = 1; i < 3; i++) {
 
-	if (ret != LIBUSB_SUCCESS || transferred == 0) {
-		upslogx(LOG_NOTICE, "%s: first libusb_interrupt_transfer() failed: %s", __func__, ret ? libusb_strerror(ret) : "timeout");
-	}
+		ret = libusb_interrupt_transfer(udev, SHUTDOWN_ENDPOINT, (unsigned char *)shutdown_packet, SHUTDOWN_PACKETSIZE, &transferred, ATCL_USB_TIMEOUT);
 
-	/* Totally guessing from the .pcap file here. TODO: configurable delay? */
-	usleep(170*1000);
+		if (ret == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
 
-	ret = libusb_interrupt_transfer(udev, SHUTDOWN_ENDPOINT, (unsigned char *)shutdown_packet, SHUTDOWN_PACKETSIZE, &transferred, ATCL_USB_TIMEOUT);
+		if (ret != LIBUSB_SUCCESS || transferred == 0)
+			upslogx(i == 1 ? LOG_NOTICE : LOG_ERR, "%s: libusb_interrupt_transfer() #%d failed: %s", __func__, i, ret ? libusb_strerror(ret) : "timeout");
 
-	if (ret != LIBUSB_SUCCESS || transferred == 0) {
-		upslogx(LOG_ERR, "%s: second libusb_interrupt_transfer() failed: %s", __func__, ret ? libusb_strerror(ret) : "timeout");
+		/* Totally guessing from the .pcap file here. TODO: configurable delay? */
+		if (i == 1)
+			usleep(170*1000);
+
 	}
 
 }
