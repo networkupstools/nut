@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.49"
+#define EATON_MARLIN_MIB_VERSION	"0.50"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -945,7 +945,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.load.cycle", 0, DO_CYCLE, AR_OID_OUTLET_STATUS ".0",
 		NULL, SU_TYPE_CMD, NULL, NULL }, */
 
-	/* TODO: handle delays */
+	/* Delays handling:
+	 * 0-n :Time in seconds until the group command is issued
+	 * -1:Cancel a pending group-level Off/On/Reboot command */
 	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
@@ -976,7 +978,15 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
 		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
 
-	/* TODO: handle delays
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	{ "outlet.%i.load.off.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.load.on.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.load.cycle.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+
+	/* Delays handling:
 	 * 0-n :Time in seconds until the group command is issued
 	 * -1:Cancel a pending group-level Off/On/Reboot command */
 	/* groupControlOffCmd.0.1 = Integer: -1 */
@@ -991,8 +1001,18 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "outlet.group.%i.load.cycle", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
-
-// FIXME: miss load.{on,off}.delay
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	{ "outlet.group.%i.load.off.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.5.6.1.3.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+	/* groupControl0nCmd.0.1 = Integer: -1 */
+	{ "outlet.group.%i.load.on.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
+	/* groupControlRebootCmd.0.1 = Integer: -1 */
+	{ "outlet.group.%i.load.cycle.delay", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET_GROUP | SU_TYPE_DAISY_1, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

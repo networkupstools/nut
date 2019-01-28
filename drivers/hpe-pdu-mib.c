@@ -24,7 +24,7 @@
 #include "hpe-pdu-mib.h"
 #include "dstate.h"
 
-#define HPE_EPDU_MIB_VERSION      "0.2"
+#define HPE_EPDU_MIB_VERSION      "0.30"
 #define HPE_EPDU_MIB_SYSOID       ".1.3.6.1.4.1.232.165.7"
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 
@@ -37,7 +37,7 @@ static info_lkp_t hpe_pdu_outlet_status_info[] = {
 };
 
 static info_lkp_t hpe_pdu_outletgroups_status_info[] = {
-	{ 1, "N/A" },    /* notApplicable, if group.type == outlet-section */
+	{ 1, "N/A" }, /* notApplicable, if group.type == outlet-section */
 	{ 2, "on" },  /* breakerOn */
 	{ 3, "off" }, /* breakerOff */
 	{ 0, NULL }
@@ -871,6 +871,19 @@ static snmp_info_t hpe_pdu_mib[] = {
 	{ "outlet.%i.load.cycle", 0, 1,
 		".1.3.6.1.4.1.232.165.7.5.2.1.4.%i.%i",
 		"0", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	/* pdu2OutletControlOffCmd.0.%i = INTEGER: -1 */
+	{ "outlet.%i.load.off.delay", 0, 1,
+		".1.3.6.1.4.1.232.165.7.5.2.1.2.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	/* pdu2OutletControlOnCmd.0.%i = INTEGER: -1 */
+	{ "outlet.%i.load.on.delay", 0, 1,
+		".1.3.6.1.4.1.232.165.7.5.2.1.3.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	/* pdu2OutletControlRebootCmd.0.%i = INTEGER: -1 */
+	{ "outlet.%i.load.cycle.delay", 0, 1,
+		".1.3.6.1.4.1.232.165.7.5.2.1.4.%i.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
