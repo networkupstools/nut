@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #define SUBDRIVER_NAME    "USB communication subdriver"
-#define SUBDRIVER_VERSION "0.36"
+#define SUBDRIVER_VERSION "0.37"
 
 /* communication driver description structure */
 upsdrv_info_t bcmxcp_comm_upsdrv_info = {
@@ -134,6 +134,7 @@ static unsigned int comm_failures = 0;
 void send_read_command(unsigned char command)
 {
 	unsigned char buf[4];
+	int	ret;
 
 	if (upsdev) {
 		buf[0] = PW_COMMAND_START_BYTE;
@@ -141,13 +142,16 @@ void send_read_command(unsigned char command)
 		buf[2] = command;                 /* command to send */
 		buf[3] = calc_checksum(buf);      /* checksum */
 		upsdebug_hex (3, "send_read_command", buf, 4);
-		usb_set_descriptor(upsdev, LIBUSB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
+		ret = usb_set_descriptor(upsdev, LIBUSB_DT_STRING, 4, buf, 4); /* FIXME: Ignore error */
+		if (ret == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
 	}
 }
 
 void send_write_command(unsigned char *command, int command_length)
 {
 	unsigned char sbuf[128];
+	int	ret;
 
 	if (upsdev) {
 		/* Prepare the send buffer */
@@ -160,7 +164,9 @@ void send_write_command(unsigned char *command, int command_length)
 		sbuf[command_length] = calc_checksum(sbuf);
 		command_length += 1;
 		upsdebug_hex (3, "send_write_command", sbuf, command_length);
-		usb_set_descriptor(upsdev, LIBUSB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
+		ret = usb_set_descriptor(upsdev, LIBUSB_DT_STRING, 4, sbuf, command_length);  /* FIXME: Ignore error */
+		if (ret == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
 	}
 }
 
@@ -206,8 +212,12 @@ int get_answer(unsigned char *data, unsigned char command)
 
 			/* Check libusb return value */
 			if (ret != LIBUSB_SUCCESS) {
-				/* Clear any possible endpoint stalls */
-				libusb_clear_halt(upsdev, LIBUSB_ENDPOINT_IN | 1);
+				if (
+					ret == LIBUSB_ERROR_NO_MEM ||
+					/* Clear any possible endpoint stalls */
+					(ret = libusb_clear_halt(upsdev, LIBUSB_ENDPOINT_IN | 1)) == LIBUSB_ERROR_NO_MEM
+				)
+					fatalx(EXIT_FAILURE, "Out of memory.");
 				/* continue; */ /* FIXME: seems a break would be better! */
 				break;
 			}
@@ -428,17 +438,18 @@ static bool_t	open_device(void)
 			continue;
 
 		ret = libusb_clear_halt(upsdev, LIBUSB_ENDPOINT_IN | 1);
-		if (ret != LIBUSB_SUCCESS) {
-			upsdebugx(1, "%s: can't reset POWERWARE USB endpoint: %s.", __func__, libusb_strerror(ret));
-			libusb_reset_device(upsdev);
-			usb_subdriver.close(upsdev);
-			upsdev = NULL;
-			/* Wait reconnect */
-			sleep(5);
-			continue;
-		}
+		if (ret == LIBUSB_SUCCESS)
+			return TRUE;
 
-		return TRUE;
+		upsdebugx(1, "%s: can't reset POWERWARE USB endpoint: %s.", __func__, libusb_strerror(ret));
+
+		if (ret == LIBUSB_ERROR_NO_MEM || (ret = libusb_reset_device(upsdev)) == LIBUSB_ERROR_NO_MEM)
+			fatalx(EXIT_FAILURE, "Out of memory.");
+
+		usb_subdriver.close(upsdev);
+		upsdev = NULL;
+		/* Wait reconnect */
+		sleep(5);
 	}
 
 	return FALSE;
