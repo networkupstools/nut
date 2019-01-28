@@ -265,8 +265,9 @@ public:
 	 * Intend to execute a command.
 	 * \param dev Device name
 	 * \param name Command name
+	 * \param param Additional command parameter
 	 */
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual void executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)throw(NutException)=0;
 	/** \} */
 
 	/**
@@ -375,7 +376,7 @@ public:
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException);
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException);
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+	virtual void executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)throw(NutException);
 
  	virtual void deviceLogin(const std::string& dev)throw(NutException);
 	virtual void deviceMaster(const std::string& dev)throw(NutException);
@@ -527,8 +528,9 @@ public:
 	/**
 	 * Intend to execute a command on the device.
 	 * \param name Command name.
+	 * \param param Additional command parameter
 	 */
-	void executeCommand(const std::string& name)throw(NutException);
+	void executeCommand(const std::string& name, const std::string& param)throw(NutException);
 
 	/**
 	 * Login current client's user for the device.
@@ -687,9 +689,10 @@ public:
 
 	/**
 	 * Intend to retrieve command description.
+	 * \param param Additional command parameter
 	 * \return Command description if provided.
 	 */
-	void execute()throw(NutException);
+	void execute(const std::string& param)throw(NutException);
 
 protected:
 	Command(Device* dev, const std::string& name);
@@ -901,7 +904,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
  * \param dev Device name.
  * \param cmd Command name.
  */
-void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param);
 
 /** \} */
 
