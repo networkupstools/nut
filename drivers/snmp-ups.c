@@ -167,7 +167,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.10"
+#define DRIVER_VERSION		"1.11"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -3085,7 +3085,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 			/* Sanity check: commands should either have a value or a default */
 			if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
 				upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
-				retval = STAT_SET_INVALID;
+				return STAT_SET_INVALID;
 			}
 			/* FIXME: switch to a generic nut_snmp_set(oid, char *value)
 			 * to simplify handling and avoid atoi(NULL) */
