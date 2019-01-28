@@ -388,8 +388,11 @@ INSTCMD
 
 Form:
 
-	INSTCMD <upsname> <cmdname>
+	INSTCMD <upsname> <cmdname> [cmdparam]
 	INSTCMD su700 test.panel.start
+	INSTCMD su700 load.off.delay 120
+
+NOTE: cmdparam is an additional and optional parameter for the command.
 
 
 LOGOUT

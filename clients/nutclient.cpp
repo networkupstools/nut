@@ -674,9 +674,9 @@ std::string TcpClient::getDeviceCommandDescription(const std::string& dev, const
 	return get("CMDDESC", dev + " " + name)[0];
 }
 
-void TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)
+void TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)throw(NutException)
 {
-	detectError(sendQuery("INSTCMD " + dev + " " + name));
+	detectError(sendQuery("INSTCMD " + dev + " " + name + " " + param));
 }
 
 void TcpClient::deviceLogin(const std::string& dev)throw(NutException)
@@ -1072,10 +1072,10 @@ Command Device::getCommand(const std::string& name)throw(NutException)
     return Command(NULL, "");
 }
 
-void Device::executeCommand(const std::string& name)throw(NutException)
+void Device::executeCommand(const std::string& name, const std::string& param)throw(NutException)
 {
   if (!isOk()) throw NutException("Invalid device");
-  getClient()->executeDeviceCommand(getName(), name);
+  getClient()->executeDeviceCommand(getName(), name, param);
 }
 
 void Device::login()throw(NutException)
@@ -1252,9 +1252,9 @@ std::string Command::getDescription()throw(NutException)
 	return getDevice()->getClient()->getDeviceCommandDescription(getDevice()->getName(), getName());
 }
 
-void Command::execute()throw(NutException)
+void Command::execute(const std::string& param)throw(NutException)
 {
-	getDevice()->executeCommand(getName());
+	getDevice()->executeCommand(getName(), param);
 }
 
 } /* namespace nut */
@@ -1734,7 +1734,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
 	return NULL;
 }
 
-void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd)
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param)
 {
 	if(client)
 	{
@@ -1743,7 +1743,7 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
 		{
 			try
 			{
-				cl->executeDeviceCommand(dev, cmd);
+				cl->executeDeviceCommand(dev, cmd, param);
 			}
 			catch(...){}
 		}
