@@ -221,6 +221,12 @@ public:
 	 */
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
 	/**
+	 * Retrieve values of all variables of a set of devices.
+	 * \param devs Device names
+	 * \return Variable values indexed by variable names, indexed by device names.
+	 */
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException);
+	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
@@ -371,6 +377,7 @@ public:
 	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException);
 	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException);
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException);
 	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException);
 	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException);
 
@@ -385,12 +392,16 @@ public:
 
 protected:
 	std::string sendQuery(const std::string& req)throw(nut::IOException);
+	void sendAsyncQueries(const std::vector<std::string>& req)throw(IOException);
 	static void detectError(const std::string& req)throw(nut::NutException);
 
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
 
 	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "")
+		throw(nut::NutException);
+
+	std::vector<std::vector<std::string> > parseList(const std::string& req)
 		throw(nut::NutException);
 
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
