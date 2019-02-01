@@ -1408,6 +1408,16 @@ else
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
 
+AC_PATH_PROGS([AUGPARSE], [augparse], [none])
+AM_CONDITIONAL([HAVE_AUGPARSE], [test "x${AUGPARSE}" != "xnone"])
+AC_MSG_CHECKING([whether to enable Augeas configuration-management lenses tests])
+if test "x${AUGPARSE}" != xnone ; then
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
+
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
 	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
