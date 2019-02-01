@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2433 utf-8
+personal_ws-1.1 en 2439 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,6 +12,7 @@ ADDRINFO
 ADK
 ADKK
 AEC
+aec
 AEG
 AES
 AGM
@@ -136,6 +137,7 @@ ByPass
 CA's
 CABAC
 CAs
+cb
 CBLimit
 CCC
 CCCC
@@ -149,6 +151,8 @@ CLI
 CLOCAL
 CMDDESC
 CMDSCRIPT
+CMDSET
+CMDSETSTATUSDELAY
 CN
 COMLI
 COMMBAD
@@ -203,6 +207,7 @@ DDDDD
 DDF
 DEADTIME
 DEBUGOUT
+dedb
 DELCMD
 DELENUM
 DELINFO
@@ -2316,6 +2321,7 @@ upserror
 upsfetch
 upsgone
 upsh
+upshandler
 upsidentmodel
 upsimage
 upsload

@@ -125,6 +125,12 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 
+	/* CMDSETSTATUSDELAY <seconds> */
+	if (!strcmp(arg[0], "CMDSETSTATUSDELAY")) {
+		cmdset_status_delay = atoi(arg[1]);
+		return 1;
+	}
+
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
 		maxconn = atoi(arg[1]);

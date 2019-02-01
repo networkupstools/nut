@@ -53,6 +53,9 @@ int	deny_severity = LOG_WARNING;
 	/* default 15 seconds before data is marked stale */
 	int	maxage = 15;
 
+	/* default to 1h before cleaning up status tracking entries */
+	int cmdset_status_delay = 3600;
+
 	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 	int	maxconn = 0;
 
@@ -83,6 +86,15 @@ typedef struct {
 	handler_type_t	type;
 	void		*data;
 } handler_t;
+
+/* general enable/disable status info for commands and settings
+ * (disabled by default)
+ * Note that only client that requested it will have it enabled
+ * (see nut_ctype.h) */
+int	cmdset_status_enabled = 0;
+
+/* Commands and settings status tracking */
+cmdset_status_t	*cmdset_status_list = NULL;
 
 	/* pollfd  */
 static struct pollfd	*fds = NULL;
@@ -480,6 +492,8 @@ static void client_connect(stype_t *server)
 
 	client->addr = xstrdup(inet_ntopW(&csock));
 
+	client->cmdset_status_enabled = 0;
+
 	pconf_init(&client->ctx, NULL);
 
 	if (firstclient) {
@@ -644,6 +658,7 @@ static void upsd_cleanup(void)
 	server_free();
 	client_free();
 	driver_free();
+	cmdset_status_free();
 
 	free(statepath);
 	free(datapath);
@@ -672,6 +687,181 @@ void poll_reload(void)
 	handler = xrealloc(handler, maxconn * sizeof(*handler));
 }
 
+/* instant command and setvar status tracking */
+
+/* allocate a new status tracking entry */
+int cmdset_status_add(const char *id)
+{
+	if (!cmdset_status_enabled)
+		return 0;
+
+	cmdset_status_t	*cmdset_status;
+
+	cmdset_status = xcalloc(1, sizeof(*cmdset_status));
+
+	cmdset_status->id = xstrdup(id);
+	cmdset_status->status = STAT_PENDING;
+	time(&cmdset_status->request_time);
+
+	if (cmdset_status_list) {
+		cmdset_status_list->prev = cmdset_status;
+		cmdset_status->next = cmdset_status_list;
+	}
+
+	cmdset_status_list = cmdset_status;
+
+	return 1;
+}
+
+/* set status of a specific tracking entry */
+int cmdset_status_set(const char *id, const char *value)
+{
+	/* sanity check */
+	if (!cmdset_status_list)
+		return 0;
+
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
+	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
+
+		cmdset_status_next = cmdset_status->next;
+
+		if (!strcmp(cmdset_status->id, id)) {
+			cmdset_status->status = atoi(value);
+			return 1;
+		}
+	}
+
+	return 0; /* id not found! */
+}
+
+/* free a specific tracking entry */
+int cmdset_status_del(const char *id)
+{
+	/* sanity check */
+	if (!cmdset_status_list)
+		return 0;
+
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
+	upsdebugx(3, "%s: deleting id %s", __func__, id);
+
+	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
+
+		cmdset_status_next = cmdset_status->next;
+
+		if (!strcmp(cmdset_status->id, id)) {
+
+			if (cmdset_status->prev) {
+				cmdset_status->prev->next = cmdset_status->next;
+			} else {
+				/* deleting first entry */
+				cmdset_status_list = cmdset_status->next;
+			}
+
+			if (cmdset_status->next) {
+				cmdset_status->next->prev = cmdset_status->prev;
+			}
+
+			free(cmdset_status->id);
+			free(cmdset_status);
+
+			return 1;
+		}
+	}
+
+	return 0; /* id not found! */
+}
+
+/* free all status tracking entries */
+void cmdset_status_free()
+{
+	/* sanity check */
+	if (!cmdset_status_list)
+		return;
+
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
+	upsdebugx(3, "%s", __func__);
+
+	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
+		cmdset_status_next = cmdset_status->next;
+		cmdset_status_del(cmdset_status->id);
+	}
+}
+
+/* cleanup status tracking entries according to their age and cmdset_status_delay */
+void cmdset_status_cleanup()
+{
+	/* sanity check */
+	if (!cmdset_status_list)
+		return;
+
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+	time_t	now;
+	time(&now);
+
+	upsdebugx(3, "%s", __func__);
+
+	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
+
+		cmdset_status_next = cmdset_status->next;
+
+		if (difftime(now, cmdset_status->request_time) > cmdset_status_delay) {
+			cmdset_status_del(cmdset_status->id);
+		}
+	}
+}
+
+/* get status of a specific tracking entry */
+char *cmdset_status_get(const char *id)
+{
+	/* sanity check */
+	if (!cmdset_status_list)
+		return "ERR UNKNOWN";
+
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
+	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
+
+		cmdset_status_next = cmdset_status->next;
+
+		if (!strcmp(cmdset_status->id, id)) {
+			switch (cmdset_status->status) {
+				case STAT_PENDING:
+					return "PENDING";
+				case STAT_HANDLED:
+					return "SUCCESS";
+				case STAT_UNKNOWN:
+					return "ERR UNKNOWN";
+				case STAT_INVALID:
+					return "ERR INVALID-ARGUMENT";
+				case STAT_FAILED:
+					return "ERR FAILED";
+			}
+		}
+	}
+
+	return "ERR UNKNOWN"; /* id not found! */
+}
+
+/* disable general status tracking only if no client still use it.
+ * return the new value for cmdset_status_enabled (0 if we can disable, 1
+ * otherwise) */
+int cmdset_status_disable()
+{
+	int ret = 0;
+	nut_ctype_t		*client, *cnext;
+
+	/* cleanup client fds */
+	for (client = firstclient; client; client = cnext) {
+		cnext = client->next;
+		if (client->cmdset_status_enabled == 1)
+			ret = 1;
+	}
+	return ret;
+}
+
 /* service requests and check on new data */
 static void mainloop(void)
 {
@@ -689,6 +879,9 @@ static void mainloop(void)
 		poll_reload();
 		reload_flag = 0;
 	}
+
+	/* cleanup instcmd/setvar status tracking entries if needed */
+	cmdset_status_cleanup();
 
 	/* scan through driver sockets */
 	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
@@ -722,6 +915,7 @@ static void mainloop(void)
 
 		if (difftime(now, client->last_heard) > 60) {
 			/* shed clients after 1 minute of inactivity */
+			/* FIXME: create an upsd.conf parameter (CLIENT_INACTIVITY_DELAY) */
 			client_disconnect(client);
 			continue;
 		}

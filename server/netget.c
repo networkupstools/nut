@@ -216,6 +216,20 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 
 void net_get(nut_ctype_t *client, int numarg, const char **arg)
 {
+	/* GET CMDSET_STATUS [STATUS_ID] */
+	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
+		if (numarg < 2) {
+			sendback(client, "%s\n", (client->cmdset_status_enabled)?"ON":"OFF");
+		}
+		else {
+			if (client->cmdset_status_enabled)
+				sendback(client, "%s\n", cmdset_status_get(arg[1]));
+			else
+				send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
+		}
+		return;
+	}
+
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;

@@ -26,9 +26,10 @@
 #include "neterr.h"
 
 #include "netset.h"
+#include "uuid4.h"
 
 static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
-	const char *newval)
+	const char *newval, const char *status_id)
 {
 	upstype_t	*ups;
 	const	char	*val;
@@ -134,11 +135,21 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	/* must be OK now */
 
-	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s",
-		client->username, client->addr, var, ups->name, newval);
+	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s (tracking ID: %s)",
+		client->username, client->addr, var, ups->name, newval,
+		(status_id != NULL)?status_id:"disabled");
 
-	snprintf(cmd, sizeof(cmd), "SET %s \"%s\"\n",
-		var, pconf_encode(newval, esc, sizeof(esc)));
+	/* see if the user want execution tracking for this command */
+	if (status_id != NULL) {
+		snprintf(cmd, sizeof(cmd), "SET %s \"%s\" STATUS_ID %s\n",
+			var, pconf_encode(newval, esc, sizeof(esc)), status_id);
+		/* Add an entry in the tracking structure */
+		cmdset_status_add(status_id);
+	}
+	else {
+		snprintf(cmd, sizeof(cmd), "SET %s \"%s\"\n",
+			var, pconf_encode(newval, esc, sizeof(esc)));
+	}
 
 	if (!sstate_sendline(ups, cmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -146,19 +157,75 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		return;
 	}
 
-	sendback(client, "OK\n");
+	/* return the result, possibly including status_id */
+	if (status_id != NULL)
+		sendback(client, "OK %s\n", status_id);
+	else
+		sendback(client, "OK\n");
 }
 
 void net_set(nut_ctype_t *client, int numarg, const char **arg)
 {
-	if (numarg < 4) {
+	char *status_id = NULL;
+
+	/* Base verification, to ensure that we have at least the SET parameter */
+	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
 	}
 
 	/* SET VAR UPS VARNAME VALUE */
 	if (!strcasecmp(arg[0], "VAR")) {
-		set_var(client, arg[1], arg[2], arg[3]);
+		if (numarg < 4) {
+			send_err(client, NUT_ERR_INVALID_ARGUMENT);
+			return;
+		}
+
+		if (client->cmdset_status_enabled) {
+			/* Generate a tracking ID, if client requested status tracking */
+			/* FIXME: for now, use a very basic and straightforward approach! */
+			status_id = xcalloc(1, UUID4_LEN);
+			uuid4_init();
+			uuid4_generate(status_id);
+		}
+
+		set_var(client, arg[1], arg[2], arg[3], status_id);
+
+		/* free the generated uuid if needed */
+		if (status_id)
+			free(status_id);
+
+		return;
+	}
+
+	/* SET CMDSET_STATUS VALUE */
+	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
+		/* Note: for now, limit status tracking to some OS.
+		 * Check for library or homebrew implementation to support
+		 * all platforms */
+#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(_WIN32)
+		if (!strcasecmp(arg[1], "ON")) {
+			/* general enablement along with for this client */
+			cmdset_status_enabled = 1;
+			client->cmdset_status_enabled = 1;
+		}
+		else if (!strcasecmp(arg[1], "OFF")) {
+			/* disable status tracking for this client first */
+			client->cmdset_status_enabled = 0;
+			/* then only disable the general one if no other clients use it! */
+			cmdset_status_enabled = cmdset_status_disable();
+		}
+		else {
+			send_err(client, NUT_ERR_INVALID_ARGUMENT);
+			return;
+		}
+		upsdebugx(1, "%s: CMDSET_STATUS %s", __func__,
+			(cmdset_status_enabled == 1)?"enabled":"disabled");
+
+		sendback(client, "OK\n");
+#else
+		send_err(client, FEATURE-NOT-SUPPORTED);
+#endif
 		return;
 	}
 

@@ -27,9 +27,10 @@
 #include "neterr.h"
 
 #include "netinstcmd.h"
+#include "uuid4.h"
 
 static void send_instcmd(nut_ctype_t *client, const char *upsname, 
-	const char *cmdname, const char *value)
+	const char *cmdname, const char *value, const char *status_id)
 {
 	int	found;
 	upstype_t	*ups;
@@ -70,20 +71,29 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		return;
 	}
 
+	/* Format the base command */
+	snprintf(sockcmd, sizeof(sockcmd), "INSTCMD %s", cmdname);
+
 	/* see if the user has also passed a value for this command */
-	if (value != NULL) {
-		upslogx(LOG_INFO, "Instant command: %s@%s did %s with value \"%s\" on %s",
-			client->username, client->addr, cmdname, value, ups->name);
+	if (value != NULL)
+		snprintfcat(sockcmd, sizeof(sockcmd), " %s", pconf_encode(value, esc, sizeof(esc)));
 
-		snprintf(sockcmd, sizeof(sockcmd), "INSTCMD %s %s\n",
-			cmdname, pconf_encode(value, esc, sizeof(esc)));
+	/* see if the user want execution tracking for this command */
+	if (status_id != NULL) {
+		snprintfcat(sockcmd, sizeof(sockcmd), " STATUS_ID %s", status_id);
+		/* Add an entry in the tracking structure */
+		cmdset_status_add(status_id);
 	}
-	else  {
-		upslogx(LOG_INFO, "Instant command: %s@%s did %s on %s",
-			client->username, client->addr, cmdname, ups->name);
 
-		snprintf(sockcmd, sizeof(sockcmd), "INSTCMD %s\n", cmdname);
-	}
+	/* add EOL */
+	snprintfcat(sockcmd, sizeof(sockcmd), "\n");
+
+	upslogx(LOG_INFO, "Instant command: %s@%s did %s%s%s on %s (tracking ID: %s)",
+		client->username, client->addr, cmdname,
+		(value != NULL)?" with value ":"",
+		(value != NULL)?value:"",
+		ups->name,
+		(status_id != NULL)?status_id:"disabled");
 
 	if (!sstate_sendline(ups, sockcmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -91,18 +101,45 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		return;
 	}
 
-	/* FIXME: need to retrieve the cookie number */
-	sendback(client, "OK\n");
+	/* return the result, possibly including status_id */
+	if (status_id != NULL)
+		sendback(client, "OK %s\n", status_id);
+	else
+		sendback(client, "OK\n");
 }
 
 void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 {
+	const char *devname = NULL;
+	const char *cmdname = NULL;
+	const char *cmdparam = NULL;
+	char *status_id = NULL;
+
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;
 	}
-	
-	/* INSTCMD <ups> <cmdname> [<extra>]*/
-	send_instcmd(client, arg[0], arg[1], (numarg == 3)?arg[2]:NULL);
+
+	/* INSTCMD <ups> <cmdname> [cmdparam] */
+	/* Check arguments */
+	devname = arg[0];
+	cmdname = arg[1];
+	if (numarg == 3)
+		cmdparam = arg[2];
+
+	if (client->cmdset_status_enabled) {
+		/* Generate a tracking ID, if client requested status tracking */
+		/* FIXME: for now, use a very basic and straightforward approach! */
+		status_id = xcalloc(1, UUID4_LEN);
+		uuid4_init();
+		uuid4_generate(status_id);
+	}
+
+	send_instcmd(client, devname, cmdname, cmdparam, status_id);
+
+	/* free the generated uuid if needed */
+	if (status_id)
+		free(status_id);
+
 	return;
 }

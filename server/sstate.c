@@ -37,6 +37,7 @@
 
 static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
+	upsdebugx(1, "%s: got %i args (%s)", __func__, numargs, arg[0]);
 	if (numargs < 1)
 		return 0;
 
@@ -113,6 +114,14 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 	/* SETAUX <varname> <auxval> */
 	if (!strcasecmp(arg[0], "SETAUX")) {
 		state_setaux(ups->inforoot, arg[1], arg[2]);
+		return 1;
+	}
+
+	/* CMDSET_STATUS <ID> <status> */
+	/* FIXME: condition on cmdset_status_enabled ? */
+	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
+		cmdset_status_set(arg[1], arg[2]);
+		upsdebugx(1, "CMDSET_STATUS: ID %s status %s", arg[1], arg[2]);
 		return 1;
 	}
 
@@ -388,7 +397,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	ret = write(ups->sock_fd, buf, strlen(buf));
 
 	if (ret == (int)strlen(buf)) {
-		return 1;	
+		return 1;
 	}
 
 	upslog_with_errno(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);

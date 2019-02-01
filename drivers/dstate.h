@@ -70,6 +70,7 @@ int dstate_delcmd(const char *cmd);
 void dstate_free(void);
 const st_tree_t *dstate_getroot(void);
 const cmdlist_t *dstate_getcmdlist(void);
+void dstate_send_cmdset_status(conn_t *conn, const char *id, int value);
 
 void dstate_dataok(void);
 void dstate_datastale(void);

@@ -201,6 +201,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
+	upsdebugx(2, "%s: sending %s", __func__, buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -394,20 +395,36 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* INSTCMD <cmdname> [<value>]*/
+	/* INSTCMD <cmdname> [cmdparam] [STATUS_ID <ID>] */
 	if (!strcasecmp(arg[0], "INSTCMD")) {
+		int ret;
+		char *cmdname = arg[1];
+		char *cmdparam = NULL;
+		char *cmdid = NULL;
+
+		/* Check if STATUS_ID was provided */
+		if (numarg >= 4) {
+			if (!strcasecmp(arg[2], "STATUS_ID")) {
+				cmdid = strdup(arg[3]);
+			}
+			else {
+				cmdparam = arg[2];
+				cmdid = arg[4];
+			}
+			upsdebugx(3, "STATUS_ID = %s", cmdid);
+		}
 
 		/* try the new handler first if present */
 		if (upsh.instcmd) {
-			if (numarg > 2) {
-				upsh.instcmd(arg[1], arg[2]);
-				return 1;
-			}
+			ret = upsh.instcmd(cmdname, cmdparam);
 
-			upsh.instcmd(arg[1], NULL);
+			/* send back execution result */
+			if (cmdid)
+				dstate_send_cmdset_status(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
-
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -416,12 +433,32 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* SET <var> <value> */
+	/* SET <var> <value> [STATUS_ID <ID>] */
 	if (!strcasecmp(arg[0], "SET")) {
+		int ret;
+		char *cmdid = NULL;
+
+		/* Check if STATUS_ID was provided */
+		if (numarg == 5) {
+			if (!strcasecmp(arg[3], "STATUS_ID")) {
+				cmdid = arg[4];
+			}
+			else {
+				upslogx(LOG_NOTICE, "Got INSTCMD with unsupported parameters (%s/%s)",
+					arg[3], arg[4]);
+			}
+			upsdebugx(3, "STATUS_ID = %s", cmdid);
+		}
 
 		/* try the new handler first if present */
 		if (upsh.setvar) {
-			upsh.setvar(arg[1], arg[2]);
+			ret = upsh.setvar(arg[1], arg[2]);
+
+			/* send back execution result */
+			if (cmdid)
+				dstate_send_cmdset_status(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
 
@@ -877,6 +914,12 @@ void dstate_datastale(void)
 int dstate_is_stale(void)
 {
 	return stale;
+}
+
+
+void dstate_send_cmdset_status(conn_t *conn, const char *id, int value)
+{
+	send_to_one(conn, "CMDSET_STATUS %s %i\n", id, value);
 }
 
 /* ups.status management functions - reducing duplication in the drivers */

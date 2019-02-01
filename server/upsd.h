@@ -68,12 +68,43 @@ void server_free(void);
 
 void check_perms(const char *fn);
 
+/* return values for instcmd / setvar status tracking,
+ * mapped on drivers/upshandler.h, apart from STAT_PENDING (initial state) */
+enum {
+   STAT_PENDING = -1,	/* not yet completed */
+   STAT_HANDLED = 0,	/* completed successfully (NUT_SUCCESS or "OK") */
+   STAT_UNKNOWN,	/* unspecified error (NUT_ERR_UNKNOWN) */
+   STAT_INVALID,	/* invalid command/setvar (NUT_ERR_INVALID_ARGUMENT) */
+   STAT_FAILED		/* command/setvar failed (NUT_ERR_INSTCMD_FAILED / NUT_ERR_SET_FAILED) */
+};
+
+/* Commands and settings status tracking functions */
+int cmdset_status_add(const char *id);
+int cmdset_status_set(const char *id, const char *value);
+int cmdset_status_del(const char *id);
+void cmdset_status_free();
+void cmdset_status_cleanup();
+char *cmdset_status_get(const char *id);
+int cmdset_status_disable();
+
+/* Commands and settings status tracking structure */
+typedef struct cmdset_status_s {
+	char	*id;
+	int	status;
+	time_t	request_time; /* for cleanup */
+	/* doubly linked list */
+	struct cmdset_status_s	*prev;
+	struct cmdset_status_s	*next;
+} cmdset_status_t;
+
 /* declarations from upsd.c */
 
-extern int		maxage, maxconn;
+extern int		maxage, maxconn, cmdset_status_delay;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
+extern int		cmdset_status_enabled;
+extern cmdset_status_t	*cmdset_status_list;
 
 /* map commands onto signals */
 
