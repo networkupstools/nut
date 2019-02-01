@@ -2826,7 +2826,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 		have_disted_doc_man=no
 		want_disted_doc_man=no
 		if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-			dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+			dnl Test that groff files exist (building from distributed tarball, not git repo)
 			have_disted_doc_man=yes
 		fi
 		if test x"${nut_doc_build_target}" = x"man=dist-auto" || test "${nut_doc_build_target_flag}" = "dist-auto"; then
@@ -2837,7 +2837,7 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			rm -f "${DOCTESTDIR}"/snmp-ups.8
 		fi
 		if test "${want_disted_doc_man}" = yes && test "${have_disted_doc_man}" = yes ; then
-			AC_MSG_NOTICE([Requested, and can, install pre-built dist'ed copies of ${nut_doc_build_target_base} documentation])
+			AC_MSG_NOTICE([Requested, and can, install pre-built distributed copies of ${nut_doc_build_target_base} documentation])
 			DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 			DOC_INSTALL_DISTED_MANS="yes"
 		else
