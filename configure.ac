@@ -832,12 +832,12 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+dnl Test that groff files exist (building from distributed tarball, not git repo)
 					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 						DOC_INSTALL_DISTED_MANS="yes"
 					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built dist'ed copies because they are absent])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
