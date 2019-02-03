@@ -41,7 +41,9 @@
 
 #include "parseconf.h"
 #include "nut_ctype.h"
+#include "stype.h"
 #include "upstype.h"
+#include "poller.h"
 
 #define NUT_NET_ANSWER_MAX SMALLBUF
 
@@ -68,12 +70,22 @@ void server_free(void);
 
 void check_perms(const char *fn);
 
+void client_connect(stype_t *server);
+void client_readline(nut_ctype_t *client);
+void client_disconnect(nut_ctype_t *client);
+void ups_data_stale(upstype_t *ups);
+void ups_data_ok(upstype_t *ups);
+
+void poller_tick();
+void poller_callback(handler_type_t type, void *data, poller_event_t event, int fd);
+
 /* declarations from upsd.c */
 
 extern int		maxage, maxconn;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
+extern int		reload_flag, exit_flag;
 
 /* map commands onto signals */
 

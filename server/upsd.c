@@ -73,26 +73,18 @@ static stype_t	*firstaddr = NULL;
 
 static int 	opt_af = AF_UNSPEC;
 
-typedef enum {
-	DRIVER = 1,
-	CLIENT,
-	SERVER
-} handler_type_t;
-
-typedef struct {
-	handler_type_t	type;
-	void		*data;
-} handler_t;
-
-	/* pollfd  */
-static struct pollfd	*fds = NULL;
-static handler_t	*handler = NULL;
-
 	/* pid file */
 static char	pidfn[SMALLBUF];
 
 	/* set by signal handlers */
-static int	reload_flag = 0, exit_flag = 0;
+	int	reload_flag = 0, exit_flag = 0;
+
+const char* handler_type_string[] = {
+	"<INVALID>"
+	"DRIVER",
+	"CLIENT",
+	"SERVER"
+};
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
@@ -129,7 +121,7 @@ upstype_t *get_ups_ptr(const char *name)
 }
 
 /* mark the data stale if this is new, otherwise cleanup any remaining junk */
-static void ups_data_stale(upstype_t *ups)
+void ups_data_stale(upstype_t *ups)
 {
 	/* don't complain again if it's already known to be stale */
 	if (ups->stale == 1) {
@@ -142,7 +134,7 @@ static void ups_data_stale(upstype_t *ups)
 }
 
 /* mark the data ok if this is new, otherwise do nothing */
-static void ups_data_ok(upstype_t *ups)
+void ups_data_ok(upstype_t *ups)
 {
 	if (ups->stale == 0) {
 		return;
@@ -229,6 +221,7 @@ static void setuptcp(stype_t *server)
 			continue;
 		}
 
+		poller_register_fd(sock_fd, HANDLER_SERVER, server);
 		server->sock_fd = sock_fd;
 		break;
 	}
@@ -266,7 +259,7 @@ static void declogins(const char *upsname)
 }
 
 /* disconnect a client connection and free all related memory */
-static void client_disconnect(nut_ctype_t *client)
+void client_disconnect(nut_ctype_t *client)
 {
 	if (!client) {
 		return;
@@ -275,6 +268,7 @@ static void client_disconnect(nut_ctype_t *client)
 	upsdebugx(2, "Disconnect from %s", client->addr);
 
 	shutdown(client->sock_fd, 2);
+	poller_unregister_fd(client->sock_fd);
 	close(client->sock_fd);
 
 	if (client->loginups) {
@@ -454,7 +448,7 @@ static void parse_net(nut_ctype_t *client)
 }
 
 /* answer incoming tcp connections */
-static void client_connect(stype_t *server)
+void client_connect(stype_t *server)
 {
 	struct	sockaddr_storage csock;
 #if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
@@ -481,6 +475,7 @@ static void client_connect(stype_t *server)
 	client->addr = xstrdup(inet_ntopW(&csock));
 
 	pconf_init(&client->ctx, NULL);
+	poller_register_fd(fd, HANDLER_CLIENT, client);
 
 	if (firstclient) {
 		firstclient->prev = client;
@@ -501,7 +496,7 @@ static void client_connect(stype_t *server)
 }
 
 /* read tcp messages and handle them */
-static void client_readline(nut_ctype_t *client)
+void client_readline(nut_ctype_t *client)
 {
 	char	buf[SMALLBUF];
 	int	i, ret;
@@ -585,6 +580,7 @@ void server_free(void)
 		snext = server->next;
 
 		if (server->sock_fd != -1) {
+			poller_unregister_fd(server->sock_fd);
 			close(server->sock_fd);
 		}
 
@@ -615,6 +611,7 @@ void driver_free(void)
 		unext = ups->next;
 
 		if (ups->sock_fd != -1) {
+			poller_unregister_fd(ups->sock_fd);
 			close(ups->sock_fd);
 		}
 
@@ -640,180 +637,17 @@ static void upsd_cleanup(void)
 
 	user_flush();
 	desc_free();
-	
+
 	server_free();
 	client_free();
 	driver_free();
+	poller_cleanup();
 
 	free(statepath);
 	free(datapath);
 	free(certfile);
 	free(certname);
 	free(certpasswd);
-
-	free(fds);
-	free(handler);
-}
-
-void poll_reload(void)
-{
-	int	ret;
-
-	ret = sysconf(_SC_OPEN_MAX);
-
-	if (ret < maxconn) {
-		fatalx(EXIT_FAILURE,
-			"Your system limits the maximum number of connections to %d\n"
-			"but you requested %d. The server won't start until this\n"
-			"problem is resolved.\n", ret, maxconn);
-	}
-
-	fds = xrealloc(fds, maxconn * sizeof(*fds));
-	handler = xrealloc(handler, maxconn * sizeof(*handler));
-}
-
-/* service requests and check on new data */
-static void mainloop(void)
-{
-	int	i, ret, nfds = 0;
-
-	upstype_t	*ups;
-	nut_ctype_t		*client, *cnext;
-	stype_t		*server;
-	time_t	now;
-
-	time(&now);
-
-	if (reload_flag) {
-		conf_reload();
-		poll_reload();
-		reload_flag = 0;
-	}
-
-	/* scan through driver sockets */
-	for (ups = firstups; ups && (nfds < maxconn); ups = ups->next) {
-
-		/* see if we need to (re)connect to the socket */
-		if (ups->sock_fd < 0) {
-			ups->sock_fd = sstate_connect(ups);
-			continue;
-		}
-
-		/* throw some warnings if it's not feeding us data any more */
-		if (sstate_dead(ups, maxage)) {
-			ups_data_stale(ups);
-		} else {
-			ups_data_ok(ups);
-		}
-
-		fds[nfds].fd = ups->sock_fd;
-		fds[nfds].events = POLLIN;
-
-		handler[nfds].type = DRIVER;
-		handler[nfds].data = ups;
-
-		nfds++;
-	}
-
-	/* scan through client sockets */
-	for (client = firstclient; client; client = cnext) {
-
-		cnext = client->next;
-
-		if (difftime(now, client->last_heard) > 60) {
-			/* shed clients after 1 minute of inactivity */
-			client_disconnect(client);
-			continue;
-		}
-
-		if (nfds >= maxconn) {
-			/* ignore clients that we are unable to handle */
-			continue;
-		}
-
-		fds[nfds].fd = client->sock_fd;
-		fds[nfds].events = POLLIN;
-
-		handler[nfds].type = CLIENT;
-		handler[nfds].data = client;
-
-		nfds++;
-	}
-
-	/* scan through server sockets */
-	for (server = firstaddr; server && (nfds < maxconn); server = server->next) {
-
-		if (server->sock_fd < 0) {
-			continue;
-		}
-
-		fds[nfds].fd = server->sock_fd;
-		fds[nfds].events = POLLIN;
-
-		handler[nfds].type = SERVER;
-		handler[nfds].data = server;
-
-		nfds++;
-	}
-
-	upsdebugx(2, "%s: polling %d filedescriptors", __func__, nfds);
-
-	ret = poll(fds, nfds, 2000);
-
-	if (ret == 0) {
-		upsdebugx(2, "%s: no data available", __func__);
-		return;
-	}
-
-	if (ret < 0) {
-		upslog_with_errno(LOG_ERR, "%s", __func__);
-		return;
-	}
-
-	for (i = 0; i < nfds; i++) {
-
-		if (fds[i].revents & (POLLHUP|POLLERR|POLLNVAL)) {
-
-			switch(handler[i].type)
-			{
-			case DRIVER:
-				sstate_disconnect((upstype_t *)handler[i].data);
-				break;
-			case CLIENT:
-				client_disconnect((nut_ctype_t *)handler[i].data);
-				break;
-			case SERVER:
-				upsdebugx(2, "%s: server disconnected", __func__);
-				break;
-			default:
-				upsdebugx(2, "%s: <unknown> disconnected", __func__);
-				break;
-			}
-
-			continue;
-		}
-
-		if (fds[i].revents & POLLIN) {
-
-			switch(handler[i].type)
-			{
-			case DRIVER:
-				sstate_readline((upstype_t *)handler[i].data);
-				break;
-			case CLIENT:
-				client_readline((nut_ctype_t *)handler[i].data);
-				break;
-			case SERVER:
-				client_connect((stype_t *)handler[i].data);
-				break;
-			default:
-				upsdebugx(2, "%s: <unknown> has data available", __func__);
-				break;
-			}
-
-			continue;
-		}
-	}
 }
 
 static void help(const char *progname) 
@@ -885,6 +719,89 @@ void check_perms(const char *fn)
 	/* include the x bit here in case we check a directory */
 	if (st.st_mode & (S_IROTH | S_IXOTH)) {
 		upslogx(LOG_WARNING, "%s is world readable", fn);
+	}
+}
+
+void poller_tick()
+{
+	upstype_t	*ups;
+	nut_ctype_t	*client, *cnext;
+	time_t		now;
+
+	time(&now);
+
+	if (reload_flag) {
+		conf_reload();
+		poller_reload();
+		reload_flag = 0;
+	}
+
+	/* scan through driver sockets */
+	for (ups = firstups; ups; ups = ups->next) {
+
+		/* see if we need to (re)connect to the socket */
+		if (ups->sock_fd < 0) {
+			ups->sock_fd = sstate_connect(ups);
+			continue;
+		}
+
+		/* throw some warnings if it's not feeding us data any more */
+		if (sstate_dead(ups, maxage)) {
+			ups_data_stale(ups);
+		} else {
+			ups_data_ok(ups);
+		}
+	}
+
+	/* scan through client sockets */
+	for (client = firstclient; client; client = cnext) {
+		cnext = client->next;
+
+		if (difftime(now, client->last_heard) > 60) {
+			/* shed clients after 1 minute of inactivity */
+			client_disconnect(client);
+			continue;
+		}
+	}
+}
+
+void poller_callback(handler_type_t type, void *data, poller_event_t event, int fd)
+{
+	if (event == POLLER_EVENT_ERROR) {
+		switch(type)
+		{
+		case HANDLER_DRIVER:
+			sstate_disconnect((upstype_t *)data);
+			break;
+		case HANDLER_CLIENT:
+			client_disconnect((nut_ctype_t *)data);
+			break;
+		case HANDLER_SERVER:
+			upsdebugx(2, "%s: server disconnected", __func__);
+			poller_unregister_fd(fd);
+			break;
+		default:
+			upsdebugx(2, "%s: <unknown> disconnected", __func__);
+			poller_unregister_fd(fd);
+			break;
+		}
+	}
+	else if (event == POLLER_EVENT_READY) {
+		switch(type)
+		{
+		case HANDLER_DRIVER:
+			sstate_readline((upstype_t *)data);
+			break;
+		case HANDLER_CLIENT:
+			client_readline((nut_ctype_t *)data);
+			break;
+		case HANDLER_SERVER:
+			client_connect((stype_t *)data);
+			break;
+		default:
+			upsdebugx(2, "%s: <unknown> has data available", __func__);
+			break;
+		}
 	}
 }
 
@@ -1000,6 +917,7 @@ int main(int argc, char **argv)
 
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
+	poller_reload();
 
 	/* start server */
 	server_load();
@@ -1016,7 +934,7 @@ int main(int argc, char **argv)
 	/* handle ups.conf */
 	read_upsconf();
 	upsconf_add(0);		/* 0 = initial */
-	poll_reload();
+	poller_reload();
 
 	if (num_ups == 0) {
 		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
@@ -1039,7 +957,7 @@ int main(int argc, char **argv)
 	ssl_init();
 
 	while (!exit_flag) {
-		mainloop();
+		poller_mainloop();
 	}
 
 	ssl_cleanup();
