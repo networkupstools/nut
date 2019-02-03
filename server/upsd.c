@@ -427,7 +427,7 @@ static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	}
 
 	/* looks good - call the command */
-	netcmds[cmdnum].func(client, numarg - 1, &arg[1]);
+	netcmds[cmdnum].func(client, numarg - 1, numarg > 1 ? &arg[1] : NULL);
 }
 
 /* parse requests from the network */
