@@ -212,7 +212,9 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 		else if (!strcasecmp(arg[1], "OFF")) {
 			/* disable status tracking for this client first */
 			client->cmdset_status_enabled = 0;
-			/* then only disable the general one if no other clients use it! */
+			/* then only disable the general one if no other clients use it!
+			 * Note: don't call cmdset_status_free() since we want info to
+			 * persist, and cmdset_status_cleanup() takes care of cleaning */
 			cmdset_status_enabled = cmdset_status_disable();
 		}
 		else {
