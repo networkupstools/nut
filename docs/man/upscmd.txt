@@ -11,7 +11,7 @@ SYNOPSIS
 
 *upscmd* -l 'ups'
 
-*upscmd* [-u 'username'] [-p 'password'] 'ups' 'command'
+*upscmd* [-u 'username'] [-p 'password'] [-w] 'ups' 'command'
 
 DESCRIPTION
 -----------
@@ -41,6 +41,10 @@ you will be prompted for this when invoking a command if -u is not used.
 *-p* 'password'::
 Set the password to authenticate to the server.  This is also optional 
 like -u, and you will be prompted for it if necessary.
+
+*-w*::
+Wait for the completion of command execution by the driver and return its
+actual result from the device.
 
 'ups'::
 Connect to this UPS.  The format is `upsname[@hostname[:port]]`.  The default
@@ -84,8 +88,7 @@ BUGS
 ----
 
 There is currently no way to tell the user when the driver requires
-confirmation to invoke a command such as `load.off`.  Similarly, there is
-not yet a way to tell the user if a command succeeds or fails.
+confirmation to invoke a command such as `load.off`.
 
 This is on the list of things to fix in the future, so don't despair.
 It involves magic cookies.

@@ -1,6 +1,8 @@
 /* upsrw - simple client for read/write variable access (formerly upsct2)
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     1999  Russell Kroll <rkroll@exploits.org>
+     2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,6 +32,7 @@
 
 static char		*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+int					status_info = 0;
 
 struct list_t {
 	char	*name;
@@ -48,6 +51,8 @@ static void usage(const char *prog)
 	printf("		use -s VAR=VALUE to avoid prompting for value\n");
 	printf("  -u <username> set username for command authentication\n");
 	printf("  -p <password> set password for command authentication\n");
+	printf("  -w            wait for the completion of setting by the driver\n");
+	printf("                and return its actual result from the device\n");
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
@@ -67,7 +72,9 @@ static void clean_exit(void)
 
 static void do_set(const char *varname, const char *newval)
 {
+	int		cmd_complete = 0;
 	char	buf[SMALLBUF], enc[SMALLBUF];
+	char	status_id[37]; /* UUID4_LEN */
 
 	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n", upsname, varname, pconf_encode(newval, enc, sizeof(enc)));
 
@@ -79,11 +86,38 @@ static void do_set(const char *varname, const char *newval)
 		fatalx(EXIT_FAILURE, "Set variable failed: %s", upscli_strerror(ups));
 	}
 
-	/* FUTURE: status cookies will tie in here */
+	/* verify answer */
 	if (strncmp(buf, "OK", 2) != 0) {
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	/* check for status tracking id */
+	if (status_info) {
+		/* sanity check on the size: "OK " + UUID4_LEN */
+		if (strlen(buf) == 39) {
+			snprintf(status_id, sizeof(status_id), "%s", buf+3);
+
+			/* send status tracking request, looping if status is PENDING */
+			/* FIXME: consider adding a timeout! */
+			while (!cmd_complete) {
+
+				snprintf(buf, sizeof(buf), "GET CMDSET_STATUS %s\n", status_id);
+
+				if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+					fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
+				}
+
+				/* and get status tracking reply */
+				if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
+					fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
+				}
+
+				if (strncmp(buf, "PENDING", 7) != 0)
+					cmd_complete = 1;
+			}
+		}
+	}
+	/* reply as usual */
 	fprintf(stderr, "%s\n", buf);
 }
 
@@ -176,6 +210,23 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 	/* old variable names are no longer supported */
 	if (!strchr(varname, '.')) {
 		fatalx(EXIT_FAILURE, "Error: old variable names are not supported");
+	}
+
+	/* enable status tracking ID */
+	if (status_info) {
+
+		snprintf(temp, sizeof(temp), "SET CMDSET_STATUS ON\n");
+
+		if (upscli_sendline(ups, temp, strlen(temp)) < 0) {
+			fatalx(EXIT_FAILURE, "Can't enable set variable status tracking: %s", upscli_strerror(ups));
+		}
+
+		if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
+			fatalx(EXIT_FAILURE, "Enabling set variable status tracking failed: %s", upscli_strerror(ups));
+		}
+		else if (strncmp(temp, "OK", 2) != 0) { /* Verify the result */
+			fatalx(EXIT_FAILURE, "Enabling set variable status tracking failed. upsd answered: %s", temp);
+		}
 	}
 
 	do_set(varname, newval);
@@ -519,7 +570,7 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+hs:p:u:V")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:p:u:wV")) != -1) {
 		switch (i)
 		{
 		case 's':
@@ -530,6 +581,9 @@ int main(int argc, char **argv)
 			break;
 		case 'u':
 			username = optarg;
+			break;
+		case 'w':
+			status_info = 1;
 			break;
 		case 'V':
 			printf("Network UPS Tools %s %s\n", prog, UPS_VERSION);
