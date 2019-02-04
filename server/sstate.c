@@ -25,6 +25,7 @@
 #include "timehead.h"
 
 #include "sstate.h"
+#include "upsd.h"
 #include "upstype.h"
 
 #include <fcntl.h>
@@ -37,7 +38,6 @@
 
 static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
-	upsdebugx(1, "%s: got %i args (%s)", __func__, numargs, arg[0]);
 	if (numargs < 1)
 		return 0;
 

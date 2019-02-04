@@ -216,6 +216,11 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 
 void net_get(nut_ctype_t *client, int numarg, const char **arg)
 {
+	if (numarg < 1) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
 	/* GET CMDSET_STATUS [STATUS_ID] */
 	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
 		if (numarg < 2) {

@@ -202,6 +202,8 @@ Form:
 
 Response:
 
+	ON                   (CMDSET_STATUS feature is enabled)
+	OFF                  (CMDSET_STATUS feature is disabled)
 	PENDING              (command execution is pending)
 	SUCCESS              (command was successfully executed)
 	ERR UNKNOWN          (command execution failed with unknown error)
@@ -407,8 +409,9 @@ Form:
 
 Response:
 
-	OK
-	ERR <message> [<extra>...]
+	OK                         (if CMDSET_STATUS is not enabled)
+	OK <status_id>             (if CMDSET_STATUS is enabled)
+	ERR <message> [<extra>...] (see Error responses)
 
 
 CMDSET_STATUS
@@ -423,7 +426,7 @@ Form:
 Response:
 
 	OK
-	ERR INVALID-ARGUMENT (if "value" is not "ON" or "OFF")
+	ERR INVALID-ARGUMENT  (if "value" is not "ON" or "OFF")
 	ERR USERNAME-REQUIRED (if not yet authenticated)
 	ERR PASSWORD-REQUIRED (if not yet authenticated)
 
@@ -441,9 +444,9 @@ NOTE: cmdparam is an additional and optional parameter for the command.
 
 Response:
 
-	OK (if CMDSET_STATUS is not enabled)
-	OK <status_id> (if CMDSET_STATUS is enabled)
-	ERR ... (see Error responses)
+	OK                         (if CMDSET_STATUS is not enabled)
+	OK <status_id>             (if CMDSET_STATUS is enabled)
+	ERR <message> [<extra>...] (see Error responses)
 
 
 LOGOUT

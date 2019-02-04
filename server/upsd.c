@@ -692,12 +692,15 @@ void poll_reload(void)
 /* allocate a new status tracking entry */
 int cmdset_status_add(const char *id)
 {
+	cmdset_status_t	*cmdset_status;
+
 	if (!cmdset_status_enabled)
 		return 0;
 
-	cmdset_status_t	*cmdset_status;
-
 	cmdset_status = xcalloc(1, sizeof(*cmdset_status));
+
+	if (!id)
+		return 0;
 
 	cmdset_status->id = xstrdup(id);
 	cmdset_status->status = STAT_PENDING;
@@ -716,11 +719,11 @@ int cmdset_status_add(const char *id)
 /* set status of a specific tracking entry */
 int cmdset_status_set(const char *id, const char *value)
 {
-	/* sanity check */
-	if (!cmdset_status_list)
-		return 0;
-
 	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
+	/* sanity checks */
+	if ((!cmdset_status_list) || (!id) || (!value))
+		return 0;
 
 	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
 
@@ -738,11 +741,11 @@ int cmdset_status_set(const char *id, const char *value)
 /* free a specific tracking entry */
 int cmdset_status_del(const char *id)
 {
-	/* sanity check */
-	if (!cmdset_status_list)
-		return 0;
-
 	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
+	/* sanity check */
+	if ((!cmdset_status_list) || (!id))
+		return 0;
 
 	upsdebugx(3, "%s: deleting id %s", __func__, id);
 
@@ -774,13 +777,13 @@ int cmdset_status_del(const char *id)
 }
 
 /* free all status tracking entries */
-void cmdset_status_free()
+void cmdset_status_free(void)
 {
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
 	/* sanity check */
 	if (!cmdset_status_list)
 		return;
-
-	cmdset_status_t	*cmdset_status, *cmdset_status_next;
 
 	upsdebugx(3, "%s", __func__);
 
@@ -791,14 +794,15 @@ void cmdset_status_free()
 }
 
 /* cleanup status tracking entries according to their age and cmdset_status_delay */
-void cmdset_status_cleanup()
+void cmdset_status_cleanup(void)
 {
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+	time_t	now;
+
 	/* sanity check */
 	if (!cmdset_status_list)
 		return;
 
-	cmdset_status_t	*cmdset_status, *cmdset_status_next;
-	time_t	now;
 	time(&now);
 
 	upsdebugx(3, "%s", __func__);
@@ -816,8 +820,8 @@ void cmdset_status_cleanup()
 /* get status of a specific tracking entry */
 char *cmdset_status_get(const char *id)
 {
-	/* sanity check */
-	if (!cmdset_status_list)
+	/* sanity checks */
+	if ((!cmdset_status_list) || (!id))
 		return "ERR UNKNOWN";
 
 	cmdset_status_t	*cmdset_status, *cmdset_status_next;
@@ -845,21 +849,19 @@ char *cmdset_status_get(const char *id)
 	return "ERR UNKNOWN"; /* id not found! */
 }
 
-/* disable general status tracking only if no client still use it.
+/* disable general status tracking only if no client use it anymore.
  * return the new value for cmdset_status_enabled (0 if we can disable, 1
  * otherwise) */
-int cmdset_status_disable()
+int cmdset_status_disable(void)
 {
-	int ret = 0;
 	nut_ctype_t		*client, *cnext;
 
-	/* cleanup client fds */
 	for (client = firstclient; client; client = cnext) {
 		cnext = client->next;
 		if (client->cmdset_status_enabled == 1)
-			ret = 1;
+			return 1;
 	}
-	return ret;
+	return 0;
 }
 
 /* service requests and check on new data */

@@ -82,10 +82,10 @@ enum {
 int cmdset_status_add(const char *id);
 int cmdset_status_set(const char *id, const char *value);
 int cmdset_status_del(const char *id);
-void cmdset_status_free();
-void cmdset_status_cleanup();
+void cmdset_status_free(void);
+void cmdset_status_cleanup(void);
 char *cmdset_status_get(const char *id);
-int cmdset_status_disable();
+int cmdset_status_disable(void);
 
 /* Commands and settings status tracking structure */
 typedef struct cmdset_status_s {

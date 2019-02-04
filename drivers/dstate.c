@@ -357,6 +357,12 @@ static int cmd_dump_conn(conn_t *conn)
 	return 1;
 }
 
+
+static void send_cmdset_status(conn_t *conn, const char *id, int value)
+{
+	send_to_one(conn, "CMDSET_STATUS %s %i\n", id, value);
+}
+
 static int sock_arg(conn_t *conn, int numarg, char **arg)
 {
 	if (numarg < 1) {
@@ -405,11 +411,15 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		/* Check if STATUS_ID was provided */
 		if (numarg >= 4) {
 			if (!strcasecmp(arg[2], "STATUS_ID")) {
-				cmdid = strdup(arg[3]);
+				cmdid = arg[3];
 			}
-			else {
+			else if (!strcasecmp(arg[3], "STATUS_ID")) {
 				cmdparam = arg[2];
 				cmdid = arg[4];
+			}
+			else {
+				upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+				return 0;
 			}
 			upsdebugx(3, "STATUS_ID = %s", cmdid);
 		}
@@ -420,7 +430,7 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 
 			/* send back execution result */
 			if (cmdid)
-				dstate_send_cmdset_status(conn, cmdid, ret);
+				send_cmdset_status(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
@@ -444,8 +454,9 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 				cmdid = arg[4];
 			}
 			else {
-				upslogx(LOG_NOTICE, "Got INSTCMD with unsupported parameters (%s/%s)",
+				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
 					arg[3], arg[4]);
+				return 0;
 			}
 			upsdebugx(3, "STATUS_ID = %s", cmdid);
 		}
@@ -456,7 +467,7 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 
 			/* send back execution result */
 			if (cmdid)
-				dstate_send_cmdset_status(conn, cmdid, ret);
+				send_cmdset_status(conn, cmdid, ret);
 
 			/* The command was handled, status is a separate consideration */
 			return 1;
@@ -914,12 +925,6 @@ void dstate_datastale(void)
 int dstate_is_stale(void)
 {
 	return stale;
-}
-
-
-void dstate_send_cmdset_status(conn_t *conn, const char *id, int value)
-{
-	send_to_one(conn, "CMDSET_STATUS %s %i\n", id, value);
 }
 
 /* ups.status management functions - reducing duplication in the drivers */
