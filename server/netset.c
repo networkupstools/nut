@@ -26,7 +26,6 @@
 #include "neterr.h"
 
 #include "netset.h"
-#include "uuid4.h"
 
 static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	const char *newval, const char *status_id)
@@ -183,10 +182,8 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 
 		if (client->cmdset_status_enabled) {
 			/* Generate a tracking ID, if client requested status tracking */
-			/* FIXME: for now, use a very basic and straightforward approach! */
 			status_id = xcalloc(1, UUID4_LEN);
-			uuid4_init();
-			uuid4_generate(status_id);
+			nut_uuid_v4(status_id);
 		}
 
 		set_var(client, arg[1], arg[2], arg[3], status_id);
@@ -200,10 +197,6 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 
 	/* SET CMDSET_STATUS VALUE */
 	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
-		/* Note: for now, limit status tracking to some OS.
-		 * Check for library or homebrew implementation to support
-		 * all platforms */
-#if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(_WIN32)
 		if (!strcasecmp(arg[1], "ON")) {
 			/* general enablement along with for this client */
 			cmdset_status_enabled = 1;
@@ -225,9 +218,7 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 			(cmdset_status_enabled == 1)?"enabled":"disabled");
 
 		sendback(client, "OK\n");
-#else
-		send_err(client, FEATURE-NOT-SUPPORTED);
-#endif
+
 		return;
 	}
 

@@ -122,6 +122,41 @@ extern cmdset_status_t	*cmdset_status_list;
 #define shutdown_how 2
 #endif
 
+/* Minimalistic support for UUID v4 */
+#define UUID4_LEN 36
+
+/* adapt to the system */
+#if RAND_MAX == SHRT_MAX
+   typedef unsigned short rand__t;
+#else
+   typedef unsigned int   rand__t;
+#endif
+
+/* From RFC 4122: https://tools.ietf.org/html/rfc4122#section-4.1.2 */
+struct uuid
+{
+   uint32_t time_low;
+      uint16_t time_mid;
+      uint16_t time_hi_and_version;
+      uint8_t  clock_seq_hi_and_reserved;
+      uint8_t  clock_seq_low;
+      uint8_t  node[6];
+} __attribute__((packed));
+
+typedef union
+{
+   struct uuid uuid;
+   uint8_t     flat[sizeof(struct uuid)];
+   rand__t     rnd [sizeof(struct uuid) / sizeof(rand__t)];
+} __attribute__((packed)) nut_uuid__t;
+
+#ifdef __SunOS
+#pragma pack()
+#endif
+
+/* UUID v4 generation function */
+int nut_uuid_v4(char *dest);
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 }

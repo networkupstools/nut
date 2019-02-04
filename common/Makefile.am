@@ -9,7 +9,7 @@ libparseconf_la_SOURCES = parseconf.c
 # 'dist', and is only required for actual build, in which case
 # BUILT_SOURCES (in ../include) will ensure nut_version.h will
 # be built before anything else
-libcommon_la_SOURCES = common.c state.c str.c upsconf.c uuid4.c
+libcommon_la_SOURCES = common.c state.c str.c upsconf.c
 libcommonclient_la_SOURCES = common.c state.c str.c
 # ensure inclusion of local implementation of missing systems functions
 # using LTLIBOBJS. Refer to configure.in/.ac -> AC_REPLACE_FUNCS

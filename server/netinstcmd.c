@@ -27,7 +27,6 @@
 #include "neterr.h"
 
 #include "netinstcmd.h"
-#include "uuid4.h"
 
 static void send_instcmd(nut_ctype_t *client, const char *upsname, 
 	const char *cmdname, const char *value, const char *status_id)
@@ -129,10 +128,8 @@ void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 
 	if (client->cmdset_status_enabled) {
 		/* Generate a tracking ID, if client requested status tracking */
-		/* FIXME: for now, use a very basic and straightforward approach! */
 		status_id = xcalloc(1, UUID4_LEN);
-		uuid4_init();
-		uuid4_generate(status_id);
+		nut_uuid_v4(status_id);
 	}
 
 	send_instcmd(client, devname, cmdname, cmdparam, status_id);
