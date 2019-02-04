@@ -114,6 +114,9 @@ static void do_set(const char *varname, const char *newval)
 
 				if (strncmp(buf, "PENDING", 7) != 0)
 					cmd_complete = 1;
+
+				/* wait a second before retrying */
+				sleep (1);
 			}
 		}
 	}

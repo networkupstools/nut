@@ -189,6 +189,9 @@ static void do_cmd(char **argv, const int argc)
 
 				if (strncmp(buf, "PENDING", 7) != 0)
 					cmd_complete = 1;
+
+				/* wait a second before retrying */
+				sleep (1);
 			}
 		}
 	}
