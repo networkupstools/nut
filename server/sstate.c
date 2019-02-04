@@ -118,7 +118,6 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 	}
 
 	/* CMDSET_STATUS <ID> <status> */
-	/* FIXME: condition on cmdset_status_enabled ? */
 	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
 		cmdset_status_set(arg[1], arg[2]);
 		upsdebugx(1, "CMDSET_STATUS: ID %s status %s", arg[1], arg[2]);
