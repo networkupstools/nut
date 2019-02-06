@@ -154,7 +154,8 @@ typedef union
 #pragma pack()
 #endif
 
-/* UUID v4 generation function */
+/* UUID v4 generation function
+ * Note: 'dest' must be at least `UUID4_LEN` long */
 int nut_uuid_v4(char *dest);
 
 #ifdef __cplusplus

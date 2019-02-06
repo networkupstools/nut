@@ -865,7 +865,8 @@ int cmdset_status_disable(void)
  * https://github.com/spc476/SPCUUID/blob/master/src/uuidlib_v4.c
  * https://github.com/spc476/SPCUUID/blob/master/src/uuidlib_toa.c
  * Copyright 2013 by Sean Conner.  All Rights Reserved.
- * Licensed under GPLv3+ */
+ * Licensed under GPLv3+
+ * Note: 'dest' must be at least `UUID4_LEN` long */
 int nut_uuid_v4(char *dest)
 {
 	nut_uuid__t	uuid;
