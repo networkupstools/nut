@@ -106,6 +106,37 @@ static char	pidfn[SMALLBUF];
 	/* set by signal handlers */
 static int	reload_flag = 0, exit_flag = 0;
 
+/* Minimalistic support for UUID v4 */
+/* adapt to the system */
+#if RAND_MAX == SHRT_MAX
+   typedef unsigned short rand__t;
+#else
+   typedef unsigned int   rand__t;
+#endif
+
+/* From RFC 4122: https://tools.ietf.org/html/rfc4122#section-4.1.2 */
+struct uuid
+{
+   uint32_t time_low;
+      uint16_t time_mid;
+      uint16_t time_hi_and_version;
+      uint8_t  clock_seq_hi_and_reserved;
+      uint8_t  clock_seq_low;
+      uint8_t  node[6];
+} __attribute__((packed));
+
+typedef union
+{
+   struct uuid uuid;
+   uint8_t     flat[sizeof(struct uuid)];
+   rand__t     rnd [sizeof(struct uuid) / sizeof(rand__t)];
+} __attribute__((packed)) nut_uuid__t;
+
+#ifdef __SunOS
+#pragma pack()
+#endif
+
+
 static const char *inet_ntopW (struct sockaddr_storage *s)
 {
 	static char str[40];

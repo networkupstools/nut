@@ -128,6 +128,8 @@ char * get_libname(const char* base_libname);
 #define SMALLBUF	512
 #define LARGEBUF	1024
 
+#define UUID4_LEN	37
+
 /* Provide declarations for getopt() global variables */
 
 #ifdef NEED_GETOPT_H
