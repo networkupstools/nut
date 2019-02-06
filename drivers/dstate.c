@@ -201,7 +201,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
-	upsdebugx(2, "%s: sending %s", __func__, buf);
+	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
