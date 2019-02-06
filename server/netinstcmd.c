@@ -112,7 +112,7 @@ void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 	const char *devname = NULL;
 	const char *cmdname = NULL;
 	const char *cmdparam = NULL;
-	char *status_id = NULL;
+	char	status_id[UUID4_LEN] = "";
 
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -128,15 +128,10 @@ void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 
 	if (client->cmdset_status_enabled) {
 		/* Generate a tracking ID, if client requested status tracking */
-		status_id = xcalloc(1, UUID4_LEN);
 		nut_uuid_v4(status_id);
 	}
 
 	send_instcmd(client, devname, cmdname, cmdparam, status_id);
-
-	/* free the generated uuid if needed */
-	if (status_id)
-		free(status_id);
 
 	return;
 }

@@ -165,7 +165,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 void net_set(nut_ctype_t *client, int numarg, const char **arg)
 {
-	char *status_id = NULL;
+	char	status_id[UUID4_LEN] = "";
 
 	/* Base verification, to ensure that we have at least the SET parameter */
 	if (numarg < 2) {
@@ -182,15 +182,10 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 
 		if (client->cmdset_status_enabled) {
 			/* Generate a tracking ID, if client requested status tracking */
-			status_id = xcalloc(1, UUID4_LEN);
 			nut_uuid_v4(status_id);
 		}
 
 		set_var(client, arg[1], arg[2], arg[3], status_id);
-
-		/* free the generated uuid if needed */
-		if (status_id)
-			free(status_id);
 
 		return;
 	}
