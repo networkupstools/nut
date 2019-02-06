@@ -53,6 +53,9 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
+/* Used by upsclient and nut-scanner */
+#define DEFAULT_TIMEOUT 5
+
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
 
