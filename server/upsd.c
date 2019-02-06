@@ -694,13 +694,10 @@ int cmdset_status_add(const char *id)
 {
 	cmdset_status_t	*cmdset_status;
 
-	if (!cmdset_status_enabled)
+	if ((!cmdset_status_enabled) || (!id))
 		return 0;
 
 	cmdset_status = xcalloc(1, sizeof(*cmdset_status));
-
-	if (!id)
-		return 0;
 
 	cmdset_status->id = xstrdup(id);
 	cmdset_status->status = STAT_PENDING;
