@@ -33,6 +33,7 @@
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			status_info = 0;
+static int			timeout = 10;
 
 struct list_t {
 	char	*name;
@@ -43,7 +44,7 @@ static void usage(const char *prog)
 {
 	printf("Network UPS Tools %s %s\n\n", prog, UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
-	printf("       %s [-s <variable>] [-u <username>] [-p <password>] <ups>\n\n", prog);
+	printf("       %s [-s <variable>] [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups>\n\n", prog);
 	printf("Demo program to set variables within UPS hardware.\n");
 	printf("\n");
 	printf("  -h            display this help text\n");
@@ -53,6 +54,7 @@ static void usage(const char *prog)
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
 	printf("                and return its actual result from the device\n");
+	printf("  -t <timeout>	set a timeout when using -w (default \"10\" seconds)\n");
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
@@ -75,6 +77,7 @@ static void do_set(const char *varname, const char *newval)
 	int		cmd_complete = 0;
 	char	buf[SMALLBUF], enc[SMALLBUF];
 	char	status_id[UUID4_LEN];
+	time_t	start, now;
 
 	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n", upsname, varname, pconf_encode(newval, enc, sizeof(enc)));
 
@@ -91,6 +94,8 @@ static void do_set(const char *varname, const char *newval)
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	time(&start);
+
 	/* check for status tracking id */
 	if (status_info) {
 		/* sanity check on the size: "OK " + UUID4_LEN */
@@ -98,8 +103,13 @@ static void do_set(const char *varname, const char *newval)
 			snprintf(status_id, sizeof(status_id), "%s", buf+3);
 
 			/* send status tracking request, looping if status is PENDING */
-			/* FIXME: consider adding a timeout! */
 			while (!cmd_complete) {
+
+				/* check for timeout */
+				time(&now);
+				if (difftime(now, start) >= timeout) {
+					fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
+				}
 
 				snprintf(buf, sizeof(buf), "GET CMDSET_STATUS %s\n", status_id);
 
@@ -108,7 +118,7 @@ static void do_set(const char *varname, const char *newval)
 				}
 
 				/* and get status tracking reply */
-				if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
+				if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0) {
 					fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 				}
 
@@ -425,7 +435,7 @@ static void do_type(const char *varname)
 	ret = upscli_get(ups, numq, query, &numa, &answer);
 
 	if ((ret < 0) || (numa < numq)) {
-		printf("Unknown type\n");	
+		printf("Unknown type\n");
 		return;
 	}
 
@@ -575,7 +585,7 @@ int main(int argc, char **argv)
 	const char	*prog = xbasename(argv[0]);
 	char	*password = NULL, *username = NULL, *setvar = NULL;
 
-	while ((i = getopt(argc, argv, "+hs:p:u:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+hs:p:t:u:wV")) != -1) {
 		switch (i)
 		{
 		case 's':
@@ -583,6 +593,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			password = optarg;
+			break;
+		case 't':
+			timeout = atoi(optarg);
 			break;
 		case 'u':
 			username = optarg;

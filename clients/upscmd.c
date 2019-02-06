@@ -33,6 +33,7 @@
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			status_info = 0;
+static int			timeout = 10;
 
 struct list_t {
 	char	*name;
@@ -44,7 +45,7 @@ static void usage(const char *prog)
 	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
-	printf("       %s [-u <username>] [-p <password>] [-w] <ups> <command> [<value>]\n\n", prog);
+	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
@@ -53,6 +54,7 @@ static void usage(const char *prog)
 	printf("  -p <password>	set password for command authentication\n");
 	printf("  -w            wait for the completion of command by the driver\n");
 	printf("                and return its actual result from the device\n");
+	printf("  -t <timeout>	set a timeout when using -w (default \"10\" seconds)\n");
 	printf("\n");
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
@@ -146,6 +148,7 @@ static void do_cmd(char **argv, const int argc)
 	int		cmd_complete = 0;
 	char	buf[SMALLBUF];
 	char	status_id[UUID4_LEN];
+	time_t	start, now;
 
 	if (argc > 1) {
 		snprintf(buf, sizeof(buf), "INSTCMD %s %s %s\n", upsname, argv[0], argv[1]);
@@ -166,6 +169,8 @@ static void do_cmd(char **argv, const int argc)
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	time(&start);
+
 	/* check for status tracking id */
 	if (status_info) {
 		/* sanity check on the size: "OK " + UUID4_LEN */
@@ -173,8 +178,13 @@ static void do_cmd(char **argv, const int argc)
 			snprintf(status_id, sizeof(status_id), "%s", buf+3);
 
 			/* send status tracking request, looping if status is PENDING */
-			/* FIXME: consider adding a timeout! */
 			while (!cmd_complete) {
+
+				/* check for timeout */
+				time(&now);
+				if (difftime(now, start) >= timeout) {
+					fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
+				}
 
 				snprintf(buf, sizeof(buf), "GET CMDSET_STATUS %s\n", status_id);
 
@@ -183,7 +193,7 @@ static void do_cmd(char **argv, const int argc)
 				}
 
 				/* and get status tracking reply */
-				if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
+				if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0) {
 					fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 				}
 
@@ -217,7 +227,7 @@ int main(int argc, char **argv)
 	char	buf[SMALLBUF], username[SMALLBUF], password[SMALLBUF];
 	const char	*prog = xbasename(argv[0]);
 
-	while ((i = getopt(argc, argv, "+lhu:p:wV")) != -1) {
+	while ((i = getopt(argc, argv, "+lhu:p:t:wV")) != -1) {
 
 		switch (i)
 		{
@@ -233,6 +243,10 @@ int main(int argc, char **argv)
 		case 'p':
 			snprintf(password, sizeof(password), "%s", optarg);
 			have_pw = 1;
+			break;
+
+		case 't':
+			timeout = atoi(optarg);
 			break;
 
 		case 'w':
