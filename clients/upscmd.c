@@ -32,7 +32,7 @@
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
-int					status_info = 0;
+static int			status_info = 0;
 
 struct list_t {
 	char	*name;
