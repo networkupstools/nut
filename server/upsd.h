@@ -124,7 +124,7 @@ extern cmdset_status_t	*cmdset_status_list;
 
 /* UUID v4 generation function
  * Note: 'dest' must be at least `UUID4_LEN` long */
-int nut_uuid_v4(char *dest);
+int nut_uuid_v4(char *uuid_str);
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

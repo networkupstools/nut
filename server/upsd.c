@@ -4,6 +4,7 @@
 	1999		Russell Kroll <rkroll@exploits.org>
 	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
 	2011 - 2012	Arnaud Quette <arnaud.quette.free.fr>
+	2019 		Eaton (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -107,34 +108,9 @@ static char	pidfn[SMALLBUF];
 static int	reload_flag = 0, exit_flag = 0;
 
 /* Minimalistic support for UUID v4 */
-/* adapt to the system */
-#if RAND_MAX == SHRT_MAX
-   typedef unsigned short rand__t;
-#else
-   typedef unsigned int   rand__t;
-#endif
-
-/* From RFC 4122: https://tools.ietf.org/html/rfc4122#section-4.1.2 */
-struct uuid
-{
-   uint32_t time_low;
-      uint16_t time_mid;
-      uint16_t time_hi_and_version;
-      uint8_t  clock_seq_hi_and_reserved;
-      uint8_t  clock_seq_low;
-      uint8_t  node[6];
-} __attribute__((packed));
-
-typedef union
-{
-   struct uuid uuid;
-   uint8_t     flat[sizeof(struct uuid)];
-   rand__t     rnd [sizeof(struct uuid) / sizeof(rand__t)];
-} __attribute__((packed)) nut_uuid__t;
-
-#ifdef __SunOS
-#pragma pack()
-#endif
+/* Ref: RFC 4122 https://tools.ietf.org/html/rfc4122#section-4.1.2 */
+#define UUID4_BYTESIZE 16
+uint8_t nut_uuid[UUID4_BYTESIZE];
 
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
@@ -892,37 +868,29 @@ int cmdset_status_disable(void)
 	return 0;
 }
 
-/* UUID v4 implementation, heavilly inspired from
- * https://github.com/spc476/SPCUUID/blob/master/src/uuidlib_v4.c
- * https://github.com/spc476/SPCUUID/blob/master/src/uuidlib_toa.c
- * Copyright 2013 by Sean Conner.  All Rights Reserved.
- * Licensed under GPLv3+
+/* UUID v4 basic implementation
  * Note: 'dest' must be at least `UUID4_LEN` long */
-int nut_uuid_v4(char *dest)
+int nut_uuid_v4(char *uuid_str)
 {
-	nut_uuid__t	uuid;
 	size_t		i;
+	uint8_t nut_uuid[UUID4_BYTESIZE];
 
-	if (!dest)
+	if (!uuid_str)
 		return 0;
 
-	for (i = 0; i < (sizeof(struct uuid) / sizeof(rand__t)); i++)
-		uuid.rnd[i] = (unsigned)rand() + (unsigned)rand();
+	for (i = 0; i < UUID4_BYTESIZE; i++)
+		nut_uuid[i] = (unsigned)rand() + (unsigned)rand();
 
 	/* set variant and version */
-	uuid.flat[6] = (uuid.flat[6] & 0x0F) | 0x40;
-	uuid.flat[8] = (uuid.flat[8] & 0x3F) | 0x80;
+	nut_uuid[6] = (nut_uuid[6] & 0x0F) | 0x40;
+	nut_uuid[8] = (nut_uuid[8] & 0x3F) | 0x80;
 
-	return snprintf(
-		dest,
-		UUID4_LEN,
+	return snprintf(uuid_str, UUID4_LEN,
 		"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-		uuid.flat[0], uuid.flat[1], uuid.flat[2], uuid.flat[3],
-		uuid.flat[4], uuid.flat[5],
-		uuid.flat[6], uuid.flat[7],
-		uuid.flat[8], uuid.flat[9],
-		uuid.flat[10], uuid.flat[11], uuid.flat[12], uuid.flat[13], uuid.flat[14], uuid.flat[15]
-	);
+		nut_uuid[0], nut_uuid[1], nut_uuid[2], nut_uuid[3],
+		nut_uuid[4], nut_uuid[5], nut_uuid[6], nut_uuid[7],
+		nut_uuid[8], nut_uuid[9], nut_uuid[10], nut_uuid[11],
+		nut_uuid[12], nut_uuid[13], nut_uuid[14], nut_uuid[15]);
 }
 
 /* service requests and check on new data */
