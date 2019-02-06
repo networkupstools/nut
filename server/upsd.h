@@ -123,7 +123,7 @@ extern cmdset_status_t	*cmdset_status_list;
 #endif
 
 /* Minimalistic support for UUID v4 */
-#define UUID4_LEN 36
+#define UUID4_LEN 37
 
 /* adapt to the system */
 #if RAND_MAX == SHRT_MAX

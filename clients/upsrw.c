@@ -74,7 +74,7 @@ static void do_set(const char *varname, const char *newval)
 {
 	int		cmd_complete = 0;
 	char	buf[SMALLBUF], enc[SMALLBUF];
-	char	status_id[37]; /* UUID4_LEN */
+	char	status_id[UUID4_LEN];
 
 	snprintf(buf, sizeof(buf), "SET VAR %s %s \"%s\"\n", upsname, varname, pconf_encode(newval, enc, sizeof(enc)));
 
@@ -94,7 +94,7 @@ static void do_set(const char *varname, const char *newval)
 	/* check for status tracking id */
 	if (status_info) {
 		/* sanity check on the size: "OK " + UUID4_LEN */
-		if (strlen(buf) == 39) {
+		if (strlen(buf) == UUID4_LEN + 2) {
 			snprintf(status_id, sizeof(status_id), "%s", buf+3);
 
 			/* send status tracking request, looping if status is PENDING */

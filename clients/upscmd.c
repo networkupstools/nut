@@ -145,7 +145,7 @@ static void do_cmd(char **argv, const int argc)
 {
 	int		cmd_complete = 0;
 	char	buf[SMALLBUF];
-	char	status_id[37]; /* UUID4_LEN */
+	char	status_id[UUID4_LEN];
 
 	if (argc > 1) {
 		snprintf(buf, sizeof(buf), "INSTCMD %s %s %s\n", upsname, argv[0], argv[1]);
@@ -169,7 +169,7 @@ static void do_cmd(char **argv, const int argc)
 	/* check for status tracking id */
 	if (status_info) {
 		/* sanity check on the size: "OK " + UUID4_LEN */
-		if (strlen(buf) == 39) {
+		if (strlen(buf) == UUID4_LEN + 2) {
 			snprintf(status_id, sizeof(status_id), "%s", buf+3);
 
 			/* send status tracking request, looping if status is PENDING */
