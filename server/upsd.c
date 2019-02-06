@@ -868,24 +868,29 @@ int cmdset_status_disable(void)
  * Licensed under GPLv3+ */
 int nut_uuid_v4(char *dest)
 {
-	nut_uuid__t *uuid = xcalloc(1, sizeof(nut_uuid__t));
+	nut_uuid__t	uuid;
+	size_t		i;
 
-	if (dest == NULL)
+	if (!dest)
 		return 0;
 
-	for (size_t i = 0 ; i < (sizeof(struct uuid) / sizeof(rand__t)) ; i++)
-		uuid->rnd[i] = (unsigned)rand() + (unsigned)rand();
+	for (i = 0; i < (sizeof(struct uuid) / sizeof(rand__t)); i++)
+		uuid.rnd[i] = (unsigned)rand() + (unsigned)rand();
 
 	/* set variant and version */
-	uuid->flat[6] = (uuid->flat[6] & 0x0F) | 0x40;
-	uuid->flat[8] = (uuid->flat[8] & 0x3F) | 0x80;
+	uuid.flat[6] = (uuid.flat[6] & 0x0F) | 0x40;
+	uuid.flat[8] = (uuid.flat[8] & 0x3F) | 0x80;
 
-	return snprintf(dest, UUID4_LEN + 1,
+	return snprintf(
+		dest,
+		UUID4_LEN,
 		"%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-		uuid->flat[0], uuid->flat[1], uuid->flat[2], uuid->flat[3],
-		uuid->flat[4], uuid->flat[5], uuid->flat[6], uuid->flat[7],
-		uuid->flat[8], uuid->flat[9], uuid->flat[10], uuid->flat[11],
-		uuid->flat[12], uuid->flat[13], uuid->flat[14], uuid->flat[15]);
+		uuid.flat[0], uuid.flat[1], uuid.flat[2], uuid.flat[3],
+		uuid.flat[4], uuid.flat[5],
+		uuid.flat[6], uuid.flat[7],
+		uuid.flat[8], uuid.flat[9],
+		uuid.flat[10], uuid.flat[11], uuid.flat[12], uuid.flat[13], uuid.flat[14], uuid.flat[15]
+	);
 }
 
 /* service requests and check on new data */
