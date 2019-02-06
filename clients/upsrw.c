@@ -227,7 +227,9 @@ static void do_setvar(const char *varname, char *uin, const char *pass)
 		if (upscli_readline(ups, temp, sizeof(temp)) < 0) {
 			fatalx(EXIT_FAILURE, "Enabling set variable status tracking failed: %s", upscli_strerror(ups));
 		}
-		else if (strncmp(temp, "OK", 2) != 0) { /* Verify the result */
+
+		/* Verify the result */
+		if (strncmp(temp, "OK", 2) != 0) {
 			fatalx(EXIT_FAILURE, "Enabling set variable status tracking failed. upsd answered: %s", temp);
 		}
 	}

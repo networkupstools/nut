@@ -366,7 +366,9 @@ int main(int argc, char **argv)
 		if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
 			fatalx(EXIT_FAILURE, "Enabling command status tracking failed: %s", upscli_strerror(ups));
 		}
-		else if (strncmp(buf, "OK", 2) != 0) { /* Verify the result */
+
+		/* Verify the result */
+		if (strncmp(buf, "OK", 2) != 0) {
 			fatalx(EXIT_FAILURE, "Enabling command status tracking failed. upsd answered: %s", buf);
 		}
 	}
