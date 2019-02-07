@@ -36,6 +36,15 @@
 # include "nut_version.h"
 #endif
 
+#include <stdio.h>
+#include <limits.h>
+
+/* Know which bitness we were built for,
+ * to adjust the search paths for get_libname() */
+#if UINTPTR_MAX == 0xffffffffffffffffULL
+# define BUILD_64   1
+#endif
+
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 	int	nut_debug_level = 0;
@@ -696,15 +705,21 @@ const char * search_paths[] = {
 	LIBDIR,
 	"/usr"LIBDIR,
 	"/usr/local"LIBDIR,
+#if BUILD_64
 	// Fall back to explicit preference of 64-bit paths as named on some OSes
 	"/usr/lib/64",
 	"/usr/lib64",
+#endif
 	"/usr/lib",
+#if BUILD_64
 	"/lib/64",
 	"/lib64",
+#endif
 	"/lib",
+#if BUILD_64
 	"/usr/local/lib/64",
 	"/usr/local/lib64",
+#endif
 	"/usr/local/lib",
 #ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
 	"/usr/lib/" AUTOTOOLS_TARGET_SHORT_ALIAS,
