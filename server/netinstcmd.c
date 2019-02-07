@@ -31,7 +31,7 @@
 static void send_instcmd(nut_ctype_t *client, const char *upsname, 
 	const char *cmdname, const char *value, const char *status_id)
 {
-	int	found;
+	int	found, have_status_id = 0;
 	upstype_t	*ups;
 	const	cmdlist_t  *ctmp;
 	char	sockcmd[SMALLBUF], esc[SMALLBUF];
@@ -78,10 +78,11 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		snprintfcat(sockcmd, sizeof(sockcmd), " %s", pconf_encode(value, esc, sizeof(esc)));
 
 	/* see if the user want execution tracking for this command */
-	if (status_id != NULL) {
+	if (strcmp(status_id, "") != 0) {
 		snprintfcat(sockcmd, sizeof(sockcmd), " STATUS_ID %s", status_id);
 		/* Add an entry in the tracking structure */
 		cmdset_status_add(status_id);
+		have_status_id = 1;
 	}
 
 	/* add EOL */
@@ -92,7 +93,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		(value != NULL)?" with value ":"",
 		(value != NULL)?value:"",
 		ups->name,
-		(status_id != NULL)?status_id:"disabled");
+		(have_status_id)?status_id:"disabled");
 
 	if (!sstate_sendline(ups, sockcmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -101,7 +102,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 	}
 
 	/* return the result, possibly including status_id */
-	if (status_id != NULL)
+	if (have_status_id)
 		sendback(client, "OK %s\n", status_id);
 	else
 		sendback(client, "OK\n");

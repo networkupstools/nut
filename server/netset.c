@@ -35,6 +35,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	const	enum_t  *etmp;
 	const	range_t  *rtmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
+	int have_status_id = 0;
 
 	ups = get_ups_ptr(upsname);
 
@@ -134,21 +135,22 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	/* must be OK now */
 
-	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s (tracking ID: %s)",
-		client->username, client->addr, var, ups->name, newval,
-		(status_id != NULL)?status_id:"disabled");
-
 	/* see if the user want execution tracking for this command */
-	if (status_id != NULL) {
+	if (strcmp(status_id, "") != 0) {
 		snprintf(cmd, sizeof(cmd), "SET %s \"%s\" STATUS_ID %s\n",
 			var, pconf_encode(newval, esc, sizeof(esc)), status_id);
 		/* Add an entry in the tracking structure */
 		cmdset_status_add(status_id);
+		have_status_id = 1;
 	}
 	else {
 		snprintf(cmd, sizeof(cmd), "SET %s \"%s\"\n",
 			var, pconf_encode(newval, esc, sizeof(esc)));
 	}
+
+	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s (tracking ID: %s)",
+		client->username, client->addr, var, ups->name, newval,
+		(have_status_id)?status_id:"disabled");
 
 	if (!sstate_sendline(ups, cmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -157,7 +159,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 	}
 
 	/* return the result, possibly including status_id */
-	if (status_id != NULL)
+	if (have_status_id)
 		sendback(client, "OK %s\n", status_id);
 	else
 		sendback(client, "OK\n");
