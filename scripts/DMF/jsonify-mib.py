@@ -6,7 +6,7 @@
 # by anyone interested.
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-#    Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 from __future__ import print_function
@@ -599,10 +599,27 @@ if args.test:
     except KeyError:
         gcc_ldflags = []
 
+    # Pass $CC_ENV as a list of envvars, if any gets used
+    try:
+        gcc_env = None
+        gcc_env_str = os.environ["CC_ENV"]
+        if gcc_env_str is not None and gcc_env_str != "" :
+            gcc_env = os.environ.copy()
+            # Nifty splitter from https://stackoverflow.com/a/5044384/4715872
+            gcc_env_list = gcc_env_str.split(" ")
+            for pair in gcc_env_list:
+                E,V = pair.split("=")
+                gcc_env[E] = V
+    except KeyError:
+        gcc_env = None
+
     cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file] + gcc_ldflags
     info ("COMPILE: " + " ".join (cmd))
     try:
-        subprocess.check_call (cmd)
+        if gcc_env is None :
+            subprocess.check_call (cmd)
+        else :
+            subprocess.check_call (cmd, env = gcc_env)
     except subprocess.CalledProcessError as retcode:
         warn ("COMPILE FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)

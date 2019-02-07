@@ -6,7 +6,7 @@
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
-#    Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 from __future__ import print_function

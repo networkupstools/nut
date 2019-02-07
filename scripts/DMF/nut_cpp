@@ -8,13 +8,14 @@
 # pycparser; also make sure to use no compiler optimizations (-O0 in gcc).
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-#    Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 [ -n "${CPP-}" ] || CPP="cpp"
 # Note that CWD may often be "DMF" or "DMF/somesubdir", so default for both
 [ -n "${CPPFLAGS-}" ] || CPPFLAGS="-I../../include -I../../../include"
 [ -n "${CFLAGS-}" ] || CFLAGS=""
+[ -z "${CPP_ENV-}" ] || eval export $CPP_ENV
 
 set -o pipefail
 #set -exv
