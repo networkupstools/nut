@@ -94,43 +94,44 @@ static void do_set(const char *varname, const char *newval)
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
 	}
 
+	/* check for status tracking id */
+	if (
+		!status_info ||
+		/* sanity check on the size: "OK " + UUID4_LEN */
+		strlen(buf) != UUID4_LEN + 2
+	) {
+		/* reply as usual */
+		fprintf(stderr, "%s\n", buf);
+		return;
+	}
+
+	snprintf(status_id, sizeof(status_id), "%s", buf + 3);
 	time(&start);
 
-	/* check for status tracking id */
-	if (status_info) {
-		/* sanity check on the size: "OK " + UUID4_LEN */
-		if (strlen(buf) == UUID4_LEN + 2) {
-			snprintf(status_id, sizeof(status_id), "%s", buf+3);
+	/* send status tracking request, looping if status is PENDING */
+	while (!cmd_complete) {
 
-			/* send status tracking request, looping if status is PENDING */
-			while (!cmd_complete) {
+		/* check for timeout */
+		time(&now);
+		if (difftime(now, start) >= timeout)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
 
-				/* check for timeout */
-				time(&now);
-				if (difftime(now, start) >= timeout) {
-					fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
-				}
+		snprintf(buf, sizeof(buf), "GET CMDSET_STATUS %s\n", status_id);
 
-				snprintf(buf, sizeof(buf), "GET CMDSET_STATUS %s\n", status_id);
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
+			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
 
-				if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
-					fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
-				}
+		/* and get status tracking reply */
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
 
-				/* and get status tracking reply */
-				if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0) {
-					fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
-				}
-
-				if (strncmp(buf, "PENDING", 7) != 0)
-					cmd_complete = 1;
-
-				/* wait a second before retrying */
-				sleep (1);
-			}
-		}
+		if (strncmp(buf, "PENDING", 7))
+			cmd_complete = 1;
+		else
+			/* wait a second before retrying */
+			sleep(1);
 	}
-	/* reply as usual */
+
 	fprintf(stderr, "%s\n", buf);
 }
 
