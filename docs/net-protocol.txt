@@ -196,8 +196,8 @@ CMDSET_STATUS
 
 Form:
 
-	GET CMDSET_STATUS               (activation status of CMDSET_STATUS)
-	GET CMDSET_STATUS [<status_id>] (execution status of a command / setvar)
+	GET CMDSET_STATUS             (activation status of CMDSET_STATUS)
+	GET CMDSET_STATUS <status_id> (execution status of a command / setvar)
 	GET CMDSET_STATUS 1bd31808-cb49-4aec-9d75-d056e6f018d2
 
 Response:
@@ -419,14 +419,14 @@ CMDSET_STATUS
 
 Form:
 
-	SET CMDSET_STATUS "<value>"
+	SET CMDSET_STATUS <value>
 	SET CMDSET_STATUS ON
 	SET CMDSET_STATUS OFF
 
 Response:
 
 	OK
-	ERR INVALID-ARGUMENT  (if "value" is not "ON" or "OFF")
+	ERR INVALID-ARGUMENT  (if <value> is not "ON" or "OFF")
 	ERR USERNAME-REQUIRED (if not yet authenticated)
 	ERR PASSWORD-REQUIRED (if not yet authenticated)
 
@@ -436,11 +436,11 @@ INSTCMD
 
 Form:
 
-	INSTCMD <upsname> <cmdname> [cmdparam]
+	INSTCMD <upsname> <cmdname> [<cmdparam>]
 	INSTCMD su700 test.panel.start
 	INSTCMD su700 load.off.delay 120
 
-NOTE: cmdparam is an additional and optional parameter for the command.
+NOTE: <cmdparam> is an additional and optional parameter for the command.
 
 Response:
 
