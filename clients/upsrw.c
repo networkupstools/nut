@@ -33,7 +33,7 @@
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
 static int			status_info = 0;
-static int			timeout = 10;
+static unsigned int		timeout = 10;
 
 struct list_t {
 	char	*name;
@@ -54,7 +54,7 @@ static void usage(const char *prog)
 	printf("  -p <password> set password for command authentication\n");
 	printf("  -w            wait for the completion of setting by the driver\n");
 	printf("                and return its actual result from the device\n");
-	printf("  -t <timeout>	set a timeout when using -w (default \"10\" seconds)\n");
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default \"10\")\n");
 	printf("\n");
 	printf("  <ups>         UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("\n");
@@ -595,7 +595,8 @@ int main(int argc, char **argv)
 			password = optarg;
 			break;
 		case 't':
-			timeout = atoi(optarg);
+			if (!str_to_uint(optarg, &timeout, 10))
+				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
 			break;
 		case 'u':
 			username = optarg;
