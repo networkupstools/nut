@@ -442,7 +442,7 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 	return NULL;
 }
 
-int upscli_cleanup()
+int upscli_cleanup(void)
 {
 #ifdef WITH_OPENSSL
 	if (ssl_ctx) {
@@ -567,7 +567,7 @@ static int upscli_select_read(const int fd, void *buf, const size_t buflen, cons
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, int timeout)
+static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
 {
 	int	ret = -1;
 
@@ -628,7 +628,7 @@ static int upscli_select_write(const int fd, const void *buf, const size_t bufle
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, int timeout)
+static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
 {
 	int	ret = -1;
 
@@ -1326,7 +1326,7 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 1;
 }
 
-int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, int timeout)
+int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
 {
 	int	ret;
 
@@ -1364,7 +1364,7 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 	return upscli_sendline_timeout(ups, buf, buflen, 0);
 }
 
-int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, int timeout)
+int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
 {
 	int	ret;
 	size_t	recv;
