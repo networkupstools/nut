@@ -85,17 +85,9 @@ int tracking_del(const char *id);
 void tracking_free(void);
 void tracking_cleanup(void);
 char *tracking_get(const char *id);
+int tracking_enable(void);
 int tracking_disable(void);
-
-/* Commands and settings status tracking structure */
-typedef struct tracking_s {
-	char	*id;
-	int	status;
-	time_t	request_time; /* for cleanup */
-	/* doubly linked list */
-	struct tracking_s	*prev;
-	struct tracking_s	*next;
-} tracking_t;
+int tracking_is_enabled(void);
 
 /* declarations from upsd.c */
 
@@ -103,8 +95,6 @@ extern int		maxage, maxconn, tracking_delay;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
-extern int		tracking_enabled;
-extern tracking_t	*tracking_list;
 
 /* map commands onto signals */
 

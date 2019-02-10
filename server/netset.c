@@ -197,8 +197,7 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 	if (!strcasecmp(arg[0], "TRACKING")) {
 		if (!strcasecmp(arg[1], "ON")) {
 			/* general enablement along with for this client */
-			tracking_enabled = 1;
-			client->tracking = 1;
+			client->tracking = tracking_enable();
 		}
 		else if (!strcasecmp(arg[1], "OFF")) {
 			/* disable status tracking for this client first */
@@ -206,14 +205,15 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 			/* then only disable the general one if no other clients use it!
 			 * Note: don't call tracking_free() since we want info to
 			 * persist, and tracking_cleanup() takes care of cleaning */
-			tracking_enabled = tracking_disable();
+			tracking_disable();
 		}
 		else {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);
 			return;
 		}
-		upsdebugx(1, "%s: TRACKING %s", __func__,
-			(tracking_enabled == 1) ? "enabled" : "disabled");
+		upsdebugx(1, "%s: TRACKING general %s, client %s.", __func__,
+			tracking_is_enabled() ? "enabled" : "disabled",
+			client->tracking ? "enabled" : "disabled");
 
 		sendback(client, "OK\n");
 

@@ -88,14 +88,27 @@ typedef struct {
 	void		*data;
 } handler_t;
 
+
+/* Commands and settings status tracking */
+
 /* general enable/disable status info for commands and settings
  * (disabled by default)
  * Note that only client that requested it will have it enabled
  * (see nut_ctype.h) */
-int	tracking_enabled = 0;
+static int	tracking_enabled = 0;
 
-/* Commands and settings status tracking */
-tracking_t	*tracking_list = NULL;
+/* Commands and settings status tracking structure */
+typedef struct tracking_s {
+	char	*id;
+	int	status;
+	time_t	request_time; /* for cleanup */
+	/* doubly linked list */
+	struct tracking_s	*prev;
+	struct tracking_s	*next;
+} tracking_t;
+
+static tracking_t	*tracking_list = NULL;
+
 
 	/* pollfd  */
 static struct pollfd	*fds = NULL;
@@ -854,9 +867,16 @@ char *tracking_get(const char *id)
 	return "ERR UNKNOWN"; /* id not found! */
 }
 
+/* enable general status tracking (tracking_enabled) and return its value (1). */
+int tracking_enable(void)
+{
+	tracking_enabled = 1;
+
+	return tracking_enabled;
+}
+
 /* disable general status tracking only if no client use it anymore.
- * return the new value for tracking_enabled (0 if we can disable, 1
- * otherwise) */
+ * return the new value for tracking_enabled */
 int tracking_disable(void)
 {
 	nut_ctype_t		*client, *cnext;
@@ -867,6 +887,12 @@ int tracking_disable(void)
 			return 1;
 	}
 	return 0;
+}
+
+/* return current general status of tracking (tracking_enabled). */
+int tracking_is_enabled(void)
+{
+	return tracking_enabled;
 }
 
 /* UUID v4 basic implementation
