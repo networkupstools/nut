@@ -221,14 +221,14 @@ void net_get(nut_ctype_t *client, int numarg, const char **arg)
 		return;
 	}
 
-	/* GET CMDSET_STATUS [STATUS_ID] */
-	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
+	/* GET TRACKING [ID] */
+	if (!strcasecmp(arg[0], "TRACKING")) {
 		if (numarg < 2) {
-			sendback(client, "%s\n", (client->cmdset_status_enabled)?"ON":"OFF");
+			sendback(client, "%s\n", (client->tracking) ? "ON" : "OFF");
 		}
 		else {
-			if (client->cmdset_status_enabled)
-				sendback(client, "%s\n", cmdset_status_get(arg[1]));
+			if (client->tracking)
+				sendback(client, "%s\n", tracking_get(arg[1]));
 			else
 				send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		}

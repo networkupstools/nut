@@ -26,7 +26,7 @@ to make upsd wait longer.
 +
 Most users should leave this at the default value.
 
-"CMDSETSTATUSDELAY 'seconds'"::
+"TRACKINGDELAY 'seconds'"::
 
 When instant commands and variables setting status tracking is enabled, status
 execution information are kept during this amount of time, and then cleaned up.

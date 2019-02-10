@@ -22,8 +22,8 @@
 # for notifications from upsd about staleness.
 
 # =======================================================================
-# CMDSETSTATUSDELAY <seconds>
-# CMDSETSTATUSDELAY 3600
+# TRACKINGDELAY <seconds>
+# TRACKINGDELAY 3600
 #
 # This defaults to 1 hour. When instant commands and variables setting status
 # tracking is enabled, status execution information are kept during this

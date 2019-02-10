@@ -29,9 +29,9 @@
 #include "netinstcmd.h"
 
 static void send_instcmd(nut_ctype_t *client, const char *upsname, 
-	const char *cmdname, const char *value, const char *status_id)
+	const char *cmdname, const char *value, const char *tracking_id)
 {
-	int	found, have_status_id = 0;
+	int	found, have_tracking_id = 0;
 	upstype_t	*ups;
 	const	cmdlist_t  *ctmp;
 	char	sockcmd[SMALLBUF], esc[SMALLBUF];
@@ -78,11 +78,11 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		snprintfcat(sockcmd, sizeof(sockcmd), " %s", pconf_encode(value, esc, sizeof(esc)));
 
 	/* see if the user want execution tracking for this command */
-	if (status_id && *status_id) {
-		snprintfcat(sockcmd, sizeof(sockcmd), " STATUS_ID %s", status_id);
+	if (tracking_id && *tracking_id) {
+		snprintfcat(sockcmd, sizeof(sockcmd), " TRACKING %s", tracking_id);
 		/* Add an entry in the tracking structure */
-		cmdset_status_add(status_id);
-		have_status_id = 1;
+		tracking_add(tracking_id);
+		have_tracking_id = 1;
 	}
 
 	/* add EOL */
@@ -93,7 +93,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		(value != NULL)?" with value ":"",
 		(value != NULL)?value:"",
 		ups->name,
-		(have_status_id)?status_id:"disabled");
+		(have_tracking_id) ? tracking_id : "disabled");
 
 	if (!sstate_sendline(ups, sockcmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -101,9 +101,9 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		return;
 	}
 
-	/* return the result, possibly including status_id */
-	if (have_status_id)
-		sendback(client, "OK %s\n", status_id);
+	/* return the result, possibly including tracking_id */
+	if (have_tracking_id)
+		sendback(client, "OK %s\n", tracking_id);
 	else
 		sendback(client, "OK\n");
 }
@@ -113,7 +113,7 @@ void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 	const char *devname = NULL;
 	const char *cmdname = NULL;
 	const char *cmdparam = NULL;
-	char	status_id[UUID4_LEN] = "";
+	char	tracking_id[UUID4_LEN] = "";
 
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
@@ -127,12 +127,12 @@ void net_instcmd(nut_ctype_t *client, int numarg, const char **arg)
 	if (numarg == 3)
 		cmdparam = arg[2];
 
-	if (client->cmdset_status_enabled) {
+	if (client->tracking) {
 		/* Generate a tracking ID, if client requested status tracking */
-		nut_uuid_v4(status_id);
+		nut_uuid_v4(tracking_id);
 	}
 
-	send_instcmd(client, devname, cmdname, cmdparam, status_id);
+	send_instcmd(client, devname, cmdname, cmdparam, tracking_id);
 
 	return;
 }

@@ -79,32 +79,32 @@ enum {
 };
 
 /* Commands and settings status tracking functions */
-int cmdset_status_add(const char *id);
-int cmdset_status_set(const char *id, const char *value);
-int cmdset_status_del(const char *id);
-void cmdset_status_free(void);
-void cmdset_status_cleanup(void);
-char *cmdset_status_get(const char *id);
-int cmdset_status_disable(void);
+int tracking_add(const char *id);
+int tracking_set(const char *id, const char *value);
+int tracking_del(const char *id);
+void tracking_free(void);
+void tracking_cleanup(void);
+char *tracking_get(const char *id);
+int tracking_disable(void);
 
 /* Commands and settings status tracking structure */
-typedef struct cmdset_status_s {
+typedef struct tracking_s {
 	char	*id;
 	int	status;
 	time_t	request_time; /* for cleanup */
 	/* doubly linked list */
-	struct cmdset_status_s	*prev;
-	struct cmdset_status_s	*next;
-} cmdset_status_t;
+	struct tracking_s	*prev;
+	struct tracking_s	*next;
+} tracking_t;
 
 /* declarations from upsd.c */
 
-extern int		maxage, maxconn, cmdset_status_delay;
+extern int		maxage, maxconn, tracking_delay;
 extern char		*statepath, *datapath;
 extern upstype_t	*firstups;
 extern nut_ctype_t	*firstclient;
-extern int		cmdset_status_enabled;
-extern cmdset_status_t	*cmdset_status_list;
+extern int		tracking_enabled;
+extern tracking_t	*tracking_list;
 
 /* map commands onto signals */
 

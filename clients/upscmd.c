@@ -32,7 +32,7 @@
 
 static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
-static int			status_info = 0;
+static int			tracking_enabled = 0;
 static unsigned int		timeout = 10;
 
 struct list_t {
@@ -147,7 +147,7 @@ static void do_cmd(char **argv, const int argc)
 {
 	int		cmd_complete = 0;
 	char	buf[SMALLBUF];
-	char	status_id[UUID4_LEN];
+	char	tracking_id[UUID4_LEN];
 	time_t	start, now;
 
 	if (argc > 1) {
@@ -171,7 +171,7 @@ static void do_cmd(char **argv, const int argc)
 
 	/* check for status tracking id */
 	if (
-		!status_info ||
+		!tracking_enabled ||
 		/* sanity check on the size: "OK " + UUID4_LEN */
 		strlen(buf) != UUID4_LEN + 2
 	) {
@@ -180,7 +180,7 @@ static void do_cmd(char **argv, const int argc)
 		return;
 	}
 
-	snprintf(status_id, sizeof(status_id), "%s", buf + 3);
+	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + 3);
 	time(&start);
 
 	/* send status tracking request, looping if status is PENDING */
@@ -191,7 +191,7 @@ static void do_cmd(char **argv, const int argc)
 		if (difftime(now, start) >= timeout)
 			fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
 
-		snprintf(buf, sizeof(buf), "GET CMDSET_STATUS %s\n", status_id);
+		snprintf(buf, sizeof(buf), "GET TRACKING %s\n", tracking_id);
 
 		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
 			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'w':
-			status_info = 1;
+			tracking_enabled = 1;
 			break;
 
 		case 'V':
@@ -371,9 +371,9 @@ int main(int argc, char **argv)
 	}
 
 	/* enable status tracking ID */
-	if (status_info) {
+	if (tracking_enabled) {
 
-		snprintf(buf, sizeof(buf), "SET CMDSET_STATUS ON\n");
+		snprintf(buf, sizeof(buf), "SET TRACKING ON\n");
 
 		if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
 			fatalx(EXIT_FAILURE, "Can't enable command status tracking: %s", upscli_strerror(ups));

@@ -28,14 +28,14 @@
 #include "netset.h"
 
 static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
-	const char *newval, const char *status_id)
+	const char *newval, const char *tracking_id)
 {
 	upstype_t	*ups;
 	const	char	*val;
 	const	enum_t  *etmp;
 	const	range_t  *rtmp;
 	char	cmd[SMALLBUF], esc[SMALLBUF];
-	int have_status_id = 0;
+	int	have_tracking_id = 0;
 
 	ups = get_ups_ptr(upsname);
 
@@ -139,11 +139,11 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		var, pconf_encode(newval, esc, sizeof(esc)));
 
 	/* see if the user want execution tracking for this command */
-	if (status_id && *status_id) {
-		snprintfcat(cmd, sizeof(cmd), " STATUS_ID %s", status_id);
+	if (tracking_id && *tracking_id) {
+		snprintfcat(cmd, sizeof(cmd), " TRACKING %s", tracking_id);
 		/* Add an entry in the tracking structure */
-		cmdset_status_add(status_id);
-		have_status_id = 1;
+		tracking_add(tracking_id);
+		have_tracking_id = 1;
 	}
 
 	/* add EOL */
@@ -151,7 +151,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s (tracking ID: %s)",
 		client->username, client->addr, var, ups->name, newval,
-		(have_status_id)?status_id:"disabled");
+		(have_tracking_id) ? tracking_id : "disabled");
 
 	if (!sstate_sendline(ups, cmd)) {
 		upslogx(LOG_INFO, "Set command send failed");
@@ -159,16 +159,16 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 		return;
 	}
 
-	/* return the result, possibly including status_id */
-	if (have_status_id)
-		sendback(client, "OK %s\n", status_id);
+	/* return the result, possibly including tracking_id */
+	if (have_tracking_id)
+		sendback(client, "OK %s\n", tracking_id);
 	else
 		sendback(client, "OK\n");
 }
 
 void net_set(nut_ctype_t *client, int numarg, const char **arg)
 {
-	char	status_id[UUID4_LEN] = "";
+	char	tracking_id[UUID4_LEN] = "";
 
 	/* Base verification, to ensure that we have at least the SET parameter */
 	if (numarg < 2) {
@@ -183,37 +183,37 @@ void net_set(nut_ctype_t *client, int numarg, const char **arg)
 			return;
 		}
 
-		if (client->cmdset_status_enabled) {
+		if (client->tracking) {
 			/* Generate a tracking ID, if client requested status tracking */
-			nut_uuid_v4(status_id);
+			nut_uuid_v4(tracking_id);
 		}
 
-		set_var(client, arg[1], arg[2], arg[3], status_id);
+		set_var(client, arg[1], arg[2], arg[3], tracking_id);
 
 		return;
 	}
 
-	/* SET CMDSET_STATUS VALUE */
-	if (!strcasecmp(arg[0], "CMDSET_STATUS")) {
+	/* SET TRACKING VALUE */
+	if (!strcasecmp(arg[0], "TRACKING")) {
 		if (!strcasecmp(arg[1], "ON")) {
 			/* general enablement along with for this client */
-			cmdset_status_enabled = 1;
-			client->cmdset_status_enabled = 1;
+			tracking_enabled = 1;
+			client->tracking = 1;
 		}
 		else if (!strcasecmp(arg[1], "OFF")) {
 			/* disable status tracking for this client first */
-			client->cmdset_status_enabled = 0;
+			client->tracking = 0;
 			/* then only disable the general one if no other clients use it!
-			 * Note: don't call cmdset_status_free() since we want info to
-			 * persist, and cmdset_status_cleanup() takes care of cleaning */
-			cmdset_status_enabled = cmdset_status_disable();
+			 * Note: don't call tracking_free() since we want info to
+			 * persist, and tracking_cleanup() takes care of cleaning */
+			tracking_enabled = tracking_disable();
 		}
 		else {
 			send_err(client, NUT_ERR_INVALID_ARGUMENT);
 			return;
 		}
-		upsdebugx(1, "%s: CMDSET_STATUS %s", __func__,
-			(cmdset_status_enabled == 1)?"enabled":"disabled");
+		upsdebugx(1, "%s: TRACKING %s", __func__,
+			(tracking_enabled == 1) ? "enabled" : "disabled");
 
 		sendback(client, "OK\n");
 

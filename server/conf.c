@@ -125,9 +125,9 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		return 1;
 	}
 
-	/* CMDSETSTATUSDELAY <seconds> */
-	if (!strcmp(arg[0], "CMDSETSTATUSDELAY")) {
-		cmdset_status_delay = atoi(arg[1]);
+	/* TRACKINGDELAY <seconds> */
+	if (!strcmp(arg[0], "TRACKINGDELAY")) {
+		tracking_delay = atoi(arg[1]);
 		return 1;
 	}
 
