@@ -401,28 +401,28 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* INSTCMD <cmdname> [cmdparam] [STATUS_ID <ID>] */
+	/* INSTCMD <cmdname> [<cmdparam>] [STATUS_ID <id>] */
 	if (!strcasecmp(arg[0], "INSTCMD")) {
 		int ret;
 		char *cmdname = arg[1];
 		char *cmdparam = NULL;
 		char *cmdid = NULL;
 
-		/* Check if STATUS_ID was provided */
-		if (numarg >= 4) {
-			if (!strcasecmp(arg[2], "STATUS_ID")) {
-				cmdid = arg[3];
-			}
-			else if (!strcasecmp(arg[3], "STATUS_ID")) {
-				cmdparam = arg[2];
-				cmdid = arg[4];
-			}
-			else {
-				upslogx(LOG_NOTICE, "Malformed INSTCMD request");
-				return 0;
-			}
-			upsdebugx(3, "STATUS_ID = %s", cmdid);
+		/* Check if <cmdparam> and STATUS_ID were provided */
+		if (numarg == 3) {
+			cmdparam = arg[2];
+		} else if (numarg == 4 && !strcasecmp(arg[2], "STATUS_ID")) {
+			cmdid = arg[3];
+		} else if (numarg == 5 && !strcasecmp(arg[3], "STATUS_ID")) {
+			cmdparam = arg[2];
+			cmdid = arg[4];
+		} else {
+			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			return 0;
 		}
+
+		if (cmdid)
+			upsdebugx(3, "%s: STATUS_ID = %s", __func__, cmdid);
 
 		/* try the new handler first if present */
 		if (upsh.instcmd) {
@@ -443,7 +443,7 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* SET <var> <value> [STATUS_ID <ID>] */
+	/* SET <var> <value> [STATUS_ID <id>] */
 	if (!strcasecmp(arg[0], "SET")) {
 		int ret;
 		char *cmdid = NULL;
@@ -458,7 +458,7 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 					arg[3], arg[4]);
 				return 0;
 			}
-			upsdebugx(3, "STATUS_ID = %s", cmdid);
+			upsdebugx(3, "%s: STATUS_ID = %s", __func__, cmdid);
 		}
 
 		/* try the new handler first if present */
