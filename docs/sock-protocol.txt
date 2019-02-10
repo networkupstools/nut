@@ -149,7 +149,7 @@ may be repeated.  It is cleared by DATAOK.
 CMDSET_STATUS
 ~~~~~~~~~~~~~
 
-	CMDSET_STATUS <ID> <value>
+	CMDSET_STATUS <id> <value>
 
 This is sent in response to an INSTCMD or SET VAR that includes a STATUS_ID,
 upon completion of request execution by the driver. <value> is the integer
@@ -178,28 +178,28 @@ server must not be passed on to the clients when this happens.
 INSTCMD
 ~~~~~~~
 
-	INSTCMD <cmdname> [cmdparam] [STATUS_ID <ID>]
+	INSTCMD <cmdname> [<cmdparam>] [STATUS_ID <id>]
 
 	INSTCMD panel.test.start
 	INSTCMD load.off 10
 	INSTCMD load.on 10 STATUS_ID 1bd31808-cb49-4aec-9d75-d056e6f018d2
 
 NOTE:
-* cmdparam is an additional and optional parameter for the command,
-* "STATUS_ID <ID>" can be provided to track commands execution status, if
+* <cmdparam> is an additional and optional parameter for the command,
+* "STATUS_ID <id>" can be provided to track commands execution status, if
 CMDSET_STATUS was set to ON on upsd. In this case, driver will later return
 the execution status, using CMDSET_STATUS.
 
 SET
 ~~~
 
-	SET <varname> "<value>" [STATUS_ID <ID>]
+	SET <varname> "<value>" [STATUS_ID <id>]
 
 	SET ups.id "Data room"
 	SET ups.id "Data room" STATUS_ID 2dedb58a-3b91-4fab-831f-c8af4b90760a
 
 NOTE:
-* "STATUS_ID <ID>" can be provided to track commands execution status, if
+* "STATUS_ID <id>" can be provided to track commands execution status, if
 CMDSET_STATUS was set to ON on upsd. In this case, driver will later return
 the execution status, using CMDSET_STATUS.
 
