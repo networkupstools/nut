@@ -823,29 +823,31 @@ void cmdset_status_cleanup(void)
 /* get status of a specific tracking entry */
 char *cmdset_status_get(const char *id)
 {
+	cmdset_status_t	*cmdset_status, *cmdset_status_next;
+
 	/* sanity checks */
 	if ((!cmdset_status_list) || (!id))
 		return "ERR UNKNOWN";
-
-	cmdset_status_t	*cmdset_status, *cmdset_status_next;
 
 	for (cmdset_status = cmdset_status_list; cmdset_status; cmdset_status = cmdset_status_next) {
 
 		cmdset_status_next = cmdset_status->next;
 
-		if (!strcmp(cmdset_status->id, id)) {
-			switch (cmdset_status->status) {
-				case STAT_PENDING:
-					return "PENDING";
-				case STAT_HANDLED:
-					return "SUCCESS";
-				case STAT_UNKNOWN:
-					return "ERR UNKNOWN";
-				case STAT_INVALID:
-					return "ERR INVALID-ARGUMENT";
-				case STAT_FAILED:
-					return "ERR FAILED";
-			}
+		if (strcmp(cmdset_status->id, id))
+			continue;
+
+		switch (cmdset_status->status)
+		{
+		case STAT_PENDING:
+			return "PENDING";
+		case STAT_HANDLED:
+			return "SUCCESS";
+		case STAT_UNKNOWN:
+			return "ERR UNKNOWN";
+		case STAT_INVALID:
+			return "ERR INVALID-ARGUMENT";
+		case STAT_FAILED:
+			return "ERR FAILED";
 		}
 	}
 
