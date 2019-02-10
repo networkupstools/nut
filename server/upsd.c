@@ -110,7 +110,6 @@ static int	reload_flag = 0, exit_flag = 0;
 /* Minimalistic support for UUID v4 */
 /* Ref: RFC 4122 https://tools.ietf.org/html/rfc4122#section-4.1.2 */
 #define UUID4_BYTESIZE 16
-uint8_t nut_uuid[UUID4_BYTESIZE];
 
 
 static const char *inet_ntopW (struct sockaddr_storage *s)
