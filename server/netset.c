@@ -161,7 +161,7 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	/* return the result, possibly including tracking_id */
 	if (have_tracking_id)
-		sendback(client, "OK %s\n", tracking_id);
+		sendback(client, "OK TRACKING %s\n", tracking_id);
 	else
 		sendback(client, "OK\n");
 }

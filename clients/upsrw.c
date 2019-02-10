@@ -97,15 +97,15 @@ static void do_set(const char *varname, const char *newval)
 	/* check for status tracking id */
 	if (
 		!tracking_enabled ||
-		/* sanity check on the size: "OK " + UUID4_LEN */
-		strlen(buf) != UUID4_LEN + 2
+		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
+		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
 	) {
 		/* reply as usual */
 		fprintf(stderr, "%s\n", buf);
 		return;
 	}
 
-	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + 3);
+	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING "));
 	time(&start);
 
 	/* send status tracking request, looping if status is PENDING */

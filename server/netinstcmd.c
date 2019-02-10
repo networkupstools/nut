@@ -103,7 +103,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 
 	/* return the result, possibly including tracking_id */
 	if (have_tracking_id)
-		sendback(client, "OK %s\n", tracking_id);
+		sendback(client, "OK TRACKING %s\n", tracking_id);
 	else
 		sendback(client, "OK\n");
 }
