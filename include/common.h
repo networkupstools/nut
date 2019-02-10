@@ -53,7 +53,7 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
-/* Used by upsclient and nut-scanner */
+/** @brief Default timeout (in seconds), as used by upsclient and nut-scanner. */
 #define DEFAULT_TIMEOUT 5
 
 /* get the syslog ready for us */
@@ -131,6 +131,7 @@ char * get_libname(const char* base_libname);
 #define SMALLBUF	512
 #define LARGEBUF	1024
 
+/** @brief (Minimum) Size that a string must have to hold a UUID4 (i.e. UUID4 length + the terminating null character). */
 #define UUID4_LEN	37
 
 /* Provide declarations for getopt() global variables */
