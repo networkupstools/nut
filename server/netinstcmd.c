@@ -78,7 +78,7 @@ static void send_instcmd(nut_ctype_t *client, const char *upsname,
 		snprintfcat(sockcmd, sizeof(sockcmd), " %s", pconf_encode(value, esc, sizeof(esc)));
 
 	/* see if the user want execution tracking for this command */
-	if (strcmp(status_id, "") != 0) {
+	if (status_id && *status_id) {
 		snprintfcat(sockcmd, sizeof(sockcmd), " STATUS_ID %s", status_id);
 		/* Add an entry in the tracking structure */
 		cmdset_status_add(status_id);

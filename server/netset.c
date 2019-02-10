@@ -135,18 +135,19 @@ static void set_var(nut_ctype_t *client, const char *upsname, const char *var,
 
 	/* must be OK now */
 
+	snprintf(cmd, sizeof(cmd), "SET %s \"%s\"",
+		var, pconf_encode(newval, esc, sizeof(esc)));
+
 	/* see if the user want execution tracking for this command */
-	if (strcmp(status_id, "") != 0) {
-		snprintf(cmd, sizeof(cmd), "SET %s \"%s\" STATUS_ID %s\n",
-			var, pconf_encode(newval, esc, sizeof(esc)), status_id);
+	if (status_id && *status_id) {
+		snprintfcat(cmd, sizeof(cmd), " STATUS_ID %s", status_id);
 		/* Add an entry in the tracking structure */
 		cmdset_status_add(status_id);
 		have_status_id = 1;
 	}
-	else {
-		snprintf(cmd, sizeof(cmd), "SET %s \"%s\"\n",
-			var, pconf_encode(newval, esc, sizeof(esc)));
-	}
+
+	/* add EOL */
+	snprintfcat(cmd, sizeof(cmd), "\n");
 
 	upslogx(LOG_INFO, "Set variable: %s@%s set %s on %s to %s (tracking ID: %s)",
 		client->username, client->addr, var, ups->name, newval,
