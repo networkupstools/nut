@@ -1416,7 +1416,7 @@ int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned i
 
 int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 {
-	return upscli_readline_timeout(ups, buf, buflen, DEFAULT_TIMEOUT);
+	return upscli_readline_timeout(ups, buf, buflen, DEFAULT_NETWORK_TIMEOUT);
 }
 
 /* split upsname[@hostname[:port]] into separate components */

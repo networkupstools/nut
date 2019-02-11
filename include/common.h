@@ -53,8 +53,11 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
-/** @brief Default timeout (in seconds), as used by upsclient and nut-scanner. */
-#define DEFAULT_TIMEOUT 5
+/** @brief Default timeout (in seconds) for network opereations, as used by `upsclient` and `nut-scanner`. */
+#define DEFAULT_NETWORK_TIMEOUT		5
+
+/** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
+#define DEFAULT_TRACKING_TIMEOUT	10
 
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
