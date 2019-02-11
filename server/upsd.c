@@ -745,7 +745,7 @@ int tracking_set(const char *id, const char *value)
 
 		next_item = item->next;
 
-		if (!strcmp(item->id, id)) {
+		if (!strcasecmp(item->id, id)) {
 			item->status = atoi(value);
 			return 1;
 		}
@@ -769,24 +769,23 @@ int tracking_del(const char *id)
 
 		next_item = item->next;
 
-		if (!strcmp(item->id, id)) {
+		if (strcasecmp(item->id, id))
+			continue;
 
-			if (item->prev) {
-				item->prev->next = item->next;
-			} else {
-				/* deleting first entry */
-				tracking_list = item->next;
-			}
+		if (item->prev)
+			item->prev->next = item->next;
+		else
+			/* deleting first entry */
+			tracking_list = item->next;
 
-			if (item->next) {
-				item->next->prev = item->prev;
-			}
+		if (item->next)
+			item->next->prev = item->prev;
 
-			free(item->id);
-			free(item);
+		free(item->id);
+		free(item);
 
-			return 1;
-		}
+		return 1;
+
 	}
 
 	return 0; /* id not found! */
@@ -846,7 +845,7 @@ char *tracking_get(const char *id)
 
 		next_item = item->next;
 
-		if (strcmp(item->id, id))
+		if (strcasecmp(item->id, id))
 			continue;
 
 		switch (item->status)
