@@ -53,7 +53,7 @@ endif
 
 # libupsclient version information
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
-libupsclient_la_LDFLAGS = -version-info 4:0:0
+libupsclient_la_LDFLAGS = -version-info 5:0:0
 
 # libnutclient version information
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
