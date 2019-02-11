@@ -416,7 +416,7 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		} else if (numarg == 5 && !strcasecmp(arg[3], "STATUS_ID")) {
 			cmdparam = arg[2];
 			cmdid = arg[4];
-		} else {
+		} else if (numarg != 2) {
 			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
 			return 0;
 		}
