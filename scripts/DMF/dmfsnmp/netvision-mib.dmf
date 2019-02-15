@@ -69,6 +69,6 @@
 		<snmp_info default="" flag_ok="yes" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.4.1.4555.1.1.1.1.2.5.0"/>
 		<snmp_info default="" flag_ok="yes" multiplier="60.0" name="battery.runtime" oid=".1.3.6.1.4.1.4555.1.1.1.1.2.3.0"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" mib_name="netvision" name="netvision" oid=".1.3.6.1.4.1.4555.1.1.1" snmp_info="netvision_mib" version="0.41"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.4555.1.1.1.1.1.1.0" mib_name="netvision" name="netvision" oid=".1.3.6.1.4.1.4555.1.1.1" snmp_info="netvision_mib" version="0.42"/>
 </nut>
 

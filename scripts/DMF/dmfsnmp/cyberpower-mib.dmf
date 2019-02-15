@@ -27,6 +27,6 @@
 		<snmp_info default="" multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.3808.1.1.1.3.2.4.0" power_status="yes"/>
 		<snmp_info default="" multiplier="0.1" name="output.voltage" oid=".1.3.6.1.4.1.3808.1.1.1.4.2.1.0" power_status="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" name="cyberpower" oid=".1.3.6.1.4.1.3808" snmp_info="cyberpower_mib" version="0.1"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.3808.1.1.1.1.1.1.0" mib_name="cyberpower" name="cyberpower" oid=".1.3.6.1.4.1.3808" snmp_info="cyberpower_mib" version="0.2"/>
 </nut>
 

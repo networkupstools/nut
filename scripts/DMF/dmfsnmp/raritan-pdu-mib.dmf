@@ -36,10 +36,10 @@
 		<snmp_info multiplier="1.0" name="outlet.%i.voltage" oid=".1.3.6.1.4.1.13742.1.2.2.1.6.%i" outlet="yes"/>
 		<snmp_info multiplier="0.01" name="outlet.%i.powerfactor" oid=".1.3.6.1.4.1.13742.1.2.2.1.9.%i" outlet="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.power" oid=".1.3.6.1.4.1.13742.1.2.2.1.8.%i" outlet="yes"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
-		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
-		<snmp_info command="yes" multiplier="2.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
+		<snmp_info command="yes" default="1" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
+		<snmp_info command="yes" default="2" multiplier="1.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.13742.1.2.2.1.3.%i" outlet="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.13742.1.1.12.0" mib_name="raritan" name="raritan" oid=".1.3.6.1.4.1.13742" snmp_info="raritan_mib" version="0.5"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.13742.1.1.12.0" mib_name="raritan" name="raritan" oid=".1.3.6.1.4.1.13742" snmp_info="raritan_mib" version="0.6"/>
 </nut>
 

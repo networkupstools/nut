@@ -294,17 +294,23 @@
 		<snmp_info multiplier="1.0" name="outlet.group.%i.realpower" oid=".1.3.6.1.4.1.534.6.6.7.5.5.1.3.%i.%i" outlet_group="yes" positive="yes" type_daisy="1"/>
 		<snmp_info multiplier="1.0" name="outlet.group.%i.power" oid=".1.3.6.1.4.1.534.6.6.7.5.5.1.2.%i.%i" outlet_group="yes" positive="yes" type_daisy="1"/>
 		<snmp_info multiplier="1.0" name="outlet.group.%i.input" oid=".1.3.6.1.4.1.534.6.6.7.5.1.1.9.%i.%i" outlet_group="yes" positive="yes" type_daisy="1"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i" outlet="yes" type_daisy="1"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i" outlet="yes" type_daisy="1"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i" outlet="yes" type_daisy="1"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i" outlet="yes" type_daisy="1"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i" outlet="yes" type_daisy="1"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i" outlet="yes" type_daisy="1"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.delay.shutdown" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.10.%i.%i" outlet="yes" positive="yes" type_daisy="1" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.delay.start" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i" outlet="yes" positive="yes" type_daisy="1" writable="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.timer.shutdown" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i" outlet="yes" type_daisy="1"/>
 		<snmp_info multiplier="1.0" name="outlet.%i.timer.start" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i" outlet="yes" type_daisy="1"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.group.%i.load.off" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.3.%i.%i" outlet_group="yes" type_daisy="1"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.group.%i.load.on" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i" outlet_group="yes" type_daisy="1"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.group.%i.load.cycle" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i" outlet_group="yes" type_daisy="1"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.off.delay" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i" outlet="yes" type_daisy="1"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.on.delay" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i" outlet="yes" type_daisy="1"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.cycle.delay" oid=".1.3.6.1.4.1.534.6.6.7.6.6.1.5.%i.%i" outlet="yes" type_daisy="1"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.group.%i.load.off" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.3.%i.%i" outlet_group="yes" type_daisy="1"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.group.%i.load.on" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i" outlet_group="yes" type_daisy="1"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.group.%i.load.cycle" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i" outlet_group="yes" type_daisy="1"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.off.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.3.%i.%i" outlet_group="yes" type_daisy="1"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.on.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i" outlet_group="yes" type_daisy="1"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.cycle.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i" outlet_group="yes" type_daisy="1"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.48"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.50"/>
 </nut>
 

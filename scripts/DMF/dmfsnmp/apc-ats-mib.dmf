@@ -49,6 +49,6 @@
 		<snmp_info multiplier="1.0" name="outlet.group.%i.voltage" oid=".1.3.6.1.4.1.318.1.1.8.5.4.5.1.6.%i" outlet_group="yes"/>
 		<snmp_info multiplier="1.0" name="outlet.group.%i.realpower" oid=".1.3.6.1.4.1.318.1.1.8.5.4.5.1.15.%i" outlet_group="yes" positive="yes"/>
 	</snmp>
-	<mib2nut mib_name="apc_ats" name="apc_ats" oid=".1.3.6.1.4.1.318.1.3.11" snmp_info="apc_ats_mib" version="0.2"/>
+	<mib2nut mib_name="apc_ats" name="apc_ats" oid=".1.3.6.1.4.1.318.1.3.11" snmp_info="apc_ats_mib" version="0.3"/>
 </nut>
 

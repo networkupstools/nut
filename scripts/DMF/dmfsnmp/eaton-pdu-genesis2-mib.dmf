@@ -19,6 +19,6 @@
 		<snmp_info multiplier="0.1" name="outlet.7.current" oid=".1.3.6.1.4.1.17373.3.2.7.0" positive="yes"/>
 		<snmp_info multiplier="0.1" name="outlet.8.current" oid=".1.3.6.1.4.1.17373.3.2.8.0" positive="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.17373.3.1.1.0" mib_name="aphel_genesisII" name="aphel_genesisII" oid=".1.3.6.1.4.1.17373" snmp_info="eaton_aphel_genesisII_mib" version="0.49"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.17373.3.1.1.0" mib_name="aphel_genesisII" name="aphel_genesisII" oid=".1.3.6.1.4.1.17373" snmp_info="eaton_aphel_genesisII_mib" version="0.50"/>
 </nut>
 
