@@ -6,7 +6,7 @@
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
  *	2015 - 2019	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
- *	2016 - 2018	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
+ *	2016 - 2019	Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2016		Eaton (author: Carlos Dominguez <CarlosDominguez@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
