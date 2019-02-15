@@ -125,15 +125,24 @@ main ()
 				if (strcmp("mge", mib2nut[i]->mib_name)==0) {
 					printf("=== DMF-Test: Found an mge MIB mapping, dumping snmp_info; iterator == %i \n\n", i);
 					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[0]));
-					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[1]));
+					if (is_sentinel__snmp_info_t( &(mib2nut[i]->snmp_info[0]) )) {
+						printf("=== DMF-Test: FAILURE : an mge MIB mapping begins with a sentinel, proceeding for now but will fail the test later! \n\n");
+						result = 2;
+					} else {
+						print_snmp_memory_struct(&(mib2nut[i]->snmp_info[1]));
+					}
 					break;
 				}
 			}
 			for (i = 0; mib2nut[i] != NULL; i++) {
 				if (strcmp("eaton_epdu", mib2nut[i]->mib_name)==0) {
 					printf("=== DMF-Test: Found an eaton_epdu MIB mapping, dumping snmp_info (note: the gateway routines manipulate driver state (snmp-ups) and do not make sense here, not linked, return error as expected); iterator == %i \n\n", i);
-					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[0]));
-					print_snmp_memory_struct(&(mib2nut[i]->snmp_info[1]));
+					if (is_sentinel__snmp_info_t( &(mib2nut[i]->snmp_info[0]) )) {
+						printf("=== DMF-Test: FAILURE : an eaton_epdu MIB mapping begins with a sentinel, proceeding for now but will fail the test later! \n\n");
+						result = 2;
+					} else {
+						print_snmp_memory_struct(&(mib2nut[i]->snmp_info[1]));
+					}
 					break;
 				}
 			}
