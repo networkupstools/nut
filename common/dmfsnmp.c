@@ -127,6 +127,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 		} /* if language is recognized */
 	} /* if code is present */
 #endif /* WITH_DMF_FUNCTIONS */
+	upsdebugx(5, "End of print_snmp_memory_struct()");
 }
 
 void
@@ -134,6 +135,7 @@ print_alarm_memory_struct(alarms_info_t *self)
 {
 	upsdebugx(5, "Alarm: -->  OID: %s //   Status: %s //   Value: %s\n",
 		self->OID, self->status_value, self->alarm_value);
+	upsdebugx(5, "End of print_alarm_memory_struct()");
 }
 
 void
@@ -178,6 +180,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 			i++;
 		}
 	}
+	upsdebugx(5, "End of print_mib2nut_memory_struct()");
 }
 /*END DEBUGGING*/
 
