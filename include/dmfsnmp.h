@@ -415,7 +415,8 @@ void
 snmp_info_t *
 	info_snmp_new (const char *name, int info_flags, double multiplier,
 		const char *oid, const char *dfl, unsigned long flags,
-		info_lkp_t *lookup, int *setvar
+		info_lkp_t *lookup
+//, int *setvar
 #if WITH_DMF_FUNCTIONS
 ,char **function_language, char **function_code
 #endif

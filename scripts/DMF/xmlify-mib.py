@@ -33,6 +33,7 @@ SU_FLAG_NEGINVALID = (1 << 4)	#/* Invalid if negative value */
 SU_FLAG_UNIQUE = (1 << 5)	#/* There can be only be one
 				# * provider of this info,
 				# * disable the other providers */
+# Free slot : setvar is now deprecated; support it to spew errors
 SU_FLAG_SETINT = (1 << 6)	#/* save value */
 SU_OUTLET = (1 << 7)	        #/* outlet template definition */
 SU_CMD_OFFSET = (1 << 8)	#/* Add +1 to the OID index */
@@ -212,10 +213,11 @@ def mk_snmp (inp, root):
                     info ["flags"].remove (flag)
 
             if SU_FLAG_SETINT in info ["flags"]:
-                if not "setvar" in info:
-                    die ("SU_FLAG_SETINT in flags, but not setvar for '%s'", (info, ))
-                kwargs ["setvar"] = info ["setvar"]
-                info ["flags"].remove (SU_FLAG_SETINT)
+                die ("Obsoleted and removed SU_FLAG_SETINT in flags for '%s'", (info, ))
+#                if not "setvar" in info:
+#                    die ("SU_FLAG_SETINT in flags, but not setvar for '%s'", (info, ))
+#                kwargs ["setvar"] = info ["setvar"]
+#                info ["flags"].remove (SU_FLAG_SETINT)
 
             # ignore the "0" flag which means no bits set
             len1 = len (info ["flags"])

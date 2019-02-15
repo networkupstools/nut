@@ -156,18 +156,18 @@ class Visitor(c_ast.NodeVisitor):
             elif isinstance (oid2info, c_ast.UnaryOp) and oid2info.op == '&':
                 ditem ["oid2info"] = oid2info.expr.name.name
 
-            # 7: int *setvar
-            try:
-                _, setvar = kids [7]
-            except IndexError:
-                warn ("%s: %d: missing setvar of %s" % (oid2info.coord.file, oid2info.coord.line, ditem ["info_type"]))
-                ditem ["setvar"] = None
-                continue
-
-            if isinstance (setvar, c_ast.Cast):
-                ditem ["setvar"] = None
-            elif isinstance (setvar, c_ast.UnaryOp):
-                ditem ["setvar"] = setvar.expr.name
+#            # 7: int *setvar : obsoleted
+#            try:
+#                _, setvar = kids [7]
+#            except IndexError:
+#                warn ("%s: %d: missing setvar of %s" % (oid2info.coord.file, oid2info.coord.line, ditem ["info_type"]))
+#                ditem ["setvar"] = None
+#                continue
+#
+#            if isinstance (setvar, c_ast.Cast):
+#                ditem ["setvar"] = None
+#            elif isinstance (setvar, c_ast.UnaryOp):
+#                ditem ["setvar"] = setvar.expr.name
 
         return tuple (ret)
 
@@ -376,7 +376,8 @@ def s_snmp2c (fout, js, name):
         pinfo = copy.copy (info)
         pinfo ["info_flags"] = functools.reduce (lambda x, y : x|y, pinfo ["info_flags"])
         pinfo ["flags"] = functools.reduce (lambda x, y : x|y, pinfo ["flags"])
-        for k in ("OID", "oid2info", "dfl", "info_type", "setvar"):
+        for k in ("OID", "oid2info", "dfl", "info_type"):
+            # , "setvar"
             if not k in pinfo or pinfo [k] is None:
                 pinfo [k] = "NULL"
 
@@ -386,9 +387,10 @@ def s_snmp2c (fout, js, name):
             if pinfo [k] != "NULL":
                 pinfo [k] = '"' + pinfo [k] + '"'
 
-        if pinfo ["setvar"] != "NULL":
-            pinfo ["setvar"] = '&' + pinfo ["setvar"]
-        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
+#        if pinfo ["setvar"] != "NULL":
+#            pinfo ["setvar"] = '&' + pinfo ["setvar"]
+#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
+        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s},' % pinfo, file=fout)
     print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
     print ("};", file=fout)
 
@@ -507,7 +509,7 @@ int main () {
             fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
             return 1;
         }
-        assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
+        // assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
     }
     fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
