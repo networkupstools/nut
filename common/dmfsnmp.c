@@ -1550,6 +1550,7 @@ dmf_strneq (const char* x, const char* y)
 bool
 is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct)
 {
+	upsdebugx (5, "Entering is_sentinel__snmp_device_id_t()");
 	assert(pstruct);
 	return ( pstruct->oid == NULL && pstruct->sysoid == NULL && pstruct->mib == NULL );
 }
@@ -1557,6 +1558,7 @@ is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct)
 bool
 is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
 {
+	upsdebugx (5, "Entering is_sentinel__snmp_info_t()");
 	assert (pstruct);
 	return ( pstruct->info_type == NULL && pstruct->info_len == 0 && pstruct->OID == NULL
 	      && pstruct->dfl == NULL && pstruct->flags == 0 && pstruct->oid2info == NULL
@@ -1572,6 +1574,7 @@ is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
 
 bool
 is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct) {
+	upsdebugx (5, "Entering is_sentinel__mib2nut_info_t()");
 	assert (pstruct);
 	return ( pstruct->mib_name == NULL && pstruct->mib_version == NULL && pstruct->oid_pwr_status == NULL
 	      && pstruct->oid_auto_check == NULL && pstruct->snmp_info == NULL && pstruct->sysOID == NULL
@@ -1580,12 +1583,14 @@ is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct) {
 
 bool
 is_sentinel__alarms_info_t(const alarms_info_t *pstruct) {
+	upsdebugx (5, "Entering is_sentinel__alarms_info_t()");
 	assert (pstruct);
 	return ( pstruct->alarm_value == NULL && pstruct->OID == NULL && pstruct->status_value == NULL );
 }
 
 bool
 is_sentinel__info_lkp_t(const info_lkp_t *pstruct) {
+	upsdebugx (5, "Entering is_sentinel__info_lkp_t()");
 	assert (pstruct);
 	return ( pstruct->info_value == NULL && pstruct->oid_value == 0
 #if WITH_SNMP_LKP_FUN
