@@ -163,6 +163,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 		while ( !is_sentinel__snmp_info_t(&(self->snmp_info[i])) ) {
 			print_snmp_memory_struct(self->snmp_info+i);
 			i++;
+                        upsdebugx(5, "print_mib2nut_memory_struct: snmp_info: Proceeding to entry #%i", i);
 		}
 	}
 
@@ -178,6 +179,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 		while ( !is_sentinel__alarms_info_t(&(self->alarms_info[i])) ) {
 			print_alarm_memory_struct(self->alarms_info+i);
 			i++;
+                        upsdebugx(5, "print_mib2nut_memory_struct: alarms_info: Proceeding to entry #%i", i);
 		}
 	}
 	upsdebugx(5, "End of print_mib2nut_memory_struct()");
