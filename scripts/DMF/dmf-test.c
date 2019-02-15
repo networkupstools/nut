@@ -105,10 +105,14 @@ main ()
 			result = 1;
 		}
 
-		/* printf("\n\n");
-		 * printf("=== DMF-Test: Original C structures (sample for 'eaton_epdu'):\n\n");
-		 * print_mib2nut_memory_struct(&eaton_marlin);
-		 * End debugging */
+		/* Aid debugging, uncomment and rebuild and re-run */
+                /*
+		printf("\n\n");
+		printf("=== DMF-Test: Displaying original (non-DMF) C structures (sample for 'eaton_epdu'):\n\n");
+		print_mib2nut_memory_struct(&eaton_marlin);
+		printf("=== DMF-Test: End of original (non-DMF) C structures (sample for 'eaton_epdu'):\n\n");
+                 */
+		/* End debugging */
 
 #if WITH_DMF_FUNCTIONS
 #if WITH_DMF_LUA
