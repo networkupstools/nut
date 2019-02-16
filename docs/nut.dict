@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2432 utf-8
+personal_ws-1.1 en 2434 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1186,6 +1186,7 @@ apctest
 apcupsd
 aphel
 ar
+arg
 argc
 args
 argv
@@ -1999,6 +2000,7 @@ privProtocol
 probu
 proc
 productid
+prog
 psu
 pw
 pwl
