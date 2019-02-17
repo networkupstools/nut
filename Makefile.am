@@ -117,6 +117,11 @@ distcheck-dmf:
 	$(MAKE) $(AM_MAKEFLAGS) distcheck-dmf-warnings
 	echo "PASSED $@ suite!"
 
+# Shortcut for DMF development - only checks its specifics after building NUT
+# The extent of actions and tests called below depends on project configuration
+check-dmf: all
+	cd $(top_srcdir)/scripts/DMF && $(MAKE) check
+
 # workaround the dist generated files that are also part of the distribution
 # Note that distcleancheck is disabled for now, while waiting for a proper
 # solution, that do not break older unix systems
