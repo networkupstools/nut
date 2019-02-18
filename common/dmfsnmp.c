@@ -941,7 +941,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	char *func_code = NULL;
 #endif
 	double multiplier = 128;
-	
+
 	unsigned long flags;
 	int info_flags;
 	info_lkp_t *lookup = NULL;
@@ -1051,23 +1051,22 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				, &func_lang, &func_code
 #endif
 				));
-	} else
+	// End of arg[5] aka setvar
+	} else*/
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
-			 const char *, unsigned long, info_lkp_t *, int *
+			 const char *, unsigned long, info_lkp_t * /*, int * */
 #if WITH_DMF_FUNCTIONS
 			, char**, char**
 #endif
 			))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
-			 arg[3], flags, lookup, NULL
+			 arg[3], flags, lookup /*, NULL*/
 #if WITH_DMF_FUNCTIONS
 			, &func_lang, &func_code
 #endif
 			));
-	// End of arg[5] aka setvar
-*/
 
 	for(i = 0; i < (INFO_SNMP_MAX_ATTRS + 1); i++)
 		free (arg[i]);
