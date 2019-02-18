@@ -570,7 +570,7 @@ static snmp_info_t eaton_marlin_mib[] = {
  */
 	{ "input.feed.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.3.1.1.10.%i.1",
-		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL /*, NULL */ },
 	/* Feed color (integer RGB)
 	 * inputFeedColor.0.1 = Gauge32: 0   (black)
 	 */
@@ -579,11 +579,11 @@ static snmp_info_t eaton_marlin_mib[] = {
  *		NULL, SU_FLAG_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL, NULL },
  */
 	{ "input.feed.color", 0, 1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.9.%i.1",
-		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_FLAG_SEMI_STATIC | SU_FLAG_OK | SU_TYPE_DAISY_1, NULL /*, NULL */ },
 	/* inputPowerCapacity.0.1 = INTEGER: 2300 */
 	/* FIXME: RFC on key name is needed when backporting to NUT upstream */
 	{ "input.realpower.nominal", 0, 1.0, ".1.3.6.1.4.1.534.6.6.7.3.5.1.9.%i.1",
-		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL, NULL },
+		NULL, SU_FLAG_NEGINVALID | SU_FLAG_OK, NULL /*, NULL */ },
 
 	/* Ambient collection */
 	{ "ambient.present", ST_FLAG_STRING, SU_INFOSIZE,
@@ -962,10 +962,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 	{ "outlet.%i.delay.shutdown", ST_FLAG_RW, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.10.%i.%i",
-		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL /*, NULL */ },
 	{ "outlet.%i.delay.start", ST_FLAG_RW, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
-		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_FLAG_NEGINVALID | SU_OUTLET | SU_TYPE_DAISY_1, NULL /*, NULL */ },
 
 	/* Per-outlet shutdown / startup timers
 	 * outletControlOffCmd.0.1 = INTEGER: -1
@@ -973,10 +973,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	 */
 	{ "outlet.%i.timer.shutdown", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
-		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL /*, NULL */ },
 	{ "outlet.%i.timer.start", 0, 1,
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.4.%i.%i",
-		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL /*, NULL */ },
 
 	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
 	{ "outlet.%i.load.off.delay", 0, 1, ".1.3.6.1.4.1.534.6.6.7.6.6.1.3.%i.%i",
