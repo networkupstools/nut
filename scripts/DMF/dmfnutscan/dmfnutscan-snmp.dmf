@@ -12,6 +12,7 @@
 	<mib2nut auto_check=".1.3.6.1.4.1.20677.1" mib_name="pulizzi_switched1" oid=".1.3.6.1.4.1.20677.1" />
 	<mib2nut auto_check=".1.3.6.1.4.1.20677.1" mib_name="pulizzi_switched2" oid=".1.3.6.1.4.1.20677.2" />
 	<mib2nut auto_check=".1.3.6.1.4.1.232.165.3.1.1.0" mib_name="cpqpower" oid=".1.3.6.1.4.1.232.165.3" />
+	<mib2nut auto_check=".1.3.6.1.4.1.232.165.7.1.2.1.3.0" mib_name="hpe_epdu" oid=".1.3.6.1.4.1.232.165.7" />
 	<mib2nut auto_check=".1.3.6.1.4.1.2947.1.1.2.0" mib_name="bestpower" />
 	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.1.1.1.1.0" mib_name="apcc" />
 	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" oid=".1.3.6.1.4.1.318.1.3.4.4" />

@@ -58,8 +58,8 @@ print_snmp_memory_struct(snmp_info_t *self)
 		" //   OID:  %s //   Default: %s",
 		self->info_type, self->info_len,
 		self->OID, self->dfl);
-	if(self->setvar)
-		upsdebugx(5, " //   Setvar: %d\n", *self->setvar);
+//	if(self->setvar)
+//		upsdebugx(5, " //   Setvar: %d\n", *self->setvar);
 
 	if (self->oid2info)
 	{
@@ -127,6 +127,7 @@ print_snmp_memory_struct(snmp_info_t *self)
 		} /* if language is recognized */
 	} /* if code is present */
 #endif /* WITH_DMF_FUNCTIONS */
+	upsdebugx(5, "End of print_snmp_memory_struct()");
 }
 
 void
@@ -134,6 +135,7 @@ print_alarm_memory_struct(alarms_info_t *self)
 {
 	upsdebugx(5, "Alarm: -->  OID: %s //   Status: %s //   Value: %s\n",
 		self->OID, self->status_value, self->alarm_value);
+	upsdebugx(5, "End of print_alarm_memory_struct()");
 }
 
 void
@@ -161,6 +163,7 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 		while ( !is_sentinel__snmp_info_t(&(self->snmp_info[i])) ) {
 			print_snmp_memory_struct(self->snmp_info+i);
 			i++;
+			upsdebugx(5, "print_mib2nut_memory_struct: snmp_info: Proceeding to entry #%i", i);
 		}
 	}
 
@@ -176,8 +179,10 @@ print_mib2nut_memory_struct(mib2nut_info_t *self)
 		while ( !is_sentinel__alarms_info_t(&(self->alarms_info[i])) ) {
 			print_alarm_memory_struct(self->alarms_info+i);
 			i++;
+			upsdebugx(5, "print_mib2nut_memory_struct: alarms_info: Proceeding to entry #%i", i);
 		}
 	}
+	upsdebugx(5, "End of print_mib2nut_memory_struct()");
 }
 /*END DEBUGGING*/
 
@@ -267,7 +272,8 @@ info_alarm_new (const char *oid, const char *status, const char *alarm)
 snmp_info_t *
 info_snmp_new (const char *name, int info_flags, double multiplier,
 	const char *oid, const char *dfl, unsigned long flags,
-	info_lkp_t *lookup, int *setvar
+	info_lkp_t *lookup
+	//, int *setvar
 #if WITH_DMF_FUNCTIONS
 	, char **function_language, char **function_code
 #endif
@@ -285,7 +291,7 @@ info_snmp_new (const char *name, int info_flags, double multiplier,
 	self->info_flags = info_flags;
 	self->flags = flags;
 	self->oid2info = lookup;
-	self->setvar = setvar;
+//	self->setvar = setvar;
 #if WITH_DMF_FUNCTIONS
 	/* Note: The DMF (XML) structure contains a "functionset" reference and
 	 * the "name" of the mapping field; these are looked up during parsing
@@ -734,10 +740,10 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 					lkp->values[i])->dfl;
 			else	snmp[i].dfl = NULL;
 
-			if( ((snmp_info_t*) lkp->values[i])->setvar )
-				snmp[i].setvar = ((snmp_info_t*)
-					lkp->values[i])->setvar;
-			else	snmp[i].setvar = NULL;
+//			if( ((snmp_info_t*) lkp->values[i])->setvar )
+//				snmp[i].setvar = ((snmp_info_t*)
+//					lkp->values[i])->setvar;
+//			else	snmp[i].setvar = NULL;
 
 			if( ((snmp_info_t*) lkp->values[i])->oid2info )
 				snmp[i].oid2info = ((snmp_info_t*)
@@ -771,7 +777,7 @@ mib2nut_info_node_handler (alist_t *list, const char **attrs)
 		snmp[i].OID = NULL;
 		snmp[i].flags = 0;
 		snmp[i].dfl = NULL;
-		snmp[i].setvar = NULL;
+//		snmp[i].setvar = NULL;
 		snmp[i].oid2info = NULL;
 #if WITH_DMF_FUNCTIONS
 		snmp[i].function_code = NULL;
@@ -935,7 +941,7 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	char *func_code = NULL;
 #endif
 	double multiplier = 128;
-	
+
 	unsigned long flags;
 	int info_flags;
 	info_lkp_t *lookup = NULL;
@@ -950,8 +956,8 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	arg[2] = get_param_by_name(SNMP_OID, attrs);
 	arg[3] = get_param_by_name(SNMP_DEFAULT, attrs);
 	arg[4] = get_param_by_name(SNMP_LOOKUP, attrs);
-	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
-	
+//	arg[5] = get_param_by_name(SNMP_SETVAR, attrs);
+
 #if WITH_DMF_FUNCTIONS
 	arg[6] = get_param_by_name(TYPE_FUNCTIONSET, attrs);
 	if(arg[6])
@@ -997,9 +1003,9 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 	if(arg[1])
 		multiplier = atof(arg[1]);
 
+/*
 	if(arg[5])
 	{
-		flags |= SU_FLAG_SETINT;
 		if(strcmp(arg[5], SETVAR_INPUT_PHASES) == 0)
 			alist_append(element, ((snmp_info_t *(*)
 				(const char *, int, double, const char *,
@@ -1045,17 +1051,18 @@ snmp_info_node_handler(alist_t *list, const char **attrs)
 				, &func_lang, &func_code
 #endif
 				));
-	} else
+	// End of arg[5] aka setvar
+	} else*/
 		alist_append(element, ((snmp_info_t *(*)
 			(const char *, int, double, const char *,
-			 const char *, unsigned long, info_lkp_t *, int *
+			 const char *, unsigned long, info_lkp_t * /*, int * */
 #if WITH_DMF_FUNCTIONS
 			, char**, char**
 #endif
 			))
 			element->new_element)
 			(arg[0], info_flags, multiplier, arg[2],
-			 arg[3], flags, lookup, NULL
+			 arg[3], flags, lookup /*, NULL*/
 #if WITH_DMF_FUNCTIONS
 			, &func_lang, &func_code
 #endif
@@ -1542,6 +1549,7 @@ dmf_strneq (const char* x, const char* y)
 bool
 is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct)
 {
+	upsdebugx (5, "Entering is_sentinel__snmp_device_id_t()");
 	assert(pstruct);
 	return ( pstruct->oid == NULL && pstruct->sysoid == NULL && pstruct->mib == NULL );
 }
@@ -1549,6 +1557,7 @@ is_sentinel__snmp_device_id_t(const snmp_device_id_t *pstruct)
 bool
 is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
 {
+	upsdebugx (5, "Entering is_sentinel__snmp_info_t()");
 	assert (pstruct);
 	return ( pstruct->info_type == NULL && pstruct->info_len == 0 && pstruct->OID == NULL
 	      && pstruct->dfl == NULL && pstruct->flags == 0 && pstruct->oid2info == NULL
@@ -1564,6 +1573,7 @@ is_sentinel__snmp_info_t(const snmp_info_t *pstruct)
 
 bool
 is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct) {
+	upsdebugx (5, "Entering is_sentinel__mib2nut_info_t()");
 	assert (pstruct);
 	return ( pstruct->mib_name == NULL && pstruct->mib_version == NULL && pstruct->oid_pwr_status == NULL
 	      && pstruct->oid_auto_check == NULL && pstruct->snmp_info == NULL && pstruct->sysOID == NULL
@@ -1572,12 +1582,14 @@ is_sentinel__mib2nut_info_t(const mib2nut_info_t *pstruct) {
 
 bool
 is_sentinel__alarms_info_t(const alarms_info_t *pstruct) {
+	upsdebugx (5, "Entering is_sentinel__alarms_info_t()");
 	assert (pstruct);
 	return ( pstruct->alarm_value == NULL && pstruct->OID == NULL && pstruct->status_value == NULL );
 }
 
 bool
 is_sentinel__info_lkp_t(const info_lkp_t *pstruct) {
+	upsdebugx (5, "Entering is_sentinel__info_lkp_t()");
 	assert (pstruct);
 	return ( pstruct->info_value == NULL && pstruct->oid_value == 0
 #if WITH_SNMP_LKP_FUN

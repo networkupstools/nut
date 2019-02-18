@@ -56,10 +56,10 @@
 		<snmp_info default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.realpower" oid=".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.6" outlet="yes"/>
 		<snmp_info default="%i" flag_ok="yes" multiplier="1.0" name="outlet.%i.powerfactor" oid=".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.7" outlet="yes"/>
 		<snmp_info default="no" flag_ok="yes" lookup="raritanpx2_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i" outlet="yes" static="yes" string="yes"/>
-		<snmp_info command="yes" multiplier="0.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
-		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
-		<snmp_info command="yes" multiplier="2.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
+		<snmp_info command="yes" default="1" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
+		<snmp_info command="yes" default="2" multiplier="1.0" name="outlet.%i.load.cycle" oid=".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i" outlet="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.13742.6.3.2.1.1.3.1" mib_name="raritan-px2" name="raritan_px2" oid=".1.3.6.1.4.1.13742.6" snmp_info="raritan_px2_mib" version="0.1"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.13742.6.3.2.1.1.3.1" mib_name="raritan-px2" name="raritan_px2" oid=".1.3.6.1.4.1.13742.6" snmp_info="raritan_px2_mib" version="0.2"/>
 </nut>
 

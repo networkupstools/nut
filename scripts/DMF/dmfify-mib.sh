@@ -5,7 +5,7 @@
 # It expects to be located in (executed from) $NUT_SOURCEDIR/scripts/DMF
 #
 #   Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-#   Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+#   Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 # A bashism, important for us here
@@ -25,24 +25,66 @@ _SCRIPT_DIR="`cd $(dirname "$0") && pwd`" || \
 
 # The pycparser uses GCC-compatible flags
 [ -n "${CC-}" ] || CC="`which gcc`"
-[ -n "${CC-}" ] && \
-case "$CC" in
-    /*) ;;
-    *) # No support for CLI args as part of "$CC" right now
-        CC="`which "$CC"`" ;;
-esac
+CC_ENV=""
+if [ -n "${CC-}" ] ; then
+    case "$CC" in
+        *" "*|*\t*) # args inside? prefixed envvars?
+            STAGE=env
+            for TOKEN in $CC ; do
+                case "$TOKEN" in
+                    *=*)
+                        case "$STAGE" in
+                            env) CC_ENV="$CC_ENV $TOKEN" ;;
+                            arg) CFLAGS="$CFLAGS $TOKEN" ;;
+                        esac ;;
+                    *)
+                        case "$STAGE" in
+                            env) STAGE=bin ; CC="$TOKEN" ;;
+                            bin) STAGE=arg ; CFLAGS="$CFLAGS $TOKEN" ;;
+                            arg) CFLAGS="$CFLAGS $TOKEN" ;;
+                        esac ;;
+                esac
+            done
+            ;;
+    esac
+    case "$CC" in
+        /*) ;;
+        *)  CC="`which "$CC"`" ;;
+    esac
+fi
 [ -n "${CC}" ] && [ -x "$CC" ] || { echo "ERROR: Can not find (G)CC: '$CC'" >&2; exit 2; }
-export CC
+export CC CFLAGS CC_ENV
 
 [ -n "${CPP-}" ] || CPP="`which cpp`"
-[ -n "${CPP-}" ] && \
-case "$CPP" in
-    /*) ;;
-    *) # No support for CLI args as part of "$CPP" right now
-        CPP="`which "$CPP"`" ;;
-esac
+CPP_ENV=""
+if [ -n "${CPP-}" ] ; then
+    case "$CPP" in
+        *" "*|*\t*) # args inside? prefixed envvars?
+            STAGE=env
+            for TOKEN in $CPP ; do
+                case "$TOKEN" in
+                    *=*)
+                        case "$STAGE" in
+                            env) CPP_ENV="$CPP_ENV $TOKEN" ;;
+                            arg) CPPFLAGS="$CPPFLAGS $TOKEN" ;;
+                        esac ;;
+                    *)
+                        case "$STAGE" in
+                            env) STAGE=bin ; CPP="$TOKEN" ;;
+                            bin) STAGE=arg ; CPPFLAGS="$CPPFLAGS $TOKEN" ;;
+                            arg) CPPFLAGS="$CPPFLAGS $TOKEN" ;;
+                        esac ;;
+                esac
+            done
+            ;;
+    esac
+    case "$CPP" in
+        /*) ;;
+        *)  CPP="`which "$CPP"`" ;;
+    esac
+fi
 [ -n "${CPP}" ] && [ -x "$CPP" ] || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
-export CPP
+export CPP CPPFLAGS CPP_ENV
 
 if [ "$1" == "--skip-sanity-check" ]; then
     shift 1
@@ -56,8 +98,8 @@ else
             { echo "ERROR: Can not use Python module '$PYMOD'" >&2; exit 2; }
     done
 
-    "$CPP" --help > /dev/null || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
-    "$CC" --help > /dev/null || { echo "ERROR: Can not find a C compiler: '$CC'" >&2; exit 2; }
+    eval $CPP_ENV "$CPP" $CPPFLAGS --help > /dev/null || { echo "ERROR: Can not find a C preprocessor: '$CPP'" >&2; exit 2; }
+    eval $CC_ENV  "$CC"  $CFLAGS   --help > /dev/null || { echo "ERROR: Can not find a C compiler: '$CC'" >&2; exit 2; }
 
     if [ "$1" = "--sanity-check" ]; then
         # We are alive by now, so checks above have succeeded

@@ -18,6 +18,6 @@
 		<snmp_info default="" multiplier="0.1" name="battery.voltage" oid=".1.3.6.1.4.1.2947.1.2.4.0" power_status="yes"/>
 		<snmp_info default="" multiplier="0.1" name="battery.current" oid=".1.3.6.1.4.1.2947.1.2.5.0" power_status="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.2947.1.1.2.0" mib_name="bestpower" name="bestpower" snmp_info="bestpower_mib" version="0.1"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.2947.1.1.2.0" mib_name="bestpower" name="bestpower" snmp_info="bestpower_mib" version="0.2"/>
 </nut>
 

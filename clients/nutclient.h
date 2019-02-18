@@ -221,6 +221,12 @@ public:
 	 */
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
 	/**
+	 * Retrieve values of all variables of a set of devices.
+	 * \param devs Device names
+	 * \return Variable values indexed by variable names, indexed by device names.
+	 */
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException);
+	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
@@ -265,8 +271,9 @@ public:
 	 * Intend to execute a command.
 	 * \param dev Device name
 	 * \param name Command name
+	 * \param param Additional command parameter
 	 */
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual void executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")throw(NutException)=0;
 	/** \} */
 
 	/**
@@ -370,12 +377,13 @@ public:
 	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException);
 	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException);
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException);
 	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException);
 	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException);
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException);
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException);
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+	virtual void executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")throw(NutException);
 
  	virtual void deviceLogin(const std::string& dev)throw(NutException);
 	virtual void deviceMaster(const std::string& dev)throw(NutException);
@@ -384,12 +392,16 @@ public:
 
 protected:
 	std::string sendQuery(const std::string& req)throw(nut::IOException);
+	void sendAsyncQueries(const std::vector<std::string>& req)throw(IOException);
 	static void detectError(const std::string& req)throw(nut::NutException);
 
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
 
 	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "")
+		throw(nut::NutException);
+
+	std::vector<std::vector<std::string> > parseList(const std::string& req)
 		throw(nut::NutException);
 
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
@@ -527,8 +539,9 @@ public:
 	/**
 	 * Intend to execute a command on the device.
 	 * \param name Command name.
+	 * \param param Additional command parameter
 	 */
-	void executeCommand(const std::string& name)throw(NutException);
+	void executeCommand(const std::string& name, const std::string& param="")throw(NutException);
 
 	/**
 	 * Login current client's user for the device.
@@ -687,9 +700,10 @@ public:
 
 	/**
 	 * Intend to retrieve command description.
+	 * \param param Additional command parameter
 	 * \return Command description if provided.
 	 */
-	void execute()throw(NutException);
+	void execute(const std::string& param="")throw(NutException);
 
 protected:
 	Command(Device* dev, const std::string& name);
@@ -901,7 +915,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
  * \param dev Device name.
  * \param cmd Command name.
  */
-void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param="");
 
 /** \} */
 

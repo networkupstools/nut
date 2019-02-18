@@ -105,15 +105,15 @@
 		<snmp_info bypass_3_phase="yes" default="" multiplier="1.0" name="input.bypass.L3.realpower" oid="1.3.6.1.2.1.33.1.5.3.1.4.3"/>
 		<snmp_info default="" lookup="ietf_overload_info" multiplier="128.0" name="ups.status" oid="1.3.6.1.2.1.33.1.6.3.8" power_status="yes" string="yes"/>
 		<snmp_info default="" lookup="ietf_test_active_info" multiplier="128.0" name="ups.status" oid="1.3.6.1.2.1.33.1.7.1.0" power_status="yes" string="yes"/>
-		<snmp_info command="yes" default="1.3.6.1.2.1.33.1.7.7.2" multiplier="0.0" name="test.battery.stop" oid="1.3.6.1.2.1.33.1.7.1.0"/>
-		<snmp_info command="yes" default="1.3.6.1.2.1.33.1.7.7.3" multiplier="0.0" name="test.battery.start" oid="1.3.6.1.2.1.33.1.7.1.0"/>
-		<snmp_info command="yes" default="1.3.6.1.2.1.33.1.7.7.4" multiplier="0.0" name="test.battery.start.quick" oid="1.3.6.1.2.1.33.1.7.1.0"/>
-		<snmp_info command="yes" default="1.3.6.1.2.1.33.1.7.7.5" multiplier="0.0" name="test.battery.start.deep" oid="1.3.6.1.2.1.33.1.7.1.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="test.battery.stop" oid="1.3.6.1.2.1.33.1.7.1.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="test.battery.start" oid="1.3.6.1.2.1.33.1.7.1.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="test.battery.start.quick" oid="1.3.6.1.2.1.33.1.7.1.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="test.battery.start.deep" oid="1.3.6.1.2.1.33.1.7.1.0"/>
 		<snmp_info default="" lookup="ietf_test_result_info" multiplier="128.0" name="ups.test.result" oid="1.3.6.1.2.1.33.1.7.3.0" power_status="yes" string="yes"/>
 		<snmp_info default="" multiplier="8.0" name="ups.timer.shutdown" oid="1.3.6.1.2.1.33.1.8.2.0" power_status="yes" string="yes" writable="yes"/>
-		<snmp_info command="yes" default="" multiplier="0.0" name="load.off" oid="1.3.6.1.2.1.33.1.8.2.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="load.off" oid="1.3.6.1.2.1.33.1.8.2.0"/>
 		<snmp_info default="" multiplier="8.0" name="ups.timer.start" oid="1.3.6.1.2.1.33.1.8.3.0" power_status="yes" string="yes" writable="yes"/>
-		<snmp_info command="yes" default="" multiplier="0.0" name="load.on" oid="1.3.6.1.2.1.33.1.8.3.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="load.on" oid="1.3.6.1.2.1.33.1.8.3.0"/>
 		<snmp_info default="" multiplier="8.0" name="ups.timer.reboot" oid="1.3.6.1.2.1.33.1.8.4.0" power_status="yes" string="yes" writable="yes"/>
 		<snmp_info default="" lookup="ietf_yes_no_info" multiplier="128.0" name="ups.start.auto" oid="1.3.6.1.2.1.33.1.8.5.0" power_status="yes" string="yes"/>
 		<snmp_info default="" multiplier="1.0" name="input.voltage.nominal" oid="1.3.6.1.2.1.33.1.9.1.0" power_status="yes"/>
@@ -124,13 +124,13 @@
 		<snmp_info default="" multiplier="1.0" name="output.realpower.nominal" oid="1.3.6.1.2.1.33.1.9.6.0" power_status="yes"/>
 		<snmp_info default="" multiplier="60.0" name="battery.runtime.low" oid="1.3.6.1.2.1.33.1.9.7.0" power_status="yes"/>
 		<snmp_info default="" lookup="ietf_beeper_status_info" multiplier="128.0" name="ups.beeper.status" oid="1.3.6.1.2.1.33.1.9.8.0" power_status="yes" string="yes"/>
-		<snmp_info command="yes" default="" multiplier="1.0" name="beeper.disable" oid="1.3.6.1.2.1.33.1.9.8.0"/>
-		<snmp_info command="yes" default="" multiplier="2.0" name="beeper.enable" oid="1.3.6.1.2.1.33.1.9.8.0"/>
-		<snmp_info command="yes" default="" multiplier="3.0" name="beeper.mute" oid="1.3.6.1.2.1.33.1.9.8.0"/>
+		<snmp_info command="yes" default="1" multiplier="1.0" name="beeper.disable" oid="1.3.6.1.2.1.33.1.9.8.0"/>
+		<snmp_info command="yes" default="2" multiplier="1.0" name="beeper.enable" oid="1.3.6.1.2.1.33.1.9.8.0"/>
+		<snmp_info command="yes" default="3" multiplier="1.0" name="beeper.mute" oid="1.3.6.1.2.1.33.1.9.8.0"/>
 		<snmp_info default="" multiplier="1.0" name="input.transfer.low" oid="1.3.6.1.2.1.33.1.9.9.0" power_status="yes"/>
 		<snmp_info default="" multiplier="1.0" name="input.transfer.high" oid="1.3.6.1.2.1.33.1.9.10.0" power_status="yes"/>
 	</snmp>
-	<mib2nut auto_check="1.3.6.1.2.1.33.1.1.1.0" mib_name="ietf" name="ietf" oid=".1.3.6.1.2.1.33" power_status="1.3.6.1.2.1.33.1.4.1.0" snmp_info="ietf_mib" version="1.51"/>
-	<mib2nut mib_name="tripplite" name="tripplite_ietf" oid=".1.3.6.1.4.1.850.1" snmp_info="ietf_mib" version="1.51"/>
+	<mib2nut auto_check="1.3.6.1.2.1.33.1.1.1.0" mib_name="ietf" name="ietf" oid=".1.3.6.1.2.1.33" power_status="1.3.6.1.2.1.33.1.4.1.0" snmp_info="ietf_mib" version="1.52"/>
+	<mib2nut mib_name="tripplite" name="tripplite_ietf" oid=".1.3.6.1.4.1.850.1" snmp_info="ietf_mib" version="1.52"/>
 </nut>
 

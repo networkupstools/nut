@@ -30,8 +30,8 @@
 		<snmp_info flag_ok="yes" lookup="apc_pdu_sw_outlet_status_info" multiplier="128.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.318.1.1.4.4.2.1.3.%i" outlet="yes" string="yes" writable="yes"/>
 		<snmp_info absent="yes" default="yes" flag_ok="yes" lookup="apc_pdu_sw_outlet_switchability_info" multiplier="128.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.318.1.1.4.4.2.1.3.%i" outlet="yes" static="yes" string="yes"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" name="apc_pdu_msp" oid=".1.3.6.1.4.1.318.1.3.4.6" snmp_info="apc_pdu_mib" version="0.2"/>
-	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" name="apc_pdu_rpdu2" oid=".1.3.6.1.4.1.318.1.3.4.5" snmp_info="apc_pdu_mib" version="0.2"/>
-	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" name="apc_pdu_rpdu" oid=".1.3.6.1.4.1.318.1.3.4.4" snmp_info="apc_pdu_mib" version="0.2"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" name="apc_pdu_msp" oid=".1.3.6.1.4.1.318.1.3.4.6" snmp_info="apc_pdu_mib" version="0.3"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" name="apc_pdu_rpdu2" oid=".1.3.6.1.4.1.318.1.3.4.5" snmp_info="apc_pdu_mib" version="0.3"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.318.1.1.4.1.4.0" mib_name="apc_pdu" name="apc_pdu_rpdu" oid=".1.3.6.1.4.1.318.1.3.4.4" snmp_info="apc_pdu_mib" version="0.3"/>
 </nut>
 

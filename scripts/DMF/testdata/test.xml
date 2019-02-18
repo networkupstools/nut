@@ -108,12 +108,12 @@
 		<info_alarm alarm="None" status="None"/>
 	</alarm>
 	<snmp name = "name">
-		<snmp_info name = "output.frequency" multiplier = "0.1" oid = "1.3.6.1.4.1.534.1.4.2.0" default = "" lookup = "pw_pwr_info" setvar = "input_phases"
+		<snmp_info name = "output.frequency" multiplier = "0.1" oid = "1.3.6.1.4.1.534.1.4.2.0" default = "" lookup = "pw_pwr_info"
 													    static = "yes"
 													    absent = "yes"
-													    
 													    writable = "no"
 													    string = "no"/>
+													<!-- setvar = "input_phases" -->
 	</snmp>
 </nut>
 

@@ -133,6 +133,10 @@ int load_neon_lib(void){
 	}
 
 	if( lt_dlinit() != 0 ) {
+		/* FIXME : Make the search for candidate library names restartable,
+		 * so if we hit a bad filename, it is not instantly the end of road.
+		 * Applies here and below, where we check for symbols in the lib.
+		 */
 		upsdebugx(1, "load_neon_lib(): lt_dlinit() action failed");
 		goto err;
 	}

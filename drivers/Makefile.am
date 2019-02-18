@@ -214,7 +214,7 @@ snmp_ups_SOURCES = snmp-ups.c apc-mib.c baytech-mib.c compaq-mib.c \
  ietf-mib.c mge-mib.c netvision-mib.c powerware-mib.c raritan-pdu-mib.c \
  bestpower-mib.c cyberpower-mib.c delta_ups-mib.c xppc-mib.c huawei-mib.c \
  eaton-ats16-mib.c apc-ats-mib.c raritan-px2-mib.c eaton-ats30-mib.c \
- apc-pdu-mib.c emerson-avocent-pdu-mib.c
+ apc-pdu-mib.c emerson-avocent-pdu-mib.c hpe-pdu-mib.c
 snmp_ups_CFLAGS = $(AM_CFLAGS)
 snmp_ups_CFLAGS += $(LIBNETSNMP_CFLAGS)
 snmp_ups_LDADD = $(LDADD_DRIVERS) $(LIBNETSNMP_LIBS)
@@ -318,7 +318,8 @@ dist_noinst_HEADERS = apc-mib.h apc-iem-mib.h apc-hid.h baytech-mib.h bcmxcp.h	\
  nutdrv_qx_voltronic.h nutdrv_qx_voltronic-qs.h nutdrv_qx_voltronic-qs-hex.h nutdrv_qx_zinto.h \
  xppc-mib.h huawei-mib.h eaton-ats16-mib.h apc-ats-mib.h raritan-px2-mib.h eaton-ats30-mib.h \
  apc-pdu-mib.h eaton-pdu-genesis2-mib.h eaton-pdu-marlin-mib.h eaton-pdu-marlin-helpers.h \
- eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h
+ eaton-pdu-pulizzi-mib.h eaton-pdu-revelation-mib.h emerson-avocent-pdu-mib.h \
+ hpe-pdu-mib.h
 
 # Define a dummy library so that Automake builds rules for the
 # corresponding object files.  This library is not actually built,

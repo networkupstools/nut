@@ -6,7 +6,7 @@
 # by anyone interested.
 #
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
-#    Copyright (C) 2016 - 2017 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
 #
 
 from __future__ import print_function
@@ -156,18 +156,18 @@ class Visitor(c_ast.NodeVisitor):
             elif isinstance (oid2info, c_ast.UnaryOp) and oid2info.op == '&':
                 ditem ["oid2info"] = oid2info.expr.name.name
 
-            # 7: int *setvar
-            try:
-                _, setvar = kids [7]
-            except IndexError:
-                warn ("%s: %d: missing setvar of %s" % (oid2info.coord.file, oid2info.coord.line, ditem ["info_type"]))
-                ditem ["setvar"] = None
-                continue
-
-            if isinstance (setvar, c_ast.Cast):
-                ditem ["setvar"] = None
-            elif isinstance (setvar, c_ast.UnaryOp):
-                ditem ["setvar"] = setvar.expr.name
+#            # 7: int *setvar : obsoleted
+#            try:
+#                _, setvar = kids [7]
+#            except IndexError:
+#                warn ("%s: %d: missing setvar of %s" % (oid2info.coord.file, oid2info.coord.line, ditem ["info_type"]))
+#                ditem ["setvar"] = None
+#                continue
+#
+#            if isinstance (setvar, c_ast.Cast):
+#                ditem ["setvar"] = None
+#            elif isinstance (setvar, c_ast.UnaryOp):
+#                ditem ["setvar"] = setvar.expr.name
 
         return tuple (ret)
 
@@ -376,7 +376,8 @@ def s_snmp2c (fout, js, name):
         pinfo = copy.copy (info)
         pinfo ["info_flags"] = functools.reduce (lambda x, y : x|y, pinfo ["info_flags"])
         pinfo ["flags"] = functools.reduce (lambda x, y : x|y, pinfo ["flags"])
-        for k in ("OID", "oid2info", "dfl", "info_type", "setvar"):
+        for k in ("OID", "oid2info", "dfl", "info_type"):
+            # , "setvar"
             if not k in pinfo or pinfo [k] is None:
                 pinfo [k] = "NULL"
 
@@ -386,9 +387,10 @@ def s_snmp2c (fout, js, name):
             if pinfo [k] != "NULL":
                 pinfo [k] = '"' + pinfo [k] + '"'
 
-        if pinfo ["setvar"] != "NULL":
-            pinfo ["setvar"] = '&' + pinfo ["setvar"]
-        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
+#        if pinfo ["setvar"] != "NULL":
+#            pinfo ["setvar"] = '&' + pinfo ["setvar"]
+#        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s, %(setvar)s},' % pinfo, file=fout)
+        print ('    { "%(info_type)s", %(info_flags)d, %(info_len)f, %(OID)s, %(dfl)s, %(flags)d, %(oid2info)s},' % pinfo, file=fout)
     print ("    { NULL, 0, 0, NULL, NULL, 0, NULL }", file=fout)
     print ("};", file=fout)
 
@@ -507,7 +509,7 @@ int main () {
             fprintf (stderr, "%(k)s_TEST[%%zi].oid2info=<%%p>\\n", i, %(k)s_TEST[i].oid2info);
             return 1;
         }
-        assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
+        // assert (%(k)s [i].setvar == %(k)s_TEST [i].setvar);
     }
     fprintf (stderr, "OK\\n");""" % {'k' : key}, file=fout)
 
@@ -599,10 +601,27 @@ if args.test:
     except KeyError:
         gcc_ldflags = []
 
+    # Pass $CC_ENV as a list of envvars, if any gets used
+    try:
+        gcc_env = None
+        gcc_env_str = os.environ["CC_ENV"]
+        if gcc_env_str is not None and gcc_env_str != "" :
+            gcc_env = os.environ.copy()
+            # Nifty splitter from https://stackoverflow.com/a/5044384/4715872
+            gcc_env_list = gcc_env_str.split(" ")
+            for pair in gcc_env_list:
+                E,V = pair.split("=")
+                gcc_env[E] = V
+    except KeyError:
+        gcc_env = None
+
     cmd = [gcc, "-std=c99", "-ggdb", "-I"+drivers_dir, "-I"+include_dir] + gcc_cflags + ["-o", prog_file, test_file] + gcc_ldflags
     info ("COMPILE: " + " ".join (cmd))
     try:
-        subprocess.check_call (cmd)
+        if gcc_env is None :
+            subprocess.check_call (cmd)
+        else :
+            subprocess.check_call (cmd, env = gcc_env)
     except subprocess.CalledProcessError as retcode:
         warn ("COMPILE FAILED with code %s" % retcode.returncode)
         sys.exit (retcode.returncode)

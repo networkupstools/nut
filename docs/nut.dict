@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2475 utf-8
+personal_ws-1.1 en 2478 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -1196,6 +1196,7 @@ apctest
 apcupsd
 aphel
 ar
+arg
 argc
 argparse
 args
@@ -1349,6 +1350,7 @@ clueful
 cmd
 cmdline
 cmdname
+cmdparam
 cmds
 cmdvartab
 codebase
@@ -2032,6 +2034,7 @@ privProtocol
 probu
 proc
 productid
+prog
 psu
 pw
 pwl
