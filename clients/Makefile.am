@@ -53,11 +53,14 @@ if WITH_SSL
   libupsclient_la_LIBADD += $(LIBSSL_LIBS)
 endif
 
-# libupsclient version information
+# Below we set API versions of public libraries
 # http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+# Note that changes here may have to be reflected in packaging (the shared
+# object .so names would differ)
+
+# libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 4:0:0
 
 # libnutclient version information
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 1:0:0
-
