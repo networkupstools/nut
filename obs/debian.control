@@ -243,7 +243,7 @@ Description: network UPS tools - development files
  .
  This package provides the development files.
 
-Package: libnutclient0
+Package: libnutclient1
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -261,7 +261,7 @@ Description: network UPS tools - new client library
 Package: libnutclient-dev
 Section: libdevel
 Architecture: any
-Depends: libnutclient0 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends: libnutclient1 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: network UPS tools - development files
  Network UPS Tools (NUT) is a client/server monitoring system that
  allows computers to share uninterruptible power supply (UPS) and
