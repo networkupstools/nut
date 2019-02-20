@@ -73,6 +73,13 @@ libnutscan_la_LIBADD = $(NETLIBS) $(top_builddir)/drivers/libserial-nutscan.la
 if WITH_LIBLTDL
 libnutscan_la_LIBADD += $(LIBLTDL_LIBS)
 endif
+#
+# Below we set API versions of public libraries
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+# Note that changes here may have to be reflected in packaging (the shared
+# object .so names would differ)
+#
+# libnutscan version information
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
