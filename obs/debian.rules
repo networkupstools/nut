@@ -111,14 +111,17 @@ common-install-arch::
 		mv $${f} $(CURDIR)/debian/tmp/etc/nut/$${nf};  \
 	done
 
-	# Move -dev file to /usr
+	# Move -dev file to /usr; make sure wanted SONAMES exist (numbers unchanged)
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.$(SO_MAJOR_LIBUPSCLIENT) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.$(SO_MAJOR_LIBUPSCLIENT) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
+	test -s $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) && \
 	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
 
