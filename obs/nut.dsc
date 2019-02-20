@@ -1,6 +1,6 @@
 Format: 1.0
 Source: nut
-Binary: nut, nut-server, nut-client, nut-cgi, nut-snmp, nut-ipmi, nut-xml, nut-powerman-pdu, nut-doc, libupsclient4, libupsclient-dev, libnutclient0, libnutclient-dev, python-nut, nut-monitor, libups-nut-perl
+Binary: nut, nut-server, nut-client, nut-cgi, nut-snmp, nut-ipmi, nut-xml, nut-powerman-pdu, nut-doc, libupsclient4, libupsclient-dev, libnutclient1, libnutclient-dev, python-nut, nut-monitor, libups-nut-perl
 Architecture: any all
 Version: 2.7.4-12
 Maintainer: Arnaud Quette <aquette@debian.org>
@@ -19,7 +19,7 @@ Build-Depends: debhelper (>= 8.1.3), cdbs (>= 0.4.122~), autotools-dev, dh-autor
 Build-Depends-Indep: asciidoc (>= 8.6.3), docbook-xsl, dblatex (>= 0.2.5), libxml2-utils
 Package-List:
  libnutclient-dev deb libdevel optional arch=any
- libnutclient0 deb libs optional arch=any
+ libnutclient1 deb libs optional arch=any
  libnutscan-dev deb libdevel optional arch=any
  libnutscan1 deb libs optional arch=any
  libups-nut-perl deb perl optional arch=all
