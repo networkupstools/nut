@@ -4,7 +4,7 @@
  *
  *  Copyright (C)
  *	2002 - 2014	Arnaud Quette <arnaud.quette@free.fr>
- *	2015 - 2018	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *	2015 - 2019	Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *	2017		Eaton (author: Jim Klimov <EvgenyKlimov@Eaton.com>)
  *	2002 - 2006	Dmitry Frolov <frolov@riss-telecom.ru>
  *			J.W. Hoogervorst <jeroen@hoogervorst.net>
@@ -63,6 +63,7 @@
 #include "apc-pdu-mib.h"
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
+#include "hpe-pdu-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -97,6 +98,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_rpdu2,
 	&apc_pdu_msp,
 	&emerson_avocent_pdu,
+	&hpe_pdu,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -126,7 +128,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.05"
+#define DRIVER_VERSION		"1.11"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -227,8 +229,11 @@ void upsdrv_updateinfo(void)
 		/* Commit status first, otherwise in daisychain mode, "device.0" may
 		 * clear the alarm count since it has an empty alarm buffer and if there
 		 * is only one device that has alarms! */
+		if (daisychain_enabled == FALSE)
+			alarm_commit();
 		status_commit();
-		alarm_commit();
+		if (daisychain_enabled == TRUE)
+			alarm_commit();
 
 		/* store timestamp */
 		lastpoll = time(NULL);
@@ -774,14 +779,19 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 	case ASN_OPAQUE:
 		len = pdu->variables->val_len > buf_len - 1 ?
 			buf_len - 1 : pdu->variables->val_len;
-		if (len > 0) {
-			/* Test for hexadecimal values */
-			if (!isprint(pdu->variables->val.string[0]))
-				snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
-			else {
-				memcpy(buf, pdu->variables->val.string, len);
-				buf[len] = '\0';
+		/* Test for hexadecimal values */
+		int hex = 0, x;
+		u_char *cp;
+		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
+			if (!(isprint(*cp) || isspace(*cp))) {
+				hex = 1;
 			}
+		}
+		if (hex)
+			snprint_hexstring(buf, buf_len, pdu->variables->val.string, pdu->variables->val_len);
+		else {
+			memcpy(buf, pdu->variables->val.string, len);
+			buf[len] = '\0';
 		}
 		break;
 	case ASN_INTEGER:
@@ -1084,7 +1094,7 @@ static void disable_transfer_oids(void)
 }
 
 /* Universal function to add or update info element.
- * If value is NULL, use the default one (su_info_p->dfl) */
+ * If value is NULL, use the default one (su_info_p->dfl) if provided */
 void su_setinfo(snmp_info_t *su_info_p, const char *value)
 {
 	info_lkp_t	*info_lkp;
@@ -1128,8 +1138,12 @@ void su_setinfo(snmp_info_t *su_info_p, const char *value)
 	{
 		if (value != NULL)
 			dstate_setinfo(info_type, "%s", value);
-		else
+		else if (su_info_p->dfl != NULL)
 			dstate_setinfo(info_type, "%s", su_info_p->dfl);
+		else {
+			upsdebugx(3, "%s: no value nor default provided, aborting...", __func__);
+			return;
+		}
 
 		dstate_setflags(info_type, su_info_p->info_flags);
 		dstate_setaux(info_type, su_info_p->info_len);
@@ -1329,7 +1343,7 @@ mib2nut_info_t *match_sysoid()
 				continue;
 
 			/* Clear variables */
-			memset(mib2nut_sysOID, 0, MAX_OID_LEN);
+			memset(mib2nut_sysOID, 0, sizeof(mib2nut_sysOID));
 			mib2nut_sysOID_len = MAX_OID_LEN;
 
 			if (!read_objid(mib2nut[i]->sysOID, mib2nut_sysOID, &mib2nut_sysOID_len))
@@ -1561,7 +1575,6 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 	new_instance->dfl = info_template->dfl;
 	new_instance->flags = info_template->flags;
 	new_instance->oid2info = info_template->oid2info;
-	new_instance->setvar = info_template->setvar;
 
 	upsdebugx(2, "instantiate_info: template instantiated");
 	return new_instance;
@@ -2056,6 +2069,9 @@ bool_t daisychain_init()
 	else {
 		upsdebugx(1, "%s: No device.model entry found.", __func__);
 	}
+
+	upsdebugx(1, "%s: daisychain support is %s", __func__,
+		(daisychain_enabled==TRUE)?"enabled":"disabled");
 
 	return daisychain_enabled;
 }
@@ -2555,10 +2571,6 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 				free_info(tmp_info_p);
 				return FALSE;
 			}
-			if (su_info_p->flags & SU_FLAG_SETINT) {
-			    	upsdebugx(1, "setvar %s", su_info_p->OID);
-			    	*su_info_p->setvar = value;
-			}
 			/* Check if there is a value to be looked up */
 			if ((strValue = su_find_infoval(su_info_p->oid2info, value)) != NULL)
 				snprintf(buf, sizeof(buf), "%s", strValue);
@@ -2721,13 +2733,25 @@ int su_setOID(int mode, const char *varname, const char *val)
 			 * so we have to check if the daisychain is enabled, and if
 			 * the formatting info for it are in 1rst or 2nd position */
 			if (daisychain_enabled == TRUE) {
+				/* Note: daisychain_enabled == TRUE means that we have
+				 * daisychain template. However:
+				 * * when there are multiple devices, offset "-1" applies
+				 *   since device.0 is a fake and actual devices start at
+				 *   index 1
+				 * * when there is only 1 device, offset doesn't apply since
+				 *   the device index is "0"
+				 */
+				int daisychain_offset = 0;
+				if (devices_count > 1)
+					daisychain_offset = 1;
+
 				if (su_info_p->flags & SU_TYPE_DAISY_1) {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						daisychain_device_number, item_number);
+						daisychain_device_number - daisychain_offset, item_number);
 				}
 				else {
 					snprintf((char *)su_info_p->OID, SU_INFOSIZE, tmp_info_p->OID,
-						item_number, daisychain_device_number);
+						item_number, daisychain_device_number - daisychain_offset);
 				}
 			}
 			else {
@@ -2768,7 +2792,14 @@ int su_setOID(int mode, const char *varname, const char *val)
 		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
 	} else {
 		if (mode==SU_MODE_INSTCMD) {
-			status = nut_snmp_set_int(su_info_p->OID, val ? atoi(val) : su_info_p->info_len);
+			/* Sanity check: commands should either have a value or a default */
+			if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
+				upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
+				return STAT_SET_INVALID;
+			}
+			/* FIXME: switch to a generic nut_snmp_set(oid, char *value)
+			 * to simplify handling and avoid atoi(NULL) */
+			status = nut_snmp_set_int(su_info_p->OID, val ? atoi(val) : atoi(su_info_p->dfl));
 		}
 		else {
 			/* non string data may imply a value lookup */

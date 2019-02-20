@@ -104,27 +104,30 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 		return 1;
 	}
 
-	/* ADDRANGE <varname> <minvalue> <maxvalue> */
-	if (!strcasecmp(arg[0], "ADDRANGE")) {
-		state_addrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
-		return 1;
-	}
-
 	/* DELENUM <varname> <enumval> */
 	if (!strcasecmp(arg[0], "DELENUM")) {
 		state_delenum(ups->inforoot, arg[1], arg[2]);
 		return 1;
 	}
 
-	/* DELRANGE <varname> <minvalue> <maxvalue> */
-	if (!strcasecmp(arg[0], "DELRANGE")) {
-		state_delrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
-		return 1;
-	}
-
 	/* SETAUX <varname> <auxval> */
 	if (!strcasecmp(arg[0], "SETAUX")) {
 		state_setaux(ups->inforoot, arg[1], arg[2]);
+		return 1;
+	}
+
+	if (numargs < 4)
+		return 0;
+
+	/* ADDRANGE <varname> <minvalue> <maxvalue> */
+	if (!strcasecmp(arg[0], "ADDRANGE")) {
+		state_addrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
+		return 1;
+	}
+
+	/* DELRANGE <varname> <minvalue> <maxvalue> */
+	if (!strcasecmp(arg[0], "DELRANGE")) {
+		state_delrange(ups->inforoot, arg[1], atoi(arg[2]), atoi(arg[3]));
 		return 1;
 	}
 

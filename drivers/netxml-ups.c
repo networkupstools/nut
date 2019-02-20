@@ -984,6 +984,9 @@ static void netxml_status_set(void)
 	if (STATUS_BIT(SHUTDOWNIMM)) {
 		status_set("FSD");		/* shutdown imminent */
 	}
+	if (STATUS_BIT(CAL)) {
+		status_set("CAL");		/* calibrating */
+	}
 }
 
 

@@ -1339,6 +1339,7 @@ clueful
 cmd
 cmdline
 cmdname
+cmdparam
 cmds
 cmdvartab
 codebase
