@@ -23,6 +23,12 @@ systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir syste
 systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
 systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
 
+# FIXME: Find a smarter way to set those from main codebase recipes...
+# Something like `grep 'version-info' **/Makefile.am` ?
+SO_MAJOR_LIBUPSCLIENT=4
+SO_MAJOR_LIBNUTCLIENT=1
+SO_MAJOR_LIBNUTSCAN=1
+
 # List any files which are not installed
 include /usr/share/cdbs/1/rules/utils.mk
 common-binary-post-install-arch:: list-missing
@@ -76,6 +82,11 @@ configure: configure.ac
 
 pre-build:: debian/compat configure
 
+# FIXME : The recipe below is a crime scene regarding hardcoded paths that
+# are more or less relevant for a particular OS distribution and version,
+# and for certain nearby packages that are impacted by this, as was relevant
+# at the time this recipe was written. Maybe more proper make macros can be
+# used to rectify paths below and allow better manageable per-distro builds.
 common-install-arch::
 	# install the bash completion script
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/bash-completion/completions/
@@ -102,13 +113,13 @@ common-install-arch::
 
 	# Move -dev file to /usr
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
-	ln -s /lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.4 \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libupsclient.so.$(SO_MAJOR_LIBUPSCLIENT) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libupsclient.so
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
-	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.0 \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutclient.so.$(SO_MAJOR_LIBNUTCLIENT) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutclient.so
 	rm -f $(CURDIR)/debian/tmp/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
-	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.1 \
+	ln -s /lib/$(DEB_HOST_MULTIARCH)/libnutscan.so.$(SO_MAJOR_LIBNUTSCAN) \
 		$(CURDIR)/debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/libnutscan.so
 
 	# Install systemd files only on systems where it's supported
