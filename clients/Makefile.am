@@ -21,7 +21,10 @@ endif
 bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
-lib_LTLIBRARIES = libupsclient.la libnutclient.la
+lib_LTLIBRARIES = libupsclient.la
+if HAVE_CXX11
+  lib_LTLIBRARIES += libnutclient.la
+endif
 if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
 endif
