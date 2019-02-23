@@ -120,8 +120,9 @@ The entry in `ups.conf` looks like this:
 		driver = apcsmart
 		port = /dev/ttyS1
 
-To start and stop drivers, use upsdrvctl.  By default, it will start or
-stop every UPS in the config file:
+To start and stop drivers, use upsdrvctl of upsdrvsvcctl (installed on
+operating systems with a service management framework supported by NUT).
+By default, it will start or stop every UPS in the config file:
 
 	/usr/local/ups/sbin/upsdrvctl start
 	/usr/local/ups/sbin/upsdrvctl stop
@@ -130,6 +131,17 @@ However, you can also just start or stop one by adding its name:
 
 	/usr/local/ups/sbin/upsdrvctl start sparky
 	/usr/local/ups/sbin/upsdrvctl stop sparky
+
+On operating systems with a supported service management framework,
+you might wrap your NUT drivers into individual services instances
+with:
+
+	/usr/local/ups/sbin/upsdrvsvcctl resync
+
+and then manage those service instances with commands like:
+
+	/usr/local/ups/sbin/upsdrvsvcctl start sparky
+	/usr/local/ups/sbin/upsdrvsvcctl stop sparky
 
 To find the driver name for your device, refer to the section below
 called "HARDWARE SUPPORT TABLE".

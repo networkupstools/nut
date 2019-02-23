@@ -51,6 +51,8 @@ Drivers
 ~~~~~~~
 
 - linkman:upsdrvctl[8]
+- linkman:upsdrvsvcctl[8]
+- linkman:nut-driver-enumerator[8]
 
 - linkman:al175[8]
 - linkman:apcsmart[8]

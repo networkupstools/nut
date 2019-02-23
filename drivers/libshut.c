@@ -476,7 +476,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 		upsdebugx(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
 	}
 	
-	upsdebugx(2, "No appropriate HID device found");
+	upsdebugx(2, "libshut: No appropriate HID device found");
 	fflush(stdout);
 
 	return -1;

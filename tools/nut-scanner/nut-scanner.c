@@ -246,10 +246,22 @@ int main(int argc, char *argv[])
 	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
 	xml_sec.peername = NULL;
 
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+		if (opt_ret == 'D')
+			nut_debug_level++;
+
 	nutscan_init();
 
 	display_func = nutscan_display_ups_conf;
 
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
 	/* Note: the getopts print an error message about unknown arguments
 	 * or arguments which need a second token and that is missing now */
 	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
@@ -280,7 +292,7 @@ int main(int argc, char *argv[])
 				cidr = strdup(optarg);
 				break;
 			case 'D':
-				nut_debug_level++;
+				/* nothing to do, here */
 				break;
 			case 'c':
 				if(!nutscan_avail_snmp) {

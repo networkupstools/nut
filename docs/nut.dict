@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2412 utf-8
+personal_ws-1.1 en 2434 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -145,6 +145,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLI
 CLOCAL
 CMDDESC
 CMDSCRIPT
@@ -397,6 +398,7 @@ IMG
 INADDR
 INFOSIZE
 INIGO
+INNO
 INSTCMDDESC
 INTERNETOFFICE
 INTL
@@ -437,8 +439,8 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
-Kaminski
 Kain
+Kaminski
 Kanji
 Kazutoshi
 Kebo
@@ -897,6 +899,7 @@ SKU
 SL
 SMALLBUF
 SMBUS
+SMF
 SMK
 SMT
 SMTP
@@ -1183,6 +1186,7 @@ apctest
 apcupsd
 aphel
 ar
+arg
 argc
 args
 argv
@@ -1335,9 +1339,11 @@ clueful
 cmd
 cmdline
 cmdname
+cmdparam
 cmds
 cmdvartab
 codebase
+codepath
 coldstarts
 collectd
 colspan
@@ -1346,6 +1352,7 @@ commandlen
 compat
 conf
 config
+configs
 configureaz
 configureaza
 confpath
@@ -1509,6 +1516,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmwares
 flts
 fmt
 footnoteref
@@ -1651,6 +1659,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+journalctl
 jpg
 jpgraph
 json
@@ -1677,6 +1686,7 @@ libaugeas
 libc
 libcommon
 libdir
+libexec
 libhid
 libhidups
 libi
@@ -1728,6 +1738,7 @@ lowruntime
 lowvoltsout
 lr
 lsusb
+lu
 lvo
 lxml
 lxyz
@@ -1990,6 +2001,7 @@ privProtocol
 probu
 proc
 productid
+prog
 psu
 pw
 pwl
@@ -2185,6 +2197,7 @@ sudo
 suid
 superset
 sv
+svc
 svn
 sw
 symlink
@@ -2199,6 +2212,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+systemctl
 systemd
 systemdsystemunitdir
 systemhours
@@ -2261,6 +2275,7 @@ uc
 udev
 udevadm
 ufw
+ugen
 ukUNV
 ul
 un
@@ -2298,6 +2313,7 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvsvcctl
 upserror
 upsfetch
 upsgone
@@ -2323,10 +2339,12 @@ upsuser
 uptime
 urpmi
 usb
+usbconfig
 usbfs
 usbhid
 usbmisc
 usbups
+usbus
 usd
 usec
 userid
@@ -2338,6 +2356,7 @@ usleep
 usr
 utalk
 uu
+uucp
 va
 valgrind
 validationSequence

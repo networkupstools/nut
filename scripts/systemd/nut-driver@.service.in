@@ -1,0 +1,42 @@
+[Unit]
+Description=Network UPS Tools - device driver for %I
+After=local-fs.target
+PartOf=nut-driver.target
+# Note: The choice of "network.target" allows to schedule this unit
+# roughly when the network stack of this OS is ready (e.g. that the
+# subsequent `upsd` will have a `0.0.0.0` or a `localhost` to bind
+# to); however this target does not ensure availability of a real
+# connection or final IP addresses. Drivers that require network as
+# a media for interaction with UPSes (snmp-ups, netxml-ups, ipmi etc.)
+# may want to extend this unit with `Requires=network-online.target`
+# instead. Also note that *generally* this should not be a problem,
+# since the drivers have a few retries with timeouts during startup,
+# and typically by the time the box gets an IP address, the driver
+# is still retrying to start and will succeed.
+# Extending the unit does not require *this* file to be edited, you
+# can instead drop in an additional piece of configuration, e.g. add
+# a `/etc/systemd/system/nut-driver@.service.d/network.conf` with:
+#   [Unit]
+#   Requires=network-online.target
+#   After=network-online.target
+# If your `upsd` requires specific IP addresses to be available before
+# starting, a `/etc/systemd/system/nut-driver.target.d/network.conf`
+# can be used in a similar manner.
+# Finally note that "nut-driver-enumerator.service" should take care of this.
+
+[Service]
+ExecStart=/bin/sh -c "@SBINDIR@/upsdrvctl start `@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`"
+ExecStop=/bin/sh -c "@SBINDIR@/upsdrvctl stop `@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`"
+Type=forking
+# Note: If you customize the "maxstartdelay" in ups.conf or in your
+# NUT compilation defaults, so it exceeds the default systemd unit
+# startup timeout (typically 90 sec), then make sure to set a slightly
+# longer systemd timeout for the nut-driver unit instances. You can
+# do this by populating a drop-in configuration, so it is not later
+# overwritten by updates to your NUT package -- create a dir+file:
+# /etc/systemd/system/nut-driver@.service.d/timeout.conf with lines:
+# [Service]
+# TimeoutStartSec=190s
+
+[Install]
+WantedBy=nut-driver.target

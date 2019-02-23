@@ -30,12 +30,10 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.61"
+#define CPQPOWER_MIB_VERSION	"1.63"
 
-#define DEFAULT_ONDELAY			30
-#define DEFAULT_OFFDELAY		20
-#define STR_DEFAULT_ONDELAY		"30"
-#define STR_DEFAULT_OFFDELAY	"20"
+#define DEFAULT_ONDELAY		"30"
+#define DEFAULT_OFFDELAY	"20"
 
 /* Note: RFC-1628 (UPS MIB) is also supported on these devices! */
 
@@ -82,6 +80,7 @@
 #define CPQPOWER_OID_ALARM_OB         ".1.3.6.1.4.1.232.165.3.7.3.0"     /* UPS-MIB::upsOnBattery */
 #define CPQPOWER_OID_ALARM_LB         ".1.3.6.1.4.1.232.165.3.7.4.0"     /* UPS-MIB::upsLowBattery */
 
+#define IETF_OID_AGENTREV             ".1.3.6.1.2.1.33.1.1.4.0"          /* UPS-MIB::upsIdentAgentSoftwareVersion.0 */
 
 /* Not used, as no longer supported by MIB ver. 1.76 (Github issue 118)
 static info_lkp_t cpqpower_alarm_ob[] = {
@@ -147,7 +146,7 @@ static info_lkp_t cpqpower_test_res_info[] = {
 	{ 0, NULL }
 } ;
 
-#define CPQPOWER_START_TEST		1
+#define CPQPOWER_START_TEST		"1"
 
 static info_lkp_t cpqpower_outlet_status_info[] = {
 	{ 1, "on" },
@@ -184,6 +183,7 @@ static snmp_info_t cpqpower_mib[] = {
 	 * UPS Firmware Revision :	00.01.0004
 	 * Communication Board Firmware Revision :	00.01.0019 */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", SU_FLAG_STATIC, NULL },
+	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", SU_FLAG_STATIC, NULL },
 	{ "ups.load", 0, 1.0, CPQPOWER_OID_LOAD_LEVEL, "", 0, NULL },
 	{ "ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER, "", SU_OUTPUT_1, NULL },
 	{ "ups.realpower", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL },
@@ -213,8 +213,8 @@ static snmp_info_t cpqpower_mib[] = {
 	 * flywheel(7)
 	 * fuelcell(8) */
 
-	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.1.0", STR_DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.2.0", STR_DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.1.0", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
+	{ "ups.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.8.2.0", DEFAULT_ONDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.timer.shutdown", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "", SU_FLAG_OK, NULL },
 	{ "ups.timer.start", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "", SU_FLAG_OK, NULL },
 
@@ -232,7 +232,7 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "battery.status", 0, 0.1, ".1.3.6.1.4.1.232.165.3.2.5.0", "", 0, NULL }, */
 
 	/* Input page */
-	{ "input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", 0, NULL, NULL },
+	{ "input.phases", 0, 1.0, CPQPOWER_OID_IN_LINES, "", 0, NULL },
 /*	{ "input.phase", 0, 1.0, CPQPOWER_OID_IN_PHASE, "", SU_OUTPUT_1, NULL }, */
 	{ "input.frequency", 0, 0.1, CPQPOWER_OID_IN_FREQ , "", 0, NULL },
 	{ "input.voltage", 0, 1.0, CPQPOWER_OID_IN_VOLTAGE, "", SU_OUTPUT_1, NULL },
@@ -254,7 +254,7 @@ static snmp_info_t cpqpower_mib[] = {
 	{ "input.quality", 0, 1.0, CPQPOWER_OID_IN_LINEBADS, "", 0, NULL },
 
 	/* Output page */
-	{ "output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", 0, NULL, NULL },
+	{ "output.phases", 0, 1.0, CPQPOWER_OID_OUT_LINES, "", 0, NULL },
 /*	{ "output.phase", 0, 1.0, CPQPOWER_OID_OUT_PHASE, "", SU_OUTPUT_1, NULL }, */
 	{ "output.frequency", 0, 0.1, CPQPOWER_OID_OUT_FREQUENCY, "", 0, NULL },
 	/* FIXME: handle multiplier (0.1 there) */
@@ -291,38 +291,38 @@ static snmp_info_t cpqpower_mib[] = {
 
 	/* outlet template definition */
 	/* FIXME always true? */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &cpqpower_outlet_switchability_info[0], NULL },
-	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL, NULL },
-	/* { "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL, NULL }, */
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.3.10.2.1.2.%i", NULL, SU_FLAG_OK | SU_OUTLET, &cpqpower_outlet_status_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, 3, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "yes", SU_FLAG_STATIC | SU_OUTLET, &cpqpower_outlet_switchability_info[0] },
+	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.1.%i", "%i", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET, NULL },
+	/* { "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, AR_OID_OUTLET_NAME ".%i", NULL, SU_OUTLET, NULL }, */
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.232.165.3.10.2.1.2.%i", NULL, SU_FLAG_OK | SU_OUTLET, &cpqpower_outlet_status_info[0] },
 	/* FIXME: come up with a suitable varname!
 	 * - The delay after going On Battery until the Receptacle is automatically turned Off.
 	 * A value of -1 means that this Output should never be turned Off automatically, but must be turned Off only by command.
-	 * { "outlet.%i.autoswitch.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.10.2.1.5.%i", STR_DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL }, // upsRecepAutoOffDelay
+	 * { "outlet.%i.autoswitch.delay.shutdown", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.10.2.1.5.%i", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL }, // upsRecepAutoOffDelay
 	 * - Seconds delay after the Outlet is signaled to turn On before the Output is Automatically turned ON.
 	 * A value of -1 means that this Output should never be turned On automatically, but only when specifically commanded to do so.
-	 * { "outlet.%i.autoswitch.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.10.2.1.5.%i", STR_DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL }, // upsRecepAutoOnDelay
+	 * { "outlet.%i.autoswitch.delay.start", ST_FLAG_STRING | ST_FLAG_RW, 6, ".1.3.6.1.4.1.232.165.3.10.2.1.5.%i", DEFAULT_OFFDELAY, SU_FLAG_ABSENT | SU_FLAG_OK, NULL }, // upsRecepAutoOnDelay
 	 */
 	/* FIXME: also define .stop (as for 'shutdown.reboot')
 	 * and .delay */
-	{ "outlet.%i.load.off", 0, 0, ".1.3.6.1.4.1.232.165.3.10.2.1.3.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.load.on", 0, 0, ".1.3.6.1.4.1.232.165.3.10.2.1.4.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.3.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
+	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.4.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
 	/* FIXME: also define a .delay or map to "outlet.%i.delay.shutdown" */
-	{ "outlet.%i.load.cycle", 0, 0, ".1.3.6.1.4.1.232.165.3.10.2.1.7.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.232.165.3.10.2.1.7.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
 
 	/* instant commands. */
 	/* We need to duplicate load.{on,off} Vs load.{on,off}.delay, since
 	 * "0" cancels the shutdown, so we put "1" (second) for immediate off! */
-	{ "load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "", SU_TYPE_CMD, NULL },
-	{ "load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "", SU_TYPE_CMD, NULL },
-	{ "shutdown.stop", 0, 0, ".1.3.6.1.4.1.232.165.3.8.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.off", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "1", SU_TYPE_CMD, NULL },
+	{ "load.on", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", "1", SU_TYPE_CMD, NULL },
+	{ "shutdown.stop", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", "0", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 	/* FIXME: need ups.{timer,delay}.{start,shutdown} param counterparts! */
 
-	{ "load.off.delay", 0, DEFAULT_OFFDELAY, ".1.3.6.1.4.1.232.165.3.8.1.0", "", SU_TYPE_CMD, NULL },
-	{ "load.on.delay", 0, DEFAULT_ONDELAY, ".1.3.6.1.4.1.232.165.3.8.2.0", "", SU_TYPE_CMD, NULL },
+	{ "load.off.delay", 0, 1, ".1.3.6.1.4.1.232.165.3.8.1.0", DEFAULT_OFFDELAY, SU_TYPE_CMD, NULL },
+	{ "load.on.delay", 0, 1, ".1.3.6.1.4.1.232.165.3.8.2.0", DEFAULT_ONDELAY, SU_TYPE_CMD, NULL },
 	/*	{ CMD_SHUTDOWN, 0, CPQPOWER_OFF_GRACEFUL, CPQPOWER_OID_OFF, "", 0, NULL }, */
-	{ "shutdown.reboot", 0, 0, ".1.3.6.1.4.1.232.165.3.8.6.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.battery.start", 0, CPQPOWER_START_TEST, ".1.3.6.1.4.1.232.165.3.7.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.reboot", 0, 1, ".1.3.6.1.4.1.232.165.3.8.6.0", "0", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.232.165.3.7.1.0", CPQPOWER_START_TEST, SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

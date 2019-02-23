@@ -295,6 +295,7 @@
 "Eaton"	"ups"	"5"	"5SC"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5P"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9SX"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"9PX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut"
@@ -310,7 +311,9 @@
 "Eaton"	"ups"	"5"	"5SC"	"Serial port"	"mge-shut"
 "Eaton"	"ups"	"5"	"5P"	"Serial port"	"mge-shut"
 "Eaton"	"ups"	"5"	"9SX"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9PX"	"Serial port"	"mge-shut"
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9PX"	"SNMP/Web card"	"netxml-ups"
 "Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"SNMP/Web card"	"netxml-ups"
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
@@ -338,11 +341,14 @@
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Network port"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Management Card Contact"	"Config 3 - Cable 66033"	"genericups upstype=7"
 "Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
+"Eaton"	"ats"	"5"	"Eaton ATS30"	""	"snmp-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
 
 "Electrys"	"ups"	"2"	"UPS 2500"	""	"nutdrv_qx or blazer_ser"
+
+"Emerson"	"pdu"	"3"	"PM3000 metered & switched"	""	"snmp-ups"
 
 "Energy Sistem"	"ups"	"2"	"(various)"	""	"blazer_ser"
 
@@ -441,6 +447,8 @@
 "HP"	"ups"	"3"	"R5000 / R7000"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
+
+"HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
 
 "Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
 
@@ -894,8 +902,8 @@
 
 "Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"5"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
-"Riello"	"ups"	"5"	"IPG 600/800"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IPG 600/800"	""	"riello_usb"
 "Riello"	"ups"	"5"	"WPG 400/600/800"	""	"riello_usb"
 "Riello"	"ups"	"5"	"NPW 600/800/1000/1500/2000"	""	"riello_usb"
 "Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	""	"riello_usb"
