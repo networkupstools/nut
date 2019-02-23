@@ -1350,11 +1350,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])
      HAVE_CXX11=1],
     [CXXFLAGS="$CXXFLAGS -std=c++11"
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [AC_MSG_RESULT([yes, GCC-style])
+        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
          HAVE_CXX11=1],
-        [AC_MSG_RESULT([no])
-         CXXFLAGS="$my_CXXFLAGS"
-         HAVE_CXX11=0])])
+        [CXXFLAGS="$CXXFLAGS -std=c++0x"
+         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+             HAVE_CXX11=1],
+            [AC_MSG_RESULT([no])
+             CXXFLAGS="$my_CXXFLAGS"
+             HAVE_CXX11=0])])])
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
 unset CPLUSPLUS_DECL
