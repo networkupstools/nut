@@ -1,4 +1,5 @@
 # Network UPS Tools: clients
+EXTRA_DIST =
 
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
@@ -59,6 +60,10 @@ endif
 # libupsclient version information
 libupsclient_la_LDFLAGS = -version-info 4:0:0
 
-# libnutclient version information
+if HAVE_CXX11
+# libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 1:0:0
+else
+EXTRA_DIST += nutclient.h nutclient.cpp
+endif
