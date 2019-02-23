@@ -1370,29 +1370,27 @@ AC_MSG_CHECKING(for C++11 support in current compiler)
 my_CXXFLAGS="$CXXFLAGS"
 AC_LANG_PUSH([C++])
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+CPLUSPLUS_DECL='
 #include <stdio.h>
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
 #endif
-]], [[printf("%ld\n", __cplusplus);]])
-],
+'
+CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
      HAVE_CXX11=1],
     [CXXFLAGS="$CXXFLAGS -std=c++11"
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#if __cplusplus < 201103L
-  #error This library needs at least a C++11 compliant compiler
-#endif
-        ]], [[printf("%ld\n", __cplusplus);]])
-        ],
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
         [AC_MSG_RESULT([yes, GCC-style])
          HAVE_CXX11=1],
-            [AC_MSG_RESULT([no])
-             CXXFLAGS="$my_CXXFLAGS"
-             HAVE_CXX11=0])])
+        [AC_MSG_RESULT([no])
+         CXXFLAGS="$my_CXXFLAGS"
+         HAVE_CXX11=0])])
 AC_LANG_POP([C++])
+unset CPLUSPLUS_MAIN
+unset CPLUSPLUS_DECL
 
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
