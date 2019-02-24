@@ -381,15 +381,12 @@ void ssl_init(void)
 
 #ifdef WITH_OPENSSL
 
-	SSL_load_error_strings();
-
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
+	SSL_load_error_strings();
 	SSL_library_init();
 
 	ssl_ctx = SSL_CTX_new(SSLv23_server_method());
 #else
-	OPENSSL_init_ssl(0, NULL);
-
 	ssl_ctx = SSL_CTX_new(TLS_server_method());
 #endif
 
