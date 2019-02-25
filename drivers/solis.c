@@ -1,6 +1,7 @@
 /* solis.c - driver for Microsol Solis UPS hardware
 
-   Copyright (C) 2004  Silvino B. Magalhães  <sbm2yk@gmail.com>
+   Copyright (C) 2004  Silvino B. Magalhães    <sbm2yk@gmail.com>
+                 2019  Roberto Panerai Velloso <rvelloso@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -51,7 +52,7 @@
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
 	DRIVER_VERSION,
-	"Silvino B. Magalhães <sbm2yk@gmail.com>",
+	"Roberto Panerai Velloso <rvelloso@gmail.com>",
 	DRV_STABLE,
 	{ NULL }
 };
