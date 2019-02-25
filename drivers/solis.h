@@ -38,6 +38,8 @@ const static int bext[5] = {14,18,28,18,1};
 const static int nompow[5] = { 1000,1500,2000,3000,1200 };
 const static int inds[6] = { 0,0,1,2,3,4 };
 const static double InVolt_offset = 30.;
+#define PACKET_SIZE 25
+const static int packet_size = PACKET_SIZE;
 
 const static struct {
          int maxi;              /* power internals */
@@ -336,7 +338,7 @@ static unsigned char DaysOnWeek=0, DaysOffWeek=0, DaysStd = 0;
 static char seman[4];
 
 /* buffers */
-static unsigned char RecPack[25];
+static unsigned char RecPack[PACKET_SIZE];
 static unsigned char ConfigPack[12];
 
 /*
@@ -348,9 +350,6 @@ unsigned char DumpPack[242];
 static const char *Model;
 static int SolisModel, imodel;
 static int InputValue, Out220;
-
-/* protocol */
-static int pacsize;
 
 /* Status group */
 static unsigned char InputStatus,OutputStatus, BattStatus;
@@ -375,12 +374,12 @@ static double BattVoltage, Temperature, batcharge;
 static double AppPower, UtilPower, upscharge;
 static int ChargePowerFactor, NominalPower, UpsPowerFactor;
 
-static void prnInfo(void);
-static int  IsToday( unsigned char, int );
-static void AutonomyCalc( int );
-static void ScanReceivePack(void);
-static void CommReceive(const char*,  int );
-static void getbaseinfo(void);
-static void getupdateinfo(void);
+static void print_info(void);
+static int  is_today( unsigned char, int );
+static void autonomy_calc( int );
+static void scan_received_pack(void);
+static void comm_receive(const unsigned char*,  int );
+static void get_base_info(void);
+static void get_update_info(void);
 
 #endif /* INCLUDED_SOLIS_H */
