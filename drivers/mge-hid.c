@@ -38,7 +38,7 @@
 #include "mge-hid.h"
 #include <math.h>
 
-#define MGE_HID_VERSION		"MGE HID 1.43"
+#define MGE_HID_VERSION		"MGE HID 1.44"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -789,6 +789,22 @@ static info_lkp_t nominal_output_voltage_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* Limit reporting "online / !online" to when "!off" */
+static const char *eaton_converter_online_fun(double value)
+{
+	int ups_status = ups_status_get();
+
+	if (!(ups_status & STATUS(OFF)))
+		return (value == 0) ? "!online" : "online";
+	else
+		return NULL;
+}
+
+info_lkp_t eaton_converter_online_info[] = {
+	{ 0, "dummy", eaton_converter_online_fun },
+	{ 0, NULL, NULL }
+};
+
 /* --------------------------------------------------------------- */
 /*      Vendor-specific usage table */
 /* --------------------------------------------------------------- */
@@ -1210,7 +1226,6 @@ static hid_info_t mge_hid2nut[] =
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
 	/* These 2 ones are used when ABM is disabled */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
@@ -1232,6 +1247,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
+	/* NOTE: UPS.PowerConverter.Input.[1].PresentStatus.Used" must only be considered when not "OFF",
+	 * and must hence be after "UPS.PowerSummary.PresentStatus.Good" */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, eaton_converter_online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },

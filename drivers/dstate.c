@@ -655,7 +655,7 @@ int dstate_addrange(const char *var, const int min, const int max)
 	ret = state_addrange(dtree_root, var, min, max);
 
 	if (ret == 1) {
-		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+		send_to_all("ADDRANGE %s %i %i\n", var, min, max);
 		/* Also add the "NUMBER" flag for ranges */
 		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
@@ -817,7 +817,7 @@ int dstate_delrange(const char *var, const int min, const int max)
 
 	/* update listeners */
 	if (ret == 1) {
-		send_to_all("DELRANGE %s \"%i %i\"\n", var, min, max);
+		send_to_all("DELRANGE %s %i %i\n", var, min, max);
 	}
 
 	return ret;
