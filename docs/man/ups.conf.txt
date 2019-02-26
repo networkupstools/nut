@@ -113,8 +113,10 @@ of the driver behavior.
 
 *user*::
 
-Optional.  If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+Optional.  The driver will setuid(2) to the user id associated with 'username',
+as opposed to its current effective user id.
+Note that drivers are generally started as root to satisfy privileges to access
+resources such ups.conf.
 
 UPS FIELDS
 ----------
