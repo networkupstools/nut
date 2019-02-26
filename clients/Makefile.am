@@ -63,7 +63,7 @@ endif
 # object .so names would differ)
 
 # libupsclient version information
-libupsclient_la_LDFLAGS = -version-info 4:0:0
+libupsclient_la_LDFLAGS = -version-info 5:0:0
 
 if HAVE_CXX11
 # libnutclient version information and build

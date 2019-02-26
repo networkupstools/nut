@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2478 utf-8
+personal_ws-1.1 en 2483 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,6 +12,7 @@ ADDRINFO
 ADK
 ADKK
 AEC
+aec
 AEG
 AES
 AGM
@@ -136,6 +137,7 @@ ByPass
 CA's
 CABAC
 CAs
+cb
 CBLimit
 CCC
 CCCC
@@ -203,6 +205,7 @@ DDDDD
 DDF
 DEADTIME
 DEBUGOUT
+dedb
 DELCMD
 DELENUM
 DELINFO
@@ -1008,6 +1011,7 @@ TIOCMBIC
 TIOCMBIS
 TLS
 TODO
+TRACKINGDELAY
 TRYSSL
 TSR
 TST
@@ -2355,6 +2359,7 @@ upserror
 upsfetch
 upsgone
 upsh
+upshandler
 upsidentmodel
 upsimage
 upsload

@@ -116,7 +116,7 @@ const struct option longopts[] =
 
 static nutscan_device_t *dev[TYPE_END];
 
-static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
+static long timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
 static long thread_number = DEFAULT_THREAD;
 static char * start_ip = NULL;
 static char * end_ip = NULL;
@@ -217,7 +217,7 @@ void show_usage()
 	printf("  -T, --thread <max number of threads>: max number of simultaneous threads (default %d).\n", DEFAULT_THREAD);
 #endif
 	printf("\nNetwork specific options:\n");
-	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
+	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
@@ -318,8 +318,8 @@ int main(int argc, char *argv[])
 			case 't':
 				timeout = atol(optarg)*1000*1000; /*in usec*/
 				if( timeout == 0 ) {
-					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_TIMEOUT);
-					timeout = DEFAULT_TIMEOUT*1000*1000;
+					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_NETWORK_TIMEOUT);
+					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 				}
 				break;
 			case 'T' : ;

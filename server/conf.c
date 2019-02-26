@@ -23,6 +23,7 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include <ctype.h>
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
@@ -121,14 +122,38 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		maxage = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1])) {
+			maxage = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "MAXAGE has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
+	}
+
+	/* TRACKINGDELAY <seconds> */
+	if (!strcmp(arg[0], "TRACKINGDELAY")) {
+		if (isdigit(arg[1])) {
+			tracking_delay = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "TRACKINGDELAY has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		maxconn = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1])) {
+			maxconn = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "MAXCONN has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 
 	/* STATEPATH <dir> */
@@ -162,8 +187,14 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		certrequest = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1])) {
+			certrequest = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "CERTREQUEST has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 #endif /* WITH_OPENSSL | WITH_NSS */

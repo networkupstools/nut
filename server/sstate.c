@@ -25,6 +25,7 @@
 #include "timehead.h"
 
 #include "sstate.h"
+#include "upsd.h"
 #include "upstype.h"
 
 #include <fcntl.h>
@@ -113,6 +114,18 @@ static int parse_args(upstype_t *ups, int numargs, char **arg)
 	/* SETAUX <varname> <auxval> */
 	if (!strcasecmp(arg[0], "SETAUX")) {
 		state_setaux(ups->inforoot, arg[1], arg[2]);
+		return 1;
+	}
+
+	/* TRACKING <id> <status> */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		tracking_set(arg[1], arg[2]);
+		upsdebugx(1, "TRACKING: ID %s status %s", arg[1], arg[2]);
+
+		/* log actual result of instcmd / setvar */
+		if (strncmp(arg[2], "PENDING", 7) != 0) {
+			upslogx(LOG_INFO, "tracking ID: %s\tresult: %s", arg[1], tracking_get(arg[1]));
+		}
 		return 1;
 	}
 
@@ -388,7 +401,7 @@ int sstate_sendline(upstype_t *ups, const char *buf)
 	ret = write(ups->sock_fd, buf, strlen(buf));
 
 	if (ret == (int)strlen(buf)) {
-		return 1;	
+		return 1;
 	}
 
 	upslog_with_errno(LOG_NOTICE, "Send to UPS [%s] failed", ups->name);
