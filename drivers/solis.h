@@ -1,6 +1,8 @@
 /* solis.h -  Microsol Solis UPS hardware
 
-   Copyright (C) 2004  Silvino B. Magalhaes  <sbm2yk@gmail.com>
+   Copyright (C) 2004  Silvino B. Magalhaes    <sbm2yk@gmail.com>
+                 2019  Roberto Panerai Velloso <rvelloso@gmail.com>
+   
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
