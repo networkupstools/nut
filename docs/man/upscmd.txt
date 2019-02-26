@@ -51,7 +51,7 @@ The command will also block until an actual result is provided from the driver,
 or the timeout is reached (see *-t*).
 
 *-t* 'seconds'::
-Set a timeout when using *-w*. Default to 10 seconds.
+Set a timeout when using *-w*. Defaults to 10 seconds.
 
 'ups'::
 Connect to this UPS.  The format is `upsname[@hostname[:port]]`.  The default

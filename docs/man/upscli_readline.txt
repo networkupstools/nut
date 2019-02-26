@@ -25,9 +25,9 @@ ERR messages from linkman:upsd[8] are detected and will cause this
 function to return -1.
 
 The difference between the two functions is that *upscli_readline_timeout()*
-let the caller decide the amount of time ('timeout' seconds) after which it
+lets the caller decide the amount of time ('timeout' seconds) after which it
 should give up and return, whereas *upscli_readline()* does not offer this
-freedom.
+freedom, and uses NUT default network timeout (5 seconds).
 
 RETURN VALUE
 ------------

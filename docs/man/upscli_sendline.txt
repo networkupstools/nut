@@ -26,9 +26,9 @@ The data in 'buf' must be a fully formatted protocol command as no
 parsing of the buffer occurs within this function.
 
 The difference between the two functions is that *upscli_sendline_timeout()*
-let the caller decide the amount of time ('timeout' seconds) after which it
+lets the caller decide the amount of time ('timeout' seconds) after which it
 should give up and return, whereas *upscli_sendline()* does not offer this
-freedom.
+freedom, and uses an immediate timeout (0 second).
 
 RETURN VALUE
 ------------
