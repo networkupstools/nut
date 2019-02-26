@@ -38,8 +38,6 @@
 
 #include "nut-scan.h"
 
-#define DEFAULT_TIMEOUT 5
-
 #define ERR_BAD_OPTION	(-1)
 
 const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
@@ -84,7 +82,7 @@ const struct option longopts[] =
 
 static nutscan_device_t *dev[TYPE_END];
 
-static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
+static long timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
 static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
@@ -169,7 +167,7 @@ void show_usage()
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
 	printf("\nNetwork specific options:\n");
-	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
+	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
@@ -270,8 +268,8 @@ int main(int argc, char *argv[])
 			case 't':
 				timeout = atol(optarg)*1000*1000; /*in usec*/
 				if( timeout == 0 ) {
-					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_TIMEOUT);
-					timeout = DEFAULT_TIMEOUT*1000*1000;
+					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_NETWORK_TIMEOUT);
+					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 				}
 				break;
 			case 's':

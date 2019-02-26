@@ -252,7 +252,9 @@ MAN3_DEV_PAGES = \
 	upscli_list_next.3 \
 	upscli_list_start.3 \
 	upscli_readline.3 \
+	upscli_readline_timeout.3 \
 	upscli_sendline.3 \
+	upscli_sendline_timeout.3 \
 	upscli_splitaddr.3 \
 	upscli_splitname.3 \
 	upscli_ssl.3 \
@@ -288,6 +290,12 @@ MAN3_DEV_PAGES = \
 	nutscan_add_device_to_device.3 \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
+
+upscli_readline_timeout.3: upscli_readline.3
+	touch $@
+
+upscli_sendline_timeout.3: upscli_sendline.3
+	touch $@
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
