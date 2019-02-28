@@ -12,11 +12,19 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * spellcheck target with a custom NUT dictionary
    * cppunit testing with valgrind
 
+ - Implement status tracking for instant commands (instcmd) and variables
+   settings (setvar): this allows to get the actual execution status from the
+   driver, and is available in libraries and upscmd / upsrw
+
+ - Add support for extra parameter for instant commands, both in library and
+   in upscmd
+
  - support for new devices:
    * IBM 6000 VA LCD 4U Rack UPS; 5396-1Kx (USB)
    * Phoenix Contact QUINT-UPS model 2320461 (Modbus)
    * Tripp-Lite SU3000LCD2UHV (USB; protocol 1330)
    * Emerson Avocent PM3000 PDU (SNMP)
+   * HPE ePDU (SNMP)
 
  - add devices to HCL/DDL:
    * APC Back-UPS CS (USB)
@@ -42,6 +50,7 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * fix Eaton/MGE mapping for beeper handling
    * add IBM USB VID
    * add deep battery test for CyberPower OL3000RMXL2U
+   * report the libusb version used
 
  - usbhid-ups / mge-shut: compute a realpower output load approximation for
    Eaton UPS when the needed data is not present
@@ -59,6 +68,22 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * update Eaton Aphel Revelation MIB
    * support Raritan Dominion PX2 PDU
    * support Emerson Avocent PM3000 PDU
+   * improve ALARM flag handling
+   * add firmware version for new HPE Network card
+   * add ups.load, battery.charge, input.{voltage,frequency} and output.voltage
+     for CyberPower
+
+ - solis: various improvements and fixes
+
+ - libnutclient: introduce getDevicesVariableValues() to improve performances
+   when querying many devices (up to 15 times faster)
+
+ - nut-driver-enumerator: @jim to complete
+
+ - Fix File descriptors leaks by upsmon and upssched (SELinux errors)
+
+ - nut-scanner: various improvements, including the detection of libraries at
+   runtime and tracing information
 
  - all drivers: add support for dumping the data tree (in upsc-like format)
    after running the driver update loop for 'update_count' times and exit.
@@ -74,6 +99,9 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
    * `input.phase.shift`
    * `outlet.N.name`
    * `outlet.N.type`
+
+ - As usual, more bugfixes, cleanup and improvements, on both source code
+   and documentation.
 
 ---------------------------------------------------------------------------
 Release notes for NUT 2.7.5 (brewing) - what's new since 2.7.4:
