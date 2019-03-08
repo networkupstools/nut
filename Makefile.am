@@ -69,8 +69,6 @@ check-scripts-syntax shellcheck:
 	done
 	@echo 'SUCCESS: Shell scripts syntax is acceptable, no fatal issues were found'
 
-check-local: check-scripts-syntax spellcheck
-
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog
