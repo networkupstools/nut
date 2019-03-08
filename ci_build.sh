@@ -25,7 +25,7 @@ case "$CI_TRACE" in
 esac
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
+default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -111,7 +111,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             CONFIG_OPTS+=("--with-doc=no")
             DO_DISTCHECK=no
             ;;
-        "default-spellcheck")
+        "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
@@ -226,6 +226,11 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             # sub-Makefiles known to check corresponding directory's doc files.
             ( $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
             exit 0
+            ;;
+        "default-shellcheck")
+            [ -z "$CI_TIME" ] || echo "`date`: Trying to check shell script syntax validity of the currently tested project..."
+            ( $CI_TIME make VERBOSE=1 shellcheck )
+            exit $?
             ;;
     esac
 

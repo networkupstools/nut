@@ -57,6 +57,20 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict:
 	cd $(srcdir)/docs && $(MAKE) $@
 
+# This target adds syntax-checking for committed shell script files,
+# to avoid surprises and delays in finding fatal typos after packaging
+check-scripts-syntax shellcheck:
+	@echo 'NOTE: modern bash complains about scripts using backticks (which we ignore for portability reasons): `...` obsolete, use $(...)'
+	for F in `git ls-files || find . -type f` ; do \
+	    case "`file "$$F"`" in \
+	        *"Bourne-Again shell script"*) ( set -x ; /bin/bash -n "$$F" ; ) ;; \
+	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
+	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
+	done
+	@echo 'SUCCESS: Shell scripts syntax is acceptable, no fatal issues were found'
+
+check-local: check-scripts-syntax spellcheck
+
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog

@@ -98,6 +98,13 @@ matrix:
         packages: &deps_aspell
         - aspell
         - aspell-en
+  - env: BUILD_TYPE=default-shellcheck
+    os: linux
+    addons:
+      apt:
+        packages:
+        - coreutils
+        - file
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
     sudo: false
