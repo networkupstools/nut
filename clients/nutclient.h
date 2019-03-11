@@ -124,6 +124,7 @@ typedef enum
 	UNKNOWN,
 	PENDING,
 	SUCCESS,
+	INVALID_ARGUMENT,
 	FAILURE,
 } TrackingResult;
 

@@ -789,6 +789,10 @@ TrackingResult TcpClient::getTrackingResult(const TrackingID& id)throw(NutExcept
 	{
 		return TrackingResult::UNKNOWN;
 	}
+	else if (result == "ERR INVALID-ARGUMENT")
+	{
+		return TrackingResult::INVALID_ARGUMENT;
+	}
 	else
 	{
 		return TrackingResult::FAILURE;
