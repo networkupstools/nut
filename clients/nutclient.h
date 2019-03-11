@@ -112,6 +112,25 @@ public:
 };
 
 /**
+ * Cookie given when performing async action, used to redeem result at a later date.
+ */
+typedef std::string TrackingID;
+
+/**
+ * Result of an async action.
+ */
+typedef enum
+{
+	UNKNOWN,
+	PENDING,
+	SUCCESS,
+	INVALID_ARGUMENT,
+	FAILURE,
+} TrackingResult;
+
+typedef std::string Feature;
+
+/**
  * A nut client is the starting point to dialog to NUTD.
  * It can connect to an NUTD then retrieve its device list.
  * Use a specific client class to connect to a NUTD.
@@ -232,14 +251,14 @@ public:
 	 * \param name Variable name
 	 * \param value Variable value
 	 */  
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)=0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)=0;
 	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \param value Variable value
 	 */  
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)=0;
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)=0;
 	/** \} */
 
 	/**
@@ -273,7 +292,7 @@ public:
 	 * \param name Command name
 	 * \param param Additional command parameter
 	 */
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")throw(NutException)=0;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")throw(NutException)=0;
 	/** \} */
 
 	/**
@@ -293,6 +312,18 @@ public:
 	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException)=0;
 	virtual void deviceMaster(const std::string& dev)throw(NutException)=0;
 	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException)=0;
+
+	/**
+	 * Retrieve the result of a tracking ID.
+	 * \param id Tracking ID.
+	 */
+	virtual TrackingResult getTrackingResult(const TrackingID& id)throw(NutException)=0;
+
+	virtual bool hasFeature(const Feature& feature)throw(NutException);
+	virtual bool isFeatureEnabled(const Feature& feature)throw(NutException)=0;
+	virtual void setFeature(const Feature& feature, bool status)throw(NutException)=0;
+
+	static const Feature TRACKING;
 
 protected:
 	Client();
@@ -378,22 +409,28 @@ public:
 	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException);
 	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
 	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException);
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException);
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException);
 
 	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException);
 	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException);
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")throw(NutException);
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")throw(NutException);
 
  	virtual void deviceLogin(const std::string& dev)throw(NutException);
 	virtual void deviceMaster(const std::string& dev)throw(NutException);
 	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException);
 	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException);
 
+	virtual TrackingResult getTrackingResult(const TrackingID& id)throw(NutException);
+
+	virtual bool isFeatureEnabled(const Feature& feature)throw(NutException);
+	virtual void setFeature(const Feature& feature, bool status)throw(NutException);
+
 protected:
 	std::string sendQuery(const std::string& req)throw(nut::IOException);
 	void sendAsyncQueries(const std::vector<std::string>& req)throw(IOException);
 	static void detectError(const std::string& req)throw(nut::NutException);
+	TrackingID sendTrackingQuery(const std::string& req)throw(nut::NutException);
 
 	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
 		throw(nut::NutException);
@@ -541,7 +578,7 @@ public:
 	 * \param name Command name.
 	 * \param param Additional command parameter
 	 */
-	void executeCommand(const std::string& name, const std::string& param="")throw(NutException);
+	TrackingID executeCommand(const std::string& name, const std::string& param="")throw(NutException);
 
 	/**
 	 * Login current client's user for the device.
