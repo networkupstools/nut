@@ -128,7 +128,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 			maxage = temp;
 			return 1;
 		}
-		upslogx(LOG_ERR, "Could not convert MAXAGE (%s) to an unsigned int (%s)!", arg[1], strerror(errno));
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
 		return 0;
 	}
 
@@ -138,7 +138,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 			tracking_delay = temp;
 			return 1;
 		}
-		upslogx(LOG_ERR, "Could not convert TRACKINGDELAY (%s) to an unsigned int (%s)!", arg[1], strerror(errno));
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
 		return 0;
 	}
 
@@ -148,7 +148,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 			maxconn = temp;
 			return 1;
 		}
-		upslogx(LOG_ERR, "Could not convert MAXCONN (%s) to an unsigned int (%s)!", arg[1], strerror(errno));
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
 		return 0;
 	}
 
@@ -187,7 +187,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 			certrequest = temp;
 			return 1;
 		}
-		upslogx(LOG_ERR, "Could not convert CERTREQUEST (%s) to an unsigned int (%s)!", arg[1], strerror(errno));
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
 		return 0;
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
