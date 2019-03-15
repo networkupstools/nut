@@ -46,7 +46,7 @@ char	*certname = NULL;
 char	*certpasswd = NULL;
 
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-int certrequest = 0;
+unsigned int certrequest = 0;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 static int	ssl_initialized = 0;

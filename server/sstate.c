@@ -341,7 +341,7 @@ const cmdlist_t *sstate_getcmdlist(const upstype_t *ups)
 	return ups->cmdlist;
 }
 
-int sstate_dead(upstype_t *ups, int maxage)
+int sstate_dead(upstype_t *ups, unsigned int maxage)
 {
 	time_t	now;
 	double	elapsed;

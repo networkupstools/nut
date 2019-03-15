@@ -32,7 +32,7 @@ extern char	*certfile;
 extern char	*certname;
 extern char	*certpasswd;
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
-extern int certrequest;
+extern unsigned int certrequest;
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 
 /* List possible values for certrequested */
