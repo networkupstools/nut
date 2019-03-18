@@ -321,6 +321,20 @@ static int main_arg(char *var, char *val)
 	if (!strcmp(var, "desc"))
 		return 1;	/* handled */
 
+	/* Allow each driver to specify its minimal debugging level -
+	 * admins can set more with command-line args, but can't set
+	 * less without changing config. Should help debug of services. */
+	if (!strcmp(var, "debug_min")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+			if ( nut_debug_level < lvl )
+				nut_debug_level = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf");
+		}
+		return 1;	/* handled */
+	}
+
 	return 0;	/* unhandled, pass it through to the driver */
 }
 
@@ -353,6 +367,18 @@ static void do_global_args(const char *var, const char *val)
 			do_synchronous=0;
 	}
 
+	/* Allow to specify its minimal debugging level for all drivers -
+	 * admins can set more with command-line args, but can't set
+	 * less without changing config. Should help debug of services. */
+	if (!strcmp(var, "debug_min")) {
+		int lvl = -1; // typeof common/common.c: int nut_debug_level
+		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
+			if ( nut_debug_level < lvl )
+				nut_debug_level = lvl;
+		} else {
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
+		}
+	}
 
 	/* unrecognized */
 }
