@@ -2,7 +2,7 @@
  *
  *  Copyright (C)
  *    2011-2012 Arnaud Quette <arnaud.quette@free.fr>
- *    2016-2017 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *    2016-2019 Eaton (author: Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-snmp-subdriver script. It must be customized!
@@ -24,7 +24,7 @@
 
 #include "eaton-ats16-mib.h"
 
-#define EATON_ATS16_MIB_VERSION  "0.15"
+#define EATON_ATS16_MIB_VERSION  "0.16"
 
 #define EATON_ATS16_SYSOID       ".1.3.6.1.4.1.534.10"
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
@@ -87,11 +87,12 @@ static snmp_info_t eaton_ats16_mib[] = {
 	/* ats2IdentModel.0 = STRING: Eaton ATS */
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.1.2.0", "ATS", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* FIXME: RFC for device.firmware! */
+	/* FIXME: the 2 "firmware" entries below should be SU_FLAG_SEMI_STATIC */
 	/* ats2IdentFWVersion.0 = STRING: 00.00.0009 */
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.1.3.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.1.3.0", NULL, SU_FLAG_OK, NULL },
 	/* FIXME: RFC for device.firmware.aux! */
 	/* ats2IdentRelease.0 = STRING: JF */
-	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.1.4.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.1.4.0", NULL, SU_FLAG_OK, NULL },
 	/* ats2IdentSerialNumber.0 = STRING: GA04F23009 */
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.10.2.1.5.0", NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* ats2IdentPartNumber.0 = STRING: EATS16N */
