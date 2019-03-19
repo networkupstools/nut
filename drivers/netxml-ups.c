@@ -40,7 +40,7 @@
 #include <ne_socket.h>
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.42"
+#define DRIVER_VERSION	"0.43"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -236,6 +236,7 @@ static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
 static ne_uri		uri;
+static char	*product_page = NULL;
 
 /* Support functions */
 static void netxml_alarm_set(void);
@@ -270,6 +271,8 @@ void upsdrv_initinfo(void)
 		if (netxml_get_page(page) != NE_OK) {
 			continue;
 		}
+		/* store product page, for later use */
+		product_page = xstrdup(page);
 
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
@@ -347,6 +350,12 @@ void upsdrv_updateinfo(void)
 	}
 
 	ret = netxml_get_page(subdriver->summary);
+	if (ret != NE_OK) {
+		errors++;
+	}
+
+	/* also refresh the product information, at least for firmware information */
+	ret = netxml_get_page(product_page);
 	if (ret != NE_OK) {
 		errors++;
 	}
@@ -663,6 +672,7 @@ void upsdrv_cleanup(void)
 	free(subdriver->summary);
 	free(subdriver->getobject);
 	free(subdriver->setobject);
+	free(product_page);
 
 	if (sock) {
 		ne_sock_close(sock);
