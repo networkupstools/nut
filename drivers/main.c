@@ -63,6 +63,16 @@ int	exit_flag = 0;
  */
 static int background_flag = -1;
 
+/* Users can pass a -D[...] option to enable debugging.
+ * For the service tracing purposes, also the ups.conf
+ * can define a debug_min value in the global or device
+ * section, to set the minimal debug level (CLI provided
+ * value less than that would not have effect, can have
+ * more.
+ */
+static int nut_debug_level_global = -1;
+static int nut_debug_level_driver = -1;
+
 /* everything else */
 static char	*pidfn = NULL;
 static int	dump_data = 0; /* Store the update_count requested */
@@ -340,10 +350,9 @@ static int main_arg(char *var, char *val)
 	if (!strcmp(var, "debug_min")) {
 		int lvl = -1; // typeof common/common.c: int nut_debug_level
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
-			if ( nut_debug_level < lvl )
-				nut_debug_level = lvl;
+			nut_debug_level_driver = lvl;
 		} else {
-			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf");
+			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf for the driver");
 		}
 		return 1;	/* handled */
 	}
@@ -386,8 +395,7 @@ static void do_global_args(const char *var, const char *val)
 	if (!strcmp(var, "debug_min")) {
 		int lvl = -1; // typeof common/common.c: int nut_debug_level
 		if ( str_to_int (val, &lvl, 10) && lvl >= 0 ) {
-			if ( nut_debug_level < lvl )
-				nut_debug_level = lvl;
+			nut_debug_level_global = lvl;
 		} else {
 			upslogx(LOG_INFO, "WARNING : Invalid debug_min value found in ups.conf global settings");
 		}
@@ -678,6 +686,21 @@ int main(int argc, char **argv)
 			"Try -h for help.");
 	}
 
+	/* CLI debug level can not be smaller than debug_min specified
+	 * in ups.conf, and value specified for a driver config section
+	 * overrides the global one.
+	 */
+	{
+		int nut_debug_level_upsconf = -1 ;
+		if ( nut_debug_level_global >= 0 && nut_debug_level_driver >= 0 ) {
+			nut_debug_level_upsconf = nut_debug_level_driver;
+		} else {
+			if ( nut_debug_level_global >= 0 ) nut_debug_level_upsconf = nut_debug_level_global;
+			if ( nut_debug_level_driver >= 0 ) nut_debug_level_upsconf = nut_debug_level_driver;
+		}
+		if ( nut_debug_level_upsconf > nut_debug_level )
+			nut_debug_level = nut_debug_level_upsconf;
+	}
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
 
 	new_uid = get_user_pwent(user);
