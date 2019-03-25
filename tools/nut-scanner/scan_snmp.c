@@ -413,6 +413,8 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	nutscan_add_option_to_device(dev,"mibs",mib);
 	/* SNMP v3 */
 	if( session->community == NULL || session->community[0] == 0) {
+		nutscan_add_option_to_device(dev,"snmp_version","v3");
+
 		if( sec->secLevel ) {
 			nutscan_add_option_to_device(dev,"secLevel",
 					sec->secLevel);
