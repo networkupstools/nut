@@ -47,7 +47,7 @@ const cmdlist_t *sstate_getcmdlist(const upstype_t *ups);
 void sstate_makeinfolist(const upstype_t *ups, char *buf, size_t bufsize);
 void sstate_makerwlist(const upstype_t *ups, char *buf, size_t bufsize);
 void sstate_makeinstcmdlist_t(const upstype_t *ups, char *buf, size_t bufsize);
-int sstate_dead(upstype_t *ups, int maxage);
+int sstate_dead(upstype_t *ups, unsigned int maxage);
 void sstate_infofree(upstype_t *ups);
 void sstate_cmdfree(upstype_t *ups);
 int sstate_sendline(upstype_t *ups, const char *buf);

@@ -116,44 +116,40 @@ static void ups_update(const char *fn, const char *name, const char *desc)
 /* return 1 if usable, 0 if not */
 static int parse_upsd_conf_args(int numargs, char **arg)
 {
+	unsigned int	temp;
+
 	/* everything below here uses up through arg[1] */
 	if (numargs < 2)
 		return 0;
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		if (isdigit(arg[1])) {
-			maxage = atoi(arg[1]);
+		if (str_to_uint(arg[1], &temp, 10)) {
+			maxage = temp;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "MAXAGE has non numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
+		return 0;
 	}
 
 	/* TRACKINGDELAY <seconds> */
 	if (!strcmp(arg[0], "TRACKINGDELAY")) {
-		if (isdigit(arg[1])) {
-			tracking_delay = atoi(arg[1]);
+		if (str_to_uint(arg[1], &temp, 10)) {
+			tracking_delay = temp;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "TRACKINGDELAY has non numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
+		return 0;
 	}
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		if (isdigit(arg[1])) {
-			maxconn = atoi(arg[1]);
+		if (str_to_uint(arg[1], &temp, 10)) {
+			maxconn = temp;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "MAXCONN has non numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
+		return 0;
 	}
 
 	/* STATEPATH <dir> */
@@ -187,14 +183,12 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (isdigit(arg[1])) {
-			certrequest = atoi(arg[1]);
+		if (str_to_uint(arg[1], &temp, 10)) {
+			certrequest = temp;
 			return 1;
 		}
-		else {
-			upslogx(LOG_ERR, "CERTREQUEST has non numeric value (%s)!", arg[1]);
-			return 0;
-		}
+		upslogx(LOG_ERR, "Could not convert %s (%s) to an unsigned int (%s)!", arg[0], arg[1], strerror(errno));
+		return 0;
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 #endif /* WITH_OPENSSL | WITH_NSS */

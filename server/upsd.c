@@ -52,13 +52,13 @@ int	deny_severity = LOG_WARNING;
 	upstype_t	*firstups = NULL;
 
 	/* default 15 seconds before data is marked stale */
-	int	maxage = 15;
+	unsigned int	maxage = 15;
 
 	/* default to 1h before cleaning up status tracking entries */
-	int	tracking_delay = 3600;
+	unsigned int	tracking_delay = 3600;
 
 	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
-	int	maxconn = 0;
+	unsigned int	maxconn = 0;
 
 	/* preloaded to STATEPATH in main, can be overridden via upsd.conf */
 	char	*statepath = NULL;
@@ -691,7 +691,7 @@ static void upsd_cleanup(void)
 
 void poll_reload(void)
 {
-	int	ret;
+	unsigned int	ret;
 
 	ret = sysconf(_SC_OPEN_MAX);
 
@@ -922,7 +922,8 @@ int nut_uuid_v4(char *uuid_str)
 /* service requests and check on new data */
 static void mainloop(void)
 {
-	int	i, ret, nfds = 0;
+	unsigned int	i, nfds = 0;
+	int				ret;
 
 	upstype_t	*ups;
 	nut_ctype_t		*client, *cnext;
@@ -1246,7 +1247,7 @@ int main(int argc, char **argv)
 		chroot_start(chroot_path);
 	}
 
-	/* default to system limit (may be overridden in upsd.conf */
+	/* default to system limit (may be overridden in upsd.conf) */
 	maxconn = sysconf(_SC_OPEN_MAX);
 
 	/* handle upsd.conf */
