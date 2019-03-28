@@ -633,6 +633,33 @@ smf_getSavedMD5() {
     # Note: lookups for GLOBAL cause each service instance to show up
     /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" 2>/dev/null | head -1 | awk '{print $NF}'
 }
+smf_setSavedUniq() {
+    # Save data value $5 of type $4 into service FMRI $1
+    # under (scrapped and) newly created property group $2
+    # and property name $3
+    _TARGET_FMRI="$1"
+    _PG="$2"
+    _PROP="$3"
+    _TYPE="$4"
+    case "${_TYPE}" in
+        *:) ;;
+        *) _TYPE="${_TYPE}:" ;;
+    esac
+    _VAL="$5"
+    /usr/sbin/svccfg -s "${_TARGET_FMRI}" delprop "${_PG}" 2>/dev/null || true
+    /usr/sbin/svccfg -s "${_TARGET_FMRI}" addpg "${_PG}" application && \
+    /usr/sbin/svccfg -s "${_TARGET_FMRI}" setprop "${_PG}/${_PROP}" = "${_TYPE}" "${_VAL}"
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the service property ${_PG}/${_PROP}">&2 ; return 1 ; }
+
+    case "${_TARGET_FMRI}" in
+        svc:/*:*) ;; # A service instance by full FMRI, refresh
+        svc:/*/nut-driver|nut-driver) return 0 ;; # A base non-instance service item for nut-driver (known multi-instance only)
+        svc:/*) ;; # A base non-instance service item (not nut-driver)
+        *:*) ;; # A service instance by short FMRI, refresh
+        *) ;; # A base non-instance service item (not nut-driver)
+    esac
+    /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
+}
 smf_setSavedMD5() {
     # Save checksum value $2 into service instance $1
     PG="nut-driver-enumerator-generated-checksum"
@@ -645,14 +672,7 @@ smf_setSavedMD5() {
         TARGET_FMRI="nut-driver"
         PROP="SECTION_CHECKSUM_GLOBAL"
     fi
-
-    /usr/sbin/svccfg -s "$TARGET_FMRI" delprop "$PG" 2>/dev/null || true
-    /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$PG" application && \
-    /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$PG/$PROP" = astring: "$2"
-    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
-    if [ -n "$1" ] ; then
-        /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
-    fi
+    smf_setSavedUniq "$TARGET_FMRI" "$PG" "$PROP" astring "$2"
 }
 smf_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
