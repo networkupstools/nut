@@ -633,7 +633,7 @@ smf_getSavedMD5() {
     # Note: lookups for GLOBAL cause each service instance to show up
     /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" 2>/dev/null | head -1 | awk '{print $NF}'
 }
-smf_setSavedUniq() {
+smf_setSavedUniq() (
     # Save data value $5 of type $4 into service FMRI $1
     # under (scrapped and) newly created property group $2
     # and property name $3
@@ -659,8 +659,8 @@ smf_setSavedUniq() {
         *) ;; # A base non-instance service item (not nut-driver)
     esac
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
-}
-smf_setSavedMD5() {
+)
+smf_setSavedMD5() (
     # Save checksum value $2 into service instance $1
     PG="nut-driver-enumerator-generated-checksum"
     PROP="SECTION_CHECKSUM"
@@ -673,7 +673,7 @@ smf_setSavedMD5() {
         PROP="SECTION_CHECKSUM_GLOBAL"
     fi
     smf_setSavedUniq "$TARGET_FMRI" "$PG" "$PROP" astring "$2"
-}
+)
 smf_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-server" 2>/dev/null
