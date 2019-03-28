@@ -650,7 +650,9 @@ smf_setSavedMD5() {
     /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$PG" application && \
     /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$PG/$PROP" = astring: "$2"
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
-    /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
+    if [ -n "$1" ] ; then
+        /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
+    fi
 }
 smf_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
