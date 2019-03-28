@@ -549,8 +549,14 @@ smf_validInstanceSuffixName() {
 smf_registerInstance() {
     DEVICE="$1"
     SVCINST="$1"
+    if /usr/bin/svcs "nut-driver:$SVCINST" >/dev/null 2>&1 ; then
+        smf_unregisterInstance "$SVCINST"
+    fi
     /usr/sbin/svccfg -s nut-driver add "$DEVICE" || \
-    { SVCINST="`smf_validInstanceName "$1"`" && \
+    { SVCINST="`smf_validInstanceName "$1"`" || return
+      if /usr/bin/svcs "nut-driver:$SVCINST" >/dev/null 2>&1 ; then
+        smf_unregisterInstance "$SVCINST"
+      fi
       /usr/sbin/svccfg -s nut-driver add "$SVCINST" || return ; }
     echo "Added instance: 'nut-driver:$SVCINST' for NUT configuration section '$DEVICE'" >&2
 
