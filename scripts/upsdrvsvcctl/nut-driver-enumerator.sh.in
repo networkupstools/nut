@@ -646,7 +646,7 @@ smf_setSavedMD5() {
         PROP="SECTION_CHECKSUM_GLOBAL"
     fi
 
-    /usr/sbin/svccfg -s "$TARGET_FMRI" delprop "$PG" || true
+    /usr/sbin/svccfg -s "$TARGET_FMRI" delprop "$PG" 2>/dev/null || true
     /usr/sbin/svccfg -s "$TARGET_FMRI" addpg "$PG" application && \
     /usr/sbin/svccfg -s "$TARGET_FMRI" setprop "$PG/$PROP" = astring: "$2"
     [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the checksum">&2 ; return 1 ; }
