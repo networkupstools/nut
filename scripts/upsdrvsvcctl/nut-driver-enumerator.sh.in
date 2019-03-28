@@ -631,7 +631,7 @@ smf_getSavedMD5() {
     fi
 
     # Note: lookups for GLOBAL cause each service instance to show up
-    /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" | head -1 | awk '{print $NF}'
+    /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" 2>/dev/null | head -1 | awk '{print $NF}'
 }
 smf_setSavedMD5() {
     # Save checksum value $2 into service instance $1
