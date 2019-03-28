@@ -594,6 +594,8 @@ smf_registerInstance() {
     fi
 
     smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
+    # Save original device (config section) name to speed up some searches
+    smf_setSavedUniq "$TARGET_FMRI" "nut-driver-enumerator-generated-devicename" "DEVICE" astring "$DEVICE"
 
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
@@ -744,6 +746,7 @@ EOF
     fi
 
     systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
+    _systemd_setSavedDevice "$SVCINST" "$DEVICE"
 
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
@@ -773,6 +776,16 @@ systemd_getSavedMD5() {
     [ -s "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" ] \
     && grep "Environment='$PROP=" "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
     || { echo "Did not find '${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf' with a $PROP" ; return 1; }
+}
+_systemd_setSavedDevice() {
+    # Save device (config section) name $2 into service instance $1
+    [ -n "$1" ] || return
+    mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
+    cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf" << EOF
+[Service]
+Environment='DEVICE="$2"'
+EOF
+    [ $? = 0 ] && echo "OK" || { echo "FAILED to stash the device name">&2 ; return 1 ; }
 }
 systemd_setSavedMD5() {
     # Save checksum value $2 into service instance $1
