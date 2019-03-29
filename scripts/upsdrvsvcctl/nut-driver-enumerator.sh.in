@@ -1,4 +1,5 @@
 #!/bin/sh
+# BIG NOTE: Not bash, not any other predetermined shell implementation
 #
 # NOTE: This script is intentionally written with portable shell constructs
 #       with the aim and hope to work in different interpreters, so it is a
