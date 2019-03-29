@@ -1206,6 +1206,97 @@ nut_driver_enumerator_main() {
     return 13
 }
 
+list_services_for_devices() {
+    FINAL_RES=0
+    upslist_readFile_once && [ -n "$UPSLIST_FILE" ] \
+        || { echo "No devices detected in '$UPSCONF'" >&2 ; return 1 ; }
+    upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
+        || { echo "No service instances detected" >&2 ; return 1; }
+    UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
+        || { echo "No service units detected" >&2 ; return 1; }
+    for DEV in $UPSLIST_FILE ; do
+        vINST="`$hook_validInstanceName "$DEV"`"
+        vUNITD="`$hook_validFullUnitName "$DEV"`"
+        vUNITI="`$hook_validFullUnitName "$vINST"`"
+        # First pass over simple verbatim names
+        for INST in $UPSLIST_SVCS ; do
+            if [ "$INST" = "$DEV" ] ; then
+                for UNIT in $UPSLIST_SVCS_RAW ; do
+                    if [ "$UNIT" = "$vUNITD" ] ; then
+                        printf '%s\t%s\n' "$UNIT" "$DEV"
+                        continue 3
+                    fi
+                done
+            fi
+        done
+        for INST in $UPSLIST_SVCS ; do
+            if [ "$INST" = "$vINST" ] ; then
+                for UNIT in $UPSLIST_SVCS_RAW ; do
+                    if [ "$UNIT" = "$vUNITI" ] ; then
+                        printf '%s\t%s\n' "$UNIT" "$DEV"
+                        continue 3
+                    fi
+                done
+            fi
+        done
+        echo "WARNING: no service instances detected that match device '$DEV'" >&2
+        FINAL_RES=1
+    done
+    return $FINAL_RES
+}
+
+SVCS_DEVS_LIST=""
+list_services_for_devices_once() {
+    # On first call, caches the system reponse
+    # On next calls returns what it got earlier
+    # Does not return any text, just the exit code
+    # (0 = data avail, even if empty, in SVCS_DEVS_LIST)
+    [ "${#SVCS_DEVS_LIST}" != 0 ] && return
+
+    # Pre-cache config file data, if nobody read it yet,
+    # and keep in main script context for reuse (no subshell)
+    upslist_readFile_once && \
+    SVCS_DEVS_LIST="`list_services_for_devices "$@"`" || return $?
+}
+
+get_device_for_service() {
+    [ -z "$1" ] && echo "Service (instance) name argument required" >&2 && return 1
+
+    # Instance name can be a hash or "native" NUT section name
+    SVC="`$hook_validInstanceSuffixName "$1"`" && [ -n "$SVC" ] \
+    || { echo "Error getting SVC name from the inputs" >&2 ; return 1; }
+
+    # Reading the config is too expensive to do for every
+    # driver management attempt when there are many devices
+    if [ "${USE_SAVEDINST-}" != false ]; then
+        # Try to use last-stashed values from service properties first
+        # (NOTE: saved value is assumed to be valid if present)
+        SAVEDINST="`$hook_getSavedDeviceName "$SVC"`" || SAVEDINST=""
+        [ -z "$SAVEDINST" ] || { echo "$SAVEDINST" ; return 0 ; }
+    fi
+
+    case "$SVC" in
+        MD5_*) ;; # fall through to the bulk of code
+        *)  upslist_readFile_once || return $?
+            echo "$UPSLIST_FILE" | egrep "^$SVC\$"
+            return $?
+            ;;
+    esac
+
+    # Inspect SVC=MD5_* usecase
+    FINAL_RES=0
+    list_services_for_devices_once && [ -n "$SVCS_DEVS_LIST" ] || FINAL_RES=$?
+    if [ "$FINAL_RES" = 0 ]; then
+        echo "$SVCS_DEVS_LIST" | grep "$SVC" | ( \
+            while read _SVC _DEV ; do
+                _SVC="`$hook_validInstanceSuffixName "${_SVC}"`" || exit
+                [ "${_SVC}" = "${SVC}" ] && echo "${_DEV}" && exit 0
+            done ; exit 1 ) && return 0
+    fi
+    echo "No service instance '$1' was detected that matches a NUT device" >&2
+    return 1
+}
+
 daemonize() (
     # Support (SIG)HUP == signal code 1 to quickly reconfigure,
     # e.g. to request it while the sleep is happening or while
@@ -1441,76 +1532,15 @@ while [ $# -gt 0 ]; do
             echo "No service instances detected that match device '$2'" >&2
             exit 1
             ;;
-        --get-device-for-service) [ -z "$2" ] && echo "Service (instance) name argument required" >&2 && exit 1
-            # Instance name can be a hash or "native" NUT section name
-            SVC="`$hook_validInstanceSuffixName "$2"`" && [ -n "$SVC" ] \
-            || { echo "Error getting SVC name from the inputs" >&2 ; exit 1; }
-
-            # Reading the config is too expensive to do for every
-            # driver management attempt when there are many devices
-            # Try to use last-stashed values from service properties first
-            # (NOTE: saved value is assumed to be valid if present)
-            SAVEDINST="`$hook_getSavedDeviceName "$SVC"`" || SAVEDINST=""
-            [ -z "$SAVEDINST" ] || { echo "$SAVEDINST" ; exit 0 ; }
-
-            case "$SVC" in
-                MD5_*) ;; # fall through to the bulk of code
-                *)  upslist_readFile_once || exit $?
-                    echo "$UPSLIST_FILE" | egrep "^$SVC\$"
-                    exit $?
-                    ;;
-            esac
-
-            # Inspect SVC=MD5_* usecase
-            FINAL_RES=0
-            OUT="`"$0" --list-services-for-devices`" && [ -n "$OUT" ] || FINAL_RES=$?
-            if [ "$FINAL_RES" = 0 ]; then
-                echo "$OUT" | grep "$SVC" | ( \
-                    while read _SVC _DEV ; do
-                        _SVC="`$hook_validInstanceSuffixName "${_SVC}"`" || exit
-                        [ "${_SVC}" = "${SVC}" ] && echo "${_DEV}" && exit 0
-                    done ; exit 1 ) && exit 0
-            fi
-            echo "No service instance '$2' was detected that matches a NUT device" >&2
-            exit 1
+        --get-device-for-service)
+            shift
+            get_device_for_service "$@"
+            exit $?
             ;;
         --list-services-for-devices)
-            FINAL_RES=0
-            upslist_readFile_once && [ -n "$UPSLIST_FILE" ] \
-                || { echo "No devices detected in '$UPSCONF'" >&2 ; exit 1 ; }
-            upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
-                || { echo "No service instances detected" >&2 ; exit 1; }
-            UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
-                || { echo "No service units detected" >&2 ; exit 1; }
-            for DEV in $UPSLIST_FILE ; do
-                vINST="`$hook_validInstanceName "$DEV"`"
-                vUNITD="`$hook_validFullUnitName "$DEV"`"
-                vUNITI="`$hook_validFullUnitName "$vINST"`"
-                # First pass over simple verbatim names
-                for INST in $UPSLIST_SVCS ; do
-                    if [ "$INST" = "$DEV" ] ; then
-                        for UNIT in $UPSLIST_SVCS_RAW ; do
-                            if [ "$UNIT" = "$vUNITD" ] ; then
-                                printf '%s\t%s\n' "$UNIT" "$DEV"
-                                continue 3
-                            fi
-                        done
-                    fi
-                done
-                for INST in $UPSLIST_SVCS ; do
-                    if [ "$INST" = "$vINST" ] ; then
-                        for UNIT in $UPSLIST_SVCS_RAW ; do
-                            if [ "$UNIT" = "$vUNITI" ] ; then
-                                printf '%s\t%s\n' "$UNIT" "$DEV"
-                                continue 3
-                            fi
-                        done
-                    fi
-                done
-                echo "WARNING: no service instances detected that match device '$DEV'" >&2
-                FINAL_RES=1
-            done
-            exit $FINAL_RES
+            shift
+            list_services_for_devices "$@"
+            exit $?
             ;;
         --show-configs|--show-device-configs|--show-all-configs|--show-all-device-configs)
             RES=0
