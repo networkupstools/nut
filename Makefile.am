@@ -60,7 +60,7 @@ doc spellcheck-sortdict:
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
 check-scripts-syntax:
-	@echo 'NOTE: modern bash complains about scripts using backticks (which we ignore for portability reasons): `...` obsolete, use $(...)'
+	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
 	for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
 	        *"Bourne-Again shell script"*) ( set -x ; /bin/bash -n "$$F" ; ) ;; \
