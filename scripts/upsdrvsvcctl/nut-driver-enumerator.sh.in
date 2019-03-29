@@ -170,6 +170,7 @@ hook_validInstanceName=""
 hook_validFullUnitName=""
 hook_validInstanceSuffixName=""
 hook_getSavedDeviceName=""
+hook_findSavedDeviceName=""
 hook_setSavedDeviceName=""
 hook_getSavedMD5=""
 hook_setSavedMD5=""
@@ -187,6 +188,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validFullUnitName="smf_validFullUnitName"
         hook_validInstanceSuffixName="smf_validInstanceSuffixName"
         hook_getSavedDeviceName="smf_getSavedDeviceName"
+        hook_findSavedDeviceName="smf_findSavedDeviceName"
         hook_setSavedDeviceName="smf_setSavedDeviceName"
         hook_getSavedMD5="smf_getSavedMD5"
         hook_setSavedMD5="smf_setSavedMD5"
@@ -203,6 +205,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validFullUnitName="systemd_validFullUnitName"
         hook_validInstanceSuffixName="systemd_validInstanceSuffixName"
         hook_getSavedDeviceName="systemd_getSavedDeviceName"
+        hook_findSavedDeviceName="systemd_findSavedDeviceName"
         hook_setSavedDeviceName="systemd_setSavedDeviceName"
         hook_getSavedMD5="systemd_getSavedMD5"
         hook_setSavedMD5="systemd_setSavedMD5"
@@ -219,6 +222,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validFullUnitName="selftest_NOOP"
         hook_validInstanceSuffixName="selftest_NOOP"
         hook_getSavedDeviceName="selftest_NOOP"
+        hook_findSavedDeviceName="selftest_NOOP"
         hook_setSavedDeviceName="selftest_NOOP"
         hook_getSavedMD5="selftest_NOOP"
         hook_setSavedMD5="selftest_NOOP"
@@ -644,6 +648,19 @@ smf_getSavedMD5() {
     # Note: lookups for GLOBAL cause each service instance to show up
     /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" 2>/dev/null | head -1 | awk '{print $NF}'
 }
+smf_findSavedDeviceName() {
+    # Returns long service FMRI which has DEVICE=="$1"
+    # For empty "$1" returns a list of all recorded "FMRI<TAB>DEVICE"
+    if [ -z "$1" ]; then
+        /usr/bin/svcprop -p "nut-driver-enumerator-generated-devicename/DEVICE" \
+            'svc:/system/power/nut-driver:*' 2>/dev/null \
+            | sed 's|^\(svc:/[^:]*:[^/:]*\)/:properties/nut-driver-enumerator-generated-devicename/DEVICE astring \(.*\)$|\1\t\2|'
+    else
+        /usr/bin/svcprop -p "nut-driver-enumerator-generated-devicename/DEVICE" \
+            "svc:/system/power/nut-driver:$1" 2>/dev/null \
+            | sed 's|^\(svc:/[^:]*:[^/:]*\)/:prop.*$|\1|'
+    fi
+}
 smf_getSavedDeviceName() {
     # Query service instance $1
     PG="nut-driver-enumerator-generated-devicename"
@@ -806,6 +823,19 @@ systemd_getSavedMD5() {
     [ -s "${PROPFILE}" ] \
     && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
     || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
+}
+systemd_findSavedDeviceName() {
+    # Returns long service instance name which has DEVICE=="$1"
+    # For empty "$1" returns a list of all recorded "SVC<TAB>DEVICE"
+    if [ -z "$1" ]; then
+        grep -H "Environment='DEVICE=" \
+            /etc/systemd/system/nut-driver@.service.d/nut-driver-enumerator-generated-devicename.conf \
+        | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*"'\(.*\)'"[\"']*"'$|\1\t\2|'
+    else
+        grep -H "Environment='DEVICE=$1'" \
+            /etc/systemd/system/nut-driver@.service.d/nut-driver-enumerator-generated-devicename.conf \
+        | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
+    fi
 }
 systemd_getSavedDeviceName() {
     # Query service instance $1 or global section
@@ -1330,6 +1360,10 @@ while [ $# -gt 0 ]; do
             ;;
         --get-service-for-device) [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
             DEV="$2"
+            # Cheap check in service instance metadata, if saved
+            SAVEDSVC="`$hook_findSavedDeviceName "$DEV"`" || SAVEDSVC=""
+            [ -z "$SAVEDSVC" ] || { echo "$SAVEDSVC" ; exit 0 ; }
+            # Trawl all the data we have...
             upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
                 || { echo "No service instances detected" >&2 ; exit 1; }
             UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
@@ -1369,8 +1403,8 @@ while [ $# -gt 0 ]; do
             # Reading the config is too expensive to do for every
             # driver management attempt when there are many devices
             # Try to use last-stashed values from service properties first
-            INST="`$hook_getSavedDeviceName "$SVC"`" || INST=""
-            [ -z "$INST" ] || { echo "$INST" ; exit 0 ; }
+            SAVEDINST="`$hook_getSavedDeviceName "$SVC"`" || SAVEDINST=""
+            [ -z "$SAVEDINST" ] || { echo "$SAVEDINST" ; exit 0 ; }
 
             case "$SVC" in
                 MD5_*) ;; # fall through to the bulk of code
