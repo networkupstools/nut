@@ -230,7 +230,15 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             ;;
         "default-shellcheck")
             [ -z "$CI_TIME" ] || echo "`date`: Trying to check shell script syntax validity of the currently tested project..."
-            ( $CI_TIME make VERBOSE=1 shellcheck )
+            ### Note: currently, shellcheck target calls check-scripts-syntax
+            ### so when both are invoked at once, in the end the check is only
+            ### executed once. Later it is anticipated that shellcheck would
+            ### be implemented by requiring, configuring and calling the tool
+            ### named "shellcheck" for even more code inspection and details.
+            ### Still, there remains value in also checking the script syntax
+            ### by the very version of the shell interpreter that would run
+            ### these scripts in production usage of the resulting packages.
+            ( $CI_TIME make VERBOSE=1 shellcheck check-scripts-syntax )
             exit $?
             ;;
     esac
