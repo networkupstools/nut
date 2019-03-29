@@ -1206,6 +1206,72 @@ nut_driver_enumerator_main() {
     return 13
 }
 
+nut_driver_enumerator_full_reconfigure() {
+    # Similar to the main routine for reconciling data,
+    # but this one removes all service instances and
+    # defines current mappings from scratch after that
+    upslist_readFile_once || return $?
+    upslist_readSvcs "before manipulations"
+
+    if [ -n "$UPSLIST_SVCS" ]; then
+        for UPSS in $UPSLIST_SVCS ; do
+            echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] to reconfigure the service unit..." >&2
+            $hook_unregisterInstance "$UPSS"
+        done
+        upslist_readSvcs "after dropping"
+    fi
+    if [ -n "$UPSLIST_FILE" ]; then
+        upslist_addSvcs
+        upslist_readSvcs "after checking for new config sections to define service instances"
+    fi
+
+    # Save new checksum of global config
+    $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
+
+    # Service units were manipulated, including saving of checksums;
+    # refresh the service management daemon if needed
+    $hook_refreshSupervizor
+
+    if [ -n "$UPSLIST_SVCS" ] ; then
+        echo "=== The currently defined service instances are:"
+        echo "$UPSLIST_SVCS"
+    fi
+
+    if [ -n "$UPSLIST_FILE" ] ; then
+        echo "=== The currently defined configurations in '$UPSCONF' are:"
+        echo "$UPSLIST_FILE"
+    fi
+
+    # We had some changes to the config file; upsd must be made aware
+    if [ "$AUTO_START" = yes ] ; then
+        $hook_restart_upsd
+    fi
+
+    # Return 42 if there was a change applied succesfully
+    # (but e.g. some services should restart - upsd, maybe upsmon)
+    UPSLIST_EQ_RES=0
+    upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" || UPSLIST_EQ_RES=$?
+
+    # File processing and service startups take a while;
+    # make sure upsconf did not change while we worked...
+    # NOTE: Check this at the last moment to minimize
+    # the chance of still not noticing the change made
+    # at just the wrong moment.
+    UPSCONF_CHECKSUM_END="`calc_md5_file "$UPSCONF"`" || true
+    if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
+        echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up and reconcile the late-coming changes"
+        nut_driver_enumerator_main ; return $?
+        # The "main" routine will do REPORT_RESTART_42 logic too
+    fi
+
+    if [ "$UPSLIST_EQ_RES" = 0 ] ; then
+        echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
+        [ "${REPORT_RESTART_42-}" = no ] && return 0 || return 42
+    fi
+
+    return 13
+}
+
 list_services_for_devices() {
     FINAL_RES=0
     upslist_readFile_once && [ -n "$UPSLIST_FILE" ] \
@@ -1481,67 +1547,8 @@ while [ $# -gt 0 ]; do
         --help|-h|-help) usage; exit 0 ;;
         --get-service-framework) echo "${SERVICE_FRAMEWORK}" ; exit 0 ;;
         --reconfigure)
-            upslist_readFile_once || exit $?
-            upslist_readSvcs "before manipulations"
-
-            if [ -n "$UPSLIST_SVCS" ]; then
-                for UPSS in $UPSLIST_SVCS ; do
-                    echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] to reconfigure the service unit..." >&2
-                    $hook_unregisterInstance "$UPSS"
-                done
-                upslist_readSvcs "after dropping"
-            fi
-
-            if [ -n "$UPSLIST_FILE" ]; then
-                upslist_addSvcs
-                upslist_readSvcs "after checking for new config sections to define service instances"
-            fi
-
-            # Save new checksum of global config
-            $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
-
-            # Service units were manipulated, including saving of checksums;
-            # refresh the service management daemon if needed
-            $hook_refreshSupervizor
-
-            if [ -n "$UPSLIST_SVCS" ] ; then
-                echo "=== The currently defined service instances are:"
-                echo "$UPSLIST_SVCS"
-            fi
-
-            if [ -n "$UPSLIST_FILE" ] ; then
-                echo "=== The currently defined configurations in '$UPSCONF' are:"
-                echo "$UPSLIST_FILE"
-            fi
-
-            # We had some changes to the config file; upsd must be made aware
-            if [ "$AUTO_START" = yes ] ; then
-                $hook_restart_upsd
-            fi
-
-            # Return 42 if there was a change applied succesfully
-            # (but e.g. some services should restart - upsd, maybe upsmon)
-            UPSLIST_EQ_RES=0
-            upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" || UPSLIST_EQ_RES=$?
-
-            # File processing and service startups take a while;
-            # make sure upsconf did not change while we worked...
-            # NOTE: Check this at the last moment to minimize
-            # the chance of still not noticing the change made
-            # at just the wrong moment.
-            UPSCONF_CHECKSUM_END="`calc_md5_file "$UPSCONF"`" || true
-            if [ "$UPSCONF_CHECKSUM_END" != "$UPSCONF_CHECKSUM_START" ] ; then
-                echo "`date -u` : '$UPSCONF' changed while $0 $* was processing its older contents; re-running the script to pick up the late-coming changes"
-                $0 ; exit $?
-                # The "main" routine will do REPORT_RESTART_42 logic too
-            fi
-
-            if [ "$UPSLIST_EQ_RES" = 0 ] ; then
-                echo "`date -u` : OK: No more changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'"
-                [ "${REPORT_RESTART_42-}" = no ] && exit 0 || exit 42
-            fi
-
-            exit 13
+            nut_driver_enumerator_full_reconfigure "$@"
+            exit $?
             ;;
         --list-devices)
             upslist_readFile_once && \
