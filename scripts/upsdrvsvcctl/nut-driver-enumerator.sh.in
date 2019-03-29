@@ -271,22 +271,22 @@ upslist_equals() {
 
     _TMP_DEV_SVC=""
     for _DEV in $1 ; do
-        DEVINST="`$hook_validInstanceName "$_DEV"`"
+        DEVINST="`$hook_validInstanceName "${_DEV}"`"
         for _SVC in $2 ; do
-            [ "$_DEV" = "$_SVC" ] \
-            || [ "$DEVINST" = "$_SVC" ] \
-            && { [ -z "$_TMP_DEV_SVC" ] \
-                 && _TMP_DEV_SVC="$_DEV = $_SVC" \
-                 || _TMP_DEV_SVC="$_TMP_DEV_SVC
-$_DEV = $_SVC" ; }
+            [ "${_DEV}" = "${_SVC}" ] \
+            || [ "$DEVINST" = "${_SVC}" ] \
+            && { [ -z "${_TMP_DEV_SVC}" ] \
+                 && _TMP_DEV_SVC="${_DEV} = ${_SVC}" \
+                 || _TMP_DEV_SVC="${_TMP_DEV_SVC}
+${_DEV} = ${_SVC}" ; }
         done
     done
 
     # Input was not empty; did anything in output fit?
-    [ -z "$_TMP_DEV_SVC" ] && return 1
+    [ -z "${_TMP_DEV_SVC}" ] && return 1
 
     # Exit code : is the built mapping as long as the source list(s)?
-    [ "`echo "$1" | wc -l`" = "`echo "$_TMP_DEV_SVC" | wc -l`" ]
+    [ "`echo "$1" | wc -l`" = "`echo "${_TMP_DEV_SVC}" | wc -l`" ]
 }
 
 upssvcconf_checksum_unchanged() {
@@ -306,21 +306,21 @@ upslist_checksums_unchanged() {
 
     _TMP_SVC=""
     for _DEV in $1 ; do
-        DEVINST="`$hook_validInstanceName "$_DEV"`"
+        DEVINST="`$hook_validInstanceName "${_DEV}"`"
         for _SVC in $2 ; do
-            if [ "$_DEV" = "$_SVC" ] \
-            || [ "$DEVINST" = "$_SVC" ] \
+            if [ "${_DEV}" = "${_SVC}" ] \
+            || [ "$DEVINST" = "${_SVC}" ] \
             ; then
-                upssvcconf_checksum_unchanged "$_DEV" "$_SVC" || \
-                { [ -z "$_TMP_SVC" ] \
-                  && _TMP_SVC="$_SVC" \
-                  || _TMP_SVC="$_TMP_SVC
-$_SVC" ; }
+                upssvcconf_checksum_unchanged "${_DEV}" "${_SVC}" || \
+                { [ -z "${_TMP_SVC}" ] \
+                  && _TMP_SVC="${_SVC}" \
+                  || _TMP_SVC="${_TMP_SVC}
+${_SVC}" ; }
             fi
         done
     done
-    [ -z "$_TMP_SVC" ] && return 0
-    echo "$_TMP_SVC"
+    [ -z "${_TMP_SVC}" ] && return 0
+    echo "${_TMP_SVC}"
     return 1
 }
 
@@ -499,7 +499,7 @@ upsconf_getDriverMedia() {
 
 upsconf_getMedia() {
     _DRVMED="`upsconf_getDriverMedia "$1"`" || return
-    echo "$_DRVMED" | tail -n +2
+    echo "${_DRVMED}" | tail -n +2
     return 0
 }
 
@@ -509,27 +509,27 @@ upsconf_debug() {
     _MED="`upsconf_getMedia "$1"`"
     _MD5="`upsconf_getSection_MD5 "$1"`"
     NAME_MD5="`calc_md5 "$1"`"
-    echo "INST: ${NAME_MD5}~[$1]: DRV='$_DRV' PORT='$_PRT' MEDIA='$_MED' SECTIONMD5='$_MD5'"
+    echo "INST: ${NAME_MD5}~[$1]: DRV='${_DRV}' PORT='${_PRT}' MEDIA='${_MED}' SECTIONMD5='${_MD5}'"
 }
 
 calc_md5() {
     # Tries several ways to produce an MD5 of the "$1" argument
-    _MD5="`echo "$1" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "$_MD5" ] || \
-    { _MD5="`echo "$1" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "$_MD5" ]; } || \
+    _MD5="`echo "$1" | md5sum 2>/dev/null | awk '{print $1}'`" && [ -n "${_MD5}" ] || \
+    { _MD5="`echo "$1" | openssl dgst -md5 2>/dev/null | awk '{print $NF}'`" && [ -n "${_MD5}" ]; } || \
     return 1
 
-    echo "$_MD5"
+    echo "${_MD5}"
 }
 
 calc_md5_file() {
     # Tries several ways to produce an MD5 of the file named by "$1" argument
     [ -s "$1" ] || return 2
 
-    _MD5="`md5sum 2>/dev/null < "$1" | awk '{print $1}'`" && [ -n "$_MD5" ] || \
-    { _MD5="`openssl dgst -md5 2>/dev/null < "$1" | awk '{print $NF}'`" && [ -n "$_MD5" ]; } || \
+    _MD5="`md5sum 2>/dev/null < "$1" | awk '{print $1}'`" && [ -n "${_MD5}" ] || \
+    { _MD5="`openssl dgst -md5 2>/dev/null < "$1" | awk '{print $NF}'`" && [ -n "${_MD5}" ]; } || \
     return 1
 
-    echo "$_MD5"
+    echo "${_MD5}"
 }
 
 smf_validFullUnitName() {
@@ -564,7 +564,7 @@ smf_registerInstance() {
     DEPSVC=""
     DEPREQ=""
     _MED="`upsconf_getMedia "$DEVICE"`"
-    case "$_MED" in
+    case "${_MED}" in
         usb)
             DEPSVC="$DEPSVC_USB_SMF"
             DEPREQ="$DEPREQ_USB_SMF" ;;
@@ -576,7 +576,7 @@ smf_registerInstance() {
             DEPREQ="$DEPREQ_NET_FULL_SMF" ;;
         serial) ;;
         '') ;;
-        *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
+        *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
     esac
 
     TARGET_FMRI="nut-driver:$SVCINST"
@@ -717,7 +717,7 @@ systemd_registerInstance() {
     DEPSVC=""
     DEPREQ=""
     _MED="`upsconf_getMedia "$DEVICE"`"
-    case "$_MED" in
+    case "${_MED}" in
         usb)
             DEPSVC="$DEPSVC_USB_SYSTEMD"
             DEPREQ="$DEPREQ_USB_SYSTEMD" ;;
@@ -729,7 +729,7 @@ systemd_registerInstance() {
             DEPREQ="$DEPREQ_NET_FULL_SYSTEMD" ;;
         serial) ;;
         '') ;;
-        *)  echo "WARNING: Unexpected NUT media type ignored: '$_MED'" >&2 ;;
+        *)  echo "WARNING: Unexpected NUT media type ignored: '${_MED}'" >&2 ;;
     esac
     if [ -n "$DEPSVC" ]; then
         [ -n "$DEPREQ" ] || DEPREQ="#Wants"
@@ -1337,7 +1337,7 @@ while [ $# -gt 0 ]; do
                 echo "$OUT" | grep "$SVC" | ( \
                     while read _SVC _DEV ; do
                         _SVC="`$hook_validInstanceSuffixName "${_SVC}"`" || exit
-                        [ "${_SVC}" = "${SVC}" ] && echo "$_DEV" && exit 0
+                        [ "${_SVC}" = "${SVC}" ] && echo "${_DEV}" && exit 0
                     done ; exit 1 ) && exit 0
             fi
             echo "No service instance '$2' was detected that matches a NUT device" >&2
