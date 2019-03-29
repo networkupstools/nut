@@ -336,6 +336,50 @@ ${_SVC}" ; }
     return 1
 }
 
+upslist_savednames_find_missing() {
+    # Verify that all existing service units have a saved DEVICE name
+    # Report those that do not have a value there (any value) so we can
+    # amend those quickly after an upgrade. Otherwise we trust these.
+
+    # Get full instance names from system and from props
+    SVCINSTS="`$hook_listInstances_raw`" && [ -n "$SVCINSTS" ] || return 1
+    # If no props were found, (over)write them all
+    SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ -n "$SVCINST_PROPS" ] \
+    || { echo $SVCINSTS ; return 2; }
+
+    # Find services which do not have saved names in props
+    for SVCINST in $SVCINSTS ; do
+        echo "$SVCINST_PROPS" | egrep "^${SVCINST_PROPS}\t"'$' >/dev/null || echo "$SVCINST"
+    done
+}
+
+upslist_savednames_find_mismatch() {
+    # TODO: Make use of this to fsck the enumerator configs
+    #
+    # Verify that all existing service units have a saved DEVICE name
+    # and that such name does match the unit instance's name (original
+    # or MD5 normalized version). If something does not match, returns
+    # the unit name so it can be redefined by caller. This does not
+    # inspect whether such DEVICE is defined in NUT configuration.
+    # This situation might occur in some errors, but the likely case
+    # is updating from versions that did not track this info yet (but
+    # upslist_savednames_find_missing() should have handled those).
+
+    # Get full instance names from system and from props
+    SVCINSTS="`$hook_listInstances_raw`" && [ -n "$SVCINSTS" ] || return 1
+    SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ -n "$SVCINST_PROPS" ] || return 2
+
+    # Find services whose props exist but services do not
+    echo "$SVCINST_PROPS" | while read SVCINST_PROP DEVNAME_PROP ; do
+        echo "$SVCINSTS" | egrep "^${SVCINST_PROP}"'$' >/dev/null || echo "$SVCINST_PROP"
+    done
+
+    # Find services which do not have saved names in props
+    for SVCINST in $SVCINSTS ; do
+        echo "$SVCINST_PROPS" | egrep "^${SVCINST_PROP}\t"'$' >/dev/null || echo "$SVCINST"
+    done
+}
+
 upsconf_getSection_content() {
     # "$1" = name of ups.conf section to display in whole, from whatever
     # comes on stdin (file or a pre-made normalized variable)
@@ -1499,6 +1543,14 @@ while [ $# -gt 0 ]; do
         upslist_debug) # Not public, not in usage()
             upslist_readFile_once || exit
             upslist_debug
+            exit $?
+            ;;
+        upslist_savednames_find_missing) # Not public, not in usage()
+            upslist_savednames_find_missing
+            exit $?
+            ;;
+        upslist_savednames_find_mismatch) # Not public, not in usage()
+            upslist_savednames_find_mismatch
             exit $?
             ;;
         *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
