@@ -1297,12 +1297,43 @@ get_device_for_service() {
     return 1
 }
 
+update_upslist_savednames_find_missing() {
+    # Runs once in production modes that inspect and reconcile
+    # configs, to handle upgraded NUT deployments
+    SVCINSTS_NO_DEVICE="`upslist_savednames_find_missing`" || \
+    case "$?" in
+        1) return 0 ;; # No services defined yet
+        2) ;; # All service units do not have DEVICE values
+    esac
+    # Something found... or not? Or all is populated?
+    [ -n "$SVCINSTS_NO_DEVICE" ] || return 0
+
+    # Make a list of what devices are known in config matched
+    # to service instances defined in the system, if any
+    # Note to not check the service instance properties which
+    # we are validating and currently to not quite trust.
+    USE_SAVEDINST=false list_services_for_devices_once && [ -n "$SVCS_DEVS_LIST" ] || return 0
+
+    # Go over services with no device value saved into properties,
+    # and write the values learned from mapping above
+    _MISSING_RES=0
+    for SVCINST in $SVCINSTS_NO_DEVICE ; do
+        _DEV="`printf '%s\n' "$SVCS_DEVS_LIST" | awk '( \$1 == "'"${SVCINST}"'" ) {print \$NF}'`"
+        echo "Service instance '$SVCINST' did not have a device recorded into properties, setting to '${_DEV}'"
+        [ -n "${_DEV}" ] || { echo "The device name value for '$SVCINST' is empty, skipping" >&2 ; _MISSING_RES=1 ; continue ; }
+        $hook_setSavedDeviceName "`$hook_validInstanceSuffixName "$SVCINST"`" "${_DEV}" || _MISSING_RES=$?
+    done
+    return ${_MISSING_RES}
+}
+
 daemonize() (
     # Support (SIG)HUP == signal code 1 to quickly reconfigure,
     # e.g. to request it while the sleep is happening or while
     # "main" is processing an earlier change of the file.
     RECONFIGURE_ASAP=false
     trap 'RECONFIGURE_ASAP=true' 1
+
+    update_upslist_savednames_find_missing
 
     # Note: this loop would die on errors with config file or
     # inability to ensure that it matches the list of services.
@@ -1334,6 +1365,7 @@ UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
 
 # By default, update wrapping of devices into services
 if [ $# = 0 ]; then
+    update_upslist_savednames_find_missing
     nut_driver_enumerator_main ; exit $?
 fi
 
@@ -1581,6 +1613,10 @@ while [ $# -gt 0 ]; do
             ;;
         upslist_savednames_find_mismatch) # Not public, not in usage()
             upslist_savednames_find_mismatch
+            exit $?
+            ;;
+        update_upslist_savednames_find_missing) # Not public, not in usage()
+            update_upslist_savednames_find_missing
             exit $?
             ;;
         *) echo "Unrecognized argument: $1" >&2 ; exit 1 ;;
