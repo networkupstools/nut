@@ -40,6 +40,26 @@ static info_lkp_t cyberpower_power_status[] = {
 	{ 0, NULL }
 } ;
 
+static info_lkp_t cyberpower_battery_status[] = {
+	{ 1, "" },	/* unknown */
+	{ 2, "" },	/* batteryNormal */
+	{ 3, "LB" },	/* batteryLow */
+	{ 0, NULL }
+} ;
+
+static info_lkp_t cyberpower_cal_status[] = {
+	{ 1, "" },          /* Calibration Successful */
+	{ 2, "" },          /* Calibration Invalid */
+	{ 3, "CAL" },       /* Calibration in progress */
+	{ 0, NULL }
+};
+
+static info_lkp_t cyberpower_battrepl_status[] = {
+	{ 1, "" },          /* No battery needs replacing */
+	{ 2, "RB" },        /* Batteries need to be replaced */
+	{ 0, NULL }
+};
+
 /* Snmp2NUT lookup table for CyberPower MIB */
 static snmp_info_t cyberpower_mib[] = {
 	/* Device page */
@@ -59,7 +79,13 @@ static snmp_info_t cyberpower_mib[] = {
 		0, NULL },
 
 	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.4.1.1.0", "",
-		0 /*SU_STATUS_PWR*/, &cyberpower_power_status[0] },
+		SU_FLAG_OK | SU_STATUS_PWR, &cyberpower_power_status[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.2.1.1.0", "",
+		SU_FLAG_OK | SU_STATUS_BATT, &cyberpower_battery_status[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.7.2.7.0", "",
+		SU_FLAG_OK | SU_STATUS_CAL, &cyberpower_cal_status[0] },
+	{ "ups.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.3808.1.1.1.2.2.5.0", "",
+		SU_FLAG_OK | SU_STATUS_RB, &cyberpower_battrepl_status[0] },
 	{ "ups.load", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.3.0", "",
 		0, NULL },
 
