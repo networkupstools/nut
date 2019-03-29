@@ -169,6 +169,7 @@ hook_listInstances_raw=""
 hook_validInstanceName=""
 hook_validFullUnitName=""
 hook_validInstanceSuffixName=""
+hook_getSavedDeviceName=""
 hook_getSavedMD5=""
 hook_setSavedMD5=""
 hook_restart_upsd=""
@@ -184,6 +185,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="smf_validInstanceName"
         hook_validFullUnitName="smf_validFullUnitName"
         hook_validInstanceSuffixName="smf_validInstanceSuffixName"
+        hook_getSavedDeviceName="smf_getSavedDeviceName"
         hook_getSavedMD5="smf_getSavedMD5"
         hook_setSavedMD5="smf_setSavedMD5"
         hook_restart_upsd="smf_restart_upsd"
@@ -198,6 +200,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="systemd_validInstanceName"
         hook_validFullUnitName="systemd_validFullUnitName"
         hook_validInstanceSuffixName="systemd_validInstanceSuffixName"
+        hook_getSavedDeviceName="systemd_getSavedDeviceName"
         hook_getSavedMD5="systemd_getSavedMD5"
         hook_setSavedMD5="systemd_setSavedMD5"
         hook_restart_upsd="systemd_restart_upsd"
@@ -212,6 +215,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validInstanceName="selftest_NOOP"
         hook_validFullUnitName="selftest_NOOP"
         hook_validInstanceSuffixName="selftest_NOOP"
+        hook_getSavedDeviceName="selftest_NOOP"
         hook_getSavedMD5="selftest_NOOP"
         hook_setSavedMD5="selftest_NOOP"
         hook_restart_upsd="selftest_NOOP"
@@ -636,6 +640,22 @@ smf_getSavedMD5() {
     # Note: lookups for GLOBAL cause each service instance to show up
     /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" 2>/dev/null | head -1 | awk '{print $NF}'
 }
+smf_getSavedDeviceName() {
+    # Query service instance $1
+    PG="nut-driver-enumerator-generated-devicename"
+    PROP="DEVICE"
+
+    if [ -n "$1" ]; then
+        TARGET_FMRI="nut-driver:$1"
+    else
+        # Global section
+        echo ""
+        return 0
+    fi
+
+    # Note: lookups for GLOBAL cause each service instance to show up
+    /usr/bin/svcprop -p "$PG/$PROP" "$TARGET_FMRI" 2>/dev/null | head -1 | awk '{print $NF}'
+}
 smf_setSavedUniq() (
     # Save data value $5 of type $4 into service FMRI $1
     # under (scrapped and) newly created property group $2
@@ -747,7 +767,7 @@ EOF
     fi
 
     systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
-    _systemd_setSavedDevice "$SVCINST" "$DEVICE"
+    _systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
 
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
@@ -774,15 +794,26 @@ systemd_getSavedMD5() {
     # Query service instance $1 or global section
     PROP="SECTION_CHECKSUM"
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
-    [ -s "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" ] \
-    && grep "Environment='$PROP=" "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
-    || { echo "Did not find '${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf' with a $PROP" ; return 1; }
+    PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
+    [ -s "${PROPFILE}" ] \
+    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
-_systemd_setSavedDevice() {
+systemd_getSavedDeviceName() {
+    # Query service instance $1 or global section
+    [ -n "$1" ] || { echo ""; return 0; }
+    PROP="DEVICE"
+    PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
+    [ -s "${PROPFILE}" ] \
+    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
+}
+_systemd_setSavedDeviceName() {
     # Save device (config section) name $2 into service instance $1
     [ -n "$1" ] || return
+    PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
-    cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf" << EOF
+    cat > "${PROPFILE}" << EOF
 [Service]
 Environment='DEVICE="$2"'
 EOF
@@ -792,8 +823,9 @@ systemd_setSavedMD5() {
     # Save checksum value $2 into service instance $1
     PROP="SECTION_CHECKSUM"
     [ -n "$1" ] || PROP="SECTION_CHECKSUM_GLOBAL"
+    PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
-    cat > "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-checksum.conf" << EOF
+    cat > "${PROPFILE}" << EOF
 [Service]
 Environment='$PROP=$2'
 EOF
@@ -1323,7 +1355,15 @@ while [ $# -gt 0 ]; do
             ;;
         --get-device-for-service) [ -z "$2" ] && echo "Service (instance) name argument required" >&2 && exit 1
             # Instance name can be a hash or "native" NUT section name
-            SVC="`$hook_validInstanceSuffixName "$2"`"
+            SVC="`$hook_validInstanceSuffixName "$2"`" && [ -n "$SVC" ] \
+            || { echo "Error getting SVC name from the inputs" >&2 ; exit 1; }
+
+            # Reading the config is too expensive do do for every
+            # driver management attempt when there are many devices
+            # Try to use last-stashed values from service properties first
+            INST="`$hook_getSavedDeviceName "$SVC"`" || INST=""
+            [ -z "$INST" ] || { echo "$INST" ; exit 0 ; }
+
             case "$SVC" in
                 MD5_*) ;; # fall through to the bulk of code
                 *)  upslist_readFile_once || exit $?
@@ -1331,6 +1371,8 @@ while [ $# -gt 0 ]; do
                     exit $?
                     ;;
             esac
+
+            # Inspect SVC=MD5_* usecase
             FINAL_RES=0
             OUT="`"$0" --list-services-for-devices`" && [ -n "$OUT" ] || FINAL_RES=$?
             if [ "$FINAL_RES" = 0 ]; then
