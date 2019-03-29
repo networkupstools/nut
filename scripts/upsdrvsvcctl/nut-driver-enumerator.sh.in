@@ -9,7 +9,7 @@
 #       reference or 100% compliant with what the binary code uses; its aim
 #       is to just pick out some strings relevant for tracking config changes.
 #
-# Copyright (C) 2016-2018 Eaton
+# Copyright (C) 2016-2019 Eaton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
