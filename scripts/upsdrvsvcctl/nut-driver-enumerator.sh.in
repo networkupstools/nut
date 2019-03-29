@@ -1366,7 +1366,7 @@ while [ $# -gt 0 ]; do
             SVC="`$hook_validInstanceSuffixName "$2"`" && [ -n "$SVC" ] \
             || { echo "Error getting SVC name from the inputs" >&2 ; exit 1; }
 
-            # Reading the config is too expensive do do for every
+            # Reading the config is too expensive to do for every
             # driver management attempt when there are many devices
             # Try to use last-stashed values from service properties first
             INST="`$hook_getSavedDeviceName "$SVC"`" || INST=""
