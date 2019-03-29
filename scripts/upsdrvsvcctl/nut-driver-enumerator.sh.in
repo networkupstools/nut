@@ -630,7 +630,8 @@ smf_listInstances_raw() {
     /usr/bin/svcs -a -H -o fmri | egrep '/nut-driver:'
 }
 smf_listInstances() {
-    smf_listInstances_raw | sed 's/^.*://' | sort -n
+    # Chop twice, in case there is a leading "svc:/...."
+    smf_listInstances_raw | sed -e 's/^.*://' -e 's/^.*://' | sort -n
 }
 smf_getSavedMD5() {
     # Query service instance $1
