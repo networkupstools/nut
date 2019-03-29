@@ -1362,6 +1362,7 @@ while [ $# -gt 0 ]; do
         --get-service-for-device) [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
             DEV="$2"
             # Cheap check in service instance metadata, if saved
+            # (NOTE: saved value is assumed to be valid if present)
             SAVEDSVC="`$hook_findSavedDeviceName "$DEV"`" || SAVEDSVC=""
             [ -z "$SAVEDSVC" ] || { echo "$SAVEDSVC" ; exit 0 ; }
             # Trawl all the data we have...
@@ -1404,6 +1405,7 @@ while [ $# -gt 0 ]; do
             # Reading the config is too expensive to do for every
             # driver management attempt when there are many devices
             # Try to use last-stashed values from service properties first
+            # (NOTE: saved value is assumed to be valid if present)
             SAVEDINST="`$hook_getSavedDeviceName "$SVC"`" || SAVEDINST=""
             [ -z "$SAVEDINST" ] || { echo "$SAVEDINST" ; exit 0 ; }
 
