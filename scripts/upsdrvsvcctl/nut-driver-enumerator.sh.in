@@ -1297,6 +1297,53 @@ get_device_for_service() {
     return 1
 }
 
+get_service_for_device() {
+    DEV="$1"
+    [ -z "$DEV" ] && echo "Device name argument required" >&2 && return 1
+
+    # Cheap check in service instance metadata, if saved
+    # (NOTE: saved value is assumed to be valid if present)
+    if [ "${USE_SAVEDSVC-}" != false ]; then
+        SAVEDSVC="`$hook_findSavedDeviceName "$DEV"`" || SAVEDSVC=""
+        [ -z "$SAVEDSVC" ] || { echo "$SAVEDSVC" ; return 0 ; }
+    fi
+
+    # Trawl all the data we have...
+    # TODO: Reorder to avoid extra parsing if we have an early hit?
+    upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
+        || { echo "No service instances detected" >&2 ; return 1; }
+    UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
+        || { echo "No service units detected" >&2 ; return 1; }
+    vINST="`$hook_validInstanceName "$DEV"`"
+    vUNITD="`$hook_validFullUnitName "$DEV"`"
+    vUNITI="`$hook_validFullUnitName "$vINST"`"
+
+    # First pass over simple verbatim names
+    for INST in $UPSLIST_SVCS ; do
+        if [ "$INST" = "$DEV" ] ; then
+            for UNIT in $UPSLIST_SVCS_RAW ; do
+                if [ "$UNIT" = "$vUNITD" ] ; then
+                    echo "$UNIT"
+                    return 0
+                fi
+            done
+        fi
+    done
+    # Second pass over other options
+    for INST in $UPSLIST_SVCS ; do
+        if [ "$INST" = "$vINST" ] ; then
+            for UNIT in $UPSLIST_SVCS_RAW ; do
+                if [ "$UNIT" = "$vUNITI" ] ; then
+                    echo "$UNIT"
+                    return 0
+                fi
+            done
+        fi
+    done
+    echo "No service instances detected that match device '$DEV'" >&2
+    return 1
+}
+
 update_upslist_savednames_find_missing() {
     # Runs once in production modes that inspect and reconcile
     # configs, to handle upgraded NUT deployments
@@ -1526,43 +1573,10 @@ while [ $# -gt 0 ]; do
             echo "No service instances detected" >&2
             exit 1
             ;;
-        --get-service-for-device) [ -z "$2" ] && echo "Device name argument required" >&2 && exit 1
-            DEV="$2"
-            # Cheap check in service instance metadata, if saved
-            # (NOTE: saved value is assumed to be valid if present)
-            SAVEDSVC="`$hook_findSavedDeviceName "$DEV"`" || SAVEDSVC=""
-            [ -z "$SAVEDSVC" ] || { echo "$SAVEDSVC" ; exit 0 ; }
-            # Trawl all the data we have...
-            upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
-                || { echo "No service instances detected" >&2 ; exit 1; }
-            UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
-                || { echo "No service units detected" >&2 ; exit 1; }
-            vINST="`$hook_validInstanceName "$DEV"`"
-            vUNITD="`$hook_validFullUnitName "$DEV"`"
-            vUNITI="`$hook_validFullUnitName "$vINST"`"
-            # First pass over simple verbatim names
-            for INST in $UPSLIST_SVCS ; do
-                if [ "$INST" = "$DEV" ] ; then
-                    for UNIT in $UPSLIST_SVCS_RAW ; do
-                        if [ "$UNIT" = "$vUNITD" ] ; then
-                            echo "$UNIT"
-                            exit 0
-                        fi
-                    done
-                fi
-            done
-            for INST in $UPSLIST_SVCS ; do
-                if [ "$INST" = "$vINST" ] ; then
-                    for UNIT in $UPSLIST_SVCS_RAW ; do
-                        if [ "$UNIT" = "$vUNITI" ] ; then
-                            echo "$UNIT"
-                            exit 0
-                        fi
-                    done
-                fi
-            done
-            echo "No service instances detected that match device '$2'" >&2
-            exit 1
+        --get-service-for-device)
+            shift
+            get_service_for_device "$@"
+            exit $?
             ;;
         --get-device-for-service)
             shift
