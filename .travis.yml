@@ -105,6 +105,7 @@ matrix:
         packages:
         - coreutils
         - file
+        #TBD# - shellcheck
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
     sudo: false

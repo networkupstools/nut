@@ -115,6 +115,7 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
         "default-withdoc")
