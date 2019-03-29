@@ -59,7 +59,7 @@ doc spellcheck-sortdict:
 
 # This target adds syntax-checking for committed shell script files,
 # to avoid surprises and delays in finding fatal typos after packaging
-check-scripts-syntax shellcheck:
+check-scripts-syntax:
 	@echo 'NOTE: modern bash complains about scripts using backticks (which we ignore for portability reasons): `...` obsolete, use $(...)'
 	for F in `git ls-files || find . -type f` ; do \
 	    case "`file "$$F"`" in \
@@ -68,6 +68,15 @@ check-scripts-syntax shellcheck:
 	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
 	done
 	@echo 'SUCCESS: Shell scripts syntax is acceptable, no fatal issues were found'
+
+shellcheck-disclaimer:
+	@echo "==============================================================================="
+	@echo "NOTICE: 'make shellcheck' is currently an alias for 'make check-scripts-syntax'"
+	@echo "Later it may become a call to the real shellcheck tool (if available on the"
+	@echo "build system during the configure phase)"
+	@echo "==============================================================================="
+
+shellcheck: shellcheck-disclaimer check-scripts-syntax
 
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
