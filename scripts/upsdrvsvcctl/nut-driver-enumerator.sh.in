@@ -170,6 +170,7 @@ hook_validInstanceName=""
 hook_validFullUnitName=""
 hook_validInstanceSuffixName=""
 hook_getSavedDeviceName=""
+hook_setSavedDeviceName=""
 hook_getSavedMD5=""
 hook_setSavedMD5=""
 hook_restart_upsd=""
@@ -186,6 +187,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validFullUnitName="smf_validFullUnitName"
         hook_validInstanceSuffixName="smf_validInstanceSuffixName"
         hook_getSavedDeviceName="smf_getSavedDeviceName"
+        hook_setSavedDeviceName="smf_setSavedDeviceName"
         hook_getSavedMD5="smf_getSavedMD5"
         hook_setSavedMD5="smf_setSavedMD5"
         hook_restart_upsd="smf_restart_upsd"
@@ -201,6 +203,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validFullUnitName="systemd_validFullUnitName"
         hook_validInstanceSuffixName="systemd_validInstanceSuffixName"
         hook_getSavedDeviceName="systemd_getSavedDeviceName"
+        hook_setSavedDeviceName="systemd_setSavedDeviceName"
         hook_getSavedMD5="systemd_getSavedMD5"
         hook_setSavedMD5="systemd_setSavedMD5"
         hook_restart_upsd="systemd_restart_upsd"
@@ -216,6 +219,7 @@ case "${SERVICE_FRAMEWORK-}" in
         hook_validFullUnitName="selftest_NOOP"
         hook_validInstanceSuffixName="selftest_NOOP"
         hook_getSavedDeviceName="selftest_NOOP"
+        hook_setSavedDeviceName="selftest_NOOP"
         hook_getSavedMD5="selftest_NOOP"
         hook_setSavedMD5="selftest_NOOP"
         hook_restart_upsd="selftest_NOOP"
@@ -600,7 +604,7 @@ smf_registerInstance() {
 
     smf_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
     # Save original device (config section) name to speed up some searches
-    smf_setSavedUniq "$TARGET_FMRI" "nut-driver-enumerator-generated-devicename" "DEVICE" astring "$DEVICE"
+    smf_setSavedDeviceName "$SVCINST" "$DEVICE"
 
     /usr/sbin/svcadm refresh "${TARGET_FMRI}" || return
     if [ "$AUTO_START" = yes ] ; then
@@ -697,6 +701,10 @@ smf_setSavedMD5() (
     fi
     smf_setSavedUniq "$TARGET_FMRI" "$PG" "$PROP" astring "$2"
 )
+smf_setSavedDeviceName() {
+    [ -n "$1" ] || return # No-op for global section
+    smf_setSavedUniq "nut-driver:$1" "nut-driver-enumerator-generated-devicename" "DEVICE" astring "$2"
+}
 smf_restart_upsd() {
     echo "Restarting NUT data server to make sure it knows new configuration..."
     /usr/sbin/svcadm enable "nut-server" 2>/dev/null
@@ -767,7 +775,7 @@ EOF
     fi
 
     systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
-    _systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
+    systemd_setSavedDeviceName "$SVCINST" "$DEVICE"
 
     if [ "$AUTO_START" = yes ] ; then
         /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
@@ -808,9 +816,9 @@ systemd_getSavedDeviceName() {
     && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
     || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
-_systemd_setSavedDeviceName() {
+systemd_setSavedDeviceName() {
     # Save device (config section) name $2 into service instance $1
-    [ -n "$1" ] || return
+    [ -n "$1" ] || return # No-op for global section
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     mkdir -p "${SYSTEMD_CONFPATH}/nut-driver@$1.service.d" && \
     cat > "${PROPFILE}" << EOF
