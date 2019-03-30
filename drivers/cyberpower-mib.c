@@ -111,6 +111,25 @@ static snmp_info_t cyberpower_mib[] = {
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.1.0", "",
 		0, NULL },
 
+	/* instant commands. */
+	/* upsAdvanceControlUpsOff */
+	{ "load.off", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsAdvanceControlTurnOnUPS */
+	{ "load.on", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsAdvanceControlUpsOff */
+	{ "shutdown.stayoff", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.6.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsBaseControlConserveBattery */
+	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsAdvanceControlSimulatePowerFail */
+	{ "test.failure.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.6.2.4.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsAdvanceTestIndicators */
+	{ "test.panel.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.5.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsAdvanceTestDiagnostics */
+	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.2.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* upsAdvanceTestRuntimeCalibration */
+	{ "calibrate.start", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.stop", 0, 1, ".1.3.6.1.4.1.3808.1.1.1.7.2.6.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 } ;
