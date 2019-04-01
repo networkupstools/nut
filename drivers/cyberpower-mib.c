@@ -112,6 +112,17 @@ static snmp_info_t cyberpower_mib[] = {
 	{ "output.voltage", 0, 0.1, ".1.3.6.1.4.1.3808.1.1.1.4.2.1.0", "",
 		0, NULL },
 
+	/* Delays affecting instant commands */
+
+	/* upsAdvanceConfigReturnDelay */
+	{ "ups.delay.start", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.3808.1.1.1.5.2.9", "0",
+		SU_FLAG_OK | SU_TYPE_TIME, NULL },
+	/* Not provided by CPS-MIB */
+	{ "ups.delay.reboot", 0, 1.0, NULL, "0",
+		SU_FLAG_OK | SU_FLAG_ABSENT, NULL },
+	/* upsAdvanceConfigSleepDelay */
+	{ "ups.delay.shutdown", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.3808.1.1.1.5.2.11", "60",
+		SU_FLAG_OK | SU_TYPE_TIME, NULL },
 	/* instant commands. */
 	/* upsAdvanceControlUpsOff */
 	{ "load.off", 0, 2, ".1.3.6.1.4.1.3808.1.1.1.6.2.1.0", NULL, SU_TYPE_CMD | SU_FLAG_OK, NULL },
