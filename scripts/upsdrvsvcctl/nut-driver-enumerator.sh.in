@@ -1145,10 +1145,6 @@ daemonize() {
 # to test in the end that it is still the same file.
 UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
 
-# Save the checksum of ups.conf as early as possible,
-# to test in the end that it is still the same file.
-UPSCONF_CHECKSUM_START="`calc_md5_file "$UPSCONF"`" || true
-
 # By default, update wrapping of devices into services
 if [ $# = 0 ]; then
     nut_driver_enumerator_main ; exit $?
