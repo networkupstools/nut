@@ -123,7 +123,7 @@
 		<snmp_info absent="yes" default="EATON" flag_ok="yes" multiplier="128.0" name="ups.mfr" static="yes" string="yes"/>
 		<snmp_info default="Eaton Powerware ePDU" flag_ok="yes" multiplier="128.0" name="ups.model" oid="1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i" static="yes" string="yes"/>
 		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.serial" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.4.%i" static="yes" string="yes"/>
-		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.5.%i" static="yes" string="yes"/>
+		<snmp_info default="" flag_ok="yes" multiplier="128.0" name="ups.firmware" oid=".1.3.6.1.4.1.534.6.6.7.1.2.1.5.%i" string="yes"/>
 		<snmp_info absent="yes" default="pdu" flag_ok="yes" multiplier="128.0" name="ups.type" static="yes" string="yes"/>
 		<snmp_info lookup="marlin_input_type_info" multiplier="1.0" name="input.phases" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.2.%i.1" static="yes"/>
 		<snmp_info multiplier="0.1" name="input.frequency" oid=".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1" power_status="yes"/>
@@ -311,6 +311,6 @@
 		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.on.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.4.%i.%i" outlet_group="yes" type_daisy="1"/>
 		<snmp_info command="yes" multiplier="1.0" name="outlet.group.%i.load.cycle.delay" oid=".1.3.6.1.4.1.534.6.6.7.5.6.1.5.%i.%i" outlet_group="yes" type_daisy="1"/>
 	</snmp>
-	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.50"/>
+	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" name="eaton_marlin" oid=".1.3.6.1.4.1.534.6.6.7" snmp_info="eaton_marlin_mib" version="0.51"/>
 </nut>
 
