@@ -33,11 +33,11 @@
 static info_lkp_t cyberpower_power_status[] = {
 	{ 2, "OL" },
 	{ 3, "OB" },
-	{ 4, "OL" },
-	{ 5, "OL" },
+	{ 4, "OL BOOST" },
+	{ 5, "OFF" },
 	{ 7, "OL" },
 	{ 1, "NULL" },
-	{ 6, "NULL" },
+	{ 6, "OFF" },
 	{ 0, NULL }
 } ;
 
