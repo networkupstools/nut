@@ -134,13 +134,13 @@ void s_upsdebug_ascii(int level, const char *msg, const void *buf, int len);
  * At least, without it GCC did not compile the code...
  */
 #define upsdebug_with_errno(level, fmt, ...) \
-	({ if (nut_debug_level >= level) { s_upsdebug_with_errno(level, fmt, ##__VA_ARGS__); } })
+	do { if (nut_debug_level >= level) { s_upsdebug_with_errno(level, fmt, ##__VA_ARGS__); } } while(0)
 #define upsdebugx(level, fmt, ...) \
-	({ if (nut_debug_level >= level) { s_upsdebugx(level, fmt, ##__VA_ARGS__); } })
+	do { if (nut_debug_level >= level) { s_upsdebugx(level, fmt, ##__VA_ARGS__); } } while(0)
 #define upsdebug_hex(level, msg, buf, len) \
-	({ if (nut_debug_level >= level) { s_upsdebug_hex(level, msg, buf, len); } })
+	do { if (nut_debug_level >= level) { s_upsdebug_hex(level, msg, buf, len); } } while(0)
 #define upsdebug_ascii(level, msg, buf, len) \
-	({ if (nut_debug_level >= level) { s_upsdebug_ascii(level, msg, buf, len); } })
+	do { if (nut_debug_level >= level) { s_upsdebug_ascii(level, msg, buf, len); } } while(0)
 
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
