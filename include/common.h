@@ -101,16 +101,46 @@ const char * dflt_statepath(void);
 /* Return the alternate path for pid files */
 const char * altpidpath(void);
 
+/* upslog*() messages are sent to syslog always;
+ * their life after that is out of NUT's control */
 void upslog_with_errno(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upslogx(int priority, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebug_with_errno(int level, const char *fmt, ...)
+
+/* upsdebug*() messages are only logged if debugging
+ * level is high enough. To speed up a bit (minimize
+ * passing of ultimately ignored data trough the stack)
+ * these are "hidden" implementations wrapped into
+ * macros for earlier routine names spread around the
+ * codebase, they would check debug level first and
+ * only if logging should happen - call the routine
+ * and pass around pointers and other data.
+ */
+void s_upsdebug_with_errno(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebugx(int level, const char *fmt, ...)
+void s_upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
-void upsdebug_hex(int level, const char *msg, const void *buf, int len);
-void upsdebug_ascii(int level, const char *msg, const void *buf, int len);
+void s_upsdebug_hex(int level, const char *msg, const void *buf, int len);
+void s_upsdebug_ascii(int level, const char *msg, const void *buf, int len);
+/* These macros should help avoid run-time overheads
+ * passing data for messages nobody would ever see.
+ *
+ * NOTE: The "##" before __VA_ARGS__ is a presumably
+ * non-standard but portable hack to support both
+ * present and absent variadic arguments in one macro
+ * that should work in different major compilers:
+ * https://stackoverflow.com/questions/679979/how-to-make-a-variadic-macro-variable-number-of-arguments
+ * At least, without it GCC did not compile the code...
+ */
+#define upsdebug_with_errno(level, fmt, ...) \
+	({ if (nut_debug_level >= level) { s_upsdebug_with_errno(level, fmt, ##__VA_ARGS__); } })
+#define upsdebugx(level, fmt, ...) \
+	({ if (nut_debug_level >= level) { s_upsdebugx(level, fmt, ##__VA_ARGS__); } })
+#define upsdebug_hex(level, msg, buf, len) \
+	({ if (nut_debug_level >= level) { s_upsdebug_hex(level, msg, buf, len); } })
+#define upsdebug_ascii(level, msg, buf, len) \
+	({ if (nut_debug_level >= level) { s_upsdebug_ascii(level, msg, buf, len); } })
 
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
