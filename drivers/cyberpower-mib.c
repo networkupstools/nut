@@ -90,8 +90,8 @@ static snmp_info_t cyberpower_mib[] = {
 	{ "ups.load", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.4.2.3.0", "",
 		0, NULL },
 
-	/* Battery runtime is expressed in minutes */
-	{ "battery.runtime", 0, 60.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.4.0", "",
+	/* Battery runtime is expressed in seconds */
+	{ "battery.runtime", 0, 1.0, ".1.3.6.1.4.1.3808.1.1.1.2.2.4.0", "",
 		0, NULL },
 	/* The elapsed time in seconds since the
 	 * UPS has switched to battery power */
