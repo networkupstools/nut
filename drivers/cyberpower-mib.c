@@ -27,7 +27,8 @@
 #define CYBERPOWER_MIB_VERSION		"0.2"
 #define CYBERPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.3808.1.1.1.1.1.1.0"
 
-#define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808"
+/* CPS-MIB::ups */
+#define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
 
 static info_lkp_t cyberpower_power_status[] = {
 	{ 2, "OL" },
