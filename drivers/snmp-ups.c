@@ -2801,7 +2801,7 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 	else {
 		if (mode==SU_MODE_INSTCMD) {
-			value = atol(val ? val : su_info_p->dfl)
+			value = atol(val ? val : su_info_p->dfl);
 		}
 		else {
 			/* non string data may imply a value lookup */
