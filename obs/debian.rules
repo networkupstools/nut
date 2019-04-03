@@ -25,7 +25,7 @@ systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd |
 
 # FIXME: Find a smarter way to set those from main codebase recipes...
 # Something like `grep 'version-info' **/Makefile.am` ?
-SO_MAJOR_LIBUPSCLIENT=4
+SO_MAJOR_LIBUPSCLIENT=5
 SO_MAJOR_LIBNUTCLIENT=1
 SO_MAJOR_LIBNUTSCAN=1
 
