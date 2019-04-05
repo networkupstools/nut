@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2478 utf-8
+personal_ws-1.1 en 2490 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,6 +12,7 @@ ADDRINFO
 ADK
 ADKK
 AEC
+aec
 AEG
 AES
 AGM
@@ -136,6 +137,7 @@ ByPass
 CA's
 CABAC
 CAs
+cb
 CBLimit
 CCC
 CCCC
@@ -203,6 +205,7 @@ DDDDD
 DDF
 DEADTIME
 DEBUGOUT
+dedb
 DELCMD
 DELENUM
 DELINFO
@@ -1008,6 +1011,7 @@ TIOCMBIC
 TIOCMBIS
 TLS
 TODO
+TRACKINGDELAY
 TRYSSL
 TSR
 TST
@@ -1036,6 +1040,8 @@ Tnn
 Tomek
 TopGuard
 Toth
+TrackingID
+TrackingResult
 Tripp
 TrippLite
 Tru
@@ -1514,6 +1520,7 @@ everyone's
 everything's
 evilhack
 executables
+executeCommand
 execve
 extendedhistory
 extradata
@@ -1569,8 +1576,10 @@ gentoo
 gestion
 getDescription
 getDevice
+getTrackingResult
 getValue
 getVariable
+getenv
 getopt
 getvar
 gitignore
@@ -1593,6 +1602,7 @@ gz
 gzip
 hal
 hardcoded
+hasFeature
 hb
 hcl
 hg
@@ -2141,6 +2151,7 @@ ser
 seria
 serialnumber
 servicebypass
+setFeature
 setaux
 setflags
 setgid
@@ -2355,6 +2366,7 @@ upserror
 upsfetch
 upsgone
 upsh
+upshandler
 upsidentmodel
 upsimage
 upsload

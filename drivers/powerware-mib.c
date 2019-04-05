@@ -25,7 +25,7 @@
 
 #include "powerware-mib.h"
 
-#define PW_MIB_VERSION "0.94"
+#define PW_MIB_VERSION "0.95"
 
 /* TODO: more sysOID and MIBs support:
  * 
@@ -250,10 +250,11 @@ static snmp_info_t pw_mib[] = {
 		SU_FLAG_STATIC, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_MODEL_NAME, "",
 		SU_FLAG_STATIC, NULL },
+	/* FIXME: the 2 "firmware" entries below should be SU_FLAG_SEMI_STATIC */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, PW_OID_FIRMREV, "",
-		SU_FLAG_STATIC,   NULL },
+		0, NULL },
 	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "",
-		SU_FLAG_STATIC, NULL },
+		0, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_IDENT, "",
 		SU_FLAG_STATIC, NULL },
 	{ "ups.load", 0, 1.0, PW_OID_OUT_LOAD, "",

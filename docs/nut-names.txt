@@ -629,46 +629,43 @@ Instant commands
 ----------------
 
 [options="header"]
-|===============================================================================
-| Name                      | Description
-| load.off                  | Turn off the load immediately
-| load.on                   | Turn on the load immediately
-| load.off.delay            | Turn off the load possibly after a delay
-| load.on.delay             | Turn on the load possibly after a delay
-| shutdown.return           | Turn off the load possibly after a delay
+|========================================================================
+| Name                     | Description
+| load.off                 | Turn off the load immediately
+| load.on                  | Turn on the load immediately
+| load.off.delay           | Turn off the load possibly after a delay
+| load.on.delay            | Turn on the load possibly after a delay
+| shutdown.return          | Turn off the load possibly after a delay
                              and return when power is back
-| shutdown.stayoff          | Turn off the load possibly after a delay
-                              and remain off even if power returns
-| shutdown.stop             | Stop a shutdown in progress
-| shutdown.reboot           | Shut down the load briefly while rebooting the UPS
-| shutdown.reboot.graceful  | After a delay, shut down the load briefly
-                              while rebooting the UPS
-| test.panel.start          | Start testing the UPS panel
-| test.panel.stop           | Stop a UPS panel test
-| test.failure.start        | Start a simulated power failure
-| test.failure.stop         | Stop simulating a power failure
-| test.battery.start        | Start a battery test
-| test.battery.start.quick  | Start a "quick" battery test
-| test.battery.start.deep   | Start a "deep" battery test
-| test.battery.stop         | Stop the battery test
-| test.system.start         | Start a system test
-| calibrate.start           | Start runtime calibration
-| calibrate.stop            | Stop runtime calibration
-| bypass.start              | Put the UPS in bypass mode
-| bypass.stop               | Take the UPS out of bypass mode
-| reset.input.minmax        | Reset minimum and maximum input voltage status
-| reset.watchdog            | Reset watchdog timer (forced reboot of load)
-| beeper.enable             | Enable UPS beeper/buzzer
-| beeper.disable            | Disable UPS beeper/buzzer
-| beeper.mute               | Temporarily mute UPS beeper/buzzer
-| beeper.toggle             | Toggle UPS beeper/buzzer
-| outlet.n.shutdown.return  | Turn off the outlet possibly after a delay
-                              and return when power is back
-| outlet.n.load.off         | Turn off the outlet immediately
-| outlet.n.load.on          | Turn on the outlet immediately
-| outlet.n.load.cycle       | Power cycle the outlet immediately
-| outlet.n.load.off.delay   | Turn off the outlet possibly after a delay
-| outlet.n.load.on.delay    | Turn on the outlet possibly after a delay
-| outlet.n.load.cycle.delay | Power cycle the outlet possibly after a delay
-| outlet.n.shutdown.return  | Turn off the outlet and return when power is back
-|===============================================================================
+| shutdown.stayoff         | Turn off the load possibly after a delay
+                             and remain off even if power returns
+| shutdown.stop            | Stop a shutdown in progress
+| shutdown.reboot          | Shut down the load briefly while rebooting the UPS
+| shutdown.reboot.graceful | After a delay, shut down the load briefly
+                             while rebooting the UPS
+| test.panel.start         | Start testing the UPS panel
+| test.panel.stop          | Stop a UPS panel test
+| test.failure.start       | Start a simulated power failure
+| test.failure.stop        | Stop simulating a power failure
+| test.battery.start       | Start a battery test
+| test.battery.start.quick | Start a "quick" battery test
+| test.battery.start.deep  | Start a "deep" battery test
+| test.battery.stop        | Stop the battery test
+| test.system.start        | Start a system test
+| calibrate.start          | Start runtime calibration
+| calibrate.stop           | Stop runtime calibration
+| bypass.start             | Put the UPS in bypass mode
+| bypass.stop              | Take the UPS out of bypass mode
+| reset.input.minmax       | Reset minimum and maximum input voltage status
+| reset.watchdog           | Reset watchdog timer (forced reboot of load)
+| beeper.enable            | Enable UPS beeper/buzzer
+| beeper.disable           | Disable UPS beeper/buzzer
+| beeper.mute              | Temporarily mute UPS beeper/buzzer
+| beeper.toggle            | Toggle UPS beeper/buzzer
+| outlet.n.shutdown.return | Turn off the outlet possibly after a delay 
+                             and return when power is back
+| outlet.n.load.off        | Turn off the outlet immediately
+| outlet.n.load.on         | Turn on the outlet immediately
+| outlet.n.load.cycle      | Power cycle the outlet immediately
+| outlet.n.shutdown.return | Turn off the outlet and return when power is back
+|========================================================================

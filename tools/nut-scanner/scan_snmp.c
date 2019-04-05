@@ -147,10 +147,10 @@ static int (*nut_generate_Ku)(const oid * hashtype, u_int hashtype_len,
 static char* (*nut_snmp_out_toggle_options)(char *options);
 static const char * (*nut_snmp_api_errstring) (int snmp_errnumber);
 static int (*nut_snmp_errno);
-static oid * (*nut_usmAESPrivProtocol);
-static oid * (*nut_usmHMACMD5AuthProtocol);
-static oid * (*nut_usmHMACSHA1AuthProtocol);
-static oid * (*nut_usmDESPrivProtocol);
+static oid (*nut_usmAESPrivProtocol);
+static oid (*nut_usmHMACMD5AuthProtocol);
+static oid (*nut_usmHMACSHA1AuthProtocol);
+static oid (*nut_usmDESPrivProtocol);
 
 void uninit_snmp_device_table() {
 #if WITH_DMFMIB
@@ -413,6 +413,8 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	nutscan_add_option_to_device(dev,"mibs",mib);
 	/* SNMP v3 */
 	if( session->community == NULL || session->community[0] == 0) {
+		nutscan_add_option_to_device(dev,"snmp_version","v3");
+
 		if( sec->secLevel ) {
 			nutscan_add_option_to_device(dev,"secLevel",
 					sec->secLevel);
@@ -601,17 +603,16 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		snmp_sess->securityAuthKeyLen = USM_AUTH_KU_LEN;
 
 		/* default to MD5 */
-		snmp_sess->securityAuthProto = (*nut_usmHMACMD5AuthProtocol);
+		snmp_sess->securityAuthProto = nut_usmHMACMD5AuthProtocol;
 		snmp_sess->securityAuthProtoLen =
-				sizeof((*nut_usmHMACMD5AuthProtocol))/
+				sizeof(usmHMACMD5AuthProtocol)/
 				sizeof(oid);
 
 		if( sec->authProtocol ) {
 			if (strcmp(sec->authProtocol, "SHA") == 0) {
-				snmp_sess->securityAuthProto =
-						(*nut_usmHMACSHA1AuthProtocol);
+				snmp_sess->securityAuthProto = nut_usmHMACSHA1AuthProtocol;
 				snmp_sess->securityAuthProtoLen =
-					sizeof((*nut_usmHMACSHA1AuthProtocol))/
+					sizeof(usmHMACSHA1AuthProtocol)/
 					sizeof(oid);
 			}
 			else {
@@ -644,16 +645,15 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		}
 
 		/* default to DES */
-		snmp_sess->securityPrivProto=(*nut_usmDESPrivProtocol);
+		snmp_sess->securityPrivProto = nut_usmDESPrivProtocol;
 		snmp_sess->securityPrivProtoLen =
-			sizeof((*nut_usmDESPrivProtocol))/sizeof(oid);
+			sizeof(usmDESPrivProtocol)/sizeof(oid);
 
 		if( sec->privProtocol ) {
 			if (strcmp(sec->privProtocol, "AES") == 0) {
-				snmp_sess->securityPrivProto=
-						(*nut_usmAESPrivProtocol);
+				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
 				snmp_sess->securityPrivProtoLen = 
-					sizeof((*nut_usmAESPrivProtocol))/
+					sizeof(usmAESPrivProtocol)/
 					sizeof(oid);
 			}
 			else {

@@ -1,4 +1,5 @@
 # Network UPS Tools: clients
+EXTRA_DIST =
 
 # by default, link programs in this directory with libcommon.a
 LDADD = ../common/libcommon.la libupsclient.la $(NETLIBS)
@@ -21,7 +22,10 @@ bin_PROGRAMS = upsc upslog upsrw upscmd
 dist_bin_SCRIPTS = upssched-cmd
 sbin_PROGRAMS = upsmon upssched
 
-lib_LTLIBRARIES = libupsclient.la libnutclient.la
+lib_LTLIBRARIES = libupsclient.la
+if HAVE_CXX11
+  lib_LTLIBRARIES += libnutclient.la
+endif
 if WITH_DEV
  include_HEADERS = upsclient.h ../include/parseconf.h nutclient.h
  include_HEADERS += ../include/dmfsnmp.h
@@ -59,8 +63,12 @@ endif
 # object .so names would differ)
 
 # libupsclient version information
-libupsclient_la_LDFLAGS = -version-info 4:0:0
+libupsclient_la_LDFLAGS = -version-info 5:0:0
 
-# libnutclient version information
+if HAVE_CXX11
+# libnutclient version information and build
 libnutclient_la_SOURCES = nutclient.h nutclient.cpp
 libnutclient_la_LDFLAGS = -version-info 1:0:0
+else
+EXTRA_DIST += nutclient.h nutclient.cpp
+endif

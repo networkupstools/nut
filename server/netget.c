@@ -216,6 +216,25 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 
 void net_get(nut_ctype_t *client, int numarg, const char **arg)
 {
+	if (numarg < 1) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
+	/* GET TRACKING [ID] */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		if (numarg < 2) {
+			sendback(client, "%s\n", (client->tracking) ? "ON" : "OFF");
+		}
+		else {
+			if (client->tracking)
+				sendback(client, "%s\n", tracking_get(arg[1]));
+			else
+				send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
+		}
+		return;
+	}
+
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;

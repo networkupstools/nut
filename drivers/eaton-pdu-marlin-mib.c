@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.50"
+#define EATON_MARLIN_MIB_VERSION	"0.51"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -272,9 +272,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.4.%i",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	/* FIXME: this entry should be SU_FLAG_SEMI_STATIC */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.5.%i",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+		"", SU_FLAG_OK, NULL },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	 /* FIXME: needs a date reformating callback
