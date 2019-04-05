@@ -891,11 +891,11 @@ systemd_findSavedDeviceName() {
     # For empty "$1" returns a list of all recorded "SVC<TAB>DEVICE"
     if [ -z "$1" ]; then
         grep -H "Environment='DEVICE=" \
-            /etc/systemd/system/nut-driver@.service.d/nut-driver-enumerator-generated-devicename.conf \
+            /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*"'\(.*\)'"[\"']*"'$|\1\t\2|'
     else
         grep -H "Environment='DEVICE=$1'" \
-            /etc/systemd/system/nut-driver@.service.d/nut-driver-enumerator-generated-devicename.conf \
+            /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
     fi
 }
