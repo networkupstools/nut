@@ -2801,7 +2801,10 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 	else {
 		if (mode==SU_MODE_INSTCMD) {
-			value = atol(val ? val : su_info_p->dfl);
+			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
+				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
+				return STAT_SET_INVALID;
+			}
 		}
 		else {
 			/* non string data may imply a value lookup */
@@ -2810,7 +2813,11 @@ int su_setOID(int mode, const char *varname, const char *val)
 			}
 			else {
 				/* Convert value and apply multiplier */
-				value = val ? atof(val) / su_info_p->info_len : atol(su_info_p->dfl);
+				if ( !str_to_long(val, &value, 10) ) {
+					upsdebugx(1, "%s: cannot set '%s': value is not a number!", __func__, varname);
+					return STAT_SET_INVALID;
+				}
+				value = (long)((double)value / su_info_p->info_len);
 			}
 		}
 		/* Actually apply the new value */
