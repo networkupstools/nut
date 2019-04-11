@@ -1608,6 +1608,9 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 	char test_OID[SU_INFOSIZE];
 	int template_type = get_template_type(su_info_p->info_type);
 
+	if (!su_info_p->OID)
+		return base_index;
+
 	upsdebugx(3, "%s: OID template = %s", __func__, su_info_p->OID);
 
 	/* Try to differentiate between template types which may have
