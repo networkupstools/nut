@@ -900,12 +900,14 @@ systemd_findSavedDeviceName() {
     fi
 }
 systemd_getSavedDeviceName() {
-    # Query service instance $1 or global section
+    # Query service instance "$1" (quiet NO-OP if empty, for mis-use
+    # in global sections context) to get the unquoted saved DEVICE
+    # section name corresponding to this service instance
     [ -n "$1" ] || { echo ""; return 0; }
     PROP="DEVICE"
     PROPFILE="${SYSTEMD_CONFPATH}/nut-driver@$1.service.d/nut-driver-enumerator-generated-devicename.conf"
     [ -s "${PROPFILE}" ] \
-    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," \
+    && grep "Environment='$PROP=" "${PROPFILE}" | sed -e "s,^Environment='$PROP=,," -e "s,'\$,," -e 's,^"\(.*\)"$,\1,' \
     || { echo "Did not find '${PROPFILE}' with a $PROP" ; return 1; }
 }
 systemd_setSavedDeviceName() {
