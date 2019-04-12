@@ -244,10 +244,10 @@ mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
 install -m 644 scripts/logrotate/nutlogd %{buildroot}%{_sysconfdir}/logrotate.d/
 mkdir -p %{buildroot}%{STATEPATH}
 rename .sample "" %{buildroot}%{_sysconfdir}/ups/*.sample
-mkdir %{buildroot}/bin
+mkdir -p %{buildroot}/bin
 mv %{buildroot}%{_bindir}/upssched-cmd %{buildroot}/bin/upssched-cmd
 # Rename web pages to not conflict with apache2-example-pages or user home page:
-mkdir %{buildroot}%{HTMLPATH}/nut %{buildroot}%{CGIPATH}/nut
+mkdir -p %{buildroot}%{HTMLPATH}/nut %{buildroot}%{CGIPATH}/nut
 mv %{buildroot}%{HTMLPATH}/*.{html,png} %{buildroot}%{HTMLPATH}/nut/
 mv %{buildroot}%{CGIPATH}/*.cgi %{buildroot}%{CGIPATH}/nut
 find %{buildroot} -type f -name "*.la" -delete -print
