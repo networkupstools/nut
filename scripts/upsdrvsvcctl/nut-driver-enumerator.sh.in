@@ -892,9 +892,9 @@ systemd_findSavedDeviceName() {
     if [ -z "$1" ]; then
         grep -H "Environment='DEVICE=" \
             /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
-        | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*"'\(.*\)'"[\"']*"'$|\1\t\2|'
+        | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*DEVICE='"[\"']*\([^\"']*\)[\"']*"'$|\1\t\2|'
     else
-        grep -H "Environment='DEVICE=$1'" \
+        egrep -H "Environment='DEVICE=($1|\"$1\")'" \
             /etc/systemd/system/nut-driver@*.service.d/nut-driver-enumerator-generated-devicename.conf \
         | sed 's|^/etc/systemd/system/\(nut-driver@[^/]*\.service\)\.d/.*$|\1|'
     fi
