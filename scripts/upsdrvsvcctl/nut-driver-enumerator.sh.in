@@ -4,7 +4,10 @@
 # NOTE: This script is intentionally written with portable shell constructs
 #       with the aim and hope to work in different interpreters, so it is a
 #       bit dumber and less efficient than could be achieved with the more
-#       featured shells in the spectrum.
+#       featured shells in the spectrum. Also, to minimize the in-memory and
+#       debug-console traffics, tests for (non-)emptiness of anticipated large
+#       strings are not done by `test -n/-z`, but by counting the size of the
+#       string (zero or not).
 # NOTE ALSO: The configuration parser in this script is not meant to be a
 #       reference or 100% compliant with what the binary code uses; its aim
 #       is to just pick out some strings relevant for tracking config changes.
@@ -259,7 +262,7 @@ selftest_NOOP() {
 }
 
 common_isFiled() {
-    [ -n "$UPSLIST_FILE" ] && \
+    [ "${#UPSLIST_FILE}" != 0 ] && \
     for UPSF in $UPSLIST_FILE ; do
         [ "$1" = "$UPSF" ] && return 0
         [ "`$hook_validInstanceName "$UPSF"`" = "$1" ] && return 0
@@ -268,7 +271,7 @@ common_isFiled() {
 }
 
 common_isRegistered() {
-    [ -n "$UPSLIST_SVCS" ] && \
+    [ "${#UPSLIST_SVCS}" != 0 ] && \
     for UPSS in $UPSLIST_SVCS ; do
         [ "$1" = "$UPSS" ] && return 0
         [ "`$hook_validInstanceName "$1"`" = "$UPSS" ] && return 0
@@ -287,8 +290,8 @@ upslist_equals() {
 
     # Trivial case 0: one string is empty, another is not
     # Note: `echo '' | wc -l` == "1" not "0"!
-    [ -n "$1" -a -z "$2" ] && return 1
-    [ -z "$1" -a -n "$2" ] && return 1
+    [ "${#1}" != 0 -a "${#2}" = 0 ] && return 1
+    [ "${#1}" = 0 -a "${#2}" != 0 ] && return 1
 
     # Trivial case 1: equal strings
     [ "$1" = "$2" ] && return 0
@@ -301,7 +304,7 @@ upslist_equals() {
         for _SVC in $2 ; do
             [ "${_DEV}" = "${_SVC}" ] \
             || [ "$DEVINST" = "${_SVC}" ] \
-            && { [ -z "${_TMP_DEV_SVC}" ] \
+            && { [ "${#_TMP_DEV_SVC}" = 0 ] \
                  && _TMP_DEV_SVC="${_DEV} = ${_SVC}" \
                  || _TMP_DEV_SVC="${_TMP_DEV_SVC}
 ${_DEV} = ${_SVC}" ; }
@@ -309,7 +312,7 @@ ${_DEV} = ${_SVC}" ; }
     done
 
     # Input was not empty; did anything in output fit?
-    [ -z "${_TMP_DEV_SVC}" ] && return 1
+    [ "${#_TMP_DEV_SVC}" = 0 ] && return 1
 
     # Exit code : is the built mapping as long as the source list(s)?
     [ "`echo "$1" | wc -l`" = "`echo "${_TMP_DEV_SVC}" | wc -l`" ]
@@ -328,7 +331,7 @@ upslist_checksums_unchanged() {
     # configuration section from the file and the stashed configuration in
     # a service instance. Prints a list of mismatching service names that
     # should get reconfigured.
-    [ -z "$1" -o -z "$2" ] && return 1
+    [ "${#1}" = 0 -o "${#2}" = 0 ] && return 1
 
     _TMP_SVC=""
     for _DEV in $1 ; do
@@ -338,14 +341,14 @@ upslist_checksums_unchanged() {
             || [ "$DEVINST" = "${_SVC}" ] \
             ; then
                 upssvcconf_checksum_unchanged "${_DEV}" "${_SVC}" || \
-                { [ -z "${_TMP_SVC}" ] \
+                { [ "${#_TMP_SVC}" = 0 ] \
                   && _TMP_SVC="${_SVC}" \
                   || _TMP_SVC="${_TMP_SVC}
 ${_SVC}" ; }
             fi
         done
     done
-    [ -z "${_TMP_SVC}" ] && return 0
+    [ "${#_TMP_SVC}" = 0 ] && return 0
     echo "${_TMP_SVC}"
     return 1
 }
@@ -356,9 +359,9 @@ upslist_savednames_find_missing() {
     # amend those quickly after an upgrade. Otherwise we trust these.
 
     # Get full instance names from system and from props
-    SVCINSTS="`$hook_listInstances_raw`" && [ -n "$SVCINSTS" ] || return 1
+    SVCINSTS="`$hook_listInstances_raw`" && [ "${#SVCINSTS}" != 0 ] || return 1
     # If no props were found, (over)write them all
-    SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ -n "$SVCINST_PROPS" ] \
+    SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ "${#SVCINST_PROPS}" != 0 ] \
     || { echo $SVCINSTS ; return 2; }
 
     # Find services which do not have saved names in props
@@ -380,8 +383,8 @@ upslist_savednames_find_mismatch() {
     # upslist_savednames_find_missing() should have handled those).
 
     # Get full instance names from system and from props
-    SVCINSTS="`$hook_listInstances_raw`" && [ -n "$SVCINSTS" ] || return 1
-    SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ -n "$SVCINST_PROPS" ] || return 2
+    SVCINSTS="`$hook_listInstances_raw`" && [ "${#SVCINSTS}" != 0 ] || return 1
+    SVCINST_PROPS="`$hook_findSavedDeviceName`" && [ "${#SVCINST_PROPS}" != 0 ] || return 2
 
     # Find services whose props exist but services do not
     echo "$SVCINST_PROPS" | while read SVCINST_PROP DEVNAME_PROP ; do
@@ -1010,7 +1013,7 @@ upslist_normalizeFile() {
     # Also use a SDP subset with just section, driver and port info
     # for faster parsing when determining driver-required media etc.
     UPSCONF_DATA="$(upslist_normalizeFile_filter < "$UPSCONF")" \
-        && [ -n "$UPSCONF_DATA" ] \
+        && [ "${#UPSCONF_DATA}" != 0 ] \
         && UPSCONF_DATA_SDP="`egrep '^(\[.*\]|driver=|port=)' << EOF
 $UPSCONF_DATA
 EOF`" \
@@ -1024,7 +1027,7 @@ upslist_normalizeFile_once() {
     # Wrapper that ensures that the parsing is only done once
     # (will re-parse if there were no devices listed on the
     # first time, though)
-    [ -z "$UPSCONF_DATA" ] && [ -z "$UPSCONF_DATA_SDP" ] || return 0
+    [ "${#UPSCONF_DATA}" = 0 ] && [ "${#UPSCONF_DATA_SDP}" = 0 ] || return 0
     upslist_normalizeFile
 }
 
@@ -1040,11 +1043,11 @@ upslist_readFile() {
         upslist_normalizeFile || return    # Propagate errors upwards
     fi
 
-    if [ -n "$UPSCONF_DATA" ] ; then
+    if [ "${#UPSCONF_DATA}" != 0 ] ; then
         # Note that section-name brackets should contain a single token
         UPSLIST_FILE="$(echo "$UPSCONF_DATA_SDP" | egrep '^\[[^'"$TABCHAR"'\ ]*\]$' | sed 's,^\[\(.*\)\]$,\1,' | sort -n)" \
             || UPSLIST_FILE=""
-        if [ -z "$UPSLIST_FILE" ] ; then
+        if [ "${#UPSLIST_FILE}" = 0 ] ; then
             echo "Error reading the '$UPSCONF' file or it does not declare any device configurations: no section declarations in parsed normalized contents" >&2
         fi
     fi
@@ -1055,13 +1058,13 @@ upslist_readFile_once() {
     # Wrapper that ensures that the parsing is only done once
     # (will re-parse if there were no devices listed on the
     # first time, though)
-    [ -z "$UPSLIST_FILE" ] || return 0
+    [ "${#UPSLIST_FILE}" = 0 ] || return 0
     DO_NORMALIZE_ONCE=yes upslist_readFile
 }
 
 upslist_readSvcs() {
     UPSLIST_SVCS="`$hook_listInstances`" || UPSLIST_SVCS=""
-    if [ -z "$UPSLIST_SVCS" ] && [ "$1" != "-" ] ; then
+    if [ "${#UPSLIST_SVCS}" = 0 ] && [ "$1" != "-" ] ; then
         EXPLAIN=""
         [ -z "$1" ] || EXPLAIN=" - $1"
         echo "Error reading the list of ${SERVICE_FRAMEWORK-} service instances for UPS drivers, or none are defined${EXPLAIN}" >&2
@@ -1152,14 +1155,14 @@ nut_driver_enumerator_main() {
     # We can only exit quickly if both there are no changed sections and no
     # new or removed sections since last run.
     NEW_CHECKSUM="`upslist_checksums_unchanged "$UPSLIST_FILE" "$UPSLIST_SVCS"`" \
-    && [ -z "$NEW_CHECKSUM" ] \
+    && [ "${#NEW_CHECKSUM}" = 0 ] \
     && upslist_equals "$UPSLIST_FILE" "$UPSLIST_SVCS" \
     && if [ -z "$DAEMON_SLEEP" -o "${VERBOSE_LOOP}" = yes ] ; then \
         echo "`date -u` : OK: No changes to reconcile between ${SERVICE_FRAMEWORK} service instances and device configurations in '$UPSCONF'" ; \
        fi \
     && [ "$RESTART_ALL" = no ] && return 0
 
-    if [ -n "$NEW_CHECKSUM" ]; then
+    if [ "${#NEW_CHECKSUM}" != 0 ]; then
         for UPSS in $NEW_CHECKSUM ; do
             echo "Dropping old ${SERVICE_FRAMEWORK} service instance ${UPSS} whose section in config file has changed..." >&2
             $hook_unregisterInstance "$UPSS"
@@ -1167,7 +1170,7 @@ nut_driver_enumerator_main() {
         upslist_readSvcs "after updating for new config section checksums"
     fi
 
-    if [ -n "$UPSLIST_SVCS" ]; then
+    if [ "${#UPSLIST_SVCS}" != 0 ]; then
         # Drop services that are not in config file (any more?)
         upslist_delSvcs
 
@@ -1183,7 +1186,7 @@ nut_driver_enumerator_main() {
         $hook_setSavedMD5 "" "`upsconf_getSection_MD5 ""`"
     fi
 
-    if [ -n "$UPSLIST_FILE" ]; then
+    if [ "${#UPSLIST_FILE}" != 0 ]; then
         # Add services for sections that are in config file but not yet wrapped
         upslist_addSvcs
         $hook_refreshSupervizor
@@ -1191,12 +1194,12 @@ nut_driver_enumerator_main() {
     fi
 
     upslist_readSvcs
-    if [ -n "$UPSLIST_SVCS" ] ; then
+    if [ "${#UPSLIST_SVCS}" != 0 ] ; then
         echo "=== The currently defined service instances are:"
         echo "$UPSLIST_SVCS"
     fi
 
-    if [ -n "$UPSLIST_FILE" ] ; then
+    if [ "${#UPSLIST_FILE}" != 0 ] ; then
         echo "=== The currently defined configurations in '$UPSCONF' are:"
         echo "$UPSLIST_FILE"
     fi
@@ -1244,14 +1247,14 @@ nut_driver_enumerator_full_reconfigure() {
     upslist_readFile_once || return $?
     upslist_readSvcs "before manipulations"
 
-    if [ -n "$UPSLIST_SVCS" ]; then
+    if [ "${#UPSLIST_SVCS}" != 0 ]; then
         for UPSS in $UPSLIST_SVCS ; do
             echo "Dropping old ${SERVICE_FRAMEWORK} service instance for power device [${UPSS}] to reconfigure the service unit..." >&2
             $hook_unregisterInstance "$UPSS"
         done
         upslist_readSvcs "after dropping"
     fi
-    if [ -n "$UPSLIST_FILE" ]; then
+    if [ "${#UPSLIST_FILE}" != 0 ]; then
         upslist_addSvcs
         upslist_readSvcs "after checking for new config sections to define service instances"
     fi
@@ -1263,12 +1266,12 @@ nut_driver_enumerator_full_reconfigure() {
     # refresh the service management daemon if needed
     $hook_refreshSupervizor
 
-    if [ -n "$UPSLIST_SVCS" ] ; then
+    if [ "${#UPSLIST_SVCS}" != 0 ] ; then
         echo "=== The currently defined service instances are:"
         echo "$UPSLIST_SVCS"
     fi
 
-    if [ -n "$UPSLIST_FILE" ] ; then
+    if [ "${#UPSLIST_FILE}" != 0 ] ; then
         echo "=== The currently defined configurations in '$UPSCONF' are:"
         echo "$UPSLIST_FILE"
     fi
@@ -1305,11 +1308,11 @@ nut_driver_enumerator_full_reconfigure() {
 
 list_services_for_devices() {
     FINAL_RES=0
-    upslist_readFile_once && [ -n "$UPSLIST_FILE" ] \
+    upslist_readFile_once && [ "${#UPSLIST_FILE}" != 0 ] \
         || { echo "No devices detected in '$UPSCONF'" >&2 ; return 1 ; }
-    upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
+    upslist_readSvcs "by user request" && [ "${#UPSLIST_SVCS}" != 0 ] \
         || { echo "No service instances detected" >&2 ; return 1; }
-    UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
+    UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ "${#UPSLIST_SVCS_RAW}" != 0 ] \
         || { echo "No service units detected" >&2 ; return 1; }
     for DEV in $UPSLIST_FILE ; do
         vINST="`$hook_validInstanceName "$DEV"`"
@@ -1369,7 +1372,7 @@ get_device_for_service() {
         # Try to use last-stashed values from service properties first
         # (NOTE: saved value is assumed to be valid if present)
         SAVEDINST="`$hook_getSavedDeviceName "$SVC"`" || SAVEDINST=""
-        [ -z "$SAVEDINST" ] || { echo "$SAVEDINST" ; return 0 ; }
+        [ "${#SAVEDINST}" = 0 ] || { echo "$SAVEDINST" ; return 0 ; }
     fi
 
     case "$SVC" in
@@ -1382,7 +1385,7 @@ get_device_for_service() {
 
     # Inspect SVC=MD5_* usecase
     FINAL_RES=0
-    list_services_for_devices_once && [ -n "$SVCS_DEVS_LIST" ] || FINAL_RES=$?
+    list_services_for_devices_once && [ "${#SVCS_DEVS_LIST}" != 0 ] || FINAL_RES=$?
     if [ "$FINAL_RES" = 0 ]; then
         echo "$SVCS_DEVS_LIST" | grep "$SVC" | ( \
             while read _SVC _DEV ; do
@@ -1402,14 +1405,14 @@ get_service_for_device() {
     # (NOTE: saved value is assumed to be valid if present)
     if [ "${USE_SAVEDSVC-}" != false ]; then
         SAVEDSVC="`$hook_findSavedDeviceName "$DEV"`" || SAVEDSVC=""
-        [ -z "$SAVEDSVC" ] || { echo "$SAVEDSVC" ; return 0 ; }
+        [ "${#SAVEDSVC}" = 0 ] || { echo "$SAVEDSVC" ; return 0 ; }
     fi
 
     # Trawl all the data we have...
     # TODO: Reorder to avoid extra parsing if we have an early hit?
-    upslist_readSvcs "by user request" && [ -n "$UPSLIST_SVCS" ] \
+    upslist_readSvcs "by user request" && [ "${#UPSLIST_SVCS}" != 0 ] \
         || { echo "No service instances detected" >&2 ; return 1; }
-    UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ -n "$UPSLIST_SVCS_RAW" ] \
+    UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && [ "${#UPSLIST_SVCS_RAW}" != 0 ] \
         || { echo "No service units detected" >&2 ; return 1; }
     vINST="`$hook_validInstanceName "$DEV"`"
     vUNITD="`$hook_validFullUnitName "$DEV"`"
@@ -1450,13 +1453,14 @@ update_upslist_savednames_find_missing() {
         2) ;; # All service units do not have DEVICE values
     esac
     # Something found... or not? Or all is populated?
-    [ -n "$SVCINSTS_NO_DEVICE" ] || return 0
+    [ "${#SVCINSTS_NO_DEVICE}" != 0 ] || return 0
 
     # Make a list of what devices are known in config matched
     # to service instances defined in the system, if any
     # Note to not check the service instance properties which
     # we are validating and currently to not quite trust.
-    USE_SAVEDINST=false list_services_for_devices_once && [ -n "$SVCS_DEVS_LIST" ] || return 0
+    USE_SAVEDINST=false list_services_for_devices_once \
+    && [ "${#SVCS_DEVS_LIST}" != 0 ] || return 0
 
     # Go over services with no device value saved into properties,
     # and write the values learned from mapping above
@@ -1626,7 +1630,7 @@ while [ $# -gt 0 ]; do
             ;;
         --list-devices)
             upslist_readFile_once && \
-            if [ -n "$UPSLIST_FILE" ] ; then
+            if [ "${#UPSLIST_FILE}" != 0 ] ; then
                 echo "=== The currently defined configurations in '$UPSCONF' are:" >&2
                 echo "$UPSLIST_FILE"
                 exit 0
@@ -1636,7 +1640,7 @@ while [ $# -gt 0 ]; do
             ;;
         --list-services)
             UPSLIST_SVCS_RAW="`$hook_listInstances_raw`" && \
-            if [ -n "$UPSLIST_SVCS_RAW" ] ; then
+            if [ "${#UPSLIST_SVCS_RAW}" != 0 ] ; then
                 echo "=== The currently defined service units are:" >&2
                 echo "$UPSLIST_SVCS_RAW"
                 exit 0
@@ -1646,7 +1650,7 @@ while [ $# -gt 0 ]; do
             ;;
         --list-instances)
             upslist_readSvcs "by user request" && \
-            if [ -n "$UPSLIST_SVCS" ] ; then
+            if [ "${#UPSLIST_SVCS}" != 0 ] ; then
                 echo "=== The currently defined service instances are:" >&2
                 echo "$UPSLIST_SVCS"
                 exit 0
@@ -1673,7 +1677,7 @@ while [ $# -gt 0 ]; do
             RES=0
             upslist_readFile_once || RES=$?
             [ "$RES" != 0 ] && { echo "ERROR: upslist_readFile_once () failed with code $RES" >&2; exit $RES; }
-            [ -n "$UPSLIST_FILE" ] \
+            [ "${#UPSLIST_FILE}" != 0 ] \
                 || { echo "WARNING: No devices detected in '$UPSCONF'" >&2 ; RES=1 ; }
             echo "$UPSCONF_DATA"
             exit $RES
