@@ -2791,29 +2791,43 @@ int su_setOID(int mode, const char *varname, const char *val)
 	}
 
 	/* set value into the device, using the provided one, or the default one otherwise */
+	if (mode==SU_MODE_INSTCMD) {
+		/* Sanity check: commands should either have a value or a default */
+		if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
+			upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
+			return STAT_SET_INVALID;
+		}
+	}
+
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_set_str(su_info_p->OID, val ? val : su_info_p->dfl);
-	} else {
+	}
+	else {
 		if (mode==SU_MODE_INSTCMD) {
-			/* Sanity check: commands should either have a value or a default */
-			if ( (val == NULL) && (su_info_p->dfl == NULL) ) {
-				upsdebugx(1, "%s: cannot execute command '%s': a provided or default value is needed!", __func__, varname);
+			if ( !str_to_long(val ? val : su_info_p->dfl, &value, 10) ) {
+				upsdebugx(1, "%s: cannot execute command '%s': value is not a number!", __func__, varname);
 				return STAT_SET_INVALID;
 			}
-			/* FIXME: switch to a generic nut_snmp_set(oid, char *value)
-			 * to simplify handling and avoid atoi(NULL) */
-			status = nut_snmp_set_int(su_info_p->OID, val ? atoi(val) : atoi(su_info_p->dfl));
 		}
 		else {
 			/* non string data may imply a value lookup */
 			if (su_info_p->oid2info) {
-				value = su_find_valinfo(su_info_p->oid2info, val);
+				value = su_find_valinfo(su_info_p->oid2info, val ? val : su_info_p->dfl);
 			}
 			else {
 				/* Convert value and apply multiplier */
-				value = atof(val) / su_info_p->info_len;
+				if ( !str_to_long(val, &value, 10) ) {
+					upsdebugx(1, "%s: cannot set '%s': value is not a number!", __func__, varname);
+					return STAT_SET_INVALID;
+				}
+				value = (long)((double)value / su_info_p->info_len);
 			}
-			/* Actually apply the new value */
+		}
+		/* Actually apply the new value */
+		if (su_info_p->flags & SU_TYPE_TIME) {
+			status = nut_snmp_set_time(su_info_p->OID, value);
+		}
+		else {
 			status = nut_snmp_set_int(su_info_p->OID, value);
 		}
 	}
