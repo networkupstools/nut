@@ -39,19 +39,30 @@ upsdrv_info_t upsdrv_info = {
 
 static void parse_output_signals(const char *value, int *line)
 {
+	int old_line = *line;
 	/* parse signals the serial port can output */
 
 	*line = 0;
 
+	upsdebugx(4, "%s: enter", __func__);
+
+	/* Note: for future drivers, please use strtok() or similar tokenizing
+	 * methods, such that it is easier to spot configuration mistakes. With
+	 * this code, a misspelled control line may go unnoticed. I'd fix it
+	 * The Right Way (tm), but these UPSes are ancient.
+	 */
 	if (strstr(value, "DTR") && !strstr(value, "-DTR")) {
+		upsdebugx(3, "%s: override DTR", __func__);
 		*line |= TIOCM_DTR;
 	}
 
 	if (strstr(value, "RTS") && !strstr(value, "-RTS")) {
+		upsdebugx(3, "%s: override RTS", __func__);
 		*line |= TIOCM_RTS;
 	}
 
 	if (strstr(value, "ST")) {
+		upsdebugx(3, "%s: override ST", __func__);
 		*line |= TIOCM_ST;
 	}
 
@@ -70,20 +81,32 @@ static void parse_output_signals(const char *value, int *line)
 	if (strstr(value, "DSR")) {
 		fatalx(EXIT_FAILURE, "Can't override output with DSR (not an output)");
 	}
+
+	if(*line == old_line) {
+		upslogx(LOG_NOTICE, "%s: output overrides specified, but no effective difference - check for typos?", __func__);
+	}
+
+	upsdebugx(4, "%s: exit", __func__);
 }
 
 static void parse_input_signals(const char *value, int *line, int *val)
 {
 	/* parse signals the serial port can input */
+	int old_line = *line, old_val = *val;
 
 	*line = 0;
 	*val = 0;
+
+	upsdebugx(4, "%s: enter", __func__);
 
 	if (strstr(value, "CTS")) {
 		*line |= TIOCM_CTS;
 
 		if (!strstr(value, "-CTS")) {
+			upsdebugx(3, "%s: override CTS (active low)", __func__);
 			*val |= TIOCM_CTS;
+		} else {
+			upsdebugx(3, "%s: override CTS", __func__);
 		}
 	}
 
@@ -91,7 +114,10 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		*line |= TIOCM_CD;
 
 		if (!strstr(value, "-DCD")) {
+			upsdebugx(3, "%s: override DCD (active low)", __func__);
 			*val |= TIOCM_CD;
+		} else {
+			upsdebugx(3, "%s: override DCD", __func__);
 		}
 	}
 
@@ -99,7 +125,10 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		*line |= TIOCM_RNG;
 
 		if (!strstr(value, "-RNG")) {
+			upsdebugx(3, "%s: override RNG (active low)", __func__);
 			*val |= TIOCM_RNG;
+		} else {
+			upsdebugx(3, "%s: override RNG", __func__);
 		}
 	}
 
@@ -107,7 +136,10 @@ static void parse_input_signals(const char *value, int *line, int *val)
 		*line |= TIOCM_DSR;
 
 		if (!strstr(value, "-DSR")) {
+			upsdebugx(3, "%s: override DSR (active low)", __func__);
 			*val |= TIOCM_DSR;
+		} else {
+			upsdebugx(3, "%s: override DSR", __func__);
 		}
 	}
 
@@ -122,6 +154,12 @@ static void parse_input_signals(const char *value, int *line, int *val)
 	if (strstr(value, "ST")) {
 		fatalx(EXIT_FAILURE, "Can't override input with ST (not an input)");
 	}
+
+	if((*line == old_line) && (*val == old_val)) {
+		upslogx(LOG_NOTICE, "%s: input overrides specified, but no effective difference - check for typos?", __func__);
+	}
+
+	upsdebugx(4, "%s: exit", __func__);
 }
 
 void upsdrv_initinfo(void)

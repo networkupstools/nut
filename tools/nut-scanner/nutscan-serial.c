@@ -1,6 +1,5 @@
-/* nutscan-serial.c: helper functions to get serial devices name
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,11 +16,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/*! \file nutscan-serial.c
+    \brief helper functions to get serial devices name
+    \author Frederic Bohe <fredericbohe@eaton.com>
+    \author Arnaud Quette <arnaud.quette@free.fr>
+*/
+
 #include "nutscan-serial.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "nut_platform.h"
+#include "common.h"
 
 #ifdef WIN32
 /* Windows: all serial port names start with "COM" */
@@ -97,7 +103,8 @@ static char ** add_port(char ** list, char * port)
 	/*+1 for the terminal NULL */
 	res = realloc(list,(count+1+1)*sizeof(char*));
 	if( res == NULL ) {
-		return NULL;
+		upsdebugx(1, "%s: Failed to realloc port list", __func__);
+		return list;
 	}
 	res[count] = strdup(port);
 	res[count+1] = NULL;

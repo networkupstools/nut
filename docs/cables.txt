@@ -55,7 +55,7 @@ Documents in this section are provided courtesy of Eaton.
 MGE Office Protection Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The two first cables also applies to MGE UPS SYSTEMS.
+The three first cables also applies to MGE UPS SYSTEMS and Eaton.
 
 DB9-DB9 cable (ref 66049)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -67,10 +67,35 @@ image::images/cables/mge-66049.png[DB9-DB9 cable]
 DB9-RJ45 cable
 ^^^^^^^^^^^^^^
 
-This cable is used on the more recent models, including Ellipse MAX, Protection
-Station, ...
+This cable is used on the more recent models, including Ellipse MAX,
+Protection Station, ...
 
 image::images/cables/mge-db9-rj45.jpg[DB9-RJ45 cable]
+
+NMC DB9-RJ45 cable
+^^^^^^^^^^^^^^^^^^
+
+The following applies to the MGE 66102 NMC (Network Management Card), and
+possibly other models. The NMC connection is an 8P8C RJ45-style jack.
+
+|====
+|Signal  | PC      |    NMC
+|        | 1,4,6   |
+|TxD     | 2       |      3
+|RxD     | 3       |      6
+|GND     | 5       |      4
+|        | 7,8     |
+|        | shield  | shield
+|====
+
+
+USB-RJ45 cable
+^^^^^^^^^^^^^^
+
+This cable is used also on the more recent models, including Ellipse MAX,
+Protection Station, ...
+
+image::images/cables/mge-usb-rj45.jpg[USB-RJ45 cable]
 
 DB9-RJ12 cable
 ^^^^^^^^^^^^^^
@@ -104,17 +129,37 @@ T700, T1000, T1500, T1500j, T700h, T1000h, T1500h, R1500, R1500j,
 R1500h, T2000, T2000j, T2400h, T2400h-NA, R3000 / R3000j, R3000h,
 R3000h-International, R3000h-NA, R6000h-NA, R6000i, R6000j. 
 
-UPS         PC  9 pin connector
+ UPS         PC  9 pin connector
 
- 1 --------- 3
- 2 --------- 2
-             4 -\
- 4 --------- 5   |
-             6 -/
- 6 --------- 7
+  1 --------- 3
+  2 --------- 2
+              4 -\
+  4 --------- 5   |
+              6 -/
+  6 --------- 7
 
 Contributed by Kjell Claesson and Arnaud Quette.
 
+Phoenixtec (Best Power)
+-----------------------
+
+Many Best Power units (including the Patriot Pro II) have a female DB-9 socket
+with a non-standard pinout.
+
+|====
+|Signal  | PC      |    UPS
+|        | 1,4,6   |     NC
+|TxD     | 2       |      2
+|RxD     | 3       |      1
+|GND     | 5       |      4
+|        | 7,8     |     NC
+|====
+
+Sources:
+
+* http://pinoutsguide.com/UPS/best_power_pinout.shtml
+* http://lit.powerware.com/ll_download.asp?file=m_patriotproii_jan99.pdf
+* Stan Gammons
 
 Tripp-Lite
 ----------

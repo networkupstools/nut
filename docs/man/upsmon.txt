@@ -160,7 +160,7 @@ Remember to wrap the path in "quotes" if it contains any spaces.
 The program you run as your NOTIFYCMD can use the environment variables
 NOTIFYTYPE and UPSNAME to know what has happened and on which UPS.  It
 also receives the notification message (see below) as the first (and
-only) argument, so you can deliver a preformatted message too.
+only) argument, so you can deliver a pre-formatted message too.
 
 Note that the NOTIFYCMD will only be called for a given event when you set
 the EXEC flag by using the notify flags, below:

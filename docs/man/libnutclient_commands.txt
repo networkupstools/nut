@@ -32,7 +32,7 @@ The *nutclient_has_device_command* function test if the specified command is sup
 Return 1 is supported and 0 if not.
 
 The *nutclient_get_device_command_description* function retrieve the command description, if any.
-The resturned string must be freed.
+The returned string must be freed.
 
 The *nutclient_execute_device_command* intend to execute the instant command.
 

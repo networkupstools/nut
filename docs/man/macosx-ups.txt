@@ -23,39 +23,15 @@ Preferences, this driver should be able to monitor it.
 
 EXTRA ARGUMENTS
 ----------------
-*port*='regex'::
-The *port* parameter in the configuration file can be a case-insensitive
-extended regular expression (see *regex*(3) for details) to match against
-specific UPS and battery names.
-+
-The traditional NUT auto-detection value of "auto" will be changed to "/UPS".
-To test this driver against the internal battery of a laptop, a value such as
-"battery" can be used.
+*port*=auto::
+Due to changes in the way that Mac OS X lists power sources, the *port*
+parameter no longer has any effect. The rest of NUT still requires a value here,
+and our traditional "don't care" value is `auto`.
 
 *model*='regex'::
 Likewise, if you have more than one UPS, it may be necessary to specify a
 *model* name to match against. This parameter is also a case-insensitive
 extended regular expression.
-
-//////////////////////////////////////////
-This driver also supports the following optional settings:
-
-*option1*='num'::
-Set the value of ... to 'num'. Contrast with *option2*.
- 
-*option2*='string'::
-Some other option.
-//////////////////////////////////////////
-
-//////////////////////////////////////////
-Optional: list supported instant commands here:
-
-INSTANT COMMANDS
-----------------
-
-*instcmd1*::
-Command 1.
-//////////////////////////////////////////
 
 DIAGNOSTICS
 -----------

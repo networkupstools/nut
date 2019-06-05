@@ -23,6 +23,13 @@ Note that you need to install the libusb development package or files.
 Build and install the SNMP drivers (default: auto-detect)
 Note that you need to install libsnmp development package or files.
 
+	--with-net-snmp-config
+
+In addition to the `--with-snmp` option above, this one allows to provide
+a custom program name (in `PATH`) or complete pathname to `net-snmp-config`.
+This may be needed on build systems which support multiple architectures,
+or in cases where your distribution names this program differently.
+
 	--with-neon
 
 Build and install the XML drivers (default: auto-detect)
@@ -39,10 +46,14 @@ Note that you need to install powerman development package or files.
 	--with-freeipmi
 
 Build and install IPMI PSU driver (default: auto-detect)
-This allows to monitor numerous Power Supply Units (PSU) found
-on servers.
-Note that you need to install freeipmi (0.8.5 or higher) development package or
-files.
+This allows to monitor numerous Power Supply Units (PSU) found on servers.
+Note that you need to install freeipmi (0.8.5 or higher, for nut-scanner ; and
+1.0.1 or higher, for nut-ipmipsu) development package or files.
+
+	--with-linux_i2c
+
+Build and install i2c drivers (default: auto-detect)
+Note that you need to install libi2c development package or files.
 
 	--with-drivers=<driver>,<driver>,...
 
@@ -78,16 +89,43 @@ information on how to set up CGI programs.
 	--with-doc=<output-format(s)>  (default: no)
 
 Build and install NUT documentation file(s).
+
 The possible values are "html-single" for single page HTML, "html-chunked"
-for multi pages HTML, "pdf" for a PDF file or "auto" to build all the
-possible previous documentation formats.
+for multi pages HTML, "pdf" for a PDF file, and "man" for the usual manpages.
+
+If the "--with-doc" argument is passed without a list, or lists just "=yes"
+or "=all", it enables all supported formats with a "=yes".
+
+An (explicit!) "--with-doc=auto" argument tries to enable all supported
+formats with an "=auto".
+
+A "--with-doc=no" quietly skips generation of all types of documentation,
+including manpages.
+
+Multiple documentation format values can be specified, separated with comma.
+Each such value can be suffixed with "=yes" to require building of the this
+documentation format (abort configuration if tools are missing), "=auto" to
+detect and enable if we can build it on this system (and not abort if we
+can not), and "=no" (or "=skip") to explicitly skip generation of this
+document format even if we do have the tools to build it.
+
+If a document format is mentioned in the list without a suffix, then it is
+treated as a "=yes" requirement.
+
 Verbose output can be enabled using: ASCIIDOC_VERBOSE=-v make
 
 This feature requires AsciiDoc 8.6.3 (http://www.methods.co.nz/asciidoc).
 
-	--with-lib (default: no)
+Example valid formats of this flag:
+* `--with-doc`
+* `--with-doc=` is a valid empty list, effectively same as `--with-doc=no`
+* `--with-doc=auto`
+* `--with-doc=pdf,html-chunked`
+* `--with-doc=man=no,pdf=auto,html-single`
 
-Build and install the upsclient library and header files. 
+	--with-dev (default: no)
+
+Build and install the upsclient and nutclient library and header files. 
 
 	--with-all (no default)
 
@@ -101,7 +139,7 @@ library).
 
 Enable SSL support, using either Mozilla NSS or OpenSSL.
 If both are present, and nothing was specified, OpenSSL support will
-be prefered. Read docs/security.txt for instructions on SSL support.
+be preferred. Read docs/security.txt for instructions on SSL support.
 
 	--with-wrap (default: auto-detect)
 
@@ -112,18 +150,11 @@ more information.
 
 Enable IPv6 support.
 
-	--with-hal (default: no)
-
-Build and install Hardware Abstraction Layer support.
-If you own a USB unit, only protect your local system and run the
-Gnome or KDE desktop, this will enable a full Plug & Play usage.
-See docs/nut-hal.txt for additional information on how to set up
-and use HAL support.
-
 	--with-avahi (default: auto-detect)
 
 Build and install Avahi support, to publish NUT server availability
-using mDNS protocol.
+using mDNS protocol.  This requires Avahi development files for the
+Core and Client parts. 
 
 	--with-libltdl (default: auto-detect)
 
@@ -173,7 +204,7 @@ for this software.
 If you use one of the --with-user and --with-group options, then
 you have to use the other one too. 
 
-See the INSTALL document and the FAQ for more on this topic.
+See the INSTALL.nut document and the FAQ for more on this topic.
 
 	--with-logfacility=FACILITY
 
@@ -229,7 +260,7 @@ Sets the base directories for the man pages.  The default is
 
 	--includedir=PATH
 
-Sets the path for include files to be installed when --with-lib is
+Sets the path for include files to be installed when `--with-dev` is
 selected. For example, upsclient.h is installed here. The default
 is <prefix>/include.
 
@@ -268,7 +299,7 @@ HTML files will be installed to this path. By default, this is
 	--with-pkgconfig-dir=PATH
 
 Where to install pkg-config *.pc files. This option only has an
-effect if --with-lib is selected, and causes a pkg-config file to
+effect if `--with-dev` is selected, and causes a pkg-config file to
 be installed in the named location. The default is
 <exec_prefix>/pkgconfig.
 
@@ -295,6 +326,23 @@ override this option.
 
 Use --without-udev-dir to disable this feature altogether. 
 
+	--with-systemdsystemunitdir=PATH
+
+Where to install Linux systemd unit definitions. Useless and harmless
+on other OSes, including Linux distributions without systemd, just adding
+a little noise to configure script output.
+
+Use --with-systemdsystemunitdir to detect the settings using pkg-config.
+
+Use --with-systemdsystemunitdir=no to disable this feature altogether.
+
+	--with-augeas-lenses-dir=PATH
+
+Where to install Augeas configuration-management lenses. Only useful and valid
+if you use Augeas to parse and modify configuration files. The default is
+/usr/share/augeas/lenses, if that directory exists, and not to install it
+otherwise.
+
 
 Directories used by NUT at run-time
 -----------------------------------
@@ -309,6 +357,8 @@ Changes the directory where pid files are stored.  By default this is
 Programs that normally don't have root powers, like the drivers and
 upsd, write their pid files here.  By default this is whatever the
 statepath is, as those programs should be able to write there.
+
+The NUT_ALTPIDPATH environment variable overrides this at run time.
 
 	--with-statepath=PATH
 
@@ -337,6 +387,13 @@ NOTE: the --with-gd switches are not necessary if you have gd 2.0.8
 or higher installed properly.  The gdlib-config script will be 
 detected and used by default in that situation.
 
+	--with-gdlib-config
+
+This option allows to provide a custom program name (in `PATH`) or
+a complete pathname to `gdlib-config`. This may be needed on build
+systems which support multiple architectures, or in cases where your
+distribution names this program differently.
+
 	--with-ssl-includes, --with-usb-includes, --with-snmp-includes,
 	--with-neon-includes, --with-libltdl-includes,
 	--with-powerman-includes="-I/foo/bar"
@@ -348,21 +405,6 @@ compiler flags that are needed.
 	--with-ssl-libs, --with-usb-libs, --with-snmp-libs,
 	--with-neon-libs, --with-libltdl-libs
 	--with-powerman-libs="-L/foo/bar -labcd -lxyz"
-
-If your system doesn't have pkg-config and support for any of the above
-libraries isn't found (but you know it is installed), you must specify the
-linker flags that are needed.
-
-HAL addons (deprecated)
------------------------
-
-	--with-hal-includes="-DDBUS_API_SUBJECT_TO_CHANGE -I/usr/include/hal \
-		-I/usr/include/dbus-1.0 -I/usr/lib/dbus-1.0/include"
-	--with-hal-libs="-lhal -ldbus-1 -lpthread"
-	--with-hal-user="haldaemon"
-	--with-hal-device-match-key="info.bus"
-	--with-hal-callouts-path="${libdir}/hal"
-	--with-hal-fdi-path="${datarootdir}/hal/fdi/information/20thirdparty"
 
 If system doesn't have pkg-config or it fails to provides hints for some of the
 settings that are needed to set it up properly and the build in defaults are

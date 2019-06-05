@@ -120,16 +120,28 @@ The entry in `ups.conf` looks like this:
 		driver = apcsmart
 		port = /dev/ttyS1
 
-To start and stop drivers, use upsdrvctl.  By default, it will start or
-stop every UPS in the config file:
+To start and stop drivers, use upsdrvctl of upsdrvsvcctl (installed on
+operating systems with a service management framework supported by NUT).
+By default, it will start or stop every UPS in the config file:
 
-	/usr/local/ups/bin/upsdrvctl start
-	/usr/local/ups/bin/upsdrvctl stop
+	/usr/local/ups/sbin/upsdrvctl start
+	/usr/local/ups/sbin/upsdrvctl stop
 
 However, you can also just start or stop one by adding its name:
 
-	/usr/local/ups/bin/upsdrvctl start sparky
-	/usr/local/ups/bin/upsdrvctl stop sparky
+	/usr/local/ups/sbin/upsdrvctl start sparky
+	/usr/local/ups/sbin/upsdrvctl stop sparky
+
+On operating systems with a supported service management framework,
+you might wrap your NUT drivers into individual services instances
+with:
+
+	/usr/local/ups/sbin/upsdrvsvcctl resync
+
+and then manage those service instances with commands like:
+
+	/usr/local/ups/sbin/upsdrvsvcctl start sparky
+	/usr/local/ups/sbin/upsdrvsvcctl stop sparky
 
 To find the driver name for your device, refer to the section below
 called "HARDWARE SUPPORT TABLE".
@@ -209,6 +221,11 @@ and networked PDU, along with Blade and IPMI enabled servers.
 See the linkman:powerman-pdu[8] man page for more
 information.
 
+- The `apcupsd-ups` driver is a bridge to the Apcupsd daemon, thus handling
+all Apcupsd supported devices. The Apcupsd project supports many serial,
+USB and networked APC UPS.
++
+See the linkman:apcupsd-ups[8] man page for more information.
 
 UPS Shutdowns
 ~~~~~~~~~~~~~
@@ -218,8 +235,8 @@ upsdrvctl can also shut down (power down) all of your UPS hardware.
 WARNING: if you play around with this command, expect your filesystems
 to die.  Don't power off your computers unless they're ready for it:
 
-	/usr/local/ups/bin/upsdrvctl shutdown
-	/usr/local/ups/bin/upsdrvctl shutdown sparky
+	/usr/local/ups/sbin/upsdrvctl shutdown
+	/usr/local/ups/sbin/upsdrvctl shutdown sparky
 
 You should read the <<UPS_shutdown,Configuring automatic UPS shutdowns>>
 chapter to learn more about when to use this feature.  If called at the wrong
@@ -231,7 +248,7 @@ Power distribution unit management
 
 NUT also provides an advanced support for power distribution units.
 
-You should read the <<Outlets_PDU_notes,Configuring automatic UPS shutdowns>>
+You should read the <<outlet_management,NUT outlets management and PDU notes>>
 chapter to learn more about when to use this feature. 
 
 Network Server

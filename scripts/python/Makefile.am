@@ -3,6 +3,7 @@
 EXTRA_DIST = README \
 			 app/gui-1.3.glade \
 			 app/NUT-Monitor \
+			 app/nut-monitor.appdata.xml \
 			 app/nut-monitor.desktop \
 			 app/nut-monitor.png \
 			 app/README \
@@ -12,6 +13,7 @@ EXTRA_DIST = README \
 			 app/pixmaps/on_battery.png \
 			 app/pixmaps/var-ro.png \
 			 app/locale/fr/LC_MESSAGES/NUT-Monitor.mo \
+			 app/locale/it/LC_MESSAGES/NUT-Monitor.mo \
 			 module/PyNUT.py \
 			 module/test_nutclient.py
 

@@ -1,6 +1,5 @@
-/* scan_usb.c: detect NUT supported USB devices
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +16,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/*! \file scan_usb.c
+    \brief detect NUT supported USB devices
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
+
 #include "common.h"
 #include "nut-scan.h"
 
@@ -28,7 +32,6 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libusb";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 static int (*nut_usb_close)(usb_dev_handle *dev);
@@ -42,75 +45,80 @@ static usb_dev_handle * (*nut_usb_open)(struct usb_device *dev);
 static int (*nut_usb_find_devices)(void);
 
 /* return 0 on error */
-int nutscan_load_usb_library()
+int nutscan_load_usb_library(const char *libname_path)
 {
-        if( dl_handle != NULL ) {
-                /* if previous init failed */
-                if( dl_handle == (void *)1 ) {
-                        return 0;
-                }
-                /* init has already been done */
-                return 1;
-        }
+	if( dl_handle != NULL ) {
+			/* if previous init failed */
+			if( dl_handle == (void *)1 ) {
+					return 0;
+			}
+			/* init has already been done */
+			return 1;
+	}
+
+	if (libname_path == NULL) {
+		fprintf(stderr, "USB library not found. USB search disabled.\n");
+		return 0;
+	}
 
 	if( lt_dlinit() != 0 ) {
 		fprintf(stderr, "Error initializing lt_init\n");
 		return 0;
 	}
 
-        dl_handle = lt_dlopenext(libname);
-        if (!dl_handle) {
-                dl_error = lt_dlerror();
-                goto err;
-        }
-        lt_dlerror();      /* Clear any existing error */
-        *(void **) (&nut_usb_close) = lt_dlsym(dl_handle, "usb_close");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	dl_handle = lt_dlopen(libname_path);
+	if (!dl_handle) {
+			dl_error = lt_dlerror();
+			goto err;
+	}
+	lt_dlerror();      /* Clear any existing error */
+	*(void **) (&nut_usb_close) = lt_dlsym(dl_handle, "usb_close");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle, "usb_find_busses");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_usb_find_busses) = lt_dlsym(dl_handle, "usb_find_busses");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle, "usb_strerror");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_usb_strerror) = lt_dlsym(dl_handle, "usb_strerror");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_usb_init) = lt_dlsym(dl_handle, "usb_init");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_usb_init) = lt_dlsym(dl_handle, "usb_init");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
-						"usb_get_string_simple");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_usb_get_string_simple) = lt_dlsym(dl_handle,
+					"usb_get_string_simple");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_usb_busses) = lt_dlsym(dl_handle, "usb_busses");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_usb_busses) = lt_dlsym(dl_handle, "usb_busses");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_usb_open) = lt_dlsym(dl_handle, "usb_open");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_usb_open) = lt_dlsym(dl_handle, "usb_open");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,"usb_find_devices");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **)(&nut_usb_find_devices) = lt_dlsym(dl_handle,"usb_find_devices");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        return 1;
+	return 1;
 err:
-        fprintf(stderr, "Cannot load USB library (%s) : %s. USB search disabled.\n", libname, dl_error);
-        dl_handle = (void *)1;
+	fprintf(stderr, "Cannot load USB library (%s) : %s. USB search disabled.\n", libname_path, dl_error);
+	dl_handle = (void *)1;
 	lt_dlexit();
-        return 0;
+	return 0;
 }
 /* end of dynamic link library stuff */
 
@@ -177,7 +185,7 @@ nutscan_device_t * nutscan_scan_usb()
 						dev->descriptor.iSerialNumber,
 						string, sizeof(string));
 					if (ret > 0) {
-						serialnumber = strdup(rtrim(string, ' '));
+						serialnumber = strdup(str_rtrim(string, ' '));
 					}
 				}
 				/* get product name */
@@ -186,7 +194,7 @@ nutscan_device_t * nutscan_scan_usb()
 						dev->descriptor.iProduct,
 						string, sizeof(string));
 					if (ret > 0) {
-						device_name = strdup(rtrim(string, ' '));
+						device_name = strdup(str_rtrim(string, ' '));
 					}
 				}
 
@@ -196,7 +204,7 @@ nutscan_device_t * nutscan_scan_usb()
 						dev->descriptor.iManufacturer, 
 						string, sizeof(string));
 					if (ret > 0) {
-						vendor_name = strdup(rtrim(string, ' '));
+						vendor_name = strdup(str_rtrim(string, ' '));
 					}
 				}
 
@@ -228,18 +236,21 @@ nutscan_device_t * nutscan_scan_usb()
 								"product",
 								device_name);
 					free(device_name);
+					device_name = NULL;
 				}
 				if(serialnumber) {
 					nutscan_add_option_to_device(nut_dev,
 								"serial",
 								serialnumber);
 					free(serialnumber);
+					serialnumber = NULL;
 				}
 				if(vendor_name) {
 					nutscan_add_option_to_device(nut_dev,
 								"vendor",
 								vendor_name);
 					free(vendor_name);
+					vendor_name = NULL;
 				}
 				nutscan_add_option_to_device(nut_dev,"bus",
 							bus->dirname);

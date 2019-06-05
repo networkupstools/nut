@@ -34,7 +34,7 @@
  * static info_lkp_t onbatt_info[] = {
  * 	{ 1, "OB" },
  * 	{ 2, "OL" },
- * 	{ 0, "NULL" }
+ * 	{ 0, NULL }
  * };
  */
 
@@ -44,7 +44,7 @@ static info_lkp_t delta_ups_upstype_info[] = {
 	{ 3, "line-interactive" },
 	{ 4, "3phase" },
 	{ 5, "splite-phase" },
-	{ 0, "NULL" }
+	{ 0, NULL }
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
@@ -56,7 +56,7 @@ static info_lkp_t delta_ups_pwr_info[] = {
     { 5, "BYPASS" },    /* manualBypass */
     /*{ 6, "NULL" },*/      /* other  */
     { 7, "OFF" },      /* none */
-    { 0, "NULL" }
+    { 0, NULL }
 } ;
 
 /* DELTA_UPS Snmp2NUT lookup table */
@@ -73,7 +73,6 @@ static snmp_info_t delta_ups_mib[] = {
 	 *	dfl: default value
 	 *	flags: snmp-ups internal flags (FIXME: ...)
 	 *	oid2info: lookup table between OID and NUT values
-	 *	setvar: variable to set for SU_FLAG_SETINT
 	 *
 	 * Example:
 	 * { "input.voltage", 0, 0.1, ".1.3.6.1.4.1.705.1.6.2.1.2.1", "", SU_INPUT_1, NULL },
@@ -84,7 +83,7 @@ static snmp_info_t delta_ups_mib[] = {
 	 * static info_lkp_t onbatt_info[] = {
 	 * 	{ 1, "OB" },
 	 * 	{ 2, "OL" },
-	 * 	{ 0, "NULL" }
+	 * 	{ 0, NULL }
 	 * };
 	 */
 

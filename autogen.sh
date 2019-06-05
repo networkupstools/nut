@@ -8,25 +8,34 @@ if [ ! -f scripts/augeas/nutupsconf.aug.in ]
 then
 	if python -c "import re,glob,codecs"; then
 		echo "Regenerating Augeas ups.conf lens..."
-		cd scripts/augeas && ./gen-nutupsconf-aug.py && cd ../..
+		cd scripts/augeas && {
+			./gen-nutupsconf-aug.py || exit 1
+			cd ../..
+		}
 	else
 		echo "----------------------------------------------------------------------"
-		echo "Warning: Python is not available."
-		echo "Skipping Augeas ups.conf lens regeneration."
+		echo "Error: Python is not available."
+		echo "Unable to regenerate Augeas ups.conf lens."
 		echo "----------------------------------------------------------------------"
+		exit 1
 	fi
 fi
 
-if [ ! -f scripts/hal/ups-nut-device.fdi.in ] || [ ! -f scripts/udev/nut-usbups.rules.in ]
+if [ ! -f scripts/udev/nut-usbups.rules.in -o \
+     ! -f scripts/devd/nut-usb.conf.in ]
 then
 	if perl -e 1; then
 		echo "Regenerating the USB helper files..."
-		cd tools && ./nut-usbinfo.pl && cd ..
+		cd tools && {
+			./nut-usbinfo.pl || exit 1
+			cd ..
+		}
 	else 
 		echo "----------------------------------------------------------------------"
 		echo "Error: Perl is not available."
-		echo "Skipping the USB helper files regeneration."
+		echo "Unable to regenerate USB helper files."
 		echo "----------------------------------------------------------------------"
+		exit 1
 	fi
 fi
 

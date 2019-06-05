@@ -1,6 +1,5 @@
-/* scan_eaton_serial.c: detect Eaton serial XCP, SHUT and Q1 devices
- * 
- *  Copyright (C) 2012  Arnaud Quette <ArnaudQuette@eaton.com>
+/*
+ *  Copyright (C) 2012 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file scan_eaton_serial.c
+    \brief detect Eaton serial XCP, SHUT and Q1 devices
+    \author Arnaud Quette <ArnaudQuette@eaton.com>
+*/
 
 #include "common.h"
 
@@ -139,11 +143,11 @@ nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 	int devfd = -1;
 
 	if ( (devfd = ser_open_nf(port_name)) != -1 ) {
-		/* set RTS to on and DTR to off first, as these are not fatal
-		 * and allow to test the port */
-		if (ser_set_dtr(devfd, 0) != -1) {
+		/* set RTS to off and DTR to on to allow correct behavior
+		 * with UPS using PnP feature */
+		if (ser_set_dtr(devfd, 1) != -1) {
 
-			ser_set_rts(devfd, 1);
+			ser_set_rts(devfd, 0);
 			ser_set_speed_nf(devfd, port_name, B2400);
 
 			if (shut_synchronise(devfd)) {
@@ -406,8 +410,15 @@ nutscan_device_t * nutscan_scan_eaton_serial(const char* ports_range)
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread, NULL, nutscan_scan_eaton_serial_device, (void*)current_port_name) == 0){
 			thread_count++;
-			thread_array = realloc(thread_array,
-					thread_count*sizeof(pthread_t));
+			pthread_t *new_thread_array = realloc(thread_array,
+						thread_count*sizeof(pthread_t));
+			if (new_thread_array == NULL) {
+				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				break;
+			}
+			else {
+				thread_array = new_thread_array;
+			}
 			thread_array[thread_count-1] = thread;
 		}
 #else

@@ -1,28 +1,46 @@
-ChangeLog
-configure
-Makefile.in
-nut-*.tar.gz
-nut-*.*.*
-Makefile
-config.log
-config.status
-autom4te.cache
-*-stamp
-svn-commit.tmp
-aclocal.m4
-configure
-libtool
-mkinstalldirs
-Makefile.in
-config.guess
-config.sub
-ltmain.sh
-depcomp
-install-sh
-missing
-.deps
-.libs
+# Backup files
 *.bak
+*~
+
+# Build process
+## Global
 *.[oa]
 *.l[oa]
-*~
+.deps/
+.libs/
+.inst/
+/_install_pkgprotodir/
+Makefile
+Makefile.in
+## Parent directory only
+/aclocal.m4
+/autom4te.cache/
+/ChangeLog
+/config.guess
+/config.log
+/config.status
+/config.sub
+/config.cache
+/configure
+/cscope.*
+/depcomp
+/INSTALL
+/install-sh
+/libtool
+/ltmain.sh
+/missing
+/test-driver
+common/.dirstamp
+
+# Dist
+/nut-*.*.*/
+/nut-*.tar.gz
+/nut*.rpm
+/NUT*.local.gz
+/NUT*.p5i
+/NUT*.depot
+
+# Official dist
+/nut-*.tar.gz.md5
+/nut-*.tar.gz.sha256
+/nut-*.tar.gz.sig

@@ -43,6 +43,7 @@
 #include "timehead.h"
 #include "attribute.h"
 #include "proto.h"
+#include "str.h"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -51,6 +52,12 @@ extern "C" {
 #endif
 
 extern const char *UPS_VERSION;
+
+/** @brief Default timeout (in seconds) for network operations, as used by `upsclient` and `nut-scanner`. */
+#define DEFAULT_NETWORK_TIMEOUT		5
+
+/** @brief Default timeout (in seconds) for retrieving the result of a `TRACKING`-enabled operation (e.g. `INSTCMD`, `SET VAR`). */
+#define DEFAULT_TRACKING_TIMEOUT	10
 
 /* get the syslog ready for us */
 void open_syslog(const char *progname);
@@ -103,6 +110,7 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 void upsdebug_hex(int level, const char *msg, const void *buf, int len);
+void upsdebug_ascii(int level, const char *msg, const void *buf, int len);
 
 void fatal_with_errno(int status, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3))) __attribute__((noreturn));
@@ -117,15 +125,17 @@ void *xcalloc(size_t number, size_t size);
 void *xrealloc(void *ptr, size_t size);
 char *xstrdup(const char *string);
 
-char *rtrim(char *in, const char sep);
-char* ltrim(char *in, const char sep);
-
 int select_read(const int fd, void *buf, const size_t buflen, const long d_sec, const long d_usec);
 int select_write(const int fd, const void *buf, const size_t buflen, const long d_sec, const long d_usec);
+
+char * get_libname(const char* base_libname);
 
 /* Buffer sizes used for various functions */
 #define SMALLBUF	512
 #define LARGEBUF	1024
+
+/** @brief (Minimum) Size that a string must have to hold a UUID4 (i.e. UUID4 length + the terminating null character). */
+#define UUID4_LEN	37
 
 /* Provide declarations for getopt() global variables */
 

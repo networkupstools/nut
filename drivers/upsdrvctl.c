@@ -42,8 +42,17 @@ static ups_t	*upstable = NULL;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 
+	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
+static int	waitfordrivers = 1;
+
 	/* timer - keeps us from getting stuck if a driver hangs */
 static int	maxstartdelay = 45;
+
+	/* counter - retry that many time(s) to start the driver if it fails to */
+static int	maxretry = 1;
+
+	/* timer - delay between each restart attempt of the driver(s) */
+static int	retrydelay = 5;
 
 	/* Directory where driver executables live */
 static char	*driverpath = NULL;
@@ -64,6 +73,15 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 			free(driverpath);
 			driverpath = xstrdup(val);
 		}
+
+		if (!strcmp(var, "maxretry"))
+			maxretry = atoi(val);
+
+		if (!strcmp(var, "retrydelay"))
+			retrydelay = atoi(val);
+
+		if (!strcmp(var, "nowait"))
+			waitfordrivers = 0;
 
 		/* ignore anything else - it's probably for main */
 
@@ -132,13 +150,14 @@ static void stop_driver(const ups_t *ups)
 	ret = stat(pidfn, &fs);
 
 	if ((ret != 0) && (ups->port != NULL)) {
+		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
 	}
 
 	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
 		exec_error++;
 		return;
 	}
@@ -191,14 +210,21 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		int	wstat;
 		struct sigaction	sa;
 
+		/* Handle "parallel" drivers startup */
+		if (waitfordrivers == 0) {
+			upsdebugx(2, "'nowait' set, continuing...");
+			return;
+		}
+
 		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sa.sa_handler = waitpid_timeout;
 		sigaction(SIGALRM, &sa, NULL);
 
+		/* Use the local maxstartdelay, if available */
 		if (ups->maxstartdelay != -1)
 			alarm(ups->maxstartdelay);
-		else
+		else /* Otherwise, use the global (or default) value */
 			alarm(maxstartdelay);
 
 		ret = waitpid(pid, &wstat, 0);
@@ -248,6 +274,7 @@ static void start_driver(const ups_t *ups)
 	char	*argv[8];
 	char	dfn[SMALLBUF];
 	int	ret, arg = 0;
+	int	initial_exec_error = exec_error, drv_maxretry = maxretry;
 	struct stat	fs;
 
 	upsdebugx(1, "Starting UPS: %s", ups->upsname);
@@ -276,10 +303,28 @@ static void start_driver(const ups_t *ups)
 	/* tie it off */
 	argv[arg++] = NULL;
 
-	debugcmdline(2, "exec: ", argv);
 
-	if (!testmode) {
-		forkexec(argv, ups);
+	while (drv_maxretry > 0) {
+		int cur_exec_error = exec_error;
+
+		upsdebugx(2, "%i remaining attempts", drv_maxretry);
+		debugcmdline(2, "exec: ", argv);
+		drv_maxretry--;
+
+		if (!testmode) {
+			forkexec(argv, ups);
+		}
+
+		/* driver command succeeded */
+		if (cur_exec_error == exec_error) {
+			drv_maxretry = 0;
+			exec_error = initial_exec_error;
+		}
+		else {
+		/* otherwise, retry if still needed */
+			if (drv_maxretry > 0)
+				sleep (retrydelay);
+		}
 	}
 }
 

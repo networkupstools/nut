@@ -1,6 +1,6 @@
 <!-- upsstats template file -->
 
-<!-- 
+<!--
 	This (upsstats.html) is the default template file which is used
 	when upsstats.cgi is loaded with no arguments.
 
@@ -16,33 +16,41 @@
 @UPSSTATSPATH upsstats.cgi@
 @UPSIMAGEPATH upsimage.cgi@
 
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN"
-	"http://www.w3.org/TR/REC-html40/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+            "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 @REFRESH@
 <title>
-Network UPS Tools upsstats 
+Network UPS Tools upsstats
 @VERSION@
 : UPS Status
 </title>
+<style type="text/css">
+body{font-family:"Times New Roman", Times, serif;}
+a:link{color:#00e;}
+a:visited{color:#551a8b;}
+th, td{padding:0.5ex;}
+.t1{background:#0ff;}
+.t2{background:#0f0;}
+</style>
 <!-- link rel="stylesheet" type="text/css" href="nut.css" / -->
 @REFRESH@
 </head>
-<body BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000EE" VLINK="#551A8B">
+<body>
 
-<table BGCOLOR="#50A0A0" ALIGN="CENTER">
+<table style="margin:auto; background:#50A0A0; text-align:center;">
 <tr><td>
 
-<table CELLPADDING="5">
+<table>
 <tr>
-<th COLSPAN="10" BGCOLOR="#60B0B0">
+<th COLSPAN="10" style="background:#60B0B0;">
 
-<font SIZE="+2">Network UPS Tools upsstats
+<span style="font-size:1.5em">Network UPS Tools upsstats
 @VERSION@
-</font>
+</span>
 
 <br>
 @DATE %a %b %d %X %Z %Y@
@@ -50,7 +58,7 @@ Network UPS Tools upsstats
 
 </tr>
 
-<tr BGCOLOR="#60B0B0">
+<tr style="background:#60B0B0;">
 <th COLSPAN="1">System</th>
 <th COLSPAN="1">Model</th>
 <th COLSPAN="1">Status</th>
@@ -65,20 +73,20 @@ Network UPS Tools upsstats
 
 @FOREACHUPS@
 
-<tr ALIGN=CENTER>
-<td BGCOLOR="#00FFFF">
+<tr>
+<td class="t1">
 @HOSTLINK@
 </td>
 
-<td BGCOLOR="#00FFFF">
+<td class="t1">
 @VAR ups.model@
 </td>
 
-<td BGCOLOR="@STATUSCOLOR@">
+<td style="background:@STATUSCOLOR@">
 @STATUS@
 </td>
 
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @IFSUPP battery.charge@
 @VAR battery.charge@
 %
@@ -89,18 +97,18 @@ Network UPS Tools upsstats
 @IFBETWEEN input.transfer.low input.transfer.high input.L1-L2.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L2-L3.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-L1.voltage@
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @ELSE@
 @IFSUPP input.L2-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L1-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L2-N.voltage@
 @IFBETWEEN input.transfer.low input.transfer.high input.L3-N.voltage@
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @ELSE@
 @IFBETWEEN input.transfer.low input.transfer.high input.voltage@
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @ELSE@
-<td BGCOLOR="#FF0000">
+<td style="background:red;">
 @ENDIF@
 
 @IFSUPP input.L2-L3.voltage@
@@ -118,7 +126,7 @@ Network UPS Tools upsstats
 @ENDIF@
 </td>
 
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @IFSUPP output.L2-L3.voltage@
 @VAR output.L1-L2.voltage@
 @VAR output.L2-L3.voltage@
@@ -134,7 +142,7 @@ Network UPS Tools upsstats
 @ENDIF@
 </td>
 
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @IFSUPP output.L2.power.percent@
 @VAR output.L1.power.percent@
 @VAR output.L2.power.percent@
@@ -151,7 +159,7 @@ Network UPS Tools upsstats
 @ENDIF@
 </td>
 
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @IFSUPP ups.temperature@
 @UPSTEMP@
 @DEGREES@
@@ -162,13 +170,13 @@ Network UPS Tools upsstats
 @ENDIF@
 </td>
 
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @IFSUPP battery.runtime@
 @RUNTIME@
 @ENDIF@
 </td>
 
-<td BGCOLOR="#00FF00">
+<td class="t2">
 @TREELINK@
 </td>
 </tr>
@@ -180,11 +188,9 @@ Network UPS Tools upsstats
 </td></tr>
 </table>
 
-<hr /><div><small>
-<a href="http://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"/></a>
-<a href="http://validator.w3.org/check?uri=referer"><img style="float:right"
-src="http://www.w3.org/Icons/valid-html40"
-alt="Valid HTML 4.0 Transitional" height="31" width="88"></a>
+<hr><div><small>
+<a href="https://jigsaw.w3.org/css-validator/check/referer"><img style="float:right" src="https://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!" height="31" width="88"></a>
+<a href="https://validator.w3.org/check?uri=referer"><img style="float:right" src="https://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01 Strict" height="31" width="88"></a>
 </small></div>
 
 </body></html>

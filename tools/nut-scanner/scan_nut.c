@@ -1,6 +1,5 @@
-/* scan_nut.c: detect remote NUT services
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +16,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+/*! \file scan_nut.c
+    \brief detect remote NUT services
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
+
 #include "common.h"
 #include "upsclient.h"
 #include "nut-scan.h"
@@ -26,7 +30,6 @@
 #include <ltdl.h>
 
 /* dynamic link library stuff */
-static char * libname = "libupsclient";
 static lt_dlhandle dl_handle = NULL;
 static const char *dl_error = NULL;
 
@@ -37,6 +40,7 @@ static int (*nut_upscli_list_start)(UPSCONN_t *ups, unsigned int numq,
 					const char **query);
 static int (*nut_upscli_list_next)(UPSCONN_t *ups, unsigned int numq,
 			const char **query,unsigned int *numa, char ***answer);
+static int (*nut_upscli_disconnect)(UPSCONN_t *ups);
 
 static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
@@ -49,61 +53,71 @@ struct scan_nut_arg {
 };
 
 /* return 0 on error */
-int nutscan_load_upsclient_library()
+int nutscan_load_upsclient_library(const char *libname_path)
 {
+	if( dl_handle != NULL ) {
+			/* if previous init failed */
+			if( dl_handle == (void *)1 ) {
+					return 0;
+			}
+			/* init has already been done */
+			return 1;
+	}
 
-        if( dl_handle != NULL ) {
-                /* if previous init failed */
-                if( dl_handle == (void *)1 ) {
-                        return 0;
-                }
-                /* init has already been done */
-                return 1;
-        }
+	if (libname_path == NULL) {
+		fprintf(stderr, "NUT client library not found. NUT search disabled.\n");
+		return 0;
+	}
 
-        if( lt_dlinit() != 0 ) {
-                fprintf(stderr, "Error initializing lt_init\n");
-                return 0;
-        }
+	if( lt_dlinit() != 0 ) {
+			fprintf(stderr, "Error initializing lt_init\n");
+			return 0;
+	}
 
-        dl_handle = lt_dlopenext(libname);
-        if (!dl_handle) {
-                dl_error = lt_dlerror();
-                goto err;
-        }
+	dl_handle = lt_dlopen(libname_path);
+	if (!dl_handle) {
+			dl_error = lt_dlerror();
+			goto err;
+	}
 
-        lt_dlerror();      /* Clear any existing error */
+	lt_dlerror();      /* Clear any existing error */
 
-        *(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
-                                                        "upscli_splitaddr");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_splitaddr) = lt_dlsym(dl_handle,
+													"upscli_splitaddr");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
-							"upscli_tryconnect");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_tryconnect) = lt_dlsym(dl_handle,
+						"upscli_tryconnect");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
-							"upscli_list_start");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_list_start) = lt_dlsym(dl_handle,
+						"upscli_list_start");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        *(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
-							"upscli_list_next");
-        if ((dl_error = lt_dlerror()) != NULL)  {
-                goto err;
-        }
+	*(void **) (&nut_upscli_list_next) = lt_dlsym(dl_handle,
+						"upscli_list_next");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
 
-        return 1;
+	*(void **) (&nut_upscli_disconnect) = lt_dlsym(dl_handle,
+						"upscli_disconnect");
+	if ((dl_error = lt_dlerror()) != NULL)  {
+			goto err;
+	}
+
+	return 1;
 err:
-        fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname, dl_error);
-        dl_handle = (void *)1;
+	fprintf(stderr, "Cannot load NUT library (%s) : %s. NUT search disabled.\n", libname_path, dl_error);
+	dl_handle = (void *)1;
 	lt_dlexit();
-        return 0;
+	return 0;
 }
 
 /* FIXME: SSL support */
@@ -133,6 +147,7 @@ static void * list_nut_devices(void * arg)
 		free(ups);
 		return NULL;
 	}
+
 	if ((*nut_upscli_tryconnect)(ups, hostname, port,UPSCLI_CONN_TRYSSL,&tv) < 0) {
 		free(target_hostname);
 		free(nut_arg);
@@ -141,6 +156,7 @@ static void * list_nut_devices(void * arg)
 	}
 
 	if((*nut_upscli_list_start)(ups, numq, query) < 0) {
+		(*nut_upscli_disconnect)(ups);
 		free(target_hostname);
 		free(nut_arg);
 		free(ups);
@@ -150,6 +166,7 @@ static void * list_nut_devices(void * arg)
 	while ((*nut_upscli_list_next)(ups,numq, query, &numa, &answer) == 1) {
 		/* UPS <upsname> <description> */
 		if (numa < 3) {
+			(*nut_upscli_disconnect)(ups);
 			free(target_hostname);
 			free(nut_arg);
 			free(ups);
@@ -182,6 +199,7 @@ static void * list_nut_devices(void * arg)
 		}
 	}
 
+	(*nut_upscli_disconnect)(ups);
 	free(target_hostname);
 	free(nut_arg);
 	free(ups);
@@ -246,8 +264,15 @@ nutscan_device_t * nutscan_scan_nut(const char* startIP, const char* stopIP, con
 #ifdef HAVE_PTHREAD
 		if (pthread_create(&thread,NULL,list_nut_devices,(void*)nut_arg)==0){
 			thread_count++;
-			thread_array = realloc(thread_array,
-					thread_count*sizeof(pthread_t));
+			pthread_t *new_thread_array = realloc(thread_array,
+						thread_count*sizeof(pthread_t));
+			if (new_thread_array == NULL) {
+				upsdebugx(1, "%s: Failed to realloc thread", __func__);
+				break;
+			}
+			else {
+				thread_array = new_thread_array;
+			}
 			thread_array[thread_count-1] = thread;
 		}
 #else

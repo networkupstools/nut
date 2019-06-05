@@ -25,6 +25,9 @@
 #include <regex.h>
 #include <usb.h>
 
+/* USB standard timeout [ms] */
+#define USB_TIMEOUT 5000
+
 /*!
  * USBDevice_t: Describe a USB device. This structure contains exactly
  * the 5 pieces of information by which a USB device identifies
@@ -35,12 +38,13 @@
  * corresponding string did not exist or could not be retrieved.
  */
 typedef struct USBDevice_s {
-	uint16_t	VendorID; /*!< Device's Vendor ID */
-	uint16_t	ProductID; /*!< Device's Product ID */
-	char		*Vendor; /*!< Device's Vendor Name */
-	char		*Product; /*!< Device's Product Name */
-	char		*Serial; /* Product serial number */
-	char		*Bus;    /* Bus name, e.g. "003" */
+	uint16_t	VendorID;  /*!< Device's Vendor ID    */
+	uint16_t	ProductID; /*!< Device's Product ID   */
+	char		*Vendor;   /*!< Device's Vendor Name  */
+	char		*Product;  /*!< Device's Product Name */
+	char		*Serial;   /*!< Product serial number */
+	char		*Bus;      /*!< Bus name, e.g. "003"  */
+	uint16_t	bcdDevice; /*!< Device release number */
 } USBDevice_t;
 
 /*!
@@ -89,5 +93,7 @@ typedef struct {
  * NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) */
 int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
 							USBDevice_t *device);
+
+void nut_usb_addvars(void);
 
 #endif /* NUT_USB_COMMON_H */

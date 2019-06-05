@@ -220,7 +220,7 @@ static void list_range(nut_ctype_t *client, const char *upsname, const char *var
 			return;
 	}
 
-	sendback(client, "END LIST ENUM %s %s\n", upsname, var);
+	sendback(client, "END LIST RANGE %s %s\n", upsname, var);
 }
 
 static void list_ups(nut_ctype_t *client)

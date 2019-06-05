@@ -32,6 +32,7 @@
  */
 
 #include "common.h"
+#include "nut_platform.h"
 #include "upsclient.h"
 
 #include "config.h"
@@ -76,6 +77,11 @@ static void set_exit_flag(int sig)
 	exit_flag = sig;
 }
 
+static void set_print_now_flag(int sig)
+{
+	/* no need to do anything, the signal will cause sleep to be interrupted */
+}
+
 /* handlers: reload on HUP, exit on INT/QUIT/TERM */
 static void setup_signals(void)
 {
@@ -96,6 +102,10 @@ static void setup_signals(void)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGQUIT handler");
 	if (sigaction(SIGTERM, &sa, NULL) < 0)
 		fatal_with_errno(EXIT_FAILURE, "Can't install SIGTERM handler");
+
+	sa.sa_handler = set_print_now_flag;
+	if (sigaction(SIGUSR1, &sa, NULL) < 0)
+		fatal_with_errno(EXIT_FAILURE, "Can't install SIGUSR1 handler");
 }
 
 static void help(const char *prog)
@@ -528,3 +538,11 @@ int main(int argc, char **argv)
 	
 	exit(EXIT_SUCCESS);
 }
+
+
+/* Formal do_upsconf_args implementation to satisfy linker on AIX */
+#if (defined NUT_PLATFORM_AIX)
+void do_upsconf_args(char *upsname, char *var, char *val) {
+        fatalx(EXIT_FAILURE, "INTERNAL ERROR: formal do_upsconf_args called");
+}
+#endif  /* end of #if (defined NUT_PLATFORM_AIX) */

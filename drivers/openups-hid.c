@@ -26,17 +26,53 @@
 #include "main.h"		/* for getval() */
 #include "usb-common.h"
 
-#define OPENUPS_HID_VERSION	"openUPS HID 0.1"
+#define OPENUPS_HID_VERSION	"openUPS HID 0.4"
 
 /* Minibox */
 #define OPENUPS_VENDORID	0x04d8
 
+/* constants for converting HID read values to real values */
+static const double vin_scale_d004 = 0.03545 * 100;
+static const double vout_scale_d004 = 0.02571 * 100;
+/* static const double vbat_scale = 0.00857 * 100; */
+static const double ccharge_scale_d004 = 0.8274 / 10;
+static const double cdischarge_scale_d004 = 16.113 / 10;
+
+static double vin_scale = 1;
+static double vout_scale= 1;
+static double ccharge_scale = 1;
+static double cdischarge_scale = 1;
+
 static char openups_scratch_buf[20];
 
+static void *get_voltage_multiplier(USBDevice_t *device)
+{
+
+	switch(device->ProductID) {
+		case 0xd004:
+			vin_scale = vin_scale_d004;
+			vout_scale= vout_scale_d004;
+			ccharge_scale= ccharge_scale_d004;
+			cdischarge_scale= cdischarge_scale_d004;
+			break;
+		case 0xd005:
+			vin_scale = 0.1;
+			vout_scale = 0.1;
+			ccharge_scale = 0.1; /* unverified */
+			cdischarge_scale = 0.1; /* unverified */
+			break;
+	}
+
+	upsdebugx(1, "vin_scale = %g; vout_scale = %g\n", vin_scale, vout_scale);
+	return NULL;
+}
+
+
 /* USB IDs device table */
-static usb_device_id_t openups_usb_device_table[] = {
+static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	/* openUPS Intelligent UPS (minimum required firmware 1.4) */
-	{USB_DEVICE(OPENUPS_VENDORID, 0xd004), NULL},
+	{USB_DEVICE(OPENUPS_VENDORID, 0xd004), get_voltage_multiplier},
+	{USB_DEVICE(OPENUPS_VENDORID, 0xd005), get_voltage_multiplier},
 
 	/* Terminating entry */
 	{-1, -1, NULL}
@@ -45,7 +81,7 @@ static usb_device_id_t openups_usb_device_table[] = {
 /* Thermistor table used for temperature lookups 
  * taken from the windows monitoring application
  */
-static unsigned int therm_tbl[] = 
+static const unsigned int therm_tbl[] =
 { 
 	(unsigned int)0x31,
 	(unsigned int)0x40,
@@ -83,7 +119,7 @@ static unsigned int therm_tbl[] =
 	(unsigned int)0x3CC
 };
 
-static unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
+static const unsigned int therm_tbl_size = sizeof(therm_tbl)/sizeof(therm_tbl[0]);
 
 static const char *openups_charging_fun(double value);
 static const char *openups_discharging_fun(double value);
@@ -200,7 +236,7 @@ static const char *openups_scale_cdischarge_fun(double value)
 static const char *openups_temperature_fun(double value)
 {
 	int i;
-	int pos = -1;
+	int pos = 0;
 	unsigned int thermistor = value * 100;
 
 	if (thermistor <= therm_tbl[0]) {
@@ -225,7 +261,7 @@ static const char *openups_temperature_fun(double value)
 				unsigned int d1 = therm_tbl[pos];
 				unsigned int d2 = therm_tbl[pos + 1];
 
-				float temp = (float) (thermistor - d1) * (t2 - t1) / (d2 - d1) + t1;
+				double temp = (double) (thermistor - d1) * (t2 - t1) / (d2 - d1) + t1;
 				snprintf(openups_scratch_buf, sizeof(openups_scratch_buf), "%.2f", temp);
 			}
 		}
@@ -267,7 +303,7 @@ static hid_info_t openups_hid2nut[] = {
 
 	/* Battery */
 	{"battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
-	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion},
+	{"battery.mfr.date", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", HU_FLAG_STATIC, stringid_conversion},
 	{"battery.voltage", 0, 0, "UPS.PowerSummary.Voltage", NULL, "%.2f", HU_FLAG_QUICK_POLL, NULL},
 	/* { "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, NULL, HU_FLAG_QUICK_POLL, openups_vbat_info }, */
 	{"battery.current", 0, 0, "UPS.PowerSummary.Current", NULL, "%.3f", HU_FLAG_QUICK_POLL, NULL},

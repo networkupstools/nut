@@ -1,6 +1,5 @@
-/* device.c: manipulation of a container describing a NUT device
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,9 +15,26 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file nutscan-device.c
+    \brief manipulation of a container describing a NUT device
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
+
 #include "nutscan-device.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
+const char * nutscan_device_type_strings[TYPE_END - 1] = {
+	"USB",
+	"SNMP",
+	"XML",
+	"NUT",
+	"IPMI",
+	"Avahi",
+	"serial",
+	};
 
 nutscan_device_t * nutscan_new_device()
 {
@@ -37,7 +53,6 @@ nutscan_device_t * nutscan_new_device()
 static void deep_free_device(nutscan_device_t * device)
 {
 	nutscan_options_t * current;
-	nutscan_options_t * old;
 
 	if(device==NULL) {
 		return;
@@ -49,18 +64,10 @@ static void deep_free_device(nutscan_device_t * device)
 		free(device->port);
 	}
 
-	current = &device->opt;
+	while (device->opt != NULL) {
+		current     = device->opt;
+		device->opt = current->next;
 
-	if(current->option != NULL) {
-		free(current->option);
-	}
-
-	if(current->value != NULL) {
-		free(current->value);
-	}
-
-	current = current->next;
-	while (current != NULL) {
 		if(current->option != NULL) {
 			free(current->option);
 		}
@@ -68,9 +75,8 @@ static void deep_free_device(nutscan_device_t * device)
 		if(current->value != NULL) {
 			free(current->value);
 		}
-		old = current;
-		current = current->next;
-		free(old);
+
+		free(current);
 	};
 
 	if(device->prev) {
@@ -98,34 +104,35 @@ void nutscan_free_device(nutscan_device_t * device)
 	deep_free_device(device);
 }
 
-void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value)
+void nutscan_add_option_to_device(nutscan_device_t * device, char * option, char * value)
 {
-	nutscan_options_t * opt;
+	nutscan_options_t **opt;
 
-	opt = &(device->opt);
 	/* search for last entry */
-	if( opt->option != NULL ) {
-		while( opt->next != NULL ) {
-			opt = opt->next;
-		}
+	opt = &device->opt;
 
-		opt->next = malloc(sizeof(nutscan_options_t));
-		opt = opt->next;
-		memset(opt,0,sizeof(nutscan_options_t));
-	}
+	while (NULL != *opt)
+		opt = &(*opt)->next;
+
+	*opt = (nutscan_options_t *)malloc(sizeof(nutscan_options_t));
+
+	/* TBD: A gracefull way to propagate memory failure would be nice */
+	assert(NULL != *opt);
+
+	memset(*opt, 0, sizeof(nutscan_options_t));
 
 	if( option != NULL ) {
-		opt->option = strdup(option);
+		(*opt)->option = strdup(option);
 	}
 	else {
-		opt->option = NULL;
+		(*opt)->option = NULL;
 	}
 
 	if( value != NULL ) {
-		opt->value = strdup(value);
+		(*opt)->value = strdup(value);
 	}
 	else {
-		opt->value = NULL;
+		(*opt)->value = NULL;
 	}
 }
 

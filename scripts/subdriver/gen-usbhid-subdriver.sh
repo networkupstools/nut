@@ -166,6 +166,7 @@ cat > "$CFILE" <<EOF
  *  2003 - 2012	Arnaud Quette <ArnaudQuette@Eaton.com>
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *  2013 Charles Lepple <clepple+nut@gmail.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -263,7 +264,7 @@ static const char *${LDRIVER}_format_serial(HIDDevice_t *hd) {
  * the device is supported by this subdriver, else 0. */
 static int ${LDRIVER}_claim(HIDDevice_t *hd)
 {
-	int status = is_usb_device_supported(${LDRIVER}_usb_device_table, hd->VendorID, hd->ProductID);
+	int status = is_usb_device_supported(${LDRIVER}_usb_device_table, hd);
 
 	switch (status)
 	{
@@ -299,8 +300,8 @@ cat <<EOF
 Done.
 
 Do not forget to:
-* add #include "${HFILE}" to usbhid-ups.c,
-* add &${LDRIVER}_subdriver to usbhid-ups.c:subdriver_list,
+* add #include "${HFILE}" to drivers/usbhid-ups.c,
+* add &${LDRIVER}_subdriver to drivers/usbhid-ups.c:subdriver_list,
 * add ${LDRIVER}-hid.c to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
 * add ${LDRIVER}-hid.h to dist_noinst_HEADERS in drivers/Makefile.am
 * "autoreconf" from the top level directory

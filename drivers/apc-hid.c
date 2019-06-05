@@ -31,7 +31,7 @@
 #include "apc-hid.h"
 #include "usb-common.h"
 
-#define APC_HID_VERSION "APC HID 0.95"
+#define APC_HID_VERSION "APC HID 0.96"
 
 /* APC */
 #define APC_VENDORID 0x051d
@@ -62,6 +62,11 @@ static void *general_apc_check(USBDevice_t *device)
 {
 	int i = 0;
 
+	if (!device->Product) {
+		upslogx(LOG_WARNING, "device->Product is NULL so it is not possible to determine whether to activate max_report_size workaround");
+		return NULL;
+	}
+
 	/* Some models of Back-UPS overflow on some ReportID.
 	 * This results in some data not being exposed and IO errors on
 	 * WIN32, causing endless reconnection or driver's failure */
@@ -79,6 +84,8 @@ static void *general_apc_check(USBDevice_t *device)
 
 /* USB IDs device table */
 static usb_device_id_t apc_usb_device_table[] = {
+	/* APC AP9584 Serial->USB kit */
+	{ USB_DEVICE(APC_VENDORID, 0x0000), NULL },
 	/* various models */
 	{ USB_DEVICE(APC_VENDORID, 0x0002), general_apc_check },
 	/* various 5G models */

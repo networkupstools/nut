@@ -1,6 +1,5 @@
-/* device.h: definition of a container describing a NUT device
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,12 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file nutscan-device.h
+    \brief definition of a container describing a NUT discovered device
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
+
 #ifndef SCAN_DEVICE
 #define SCAN_DEVICE
 
@@ -24,6 +29,16 @@
 extern "C" {
 /* *INDENT-ON* */
 #endif
+
+/**
+ *  \brief  Device type string getter
+ *
+ *  \param  type  Device type
+ *
+ *  \return Type string
+ */
+#define nutscan_device_type_string(type) \
+	(assert(0 < (type) && (type) < TYPE_END), nutscan_device_type_strings[type - 1])
 
 typedef enum nutscan_device_type {
 	TYPE_NONE=0,
@@ -37,6 +52,9 @@ typedef enum nutscan_device_type {
 	TYPE_END
 } nutscan_device_type_t;
 
+/** Device type -> string mapping */
+extern const char * nutscan_device_type_strings[TYPE_END - 1];
+
 typedef struct nutscan_options {
 	char *		option;
 	char *		value;
@@ -47,7 +65,7 @@ typedef struct nutscan_device {
 	nutscan_device_type_t	type;
 	char *		driver;
 	char *		port;
-	nutscan_options_t	opt;
+	nutscan_options_t     * opt;
 	struct nutscan_device * prev;
 	struct nutscan_device * next;
 } nutscan_device_t;
@@ -56,6 +74,7 @@ nutscan_device_t * nutscan_new_device();
 void nutscan_free_device(nutscan_device_t * device);
 void nutscan_add_option_to_device(nutscan_device_t * device,char * option, char * value);
 nutscan_device_t * nutscan_add_device_to_device(nutscan_device_t * first, nutscan_device_t * second);
+
 /**
  *  \brief  Rewind device list
  *

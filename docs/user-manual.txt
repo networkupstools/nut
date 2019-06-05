@@ -81,7 +81,7 @@ include::download.txt[]
 
 [[_installation_instructions]]
 
-include::../INSTALL[]
+include::../INSTALL.nut[]
 
 
 [[Configuration_notes]]
@@ -94,9 +94,13 @@ include::config-notes.txt[]
 include::scheduling.txt[]
 
 
-[[Outlets_PDU_notes]]
-
 include::outlets.txt[]
+
+[[daisychain]]
+NUT daisychain support notes
+============================
+
+include::daisychain.txt[]
 
 
 [[NUT_Security]]
@@ -111,10 +115,14 @@ This section document the various acronyms used throughout the present
 documentation.
 
 [template="glossary",id="terms"]
+ATS::
+	Automatic Transfer Switch.
 NUT::
 	Network UPS Tools.
 PDU::
 	Power Distribution Unit.
+PSU::
+	Power Supply Units.
 SCD::
 	Solar Controller Device.
 UPS::
@@ -139,13 +147,7 @@ include::nut-names.txt[]
 Appendix D: Hardware Compatibility List
 =======================================
 
-ifdef::website[]
-include::stable-hcl.txt[]
-endif::website[]
-
-ifndef::website[]
 Refer to the link:http://www.networkupstools.org/stable-hcl.html[online HCL].
-endif::website[]
 
 
 Appendix E: Documentation

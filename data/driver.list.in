@@ -18,6 +18,7 @@
 #   "ups" for Uninterruptible Power Supply
 #   "pdu" for Power Distributions Unit
 #   "scd" for Solar Controlers Device
+#   "ats" for Automatic Transfer Switch
 #
 # - support level: a number from "1" to "5" (stars) meaning:
 #   *       protocol based on reverse engineering
@@ -27,8 +28,8 @@
 #   *****   vendor provided protocol and hardware
 #
 # - driver [parameters]: mention the driver(s) (separated by "or" if there are
-#   several possibilities. Any mandatory parameter(s) must be referenced, as
-#   they will be parsed by configuration helper softwares.
+#   several possibilities). Any mandatory parameter(s) must be referenced, as
+#   they will be parsed by configuration helper software.
 #   For example, genericups entries must mention the "upstype=nn" format.
 #
 # Duplicate text in the last field will be cooked out during the conversion
@@ -47,19 +48,24 @@
 "AEC"	"ups"	"1"	"MiniGuard UPS 700"	"Megatec M2501 cable"	"genericups upstype=21"
 
 "AEG Power Solutions"	"ups"	"2"	"PROTECT HOME"	""	"blazer_ser or blazer_usb"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT NAS"	""	"usbhid-ups"
+"AEG Power Solutions"	"ups"	"3"	"PROTECT B"	""	"usbhid-ups"
 
+"APC"	"ups"	"2"	"Back-UPS 1200BR (Microsol)"	""	"solis"
+"APC"	"ups"	"2"	"Back-UPS BZ2200BI-BR (Microsol)"	""	"solis"
 "APC"	"ups"	"1"	"Back-UPS Pro"	""	"apcsmart"
 "APC"	"ups"	"1"	"Matrix-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS"	""	"apcsmart"
 "APC"	"ups"	"1"	"Smart-UPS SMT/SMX/SURTD"	"Microlink models with RJ45 socket - they *require* AP9620 SmartSlot expansion card and smart cable"	"apcsmart"
 "APC"	"ups"	"2"	"Back-UPS Pro USB"	"USB"	"usbhid-ups"
-"APC"	"ups"	"2"	"Back-UPS USB"	"USB"	"usbhid-ups"
+"APC"	"ups"	"2"	"Back-UPS (USB)"	"USB"	"usbhid-ups"
+"APC"	"ups"	"2"	"Back-UPS CS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS RS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS LS USB"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS ES/CyberFort 350"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"Back-UPS BF500"	"USB"	"usbhid-ups"
 "APC"	"ups"	"2"	"BACK-UPS XS LCD"	"USB"	"usbhid-ups"
-"APC"	"ups"	"2"	"Smart-UPS USB"	"USB"	"usbhid-ups"
+"APC"	"ups"	"2"	"Smart-UPS (USB)"	"USB"	"usbhid-ups"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0095A/C cables"	"genericups upstype=1"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0020B/C cables"	"genericups upstype=2"
 "APC"	"ups"	"1"	"Back-UPS"	"940-0023A cable"	"genericups upstype=9"
@@ -68,10 +74,12 @@
 "APC"	"ups"	"3"	"Smart-UPS RT XL"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9618 SNMP monitoring card"	"snmp-ups"
 "APC"	"ups"	"3"	"(various)"	"AP9630 SNMP monitoring card"	"snmp-ups privProtocol=AES"
+"APC"	"ups"	"3"	"(various)"	"APCUPSD-controlled devices"	"apcupsd-ups"
 "APC"	"pdu"	"1"	"Masterswitch"	"940-0020 cable"	"genericups upstype=12"
 "APC"	"pdu"	"1"	"AP9210"	"8 outlets"	"powerman-pdu (experimental)"
 "APC"	"pdu"	"1"	"AP79xx"	"8 to 24 outlets"	"powerman-pdu (experimental)"
-"APC"	"pdu"	"3"	"(various)"	"SNMP monitoring card"	"snmp-ups (experimental)"
+"APC"	"pdu"	"3"	"(various APxxxx)"	"SNMP monitoring card"	"snmp-ups"
+"APC"	"ats"	"3"	"ATS AP7724"	""	"snmp-ups (experimental)"
 
 "Aphel"	"pdu"	"3"	"various PDU"	""	"snmp-ups (experimental)"
 
@@ -91,6 +99,10 @@
 "ARTronic"	"ups"	"2"	"ARTon Platinium Combo 3.1 10/15/20 kVA"	"USB"	"blazer_usb"
 "ARTronic"	"ups"	"2"	"ARTon Platinium RT 1/2/3/6/10 kVA"	"USB"	"blazer_usb"
 
+"ASEM SPA"	"ups"	"5"	"PB1300 UPS"	"i2c"	"asem"
+
+"Asium"	"ups"	"3"	"P700"	"USB"	"blazer_usb"	# http://www.asiumpower.com/Asium-ASIUM-P700-650VA-360W/dp/B009SMEQ10
+
 "ATEK"	"ups"	"2"	"Defensor 1K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 2K Tower / Rack"	"USB"	"blazer_usb"
 "ATEK"	"ups"	"2"	"Defensor 3K Tower / Rack"	"USB"	"blazer_usb"
@@ -98,10 +110,13 @@
 "ATEK"	"ups"	"2"	"Defensor 10K Tower / Rack"	"USB"	"blazer_usb"
 
 "Atlantis Land"	"ups"	"2"	"A03-P826"	""	"blazer_ser"
-"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"voltronic_ser"
-"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"voltronic_usb"
-"Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
+"Atlantis Land"	"ups"	"2"	"A03-P551"	"USB"	"blazer_usb langid_fix=0x0409"	# http://www.atlantisland.it/pub/prodotti.php?famiglia=1&l1=7&l2=24&articolo=QTAzLVA1NTE=
+"Atlantis Land"	"ups"	"2"	"HostPower 851 (A03-HP851)"	"USB"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"Serial"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"2"	"LinePower 1151 (A03-OP1151)"	"USB"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"2"	"OnePower 841+ (A03-P841)"	"USB"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
+"Atlantis Land"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
 
 "Aviem Systems"	"ups"	"2"	"Aviem Power RT 1000-3000VA"	""	"blazer_ser"
 
@@ -117,6 +132,7 @@
 "Belkin"	"ups"	"2"	"F6H375-USB"	"USB (<= 2005 models, vendor id: 050d)"	"usbhid-ups"
 "Belkin"	"ups"	"2"	"F6H375-USB"	"USB (2007 models, vendor id: 0665)"	"blazer_usb"
 "Belkin"	"ups"	"2"	"Office Series F6C550-AVR"	"USB"	"usbhid-ups"
+"Belkin"	"ups"	"3"	"Regulator PRO-USB"	"USB (~2000, product id: 0f51)"	"usbhid-ups"
 "Belkin"	"ups"	"2"	"Regulator Pro"	"F6C525-SER, F6C625-SER"	"belkin"
 "Belkin"	"ups"	"1"	"Resource"	""	"genericups upstype=4"
 "Belkin"	"ups"	"2"	"Small Enterprise F6C1500-TW-RK"	"serial port"	"belkin"
@@ -153,6 +169,8 @@
 "Borri"	"ups"	"2"	"B500-R060-B/B500-R100-B"	""	"blazer_usb"
 "Borri"	"ups"	"2"	"B500EVO-100-B/B500EVO-200-B"	""	"blazer_usb"
 
+"CABAC"	"ups"	"2"	"UPS-1700DV2"	""	"blazer_usb"
+
 "Chloride"	"ups"	"2"	"Desk Power 650"	"serial port"	"blazer_ser"
 
 "Cito Power"	"ups"	"2"	"CPG-SR1000"	""	"blazer_ser"
@@ -168,39 +186,46 @@
 "COVER ENERGY SA"	"ups"	"2"	"COVER PRM 1K/2K/3K/6K/10K EC"	""	"blazer_usb"
 "COVER ENERGY SA"	"ups"	"2"	"COVER PRM 6K/10K PR"	""	"blazer_usb"
 
-"Cyber Power Systems"	"ups"	"1"	"320AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"500AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"650AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"700AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"800AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"850AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"900AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"1250AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"1500AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"Power99"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"550SL"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"1"	"725SL"	""	"genericups upstype=7"
+"Cyber Power Systems"	"ups"	"1"	"CPS1100AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS1200AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS1250AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS1500AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS1500AVR-HO"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS320AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS500AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS650AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS700AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS800AVR"	""	"powerpanel"
 "Cyber Power Systems"	"ups"	"1"	"CPS825VA"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"1100AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"1200AVR"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"1"	"1500AVR-HO"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS850AVR"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"1"	"CPS900AVR"	""	"powerpanel"	# http://www.cyberpowersystems.com/products/ups-systems/other-ups/CPS900AVR.html
 "Cyber Power Systems"	"ups"	"1"	"PR2200"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"2"	"PR3000E"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"2"	"OL3000RMXL2U"	""	"powerpanel"
-"Cyber Power Systems"	"ups"	"2"	"685AVR"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"2"	"800AVR"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"1"	"Power99"	""	"genericups upstype=7"
 "Cyber Power Systems"	"ups"	"2"	"AE550"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"3"	"CP 1500C"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1000AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1350AVRLCD"	"USB"	"usbhid-ups"
 "Cyber Power Systems"	"ups"	"2"	"CP1500AVRLCD"	"USB"	"usbhid-ups"
-"Cyber Power Systems"	"ups"	"2"	"CP1000PFCLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CP900AVR"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CPS685AVR"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"CPS800AVR"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"OL3000RMXL2U"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"2"	"PR3000E"	""	"powerpanel"
+"Cyber Power Systems"	"ups"	"2"	"Value 1500ELCD-RU"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"Value 400E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"Value 600E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"2"	"Value 800E"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"CP 1500C"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"CP1000PFCLCD"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"CP1500EPFCLCD"	"USB"	"usbhid-ups"	# http://www.cyberpower-eu.com/products/ups_systems/pfc-sinewave/cp1500epfclcd.htm
+"Cyber Power Systems"	"ups"	"3"	"CP825AVR-G / LE825G"	"USB"	"usbhid-ups"	# http://www.cyberpowersystems.com/products/ups-systems/retail-products/LE825G.html
+"Cyber Power Systems"	"ups"	"3"	"EC350G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/ecologic/ec350g
+"Cyber Power Systems"	"ups"	"3"	"EC750G"	"USB"	"usbhid-ups"	# https://www.cyberpowersystems.com/products/ups/desktop/ec750g
+"Cyber Power Systems"	"ups"	"3"	"OR2200LCDRM2U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"OR700LCDRM1U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"PR6000LCDRTXL5U"	"USB"	"usbhid-ups"
+"Cyber Power Systems"	"ups"	"3"	"PR2200LCDRT2U"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD100"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD201"	""	"snmp-ups"
 "Cyber Power Systems"	"ups"	"3"	"RMCARD202"	""	"snmp-ups"
@@ -229,8 +254,8 @@
 "Dell"	"ups"	"5"	"Rack 3750W High Efficiency Online HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 4200W High Efficiency Online HV"	"USB port"	"usbhid-ups"
 "Dell"	"ups"	"5"	"Rack 5600W HV"	"USB port"	"usbhid-ups"
-"Dell"	"ups"	"5"	"Various (SNMP mode)"	"UPS Network Management Card "	"snmp-ups"
-"Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card "	"netxml-ups (experimental)"
+"Dell"	"ups"	"5"	"Various (SNMP mode)"	"UPS Network Management Card"	"snmp-ups"
+"Dell"	"ups"	"5"	"Various (XML/HTTP mode)"	"UPS Network Management Card"	"netxml-ups (experimental)"
 
 "Delta"	"ups"	"1"	"GES602N"	""	"belkin"
 
@@ -239,6 +264,7 @@
 
 "Digital Loggers"	"pdu"	"1"	"LPC, EPCR2, DIN"	"8 outlets"	"powerman-pdu (experimental)"
 
+"Digitus"	"ups"	"1"	"DN-170014"	"USB"	"richcomm_usb"	# http://www.digitus.info/en/products/professional-network/security-and-surveillance/power-supply/uninterrruptable-power-supplies/ups-uninterruptible-power-systems-dn-170014/section/prof/
 "Digitus"	"ups"	"2"	"DN-170020"	""	"blazer_ser"
 
 "Dynamix"	"ups"	"2"	"UPS1700D"	""	"blazer_ser"
@@ -253,6 +279,7 @@
 "Eaton"	"ups"	"5"	"Ellipse ECO 650/800/1200/1600 VA"	"USB"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"USB cable"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"Ellipse PRO 650 VA"	"USB cable"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Evolution S 1250/1750/2500/3000 VA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"EX 700/1000/1500 VA"	"USB port"	"usbhid-ups"
@@ -261,23 +288,40 @@
 "Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"5 PX"	"USB port"	"usbhid-ups"
 "Eaton"	"ups"	"5"	"Nova AVR 625/1250"	"USB"	"usbhid-ups"
-"Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"Evolution S 1250/1750/2500/3000 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"EX 700/1000/1500 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"EX 2200/3000/3000 XL VA"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"EX 1000 RT2U / 1500 RT2U"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"5 PX"	"Serial port"	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"EX RT 1:1 7/11 kVA"	""	"mge-shut or oldmge-shut"
-"Eaton"	"ups"	"5"	"EX RT 3:1 5/7/11 kVA"	""	"mge-shut or oldmge-shut"
+"Eaton"	"ups"	"5"	"5E650iUSB"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5E1100iUSB"	"USB port"	"usbhid-ups"	# http://powerquality.eaton.com/5E1100iUSB.aspx?CX&GUID=8D85FE66-3102-427C-8F33-B8D56BBDD4D3
+"Eaton"	"ups"	"4"	"5E2200"	"USB port"	"nutdrv_qx"
+"Eaton"	"ups"	"5"	"5S"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5SC"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"5P"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"9SX"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"9PX"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"USB port"	"usbhid-ups"
+"Eaton"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut"
+"Eaton"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut"
+"Eaton"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"Evolution S 1250/1750/2500/3000 VA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"EX 700/1000/1500 VA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"EX 2200/3000/3000 XL VA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"EX 1000 RT2U / 1500 RT2U"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"5 PX"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"EX RT 1:1 7/11 kVA"	""	"mge-shut"
+"Eaton"	"ups"	"5"	"EX RT 3:1 5/7/11 kVA"	""	"mge-shut"
+"Eaton"	"ups"	"5"	"5SC"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"5P"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9SX"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9PX"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"Serial port"	"mge-shut"
+"Eaton"	"ups"	"5"	"9PX"	"SNMP/Web card"	"netxml-ups"
+"Eaton"	"ups"	"5"	"9PX Split Phase 6/8/10 kVA"	"SNMP/Web card"	"netxml-ups"
 "Eaton"	"ups"	"5"	"EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"E Series NV UPS 400-2000 VA"	""	"blazer_usb"
-"Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"mge-utalk"
+"Eaton"	"ups"	"5"	"E Series DX UPS 1-20 kVA"	""	"blazer_ser"	# http://www.eaton.com/Eaton/ESeriesUPS/DXUPS/
 "Eaton"	"ups"	"4"	"NetUPS SE 450/700/1000/1500"	""	"upscode2"
 "Eaton"	"ups"	"5"	"BladeUPS (SNMP)"	"ConnectUPS Web/SNMP Card"	"snmp-ups (experimental)"
+"Eaton"	"ups"	"5"	"various models (SNMP mode)"	"Power Xpert Gateway UPS Card"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (ref 66102)"	"netxml-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (ref 66102)"	"snmp-ups (experimental)"
 "Eaton"	"ups"	"5"	"various models (XML/HTTP mode)"	"SNMP/Web Minislot card (ref 66244)"	"netxml-ups (experimental)"
@@ -286,6 +330,8 @@
 "Eaton"	"pdu"	"5"	"ePDU Managed"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Switched"	""	"snmp-ups"
 "Eaton"	"pdu"	"5"	"ePDU Monitored"	""	"snmp-ups or netxml-ups"
+"Eaton"	"ups"	"5"	"Powerware 3105"	"USB"	"bcmxcp_usb"	# http://powerquality.eaton.com/Products-services/Backup-Power-UPS/3105-eol.aspx
+"Eaton"	"ups"	"5"	"Powerware 9125"	"USB card"	"bcmxcp_usb"
 "Eaton"	"ups"	"5"	"Powerware 9130"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 9140"	""	"bcmxcp or usbhid-ups"
 "Eaton"	"ups"	"5"	"Powerware 5130"	""	"usbhid-ups"
@@ -294,14 +340,22 @@
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Serial Pass-through mode"	"bcmxcp"
 "Eaton"	"ups"	"5"	"ConnectUPS X / BD / E Slot"	"Network port"	"snmp-ups"
 "Eaton"	"ups"	"5"	"Management Card Contact"	"Config 3 - Cable 66033"	"genericups upstype=7"
+"Eaton"	"ats"	"5"	"Eaton ATS16"	""	"snmp-ups"
+"Eaton"	"ats"	"5"	"Eaton ATS30"	""	"snmp-ups"
 
 "Effekta"	"ups"	"2"	"MI/MT/MH"	"2502 cable"	"blazer_ser"
 "Effekta"	"ups"	"2"	"RM2000MH"	""	"blazer_ser"
+
+"Electrys"	"ups"	"2"	"UPS 2500"	""	"nutdrv_qx or blazer_ser"
+
+"Emerson"	"pdu"	"3"	"PM3000 metered & switched"	""	"snmp-ups"
 
 "Energy Sistem"	"ups"	"2"	"(various)"	""	"blazer_ser"
 
 "ETA"	"ups"	"1"	"mini+UPS"	"WinNT/Upsoft cable"	"genericups upstype=7"
 "ETA"	"ups"	"1"	"mini+UPS PRO"	"UPS Explorer cable"	"etapro"
+
+"EUROCASE"	"ups"	"2"	"EA200N 2000VA"	"USB"	"nutdrv_qx"	# http://partis.cz/index.php?gid=2551
 
 "EVER"	"ups"	"1"	"NET DPC series"	"Serial port"	"everups"
 "EVER"	"ups"	"1"	"AP Pro series"	"Serial port"	"everups"
@@ -325,17 +379,23 @@
 "Fairstone"	"ups"	"1"	"L525/L625/L750"	""	"safenet"
 
 "Fideltronik"	"ups"	"1"	"Ares 700 and larger"	""	"genericups upstype=6"
+"Fideltronik"	"ups"	"2"	"LUPUS 500"	"USB"	"nutdrv_qx"
 "Fideltronik"	"ups"	"1"	"Other Ares models"	""	"genericups upstype=19"
+"Fideltronik INIGO"	"ups"	"2"	"Viper 1200"	"USB"	"nutdrv_qx" # http://fideltronikinigo.com/viper/viper-1200/
 
 "Fiskars"	"ups"	"4"	"PowerRite MAX"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"PowerServer 10"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"PowerServer 30"	""	"upscode2"
 "Fiskars"	"ups"	"4"	"9200"	"UPS Information Unit"	"upscode2"
 
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"Serial"	"voltronic_ser"
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"USB"	"voltronic_usb"
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS"	"Serial"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS"	"USB"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS(T)"	"Serial"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"FT-1000BS(T)"	"USB"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"Serial"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"Smart On Line UPS 1KVA"	"USB"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
+"Flight Technic & International (FTUPS)"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
 
 "Forza Power Technologies"	"ups"	"2"	"SL-1001"	"USB"	"blazer_usb"
 "Forza Power Technologies"	"ups"	"2"	"FX-1500LCD"	"USB"	"blazer_usb"
@@ -356,6 +416,8 @@
 
 "Gemini"	"ups"	"1"	"UPS625/UPS1000"	""	"safenet"
 
+"Grafenthal"	"ups"	"2"	"PR-3000-HS"	"SNMP/Web Minislot card (ref 149G0006)"	"snmp-ups"	# http://grafenthal.de/produkte/usv/online/pr-hs-serie/pr-3000-hs/?L=3et8
+
 "Gtec"	"ups"	"2"	"ZP120N-1K / ZP120N-1KS / ZP120N-2K / ZP120N-2KS / ZP120N-3K / ZP120N-3KS"	""	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-6K / ZP120N-6KS / ZP120N-10K-11 / ZP120N-10KS-11"	""	"blazer_usb"
 "Gtec"	"ups"	"2"	"ZP120N-10K-31-00 / ZP120N-10K-31-07 / ZP120N-10K-31-09 / ZP120N-10K-31-99 / ZP120N-20K"	"USB port"	"blazer_usb"
@@ -371,8 +433,8 @@
 "HP"	"ups"	"4"	"R3000 XR"	""	"bcmxcp"
 "HP"	"ups"	"4"	"R5500 XR"	""	"bcmxcp"
 "HP"	"ups"	"3"	"T500 / T750"	"older models, USB port"	"bcmxcp_usb"
-"HP"	"ups"	"3"	"R/T3000"	"Serial port"	"mge-shut or oldmge-shut"
-"HP"	"ups"	"3"	"R5000 / R7000"	"Serial port"	"mge-shut or oldmge-shut"
+"HP"	"ups"	"3"	"R/T3000"	"Serial port"	"mge-shut"
+"HP"	"ups"	"3"	"R5000 / R7000"	"Serial port"	"mge-shut"
 "HP"	"ups"	"3"	"T750 INTL"	""	"usbhid-ups"
 "HP"	"ups"	"3"	"T1000 INTL"	""	"usbhid-ups"
 "HP"	"ups"	"3"	"T1500 INTL"	""	"usbhid-ups"
@@ -383,9 +445,15 @@
 "HP"	"ups"	"3"	"R/T 2200 G2"	""	"usbhid-ups"
 "HP"	"ups"	"3"	"R/T3000"	"USB port"	"usbhid-ups"
 "HP"	"ups"	"3"	"R5000 / R7000"	"USB port"	"usbhid-ups"
-"HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module "	"snmp-ups"
+"HP"	"ups"	"4"	"Various (SNMP mode)"	"HP UPS Management Module"	"snmp-ups"
 "HP"	"pdu"	"1"	"HP3488 Switch/Control Unit"	""	"powerman-pdu (experimental)"
 
+"HPE"	"pdu"	"5"	"Various (SNMP mode)"	""	"snmp-ups"
+
+"Huawei"	"ups"	"4"	"UPS5000-E"	""	"snmp-ups"
+
+"IBM"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
+"IBM"	"ups"	"5"	"Various"	"Serial port"	"mge-shut"
 "IBM"	"pdu"	"1"	"Blade Center Management Module"	"15 outlets"	"powerman-pdu (experimental)"
 
 "ICS"	"pdu"	"1"	"8064 Ethernet Relay Interface"	"16 outlets"	"powerman-pdu (experimental)"
@@ -405,6 +473,7 @@
 "Infosec"	"ups"	"2"	"iPEL 750"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"iPEL 1000"	""	"blazer_ser"
 "Infosec"	"ups"	"2"	"500XP"	""	"blazer_ser"
+"Infosec"	"ups"	"2"	"X2, X3, X4, E2, E3, E4"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 500"	"USB"	"blazer_usb"
 "Infosec"	"ups"	"2"	"XP 1000"	""	"blazer_ser"
 
@@ -428,6 +497,10 @@
 
 "Jageson Technology"	"ups"	"1"	"Jasuny USPS"	""	"genericups upstype=4"
 
+"JAWAN"	"ups"	"2"	"JW-UPSLC02"	"USB"	"blazer_usb"
+
+"Kanji"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"
+
 "Kebo"	"ups"	"2"	"1200D/D Series"	""	"blazer_ser"
 
 "KOLFF"	"ups"	"2"	"BLACK NOVA 1K/2K/3K/6K/10K/20K TOWER"	""	"blazer_usb"
@@ -438,7 +511,11 @@
 "Krauler"	"ups"	"2"	"UP-D1200VA"	"USB"	"blazer_usb"
 "Krauler"	"ups"	"2"	"UP-M500VA"	"USB"	"blazer_usb"
 
+"Lacerda"	"ups"	"2"	"New Orion 800VA"	"USB"	"blazer_usb"
+
 "LDLC"	"ups"	"2"	"UPS-1200D"	""	"blazer_usb langid_fix=0x4095"
+
+"Legrand"	"ups"	"2"	"Keor Multiplug"	""	"nutdrv_qx"
 
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
@@ -449,15 +526,18 @@
 "Liebert"	"ups"	"1"	"GXT2-3000RT230"	""	"liebert-esp2 (experimental)"
 "Liebert"	"ups"	"2"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"2"	"PowerSure PSA"	"USB"	"usbhid-ups"
+"Liebert"	"ups"	"2"	"PowerSure PSI 1440"	"USB"	"usbhid-ups"	# http://www.emersonnetworkpower.com/en-US/Products/ACPower/Pages/LiebertPowerSurePSILineInteractiveUPS10003000VA.aspx
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 
+"Lyonn"	"ups"	"2"	"CTB-800V"	""	"nutdrv_qx"
 "Lyonn"	"ups"	"2"	"CTB-1200"	""	"blazer_usb"
 
 "Masterguard"	"ups"	"1"	"(various)"	""	"masterguard"
 
 "Maxxtro"	"ups"	"2"	"UPS 600 VA"	"serial port"	"blazer_ser"
 
+"Mecer"	"ups"	"2"	"ME-1000-WTU"	"USB"	"nutdrv_qx"	# http://www.comx-computers.co.za/download/mecer/ME-1000-WTU.pdf
 "Mecer"	"ups"	"2"	"ME-2000"	""	"blazer_ser"
 
 "Meta System"	"ups"	"1"	"HF Line"	"1..4 boards"	"metasys"
@@ -512,15 +592,15 @@
 "MGE Office Protection Systems"	"ups"	"5"	"Pulsar 700/1000/1500 VA"	"USB port"	"usbhid-ups"
 "MGE Office Protection Systems"	"ups"	"5"	"Pulsar M 2200/3000 VA"	"USB port"	"usbhid-ups"
 "MGE Office Protection Systems"	"ups"	"5"	"Pulsar MX 5/8/10/15/20 kVA"	"USB port"	"usbhid-ups"
-"MGE Office Protection Systems"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Evolution S 1250/1750/2500/3000 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Pulsar 700/1000/1500 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Pulsar M 2200/3000 VA"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Pulsar MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Comet EX RT 1:1 7/11 kVA"	""	"mge-shut or oldmge-shut"
-"MGE Office Protection Systems"	"ups"	"5"	"Comet EX RT 3:1 5/7/11 kVA"	""	"mge-shut or oldmge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Ellipse ASR USBS 600/750/1000/1500 VA"	"Serial cable"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Ellipse MAX USBS 600/850/1100/1500 VA"	"Serial cable"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Evolution 650/850/1150/1550/2000 VA"	"Serial port"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Evolution S 1250/1750/2500/3000 VA"	"Serial port"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Pulsar 700/1000/1500 VA"	"Serial port"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Pulsar M 2200/3000 VA"	"Serial port"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Pulsar MX 5/8/10/15/20 kVA"	"Serial port"	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Comet EX RT 1:1 7/11 kVA"	""	"mge-shut"
+"MGE Office Protection Systems"	"ups"	"5"	"Comet EX RT 3:1 5/7/11 kVA"	""	"mge-shut"
 "MGE Office Protection Systems"	"ups"	"5"	"Comet EX RT (XML/HTTP)"	"NMC Transverse card (ref 66074)"	"netxml-ups (experimental)"
 "MGE Office Protection Systems"	"ups"	"5"	"Comet EX RT (SNMP)"	"NMC Transverse card (ref 66074)"	"snmp-ups (experimental)"
 "MGE Office Protection Systems"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
@@ -568,45 +648,45 @@
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar MX 4000 RT"	"USB"	"usbhid-ups"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar MX 5000 RT"	"USB"	"usbhid-ups"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Comet / Galaxy (USB)"	"USB Card (ref 66067)"	"usbhid-ups"
-"MGE UPS SYSTEMS"	"ups"	"5"	"NOVA AVR 600 Serial"	""	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"NOVA AVR 1100 Serial"	""	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse USBS"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse S"	""	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse Premium USBS"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse Premium S"	""	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 600"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 750"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 1000"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 1500"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 600"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 850"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 1100"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 1500"	"Serial cable"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar EXtreme C / EX RT"	""	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Comet EX RT"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Comet EX RT 3:1"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Esprit"	""	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 650"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 850"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 1150"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 1250"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 1550"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 1750"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 2000"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 2500"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 3000"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar M 2200"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar M 3000"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar M 3000 XL"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 700"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1000"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1500"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1000 RT2U"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1500 RT2U"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar MX 4000 RT"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar MX 5000 RT"	"Serial port"	"mge-shut or oldmge-shut"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Evolution"	"Serial port"	"mge-shut or oldmge-shut or mge-utalk"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar EXtreme C"	""	"mge-shut or oldmge-shut or mge-utalk"
+"MGE UPS SYSTEMS"	"ups"	"5"	"NOVA AVR 600 Serial"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"NOVA AVR 1100 Serial"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse USBS"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse S"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse Premium USBS"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Ellipse Premium S"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 600"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 750"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 1000"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse Office 1500"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 600"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 850"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 1100"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Ellipse MAX 1500"	"Serial cable"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar EXtreme C / EX RT"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Comet EX RT"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Comet EX RT 3:1"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Esprit"	""	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 650"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 850"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 1150"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 1250"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 1550"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 1750"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution 2000"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 2500"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Evolution S 3000"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar M 2200"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar M 3000"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar M 3000 XL"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 700"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1000"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1500"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1000 RT2U"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar 1500 RT2U"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar MX 4000 RT"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar MX 5000 RT"	"Serial port"	"mge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar Evolution"	"Serial port"	"mge-shut or mge-utalk"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar EXtreme C"	""	"mge-shut or mge-utalk"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar ES+"	""	"mge-utalk"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar ESV+"	""	"mge-utalk"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar SV"	""	"mge-utalk"
@@ -618,7 +698,7 @@
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar EXtreme"	""	"mge-utalk"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Comet EXtreme"	""	"mge-utalk"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Comet / Galaxy (Serial)"	"Utalk Serial Card (ref 66060)"	"mge-utalk"
-"MGE UPS SYSTEMS"	"ups"	"5"	"Comet / Galaxy (Serial)"	"HID COM Serial Card (ref 66066)"	"mge-shut or oldmge-shut"
+"MGE UPS SYSTEMS"	"ups"	"5"	"Comet / Galaxy (Serial)"	"HID COM Serial Card (ref 66066)"	"mge-shut"
 "MGE UPS SYSTEMS"	"ups"	"5"	"Pulsar / Comet / Galaxy (SNMP)"	"SNMP/Web Transverse card (ref 66074)"	"snmp-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (XML/HTTP mode)"	"NMC Minislot (Ref 66102)"	"netxml-ups (experimental)"
 "MGE UPS SYSTEMS"	"ups"	"5"	"various models (SNMP mode)"	"NMC Minislot (Ref 66102)"	"snmp-ups (experimental)"
@@ -632,6 +712,7 @@
 "MicroDowell"	"ups"	"1"	"B.Box BP  750"	""	"powerpanel"
 "MicroDowell"	"ups"	"1"	"B.Box BP 1000"	""	"powerpanel"
 "MicroDowell"	"ups"	"1"	"B.Box BP 1500"	""	"powerpanel"
+"MicroDowell"	"ups"	"1"	"B.Box LP  500"	""	"genericups upstype=7"
 "MicroDowell"	"ups"	"5"	"Enterprise B8"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise B10"	""	"microdowell"
 "MicroDowell"	"ups"	"5"	"Enterprise N8"	""	"microdowell"
@@ -650,6 +731,8 @@
 "Microline"	"ups"	"2"	"C-Lion Innova Tower 6K/10K"	""	"blazer_usb"
 "Microline"	"ups"	"2"	"C-Lion Innova Combo 10K/20K (3/1)"	""	"blazer_usb"
 
+"Micropower"	"ups"	"2"	"LCD 1000"	"USB"	"blazer_usb"
+
 "Microsol"	"ups"	"4"	"Solis 1.0"	"1000VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 1.5"	"1500VA"	"solis"
 "Microsol"	"ups"	"4"	"Solis 2.0"	"2000VA"	"solis"
@@ -665,20 +748,33 @@
 "Mustek"	"ups"	"2"	"Powermust"	"600VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"800VA Pro"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"1000VA Plus"	"blazer_ser"
+"Mustek"	"ups"	"2"	"Powermust"	"1000VA USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Powermust"	"1400VA Plus"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust"	"2000VA USB"	"blazer_ser"
 "Mustek"	"ups"	"2"	"Powermust Office 650"	"USB"	"blazer_usb"
 "Mustek"	"ups"	"2"	"PowerMust 424 / 636 / 848"	"USB"	"blazer_usb"
-"Mustek"	"ups"	"2"	"Yukai PowerMust" "1000 USB (PID: 5161)"	"blazer_usb"
+"Mustek"	"ups"	"2"	"Yukai PowerMust"	"1000 USB (PID: 5161)"	"blazer_usb"
 "Mustek"	"ups"	"2"	"Various"	""	"blazer_ser"
 
 "Neus"	"ups"	"2"	"400va / 600va"	""	"blazer_ser"
+
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert C Online 6000"	""	"gamatronic"	# http://www.nhs.com.br/produtos_interna/id/TWpFeQ==
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert C Online 8000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert C Online 10000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 6000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 8000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 10000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Expert S Online 10000"	""	"gamatronic"
+"NHS Sistemas de Energia"	"ups"	"5"	"Laser Senoidal 5000VA"	"USB"	"gamatronic"	# http://www.nhs.com.br/produtos_interna/id/T0RrPQ==
 
 "Nitram"	"ups"	"1"	"Elite 500"	""	"genericups upstype=8"
 "Nitram"	"ups"	"1"	"Elite 2002"	""	"genericups upstype=16"
 "Nitram"	"ups"	"1"	"Elite 2005"	""	"powerpanel"
 
-"NUMERIC"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+"Novex"	"ups"	"1"	"NUPS-650"	"USB"	"blazer_usb protocol=megatec"	# http://komp.1k.by/periphery-ups/novex/Novex_NUPS_650-130052.html
+
+"Numeric"	"ups"	"2"	"3000 SW"	""	"blazer_ser"
+"Numeric"	"ups"	"2"	"Digital 800 plus"	"USB"	"nutdrv_qx or blazer_usb"
 
 "Oneac"	"ups"	"1"	"ON400"	"advanced interface"	"oneac"
 "Oneac"	"ups"	"1"	"ON600"	"advanced interface"	"oneac"
@@ -706,14 +802,18 @@
 "OnLite"	"ups"	"2"	"AQUA"	"50"	"blazer_ser"
 
 "Opti-UPS"	"ups"	"1"	"PowerES"	"420E"	"optiups"
+"Opti-UPS"	"ups"	"1"	"VS 575C"	"type=OPTI"	"powercom"
 
 "Orvaldi Power Protection"	"ups"	"2"	"various"	"not 400 or 600"	"blazer_ser"
 "Orvaldi Power Protection"	"ups"	"2"	"750 / 900SP"	""	"blazer_usb"
 
 "Phasak"	"ups"	"2"	"400VA / 600VA"	""	"blazer_ser"
 
+"PhoenixContact"	"ups"	"4"	"QUINT-UPS/24DC"	"2320461"	"phoenixcontact_modbus" #https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461
+
 "Plexus"	"ups"	"2"	"500VA"	"USB"	"blazer_usb"
 "Plexus"	"ups"	"2"	"1000VA Pro"	"USB"	"blazer_usb"
+"Plexus"	"ups"	"1"	"800 VA"	"USB"	"nutdrv_atcl_usb"
 
 "Powercom"	"ups"	"4"	"SMK"	""	"blazer_ser"
 "Powercom"	"ups"	"4"	"SXL"	""	"blazer_ser"
@@ -733,6 +833,9 @@
 "Powercom"	"ups"	"4"	"(various)"	"USB (<= 2009 models, product id: 0002)"	"powercom (requires 'usbserial' kernel module)"
 "Powercom"	"ups"	"5"	"(various)"	"USB (2009 models, product id: 00a?)"	"usbhid-ups (experimental)"
 "Powercom"	"ups"	"5"	"BNT-xxxAP"	"USB (product id: 0004)"	"usbhid-ups (experimental)"
+"Powercom"	"ups"	"1"	"BNT-xxxAP"	"USB (product id: 0001)"	"usbhid-ups (experimental)"
+
+"Powercool"	"ups"	"1"	"350VA to 1600VA"	"USB"	"nutdrv_atcl_usb"
 
 "POWEREX"	"ups"	"2"	"VI 1000 LED"	""	"blazer_usb"
 
@@ -789,6 +892,7 @@
 "Raritan"	"pdu"	"3"	"Intelligent PDU - Dominion PX"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Metered PDU - Raritan PM"	"no report, but should be supported"	"snmp-ups (experimental)"
 "Raritan"	"pdu"	"3"	"Switched PDU - Raritan RPC"	"no report, but should be supported"	"snmp-ups (experimental)"
+"Raritan"	"pdu"	"3"	"Dominion PX2"	""	"snmp-ups"
 
 "REDi"	"ups"	"2"	"Blazer 400VA / 600VA / 800VA"	""	"blazer_ser"
 
@@ -798,8 +902,8 @@
 
 "Riello"	"ups"	"3"	"Riello Sentinel SDL 6000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
 "Riello"	"ups"	"3"	"Riello Sentinel Dual SDH 1000-7"	"Netman Plus 102 SNMP Card"	"snmp-ups"
-"Riello"	"ups"	"5"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
-"Riello"	"ups"	"5"	"IPG 600/800"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IDG 400/600/800/1200/1600"	""	"riello_usb"
+"Riello"	"ups"	"4"	"IPG 600/800"	""	"riello_usb"
 "Riello"	"ups"	"5"	"WPG 400/600/800"	""	"riello_usb"
 "Riello"	"ups"	"5"	"NPW 600/800/1000/1500/2000"	""	"riello_usb"
 "Riello"	"ups"	"5"	"NDG 800/1000/1500/2000"	""	"riello_usb"
@@ -837,6 +941,8 @@
 
 "Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
+"Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
+
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 
 "SMS (Brazil)"	"ups"	"2"	"Manager III"	""	"blazer_ser"
@@ -863,6 +969,8 @@
 
 "SquareOne Power"	"ups"	"2"	"QP1000"	""	"blazer_ser"
 
+"StarPower"	"ups"	"1"	"PCF-800VA"	"USB"	"richcomm_usb"	# http://www.sako.com.cn/products01.asp?Id=29&proid=53
+
 "Sun"	"pdu"	"1"	"ILOM Management Module"	"1 outlet"	"powerman-pdu (experimental)"
 
 "SuperPower"	"ups"	"2"	"HP360, Hope-550"	""	"blazer_ser"
@@ -876,38 +984,149 @@
 "Sweex"	"ups"	"1"	"500/1000"	""	"genericups upstype=7"
 "Sweex"	"ups"	"1"	"1000"	"USB"	"richcomm_usb"
 "Sweex"	"ups"	"2"	"(various)"	""	"blazer_ser"
+"Sweex"	"ups"	"2"	"INTELLIGENT UPS 1500VA P220"	"USB"	"blazer_usb (USB ID 0665:5161)"	# http://www.sweex.com/en/notebook-pc-accessoires/ups/PP220/
+
+"Syndome"	"ups"	"2"	"Era 500VA"	"USB"	"blazer_usb"
 
 "Sysgration"	"ups"	"2"	"UPGUARDS Pro650"	""	"blazer_ser"
 
 "Tecnoware"	"ups"	"2"	"Easy Power 1200"	""	"blazer_ser"
 "Tecnoware"	"ups"	"2"	"UPS ERA LCD 0.65"	""	"blazer_usb langid_fix=0x409"
 
-"Tripp-Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"2"	"OMNIVS1000"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"SMART700USB"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"SMART1500RM2U"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"SMART550USB"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"OMNISMART500"	"USB"	"tripplite_usb"
-"Tripp-Lite"	"ups"	"1"	"SMART2200RMXL2U"	"USB, older models"	"tripplite_usb (experimental)"
-"Tripp-Lite"	"ups"	"1"	"SmartUPS"	""	"tripplite"
-"Tripp-Lite"	"ups"	"1"	"SmartOnline"	""	"tripplitesu"
-"Tripp-Lite"	"ups"	"1"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
-"Tripp-Lite"	"ups"	"2"	"OMNI1000LCD"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"OMNI900LCD"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"OMNI650LCD"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"1500 LCD"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"AVR550U"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"AVR750U"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"ECO550UPS"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"SmartOnline SU1500RTXL2ua"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"Smart1000LCD"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"Smart1500LCD"	"USB"	"usbhid-ups"
-"Tripp-Lite"	"ups"	"2"	"smart2200RMXL2U"	"USB, newer models"	"usbhid-ups"
+"Tripp Lite"	"ups"	"1"	"(various)"	"Lan 2.2 interface - black 73-0844 cable"	"genericups upstype=5"
+"Tripp Lite"	"ups"	"2"	"1500 LCD"	"USB"	"usbhid-ups"
+"Tripp Lite"	"ups"	"3"	"AVR550U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3090
+"Tripp Lite"	"ups"	"3"	"AVR700U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=4785
+"Tripp Lite"	"ups"	"3"	"AVR750U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3141
+"Tripp Lite"	"ups"	"3"	"AVR900U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3649
+"Tripp Lite"	"ups"	"3"	"AVR900UTAA"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4375
+"Tripp Lite"	"ups"	"3"	"AVRX550U"	"USB (protocol 2009)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3079
+"Tripp Lite"	"ups"	"3"	"AVRX550UD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=4620
+"Tripp Lite"	"ups"	"3"	"AVRX750U"	"USB (protocol 2009)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3190
+"Tripp Lite"	"ups"	"3"	"AVRX750UD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=4755
+"Tripp Lite"	"ups"	"3"	"AVRX750UF"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=4756
+"Tripp Lite"	"ups"	"3"	"BC600SINE"	"USB (protocol 2011)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4863
+"Tripp Lite"	"ups"	"3"	"BCPERS450"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4
+"Tripp Lite"	"ups"	"3"	"BCPRO600"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=931&txtModelID=5
+"Tripp Lite"	"ups"	"3"	"ECO350UPS"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=743&txtModelID=4149
+"Tripp Lite"	"ups"	"3"	"ECO550UPS"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=743&txtModelID=4148
+"Tripp Lite"	"ups"	"3"	"ECO650LCD"	"USB (protocol 2011)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4861
+"Tripp Lite"	"ups"	"3"	"ECO750UPS"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=743&txtModelID=4147
+"Tripp Lite"	"ups"	"3"	"ECO850LCD"	"USB (protocol 2011)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=743&txtModelID=4862
+"Tripp Lite"	"ups"	"3"	"HT850UPS"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3197
+"Tripp Lite"	"ups"	"3"	"HTR05-1U"	"USB (protocol 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3202
+"Tripp Lite"	"ups"	"3"	"HTR10-2U"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3343
+"Tripp Lite"	"ups"	"3"	"INTERNET350U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2663
+"Tripp Lite"	"ups"	"3"	"INTERNET550U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3063
+"Tripp Lite"	"ups"	"3"	"INTERNET600U"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3033
+"Tripp Lite"	"ups"	"3"	"INTERNET750U"	"USB (protocol 1007)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3142
+"Tripp Lite"	"ups"	"3"	"INTERNET900U"	"USB (protocol 1007)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=3657
+"Tripp Lite"	"ups"	"3"	"INTERNETOFFICE500"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=11
+"Tripp Lite"	"ups"	"1"	"INTERNETOFFICE700"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"INTERNETOFFICE700"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=930&txtModelID=14
+"Tripp Lite"	"ups"	"3"	"OMNI650LCD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3195
+"Tripp Lite"	"ups"	"3"	"OMNI900LCD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=3082
+"Tripp Lite"	"ups"	"2"	"OMNI1000LCD"	"USB"	"usbhid-ups"
+"Tripp Lite"	"ups"	"3"	"OMNISMART300PNP"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=19
+"Tripp Lite"	"ups"	"1"	"OMNISMART500"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"OMNISMART500"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=21
+"Tripp Lite"	"ups"	"3"	"OMNISMART700"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=23
+"Tripp Lite"	"ups"	"2"	"OMNIVSINT800"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"OMNIVS800"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2729
+"Tripp Lite"	"ups"	"2"	"OMNIVS1000"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"OMNIVS1000"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2656
+"Tripp Lite"	"ups"	"1"	"OMNIVS1500XL"	"USB"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"POS500"	"USB (protocol 2007)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3742
+"Tripp Lite"	"ups"	"3"	"SM2200RMDVTAA"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4648
+"Tripp Lite"	"ups"	"1"	"SmartUPS"	""	"tripplite"
+"Tripp Lite"	"ups"	"1"	"SmartOnline"	""	"tripplitesu"
+"Tripp Lite"	"ups"	"1"	"SMART550USB"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"SMART550USB"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2002
+"Tripp Lite"	"ups"	"3"	"SMART550USBWD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2591
+"Tripp Lite"	"ups"	"1"	"SMART700USB"	"USB"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"SMART750RMXL2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3020
+"Tripp Lite"	"ups"	"3"	"SMART750SLT"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3007
+"Tripp Lite"	"ups"	"3"	"SMART750USB"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=2679
+"Tripp Lite"	"ups"	"3"	"SMART750XLA"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3820
+"Tripp Lite"	"ups"	"3"	"SMART1000LCD"	"USB (protocol 2010)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=3071
+"Tripp Lite"	"ups"	"3"	"SMART1000RM2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2657
+"Tripp Lite"	"ups"	"3"	"SMART1000RMXL2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5262
+"Tripp Lite"	"ups"	"3"	"SMART1050SLT"	"USB (protocol 3012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3253
+"Tripp Lite"	"ups"	"3"	"SMART1050SLTAA"	"USB (protocol 3012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4389
+"Tripp Lite"	"ups"	"3"	"SMART1200LCD"	"USB (protocol 2009)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3193
+"Tripp Lite"	"ups"	"1"	"SMART1500RM2U"	"USB (older; product ID: 0001)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"SMART1500CRMXL"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3826
+"Tripp Lite"	"ups"	"3"	"SMART1500LCD"	"USB (protocol 2009)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=3151
+"Tripp Lite"	"ups"	"3"	"SMART1500LCDXL"	"USB (protocol 2012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=4978
+"Tripp Lite"	"ups"	"3"	"SMART1500RM2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=2658
+"Tripp Lite"	"ups"	"3"	"SMART1500RM2UN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5424
+"Tripp Lite"	"ups"	"3"	"SMART1500RMXL2UA"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3982
+"Tripp Lite"	"ups"	"3"	"SMART1500RMXLN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5429
+"Tripp Lite"	"ups"	"3"	"SMART1500SLT"	"USB (protocol 3012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3254
+"Tripp Lite"	"ups"	"3"	"SMART2200CRMXL"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3825
+"Tripp Lite"	"ups"	"3"	"SMART2200RM2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=4403
+"Tripp Lite"	"ups"	"3"	"SMART2200RM2UN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5428
+"Tripp Lite"	"ups"	"1"	"SMART2200RMXL2U"	"USB (older; product ID: 0001)"	"tripplite_usb (experimental)"
+"Tripp Lite"	"ups"	"3"	"SMART2200RMXL2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3264
+"Tripp Lite"	"ups"	"3"	"SMART2200RMXL2UP"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=4672
+"Tripp Lite"	"ups"	"3"	"SMART2200RMXLN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5427
+"Tripp Lite"	"ups"	"3"	"SMART2200SLT"	"USB (protocol 3013)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3489
+"Tripp Lite"	"ups"	"3"	"SMART2200SLTAA"	"USB (protocol 3013)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4390
+"Tripp Lite"	"ups"	"3"	"SMART2500XLHG"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=5440
+"Tripp Lite"	"ups"	"3"	"SMART2600RM2U"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3024
+"Tripp Lite"	"ups"	"3"	"SMART3000CRMXL"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3824
+"Tripp Lite"	"ups"	"3"	"SMART3000RM2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3025
+"Tripp Lite"	"ups"	"3"	"SMART3000RM2UN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5426
+"Tripp Lite"	"ups"	"3"	"SMART3000RMOD2U"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=4249
+"Tripp Lite"	"ups"	"3"	"SMART3000RMXL2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=4418
+"Tripp Lite"	"ups"	"3"	"SMART3000RMXLN"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=5425
+"Tripp Lite"	"ups"	"3"	"SMART3000SLT"	"USB (protocol 3013)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=3490
+"Tripp Lite"	"ups"	"2"	"SMART500RT1U"	"USB (older; product ID 0001, protocol 3005)"	"tripplite_usb"
+"Tripp Lite"	"ups"	"3"	"SMART500RT1U"	"USB (newer; protocol/product ID 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2853
+"Tripp Lite"	"ups"	"3"	"SMX1000LCD"	"USB (protocol 2005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3200
+"Tripp Lite"	"ups"	"3"	"SMX1000RT2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2798
+"Tripp Lite"	"ups"	"3"	"SMX1050SLT"	"USB (protocol 3012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3249
+"Tripp Lite"	"ups"	"3"	"SMX1500LCD"	"USB (protocol 2009)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=932&txtModelID=3303
+"Tripp Lite"	"ups"	"3"	"SMX1500SLT"	"USB (protocol 3012)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3248
+"Tripp Lite"	"ups"	"3"	"SMX1500XLRT2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=2687
+"Tripp Lite"	"ups"	"3"	"SMX2200XLRT2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3251
+"Tripp Lite"	"ups"	"3"	"SMX3000RT2UTAA"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4396
+"Tripp Lite"	"ups"	"3"	"SMX3000XLRT2U"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=933&txtModelID=2694
+"Tripp Lite"	"ups"	"3"	"SMX3000XLRT2UA"	"USB (protocol 3015)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=5658
+"Tripp Lite"	"ups"	"3"	"SMX500RT1U"	"USB (protocol 3005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=2691
+"Tripp Lite"	"ups"	"3"	"SMX750SLT"	"USB (protocol 3014)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3021
+"Tripp Lite"	"ups"	"3"	"SU750RTXL2U"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3194
+"Tripp Lite"	"ups"	"3"	"SU750RTXLCD2U"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=5070
+"Tripp Lite"	"ups"	"3"	"SU750XL"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3299
+"Tripp Lite"	"ups"	"3"	"SU1000RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=2948
+"Tripp Lite"	"ups"	"3"	"SU1000RTXLCD2U"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=745&txtModelID=4980
+"Tripp Lite"	"ups"	"3"	"SU1000XLA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3180
+"Tripp Lite"	"ups"	"3"	"SU1000XLCD"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=5320
+"Tripp Lite"	"ups"	"3"	"SU1500RTXL2UA (SmartOnline)"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=2949
+"Tripp Lite"	"ups"	"3"	"SU1500RTXLCD2U"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=745&txtModelID=5037
+"Tripp Lite"	"ups"	"3"	"SU1500XL"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3300
+"Tripp Lite"	"ups"	"3"	"SU1500XLCD"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=744&txtModelID=5339
+"Tripp Lite"	"ups"	"3"	"SU2200RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=2950
+"Tripp Lite"	"ups"	"3"	"SU2200RTXLCD2U"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=745&txtModelID=5069
+"Tripp Lite"	"ups"	"3"	"SU2200XLA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3594
+"Tripp Lite"	"ups"	"3"	"SU2200XLCD"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=744&txtModelID=5340
+"Tripp Lite"	"ups"	"3"	"SU3000RTXL2U"	"USB (protocol 4005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4210
+"Tripp Lite"	"ups"	"3"	"SU3000RTXL3U"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3023
+"Tripp Lite"	"ups"	"3"	"SU3000RTXLCD3U"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=745&txtModelID=5071
+"Tripp Lite"	"ups"	"3"	"SU3000RTXR3U"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3080
+"Tripp Lite"	"ups"	"3"	"SU3000RTXR3UHW"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=4976
+"Tripp Lite"	"ups"	"3"	"SU3000XL"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3601
+"Tripp Lite"	"ups"	"3"	"SU3000XLCD"	"USB (protocol 4004)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=744&txtModelID=5342
+"Tripp Lite"	"ups"	"3"	"SUINT1000RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=3983
+"Tripp Lite"	"ups"	"3"	"SUINT1500RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=2720
+"Tripp Lite"	"ups"	"3"	"SUINT2200RTXL2UA"	"USB (protocol 4001)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtSeriesID=934&txtModelID=3970
+"Tripp Lite"	"ups"	"3"	"SUINT3000RTXL2U"	"USB (protocol 4005)"	"usbhid-ups"	# http://www.tripplite.com/en/products/model.cfm?txtModelID=4523
 
 "Trust"	"ups"	"2"	"UPS 1000 Management PW-4105"	""	"blazer_ser"
 "Trust"	"ups"	"2"	"UPS 1200VA Management PW-4120M"	""	"blazer_ser"
 "Trust"	"ups"	"2"	"UPS 1300VA Management PW-4130M"	""	"blazer_ser"
+
+"TS Shara"	"ups"	"4"	"(various)"	""	"nutdrv_qx"
 
 "UNITEK"	"ups"	"2"	"ALPHA 500 IC"	""	"blazer_ser"
 "UNITEK"	"ups"	"2"	"Alpha 1000is"	""	"blazer_ser"
@@ -934,8 +1153,8 @@
 "Various"	"ups"	"3"	"(various)"	"SNMP - RFC 1628"	"snmp-ups (experimental)"
 "Various"	"ups"	"1"	"(various)"	"Safenet software"	"safenet"
 "Various"	"ups"	"2"	"(Various USB)"	"UPSilon 2000 software"	"blazer_usb langid_fix=0x409"
-"Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"voltronic_ser"
-"Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"voltronic_usb"
+"Various"	"ups"	"2"	"(Various serial)"	"ViewPower software"	"nutdrv_qx"
+"Various"	"ups"	"2"	"(Various USB)"	"ViewPower software"	"nutdrv_qx"
 "Various"	"ups"	"2"	"(Various serial)"	"WinPower software"	"blazer_ser"
 "Various"	"ups"	"2"	"(Various USB)"	"WinPower software"	"blazer_usb"
 "Various"	"ups"	"2"	"Various Innova T"	"(USB ID 06da:0201)"	"blazer_ser or blazer_usb"
@@ -949,14 +1168,22 @@
 
 "Vivaldi"	"ups"	"1"	"EA200 LED"	"USB"	"richcomm_usb"
 
-"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"voltronic_ser"
-"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"voltronic_usb"
-"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"voltronic_ser"
-"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"voltronic_usb"
-"Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"voltronic_ser"
-"Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"voltronic_usb"
+"Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Apex 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Frigate TX 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Galleon 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Imperial 1KVA"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Imperial 1KVA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Prosine 800"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Prosine 800"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"Vesta LED 850VA"	"USB"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"(various)"	"Serial"	"nutdrv_qx"
+"Voltronic Power"	"ups"	"2"	"(various)"	"USB"	"nutdrv_qx"
 
 "WinPower"	"ups"	"2"	"CPM-800"	""	"blazer_ser"
 
 "WTI"	"pdu"	"1"	"RPS-10"	"10 outlets"	"powerman-pdu (experimental)"
 "WTI"	"pdu"	"1"	"NPS"	"8 outlets"	"powerman-pdu (experimental)"
+

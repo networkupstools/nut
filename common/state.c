@@ -424,6 +424,11 @@ void state_setflags(st_tree_t *root, const char *var, int numflags, char **flag)
 			continue;
 		}
 
+		if (!strcasecmp(flag[i], "NUMBER")) {
+			sttmp->flags |= ST_FLAG_NUMBER;
+			continue;
+		}
+
 		upsdebugx(2, "Unrecognized flag [%s]", flag[i]);
 	}
 }

@@ -5,7 +5,7 @@
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
  *	2007-2008   Arjen de Korte <adkorte-guest@alioth.debian.org>
- *	2012        Timothy Pearson <kb9vqf@pearsoncomputing.net>
+ *	2012-2016   Timothy Pearson <kb9vqf@pearsoncomputing.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,6 +72,7 @@ static struct {
 	const char	*command;
 } cmdtab[] = {
 	{ "test.battery.start.quick", "T\r" },
+	{ "test.battery.start.deep", "TL\r" },
 	{ "test.battery.stop", "CT\r" },
 	{ "beeper.enable", "C7:1\r" },
 	{ "beeper.disable", "C7:0\r" },
@@ -230,7 +231,7 @@ static void powpan_initinfo(void)
 	 * was used for autodetection of the UPS. No need to do it again.
 	 */
 	if ((s = strtok(&powpan_answer[1], ",")) != NULL) {
-		dstate_setinfo("ups.model", "%s", rtrim(s, ' '));
+		dstate_setinfo("ups.model", "%s", str_rtrim(s, ' '));
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
 		dstate_setinfo("ups.firmware", "%s", s);
@@ -239,7 +240,7 @@ static void powpan_initinfo(void)
 		dstate_setinfo("ups.serial", "%s", s);
 	}
 	if ((s = strtok(NULL, ",")) != NULL) {
-		dstate_setinfo("ups.mfr", "%s", rtrim(s, ' '));
+		dstate_setinfo("ups.mfr", "%s", str_rtrim(s, ' '));
 	}
 
 	/*

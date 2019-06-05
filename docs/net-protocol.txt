@@ -13,12 +13,14 @@ query commands as authentication is impossible over a UDP socket.
 A library, named libupsclient, that implement this protocol is provided
 in both static and shared version to help the client application development.
 
+
 Old command removal notice
 --------------------------
 
 Before version 1.5.0, a number of old commands were supported.  These
 have been removed from the specification.  For more information, consult
 an older version of the software.
+
 
 Command reference
 -----------------
@@ -28,23 +30,27 @@ Embedded quotes are escaped with backslashes.  Embedded backslashes are
 also escaped by representing them as \\.  This protocol is intended to
 be interpreted with parseconf (NUT parser) or something similar.
 
+
 Revision history
 ----------------
 
 Here's a table to present the various changes that happened to the
 NUT network protocol, over the time:
 
-[options="header",style="asciidoc",cols="^.^,^.^,<"]
+[options="header,autowidth",frame="topbot",grid="rows",cols="^.^,^.^,<",align="center"]
 |===============================================================================
 |Protocol version |NUT version |Description
 |1.0              |< 1.5.0     |Original protocol (legacy version)
 |1.1              |>= 1.5.0    |Original protocol (without old commands)
 .2+|1.2        .2+|>= 2.6.4    |Add "LIST CLIENTS" and "NETVER" commands
                                |Add ranges of values for writable variables
+.2+|1.3        .2+|>= 2.7.5    |Add "cmdparam" to "INSTCMD"
+                               |Add "TRACKING" commands (GET, SET)
 |===============================================================================
 
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
-in *configure.in*.
+in *configure.ac*.
+
 
 GET
 ---
@@ -52,6 +58,7 @@ GET
 Retrieve a single response from the server.
 
 Possible sub-commands:
+
 
 NUMLOGINS
 ~~~~~~~~~
@@ -72,6 +79,7 @@ still connected when starting the shutdown process.
 
 This replaces the old "REQ NUMLOGINS" command.
 
+
 UPSDESC
 ~~~~~~~
 
@@ -91,6 +99,7 @@ is not set, upsd will return "Unavailable".
 This can be used to provide human-readable descriptions instead of a
 cryptic "upsname@hostname" string.
 
+
 VAR
 ~~~
 
@@ -105,6 +114,7 @@ Response:
 	VAR su700 ups.status "OL"
 
 This replaces the old "REQ" command.
+
 
 TYPE
 ~~~~
@@ -124,12 +134,21 @@ Response:
 - 'RW': this variable may be set to another value with SET
 - 'ENUM': an enumerated type, which supports a few specific values
 - 'STRING:n': this is a string of maximum length n
-- 'RANGE': this is an integer, comprised in the range (see LIST RANGE)
+- 'RANGE': this is an numeric, either integer or float, comprised in the range (see LIST RANGE)
+- 'NUMBER': this is a simple numeric value, either integer or float
 
 ENUM, STRING and RANGE are usually associated with RW, but not always.
-The default <type>, when omitted, is integer.
+The default <type>, when omitted, is numeric, so either integer or float.  Each
+driver is then responsible for handling values as either integer or float.
+
+Note that float values are expressed using decimal (base 10) english-based
+representation, so using a dot, in non-scientific notation.  So hexadecimal,
+exponents, and comma for thousands separator are forbidden.
+For example: "1200.20" is valid, while "1,200.20" and "1200,20" are invalid.
+
 
 This replaces the old "VARTYPE" command.
+
 
 DESC
 ~~~~
@@ -153,6 +172,7 @@ provide for localization and internationalization.
 
 This replaces the old "VARDESC" command.
 
+
 CMDDESC
 ~~~~~~~
 
@@ -170,6 +190,27 @@ This is like DESC above, but it applies to the instant commands.
 
 This replaces the old "INSTCMDDESC" command.
 
+
+TRACKING
+~~~~~~~~
+
+Form:
+
+	GET TRACKING      (activation status of TRACKING)
+	GET TRACKING <id> (execution status of a command / setvar)
+	GET TRACKING 1bd31808-cb49-4aec-9d75-d056e6f018d2
+
+Response:
+
+	ON                   (TRACKING feature is enabled)
+	OFF                  (TRACKING feature is disabled)
+	PENDING              (command execution is pending)
+	SUCCESS              (command was successfully executed)
+	ERR UNKNOWN          (command execution failed with unknown error)
+	ERR INVALID-ARGUMENT (command execution failed due to missing or invalid argument)
+	ERR FAILED           (command execution failed)
+
+
 LIST
 ----
 
@@ -182,6 +223,7 @@ The formatting may seem a bit redundant, but it makes a different form
 of client possible.  You can send a LIST query and then go off and wait
 for it to get back to you.  When it arrives, you don't need complicated
 state machines to remember which list is which.
+
 
 UPS
 ~~~
@@ -211,6 +253,7 @@ handle situations where a single upsd supports multiple drivers.
 
 Clients which perform a UPS discovery process may find this useful.
 
+
 VAR
 ~~~
 
@@ -233,6 +276,7 @@ Response:
 	END LIST VAR su700
 
 This replaces the old "LISTVARS" command.
+
 
 RW
 ~~
@@ -257,6 +301,7 @@ Response:
 
 This replaces the old "LISTRW" command.
 
+
 CMD
 ~~~
 
@@ -279,6 +324,7 @@ Response:
 	END LIST CMD su700
 
 This replaces the old "LISTINSTCMD" command.
+
 
 ENUM
 ~~~~
@@ -306,6 +352,7 @@ This replaces the old "ENUM" command.
 NOTE: this does not support the old "SELECTED" notation.  You must
 request the current value separately.
 
+
 RANGE
 ~~~~~
 
@@ -327,6 +374,7 @@ Response:
 	...
 	END LIST RANGE su700 input.transfer.low
 
+
 CLIENT
 ~~~~~~
 
@@ -347,21 +395,59 @@ Response:
 	CLIENT ups1 192.168.1.2
 	END LIST CLIENT ups1
 
+
 SET
 ---
+
+VAR
+~~~
 
 Form:
 
 	SET VAR <upsname> <varname> "<value>"
 	SET VAR su700 ups.id "My UPS"
 
+Response:
+
+	OK                         (if TRACKING is not enabled)
+	OK TRACKING <id>           (if TRACKING is enabled)
+	ERR <message> [<extra>...] (see Error responses)
+
+
+TRACKING
+~~~~~~~~
+
+Form:
+
+	SET TRACKING <value>
+	SET TRACKING ON
+	SET TRACKING OFF
+
+Response:
+
+	OK
+	ERR INVALID-ARGUMENT  (if <value> is not "ON" or "OFF")
+	ERR USERNAME-REQUIRED (if not yet authenticated)
+	ERR PASSWORD-REQUIRED (if not yet authenticated)
+
+
 INSTCMD
 -------
 
 Form:
 
-	INSTCMD <upsname> <cmdname>
+	INSTCMD <upsname> <cmdname> [<cmdparam>]
 	INSTCMD su700 test.panel.start
+	INSTCMD su700 load.off.delay 120
+
+NOTE: <cmdparam> is an additional and optional parameter for the command.
+
+Response:
+
+	OK                         (if TRACKING is not enabled)
+	OK TRACKING <id>           (if TRACKING is enabled)
+	ERR <message> [<extra>...] (see Error responses)
+
 
 LOGOUT
 ------
@@ -377,6 +463,7 @@ Response:
 
 Used to disconnect gracefully from the server.
 
+
 LOGIN
 -----
 
@@ -387,7 +474,8 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon slave" or "upsmon master" in upsd.users
 
@@ -397,6 +485,7 @@ The upsmon master will wait until the count of attached systems reaches
 
 NOTE: You probably shouldn't send this command unless you are upsmon,
 or a upsmon replacement.
+
 
 MASTER
 ------
@@ -408,12 +497,14 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon master" in upsd.users
 
 This function doesn't do much by itself.  It is used by upsmon to make
 sure that master-level functions like FSD are available if necessary.
+
 
 FSD
 ---
@@ -425,7 +516,8 @@ Form:
 Response:
 
 	OK FSD-SET	(success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 NOTE: This requires "upsmon master" in upsd.users, or "FSD" action
 granted in upsd.users
@@ -443,6 +535,7 @@ no way to clear it short of restarting upsd or dropping then re-adding
 it in the ups.conf.  This may cause issues when upsd is running on a
 system that is not shut down due to the UPS event.
 
+
 PASSWORD
 --------
 
@@ -453,10 +546,12 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 Sets the password associated with a connection.  Used for later
 authentication for commands that require it.
+
 
 USERNAME
 --------
@@ -468,10 +563,12 @@ Form:
 Response:
 
 	OK	(upon success)
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 Sets the username associated with a connection.  This is also used for
 authentication, specifically in conjunction with the upsd.users file.
+
 
 STARTTLS
 --------
@@ -483,11 +580,13 @@ Form:
 Response:
 
 	OK STARTTLS
-	or <<np-errors,various errors>>
+
+or <<np-errors,various errors>>
 
 This tells upsd to switch to TLS mode internally, so all future
 communications will be encrypted.  You must also change to TLS mode in
 the client after receiving the OK, or the connection will be useless.
+
 
 Other commands
 --------------
@@ -502,6 +601,8 @@ telnet, make sure you don't have it set to negotiate extra options.
 upsd doesn't speak telnet and will probably misunderstand your first
 request due to the extra junk in the buffer.
 
+
+[[np-errors]]
 Error responses
 ---------------
 
@@ -639,8 +740,10 @@ The value specified in the request is not valid.  This usually
 applies to a SET of an ENUM type which is using a value which is
 not in the list of allowed values.
 
+
 Future ideas
 ------------
+
 
 Dense lists
 ~~~~~~~~~~~
@@ -649,11 +752,6 @@ The LIST commands may be given the ability to handle options some day.
 For example, "LIST VARS <ups> +DESC" would return the current value
 like now, but it would also append the description of that variable.
 
-Command status
-~~~~~~~~~~~~~~
-
-After sending an INSTCMD or SET, a client will eventually be able to
-poll to see whether it was completed successfully by the driver.
 
 Get collection
 ~~~~~~~~~~~~~~

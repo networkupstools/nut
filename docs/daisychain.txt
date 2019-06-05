@@ -1,0 +1,204 @@
+ifndef::external_title[]
+[[daisychain]]
+NUT daisychain support notes
+============================
+endif::external_title[]
+
+NUT supports daisychained devices for any kind of device that proposes
+it. This chapter introduces:
+
+* for developers: how to implement such mechanism,
+* for users: how to manage and use daisychained devices in NUT in general, and
+how to take advantage of the provided features.
+
+Introduction
+------------
+
+It's not unusual to see some daisy-chained PDUs or UPSs, connected together in
+master-slave mode, to only consume 1 IP address for their communication
+interface (generally, network card exposing SNMP data) and expose only one point
+of communication to manage several devices, through the daisychain master.
+
+This breaks the historical consideration of NUT that one driver provides data
+for one unique device.
+However, there is an actual need, and a smart approach was considered to
+fulfill this, while not breaking the standard scope (for base compatibility).
+
+
+Implementation notes
+--------------------
+
+General specification
+~~~~~~~~~~~~~~~~~~~~~
+
+The daisychain support uses the device collection to extend the historical NUT
+scope (1 driver - 1 device), and provide data from the additional devices.
+
+A new variable was introduced to provide the number of devices exposed: device.count
+
+device.count:
+
+* defaults to 1
+* if higher than 1, enable daisychain support and access devices data through
+device.X.{...}
+
+To ensure backward compatibility in NUT, the data of the various devices are
+exposed the following way:
+
+* "device.0" is a special case, for the whole set of devices (the whole
+daisychain). It is equivalent to "device" (without ".X" index) and root
+collections. The idea is to be able to get visibility and control over the whole
+daisychain from a single point.
+* daisy chained devices are available from "device.1" (master) to "device.N"
+(slaves).
+
+That way, client application that are unaware of the daisychain support, will
+only see the whole daisychain, as it would normally see, and not nothing at all.
+
+Moreover, this solution is generic, and not specific to the PDU use case
+currently considered. It thus support both the current NUT scope, along with
+other use cases (parallel / serial UPS setups), and potential evolution and
+technology change (hybrid chain with UPS and PDU for example).
+
+
+Devices status handling
+^^^^^^^^^^^^^^^^^^^^^^^
+
+To be clarified...
+
+
+Devices alarms handling
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Devices (master and slaves) alarms are published in "device.X.ups.alarm", which
+may evolve into "device.X.alarm". If any of the device has an alarm, the main
+ups.status will publish an "ALARM" flag. This flag is be cleared once all
+devices have no alarms anymore.
+
+NOTE: ups.alarm behavior is not yet defined (all devices alarms Vs list of
+device(s) that have alarms Vs nothing?)
+
+Example
+^^^^^^^
+Here is an example excerpt of three PDUs, connected in daisychain mode, with one
+master and two slaves:
+
+	device.count: 3
+	device.mfr: EATON
+	device.model: EATON daisychain PDU
+	device.1.mfr: EATON
+	device.1.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
+	device.2.mfr: EATON
+	device.2.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
+	device.3.mfr: EATON
+	device.3.model: EPDU MI 38U-A IN: L6-30P 24A 1P OUT: 36XC13:6XC19
+	...
+	device.3.ups.alarm: high current critical!
+	device.3.ups.status: ALARM
+	...
+	input.voltage: ??? (proposal: range or list or average?)
+	device.1.input.voltage: 237.75
+	device.2.input.voltage: 237.75
+	device.3.input.voltage: 237.75
+	...
+	outlet.1.status: ?? (proposal: "on, off, off)
+	device.1.outlet.1.status: on
+	device.2.outlet.1.status: off
+	device.3.outlet.1.status: off
+	...
+	ups.status: ALARM
+
+
+Information for developers
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+NOTE: these information are dedicated to the snmp-ups driver!
+
+In order to enable daisychain support for a range of devices, developers have to
+do two things:
+
+* Add a "device.count" entry in a mapping file (-mib.c)
+* Modify mapping entries to include a format string for the daisychain index
+
+Optionally, if there is support for outlets and / or outlets groups, there is
+already a template formatting string. So you have to tag such templates with
+multiple definitions, to point if the daisychain index is the first or second
+formatting string.
+
+Base support
+^^^^^^^^^^^^
+
+In order to enable daisychain support on a mapping structure, the following
+steps have to be done:
+
+* Add a "device.count" entry in the mapping file: snmp-ups will determine
+if the daisychain support has to be enabled (if more than 1 device).
+To achieve this, use one of the following type of declarations:
++
+a) point at an OID which provides the number of devices:
+
+	{ "device.count", 0, 1, ".1.3.6.1.4.1.13742.6.3.1.0", "1", SU_FLAG_STATIC, NULL },
++
+b) point at a template OID to guesstimate the number of devices, by walking
+through this template, until it fails:
++
+	{ "device.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i", "1", SU_FLAG_STATIC, NULL, NULL },
+
+* Modify all entries so that OIDs include the formatting string for the
+daisychain index. For example, if you have the following entry:
++
+	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0", ... },
++
+And if the last "0" of the the 4th field represents the index of the device in
+the daisychain, then you would have to adapt it the following way:
++
+	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.6.7.1.2.1.2.%i", ... },
+
+
+Templates with multiple definitions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If there exist already templates in the mapping structure, such as for outlets
+and outlets groups, you also need to specify the position of the daisychain
+device index in the OID strings for all entries in the mapping table, to
+indicate where the daisychain insertion point is exactly.
+
+For example, using the following entry:
+
+	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.0.%i", NULL, SU_OUTLET, NULL, NULL },
+
+You would have to translate it to:
+
+	{ "outlet.%i.current", 0, 0.001, ".1.3.6.1.4.1.534.6.6.7.6.4.1.3.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+
+SU_TYPE_DAISY_1 indicates that the daisychain index is the 1st specifier ("%i")
+in the string. If it is the second one, use SU_TYPE_DAISY_2.
+
+
+Devices alarms handling
+^^^^^^^^^^^^^^^^^^^^^^^
+
+Two functions are available to handle alarms on daisychain devices in your
+driver:
+
+* device_alarm_init(): clear the current alarm buffer
+* device_alarm_commit(const int device_number): commit the current alarm buffer
+to "device.<device_number>.ups.alarm", and increase the count of alarms. If the
+current alarms buffer is empty, the count of alarm is decreased, and the
+variable "device.<device_number>.ups.alarm" is removed from publication. Once
+the alarm count reaches "0", the main (device.0) ups.status will also remove the
+"ALARM" flag.
+
+NOTE: when implementing a new driver, the following functions have to be called:
+* "alarm_init()" at the beginning of the main update loop, for the whole
+daisychain. This will set the alarm count to "0", and reinitialize all alarms,
+* "device_alarm_init()" at the beginning of the per-device update loop.
+This will only clear the alarms for the current device,
+* "device_alarm_commit()" at the end of the per-device update loop. This will
+flush the current alarms for the current device,
+* also "device_alarm_init()" at the end of the per-device update loop. This will
+clear the current alarms, and ensure that this buffer will not be considered by
+other subsequent devices,
+- "alarm_commit()" at the end of the main update loop, for the whole daisychain.
+This will take care of publishing or not the "ALARM" flag in the main ups.status
+(device.0, root collection).

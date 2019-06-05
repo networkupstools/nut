@@ -240,10 +240,11 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	}
 	
 #ifdef WITH_OPENSSL	
-	if (!ssl_ctx) {
+	if (!ssl_ctx)
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
-	if (!NSS_IsInitialized()) {
+	if (!NSS_IsInitialized())
 #endif /* WITH_OPENSSL | WITH_NSS */
+	{
 		send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
 		ssl_initialized = 0;
 		return;
@@ -274,7 +275,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	{
 	case 1:
 		client->ssl_connected = 1;
-		upsdebugx(3, "SSL connected");
+		upsdebugx(3, "SSL connected (%s)", SSL_get_version(client->ssl));
 		break;
 		
 	case 0:
@@ -291,20 +292,20 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 
 	socket = PR_ImportTCPSocket(client->sock_fd);
 	if (socket == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / PR_ImportTCPSocket");
 		return;
 	}
 
 	client->ssl = SSL_ImportFD(NULL, socket);
 	if (client->ssl == NULL){
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_ImportFD");
 		return;
 	}
 	
 	if (SSL_SetPKCS11PinArg(client->ssl, client) == -1){
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_SetPKCS11PinArg");
 		return;
 	}
@@ -314,35 +315,35 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	 */
 	status = SSL_AuthCertificateHook(client->ssl, (SSLAuthCertificate)AuthCertificate, CERT_GetDefaultCertDB());
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_AuthCertificateHook");
 		return;
 	}
 	
 	status = SSL_BadCertHook(client->ssl, (SSLBadCertHandler)BadCertHandler, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_BadCertHook");
 		return;
 	}
 	
 	status = SSL_HandshakeCallback(client->ssl, (SSLHandshakeCallback)HandshakeCallback, client);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_HandshakeCallback");
 		return;
 	}
 	
 	status = SSL_ConfigSecureServer(client->ssl, cert, privKey, NSS_FindCertKEAType(cert));
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_ConfigSecureServer");
 		return;
 	}
 
 	status = SSL_ResetHandshake(client->ssl, PR_TRUE);
 	if (status != SECSuccess) {
-		upslogx(LOG_ERR, "Can not inialize SSL connexion");
+		upslogx(LOG_ERR, "Can not inialize SSL connection");
 		nss_error("net_starttls / SSL_ResetHandshake");
 		return;
 	}
@@ -358,7 +359,7 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 				client->addr);
 		} else {
 			nss_error("net_starttls / SSL_ForceHandshake");
-			/* TODO : Close the connexion. */
+			/* TODO : Close the connection. */
 			return;
 		}
 	}
@@ -370,13 +371,7 @@ void ssl_init(void)
 {
 #ifdef WITH_NSS
 	SECStatus status;
-#elif defined(WITH_OPENSSL)
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-	const SSL_METHOD	*ssl_method;
-#else
-	SSL_METHOD	*ssl_method;
-#endif
-#endif /* WITH_NSS|WITH_OPENSSL */
+#endif /* WITH_NSS */
 
 	if (!certfile) {
 		return;
@@ -386,18 +381,29 @@ void ssl_init(void)
 
 #ifdef WITH_OPENSSL
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
 	SSL_library_init();
 
-	if ((ssl_method = TLSv1_server_method()) == NULL) {
-		ssl_debug();
-		fatalx(EXIT_FAILURE, "TLSv1_server_method failed");
-	}
+	ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+#else
+	ssl_ctx = SSL_CTX_new(TLS_server_method());
+#endif
 
-	if ((ssl_ctx = SSL_CTX_new(ssl_method)) == NULL) {
+	if (!ssl_ctx) {
 		ssl_debug();
 		fatalx(EXIT_FAILURE, "SSL_CTX_new failed");
 	}
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	/* set minimum protocol TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#else
+	if (SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION) != 1) {
+		ssl_debug();
+		fatalx(EXIT_FAILURE, "SSL_CTX_set_min_proto_version(TLS1_VERSION)");
+	}
+#endif
 
 	if (SSL_CTX_use_certificate_chain_file(ssl_ctx, certfile) != 1) {
 		ssl_debug();

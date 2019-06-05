@@ -30,9 +30,12 @@
 - add syscontact/location (to all mib.h or centralized?)
 - complete shutdown
 - add enum values to OIDs.
-- optimize network flow by constructing one big packet (calling snmp_add_null_var
-for each OID request we made), instead of sending many small packets
-- add support for registration and traps (manager mode),
+- optimize network flow by:
+  1) caching OID values (as in usbhid-ups) with timestamping and lifetime
+  2) constructing one big packet (calling snmp_add_null_var
+     for each OID request we made), instead of sending many small packets
+- add support for registration and traps (manager mode)
+  => Issue: 1 trap listener for N snmp-ups drivers!
 - complete mib2nut data (add all OID translation to NUT)
 - externalize mib2nut data in .m2n files and load at driver startup using parseconf()...
 - adjust information logging.
@@ -79,7 +82,9 @@ for each OID request we made), instead of sending many small packets
 #define DISABLE_MIB_LOADING 1
 
 /* Parameters default values */
-#define DEFAULT_POLLFREQ	30		/* in seconds */
+#define DEFAULT_POLLFREQ          30   /* in seconds */
+#define DEFAULT_NETSNMP_RETRIES   5
+#define DEFAULT_NETSNMP_TIMEOUT   1    /* in seconds */
 
 /* use explicit booleans */
 #ifndef FALSE
@@ -100,8 +105,10 @@ typedef int bool_t;
 
 /* for lookup between OID values and INFO_ value */
 typedef struct {
-	int oid_value;			/* OID value */
-	const char *info_value;	/* INFO_* value */
+	int oid_value;                      /* SNMP OID value */
+	const char *info_value;             /* NUT INFO_* value */
+	const char *(*fun)(int snmp_value); /* optional SNMP to NUT mapping function */
+	int (*nuf)(const char *nut_value);  /* optional NUT to SNMP mapping function */
 } info_lkp_t;
 
 /* Structure containing info about one item that can be requested
@@ -110,28 +117,27 @@ typedef struct {
    are converted according to the multiplier table
 */
 typedef struct {
-	const char   *info_type;	/* INFO_ or CMD_ element */
-	int           info_flags;	/* flags to set in addinfo */
-	float         info_len;		/* length of strings if STR,
-								 * cmd value if CMD, multiplier otherwise. */
-	const char   *OID;			/* SNMP OID or NULL */
-	const char   *dfl;			/* default value */
-	unsigned long flags;		/* my flags */
-	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
-	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
+	const char   *info_type;  /* INFO_ or CMD_ element */
+	int           info_flags; /* flags to set in addinfo */
+	double        info_len;   /* length of strings if ST_FLAG_STRING, multiplier otherwise. */
+	const char   *OID;        /* SNMP OID or NULL */
+	const char   *dfl;        /* default value */
+	unsigned long flags;      /* snmp-ups internal flags */
+	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-#define SU_FLAG_OK			(1 << 0)	/* show element to upsd. */
+#define SU_FLAG_OK		(1 << 0)	/* show element to upsd - internal to snmp driver */
 #define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
 #define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device,
 										 * use default value. */
-#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often. */
+#define SU_FLAG_STALE		(1 << 3)	/* data stale, don't try too often - internal to snmp driver */
 #define SU_FLAG_NEGINVALID	(1 << 4)	/* Invalid if negative value */
 #define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
-#define SU_FLAG_SETINT		(1 << 6)	/* save value */
-#define SU_OUTLET			(1 << 7)	/* outlet template definition */
+/* Free slot
+ * #define SU_FLAG_SETINT	(1 << 6)*/	/* save value */
+#define SU_OUTLET		(1 << 7)	/* outlet template definition */
 #define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template
@@ -151,6 +157,8 @@ typedef struct {
 #define SU_STATUS_NUM_ELEM	4
 #define SU_STATUS_INDEX(t)	(((t) >> 8) & 7)
 
+#define SU_OUTLET_GROUP     (1 << 10)   /* outlet group template definition */
+
 /* Phase specific data */
 #define SU_PHASES		(0x3F << 12)
 #define SU_INPHASES		(0x3 << 12)
@@ -167,13 +175,27 @@ typedef struct {
 
 /* hints for su_ups_set, applicable only to rw vars */
 #define SU_TYPE_INT			(0 << 18)	/* cast to int when setting value */
-#define SU_TYPE_STRING		(1 << 18)	/* cast to string. FIXME: redundant with ST_FLAG_STRING */
+/* Free slot                (1 << 18) */
 #define SU_TYPE_TIME		(2 << 18)	/* cast to int */
 #define SU_TYPE_CMD			(3 << 18)	/* instant command */
 #define SU_TYPE(t)			((t)->flags & (7 << 18))
 
+/* Daisychain template definition */
+/* the following 2 flags specify the position of the daisychain device index
+ * in the formatting string. This is useful when considering daisychain with
+ * templates, such as outlets / outlets groups, which already have a format
+ * string specifier */
+#define SU_TYPE_DAISY_1		(1 << 19) /* Daisychain index is the 1st specifier */
+#define SU_TYPE_DAISY_2		(2 << 19) /* Daisychain index is the 2nd specifier */
+#define SU_TYPE_DAISY		((t)->flags & (7 << 19))
+#define SU_DAISY			(2 << 19) /* Daisychain template definition */
+#define SU_FLAG_ZEROINVALID    (1 << 20)       /* Invalid if "0" value */
+#define SU_FLAG_NAINVALID      (1 << 21)       /* Invalid if "N/A" value */
+
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
+#define SU_VAR_RETRIES		"snmp_retries"
+#define SU_VAR_TIMEOUT		"snmp_timeout"
 #define SU_VAR_MIBS			"mibs"
 #define SU_VAR_POLLFREQ		"pollfreq"
 /* SNMP v3 related parameters */
@@ -183,7 +205,6 @@ typedef struct {
 #define SU_VAR_PRIVPASSWD	"privPassword"
 #define SU_VAR_AUTHPROT		"authProtocol"
 #define SU_VAR_PRIVPROT		"privProtocol"
-
 
 #define SU_INFOSIZE		128
 #define SU_BUFSIZE		32
@@ -196,9 +217,19 @@ typedef struct {
 #define SU_WALKMODE_INIT	0
 #define SU_WALKMODE_UPDATE	1
 
+/* modes for su_setOID */
+#define SU_MODE_INSTCMD     1
+#define SU_MODE_SETVAR      2
+
 /* log spew limiters */
 #define SU_ERR_LIMIT 10	/* start limiting after this many errors in a row  */
 #define SU_ERR_RATE 100	/* only print every nth error once limiting starts */
+
+typedef struct {
+	const char * OID;
+	const char *status_value; /* when not NULL, set ups.status to this */
+	const char *alarm_value;  /* when not NULL, set ups.alarm to this */
+} alarms_info_t;
 
 typedef struct {
 	const char	*mib_name;
@@ -208,7 +239,7 @@ typedef struct {
 	snmp_info_t	*snmp_info;			/* pointer to the good Snmp2Nut lookup data */
 	const char	*sysOID;			/* OID to match against sysOID, aka MIB
 									 * main entry point */
-
+	alarms_info_t	*alarms_info;
 } mib2nut_info_t;
 
 /* Common SNMP functions */
@@ -251,6 +282,20 @@ extern const char *OID_pwr_status;
 extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int input_phases, output_phases, bypass_phases;
+
+/* Common daisychain structure and functions */
+
+bool_t daisychain_init();
+int su_addcmd(snmp_info_t *su_info_p);
+
+/* Structure containing info about each daisychain device, including phases
+ * for input, output and bypass */
+typedef struct {
+	long input_phases;
+	long output_phases;
+	long bypass_phases;
+} daisychain_info_t;
+
 
 #endif /* SNMP_UPS_H */
 

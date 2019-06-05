@@ -75,7 +75,7 @@ iteration function to display results:
 
 
 This library file and the associated header files are not installed by
-default.  You must `./configure --with-lib` to enable building and
+default.  You must `./configure --with-dev` to enable building and
 installing these files. The libraries can then be built and installed
 with `make` and `make install` as usual. This must be done before
 building other (non-NUT) programs which depend on them.

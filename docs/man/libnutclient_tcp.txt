@@ -31,9 +31,9 @@ These functions allow to manage connections to linkman:upsd[8] using NUT TCP pro
 The *nutclient_tcp_create_client()* function create the 'NUTCLIENT_TCP_t' context and
 intend to connect to upsd at 'host' and 'port'. The context must be freed by 'nutclient_destroy()'
 
-'host' can be a sever name or a valid IPv4 or IPv6 adress like "localhost", "127.0.0.1" or "::1".
+'host' can be a sever name or a valid IPv4 or IPv6 address like "localhost", "127.0.0.1" or "::1".
 
-'port' is a valid TCP port, genrally 3493.
+'port' is a valid TCP port, generally 3493.
 
 The *nutclient_tcp_is_connected()* function test if the connection is valid.
 

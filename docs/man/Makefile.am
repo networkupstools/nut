@@ -4,13 +4,17 @@
 # Notes:
 # - sources (.txt) and groff formats are both distributed,
 # - only sources are versioned ; groff files are generated at worst
-#   during 'make dist'
+#   during 'make dist' (while preparing a release tarball)
 # - HTML files are built upon request, if AsciiDoc is available,
 # - groff update will only happen if AsciiDoc is available too,
 # - all this can probably (and hopefully) be improved, but I've not
 #   found a way to do pattern replacement on the fly for target deps!
 #   FIXME: investigate an autogen.sh hook
 # - Ref: http://www.gnu.org/software/hello/manual/automake/Man-pages.html
+# - WITH_MANS can be enabled if either we are building man-pages, or if
+#   the --with-doc=man=auto detected an inability to build the man-pages
+#   but enabled the DOC_INSTALL_DISTED_MANS toggle so we deliver disted
+#   files from source tree
 
 # Base configuration and client manpages, always installed
 SRC_CONF_PAGES = \
@@ -21,6 +25,7 @@ SRC_CONF_PAGES = \
 	upsmon.conf.txt \
 	upssched.conf.txt
 
+if WITH_MANS
 MAN_CONF_PAGES = \
 	nut.conf.5 \
 	ups.conf.5 \
@@ -28,6 +33,7 @@ MAN_CONF_PAGES = \
 	upsd.users.5 \
 	upsmon.conf.5 \
 	upssched.conf.5
+endif
 
 man5_MANS = $(MAN_CONF_PAGES)
 
@@ -41,34 +47,42 @@ HTML_CONF_MANS = \
 
 SRC_CLIENT_PAGES = \
 	nutupsdrv.txt \
+	nut-driver-enumerator.txt \
 	upsc.txt \
 	upscmd.txt \
 	upsd.txt \
 	upsdrvctl.txt \
+	upsdrvsvcctl.txt \
 	upslog.txt \
 	upsmon.txt \
 	upsrw.txt \
 	upssched.txt
 
+if WITH_MANS
 MAN_CLIENT_PAGES = \
 	nutupsdrv.8 \
+	nut-driver-enumerator.8 \
 	upsc.8 \
 	upscmd.8 \
 	upsd.8 \
 	upsdrvctl.8 \
+	upsdrvsvcctl.8 \
 	upslog.8 \
 	upsmon.8 \
 	upsrw.8 \
 	upssched.8
+endif
 
 man8_MANS = $(MAN_CLIENT_PAGES)
 
 HTML_CLIENT_MANS = \
 	nutupsdrv.html \
+	nut-driver-enumerator.html \
 	upsc.html \
 	upscmd.html \
 	upsd.html \
 	upsdrvctl.html \
+	upsdrvsvcctl.html \
 	upslog.html \
 	upsmon.html \
 	upsrw.html \
@@ -76,7 +90,9 @@ HTML_CLIENT_MANS = \
 
 SRC_TOOL_PAGES = nut-scanner.txt nut-recorder.txt
 
+if WITH_MANS
 MAN_TOOL_PAGES = nut-scanner.8 nut-recorder.8
+endif
 
 man8_MANS += $(MAN_TOOL_PAGES)
 
@@ -91,6 +107,7 @@ SRC_CGI_PAGES = \
 	upsstats.cgi.txt \
 	upsimage.cgi.txt
 
+if WITH_MANS
 MAN5_CGI_PAGES = \
 	hosts.conf.5 \
 	upsset.conf.5 \
@@ -100,6 +117,7 @@ MAN8_CGI_PAGES = \
 	upsset.cgi.8 \
 	upsstats.cgi.8 \
 	upsimage.cgi.8
+endif
 
 if WITH_CGI
  man5_MANS += $(MAN5_CGI_PAGES)
@@ -162,7 +180,66 @@ SRC_DEV_PAGES = \
 	libupsclient-config.txt \
 	skel.txt
 
+if WITH_MANS
 # NOTE: nutclient_*.3 has no source counterpart (libnutclient_*.txt)
+
+LIBNUTCLIENT_MISC_DEPS= \
+	nutclient_authenticate.3 \
+	nutclient_logout.3 \
+	nutclient_device_login.3 \
+	nutclient_get_device_num_logins.3 \
+	nutclient_device_master.3 \
+	nutclient_device_forced_shutdown.3
+
+$(LIBNUTCLIENT_MISC_DEPS): libnutclient_misc.3
+	touch $@
+
+LIBNUTCLIENT_TCP_DEPS= \
+	nutclient_tcp_create_client.3 \
+	nutclient_tcp_disconnect.3 \
+	nutclient_tcp_get_timeout.3 \
+	nutclient_tcp_is_connected.3 \
+	nutclient_tcp_reconnect.3 \
+	nutclient_tcp_set_timeout.3
+
+$(LIBNUTCLIENT_TCP_DEPS): libnutclient_tcp.3
+	touch $@
+
+LIBNUTCLIENT_GENERAL_DEPS= \
+	nutclient_destroy.3
+
+$(LIBNUTCLIENT_GENERAL_DEPS): libnutclient_general.3
+	touch $@
+
+LIBNUTCLIENT_VARIABLES_DEPS= \
+	nutclient_get_device_rw_variables.3 \
+	nutclient_get_device_variable_description.3 \
+	nutclient_get_device_variables.3 \
+	nutclient_get_device_variable_values.3 \
+	nutclient_has_device_variable.3 \
+	nutclient_set_device_variable_value.3 \
+	nutclient_set_device_variable_values.3
+
+$(LIBNUTCLIENT_VARIABLES_DEPS): libnutclient_variables.3
+	touch $@
+
+LIBNUTCLIENT_COMMANDS_DEPS= \
+	nutclient_execute_device_command.3 \
+	nutclient_get_device_command_description.3 \
+	nutclient_get_device_commands.3 \
+	nutclient_has_device_command.3
+
+$(LIBNUTCLIENT_COMMANDS_DEPS): libnutclient_commands.3
+	touch $@
+
+LIBNUTCLIENT_DEVICES_DEPS= \
+	nutclient_get_device_description.3 \
+	nutclient_get_devices.3 \
+	nutclient_has_device.3
+
+$(LIBNUTCLIENT_DEVICES_DEPS): libnutclient_devices.3
+	touch $@
+
 MAN3_DEV_PAGES = \
 	upsclient.3 \
 	upscli_add_host_cert.3 \
@@ -175,7 +252,9 @@ MAN3_DEV_PAGES = \
 	upscli_list_next.3 \
 	upscli_list_start.3 \
 	upscli_readline.3 \
+	upscli_readline_timeout.3 \
 	upscli_sendline.3 \
+	upscli_sendline_timeout.3 \
 	upscli_splitaddr.3 \
 	upscli_splitname.3 \
 	upscli_ssl.3 \
@@ -183,38 +262,17 @@ MAN3_DEV_PAGES = \
 	upscli_upserror.3 \
 	libnutclient.3 \
 	libnutclient_commands.3 \
+	$(LIBNUTCLIENT_COMMANDS_DEPS) \
 	libnutclient_devices.3 \
+	$(LIBNUTCLIENT_DEVICES_DEPS) \
 	libnutclient_general.3 \
+	$(LIBNUTCLIENT_GENERAL_DEPS) \
 	libnutclient_misc.3 \
+	$(LIBNUTCLIENT_MISC_DEPS) \
 	libnutclient_tcp.3 \
+	$(LIBNUTCLIENT_TCP_DEPS) \
 	libnutclient_variables.3 \
-	nutclient_authenticate.3 \
-	nutclient_destroy.3 \
-	nutclient_device_forced_shutdown.3 \
-	nutclient_device_login.3 \
-	nutclient_device_master.3 \
-	nutclient_execute_device_command.3 \
-	nutclient_get_device_command_description.3 \
-	nutclient_get_device_commands.3 \
-	nutclient_get_device_description.3 \
-	nutclient_get_device_num_logins.3 \
-	nutclient_get_device_rw_variables.3 \
-	nutclient_get_devices.3 \
-	nutclient_get_device_variable_description.3 \
-	nutclient_get_device_variables.3 \
-	nutclient_get_device_variable_values.3 \
-	nutclient_has_device.3 \
-	nutclient_has_device_command.3 \
-	nutclient_has_device_variable.3 \
-	nutclient_logout.3 \
-	nutclient_set_device_variable_value.3 \
-	nutclient_set_device_variable_values.3 \
-	nutclient_tcp_create_client.3 \
-	nutclient_tcp_disconnect.3 \
-	nutclient_tcp_get_timeout.3 \
-	nutclient_tcp_is_connected.3 \
-	nutclient_tcp_reconnect.3 \
-	nutclient_tcp_set_timeout.3 \
+	$(LIBNUTCLIENT_VARIABLES_DEPS) \
 	nutscan.3 \
 	nutscan_scan_snmp.3 \
 	nutscan_scan_usb.3 \
@@ -233,8 +291,15 @@ MAN3_DEV_PAGES = \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
 
+upscli_readline_timeout.3: upscli_readline.3
+	touch $@
+
+upscli_sendline_timeout.3: upscli_sendline.3
+	touch $@
+
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
+endif
 
 if WITH_DEV
  man3_MANS = $(MAN3_DEV_PAGES)
@@ -301,6 +366,7 @@ else
 
 # (--with-serial)
 SRC_SERIAL_PAGES = \
+	al175.txt	\
 	apcsmart.txt	\
 	apcsmart-old.txt	\
 	bcmxcp.txt 	\
@@ -310,7 +376,8 @@ SRC_SERIAL_PAGES = \
 	bestuferrups.txt	\
 	bestups.txt 	\
 	bestfcom.txt	\
-	blazer.txt	\
+	blazer-common.txt	\
+	blazer_ser.txt	\
 	clone.txt \
 	dummy-ups.txt	\
 	etapro.txt	\
@@ -338,10 +405,11 @@ SRC_SERIAL_PAGES = \
 	tripplitesu.txt	\
 	upscode2.txt	\
 	victronups.txt	\
-	voltronic_ser.txt
+	apcupsd-ups.txt
 
-# NOTE: blazer_ser.8 has no source counterpart (blazer.txt)
+if WITH_MANS
 MAN_SERIAL_PAGES = \
+	al175.8	\
 	apcsmart.8	\
 	apcsmart-old.8	\
 	bcmxcp.8 	\
@@ -351,7 +419,6 @@ MAN_SERIAL_PAGES = \
 	bestuferrups.8	\
 	bestups.8 	\
 	bestfcom.8	\
-	blazer.8	\
 	blazer_ser.8	\
 	clone.8 \
 	dummy-ups.8	\
@@ -380,13 +447,15 @@ MAN_SERIAL_PAGES = \
 	tripplitesu.8	\
 	upscode2.8	\
 	victronups.8	\
-	voltronic_ser.8
+	apcupsd-ups.8
+endif
 
 if WITH_SERIAL
   man8_MANS +=  $(MAN_SERIAL_PAGES)
 endif
 
 HTML_SERIAL_MANS = \
+	al175.html	\
 	apcsmart.html	\
 	apcsmart-old.html	\
 	bcmxcp.html 	\
@@ -396,7 +465,7 @@ HTML_SERIAL_MANS = \
 	bestuferrups.html	\
 	bestups.html 	\
 	bestfcom.html	\
-	blazer.html	\
+	blazer_ser.html	\
 	clone.html \
 	dummy-ups.html	\
 	etapro.html	\
@@ -424,11 +493,13 @@ HTML_SERIAL_MANS = \
 	tripplitesu.html	\
 	upscode2.html	\
 	victronups.html	\
-	voltronic_ser.html
+	apcupsd-ups.html
 
 # (--with-snmp)
 SRC_SNMP_PAGES = snmp-ups.txt
+if WITH_MANS
 MAN_SNMP_PAGES = snmp-ups.8
+endif
 
 if WITH_SNMP
   man8_MANS += $(MAN_SNMP_PAGES)
@@ -439,21 +510,24 @@ HTML_SNMP_MANS = snmp-ups.html
 # (--with-usb)
 SRC_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.txt \
+	blazer-common.txt	\
+	blazer_usb.txt	\
+	nutdrv_atcl_usb.txt \
 	richcomm_usb.txt \
 	riello_usb.txt	\
 	tripplite_usb.txt \
-	usbhid-ups.txt	\
-	voltronic_usb.txt
+	usbhid-ups.txt
 
-# NOTE: blazer_usb.8 has no source counterpart (blazer.txt)
+if WITH_MANS
 MAN_USB_LIBUSB_PAGES = \
 	bcmxcp_usb.8 \
 	blazer_usb.8 \
+	nutdrv_atcl_usb.8 \
 	richcomm_usb.8 \
 	riello_usb.8	\
 	tripplite_usb.8 \
-	usbhid-ups.8	\
-	voltronic_usb.8
+	usbhid-ups.8
+endif
 
 if WITH_USB
  man8_MANS += $(MAN_USB_LIBUSB_PAGES)
@@ -461,15 +535,38 @@ endif
 
 HTML_USB_LIBUSB_MANS = \
 	bcmxcp_usb.html \
+	blazer_usb.html	\
+	nutdrv_atcl_usb.html \
 	richcomm_usb.html \
 	riello_usb.html	\
 	tripplite_usb.html \
-	usbhid-ups.html	\
-	voltronic_usb.html
+	usbhid-ups.html
+
+# (--with-serial / --with-usb)
+SRC_SERIAL_USB_PAGES = \
+	nutdrv_qx.txt
+
+if WITH_MANS
+MAN_SERIAL_USB_PAGES = \
+	nutdrv_qx.8
+endif
+
+if WITH_SERIAL
+ man8_MANS += $(MAN_SERIAL_USB_PAGES)
+else
+if WITH_USB
+ man8_MANS += $(MAN_SERIAL_USB_PAGES)
+endif
+endif
+
+HTML_SERIAL_USB_MANS = \
+	nutdrv_qx.html
 
 # (--with-neon)
 SRC_NETXML_PAGES = netxml-ups.txt
+if WITH_MANS
 MAN_NETXML_PAGES = netxml-ups.8
+endif
 
 if WITH_NEON
    man8_MANS += $(MAN_NETXML_PAGES)
@@ -479,7 +576,9 @@ HTML_NETXML_MANS = netxml-ups.html
 
 # (--with-powerman)
 SRC_POWERMAN_PAGES = powerman-pdu.txt
+if WITH_MANS
 MAN_POWERMAN_PAGES = powerman-pdu.8
+endif
 
 if WITH_LIBPOWERMAN
    man8_MANS += $(MAN_POWERMAN_PAGES)
@@ -489,7 +588,9 @@ HTML_POWERMAN_MANS = powerman-pdu.html
 
 # (--with-ipmi)
 SRC_IPMIPSU_PAGES = nut-ipmipsu.txt
+if WITH_MANS
 MAN_IPMIPSU_PAGES = nut-ipmipsu.8
+endif
 
 if WITH_IPMI
    man8_MANS += $(MAN_IPMIPSU_PAGES)
@@ -498,7 +599,9 @@ endif
 HTML_IPMIPSU_MANS = nut-ipmipsu.html
 
 SRC_MACOSX_PAGES = macosx-ups.txt
+if WITH_MANS
 MAN_MACOSX_PAGES = macosx-ups.8
+endif
 
 if WITH_MACOSX
    man8_MANS += $(MAN_MACOSX_PAGES)
@@ -506,10 +609,34 @@ endif
 
 HTML_MACOSX_MANS = macosx-ups.html
 
+SRC_MODBUS_PAGES = phoenixcontact_modbus.txt
+if WITH_MANS
+MAN_MODBUS_PAGES = phoenixcontact_modbus.8
+endif
+
+if WITH_MODBUS
+   man8_MANS += $(MAN_MODBUS_PAGES)
+endif
+
+HTML_MODBUS_MANS = phoenixcontact_modbus.html
+
+SRC_LINUX_I2C_PAGES = asem.txt
+if WITH_MANS
+MAN_LINUX_I2C_PAGES = asem.8
+endif
+
+if WITH_LINUX_I2C
+   man8_MANS += $(MAN_LINUX_I2C_PAGES)
+endif
+
+HTML_LINUX_I2C_MANS = asem.html
+
 # SOME_DRIVERS
 endif
 
-MAN_MANS = \
+MAN_MANS =
+if WITH_MANS
+MAN_MANS += \
 	$(MAN_CONF_PAGES) \
 	$(MAN_CLIENT_PAGES) \
 	$(MAN_TOOL_PAGES) \
@@ -520,14 +647,18 @@ MAN_MANS = \
 	$(MAN_SERIAL_PAGES) \
 	$(MAN_SNMP_PAGES) \
 	$(MAN_USB_LIBUSB_PAGES) \
+	$(MAN_SERIAL_USB_PAGES) \
 	$(MAN_NETXML_PAGES) \
 	$(MAN_POWERMAN_PAGES) \
 	$(MAN_IPMIPSU_PAGES) \
-	$(MAN_MACOSX_PAGES)
+	$(MAN_MACOSX_PAGES) \
+	$(MAN_MODBUS_PAGES) \
+	$(MAN_LINUX_I2C_PAGES)
+endif
 
 # distribute everything, even those not installed by default
 # Note that 'dist' target requires AsciiDoc!
-EXTRA_DIST = \
+SRC_ALL_PAGES = \
 	$(SRC_CONF_PAGES) \
 	$(SRC_CLIENT_PAGES) \
 	$(SRC_TOOL_PAGES) \
@@ -536,12 +667,36 @@ EXTRA_DIST = \
 	$(SRC_SERIAL_PAGES) \
 	$(SRC_SNMP_PAGES) \
 	$(SRC_USB_LIBUSB_PAGES) \
+	$(SRC_SERIAL_USB_PAGES) \
 	$(SRC_NETXML_PAGES) \
 	$(SRC_POWERMAN_PAGES) \
 	$(SRC_IPMIPSU_PAGES) \
 	$(SRC_MACOSX_PAGES) \
+	$(SRC_MODBUS_PAGES) \
+	$(SRC_LINUX_I2C_PAGES)
+
+EXTRA_DIST = \
+	$(SRC_ALL_PAGES) \
 	$(MAN_MANS) \
 	asciidoc.conf
+
+if ! WITH_MANS
+if ! SKIP_MANS
+# Cause "make dist" to fail, unless caller (like the stack of distcheck-dmf)
+# runs ./configure --with-doc=skip (or --with-doc=man=skip specifically)
+EXTRA_DIST += dist
+dist:
+	echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+endif
+endif
+
+# For builds done from dist'ed sources, there may be a conflict of timestamps
+# between original *.txt files and pre-built manpages etc. leading to skipping
+# of manpage re-generation even if that activity is possible and requested.
+# Possibly a cleaner, but less portable, solution would be to touch the
+# generated files to long ago. Current solution assumes good valid clocks :)
+dist-hook:
+	@echo "Fix up manpage source timestamps" && cd $(distdir) && touch $(SRC_ALL_PAGES)
 
 HTML_MANS = \
 	$(HTML_CONF_MANS) \
@@ -552,21 +707,31 @@ HTML_MANS = \
 	$(HTML_SERIAL_MANS) \
 	$(HTML_SNMP_MANS) \
 	$(HTML_USB_LIBUSB_MANS) \
+	$(HTML_SERIAL_USB_MANS) \
 	$(HTML_NETXML_MANS) \
 	$(HTML_POWERMAN_MANS) \
 	$(HTML_IPMIPSU_MANS) \
-	$(HTML_MACOSX_MANS)
+	$(HTML_MACOSX_MANS) \
+	$(HTML_MODBUS_MANS) \
+	$(HTML_LINUX_I2C_MANS)
 
 all:
 
-man-index.html: index.html
-	cp -f $< $@
-
-html-man: $(HTML_MANS) man-index.html
+html-man: $(HTML_MANS) index.html
 
 CLEANFILES = *.xml *.html
 
 SUFFIXES = .txt .html .1 .3 .5 .8
+
+# For builds with allowed installation of prebuild man pages, check that
+# they exist in sources (make would pull them automatically as a fallback
+# from failed lookup in build products). For builds that require rebuild
+# of man pages, abort with error if build product is missing.
+if DOC_INSTALL_DISTED_MANS
+SRC_PREBUILT_CLAUSE=|| [ -r "$(srcdir)/`basename $@`" ]
+else
+SRC_PREBUILT_CLAUSE=
+endif
 
 if HAVE_ASCIIDOC
 
@@ -574,46 +739,78 @@ if HAVE_ASCIIDOC
 	$(ASCIIDOC) --backend=xhtml11 \
 		--attribute localdate=`TZ=UTC date +%Y-%m-%d` \
 		--attribute localtime=`TZ=UTC date +%H:%M:%S` \
+		--attribute nutversion="@PACKAGE_VERSION@" \
 		-o $@ $<
 
-### The --destination-dir flag doesn't seem to affect the intermediate .xml file.
-### Hence, the copying dance below.
+### Prior to Asciidoc ~8.6.8, the --destination-dir flag didn't seem to affect the location of the intermediate .xml file.
+### This parameter is currently required; see docs/Makefile.am for more detail.
 A2X_MANPAGE_OPTS = --doctype manpage --format manpage \
+	--xsltproc-opts "--nonet" \
 	--attribute mansource="Network UPS Tools" \
 	--attribute manversion="@PACKAGE_VERSION@" \
-	--attribute manmanual="NUT Manual"
+	--attribute manmanual="NUT Manual" \
+	--destination-dir=.
 
 .txt.1:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.3:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.5:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 .txt.8:
-	test -f `basename $<` || cp -p $< .
-	$(A2X) $(A2X_MANPAGE_OPTS) `basename $<`
+	$(A2X) $(A2X_MANPAGE_OPTS) $<
 
 else !HAVE_ASCIIDOC
 
 .txt.html:
-	@echo "Not (re)building $@ manual page, since 'asciidoc' was not found."
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.1:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.3:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.5:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 .txt.8:
-	@echo "Using existing $@ manual page, since 'asciidoc' was not found."
+	@if [ -r "$@" ] $(SRC_PREBUILT_CLAUSE); then \
+		echo "Not (re)building $@ manual page, since 'asciidoc', 'xmllint' or 'xsltproc' were not found." ; \
+	else \
+		echo "Could not find prebuilt $@ manual page." ; \
+		echo "If you are building from Git, do you have all of the asciidoc/a2x tools installed?"; \
+		exit 1; \
+	fi
 
 endif !HAVE_ASCIIDOC
+
+spellcheck spellcheck-interactive spellcheck-sortdict:
+	$(MAKE) -f $(top_builddir)/docs/Makefile SPELLCHECK_SRC="$(SRC_ALL_PAGES)" $@

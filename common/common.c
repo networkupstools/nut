@@ -23,6 +23,7 @@
 #include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
+#include <dirent.h>
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -31,6 +32,15 @@
 	need to be re-linked). */
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;
+
+#include <stdio.h>
+#include <limits.h>
+
+/* Know which bitness we were built for,
+ * to adjust the search paths for get_libname() */
+#if UINTPTR_MAX == 0xffffffffffffffffULL
+# define BUILD_64   1
+#endif
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
@@ -51,7 +61,7 @@ static int xbit_test(int val, int flag)
 	return ((val & flag) == flag);
 }
 
-/* enable writing upslog_with_errno() and upslogx() type messages to 
+/* enable writing upslog_with_errno() and upslogx() type messages to
    the syslog */
 void syslogbit_set(void)
 {
@@ -126,7 +136,7 @@ void background(void)
 	close(1);
 	close(2);
 
-	if (pid != 0) 
+	if (pid != 0)
 		_exit(EXIT_SUCCESS);		/* parent */
 
 	/* child */
@@ -163,7 +173,7 @@ struct passwd *get_user_pwent(const char *name)
 		fatalx(EXIT_FAILURE, "user %s not found", name);
 	else
 		fatal_with_errno(EXIT_FAILURE, "getpwnam(%s)", name);
-		
+
 	return NULL;  /* to make the compiler happy */
 }
 
@@ -246,7 +256,7 @@ int sendsignalfn(const char *pidfn, int sig)
 		upslogx(LOG_NOTICE, "Failed to read pid from %s", pidfn);
 		fclose(pidf);
 		return -1;
-	}	
+	}
 
 	pid = strtol(buf, (char **)NULL, 10);
 
@@ -331,18 +341,18 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	if (nut_debug_level > 0) {
 		static struct timeval	start = { 0 };
 		struct timeval		now;
-	
+
 		gettimeofday(&now, NULL);
-	
+
 		if (start.tv_sec == 0) {
 			start = now;
 		}
-	
+
 		if (start.tv_usec > now.tv_usec) {
 			now.tv_usec += 1000000;
 			now.tv_sec -= 1;
 		}
-	
+
 		fprintf(stderr, "%4.0f.%06ld\t", difftime(now.tv_sec, start.tv_sec), (long)(now.tv_usec - start.tv_usec));
 	}
 
@@ -353,7 +363,7 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 }
 
 /* Return the default path for the directory containing configuration files */
-const char * confpath(void) 
+const char * confpath(void)
 {
 	const char * path;
 
@@ -364,23 +374,39 @@ const char * confpath(void)
 }
 
 /* Return the default path for the directory containing state files */
-const char * dflt_statepath(void) 
+const char * dflt_statepath(void)
 {
 	const char * path;
 
-	if ((path = getenv("NUT_STATEPATH")) == NULL)
+	path = getenv("NUT_STATEPATH");
+	if ( (path == NULL) || (*path == '\0') )
 		path = STATEPATH;
 
 	return path;
 }
 
-/* Return the alternate path for pid files */
-const char * altpidpath(void) 
+/* Return the alternate path for pid files, for processes running as non-root
+ * Per documentation and configure script, the fallback value is the
+ * state-file path as the daemon and drivers can write there too.
+ * Note that this differs from PIDPATH that higher-privileged daemons, such
+ * as upsmon, tend to use.
+ */
+const char * altpidpath(void)
 {
+	const char * path;
+
+	path = getenv("NUT_ALTPIDPATH");
+	if ( (path == NULL) || (*path == '\0') )
+		path = getenv("NUT_STATEPATH");
+
+	if ( (path != NULL) && (*path != '\0') )
+		return path;
+
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-	return dflt_statepath();
+/* We assume, here and elsewhere, that at least STATEPATH is always defined */
+	return STATEPATH;
 #endif
 }
 
@@ -407,9 +433,26 @@ void upslogx(int priority, const char *fmt, ...)
 void upsdebug_with_errno(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
+
+/* For debugging output, we want to prepend the debug level so the user can
+ * e.g. lower the level (less -D's on command line) to retain just the amount
+ * of logging info he needs to see at the moment. Using '-DDDDD' all the time
+ * is too brutal and needed high-level overview can be lost. This [D#] prefix
+ * can help limit this debug stream quicker, than experimentally picking ;) */
+	char fmt2[LARGEBUF];
+	if (level > 0) {
+		int ret;
+		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
+			syslog(LOG_WARNING, "upsdebug_with_errno: snprintf needed more than %d bytes",
+				LARGEBUF);
+		} else {
+			fmt = (const char *)fmt2;
+		}
+	}
 
 	va_start(va, fmt);
 	vupslog(LOG_DEBUG, fmt, va, 1);
@@ -419,9 +462,22 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 void upsdebugx(int level, const char *fmt, ...)
 {
 	va_list va;
-	
+
 	if (nut_debug_level < level)
 		return;
+
+/* See comments above in upsdebug_with_errno() - they apply here too. */
+	char fmt2[LARGEBUF];
+	if (level > 0) {
+		int ret;
+		ret = snprintf(fmt2, sizeof(fmt2), "[D%d] %s", level, fmt);
+		if ((ret < 0) || (ret >= (int) sizeof(fmt2))) {
+			syslog(LOG_WARNING, "upsdebugx: snprintf needed more than %d bytes",
+				LARGEBUF);
+		} else {
+			fmt = (const char *)fmt2;
+		}
+	}
 
 	va_start(va, fmt);
 	vupslog(LOG_DEBUG, fmt, va, 0);
@@ -437,7 +493,7 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 	int n;	/* number of characters currently in line */
 	int i;	/* number of bytes output from buffer */
 
-	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len); 
+	n = snprintf(line, sizeof(line), "%s: (%d bytes) =>", msg, len);
 
 	for (i = 0; i < len; i++) {
 
@@ -449,6 +505,68 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
 			((unsigned char *)buf)[i]);
 	}
+	upsdebugx(level, "%s", line);
+}
+
+/* taken from www.asciitable.com */
+static const char* ascii_symb[] = {
+	"NUL",  /*  0x00    */
+	"SOH",  /*  0x01    */
+	"STX",  /*  0x02    */
+	"ETX",  /*  0x03    */
+	"EOT",  /*  0x04    */
+	"ENQ",  /*  0x05    */
+	"ACK",  /*  0x06    */
+	"BEL",  /*  0x07    */
+	"BS",   /*  0x08    */
+	"TAB",  /*  0x09    */
+	"LF",   /*  0x0A    */
+	"VT",   /*  0x0B    */
+	"FF",   /*  0x0C    */
+	"CR",   /*  0x0D    */
+	"SO",   /*  0x0E    */
+	"SI",   /*  0x0F    */
+	"DLE",  /*  0x10    */
+	"DC1",  /*  0x11    */
+	"DC2",  /*  0x12    */
+	"DC3",  /*  0x13    */
+	"DC4",  /*  0x14    */
+	"NAK",  /*  0x15    */
+	"SYN",  /*  0x16    */
+	"ETB",  /*  0x17    */
+	"CAN",  /*  0x18    */
+	"EM",   /*  0x19    */
+	"SUB",  /*  0x1A    */
+	"ESC",  /*  0x1B    */
+	"FS",   /*  0x1C    */
+	"GS",   /*  0x1D    */
+	"RS",   /*  0x1E    */
+	"US"    /*  0x1F    */
+};
+
+/* dump message msg and len bytes from buf to upsdebugx(level) in ascii. */
+void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
+{
+	char line[256];
+	int i;
+	unsigned char ch;
+
+	if (nut_debug_level < level)
+		return;	/* save cpu cycles */
+
+	snprintf(line, sizeof(line), "%s", msg);
+
+	for (i=0; i<len; ++i) {
+		ch = ((unsigned char *)buf)[i];
+
+		if (ch < 0x20)
+			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
+		else if (ch >= 0x80)
+			snprintfcat(line, sizeof(line), "%02Xh ", ch);
+		else
+			snprintfcat(line, sizeof(line), "'%c' ", ch);
+	}
+
 	upsdebugx(level, "%s", line);
 }
 
@@ -522,36 +640,6 @@ char *xstrdup(const char *string)
 	return p;
 }
 
-/* modify in - strip all trailing instances of <sep> */
-char *rtrim(char *in, const char sep)
-{
-	char	*p;
-
-	if (in) {
-		p = &in[strlen(in) - 1];
-
-		while ((p >= in) && (*p == sep))
-			*p-- = '\0';
-	}
-	return in;
-}
-
-/* modify in - strip all leading instances of <sep> */
-char* ltrim(char *in, const char sep)
-{
-	char *p;
-
-	if (in) {
-		p = in;
-
-		while ((*p != '\0') && (*p == sep))
-			*p++ = *in++;
-
-		p = '\0';
-	}
-	return in;
-}
-
 /* Read up to buflen bytes from fd and return the number of bytes
    read. If no data is available within d_sec + d_usec, return 0.
    On error, a value < 0 is returned (errno indicates error). */
@@ -598,4 +686,99 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 	}
 
 	return write(fd, buf, buflen);
+}
+
+
+/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
+ * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
+ * note that different OSes can have their pathnames set up differently
+ * with regard to default/preferred bitness (maybe a "32" in the name
+ * should also be searched explicitly - again, IFF our build is 32-bit).
+ */
+const char * search_paths[] = {
+	// Use the library path (and bitness) provided during ./configure first
+	LIBDIR,
+	"/usr"LIBDIR,
+	"/usr/local"LIBDIR,
+#if BUILD_64
+	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	"/usr/lib/64",
+	"/usr/lib64",
+#endif
+	"/usr/lib",
+#if BUILD_64
+	"/lib/64",
+	"/lib64",
+#endif
+	"/lib",
+#if BUILD_64
+	"/usr/local/lib/64",
+	"/usr/local/lib64",
+#endif
+	"/usr/local/lib",
+#ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_TARGET_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_TARGET_SHORT_ALIAS,
+#else
+# ifdef AUTOTOOLS_HOST_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_HOST_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_HOST_SHORT_ALIAS,
+# else
+#  ifdef AUTOTOOLS_BUILD_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_BUILD_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_BUILD_SHORT_ALIAS,
+#  endif
+# endif
+#endif
+#ifdef AUTOTOOLS_TARGET_ALIAS
+	"/usr/lib/" AUTOTOOLS_TARGET_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_TARGET_ALIAS,
+#else
+# ifdef AUTOTOOLS_HOST_ALIAS
+	"/usr/lib/" AUTOTOOLS_HOST_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_HOST_ALIAS,
+# else
+#  ifdef AUTOTOOLS_BUILD_ALIAS
+	"/usr/lib/" AUTOTOOLS_BUILD_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_BUILD_ALIAS,
+#  endif
+# endif
+#endif
+	NULL
+};
+
+char * get_libname(const char* base_libname)
+{
+	DIR *dp;
+	struct dirent *dirp;
+	int index = 0;
+	char *libname_path = NULL;
+	char current_test_path[LARGEBUF];
+	int base_libname_length = strlen(base_libname);
+
+	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
+	{
+		memset(current_test_path, 0, LARGEBUF);
+
+		if ((dp = opendir(search_paths[index])) == NULL)
+			continue;
+
+		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, search_paths[index]);
+		while ((dirp = readdir(dp)) != NULL)
+		{
+			upsdebugx(5,"Comparing lib %s with dirpath %s", base_libname, dirp->d_name);
+			int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
+			if(compres == 0) {
+				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
+				libname_path = realpath(current_test_path, NULL);
+				upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)", base_libname, current_test_path, (libname_path!=NULL)?libname_path:"NULL");
+				if (libname_path != NULL)
+					break;
+			}
+		}
+		closedir(dp);
+	}
+
+	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
+	return libname_path;
 }

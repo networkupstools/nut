@@ -1,7 +1,8 @@
 /*  mge-hid.c - data to monitor Eaton / MGE HID (USB and serial) devices
  *
- *  Copyright (C) 2003 - 2012
- *  			Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *        2003 - 2015 Arnaud Quette <arnaud.quette@free.fr>
+ *        2015 - 2016 Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>
  *
@@ -35,8 +36,9 @@
 #include "main.h"		/* for getval() */
 #include "usbhid-ups.h"
 #include "mge-hid.h"
+#include <math.h>
 
-#define MGE_HID_VERSION		"MGE HID 1.32"
+#define MGE_HID_VERSION		"MGE HID 1.44"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -50,6 +52,15 @@
 
 /* Hewlett Packard */
 #define HP_VENDORID 0x03f0
+
+/* AEG */
+#define AEG_VENDORID 0x2b2d
+
+/* Phoenixtec Power Co., Ltd */
+#define PHOENIXTEC 0x06da
+
+/* IBM */
+#define IBM_VENDORID 0x04b3
 
 #ifndef SHUT_MODE
 #include "usb-common.h"
@@ -73,6 +84,13 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe7), NULL },
 	{ USB_DEVICE(HP_VENDORID, 0x1fe8), NULL },
+
+	/* PROTECT B / NAS */
+	{ USB_DEVICE(AEG_VENDORID, 0xffff), NULL },
+	{ USB_DEVICE(PHOENIXTEC, 0xffff), NULL },
+
+	/* 6000 VA LCD 4U Rack UPS; 5396-1Kx */
+	{ USB_DEVICE(IBM_VENDORID, 0x0001), NULL },
 
 	/* Terminating entry */
 	{ -1, -1, NULL }
@@ -98,7 +116,8 @@ typedef enum {
 	MGE_PULSAR_M = 0x400,		/* MGE Pulsar M series */
 		MGE_PULSAR_M_2200,
 		MGE_PULSAR_M_3000,
-		MGE_PULSAR_M_3000_XL
+		MGE_PULSAR_M_3000_XL,
+	EATON_5P = 0x500			/* Eaton 5P / 5PX series */
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
@@ -119,6 +138,223 @@ typedef enum {
 static int		country_code = COUNTRY_UNKNOWN;
 
 static char		mge_scratch_buf[20];
+
+/* ABM - Advanced Battery Monitoring
+ ***********************************
+ * Synthesis table
+ * HID data                                   |             Charger in ABM mode             | Charger in Constant mode
+ * UPS.BatterySystem.Charger.ABMEnable        |                      1                      |            0
+ * UPS.PowerSummary.PresentStatus.ACPresent   |           On utility          | On battery  | On utility | On battery
+ * Charger ABM mode                           | Charging | Floating | Resting | Discharging | Disabled   | Disabled
+ * UPS.BatterySystem.Charger.Mode             |     1    |    3     |   4     |      2      |     6      |    6
+ * UPS.PowerSummary.PresentStatus.Charging    |     1    |    1     |   1     |      0      |     1      |    0
+ * UPS.PowerSummary.PresentStatus.Discharging |     0    |    0     |   0     |      1      |     0      |    1
+ *
+ * Notes (from David G. Miller) to understand ABM status:
+ * When supporting ABM, when a UPS powers up or returns from battery, or
+ * ends the ABM rest mode, it enters charge mode.
+ * Some UPSs run a different charger reference voltage during charge mode
+ * but all the newer models should not be doing that, but basically once
+ * the battery voltage reaches the charger reference level (should be 2.3
+ * volts/cell), the charger is considered in float mode.  Some UPSs will not
+ * annunciate float mode until the charger power starts falling from the maximum
+ * level indicating the battery is truly at the float voltage or in float mode.
+ * The %charge level is based on battery voltage and the charge mode timer
+ * (should be 48 hours) and some UPSs add in a value that's related to charger
+ * power output.  So you can have UPS that enters float mode with anywhere
+ * from 80% or greater battery capacity.
+ * float mode is not important from the software's perspective, it's there to
+ * help determine if the charger is advancing correctly.
+ * So in float mode, the charger is charging the battery, so by definition you
+ * can assert the CHRG flag in NUT when in “float” mode or “charge” mode.
+ * When in “rest” mode the charger is not delivering anything to the battery,
+ * but it will when the ABM cycle(28 days) ends, or a battery discharge occurs
+ * and utility returns.  This is when the ABM status should be “resting”.
+ * If a battery failure is detected that disables the charger, it should be
+ * reporting “off” in the ABM charger status.
+ * Of course when delivering load power from the battery, the ABM status is
+ * discharging.
+ */
+
+#define			ABM_UNKNOWN  -1
+#define			ABM_DISABLED  0
+#define			ABM_ENABLED   1
+
+/* Internal flag to process battery status (CHRG/DISCHRG) and ABM */
+static int advanced_battery_monitoring = ABM_UNKNOWN;
+
+/* Used to store internally if ABM is enabled or not */
+static const char *eaton_abm_enabled_fun(double value)
+{
+	advanced_battery_monitoring = value;
+
+	upsdebugx(2, "ABM is %s", (advanced_battery_monitoring==1)?"enabled":"disabled");
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_enabled_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_fun },
+	{ 0, NULL, NULL }
+};
+
+/* Note 1: This point will need more clarification! */
+# if 0
+/* Used to store internally if ABM is enabled or not (for legacy units) */
+static const char *eaton_abm_enabled_legacy_fun(double value)
+{
+	advanced_battery_monitoring = value;
+
+	upsdebugx(2, "ABM is %s (legacy data)", (advanced_battery_monitoring==1)?"enabled":"disabled");
+
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_abm_enabled_legacy_info[] = {
+	{ 0, "dummy", eaton_abm_enabled_legacy_fun },
+	{ 0, NULL, NULL }
+};
+#endif /* if 0 */
+
+/* Used to process ABM flags, for battery.charger.status */
+static const char *eaton_abm_status_fun(double value)
+{
+	/* Don't process if ABM is disabled */
+	if (advanced_battery_monitoring == ABM_DISABLED) {
+		/* Clear any previously published data, in case
+		 * the user has switched off ABM */
+		dstate_delinfo("battery.charger.status");
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM numeric status: %i", (int)value);
+
+	switch ((long)value)
+	{
+	case 1:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "charging");
+		break;
+	case 2:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "discharging");
+		break;
+	case 3:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "floating");
+		break;
+	case 4:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "resting");
+		break;
+	case 6: /* ABM Charger Disabled */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "off");
+		break;
+	case 5: /* Undefined - ABM is not activated */
+	default:
+		/* Return NULL, not to get the value published! */
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM string status: %s", mge_scratch_buf);
+
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_abm_status_info[] = {
+	{ 1, "dummy", eaton_abm_status_fun },
+	{ 0, NULL, NULL }
+};
+
+/* Used to process ABM flags, for ups.status (CHRG/DISCHRG/RB) */
+static const char *eaton_abm_chrg_dischrg_fun(double value)
+{
+	/* Don't process if ABM is disabled */
+	if (advanced_battery_monitoring == ABM_DISABLED)
+		return NULL;
+
+	switch ((long)value)
+	{
+	case 1: /* charging status */
+	case 3: /* floating status */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+		break;
+	case 2:
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+		break;
+	case 6: /* ABM Charger Disabled */
+	case 4: /* resting, nothing to publish! (?) */
+	case 5: /* Undefined - ABM is not activated */
+	default:
+		/* Return NULL, not to get the value published! */
+		return NULL;
+	}
+
+	upsdebugx(2, "ABM CHRG/DISCHRG legacy string status (ups.status): %s", mge_scratch_buf);
+
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_abm_chrg_dischrg_info[] = {
+	{ 1, "dummy", eaton_abm_chrg_dischrg_fun },
+	{ 0, NULL, NULL }
+};
+
+/* ABM also implies that standard CHRG/DISCHRG are processed according
+ * to weither ABM is enabled or not...
+ * If ABM is disabled, we publish these legacy status
+ * Otherwise, we don't publish on ups.status, but only battery.charger.status */
+/* FIXME: we may prefer to publish the CHRG/DISCHRG status
+ * on battery.charger.status?! */
+static const char *eaton_abm_check_dischrg_fun(double value)
+{
+	if (advanced_battery_monitoring == ABM_DISABLED)
+	{
+		if (value == 1) {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "dischrg");
+		}
+		else {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!dischrg");
+		}
+	}
+	else {
+		/* Else, ABM is enabled, we should return NULL,
+		 * not to get the value published!
+		 * However, clear flags that would persist in case of prior
+		 * publication in ABM-disabled mode */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!dischrg");
+	}
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_discharging_info[] = {
+	{ 1, "dummy", eaton_abm_check_dischrg_fun },
+	{ 0, NULL, NULL }
+};
+
+static const char *eaton_abm_check_chrg_fun(double value)
+{
+	if (advanced_battery_monitoring == ABM_DISABLED)
+	{
+		if (value == 1) {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "chrg");
+		}
+		else {
+			snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
+		}
+	}
+	else {
+		/* Else, ABM is enabled, we should return NULL,
+		 * not to get the value published!
+		 * However, clear flags that would persist in case of prior
+		 * publication in ABM-disabled mode */
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%s", "!chrg");
+	}
+	return mge_scratch_buf;
+}
+
+static info_lkp_t eaton_charging_info[] = {
+	{ 1, "dummy", eaton_abm_check_chrg_fun },
+	{ 0, NULL, NULL }
+};
 
 /* The HID path 'UPS.PowerSummary.Time' reports Unix time (ie the number of
  * seconds since 1970-01-01 00:00:00. This has to be split between ups.date and
@@ -211,6 +447,7 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 		break;
 
 	case MGE_PULSAR_M:
+	case EATON_5P:
 		break;
 
 	default:
@@ -234,6 +471,7 @@ static const char *mge_battery_voltage_fun(double value)
 	{
 	case MGE_EVOLUTION:
 	case MGE_PULSAR_M:
+	case EATON_5P:
 		break;
 
 	default:
@@ -416,6 +654,39 @@ static info_lkp_t eaton_check_country_info[] = {
 	{ 0, NULL, NULL }
 };
 
+/* When UPS.PowerConverter.Output.ActivePower is not present,
+ * compute a realpower approximation using available data */
+static const char *eaton_compute_realpower_fun(double value)
+{
+	const char *str_ups_load = dstate_getinfo("ups.load");
+	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
+	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
+	float powerfactor = 0.80;
+	int power_nominal = 0;
+	int ups_load = 0;
+	double realpower = 0;
+	if (str_power_nominal && str_ups_load) {
+		/* Extract needed values */
+		ups_load = atoi(str_ups_load);
+		power_nominal = atoi(str_power_nominal);
+		if (str_powerfactor)
+			powerfactor = atoi(str_powerfactor);
+		/* Compute the value */
+		realpower = round(ups_load * 0.01 * power_nominal * powerfactor);
+		snprintf(mge_scratch_buf, sizeof(mge_scratch_buf), "%.0f", realpower);
+		upsdebugx(1, "eaton_compute_realpower_fun(%s)", mge_scratch_buf);
+		return mge_scratch_buf;
+	}
+	/* else can't process */
+	/* Return NULL, not to get the value published! */
+	return NULL;
+}
+
+static info_lkp_t eaton_compute_realpower_info[] = {
+	{ 0, "dummy", eaton_compute_realpower_fun },
+	{ 0, NULL, NULL }
+};
+
 /* Limit nominal output voltage according to HV or LV models */
 static const char *nominal_output_voltage_fun(double value)
 {
@@ -515,6 +786,22 @@ static info_lkp_t nominal_output_voltage_info[] = {
 	{ 110, "110", nominal_output_voltage_fun },
 	{ 120, "120", nominal_output_voltage_fun },
 	{ 127, "127", nominal_output_voltage_fun },
+	{ 0, NULL, NULL }
+};
+
+/* Limit reporting "online / !online" to when "!off" */
+static const char *eaton_converter_online_fun(double value)
+{
+	int ups_status = ups_status_get();
+
+	if (!(ups_status & STATUS(OFF)))
+		return (value == 0) ? "!online" : "online";
+	else
+		return NULL;
+}
+
+info_lkp_t eaton_converter_online_info[] = {
+	{ 0, "dummy", eaton_converter_online_fun },
 	{ 0, NULL, NULL }
 };
 
@@ -774,6 +1061,12 @@ static models_name_t mge_model_names [] =
 	{ "Evolution", "S 2500", MGE_EVOLUTION_S_2500, NULL },
 	{ "Evolution", "S 3000", MGE_EVOLUTION_S_3000, NULL },
 
+	/* Eaton 5P */
+	{ "Eaton 5P", "650", EATON_5P, "5P 650" },
+	{ "Eaton 5P", "850", EATON_5P, "5P 850" },
+	{ "Eaton 5P", "1150", EATON_5P, "5P 1150" },
+	{ "Eaton 5P", "1550", EATON_5P, "5P 1550" },
+	
 	/* Pulsar M models */
 	{ "PULSAR M", "2200", MGE_PULSAR_M_2200, NULL },
 	{ "PULSAR M", "3000", MGE_PULSAR_M_3000, NULL },
@@ -871,6 +1164,21 @@ static hid_info_t mge_hid2nut[] =
 	{ "battery.voltage.nominal", 0, 0, "UPS.PowerSummary.ConfigVoltage", NULL, "%s", HU_FLAG_STATIC, mge_battery_voltage_nominal },
 	{ "battery.protection", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.BatterySystem.Battery.DeepDischargeProtection", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
 	{ "battery.energysave", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].EnergySaving", NULL, "%s", HU_FLAG_SEMI_STATIC, yes_no_info },
+	{ "battery.energysave.load", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ConfigPercentLoad", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* Current implementation */
+	{ "battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].EnergySaving.ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* Newer implementation */
+	{ "battery.energysave.delay", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ShutdownTimer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	{ "battery.energysave.realpower", ST_FLAG_RW | ST_FLAG_STRING, 5, "UPS.PowerConverter.Input.[3].ConfigActivePower", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* ABM (Advanced Battery Monitoring) processing
+	 * Must be processed before the BOOL status */
+	/* Not published, just to store in internal var. advanced_battery_monitoring */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.ABMEnable", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_info },
+	/* Same as the one above, but for legacy units */
+	/* Refer to Note 1 (This point will need more clarification!)
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_enabled_legacy_info }, */
+	/* This data is the actual ABM status information */
+	{ "battery.charger.status", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_status_info },
 
 	/* UPS page */
 	{ "ups.efficiency", 0, 0, "UPS.PowerConverter.Output.Efficiency", NULL, "%.0f", 0, NULL },
@@ -884,6 +1192,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "%.0f", HU_FLAG_QUICK_POLL, NULL},
 	{ "ups.test.result", 0, 0, "UPS.BatterySystem.Battery.Test", NULL, "%s", 0, test_read_info },
 	{ "ups.test.interval", ST_FLAG_RW | ST_FLAG_STRING, 8, "UPS.BatterySystem.Battery.TestPeriod", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
+	/* Duplicate data for some units (such as 3S) that use a different path
+	 * Only the first valid one will be used */
+	{ "ups.beeper.status", 0 ,0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
 	{ "ups.beeper.status", 0 ,0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "%s", HU_FLAG_SEMI_STATIC, beeper_info },
 	{ "ups.temperature", 0, 0, "UPS.PowerSummary.Temperature", NULL, "%s", 0, kelvin_celsius_conversion },
 	{ "ups.power", 0, 0, "UPS.PowerConverter.Output.ApparentPower", NULL, "%.0f", 0, NULL },
@@ -892,6 +1203,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "ups.L3.power", 0, 0, "UPS.PowerConverter.Output.Phase.[3].ApparentPower", NULL, "%.0f", 0, NULL },
 	{ "ups.power.nominal", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "%.0f", HU_FLAG_STATIC, NULL },
 	{ "ups.realpower", 0, 0, "UPS.PowerConverter.Output.ActivePower", NULL, "%.0f", 0, NULL },
+	/* When not available, process an approximation from other data,
+	 * but map to apparent power to be called */
+	{ "ups.realpower", 0, 0, "UPS.Flow.[4].ConfigApparentPower", NULL, "-1", 0, eaton_compute_realpower_info },
 	{ "ups.L1.realpower", 0, 0, "UPS.PowerConverter.Output.Phase.[1].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "ups.L2.realpower", 0, 0, "UPS.PowerConverter.Output.Phase.[2].ActivePower", NULL, "%.0f", 0, NULL },
 	{ "ups.L3.realpower", 0, 0, "UPS.PowerConverter.Output.Phase.[3].ActivePower", NULL, "%.0f", 0, NULL },
@@ -912,9 +1226,11 @@ static hid_info_t mge_hid2nut[] =
 	/* Special case: boolean values that are mapped to ups.status and ups.alarm */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.ACPresent", NULL, NULL, HU_FLAG_QUICK_POLL, online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[3].PresentStatus.Used", NULL, NULL, 0, mge_onbatt_info },
-	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, online_info },
-	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, discharging_info },
-	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, charging_info },
+	/* These 2 ones are used when ABM is disabled */
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Discharging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_discharging_info },
+	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Charging", NULL, NULL, HU_FLAG_QUICK_POLL, eaton_charging_info },
+	/* And this one when ABM is enabled (same as battery.charger.status) */
+	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.Mode", NULL, "%.0f", HU_FLAG_QUICK_POLL, eaton_abm_chrg_dischrg_info },
 	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 1" */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.BelowRemainingCapacityLimit", NULL, NULL, HU_FLAG_QUICK_POLL, lowbatt_info },
 	/* Output overload, Level 1 (FIXME: add the level?) */
@@ -931,8 +1247,9 @@ static hid_info_t mge_hid2nut[] =
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.VoltageOutOfRange", NULL, NULL, 0, vrange_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.FrequencyOutOfRange", NULL, NULL, 0, frange_info },
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.Good", NULL, NULL, 0, off_info },
-	{ "BOOL", 0, 0, "UPS.BatterySystem.Charger.PresentStatus.Used", NULL, NULL, 0, off_info },
-	/* FIXME: on Dell, the above requires an "AND" with "UPS.BatterySystem.Charger.Mode = 4 (ABM Resting)" */
+	/* NOTE: UPS.PowerConverter.Input.[1].PresentStatus.Used" must only be considered when not "OFF",
+	 * and must hence be after "UPS.PowerSummary.PresentStatus.Good" */
+	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[1].PresentStatus.Used", NULL, NULL, 0, eaton_converter_online_info },
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[2].PresentStatus.Used", NULL, NULL, 0, bypass_auto_info }, /* Automatic bypass */
 	{ "BOOL", 0, 0, "UPS.PowerConverter.Input.[4].PresentStatus.Used", NULL, NULL, 0, bypass_manual_info }, /* Manual bypass */
 	{ "BOOL", 0, 0, "UPS.PowerSummary.PresentStatus.FanFailure", NULL, NULL, 0, fanfail_info },
@@ -1079,8 +1396,13 @@ static hid_info_t mge_hid2nut[] =
 	{ "shutdown.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL},
 	{ "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
+	/* Duplicate commands for some units (such as 3S) that use a different path
+	 * Only the first valid one will be used */
+	{ "beeper.mute", 0, 0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
 	{ "beeper.mute", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
+	{ "beeper.disable", 0, 0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
 	{ "beeper.disable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "1", HU_TYPE_CMD, NULL },
+	{ "beeper.enable", 0, 0, "UPS.BatterySystem.Battery.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 	{ "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
 
 	/* Command for the outlet collection */

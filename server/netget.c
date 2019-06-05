@@ -142,13 +142,11 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 		snprintfcat(buf, sizeof(buf), " RW");
 
 	if (node->enum_list) {
-		sendback(client, "%s ENUM\n", buf);
-		return;
+		snprintfcat(buf, sizeof(buf), " ENUM");
 	}
 
 	if (node->range_list) {
-		sendback(client, "%s RANGE\n", buf);
-		return;
+		snprintfcat(buf, sizeof(buf), " RANGE");
 	}
 
 	if (node->flags & ST_FLAG_STRING) {
@@ -156,9 +154,10 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 		return;
 	}
 
-	/* hmm... */
+	/* Any variable that is not string | range | enum is just a simple
+	 * numeric value */
 
-	sendback(client, "TYPE %s %s UNKNOWN\n", upsname, var);
+	sendback(client, "%s NUMBER\n", buf);
 }		
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
@@ -217,6 +216,25 @@ static void get_var(nut_ctype_t *client, const char *upsname, const char *var)
 
 void net_get(nut_ctype_t *client, int numarg, const char **arg)
 {
+	if (numarg < 1) {
+		send_err(client, NUT_ERR_INVALID_ARGUMENT);
+		return;
+	}
+
+	/* GET TRACKING [ID] */
+	if (!strcasecmp(arg[0], "TRACKING")) {
+		if (numarg < 2) {
+			sendback(client, "%s\n", (client->tracking) ? "ON" : "OFF");
+		}
+		else {
+			if (client->tracking)
+				sendback(client, "%s\n", tracking_get(arg[1]));
+			else
+				send_err(client, NUT_ERR_FEATURE_NOT_CONFIGURED);
+		}
+		return;
+	}
+
 	if (numarg < 2) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;

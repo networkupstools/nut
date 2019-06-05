@@ -18,25 +18,25 @@
 #
 # --------------------------------------------------------------------------
 #
-# actions: Let the user do certain things with upsd.  
-# 
+# actions: Let the user do certain things with upsd.
+#
 # Valid actions are:
 #
-# SET	- change the value of certain variables in the UPS
+# SET   - change the value of certain variables in the UPS
 # FSD   - set the "forced shutdown" flag in the UPS
-# 
+#
 # --------------------------------------------------------------------------
 #
 # instcmds: Let the user initiate specific instant commands.  Use "ALL"
-# to grant all commands automatically.  There are many possible  
+# to grant all commands automatically.  There are many possible
 # commands, so use 'upscmd -l' to see what your hardware supports.  Here
 # are a few examples:
 #
-# test.panel.start	- Start a front panel test
-# test.battery.start	- Start battery test
-# test.battery.stop	- Stop battery test
-# calibrate.start	- Start calibration
-# calibrate.stop	- Stop calibration
+# test.panel.start      - Start a front panel test
+# test.battery.start    - Start battery test
+# test.battery.stop     - Stop battery test
+# calibrate.start       - Start calibration
+# calibrate.stop        - Stop calibration
 #
 # --------------------------------------------------------------------------
 #
@@ -61,12 +61,15 @@
 #
 # To add a user for your upsmon, use this example:
 #
-#	[upsmon]
-#		password  = pass
-#		upsmon master
+#   [upsmon]
+#       password  = pass
+#       upsmon master
 # or
-#		upsmon slave
+#       upsmon slave
 #
 # The matching MONITOR line in your upsmon.conf would look like this:
 #
 # MONITOR myups@localhost 1 upsmon pass master	(or slave)
+#
+# See comments in the upsmon.conf(.sample) file for details about this
+# keyword and the difference of NUT slave and master systems.

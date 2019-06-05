@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2014 Arnaud Quette <arnaud.quette@free.fr> -->
+<application>
+ <id type="desktop">nut-monitor.desktop</id>
+ <metadata_license>CC0-1.0</metadata_license>
+ <project_license>GPL-3.0+</project_license>
+ <name>NUT Monitor</name>
+ <summary>GUI application to monitor UPS status</summary>
+ <description>
+  <p>
+   NUT Monitor is a GUI application to monitor UPS status, through NUT -
+   Network UPS Tools.
+   NUT is a client/server monitoring system that allows computers to
+   share uninterruptible power supply (UPS) and power distribution unit
+   (PDU) hardware. Clients access the hardware through the server, and
+   are notified whenever the power status changes.
+  </p>
+  <p>NUT Monitor provides the following features:</p>
+  <ul>
+   <li>Automatically connects to local UPS if there is only one managed</li>
+   <li>Command line options to start hidden, load a favorite, ...</li>
+   <li>System tray (notification area) integration, including notifications</li>
+   <li>Favorites, to store different devices</li>
+   <li>Display all device variables</li>
+   <li>Modify writable variables on UPS and devices</li>
+   <li>Support English and French</li>
+  </ul>
+  <p>
+   NUT Monitor requires that you have a running NUT system, that you can
+   connect to, either locally or remotely.
+   For more information on NUT: http://www.networkupstools.org/
+  </p>
+ </description>
+ <screenshots>
+  <screenshot type="default" width="620" height="349">http://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-1.png</screenshot>
+  <screenshot width="620" height="349">http://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-2.png</screenshot>
+  <screenshot width="620" height="349">http://www.lestat.st/_media/informatique/projets/nut-monitor/nut-monitor-3.png</screenshot>
+ </screenshots>
+ <url type="homepage">http://www.lestat.st/en/informatique/projets/nut-monitor</url>
+ <updatecontact>david@lestat.st</updatecontact>
+ <!-- project_group>GNOME</project_group -->
+</application>

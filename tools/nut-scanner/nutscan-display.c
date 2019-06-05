@@ -1,6 +1,5 @@
-/* display.c: format and display scanned devices
- * 
- *  Copyright (C) 2011 - Frederic Bohe <fredericbohe@eaton.com>
+/*
+ *  Copyright (C) 2011 - EATON
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,6 +15,11 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
+
+/*! \file nutscan-display.c
+    \brief format and display scanned devices
+    \author Frederic Bohe <fredericbohe@eaton.com>
+*/
 
 #include "common.h"
 #include <stdio.h>
@@ -52,9 +56,9 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 				nutdev_num, current_dev->driver,
 				current_dev->port);
 
-		opt = &(current_dev->opt);
+		opt = current_dev->opt;
 
-		do {
+		while (NULL != opt) {
 			if( opt->option != NULL ) {
 				printf("\t%s",opt->option);
 				if( opt->value != NULL ) {
@@ -63,7 +67,7 @@ void nutscan_display_ups_conf(nutscan_device_t * device)
 				printf("\n");
 			}
 			opt = opt->next;
-		} while( opt != NULL );
+		}
 
 		nutdev_num++;
 
@@ -93,9 +97,9 @@ void nutscan_display_parsable(nutscan_device_t * device)
 			current_dev->driver,
 			current_dev->port);
 
-		opt = &(current_dev->opt);
+		opt = current_dev->opt;
 
-		do {
+		while (NULL != opt) {
 			if( opt->option != NULL ) {
 				printf(",%s",opt->option);
 				if( opt->value != NULL ) {
@@ -103,7 +107,8 @@ void nutscan_display_parsable(nutscan_device_t * device)
 				}
 			}
 			opt = opt->next;
-		} while( opt != NULL );
+		}
+
 		printf("\n");
 
 		current_dev = current_dev->next;

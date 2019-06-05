@@ -58,17 +58,63 @@ directory, which is often /usr/local/ups/bin.
 Optional.  Same as the UPS field of the same name, but this is the
 default for UPSes that don't have the field.
 
+*maxretry*::
+Optional.  Specify the number of attempts to start the driver(s), in case of
+failure, before giving up. A delay of 'retrydelay' is inserted between each
+attempt. Caution should be taken when using this option, since it can
+impact the time taken by your system to start.
++
+The default is 1 attempt.
+
+*nowait*::
+Optional.  Specify to upsdrvctl to not wait at all for the driver(s) to
+execute the request command.
++
+The default (omission) is to wait.
+
+*retrydelay*::
+Optional.  Specify the delay between each restart attempt of the driver(s),
+as specified by 'maxretry'. Caution should be taken when using this option,
+since it can impact the time taken by your system to start.
++
+The default is 5 seconds.
+
 *pollinterval*::
 
 Optional.  The status of the UPS will be refreshed after a maximum
 delay which is controlled by this setting.  This is normally 2 seconds.  This
 may be useful if the driver is creating too much of a load on your system or
 network.
++
+Note that some drivers (such as linkman:usbhid-ups[8], linkman:snmp-ups[8] and
+linkman:nutdrv_qx[8]) also have an option called *pollfreq* which controls how
+frequently some of the less critical parameters are polled. Details are
+provided in the respective driver man pages.
+
+*synchronous*::
+
+Optional.  The driver work by default in asynchronous mode (i.e
+*synchronous=no*).  This means that all data are pushed by the driver
+on the communication socket to upsd (Unix socket on Unix, Named pipe
+on Windows) without waiting for these data to be actually consumed.
+With some HW, such as ePDUs, that can produce a lot of data,
+asynchronous mode may cause some congestion, resulting in the socket to
+be full, and the driver to appear as not connected.  In such case, the
+driver will provide the following debug message:
++
+	write XX bytes to socket Y failed
++
+By enabling the 'synchronous' flag (value = 'yes'), the driver will wait
+for data to be consumed by upsd, prior to publishing more.  This can be
+enabled either globally or per driver.
++
+The default is 'no' (i.e. asynchronous mode) for backward compatibility
+of the driver behavior.
 
 *user*::
 
-Optional.  If started as root, the driver will setuid(2) to the user id
-associated with 'username'.
+Optional.  Overrides the compiled-in default unprivileged username. See the
+discussion of the `-u` option in linkman:nutupsdrv[8] for details.
 
 UPS FIELDS
 ----------
@@ -113,7 +159,7 @@ This may be needed on Mac OS X systems.
 
 Optional.  When you specify this, the driver ignores a low battery condition
 flag that is reported by the UPS (some devices will switch off almost
-immediately after setting this flag, or will report this as soons as the
+immediately after setting this flag, or will report this as soon as the
 mains fails).  Instead it will use either of the following conditions to
 determine when the battery is low:
 
@@ -138,6 +184,21 @@ long upsdrvctl will wait for the driver to finish starting.  This keeps your
 system from getting stuck due to a broken driver or UPS.
 +
 The default is 45 seconds.
+
+*synchronous*::
+
+Optional.  Same as the global directive of the same name, but this is
+for a specific device.
+
+*usb_set_altinterface*[='altinterface']::
+
+Optional.  Force the USB code to call `usb_set_altinterface(0)`, as was done in
+NUT 2.7.2 and earlier.  This should not be necessary, since the default for
+`bAlternateSetting` (as shown in lsusb) is zero on all USB devices seen to
+date.  However, this redundant call to `usb_set_altinterface()` prevents
+certain UPSes from working on Mac OS X. If your UPS requires explicitly setting
+the alternate interface, include this flag, and email the nut-upsdev list with
+details about your UPS and operating system.
 
 *default.<variable>*::
 

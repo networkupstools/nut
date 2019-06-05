@@ -1,6 +1,6 @@
 Desc: Udev script for NUT USB and IPMI drivers
 File: scripts/udev/README
-Date: 25 July 2011
+Date: 31 July 2014
 Auth: Arnaud Quette <aquette.dev@gmail.com>
 
 This document introduces the Linux udev script for NUT USB
@@ -32,7 +32,7 @@ Manual installation
 To install them manually, copy the rules file(s) to /etc/udev/rules.d
 (or /lib/udev/rules.d on newer systems) using the command(s):
 
-$ cp -f nut-usbups.rules /etc/udev/rules.d/52-nut-usbups.rules
+$ cp -f nut-usbups.rules /etc/udev/rules.d/62-nut-usbups.rules
 $ cp -f nut-ipmipsu.rules /etc/udev/rules.d/52-nut-ipmipsu.rules
 
 You will need to refresh the bus to avoid a reboot for these rules to be

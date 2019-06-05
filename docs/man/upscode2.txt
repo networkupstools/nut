@@ -54,7 +54,7 @@ A Compaq T1500h is known to need this.
 COMMANDS
 --------
 
-The driver supports the following commands for those UPSen that support them.
+The driver supports the following commands for those UPSes that support them.
 The available commands are autodetected during initialization,
 so you should check availability with 'upscmd -l'.
 

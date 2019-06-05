@@ -26,12 +26,7 @@
 
 #include "usbhid-ups.h"
 
-/* constants for converting HID read values to real values */
-static const float vin_scale = 0.03545 * 100;
-static const float vout_scale = 0.02571 * 100;
-static const float vbat_scale = 0.00857 * 100;
-static const float ccharge_scale = 0.8274 / 10;
-static const float cdischarge_scale = 16.113 / 10;
+/* Don't put non-extern definitions here - this file gets included by usbhid-ups.c */
 
 extern subdriver_t openups_subdriver;
 
