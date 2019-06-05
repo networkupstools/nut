@@ -1,4 +1,4 @@
-NUTDRV_MODBUS(8) 
+NUTDRV_MODBUS(8)
 ================
 
 NAME

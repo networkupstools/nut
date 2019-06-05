@@ -24,7 +24,7 @@
  * - complete initups
  * - create initinfo
  * - create updateinfo
- * 
+ *
  * "NUT Modbus definition file"		xxx.modbus
  * # A comment header may contain information such as
  * # - author and device information
@@ -82,7 +82,7 @@ void upsdrv_updateinfo(void)
 	/* ser_send(upsfd, "foo%d", 1234); */
 	/* ser_send_buf(upsfd, bincmd, 12); */
 
-	/* 
+	/*
 	 * ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS);
 	 *
 	 * if (ret < STATUS_LEN) {
@@ -196,7 +196,7 @@ void upsdrv_initups(void)
 	/* else {
 		 * upscli_splitaddr(device_path[0] ? device_path[0] : "localhost", &hostname, &port
 		upsdebugx(2, "upsdrv_initups: TCP (network) device");
-		ctx = modbus_new_tcp(device_path, 1502); 
+		ctx = modbus_new_tcp(device_path, 1502);
 		if (ctx == NULL)
 			fatalx(EXIT_FAILURE, "Unable to create the libmodbus context");
 
