@@ -950,7 +950,7 @@ void upsdrv_help(void) {
 	printf("  houron = hh:mm hh = hour 0-23 mm = minute 0-59 separated with :\n");
 	printf("  houroff = hh:mm hh = hour 0-23 mm = minute 0-59 separated with :\n");
 	printf(" where houron is power-on hour and houroff is shutdown and power-off hour\n");
-	printf(" Uses daysweek and houron to programing and save UPS power on/off\n");
+	printf(" Uses daysweek and houron to programming and save UPS power on/off\n");
 	printf(" These are valid only if prgshut = 2 or 3\n");
 }
 
