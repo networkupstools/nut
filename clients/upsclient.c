@@ -1039,7 +1039,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 				upscli_disconnect(ups);
 				return -1;
 			}
-			upsdebugx(3, "Can not connect to %s in SSL, continue uncrypted", host);
+			upsdebugx(3, "Can not connect to %s in SSL, continue unencrypted", host);
 		} else {
 			upslogx(LOG_INFO, "Connected to %s in SSL", host);
 			if (certverify == 0) {
