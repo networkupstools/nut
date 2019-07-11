@@ -25,8 +25,8 @@ PartOf=nut-driver.target
 # Finally note that "nut-driver-enumerator.service" should take care of this.
 
 [Service]
-ExecStart=/bin/sh -c "@SBINDIR@/upsdrvctl start `@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`"
-ExecStop=/bin/sh -c "@SBINDIR@/upsdrvctl stop `@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`"
+ExecStart=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; /sbin/upsdrvctl start "$NUTDEV"'
+ExecStop=/bin/sh -c 'NUTDEV="`@NUT_LIBEXECDIR@/nut-driver-enumerator.sh --get-device-for-service %i`" && [ -n "$NUTDEV" ] || { echo "FATAL: Could not find a NUT device section for service unit %i" >&2 ; exit 1 ; } ; /sbin/upsdrvctl stop "$NUTDEV"'
 Type=forking
 Restart=on-failure
 RestartSec=5min
