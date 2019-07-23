@@ -46,7 +46,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.66"
+#define DRIVER_VERSION	"0.67"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -457,7 +457,7 @@ static void scan_received_pack(void) {
 	if (im < 3)
 		autonomy_calc(im);
 	else {
-		if (BattExtension == 80)
+		if (BattExtension == 80 && im == 3)
 			autonomy_calc(im + 1);
 		else
 			autonomy_calc(im);
