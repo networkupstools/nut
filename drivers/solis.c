@@ -457,7 +457,7 @@ static void scan_received_pack(void) {
 	if (im < 3)
 		autonomy_calc(im);
 	else {
-		if (BattExtension == 80)
+		if (BattExtension == 80 && im == 3)
 			autonomy_calc(im + 1);
 		else
 			autonomy_calc(im);
