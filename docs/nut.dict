@@ -28,6 +28,7 @@ ARS
 ATEK
 ATR
 ATT
+ATTRS
 ATX
 ATs
 AVL
@@ -93,6 +94,7 @@ BTIntervl
 BTS
 BTTime
 BTV
+BUFRD
 BUZ
 BYP
 BZ
@@ -113,6 +115,7 @@ BayTech
 BeepTone
 Belkin's
 Benedikt
+Berge
 BestPort
 BiWeekly
 Bieringer
@@ -404,6 +407,7 @@ INIGO
 INNO
 INSTCMDDESC
 INTERNETOFFICE
+INTERR
 INTL
 INV
 INVOLT
@@ -551,6 +555,7 @@ Martinezgarza
 Martín
 Marzouk
 Massimo
+Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
@@ -1424,6 +1429,7 @@ devd
 devel
 devscan
 dfl
+dialout
 dipsw
 dir
 disp
@@ -1537,6 +1543,7 @@ frob
 frontends
 fs
 fsd
+ftdi
 fuji
 fullload
 gamatronic
@@ -1814,11 +1821,13 @@ mmddyyyy
 mn
 modbus
 modelname
+modprobe
 monmaster
 monpasswd
 monslave
 monuser
 morbo
+msec
 multi
 multilink
 multimeter
@@ -1958,6 +1967,7 @@ pfy
 ph
 phasewindow
 phoenixcontact
+picocom
 pid
 pidpath
 pinout
@@ -2134,11 +2144,14 @@ shutdownpolarity
 shutdowntime
 shutup
 si
+siemens
 sigaction
 sigmask
 simplejson
 simu
+sio
 sitesearch
+sitop
 sizeof
 skel
 slavesync
@@ -2266,6 +2279,7 @@ tsd
 tty
 ttyS
 ttySx
+ttyUPS
 ttyUSB
 ttya
 ttyb
