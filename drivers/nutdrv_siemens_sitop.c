@@ -56,7 +56,7 @@
 #include "limits.h"
 
 #define DRIVER_NAME	"Siemens SITOP UPS500 series driver"
-#define DRIVER_VERSION	"0.01"
+#define DRIVER_VERSION	"0.02"
 
 #define RX_BUFFER_SIZE 100
 
@@ -227,7 +227,7 @@ void upsdrv_updateinfo(void) {
 	}
 
 	/* This is all we know about the charge level... */
-	dstate_setinfo("battery.charge.indication",
+	dstate_setinfo("battery.charge.approx",
 		(current_ups_status.battery_above_85_percent) ? ">85" : "<85");
 
 	status_init();
