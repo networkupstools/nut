@@ -98,7 +98,11 @@ static void help_msg(void)
 
 	printf("  -s <id>        - configure directly from cmd line arguments\n");
 	printf("                 - note: must specify all driver parameters with successive -x\n");
-	printf("                 - note: at least 'port' variable should be set\n\n");
+	printf("                 - note: at least 'port' variable should be set\n");
+	printf("                 - note: to explore the current values on a device from an\n");
+	printf("                   unprivileged user account (with sufficient media access in\n");
+	printf("                   the OS - e.g. to query networked devices), you can specify\n");
+	printf("                   '-d 1' argument and `export NUT_STATEPATH=/tmp` beforehand\n\n");
 
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
@@ -632,7 +636,7 @@ int main(int argc, char **argv)
 				break;
 			}
 
-			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
 
 			/* Allow driver some time to quit */
 			sleep(5);
@@ -645,7 +649,7 @@ int main(int argc, char **argv)
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
 
-	/* note: device.type is set early to be overriden by the driver
+	/* note: device.type is set early to be overridden by the driver
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 

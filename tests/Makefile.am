@@ -1,10 +1,11 @@
 # Network UPS Tools: tests
 
-# Tests with gcc-4.8 require this C++11 option to be provided explicitly
-# gcc-4.6 does not support this yet; newer gcc's should be ok by default
-CPPUNIT_NUT_CFLAGS = -g -O0 -std=c++11
+EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
+if HAVE_CXX11
 if HAVE_CPPUNIT
+# Note: per configure script this "SHOULD" also assume
+# that we HAVE_CXX11 - but better have it explicit
 
 TESTS = cppunittest
 
@@ -15,7 +16,7 @@ check-local: $(check_PROGRAMS)
 	RES=0; for P in $^ ; do $(VALGRIND) ./$$P || { RES=$$? ; echo "FAILED: $(VALGRIND) ./$$P" >&2; }; done; exit $$RES
 endif
 
-cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) $(CPPUNIT_NUT_CFLAGS)
+cppunittest_CXXFLAGS = $(CPPUNIT_CFLAGS) $(CPPUNIT_CXXFLAGS) $(CPPUNIT_NUT_CXXFLAGS) $(CXXFLAGS)
 cppunittest_LDFLAGS = $(CPPUNIT_LIBS)
 cppunittest_LDADD = ../clients/libnutclient.la
 
@@ -26,6 +27,12 @@ cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 
 else !HAVE_CPPUNIT
 
-EXTRA_DIST = example.cpp cpputest.cpp
+EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CPPUNIT
+
+else !HAVE_CXX11
+
+EXTRA_DIST += example.cpp cpputest.cpp
+
+endif !HAVE_CXX11

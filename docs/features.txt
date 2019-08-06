@@ -137,9 +137,14 @@ supported by the UPS hardware.
 - All drivers are started and stopped with one common program. Starting one is
 as easy as starting ten: 'upsdrvctl start'.
 
+- For operating systems with a supported service management framework, you can
+manage the NUT drivers wrapped into independent service instances using the
+'upsdrvsvcctl' instead, and gain the benefits of automated restart as well as
+possibility to define further dependencies between your OS components.
+
 - Shutdowns and other procedures may be tested without stressing actual UPS
 hardware by simulating status values with the dummy-ups pseudo-driver. Anything
-which can happen in a driver can be replicated with dummy-ups. 
+which can happen in a driver can be replicated with dummy-ups.
 
 Monitoring diagrams
 -------------------

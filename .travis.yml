@@ -57,21 +57,26 @@ addons:
     - libxml2-utils
     - libmodbus-dev
 
-# Define one job in the matrix, to avoid a failing job
-# with "no environment variables set"; but others are
-# listed below to prioritize the longer jobs to start first.
+# Define at least two jobs in the matrix, to avoid a failing job
+# with "no environment variables set" and have them built (one
+# is too few); but others are listed below to prioritize the
+# longer jobs to start first as faster ones complete in parallel.
 env:
   global:
     - CI_TIME=true
     - CI_TRACE=false
   matrix:
     - BUILD_TYPE=default
+    - BUILD_TYPE=default-tgt:distcheck-light
 
 # Builds with customized setups
 # Note that doc-related builds take the longest, and Travis CI cloud
 # runs only a few sub-jobs in parallel, so we want the withdoc and
 # perhaps spellcheck jobs to start first, and while they are still in
 # progress, others are spawned and finished - reducing overall job TTL.
+# Note that the nut-driver-enumerator tests should be tried in at least
+# the shell interpreters reasonable for default setups of Solaris/illumos
+# (ksh) and Linux (bash, dash, etc.) common distros.
 matrix:
   include:
   - env: BUILD_TYPE=default-withdoc
@@ -93,6 +98,14 @@ matrix:
         packages: &deps_aspell
         - aspell
         - aspell-en
+  - env: BUILD_TYPE=default-shellcheck
+    os: linux
+    addons:
+      apt:
+        packages:
+        - coreutils
+        - file
+        #TBD# - shellcheck
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
     sudo: false
@@ -104,6 +117,38 @@ matrix:
         - *deps_driverlibs
         - valgrind
 # Other quicker builds in standard env follow:
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=bash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - bash
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=ksh
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - ksh
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=dash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - dash
+  - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=ash
+    os: linux
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - ash
   - env: BUILD_TYPE=default-nodoc
     os: linux
     addons:
@@ -119,11 +164,11 @@ matrix:
       apt:
         packages:
         - *deps_driverlibs
-  - env: BUILD_TYPE=default-tgt:distcheck-light
+  - env:
+    - BUILD_TYPE=default-tgt:distcheck-light
+    - NO_PKG_CONFIG=true
     os: linux
-    sudo: false
-    services:
-        - docker
+    sudo: true
     addons:
       apt:
         packages:
