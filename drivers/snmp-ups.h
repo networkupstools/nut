@@ -208,8 +208,7 @@ typedef struct {
 #define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
-/* Free slot
- * #define SU_FLAG_SETINT	(1 << 6)*/	/* save value */
+#define SU_AMBIENT_TEMPLATE	(1 << 6)	/* ambient template definition */
 #define SU_OUTLET		(1 << 7)	/* outlet template definition */
 #define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 
@@ -271,6 +270,7 @@ typedef struct {
 
 #define SU_FLAG_SEMI_STATIC	(1 << 22) /* Refresh this entry once in several walks
  * (for R/W values user can set on device, like descriptions or contacts) */
+#define SU_TYPE_DAISY_MASTER_ONLY	(1 << 23) /* Only valid for daisychain master (device.1) */
 
 #define SU_VAR_COMMUNITY	"community"
 #define SU_VAR_VERSION		"snmp_version"
@@ -367,6 +367,14 @@ extern int g_pwr_battery;
 extern int pollfreq; /* polling frequency */
 extern int semistaticfreq; /* semistatic entry update frequency */
 
+/* Temperature handling, to convert back to Celsius (NUT standard) */
+extern int temperature_unit;
+
+#define TEMPERATURE_UNKNOWN    0
+#define TEMPERATURE_CELSIUS    1
+#define TEMPERATURE_KELVIN     2
+#define TEMPERATURE_FARHENHEIT 3
+
 /* Common daisychain structure and functions */
 
 bool_t daisychain_init();
@@ -380,6 +388,9 @@ typedef struct {
 	long bypass_phases;
 } daisychain_info_t;
 
+/* Subdrivers shared helpers functions */
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(long snmp_value);
 
 #endif /* SNMP_UPS_H */
 
