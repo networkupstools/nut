@@ -543,16 +543,21 @@ above in the Time and Date format chapter.
 ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-NOTE: multiple sensors can be exposed using the indexed notation.
-'ambient.*', without index or using '0', relates to the embedded sensor.
-For example: 'ambient.temperature' represent the embedded sensor temperature.
-Other sensors (external, communication card, ...) can use indexes
-from '1' to 'n'. For example: 'ambient.1.temperature' for the first external
-sensor temperature.
+NOTE: *n* stands for the sensors index. A special case is "ambient.0" which is
+equivalent to "ambient" (without index), and represent the embedded sensor of
+the device. The most important data is "ambient.count", used to iterate over
+the whole set of outlets.
+For more information, refer to the NUT sensors management notes chapter
+of the user manual.
 
 [options="header"]
 |==================================================================================
 | Name                                | Description                 | Example value
+| ambient.count                       | Total number of sensors     | 2
+| ambient.n.name                      | Ambient sensor name         | sensor 1
+| ambient.n.mfr                       | Ambient sensor manufacturer | EATON
+| ambient.n.model                     | Ambient sensor model        | EMPDT1H1C2
+| ambient.n.firmware                  | Ambient sensor firmware     | 01.03.0011
 | ambient.n.present                   | Ambient sensor presence     | yes
 | ambient.n.temperature               | Ambient temperature
                                         (degrees C)                 | 25.40
@@ -600,8 +605,16 @@ sensor temperature.
                                         seen (percent)              | 13
 | ambient.n.contacts.x.status         | State of the dry contact
                                         sensor x                    | open
+| ambient.n.contacts.x.config         | Configuration of the dry
+                                        contact sensor x            | normal-open
+| ambient.n.contacts.x.name           | Name of the dry contact
+                                        sensor x                    | smoke-detector1
 |==================================================================================
 
+NOTE:
+- ambient.n.contacts.x.status may either be the raw status ('open' or 'closed'),
+or may relate to ambient.n.contacts.x.config. In this case, the value can be
+'active' or 'inactive'.
 
 outlet: Smart outlet management
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
