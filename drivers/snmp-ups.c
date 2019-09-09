@@ -166,7 +166,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.19"
+#define DRIVER_VERSION		"1.20"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -193,7 +193,11 @@ static int template_index_base = -1;
 static int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
 static int outlet_template_index_base = -1;
 static int outletgroup_template_index_base = -1;
+static int ambient_template_index_base = -1;
 static int device_template_offset = -1;
+
+/* Temperature handling, to convert back to Celsius */
+int temperature_unit = TEMPERATURE_UNKNOWN;
 
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
@@ -2208,7 +2212,7 @@ static bool_t is_multiple_template(const char *OID_template)
 }
 
 /* Instantiate an snmp_info_t from a template.
- * Useful for outlet and outlet.group templates.
+ * Useful for device, outlet, outlet.group and ambient templates.
  * Note: remember to adapt info_type, OID and optionaly dfl */
 static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
@@ -2292,6 +2296,9 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 		case SU_DAISY:
 			template_index_base = device_template_index_base;
 			break;
+		case SU_AMBIENT_TEMPLATE:
+			template_index_base = ambient_template_index_base;
+			break;
 		default:
 			/* we should never fall here! */
 			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
@@ -2356,6 +2363,8 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			outlet_template_index_base = base_index;
 		else if (su_info_p->flags & SU_OUTLET_GROUP)
 			outletgroup_template_index_base = base_index;
+		else if (su_info_p->flags & SU_AMBIENT_TEMPLATE)
+			ambient_template_index_base = base_index;
 		else
 			device_template_index_base = base_index;
 	}
@@ -2464,6 +2473,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 	else {
 		template_count = atoi(dstate_getinfo(template_count_var));
 	}
+	upsdebugx(1, "%i instances found...", template_count);
 
 	/* Only instantiate templates if needed! */
 	if (template_count > 0) {
@@ -2476,6 +2486,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 				cur_template_number < (template_count + base_snmp_index) ;
 				cur_template_number++)
 		{
+			upsdebugx(1, "Processing instance %i/%i...", cur_template_number, template_count);
 			/* Special processing for daisychain:
 			 * append 'device.x' to the NUT variable name, except for the
 			 * whole daisychain ("device.0") */
@@ -2515,7 +2526,7 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 #endif
 				}
 			}
-			else /* Outlet and outlet groups templates */
+			else if (!strncmp(type, "outlet", 6)) /* Outlet and outlet groups templates */
 			{
 				/* Get the index of the current template instance */
 				cur_nut_index = cur_template_number;
@@ -2552,6 +2563,44 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 						su_info_p->info_type, cur_nut_index);
 				}
 			}
+			else if (!strncmp(type, "ambient", 7))
+			{
+				/* FIXME: can be grouped with outlet* above */
+				/* Get the index of the current template instance */
+				cur_nut_index = cur_template_number;
+
+				/* Special processing for daisychain */
+				if (daisychain_enabled == TRUE) {
+					/* Only publish on the daisychain host */
+					if ( (su_info_p->flags & SU_TYPE_DAISY_MASTER_ONLY)
+						&& (current_device_number != 1) ) {
+							upsdebugx(2, "discarding variable due to daisychain master flag");
+							continue;
+						}
+
+					/* Device(s) 1-N (master + slave(s)) need to append 'device.x' */
+					if ((devices_count > 1) && (current_device_number > 0)) {
+						memset(&tmp_buf[0], 0, SU_INFOSIZE);
+						strcat(&tmp_buf[0], "device.%i.");
+						strcat(&tmp_buf[0], su_info_p->info_type);
+
+						upsdebugx(4, "FORMATTING STRING = %s", &tmp_buf[0]);
+							snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+								&tmp_buf[0], current_device_number, cur_nut_index);
+					}
+					else {
+						/* FIXME: daisychain-whole, what to do? */
+						snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+							su_info_p->info_type, cur_nut_index);
+					}
+				}
+				else {
+					snprintf((char*)cur_info_p.info_type, SU_INFOSIZE,
+						su_info_p->info_type, cur_nut_index);
+				}
+			}
+			else
+				upsdebugx(4, "Error: unknown template type '%s", type);
 
 			/* check if default value is also a template */
 			if ((cur_info_p.dfl != NULL) &&
@@ -2580,9 +2629,14 @@ static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
 								su_info_p->OID, current_device_number + device_template_offset, cur_template_number);
 						}
-						else {
+						else if (su_info_p->flags & SU_TYPE_DAISY_2) {
 							snprintf((char *)cur_info_p.OID, SU_INFOSIZE,
-								su_info_p->OID, cur_template_number + device_template_offset, current_device_number - device_template_offset);
+								su_info_p->OID, cur_template_number + device_template_offset,
+								current_device_number - device_template_offset);
+						}
+						else {
+							/* Note: no device daisychain templating (SU_TYPE_DAISY_MASTER_ONLY)! */
+							snprintf((char *)cur_info_p.OID, SU_INFOSIZE, su_info_p->OID, cur_template_number);
 						}
 					}
 					else {
@@ -2638,6 +2692,10 @@ snmp_info_flags_t get_template_type(const char* varname)
 		upsdebugx(4, "device template");
 		return SU_DAISY;
 	}
+	else if (!strncmp(varname, "ambient", 7)) {
+		upsdebugx(4, "ambient template");
+		return SU_AMBIENT_TEMPLATE;
+	}
 	else {
 		upsdebugx(2, "Unknown template type: %s", varname);
 		return 0;
@@ -2657,6 +2715,8 @@ int extract_template_number(snmp_info_flags_t template_type, const char* varname
 		item_number_ptr = &varname[6];
 	else if (template_type & SU_DAISY)
 		item_number_ptr = &varname[6];
+	else if (template_type & SU_AMBIENT_TEMPLATE)
+		item_number_ptr = &varname[7];
 	else
 		return -1;
 
@@ -3103,7 +3163,8 @@ bool_t snmp_ups_walk(int mode)
 			 * Not applicable to outlets (need SU_FLAG_STATIC tagging) */
 			if ((su_info_p->flags & SU_FLAG_ABSENT)
 				&& !(su_info_p->flags & SU_OUTLET)
-				&& !(su_info_p->flags & SU_OUTLET_GROUP))
+				&& !(su_info_p->flags & SU_OUTLET_GROUP)
+				&& !(su_info_p->flags & SU_AMBIENT_TEMPLATE))
 			{
 				if (mode == SU_WALKMODE_INIT)
 				{
@@ -3174,6 +3235,13 @@ bool_t snmp_ups_walk(int mode)
 					continue;
 				else
 					status = process_template(mode, "outlet.group", su_info_p);
+			}
+			else if (su_info_p->flags & SU_AMBIENT_TEMPLATE) {
+				/* Skip commands after init */
+				if ((SU_TYPE(su_info_p) == SU_TYPE_CMD) && (mode == SU_WALKMODE_UPDATE))
+					continue;
+				else
+					status = process_template(mode, "ambient", su_info_p);
 			}
 			else {
 /*				if (daisychain_enabled == TRUE) {
@@ -3990,3 +4058,37 @@ void read_mibconf(char *mib)
 	}
 	pconf_finish(&ctx);
 }
+
+/***********************************************************************
+ * Subdrivers shared helpers functions
+ **********************************************************************/
+
+static char su_scratch_buf[20];
+
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(long snmp_value)
+{
+	memset(su_scratch_buf, 0, sizeof(su_scratch_buf));
+	long celsius_value = snmp_value;
+
+	switch (temperature_unit) {
+		case TEMPERATURE_KELVIN:
+			celsius_value = (snmp_value / 10) - 273.15;
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
+			break;
+		case TEMPERATURE_CELSIUS:
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
+			break;
+		case TEMPERATURE_FARHENHEIT:
+			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
+			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
+			break;
+		case TEMPERATURE_UNKNOWN:
+		default:
+			upsdebugx(1, "%s: not a known temperature unit for conversion!", __func__);
+			break;
+	}
+	upsdebugx(2, "%s: %.1ld => %s", __func__, (snmp_value / 10), su_scratch_buf);
+	return su_scratch_buf;
+}
+

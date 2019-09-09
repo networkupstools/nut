@@ -244,17 +244,14 @@ typedef struct {
 /* "flags" bits 21..23 (and 24 reserved for DMF) */
 #define SU_TYPE_DAISY_1		(1UL << 21)	/* Daisychain index is the 1st specifier */
 #define SU_TYPE_DAISY_2		(1UL << 22)	/* Daisychain index is the 2nd specifier */
-#define SU_TYPE_DAISY(t)	((t)->flags & (3UL << 21))	/* Mask the 2 SU_TYPE_DAISY_* but not SU_DAISY */
+#define SU_TYPE_DAISY(t)	((t)->flags & (11UL << 21))	/* Mask the SU_TYPE_DAISY_{1,2,MASTER_ONLY} but not SU_DAISY */
 #define SU_DAISY			(1UL << 23)	/* Daisychain template definition - set at run-time for devices with detected "device.count" over 1 */
-/* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2*/
-/* Reserved slot -- to import from DMF branch codebase
-// (and change SU_TYPE_DAISY to 11UL<<21 for the 3 types then):
-//#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)*/	/* Only valid for daisychain master (device.1) */
+/* NOTE: Previously SU_DAISY had same bit-flag value as SU_TYPE_DAISY_2 */
+#define SU_TYPE_DAISY_MASTER_ONLY	(1UL << 24)	/* Only valid for daisychain master (device.1) */
 
 /* Free slot: (1UL << 25) */
 
-/* Reserved slot -- to import from DMF branch codebase:
-//#define SU_AMBIENT_TEMPLATE	(1UL << 26)*/	/* ambient template definition */
+#define SU_AMBIENT_TEMPLATE	(1UL << 26)	/* ambient template definition */
 
 /* Reserved slot -- to import from DMF branch codebase:
 //#define SU_FLAG_FUNCTION	(1UL << 27)
@@ -371,6 +368,17 @@ const char *su_usdate_to_isodate_info_fun(void *raw_date);
 extern info_lkp_t su_convert_to_iso_date_info[];
 /* Name the mapping location in that array for consumers to reference */
 #define FUNMAP_USDATE_TO_ISODATE 0
+
+/* Process temperature value according to 'temperature_unit' */
+const char *su_temperature_read_fun(long snmp_value);
+
+/* Temperature handling, to convert back to Celsius (NUT standard) */
+extern int temperature_unit;
+
+#define TEMPERATURE_UNKNOWN    0
+#define TEMPERATURE_CELSIUS    1
+#define TEMPERATURE_KELVIN     2
+#define TEMPERATURE_FARHENHEIT 3
 
 /*****************************************************
  * End of Subdrivers shared helpers functions
