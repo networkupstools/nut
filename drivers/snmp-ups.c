@@ -1790,8 +1790,14 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 			break;
 		case SU_DAISY:
 			template_index_base = device_template_index_base;
+			break;
 		case SU_AMBIENT_TEMPLATE:
 			template_index_base = ambient_template_index_base;
+			break;
+		default:
+			/* we should never fall here! */
+			upsdebugx(3, "%s: unknown template type '%i' for %s",
+				__func__, template_type, su_info_p->info_type);
 	}
 	base_index = template_index_base;
 
