@@ -70,8 +70,8 @@ const char *eaton_sensor_temperature_unit_fun(long snmp_value)
 			return "celsius";
 		case 2:
 			/* store the value, for temperature processing */
-			temperature_unit = TEMPERATURE_FARHENHEIT;
-			return "farhenheit";
+			temperature_unit = TEMPERATURE_FAHRENHEIT;
+			return "fahrenheit";
 		default:
 			/* store the value, for temperature processing */
 			temperature_unit = TEMPERATURE_UNKNOWN;

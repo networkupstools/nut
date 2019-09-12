@@ -238,7 +238,7 @@ static info_lkp_t eaton_sensor_temperature_read_info[] = {
 static info_lkp_t eaton_sensor_temperature_unit_info[] = {
 	{ 0, "kelvin", NULL, NULL },
 	{ 1, "celsius", NULL, NULL },
-	{ 2, "farhenheit", NULL, NULL },
+	{ 2, "fahrenheit", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 

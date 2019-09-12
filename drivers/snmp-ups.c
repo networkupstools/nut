@@ -4079,7 +4079,7 @@ const char *su_temperature_read_fun(long snmp_value)
 		case TEMPERATURE_CELSIUS:
 			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", (snmp_value / 10));
 			break;
-		case TEMPERATURE_FARHENHEIT:
+		case TEMPERATURE_FAHRENHEIT:
 			celsius_value = (((snmp_value / 10) - 32) * 5) / 9;
 			snprintf(su_scratch_buf, sizeof(su_scratch_buf), "%.1ld", celsius_value);
 			break;
