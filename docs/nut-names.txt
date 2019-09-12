@@ -544,9 +544,10 @@ ambient: Conditions from external probe equipment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 NOTE: *n* stands for the sensors index. A special case is "ambient.0" which is
-equivalent to "ambient" (without index), and represent the embedded sensor of
-the device. The most important data is "ambient.count", used to iterate over
-the whole set of outlets.
+equivalent to "ambient" (without index), and represents the default sensor of
+the device.  This is not to be confused with the device embedded sensor, which
+is published as 'ups.temperature'.  The most important data is "ambient.count",
+used to iterate over the whole set of outlets.
 For more information, refer to the NUT sensors management notes chapter
 of the user manual.
 
