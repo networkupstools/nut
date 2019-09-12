@@ -45,7 +45,7 @@ SERIAL_USB_DRIVERLIST = \
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus
-LINUX_I2C_DRIVERLIST = asem
+LINUX_I2C_DRIVERLIST = asem pijuice
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
@@ -128,6 +128,7 @@ mge_utalk_SOURCES = mge-utalk.c
 microdowell_SOURCES = microdowell.c
 oneac_SOURCES = oneac.c
 optiups_SOURCES = optiups.c
+pijuice_SOURCES = pijuice.c
 powercom_SOURCES = powercom.c
 powercom_LDADD = $(LDADD) -lm
 powerpanel_SOURCES = powerpanel.c powerp-bin.c powerp-txt.c
@@ -241,9 +242,11 @@ macosx_ups_SOURCES = macosx-ups.c
 phoenixcontact_modbus_SOURCES = phoenixcontact_modbus.c
 phoenixcontact_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 
-# Asem
+# Linux I2C drivers
 asem_LDADD = $(LDADD_DRIVERS)
 asem_SOURCES = asem.c
+pijuice_LDADD = $(LDADD_DRIVERS)
+pijuice_SOURCES = pijuice.c
 
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c
