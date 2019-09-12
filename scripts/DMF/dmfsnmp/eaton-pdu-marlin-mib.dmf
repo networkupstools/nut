@@ -113,7 +113,7 @@
 	<lookup name="eaton_sensor_temperature_unit_info">
 		<lookup_info oid="0" value="kelvin"/>
 		<lookup_info oid="1" value="celsius"/>
-		<lookup_info oid="2" value="farhenheit"/>
+		<lookup_info oid="2" value="fahrenheit"/>
 	</lookup>
 	<lookup name="marlin_input_type_info">
 		<lookup_info oid="1" value="1"/>

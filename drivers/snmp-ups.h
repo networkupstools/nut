@@ -373,7 +373,7 @@ extern int temperature_unit;
 #define TEMPERATURE_UNKNOWN    0
 #define TEMPERATURE_CELSIUS    1
 #define TEMPERATURE_KELVIN     2
-#define TEMPERATURE_FARHENHEIT 3
+#define TEMPERATURE_FAHRENHEIT 3
 
 /* Common daisychain structure and functions */
 
