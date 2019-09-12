@@ -8,11 +8,12 @@
 <!--
   // This is an XSD schema for NUT DMF files intended for snmp-ups usage
   // with SNMP MIB references.
-  // Copyright (C) 2016 - 2018 by Eaton
+  // Copyright (C) 2016 - 2019 by Eaton
   // Authors:
   //    Jim Klimov <EvgenyKlimov@eaton.com>
   //    Carlos Dominguez <CarlosDominguez@eaton.com>
   //    Michal Vyskocil <MichalVyskocil@eaton.com>
+  //    Arnaud Quette <ArnaudQuette@Eaton.com>
   // Adapted from markup generated from de-facto DMF files with online tool:
   //    http://www.freeformatter.com/xsd-generator.html
   // as a superset of all DMFs we have initially generated from *-mib.c files.
@@ -107,6 +108,7 @@
                       <xs:attribute type="xs:string" name="input_3_phase" use="optional"/>
                       <xs:attribute type="xs:string" name="bypass_1_phase" use="optional"/>
                       <xs:attribute type="xs:string" name="bypass_3_phase" use="optional"/>
+                      <xs:attribute type="xs:string" name="ambient" use="optional"/>
                       <xs:attribute type="xs:string" name="outlet" use="optional"/>
                       <xs:attribute type="xs:string" name="outlet_group" use="optional"/>
                       <xs:attribute type="xs:string" name="writable" use="optional"/>

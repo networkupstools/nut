@@ -196,6 +196,7 @@
 #define SNMP_FLAG_SEMI_STATIC "semistatic"
 #define SNMP_FLAG_ABSENT "absent"
 #define SNMP_FLAG_NEGINVALID "positive"
+#define SNMP_AMBIENT_TEMPLATE "ambient"
 #define SNMP_FLAG_UNIQUE "unique"
 #define SNMP_FLAG_ZEROINVALID "zero_invalid"
 #define SNMP_FLAG_NAINVALID "na_invalid"
