@@ -7,6 +7,7 @@
 #    Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
 #    Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
 #    Copyright (C) 2016 - 2019 Jim Klimov <EvgenyKlimov@eaton.com>
+#    Copyright (C) 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
 #
 
 from __future__ import print_function
@@ -33,8 +34,7 @@ SU_FLAG_NEGINVALID = (1 << 4)	#/* Invalid if negative value */
 SU_FLAG_UNIQUE = (1 << 5)	#/* There can be only be one
 				# * provider of this info,
 				# * disable the other providers */
-# Free slot : setvar is now deprecated; support it to spew errors
-SU_FLAG_SETINT = (1 << 6)	#/* save value */
+SU_AMBIENT_TEMPLATE = (1 << 6)	#/* ambient template definition */
 SU_OUTLET = (1 << 7)	        #/* outlet template definition */
 SU_CMD_OFFSET = (1 << 8)	#/* Add +1 to the OID index */
 
@@ -68,6 +68,7 @@ SU_FLAG_ZEROINVALID = (1 << 20)	#/* Invalid if "0" value */
 SU_FLAG_NAINVALID = (1 << 21)	#/* Invalid if "N/A" value */
 
 SU_FLAG_SEMI_STATIC = (1 << 22)	#/* retrieve info every few update walks. */
+SU_TYPE_DAISY_MASTER_ONLY = (1 << 23) #/* Only valid for daisychain master (device.1) */
 
 def die (msg):
     print ("E: " + msg, file=sys.stderr)
@@ -191,6 +192,7 @@ def mk_snmp (inp, root):
                     ("command", SU_TYPE_CMD, "yes"),
                     ("outlet_group", SU_OUTLET_GROUP, "yes"),
                     ("outlet", SU_OUTLET, "yes"),
+                    ("ambient", SU_AMBIENT_TEMPLATE, "yes"),
                     ("output_1_phase", SU_OUTPUT_1, "yes"),
                     ("output_3_phase", SU_OUTPUT_3, "yes"),
                     ("input_1_phase", SU_INPUT_1, "yes"),
@@ -199,6 +201,7 @@ def mk_snmp (inp, root):
                     ("bypass_3_phase", SU_BYPASS_3, "yes"),
                     ("type_daisy", SU_TYPE_DAISY_1, "1"),
                     ("type_daisy", SU_TYPE_DAISY_2, "2"),
+                    ("type_daisy", SU_TYPE_DAISY_MASTER_ONLY, "3"),
                     ("zero_invalid", SU_FLAG_ZEROINVALID, "yes"),
                     ("na_invalid", SU_FLAG_NAINVALID, "yes"),
                     ):
@@ -212,8 +215,8 @@ def mk_snmp (inp, root):
                 if flag in info ["flags"]:
                     info ["flags"].remove (flag)
 
-            if SU_FLAG_SETINT in info ["flags"]:
-                die ("Obsoleted and removed SU_FLAG_SETINT in flags for '%s'", (info, ))
+#            if SU_FLAG_SETINT in info ["flags"]:
+#                die ("Obsoleted and removed SU_FLAG_SETINT in flags for '%s'", (info, ))
 #                if not "setvar" in info:
 #                    die ("SU_FLAG_SETINT in flags, but not setvar for '%s'", (info, ))
 #                kwargs ["setvar"] = info ["setvar"]

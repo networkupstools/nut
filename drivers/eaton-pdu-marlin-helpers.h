@@ -2,7 +2,7 @@
  * Eaton ePDU SNMP devices with NUT
  *
  *  Copyright (C)
- *  2017        Arnaud Quette <ArnaudQuette@eaton.com>
+ *  2017-2019   Arnaud Quette <ArnaudQuette@eaton.com>
  *  2017        Jim Klimov <EvgenyKlimov@eaton.com>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -24,5 +24,6 @@
 #define EATON_EPDU_MARLIN_HELPERS_H
 
 long marlin_device_count_fun(const char *daisy_dev_list);
+const char *eaton_sensor_temperature_unit_fun(long snmp_value);
 
 #endif /* EATON_EPDU_MARLIN_HELPERS_H */

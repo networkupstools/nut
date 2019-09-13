@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2490 utf-8
+personal_ws-1.1 en 2491 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -255,6 +255,7 @@ EEPROM
 EG
 EL
 ELCD
+EMPDT
 ENV
 EOF
 EPERM

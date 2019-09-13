@@ -7,6 +7,7 @@
  * Copyright (C) 2016 Carlos Dominguez <CarlosDominguez@eaton.com>
  * Copyright (C) 2016 Michal Vyskocil <MichalVyskocil@eaton.com>
  * Copyright (C) 2016 Jim Klimov <EvgenyKlimov@eaton.com>
+ * Copyright (C) 2019 Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1134,6 +1135,11 @@ compile_flags(const char **attrs)
 			flags = flags | SU_TYPE_CMD;
 
 	if(aux_flags)free(aux_flags);
+	aux_flags = get_param_by_name(SNMP_AMBIENT_TEMPLATE, attrs);
+	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
+			flags = flags | SU_AMBIENT_TEMPLATE;
+
+	if(aux_flags)free(aux_flags);
 	aux_flags = get_param_by_name(SNMP_OUTLET_GROUP, attrs);
 	if(aux_flags)if(strcmp(aux_flags, YES) == 0)
 			flags = flags | SU_OUTLET_GROUP;
@@ -1180,6 +1186,8 @@ compile_flags(const char **attrs)
 			flags = flags | SU_TYPE_DAISY_1;
 		else if(strcmp(aux_flags, "2") == 0)
 			flags = flags | SU_TYPE_DAISY_2;
+		else if(strcmp(aux_flags, "3") == 0)
+			flags = flags | SU_TYPE_DAISY_MASTER_ONLY;
 	}
 	if(aux_flags)free(aux_flags);
 
