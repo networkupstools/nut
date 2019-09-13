@@ -286,7 +286,7 @@ static void get_status()
 
 	upsdebugx( 3, __FUNCTION__ );
 
-	memset( status_buf, 0, sizeof( status_buf ));
+	memset( status_buf, 0, ST_MAX_VALUE_LEN );
 
 	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
 
