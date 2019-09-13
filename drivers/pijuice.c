@@ -17,17 +17,128 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
+#include "main.h"
+
 #include <sys/ioctl.h>
-#include <stdbool.h>
 #include <stdint.h>
-#ifndef _LINUX_I2C_H
-#	include <linux/i2c.h>
+
+/*
+ * Linux I2C userland is a bit of a mess until distros refresh to 
+ * the i2c-tools 4.x release that profides i2c/smbus.h for userspace 
+ * instead of (re)using linux/i2c-dev.h, which conflicts with a 
+ * kernel header of the same name.
+ *
+ * See:
+ * https://i2c.wiki.kernel.org/index.php/Plans_for_I2C_Tools_4 
+ */
+#if HAVE_LINUX_SMBUS_H
+#	include <i2c/smbus.h>
 #endif
-#ifndef _LINUX_I2C_DEV_H
-#	include <linux/i2c-dev.h>
+#if HAVE_LINUX_I2C_DEV_H
+#	include <linux/i2c-dev.h> /* for I2C_SLAVE */
 #endif
 
-#include "main.h"
+/* 
+ * i2c-tools pre-4.0 has a userspace header with a name that conflicts 
+ * with a kernel header, so it may be ignored/removed by distributions
+ * when packaging i2c-tools.
+ *
+ * This will cause the driver to be un-buildable on certain 
+ * configurations, so include the necessary bits here to handle this 
+ * situation.
+ */
+#if WITH_LINUX_I2C
+#if !HAVE_LINUX_SMBUS_H
+static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
+                                     int size, union i2c_smbus_data *data)
+{
+	struct i2c_smbus_ioctl_data args;
+	__s32 err;
+
+	args.read_write = read_write;
+	args.command = command;
+	args.size = size;
+	args.data = data;
+
+	err = ioctl(file, I2C_SMBUS, &args);
+	if (err == -1)
+		err = -errno;
+	return err;
+}
+
+
+static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
+{
+	union i2c_smbus_data data;
+	int err;
+
+	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
+	                     I2C_SMBUS_BYTE_DATA, &data)) < 0)
+		return err;
+	else
+		return 0x0FF & data.byte;
+}
+
+static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value)
+{
+	union i2c_smbus_data data;
+	int err;
+
+	data.byte = value;
+	if ((err = i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+	                     I2C_SMBUS_BYTE_DATA, &data)) < 0)
+		return err;
+	else
+		return 0x0FF & data.byte;
+}
+
+static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
+{
+	union i2c_smbus_data data;
+	int err;
+
+	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
+	                     I2C_SMBUS_WORD_DATA, &data)) < 0)
+		return err;
+	else
+		return 0x0FFFF & data.word;
+}
+
+static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 value)
+{
+	union i2c_smbus_data data;
+	int err;
+
+	data.word = value;
+	if ((err = i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
+	                     I2C_SMBUS_WORD_DATA, &data)) < 0)
+		return err;
+	else
+		return 0x0FFFF & data.word;
+}
+
+static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 length, __u8 *values)
+{
+	union i2c_smbus_data data;
+	int err;
+
+	if ( length > I2C_SMBUS_BLOCK_MAX)
+	{
+		length = I2C_SMBUS_BLOCK_MAX;
+	}
+
+	data.block[0] = length;
+	memcpy(data.block + 1, values, length);
+
+	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
+	                     I2C_SMBUS_I2C_BLOCK_DATA, &data)) < 0)
+		return NULL;
+	else
+		memcpy(values, &data.block[1], data.block[0]);
+		return values;
+}
+#endif
+#endif
 
 #define STATUS_CMD				0x40
 #define CHARGE_LEVEL_CMD			0x41
@@ -77,23 +188,24 @@
 #define RESET_TO_DEFAULT_CMD			0xF0
 #define FIRMWARE_VERSION_CMD			0xFD
 
-#define BATT_NORMAL 0
-#define BATT_CHARGING_FROM_IN 1
-#define BATT_CHARGING_FROM_5V 2
-#define BATT_NOT_PRESENT 3
+#define BATT_NORMAL		0
+#define BATT_CHARGING_FROM_IN	1
+#define BATT_CHARGING_FROM_5V	2
+#define BATT_NOT_PRESENT	3
 
-#define POWER_NOT_PRESENT 0
-#define POWER_BAD 1
-#define POWER_WEAK 2
-#define POWER_PRESENT 3
+#define POWER_NOT_PRESENT	0
+#define POWER_BAD		1
+#define POWER_WEAK		2
+#define POWER_PRESENT		3
 
-#define LOW_BATTERY_THRESHOLD 25.0
-#define HIGH_BATTERY_THRESHOLD 75.0
+#define LOW_BATTERY_THRESHOLD	25.0
+#define HIGH_BATTERY_THRESHOLD	75.0
+#define NOMINAL_BATTERY_VOLTAGE	4.18
 
-#define DRIVER_NAME	"PiJuice UPS driver"
-#define DRIVER_VERSION	"0.7"
+#define DRIVER_NAME		"PiJuice UPS driver"
+#define DRIVER_VERSION		"0.9"
 
-static uint8_t i2c_address = 0x14;
+static uint8_t i2c_address    =	0x14;
 static uint8_t shutdown_delay = 30;
 
 /*
@@ -142,99 +254,6 @@ upsdrv_info_t upsdrv_info = {
 		return; \
 	}
 
-/* Not all i2c-tools installs include the appropriate headers/libraries */
-#ifndef LIB_I2C_SMBUS_H
-static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
-                                     int size, union i2c_smbus_data *data)
-{
-	struct i2c_smbus_ioctl_data args;
-	__s32 err;
-
-	args.read_write = read_write;
-	args.command = command;
-	args.size = size;
-	args.data = data;
-
-	err = ioctl(file, I2C_SMBUS, &args);
-	if (err == -1)
-		err = -errno;
-	return err;
-}
-
-
-static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
-{
-	union i2c_smbus_data data;
-	int err;
-
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
-	                     I2C_SMBUS_BYTE_DATA, &data)) < 0)
-		return err;
-	else
-		return 0x0FF & data.byte;
-}
-
-static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value)
-{
-	union i2c_smbus_data data;
-	int err;
-
-	data.byte = value;
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
-	                     I2C_SMBUS_BYTE_DATA, &data)) < 0)
-		return err;
-	else
-		return 0x0FF & data.byte;
-}
-
-
-static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
-{
-	union i2c_smbus_data data;
-	int err;
-
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
-	                     I2C_SMBUS_WORD_DATA, &data)) < 0)
-		return err;
-	else
-		return 0x0FFFF & data.word;
-}
-
-static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 value)
-{
-	union i2c_smbus_data data;
-	int err;
-
-	data.word = value;
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_WRITE, command,
-	                     I2C_SMBUS_WORD_DATA, &data)) < 0)
-		return err;
-	else
-		return 0x0FFFF & data.word;
-}
-
-static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 length, __u8 *values)
-{
-	union i2c_smbus_data data;
-	int err;
-
-	if ( length > I2C_SMBUS_BLOCK_MAX)
-	{
-		length = I2C_SMBUS_BLOCK_MAX;
-	}
-
-	data.block[0] = length;
-	memcpy(data.block + 1, values, length);
-
-	if ((err = i2c_smbus_access(file, I2C_SMBUS_READ, command,
-	                     I2C_SMBUS_I2C_BLOCK_DATA, &data)) < 0)
-		return NULL;
-	else
-		memcpy(values, &data.block[1], data.block[0]);
-		return values;
-}
-#endif
-
 static inline int open_i2c_bus(char *path, uint8_t addr)
 {
 	int file;
@@ -266,15 +285,18 @@ static void get_charge_level_hi_res()
 	 * reads; the charge level data may be slightly stale, 
 	 * but no other options seem reasonable:
 	 *
-	 * 1) return 0 / NULL
-	 * 	leads to a false report of a depleted battery, possibly
+	 * 1) store 0
+	 * 	Leads to a false report of a depleted battery, possibly
 	 * 	triggering an immediate shutdown if on battery power only
-	 * 2) retry the read immediately
-	 * 	could tie up the i2c bus and make matters exponentially worse
+	 * 2) store -1
+	 * 	Adds a lot of logic to "skip" over negative charge levels,
+	 * 	which effectively accomplishes the same thing
+	 * 3) retry the read immediately
+	 * 	Could tie up the i2c bus and make matters exponentially worse
 	 */
 	battery_charge_level = data / 10.0;
 
-	upsdebugx( 1, "battery.charge: %02.1f%%", battery_charge_level );
+	upsdebugx( 1, "Battery Charge Level: %02.1f%%", battery_charge_level );
 	dstate_setinfo( "battery.charge", "%02.1f", battery_charge_level );
 }
 
@@ -361,16 +383,14 @@ static void get_status()
 	{
 		get_charge_level_hi_res();
 
-		upsdebugx( 1, "battery_charge_level: %02.1f", battery_charge_level );
-
 		if ( battery_charge_level <= LOW_BATTERY_THRESHOLD )
 		{
-			upsdebugx( 1, "Low Battery Status" );
+			upsdebugx( 1, "Battery Charge Status: LOW" );
 			snprintfcat( status_buf, ST_MAX_VALUE_LEN, "LB " );
 		}
 		else if ( battery_charge_level > HIGH_BATTERY_THRESHOLD )
 		{
-			upsdebugx( 1, "High Battery Status" );
+			upsdebugx( 1, "Battery Charge Status: HIGH" );
 			snprintfcat( status_buf, ST_MAX_VALUE_LEN, "HB " );
 		}
 	}
@@ -383,9 +403,9 @@ static void get_status()
 	     powerInput     <= POWER_PRESENT &&
 	     powerInput5vIo <= POWER_PRESENT )
 	{
-		if ( powerInput     == POWER_NOT_PRESENT && 
-                   ( powerInput5vIo != POWER_NOT_PRESENT && 
-		     powerInput5vIo <= POWER_PRESENT ))
+		if ( powerInput       == POWER_NOT_PRESENT && 
+                     ( powerInput5vIo != POWER_NOT_PRESENT && 
+		       powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{
@@ -400,12 +420,12 @@ static void get_status()
 			if ( batteryStatus == BATT_CHARGING_FROM_5V )
 			{
 				snprintfcat( status_buf, sizeof( status_buf ), " CHRG" );
-				upsdebugx( 1, "battery charging" );
+				upsdebugx( 1, "Battery Charger Status: charging" );
 				dstate_setinfo( "battery.charger.status", "%s", "charging" );
 			}
 			else if ( batteryStatus == BATT_NORMAL )
 			{
-				upsdebugx( 1, "battery resting" );
+				upsdebugx( 1, "Battery Charger Status: resting" );
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 			status_set( status_buf );
@@ -428,17 +448,17 @@ static void get_status()
 			{
 				snprintfcat( status_buf, sizeof(status_buf), " CHRG" );
 				status_set( status_buf );
-				upsdebugx( 1, "battery charging");
+				upsdebugx( 1, "Battery Charger Status: charging" );
 				dstate_setinfo( "battery.charger.status", "%s", "charging" );
 			}
 			else if ( batteryStatus == BATT_NORMAL )
 			{
 				status_set( status_buf );
-				upsdebugx(1, "battery resting");
+				upsdebugx( 1, "Battery Charger Status: resting" );
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 		}
-		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT ) && 
+		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT ) &&
 			  ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 1 )
@@ -451,18 +471,17 @@ static void get_status()
 			upsdebugx( 1, "On USB and 5V_GPIO power [%d:%d:%d]", usb_power, gpio_power, battery_power );
 
 			snprintfcat( status_buf, sizeof( status_buf ), "OL" );
-			if ( batteryStatus == BATT_CHARGING_FROM_IN || 
-			     batteryStatus == BATT_CHARGING_FROM_5V )
+			if ( batteryStatus == BATT_CHARGING_FROM_IN )
 			{
 				snprintfcat( status_buf, sizeof(status_buf), " CHRG");
 				status_set( status_buf );
-				upsdebugx(1, "battery charging");
+				upsdebugx( 1, "Battery Charger Status: charging" );
 				dstate_setinfo("battery.charger.status", "%s", "charging");
 			}
 			else if ( batteryStatus == BATT_NORMAL )
 			{
 				status_set( status_buf );
-				upsdebugx( 1, "battery resting" );
+				upsdebugx( 1, "Battery Charger Status: resting" );
 				dstate_setinfo( "battery.charger.status", "%s", "resting" );
 			}
 		}
@@ -492,10 +511,8 @@ static void get_battery_temperature()
 
 	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
 
-	upsdebugx( 1, "battery.temperature: %d°C", data );
+	upsdebugx( 1, "Battery Temperature: %d°C", data );
 	dstate_setinfo( "battery.temperature", "%d", data );
-	/* Use this for UPS temperature as well, since there is not a separate sensor available */
-	dstate_setinfo( "ups.temperature", "%d", data );
 }
 
 static void get_battery_voltage()
@@ -507,9 +524,8 @@ static void get_battery_voltage()
 
 	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
 
-	upsdebugx( 1, "battery.voltage: %0.3fV", data / 1000.0 );
+	upsdebugx( 1, "Battery Voltage: %0.3fV", data / 1000.0 );
 	dstate_setinfo( "battery.voltage", "%0.3f", data / 1000.0 );
-	dstate_setinfo( "battery.voltage.nominal", "%0.3f", 4.1 );
 }
 
 static void get_battery_current()
@@ -519,10 +535,19 @@ static void get_battery_current()
 
 	upsdebugx( 3, __FUNCTION__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	/*
+	 * The reported current can actually be negative, so we cannot 
+	 * check for I2C failure by looking for negative values
+	 */
+	data = i2c_smbus_read_word_data(upsfd, cmd);
 
-	upsdebugx( 1, "battery.current: %dmA", data );
-	dstate_setinfo( "battery.current", "%d", data );
+	if ( data & ( 1 << 15 ) )
+	{
+		data = data - ( 1 << 16 );
+	}
+
+	upsdebugx( 1, "Battery Current: %0.3fA", data / 1000.0 );
+	dstate_setinfo( "battery.current", "%0.3f", data / 1000.0 );
 }
 
 static void get_io_voltage()
@@ -534,7 +559,7 @@ static void get_io_voltage()
 
 	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
 
-	upsdebugx( 1, "input.voltage: %.3fV", data / 1000.0 );
+	upsdebugx( 1, "Input Voltage: %.3fV", data / 1000.0 );
 	dstate_setinfo( "input.voltage", "%.3f", data / 1000.0 );
 }
 
@@ -545,15 +570,19 @@ static void get_io_current()
 
 	upsdebugx( 3, __FUNCTION__ );
 
-	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
+	/*
+	 * The reported current can actually be negative, so we cannot 
+	 * check for I2C failure by looking for negative values
+	 */
+	data = i2c_smbus_read_word_data(upsfd, cmd);
 
 	if ( data & ( 1 << 15 ) )
 	{
 		data = data - ( 1 << 16 );
 	}
 
-	upsdebugx( 1, "input.current: %dmA", data );
-	dstate_setinfo( "input.current", "%d", data );
+	upsdebugx( 1, "Input Current: %.3fA", data / 1000.0 );
+	dstate_setinfo( "input.current", "%.3f", data / 1000.0 );
 }
 
 static void get_firmware_version()
@@ -574,7 +603,7 @@ static void get_firmware_version()
         	upslogx( LOG_WARNING, "Unknown Firmware release: %d.%d", major, minor );
 	}
 
-	upsdebugx( 1, "ups.firmware: %d.%d", major, minor );
+	upsdebugx( 1, "UPS Firmware Version: %d.%d", major, minor );
 	dstate_setinfo( "ups.firmware", "%d.%d", major, minor );
 }
 
@@ -587,7 +616,7 @@ static void get_battery_profile()
 
 	I2C_READ_BLOCK( upsfd, cmd, 14, block, __FUNCTION__ )
 
-	upsdebugx( 1, "battery.capacity: %0.3fAh", ( block[1] << 8 | block[0] ) / 1000.0 );
+	upsdebugx( 1, "Battery Capacity: %0.3fAh", ( block[1] << 8 | block[0] ) / 1000.0 );
 	dstate_setinfo( "battery.capacity", "%0.3f", ( block[1] << 8 | block[0] ) / 1000.0 );
 }
 
@@ -603,15 +632,15 @@ static void get_battery_profile_ext()
 	switch( block[0] & 0xFF00 )
 	{
 		case 0:
-			upsdebugx( 1, "battery.type: LiPO" );
+			upsdebugx( 1, "Battery Chemistry: LiPO" );
 			dstate_setinfo( "battery.type", "%s", "LiPO" );
 			break;
 		case 1:
-			upsdebugx( 1, "battery.type: LiFePO4" );
+			upsdebugx( 1, "Battery Chemistry: LiFePO4" );
 			dstate_setinfo( "battery.type", "%s", "LiFePO4" );
 			break;
 		default:
-			upsdebugx( 1, "battery.type: UNKNOWN" );
+			upsdebugx( 1, "Battery Chemistry: UNKNOWN" );
 			dstate_setinfo( "battery.type", "%s", "UNKNOWN" );
 	}
 }
@@ -625,7 +654,14 @@ static void get_power_off()
 
 	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
 
-	upsdebugx( 1, "Power Off: %d", data );
+	if ( data == 255 )
+	{
+		upsdebugx( 1, "Power Off: DISABLED" );
+	}
+	else if ( data <= 250 )
+	{
+		upsdebugx( 1, "Power Off: %d Seconds", data );
+	}
 }
 
 static void set_power_off()
@@ -637,14 +673,26 @@ static void set_power_off()
 
 	/*
 	 * Acceptable values for shutdown_delay are 1-250, 
-	 * use 255 to clear a scheduled power off command
+	 * use 0/255 to clear a scheduled power off command
 	 */
 
 	if ( shutdown_delay > 255 )
+	{
+        	upslogx(
+			LOG_WARNING,
+			"shutdown delay of >250 seconds requested, shortening to 250 seconds"
+		);
 		shutdown_delay = 250;
+	}
 
 	if ( shutdown_delay == 0 )
-		shutdown_delay++;
+	{
+        	upslogx(
+			LOG_WARNING,
+			"shutdown delay of 0 seconds requested, using 1 second instead"
+		);
+		shutdown_delay = 1;
+	}
 
 	I2C_WRITE_BYTE( upsfd, cmd, shutdown_delay, __FUNCTION__ )
 }
@@ -668,10 +716,10 @@ static void get_time()
 	year       = (( (block[6] >> 4 ) & 0x0F) * 10 ) + ( block[6] & 0x0F ) + 2000;
 	subsecond  = block[7] * 100 / 256;
 
-	upsdebugx( 1, "ups.time: %02d:%02d:%02d.%02d", hour, minute, second, subsecond );
+	upsdebugx( 1, "UPS Time: %02d:%02d:%02d.%02d", hour, minute, second, subsecond );
 	dstate_setinfo( "ups.time", "%02d:%02d:%02d.%02d", hour, minute, second, subsecond );
 
-	upsdebugx( 1, "ups.date: %04d-%02d-%02d", year, month, day );
+	upsdebugx( 1, "UPS Date: %04d-%02d-%02d", year, month, day );
 	dstate_setinfo( "ups.date", "%04d-%02d-%02d", year, month, day );
 }
 
@@ -710,7 +758,11 @@ void upsdrv_initinfo(void)
 	dstate_setinfo( "device.mfr", "%s", "PiJuice" );
 	dstate_setinfo( "device.type", "%s", "HAT" );
 
+	upsdebugx( 1, "Low Battery Threshold: %0.0f%%", LOW_BATTERY_THRESHOLD );
 	dstate_setinfo( "battery.charge.low", "%0.0f", LOW_BATTERY_THRESHOLD );
+
+	upsdebugx( 1, "Nominal Battery Voltage: %0.3fV", NOMINAL_BATTERY_VOLTAGE );
+	dstate_setinfo( "battery.voltage.nominal", "%0.3f", NOMINAL_BATTERY_VOLTAGE );
 
 	get_i2c_address();
 	get_battery_profile();
