@@ -36,6 +36,9 @@
 #endif
 #if HAVE_LINUX_I2C_DEV_H
 #	include <linux/i2c-dev.h> /* for I2C_SLAVE */
+#if !HAVE_LINUX_SMBUS_H
+#	include <linux/i2c.h> 
+#endif
 #endif
 
 /* 
@@ -48,7 +51,7 @@
  * situation.
  */
 #if WITH_LINUX_I2C
-#if !HAVE_LINUX_SMBUS_H
+#if !HAVE_DECL_I2C_SMBUS_ACCESS 
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
                                      int size, union i2c_smbus_data *data)
 {
@@ -65,8 +68,9 @@ static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
 		err = -errno;
 	return err;
 }
+#endif
 
-
+#if !HAVE_DECL_I2C_SMBUS_READ_BYTE_DATA
 static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -78,7 +82,9 @@ static inline __s32 i2c_smbus_read_byte_data(int file, __u8 command)
 	else
 		return 0x0FF & data.byte;
 }
+#endif
 
+#if !HAVE_DECL_I2C_SMBUS_WRITE_BYTE_DATA
 static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value)
 {
 	union i2c_smbus_data data;
@@ -91,7 +97,9 @@ static inline __s32 i2c_smbus_write_byte_data(int file, __u8 command, __u8 value
 	else
 		return 0x0FF & data.byte;
 }
+#endif
 
+#if !HAVE_DECL_I2C_SMBUS_READ_WORD_DATA
 static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 {
 	union i2c_smbus_data data;
@@ -103,7 +111,9 @@ static inline __s32 i2c_smbus_read_word_data(int file, __u8 command)
 	else
 		return 0x0FFFF & data.word;
 }
+#endif
 
+#if !HAVE_DECL_I2C_SMBUS_WRITE_WORD_DATA
 static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 value)
 {
 	union i2c_smbus_data data;
@@ -116,7 +126,9 @@ static inline __s32 i2c_smbus_write_word_data(int file, __u8 command, __u16 valu
 	else
 		return 0x0FFFF & data.word;
 }
+#endif
 
+#if !HAVE_DECL_I2C_SMBUS_READ_BLOCK_DATA
 static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 length, __u8 *values)
 {
 	union i2c_smbus_data data;

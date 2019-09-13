@@ -534,7 +534,7 @@ if test "${nut_with_linux_i2c}" != no; then
                     [Define to 1 if you have <i2c/smbus.h>.])]
             )
             AC_CHECK_DECLS(
-                [i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
                 [nut_with_linux_i2c="no"],
                 [#include <stdio.h>
