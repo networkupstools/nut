@@ -49,6 +49,7 @@
 	#include "tripplite-hid.h"
 	#include "idowell-hid.h"
 	#include "openups-hid.h"
+	#include "powervar-hid.h"
 #endif
 
 /* master list of avaiable subdrivers */
@@ -66,6 +67,7 @@ static subdriver_t *subdriver_list[] = {
 	&tripplite_subdriver,
 	&idowell_subdriver,
 	&openups_subdriver,
+	&powervar_subdriver,
 #endif
 	NULL
 };
