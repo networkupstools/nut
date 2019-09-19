@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.98"
+#define PW_MIB_VERSION "0.99"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -308,6 +308,13 @@ static info_lkp_t pw_ambient_drycontacts_state_info[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
+static info_lkp_t pw_emp002_ambient_presence_info[] = {
+	{ 0, "unknown", NULL, NULL },
+	{ 2, "yes", NULL, NULL },     /* communicationOK */
+	{ 3, "no", NULL, NULL },      /* communicationLost */
+	{ 0, NULL, NULL, NULL }
+};
+
 /* extracted from drivers/eaton-pdu-marlin-mib.c -> marlin_threshold_status_info */
 static info_lkp_t pw_threshold_status_info[] = {
 	{ 0, "good", NULL, NULL },          /* No threshold triggered */
@@ -561,6 +568,9 @@ static snmp_info_t pw_mib[] = {
 	/* Warning: indexes start at '1' not '0'! */
 	/* sensorCount.0 */
 	{ "ambient.count", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.1.0", "", 0, NULL },
+	/* CommunicationStatus.n */
+	{ "ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
+		NULL, SU_AMBIENT_TEMPLATE, &pw_emp002_ambient_presence_info[0] },
 	/* sensorName.n: OctetString EMPDT1H1C2 @1 */
 	{ "ambient.%i.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i", "", SU_AMBIENT_TEMPLATE, NULL },
 	/* sensorManufacturer.n */

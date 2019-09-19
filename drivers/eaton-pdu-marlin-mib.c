@@ -36,7 +36,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.63"
+#define EATON_MARLIN_MIB_VERSION	"0.64"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -109,6 +109,13 @@ static info_lkp_t marlin_ambient_presence_info[] = {
 	{ -1, "unknown", NULL, NULL },
 	{ 0, "no", NULL, NULL },  /* disconnected */
 	{ 1, "yes", NULL, NULL }, /* connected */
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t marlin_emp002_ambient_presence_info[] = {
+	{ 0, "unknown", NULL, NULL },
+	{ 2, "yes", NULL, NULL },     /* communicationOK */
+	{ 3, "no", NULL, NULL },      /* communicationLost */
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -805,6 +812,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 	/* Warning: indexes start at '1' not '0'! */
 	/* sensorCount.0 */
 	{ "ambient.count", ST_FLAG_RW, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.1.0", "0", SU_TYPE_DAISY_MASTER_ONLY, NULL },
+	/* CommunicationStatus.n */
+	{ "ambient.%i.present", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i",
+		NULL, SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, &marlin_emp002_ambient_presence_info[0] },
 	/* sensorName.n: OctetString EMPDT1H1C2 @1 */
 	{ "ambient.%i.name", ST_FLAG_STRING, 1.0, ".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i", "", SU_AMBIENT_TEMPLATE | SU_TYPE_DAISY_MASTER_ONLY, NULL },
 	/* sensorManufacturer.n */
