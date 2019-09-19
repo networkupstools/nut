@@ -93,6 +93,11 @@
 		<lookup_info oid="1" value="yes"/>
 		<lookup_info oid="2" value="no"/>
 	</lookup>
+	<lookup name="emp002_ambient_presence_info">
+		<lookup_info oid="0" value="unknown"/>
+		<lookup_info oid="2" value="yes"/>
+		<lookup_info oid="3" value="no"/>
+	</lookup>
 	<lookup name="pw_battery_abm_status">
 		<lookup_info oid="1" value="CHRG"/>
 		<lookup_info oid="2" value="DISCHRG"/>
@@ -238,6 +243,7 @@
 		<snmp_info default="" lookup="pw_ambient_drycontacts_info" multiplier="1.0" name="ambient.contacts.1.status" oid=".1.3.6.1.4.1.534.1.6.8.1.3.1" power_status="yes" string="yes"/>
 		<snmp_info default="" lookup="pw_ambient_drycontacts_info" multiplier="1.0" name="ambient.contacts.2.status" oid=".1.3.6.1.4.1.534.1.6.8.1.3.2" power_status="yes" string="yes"/>
 		<snmp_info default="" multiplier="1.0" name="ambient.count" oid=".1.3.6.1.4.1.534.6.8.1.1.1.0" power_status="yes" writable="yes"/>
+		<snmp_info ambient="yes" lookup="emp002_ambient_presence_info" multiplier="128.0" name="ambient.%i.present" oid=".1.3.6.1.4.1.534.6.8.1.1.4.1.1.%i" string="yes"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.name" oid=".1.3.6.1.4.1.534.6.8.1.1.3.1.1.%i" string="yes"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.mfr" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.6.%i" string="yes"/>
 		<snmp_info ambient="yes" default="" multiplier="1.0" name="ambient.%i.model" oid=".1.3.6.1.4.1.534.6.8.1.1.2.1.7.%i" string="yes"/>
@@ -273,7 +279,7 @@
 		<snmp_info command="yes" default="" flag_ok="yes" multiplier="20.0" name="load.on.delay" oid="1.3.6.1.4.1.534.1.9.2"/>
 		<snmp_info default="" multiplier="1.0" name="ups.alarms" oid="1.3.6.1.4.1.534.1.7.1.0" power_status="yes"/>
 	</snmp>
-	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" name="powerware" oid=".1.3.6.1.4.1.534.1" snmp_info="pw_mib" version="0.96"/>
-	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" snmp_info="pw_mib" version="0.96"/>
+	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" name="powerware" oid=".1.3.6.1.4.1.534.1" snmp_info="pw_mib" version="0.97"/>
+	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" snmp_info="pw_mib" version="0.97"/>
 </nut>
 
