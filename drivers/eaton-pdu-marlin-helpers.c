@@ -56,25 +56,29 @@ long marlin_device_count_fun(const char *daisy_dev_list)
 	return count;
 }
 
-/* Temperature unit consideration */
+/* Temperature unit consideration:
+ * only store the device unit, for converting to Celsius.
+ * Don't publish the device unit, since NUT will publish
+ * as Celsius in all cases */
 const char *eaton_sensor_temperature_unit_fun(long snmp_value)
 {
 	switch (snmp_value) {
 		case 0:
 			/* store the value, for temperature processing */
 			temperature_unit = TEMPERATURE_KELVIN;
-			return "kelvin";
+			break;
 		case 1:
 			/* store the value, for temperature processing */
 			temperature_unit = TEMPERATURE_CELSIUS;
-			return "celsius";
+			break;
 		case 2:
 			/* store the value, for temperature processing */
 			temperature_unit = TEMPERATURE_FAHRENHEIT;
-			return "fahrenheit";
+			break;
 		default:
 			/* store the value, for temperature processing */
 			temperature_unit = TEMPERATURE_UNKNOWN;
-			return "unknown";
+			break;
 	}
+	return "celsius";
 }
