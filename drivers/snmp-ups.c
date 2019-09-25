@@ -166,7 +166,7 @@ static const char *mibname;
 static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.20"
+#define DRIVER_VERSION		"1.21"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -185,6 +185,12 @@ upsdrv_info_t	upsdrv_info = {
 /* FIXME: integrate MIBs info? do the same as for usbhid-ups! */
 
 static time_t lastpoll = 0;
+
+/* Communication status handling */
+#define COMM_UNKNOWN 0
+#define COMM_OK      1
+#define COMM_LOST    2
+static int comm_status = COMM_UNKNOWN;
 
 /* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
@@ -267,9 +273,11 @@ su_addcmd(su_info_p);
 	/* initialize all other INFO_ fields from list */
 	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE) {
 		dstate_dataok();
+		comm_status = COMM_OK;
 	}
 	else {
 		dstate_datastale();
+		comm_status = COMM_LOST;
 	}
 
 	/* setup handlers for instcmd and setvar functions */
@@ -292,10 +300,12 @@ void upsdrv_updateinfo(void)
 		if (snmp_ups_walk(SU_WALKMODE_UPDATE)) {
 			upsdebugx(1, "%s: pollfreq: Data OK", __func__);
 			dstate_dataok();
+			comm_status = COMM_OK;
 		}
 		else {
 			upsdebugx(1, "%s: pollfreq: Data STALE", __func__);
 			dstate_datastale();
+			comm_status = COMM_LOST;
 		}
 
 		/* Commit status first, otherwise in daisychain mode, "device.0" may
@@ -311,8 +321,11 @@ void upsdrv_updateinfo(void)
 		lastpoll = time(NULL);
 	}
 	else {
-		/* Just tell everything is ok to upsd */
-		dstate_dataok();
+		/* Just tell the same status to upsd */
+		if (comm_status == COMM_OK)
+			dstate_dataok();
+		else
+			dstate_datastale();
 	}
 }
 
@@ -2298,7 +2311,7 @@ static int base_snmp_template_index(const snmp_info_t *su_info_p)
 			/* we should never fall here! */
 			upsdebugx(3, "%s: unknown template type '%" PRI_SU_FLAGS "' for %s",
 				__func__, template_type, su_info_p->info_type);
-	}
+		}
 	base_index = template_index_base;
 
 	if (template_index_base == -1)
