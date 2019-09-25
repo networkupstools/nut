@@ -167,7 +167,7 @@ const char *mibvers;
 #else
 # define DRIVER_NAME	"Generic SNMP UPS driver"
 #endif /* WITH_DMFMIB */
-#define DRIVER_VERSION		"1.12"
+#define DRIVER_VERSION		"1.13"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
@@ -187,6 +187,12 @@ upsdrv_info_t	upsdrv_info = {
 /* FIXME: integrate MIBs info? do the same as for usbhid-ups! */
 
 time_t lastpoll = 0;
+
+/* Communication status handling */
+#define COMM_UNKNOWN 0
+#define COMM_OK      1
+#define COMM_LOST    2
+int comm_status = COMM_UNKNOWN;
 
 /* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
@@ -246,10 +252,14 @@ void upsdrv_initinfo(void)
 		disable_transfer_oids();
 
 	/* initialize all other INFO_ fields from list */
-	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE)
+	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE) {
 		dstate_dataok();
-	else
+		comm_status = COMM_OK;
+	}
+	else {
 		dstate_datastale();
+		comm_status = COMM_LOST;
+	}
 
 	/* setup handlers for instcmd and setvar functions */
 	upsh.setvar = su_setvar;
@@ -268,10 +278,14 @@ void upsdrv_updateinfo(void)
 		status_init();
 
 		/* update all dynamic info fields */
-		if (snmp_ups_walk(SU_WALKMODE_UPDATE))
+		if (snmp_ups_walk(SU_WALKMODE_UPDATE)) {
 			dstate_dataok();
-		else
+			comm_status = COMM_OK;
+		}
+		else {
 			dstate_datastale();
+			comm_status = COMM_LOST;
+		}
 
 		/* Commit status first, otherwise in daisychain mode, "device.0" may
 		 * clear the alarm count since it has an empty alarm buffer and if there
@@ -285,8 +299,13 @@ void upsdrv_updateinfo(void)
 		/* store timestamp */
 		lastpoll = time(NULL);
 	}
-	else /* Just tell everything is ok to upsd */
-		dstate_dataok();
+	else {
+		/* Just tell the same status to upsd */
+		if (comm_status == COMM_OK)
+			dstate_dataok();
+		else
+			dstate_datastale();
+	}
 }
 
 void upsdrv_shutdown(void)
@@ -1798,7 +1817,7 @@ int base_snmp_template_index(const snmp_info_t *su_info_p)
 			/* we should never fall here! */
 			upsdebugx(3, "%s: unknown template type '%i' for %s",
 				__func__, template_type, su_info_p->info_type);
-	}
+		}
 	base_index = template_index_base;
 
 	if (template_index_base == -1)
