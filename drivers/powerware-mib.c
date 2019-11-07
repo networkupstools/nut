@@ -29,7 +29,7 @@
 #include "eaton-pdu-marlin-helpers.h"
 #endif
 
-#define PW_MIB_VERSION "0.99"
+#define PW_MIB_VERSION "0.100"
 
 /* TODO: more sysOID and MIBs support:
  *
@@ -77,8 +77,8 @@
 
 #define PW_OID_BATTEST_START	"1.3.6.1.4.1.534.1.8.1"		/* XUPS-MIB::xupsTestBattery   set to startTest(1) to initiate test*/
 
-#define PW_OID_CONT_OFFDELAY	"1.3.6.1.4.1.534.1.9.1"		/* XUPS-MIB::xupsControlOutputOffDelay */
-#define PW_OID_CONT_ONDELAY	"1.3.6.1.4.1.534.1.9.2"		/* XUPS-MIB::xupsControlOutputOnDelay */
+#define PW_OID_CONT_OFFDELAY	"1.3.6.1.4.1.534.1.9.1.0"		/* XUPS-MIB::xupsControlOutputOffDelay */
+#define PW_OID_CONT_ONDELAY	"1.3.6.1.4.1.534.1.9.2.0"		/* XUPS-MIB::xupsControlOutputOnDelay */
 #define PW_OID_CONT_OFFT_DEL	"1.3.6.1.4.1.534.1.9.3"		/* XUPS-MIB::xupsControlOutputOffTrapDelay */
 #define PW_OID_CONT_ONT_DEL	"1.3.6.1.4.1.534.1.9.4"		/* XUPS-MIB::xupsControlOutputOnTrapDelay */
 #define PW_OID_CONT_LOAD_SHED_AND_RESTART	"1.3.6.1.4.1.534.1.9.6"		/* XUPS-MIB::xupsLoadShedSecsWithRestart */
@@ -239,6 +239,18 @@ static info_lkp_t pw_batt_test_info[] = {
 static info_lkp_t pw_yes_no_info[] = {
 	{ 1, "yes", NULL, NULL },
 	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
+};
+
+static info_lkp_t pw_outlet_status_info[] = {
+	{ 1, "on", NULL, NULL },
+	{ 2, "off", NULL, NULL },
+	{ 3, "on", NULL, NULL },  /* pendingOff, transitional status */
+	{ 4, "off", NULL, NULL }, /* pendingOn, transitional status */
+	/* { 5, "", NULL, NULL },  unknown */
+	/* { 6, "", NULL, NULL },  reserved */
+	{ 7, "off", NULL, NULL }, /* Failed in Closed position */
+	{ 8, "on", NULL, NULL },  /* Failed in Open position */
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -497,10 +509,9 @@ static snmp_info_t pw_mib[] = {
 	{ "input.voltage", 0, 1.0, PW_OID_IN_VOLTAGE ".0", "",
 		SU_INPUT_1, NULL },
 	/* Duplicate of the above entry, but pointing at the first index */
-	/* xupsInputVoltage.1.0; Value (Integer): 245 */
-	{ "input.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.3.4.1.2.1.0", "",
+	/* xupsInputVoltage.1[.0]; Value (Integer): 245 */
+	{ "input.voltage", 0, 1.0, "1.3.6.1.4.1.534.1.3.4.1.2.1", "",
 		SU_INPUT_1, NULL },
-
 
 	/* XUPS-MIB::xupsConfigInputVoltage.0 */
 	{ "input.voltage.nominal", 0, 1.0, "1.3.6.1.4.1.534.1.10.2.0", "", 0, NULL },
@@ -542,6 +553,17 @@ static snmp_info_t pw_mib[] = {
 		SU_INPUT_3, NULL },
 	{ "input.bypass.L3-N.voltage", 0, 1.0, PW_OID_BY_VOLTAGE ".3", "",
 		SU_INPUT_3, NULL },
+
+	/* Outlet page */
+	/* XUPS-MIB::xupsNumReceptacles; Value (Integer): 2 */
+	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.1.12.1.0", NULL, SU_FLAG_STATIC, NULL },
+	/* XUPS-MIB::xupsRecepIndex.X; Value (Integer): X */
+	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.1.%i", NULL, SU_FLAG_STATIC | SU_OUTLET, NULL },
+	/* This MIB does not provide outlets switchability info. So map to a nearby
+		OID, for data activation, and map all values to "yes" */
+	{ "outlet.%i.switchable", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.1.%i", NULL, SU_FLAG_STATIC | SU_OUTLET, NULL },
+	/* XUPS-MIB::xupsRecepStatus.X; Value (Integer): 1 */
+	{ "outlet.%i.status", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.2.%i", NULL, SU_OUTLET, &pw_outlet_status_info[0] },
 
 	/* Ambient collection */
 	/* EMP001 (legacy) mapping */
@@ -643,16 +665,36 @@ static snmp_info_t pw_mib[] = {
 	/* Cancel output off, by writing 0 to xupsControlOutputOffDelay */
 	{ "shutdown.stop", 0, 0, PW_OID_CONT_OFFDELAY, "",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* XUPS-MIB::xupsControlOutputOffDelay */
 	/* load off after 1 sec, shortest possible delay; 0 cancels */
-	{ "load.off", 0, 1, PW_OID_CONT_OFFDELAY, "",
+	{ "load.off", 0, 1, PW_OID_CONT_OFFDELAY, "1",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "load.off.delay", 0, DEFAULT_OFFDELAY, PW_OID_CONT_OFFDELAY, "",
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	{ "load.off.delay", 0, 1, PW_OID_CONT_OFFDELAY, NULL,
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	/* XUPS-MIB::xupsControlOutputOnDelay */
 	/* load on after 1 sec, shortest possible delay; 0 cancels */
-	{ "load.on", 0, 1, PW_OID_CONT_ONDELAY, "",
+	{ "load.on", 0, 1, PW_OID_CONT_ONDELAY, "1",
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "load.on.delay", 0, DEFAULT_ONDELAY, PW_OID_CONT_ONDELAY, "",
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	{ "load.on.delay", 0, 1, PW_OID_CONT_ONDELAY, NULL,
 		SU_TYPE_CMD | SU_FLAG_OK, NULL },
+
+	/* Delays handling:
+	 * 0-n :Time in seconds until the command is issued
+	 * -1:Cancel a pending Off/On command */
+	/* XUPS-MIB::xupsRecepOffDelaySecs.n */
+	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.3.%i",
+		"0", SU_TYPE_CMD | SU_OUTLET, NULL },
+	/* XUPS-MIB::xupsRecepOnDelaySecs.n */
+	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.4.%i",
+		"0", SU_TYPE_CMD | SU_OUTLET, NULL },
+	/* Delayed version, parameter is mandatory (so dfl is NULL)! */
+	{ "outlet.%i.load.off.delay", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.3.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET, NULL },
+	/* XUPS-MIB::xupsRecepOnDelaySecs.n */
+	{ "outlet.%i.load.on.delay", 0, 1, ".1.3.6.1.4.1.534.1.12.2.1.4.%i",
+		NULL, SU_TYPE_CMD | SU_OUTLET, NULL },
 
 	{ "ups.alarms", 0, 1.0, PW_OID_ALARMS, "",
 		0, NULL },
