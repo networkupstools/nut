@@ -349,10 +349,10 @@ static int libfreeipmi_get_psu_info (const void *areabuf,
 
 	/* FIXME: directly use ipmi_dev fields */
 	unsigned int overall_capacity;
-	unsigned int low_end_input_voltage_range_1;
-	unsigned int high_end_input_voltage_range_1;
-	unsigned int low_end_input_frequency_range;
-	unsigned int high_end_input_frequency_range;
+	int low_end_input_voltage_range_1;
+	int high_end_input_voltage_range_1;
+	int low_end_input_frequency_range;
+	int high_end_input_frequency_range;
 	unsigned int voltage_1;
 
 	/* FIXME: check for the interest and capability to use these data */
