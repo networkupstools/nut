@@ -1,5 +1,13 @@
 <?xml version="1.0" ?>
 <nut version="1.0.0" xmlns="http://www.networkupstools.org/dmf/snmp/snmp-ups">
+	<lookup name="pw_outlet_status_info">
+		<lookup_info oid="1" value="on"/>
+		<lookup_info oid="2" value="off"/>
+		<lookup_info oid="3" value="on"/>
+		<lookup_info oid="4" value="off"/>
+		<lookup_info oid="7" value="off"/>
+		<lookup_info oid="8" value="on"/>
+	</lookup>
 	<lookup name="pw_alarm_lb">
 		<lookup_info oid="1" value="LB"/>
 		<lookup_info oid="2" value=""/>
@@ -213,7 +221,7 @@
 		<snmp_info default="" multiplier="1.0" name="input.phases" oid="1.3.6.1.4.1.534.1.3.3.0" power_status="yes"/>
 		<snmp_info default="" multiplier="0.1" name="input.frequency" oid="1.3.6.1.4.1.534.1.3.1.0" power_status="yes"/>
 		<snmp_info default="" input_1_phase="yes" multiplier="1.0" name="input.voltage" oid="1.3.6.1.4.1.534.1.3.4.1.2.0"/>
-		<snmp_info default="" input_1_phase="yes" multiplier="1.0" name="input.voltage" oid="1.3.6.1.4.1.534.1.3.4.1.2.1.0"/>
+		<snmp_info default="" input_1_phase="yes" multiplier="1.0" name="input.voltage" oid="1.3.6.1.4.1.534.1.3.4.1.2.1"/>
 		<snmp_info default="" multiplier="1.0" name="input.voltage.nominal" oid="1.3.6.1.4.1.534.1.10.2.0" power_status="yes"/>
 		<snmp_info default="" input_1_phase="yes" multiplier="0.1" name="input.current" oid="1.3.6.1.4.1.534.1.3.4.1.3.0"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.L1-N.voltage" oid="1.3.6.1.4.1.534.1.3.4.1.2.1"/>
@@ -232,6 +240,10 @@
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L1-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.1"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L2-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.2"/>
 		<snmp_info default="" input_3_phase="yes" multiplier="1.0" name="input.bypass.L3-N.voltage" oid="1.3.6.1.4.1.534.1.5.3.1.2.3"/>
+		<snmp_info multiplier="1.0" name="outlet.count" oid=".1.3.6.1.4.1.534.1.12.1.0" static="yes"/>
+		<snmp_info multiplier="1.0" name="outlet.%i.id" oid=".1.3.6.1.4.1.534.1.12.2.1.1.%i" outlet="yes" static="yes"/>
+		<snmp_info multiplier="1.0" name="outlet.%i.switchable" oid=".1.3.6.1.4.1.534.1.12.2.1.1.%i" outlet="yes" static="yes"/>
+		<snmp_info lookup="pw_outlet_status_info" multiplier="1.0" name="outlet.%i.status" oid=".1.3.6.1.4.1.534.1.12.2.1.2.%i" outlet="yes"/>
 		<snmp_info default="" multiplier="1.0" name="ambient.temperature" oid="1.3.6.1.4.1.534.1.6.5.0" power_status="yes"/>
 		<snmp_info default="" multiplier="1.0" name="ambient.temperature.low" oid="1.3.6.1.4.1.534.1.6.9.0" power_status="yes" writable="yes"/>
 		<snmp_info default="" multiplier="1.0" name="ambient.temperature.high" oid="1.3.6.1.4.1.534.1.6.10.0" power_status="yes" writable="yes"/>
@@ -272,14 +284,18 @@
 		<snmp_info ambient="yes" default="" lookup="ambient_drycontacts_state_info" multiplier="1.0" name="ambient.%i.contacts.2.status" oid=".1.3.6.1.4.1.534.6.8.1.4.3.1.3.%i.2" string="yes"/>
 		<snmp_info command="yes" default="" flag_ok="yes" multiplier="1.0" name="test.battery.start.quick" oid="1.3.6.1.4.1.534.1.8.1"/>
 		<snmp_info command="yes" default="" flag_ok="yes" multiplier="0.0" name="shutdown.return" oid="1.3.6.1.4.1.534.1.9.6"/>
-		<snmp_info command="yes" default="" flag_ok="yes" multiplier="0.0" name="shutdown.stop" oid="1.3.6.1.4.1.534.1.9.1"/>
-		<snmp_info command="yes" default="" flag_ok="yes" multiplier="1.0" name="load.off" oid="1.3.6.1.4.1.534.1.9.1"/>
-		<snmp_info command="yes" default="" flag_ok="yes" multiplier="30.0" name="load.off.delay" oid="1.3.6.1.4.1.534.1.9.1"/>
-		<snmp_info command="yes" default="" flag_ok="yes" multiplier="1.0" name="load.on" oid="1.3.6.1.4.1.534.1.9.2"/>
-		<snmp_info command="yes" default="" flag_ok="yes" multiplier="20.0" name="load.on.delay" oid="1.3.6.1.4.1.534.1.9.2"/>
+		<snmp_info command="yes" default="" flag_ok="yes" multiplier="0.0" name="shutdown.stop" oid="1.3.6.1.4.1.534.1.9.1.0"/>
+		<snmp_info command="yes" default="1" flag_ok="yes" multiplier="1.0" name="load.off" oid="1.3.6.1.4.1.534.1.9.1.0"/>
+		<snmp_info command="yes" flag_ok="yes" multiplier="1.0" name="load.off.delay" oid="1.3.6.1.4.1.534.1.9.1.0"/>
+		<snmp_info command="yes" default="1" flag_ok="yes" multiplier="1.0" name="load.on" oid="1.3.6.1.4.1.534.1.9.2.0"/>
+		<snmp_info command="yes" flag_ok="yes" multiplier="1.0" name="load.on.delay" oid="1.3.6.1.4.1.534.1.9.2.0"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.off" oid=".1.3.6.1.4.1.534.1.12.2.1.3.%i" outlet="yes"/>
+		<snmp_info command="yes" default="0" multiplier="1.0" name="outlet.%i.load.on" oid=".1.3.6.1.4.1.534.1.12.2.1.4.%i" outlet="yes"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.off.delay" oid=".1.3.6.1.4.1.534.1.12.2.1.3.%i" outlet="yes"/>
+		<snmp_info command="yes" multiplier="1.0" name="outlet.%i.load.on.delay" oid=".1.3.6.1.4.1.534.1.12.2.1.4.%i" outlet="yes"/>
 		<snmp_info default="" multiplier="1.0" name="ups.alarms" oid="1.3.6.1.4.1.534.1.7.1.0" power_status="yes"/>
 	</snmp>
-	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" name="powerware" oid=".1.3.6.1.4.1.534.1" snmp_info="pw_mib" version="0.97"/>
-	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" snmp_info="pw_mib" version="0.97"/>
+	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pw" name="powerware" oid=".1.3.6.1.4.1.534.1" snmp_info="pw_mib" version="0.98"/>
+	<mib2nut alarms_info="pw_alarms" auto_check="1.3.6.1.4.1.534.1.1.2.0" mib_name="pxgx_ups" name="pxgx_ups" oid=".1.3.6.1.4.1.534.2.12" snmp_info="pw_mib" version="0.98"/>
 </nut>
 
