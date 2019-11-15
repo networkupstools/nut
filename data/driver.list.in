@@ -527,6 +527,7 @@
 "Liebert"	"ups"	"2"	"PowerSure Personal XT"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"2"	"PowerSure PSA"	"USB"	"usbhid-ups"
 "Liebert"	"ups"	"2"	"PowerSure PSI 1440"	"USB"	"usbhid-ups"	# http://www.emersonnetworkpower.com/en-US/Products/ACPower/Pages/LiebertPowerSurePSILineInteractiveUPS10003000VA.aspx
+"Liebert"	"ups"	"4"	"GXT2U"	"Voyager SNMP/web Card"	"snmp-ups"
 
 "LNXI"	"pdu"	"1"	"Icebox"	"10 outlets"	"powerman-pdu (experimental)"
 

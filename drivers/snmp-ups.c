@@ -64,6 +64,7 @@
 #include "eaton-ats30-mib.h"
 #include "emerson-avocent-pdu-mib.h"
 #include "hpe-pdu-mib.h"
+#include "liebert-voyager-mib.h"
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
@@ -99,6 +100,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&apc_pdu_msp,
 	&emerson_avocent_pdu,
 	&hpe_pdu,
+	&liebert_voyager,
 	/*
 	 * Prepend vendor specific MIB mappings before IETF, so that
 	 * if a device supports both IETF and vendor specific MIB,
@@ -128,7 +130,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.11"
+#define DRIVER_VERSION		"1.12"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
