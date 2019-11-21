@@ -55,11 +55,11 @@ static snmp_info_t liebert_voyager_mib[] = {
 
 	/* Battery Page */
 	/* lcUpsBatTimeRemaining.0 = INTEGER: 19 */
-	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.476.1.1.1.1.2.1.0", NULL, SU_FLAG_OK, NULL },
+	{ "battery.runtime", 0, 60, ".1.3.6.1.4.1.476.1.1.1.1.2.1.0", NULL, SU_FLAG_OK, NULL },
 	/* lcUpsBatVoltage.0 = INTEGER: 54 */
 	{ "battery.voltage", 0, 1, ".1.3.6.1.4.1.476.1.1.1.1.2.3.0", NULL, SU_FLAG_OK, NULL },
 	/* lcUpsBatCapacity.0 = INTEGER: 100 */
-	/* { "unmapped.lcUpsBatCapacity", 0, 1, ".1.3.6.1.4.1.476.1.1.1.1.2.6.0", NULL, SU_FLAG_OK, NULL },*/
+	{ "battery.charge", 0, 1, ".1.3.6.1.4.1.476.1.1.1.1.2.6.0", NULL, SU_FLAG_OK, NULL },
 
 	/* Input Page */
 	/* lcUpsInputFrequency.0 = INTEGER: 60 */
