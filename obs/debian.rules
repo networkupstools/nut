@@ -23,6 +23,9 @@ systemdsystemunitdir := $(shell pkg-config --variable=systemdsystemunitdir syste
 systemdsystemdutildir := $(shell pkg-config --variable=systemdutildir systemd || echo /lib/systemd)
 systemdshutdowndir := $(shell pkg-config --variable=systemdshutdowndir systemd || echo /lib/systemd/system-shutdown)
 
+# Newer systems have just /run (and yet newer systemd noisily suggests it)
+runbasedir := $(shell test -d /run && echo /run || echo /var/run)
+
 # FIXME: Find a smarter way to set those from main codebase recipes...
 # Something like `grep 'version-info' **/Makefile.am` ?
 SO_MAJOR_LIBUPSCLIENT=5
@@ -48,12 +51,12 @@ DEB_CONFIGURE_EXTRA_FLAGS := --libdir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH) \
 			     --with-dmfsnmp-regenerate=no --with-dmfnutscan-regenerate=no --with-dmfsnmp-validate=no --with-dmfnutscan-validate=no \
 			     --with-dev \
 			     --disable-static \
-			     --with-statepath=/var/run/nut \
-			     --with-altpidpath=/var/run/nut \
+			     --with-statepath=$(runbasedir)/nut \
+			     --with-altpidpath=$(runbasedir)/nut \
 			     --with-drvpath=/lib/nut \
 			     --with-cgipath=/usr/lib/cgi-bin/nut \
 			     --with-htmlpath=/usr/share/nut/www \
-			     --with-pidpath=/var/run/nut \
+			     --with-pidpath=$(runbasedir)/nut \
 			     --datadir=/usr/share/nut \
 			     --with-pkgconfig-dir=/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig \
 			     --with-user=nut --with-group=nut
@@ -88,6 +91,13 @@ pre-build:: debian/compat configure
 # at the time this recipe was written. Maybe more proper make macros can be
 # used to rectify paths below and allow better manageable per-distro builds.
 common-install-arch::
+	# prepare debian packaging files
+	mkdir -p $(CURDIR)/debian
+	for F in debian.nut-client.init debian.nut-common.postinst debian.nut-common.prerm debian.nut-server.init debian.nut-server.prerm debian.nut-common.tmpfiles ; do \
+		echo "  SED    $F.in => $F" ; \
+		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/obs/$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
+	done
+
 	# install the bash completion script
 	mkdir -p $(CURDIR)/debian/tmp/usr/share/bash-completion/completions/
 	cp $(CURDIR)/scripts/misc/nut.bash_completion \

@@ -37,7 +37,7 @@ case "$1" in
     fi
 
     invoke-rc.d nut stop && sleep 1
-    [ -d /var/run/nut ] && rm -rf /var/run/nut/
+    [ -d @runbasedir@/nut ] && rm -rf @runbasedir@/nut/
     ;;
 
   upgrade)

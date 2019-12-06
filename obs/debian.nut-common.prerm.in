@@ -15,7 +15,7 @@ case "$1" in
         /bin/systemctl disable nut.target
     fi
 
-    [ -d /var/run/nut ] && rm -rf /var/run/nut/
+    [ -d @runbasedir@/nut ] && rm -rf @runbasedir@/nut/
     ;;
 
   upgrade)
