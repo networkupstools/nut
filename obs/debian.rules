@@ -93,9 +93,9 @@ pre-build:: debian/compat configure
 common-install-arch::
 	# prepare debian packaging files
 	mkdir -p $(CURDIR)/debian
-	for F in debian.nut-client.init debian.nut-common.postinst debian.nut-common.prerm debian.nut-server.init debian.nut-server.prerm debian.nut-common.tmpfiles ; do \
+	for F in nut-client.init nut-common.postinst nut-common.prerm nut-server.init nut-server.prerm nut-common.tmpfiles ; do \
 		echo "  SED    $F.in => $F" ; \
-		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/obs/$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
+		sed 's,@runbasedir[@],$(runbasedir),g' < "$(CURDIR)/obs/debian.$$F.in" > $(CURDIR)/debian/"$$F" || exit ; \
 	done
 
 	# install the bash completion script
