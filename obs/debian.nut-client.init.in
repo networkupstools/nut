@@ -19,7 +19,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin
 NAME=nut-client
 DESC="NUT - power device monitor and shutdown controller"
 CONFIG=/etc/nut/nut.conf
-pid_dir=/var/run/nut
+pid_dir=@runbasedir@/nut
 upsmon_pid=${pid_dir}/upsmon.pid
 upsmon=/sbin/upsmon
 log=">/dev/null 2>/dev/null"
@@ -50,7 +50,7 @@ if [ "x$MODE" = "xnone" -o -z "$MODE" ] ; then
     exit 0
 fi
 
-# Check if /var/run/nut exists and has the correct perms
+# Check if (/var)/run/nut exists and has the correct perms
 check_var_directory() {
   [ ! -d ${pid_dir} ] && mkdir -p ${pid_dir} \
     && chown root:nut ${pid_dir} \
