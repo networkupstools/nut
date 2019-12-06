@@ -18,7 +18,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/sbin:/usr/local/bin
 NAME=nut-server
 DESC="NUT - power devices information server and drivers"
 CONFIG=/etc/nut/nut.conf
-pid_dir=/var/run/nut
+pid_dir=@runbasedir@/nut
 upsd_pid=${pid_dir}/upsd.pid
 upsd=/sbin/upsd
 upsdrvctl=/sbin/upsdrvctl
@@ -48,7 +48,7 @@ if [ "x$MODE" = "xnone" -o -z "$MODE" ] ; then
     exit 0
 fi
 
-# Check if /var/run/nut exists and has the correct perms
+# Check if (/var)/run/nut exists and has the correct perms
 check_var_directory() {
   [ ! -d ${pid_dir} ] && mkdir -p ${pid_dir} \
     && chown root:nut ${pid_dir} \
