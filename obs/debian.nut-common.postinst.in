@@ -33,17 +33,17 @@ case "$1" in
         chmod 755 /etc/nut/
     fi
 
-    # make sure that /var/run/nut exists and has the correct ownerships
+    # make sure that (/var)/run/nut exists and has the correct ownerships
     # (note that on newer systems, after reboot, the /run/nut is created
     # by systemd using the tmpfiles configuration snippet)
-    if [ ! -d /var/run/nut ] ; then
-        mkdir -p /var/run/nut
+    if [ ! -d @runbasedir@/nut ] ; then
+        mkdir -p @runbasedir@/nut
     fi
-    if [ -d /var/run/nut ] ; then
-        chown root:nut /var/run/nut
-        chmod 770 /var/run/nut
+    if [ -d @runbasedir@/nut ] ; then
+        chown root:nut @runbasedir@/nut
+        chmod 770 @runbasedir@/nut
         if which restorecon >/dev/null 2>&1; then
-            restorecon /var/run/nut
+            restorecon @runbasedir@/nut
         fi
     fi
 
