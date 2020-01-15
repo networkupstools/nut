@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-#   Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>
-#   Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>
+#   Copyright (C) 2011-2019 Eaton
+# 		Authors:	Frederic Bohe <FredericBohe@Eaton.com>
+#   				Arnaud Quette <ArnaudQuette@Eaton.com>
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -58,9 +59,10 @@ def expand_define(filename,constant):
 	return ret_line
 
 
-output_file.write( "/* nutscan-snmp\n" )
-output_file.write( " *  Copyright (C) 2011 - Frederic Bohe <FredericBohe@Eaton.com>\n" )
-output_file.write( " *  Copyright (C) 2016 - Arnaud Quette <ArnaudQuette@Eaton.com>\n" )
+output_file.write( "/* nutscan-snmp.c - fully generated during build of NUT\n" )
+output_file.write( " *  Copyright (C) 2011-2019 EATON\n" )
+output_file.write( " *  	Authors: Frederic Bohe <FredericBohe@Eaton.com>\n" )
+output_file.write( " *               Arnaud Quette <ArnaudQuette@Eaton.com>\n" )
 output_file.write( " *\n" )
 output_file.write( " *  This program is free software; you can redistribute it and/or modify\n" )
 output_file.write( " *  it under the terms of the GNU General Public License as published by\n" )
@@ -106,7 +108,7 @@ for filename in sorted(glob.glob(TOP_SRCDIR + '/drivers/*-mib.c')):
 			line = line2.split("{",1)
 			#line[1] is the part between {}
 			line2 = line[1].split(",")
-			mib = line2[0]
+			mib = line2[0].lstrip(" ")
 			#line2[3] is the OID of the device model name which
 			#could be made of #define const and string.
 			source_oid = line2[3]
@@ -127,7 +129,7 @@ for filename in sorted(glob.glob(TOP_SRCDIR + '/drivers/*-mib.c')):
 					clean_elem = re.sub("\"", "", elem)
 					oid = oid+clean_elem
 				else:
-					oid = oid + expand_define(filename,elem);
+					oid = oid + expand_define(filename,elem)
 
 			#decode source_sysoid
 			line = source_sysoid.lstrip(" ")
@@ -140,16 +142,22 @@ for filename in sorted(glob.glob(TOP_SRCDIR + '/drivers/*-mib.c')):
 					clean_elem = re.sub("\"", "", elem)
 					sysoid = sysoid+clean_elem
 				else:
-					sysoid = sysoid + expand_define(filename,elem);
+					sysoid = sysoid + expand_define(filename,elem)
 
+			# Sanity checks
 			if sysoid == "":
 				sysoid = "NULL"
 			else:
 				sysoid = "\"" + sysoid + "\""
 
-			output_file.write( "\t{ \"" + oid + "\", " + mib + ", " + sysoid + "},\n" )
+			if oid == "":
+				oid = "NULL"
+			else:
+				oid = "\"" + oid + "\""
 
-output_file.write( "        /* Terminating entry */\n" )
-output_file.write( "        { NULL, NULL, NULL}\n" )
+			output_file.write( "\t{ " + oid + ", " + mib + ", " + sysoid + " },\n" )
+
+output_file.write( "\t/* Terminating entry */\n" )
+output_file.write( "\t{ NULL, NULL, NULL }\n" )
 output_file.write( "};\n" )
 output_file.write( "#endif /* DEVSCAN_SNMP_H */\n" )
