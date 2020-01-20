@@ -80,7 +80,13 @@ Release notes for NUT 2.7.5 - what's new since 2.7.4:
  - libnutclient: introduce getDevicesVariableValues() to improve performances
    when querying many devices (up to 15 times faster)
 
- - nut-driver-enumerator: @jim to complete
+ - nut-driver-enumerator: introduced a script for Linux systemd and
+   Solaris/illumos SMF to inspect current NUT configuration in ups.conf
+   file and generate service management instances for each currently
+   tracked power device. Also introduced services to monitor the NUT
+   configuration and react to editions of this file, mostly intended
+   for deployments that do massive monitoring of dynamically changing
+   farms of power devices.
 
  - Fix File descriptors leaks by upsmon and upssched (SELinux errors)
 
