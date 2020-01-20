@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2447 utf-8
+personal_ws-1.1 en 2484 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -12,7 +12,6 @@ ADDRINFO
 ADK
 ADKK
 AEC
-aec
 AEG
 AES
 AGM
@@ -140,7 +139,6 @@ ByPass
 CA's
 CABAC
 CAs
-cb
 CBLimit
 CCC
 CCCC
@@ -208,7 +206,6 @@ DDDDD
 DDF
 DEADTIME
 DEBUGOUT
-dedb
 DELCMD
 DELENUM
 DELINFO
@@ -594,6 +591,7 @@ MyState
 NAK
 NAS
 NBF
+NConfigs
 NETVER
 NETVERSION
 NFS
@@ -673,6 +671,7 @@ Oldworld
 Olli
 Omni
 OmniGuard
+OmniOS
 OmniSmart
 OnLine
 OnTime
@@ -716,6 +715,7 @@ PLL
 PLVn
 POLLFREQALERT
 POMode
+POSIX
 POWERDOWNFLAG
 POWEREX
 POWERLINE
@@ -930,6 +930,9 @@ STESTI
 STI
 STO
 STP
+SUNWlibusbugen
+SUNWugen
+SUNWusb
 SURTD
 SUSE
 SX
@@ -1162,10 +1165,12 @@ addenum
 addinfo
 addrange
 adkorte
+adm
 admin's
 adminbox
 advorder
 ae
+aec
 af
 aggregator
 ai
@@ -1279,6 +1284,7 @@ bindir
 bitmapped
 bitwise
 bn
+boolean
 boostvoolts
 bootable
 bp
@@ -1299,6 +1305,7 @@ bypassvolts
 byv
 cablepower
 calloc
+cb
 cbl
 cblimit
 cd
@@ -1317,6 +1324,8 @@ cfacvod
 cfacvon
 cfdcvd
 cfdcvn
+cfg
+cfgadm
 cflag
 cflags
 cgi
@@ -1327,8 +1336,10 @@ chargetime
 charset
 checksum
 chgrp
+chipset
 chmod
 chown
+chr
 christoph
 chroot
 chrooted
@@ -1417,12 +1428,14 @@ debouncing
 deci
 decrement
 decrypt
+dedb
 defun
 dep
 dephasing
 deps
 desc
 deschis
+descr
 desde
 dev
 devd
@@ -1756,6 +1769,7 @@ lowvoltsout
 lr
 lsusb
 lu
+lv
 lvo
 lxml
 lxyz
@@ -1790,6 +1804,7 @@ mecer
 megatec
 memset
 merchantability
+metadata
 metasys
 methodOfFlowControl
 mge
@@ -1963,6 +1978,7 @@ pe
 peername
 pem
 perl
+pfexec
 pfy
 ph
 phasewindow
@@ -2022,6 +2038,7 @@ probu
 proc
 productid
 prog
+prtconf
 psu
 pw
 pwl
@@ -2123,6 +2140,7 @@ sendline
 sendmail
 ser
 seria
+serialno
 serialnumber
 servicebypass
 setFeature
@@ -2167,11 +2185,13 @@ snmpwalk
 snprintf
 snprintfcat
 sockdebug
+solaris
 solis
 somepass
 something's
 sp
 spanish
+spectype
 spellcheck
 splitaddr
 splitname
@@ -2304,6 +2324,7 @@ ugen
 ukUNV
 ul
 un
+unconfigured
 undefine
 undervoltage
 unescaped
@@ -2368,6 +2389,7 @@ usb
 usbconfig
 usbfs
 usbhid
+usbif
 usbmisc
 usbups
 usbus
@@ -2396,6 +2418,7 @@ varlow
 varname
 varvalue
 vbatt
+vc
 vendorid
 verifySourceSig
 versa
