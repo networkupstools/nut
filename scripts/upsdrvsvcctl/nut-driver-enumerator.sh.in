@@ -8,7 +8,7 @@
 #       reference or 100% compliant with what the binary code uses; its aim
 #       is to just pick out some strings relevant for tracking config changes.
 #
-# Copyright (C) 2016-2018 Eaton
+# Copyright (C) 2016-2020 Eaton
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -732,6 +732,7 @@ EOF
     systemd_setSavedMD5 "$SVCINST" "`upsconf_getSection_MD5 "$DEVICE"`"
 
     if [ "$AUTO_START" = yes ] ; then
+        systemd_refreshSupervizor || echo "WARNING: Somehow managed to fail systemd_refreshSupervizor()" >&2
         $TIMEOUT_CMD $TIMEOUT_ARGS /bin/systemctl start --no-block 'nut-driver@'"$SVCINST".service || return
         echo "Started instance: 'nut-driver@$SVCINST' for NUT configuration section '$DEVICE'" >&2
     fi
@@ -778,6 +779,7 @@ systemd_restart_upsd() {
     # Do not restart/reload if not already running
     case "`/bin/systemctl is-active "nut-server"`" in
         active|unknown) ;; # unknown meant "starting" in our testing...
+        failed) echo "Note: nut-server unit was 'failed' - not disabled by user, so (re)starting it (probably had no config initially)" >&2 ;;
         *) return 0 ;;
     esac
 
