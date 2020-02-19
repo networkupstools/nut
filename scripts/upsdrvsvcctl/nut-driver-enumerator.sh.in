@@ -779,6 +779,7 @@ systemd_restart_upsd() {
     # Do not restart/reload if not already running
     case "`/bin/systemctl is-active "nut-server"`" in
         active|unknown) ;; # unknown meant "starting" in our testing...
+        failed) echo "Note: nut-server unit was 'failed' - not disabled by user, so (re)starting it (probably had no config initially)" >&2 ;;
         *) return 0 ;;
     esac
 
