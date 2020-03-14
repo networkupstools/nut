@@ -2,6 +2,6 @@ scripts/python/app/NUT-Monitor usr/bin/
 scripts/python/app/nut-monitor.desktop usr/share/applications/
 scripts/python/app/gui-*.glade usr/share/nut-monitor/
 scripts/python/app/locale/ usr/share/
-scripts/python/app/nut-monitor.png usr/share/pixmaps/
+scripts/python/app/icons/48x48/nut-monitor.png usr/share/pixmaps/
 scripts/python/app/pixmaps usr/share/nut-monitor/
 debian/nut-monitor.xpm usr/share/pixmaps/
