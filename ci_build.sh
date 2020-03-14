@@ -25,7 +25,7 @@ case "$CI_TRACE" in
 esac
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
+default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -111,10 +111,11 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             CONFIG_OPTS+=("--with-doc=no")
             DO_DISTCHECK=no
             ;;
-        "default-spellcheck")
+        "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
         "default-withdoc")
@@ -228,6 +229,19 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             # sub-Makefiles known to check corresponding directory's doc files.
             ( $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
             exit 0
+            ;;
+        "default-shellcheck")
+            [ -z "$CI_TIME" ] || echo "`date`: Trying to check shell script syntax validity of the currently tested project..."
+            ### Note: currently, shellcheck target calls check-scripts-syntax
+            ### so when both are invoked at once, in the end the check is only
+            ### executed once. Later it is anticipated that shellcheck would
+            ### be implemented by requiring, configuring and calling the tool
+            ### named "shellcheck" for even more code inspection and details.
+            ### Still, there remains value in also checking the script syntax
+            ### by the very version of the shell interpreter that would run
+            ### these scripts in production usage of the resulting packages.
+            ( $CI_TIME make VERBOSE=1 shellcheck check-scripts-syntax )
+            exit $?
             ;;
     esac
 

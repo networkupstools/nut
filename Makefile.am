@@ -143,6 +143,37 @@ spellcheck spellcheck-interactive:
 doc spellcheck-sortdict:
 	cd $(srcdir)/docs && $(MAKE) $@
 
+# This target adds syntax-checking for committed shell script files,
+# to avoid surprises and delays in finding fatal typos after packaging
+###
+### Note: currently, shellcheck target calls check-scripts-syntax
+### so when both are invoked at once, in the end the check is only
+### executed once. Later it is anticipated that shellcheck would
+### be implemented by requiring, configuring and calling the tool
+### named "shellcheck" for even more code inspection and details.
+### Still, there remains value in also checking the script syntax
+### by the very version of the shell interpreter that would run
+### these scripts in production usage of the resulting packages.
+###
+check-scripts-syntax:
+	@echo 'NOTE: modern bash complains about scripts using backticks (warning not error), which we ignore in NUT codebase for portability reasons: `...` obsolete, use $$(...)'
+	for F in `git ls-files || find . -type f` ; do \
+	    case "`file "$$F"`" in \
+	        *"Bourne-Again shell script"*) ( set -x ; /bin/bash -n "$$F" ; ) ;; \
+	        *"POSIX shell script"*|*"shell script"*) ( set -x ; /bin/sh -n "$$F" ; ) ;; \
+	    esac || { RES=$$? ; echo "ERROR: Syntax check failed for script file: $$F" >&2 ; exit $$RES ; } ; \
+	done
+	@echo 'SUCCESS: Shell scripts syntax is acceptable, no fatal issues were found'
+
+shellcheck-disclaimer:
+	@echo "==============================================================================="
+	@echo "NOTICE: 'make shellcheck' is currently an alias for 'make check-scripts-syntax'"
+	@echo "Later it may become a call to the real shellcheck tool (if available on the"
+	@echo "build system during the configure phase)"
+	@echo "==============================================================================="
+
+shellcheck: shellcheck-disclaimer check-scripts-syntax
+
 # ----------------------------------------------------------------------
 # Automatically generate the ChangeLog from Git logs:
 MAINTAINERCLEAN_FILES = ChangeLog

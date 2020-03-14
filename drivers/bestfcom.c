@@ -444,7 +444,7 @@ void upsdrv_shutdown(void)
 {
 	/* NB: hard-wired password */
 	ser_send(upsfd, "pw377\r");
-	ser_send(upsfd, "off 1 a\r");	/* power off in 1 second and restart when line power returns */
+	ser_send(upsfd, "o 10 a\r");	/* power off in 10 seconds and restart when line power returns, FE7K required a min of 5 seconds for off to function */
 }
 
 /* list flags and values that you want to receive via -x */
