@@ -1270,7 +1270,16 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		char *envvar = getenv("NUT_NOCONF_ALLOWED");
+		if ( (envvar != NULL) && (0 == strncasecmp("TRUE", envvar, 4)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			upslogx(LOG_WARNING, "Normally at least one UPS must be defined in ups.conf, currently there are none (please configure the file and reload the service)");
+		} else {
+			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		}
 	}
 
 	/* try to bring in the var/cmd descriptions */
