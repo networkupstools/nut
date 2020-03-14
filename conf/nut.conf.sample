@@ -33,4 +33,4 @@ MODE=none
 
 # Uncomment this to allow starting the service even if ups.conf has
 # no device sections at the moment:
-#NUT_NOCONF_ALLOWED=true; export NUT_NOCONF_ALLOWED
+NUT_NOCONF_ALLOWED=true; export NUT_NOCONF_ALLOWED
