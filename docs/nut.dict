@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2528 utf-8
+personal_ws-1.1 en 2531 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -629,6 +629,7 @@ NQA
 NTP
 NUT's
 NUTSRC
+NUT_NOCONF_ALLOWED
 NVA
 NX
 Nadav
@@ -1087,6 +1088,7 @@ UTalk
 UUU
 UX
 Ulf
+Uncomment
 Unices
 Unitek
 Upsonic
@@ -2362,6 +2364,7 @@ ugen
 ukUNV
 ul
 un
+uncomment
 unconfigured
 undefine
 undervoltage
