@@ -649,7 +649,7 @@ int main(int argc, char **argv)
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
 
-	/* note: device.type is set early to be overriden by the driver
+	/* note: device.type is set early to be overridden by the driver
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 

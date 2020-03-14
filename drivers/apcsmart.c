@@ -1419,7 +1419,7 @@ static int sdok(int ign)
 	debx(1, "got \"%s\"", temp);
 
 	if ((!ret && ign) || !strcmp(temp, "OK")) {
-		debx(1, "last shutdown cmd succeded");
+		debx(1, "last shutdown cmd succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 

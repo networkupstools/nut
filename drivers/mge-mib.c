@@ -122,7 +122,7 @@ static info_lkp_t mge_yes_no_info[] = {
 };
 
 /* FIXME: the below may introduce status redundancy, that needs to be
- * adressed by the driver, as for usbhid-ups! */
+ * addressed by the driver, as for usbhid-ups! */
 static info_lkp_t mge_power_source_info[] = {
 	{ 1, "" /* other */ },
 	{ 2, "OFF" /* none */ },

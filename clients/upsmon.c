@@ -1822,7 +1822,7 @@ static void reload_conf(void)
 		upslogx(LOG_CRIT, "Fatal error: total power value (%d) less "
 			"than MINSUPPLIES (%d)", totalpv, minsupplies);
 
-		fatalx(EXIT_FAILURE, "Impossible power configuation, unable to continue");
+		fatalx(EXIT_FAILURE, "Impossible power configuration, unable to continue");
 	}
 
 	/* finally clear the flag */

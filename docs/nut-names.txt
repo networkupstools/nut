@@ -359,6 +359,8 @@ battery: Any battery details
 |===============================================================================
 | Name                         | Description                         | Example value
 | battery.charge               | Battery charge (percent)            | 100.0
+| battery.charge.approx        | Rough approximation of battery
+                                 charge (opaque, percent)            | <85
 | battery.charge.low           | Remaining battery level when
                                  UPS switches to LB (percent)        | 20
 | battery.charge.restart       | Minimum battery level for

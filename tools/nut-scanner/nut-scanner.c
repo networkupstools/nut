@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 	int allow_oldnut = 0;
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
-	int allow_eaton_serial = 0; /* MUST be requested explicitely! */
+	int allow_eaton_serial = 0; /* MUST be requested explicitly! */
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
