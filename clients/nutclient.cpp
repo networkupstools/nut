@@ -671,6 +671,14 @@ std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient
 {
 	std::map<std::string,std::map<std::string,std::vector<std::string> > > map;
 
+	if (devs.empty())
+	{
+		// This request might come from processing the empty valid
+		// response of an upsd server which was allowed to start
+		// with no device sections in its ups.conf
+		return map;
+	}
+
 	std::vector<std::string> queries;
 	for (std::set<std::string>::const_iterator it=devs.cbegin(); it!=devs.cend(); ++it)
 	{
