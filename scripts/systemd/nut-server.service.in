@@ -33,6 +33,7 @@ PartOf=nut.target
 #LimitNOFILE=infinity
 #LimitNOFILE=65535
 LimitNOFILE=1048576
+EnvironmentFile=-@CONFPATH@/nut.conf
 ExecStart=@SBINDIR@/upsd
 ExecReload=@SBINDIR@/upsd -c reload
 ExecStartPost=-/bin/grep -E 'Units|Max open files' /proc/${MAINPID}/limits
