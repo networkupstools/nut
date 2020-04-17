@@ -144,6 +144,26 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		}
 	}
 
+	/* NUT_NOCONF_ALLOWED <seconds> */
+	if (!strcmp(arg[0], "NUT_NOCONF_ALLOWED")) {
+		if (isdigit(arg[1][0])) {
+			nut_noconf_allowed = (atoi(arg[1]) != 0); // non-zero arg is true here
+			return 1;
+		}
+		else {
+			if ( (!strcasecmp(arg[1], "true")) || (!strcasecmp(arg[1], "on")) || (!strcasecmp(arg[1], "yes"))) {
+				nut_noconf_allowed = 1;
+				return 1;
+			}
+			if ( (!strcasecmp(arg[1], "false")) || (!strcasecmp(arg[1], "off")) || (!strcasecmp(arg[1], "no"))) {
+				nut_noconf_allowed = 0;
+				return 1;
+			}
+			upslogx(LOG_ERR, "NUT_NOCONF_ALLOWED has non numeric and non boolean value (%s)!", arg[1]);
+			return 0;
+		}
+	}
+
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
 		if (isdigit(arg[1][0])) {
