@@ -30,7 +30,7 @@
 # amount of time, and then cleaned up.
 
 # =======================================================================
-# NUT_NOCONF_ALLOWED <bool>
+# NUT_NOCONF_ALLOWED <Boolean>
 # NUT_NOCONF_ALLOWED true
 #
 # Normally upsd requires that at least one device section is defined in ups.conf
