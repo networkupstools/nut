@@ -91,6 +91,7 @@ static mib2nut_info_t *mib2nut[] = {
 	&huawei,
 	&tripplite_ietf,
 	&eaton_ats16,
+	&eaton_ats16_g2,
 	&apc_ats,
 	&raritan_px2,
 	&eaton_ats30,
@@ -128,7 +129,7 @@ const char *mibname;
 const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
-#define DRIVER_VERSION		"1.11"
+#define DRIVER_VERSION		"1.12"
 
 /* driver description structure */
 upsdrv_info_t	upsdrv_info = {
