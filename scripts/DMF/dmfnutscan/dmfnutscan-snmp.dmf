@@ -23,6 +23,7 @@
 	<mib2nut auto_check=".1.3.6.1.4.1.4779.1.3.5.2.1.24.1" mib_name="baytech" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.10.1.2.1.0" mib_name="eaton_ats30" oid=".1.3.6.1.4.1.534.10.1" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16" oid=".1.3.6.1.4.1.705.1" />
+	<mib2nut auto_check=".1.3.6.1.4.1.534.10.2.1.2.0" mib_name="eaton_ats16_g2" oid=".1.3.6.1.4.1.534.10.2" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.6.1.1.12.0" mib_name="aphel_revelation" oid=".1.3.6.1.4.1.534.6.6.6" />
 	<mib2nut auto_check=".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0" mib_name="eaton_epdu" oid=".1.3.6.1.4.1.534.6.6.7" />
 	<mib2nut auto_check=".1.3.6.1.4.1.705.1.1.1.0" mib_name="mge" oid=".1.3.6.1.4.1.705.1" />
