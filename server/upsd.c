@@ -1262,7 +1262,7 @@ int main(int argc, char **argv)
 	/* As documented above, the NUT_NOCONF_ALLOWED can be provided via
 	 * envvars and then has higher priority than an upsd.conf setting
 	 */
-	char *envvar = getenv("NUT_NOCONF_ALLOWED");
+	const char *envvar = getenv("NUT_NOCONF_ALLOWED");
 	if ( envvar != NULL) {
 		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
 			/* Admins of this server expressed a desire to serve
