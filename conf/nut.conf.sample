@@ -31,6 +31,7 @@
 
 MODE=none
 
-# Uncomment this to allow starting the service even if ups.conf has
-# no device sections at the moment:
+# Uncomment this to allow starting the service even if ups.conf has no device
+# sections at the moment. This environment variable overrides the built-in
+# "false" and an optional same-named default flag that can be set in upsd.conf:
 #NUT_NOCONF_ALLOWED=true; export NUT_NOCONF_ALLOWED
