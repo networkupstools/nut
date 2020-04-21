@@ -58,10 +58,10 @@ int	deny_severity = LOG_WARNING;
 	int	tracking_delay = 3600;
 
 	/*
-	 * Preloaded to NUT_NOCONF_ALLOWED from upsd.conf or environment variable
+	 * Preloaded to ALLOW_NO_DEVICE from upsd.conf or environment variable
 	 * (with higher prio for envvar); defaults to disabled for legacy compat.
 	 */
-	int nut_noconf_allowed = 0;
+	int allow_no_device = 0;
 
 	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 	int	maxconn = 0;
@@ -1259,23 +1259,23 @@ int main(int argc, char **argv)
 	load_upsdconf(0);	/* 0 = initial */
 
 	{ // scope
-	/* As documented above, the NUT_NOCONF_ALLOWED can be provided via
+	/* As documented above, the ALLOW_NO_DEVICE can be provided via
 	 * envvars and then has higher priority than an upsd.conf setting
 	 */
-	const char *envvar = getenv("NUT_NOCONF_ALLOWED");
+	const char *envvar = getenv("ALLOW_NO_DEVICE");
 	if ( envvar != NULL) {
 		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
 			/* Admins of this server expressed a desire to serve
 			 * anything on the NUT protocol, even if nothing is
 			 * configured yet - tell the clients so, properly.
 			 */
-			nut_noconf_allowed = 1;
+			allow_no_device = 1;
 		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
 			/* Admins of this server expressed a desire to serve
 			 * anything on the NUT protocol, even if nothing is
 			 * configured yet - tell the clients so, properly.
 			 */
-			nut_noconf_allowed = 0;
+			allow_no_device = 0;
 		}
 	}
 	} // scope
@@ -1298,7 +1298,7 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		if (nut_noconf_allowed) {
+		if (allow_no_device) {
 			upslogx(LOG_WARNING, "Normally at least one UPS must be defined in ups.conf, currently there are none (please configure the file and reload the service)");
 		} else {
 			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");

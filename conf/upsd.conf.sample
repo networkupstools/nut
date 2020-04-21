@@ -30,8 +30,8 @@
 # amount of time, and then cleaned up.
 
 # =======================================================================
-# NUT_NOCONF_ALLOWED <Boolean>
-# NUT_NOCONF_ALLOWED true
+# ALLOW_NO_DEVICE <Boolean>
+# ALLOW_NO_DEVICE true
 #
 # Normally upsd requires that at least one device section is defined in ups.conf
 # when the daemon starts, to serve its data.  For automatically managed services

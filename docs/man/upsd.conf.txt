@@ -32,7 +32,7 @@ When instant commands and variables setting status tracking is enabled, status
 execution information are kept during this amount of time, and then cleaned up.
 This defaults to 3600 (1 hour).
 
-"NUT_NOCONF_ALLOWED 'Boolean'"::
+"ALLOW_NO_DEVICE 'Boolean'"::
 
 Normally upsd requires that at least one device section is defined in ups.conf
 when the daemon starts, to serve its data.  For automatically managed services

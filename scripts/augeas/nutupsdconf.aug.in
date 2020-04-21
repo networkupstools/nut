@@ -40,7 +40,7 @@ let path     = word
 
 let upsd_maxage    = [ opt_spc . key "MAXAGE"    . sep_spc . store num  . eol ]
 let upsd_trackingdelay = [ opt_spc . key "TRACKINGDELAY"    . sep_spc . store num  . eol ]
-let upsd_nut_noconf_allowed = [ opt_spc . key "NUT_NOCONF_ALLOWED"    . sep_spc . store num  . eol ]
+let upsd_allow_no_device = [ opt_spc . key "ALLOW_NO_DEVICE"    . sep_spc . store num  . eol ]
 let upsd_statepath = [ opt_spc . key "STATEPATH" . sep_spc . store path . eol ]
 let upsd_listen    = [ opt_spc . key "LISTEN"    . sep_spc 
                           . [ label "interface" . store ip ]

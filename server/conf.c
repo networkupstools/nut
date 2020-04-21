@@ -144,22 +144,22 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 		}
 	}
 
-	/* NUT_NOCONF_ALLOWED <seconds> */
-	if (!strcmp(arg[0], "NUT_NOCONF_ALLOWED")) {
+	/* ALLOW_NO_DEVICE <seconds> */
+	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
 		if (isdigit(arg[1][0])) {
-			nut_noconf_allowed = (atoi(arg[1]) != 0); // non-zero arg is true here
+			allow_no_device = (atoi(arg[1]) != 0); // non-zero arg is true here
 			return 1;
 		}
 		else {
 			if ( (!strcasecmp(arg[1], "true")) || (!strcasecmp(arg[1], "on")) || (!strcasecmp(arg[1], "yes"))) {
-				nut_noconf_allowed = 1;
+				allow_no_device = 1;
 				return 1;
 			}
 			if ( (!strcasecmp(arg[1], "false")) || (!strcasecmp(arg[1], "off")) || (!strcasecmp(arg[1], "no"))) {
-				nut_noconf_allowed = 0;
+				allow_no_device = 0;
 				return 1;
 			}
-			upslogx(LOG_ERR, "NUT_NOCONF_ALLOWED has non numeric and non boolean value (%s)!", arg[1]);
+			upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
 			return 0;
 		}
 	}
