@@ -244,11 +244,8 @@ static snmp_info_t eaton_ats16_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-/* Note: keep the legacy definition intact, to avoid breaking compatibility */
 mib2nut_info_t	eaton_ats16 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN1 };
-mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2 };
-/* Note:
- * * newer Network-M2 communication cards, with a fixed sysOID (above)
- * * due to a bug in tools/nut-snmpinfo.py, prepending a 2nd mib2nut_info_t declaration with a comment line
- *   results in data extraction not being done for all entries in the file. Hence the above comment line being
- *   after its belonging declaration! */
+/* Newer Network-M2 communication cards, with a fixed sysOID */
+/* FIXME: Duplicate the line below to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
+/*mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16_g2", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2 };*/
+mib2nut_info_t	eaton_ats16_g2 = { "eaton_ats16", EATON_ATS16_MIB_VERSION, NULL, EATON_ATS16_MODEL, eaton_ats16_mib, EATON_ATS16_SYSOID_GEN2 };
