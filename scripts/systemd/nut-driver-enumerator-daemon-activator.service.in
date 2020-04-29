@@ -33,7 +33,10 @@ TimeoutStartSec=10s
 # after interval expiration, this might race-condition to not detect some
 # latest update into the configuration file if it happens after the main
 # script loop has slurped intermediate state of device config.
-StartLimitIntervalSec=0
+# Note: Using the older but still supported Service/StartLimitInterval
+# see https://lists.freedesktop.org/archives/systemd-devel/2017-July/039255.html
+# for broader compatibility.
+StartLimitInterval=0
 ExecStart=/bin/systemctl reload-or-restart --no-block nut-driver-enumerator-daemon.service
 
 [Install]
