@@ -38,7 +38,7 @@
 #include "mge-hid.h"
 #include <math.h>
 
-#define MGE_HID_VERSION		"MGE HID 1.44"
+#define MGE_HID_VERSION		"MGE HID 1.45"
 
 /* (prev. MGE Office Protection Systems, prev. MGE UPS SYSTEMS) */
 /* Eaton */
@@ -55,6 +55,9 @@
 
 /* AEG */
 #define AEG_VENDORID 0x2b2d
+
+/* Lenovo */
+#define LENOVO_VENDORID 0x04b3
 
 /* Phoenixtec Power Co., Ltd */
 #define PHOENIXTEC 0x06da
@@ -84,6 +87,9 @@ static usb_device_id_t mge_usb_device_table[] = {
 	/* various models */
 	{ USB_DEVICE(HP_VENDORID, 0x1fe7), NULL },
 	{ USB_DEVICE(HP_VENDORID, 0x1fe8), NULL },
+
+	/* various models */
+	{ USB_DEVICE(LENOVO_VENDORID, 0x0001), NULL },
 
 	/* PROTECT B / NAS */
 	{ USB_DEVICE(AEG_VENDORID, 0xffff), NULL },

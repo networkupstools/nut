@@ -517,6 +517,8 @@
 
 "Legrand"	"ups"	"2"	"Keor Multiplug"	""	"nutdrv_qx"
 
+"Lenovo"	"ups"	"5"	"Various"	"USB port"	"usbhid-ups"
+
 "Lestar"	"ups"	"2"	"MD-800E"	""	"blazer_ser"
 
 "Lexis"	"ups"	"2"	"X-Power Tigra 1kVA"	""	"blazer_ser or bestups"

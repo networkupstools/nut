@@ -30,7 +30,8 @@ At the present time, usbhid-ups supports:
  - some Belkin models,
  - some Cyber Power Systems models,
  - some Powercom models,
- - some TrippLite models.
+ - some TrippLite models,
+ - all Lenovo USB models.
 
 For a more complete list, refer to the NUT hardware compatibility list,
 available in the source distribution as data/drivers.list, or on the
