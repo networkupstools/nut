@@ -374,11 +374,13 @@ static struct snmp_pdu * scan_snmp_get_oid(char* oid_str,void* handle)
 	return response;
 }
 
-static void try_all_oid(void * arg, const char * sysoid_found)
+static void try_all_oid(void * arg, const char * mib_found)
 {
 	struct snmp_pdu *response = NULL;
 	int index = 0;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
+
+	upsdebugx(2, "%s", __func__);
 
 	while(snmp_device_table[index].mib != NULL) {
 
@@ -393,9 +395,10 @@ static void try_all_oid(void * arg, const char * sysoid_found)
 			continue;
 		}
 
-		/* add device only if not yet detected with sysoid */
-		if (sysoid_found == NULL || strcmp(sysoid_found, snmp_device_table[index].sysoid) != 0) {
+		/* add device only if not yet detected with the same mib */
+		if (mib_found == NULL || (strcmp(mib_found, snmp_device_table[index].mib) != 0)) {
 			scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
+			upsdebugx(3, "Found another match for device with MIB '%s'", snmp_device_table[index].mib);
 		}
 		else {
 			upsdebugx(3, "Skip duplicated device %s", snmp_device_table[index].mib);
@@ -574,7 +577,9 @@ static void * try_SysOID(void * arg)
 	size_t name_len = MAX_OID_LEN;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	int index = 0;
-	char *sysoid_found = NULL;
+	char *mib_found = NULL;
+
+	upsdebugx(2, "%s", __func__);
 
 	/* Initialize session */
 	if( !init_session(&snmp_sess,sec) ) {
@@ -639,6 +644,7 @@ static void * try_SysOID(void * arg)
 					response->variables->val.objid,
 					response->variables->val_len/sizeof(oid),
 					name, name_len) == 0 ) {
+
 					/* we have found a relevant sysoid */
 
 					/* add mib if no complementary oid is present */
@@ -646,7 +652,7 @@ static void * try_SysOID(void * arg)
 					if (snmp_device_table[index].oid == NULL
 						|| strcmp(snmp_device_table[index].oid, "") == 0) {
 						scan_snmp_add_device(sec,NULL,snmp_device_table[index].mib);
-						sysoid_found = snmp_device_table[index].sysoid;
+						mib_found = snmp_device_table[index].sysoid;
 					}
 					/* else test complementary oid before adding mib */
 					else {
@@ -655,7 +661,7 @@ static void * try_SysOID(void * arg)
 							handle);
 						if( resp != NULL ) {
 							scan_snmp_add_device(sec,resp, snmp_device_table[index].mib);
-							sysoid_found = snmp_device_table[index].sysoid;
+							mib_found = snmp_device_table[index].mib;
 							(*nut_snmp_free_pdu)(resp);
 						}
 					}
@@ -665,7 +671,7 @@ static void * try_SysOID(void * arg)
 		}
 
 		/* try a list of known OID */
-		try_all_oid(sec, sysoid_found);
+		try_all_oid(sec, mib_found);
 
 		(*nut_snmp_free_pdu)(response);
 		response = NULL;
