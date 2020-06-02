@@ -21,10 +21,11 @@
 
 #include "huawei-mib.h"
 
-#define HUAWEI_MIB_VERSION  "0.1"
+#define HUAWEI_MIB_VERSION  "0.2"
 
 #define HUAWEI_SYSOID       ".1.3.6.1.4.1.8072.3.2.10"
 #define HUAWEI_UPSMIB       ".1.3.6.1.4.1.2011"
+#define HUAWEI_OID_MODEL_NAME ".1.3.6.1.4.1.2011.6.174.1.2.100.1.2.1"
 
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
@@ -234,4 +235,4 @@ static snmp_info_t huawei_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	huawei = { "huawei", HUAWEI_MIB_VERSION, NULL, NULL, huawei_mib, HUAWEI_SYSOID };
+mib2nut_info_t	huawei = { "huawei", HUAWEI_MIB_VERSION, NULL, HUAWEI_OID_MODEL_NAME, huawei_mib, HUAWEI_SYSOID };
