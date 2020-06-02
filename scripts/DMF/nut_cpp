@@ -50,6 +50,7 @@ sed \
     -e 's/static __inline/static/' \
     -e 's/__extern_inline/extern/' \
     -e 's/extern __inline/extern/' \
+    -e 's/_Float[0-9]*x*/float/' \
     -e 's/__restrict//g' \
     -e 's/__extension__//' \
     -e 's/__builtin_va_list/int/' #| tee temp-cpp-filt.tmp
