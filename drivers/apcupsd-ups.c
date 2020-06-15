@@ -145,7 +145,7 @@ static int getdata(void)
 	char bfr[1024];
 
 	for(x=0;nut_data[x].info_type;x++)
-		if(!(nut_data[x].drv_flags&DU_FLAG_INIT))
+		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
 			dstate_delinfo(nut_data[x].info_type);
 
 	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==-1)
