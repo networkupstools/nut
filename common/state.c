@@ -141,6 +141,10 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 			continue;
 		}
 
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			return 0;
+		}
+
 		/* whatever is on the left, hang it off current right */
 		st_tree_node_add(&node->right, node->left);
 
