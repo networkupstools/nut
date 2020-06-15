@@ -28,6 +28,8 @@
 #define DRIVER_NAME	"apcupsd network client UPS driver"
 #define DRIVER_VERSION	"0.5"
 
+#define POLL_INTERVAL_MIN 10
+
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
 	DRIVER_NAME,
@@ -237,14 +239,16 @@ void upsdrv_initinfo(void)
 	if(!port)fatalx(EXIT_FAILURE,"invalid host or port specified!");
 	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_updateinfo(void)
 {
 	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_shutdown(void)
