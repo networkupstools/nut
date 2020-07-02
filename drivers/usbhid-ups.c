@@ -44,6 +44,7 @@
 	#include "apc-hid.h"
 	#include "belkin-hid.h"
 	#include "cps-hid.h"
+	#include "delta-hid.h"
 	#include "liebert-hid.h"
 	#include "powercom-hid.h"
 	#include "tripplite-hid.h"
@@ -61,6 +62,7 @@ static subdriver_t *subdriver_list[] = {
 	&apc_subdriver,
 	&belkin_subdriver,
 	&cps_subdriver,
+	&delta_subdriver,
 	&liebert_subdriver,
 	&powercom_subdriver,
 	&tripplite_subdriver,
