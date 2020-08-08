@@ -505,6 +505,7 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(3493),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	// Do not connect now
@@ -512,6 +513,7 @@ _socket(new internal::Socket)
 
 TcpClient::TcpClient(const std::string& host, int port)throw(IOException):
 Client(),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	connect(host, port);
@@ -893,7 +895,7 @@ std::string TcpClient::sendQuery(const std::string& req)throw(IOException)
 
 void TcpClient::sendAsyncQueries(const std::vector<std::string>& req)throw(IOException)
 {
-	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); it++)
+	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); ++it)
 	{
 		_socket->write(*it);
 	}

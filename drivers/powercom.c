@@ -674,7 +674,7 @@ static float load_level(void)
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		return raw_data[UPS_LOAD];
 	}
-	return raw_data[STATUS_A] & MAINS_FAILURE ?
+	return (raw_data[STATUS_A] & MAINS_FAILURE) ?
 		types[type].loadpct[0] * raw_data[UPS_LOAD] +
 									types[type].loadpct[1] :
 		types[type].loadpct[2] * raw_data[UPS_LOAD] +
@@ -693,9 +693,9 @@ static float batt_level(void)
 		battval=(raw_data[UPS_LOAD])/4+raw_data[BATTERY_CHARGE];
 		if (battval<=bat0)
 			return 0.0;
-		if (battval>bat0 && battval<=bat29)
+		if (battval<=bat29)
 			return (battval-bat0)*30.0/(bat29-bat0);
-		if (battval>bat29 && battval<=bat100)
+		if (battval<=bat100)
 			return 30.0+(battval-bat29)*70.0/(bat100-bat29);
 		return 100.0;
 	}
@@ -729,7 +729,7 @@ static float batt_level(void)
 	}
 	if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI"))
 		return raw_data[BATTERY_CHARGE];
-	return raw_data[STATUS_A] & ONLINE ? /* Are we on battery power? */
+	return (raw_data[STATUS_A] & ONLINE) ? /* Are we on battery power? */
 		/* Yes */
 		types[type].battpct[0] * raw_data[BATTERY_CHARGE] +
 			types[type].battpct[1] * load_level() + types[type].battpct[2] :
