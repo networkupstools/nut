@@ -1422,7 +1422,8 @@ static void ups_status_set(void)
 		dstate_delinfo("input.transfer.reason");
 	}
 
-	if (ups_status & STATUS(ONLINE)) {
+	if ((ups_status & STATUS(ONLINE)) &&
+                !(ups_status & STATUS(DISCHRG))) {
 		status_set("OL");		/* on line */
 	} else {
 		status_set("OB");		/* on battery */
