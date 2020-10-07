@@ -36,11 +36,11 @@
 #endif
 #if HAVE_LINUX_I2C_DEV_H
 #	include <linux/i2c-dev.h> /* for I2C_SLAVE */
-#if !HAVE_LINUX_SMBUS_H
-#ifndef I2C_FUNC_I2C
+# if !HAVE_LINUX_SMBUS_H
+#  ifndef I2C_FUNC_I2C
 #	include <linux/i2c.h>
-#endif
-#endif
+#  endif
+# endif
 #endif
 
 /*
