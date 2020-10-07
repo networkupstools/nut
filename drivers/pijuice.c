@@ -23,37 +23,37 @@
 #include <stdint.h>
 
 /*
- * Linux I2C userland is a bit of a mess until distros refresh to 
- * the i2c-tools 4.x release that profides i2c/smbus.h for userspace 
- * instead of (re)using linux/i2c-dev.h, which conflicts with a 
+ * Linux I2C userland is a bit of a mess until distros refresh to
+ * the i2c-tools 4.x release that profides i2c/smbus.h for userspace
+ * instead of (re)using linux/i2c-dev.h, which conflicts with a
  * kernel header of the same name.
  *
  * See:
- * https://i2c.wiki.kernel.org/index.php/Plans_for_I2C_Tools_4 
+ * https://i2c.wiki.kernel.org/index.php/Plans_for_I2C_Tools_4
  */
 #if HAVE_LINUX_SMBUS_H
 #	include <i2c/smbus.h>
 #endif
 #if HAVE_LINUX_I2C_DEV_H
 #	include <linux/i2c-dev.h> /* for I2C_SLAVE */
-#if !HAVE_LINUX_SMBUS_H
-#ifndef I2C_FUNC_I2C
+# if !HAVE_LINUX_SMBUS_H
+#  ifndef I2C_FUNC_I2C
 #	include <linux/i2c.h>
-#endif
-#endif
+#  endif
+# endif
 #endif
 
-/* 
- * i2c-tools pre-4.0 has a userspace header with a name that conflicts 
+/*
+ * i2c-tools pre-4.0 has a userspace header with a name that conflicts
  * with a kernel header, so it may be ignored/removed by distributions
  * when packaging i2c-tools.
  *
- * This will cause the driver to be un-buildable on certain 
- * configurations, so include the necessary bits here to handle this 
+ * This will cause the driver to be un-buildable on certain
+ * configurations, so include the necessary bits here to handle this
  * situation.
  */
 #if WITH_LINUX_I2C
-#if !HAVE_DECL_I2C_SMBUS_ACCESS 
+#if !HAVE_DECL_I2C_SMBUS_ACCESS
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
                                      int size, union i2c_smbus_data *data)
 {
@@ -149,77 +149,78 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 		return NULL;
 	else
 		memcpy(values, &data.block[1], data.block[0]);
-		return values;
+
+	return values;
 }
 #endif
-#endif
+#endif // if WITH_LINUX_I2C
 
-#define STATUS_CMD				0x40
-#define CHARGE_LEVEL_CMD			0x41
-#define CHARGE_LEVEL_HI_RES_CMD			0x42
-#define FAULT_EVENT_CMD				0x44
-#define BUTTON_EVENT_CMD			0x45
-#define BATTERY_TEMPERATURE_CMD			0x47
-#define BATTERY_VOLTAGE_CMD			0x49
-#define BATTERY_CURRENT_CMD			0x4b
-#define IO_VOLTAGE_CMD				0x4d
-#define IO_CURRENT_CMD				0x4f
+#define STATUS_CMD                          0x40
+#define CHARGE_LEVEL_CMD                    0x41
+#define CHARGE_LEVEL_HI_RES_CMD             0x42
+#define FAULT_EVENT_CMD                     0x44
+#define BUTTON_EVENT_CMD                    0x45
+#define BATTERY_TEMPERATURE_CMD             0x47
+#define BATTERY_VOLTAGE_CMD                 0x49
+#define BATTERY_CURRENT_CMD                 0x4b
+#define IO_VOLTAGE_CMD                      0x4d
+#define IO_CURRENT_CMD                      0x4f
 
-#define CHARGING_CONFIG_CMD			0x51
-#define BATTERY_PROFILE_ID_CMD			0x52
-#define BATTERY_PROFILE_CMD			0x53
-#define BATTERY_EXT_PROFILE_CMD			0x54
-#define BATTERY_TEMP_SENSE_CONFIG_CMD		0x5D
+#define CHARGING_CONFIG_CMD                 0x51
+#define BATTERY_PROFILE_ID_CMD              0x52
+#define BATTERY_PROFILE_CMD                 0x53
+#define BATTERY_EXT_PROFILE_CMD             0x54
+#define BATTERY_TEMP_SENSE_CONFIG_CMD       0x5D
 
-#define POWER_INPUTS_CONFIG_CMD			0x5E
-#define RUN_PIN_CONFIG_CMD			0x5F
-#define POWER_REGULATOR_CONFIG_CMD		0x60
-#define WATCHDOG_ACTIVATION_CMD			0x61
-#define POWER_OFF_CMD				0x62
-#define WAKEUP_ON_CHARGE_CMD			0x63
-#define SYSTEM_POWER_SWITCH_CTRL_CMD		0x64
+#define POWER_INPUTS_CONFIG_CMD             0x5E
+#define RUN_PIN_CONFIG_CMD                  0x5F
+#define POWER_REGULATOR_CONFIG_CMD          0x60
+#define WATCHDOG_ACTIVATION_CMD             0x61
+#define POWER_OFF_CMD                       0x62
+#define WAKEUP_ON_CHARGE_CMD                0x63
+#define SYSTEM_POWER_SWITCH_CTRL_CMD        0x64
 
-#define LED_STATE_CMD				0x66
-#define LED_BLINK_CMD				0x68
-#define LED_CONFIGURATION_CMD			0x6A
-#define BUTTON_CONFIGURATION_CMD		0x6E
+#define LED_STATE_CMD                       0x66
+#define LED_BLINK_CMD                       0x68
+#define LED_CONFIGURATION_CMD               0x6A
+#define BUTTON_CONFIGURATION_CMD            0x6E
 
-#define IO1_CONFIGURATION_CMD			0x72
-#define IO1_PIN_ACCESS_CMD			0x75
+#define IO1_CONFIGURATION_CMD               0x72
+#define IO1_PIN_ACCESS_CMD                  0x75
 
-#define IO2_CONFIGURATION_CMD			0x77
-#define IO2_PIN_ACCESS_CMD			0x7A
+#define IO2_CONFIGURATION_CMD               0x77
+#define IO2_PIN_ACCESS_CMD                  0x7A
 
-#define I2C_ADDRESS_CMD				0x7C
+#define I2C_ADDRESS_CMD                     0x7C
 
-#define ID_EEPROM_WRITE_PROTECT_CTRL_CMD	0x7E
-#define ID_EEPROM_ADDRESS_CMD			0x7F
+#define ID_EEPROM_WRITE_PROTECT_CTRL_CMD    0x7E
+#define ID_EEPROM_ADDRESS_CMD               0x7F
 
-#define RTC_TIME_CMD				0xB0
-#define RTC_ALARM_CMD				0xB9
-#define RTC_CTRL_STATUS_CMD			0xC2
+#define RTC_TIME_CMD                        0xB0
+#define RTC_ALARM_CMD                       0xB9
+#define RTC_CTRL_STATUS_CMD                 0xC2
 
-#define RESET_TO_DEFAULT_CMD			0xF0
-#define FIRMWARE_VERSION_CMD			0xFD
+#define RESET_TO_DEFAULT_CMD                0xF0
+#define FIRMWARE_VERSION_CMD                0xFD
 
-#define BATT_NORMAL		0
-#define BATT_CHARGING_FROM_IN	1
-#define BATT_CHARGING_FROM_5V	2
-#define BATT_NOT_PRESENT	3
+#define BATT_NORMAL                         0
+#define BATT_CHARGING_FROM_IN               1
+#define BATT_CHARGING_FROM_5V               2
+#define BATT_NOT_PRESENT                    3
 
-#define POWER_NOT_PRESENT	0
-#define POWER_BAD		1
-#define POWER_WEAK		2
-#define POWER_PRESENT		3
+#define POWER_NOT_PRESENT                   0
+#define POWER_BAD                           1
+#define POWER_WEAK                          2
+#define POWER_PRESENT                       3
 
-#define LOW_BATTERY_THRESHOLD	25.0
-#define HIGH_BATTERY_THRESHOLD	75.0
-#define NOMINAL_BATTERY_VOLTAGE	4.18
+#define LOW_BATTERY_THRESHOLD               25.0
+#define HIGH_BATTERY_THRESHOLD              75.0
+#define NOMINAL_BATTERY_VOLTAGE             4.18
 
-#define DRIVER_NAME		"PiJuice UPS driver"
-#define DRIVER_VERSION		"0.9"
+#define DRIVER_NAME                         "PiJuice UPS driver"
+#define DRIVER_VERSION                      "0.9"
 
-static uint8_t i2c_address    =	0x14;
+static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;
 
 /*
@@ -246,25 +247,25 @@ upsdrv_info_t upsdrv_info = {
 
 #define I2C_READ_BYTE(fd, cmd, label) \
 	if ((data = i2c_smbus_read_byte_data(upsfd, cmd)) < 0 ) { \
-	 	upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 		return; \
 	}
 
 #define I2C_WRITE_BYTE(fd, cmd, value, label) \
 	if ((data = i2c_smbus_write_byte_data(upsfd, cmd, value)) < 0 ) { \
-	 	upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
 		return; \
 	}
 
 #define I2C_READ_WORD(fd, cmd, label) \
 	if ((data = i2c_smbus_read_word_data(upsfd, cmd)) < 0 ) { \
-	 	upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 		return; \
 	}
 
 #define I2C_READ_BLOCK(fd, cmd, size, block, label) \
 	if ((i2c_smbus_read_i2c_block_data(upsfd, cmd, size, block)) < 0 ) { \
-	 	upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 		return; \
 	}
 
@@ -274,12 +275,12 @@ static inline int open_i2c_bus(char *path, uint8_t addr)
 
 	if ((file = open(path, O_RDWR)) < 0)
 	{
-	 	fatal_with_errno(EXIT_FAILURE, "Failed to open the i2c bus on %s", path);
+		fatal_with_errno(EXIT_FAILURE, "Failed to open the i2c bus on %s", path);
 	}
 
 	if (ioctl(file, I2C_SLAVE, addr) < 0)
 	{
-	 	fatal_with_errno(EXIT_FAILURE, "Failed to acquire the i2c bus and/or talk to the UPS");
+		fatal_with_errno(EXIT_FAILURE, "Failed to acquire the i2c bus and/or talk to the UPS");
 	}
 
 	return file;
@@ -295,8 +296,8 @@ static void get_charge_level_hi_res()
 	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
 
 	/*
-	 * Use an external variable to allow for missed i2c bus 
-	 * reads; the charge level data may be slightly stale, 
+	 * Use an external variable to allow for missed i2c bus
+	 * reads; the charge level data may be slightly stale,
 	 * but no other options seem reasonable:
 	 *
 	 * 1) store 0
@@ -391,7 +392,7 @@ static void get_status()
 			upsdebugx(1, "Power Input 5v: UNKNOWN");
 	}
 
-	if ( batteryStatus == BATT_NORMAL || 
+	if ( batteryStatus == BATT_NORMAL ||
 	     batteryStatus == BATT_CHARGING_FROM_IN ||
 	     batteryStatus == BATT_CHARGING_FROM_5V )
 	{
@@ -417,13 +418,13 @@ static void get_status()
 	     powerInput     <= POWER_PRESENT &&
 	     powerInput5vIo <= POWER_PRESENT )
 	{
-		if ( powerInput       == POWER_NOT_PRESENT && 
-                     ( powerInput5vIo != POWER_NOT_PRESENT && 
+		if ( powerInput       == POWER_NOT_PRESENT &&
+		     ( powerInput5vIo != POWER_NOT_PRESENT &&
 		       powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{
-        			upslogx( LOG_NOTICE, "On USB power" );
+				upslogx( LOG_NOTICE, "On USB power" );
 			}
 			usb_power     = 1;
 			gpio_power    = 0;
@@ -444,13 +445,13 @@ static void get_status()
 			}
 			status_set( status_buf );
 		}
-		else if ( powerInput5vIo == POWER_NOT_PRESENT && 
-			  ( powerInput   != POWER_NOT_PRESENT && 
-			    powerInput   <= POWER_PRESENT ))
+		else if ( powerInput5vIo == POWER_NOT_PRESENT &&
+		      ( powerInput   != POWER_NOT_PRESENT &&
+		        powerInput   <= POWER_PRESENT ))
 		{
 			if ( gpio_power != 1 || usb_power != 0 )
 			{
-        			upslogx( LOG_NOTICE, "On 5V_GPIO power" );
+				upslogx( LOG_NOTICE, "On 5V_GPIO power" );
 			}
 			usb_power     = 0;
 			gpio_power    = 1;
@@ -473,11 +474,11 @@ static void get_status()
 			}
 		}
 		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT ) &&
-			  ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
+		          ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 1 )
 			{
-        			upslogx( LOG_NOTICE, "On USB and 5V_GPIO power" );
+				upslogx( LOG_NOTICE, "On USB and 5V_GPIO power" );
 			}
 			usb_power     = 1;
 			gpio_power    = 1;
@@ -503,7 +504,7 @@ static void get_status()
 		{
 			if ( usb_power != 0 || gpio_power != 0 )
 			{
-        			upslogx( LOG_NOTICE, "On Battery power" );
+				upslogx( LOG_NOTICE, "On Battery power" );
 			}
 			usb_power     = 0;
 			gpio_power    = 0;
@@ -550,7 +551,7 @@ static void get_battery_current()
 	upsdebugx( 3, __FUNCTION__ );
 
 	/*
-	 * The reported current can actually be negative, so we cannot 
+	 * The reported current can actually be negative, so we cannot
 	 * check for I2C failure by looking for negative values
 	 */
 	data = i2c_smbus_read_word_data(upsfd, cmd);
@@ -585,7 +586,7 @@ static void get_io_current()
 	upsdebugx( 3, __FUNCTION__ );
 
 	/*
-	 * The reported current can actually be negative, so we cannot 
+	 * The reported current can actually be negative, so we cannot
 	 * check for I2C failure by looking for negative values
 	 */
 	data = i2c_smbus_read_word_data(upsfd, cmd);
@@ -603,7 +604,7 @@ static void get_firmware_version()
 {
 	uint8_t cmd = FIRMWARE_VERSION_CMD;
 	uint16_t data;
-        uint8_t major, minor;
+	uint8_t major, minor;
 
 	upsdebugx( 3, __FUNCTION__ );
 
@@ -614,7 +615,7 @@ static void get_firmware_version()
 
 	if (( major != 1 ) || ( minor > 3 ))
 	{
-        	upslogx( LOG_WARNING, "Unknown Firmware release: %d.%d", major, minor );
+		upslogx( LOG_WARNING, "Unknown Firmware release: %d.%d", major, minor );
 	}
 
 	upsdebugx( 1, "UPS Firmware Version: %d.%d", major, minor );
@@ -686,13 +687,13 @@ static void set_power_off()
 	upsdebugx( 3, __FUNCTION__ );
 
 	/*
-	 * Acceptable values for shutdown_delay are 1-250, 
+	 * Acceptable values for shutdown_delay are 1-250,
 	 * use 0/255 to clear a scheduled power off command
 	 */
 
 	if ( shutdown_delay > 255 )
 	{
-        	upslogx(
+		upslogx(
 			LOG_WARNING,
 			"shutdown delay of >250 seconds requested, shortening to 250 seconds"
 		);
@@ -701,7 +702,7 @@ static void set_power_off()
 
 	if ( shutdown_delay == 0 )
 	{
-        	upslogx(
+		upslogx(
 			LOG_WARNING,
 			"shutdown delay of 0 seconds requested, using 1 second instead"
 		);
@@ -739,24 +740,24 @@ static void get_time()
 
 static void get_i2c_address()
 {
-        uint8_t cmd = I2C_ADDRESS_CMD;
-        uint8_t data;
+	uint8_t cmd = I2C_ADDRESS_CMD;
+	uint8_t data;
 
 	upsdebugx( 3, __FUNCTION__ );
 
 	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
 
-        upsdebugx( 1, "I2C Address: 0x%0x", data );
+	upsdebugx( 1, "I2C Address: 0x%0x", data );
 
 	if ( data == i2c_address )
 	{
-		upsdebugx( 1, "Found device '0x%0x' on port '%s'", 
-		   	(unsigned int) i2c_address, device_path );
+		upsdebugx( 1, "Found device '0x%0x' on port '%s'",
+			(unsigned int) i2c_address, device_path );
 	}
 	else
 	{
-		fatalx( EXIT_FAILURE, 
-			"Could not find PiJuice HAT at I2C address 0x%0x", 
+		fatalx( EXIT_FAILURE,
+			"Could not find PiJuice HAT at I2C address 0x%0x",
 			i2c_address );
 	}
 }
