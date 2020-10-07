@@ -153,7 +153,7 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 	return values;
 }
 #endif
-#endif
+#endif // if WITH_LINUX_I2C
 
 #define STATUS_CMD				0x40
 #define CHARGE_LEVEL_CMD			0x41
