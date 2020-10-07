@@ -2573,7 +2573,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 		if (status == TRUE) {
 			if (quirk_symmetra_threephase) {
 				if (!strcasecmp(su_info_p->info_type, "input.transfer.low")
-					|| !strcasecmp(su_info_p->info_type, "input.transfer.high")) {
+				 || !strcasecmp(su_info_p->info_type, "input.transfer.high")) {
 					/* Convert from three phase line-to-line voltage to line-to-neutral voltage */
 					double value = atof(buf);
 					value = value * 0.707;
