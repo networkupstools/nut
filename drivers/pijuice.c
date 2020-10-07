@@ -155,72 +155,72 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 #endif
 #endif // if WITH_LINUX_I2C
 
-#define STATUS_CMD				0x40
-#define CHARGE_LEVEL_CMD			0x41
-#define CHARGE_LEVEL_HI_RES_CMD			0x42
-#define FAULT_EVENT_CMD				0x44
-#define BUTTON_EVENT_CMD			0x45
-#define BATTERY_TEMPERATURE_CMD			0x47
-#define BATTERY_VOLTAGE_CMD			0x49
-#define BATTERY_CURRENT_CMD			0x4b
-#define IO_VOLTAGE_CMD				0x4d
-#define IO_CURRENT_CMD				0x4f
+#define STATUS_CMD                          0x40
+#define CHARGE_LEVEL_CMD                    0x41
+#define CHARGE_LEVEL_HI_RES_CMD             0x42
+#define FAULT_EVENT_CMD                     0x44
+#define BUTTON_EVENT_CMD                    0x45
+#define BATTERY_TEMPERATURE_CMD             0x47
+#define BATTERY_VOLTAGE_CMD                 0x49
+#define BATTERY_CURRENT_CMD                 0x4b
+#define IO_VOLTAGE_CMD                      0x4d
+#define IO_CURRENT_CMD                      0x4f
 
-#define CHARGING_CONFIG_CMD			0x51
-#define BATTERY_PROFILE_ID_CMD			0x52
-#define BATTERY_PROFILE_CMD			0x53
-#define BATTERY_EXT_PROFILE_CMD			0x54
-#define BATTERY_TEMP_SENSE_CONFIG_CMD		0x5D
+#define CHARGING_CONFIG_CMD                 0x51
+#define BATTERY_PROFILE_ID_CMD              0x52
+#define BATTERY_PROFILE_CMD                 0x53
+#define BATTERY_EXT_PROFILE_CMD             0x54
+#define BATTERY_TEMP_SENSE_CONFIG_CMD       0x5D
 
-#define POWER_INPUTS_CONFIG_CMD			0x5E
-#define RUN_PIN_CONFIG_CMD			0x5F
-#define POWER_REGULATOR_CONFIG_CMD		0x60
-#define WATCHDOG_ACTIVATION_CMD			0x61
-#define POWER_OFF_CMD				0x62
-#define WAKEUP_ON_CHARGE_CMD			0x63
-#define SYSTEM_POWER_SWITCH_CTRL_CMD		0x64
+#define POWER_INPUTS_CONFIG_CMD             0x5E
+#define RUN_PIN_CONFIG_CMD                  0x5F
+#define POWER_REGULATOR_CONFIG_CMD          0x60
+#define WATCHDOG_ACTIVATION_CMD             0x61
+#define POWER_OFF_CMD                       0x62
+#define WAKEUP_ON_CHARGE_CMD                0x63
+#define SYSTEM_POWER_SWITCH_CTRL_CMD        0x64
 
-#define LED_STATE_CMD				0x66
-#define LED_BLINK_CMD				0x68
-#define LED_CONFIGURATION_CMD			0x6A
-#define BUTTON_CONFIGURATION_CMD		0x6E
+#define LED_STATE_CMD                       0x66
+#define LED_BLINK_CMD                       0x68
+#define LED_CONFIGURATION_CMD               0x6A
+#define BUTTON_CONFIGURATION_CMD            0x6E
 
-#define IO1_CONFIGURATION_CMD			0x72
-#define IO1_PIN_ACCESS_CMD			0x75
+#define IO1_CONFIGURATION_CMD               0x72
+#define IO1_PIN_ACCESS_CMD                  0x75
 
-#define IO2_CONFIGURATION_CMD			0x77
-#define IO2_PIN_ACCESS_CMD			0x7A
+#define IO2_CONFIGURATION_CMD               0x77
+#define IO2_PIN_ACCESS_CMD                  0x7A
 
-#define I2C_ADDRESS_CMD				0x7C
+#define I2C_ADDRESS_CMD                     0x7C
 
-#define ID_EEPROM_WRITE_PROTECT_CTRL_CMD	0x7E
-#define ID_EEPROM_ADDRESS_CMD			0x7F
+#define ID_EEPROM_WRITE_PROTECT_CTRL_CMD    0x7E
+#define ID_EEPROM_ADDRESS_CMD               0x7F
 
-#define RTC_TIME_CMD				0xB0
-#define RTC_ALARM_CMD				0xB9
-#define RTC_CTRL_STATUS_CMD			0xC2
+#define RTC_TIME_CMD                        0xB0
+#define RTC_ALARM_CMD                       0xB9
+#define RTC_CTRL_STATUS_CMD                 0xC2
 
-#define RESET_TO_DEFAULT_CMD			0xF0
-#define FIRMWARE_VERSION_CMD			0xFD
+#define RESET_TO_DEFAULT_CMD                0xF0
+#define FIRMWARE_VERSION_CMD                0xFD
 
-#define BATT_NORMAL		0
-#define BATT_CHARGING_FROM_IN	1
-#define BATT_CHARGING_FROM_5V	2
-#define BATT_NOT_PRESENT	3
+#define BATT_NORMAL                         0
+#define BATT_CHARGING_FROM_IN               1
+#define BATT_CHARGING_FROM_5V               2
+#define BATT_NOT_PRESENT                    3
 
-#define POWER_NOT_PRESENT	0
-#define POWER_BAD		1
-#define POWER_WEAK		2
-#define POWER_PRESENT		3
+#define POWER_NOT_PRESENT                   0
+#define POWER_BAD                           1
+#define POWER_WEAK                          2
+#define POWER_PRESENT                       3
 
-#define LOW_BATTERY_THRESHOLD	25.0
-#define HIGH_BATTERY_THRESHOLD	75.0
-#define NOMINAL_BATTERY_VOLTAGE	4.18
+#define LOW_BATTERY_THRESHOLD               25.0
+#define HIGH_BATTERY_THRESHOLD              75.0
+#define NOMINAL_BATTERY_VOLTAGE             4.18
 
-#define DRIVER_NAME		"PiJuice UPS driver"
-#define DRIVER_VERSION		"0.9"
+#define DRIVER_NAME                         "PiJuice UPS driver"
+#define DRIVER_VERSION                      "0.9"
 
-static uint8_t i2c_address    =	0x14;
+static uint8_t i2c_address    = 0x14;
 static uint8_t shutdown_delay = 30;
 
 /*
