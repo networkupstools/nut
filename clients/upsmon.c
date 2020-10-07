@@ -658,8 +658,17 @@ static int is_ups_critical(utype_t *ups)
 	/* must be OB+LB now */
 
 	/* if UPS is calibrating, don't declare it critical */
-	if (flag_isset(ups->status, ST_CAL))
+	/* FIXME: Consider UPSes where we can know if they have other power
+	 * circuits (bypass, etc.) and whether those do currently provide
+	 * wall power to the host - and that we do not have both calibration
+	 * and a real outage, when we still should shut down right now.
+	 */
+	if (flag_isset(ups->status, ST_CAL)) {
+		upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OB+LB now, but "
+			"it is also calibrating - not declaring a critical state",
+			  __func__, ups->upsname);
 		return 0;
+	}
 
 	/* if we're a master, declare it critical so we set FSD on it */
 	if (flag_isset(ups->status, ST_MASTER))
