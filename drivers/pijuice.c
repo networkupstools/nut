@@ -149,7 +149,8 @@ static inline __u8* i2c_smbus_read_i2c_block_data(int file, __u8 command, __u8 l
 		return NULL;
 	else
 		memcpy(values, &data.block[1], data.block[0]);
-		return values;
+
+	return values;
 }
 #endif
 #endif
