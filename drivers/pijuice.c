@@ -247,25 +247,25 @@ upsdrv_info_t upsdrv_info = {
 
 #define I2C_READ_BYTE(fd, cmd, label) \
 	if ((data = i2c_smbus_read_byte_data(upsfd, cmd)) < 0 ) { \
-	 	upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 		return; \
 	}
 
 #define I2C_WRITE_BYTE(fd, cmd, value, label) \
 	if ((data = i2c_smbus_write_byte_data(upsfd, cmd, value)) < 0 ) { \
-	 	upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
 		return; \
 	}
 
 #define I2C_READ_WORD(fd, cmd, label) \
 	if ((data = i2c_smbus_read_word_data(upsfd, cmd)) < 0 ) { \
-	 	upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 		return; \
 	}
 
 #define I2C_READ_BLOCK(fd, cmd, size, block, label) \
 	if ((i2c_smbus_read_i2c_block_data(upsfd, cmd, size, block)) < 0 ) { \
-	 	upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
+		upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 		return; \
 	}
 
@@ -275,12 +275,12 @@ static inline int open_i2c_bus(char *path, uint8_t addr)
 
 	if ((file = open(path, O_RDWR)) < 0)
 	{
-	 	fatal_with_errno(EXIT_FAILURE, "Failed to open the i2c bus on %s", path);
+		fatal_with_errno(EXIT_FAILURE, "Failed to open the i2c bus on %s", path);
 	}
 
 	if (ioctl(file, I2C_SLAVE, addr) < 0)
 	{
-	 	fatal_with_errno(EXIT_FAILURE, "Failed to acquire the i2c bus and/or talk to the UPS");
+		fatal_with_errno(EXIT_FAILURE, "Failed to acquire the i2c bus and/or talk to the UPS");
 	}
 
 	return file;
@@ -419,12 +419,12 @@ static void get_status()
 	     powerInput5vIo <= POWER_PRESENT )
 	{
 		if ( powerInput       == POWER_NOT_PRESENT &&
-                     ( powerInput5vIo != POWER_NOT_PRESENT &&
+		     ( powerInput5vIo != POWER_NOT_PRESENT &&
 		       powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
 			{
-        			upslogx( LOG_NOTICE, "On USB power" );
+				upslogx( LOG_NOTICE, "On USB power" );
 			}
 			usb_power     = 1;
 			gpio_power    = 0;
@@ -446,12 +446,12 @@ static void get_status()
 			status_set( status_buf );
 		}
 		else if ( powerInput5vIo == POWER_NOT_PRESENT &&
-			  ( powerInput   != POWER_NOT_PRESENT &&
-			    powerInput   <= POWER_PRESENT ))
+		      ( powerInput   != POWER_NOT_PRESENT &&
+		        powerInput   <= POWER_PRESENT ))
 		{
 			if ( gpio_power != 1 || usb_power != 0 )
 			{
-        			upslogx( LOG_NOTICE, "On 5V_GPIO power" );
+				upslogx( LOG_NOTICE, "On 5V_GPIO power" );
 			}
 			usb_power     = 0;
 			gpio_power    = 1;
@@ -474,11 +474,11 @@ static void get_status()
 			}
 		}
 		else if ( ( powerInput     != POWER_NOT_PRESENT && powerInput     <= POWER_PRESENT ) &&
-			  ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
+		          ( powerInput5vIo != POWER_NOT_PRESENT && powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 1 )
 			{
-        			upslogx( LOG_NOTICE, "On USB and 5V_GPIO power" );
+				upslogx( LOG_NOTICE, "On USB and 5V_GPIO power" );
 			}
 			usb_power     = 1;
 			gpio_power    = 1;
@@ -504,7 +504,7 @@ static void get_status()
 		{
 			if ( usb_power != 0 || gpio_power != 0 )
 			{
-        			upslogx( LOG_NOTICE, "On Battery power" );
+				upslogx( LOG_NOTICE, "On Battery power" );
 			}
 			usb_power     = 0;
 			gpio_power    = 0;
@@ -604,7 +604,7 @@ static void get_firmware_version()
 {
 	uint8_t cmd = FIRMWARE_VERSION_CMD;
 	uint16_t data;
-        uint8_t major, minor;
+	uint8_t major, minor;
 
 	upsdebugx( 3, __FUNCTION__ );
 
@@ -615,7 +615,7 @@ static void get_firmware_version()
 
 	if (( major != 1 ) || ( minor > 3 ))
 	{
-        	upslogx( LOG_WARNING, "Unknown Firmware release: %d.%d", major, minor );
+		upslogx( LOG_WARNING, "Unknown Firmware release: %d.%d", major, minor );
 	}
 
 	upsdebugx( 1, "UPS Firmware Version: %d.%d", major, minor );
@@ -693,7 +693,7 @@ static void set_power_off()
 
 	if ( shutdown_delay > 255 )
 	{
-        	upslogx(
+		upslogx(
 			LOG_WARNING,
 			"shutdown delay of >250 seconds requested, shortening to 250 seconds"
 		);
@@ -702,7 +702,7 @@ static void set_power_off()
 
 	if ( shutdown_delay == 0 )
 	{
-        	upslogx(
+		upslogx(
 			LOG_WARNING,
 			"shutdown delay of 0 seconds requested, using 1 second instead"
 		);
@@ -740,19 +740,19 @@ static void get_time()
 
 static void get_i2c_address()
 {
-        uint8_t cmd = I2C_ADDRESS_CMD;
-        uint8_t data;
+	uint8_t cmd = I2C_ADDRESS_CMD;
+	uint8_t data;
 
 	upsdebugx( 3, __FUNCTION__ );
 
 	I2C_READ_BYTE( upsfd, cmd, __FUNCTION__ )
 
-        upsdebugx( 1, "I2C Address: 0x%0x", data );
+	upsdebugx( 1, "I2C Address: 0x%0x", data );
 
 	if ( data == i2c_address )
 	{
 		upsdebugx( 1, "Found device '0x%0x' on port '%s'",
-		   	(unsigned int) i2c_address, device_path );
+			(unsigned int) i2c_address, device_path );
 	}
 	else
 	{
