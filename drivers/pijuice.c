@@ -23,13 +23,13 @@
 #include <stdint.h>
 
 /*
- * Linux I2C userland is a bit of a mess until distros refresh to 
- * the i2c-tools 4.x release that profides i2c/smbus.h for userspace 
- * instead of (re)using linux/i2c-dev.h, which conflicts with a 
+ * Linux I2C userland is a bit of a mess until distros refresh to
+ * the i2c-tools 4.x release that profides i2c/smbus.h for userspace
+ * instead of (re)using linux/i2c-dev.h, which conflicts with a
  * kernel header of the same name.
  *
  * See:
- * https://i2c.wiki.kernel.org/index.php/Plans_for_I2C_Tools_4 
+ * https://i2c.wiki.kernel.org/index.php/Plans_for_I2C_Tools_4
  */
 #if HAVE_LINUX_SMBUS_H
 #	include <i2c/smbus.h>
@@ -43,17 +43,17 @@
 #endif
 #endif
 
-/* 
- * i2c-tools pre-4.0 has a userspace header with a name that conflicts 
+/*
+ * i2c-tools pre-4.0 has a userspace header with a name that conflicts
  * with a kernel header, so it may be ignored/removed by distributions
  * when packaging i2c-tools.
  *
- * This will cause the driver to be un-buildable on certain 
- * configurations, so include the necessary bits here to handle this 
+ * This will cause the driver to be un-buildable on certain
+ * configurations, so include the necessary bits here to handle this
  * situation.
  */
 #if WITH_LINUX_I2C
-#if !HAVE_DECL_I2C_SMBUS_ACCESS 
+#if !HAVE_DECL_I2C_SMBUS_ACCESS
 static inline __s32 i2c_smbus_access(int file, char read_write, __u8 command,
                                      int size, union i2c_smbus_data *data)
 {
@@ -295,8 +295,8 @@ static void get_charge_level_hi_res()
 	I2C_READ_WORD( upsfd, cmd, __FUNCTION__ )
 
 	/*
-	 * Use an external variable to allow for missed i2c bus 
-	 * reads; the charge level data may be slightly stale, 
+	 * Use an external variable to allow for missed i2c bus
+	 * reads; the charge level data may be slightly stale,
 	 * but no other options seem reasonable:
 	 *
 	 * 1) store 0
@@ -391,7 +391,7 @@ static void get_status()
 			upsdebugx(1, "Power Input 5v: UNKNOWN");
 	}
 
-	if ( batteryStatus == BATT_NORMAL || 
+	if ( batteryStatus == BATT_NORMAL ||
 	     batteryStatus == BATT_CHARGING_FROM_IN ||
 	     batteryStatus == BATT_CHARGING_FROM_5V )
 	{
@@ -417,8 +417,8 @@ static void get_status()
 	     powerInput     <= POWER_PRESENT &&
 	     powerInput5vIo <= POWER_PRESENT )
 	{
-		if ( powerInput       == POWER_NOT_PRESENT && 
-                     ( powerInput5vIo != POWER_NOT_PRESENT && 
+		if ( powerInput       == POWER_NOT_PRESENT &&
+                     ( powerInput5vIo != POWER_NOT_PRESENT &&
 		       powerInput5vIo <= POWER_PRESENT ))
 		{
 			if ( usb_power != 1 || gpio_power != 0 )
@@ -444,8 +444,8 @@ static void get_status()
 			}
 			status_set( status_buf );
 		}
-		else if ( powerInput5vIo == POWER_NOT_PRESENT && 
-			  ( powerInput   != POWER_NOT_PRESENT && 
+		else if ( powerInput5vIo == POWER_NOT_PRESENT &&
+			  ( powerInput   != POWER_NOT_PRESENT &&
 			    powerInput   <= POWER_PRESENT ))
 		{
 			if ( gpio_power != 1 || usb_power != 0 )
@@ -550,7 +550,7 @@ static void get_battery_current()
 	upsdebugx( 3, __FUNCTION__ );
 
 	/*
-	 * The reported current can actually be negative, so we cannot 
+	 * The reported current can actually be negative, so we cannot
 	 * check for I2C failure by looking for negative values
 	 */
 	data = i2c_smbus_read_word_data(upsfd, cmd);
@@ -585,7 +585,7 @@ static void get_io_current()
 	upsdebugx( 3, __FUNCTION__ );
 
 	/*
-	 * The reported current can actually be negative, so we cannot 
+	 * The reported current can actually be negative, so we cannot
 	 * check for I2C failure by looking for negative values
 	 */
 	data = i2c_smbus_read_word_data(upsfd, cmd);
@@ -686,7 +686,7 @@ static void set_power_off()
 	upsdebugx( 3, __FUNCTION__ );
 
 	/*
-	 * Acceptable values for shutdown_delay are 1-250, 
+	 * Acceptable values for shutdown_delay are 1-250,
 	 * use 0/255 to clear a scheduled power off command
 	 */
 
@@ -750,13 +750,13 @@ static void get_i2c_address()
 
 	if ( data == i2c_address )
 	{
-		upsdebugx( 1, "Found device '0x%0x' on port '%s'", 
+		upsdebugx( 1, "Found device '0x%0x' on port '%s'",
 		   	(unsigned int) i2c_address, device_path );
 	}
 	else
 	{
-		fatalx( EXIT_FAILURE, 
-			"Could not find PiJuice HAT at I2C address 0x%0x", 
+		fatalx( EXIT_FAILURE,
+			"Could not find PiJuice HAT at I2C address 0x%0x",
 			i2c_address );
 	}
 }
