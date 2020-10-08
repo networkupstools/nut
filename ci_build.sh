@@ -153,10 +153,11 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             ;;
     esac
 
-    if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC ]; then
+    if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         PATH="/usr/lib/ccache:$PATH"
         export PATH
-        if [ -n "$CC" ] && [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
+        if [ -n "$CC" ]; then
+          if [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
                 */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
@@ -167,10 +168,12 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
                     ;;
             esac
             CC="/usr/lib/ccache/`basename "$CC"`"
-        else
+          else
             : # CC="ccache $CC"
+          fi
         fi
-        if [ -n "$CXX" ] && [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
+        if [ -n "$CXX" ]; then
+          if [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
                 */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
@@ -181,8 +184,9 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
                     ;;
             esac
             CXX="/usr/lib/ccache/`basename "$CXX"`"
-        else
+          else
             : # CXX="ccache $CXX"
+          fi
         fi
         if [ -n "$CPP" ] && [ -x "/usr/lib/ccache/`basename "$CPP"`" ]; then
             case "$CPP" in
