@@ -94,9 +94,9 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
         fi
     fi
 
-    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include")
-    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include")
-    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include")
+    CONFIG_OPTS+=("CFLAGS='-I${BUILD_PREFIX}/include ${CFLAGS}'")
+    CONFIG_OPTS+=("CPPFLAGS='-I${BUILD_PREFIX}/include ${CPPFLAGS}'")
+    CONFIG_OPTS+=("CXXFLAGS='-I${BUILD_PREFIX}/include ${CXXFLAGS}'")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
     CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
@@ -202,6 +202,8 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
         sudo dpkg -r --force all pkg-config
     fi
 
+    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
+    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
 
     case "$BUILD_TYPE" in
