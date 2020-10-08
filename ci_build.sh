@@ -241,7 +241,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
 
     case "$BUILD_TYPE" in
-        default-tgt:*) # Hook for matrix of custom distchecks primarily
+        "default-tgt:"*) # Hook for matrix of custom distchecks primarily
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
             export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
@@ -280,7 +280,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             ( $CI_TIME make VERBOSE=1 shellcheck check-scripts-syntax )
             exit $?
             ;;
-        default-all-errors)
+        "default-all-errors")
             ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
               $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 ; ) || \
             ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
