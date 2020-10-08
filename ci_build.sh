@@ -169,7 +169,7 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             esac
             CC="/usr/lib/ccache/`basename "$CC"`"
           else
-            : # CC="ccache $CC"
+            CC="ccache $CC"
           fi
         fi
         if [ -n "$CXX" ]; then
@@ -185,7 +185,7 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             esac
             CXX="/usr/lib/ccache/`basename "$CXX"`"
           else
-            : # CXX="ccache $CXX"
+            CXX="ccache $CXX"
           fi
         fi
         if [ -n "$CPP" ] && [ -x "/usr/lib/ccache/`basename "$CPP"`" ]; then
@@ -203,9 +203,9 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             : # CPP="ccache $CPP"
         fi
 
-        CONFIG_OPTS+=("CC=${CC}")
-        CONFIG_OPTS+=("CXX=${CXX}")
-        CONFIG_OPTS+=("CPP=${CPP}")
+        CONFIG_OPTS+=("CC='${CC}'")
+        CONFIG_OPTS+=("CXX='${CXX}'")
+        CONFIG_OPTS+=("CPP='${CPP}'")
     fi
 
     # Build and check this project; note that zprojects always have an autogen.sh
