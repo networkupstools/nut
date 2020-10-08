@@ -112,9 +112,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         fi
     fi
 
-    CONFIG_OPTS+=("CFLAGS='-I${BUILD_PREFIX}/include ${CFLAGS}'")
-    CONFIG_OPTS+=("CPPFLAGS='-I${BUILD_PREFIX}/include ${CPPFLAGS}'")
-    CONFIG_OPTS+=("CXXFLAGS='-I${BUILD_PREFIX}/include ${CXXFLAGS}'")
+    # Note: Potentially there can be spaces in entries for multiple
+    # *FLAGS here; this should be okay as long as entry expands to
+    # one token when calling shell (may not be the case for distcheck)
+    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
+    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
+    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
     CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
@@ -203,9 +206,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             : # CPP="ccache $CPP"
         fi
 
-        CONFIG_OPTS+=("CC='${CC}'")
-        CONFIG_OPTS+=("CXX='${CXX}'")
-        CONFIG_OPTS+=("CPP='${CPP}'")
+        # Note: Potentially there can be spaces in entries for multiword
+        # "ccache gcc" here; this should be okay as long as entry expands to
+        # one token when calling shell (may not be the case for distcheck)
+        CONFIG_OPTS+=("CC=${CC}")
+        CONFIG_OPTS+=("CXX=${CXX}")
+        CONFIG_OPTS+=("CPP=${CPP}")
     fi
 
     # Build and check this project; note that zprojects always have an autogen.sh
