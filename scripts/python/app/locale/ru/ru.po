@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: NUT Monitor\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-10-15 20:35+0200\n"
-"PO-Revision-Date: 2020-07-15 12:00+0300\n"
+"PO-Revision-Date: 2020-10-08 14:20+0300\n"
 "Last-Translator: Alexey Rodionov <alexey.rodionov@red-soft.ru>\n"
 "Language-Team: Russian\n"
 "Language: ru\n"
@@ -22,16 +22,16 @@ msgstr "Параметры"
 
 #: NUT-Monitor:158
 msgid "Value"
-msgstr "Значения"
+msgstr "Значение"
 
 #: NUT-Monitor:205
 msgid "Welcome to NUT Monitor"
-msgstr "Добро пожаловать в мониторинг ИБП"
+msgstr "Добро пожаловать в NUT Monitor"
 
 #: NUT-Monitor:304
 #, python-brace-format
 msgid "Found {0} devices on {1}"
-msgstr "Найдено {0} ИБП на {1}"
+msgstr "Найдено {0} устройств на {1}"
 
 #: NUT-Monitor:307 NUT-Monitor:664
 #, python-brace-format
@@ -40,11 +40,11 @@ msgstr "Ошибка подключения к '{0}' ({1})"
 
 #: NUT-Monitor:315
 msgid "Disconnecting from device"
-msgstr "Отключение от ИБП"
+msgstr "Отключение от устройства"
 
 #: NUT-Monitor:380
 msgid "Are you sure that you want to remove this favorite ?"
-msgstr "Вы уверены, что хотите удальть это из Избранного ?"
+msgstr "Вы уверены, что хотите удалить это из Избранного ?"
 
 #: NUT-Monitor:388
 #, python-format
@@ -138,7 +138,6 @@ msgstr ""
 "Ошибка подключения к '{0}'\n"
 "{1}"
 
-
 #: NUT-Monitor:673 NUT-Monitor:674
 #, python-format
 msgid "Device '%s' not found on server"
@@ -188,7 +187,7 @@ msgstr "Перегрузка !"
 
 #: NUT-Monitor:777
 msgid "there is too much load for device"
-msgstr "слишком большая нагрузка на ИБП"
+msgstr "слишком большая нагрузка на устройство"
 
 #: NUT-Monitor:778
 msgid "Triming <i>(UPS is triming incoming voltage)</i>"
@@ -200,7 +199,7 @@ msgstr "Повышение <i>(ИБП повышает входящее напр
 
 #: NUT-Monitor:792
 msgid "Device status :"
-msgstr "Статус ИБП : "
+msgstr "Статус устройства : "
 
 #: NUT-Monitor:795
 msgid "Online"
@@ -326,15 +325,15 @@ msgstr ""
 
 #: gui-1.3.glade.h:15
 msgid "Device commands :"
-msgstr "Команды ИБП : "
+msgstr "Команды устройства : "
 
 #: gui-1.3.glade.h:16
 msgid "Device status"
-msgstr "Статус ИБП"
+msgstr "Статус устройства"
 
 #: gui-1.3.glade.h:17
 msgid "Device vars"
-msgstr "Параметры ИБП"
+msgstr "Параметры устройства"
 
 #: gui-1.3.glade.h:18
 msgid ""
@@ -342,7 +341,7 @@ msgid ""
 "\n"
 "<span color=\"#808080\">You cannot re-use a name from another entry</span>\n"
 msgstr ""
-"Введите название для данной закладки\n"
+"Введите название для Избранной закладки\n"
 "\n"
 "<span color=\"#808080\">Вы не можете повторно использовать имя другой закладки</span>\n"
 
@@ -353,7 +352,7 @@ msgid ""
 "want to delete from list...\n"
 msgstr ""
 "\n"
-"Укажаите закладку, которую Вы\n"
+"Укажаите Избранную закладку, которую Вы\n"
 "хотите удалить из списка...\n"
 
 #: gui-1.3.glade.h:26
@@ -366,7 +365,7 @@ msgstr "Введите новое значение параметра.\n"
 
 #: gui-1.3.glade.h:29
 msgid "Copyright (c) 2010 David Goncalves"
-msgstr ""
+msgstr "Copyright (c) 2010 David Goncalves"
 
 #: gui-1.3.glade.h:30
 msgid ""
@@ -377,10 +376,16 @@ msgid ""
 "\n"
 "http://www.networkupstools.org\n"
 msgstr ""
+"Графическая утилита управления устройствами, подключенными к серверу NUT.\n"
+"\n"
+"Для получения дополнительной информации о NUT (Network UPS Tools)\n"
+"пожалуйста посетите веб-сайт проекта.\n"
+"\n"
+"http://www.networkupstools.org\n"
 
 #: gui-1.3.glade.h:37
 msgid "http://www.lestat.st"
-msgstr ""
+msgstr "http://www.lestat.st"
 
 #: gui-1.3.glade.h:38
 msgid ""
@@ -399,3 +404,17 @@ msgid ""
 "You should have received a copy of the GNU General Public License\n"
 "along with this program.  If not, see <http://www.gnu.org/licenses/>."
 msgstr ""
+"Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
+"\n"
+"This program is free software: you can redistribute it and/or modify\n"
+"it under the terms of the GNU General Public License as published by\n"
+"the Free Software Foundation; either version 3 of the License, or\n"
+"(at your option) any later version.\n"
+"\n"
+"This program is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"GNU General Public License for more details.\n"
+"\n"
+"You should have received a copy of the GNU General Public License\n"
+"along with this program.  If not, see <http://www.gnu.org/licenses/>."
