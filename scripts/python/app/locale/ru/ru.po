@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: NUT Monitor\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-10-15 20:35+0200\n"
-"PO-Revision-Date: 2020-10-08 14:20+0300\n"
+"PO-Revision-Date: 2020-10-08 14:50+0300\n"
 "Last-Translator: Alexey Rodionov <alexey.rodionov@red-soft.ru>\n"
 "Language-Team: Russian\n"
 "Language: ru\n"
@@ -18,7 +18,7 @@ msgstr ""
 
 #: NUT-Monitor:150
 msgid "Var name"
-msgstr "Параметры"
+msgstr "Параметр"
 
 #: NUT-Monitor:158
 msgid "Value"
@@ -44,12 +44,12 @@ msgstr "Отключение от устройства"
 
 #: NUT-Monitor:380
 msgid "Are you sure that you want to remove this favorite ?"
-msgstr "Вы уверены, что хотите удалить это из Избранного ?"
+msgstr "Вы уверены, что хотите удалить эту закладку ?"
 
 #: NUT-Monitor:388
 #, python-format
 msgid "Removed favorite '%s'"
-msgstr "Удалено '%s'"
+msgstr "Закладка '%s' удалена"
 
 #: NUT-Monitor:414
 #, python-format
@@ -107,13 +107,13 @@ msgid ""
 "Error parsing favorites, password for '%s' is not in base64\n"
 "Skipping password for this entry"
 msgstr ""
-"Ошибка разбора Избранного, пароль для '%s' не в формате base64\n"
+"Ошибка разбора закладок, пароль для '%s' не в формате base64\n"
 "Пропускаем пароль для этой записи"
 
 #: NUT-Monitor:567
 #, python-format
 msgid "Error while parsing favorites file (%s)"
-msgstr "Ошибка при разборе файла Избранного (%s)"
+msgstr "Ошибка при разборе файла закладок (%s)"
 
 #: NUT-Monitor:578
 #, python-format
@@ -122,12 +122,12 @@ msgstr "Ошибка при создании каталога настроек (
 
 #: NUT-Monitor:590
 msgid "Saved favorites..."
-msgstr "Избранные сохранены..."
+msgstr "Закладки сохранены..."
 
 #: NUT-Monitor:593
 #, python-format
 msgid "Error while saving favorites (%s)"
-msgstr "Ошибка при сохранении Избранного (%s)"
+msgstr "Ошибка при сохранении закладок (%s)"
 
 #: NUT-Monitor:665
 #, python-brace-format
@@ -141,7 +141,7 @@ msgstr ""
 #: NUT-Monitor:673 NUT-Monitor:674
 #, python-format
 msgid "Device '%s' not found on server"
-msgstr "ИБП '%s' не найден на сервере"
+msgstr "Устройство '%s' не найден на сервере"
 
 #: NUT-Monitor:708
 #, python-brace-format
@@ -167,11 +167,11 @@ msgstr "Замените батареи !"
 
 #: NUT-Monitor:774
 msgid "(no battery protection)"
-msgstr "(нет защиты батарей)"
+msgstr "(нет защиты батареей)"
 
 #: NUT-Monitor:775
 msgid "Performing runtime calibration"
-msgstr "Выполняется калибровка"
+msgstr "Выполнение калибровки"
 
 #: NUT-Monitor:776
 msgid "Offline"
@@ -203,7 +203,7 @@ msgstr "Статус устройства : "
 
 #: NUT-Monitor:795
 msgid "Online"
-msgstr "В сети"
+msgstr "От сети"
 
 #: NUT-Monitor:801
 msgid "On batteries"
@@ -260,7 +260,7 @@ msgstr "<b><span color=\"#DD0000\">%M мин. %S сек.</span></b>"
 #: NUT-Monitor:876
 #, python-brace-format
 msgid "Error from '{0}' ({1})"
-msgstr "Ошибка '{0}' ({1})"
+msgstr "Ошибка от '{0}' ({1})"
 
 #: NUT-Monitor:877
 #, python-brace-format
@@ -268,12 +268,12 @@ msgid ""
 "Error from '{0}'\n"
 "{1}"
 msgstr ""
-"Ошибка '{0}'\n"
+"Ошибка от '{0}'\n"
 "{1}"
 
 #: gui-1.3.glade.h:1
 msgid "NUT Monitor"
-msgstr "Мониторинг ИБП"
+msgstr "NUT Monitor"
 
 #: gui-1.3.glade.h:2
 msgid "_File"
@@ -281,7 +281,7 @@ msgstr "_Файл"
 
 #: gui-1.3.glade.h:3
 msgid "F_avorites"
-msgstr "_Избранное"
+msgstr "_Закладки"
 
 #: gui-1.3.glade.h:4
 msgid "Host / Port : "
@@ -289,7 +289,7 @@ msgstr "Хост / Порт : "
 
 #: gui-1.3.glade.h:5
 msgid "Device : "
-msgstr "ИБП : "
+msgstr "Устройство : "
 
 #: gui-1.3.glade.h:6
 msgid "None"
@@ -321,7 +321,7 @@ msgstr "Время автономной работы : "
 
 #: gui-1.3.glade.h:14
 msgid "N/A"
-msgstr ""
+msgstr "N/A"
 
 #: gui-1.3.glade.h:15
 msgid "Device commands :"
@@ -341,7 +341,7 @@ msgid ""
 "\n"
 "<span color=\"#808080\">You cannot re-use a name from another entry</span>\n"
 msgstr ""
-"Введите название для Избранной закладки\n"
+"Введите название для этой закладки\n"
 "\n"
 "<span color=\"#808080\">Вы не можете повторно использовать имя другой закладки</span>\n"
 
@@ -352,7 +352,7 @@ msgid ""
 "want to delete from list...\n"
 msgstr ""
 "\n"
-"Укажаите Избранную закладку, которую Вы\n"
+"Укажаите закладку, которую Вы\n"
 "хотите удалить из списка...\n"
 
 #: gui-1.3.glade.h:26
