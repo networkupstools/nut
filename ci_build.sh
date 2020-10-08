@@ -125,6 +125,9 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
             CONFIG_OPTS+=("--with-all=yes")
+            # Currently --with-all implies this, but better be sure to
+            # really build everything we can to be certain it builds:
+            CONFIG_OPTS+=("--with-cgi=yes")
             ;;
         "default"|*)
             # Do not build the docs and tell distcheck it is okay
