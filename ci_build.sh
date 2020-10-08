@@ -65,10 +65,17 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
         if [ -n "$1" ] && "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
     }
 
+    is_clang() {
+        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    }
+
     COMPILER_FAMILY=""
     if [ -n "$CC" -a -n "$CXX" ]; then
         if is_gnucc "$CC" && is_gnucc "$CXX" ; then
             COMPILER_FAMILY="GCC"
+            export CC CXX
+        elif is_clang "$CC" && is_clang "$CXX" ; then
+            COMPILER_FAMILY="CLANG"
             export CC CXX
         fi
     else
@@ -80,6 +87,17 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             export CC CXX
         elif is_gnucc "cc" && is_gnucc "c++" ; then
             COMPILER_FAMILY="GCC"
+            [ -n "$CC" ] || CC=cc
+            [ -n "$CXX" ] || CXX=c++
+            export CC CXX
+        elif is_clang "clang" && is_clang "clang++" ; then
+            # Autoconf would pick this by default
+            COMPILER_FAMILY="CLANG"
+            [ -n "$CC" ] || CC=clang
+            [ -n "$CXX" ] || CXX=clang++
+            export CC CXX
+        elif is_clang "cc" && is_clang "c++" ; then
+            COMPILER_FAMILY="CLANG"
             [ -n "$CC" ] || CC=cc
             [ -n "$CXX" ] || CXX=c++
             export CC CXX
