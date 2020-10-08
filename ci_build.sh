@@ -142,13 +142,19 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         "default-withdoc")
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
-        "default-alldrv"|default-all-errors)
-            # Do not build the docs and make possible a distcheck below
+        "default-all-errors")
+            # Do not build the docs as we are interested in binary code
             CONFIG_OPTS+=("--with-doc=skip")
-            CONFIG_OPTS+=("--with-all=yes")
+            # Enable as many binaries to build as current worker setup allows
+            CONFIG_OPTS+=("--with-all=auto")
             # Currently --with-all implies this, but better be sure to
             # really build everything we can to be certain it builds:
             CONFIG_OPTS+=("--with-cgi=yes")
+            ;;
+        "default-alldrv")
+            # Do not build the docs and make possible a distcheck below
+            CONFIG_OPTS+=("--with-doc=skip")
+            CONFIG_OPTS+=("--with-all=yes")
             ;;
         "default"|*)
             # Do not build the docs and tell distcheck it is okay
