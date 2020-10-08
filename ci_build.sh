@@ -25,7 +25,7 @@ case "$CI_TRACE" in
 esac
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
+default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -139,7 +139,7 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
         "default-withdoc")
             CONFIG_OPTS+=("--with-doc=yes")
             ;;
-        "default-alldrv")
+        "default-alldrv"|default-all-errors)
             # Do not build the docs and make possible a distcheck below
             CONFIG_OPTS+=("--with-doc=skip")
             CONFIG_OPTS+=("--with-all=yes")
@@ -266,6 +266,13 @@ default|default-alldrv|default-spellcheck|default-shellcheck|default-nodoc|defau
             ### by the very version of the shell interpreter that would run
             ### these scripts in production usage of the resulting packages.
             ( $CI_TIME make VERBOSE=1 shellcheck check-scripts-syntax )
+            exit $?
+            ;;
+        default-all-errors)
+            ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
+              $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 ; ) || \
+            ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
+              $CI_TIME make VERBOSE=1 all -k )
             exit $?
             ;;
     esac
