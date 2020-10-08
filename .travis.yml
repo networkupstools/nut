@@ -179,6 +179,9 @@ matrix:
 # and different lenience against warnings. Many of
 # these blocks look similar and all should have unique
 # "env" field to use some with allowed_failure below.
+# Note that passing multi-token C*FLAGS may be problematic
+# for sub-makes like distcheck; verify thoroughly before
+# trying to enable those if that would make sense anytime.
 # Ordered by variants expected to succeed to run first:
   - env: NUT_MATRIX_TAG="c99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
     os: linux
