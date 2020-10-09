@@ -2,7 +2,10 @@
 
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
+if HAVE_CXX11
 if HAVE_CPPUNIT
+# Note: per configure script this "SHOULD" also assume
+# that we HAVE_CXX11 - but better have it explicit
 
 TESTS = cppunittest
 
@@ -27,3 +30,9 @@ else !HAVE_CPPUNIT
 EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CPPUNIT
+
+else !HAVE_CXX11
+
+EXTRA_DIST += example.cpp cpputest.cpp
+
+endif !HAVE_CXX11

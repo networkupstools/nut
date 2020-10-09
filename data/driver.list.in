@@ -863,6 +863,7 @@
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 850 LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"Online VFI 1000RT/1500RT/2000RT/3000RT/6000RT/10000RT LCD"	""	"blazer_usb"
 "PowerWalker"	"ups"	"2"	"Line-Interactive VI 1000RT/1500RT/2000RT/3000RT LCD"	""	"blazer_usb"
+"PowerWalker"	"ups"	"2"	"VFI 1000 CG PF1"	""	"nutdrv_qx" # https://powerwalker.com/?page=product&item=10122108&lang=en
 
 "Powerware"	"ups"	"4"	"3110"	""	"genericups upstype=7"
 "Powerware"	"ups"	"4"	"3115"	""	"genericups upstype=11"
@@ -942,6 +943,9 @@
 "Rocketfish"	"ups"	"2"	"RF-1000VA / RF-1025VA"	""	"usbhid-ups"
 
 "Rucelf"	"ups"	"2"	"Rucelf UPOII-3000-96-EL"	""	"blazer_ser" # http://www.rucelf.ua/en/catalog/upoii-3000-96-el/
+
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"serial"	"nutdrv_siemens_sitop (experimental, untested)"
+"Siemens"	"ups"	"4"	"SITOP UPS500"	"USB"	"nutdrv_siemens_sitop (experimental)"
 
 "SmartLabs"	"pdu"	"1"	"2412S Power Line Modem"	"for X10/Insteon"	"powerman-pdu (experimental)"
 

@@ -802,7 +802,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
-		if (ca1 == '\0') {
+		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
 			return;
 		}

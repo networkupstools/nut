@@ -98,6 +98,14 @@ matrix:
         packages: &deps_aspell
         - aspell
         - aspell-en
+  - env: BUILD_TYPE=default-shellcheck
+    os: linux
+    addons:
+      apt:
+        packages:
+        - coreutils
+        - file
+        #TBD# - shellcheck
   - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
     sudo: false
@@ -166,8 +174,257 @@ matrix:
         packages:
         - *deps_driverlibs
 
+# Re-run the build of all binaries we can make, with
+# varied compiler and C/C++ standard implementations
+# and different lenience against warnings. Many of
+# these blocks look similar and all should have unique
+# "env" field to use some with allowed_failure below.
+#
+# The leading NUT_MATRIX_TAG allows humans to understand
+# what a test case is about in Travis CI dashboard table
+# of jobs, but otherwise it is not used by script code.
+#
+# Note that passing multi-token C*FLAGS may be problematic
+# for sub-makes like distcheck; verify thoroughly before
+# trying to enable those if that would make sense anytime.
+#
+# Ordered by variants expected to succeed to run first,
+# although with current Travis CI implementation, the env
+# blocks listed in allowed_failures only run after all
+# those not listed:
+#
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc-7 CXX=g++-7
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - gcc-7
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu11-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11" CC=gcc-7 CXX=g++-7
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - gcc-7
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang CXX=clang++
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic" CXXFLAGS="-Wall -Werror"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Werror -std=gnu++99"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Werror -std=gnu++99" CC=gcc-7 CXX=g++-7
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+        - gcc-7
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99" CC=clang CXX=clang++
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Werror -std=c++11" CC=clang CXX=clang++
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-5.0
+        packages:
+        - clang-5.0
+        - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Werror -std=c++11"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Werror -std=gnu++11"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# Note: some of the warnings that are hidden in this case seem to be serious
+# issues that may impact viability of binaries built by C89 mode compilers!
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Werror -std=c++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Werror -std=gnu++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# Note: "env" lines below must exactly describe a matrix option defined above
+  allow_failures:
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc-7 CXX=g++-7
+#OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11" CC=gcc-7 CXX=g++-7
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c11" CXXFLAGS="-std=c++11" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic" CXXFLAGS="-Wall -Werror"
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Werror -std=gnu++99"
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99"
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Werror -std=gnu++99" CC=gcc-7 CXX=g++-7
+  - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Werror -std=c++11" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Werror -std=c++11"
+  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Werror -std=gnu++11"
+#OK#  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+  - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Werror -std=c++89"
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Werror -std=gnu++89"
+
 before_install:
 - if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+- if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
 
 # Hand off to generated script for each BUILD_TYPE
 script: ./ci_build.sh
