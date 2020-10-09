@@ -360,6 +360,8 @@ matrix:
         packages:
         - *deps_driverlibs
 
+# Note: some of the warnings that are hidden in this case seem to be serious
+# issues that may impact viability of binaries built by C89 mode compilers!
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
     os: linux
     sudo: false
@@ -406,7 +408,7 @@ matrix:
   - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Werror -std=c++11" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Werror -std=c++11"
   - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Werror -std=gnu++11"
-  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+#OK#  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
   - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Werror -std=c++89"
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Werror -std=gnu++89"
 
