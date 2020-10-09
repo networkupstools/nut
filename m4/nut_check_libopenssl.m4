@@ -12,16 +12,19 @@ if test -z "${nut_have_libopenssl_seen}"; then
 	dnl save CFLAGS and LIBS
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
+	REQUIRES_ORIG="${REQUIRES}"
 
 	AC_MSG_CHECKING(for OpenSSL version via pkg-config)
 	OPENSSL_VERSION="`pkg-config --silence-errors --modversion openssl 2>/dev/null`"
 	if test "$?" = "0" -a -n "${OPENSSL_VERSION}"; then
 		CFLAGS="`pkg-config --silence-errors --cflags openssl 2>/dev/null`"
 		LIBS="`pkg-config --silence-errors --libs openssl 2>/dev/null`"
+		REQUIRES="openssl"
 	else
 		OPENSSL_VERSION="none"
 		CFLAGS=""
 		LIBS="-lssl -lcrypto"
+		REQUIRES="openssl"
 	fi
 	AC_MSG_RESULT(${OPENSSL_VERSION} found)
 
@@ -58,7 +61,7 @@ if test -z "${nut_have_libopenssl_seen}"; then
 
 	dnl check if openssl is usable
 	AC_CHECK_HEADERS(openssl/ssl.h, [nut_have_openssl=yes], [nut_have_openssl=no], [AC_INCLUDES_DEFAULT])
-	AC_CHECK_FUNCS(SSL_library_init, [], [nut_have_openssl=no])
+	AC_CHECK_FUNCS(SSL_CTX_new, [], [nut_have_openssl=no])
 
 	if test "${nut_have_openssl}" = "yes"; then
 		nut_with_ssl="yes"
@@ -67,10 +70,12 @@ if test -z "${nut_have_libopenssl_seen}"; then
 		AC_DEFINE(WITH_OPENSSL, 1, [Define to enable SSL support using OpenSSL])
 		LIBSSL_CFLAGS="${CFLAGS}"
 		LIBSSL_LIBS="${LIBS}"
+		LIBSSL_REQUIRES="${REQUIRES}"
 	fi
 
 	dnl restore original CFLAGS and LIBS
 	CFLAGS="${CFLAGS_ORIG}"
 	LIBS="${LIBS_ORIG}"
+	REQUIRES="${REQUIRES_ORIG}"
 fi
 ])

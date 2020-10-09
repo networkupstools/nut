@@ -11,7 +11,7 @@ SYNOPSIS
 
  #include <upsclient.h>
 
- int upscli_cleanup();
+ int upscli_cleanup(void);
 
 DESCRIPTION
 -----------
