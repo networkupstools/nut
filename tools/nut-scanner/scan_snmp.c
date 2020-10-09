@@ -84,7 +84,7 @@ static void (*nut_init_snmp)(const char *type);
 static void (*nut_snmp_sess_init)(netsnmp_session * session);
 static void * (*nut_snmp_sess_open)(struct snmp_session *session);
 static int (*nut_snmp_sess_close)(void *handle);
-static struct snmp_session * (*nut_snmp_sess_session)(void *handle); 
+static struct snmp_session * (*nut_snmp_sess_session)(void *handle);
 static void * (*nut_snmp_parse_oid)(const char *input, oid *objid,
 		size_t *objidlen);
 static struct snmp_pdu * (*nut_snmp_pdu_create) (int command );
@@ -268,13 +268,15 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	dev->type = TYPE_SNMP;
 	dev->driver = strdup("snmp-ups");
 	dev->port = strdup(session->peername);
-	buf = malloc( response->variables->val_len + 1 );
-	if( buf ) {
-		memcpy(buf,response->variables->val.string,
-			response->variables->val_len);
-		buf[response->variables->val_len]=0;
-		nutscan_add_option_to_device(dev,"desc",buf);
-		free(buf);
+	if (response != NULL) {
+		buf = malloc( response->variables->val_len + 1 );
+		if( buf ) {
+			memcpy(buf,response->variables->val.string,
+				response->variables->val_len);
+			buf[response->variables->val_len]=0;
+			nutscan_add_option_to_device(dev,"desc",buf);
+			free(buf);
+		}
 	}
 	nutscan_add_option_to_device(dev,"mibs",mib);
 	/* SNMP v3 */
@@ -327,7 +329,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 
 }
 
-static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
+static struct snmp_pdu * scan_snmp_get_oid(char* oid_str,void* handle)
 {
 	size_t name_len;
 	oid name[MAX_OID_LEN];
@@ -362,7 +364,7 @@ static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
 			response->variables->name == NULL ||
 			(*nut_snmp_oid_compare)(response->variables->name,
 				response->variables->name_length,
-				name, name_len) != 0 || 
+				name, name_len) != 0 ||
 			response->variables->val.string == NULL ) {
 		(*nut_snmp_free_pdu)(response);
 		index++;
@@ -372,21 +374,35 @@ static struct snmp_pdu * scan_snmp_get_manufacturer(char* oid_str,void* handle)
 	return response;
 }
 
-static void try_all_oid(void * arg)
+static void try_all_oid(void * arg, const char * mib_found)
 {
 	struct snmp_pdu *response = NULL;
 	int index = 0;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 
-	while(snmp_device_table[index].oid != NULL) {
+	upsdebugx(2, "%s", __func__);
 
-		response = scan_snmp_get_manufacturer(snmp_device_table[index].oid,sec->handle);
+	while(snmp_device_table[index].mib != NULL) {
+
+		if (snmp_device_table[index].oid == NULL || strcmp(snmp_device_table[index].oid, "") == 0) {
+			index++;
+			continue;
+		}
+
+		response = scan_snmp_get_oid(snmp_device_table[index].oid,sec->handle);
 		if( response == NULL ) {
 			index++;
 			continue;
 		}
 
-		scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
+		/* add device only if not yet detected with the same mib */
+		if (mib_found == NULL || (strcmp(mib_found, snmp_device_table[index].mib) != 0)) {
+			scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
+			upsdebugx(3, "Found another match for device with MIB '%s'", snmp_device_table[index].mib);
+		}
+		else {
+			upsdebugx(3, "Skip duplicated device %s", snmp_device_table[index].mib);
+		}
 
 		(*nut_snmp_free_pdu)(response);
 		response = NULL;
@@ -412,7 +428,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			snmp_sess->community_len = strlen("public");
 		}
 	}
-	else { /* SNMP v3 */ 
+	else { /* SNMP v3 */
 		snmp_sess->version = SNMP_VERSION_3;
 
 		/* Security level */
@@ -518,7 +534,7 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 		if( sec->privProtocol ) {
 			if (strcmp(sec->privProtocol, "AES") == 0) {
 				snmp_sess->securityPrivProto = nut_usmAESPrivProtocol;
-				snmp_sess->securityPrivProtoLen = 
+				snmp_sess->securityPrivProtoLen =
 					sizeof(usmAESPrivProtocol)/
 					sizeof(oid);
 			}
@@ -561,13 +577,15 @@ static void * try_SysOID(void * arg)
 	size_t name_len = MAX_OID_LEN;
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 	int index = 0;
-	int sysoid_found = 0;
+	char *mib_found = NULL;
+
+	upsdebugx(2, "%s", __func__);
 
 	/* Initialize session */
 	if( !init_session(&snmp_sess,sec) ) {
 		goto try_SysOID_free;
 	}
-	
+
 	snmp_sess.retries = 0;
 	snmp_sess.timeout = g_usec_timeout;
 
@@ -609,7 +627,7 @@ static void * try_SysOID(void * arg)
 		/* Check if the received OID match with a known sysOID */
 		if(response->variables != NULL &&
 				response->variables->val.objid != NULL){
-			while(snmp_device_table[index].oid != NULL) {
+			while(snmp_device_table[index].mib != NULL) {
 				if(snmp_device_table[index].sysoid == NULL ) {
 					index++;
 					continue;
@@ -626,15 +644,26 @@ static void * try_SysOID(void * arg)
 					response->variables->val.objid,
 					response->variables->val_len/sizeof(oid),
 					name, name_len) == 0 ) {
-					/* we have found a relevent sysoid */
-					resp = scan_snmp_get_manufacturer(
-						snmp_device_table[index].oid,
-						handle);
-					if( resp != NULL ) {
-						scan_snmp_add_device(sec,resp,
-							snmp_device_table[index].mib);
-						sysoid_found = 1;
-						(*nut_snmp_free_pdu)(resp);
+
+					/* we have found a relevant sysoid */
+
+					/* add mib if no complementary oid is present */
+					/* FIXME: No desc defined when add device */
+					if (snmp_device_table[index].oid == NULL
+						|| strcmp(snmp_device_table[index].oid, "") == 0) {
+						scan_snmp_add_device(sec,NULL,snmp_device_table[index].mib);
+						mib_found = snmp_device_table[index].sysoid;
+					}
+					/* else test complementary oid before adding mib */
+					else {
+						resp = scan_snmp_get_oid(
+							snmp_device_table[index].oid,
+							handle);
+						if( resp != NULL ) {
+							scan_snmp_add_device(sec,resp, snmp_device_table[index].mib);
+							mib_found = snmp_device_table[index].mib;
+							(*nut_snmp_free_pdu)(resp);
+						}
 					}
 				}
 				index++;
@@ -642,9 +671,7 @@ static void * try_SysOID(void * arg)
 		}
 
 		/* try a list of known OID */
-		if( !sysoid_found ) {
-			try_all_oid(sec);
-		}
+		try_all_oid(sec, mib_found);
 
 		(*nut_snmp_free_pdu)(response);
 		response = NULL;
