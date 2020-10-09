@@ -179,10 +179,20 @@ matrix:
 # and different lenience against warnings. Many of
 # these blocks look similar and all should have unique
 # "env" field to use some with allowed_failure below.
+#
+# The leading NUT_MATRIX_TAG allows humans to understand
+# what a test case is about in Travis CI dashboard table
+# of jobs, but otherwise it is not used by script code.
+#
 # Note that passing multi-token C*FLAGS may be problematic
 # for sub-makes like distcheck; verify thoroughly before
 # trying to enable those if that would make sense anytime.
-# Ordered by variants expected to succeed to run first:
+#
+# Ordered by variants expected to succeed to run first,
+# although with current Travis CI implementation, the env
+# blocks listed in allowed_failures only run after all
+# those not listed:
+#
   - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
     os: linux
     sudo: false
