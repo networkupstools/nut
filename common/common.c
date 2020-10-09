@@ -33,6 +33,16 @@
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;
 
+#include <stdio.h>
+#include <limits.h>
+
+/* Know which bitness we were built for,
+ * to adjust the search paths for get_libname() */
+#include "nut_stdint.h"
+#if UINTPTR_MAX == 0xffffffffffffffffULL
+# define BUILD_64   1
+#endif
+
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
 	static	int	upslog_flags = UPSLOG_STDERR;
@@ -680,15 +690,32 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 }
 
 
-/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or LD_LIBRARY_PATH */
+/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
+ * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
+ * note that different OSes can have their pathnames set up differently
+ * with regard to default/preferred bitness (maybe a "32" in the name
+ * should also be searched explicitly - again, IFF our build is 32-bit).
+ */
 const char * search_paths[] = {
+	// Use the library path (and bitness) provided during ./configure first
 	LIBDIR,
 	"/usr"LIBDIR,
+	"/usr/local"LIBDIR,
+#if BUILD_64
+	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	"/usr/lib/64",
 	"/usr/lib64",
-	"/lib64",
+#endif
 	"/usr/lib",
+#if BUILD_64
+	"/lib/64",
+	"/lib64",
+#endif
 	"/lib",
+#if BUILD_64
+	"/usr/local/lib/64",
 	"/usr/local/lib64",
+#endif
 	"/usr/local/lib",
 #ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
 	"/usr/lib/" AUTOTOOLS_TARGET_SHORT_ALIAS,

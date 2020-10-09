@@ -32,14 +32,13 @@ have_PKG_CONFIG=yes
 AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
 AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
     [have_PKG_CONFIG=no],
-    [AC_MSG_CHECKING([for autoconf macro support of pkg-config])
+    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
      PKG_PROG_PKG_CONFIG
      dummy_RES=$?
      AS_IF([test $dummy_RES = 0],
-        [AC_MSG_RESULT(ok)
-         AC_MSG_CHECKING([for autoconf macro support of pkg-config module checker])
+        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
          PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
-            [AC_MSG_RESULT([ok])], [have_PKG_CONFIG=no])
+            [], [have_PKG_CONFIG=no])
         ], [have_PKG_CONFIG=no])]
 )
 AS_IF([test x"$have_PKG_CONFIG" = xno],
@@ -149,8 +148,8 @@ dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
     LN_S_R="ln"
-    DIR1="$(mktemp -d "dir1.XXXXX")" && \
-    DIR2="$(mktemp -d "dir2.XXXXX")" && \
+    DIR1="$(mktemp -d "dir1.XXXXXXX")" && \
+    DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
     ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
@@ -339,6 +338,7 @@ case ${target_os} in
       ;;
     hpux11*)
       CFLAGS="${CFLAGS} -lpthread"
+      ;;
 esac
 
 
@@ -523,14 +523,30 @@ NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
         linux* )
+            AC_CHECK_HEADER(
+                [linux/i2c-dev.h],
+                [AC_DEFINE([HAVE_LINUX_I2C_DEV_H], [1],
+                    [Define to 1 if you have <linux/i2c-dev.h>.])]
+            )
+            AC_CHECK_HEADER(
+                [i2c/smbus.h],
+                [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
+                    [Define to 1 if you have <i2c/smbus.h>.])]
+            )
             AC_CHECK_DECLS(
-                [i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
                 [nut_with_linux_i2c="no"],
                 [#include <stdio.h>
+                 #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
+                 #endif
+                 #ifdef HAVE_LINUX_SMBUS_H
+                 #include <i2c/smbus.h>
+                 #endif
                 ]
             )
+            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -832,12 +848,12 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+dnl Test that groff files exist (building from distributed tarball, not git repo)
 					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 						DOC_INSTALL_DISTED_MANS="yes"
 					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built dist'ed copies because they are absent])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
@@ -1330,41 +1346,45 @@ dnl # Could use `AX_CXX_COMPILE_STDCXX_11([noext], [optional])` if it were
 dnl # available everywhere. Or AX_CHECK_COMPILE_FLAG if it was ubiquitous:
 dnl ###AX_CHECK_COMPILE_FLAG([-std=c++11],
 dnl ###    [CXXFLAGS="$CXXFLAGS -std=c++11"
-dnl ###     HAVE_CXX11=1],
-dnl ###    [HAVE_CXX11=0])
+dnl ###     have_cxx11=yes],
+dnl ###    [have_cxx11=no])
 
 AC_MSG_CHECKING(for C++11 support in current compiler)
+have_cxx11=unknown
 my_CXXFLAGS="$CXXFLAGS"
 AC_LANG_PUSH([C++])
 
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+CPLUSPLUS_DECL='
 #include <stdio.h>
 #if __cplusplus < 201103L
   #error This library needs at least a C++11 compliant compiler
 #endif
-]], [[printf("%ld\n", __cplusplus);]])
-],
+'
+CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
-     HAVE_CXX11=1],
+     have_cxx11=yes],
     [CXXFLAGS="$CXXFLAGS -std=c++11"
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#if __cplusplus < 201103L
-  #error This library needs at least a C++11 compliant compiler
-#endif
-        ]], [[printf("%ld\n", __cplusplus);]])
-        ],
-        [AC_MSG_RESULT([yes, GCC-style])
-         HAVE_CXX11=1],
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
+         have_cxx11=yes],
+        [CXXFLAGS="$CXXFLAGS -std=c++0x"
+         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+             have_cxx11=yes],
             [AC_MSG_RESULT([no])
              CXXFLAGS="$my_CXXFLAGS"
-             HAVE_CXX11=0])])
+             have_cxx11=no])])])
+AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
 AC_LANG_POP([C++])
+unset CPLUSPLUS_MAIN
+unset CPLUSPLUS_DECL
 
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
-    [AS_IF([test "${HAVE_CXX11}" = 1],
+    [AS_IF([test x"${have_cxx11}" = xyes],
         [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
@@ -1407,6 +1427,16 @@ else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
+
+AC_PATH_PROGS([AUGPARSE], [augparse], [none])
+AM_CONDITIONAL([HAVE_AUGPARSE], [test "x${AUGPARSE}" != "xnone"])
+AC_MSG_CHECKING([whether to enable Augeas configuration-management lenses tests])
+if test "x${AUGPARSE}" != xnone ; then
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
 
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,

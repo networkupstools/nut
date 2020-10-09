@@ -117,18 +117,16 @@ typedef struct {
    are converted according to the multiplier table
 */
 typedef struct {
-	const char   *info_type;	/* INFO_ or CMD_ element */
-	int           info_flags;	/* flags to set in addinfo */
-	double        info_len;		/* length of strings if STR,
-								 * cmd value if CMD, multiplier otherwise. */
-	const char   *OID;			/* SNMP OID or NULL */
-	const char   *dfl;			/* default value */
-	unsigned long flags;		/* my flags */
-	info_lkp_t   *oid2info;		/* lookup table between OID and NUT values */
-	int          *setvar;		/* variable to set for SU_FLAG_SETINT */
+	const char   *info_type;  /* INFO_ or CMD_ element */
+	int           info_flags; /* flags to set in addinfo */
+	double        info_len;   /* length of strings if ST_FLAG_STRING, multiplier otherwise. */
+	const char   *OID;        /* SNMP OID or NULL */
+	const char   *dfl;        /* default value */
+	unsigned long flags;      /* snmp-ups internal flags */
+	info_lkp_t   *oid2info;   /* lookup table between OID and NUT values */
 } snmp_info_t;
 
-#define SU_FLAG_OK			(1 << 0)	/* show element to upsd - internal to snmp driver */
+#define SU_FLAG_OK		(1 << 0)	/* show element to upsd - internal to snmp driver */
 #define SU_FLAG_STATIC		(1 << 1)	/* retrieve info only once. */
 #define SU_FLAG_ABSENT		(1 << 2)	/* data is absent in the device,
 										 * use default value. */
@@ -137,8 +135,9 @@ typedef struct {
 #define SU_FLAG_UNIQUE		(1 << 5)	/* There can be only be one
 						 				 * provider of this info,
 						 				 * disable the other providers */
-#define SU_FLAG_SETINT		(1 << 6)	/* save value */
-#define SU_OUTLET			(1 << 7)	/* outlet template definition */
+/* Free slot
+ * #define SU_FLAG_SETINT	(1 << 6)*/	/* save value */
+#define SU_OUTLET		(1 << 7)	/* outlet template definition */
 #define SU_CMD_OFFSET		(1 << 8)	/* Add +1 to the OID index */
 /* Notes on outlet templates usage:
  * - outlet.count MUST exist and MUST be declared before any outlet template

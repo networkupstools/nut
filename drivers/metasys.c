@@ -200,7 +200,7 @@ int get_answer(unsigned char *data) {
 	for (i = 0; i < (packet_length - 1); i++) checksum += my_buf[i];  
 	checksum = checksum % 256;
 	if (my_buf[packet_length-1] != checksum) {
-		ser_comm_fail("checksum error! got %x instad of %x, received %d bytes \n", my_buf[packet_length - 1], checksum, packet_length);
+		ser_comm_fail("checksum error! got %x instead of %x, received %d bytes \n", my_buf[packet_length - 1], checksum, packet_length);
 		dump_buffer(my_buf, packet_length);
 		return -1;
 	}

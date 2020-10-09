@@ -406,6 +406,8 @@ void Socket::write(const std::string& str)throw(nut::IOException)
  *
  */
 
+const Feature Client::TRACKING = "TRACKING";
+
 Client::Client()
 {
 }
@@ -461,12 +463,37 @@ std::map<std::string,std::vector<std::string> > Client::getDeviceVariableValues(
   return res;
 }
 
+std::map<std::string,std::map<std::string,std::vector<std::string> > > Client::getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException)
+{
+	std::map<std::string,std::map<std::string,std::vector<std::string> > > res;
+
+	for(std::set<std::string>::const_iterator it=devs.cbegin(); it!=devs.cend(); ++it)
+	{
+		res[*it] = getDeviceVariableValues(*it);
+	}
+
+	return res;
+}
+
 bool Client::hasDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)
 {
   std::set<std::string> names = getDeviceCommandNames(dev);
   return names.find(name) != names.end();
 }
 
+bool Client::hasFeature(const Feature& feature)throw(NutException)
+{
+	try
+	{
+		// If feature is known, querying it won't throw an exception.
+		isFeatureEnabled(feature);
+		return true;
+	}
+	catch(...)
+	{
+		return false;
+	}
+}
 
 /*
  *
@@ -640,20 +667,61 @@ std::map<std::string,std::vector<std::string> > TcpClient::getDeviceVariableValu
 	return map;
 }
 
-void TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)
+std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient::getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException)
 {
-	std::string query = "SET VAR " + dev + " " + name + " " + escape(value);
-	detectError(sendQuery(query));
+	std::map<std::string,std::map<std::string,std::vector<std::string> > > map;
+
+	std::vector<std::string> queries;
+	for (std::set<std::string>::const_iterator it=devs.cbegin(); it!=devs.cend(); ++it)
+	{
+		queries.push_back("LIST VAR " + *it);
+	}
+	sendAsyncQueries(queries);
+
+	for (std::set<std::string>::const_iterator it=devs.cbegin(); it!=devs.cend(); ++it)
+	{
+		try
+		{
+			std::map<std::string,std::vector<std::string> > map2;
+			std::vector<std::vector<std::string> > res = parseList("VAR " + *it);
+			for (std::vector<std::vector<std::string> >::iterator it2=res.begin(); it2!=res.end(); ++it2)
+			{
+				std::vector<std::string>& vals = *it2;
+				std::string var = vals[0];
+				vals.erase(vals.begin()),
+				map2[var] = vals;
+			}
+			map[*it] = map2;
+		}
+		catch (NutException&)
+		{
+			// We sent a bunch of queries, we need to process them all to clear up the backlog.
+		}
+	}
+
+	if (map.empty())
+	{
+		// We may fail on some devices, but not on ALL devices.
+		throw NutException("Invalid device");
+	}
+
+	return map;
 }
 
-void TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)
+TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)
+{
+	std::string query = "SET VAR " + dev + " " + name + " " + escape(value);
+	return sendTrackingQuery(query);
+}
+
+TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)
 {
 	std::string query = "SET VAR " + dev + " " + name;
 	for(size_t n=0; n<values.size(); ++n)
 	{
 		query += " " + escape(values[n]);
 	}
-	detectError(sendQuery(query));
+	return sendTrackingQuery(query);
 }
 
 std::set<std::string> TcpClient::getDeviceCommandNames(const std::string& dev)throw(NutException)
@@ -674,9 +742,9 @@ std::string TcpClient::getDeviceCommandDescription(const std::string& dev, const
 	return get("CMDDESC", dev + " " + name)[0];
 }
 
-void TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)
+TrackingID TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)throw(NutException)
 {
-	detectError(sendQuery("INSTCMD " + dev + " " + name));
+	return sendTrackingQuery("INSTCMD " + dev + " " + name + " " + param);
 }
 
 void TcpClient::deviceLogin(const std::string& dev)throw(NutException)
@@ -700,6 +768,60 @@ int TcpClient::deviceGetNumLogins(const std::string& dev)throw(NutException)
 	return atoi(num.c_str());
 }
 
+TrackingResult TcpClient::getTrackingResult(const TrackingID& id)throw(NutException)
+{
+	if (id.empty())
+	{
+		return TrackingResult::SUCCESS;
+	}
+
+	std::string result = sendQuery("GET TRACKING " + id);
+
+	if (result == "PENDING")
+	{
+		return TrackingResult::PENDING;
+	}
+	else if (result == "SUCCESS")
+	{
+		return TrackingResult::SUCCESS;
+	}
+	else if (result == "ERR UNKNOWN")
+	{
+		return TrackingResult::UNKNOWN;
+	}
+	else if (result == "ERR INVALID-ARGUMENT")
+	{
+		return TrackingResult::INVALID_ARGUMENT;
+	}
+	else
+	{
+		return TrackingResult::FAILURE;
+	}
+}
+
+bool TcpClient::isFeatureEnabled(const Feature& feature)throw(NutException)
+{
+	std::string result = sendQuery("GET " + feature);
+	detectError(result);
+
+	if (result == "ON")
+	{
+		return true;
+	}
+	else if (result == "OFF")
+	{
+		return false;
+	}
+	else
+	{
+		throw NutException("Unknown feature result " + result);
+	}
+}
+void TcpClient::setFeature(const Feature& feature, bool status)throw(NutException)
+{
+	std::string result = sendQuery("SET " + feature + " " + (status ? "ON" : "OFF"));
+	detectError(result);
+}
 
 std::vector<std::string> TcpClient::get
 	(const std::string& subcmd, const std::string& params) throw(NutException)
@@ -727,7 +849,16 @@ std::vector<std::vector<std::string> > TcpClient::list
 	{
 		req += " " + params;
 	}
-	std::string res = sendQuery("LIST " + req);
+	std::vector<std::string> query;
+	query.push_back("LIST " + req);
+	sendAsyncQueries(query);
+	return parseList(req);
+}
+
+std::vector<std::vector<std::string> > TcpClient::parseList
+	(const std::string& req) throw(NutException)
+{
+	std::string res = _socket->read();
 	detectError(res);
 	if(res != ("BEGIN LIST " + req))
 	{
@@ -758,6 +889,14 @@ std::string TcpClient::sendQuery(const std::string& req)throw(IOException)
 {
 	_socket->write(req);
 	return _socket->read();
+}
+
+void TcpClient::sendAsyncQueries(const std::vector<std::string>& req)throw(IOException)
+{
+	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); it++)
+	{
+		_socket->write(*it);
+	}
 }
 
 void TcpClient::detectError(const std::string& req)throw(NutException)
@@ -896,6 +1035,26 @@ std::string TcpClient::escape(const std::string& str)
 
 	res += '"';
 	return res; 
+}
+
+TrackingID TcpClient::sendTrackingQuery(const std::string& req)throw(NutException)
+{
+	std::string reply = sendQuery(req);
+	detectError(reply);
+	std::vector<std::string> res = explode(reply);
+
+	if (res.size() == 1 && res[0] == "OK")
+	{
+		return TrackingID("");
+	}
+	else if (res.size() == 3 && res[0] == "OK" && res[1] == "TRACKING")
+	{
+		return TrackingID(res[2]);
+	}
+	else
+	{
+		throw NutException("Unknown query result");
+	}
 }
 
 /*
@@ -1072,10 +1231,10 @@ Command Device::getCommand(const std::string& name)throw(NutException)
     return Command(NULL, "");
 }
 
-void Device::executeCommand(const std::string& name)throw(NutException)
+TrackingID Device::executeCommand(const std::string& name, const std::string& param)throw(NutException)
 {
   if (!isOk()) throw NutException("Invalid device");
-  getClient()->executeDeviceCommand(getName(), name);
+  return getClient()->executeDeviceCommand(getName(), name, param);
 }
 
 void Device::login()throw(NutException)
@@ -1252,9 +1411,9 @@ std::string Command::getDescription()throw(NutException)
 	return getDevice()->getClient()->getDeviceCommandDescription(getDevice()->getName(), getName());
 }
 
-void Command::execute()throw(NutException)
+void Command::execute(const std::string& param)throw(NutException)
 {
-	getDevice()->executeCommand(getName());
+	getDevice()->executeCommand(getName(), param);
 }
 
 } /* namespace nut */
@@ -1734,7 +1893,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
 	return NULL;
 }
 
-void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd)
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param)
 {
 	if(client)
 	{
@@ -1743,7 +1902,7 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
 		{
 			try
 			{
-				cl->executeDeviceCommand(dev, cmd);
+				cl->executeDeviceCommand(dev, cmd, param);
 			}
 			catch(...){}
 		}

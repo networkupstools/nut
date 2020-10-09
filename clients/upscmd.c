@@ -1,6 +1,8 @@
 /* upscmd - simple "client" to test instant commands via upsd
 
-   Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+     2000  Russell Kroll <rkroll@exploits.org>
+     2019  EATON (author: Arnaud Quette <ArnaudQuette@eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -28,8 +30,10 @@
 
 #include "upsclient.h"
 
-static char		*upsname = NULL, *hostname = NULL;
+static char			*upsname = NULL, *hostname = NULL;
 static UPSCONN_t	*ups = NULL;
+static int			tracking_enabled = 0;
+static unsigned int		timeout = DEFAULT_TRACKING_TIMEOUT;
 
 struct list_t {
 	char	*name;
@@ -41,13 +45,16 @@ static void usage(const char *prog)
 	printf("Network UPS Tools upscmd %s\n\n", UPS_VERSION);
 	printf("usage: %s [-h]\n", prog);
 	printf("       %s [-l <ups>]\n", prog);
-	printf("       %s [-u <username>] [-p <password>] <ups> <command> [<value>]\n\n", prog);
+	printf("       %s [-u <username>] [-p <password>] [-w] [-t <timeout>] <ups> <command> [<value>]\n\n", prog);
 	printf("Administration program to initiate instant commands on UPS hardware.\n");
 	printf("\n");
 	printf("  -h		display this help text\n");
 	printf("  -l <ups>	show available commands on UPS <ups>\n");
 	printf("  -u <username>	set username for command authentication\n");
 	printf("  -p <password>	set password for command authentication\n");
+	printf("  -w            wait for the completion of command by the driver\n");
+	printf("                and return its actual result from the device\n");
+	printf("  -t <timeout>	set a timeout when using -w (in seconds, default: %u)\n", DEFAULT_TRACKING_TIMEOUT);
 	printf("\n");
 	printf("  <ups>		UPS identifier - <upsname>[@<hostname>[:<port>]]\n");
 	printf("  <command>	Valid instant command - test.panel.start, etc.\n");
@@ -138,7 +145,10 @@ static void listcmds(void)
 
 static void do_cmd(char **argv, const int argc)
 {
+	int		cmd_complete = 0;
 	char	buf[SMALLBUF];
+	char	tracking_id[UUID4_LEN];
+	time_t	start, now;
 
 	if (argc > 1) {
 		snprintf(buf, sizeof(buf), "INSTCMD %s %s %s\n", upsname, argv[0], argv[1]);
@@ -154,9 +164,47 @@ static void do_cmd(char **argv, const int argc)
 		fatalx(EXIT_FAILURE, "Instant command failed: %s", upscli_strerror(ups));
 	}
 
-	/* FUTURE: status cookies will tie in here */
+	/* verify answer */
 	if (strncmp(buf, "OK", 2) != 0) {
 		fatalx(EXIT_FAILURE, "Unexpected response from upsd: %s", buf);
+	}
+
+	/* check for status tracking id */
+	if (
+		!tracking_enabled ||
+		/* sanity check on the size: "OK TRACKING " + UUID4_LEN */
+		strlen(buf) != (UUID4_LEN - 1 + strlen("OK TRACKING "))
+	) {
+		/* reply as usual */
+		fprintf(stderr, "%s\n", buf);
+		return;
+	}
+
+	snprintf(tracking_id, sizeof(tracking_id), "%s", buf + strlen("OK TRACKING "));
+	time(&start);
+
+	/* send status tracking request, looping if status is PENDING */
+	while (!cmd_complete) {
+
+		/* check for timeout */
+		time(&now);
+		if (difftime(now, start) >= timeout)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: timeout");
+
+		snprintf(buf, sizeof(buf), "GET TRACKING %s\n", tracking_id);
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0)
+			fatalx(EXIT_FAILURE, "Can't send status tracking request: %s", upscli_strerror(ups));
+
+		/* and get status tracking reply */
+		if (upscli_readline_timeout(ups, buf, sizeof(buf), timeout) < 0)
+			fatalx(EXIT_FAILURE, "Can't receive status tracking information: %s", upscli_strerror(ups));
+
+		if (strncmp(buf, "PENDING", 7))
+			cmd_complete = 1;
+		else
+			/* wait a second before retrying */
+			sleep(1);
 	}
 
 	fprintf(stderr, "%s\n", buf);
@@ -180,7 +228,7 @@ int main(int argc, char **argv)
 	char	buf[SMALLBUF], username[SMALLBUF], password[SMALLBUF];
 	const char	*prog = xbasename(argv[0]);
 
-	while ((i = getopt(argc, argv, "+lhu:p:V")) != -1) {
+	while ((i = getopt(argc, argv, "+lhu:p:t:wV")) != -1) {
 
 		switch (i)
 		{
@@ -196,6 +244,15 @@ int main(int argc, char **argv)
 		case 'p':
 			snprintf(password, sizeof(password), "%s", optarg);
 			have_pw = 1;
+			break;
+
+		case 't':
+			if (!str_to_uint(optarg, &timeout, 10))
+				fatal_with_errno(EXIT_FAILURE, "Could not convert the provided value for timeout ('-t' option) to unsigned int");
+			break;
+
+		case 'w':
+			tracking_enabled = 1;
 			break;
 
 		case 'V':
@@ -311,6 +368,25 @@ int main(int argc, char **argv)
 
 	if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
 		fatalx(EXIT_FAILURE, "Set password failed: %s", upscli_strerror(ups));
+	}
+
+	/* enable status tracking ID */
+	if (tracking_enabled) {
+
+		snprintf(buf, sizeof(buf), "SET TRACKING ON\n");
+
+		if (upscli_sendline(ups, buf, strlen(buf)) < 0) {
+			fatalx(EXIT_FAILURE, "Can't enable command status tracking: %s", upscli_strerror(ups));
+		}
+
+		if (upscli_readline(ups, buf, sizeof(buf)) < 0) {
+			fatalx(EXIT_FAILURE, "Enabling command status tracking failed: %s", upscli_strerror(ups));
+		}
+
+		/* Verify the result */
+		if (strncmp(buf, "OK", 2) != 0) {
+			fatalx(EXIT_FAILURE, "Enabling command status tracking failed. upsd answered: %s", buf);
+		}
 	}
 
 	do_cmd(&argv[1], argc - 1);
