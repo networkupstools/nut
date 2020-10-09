@@ -114,6 +114,7 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
+int quirk_symmetra_threephase = 0;
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
 long devices_count = 1;
 int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
@@ -198,6 +199,11 @@ su_addcmd(su_info_p);
 
 	if (testvar("notransferoids"))
 		disable_transfer_oids();
+
+	if (testvar("symmetrathreephase"))
+		quirk_symmetra_threephase = 1;
+	else
+		quirk_symmetra_threephase = 0;
 
 	/* initialize all other INFO_ fields from list */
 	if (snmp_ups_walk(SU_WALKMODE_INIT) == TRUE)
@@ -302,6 +308,8 @@ void upsdrv_makevartable(void)
 		"Specifies the Net-SNMP timeout in seconds between retries (default=1)");
 	addvar(VAR_FLAG, "notransferoids",
 		"Disable transfer OIDs (use on APCC Symmetras)");
+	addvar(VAR_FLAG, "symmetrathreephase",
+		"Enable APCC three phase Symmetra quirks (use on APCC three phase Symmetras)");
 	addvar(VAR_VALUE, SU_VAR_SECLEVEL,
 		"Set the securityLevel used for SNMPv3 messages (default=noAuthNoPriv, allowed: authNoPriv,authPriv)");
 	addvar(VAR_VALUE | VAR_SENSITIVE, SU_VAR_SECNAME,
@@ -2562,6 +2570,17 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
 
 	if (su_info_p->info_flags & ST_FLAG_STRING) {
 		status = nut_snmp_get_str(su_info_p->OID, buf, sizeof(buf), su_info_p->oid2info);
+		if (status == TRUE) {
+			if (quirk_symmetra_threephase) {
+				if (!strcasecmp(su_info_p->info_type, "input.transfer.low")
+				 || !strcasecmp(su_info_p->info_type, "input.transfer.high")) {
+					/* Convert from three phase line-to-line voltage to line-to-neutral voltage */
+					double value = atof(buf);
+					value = value * 0.707;
+					snprintf(buf, sizeof(buf), "%.2f", value);
+				}
+			}
+		}
 	} else {
 		status = nut_snmp_get_int(su_info_p->OID, &value);
 		if (status == TRUE) {

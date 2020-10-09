@@ -523,14 +523,30 @@ NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
         linux* )
+            AC_CHECK_HEADER(
+                [linux/i2c-dev.h],
+                [AC_DEFINE([HAVE_LINUX_I2C_DEV_H], [1],
+                    [Define to 1 if you have <linux/i2c-dev.h>.])]
+            )
+            AC_CHECK_HEADER(
+                [i2c/smbus.h],
+                [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
+                    [Define to 1 if you have <i2c/smbus.h>.])]
+            )
             AC_CHECK_DECLS(
-                [i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
                 [nut_with_linux_i2c="no"],
                 [#include <stdio.h>
+                 #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
+                 #endif
+                 #ifdef HAVE_LINUX_SMBUS_H
+                 #include <i2c/smbus.h>
+                 #endif
                 ]
             )
+            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
             ;;
         * )
             nut_with_linux_i2c="no"
