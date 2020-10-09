@@ -1,0 +1,420 @@
+# Russian translations for NUT-Monitor.
+# Copyright (C) 2020 Alexey Rodionov (RED SOFT, Russia)
+# This file is distributed under the same license as the NUT package.
+# Alexey Rodionov <alexey.rodionov@red-soft.ru>, 2020
+
+msgid ""
+msgstr ""
+"Project-Id-Version: NUT Monitor\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-10-15 20:35+0200\n"
+"PO-Revision-Date: 2020-10-08 23:16+0300\n"
+"Last-Translator: Alexey Rodionov <alexey.rodionov@red-soft.ru>\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: NUT-Monitor:150
+msgid "Var name"
+msgstr "Параметр"
+
+#: NUT-Monitor:158
+msgid "Value"
+msgstr "Значение"
+
+#: NUT-Monitor:205
+msgid "Welcome to NUT Monitor"
+msgstr "Добро пожаловать в NUT Monitor"
+
+#: NUT-Monitor:304
+#, python-brace-format
+msgid "Found {0} devices on {1}"
+msgstr "Найдено {0} устройств на {1}"
+
+#: NUT-Monitor:307 NUT-Monitor:664
+#, python-brace-format
+msgid "Error connecting to '{0}' ({1})"
+msgstr "Ошибка подключения к '{0}' ({1})"
+
+#: NUT-Monitor:315
+msgid "Disconnecting from device"
+msgstr "Отключение от устройства"
+
+#: NUT-Monitor:380
+msgid "Are you sure that you want to remove this favorite ?"
+msgstr "Вы уверены, что хотите удалить эту закладку ?"
+
+#: NUT-Monitor:388
+#, python-format
+msgid "Removed favorite '%s'"
+msgstr "Закладка '%s' удалена"
+
+#: NUT-Monitor:414
+#, python-format
+msgid "Loaded '%s'"
+msgstr "Загружено '%s'"
+
+#: NUT-Monitor:422
+#, python-format
+msgid ""
+"Are you sure that you want to send\n"
+"'%s' to the device ?"
+msgstr ""
+"Вы уверены, что хотите отправить\n"
+"'%s' на устройство ?"
+
+#: NUT-Monitor:431
+#, python-brace-format
+msgid "Sent '{0}' command to {1}"
+msgstr "Отправлена команда '{0}' на {1}"
+
+#: NUT-Monitor:434
+#, python-brace-format
+msgid "Failed to send '{0}' ({1})"
+msgstr "Ошибка отправки '{0}' ({1})"
+
+#: NUT-Monitor:452
+#, python-brace-format
+msgid ""
+"Enter a new value for the variable.\n"
+"\n"
+"{0} = {1} <span color=\"#606060\"><i>(current value)</i></span>"
+msgstr ""
+"Введите новое значение параметра.\n"
+"\n"
+"{0} = {1} <span color=\"#606060\"><i>(текущее значение)</i></span>"
+
+#: NUT-Monitor:466
+#, python-format
+msgid "Updated variable on %s"
+msgstr "Обновлён параметр на %s"
+
+#: NUT-Monitor:474
+#, python-brace-format
+msgid "Error updating variable on '{0}' ({1})"
+msgstr "Ошибка обновления параметра на '{0}' ({1})"
+
+#: NUT-Monitor:479
+#, python-format
+msgid "No variable modified on %s - User cancelled"
+msgstr "Параметр на %s не изменён - отменено пользователем"
+
+#: NUT-Monitor:558
+#, python-format
+msgid ""
+"Error parsing favorites, password for '%s' is not in base64\n"
+"Skipping password for this entry"
+msgstr ""
+"Ошибка разбора закладок, пароль для '%s' не в формате base64\n"
+"Пропускаем пароль для этой записи"
+
+#: NUT-Monitor:567
+#, python-format
+msgid "Error while parsing favorites file (%s)"
+msgstr "Ошибка при разборе файла закладок (%s)"
+
+#: NUT-Monitor:578
+#, python-format
+msgid "Error while creating configuration folder (%s)"
+msgstr "Ошибка при создании каталога настроек (%s)"
+
+#: NUT-Monitor:590
+msgid "Saved favorites..."
+msgstr "Закладки сохранены..."
+
+#: NUT-Monitor:593
+#, python-format
+msgid "Error while saving favorites (%s)"
+msgstr "Ошибка при сохранении закладок (%s)"
+
+#: NUT-Monitor:665
+#, python-brace-format
+msgid ""
+"Error connecting to '{0}'\n"
+"{1}"
+msgstr ""
+"Ошибка подключения к '{0}'\n"
+"{1}"
+
+#: NUT-Monitor:673 NUT-Monitor:674
+#, python-format
+msgid "Device '%s' not found on server"
+msgstr "Устройство '%s' не найдено на сервере"
+
+#: NUT-Monitor:708
+#, python-brace-format
+msgid "Connected to '{0}' on {1}"
+msgstr "Подключено к '{0}' на {1}"
+
+#: NUT-Monitor:740
+msgid "<i>Not connected</i>"
+msgstr "<i>Не подключено</i>"
+
+#: NUT-Monitor:750
+#, python-format
+msgid "Disconnected from '%s'"
+msgstr "Отключено от '%s'"
+
+#: NUT-Monitor:772
+msgid "Low batteries"
+msgstr "Низкий заряд"
+
+#: NUT-Monitor:773
+msgid "Replace batteries !"
+msgstr "Замените батареи !"
+
+#: NUT-Monitor:774
+msgid "(no battery protection)"
+msgstr "(нет защиты батареей)"
+
+#: NUT-Monitor:775
+msgid "Performing runtime calibration"
+msgstr "Выполнение калибровки"
+
+#: NUT-Monitor:776
+msgid "Offline"
+msgstr "Выключен"
+
+#: NUT-Monitor:776
+msgid "not providing power to the load"
+msgstr "не обеспечено должного уровня питания для нагрузки"
+
+#: NUT-Monitor:777
+msgid "Overloaded !"
+msgstr "Перегрузка !"
+
+#: NUT-Monitor:777
+msgid "there is too much load for device"
+msgstr "слишком большая нагрузка на устройство"
+
+#: NUT-Monitor:778
+msgid "Triming <i>(UPS is triming incoming voltage)</i>"
+msgstr "Отсечение <i>(ИБП обрезает входящее напряжение)"
+
+#: NUT-Monitor:779
+msgid "Boost <i>(UPS is boosting incoming voltage)</i>"
+msgstr "Повышение <i>(ИБП повышает входящее напряжение)"
+
+#: NUT-Monitor:792
+msgid "Device status :"
+msgstr "Статус устройства : "
+
+#: NUT-Monitor:795
+msgid "Online"
+msgstr "От сети"
+
+#: NUT-Monitor:801
+msgid "On batteries"
+msgstr "От батарей"
+
+#: NUT-Monitor:804
+msgid "Device is running on batteries"
+msgstr "Устройство работает от батарей"
+
+#: NUT-Monitor:817
+msgid "discharging"
+msgstr "разрядка"
+
+#: NUT-Monitor:819
+msgid "charging"
+msgstr "зарядка"
+
+#: NUT-Monitor:825
+msgid "Model :"
+msgstr "Модель : "
+
+#: NUT-Monitor:829
+msgid "Temperature :"
+msgstr "Температура : "
+
+#: NUT-Monitor:833
+msgid "Battery voltage :"
+msgstr "Напряжение батарей :"
+
+#: NUT-Monitor:844 gui-1.3.glade.h:11
+msgid "Battery charge :"
+msgstr "Уровень заряда батарей : "
+
+#: NUT-Monitor:847 NUT-Monitor:856 NUT-Monitor:868
+msgid "Not available"
+msgstr "Не доступно"
+
+#: NUT-Monitor:853
+msgid "UPS load :"
+msgstr "Нагрузка ИБП :"
+
+#: NUT-Monitor:862
+msgid "<b>%H hours %M minutes %S seconds</b>"
+msgstr "<b>%H ч.%M мин. %S сек.</b>"
+
+#: NUT-Monitor:864
+msgid "<b>%M minutes %S seconds</b>"
+msgstr "<b>%M мин. %S сек.</b>"
+
+#: NUT-Monitor:866
+msgid "<b><span color=\"#DD0000\">%M minutes %S seconds</span></b>"
+msgstr "<b><span color=\"#DD0000\">%M мин. %S сек.</span></b>"
+
+#: NUT-Monitor:876
+#, python-brace-format
+msgid "Error from '{0}' ({1})"
+msgstr "Ошибка от '{0}' ({1})"
+
+#: NUT-Monitor:877
+#, python-brace-format
+msgid ""
+"Error from '{0}'\n"
+"{1}"
+msgstr ""
+"Ошибка от '{0}'\n"
+"{1}"
+
+#: gui-1.3.glade.h:1
+msgid "NUT Monitor"
+msgstr "NUT Monitor"
+
+#: gui-1.3.glade.h:2
+msgid "_File"
+msgstr "_Файл"
+
+#: gui-1.3.glade.h:3
+msgid "F_avorites"
+msgstr "_Закладки"
+
+#: gui-1.3.glade.h:4
+msgid "Host / Port : "
+msgstr "Хост / Порт : "
+
+#: gui-1.3.glade.h:5
+msgid "Device : "
+msgstr "Устройство : "
+
+#: gui-1.3.glade.h:6
+msgid "None"
+msgstr "Нет"
+
+#: gui-1.3.glade.h:7
+msgid "Use authentication"
+msgstr "Аутентификация"
+
+#: gui-1.3.glade.h:8
+msgid "Login / Password : "
+msgstr "Имя / Пароль : "
+
+#: gui-1.3.glade.h:9
+msgid " NUT Server "
+msgstr " Сервер NUT "
+
+#: gui-1.3.glade.h:10
+msgid "label"
+msgstr "метка"
+
+#: gui-1.3.glade.h:12
+msgid "Current load :"
+msgstr "Текущая нагрузка :"
+
+#: gui-1.3.glade.h:13
+msgid "Remaining time :"
+msgstr "Время автономной работы : "
+
+#: gui-1.3.glade.h:14
+msgid "N/A"
+msgstr "N/A"
+
+#: gui-1.3.glade.h:15
+msgid "Device commands :"
+msgstr "Команды устройства : "
+
+#: gui-1.3.glade.h:16
+msgid "Device status"
+msgstr "Статус устройства"
+
+#: gui-1.3.glade.h:17
+msgid "Device vars"
+msgstr "Параметры устройства"
+
+#: gui-1.3.glade.h:18
+msgid ""
+"Enter a name for this favorite\n"
+"\n"
+"<span color=\"#808080\">You cannot re-use a name from another entry</span>\n"
+msgstr ""
+"Введите название для этой закладки\n"
+"\n"
+"<span color=\"#808080\">Вы не можете повторно использовать имя другой закладки</span>\n"
+
+#: gui-1.3.glade.h:22
+msgid ""
+"\n"
+"Please select the favorite that you\n"
+"want to delete from list...\n"
+msgstr ""
+"\n"
+"Укажите закладку, которую Вы\n"
+"хотите удалить из списка...\n"
+
+#: gui-1.3.glade.h:26
+msgid "<None>"
+msgstr "<Нет>"
+
+#: gui-1.3.glade.h:27
+msgid "Enter a new value for the variable.\n"
+msgstr "Введите новое значение параметра.\n"
+
+#: gui-1.3.glade.h:29
+msgid "Copyright (c) 2010 David Goncalves"
+msgstr "Copyright (c) 2010 David Goncalves"
+
+#: gui-1.3.glade.h:30
+msgid ""
+"GUI to manage devices connected a NUT server.\n"
+"\n"
+"For more information about NUT (Network UPS Tools)\n"
+"please visit the author's website.\n"
+"\n"
+"http://www.networkupstools.org\n"
+msgstr ""
+"Графическая утилита управления устройствами, подключенными к серверу NUT.\n"
+"\n"
+"Для получения дополнительной информации о NUT (Network UPS Tools)\n"
+"пожалуйста посетите веб-сайт проекта.\n"
+"\n"
+"http://www.networkupstools.org\n"
+
+#: gui-1.3.glade.h:37
+msgid "http://www.lestat.st"
+msgstr "http://www.lestat.st"
+
+#: gui-1.3.glade.h:38
+msgid ""
+"Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
+"\n"
+"This program is free software: you can redistribute it and/or modify\n"
+"it under the terms of the GNU General Public License as published by\n"
+"the Free Software Foundation; either version 3 of the License, or\n"
+"(at your option) any later version.\n"
+"\n"
+"This program is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"GNU General Public License for more details.\n"
+"\n"
+"You should have received a copy of the GNU General Public License\n"
+"along with this program.  If not, see <http://www.gnu.org/licenses/>."
+msgstr ""
+"Copyright (C) 2010 David Goncalves <david@lestat.st>\n"
+"\n"
+"This program is free software: you can redistribute it and/or modify\n"
+"it under the terms of the GNU General Public License as published by\n"
+"the Free Software Foundation; either version 3 of the License, or\n"
+"(at your option) any later version.\n"
+"\n"
+"This program is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n"
+"GNU General Public License for more details.\n"
+"\n"
+"You should have received a copy of the GNU General Public License\n"
+"along with this program.  If not, see <http://www.gnu.org/licenses/>."

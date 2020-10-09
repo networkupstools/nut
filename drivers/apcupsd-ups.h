@@ -89,6 +89,7 @@ typedef struct {
 #define DU_FLAG_TIME			8
 #define DU_FLAG_FW1			16
 #define DU_FLAG_FW2			32
+#define DU_FLAG_PRESERVE 	64
 
 /* ------------ */
 /*  Data table  */
@@ -124,14 +125,19 @@ static apcuspd_info_t nut_data[] =
 	{ "LINEFREQ", "input.frequency", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "OUTPUTV", "output.voltage", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "LINEFREQ", "output.frequency", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
-	{ "BCHARGE", "battery.charge", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "BCHARGE", "battery.charge", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_PRESERVE, NULL },
 	{ "MBATTCHG", "battery.charge.low", ST_FLAG_RW, 1, "%.0f", DU_FLAG_NONE, NULL },
 	{ "BATTDATE", "battery.date", ST_FLAG_STRING /* | ST_FLAG_RW */, 16, NULL, DU_FLAG_DATE, NULL },
 	{ "BATTV", "battery.voltage", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "NOMBATTV", "battery.voltage.nominal", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
-	{ "TIMELEFT", "battery.runtime", ST_FLAG_RW, 60, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "TIMELEFT", "battery.runtime", ST_FLAG_RW, 60, "%1.1f", DU_FLAG_PRESERVE, NULL },
 	{ "MINTIMEL", "battery.runtime.low", ST_FLAG_RW, 60, "%.0f", DU_FLAG_NONE, NULL },
 	{ "RETPCT", "battery.charge.restart", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
 	{ "NOMPOWER", "ups.realpower.nominal", 0, 1, "%1.1f", DU_FLAG_INIT, NULL },
+	{ "LOAD_W", "ups.realpower", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "LOADAPNT", "power.percent", ST_FLAG_RW, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "OUTCURNT", "output.current", 0, 1, "%1.2f", DU_FLAG_NONE, NULL },
+	{ "LOAD_VA", "ups.power", 0, 1, "%1.1f", DU_FLAG_NONE, NULL },
+	{ "NOMAPNT", "ups.power.nominal", 0, 1, "%.0f", DU_FLAG_INIT, NULL },
 	{ NULL, NULL, 0, 0, NULL, DU_FLAG_NONE, NULL }
 };
