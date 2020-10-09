@@ -607,9 +607,9 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off */
+	/* Only switch to statepath if we're not powering off or just dumping data, for discovery */
 	/* This avoid case where ie /var is umounted */
-	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
+	if ((!do_forceshutdown) && (dump_data < 0) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	/* Setup signals to communicate with driver once backgrounded. */
@@ -642,14 +642,17 @@ int main(int argc, char **argv)
 			sleep(5);
 		}
 
-		pidfn = xstrdup(buffer);
-		writepid(pidfn);	/* before backgrounding */
+		/* Only write pid if we're not just dumping data, for discovery */
+		if (dump_data < 0) {
+			pidfn = xstrdup(buffer);
+			writepid(pidfn);	/* before backgrounding */
+		}
 	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
 
-	/* note: device.type is set early to be overriden by the driver
+	/* note: device.type is set early to be overridden by the driver
 	 * when its a pdu! */
 	dstate_setinfo("device.type", "ups");
 
@@ -698,7 +701,10 @@ int main(int argc, char **argv)
 	}
 
 	/* now we can start servicing requests */
-	dstate_init(progname, upsname);
+	/* Only write pid if we're not just dumping data, for discovery */
+	if (dump_data < 0) {
+		dstate_init(progname, upsname);
+	}
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);

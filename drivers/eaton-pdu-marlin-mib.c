@@ -34,7 +34,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.46"
+#define EATON_MARLIN_MIB_VERSION	"0.47"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -244,9 +244,10 @@ static snmp_info_t eaton_marlin_mib[] = {
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.4.%i",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	/* FIXME: this entry should be SU_FLAG_SEMI_STATIC */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.534.6.6.7.1.2.1.5.%i",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+		"", SU_FLAG_OK, NULL },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	 /* FIXME: needs a date reformating callback
@@ -583,12 +584,12 @@ static snmp_info_t eaton_marlin_mib[] = {
 		NULL, SU_FLAG_OK, &marlin_ambient_drycontacts_info[0] },
 
 	/* Outlet collection */
+	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i",
+		"0", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "outlet.id", 0, 1, NULL,
 		"0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
-	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.534.6.6.7.1.2.1.22.%i",
-		"0", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* The below ones are the same as the input.* equivalent */
 	/* FIXME: transition period, TO BE REMOVED, moved to input.* */
 	{ "outlet.frequency", 0, 0.1, ".1.3.6.1.4.1.534.6.6.7.3.1.1.3.%i.1",
