@@ -3,7 +3,7 @@
  *  Copyright (C)
  *    2008-2018 Arnaud Quette <arnaud.quette@gmail.com>
  *    2009 Opengear <support@opengear.com>
- *    2017 Eaton (Arnaud Quette <ArnaudQuette@Eaton.com>)
+ *    2017-2019 Eaton (Arnaud Quette <ArnaudQuette@Eaton.com>)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "emerson-avocent-pdu-mib.h"
 
-#define EMERSON_AVOCENT_MIB_VERSION		"1.0"
+#define EMERSON_AVOCENT_MIB_VERSION		"1.1"
 #define EMERSON_AVOCENT_SYSOID			".1.3.6.1.4.1.10418.17.1.7"
 #define EMERSON_AVOCENT_OID_MODEL_NAME	".1.3.6.1.4.1.10418.17.2.1.2.0"
 
@@ -78,35 +78,35 @@ info_lkp_t avocent_outlet_status_info[] = {
 snmp_info_t emerson_avocent_pdu_mib[] = {
 	/* Device page */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Avocent",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.10418.17.2.5.3.1.5.1.%i", /* EMERSON_AVOCENT_OID_MODEL_NAME */
-		"Avocent SNMP PDU", SU_FLAG_ABSENT | SU_FLAG_OK | SU_FLAG_NAINVALID, NULL, NULL },
+		"Avocent SNMP PDU", SU_FLAG_ABSENT | SU_FLAG_OK | SU_FLAG_NAINVALID, NULL },
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.10418.17.2.1.4.0", "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/* Daisychained devices support
 	 * Notes: this definition is used to:
 	 * - estimate the number of devices, based on the below OID iteration capabilities
 	 * - determine the base index of the SNMP OID (ie 0 or 1) */
 	{ "device.count", 0, 1, ".1.3.6.1.4.1.10418.17.2.5.2.1.4.1",
-		"1", SU_FLAG_STATIC, NULL, NULL /* devices_count */ },
+		"1", SU_FLAG_STATIC, NULL },
 
 	/* UPS page */
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "Avocent",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, EMERSON_AVOCENT_OID_MODEL_NAME,
-		"Avocent SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		"Avocent SNMP PDU", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.10418.17.2.1.1.0",
-		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		"unknown", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.10418.17.2.1.4.0", "",
-		SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.10418.17.2.1.7.0", "",
 		SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "ups.macaddr", ST_FLAG_STRING, SU_INFOSIZE, AVOCENT_OID_UNIT_MACADDR,
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* Outlet page */
 	{ "outlet.id", 0, 1, NULL, "0", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	{ "outlet.desc", ST_FLAG_RW | ST_FLAG_STRING, 20, NULL, "All outlets",
@@ -119,36 +119,36 @@ snmp_info_t emerson_avocent_pdu_mib[] = {
 	 * to unitary get, since OIDs start at index '1'.
 	 *Use the status data below to test since '0' is not a supported value */
 	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.10418.17.2.5.5.1.5.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1 | SU_FLAG_ZEROINVALID, &avocent_outlet_status_info[0], NULL },
+		".1.3.6.1.4.1.10418.17.2.5.5.1.5.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1 | SU_FLAG_ZEROINVALID, &avocent_outlet_status_info[0] },
 	{ "outlet.%i.id", 0, 1,
-		".1.3.6.1.4.1.10418.17.2.5.5.1.3.1.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		".1.3.6.1.4.1.10418.17.2.5.5.1.3.1.%i.%i", NULL, SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE,
-		".1.3.6.1.4.1.10418.17.2.5.5.1.4.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1 | SU_FLAG_NAINVALID, NULL, NULL },
+		".1.3.6.1.4.1.10418.17.2.5.5.1.4.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1 | SU_FLAG_NAINVALID, NULL },
 	/* pmPowerMgmtOutletsTableCurrentValue.1.1.1; Value (Integer): 0 */
 	{ "outlet.%i.current", 0, 0.1,
-		".1.3.6.1.4.1.10418.17.2.5.5.1.50.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		".1.3.6.1.4.1.10418.17.2.5.5.1.50.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* pmPowerMgmtOutletsTableCurrentHighCritical.1.1.1; Value (Integer): 160 */
 	{ "outlet.%i.current.high.critical", ST_FLAG_RW, 0.1,
 		".1.3.6.1.4.1.10418.17.2.5.5.1.100.1.%i.%i",
-		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* pmPowerMgmtOutletsTableCurrentHighWarning.1.1.1; Value (Integer): 120 */
 	{ "outlet.%i.current.high.warning", ST_FLAG_RW, 0.1,
 		".1.3.6.1.4.1.10418.17.2.5.5.1.101.1.%i.%i",
-		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* pmPowerMgmtOutletsTableCurrentLowWarning.1.1.1; Value (Integer): 0 */
 	{ "outlet.%i.current.low.warning", ST_FLAG_RW, 0.1,
 		".1.3.6.1.4.1.10418.17.2.5.5.1.102.1.%i.%i",
-		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* pmPowerMgmtOutletsTableCurrentLowCritical.1.1.1; Value (Integer): 0 */
 	{ "outlet.%i.current.low.critical", ST_FLAG_RW, 0.1,
 		".1.3.6.1.4.1.10418.17.2.5.5.1.103.1.%i.%i",
-		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* pmPowerMgmtOutletsTablePowerValue.1.1.1; Value (Integer): 0 */
 	{ "outlet.%i.realpower", 0, 0.1,
-		".1.3.6.1.4.1.10418.17.2.5.5.1.60.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		".1.3.6.1.4.1.10418.17.2.5.5.1.60.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* pmPowerMgmtOutletsTableVoltageValue.1.1.1; Value (Integer): 238 */
 	{ "outlet.%i.voltage", 0, 1,
-		".1.3.6.1.4.1.10418.17.2.5.5.1.70.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+		".1.3.6.1.4.1.10418.17.2.5.5.1.70.1.%i.%i", NULL, SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
 	/* TODO: handle statistics
 	 * pmPowerMgmtOutletsTableEnergyValue.1.1.1; Value (Integer): 0 (Wh)
@@ -159,7 +159,7 @@ snmp_info_t emerson_avocent_pdu_mib[] = {
 	/* Outlet groups collection */
 	/* pmPowerMgmtNumberOfOutletGroup.0; Value (Integer): 0 */
 	{ "outlet.group.count", 0, 1, ".1.3.6.1.4.1.10418.17.2.5.6.%i",
-		"0", SU_FLAG_STATIC | SU_TYPE_DAISY_1, NULL, NULL },
+		"0", SU_FLAG_STATIC | SU_TYPE_DAISY_1, NULL },
 
 	/* TODO: support for "Banks" (not sure to understand what is this?!)
 	 * pmPowerMgmtTotalNumberOfBanks.0; Value (Integer): 6
@@ -174,12 +174,12 @@ snmp_info_t emerson_avocent_pdu_mib[] = {
 	 * powerLock(5),
 	 * powerUnlock(6)
 	 */
-	{ "outlet.%i.load.cycle", 0, 4, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
-	{ "outlet.%i.load.off", 0, 3, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
-	{ "outlet.%i.load.on", 0, 2, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", NULL, SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL, NULL },
+	{ "outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", "4", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.load.off", 0, 1, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", "3", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.load.on", 0, 1, ".1.3.6.1.4.1.10418.17.2.5.5.1.6.1.%i.%i", "2", SU_TYPE_CMD | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
+	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
 mib2nut_info_t	emerson_avocent_pdu = { "emerson_avocent_pdu", EMERSON_AVOCENT_MIB_VERSION, NULL, EMERSON_AVOCENT_OID_MODEL_NAME, emerson_avocent_pdu_mib, EMERSON_AVOCENT_SYSOID };
