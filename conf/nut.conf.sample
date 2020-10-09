@@ -14,7 +14,7 @@
 # The values of MODE can be:
 # - none: NUT is not configured, or use the Integrated Power Management, or use
 #   some external system to startup NUT components. So nothing is to be started.
-# - standalone: This mode address a local only configuration, with 1 UPS 
+# - standalone: This mode address a local only configuration, with 1 UPS
 #   protecting the local system. This implies to start the 3 NUT layers (driver,
 #   upsd and upsmon) and the matching configuration files. This mode can also
 #   address UPS redundancy.

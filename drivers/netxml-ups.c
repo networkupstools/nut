@@ -40,7 +40,7 @@
 #include <ne_socket.h>
 
 #define DRIVER_NAME	"network XML UPS"
-#define DRIVER_VERSION	"0.41"
+#define DRIVER_VERSION	"0.43"
 
 /** *_OBJECT query multi-part body boundary */
 #define FORM_POST_BOUNDARY "NUT-NETXML-UPS-OBJECTS"
@@ -235,6 +235,7 @@ static subdriver_t	*subdriver = &mge_xml_subdriver;
 static ne_session	*session = NULL;
 static ne_socket	*sock = NULL;
 static ne_uri		uri;
+static char	*product_page = NULL;
 
 /* Support functions */
 static void netxml_alarm_set(void);
@@ -269,6 +270,8 @@ void upsdrv_initinfo(void)
 		if (netxml_get_page(page) != NE_OK) {
 			continue;
 		}
+		/* store product page, for later use */
+		product_page = xstrdup(page);
 
 		dstate_setinfo("driver.version.data", "%s", subdriver->version);
 
@@ -346,6 +349,12 @@ void upsdrv_updateinfo(void)
 	}
 
 	ret = netxml_get_page(subdriver->summary);
+	if (ret != NE_OK) {
+		errors++;
+	}
+
+	/* also refresh the product information, at least for firmware information */
+	ret = netxml_get_page(product_page);
 	if (ret != NE_OK) {
 		errors++;
 	}
@@ -513,6 +522,9 @@ void upsdrv_makevartable(void)
 		snprintf(buf, sizeof(buf), "shutdown timer in second (default: none)");
 	}
 	addvar(VAR_VALUE, "shutdown_timer", buf);
+
+	/* Legacy MGE-XML conversion from 2000's, not needed in modern firmwares */
+	addvar(VAR_FLAG, "do_convert_deci", "enable legacy convert_deci() for certain measurements 10x too large");
 }
 
 void upsdrv_initups(void)
@@ -556,7 +568,7 @@ void upsdrv_initups(void)
 		shutdown_timer = atoi(val);
 
 		if (shutdown_timer < 0) {
-			fatalx(EXIT_FAILURE, "shutdwon timer must be greater than or equal to 0");
+			fatalx(EXIT_FAILURE, "shutdown timer must be greater than or equal to 0");
 		}
 	}
 
@@ -638,6 +650,7 @@ void upsdrv_cleanup(void)
 	free(subdriver->summary);
 	free(subdriver->getobject);
 	free(subdriver->setobject);
+	free(product_page);
 
 	if (sock) {
 		ne_sock_close(sock);
@@ -980,6 +993,9 @@ static void netxml_status_set(void)
 
 	if (STATUS_BIT(SHUTDOWNIMM)) {
 		status_set("FSD");		/* shutdown imminent */
+	}
+	if (STATUS_BIT(CAL)) {
+		status_set("CAL");		/* calibrating */
 	}
 }
 

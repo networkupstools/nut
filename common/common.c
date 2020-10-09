@@ -23,6 +23,7 @@
 #include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
+#include <dirent.h>
 
 /* the reason we define UPS_VERSION as a static string, rather than a
 	macro, is to make dependency tracking easier (only common.o depends
@@ -31,6 +32,16 @@
 	need to be re-linked). */
 #include "nut_version.h"
 const char *UPS_VERSION = NUT_VERSION_MACRO;
+
+#include <stdio.h>
+#include <limits.h>
+
+/* Know which bitness we were built for,
+ * to adjust the search paths for get_libname() */
+#include "nut_stdint.h"
+#if UINTPTR_MAX == 0xffffffffffffffffULL
+# define BUILD_64   1
+#endif
 
 	int	nut_debug_level = 0;
 	int	nut_log_level = 0;
@@ -368,19 +379,35 @@ const char * dflt_statepath(void)
 {
 	const char * path;
 
-	if ((path = getenv("NUT_STATEPATH")) == NULL)
+	path = getenv("NUT_STATEPATH");
+	if ( (path == NULL) || (*path == '\0') )
 		path = STATEPATH;
 
 	return path;
 }
 
-/* Return the alternate path for pid files */
+/* Return the alternate path for pid files, for processes running as non-root
+ * Per documentation and configure script, the fallback value is the
+ * state-file path as the daemon and drivers can write there too.
+ * Note that this differs from PIDPATH that higher-privileged daemons, such
+ * as upsmon, tend to use.
+ */
 const char * altpidpath(void)
 {
+	const char * path;
+
+	path = getenv("NUT_ALTPIDPATH");
+	if ( (path == NULL) || (*path == '\0') )
+		path = getenv("NUT_STATEPATH");
+
+	if ( (path != NULL) && (*path != '\0') )
+		return path;
+
 #ifdef ALTPIDPATH
 	return ALTPIDPATH;
 #else
-	return dflt_statepath();
+/* We assume, here and elsewhere, that at least STATEPATH is always defined */
+	return STATEPATH;
 #endif
 }
 
@@ -660,4 +687,99 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
 	}
 
 	return write(fd, buf, buflen);
+}
+
+
+/* FIXME: would be good to get more from /etc/ld.so.conf[.d] and/or
+ * LD_LIBRARY_PATH and a smarter dependency on build bitness; also
+ * note that different OSes can have their pathnames set up differently
+ * with regard to default/preferred bitness (maybe a "32" in the name
+ * should also be searched explicitly - again, IFF our build is 32-bit).
+ */
+const char * search_paths[] = {
+	// Use the library path (and bitness) provided during ./configure first
+	LIBDIR,
+	"/usr"LIBDIR,
+	"/usr/local"LIBDIR,
+#if BUILD_64
+	// Fall back to explicit preference of 64-bit paths as named on some OSes
+	"/usr/lib/64",
+	"/usr/lib64",
+#endif
+	"/usr/lib",
+#if BUILD_64
+	"/lib/64",
+	"/lib64",
+#endif
+	"/lib",
+#if BUILD_64
+	"/usr/local/lib/64",
+	"/usr/local/lib64",
+#endif
+	"/usr/local/lib",
+#ifdef AUTOTOOLS_TARGET_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_TARGET_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_TARGET_SHORT_ALIAS,
+#else
+# ifdef AUTOTOOLS_HOST_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_HOST_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_HOST_SHORT_ALIAS,
+# else
+#  ifdef AUTOTOOLS_BUILD_SHORT_ALIAS
+	"/usr/lib/" AUTOTOOLS_BUILD_SHORT_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_BUILD_SHORT_ALIAS,
+#  endif
+# endif
+#endif
+#ifdef AUTOTOOLS_TARGET_ALIAS
+	"/usr/lib/" AUTOTOOLS_TARGET_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_TARGET_ALIAS,
+#else
+# ifdef AUTOTOOLS_HOST_ALIAS
+	"/usr/lib/" AUTOTOOLS_HOST_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_HOST_ALIAS,
+# else
+#  ifdef AUTOTOOLS_BUILD_ALIAS
+	"/usr/lib/" AUTOTOOLS_BUILD_ALIAS,
+	"/usr/lib/gcc/" AUTOTOOLS_BUILD_ALIAS,
+#  endif
+# endif
+#endif
+	NULL
+};
+
+char * get_libname(const char* base_libname)
+{
+	DIR *dp;
+	struct dirent *dirp;
+	int index = 0;
+	char *libname_path = NULL;
+	char current_test_path[LARGEBUF];
+	int base_libname_length = strlen(base_libname);
+
+	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
+	{
+		memset(current_test_path, 0, LARGEBUF);
+
+		if ((dp = opendir(search_paths[index])) == NULL)
+			continue;
+
+		upsdebugx(2,"Looking for lib %s in directory #%d : %s", base_libname, index, search_paths[index]);
+		while ((dirp = readdir(dp)) != NULL)
+		{
+			upsdebugx(5,"Comparing lib %s with dirpath %s", base_libname, dirp->d_name);
+			int compres = strncmp(dirp->d_name, base_libname, base_libname_length);
+			if(compres == 0) {
+				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
+				libname_path = realpath(current_test_path, NULL);
+				upsdebugx(2,"Candidate path for lib %s is %s (realpath %s)", base_libname, current_test_path, (libname_path!=NULL)?libname_path:"NULL");
+				if (libname_path != NULL)
+					break;
+			}
+		}
+		closedir(dp);
+	}
+
+	upsdebugx(1,"Looking for lib %s, found %s", base_libname, (libname_path!=NULL)?libname_path:"NULL");
+	return libname_path;
 }

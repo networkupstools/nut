@@ -1,9 +1,9 @@
 /* dstate.c - Network UPS Tools driver-side state management
 
    Copyright (C)
-	2003	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2003		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012 - 2017	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -201,6 +201,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
+	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -327,6 +328,9 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 		if (node->flags & ST_FLAG_STRING) {
 			snprintfcat(flist, sizeof(flist), " STRING");
 		}
+		if (node->flags & ST_FLAG_NUMBER) {
+			snprintfcat(flist, sizeof(flist), " NUMBER");
+		}
 
 		if (!send_to_one(conn, "SETFLAGS %s\n", flist)) {
 			return 0;
@@ -351,6 +355,12 @@ static int cmd_dump_conn(conn_t *conn)
 	}
 
 	return 1;
+}
+
+
+static void send_tracking(conn_t *conn, const char *id, int value)
+{
+	send_to_one(conn, "TRACKING %s %i\n", id, value);
 }
 
 static int sock_arg(conn_t *conn, int numarg, char **arg)
@@ -391,20 +401,40 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* INSTCMD <cmdname> [<value>]*/
+	/* INSTCMD <cmdname> [<cmdparam>] [TRACKING <id>] */
 	if (!strcasecmp(arg[0], "INSTCMD")) {
+		int ret;
+		char *cmdname = arg[1];
+		char *cmdparam = NULL;
+		char *cmdid = NULL;
+
+		/* Check if <cmdparam> and TRACKING were provided */
+		if (numarg == 3) {
+			cmdparam = arg[2];
+		} else if (numarg == 4 && !strcasecmp(arg[2], "TRACKING")) {
+			cmdid = arg[3];
+		} else if (numarg == 5 && !strcasecmp(arg[3], "TRACKING")) {
+			cmdparam = arg[2];
+			cmdid = arg[4];
+		} else if (numarg != 2) {
+			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			return 0;
+		}
+
+		if (cmdid)
+			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
 		/* try the new handler first if present */
 		if (upsh.instcmd) {
-			if (numarg > 2) {
-				upsh.instcmd(arg[1], arg[2]);
-				return 1;
-			}
+			ret = upsh.instcmd(cmdname, cmdparam);
 
-			upsh.instcmd(arg[1], NULL);
+			/* send back execution result */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
-
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -413,12 +443,33 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* SET <var> <value> */
+	/* SET <var> <value> [TRACKING <id>] */
 	if (!strcasecmp(arg[0], "SET")) {
+		int ret;
+		char *setid = NULL;
+
+		/* Check if TRACKING was provided */
+		if (numarg == 5) {
+			if (!strcasecmp(arg[3], "TRACKING")) {
+				setid = arg[4];
+			}
+			else {
+				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+					arg[3], arg[4]);
+				return 0;
+			}
+			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
+		}
 
 		/* try the new handler first if present */
 		if (upsh.setvar) {
-			upsh.setvar(arg[1], arg[2]);
+			ret = upsh.setvar(arg[1], arg[2]);
+
+			/* send back execution result */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
 
@@ -652,9 +703,9 @@ int dstate_addrange(const char *var, const int min, const int max)
 	ret = state_addrange(dtree_root, var, min, max);
 
 	if (ret == 1) {
-		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
-		/* Also set the "NUMBER" flag for ranges */
-		dstate_setflags(var, ST_FLAG_NUMBER);
+		send_to_all("ADDRANGE %s %i %i\n", var, min, max);
+		/* Also add the "NUMBER" flag for ranges */
+		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
 
 	return ret;
@@ -701,6 +752,42 @@ void dstate_setflags(const char *var, int flags)
 
 	/* update listeners */
 	send_to_all("SETFLAGS %s\n", flist);
+}
+
+void dstate_addflags(const char *var, const int addflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already set */
+	if ((flags & addflags) == addflags)
+		return;
+
+	flags |= addflags;
+
+	dstate_setflags(var, flags);
+}
+
+void dstate_delflags(const char *var, const int delflags)
+{
+	int	flags = state_getflags(dtree_root, var);
+
+	if (flags == -1) {
+		upslogx(LOG_ERR, "%s: cannot get flags of '%s'", __func__, var);
+		return;
+	}
+
+	/* Already not set */
+	if (!(flags & delflags))
+		return;
+
+	flags &= ~delflags;
+
+	dstate_setflags(var, flags);
 }
 
 void dstate_setaux(const char *var, int aux)
@@ -778,7 +865,7 @@ int dstate_delrange(const char *var, const int min, const int max)
 
 	/* update listeners */
 	if (ret == 1) {
-		send_to_all("DELRANGE %s \"%i %i\"\n", var, min, max);
+		send_to_all("DELRANGE %s %i %i\n", var, min, max);
 	}
 
 	return ret;
@@ -962,4 +1049,230 @@ void device_alarm_commit(const int device_number)
 	} else {
 		dstate_delinfo(info_name);
 	}
+}
+
+/* For devices where we do not have phase-count info (no mapping provided
+ * in the tables), nor in the device data/protocol, we can still guesstimate
+ * and report a value. This routine may also replace an existing value, e.g.
+ * if we've found new data disproving old one (e.g. if the 3-phase UPS was
+ * disbalanced when the driver was started, so we thought it is 1-phase in
+ * practice, and then the additional lines came up loaded, hence the bools
+ * "may_reevaluate" and the readonly flag "may_change_dstate" (so the caller
+ * can query the current apparent situation, without changing any dstates).
+ * It is up to callers to decide if they already have data they want to keep.
+ * The "xput_prefix" is e.g. "input." or "input.bypass." or "output." with
+ * the trailing dot where applicable - we use this string verbatim below.
+ * The "inited_phaseinfo" and "num_phases" are addresses of caller's own
+ * variables to store the flag (if we have successfully inited) and the
+ * discovered amount of phases, or NULL if caller does not want to track it.
+ *
+ * NOTE: The code below can detect if the device is 1, 2 (split phase) or 3
+ * phases.
+ *
+ * Returns:
+ *   -1     Runtime/input error (non fatal, but routine was skipped)
+ *    0     Nothing changed: could not determine a value
+ *    1     A phase value was just determined (and set, if not read-only mode)
+ *    2     Nothing changed: already inited (and may_reevaluate==false)
+ *    3     Nothing changed: detected a value but it is already published
+ *          as a dstate; populated inited_phaseinfo and num_phases though
+ */
+int dstate_detect_phasecount(
+		const char *xput_prefix,
+		const int may_change_dstate,
+		int *inited_phaseinfo,
+		int *num_phases,
+		const int may_reevaluate
+) {
+	/* If caller does not want either of these back - loopback the values below */
+	int local_inited_phaseinfo = 0, local_num_phases = -1;
+	/* Temporary local value storage */
+	int old_num_phases = -1, detected_phaseinfo = 0;
+
+	if (!inited_phaseinfo)
+		inited_phaseinfo = &local_inited_phaseinfo;
+	if (!num_phases)
+		num_phases = &local_num_phases;
+	old_num_phases = *num_phases;
+
+	upsdebugx(3, "Entering %s('%s', %i, %i, %i, %i)", __func__,
+		xput_prefix, may_change_dstate, *inited_phaseinfo, *num_phases, may_reevaluate);
+
+	if (!(*inited_phaseinfo) || may_reevaluate) {
+		const char *v1,  *v2,  *v3,  *v0,
+		           *v1n, *v2n, *v3n,
+		           *v12, *v23, *v31,
+		           *c1,  *c2,  *c3,  *c0;
+		char buf[MAX_STRING_SIZE]; /* For concatenation of "xput_prefix" with items we want to query */
+		size_t xput_prefix_len;
+		int bufrw_max;
+		char *bufrw_ptr = NULL;
+
+		if (!xput_prefix) {
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is NULL - function skipped", __func__);
+			return -1;
+		}
+
+		xput_prefix_len = strlen(xput_prefix);
+		if (xput_prefix_len < 1) {
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is empty - function skipped", __func__);
+			return -1;
+		}
+
+		bufrw_max = sizeof(buf) - xput_prefix_len;
+		if (bufrw_max <= 15) {
+			/* We need to append max ~13 chars per below, so far */
+			upsdebugx(0, "%s(): Bad xput_prefix was passed: it is too long - function skipped", __func__);
+			return -1;
+		}
+		memset(buf, 0, sizeof(buf));
+		strncpy(buf, xput_prefix, sizeof(buf));
+		bufrw_ptr = buf + xput_prefix_len ;
+
+		/* We either have defined and non-zero (numeric) values below, or NULLs.
+		 * Note that as "zero" we should expect any valid numeric representation
+		 * of a zero value as some drivers may save strangely formatted values.
+		 * For now, we limit the level of paranoia with missing dstate entries,
+		 * empty entries, and actual single zero character as contents of the
+		 * string. Other obscure cases (string of multiple zeroes, a floating
+		 * point zero, surrounding whitespace etc. may be solved if the need
+		 * does arise in the future. Arguably, drivers' translation/mapping
+		 * tables should take care of this with converion routine and numeric
+		 * data type flags. */
+#define dstate_getinfo_nonzero(var, suffix) \
+		{ strncpy(bufrw_ptr, suffix, bufrw_max); \
+		  if ( (var = dstate_getinfo(buf)) ) { \
+		    if ( (var[0] == '0' && var[1] == '\0') || \
+		         (var[0] == '\0') ) { \
+		      var = NULL; \
+		    } \
+		  } \
+		} ;
+
+		dstate_getinfo_nonzero(v1,  "L1.voltage");
+		dstate_getinfo_nonzero(v2,  "L2.voltage");
+		dstate_getinfo_nonzero(v3,  "L3.voltage");
+		dstate_getinfo_nonzero(v1n, "L1-N.voltage");
+		dstate_getinfo_nonzero(v2n, "L2-N.voltage");
+		dstate_getinfo_nonzero(v3n, "L3-N.voltage");
+		dstate_getinfo_nonzero(v1n, "L1-N.voltage");
+		dstate_getinfo_nonzero(v12, "L1-L2.voltage");
+		dstate_getinfo_nonzero(v23, "L2-L3.voltage");
+		dstate_getinfo_nonzero(v31, "L3-L1.voltage");
+		dstate_getinfo_nonzero(c1,  "L1.current");
+		dstate_getinfo_nonzero(c2,  "L2.current");
+		dstate_getinfo_nonzero(c3,  "L3.current");
+		dstate_getinfo_nonzero(v0,  "voltage");
+		dstate_getinfo_nonzero(c0,  "current");
+
+		if ( (v1 && v2 && !v3) ||
+		     (v1n && v2n && !v3n) ||
+		     (c1 && c2 && !c2) ||
+		     (v12 && !v23 && !v31) ) {
+			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
+			*num_phases = 2;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+		} else if ( (v1 && v2 && v3) ||
+		     (v1n && v2n && v3n) ||
+		     (c1 && (c2 || c3)) ||
+		     (c2 && (c1 || c3)) ||
+		     (c3 && (c1 || c2)) ||
+		     v12 || v23 || v31 ) {
+			upsdebugx(5, "%s(): determined a 3-phase case", __func__);
+			*num_phases = 3;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+		} else if ( /* We definitely have only one non-zero line */
+		     !v12 && !v23 && !v31 && (
+		     (c0 && !c1 && !c2 && !c3) ||
+		     (v0 && !v1 && !v2 && !v3) ||
+		     (c1 && !c2 && !c3) ||
+		     (!c1 && c2 && !c3) ||
+		     (!c1 && !c2 && c3) ||
+		     (v1 && !v2 && !v3) ||
+		     (!v1 && v2 && !v3) ||
+		     (!v1 && !v2 && v3) ||
+		     (v1n && !v2n && !v3n) ||
+		     (!v1n && v2n && !v3n) ||
+		     (!v1n && !v2n && v3n) ) ) {
+			*num_phases = 1;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+			upsdebugx(5, "%s(): determined a 1-phase case", __func__);
+		} else {
+			upsdebugx(5, "%s(): could not determine the phase case", __func__);
+		}
+
+		if (detected_phaseinfo) {
+			const char *oldphases;
+			strncpy(bufrw_ptr, "phases", bufrw_max);
+			oldphases = dstate_getinfo(buf);
+
+			if (oldphases) {
+				if (atoi(oldphases) == *num_phases) {
+					/* Technically, a bit has changed: we have set the flag which may have been missing before */
+					upsdebugx(5, "%s(): Nothing changed, with a valid reason; dstate already published with the same value: %s=%s (detected %d)",
+						__func__, buf, oldphases, *num_phases);
+					return 3;
+				}
+			}
+
+			if ( (*num_phases != old_num_phases) || (!oldphases) ) {
+				if (may_change_dstate) {
+					dstate_setinfo(buf, "%d", *num_phases);
+					upsdebugx(3, "%s(): calculated non-XML value for NUT variable %s was set to %d",
+						__func__, buf, *num_phases);
+				} else {
+					upsdebugx(3, "%s(): calculated non-XML value for NUT variable %s=%d but did not set its dstate (read-only request)",
+						__func__, buf, *num_phases);
+				}
+				return 1;
+			}
+		}
+
+		upsdebugx(5, "%s(): Nothing changed: could not determine a value", __func__);
+		return 0;
+	}
+
+	upsdebugx(5, "%s(): Nothing changed, with a valid reason; already inited", __func__);
+	return 2;
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Actual implementation */
+static int dstate_tree_dump(st_tree_t *node)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = dstate_tree_dump(node->left);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	printf("%s: %s\n", node->var, node->val);
+
+	if (node->right) {
+		return dstate_tree_dump(node->right);
+	}
+
+	return 1;	/* everything's OK here ... */
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Public interface */
+void dstate_dump(void)
+{
+	upsdebugx(3, "Entering %s", __func__);
+
+	st_tree_t *node = (st_tree_t *)dstate_getroot();
+
+	dstate_tree_dump(node);
 }

@@ -1,0 +1,90 @@
+PHOENIXCONTACT_MODBUS(8)
+========================
+
+NAME
+----
+
+phoenixcontact_modbus - Driver for Phoenix Contact
+
+SYNOPSIS
+--------
+
+*phoenixcontact_modbus* -h
+
+*phoenixcontact_modbus* -a 'DEVICE_NAME' ['OPTIONS']
+
+NOTE: This man page only documents the hardware-specific features of the
+phoenixcontact_modbus driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+
+This driver should support the PhoenixContact QUINT-UPS industrial DC UPS, model 2320461 and all compatible models.
+More information about this UPS can be found here: https://www.phoenixcontact.com/online/portal/us?uri=pxc-oc-itemdetail:pid=2320461
+
+phoenixcontact_modbus uses the libmodbus project, for Modbus implementation.
+
+How to configure the UPS
+------------------------
+
+Note: this UPS and its manual refers to Low-Batt as "Shutdown Event".
+
+You need the "IFS-RS232-DATACABLE" to communicate with the UPS in linux as the IFS-USB cable doesn't seem to be supported. FYI communication parameters are: 115200,E,8,1.
+You also need the UPS-CONF Windows software (free; download from their site), to configure the UPS signals and timers.
+
+1. Run the UPS-CONF
+2. Go to Settings->Time Setting
+3. Choose "state of charge shutdown delay"
+4. Choose Remote starts PC-Shutdown in Mains and Battery mode
+5. On the PC-Shutdown enter the maximum value (5 minutes)
+6. On the PC-Restart delay enter the time you want the UPS to leave the output power off before restarting (e.g. 60 seconds), after mains power is restored.
+7. On the UPS, turn the screw to the "PC-MODE" position
+
+Configuring the above way ensures that:
+
+ * When power is lost, UPS constantly calculates remaining battery time
+ * When remaining battery time is less than 5 minutes (PC-Shutdown setting), it will raise the "Shutdown" event (seen as LOW-BATT in NUT)
+ * From that moment even if input power is restored, the UPS will cut the output power to its load after 5 minutes
+ * When the input power is restored, the UPS will restore output power after 60 seconds (PC-RESTART delay setting).
+
+Meaning of settings:
+
+ * PC-Shutdown: How long before output cutoff the UPS will raise the "shutdown event" signal. Max value for this is 5 minutes. So PC should be able to shutdown within 5 minutes.
+ * PC-Restart: How long to delay output power after power is restored. Max is 60 seconds.
+ 
+
+EXTRA ARGUMENTS
+---------------
+
+This driver doesn't support any optional settings.
+
+INSTALLATION
+------------
+
+This driver is not built by default.  You can build it by installing libmodbus
+and running `configure --with-modbus=yes`.
+
+You also need to give proper permissions on the local serial device file
+(/dev/ttyS0 for example) to allow the NUT user to access it.
+
+INSTANT COMMANDS
+----------------
+
+This driver doesn't support any instant commands.
+
+AUTHOR
+------
+Spiros Ioannou <sivann@gmail.com>
+
+SEE ALSO
+--------
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/
+
+libmodbus home page: http://libmodbus.org

@@ -1,7 +1,7 @@
 APCSMART(8)
 ===========
 
-NAME  
+NAME
 ----
 
 apcsmart - Driver for American Power Conversion Smart Protocol UPS equipment
@@ -46,18 +46,18 @@ division isn't strict by any means, and the borders between those are pretty fuz
 "new" models::
     These models usually come from late 1990s / pre-2009 times. They are often
     referred as "3rd. gen". For the most part, they have programmable EEPROM,
-    report supported commands and capabilites, and should work just fine with the
+    report supported commands and capabilities, and should work just fine with the
     apcsmart driver.
 
 "microlink" models::
     WARNING: these are not _natively_ supported by *apcsmart* (or *apcupsd*,
     for that matter, if you're wondering). Around 2007, APC (now APC Schneider)
-    decided to go back to its proprietry roots, and all the new models (SMT,
+    decided to go back to its proprietary roots, and all the new models (SMT,
     SMX, SURTD) use completely different protocol and cables. If you purchased
     a new APC UPS - that uses cable with RJ45 on the one end, and DB-9 on the
     other - then you have such model. Your only option to support it through
     *NUT* is to purchase a "legacy communications card" - part #AP9620 (google
-    \'AP9620' for more details). Or if that's not an option, rely on official
+    'AP9620' for more details). Or if that's not an option, rely on official
     software.
 
 Microsol models::
@@ -80,7 +80,7 @@ CABLING
 -------
 
 This driver expects to see a 940-0024C cable or a clone by default. You
-can switch to the 940-0095B dual-mode cable support with the \'cable='
+can switch to the 940-0095B dual-mode cable support with the 'cable='
 definition described below.
 
 If your 940-xx24X cable is broken or missing, use this diagram to build
@@ -108,7 +108,7 @@ TTY MODES
 By default the driver works in canonical mode, but it proved to be a problem in
 Windows systems. Furthermore there's a possibility of some obscure serial cards
 or serial-USB converters that could cause problems as well. You can use
-\'ttymode=' option to force non-canonical discipline in linkman:ups.conf[5]:
+'ttymode=' option to force non-canonical discipline in linkman:ups.conf[5]:
 
 *ttymode*=raw
 
@@ -138,29 +138,33 @@ behaviour quite a bit, depending on the model.
         The behaviour here is as expected - the power is cut off after the
         EEPROM defined grace period. The UPS will wake up when the power
         returns, after the EEPROM defined delay AND if the EEPROM defined min.
-        battery charge level is met. The delay is counted from the power\'s
+        battery charge level is met. The delay is counted from the power's
         return.
 
 *CS* (aka "force OB hack")::
-    This is a trick to make UPS power down even if it\'s running on mains.
+    This is a trick to make UPS power down even if it's running on mains.
     Immediately before issuing *S*, "simulate power failure" is issued. The
     remaining behaviour is as in *S* case.
 +
+There's a delay between "simulate power failure" and *S* - by default set to
+3.5s. You can control it through *cshdelay* option (allowed values are from 0
+to 9.9).
++
 The name came from APC CS models, where such trick was used to power down
-UPSes in consistent fashion using only *S*. It\'s better to use *@nnn*
+UPSes in consistent fashion using only *S*. It's better to use *@nnn*
 command if your UPS supports it (and is not too old, see below).
 
 *@nnn* (hard hibernate)::
-    This is basic command used to hibernate UPS regardless if it\'s
+    This is basic command used to hibernate UPS regardless if it's
     running on batteries or on mains. The option takes 3 digits argument which
-    can be used to specify additional wakeup delay (in 6 minute units).
+    can be used to specify additional wake-up delay (in 6 minute units).
 +
 --
     "old" models:::
-        The behaviour is - unfortunately - similary primitive to *S*. The UPS
-        unconditionally wakes up after $$nnn*6$$ minutes - *it doesn\'t care if the
+        The behaviour is - unfortunately - similarly primitive to *S*. The UPS
+        unconditionally wakes up after $$nnn*6$$ minutes - *it doesn't care if the
         power returned !* If nnn = 000, then UPS will do precisely nothing. On
-        those models you\'re better specifying nnn > 0, if you can estimate
+        those models you're better specifying nnn > 0, if you can estimate
         the kind of power problems that might be happening in your environment.
         Another thing to consider with "old" models - you might lose the
         connection with the UPS, until it wakes up (with *S*, the serial
@@ -169,7 +173,7 @@ command if your UPS supports it (and is not too old, see below).
     "new" models:::
         All the usual variables defined in EEPROM are respected (see *S*).
         Additionally, if nnn > 0, the $$nnn*6$$ minutes are added to EEPROM
-        defined delay. UPS will not power up if it\'s running on batteries,
+        defined delay. UPS will not power up if it's running on batteries,
         contrary to what "old" models used to do - the combined delay is counted
         from the moment of power return.
 --
@@ -197,17 +201,17 @@ There are three options used to control the shutdown behaviour.
 
 *advorder*=no|[0-4]+::
     This option takes string of digits as an argument. Methods listed are tried
-    in turn until one of them succeedes. Note that the meaning of digits is
+    in turn until one of them succeeds. Note that the meaning of digits is
     different from *sdtype*. See below for details.
 
 *awd*=[0-9]{1,3}::
-    This option lets you specify additional wakeup delay used by *@*. If you
+    This option lets you specify additional wake-up delay used by *@*. If you
     provide exactly 2 digits, the driver will try 2 digits variation (see
     previous section for more info). Otherwise standard 3 digits variation is
     used. *Note: the time unit is 6 minutes !*
 
 Keep in mind that *sdtype* and *advorder* are mutually exclusive. If *advorder*
-is provided, *sdtype* is ignored. If *advorder* is set to \'no', *sdtype* is
+is provided, *sdtype* is ignored. If *advorder* is set to 'no', *sdtype* is
 used instead.
 
 If nothing is provided, *NUT* will assume *sdtype*=0 - which is generally fine
@@ -234,16 +238,16 @@ issue "force OB hack" (*CS*)
 5::
 issue hard hibernate (*@*)
 
-NOTE: Hard hibernate\'s additional wakeup delay can be provided by *awd*.
+NOTE: Hard hibernate's additional wake-up delay can be provided by *awd*.
 
 ADVORDER
 ~~~~~~~~
 
-The argument is either a word \'no', or a string of 1 - 5 digits in [0 - 4]
+The argument is either a word 'no', or a string of 1 - 5 digits in [0 - 4]
 range. Each digit maps to the one of shutdown methods supported by APC UPSes.
-Methods listed in this way are tried in order, until one of them succedes.
+Methods listed in this way are tried in order, until one of them succeeds.
 
-If *advorder* is undefined or set to \'no', *sdtype* is used instead.
+If *advorder* is undefined or set to 'no', *sdtype* is used instead.
 
 The mapping is as follows:
 
@@ -254,7 +258,7 @@ The mapping is as follows:
 3:: instant poweroff (*Z*)
 4:: "force OB hack" (*CS*)
 
-NOTE: Hard hibernate\'s additional wakeup delay can be provided by *awd*.
+NOTE: Hard hibernate's additional wake-up delay can be provided by *awd*.
 
 IGNORING LB STATE
 -----------------
@@ -307,7 +311,7 @@ remaining runtime (especially right after going into OB state). *ignorelb*
 option and *$$override.*$$* let you remain in control of the UPS, not UPS in control
 of you.
 
-Furthermore, this allows to specify conditions similary to how it's done in
+Furthermore, this allows to specify conditions similarly to how it's done in
 apcupsd daemon, so it should be welcome by people used to that software.
 
 
@@ -321,7 +325,7 @@ executes soft hibernate
 shutdown.return cs::
 executes "force OB hack"
 shutdown.return at:<nbr>::
-executes "hard hibernate" with $$<nbr>*6$$ minutes additional wakeup delay (<nbr> format
+executes "hard hibernate" with $$<nbr>*6$$ minutes additional wake-up delay (<nbr> format
 is the same as of *awd* option)
 shutdown.stayoff::
 executes "delayed poweroff"
@@ -331,7 +335,7 @@ executes "instant poweroff"
 All the above commands must be issued 2nd time to have any effect (no less than 3
 seconds, and no more than 15 seconds after the initial call). Those commands are
 mostly useful for manual testing, when your machine is not powered by the UPS
-you\'re testing.
+you're testing.
 
 Other supported commands:
 
@@ -349,7 +353,7 @@ PREVIOUS DRIVER VERSION
 -----------------------
 
 Previous driver is still available as *apcsmart-old*, should there be any need to
-use earlier version (bugs, incompatiblities with new functionality, etc.). In
+use earlier version (bugs, incompatibilities with new functionality, etc.). In
 due time, *apcsmart-old* will be phased out completely, but this won't happen until
 the new version gets solid exposure with no pending issues.
 

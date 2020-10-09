@@ -73,7 +73,7 @@ upsd can reload its configuration files without shutting down the process
 if you send it a SIGHUP or start it again with `-c reload`.  This only works
 if the background process is able to read those files.
 
-If you think that upsd can't reload, check your syslogs for error messages.
+If you think that upsd can't reload, check your syslog for error messages.
 If it's complaining about not being able to read the files, then you need
 to adjust your system to make it possible.  Either change the permissions
 on the files, or run upsd as another user that will be able to read them.
@@ -126,10 +126,15 @@ ENVIRONMENT VARIABLES
 `upsd.conf` and other configuration files.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
 
-*NUT_STATEPATH* is the path name of the directory in which 
+*NUT_STATEPATH* is the path name of the directory in which
 *upsd* keeps state information.  If this variable is not set,
 *upsd* uses a built-in default, which is often `/var/state/ups`.
 The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
+
+*NUT_ALTPIDPATH* is the path name of the directory in which
+*upsd* and drivers store .pid files.  If this variable is not set,
+*upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
+or otherwise the built-in default *STATEPATH*.
 
 SEE ALSO
 --------

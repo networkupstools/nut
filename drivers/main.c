@@ -1,6 +1,9 @@
 /* main.c - Network UPS Tools driver core
 
-   Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
+   Copyright (C)
+   1999			Russell Kroll <rkroll@exploits.org>
+   2005 - 2017	Arnaud Quette <arnaud.quette@free.fr>
+   2017 		Eaton (author: Emilien Kia <EmilienKia@Eaton.com>)
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,6 +51,7 @@
 
 	/* everything else */
 	static char	*pidfn = NULL;
+	int	dump_data = 0; /* Store the update_count requested */
 
 /* print the driver banner */
 void upsdrv_banner (void)
@@ -87,14 +91,23 @@ static void help_msg(void)
 {
 	vartab_t	*tmp;
 
-	printf("\nusage: %s -a <id> [OPTIONS]\n", progname);
+	printf("\nusage: %s (-a <id>|-s <id>) [OPTIONS]\n", progname);
 
 	printf("  -a <id>        - autoconfig using ups.conf section <id>\n");
 	printf("                 - note: -x after -a overrides ups.conf settings\n\n");
 
+	printf("  -s <id>        - configure directly from cmd line arguments\n");
+	printf("                 - note: must specify all driver parameters with successive -x\n");
+	printf("                 - note: at least 'port' variable should be set\n");
+	printf("                 - note: to explore the current values on a device from an\n");
+	printf("                   unprivileged user account (with sufficient media access in\n");
+	printf("                   the OS - e.g. to query networked devices), you can specify\n");
+	printf("                   '-d 1' argument and `export NUT_STATEPATH=/tmp` beforehand\n\n");
+
 	printf("  -V             - print version, then exit\n");
 	printf("  -L             - print parseable list of driver variables\n");
 	printf("  -D             - raise debugging level\n");
+	printf("  -d <count>     - dump data to stdout after 'count' updates loop and exit\n");
 	printf("  -q             - raise log level threshold\n");
 	printf("  -h             - display this help\n");
 	printf("  -k             - force shutdown\n");
@@ -489,6 +502,7 @@ int main(int argc, char **argv)
 {
 	struct	passwd	*new_uid = NULL;
 	int	i, do_forceshutdown = 0;
+	int	update_count = 0;
 
 	atexit(exit_cleanup);
 
@@ -508,7 +522,7 @@ int main(int argc, char **argv)
 	/* build the driver's extra (-x) variable table */
 	upsdrv_makevartable();
 
-	while ((i = getopt(argc, argv, "+a:kDhx:Lqr:u:Vi:")) != -1) {
+	while ((i = getopt(argc, argv, "+a:s:kDd:hx:Lqr:u:Vi:")) != -1) {
 		switch (i) {
 			case 'a':
 				upsname = optarg;
@@ -519,8 +533,15 @@ int main(int argc, char **argv)
 					fatalx(EXIT_FAILURE, "Error: Section %s not found in ups.conf",
 						optarg);
 				break;
+			case 's':
+				upsname = optarg;
+				upsname_found = 1;
+				break;
 			case 'D':
 				nut_debug_level++;
+				break;
+			case 'd':
+				dump_data = atoi(optarg);
 				break;
 			case 'i':
 				poll_interval = atoi(optarg);
@@ -567,13 +588,14 @@ int main(int argc, char **argv)
 
 	if (!upsname_found) {
 		fatalx(EXIT_FAILURE,
-			"Error: specifying '-a id' is now mandatory. Try -h for help.");
+			"Error: specifying '-a id' or '-s id' is now mandatory. Try -h for help.");
 	}
 
 	/* we need to get the port from somewhere */
 	if (!device_path) {
 		fatalx(EXIT_FAILURE,
-			"Error: you must specify a port name in ups.conf. Try -h for help.");
+			"Error: you must specify a port name in ups.conf or in '-x port=...' argument.\n"
+			"Try -h for help.");
 	}
 
 	upsdebugx(1, "debug level is '%d'", nut_debug_level);
@@ -585,9 +607,9 @@ int main(int argc, char **argv)
 
 	become_user(new_uid);
 
-	/* Only switch to statepath if we're not powering off */
+	/* Only switch to statepath if we're not powering off or just dumping data, for discovery */
 	/* This avoid case where ie /var is umounted */
-	if ((!do_forceshutdown) && (chdir(dflt_statepath())))
+	if ((!do_forceshutdown) && (dump_data < 0) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	/* Setup signals to communicate with driver once backgrounded. */
@@ -614,18 +636,25 @@ int main(int argc, char **argv)
 				break;
 			}
 
-			upslogx(LOG_WARNING, "Duplicate driver instance detected! Terminating other driver!");
+			upslogx(LOG_WARNING, "Duplicate driver instance detected (PID file %s exists)! Terminating other driver!", buffer);
 
 			/* Allow driver some time to quit */
 			sleep(5);
 		}
 
-		pidfn = xstrdup(buffer);
-		writepid(pidfn);	/* before backgrounding */
+		/* Only write pid if we're not just dumping data, for discovery */
+		if (dump_data < 0) {
+			pidfn = xstrdup(buffer);
+			writepid(pidfn);	/* before backgrounding */
+		}
 	}
 
 	/* clear out callback handler data */
 	memset(&upsh, '\0', sizeof(upsh));
+
+	/* note: device.type is set early to be overridden by the driver
+	 * when its a pdu! */
+	dstate_setinfo("device.type", "ups");
 
 	upsdrv_initups();
 
@@ -639,10 +668,6 @@ int main(int argc, char **argv)
 
 	if (do_forceshutdown)
 		forceshutdown();
-
-	/* note: device.type is set early to be overriden by the driver
-	 * when its a pdu! */
-	dstate_setinfo("device.type", "ups");
 
 	/* publish the top-level data: version numbers, driver name */
 	dstate_setinfo("driver.version", "%s", UPS_VERSION);
@@ -676,7 +701,10 @@ int main(int argc, char **argv)
 	}
 
 	/* now we can start servicing requests */
-	dstate_init(progname, upsname);
+	/* Only write pid if we're not just dumping data, for discovery */
+	if (dump_data < 0) {
+		dstate_init(progname, upsname);
+	}
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);
@@ -693,7 +721,7 @@ int main(int argc, char **argv)
 	if (dstate_getinfo("ups.serial") != NULL)
 		dstate_setinfo("device.serial", "%s", dstate_getinfo("ups.serial"));
 
-	if (nut_debug_level == 0) {
+	if ( (nut_debug_level == 0) && (!dump_data) ) {
 		background();
 		writepid(pidfn);	/* PID changes when backgrounding */
 	}
@@ -707,13 +735,26 @@ int main(int argc, char **argv)
 
 		upsdrv_updateinfo();
 
+		/* Dump the data tree (in upsc-like format) to stdout and exit */
+		if (dump_data) {
+			/* Wait for 'dump_data' update loops to ensure data completion */
+			if (update_count == dump_data) {
+				dstate_dump();
+				exit_flag = 1;
+			}
+			else
+				update_count++;
+		}
+
 		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
 			/* repeat until time is up or extrafd has data */
 		}
 	}
 
 	/* if we get here, the exit flag was set by a signal handler */
-	upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
+	/* however, avoid to "pollute" data dump output! */
+	if (!dump_data)
+		upslogx(LOG_INFO, "Signal %d: exiting", exit_flag);
 
 	exit(EXIT_SUCCESS);
 }

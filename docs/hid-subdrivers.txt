@@ -9,9 +9,9 @@ different classes (audio, imaging, mass storage etc). Almost all UPS
 devices belong to the "HID" class, which means "Human Interface
 Device", and also includes things like keyboards and mice. What HID
 devices have in common is a particular (and very flexible) interface
-for reading and writing information (such as x/y coordinates and
-button states, in case of a mouse, or voltages and status information,
-in case of a UPS).
+for reading and writing information (such as X/Y coordinates and
+button states, in the case of a mouse, or voltages and status information,
+in the case of a UPS).
 
 The NUT "usbhid-ups" driver is a meta-driver that handles all HID UPS
 devices. It consists of a core driver that handles most of the work of
@@ -20,13 +20,14 @@ specific UPS manufacturers (MGE, APC, and Belkin are currently
 supported).  Adding support for a new HID UPS device is easy, because
 it requires only the creation of a new sub-driver.
 
-There are a few USB UPS devices that are not HID devices. These
+There are a few USB UPS devices that are not true HID devices. These
 devices typically implement some version of the manufacturer's serial
 protocol over USB (which is a really dumb idea, by the way). An
-example is the Tripplite USB. Such devices are *not* supported by the
-usbhid-ups driver, and are not covered in this document. If you need to
-add support for such a device, read new-drivers.txt and see the
-tripplite_usb driver for inspiration.
+example is the original Tripplite USB interface (USB idProduct = 0001). Its HID
+descriptor is only 52 bytes long (compared to several hundred bytes for a true
+PDC HID UPS).  Such devices are *not* supported by the usbhid-ups driver, and
+are not covered in this document. If you need to add support for such a device,
+read new-drivers.txt and see the "tripplite_usb" driver for inspiration.
 
 HID Usage Tree
 ~~~~~~~~~~~~~~
@@ -132,7 +133,7 @@ Writing a subdriver
 In preparation for writing a subdriver for a device that is currently
 unsupported, run usbhid-ups with the following command line:
 
- drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX auto
+ drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX -x port=auto -s ups
 
 (substitute your device's 4-digit VendorID instead of "XXXX"). 
 This will produce a bunch of debugging information, including a number 
@@ -140,12 +141,14 @@ of lines starting with "Path:" that describe the device's usage tree.
 This information forms the initial basis for a new subdriver. 
 
 You should save this information to a file, e.g. 
- drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX auto >& /tmp/info
+
+ drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
+   -x port=auto -s ups 2>&1 | tee /tmp/info
 
 You can create an initial "stub" subdriver for your device by using
 script scripts/subdriver/gen-usbhid-subdriver.sh. Note: this only creates
-a "stub" and needs to be futher customized to be useful (see
-CUSTOMIZATION below).
+a "stub" and needs to be further customized to be useful (see
+"Customization" below).
 
 Use the script as follows:
 
@@ -160,14 +163,18 @@ and digits, and use natural capitalization such as "Belkin" (not
 information.
 
 You should put the generated files into the drivers/ subdirectory, and
-update usbhid-ups.c by adding the appropriate #include line and by
-updating the definition of subdriver_list in usbhid-ups.c. You must
-also add the subdriver to USBHID_UPS_SUBDRIVERS in drivers/Makefile.am
-and call "autoreconf" and/or "./configure" from the top level NUT directory.
-You can then recompile usbhid-ups, and start experimenting with the new
+update `usbhid-ups.c` by adding the appropriate `#include` line and by
+updating the definition of `subdriver_list` in `usbhid-ups.c`. You must
+also add the subdriver to USBHID_UPS_SUBDRIVERS in `drivers/Makefile.am`
+and call `autoreconf` and/or `./configure` from the top-level NUT directory.
+You can then recompile `usbhid-ups`, and start experimenting with the new
 subdriver.
 
-CUSTOMIZATION: The initially generated subdriver code is only a stub,
+
+Customization
+~~~~~~~~~~~~~
+
+The initially generated subdriver code is only a stub,
 and will not implement any useful functionality (in particular, it
 will be unable to shut down the UPS). In the beginning, it simply
 attempts to monitor some UPS variables. To make this driver useful,
@@ -175,7 +182,7 @@ you must examine the NUT variables of the form "unmapped.*" in the
 hid_info_t data structure, and map them to actual NUT variables and
 instant commands. There are currently no step-by-step instructions for
 how to do this. Please look at the files to see how the currently implemented
-subdrivers are written.:
+subdrivers are written:
 
 - apc-hid.c/h
 - belkin-hid.c/h
@@ -191,7 +198,7 @@ subdrivers are written.:
 Shutting down the UPS
 ~~~~~~~~~~~~~~~~~~~~~
 
-It is desireable to support shutting down the UPS. Usually (for
+It is desirable to support shutting down the UPS. Usually (for
 devices that follow the HID Power Device Class specification), this
 requires sending the UPS two commands. One for shutting down the UPS
 (with an 'offdelay') and one for restarting it (with an 'ondelay'),

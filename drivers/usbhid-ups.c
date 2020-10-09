@@ -5,6 +5,7 @@
  *   2005      John Stamp <kinsayder@hotmail.com>
  *   2005-2006 Peter Selinger <selinger@users.sourceforge.net>
  *   2007-2009 Arjen de Korte <adkorte-guest@alioth.debian.org>
+ *   2016      Eaton / Arnaud Quette <ArnaudQuette@Eaton.com>
  *
  * This program was sponsored by MGE UPS SYSTEMS, and now Eaton
  *
@@ -27,7 +28,7 @@
  */
 
 #define DRIVER_NAME	"Generic HID driver"
-#define DRIVER_VERSION		"0.41"
+#define DRIVER_VERSION		"0.43"
 
 #include "main.h"
 #include "libhid.h"
@@ -133,40 +134,6 @@ static double interval(void);
 /* global variables */
 HIDDesc_t	*pDesc = NULL;		/* parsed Report Descriptor */
 reportbuf_t	*reportbuf = NULL;	/* buffer for most recent reports */
-
-/* ---------------------------------------------------------------------- */
-/* data for processing boolean values from UPS */
-
-#define	STATUS(x)	((unsigned)1<<x)
-
-typedef enum {
-	ONLINE = 0,	/* on line */
-	DISCHRG,	/* discharging */
-	CHRG,		/* charging */
-	LOWBATT,	/* low battery */
-	OVERLOAD,	/* overload */
-	REPLACEBATT,	/* replace battery */
-	SHUTDOWNIMM,	/* shutdown imminent */
-	TRIM,		/* SmartTrim */
-	BOOST,		/* SmartBoost */
-	BYPASSAUTO,	/* on automatic bypass */
-	BYPASSMAN,	/* on manual/service bypass */
-	OFF,		/* ups is off */
-	CAL,		/* calibration */
-	OVERHEAT,	/* overheat; Belkin, TrippLite */
-	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
-	DEPLETED,	/* battery depleted; Belkin */
-	TIMELIMITEXP,	/* time limit expired; APC */
-	FULLYCHARGED,	/* battery full; CyberPower */
-	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
-	FANFAIL,	/* fan failure; MGE */
-	NOBATTERY,	/* battery missing; MGE */
-	BATTVOLTLO,	/* battery voltage too low; MGE */
-	BATTVOLTHI,	/* battery voltage too high; MGE */
-	CHARGERFAIL,	/* battery charger failure; MGE */
-	VRANGE,		/* voltage out of range */
-	FRANGE		/* frequency out of range */
-} status_bit_t;
 
 
 /* --------------------------------------------------------------- */
@@ -557,6 +524,7 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Check for fallback if not found */
 	if (hidups_item == NULL) {
+		upsdebugx(3, "%s: cmdname '%s' not found; checking for alternatives", __func__, cmdname);
 
 		if (!strcasecmp(cmdname, "load.on")) {
 			return instcmd("load.on.delay", "0");
@@ -602,6 +570,8 @@ int instcmd(const char *cmdname, const char *extradata)
 		return STAT_INSTCMD_INVALID;
 	}
 
+	upsdebugx(3, "%s: using Path '%s'", __func__, hidups_item->hidpath);
+
 	/* Check if the item is an instant command */
 	if (!(hidups_item->hidflags & HU_TYPE_CMD)) {
 		upsdebugx(2, "instcmd: %s is not an instant command\n", cmdname);
@@ -620,7 +590,7 @@ int instcmd(const char *cmdname, const char *extradata)
 
 	/* Actual variable setting */
 	if (HIDSetDataValue(udev, hidups_item->hiddata, value) == 1) {
-		upsdebugx(5, "instcmd: SUCCEED\n");
+		upsdebugx(3, "instcmd: SUCCEED\n");
 		/* Set the status so that SEMI_STATIC vars are polled */
 		data_has_changed = TRUE;
 		return STAT_INSTCMD_HANDLED;
@@ -911,18 +881,24 @@ void upsdrv_initups(void)
 {
 	int ret;
 	char *val;
+
+	upsdebugx(2, "Initializing an USB-connected UPS with library %s " \
+		"(NUT subdriver name='%s' ver='%s')",
+		dstate_getinfo("driver.version.usb"),
+		comm_driver->name, comm_driver->version );
+
 #ifdef SHUT_MODE
 	/*!
 	 * SHUT is a serial protocol, so it needs
 	 * only the device path
 	 */
-	upsdebugx(1, "upsdrv_initups...");
+	upsdebugx(1, "upsdrv_initups (SHUT)...");
 
 	subdriver_matcher = device_path;
 #else
 	char *regex_array[6];
 
-	upsdebugx(1, "upsdrv_initups...");
+	upsdebugx(1, "upsdrv_initups (non-SHUT)...");
 
 	subdriver_matcher = &subdriver_matcher_struct;
 
@@ -1329,6 +1305,8 @@ static bool_t hid_ups_walk(walkmode_t mode)
 			item->hiddata->Offset, item->hiddata->Size, value);
 
 		if (item->hidflags & HU_TYPE_CMD) {
+			upsdebugx(3, "Adding command '%s' using Path '%s'",
+				item->info_type, item->hidpath);
 			dstate_addcmd(item->info_type);
 			continue;
 		}
@@ -1424,6 +1402,12 @@ static void ups_alarm_set(void)
 	if (ups_status & STATUS(BYPASSMAN)) {
 		alarm_set("Manual bypass mode!");
 	}
+}
+
+/* Return the current value of ups_status */
+int ups_status_get(void)
+{
+	return ups_status;
 }
 
 /* Convert the local status information to NUT format and set NUT

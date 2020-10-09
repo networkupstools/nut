@@ -24,7 +24,6 @@
 #include "common.h"
 #include <ltdl.h>
 #include <unistd.h>
-#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,66 +41,56 @@ int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path);
 
-/* FIXME: would be good to get more from /etc/ld.so.conf[.d] */
-char * search_paths[] = {
-	LIBDIR,
-	"/usr"LIBDIR,
-	"/usr/lib64",
-	"/lib64",
-	"/usr/lib",
-	"/lib",
-	"/usr/local/lib",
-	NULL
-};
-
-const char * get_libname(const char* base_libname)
-{
-	DIR *dp;
-	struct dirent *dirp;
-	int index = 0;
-	char *libname_path = NULL;
-	char current_test_path[LARGEBUF];
-
-	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
-	{
-		memset(current_test_path, 0, LARGEBUF);
-
-		if ((dp = opendir(search_paths[index])) == NULL)
-			continue;
-
-		while ((dirp = readdir(dp)) != NULL)
-		{
-			if(!strncmp(dirp->d_name, base_libname, strlen(base_libname))) {
-				snprintf(current_test_path, LARGEBUF, "%s/%s", search_paths[index], dirp->d_name);
-				libname_path = realpath(current_test_path, NULL);
-				if (libname_path != NULL)
-					break;
-			}
-		}
-		closedir(dp);
-	}
-	/* fprintf(stderr,"Looking for lib %s, found %s\n", base_libname, (libname_path!=NULL)?libname_path:"NULL");*/
-	return libname_path;
-}
-
 void nutscan_init(void)
 {
+	char *libname = NULL;
 #ifdef WITH_USB
-	nutscan_avail_usb = nutscan_load_usb_library(get_libname("libusb-0.1.so"));
+	libname = get_libname("libusb-0.1.so");
+	if (!libname) {
+		/* We can also use libusb-compat from newer libusb-1.0 releases */
+		libname = get_libname("libusb.so");
+	}
+	if (libname) {
+		nutscan_avail_usb = nutscan_load_usb_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_SNMP
-	nutscan_avail_snmp = nutscan_load_snmp_library(get_libname("libnetsnmp.so"));
+	libname = get_libname("libnetsnmp.so");
+	if (libname) {
+		nutscan_avail_snmp = nutscan_load_snmp_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_NEON
-	nutscan_avail_xml_http = nutscan_load_neon_library(get_libname("libneon.so"));
+	libname = get_libname("libneon.so");
+	if (!libname) {
+		libname = get_libname("libneon-gnutls.so");
+	}
+	if (libname) {
+		nutscan_avail_xml_http = nutscan_load_neon_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_AVAHI
-	nutscan_avail_avahi = nutscan_load_avahi_library(get_libname("libavahi-client.so"));
+	libname = get_libname("libavahi-client.so");
+	if (libname) {
+		nutscan_avail_avahi = nutscan_load_avahi_library(libname);
+		free(libname);
+	}
 #endif
 #ifdef WITH_FREEIPMI
-	nutscan_avail_ipmi = nutscan_load_ipmi_library(get_libname("libfreeipmi.so"));
+	libname = get_libname("libfreeipmi.so");
+	if (libname) {
+		nutscan_avail_ipmi = nutscan_load_ipmi_library(libname);
+		free(libname);
+	}
 #endif
-	nutscan_avail_nut = nutscan_load_upsclient_library(get_libname("libupsclient.so"));
+	libname = get_libname("libupsclient.so");
+	if (libname) {
+		nutscan_avail_nut = nutscan_load_upsclient_library(libname);
+		free(libname);
+	}
 }
 
 void nutscan_free(void)

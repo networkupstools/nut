@@ -1,0 +1,188 @@
+NUTDRV_SIEMENS_SITOP(8)
+=======================
+
+NAME
+----
+nutdrv_siemens_sitop - driver for the Siemens SITOP UPS500 series UPS
+
+NOTE
+----
+This man page only documents the hardware-specific features of the
+*nutdrv_siemens_sitop* driver.  For information about the core driver, see
+linkman:nutupsdrv[8].
+
+SUPPORTED HARDWARE
+------------------
+*nutdrv_siemens_sitop* supports Siemens UPS models from the SITOP UPS500 series.
+Some models have a serial port, others have a USB port.
+The models with USB port actually contain a serial-over-USB chip,
+so as far as this driver is concerned, all models are serial models.
+This driver should work with all models in the SITOP UPS500 series,
+as long as your kernel has support for the serial port device
+(see section *USB driver* below).
+
+NOTE: This driver has only been tested with the SITOP UPS500S-2.5
+with USB port (Siemens product number 6EP1933-2EC41).
+
+DEVICE SETTINGS
+---------------
+The UPS is configured via DIP-switches.
+For correct functioning in combination with NUT, set the DIP-switches
+to the following:
+
+*switch 1-4*::
+Choose whatever suits your situation. Any combination will work with NUT.
+
+*switch 5* (=> / t)::
+Set to OFF (t). This ensures that the UPS will not cut power unless NUT
+tells it to do so (or unless the batteries are exhausted).
+
+*switch 6-10* (delay)::
+Set to OFF (minimum delay). Setting a higher delay will actually also work,
+but any command from NUT will be delayed as well before being executed
+by the UPS. With the minimum setting, it will already take 5 seconds
+before a command from NUT is executed.
+
+*switch 11* (INTERR.)::
+Set to ON (interrupt the output after the timer expires). This ensures that
+the UPS briefly interrupts the output power in response to the shutdown.return
+command. See the section *Instant Commands* below.
+
+*switch 12* (ON/OFF)::
+set to ON (enable the UPS functionality). Without this, the UPS will never
+supply power from its batteries.
+
+USB driver
+----------
+The USB-versions of the UPS contain an FTDI USB-to-serial converter chip.
+It is programmed with a non-standard product ID (for example _0403:e0e3_),
+but can still be used with the normal ftdi_sio driver.
+
+NOTE: The following hints may be specific to GNU/Linux.
+
+Use *lsusb* to figure out which product ID is used in your model, and
+replace all occurrences of _e0e3_ in the following examples with the actual
+Product ID.
+
+....
+modprobe ftdi_sio
+echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id
+....
+
+If your system uses *udev*, this can be automated via a udev rule:
+
+----
+ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3", \
+  RUN+="/sbin/modprobe ftdi_sio", \
+  RUN+="/bin/sh -c 'echo 0403 e0e3 > /sys/bus/usb-serial/drivers/ftdi_sio/new_id'"
+----
+
+You can use the following udev rule to obtain a predictable device name,
+for example _/dev/ttyUPS_:
+----
+SUBSYSTEM=="tty" ATTRS{idVendor}=="0403", ATTRS{idProduct}=="e0e3" SYMLINK+="ttyUPS"
+----
+
+POLLING
+-------
+The UPS does not have a special 'get status' command. Instead, it continuously
+sends out status update messages (tens of messages per second).
+Every *pollinterval*, these messages are read from the serial port buffer.
+In order to react quickly on status changes from the UPS, and to prevent the serial buffer
+from overflowing, *pollinterval* should be set to a relatively low value. The recommended
+value is 1 (second).
+
+EXTRA ARGUMENTS
+---------------
+This driver supports the following optional settings:
+
+*max_polls_without_data*='num'::
+The serial port is polled periodically for new data (see *Polling*).
+If there is no valid new data after 'num' polls, it is assumed that communication
+with the UPS is lost.
+The default value is 2. Lower values may cause spurious 'Data stale' messages,
+especially at startup.
+
+INSTANT COMMANDS
+----------------
+
+*shutdown.return*::
+The behavior of this command depends on the line state:
+
+* *on line*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
+the UPS will shut off its output. After another 5 seconds, the output is
+activated again.
+* *on battery*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
+the UPS will shut off its output. The output will stay off, until the
+line voltage has returned.
+
+*shutdown.stayoff*::
+The behavior of this command depends on the line state:
+
+* *on line*: after 5 seconds (or longer, if DIP switches 6-10 are not OFF),
+the UPS will shut off its output. The output stays off, until the line voltage
+has been removed for at least 1 second, and has been re-applied.
+* *on battery*: this command behaves the same as *shutdown.return*.
+
+INSTALLATION
+------------
+Make sure that your operating system has created a serial device for the UPS.
+See the section *USB driver* for more information.
+
+Next, make sure that NUT has access rights to this device file.
+For example, by creating a udev rule that grants permission to the NUT user,
+or by adding the NUT user to a user group that can access serial devices
+(e.g. the *dialout* group on Debian-based systems).
+
+DIAGNOSTICS
+-----------
+You can verify the correct functioning of the hardware, by monitoring the
+serial port with a terminal program, for example picocom:
+
+....
+picocom -b 9600 -d 8 -p n /dev/ttyUPS
+....
+
+NUT must not be running when you do this.
+You should now see a continuous stream of 5-character texts coming in,
+for example:
+
+....
+BUFRD
+BA>85
+DC_OK
+....
+To exit picocom, use Ctrl-A Ctrl-X.
+
+KNOWN ISSUES AND BUGS
+---------------------
+*Untested models*::
+As mentioned under *Supported hardware*, this driver has not been tested
+with all models in the SITOP UPS500 series.
+
+*Data stale messages*::
+The firmware in these UPSes is quite buggy. After sending data to the UPS,
+it sometimes stops sending status updates. This driver tries to prevent this
+(e.g. by sending commands twice, and by sending additional LF characters after
+each command).
+Once the UPS is in this state, communication can only be restored by rebooting
+the UPS, or by unplugging and reconnecting the USB cable.
+During normal operation, no commands are sent to the UPS at all
+(only at shutdown), so this issue is expected to have little impact on
+usability.
+It is not sure if the serial models are affected by this issue as well.
+
+AUTHORS
+-------
+Matthijs H. ten Berge
+
+SEE ALSO
+--------
+
+The core driver:
+~~~~~~~~~~~~~~~~
+linkman:nutupsdrv[8]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

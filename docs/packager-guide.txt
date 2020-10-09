@@ -18,7 +18,7 @@ and as a foundation block to build upon.
 *sandbox*
 that have been done to help those improving, and give advice on what's
 the best way to package NUT for the remaining "not yet packaged"
-platform (Sun, Aix, Mac, ...). The ultimate aim is to have NUT
+platform (Sun, AIX, Mac, ...). The ultimate aim is to have NUT
 well packaged (all NUT features available) on all supported
 platforms.
 ///////////////////////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ support, the premises of libraries, ...) that the simple
 
 This fact has reached a high level since NUT 1.4. Actually,
 doing this would result in either being forced to install hosts
-of unneeded dependencies (net-snmp, gd, ... as seen on SuSE),
+of unneeded dependencies (net-snmp, gd, ... as seen on SUSE),
 to have a partially broken package [1] or not being able to
 use all NUT features [2].
 
@@ -62,7 +62,7 @@ Let's now have an overview on how NUT is currently packaged:
 		nut
 		nut-cgi
 
-	3) SuSE / Novell
+	3) SUSE / Novell
 		nut
 
 	4) RedHat
@@ -106,7 +106,7 @@ Packagers involved
 The following packagers are working on this subject:
 
 - Debian (and derivatives): Arnaud Quette <aquette@debian.org>
-- SuSE/Novell:	Stanislav Brabec <sbrabec@suse.cz>
+- SUSE/Novell:	Stanislav Brabec <sbrabec@suse.cz>
 
 NOTE: the people below should be contacted to (re)launch discussions!
  
@@ -120,8 +120,7 @@ The following packagers should be interested in working on this subject:
 - OpenBSD: <>
 - PLD: Andrzej Zawadzki <zawadaa@wp.pl>
 - E-Smith: Charlie Brady <charlieb-nut-upsdev@e-smith.com>
-- openSolaris: <> 
-
+- Solaris, OpenSolaris, OpenIndiana and related illumos distributions: Jim Klimov <jimklimov@gmail.com>
 - Windows: check with WinNUT author?!
 - MacOS: <> => Charles Lepple? <>
 - HP-UX: <>
@@ -138,27 +137,27 @@ Possible use cases
 
 TO BE COMPLETED...
 
-Optimised packaging proposal
+Optimized packaging proposal
 ----------------------------
 
 NOTE: The below proposed packages split is subject to discussion.
 
 The aim of this is to:
 
-- rationalise split according to the above use cases,
-- share ressources (descriptions, i18n, ...)
+- rationalize split according to the above use cases,
+- share resources (descriptions, i18n, ...)
 - find the best compromise between available features and dependencies,
 - standardize nut packages name,
 - create the foundation for the upcoming and underway improvements,
-- improve nut integration
+- improve nut integration,
 - ease and improve user experience.
 
 
 This standard was created by:
 
-- capitalizing the experience of existing packages,
-- using and improving the use of all nut features
-- considering upcoming nut changes and improvements
+- capitalizing on the experience of existing packages,
+- using and improving the use of all nut features,
+- considering upcoming nut changes and improvements,
 - working closely with packagers.
 
 Overview of the package tree
@@ -188,10 +187,10 @@ the packaging system. Each package's description is composed of a
 paragraph common to all NUT packages, and a part that is specific to the
 package. The common part (further referenced by *COMMON DESC*) is:
 ________________________________________________________________________
- Network UPS Tools (NUT) is a client/server monitoring system that allows computers to share
- uninterruptible power supply (UPS) and power distribution unit (PDU)
- hardware. Clients access the hardware through the server, and are notified
- whenever the power status changes.
+ Network UPS Tools (NUT) is a client/server monitoring system that allows
+ computers to share uninterruptible power supply (UPS) and power distribution
+ unit (PDU) hardware. Clients access the hardware through the server, and are
+ notified whenever the power status changes.
 ________________________________________________________________________
 - The *Files* field lists the content of the package.
 - The mentioned *Size* is a rough estimation of packaged and installed
@@ -337,7 +336,7 @@ nut-server
 
 Note: "nut" can be a meta package
 
-This kind of tree obviously need modification on the conf/make
+This kind of tree obviously needs modification on the conf/make
 files of NUT to allow build/install in a separate way.
 
 

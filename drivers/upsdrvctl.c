@@ -42,6 +42,9 @@ static ups_t	*upstable = NULL;
 
 static int	maxsdorder = 0, testmode = 0, exec_error = 0;
 
+	/* Should we wait for driver (1) or "parallelize" drivers start (0) */
+static int	waitfordrivers = 1;
+
 	/* timer - keeps us from getting stuck if a driver hangs */
 static int	maxstartdelay = 45;
 
@@ -76,6 +79,9 @@ void do_upsconf_args(char *upsname, char *var, char *val)
 
 		if (!strcmp(var, "retrydelay"))
 			retrydelay = atoi(val);
+
+		if (!strcmp(var, "nowait"))
+			waitfordrivers = 0;
 
 		/* ignore anything else - it's probably for main */
 
@@ -144,13 +150,14 @@ static void stop_driver(const ups_t *ups)
 	ret = stat(pidfn, &fs);
 
 	if ((ret != 0) && (ups->port != NULL)) {
+		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
 	}
 
 	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
 		exec_error++;
 		return;
 	}
@@ -203,14 +210,21 @@ static void forkexec(char *const argv[], const ups_t *ups)
 		int	wstat;
 		struct sigaction	sa;
 
+		/* Handle "parallel" drivers startup */
+		if (waitfordrivers == 0) {
+			upsdebugx(2, "'nowait' set, continuing...");
+			return;
+		}
+
 		sigemptyset(&sa.sa_mask);
 		sa.sa_flags = 0;
 		sa.sa_handler = waitpid_timeout;
 		sigaction(SIGALRM, &sa, NULL);
 
+		/* Use the local maxstartdelay, if available */
 		if (ups->maxstartdelay != -1)
 			alarm(ups->maxstartdelay);
-		else
+		else /* Otherwise, use the global (or default) value */
 			alarm(maxstartdelay);
 
 		ret = waitpid(pid, &wstat, 0);

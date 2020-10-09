@@ -161,6 +161,9 @@
 /* advorder method regex format*/
 #define APC_ADVFMT	"^([0-4]{1,5}|[Nn][Oo])$"
 
+/* cshdelay format */
+#define APC_CSHDFMT	"^([0-9]\\.?|[0-9]?\\.[0-9])$"
+
 /* error logging/debug related macros */
 
 #define fatx(fmt, ...) fatalx(EXIT_FAILURE, "%s: " fmt, __func__ , ## __VA_ARGS__)

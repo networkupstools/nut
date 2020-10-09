@@ -108,8 +108,9 @@ link:http://packages.debian.org/nut[Debian],
 link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
 Mandriva,
 link:https://apps.fedoraproject.org/packages/nut[Red Hat / Fedora],
-link:http://software.opensuse.org/package/nut[Novell Suse / openSUSE],
+link:http://software.opensuse.org/package/nut[Novell SUSE / openSUSE],
 link:https://github.com/openwrt/packages/tree/master/net/nut[OpenWrt],
+link:http://sotirov-bg.net/slackpack/search.cgi?q=nut[Slackware],
 link:http://packages.ubuntu.com/nut[Ubuntu],
 link:https://github.com/voidlinux/xbps-packages/blob/master/srcpkgs/network-ups-tools/template[Void Linux].
 

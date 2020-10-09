@@ -13,15 +13,12 @@ This man page only documents the hardware-specific features of the
 usbhid-ups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
-This driver, formerly called 'newhidups', replaces the legacy 'hidups' driver,
-which only supported Linux systems.
-
 SUPPORTED HARDWARE
 ------------------
 
-*usbhid-ups* brings USB/HID UPS monitoring to NUT on all platform supporting
-USB through libusb. It should detect any UPS that uses the HID power device
-class, but the amount of data will vary depending on the manufacturer and
+*usbhid-ups* brings USB/HID UPS monitoring to NUT on all platforms supporting
+USB through libusb. It should detect any UPS that uses the HID Power Device
+Class, but the amount of data will vary depending on the manufacturer and
 model.
 
 At the present time, usbhid-ups supports:
@@ -59,30 +56,37 @@ sent (via the *-k* switch).
 +
 The default value is 20 (in seconds). Usually this *must be lower* than
 'ondelay', but the driver will *not* warn you upon startup if it isn't.
++
+Note that many Cyber Power Systems (CPS) models tend to divide this delay by
+60 and round down, so the minimum advisable value is 60 to avoid powering off
+immediately after NUT sends the shutdown command to the UPS.
  
 *ondelay*='num'::
 Set the timer for the UPS to switch on in case the power returns after the
-kill power command had been sent but before the actual switch off. This
+kill power command had been sent, but before the actual switch off. This
 ensures the machines connected to the UPS are, in all cases, rebooted after
 a power failure.
 +
 The default value is 30 (in seconds). Usually this *must be greater*
 than offdelay, but the driver will *not* warn you upon startup if it
-isn't. Some UPS'es will restart no matter what, even if the power is
-(still) out at the moment this timer elapses. In that case, you could try
-if setting 'ondelay = -1' in *ups.conf* helps.
+isn't. Some UPSes will restart no matter what, even if the power is
+(still) out at the moment this timer elapses. In that case, you could see
+whether setting `ondelay = -1` in *ups.conf* helps.
++
+Note that many CPS models tend to divide this delay by 60 and round down, so
+the minimum advisable value is 120 to allow a short delay between when the UPS
+shuts down, and when the power returns.
 
 *pollfreq*='num'::
-Set polling frequency, in seconds, to reduce the USB data flow.
-Between two polling requests, the driver will wait for interrupts (aka UPS
-notifications), which are data changes returned by the UPS by itself.
-This mechanism allow to avoid or reduce staleness message, due to the UPS
-being temporarily overloaded with too much polling requests.
-The default value is 30 (in seconds).
+Set polling frequency for full updates, in seconds. Compared to the quick
+updates performed every "pollinterval" (the latter option is described in
+linkman:ups.conf[5]), the "pollfreq" interval is for polling the less-critical
+variables.  The default value is 30 (in seconds).
 
 *pollonly*::
-If this flag is set, the driver will ignore interrupts it receives from the
-UPS (not recommended, but needed if these reports are broken on your UPS).
+If this flag is set, the driver will not use Interrupt In transfers during the
+shorter "pollinterval" cycles (not recommended, but needed if these reports
+are broken on your UPS).
 
 *vendor*='regex'::
 *product*='regex'::
@@ -91,7 +95,7 @@ UPS (not recommended, but needed if these reports are broken on your UPS).
 *productid*='regex'::
 
 Select a specific UPS, in case there is more than one connected via
-USB Each option specifies an extended regular expression (see
+USB. Each option specifies an extended regular expression (see
 regex(7)) that must match the UPS's entire vendor/product/serial
 string (minus any surrounding whitespace), or the whole 4-digit
 hexadecimal code for vendorid and productid. Try *-DD* for
@@ -105,7 +109,7 @@ Examples:
 
 *bus*='regex'::
 
-Select a UPS on a specific USB bus or group of busses. The argument is
+Select a UPS on a specific USB bus or group of buses. The argument is
 a regular expression that must match the bus name where the UPS is
 connected (e.g. bus="002", bus="00[2-3]"). 
 
@@ -142,11 +146,12 @@ and libhid.usermap, generally in /etc/hotplug/usb/), or the udev file
 permission settings problem. For more information, refer to the README
 file in nut/scripts/hotplug or nut/scripts/udev.
 
-On Linux with MGE equipment, you will need at least a 2.4.25 or 2.6.2 kernel as
-well as libusb-0.1.8 or later to disable hiddev support and avoid conflict.
-
 IMPLEMENTATION
 --------------
+
+Selecting a specific UPS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 The driver ignores the "port" value in *ups.conf*. Unlike previous
 versions of this driver, it is now possible to control multiple UPS
 units simultaneously with this driver, provided they can be distinguished
@@ -162,6 +167,23 @@ by setting some combination of the "vendor", "product", "serial",
 		port = auto
 		vendorid = 09ae
 
+USB Polling and Interrupt Transfers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The *usbhid-ups* driver has two polling intervals. The "pollinterval"
+configuration option controls what can be considered the "inner loop", where
+the driver polls and waits briefly for "interrupt" reports. The "pollfreq"
+option is for less frequent updates of a larger set of values, and as such, we
+recommend setting that interval to several times the value of "pollinterval".
+
+Many UPSes will respond to a USB Interrupt In transfer with HID reports
+corresponding to values which have changed. This saves the driver from having
+to poll each value individually with USB Control transfers. Since the `OB` and
+`LB` status flags are important for a clean shutdown, the driver also
+explicitly polls the HID paths corresponding to those status bits during the
+inner "pollinterval" time period. The "pollonly" option can be used to skip
+the Interrupt In transfers if they are known not to work.
+
 KNOWN ISSUES AND BUGS
 ---------------------
 
@@ -176,7 +198,10 @@ The result is that your system log will have lots of messages like:
         ret -110
 
 In this case, simply modify the general parameter "pollinterval" to a higher
-value (like 10 for 10 seconds). This should solve the issue.
+value (such as 10 seconds). This should solve the issue.
+
+Note that if you increase "pollinterval" beyond 10 or 15 seconds, you might
+also want to increase "pollfreq" by the same factor.
 
 Got EPERM: Operation not permitted upon driver startup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -201,6 +226,12 @@ bring your systems down and then cycle the power to restart them again.
 If you do the same without mains present, it should do the same, but in
 this case, the outputs shall remain off until mains power is applied
 again.
+
+HISTORY
+-------
+
+This driver, formerly called 'newhidups', replaces the legacy 'hidups' driver,
+which only supported Linux systems.
 
 AUTHORS
 -------

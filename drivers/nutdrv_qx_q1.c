@@ -20,7 +20,7 @@
  * NOTE:
  * This subdriver implements the same protocol as the one used by the 'megatec' subdriver minus the vendor (I) and ratings (F) queries.
  * In the claim function:
- * - it doesn't even try to get 'vendor' informations (I)
+ * - it doesn't even try to get 'vendor' information (I)
  * - it checks only status (Q1), through 'input.voltage' variable
  * Therefore it should be able to work even if the UPS doesn't support vendor/ratings *and* the user doesn't use the 'novendor'/'norating' flags, as long as:
  * - the UPS replies a Q1-compliant answer (i.e. not necessary filled with all of the Q1-required data, but at least of the right length and with not available data filled with some replacement character)

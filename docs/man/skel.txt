@@ -15,7 +15,7 @@ linkman:nutupsdrv[8].
 The following lines are comments.
 
 When copying this man page for your new driver, be sure to replace all
-occurrances of "skel" and "SKEL" by your actual driver name.
+occurrences of "skel" and "SKEL" by your actual driver name.
 
 If you have AsciiDoc installed, you can test the formatting of your man page by
 running:
