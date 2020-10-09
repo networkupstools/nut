@@ -272,6 +272,12 @@ Note: if you jumped in with both feet and didn't follow the INSTALL.nut
 document, you probably started upsd by itself.  You have to run
 'upsdrvctl start' to start the drivers after configuring ups.conf.
 
+On operating systems with a supported service management framework,
+you might wrap your NUT drivers into individual services instances
+with 'upsdrvsvcctl resync' and then manage those with commands like
+'upsdrvsvcctl stop' and 'upsdrvsvcctl start' (note that on other
+systems this tool may be not pre-installed via packaging).
+
 == Why don't the pathnames in your documentation match the package I installed?
 
 Each distribution has conventions for where specific file types should be

@@ -45,6 +45,9 @@ typedef struct nut_ctype_s {
 	char	*loginups;
 	char	*password;
 	char	*username;
+	/* per client status info for commands and settings
+	 * (disabled by default) */
+	int	tracking;
 
 #ifdef	WITH_OPENSSL
 	SSL	*ssl;

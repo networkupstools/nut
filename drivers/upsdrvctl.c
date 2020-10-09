@@ -150,13 +150,14 @@ static void stop_driver(const ups_t *ups)
 	ret = stat(pidfn, &fs);
 
 	if ((ret != 0) && (ups->port != NULL)) {
+		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
 		snprintf(pidfn, sizeof(pidfn), "%s/%s-%s.pid", altpidpath(),
 			ups->driver, xbasename(ups->port));
 		ret = stat(pidfn, &fs);
 	}
 
 	if (ret != 0) {
-		upslog_with_errno(LOG_ERR, "Can't open %s", pidfn);
+		upslog_with_errno(LOG_ERR, "Can't open %s either", pidfn);
 		exec_error++;
 		return;
 	}

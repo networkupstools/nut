@@ -1,0 +1,11 @@
+This directory contains the shared NUT support files for Linux systemd (the
+System and Service Manager) and Solaris SMF (Service Management Framework).
+It includes the nut-driver-enumerator.sh (service and implementation method)
+and upsdrvsvcctl (tool) to manage NUT drivers as service instances.
+
+These files are automatically installed into SBINDIR/upsdrvsvcctl and
+LIBEXECDIR/nut-driver-enumerator.sh, upon detection (at configure time)
+of a systemd or SMF enabled system, with Makefiles of the ../systemd/ and
+../Solaris/ source directories respectively.
+
+Contributed 2016-2018 by Jim Klimov <EvgenyKlimov@eaton.com>

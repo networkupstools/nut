@@ -24,6 +24,8 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "upsclient.h"
 #include "upsmon.h"
@@ -655,6 +657,19 @@ static int is_ups_critical(utype_t *ups)
 
 	/* must be OB+LB now */
 
+	/* if UPS is calibrating, don't declare it critical */
+	/* FIXME: Consider UPSes where we can know if they have other power
+	 * circuits (bypass, etc.) and whether those do currently provide
+	 * wall power to the host - and that we do not have both calibration
+	 * and a real outage, when we still should shut down right now.
+	 */
+	if (flag_isset(ups->status, ST_CAL)) {
+		upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OB+LB now, but "
+			"it is also calibrating - not declaring a critical state",
+			  __func__, ups->upsname);
+		return 0;
+	}
+
 	/* if we're a master, declare it critical so we set FSD on it */
 	if (flag_isset(ups->status, ST_MASTER))
 		return 1;
@@ -739,6 +754,21 @@ static void upsreplbatt(utype_t *ups)
 		do_notify(ups, NOTIFY_REPLBATT);
 		ups->lastrbwarn = now;
 	}
+}
+
+static void ups_cal(utype_t *ups)
+{
+	if (flag_isset(ups->status, ST_CAL)) { 	/* no change */
+		upsdebugx(4, "%s: %s (no change)", __func__, ups->sys);
+		return;
+	}
+
+	upsdebugx(3, "%s: %s (first time)", __func__, ups->sys);
+
+	/* must have changed from !CAL to CAL, so notify */
+
+	do_notify(ups, NOTIFY_CAL);
+	setflag(&ups->status, ST_CAL);
 }
 
 static void ups_fsd(utype_t *ups)
@@ -1370,9 +1400,10 @@ static void setup_signals(void)
 /* remember the last time the ups was not critical (OB + LB) */
 static void update_crittimer(utype_t *ups)
 {
-	/* if !OB or !LB, then it's not critical, so log the time */
-	if ((!flag_isset(ups->status, ST_ONBATT)) || 
-		(!flag_isset(ups->status, ST_LOWBATT))) {
+	/* if !OB, !LB, or CAL, then it's not critical, so log the time */
+	if ((!flag_isset(ups->status, ST_ONBATT))  || 
+		(!flag_isset(ups->status, ST_LOWBATT)) ||
+		(flag_isset(ups->status, ST_CAL))) {
 
 		time(&ups->lastnoncrit);
 		return;
@@ -1432,6 +1463,9 @@ static int try_connect(utype_t *ups)
 	/* we're definitely connected now */
 	setflag(&ups->status, ST_CONNECTED);
 
+	/* prevent connection leaking to NOTIFYCMD */
+	fcntl(upscli_fd(&ups->conn), F_SETFD, FD_CLOEXEC);
+
 	/* now try to authenticate to upsd */
 
 	ret = do_upsd_auth(ups);
@@ -1487,6 +1521,8 @@ static void parse_status(utype_t *ups, char *status)
 			ups_low_batt(ups);
 		if (!strcasecmp(statword, "RB"))
 			upsreplbatt(ups);
+		if (!strcasecmp(statword, "CAL"))
+			ups_cal(ups);
 
 		/* do it last to override any possible OL */
 		if (!strcasecmp(statword, "FSD"))
@@ -1714,6 +1750,9 @@ static void start_pipe(void)
 	}
 
 	close(pipefd[0]);
+
+	/* prevent pipe leaking to NOTIFYCMD */
+	fcntl(pipefd[1], F_SETFD, FD_CLOEXEC);
 }
 
 static void delete_ups(utype_t *target)
@@ -1814,7 +1853,7 @@ static void reload_conf(void)
 		upslogx(LOG_CRIT, "Fatal error: total power value (%d) less "
 			"than MINSUPPLIES (%d)", totalpv, minsupplies);
 
-		fatalx(EXIT_FAILURE, "Impossible power configuation, unable to continue");
+		fatalx(EXIT_FAILURE, "Impossible power configuration, unable to continue");
 	}
 
 	/* finally clear the flag */

@@ -157,8 +157,8 @@ calling sendmail, or opening a subspace channel to V'ger.
 Establishing timers
 ^^^^^^^^^^^^^^^^^^^
 
-Let's say that you want to receive a page when any UPS has been running on
-battery for 30 seconds.  Create a handler that starts a 30 second timer
+Let's say that you want to receive a notification when any UPS has been running
+on battery for 30 seconds.  Create a handler that starts a 30 second timer
 for an ONBATT condition.
 
 	AT ONBATT * START-TIMER onbattwarn 30
@@ -171,6 +171,10 @@ time is up.  In essence, if it goes back on line, we need to cancel it.
 So, let's tell upssched that.
 
 	AT ONLINE * CANCEL-TIMER onbattwarn
+
+NOTE: Timers are pure in-memory mechanisms, specific to upssched.  Conversely
+to other mechanisms found in NUT, such as upsmon->POWERDOWNFLAG, there is no
+file created on the filesystem.
 
 Executing commands immediately
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -208,10 +212,14 @@ shell script writing to deal with that input.
 
 	case $1 in
 		onbattwarn)
+			# Send a notification mail
 			echo "The UPS has been on battery for awhile" \
 			| mail -s"UPS monitor" bofh@pager.example.com
+			# Create a flag-file on the filesystem, for your own processing
+			/usr/bin/touch /some/path/ups-on-battery
 			;;
 		ups-back-on-power)
+			# Delete the flag-file on the filesystem
 			/bin/rm -f /some/path/ups-on-battery
 			;;
 		*)

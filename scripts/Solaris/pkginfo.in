@@ -1,6 +1,6 @@
 PKG="NUT"
 NAME="Network UPS Tools"
-ARCH="@OS_NAME@"
+ARCH="@target_cpu@"
 VERSION="@PACKAGE_VERSION@"
 CATEGORY="application"
 VENDOR="http://www.networkupstools.org"

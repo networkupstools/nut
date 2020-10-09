@@ -1,0 +1,197 @@
+UPSDRVSVCCTL(8) 
+===============
+
+NAME
+----
+
+upsdrvsvcctl - UPS driver service instance controller
+
+SYNOPSIS
+--------
+*upsdrvsvcctl* -h
+
+*upsdrvsvcctl* ['OPTIONS'] {start | stop } ['ups']
+
+DESCRIPTION
+-----------
+
+*upsdrvsvcctl* provides a uniform interface for controlling your UPS
+drivers wrapped into service instances on platforms which support that
+(currently this covers Linux distributions with systemd and systems
+derived from Solaris 10 codebase, including proprietary Sun/Oracle
+Solaris and numerous open-source illumos distributions with SMF).
+It may be not installed in packaging for other operating systems.
+
+When used properly, upsdrvsvcctl lets you maintain identical startup
+scripts across multiple systems with different UPS configurations.
+
+The goal of this solution is to allow the services of *upsd* data
+server to start up even if some of the power devices are currently
+not accessible, and for NUT drivers to be automatically restarted
+by the system in case of problems (driver bug, startup failure).
+It also allows for faster startup of systems which monitor several
+devices, by letting each driver to start in parallel with others,
+and not with a sequential loop like was done previously.
+
+Independent service instances for each NUT driver also allow one
+to configure further dependencies, such as that networking must be
+available for SNMP and similar drivers (but is not needed for
+local-medium drivers such as serial or USB).
+
+The old monolithic "all or nothing" solution requiring that all
+drivers must be running, which sufficed for deployments with a few
+UPSes, did not really work well for monitoring larger deployments.
+It was also not easy to strike a pre-packaged balance between early
+UPS protection for USB/serial home setups vs. waiting for network
+on larger ones.
+
+*upsdrvsvcctl* is a script which mimics the operation of *upsdrvctl*
+program (where possible) to provide similar end-user experience when
+manipulating drivers wrapped into service instances rather than as
+directly executed daemons. It relies on *nut-driver-enumerator.sh*
+for a large part of actual operations.
+
+You should use upsdrvsvcctl instead of direct calls to the drivers
+and daemon-based management with *upsdrvctl* whenever possible (that
+is, for "production" use on compatible OSes). Otherwise (testing,
+other OSes) the *upsdrvctl* is a recommended option.
+
+OPTIONS
+-------
+
+*-h*::
+Display the help text.
+
+*-t*::
+Enable testing mode. Testing mode makes upsdrvsvcctl display the actions
+it would execute without actually doing them.
+
+
+
+OPTIONS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
+---------------------------------------------------------------
+
+Options like '-r', '-u' or '-D' could be handled by properties of the
+service instances themselves, with this script helping to configure
+them (assuming proper privileges of the user who called it). This is
+not a "production" use case, though, to change such options on a
+configured system -- so for experiments and troubleshooting, it may
+be better to stop the service instance and play with *upsdrvctl*
+directly.
+
+*-r* 'directory'::
+If starting a driver, this value will direct it to *chroot*(2) into
+'directory'.  This can be useful when securing systems.
+
+This may be set in the ups.conf with "chroot" in the global section.
+
+*-u* 'username'::
+If starting a driver, this value will direct it to *setuid*(2) to
+the user id associated with 'username'.
+
+If the driver is started as root without specifying this value, it will
+use the username that was compiled into the binary.  This defaults to
+"nobody", and is far from ideal.
+
+This may be set in ups.conf with "user" in the global section.
+
+*-D*::
+Raise the driver debug level.  Use this multiple times for additional
+details.
+
+COMMANDS
+--------
+
+*upsdrvsvcctl* supports three of the commands processed by *upsdrvctl* --
+start, stop and shutdown. They take an optional argument which is a UPS
+name from linkman:ups.conf[5]. Without that argument, they operate on
+every UPS that is currently configured.
+
+Note: shutdown is currently supported by stopping the driver service
+instances to release the potentially held ports etc., calling the
+*upsdrvctl* directly for issuing the shutdown command, and restarting
+the driver service instances to reconnect when the device comes back
+online.
+
+*start*::
+Start the UPS driver(s). In case of failure, further attempts may be executed
+by using the 'maxretry' and 'retrydelay' options - see linkman:ups.conf[5].
+
+*stop*::
+Stop the UPS driver(s).
+
+*upsdrvsvcctl* also supports further operations for troubleshooting the
+mapping of NUT driver section names to the service instance names (which
+may differ due to limitations of various systems).
+
+*list*::
+list the currently active mapping of service instances to device sections
+
+*resync*::
+update the mapping of service instances for NUT drivers to device section
+names used in 'ups.conf' (register new instances, tear down obsoleted ones).
+
+
+COMMANDS OF UPSDRVCTL NOT (CURRENTLY) APPLICABLE TO UPSDRVSVCCTL
+----------------------------------------------------------------
+
+*shutdown*::
+Command the UPS driver(s) to run their shutdown sequence.  Drivers are
+stopped according to their sdorder value - see linkman:ups.conf[5].
+
+WARNING: this will probably power off your computers, so don't
+play around with this option.  Only use it when your systems are prepared
+to lose power.
+
+NOTE: refer to linkman:ups.conf[5] for using the *nowait* parameter.
+
+ENVIRONMENT VARIABLES
+---------------------
+
+*NUT_CONFPATH* is the path name of the directory that contains
+`upsd.conf` and other configuration files.  If this variable is not set,
+*upsdrvsvcctl* (or rather *nut-driver-enumerator.sh*) would use a built-in
+default, which is often `/usr/local/ups/etc`.
+
+DIAGNOSTICS
+-----------
+
+upsdrvsvcctl will return a nonzero exit code if it encounters an error
+while performing the desired operation.  This will also happen if a
+driver takes longer than the 'maxstartdelay' period to enter the
+background.
+
+Any messages issued by the *upsdrvctl* program used to start the NUT
+drivers as part of the service instances' implementations, or by the
+drivers themselves, will be logged by the service management framework
+facilities and will not appear in your interactive terminal used to
+manage the driver.
+
+Use `upsdrvsvcctl list` or `upsdrvsvcctl list NUT-device` to find out
+the service instance name for the NUT driver (section name) you are
+interested in. Then look up the service logs (where the outputs of the
+service implementation program as well as the framework messages about
+this service are stored), as suggested below:
+
+*Linux systemd*::
+Messages will normally be kept in the service journal, so:
+
+	journalctl -lu nut-driver@instance-name
+
+Note that your local system configuration may be impacted by such
+nuances as passing the journal data to a standard syslog server,
+and/or by having a small cache for locally stored journal messages
+(so older entries would disappear). There may also be or not be a
+copy of the journals stored in the filesystem.
+
+*Solaris SMF*::
+Look for `/var/svc/log/system-power-nut-driver:instance-name.log` file.
+
+SEE ALSO
+--------
+linkman:upsdrvctl[8], linkman:nutupsdrv[8], linkman:upsd[8],
+linkman:nut-driver-enumerator[8], linkman:ups.conf[5]
+
+Internet resources:
+~~~~~~~~~~~~~~~~~~~
+The NUT (Network UPS Tools) home page: http://www.networkupstools.org/

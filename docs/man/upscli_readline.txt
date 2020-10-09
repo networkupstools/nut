@@ -4,7 +4,7 @@ UPSCLI_READLINE(3)
 NAME
 ----
 
-upscli_readline - read a single response from a UPS
+upscli_readline, upscli_readline_timeout - read a single response from a UPS
 
 SYNOPSIS
 --------
@@ -12,23 +12,28 @@ SYNOPSIS
  #include <upsclient.h>
 
  int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen);
+ int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout);
 
 DESCRIPTION
 -----------
-The *upscli_readline()* function takes the pointer 'ups' to a
-`UPSCONN_t` state structure, receives a single line from the server, and
-copies up to 'buflen' bytes of the response into the buffer
-'buf'.
+The *upscli_readline()* and *upscli_readline_timeout()* functions take the
+pointer 'ups' to a `UPSCONN_t` state structure, receive a single line from the
+server, and copy up to 'buflen' bytes of the response into the buffer 'buf'.
 
 Some parsing of the string occurs during reception.  In particular,
 ERR messages from linkman:upsd[8] are detected and will cause this
 function to return -1.
 
+The difference between the two functions is that *upscli_readline_timeout()*
+lets the caller decide the amount of time ('timeout' seconds) after which it
+should give up and return, whereas *upscli_readline()* does not offer this
+freedom, and uses NUT default network timeout (5 seconds).
+
 RETURN VALUE
 ------------
 
-The *upscli_readline()* function returns 0 on success, or -1 if an
-error occurs.
+The *upscli_readline()* and *upscli_readline_timeout()* functions return 0 on
+success, or -1 if an error occurs.
 
 SEE ALSO
 --------

@@ -1,4 +1,4 @@
-dnl Check for LIBAVAHI compiler flags. On success, set nut_have_neon="yes"
+dnl Check for LIBAVAHI compiler flags. On success, set nut_have_avahi="yes"
 dnl and set LIBAVAHI_CFLAGS and LIBAVAHI_LIBS. On failure, set
 dnl nut_have_avahi="no". This macro can be run multiple times, but will
 dnl do the checking only once.

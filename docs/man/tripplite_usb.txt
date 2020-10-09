@@ -20,9 +20,9 @@ the devices supported by tripplite_usb have product ID 0001, and the newer
 units (such as those with "LCD" in the model name) with product ID 2001 require
 the linkman:usbhid-ups[8] driver instead.  Please report success or failure to
 the nut-upsuser mailing list.  A key piece of information is the protocol
-number, returned in `ups.debug.0`.  Also, be sure to turn on debugging ('-DDD')
+number, returned in `ups.firmware.aux`.  Also, be sure to turn on debugging ('-DDD')
 for more informative log messages.  If your Tripp Lite UPS uses a serial port,
-you may wish to investigate the linkman:tripplite[8] or linkman:tripplite_su[8]
+you may wish to investigate the linkman:tripplite[8] or linkman:tripplitesu[8]
 driver.
 
 This driver has been tested with the following models:
@@ -43,6 +43,7 @@ following protocols:
  * Protocol 1001
  * Protocol 2001
  * Protocol 3003
+ * Protocol 3005
 
 On the other hand, if the web page for your UPS on the Tripp-Lite website says
 "HID-compliant USB port also enables direct integration with built-in power

@@ -1,6 +1,19 @@
 [Unit]
 Description=Network UPS Tools - power device monitor and shutdown controller
 After=local-fs.target network.target nut-server.service
+# Note: We do not specify Requires nut-server.service because
+# the `upsd` daemon(s) may be running on a different machine
+# (connected to the UPSes) than the `upsmon` shutdown protector.
+# The "Wants" directive would try to start the nut-server but
+# would not abort if that attempt fails for whatever reason.
+Wants=nut-server.service
+# Extending the unit does not require *this* file to be edited, you
+# can instead drop in an additional piece of configuration, e.g. add
+# a `/etc/systemd/system/nut-monitor.service.d/network.conf` with:
+#   [Unit]
+#   Requires=network-online.target
+#   After=network-online.target
+PartOf=nut.target
 
 [Service]
 ExecStart=@SBINDIR@/upsmon
@@ -8,4 +21,4 @@ PIDFile=@PIDPATH@/upsmon.pid
 Type=forking
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=nut.target

@@ -22,7 +22,7 @@
 
 #include "bestpower-mib.h"
 
-#define BESTPOWER_MIB_VERSION		"0.1"
+#define BESTPOWER_MIB_VERSION		"0.2"
 #define BESTPOWER_OID_MODEL_NAME	".1.3.6.1.4.1.2947.1.1.2.0"
 
 /*
@@ -43,19 +43,19 @@ static info_lkp_t bestpower_power_status[] = {
 static snmp_info_t bestpower_mib[] = {
 	/* Device page */
 	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "ups",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 
 	{ "ups.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "EATON",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/*.1.3.6.1.4.1.2947.1.1.1.0 = STRING: "Ferrups"
 	.1.3.6.1.4.1.2947.1.1.2.0 = STRING: "FE850VA"*/
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, BESTPOWER_OID_MODEL_NAME,
-		"Best Ferrups", SU_FLAG_STATIC, NULL, NULL },
+		"Best Ferrups", SU_FLAG_STATIC, NULL },
 
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2947.1.1.5.0",
 		"", SU_FLAG_STATIC, NULL },
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2947.1.1.7.0",
-		"", SU_FLAG_STATIC,   NULL },
+		"", SU_FLAG_STATIC, NULL },
 	{ "ups.power", 0, 1, ".1.3.6.1.4.1.2947.1.1.3.0", "",
 		0, NULL },
 	{ "ups.mfr.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.2947.1.1.8.0", "",
@@ -77,7 +77,7 @@ static snmp_info_t bestpower_mib[] = {
 		0, NULL },
 
 	/* end of structure. */
-	{ NULL, 0, 0, NULL, NULL, 0, NULL, NULL }
+	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 } ;
 
 mib2nut_info_t	bestpower = { "bestpower", BESTPOWER_MIB_VERSION, NULL,

@@ -9,5 +9,6 @@ nutuser=@RUN_AS_USER@
 Name: libupsclient
 Description: UPS monitoring with Network UPS Tools
 Version: @PACKAGE_VERSION@
-Libs: -L${libdir} -lupsclient @LIBSSL_LIBS@
-Cflags: -I${includedir} @LIBSSL_CFLAGS@
+Libs: -L${libdir} -lupsclient
+Cflags: -I${includedir}
+Requires: @LIBSSL_REQUIRES@

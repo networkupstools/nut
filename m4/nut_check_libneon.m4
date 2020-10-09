@@ -12,13 +12,23 @@ if test -z "${nut_have_neon_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
+	nut_defaulted_neon_version=no
+	nut_defaulted_neon_cflags=no
+	nut_defaulted_neon_libs=no
+
 	dnl See which version of the neon library (if any) is installed
+	dnl FIXME : Support detection of cflags/ldflags below by legacy discovery if pkgconfig is not there
 	AC_MSG_CHECKING(for libneon version via pkg-config (0.25.0 minimum required))
 	NEON_VERSION="`pkg-config --silence-errors --modversion neon 2>/dev/null`"
 	if test "$?" != "0" -o -z "${NEON_VERSION}"; then
+		nut_defaulted_neon_version=yes
 		NEON_VERSION="none"
 	fi
 	AC_MSG_RESULT(${NEON_VERSION} found)
+
+	if test "${nut_defaulted_neon_version}" = "yes" ; then
+		AC_MSG_WARN([could not get pkg-config information for libneon version, using fallback defaults])
+	fi
 
 	AC_MSG_CHECKING(for libneon cflags)
 	AC_ARG_WITH(neon-includes,
@@ -32,8 +42,16 @@ if test -z "${nut_have_neon_seen}"; then
 			CFLAGS="${withval}"
 			;;
 		esac
-	], [CFLAGS="`pkg-config --silence-errors --cflags neon 2>/dev/null`"])
+	], [CFLAGS="`pkg-config --silence-errors --cflags neon 2>/dev/null`"
+		if test "$?" != 0 ; then
+			nut_defaulted_neon_cflags=yes
+			CFLAGS="-I/usr/include/neon"
+		fi])
 	AC_MSG_RESULT([${CFLAGS}])
+
+	if test "${nut_defaulted_neon_cflags}" = "yes" ; then
+		AC_MSG_WARN([could not get pkg-config information for libneon cflags, using fallback defaults])
+	fi
 
 	AC_MSG_CHECKING(for libneon ldflags)
 	AC_ARG_WITH(neon-libs,
@@ -47,8 +65,16 @@ if test -z "${nut_have_neon_seen}"; then
 			LIBS="${withval}"
 			;;
 		esac
-	], [LIBS="`pkg-config --silence-errors --libs neon 2>/dev/null`"])
+	], [LIBS="`pkg-config --silence-errors --libs neon 2>/dev/null`"
+		if test "$?" != 0 ; then
+			nut_defaulted_neon_libs=yes
+			LIBS="-lneon"
+		fi])
 	AC_MSG_RESULT([${LIBS}])
+
+	if test "${nut_defaulted_neon_libs}" = "yes" ; then
+		AC_MSG_WARN([could not get pkg-config information for libneon libs, using fallback defaults])
+	fi
 
 	dnl check if neon is usable
 	AC_CHECK_HEADERS(ne_xmlreq.h, [nut_have_neon=yes], [nut_have_neon=no], [AC_INCLUDES_DEFAULT])

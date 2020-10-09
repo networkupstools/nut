@@ -4,7 +4,7 @@ UPSCLI_SENDLINE(3)
 NAME
 ----
 
-upscli_sendline - send a single command to a UPS
+upscli_sendline, upscli_sendline_timeout - send a single command to a UPS
 
 SYNOPSIS
 --------
@@ -13,22 +13,28 @@ SYNOPSIS
  #include <upsclient.h>
 
  int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen);
+ int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout);
 
 DESCRIPTION
 -----------
 
-The *upscli_sendline()* function takes the pointer 'ups' to a
-`UPSCONN_t` state structure and transmits a buffer 'buf' of size
-'buflen' to the server. 
+The *upscli_sendline()* and *upscli_sendline_timeout()* functions take the
+pointer 'ups' to a `UPSCONN_t` state structure and transmit a buffer 'buf' of
+size 'buflen' to the server.
 
 The data in 'buf' must be a fully formatted protocol command as no
 parsing of the buffer occurs within this function.
 
+The difference between the two functions is that *upscli_sendline_timeout()*
+lets the caller decide the amount of time ('timeout' seconds) after which it
+should give up and return, whereas *upscli_sendline()* does not offer this
+freedom, and uses an immediate timeout (0 second).
+
 RETURN VALUE
 ------------
 
-The *upscli_sendline()* function returns 0 on success, or -1 if an
-error occurs.
+The *upscli_sendline()* and *upscli_sendline_timeout()* functions return 0 on
+success, or -1 if an error occurs.
 
 SEE ALSO
 --------

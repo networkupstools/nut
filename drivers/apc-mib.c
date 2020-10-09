@@ -26,7 +26,7 @@
 
 #include "apc-mib.h"
 
-#define APCC_MIB_VERSION	"1.2"
+#define APCC_MIB_VERSION	"1.3"
 
 /* Other APC sysOID:
  * 
@@ -276,21 +276,21 @@ static snmp_info_t apcc_mib[] = {
 	{ "ambient.humidity", 0, 1, APCC_OID_IEM_HUMID, "", SU_FLAG_OK, NULL },
 
 	/* instant commands. */
-	{ "load.off", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "load.on", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.6.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "shutdown.stayoff", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.off", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "load.on", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.6.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.stayoff", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.1.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 /*	{ CMD_SDRET, 0, APCC_REBOOT_GRACEFUL, APCC_OID_REBOOT, "", SU_TYPE_CMD | SU_FLAG_OK, NULL }, */
 
-	{ "shutdown.return", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.failure.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.panel.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "bypass.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "bypass.stop", 0, 3, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "test.battery.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.7.2.2.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.start", 0, 2, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "calibrate.stop", 0, 3, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
-	{ "reset.input.minmax", 0, 2, ".1.3.6.1.4.1.318.1.1.1.9.1.1.0", "", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "shutdown.return", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.failure.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.4.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.panel.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.5.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "bypass.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "bypass.stop", 0, 1, ".1.3.6.1.4.1.318.1.1.1.6.2.7.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "test.battery.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.7.2.2.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.start", 0, 1, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "calibrate.stop", 0, 1, ".1.3.6.1.4.1.318.1.1.1.7.2.5.0", "3", SU_TYPE_CMD | SU_FLAG_OK, NULL },
+	{ "reset.input.minmax", 0, 1, ".1.3.6.1.4.1.318.1.1.1.9.1.1.0", "2", SU_TYPE_CMD | SU_FLAG_OK, NULL },
 
 	/* end of structure. */
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }

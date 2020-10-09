@@ -292,25 +292,47 @@ You can either install NUT as a binary package or as a port.
 Binary package
 ^^^^^^^^^^^^^^
 
-To install the main component, use the following command:
+To install NUT as a package execute:
 
-	# pkg_add -r nut
+	# pkg install nut
 
 Port
 ^^^^
 
-The port is located under /usr/ports/sysutils/nut. 
-To install it, use the following command:
+The port is located under +sysutils/nut+. 
+Use +make config+ to select configuration options, e.g. to build the optional CGI scripts.
+To install it, use:
 
-	# cd /usr/ports/sysutils/nut/ && make install clean
+	# make install clean
 
-You have to define WITH_NUT_CGI to build the optional CGI scripts.
+USB UPS on FreeBSD
+^^^^^^^^^^^^^^^^^^
 
-Optionally, you can also install the following ports:
+For USB UPS devices the NUT package/port installs devd rules in +/usr/local/etc/devd/nut-usb.conf+ to set USB device permissions. 'devd' needs to be restarted  for these rules to apply:
 
-- sysutils/nut-snmp, for the SNMP driver,
-- sysutils/nut-usb, for the USB drivers,
-- sysutils/nut-libupsclient, for the upsclient library.
+	# service devd restart
+
+(Re-)connect the device after restarting 'devd' and check that the USB device has the proper
+permissions. Check the last entries of the system message buffer. You should
+find an entry like
+
+	# dmesg | tail
+	[...]
+	ugen0.2: <INNO TECH USB to Serial> at usbus0
+
+The device file must be owned by group +uucp+ and must be group
+read-/writable. In the example from above this would be
+
+	# ls -Ll /dev/ugen0.2
+	crw-rw----  1 root  uucp  0xa5 Mar 12 10:33 /dev/ugen0.2
+
+If the permissions are not correct, verify that your device is registered in
++/usr/local/etc/devd/nut-usb.conf+. The vendor and product id can be found
+using:
+
+	# usbconfig -u 0 -a 2 dump_device_desc
+
+where +-u+ specifies the USB bus number and +-a+ specifies the USB device index.
 
 
 You are now ready to configure NUT, and start testing and using it.

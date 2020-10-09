@@ -22,7 +22,7 @@
 
 /* No Autorisation required */ 
 #define PW_ID_BLOCK_REQ                 (unsigned char)0x31 /* Model name, ... length 1 */
-#define PW_EVENT_HISTORY_LOG_REQ        (unsigned char)0x32 /* List alarms that have occured. length 1 */
+#define PW_EVENT_HISTORY_LOG_REQ        (unsigned char)0x32 /* List alarms that have occurred. length 1 */
 #define PW_STATUS_REQ                   (unsigned char)0x33 /* On Line, On Bypass, ...  length 1-2 */
 #define PW_METER_BLOCK_REQ              (unsigned char)0x34 /* Current UPS status (Load, utility,...) length 1 */
 #define PW_CUR_ALARM_REQ                (unsigned char)0x35 /* Current alarm and event request. length 1 */

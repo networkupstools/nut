@@ -25,7 +25,7 @@
 #ifdef HAVE_PTHREAD
 /* this include is needed on AIX to have errno stored in thread local storage */
 #include <pthread.h>
-#endif 
+#endif
 
 #include <errno.h>
 #include <netdb.h>
@@ -37,7 +37,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <sys/time.h>
 
 #include "upsclient.h"
 #include "common.h"
@@ -300,11 +299,6 @@ int upscli_init(int certverify, const char *certpath,
 {
 #ifdef WITH_OPENSSL
 	int ret, ssl_mode = SSL_VERIFY_NONE;
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
-	const SSL_METHOD	*ssl_method;
-#else
-	SSL_METHOD	*ssl_method;
-#endif
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
 #endif /* WITH_OPENSSL | WITH_NSS */
@@ -316,22 +310,32 @@ int upscli_init(int certverify, const char *certpath,
 	}
 	
 #ifdef WITH_OPENSSL
-	
-	SSL_library_init();
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	SSL_load_error_strings();
+	SSL_library_init();
 
-	ssl_method = TLSv1_client_method();
+	ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+#else
+	ssl_ctx = SSL_CTX_new(TLS_client_method());
+#endif
 
-	if (!ssl_method) {
-		return 0;
-	}
-
-	ssl_ctx = SSL_CTX_new(ssl_method);
 	if (!ssl_ctx) {
 		upslogx(LOG_ERR, "Can not initialize SSL context");
 		return -1;
 	}
 	
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	/* set minimum protocol TLSv1 */
+	SSL_CTX_set_options(ssl_ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+#else
+	ret = SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_VERSION);
+	if (ret != 1) {
+		upslogx(LOG_ERR, "Can not set minimum protocol to TLSv1");
+		return -1;
+	}
+#endif
+
 	if (!certpath) {
 		if (certverify == 1) {
 			upslogx(LOG_ERR, "Can not verify certificate if any is specified");
@@ -443,7 +447,7 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 	return NULL;
 }
 
-int upscli_cleanup()
+int upscli_cleanup(void)
 {
 #ifdef WITH_OPENSSL
 	if (ssl_ctx) {
@@ -568,9 +572,9 @@ static int upscli_select_read(const int fd, void *buf, const size_t buflen, cons
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
+static int net_read(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
 {
-	int	ret;
+	int	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
@@ -588,7 +592,7 @@ static int net_read(UPSCONN_t *ups, char *buf, size_t buflen)
 	}
 #endif
 
-	ret = upscli_select_read(ups->fd, buf, buflen, 5, 0);
+	ret = upscli_select_read(ups->fd, buf, buflen, timeout, 0);
 
 	/* error reading data, server disconnected? */
 	if (ret < 0) {
@@ -629,9 +633,9 @@ static int upscli_select_write(const int fd, const void *buf, const size_t bufle
 }
 
 /* internal: abstract the SSL calls for the other functions */
-static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
+static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
 {
-	int	ret;
+	int	ret = -1;
 
 #ifdef WITH_SSL
 	if (ups->ssl) {
@@ -649,7 +653,7 @@ static int net_write(UPSCONN_t *ups, const char *buf, size_t buflen)
 	}
 #endif
 
-	ret = upscli_select_write(ups->fd, buf, buflen, 0, 0);
+	ret = upscli_select_write(ups->fd, buf, buflen, timeout, 0);
 
 	/* error writing data, server disconnected? */
 	if (ret < 0) {
@@ -738,7 +742,7 @@ static int upscli_sslinit(UPSCONN_t *ups, int verifycert)
 	switch(res)
 	{
 	case 1:
-		upsdebugx(3, "SSL connected");
+		upsdebugx(3, "SSL connected (%s)", SSL_get_version(ups->ssl));
 		break;
 	case 0:
 		upslog_with_errno(1, "SSL_connect do not accept handshake.");
@@ -1035,7 +1039,7 @@ int upscli_tryconnect(UPSCONN_t *ups, const char *host, int port, int flags,stru
 				upscli_disconnect(ups);
 				return -1;
 			}
-			upsdebugx(3, "Can not connect to %s in SSL, continue uncrypted", host);
+			upsdebugx(3, "Can not connect to %s in SSL, continue unencrypted", host);
 		} else {
 			upslogx(LOG_INFO, "Connected to %s in SSL", host);
 			if (certverify == 0) {
@@ -1327,7 +1331,7 @@ int upscli_list_next(UPSCONN_t *ups, unsigned int numq, const char **query,
 	return 1;
 }
 
-int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
+int upscli_sendline_timeout(UPSCONN_t *ups, const char *buf, size_t buflen, unsigned int timeout)
 {
 	int	ret;
 
@@ -1350,7 +1354,7 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 		return -1;
 	}
 
-	ret = net_write(ups, buf, buflen);
+	ret = net_write(ups, buf, buflen, timeout);
 
 	if (ret < 1) {
 		upscli_disconnect(ups);
@@ -1360,7 +1364,12 @@ int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
 	return 0;
 }
 
-int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
+int upscli_sendline(UPSCONN_t *ups, const char *buf, size_t buflen)
+{
+	return upscli_sendline_timeout(ups, buf, buflen, 0);
+}
+
+int upscli_readline_timeout(UPSCONN_t *ups, char *buf, size_t buflen, unsigned int timeout)
 {
 	int	ret;
 	size_t	recv;
@@ -1388,7 +1397,7 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 
 		if (ups->readidx == ups->readlen) {
 
-			ret = net_read(ups, ups->readbuf, sizeof(ups->readbuf));
+			ret = net_read(ups, ups->readbuf, sizeof(ups->readbuf), timeout);
 
 			if (ret < 1) {
 				upscli_disconnect(ups);
@@ -1408,6 +1417,11 @@ int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
 
 	buf[recv] = '\0';
 	return 0;
+}
+
+int upscli_readline(UPSCONN_t *ups, char *buf, size_t buflen)
+{
+	return upscli_readline_timeout(ups, buf, buflen, DEFAULT_NETWORK_TIMEOUT);
 }
 
 /* split upsname[@hostname[:port]] into separate components */
@@ -1519,7 +1533,7 @@ int upscli_disconnect(UPSCONN_t *ups)
 		return 0;
 	}
 
-	net_write(ups, "LOGOUT\n", 7);
+	net_write(ups, "LOGOUT\n", 7, 0);
 
 #ifdef WITH_OPENSSL
 	if (ups->ssl) {

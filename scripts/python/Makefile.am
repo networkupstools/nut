@@ -5,7 +5,10 @@ EXTRA_DIST = README \
 			 app/NUT-Monitor \
 			 app/nut-monitor.appdata.xml \
 			 app/nut-monitor.desktop \
-			 app/nut-monitor.png \
+			 app/icons/48x48/nut-monitor.png \
+			 app/icons/64x64/nut-monitor.png \
+			 app/icons/256x256/nut-monitor.png \
+			 app/icons/scalable/nut-monitor.svg \
 			 app/README \
 			 app/pixmaps/var-rw.png \
 			 app/pixmaps/on_line.png \

@@ -67,7 +67,8 @@ typedef enum {
 	CHARGERFAIL,	/* battery charger failure */
 	VRANGE,		/* voltage out of range */
 	FRANGE,		/* frequency out of range */
-	FUSEFAULT	/* fuse fault */
+	FUSEFAULT,	/* fuse fault */
+	CAL		/* calibrating */
 } status_bit_t;
 
 extern uint32_t	ups_status;

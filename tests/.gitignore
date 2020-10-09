@@ -2,3 +2,4 @@
 /cppunittest.log
 /cppunittest.trs
 /test-suite.log
+/selftest-rw/*

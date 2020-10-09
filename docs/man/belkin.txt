@@ -20,6 +20,10 @@ Other similar models such as the 425 and 625 should also work.
 
 The Trust UPS and older Belkin units are not supported.
 
+This driver only supports serial connections. If your UPS has a USB port,
+please consult the Hardware Compatibility List (HCL) to see which of the USB
+drivers you should use.
+
 EXTRA ARGUMENTS
 ---------------
 
@@ -43,6 +47,13 @@ SEE ALSO
 The core driver:
 ~~~~~~~~~~~~~~~~
 linkman:nutupsdrv[8]
+
+Other Belkin drivers:
+~~~~~~~~~~~~~~~~~~~~~
+linkman:belkinunv[8],
+linkman:blazer_ser[8],
+linkman:blazer_usb[8],
+linkman:usbhid-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
