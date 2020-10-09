@@ -125,6 +125,20 @@ While this will compile and run on these newer versions, it will fail
 miserably for anyone on an older system.  That means you must not use
 it.  gcc only warns about this with -pedantic.
 
+Another feature that does not work on some compilers (e.g. conforming
+to ANSI C / C89 standard) is initial variable declaration inside a
+'for loop' block, like this:
+--------------------------------------------------------------------------------
+function do_stuff(void)
+{
+	/* This should declare "int i;" first, then use it in "for" loop: */
+	for (int i = 0; i < INT_MAX; ++i) { ... }
+
+	/* Additional loops cause also an error about re-declaring a variable: */
+	for (int i = 10; i < 15; ++i) { ... }
+}
+--------------------------------------------------------------------------------
+
 At this point NUT is expected to work correctly when built with a C99
 (or GNU99 on Linux) or newer standard.
 
