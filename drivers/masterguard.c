@@ -474,7 +474,7 @@ void upsdrv_initinfo(void)
 /********************************************************************
  *
  * This is the main function. It gets called if the driver wants 
- * to update the ups status and the informations.
+ * to update the ups status and the information.
  * 
  ********************************************************************/
 void upsdrv_updateinfo(void)

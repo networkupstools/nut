@@ -121,7 +121,7 @@ typedef enum {
 } models_type_t;
 
 /* Default to line-interactive or online (ie, not offline).
- * This is then overriden for offline, through mge_model_names */
+ * This is then overridden for offline, through mge_model_names */
 static models_type_t	mge_type = MGE_DEFAULT;
 
 /* Countries definition, for region specific settings and features */

@@ -122,7 +122,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		if (isdigit(arg[1])) {
+		if (isdigit(arg[1][0])) {
 			maxage = atoi(arg[1]);
 			return 1;
 		}
@@ -134,7 +134,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* TRACKINGDELAY <seconds> */
 	if (!strcmp(arg[0], "TRACKINGDELAY")) {
-		if (isdigit(arg[1])) {
+		if (isdigit(arg[1][0])) {
 			tracking_delay = atoi(arg[1]);
 			return 1;
 		}
@@ -146,7 +146,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		if (isdigit(arg[1])) {
+		if (isdigit(arg[1][0])) {
 			maxconn = atoi(arg[1]);
 			return 1;
 		}
@@ -187,7 +187,7 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		if (isdigit(arg[1])) {
+		if (isdigit(arg[1][0])) {
 			certrequest = atoi(arg[1]);
 			return 1;
 		}

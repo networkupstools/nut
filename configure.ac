@@ -523,14 +523,30 @@ NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
         linux* )
+            AC_CHECK_HEADER(
+                [linux/i2c-dev.h],
+                [AC_DEFINE([HAVE_LINUX_I2C_DEV_H], [1],
+                    [Define to 1 if you have <linux/i2c-dev.h>.])]
+            )
+            AC_CHECK_HEADER(
+                [i2c/smbus.h],
+                [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
+                    [Define to 1 if you have <i2c/smbus.h>.])]
+            )
             AC_CHECK_DECLS(
-                [i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
                 [nut_with_linux_i2c="no"],
                 [#include <stdio.h>
+                 #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
+                 #endif
+                 #ifdef HAVE_LINUX_SMBUS_H
+                 #include <i2c/smbus.h>
+                 #endif
                 ]
             )
+            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -1330,10 +1346,11 @@ dnl # Could use `AX_CXX_COMPILE_STDCXX_11([noext], [optional])` if it were
 dnl # available everywhere. Or AX_CHECK_COMPILE_FLAG if it was ubiquitous:
 dnl ###AX_CHECK_COMPILE_FLAG([-std=c++11],
 dnl ###    [CXXFLAGS="$CXXFLAGS -std=c++11"
-dnl ###     have_cxx11=1],
-dnl ###    [have_cxx11=0])
+dnl ###     have_cxx11=yes],
+dnl ###    [have_cxx11=no])
 
 AC_MSG_CHECKING(for C++11 support in current compiler)
+have_cxx11=unknown
 my_CXXFLAGS="$CXXFLAGS"
 AC_LANG_PUSH([C++])
 
@@ -1347,18 +1364,18 @@ CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
 
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
-     have_cxx11=1],
+     have_cxx11=yes],
     [CXXFLAGS="$CXXFLAGS -std=c++11"
      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
         [AC_MSG_RESULT([yes, GCC-style (as C++11)])
-         have_cxx11=1],
+         have_cxx11=yes],
         [CXXFLAGS="$CXXFLAGS -std=c++0x"
          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
             [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
-             have_cxx11=1],
+             have_cxx11=yes],
             [AC_MSG_RESULT([no])
              CXXFLAGS="$my_CXXFLAGS"
-             have_cxx11=0])])])
+             have_cxx11=no])])])
 AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
@@ -1367,7 +1384,7 @@ unset CPLUSPLUS_DECL
 have_cppunit="no"
 CPPUNIT_NUT_CXXFLAGS=""
 AS_IF([test x"$have_PKG_CONFIG" = xyes],
-    [AS_IF([test "${have_cxx11}" = 1],
+    [AS_IF([test x"${have_cxx11}" = xyes],
         [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
          AS_IF([test "${have_cppunit}" != "yes"],
             [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])

@@ -38,6 +38,7 @@ const char *UPS_VERSION = NUT_VERSION_MACRO;
 
 /* Know which bitness we were built for,
  * to adjust the search paths for get_libname() */
+#include "nut_stdint.h"
 #if UINTPTR_MAX == 0xffffffffffffffffULL
 # define BUILD_64   1
 #endif
