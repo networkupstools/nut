@@ -1433,23 +1433,21 @@ static void ups_status_set(void)
 	}
 
 
-	if ((ups_status & STATUS(ONLINE)) && (ups_status & STATUS(DISCHRG))) {
+	if (!(ups_status & STATUS(ONLINE))) {
+		status_set("OB");		/* on battery */
+	} else if ((ups_status & STATUS(DISCHRG))) {
 		/* warning or CyberPower UT quirk */
 		if (cputquirk) {
-			status_set("OB");
-		} else if ((ups_status & STATUS(CAL))) {
-			status_set("OL");
+			status_set("OB");	/* on battery */
 		} else {
-			upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OL+DISCHRG state now. "
-			"Is it calibrating or do you perhaps want to set 'cputquirk' option? "
-			"Some CyberPower UT series emit OL+DISCHRG when offline.",
-			  __func__, ups->upsname)
+			if (!(ups_status & STATUS(CAL))) {
+				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OL+DISCHRG state now. "
+				"Is it calibrating or do you perhaps want to set 'cputquirk' option? "
+				"Some CyberPower UT series emit OL+DISCHRG when offline.",
+				  __func__, ups->upsname)
+			}
 			status_set("OL");
 		}
-	} else if ((ups_status & STATUS(ONLINE))) {
-		status_set("OL");
-	} else {
-		status_set("OB");		/* on battery */
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
 		!(ups_status & STATUS(DEPLETED))) {
