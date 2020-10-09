@@ -26,5 +26,6 @@
 #include "snmp-ups.h"
 
 extern mib2nut_info_t eaton_ats16;
+extern mib2nut_info_t eaton_ats16_g2;
 
 #endif /* EATON_ATS16_MIB_H */

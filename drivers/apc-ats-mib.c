@@ -24,9 +24,10 @@
 
 #include "apc-ats-mib.h"
 
-#define APC_ATS_MIB_VERSION  "0.3"
+#define APC_ATS_MIB_VERSION  "0.4"
 
 #define APC_ATS_SYSOID       ".1.3.6.1.4.1.318.1.3.11"
+#define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
 static info_lkp_t ats_sensitivity_info[] = {
 	{ 1, "high" },
@@ -63,7 +64,7 @@ static snmp_info_t apc_ats_mib[] = {
 	/* ats2IdentManufacturer.0 = STRING: EATON */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, NULL, "APC", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/* atsIdentModelNumber.0 = STRING: "AP7724" */
-	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.1.5.0", NULL, SU_FLAG_OK, NULL },
+	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, APC_ATS_OID_MODEL_NAME, NULL, SU_FLAG_OK, NULL },
 	/* FIXME: RFC for device.firmware! */
 	/* atsIdentHardwareRev.0 = STRING: "R01" */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.318.1.1.8.1.1.0", NULL, SU_FLAG_OK, NULL },
@@ -444,4 +445,4 @@ static snmp_info_t apc_ats_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, NULL, apc_ats_mib, APC_ATS_SYSOID };
+mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, APC_ATS_OID_MODEL_NAME, apc_ats_mib, APC_ATS_SYSOID };

@@ -157,8 +157,8 @@ into the server.
 
 `hosts.allow`:
 
-	ups : admin@127.0.0.1/32
-	ups : monslave@127.0.0.1/32 monslave@192.168.1.0/24
+	upsd : admin@127.0.0.1/32
+	upsd : monslave@127.0.0.1/32 monslave@192.168.1.0/24
 
 `hosts.deny`:
 

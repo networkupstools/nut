@@ -46,7 +46,7 @@
 #include "timehead.h"
 
 #define DRIVER_NAME	"Microsol Solis UPS driver"
-#define DRIVER_VERSION	"0.66"
+#define DRIVER_VERSION	"0.67"
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -139,8 +139,9 @@ inline static int is_binary(char ch ) {
 /* convert string to binary */
 static int str2bin( char *binStr ) {
 	int result = 0;
+	int i;
 
-	for (int i = 0; i < 7; ++i) {
+	for (i = 0; i < 7; ++i) {
 		char ch = binStr[i];
 		if (is_binary(ch))
 			result += ( (ch - '0') << (6 - i) );
@@ -154,14 +155,15 @@ static int str2bin( char *binStr ) {
 /* revert firmware format to standard string binary days */
 static unsigned char revert_days(unsigned char dweek) {
 	char alt[8];
+	int i;
 
-	for (int i = 0; i < (6 - weekn); ++i)
+	for (i = 0; i < (6 - weekn); ++i)
 		alt[i] = (dweek >> (5 - weekn - i)) & 0x01;
 	
-	for (int i = 0; i < weekn+1; ++i)
+	for (i = 0; i < weekn+1; ++i)
 		alt[i+(6-weekn)] = (dweek >> (6 - i)) & 0x01;
 
-	for (int i=0; i < 7; i++)
+	for (i=0; i < 7; i++)
 		alt[i] += '0';
 
 	alt[7] = 0; /* string terminator */
@@ -187,7 +189,9 @@ static int is_hour(char *hour, int qual) {
 }
 
 static void send_shutdown( void ) {
-	for (int i=0; i < 10; i++)
+	int i;
+
+	for (i = 0; i < 10; i++)
 	  ser_send_char(upsfd, CMD_SHUT );
 
 	upslogx(LOG_NOTICE, "Ups shutdown command sent");
@@ -233,9 +237,10 @@ static void print_info( void ) {
 	if (prgups > 0) {
 		/*sunday, monday, tuesday, wednesday, thursday, friday, saturday*/
 		int week_days[7] = {0, 0, 0, 0, 0, 0, 0};
+		int i;
 
 		/* this is the string to binary standard */
-		for (int i = 0; i < 7; ++i)
+		for (i = 0; i < 7; ++i)
 			week_days[i] = (DaysStd >> (6 - i)) & 0x01;
 
 		if (prgups == 3)
@@ -457,7 +462,7 @@ static void scan_received_pack(void) {
 	if (im < 3)
 		autonomy_calc(im);
 	else {
-		if (BattExtension == 80)
+		if (BattExtension == 80 && im == 3)
 			autonomy_calc(im + 1);
 		else
 			autonomy_calc(im);
@@ -594,14 +599,15 @@ static void scan_received_pack(void) {
 
 static void comm_receive(const unsigned char *bufptr,  int size) {
 	if (size == packet_size) {
+		int CheckSum = 0, i;
+
 		memcpy(RecPack, bufptr, packet_size);
 		
 		if (nut_debug_level >= 3)
 			upsdebug_hex(3, "comm_receive: RecPack", RecPack, size);
 
 		/* CheckSum verify */
-		int CheckSum = 0;
-		for (int i = 0 ; i < packet_size-2 ; ++i )
+		for (i = 0 ; i < packet_size-2 ; ++i )
 			CheckSum += RecPack[i];
 		CheckSum = CheckSum % 256;
 		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
@@ -676,7 +682,7 @@ static void get_base_info(void) {
 	const char DaysOfWeek[7][4]={"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 #endif
 	unsigned char packet[packet_size], syncEOR;
-	int i1=0, i2=0, tam;
+	int i1=0, i2=0, tam, i;
 
 	time_t tmt;
 	struct tm *now;
@@ -688,7 +694,7 @@ static void get_base_info(void) {
 	ihour = now->tm_hour;
 	imin = now->tm_min;
 	isec = now->tm_sec;
-    weekn = now->tm_wday;
+	weekn = now->tm_wday;
 
 	strcpy(seman, DaysOfWeek[weekn]);
 
@@ -737,7 +743,7 @@ static void get_base_info(void) {
 	 * read up to 3 packets in size before giving up 
 	 * synchronizing with the device.
 	*/
-	for (int i=0; i<packet_size*3; i++) {
+	for (i = 0; i < packet_size*3; i++) {
 		ser_get_char(upsfd, &syncEOR, 3, 0);
 		if(syncEOR == RESP_END)
 			break;
@@ -950,7 +956,7 @@ void upsdrv_help(void) {
 	printf("  houron = hh:mm hh = hour 0-23 mm = minute 0-59 separated with :\n");
 	printf("  houroff = hh:mm hh = hour 0-23 mm = minute 0-59 separated with :\n");
 	printf(" where houron is power-on hour and houroff is shutdown and power-off hour\n");
-	printf(" Uses daysweek and houron to programing and save UPS power on/off\n");
+	printf(" Uses daysweek and houron to programming and save UPS power on/off\n");
 	printf(" These are valid only if prgshut = 2 or 3\n");
 }
 

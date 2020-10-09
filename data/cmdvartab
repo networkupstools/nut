@@ -94,6 +94,7 @@ VARDESC output.current "Output current (A)"
 VARDESC output.current.nominal "Nominal output current (A)"
 
 VARDESC battery.charge "Battery charge (percent of full)"
+VARDESC battery.charge.approx "Rough approximation of battery charge"
 VARDESC battery.charge.low "Remaining battery level when UPS switches to LB (percent)"
 VARDESC battery.charge.restart "Minimum battery level for restart after power off (percent)"
 VARDESC battery.charge.warning "Battery level when UPS switches to Warning state (percent)"

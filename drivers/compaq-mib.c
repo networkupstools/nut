@@ -30,7 +30,7 @@
 
 #include "compaq-mib.h"
 
-#define CPQPOWER_MIB_VERSION	"1.63"
+#define CPQPOWER_MIB_VERSION	"1.64"
 
 #define DEFAULT_ONDELAY		"30"
 #define DEFAULT_OFFDELAY	"20"
@@ -182,8 +182,9 @@ static snmp_info_t cpqpower_mib[] = {
 	/* FIXME: split between firmware and firmware.aux ("00.01.0019;00.01.0004")
 	 * UPS Firmware Revision :	00.01.0004
 	 * Communication Board Firmware Revision :	00.01.0019 */
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", SU_FLAG_STATIC, NULL },
-	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", SU_FLAG_STATIC, NULL },
+	/* FIXME: the 2 "firmware" entries below should be SU_FLAG_SEMI_STATIC */
+	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, CPQPOWER_OID_FIRMREV, "", 0, NULL },
+	{ "ups.firmware.aux", ST_FLAG_STRING, SU_INFOSIZE, IETF_OID_AGENTREV, "", 0, NULL },
 	{ "ups.load", 0, 1.0, CPQPOWER_OID_LOAD_LEVEL, "", 0, NULL },
 	{ "ups.realpower", 0, 1.0, CPQPOWER_OID_OUT_POWER, "", SU_OUTPUT_1, NULL },
 	{ "ups.realpower", 0, 1.0, ".1.3.6.1.4.1.232.165.3.9.3.0", "", SU_OUTPUT_1, NULL },

@@ -25,7 +25,7 @@ case "$CI_TRACE" in
 esac
 
 case "$BUILD_TYPE" in
-default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
+default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
     LC_ALL=C
     export LANG LC_ALL
@@ -40,7 +40,7 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
     BUILD_PREFIX=$PWD/tmp
     INST_PREFIX=$PWD/.inst
 
-    PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'2`"
+    PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'`"
     CCACHE_PATH="$PATH"
     CCACHE_DIR="${HOME}/.ccache"
     export CCACHE_PATH CCACHE_DIR PATH
@@ -48,12 +48,12 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
     if which ccache && ls -la /usr/lib/ccache ; then
         HAVE_CCACHE=yes
     fi
+    mkdir -p "${CCACHE_DIR}" || HAVE_CCACHE=no
 
     if [ "$HAVE_CCACHE" = yes ] && [ -d "$CCACHE_DIR" ]; then
         echo "CCache stats before build:"
         ccache -s || true
     fi
-    mkdir -p "${HOME}/.ccache"
 
     CONFIG_OPTS=()
     COMMON_CFLAGS=""
@@ -65,10 +65,17 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
         if [ -n "$1" ] && "$1" --version 2>&1 | grep 'Free Software Foundation' > /dev/null ; then true ; else false ; fi
     }
 
+    is_clang() {
+        if [ -n "$1" ] && "$1" --version 2>&1 | grep 'clang version' > /dev/null ; then true ; else false ; fi
+    }
+
     COMPILER_FAMILY=""
     if [ -n "$CC" -a -n "$CXX" ]; then
         if is_gnucc "$CC" && is_gnucc "$CXX" ; then
             COMPILER_FAMILY="GCC"
+            export CC CXX
+        elif is_clang "$CC" && is_clang "$CXX" ; then
+            COMPILER_FAMILY="CLANG"
             export CC CXX
         fi
     else
@@ -83,6 +90,17 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             [ -n "$CC" ] || CC=cc
             [ -n "$CXX" ] || CXX=c++
             export CC CXX
+        elif is_clang "clang" && is_clang "clang++" ; then
+            # Autoconf would pick this by default
+            COMPILER_FAMILY="CLANG"
+            [ -n "$CC" ] || CC=clang
+            [ -n "$CXX" ] || CXX=clang++
+            export CC CXX
+        elif is_clang "cc" && is_clang "c++" ; then
+            COMPILER_FAMILY="CLANG"
+            [ -n "$CC" ] || CC=cc
+            [ -n "$CXX" ] || CXX=c++
+            export CC CXX
         fi
     fi
 
@@ -94,9 +112,12 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
         fi
     fi
 
-    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include")
-    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include")
-    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include")
+    # Note: Potentially there can be spaces in entries for multiple
+    # *FLAGS here; this should be okay as long as entry expands to
+    # one token when calling shell (may not be the case for distcheck)
+    CONFIG_OPTS+=("CFLAGS=-I${BUILD_PREFIX}/include ${CFLAGS}")
+    CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
+    CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
     CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
@@ -111,14 +132,24 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             CONFIG_OPTS+=("--with-doc=no")
             DO_DISTCHECK=no
             ;;
-        "default-spellcheck")
+        "default-spellcheck"|"default-shellcheck")
             CONFIG_OPTS+=("--with-all=no")
             CONFIG_OPTS+=("--with-libltdl=no")
             CONFIG_OPTS+=("--with-doc=man=skip")
+            #TBD# CONFIG_OPTS+=("--with-shellcheck=yes")
             DO_DISTCHECK=no
             ;;
         "default-withdoc")
             CONFIG_OPTS+=("--with-doc=yes")
+            ;;
+        "default-all-errors")
+            # Do not build the docs as we are interested in binary code
+            CONFIG_OPTS+=("--with-doc=skip")
+            # Enable as many binaries to build as current worker setup allows
+            CONFIG_OPTS+=("--with-all=auto")
+            # Currently --with-all implies this, but better be sure to
+            # really build everything we can to be certain it builds:
+            CONFIG_OPTS+=("--with-cgi=yes")
             ;;
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
@@ -131,10 +162,11 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             ;;
     esac
 
-    if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC ]; then
+    if [ "$HAVE_CCACHE" = yes ] && [ "${COMPILER_FAMILY}" = GCC -o "${COMPILER_FAMILY}" = CLANG ]; then
         PATH="/usr/lib/ccache:$PATH"
         export PATH
-        if [ -n "$CC" ] && [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
+        if [ -n "$CC" ]; then
+          if [ -x "/usr/lib/ccache/`basename "$CC"`" ]; then
             case "$CC" in
                 *ccache*) ;;
                 */*) DIR_CC="`dirname "$CC"`" && [ -n "$DIR_CC" ] && DIR_CC="`cd "$DIR_CC" && pwd `" && [ -n "$DIR_CC" ] && [ -d "$DIR_CC" ] || DIR_CC=""
@@ -145,10 +177,12 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
                     ;;
             esac
             CC="/usr/lib/ccache/`basename "$CC"`"
-        else
-            : # CC="ccache $CC"
+          else
+            CC="ccache $CC"
+          fi
         fi
-        if [ -n "$CXX" ] && [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
+        if [ -n "$CXX" ]; then
+          if [ -x "/usr/lib/ccache/`basename "$CXX"`" ]; then
             case "$CXX" in
                 *ccache*) ;;
                 */*) DIR_CXX="`dirname "$CXX"`" && [ -n "$DIR_CXX" ] && DIR_CXX="`cd "$DIR_CXX" && pwd `" && [ -n "$DIR_CXX" ] && [ -d "$DIR_CXX" ] || DIR_CXX=""
@@ -159,8 +193,9 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
                     ;;
             esac
             CXX="/usr/lib/ccache/`basename "$CXX"`"
-        else
-            : # CXX="ccache $CXX"
+          else
+            CXX="ccache $CXX"
+          fi
         fi
         if [ -n "$CPP" ] && [ -x "/usr/lib/ccache/`basename "$CPP"`" ]; then
             case "$CPP" in
@@ -177,6 +212,9 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             : # CPP="ccache $CPP"
         fi
 
+        # Note: Potentially there can be spaces in entries for multiword
+        # "ccache gcc" here; this should be okay as long as entry expands to
+        # one token when calling shell (may not be the case for distcheck)
         CONFIG_OPTS+=("CC=${CC}")
         CONFIG_OPTS+=("CXX=${CXX}")
         CONFIG_OPTS+=("CPP=${CPP}")
@@ -198,10 +236,12 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
         sudo dpkg -r --force all pkg-config
     fi
 
+    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
+    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
     $CI_TIME ./configure "${CONFIG_OPTS[@]}"
 
     case "$BUILD_TYPE" in
-        default-tgt:*) # Hook for matrix of custom distchecks primarily
+        "default-tgt:"*) # Hook for matrix of custom distchecks primarily
             BUILD_TGT="`echo "$BUILD_TYPE" | sed 's,^default-tgt:,,'`"
             echo "`date`: Starting the sequential build attempt for singular target $BUILD_TGT..."
             export DISTCHECK_CONFIGURE_FLAGS="${CONFIG_OPTS[@]}"
@@ -226,6 +266,26 @@ default|default-alldrv|default-spellcheck|default-nodoc|default-withdoc|"default
             # sub-Makefiles known to check corresponding directory's doc files.
             ( $CI_TIME make VERBOSE=1 SPELLCHECK_ERROR_FATAL=yes spellcheck )
             exit 0
+            ;;
+        "default-shellcheck")
+            [ -z "$CI_TIME" ] || echo "`date`: Trying to check shell script syntax validity of the currently tested project..."
+            ### Note: currently, shellcheck target calls check-scripts-syntax
+            ### so when both are invoked at once, in the end the check is only
+            ### executed once. Later it is anticipated that shellcheck would
+            ### be implemented by requiring, configuring and calling the tool
+            ### named "shellcheck" for even more code inspection and details.
+            ### Still, there remains value in also checking the script syntax
+            ### by the very version of the shell interpreter that would run
+            ### these scripts in production usage of the resulting packages.
+            ( $CI_TIME make VERBOSE=1 shellcheck check-scripts-syntax )
+            exit $?
+            ;;
+        "default-all-errors")
+            ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
+              $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 ; ) || \
+            ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
+              $CI_TIME make VERBOSE=1 all -k )
+            exit $?
             ;;
     esac
 

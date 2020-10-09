@@ -124,7 +124,10 @@ static void st_tree_node_add(st_tree_t **nptr, st_tree_t *sptr)
 	*nptr = sptr;
 }
 
-/* remove a variable from a tree */
+/* remove a variable from a tree
+ * except for variables with ST_FLAG_IMMUTABLE
+ * (for override.* to survive) per issue #737
+ */
 int state_delinfo(st_tree_t **nptr, const char *var)
 {
 	while (*nptr) {
@@ -139,6 +142,11 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 		if (strcasecmp(node->var, var) < 0) {
 			nptr = &node->right;
 			continue;
+		}
+
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not deleting immutable variable [%s]", __func__, var);
+			return 0;
 		}
 
 		/* whatever is on the left, hang it off current right */

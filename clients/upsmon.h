@@ -26,6 +26,7 @@
 #define ST_MASTER      (1 << 4)       /* we are the master on this UPS        */
 #define ST_LOGIN       (1 << 5)       /* we are logged into this UPS          */
 #define ST_CONNECTED   (1 << 6)       /* upscli_connect returned OK           */
+#define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)    */
 
 /* required contents of flag file */
 #define SDMAGIC "upsmon-shutdown-file"  
@@ -75,6 +76,7 @@ typedef struct {
 #define NOTIFY_REPLBATT	7	/* UPS battery needs to be replaced	*/
 #define NOTIFY_NOCOMM	8	/* UPS hasn't been contacted in awhile	*/
 #define NOTIFY_NOPARENT	9	/* privileged parent process died	*/
+#define NOTIFY_CAL		10	/* UPS is performing calibration   */
 
 /* notify flag values */
 
@@ -104,6 +106,7 @@ struct {
 	{ NOTIFY_REPLBATT, "REPLBATT", NULL, "UPS %s battery needs to be replaced", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_NOCOMM,   "NOCOMM",   NULL, "UPS %s is unavailable", NOTIFY_SYSLOG | NOTIFY_WALL },
 	{ NOTIFY_NOPARENT, "NOPARENT", NULL, "upsmon parent process died - shutdown impossible", NOTIFY_SYSLOG | NOTIFY_WALL },
+	{ NOTIFY_CAL,      "CAL",      NULL, "UPS %s: calibration in progress", NOTIFY_SYSLOG },
 	{ 0, NULL, NULL, NULL, 0 }
 };
 

@@ -33,7 +33,7 @@ SERIAL_DRIVERLIST = al175 bcmxcp belkin belkinunv bestfcom	\
  bestfortress bestuferrups bestups dummy-ups etapro everups 	\
  gamatronic genericups isbmex liebert liebert-esp2 masterguard metasys	\
  mge-utalk microdowell mge-shut oneac optiups powercom rhino 	\
- safenet skel solis tripplite tripplitesu upscode2 victronups powerpanel \
+ safenet nutdrv_siemens-sitop skel solis tripplite tripplitesu upscode2 victronups powerpanel \
  blazer_ser clone clone-outlet ivtscd apcsmart apcsmart-old apcupsd-ups riello_ser
 SNMP_DRIVERLIST = snmp-ups
 USB_LIBUSB_DRIVERLIST = usbhid-ups bcmxcp_usb tripplite_usb \
@@ -45,7 +45,7 @@ SERIAL_USB_DRIVERLIST = \
 NEONXML_DRIVERLIST = netxml-ups
 MACOSX_DRIVERLIST = macosx-ups
 MODBUS_DRIVERLIST = phoenixcontact_modbus
-LINUX_I2C_DRIVERLIST = asem
+LINUX_I2C_DRIVERLIST = asem pijuice
 
 # distribute all drivers, even ones that are not built by default
 EXTRA_PROGRAMS = $(SERIAL_DRIVERLIST) $(SNMP_DRIVERLIST) $(USB_DRIVERLIST) $(SERIAL_USB_DRIVERLIST) $(NEONXML_DRIVERLIST) $(MACOSX_DRIVERLIST)
@@ -135,6 +135,7 @@ powerpanel_LDADD = $(LDADD) -lm
 rhino_SOURCES = rhino.c
 rhino_LDADD = $(LDADD) -lm
 safenet_SOURCES = safenet.c
+nutdrv_siemens_sitop_SOURCES = nutdrv_siemens_sitop.c
 solis_SOURCES = solis.c
 solis_LDADD = $(LDADD) -lm
 tripplite_SOURCES = tripplite.c
@@ -227,7 +228,7 @@ powerman_pdu_LDADD = $(LDADD) $(LIBPOWERMAN_LIBS)
 # IPMI PSU
 nut_ipmipsu_SOURCES = nut-ipmipsu.c
 if WITH_FREEIPMI
-  nut_ipmipsu_SOURCES += nut-libfreeipmi.c 
+  nut_ipmipsu_SOURCES += nut-libfreeipmi.c
 endif
 nut_ipmipsu_LDADD = $(LDADD) $(LIBIPMI_LIBS)
 
@@ -240,9 +241,11 @@ macosx_ups_SOURCES = macosx-ups.c
 phoenixcontact_modbus_SOURCES = phoenixcontact_modbus.c
 phoenixcontact_modbus_LDADD = $(LDADD_DRIVERS) $(LIBMODBUS_LIBS)
 
-# Asem
+# Linux I2C drivers
 asem_LDADD = $(LDADD_DRIVERS)
 asem_SOURCES = asem.c
+pijuice_LDADD = $(LDADD_DRIVERS)
+pijuice_SOURCES = pijuice.c
 
 # nutdrv_qx USB/Serial
 nutdrv_qx_SOURCES = nutdrv_qx.c

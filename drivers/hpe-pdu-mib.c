@@ -24,7 +24,7 @@
 #include "hpe-pdu-mib.h"
 #include "dstate.h"
 
-#define HPE_EPDU_MIB_VERSION      "0.30"
+#define HPE_EPDU_MIB_VERSION      "0.31"
 #define HPE_EPDU_MIB_SYSOID       ".1.3.6.1.4.1.232.165.7"
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 
@@ -218,10 +218,11 @@ static snmp_info_t hpe_pdu_mib[] = {
 	{ "ups.serial", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.232.165.7.1.2.1.7.%i",
 		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	/* FIXME: this entry should be SU_FLAG_SEMI_STATIC */
 	/* pdu2FirmwareVersion.0 = STRING: "02.00.0043" */
 	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE,
 		".1.3.6.1.4.1.232.165.7.1.2.1.5.%i",
-		"", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+		"", SU_FLAG_OK, NULL },
 	{ "ups.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu",
 		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 

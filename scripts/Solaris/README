@@ -33,3 +33,6 @@ Note that only one of these can be enabled at the same time:
 
 Init-script solution contributed by numerous authors
 SMF solution contributed by Jim Klimov <jimklimov@gmail.com>
+
+For special notes about USB-connected device monitoring with NUT under Solaris
+and related operating systems, see docs/solaris-usb.txt
