@@ -38,8 +38,6 @@
 
 #include "nut-scan.h"
 
-#define DEFAULT_TIMEOUT 5
-
 #define ERR_BAD_OPTION	(-1)
 
 const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
@@ -84,7 +82,7 @@ const struct option longopts[] =
 
 static nutscan_device_t *dev[TYPE_END];
 
-static long timeout = DEFAULT_TIMEOUT*1000*1000; /* in usec */
+static long timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000; /* in usec */
 static char * start_ip = NULL;
 static char * end_ip = NULL;
 static char * port = NULL;
@@ -169,7 +167,7 @@ void show_usage()
 	printf("  -E, --eaton_serial <serial ports list>: Scan serial Eaton devices (XCP, SHUT and Q1).\n");
 
 	printf("\nNetwork specific options:\n");
-	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n",DEFAULT_TIMEOUT);
+	printf("  -t, --timeout <timeout in seconds>: network operation timeout (default %d).\n", DEFAULT_NETWORK_TIMEOUT);
 	printf("  -s, --start_ip <IP address>: First IP address to scan.\n");
 	printf("  -e, --end_ip <IP address>: Last IP address to scan.\n");
 	printf("  -m, --mask_cidr <IP address/mask>: Give a range of IP using CIDR notation.\n");
@@ -225,7 +223,7 @@ int main(int argc, char *argv[])
 	int allow_oldnut = 0;
 	int allow_avahi = 0;
 	int allow_ipmi = 0;
-	int allow_eaton_serial = 0; /* MUST be requested explicitely! */
+	int allow_eaton_serial = 0; /* MUST be requested explicitly! */
 	int quiet = 0; /* The debugging level for certain upsdebugx() progress messages; 0 = print always, quiet==1 is to require at least one -D */
 	void (*display_func)(nutscan_device_t * device);
 	int ret_code = EXIT_SUCCESS;
@@ -246,8 +244,22 @@ int main(int argc, char *argv[])
 	xml_sec.usec_timeout = -1; /* Override with the "timeout" common setting later */
 	xml_sec.peername = NULL;
 
+	/* Parse command line options -- First loop: only get debug level */
+	/* Suppress error messages, for now -- leave them to the second loop. */
+	opterr = 0;
+	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL)) != -1)
+		if (opt_ret == 'D')
+			nut_debug_level++;
+
+	nutscan_init();
+
 	display_func = nutscan_display_ups_conf;
 
+	/* Parse command line options -- Second loop: everything else */
+	/* Restore error messages... */
+	opterr = 1;
+	/* ...and index of the item to be processed by getopt(). */
+	optind = 1;
 	/* Note: the getopts print an error message about unknown arguments
 	 * or arguments which need a second token and that is missing now */
 	while((opt_ret = getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
@@ -256,8 +268,8 @@ int main(int argc, char *argv[])
 			case 't':
 				timeout = atol(optarg)*1000*1000; /*in usec*/
 				if( timeout == 0 ) {
-					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_TIMEOUT);
-					timeout = DEFAULT_TIMEOUT*1000*1000;
+					fprintf(stderr,"Illegal timeout value, using default %ds\n", DEFAULT_NETWORK_TIMEOUT);
+					timeout = DEFAULT_NETWORK_TIMEOUT * 1000 * 1000;
 				}
 				break;
 			case 's':
@@ -278,7 +290,7 @@ int main(int argc, char *argv[])
 				cidr = strdup(optarg);
 				break;
 			case 'D':
-				nut_debug_level++;
+				/* nothing to do, here */
 				break;
 			case 'c':
 				if(!nutscan_avail_snmp) {
@@ -465,12 +477,6 @@ display_help:
 		allow_ipmi = 1;
 		/* BEWARE: allow_all does not include allow_eaton_serial! */
 	}
-
-	/* TODO: nutscan_init() should consider (via args? shared global vars?)
-	 * which scan types we desire at this run, and not try to load irrelevant
-	 * libraries.
-	 */
-	nutscan_init();
 
 /* TODO/discuss : Should the #else...#endif code below for lack of pthreads
  * during build also serve as a fallback for pthread failure at runtime?

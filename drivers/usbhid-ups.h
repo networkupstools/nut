@@ -69,6 +69,9 @@ typedef struct {
 	double	(*nuf)(const char *nut_value);		/* optional NUT to HID mapping */
 } info_lkp_t;
 
+/* accessor on the status */
+extern int ups_status_get(void);
+
 /* declarations of public lookup tables */
 /* boolean status values from UPS */
 extern info_lkp_t online_info[];
@@ -112,6 +115,40 @@ extern info_lkp_t hex_conversion[];
 extern info_lkp_t stringid_conversion[];
 extern info_lkp_t divide_by_10_conversion[];
 extern info_lkp_t kelvin_celsius_conversion[];
+
+/* ---------------------------------------------------------------------- */
+/* data for processing boolean values from UPS */
+
+#define	STATUS(x)	((unsigned)1<<x)
+
+typedef enum {
+	ONLINE = 0,	/* on line */
+	DISCHRG,	/* discharging */
+	CHRG,		/* charging */
+	LOWBATT,	/* low battery */
+	OVERLOAD,	/* overload */
+	REPLACEBATT,	/* replace battery */
+	SHUTDOWNIMM,	/* shutdown imminent */
+	TRIM,		/* SmartTrim */
+	BOOST,		/* SmartBoost */
+	BYPASSAUTO,	/* on automatic bypass */
+	BYPASSMAN,	/* on manual/service bypass */
+	OFF,		/* ups is off */
+	CAL,		/* calibration */
+	OVERHEAT,	/* overheat; Belkin, TrippLite */
+	COMMFAULT,	/* UPS fault; Belkin, TrippLite */
+	DEPLETED,	/* battery depleted; Belkin */
+	TIMELIMITEXP,	/* time limit expired; APC */
+	FULLYCHARGED,	/* battery full; CyberPower */
+	AWAITINGPOWER,	/* awaiting power; Belkin, TrippLite */
+	FANFAIL,	/* fan failure; MGE */
+	NOBATTERY,	/* battery missing; MGE */
+	BATTVOLTLO,	/* battery voltage too low; MGE */
+	BATTVOLTHI,	/* battery voltage too high; MGE */
+	CHARGERFAIL,	/* battery charger failure; MGE */
+	VRANGE,		/* voltage out of range */
+	FRANGE		/* frequency out of range */
+} status_bit_t;
 
 /* --------------------------------------------------------------- */
 /* Structure containing information about how to get/set data      */

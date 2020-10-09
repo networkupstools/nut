@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2412 utf-8
+personal_ws-1.1 en 2488 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -27,6 +27,7 @@ ARS
 ATEK
 ATR
 ATT
+ATTRS
 ATX
 ATs
 AVL
@@ -92,6 +93,7 @@ BTIntervl
 BTS
 BTTime
 BTV
+BUFRD
 BUZ
 BYP
 BZ
@@ -112,6 +114,7 @@ BayTech
 BeepTone
 Belkin's
 Benedikt
+Berge
 BestPort
 BiWeekly
 Bieringer
@@ -145,6 +148,7 @@ CERTREQUEST
 CERTVERIF
 CEST
 CHRG
+CLI
 CLOCAL
 CMDDESC
 CMDSCRIPT
@@ -397,8 +401,10 @@ IMG
 INADDR
 INFOSIZE
 INIGO
+INNO
 INSTCMDDESC
 INTERNETOFFICE
+INTERR
 INTL
 INV
 INVOLT
@@ -437,8 +443,8 @@ KNutClient
 KNutSetting
 KOLFF
 KRT
-Kaminski
 Kain
+Kaminski
 Kanji
 Kazutoshi
 Kebo
@@ -546,6 +552,7 @@ Martinezgarza
 Martín
 Marzouk
 Massimo
+Matthijs
 MaxACVI
 MaxACVO
 MaxDCV
@@ -584,6 +591,7 @@ MyState
 NAK
 NAS
 NBF
+NConfigs
 NETVER
 NETVERSION
 NFS
@@ -663,6 +671,7 @@ Oldworld
 Olli
 Omni
 OmniGuard
+OmniOS
 OmniSmart
 OnLine
 OnTime
@@ -706,6 +715,7 @@ PLL
 PLVn
 POLLFREQALERT
 POMode
+POSIX
 POWERDOWNFLAG
 POWEREX
 POWERLINE
@@ -741,6 +751,8 @@ PhaseWin
 PhoenixContact
 PhoenixTec
 Phoenixtec
+Pi
+PiJuice
 Plesser
 PnP
 Pohle
@@ -897,6 +909,7 @@ SKU
 SL
 SMALLBUF
 SMBUS
+SMF
 SMK
 SMT
 SMTP
@@ -919,6 +932,9 @@ STESTI
 STI
 STO
 STP
+SUNWlibusbugen
+SUNWugen
+SUNWusb
 SURTD
 SUSE
 SX
@@ -978,6 +994,7 @@ Suatoni
 SuperPower
 Sweex
 Symmetra
+Symmetras
 Synology
 SysHrs
 Sysgration
@@ -996,6 +1013,7 @@ TIOCMBIC
 TIOCMBIS
 TLS
 TODO
+TRACKINGDELAY
 TRYSSL
 TSR
 TST
@@ -1024,6 +1042,8 @@ Tnn
 Tomek
 TopGuard
 Toth
+TrackingID
+TrackingResult
 Tripp
 TrippLite
 Tru
@@ -1148,10 +1168,12 @@ addenum
 addinfo
 addrange
 adkorte
+adm
 admin's
 adminbox
 advorder
 ae
+aec
 af
 aggregator
 ai
@@ -1183,6 +1205,7 @@ apctest
 apcupsd
 aphel
 ar
+arg
 argc
 args
 argv
@@ -1264,6 +1287,7 @@ bindir
 bitmapped
 bitwise
 bn
+boolean
 boostvoolts
 bootable
 bp
@@ -1284,6 +1308,7 @@ bypassvolts
 byv
 cablepower
 calloc
+cb
 cbl
 cblimit
 cd
@@ -1302,6 +1327,8 @@ cfacvod
 cfacvon
 cfdcvd
 cfdcvn
+cfg
+cfgadm
 cflag
 cflags
 cgi
@@ -1312,8 +1339,10 @@ chargetime
 charset
 checksum
 chgrp
+chipset
 chmod
 chown
+chr
 christoph
 chroot
 chrooted
@@ -1335,9 +1364,11 @@ clueful
 cmd
 cmdline
 cmdname
+cmdparam
 cmds
 cmdvartab
 codebase
+codepath
 coldstarts
 collectd
 colspan
@@ -1346,6 +1377,7 @@ commandlen
 compat
 conf
 config
+configs
 configureaz
 configureaza
 confpath
@@ -1399,18 +1431,21 @@ debouncing
 deci
 decrement
 decrypt
+dedb
 defun
 dep
 dephasing
 deps
 desc
 deschis
+descr
 desde
 dev
 devd
 devel
 devscan
 dfl
+dialout
 dipsw
 dir
 disp
@@ -1484,6 +1519,7 @@ everyone's
 everything's
 evilhack
 executables
+executeCommand
 execve
 extendedhistory
 extradata
@@ -1509,6 +1545,7 @@ filenames
 filesystem
 filesystems
 firewalling
+firmwares
 flts
 fmt
 footnoteref
@@ -1522,6 +1559,7 @@ frob
 frontends
 fs
 fsd
+ftdi
 fuji
 fullload
 gamatronic
@@ -1537,8 +1575,10 @@ gentoo
 gestion
 getDescription
 getDevice
+getTrackingResult
 getValue
 getVariable
+getenv
 getopt
 getvar
 gitignore
@@ -1561,6 +1601,7 @@ gz
 gzip
 hal
 hardcoded
+hasFeature
 hb
 hcl
 hg
@@ -1651,6 +1692,7 @@ ivtscd
 jNUT
 jNut
 jNutWebAPI
+journalctl
 jpg
 jpgraph
 json
@@ -1677,6 +1719,7 @@ libaugeas
 libc
 libcommon
 libdir
+libexec
 libhid
 libhidups
 libi
@@ -1728,6 +1771,8 @@ lowruntime
 lowvoltsout
 lr
 lsusb
+lu
+lv
 lvo
 lxml
 lxyz
@@ -1762,6 +1807,7 @@ mecer
 megatec
 memset
 merchantability
+metadata
 metasys
 methodOfFlowControl
 mge
@@ -1793,11 +1839,13 @@ mmddyyyy
 mn
 modbus
 modelname
+modprobe
 monmaster
 monpasswd
 monslave
 monuser
 morbo
+msec
 multi
 multilink
 multimeter
@@ -1933,12 +1981,15 @@ pe
 peername
 pem
 perl
+pfexec
 pfy
 ph
 phasewindow
 phoenixcontact
+picocom
 pid
 pidpath
+pijuice
 pinout
 pinouts
 pkg
@@ -1990,6 +2041,8 @@ privProtocol
 probu
 proc
 productid
+prog
+prtconf
 psu
 pw
 pwl
@@ -2091,8 +2144,10 @@ sendline
 sendmail
 ser
 seria
+serialno
 serialnumber
 servicebypass
+setFeature
 setaux
 setflags
 setgid
@@ -2111,11 +2166,14 @@ shutdownpolarity
 shutdowntime
 shutup
 si
+siemens
 sigaction
 sigmask
 simplejson
 simu
+sio
 sitesearch
+sitop
 sizeof
 skel
 slavesync
@@ -2131,11 +2189,13 @@ snmpwalk
 snprintf
 snprintfcat
 sockdebug
+solaris
 solis
 somepass
 something's
 sp
 spanish
+spectype
 spellcheck
 splitaddr
 splitname
@@ -2185,11 +2245,13 @@ sudo
 suid
 superset
 sv
+svc
 svn
 sw
 symlink
 symlinking
 symlinks
+symmetrathreephase
 sys
 sysDescr
 sysOID
@@ -2199,6 +2261,7 @@ syscalls
 sysconfdir
 sysconfig
 syslog
+systemctl
 systemd
 systemdsystemunitdir
 systemhours
@@ -2241,6 +2304,7 @@ tsd
 tty
 ttyS
 ttySx
+ttyUPS
 ttyUSB
 ttya
 ttyb
@@ -2261,9 +2325,11 @@ uc
 udev
 udevadm
 ufw
+ugen
 ukUNV
 ul
 un
+unconfigured
 undefine
 undervoltage
 unescaped
@@ -2298,10 +2364,12 @@ upsdebugx
 upsdev
 upsdrv
 upsdrvctl
+upsdrvsvcctl
 upserror
 upsfetch
 upsgone
 upsh
+upshandler
 upsidentmodel
 upsimage
 upsload
@@ -2323,10 +2391,13 @@ upsuser
 uptime
 urpmi
 usb
+usbconfig
 usbfs
 usbhid
+usbif
 usbmisc
 usbups
+usbus
 usd
 usec
 userid
@@ -2338,6 +2409,7 @@ usleep
 usr
 utalk
 uu
+uucp
 va
 valgrind
 validationSequence
@@ -2351,6 +2423,7 @@ varlow
 varname
 varvalue
 vbatt
+vc
 vendorid
 verifySourceSig
 versa
