@@ -114,6 +114,13 @@ bool_t use_interrupt_pipe = FALSE;
 #endif
 static time_t lastpoll; /* Timestamp the last polling */
 hid_dev_handle_t udev;
+/**
+ * CyberPower UT series sometime need a bit of help deciding their online status.
+ * This quirk is to enable the special handling of OL & DISCHRG at the same time
+ * as being OB (on battery power/no mains power)
+ */
+#define DEFAULT_CPUTQUIRK 0
+static int cputquirk = DEFAULT_CPUTQUIRK;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -704,6 +711,9 @@ void upsdrv_makevartable(void)
 	addvar(VAR_VALUE, HU_VAR_POLLFREQ, temp);
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
+
+	snprintf(temp, sizeof(temp), "Enable CyberPower UT series quirk (default=%s)", DEFAULT_CPUTQUIRK);
+	addvar(VAR_FLAG, "cputquirk", temp);
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
@@ -1420,6 +1430,26 @@ static void ups_status_set(void)
 		dstate_setinfo("input.transfer.reason", "input frequency out of range");
 	} else {
 		dstate_delinfo("input.transfer.reason");
+	}
+
+
+	if ((ups_status & STATUS(ONLINE)) && (ups_status & STATUS(DISCHRG))) {
+		/* warning or CyberPower UT quirk */
+		if (cputquirk) {
+			status_set("OB");
+		} else if ((ups_status & STATUS(CAL))) {
+			status_set("OL");
+		} else {
+			upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OL+DISCHRG state now. "
+			"Is it calibrating or do you perhaps want to set 'cputquirk' option? "
+			"Some CyberPower UT series emit OL+DISCHRG when offline.",
+			  __func__, ups->upsname)
+			status_set("OL");
+		}
+	} else if ((ups_status & STATUS(ONLINE))) {
+		status_set("OL");
+	} else {
+		status_set("OB");		/* on battery */
 	}
 
 	if ((ups_status & STATUS(ONLINE)) &&
