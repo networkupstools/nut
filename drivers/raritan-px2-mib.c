@@ -23,7 +23,7 @@
 
 #include "raritan-px2-mib.h"
 
-#define RARITAN_PX2_MIB_VERSION  "0.1"
+#define RARITAN_PX2_MIB_VERSION  "0.2"
 
 #define RARITAN_PX2_MIB_SYSOID     ".1.3.6.1.4.1.13742.6"
 #define RARITAN_PX2_OID_MODEL_NAME ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1"
@@ -69,65 +69,65 @@ static snmp_info_t raritan_px2_mib[] = {
 
 	/* pduManufacturer.1 = STRING: Raritan */
 	{ "device.mfr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.2.1",
-		"Raritan", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		"Raritan", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* pduModel.1 = STRING: PX2-5475 */
 	{ "device.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1",
-		"Raritan PX2 SNMP PDU device", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		"Raritan PX2 SNMP PDU device", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* pduSerialNumber.1 = STRING: QFC3950619 */
 	{ "device.serial", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.4.1",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
-	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL, NULL },
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
+	{ "device.type", ST_FLAG_STRING, SU_INFOSIZE, NULL, "pdu", SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK, NULL },
 	/* pxMACAddress.1 = STRING: 0:d:5d:b:49:0 */
 	{ "device.macaddr", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.2.1.11.1",
-		NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		NULL, SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* boardVersion.1.mainController.1 = STRING: 0x01 */
 	/* FIXME: not compliant! to be RFC'ed */
-	{ "device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.3.1.4.1.1.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "device.revision", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.3.1.4.1.1.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* FIXME: move to device collection! */
 	/* Wrong OID!
 	 * { "ups.mfr.date", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.3.1.6.1.1.1", "", SU_FLAG_OK | SU_FLAG_STATIC, NULL },*/
 	/* boardFirmwareVersion.1.mainController.1 = STRING: 2.4.3.5-40298 */
-	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.3.1.6.1.1.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "ups.firmware", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.3.1.6.1.1.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	/* pduName.1 = STRING: my PX */
-	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.2.1.13.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "ups.id", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.2.1.13.1", "", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 	{ "ups.model", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.2.1.1.3.1",
-		"Raritan PX2 SNMP PDU device", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+		"Raritan PX2 SNMP PDU device", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* Input data:
 	 * Units are given in inletSensorUnits.1.1.%i
 	 * Value should be scaled by inletSensorDecimalDigits.1.1.%i
      * For example, if the value is 1 and inletSensorDecimalDigits is 2, then actual value is 0.01. */
  	/* measurementsInletSensorValue.1.1.rmsCurrent = Gauge32: 10 (A) */
-	{ "input.load", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.1", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "input.load", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.1", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.rmsVoltage = Gauge32: 119 (V) */
-	{ "input.voltage", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.4", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "input.voltage", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.4", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.activePower = Gauge32: 10 (W) */
-	{ "input.realpower", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.5", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "input.realpower", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.5", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.apparentPower = Gauge32: 122 (VA) */
-	{ "input.power", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.6", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "input.power", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.6", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.powerFactor = Gauge32: 8 (none) */
 	/* FIXME: need RFC! */
-	{ "input.powerfactor", 0, 0.01, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.7", NULL, SU_FLAG_OK, NULL, NULL },
+	{ "input.powerfactor", 0, 0.01, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.7", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.activeEnergy = Gauge32: 193359 (wattHour) */
-	/* { "unmapped.measurementsInletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.8", NULL, SU_FLAG_OK, NULL, NULL }, */
+	/* { "unmapped.measurementsInletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.8", NULL, SU_FLAG_OK, NULL }, */
 
 	/* inletPlug.1.1 = INTEGER: plugIEC320C20(6) */
 	/* FIXME: need RFC (input.type | [input.]inlet.type...) and standardization
 	 * { "unmapped.inletPlug", 0, 1, ".1.3.6.1.4.1.13742.6.3.3.3.1.4.1.1", NULL, SU_FLAG_OK, NULL },*/
 
 	/* outletCount.1 = INTEGER: 24 */
-	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.13742.6.3.2.2.1.4.1", "0", SU_FLAG_STATIC | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.count", 0, 1, ".1.3.6.1.4.1.13742.6.3.2.2.1.4.1", "0", SU_FLAG_STATIC | SU_FLAG_OK, NULL },
 
 	/* outlet template definition
 	 * Indexes start from 1, ie outlet.1 => <OID>.1 */
 	/* Note: the first definition is used to determine the base index (ie 0 or 1) */
 	/* outletName.1.%i = STRING:  */
-	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.3.1.%i", NULL, SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.desc", ST_FLAG_RW | ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.3.1.%i", NULL, SU_OUTLET, NULL },
 	/* outletSwitchingState.1.%i = INTEGER: on(7) */
-	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.4.1.2.1.3.1.%i", NULL, SU_OUTLET, &raritanpx2_outlet_status_info[0], NULL },
+	{ "outlet.%i.status", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.4.1.2.1.3.1.%i", NULL, SU_OUTLET, &raritanpx2_outlet_status_info[0] },
 	/* outletLabel.1.%i = STRING: 1 */
-	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.13742.6.3.5.3.1.2.1.%i", "%i", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.%i.id", 0, 1, ".1.3.6.1.4.1.13742.6.3.5.3.1.2.1.%i", "%i", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, NULL },
 
 	/* outletReceptacle.1.1 = INTEGER: receptacleNEMA520R(37) */
 	/* FIXME: need RFC and standardization
@@ -135,30 +135,30 @@ static snmp_info_t raritan_px2_mib[] = {
 
     /* RMS Current (divide by 10). e.g. 5 == 0.5A */
 	/* measurementsOutletSensorValue.1.%i.rmsCurrent = Gauge32: 10 */
-	{ "outlet.%i.current", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.1", NULL, SU_OUTLET | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.%i.current", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.1", NULL, SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.%i.rmsVoltage = Gauge32: 119 */
-	{ "outlet.%i.voltage", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.4", "%i", SU_OUTLET | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.%i.voltage", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.4", "%i", SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.%i.activePower = Gauge32: 10 */
-	{ "outlet.%i.power", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.5", "%i", SU_OUTLET | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.%i.power", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.5", "%i", SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.%i.apparentPower = Gauge32: 122 */
-	{ "outlet.%i.realpower", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.6", "%i", SU_OUTLET | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.%i.realpower", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.6", "%i", SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.%i.powerFactor = Gauge32: 8 */
-	{ "outlet.%i.powerfactor", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.7", "%i", SU_OUTLET | SU_FLAG_OK, NULL, NULL },
+	{ "outlet.%i.powerfactor", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.7", "%i", SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.1.activeEnergy = Gauge32: 89890 */
 	/* FIXME:
-	 * { "unmapped.measurementsOutletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.1.8", NULL, SU_FLAG_OK, NULL, NULL }, */
+	 * { "unmapped.measurementsOutletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.1.8", NULL, SU_FLAG_OK, NULL }, */
 	/* measurementsOutletSensorValue.1.1.onOff = Gauge32: 0 */
 	/* FIXME:
 	 * { "unmapped.measurementsOutletSensorValue", 0, 1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.1.14", NULL, SU_FLAG_OK, NULL }, */
 
 	/* outletSwitchable.1.%i = INTEGER: true(1) */
-	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &outlet_switchability_info[0], NULL },
+	{ "outlet.%i.switchable", ST_FLAG_STRING, SU_INFOSIZE, ".1.3.6.1.4.1.13742.6.3.5.3.1.28.1.%i", "no", SU_FLAG_STATIC | SU_OUTLET | SU_FLAG_OK, &outlet_switchability_info[0] },
 
 	/* instant commands. */
 	/* switchingOperation.1.1 = INTEGER: on(1) */
-	{ "outlet.%i.load.off",   0, 0, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.load.on",    0, 1, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
-	{ "outlet.%i.load.cycle", 0, 2, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", NULL, SU_TYPE_CMD | SU_OUTLET, NULL, NULL },
+	{ "outlet.%i.load.off",   0, 1, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", "0", SU_TYPE_CMD | SU_OUTLET, NULL },
+	{ "outlet.%i.load.on",    0, 1, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", "1", SU_TYPE_CMD | SU_OUTLET, NULL },
+	{ "outlet.%i.load.cycle", 0, 1, ".1.3.6.1.4.1.13742.6.4.1.2.1.2.1.%i", "2", SU_TYPE_CMD | SU_OUTLET, NULL },
 
 #ifdef DEBUG
 	/* pduCount.0 = INTEGER: 1 */

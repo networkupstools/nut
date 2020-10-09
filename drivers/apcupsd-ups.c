@@ -26,7 +26,9 @@
 #include "apcupsd-ups.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
-#define DRIVER_VERSION	"0.04"
+#define DRIVER_VERSION	"0.5"
+
+#define POLL_INTERVAL_MIN 10
 
 /* driver description structure */
 upsdrv_info_t upsdrv_info = {
@@ -54,9 +56,8 @@ static void process(char *item,char *data)
 	{
 	case DU_FLAG_STATUS:
 		status_init();
-		if(!strcmp(data,"COMMLOST")||!strcmp(data,"SHUTTING DOWN")||
-			!strcmp(data,"NETWORK ERROR")||!strcmp(data,"ERROR"))
-				status_set("OFF");
+		if(!strcmp(data,"COMMLOST")||!strcmp(data,"NETWORK ERROR")||
+		   !strcmp(data,"ERROR"))status_set("OFF");
 		else if(!strcmp(data,"SELFTEST"))status_set("OB");
 		else for(;(data=strtok(data," "));data=NULL)
 		{
@@ -66,7 +67,8 @@ static void process(char *item,char *data)
 			else if(!strcmp(data,"ONLINE"))status_set("OL");
 			else if(!strcmp(data,"ONBATT"))status_set("OB");
 			else if(!strcmp(data,"OVERLOAD"))status_set("OVER");
-			else if(!strcmp(data,"LOWBATT"))status_set("LB");
+			else if(!strcmp(data,"SHUTTING DOWN")||
+				!strcmp(data,"LOWBATT"))status_set("LB");
 			else if(!strcmp(data,"REPLACEBATT"))status_set("RB");
 			else if(!strcmp(data,"NOBATT"))status_set("BYPASS");
 		}
@@ -145,7 +147,7 @@ static int getdata(void)
 	char bfr[1024];
 
 	for(x=0;nut_data[x].info_type;x++)
-		if(!(nut_data[x].drv_flags&DU_FLAG_INIT))
+		if(!(nut_data[x].drv_flags & DU_FLAG_INIT) && !(nut_data[x].drv_flags & DU_FLAG_PRESERVE))
 			dstate_delinfo(nut_data[x].info_type);
 
 	if((p.fd=socket(AF_INET,SOCK_STREAM,0))==-1)
@@ -237,14 +239,16 @@ void upsdrv_initinfo(void)
 	if(!port)fatalx(EXIT_FAILURE,"invalid host or port specified!");
 	if(getdata())fatalx(EXIT_FAILURE,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_updateinfo(void)
 {
 	if(getdata())upslogx(LOG_ERR,"can't communicate with apcupsd!");
 	else dstate_dataok();
-	poll_interval=60;
+
+	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
 
 void upsdrv_shutdown(void)

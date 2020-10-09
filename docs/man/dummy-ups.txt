@@ -33,7 +33,7 @@ Repeater Mode
 In this mode, *dummy-ups* acts as a NUT client, simply forwarding data.
 This can be useful for supervision purposes. This mode can also allow some
 load sharing between several `upsd` instances communicating with ultimate
-NUT clients, wit a "central" one using a point-to-point communication with
+NUT clients, with a "central" one using a point-to-point communication with
 the UPS. This arrangement can also help with networked UPSes, whose network
 management cards can be overwhelmed with a farm of servers directly polling
 SNMP or other protocols every few seconds.
@@ -87,7 +87,7 @@ between "OL", "OB" and "OB LB" every minute:
 	TIMER 60
 	ups.status: OB
 	TIMER 60
-	ups.status: LB
+	ups.status: OB LB
 	TIMER 60
 
 It is wise to end the script with a `TIMER` keyword. Otherwise *dummy-ups*

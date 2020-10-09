@@ -4,7 +4,7 @@ POWERPANEL(8)
 NAME
 ----
 
-powerpanel - Driver for PowerPanel Plus compatible UPS equipment
+powerpanel - Driver for serial PowerPanel Plus compatible UPS equipment
 
 NOTE
 ----
@@ -17,6 +17,10 @@ SUPPORTED HARDWARE
 This driver supports CyberPower BC1200, PR2200 and many other similar
 devices, both for the text and binary protocols. The driver will
 autodetect which protocol is used.
+
+If your Cyber Power Systems UPS has a USB port, you may wish to use the
+linkman:usbhid-ups[8] driver. The linkman:snmp-ups[8] driver supports several
+network cards via SNMP.
 
 EXTRA ARGUMENTS
 ---------------
@@ -132,6 +136,11 @@ SEE ALSO
 The core driver:
 ~~~~~~~~~~~~~~~~
 linkman:nutupsdrv[8]
+
+Other drivers:
+~~~~~~~~~~~~~~
+linkman:usbhid-ups[8],
+linkman:snmp-ups[8]
 
 Internet resources:
 ~~~~~~~~~~~~~~~~~~~
