@@ -174,9 +174,26 @@ non-tab character has appeared on the line must be done by spaces in
 order for it to remain at the same alignment when someone views tabs at
 a different widths.
 
-If you write something that uses spaces, you may get away with it in a
-driver that's relatively secluded.  However, if we have to work on that
-code, expect it to get reformatted according to the above.
+One common example for this is multi-line if condition:
+
+--------------------------------------------------------------------------------
+	if (something &&
+	    something_else) {
+--------------------------------------------------------------------------------
+
+Another example is tables of definitions that are better aligned with
+(non-leading) spaces at least between names and values not too many
+characters wide; it still helps to align the columns with spaces at
+offsets divisible by 4 or 8 (consistently for the whole table):
+
+--------------------------------------------------------------------------------
+#define SHORT_MACRO                         1	/* flag comment */
+#define SOMETHING_WITH_A_VERY_LONG_NAME     255	/* flag comment */
+--------------------------------------------------------------------------------
+
+If you write something that uses leading spaces, you may get away with
+it in a driver that's relatively secluded.  However, if we have to work
+on that code, expect it to get reformatted according to the above.
 
 Patches to existing code that don't conform to the coding style being
 used in that file will probably be dropped.  If it's something we really
