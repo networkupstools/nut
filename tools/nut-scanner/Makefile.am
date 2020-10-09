@@ -26,6 +26,13 @@ libnutscan_la_SOURCES = scan_nut.c scan_ipmi.c \
 			../../drivers/bcmxcp_ser.c \
 			../../common/common.c ../../common/str.c
 libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
+#
+# Below we set API versions of public libraries
+# http://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html
+# Note that changes here may have to be reflected in packaging (the shared
+# object .so names would differ)
+#
+# libnutscan version information
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 

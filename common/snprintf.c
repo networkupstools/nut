@@ -54,7 +54,7 @@
 #include "config.h"
 
 #include <string.h>
-# include <ctype.h>
+#include <ctype.h>
 #include <sys/types.h>
 
 #if !defined(HAVE_SNPRINTF) || !defined(HAVE_VSNPRINTF)
