@@ -33,12 +33,12 @@ libnutscan_la_LIBADD = $(NETLIBS) $(LIBLTDL_LIBS)
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0 -export-symbols-regex ^nutscan_
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include $(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = libnutscan.la
+nut_scanner_LDADD = ../../common/libcommon.la libnutscan.la
 
 if WITH_SSL
   libnutscan_la_CFLAGS += $(LIBSSL_CFLAGS)
