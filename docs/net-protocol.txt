@@ -44,6 +44,8 @@ NUT network protocol, over the time:
 |1.1              |>= 1.5.0    |Original protocol (without old commands)
 .2+|1.2        .2+|>= 2.6.4    |Add "LIST CLIENTS" and "NETVER" commands
                                |Add ranges of values for writable variables
+.2+|1.3        .2+|>= 2.7.5    |Add "cmdparam" to "INSTCMD"
+                               |Add "TRACKING" commands (GET, SET)
 |===============================================================================
 
 NOTE: any new version of the protocol implies an update of NUT_NETVERSION
@@ -187,6 +189,26 @@ Response:
 This is like DESC above, but it applies to the instant commands.
 
 This replaces the old "INSTCMDDESC" command.
+
+
+TRACKING
+~~~~~~~~
+
+Form:
+
+	GET TRACKING      (activation status of TRACKING)
+	GET TRACKING <id> (execution status of a command / setvar)
+	GET TRACKING 1bd31808-cb49-4aec-9d75-d056e6f018d2
+
+Response:
+
+	ON                   (TRACKING feature is enabled)
+	OFF                  (TRACKING feature is disabled)
+	PENDING              (command execution is pending)
+	SUCCESS              (command was successfully executed)
+	ERR UNKNOWN          (command execution failed with unknown error)
+	ERR INVALID-ARGUMENT (command execution failed due to missing or invalid argument)
+	ERR FAILED           (command execution failed)
 
 
 LIST
@@ -377,10 +399,36 @@ Response:
 SET
 ---
 
+VAR
+~~~
+
 Form:
 
 	SET VAR <upsname> <varname> "<value>"
 	SET VAR su700 ups.id "My UPS"
+
+Response:
+
+	OK                         (if TRACKING is not enabled)
+	OK TRACKING <id>           (if TRACKING is enabled)
+	ERR <message> [<extra>...] (see Error responses)
+
+
+TRACKING
+~~~~~~~~
+
+Form:
+
+	SET TRACKING <value>
+	SET TRACKING ON
+	SET TRACKING OFF
+
+Response:
+
+	OK
+	ERR INVALID-ARGUMENT  (if <value> is not "ON" or "OFF")
+	ERR USERNAME-REQUIRED (if not yet authenticated)
+	ERR PASSWORD-REQUIRED (if not yet authenticated)
 
 
 INSTCMD
@@ -388,8 +436,17 @@ INSTCMD
 
 Form:
 
-	INSTCMD <upsname> <cmdname>
+	INSTCMD <upsname> <cmdname> [<cmdparam>]
 	INSTCMD su700 test.panel.start
+	INSTCMD su700 load.off.delay 120
+
+NOTE: <cmdparam> is an additional and optional parameter for the command.
+
+Response:
+
+	OK                         (if TRACKING is not enabled)
+	OK TRACKING <id>           (if TRACKING is enabled)
+	ERR <message> [<extra>...] (see Error responses)
 
 
 LOGOUT
@@ -694,13 +751,6 @@ Dense lists
 The LIST commands may be given the ability to handle options some day.
 For example, "LIST VARS <ups> +DESC" would return the current value
 like now, but it would also append the description of that variable.
-
-
-Command status
-~~~~~~~~~~~~~~
-
-After sending an INSTCMD or SET, a client will eventually be able to
-poll to see whether it was completed successfully by the driver.
 
 
 Get collection

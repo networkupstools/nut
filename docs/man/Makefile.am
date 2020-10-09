@@ -252,7 +252,9 @@ MAN3_DEV_PAGES = \
 	upscli_list_next.3 \
 	upscli_list_start.3 \
 	upscli_readline.3 \
+	upscli_readline_timeout.3 \
 	upscli_sendline.3 \
+	upscli_sendline_timeout.3 \
 	upscli_splitaddr.3 \
 	upscli_splitname.3 \
 	upscli_ssl.3 \
@@ -288,6 +290,12 @@ MAN3_DEV_PAGES = \
 	nutscan_add_device_to_device.3 \
 	nutscan_get_serial_ports_list.3 \
 	nutscan_init.3
+
+upscli_readline_timeout.3: upscli_readline.3
+	touch $@
+
+upscli_sendline_timeout.3: upscli_sendline.3
+	touch $@
 
 MAN1_DEV_PAGES = \
 	libupsclient-config.1
@@ -612,16 +620,16 @@ endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html
 
-SRC_LINUX_I2C_PAGES = asem.txt
+SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.8
+MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
 endif
 
 if WITH_LINUX_I2C
    man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif
 
-HTML_LINUX_I2C_MANS = asem.html
+HTML_LINUX_I2C_MANS = asem.html pijuice.html
 
 # SOME_DRIVERS
 endif
