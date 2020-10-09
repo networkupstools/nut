@@ -90,7 +90,7 @@ With "auto", the driver will try a select set of SNMP objects until it finds
 one that the device responds to.  Note that since NUT 2.6.2, snmp-ups has a new
 method that uses sysObjectID (which is a pointer to the preferred MIB of the
 device) to detect supported devices.  This renders void the use of "mibs" option.
-   
+
 *community*='name'::
 Set community name (default = public).
 Note that a RW community name is required to change UPS settings (as for a powerdown).
@@ -103,6 +103,11 @@ Specifies the number of Net-SNMP retries to be used in the requests (default=5)
 
 *snmp_timeout*='timeout'::
 Specifies the Net-SNMP timeout in seconds between retries (default=1)
+
+*symmetrathreephase*::
+Enable APCC three phase Symmetra quirks (use on APCC three phase Symmetras):
+Convert from three phase line-to-line voltage to line-to-neutral voltage
+(default: not enabled)
 
 *pollfreq*='num'::
 Set polling interval for full updates, in seconds, to reduce SNMP network

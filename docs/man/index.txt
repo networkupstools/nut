@@ -91,6 +91,7 @@ Drivers
 - linkman:oneac[8]
 - linkman:optiups[8]
 - linkman:phoenixcontact_modbus[8]
+- linkman:pijuice[8]
 - linkman:powercom[8]
 - linkman:powerman-pdu[8]
 - linkman:powerpanel[8]
