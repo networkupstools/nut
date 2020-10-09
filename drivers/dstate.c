@@ -1,9 +1,9 @@
 /* dstate.c - Network UPS Tools driver-side state management
 
    Copyright (C)
-	2003	Russell Kroll <rkroll@exploits.org>
-	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
-	2012	Arnaud Quette <arnaud.quette@free.fr>
+	2003		Russell Kroll <rkroll@exploits.org>
+	2008		Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2012 - 2017	Arnaud Quette <arnaud.quette@free.fr>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -201,6 +201,7 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
+	upsdebugx(2, "%s: sending %.*s", __func__, (int)strcspn(buf, "\n"), buf);
 	if (ret < 1) {
 		upsdebugx(2, "%s: nothing to write", __func__);
 		return 1;
@@ -356,6 +357,12 @@ static int cmd_dump_conn(conn_t *conn)
 	return 1;
 }
 
+
+static void send_tracking(conn_t *conn, const char *id, int value)
+{
+	send_to_one(conn, "TRACKING %s %i\n", id, value);
+}
+
 static int sock_arg(conn_t *conn, int numarg, char **arg)
 {
 	if (numarg < 1) {
@@ -394,20 +401,40 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* INSTCMD <cmdname> [<value>]*/
+	/* INSTCMD <cmdname> [<cmdparam>] [TRACKING <id>] */
 	if (!strcasecmp(arg[0], "INSTCMD")) {
+		int ret;
+		char *cmdname = arg[1];
+		char *cmdparam = NULL;
+		char *cmdid = NULL;
+
+		/* Check if <cmdparam> and TRACKING were provided */
+		if (numarg == 3) {
+			cmdparam = arg[2];
+		} else if (numarg == 4 && !strcasecmp(arg[2], "TRACKING")) {
+			cmdid = arg[3];
+		} else if (numarg == 5 && !strcasecmp(arg[3], "TRACKING")) {
+			cmdparam = arg[2];
+			cmdid = arg[4];
+		} else if (numarg != 2) {
+			upslogx(LOG_NOTICE, "Malformed INSTCMD request");
+			return 0;
+		}
+
+		if (cmdid)
+			upsdebugx(3, "%s: TRACKING = %s", __func__, cmdid);
 
 		/* try the new handler first if present */
 		if (upsh.instcmd) {
-			if (numarg > 2) {
-				upsh.instcmd(arg[1], arg[2]);
-				return 1;
-			}
+			ret = upsh.instcmd(cmdname, cmdparam);
 
-			upsh.instcmd(arg[1], NULL);
+			/* send back execution result */
+			if (cmdid)
+				send_tracking(conn, cmdid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
-
 		upslogx(LOG_NOTICE, "Got INSTCMD, but driver lacks a handler");
 		return 1;
 	}
@@ -416,12 +443,33 @@ static int sock_arg(conn_t *conn, int numarg, char **arg)
 		return 0;
 	}
 
-	/* SET <var> <value> */
+	/* SET <var> <value> [TRACKING <id>] */
 	if (!strcasecmp(arg[0], "SET")) {
+		int ret;
+		char *setid = NULL;
+
+		/* Check if TRACKING was provided */
+		if (numarg == 5) {
+			if (!strcasecmp(arg[3], "TRACKING")) {
+				setid = arg[4];
+			}
+			else {
+				upslogx(LOG_NOTICE, "Got SET <var> with unsupported parameters (%s/%s)",
+					arg[3], arg[4]);
+				return 0;
+			}
+			upsdebugx(3, "%s: TRACKING = %s", __func__, setid);
+		}
 
 		/* try the new handler first if present */
 		if (upsh.setvar) {
-			upsh.setvar(arg[1], arg[2]);
+			ret = upsh.setvar(arg[1], arg[2]);
+
+			/* send back execution result */
+			if (setid)
+				send_tracking(conn, setid, ret);
+
+			/* The command was handled, status is a separate consideration */
 			return 1;
 		}
 
@@ -655,7 +703,7 @@ int dstate_addrange(const char *var, const int min, const int max)
 	ret = state_addrange(dtree_root, var, min, max);
 
 	if (ret == 1) {
-		send_to_all("ADDRANGE %s  %i %i\n", var, min, max);
+		send_to_all("ADDRANGE %s %i %i\n", var, min, max);
 		/* Also add the "NUMBER" flag for ranges */
 		dstate_addflags(var, ST_FLAG_NUMBER);
 	}
@@ -817,7 +865,7 @@ int dstate_delrange(const char *var, const int min, const int max)
 
 	/* update listeners */
 	if (ret == 1) {
-		send_to_all("DELRANGE %s \"%i %i\"\n", var, min, max);
+		send_to_all("DELRANGE %s %i %i\n", var, min, max);
 	}
 
 	return ret;
@@ -1018,11 +1066,8 @@ void device_alarm_commit(const int device_number)
  * variables to store the flag (if we have successfully inited) and the
  * discovered amount of phases, or NULL if caller does not want to track it.
  *
- * NOTE: At this time the code below, like elsewhere in the NUT codebase,
- * assumes there are either 1 or 3 phases, when/if it has to guess (rather
- * than use a value reported by the device). There was recently a discussion
- * in NUT issues that 2-phase devices (aka "split phase") exist on the market,
- * so (TODO) support for these may have to be added at some point.
+ * NOTE: The code below can detect if the device is 1, 2 (split phase) or 3
+ * phases.
  *
  * Returns:
  *   -1     Runtime/input error (non fatal, but routine was skipped)
@@ -1120,7 +1165,15 @@ int dstate_detect_phasecount(
 		dstate_getinfo_nonzero(v0,  "voltage");
 		dstate_getinfo_nonzero(c0,  "current");
 
-		if ( (v1 && v2 && v3) ||
+		if ( (v1 && v2 && !v3) ||
+		     (v1n && v2n && !v3n) ||
+		     (c1 && c2 && !c2) ||
+		     (v12 && !v23 && !v31) ) {
+			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
+			*num_phases = 2;
+			*inited_phaseinfo = 1;
+			detected_phaseinfo = 1;
+		} else if ( (v1 && v2 && v3) ||
 		     (v1n && v2n && v3n) ||
 		     (c1 && (c2 || c3)) ||
 		     (c2 && (c1 || c3)) ||
@@ -1184,4 +1237,42 @@ int dstate_detect_phasecount(
 
 	upsdebugx(5, "%s(): Nothing changed, with a valid reason; already inited", __func__);
 	return 2;
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Actual implementation */
+static int dstate_tree_dump(st_tree_t *node)
+{
+	int	ret;
+
+	if (!node) {
+		return 1;	/* not an error */
+	}
+
+	if (node->left) {
+		ret = dstate_tree_dump(node->left);
+
+		if (!ret) {
+			return 0;	/* write failed in the child */
+		}
+	}
+
+	printf("%s: %s\n", node->var, node->val);
+
+	if (node->right) {
+		return dstate_tree_dump(node->right);
+	}
+
+	return 1;	/* everything's OK here ... */
+}
+
+/* Dump the data tree (in upsc-like format) to stdout */
+/* Public interface */
+void dstate_dump(void)
+{
+	upsdebugx(3, "Entering %s", __func__);
+
+	st_tree_t *node = (st_tree_t *)dstate_getroot();
+
+	dstate_tree_dump(node);
 }

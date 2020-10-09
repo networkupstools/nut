@@ -51,6 +51,8 @@ Drivers
 ~~~~~~~
 
 - linkman:upsdrvctl[8]
+- linkman:upsdrvsvcctl[8]
+- linkman:nut-driver-enumerator[8]
 
 - linkman:al175[8]
 - linkman:apcsmart[8]
@@ -88,6 +90,8 @@ Drivers
 - linkman:nutupsdrv[8]
 - linkman:oneac[8]
 - linkman:optiups[8]
+- linkman:phoenixcontact_modbus[8]
+- linkman:pijuice[8]
 - linkman:powercom[8]
 - linkman:powerman-pdu[8]
 - linkman:powerpanel[8]

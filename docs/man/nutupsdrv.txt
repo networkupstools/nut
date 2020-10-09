@@ -1,7 +1,7 @@
 NUTUPSDRV(8)
 ============
 
-NAME  
+NAME
 ----
 
 nutupsdrv - generic manual for unified NUT drivers
@@ -27,16 +27,21 @@ hardware and the linkman:upsd[8] server.  The driver is responsible for
 translating the native protocol of the UPS to the common format used by
 the rest of this package.
 
-The core has two modes of operation which are determined by the
+The core has three modes of operation which are determined by the
 command line switches.  In the normal mode, the driver will periodically
-poll the UPS for its state and parameters.  The results of this command
-is presented to upsd.  The driver will also handle setting variables and
-instant commands if available.
+poll the UPS for its state and parameters, as per the *pollinterval* parameter
+in linkman:ups.conf[5].  The results of this command are presented to upsd.
+The driver will also handle setting variables and instant commands if available.
 
-The driver can also instruct the UPS to shut down the load, possibly
-after some delay.  This mode of operation is intended for cases when it is
-known that the UPS is running out of battery power and the systems
-attached must be turned off to ensure a proper reboot when power returns.
+In the second mode, using *-k*, the driver can instruct the UPS to shut down
+the load, possibly after some delay.  This mode of operation is intended for
+cases when it is known that the UPS is running out of battery power and the
+systems attached must be turned off to ensure a proper reboot when power
+returns.
+
+In the third mode, using *-d*, the driver will exit after some update loops,
+dumping the data tree (in upsc-like format) to stdout.  This can be useful to
+complement the nut-scanner to discover devices, along with in-depth data.
 
 NOTE: You probably don't want to use any of these options directly.  You
 should use linkman:upsdrvctl[8] to control your drivers, and
@@ -54,6 +59,14 @@ driver's author may have provided.
 Autoconfigure this driver using the 'id' section of linkman:ups.conf[5].
 *This argument is mandatory when calling the driver directly.*
 
+*-s* 'id'::
+Configure this driver only with command line arguments instead of reading
+linkman:ups.conf[5]. To be used instead of *-a* option when need to run
+a driver not present in driver configuration file. Instead, driver
+configuration have to be set with *-x* options directly in the command line.
+As the driver instance cannot be controlled by linkman:upsdrvctl[8],
+this option should be used for specific needs only.
+
 *-D*::
 Raise the debugging level.  Use this multiple times to see more details.
 Running a driver in debug mode will prevent it from backgrounding after
@@ -66,11 +79,17 @@ have with a driver to a developer/maintainer, before sending them debugging
 output.  More often than not, if you just pick a level, the output may be
 either too limited or too verbose to be of any use.
 
+*-d* 'update_count'::
+Dump the data tree (in upsc-like format) to stdout after running the driver
+update loop for 'update_count' times and exit.
+Note that the driver banner will be printed too, so when using this option in
+scripts, don't forget to trim the first line.
+
 *-q*::
 Raise log level threshold.  Use this multiple times to log more details.
 +
 The debugging comment above also applies here.
- 
+
 *-i* 'interval'::
 Set the poll interval for the device.  The default value is 2 (in seconds).
 
@@ -98,17 +117,25 @@ opened before the chroot call, so you do not need to create them inside
 the jail.  In fact, it is somewhat safer if you do not.
 
 *-u* 'username'::
-If started as root, the driver will setuid(2) to the user id
-associated with 'username'.  
+Override the unprivileged username that the driver may use after startup.  If
+started as root, after opening configuration files (and optionally calling
+chroot(2), as described in the previous option), the driver will look up
+'username' in the `passwd` database, then change to the user and group
+identities associated with 'username'. (If started with a nonzero UID or
+effective UID, the driver will silently ignore this option.)
 +
-If you do not specify this value and start it as root, the driver will
-switch to the default value that was compiled into the code.  This is
-typically 'nobody', and is far from ideal.
+When compiling NUT from source, the default username is typically `nobody`, and
+this may cause permission errors when the driver opens the UPS device node. You
+can use this option to temporarily override the defaults. For testing purposes,
+you can set this option to `root` to bypass permission errors, especially with
+USB-based drivers. However, you will want to remove this option later in order
+to avoid permission conflicts between the driver and the unprivileged copy of
+linkman:upsd[8].
 
 *-x* 'var'='val'::
 Define a variable called 'var' with the value of 'var' in the
 driver.  This varies from driver to driver - see the specific man pages
-for more information.  
+for more information.
 +
 This is like setting 'var'='val' in linkman:ups.conf[5], but
 *-x* overrides any settings from that file.
@@ -133,6 +160,23 @@ FILES
 ups.conf::
 Required configuration file.  This contains all details on which drivers
 to start and where the hardware is attached.
+
+ENVIRONMENT VARIABLES
+---------------------
+
+*NUT_CONFPATH* is the path name of the directory that contains
+`upsd.conf` and other configuration files.  If this variable is not set,
+*upsd* uses a built-in default, which is often `/usr/local/ups/etc`.
+
+*NUT_STATEPATH* is the path name of the directory in which
+*upsd* keeps state information.  If this variable is not set,
+*upsd* uses a built-in default, which is often `/var/state/ups`.
+The *STATEPATH* directive in linkman:upsd.conf[5] overrides this variable.
+
+*NUT_ALTPIDPATH* is the path name of the directory in which
+*upsd* and drivers store .pid files.  If this variable is not set,
+*upsd* and drivers use either *NUT_STATEPATH* if set, or ALTPIDPATH if set,
+or otherwise the built-in default *STATEPATH*.
 
 BUGS
 ----
@@ -181,7 +225,6 @@ linkman:metasys[8],
 linkman:mge-shut[8],
 linkman:mge-utalk[8],
 linkman:mge-xml[8],
-linkman:newmge-shut[8],
 linkman:nitram[8],
 linkman:nutdrv_qx[8],
 linkman:oneac[8],

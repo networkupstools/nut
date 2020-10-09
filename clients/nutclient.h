@@ -51,9 +51,9 @@ class NutException : public std::exception
 {
 public:
 	NutException(const std::string& msg):_msg(msg){}
-	virtual ~NutException() throw() {}
-	virtual const char * what() const throw() {return this->_msg.c_str();}
-	virtual std::string str() const throw() {return this->_msg;}
+	virtual ~NutException() {}
+	virtual const char * what() const noexcept {return this->_msg.c_str();}
+	virtual std::string str() const noexcept {return this->_msg;}
 private:
 	std::string _msg;
 };
@@ -65,7 +65,7 @@ class SystemException : public NutException
 {
 public:
 	SystemException();
-	virtual ~SystemException() throw() {}
+	virtual ~SystemException() {}
 private:
 	static std::string err();
 };
@@ -78,7 +78,7 @@ class IOException : public NutException
 {
 public:
 	IOException(const std::string& msg):NutException(msg){}
-	virtual ~IOException() throw() {}
+	virtual ~IOException() {}
 };
 
 /**
@@ -88,7 +88,7 @@ class UnknownHostException : public IOException
 {
 public:
 	UnknownHostException():IOException("Unknown host"){}
-	virtual ~UnknownHostException() throw() {}
+	virtual ~UnknownHostException() {}
 };
 
 /**
@@ -98,7 +98,7 @@ class NotConnectedException : public IOException
 {
 public:
 	NotConnectedException():IOException("Not connected"){}
-	virtual ~NotConnectedException() throw() {}
+	virtual ~NotConnectedException() {}
 };
 
 /**
@@ -108,8 +108,27 @@ class TimeoutException : public IOException
 {
 public:
 	TimeoutException():IOException("Timeout"){}
-	virtual ~TimeoutException() throw() {}
+	virtual ~TimeoutException() {}
 };
+
+/**
+ * Cookie given when performing async action, used to redeem result at a later date.
+ */
+typedef std::string TrackingID;
+
+/**
+ * Result of an async action.
+ */
+typedef enum
+{
+	UNKNOWN,
+	PENDING,
+	SUCCESS,
+	INVALID_ARGUMENT,
+	FAILURE,
+} TrackingResult;
+
+typedef std::string Feature;
 
 /**
  * A nut client is the starting point to dialog to NUTD.
@@ -132,13 +151,13 @@ public:
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 * \note Actually, authentication fails only if already set, not if bad values are sent.
 	 */
-	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException)=0;
+	virtual void authenticate(const std::string& user, const std::string& passwd)=0;
 
 	/**
 	 * Disconnect from the NUTD server.
 	 * \todo Is his method is global to all connection protocol or is it specific to TCP ?
 	 */
-	virtual void logout()throw(NutException)=0;
+	virtual void logout()=0;
 
 	/**
 	 * Device manipulations.
@@ -151,29 +170,29 @@ public:
 	 * \param name Name of the device.
 	 * \return The device.
 	 */
-	virtual Device getDevice(const std::string& name)throw(NutException);
+	virtual Device getDevice(const std::string& name);
 	/**
 	 * Retrieve the list of all devices supported by UPSD server.
 	 * \return The set of supported devices.
 	 */
-	virtual std::set<Device> getDevices()throw(NutException);
+	virtual std::set<Device> getDevices();
 	/**
 	 * Test if a device is supported by the NUTD server.
 	 * \param dev Device name.
 	 * \return true if supported, false otherwise.
 	 */
-	virtual bool hasDevice(const std::string& dev)throw(NutException);
+	virtual bool hasDevice(const std::string& dev);
 	/**
 	 * Retrieve names of devices supported by NUTD server.
 	 * \return The set of names of supported devices.
 	 */
-	virtual std::set<std::string> getDeviceNames()throw(NutException)=0;
+	virtual std::set<std::string> getDeviceNames()=0;
 	/**
 	 * Retrieve the description of a device.
 	 * \param name Device name.
 	 * \return Device description.
 	 */
-	virtual std::string getDeviceDescription(const std::string& name)throw(NutException)=0;
+	virtual std::string getDeviceDescription(const std::string& name)=0;
 	/** \} */
 
 	/**
@@ -186,54 +205,60 @@ public:
 	 * \param dev Device name
 	 * \return Variable names
 	 */
-	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)throw(NutException)=0;
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)=0;
 	/**
 	 * Retrieve names of read/write variables supported by a device.
 	 * \param dev Device name
 	 * \return RW variable names
 	 */
-	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)throw(NutException)=0;
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)=0;
 	/**
 	 * Test if a variable is supported by a device.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \return true if the variable is supported.
 	 */
-	virtual bool hasDeviceVariable(const std::string& dev, const std::string& name)throw(NutException);
+	virtual bool hasDeviceVariable(const std::string& dev, const std::string& name);
 	/**
 	 * Retrieve the description of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \return Variable description if provided.
 	 */
-	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)=0;
 	/**
 	 * Retrieve values of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \return Variable values (usually one) if available.
 	 */
-	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)=0;
 	/**
 	 * Retrieve values of all variables of a device.
 	 * \param dev Device name
 	 * \return Variable values indexed by variable names.
 	 */
-	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev);
+	/**
+	 * Retrieve values of all variables of a set of devices.
+	 * \param devs Device names
+	 * \return Variable values indexed by variable names, indexed by device names.
+	 */
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs);
 	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \param value Variable value
-	 */  
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)=0;
+	 */
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)=0;
 	/**
 	 * Intend to set the value of a variable.
 	 * \param dev Device name
 	 * \param name Variable name
 	 * \param value Variable value
-	 */  
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)=0;
+	 */
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)=0;
 	/** \} */
 
 	/**
@@ -246,27 +271,28 @@ public:
 	 * \param dev Device name
 	 * \return Command names
 	 */
-	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException)=0;
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)=0;
 	/**
 	 * Test if a command is supported by a device.
 	 * \param dev Device name
 	 * \param name Command name
 	 * \return true if the command is supported.
 	 */
-	virtual bool hasDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+	virtual bool hasDeviceCommand(const std::string& dev, const std::string& name);
 	/**
 	 * Retrieve the description of a command.
 	 * \param dev Device name
 	 * \param name Command name
 	 * \return Command description if provided.
 	 */
-	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)=0;
 	/**
 	 * Intend to execute a command.
 	 * \param dev Device name
 	 * \param name Command name
+	 * \param param Additional command parameter
 	 */
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)=0;
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="")=0;
 	/** \} */
 
 	/**
@@ -277,15 +303,27 @@ public:
 	 * Log the current user (if authenticated) for a device.
 	 * \param dev Device name.
 	 */
-	virtual void deviceLogin(const std::string& dev)throw(NutException)=0;
+	virtual void deviceLogin(const std::string& dev)=0;
 	/**
 	 * Retrieve the number of user longged in the specified device.
 	 * \param dev Device name.
 	 * \return Number of logged-in users.
 	 */
-	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException)=0;
-	virtual void deviceMaster(const std::string& dev)throw(NutException)=0;
-	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException)=0;
+	virtual int deviceGetNumLogins(const std::string& dev)=0;
+	virtual void deviceMaster(const std::string& dev)=0;
+	virtual void deviceForcedShutdown(const std::string& dev)=0;
+
+	/**
+	 * Retrieve the result of a tracking ID.
+	 * \param id Tracking ID.
+	 */
+	virtual TrackingResult getTrackingResult(const TrackingID& id)=0;
+
+	virtual bool hasFeature(const Feature& feature);
+	virtual bool isFeatureEnabled(const Feature& feature)=0;
+	virtual void setFeature(const Feature& feature, bool status)=0;
+
+	static const Feature TRACKING;
 
 protected:
 	Client();
@@ -309,7 +347,7 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	TcpClient(const std::string& host, int port = 3493)throw(nut::IOException);
+	TcpClient(const std::string& host, int port = 3493);
 	~TcpClient();
 
 	/**
@@ -317,13 +355,13 @@ public:
 	 * \param host Server host name.
 	 * \param port Server port.
 	 */
-	void connect(const std::string& host, int port = 3493)throw(nut::IOException);
+	void connect(const std::string& host, int port = 3493);
 
 	/**
 	 * Connect to the server.
 	 * Host name and ports must have already set (usefull for reconnection).
 	 */
-	void connect()throw(nut::IOException);
+	void connect();
 
 	/**
 	 * Test if the connection is active.
@@ -358,39 +396,47 @@ public:
 	 */
 	int getPort()const;
 
-	virtual void authenticate(const std::string& user, const std::string& passwd)throw(NutException);
-	virtual void logout()throw(NutException);
-  
-	virtual Device getDevice(const std::string& name)throw(NutException);
-	virtual std::set<std::string> getDeviceNames()throw(NutException);
-	virtual std::string getDeviceDescription(const std::string& name)throw(NutException);
+	virtual void authenticate(const std::string& user, const std::string& passwd);
+	virtual void logout();
 
-	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev)throw(NutException);
-	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev)throw(NutException);
-	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException);
-	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException);
-	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev)throw(NutException);
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException);
-	virtual void setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException);
+	virtual Device getDevice(const std::string& name);
+	virtual std::set<std::string> getDeviceNames();
+	virtual std::string getDeviceDescription(const std::string& name);
 
-	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev)throw(NutException);
-	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException);
-	virtual void executeDeviceCommand(const std::string& dev, const std::string& name)throw(NutException);
+	virtual std::set<std::string> getDeviceVariableNames(const std::string& dev);
+	virtual std::set<std::string> getDeviceRWVariableNames(const std::string& dev);
+	virtual std::string getDeviceVariableDescription(const std::string& dev, const std::string& name);
+	virtual std::vector<std::string> getDeviceVariableValue(const std::string& dev, const std::string& name);
+	virtual std::map<std::string,std::vector<std::string> > getDeviceVariableValues(const std::string& dev);
+	virtual std::map<std::string,std::map<std::string,std::vector<std::string> > > getDevicesVariableValues(const std::set<std::string>& devs);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value);
+	virtual TrackingID setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values);
 
- 	virtual void deviceLogin(const std::string& dev)throw(NutException);
-	virtual void deviceMaster(const std::string& dev)throw(NutException);
-	virtual void deviceForcedShutdown(const std::string& dev)throw(NutException);
-	virtual int deviceGetNumLogins(const std::string& dev)throw(NutException);
+	virtual std::set<std::string> getDeviceCommandNames(const std::string& dev);
+	virtual std::string getDeviceCommandDescription(const std::string& dev, const std::string& name);
+	virtual TrackingID executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param="");
+
+ 	virtual void deviceLogin(const std::string& dev);
+	virtual void deviceMaster(const std::string& dev);
+	virtual void deviceForcedShutdown(const std::string& dev);
+	virtual int deviceGetNumLogins(const std::string& dev);
+
+	virtual TrackingResult getTrackingResult(const TrackingID& id);
+
+	virtual bool isFeatureEnabled(const Feature& feature);
+	virtual void setFeature(const Feature& feature, bool status);
 
 protected:
-	std::string sendQuery(const std::string& req)throw(nut::IOException);
-	static void detectError(const std::string& req)throw(nut::NutException);
+	std::string sendQuery(const std::string& req);
+	void sendAsyncQueries(const std::vector<std::string>& req);
+	static void detectError(const std::string& req);
+	TrackingID sendTrackingQuery(const std::string& req);
 
-	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "")
-		throw(nut::NutException);
+	std::vector<std::string> get(const std::string& subcmd, const std::string& params = "");
 
-	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "")
-		throw(nut::NutException);
+	std::vector<std::vector<std::string> > list(const std::string& subcmd, const std::string& params = "");
+
+	std::vector<std::vector<std::string> > parseList(const std::string& req);
 
 	static std::vector<std::string> explode(const std::string& str, size_t begin=0);
 	static std::string escape(const std::string& str);
@@ -455,92 +501,93 @@ public:
 	/**
 	 * Retrieve the description of the devce if specified.
 	 */
-	std::string getDescription()throw(NutException);
+	std::string getDescription();
 
 	/**
 	 * Intend to retrieve the value of a variable of the device.
 	 * \param name Name of the variable to get.
      * \return Value of the variable, if available.
 	 */
-	std::vector<std::string> getVariableValue(const std::string& name)throw(NutException);
+	std::vector<std::string> getVariableValue(const std::string& name);
 	/**
 	 * Intend to retrieve values of all variables of the devices.
 	 * \return Map of all variables values indexed by their names.
 	 */
-	std::map<std::string,std::vector<std::string> > getVariableValues()throw(NutException);
+	std::map<std::string,std::vector<std::string> > getVariableValues();
 	/**
 	 * Retrieve all variables names supported by the device.
 	 * \return Set of available variable names.
 	 */
-	std::set<std::string> getVariableNames()throw(NutException);
+	std::set<std::string> getVariableNames();
 	/**
 	 * Retrieve all Read/Write variables names supported by the device.
 	 * \return Set of available Read/Write variable names.
 	 */
-	std::set<std::string> getRWVariableNames()throw(NutException);
+	std::set<std::string> getRWVariableNames();
 	/**
 	 * Intend to set the value of a variable of the device.
 	 * \param name Variable name.
 	 * \param value New variable value.
 	 */
-	void setVariable(const std::string& name, const std::string& value)throw(NutException);
+	void setVariable(const std::string& name, const std::string& value);
 	/**
 	 * Intend to set values of a variable of the device.
 	 * \param name Variable name.
 	 * \param value New variable values.
 	 */
-	void setVariable(const std::string& name, const std::vector<std::string>& values)throw(NutException);
+	void setVariable(const std::string& name, const std::vector<std::string>& values);
 
 	/**
 	 * Retrieve a Variable object representing the specified variable.
      * \param name Variable name.
 	 * \return Variable object.
 	 */
-	Variable getVariable(const std::string& name)throw(NutException);
+	Variable getVariable(const std::string& name);
 	/**
 	 * Retrieve Variable objects representing all variables available for the device.
 	 * \return Set of Variable objects.
 	 */
-	std::set<Variable> getVariables()throw(NutException);
+	std::set<Variable> getVariables();
 	/**
 	 * Retrieve Variable objects representing all Read/Write variables available for the device.
 	 * \return Set of Variable objects.
 	 */
-	std::set<Variable> getRWVariables()throw(NutException);
+	std::set<Variable> getRWVariables();
 
 	/**
 	 * Retrieve names of all commands supported by the device.
 	 * \return Set of available command names.
 	 */
-	std::set<std::string> getCommandNames()throw(NutException);
+	std::set<std::string> getCommandNames();
 	/**
 	 * Retrieve objects for all commands supported by the device.
 	 * \return Set of available Command objects.
 	 */
-	std::set<Command> getCommands()throw(NutException);
+	std::set<Command> getCommands();
 	/**
 	 * Retrieve an object representing a command of the device.
 	 * \param name Command name.
 	 * \return Command object.
 	 */
-	Command getCommand(const std::string& name)throw(NutException);
+	Command getCommand(const std::string& name);
 	/**
 	 * Intend to execute a command on the device.
 	 * \param name Command name.
+	 * \param param Additional command parameter
 	 */
-	void executeCommand(const std::string& name)throw(NutException);
+	TrackingID executeCommand(const std::string& name, const std::string& param="");
 
 	/**
 	 * Login current client's user for the device.
 	 */
-	void login()throw(NutException);
-	void master()throw(NutException);
-	void forcedShutdown()throw(NutException);
+	void login();
+	void master();
+	void forcedShutdown();
 	/**
 	 * Retrieve the number of logged user for the device.
 	 * \return Number of users.
 	 */
-	int getNumLogins()throw(NutException);
+	int getNumLogins();
 
 protected:
 	Device(Client* client, const std::string& name);
@@ -603,23 +650,23 @@ public:
 	 * Intend to retrieve variable value.
 	 * \return Value of the variable.
 	 */
-	std::vector<std::string> getValue()throw(NutException);
+	std::vector<std::string> getValue();
 	/**
 	 * Intend to retireve variable description.
 	 * \return Variable description if provided.
 	 */
-	std::string getDescription()throw(NutException);
+	std::string getDescription();
 
 	/**
 	 * Intend to set a value to the variable.
 	 * \param value New variable value.
 	 */
-	void setValue(const std::string& value)throw(NutException);
+	void setValue(const std::string& value);
 	/**
 	 * Intend to set (multiple) values to the variable.
 	 * \param value New variable values.
 	 */
-	void setValues(const std::vector<std::string>& values)throw(NutException);
+	void setValues(const std::vector<std::string>& values);
 
 protected:
 	Variable(Device* dev, const std::string& name);
@@ -683,13 +730,14 @@ public:
 	 * Intend to retireve command description.
 	 * \return Command description if provided.
 	 */
-	std::string getDescription()throw(NutException);
+	std::string getDescription();
 
 	/**
 	 * Intend to retrieve command description.
+	 * \param param Additional command parameter
 	 * \return Command description if provided.
 	 */
-	void execute()throw(NutException);
+	void execute(const std::string& param="");
 
 protected:
 	Command(Device* dev, const std::string& name);
@@ -901,7 +949,7 @@ char* nutclient_get_device_command_description(NUTCLIENT_t client, const char* d
  * \param dev Device name.
  * \param cmd Command name.
  */
-void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd);
+void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const char* cmd, const char* param="");
 
 /** \} */
 

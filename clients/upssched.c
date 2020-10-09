@@ -46,6 +46,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include "upssched.h"
 #include "timehead.h"
@@ -297,6 +299,9 @@ static int open_sock(void)
 	if (ret < 0)
 		fatal_with_errno(EXIT_FAILURE, "listen(%d, %d) failed", fd, US_LISTEN_BACKLOG);
 
+	/* don't leak socket to CMDSCRIPT */
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+
 	return fd;
 }
 
@@ -369,6 +374,9 @@ static void conn_add(int sockfd)
 		upslog_with_errno(LOG_ERR, "accept on unix fd failed");
 		return;
 	}
+
+	/* don't leak connection to CMDSCRIPT */
+	fcntl(acc, F_SETFD, FD_CLOEXEC);
 
 	/* enable nonblocking I/O */
 
@@ -794,7 +802,7 @@ static void parse_at(const char *ntype, const char *un, const char *cmd,
 	}
 
 	if (!strcmp(cmd, "EXECUTE")) {
-		if (ca1 == '\0') {
+		if (ca1[0] == '\0') {
 			upslogx(LOG_ERR, "Empty EXECUTE command argument");
 			return;
 		}
