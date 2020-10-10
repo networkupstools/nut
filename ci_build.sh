@@ -162,9 +162,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            # Currently --with-all implies this, but better be sure to
-            # really build everything we can to be certain it builds:
-            CONFIG_OPTS+=("--with-cgi=yes")
+            if [[ $TRAVIS_OS_NAME != "windows" ]] ; then
+                # Currently --with-all implies this, but better be sure to
+                # really build everything we can to be certain it builds:
+                CONFIG_OPTS+=("--with-cgi=yes")
+            else
+                # No prereq dll and headers on win so far
+                CONFIG_OPTS+=("--with-cgi=auto")
+            fi
             ;;
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
