@@ -41,13 +41,16 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     INST_PREFIX=$PWD/.inst
 
     echo "PATH='$PATH' before possibly applying CCACHE into the mix"
+    ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
     if [ -n "$CC" ]; then
         echo "CC='$CC' before possibly applying CCACHE into the mix"
+        $CC --version $CFLAGS || \
         $CC --version || true
     fi
 
     if [ -n "$CXX" ]; then
         echo "CXX='$CXX' before possibly applying CCACHE into the mix"
+        $CXX --version $CXXFLAGS || \
         $CXX --version || true
     fi
 
