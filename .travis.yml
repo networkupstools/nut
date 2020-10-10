@@ -59,10 +59,7 @@ addons:
     - libxml2-utils
     - libmodbus-dev
 
-# Define at least two jobs in the matrix, to avoid a failing job
-# with "no environment variables set" and have them built (one
-# is too few); but others are listed below to prioritize the
-# longer jobs to start first as faster ones complete in parallel.
+# Common settings for jobs in the matrix built below
 env:
   global:
     - CI_TIME=true
@@ -79,6 +76,21 @@ env:
 matrix:
   include:
 
+  - env: BUILD_TYPE=default-nodoc
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: BUILD_TYPE=default-spellcheck
+    os: linux
+    addons:
+      apt:
+        packages: &deps_aspell
+        - aspell
+        - aspell-en
+
   - env: BUILD_TYPE=default
     os: linux
     addons:
@@ -93,26 +105,6 @@ matrix:
         packages:
         - *deps_driverlibs
 
-  - env: BUILD_TYPE=default-withdoc
-    os: linux
-    addons:
-      apt:
-        packages: &deps_gendocs
-        - asciidoc
-        - xsltproc
-        - dblatex
-        - docbook-xsl
-        - docbook-xsl-ns
-        - source-highlight
-        - libxml2-utils
-
-  - env: BUILD_TYPE=default-spellcheck
-    os: linux
-    addons:
-      apt:
-        packages: &deps_aspell
-        - aspell
-        - aspell-en
   - env: BUILD_TYPE=default-shellcheck
     os: linux
     addons:
@@ -121,16 +113,7 @@ matrix:
         - coreutils
         - file
         #TBD# - shellcheck
-  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
-    os: linux
-    sudo: false
-    services:
-        - docker
-    addons:
-      apt:
-        packages:
-        - *deps_driverlibs
-        - valgrind
+
 # Other quicker builds in standard env follow:
   - env: BUILD_TYPE=nut-driver-enumerator-test SHELL_PROGS=bash
     os: linux
@@ -164,12 +147,31 @@ matrix:
       apt:
         packages:
         - ash
-  - env: BUILD_TYPE=default-nodoc
+
+  - env: BUILD_TYPE=default-tgt:distcheck-valgrind
     os: linux
+    sudo: false
+    services:
+        - docker
     addons:
       apt:
         packages:
         - *deps_driverlibs
+        - valgrind
+
+  - env: BUILD_TYPE=default-withdoc
+    os: linux
+    addons:
+      apt:
+        packages: &deps_gendocs
+        - asciidoc
+        - xsltproc
+        - dblatex
+        - docbook-xsl
+        - docbook-xsl-ns
+        - source-highlight
+        - libxml2-utils
+
   - env: BUILD_TYPE=default-alldrv
     os: linux
     sudo: false
@@ -179,6 +181,7 @@ matrix:
       apt:
         packages:
         - *deps_driverlibs
+
   - env:
     - BUILD_TYPE=default-tgt:distcheck-light
     - NO_PKG_CONFIG=true
