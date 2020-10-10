@@ -14,9 +14,11 @@ os:
 
 sudo: false
 
-# Tests for cppunit require C++11 which requires gcc-4.8 or newer
-# This is available in either "trusty" or newer distros, or in "docker" envs
-#dist: trusty
+# Tests for cppunit require C++11 which requires gcc-4.8 or newer.
+# This is available in either "trusty" or newer distros (e.g. "xenial"
+# which we also reference explicitly for additional repositories below),
+# or in "docker" envs.
+dist: xenial
 
 services:
 - docker
