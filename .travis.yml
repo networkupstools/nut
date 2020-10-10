@@ -565,11 +565,21 @@ _matrix_osx_cstd_nowarn:
     os: osx
     osx_image: xcode10.2
     compiler: clang
+    cache:
+      directories:
+      - /usr/local/Cellar
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
 
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
     compiler: clang
+    cache:
+      directories:
+      - /usr/local/Cellar
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
 
 _matrix_osx_cstd_warn:
   include: &_matrix_osx_cstd_warn
@@ -577,16 +587,31 @@ _matrix_osx_cstd_warn:
     os: osx
     osx_image: xcode10.2
     compiler: clang
+    cache:
+      directories:
+      - /usr/local/Cellar
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
 
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
     compiler: clang
+    cache:
+      directories:
+      - /usr/local/Cellar
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
 
   - env: NUT_MATRIX_TAG="c17-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
     os: osx
     osx_image: xcode7.3
     compiler: clang
+    cache:
+      directories:
+      - /usr/local/Cellar
+      - $HOME/Library/Caches/Homebrew
+      - $HOME/.ccache
 
 # Try also a build on Windows to see our horizons
 # https://docs.travis-ci.com/user/reference/windows/
