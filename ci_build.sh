@@ -40,6 +40,17 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     BUILD_PREFIX=$PWD/tmp
     INST_PREFIX=$PWD/.inst
 
+    echo "PATH='$PATH' before possibly applying CCACHE into the mix"
+    if [ -n "$CC" ]; then
+        echo "CC='$CC' before possibly applying CCACHE into the mix"
+        $CC --version || true
+    fi
+
+    if [ -n "$CXX" ]; then
+        echo "CXX='$CXX' before possibly applying CCACHE into the mix"
+        $CXX --version || true
+    fi
+
     PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'`"
     CCACHE_PATH="$PATH"
     CCACHE_DIR="${HOME}/.ccache"
