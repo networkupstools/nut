@@ -197,6 +197,12 @@ matrix:
 # and different lenience against warnings. Many of
 # these blocks look similar and all should have unique
 # "env" field to use some with allowed_failure below.
+# For a list of standards supported, see:
+#   https://gcc.gnu.org/onlinedocs/gcc/Standards.html
+#   https://gcc.gnu.org/projects/cxx-status.html
+#   https://clang.llvm.org/cxx_status.html
+# Note that while there is C++14 there is no C14:
+#   https://en.wikipedia.org/wiki/C_(programming_language)#History
 #
 # The leading NUT_MATRIX_TAG allows humans to understand
 # what a test case is about in Travis CI dashboard table
