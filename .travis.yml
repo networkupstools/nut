@@ -67,9 +67,6 @@ env:
   global:
     - CI_TIME=true
     - CI_TRACE=false
-  matrix:
-    - BUILD_TYPE=default
-    - BUILD_TYPE=default-tgt:distcheck-light
 
 # Builds with customized setups
 # Note that doc-related builds take the longest, and Travis CI cloud
@@ -81,6 +78,21 @@ env:
 # (ksh) and Linux (bash, dash, etc.) common distros.
 matrix:
   include:
+
+  - env: BUILD_TYPE=default
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+  - env: BUILD_TYPE=default-tgt:distcheck-light
+    os: linux
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
   - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:
@@ -93,6 +105,7 @@ matrix:
         - docbook-xsl-ns
         - source-highlight
         - libxml2-utils
+
   - env: BUILD_TYPE=default-spellcheck
     os: linux
     addons:
