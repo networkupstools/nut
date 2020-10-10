@@ -305,6 +305,20 @@ matrix:
         - clang-format-8
         - *deps_driverlibs
 
+# Note: some of the warnings that are hidden in this case seem to be serious
+# issues that may impact viability of binaries built by C89 mode compilers!
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# At this time, anything with strict C standard fails on Linux, even "nowarn" cases below:
   - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
     os: linux
     dist: xenial
@@ -369,6 +383,7 @@ matrix:
         - clang-format-8
         - *deps_driverlibs
 
+# Stuff with warnings made fatal... well, is usually fatal so far:
   - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic" CXXFLAGS="-Wall -Werror"
     os: linux
     sudo: false
@@ -391,7 +406,7 @@ matrix:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99"
+  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Werror -std=gnu++11"
     os: linux
     sudo: false
     services:
@@ -430,6 +445,30 @@ matrix:
         packages:
         - g++-9
         - gcc-9
+        - *deps_driverlibs
+
+# Note: Fixing these would make NUT viable again on platforms with only ANSI C!
+  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Werror -std=gnu++89"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
+# The hardest of two worlds follows: both strict C standards on Linux and fatal warnings:
+  - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99"
+    os: linux
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
         - *deps_driverlibs
 
   - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99" CC=clang CXX=clang++
@@ -491,42 +530,7 @@ matrix:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu11" CXXFLAGS="-Wall -Werror -std=gnu++11"
-    os: linux
-    sudo: false
-    services:
-        - docker
-    compiler: gcc
-    addons:
-      apt:
-        packages:
-        - *deps_driverlibs
-
-# Note: some of the warnings that are hidden in this case seem to be serious
-# issues that may impact viability of binaries built by C89 mode compilers!
-  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
-    os: linux
-    sudo: false
-    services:
-        - docker
-    compiler: gcc
-    addons:
-      apt:
-        packages:
-        - *deps_driverlibs
-
   - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Werror -std=c++89"
-    os: linux
-    sudo: false
-    services:
-        - docker
-    compiler: gcc
-    addons:
-      apt:
-        packages:
-        - *deps_driverlibs
-
-  - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Werror -std=gnu++89"
     os: linux
     sudo: false
     services:
