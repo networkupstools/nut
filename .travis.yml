@@ -258,21 +258,6 @@ matrix:
         - gcc-7
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu14-gcc-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu14" CXXFLAGS="-std=gnu++14" CC=gcc-8 CXX=g++-8
-    os: linux
-    sudo: false
-    services:
-        - docker
-    compiler: gcc
-    addons:
-      apt:
-        sources:
-        - ubuntu-toolchain-r-test
-        packages:
-        - g++-8
-        - gcc-8
-        - *deps_driverlibs
-
   - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
     os: linux
     sudo: false
@@ -302,6 +287,22 @@ matrix:
         packages:
         - clang-5.0
         - clang-format-5.0
+        - *deps_driverlibs
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
         - *deps_driverlibs
 
   - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
@@ -599,9 +600,9 @@ matrix:
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc-7 CXX=g++-7
 #OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11" CC=gcc-7 CXX=g++-7
-#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu14-gcc-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu14" CXXFLAGS="-std=gnu++14" CC=gcc-8 CXX=g++-8
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
   - env: NUT_MATRIX_TAG="gnu17-gcc-9-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Werror -std=gnu++17" CC=gcc-9 CXX=g++-9
   - env: NUT_MATRIX_TAG="c99-clang-3.5-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang-3.5 CXX=clang++-3.5
   - env: NUT_MATRIX_TAG="c99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
