@@ -553,6 +553,11 @@ matrix:
     osx_image: xcode10.2
     compiler: clang
 
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99" CC=clang CXX=clang++
+    os: osx
+    osx_image: xcode10.2
+    compiler: clang
+
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
     os: osx
     osx_image: xcode10.2
@@ -626,6 +631,7 @@ matrix:
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Werror -std=gnu++89"
 ### macosx
   - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="c99-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=c17" CXXFLAGS="-std=c++17" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c17-clang-xcode6.4-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
