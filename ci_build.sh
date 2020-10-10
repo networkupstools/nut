@@ -24,6 +24,7 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
 default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
@@ -338,6 +339,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     ;;
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
+    ;;
+"")
+    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual"
+    ./autogen.sh
+    ./configure
+    make all && make check
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh
