@@ -222,6 +222,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -232,6 +233,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         sources:
@@ -246,6 +248,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         sources:
@@ -261,6 +264,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: clang
     addons:
       apt:
         sources:
@@ -276,6 +280,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: clang
     addons:
       apt:
         sources:
@@ -291,6 +296,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: clang
     addons:
       apt:
         sources:
@@ -305,6 +311,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -315,6 +322,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -325,6 +333,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -335,6 +344,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         sources:
@@ -350,6 +360,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: clang
     addons:
       apt:
         sources:
@@ -365,6 +376,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: clang
     addons:
       apt:
         sources:
@@ -379,6 +391,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -389,6 +402,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -401,6 +415,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -411,6 +426,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
@@ -421,6 +437,7 @@ matrix:
     sudo: false
     services:
         - docker
+    compiler: gcc
     addons:
       apt:
         packages:
