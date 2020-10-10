@@ -757,6 +757,8 @@ before_install:
             popd
         fi
         export PATH=/C/tools/bin:$PATH
+        CI_TRACE=true
+        export CI_TRACE
     fi
 - if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
 
