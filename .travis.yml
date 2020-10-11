@@ -770,7 +770,16 @@ jobs:
   - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Werror -pedantic -std=c20" CXXFLAGS="-Wall -Werror -std=c++20" CC=clang CXX=clang++
 
 before_install:
-- if [ $TRAVIS_OS_NAME == "osx" ] ; then brew update; brew install binutils gd asciidoc docbook-xsl ; XML_CATALOG_FILES=/usr/local/etc/xml/catalog ; export XML_CATALOG_FILES ; fi
+- |-
+  if [ $TRAVIS_OS_NAME == "osx" ] ; then
+    brew update
+    brew install binutils ccache gd
+    if [ $BUILD_TYPE = default-withdoc ] ; then
+        brew install asciidoc docbook-xsl
+        XML_CATALOG_FILES=/usr/local/etc/xml/catalog
+        export XML_CATALOG_FILES
+    fi
+  fi
 - |-
     if [[ $TRAVIS_OS_NAME == "windows" ]] ; then
         if [[ ! -s C:/tools/bin/ccache.exe ]] ; then
