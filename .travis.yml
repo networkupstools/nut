@@ -669,6 +669,17 @@ _matrix_osx_cstd_warn:
 # a complex routine to add gcc if we'd need that)
 # and a Git Bash as default shell, but no ccache.
 # TODO: Eventually try native visualstudio compilers?
+_matrix_windows_gnustd_nowarn:
+  include: &_matrix_windows_gnustd_nowarn
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
 _matrix_windows_cstd_nowarn:
   include: &_matrix_windows_cstd_nowarn
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
@@ -737,6 +748,7 @@ _matrix_osx:
 
 _matrix_windows:
   include: &_matrix_windows
+  - *_matrix_windows_gnustd_nowarn
   - *_matrix_windows_cstd_nowarn
   - *_matrix_windows_cstd_warn
 
@@ -828,6 +840,7 @@ jobs:
   - env: NUT_MATRIX_TAG="c17-clang-xcode10.2-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c17-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Werror -pedantic -std=c17" CXXFLAGS="-Wall -Werror -std=c++17" CC=clang CXX=clang++
 ### windows
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Werror -std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Werror -pedantic -std=c20" CXXFLAGS="-Wall -Werror -std=c++20" CC=clang CXX=clang++
