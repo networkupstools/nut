@@ -64,6 +64,12 @@ env:
   global:
     - CI_TIME=true
     - CI_TRACE=false
+    - CI_DEFAULT_HOMEBREW_NO_AUTO_UPDATE=1
+      # By default, avoid updating (including cleaning) osx worker beside what
+      # we require to install, compared to what Travis provides. Technically
+      # we can call master branch builds sometimes to update the workers cache
+      # of packages by manual or timer-driven runs with explicit setting like
+      # HOMEBREW_NO_AUTO_UPDATE=0
 
 # Builds with customized setups
 # Note that doc-related builds take the longest, and Travis CI cloud
@@ -771,10 +777,17 @@ jobs:
 
 before_install:
 - |-
-  if [ $TRAVIS_OS_NAME == "osx" ] ; then
-    brew update
+  if [ $TRAVIS_OS_NAME = "osx" ] ; then
+    [ -n "$HOMEBREW_NO_AUTO_UPDATE" ] || HOMEBREW_NO_AUTO_UPDATE="$CI_DEFAULT_HOMEBREW_NO_AUTO_UPDATE"
+    if [ "$HOMEBREW_NO_AUTO_UPDATE" = 1 ] ; then
+        echo "NOT CALLING 'brew update' as it takes too long and cleans up preinstalled env"
+        export HOMEBREW_NO_AUTO_UPDATE
+    else
+        unset HOMEBREW_NO_AUTO_UPDATE
+        brew update
+    fi
     brew install binutils ccache gd
-    if [ $BUILD_TYPE = default-withdoc ] ; then
+    if [ "$BUILD_TYPE" = default-withdoc ] ; then
         brew install asciidoc docbook-xsl
         XML_CATALOG_FILES=/usr/local/etc/xml/catalog
         export XML_CATALOG_FILES
