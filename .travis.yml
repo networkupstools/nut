@@ -573,7 +573,6 @@ _matrix_osx_gnustd_nowarn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -583,7 +582,6 @@ _matrix_osx_gnustd_nowarn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -593,7 +591,6 @@ _matrix_osx_gnustd_nowarn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -605,7 +602,6 @@ _matrix_osx_gnustd_warn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -615,7 +611,6 @@ _matrix_osx_gnustd_warn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -627,7 +622,6 @@ _matrix_osx_cstd_nowarn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -637,7 +631,6 @@ _matrix_osx_cstd_nowarn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -649,7 +642,6 @@ _matrix_osx_cstd_warn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -659,7 +651,6 @@ _matrix_osx_cstd_warn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
@@ -669,7 +660,6 @@ _matrix_osx_cstd_warn:
     compiler: clang
     cache:
       directories:
-      - /usr/local/Cellar
       - $HOME/Library/Caches/Homebrew
       - $HOME/.ccache
 
