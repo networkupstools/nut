@@ -255,7 +255,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     else
         $CI_TIME ./autogen.sh 2>/dev/null
     fi
-    if [ "$NO_PKG_CONFIG" == "true" ] ; then
+    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$TRAVIS_OS_NAME" = "linux" ] ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
