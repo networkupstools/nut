@@ -699,7 +699,11 @@ _matrix_fixbugs:
 # DO NOT COMMIT TO MASTER BRANCH TEST-MATRICES THAT ARE NOT _matrix-master!
 #
 # These days, "jobs" and "matrix" are same thing... at least, ours is an explicit list.
+# By "fast_finish" we allow to assign a verdict based on completion of required
+# test cases. The "allow_failures" will proceed to run for our information
+# but not block nor delay PR considerations etc.
 jobs:
+  fast_finish: true
   include:
   - *_matrix_master
 
