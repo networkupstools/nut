@@ -856,7 +856,7 @@ before_install:
             mkdir -p C:/tools/bin/
             pushd C:/tools/bin/ || exit
                 wget https://github.com/ccache/ccache/releases/download/v3.7.12/ccache-3.7.12-windows-64.zip || exit
-                7z x -y ccache-3.7.12-windows-64.zip || exit
+                7z e -y ccache-3.7.12-windows-64.zip || exit
                 rm -f ccache-3.7.12-windows-64.zip
             popd
         fi
