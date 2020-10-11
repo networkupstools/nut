@@ -119,8 +119,8 @@ hid_dev_handle_t udev;
  * This quirk is to enable the special handling of OL & DISCHRG at the same time
  * as being OB (on battery power/no mains power)
  */
-#define DEFAULT_CPUTQUIRK 0
-static int cputquirk = DEFAULT_CPUTQUIRK;
+#define DEFAULT_ONLINEDISCHARGE 0
+static int onlinedischarge = DEFAULT_ONLINEDISCHARGE;
 
 /* support functions */
 static hid_info_t *find_nut_info(const char *varname);
@@ -712,8 +712,9 @@ void upsdrv_makevartable(void)
 
 	addvar(VAR_FLAG, "pollonly", "Don't use interrupt pipe, only use polling");
 
-	snprintf(temp, sizeof(temp), "Enable CyberPower UT series quirk (default=%s)", DEFAULT_CPUTQUIRK);
-	addvar(VAR_FLAG, "cputquirk", temp);
+	snprintf(temp, sizeof(temp), "Treat discharging while online as being offline (default=%s)",
+		DEFAULT_ONLINEDISCHARGE);
+	addvar(VAR_FLAG, "onlinedischarge", temp);
 
 #ifndef SHUT_MODE
 	/* allow -x vendor=X, vendorid=X, product=X, productid=X, serial=X */
@@ -1436,17 +1437,20 @@ static void ups_status_set(void)
 	if (!(ups_status & STATUS(ONLINE))) {
 		status_set("OB");		/* on battery */
 	} else if ((ups_status & STATUS(DISCHRG))) {
-		/* warning or CyberPower UT quirk */
-		if (cputquirk) {
+			/* if online */
+		if (onlinedischarge) {
+			/* if we treat OL+DISCHRG as being offline */
 			status_set("OB");	/* on battery */
 		} else {
 			if (!(ups_status & STATUS(CAL))) {
-				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is OL+DISCHRG state now. "
-				"Is it calibrating or do you perhaps want to set 'cputquirk' option? "
-				"Some CyberPower UT series emit OL+DISCHRG when offline.",
+				/* if in OL+DISCHRG unknowingly, warn user */
+				upslogx(LOG_WARNING, "%s: seems that UPS [%s] is in OL+DISCHRG state now. "
+				"Is it calibrating or do you perhaps want to set 'onlinedischarge' option? "
+				"Some UPS models (e.g. CyberPower UT series) emit OL+DISCHRG when offline.",
 				  __func__, ups->upsname)
 			}
-			status_set("OL");
+			/* if we're calibrating */
+			status_set("OL");	/* on line */
 		}
 	}
 	if ((ups_status & STATUS(DISCHRG)) &&
