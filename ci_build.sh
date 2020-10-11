@@ -162,7 +162,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            if [[ $TRAVIS_OS_NAME != "windows" ]] ; then
+            if [[ "$TRAVIS_OS_NAME" != "windows" ]] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
                 CONFIG_OPTS+=("--with-cgi=yes")
@@ -242,7 +242,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
 
     # Build and check this project; note that zprojects always have an autogen.sh
     [ -z "$CI_TIME" ] || echo "`date`: Starting build of currently tested project..."
-    CCACHE_BASEDIR=${PWD}
+    CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
     # Note: modern auto(re)conf requires pkg-config to generate the configure
@@ -250,7 +250,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     # older system) we have to remove it when we already have the script.
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
-    $CI_TIME ./autogen.sh 2> /dev/null
+    if [ "$TRAVIS_OS_NAME" = "windows" ] ; then
+        $CI_TIME ./autogen.sh || true
+    else
+        $CI_TIME ./autogen.sh 2>/dev/null
+    fi
     if [ "$NO_PKG_CONFIG" == "true" ] ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
