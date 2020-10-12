@@ -5,6 +5,7 @@
  *  2005 - 2006	Peter Selinger <selinger@users.sourceforge.net>
  *  2008 - 2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
  *  2013 Charles Lepple <clepple+nut@gmail.com>
+ *  2019 AMETEK Powervar - Andrew McCartney <andrew.mccartney@ametek.com>
  *
  *  Note: this subdriver was initially generated as a "stub" by the
  *  gen-usbhid-subdriver script. It must be customized.
@@ -67,9 +68,6 @@ static usage_tables_t powervar_utab[] = {
 
 static hid_info_t powervar_hid2nut[] = {
 
-  { "ups.powersummary.iproduct", 0, 0, "UPS.PowerSummary.iProduct", NULL, "%.0f", 0, NULL },
-  { "ups.powersummary.iserialnumber", 0, 0, "UPS.PowerSummary.iSerialNumber", NULL, "%.0f", 0, NULL },
-  { "ups.powersummary.imanufacturer", 0, 0, "UPS.PowerSummary.iMnaufacturer", NULL, "%.0f", 0, NULL },
   /* Battery page */
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
   { "battery.ioeminformation", 0, 0, "UPS.PowerSummary.iOEMInformation", NULL, "%s", 0, stringid_conversion },
