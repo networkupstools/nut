@@ -620,16 +620,16 @@ endif
 
 HTML_MODBUS_MANS = phoenixcontact_modbus.html
 
-SRC_LINUX_I2C_PAGES = asem.txt
+SRC_LINUX_I2C_PAGES = asem.txt pijuice.txt
 if WITH_MANS
-MAN_LINUX_I2C_PAGES = asem.8
+MAN_LINUX_I2C_PAGES = asem.8 pijuice.8
 endif
 
 if WITH_LINUX_I2C
    man8_MANS += $(MAN_LINUX_I2C_PAGES)
 endif
 
-HTML_LINUX_I2C_MANS = asem.html
+HTML_LINUX_I2C_MANS = asem.html pijuice.html
 
 # SOME_DRIVERS
 endif
