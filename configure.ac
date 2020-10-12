@@ -902,7 +902,7 @@ NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], 
 DOC_CHECK_LIST=""
 if test "${nut_with_doc}" = yes ; then
     for V in $DOC_BUILD_LIST ; do
-	DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
     done
 fi
 
