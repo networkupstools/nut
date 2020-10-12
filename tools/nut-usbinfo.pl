@@ -28,20 +28,31 @@
 use File::Find;
 use strict;
 
+
+my $TOP_SRCDIR = "..";
+if (defined $ENV{'TOP_SRCDIR'}) {
+    $TOP_SRCDIR = $ENV{'TOP_SRCDIR'};
+}
+
+my $TOP_BUILDDIR = "..";
+if (defined $ENV{'TOP_BUILDDIR'}) {
+    $TOP_BUILDDIR = $ENV{'TOP_BUILDDIR'};
+}
+
 # path to scan for USB_DEVICE pattern
-my $scanPath="../drivers";
+my $scanPath="$TOP_SRCDIR/drivers";
 
 # Hotplug output file
-my $outputHotplug="../scripts/hotplug/libhid.usermap";
+my $outputHotplug="$TOP_BUILDDIR/scripts/hotplug/libhid.usermap";
 
 # udev output file
-my $outputUdev="../scripts/udev/nut-usbups.rules.in";
+my $outputUdev="$TOP_BUILDDIR/scripts/udev/nut-usbups.rules.in";
 
 # BSD devd output file
-my $output_devd="../scripts/devd/nut-usb.conf.in";
+my $output_devd="$TOP_BUILDDIR/scripts/devd/nut-usb.conf.in";
 
 # UPower output file
-my $outputUPower="../scripts/upower/95-upower-hid.rules";
+my $outputUPower="$TOP_BUILDDIR/scripts/upower/95-upower-hid.rules";
 
 # tmp output, to allow generating the ENV{UPOWER_VENDOR} header list
 my $tmpOutputUPower;
@@ -49,7 +60,7 @@ my $tmpOutputUPower;
 my $upowerMfrHeaderDone = 0;
 
 # NUT device scanner - C header
-my $outputDevScanner = "./nut-scanner/nutscan-usb.h";
+my $outputDevScanner = "$TOP_BUILDDIR/tools/nut-scanner/nutscan-usb.h";
 
 my $GPL_header = "\
  *  Copyright (C) 2011 - Arnaud Quette <arnaud.quette\@free.fr>\
@@ -76,7 +87,7 @@ my %vendorName;
 
 ################# MAIN #################
 
-find(\&find_usbdevs,$scanPath);
+find({wanted=>\&find_usbdevs, preprocess=>sub{sort @_}}, $scanPath);
 &gen_usb_files;
 
 ################# SUB METHOD #################
@@ -280,27 +291,9 @@ sub find_usbdevs
 			if($nameFile=~/(.+)-hid\.c/) {
 				$driver="usbhid-ups";
 			}
-			# FIXME: make a generic matching rule *.c => *
-			elsif ($nameFile eq "bcmxcp_usb.c") {
-				$driver="bcmxcp_usb";
-			}
-			elsif ($nameFile eq "tripplite_usb.c") {
-				$driver="tripplite_usb";
-			}
-			elsif ($nameFile eq "blazer_usb.c") {
-				$driver="blazer_usb";
-			}
-			elsif ($nameFile eq "richcomm_usb.c") {
-				$driver="richcomm_usb";
-			}
-			elsif ($nameFile eq "nutdrv_atcl_usb.c") {
-				$driver="nutdrv_atcl_usb";
-			}
-			elsif ($nameFile eq "riello_usb.c") {
-				$driver="riello_usb";
-			}
-			elsif ($nameFile eq "nutdrv_qx.c") {
-				$driver="nutdrv_qx";
+			# generic matching rule *.c => *
+			elsif ($nameFile =~ /(.+)\.c$/) {
+				$driver=$1;
 			}
 			else {
 				die "Unknown driver type: $nameFile";

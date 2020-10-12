@@ -27,7 +27,23 @@ dnl Use "./configure --enable-maintainer-mode" to keep Makefile.in and Makefile
 dnl in sync after Git updates.
 AM_MAINTAINER_MODE
 
-dnl PKG_PROG_PKG_CONFIG
+dnl Some systems have older autotools without direct macro support for PKG_CONF*
+have_PKG_CONFIG=yes
+AC_PATH_PROG(dummy_PKG_CONFIG, pkg-config)
+AS_IF([test x"$dummy_PKG_CONFIG" = xno || test -z "$dummy_PKG_CONFIG"],
+    [have_PKG_CONFIG=no],
+    [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config])
+     PKG_PROG_PKG_CONFIG
+     dummy_RES=$?
+     AS_IF([test $dummy_RES = 0],
+        [AC_MSG_NOTICE([checking for autoconf macro support of pkg-config module checker])
+         PKG_CHECK_MODULES([dummy_PKG_CONFIG], [pkg-config],
+            [], [have_PKG_CONFIG=no])
+        ], [have_PKG_CONFIG=no])]
+)
+AS_IF([test x"$have_PKG_CONFIG" = xno],
+    [AC_MSG_WARN([pkg-config is needed to look for further dependencies (will be skipped)])])
+
 
 dnl Various version related processing
 dnl ----------------------------------
@@ -104,10 +120,12 @@ AC_CONFIG_LIBOBJ_DIR([common])
 dnl +-------------------------------------------------------------------
 
 AC_PROG_CC
+AC_PROG_CC_C99
 dnl Needed for per-target flags
 AM_PROG_CC_C_O
 AC_PROG_CPP
 AC_PROG_CXX
+AC_PROG_CXX_C_O
 AC_PROG_INSTALL
 AC_PROG_MKDIR_P
 AC_PROG_LN_S
@@ -130,8 +148,8 @@ dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
 if test "$as_ln_s" = "ln -s" ; then
     LN_S_R="ln"
-    DIR1="$(mktemp -d "dir1.XXXXX")" && \
-    DIR2="$(mktemp -d "dir2.XXXXX")" && \
+    DIR1="$(mktemp -d "dir1.XXXXXXX")" && \
+    DIR2="$(mktemp -d "dir2.XXXXXXX")" && \
     touch "${DIR1}/a" && \
     $as_ln_s -r "${DIR1}/a" "${DIR2}/b" && \
     ls -la "${DIR2}/b" | grep '\.\./' > /dev/null && \
@@ -154,18 +172,6 @@ AC_CHECK_FUNCS(vsnprintf snprintf, [], [
 
 AC_REPLACE_FUNCS(setenv strerror atexit)
 
-
-dnl
-dnl Tests for CppUnit availability and usability
-dnl Using CppUnit implies C++ support!
-dnl Theoretically, libcppunit-dev will pull up to g++, through libstdc++...
-dnl AM_PATH_CPPUNIT(1.9.6)
-
-PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
-if test "${have_cppunit}" != "yes" ; then
-	AC_MSG_WARN([libcppunit not found.])
-fi
-AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
 
 dnl
 dnl Only use these when compiling with gcc
@@ -321,16 +327,18 @@ dnl Solaris 10/11 USB handling (need librt and libusb runtime path)
 dnl HPUX, since v11, needs an explicit activation of pthreads
 case ${target_os} in
    solaris2.1* )
-      echo Checking for Solaris 10 / 11 specific configuration for usb drivers
+      AC_MSG_CHECKING([for Solaris 10 / 11 specific configuration for usb drivers])
       AC_SEARCH_LIBS(nanosleep, rt)
       LIBUSB_LIBS="-R/usr/sfw/lib ${LIBUSB_LIBS}"
       dnl FIXME: Sun's libusb doesn't support timeout (so blocks notification)
       dnl and need to call libusb close upon reconnection
       AC_DEFINE(SUN_LIBUSB, 1, [Define to 1 for Sun version of the libusb.])
       SUN_LIBUSB=1
+      AC_MSG_RESULT([${LIBUSB_LIBS}])
       ;;
     hpux11*)
       CFLAGS="${CFLAGS} -lpthread"
+      ;;
 esac
 
 
@@ -350,7 +358,7 @@ dnl checks related to --with-usb
 
 dnl ${nut_with_usb}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_usb}" = "yes" -a "${nut_have_libusb}" != "yes"; then
-   AC_MSG_ERROR(["USB drivers requested, but libusb not found."])
+   AC_MSG_ERROR([USB drivers requested, but libusb not found.])
 fi
 
 if test "${nut_with_usb}" != "no"; then
@@ -365,7 +373,7 @@ dnl checks related to --with-neon
 
 dnl ${nut_with_neon}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_neon}" = "yes" -a "${nut_have_neon}" != "yes"; then
-   AC_MSG_ERROR(["neon libraries not found, required for neon based XML/HTTP driver"])
+   AC_MSG_ERROR([neon libraries not found, required for neon based XML/HTTP driver])
 fi
 
 if test "${nut_with_neon}" != "no"; then
@@ -381,7 +389,7 @@ dnl checks related to --with-avahi
 
 dnl ${nut_with_avahi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_avahi}" = "yes" -a "${nut_have_avahi}" != "yes"; then
-   AC_MSG_ERROR(["avahi libraries not found"])
+   AC_MSG_ERROR([avahi libraries not found])
 fi
 
 if test "${nut_with_avahi}" != "no"; then
@@ -397,7 +405,7 @@ dnl checks related to --with-powerman
 
 dnl ${nut_with_powerman}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_powerman}" = "yes" -a "${nut_have_libpowerman}" != "yes"; then
-   AC_MSG_ERROR(["Powerman client libraries not found, required for Powerman PDU client driver"])
+   AC_MSG_ERROR([Powerman client libraries not found, required for Powerman PDU client driver])
 fi
 
 if test "${nut_with_powerman}" != "no"; then
@@ -412,7 +420,7 @@ dnl checks related to --with-modbus
 
 dnl ${nut_with_modbus}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_modbus}" = "yes" -a "${nut_have_libmodbus}" != "yes"; then
-   AC_MSG_ERROR(["modbus library not found, required for Modbus driver"])
+   AC_MSG_ERROR([modbus library not found, required for Modbus driver])
 fi
 
 if test "${nut_with_modbus}" != "no"; then
@@ -438,15 +446,15 @@ if test "${nut_with_ipmi}" != "no"; then
    if test "${nut_with_freeipmi}" = "yes"; then
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
-         AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+         AC_MSG_ERROR([FreeIPMI not found, required for IPMI support])
       fi
       dnl Implies --with-ipmi
       nut_with_ipmi="yes"
    dnl elif test "${nut_with_openipmi}" = "yes"; then
-      dnl AC_MSG_ERROR(["OpenIPMI is not yet supported"])
+      dnl AC_MSG_ERROR([OpenIPMI is not yet supported])
       dnl NUT_CHECK_LIBOPENIPMI
       dnl if test "${nut_have_openipmi}" != "yes"; then
-      dnl    AC_MSG_ERROR(["OpenIPMI not found, required for IPMI support"])
+      dnl    AC_MSG_ERROR([OpenIPMI not found, required for IPMI support])
       dnl fi
       dnl    Implies --with-ipmi
       dnl    nut_with_ipmi="yes"
@@ -456,13 +464,13 @@ if test "${nut_with_ipmi}" != "no"; then
       NUT_CHECK_LIBFREEIPMI
       if test "${nut_have_freeipmi}" != "yes"; then
          if test "${nut_with_ipmi}" = "yes"; then
-            AC_MSG_ERROR(["FreeIPMI not found, required for IPMI support"])
+            AC_MSG_ERROR([FreeIPMI not found, required for IPMI support])
          fi
          nut_with_ipmi="no"
          dnl NUT_CHECK_OPENIPMI
          dnl if test "${nut_have_openipmi}" != "yes"; then
          dnl    if test "${nut_with_ipmi}" = "yes"; then
-         dnl       AC_MSG_ERROR(["GNU FreeIPMI and OpenIPMI neither found, required for IPMI support"])
+         dnl       AC_MSG_ERROR([Neither GNU FreeIPMI nor OpenIPMI was found (required for IPMI support)])
          dnl    fi
          dnl    nut_with_ipmi="no"
          dnl else
@@ -515,14 +523,30 @@ NUT_ARG_WITH([linux_i2c], [build and install i2c drivers], [auto])
 if test "${nut_with_linux_i2c}" != no; then
     case ${target_os} in
         linux* )
+            AC_CHECK_HEADER(
+                [linux/i2c-dev.h],
+                [AC_DEFINE([HAVE_LINUX_I2C_DEV_H], [1],
+                    [Define to 1 if you have <linux/i2c-dev.h>.])]
+            )
+            AC_CHECK_HEADER(
+                [i2c/smbus.h],
+                [AC_DEFINE([HAVE_LINUX_SMBUS_H], [1],
+                    [Define to 1 if you have <i2c/smbus.h>.])]
+            )
             AC_CHECK_DECLS(
-                [i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
+                [i2c_smbus_access, i2c_smbus_read_byte_data, i2c_smbus_write_byte_data, i2c_smbus_read_word_data, i2c_smbus_write_word_data, i2c_smbus_read_block_data],
                 [nut_with_linux_i2c="yes"],
                 [nut_with_linux_i2c="no"],
                 [#include <stdio.h>
+                 #ifdef HAVE_LINUX_I2C_DEV_H
                  #include <linux/i2c-dev.h>
+                 #endif
+                 #ifdef HAVE_LINUX_SMBUS_H
+                 #include <i2c/smbus.h>
+                 #endif
                 ]
             )
+            AC_SEARCH_LIBS([i2c_smbus_read_byte], [i2c])
             ;;
         * )
             nut_with_linux_i2c="no"
@@ -554,12 +578,12 @@ if test "${nut_with_ssl}" != "no"; then
    if test "${nut_with_nss}" = "yes"; then
       NUT_CHECK_LIBNSS
       if test "${nut_have_libnss}" != "yes"; then
-         AC_MSG_ERROR(["Mozilla NSS not found, required for SSL support"])
+         AC_MSG_ERROR([Mozilla NSS not found (required for SSL support)])
       fi
    elif test "${nut_with_openssl}" = "yes"; then
       NUT_CHECK_LIBOPENSSL
       if test "${nut_have_openssl}" != "yes"; then
-         AC_MSG_ERROR(["OpenSSL not found, required for SSL support"])
+         AC_MSG_ERROR([OpenSSL not found (required for SSL support)])
       fi
    else
       dnl Prefer OpenSSL over NSS otherwise
@@ -569,9 +593,9 @@ if test "${nut_with_ssl}" != "no"; then
          if test "${nut_have_libnss}" != "yes"; then
             dnl Only abort if SSL has been explicitly requested by the user
             if test "${nut_with_ssl}" = "yes"; then
-               AC_MSG_ERROR(["Mozilla NSS and OpenSSL neither found, but are needed for the requested SSL support"])
+               AC_MSG_ERROR([Neither Mozilla NSS nor OpenSSL was found, but one is needed for the requested SSL support.])
             else
-               AC_MSG_WARN(["Mozilla NSS and OpenSSL neither found, required for SSL support"])
+               AC_MSG_WARN([Neither Mozilla NSS nor OpenSSL was found (required for SSL support)])
             fi
             nut_with_ssl="no"
          else
@@ -601,7 +625,7 @@ if test "${nut_with_wrap}" != "no"; then
 fi
 
 if test "${nut_with_wrap}" = "yes" -a "${nut_have_libwrap}" != "yes"; then
-   AC_MSG_ERROR(["libwrap not found"])
+   AC_MSG_ERROR([libwrap not found])
 fi
 
 if test "${nut_with_wrap}" != "no"; then
@@ -624,7 +648,7 @@ if test "${nut_with_libltdl}" != "no"; then
 fi
 
 if test "${nut_with_libltdl}" = "yes" -a "${nut_have_libltdl}" != "yes"; then
-   AC_MSG_ERROR(["libltdl not found"])
+   AC_MSG_ERROR([libltdl not found])
 fi
 
 if test "${nut_with_libltdl}" != "no"; then
@@ -824,12 +848,12 @@ dnl not fail if we have no tools to generate it (so add to SKIP list).
 			else
 				DOC_SKIPBUILD_LIST="${DOC_SKIPBUILD_LIST} ${nut_doc_build_target_base}"
 				if test "${nut_doc_build_target_flag}" = "auto" ; then
-dnl Test that groff files exist (building from dist'ed tarball, not git repo)
+dnl Test that groff files exist (building from distributed tarball, not git repo)
 					if test -s "${abs_srcdir}"/docs/man/snmp-ups.8 ; then
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built dist'ed copies])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, but can install pre-built distributed copies])
 						DOC_INSTALL_DISTED_MANS="yes"
 					else
-						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built dist'ed copies because they are absent])
+						AC_MSG_WARN([Unable to build ${nut_doc_build_target_base} documentation, and unable to install pre-built distributed copies because they are absent])
 					fi
 				fi  # Other variants include "no", "skip"...
 			fi
@@ -1081,9 +1105,9 @@ AC_MSG_RESULT(${RUN_AS_GROUP})
 
 dnl check that --with-user is given if --with-group is given.
 if test "${nut_user_given}" = "yes" -a "${nut_group_given}" = "no"; then
-	AC_MSG_ERROR(["If you specify --with-user, you also must specify --with-group"])
+	AC_MSG_ERROR([If you specify --with-user, you also must specify --with-group])
 elif test "${nut_user_given}" = "no" -a "${nut_group_given}" = "yes"; then
-	AC_MSG_ERROR(["If you specify --with-group, you also must specify --with-user"])
+	AC_MSG_ERROR([If you specify --with-group, you also must specify --with-user])
 fi
 
 AC_MSG_CHECKING(facility for syslog)
@@ -1190,7 +1214,90 @@ else
 fi
 AM_CONDITIONAL(WITH_PKG_CONFIG, test -n "${pkgconfigdir}")
 
-PKG_PROG_PKG_CONFIG
+AC_MSG_CHECKING(whether to install Solaris SMF files)
+solarissmf="auto"
+AC_ARG_WITH([solaris-smf],
+	AS_HELP_STRING([--with-solaris-smf=(yes|auto|no)], [Enable installation of NUT scripts and manifests for Solaris Service Management Framework (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarissmf="auto"
+		;;
+	yes|no)
+		solarissmf="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-smf=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarissmf" = xauto ; then
+	if test -x /usr/sbin/svcadm && test -x /usr/sbin/svccfg && test -x /usr/bin/svcs ; then
+		solarissmf="yes"
+	else
+		solarissmf="no"
+	fi
+fi
+AC_MSG_RESULT([${solarissmf}])
+AM_CONDITIONAL(WITH_SOLARIS_SMF, test x"$solarissmf" = x"yes")
+
+AC_MSG_CHECKING(whether to make Solaris SVR4 packages)
+solarispkg_svr4="auto"
+AC_ARG_WITH([solaris-pkg-svr4],
+	AS_HELP_STRING([--with-solaris-pkg-svr4=(yes|auto|no)], [Enable construction of Solaris SVR4 packages (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarispkg_svr4="auto"
+		;;
+	yes|no)
+		solarispkg_svr4="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-svr4=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarispkg_svr4" = xauto ; then
+	if test -x /usr/bin/pkgtrans && test -x /usr/bin/pkgmk && test -x /usr/bin/pkgproto ; then
+		solarispkg_svr4="yes"
+	else
+		solarispkg_svr4="no"
+	fi
+fi
+AC_MSG_RESULT([${solarispkg_svr4}])
+AM_CONDITIONAL(WITH_SOLARIS_PKG_SVR4, test x"$solarispkg_svr4" = x"yes")
+
+AC_MSG_CHECKING(whether to make Solaris IPS packages)
+solarispkg_ips="auto"
+AC_ARG_WITH([solaris-pkg-ips],
+	AS_HELP_STRING([--with-solaris-pkg-ips=(yes|auto|no)], [Enable construction of Solaris IPS packages (auto)]),
+[
+	case "${withval}" in
+	auto|"")
+		solarispkg_ips="auto"
+		;;
+	yes|no)
+		solarispkg_ips="${withval}"
+		;;
+	*)
+		AC_MSG_ERROR([Unexpected argument for --with-solaris-pkg-ips=${withval}])
+		;;
+	esac
+], [])
+
+if test x"$solarispkg_ips" = xauto ; then
+	if test -x /usr/bin/pkg && test -x /usr/bin/pkgmogrify && test -x /usr/bin/pkgdepend ; then
+		solarispkg_ips="yes"
+	else
+		solarispkg_ips="no"
+	fi
+fi
+AC_MSG_RESULT([${solarispkg_ips}])
+AM_CONDITIONAL(WITH_SOLARIS_PKG_IPS, test x"$solarispkg_ips" = x"yes")
+
 AC_MSG_CHECKING(whether to install systemd files)
 AC_ARG_WITH([systemdsystemunitdir],
 	AS_HELP_STRING([--with-systemdsystemunitdir=DIR], [Directory for systemd service files (auto)]),
@@ -1207,16 +1314,91 @@ AC_ARG_WITH([systemdsystemunitdir],
 		;;
 	esac
 ], [])
-dnl Override installation directory, with the local installation
-dnl prefix. This is needed for 'distcheck*' targets, otherwise
-dnl files will try to get intalled to the actual system directories
 if test -n "${systemdsystemunitdir}"; then
-	systemdsystemshutdowndir="${libdir}/systemd/system-shutdown"
 	AC_MSG_RESULT(using ${systemdsystemunitdir})
 else
 	AC_MSG_RESULT(no)
 fi
 AM_CONDITIONAL(HAVE_SYSTEMD, test "$systemdsystemunitdir" != "")
+dnl This option is only provided so that make distcheck can override it,
+dnl otherwise we ask pkg-config whenever --with-systemdsystemunitdir is
+dnl given
+AC_ARG_WITH([systemdshutdowndir],
+	AS_HELP_STRING([--with-systemdshutdowndir=DIR], [Directory for systemd shutdown scripts (auto)]),
+	[systemdshutdowndir=${withval}])
+if test -n "${systemdsystemunitdir}"; then
+	case "${systemdshutdowndir}" in
+	yes|auto|"")
+		systemdshutdowndir=`$PKG_CONFIG --variable=systemdshutdowndir systemd`
+	esac
+fi
+
+dnl
+dnl Tests for CppUnit availability and usability (will be built if we can,
+dnl and if valgrind is enabled for this configuration - reported below).
+dnl Using CppUnit implies C++ support!
+dnl Theoretically, libcppunit-dev will pull up to g++, through libstdc++...
+dnl AM_PATH_CPPUNIT(1.9.6)
+
+dnl # Tests with gcc-4.8 require this C++11 option to be provided explicitly
+dnl # gcc-4.6 does not support this yet; newer gcc's should be ok by default.
+dnl # Could use `AX_CXX_COMPILE_STDCXX_11([noext], [optional])` if it were
+dnl # available everywhere. Or AX_CHECK_COMPILE_FLAG if it was ubiquitous:
+dnl ###AX_CHECK_COMPILE_FLAG([-std=c++11],
+dnl ###    [CXXFLAGS="$CXXFLAGS -std=c++11"
+dnl ###     have_cxx11=yes],
+dnl ###    [have_cxx11=no])
+
+AC_MSG_CHECKING(for C++11 support in current compiler)
+have_cxx11=unknown
+my_CXXFLAGS="$CXXFLAGS"
+AC_LANG_PUSH([C++])
+
+CPLUSPLUS_DECL='
+#include <stdio.h>
+#if __cplusplus < 201103L
+  #error This library needs at least a C++11 compliant compiler
+#endif
+'
+CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+    [AC_MSG_RESULT([yes, out of the box])
+     have_cxx11=yes],
+    [CXXFLAGS="$CXXFLAGS -std=c++11"
+     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
+         have_cxx11=yes],
+        [CXXFLAGS="$CXXFLAGS -std=c++0x"
+         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+             have_cxx11=yes],
+            [AC_MSG_RESULT([no])
+             CXXFLAGS="$my_CXXFLAGS"
+             have_cxx11=no])])])
+AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
+AC_LANG_POP([C++])
+unset CPLUSPLUS_MAIN
+unset CPLUSPLUS_DECL
+
+have_cppunit="no"
+CPPUNIT_NUT_CXXFLAGS=""
+AS_IF([test x"$have_PKG_CONFIG" = xyes],
+    [AS_IF([test x"${have_cxx11}" = xyes],
+        [PKG_CHECK_MODULES(CPPUNIT, cppunit, have_cppunit=yes, have_cppunit=no)
+         AS_IF([test "${have_cppunit}" != "yes"],
+            [AC_MSG_WARN([libcppunit not found - those C++ tests will not be built.])
+             have_cppunit=no],
+            [AS_IF([test -n "$CXX"],
+                [AS_IF([$CXX --version 2>&1 | grep 'Free Software Foundation' > /dev/null],
+                    [CPPUNIT_NUT_CXXFLAGS="-g -O0"])])
+            ])
+        ])
+    ], [AC_MSG_WARN([pkg-config not found, can not look properly for libcppunit - those C++ tests will not be built.])
+        have_cppunit=no]
+)
+AM_CONDITIONAL(HAVE_CPPUNIT, test "${have_cppunit}" = "yes")
+AC_DEFINE_UNQUOTED(CPPUNIT_NUT_CXXFLAGS, $CPPUNIT_NUT_CXXFLAGS, [Compiler flags for cppunit tests])
 
 AC_MSG_CHECKING(whether to install Augeas configuration-management lenses)
 AC_ARG_WITH(augeas-lenses-dir,
@@ -1226,7 +1408,7 @@ AC_ARG_WITH(augeas-lenses-dir,
 	yes)
 		if test -z "${auglensdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["augeas lenses directory requested but not found in default location"])
+			AC_MSG_ERROR([augeas lenses directory requested but not found in default location])
 		fi
 		;;
 	auto)
@@ -1246,6 +1428,16 @@ else
 fi
 AM_CONDITIONAL(WITH_AUGLENS, test -n "${auglensdir}")
 
+AC_PATH_PROGS([AUGPARSE], [augparse], [none])
+AM_CONDITIONAL([HAVE_AUGPARSE], [test "x${AUGPARSE}" != "xnone"])
+AC_MSG_CHECKING([whether to enable Augeas configuration-management lenses tests])
+if test "x${AUGPARSE}" != xnone ; then
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
+
 AC_MSG_CHECKING(whether to install hotplug rules)
 AC_ARG_WITH(hotplug-dir,
 	AS_HELP_STRING([--with-hotplug-dir=PATH], [where to install hotplug rules (/etc/hotplug)]),
@@ -1254,7 +1446,7 @@ AC_ARG_WITH(hotplug-dir,
 	yes)
 		if test -z "${hotplugdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["hotplug directory requested but not found"])
+			AC_MSG_ERROR([hotplug directory requested but not found])
 		fi
 		;;
 	auto)
@@ -1282,7 +1474,7 @@ AC_ARG_WITH(udev-dir,
 	yes)
 		if test -z "${udevdir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["udev directory requested but not found"])
+			AC_MSG_ERROR([udev directory requested but not found])
 		fi
 		;;
 	auto)
@@ -1312,7 +1504,7 @@ AC_ARG_WITH(devd-dir,
 	yes)
 		if test -z "${devddir}"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["devd directory requested but not found"])
+			AC_MSG_ERROR([devd directory requested but not found])
 		fi
 		;;
 	auto)
@@ -1351,7 +1543,7 @@ AC_ARG_WITH(valgrind,
 	yes)
 		if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["valgrind requested but not found"])
+			AC_MSG_ERROR([valgrind requested but not found])
 		fi
 		with_valgrind="yes"
 		;;
@@ -1365,7 +1557,7 @@ AC_ARG_WITH(valgrind,
 		AC_PATH_PROGS([VALGRIND], ["${withval}"], [none])
 		if test "x$VALGRIND" = "xnone"; then
 			AC_MSG_RESULT(no)
-			AC_MSG_ERROR(["valgrind requested but not found"])
+			AC_MSG_ERROR([valgrind requested but not found])
 		fi
 		with_valgrind="yes"
 		;;
@@ -1389,7 +1581,16 @@ fi
 AM_CONDITIONAL([HAVE_VALGRIND], [test "x${VALGRIND}" != "xnone"])
 AM_CONDITIONAL([WITH_VALGRIND], [test "x${with_valgrind}" = "xyes"])
 
-dnl expand ${sysconfdir} and write it out
+AC_MSG_CHECKING([whether to build cppunit tests using valgrind support])
+if test "x${with_valgrind}" = xyes && test "x${have_cppunit}" = xyes ; then
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
+dnl expand ${sysconfdir} and write it out - note that most packages
+dnl override it to be /etc/nut, /etc/ups or similar, while the
+dnl autotools default would be $prefix/etc
 conftemp="${sysconfdir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
@@ -1401,6 +1602,7 @@ conftemp="${datadir}"
 eval conftemp=\"${conftemp}\"
 eval conftemp=\"${conftemp}\"
 DATADIR=${conftemp}
+NUT_DATADIR=${conftemp}
 AC_DEFINE_UNQUOTED(DATADIR, "${conftemp}", [Default path for data files])
 
 dnl same for bindir
@@ -1424,12 +1626,19 @@ eval conftemp=\"${conftemp}\"
 LIBDIR=${conftemp}
 AC_DEFINE_UNQUOTED(LIBDIR, "${conftemp}", [Default path for system libraries])
 
+dnl same for libexecdir
+conftemp="${libexecdir}"
+eval conftemp=\"${conftemp}\"
+eval conftemp=\"${conftemp}\"
+LIBEXECDIR=${conftemp}
+AC_DEFINE_UNQUOTED(LIBEXECDIR, "${conftemp}", [Default path for system exec-libraries])
+
 
 dnl checks related to --with-snmp enabled on command-line
 
 dnl ${nut_with_snmp}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_snmp}" = "yes" -a "${nut_have_libnetsnmp}" != "yes"; then
-   AC_MSG_ERROR(["Net-SNMP libraries not found, required for SNMP drivers"])
+   AC_MSG_ERROR([Net-SNMP libraries not found, required for SNMP drivers])
 fi
 
 if test "${nut_with_snmp}" != "no"; then
@@ -1484,6 +1693,7 @@ AC_SUBST(TREE_VERSION)
 AC_SUBST(NUT_NETVERSION)
 AC_SUBST(LIBSSL_CFLAGS)
 AC_SUBST(LIBSSL_LIBS)
+AC_SUBST(LIBSSL_REQUIRES)
 AC_SUBST(LIBGD_CFLAGS)
 AC_SUBST(LIBGD_LDFLAGS)
 AC_SUBST(LIBNETSNMP_CFLAGS)
@@ -1515,6 +1725,8 @@ AC_SUBST(STATEPATH)
 AC_SUBST(CONFPATH)
 AC_SUBST(BINDIR)
 AC_SUBST(LIBDIR)
+AC_SUBST(NUT_DATADIR, [`eval echo "${DATADIR}"`])
+AC_SUBST(NUT_LIBEXECDIR, [`eval echo "${LIBEXECDIR}"`])
 AC_SUBST(DRVPATH)
 AC_SUBST(SBINDIR)
 AC_SUBST(PORT)
@@ -1528,7 +1740,7 @@ AC_SUBST(driverexecdir)
 AC_SUBST(htmldir)
 AC_SUBST(pkgconfigdir)
 AC_SUBST(systemdsystemunitdir)
-AC_SUBST(systemdsystemshutdowndir)
+AC_SUBST(systemdshutdowndir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
@@ -1568,19 +1780,35 @@ AC_OUTPUT([
  scripts/devd/nut-usb.conf
  scripts/hotplug/Makefile
  scripts/hotplug/libhidups
+ scripts/Aix/nut.init
  scripts/HP-UX/nut.psf
  scripts/HP-UX/postinstall
  scripts/python/Makefile
+ scripts/upsdrvsvcctl/Makefile
+ scripts/upsdrvsvcctl/nut-driver-enumerator.sh
+ scripts/upsdrvsvcctl/upsdrvsvcctl
  scripts/systemd/Makefile
- scripts/systemd/nut-driver.service
+ scripts/systemd/nut-driver@.service
  scripts/systemd/nut-monitor.service
  scripts/systemd/nut-server.service
+ scripts/systemd/nut-driver-enumerator.service
+ scripts/systemd/nut-driver-enumerator.path
  scripts/systemd/nutshutdown
+ scripts/Solaris/nut-driver-enumerator.xml
+ scripts/Solaris/nut-driver.xml
+ scripts/Solaris/nut-monitor.xml
+ scripts/Solaris/nut-server.xml
+ scripts/Solaris/nut.xml
+ scripts/Solaris/svc-nut-server
+ scripts/Solaris/svc-nut-monitor
  scripts/Solaris/Makefile
  scripts/Solaris/pkginfo
+ scripts/Solaris/preinstall
  scripts/Solaris/postinstall
  scripts/Solaris/preremove
- scripts/Solaris/nut 
+ scripts/Solaris/postremove
+ scripts/Solaris/preproto.pl
+ scripts/Solaris/nut
  scripts/udev/Makefile
  scripts/udev/nut-ipmipsu.rules
  scripts/udev/nut-usbups.rules

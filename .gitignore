@@ -9,6 +9,7 @@
 .deps/
 .libs/
 .inst/
+/_install_pkgprotodir/
 Makefile
 Makefile.in
 ## Parent directory only
@@ -19,6 +20,7 @@ Makefile.in
 /config.log
 /config.status
 /config.sub
+/config.cache
 /configure
 /cscope.*
 /depcomp
@@ -33,6 +35,10 @@ common/.dirstamp
 # Dist
 /nut-*.*.*/
 /nut-*.tar.gz
+/nut*.rpm
+/NUT*.local.gz
+/NUT*.p5i
+/NUT*.depot
 
 # Official dist
 /nut-*.tar.gz.md5

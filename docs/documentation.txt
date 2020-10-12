@@ -13,6 +13,7 @@ ifdef::website[]
 - Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
 - link:ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
+- link:docs/solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 ifndef::website[]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
@@ -20,6 +21,7 @@ ifndef::website[]
 - <<Cables_information,Cables information>>
 - link:../man/index.html#User_man[User manual pages]
 - link:http://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
+- link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 
 Developer Documentation

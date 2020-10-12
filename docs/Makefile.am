@@ -40,7 +40,8 @@ CABLES_IMAGES = images/cables/73-0724.png images/cables/940-0024C.jpg \
 
 ALL_TXT_SRC = nut-names.txt daisychain.txt \
  $(USER_MANUAL_DEPS) $(DEVELOPER_GUIDE_DEPS) \
- $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt
+ $(CABLES_DEPS) FAQ.txt nut-qa.txt packager-guide.txt snmp.txt \
+ solaris-usb.txt
 
 NUT_SPELL_DICT = nut.dict
 EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
@@ -50,17 +51,22 @@ EXTRA_DIST += $(ALL_TXT_SRC) $(SHARED_DEPS) $(IMAGE_FILES) \
 ASCIIDOC_HTML_SINGLE = user-manual.html \
 	developer-guide.html \
 	packager-guide.html \
+	solaris-usb.html \
+	cables.html \
 	FAQ.html
 
 ASCIIDOC_HTML_CHUNKED = user-manual.chunked \
 	developer-guide.chunked \
 	packager-guide.chunked \
-	FAQ.html
+	solaris-usb.chunked \
+	cables.chunked \
+	FAQ.chunked
 
 ASCIIDOC_PDF = user-manual.pdf \
 	developer-guide.pdf \
 	packager-guide.pdf \
-	cables.pdf	\
+	solaris-usb.pdf \
+	cables.pdf \
 	FAQ.pdf
 
 SUBDIRS = man
@@ -89,6 +95,7 @@ FULL_DEVELOPER_GUIDE_DEPS = $(DEVELOPER_GUIDE_DEPS) $(SHARED_DEPS) \
 user-manual.html user-manual.chunked user-manual.pdf: $(FULL_USER_MANUAL_DEPS)
 developer-guide.html developer-guide.chunked developer-guide.pdf: $(FULL_DEVELOPER_GUIDE_DEPS)
 packager-guide.html packager-guide.chunked packager-guide.pdf: packager-guide.txt asciidoc.conf
+solaris-usb.html solaris-usb.chunked solaris-usb.pdf: solaris-usb.txt asciidoc.conf
 
 # Note: without the "-v", asciidoc (circa 8.6.2) sometimes hangs when
 # generating the chunked HTML. In this case, export the environment
@@ -112,16 +119,26 @@ A2X_COMMON_OPTS = $(ASCIIDOC_VERBOSE) --attribute icons \
 # https://github.com/networkupstools/nut/pull/281/commits/fe17861c4ea12679b3ebfefa8a6d692d79d99f2d
 # and do not forget to fix up docs/man/Makefile.am too ;)
 
+# NOTE: a2x tends to copy some files into its working area, preserving original
+# permissions. If those files are read-only in origin (e.g. packaged stylesheet
+# or our resources coming from EXTRA_DIST) the next a2x can not overwrite it.
+# Also note that such hoarding of files has potential to break parallel builds
+# (or cause them to produce undefined results if some bad timing happens).
+# As a brutal workaround for the former problem, we chmod. For second one we
+# might try magic with .SEQUENTIAL recipe hints, but that is gmake-dependent.
 .txt.html: common.xsl xhtml.xsl
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod +w "${builddir}/docbook-xsl.css" ; fi
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=xhtml11_format --format=xhtml --xsl-file=$(srcdir)/xhtml.xsl $<
 
 .txt.chunked: common.xsl chunked.xsl
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod +w "${builddir}/docbook-xsl.css" ; fi
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=chunked_format --format=chunked --xsl-file=$(srcdir)/chunked.xsl $<
 
 .txt.pdf: docinfo.xml
-	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod +w "${builddir}/docbook-xsl.css" ; fi
+	@if test -s "${builddir}/docbook-xsl.css" && test -r "${builddir}/docbook-xsl.css" && ! test -w "${builddir}/docbook-xsl.css" ; then chmod u+w "${builddir}/docbook-xsl.css" ; fi
+	@chmod -R u+w .
 	$(A2X) $(A2X_COMMON_OPTS) --attribute=pdf_format --format=pdf -a docinfo1 $<
 
 if HAVE_ASPELL
