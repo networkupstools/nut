@@ -384,8 +384,8 @@ If your copy of gd isn't linking properly, use this to give the
 proper -L and -l flags to make it work.  See LIBS= in gd's Makefile.
 
 NOTE: the --with-gd switches are not necessary if you have gd 2.0.8
-or higher installed properly.  The gdlib-config script will be 
-detected and used by default in that situation.
+or higher installed properly.  The gdlib-config script or pkgconfig
+manifest will be detected and used by default in that situation.
 
 	--with-gdlib-config
 
