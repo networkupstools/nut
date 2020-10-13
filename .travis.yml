@@ -803,9 +803,11 @@ _matrix_all:
 _matrix_master:
   include: &_matrix_master
   - *_matrix_required
-  - *_matrix_allowfail_linux
-  - *_matrix_osx
-  - *_matrix_windows
+### Enable for branch builds that intend to fix the issues which preclude
+### following items from becoming green:
+#  - *_matrix_allowfail_linux
+#  - *_matrix_allowfail_osx
+#  - *_matrix_windows
 
 _matrix_fixbugs:
   include: &_matrix_fixbugs
