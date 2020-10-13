@@ -741,16 +741,29 @@ _matrix_allowfail_osx:
   - *_matrix_osx_gnustd_warn
   - *_matrix_osx_cstd_warn
 
+_matrix_required_osx:
+  include: &_matrix_required_osx
+  - *_matrix_osx_gnustd_nowarn
+
 _matrix_osx:
   include: &_matrix_osx
-  - *_matrix_osx_gnustd_nowarn
+  - *_matrix_required_osx
   - *_matrix_allowfail_osx
 
-_matrix_windows:
-  include: &_matrix_windows
+# Nothing this good yet
+#_matrix_required_windows:
+#  include: &_matrix_required_windows
+
+_matrix_allowfail_windows:
+  include: &_matrix_allowfail_windows
   - *_matrix_windows_gnustd_nowarn
   - *_matrix_windows_cstd_nowarn
   - *_matrix_windows_cstd_warn
+
+_matrix_windows:
+  include: &_matrix_windows
+#  - *_matrix_required_windows
+  - *_matrix_allowfail_windows
 
 # Different dissections of interest to fixers:
 _matrix_cstd_nowarn:
@@ -773,6 +786,8 @@ _matrix_warn:
 _matrix_required:
   include: &_matrix_required
   - *_matrix_required_linux
+  - *_matrix_required_osx
+#  - *_matrix_required_windows
 
 _matrix_master:
   include: &_matrix_master
