@@ -724,11 +724,11 @@ if ! SKIP_MANS
 check-local: check-man
 else
 check-local: check-man-txt check-man-pages
-	echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&@
+	echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 else
 check-local: check-man-txt check-man-pages
-	echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&@
+	echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 
 check-man: check-man-txt check-man-pages check-html-man
