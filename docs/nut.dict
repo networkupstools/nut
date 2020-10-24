@@ -607,6 +607,7 @@ NNNNNNNNNNNNNNNNNNN
 NOAUTH
 NOCOMM
 NOCOMMWARNTIME
+NOCONF
 NOMBATTV
 NOMINV
 NOMOUTV
@@ -622,6 +623,7 @@ NOTIFYMSG
 NQA
 NTP
 NUT's
+NUTSRC
 NVA
 NX
 Nadav
@@ -1080,6 +1082,7 @@ UTalk
 UUU
 UX
 Ulf
+Uncomment
 Unices
 Unitek
 Upsonic
@@ -2329,6 +2332,7 @@ ugen
 ukUNV
 ul
 un
+uncomment
 unconfigured
 undefine
 undervoltage
