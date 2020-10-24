@@ -74,7 +74,7 @@ When editing the genericups.h, the values have the following meanings:
 
 Outgoing lines:
 
-- line_norm = what to set to make the line "normal" - i.e. cable power
+- line_norm = what to set to make the line "normal" -- i.e. cable power
 - line_sd   = what to set to make the UPS shut down the load
 
 Incoming lines:
@@ -91,7 +91,7 @@ with the value of the serial port whenever a poll occurs.  If that flag
 exists, then the result of the and will be 0x80.  If it does not exist,
 the result will be 0.
 
-So, if line_ol = foo, then val_ol can only be foo or 0.  
+So, if line_ol = foo, then val_ol can only be foo or 0.
 
 As a general case, if 'line_ol == val_ol', then the value you're reading
 is active high.  Otherwise, it's active low.  Check out the guts of
