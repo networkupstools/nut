@@ -169,6 +169,11 @@ driver and expansion of the existing snmp-ups driver.
 Liebert has since been acquired by link:http://www.emerson.com[Emerson].
 
 NOTE: If a company or individual isn't listed here, then we probably don't
-have enough information about the situation. Developers are requested to
-report vendor contributions to the NUT team so this list may reflect their
-help. If we have left you out, please send us some mail.
+have enough information about the situation. Developers are kindly requested
+to report vendor contributions to the NUT team so this list may reflect their
+help, as well as convey a sense of official support (at least, that drivers
+were proposed according to the know-how coming from specs and knowledge about
+hardware and firmware capabilities, and not acquired via reverse engineering
+with a certain degree of unreliability and incompleteness). If we have left
+you out, please send us some mail or post a pull request to update this
+document in GitHub.
