@@ -686,7 +686,7 @@ if ! SKIP_MANS
 # runs ./configure --with-doc=skip (or --with-doc=man=skip specifically)
 EXTRA_DIST += dist
 dist:
-	echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
+	@echo "ERROR: Manpage building was disabled by configure script, and these pages are required for our proper 'make dist'" >&2 ; false
 endif
 endif
 
@@ -724,11 +724,11 @@ if ! SKIP_MANS
 check-local: check-man
 else
 check-local: check-man-txt check-man-pages
-	echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
+	@echo "Man-page generation was SKIPPED per user request, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 else
 check-local: check-man-txt check-man-pages
-	echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
+	@echo "Man-page generation was not done, so pregenerated pages were sanity-checked (if any)" >&2
 endif
 
 check-man: check-man-txt check-man-pages check-html-man
