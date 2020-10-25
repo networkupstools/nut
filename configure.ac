@@ -700,16 +700,16 @@ NUT_REPORT_FEATURE([build and install documentation], [${nut_with_doc}], [],
 DOC_INSTALL_DISTED_MANS=no
 
 case "${nut_with_doc}" in
-	yes|all)
+	yes|all|all=yes)
 		nut_doc_build_list="man html-single html-chunked pdf"
 		;;
-	auto)
+	auto|all=auto)
 		nut_doc_build_list="man=auto html-single=auto html-chunked=auto pdf=auto"
 		;;
-	skip)
+	skip|all=skip)
 		nut_doc_build_list="man=skip html-single=skip html-chunked=skip pdf=skip"
 		;;
-	no)
+	no|all=no)
 		nut_doc_build_list=""
 		;;
 dnl If user passed --with-doc='' they they want nothing, right?
@@ -896,6 +896,15 @@ esac
 
 NUT_REPORT_FEATURE([build specific documentation format(s)], [${nut_with_doc}], [${DOC_BUILD_LIST}],
 					[WITH_DOCS], [Define to enable overall documentation generation])
+
+# To cater for less portable make's, precalculate the target list
+# for "make check" in "docs/" here...
+DOC_CHECK_LIST=""
+if test "${nut_with_doc}" = yes ; then
+    for V in $DOC_BUILD_LIST ; do
+        DOC_CHECK_LIST="$DOC_CHECK_LIST check-$V"
+    done
+fi
 
 WITH_MANS=no
 SKIP_MANS=no
@@ -1711,6 +1720,7 @@ AC_SUBST(LIBMODBUS_LIBS)
 AC_SUBST(LIBIPMI_CFLAGS)
 AC_SUBST(LIBIPMI_LIBS)
 AC_SUBST(DOC_BUILD_LIST)
+AC_SUBST(DOC_CHECK_LIST)
 AC_SUBST(LIBWRAP_CFLAGS)
 AC_SUBST(LIBWRAP_LIBS)
 AC_SUBST(LIBLTDL_CFLAGS)
