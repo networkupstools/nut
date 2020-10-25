@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2488 utf-8
+personal_ws-1.1 en 2491 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -287,6 +287,7 @@ Eriksson
 FEMEA
 FFF
 FH
+FHS
 FINALDELAY
 FIPS
 FIXME
@@ -1454,6 +1455,7 @@ dir
 disp
 distcheck
 distro
+distros
 dl
 dll
 dlopen
