@@ -13,6 +13,7 @@ ifdef::website[]
 - Cables information (link:cables.html[online]) (link:docs/cables.pdf[PDF])
 - link:docs/man/index.html#User_man[User manual pages]
 - link:ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
+- link:docs/solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 ifndef::website[]
 - link:../FAQ.html[FAQ - Frequently Asked Questions]
@@ -20,6 +21,7 @@ ifndef::website[]
 - <<Cables_information,Cables information>>
 - link:../man/index.html#User_man[User manual pages]
 - link:http://www.networkupstools.org/ddl/index.html#_supported_devices[Devices Dumps Library (DDL)]: Provides information on how devices are supported
+- link:../solaris-usb.html[Notes on NUT monitoring of USB devices in Solaris and related operating systems]
 endif::website[]
 
 Developer Documentation
@@ -59,7 +61,7 @@ These are general information about UPS, PDU, ATS, PSU and SCD:
 These are writeups by users of the software.
 
 - link:http://rogerprice.org/NUT.html[NUT Setup with openSUSE] '(Roger Price)'
-- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'   
+- link:http://www.dimat.unina2.it/LCS/MonitoraggioUpsNutUbuntu10-eng.htm[Deploying NUT on an Ubuntu 10.04 cluster] '(Stefano Angelone)'
 - link:http://blog.shadypixel.com/monitoring-a-ups-with-nut-on-debian-or-ubuntu-linux[Monitoring a UPS with nut on Debian or Ubuntu Linux] '(Avery Fay)'
 - link:http://linux.developpez.com/cours/upsusb/[Installation et gestion d'un UPS USB en réseau sous linux] '(Olivier Van Hoof, french)'
 - link:http://trac.networkupstools.org/projects/nut/wiki/NutOnMacOSX[Network UPS Tools (NUT) on Mac OS X (10.4.10)] '(Andy Poush)'

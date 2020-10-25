@@ -491,7 +491,7 @@ class interface(object):
                         self.gui_status_message(error_msg)
 
             except:
-                # Failed to get informations from the treeview... skip action
+                # Failed to get information from the treeview... skip action
                 pass
 
     # -------------------------------------------------------------------
@@ -816,7 +816,7 @@ class gui_updater(threading.Thread):
                         self.__parent_class.gui_status_notification(_("Device is running on batteries"), "on_battery.png")
                         was_online = False
 
-                # Check for additionnal informations
+                # Check for additional information
                 for k, v in status_mapper.items():
                     if vars_.get("ups.status").find(k) != -1:
                         if text_right != "":

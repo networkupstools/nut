@@ -23,6 +23,7 @@
 #include "sstate.h"
 #include "user.h"
 #include "netssl.h"
+#include <ctype.h>
 
 	ups_t	*upstable = NULL;
 	int	num_ups = 0;
@@ -121,14 +122,58 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 
 	/* MAXAGE <seconds> */
 	if (!strcmp(arg[0], "MAXAGE")) {
-		maxage = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1][0])) {
+			maxage = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "MAXAGE has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
+	}
+
+	/* TRACKINGDELAY <seconds> */
+	if (!strcmp(arg[0], "TRACKINGDELAY")) {
+		if (isdigit(arg[1][0])) {
+			tracking_delay = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "TRACKINGDELAY has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
+	}
+
+	/* ALLOW_NO_DEVICE <seconds> */
+	if (!strcmp(arg[0], "ALLOW_NO_DEVICE")) {
+		if (isdigit(arg[1][0])) {
+			allow_no_device = (atoi(arg[1]) != 0); // non-zero arg is true here
+			return 1;
+		}
+		else {
+			if ( (!strcasecmp(arg[1], "true")) || (!strcasecmp(arg[1], "on")) || (!strcasecmp(arg[1], "yes"))) {
+				allow_no_device = 1;
+				return 1;
+			}
+			if ( (!strcasecmp(arg[1], "false")) || (!strcasecmp(arg[1], "off")) || (!strcasecmp(arg[1], "no"))) {
+				allow_no_device = 0;
+				return 1;
+			}
+			upslogx(LOG_ERR, "ALLOW_NO_DEVICE has non numeric and non boolean value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 
 	/* MAXCONN <connections> */
 	if (!strcmp(arg[0], "MAXCONN")) {
-		maxconn = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1][0])) {
+			maxconn = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "MAXCONN has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 
 	/* STATEPATH <dir> */
@@ -162,8 +207,14 @@ static int parse_upsd_conf_args(int numargs, char **arg)
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
 	/* CERTREQUEST (0 | 1 | 2) */
 	if (!strcmp(arg[0], "CERTREQUEST")) {
-		certrequest = atoi(arg[1]);
-		return 1;
+		if (isdigit(arg[1][0])) {
+			certrequest = atoi(arg[1]);
+			return 1;
+		}
+		else {
+			upslogx(LOG_ERR, "CERTREQUEST has non numeric value (%s)!", arg[1]);
+			return 0;
+		}
 	}
 #endif /* WITH_CLIENT_CERTIFICATE_VALIDATION */
 #endif /* WITH_OPENSSL | WITH_NSS */

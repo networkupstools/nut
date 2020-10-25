@@ -1,7 +1,14 @@
 #!/bin/sh
 
+# This script requires both nut-server (drivers)
+# and nut-client (upsmon) to be present locally
+# and on mounted filesystems
+[ -x "@SBINDIR@/upsmon" ] && [ -x "@SBINDIR@/upsdrvctl" ] || exit
+
 if @SBINDIR@/upsmon -K >/dev/null 2>&1; then
-  wait_delay=`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`
+  # The argument may be anything compatible with sleep
+  # (not necessarily a non-negative integer)
+  wait_delay="`/bin/sed -ne 's#^ *POWEROFF_WAIT= *\(.*\)$#\1#p' @CONFPATH@/nut.conf`" || wait_delay=""
 
   @SBINDIR@/upsdrvctl shutdown
 
