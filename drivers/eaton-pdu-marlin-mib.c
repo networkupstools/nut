@@ -34,7 +34,7 @@
 /* Eaton PDU-MIB - Marlin MIB
  * ************************** */
 
-#define EATON_MARLIN_MIB_VERSION	"0.48"
+#define EATON_MARLIN_MIB_VERSION	"0.49"
 #define EATON_MARLIN_SYSOID			".1.3.6.1.4.1.534.6.6.7"
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
@@ -629,8 +629,9 @@ static snmp_info_t eaton_marlin_mib[] = {
 		".1.3.6.1.4.1.534.6.6.7.6.6.1.2.%i.%i",
 		NULL, SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, &marlin_outlet_status_info[0] },
 	/* Numeric identifier of the outlet, tied to the whole unit */
-	{ "outlet.%i.id", 0, 1, NULL, "%i",
-		SU_FLAG_STATIC | SU_FLAG_ABSENT | SU_FLAG_OK | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
+	{ "outlet.%i.id", 0, 1,
+		".1.3.6.1.4.1.534.6.6.7.6.6.1.7.%i.%i",
+		NULL, SU_FLAG_STATIC | SU_OUTLET | SU_TYPE_DAISY_1, NULL },
 	/* outletID: Outlet physical name, related to its number in the group
 	 * ex: first outlet of the second group (B) is B1 */
 	{ "outlet.%i.name", ST_FLAG_STRING, SU_INFOSIZE,
