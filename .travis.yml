@@ -808,8 +808,11 @@ _matrix_cstd_nowarn:
   - *_matrix_linux_cstd_nowarn
   - *_matrix_osx_cstd_nowarn
   - *_matrix_windows_cstd_nowarn
-###  - *_matrix_osx_gnustd_nowarn
-###  - *_matrix_linux_gnustd_nowarn
+
+_matrix_gnustd_nowarn:
+  include: &_matrix_gnustd_nowarn
+  - *_matrix_osx_gnustd_nowarn
+  - *_matrix_linux_gnustd_nowarn
 
 _matrix_warn:
   include: &_matrix_warn
