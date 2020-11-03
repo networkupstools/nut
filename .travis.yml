@@ -838,9 +838,9 @@ _matrix_master:
 ### Enabled for branches with names containing "fightwarn" to perform
 ### builds that intend to actively fix the issues which preclude the
 ### following items from becoming green:
-#  - *_matrix_allowfail_linux
-#  - *_matrix_allowfail_osx
-#  - *_matrix_windows
+  - *_matrix_allowfail_linux
+  - *_matrix_allowfail_osx
+  - *_matrix_windows
 
 _matrix_fixbugs:
   include: &_matrix_fixbugs
