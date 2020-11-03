@@ -342,6 +342,11 @@ _matrix_linux_gnustd_nowarn:
         - *deps_driverlibs
 
 # Make sure we don't assume "long int" is a "int64_t" and so on
+# Seems we'd have to use tricks like 32-bit docker in 64-bit VM per
+#   https://stackoverflow.com/questions/29361465/request-for-32bit-travis-build-machine
+#   https://github.com/travis-ci/travis-ci/issues/5770#issuecomment-197771661
+#     services: docker
+#     script: "docker run -i -v \"${PWD}:/MyProgram\" toopher/centos-i386:centos6 /bin/bash -c \"linux32 --32bit i386 /MyProgram/build.sh\""
 _matrix_linux_gnustd_nowarn_x86_32bit:
   include: &_matrix_linux_gnustd_nowarn_x86_32bit
   - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32"
