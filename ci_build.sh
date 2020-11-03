@@ -262,7 +262,8 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
 
     echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
     echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+    $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
+    || { RES=$?; echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"; exit $RES; }
 
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
