@@ -108,10 +108,9 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
 
     if (ret < 0) return -1;
 
-    if (ret >= 0) {
-	strncpy(msgbuf, msg, ret);
-	upsdebugx(1, "UPS<--PC: \"%s\"",msg);
-    }
+    strncpy(msgbuf, msg, ret);
+    upsdebugx(1, "UPS<--PC: \"%s\"",msg);
+
 /*    *(msgbuf+ret) = '\0';*/
 
     *buflen = ret;

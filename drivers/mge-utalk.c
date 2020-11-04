@@ -896,19 +896,17 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 	}
 
 	/* send terminating string */
-	if (MGE_COMMAND_ENDCHAR) {
-		for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
-			if ( isprint(*p & 0xFF) )
-				upsdebugx(4, "mge_command: sending [%c]", *p);
-			else
-				upsdebugx(4, "mge_command: sending [%02X]", *p);
+	for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
+		if ( isprint(*p & 0xFF) )
+			upsdebugx(4, "mge_command: sending [%c]", *p);
+		else
+			upsdebugx(4, "mge_command: sending [%02X]", *p);
 
-			if (write(upsfd, p, 1) != 1)
-				return -1;
+		if (write(upsfd, p, 1) != 1)
+			return -1;
 
-			bytes_sent++;
-			usleep(MGE_CHAR_DELAY);
-		}
+		bytes_sent++;
+		usleep(MGE_CHAR_DELAY);
 	}
 
 	if ( !reply )

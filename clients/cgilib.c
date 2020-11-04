@@ -46,7 +46,7 @@ static char *unescape(char *buf)
 			hex[1] = buf[++i];
 			hex[2] = '\0';
 			if (!isxdigit((unsigned char) hex[0])
-				|| !isxdigit((unsigned char) hex[0]))
+				|| !isxdigit((unsigned char) hex[1]))
 				fatalx(EXIT_FAILURE, "bad escape char");
 			ch = strtol(hex, NULL, 16);
 
