@@ -1703,7 +1703,7 @@ void upsdrv_updateinfo(void)
 		else {
 			upsdebugx(1, "Failed to extract Battery Status from answer");
 		}
-	
+
     		/*Extracting internal batteries ABM status*/
 		/*Placed first in ABM statuses list. For examples above - on position BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS (18):
 		PW5115RM - 0 - no external strings, no status bytes,
@@ -1712,7 +1712,7 @@ void upsdrv_updateinfo(void)
 		PW9130 - 1 - one external string, so one additional status byte (#19 - 00 - no test run), next(20) - number of ABM statuses,
 		next (21) - ABM Status for internal batteries.
 		*/
-		value=*(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS + *(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS)*1+2 ); 
+		value=*(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS + *(answer + BCMXCP_BATTDATA_BLOCK_NUMBER_OF_STRINGS)*1+2 );
 			upsdebugx(2, "ABM Status = %d ",value);
 		if (value > 0 && value < 5)
 			dstate_setinfo("battery.charger.status","%s",ABMStatus[value-1]);
@@ -1816,7 +1816,7 @@ void upsdrv_updateinfo(void)
 			dstate_setinfo("output.voltage.nominal", "%d", value);
 		/*Number of EBM*/
 		value = (int) *(answer + BCMXCP_CONFIG_BLOCK_BATTERY_DATA_WORD3);
-		if (value != 0)        
+		if (value != 0)
 			dstate_setinfo("battery.packs", "%d", value);
 
 	}
