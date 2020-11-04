@@ -263,7 +263,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
     echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
     $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
-    || { RES=$?; echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"; exit $RES; }
+    || { RES=$?
+        echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
+        echo "    (or press Ctrl+C to abort now if running interactively)" >&2
+        sleep 1
+        echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
+        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+        exit $RES
+       }
 
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
