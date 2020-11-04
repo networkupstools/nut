@@ -1001,10 +1001,19 @@ then
 	dnl # Avoid new compilers' warnings/errors about libtool distro flaws in this test like:
 	dnl #   error: ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
 	dnl #   {"nm_test_func", (void *) &nm_test_func},
-	dnl # or ones about LTO as in https://www.mail-archive.com/libtool@gnu.org/msg14037.html
-	dnl # leading to undefined "global_symbol_pipe" in generated libtool script
+	dnl # or ones about LTO (-flto -fno-common) as discussed and suggested
+	dnl # in https://www.mail-archive.com/libtool@gnu.org/msg14037.html -
+	dnl # all leading to undefined "global_symbol_pipe" in the generated
+	dnl # libtool script, and resulting in errors like `... | | ...` below :
+	dnl # libtool: link: /usr/bin/nm -B .libs/upsclient.o \
+	dnl #   ../common/.libs/libcommonclient.a |  | /usr/bin/sed 's/.* //' \
+	dnl #   | sort | uniq > .libs/libupsclient.exp
+	dnl # ../libtool: syntax error: `|' unexpected
+
 	CFLAGS_SAVED_NOPEDANTIC="$CFLAGS"
-	CFLAGS="$CFLAGS -Wno-pedantic -ffat-lto-objects -Wno-error"
+	AS_CASE(["${CFLAGS}"],[*"-pedantic"*],[CFLAGS="${CFLAGS} -Wno-pedantic"])
+	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
+	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
 fi
 AC_PROG_LIBTOOL
 if ( test "${GCC}" = "yes" )
