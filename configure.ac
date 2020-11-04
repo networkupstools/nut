@@ -996,7 +996,21 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
 
 dnl We only init libtool there to allow AC_DISABLE_STATIC
+if ( test "${GCC}" = "yes" || test "${CLANG}" = "yes" )
+then
+	dnl # Avoid new compilers' warnings/errors about libtool distro flaws in this test like:
+	dnl #   error: ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+	dnl #   {"nm_test_func", (void *) &nm_test_func},
+	dnl # or ones about LTO as in https://www.mail-archive.com/libtool@gnu.org/msg14037.html
+	dnl # leading to undefined "global_symbol_pipe" in generated libtool script
+	CFLAGS_SAVED_NOPEDANTIC="$CFLAGS"
+	CFLAGS="$CFLAGS -Wno-pedantic -ffat-lto-objects -Wno-error"
+fi
 AC_PROG_LIBTOOL
+if ( test "${GCC}" = "yes" || test "${CLANG}" = "yes" )
+then
+	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
+fi
 
 dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_dev}" != "no"; then
