@@ -782,7 +782,7 @@ bool_t init_command(int size)
 			for (ncounter = 0; ncounter < NumComms; ncounter++)
 			{
 				commandByte = answer[iIndex];
-				if(commandByte >= 0 && commandByte < BCMXCP_COMMAND_MAP_MAX) {
+				if(commandByte < BCMXCP_COMMAND_MAP_MAX) {
 					upsdebugx(2, "%03d\t%02x\t%s", ncounter, commandByte, bcmxcp_command_map[commandByte].command_desc);
 					bcmxcp_command_map[commandByte].command_byte = commandByte;
 				}

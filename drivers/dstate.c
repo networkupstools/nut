@@ -1167,7 +1167,7 @@ int dstate_detect_phasecount(
 
 		if ( (v1 && v2 && !v3) ||
 		     (v1n && v2n && !v3n) ||
-		     (c1 && c2 && !c2) ||
+		     (c1 && c2 && !c3) ||
 		     (v12 && !v23 && !v31) ) {
 			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
 			*num_phases = 2;

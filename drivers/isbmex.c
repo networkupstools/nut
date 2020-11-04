@@ -175,7 +175,7 @@ static const char *getpacket(int *we_know){
   }
 
   r=read(upsfd,buf,255);
-  D(printf("%d bytes read: ",r);)
+  D(printf("%zd bytes read: ",r);)
   buf[r]=0;
   if (bytes_per_packet && r < bytes_per_packet){
 	     ssize_t rr;

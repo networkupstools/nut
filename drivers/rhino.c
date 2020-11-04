@@ -187,7 +187,7 @@ AutonomyCalc( int ia ) /* all models */
     {
       currin = ( UtilPowerOut + ConstInt ) *1.0 / Vin;
       auton = ( ( ( AmpH *1.0 / currin ) * 60 * ( ( BattVoltage - VbatMin ) * 1.0 /( VbatNom - VbatMin ) ) * FM ) + FA );
-      if(  ( BattVoltage > 129 ) || ( BattVoltage < 144 ) )
+      if(  ( BattVoltage > 129 ) && ( BattVoltage < 144 ) )
 	result = 133;
       else
 	result = (int) auton;

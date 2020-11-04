@@ -484,7 +484,7 @@ static void scan_received_pack(void) {
 	if (!SourceFail && InversorOn)
 		OutFreq = InFreq;
 
-	if (AppPower <= 0) /* charge pf */
+	if (AppPower < 0) /* charge pf */
 		ChargePowerFactor = 0;
 	else  {
 		if( AppPower == 0 )
@@ -728,8 +728,7 @@ static void get_base_info(void) {
 		} else {
 			if (i2 == 1 && DaysOffWeek > 0) {
 				isprogram = 1;
-				if (DaysOnWeek != DaysOffWeek)
-					DaysOnWeek = DaysOffWeek;
+				DaysOnWeek = DaysOffWeek;
 			}
 		}
 	} /* end prgups 1 - 2 */

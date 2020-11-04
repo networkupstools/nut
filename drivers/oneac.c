@@ -173,7 +173,7 @@ void EliminateLeadingZeroes (const char* buff1, int StringSize, char* buff2,
 	memset(buff2, '\0', buff2size);			/* Fill with nulls */
 	
 	/* Find first non-'0' */
-	while ((buff1[i] == '0') && (i < (StringSize - 1)))
+	while ((i < (StringSize - 1) && (buff1[i] == '0')))
 	{
 		i++;
 	}

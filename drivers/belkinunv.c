@@ -919,7 +919,7 @@ void upsdrv_initinfo(void)
 
 	val = belkin_nut_read_int(REG_ALARMSTATUS);
         if (val!=-1) {
-	  dstate_setinfo("ups.beeper.status", "%s", val==1 ? "disabled" : val&1 ? "muted" : "enabled");
+	  dstate_setinfo("ups.beeper.status", "%s", (val==1) ? "disabled" : (val&1) ? "muted" : "enabled");
 
 	  /* declare variable writable */
 	  dstate_setflags("ups.beeper.status", ST_FLAG_RW);
@@ -1060,7 +1060,7 @@ void upsdrv_updateinfo(void)
 
 	val = belkin_nut_read_int(REG_ALARMSTATUS);
 	if (val!=-1) {
-		dstate_setinfo("ups.beeper.status", "%s", val==1 ? "disabled" : val&1 ? "muted" : "enabled");
+		dstate_setinfo("ups.beeper.status", "%s", (val==1) ? "disabled" : (val&1) ? "muted" : "enabled");
 	}
 
 	val = belkin_nut_read_int(REG_SHUTDOWNTIMER);
