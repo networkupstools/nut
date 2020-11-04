@@ -338,6 +338,8 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'X':
         flags |= DP_F_UP;
+        /* Falls through to 'x' for rest of processing */
+        /* FALLTHRU */
       case 'x':
         flags |= DP_F_UNSIGNED;
         if (cflags == DP_C_SHORT)
@@ -364,6 +366,8 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'E':
         flags |= DP_F_UP;
+        /* Falls through to 'e' for rest of processing */
+        /* FALLTHRU */
       case 'e':
         if (cflags == DP_C_LDOUBLE)
           fvalue = va_arg (args, LDOUBLE);
@@ -372,6 +376,8 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'G':
         flags |= DP_F_UP;
+        /* Falls through to 'g' for rest of processing */
+        /* FALLTHRU */
       case 'g':
         if (cflags == DP_C_LDOUBLE)
           fvalue = va_arg (args, LDOUBLE);
