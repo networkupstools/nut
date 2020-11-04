@@ -102,7 +102,6 @@ static int char_read (char *bytes, int size, int read_timeout)
 			return -1;
 		}
 		else {
-			bytes += now;
 			readen += now;
 		}
 	}

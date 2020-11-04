@@ -944,10 +944,7 @@ static void addups(int reloading, const char *sys, const char *pvs,
 	/* build this up so the user doesn't run with bad settings */
 	totalpv += tmp->pv;
 
-	if (un)
-		tmp->un = xstrdup(un);
-	else
-		tmp->un = NULL;
+	tmp->un = xstrdup(un);
 
 	tmp->pw = xstrdup(pw);
 	tmp->status = 0;

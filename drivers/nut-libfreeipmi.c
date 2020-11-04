@@ -861,7 +861,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 		 * if ((sensor_state = ipmi_monitoring_sensor_read_sensor_state (mon_ctx)) < 0)
 		 * ... */
 
-		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) < 0)
+		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) == NULL)
 		{
 			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_reading() error: %s",
 						ipmi_monitoring_ctx_errormsg (mon_ctx));
@@ -881,7 +881,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 			continue;
 		}
 
-		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) < 0)
+		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) == NULL)
 		{
 			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_bitmask_strings() error: %s",
 						ipmi_monitoring_ctx_errormsg (mon_ctx));

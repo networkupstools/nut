@@ -919,7 +919,7 @@ static int (*sdlist[])(int) = {
 
 static void upsdrv_shutdown_simple(int status)
 {
-	unsigned int sdtype = 0;
+	long sdtype = 0;
 	char *strval;
 
 	if ((strval = getval("sdtype"))) {
