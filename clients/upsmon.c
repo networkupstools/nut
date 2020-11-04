@@ -1354,13 +1354,13 @@ static void user_fsd(int sig)
 	userfsd = 1;
 }
 
-static void set_reload_flag(int sig)
+static void set_reload_flag(int NUT_UNUSED(sig))
 {
 	reload_flag = 1;
 }
 
 /* handler for alarm when getupsvarfd times out */
-static void read_timeout(int sig)
+static void read_timeout(int NUT_UNUSED(sig))
 {
 	/* don't do anything here, just return */
 }
