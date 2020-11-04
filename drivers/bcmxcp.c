@@ -1886,7 +1886,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	int res, sec, outlet_num;
 	int sddelay = 0x03; /* outlet off in 3 seconds, by default */
 
-	upsdebugx(1, "entering instcmd(%s)", cmdname);
+	upsdebugx(1, "entering instcmd(%s)(%s)", cmdname, extra);
 
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		send_write_command(AUTHOR, 4);
