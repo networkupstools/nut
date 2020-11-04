@@ -193,7 +193,7 @@ static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 	                    SER_WAIT_SEC, SER_WAIT_USEC);
 }
 
-static int upsflushin(int f,int verbose,const char *ignset)
+static int upsflushin(int NUT_UNUSED(f),int verbose,const char *ignset)
 {
 	return ser_flush_in(upsfd, ignset, verbose);
 }
