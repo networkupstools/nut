@@ -688,7 +688,7 @@ static void setup_sigalrm(void)
 static void sendcmd(const char *cmd, const char *arg1, const char *arg2)
 {
 	int	i, pipefd, ret;
-	char	buf[SMALLBUF], enc[SMALLBUF];
+	char	buf[SMALLBUF], enc[SMALLBUF + 8];
 
 	/* insanity */
 	if (!arg1)
