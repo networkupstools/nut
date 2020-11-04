@@ -206,7 +206,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * if (mode == MODE_META) => ?
 	 */
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
