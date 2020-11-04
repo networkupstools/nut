@@ -908,9 +908,15 @@ static void checkconf(void)
 
 int main(int argc, char **argv)
 {
-	const char	*prog = xbasename(argv[0]);
+	const char	*prog = NULL;
+	/* More a use for argc to avoid warnings than a real need: */
+	if (argc > 0) {
+		xbasename(argv[0]);
+	} else {
+		xbasename("upssched");
+	}
 
-	verbose = 1;		/* TODO: remove when done testing */
+	verbose = 1;		/* TODO: remove when done testing, or add -D */
 
 	/* normally we don't have stderr, so get this going to syslog early */
 	open_syslog(prog);
