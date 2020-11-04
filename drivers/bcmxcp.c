@@ -2139,7 +2139,7 @@ int setvar (const char *varname, const char *val)
 {
 	unsigned char answer[128], cbuf[5];
 	char namebuf[MAX_NUT_NAME_LENGTH];
-	char success_msg[50];
+	char success_msg[SMALLBUF];
 	int res, sec, outlet_num,tmp;
 	int onOff_setting = PW_AUTO_OFF_DELAY;
 
