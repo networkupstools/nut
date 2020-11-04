@@ -484,7 +484,7 @@ static void scan_received_pack(void) {
 	if (!SourceFail && InversorOn)
 		OutFreq = InFreq;
 
-	if (AppPower < 0) /* charge pf */  // •••Sean••• not sure...
+	if (AppPower < 0) /* charge pf */
 		ChargePowerFactor = 0;
 	else  {
 		if( AppPower == 0 )
