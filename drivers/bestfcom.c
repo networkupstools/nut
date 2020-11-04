@@ -179,7 +179,7 @@ int bcd2i (const char *bcdstring, const int bcdlen)
 }
 
 #define POLL_ALERT "{"
-static void alert_handler(char ch)
+static void alert_handler(char NUT_UNUSED(ch))
 {
 	char buf[256];
 
