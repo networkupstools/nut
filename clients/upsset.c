@@ -1030,7 +1030,7 @@ static void check_conf(void)
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc, char **argv)
+int main(int NUT_UNUSED(argc), char ** NUT_UNUSED(argv))
 {
 	username = password = function = monups = NULL;
 
