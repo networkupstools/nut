@@ -57,6 +57,12 @@ int	deny_severity = LOG_WARNING;
 	/* default to 1h before cleaning up status tracking entries */
 	int	tracking_delay = 3600;
 
+	/*
+	 * Preloaded to ALLOW_NO_DEVICE from upsd.conf or environment variable
+	 * (with higher prio for envvar); defaults to disabled for legacy compat.
+	 */
+	int allow_no_device = 0;
+
 	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 	int	maxconn = 0;
 
@@ -1141,7 +1147,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i, cmd = 0, cmdret = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1210,8 +1216,8 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
-		sendsignalfn(pidfn, cmd);
-		exit(EXIT_SUCCESS);
+		cmdret = sendsignalfn(pidfn, cmd);
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
@@ -1252,6 +1258,28 @@ int main(int argc, char **argv)
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
 
+	{ // scope
+	/* As documented above, the ALLOW_NO_DEVICE can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NO_DEVICE");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 0;
+		}
+	}
+	} // scope
+
 	/* start server */
 	server_load();
 
@@ -1270,7 +1298,11 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		if (allow_no_device) {
+			upslogx(LOG_WARNING, "Normally at least one UPS must be defined in ups.conf, currently there are none (please configure the file and reload the service)");
+		} else {
+			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		}
 	}
 
 	/* try to bring in the var/cmd descriptions */
