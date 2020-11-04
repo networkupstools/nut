@@ -152,7 +152,7 @@ int ser_open(const char *port)
 	return res;
 }
 
-int ser_set_speed_nf(int fd, const char *port, speed_t speed)
+int ser_set_speed_nf(int fd, const char * NUT_UNUSED(port), speed_t speed)
 {
 	struct	termios	tio;
 
