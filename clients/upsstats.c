@@ -1039,7 +1039,7 @@ static void display_single(void)
 	upscli_disconnect(&ups);
 }
 
-int main(int argc, char ** NUT_UNUSED(argv))
+int main(int NUT_UNUSED(argc), char ** NUT_UNUSED(argv))
 {
 	extractcgiargs();
 
