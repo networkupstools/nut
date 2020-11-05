@@ -786,7 +786,7 @@ static info_lkp_t nominal_output_voltage_info[] = {
 	{ 110, "110", nominal_output_voltage_fun, NULL },
 	{ 120, "120", nominal_output_voltage_fun, NULL },
 	{ 127, "127", nominal_output_voltage_fun, NULL },
-	{ 0, NULL, NULL }
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Limit reporting "online / !online" to when "!off" */
