@@ -98,7 +98,7 @@ static subdriver_t *subdriver = NULL;
 
 /* Global vars */
 static HIDDevice_t *hd = NULL;
-static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL };
+static HIDDevice_t curDevice = { 0x0000, 0x0000, NULL, NULL, NULL, NULL, 0 };
 static HIDDeviceMatcher_t *subdriver_matcher = NULL;
 #ifndef SHUT_MODE
 static HIDDeviceMatcher_t *exact_matcher = NULL;
