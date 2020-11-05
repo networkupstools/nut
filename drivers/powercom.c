@@ -140,94 +140,94 @@ static void no_flow_control (void);
  *	  120VoltageFactor, 120VoltageConstant },
  */
 static struct type types[] = {
-        {
-                "Trust",
-                11,
-				{  "dtr0rts1", dtr0rts1 },
-                { { 5U, 0U }, { 7U, 0U }, { 8U, 0U } },
-                { { 0U, 10U }, 'n' },
-                {  0.00020997, 0.00020928 },
-                {  6.1343, -0.3808,  4.3110,  0.1811 },
-                {  5.0000,  0.3268,  -825.00,  4.5639, -835.82 },
-                {  1.9216, -0.0977,  0.9545,  0.0000 },
-        },
-        {
-                "Egys",
-                16,
-				{  "no_flow_control", no_flow_control },
-                { { 5U, 0x80U }, { 7U, 0U }, { 8U, 0U } },
-                { { 0U, 10U }, 'n' },
-                {  0.00020997, 0.00020928 },
-                {  6.1343, -0.3808,  1.3333,  0.6667 },
-                {  5.0000,  0.3268,  -825.00,  2.2105, -355.37 },
-                {  1.9216, -0.0977,  0.9545,  0.0000 },
-        },
-        {
-                "KP625AP",
-                16,
-				{  "dtr0rts1", dtr0rts1 },
-                { { 5U, 0x80U }, { 7U, 0U }, { 8U, 0U } },
-                { { 0U, 10U }, 'n' },
-                {  0.00020997, 0.00020928 },
-                {  6.1343, -0.3808,  4.3110,  0.1811 },
-                {  5.0000,  0.3268,  -825.00,  4.5639, -835.82 },
-                {  1.9216, -0.0977,  0.9545,  0.0000 },
-        },
-        {
-                "IMP",
-                16,
-				{  "no_flow_control", no_flow_control },
-                { { 5U, 0xFFU }, { 7U, 0U }, { 8U, 0U } },
-                { { 1U, 30U }, 'y' },
-                {  0.00020997, 0.00020928 },
-                {  6.1343, -0.3808,  4.3110,  0.1811 },
-                {  5.0000,  0.3268,  -825.00,  4.5639, -835.82 },
-                {  1.9216, -0.0977,  0.9545,  0.0000 },
-        },
-        {
-                "KIN",
-                16,
-				{  "no_flow_control", no_flow_control },
-                { { 11U, 0x4bU }, { 8U, 0U }, { 8U, 0U } },
-                { { 1U, 30U }, 'y' },
-                {  0.00020997, 0.0 },
-                {  6.1343, -0.3808,  1.075,  0.1811 },
-                {  5.0000,  0.3268,  -825.00,  0.46511, 0 },
-                {  1.9216, -0.0977,  0.82857,  0.0000 },
-        },
-        {
-                "BNT",
-                16,
-				{  "no_flow_control", no_flow_control },
-                { { 11U, 0x42U }, { 8U, 0U }, { 8U, 0U } },
-                { { 1U, 30U }, 'y' },
-                {  0.00020803, 0.0 },
-                {  1.4474,     0.0,   0.8594,  0.0 },
-                {  5.0000,  0.3268,  -825.00,  0.46511, 0 },
-                {  1.9216, -0.0977,  0.82857,  0.0000 },
-        },
-        {
-                "BNT-other",
-                16,
-				{  "no_flow_control", no_flow_control },
-                { { 8U, 0U }, { 8U, 0U }, { 8U, 0U } },
-                { { 1U, 30U }, 'y' },
-                {  0.00027778, 0.0000 },
-                {  1.0000,  0.0000,  1.0000,  0.0000 },
-                {  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
-                {  2.0000,  0.0000,  2.0000,  0.0000 },
-        },
-        {
-                "OPTI",
-                16,
-                {  "no_flow_control", no_flow_control },
-                { { 5U, 0xFFU }, { 7U, 0U }, { 8U, 0U } },
-                { { 1U, 30U }, 'y' },
-                {  0.0000, 0.0000 },
-                {  1.0000,  0.0000,  1.0000,  0.0000 },
-                {  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
-                {  2.0000,  0.0000,  2.0000,  0.0000 },
-        },
+	{
+		"Trust",
+		11,
+		{  "dtr0rts1", dtr0rts1 },
+		{ { 5U, 0U }, { 7U, 0U }, { 8U, 0U } },
+		{ { 0U, 10U }, 'n' },
+		{  0.00020997, 0.00020928 },
+		{  6.1343, -0.3808,  4.3110,  0.1811 },
+		{  5.0000,  0.3268,  -825.00,  4.5639, -835.82 },
+		{  1.9216, -0.0977,  0.9545,  0.0000 },
+	},
+	{
+		"Egys",
+		16,
+		{  "no_flow_control", no_flow_control },
+		{ { 5U, 0x80U }, { 7U, 0U }, { 8U, 0U } },
+		{ { 0U, 10U }, 'n' },
+		{  0.00020997, 0.00020928 },
+		{  6.1343, -0.3808,  1.3333,  0.6667 },
+		{  5.0000,  0.3268,  -825.00,  2.2105, -355.37 },
+		{  1.9216, -0.0977,  0.9545,  0.0000 },
+	},
+	{
+		"KP625AP",
+		16,
+		{  "dtr0rts1", dtr0rts1 },
+		{ { 5U, 0x80U }, { 7U, 0U }, { 8U, 0U } },
+		{ { 0U, 10U }, 'n' },
+		{  0.00020997, 0.00020928 },
+		{  6.1343, -0.3808,  4.3110,  0.1811 },
+		{  5.0000,  0.3268,  -825.00,  4.5639, -835.82 },
+		{  1.9216, -0.0977,  0.9545,  0.0000 },
+	},
+	{
+		"IMP",
+		16,
+		{  "no_flow_control", no_flow_control },
+		{ { 5U, 0xFFU }, { 7U, 0U }, { 8U, 0U } },
+		{ { 1U, 30U }, 'y' },
+		{  0.00020997, 0.00020928 },
+		{  6.1343, -0.3808,  4.3110,  0.1811 },
+		{  5.0000,  0.3268,  -825.00,  4.5639, -835.82 },
+		{  1.9216, -0.0977,  0.9545,  0.0000 },
+	},
+	{
+		"KIN",
+		16,
+		{  "no_flow_control", no_flow_control },
+		{ { 11U, 0x4bU }, { 8U, 0U }, { 8U, 0U } },
+		{ { 1U, 30U }, 'y' },
+		{  0.00020997, 0.0 },
+		{  6.1343, -0.3808,  1.075,  0.1811 },
+		{  5.0000,  0.3268,  -825.00,  0.46511, 0 },
+		{  1.9216, -0.0977,  0.82857,  0.0000 },
+	},
+	{
+		"BNT",
+		16,
+		{  "no_flow_control", no_flow_control },
+		{ { 11U, 0x42U }, { 8U, 0U }, { 8U, 0U } },
+		{ { 1U, 30U }, 'y' },
+		{  0.00020803, 0.0 },
+		{  1.4474,     0.0,   0.8594,  0.0 },
+		{  5.0000,  0.3268,  -825.00,  0.46511, 0 },
+		{  1.9216, -0.0977,  0.82857,  0.0000 },
+	},
+	{
+		"BNT-other",
+		16,
+		{  "no_flow_control", no_flow_control },
+		{ { 8U, 0U }, { 8U, 0U }, { 8U, 0U } },
+		{ { 1U, 30U }, 'y' },
+		{  0.00027778, 0.0000 },
+		{  1.0000,  0.0000,  1.0000,  0.0000 },
+		{  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
+		{  2.0000,  0.0000,  2.0000,  0.0000 },
+	},
+	{
+		"OPTI",
+		16,
+		{  "no_flow_control", no_flow_control },
+		{ { 5U, 0xFFU }, { 7U, 0U }, { 8U, 0U } },
+		{ { 1U, 30U }, 'y' },
+		{  0.0000, 0.0000 },
+		{  1.0000,  0.0000,  1.0000,  0.0000 },
+		{  1.0000,  0.0000,  0.0000,  1.0000,  0.0000 },
+		{  2.0000,  0.0000,  2.0000,  0.0000 },
+	},
 };
 
 /* values for sending to UPS */
@@ -235,7 +235,7 @@ enum commands {
 	SEND_DATA    = '\x01',
 	BATTERY_TEST = '\x03',
 	WAKEUP_TIME  = '\x04',
-	RESTART	     = '\xb9',
+	RESTART      = '\xb9',
 	SHUTDOWN     = '\xba',
 	COUNTER      = '\xbc'
 };
@@ -312,7 +312,7 @@ static int instcmd (const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "test.battery.start")) {
 	    ser_send_char (upsfd, BATTERY_TEST);
 	    return STAT_INSTCMD_HANDLED;
-    }
+	}
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		shutdown_ret();
 		return STAT_INSTCMD_HANDLED;
@@ -322,8 +322,8 @@ static int instcmd (const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-    upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
-    return STAT_INSTCMD_UNKNOWN;
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	return STAT_INSTCMD_UNKNOWN;
 }
 
 /* set DTR and RTS lines on a serial port to supply a passive
@@ -357,14 +357,14 @@ static void no_flow_control (void)
 static int validate_raw_data (void)
 {
 	int i = 0,
-    num_of_tests =
+	num_of_tests =
 		sizeof types[0].validation / sizeof types[0].validation[0];
 
 	for (i = 0;
 		 i < num_of_tests  &&
 		   raw_data[
 		        types[type].validation[i].index_of_byte] ==
-          		       types[type].validation[i].required_value;
+		        types[type].validation[i].required_value;
 		 i++)  ;
 	return (i < num_of_tests) ? 1 : 0;
 }
@@ -399,7 +399,7 @@ static int ups_getinfo(void)
 		/* FIXME: use upsdebug_hex() ? */
 		printf("Raw data from UPS:\n");
 		for (i = 0; i < types[type].num_of_bytes_from_ups; i++) {
-	 		printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
+			printf("%2d 0x%02x (%c)\n", i, raw_data[i], raw_data[i]>=0x20 ? raw_data[i] : ' ');
 		};
 	};
 
@@ -443,7 +443,7 @@ static float input_voltage(void)
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		tmp=raw_data[INPUT_VOLTAGE]*2.0;
 	} else {
-	    tmp=linevoltage >= 220 ?
+		tmp=linevoltage >= 220 ?
 			types[type].voltage[0] * raw_data[INPUT_VOLTAGE] + types[type].voltage[1] :
 			types[type].voltage[2] * raw_data[INPUT_VOLTAGE] + types[type].voltage[3];
 	}
@@ -593,8 +593,8 @@ static float input_freq(void)
 		return raw_data[INPUT_FREQUENCY];
 	return raw_data[INPUT_FREQUENCY] ?
 		1.0 / (types[type].freq[0] *
-                raw_data[INPUT_FREQUENCY] +
-                        types[type].freq[1]) : 0;
+				raw_data[INPUT_FREQUENCY] +
+						types[type].freq[1]) : 0;
 }
 
 static float output_freq(void)
@@ -605,8 +605,8 @@ static float output_freq(void)
 		return raw_data[OUTPUT_FREQUENCY];
 	return raw_data[OUTPUT_FREQUENCY] ?
 		1.0 / (types[type].freq[0] *
-                raw_data[OUTPUT_FREQUENCY] +
-                        types[type].freq[1]) : 0;
+				raw_data[OUTPUT_FREQUENCY] +
+						types[type].freq[1]) : 0;
 }
 
 static float load_level(void)
@@ -869,7 +869,7 @@ void upsdrv_initups(void)
 		tmp = atoi(getval("numOfBytesFromUPS"));
 		if (! (tmp > 0 && tmp <= MAX_NUM_OF_BYTES_FROM_UPS) ) {
 			printf("Given numOfBytesFromUPS '%d' is out of range (1 to %d)\n",
-	               tmp, MAX_NUM_OF_BYTES_FROM_UPS);
+			       tmp, MAX_NUM_OF_BYTES_FROM_UPS);
 			exit (1);
 		};
 		types[type].num_of_bytes_from_ups = (unsigned char) tmp;
@@ -890,8 +890,8 @@ void upsdrv_initups(void)
 	}
 
 	if (getval("validationSequence")  &&
-            sscanf(getval("validationSequence"),
-					"{{%u,%x},{%u,%x},{%u,%x}}",
+	    sscanf(getval("validationSequence"),
+			        "{{%u,%x},{%u,%x},{%u,%x}}",
 			                &types[type].validation[0].index_of_byte,
 			                &types[type].validation[0].required_value,
 			                &types[type].validation[1].index_of_byte,
@@ -918,8 +918,8 @@ void upsdrv_initups(void)
 	}
 
 	if (getval("frequency")  &&
-            sscanf(getval("frequency"), "{%f,%f}",
-			                &types[type].freq[0], &types[type].freq[1]
+	        sscanf(getval("frequency"), "{%f,%f}",
+	                &types[type].freq[0], &types[type].freq[1]
 	              ) < 2
 	   ) {
 		printf("Given frequency '%s' isn't valid!\n",
@@ -928,7 +928,7 @@ void upsdrv_initups(void)
 	}
 
 	if (getval("loadPercentage")  &&
-            sscanf(getval("loadPercentage"), "{%f,%f,%f,%f}",
+	        sscanf(getval("loadPercentage"), "{%f,%f,%f,%f}",
 	            &types[type].loadpct[0], &types[type].loadpct[1],
 	            &types[type].loadpct[2], &types[type].loadpct[3]
 	              ) < 4
@@ -939,7 +939,7 @@ void upsdrv_initups(void)
 	}
 
 	if (getval("batteryPercentage")  &&
-            sscanf(getval("batteryPercentage"), "{%f,%f,%f,%f,%f}",
+	        sscanf(getval("batteryPercentage"), "{%f,%f,%f,%f,%f}",
 	                &types[type].battpct[0], &types[type].battpct[1],
 	                &types[type].battpct[2], &types[type].battpct[3],
 	                &types[type].battpct[4]
@@ -951,7 +951,7 @@ void upsdrv_initups(void)
 	}
 
 	if (getval("voltage")  &&
-            sscanf(getval("voltage"), "{%f,%f,%f,%f}",
+	        sscanf(getval("voltage"), "{%f,%f,%f,%f}",
 	            &types[type].voltage[0], &types[type].voltage[1],
 	            &types[type].voltage[2], &types[type].voltage[3]
 				  ) < 4
@@ -1019,34 +1019,34 @@ void upsdrv_initups(void)
 	upsdebugx(1, " line voltage            : '%u'", linevoltage);
 	upsdebugx(1, " type                    : '%s'", types[type].name);
 	upsdebugx(1, " number of bytes from UPS: '%u'",
-	                        types[type].num_of_bytes_from_ups);
+	            types[type].num_of_bytes_from_ups);
 	upsdebugx(1, " method of flow control  : '%s'",
-    	                    types[type].flowControl.name);
+	            types[type].flowControl.name);
 	upsdebugx(1, " validation sequence: '{{%u,%#x},{%u,%#x},{%u,%#x}}'",
-			            types[type].validation[0].index_of_byte,
-			            types[type].validation[0].required_value,
-			            types[type].validation[1].index_of_byte,
-			            types[type].validation[1].required_value,
-			            types[type].validation[2].index_of_byte,
-			            types[type].validation[2].required_value);
+	            types[type].validation[0].index_of_byte,
+	            types[type].validation[0].required_value,
+	            types[type].validation[1].index_of_byte,
+	            types[type].validation[1].required_value,
+	            types[type].validation[2].index_of_byte,
+	            types[type].validation[2].required_value);
 	upsdebugx(1, " shutdown arguments: '{{%u,%u},%c}'",
-	                types[type].shutdown_arguments.delay[0],
-	                types[type].shutdown_arguments.delay[1],
-	                types[type].shutdown_arguments.minutesShouldBeUsed);
+	            types[type].shutdown_arguments.delay[0],
+	            types[type].shutdown_arguments.delay[1],
+	            types[type].shutdown_arguments.minutesShouldBeUsed);
 	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
 		upsdebugx(1, " frequency calculation coefficients: '{%f,%f}'",
-								types[type].freq[0], types[type].freq[1]);
+		        types[type].freq[0], types[type].freq[1]);
 		upsdebugx(1, " load percentage calculation coefficients: "
-					"'{%f,%f,%f,%f}'",
-						types[type].loadpct[0], types[type].loadpct[1],
-						types[type].loadpct[2], types[type].loadpct[3]);
+		        "'{%f,%f,%f,%f}'",
+		        types[type].loadpct[0], types[type].loadpct[1],
+		        types[type].loadpct[2], types[type].loadpct[3]);
 		upsdebugx(1, " battery percentage calculation coefficients: "
-					"'{%f,%f,%f,%f,%f}'",
-						types[type].battpct[0], types[type].battpct[1],
-						types[type].battpct[2], types[type].battpct[3],
-						types[type].battpct[4]);
+		        "'{%f,%f,%f,%f,%f}'",
+		        types[type].battpct[0], types[type].battpct[1],
+		        types[type].battpct[2], types[type].battpct[3],
+		        types[type].battpct[4]);
 		upsdebugx(1, " voltage calculation coefficients: '{%f,%f}'",
-							types[type].voltage[2], types[type].voltage[3]);
+		        types[type].voltage[2], types[type].voltage[3]);
 	}
 
 }
@@ -1127,9 +1127,9 @@ void upsdrv_initinfo(void)
 	dstate_setinfo ("input.voltage.nominal", "%u", linevoltage);
 
 	/* now add the instant commands */
-    dstate_addcmd ("test.battery.start");
-   	dstate_addcmd ("shutdown.return");
-   	dstate_addcmd ("shutdown.stayoff");
+	dstate_addcmd ("test.battery.start");
+	dstate_addcmd ("shutdown.return");
+	dstate_addcmd ("shutdown.stayoff");
 	upsh.instcmd = instcmd;
 }
 
