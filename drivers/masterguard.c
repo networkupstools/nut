@@ -25,10 +25,10 @@
  * Please if you edit this code convert tabs to spaces and use
  * four characters indent.
  * If you don't know what this means use the vim editor.
- * 
+ *
  * Have fun
  *      Michael
- * 
+ *
  ********************************************************************/
 #include "main.h"
 #include "serial.h"
@@ -60,19 +60,19 @@ char    firmware[6];
 
 /********************************************************************
  *
- * Helper function to split a sting into words by splitting at the 
+ * Helper function to split a sting into words by splitting at the
  * SPACE character.
  *
- * Adds up to maxlen characters to the char word. 
+ * Adds up to maxlen characters to the char word.
  * Returns NULL on reaching the end of the string.
- * 
+ *
  ********************************************************************/
 static char *StringSplit( char *source, char *word, int maxlen )
 {
     int     i;
     int     len;
     int     wc=0;
-   
+
     word[0] = '\0';
     len = strlen( source );
     for( i = 0; i < len; i++ )
@@ -88,14 +88,14 @@ static char *StringSplit( char *source, char *word, int maxlen )
     word[wc] = '\0';
     return NULL;
 }
-     
+
 /********************************************************************
  *
  * Helper function to drop all whitespaces within a string.
- * 
+ *
  * "word" must be large enought to hold "source", for the worst case
  * "word" has to be exacly the size of "source".
- * 
+ *
  ********************************************************************/
 static void StringStrip( char *source, char *word )
 {
@@ -123,7 +123,7 @@ static void StringStrip( char *source, char *word )
  *
  * Function parses the status flags which occure in the Q1 and Q3
  * command. Sets the INFO_STATUS value ( OL, OB, ... )
- * 
+ *
  ********************************************************************/
 static void parseFlags( char *flags )
 {
@@ -165,7 +165,7 @@ static void parseFlags( char *flags )
  *
  * Function parses the response of the query1 ( "Q1" ) command.
  * Also sets various values (IPFreq ... )
- * 
+ *
  ********************************************************************/
 static void query1( char *buf )
 {
@@ -180,7 +180,7 @@ static void query1( char *buf )
         printf( "Q1 Buffer is : %s\n" , buf + 1 );
     oldPOS = buf + 1;
     newPOS = oldPOS;
-  
+
     do
     {
         newPOS = StringSplit( oldPOS, word, WORDMAXLEN );
@@ -192,7 +192,7 @@ static void query1( char *buf )
             printf( "value=%s\n", value );
             fflush( stdout );
         }
-        switch( count ) 
+        switch( count )
         {
             case  0:
                     /* IP Voltage */
@@ -239,7 +239,7 @@ static void query1( char *buf )
  *
  * Function parses the response of the query3 ( "Q3" ) command.
  * Also sets various values (IPFreq ... )
- * 
+ *
  ********************************************************************/
 static void query3( char *buf )
 {
@@ -250,11 +250,11 @@ static void query3( char *buf )
     char    *oldPOS;
     int     count = 0;
 
-    if( DEBUG ) 
+    if( DEBUG )
         printf( "Q3 Buffer is : %s\n" , buf+1 );
     oldPOS = buf + 1;
     newPOS = oldPOS;
-  
+
     do
     {
         newPOS = StringSplit( oldPOS, word, WORDMAXLEN );
@@ -270,7 +270,7 @@ static void query3( char *buf )
             printf( "value=%s\n", value );
             fflush( stdout );
         }
-        switch( count ) 
+        switch( count )
         {
             case  0:
                     /* UPS ID */
@@ -332,7 +332,7 @@ static void query3( char *buf )
  *
  * Function to parse the WhoAmI response of the UPS. Also sets the
  * values of the firmware version and the UPS identification.
- * 
+ *
  ********************************************************************/
 static void parseWH( char *buf )
 {
@@ -345,7 +345,7 @@ static void parseWH( char *buf )
 }
 
 /********************************************************************
- * 
+ *
  * Function to parse the old and possible broken WhoAmI response
  * and set the values for the firmware Version and the identification
  * of the UPS.
@@ -364,7 +364,7 @@ static void parseOldWH( char *buf )
 /********************************************************************
  *
  * Function to fake a WhoAmI response of a UPS that returns NAK.
- * 
+ *
  ********************************************************************/
 static void fakeWH(void)
 {
@@ -383,7 +383,7 @@ static int ups_ident( void )
     ret = ser_send_pace(upsfd, UPS_PACE, "%s", "Q1\x0D" );
     ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
     ret = strlen( buf );
-    if( ret != 46 ) 
+    if( ret != 46 )
     {
         /* No Q1 response found */
         type   = 0;
@@ -400,13 +400,13 @@ static int ups_ident( void )
     ret = ser_send_pace(upsfd, UPS_PACE, "%s", "Q3\x0D" );
     ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
     ret = strlen( buf );
-    if( ret == 70 ) 
+    if( ret == 70 )
     {
         if( DEBUG )
             printf( "Found Q3\n" );
         type = Q1 | Q3;
     }
-    
+
     /* Check presence of WH ( Who am I ) */
     ret = ser_send_pace(upsfd, UPS_PACE, "%s", "WH\x0D" );
     ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
@@ -433,17 +433,17 @@ static int ups_ident( void )
     {
         if( DEBUG )
             printf( "WH says <%s> with length %i\n", buf, ret );
-        upslog_with_errno( LOG_INFO, 
+        upslog_with_errno( LOG_INFO,
                 "New WH String found. Please report to maintainer\n" );
     }
     return 1;
-} 
+}
 
 /********************************************************************
  *
- * 
- * 
- * 
+ *
+ *
+ *
  ********************************************************************/
 void upsdrv_help( void )
 {
@@ -453,13 +453,13 @@ void upsdrv_help( void )
 /********************************************************************
  *
  * Function to initialize the fields of the ups driver.
- * 
+ *
  ********************************************************************/
 void upsdrv_initinfo(void)
 {
 	dstate_setinfo("ups.mfr", "MASTERGUARD");
 	dstate_setinfo("ups.model", "unknown");
-	
+
 	/*
 	dstate_addcmd("test.battery.stop");
 	dstate_addcmd("test.battery.start");
@@ -473,9 +473,9 @@ void upsdrv_initinfo(void)
 
 /********************************************************************
  *
- * This is the main function. It gets called if the driver wants 
+ * This is the main function. It gets called if the driver wants
  * to update the ups status and the information.
- * 
+ *
  ********************************************************************/
 void upsdrv_updateinfo(void)
 {
@@ -483,7 +483,7 @@ void upsdrv_updateinfo(void)
     int     ret;
     int     lenRSP=0;
 
-    if( DEBUG ) 
+    if( DEBUG )
         printf( "update info\n" );
 
     /* Q3 found ? */
@@ -510,9 +510,9 @@ void upsdrv_updateinfo(void)
     ret = ser_get_line(upsfd, buf, sizeof(buf), '\r', "", 3, 0);
     ret = strlen( buf );
 
-    if( ret != lenRSP ) 
+    if( ret != lenRSP )
     {
-        if( DEBUG ) 
+        if( DEBUG )
             printf( "buf = %s len = %i\n", buf, ret );
         upslog_with_errno( LOG_ERR, "Error in UPS response " );
 	dstate_datastale();
@@ -538,7 +538,7 @@ void upsdrv_updateinfo(void)
  *
  * Called if the driver wants to shutdown the UPS.
  * ( also used by the "-k" command line switch )
- * 
+ *
  * This cuts the utility from the UPS after 20 seconds and restores
  * the utility one minute _after_ the utility to the UPS has restored
  *
@@ -552,9 +552,9 @@ void upsdrv_shutdown(void)
 /********************************************************************
  *
  * Populate the command line switches.
- * 
+ *
  * CS:  Cancel the shutdown process
- * 
+ *
  ********************************************************************/
 void upsdrv_makevartable(void)
 {
@@ -565,14 +565,14 @@ void upsdrv_makevartable(void)
  *
  * This is the first function called by the UPS driver.
  * Detects the UPS and handles the command line args.
- * 
+ *
  ********************************************************************/
 void upsdrv_initups(void)
 {
     int     count = 0;
     int     fail  = 0;
     int     good  = 0;
-    
+
 	/* setup serial port */
     upsfd = ser_open(device_path);
     ser_set_speed(upsfd, device_path, B2400);
@@ -599,9 +599,9 @@ void upsdrv_initups(void)
     {
         fatalx(EXIT_FAILURE,  "No MASTERGUARD UPS found" );
     }
-       
+
     upslogx(LOG_INFO, "MASTERGUARD UPS found\n" );
-    
+
     /* Cancel Shutdown */
     if( testvar("CS") )
     {
@@ -617,7 +617,7 @@ void upsdrv_initups(void)
  * http://www.vim.org
  *
  * vim:ts=4:sw=4:tw=78:et
- * 
+ *
  ********************************************************************/
 
 void upsdrv_cleanup(void)
