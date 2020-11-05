@@ -656,7 +656,7 @@ static info_lkp_t eaton_check_country_info[] = {
 
 /* When UPS.PowerConverter.Output.ActivePower is not present,
  * compute a realpower approximation using available data */
-static const char *eaton_compute_realpower_fun(double value)
+static const char *eaton_compute_realpower_fun(double NUT_UNUSED(value))
 {
 	const char *str_ups_load = dstate_getinfo("ups.load");
 	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
@@ -1539,7 +1539,8 @@ static int mge_claim(HIDDevice_t *hd) {
 		return 0;
 	}
 #else
-			return 1;
+	NUT_UNUSED_VARIABLE(hd);
+	return 1;
 #endif
 }
 
