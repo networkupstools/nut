@@ -80,7 +80,7 @@ struct {
 
 /* macro for checking whether a variable is supported */
 
-struct {
+typedef struct {
     const char *setcmd;	/* INFO_x define from shared.h */
     const char *name;		/* Human readable text (also in shared-tables.h) */
     int  unit;		/* Variable should be divided by this */
@@ -90,7 +90,9 @@ struct {
     int  poll;		/* poll flag */
     int  flags;		/* Flags for addinfo() */
     char value[SEC_MAX_VARSIZE];
-} sec_varlist[] = {
+} sec_varlist_t;
+
+sec_varlist_t sec_varlist[] = {
     { "",			"",                          0, "",              0,       0,  0, 0 },
     /*setcmd		 name                        unit   cmd        field   size  poll  flags */
     { "",			"Awaiting Power ",           1, SEC_ALARMSTAT,  13,       2,  0, FLAG_ALARM},
