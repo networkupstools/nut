@@ -13,21 +13,21 @@
  * (C) 2013 Florian Bruhin <nut@the-compiler.org>
  * (C) 2002 Simon Rozman <simon@rozman.net>
  * (C) 1999  Peter Bieringer <pb@bieringer.de>
- *                              
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *                            
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *    
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
- * 
+ *
  * rev 0.7: Alexey Sidorov <alexsid@altlinux.org>
  * - add Powercom's Black Knight Pro model support ( BNT-400/500/600/800/801/1000/1200/1500/2000AP 220-240V )
  *
@@ -74,7 +74,7 @@
  * - Fixed the processing of input/output voltages for KIN models
  *   (https://github.com/networkupstools/nut/issues/187)
  *
- */ 
+ */
 
 #include "main.h"
 #include "serial.h"
@@ -287,7 +287,7 @@ unsigned int OPTImodels[]={0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
 static void shutdown_halt(void)
 {
 	ser_send_char (upsfd, SHUTDOWN);
-	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n') 
+	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (stayoff) initiated.");
@@ -298,27 +298,27 @@ static void shutdown_ret(void)
 {
 	ser_send_char (upsfd, RESTART);
 	ser_send_char (upsfd, COUNTER);
-	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n') 
+	if (types[type].shutdown_arguments.minutesShouldBeUsed != 'n')
 		ser_send_char (upsfd, types[type].shutdown_arguments.delay[0]);
 	ser_send_char (upsfd, types[type].shutdown_arguments.delay[1]);
 	upslogx(LOG_INFO, "Shutdown (return) initiated.");
-			
+
 	exit (0);
 }
 
 /* registered instant commands */
 static int instcmd (const char *cmdname, const char *extra)
 {
-	if (!strcasecmp(cmdname, "test.battery.start")) { 
+	if (!strcasecmp(cmdname, "test.battery.start")) {
 	    ser_send_char (upsfd, BATTERY_TEST);
 	    return STAT_INSTCMD_HANDLED;
     }
-	if (!strcasecmp(cmdname, "shutdown.return")) { 
+	if (!strcasecmp(cmdname, "shutdown.return")) {
 		shutdown_ret();
 		return STAT_INSTCMD_HANDLED;
 	}
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-		shutdown_halt(); 
+		shutdown_halt();
 		return STAT_INSTCMD_HANDLED;
 	}
 
@@ -331,8 +331,8 @@ static int instcmd (const char *cmdname, const char *extra)
  */
 static void dtr0rts1 (void)
 {
-	ser_set_dtr(upsfd, 0); 
-	ser_set_rts(upsfd, 1); 
+	ser_set_dtr(upsfd, 0);
+	ser_set_rts(upsfd, 1);
 	upsdebugx(2, "DTR => 0, RTS => 1");
 }
 
@@ -340,13 +340,13 @@ static void dtr0rts1 (void)
 static void no_flow_control (void)
 {
 	struct termios tio;
-	
+
 	tcgetattr (upsfd, &tio);
-	
+
 	tio.c_iflag &= ~ (IXON | IXOFF);
 	tio.c_cc[VSTART] = _POSIX_VDISABLE;
 	tio.c_cc[VSTOP] = _POSIX_VDISABLE;
-				
+
 	upsdebugx(2, "Flow control disable");
 
 	/* disable any flow control */
@@ -356,12 +356,12 @@ static void no_flow_control (void)
 /* sane check for returned buffer */
 static int validate_raw_data (void)
 {
-	int i = 0, 
-    num_of_tests = 
+	int i = 0,
+    num_of_tests =
 		sizeof types[0].validation / sizeof types[0].validation[0];
-	
+
 	for (i = 0;
-		 i < num_of_tests  && 
+		 i < num_of_tests  &&
 		   raw_data[
 		        types[type].validation[i].index_of_byte] ==
           		       types[type].validation[i].required_value;
@@ -373,7 +373,7 @@ static int validate_raw_data (void)
 static int ups_getinfo(void)
 {
 	int	i, c;
-	
+
 	/* send trigger char to UPS */
 	if (ser_send_char (upsfd, SEND_DATA) != 1) {
 		upslogx(LOG_NOTICE, "writing error");
@@ -384,7 +384,7 @@ static int ups_getinfo(void)
 
 		c = ser_get_buf_len(upsfd, raw_data,
 			types[type].num_of_bytes_from_ups, 3, 0);
-	
+
 		if (c != types[type].num_of_bytes_from_ups) {
 			upslogx(LOG_NOTICE, "data receiving error (%d instead of %d bytes)", c, types[type].num_of_bytes_from_ups);
 			dstate_datastale();
@@ -416,7 +416,7 @@ static float input_voltage(void)
 {
 	unsigned int model;
 	float tmp=0.0;
-			
+
 	if ( !strcmp(types[type].name, "BNT") && raw_data[MODELNUMBER]%16 > 7 ) {
 		tmp=2.2*raw_data[INPUT_VOLTAGE]-24;
 	} else if ( !strcmp(types[type].name, "KIN")) {
@@ -591,7 +591,7 @@ static float input_freq(void)
 		return 4807.0/raw_data[INPUT_FREQUENCY];
 	else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI"))
 		return raw_data[INPUT_FREQUENCY];
-	return raw_data[INPUT_FREQUENCY] ? 
+	return raw_data[INPUT_FREQUENCY] ?
 		1.0 / (types[type].freq[0] *
                 raw_data[INPUT_FREQUENCY] +
                         types[type].freq[1]) : 0;
@@ -603,7 +603,7 @@ static float output_freq(void)
 		return 4807.0/raw_data[OUTPUT_FREQUENCY];
 	else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI"))
 		return raw_data[OUTPUT_FREQUENCY];
-	return raw_data[OUTPUT_FREQUENCY] ? 
+	return raw_data[OUTPUT_FREQUENCY] ?
 		1.0 / (types[type].freq[0] *
                 raw_data[OUTPUT_FREQUENCY] +
                         types[type].freq[1]) : 0;
@@ -629,7 +629,7 @@ static float load_level(void)
 	int load801i[]={1,1,1,1,1,1,1,1,44,42,40};
 	int load1000i[]={1,1,1,1,1,1,1,1,56,54,52};
 	int load1200i[]={1,1,1,1,1,1,1,1,76,74,72};
-	
+
 	if ( !strcmp(types[type].name, "BNT") && raw_data[MODELNUMBER]%16 > 7 ) {
 		statINV=raw_data[STATUS_A] & ONLINE;
 		voltage=raw_data[MODELNUMBER]%16;
@@ -685,7 +685,7 @@ static float batt_level(void)
 {
 	int bat0,bat29,bat100,model;
 	float battval;
-	
+
 	if ( !strcmp(types[type].name, "BNT") ) {
 		bat0=157;
 		bat29=165;
@@ -746,11 +746,11 @@ static float batt_level(void)
 void upsdrv_updateinfo(void)
 {
 	char	val[32];
-	
+
 	if (!ups_getinfo()){
 		return;
 	}
-	
+
 	/* input.frequency */
 	upsdebugx(3, "input.frequency   (raw data): [raw: %u]",
 	                            raw_data[INPUT_FREQUENCY]);
@@ -763,7 +763,7 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("output.frequency", "%02.2f", output_freq());
 	upsdebugx(2, "output.frequency: %s", dstate_getinfo("output.frequency"));
 
-	/* ups.load */	
+	/* ups.load */
 	upsdebugx(3, "ups.load  (raw data): [raw: %u]",
 	                            raw_data[UPS_LOAD]);
 	dstate_setinfo("ups.load", "%03.1f", load_level());
@@ -775,23 +775,23 @@ void upsdrv_updateinfo(void)
 	dstate_setinfo("battery.charge", "%03.1f", batt_level());
 	upsdebugx(2, "battery.charge: %s", dstate_getinfo("battery.charge"));
 
-	/* input.voltage */	
+	/* input.voltage */
 	upsdebugx(3, "input.voltage (raw data): [raw: %u]",
 	                            raw_data[INPUT_VOLTAGE]);
 	dstate_setinfo("input.voltage", "%03.1f",input_voltage());
 	upsdebugx(2, "input.voltage: %s", dstate_getinfo("input.voltage"));
-	
-	/* output.voltage */	
+
+	/* output.voltage */
 	upsdebugx(3, "output.voltage (raw data): [raw: %u]",
 	                            raw_data[OUTPUT_VOLTAGE]);
 	dstate_setinfo("output.voltage", "%03.1f",output_voltage());
 	upsdebugx(2, "output.voltage: %s", dstate_getinfo("output.voltage"));
 
 	status_init();
-	
+
 	*val = 0;
 	if (!(raw_data[STATUS_A] & MAINS_FAILURE)) {
-		!(raw_data[STATUS_A] & OFF) ? 
+		!(raw_data[STATUS_A] & OFF) ?
 			status_set("OL") : status_set("OFF");
 	} else {
 		status_set("OB");
@@ -800,7 +800,7 @@ void upsdrv_updateinfo(void)
 	if (raw_data[STATUS_A] & LOW_BAT)  status_set("LB");
 
 	if (raw_data[STATUS_A] & AVR_ON) {
-		input_voltage() < linevoltage ? 
+		input_voltage() < linevoltage ?
 			status_set("BOOST") : status_set("TRIM");
 	}
 
@@ -832,29 +832,29 @@ void upsdrv_initups(void)
 	static char buf[20];
 
 	/* check manufacturer name from arguments */
-	if (getval("manufacturer") != NULL) 
+	if (getval("manufacturer") != NULL)
 		manufacturer = getval("manufacturer");
-	
+
 	/* check model name from arguments */
-	if (getval("modelname") != NULL) 
+	if (getval("modelname") != NULL)
 		modelname = getval("modelname");
-	
+
 	/* check serial number from arguments */
-	if (getval("serialnumber") != NULL) 
+	if (getval("serialnumber") != NULL)
 		serialnumber = getval("serialnumber");
-	
+
 	/* get and check type */
 	if (getval("type") != NULL) {
-		for (i = 0; 
+		for (i = 0;
 			 i < NUM_OF_SUBTYPES  &&  strcmp(types[i].name, getval("type"));
 			 i++) ;
 		if (i >= NUM_OF_SUBTYPES) {
 			printf("Given UPS type '%s' isn't valid!\n", getval("type"));
 			exit (1);
 		}
-		type = i;	
+		type = i;
 	};
-	
+
 	/* check line voltage from arguments */
 	if (getval("linevoltage") != NULL) {
 		tmp = atoi(getval("linevoltage"));
@@ -876,17 +876,17 @@ void upsdrv_initups(void)
 	}
 
 	if (getval("methodOfFlowControl") != NULL) {
-		for (i = 0; 
-			 i < NUM_OF_SUBTYPES  &&  
+		for (i = 0;
+			 i < NUM_OF_SUBTYPES  &&
 					strcmp(types[i].flowControl.name,
 							getval("methodOfFlowControl"));
 			 i++) ;
 		if (i >= NUM_OF_SUBTYPES) {
-			printf("Given methodOfFlowControl '%s' isn't valid!\n", 
+			printf("Given methodOfFlowControl '%s' isn't valid!\n",
 					getval("methodOfFlowControl"));
 			exit (1);
 		};
-		types[type].flowControl = types[i].flowControl;	
+		types[type].flowControl = types[i].flowControl;
 	}
 
 	if (getval("validationSequence")  &&
@@ -900,7 +900,7 @@ void upsdrv_initups(void)
 			                &types[type].validation[2].required_value
 			      ) < 6
 	   ) {
-		printf("Given validationSequence '%s' isn't valid!\n", 
+		printf("Given validationSequence '%s' isn't valid!\n",
 								         getval("validationSequence"));
 		exit (1);
 	}
@@ -909,43 +909,43 @@ void upsdrv_initups(void)
 	    sscanf(getval("shutdownArguments"), "{{%u,%u},%c}",
 	                &types[type].shutdown_arguments.delay[0],
 	                &types[type].shutdown_arguments.delay[1],
-	                &types[type].shutdown_arguments.minutesShouldBeUsed 
+	                &types[type].shutdown_arguments.minutesShouldBeUsed
 	          ) < 3
 	   ) {
-	    printf("Given shutdownArguments '%s' isn't valid!\n", 
+	    printf("Given shutdownArguments '%s' isn't valid!\n",
 								         getval("shutdownArguments"));
 		exit (1);
-	} 
+	}
 
 	if (getval("frequency")  &&
             sscanf(getval("frequency"), "{%f,%f}",
 			                &types[type].freq[0], &types[type].freq[1]
 	              ) < 2
 	   ) {
-		printf("Given frequency '%s' isn't valid!\n", 
+		printf("Given frequency '%s' isn't valid!\n",
 										getval("frequency"));
 		exit (1);
 	}
 
-	if (getval("loadPercentage")  && 
+	if (getval("loadPercentage")  &&
             sscanf(getval("loadPercentage"), "{%f,%f,%f,%f}",
 	            &types[type].loadpct[0], &types[type].loadpct[1],
 	            &types[type].loadpct[2], &types[type].loadpct[3]
 	              ) < 4
 	   ) {
-		printf("Given loadPercentage '%s' isn't valid!\n", 
+		printf("Given loadPercentage '%s' isn't valid!\n",
 								         getval("loadPercentage"));
 		exit (1);
 	}
 
-	if (getval("batteryPercentage")  && 
+	if (getval("batteryPercentage")  &&
             sscanf(getval("batteryPercentage"), "{%f,%f,%f,%f,%f}",
 	                &types[type].battpct[0], &types[type].battpct[1],
 	                &types[type].battpct[2], &types[type].battpct[3],
 	                &types[type].battpct[4]
 	              ) < 5
 	   ) {
-		printf("Given batteryPercentage '%s' isn't valid!\n", 
+		printf("Given batteryPercentage '%s' isn't valid!\n",
 								         getval("batteryPercentage"));
 		exit (1);
 	}
@@ -963,7 +963,7 @@ void upsdrv_initups(void)
 	/* open serial port */
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
-	
+
 	/* setup flow control */
 	types[type].flowControl.setup_flow_control();
 
@@ -1011,16 +1011,16 @@ void upsdrv_initups(void)
 			return;
 		}
 	}
-	
+
 	upsdebugx(1, "Values of arguments:");
 	upsdebugx(1, " manufacturer            : '%s'", manufacturer);
 	upsdebugx(1, " model name              : '%s'", modelname);
 	upsdebugx(1, " serial number           : '%s'", serialnumber);
 	upsdebugx(1, " line voltage            : '%u'", linevoltage);
 	upsdebugx(1, " type                    : '%s'", types[type].name);
-	upsdebugx(1, " number of bytes from UPS: '%u'", 
+	upsdebugx(1, " number of bytes from UPS: '%u'",
 	                        types[type].num_of_bytes_from_ups);
-	upsdebugx(1, " method of flow control  : '%s'", 
+	upsdebugx(1, " method of flow control  : '%s'",
     	                    types[type].flowControl.name);
 	upsdebugx(1, " validation sequence: '{{%u,%#x},{%u,%#x},{%u,%#x}}'",
 			            types[type].validation[0].index_of_byte,
@@ -1032,7 +1032,7 @@ void upsdrv_initups(void)
 	upsdebugx(1, " shutdown arguments: '{{%u,%u},%c}'",
 	                types[type].shutdown_arguments.delay[0],
 	                types[type].shutdown_arguments.delay[1],
-	                types[type].shutdown_arguments.minutesShouldBeUsed); 
+	                types[type].shutdown_arguments.minutesShouldBeUsed);
 	if ( strcmp(types[type].name, "KIN") && strcmp(types[type].name, "BNT") && strcmp(types[type].name, "IMP")) {
 		upsdebugx(1, " frequency calculation coefficients: '{%f,%f}'",
 								types[type].freq[0], types[type].freq[1]);
@@ -1040,7 +1040,7 @@ void upsdrv_initups(void)
 					"'{%f,%f,%f,%f}'",
 						types[type].loadpct[0], types[type].loadpct[1],
 						types[type].loadpct[2], types[type].loadpct[3]);
-		upsdebugx(1, " battery percentage calculation coefficients: " 
+		upsdebugx(1, " battery percentage calculation coefficients: "
 					"'{%f,%f,%f,%f,%f}'",
 						types[type].battpct[0], types[type].battpct[1],
 						types[type].battpct[2], types[type].battpct[3],
