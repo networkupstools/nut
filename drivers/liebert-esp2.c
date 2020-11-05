@@ -109,6 +109,14 @@ static const unsigned char
 	cmd_sysLoadKey[]	= {1,156,2,1,7,167}, /* UPS SysLoadKey */
 	cmd_shutdown[]  	= {1,156,4,1,136,76,76,194}; /* UPS shutdown */
 
+/* Quiesce the compiler warnings */
+static void NUT_UNUSED_FUNCTION(dummy_bitfields)(void)
+{
+	NUT_UNUSED_VARIABLE(cmd_battestres);
+	NUT_UNUSED_VARIABLE(cmd_selftestres);
+	NUT_UNUSED_VARIABLE(cmd_bitfield7);
+}
+
 static int num_inphases = 1, num_outphases = 1;
 
 static char cksum(const char *buf, const size_t len)
