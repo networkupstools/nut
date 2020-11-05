@@ -576,6 +576,7 @@ static const char *eaton_check_pegasus_fun(double value)
 		/* Only consider non European models */
 		if (country_code != COUNTRY_EUROPE)
 			break;
+		/* FALLTHRU */
 	default:
 		return NULL;
 	}
@@ -604,6 +605,7 @@ static const char *pegasus_yes_no_info_fun(double value)
 		/* Only consider non European models */
 		if (country_code != COUNTRY_EUROPE)
 			break;
+		/* FALLTHRU */
 	default:
 		return NULL;
 	}
@@ -622,6 +624,7 @@ static double pegasus_yes_no_info_nuf(const char *value)
 		/* Only consider non European models */
 		if (country_code != COUNTRY_EUROPE)
 			break;
+		/* FALLTHRU */
 	default:
 		return 0;
 	}
@@ -731,6 +734,7 @@ static const char *nominal_output_voltage_fun(double value)
 		case 240:
 			if ((mge_type & 0xFF00) >= MGE_DEFAULT)
 				break;
+			/* FALLTHRU */
 		default:
 			return NULL;
 		}
