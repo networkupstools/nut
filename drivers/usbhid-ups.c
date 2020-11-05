@@ -397,8 +397,9 @@ static const char *date_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t date_conversion[] = {
-	{ 0, NULL, date_conversion_fun }
+	{ 0, NULL, date_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -412,8 +413,9 @@ static const char *hex_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t hex_conversion[] = {
-	{ 0, NULL, hex_conversion_fun }
+	{ 0, NULL, hex_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -425,8 +427,9 @@ static const char *stringid_conversion_fun(double value)
 	return HIDGetIndexString(udev, (int)value, buf, sizeof(buf));
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t stringid_conversion[] = {
-	{ 0, NULL, stringid_conversion_fun }
+	{ 0, NULL, stringid_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -440,8 +443,9 @@ static const char *divide_by_10_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t divide_by_10_conversion[] = {
-	{ 0, NULL, divide_by_10_conversion_fun }
+	{ 0, NULL, divide_by_10_conversion_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -465,8 +469,9 @@ static const char *kelvin_celsius_conversion_fun(double value)
 	return buf;
 }
 
+/* FIXME? Do we need an inverse "nuf()" here? */
 info_lkp_t kelvin_celsius_conversion[] = {
-	{ 0, NULL, kelvin_celsius_conversion_fun }
+	{ 0, NULL, kelvin_celsius_conversion_fun, NULL }
 };
 
 /*!
