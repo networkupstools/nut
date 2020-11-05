@@ -52,12 +52,12 @@ enum mult_enum {
         M_NOMPOWER,
         M_POWER,
         M_REALPOWER,
-        M_LOADPERC      
+        M_LOADPERC
 };
 
 static float multi[19]={
-  10.0, 
-  0.1, 
+  10.0,
+  0.1,
   0.1, /* volt */
   0.1,
   0.1,
@@ -103,7 +103,7 @@ static const unsigned char
 	cmd_upstype[] 		= { 1,136,2,1,1,141},   /* type bits + number of phases in bit groups*/
 	cmd_scaling1[] 		= { 1,131,2,1,2,137},   /* part of multiplier information*/
 
-	/* Shutdown commands by Robert Jobbagy */	
+	/* Shutdown commands by Robert Jobbagy */
 	cmd_setOutOffMode[]	= { 1,156,4,1,6,0,1,169}, /* UPS OutOffMode command */
 	cmd_setOutOffDelay[] = {1,156,4,1,5,0,UPS_SHUTDOWN_DELAY,167+UPS_SHUTDOWN_DELAY}, /* UPS Shutdown with delay */
 	cmd_sysLoadKey[]    = {1,156,2,1,7,167}, /* UPS SysLoadKey */
@@ -239,7 +239,7 @@ void upsdrv_initinfo(void)
 	}
 
 	/* determine scaling */
-	/* full scaling output not defined yet, but we can differentiate sets of 
+	/* full scaling output not defined yet, but we can differentiate sets of
 	 * multipliers based on a sample scaling reading */
 	memcpy(command,cmd_scaling1,6);
 	ret = do_command((unsigned char *)command, reply, 6);
@@ -372,7 +372,7 @@ void upsdrv_updateinfo(void)
 		{ { 1,146,2,1,2,152 },	"input.L3.current", "%.1f", M_CURRENT_I },
 		{ { 0 }, NULL, NULL, 0 }
 	};
-	
+
 	static cmd_s * cmdin_p;
 	static cmd_s * cmdout_p;
 
@@ -507,7 +507,7 @@ void upsdrv_updateinfo(void)
 void upsdrv_shutdown(void)
 {
 	char reply[8];
-	
+
 	if(!(do_command(cmd_setOutOffMode, reply, 8) != -1) &&
 	(do_command(cmd_setOutOffDelay, reply, 8) != -1) &&
 	(do_command(cmd_sysLoadKey, reply, 6) != -1) &&
