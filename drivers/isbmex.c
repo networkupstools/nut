@@ -294,6 +294,7 @@ void upsdrv_updateinfo(void)
 				break;
 			case 50: D(printf("TRIM ");)
 				status_set("TRIM");
+				break;
 			default: break;
 		}
 		switch (buf[(bytes_per_packet==10)?9:8]){
@@ -302,6 +303,9 @@ void upsdrv_updateinfo(void)
 				break;
 			case 50: D(printf("LB ");)
 				status_set("LB");
+				/* break; */
+				/* FIXME? Can this device set independently LB and OB? */
+				/* FALLTHRU */
 			case 49: D(printf("OB ");)
 				status_set("OB");
 				break;
