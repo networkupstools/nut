@@ -361,7 +361,7 @@ static void scan_received_pack(void) {
 			InVoltage = RecPack[6] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
 	} else {
 		/* Code InVoltage for STAY1200_USB */
-		if ((RecPack[20] & 0x1) == 0) // IsOutVoltage 220
+		if ((RecPack[20] & 0x1) == 0) /* IsOutVoltage 220 */
 			InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1];
 		else
 			InVoltage = RecPack[2] * ctab[imodel].m_involt193[0] + ctab[imodel].m_involt193[1] - 3.0;
@@ -403,7 +403,7 @@ static void scan_received_pack(void) {
 			if (RecPack[20] == 0) {
 				double a = RecPack[1] * 2;
 				a /= 128.0;
-				//	a = double sqrt(a);
+				/* a = double sqrt(a); */
 				OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
 			}
 		} else {
@@ -501,7 +501,8 @@ static void scan_received_pack(void) {
 	/* source return */
 	if (!SourceFail && !SourceLast) {
 		SourceReturn = true;
-		//ser_flush_in(upsfd,"",0);    /* clean port */
+		/* clean port: */
+		/* ser_flush_in(upsfd,"",0); */
 	}
 
 	if((!SourceFail) == SourceLast) {
@@ -611,7 +612,8 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 		CheckSum = CheckSum % 256;
 		upsdebugx(4, "%s: calculated checksum = 0x%02x, RecPack[23] = 0x%02x", __func__, CheckSum, RecPack[23]);
 
-		//ser_flush_in(upsfd,"",0); /* clean port */
+		/* clean port: */
+		/* ser_flush_in(upsfd,"",0); */
 
 		/* RecPack[0] == model number below:
 		 * SOLIS = 1;
@@ -662,12 +664,12 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 			case 15:
 				scan_received_pack();
 				break;
-			case 16:      // STAY1200_USB model
+			case 16:	/* STAY1200_USB model */
 				scan_received_pack();
 				break;
 			default:
 				printf(M_UNKN);
-				scan_received_pack(); // Scan anyway.
+				scan_received_pack(); /* Scan anyway. */
 				break;
 			}
 		}
@@ -747,7 +749,8 @@ static void get_base_info(void) {
 			break;
 	}
 
-	if (syncEOR != RESP_END) { // synchronization failed
+	if (syncEOR != RESP_END) {
+		/* synchronization failed */
 		fatalx(EXIT_FAILURE, NO_SOLIS);
 	} else {
 		upsdebugx(4, "%s: requesting %d bytes from ser_get_buf_len()", __func__, packet_size);
