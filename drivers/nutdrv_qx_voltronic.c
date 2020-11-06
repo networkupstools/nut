@@ -129,7 +129,7 @@ static info_rw_t	voltronic_r_batt_low[] = {
 };
 
 /* Preprocess range value for battery low voltage */
-static int	voltronic_batt_low(char *value, const size_t len)
+static int	voltronic_batt_low(char *value, const size_t NUT_UNUSED(len))
 {
 	int		val = strtol(value, NULL, 10);
 	const char	*ovn = dstate_getinfo("output.voltage.nominal"),
@@ -209,7 +209,7 @@ static info_rw_t	voltronic_r_bypass_volt_max[] = {
 };
 
 /* Preprocess range value for Bypass Mode maximum voltage */
-static int	voltronic_bypass_volt_max(char *value, const size_t len)
+static int	voltronic_bypass_volt_max(char *value, const size_t NUT_UNUSED(len))
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
@@ -363,7 +363,7 @@ static info_rw_t	voltronic_r_bypass_volt_min[] = {
 };
 
 /* Preprocess range value for Bypass Mode minimum voltage */
-static int	voltronic_bypass_volt_min(char *value, const size_t len)
+static int	voltronic_bypass_volt_min(char *value, const size_t NUT_UNUSED(len))
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10),
@@ -509,7 +509,7 @@ static info_rw_t	voltronic_r_bypass_freq_max[] = {
 };
 
 /* Preprocess range value for Bypass Mode maximum frequency */
-static int	voltronic_bypass_freq_max(char *value, const size_t len)
+static int	voltronic_bypass_freq_max(char *value, const size_t NUT_UNUSED(len))
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -607,7 +607,7 @@ static info_rw_t	voltronic_r_bypass_freq_min[] = {
 };
 
 /* Preprocess range value for Bypass Mode minimum frequency */
-static int	voltronic_bypass_freq_min(char *value, const size_t len)
+static int	voltronic_bypass_freq_min(char *value, const size_t NUT_UNUSED(len))
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -721,7 +721,7 @@ static info_rw_t	voltronic_r_eco_freq_min[] = {
 };
 
 /* Preprocess range value for ECO Mode minimum frequency */
-static int	voltronic_eco_freq_min(char *value, const size_t len)
+static int	voltronic_eco_freq_min(char *value, const size_t NUT_UNUSED(len))
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
@@ -841,7 +841,7 @@ static info_rw_t	voltronic_r_eco_freq_max[] = {
 };
 
 /* Preprocess range value for ECO Mode maximum frequency */
-static int	voltronic_eco_freq_max(char *value, const size_t len)
+static int	voltronic_eco_freq_max(char *value, const size_t NUT_UNUSED(len))
 {
 	int		protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10),
 			val = strtol(value, NULL, 10);
