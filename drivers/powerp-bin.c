@@ -268,7 +268,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
