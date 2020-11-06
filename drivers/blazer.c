@@ -583,7 +583,7 @@ static void blazer_initbattery(void)
 		/* Publish these data too */
 		dstate_setinfo("battery.voltage.low", "%.2f", batt.volt.low);
 		dstate_setinfo("battery.voltage.high", "%.2f", batt.volt.high);
-		
+
 		upslogx(LOG_INFO, "Using 'guestimation' (low: %f, high: %f)!", batt.volt.low, batt.volt.high);
 	}
 
