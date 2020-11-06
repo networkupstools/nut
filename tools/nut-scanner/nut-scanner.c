@@ -91,7 +91,7 @@ static char * serial_ports = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_t thread[TYPE_END];
 
-static void * run_usb(void * arg)
+static void * run_usb(void * NUT_UNUSED(arg))
 {
 	dev[TYPE_USB] = nutscan_scan_usb();
 	return NULL;
@@ -113,13 +113,13 @@ static void * run_xml(void * arg)
 	return NULL;
 }
 
-static void * run_nut_old(void * arg)
+static void * run_nut_old(void * NUT_UNUSED(arg))
 {
 	dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
 	return NULL;
 }
 
-static void * run_avahi(void * arg)
+static void * run_avahi(void * NUT_UNUSED(arg))
 {
 	dev[TYPE_AVAHI] = nutscan_scan_avahi(timeout);
 	return NULL;
@@ -133,7 +133,7 @@ static void * run_ipmi(void * arg)
 	return NULL;
 }
 
-static void * run_eaton_serial(void * arg)
+static void * run_eaton_serial(void * NUT_UNUSED(arg))
 {
 	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
 	return NULL;
