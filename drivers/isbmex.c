@@ -305,8 +305,11 @@ void upsdrv_updateinfo(void)
 				status_set("LB");
 				/* break; */
 				/* FIXME? Can this device set independently LB and OB? */
+				goto fallthrough_LB_means_OB;
 				/* FALLTHRU */
-			case 49: D(printf("OB ");)
+			case 49:
+			fallthrough_LB_means_OB:
+				D(printf("OB ");)
 				status_set("OB");
 				break;
 			default: break;
