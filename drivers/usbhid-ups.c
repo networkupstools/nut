@@ -764,13 +764,14 @@ void upsdrv_updateinfo(void)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
-			/* FALLTHRU */
+			goto fallthrough_reconnect;
 		case -EPERM:		/* Operation not permitted */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return;
@@ -1274,13 +1275,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
-			/* FALLTHRU */
+			goto fallthrough_reconnect;
 		case -EPERM:		/* Operation not permitted */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;
