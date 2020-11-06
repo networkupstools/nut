@@ -440,7 +440,7 @@ NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
 NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
 dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
 
-dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ipmi}" != "no"; then
    dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
    if test "${nut_with_freeipmi}" = "yes"; then
@@ -572,7 +572,7 @@ NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
 NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
    if test "${nut_with_nss}" = "yes"; then
