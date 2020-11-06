@@ -838,7 +838,7 @@ void upsdrv_updateinfo(void)
 		dstate_setinfo("battery.runtime", "%.0f", batt_runtime*60);
 	}
 	else if (load > 0 && batt_disch_curr_max != 0) {
-		float est_battcurr = load * abs(batt_disch_curr_max);
+		float est_battcurr = load * fabs(batt_disch_curr_max);
 		/* Peukert equation */
 		float runtime = (batt_cap_nom*3600)/pow(est_battcurr, 1.35);
 
