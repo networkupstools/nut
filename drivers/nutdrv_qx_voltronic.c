@@ -4026,6 +4026,9 @@ static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
+	if (!item->info_rw)
+		return -1;
+
 	for (i = 0; strlen(item->info_rw[i].value) > 0; i++) {
 
 		if (!strcasecmp(item->info_rw[i].value, value))
@@ -4034,7 +4037,7 @@ static int	voltronic_p31b_set(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* At this point value should already be checked against enum so this shouldn't happen.. however.. */
-	if (i >= (int)(sizeof(item->info_rw) / sizeof(item->info_rw[0]))) {
+	if (!strlen(item->info_rw[i].value)) {
 		upslogx(LOG_ERR, "%s: value [%s] out of range", item->info_type, value);
 		return -1;
 	}
@@ -4069,6 +4072,9 @@ static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
+	if (!item->info_rw)
+		return -1;
+
 	for (i = 0; strlen(item->info_rw[i].value) > 0; i++) {
 
 		if (!strcasecmp(item->info_rw[i].value, value))
@@ -4077,7 +4083,7 @@ static int	voltronic_p31g_set(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
-	if (i >= (int)(sizeof(item->info_rw) / sizeof(item->info_rw[0]))) {
+	if (!strlen(item->info_rw[i].value)) {
 		upslogx(LOG_ERR, "%s: value [%s] out of range", item->info_type, value);
 		return -1;
 	}
@@ -4136,6 +4142,9 @@ static int	voltronic_phase_set(item_t *item, char *value, const size_t valuelen)
 {
 	int	i;
 
+	if (!item->info_rw)
+		return -1;
+
 	for (i = 0; strlen(item->info_rw[i].value) > 0; i++) {
 
 		if (!strcasecmp(item->info_rw[i].value, value))
@@ -4144,7 +4153,7 @@ static int	voltronic_phase_set(item_t *item, char *value, const size_t valuelen)
 	}
 
 	/* At this point value should have been already checked against enum so this shouldn't happen.. however.. */
-	if (i >= (int)(sizeof(item->info_rw) / sizeof(item->info_rw[0]))) {
+	if (!strlen(item->info_rw[i].value)) {
 		upslogx(LOG_ERR, "%s: value [%s] out of range", item->info_type, value);
 		return -1;
 	}
