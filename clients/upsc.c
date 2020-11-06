@@ -218,8 +218,9 @@ int main(int argc, char **argv)
 		{
 		case 'L':
 			verbose = 1;
-			/* FALLTHRU */
+			goto fallthrough_case_l;
 		case 'l':
+		fallthrough_case_l:
 			varlist = 1;
 			break;
 		case 'c':
