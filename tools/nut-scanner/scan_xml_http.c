@@ -176,7 +176,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 	fd_set fds;
 	struct timeval timeout;
 	int ret;
-	char buf[SMALLBUF];
+	char buf[SMALLBUF + 8];
 	char string[SMALLBUF];
 	ssize_t recv_size;
 	int i;
@@ -302,7 +302,7 @@ static void * nutscan_scan_xml_http_generic(void * arg)
 
 				if (parserFailed == 0) {
 					nut_dev->driver = strdup("netxml-ups");
-					sprintf(buf,"http://%s",string);
+					sprintf(buf, "http://%s", string);
 					nut_dev->port = strdup(buf);
 					upsdebugx(3,"nutscan_scan_xml_http_generic(): Adding configuration for driver='%s' port='%s'", nut_dev->driver, nut_dev->port);
 					dev_ret = nutscan_add_device_to_device(
