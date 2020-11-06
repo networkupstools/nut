@@ -156,6 +156,11 @@ apc_compattab_t apc_compattab[] = {
 
 upsdrv_info_t apc_tab_info = {
 	"APC command table",
-	APC_TABLE_VERSION
+	APC_TABLE_VERSION,
+	"Russell Kroll <rkroll@exploits.org>\n" \
+	"Nigel Metheringham <Nigel.Metheringham@Intechnology.co.uk>\n" \
+	"Michal Soltys <soltys@ziu.info>",
+	DRV_STABLE,
+	{ NULL }
 };
 
