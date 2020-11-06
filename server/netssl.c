@@ -531,7 +531,7 @@ void ssl_init(void)
 
 int ssl_read(nut_ctype_t *client, char *buf, size_t buflen)
 {
-	int	ret;
+	int	ret = -1;
 
 	if (!client->ssl_connected) {
 		return -1;

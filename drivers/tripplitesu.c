@@ -432,7 +432,7 @@ static void set_sensitivity(const char *val) {
 
 	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
-			snprintf(parm, sizeof(parm), "%d", i);
+			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
 			break;
 		}

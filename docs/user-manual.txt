@@ -71,7 +71,7 @@ possibly some more packages to gain access to the serial ports.
 Other features, such as USB / SNMP / whatever, will also need extra software
 installed.
 
-Success reports are welcomed to keep this list accurate. 
+Success reports are welcomed to keep this list accurate.
 
 
 [[Download_instructions]]

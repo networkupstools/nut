@@ -505,6 +505,7 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(3493),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	// Do not connect now
@@ -512,6 +513,7 @@ _socket(new internal::Socket)
 
 TcpClient::TcpClient(const std::string& host, int port):
 Client(),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	connect(host, port);
@@ -669,6 +671,14 @@ std::map<std::string,std::vector<std::string> > TcpClient::getDeviceVariableValu
 std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient::getDevicesVariableValues(const std::set<std::string>& devs)
 {
 	std::map<std::string,std::map<std::string,std::vector<std::string> > > map;
+
+	if (devs.empty())
+	{
+		// This request might come from processing the empty valid
+		// response of an upsd server which was allowed to start
+		// with no device sections in its ups.conf
+		return map;
+	}
 
 	std::vector<std::string> queries;
 	for (std::set<std::string>::const_iterator it=devs.cbegin(); it!=devs.cend(); ++it)
@@ -892,7 +902,7 @@ std::string TcpClient::sendQuery(const std::string& req)
 
 void TcpClient::sendAsyncQueries(const std::vector<std::string>& req)
 {
-	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); it++)
+	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); ++it)
 	{
 		_socket->write(*it);
 	}

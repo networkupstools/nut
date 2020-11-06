@@ -110,7 +110,7 @@ link:http://anonscm.debian.org/viewvc/nut/trunk/data/evolution500.seq?revision=2
 only apply according to the TIMER events and the current position in the
 sequence.
 
-For more information, refer to linkman:dummy-ups[8] manual page. 
+For more information, refer to linkman:dummy-ups[8] manual page.
 
 
 [[dev-recording]]
