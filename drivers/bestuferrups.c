@@ -1,4 +1,4 @@
-/* 
+/*
    bestuferrups.c - model specific routines for Best Power Micro-Ferrups
 
    This module is a 40% rewritten mangle of the bestfort module by
@@ -97,10 +97,10 @@ void  upsdrv_initinfo (void)
             break;
           default:
 	    fatalx(EXIT_FAILURE, "UPS model not matched!"); /* Will never get here, upsdrv_initups() will catch */
-        } 
-	fprintf(stderr, "Best Power %s detected\n", 
+        }
+	fprintf(stderr, "Best Power %s detected\n",
 		dstate_getinfo("ups.model"));
-	fprintf(stderr, "Battery voltages %5.1f nominal, %5.1f full, %5.1f empty\n", 
+	fprintf(stderr, "Battery voltages %5.1f nominal, %5.1f full, %5.1f empty\n",
 	 fc.idealbvolts,
 	 fc.fullvolts,
 	 fc.emptyvolts);
@@ -114,11 +114,11 @@ time^M^M^JFeb 20, 22:13:32^M^J^M^J=>id^M^JUnit ID "ME3.1K12345"^M^J^M^J=>
 ----------------------------------------------------
 */
 
-static int execute(const char *cmd, char *result, int resultsize) 
+static int execute(const char *cmd, char *result, int resultsize)
 {
   int ret;
   char buf[256];
-  
+
   ser_send(upsfd, "%s", cmd);
   ser_get_line(upsfd, buf, sizeof(buf), '\012', "", 3, 0);
   ret = ser_get_line(upsfd, result, resultsize, '\015', "\012", 3, 0);
@@ -133,13 +133,13 @@ void upsdrv_updateinfo(void)
   char fstring[512];
 
   if (! fc.valid) {
-    fprintf(stderr, 
+    fprintf(stderr,
 	    "upsupdate run before ups_ident() read ups config\n");
     assert(0);
   }
 
   if (execute("f\r", fstring, sizeof(fstring)) > 0) {
-    int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0, 
+    int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0,
       alstat=0, vaout=0;
     double ampsout=0.0, vbatt=0.0, battpercent=0.0, loadpercent=0.0,
       hstemp=0.0, acfreq=0.0, ambtemp=0.0;
@@ -154,7 +154,7 @@ void upsdrv_updateinfo(void)
     memcpy(tmp, fstring+18, 2);
     tmp[2] = '\0';
     charger = atoi(tmp);
-    
+
     /* Input Voltage. integer number */
     memcpy(tmp, fstring+24, 4);
     tmp[4] = '\0';
@@ -242,13 +242,13 @@ void upsdrv_updateinfo(void)
         fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
     }
     /* Compute battery percent left based on battery voltages. */
-    battpercent = ((vbatt - fc.emptyvolts) 
+    battpercent = ((vbatt - fc.emptyvolts)
 		   / (fc.fullvolts - fc.emptyvolts) * 100.0);
-    if (battpercent < 0.0) 
+    if (battpercent < 0.0)
       battpercent = 0.0;
     else if (battpercent > 100.0)
       battpercent = 100.0;
-    
+
     /* Compute status string */
     {
 	int lowbatt, overload, replacebatt, boosting, trimming;
@@ -260,8 +260,8 @@ void upsdrv_updateinfo(void)
 	trimming = inverter && (linestat & (1<<2)) && (vin > 115);
 
 	status_init();
-      
-	if (inverter) 
+
+	if (inverter)
 		status_set("OB");
 	else
 		status_set("OL");
@@ -312,7 +312,7 @@ void upsdrv_updateinfo(void)
     return;
   } else {
 
-    dstate_datastale();  
+    dstate_datastale();
 
   } /* if (execute("f\r", fstring, sizeof(fstring)) > 0) */
 
@@ -369,12 +369,12 @@ static void sync_serial(void) {
 
 /* Begin code stolen from bestups.c */
 static void setup_serial(void)
-{  
+{
 	struct   termios  tio;
-			     
+
 	if (tcgetattr(upsfd, &tio) == -1)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
-				     
+
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
 	tio.c_cflag = (CS8 | CREAD | HUPCL | CLOCAL);
@@ -411,10 +411,10 @@ void upsdrv_initups ()
   if (execute("id\r", fcstring, sizeof(fcstring)) < 1) {
     fatalx(EXIT_FAILURE, "Failed execute in ups_ident()");
   }
-  
+
   /* response is a one-line packed string starting with $ */
   if (memcmp(fcstring, "Unit", 4)) {
-    fatalx(EXIT_FAILURE, 
+    fatalx(EXIT_FAILURE,
 	"Bad response from formatconfig command in ups_ident()\n"
 	"id: %s\n", fcstring
     );
@@ -422,7 +422,7 @@ void upsdrv_initups ()
 
   if (debugging)
     fprintf(stderr, "id: %s\n", fcstring);
-  
+
   /* chars 4:2  are a two-digit ascii hex enumerated model code */
   memcpy(temp, fcstring+9, 2);
   temp[2] = '\0';
@@ -436,7 +436,7 @@ void upsdrv_initups ()
        "15 M#    MD1KVA", "id\r" yields "Unit ID "C1K03588"" */
     fc.model = MD1KVA;
   }
- 
+
   switch(fc.model) {
     case ME3100:
       fc.va = 3100;
