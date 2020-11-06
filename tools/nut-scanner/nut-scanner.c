@@ -77,7 +77,7 @@ const struct option longopts[] =
 	{ "nut_debug_level", no_argument, NULL, 'D' },
 	{NULL,0,NULL,0}};
 #else
-#define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
+#define getopt_long(a,b,c,d,e)	getopt(a,b,c)
 #endif /* HAVE_GETOPT_LONG */
 
 static nutscan_device_t *dev[TYPE_END];
