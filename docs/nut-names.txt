@@ -507,6 +507,8 @@ of the user manual.
 |===============================================================================
 | Name                           | Description                 | Example value
 | outlet.count                   | Total number of outlets     | 12
+| outlet.switchable              | General outlet switch ability
+                                   of the unit (yes/no)        | yes
 | outlet.n.id                    | Outlet system identifier
                                    (opaque string)             | 1
 | outlet.n.name                  | Outlet name (opaque string) | A1
