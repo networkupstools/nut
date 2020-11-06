@@ -338,9 +338,9 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'X':
         flags |= DP_F_UP;
-        /* Falls through to 'x' for rest of processing */
-        /* FALLTHRU */
+        goto fallthrough_case_x;
       case 'x':
+      fallthrough_case_x:
         flags |= DP_F_UNSIGNED;
         if (cflags == DP_C_SHORT)
 #ifdef C89PLUS
@@ -366,9 +366,9 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'E':
         flags |= DP_F_UP;
-        /* Falls through to 'e' for rest of processing */
-        /* FALLTHRU */
+        goto fallthrough_case_e;
       case 'e':
+      fallthrough_case_e:
         if (cflags == DP_C_LDOUBLE)
           fvalue = va_arg (args, LDOUBLE);
         else
@@ -376,9 +376,9 @@ static void dopr (char *buffer, size_t maxlen, const char *format, va_list args)
         break;
       case 'G':
         flags |= DP_F_UP;
-        /* Falls through to 'g' for rest of processing */
-        /* FALLTHRU */
+        goto fallthrough_case_g;
       case 'g':
+      fallthrough_case_g:
         if (cflags == DP_C_LDOUBLE)
           fvalue = va_arg (args, LDOUBLE);
         else
