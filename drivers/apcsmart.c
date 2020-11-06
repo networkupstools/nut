@@ -1439,7 +1439,7 @@ static int sdcmd_S(const void *foo)
 }
 
 /* soft hibernate, hack version for CS 350 & co. */
-static int sdcmd_CS(const void *foo)
+static int sdcmd_CS(const void * NUT_UNUSED(foo))
 {
 	int ret, cshd = 3500000;
 	char temp[APC_SBUF];
@@ -1520,7 +1520,7 @@ static int sdcmd_AT(const void *str)
 }
 
 /* shutdown: K - delayed poweroff */
-static int sdcmd_K(const void *foo)
+static int sdcmd_K(const void * NUT_UNUSED(foo))
 {
 	int ret;
 
@@ -1535,7 +1535,7 @@ static int sdcmd_K(const void *foo)
 }
 
 /* shutdown: Z - immediate poweroff */
-static int sdcmd_Z(const void *foo)
+static int sdcmd_Z(const void * NUT_UNUSED(foo))
 {
 	int ret;
 
