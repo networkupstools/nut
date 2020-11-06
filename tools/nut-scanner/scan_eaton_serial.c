@@ -59,7 +59,7 @@ extern struct pw_baud_rate {
 static nutscan_device_t * dev_ret = NULL;
 
 /* Remap some functions to avoid undesired behavior (drivers/main.c) */
-char *getval(const char *var) { return NULL; }
+char *getval(const char * NUT_UNUSED(var)) { return NULL; }
 
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
