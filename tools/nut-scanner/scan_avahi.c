@@ -377,6 +377,8 @@ static void resolve_callback(
 
 			(*nut_avahi_address_snprint)(a, sizeof(a), address);
 			t = (*nut_avahi_string_list_to_string)(txt);
+
+			NUT_UNUSED_VARIABLE(flags);
 /*
 			fprintf(stderr,
 				"\t%s:%u (%s)\n"
