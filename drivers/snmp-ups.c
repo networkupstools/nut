@@ -1238,13 +1238,14 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 		if (info_type[0] == 'L') {
 			/* Extract phase number */
 			item_number = atoi(info_type+1);
+			char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
 
 			upsdebugx(2, "%s: appending phase L%i", __func__, item_number);
 
 			/* Inject in the alarm string */
-			snprintf(alarm_info_value, sizeof(alarm_info_value),
+			snprintf(alarm_info_value_more, sizeof(alarm_info_value_more),
 				"phase L%i %s", item_number, info_value);
-			info_value = &alarm_info_value[0];
+			info_value = &alarm_info_value_more[0];
 		}
 
 		/* Set the alarm value */
