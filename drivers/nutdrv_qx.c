@@ -1944,9 +1944,11 @@ void	upsdrv_initups(void)
 		/* Check for language ID workaround (#1) */
 		if (getval("langid_fix")) {
 			/* Skip "0x" prefix and set back to hexadecimal */
-			if (sscanf(getval("langid_fix") + 2, "%x", &langid_fix) != 1) {
+			unsigned int u_langid_fix;
+			if ( (sscanf(getval("langid_fix") + 2, "%x", &u_langid_fix) != 1) || (u_langid_fix > INT_MAX)) {
 				upslogx(LOG_NOTICE, "Error enabling language ID workaround");
 			} else {
+				langid_fix = u_langid_fix;
 				upsdebugx(2, "Language ID workaround enabled (using '0x%x')", langid_fix);
 			}
 		}
