@@ -609,7 +609,7 @@ int main(int argc, char **argv)
 
 	/* Only switch to statepath if we're not powering off or just dumping data, for discovery */
 	/* This avoid case where ie /var is umounted */
-	if ((!do_forceshutdown) && (dump_data < 0) && (chdir(dflt_statepath())))
+	if ((!do_forceshutdown) && (!dump_data) && (chdir(dflt_statepath())))
 		fatal_with_errno(EXIT_FAILURE, "Can't chdir to %s", dflt_statepath());
 
 	/* Setup signals to communicate with driver once backgrounded. */
@@ -643,7 +643,7 @@ int main(int argc, char **argv)
 		}
 
 		/* Only write pid if we're not just dumping data, for discovery */
-		if (dump_data < 0) {
+		if (!dump_data) {
 			pidfn = xstrdup(buffer);
 			writepid(pidfn);	/* before backgrounding */
 		}
@@ -702,9 +702,8 @@ int main(int argc, char **argv)
 
 	/* now we can start servicing requests */
 	/* Only write pid if we're not just dumping data, for discovery */
-	if (dump_data < 0) {
+	if (!dump_data)
 		dstate_init(progname, upsname);
-	}
 
 	/* The poll_interval may have been changed from the default */
 	dstate_setinfo("driver.parameter.pollinterval", "%d", poll_interval);

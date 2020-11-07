@@ -109,7 +109,7 @@ static void get_cmddesc(nut_ctype_t *client, const char *upsname, const char *cm
 	if (desc)
 		sendback(client, "CMDDESC %s %s \"%s\"\n", upsname, cmd, desc);
 	else
-		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n", 
+		sendback(client, "CMDDESC %s %s \"Description unavailable\"\n",
 			upsname, cmd);
 }
 
@@ -158,20 +158,20 @@ static void get_type(nut_ctype_t *client, const char *upsname, const char *var)
 	 * numeric value */
 
 	sendback(client, "%s NUMBER\n", buf);
-}		
+}
 
 static void get_var_server(nut_ctype_t *client, const char *upsname, const char *var)
 {
 	if (!strcasecmp(var, "server.info")) {
 		sendback(client, "VAR %s server.info "
 			"\"Network UPS Tools upsd %s - "
-			"http://www.networkupstools.org/\"\n", 
+			"http://www.networkupstools.org/\"\n",
 			upsname, UPS_VERSION);
 		return;
 	}
 
 	if (!strcasecmp(var, "server.version")) {
-		sendback(client, "VAR %s server.version \"%s\"\n", 
+		sendback(client, "VAR %s server.version \"%s\"\n",
 			upsname, UPS_VERSION);
 		return;
 	}

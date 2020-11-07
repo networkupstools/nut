@@ -36,7 +36,7 @@
 
 #include <usb.h>	/* libusb header file */
 
-extern upsdrv_info_t comm_upsdrv_info; 
+extern upsdrv_info_t comm_upsdrv_info;
 
 /*!
  * usb_communication_subdriver_s: structure to describe the communication routines

@@ -167,7 +167,7 @@
 #define V120AC			'1'
 #define XFER_BLACKOUT	'B'
 #define XFER_LOW_VOLT	'L'
-#define XFER_HI_VOLT	'H' 
+#define XFER_HI_VOLT	'H'
 #define	BUZZER_ENABLED	'1'
 #define BUZZER_DISABLED	'0'
 #define	BUZZER_MUTED	'2'
