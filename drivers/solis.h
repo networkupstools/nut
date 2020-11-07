@@ -2,7 +2,7 @@
 
    Copyright (C) 2004  Silvino B. Magalhaes    <sbm2yk@gmail.com>
                  2019  Roberto Panerai Velloso <rvelloso@gmail.com>
-   
+
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
    2004/10/30 - Version 0.40 - add model data structs
    2004/11/22 - Version 0.50 - add internal e external shutdown programming
    2005/06/16 - Version 0.60 - save external shutdown programming to ups,
- 			       support new cables and Solaris compilation   
+                               support new cables and Solaris compilation
    2015/09/19 - Version 0.63 - patch for correct reading for Microsol Back-Ups BZ1200-BR
 
 */

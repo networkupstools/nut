@@ -177,24 +177,22 @@ static void * list_nut_devices(void * arg)
 		/* FIXME:
 		 * - also print answer[2] if != "Unavailable"?
 		 * - for upsmon.conf or ups.conf (using dummy-ups)? */
-		if (numa >= 3) {
-			dev = nutscan_new_device();
-			dev->type = TYPE_NUT;
-			dev->driver = strdup("nutclient");
-			/* +1+1 is for '@' character and terminating 0 */
-			buf_size = strlen(answer[1])+strlen(hostname)+1+1;
-			dev->port = malloc(buf_size);
-			if( dev->port ) {
-				snprintf(dev->port,buf_size,"%s@%s",answer[1],
-						hostname);
+		dev = nutscan_new_device();
+		dev->type = TYPE_NUT;
+		dev->driver = strdup("nutclient");
+		/* +1+1 is for '@' character and terminating 0 */
+		buf_size = strlen(answer[1])+strlen(hostname)+1+1;
+		dev->port = malloc(buf_size);
+		if( dev->port ) {
+			snprintf(dev->port,buf_size,"%s@%s",answer[1],
+					hostname);
 #ifdef HAVE_PTHREAD
-				pthread_mutex_lock(&dev_mutex);
+			pthread_mutex_lock(&dev_mutex);
 #endif
-				dev_ret = nutscan_add_device_to_device(dev_ret,dev);
+			dev_ret = nutscan_add_device_to_device(dev_ret,dev);
 #ifdef HAVE_PTHREAD
-				pthread_mutex_unlock(&dev_mutex);
+			pthread_mutex_unlock(&dev_mutex);
 #endif
-			}
 
 		}
 	}

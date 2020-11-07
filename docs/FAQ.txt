@@ -4,8 +4,8 @@ NUT Frequently Asked Questions
 endif::external_title[]
 
 == I just upgraded, and ...
-You have read link:UPGRADING[UPGRADING] in the base directory of the distribution,
-right?
+You have read link:UPGRADING[UPGRADING] in the base directory of the
+distribution, right?
 
 If not, go read it now, then come back to this file if your
 question wasn't answered in there.
@@ -38,7 +38,7 @@ already been done in the old version.
 
 The drivers drop root privileges long before the serial port is
 opened.  You'll need to change the permissions on that port so that
-their new user id can access it.  Normally this is "nobody", but it 
+their new user id can access it.  Normally this is "nobody", but it
 may be changed at compile-time by using configure --with-user.
 
 Read the error message.  If you have a permissions mismatch, then
@@ -47,12 +47,12 @@ you'll see something like this:
 	Network UPS Tools - APC Smart protocol driver 0.60 (1.1.7)
 	This program is currently running as youruid (UID 1234)
 	/dev/ttyS2 is owned by user root (UID 0), mode 0600
-	Change the port name, or fix the permissions or ownership 
+	Change the port name, or fix the permissions or ownership
 	of /dev/ttyS2 and try again.
 	Unable to open /dev/ttyS2: Permission denied
 
 Now is a good time to point out that using "nobody" is a bad idea,
-since it's a hack for NFS access.  You should create a new role 
+since it's a hack for NFS access.  You should create a new role
 account (perhaps called "ups" or "nut"), and use that instead.
 
 Also, scroll down to the "security domains" question to see an
@@ -88,16 +88,16 @@ Refer to the upsd(8) and upsd.conf(5) manpages for more information.
 
 == I get a 'not listening on...' error from upsd.
 
-Verify your LISTEN directive. It should be one of the valid IP addresses for
-the computer running upsd (or 0.0.0.0, which is INADDR_ANY), not an address for
-a client.
+Verify your LISTEN directive. It should be one of the valid IP addresses
+for the computer running `upsd` (or `0.0.0.0`, which is `INADDR_ANY`), not
+an address for a client.
 
-The LISTEN directive lets you pick which interface upsd listens on. If you are
-trying to limit the clients which can connect to upsd, you either need to use
-tcp-wrappers or kernel firewall rules.
+The LISTEN directive lets you pick which interface `upsd` listens on.
+If you are trying to limit the clients which can connect to `upsd`,
+you either need to use tcp-wrappers or kernel firewall rules.
 
-This isn't a NUT-specific limitation - it applies equally to your web server or
-mailer daemon.
+This isn't a NUT-specific limitation -- it applies equally to your web server
+or mailer daemon.
 
 == Which UPS should I buy?
 
@@ -112,13 +112,13 @@ hardware for testing, results of their testing efforts, or protocol
 specifications. We try to publish this information on the NUT website, so you
 can take this into consideration when selecting an UPS brand.
 
-== I have an APC Smart-UPS connected with a grey APC serial cable and it won't work. 
+== I have an APC Smart-UPS connected with a grey APC serial cable and it won't work.
 
 The Back-UPS type in the genericups driver works but then I don't get to use
 all the nifty features in there.  Why doesn't the right driver work?
 
 The problem lies in your choice of cable.  APC's grey cables
-generally only do "dumb" signalling - very basic yes/no info about
+generally only do "dumb" signalling -- very basic yes/no info about
 the battery and line status.  While that is sufficient to detect a
 low battery condition while on battery, you miss out on all the
 goodies that you paid for.
@@ -138,9 +138,10 @@ If your grey cable isn't the 940-0095B, the solution is to dump that
 cable and find one that supports APC's "smart" signalling.  Typically
 these come with the UPS and are black.  If your smart cable has
 wandered off, one can be built rather easily with some connectors and
-cable - there's no fancy wiring or resistors.
+cable -- there's no fancy wiring or resistors.
 
-See this URL for a handy diagram: http://www.networkupstools.org/cables/940-0024C.jpg
+See this URL for a handy diagram:
+http://www.networkupstools.org/cables/940-0024C.jpg
 
 There is also a text version of that diagram in the docs/cables
 directory of the NUT source distribution.  Either one should allow
@@ -185,7 +186,7 @@ If this really bothers you, roll up your sleeves and use the
 sockdebug code to write a "upsmon" type program that sits on top of
 the state sockets.  It won't work over the network, but it means
 you don't need upsd.  It also means only one host can monitor the
-UPS. 
+UPS.
 
 This is also a good option to consider if you can't use networked
 monitoring code for security or safety reasons.
@@ -206,7 +207,7 @@ It is also coherent with the answer to the previous question.
 *Answer 1*
 
 New versions of the init man page taken from the sysvinit package
-are saying that usage of SIGPWR is discouraged, since /dev/initctl 
+are saying that usage of SIGPWR is discouraged, since /dev/initctl
 control channel is the preferred way of communication.
 
 *Answer 2*
@@ -253,16 +254,16 @@ directly affects how long you run on battery without knowing
 what's going on with the UPS.
 
 Note: some drivers occasionally need more time to update than the
-default value of MAXAGE (in upsd.conf) allows.  As a result, they 
+default value of MAXAGE (in upsd.conf) allows.  As a result, they
 are temporarily marked stale even though everything is fine.  This
-can happen with MGE Ellipse equipment - see the mge-shut or usbhid-ups man
+can happen with MGE Ellipse equipment -- see the mge-shut or usbhid-ups man
 pages.  In such cases, you can raise the value of MAXAGE to avoid these
 warnings; try a value like 25 or 30.
 
 == Why do the client programs say 'Driver not connected' when I try to run them?
 
 This means that upsd can't connect to the driver for some reason.
-Your ups.conf entry might be wrong, or the driver might not be 
+Your ups.conf entry might be wrong, or the driver might not be
 running.  Maybe your state path is not configured properly.
 
 Check your syslog.  upsd will complain regularly if it can't
@@ -308,7 +309,7 @@ might look like this:
 
 	if (test -f /etc/killpower)
 	then
-		/usr/local/ups/sbin/upsdrvctl shutdown
+		/sbin/upsdrvctl shutdown
 
 		sleep 600	# this should never return
 
@@ -329,8 +330,8 @@ things depending on what's supported:
 
 - Set a jumper on the motherboard that means "return after outage"
 - Set something in the BIOS that says "power up after power failure"
-- Try using something (like a capacitor) across the power button 
-  to "push" it for you - this might not work if it needs a delay
+- Try using something (like a capacitor) across the power button
+  to "push" it for you -- this might not work if it needs a delay
 - Hack the cable between the power supply and the motherboard to fool
   it into powering up whenever line power is present
 - Teach a monkey to watch the machine and press the power button
@@ -369,11 +370,11 @@ use of `setpci`, and are highly model-specific:
  - http://superuser.com/questions/212434/reboot-after-power-failure-for-mac-running-ubuntu
  - http://ubuntuforums.org/showthread.php?t=1209576
 
-Note: this question has been in the FAQ for several years now, and 
+Note: this question has been in the FAQ for several years now, and
 there's still no clean answer.  Let me guess: everyone who runs a server
 on Mac hardware has a team of trained monkeys, and feeds them
 by growing bananas in the tropical environment formed by waste heat
-from the equipment. 
+from the equipment.
 
 The rest of us are still waiting for the answer.  Booting into the
 Mac OS to frob the "file server" panel is not an acceptable
@@ -410,7 +411,7 @@ For my development system this yields the following /dev entries:
 
 - Switch to root, then start the drivers:
 
-	# /usr/local/ups/sbin/upsdrvctl -u nutdev start
+	# upsdrvctl -u nutdev start
 
 - The listing for /var/state/ups then looks like this:
 
@@ -434,7 +435,7 @@ make the files owned by root.nut, with mode 0640.
 
 Once the config files are ready, start upsd:
 
-	# /usr/local/ups/sbin/upsd -u nutsrv
+	# upsd -u nutsrv
 
 Check your syslog to be sure everything's happy, then be sure to
 update your startup scripts so it uses this procedure on your next
@@ -451,12 +452,12 @@ to that one user account.  Direct access to the serial device is
 not possible, since that is owned by another user.
 
 There is also the possibility of running the drivers and upsd in a
-chroot jail.  See the chroot.txt provided in the source 
-distribution for an example implementation. 
+chroot jail.  See the chroot.txt provided in the source
+distribution for an example implementation.
 
 Why give would-be vandals any sort of help?
 
-Put it this way - I *wrote* good chunks of this stuff, and I still
+Put it this way -- I *wrote* good chunks of this stuff, and I still
 run the programs this way locally.  You should definitely consider
 using this technique.
 
@@ -496,14 +497,14 @@ service by bringing down the box.
 See upssched.txt for information on how you can shutdown early if
 this is what you really want to do.
 
-== The CGI programs report 'access to that host is not authorized' -  what's going on?
+== The CGI programs report 'access to that host is not authorized' --  what's going on?
 
 Those programs need to see a host in your hosts.conf before they
 will attempt communications.  This keeps people from feeding it
 random "host=" settings, which would annoy others with outgoing
 connection attempts from your system.
 
-If your hosts.conf turns out to be configured correctly with 
+If your hosts.conf turns out to be configured correctly with
 MONITOR entries and all that, check the permissions.  Your web
 server may be running the CGI programs as a user that can't read
 the file.
@@ -511,7 +512,7 @@ the file.
 If you run your web server in a chroot jail, make sure the programs
 can still read hosts.conf.  You may have to copy it into the jail
 for this to work.  If you do that, make sure it's not writable by
-any of the user accounts which run inside the jail.   
+any of the user accounts which run inside the jail.
 
 == upsd is running, so why can't I connect to it?
 
@@ -552,8 +553,9 @@ http://www.networkupstools.org/stable-hcl.html?connection=USB
 
 == My USB UPS is supported but doesn't work!
 
-On Linux, udev rules are provided to set the correct permissions on device file.
-This allows the NUT driver to communicate with the UPS, through this device file.
+On Linux, udev rules are provided to set the correct permissions on device
+file. This allows the NUT driver to communicate with the UPS, through this
+device file.
 
 However, the driver may still fail to start and support the device, with a
 message like:
@@ -641,7 +643,7 @@ incidentally what the official FreeBSD port of NUT does for all builds.
 == I have 'some problem' with 'some old version' ...
 
 Get the latest stable release, and see if it still happens.  If it
-goes away, it means someone else reported it and got it fixed a 
+goes away, it means someone else reported it and got it fixed a
 long time ago.
 
 You may want to search the mailing lists to see if someone else has
@@ -651,7 +653,7 @@ into your distribution (potentially with unofficial packages).
 
 Some OS distributions contain old versions of NUT. If your hardware is newer
 than the NUT release, there is a good chance that support has not been added
-yet. Please do not tell us you have the "latest version for Distro XYZ" - even
+yet. Please do not tell us you have the "latest version for Distro XYZ" -- even
 if the developers are familiar with that distribution, it helps others if you
 quote the exact package version.
 
@@ -679,7 +681,7 @@ and also SNMP and XML/HTTP (Eaton and MGE) communications.
 
 Since NUT is very extensible, support for a new communication bus can be added
 easily.
- 
+
 Any time there is a gap in features, it's usually because the
 group of people who own that hardware and the group of people who
 write code don't overlap.  The fix is to make them overlap -
@@ -711,7 +713,7 @@ has already handled it successfully.
 == I replaced the battery in my APC Smart-UPS and now it thinks the battery is low all the time.  How do you fix this?
 
 Or a variation like...
- 
+
 == My APC UPS keeps reporting 'OL LB', even after it's been charging for many hours.  What can I do about this?
 
 This happened to me, and some other people too.  The combination of
@@ -729,7 +731,7 @@ disconnect it from the computer so this software won't shut it
 down.
 
 The easiest way to do this is to first unplug your computer(s) from
-it, and plug in a token load like a lamp.  Also, move the UPS to a 
+it, and plug in a token load like a lamp.  Also, move the UPS to a
 power strip that doesn't switch the ground line or an outlet that
 you can switch off at your panel.
 
@@ -799,7 +801,7 @@ It's a kind of Magic.
 It's both that and a frequently *anticipated* questions file, too.
 
 The idea is to write it up in here so that nobody asks the mailing
-list when it finally does get released.  
+list when it finally does get released.
 
 == My UPS powers up immediately after a power failure instead of waiting for the batteries to recharge!
 
@@ -818,8 +820,8 @@ where there's not enough battery capacity left for upsmon to do its thing.
 Exactly how long to wait is a function of your UPS hardware, and will require
 careful testing.
 
-If this is too evil for you, buy another kind of UPS that will either wait for a
-minimum amount of charge, a minimum amount of time, or both.
+If this is too evil for you, buy another kind of UPS that will either wait for
+a minimum amount of charge, a minimum amount of time, or both.
 
 == I'm facing a power race
 Or a variation like...
@@ -846,7 +848,7 @@ Implement this by modifying your shutdown script like this:
 
 	if (test -f /etc/killpower)
 	then
-		/usr/local/ups/sbin/upsdrvctl shutdown
+		/sbin/upsdrvctl shutdown
 
 		sleep 120
 
