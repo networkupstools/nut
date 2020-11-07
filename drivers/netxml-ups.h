@@ -1,4 +1,4 @@
-/* netxml-ups.h	Driver data/defines for network XML UPS units 
+/* netxml-ups.h	Driver data/defines for network XML UPS units
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>

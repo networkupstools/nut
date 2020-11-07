@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h> 
+#include <sys/un.h>
 
 static int parse_args(upstype_t *ups, int numargs, char **arg)
 {
@@ -202,7 +202,7 @@ int sstate_connect(upstype_t *ups)
 			return -1;
 
 		ups->last_connfail = now;
-		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)", 
+		upslog_with_errno(LOG_ERR, "Can't connect to UPS [%s] (%s)",
 			ups->name, ups->fn);
 
 		return -1;
@@ -319,12 +319,12 @@ const char *sstate_getinfo(const upstype_t *ups, const char *var)
 int sstate_getflags(const upstype_t *ups, const char *var)
 {
 	return state_getflags(ups->inforoot, var);
-}	
+}
 
 int sstate_getaux(const upstype_t *ups, const char *var)
 {
 	return state_getaux(ups->inforoot, var);
-}	
+}
 
 const enum_t *sstate_getenumlist(const upstype_t *ups, const char *var)
 {

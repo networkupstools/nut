@@ -44,7 +44,7 @@ static info_lkp_t xpcc_onbatt_info[] = {
 	{ 3, "LB" }	/* batteryLow */
 };
 
-/* 
+/*
 upsBaseOutputStatus OBJECT-TYPE
 	SYNTAX INTEGER {
 			unknown(1),
