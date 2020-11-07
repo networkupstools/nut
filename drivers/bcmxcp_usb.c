@@ -79,7 +79,7 @@ static usb_device_id_t pw_usb_device_table[] = {
 	{ USB_DEVICE(HP_VENDORID, 0x1f01), &phoenixtec_ups },
 	/* T750 */
 	{ USB_DEVICE(HP_VENDORID, 0x1f02), &phoenixtec_ups },
-	
+
 	/* Terminating entry */
 	{ -1, -1, NULL }
 };
@@ -274,7 +274,7 @@ int command_read_sequence(unsigned char command, unsigned char *data)
 {
 	int bytes_read = 0;
 	int retry = 0;
-	
+
 	while ((bytes_read < 1) && (retry < 5)) {
 		send_read_command(command);
 		bytes_read = get_answer(data, command);
@@ -356,14 +356,14 @@ static void nutusb_open_error(const char *port)
 /* FIXME: this part of the opening can go into common... */
 static usb_dev_handle *open_powerware_usb(void)
 {
-	struct usb_bus *busses = usb_get_busses();  
+	struct usb_bus *busses = usb_get_busses();
 	struct usb_bus *bus;
 	USBDevice_t curDevice;
 
 	for (bus = busses; bus; bus = bus->next)
 	{
 		struct usb_device *dev;
-    
+
 		for (dev = bus->devices; dev; dev = dev->next)
 		{
 			if (dev->descriptor.bDeviceClass != USB_CLASS_PER_INTERFACE) {
@@ -471,7 +471,7 @@ int nutusb_close(usb_dev_handle *dev_h, const char *port)
 		usb_release_interface(dev_h, 0);
 		return usb_close(dev_h);
 	}
-	
+
 	return 0;
 }
 

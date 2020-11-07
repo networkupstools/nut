@@ -26,7 +26,14 @@
 # - netclient: this mode only requires upsmon.
 #
 # IMPORTANT NOTE:
-#  This file is intended to be sourced by shell scripts.
+#  This file is intended to be sourced by standard POSIX shell scripts (so
+#  there is no guaranteed `export VAR=VAL` syntax) and by systemd on Linux.
 #  You MUST NOT use spaces around the equal sign!
 
 MODE=none
+
+# Uncomment this to allow starting the service even if ups.conf has no device
+# sections at the moment. This environment variable overrides the built-in
+# "false" and an optional same-named default flag that can be set in upsd.conf:
+#ALLOW_NO_DEVICE=true
+#export ALLOW_NO_DEVICE

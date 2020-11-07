@@ -70,7 +70,7 @@ static void sock_fail(const char *fn)
 			user->pw_name, (int)user->pw_uid);
 
 		printf("Things to try:\n\n");
-		printf(" - set different owners or permissions on %s\n\n", 
+		printf(" - set different owners or permissions on %s\n\n",
 			dflt_statepath());
 		printf(" - run this as some other user "
 			"(try -u <username>)\n");
@@ -87,9 +87,9 @@ static void sock_fail(const char *fn)
 		printf(" - mkdir %s\n", dflt_statepath());
 		break;
 	}
-	
+
 	/*
-	 * there - that wasn't so bad.  every helpful line of code here 
+	 * there - that wasn't so bad.  every helpful line of code here
 	 * prevents one more "help me" mail to the list a year from now
 	 */
 
@@ -225,7 +225,7 @@ static void sock_connect(int sock)
 	int	fd, ret;
 	conn_t	*conn;
 	struct sockaddr_un sa;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	salen;
 #else
 	socklen_t	salen;
@@ -254,7 +254,7 @@ static void sock_connect(int sock)
 			upslog_with_errno(LOG_ERR, "fcntl set O_NDELAY on unix fd failed");
 			close(fd);
 			return;
-		}	
+		}
 	}
 
 	conn = xcalloc(1, sizeof(*conn));
@@ -616,7 +616,7 @@ int dstate_poll_fds(struct timeval timeout, int extrafd)
 		timeout.tv_sec -= now.tv_sec;
 		timeout.tv_usec -= now.tv_usec;
 	}
-	
+
 	ret = select(maxfd + 1, &rfds, NULL, NULL, &timeout);
 
 	if (ret == 0) {
@@ -889,7 +889,7 @@ void dstate_free(void)
 {
 	state_infofree(dtree_root);
 	dtree_root = NULL;
-	
+
 	state_cmdfree(cmdhead);
 	cmdhead = NULL;
 
@@ -1167,7 +1167,7 @@ int dstate_detect_phasecount(
 
 		if ( (v1 && v2 && !v3) ||
 		     (v1n && v2n && !v3n) ||
-		     (c1 && c2 && !c2) ||
+		     (c1 && c2 && !c3) ||
 		     (v12 && !v23 && !v31) ) {
 			upsdebugx(5, "%s(): determined a 2-phase case", __func__);
 			*num_phases = 2;
