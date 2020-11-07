@@ -57,7 +57,7 @@ static void user_add(const char *un)
 	if (last) {
 		last->next = tmp;
 	} else {
-		users = tmp;	
+		users = tmp;
 	}
 
 	/* remember who we're working on */
@@ -78,7 +78,7 @@ static void user_password(const char *pw)
 	}
 
 	if (curr_user->password) {
-		fprintf(stderr, "Ignoring duplicate password for %s\n", 
+		fprintf(stderr, "Ignoring duplicate password for %s\n",
 			curr_user->username);
 		return;
 	}
@@ -447,7 +447,7 @@ static void user_parse_arg(int numargs, char **arg)
 		/* foo = bar <rest1> <rest2> ... */
 
 		/* parse first var/val, plus subsequent values (if any) */
-		
+
 		parse_rest(arg[0], arg[2], arg, 3, numargs - 3);
 		return;
 	}

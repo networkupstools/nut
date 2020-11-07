@@ -96,7 +96,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			start++;
 
 		} while ((my_buf[0] != PW_COMMAND_START_BYTE) && (start < 128));
-		
+
 		if (start == 128) {
 			ser_comm_fail("Receive error (PW_COMMAND_START_BYTE): packet not on start!!%x\n", my_buf[0]);
 			return -1;
@@ -265,7 +265,7 @@ void pw_comm_setup(const char *port)
 	if (getval("baud_rate") != NULL)
 	{
 		baud = atoi(getval("baud_rate"));
-		
+
 		for(i = 0; i < PW_MAX_BAUD; i++) {
 			if (baud == pw_baud_rates[i].name) {
 				mybaud = pw_baud_rates[i].rate;
