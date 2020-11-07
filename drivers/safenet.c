@@ -260,7 +260,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 */
 	if (!strcasecmp(cmdname, "shutdown.return")) {
 		char	command[] = SHUTDOWN_RETURN;
-		
+
 		command[4] += ((offdelay % 1000) / 100);
 		command[5] += ((offdelay % 100) / 10);
 		command[6] +=  (offdelay % 10);

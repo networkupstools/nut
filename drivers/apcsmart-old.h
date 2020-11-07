@@ -141,7 +141,7 @@ apc_vartab_t	apc_vartab[] = {
 	{ "input.transfer.low",	APC_F_VOLT,		'l' },
 	{ "input.transfer.high",
 				APC_F_VOLT,		'u' },
-	{ "input.transfer.reason", 
+	{ "input.transfer.reason",
 				APC_POLL|APC_F_REASON,	'G' },
 
 	{ "input.voltage.maximum",
@@ -151,30 +151,30 @@ apc_vartab_t	apc_vartab[] = {
 
 	{ "output.current", 	APC_POLL|APC_F_AMP,	'/' },
 	{ "output.voltage", 	APC_POLL|APC_F_VOLT,	'O' },
-	{ "output.voltage.nominal",  
+	{ "output.voltage.nominal",
 				APC_F_VOLT,		'o' },
 
 	{ "ambient.humidity",  	APC_POLL|APC_F_PERCENT,	'h' },
-	{ "ambient.humidity.high", 
+	{ "ambient.humidity.high",
 				APC_F_PERCENT,		'{' },
-	{ "ambient.humidity.low", 
+	{ "ambient.humidity.low",
 				APC_F_PERCENT,		'}' },
 
-	{ "ambient.temperature", 	
+	{ "ambient.temperature",
 				APC_POLL|APC_F_CELSIUS, 't' },
-	{ "ambient.temperature.high",	
+	{ "ambient.temperature.high",
 				APC_F_CELSIUS,		'[' },
-	{ "ambient.temperature.low", 	
+	{ "ambient.temperature.low",
 				APC_F_CELSIUS,		']' },
 
 	{ "battery.date",	APC_STRING,		'x' },
 
 	{ "battery.charge",  	APC_POLL|APC_F_PERCENT,	'f' },
-	{ "battery.charge.restart",  
+	{ "battery.charge.restart",
 				APC_F_PERCENT,		'e' },
 
 	{ "battery.voltage", 	APC_POLL|APC_F_VOLT,	'B' },
-	{ "battery.voltage.nominal", 
+	{ "battery.voltage.nominal",
 				0,			'g' },
 
 	{ "battery.runtime", 	APC_POLL|APC_F_MINUTES,	'j' },
@@ -183,7 +183,7 @@ apc_vartab_t	apc_vartab[] = {
 
 	{ "battery.packs", 	APC_F_DEC,		'>' },
 	{ "battery.packs.bad", 	APC_F_DEC,		'<' },
-	{ "battery.alarm.threshold", 
+	{ "battery.alarm.threshold",
 				0,			'k' },
 	/* todo:
 

@@ -1,4 +1,4 @@
-/* 
+/*
    bestfcom.c - model specific routines for Best Power F-Command ups models
 
    This module is yet another rewritten mangle of the bestuferrups
@@ -114,24 +114,24 @@ void  upsdrv_initinfo (void)
 	*/
 	dstate_setinfo("ups.mfr", "%s", "Best Power");
 	switch(fc.model) {
-	  case MExxxx:
-		dstate_setinfo("ups.model", "%s ME%d", fc.name, fc.va);
-		break;
-	  case MDxxxx:
-		dstate_setinfo("ups.model", "%s MD%d", fc.name, fc.va);
-		break;
-	  case FDxxxx:
-		dstate_setinfo("ups.model", "%s FD%d", fc.name, fc.va);
-		break;
-	  case FExxxx:
-		dstate_setinfo("ups.model", "%s FE%d", fc.name, fc.va);
-		break;
-	  case LIxxxx:
-		dstate_setinfo("ups.model", "%s LI%d", fc.name, fc.va);
-		break;
-	  default:
-		fatalx(EXIT_FAILURE, "Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
-	} 
+		case MExxxx:
+			dstate_setinfo("ups.model", "%s ME%d", fc.name, fc.va);
+			break;
+		case MDxxxx:
+			dstate_setinfo("ups.model", "%s MD%d", fc.name, fc.va);
+			break;
+		case FDxxxx:
+			dstate_setinfo("ups.model", "%s FD%d", fc.name, fc.va);
+			break;
+		case FExxxx:
+			dstate_setinfo("ups.model", "%s FE%d", fc.name, fc.va);
+			break;
+		case LIxxxx:
+			dstate_setinfo("ups.model", "%s LI%d", fc.name, fc.va);
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model - oops!"); /* Will never get here, upsdrv_initups() will catch */
+	}
 
 	dstate_setinfo("ups.power.nominal", "%d", fc.va);
 	dstate_setinfo("ups.realpower.nominal", "%d", fc.watts);
@@ -254,7 +254,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	if (execute("f\r", fstring, sizeof(fstring)) >= 80) {
-		int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0, 
+		int inverter=0, charger=0, vin=0, vout=0, btimeleft=0, linestat=0,
 			alstat=0, vaout=0;
 
 		double ampsout=0.0, vbatt=0.0, battpercent=0.0, loadpercent=0.0,
@@ -269,7 +269,7 @@ void upsdrv_updateinfo(void)
 
 		/* Charger status.	0=off 1=on */
 		charger = bcd2i(&fstring[18], 2);
-		
+
 		/* Input Voltage. integer number */
 		vin	 = bcd2i(&fstring[24], 4);
 
@@ -309,35 +309,35 @@ void upsdrv_updateinfo(void)
 
 		/* Percent Load */
 		switch(fc.model) {
-		  case LIxxxx:
-		  case FDxxxx:
-		  case FExxxx:
-		  case MExxxx:
-			if (execute("d 16\r", tmp, sizeof(tmp)) > 0) {
-				int l;
-				sscanf(tmp, "16 FullLoad%% %d", &l);
-				loadpercent = (double) l;
-			}
-			break;
-		  case MDxxxx:
-			if (execute("d 22\r", tmp, sizeof(tmp)) > 0) {
-				int l;
-				sscanf(tmp, "22 FullLoad%% %d", &l);
-				loadpercent = (double) l;
-			}
-			break;
-		  default: /* Will never happen, caught in upsdrv_initups() */
-			fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
+			case LIxxxx:
+			case FDxxxx:
+			case FExxxx:
+			case MExxxx:
+				if (execute("d 16\r", tmp, sizeof(tmp)) > 0) {
+					int l;
+					sscanf(tmp, "16 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				break;
+			case MDxxxx:
+				if (execute("d 22\r", tmp, sizeof(tmp)) > 0) {
+					int l;
+					sscanf(tmp, "22 FullLoad%% %d", &l);
+					loadpercent = (double) l;
+				}
+				break;
+			default: /* Will never happen, caught in upsdrv_initups() */
+				fatalx(EXIT_FAILURE, "Unknown model in upsdrv_updateinfo()");
 		}
 
 		/* Compute battery percent left based on battery voltages. */
-		battpercent = ((vbatt - fc.emptyvolts) 
+		battpercent = ((vbatt - fc.emptyvolts)
 					   / (fc.idealbvolts - fc.emptyvolts) * 100.0);
-		if (battpercent < 0.0) 
+		if (battpercent < 0.0)
 			battpercent = 0.0;
 		else if (battpercent > 100.0)
 			battpercent = 100.0;
-		
+
 		/* Compute status string */
 		{
 			int lowbatt, lowvolts, overload, replacebatt, boosting, trimming;
@@ -353,7 +353,7 @@ void upsdrv_updateinfo(void)
 			lowvolts = (vbatt <= fc.lowvolts);
 
 			status_init();
-			 
+
 			if (inverter) {
 				if (inverter_status < 1) {
 					upsdebugx(1, "Inverter On, charger: %d battery time left: %d",
@@ -477,10 +477,10 @@ static void sync_serial(void) {
 static void setup_serial(void)
 {
 	struct termios tio;
-			 
+
 	if (tcgetattr(upsfd, &tio) == -1)
 		fatal_with_errno(EXIT_FAILURE, "tcgetattr");
-				 
+
 	tio.c_iflag = IXON | IXOFF;
 	tio.c_oflag = 0;
 	tio.c_cflag = (CS8 | CREAD | HUPCL | CLOCAL);
@@ -529,7 +529,7 @@ void upsdrv_init_nofc(void)
 {
 	char tmp[256], rstring[1024];
 
-	/* This is a Best UPS	
+	/* This is a Best UPS
 	 * Set initial values for old Fortress???
 	 */
 
@@ -577,7 +577,8 @@ void upsdrv_init_nofc(void)
 		}
 	} else
 	if (strstr(rstring, "Model:	   FE")
-	    || strstr(rstring, "Model:    FE")){
+	    || strstr(rstring, "Model:    FE"))
+	{
 		fc.model = FExxxx;
 		fc.type = FERRUPS;
 		snprintf(fc.name, sizeof(fc.name), "%s", "Ferrups");
@@ -586,56 +587,56 @@ void upsdrv_init_nofc(void)
 		/* How does the old Fortress respond to this? */
 		upsdebugx(2, "Old Best Fortress???");
 		/* fc.model = FORTRESS; */
-	} 
+	}
 
 	if (fc.model == UNKNOWN) {
 		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
 	}
 
 	switch(fc.model) {
-	  case MExxxx:
-	  case MDxxxx:
-	  case FDxxxx:
-		/* determine shutdown battery voltage */
-		if (execute("d 27\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "27 LowBatt %f", &fc.emptyvolts);
-		}
-		/* determine near low battery voltage */
-		if (execute("d 30\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "30 NLBatt %f", &fc.lowvolts);
-		}
-		/* determine fully charged battery voltage */
-		if (execute("d 28\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "28 Hi Batt %f", &fc.fullvolts);
-		}
-		fc.fullvolts = 13.70;
-		/* determine "ideal" voltage by a guess */
-		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-		break;
-	  case FExxxx:
-		if (execute("d 45\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "45 RatedVA %d", &fc.va);			/* 4300  */
-		}
-		if (execute("d 46\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "46 RatedW %d", &fc.watts);		/* 3000  */
-		}
-		if (execute("d 65\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "65 LoBatV %f", &fc.emptyvolts);	/* 41.00 */
-		}
-		if (execute("d 66\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "66 NLBatV %f", &fc.lowvolts);		/* 44.00 */
-		}
-		if (execute("d 67\r", tmp, sizeof(tmp)) > 0) {
-			sscanf(tmp, "67 HiBatV %f", &fc.fullvolts);	/* 59.60 */
-		}
-		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-		if (fc.va < 1.0) {
-			fatalx(EXIT_FAILURE, "Error determining Ferrups UPS rating.");
-		}
-		break;
-	  default:
-		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
-		break;
+		case MExxxx:
+		case MDxxxx:
+		case FDxxxx:
+			/* determine shutdown battery voltage */
+			if (execute("d 27\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "27 LowBatt %f", &fc.emptyvolts);
+			}
+			/* determine near low battery voltage */
+			if (execute("d 30\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "30 NLBatt %f", &fc.lowvolts);
+			}
+			/* determine fully charged battery voltage */
+			if (execute("d 28\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "28 Hi Batt %f", &fc.fullvolts);
+			}
+			fc.fullvolts = 13.70;
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		case FExxxx:
+			if (execute("d 45\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "45 RatedVA %d", &fc.va);			/* 4300  */
+			}
+			if (execute("d 46\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "46 RatedW %d", &fc.watts);		/* 3000  */
+			}
+			if (execute("d 65\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "65 LoBatV %f", &fc.emptyvolts);	/* 41.00 */
+			}
+			if (execute("d 66\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "66 NLBatV %f", &fc.lowvolts);		/* 44.00 */
+			}
+			if (execute("d 67\r", tmp, sizeof(tmp)) > 0) {
+				sscanf(tmp, "67 HiBatV %f", &fc.fullvolts);	/* 59.60 */
+			}
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			if (fc.va < 1.0) {
+				fatalx(EXIT_FAILURE, "Error determining Ferrups UPS rating.");
+			}
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_nofc()", rstring);
+			break;
 	}
 	fc.valid = 1;
 }
@@ -709,24 +710,24 @@ void upsdrv_init_fc(const char *fcstring)
 	}
 
 	switch(fc.model) {
-	  case LIxxxx:
-		fc.va = bcd2i(&fcstring[11], 5);
-		fc.watts = bcd2i(&fcstring[16], 5);
+		case LIxxxx:
+			fc.va = bcd2i(&fcstring[11], 5);
+			fc.watts = bcd2i(&fcstring[16], 5);
 
-		/* determine shutdown battery voltage */
-		fc.emptyvolts= ((double)bcd2i(&fcstring[57], 4) / 10.0);
+			/* determine shutdown battery voltage */
+			fc.emptyvolts= ((double)bcd2i(&fcstring[57], 4) / 10.0);
 
-		/* determine fully charged battery voltage */
-		fc.lowvolts= ((double)bcd2i(&fcstring[53], 4) / 10.0);
+			/* determine fully charged battery voltage */
+			fc.lowvolts= ((double)bcd2i(&fcstring[53], 4) / 10.0);
 
-		/* determine fully charged battery voltage */
-		fc.fullvolts= ((double)bcd2i(&fcstring[49], 4) / 10.0);
+			/* determine fully charged battery voltage */
+			fc.fullvolts= ((double)bcd2i(&fcstring[49], 4) / 10.0);
 
-		/* determine "ideal" voltage by a guess */
-		fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
-		break;
-	  default:
-		fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_fc()", tmp);
+			/* determine "ideal" voltage by a guess */
+			fc.idealbvolts = ((fc.fullvolts - fc.emptyvolts) * 0.7) + fc.emptyvolts;
+			break;
+		default:
+			fatalx(EXIT_FAILURE, "Unknown model %s in upsdrv_init_fc()", tmp);
 	}
 	fc.valid = 1;
 }
