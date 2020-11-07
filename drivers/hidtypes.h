@@ -111,7 +111,7 @@ typedef struct {
 /*
  * HIDData struct
  *
- * Describe a HID Data with its location in report 
+ * Describe a HID Data with its location in report
  * -------------------------------------------------------------------------- */
 typedef struct {
 	HIDPath_t	Path;				/* HID Path				*/

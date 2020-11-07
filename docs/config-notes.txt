@@ -13,8 +13,8 @@ NOTE: NUT does not currently provide proper graphical configuration tools.
 However, there is now support for linkdoc:developer-guide[Augeas,augeas_user],
 which will enable the easier creation of configuration tools.
 Moreover, linkman:nut-scanner[8] is available to discover supported devices
-(USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the classic
-connection method).
+(USB, SNMP, Eaton XML/HTTP and IPMI) and NUT servers (using Avahi or the
+classic connection method).
 
 Details about the configuration files
 -------------------------------------
@@ -123,13 +123,17 @@ those of the bundled services, which are enabled on a particular deployment.
 Driver configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-Create one section per UPS in /usr/local/ups/etc/ups.conf
+Create one section per UPS in ups.conf
+
+NOTE: The default path for a source installation is `/usr/local/ups/etc`, while
+packaged installation will vary. For example, `/etc/nut` is used on Debian and
+derivatives, while `/etc/ups` or `/etc/upsd` is used on RedHat and derivatives.
 
 To find out which driver to use, check the <<HCL,Hardware Compatibility List>>,
-or data/driver.list.
+or `data/driver.list`.
 
 Once you have picked a driver, create a section for your UPS in
-ups.conf.  You must supply values for "driver" and "port".
+`ups.conf`.  You must supply values for "driver" and "port".
 
 Some drivers may require other flags or settings.  The "desc" value
 is optional, but is recommended to provide a better description of
@@ -166,14 +170,14 @@ Starting the driver(s)
 Generally, you can just start the driver(s) for your hardware (all sections
 defined in 'ups.conf') using the following command:
 
-	/usr/local/ups/sbin/upsdrvctl start
+	upsdrvctl start
 
 Make sure the driver doesn't report any errors.  It should show a
 few details about the hardware and then enter the background.  You
 should get back to the command prompt a few seconds later.  For
 reference, a successful start of the `usbhid-ups` driver looks like this:
 
-	# /usr/local/ups/sbin/upsdrvctl start
+	# upsdrvctl start
 	Network UPS Tools - Generic HID driver 0.34 (2.4.1)
 	USB communication driver 0.31
 	Using subdriver: MGE HID 1.12
@@ -307,12 +311,12 @@ Starting the data server
 
 Start the network data server:
 
-	/usr/local/ups/sbin/upsd
+	upsd
 
 Make sure it is able to connect to the driver(s) on your system.
 A successful run looks like this:
 
-	# /usr/local/ups/sbin/upsd
+	# upsd
 	Network UPS Tools upsd 2.4.1
 	listening on 127.0.0.1 port 3493
 	listening on ::1 port 3493
@@ -340,14 +344,14 @@ Status data
 
 Make sure that the UPS is providing good status data.
 
-	/usr/local/ups/bin/upsc myupsname@localhost ups.status
+	upsc myupsname@localhost ups.status
 
 You should see just one line in response:
 
 	OL
 
 OL means your system is running on line power.  If it says something
-else (like OB - on battery, or LB - low battery), your driver was
+else (like OB -- on battery, or LB -- low battery), your driver was
 probably misconfigured during the <<Driver_configuration, Driver configuration>>
 step.  If you reconfigure the driver, use `upsdrvctl stop` to stop it, then
 start it again as shown in the <<Starting_drivers, Starting driver(s)>> step.
@@ -360,7 +364,7 @@ All data
 
 Look at all of the status data which is being monitored.
 
-	/usr/local/ups/bin/upsc myupsname@localhost
+	upsc myupsname@localhost
 
 What happens now depends on the kind of device and driver you have.
 In the list, you should see ups.status with the same value you got
@@ -420,8 +424,11 @@ Startup scripts
 
 NOTE: This step is not necessary if you installed from packages.
 
-Edit your startup scripts, and make sure upsdrvctl and upsd are run every time
-your system starts.
+Edit your startup scripts, and make sure `upsdrvctl` and `upsd` are run
+every time your system starts. In newer versions of NUT, you may have a
+`nut.conf` file which sets the `MODE` variable for bundled init-scripts,
+to facilitate enabling of certain features in the specific end-user
+deployments.
 
 [[UPS_shutdown]]
 Configuring automatic shutdowns for low battery events
@@ -455,7 +462,7 @@ The exact behavior depends on the specific device, and is related to:
    - battery.charge and battery.charge.low
    - battery.runtime and battery.runtime.low
 
-3. The upsmon master notices and sets "FSD" - the "forced shutdown"
+3. The upsmon master notices and sets "FSD" -- the "forced shutdown"
    flag to tell all slave systems that it will soon power down the load.
 +
 (If you have no slaves, skip to step 6)
@@ -463,7 +470,7 @@ The exact behavior depends on the specific device, and is related to:
 4. upsmon slave systems see "FSD" and:
 
    - generate a NOTIFY_SHUTDOWN event
-   - wait FINALDELAY seconds - typically 5
+   - wait FINALDELAY seconds -- typically 5
    - call their SHUTDOWNCMD
    - disconnect from upsd
 
@@ -475,8 +482,8 @@ The exact behavior depends on the specific device, and is related to:
 6. The upsmon master:
 
    - generates a NOTIFY_SHUTDOWN event
-   - waits FINALDELAY seconds - typically 5
-   - creates the POWERDOWNFLAG file - usually /etc/killpower
+   - waits FINALDELAY seconds -- typically 5
+   - creates the POWERDOWNFLAG file -- usually `/etc/killpower`
    - calls the SHUTDOWNCMD
 
 7. On most systems, init takes over, kills your processes, syncs and
@@ -519,12 +526,12 @@ Reloading the data server
 Reload upsd.  Depending on your configuration, you may be able to
 do this without stopping upsd:
 
-	/usr/local/ups/sbin/upsd -c reload
+	upsd -c reload
 
 If that doesn't work (check the syslog), just restart it:
 
-	/usr/local/ups/sbin/upsd -c stop
-	/usr/local/ups/sbin/upsd
+	upsd -c stop
+	upsd
 
 NOTE: if you want to make reloading work later, see the entry in the
 link:FAQ.html[FAQ] about starting upsd as a different user.
@@ -601,7 +608,7 @@ does local shutdown tasks before calling init.
 Start upsmon
 ^^^^^^^^^^^^
 
-	/usr/local/ups/sbin/upsmon
+	upsmon
 
 If it complains about something, then check your configuration.
 
@@ -646,16 +653,16 @@ NOTE: This step is not need if you installed from packages.
 
 Edit your shutdown scripts, and add `upsdrvctl shutdown`.
 
-You should configure your system to power down the UPS after the filesystems are
-remounted read-only.  Have it look for the presence of the POWERDOWNFLAG (from
-linkman:upsmon.conf[5]), using this as an example:
+You should configure your system to power down the UPS after the filesystems
+are remounted read-only.  Have it look for the presence of the POWERDOWNFLAG
+(from linkman:upsmon.conf[5]), using this as an example:
 
---------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 	if (test -f /etc/killpower)
 	then
 		echo "Killing the power, bye!"
-		/usr/local/ups/bin/upsdrvctl shutdown
+		/sbin/upsdrvctl shutdown
 
 		sleep 120
 
@@ -664,18 +671,18 @@ linkman:upsmon.conf[5]), using this as an example:
 		# *** see also the section on power races in the FAQ! ***
 	fi
 
---------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 
 [WARNING]
-================================================================================
+==============================================================================
 - Be careful that upsdrvctl command will probably power off your machine.
 Don't use it unless your system is ready to be halted by force.
 If you run RAID, read the <<_raid_warning,RAID warning>> below!
 
 - Make sure the filesystem(s) containing upsdrvctl, ups.conf and your UPS
-driver(s) are mounted (possibly in read-only mode) when the system gets to this
-point.  Otherwise it won't be able to figure out what to do.
-================================================================================
+driver(s) are mounted (possibly in read-only mode) when the system gets to
+this point.  Otherwise it won't be able to figure out what to do.
+==============================================================================
 
 
 [[Testing_shutdowns]]
@@ -688,17 +695,17 @@ on your systems before leaving them unattended.  A successful sequence
 is one where the OS halts before the battery runs out, and the system
 restarts when power returns.
 
-The first step is to see how upsdrvctl will behave without actually turning off
-power. To do so, use the '-t' argument:
+The first step is to see how upsdrvctl will behave without actually
+turning off the power. To do so, use the '-t' argument:
 
-	/usr/local/ups/bin/upsdrvctl -t shutdown
+	upsdrvctl -t shutdown
 
 It will display the sequence without actually calling the drivers.
 
 
 You can finally test a forced shutdown sequence (FSD) using:
 
-	/usr/local/ups/sbin/upsmon -c fsd
+	upsmon -c fsd
 
 This will execute a full shutdown sequence, as presented in
 <<Shutdown_design,Shutdown design>>, starting from the 3rd step.
@@ -814,7 +821,7 @@ programs need to be run for monitoring:
 To further complicate things, you can have a system that is hooked to
 multiple UPSes, but only depends on one for power.  This particular
 situation makes it an "A" relative to one UPS, and a "C" relative to the
-other.  The software can handle this - you just have to tell it what to do.
+other.  The software can handle this -- you just have to tell it what to do.
 
 NOTE: NUT can also serve as a data proxy to increase the number of clients,
 or share the communication load between several upsd instances.
