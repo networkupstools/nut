@@ -92,6 +92,10 @@ support in NUT.*
 revived the 'sec' driver (as gamatronic), and expanded a bit genericups for its
 UPSs with alarm interface.
 
+* link:https://ever.eu/[EVER Power Systems], through David, added a
+USB HID subdriver for EVER UPSes (Sinline RT Series, Sinline RT XL Series,
+ECO PRO AVR CDS Series).
+
 * link:http://www.microdowell.com[Microdowell], through Elio Corbolante, has
 created the 'microdowell' driver to support the Enterprise Nxx/Bxx serial devices.
 They also proposes NUT as an alternative to its software for
