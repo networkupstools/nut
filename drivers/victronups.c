@@ -87,9 +87,9 @@ static int get_data (const char *out_string, char *in_string)
 	int ret_code;
 	ser_send(upsfd, "%s%c", out_string, ENDCHAR);
 	usleep (UPS_DELAY);
-	ret_code = ser_get_line(upsfd, in_string, LENGTH_TEMP, ENDCHAR, 
+	ret_code = ser_get_line(upsfd, in_string, LENGTH_TEMP, ENDCHAR,
 				IGNCHARS, 3, 0);
-	if (ret_code < 1) {            
+	if (ret_code < 1) {
 		dstate_datastale();
 		return -1;
 	}
@@ -98,7 +98,7 @@ static int get_data (const char *out_string, char *in_string)
 
 static int instcmd(const char *cmdname, const char *extra)
 {
-	char temp[ LENGTH_TEMP ]; 
+	char temp[ LENGTH_TEMP ];
 
 	if(!strcasecmp(cmdname, "calibrate.start"))
 	{
@@ -113,7 +113,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			test_in_progress = VICTRON_CALIBRATION;
 			return STAT_INSTCMD_HANDLED;
 		}
-	}		
+	}
 	else if(!strcasecmp(cmdname, "calibrate.stop"))
 	{
 		if(get_data("vTi2!",temp))
@@ -126,7 +126,7 @@ static int instcmd(const char *cmdname, const char *extra)
 			upsdebugx(1, "instcmd: calibrate.stop returned: %s", temp);
 			return STAT_INSTCMD_HANDLED;
 		}
-	}		
+	}
 	else if(!strcasecmp(cmdname, "test.battery.stop"))
 	{
 		if(get_data("vTi2!",temp))
@@ -214,10 +214,10 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_UNKNOWN;
 	}
 }
-	
+
 void upsdrv_initinfo(void)
 {
-       	
+
 	if (model_name)
 		dstate_setinfo("ups.model", "%s", model_name);
 
@@ -236,13 +236,13 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-	int flags; 
-	char temp[ LENGTH_TEMP ]; 
+	int flags;
+	char temp[ LENGTH_TEMP ];
 	char test_result[ LENGTH_TEMP ];
 	int runtime_sec = -1;
 
-        if (start_is_datastale)
-		{
+	if (start_is_datastale)
+	{
 		if (get_data("vDS?",temp)) return;
 		if (strcmp(temp+3,"NA"))
 			exist_ups_serial=1;
@@ -250,7 +250,7 @@ void upsdrv_updateinfo(void)
 		if (get_data("vBT?",temp)) return;
 		if (strcmp(temp+3,"NA"))
 			exist_ups_temperature =1;
-	
+
 		if (get_data("vO0I?",temp)) return;
 		if (strcmp(temp+4,"NA"))
 			exist_output_current =1;
@@ -258,7 +258,7 @@ void upsdrv_updateinfo(void)
 		if (get_data("vBC?",temp)) return;
 		if (strcmp(temp+3,"NA"))
 			exist_battery_charge = 1;
-	
+
 		if (get_data("vBI?",temp)) return;
 		if (strcmp(temp+3,"NA"))
 			exist_battery_charge = 1;
@@ -272,12 +272,12 @@ void upsdrv_updateinfo(void)
 			exist_battery_runtime = 1;
 
 		start_is_datastale = 0;
-		}
+	}
 
 
 
-	
-	/* ups.status */ 
+
+	/* ups.status */
 	if (get_data("vAa?",temp)) return;
 	flags = atoi (temp+3);
 
@@ -296,123 +296,124 @@ void upsdrv_updateinfo(void)
 		status_set("OB");
 	else
 		status_set("OL");
-	  
+
 	/* Get UPS test results */
 	if (get_data("vTr?",temp)) return;
 	if (get_data("vTd?",test_result)) return;
-	
+
 	switch(atoi(temp+3))
 	{
 		case 1:
-		upsdebugx(1, "upsdrv_updateinfo: test %i result = Done, Passed: %s",test_in_progress,test_result+3);
-		test_in_progress = VICTRON_NO_TEST;
-		break;
+			upsdebugx(1, "upsdrv_updateinfo: test %i result = Done, Passed: %s",test_in_progress,test_result+3);
+			test_in_progress = VICTRON_NO_TEST;
+			break;
 
 		case 2:
-		upsdebugx(1, "upsdrv_updateinfo: test %i result = Done, Warning: %s",test_in_progress,test_result+3);
-		test_in_progress = VICTRON_NO_TEST;
-		break;
+			upsdebugx(1, "upsdrv_updateinfo: test %i result = Done, Warning: %s",test_in_progress,test_result+3);
+			test_in_progress = VICTRON_NO_TEST;
+			break;
 
 		case 3:
-		upsdebugx(1, "upsdrv_updateinfo: test %i result = Done, Error: %s",test_in_progress,test_result+3);
-		test_in_progress = VICTRON_NO_TEST;
-		break;
+			upsdebugx(1, "upsdrv_updateinfo: test %i result = Done, Error: %s",test_in_progress,test_result+3);
+			test_in_progress = VICTRON_NO_TEST;
+			break;
 
 		case 4:
-		upsdebugx(1, "upsdrv_updateinfo: test %i result = Aborted: %s",test_in_progress,test_result+3);
-		test_in_progress = VICTRON_NO_TEST;
-		break;
+			upsdebugx(1, "upsdrv_updateinfo: test %i result = Aborted: %s",test_in_progress,test_result+3);
+			test_in_progress = VICTRON_NO_TEST;
+			break;
 
 		case 5:
-		if(test_in_progress==VICTRON_CALIBRATION)
-	                status_set("CAL");              /* calibration in progress*/
-		upsdebugx(1, "upsdrv_updateinfo: test %i result = In Progress: %s",
+			if(test_in_progress==VICTRON_CALIBRATION)
+				status_set("CAL");    /* calibration in progress */
+			upsdebugx(1, "upsdrv_updateinfo: test %i result = In Progress: %s",
 			test_in_progress,test_result+3);
-		break;
+			break;
 
 		case 6:
-		upsdebugx(1, "upsdrv_updateinfo: test result = No test initiated: %s",
+			upsdebugx(1, "upsdrv_updateinfo: test result = No test initiated: %s",
 			test_result+3);
-		break;
-		
+			break;
+
 		default:
-		upsdebugx(1, "upsdrv_updateinfo: unknown test result: %s / %s",temp+3,test_result+3);
-		break;
+			upsdebugx(1, "upsdrv_updateinfo: unknown test result: %s / %s",temp+3,test_result+3);
+			break;
 	}
 
 	status_commit();
 	/* dstate_dataok(); */
 
 	upsdebugx(1, "upsdrv_updateinfo: ups.status = %s\n", dstate_getinfo("ups.status"));
-  
+
 
 	/************** ups.x ***************************/
-	 
-	/* ups model */ 
+
+	/* ups model */
 	if (!model_name)
 	{
 		if (get_data("vDM?",temp)) return;
 		dstate_setinfo("ups.model", "%s", temp+3);
-		upsdebugx(1, "ups.model >%s<>%s<\n",temp,temp+3);   
+		upsdebugx(1, "ups.model >%s<>%s<\n",temp,temp+3);
 	}
- 
+
 
 
 	/* ups.mfr */
 	if (get_data("vDm?",temp)) return;
 	dstate_setinfo("ups.mfr", "%s", temp+3);
-	upsdebugx(1, "ups.mfr >%s<>%s<\n",temp,temp+3);   
+	upsdebugx(1, "ups.mfr >%s<>%s<\n",temp,temp+3);
 
- 
+
 	/* ups.serial */
 	if (exist_ups_serial)
-		{
+	{
 		if (get_data("vDS?",temp)) return;
 		dstate_setinfo("ups.serial", "%s", temp+3);
-		}
-	upsdebugx(1, "ups.serial >%s<>%s<\n",temp,temp+3);   
+	}
+	upsdebugx(1, "ups.serial >%s<>%s<\n",temp,temp+3);
 
-	/* ups.firmware */ 
+	/* ups.firmware */
 	if (get_data("vDV?",temp)) return;
 	dstate_setinfo("ups.firmware", "%s", temp+3);
-	upsdebugx(1, "ups.firmware >%s<>%s<\n",temp,temp+3);   
+	upsdebugx(1, "ups.firmware >%s<>%s<\n",temp,temp+3);
 
 	/* ups.temperature */
 	if (exist_ups_temperature)
-		{
+	{
 		if (get_data("vBT?",temp)) return;
 		dstate_setinfo("ups.temperature", "%s", temp+3);
-		}
-	upsdebugx(1, "ups.temperature >%s<>%s<\n",temp,temp+3);   
+	}
+	upsdebugx(1, "ups.temperature >%s<>%s<\n",temp,temp+3);
 
 	/* ups.load */
 	if (get_data("vO0L?",temp)) return;
 	dstate_setinfo("ups.load", "%s", temp+4);
-	upsdebugx(1, "ups.load >%s<>%s<\n",temp,temp+4);   
+	upsdebugx(1, "ups.load >%s<>%s<\n",temp,temp+4);
 
 
 
-	/* ups protocol */ 
-	/*if (get_data("vDC?",temp)) return;
+	/* ups protocol */
+	/*
+	if (get_data("vDC?",temp)) return;
 	dstate_setinfo("ups.protocol", "%s", temp+3;
-	upsdebugx(1, "ups.protocol >%s<>%s<\n",temp,temp+3;   
+	upsdebugx(1, "ups.protocol >%s<>%s<\n",temp,temp+3;
 	*/
 
 
 	/************** input.x *****************/
-   
+
 	/* input.voltage */
 	if (get_data("vI0U?",temp)) return;
 	dstate_setinfo("input.voltage", "%s", temp+4);
-	upsdebugx(1, "input.voltage >%s<>%s<\n",temp,temp+4);   
+	upsdebugx(1, "input.voltage >%s<>%s<\n",temp,temp+4);
 
-                                                                               
+
 	/* input.transfer.low */
 	if (get_data("vFi?",temp)) return;
 	dstate_setinfo("input.transfer.low", "%s", temp+3);
-	upsdebugx(1, "input.transfer.low >%s<>%s<\n",temp,temp+3);   
+	upsdebugx(1, "input.transfer.low >%s<>%s<\n",temp,temp+3);
 
-   
+
 	/* input.transfer.high */
 	if (get_data("vFj?",temp)) return;
 	dstate_setinfo("input.transfer.high", "%s", temp+3);
@@ -422,75 +423,75 @@ void upsdrv_updateinfo(void)
 	/* input.frequency */
 	if (get_data("vI0f?",temp)) return;
 	dstate_setinfo("input.frequency", "%2.1f", atof(temp+4) / 10.0);
-	upsdebugx(1, "input.frequency >%s<>%s<\n",temp,temp+4);   
+	upsdebugx(1, "input.frequency >%s<>%s<\n",temp,temp+4);
 
 
-	/*************** output.x ********************************/ 
-   
-   
+	/*************** output.x ********************************/
+
+
 	/* output.voltage */
 	if (get_data("vO0U?",temp)) return;
 	dstate_setinfo("output.voltage", "%s", temp+4);
-	upsdebugx(1, "output.voltage >%s<>%s<\n",temp,temp+4);   
+	upsdebugx(1, "output.voltage >%s<>%s<\n",temp,temp+4);
 
-   
+
 	/* output.frequency */
 	if (get_data("vOf?",temp)) return;
 	dstate_setinfo("output.frequency", "%2.1f", atof(temp+3) / 10.0);
-	upsdebugx(1, "output.frequency >%s<>%s<\n",temp,temp+3);   
+	upsdebugx(1, "output.frequency >%s<>%s<\n",temp,temp+3);
 
 
 	/* output.current */
 	if (exist_output_current)
-		{
+	{
 		if (get_data("vO0I?",temp)) return;
 		dstate_setinfo("output.current", "%2.1f", atof(temp+4) / 10.0);
-		}
-	upsdebugx(1, "output.current >%s<>%s<\n",temp,temp+4);   
-   
-   
+	}
+	upsdebugx(1, "output.current >%s<>%s<\n",temp,temp+4);
+
+
 	/*************** battery.x *******************************/
-   
+
 	/* battery charge */
 	if (exist_battery_charge)
-		{
+	{
 		if (get_data("vBC?",temp)) return;
 		dstate_setinfo("battery.charge", "%s", temp+3);
-		}
-	upsdebugx(1, "battery.charge >%s<>%s<\n",temp,temp+3);   
-                                                                    
+	}
+	upsdebugx(1, "battery.charge >%s<>%s<\n",temp,temp+3);
+
 	/* battery.voltage */
 	if (get_data("vBU?",temp)) return;
 	dstate_setinfo("battery.voltage", "%2.1f", atof(temp+3) / 10.0);
-	upsdebugx(1, "battery.voltage >%s<>%s<\n",temp,temp+3);   
-        
+	upsdebugx(1, "battery.voltage >%s<>%s<\n",temp,temp+3);
+
 
 	/* battery.current */
 	if (exist_battery_current)
-		{
+	{
 		if (get_data("vBI?",temp)) return;
 		dstate_setinfo("battery.current", "%2.1f", atof(temp+3) / 10.0);
-		}
-	upsdebugx(1, "battery.current >%s<>%s<\n",temp,temp+3);   
+	}
+	upsdebugx(1, "battery.current >%s<>%s<\n",temp,temp+3);
 
 	/* battery.temperature */
 	if (exist_battery_temperature)
-		{
+	{
 		if (get_data("vBT?",temp)) return;
 		dstate_setinfo("battery.temperature", "%s", temp+3);
-		}
-	upsdebugx(1, "battery.temperature >%s<>%s<\n",temp,temp+3);   
+	}
+	upsdebugx(1, "battery.temperature >%s<>%s<\n",temp,temp+3);
 
 
 	/* battery.runtime */
 	if (exist_battery_runtime)
-		{
+	{
 		if (get_data("vBt?",temp)) return;
 		runtime_sec = strtol(temp+3, NULL, 10)*60;
 		snprintf(temp, sizeof(temp), "%d", runtime_sec);
 		dstate_setinfo("battery.runtime", "%s", temp);
-		}
-	upsdebugx(1, "battery.runtime >%s<>%d<\n",temp,runtime_sec);   
+	}
+	upsdebugx(1, "battery.runtime >%s<>%d<\n",temp,runtime_sec);
 
 	dstate_dataok();
 }
@@ -500,7 +501,7 @@ void upsdrv_shutdown(void)
 	ser_send(upsfd, "vCc0!%c", ENDCHAR);
 	usleep(UPS_DELAY);
 
-	ser_send(upsfd, "vCb%i!%c", sdwdelay, ENDCHAR); 
+	ser_send(upsfd, "vCb%i!%c", sdwdelay, ENDCHAR);
 }
 
 void upsdrv_help(void)
@@ -511,25 +512,27 @@ void upsdrv_help(void)
 void upsdrv_makevartable(void)
 {
 	addvar(VAR_VALUE, "usd", "Seting delay before shutdown");
-	addvar(VAR_VALUE, "modelname", "Seting model name"); 
+	addvar(VAR_VALUE, "modelname", "Seting model name");
 }
 
 void upsdrv_initups(void)
 {
 	char temp[ LENGTH_TEMP ], *usd = NULL;  /* = NULL je dulezite jen pro prekladac */
-	
-   
+
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B1200);
 
 
-	if ((usd = getval("usd"))) {
+	if ((usd = getval("usd")))
+	{
 		sdwdelay=atoi(usd);
 		upsdebugx(1, "(-x) Delay before shutdown %i",sdwdelay);
 	}
 
-	if ((model_name = getval("modelname"))) {
-		/* kdyz modelname nebylo zadano je vraceno NULL*/ 
+	if ((model_name = getval("modelname")))
+	{
+		/* kdyz modelname nebylo zadano je vraceno NULL*/
 		upsdebugx(1, "(-x) UPS Name %s",model_name);
 	}
 

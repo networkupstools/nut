@@ -163,7 +163,7 @@ static void usb_comm_good(void)
 		return;
 	}
 
-	upslogx(LOG_NOTICE, "Communications with UPS re-established");	
+	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
 
@@ -238,7 +238,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			upsdebugx(4, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
-			
+
 			/* supported vendors are now checked by the supplied matcher */
 
 			/* open the device */
@@ -264,7 +264,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
 			device->Bus = strdup(bus->dirname);
-			
+
 			if (dev->descriptor.iManufacturer) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, dev->descriptor.iManufacturer,
@@ -300,7 +300,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
 
 			for (m = matcher; m; m = m->next) {
-				
+
 				switch (m->match_function(device, m->privdata))
 				{
 				case 0:

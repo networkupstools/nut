@@ -59,13 +59,13 @@ upsdrv_info_t comm_upsdrv_info = {
  * HID descriptor, completed with desc{type,len}
  */
 struct my_hid_descriptor {
-        uint8_t  bLength;
-        uint8_t  bDescriptorType;
-        uint16_t bcdHID;
-        uint8_t  bCountryCode;
-        uint8_t  bNumDescriptors;
-        uint8_t  bReportDescriptorType;
-        uint16_t wDescriptorLength;
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint16_t bcdHID;
+	uint8_t  bCountryCode;
+	uint8_t  bNumDescriptors;
+	uint8_t  bReportDescriptorType;
+	uint16_t wDescriptorLength;
 };
 
 /*!********************************************************
@@ -170,7 +170,7 @@ struct my_hid_descriptor {
 #define SHUT_NOK                0x15
 /* sync signals are also used to set the notification level */
 #define SHUT_SYNC               0x16 /* complete notifications - not yet managed */
-				     /* but needed for some early Ellipse models */
+                                     /* but needed for some early Ellipse models */
 #define SHUT_SYNC_LIGHT         0x17 /* partial notifications */
 #define SHUT_SYNC_OFF           0x18 /* disable notifications - only do polling */
 #define SHUT_PKT_LAST           0x80
@@ -205,7 +205,7 @@ typedef struct shut_ctrltransfer_s {
 	uint16_t wValue;
 	uint16_t wIndex;
 	uint16_t wLength;
-	
+
 	uint32_t timeout;      /* in milliseconds */
 
 	/* pointer to data */
@@ -264,17 +264,17 @@ void setline(int upsfd, int set);
 int shut_synchronise(int upsfd);
 int shut_wait_ack(int upsfd);
 int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes,
-			int size, int timeout);
+                        int size, int timeout);
 int shut_control_msg(int upsfd, int requesttype, int request, int value,
-		     int index, unsigned char *bytes, int size, int timeout);
+                        int index, unsigned char *bytes, int size, int timeout);
 
 /* Data portability */
 /* realign packet data according to Endianess */
 #define BYTESWAP(in) (((in & 0xFF) << 8) + ((in & 0xFF00) >> 8))
-static void align_request(struct shut_ctrltransfer_s *ctrl )
+static void align_request(struct shut_ctrltransfer_s *ctrl)
 {
 #if WORDS_BIGENDIAN
-        /* Sparc/Mips/... are big endian, USB/SHUT little endian */
+	/* Sparc/Mips/... are big endian, USB/SHUT little endian */
 	(*ctrl).wValue    = BYTESWAP((*ctrl).wValue);
 	(*ctrl).wIndex    = BYTESWAP((*ctrl).wIndex);
 	(*ctrl).wLength   = BYTESWAP((*ctrl).wLength);
@@ -289,14 +289,15 @@ static void align_request(struct shut_ctrltransfer_s *ctrl )
  * is accepted, or < 1 if not.
  */
 int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
-	int (*callback)(int upsfd, SHUTDevice_t *hd, unsigned char *rdbuf, int rdlen))
+                 int (*callback)(int upsfd, SHUTDevice_t *hd,
+                 unsigned char *rdbuf, int rdlen))
 {
-	int ret, res; 
+	int ret, res;
 	unsigned char buf[20];
 	char string[MAX_STRING_SIZE];
 	struct my_hid_descriptor *desc;
 	struct device_descriptor_s *dev_descriptor;
-	
+
 	/* report descriptor */
 	unsigned char	rdbuf[MAX_REPORT_SIZE];
 	int		rdlen;
@@ -429,16 +430,18 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	{
 		upsdebugx(2, "HID descriptor too short (expected %d, got %d)", 8, res);
 		return -1;
-	} 
+	}
 
 	/* USB_LE16_TO_CPU(desc->wDescriptorLength); */
 	desc->wDescriptorLength = buf[7] | (buf[8] << 8);
 	upsdebugx(2, "HID descriptor retrieved (Reportlen = %u)", desc->wDescriptorLength);
 
-/*	if (!dev->config) {
+/*
+	if (!dev->config) {
 		upsdebugx(2, "  Couldn't retrieve descriptors");
 		return -1;
-	}*/
+	}
+*/
 
 	rdlen = desc->wDescriptorLength;
 
@@ -450,7 +453,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	/* Get REPORT descriptor */
 	res = shut_get_descriptor(*upsfd, USB_DT_REPORT, hid_desc_index, rdbuf, rdlen);
 	/* res = shut_control_msg(devp, USB_ENDPOINT_IN+1, USB_REQ_GET_DESCRIPTOR,
-				(USB_DT_REPORT << 8) + 0, 0, ReportDesc, 
+				(USB_DT_REPORT << 8) + 0, 0, ReportDesc,
 			desc->wDescriptorLength, SHUT_TIMEOUT); */
 	if (res == rdlen)
 	{
@@ -475,7 +478,7 @@ int libshut_open(int *upsfd, SHUTDevice_t *curDevice, char *device_path,
 	{
 		upsdebugx(2, "Report descriptor too short (expected %d, got %d)", rdlen, res);
 	}
-	
+
 	upsdebugx(2, "libshut: No appropriate HID device found");
 	fflush(stdout);
 
@@ -491,11 +494,11 @@ void libshut_close(int upsfd)
 	ser_close(upsfd, NULL);
 }
 
-/* return the report of ID=type in report 
+/* return the report of ID=type in report
  * return -1 on failure, report length on success
  */
 int libshut_get_report(int upsfd, int ReportId,
-		       unsigned char *raw_buf, int ReportSize )
+                       unsigned char *raw_buf, int ReportSize )
 {
 	if (upsfd < 1) {
 		return 0;
@@ -513,33 +516,33 @@ int libshut_get_report(int upsfd, int ReportId,
 
 /* return ReportSize upon success ; -1 otherwise */
 int libshut_set_report(int upsfd, int ReportId,
-		       unsigned char *raw_buf, int ReportSize )
+                       unsigned char *raw_buf, int ReportSize )
 {
 	int ret;
-	
+
 	if (upsfd < 1) {
 		return 0;
 	}
-		
+
 	upsdebugx(1, "Entering libshut_set_report (report %x, len %i)",
 		ReportId, ReportSize);
 
 	upsdebug_hex (4, "==> Report after set", raw_buf, ReportSize);
 
-	ret = shut_control_msg(upsfd, 
+	ret = shut_control_msg(upsfd,
 		REQUEST_TYPE_SET_REPORT,
 		/* == USB_ENDPOINT_OUT + USB_TYPE_CLASS + USB_RECIP_INTERFACE, */
 		0x09,
 		ReportId+(0x03<<8), /* HID_REPORT_TYPE_FEATURE */
 		0, raw_buf, ReportSize, SHUT_TIMEOUT);
-	
+
 	return ((ret == 0) ? ReportSize : ret);
 }
 
 int libshut_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
 {
 	int ret;
-	
+
 	if (upsfd < 1) {
 		return -1;
 	}
@@ -554,7 +557,7 @@ int libshut_get_string(int upsfd, int StringIdx, char *buf, size_t buflen)
 }
 
 int libshut_get_interrupt(int upsfd, unsigned char *buf,
-			   int bufsize, int timeout)
+                          int bufsize, int timeout)
 {
 	int ret;
 
@@ -568,7 +571,7 @@ int libshut_get_interrupt(int upsfd, unsigned char *buf,
 		upsdebugx(6, " ok");
 	else
 		upsdebugx(6, " none (%i)", ret);
-	
+
 	return ret;
 }
 
@@ -589,7 +592,7 @@ shut_communication_subdriver_t shut_subdriver = {
 
 /*
  * set RTS to on and DTR to off
- * 
+ *
  * set : 1 to set comm
  * set : 0 to stop commupsh.
  */
@@ -612,7 +615,7 @@ void setline(int upsfd, int set)
 
 /*****************************************************************************
  * shut_synchronise ()
- * 
+ *
  * initiate communication with the UPS
  *
  * return TRUE on success, FALSE on failure
@@ -623,7 +626,7 @@ int shut_synchronise(int upsfd)
 	int retCode = 0;
 	u_char c = SHUT_SYNC_OFF, reply;
 	int try;
-		
+
 	upsdebugx (2, "entering shut_synchronise()");
 	reply = '\0';
 
@@ -671,7 +674,7 @@ u_char shut_checksum(const u_char *buf, int bufsize)
 {
 	int i;
 	u_char chk=0;
-	
+
 	for(i=0; i<bufsize; i++)
 		chk^=buf[i];
 
@@ -691,9 +694,9 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 	int recv;
 	/* FIXME: use this
 	 * shut_data_t   sdata; */
-	
+
 	upsdebugx (4, "entering shut_packet_recv (%i)", datalen);
-	
+
 	while(datalen>0 && Retry<3)
 	{
 		/* if(serial_read (SHUT_TIMEOUT, &Start[0]) > 0) */
@@ -712,7 +715,7 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 				memcpy(Buf, Start, 1);
 				return 1;
 			}
-			else 
+			else
 			{
 				/* if((serial_read (SHUT_TIMEOUT, &Start[1]) > 0) && */
 				if( (ser_get_char(upsfd, &Start[1], SHUT_TIMEOUT/1000, 0) > 0) &&
@@ -781,28 +784,28 @@ int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
 		else
 			Retry++;
 	} /* while */
-	
+
 	return 0;
 }
 
 /**********************************************************************/
 int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes, int size,
-		       int timeout)
+                        int timeout)
 {
 /*
 	usleep(timeout * 1000);
- */
+*/
 	/* FIXME: to be written */
 	return 0;
 }
 
 /**********************************************************************/
 int shut_get_string_simple(int upsfd, int index,
-			   char *buf, size_t buflen)
+                           char *buf, size_t buflen)
 {
 	unsigned char tbuf[255];       /* Some devices choke on size > 255 */
 	int ret, si, di;
-	
+
 	ret = shut_control_msg(upsfd, USB_ENDPOINT_IN, USB_REQ_GET_DESCRIPTOR,
 			(USB_DT_STRING << 8) + index, 0x0, tbuf, buflen, SHUT_TIMEOUT);
 	if (ret < 0)
@@ -829,14 +832,14 @@ int shut_get_string_simple(int upsfd, int index,
 	buf[di] = 0;
 	return di;
 }
-		
-/* 
+
+/*
  * Human Interface Device (HID) functions
  *********************************************************************/
 
 /**********************************************************************
  * shut_get_descriptor(int desctype, u_char *pkt)
- * 
+ *
  * get descriptor specified by DescType and return it in Buf
  *
  * desctype  - from shutdataType
@@ -846,7 +849,7 @@ int shut_get_string_simple(int upsfd, int index,
  *
  *********************************************************************/
 int shut_get_descriptor(int upsfd, unsigned char type,
-			unsigned char index, void *buf, int size)
+                        unsigned char index, void *buf, int size)
 {
 	memset(buf, 0, size);
 
@@ -858,7 +861,7 @@ int shut_get_descriptor(int upsfd, unsigned char type,
 
 /* Take care of a SHUT transfer (sending and receiving data) */
 int shut_control_msg(int upsfd, int requesttype, int request,
-		    int value, int index, unsigned char *bytes, int size, int timeout)
+                     int value, int index, unsigned char *bytes, int size, int timeout)
 {
 	unsigned char shut_pkt[11];
 	short Retry=1, set_pass = -1;
@@ -866,7 +869,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 	int i;
 	struct shut_ctrltransfer_s ctrl;
 	int ret = 0;
-	
+
 	upsdebugx (3, "entering shut_control_msg");
 
 	/* deal for set requests */
@@ -905,7 +908,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 			/* Always 8 bytes payload for GET_REPORT with SHUT */
 			data_size = 8;
 		}
-		
+
 		/* Forge the SHUT Frame */
 		shut_pkt[0] = SHUT_TYPE_REQUEST + ( ((requesttype == REQUEST_TYPE_SET_REPORT) && (remaining_size>8))? 0 : SHUT_PKT_LAST);
 		shut_pkt[1] = (data_size<<4) + data_size;
@@ -914,7 +917,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 		else
 			memcpy(&shut_pkt[2], &ctrl, 8);
 		shut_pkt[(data_size+3) - 1] = shut_checksum(&shut_pkt[2], data_size);
-		
+
 		/* Packets need only to be sent once
 		* NACK handling should take care of the rest */
 		if (Retry == 1)
@@ -939,7 +942,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 				if (Retry >= MAX_TRY)
 				{
 					upsdebugx(2, "Max tries reached while waiting for ACK, still getting errors");
-					
+
 					/* try to resync, and give one more try */
 					Retry--;
 					shut_synchronise(upsfd);
@@ -965,7 +968,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 	}
 	if (remaining_size != 0)
 		return -1;
-	
+
 	/* now receive data, except for SET_REPORT */
 	if (requesttype != REQUEST_TYPE_SET_REPORT)
 		ret = shut_packet_recv (upsfd, bytes, size);
@@ -979,7 +982,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
  * wait for an ACK packet
  *
  * returns 0 on success, -1 on error, -2 on NACK, -3 on NOTIFICATION
- * 
+ *
  *********************************************************************/
 int shut_wait_ack(int upsfd)
 {
@@ -1004,6 +1007,6 @@ int shut_wait_ack(int upsfd)
 	}
 	else if (c == '\0')
 		upsdebugx (2, "shut_wait_ack(): Nothing received");
-	
+
 	return retCode;
 }
