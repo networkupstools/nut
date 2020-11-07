@@ -28,7 +28,7 @@
 /* Windows/Linux Socket compatibility layer: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
-#  include <winsock2.h> 
+#  include <winsock2.h>
 #else
 #  include <sys/types.h>
 #  include <sys/socket.h>
@@ -39,7 +39,7 @@
 #  include <fcntl.h>
 #  define INVALID_SOCKET -1
 #  define SOCKET_ERROR -1
-#  define closesocket(s) close(s) 
+#  define closesocket(s) close(s)
    typedef int SOCKET;
    typedef struct sockaddr_in SOCKADDR_IN;
    typedef struct sockaddr SOCKADDR;
@@ -88,7 +88,7 @@ namespace internal
 /**
  * Internal socket wrapper.
  * Provides only client socket functions.
- * 
+ *
  * Implemented as separate internal class to easily hide plateform specificities.
  */
 class Socket
@@ -505,6 +505,7 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(3493),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	// Do not connect now
@@ -512,6 +513,7 @@ _socket(new internal::Socket)
 
 TcpClient::TcpClient(const std::string& host, int port):
 Client(),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	connect(host, port);
@@ -616,7 +618,7 @@ std::string TcpClient::getDeviceDescription(const std::string& name)
 std::set<std::string> TcpClient::getDeviceVariableNames(const std::string& dev)
 {
 	std::set<std::string> set;
-	
+
 	std::vector<std::vector<std::string> > res = list("VAR", dev);
 	for(size_t n=0; n<res.size(); ++n)
 	{
@@ -629,7 +631,7 @@ std::set<std::string> TcpClient::getDeviceVariableNames(const std::string& dev)
 std::set<std::string> TcpClient::getDeviceRWVariableNames(const std::string& dev)
 {
 	std::set<std::string> set;
-	
+
 	std::vector<std::vector<std::string> > res = list("RW", dev);
 	for(size_t n=0; n<res.size(); ++n)
 	{
@@ -653,7 +655,7 @@ std::map<std::string,std::vector<std::string> > TcpClient::getDeviceVariableValu
 {
 
 	std::map<std::string,std::vector<std::string> >  map;
-	
+
 	std::vector<std::vector<std::string> > res = list("VAR", dev);
 	for(size_t n=0; n<res.size(); ++n)
 	{
@@ -844,7 +846,7 @@ std::vector<std::string> TcpClient::get
 	{
 		throw NutException("Invalid response");
 	}
-	
+
 	return explode(res, req.size());
 }
 
@@ -900,7 +902,7 @@ std::string TcpClient::sendQuery(const std::string& req)
 
 void TcpClient::sendAsyncQueries(const std::vector<std::string>& req)
 {
-	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); it++)
+	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); ++it)
 	{
 		_socket->write(*it);
 	}
@@ -973,7 +975,7 @@ std::vector<std::string> TcpClient::explode(const std::string& str, size_t begin
 			else
 			{
 				temp += c;
-			}		
+			}
 			break;
 		case QUOTED_STRING:
 			if(c=='\\')
@@ -1028,7 +1030,7 @@ std::vector<std::string> TcpClient::explode(const std::string& str, size_t begin
 std::string TcpClient::escape(const std::string& str)
 {
 	std::string res = "\"";
-	
+
 	for(size_t n=0; n<str.size(); n++)
 	{
 		char c = str[n];
@@ -1041,7 +1043,7 @@ std::string TcpClient::escape(const std::string& str)
 	}
 
 	res += '"';
-	return res; 
+	return res;
 }
 
 TrackingID TcpClient::sendTrackingQuery(const std::string& req)
@@ -1108,7 +1110,7 @@ bool Device::isOk()const
 
 Device::operator bool()const
 {
-	return isOk();	
+	return isOk();
 }
 
 bool Device::operator!()const
@@ -1457,7 +1459,7 @@ strarr stringset_to_strarr(const std::set<std::string>& strset)
 		*pstr = xstrdup(it->c_str());
 		pstr++;
 	}
-	return arr;	
+	return arr;
 }
 
 strarr stringvector_to_strarr(const std::vector<std::string>& strset)
@@ -1469,7 +1471,7 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 		*pstr = xstrdup(it->c_str());
 		pstr++;
 	}
-	return arr;	
+	return arr;
 }
 
 
@@ -1487,7 +1489,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short por
 		delete client;
 		return NULL;
 	}
-	
+
 }
 
 void nutclient_destroy(NUTCLIENT_t client)
@@ -1680,7 +1682,7 @@ strarr nutclient_get_devices(NUTCLIENT_t client)
 			catch(...){}
 		}
 	}
-	return NULL;	
+	return NULL;
 }
 
 int nutclient_has_device(NUTCLIENT_t client, const char* dev)

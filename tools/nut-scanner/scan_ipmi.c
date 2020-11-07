@@ -397,7 +397,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 	}
 
 	/* Are we scanning locally, or over the network? */
-	if (IPaddr == NULL) 
+	if (IPaddr == NULL)
 	{
 		/* FIXME: we need root right to access local IPMI!
 		if (!ipmi_is_root ()) {
@@ -547,7 +547,7 @@ nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t 
 			nut_dev->port = strdup(port_id);
 			/* FIXME: also dump device.serial?
 			 * using drivers/libfreeipmi_get_board_info() */
-			
+
 			current_nut_dev = nutscan_add_device_to_device(
 							current_nut_dev,
 							nut_dev);
@@ -582,7 +582,7 @@ nutscan_device_t * nutscan_scan_ipmi(const char * start_ip, const char * stop_ip
 
 
 	/* Are we scanning locally, or through the network? */
-	if (start_ip == NULL) 
+	if (start_ip == NULL)
 	{
 		/* Local PSU scan */
 		current_nut_dev = nutscan_scan_ipmi_device(NULL, NULL);

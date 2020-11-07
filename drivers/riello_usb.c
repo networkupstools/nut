@@ -181,7 +181,7 @@ int Get_USB_Packet(uint8_t *buffer)
 
 	if (err > 0)
 		upsdebugx(3, "read: %02X %02X %02X %02X %02X %02X %02X %02X", inBuf[0], inBuf[1], inBuf[2], inBuf[3], inBuf[4], inBuf[5], inBuf[6], inBuf[7]);
-	
+
 	if (err < 0){
 		upsdebugx(3, "USB: Get_USB_Packet: send_usb_packet, err = %d %s ", err, strerror(errno));
 		return err;
@@ -330,10 +330,10 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 		ret = usb->open(&udev, &usbdevice, reopen_matcher, &driver_callback);
 
 		upsdebugx (3, "riello_command err udev NULL : %d ", ret);
-		if (ret < 0) 
+		if (ret < 0)
 			return ret;
-		
-		upsdrv_initinfo();	//reconekt usb cable 
+
+		upsdrv_initinfo();	//reconekt usb cable
 	}
 
 	ret = (*subdriver_command)(cmd, buf, length, buflen);
@@ -386,7 +386,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 		break;
 	}
 
-	
+
 	return ret;
 }
 
@@ -1075,11 +1075,11 @@ void upsdrv_updateinfo(void)
 
 	/* Boost */
 	if (riello_test_bit(&DevData.StatusCode[1], 1))
-		status_set("BOOST");	
+		status_set("BOOST");
 
 	/* Replace battery */
 	if (riello_test_bit(&DevData.StatusCode[2], 0))
-		status_set("RB");	
+		status_set("RB");
 
 	/* Charging battery */
 	if (riello_test_bit(&DevData.StatusCode[2], 2))

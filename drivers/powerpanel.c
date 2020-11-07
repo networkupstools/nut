@@ -1,6 +1,6 @@
 /*
  * powerpanel.c - Model specific routines for CyberPower text/binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
