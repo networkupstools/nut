@@ -1,6 +1,6 @@
-/* 
+/*
  * bcmxcp_io.h -- header for BCM/XCP IO module
- */ 
+ */
 
 #ifndef BCMXCP_IO__
 #define BCMXCP_IO__

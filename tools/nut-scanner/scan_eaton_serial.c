@@ -218,7 +218,7 @@ nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 			usleep(90000);
 			send_write_command(AUT, 4);
 			usleep(500000);
-			
+
 			/* Discovery with Baud Hunting (XCP protocol spec. §4.1.2)
 			 * sending PW_SET_REQ_ONLY_MODE should be enough, since
 			 * the unit should send back Identification block */
