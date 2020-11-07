@@ -191,7 +191,7 @@ static void drawscale(
 			if (level % step5 == 0)
 				gdImageLine(im, 5, y, width - 5, y, col2);
 			else
-		    		gdImageLine(im, 10, y, width - 10, y, col2);
+				gdImageLine(im, 10, y, width - 10, y, col2);
 		}
 	}
 
@@ -458,7 +458,7 @@ static void draw_battvolt(double var, int min, int nom, int max,
 	}
 
 	if (nom < min || nom > max)
-	    	nom = -1;
+		nom = -1;
 
 
 	deviation = -(nom*0.05); /* 5% deviation from nominal voltage */
