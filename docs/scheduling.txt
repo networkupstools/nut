@@ -3,7 +3,7 @@ Advanced usage and scheduling notes
 
 upsmon can call out to a helper script or program when the device changes
 state.  The example upsmon.conf has a full list of which state changes
-are available - ONLINE, ONBATT, LOWBATT, and more.
+are available -- ONLINE, ONBATT, LOWBATT, and more.
 
 There are two options, that will be presented in details:
 
@@ -23,7 +23,7 @@ Your command will be called with the full text of the message as one argument.
 For the default values, refer to the sample upsmon.conf file.
 
 The environment string NOTIFYTYPE will contain the type string of whatever
-caused this event to happen - ONLINE, ONBATT, LOWBATT, ...
+caused this event to happen -- ONLINE, ONBATT, LOWBATT, ...
 
 Making this some sort of shell script might be a good idea, but the helper can
 be in any programming or scripting language.
@@ -52,7 +52,7 @@ You get the idea.
 
 	NOTIFYCMD /path/to/my/script
 
-- Make a simple script like this at that location:   
+- Make a simple script like this at that location:
 
 	#! /bin/bash
 	echo "$*" | sendmail -F"ups@mybox" bofh@pager.example.com
@@ -66,7 +66,7 @@ alert in the body of the message, since upsmon passes the alert text
 Using more advanced features
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Your helper script will be run with a few environment variables set.  
+Your helper script will be run with a few environment variables set.
 
 - UPSNAME: the name of the system that generated the change.
 +
@@ -165,7 +165,7 @@ for an ONBATT condition.
 
 This means "when any UPS (the *) goes on battery, start a timer called
 onbattwarn that will trigger in 30 seconds".  We'll come back to the
-onbattwarn part in a moment.  Right now we need to make sure that we 
+onbattwarn part in a moment.  Right now we need to make sure that we
 don't trigger that timer if the UPS happens to come back before the
 time is up.  In essence, if it goes back on line, we need to cancel it.
 So, let's tell upssched that.
@@ -180,7 +180,7 @@ Executing commands immediately
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As an example, consider the scenario where a UPS goes onto battery power.
-However, the users are not informed until 60 seconds later - using a timer as
+However, the users are not informed until 60 seconds later -- using a timer as
 described above. Whilst this may let the *logged in* users know that the UPS
 is on battery power, it does not inform any users subsequently logging in. To
 enable this we could, at the same time, create a file which is read and
@@ -235,7 +235,7 @@ names, you will need to test for each possibility and handle it according
 to your desires.
 
 NOTE: You can invoke just about anything from inside the CMDSCRIPT.  It doesn't
-need to be a shell script, either - that's just an example.  If you want to
+need to be a shell script, either -- that's just an example.  If you want to
 write a program that will parse argv[1] and deal with the  possibilities, that
 will work too.
 
@@ -253,9 +253,15 @@ make upsmon set the "forced shutdown" (FSD) flag on the upsd so your
 slave systems shut down early too.  Just do something like this in your
 CMDSCRIPT:
 
-	/usr/local/ups/sbin/upsmon -c fsd
+	/sbin/upsmon -c fsd
 
-It's not a good idea to call your system's shutdown routine directly 
+NOTE: the path to `upsmon` must be provided. The default for an installation
+built from sources is `/usr/local/ups` (so `/usr/local/ups/sbin/upsmon`),
+while packaged installations will generally comply to
+link:http://refspecs.linuxfoundation.org/fhs.shtml[FHS -- Filesystem Hierarchy Standard]
+(so `/sbin/upsmon`).
+
+It's not a good idea to call your system's shutdown routine directly
 from the CMDSCRIPT, since there's no synchronization with the slave
 systems hooked to the same UPS.  FSD is the master's way of saying
 "we're shutting down *now* like it or not, so you'd better get ready".
@@ -284,7 +290,7 @@ no timers are present in the queue, the background process exits.
 This means that you will only see upssched running when one of two things
 is happening:
 
- 1. There's a timer of some sort currently running 
+ 1. There's a timer of some sort currently running
  2. upsmon just called it, and you managed to catch the brief instance
 
 The final optimization handles the possibility of trying to cancel a timer
