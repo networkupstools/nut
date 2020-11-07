@@ -705,9 +705,9 @@ static int 	hunnox_protocol(int asking_for)
 		case 1:
 			if (asking_for != 0x0d) {
 				upsdebugx(3, "asking for: %02X", 0x0d);
-	            		usb_get_string(udev, 0x0d, langid_fix_local, buf, 102);
+				usb_get_string(udev, 0x0d, langid_fix_local, buf, 102);
 			}
-		        break;
+			break;
 		case 2:
 			if (asking_for != 0x03) {
 				upsdebugx(3, "asking for: %02X", 0x03);
@@ -912,7 +912,7 @@ static int	_fabula_command(const char *cmd, char *buf, size_t buflen, char hunno
 
 	if (hunnox_patch) {
 		// Enable lock-step protocol for Hunnox
-		if  (hunnox_protocol(index) != 0) {
+		if (hunnox_protocol(index) != 0) {
 			return 0;
 		}
 
@@ -979,14 +979,14 @@ static int	_fabula_command(const char *cmd, char *buf, size_t buflen, char hunno
 	return ret;
 }
 
-static int      fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
+static int	fabula_command_hunnox(const char *cmd, char *buf, size_t buflen)
 {
-        return _fabula_command(cmd, buf, buflen, TRUE);
+	return _fabula_command(cmd, buf, buflen, TRUE);
 }
 
-static int      fabula_command(const char *cmd, char *buf, size_t buflen)
+static int	fabula_command(const char *cmd, char *buf, size_t buflen)
 {
-        return _fabula_command(cmd, buf, buflen, FALSE);
+	return _fabula_command(cmd, buf, buflen, FALSE);
 }
 
 /* Fuji communication subdriver */
