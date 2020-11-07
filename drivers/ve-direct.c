@@ -75,7 +75,7 @@ int process_text_buffer()
 
 	checksum[9] = '\0';
 
-	// parse what is in buffer..
+	// parse what is in buffer
 	v_name = line;
 	while (v_name < checksum)
 	{
@@ -130,7 +130,7 @@ unsigned char ve_checksum(const char ve_cmd, const char *ve_extra)
 	return ch;
 }
 
-int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t ret_lenght)
+int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t ret_length)
 {
 	int ret;
 
@@ -192,12 +192,12 @@ int ve_command(const char ve_cmd, const char *ve_extra, char *ve_return, size_t 
 
 		if (ve_return != NULL)
 		{
-			memset(ve_return, 9, ret_lenght);
+			memset(ve_return, 9, ret_length);
 
 			size_t r_len = endl - line - 4;
 			if (r_len > 0)
 			{
-				strncpy(ve_return, line + 2, r_len > ret_lenght ? ret_lenght : r_len);
+				strncpy(ve_return, line + 2, r_len > ret_length ? ret_length : r_len);
 			}
 		}
 
