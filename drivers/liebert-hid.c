@@ -83,12 +83,12 @@ static hid_info_t liebert_hid2nut[] = {
   { "battery.charge", 0, 0, "UPS.PowerSummary.RemainingCapacity", NULL, "%.0f", 0, NULL },
   { "battery.runtime", 0, 0, "UPS.PowerSummary.RunTimeToEmpty", NULL, "%.0f", 0, NULL },
   { "battery.type", 0, 0, "UPS.PowerSummary.iDeviceChemistry", NULL, "%s", 0, stringid_conversion },
- 
+
   { "ups.load",   0, 0, "UPS.PowerSummary.PercentLoad", NULL, "%.0f", 0, NULL },
- 
+
   { "output.voltage", 0, 0, "UPS.PowerConverter.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.frequency", 0, 0, "UPS.PowerConverter.Output.Frequency", NULL, "%.2f", 0, NULL },
- 
+
   { "input.voltage", 0, 0, "UPS.PowerConverter.Input.[1].Voltage", NULL, "%.1f", 0, NULL },
   { "input.frequency", 0, 0, "UPS.PowerConverter.Input.[1].Frequency", NULL, "%.2f", 0, NULL },
 
