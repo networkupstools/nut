@@ -8,7 +8,7 @@ ve-direct - Driver for Victron UPS unit running on VE.Direct serial protocol
 NOTE
 ----
 This man page only documents the hardware-specific features of the the
-victronups driver.  For information about the core driver, see  
+victronups driver.  For information about the core driver, see
 linkman:nutupsdrv[8].
 
 SUPPORTED HARDWARE
