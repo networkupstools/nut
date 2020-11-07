@@ -576,7 +576,7 @@ static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *rep
 		}
 
 #if ! defined(__FreeBSD__)
-		if(!done) { usleep(1000*100); /* TODO: nanosleep */ }
+		usleep(1000*100); /* TODO: nanosleep */
 #endif
 
 		for(recv_try=0; !done && recv_try < MAX_RECV_TRIES; recv_try++) {

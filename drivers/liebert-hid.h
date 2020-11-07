@@ -2,7 +2,7 @@
  *
  *  Copyright (C)
  *  2003 - 2005 Arnaud Quette <arnaud.quette@free.fr>
- *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>         
+ *  2005 - 2006 Peter Selinger <selinger@users.sourceforge.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

@@ -91,7 +91,7 @@ typedef struct {
 /* Function used to match a VendorID/ProductID pair against a list of
  * supported devices. Return values:
  * NOT_SUPPORTED (0), POSSIBLY_SUPPORTED (1) or SUPPORTED (2) */
-int is_usb_device_supported(usb_device_id_t *usb_device_id_list, 
+int is_usb_device_supported(usb_device_id_t *usb_device_id_list,
 							USBDevice_t *device);
 
 void nut_usb_addvars(void);

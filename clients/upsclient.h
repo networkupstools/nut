@@ -78,7 +78,7 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 
 /* --- functions that only use the new names --- */
 
-int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query, 
+int upscli_get(UPSCONN_t *ups, unsigned int numq, const char **query,
 		unsigned int *numa, char ***answer);
 
 int upscli_list_start(UPSCONN_t *ups, unsigned int numq, const char **query);
@@ -105,7 +105,7 @@ int upscli_fd(UPSCONN_t *ups);
 int upscli_upserror(UPSCONN_t *ups);
 
 /* returns 1 if SSL mode is active for this connection */
-int upscli_ssl(UPSCONN_t *ups);	
+int upscli_ssl(UPSCONN_t *ups);
 
 /* upsclient error list */
 

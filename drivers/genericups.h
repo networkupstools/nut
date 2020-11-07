@@ -56,7 +56,7 @@ struct {
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
 	  TIOCM_DTR|TIOCM_RTS		/* shutdown: DTR + RTS		*/
 	},
-	
+
 	/* Type 3 */
 	{ "PowerTech",
 	  "Comp1000",
@@ -100,7 +100,7 @@ struct {
 	/* Type 7 */
 	{ "CyberPower",
 	  "Power99",
-	  "CyberPower Power99", 
+	  "CyberPower Power99",
 	  TIOCM_RTS,			/* cable power: RTS		*/
 	  TIOCM_CTS, TIOCM_CTS,		/* online: CTS on		*/
 	  TIOCM_CD, 0,			/* low battery: CD off		*/
@@ -156,7 +156,7 @@ struct {
 	  TIOCM_CD, TIOCM_CD,		/* low battery: CD on		*/
 	  TIOCM_DTR			/* shutdown: raise DTR		*/
 	},
-	
+
 	/* Type 13 */
 	{ "RPT",
           "Repoteck",
@@ -248,7 +248,7 @@ struct {
 	  TIOCM_CD, 0,                  /* low battery: CD off		*/
 	  TIOCM_RTS | TIOCM_DTR         /* shutdown: RTS+DTR		*/
 	},
-	
+
 	/* Type 22 (duplicate from 7)*/
 	{ "Gamatronic Electronic Industries",
 	  "Generic Alarm UPS",

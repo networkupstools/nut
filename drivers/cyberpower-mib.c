@@ -1,7 +1,7 @@
 /*  cyberpower-mib.c - data to monitor Cyberpower RMCARD
  *
  *  Copyright (C) 2010 - Eric Schultz <paradxum@mentaljynx.com>
- *  
+ *
  *  derived (i.e. basically copied and modified) of bestpower by:
  *  Copyright (C) 2010 - Arnaud Quette <arnaud.quette@free.fr>
  *

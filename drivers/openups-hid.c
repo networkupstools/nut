@@ -78,11 +78,11 @@ static /* const */ usb_device_id_t openups_usb_device_table[] = {
 	{-1, -1, NULL}
 };
 
-/* Thermistor table used for temperature lookups 
+/* Thermistor table used for temperature lookups
  * taken from the windows monitoring application
  */
 static const unsigned int therm_tbl[] =
-{ 
+{
 	(unsigned int)0x31,
 	(unsigned int)0x40,
 	(unsigned int)0x53,
@@ -282,7 +282,7 @@ static usage_lkp_t openups_usage_lkp[] = {
 	{"Cell4", 0x00000004},	/* Battery cell 4 on J6 pin 4 */
 	{"Cell5", 0x00000005},	/* Battery cell 5 on J6 pin 5 */
 	{"Cell6", 0x00000006},	/* Battery cell 6 on J4 pin 1 */
-	/* Usage table for windows monitoring app only updates when 
+	/* Usage table for windows monitoring app only updates when
 	 * certain request codes are written to USB endpoint */
 	/*{ "OpenUPSExtra", 0xff000001 }, */
 	{NULL, 0}

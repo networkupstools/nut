@@ -1,4 +1,4 @@
-/* upsd.c - watches ups state files and answers queries 
+/* upsd.c - watches ups state files and answers queries
 
    Copyright (C)
 	1999		Russell Kroll <rkroll@exploits.org>
@@ -56,6 +56,12 @@ int	deny_severity = LOG_WARNING;
 
 	/* default to 1h before cleaning up status tracking entries */
 	int	tracking_delay = 3600;
+
+	/*
+	 * Preloaded to ALLOW_NO_DEVICE from upsd.conf or environment variable
+	 * (with higher prio for envvar); defaults to disabled for legacy compat.
+	 */
+	int allow_no_device = 0;
 
 	/* preloaded to {OPEN_MAX} in main, can be overridden via upsd.conf */
 	int	maxconn = 0;
@@ -235,7 +241,7 @@ static void setuptcp(stype_t *server)
 			upsdebug_with_errno(3, "setuptcp: socket");
 			continue;
 		}
-		
+
 		if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0) {
 			fatal_with_errno(EXIT_FAILURE, "setuptcp: setsockopt");
 		}
@@ -359,7 +365,7 @@ int sendback(nut_ctype_t *client, const char *fmt, ...)
 #ifdef WITH_SSL
 	if (client->ssl) {
 		res = ssl_write(client, ans, len);
-	} else 
+	} else
 #endif /* WITH_SSL */
 	{
 		res = write(client->sock_fd, ans, len);
@@ -427,7 +433,7 @@ int ups_available(const upstype_t *ups, nut_ctype_t *client)
 }
 
 /* check flags and access for an incoming command from the network */
-static void check_command(int cmdnum, nut_ctype_t *client, int numarg, 
+static void check_command(int cmdnum, nut_ctype_t *client, int numarg,
 	const char **arg)
 {
 	if (netcmds[cmdnum].flags & FLAG_USER) {
@@ -488,7 +494,7 @@ static void parse_net(nut_ctype_t *client)
 static void client_connect(stype_t *server)
 {
 	struct	sockaddr_storage csock;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int	clen;
 #else
 	socklen_t	clen;
@@ -542,7 +548,7 @@ static void client_readline(nut_ctype_t *client)
 #ifdef WITH_SSL
 	if (client->ssl) {
 		ret = ssl_read(client, buf, sizeof(buf));
-	} else 
+	} else
 #endif /* WITH_SSL */
 	{
 		ret = read(client->sock_fd, buf, sizeof(buf));
@@ -602,7 +608,7 @@ void server_load(void)
 	for (server = firstaddr; server; server = server->next) {
 		setuptcp(server);
 	}
-	
+
 	/* check if we have at least 1 valid LISTEN interface */
 	if (firstaddr->sock_fd < 0) {
 		fatalx(EXIT_FAILURE, "no listening interface available");
@@ -673,7 +679,7 @@ static void upsd_cleanup(void)
 
 	user_flush();
 	desc_free();
-	
+
 	server_free();
 	client_free();
 	driver_free();
@@ -1067,7 +1073,7 @@ static void mainloop(void)
 	}
 }
 
-static void help(const char *progname) 
+static void help(const char *progname)
 {
 	printf("Network server for UPS data.\n\n");
 	printf("usage: %s [OPTIONS]\n", progname);
@@ -1141,7 +1147,7 @@ void check_perms(const char *fn)
 
 int main(int argc, char **argv)
 {
-	int	i, cmd = 0;
+	int	i, cmd = 0, cmdret = 0;
 	char	*chroot_path = NULL;
 	const char	*user = RUN_AS_USER;
 	struct passwd	*new_uid = NULL;
@@ -1210,8 +1216,8 @@ int main(int argc, char **argv)
 	}
 
 	if (cmd) {
-		sendsignalfn(pidfn, cmd);
-		exit(EXIT_SUCCESS);
+		cmdret = sendsignalfn(pidfn, cmd);
+		exit((cmdret == 0)?EXIT_SUCCESS:EXIT_FAILURE);
 	}
 
 	/* otherwise, we are being asked to start.
@@ -1252,6 +1258,28 @@ int main(int argc, char **argv)
 	/* handle upsd.conf */
 	load_upsdconf(0);	/* 0 = initial */
 
+	{ // scope
+	/* As documented above, the ALLOW_NO_DEVICE can be provided via
+	 * envvars and then has higher priority than an upsd.conf setting
+	 */
+	const char *envvar = getenv("ALLOW_NO_DEVICE");
+	if ( envvar != NULL) {
+		if ( (!strncasecmp("TRUE", envvar, 4)) || (!strncasecmp("YES", envvar, 3)) || (!strncasecmp("ON", envvar, 2)) || (!strncasecmp("1", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 1;
+		} else if ( (!strncasecmp("FALSE", envvar, 5)) || (!strncasecmp("NO", envvar, 2)) || (!strncasecmp("OFF", envvar, 3)) || (!strncasecmp("0", envvar, 1)) ) {
+			/* Admins of this server expressed a desire to serve
+			 * anything on the NUT protocol, even if nothing is
+			 * configured yet - tell the clients so, properly.
+			 */
+			allow_no_device = 0;
+		}
+	}
+	} // scope
+
 	/* start server */
 	server_load();
 
@@ -1270,7 +1298,11 @@ int main(int argc, char **argv)
 	poll_reload();
 
 	if (num_ups == 0) {
-		fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		if (allow_no_device) {
+			upslogx(LOG_WARNING, "Normally at least one UPS must be defined in ups.conf, currently there are none (please configure the file and reload the service)");
+		} else {
+			fatalx(EXIT_FAILURE, "Fatal error: at least one UPS must be defined in ups.conf");
+		}
 	}
 
 	/* try to bring in the var/cmd descriptions */

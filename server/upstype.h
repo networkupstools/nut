@@ -51,7 +51,7 @@ typedef struct upstype_s {
 	int	fsd;		/* forced shutdown in effect? */
 
 	int	retain;
-	
+
 	struct upstype_s	*next;
 
 } upstype_t;

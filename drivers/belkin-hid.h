@@ -1,7 +1,7 @@
 /*  belkin-hid.h - data to monitor Belkin UPS Systems USB/HID devices with NUT
  *
- *  Copyright (C)  
- *	2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
+ *  Copyright (C)
+ *  2003 - 2005	Arnaud Quette <arnaud.quette@free.fr>
  *      2005            Peter Selinger <selinger@users.sourceforge.net>
  *
  *  Sponsored by MGE UPS SYSTEMS <http://www.mgeups.com>

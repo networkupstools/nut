@@ -79,7 +79,7 @@ my $GPL_header = "\
  *  along with this program; if not, write to the Free Software\
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA";
 
-# array of products indexed by vendorID 
+# array of products indexed by vendorID
 my %vendor;
 
 # contain for each vendor, its name (and...)
@@ -174,7 +174,7 @@ sub gen_usb_files
 			print $outUdev "ATTR{idVendor}==\"".removeHexPrefix($vendorId);
 			print $outUdev "\", ATTR{idProduct}==\"".removeHexPrefix($productId)."\",";
 			print $outUdev ' MODE="664", GROUP="@RUN_AS_GROUP@"'."\n";
-			
+
 			# devd device entry
 			print $out_devd "# ".$vendor{$vendorId}{$productId}{"comment"}.' - '.$vendor{$vendorId}{$productId}{"driver"}."\n";
 			print $out_devd "notify 100 {\n\tmatch \"system\"\t\t\"USB\";\n";
@@ -227,7 +227,7 @@ sub find_usbdevs
 
 	my $nameFile=$_;
 	my $lastComment="";
-	
+
 	open my $file,$nameFile or die "error open file $nameFile";
 	while(my $line=<$file>)
 	{
@@ -254,7 +254,7 @@ sub find_usbdevs
 				{
 					# catch Vendor Name
 					if($data =~/\s*\/\*(.+)\*\/\s*$/)
-					{			
+					{
 						$VendorName=$1;
 					}
 					# catch VendorID

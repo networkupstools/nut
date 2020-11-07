@@ -44,7 +44,7 @@ For a complete list of outlet data and commands, refer to the
 An example upsc output (data/epdu-managed.dev) is available in the source
 archive.
 
-NOTE: The variables supported depend on the exact device type. 
+NOTE: The variables supported depend on the exact device type.
 
 
 Outlets on PDU
@@ -68,8 +68,8 @@ This also allows the same remote electrical management of devices provided
 by PDUs, which can be very interesting in Data Centers.
 
 For example, on small setup, you can plug printers, USB devices, hubs, (...)
-into managed outlets. Depending on your UPS's capabilities, you will be able to
-turn off those loads:
+into managed outlets. Depending on your UPS's capabilities, you will be able
+to turn off those loads:
 
 - after some minutes of back-up time using 'outlet.n.delay.start',
 - when reaching a percentage battery charge using
@@ -84,17 +84,19 @@ NOTE: If you need the scheduling function and your device doesn't support
 it, you can still use
 <<Advanced_usage_scheduling_notes,NUT scheduling features>>.
 
-WARNING: don't plug the UPS's communication cable (USB or network) on a managed outlet.
-Otherwise, all computers will be stopped as soon as the communication is lost.
+WARNING: don't plug the UPS's communication cable (USB or network) on a
+managed outlet. Otherwise, all computers will be stopped as soon as the
+communication is lost.
 
 Other type of devices
 ---------------------
 
-As mentioned in the introduction, some other devices can be considered and managed like
-PDUs. This is the case in most blade systems, where the blade chassis offers
-power management services.
+As mentioned in the introduction, some other devices can be considered and
+managed like PDUs. This is the case in most blade systems, where the blade
+chassis offers power management services.
 
 This way, you can control remotely each blade server as if it were a PDU
 outlet.
 
-This category of devices is generally called Remote Power Controls - RPC in NUT.
+This category of devices is generally called Remote Power Controls --
+or "RPC" in NUT.

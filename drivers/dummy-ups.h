@@ -19,7 +19,7 @@
 */
 
 /* This file lists all valid data with their type and info.
- * 
+ *
  * These are then enabled through a definition file, specified
  * as the "port" parameter (only the file name, not the path).
  *

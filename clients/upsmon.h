@@ -29,7 +29,7 @@
 #define ST_CAL         (1 << 7)       /* UPS calibration in progress (CAL)    */
 
 /* required contents of flag file */
-#define SDMAGIC "upsmon-shutdown-file"  
+#define SDMAGIC "upsmon-shutdown-file"
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */

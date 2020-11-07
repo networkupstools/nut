@@ -71,7 +71,7 @@ do
 	sleep $pollInterval
 
 	# update the TIMER value
-	curTimer=`expr $curTimer + $pollInterval` 
+	curTimer=`expr $curTimer + $pollInterval`
 
 	# dump the current data
 	testResult="`upsc $devName > ${TEMP_DIR}/curDump.tmp`"

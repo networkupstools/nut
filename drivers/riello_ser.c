@@ -102,7 +102,6 @@ static int char_read (char *bytes, int size, int read_timeout)
 			return -1;
 		}
 		else {
-			bytes += now;
 			readen += now;
 		}
 	}
@@ -427,7 +426,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 				length = riello_prepare_cr(bufOut, gpser_error_control, delay);
 			else {
 				length = riello_prepare_setrebsentr(bufOut, delay);
-				
+
 				if (ser_send_buf(upsfd, bufOut, length) == 0) {
 					upsdebugx (3, "Command load.on communication error");
 					return STAT_INSTCMD_FAILED;
@@ -551,7 +550,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 	if (!strcasecmp(cmdname, "shutdown.stop")) {
 		riello_init_serial();
 
-		if (typeRielloProtocol == DEV_RIELLOGPSER) 
+		if (typeRielloProtocol == DEV_RIELLOGPSER)
 			length = riello_prepare_cd(bufOut, gpser_error_control);
 		else
 			length = riello_prepare_cancelsentr(bufOut);
@@ -679,7 +678,7 @@ int start_ups_comm()
 void upsdrv_initinfo(void)
 {
 	int ret;
-	
+
 	ret = start_ups_comm();
 
 	if (ret < 0)
@@ -776,7 +775,7 @@ void upsdrv_updateinfo(void)
 		}
 	}
 
-	if (typeRielloProtocol == DEV_RIELLOGPSER) 
+	if (typeRielloProtocol == DEV_RIELLOGPSER)
 		stat = get_ups_status();
 	else
 		stat = get_ups_sentr();
@@ -836,7 +835,7 @@ void upsdrv_updateinfo(void)
 	}
 
 	status_init();
-	
+
 	/* AC Fail */
 	if (riello_test_bit(&DevData.StatusCode[0], 1))
 		status_set("OB");

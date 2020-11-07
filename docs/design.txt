@@ -1,7 +1,7 @@
 NUT design document
 ===================
 
-This software is designed around a layered scheme with drivers, a 
+This software is designed around a layered scheme with drivers, a
 server and clients.   These layers communicate with text-based
 protocols for easier maintenance and diagnostics.
 
@@ -26,7 +26,7 @@ From the driver
 ~~~~~~~~~~~~~~~
 
 The core of all DRIVERS maintains internal storage for every variable
-that is known along with the auxiliary data for those variables.  It 
+that is known along with the auxiliary data for those variables.  It
 sends updates to this data to any process which connects to the Unix
 domain socket.
 
@@ -62,7 +62,7 @@ test the front panel of the UPS.
 
 They are passed to the SERVER from a CLIENT using an authenticated
 network connection.  The SERVER first checks to make sure that the instant
-command is valid for the DRIVER.  If it's supported, a message is sent 
+command is valid for the DRIVER.  If it's supported, a message is sent
 via a socket to the DRIVER containing the command and any auxiliary
 information.
 
@@ -100,8 +100,8 @@ delivering the alpha message to the admin.
 2. DRIVER notices this flag and stores it in the ups.status variable as
    OB.  This update gets pushed out to any listeners via the sockets.
 
-3. SERVER upsd sees activity on the socket, reads it, parses it, and 
-   commits the new data to its local version of the status variable. 
+3. SERVER upsd sees activity on the socket, reads it, parses it, and
+   commits the new data to its local version of the status variable.
 
 4. CLIENT upsmon does a routine poll of SERVER for "ups.status" and
    gets "OB".
@@ -138,7 +138,7 @@ This scenario requires some configuration, obviously:
 		upsmon master
 
 4. upsmon is set to monitor this UPS in upsmon.conf.
-   
+
 	MONITOR myups@localhost 1 monuser somepass master
 
 5. upsmon is set to EXEC the NOTIFYCMD for the ONBATT condition in
@@ -200,6 +200,6 @@ active, it reads the fd and parses the results.  Updates from the
 hardware now get to upsd about as fast as they possibly can.
 
 Drivers used to call setinfo() to change the local array, and then would
-call writeinfo() to push the array onto the disk, or into the 
+call writeinfo() to push the array onto the disk, or into the
 mmap/shared memory space.  This introduced a lag since many drivers poll
 quite a few variables during an update.

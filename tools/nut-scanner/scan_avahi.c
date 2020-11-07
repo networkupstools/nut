@@ -270,7 +270,7 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 			}
 
 			if( port != PORT) {
-				/* +5+1+1+1 is for : 
+				/* +5+1+1+1 is for :
 				 - port number (max 65535 so 5 characters),
 				 - '@' and ':' characters
 				 - terminating 0 */
@@ -465,7 +465,7 @@ static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UN
 
 nutscan_device_t * nutscan_scan_avahi(long usec_timeout)
 {
-	/* Example service publication 
+	/* Example service publication
 	 * $ avahi-publish -s nut _upsd._tcp 3493 txtvers=1 protovers=1.0.0 device_list="dev1;dev2"
 	 */
 	AvahiClient *client = NULL;

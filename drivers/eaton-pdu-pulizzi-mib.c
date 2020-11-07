@@ -31,7 +31,7 @@
 
 /* Pulizzi Monitored ePDU (Basic model, SNMP only)
  * FIXME: to be completed
- * 
+ *
  * Warning: there are 2 versions:
  * - SA built MI.mib (old MIB)
  * 		#define PULIZZI1_OID_MIB			".1.3.6.1.4.1.20677.3.1.1"

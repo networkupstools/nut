@@ -86,7 +86,7 @@ link:http://en.wikipedia.org/wiki/Simple_Network_Management_Protocol[Wikipedia]
 article, or browse the Internet.
 
 
-To be able to convert values, NUT SNMP subdrivers need to provide: 
+To be able to convert values, NUT SNMP subdrivers need to provide:
 
 - manufacturer-specific sysOID, to determine which lookup structure applies
 to which devices,

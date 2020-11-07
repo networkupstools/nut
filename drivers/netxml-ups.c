@@ -1,4 +1,4 @@
-/* netxml-ups.c	Driver routines for network XML UPS units 
+/* netxml-ups.c	Driver routines for network XML UPS units
 
    Copyright (C)
 	2008-2009	Arjen de Korte <adkorte-guest@alioth.debian.org>
@@ -222,7 +222,7 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle);
 
 
 /* FIXME:
- * "built with neon library %s" LIBNEON_VERSION 
+ * "built with neon library %s" LIBNEON_VERSION
  * subdrivers (limited to MGE only ATM) */
 
 /* Global vars */
@@ -262,7 +262,7 @@ void upsdrv_initinfo(void)
 {
 	char	*page, *last = NULL;
 	char	buf[SMALLBUF];
-	
+
 	snprintf(buf, sizeof(buf), "%s", subdriver->initinfo);
 
 	for (page = strtok_r(buf, " ", &last); page != NULL; page = strtok_r(NULL, " ", &last)) {
@@ -587,7 +587,7 @@ void upsdrv_initups(void)
 	if (uri.scheme == NULL) {
 		uri.scheme = strdup("http");
 	}
- 
+
 	if (uri.host == NULL) {
 		uri.host = strdup(device_path);
 	}
@@ -599,7 +599,7 @@ void upsdrv_initups(void)
 	upsdebugx(1, "using %s://%s port %d", uri.scheme, uri.host, uri.port);
 
 	session = ne_session_create(uri.scheme, uri.host, uri.port);
-	
+
 	/* timeout if we can't (re)connect to the UPS */
 #ifdef HAVE_NE_SET_CONNECT_TIMEOUT
 	ne_set_connect_timeout(session, timeout);

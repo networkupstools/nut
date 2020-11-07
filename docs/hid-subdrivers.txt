@@ -116,7 +116,7 @@ example Belkin defines `00860040` = ConfigVoltage (which is incidentally
 a violation of the USB PDC specification, as `00860040` is reserved for
 future use).
 
-Thus, subdrivers generally need to provide: 
+Thus, subdrivers generally need to provide:
 
 - manufacturer-specific usage definitions,
 - a mapping of HID variables to NUT variables.
@@ -133,17 +133,17 @@ Writing a subdriver
 In preparation for writing a subdriver for a device that is currently
 unsupported, run usbhid-ups with the following command line:
 
- drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX -x port=auto -s ups
+	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX -x port=auto -s ups
 
-(substitute your device's 4-digit VendorID instead of "XXXX"). 
-This will produce a bunch of debugging information, including a number 
-of lines starting with "Path:" that describe the device's usage tree. 
-This information forms the initial basis for a new subdriver. 
+(substitute your device's 4-digit VendorID instead of "XXXX").
+This will produce a bunch of debugging information, including a number
+of lines starting with "Path:" that describe the device's usage tree.
+This information forms the initial basis for a new subdriver.
 
-You should save this information to a file, e.g. 
+You should save this information to a file, e.g.:
 
- drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
-   -x port=auto -s ups 2>&1 | tee /tmp/info
+	drivers/usbhid-ups -DD -u root -x explore -x vendorid=XXXX \
+		-x port=auto -s ups 2>&1 | tee /tmp/info
 
 You can create an initial "stub" subdriver for your device by using
 script scripts/subdriver/gen-usbhid-subdriver.sh. Note: this only creates

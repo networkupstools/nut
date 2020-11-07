@@ -171,7 +171,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 		libfreeipmi_cleanup();
 		fatal_with_errno(EXIT_FAILURE, "ipmi_fru_ctx_create()");
 	}
-      
+
 	/* lots of motherboards calculate checksums incorrectly */
 	if (ipmi_fru_ctx_set_flags (fru_ctx, IPMI_FRU_FLAGS_SKIP_CHECKSUM_CHECKS) < 0)
 	{
@@ -206,7 +206,7 @@ int nut_ipmi_open(int ipmi_id, IPMIDevice_t *ipmi_dev)
 											IPMI_FRU_AREA_SIZE_MAX) < 0)
 		{
 			libfreeipmi_cleanup();
-			fatal_with_errno(EXIT_FAILURE, 
+			fatal_with_errno(EXIT_FAILURE,
 				"ipmi_fru_read_data_area: %s\n",
 				ipmi_fru_ctx_errormsg (fru_ctx));
 		}
@@ -661,7 +661,7 @@ static int libfreeipmi_get_sensors_info (IPMIDevice_t *ipmi_dev)
 
 	if (ipmi_sdr_cache_first (sdr_ctx) < 0)
 	{
-		fprintf (stderr, "ipmi_sdr_cache_first: %s\n", 
+		fprintf (stderr, "ipmi_sdr_cache_first: %s\n",
 			ipmi_sdr_ctx_errormsg (sdr_ctx));
 		goto cleanup;
 	}
@@ -861,7 +861,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 		 * if ((sensor_state = ipmi_monitoring_sensor_read_sensor_state (mon_ctx)) < 0)
 		 * ... */
 
-		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) < 0)
+		if ((sensor_reading = ipmi_monitoring_sensor_read_sensor_reading (mon_ctx)) == NULL)
 		{
 			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_reading() error: %s",
 						ipmi_monitoring_ctx_errormsg (mon_ctx));
@@ -881,7 +881,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 			continue;
 		}
 
-		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) < 0)
+		if ((sensor_bitmask_strings = ipmi_monitoring_sensor_read_sensor_bitmask_strings (mon_ctx)) == NULL)
 		{
 			upsdebugx (1, "ipmi_monitoring_sensor_read_sensor_bitmask_strings() error: %s",
 						ipmi_monitoring_ctx_errormsg (mon_ctx));
@@ -989,7 +989,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 				break;
 		}
 	}
-	
+
 	/* Process status if needed */
 	if (psu_status != PSU_STATUS_UNKNOWN) {
 
@@ -1011,7 +1011,7 @@ int nut_ipmi_get_sensors_status(IPMIDevice_t *ipmi_dev)
 				retval = 0;
 				break;
 		}
-	
+
 		status_commit();
 	}
 #endif /* HAVE_FREEIPMI_MONITORING */

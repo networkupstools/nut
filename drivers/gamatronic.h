@@ -91,23 +91,23 @@ struct {
     int  flags;		/* Flags for addinfo() */
     char value[SEC_MAX_VARSIZE];
 } sec_varlist[] = {
-    { "",          "",                          0, "",              0,       0,  0, 0 },
-    /*setcmd              	 name                      unit cmd            field   size  poll  flags */
-    { "",			"Awaiting Power ",	     1, SEC_ALARMSTAT,  13,       2,  0, FLAG_ALARM},
+    { "",			"",                          0, "",              0,       0,  0, 0 },
+    /*setcmd		 name                        unit   cmd        field   size  poll  flags */
+    { "",			"Awaiting Power ",           1, SEC_ALARMSTAT,  13,       2,  0, FLAG_ALARM},
     { "",			"Bypass Bad ",               1, SEC_ALARMSTAT,   5,       2,  0, FLAG_ALARM},
     { "",			"Charger Failure ",          1, SEC_ALARMSTAT,   8,       2,  0, FLAG_ALARM},
     { "",			"Fan Failure ",              1, SEC_ALARMSTAT,  10,       2,  0, FLAG_ALARM},
     { "",			"Fuse Failure ",             1, SEC_ALARMSTAT,  11,       2,  0, FLAG_ALARM},
     { "",			"General Fault ",            1, SEC_ALARMSTAT,  12,       2,  0, FLAG_ALARM},
-    { "",			"Input Bad ",         	     1, SEC_ALARMSTAT,   2,       2,  0, FLAG_ALARM},
-    { "",			"Output Bad ",         	     1, SEC_ALARMSTAT,   3,       2,  0, FLAG_ALARM},
+    { "",			"Input Bad ",                1, SEC_ALARMSTAT,   2,       2,  0, FLAG_ALARM},
+    { "",			"Output Bad ",               1, SEC_ALARMSTAT,   3,       2,  0, FLAG_ALARM},
     { "",			"Output Off ",               1, SEC_ALARMSTAT,   6,       2,  0, FLAG_ALARM},
-    { "",			"Overload ",           	     1, SEC_ALARMSTAT,   4,       2,  0, FLAG_ALARM},
-    { "",			"Shutdown Imminent ",  	     1, SEC_ALARMSTAT,  15,       2,  0, FLAG_ALARM},
-    { "",			"Shutdown Pending ",	     1, SEC_ALARMSTAT,  14,       2,  0, FLAG_ALARM},
-    { "",			"System Off ",		     1, SEC_ALARMSTAT,   9,       2,  0, FLAG_ALARM},
-    { "",			"Temperature ",		     1, SEC_ALARMSTAT,   1,       2,  0, FLAG_ALARM},
-    { "",			"UPS Shutdown ",   	     1, SEC_ALARMSTAT,   7,       2,  0, FLAG_ALARM},
+    { "",			"Overload ",                 1, SEC_ALARMSTAT,   4,       2,  0, FLAG_ALARM},
+    { "",			"Shutdown Imminent ",        1, SEC_ALARMSTAT,  15,       2,  0, FLAG_ALARM},
+    { "",			"Shutdown Pending ",         1, SEC_ALARMSTAT,  14,       2,  0, FLAG_ALARM},
+    { "",			"System Off ",               1, SEC_ALARMSTAT,   9,       2,  0, FLAG_ALARM},
+    { "",			"Temperature ",              1, SEC_ALARMSTAT,   1,       2,  0, FLAG_ALARM},
+    { "",			"UPS Shutdown ",             1, SEC_ALARMSTAT,   7,       2,  0, FLAG_ALARM},
     { "",			"Audible Alarm",             1, SEC_NOMINAL,     8,       4,  FLAG_POLLONCE, FLAG_RW},
     { "",			"Auto Restart",              1, SEC_AUTORESTART, 1,       2,  FLAG_POLLONCE, FLAG_RW},
     { "",			"Battery Charge",            1, SEC_BATTSTAT,    3,       4,  0, 0},
@@ -188,8 +188,8 @@ struct {
 /* a type for the supported variables */
 #define SEC_QUERYLIST_LEN	17
 #define SEC_MAXFIELDS		16
-#define SEC_POLL		1
-#define SEC_POLLONCE  		0
+#define SEC_POLL			1
+#define SEC_POLLONCE		0
 
 struct {
     const char *command;	/* sec command */

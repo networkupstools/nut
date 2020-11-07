@@ -30,7 +30,7 @@ SETINFO
 
 	SETINFO ups.status "OB LB"
 
-There is no "ADDINFO" - if a given variable does not exist, it is
+There is no "ADDINFO" -- if a given variable does not exist, it is
 created upon receiving the first SETINFO command.
 
 DELINFO
@@ -224,7 +224,7 @@ Requests
 ~~~~~~~~
 
 There is no way to request just one variable.  This was done on purpose
-to limit the complexity of the drivers.  Their job is to send out  
+to limit the complexity of the drivers.  Their job is to send out
 updates and handle a few simple requests.  DUMPALL is provided to give
 the server a known foundation.
 

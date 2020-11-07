@@ -7,7 +7,7 @@
  *  gen-snmp-subdriver.sh script. It must be customized!
  *
  *  MIB reference: http://www.networkupstools.org/ups-protocols/snmp/DeltaUPSv4.mib
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or

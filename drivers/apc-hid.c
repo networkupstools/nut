@@ -382,7 +382,7 @@ static hid_info_t apc_hid2nut[] = {
   { "input.transfer.low", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.LowVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.transfer.high", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.HighVoltageTransfer", NULL, "%.0f", HU_FLAG_SEMI_STATIC, NULL },
   { "input.sensitivity", ST_FLAG_RW | ST_FLAG_STRING, 10, "UPS.Input.APCSensitivity", NULL, "%s", HU_FLAG_SEMI_STATIC, apc_sensitivity_info },
-  
+
   /* Output page */
   { "output.voltage", 0, 0, "UPS.Output.Voltage", NULL, "%.1f", 0, NULL },
   { "output.voltage.nominal", 0, 0, "UPS.Output.ConfigVoltage", NULL, "%.1f", 0, NULL },
@@ -429,7 +429,7 @@ static hid_info_t apc_hid2nut[] = {
   { "shutdown.reboot", 0, 0, "UPS.APCGeneralCollection.APCDelayBeforeReboot", NULL, "10", HU_TYPE_CMD, NULL },
   /* used by APC BackUPS CS */
   { "shutdown.return", 0, 0, "UPS.Output.APCDelayBeforeReboot", NULL, "1", HU_TYPE_CMD, NULL },
-  
+
   { "beeper.on", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },
   { "beeper.off", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "3", HU_TYPE_CMD, NULL },
   { "beeper.enable", 0, 0, "UPS.PowerSummary.AudibleAlarmControl", NULL, "2", HU_TYPE_CMD, NULL },

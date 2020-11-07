@@ -10,7 +10,7 @@ Source code
 ================================================================================
 You should always use PGP/GPG to verify the signatures before using any source code.
 
-You can use the 
+You can use the
 ifdef::website[]
 link:docs/user-manual.chunked/ar01s09.html#verifySourceSig[following procedure]
 endif::website[]
@@ -51,7 +51,7 @@ following script in the directory you just checked out:
 
 	$ ./autogen.sh
 
-Then refer to the 
+Then refer to the
 ifdef::website[]
 link:docs/user-manual.chunked/index.html[NUT user manual]
 endif::website[]
@@ -59,7 +59,7 @@ ifndef::website[]
 linkdoc:user-manual[NUT user manual]
 endif::website[]
  for more information.
- 
+
 //////////////////////////
 NOTE: Users that need the latest developments to support new devices *must*
 use Git or <<Snapshots,snapshots>>.
@@ -102,7 +102,7 @@ NOTE: The only official releases from this project are source code.
 
 NUT is already available in the following systems:
 
-- Linux: 
+- Linux:
 link:https://aur.archlinux.org/packages/network-ups-tools[Arch Linux],
 link:http://packages.debian.org/nut[Debian],
 link:http://packages.gentoo.org/package/sys-power/nut[Gentoo Linux],
@@ -131,7 +131,8 @@ link:http://www.networkupstools.org/package/windows/NUT-Installer-2.6.5-6.msi[Wi
 Java packages
 -------------
 
-The jNut package has been split into its own link:https://github.com/networkupstools/jNut[GitHub repository].
+The jNut package has been split into its own
+link:https://github.com/networkupstools/jNut[GitHub repository].
 
 - NUT Java support (client side, Beta)
 link:http://www.networkupstools.org/package/java/jNut-0.2-SNAPSHOT.tar.gz[jNUT 0.2-SNAPSHOT]

@@ -24,11 +24,11 @@
    2005/06/30 - Version 0.41 - patch for solaris compability
    2005/07/01 - Version 0.50 - add internal e external shutdown programming
    2005/08/18 - Version 0.60 - save external shutdown programming to ups,
- 			                   and support new cables for solis 3
+                               and support new cables for solis 3
    2015/09/19 - Version 0.65 - patch for correct reading for Microsol Back-Ups BZ1200-BR
-   2017/12/21 - Version 0.66 - remove memory leaks (unfreed strdup()s); 
+   2017/12/21 - Version 0.66 - remove memory leaks (unfreed strdup()s);
                                remove ser_flush_in calls that were causing desync issues;
-							   other minor improvements in source code.
+                               other minor improvements in source code.
    (see the version control logs for more recent updates)
 
    Microsol contributed with UPS Solis 1.5 HS 1.5 KVA for my tests.
@@ -61,7 +61,7 @@ upsdrv_info_t upsdrv_info = {
 #define false 0
 #define true 1
 #define RESP_END    0xFE
-#define ENDCHAR 13	/* replies end with CR */
+#define ENDCHAR     13	/* replies end with CR */
 /* solis commands */
 #define CMD_UPSCONT 0xCC
 #define CMD_SHUT    0xDD
@@ -159,7 +159,7 @@ static unsigned char revert_days(unsigned char dweek) {
 
 	for (i = 0; i < (6 - weekn); ++i)
 		alt[i] = (dweek >> (5 - weekn - i)) & 0x01;
-	
+
 	for (i = 0; i < weekn+1; ++i)
 		alt[i+(6-weekn)] = (dweek >> (6 - i)) & 0x01;
 
@@ -174,7 +174,7 @@ static unsigned char revert_days(unsigned char dweek) {
 static int is_hour(char *hour, int qual) {
 	int hora, min;
 
-	if ((strlen(hour) != 5) || 
+	if ((strlen(hour) != 5) ||
 		(sscanf(hour, "%d:%d", &hora, &min) != 2))
 		return -1;
 
@@ -247,13 +247,13 @@ static void print_info( void ) {
 			printf(PRG_ONOU);
 		else
 			printf(PRG_ONON);
-		
+
 		printf(TIME_ON, lhour, lmin);
 		printf(TIME_OFF, dhour, dmin);
 		printf(PRG_DAYS);
-		printf(FMT_DAYS, 
-			week_days[0], week_days[1], week_days[2], 
-			week_days[3], week_days[4], week_days[5], 
+		printf(FMT_DAYS,
+			week_days[0], week_days[1], week_days[2],
+			week_days[3], week_days[4], week_days[5],
 			week_days[6]);
 	} else
 		printf(PRG_ONOF);
@@ -293,9 +293,9 @@ static void autonomy_calc( int iauto ) {
 		if( indice > inf && indice < sup )
 			Autonomy = auton[iauto].mm[ipo][indd];
 		else {
-			if (indice > max) 
+			if (indice > max)
 				Autonomy = maxauto;
-			if (indice < min) 
+			if (indice < min)
 				Autonomy = 0;
 		}
 	}
@@ -333,7 +333,7 @@ static void scan_received_pack(void) {
 
 	if ((0x01  & RecPack[20]) == 0x01)
 		Out220 = 1;
-	
+
 	CriticBatt = (0x04  & RecPack[20]) == 0x04;
 	InversorOn = (0x08 & RecPack[20]) == 0x08;
 	SuperHeat = (0x10  & RecPack[20]) == 0x10;
@@ -344,7 +344,7 @@ static void scan_received_pack(void) {
 		InputValue = 1;
 	else
 		InputValue = 0;
-	
+
 	Temperature = 0x7F & RecPack[4];
 	if (0x80 & RecPack[4])
 		Temperature -= 128;
@@ -385,7 +385,7 @@ static void scan_received_pack(void) {
 		InCurrent = ( ctab[imodel].m_incurr[0] * 1.0 / BattVoltage ) - ( AppPower * 1.0 / ctab[imodel].m_incurr[1] )
 		+ OutCurrent *( OutVoltage * 1.0 / InVoltage );
 	}
-	
+
 	if (SolisModel == 16) {
 		int configRelay = (RecPack[6] & 0x38) >> 3;
 		double TENSAO_SAIDA_F1_MR[8] = { 1.1549, 1.0925, 0.0, 0.0, 1.0929, 1.0885, 0.0, 0.8654262224145391 };
@@ -396,7 +396,7 @@ static void scan_received_pack(void) {
 
 		const double corrente_saida_F1_MR = 0.12970000389100012;
 		const double corrente_saida_F2_MR = 0.5387060281204546;
-		/* double corrente_saida_F1_MI = 0.1372; 
+		/* double corrente_saida_F1_MI = 0.1372;
 		double corrente_saida_F2_MI = 0.3456; */
 
 		if (SourceFail) {
@@ -405,7 +405,6 @@ static void scan_received_pack(void) {
 				a /= 128.0;
 				//	a = double sqrt(a);
 				OutVoltage = RecPack[1] * a *  TENSAO_SAIDA_F1_MI[configRelay] + TENSAO_SAIDA_F2_MI[configRelay];
-
 			}
 		} else {
 			OutCurrent = (float)(corrente_saida_F1_MR * RecPack[5] + corrente_saida_F2_MR);
@@ -484,14 +483,14 @@ static void scan_received_pack(void) {
 	if (!SourceFail && InversorOn)
 		OutFreq = InFreq;
 
-	if (AppPower <= 0) /* charge pf */
+	if (AppPower < 0) /* charge pf */
 		ChargePowerFactor = 0;
 	else  {
 		if( AppPower == 0 )
 			ChargePowerFactor = 100;
 		else
 			ChargePowerFactor = (( UtilPower / AppPower) * 100);
-		
+
 		if(ChargePowerFactor > 100)
 		ChargePowerFactor = 100;
 	}
@@ -580,13 +579,13 @@ static void scan_received_pack(void) {
 	if (InversorOnLast && !InversorOn)
 		OutputEvents = 27;
 	InversorOnLast = InversorOn;
-	
+
 	if (SuperHeat && !SuperHeatLast)
 		OutputEvents = 12;
 	if (SuperHeatLast && !SuperHeat)
 		OutputEvents = 13;
 	SuperHeatLast = SuperHeat;
-	
+
 	if (OverCharge && !OverChargeLast)
 		OutputEvents = 10;
 	if (OverChargeLast && !OverCharge)
@@ -602,7 +601,7 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 		int CheckSum = 0, i;
 
 		memcpy(RecPack, bufptr, packet_size);
-		
+
 		if (nut_debug_level >= 3)
 			upsdebug_hex(3, "comm_receive: RecPack", RecPack, size);
 
@@ -635,7 +634,7 @@ static void comm_receive(const unsigned char *bufptr,  int size) {
 		 * STAY700_USB = 189;
 		 * BZ1500 = 190;
 		 */
-		 
+
 		if ((((RecPack[0] & 0xF0) == 0xA0 ) || (RecPack[0] & 0xF0) == 0xB0) &&
 			(RecPack[24] == 254) &&
 			(RecPack[23] == CheckSum)) {
@@ -728,8 +727,7 @@ static void get_base_info(void) {
 		} else {
 			if (i2 == 1 && DaysOffWeek > 0) {
 				isprogram = 1;
-				if (DaysOnWeek != DaysOffWeek)
-					DaysOnWeek = DaysOffWeek;
+				DaysOnWeek = DaysOffWeek;
 			}
 		}
 	} /* end prgups 1 - 2 */
@@ -738,9 +736,9 @@ static void get_base_info(void) {
 	upsdebugx(3, "%s: sending CMD_UPSCONT and ENDCHAR to sync", __func__);
 	ser_send(upsfd, "%c%c", CMD_UPSCONT, ENDCHAR);
 
-	/* 
-	 * - Read until end-of-response character (0xFE): 
-	 * read up to 3 packets in size before giving up 
+	/*
+	 * - Read until end-of-response character (0xFE):
+	 * read up to 3 packets in size before giving up
 	 * synchronizing with the device.
 	*/
 	for (i = 0; i < packet_size*3; i++) {
@@ -795,7 +793,7 @@ static void get_base_info(void) {
 					hourshut = dhour - 1;
 				else
 					hourshut = 23;
-				
+
 				minshut = 60 - ( 5 - dmin );
 			} else {
 				hourshut = dhour;
@@ -830,7 +828,7 @@ static void get_update_info(void) {
 	now = localtime(&tmt);
 	hourn = now->tm_hour;
 	minn = now->tm_min;
-    weekn = now->tm_wday;
+	weekn = now->tm_wday;
 
 	if (isprogram || prgups == 3) {
 		if (isprogram)
@@ -842,10 +840,10 @@ static void get_update_info(void) {
 			printf(TODAY_DD, hourshut, minshut);
 
 		if (
-			(hourn == hourshut) && 
-			(minn >= minshut) && 
+			(hourn == hourshut) &&
+			(minn >= minshut) &&
 			isday) {
-				
+
 			printf( SHUT_NOW );
 			progshut = 1;
 		}
@@ -874,10 +872,10 @@ static int instcmd(const char *cmdname, const char *extra) {
 	}
 
 	if (!strcasecmp(cmdname, "shutdown.stayoff")) {
-	    /* shutdown now (one way) */
-	    ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
-	    /* ser_send_char(upsfd, ENDCHAR); */
-	    return STAT_INSTCMD_HANDLED;
+		/* shutdown now (one way) */
+		ser_send_char(upsfd, CMD_SHUT); /* 0xDD */
+		/* ser_send_char(upsfd, ENDCHAR); */
+		return STAT_INSTCMD_HANDLED;
 	}
 
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);

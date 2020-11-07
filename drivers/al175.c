@@ -531,7 +531,7 @@ static int al_parse_reply(io_head_t *io_head, raw_data_t *io_buf, /*const*/ raw_
 
 	int err;
 	unsigned i;
-	const byte_t *reply = raw_reply.begin - 1;
+	const byte_t *reply = NULL;
 
 	/* 1: extract header and parse it */
 	/*const*/ raw_data_t raw_reply_head = raw_reply;

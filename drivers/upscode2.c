@@ -83,7 +83,7 @@ upsdrv_info_t	upsdrv_info = {
 typedef enum {
 	t_ignore,	/* Ignore this response  */
 	t_value,	/* Sets a NUT variable */
-	t_final,        /* Marks the end of UPS data for this command */
+	t_final,	/* Marks the end of UPS data for this command */
 	t_string,	/* Set a NUT string variable */
 	t_finstr,	/* Set a NUT string variable, and marks end of data */
 	t_setval,	/* Sets a variable in the driver and possibly in NUT */

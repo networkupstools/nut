@@ -262,14 +262,14 @@ void upsdrv_updateinfo(void)
 		get_belkin_field(temp, st, sizeof(st), 10);
 		res = atoi(st);
 		get_belkin_field(temp, st, sizeof(st), 2);
-		
+
 		if (*st == '1' || res < LOW_BAT) {
 			status_set("LB");	/* low battery */
 		}
 
 		get_belkin_field(temp, st, sizeof(st), 10);
 		dstate_setinfo("battery.charge", "%.0f", strtod(st, NULL));
-		
+
 		get_belkin_field(temp, st, sizeof(st), 9);
 		dstate_setinfo("battery.temperature", "%.0f", strtod(st, NULL));
 
@@ -302,7 +302,7 @@ void upsdrv_updateinfo(void)
 		get_belkin_field(temp, st, sizeof(st), 7);
 		dstate_setinfo("ups.load", "%.0f", strtod(st, NULL));
 	}
-	
+
 	send_belkin_command(STATUS, TEST_RESULT, "");
 	res = get_belkin_reply(temp);
 	if (res > 0) {
@@ -487,7 +487,7 @@ void upsdrv_initinfo(void)
 
 	res = init_communication();
 	if (res < 0) {
-		fatalx(EXIT_FAILURE, 
+		fatalx(EXIT_FAILURE,
 			"Unable to detect an Belkin Smart protocol UPS on port %s\n"
 			"Check the cabling, port name or model name and try again", device_path
 			);

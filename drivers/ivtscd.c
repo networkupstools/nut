@@ -73,7 +73,7 @@ static int ivt_status(void)
 
 	upsdebugx(3, "send: F");
 	sleep(1);	/* allow controller some time to digest this */
-	
+
 	/*
 	 * read: R:12,57;- 1,1;20;12,57;13,18;- 2,1; 1,5;\n
 	 */
@@ -126,7 +126,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
-		
+
 void upsdrv_initinfo(void)
 {
 	if (ivt_status() < 7) {

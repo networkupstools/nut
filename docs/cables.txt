@@ -37,20 +37,20 @@ OmniGuard F6C***-RKM
 
 *From "Daniel"*
 
-A straight-through RS-232 cable (with pins 2-7 connected through) should work
-with the following models:
+A straight-through RS-232 cable (with pins 2-7 connected through) should
+work with the following models:
 
 - F6C110-RKM-2U
 - F6C150-RKM-2U
 - F6C230-RKM-2U
-- F6C320-RKM-3U 
+- F6C320-RKM-3U
 
 image::images/cables/belkin-f6cx-rkm-xu-cable.jpg[Belkin OmniGuard F6C***-RKM cable]
 
 Eaton
 -----
 
-Documents in this section are provided courtesy of Eaton. 
+Documents in this section are provided courtesy of Eaton.
 
 MGE Office Protection Systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,7 +127,7 @@ This cable can be used with the following models:
 
 T700, T1000, T1500, T1500j, T700h, T1000h, T1500h, R1500, R1500j,
 R1500h, T2000, T2000j, T2400h, T2400h-NA, R3000 / R3000j, R3000h,
-R3000h-International, R3000h-NA, R6000h-NA, R6000i, R6000j. 
+R3000h-International, R3000h-NA, R6000h-NA, R6000i, R6000j.
 
  UPS         PC  9 pin connector
 
@@ -143,8 +143,8 @@ Contributed by Kjell Claesson and Arnaud Quette.
 Phoenixtec (Best Power)
 -----------------------
 
-Many Best Power units (including the Patriot Pro II) have a female DB-9 socket
-with a non-standard pinout.
+Many Best Power units (including the Patriot Pro II) have a female DB-9
+socket with a non-standard pinout.
 
 |====
 |Signal  | PC      |    UPS
@@ -166,7 +166,7 @@ Tripp-Lite
 
 *From Tripp-Lite, via Bryan Kolodziej*
 
-This cable (black 73-0844 cable) is used on various models, using the "Lan 2.2 interface"
-and the genericups driver (upstype=5).
+This cable (black 73-0844 cable) is used on various models, using the
+"Lan 2.2 interface" and the genericups driver (upstype=5).
 
 image::images/cables/73-0724.png[73-0724 cable]

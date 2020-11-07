@@ -30,24 +30,24 @@
 
 /*
  * IMPLEMENTATION DETAILS
- * 
+ *
  * Not all UTalk models provide all possible information, settings and commands.
  * mge-utalk checks on startup which variables and commands are available from
  * the UPS, and re-reads these regularly. Thus, startup is a bit slow, but this
  * should not matter much.
- * 
+ *
  * mge-utalk.h defines a struct array that tells the driver how to read
  * variables from the UPS and publish them as NUT data.
- * 
+ *
  * "ups.status" variable is not included in this array, since it contains
  * information that requires several calls to the UPS and more advanced analysis
  * of the reponses. The function get_ups_status does this job.
- * 
+ *
  * Note that MGE enumerates the status "bits" from right to left,
  * i.e., if buf[] contains the reponse to command "Ss" (read system status),
  * then buf[0] contains "bit" Ss.1.7 (General alarm), while buf[7] contains
- * "bit" Ss.1.0 (Load unprotected). 
- * 
+ * "bit" Ss.1.0 (Load unprotected).
+ *
  * enable_ups_comm() is called before each attempt to read/write data
  * from/to the UPS to re synchronise the communication.
  */
@@ -96,7 +96,7 @@ upsdrv_info_t upsdrv_info = {
 #define MGE_REPLY_IGNCHAR   "\r\n"
 
 #define MAXTRIES    10 /* max number of connect tries              */
-#define BUFFLEN    256 
+#define BUFFLEN    256
 
 #define SD_RETURN	0
 #define SD_STAYOFF	1
@@ -124,7 +124,7 @@ static int instcmd(const char *cmdname, const char *extra);
 static int setvar(const char *varname, const char *val);
 static void enable_ups_comm(void);
 static void disable_ups_comm(void);
-static void extract_info(const char *buf, const mge_info_item_t *mge, 
+static void extract_info(const char *buf, const mge_info_item_t *mge,
 			 char *infostr, int infolen);
 static const char *info_variable_cmd(const char *type);
 static bool_t info_variable_ok(const char *type);
@@ -139,17 +139,17 @@ void upsdrv_makevartable(void)
 {
 	char temp[BUFFLEN];
 
-	snprintf(temp, sizeof(temp), 
-		"Low battery level, in %%              (default = %3d)", 
+	snprintf(temp, sizeof(temp),
+		"Low battery level, in %%              (default = %3d)",
 		DEFAULT_LOWBATT);
 	addvar (VAR_VALUE, "LowBatt", temp);
 
-	snprintf(temp, sizeof(temp), 
+	snprintf(temp, sizeof(temp),
 		"Delay before startup, in minutes     (default = %3d)",
 		DEFAULT_ONDELAY);
 	addvar (VAR_VALUE, "OnDelay", temp);
 
-	snprintf(temp, sizeof(temp), 
+	snprintf(temp, sizeof(temp),
 		"Delay before shutdown, in seconds    (default = %3d)",
 		DEFAULT_OFFDELAY);
 	addvar (VAR_VALUE, "OffDelay", temp);
@@ -163,14 +163,14 @@ void upsdrv_initups(void)
 {
 	char buf[BUFFLEN];
 	int RTS = TIOCM_RTS;
-	
+
 	upsfd = ser_open(device_path);
 	ser_set_speed(upsfd, device_path, B2400);
 
 	/* read command line/conf variable that affect comm. */
 	if (testvar ("oldmac"))
 		RTS = ~TIOCM_RTS;
-	
+
 	/* Init serial line */
 	ioctl(upsfd, TIOCMBIC, &RTS);
 	enable_ups_comm();
@@ -235,7 +235,7 @@ void upsdrv_initinfo(void)
 
 	/* manufacturer -------------------------------------------- */
 	dstate_setinfo("ups.mfr", "MGE UPS SYSTEMS");
-	
+
 	/* loop until we have at status */
 	tries = 0;
 	do {
@@ -324,9 +324,9 @@ void upsdrv_initinfo(void)
 			dstate_setinfo("ups.firmware", "%s", firmware);
 		else
 			dstate_setinfo("ups.firmware", "unknown");
-		
+
 		/* multiplier table */
-		/* <protocol level> <multiplier table> */ 
+		/* <protocol level> <multiplier table> */
 		bytes_rcvd = mge_command(buf, sizeof(buf), "Ai");
 
 		if (bytes_rcvd > 0 && buf[0] != '?') {
@@ -341,7 +341,7 @@ void upsdrv_initinfo(void)
 		/* status --- try only system status, to get the really important
 		 * information (OL, OB, LB); all else is added later by updateinfo */
 		status_ok = get_ups_status();
-	
+
 	} while ( (!status_ok) && (tries++ < MAXTRIES) && (exit_flag != 1) );
 
 	if ( tries == MAXTRIES && !status_ok )
@@ -359,7 +359,7 @@ void upsdrv_initinfo(void)
 
 		/* send request, read answer */
 		chars_rcvd = mge_command(buf, sizeof(buf), item->cmd);
-		
+
 		if ( chars_rcvd < 1 || buf[0] == '?' ) {
 			item->ok = FALSE;
 			upsdebugx(1, "initinfo: %s unavailable", item->type);
@@ -437,7 +437,7 @@ void upsdrv_updateinfo(void)
 		if ( item->ok ) {
 			/* send request, read answer */
 			bytes_rcvd = mge_command(buf, sizeof(buf), item->cmd);
-			
+
 			if ( bytes_rcvd > 0 && buf[0] != '?' )  {
 				extract_info(buf, item, infostr, sizeof(infostr));
 				dstate_setinfo(item->type, "%s", infostr);
@@ -468,10 +468,10 @@ void upsdrv_shutdown(void)
 	if (sdtype == SD_RETURN) {
 		/* enable automatic restart */
 		mge_command(buf, sizeof(buf), "Sx 5");
-		
+
 		upslogx(LOG_INFO, "UPS response to Automatic Restart was %s", buf);
 	}
-	
+
 	/* Only call the effective shutoff if restart is ok */
 	/* or if we need only a stayoff... */
 	if (!strcmp(buf, "OK") || (sdtype == SD_STAYOFF)) {
@@ -506,7 +506,7 @@ int instcmd(const char *cmdname, const char *extra)
 	{
 		mge_command(temp, sizeof(temp), "Bx 1");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-		
+
 		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
 		else
@@ -518,7 +518,7 @@ int instcmd(const char *cmdname, const char *extra)
 	{
 		mge_command(temp, sizeof(temp), "Sx 129");
 		upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-		
+
 		if(strcmp(temp, "OK"))
 			return STAT_INSTCMD_UNKNOWN;
 		else
@@ -531,13 +531,13 @@ int instcmd(const char *cmdname, const char *extra)
 		sdtype = SD_STAYOFF;
 		upsdrv_shutdown();
 	}
-	
+
 	if (!strcasecmp(cmdname, "shutdown.return"))
 	{
 		sdtype = SD_RETURN;
 		upsdrv_shutdown();
 	}
-	
+
 	/* Power Off [all] plugs */
 	if (!strcasecmp(cmdname, "load.off"))
 	{
@@ -550,10 +550,10 @@ int instcmd(const char *cmdname, const char *extra)
 		else
 		{
 			mge_command(temp, sizeof(temp), "Wx 0");
-			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);		
+			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 			if(strcmp(temp, "OK"))
 				return STAT_INSTCMD_UNKNOWN;
-			else 
+			else
 				return STAT_INSTCMD_HANDLED;
 		}
 	}
@@ -570,16 +570,16 @@ int instcmd(const char *cmdname, const char *extra)
 		else
 		{
 			mge_command(temp, sizeof(temp), "Wx 1");
-			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);		
+			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
 			if(strcmp(temp, "OK"))
 				return STAT_INSTCMD_UNKNOWN;
-			else 
+			else
 				return STAT_INSTCMD_HANDLED;
 		}
 	}
 
 	/* Switch on/off Maintenance Bypass */
-	if ((!strcasecmp(cmdname, "bypass.start")) 
+	if ((!strcasecmp(cmdname, "bypass.start"))
 		|| (!strcasecmp(cmdname, "bypass.stop")))
 	{
 		/* TODO: add control on bypass value */
@@ -596,16 +596,16 @@ int instcmd(const char *cmdname, const char *extra)
 				/* Enable Maintenance Bypass */
 				mge_command(temp, sizeof(temp), "Px 3");
 			}
-			
+
 			upsdebugx(2, "UPS response to %s was %s", cmdname, temp);
-			
+
 			if(strcmp(temp, "OK"))
 				return STAT_INSTCMD_UNKNOWN;
 			else
 				return STAT_INSTCMD_HANDLED;
 		}
 	}
-	
+
 	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
 	return STAT_INSTCMD_UNKNOWN;
 }
@@ -617,9 +617,9 @@ int setvar(const char *varname, const char *val)
 {
 	char temp[BUFFLEN];
 	char cmd[15];
-	
+
 	/* TODO : add some controls */
-	
+
 	if(info_variable_ok(varname))
 	{
 		/* format command */
@@ -631,7 +631,7 @@ int setvar(const char *varname, const char *val)
 		upslogx(LOG_INFO, "setvar: UPS response to Set %s to %s was %s", varname, val, temp);
 	} else
 		upsdebugx(1, "setvar: Variable %s not supported by UPS", varname);
-	
+
 	return STAT_SET_UNKNOWN;
 }
 
@@ -651,7 +651,7 @@ static void disable_ups_comm(void)
 static void enable_ups_comm(void)
 {
 	char buf[8];
-	
+
 	/* send Z twice --- speeds up re-connect */
 	mge_command(NULL, 0, "Z");
 	mge_command(NULL, 0, "Z");
@@ -661,7 +661,7 @@ static void enable_ups_comm(void)
 		mge_command(NULL, 0, "Ax 1");
 		usleep(MGE_CONNECT_DELAY);
 	}
-	
+
 	ser_flush_in(upsfd, "?\r\n", nut_debug_level);
 }
 
@@ -670,11 +670,11 @@ static void enable_ups_comm(void)
 /* extract information from buffer
    in:   buf    : reply from UPS
          item   : INFO item queried
-   out:  infostr: to be placed in INFO_ variable 
+   out:  infostr: to be placed in INFO_ variable
    NOTE: buf="?" must be handled before calling extract_info
          buf is changed inspite of const !!!!!
 */
-static void extract_info(const char *buf, const mge_info_item_t *item, 
+static void extract_info(const char *buf, const mge_info_item_t *item,
 			 char *infostr, int infolen)
 {
 	/* initialize info string */
@@ -699,9 +699,9 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 /* get system status, at least: OB, OL, LB
    calls set_status appropriately
    tries MAXTRIES times
-   returns non-nil if successful           
+   returns non-nil if successful
 
-   NOTE: MGE counts bytes/chars the opposite way as C, 
+   NOTE: MGE counts bytes/chars the opposite way as C,
          see mge-utalk manpage.  If status commands send two
          data items, these are separated by a space, so
 	 the elements of the second item are in buf[16..9].
@@ -709,13 +709,13 @@ static void extract_info(const char *buf, const mge_info_item_t *item,
 
 static int get_ups_status(void)
 {
-	char buf[BUFFLEN]; 
+	char buf[BUFFLEN];
 	int rb_set= FALSE;  /* has RB flag been set ? */
 	int over_set= FALSE;  /* has OVER flag been set ? */
 	int tries = 0;
 	int ok    = FALSE;
 	int bytes_rcvd = 0;
-	
+
 	do {
 		/* Check if we are asked to stop (reactivity++) */
 		if (exit_flag != 0)
@@ -745,7 +745,7 @@ static int get_ups_status(void)
 
 			if (buf[3] == '1') {
 				rb_set = TRUE;
-				status_set("RB"); 
+				status_set("RB");
 			}
 			/* buf[2] not used */
 			if (buf[1] == '1')
@@ -762,10 +762,10 @@ static int get_ups_status(void)
 		if ( strlen(buf) > 7 ) {
 			if ( !rb_set && ( buf[7] == '1' || buf[3] == '1' ) )
 				status_set("RB");
-			
+
 			if (buf[1] == '1')
 				status_set("CHRG");
-			
+
 			if (buf[0] == '1')
 				status_set("DISCHRG");
 		} /* if strlen */
@@ -795,7 +795,7 @@ static int get_ups_status(void)
 			/* This is not the OFF status!
 			if ( !(buf[8] == '1') )
 				status_set("OFF"); */
-		} /* if strlen */  
+		} /* if strlen */
 
 		/* Bypass status */
 		mge_command(buf, sizeof(buf), "Ps");
@@ -809,39 +809,39 @@ static int get_ups_status(void)
 			if (buf[6] == '1')
 				status_set("BYPASS");
 		} /* if strlen */
-	
+
 	} while ( !ok && tries++ < MAXTRIES );
 
 	status_commit();
-	
+
 	return ok;
 }
 
 /* --------------------------------------------------------------- */
 
 /* return proper variable "ok" given INFO_ type */
-   
-static bool_t info_variable_ok(const char *type) 
+
+static bool_t info_variable_ok(const char *type)
 {
 	mge_info_item_t *item = mge_info ;
-	
+
 	while ( strcasecmp(item->type, type ))
 		item++;
-	
+
 	return item->ok;
 }
 
 /* --------------------------------------------------------------- */
 
 /* return proper variable "cmd" given INFO_ type */
-   
-static const char *info_variable_cmd(const char *type) 
+
+static const char *info_variable_cmd(const char *type)
 {
 	mge_info_item_t *item = mge_info ;
-	
+
 	while ( strcasecmp(item->type, type ))
 		item++;
-	
+
 	return item->cmd;
 }
 
@@ -871,16 +871,16 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 
 	if ((ret < 1) || (ret >= (int) sizeof(command)))
 		upsdebugx(4, "mge_command: command truncated");
-	
+
 	va_end(ap);
 
 	/* Delay a bit to avoid overlap of a previous answer (500 ms), as per
 	 * http://old.networkupstools.org/protocols/mge/9261zwfa.pdf § 6.1. Timings */
 	usleep(500000);
-	
+
 	/* flush received, unread data */
 	tcflush(upsfd, TCIFLUSH);
-	
+
 	/* send command */
 	for (p = command; *p; p++) {
 		if ( isprint(*p & 0xFF) )
@@ -890,25 +890,23 @@ static int mge_command(char *reply, int replylen, const char *fmt, ...)
 
 		if (write(upsfd, p, 1) != 1)
 			return -1;
-	
+
 		bytes_sent++;
 		usleep(MGE_CHAR_DELAY);
 	}
 
 	/* send terminating string */
-	if (MGE_COMMAND_ENDCHAR) {
-		for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
-			if ( isprint(*p & 0xFF) )
-				upsdebugx(4, "mge_command: sending [%c]", *p);
-			else
-				upsdebugx(4, "mge_command: sending [%02X]", *p);
+	for (p = MGE_COMMAND_ENDCHAR; *p; p++) {
+		if ( isprint(*p & 0xFF) )
+			upsdebugx(4, "mge_command: sending [%c]", *p);
+		else
+			upsdebugx(4, "mge_command: sending [%02X]", *p);
 
-			if (write(upsfd, p, 1) != 1)
-				return -1;
+		if (write(upsfd, p, 1) != 1)
+			return -1;
 
-			bytes_sent++;
-			usleep(MGE_CHAR_DELAY);
-		}
+		bytes_sent++;
+		usleep(MGE_CHAR_DELAY);
 	}
 
 	if ( !reply )

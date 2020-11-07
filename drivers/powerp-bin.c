@@ -1,6 +1,6 @@
 /*
  * powerp-bin.c - Model specific routines for CyberPower binary
- *                protocol UPSes 
+ *                protocol UPSes
  *
  * Copyright (C)
  *	2007        Doug Reynolds <mav@wastegate.net>
@@ -359,7 +359,7 @@ static void powpan_initinfo(void)
 	}
 
 	for (i = 0; vartab[i].var != NULL; i++) {
-		
+
 		if (powpan_command(vartab[i].get, 3) < 2) {
 			continue;
 		}
@@ -373,7 +373,7 @@ static void powpan_initinfo(void)
 			dstate_setinfo(vartab[i].var, "%s", vartab[i].map[type][j].val);
 			break;
 		}
-	
+
 		if (dstate_getinfo(vartab[i].var) == NULL) {
 			upslogx(LOG_WARNING, "warning: [%d] unknown value for [%s]!",
 				powpan_answer[1], vartab[i].var);
@@ -397,7 +397,7 @@ static void powpan_initinfo(void)
 		powpan_command("R\x2B\r", 3);
 		powpan_command("R\x3D\r", 3);
 	}
-		
+
 	dstate_addcmd("shutdown.stayoff");
 	dstate_addcmd("shutdown.reboot");
 }
@@ -523,7 +523,7 @@ static int powpan_updateinfo(void)
 		} else if (status.o_volt < 1.05 * status.i_volt) {
 			upsdebugx(2, "%s: appears to be in BYPASS state", __func__);
 		} else if (status.o_volt < 1.5 * status.i_volt) {
-			status_set("BOOST"); 
+			status_set("BOOST");
 		} else {
 			upsdebugx(2, "%s: output voltage too high", __func__);
 		}

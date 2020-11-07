@@ -786,7 +786,7 @@ void strarr_free(strarr arr);
 typedef void* NUTCLIENT_t;
 
 /**
- * Destroy a client. 
+ * Destroy a client.
  * \param client Nut client handle.
  */
 void nutclient_destroy(NUTCLIENT_t client);
@@ -959,7 +959,7 @@ void nutclient_execute_device_command(NUTCLIENT_t client, const char* dev, const
  * \{
  */
 /**
- * Hidden structure representing a TCP connection to NUTD. 
+ * Hidden structure representing a TCP connection to NUTD.
  * NUTCLIENT_TCP_t is back compatible to NUTCLIENT_t.
  */
 typedef NUTCLIENT_t NUTCLIENT_TCP_t;

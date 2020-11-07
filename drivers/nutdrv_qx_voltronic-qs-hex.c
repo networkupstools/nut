@@ -219,7 +219,7 @@ static int	voltronic_qs_hex_preprocess_qs_answer(item_t *item, const int len)
 		}
 
 		/* 'Unescape' raw data */
-		if (item->answer[i] == 0x28 && i < len) {
+		if (i < len && item->answer[i] == 0x28) {
 
 			switch (item->answer[i + 1])
 			{

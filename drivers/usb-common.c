@@ -78,7 +78,7 @@ static int strcmp_null(char *s1, char *s2)
 static int match_function_exact(USBDevice_t *hd, void *privdata)
 {
 	USBDevice_t	*data = (USBDevice_t *)privdata;
-	
+
 	if (hd->VendorID != data->VendorID) {
 		return 0;
 	}
@@ -279,7 +279,7 @@ static int match_function_regex(USBDevice_t *hd, void *privdata)
 {
 	regex_matcher_data_t	*data = (regex_matcher_data_t *)privdata;
 	int r;
-	
+
 	r = match_regex_hex(data->regex[0], hd->VendorID);
 	if (r != 1) {
 		return r;
@@ -365,7 +365,7 @@ void USBFreeRegexMatcher(USBDeviceMatcher_t *matcher)
 {
 	int	i;
 	regex_matcher_data_t	*data;
-	
+
 	if (!matcher) {
 		return;
 	}

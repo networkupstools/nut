@@ -1,4 +1,4 @@
-/* upsc - simple "client" to test communications 
+/* upsc - simple "client" to test communications
 
    Copyright (C) 1999  Russell Kroll <rkroll@exploits.org>
    Copyright (C) 2012  Arnaud Quette <arnaud.quette@free.fr>
@@ -137,7 +137,7 @@ static void list_upses(int verbose)
 	numq = 1;
 
 	ret = upscli_list_start(ups, numq, query);
-	
+
 	if (ret < 0) {
 		/* check for an old upsd */
 		if (upscli_upserror(ups) == UPSCLI_ERR_UNKCOMMAND) {

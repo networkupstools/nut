@@ -1559,7 +1559,7 @@ bool_t is_multiple_template(const char *OID_template)
  * Note: remember to adapt info_type, OID and optionaly dfl */
 snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
-	upsdebugx(1, "%s(%s)", __func__, info_template->info_type);
+	upsdebugx(1, "%s(%s)", __func__, info_template ? info_template->info_type : "n/a");
 
 	/* sanity check */
 	if (info_template == NULL)

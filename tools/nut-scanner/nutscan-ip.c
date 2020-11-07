@@ -103,7 +103,7 @@ char * nutscan_ip_iter_init(nutscan_ip_iter_t * ip, const char * startIP, const 
 			fprintf(stderr,"Invalid address : %s\n",startIP);
 			return NULL;
 		}
-		
+
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
 		memcpy(&ip->start6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);
@@ -190,7 +190,7 @@ char * nutscan_ip_iter_inc(nutscan_ip_iter_t * ip)
 		if( ntop(&ip->start, host, sizeof(host)) != 0 ) {
 			return NULL;
 		}
-	
+
 		return strdup(host);
 	}
 	else {
@@ -257,7 +257,7 @@ int nutscan_cidr_to_ip(const char * cidr, char ** start_ip, char ** stop_ip)
 			free(first_ip);
 			return 0;
 		}
-		
+
 		s_in6 = (struct sockaddr_in6 *)res->ai_addr;
 		memcpy(&ip.start6,&s_in6->sin6_addr,sizeof(struct in6_addr));
 		freeaddrinfo(res);

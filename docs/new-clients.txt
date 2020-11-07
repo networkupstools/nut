@@ -60,8 +60,11 @@ For more information, refer to the linkman:libnutclient[3] manual page.
   using namespace nut;
   using namespace std;
 
-  // argv[1] is the mandatory NUT device name (@localhost), used to list variables from
-  // argv[2] is an optional command. When provided, it will be executed and possibly with status tracking enabled
+  /* argv[1] is the mandatory NUT device name (@localhost),
+   *    used to list variables from
+   * argv[2] is an optional command. When provided, it will be
+   *    executed and possibly with status tracking enabled
+   */
   int main(int argc, char **argv)
   {
     Client *client;
