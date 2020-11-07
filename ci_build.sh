@@ -24,6 +24,7 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
 default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
     LANG=C
@@ -39,6 +40,20 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     mkdir -p tmp .inst
     BUILD_PREFIX=$PWD/tmp
     INST_PREFIX=$PWD/.inst
+
+    echo "PATH='$PATH' before possibly applying CCACHE into the mix"
+    ( echo "$PATH" | grep ccache ) >/dev/null && echo "WARNING: ccache is already in PATH"
+    if [ -n "$CC" ]; then
+        echo "CC='$CC' before possibly applying CCACHE into the mix"
+        $CC --version $CFLAGS || \
+        $CC --version || true
+    fi
+
+    if [ -n "$CXX" ]; then
+        echo "CXX='$CXX' before possibly applying CCACHE into the mix"
+        $CXX --version $CXXFLAGS || \
+        $CXX --version || true
+    fi
 
     PATH="`echo "$PATH" | sed -e 's,^/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?:,,' -e 's,:/usr/lib/ccache/?$,,' -e 's,^/usr/lib/ccache/?$,,'`"
     CCACHE_PATH="$PATH"
@@ -147,9 +162,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            # Currently --with-all implies this, but better be sure to
-            # really build everything we can to be certain it builds:
-            CONFIG_OPTS+=("--with-cgi=yes")
+            if [[ "$TRAVIS_OS_NAME" != "windows" ]] ; then
+                # Currently --with-all implies this, but better be sure to
+                # really build everything we can to be certain it builds:
+                CONFIG_OPTS+=("--with-cgi=yes")
+            else
+                # No prereq dll and headers on win so far
+                CONFIG_OPTS+=("--with-cgi=auto")
+            fi
             ;;
         "default-alldrv")
             # Do not build the docs and make possible a distcheck below
@@ -222,7 +242,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
 
     # Build and check this project; note that zprojects always have an autogen.sh
     [ -z "$CI_TIME" ] || echo "`date`: Starting build of currently tested project..."
-    CCACHE_BASEDIR=${PWD}
+    CCACHE_BASEDIR="${PWD}"
     export CCACHE_BASEDIR
 
     # Note: modern auto(re)conf requires pkg-config to generate the configure
@@ -230,8 +250,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     # older system) we have to remove it when we already have the script.
     # This matches the use-case of distro-building from release tarballs that
     # include all needed pre-generated files to rely less on OS facilities.
-    $CI_TIME ./autogen.sh 2> /dev/null
-    if [ "$NO_PKG_CONFIG" == "true" ] ; then
+    if [ "$TRAVIS_OS_NAME" = "windows" ] ; then
+        $CI_TIME ./autogen.sh || true
+    else
+        $CI_TIME ./autogen.sh 2>/dev/null
+    fi
+    if [ "$NO_PKG_CONFIG" == "true" ] && [ "$TRAVIS_OS_NAME" = "linux" ] ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
@@ -324,6 +348,12 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     ;;
 bindings)
     pushd "./bindings/${BINDING}" && ./ci_build.sh
+    ;;
+"")
+    echo "ERROR: No BUILD_TYPE was specified, doing a minimal default ritual"
+    ./autogen.sh
+    ./configure
+    make all && make check
     ;;
 *)
     pushd "./builds/${BUILD_TYPE}" && REPO_DIR="$(dirs -l +1)" ./ci_build.sh

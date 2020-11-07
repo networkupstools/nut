@@ -954,7 +954,7 @@ static xml_info_t mge_xml2nut[] = {
 	{ "ups.delay.shutdown", ST_FLAG_RW, 0, "System.ShutdownDuration", 0, 0, NULL },
 	{ "ups.timer.start", ST_FLAG_RW, 0, "UPS.PowerSummary.DelayBeforeStartup", 0, 0, NULL},
 	{ "ups.timer.shutdown", ST_FLAG_RW, 0, "UPS.PowerSummary.DelayBeforeShutdown", 0, 0, mge_timer_shutdown },
-	/* Catch shutdown imminent criteria, keep it after 
+	/* Catch shutdown imminent criteria, keep it after
 	UPS.PowerSummary.DelayBeforeShutdown managment */
 	{ NULL, 0, 0, "System.RunTimeToShutdown", 0, 0, mge_shutdown_imminent },
 	{ "ups.timer.reboot", 0, 0, "UPS.PowerSummary.DelayBeforeReboot", 0, 0, NULL },

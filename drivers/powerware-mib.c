@@ -28,7 +28,7 @@
 #define PW_MIB_VERSION "0.92"
 
 /* TODO: more sysOID and MIBs support:
- * 
+ *
  * Powerware UPS (Ingrasys X-SLOT and BD-SLOT): ".1.3.6.1.4.1.534.1"
  * Powerware PXGX cards: ".1.3.6.1.4.1.534.2.12"
  *		PXGX 2000 cards (UPS): Get xupsIdentModel (".1.3.6.1.4.1.534.1.1.2.0")

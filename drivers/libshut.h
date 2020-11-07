@@ -30,7 +30,7 @@
 #include "main.h"	/* for subdrv_info_t */
 #include "nut_stdint.h"	/* for uint16_t */
 
-extern upsdrv_info_t comm_upsdrv_info; 
+extern upsdrv_info_t comm_upsdrv_info;
 
 /*!
  * SHUTDevice_t: Describe a SHUT device. This structure contains exactly

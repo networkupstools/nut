@@ -246,7 +246,7 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 	status_set(online ? "OL" : "OB");
-	if (!discharging & !fully_charged)
+	if (!discharging && !fully_charged)
 		status_set("CHRG");
 	else if (discharging && current < 0)
 		status_set("DISCHRG");
