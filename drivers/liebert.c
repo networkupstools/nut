@@ -92,7 +92,7 @@ void upsdrv_updateinfo(void)
 		if (c == ML_ONBATTERY)
 			ob = 1;
 	}
-	
+
 	if (ser_get_dcd(upsfd))
 		lb = 1;
 

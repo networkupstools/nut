@@ -95,7 +95,7 @@ void upsdrv_updateinfo(void)
 	unsigned long acuV;
 	unsigned long lineV;
 	double	fVal;
-	
+
 	if (!Code(2)) {
 		upslog_with_errno(LOG_INFO, "Code failed");
 		dstate_datastale();
@@ -106,7 +106,7 @@ void upsdrv_updateinfo(void)
 	ser_get_char(upsfd, recBuf, 3, 0);
 	if ((recBuf[0] & 1) !=0)
 		standby=1;
-	else 
+	else
 		battery=(recBuf[0] &4) !=0;
 	if (Code(1)) {  /*Accumulator voltage value*/
 		ser_send_char(upsfd, 189);
