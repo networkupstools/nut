@@ -89,7 +89,7 @@ void extractcgiargs(void)
 
 			continue;
 		}
-		
+
 		*eq = '\0';
 		value = eq + 1;
 		amp = strchr(value, '&');
@@ -101,7 +101,7 @@ void extractcgiargs(void)
 			ptr = NULL;
 
 		cleanvar = unescape(varname);
-		cleanval = unescape(value);	
+		cleanval = unescape(value);
 		parsearg(cleanvar, cleanval);
 		free(cleanvar);
 		free(cleanval);
@@ -199,4 +199,4 @@ int checkhost(const char *host, char **desc)
 	pconf_finish(&ctx);
 
 	return 0;	/* not found: access denied */
-}	
+}

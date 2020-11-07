@@ -243,7 +243,8 @@ AC_SEARCH_LIBS(gethostbyname, nsl)
 AC_SEARCH_LIBS(connect, socket)
 
 AC_HEADER_TIME
-AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/termios.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+AC_CHECK_HEADERS(sys/modem.h stdarg.h varargs.h sys/time.h, [], [], [AC_INCLUDES_DEFAULT])
+
 
 dnl pthread related checks
 AC_SEARCH_LIBS([pthread_create], [pthread],
@@ -346,9 +347,77 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-serial
 
 dnl ${nut_with_serial}: any value except "yes" or "no" is treated as "auto".
-if test "${nut_with_serial}" != "no"; then
-  nut_with_serial="yes"
-fi
+dnl Below we try to detect if we can build serial drivers, and if we must?
+AS_IF([test "${nut_with_serial}" != "no"],
+    [AS_IF([test "${nut_with_serial}" != "yes"],[nut_with_serial="auto"])
+
+    CFLAGS_SAVED_SERIAL="${CFLAGS}"
+    AS_IF([test "${GCC}" = yes],
+        [CFLAGS_SAVED_WERROR="${CFLAGS} -Wall -Werror"
+         CFLAGS_SAVED_WNOERROR="${CFLAGS} -Wno-error"
+        ],
+        [CFLAGS_SAVED_WERROR="${CFLAGS}"
+         CFLAGS_SAVED_WNOERROR="${CFLAGS}"
+        ])
+
+    dnl At least recent *BSD distros have deprecated sys/termios.h and spew
+    dnl warnings that termios.h should be used instead. This is redundantly
+    dnl fatal for pedantic builds where we aim to have no warnings in code.
+    dnl So there AC_CHECK_HEADERS does find the header, but we don't really
+    dnl want to use it unless we have no choice: if there is a warning while
+    dnl trying sys/ version, try the plain header path (without fatal warnings),
+    dnl and only if that is missing - retry with the sys/ version again (and
+    dnl no warnings still).
+
+    CFLAGS="${CFLAGS_SAVED_WERROR}"
+    AC_CHECK_HEADERS(sys/termios.h, [], [
+        CFLAGS="${CFLAGS_SAVED_WNOERROR}"
+        AC_CHECK_HEADERS(termios.h, [], [
+            AC_CHECK_HEADERS(sys/termios.h, [], [], [AC_INCLUDES_DEFAULT])
+            ], [AC_INCLUDES_DEFAULT])
+        ], [AC_INCLUDES_DEFAULT])
+
+    dnl CFLAGS at this point suffice for surviving a compilation with termios.h
+
+    dnl Don't mind the stupid code below, it just probes the tokens and
+    dnl sails around compiler warnings
+    AC_MSG_CHECKING([for struct termios and speed_t])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#if defined(HAVE_SYS_TERMIOS_H)
+#  include <sys/termios.h>      /* for speed_t */
+#else
+# if defined(HAVE_TERMIOS_H)
+#  include <termios.h>
+# endif /* HAVE_TERMIOS_H */
+#endif /* HAVE_SYS_TERMIOS_H */
+void getspeed(speed_t* b) { *b = B19200; }
+],
+[struct termios tio;
+if (!tcgetattr(0, &tio)) { return 1; }
+speed_t baudrate;
+getspeed(&baudrate);
+]
+        )],
+        [AC_MSG_RESULT([ok])
+         nut_have_serial_types=yes
+        ],
+        [AC_MSG_RESULT([no, struct termios and/or speed_t not found in discovered headers])
+         nut_have_serial_types=no
+        ])
+
+        dnl Restore common set-or-discovered CFLAGS
+        CFLAGS="${CFLAGS_SAVED_SERIAL}"
+
+        AC_MSG_CHECKING([whether we can build serial drivers])
+        AS_IF([test "${nut_have_serial_types}" = yes],
+            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="yes"])],
+            [AS_IF([test "${nut_with_serial}" = "auto"],[nut_with_serial="no"])
+             AS_IF([test "${nut_with_serial}" = "yes"],[AC_MSG_ERROR([no, and were required to])])
+            ])
+        AS_IF([test "${nut_with_serial}" = "yes"],
+            [AC_MSG_RESULT([yes])],
+            [AC_MSG_RESULT([no])])
+    ])
 
 NUT_REPORT_FEATURE([build serial drivers], [${nut_with_serial}], [],
 					[WITH_SERIAL], [Define to enable serial support])
@@ -440,7 +509,7 @@ NUT_ARG_WITH([ipmi], [build and install IPMI PSU driver], [auto])
 NUT_ARG_WITH([freeipmi], [enable IPMI support using FreeIPMI], [auto])
 dnl NUT_ARG_WITH([openipmi], [enable IPMI support using OpenIPMI], [auto])
 
-dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ipmi}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ipmi}" != "no"; then
    dnl check if FreeIPMI (and maybe later OpenIPMI) was explicitly requested
    if test "${nut_with_freeipmi}" = "yes"; then
@@ -572,7 +641,7 @@ NUT_ARG_WITH([ssl], [enable SSL support (either NSS or OpenSSL)], [auto])
 NUT_ARG_WITH([nss], [enable SSL support using Mozilla NSS], [auto])
 NUT_ARG_WITH([openssl], [enable SSL support using OpenSSL], [auto])
 
-dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto". 
+dnl ${nut_with_ssl}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_ssl}" != "no"; then
    dnl check if either NSS or OpenSSL was explicitly requested
    if test "${nut_with_nss}" = "yes"; then

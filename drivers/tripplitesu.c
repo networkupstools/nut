@@ -790,7 +790,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) / 
+		trsize = sizeof(test_result_names) /
 			sizeof(test_result_names[0]);
 
 		if ((r < 0) || (r >= (int) trsize))
