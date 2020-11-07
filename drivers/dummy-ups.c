@@ -194,7 +194,7 @@ void upsdrv_shutdown(void)
 }
 
 static int instcmd(const char *cmdname, const char *extra)
-{	
+{
 /*
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
@@ -423,7 +423,7 @@ static void upsconf_err(const char *errmsg)
 
 /* for dummy mode
  * parse the definition file and process its content
- */ 
+ */
 static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
@@ -531,7 +531,7 @@ static int parse_data_file(int upsfd)
 					ctx->arglist[0], var_value, ctx->errmsg);
 			}
 			else
-			{ 
+			{
 				upsdebugx(3, "parse_data_file: added \"%s\" with value \"%s\"",
 					ctx->arglist[0], var_value);
 			}

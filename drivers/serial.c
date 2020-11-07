@@ -57,7 +57,7 @@ static void ser_open_error(const char *port)
 	user = getpwuid(getuid());
 
 	if (user)
-		printf("  Current user id: %s (%d)\n", 
+		printf("  Current user id: %s (%d)\n",
 			user->pw_name, (int) user->pw_uid);
 
 	user = getpwuid(fs.st_uid);
@@ -97,7 +97,7 @@ static void lock_set(int fd, const char *port)
 	ret = uu_lock(xbasename(port));
 
 	if (ret != 0)
-		fatalx(EXIT_FAILURE, "Can't uu_lock %s: %s", xbasename(port), 
+		fatalx(EXIT_FAILURE, "Can't uu_lock %s: %s", xbasename(port),
 			uu_lockerr(ret));
 
 #elif defined(HAVE_FLOCK)
@@ -369,7 +369,7 @@ int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec)
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
 int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
-	const char *ignset, const char *alertset, void handler(char ch), 
+	const char *ignset, const char *alertset, void handler(char ch),
 	long d_sec, long d_usec)
 {
 	int	i, ret;

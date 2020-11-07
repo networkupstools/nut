@@ -28,14 +28,14 @@ struct {
 	int	val;		/* hex digits, ala HTML */
 	int	min;		/* minimum reasonable value */
 	int	max;		/* maximum reasonable value */
-}	imgarg[] = 
+}	imgarg[] =
 {
 	{ "width",                           100,       50,      200 },
 	{ "height",                          350,      100,      500 },
 	{ "scale_height",                    300,      100,      500 },
 	{ "back_col",			0x000000, 0x000000, 0xffffff },
 	{ "scale_num_col",		0xffff00, 0x000000, 0xffffff },
-	{ "summary_col",		0xffff00, 0x000000, 0xffffff }, 
+	{ "summary_col",		0xffff00, 0x000000, 0xffffff },
 	{ "ok_zone_maj_col",		0x00ff00, 0x000000, 0xffffff },
 	{ "ok_zone_min_col",		0x007800, 0x000000, 0xffffff },
 	{ "neutral_zone_maj_col",	0xffffff, 0x000000, 0xffffff },
@@ -47,20 +47,20 @@ struct {
 	{ "tempmax",                          40,     -100,      150 },
 	{ "nom_in_freq",                      50,        0,      100 },
 	{ "nom_out_freq",                     50,        0,      100 },
-	{ NULL,				0, 0, 0 }
+	{ NULL, 0, 0, 0 }
 };
 
 typedef struct {
 	char	*name;		/* name of the UPS variable                 */
 	char	*minimum;	/* name of minimum value UPS variable
-				   or variable in imgarg table              */
+	                       or variable in imgarg table              */
 	char	*nominal;	/* as above, only for nominal value         */
 	char	*maximum;	/* as above, only for maximum value         */
 	int	deviation;	/* variable deviation - width of green zone */
 	char	*format;	/* format string to generate summary text   */
 
 				/* pointer to drawing function              */
-	void	(*drawfunc)(double, int, int, int, int, const char*);	
+	void	(*drawfunc)(double, int, int, int, int, const char*);
 } imgvar_t;
 
 extern imgvar_t imgvar[];
