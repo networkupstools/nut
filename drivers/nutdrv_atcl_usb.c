@@ -70,7 +70,7 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 	switch (is_usb_device_supported(atcl_usb_id, device))
 	{
 	case SUPPORTED:
-		if(!device->Vendor) { 
+		if(!device->Vendor) {
 			upsdebugx(1, "Couldn't retrieve USB string descriptor for vendor. Check permissions?");
 			requested_vendor = getval("vendor");
 			if(requested_vendor) {
@@ -78,7 +78,7 @@ static int device_match_func(USBDevice_t *device, void *privdata)
 					upsdebugx(3, "Matched device with NULL vendor string.");
 					return 1;
 				}
-			}	
+			}
 			upsdebugx(1, "To keep trying (in case your device does not have a vendor string), use vendor=NULL");
 			return 0;
 		}
@@ -179,7 +179,7 @@ static void usb_comm_good(void)
 		return;
 	}
 
-	upslogx(LOG_NOTICE, "Communications with UPS re-established");	
+	upslogx(LOG_NOTICE, "Communications with UPS re-established");
 	comm_failures = 0;
 }
 
@@ -246,7 +246,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 
 			upsdebugx(3, "Checking USB device [%04x:%04x] (%s/%s)", dev->descriptor.idVendor,
 				dev->descriptor.idProduct, bus->dirname, dev->filename);
-			
+
 			/* supported vendors are now checked by the supplied matcher */
 
 			/* open the device */
@@ -272,7 +272,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			device->VendorID = dev->descriptor.idVendor;
 			device->ProductID = dev->descriptor.idProduct;
 			device->Bus = strdup(bus->dirname);
-			
+
 			if (dev->descriptor.iManufacturer) {
 				char	buf[SMALLBUF];
 				ret = usb_get_string_simple(handle, dev->descriptor.iManufacturer,
@@ -308,7 +308,7 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 			upsdebugx(4, "- Bus          : %s", device->Bus ? device->Bus : "unknown");
 
 			for (m = matcher; m; m = m->next) {
-				
+
 				switch (m->match_function(device, m->privdata))
 				{
 				case 0:

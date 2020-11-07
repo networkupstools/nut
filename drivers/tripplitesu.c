@@ -432,7 +432,7 @@ static void set_sensitivity(const char *val) {
 
 	for (i = 0; i < sizeof(sensitivity) / sizeof(sensitivity[0]); i++) {
 		if (!strcasecmp(val, sensitivity[i].name)) {
-			snprintf(parm, sizeof(parm), "%d", i);
+			snprintf(parm, sizeof(parm), "%u", i);
 			do_command(SET, VOLTAGE_SENSITIVITY, parm, NULL);
 			break;
 		}
@@ -790,7 +790,7 @@ void upsdrv_updateinfo(void)
 		size_t	trsize;
 
 		r = atoi(response);
-		trsize = sizeof(test_result_names) / 
+		trsize = sizeof(test_result_names) /
 			sizeof(test_result_names[0]);
 
 		if ((r < 0) || (r >= (int) trsize))

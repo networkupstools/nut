@@ -40,6 +40,7 @@ let path     = word
 
 let upsd_maxage    = [ opt_spc . key "MAXAGE"    . sep_spc . store num  . eol ]
 let upsd_trackingdelay = [ opt_spc . key "TRACKINGDELAY"    . sep_spc . store num  . eol ]
+let upsd_allow_no_device = [ opt_spc . key "ALLOW_NO_DEVICE"    . sep_spc . store num  . eol ]
 let upsd_statepath = [ opt_spc . key "STATEPATH" . sep_spc . store path . eol ]
 let upsd_listen    = [ opt_spc . key "LISTEN"    . sep_spc 
                           . [ label "interface" . store ip ]
@@ -51,13 +52,14 @@ let upsd_certfile = [ opt_spc . key "CERTFILE" . sep_spc . store path . eol ]
 (************************************************************************
  * MAXAGE seconds
  * TRACKINGDELAY seconds
+ * ALLOW_NO_DEVICE Boolean
  * STATEPATH path
  * LISTEN interface port
  *    Multiple LISTEN addresses may be specified. The default is to bind to 0.0.0.0 if no LISTEN addresses are specified.
  *    LISTEN 127.0.0.1 LISTEN 192.168.50.1 LISTEN ::1 LISTEN 2001:0db8:1234:08d3:1319:8a2e:0370:7344
  *
  *************************************************************************)
-let upsd_other  =  upsd_maxage | upsd_trackingdelay | upsd_statepath | upsd_listen_list | upsd_maxconn | upsd_certfile
+let upsd_other  =  upsd_maxage | upsd_trackingdelay | upsd_allow_no_device | upsd_statepath | upsd_listen_list | upsd_maxconn | upsd_certfile
 
 let upsd_lns    = (upsd_other|comment|empty)*
 
