@@ -267,7 +267,7 @@ static int	voltronic_bypass_volt_max(char *value, const size_t len)
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 13 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;
@@ -300,7 +300,7 @@ static int	voltronic_bypass_volt_max(char *value, const size_t len)
 		if (ivn < 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 2 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14 || protocol == 99)
 			return 0;
 
 		break;
@@ -394,7 +394,7 @@ static int	voltronic_bypass_volt_min(char *value, const size_t len)
 		if (ivn >= 200)
 			return -1;
 
-		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 10 || protocol == 13 || protocol == 14)
+		if (protocol == 2 || protocol == 3 || protocol == 10 || protocol == 13 || protocol == 14)
 			return 0;
 
 		break;

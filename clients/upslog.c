@@ -20,12 +20,12 @@
 /* Basic theory of operation:
  *
  * First we go through and parse as much of the status format string as
- * possible.  We used to do this parsing run every time, but that's a 
+ * possible.  We used to do this parsing run every time, but that's a
  * waste of CPU since it can't change during the program's run.
  *
  * This version does the parsing pass once, and creates a linked list of
  * pointers to the functions that do the work and the arg they get.
- * 
+ *
  * That means the main loop just has to run the linked list and call
  * anything it finds in there.  Everything happens from there, and we
  * don't have to pointlessly reparse the string every time around.
@@ -269,7 +269,7 @@ static void add_call(void (*fptr)(const char *arg), const char *arg)
 	tmp->next = NULL;
 
 	if (last)
-		last->next = tmp;	
+		last->next = tmp;
 	else
 		fhead = tmp;
 }
@@ -330,7 +330,7 @@ static void compile_format(void)
 		/* see if we know how to handle this command */
 
 		for (j = 0; logcmds[j].name != NULL; j++) {
-			if (strncasecmp(cmd, logcmds[j].name, 
+			if (strncasecmp(cmd, logcmds[j].name,
 				strlen(logcmds[j].name)) == 0) {
 
 				add_call(logcmds[j].func, arg);
@@ -462,7 +462,7 @@ int main(int argc, char **argv)
 	if (!logformat)
 		fatalx(EXIT_FAILURE, "No format defined - but this should be impossible");
 
-	printf("logging status of %s to %s (%is intervals)\n", 
+	printf("logging status of %s to %s (%is intervals)\n",
 		monhost, logfn, interval);
 
 	if (upscli_splitname(monhost, &upsname, &hostname, &port) != 0) {
@@ -470,7 +470,7 @@ int main(int argc, char **argv)
 	}
 
 	if (upscli_connect(&ups, hostname, port, UPSCLI_CONN_TRYSSL) < 0)
-		fprintf(stderr, "Warning: initial connect failed: %s\n", 
+		fprintf(stderr, "Warning: initial connect failed: %s\n",
 			upscli_strerror(&ups));
 
 	if (strcmp(logfn, "-") == 0)
@@ -484,7 +484,7 @@ int main(int argc, char **argv)
 	/* now drop root if we have it */
 	new_uid = get_user_pwent(user);
 
-	open_syslog(prog); 
+	open_syslog(prog);
 
 	if (logfile != stdout)
 		background();
@@ -510,7 +510,7 @@ int main(int argc, char **argv)
 		}
 
 		if (reopen_flag) {
-			upslogx(LOG_INFO, "Signal %d: reopening log file", 
+			upslogx(LOG_INFO, "Signal %d: reopening log file",
 				reopen_flag);
 			reopen_log();
 			reopen_flag = 0;
@@ -535,7 +535,7 @@ int main(int argc, char **argv)
 		fclose(logfile);
 
 	upscli_disconnect(&ups);
-	
+
 	exit(EXIT_SUCCESS);
 }
 
