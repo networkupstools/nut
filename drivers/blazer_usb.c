@@ -324,28 +324,28 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 }
 
 
-static void *cypress_subdriver(USBDevice_t *device)
+static void *cypress_subdriver(USBDevice_t * NUT_UNUSED(device))
 {
 	subdriver_command = &cypress_command;
 	return NULL;
 }
 
 
-static void *ippon_subdriver(USBDevice_t *device)
+static void *ippon_subdriver(USBDevice_t * NUT_UNUSED(device))
 {
 	subdriver_command = &ippon_command;
 	return NULL;
 }
 
 
-static void *krauler_subdriver(USBDevice_t *device)
+static void *krauler_subdriver(USBDevice_t * NUT_UNUSED(device))
 {
 	subdriver_command = &krauler_command;
 	return NULL;
 }
 
 
-static void *phoenix_subdriver(USBDevice_t *device)
+static void *phoenix_subdriver(USBDevice_t * NUT_UNUSED(device))
 {
 	subdriver_command = &phoenix_command;
 	return NULL;
@@ -370,7 +370,7 @@ static usb_device_id_t blazer_usb_id[] = {
 };
 
 
-static int device_match_func(USBDevice_t *hd, void *privdata)
+static int device_match_func(USBDevice_t *hd, void * NUT_UNUSED(privdata))
 {
 	if (subdriver_command) {
 		return 1;
