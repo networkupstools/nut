@@ -41,7 +41,7 @@ char * tweak_max_report[] = {
 	/* Back-UPS ES 700 does NOT overflow. */
 	/* Back-UPS ES 725 does NOT overflow. */
 	/* Back-UPS ES 525 overflows on ReportID 0x0c
-		 (UPS.PowerSummary.RemainingCapacity).*/
+	   (UPS.PowerSummary.RemainingCapacity). */
 	"Back-UPS ES 525",
 	/* Back-UPS CS 650 overflows on ReportID 0x46 */
 	"Back-UPS CS",
@@ -130,8 +130,8 @@ info_lkp_t apc_date_conversion[] = {
 
 /* This was determined empirically from observing a BackUPS LS 500 */
 static info_lkp_t apcstatusflag_info[] = {
-	{ 8, "!off", NULL, NULL },  /* Normal operation */
-	{ 16, "!off", NULL, NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+	{ 8, "!off", NULL, NULL },	/* Normal operation */
+	{ 16, "!off", NULL, NULL },	/* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
 	{ 0, "off", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
@@ -143,7 +143,7 @@ static info_lkp_t apc_linefailcause_vrange_info[] = {
 	{ 4, "vrange", NULL, NULL },	/* notch, spike, or blackout */
 	{ 8, "vrange", NULL, NULL },	/* Notch or blackout */
 	{ 9, "vrange", NULL, NULL },	/* Spike or blackout */
-	{ 0, "!vrange", NULL, NULL },		/* No transfers have ocurred */
+	{ 0, "!vrange", NULL, NULL },	/* No transfers have ocurred */
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -157,7 +157,7 @@ static info_lkp_t apc_linefailcause_frange_info[] = {
 /* these input.transfer.reason can't be mapped at the moment... */
 	{ 3, "ripple", NULL, NULL },		/* Ripple */
 	{ 5, "self test", NULL, NULL },	/* Self Test or Discharge Calibration commanded
-								 * Test usage, front button, or 2 week self test */
+	                                 * Test usage, front button, or 2 week self test */
 	{ 6, "forced", NULL, NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
 	{ 10, "forced", NULL, NULL },		/* Graceful shutdown by accessories */
 	{ 11, "self test", NULL, NULL },	/* Test usage invoked */
@@ -395,7 +395,7 @@ static hid_info_t apc_hid2nut[] = {
 /*
   { "ambient.temperature", 0, 0, "UPS.APCEnvironment.APCProbe2.Temperature", NULL, "%.1f", 0, kelvin_celsius_conversion },
   { "ambient.humidity", 0, 0, "UPS.APCEnvironment.APCProbe2.Humidity", NULL, "%.1f", 0, NULL },
- */
+*/
 
   /* instant commands. */
   /* test.* split into subset while waiting for extradata support
