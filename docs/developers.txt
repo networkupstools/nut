@@ -324,9 +324,9 @@ it is not trivial to state whether the fall-through was intentional or
 really is a bug).
 
 Compilers which detect such problem usually offer ways to decorate the
-code with comments or attributes to quiesce it in cases where the jump
-is intentional; also C++17 introduces special keywords for that in the
-standard. NUT aiming to be portable and independent of compilers as
+code with comments or attributes to keep it quiet it in cases where the
+jump is intentional; also C++17 introduces special keywords for that in
+the standard. NUT aiming to be portable and independent of compilers as
 much as possible, prefers the arguably clearer and standards-based way
 of using `goto` into the next intended operation, even though it is a
 couple of lines away, e.g.:
