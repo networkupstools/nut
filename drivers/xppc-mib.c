@@ -31,17 +31,18 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, NULL }
+ * 	{ 1, "OB", NULL, NULL },
+ * 	{ 2, "OL", NULL, NULL },
+ * 	{ 0, NULL, NULL, NULL }
  * };
  */
 
 /* upsBaseBatteryStatus */
 static info_lkp_t xpcc_onbatt_info[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" }	/* batteryLow */
+	{ 1, "", NULL, NULL },	/* unknown */
+	{ 2, "", NULL, NULL },	/* batteryNormal */
+	{ 3, "LB", NULL, NULL },	/* batteryLow */
+	{ 0, NULL, NULL, NULL }
 };
 
 /*
@@ -58,15 +59,16 @@ upsBaseOutputStatus OBJECT-TYPE
 			onBuck(9) }
 */
 static info_lkp_t xpcc_power_info[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "OL" },	/* onLine */
-	{ 3, "OB" },	/* onBattery */
-	{ 4, "OL BOOST" },	/* onBoost */
-	{ 5, "OFF" },	/* sleeping */
-	{ 6, "BYPASS"},	/* onBypass */
-	{ 7, "" },	/* rebooting */
-	{ 8, "OFF" },	/* standBy */
-	{ 9, "OL TRIM"}	/* onBuck */
+	{ 1, "", NULL, NULL },	/* unknown */
+	{ 2, "OL", NULL, NULL },	/* onLine */
+	{ 3, "OB", NULL, NULL },	/* onBattery */
+	{ 4, "OL BOOST", NULL, NULL },	/* onBoost */
+	{ 5, "OFF", NULL, NULL },	/* sleeping */
+	{ 6, "BYPASS", NULL, NULL },	/* onBypass */
+	{ 7, "", NULL, NULL },	/* rebooting */
+	{ 8, "OFF", NULL, NULL },	/* standBy */
+	{ 9, "OL TRIM", NULL, NULL },	/* onBuck */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* XPPC Snmp2NUT lookup table */
