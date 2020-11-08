@@ -28,6 +28,7 @@
 #define APC_PDU_MIB_SYSOID_RPDU      ".1.3.6.1.4.1.318.1.3.4.4"
 #define APC_PDU_MIB_SYSOID_RPDU2     ".1.3.6.1.4.1.318.1.3.4.5"
 #define APC_PDU_MIB_SYSOID_MSP       ".1.3.6.1.4.1.318.1.3.4.6"
+#define APC_PDU_DEVICE_MODEL         ".1.3.6.1.4.1.318.1.1.4.1.4.0"
 
 
 static info_lkp_t apc_pdu_sw_outlet_status_info[] = {
@@ -966,7 +967,6 @@ static snmp_info_t apc_pdu_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-#define APC_PDU_DEVICE_MODEL ".1.3.6.1.4.1.318.1.1.4.1.4.0"
 mib2nut_info_t apc_pdu_rpdu = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_RPDU, NULL };
 mib2nut_info_t apc_pdu_rpdu2 = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_RPDU2, NULL };
 mib2nut_info_t apc_pdu_msp = { "apc_pdu", APC_PDU_MIB_VERSION, NULL, APC_PDU_DEVICE_MODEL, apc_pdu_mib, APC_PDU_MIB_SYSOID_MSP, NULL };
