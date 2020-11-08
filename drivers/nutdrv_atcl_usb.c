@@ -64,7 +64,7 @@ static usb_dev_handle	*udev = NULL;
 static USBDevice_t	usbdevice;
 static unsigned int	comm_failures = 0;
 
-static int device_match_func(USBDevice_t *device, void *privdata)
+static int device_match_func(USBDevice_t *device, void * NUT_UNUSED(privdata))
 {
 	char *requested_vendor;
 	switch (is_usb_device_supported(atcl_usb_id, device))
@@ -190,7 +190,7 @@ static void usb_comm_good(void)
  * caller, don't do this here. Return < 0 on error, 0 or higher on
  * success.
  */
-static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
+static int driver_callback(usb_dev_handle *handle, USBDevice_t * NUT_UNUSED(device))
 {
 	if (usb_set_configuration(handle, 1) < 0) {
 		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
