@@ -325,8 +325,9 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             exit $?
             ;;
         "default-all-errors")
-            build_to_only_catch_errors
-            exit $?
+            RES=0
+            build_to_only_catch_errors || RES=$?
+            exit $RES
             ;;
     esac
 
