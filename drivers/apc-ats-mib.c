@@ -30,30 +30,30 @@
 #define APC_ATS_OID_MODEL_NAME ".1.3.6.1.4.1.318.1.1.8.1.5.0"
 
 static info_lkp_t ats_sensitivity_info[] = {
-	{ 1, "high" },
-	{ 2, "low" },
-	{ 0, NULL }
+	{ 1, "high", NULL, NULL },
+	{ 2, "low", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ats_output_status_info[] = {
-	{ 1, "OFF" }, /* fail */
-	{ 2, "OL" },  /* ok */
-	{ 0, NULL }
+	{ 1, "OFF", NULL, NULL }, /* fail */
+	{ 2, "OL", NULL, NULL },  /* ok */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ats_outletgroups_name_info[] = {
-	{ 1, "total" },
-	{ 2, "bank1" },
-	{ 3, "bank2" },
-	{ 0, NULL }
+	{ 1, "total", NULL, NULL },
+	{ 2, "bank1", NULL, NULL },
+	{ 3, "bank2", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ats_outletgroups_status_info[] = {
-	{ 1, "OL" },   /* normal */
-	{ 2, "" },     /* lowload */
-	{ 3, "" },     /* nearoverload */
-	{ 4, "OVER" }, /* overload */
-	{ 0, NULL }
+	{ 1, "OL", NULL, NULL },   /* normal */
+	{ 2, "", NULL, NULL },     /* lowload */
+	{ 3, "", NULL, NULL },     /* nearoverload */
+	{ 4, "OVER", NULL, NULL }, /* overload */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* APC ATS Snmp2NUT lookup table */
