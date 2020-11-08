@@ -332,7 +332,7 @@ of using `goto` into the next intended operation, even though it is a
 couple of lines away, e.g.:
 
 	int uppercase = 0;
-	switch (charopt) {
+	switch (char_opt) {
 		case 'U':
 			uppercase = 1;
 			goto fallthrough_case_u_option;
