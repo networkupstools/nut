@@ -181,4 +181,4 @@ static snmp_info_t netvision_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, NULL, NETVISION_OID_UPSIDENTMODEL, netvision_mib, NETVISION_SYSOID };
+mib2nut_info_t	netvision = { "netvision", NETVISION_MIB_VERSION, NULL, NETVISION_OID_UPSIDENTMODEL, netvision_mib, NETVISION_SYSOID, NULL };
