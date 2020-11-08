@@ -121,4 +121,4 @@ static snmp_info_t raritan_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID };
+mib2nut_info_t	raritan = { "raritan", RARITAN_MIB_VERSION, NULL, RARITAN_OID_MODEL_NAME, raritan_mib, RARITAN_SYSOID, NULL };
