@@ -29,6 +29,8 @@
 #define APCC_MIB_VERSION	"1.3"
 
 #define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
+/* FIXME: Find a better oid_auto_check vs sysOID for this one? */
+#define APC_UPS_SYSOID	APC_UPS_DEVICE_MODEL
 
 /* Other APC sysOID:
  *
@@ -298,7 +300,7 @@ static snmp_info_t apcc_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, APC_UPS_DEVICE_MODEL, apcc_mib };
+mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, APC_UPS_DEVICE_MODEL, apcc_mib, APC_UPS_SYSOID, NULL };
 
 /*
 vim:ts=4:sw=4:et:
