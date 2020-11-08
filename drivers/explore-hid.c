@@ -56,7 +56,7 @@ static const char *explore_format_serial(HIDDevice_t *hd) {
 
 /* this function allows the subdriver to "claim" a device: return 1 if
  * the device is supported by this subdriver, else 0. */
-static int explore_claim(HIDDevice_t *hd) {
+static int explore_claim(HIDDevice_t * NUT_UNUSED(hd)) {
 	if (testvar("explore")) {
 		return 1;
 	} else {
