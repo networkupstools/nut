@@ -369,4 +369,4 @@ static snmp_info_t eaton_ats30_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	eaton_ats30 = { "eaton_ats30", EATON_ATS30_MIB_VERSION, NULL, EATON_ATS30_MODEL, eaton_ats30_mib, EATON_ATS30_SYSOID };
+mib2nut_info_t	eaton_ats30 = { "eaton_ats30", EATON_ATS30_MIB_VERSION, NULL, EATON_ATS30_MODEL, eaton_ats30_mib, EATON_ATS30_SYSOID, NULL };
