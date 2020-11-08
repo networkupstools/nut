@@ -32,6 +32,7 @@
 /* TODO: find the right sysOID for this MIB
  * #define BESTPOWER_SYSOID			".1.3.6.1.4.1.2947???"
  */
+#define BESTPOWER_SYSOID	BESTPOWER_OID_MODEL_NAME
 
 static info_lkp_t bestpower_power_status[] = {
 	{ 1, "OL", NULL, NULL },
@@ -81,4 +82,4 @@ static snmp_info_t bestpower_mib[] = {
 } ;
 
 mib2nut_info_t	bestpower = { "bestpower", BESTPOWER_MIB_VERSION, NULL,
-	BESTPOWER_OID_MODEL_NAME, bestpower_mib };
+	BESTPOWER_OID_MODEL_NAME, bestpower_mib, BESTPOWER_SYSOID, NULL };
