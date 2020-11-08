@@ -173,4 +173,4 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 };
 
 
-mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_REVELATION_MIB_VERSION, NULL, APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID };
+mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_REVELATION_MIB_VERSION, NULL, APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID, NULL };
