@@ -38,98 +38,98 @@
 #define MGE_OID_MODEL_NAME	MGE_BASE_OID ".1.1.0"
 
 static info_lkp_t mge_lowbatt_info[] = {
-	{ 1, "LB" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "LB", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_onbatt_info[] = {
-	{ 1, "OB" },
-	{ 2, "OL" },
-	{ 0, NULL }
+	{ 1, "OB", NULL, NULL },
+	{ 2, "OL", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_bypass_info[] = {
-	{ 1, "BYPASS" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "BYPASS", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_boost_info[] = {
-	{ 1, "BOOST" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "BOOST", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_trim_info[] = {
-	{ 1, "TRIM" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "TRIM", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_overload_info[] = {
-	{ 1, "OVER" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "OVER", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 
 static info_lkp_t mge_replacebatt_info[] = {
-	{ 1, "RB" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "RB", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_output_util_off_info[] = {
-	{ 1, "OFF" },
-	{ 2, "" },
-	{ 0, NULL }
+	{ 1, "OFF", NULL, NULL },
+	{ 2, "", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_transfer_reason_info[] = {
-	{ 1, "" },
-	{ 2, "input voltage out of range" },
-	{ 3, "input frequency out of range" },
-	{ 4, "utility off" },
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },
+	{ 2, "input voltage out of range", NULL, NULL },
+	{ 3, "input frequency out of range", NULL, NULL },
+	{ 4, "utility off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, NULL }
+	{ 1, "done and passed", NULL, NULL },
+	{ 2, "done and warning", NULL, NULL },
+	{ 3, "done and error", NULL, NULL },
+	{ 4, "aborted", NULL, NULL },
+	{ 5, "in progress", NULL, NULL },
+	{ 6, "no test initiated", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_beeper_status_info[] = {
-	{ 1, "disabled" },
-	{ 2, "enabled" },
-	{ 3, "muted" },
-	{ 0, NULL }
+	{ 1, "disabled", NULL, NULL },
+	{ 2, "enabled", NULL, NULL },
+	{ 3, "muted", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t ietf_yes_no_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ 1, "yes", NULL, NULL },
+	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* FIXME: the below may introduce status redundancy, that needs to be
  * addressed by the driver, as for usbhid-ups! */
 static info_lkp_t ietf_power_source_info[] = {
-	{ 1, "" /* other */ },
-	{ 2, "OFF" /* none */ },
+	{ 1, "" /* other */, NULL, NULL },
+	{ 2, "OFF" /* none */, NULL, NULL },
 #if 0
-	{ 3, "OL" /* normal */ },
+	{ 3, "OL" /* normal */, NULL, NULL },
 #endif
-	{ 4, "BYPASS" /* bypass */ },
-	{ 5, "OB" /* battery */ },
-	{ 6, "BOOST" /* booster */ },
-	{ 7, "TRIM" /* reducer */ },
-	{ 0, NULL }
+	{ 4, "BYPASS" /* bypass */, NULL, NULL },
+	{ 5, "OB" /* battery */, NULL, NULL },
+	{ 6, "BOOST" /* booster */, NULL, NULL },
+	{ 7, "TRIM" /* reducer */, NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Parameters default values */
