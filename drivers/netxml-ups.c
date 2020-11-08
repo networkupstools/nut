@@ -888,6 +888,8 @@ static int netxml_dispatch_request(ne_request *request, ne_xml_parser *parser)
 /* Supply the 'login' and 'password' when authentication is required */
 static int netxml_authenticate(void *userdata, const char *realm, int attempt, char *username, char *password)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+
 	char	*val;
 
 	upsdebugx(2, "%s: realm = [%s], attempt = %d", __func__, realm, attempt);
@@ -1497,6 +1499,9 @@ static int set_object_raw_resp_end_element(
 	const char *nspace,
 	const char *name)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
+
 	/* OBJECT (as a SET_OBJECT child) */
 	if (NE_XML_STATEROOT + 2 == state) {
 		assert(0 == strcasecmp(name, "OBJECT"));
