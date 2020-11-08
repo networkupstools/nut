@@ -435,16 +435,20 @@ int blazer_command(const char *cmd, char *buf, size_t buflen)
 			break;
 		}
 #ifdef ETIME
+		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
+	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
 			upsdebugx(1, "Device reset handled");
 		}
+		goto fallthrough_case_reconnect;
 	case -ENODEV:		/* No such device */
 	case -EACCES:		/* Permission denied */
 	case -EIO:		/* I/O error */
 	case -ENXIO:		/* No such device or address */
 	case -ENOENT:		/* No such file or directory */
+	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
