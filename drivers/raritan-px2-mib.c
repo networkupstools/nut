@@ -31,37 +31,37 @@
 /* info elements */
 /* FIXME: triage between status and alarms, and make it compliant! */
 info_lkp_t raritanpx2_outlet_status_info[] = {
-    { -1, "unavailable" },
-    {  0, "open" },
-    {  1, "closed" },
-    {  2, "belowLowerCritical" },
-    {  3, "belowLowerWarning" },
-    {  4, "normal" },
-    {  5, "aboveUpperWarning" },
-    {  6, "aboveUpperCritical" },
-    {  7, "on" },
-    {  8, "off" },
-    {  9, "detected" },
-    { 10, "notDetected" },
-    { 11, "alarmed" },
-    { 12, "ok" },
-    { 13, "marginal" },
-    { 14, "fail" },
-    { 15, "yes" },
-    { 16, "no" },
-    { 17, "standby" },
-    { 18, "one" },
-    { 19, "two" },
-    { 20, "inSync" },
-    { 21, "outOfSync" },
-	{ 0, "NULL" }
+	{ -1, "unavailable", NULL, NULL },
+	{  0, "open", NULL, NULL },
+	{  1, "closed", NULL, NULL },
+	{  2, "belowLowerCritical", NULL, NULL },
+	{  3, "belowLowerWarning", NULL, NULL },
+	{  4, "normal", NULL, NULL },
+	{  5, "aboveUpperWarning", NULL, NULL },
+	{  6, "aboveUpperCritical", NULL, NULL },
+	{  7, "on", NULL, NULL },
+	{  8, "off", NULL, NULL },
+	{  9, "detected", NULL, NULL },
+	{ 10, "notDetected", NULL, NULL },
+	{ 11, "alarmed", NULL, NULL },
+	{ 12, "ok", NULL, NULL },
+	{ 13, "marginal", NULL, NULL },
+	{ 14, "fail", NULL, NULL },
+	{ 15, "yes", NULL, NULL },
+	{ 16, "no", NULL, NULL },
+	{ 17, "standby", NULL, NULL },
+	{ 18, "one", NULL, NULL },
+	{ 19, "two", NULL, NULL },
+	{ 20, "inSync", NULL, NULL },
+	{ 21, "outOfSync", NULL, NULL },
+	{ 0, "NULL", NULL, NULL }
 };
 
 static info_lkp_t outlet_switchability_info[] = {
-	{ -1, "yes" },
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ -1, "yes", NULL, NULL },
+	{ 1, "yes", NULL, NULL },
+	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* PDU2-MIB Snmp2NUT lookup table */
