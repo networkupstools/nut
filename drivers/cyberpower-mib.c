@@ -31,34 +31,34 @@
 #define CYBERPOWER_SYSOID			".1.3.6.1.4.1.3808.1.1.1"
 
 static info_lkp_t cyberpower_power_status[] = {
-	{ 2, "OL" },
-	{ 3, "OB" },
-	{ 4, "OL BOOST" },
-	{ 5, "OFF" },
-	{ 7, "OL" },
-	{ 1, "NULL" },
-	{ 6, "OFF" },
-	{ 0, NULL }
+	{ 2, "OL", NULL, NULL },
+	{ 3, "OB", NULL, NULL },
+	{ 4, "OL BOOST", NULL, NULL },
+	{ 5, "OFF", NULL, NULL },
+	{ 7, "OL", NULL, NULL },
+	{ 1, "NULL", NULL, NULL },
+	{ 6, "OFF", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 } ;
 
 static info_lkp_t cyberpower_battery_status[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" },	/* batteryLow */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },	/* unknown */
+	{ 2, "", NULL, NULL },	/* batteryNormal */
+	{ 3, "LB", NULL, NULL },	/* batteryLow */
+	{ 0, NULL, NULL, NULL }
 } ;
 
 static info_lkp_t cyberpower_cal_status[] = {
-	{ 1, "" },          /* Calibration Successful */
-	{ 2, "" },          /* Calibration Invalid */
-	{ 3, "CAL" },       /* Calibration in progress */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },          /* Calibration Successful */
+	{ 2, "", NULL, NULL },          /* Calibration Invalid */
+	{ 3, "CAL", NULL, NULL },       /* Calibration in progress */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t cyberpower_battrepl_status[] = {
-	{ 1, "" },          /* No battery needs replacing */
-	{ 2, "RB" },        /* Batteries need to be replaced */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },          /* No battery needs replacing */
+	{ 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for CyberPower MIB */
