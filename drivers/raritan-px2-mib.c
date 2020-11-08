@@ -97,8 +97,8 @@ static snmp_info_t raritan_px2_mib[] = {
 	/* Input data:
 	 * Units are given in inletSensorUnits.1.1.%i
 	 * Value should be scaled by inletSensorDecimalDigits.1.1.%i
-     * For example, if the value is 1 and inletSensorDecimalDigits is 2, then actual value is 0.01. */
- 	/* measurementsInletSensorValue.1.1.rmsCurrent = Gauge32: 10 (A) */
+	 * For example, if the value is 1 and inletSensorDecimalDigits is 2, then actual value is 0.01. */
+	/* measurementsInletSensorValue.1.1.rmsCurrent = Gauge32: 10 (A) */
 	{ "input.load", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.1", NULL, SU_FLAG_OK, NULL },
 	/* measurementsInletSensorValue.1.1.rmsVoltage = Gauge32: 119 (V) */
 	{ "input.voltage", 0, 1, ".1.3.6.1.4.1.13742.6.5.2.3.1.4.1.1.4", NULL, SU_FLAG_OK, NULL },
@@ -133,7 +133,7 @@ static snmp_info_t raritan_px2_mib[] = {
 	/* FIXME: need RFC and standardization
 	 * { "outlet.%i.type", 0, 1, ".1.3.6.1.4.1.13742.6.3.5.3.1.4.1.%i", NULL, SU_OUTLET | SU_FLAG_OK, NULL }, */
 
-    /* RMS Current (divide by 10). e.g. 5 == 0.5A */
+	/* RMS Current (divide by 10). e.g. 5 == 0.5A */
 	/* measurementsOutletSensorValue.1.%i.rmsCurrent = Gauge32: 10 */
 	{ "outlet.%i.current", 0, 0.1, ".1.3.6.1.4.1.13742.6.5.4.3.1.4.1.%i.1", NULL, SU_OUTLET | SU_FLAG_OK, NULL },
 	/* measurementsOutletSensorValue.1.%i.rmsVoltage = Gauge32: 119 */
