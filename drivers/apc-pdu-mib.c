@@ -31,15 +31,15 @@
 
 
 static info_lkp_t apc_pdu_sw_outlet_status_info[] = {
-	{ 1, "on" },
-	{ 2, "off" },
-	{ 0, NULL }
+	{ 1, "on", NULL, NULL },
+	{ 2, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t apc_pdu_sw_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
+	{ 1, "yes", NULL, NULL },
+	{ 2, "yes", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* POWERNET-MIB Snmp2NUT lookup table */
