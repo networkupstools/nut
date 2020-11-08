@@ -445,4 +445,4 @@ static snmp_info_t apc_ats_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, APC_ATS_OID_MODEL_NAME, apc_ats_mib, APC_ATS_SYSOID };
+mib2nut_info_t	apc_ats = { "apc_ats", APC_ATS_MIB_VERSION, NULL, APC_ATS_OID_MODEL_NAME, apc_ats_mib, APC_ATS_SYSOID, NULL };
