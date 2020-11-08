@@ -288,9 +288,9 @@ static snmp_info_t ietf_mib[] = {
 /* FIXME: Rename the structure here (or even relocate to new file)
  * and in snmp-ups.c when the real TrippLite mappings get defined. */
 /* FIXME: Duplicate the line below to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
-/*mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };*/
-mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID };
+/*mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID, NULL };*/
+mib2nut_info_t	tripplite_ietf = { "tripplite", IETF_MIB_VERSION, NULL, NULL, ietf_mib, TRIPPLITE_SYSOID, NULL };
 
 /* FIXME: Duplicate the line below to fix an issue with the code generator (nut-snmpinfo.py -> line is discarding) */
-/*mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };*/
-mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID };
+/*mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID, NULL };*/
+mib2nut_info_t	ietf = { "ietf", IETF_MIB_VERSION, IETF_OID_UPS_MIB "4.1.0", IETF_OID_UPS_MIB "1.1.0", ietf_mib, IETF_SYSOID, NULL };
