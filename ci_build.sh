@@ -24,6 +24,20 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+configure_nut() {
+    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
+    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+    $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
+    || { RES=$?
+        echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
+        echo "    (or press Ctrl+C to abort now if running interactively)" >&2
+        sleep 1
+        echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
+        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+        exit $RES
+       }
+}
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
 default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
@@ -260,17 +274,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         sudo dpkg -r --force all pkg-config
     fi
 
-    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
-    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
-    || { RES=$?
-        echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
-        echo "    (or press Ctrl+C to abort now if running interactively)" >&2
-        sleep 1
-        echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
-        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
-        exit $RES
-       }
+    configure_nut
 
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
