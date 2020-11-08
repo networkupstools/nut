@@ -60,75 +60,75 @@
 #define APCC_OID_BATT_STATUS	".1.3.6.1.4.1.318.1.1.1.2.1.1.0"
 /* Defines for APCC_OID_BATT_STATUS */
 static info_lkp_t apcc_batt_info[] = {
-	{ 1, "" },	/* unknown */
-	{ 2, "" },	/* batteryNormal */
-	{ 3, "LB" },	/* batteryLow */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },	/* unknown */
+	{ 2, "", NULL, NULL },	/* batteryNormal */
+	{ 3, "LB", NULL, NULL },	/* batteryLow */
+	{ 0, NULL, NULL, NULL }
 } ;
 
 #define APCC_OID_POWER_STATUS	".1.3.6.1.4.1.318.1.1.1.4.1.1.0"
 /* Defines for APCC_OID_POWER_STATUS */
 static info_lkp_t apcc_pwr_info[] = {
-    { 1, "" },          /* unknown  */
-    { 2, "OL" },        /* onLine */
-    { 3, "OB" },        /* onBattery */
-    { 4, "OL BOOST" },     /* onSmartBoost */
-    { 5, "OFF" },       /* timedSleeping */
-    { 6, "OFF" },       /* softwareBypass  */
-    { 7, "OFF" },       /* off */
-    { 8, "" },          /* rebooting */
-    { 9, "BYPASS" },    /* switchedBypass */
-    { 10, "BYPASS" },   /* hardwareFailureBypass */
-    { 11, "OFF" },      /* sleepingUntilPowerReturn */
-    { 12, "OL TRIM" },     /* onSmartTrim */
-    { 0, NULL }
+    { 1, "", NULL, NULL },          /* unknown  */
+    { 2, "OL", NULL, NULL },        /* onLine */
+    { 3, "OB", NULL, NULL },        /* onBattery */
+    { 4, "OL BOOST", NULL, NULL },     /* onSmartBoost */
+    { 5, "OFF", NULL, NULL },       /* timedSleeping */
+    { 6, "OFF", NULL, NULL },       /* softwareBypass  */
+    { 7, "OFF", NULL, NULL },       /* off */
+    { 8, "", NULL, NULL },          /* rebooting */
+    { 9, "BYPASS", NULL, NULL },    /* switchedBypass */
+    { 10, "BYPASS", NULL, NULL },   /* hardwareFailureBypass */
+    { 11, "OFF", NULL, NULL },      /* sleepingUntilPowerReturn */
+    { 12, "OL TRIM", NULL, NULL },     /* onSmartTrim */
+    { 0, NULL, NULL, NULL }
 } ;
 
 #define APCC_OID_CAL_RESULTS	".1.3.6.1.4.1.318.1.1.1.7.2.6.0"
 static info_lkp_t apcc_cal_info[] = {
-    { 1, "" },          /* Calibration Successful */
-    { 2, "" },          /* Calibration not done, battery capacity below 100% */
-    { 3, "CAL" },       /* Calibration in progress */
-    { 0, NULL }
+    { 1, "", NULL, NULL },          /* Calibration Successful */
+    { 2, "", NULL, NULL },          /* Calibration not done, battery capacity below 100% */
+    { 3, "CAL", NULL, NULL },       /* Calibration in progress */
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_NEEDREPLBATT	".1.3.6.1.4.1.318.1.1.1.2.2.4.0"
 static info_lkp_t apcc_battrepl_info[] = {
-    { 1, "" },          /* No battery needs replacing */
-    { 2, "RB" },        /* Batteries need to be replaced */
-    { 0, NULL }
+    { 1, "", NULL, NULL },          /* No battery needs replacing */
+    { 2, "RB", NULL, NULL },        /* Batteries need to be replaced */
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_TESTDIAGRESULTS ".1.3.6.1.4.1.318.1.1.1.7.2.3.0"
 static info_lkp_t apcc_testdiag_results[] = {
-    { 1, "Ok" },
-    { 2, "Failed" },
-    { 3, "InvalidTest" },
-    { 4, "TestInProgress"},
-    { 0, NULL }
+    { 1, "Ok", NULL, NULL },
+    { 2, "Failed", NULL, NULL },
+    { 3, "InvalidTest", NULL, NULL },
+    { 4, "TestInProgress", NULL, NULL },
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_SENSITIVITY ".1.3.6.1.4.1.318.1.1.1.5.2.7.0"
 static info_lkp_t apcc_sensitivity_modes[] = {
-    { 1, "auto" },
-    { 2, "low" },
-    { 3, "medium" },
-    { 4, "high" },
-    { 0, NULL }
+    { 1, "auto", NULL, NULL },
+    { 2, "low", NULL, NULL },
+    { 3, "medium", NULL, NULL },
+    { 4, "high", NULL, NULL },
+    { 0, NULL, NULL, NULL }
 };
 
 #define APCC_OID_TRANSFERREASON "1.3.6.1.4.1.318.1.1.1.3.2.5.0"
 static info_lkp_t apcc_transfer_reasons[] = {
-    { 1, "noTransfer" },
-    { 2, "highLineVoltage" },
-    { 3, "brownout" },
-    { 4, "blackout" },
-    { 5, "smallMomentarySag" },
-    { 6, "deepMomentarySag" },
-    { 7, "smallMomentarySpike" },
-    { 8, "largeMomentarySpike" },
-    { 9, "selfTest" },
-    { 10, "rateOfVoltageChange" }
+    { 1, "noTransfer", NULL, NULL },
+    { 2, "highLineVoltage", NULL, NULL },
+    { 3, "brownout", NULL, NULL },
+    { 4, "blackout", NULL, NULL },
+    { 5, "smallMomentarySag", NULL, NULL },
+    { 6, "deepMomentarySag", NULL, NULL },
+    { 7, "smallMomentarySpike", NULL, NULL },
+    { 8, "largeMomentarySpike", NULL, NULL },
+    { 9, "selfTest", NULL, NULL },
+    { 10, "rateOfVoltageChange", NULL, NULL }
 };
 
 /* --- */
