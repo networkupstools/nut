@@ -125,52 +125,52 @@ static const char *apc_date_conversion_fun(double value)
 }
 
 info_lkp_t apc_date_conversion[] = {
-	{ 0, NULL, apc_date_conversion_fun }
+	{ 0, NULL, apc_date_conversion_fun, NULL }
 };
 
 /* This was determined empirically from observing a BackUPS LS 500 */
 static info_lkp_t apcstatusflag_info[] = {
-	{ 8, "!off", NULL },  /* Normal operation */
-	{ 16, "!off", NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
-	{ 0, "off", NULL },
-	{ 0, NULL, NULL }
+	{ 8, "!off", NULL, NULL },  /* Normal operation */
+	{ 16, "!off", NULL, NULL }, /* This occurs briefly during power-on, and corresponds to status 'DISCHRG'. */
+	{ 0, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Reason of the last battery transfer (from apcupsd) */
 static info_lkp_t apc_linefailcause_vrange_info[] = {
-	{ 1, "vrange", NULL },	/* Low line voltage */
-	{ 2, "vrange", NULL },	/* High line voltage */
-	{ 4, "vrange", NULL },	/* notch, spike, or blackout */
-	{ 8, "vrange", NULL },	/* Notch or blackout */
-	{ 9, "vrange", NULL },	/* Spike or blackout */
-	{ 0, "!vrange", NULL },		/* No transfers have ocurred */
-	{ 0, NULL, NULL }
+	{ 1, "vrange", NULL, NULL },	/* Low line voltage */
+	{ 2, "vrange", NULL, NULL },	/* High line voltage */
+	{ 4, "vrange", NULL, NULL },	/* notch, spike, or blackout */
+	{ 8, "vrange", NULL, NULL },	/* Notch or blackout */
+	{ 9, "vrange", NULL, NULL },	/* Spike or blackout */
+	{ 0, "!vrange", NULL, NULL },		/* No transfers have ocurred */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t apc_linefailcause_frange_info[] = {
-	{ 7, "frange", NULL },		/* Input frequency out of range */
-	{ 0, "!frange", NULL },		/* No transfers have ocurred */
-	{ 0, NULL, NULL }
+	{ 7, "frange", NULL, NULL },		/* Input frequency out of range */
+	{ 0, "!frange", NULL, NULL },		/* No transfers have ocurred */
+	{ 0, NULL, NULL, NULL }
 };
 
 #if 0
 /* these input.transfer.reason can't be mapped at the moment... */
-	{ 3, "ripple", NULL },		/* Ripple */
-	{ 5, "self test", NULL },	/* Self Test or Discharge Calibration commanded
+	{ 3, "ripple", NULL, NULL },		/* Ripple */
+	{ 5, "self test", NULL, NULL },	/* Self Test or Discharge Calibration commanded
 								 * Test usage, front button, or 2 week self test */
-	{ 6, "forced", NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
-	{ 10, "forced", NULL },		/* Graceful shutdown by accessories */
-	{ 11, "self test", NULL },	/* Test usage invoked */
-	{ 12, "self test", NULL },	/* Front button initiated self test */
-	{ 13, "self test", NULL },	/* 2 week self test */
-	{ 0, NULL, NULL }
+	{ 6, "forced", NULL, NULL },		/* DelayBeforeShutdown or APCDelayBeforeShutdown */
+	{ 10, "forced", NULL, NULL },		/* Graceful shutdown by accessories */
+	{ 11, "self test", NULL, NULL },	/* Test usage invoked */
+	{ 12, "self test", NULL, NULL },	/* Front button initiated self test */
+	{ 13, "self test", NULL, NULL },	/* 2 week self test */
+	{ 0, NULL, NULL, NULL }
 #endif
 
 static info_lkp_t apc_sensitivity_info[] = {
-	{ 0, "low", NULL },
-	{ 1, "medium", NULL },
-	{ 2, "high", NULL },
-	{ 0, NULL, NULL }
+	{ 0, "low", NULL, NULL },
+	{ 1, "medium", NULL, NULL },
+	{ 2, "high", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* --------------------------------------------------------------- */
