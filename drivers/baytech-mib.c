@@ -89,4 +89,4 @@ static snmp_info_t baytech_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib };
+mib2nut_info_t	baytech = { "baytech", BAYTECH_MIB_VERSION, NULL, BAYTECH_OID_MODEL_NAME, baytech_mib, BAYTECH_OID_MIB, NULL };
