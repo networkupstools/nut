@@ -122,4 +122,4 @@ static snmp_info_t xppc_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	xppc = { "xppc", XPPC_MIB_VERSION, NULL, NULL, xppc_mib, XPPC_SYSOID };
+mib2nut_info_t	xppc = { "xppc", XPPC_MIB_VERSION, NULL, NULL, xppc_mib, XPPC_SYSOID, NULL };
