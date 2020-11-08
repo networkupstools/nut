@@ -891,5 +891,4 @@ static snmp_info_t hpe_pdu_mib[] = {
 };
 
 
-mib2nut_info_t	hpe_pdu = { "hpe_epdu", HPE_EPDU_MIB_VERSION, NULL, HPE_EPDU_OID_MODEL_NAME, hpe_pdu_mib, HPE_EPDU_MIB_SYSOID };
-
+mib2nut_info_t	hpe_pdu = { "hpe_epdu", HPE_EPDU_MIB_VERSION, NULL, HPE_EPDU_OID_MODEL_NAME, hpe_pdu_mib, HPE_EPDU_MIB_SYSOID, NULL };
