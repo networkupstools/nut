@@ -39,148 +39,148 @@
 #define EATON_MARLIN_OID_MODEL_NAME	".1.3.6.1.4.1.534.6.6.7.1.2.1.2.0"
 
 static info_lkp_t marlin_outlet_status_info[] = {
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "pendingOff" }, /* transitional status */
-	{ 3, "pendingOn" },  /* transitional status */
-	{ 0, NULL }
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 2, "pendingOff", NULL, NULL }, /* transitional status */
+	{ 3, "pendingOn", NULL, NULL },  /* transitional status */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_outletgroups_status_info[] = {
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "rebooting" }, /* transitional status */
-	{ 3, "mixed" },     /* transitional status, not sure what it means! */
-	{ 0, NULL }
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 2, "rebooting", NULL, NULL }, /* transitional status */
+	{ 3, "mixed", NULL, NULL },     /* transitional status, not sure what it means! */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_outlet_switchability_info[] = {
-	{ 1, "yes" }, /* switchable */
-	{ 2, "no" }, /* notSwitchable */
-	{ 0, NULL }
+	{ 1, "yes", NULL, NULL }, /* switchable */
+	{ 2, "no", NULL, NULL }, /* notSwitchable */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Overall outlets switchability info for the unit.
  * This is refined per-outlet, depending on user configuration,
  * possibly disabling switchability of some outlets */
 static info_lkp_t marlin_unit_switchability_info[] = {
-	{ 0, "no" },  /* unknown */
-	{ 1, "yes" }, /* switched */
-	{ 2, "no" },  /* advancedMonitored */
-	{ 3, "yes" }, /* managed */
-	{ 4, "no" },  /* monitored */
-	{ 0, NULL }
+	{ 0, "no", NULL, NULL },  /* unknown */
+	{ 1, "yes", NULL, NULL }, /* switched */
+	{ 2, "no", NULL, NULL },  /* advancedMonitored */
+	{ 3, "yes", NULL, NULL }, /* managed */
+	{ 4, "no", NULL, NULL },  /* monitored */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The physical type of outlet */
 static info_lkp_t marlin_outlet_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "iecC13" },
-	{ 2, "iecC19" },
-	{ 10, "uk" },
-	{ 11, "french" },
-	{ 12, "schuko" },
-	{ 20, "nema515" },
-	{ 21, "nema51520" },
-	{ 22, "nema520" },
-	{ 23, "nemaL520" },
-	{ 24, "nemaL530" },
-	{ 25, "nema615" },
-	{ 26, "nema620" },
-	{ 27, "nemaL620" },
-	{ 28, "nemaL630" },
-	{ 29, "nemaL715" },
-	{ 30, "rf203p277" },
-	{ 0, NULL }
+	{ 0, "unknown", NULL, NULL },
+	{ 1, "iecC13", NULL, NULL },
+	{ 2, "iecC19", NULL, NULL },
+	{ 10, "uk", NULL, NULL },
+	{ 11, "french", NULL, NULL },
+	{ 12, "schuko", NULL, NULL },
+	{ 20, "nema515", NULL, NULL },
+	{ 21, "nema51520", NULL, NULL },
+	{ 22, "nema520", NULL, NULL },
+	{ 23, "nemaL520", NULL, NULL },
+	{ 24, "nemaL530", NULL, NULL },
+	{ 25, "nema615", NULL, NULL },
+	{ 26, "nema620", NULL, NULL },
+	{ 27, "nemaL620", NULL, NULL },
+	{ 28, "nemaL630", NULL, NULL },
+	{ 29, "nemaL715", NULL, NULL },
+	{ 30, "rf203p277", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_ambient_presence_info[] = {
-	{ -1, "unknown" },
-	{ 0, "no" },  /* disconnected */
-	{ 1, "yes" }, /* connected */
-	{ 0, NULL }
+	{ -1, "unknown", NULL, NULL },
+	{ 0, "no", NULL, NULL },  /* disconnected */
+	{ 1, "yes", NULL, NULL }, /* connected */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_status_info[] = {
-	{ 0, "good" },          /* No threshold triggered */
-	{ 1, "warning-low" },   /* Warning low threshold triggered */
-	{ 2, "critical-low" },  /* Critical low threshold triggered */
-	{ 3, "warning-high" },  /* Warning high threshold triggered */
-	{ 4, "critical-high" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 0, "good", NULL, NULL },          /* No threshold triggered */
+	{ 1, "warning-low", NULL, NULL },   /* Warning low threshold triggered */
+	{ 2, "critical-low", NULL, NULL },  /* Critical low threshold triggered */
+	{ 3, "warning-high", NULL, NULL },  /* Warning high threshold triggered */
+	{ 4, "critical-high", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_frequency_status_info[] = {
-	{ 0, "good" },          /* No threshold triggered */
-	{ 1, "out-of-range" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 0, "good", NULL, NULL },          /* No threshold triggered */
+	{ 1, "out-of-range", NULL, NULL },  /* Frequency out of range triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_ambient_drycontacts_info[] = {
-	{ -1, "unknown" },
-	{ 0, "open" },
-	{ 1, "closed" },
-	{ 0, NULL }
+	{ -1, "unknown", NULL, NULL },
+	{ 0, "open", NULL, NULL },
+	{ 1, "closed", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_voltage_alarms_info[] = {
-	{ 0, "" },                       /* No threshold triggered */
-	{ 1, "low voltage warning!" },   /* Warning low threshold triggered */
-	{ 2, "low voltage critical!" },  /* Critical low threshold triggered */
-	{ 3, "high voltage warning!" },  /* Warning high threshold triggered */
-	{ 4, "high voltage critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 0, "", NULL, NULL },                       /* No threshold triggered */
+	{ 1, "low voltage warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 2, "low voltage critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 3, "high voltage warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 4, "high voltage critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_current_alarms_info[] = {
-	{ 0, "" },                       /* No threshold triggered */
-	{ 1, "low current warning!" },   /* Warning low threshold triggered */
-	{ 2, "low current critical!" },  /* Critical low threshold triggered */
-	{ 3, "high current warning!" },  /* Warning high threshold triggered */
-	{ 4, "high current critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 0, "", NULL, NULL },                       /* No threshold triggered */
+	{ 1, "low current warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 2, "low current critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 3, "high current warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 4, "high current critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_frequency_alarm_info[] = {
-	{ 0, "" },                         /* No threshold triggered */
-	{ 1, "frequency out of range!" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 0, "", NULL, NULL },                         /* No threshold triggered */
+	{ 1, "frequency out of range!", NULL, NULL },  /* Frequency out of range triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_temperature_alarms_info[] = {
-	{ 0, "" },                           /* No threshold triggered */
-	{ 1, "low temperature warning!" },   /* Warning low threshold triggered */
-	{ 2, "low temperature critical!" },  /* Critical low threshold triggered */
-	{ 3, "high temperature warning!" },  /* Warning high threshold triggered */
-	{ 4, "high temperature critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 0, "", NULL, NULL },                           /* No threshold triggered */
+	{ 1, "low temperature warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 2, "low temperature critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 3, "high temperature warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 4, "high temperature critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_threshold_humidity_alarms_info[] = {
-	{ 0, "" },                        /* No threshold triggered */
-	{ 1, "low humidity warning!" },   /* Warning low threshold triggered */
-	{ 2, "low humidity critical!" },  /* Critical low threshold triggered */
-	{ 3, "high humidity warning!" },  /* Warning high threshold triggered */
-	{ 4, "high humidity critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 0, "", NULL, NULL },                        /* No threshold triggered */
+	{ 1, "low humidity warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 2, "low humidity critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 3, "high humidity warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 4, "high humidity critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_outlet_group_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "breaker1pole" },
-	{ 2, "breaker2pole" },
-	{ 3, "breaker3pole" },
-	{ 4, "outlet-section" },
-	{ 5, "user-defined" },
-	{ 0, NULL }
+	{ 0, "unknown", NULL, NULL },
+	{ 1, "breaker1pole", NULL, NULL },
+	{ 2, "breaker2pole", NULL, NULL },
+	{ 3, "breaker3pole", NULL, NULL },
+	{ 4, "outlet-section", NULL, NULL },
+	{ 5, "user-defined", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t marlin_input_type_info[] = {
-	{ 1, "1" }, /* singlePhase     */
-	{ 2, "2" }, /* splitPhase      */
-	{ 3, "3" }, /* threePhaseDelta */
-	{ 4, "3" }, /* threePhaseWye   */
-	{ 0, NULL }
+	{ 1, "1", NULL, NULL }, /* singlePhase     */
+	{ 2, "2", NULL, NULL }, /* splitPhase      */
+	{ 3, "3", NULL, NULL }, /* threePhaseDelta */
+	{ 4, "3", NULL, NULL }, /* threePhaseWye   */
+	{ 0, NULL, NULL, NULL }
 };
 
 static char marlin_scratch_buf[20];
@@ -210,8 +210,8 @@ static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 	return NULL;
 }
 static info_lkp_t marlin_outlet_group_phase_info[] = {
-	{ 1, "dummy", marlin_outlet_group_phase_fun },
-	{ 0, NULL }
+	{ 1, "dummy", marlin_outlet_group_phase_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for Eaton Marlin MIB */
