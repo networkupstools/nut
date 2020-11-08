@@ -235,4 +235,4 @@ static snmp_info_t huawei_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	huawei = { "huawei", HUAWEI_MIB_VERSION, NULL, HUAWEI_OID_MODEL_NAME, huawei_mib, HUAWEI_SYSOID };
+mib2nut_info_t	huawei = { "huawei", HUAWEI_MIB_VERSION, NULL, HUAWEI_OID_MODEL_NAME, huawei_mib, HUAWEI_SYSOID, NULL };
