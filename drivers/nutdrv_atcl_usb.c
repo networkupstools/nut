@@ -446,8 +446,12 @@ void upsdrv_updateinfo(void)
 		case 2:
 			upsdebugx(2, "reply[0] = 0x%02x -> LB", reply[0]);
 			status_set("LB");
+			goto fallthrough_LB_means_OB;
+			/* Note: the comment below existed for years, so wondering
+			 * if this device CAN set independently LB and OB? */
 			/* fall through */
 		case 1:
+		fallthrough_LB_means_OB:
 			upsdebugx(2, "reply[0] = 0x%02x -> OB", reply[0]);
 			status_set("OB");
 			break;
