@@ -30,72 +30,72 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, NULL }
+ * 	{ 1, "OB", NULL, NULL },
+ * 	{ 2, "OL", NULL, NULL },
+ * 	{ 0, NULL, NULL, NULL }
  * };
  */
 
 static info_lkp_t huawei_supplymethod_info[] = {
-	{ 1, "" },		/* no supply */
-	{ 2, "OL BYPASS" },
-	{ 3, "OL" },
-	{ 4, "OB" },
-	{ 5, "" },		/* combined */
-	{ 6, "OL ECO" },
-	{ 7, "OB ECO" },
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },		/* no supply */
+	{ 2, "OL BYPASS", NULL, NULL },
+	{ 3, "OL", NULL, NULL },
+	{ 4, "OB", NULL, NULL },
+	{ 5, "", NULL, NULL },		/* combined */
+	{ 6, "OL ECO", NULL, NULL },
+	{ 7, "OB ECO", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t huawei_battstate_info[] = {
-	{ 1, "" },		/* not connected */
-	{ 2, "" },		/* not charging or discharging */
-	{ 3, "" },		/* hibernation */
-	{ 4, "" },		/* float */
-	{ 5, "CHRG" },		/* equalized charging */
-	{ 6, "DISCHRG" },
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },		/* not connected */
+	{ 2, "", NULL, NULL },		/* not charging or discharging */
+	{ 3, "", NULL, NULL },		/* hibernation */
+	{ 4, "", NULL, NULL },		/* float */
+	{ 5, "CHRG", NULL, NULL },		/* equalized charging */
+	{ 6, "DISCHRG", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t huawei_phase_info[] = {
-	{ 1, "1" },
-	{ 2, "3" },
-	{ 0, NULL }
+	{ 1, "1", NULL, NULL },
+	{ 2, "3", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t huawei_voltrating_info[] = {
-	{ 1, "200" },
-	{ 2, "208" },
-	{ 3, "220" },
-	{ 4, "380" },
-	{ 5, "400" },
-	{ 6, "415" },
-	{ 7, "480" },
-	{ 8, "600" },
-	{ 9, "690" },
-	{ 0, NULL }
+	{ 1, "200", NULL, NULL },
+	{ 2, "208", NULL, NULL },
+	{ 3, "220", NULL, NULL },
+	{ 4, "380", NULL, NULL },
+	{ 5, "400", NULL, NULL },
+	{ 6, "415", NULL, NULL },
+	{ 7, "480", NULL, NULL },
+	{ 8, "600", NULL, NULL },
+	{ 9, "690", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t huawei_freqrating_info[] = {
-	{ 1, "50" },
-	{ 2, "60" },
-	{ 0, NULL }
+	{ 1, "50", NULL, NULL },
+	{ 2, "60", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t huawei_pwrrating_info[] = {
-	{ 1, "80000" },
-	{ 2, "100000" },
-	{ 3, "120000" },
-	{ 4, "160000" },
-	{ 5, "200000" },
-	{ 6, "30000" },
-	{ 7, "40000" },
-	{ 8, "60000" },
-	{ 9, "2400000" },
-	{ 10, "2500000" },
-	{ 11, "2800000" },
-	{ 12, "3000000" },
-	{ 0, NULL }
+	{ 1, "80000", NULL, NULL },
+	{ 2, "100000", NULL, NULL },
+	{ 3, "120000", NULL, NULL },
+	{ 4, "160000", NULL, NULL },
+	{ 5, "200000", NULL, NULL },
+	{ 6, "30000", NULL, NULL },
+	{ 7, "40000", NULL, NULL },
+	{ 8, "60000", NULL, NULL },
+	{ 9, "2400000", NULL, NULL },
+	{ 10, "2500000", NULL, NULL },
+	{ 11, "2800000", NULL, NULL },
+	{ 12, "3000000", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Note: This is currently identical to ietf_test_result_info from IETF MIB
@@ -103,13 +103,13 @@ static info_lkp_t huawei_pwrrating_info[] = {
  * b) avoid namespace conflicts, especially with DMF loader of named objects
  */
 static info_lkp_t huawei_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, NULL }
+	{ 1, "done and passed", NULL, NULL },
+	{ 2, "done and warning", NULL, NULL },
+	{ 3, "done and error", NULL, NULL },
+	{ 4, "aborted", NULL, NULL },
+	{ 5, "in progress", NULL, NULL },
+	{ 6, "no test initiated", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 
