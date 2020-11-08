@@ -28,6 +28,8 @@
 
 #define APCC_MIB_VERSION	"1.3"
 
+#define APC_UPS_DEVICE_MODEL	".1.3.6.1.4.1.318.1.1.1.1.1.1.0"
+
 /* Other APC sysOID:
  *
  * examples found on the Net and other sources:
@@ -296,7 +298,7 @@ static snmp_info_t apcc_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, ".1.3.6.1.4.1.318.1.1.1.1.1.1.0", apcc_mib };
+mib2nut_info_t	apc = { "apcc", APCC_MIB_VERSION, APCC_OID_POWER_STATUS, APC_UPS_DEVICE_MODEL, apcc_mib };
 
 /*
 vim:ts=4:sw=4:et:
