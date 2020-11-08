@@ -593,6 +593,9 @@ void nut_snmp_init(const char *type, const char *hostname)
 		}
 		else if (strcmp(privProtocol, "AES") == 0) {
 			g_snmp_sess.securityPrivProto = usmAESPrivProtocol;
+			/* FIXME: Find another way to get the size of array(?) to avoid:
+			 *   error: division 'sizeof (oid * {aka long unsigned int *}) / sizeof (oid {aka long unsigned int})' does not compute the number of array elements [-Werror=sizeof-pointer-div]
+			 */
 			g_snmp_sess.securityPrivProtoLen =  sizeof(usmAESPrivProtocol)/sizeof(oid);
 		}
 		else
