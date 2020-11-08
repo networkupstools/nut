@@ -357,4 +357,4 @@ static snmp_info_t delta_ups_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID };
+mib2nut_info_t	delta_ups = { "delta_ups", DELTA_UPS_MIB_VERSION, NULL, NULL, delta_ups_mib, DELTA_UPS_SYSOID, NULL };
