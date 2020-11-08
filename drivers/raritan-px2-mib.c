@@ -578,4 +578,4 @@ static snmp_info_t raritan_px2_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	raritan_px2 = { "raritan-px2", RARITAN_PX2_MIB_VERSION, NULL, RARITAN_PX2_OID_MODEL_NAME, raritan_px2_mib, RARITAN_PX2_MIB_SYSOID };
+mib2nut_info_t	raritan_px2 = { "raritan-px2", RARITAN_PX2_MIB_VERSION, NULL, RARITAN_PX2_OID_MODEL_NAME, raritan_px2_mib, RARITAN_PX2_MIB_SYSOID, NULL };
