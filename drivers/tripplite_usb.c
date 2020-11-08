@@ -174,6 +174,8 @@ static int subdriver_match_func(USBDevice_t *hd, void *privdata)
 		if (getval("productid")) {
 			return 1;
 		}
+		return 0;
+
 	case NOT_SUPPORTED:
 	default:
 		return 0;
@@ -1227,7 +1229,9 @@ void upsdrv_updateinfo(void)
 				status_set("RB");
 				break;
 			} /* else fall through: */
+			goto fallthrough_case_default;
 		default:
+		fallthrough_case_default:
 			upslogx(LOG_ERR, "Unknown value for s[1]: 0x%02x", s_value[1]);
 			dstate_datastale();
 			break;
