@@ -329,5 +329,5 @@ static snmp_info_t cpqpower_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, NULL, CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID };
+mib2nut_info_t	compaq = { "cpqpower", CPQPOWER_MIB_VERSION, NULL, CPQPOWER_OID_MFR_NAME, cpqpower_mib, CPQPOWER_SYSOID, NULL };
 
