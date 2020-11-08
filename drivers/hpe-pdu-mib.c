@@ -29,148 +29,148 @@
 #define HPE_EPDU_OID_MODEL_NAME	".1.3.6.1.4.1.232.165.7.1.2.1.3.0"
 
 static info_lkp_t hpe_pdu_outlet_status_info[] = {
-	{ 1, "off" },
-	{ 2, "on" },
-	{ 3, "pendingOff" }, /* transitional status */
-	{ 4, "pendingOn" },  /* transitional status */
-	{ 0, NULL }
+	{ 1, "off", NULL, NULL },
+	{ 2, "on", NULL, NULL },
+	{ 3, "pendingOff", NULL, NULL }, /* transitional status */
+	{ 4, "pendingOn", NULL, NULL },  /* transitional status */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_outletgroups_status_info[] = {
-	{ 1, "N/A" }, /* notApplicable, if group.type == outlet-section */
-	{ 2, "on" },  /* breakerOn */
-	{ 3, "off" }, /* breakerOff */
-	{ 0, NULL }
+	{ 1, "N/A", NULL, NULL }, /* notApplicable, if group.type == outlet-section */
+	{ 2, "on", NULL, NULL },  /* breakerOn */
+	{ 3, "off", NULL, NULL }, /* breakerOff */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "no" },
-	{ 0, NULL }
+	{ 1, "yes", NULL, NULL },
+	{ 2, "no", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The physical type of outlet */
 static info_lkp_t hpe_pdu_outlet_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "iecC13" },
-	{ 2, "iecC19" },
-	{ 10, "uk" },
-	{ 11, "french" },
-	{ 12, "schuko" },
-	{ 20, "nema515" },
-	{ 21, "nema51520" },
-	{ 22, "nema520" },
-	{ 23, "nemaL520" },
-	{ 24, "nemaL530" },
-	{ 25, "nema615" },
-	{ 26, "nema620" },
-	{ 27, "nemaL620" },
-	{ 28, "nemaL630" },
-	{ 29, "nemaL715" },
-	{ 30, "rf203p277" },
-	{ 0, NULL }
+	{ 0, "unknown", NULL, NULL },
+	{ 1, "iecC13", NULL, NULL },
+	{ 2, "iecC19", NULL, NULL },
+	{ 10, "uk", NULL, NULL },
+	{ 11, "french", NULL, NULL },
+	{ 12, "schuko", NULL, NULL },
+	{ 20, "nema515", NULL, NULL },
+	{ 21, "nema51520", NULL, NULL },
+	{ 22, "nema520", NULL, NULL },
+	{ 23, "nemaL520", NULL, NULL },
+	{ 24, "nemaL530", NULL, NULL },
+	{ 25, "nema615", NULL, NULL },
+	{ 26, "nema620", NULL, NULL },
+	{ 27, "nemaL620", NULL, NULL },
+	{ 28, "nemaL630", NULL, NULL },
+	{ 29, "nemaL715", NULL, NULL },
+	{ 30, "rf203p277", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_ambient_presence_info[] = {
-	{ -1, "unknown" },
-	{ 1, "no" },  /* disconnected */
-	{ 2, "yes" }, /* connected */
-	{ 0, NULL }
+	{ -1, "unknown", NULL, NULL },
+	{ 1, "no", NULL, NULL },  /* disconnected */
+	{ 2, "yes", NULL, NULL }, /* connected */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "warning-low" },   /* Warning low threshold triggered */
-	{ 3, "critical-low" },  /* Critical low threshold triggered */
-	{ 4, "warning-high" },  /* Warning high threshold triggered */
-	{ 5, "critical-high" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, "good", NULL, NULL },          /* No threshold triggered */
+	{ 2, "warning-low", NULL, NULL },   /* Warning low threshold triggered */
+	{ 3, "critical-low", NULL, NULL },  /* Critical low threshold triggered */
+	{ 4, "warning-high", NULL, NULL },  /* Warning high threshold triggered */
+	{ 5, "critical-high", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_frequency_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "out-of-range" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 1, "good", NULL, NULL },          /* No threshold triggered */
+	{ 2, "out-of-range", NULL, NULL },  /* Frequency out of range triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_ambient_drycontacts_info[] = {
-	{ -1, "unknown" },
-	{ 0, "unknown" },
-	{ 1, "open" },
-	{ 2, "closed" },
-	{ 3, "bad" }, /* FIXME: what to do with that? */
-	{ 0, NULL }
+	{ -1, "unknown", NULL, NULL },
+	{ 0, "unknown", NULL, NULL },
+	{ 1, "open", NULL, NULL },
+	{ 2, "closed", NULL, NULL },
+	{ 3, "bad", NULL, NULL }, /* FIXME: what to do with that? */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_voltage_alarms_info[] = {
-	{ 1, "" },                       /* No threshold triggered */
-	{ 2, "low voltage warning!" },   /* Warning low threshold triggered */
-	{ 3, "low voltage critical!" },  /* Critical low threshold triggered */
-	{ 4, "high voltage warning!" },  /* Warning high threshold triggered */
-	{ 5, "high voltage critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },                       /* No threshold triggered */
+	{ 2, "low voltage warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 3, "low voltage critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 4, "high voltage warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 5, "high voltage critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_current_alarms_info[] = {
-	{ 1, "" },                       /* No threshold triggered */
-	{ 2, "low current warning!" },   /* Warning low threshold triggered */
-	{ 3, "low current critical!" },  /* Critical low threshold triggered */
-	{ 4, "high current warning!" },  /* Warning high threshold triggered */
-	{ 5, "high current critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },                       /* No threshold triggered */
+	{ 2, "low current warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 3, "low current critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 4, "high current warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 5, "high current critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_frequency_alarm_info[] = {
-	{ 1, "" },                         /* No threshold triggered */
-	{ 2, "frequency out of range!" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },                         /* No threshold triggered */
+	{ 2, "frequency out of range!", NULL, NULL },  /* Frequency out of range triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_temperature_alarms_info[] = {
-	{ 1, "" },                           /* No threshold triggered */
-	{ 2, "low temperature warning!" },   /* Warning low threshold triggered */
-	{ 3, "low temperature critical!" },  /* Critical low threshold triggered */
-	{ 4, "high temperature warning!" },  /* Warning high threshold triggered */
-	{ 5, "high temperature critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },                           /* No threshold triggered */
+	{ 2, "low temperature warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 3, "low temperature critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 4, "high temperature warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 5, "high temperature critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_threshold_humidity_alarms_info[] = {
-	{ 1, "" },                        /* No threshold triggered */
-	{ 2, "low humidity warning!" },   /* Warning low threshold triggered */
-	{ 3, "low humidity critical!" },  /* Critical low threshold triggered */
-	{ 4, "high humidity warning!" },  /* Warning high threshold triggered */
-	{ 5, "high humidity critical!" }, /* Critical high threshold triggered */
-	{ 0, NULL }
+	{ 1, "", NULL, NULL },                        /* No threshold triggered */
+	{ 2, "low humidity warning!", NULL, NULL },   /* Warning low threshold triggered */
+	{ 3, "low humidity critical!", NULL, NULL },  /* Critical low threshold triggered */
+	{ 4, "high humidity warning!", NULL, NULL },  /* Warning high threshold triggered */
+	{ 5, "high humidity critical!", NULL, NULL }, /* Critical high threshold triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_outlet_group_type_info[] = {
-	{ 0, "unknown" },
-	{ 1, "unknown" },
-	{ 2, "breaker1pole" },
-	{ 3, "breaker2pole" },
-	{ 4, "breaker3pole" },
-	{ 5, "outlet-section" },
-	{ 0, NULL }
+	{ 0, "unknown", NULL, NULL },
+	{ 1, "unknown", NULL, NULL },
+	{ 2, "breaker1pole", NULL, NULL },
+	{ 3, "breaker2pole", NULL, NULL },
+	{ 4, "breaker3pole", NULL, NULL },
+	{ 5, "outlet-section", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_input_type_info[] = {
-	{ 1, "1" }, /* singlePhase     */
-	{ 2, "2" }, /* splitPhase      */
-	{ 3, "3" }, /* threePhaseDelta */
-	{ 4, "3" }, /* threePhaseWye   */
-	{ 0, NULL }
+	{ 1, "1", NULL, NULL }, /* singlePhase     */
+	{ 2, "2", NULL, NULL }, /* splitPhase      */
+	{ 3, "3", NULL, NULL }, /* threePhaseDelta */
+	{ 4, "3", NULL, NULL }, /* threePhaseWye   */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t hpe_pdu_outlet_group_phase_info[] = {
-	{ 1, "L1" }, /* singlePhase */
-	{ 2, "L1" }, /* phase1toN   */
-	{ 3, "L2" }, /* phase2toN   */
-	{ 4, "L3" }, /* phase3toN   */
-	{ 5, "L1" }, /* phase1to2   */
-	{ 6, "L2" }, /* phase2to3   */
-	{ 7, "L3" }, /* phase3to1   */
-	{ 0, NULL }
+	{ 1, "L1", NULL, NULL }, /* singlePhase */
+	{ 2, "L1", NULL, NULL }, /* phase1toN   */
+	{ 3, "L2", NULL, NULL }, /* phase2toN   */
+	{ 4, "L3", NULL, NULL }, /* phase3toN   */
+	{ 5, "L1", NULL, NULL }, /* phase1to2   */
+	{ 6, "L2", NULL, NULL }, /* phase2to3   */
+	{ 7, "L3", NULL, NULL }, /* phase3to1   */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for HPE PDU MIB */
