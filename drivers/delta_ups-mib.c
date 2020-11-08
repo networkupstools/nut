@@ -32,31 +32,31 @@
 /* To create a value lookup structure (as needed on the 2nd line of the example
  * below), use the following kind of declaration, outside of the present snmp_info_t[]:
  * static info_lkp_t onbatt_info[] = {
- * 	{ 1, "OB" },
- * 	{ 2, "OL" },
- * 	{ 0, NULL }
+ * 	{ 1, "OB", NULL, NULL },
+ * 	{ 2, "OL", NULL, NULL },
+ * 	{ 0, NULL, NULL, NULL }
  * };
  */
 
 static info_lkp_t delta_ups_upstype_info[] = {
-	{ 1, "on-line" },
-	{ 2, "off-line" },
-	{ 3, "line-interactive" },
-	{ 4, "3phase" },
-	{ 5, "splite-phase" },
-	{ 0, NULL }
+	{ 1, "on-line", NULL, NULL },
+	{ 2, "off-line", NULL, NULL },
+	{ 3, "line-interactive", NULL, NULL },
+	{ 4, "3phase", NULL, NULL },
+	{ 5, "splite-phase", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t delta_ups_pwr_info[] = {
-    { 0, "OL" },        /* normal  */
-    { 1, "OB" },        /* battery  */
-    { 2, "BYPASS" },    /* bypass */
-    { 3, "TRIM" },      /* reducing */
-    { 4, "BOOST" },     /* boosting */
-    { 5, "BYPASS" },    /* manualBypass */
-    /*{ 6, "NULL" },*/      /* other  */
-    { 7, "OFF" },      /* none */
-    { 0, NULL }
+    { 0, "OL", NULL, NULL },        /* normal  */
+    { 1, "OB", NULL, NULL },        /* battery  */
+    { 2, "BYPASS", NULL, NULL },    /* bypass */
+    { 3, "TRIM", NULL, NULL },      /* reducing */
+    { 4, "BOOST", NULL, NULL },     /* boosting */
+    { 5, "BYPASS", NULL, NULL },    /* manualBypass */
+    /*{ 6, "NULL", NULL, NULL },*/      /* other  */
+    { 7, "OFF", NULL, NULL },      /* none */
+    { 0, NULL, NULL, NULL }
 } ;
 
 /* DELTA_UPS Snmp2NUT lookup table */
