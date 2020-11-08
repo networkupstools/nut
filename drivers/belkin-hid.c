@@ -29,6 +29,8 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
+#include <math.h>     /* for fabs() */
+
 #define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.17"
 
 /* Belkin */
