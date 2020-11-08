@@ -53,16 +53,16 @@
 
 
 static info_lkp_t pulizzi_sw_outlet_status_info[] = {
-	{ 1, "on" },
-	{ 2, "off" },
-	{ 0, NULL }
+	{ 1, "on", NULL, NULL },
+	{ 2, "off", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* simply remap the above status to "yes" */
 static info_lkp_t pulizzi_sw_outlet_switchability_info[] = {
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
+	{ 1, "yes", NULL, NULL },
+	{ 2, "yes", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for Eaton Pulizzi Switched ePDU MIB */
