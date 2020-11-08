@@ -32,51 +32,51 @@
 #define EATON_ATS16_MODEL        ".1.3.6.1.4.1.534.10.2.1.2.0"
 
 static info_lkp_t eaton_ats16_source_info[] = {
-	{ 1, "init" },
-	{ 2, "diagnosis" },
-	{ 3, "off" },
-	{ 4, "1" },
-	{ 5, "2" },
-	{ 6, "safe" },
-	{ 7, "fault" },
-	{ 0, NULL }
+	{ 1, "init", NULL, NULL },
+	{ 2, "diagnosis", NULL, NULL },
+	{ 3, "off", NULL, NULL },
+	{ 4, "1", NULL, NULL },
+	{ 5, "2", NULL, NULL },
+	{ 6, "safe", NULL, NULL },
+	{ 7, "fault", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t eaton_ats16_sensitivity_info[] = {
-	{ 1, "normal" },
-	{ 2, "high" },
-	{ 3, "low" },
-	{ 0, NULL }
+	{ 1, "normal", NULL, NULL },
+	{ 2, "high", NULL, NULL },
+	{ 3, "low", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t eaton_ats16_input_frequency_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "out-of-range" },  /* Frequency out of range triggered */
-	{ 0, NULL }
+	{ 1, "good", NULL, NULL },          /* No threshold triggered */
+	{ 2, "out-of-range", NULL, NULL },  /* Frequency out of range triggered */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t eaton_ats16_input_voltage_status_info[] = {
-	{ 1, "good" },          /* No threshold triggered */
-	{ 2, "derated-range" }, /* Voltage derated */
-	{ 3, "out-of-range" },  /* Voltage out of range triggered */
-	{ 4, "unknown" },       /* "missing" */
-	{ 0, NULL }
+	{ 1, "good", NULL, NULL },          /* No threshold triggered */
+	{ 2, "derated-range", NULL, NULL }, /* Voltage derated */
+	{ 3, "out-of-range", NULL, NULL },  /* Voltage out of range triggered */
+	{ 4, "unknown", NULL, NULL },       /* "missing" */
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t eaton_ats16_test_result_info[] = {
-	{ 1, "done and passed" },
-	{ 2, "done and warning" },
-	{ 3, "done and error" },
-	{ 4, "aborted" },
-	{ 5, "in progress" },
-	{ 6, "no test initiated" },
-	{ 0, NULL }
+	{ 1, "done and passed", NULL, NULL },
+	{ 2, "done and warning", NULL, NULL },
+	{ 3, "done and error", NULL, NULL },
+	{ 4, "aborted", NULL, NULL },
+	{ 5, "in progress", NULL, NULL },
+	{ 6, "no test initiated", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t eaton_ats16_output_status_info[] = {
-	{ 1, "OFF" }, /* Output not powered */
-	{ 2, "OL" },  /* Output powered */
-	{ 0, NULL }
+	{ 1, "OFF", NULL, NULL }, /* Output not powered */
+	{ 2, "OL", NULL, NULL },  /* Output powered */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* EATON_ATS Snmp2NUT lookup table */
