@@ -316,7 +316,7 @@ fail to compile in some cases.  This is what we want.
 Switch case fall-through
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-While C standards allow to write `switch` statements th "fall through"
+While C standards allow to write `switch` statements to "fall through"
 from handling one case into another, modern compilers frown upon that
 practice and spew warnings which complicate detecting real bugs in the
 code (and also looking back at some of the cases written decades ago,
