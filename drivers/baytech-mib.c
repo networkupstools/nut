@@ -31,11 +31,11 @@
 #define BAYTECH_OID_MODEL_NAME	".1.3.6.1.4.1.4779.1.3.5.2.1.24.1"
 
 static info_lkp_t outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
+	{ -1, "error", NULL, NULL },
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 2, "cycling", NULL, NULL }, /* transitional status */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Snmp2NUT lookup table for BayTech MIBs */
