@@ -691,7 +691,7 @@ static void set_power_off()
 	 * use 0/255 to clear a scheduled power off command
 	 */
 
-	if ( shutdown_delay > 255 )
+	if ( shutdown_delay > 250 )
 	{
 		upslogx(
 			LOG_WARNING,
