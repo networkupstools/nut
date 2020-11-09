@@ -1644,11 +1644,11 @@ void upsdrv_shutdown(void)
 		if (apc_read(temp, sizeof(temp), SER_D1) == 1) {
 			ups_status = strtol(temp, 0, 16);
 		} else {
-			logx(LOG_WARNING, "status read failed, assuming LB+OB");
+			logx(LOG_WARNING, "%s", "status read failed, assuming LB+OB");
 			ups_status = APC_STAT_LB | APC_STAT_OB;
 		}
 	} else {
-		logx(LOG_WARNING, "status write failed, assuming LB+OB");
+		logx(LOG_WARNING, "%s", "status write failed, assuming LB+OB");
 		ups_status = APC_STAT_LB | APC_STAT_OB;
 	}
 
