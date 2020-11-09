@@ -701,7 +701,6 @@ static void get_power_off()
 static void set_power_off()
 {
 	uint8_t cmd = POWER_OFF_CMD;
-	uint8_t data;
 
 	upsdebugx( 3, __func__ );
 
