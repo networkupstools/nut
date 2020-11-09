@@ -385,39 +385,39 @@ static void alert_handler(char ch)
 {
 	switch (ch) {
 		case '!':		/* clear OL, set OB */
-			debx(1, "OB");
+			debx(1, "%s", "OB");
 			ups_status &= ~APC_STAT_OL;
 			ups_status |= APC_STAT_OB;
 			break;
 
 		case '$':		/* clear OB, set OL */
-			debx(1, "OL");
+			debx(1, "%s", "OL");
 			ups_status &= ~APC_STAT_OB;
 			ups_status |= APC_STAT_OL;
 			break;
 
 		case '%':		/* set LB */
-			debx(1, "LB");
+			debx(1, "%s", "LB");
 			ups_status |= APC_STAT_LB;
 			break;
 
 		case '+':		/* clear LB */
-			debx(1, "not LB");
+			debx(1, "%s", "not LB");
 			ups_status &= ~APC_STAT_LB;
 			break;
 
 		case '#':		/* set RB */
-			debx(1, "RB");
+			debx(1, "%s", "RB");
 			ups_status |= APC_STAT_RB;
 			break;
 
 		case '?':		/* set OVER */
-			debx(1, "OVER");
+			debx(1, "%s", "OVER");
 			ups_status |= APC_STAT_OVER;
 			break;
 
 		case '=':		/* clear OVER */
-			debx(1, "not OVER");
+			debx(1, "%s", "not OVER");
 			ups_status &= ~APC_STAT_OVER;
 			break;
 
@@ -1419,11 +1419,11 @@ static int sdok(int ign)
 	debx(1, "got \"%s\"", temp);
 
 	if ((!ret && ign) || !strcmp(temp, "OK")) {
-		debx(1, "last shutdown cmd succeeded");
+		debx(1, "%s", "last shutdown cmd succeeded");
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	debx(1, "last shutdown cmd failed");
+	debx(1, "%s", "last shutdown cmd failed");
 	return STAT_INSTCMD_FAILED;
 }
 
@@ -1669,12 +1669,12 @@ static int update_info(int all)
 			continue;
 
 		if (!poll_data(&apc_vartab[i])) {
-			debx(1, "aborting scan");
+			debx(1, "%s", "aborting scan");
 			return 0;
 		}
 	}
 
-	debx(1, "scan completed");
+	debx(1, "%s", "scan completed");
 	return 1;
 }
 
@@ -2109,7 +2109,7 @@ void upsdrv_updateinfo(void)
 	/* try to wake up a dead ups once in awhile */
 	if (dstate_is_stale()) {
 		if (!last_worked)
-			debx(1, "comm lost");
+			debx(1, "%s", "comm lost");
 
 		/* reset this so a full update runs when the UPS returns */
 		last_full = 0;
