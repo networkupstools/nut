@@ -123,6 +123,15 @@ _matrix_required_linux_pass1_quick:
         packages:
         - *deps_driverlibs
 
+  - env:
+    - BUILD_TYPE=default-tgt:distcheck-light NO_PKG_CONFIG=true
+    os: linux
+    sudo: true
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
 # Second pass is a number of shell script syntax checks in standard env:
 _matrix_required_linux_pass2_shell:
   include: &_matrix_required_linux_pass2_shell
