@@ -247,14 +247,16 @@ upsdrv_info_t upsdrv_info = {
 
 /* The macros below all write into a "data" variable defined by the routine
  * scope which calls them, with respective type of uint8_t for "byte" and
- * uint16_t for "word" macros. Native i2c functions operate with s32 type
+ * uint16_t for "word" macros. Native i2c functions operate with __s32 type
  * (currently, signed 32-bit ints?) with negative values for error returns.
+ * Note: some manpages refer to "s32" while headers on my and CI systems use
+ * a "__s32" type. Maybe this is something to determine in configure script?
  * Code below was fixed to convert the valid values and avoid compiler
  * warnings about comparing whether unsigned ints happened to be negative.
  */
 #define I2C_READ_BYTE(fd, cmd, label) \
 	{ \
-		s32 sData; \
+		__s32 sData; \
 		if ((sData = i2c_smbus_read_byte_data(upsfd, cmd)) < 0 ) { \
 			upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 			return; \
@@ -270,7 +272,7 @@ upsdrv_info_t upsdrv_info = {
  */
 #define I2C_WRITE_BYTE(fd, cmd, value, label) \
 	{ \
-		s32 sData; \
+		__s32 sData; \
 		if ((sData = i2c_smbus_write_byte_data(upsfd, cmd, value)) < 0 ) { \
 			upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
 			return; \
@@ -280,7 +282,7 @@ upsdrv_info_t upsdrv_info = {
 
 #define I2C_READ_WORD(fd, cmd, label) \
 	{ \
-		s32 sData; \
+		__s32 sData; \
 		if ((sData = i2c_smbus_read_word_data(upsfd, cmd)) < 0 ) { \
 			upsdebugx(2, "Failure reading the i2c bus [%s]", label); \
 			return; \
