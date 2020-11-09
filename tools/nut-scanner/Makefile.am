@@ -80,7 +80,12 @@ endif
 # object .so names would differ)
 #
 # libnutscan version information
-libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0 -export-symbols-regex ^nutscan_
+libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+if WITH_DMF
+libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table)'
+else
+libnutscan_la_LDFLAGS += -export-symbols-regex ^nutscan_
+endif
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 if WITH_DMF
