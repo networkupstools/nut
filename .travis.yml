@@ -191,6 +191,16 @@ _matrix_required_linux_pass3_large:
         - *deps_driverlibs
         - valgrind
 
+  - env: BUILD_TYPE=default-tgt:distcheck-light-man
+    os: linux
+    sudo: required
+    services:
+        - docker
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+
   - env: BUILD_TYPE=default-withdoc
     os: linux
     addons:
@@ -828,6 +838,7 @@ _matrix_windows_cstd_warn:
 _matrix_required_linux:
   include: &_matrix_required_linux
   - *_matrix_required_linux_pass1_quick
+  - *_matrix_required_linux_pass4_dmf
   - *_matrix_required_linux_pass2_shell
   - *_matrix_required_linux_pass3_large
   - *_matrix_linux_gnustd_nowarn
