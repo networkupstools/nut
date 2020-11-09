@@ -800,7 +800,7 @@ static int update_status(void)
 
 	if ((ret < 1) || (!strcmp(buf, "NA"))) {
 		if (ret >= 0)
-			logx(LOG_WARNING, "failed");
+			logx(LOG_WARNING, "%s", "failed");
 		return 0;
 	}
 
@@ -951,7 +951,7 @@ static void apc_getcaps(int qco)
 		 * as capability support was reported earlier
 		 */
 		if (ret >= 0)
-			upslogx(LOG_WARNING, "APC cannot do capabilities but said it could !");
+			upslogx(LOG_WARNING, "%s", "APC cannot do capabilities but said it could !");
 		return;
 	}
 
@@ -1281,7 +1281,7 @@ static int do_cal(int start)
 
 	/* if we can't check the current calibration status, bail out */
 	if ((ret < 1) || (!strcmp(temp, "NA"))) {
-		upslogx(LOG_WARNING, "runtime calibration state undeterminable");
+		upslogx(LOG_WARNING, "%s", "runtime calibration state undeterminable");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
@@ -1290,13 +1290,13 @@ static int do_cal(int start)
 	if (tval & APC_STAT_CAL) {	/* calibration currently happening */
 		if (start == 1) {
 			/* requested start while calibration still running */
-			upslogx(LOG_NOTICE, "runtime calibration already in progress");
+			upslogx(LOG_NOTICE, "%s", "runtime calibration already in progress");
 			return STAT_INSTCMD_HANDLED;	/* FUTURE: failure */
 		}
 
 		/* stop requested */
 
-		upslogx(LOG_NOTICE, "stopping runtime calibration");
+		upslogx(LOG_NOTICE, "%s", "stopping runtime calibration");
 
 		ret = apc_write(APC_CMD_CALTOGGLE);
 
@@ -1317,11 +1317,11 @@ static int do_cal(int start)
 	/* calibration not happening */
 
 	if (start == 0) {		/* stop requested */
-		upslogx(LOG_NOTICE, "runtime calibration not occurring");
+		upslogx(LOG_NOTICE, "%s", "runtime calibration not occurring");
 		return STAT_INSTCMD_HANDLED;		/* FUTURE: failure */
 	}
 
-	upslogx(LOG_NOTICE, "starting runtime calibration");
+	upslogx(LOG_NOTICE, "%s", "starting runtime calibration");
 
 	ret = apc_write(APC_CMD_CALTOGGLE);
 
@@ -1354,7 +1354,7 @@ static int smartmode(void)
 	ret = apc_read(temp, sizeof(temp), 0);
 
 	if ((ret < 1) || (!strcmp(temp, "NA")) || (!strcmp(temp, "NO"))) {
-		upslogx(LOG_CRIT, "enabling smartmode failed !");
+		upslogx(LOG_CRIT, "%s", "enabling smartmode failed !");
 		return 0;
 	}
 
@@ -1636,7 +1636,7 @@ void upsdrv_shutdown(void)
 	char temp[APC_LBUF];
 
 	if (!smartmode(1))
-		logx(LOG_WARNING, "setting SmartMode failed !");
+		logx(LOG_WARNING, "%s", "setting SmartMode failed !");
 
 	/* check the line status */
 
@@ -1800,12 +1800,12 @@ static int setvar_string(apc_vartab_t *vt, const char *val)
 	ret = apc_read(temp, sizeof(temp), SER_AA);
 
 	if (ret < 1) {
-		logx(LOG_ERR, "short final read");
+		logx(LOG_ERR, "%s", "short final read");
 		return STAT_SET_FAILED;
 	}
 
 	if (!strcmp(temp, "NO")) {
-		logx(LOG_ERR, "got NO at final read");
+		logx(LOG_ERR, "%s", "got NO at final read");
 		return STAT_SET_FAILED;
 	}
 
