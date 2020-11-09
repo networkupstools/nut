@@ -264,20 +264,12 @@ upsdrv_info_t upsdrv_info = {
 		data = (uint8_t) sData; \
 	}
 
-/* FIXME? This code before fixing contained assignment to "data" so the fix
- * retains that. Not sure this is logically right; maybe just checking for
- * anonymous negative result should suffice.
- * For the one currently existing use-case below this does not matter anyway,
- * it is the last operation in a routine.
- */
 #define I2C_WRITE_BYTE(fd, cmd, value, label) \
 	{ \
-		__s32 sData; \
-		if ((sData = i2c_smbus_write_byte_data(upsfd, cmd, value)) < 0 ) { \
+		if ( i2c_smbus_write_byte_data(upsfd, cmd, value) < 0 ) { \
 			upsdebugx(2, "Failure writing to the i2c bus [%s]", label); \
 			return; \
 		} ; \
-		data = (uint8_t) sData; \
 	}
 
 #define I2C_READ_WORD(fd, cmd, label) \
