@@ -134,7 +134,7 @@ static void do_header(const char *title)
 	printf("<HTML>\n");
 	printf("<HEAD><TITLE>upsset: %s</TITLE></HEAD>\n", title);
 
-	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n"); 
+	printf("<BODY BGCOLOR=\"#FFFFFF\" TEXT=\"#000000\" LINK=\"#0000EE\" VLINK=\"#551A8B\">\n");
 
 	printf("<TABLE BGCOLOR=\"#50A0A0\" ALIGN=\"CENTER\">\n");
 	printf("<TR><TD>\n");
@@ -144,7 +144,7 @@ static void start_table(void)
 {
 	printf("<TABLE CELLPADDING=\"5\" CELLSPACING=\"0\" ALIGN=\"CENTER\" WIDTH=\"100%%\">\n");
 	printf("<TR><TH COLSPAN=2 BGCOLOR=\"#60B0B0\">\n");
-	printf("<FONT SIZE=\"+2\">Network UPS Tools upsset %s</FONT>\n", 
+	printf("<FONT SIZE=\"+2\">Network UPS Tools upsset %s</FONT>\n",
 		UPS_VERSION);
 	printf("</TH></TR>\n");
 }
@@ -158,7 +158,7 @@ static void do_hidden(const char *next)
 		password);
 
 	if (next)
-		printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"%s\">\n", 
+		printf("<INPUT TYPE=\"HIDDEN\" NAME=\"function\" VALUE=\"%s\">\n",
 			next);
 }
 
@@ -222,7 +222,7 @@ static void do_pickups(const char *currfunc)
 			continue;
 		}
 
-		upslist_arg(ctx.numargs, ctx.arglist);		
+		upslist_arg(ctx.numargs, ctx.arglist);
 	}
 
 	pconf_finish(&ctx);
@@ -391,7 +391,7 @@ static void showcmds(void)
 		/* CMD upsname cmdname */
 		if (numa < 3) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %d args, need at least 3)\n", numa);
+				"(got %u args, need at least 3)\n", numa);
 
 			return;
 		}
@@ -466,7 +466,7 @@ static void showcmds(void)
 
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
-}	
+}
 
 /* handle setting authentication data in the server */
 static void send_auth(const char *next)
@@ -491,7 +491,7 @@ static void send_auth(const char *next)
 				"upsd version too old - USERNAME not supported");
 		}
 
-		error_page(next, "Can't set user name", 
+		error_page(next, "Can't set user name",
 			"Set user name failed: %s", upscli_strerror(&ups));
 	}
 
@@ -504,7 +504,7 @@ static void send_auth(const char *next)
 	if (upscli_readline(&ups, buf, sizeof(buf)) < 0)
 		error_page(next, "Can't set password",
 			"Password set failed: %s", upscli_strerror(&ups));
-}	
+}
 
 static void docmd(void)
 {
@@ -515,13 +515,13 @@ static void docmd(void)
 			"Access to that host is not authorized");
 
 	/* the user is messing with us */
-	if (!upscommand)	
-		error_page("showcmds", "Form error", 
+	if (!upscommand)
+		error_page("showcmds", "Form error",
 			"No instant command selected");
 
 	/* (l)user took the default blank option */
 	if (strlen(upscommand) == 0)
-		error_page("showcmds", "Form error", 
+		error_page("showcmds", "Form error",
 			"No instant command selected");
 
 	upsd_connect();
@@ -659,8 +659,9 @@ static void do_enum(const char *varname)
 
 	if (ret < 0) {
 		printf("Unavailable\n");
-		fprintf(stderr, "Error doing ENUM %s %s: %s\n", 
+		fprintf(stderr, "Error doing ENUM %s %s: %s\n",
 			upsname, varname, upscli_strerror(&ups));
+		free(val);
 		return;
 	}
 
@@ -674,7 +675,7 @@ static void do_enum(const char *varname)
 
 		if (numa < 4) {
 			fprintf(stderr, "Error: insufficient data "
-				"(got %d args, need at least 4)\n", numa);
+				"(got %u args, need at least 4)\n", numa);
 
 			free(val);
 			return;
@@ -709,7 +710,7 @@ static void do_type(const char *varname)
 	ret = upscli_get(&ups, numq, query, &numa, &answer);
 
 	if ((ret < 0) || (numa < numq)) {
-		printf("Unknown type\n");	
+		printf("Unknown type\n");
 		return;
 	}
 
@@ -913,7 +914,7 @@ static void savesettings(void)
 	char	*desc;
 	uvtype_t	*upsvar;
 
-	if (!checkhost(monups, &desc)) 
+	if (!checkhost(monups, &desc))
 		error_page("showsettings", "Access denied",
 			"Access to that host is not authorized");
 
@@ -1027,7 +1028,7 @@ static void check_conf(void)
 	fprintf(stderr, "upsset.conf does not permit execution\n");
 
 	exit(EXIT_FAILURE);
-}	
+}
 
 int main(int argc, char **argv)
 {
@@ -1074,6 +1075,6 @@ int main(int argc, char **argv)
 		docmd();
 
 	printf("Error: Unhandled function name [%s]\n", function);
-	
+
 	return 0;
 }

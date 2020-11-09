@@ -1,12 +1,12 @@
 /*
 	anything commented is optional
 	anything else is mandatory
-	 
+
 	for more information, refer to:
 	* docs/developers.txt
 	* docs/new-drivers.txt
 	* docs/new-names.txt
-	
+
 	and possibly also to:
 	* docs/hid-subdrivers.txt for USB/HID devices
 	* or docs/snmp-subdrivers.txt for SNMP devices
@@ -55,7 +55,7 @@ void upsdrv_updateinfo(void)
 	/* ser_send(upsfd, "foo%d", 1234); */
 	/* ser_send_buf(upsfd, bincmd, 12); */
 
-	/* 
+	/*
 	 * ret = ser_get_line(upsfd, temp, sizeof(temp), ENDCHAR, IGNCHARS);
 	 *
 	 * if (ret < STATUS_LEN) {

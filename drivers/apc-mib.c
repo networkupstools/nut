@@ -29,7 +29,7 @@
 #define APCC_MIB_VERSION	"1.3"
 
 /* Other APC sysOID:
- * 
+ *
  * examples found on the Net and other sources:
  *   'enterprises.apc.products.system.smartUPS.smartUPS700'
  *  - from fence agents
@@ -43,7 +43,7 @@
  *   .1.3.6.1.4.1.318.1.3.2.8
  */
 
-/* TODO: find the right sysOID for this MIB 
+/* TODO: find the right sysOID for this MIB
  * Ie ".1.3.6.1.4.1.318.1.1.1" or ".1.3.6.1.4.1.318" or? */
 
 /*     .1.3.6.1.4.1.318.1.1.1

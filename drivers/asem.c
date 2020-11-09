@@ -30,13 +30,14 @@
 	so you need to boot with acpi_enforce_resources=lax option.
 */
 
-/* Depends on i2c-dev.h, Linux only */
+#include "main.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+/* Depends on i2c-dev.h, Linux only */
 #include <linux/i2c-dev.h>
-
-#include "main.h"
+#include <sys/ioctl.h>
 
 #ifndef __STR__
 #	define __STR__(x) #x
@@ -245,7 +246,7 @@ void upsdrv_updateinfo(void)
 
 	status_init();
 	status_set(online ? "OL" : "OB");
-	if (!discharging & !fully_charged)
+	if (!discharging && !fully_charged)
 		status_set("CHRG");
 	else if (discharging && current < 0)
 		status_set("DISCHRG");

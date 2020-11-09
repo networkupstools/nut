@@ -201,7 +201,7 @@ nutscan_device_t * nutscan_scan_usb()
 				/* get vendor name */
 				if (dev->descriptor.iManufacturer) {
 					ret = (*nut_usb_get_string_simple)(udev,
-						dev->descriptor.iManufacturer, 
+						dev->descriptor.iManufacturer,
 						string, sizeof(string));
 					if (ret > 0) {
 						vendor_name = strdup(str_rtrim(string, ' '));

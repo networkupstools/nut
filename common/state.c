@@ -124,7 +124,10 @@ static void st_tree_node_add(st_tree_t **nptr, st_tree_t *sptr)
 	*nptr = sptr;
 }
 
-/* remove a variable from a tree */
+/* remove a variable from a tree
+ * except for variables with ST_FLAG_IMMUTABLE
+ * (for override.* to survive) per issue #737
+ */
 int state_delinfo(st_tree_t **nptr, const char *var)
 {
 	while (*nptr) {
@@ -141,6 +144,11 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 			continue;
 		}
 
+		if (node->flags & ST_FLAG_IMMUTABLE) {
+			upsdebugx(6, "%s: not deleting immutable variable [%s]", __func__, var);
+			return 0;
+		}
+
 		/* whatever is on the left, hang it off current right */
 		st_tree_node_add(&node->right, node->left);
 
@@ -153,7 +161,7 @@ int state_delinfo(st_tree_t **nptr, const char *var)
 	}
 
 	return 0;	/* not found */
-}	
+}
 
 /* interface */
 
@@ -218,7 +226,7 @@ static int st_tree_enum_add(enum_t **list, const char *enc)
 			list = &(*list)->next;
 			continue;
 		}
-		
+
 		return 0;	/* duplicate */
 	}
 
@@ -397,7 +405,7 @@ const range_t *state_getrangelist(st_tree_t *root, const char *var)
 }
 
 void state_setflags(st_tree_t *root, const char *var, int numflags, char **flag)
-{	
+{
 	int	i;
 	st_tree_t	*sttmp;
 

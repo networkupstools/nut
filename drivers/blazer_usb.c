@@ -279,7 +279,7 @@ static int krauler_command(const char *cmd, char *buf, size_t buflen)
 			if (langid_fix != -1) {
 				/* Limit this check, at least for now */
 				/* Invalid receive size - message corrupted */
-				if (ret != buf[0]) 
+				if (ret != buf[0])
 				{
 					upsdebugx(1, "size mismatch: %d / %d", ret, buf[0]);
 					continue;

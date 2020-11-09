@@ -111,7 +111,7 @@ const struct option longopts[] =
 	{ "snmp_scan_dmf_dir", required_argument, NULL, 'Z' },
 	{NULL,0,NULL,0}};
 #else
-#define getopt_long(a,b,c,d,e)	getopt(a,b,c) 
+#define getopt_long(a,b,c,d,e)	getopt(a,b,c)
 #endif /* HAVE_GETOPT_LONG */
 
 static nutscan_device_t *dev[TYPE_END];
@@ -136,7 +136,7 @@ static void * run_snmp(void * arg)
 {
 	nutscan_snmp_t * sec = (nutscan_snmp_t *)arg;
 
-	dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip,end_ip,timeout,sec);
+	dev[TYPE_SNMP] = nutscan_scan_snmp(start_ip, end_ip, timeout, sec);
 	return NULL;
 }
 
@@ -150,7 +150,7 @@ static void * run_xml(void * arg)
 
 static void * run_nut_old(void * arg)
 {
-	dev[TYPE_NUT] = nutscan_scan_nut(start_ip,end_ip,port,timeout);
+	dev[TYPE_NUT] = nutscan_scan_nut(start_ip, end_ip, port, timeout);
 	return NULL;
 }
 
@@ -164,13 +164,13 @@ static void * run_ipmi(void * arg)
 {
 	nutscan_ipmi_t * sec = (nutscan_ipmi_t *)arg;
 
-	dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip,end_ip,sec);
+	dev[TYPE_IPMI] = nutscan_scan_ipmi(start_ip, end_ip, sec);
 	return NULL;
 }
 
 static void * run_eaton_serial(void * arg)
 {
-	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial (serial_ports);
+	dev[TYPE_EATON_SERIAL] = nutscan_scan_eaton_serial(serial_ports);
 	return NULL;
 }
 
