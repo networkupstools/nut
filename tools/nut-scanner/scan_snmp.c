@@ -87,7 +87,9 @@
 #endif
 
 #include "nutscan-snmp.h"
-#include "dmf.h"
+#if WITH_DMFMIB
+# include "dmf.h"
+#endif
 
 /* Address API change */
 #ifndef usmAESPrivProtocol
