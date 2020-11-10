@@ -1095,8 +1095,9 @@ static void help(const char *progname)
 	exit(EXIT_SUCCESS);
 }
 
-static void set_reload_flag(int NUT_UNUSED(sig))
+static void set_reload_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
 	reload_flag = 1;
 }
 
