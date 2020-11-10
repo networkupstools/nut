@@ -1,5 +1,5 @@
-#ifndef PROTO_H
-#define PROTO_H
+#ifndef NUT_PROTO_H_SEEN
+#define NUT_PROTO_H_SEEN 1
 
 #include "attribute.h"
 
@@ -91,4 +91,4 @@ int putenv(char *);
 /* *INDENT-ON* */
 #endif
 
-#endif /* PROTO_H */
+#endif /* NUT_PROTO_H_SEEN */
