@@ -1,7 +1,7 @@
 /* external state structures used by things like upsd */
 
-#ifndef EXTSTATE_H_SEEN
-#define EXTSTATE_H_SEEN 1
+#ifndef NUT_EXTSTATE_H_SEEN
+#define NUT_EXTSTATE_H_SEEN 1
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -44,4 +44,4 @@ typedef struct cmdlist_s {
 /* *INDENT-ON* */
 #endif
 
-#endif	/* EXTSTATE_H_SEEN */
+#endif	/* NUT_EXTSTATE_H_SEEN */
