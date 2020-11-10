@@ -152,9 +152,10 @@ int ser_open(const char *port)
 	return res;
 }
 
-int ser_set_speed_nf(int fd, const char * NUT_UNUSED(port), speed_t speed)
+int ser_set_speed_nf(int fd, const char *port, speed_t speed)
 {
 	struct	termios	tio;
+	NUT_UNUSED_VARIABLE(port);
 
 	if (tcgetattr(fd, &tio) != 0) {
 		return -1;
