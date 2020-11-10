@@ -189,10 +189,12 @@ int init_snmp_device_table()
 			    device_table_counter>1 )
 			{
 				snmp_device_table = snmp_device_table_dmf;
-				upsdebugx(1, "SUCCESS: Can use the SNMP device mapping parsed from DMF library with %d definitions", device_table_counter-1);
+				upsdebugx(1, "SUCCESS: Can use the SNMP device mapping parsed from "
+					"DMF library with %d definitions", device_table_counter-1);
 				// Note: caller should free these structures in the end, just like below
 			} else {
-				upsdebugx(1, "PROBLEM: Can not access the SNMP device mapping parsed from DMF library, or loaded an empty table");
+				upsdebugx(1, "PROBLEM: Can not access the SNMP device mapping "
+					"parsed from DMF library, or loaded an empty table");
 				uninit_snmp_device_table();
 			}
 		}
@@ -358,14 +360,15 @@ int nutscan_load_snmp_library(const char *libname_path)
 
 	return 1;
 err:
-	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n", libname_path, dl_error);
+	fprintf(stderr, "Cannot load SNMP library (%s) : %s. SNMP search disabled.\n",
+		libname_path, dl_error);
 	dl_handle = (void *)1;
 	lt_dlexit();
 	return 0;
 }
 /* end of dynamic link library stuff */
 
-static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response,char * mib)
+static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response, char * mib)
 {
 	nutscan_device_t * dev = NULL;
 	struct snmp_session * session;
@@ -535,7 +538,8 @@ static void try_all_oid(void * arg, const char * mib_found)
 		/* add device only if not yet detected with the same mib */
 		if (mib_found == NULL || (strcmp(mib_found, snmp_device_table[index].mib) != 0)) {
 			scan_snmp_add_device(sec,response,snmp_device_table[index].mib);
-			upsdebugx(3, "Found another match for device with MIB '%s'", snmp_device_table[index].mib);
+			upsdebugx(3, "Found another match for device with MIB '%s'",
+				snmp_device_table[index].mib);
 		}
 		else {
 			upsdebugx(3, "Skip duplicated device %s", snmp_device_table[index].mib);
@@ -599,7 +603,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 			case SNMP_SEC_LEVEL_AUTHNOPRIV:
 				if (sec->authPassword == NULL) {
 					fprintf(stderr,
-			"authPassword is required for SNMPv3 in %s mode\n",
+						"authPassword is required "
+						"for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
@@ -608,7 +613,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 				if ((sec->authPassword == NULL) ||
 					(sec->privPassword == NULL)) {
 					fprintf(stderr,
-	"authPassword and privPassword are required for SNMPv3 in %s mode\n",
+						"authPassword and privPassword are "
+						"required for SNMPv3 in %s mode\n",
 						sec->secLevel);
 					return 0;
 				}
@@ -654,7 +660,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					&snmp_sess->securityAuthKeyLen)
 					!= SNMPERR_SUCCESS) {
 							fprintf(stderr,
-		"Error generating Ku from authentication pass phrase\n");
+							"Error generating Ku from "
+							"authentication pass phrase\n");
 							return 0;
 		}
 
@@ -696,7 +703,8 @@ static int init_session(struct snmp_session * snmp_sess, nutscan_snmp_t * sec)
 					&snmp_sess->securityPrivKeyLen)
 					!= SNMPERR_SUCCESS) {
 							fprintf(stderr,
-		"Error generating Ku from private pass phrase\n");
+							"Error generating Ku from "
+							"private pass phrase\n");
 							return 0;
 		}
 
@@ -825,15 +833,16 @@ try_SysOID_free:
 	return NULL;
 }
 
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
+                                     long usec_timeout, nutscan_snmp_t * sec)
 {
 	int i;
 	nutscan_snmp_t * tmp_sec;
 	nutscan_ip_iter_t ip;
 	char * ip_str = NULL;
-        bool pass = true;
+	bool pass = true;
 #ifdef HAVE_PTHREAD
-        sem_t *semaphore = nutscan_semaphore();
+	sem_t *semaphore = nutscan_semaphore();
 	pthread_t thread;
 	pthread_t * thread_array = NULL;
 	int thread_count = 0;
@@ -865,50 +874,50 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 
 	while(ip_str != NULL) {
 #ifdef HAVE_PTHREAD
-            if(thread_array == NULL) {
-                sem_wait(semaphore);
-                pass=true;
-            } else {
-                pass = (sem_trywait(semaphore) == 0);
-            }
+		if(thread_array == NULL) {
+			sem_wait(semaphore);
+			pass=true;
+		} else {
+			pass = (sem_trywait(semaphore) == 0);
+		}
 #endif
-            if(pass) {
-		tmp_sec = malloc(sizeof(nutscan_snmp_t));
-		memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
-		tmp_sec->peername = ip_str;
+		if(pass) {
+			tmp_sec = malloc(sizeof(nutscan_snmp_t));
+			memcpy(tmp_sec, sec, sizeof(nutscan_snmp_t));
+			tmp_sec->peername = ip_str;
 
 #ifdef HAVE_PTHREAD
-		if (pthread_create(&thread,NULL,try_SysOID,(void*)tmp_sec)==0){
-			thread_count++;
-			pthread_t *new_thread_array = realloc(thread_array,
+			if (pthread_create(&thread,NULL,try_SysOID,(void*)tmp_sec)==0){
+				thread_count++;
+				pthread_t *new_thread_array = realloc(thread_array,
 						thread_count*sizeof(pthread_t));
-			if (new_thread_array == NULL) {
-				upsdebugx(1, "%s: Failed to realloc thread", __func__);
-				break;
+				if (new_thread_array == NULL) {
+					upsdebugx(1, "%s: Failed to realloc thread", __func__);
+					break;
+				}
+				else {
+					thread_array = new_thread_array;
+				}
+				thread_array[thread_count-1] = thread;
 			}
-			else {
-				thread_array = new_thread_array;
-			}
-			thread_array[thread_count-1] = thread;
-		}
 #else
-		try_SysOID((void *)tmp_sec);
+			try_SysOID((void *)tmp_sec);
 #endif
-//		free(ip_str); // Do not free() here - seems to cause a double-free instead
-		ip_str = nutscan_ip_iter_inc(&ip);
-//		free(tmp_sec);
+//			free(ip_str); // Do not free() here - seems to cause a double-free instead
+			ip_str = nutscan_ip_iter_inc(&ip);
+//			free(tmp_sec);
 #ifdef HAVE_PTHREAD
-            } else {
-		for (i=0; i < thread_count; i++) {
-			pthread_join(thread_array[i],NULL);
-			sem_post(semaphore);
-		}
-		thread_count = 0;
-		free(thread_array);
-		thread_array = NULL;
+		} else {
+			for (i=0; i < thread_count; i++) {
+				pthread_join(thread_array[i],NULL);
+				sem_post(semaphore);
+			}
+			thread_count = 0;
+			free(thread_array);
+			thread_array = NULL;
 #endif
-            }
-	};
+		}
+	}
 
 #ifdef HAVE_PTHREAD
 	for ( i=0; i < thread_count ; i++) {
@@ -922,10 +931,9 @@ nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip
 	return result;
 }
 #else /* WITH_SNMP */
-nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,long usec_timeout, nutscan_snmp_t * sec)
+nutscan_device_t * nutscan_scan_snmp(const char * start_ip, const char * stop_ip,
+                                     long usec_timeout, nutscan_snmp_t * sec)
 {
 	return NULL;
 }
 #endif /* WITH_SNMP */
-
-
