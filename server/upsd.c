@@ -1168,21 +1168,26 @@ int main(int argc, char **argv)
 			case 'h':
 				help(progname);
 				break;
+
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
 					exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+
 			case 'q':
 				nut_log_level++;
 				break;
+
 			case 'r':
 				chroot_path = optarg;
 				break;
+
 			case 'u':
 				user = optarg;
 				break;
+
 			case 'V':
 				/* do nothing - we already printed the banner */
 				exit(EXIT_SUCCESS);
