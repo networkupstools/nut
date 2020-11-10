@@ -413,9 +413,13 @@ static void draw_utility(double var, int min, int nom, int max,
 }
 
 /* draws battery.percent bar style indicator */
-static void draw_battpct(double var, int min, int NUT_UNUSED(nom),
-		int NUT_UNUSED(max), int NUT_UNUSED(deviation), const char *format)
+static void draw_battpct(double var, int min, int nom,
+		int max, int deviation, const char *format)
 {
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(max);
+	NUT_UNUSED_VARIABLE(deviation);
+
 	if (min < 0) {
 		min = 50;
 	}
@@ -470,27 +474,37 @@ static void draw_battvolt(double var, int min, int nom, int max,
 }
 
 /* draws ups.load bar style indicator */
-static void draw_upsload(double var, int NUT_UNUSED(min),
-		int NUT_UNUSED(nom), int NUT_UNUSED(max),
-		int NUT_UNUSED(deviation), const char *format)
+static void draw_upsload(double var, int min,
+		int nom, int max,
+		int deviation, const char *format)
 {
+	NUT_UNUSED_VARIABLE(min);
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(max);
+	NUT_UNUSED_VARIABLE(deviation);
+
 	drawbar(0, 125, 5, 5, 25, 100, 125, -1, -1, 0, 50, var, format);
 }
 
 /* draws temperature bar style indicator */
-static void draw_temperature(double var, int min, int NUT_UNUSED(nom), int max,
-		int NUT_UNUSED(deviation), const char *format)
+static void draw_temperature(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
 	int	hi = get_imgarg("tempmax");
 	int	lo = get_imgarg("tempmin");
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(deviation);
 
 	drawbar(lo, hi, 1, 5, 10, lo, min, max, hi, -1, -1, var, format);
 }
 
 /* draws humidity bar style indicator */
-static void draw_humidity(double var, int min, int NUT_UNUSED(nom), int max,
-		int NUT_UNUSED(deviation), const char *format)
+static void draw_humidity(double var, int min, int nom, int max,
+		int deviation, const char *format)
 {
+	NUT_UNUSED_VARIABLE(nom);
+	NUT_UNUSED_VARIABLE(deviation);
+
 	drawbar(0, 100, 2, 10, 20, 0, min, max, 100, -1, -1, var, format);
 }
 
@@ -519,11 +533,13 @@ static int get_var(const char *var, char *buf, size_t buflen)
 	return 1;
 }
 
-int main(int NUT_UNUSED(argc), char ** NUT_UNUSED(argv))
+int main(int argc, char **argv)
 {
 	char	str[SMALLBUF];
 	int	i, min, nom, max;
 	double	var = 0;
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 
 	extractcgiargs();
 
