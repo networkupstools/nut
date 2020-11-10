@@ -48,8 +48,10 @@ char * tweak_max_report[] = {
 	NULL};
 
 /* Don't use interrupt pipe on 5G models (used by proprietary protocol) */
-static void *disable_interrupt_pipe(USBDevice_t *  NUT_UNUSED(device))
+static void *disable_interrupt_pipe(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	if (use_interrupt_pipe == TRUE) {
 		/* FIXME? Suggest data from "device" to help the setup below? */
 		upslogx(LOG_INFO, "interrupt pipe disabled (add 'pollonly' flag to 'ups.conf' to get rid of this message)");
