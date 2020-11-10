@@ -176,8 +176,10 @@ static void stop_driver(const ups_t *ups)
 	}
 }
 
-static void waitpid_timeout(const int NUT_UNUSED(sig))
+static void waitpid_timeout(const int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* do nothing */
 	return;
 }
