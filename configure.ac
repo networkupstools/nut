@@ -147,14 +147,15 @@ AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
 dnl compilation modes, only in GNU, POSIX or other extension modes:
-AC_MSG_CHECKING([for required C library routines; if something is not found, you may need to enable a different standard or extension version])
-AC_CHECK_FUNCS(strcasecmp strncasecmp, [], [AC_MSG_ERROR([Required C library routine not found])])
+AC_MSG_CHECKING([for required C library routines; if something is not
+found, you may need to enable a different standard or extension version.
+You may also have to configure without extreme warning levels since
+autotools tests fail those on their own and assume system lacks stuff.])
+AC_CHECK_FUNCS(strcasecmp strncasecmp,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
 AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
-	[], [AC_MSG_ERROR([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
-
-AS_IF([test -n "${nut_missing_std_func}"],
-	[AC_MSG_ERROR([R: ${nut_missing_std_func}])])
+	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
 
 dnl These routines' arg types differ in strict C standard mode
 dnl from what they use in the modes expected by NUT codebase:
