@@ -1007,44 +1007,58 @@ static int	fuji_command(const char *cmd, char *buf, size_t buflen)
 	return (int)strlen(buf);
 }
 
-static void	*cypress_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
 
-static void	*sgs_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*sgs_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &sgs_command;
 	return NULL;
 }
 
-static void	*ippon_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*ippon_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &ippon_command;
 	return NULL;
 }
 
-static void	*krauler_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*krauler_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &krauler_command;
 	return NULL;
 }
 
-static void	*phoenix_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*phoenix_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &phoenix_command;
 	return NULL;
 }
 
-static void	*fabula_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*fabula_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fabula_command;
 	return NULL;
 }
 
-static void	*fuji_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void	*fuji_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &fuji_command;
 	return NULL;
 }
@@ -1112,8 +1126,10 @@ static int qx_is_usb_device_supported(qx_usb_device_id_t *usb_device_id_list, US
 	return retval;
 }
 
-static int	device_match_func(USBDevice_t *hd, void * NUT_UNUSED(privdata))
+static int	device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
