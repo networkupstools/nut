@@ -143,6 +143,10 @@ function do_stuff(void)
 At this point NUT is expected to work correctly when built with a C99
 (or GNU99 on Linux) or newer standard.
 
+See the `.travis.yml` file in project sources for detailed matrix of
+`CFLAGS` and compiler versions currently known to work or to not (yet)
+work on operating systems available to that CI solution.
+
 The NUT codebase may build in a mode without warnings made fatal on C89
 (GNU89), but the emitted warnings indicate that those binaries may crash.
 If somebody in the community requires to build and run NUT on systems
@@ -152,8 +156,29 @@ The NUT project on GitHub has integration with Travis CI to test a large
 set of compiler and option combinations, covering different versions of
 gcc and clang, C standards, and requiring to pass builds at least in a
 mode without warnings (and checking the other cases where any warnings
-are made fatal). Developers can use the scripts involved to fix existing
-code or ensure support for new compilers and C standard revisions.
+are made fatal).
+
+Developers can directly use the scripts involved in CI builds to fix
+existing code on their workstations or to ensure support for new
+compilers and C standard revisions, e.g. save a local file like this:
+
+	$ cat _fightwarn-gcc10-gnu17.sh
+	#!/bin/sh
+
+	BUILD_TYPE=default-all-errors \
+	CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" \
+	CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" \
+	CC=gcc-10 CXX=g++-10 \
+		./ci_build.sh
+
+...and then execute it to prepare a workspace, after which you can go
+fixing bugs file-by-file running a `make` after each save to confirm
+your solutions and uncover the next issue to address :-)
+
+As a rule of thumb, new contributions must not emit any warnings when
+built in GNU99 mode. Technically they must survive the part of test
+matrix across the several platforms tested by Travis CI and marked
+as required to pass, to be accepted for pull request merge.
 
 * https://github.com/networkupstools/nut/issues/823
 
@@ -282,7 +307,6 @@ To display in a rough example:
 -------------------------------------------------------------------------------
 	static void signal_X_handler(int signal_X) {
 		NUT_UNUSED_VARIABLE(signal_X);
-	
 		/* We have explicitly got nothing to do if we catch signal X */
 		return;
 	}
