@@ -109,8 +109,8 @@ static const unsigned char
 	cmd_sysLoadKey[]	= {1,156,2,1,7,167}, /* UPS SysLoadKey */
 	cmd_shutdown[]  	= {1,156,4,1,136,76,76,194}; /* UPS shutdown */
 
-/* Quiesce the compiler warnings */
-static void NUT_UNUSED_FUNCTION(dummy_bitfields)(void)
+/* Quiesce the compiler warnings about the fields below */
+static void NUT_UNUSED_FUNCTION_dummy_bitfields(void)
 {
 	NUT_UNUSED_VARIABLE(cmd_battestres);
 	NUT_UNUSED_VARIABLE(cmd_selftestres);
@@ -562,6 +562,9 @@ void upsdrv_initups(void)
 {
 	const char *val = getval("baudrate");
 	speed_t baudrate = B2400;
+
+	/* No-op, just made to quiesce the compiler warnings */
+	NUT_UNUSED_FUNCTION_dummy_bitfields();
 
 	if (val) {
 		switch (atoi(val))
