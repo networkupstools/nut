@@ -1039,8 +1039,11 @@ static void display_single(void)
 	upscli_disconnect(&ups);
 }
 
-int main(int NUT_UNUSED(argc), char ** NUT_UNUSED(argv))
+int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
+
 	extractcgiargs();
 
 	printf("Content-type: text/html\n");
