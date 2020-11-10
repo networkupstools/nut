@@ -1,6 +1,11 @@
 /* user-data.h - structures for user.c
 
    Copyright (C) 2001  Russell Kroll <rkroll@exploits.org>
+	2005	Arnaud Quette <arnaud.quette@free.fr>
+	2007	Peter Selinger <selinger@users.sourceforge.net>
+	2008	Arjen de Korte <adkorte-guest@alioth.debian.org>
+	2013	Emilien Kia <kiae.dev@gmail.com>
+	2020	Jim Klimov <jimklimov@gmail.com>
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
