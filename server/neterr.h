@@ -21,6 +21,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_NETERR_H_SEEN
+#define NUT_NETERR_H_SEEN 1
+
 /* network error definitions for consistency */
 
 #define NUT_ERR_ACCESS_DENIED		"ACCESS-DENIED"
@@ -56,3 +59,5 @@
 #define NUT_ERR_UNKNOWN_INSTCMD		"UNKNOWN-INSTCMD"
 #define NUT_ERR_MISSING_ARGUMENT	"MISSING-ARGUMENT"
 #define NUT_ERR_INVALID_VALUE		"INVALID-VALUE"
+
+#endif /* NUT_NETERR_H_SEEN */
