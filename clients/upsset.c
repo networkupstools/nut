@@ -1030,8 +1030,10 @@ static void check_conf(void)
 	exit(EXIT_FAILURE);
 }
 
-int main(int NUT_UNUSED(argc), char ** NUT_UNUSED(argv))
+int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n\n");
