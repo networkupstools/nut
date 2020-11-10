@@ -45,19 +45,22 @@ static double   io_frequency_scale = 1.0;
 static double   io_current_scale = 1.0;
 
 /* Specific handlers for USB device matching */
-static void *battery_scale_1dot0(USBDevice_t * NUT_UNUSED(device))
+static void *battery_scale_1dot0(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	/* FIXME: we could remove this one since it's the default! */
 	battery_scale = 1.0;
 	return NULL;
 }
-static void *battery_scale_0dot1(USBDevice_t * NUT_UNUSED(device))
+static void *battery_scale_0dot1(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 0.1;
 	return NULL;
 }
-static void *smart1500lcdt_scale(USBDevice_t * NUT_UNUSED(device))
+static void *smart1500lcdt_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
 	battery_scale = 100000.0;
 	io_voltage_scale = 100000.0;
 	io_frequency_scale = 0.01;
