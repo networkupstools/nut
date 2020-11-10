@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_NETCMDS_H_SEEN
+#define NUT_NETCMDS_H_SEEN 1
+
 #include "nut_ctype.h"
 
 #include "netssl.h"
@@ -69,3 +72,4 @@ struct {
 /* *INDENT-ON* */
 #endif
 
+#endif /* NUT_NETCMDS_H_SEEN */
