@@ -348,8 +348,8 @@ static void update_device(const char * host_name,const char *ip, uint16_t port,c
 
 static void resolve_callback(
 	AvahiServiceResolver *r,
-	AVAHI_GCC_UNUSED AvahiIfIndex interface,
-	AVAHI_GCC_UNUSED AvahiProtocol protocol,
+	AvahiIfIndex interface,
+	AvahiProtocol protocol,
 	AvahiResolverEvent event,
 	const char *name,
 	const char *type,
@@ -359,9 +359,14 @@ static void resolve_callback(
 	uint16_t port,
 	AvahiStringList *txt,
 	AvahiLookupResultFlags flags,
-	AVAHI_GCC_UNUSED void* userdata) {
+	void* userdata)
+{
 
 	assert(r);
+
+	NUT_UNUSED_VARIABLE(interface);
+	NUT_UNUSED_VARIABLE(protocol);
+	NUT_UNUSED_VARIABLE(userdata);
 
 	/* Called whenever a service has been resolved successfully or timed out */
 
@@ -414,11 +419,14 @@ static void browse_callback(
 		const char *name,
 		const char *type,
 		const char *domain,
-		AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
-		void* userdata) {
+		AvahiLookupResultFlags flags,
+		void* userdata)
+{
 
 	AvahiClient *c = userdata;
 	assert(b);
+
+	NUT_UNUSED_VARIABLE(flags);
 
 	/* Called whenever a new services becomes available on the LAN or is removed from the LAN */
 
@@ -454,8 +462,9 @@ static void browse_callback(
 	}
 }
 
-static void client_callback(AvahiClient *c, AvahiClientState state, AVAHI_GCC_UNUSED void * userdata) {
+static void client_callback(AvahiClient *c, AvahiClientState state, void * userdata) {
 	assert(c);
+	NUT_UNUSED_VARIABLE(userdata);
 
 	/* Called whenever the client or server state changes */
 
