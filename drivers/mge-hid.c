@@ -656,8 +656,9 @@ static info_lkp_t eaton_check_country_info[] = {
 
 /* When UPS.PowerConverter.Output.ActivePower is not present,
  * compute a realpower approximation using available data */
-static const char *eaton_compute_realpower_fun(double NUT_UNUSED(value))
+static const char *eaton_compute_realpower_fun(double value)
 {
+	NUT_UNUSED_VARIABLE(value);
 	const char *str_ups_load = dstate_getinfo("ups.load");
 	const char *str_power_nominal = dstate_getinfo("ups.power.nominal");
 	const char *str_powerfactor = dstate_getinfo("output.powerfactor");
