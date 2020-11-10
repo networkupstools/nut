@@ -249,8 +249,10 @@ static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint1
 	return buf_ptr_length;
 }
 
-static void *cypress_subdriver(USBDevice_t * NUT_UNUSED(device))
+static void *cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -267,8 +269,10 @@ static usb_device_id_t riello_usb_id[] = {
 };
 
 
-static int device_match_func(USBDevice_t *hd, void * NUT_UNUSED(privdata))
+static int device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
