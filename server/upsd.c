@@ -1173,6 +1173,7 @@ int main(int argc, char **argv)
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
+					exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 			case 'q':
 				nut_log_level++;
 				break;
