@@ -667,8 +667,10 @@ static int check_parent(const char *cmd, const char *arg2)
 	exit(EXIT_FAILURE);
 }
 
-static void read_timeout(int NUT_UNUSED(sig))
+static void read_timeout(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* ignore this */
 	return;
 }
