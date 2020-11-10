@@ -121,7 +121,7 @@ char *dmfnutscan_snmp_dir = NULL;
 #define SU_VAR_DMFDIR                "dmfdir"
 #endif
 
-#endif
+#endif /* if WITH_DMFMIB */
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -160,7 +160,8 @@ void uninit_snmp_device_table() {
 		mibdmf_parser_destroy(&dmfnutscan_snmp_dmp);
 	snmp_device_table_dmf = NULL;
 	dmfnutscan_snmp_dmp = NULL;
-#endif
+#endif /* if WITH_DMFMIB */
+
 }
 
 /* return 0 on error */
@@ -194,7 +195,7 @@ int init_snmp_device_table()
 			}
 		}
 	}
-#endif
+#endif /* if WITH_DMFMIB */
 
 #ifdef DEVSCAN_SNMP_BUILTIN
 	if (snmp_device_table == NULL && snmp_device_table_builtin!=NULL) {
@@ -400,7 +401,7 @@ static void scan_snmp_add_device(nutscan_snmp_t * sec, struct snmp_pdu *response
 	}
 #else
 	dev->driver = strdup("snmp-ups");
-#endif
+#endif /* if WITH_DMFMIB */
 	dev->port = strdup(session->peername);
 	if (response != NULL) {
 		buf = malloc( response->variables->val_len + 1 );
