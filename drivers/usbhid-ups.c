@@ -929,8 +929,10 @@ void upsdrv_initups(void)
 		break;
 	case -1:
 		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 	}
 
 	/* link the matchers */
