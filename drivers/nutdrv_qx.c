@@ -2126,9 +2126,11 @@ static int	qx_command(const char *cmd, char *buf, size_t buflen)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 		case -EPERM:		/* Operation not permitted */
 			fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+			exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 		case -EPIPE:		/* Broken pipe */
 			if (usb_clear_halt(udev, 0x81) == 0) {
