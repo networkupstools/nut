@@ -396,9 +396,10 @@ static int is_valid_data(const char* varname)
 }
 
 /* check if data's value validity */
-static int is_valid_value(const char* varname, const char * NUT_UNUSED(value))
+static int is_valid_value(const char* varname, const char *value)
 {
 	dummy_info_t *item;
+	NUT_UNUSED_VARIABLE(value);
 
 	if ( (item = find_info(varname)) != NULL)
 	{
@@ -424,12 +425,13 @@ static void upsconf_err(const char *errmsg)
 /* for dummy mode
  * parse the definition file and process its content
  */
-static int parse_data_file(int NUT_UNUSED(upsfd))
+static int parse_data_file(int upsfd)
 {
 	char	fn[SMALLBUF];
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	int		value_args = 0, counter;
 	time_t	now;
+	NUT_UNUSED_VARIABLE(upsfd);
 
 	time(&now);
 
