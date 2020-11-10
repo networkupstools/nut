@@ -805,8 +805,10 @@ static int sdok(void)
 }
 
 /* soft hibernate: S - working only when OB, otherwise ignored */
-static int sdcmd_S(int NUT_UNUSED(dummy))
+static int sdcmd_S(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 
 	upsdebugx(1, "Issuing soft hibernate");
@@ -874,8 +876,10 @@ static int sdcmd_ATn(int cnt)
 }
 
 /* shutdown: K - delayed poweroff */
-static int sdcmd_K(int NUT_UNUSED(dummy))
+static int sdcmd_K(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	upsdebugx(1, "Issuing delayed poweroff");
 
@@ -887,8 +891,10 @@ static int sdcmd_K(int NUT_UNUSED(dummy))
 }
 
 /* shutdown: Z - immediate poweroff */
-static int sdcmd_Z(int NUT_UNUSED(dummy))
+static int sdcmd_Z(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	upsdebugx(1, "Issuing immediate poweroff");
 
