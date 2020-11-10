@@ -1,3 +1,5 @@
+#ifndef NUT_DESC_H_SEEN
+#define NUT_DESC_H_SEEN 1
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -16,3 +18,4 @@ const char *desc_get_var(const char *name);
 /* *INDENT-ON* */
 #endif
 
+#endif /* NUT_DESC_H_SEEN */
