@@ -24,6 +24,12 @@
 #ifndef NUT_NETERR_H_SEEN
 #define NUT_NETERR_H_SEEN 1
 
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+extern "C" {
+/* *INDENT-ON* */
+#endif
+
 /* network error definitions for consistency */
 
 #define NUT_ERR_ACCESS_DENIED		"ACCESS-DENIED"
@@ -59,5 +65,11 @@
 #define NUT_ERR_UNKNOWN_INSTCMD		"UNKNOWN-INSTCMD"
 #define NUT_ERR_MISSING_ARGUMENT	"MISSING-ARGUMENT"
 #define NUT_ERR_INVALID_VALUE		"INVALID-VALUE"
+
+#ifdef __cplusplus
+/* *INDENT-OFF* */
+}
+/* *INDENT-ON* */
+#endif
 
 #endif /* NUT_NETERR_H_SEEN */
