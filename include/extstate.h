@@ -21,7 +21,7 @@ extern "C" {
 
 /* list of possible ENUM values */
 typedef struct enum_s {
-	char    *val;
+	char	*val;
 	struct enum_s	*next;
 } enum_t;
 
@@ -34,8 +34,8 @@ typedef struct range_s {
 
 /* list of instant commands */
 typedef struct cmdlist_s {
-        char    *name;
-        struct cmdlist_s	*next;
+	char	*name;
+	struct cmdlist_s	*next;
 } cmdlist_t;
 
 #ifdef __cplusplus
