@@ -1,6 +1,3 @@
-#ifndef NUT_COMMON_H
-#define NUT_COMMON_H
-
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
@@ -19,6 +16,9 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#ifndef NUT_COMMON_H_SEEN
+#define NUT_COMMON_H_SEEN 1
 
 #include "config.h"		/* must be the first header */
 
@@ -193,4 +193,4 @@ extern int optind;
 /* *INDENT-ON* */
 #endif
 
-#endif /* NUT_COMMON_H */
+#endif /* NUT_COMMON_H_SEEN */
