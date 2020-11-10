@@ -145,6 +145,25 @@ AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
+dnl These common routines are not available in strict C standard library
+dnl compilation modes, only in GNU, POSIX or other extension modes:
+AC_MSG_CHECKING([for required C library routines; if something is not found, you may need to enable a different standard or extension version])
+AC_CHECK_FUNCS(strcasecmp strncasecmp, [], [AC_MSG_ERROR([Required C library routine not found])])
+dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
+AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
+	[], [AC_MSG_ERROR([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+AS_IF([test -n "${nut_missing_std_func}"],
+	[AC_MSG_ERROR([R: ${nut_missing_std_func}])])
+
+dnl These routines' arg types differ in strict C standard mode
+dnl from what they use in the modes expected by NUT codebase:
+dnl   bind() :     /usr/include/x86_64-linux-gnu/sys/socket.h:123:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   accept() :   /usr/include/x86_64-linux-gnu/sys/socket.h:243:12: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   connect() :  /usr/include/x86_64-linux-gnu/sys/socket.h:137:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'const struct sockaddr *'
+dnl   sendto() :   /usr/include/x86_64-linux-gnu/sys/socket.h:163:16: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   recvfrom() : /usr/include/x86_64-linux-gnu/bits/socket2.h:64:1: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+
 AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
 LN_S_R="cp -pR"
