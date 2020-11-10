@@ -577,7 +577,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		if(g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) authPassword, strlen(authPassword),
+				(unsigned char *) authPassword, strlen(authPassword),
 				g_snmp_sess.securityAuthKey,
 				&g_snmp_sess.securityAuthKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -604,7 +604,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) privPassword, strlen(privPassword),
+				(unsigned char *) privPassword, strlen(privPassword),
 				g_snmp_sess.securityPrivKey,
 				&g_snmp_sess.securityPrivKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -790,7 +790,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			buf_len - 1 : pdu->variables->val_len;
 		/* Test for hexadecimal values */
 		int hex = 0, x;
-		u_char *cp;
+		unsigned char *cp;
 		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
 			if (!(isprint(*cp) || isspace(*cp))) {
 				hex = 1;
