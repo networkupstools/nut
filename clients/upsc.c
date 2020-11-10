@@ -229,6 +229,7 @@ int main(int argc, char **argv)
 
 		case 'V':
 			fatalx(EXIT_SUCCESS, "Network UPS Tools upscmd %s", UPS_VERSION);
+			exit(EXIT_SUCCESS);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 		case 'h':
 		default:
