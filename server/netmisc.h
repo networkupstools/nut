@@ -22,6 +22,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_NETMISC_H_SEEN
+#define NUT_NETMISC_H_SEEN 1
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -39,3 +42,4 @@ void net_fsd(nut_ctype_t *client, int numarg, const char **arg);
 /* *INDENT-ON* */
 #endif
 
+#endif /* NUT_NETMISC_H_SEEN */
