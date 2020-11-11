@@ -193,16 +193,21 @@ static const char *marlin_outlet_group_phase_fun(int outlet_group_nb)
 {
 	const char* str_phases_nb = dstate_getinfo("input.phases");
 	int phases_nb = 1;
-	if (str_phases_nb) {
+	if (str_phases_nb && (outlet_group_nb >= 0) ) {
 		phases_nb = atoi(str_phases_nb);
 		if (phases_nb == 1) {
 			return "L1";
 		}
 		else { /* 3ph assumed, 2ph PDU don't exist! */
 			if (outlet_group_nb > 3)
-				snprintf(marlin_scratch_buf, 3, "L%i", (outlet_group_nb -3));
+				phases_nb = (outlet_group_nb - 3);
 			else
-				snprintf(marlin_scratch_buf, 3, "L%i", outlet_group_nb);
+				phases_nb = outlet_group_nb;
+
+			snprintf(marlin_scratch_buf, sizeof(marlin_scratch_buf), "L%i", phases_nb);
+			if (phases_nb < 1 || phases_nb > 3)
+				upsdebugx(3, "WARNING: %s got %i phases which is an unexpected amount",
+				        __func__, phases_nb);
 
 			return marlin_scratch_buf;
 		}

@@ -987,7 +987,7 @@ int init_outlet(unsigned char len)
 	int num_outlet, size_outlet;
 	int outlet_num, outlet_state;
 	short auto_dly_off, auto_dly_on;
-	char outlet_name[25];
+	char outlet_name[64];
 
 	res = command_read_sequence(PW_OUT_MON_BLOCK_REQ, answer);
 	if (res <= 0)
@@ -1322,7 +1322,7 @@ void upsdrv_initinfo(void)
 {
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	char *pTmp;
-	char outlet_name[27];
+	char outlet_name[64];
 	char power_rating[10];
 	int iRating = 0, iIndex = 0, res, len;
 	int ncpu = 0, buf;

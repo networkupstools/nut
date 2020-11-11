@@ -302,7 +302,7 @@ ScanReceivePack( void )
 	if( !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
 		RetornoDaRede = true;
 
-	if( !( SourceFail ) == RedeAnterior )
+	if( RedeAnterior == !( SourceFail ) )
 	{
 		RetornoDaRede = false;
 		OcorrenciaDeFalha = false;

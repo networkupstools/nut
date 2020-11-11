@@ -344,8 +344,13 @@ static int HIDParse(HIDParser_t *pParser, HIDData_t *pData)
 		upslogx(LOG_ERR, "%s: Report descriptor too big", __func__);
 	if(pParser->UsageSize >= USAGE_TAB_SIZE)
 		upslogx(LOG_ERR, "%s: HID Usage too high", __func__);
+
+	/* FIXME: comparison is always false due to limited range of data type [-Werror=type-limits]
+	 * with ReportID beint uint8_t and MAX_REPORT being 500 currently */
+	/*
 	if(pParser->Data.ReportID >= MAX_REPORT)
 		upslogx(LOG_ERR, "%s: Too many HID reports", __func__);
+	*/
 
 	return Found;
 }

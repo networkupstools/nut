@@ -62,7 +62,6 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-long g_usec_timeout ;
 
 /* return 0 on error */
 int nutscan_load_neon_library(const char *libname_path)
@@ -375,8 +374,6 @@ nutscan_device_t * nutscan_scan_xml_http_range(const char * start_ip, const char
 
 			pthread_mutex_init(&dev_mutex,NULL);
 #endif
-
-			g_usec_timeout = usec_timeout;
 
 			ip_str = nutscan_ip_iter_init(&ip, start_ip, end_ip);
 
