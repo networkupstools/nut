@@ -2,13 +2,13 @@
  *
  * SEC UPS Driver ported to the new NUT API for Gamatronic UPS Usage.
  *
- * Copyright (C) 
+ * Copyright (C)
  *   2001 John Marley <John.Marley@alcatel.com.au>
  *   2002 Jules Taplin <jules@netsitepro.co.uk>
  *   2002 Eric Lawson <elawson@inficad.com>
  *   2005 Arnaud Quette <http://arnaud.quette.free.fr/contact.html>
  *   2005 Nadav Moskovitch <blutz@walla.com / http://www.gamatronic.com>
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -24,7 +24,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
- 
+
+#ifndef NUT_GAMATRONIC_H_SEEN
+#define NUT_GAMATRONIC_H_SEEN 1
+
 #define SEC_MSG_STARTCHAR	'^'
 #define SEC_POLLCMD		'P'
 #define SEC_SETCMD		'S'
@@ -201,3 +204,4 @@ struct {
 
 #define sqv(a,b) sec_querylist[a].varnum[b]
 
+#endif	/* NUT_GAMATRONIC_H_SEEN */

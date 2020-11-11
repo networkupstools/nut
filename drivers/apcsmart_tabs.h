@@ -20,8 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef __apcsmart_tabs_h__
-#define __apcsmart_tabs_h__
+#ifndef NUT_APCSMART_TABS_H_SEEN
+#define NUT_APCSMART_TABS_H_SEEN 1
 
 #include "main.h"
 
@@ -103,4 +103,4 @@ extern apc_cmdtab_t apc_cmdtab[];
 extern apc_compattab_t apc_compattab[];
 extern upsdrv_info_t apc_tab_info;
 
-#endif
+#endif  /* NUT_APCSMART_TABS_H_SEEN */

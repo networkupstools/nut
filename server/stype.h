@@ -18,8 +18,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef STYPE_H_SEEN
-#define STYPE_H_SEEN 1
+#ifndef NUT_STYPE_H_SEEN
+#define NUT_STYPE_H_SEEN 1
 
 #include <netdb.h>
 
@@ -50,4 +50,4 @@ typedef struct stype_s {
 /* *INDENT-ON* */
 #endif
 
-#endif	/* STYPE_H_SEEN */
+#endif	/* NUT_STYPE_H_SEEN */
