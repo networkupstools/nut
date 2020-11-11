@@ -225,7 +225,7 @@ int main(int argc, char **argv)
 {
 	int	i, ret, port;
 	int	have_un = 0, have_pw = 0, cmdlist = 0;
-	char	buf[SMALLBUF], username[SMALLBUF], password[SMALLBUF];
+	char	buf[SMALLBUF * 2], username[SMALLBUF], password[SMALLBUF];
 	const char	*prog = xbasename(argv[0]);
 
 	while ((i = getopt(argc, argv, "+lhu:p:t:wV")) != -1) {
