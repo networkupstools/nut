@@ -446,6 +446,7 @@ int main(int argc, char *argv[])
 				exit(EXIT_SUCCESS);
 			case '?':
 				ret_code = ERR_BAD_OPTION;
+				goto display_help;
 				/* Fall through to usage and error exit */
 			case 'h':
 			default:

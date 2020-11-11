@@ -764,12 +764,14 @@ void upsdrv_updateinfo(void)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+			goto fallthrough_reconnect;
 		case -EPERM:		/* Operation not permitted */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return;
@@ -927,8 +929,10 @@ void upsdrv_initups(void)
 		break;
 	case -1:
 		fatal_with_errno(EXIT_FAILURE, "HIDNewRegexMatcher()");
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 	default:
 		fatalx(EXIT_FAILURE, "invalid regular expression: %s", regex_array[ret]);
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 	}
 
 	/* link the matchers */
@@ -1273,12 +1277,14 @@ static bool_t hid_ups_walk(walkmode_t mode)
 		{
 		case -EBUSY:		/* Device or resource busy */
 			upslog_with_errno(LOG_CRIT, "Got disconnected by another driver");
+			goto fallthrough_reconnect;
 		case -EPERM:		/* Operation not permitted */
 		case -ENODEV:		/* No such device */
 		case -EACCES:		/* Permission denied */
 		case -EIO:		/* I/O error */
 		case -ENXIO:		/* No such device or address */
 		case -ENOENT:		/* No such file or directory */
+		fallthrough_reconnect:
 			/* Uh oh, got to reconnect! */
 			hd = NULL;
 			return FALSE;

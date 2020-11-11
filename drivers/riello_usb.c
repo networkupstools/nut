@@ -348,9 +348,11 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	{
 	case -EBUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 	case -EPIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
@@ -358,16 +360,20 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 			break;
 		}
 #ifdef ETIME
+		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
+	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
 			upsdebugx(1, "Device reset handled");
 		}
+		goto fallthrough_case_reconnect;
 	case -ENODEV:		/* No such device */
 	case -EACCES:		/* Permission denied */
 	case -EIO:		/* I/O error */
 	case -ENXIO:		/* No such device or address */
 	case -ENOENT:		/* No such file or directory */
+	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
@@ -375,7 +381,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 
 	case -ETIMEDOUT:	/* Connection timed out */
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
-
+		break;
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
 #ifdef EPROTO
@@ -385,7 +391,6 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	default:
 		break;
 	}
-
 
 	return ret;
 }
