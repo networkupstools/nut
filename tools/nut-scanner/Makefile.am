@@ -81,6 +81,11 @@ endif
 #
 # libnutscan version information
 libnutscan_la_LDFLAGS = $(SERLIBS) -version-info 1:0:0
+if WITH_DMF
+libnutscan_la_LDFLAGS += -export-symbols-regex '^((dmf)?nutscan_|uninit_snmp_device_table)'
+else
+libnutscan_la_LDFLAGS += -export-symbols-regex ^nutscan_
+endif
 libnutscan_la_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include \
 			$(LIBLTDL_CFLAGS) -I$(top_srcdir)/drivers
 if WITH_DMF
@@ -103,7 +108,7 @@ libnutscan_la_LIBADD += $(top_builddir)/common/libcommonstr.la
 
 nut_scanner_SOURCES = nut-scanner.c
 nut_scanner_CFLAGS = -I$(top_srcdir)/clients -I$(top_srcdir)/include
-nut_scanner_LDADD = libnutscan.la $(top_builddir)/common/libcommonstr.la
+nut_scanner_LDADD = $(top_builddir)/common/libcommon.la libnutscan.la $(top_builddir)/common/libcommonstr.la
 
 if WITH_SNMP
 if WITH_NEON

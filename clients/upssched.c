@@ -361,7 +361,7 @@ static void conn_add(int sockfd)
 	int	acc, ret;
 	conn_t	*tmp, *last;
 	struct	sockaddr_un	saddr;
-#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED) 
+#if defined(__hpux) && !defined(_XOPEN_SOURCE_EXTENDED)
 	int			salen;
 #else
 	socklen_t	salen;

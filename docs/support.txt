@@ -9,8 +9,8 @@ There are various ways to obtain support for NUT.
 Documentation
 -------------
 
-- First, be sure to read the link:docs/FAQ.html[FAQ]. The most common problems are already
-addressed there.
+- First, be sure to read the link:docs/FAQ.html[FAQ]. The most common
+problems are already addressed there.
 
 ifdef::website[]
 - Else, you can read the link:docs/user-manual.chunked/index.html[NUT User Manual].
@@ -66,15 +66,16 @@ In this case, be sure to include the following information:
 - OS name and version,
 - exact NUT version,
 - NUT installation method: from source tarball, package or Subversion,
-- exact device name and related information (manufacturing date, web pointers, ...),
-- complete problem description, with any relevant traces, like system log excerpts,
-and driver debug output. You can obtain the latter using the following command,
-as root and after having stopped NUT:
+- exact device name and related information (manufacturing date, web
+pointers, ...),
+- complete problem description, with any relevant traces, like system
+log excerpts, and driver debug output. You can obtain the latter using
+the following command, running as root and after having stopped NUT:
 
 	/path/to/driver -DD -a <upsname>
 
-If you don't include the above information in your help request, we will not be
-able to help you!
+If you don't include the above information in your help request, we will
+not be able to help you!
 
 Post a patch, ask a development question, ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,15 +83,15 @@ Post a patch, ask a development question, ...
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-upsdev[NUT Developers]
 mailing list.
 
-Refer to the 
+Refer to the
 ifdef::website[]
 link:docs/developer-guide.chunked/index.html[NUT Developer Guide]
-for more information, and the chapter on how to 
+for more information, and the chapter on how to
 link:docs/developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 ifndef::website[]
 linkdoc:developer-guide[NUT Developer Guide]
-for more information, and the chapter on how to 
+for more information, and the chapter on how to
 link:../developer-guide.chunked/ar01s03.html#_submitting_patches[submit patches].
 endif::website[]
 
@@ -101,7 +102,7 @@ Discuss packaging and related topics
 Use the link:http://lists.alioth.debian.org/mailman/listinfo/nut-packaging[NUT Packagers]
 mailing list.
 
-Refer to the 
+Refer to the
 ifdef::website[]
 link:docs/packager-guide.chunked/index.html[NUT Packager Guide]
 endif::website[]

@@ -28,7 +28,7 @@
 /* Windows/Linux Socket compatibility layer: */
 /* Thanks to Benjamin Roux (http://broux.developpez.com/articles/c/sockets/) */
 #ifdef WIN32
-#  include <winsock2.h> 
+#  include <winsock2.h>
 #else
 #  include <sys/types.h>
 #  include <sys/socket.h>
@@ -39,7 +39,7 @@
 #  include <fcntl.h>
 #  define INVALID_SOCKET -1
 #  define SOCKET_ERROR -1
-#  define closesocket(s) close(s) 
+#  define closesocket(s) close(s)
    typedef int SOCKET;
    typedef struct sockaddr_in SOCKADDR_IN;
    typedef struct sockaddr SOCKADDR;
@@ -88,7 +88,7 @@ namespace internal
 /**
  * Internal socket wrapper.
  * Provides only client socket functions.
- * 
+ *
  * Implemented as separate internal class to easily hide plateform specificities.
  */
 class Socket
@@ -97,18 +97,18 @@ public:
 	Socket();
 	~Socket();
 
-	void connect(const std::string& host, int port)throw(nut::IOException);
+	void connect(const std::string& host, int port);
 	void disconnect();
 	bool isConnected()const;
 
 	void setTimeout(long timeout);
 	bool hasTimeout()const{return _tv.tv_sec>=0;}
 
-	size_t read(void* buf, size_t sz)throw(nut::IOException);
-	size_t write(const void* buf, size_t sz)throw(nut::IOException);
+	size_t read(void* buf, size_t sz);
+	size_t write(const void* buf, size_t sz);
 
-	std::string read()throw(nut::IOException);
-	void write(const std::string& str)throw(nut::IOException);
+	std::string read();
+	void write(const std::string& str);
 
 
 private:
@@ -135,7 +135,7 @@ void Socket::setTimeout(long timeout)
 	_tv.tv_sec = timeout;
 }
 
-void Socket::connect(const std::string& host, int port)throw(nut::IOException)
+void Socket::connect(const std::string& host, int port)
 {
 	int	sock_fd;
 	struct addrinfo	hints, *res, *ai;
@@ -304,7 +304,7 @@ bool Socket::isConnected()const
 	return _sock!=INVALID_SOCKET;
 }
 
-size_t Socket::read(void* buf, size_t sz)throw(nut::IOException)
+size_t Socket::read(void* buf, size_t sz)
 {
 	if(!isConnected())
 	{
@@ -331,7 +331,7 @@ size_t Socket::read(void* buf, size_t sz)throw(nut::IOException)
 	return (size_t) res;
 }
 
-size_t Socket::write(const void* buf, size_t sz)throw(nut::IOException)
+size_t Socket::write(const void* buf, size_t sz)
 {
 	if(!isConnected())
 	{
@@ -358,7 +358,7 @@ size_t Socket::write(const void* buf, size_t sz)throw(nut::IOException)
 	return (size_t) res;
 }
 
-std::string Socket::read()throw(nut::IOException)
+std::string Socket::read()
 {
 	std::string res;
 	char buff[256];
@@ -389,7 +389,7 @@ std::string Socket::read()throw(nut::IOException)
 	}
 }
 
-void Socket::write(const std::string& str)throw(nut::IOException)
+void Socket::write(const std::string& str)
 {
 //	write(str.c_str(), str.size());
 //	write("\n", 1);
@@ -416,13 +416,13 @@ Client::~Client()
 {
 }
 
-bool Client::hasDevice(const std::string& dev)throw(NutException)
+bool Client::hasDevice(const std::string& dev)
 {
 	std::set<std::string> devs = getDeviceNames();
 	return devs.find(dev) != devs.end();
 }
 
-Device Client::getDevice(const std::string& name)throw(NutException)
+Device Client::getDevice(const std::string& name)
 {
 	if(hasDevice(name))
 		return Device(this, name);
@@ -430,7 +430,7 @@ Device Client::getDevice(const std::string& name)throw(NutException)
 		return Device(NULL, "");
 }
 
-std::set<Device> Client::getDevices()throw(NutException)
+std::set<Device> Client::getDevices()
 {
 	std::set<Device> res;
 
@@ -443,13 +443,13 @@ std::set<Device> Client::getDevices()throw(NutException)
 	return res;
 }
 
-bool Client::hasDeviceVariable(const std::string& dev, const std::string& name)throw(NutException)
+bool Client::hasDeviceVariable(const std::string& dev, const std::string& name)
 {
 	std::set<std::string> names = getDeviceVariableNames(dev);
 	return names.find(name) != names.end();
 }
 
-std::map<std::string,std::vector<std::string> > Client::getDeviceVariableValues(const std::string& dev)throw(NutException)
+std::map<std::string,std::vector<std::string> > Client::getDeviceVariableValues(const std::string& dev)
 {
   std::map<std::string,std::vector<std::string> > res;
 
@@ -463,7 +463,7 @@ std::map<std::string,std::vector<std::string> > Client::getDeviceVariableValues(
   return res;
 }
 
-std::map<std::string,std::map<std::string,std::vector<std::string> > > Client::getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException)
+std::map<std::string,std::map<std::string,std::vector<std::string> > > Client::getDevicesVariableValues(const std::set<std::string>& devs)
 {
 	std::map<std::string,std::map<std::string,std::vector<std::string> > > res;
 
@@ -475,13 +475,13 @@ std::map<std::string,std::map<std::string,std::vector<std::string> > > Client::g
 	return res;
 }
 
-bool Client::hasDeviceCommand(const std::string& dev, const std::string& name)throw(NutException)
+bool Client::hasDeviceCommand(const std::string& dev, const std::string& name)
 {
   std::set<std::string> names = getDeviceCommandNames(dev);
   return names.find(name) != names.end();
 }
 
-bool Client::hasFeature(const Feature& feature)throw(NutException)
+bool Client::hasFeature(const Feature& feature)
 {
 	try
 	{
@@ -505,13 +505,15 @@ TcpClient::TcpClient():
 Client(),
 _host("localhost"),
 _port(3493),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	// Do not connect now
 }
 
-TcpClient::TcpClient(const std::string& host, int port)throw(IOException):
+TcpClient::TcpClient(const std::string& host, int port):
 Client(),
+_timeout(0),
 _socket(new internal::Socket)
 {
 	connect(host, port);
@@ -522,14 +524,14 @@ TcpClient::~TcpClient()
 	delete _socket;
 }
 
-void TcpClient::connect(const std::string& host, int port)throw(IOException)
+void TcpClient::connect(const std::string& host, int port)
 {
 	_host = host;
 	_port = port;
 	connect();
 }
 
-void TcpClient::connect()throw(nut::IOException)
+void TcpClient::connect()
 {
 	_socket->connect(_host, _port);
 }
@@ -565,19 +567,18 @@ long TcpClient::getTimeout()const
 }
 
 void TcpClient::authenticate(const std::string& user, const std::string& passwd)
-	throw(NutException)
 {
 	detectError(sendQuery("USERNAME " + user));
 	detectError(sendQuery("PASSWORD " + passwd));
 }
 
-void TcpClient::logout()throw(NutException)
+void TcpClient::logout()
 {
 	detectError(sendQuery("LOGOUT"));
 	_socket->disconnect();
 }
 
-Device TcpClient::getDevice(const std::string& name)throw(NutException)
+Device TcpClient::getDevice(const std::string& name)
 {
 	try
 	{
@@ -593,7 +594,7 @@ Device TcpClient::getDevice(const std::string& name)throw(NutException)
 	return Device(this, name);
 }
 
-std::set<std::string> TcpClient::getDeviceNames()throw(NutException)
+std::set<std::string> TcpClient::getDeviceNames()
 {
 	std::set<std::string> res;
 
@@ -609,15 +610,15 @@ std::set<std::string> TcpClient::getDeviceNames()throw(NutException)
 	return res;
 }
 
-std::string TcpClient::getDeviceDescription(const std::string& name)throw(NutException)
+std::string TcpClient::getDeviceDescription(const std::string& name)
 {
   return get("UPSDESC", name)[0];
 }
 
-std::set<std::string> TcpClient::getDeviceVariableNames(const std::string& dev)throw(NutException)
+std::set<std::string> TcpClient::getDeviceVariableNames(const std::string& dev)
 {
 	std::set<std::string> set;
-	
+
 	std::vector<std::vector<std::string> > res = list("VAR", dev);
 	for(size_t n=0; n<res.size(); ++n)
 	{
@@ -627,10 +628,10 @@ std::set<std::string> TcpClient::getDeviceVariableNames(const std::string& dev)t
 	return set;
 }
 
-std::set<std::string> TcpClient::getDeviceRWVariableNames(const std::string& dev)throw(NutException)
+std::set<std::string> TcpClient::getDeviceRWVariableNames(const std::string& dev)
 {
 	std::set<std::string> set;
-	
+
 	std::vector<std::vector<std::string> > res = list("RW", dev);
 	for(size_t n=0; n<res.size(); ++n)
 	{
@@ -640,21 +641,21 @@ std::set<std::string> TcpClient::getDeviceRWVariableNames(const std::string& dev
 	return set;
 }
 
-std::string TcpClient::getDeviceVariableDescription(const std::string& dev, const std::string& name)throw(NutException)
+std::string TcpClient::getDeviceVariableDescription(const std::string& dev, const std::string& name)
 {
 	return get("DESC", dev + " " + name)[0];
 }
 
-std::vector<std::string> TcpClient::getDeviceVariableValue(const std::string& dev, const std::string& name)throw(NutException)
+std::vector<std::string> TcpClient::getDeviceVariableValue(const std::string& dev, const std::string& name)
 {
 	return get("VAR", dev + " " + name);
 }
 
-std::map<std::string,std::vector<std::string> > TcpClient::getDeviceVariableValues(const std::string& dev)throw(NutException)
+std::map<std::string,std::vector<std::string> > TcpClient::getDeviceVariableValues(const std::string& dev)
 {
 
 	std::map<std::string,std::vector<std::string> >  map;
-	
+
 	std::vector<std::vector<std::string> > res = list("VAR", dev);
 	for(size_t n=0; n<res.size(); ++n)
 	{
@@ -667,7 +668,7 @@ std::map<std::string,std::vector<std::string> > TcpClient::getDeviceVariableValu
 	return map;
 }
 
-std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient::getDevicesVariableValues(const std::set<std::string>& devs)throw(NutException)
+std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient::getDevicesVariableValues(const std::set<std::string>& devs)
 {
 	std::map<std::string,std::map<std::string,std::vector<std::string> > > map;
 
@@ -716,13 +717,13 @@ std::map<std::string,std::map<std::string,std::vector<std::string> > > TcpClient
 	return map;
 }
 
-TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)throw(NutException)
+TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::string& value)
 {
 	std::string query = "SET VAR " + dev + " " + name + " " + escape(value);
 	return sendTrackingQuery(query);
 }
 
-TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)throw(NutException)
+TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::string& name, const std::vector<std::string>& values)
 {
 	std::string query = "SET VAR " + dev + " " + name;
 	for(size_t n=0; n<values.size(); ++n)
@@ -732,7 +733,7 @@ TrackingID TcpClient::setDeviceVariable(const std::string& dev, const std::strin
 	return sendTrackingQuery(query);
 }
 
-std::set<std::string> TcpClient::getDeviceCommandNames(const std::string& dev)throw(NutException)
+std::set<std::string> TcpClient::getDeviceCommandNames(const std::string& dev)
 {
 	std::set<std::string> cmds;
 
@@ -745,38 +746,38 @@ std::set<std::string> TcpClient::getDeviceCommandNames(const std::string& dev)th
 	return cmds;
 }
 
-std::string TcpClient::getDeviceCommandDescription(const std::string& dev, const std::string& name)throw(NutException)
+std::string TcpClient::getDeviceCommandDescription(const std::string& dev, const std::string& name)
 {
 	return get("CMDDESC", dev + " " + name)[0];
 }
 
-TrackingID TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)throw(NutException)
+TrackingID TcpClient::executeDeviceCommand(const std::string& dev, const std::string& name, const std::string& param)
 {
 	return sendTrackingQuery("INSTCMD " + dev + " " + name + " " + param);
 }
 
-void TcpClient::deviceLogin(const std::string& dev)throw(NutException)
+void TcpClient::deviceLogin(const std::string& dev)
 {
 	detectError(sendQuery("LOGIN " + dev));
 }
 
-void TcpClient::deviceMaster(const std::string& dev)throw(NutException)
+void TcpClient::deviceMaster(const std::string& dev)
 {
 	detectError(sendQuery("MASTER " + dev));
 }
 
-void TcpClient::deviceForcedShutdown(const std::string& dev)throw(NutException)
+void TcpClient::deviceForcedShutdown(const std::string& dev)
 {
 	detectError(sendQuery("FSD " + dev));
 }
 
-int TcpClient::deviceGetNumLogins(const std::string& dev)throw(NutException)
+int TcpClient::deviceGetNumLogins(const std::string& dev)
 {
 	std::string num = get("NUMLOGINS", dev)[0];
 	return atoi(num.c_str());
 }
 
-TrackingResult TcpClient::getTrackingResult(const TrackingID& id)throw(NutException)
+TrackingResult TcpClient::getTrackingResult(const TrackingID& id)
 {
 	if (id.empty())
 	{
@@ -807,7 +808,7 @@ TrackingResult TcpClient::getTrackingResult(const TrackingID& id)throw(NutExcept
 	}
 }
 
-bool TcpClient::isFeatureEnabled(const Feature& feature)throw(NutException)
+bool TcpClient::isFeatureEnabled(const Feature& feature)
 {
 	std::string result = sendQuery("GET " + feature);
 	detectError(result);
@@ -825,14 +826,14 @@ bool TcpClient::isFeatureEnabled(const Feature& feature)throw(NutException)
 		throw NutException("Unknown feature result " + result);
 	}
 }
-void TcpClient::setFeature(const Feature& feature, bool status)throw(NutException)
+void TcpClient::setFeature(const Feature& feature, bool status)
 {
 	std::string result = sendQuery("SET " + feature + " " + (status ? "ON" : "OFF"));
 	detectError(result);
 }
 
 std::vector<std::string> TcpClient::get
-	(const std::string& subcmd, const std::string& params) throw(NutException)
+	(const std::string& subcmd, const std::string& params)
 {
 	std::string req = subcmd;
 	if(!params.empty())
@@ -845,12 +846,12 @@ std::vector<std::string> TcpClient::get
 	{
 		throw NutException("Invalid response");
 	}
-	
+
 	return explode(res, req.size());
 }
 
 std::vector<std::vector<std::string> > TcpClient::list
-	(const std::string& subcmd, const std::string& params) throw(NutException)
+	(const std::string& subcmd, const std::string& params)
 {
 	std::string req = subcmd;
 	if(!params.empty())
@@ -864,7 +865,7 @@ std::vector<std::vector<std::string> > TcpClient::list
 }
 
 std::vector<std::vector<std::string> > TcpClient::parseList
-	(const std::string& req) throw(NutException)
+	(const std::string& req)
 {
 	std::string res = _socket->read();
 	detectError(res);
@@ -893,21 +894,21 @@ std::vector<std::vector<std::string> > TcpClient::parseList
 	}
 }
 
-std::string TcpClient::sendQuery(const std::string& req)throw(IOException)
+std::string TcpClient::sendQuery(const std::string& req)
 {
 	_socket->write(req);
 	return _socket->read();
 }
 
-void TcpClient::sendAsyncQueries(const std::vector<std::string>& req)throw(IOException)
+void TcpClient::sendAsyncQueries(const std::vector<std::string>& req)
 {
-	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); it++)
+	for (std::vector<std::string>::const_iterator it = req.cbegin(); it != req.cend(); ++it)
 	{
 		_socket->write(*it);
 	}
 }
 
-void TcpClient::detectError(const std::string& req)throw(NutException)
+void TcpClient::detectError(const std::string& req)
 {
 	if(req.substr(0,3)=="ERR")
 	{
@@ -974,7 +975,7 @@ std::vector<std::string> TcpClient::explode(const std::string& str, size_t begin
 			else
 			{
 				temp += c;
-			}		
+			}
 			break;
 		case QUOTED_STRING:
 			if(c=='\\')
@@ -1029,7 +1030,7 @@ std::vector<std::string> TcpClient::explode(const std::string& str, size_t begin
 std::string TcpClient::escape(const std::string& str)
 {
 	std::string res = "\"";
-	
+
 	for(size_t n=0; n<str.size(); n++)
 	{
 		char c = str[n];
@@ -1042,10 +1043,10 @@ std::string TcpClient::escape(const std::string& str)
 	}
 
 	res += '"';
-	return res; 
+	return res;
 }
 
-TrackingID TcpClient::sendTrackingQuery(const std::string& req)throw(NutException)
+TrackingID TcpClient::sendTrackingQuery(const std::string& req)
 {
 	std::string reply = sendQuery(req);
 	detectError(reply);
@@ -1109,7 +1110,7 @@ bool Device::isOk()const
 
 Device::operator bool()const
 {
-	return isOk();	
+	return isOk();
 }
 
 bool Device::operator!()const
@@ -1127,46 +1128,43 @@ bool Device::operator<(const Device& dev)const
   return getName()<dev.getName();
 }
 
-std::string Device::getDescription()throw(NutException)
+std::string Device::getDescription()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceDescription(getName());
 }
 
 std::vector<std::string> Device::getVariableValue(const std::string& name)
-	throw(NutException)
 {
 	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceVariableValue(getName(), name);
 }
 
 std::map<std::string,std::vector<std::string> > Device::getVariableValues()
-	throw(NutException)
 {
 	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceVariableValues(getName());
 }
 
-std::set<std::string> Device::getVariableNames()throw(NutException)
+std::set<std::string> Device::getVariableNames()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceVariableNames(getName());
 }
 
-std::set<std::string> Device::getRWVariableNames()throw(NutException)
+std::set<std::string> Device::getRWVariableNames()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceRWVariableNames(getName());
 }
 
-void Device::setVariable(const std::string& name, const std::string& value)throw(NutException)
+void Device::setVariable(const std::string& name, const std::string& value)
 {
 	if (!isOk()) throw NutException("Invalid device");
 	getClient()->setDeviceVariable(getName(), name, value);
 }
 
 void Device::setVariable(const std::string& name, const std::vector<std::string>& values)
-	throw(NutException)
 {
 	if (!isOk()) throw NutException("Invalid device");
 	getClient()->setDeviceVariable(getName(), name, values);
@@ -1174,7 +1172,7 @@ void Device::setVariable(const std::string& name, const std::vector<std::string>
 
 
 
-Variable Device::getVariable(const std::string& name)throw(NutException)
+Variable Device::getVariable(const std::string& name)
 {
   if (!isOk()) throw NutException("Invalid device");
   if(getClient()->hasDeviceVariable(getName(), name))
@@ -1183,7 +1181,7 @@ Variable Device::getVariable(const std::string& name)throw(NutException)
     return Variable(NULL, "");
 }
 
-std::set<Variable> Device::getVariables()throw(NutException)
+std::set<Variable> Device::getVariables()
 {
 	std::set<Variable> set;
 	if (!isOk()) throw NutException("Invalid device");
@@ -1197,7 +1195,7 @@ std::set<Variable> Device::getVariables()throw(NutException)
 	return set;
 }
 
-std::set<Variable> Device::getRWVariables()throw(NutException)
+std::set<Variable> Device::getRWVariables()
 {
 	std::set<Variable> set;
 	if (!isOk()) throw NutException("Invalid device");
@@ -1211,13 +1209,13 @@ std::set<Variable> Device::getRWVariables()throw(NutException)
 	return set;
 }
 
-std::set<std::string> Device::getCommandNames()throw(NutException)
+std::set<std::string> Device::getCommandNames()
 {
 	if (!isOk()) throw NutException("Invalid device");
 	return getClient()->getDeviceCommandNames(getName());
 }
 
-std::set<Command> Device::getCommands()throw(NutException)
+std::set<Command> Device::getCommands()
 {
 	std::set<Command> cmds;
 
@@ -1230,7 +1228,7 @@ std::set<Command> Device::getCommands()throw(NutException)
 	return cmds;
 }
 
-Command Device::getCommand(const std::string& name)throw(NutException)
+Command Device::getCommand(const std::string& name)
 {
   if (!isOk()) throw NutException("Invalid device");
   if(getClient()->hasDeviceCommand(getName(), name))
@@ -1239,29 +1237,29 @@ Command Device::getCommand(const std::string& name)throw(NutException)
     return Command(NULL, "");
 }
 
-TrackingID Device::executeCommand(const std::string& name, const std::string& param)throw(NutException)
+TrackingID Device::executeCommand(const std::string& name, const std::string& param)
 {
   if (!isOk()) throw NutException("Invalid device");
   return getClient()->executeDeviceCommand(getName(), name, param);
 }
 
-void Device::login()throw(NutException)
+void Device::login()
 {
   if (!isOk()) throw NutException("Invalid device");
   getClient()->deviceLogin(getName());
 }
 
-void Device::master()throw(NutException)
+void Device::master()
 {
   if (!isOk()) throw NutException("Invalid device");
   getClient()->deviceMaster(getName());
 }
 
-void Device::forcedShutdown()throw(NutException)
+void Device::forcedShutdown()
 {
 }
 
-int Device::getNumLogins()throw(NutException)
+int Device::getNumLogins()
 {
   if (!isOk()) throw NutException("Invalid device");
   return getClient()->deviceGetNumLogins(getName());
@@ -1330,22 +1328,22 @@ bool Variable::operator<(const Variable& var)const
 	return getName()<var.getName();
 }
 
-std::vector<std::string> Variable::getValue()throw(NutException)
+std::vector<std::string> Variable::getValue()
 {
   return getDevice()->getClient()->getDeviceVariableValue(getDevice()->getName(), getName());
 }
 
-std::string Variable::getDescription()throw(NutException)
+std::string Variable::getDescription()
 {
   return getDevice()->getClient()->getDeviceVariableDescription(getDevice()->getName(), getName());
 }
 
-void Variable::setValue(const std::string& value)throw(NutException)
+void Variable::setValue(const std::string& value)
 {
 	getDevice()->setVariable(getName(), value);
 }
 
-void Variable::setValues(const std::vector<std::string>& values)throw(NutException)
+void Variable::setValues(const std::vector<std::string>& values)
 {
 	getDevice()->setVariable(getName(), values);
 }
@@ -1414,12 +1412,12 @@ bool Command::operator<(const Command& cmd)const
 	return getName()<cmd.getName();
 }
 
-std::string Command::getDescription()throw(NutException)
+std::string Command::getDescription()
 {
 	return getDevice()->getClient()->getDeviceCommandDescription(getDevice()->getName(), getName());
 }
 
-void Command::execute(const std::string& param)throw(NutException)
+void Command::execute(const std::string& param)
 {
 	getDevice()->executeCommand(getName(), param);
 }
@@ -1461,7 +1459,7 @@ strarr stringset_to_strarr(const std::set<std::string>& strset)
 		*pstr = xstrdup(it->c_str());
 		pstr++;
 	}
-	return arr;	
+	return arr;
 }
 
 strarr stringvector_to_strarr(const std::vector<std::string>& strset)
@@ -1473,7 +1471,7 @@ strarr stringvector_to_strarr(const std::vector<std::string>& strset)
 		*pstr = xstrdup(it->c_str());
 		pstr++;
 	}
-	return arr;	
+	return arr;
 }
 
 
@@ -1491,7 +1489,7 @@ NUTCLIENT_TCP_t nutclient_tcp_create_client(const char* host, unsigned short por
 		delete client;
 		return NULL;
 	}
-	
+
 }
 
 void nutclient_destroy(NUTCLIENT_t client)
@@ -1684,7 +1682,7 @@ strarr nutclient_get_devices(NUTCLIENT_t client)
 			catch(...){}
 		}
 	}
-	return NULL;	
+	return NULL;
 }
 
 int nutclient_has_device(NUTCLIENT_t client, const char* dev)

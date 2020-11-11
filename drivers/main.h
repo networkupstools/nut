@@ -53,7 +53,7 @@ void addvar(int vartype, const char *name, const char *desc);
 
 /* subdriver description structure */
 typedef struct upsdrv_info_s {
-	const char	*name;		/* driver full name, for banner printing, ... */ 
+	const char	*name;		/* driver full name, for banner printing, ... */
 	const char	*version;	/* driver version */
 	const char	*authors;	/* authors name */
 	const int	status;		/* driver development status */

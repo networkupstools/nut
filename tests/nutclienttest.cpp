@@ -73,7 +73,7 @@ void NutClientTest::test_stringset_to_strarr()
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"test\"", res.find("test")!=res.end());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"hello\"", res.find("hello")!=res.end());
 	CPPUNIT_ASSERT_MESSAGE("stringset_to_strarr(...) result has not item \"world\"", res.find("world")!=res.end());
-	
+
 	strarr_free(arr);
 }
 
@@ -95,6 +95,6 @@ void NutClientTest::test_stringvector_to_strarr()
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not item 2==\"world\"", std::string("world"), std::string(*ptr));
 	++ptr;
 	CPPUNIT_ASSERT_EQUAL_MESSAGE("stringvector_to_strarr(...) result has not only 3 items", (char*)NULL, *ptr);
-	
+
 	strarr_free(arr);
 }
