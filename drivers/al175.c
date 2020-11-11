@@ -397,6 +397,12 @@ static void al_prep_activate(raw_data_t *dest, byte_t cmd, byte_t subcmd, uint16
 	data[0] = cmd;
 	data[1] = subcmd;
 
+	/* FIXME? One CI testcase builder claims here that
+	 *   warning: '%2X' directive output may be truncated writing
+	 *   between 2 and 4 bytes into a region of size between 3 and 5
+	 *   [-Wformat-truncation=]
+	 * but none others do, and I can't figure out how it thinks so :/
+	 */
 	snprintf(data+2, 6+1, "%2X%2X%2X", pr1, pr2, pr3);
 
 	comli_prepare(dest, &h, data, 8);

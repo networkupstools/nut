@@ -137,7 +137,7 @@ static void do_set(const char *varname, const char *newval)
 
 static void do_setvar(const char *varname, char *uin, const char *pass)
 {
-	char	newval[SMALLBUF], temp[SMALLBUF], user[SMALLBUF], *ptr;
+	char	newval[SMALLBUF], temp[SMALLBUF * 2], user[SMALLBUF], *ptr;
 	struct passwd	*pw;
 
 	if (uin) {

@@ -99,17 +99,19 @@ enum {
 typedef struct ezfill_s {
 	const char *cmd;
 	const char *var;
-	const float scale;
+	const float scale;  /*  if 0, no conversion is done and the string
+	                        is passed to dstate as is, otherwise a float
+	                        conversion with single decimal is applied */
 } ezfill_t;
 
 /* These can be polled right into a string usable by NUT.
  * Others such as "AG" and "BV" require some transformation of the return value */
 static ezfill_t _pollv[] = {
-	{ "NV", "input.voltage" },
+	{ "NV", "input.voltage", 0 },
 	{ "OL", "ups.load", 1.0 },
-	{ "OV", "output.voltage" },
+	{ "OV", "output.voltage", 0 },
 	{ "FF", "input.frequency", 0.1 },
-	{ "BT", "ups.temperature" },
+	{ "BT", "ups.temperature", 0 },
 };
 static ezfill_t _pollv_zinto[] = {
 	{ "NV", "input.voltage", 2.0 },
@@ -117,14 +119,14 @@ static ezfill_t _pollv_zinto[] = {
 	{ "OV", "output.voltage", 2.0 },
 	{ "OF", "output.frequency", 0.1 },
 	{ "NF", "input.frequency", 0.1 },
-	{ "BT", "ups.temperature" },
+	{ "BT", "ups.temperature", 0 },
 };
 
 /* model "IO" is parsed differently in upsdrv_initinfo() */
 static ezfill_t _initv[] = {
-	{ "IM", "ups.mfr" },
-	{ "IZ", "ups.serial" },
-	{ "IS", "ups.firmware" },
+	{ "IM", "ups.mfr", 0 },
+	{ "IZ", "ups.serial", 0 },
+	{ "IS", "ups.firmware", 0 },
 };
 
 /* All serial reads of the OPTI-UPS go through here.  We always expect a CR/LF terminated

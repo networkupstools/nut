@@ -19,7 +19,7 @@
  */
 
 #ifndef NUT_STDINT_H_SEEN
-#define NUT_STDINT_H_SEEN
+#define NUT_STDINT_H_SEEN 1
 
 #include "config.h"
 

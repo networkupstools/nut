@@ -746,6 +746,8 @@ static void print_rw(const char *upsname, const char *varname)
 {
 	const	char	*tmp;
 
+	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", upsname);
+
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 
 	printf("<TD>");
@@ -1032,6 +1034,8 @@ static void check_conf(void)
 
 int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n\n");

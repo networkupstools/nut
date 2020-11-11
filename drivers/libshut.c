@@ -278,6 +278,8 @@ static void align_request(struct shut_ctrltransfer_s *ctrl)
 	(*ctrl).wValue    = BYTESWAP((*ctrl).wValue);
 	(*ctrl).wIndex    = BYTESWAP((*ctrl).wIndex);
 	(*ctrl).wLength   = BYTESWAP((*ctrl).wLength);
+#else
+	NUT_UNUSED_VARIABLE(ctrl);
 #endif
 }
 
@@ -796,6 +798,11 @@ int shut_interrupt_read(int upsfd, int ep, unsigned char *bytes, int size,
 	usleep(timeout * 1000);
 */
 	/* FIXME: to be written */
+	NUT_UNUSED_VARIABLE(upsfd);
+	NUT_UNUSED_VARIABLE(ep);
+	NUT_UNUSED_VARIABLE(bytes);
+	NUT_UNUSED_VARIABLE(size);
+	NUT_UNUSED_VARIABLE(timeout);
 	return 0;
 }
 

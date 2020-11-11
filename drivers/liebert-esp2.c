@@ -109,6 +109,14 @@ static const unsigned char
 	cmd_sysLoadKey[]	= {1,156,2,1,7,167}, /* UPS SysLoadKey */
 	cmd_shutdown[]  	= {1,156,4,1,136,76,76,194}; /* UPS shutdown */
 
+/* Quiesce the compiler warnings about the fields below */
+static void NUT_UNUSED_FUNCTION_dummy_bitfields(void)
+{
+	NUT_UNUSED_VARIABLE(cmd_battestres);
+	NUT_UNUSED_VARIABLE(cmd_selftestres);
+	NUT_UNUSED_VARIABLE(cmd_bitfield7);
+}
+
 static int num_inphases = 1, num_outphases = 1;
 
 static char cksum(const char *buf, const size_t len)
@@ -536,7 +544,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 */
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslogx(LOG_NOTICE, "setvar: unknown variable [%s] [%s]", varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
@@ -554,6 +562,9 @@ void upsdrv_initups(void)
 {
 	const char *val = getval("baudrate");
 	speed_t baudrate = B2400;
+
+	/* No-op, just made to quiesce the compiler warnings */
+	NUT_UNUSED_FUNCTION_dummy_bitfields();
 
 	if (val) {
 		switch (atoi(val))

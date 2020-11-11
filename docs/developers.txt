@@ -261,6 +261,33 @@ if (condition) {
 }
 -------------------------------------------------------------------------------
 
+Un-used variables and function arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whenever a function needs to satisfy a particular API, it can end up
+taking arguments that are not used in practice (think a too-trivial
+signal handler). While some compilers offer the facility of decorations
+like `__attribute__(unused)`, this proved not to be a portable solution.
+Also the abilities of newer C++ standard revisions are of no help to
+the vast range of existing systems that run NUT today and expect to be
+able to do so tomorrow (hence the required C99+ support noted above).
+
+In NUT codebase we prefer to mark un-used variables explicitly in the
+body of the function (or an `#ifdef` branch of its code) using the
+`NUT_UNUSED_VARIABLE(varname)` as a routine call inside a function
+body, referring to the macro defined in `common.h`.
+
+To display in a rough example:
+
+-------------------------------------------------------------------------------
+	static void signal_X_handler(int signal_X) {
+		NUT_UNUSED_VARIABLE(signal_X);
+	
+		/* We have explicitly got nothing to do if we catch signal X */
+		return;
+	}
+-------------------------------------------------------------------------------
+
 Miscellaneous coding style tools
 --------------------------------
 

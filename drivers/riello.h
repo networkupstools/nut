@@ -26,8 +26,8 @@
  * Reference of the derivative work: blazer driver
  */
 
-#ifndef dev_dataH
-#define dev_dataH
+#ifndef NUT_RIELLO_H_SEEN
+#define NUT_RIELLO_H_SEEN 1
 
 #include <stdint.h>
 
@@ -176,4 +176,4 @@ uint8_t riello_test_nak(uint8_t type, uint8_t* buffer);
 void riello_parse_serialport(uint8_t typedev, uint8_t* buffer, uint8_t checksum);
 void riello_comm_setup(const char *port);
 
-#endif
+#endif /* NUT_RIELLO_H_SEEN */

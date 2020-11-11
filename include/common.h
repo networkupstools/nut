@@ -1,6 +1,3 @@
-#ifndef NUT_COMMON_H
-#define NUT_COMMON_H
-
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
@@ -19,6 +16,9 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#ifndef NUT_COMMON_H_SEEN
+#define NUT_COMMON_H_SEEN 1
 
 #include "config.h"		/* must be the first header */
 
@@ -53,30 +53,15 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
-/* A somewhat portable way to mark unused variables to avoid warnings
-   (wherever we implement an API or ifdef large parts of codebase) per
-   https://stackoverflow.com/a/12891181/4715872
- */
-/* Example: void foo(int NUT_UNUSED(bar)) { ... } */
-#ifdef __GNUC__
-#  define NUT_UNUSED(x) NUT_UNUSED_ ## x __attribute__((__unused__))
-#else
-#  define NUT_UNUSED(x) NUT_UNUSED_ ## x
-#endif
-
-/* Example: static void NUT_UNUSED_FUNCTION(foo)(int bar) { ... } */
-#ifdef __GNUC__
-#  define NUT_UNUSED_FUNCTION(x) __attribute__((__unused__)) NUT_UNUSED_ ## x
-#else
-#  define NUT_UNUSED_FUNCTION(x) NUT_UNUSED_ ## x
-#endif
-
 /* Use in code to notify the developers and quiesce the compiler that
  * (for this codepath) the argument or variable is unused intentionally.
  * void f(int x) {
  *   NUT_UNUSED_VARIABLE(x);
  *   ...
  * }
+ *
+ * Note that solutions which mark up function arguments or employ this or
+ * that __attribute__ proved not portable enough for wherever NUT builds.
  */
 #define NUT_UNUSED_VARIABLE(x) (void)(x)
 
@@ -193,4 +178,4 @@ extern int optind;
 /* *INDENT-ON* */
 #endif
 
-#endif /* NUT_COMMON_H */
+#endif /* NUT_COMMON_H_SEEN */

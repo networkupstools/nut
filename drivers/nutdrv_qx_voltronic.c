@@ -134,6 +134,7 @@ static int	voltronic_batt_low(char *value, const size_t len)
 	int		val = strtol(value, NULL, 10);
 	const char	*ovn = dstate_getinfo("output.voltage.nominal"),
 			*ocn = dstate_getinfo("output.current.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!ovn || !ocn) {
 		upsdebugx(2, "%s: unable to get the value of output voltage nominal/output current nominal", __func__);
@@ -215,6 +216,7 @@ static int	voltronic_bypass_volt_max(char *value, const size_t len)
 			val = strtol(value, NULL, 10),
 			ivn;
 	const char	*involtnom = dstate_getinfo("input.voltage.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!involtnom) {
 		upsdebugx(2, "%s: unable to get input.voltage.nominal", __func__);
@@ -369,6 +371,7 @@ static int	voltronic_bypass_volt_min(char *value, const size_t len)
 			val = strtol(value, NULL, 10),
 			ivn;
 	const char	*involtnom = dstate_getinfo("input.voltage.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!involtnom) {
 		upsdebugx(2, "%s: unable to get input.voltage.nominal", __func__);
@@ -515,6 +518,7 @@ static int	voltronic_bypass_freq_max(char *value, const size_t len)
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -613,6 +617,7 @@ static int	voltronic_bypass_freq_min(char *value, const size_t len)
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -727,6 +732,7 @@ static int	voltronic_eco_freq_min(char *value, const size_t len)
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -847,6 +853,7 @@ static int	voltronic_eco_freq_max(char *value, const size_t len)
 			val = strtol(value, NULL, 10);
 	double		ofn;
 	const char	*outfreqnom = dstate_getinfo("output.frequency.nominal");
+	NUT_UNUSED_VARIABLE(len);
 
 	if (!outfreqnom) {
 		upsdebugx(2, "%s: unable to get output.frequency.nominal", __func__);
@@ -2824,7 +2831,7 @@ static int	voltronic_fault(item_t *item, char *value, const size_t valuelen)
 {
 	int	protocol = strtol(dstate_getinfo("ups.firmware.aux")+1, NULL, 10);
 
-	char	alarm[SMALLBUF];
+	char	alarm[LARGEBUF]; /* can sprintf() SMALLBUF plus markup into here */
 
 	upslogx(LOG_INFO, "Checking for faults..");
 

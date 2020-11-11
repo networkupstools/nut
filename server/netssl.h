@@ -17,8 +17,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef NETSSL_H_SEEN
-#define NETSSL_H_SEEN 1
+#ifndef NUT_NETSSL_H_SEEN
+#define NUT_NETSSL_H_SEEN 1
 
 #include "nut_ctype.h"
 
@@ -59,4 +59,4 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg);
 /* *INDENT-ON* */
 #endif
 
-#endif	/* NETSSL_H_SEEN */
+#endif	/* NUT_NETSSL_H_SEEN */
