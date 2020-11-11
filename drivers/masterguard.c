@@ -64,7 +64,7 @@ static char *StringSplit( char *source, char *word, int maxlen )
 
 	word[0] = '\0';
 	len = strlen( source );
-	for( i = 0; i < len; i++ )
+	for( i = 0; i < len && wc < maxlen; i++ )
 	{
 		if( source[i] == ' ' )
 		{

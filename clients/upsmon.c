@@ -1300,7 +1300,7 @@ static void loadconfig(void)
 /* SIGPIPE handler */
 static void sigpipe(int sig)
 {
-	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing...");
+	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing after signal %i...", sig);
 }
 
 /* SIGQUIT, SIGTERM handler */

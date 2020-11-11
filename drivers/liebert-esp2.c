@@ -544,7 +544,7 @@ static int setvar(const char *varname, const char *val)
 		return STAT_SET_HANDLED;
 	}
 */
-	upslogx(LOG_NOTICE, "setvar: unknown variable [%s]", varname);
+	upslogx(LOG_NOTICE, "setvar: unknown variable [%s] [%s]", varname, val);
 	return STAT_SET_UNKNOWN;
 }
 
