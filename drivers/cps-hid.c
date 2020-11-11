@@ -49,6 +49,8 @@ static const double battery_voltage_sanity_check = 1.4;
 
 static void *cps_battery_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	might_need_battery_scale = 1;
 	return NULL;
 }

@@ -79,6 +79,8 @@ static void set_exit_flag(int sig)
 
 static void set_print_now_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* no need to do anything, the signal will cause sleep to be interrupted */
 }
 
@@ -146,6 +148,7 @@ static void do_host(const char *arg)
 {
 	int	ret;
 	char	hn[LARGEBUF];
+	NUT_UNUSED_VARIABLE(arg);
 
 	ret = gethostname(hn, sizeof(hn));
 
@@ -159,11 +162,15 @@ static void do_host(const char *arg)
 
 static void do_upshost(const char *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", monhost);
 }
 
 static void do_pid(const char *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (long)getpid());
 }
 
@@ -235,6 +242,7 @@ static void do_var(const char *arg)
 static void do_etime(const char *arg)
 {
 	time_t	tod;
+	NUT_UNUSED_VARIABLE(arg);
 
 	time(&tod);
 	snprintfcat(logbuffer, sizeof(logbuffer), "%ld", (unsigned long) tod);

@@ -482,6 +482,7 @@ info_lkp_t kelvin_celsius_conversion[] = {
 #ifndef SHUT_MODE
 static int match_function_subdriver(HIDDevice_t *d, void *privdata) {
 	int i;
+	NUT_UNUSED_VARIABLE(privdata);
 
 	for (i=0; subdriver_list[i] != NULL; i++) {
 		if (subdriver_list[i]->claim(d)) {

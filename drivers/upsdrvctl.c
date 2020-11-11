@@ -178,6 +178,8 @@ static void stop_driver(const ups_t *ups)
 
 static void waitpid_timeout(const int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* do nothing */
 	return;
 }
@@ -429,7 +431,7 @@ static void send_all_drivers(void (*command)(const ups_t *))
 		while (ups) {
 			if (ups->sdorder == i)
 				command(ups);
-			
+
 			ups = ups->next;
 		}
 	}

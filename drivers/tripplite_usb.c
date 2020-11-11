@@ -164,6 +164,8 @@ static usb_device_id_t tripplite_usb_device_table[] = {
 
 static int subdriver_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	switch (is_usb_device_supported(tripplite_usb_device_table, hd))
 	{
 	case SUPPORTED:
@@ -542,6 +544,7 @@ void usb_comm_fail(int res, const char *msg)
  */
 static int send_cmd(const unsigned char *msg, size_t msg_len, unsigned char *reply, size_t reply_len)
 {
+	NUT_UNUSED_VARIABLE(reply_len);
 	unsigned char buffer_out[8];
 	unsigned char csum = 0;
 	int ret = 0, send_try, recv_try=0, done = 0;

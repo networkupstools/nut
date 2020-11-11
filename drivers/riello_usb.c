@@ -251,6 +251,8 @@ static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint1
 
 static void *cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -269,6 +271,8 @@ static usb_device_id_t riello_usb_id[] = {
 
 static int device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -302,10 +306,16 @@ static USBDeviceMatcher_t device_matcher = {
  */
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
 {
-	/*if (usb_set_configuration(handle, 1) < 0) {
+	 NUT_UNUSED_VARIABLE(device);
+	 NUT_UNUSED_VARIABLE(rdbuf);
+	 NUT_UNUSED_VARIABLE(rdlen);
+
+/*
+	if (usb_set_configuration(handle, 1) < 0) {
 		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
 		return -1;
-	} */
+	}
+*/
 
 	if (usb_claim_interface(handle, 0) < 0) {
 		upslogx(LOG_WARNING, "Can't claim USB interface: %s", usb_strerror());

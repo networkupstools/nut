@@ -53,30 +53,15 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
-/* A somewhat portable way to mark unused variables to avoid warnings
-   (wherever we implement an API or ifdef large parts of codebase) per
-   https://stackoverflow.com/a/12891181/4715872
- */
-/* Example: void foo(int NUT_UNUSED(bar)) { ... } */
-#ifdef __GNUC__
-#  define NUT_UNUSED(x) NUT_UNUSED_ ## x __attribute__((__unused__))
-#else
-#  define NUT_UNUSED(x) NUT_UNUSED_ ## x
-#endif
-
-/* Example: static void NUT_UNUSED_FUNCTION(foo)(int bar) { ... } */
-#ifdef __GNUC__
-#  define NUT_UNUSED_FUNCTION(x) __attribute__((__unused__)) NUT_UNUSED_ ## x
-#else
-#  define NUT_UNUSED_FUNCTION(x) NUT_UNUSED_ ## x
-#endif
-
 /* Use in code to notify the developers and quiesce the compiler that
  * (for this codepath) the argument or variable is unused intentionally.
  * void f(int x) {
  *   NUT_UNUSED_VARIABLE(x);
  *   ...
  * }
+ *
+ * Note that solutions which mark up function arguments or employ this or
+ * that __attribute__ proved not portable enough for wherever NUT builds.
  */
 #define NUT_UNUSED_VARIABLE(x) (void)(x)
 

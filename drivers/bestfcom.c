@@ -182,6 +182,7 @@ int bcd2i (const char *bcdstring, const int bcdlen)
 static void alert_handler(char ch)
 {
 	char buf[256];
+	NUT_UNUSED_VARIABLE(ch);
 
 	/* Received an Inverter status alarm :
 	 * "\r\n{Inverter:     On}\r\n=>"
