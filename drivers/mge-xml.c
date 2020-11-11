@@ -1363,8 +1363,12 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 			state = XC_GENERAL;
 			break;
 		}
+		/* FIXME? Is the fall-through to handling "GENERAL" intended?
+		 * was so in legacy code before the goto below... */
+		goto fallthrough_case_general;
 
 	case XC_GENERAL:
+	fallthrough_case_general:
 		if (!strcasecmp(name, "STARTUP")) {
 			/* config="CENTRALIZED" */
 			state = XC_STARTUP;
