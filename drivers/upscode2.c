@@ -1300,7 +1300,10 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				break;
 			case t_final:
 				buffer_empty = 1;
+				/* FIXME? Should this really fall through, or should break? */
+				goto fallthrough_bufempty_processing_1;
 			case t_value:
+			fallthrough_bufempty_processing_1:
 				if (!sp->desc) {
 					break;
 				}
@@ -1317,7 +1320,10 @@ static int upsc_simple(const simple_t *sp, const char *var, const char *val)
 				break;
 			case t_finstr:
 				buffer_empty = 1;
+				/* FIXME? Should this really fall through, or should break? */
+				goto fallthrough_bufempty_processing_2;
 			case t_string:
+			fallthrough_bufempty_processing_2:
 				if (!sp->desc) {
 					break;
 				}
