@@ -171,7 +171,7 @@ static const char *tripplite_chemistry_fun(double value)
 }
 
 static info_lkp_t tripplite_chemistry[] = {
-	{ 0, NULL, tripplite_chemistry_fun }
+	{ 0, NULL, tripplite_chemistry_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -186,7 +186,7 @@ static const char *tripplite_battvolt_fun(double value)
 }
 
 static info_lkp_t tripplite_battvolt[] = {
-	{ 0, NULL, tripplite_battvolt_fun }
+	{ 0, NULL, tripplite_battvolt_fun, NULL }
 };
 
 static const char *tripplite_iovolt_fun(double value)
@@ -199,7 +199,7 @@ static const char *tripplite_iovolt_fun(double value)
 }
 
 static info_lkp_t tripplite_iovolt[] = {
-	{ 0, NULL, tripplite_iovolt_fun }
+	{ 0, NULL, tripplite_iovolt_fun, NULL }
 };
 
 static const char *tripplite_iofreq_fun(double value)
@@ -212,7 +212,7 @@ static const char *tripplite_iofreq_fun(double value)
 }
 
 static info_lkp_t tripplite_iofreq[] = {
-	{ 0, NULL, tripplite_iofreq_fun }
+	{ 0, NULL, tripplite_iofreq_fun, NULL }
 };
 
 static const char *tripplite_ioamp_fun(double value)
@@ -225,7 +225,7 @@ static const char *tripplite_ioamp_fun(double value)
 }
 
 static info_lkp_t tripplite_ioamp[] = {
-	{ 0, NULL, tripplite_ioamp_fun }
+	{ 0, NULL, tripplite_ioamp_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */
