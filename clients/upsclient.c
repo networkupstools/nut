@@ -299,10 +299,14 @@ int upscli_init(int certverify, const char *certpath,
 {
 #ifdef WITH_OPENSSL
 	int ret, ssl_mode = SSL_VERIFY_NONE;
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certpasswd);
 #elif defined(WITH_NSS) /* WITH_OPENSSL */
 	SECStatus	status;
+#else
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certpasswd);
 #endif /* WITH_OPENSSL | WITH_NSS */
-
 
 	if (upscli_initialized == 1) {
 		upslogx(LOG_WARNING, "upscli already initialized");
@@ -428,6 +432,11 @@ void upscli_add_host_cert(const char* hostname, const char* certname, int certve
 	cert->certverify = certverify;
 	cert->forcessl = forcessl;
 	first_host_cert = cert;
+#else
+	NUT_UNUSED_VARIABLE(hostname);
+	NUT_UNUSED_VARIABLE(certname);
+	NUT_UNUSED_VARIABLE(certverify);
+	NUT_UNUSED_VARIABLE(forcessl);
 #endif /* WITH_NSS */
 }
 
@@ -443,6 +452,8 @@ static HOST_CERT_t* upscli_find_host_cert(const char* hostname)
 			cert = cert->next;
 		}
 	}
+#else
+	NUT_UNUSED_VARIABLE(hostname);
 #endif /* WITH_NSS */
 	return NULL;
 }

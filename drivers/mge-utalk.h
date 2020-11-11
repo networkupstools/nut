@@ -28,6 +28,9 @@
  *
  */
 
+#ifndef NUT_MGE_UTALK_H_SEEN
+#define NUT_MGE_UTALK_H_SEEN 1
+
 /* --------------------------------------------------------------- */
 /*                 Default Values for UPS Variables                */
 /* --------------------------------------------------------------- */
@@ -233,3 +236,5 @@ static mge_info_item_t mge_info[] = {
 	/* terminating element */
 	{ NULL, 0, 0, "\0", "\0", NONE, FALSE }
 };
+
+#endif	/* NUT_MGE_UTALK_H_SEEN */

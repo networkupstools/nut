@@ -1120,6 +1120,8 @@ static xml_info_t mge_xml2nut[] = {
 static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, const char *name, const char **atts)
 {
 	int	state = _UNEXPECTED;
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
 
 	switch(parent)
 	{
@@ -1396,6 +1398,8 @@ static int mge_xml_startelm_cb(void *userdata, int parent, const char *nspace, c
 /* Character data callback; may return non-zero to abort the parse. */
 static int mge_xml_cdata_cb(void *userdata, int state, const char *cdata, size_t len)
 {
+	NUT_UNUSED_VARIABLE(userdata);
+
 	/* skip empty lines */
 	if ((len == 1) && (cdata[0] == '\n')) {
 		upsdebugx(3, "%s: cdata ignored (state = %d)", __func__, state);
@@ -1424,6 +1428,8 @@ static int mge_xml_endelm_cb(void *userdata, int state, const char *nspace, cons
 {
 	xml_info_t	*info;
 	const char	*value;
+	NUT_UNUSED_VARIABLE(userdata);
+	NUT_UNUSED_VARIABLE(nspace);
 
 	/* ignore objects for which no value was set */
 	if (strlen(val) == 0) {

@@ -40,6 +40,7 @@ upsdrv_info_t	upsdrv_info = {
 	{ NULL }
 };
 
+/* FIXME: Replace with proper upsdebugx() et al */
 #define xDEBUG
 
 #ifdef DEBUG

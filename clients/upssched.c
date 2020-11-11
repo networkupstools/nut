@@ -669,6 +669,8 @@ static int check_parent(const char *cmd, const char *arg2)
 
 static void read_timeout(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* ignore this */
 	return;
 }

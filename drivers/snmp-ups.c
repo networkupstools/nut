@@ -1461,6 +1461,9 @@ bool_t load_mib2nut(const char *mib)
 	} else {
 		fatalx(EXIT_FAILURE, "No supported device detected");
 	}
+
+	/* Should not get here thanks to fatalx() above, but need to silence a warning */
+	return FALSE;
 }
 
 /* find the OID value matching that INFO_* value */
