@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include <ne_request.h>
 #include <ne_basic.h>
@@ -773,15 +774,34 @@ static int netxml_alarm_subscribe(const char *page)
 	/* due to different formats used by the various NMCs, we need to\
 	   break up the reply in lines and parse each one separately */
 	for (s = strtok(resp_buf, "\r\n"); s != NULL; s = strtok(NULL, "\r\n")) {
+		long long int	tmp_port = -1, tmp_secret = -1;
 		upsdebugx(2, "%s: parsing %s", __func__, s);
 
-		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%u", &port) != 1)) {
+		if (!strncasecmp(s, "<Port>", 6) && (sscanf(s+6, "%lli", &tmp_port) != 1)) {
 			return NE_RETRY;
 		}
 
-		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%u", &secret) != 1)) {
+		/* FIXME? Does a port==0 make sense here? Or should the test below be for port<1?
+		 * Legacy code until a fix here used sscanf() above to get a '%u' value...
+		 */
+		if (tmp_port < 0 || tmp_port > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad port value", __func__);
 			return NE_RETRY;
 		}
+
+		if (!strncasecmp(s, "<Secret>", 8) && (sscanf(s+8, "%lli", &tmp_secret) != 1)) {
+			return NE_RETRY;
+		}
+
+		if (tmp_secret < 0 || tmp_secret > UINT_MAX) {
+			upsdebugx(2, "%s: parsing initial subcription failed, bad secret value", __func__);
+			return NE_RETRY;
+		}
+
+		/* Range of valid values constrained above */
+		port = tmp_port;
+		secret = tmp_secret;
+
 	}
 
 	if ((port == -1) || (secret == -1)) {
