@@ -53,6 +53,18 @@ extern "C" {
 
 extern const char *UPS_VERSION;
 
+/* Use in code to notify the developers and quiesce the compiler that
+ * (for this codepath) the argument or variable is unused intentionally.
+ * void f(int x) {
+ *   NUT_UNUSED_VARIABLE(x);
+ *   ...
+ * }
+ *
+ * Note that solutions which mark up function arguments or employ this or
+ * that __attribute__ proved not portable enough for wherever NUT builds.
+ */
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
+
 /** @brief Default timeout (in seconds) for network operations, as used by `upsclient` and `nut-scanner`. */
 #define DEFAULT_NETWORK_TIMEOUT		5
 

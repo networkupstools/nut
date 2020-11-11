@@ -1444,6 +1444,7 @@ static int sdcmd_CS(const void *foo)
 	int ret, cshd = 3500000;
 	char temp[APC_SBUF];
 	const char *val;
+	NUT_UNUSED_VARIABLE(foo);
 
 	if ((val = getval("cshdelay")))
 		cshd = (int)(strtod(val, NULL) * 1000000);
@@ -1523,6 +1524,7 @@ static int sdcmd_AT(const void *str)
 static int sdcmd_K(const void *foo)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(foo);
 
 	debx(1, "issuing [%s]", prtchr(APC_CMD_SHUTDOWN));
 
@@ -1538,6 +1540,7 @@ static int sdcmd_K(const void *foo)
 static int sdcmd_Z(const void *foo)
 {
 	int ret;
+	NUT_UNUSED_VARIABLE(foo);
 
 	debx(1, "issuing [%s]", prtchr(APC_CMD_OFF));
 

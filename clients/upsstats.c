@@ -1041,6 +1041,9 @@ static void display_single(void)
 
 int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
+
 	extractcgiargs();
 
 	printf("Content-type: text/html\n");

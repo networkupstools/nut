@@ -177,60 +177,60 @@ const char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
 /* Battery test results */
 info_lkp_t batt_test_info[] = {
-	{ 0, "No test initiated", NULL },
-	{ 1, "In progress", NULL },
-	{ 2, "Done and passed", NULL },
-	{ 3, "Aborted", NULL },
-	{ 4, "Done and error", NULL },
-	{ 5, "Test scheduled", NULL },
+	{ 0, "No test initiated", NULL, NULL },
+	{ 1, "In progress", NULL, NULL },
+	{ 2, "Done and passed", NULL, NULL },
+	{ 3, "Aborted", NULL, NULL },
+	{ 4, "Done and error", NULL, NULL },
+	{ 5, "Test scheduled", NULL, NULL },
 	/* Not sure about the meaning of the below ones! */
-	{ 6, NULL, NULL }, /* The string was present but it has now been removed */
-	{ 7, NULL, NULL }, /* The string was not installed at the last power up */
-	{ 0, NULL, NULL }
+	{ 6, NULL, NULL, NULL }, /* The string was present but it has now been removed */
+	{ 7, NULL, NULL, NULL }, /* The string was not installed at the last power up */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Topology map results */
 info_lkp_t topology_info[] = {
-	{ BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P, "Off-line switcher, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_LINEINT_UPS_1P, "Line-Interactive UPS, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_LINEINT_UPS_2P, "Line-Interactive UPS, Two Phase", NULL },
-	{ BCMXCP_TOPOLOGY_LINEINT_UPS_3P, "Line-Interactive UPS, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P, "Dual AC Input, On-Line UPS, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P, "Dual AC Input, On-Line UPS, Two Phase", NULL },
-	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P, "Dual AC Input, On-Line UPS, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_ONLINE_UPS_1P, "On-Line UPS, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_ONLINE_UPS_2P, "On-Line UPS, Two Phase", NULL },
-	{ BCMXCP_TOPOLOGY_ONLINE_UPS_3P, "On-Line UPS, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P, "Parallel Redundant On-Line UPS, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P, "Parallel Redundant On-Line UPS, Two Phase", NULL },
-	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P, "Parallel Redundant On-Line UPS, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P, "Parallel for Capacity On-Line UPS, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P, "Parallel for Capacity On-Line UPS, Two Phase", NULL },
-	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P, "Parallel for Capacity On-Line UPS, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P, "System Bypass Module, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P, "Hot-Tie Cabinet, Three Phase", NULL },
-	{ BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P, "Outlet Controller, Single Phase", NULL },
-	{ BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P, "Dual AC Input Static Switch Module, 3 Phase", NULL },
-	{ 0, NULL, NULL }
+	{ BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P, "Off-line switcher, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_LINEINT_UPS_1P, "Line-Interactive UPS, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_LINEINT_UPS_2P, "Line-Interactive UPS, Two Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_LINEINT_UPS_3P, "Line-Interactive UPS, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_1P, "Dual AC Input, On-Line UPS, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_2P, "Dual AC Input, On-Line UPS, Two Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_ONLINE_UPS_3P, "Dual AC Input, On-Line UPS, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_ONLINE_UPS_1P, "On-Line UPS, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_ONLINE_UPS_2P, "On-Line UPS, Two Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_ONLINE_UPS_3P, "On-Line UPS, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_1P, "Parallel Redundant On-Line UPS, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_2P, "Parallel Redundant On-Line UPS, Two Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_PARA_REDUND_ONLINE_UPS_3P, "Parallel Redundant On-Line UPS, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_1P, "Parallel for Capacity On-Line UPS, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_2P, "Parallel for Capacity On-Line UPS, Two Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_PARA_CAPACITY_ONLINE_UPS_3P, "Parallel for Capacity On-Line UPS, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_SYSTEM_BYPASS_MODULE_3P, "System Bypass Module, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_HOT_TIE_CABINET_3P, "Hot-Tie Cabinet, Three Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_OUTLET_CONTROLLER_1P, "Outlet Controller, Single Phase", NULL, NULL },
+	{ BCMXCP_TOPOLOGY_DUAL_AC_STATIC_SWITCH_3P, "Dual AC Input Static Switch Module, 3 Phase", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Command map results */
 info_lkp_t command_map_info[] = {
-	{ PW_INIT_BAT_TEST, "test.battery.start", NULL },
-	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL },
-	{ PW_UPS_OFF, "shutdown.stayoff", NULL },
-	{ PW_UPS_ON, "load.on", NULL},
-	{ PW_GO_TO_BYPASS, "bypass.start", NULL},
-	{ 0, NULL, NULL }
+	{ PW_INIT_BAT_TEST, "test.battery.start", NULL, NULL },
+	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL, NULL },
+	{ PW_UPS_OFF, "shutdown.stayoff", NULL, NULL },
+	{ PW_UPS_ON, "load.on", NULL, NULL },
+	{ PW_GO_TO_BYPASS, "bypass.start", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* System test capabilities results */
 info_lkp_t system_test_info[] = {
-	{ PW_SYS_TEST_GENERAL, "test.system.start", NULL },
-/*	{ PW_SYS_TEST_SCHEDULE_BATTERY_COMMISSION, "test.battery.start.delayed", NULL }, */
-/*	{ PW_SYS_TEST_ALTERNATE_AC_INPUT, "test.alternate_acinput.start", NULL }, */
-	{ PW_SYS_TEST_FLASH_LIGHTS, "test.panel.start", NULL },
-	{ 0, NULL, NULL }
+	{ PW_SYS_TEST_GENERAL, "test.system.start", NULL, NULL },
+/*	{ PW_SYS_TEST_SCHEDULE_BATTERY_COMMISSION, "test.battery.start.delayed", NULL, NULL }, */
+/*	{ PW_SYS_TEST_ALTERNATE_AC_INPUT, "test.alternate_acinput.start", NULL, NULL }, */
+	{ PW_SYS_TEST_FLASH_LIGHTS, "test.panel.start", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* allocate storage for shared variables (extern in bcmxcp.h) */

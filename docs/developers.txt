@@ -261,6 +261,33 @@ if (condition) {
 }
 -------------------------------------------------------------------------------
 
+Un-used variables and function arguments
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Whenever a function needs to satisfy a particular API, it can end up
+taking arguments that are not used in practice (think a too-trivial
+signal handler). While some compilers offer the facility of decorations
+like `__attribute__(unused)`, this proved not to be a portable solution.
+Also the abilities of newer C++ standard revisions are of no help to
+the vast range of existing systems that run NUT today and expect to be
+able to do so tomorrow (hence the required C99+ support noted above).
+
+In NUT codebase we prefer to mark un-used variables explicitly in the
+body of the function (or an `#ifdef` branch of its code) using the
+`NUT_UNUSED_VARIABLE(varname)` as a routine call inside a function
+body, referring to the macro defined in `common.h`.
+
+To display in a rough example:
+
+-------------------------------------------------------------------------------
+	static void signal_X_handler(int signal_X) {
+		NUT_UNUSED_VARIABLE(signal_X);
+	
+		/* We have explicitly got nothing to do if we catch signal X */
+		return;
+	}
+-------------------------------------------------------------------------------
+
 Miscellaneous coding style tools
 --------------------------------
 
@@ -313,11 +340,46 @@ or access something outside their scope will throw a warning or even
 fail to compile in some cases.  This is what we want.
 
 
+Switch case fall-through
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+While C standards allow to write `switch` statements to "fall through"
+from handling one case into another, modern compilers frown upon that
+practice and spew warnings which complicate detecting real bugs in the
+code (and also looking back at some of the cases written decades ago,
+it is not trivial to state whether the fall-through was intentional or
+really is a bug).
+
+Compilers which detect such problem usually offer ways to decorate the
+code with comments or attributes to keep it quiet it in cases where the
+jump is intentional; also C++17 introduces special keywords for that in
+the standard. NUT aiming to be portable and independent of compilers as
+much as possible, prefers the arguably clearer and standards-based way
+of using `goto` into the next intended operation, even though it is a
+couple of lines away, e.g.:
+
+	int uppercase = 0;
+	switch (char_opt) {
+		case 'U':
+			uppercase = 1;
+			goto fallthrough_case_u_option;
+		case 'u':
+		fallthrough_case_u_option:
+			process_u_option(uppercase);
+			break;
+	}
+
+In trivial cases, like falling through to `default` which just returns,
+it may be clearer and more maintainable (adding other option cases in
+the future) to just `return same_result` in the code block that would
+fall through otherwise and avoid `goto` statements altogether.
+
 Spaghetti
 ~~~~~~~~~
 
-If you use a goto, expect us to drop it when our head stops spinning.
-It gives us flashbacks to the very old code we wrote.
+If you use a `goto` that jumps over long distances (see "Switch case
+fall-through" section above), expect us to drop it when our head stops
+spinning. It gives us flashbacks to the very old code we wrote.
 We've tried to clean up our act, and you should make the effort
 as well.
 
