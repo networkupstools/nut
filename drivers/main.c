@@ -744,9 +744,10 @@ int main(int argc, char **argv)
 			else
 				update_count++;
 		}
-
-		while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
-			/* repeat until time is up or extrafd has data */
+		else {
+			while (!dstate_poll_fds(timeout, extrafd) && !exit_flag) {
+				/* repeat until time is up or extrafd has data */
+			}
 		}
 	}
 
