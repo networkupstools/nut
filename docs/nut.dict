@@ -1,4 +1,4 @@
-personal_ws-1.1 en 2515 utf-8
+personal_ws-1.1 en 2520 utf-8
 AAS
 ACFAIL
 ACFREQ
@@ -173,6 +173,8 @@ CTB
 CUDA
 CVE
 CXR
+CXX
+CXXFLAGS
 Casar
 CentOS
 Centralion
@@ -1129,6 +1131,8 @@ WS
 WSE
 WTU
 Waldie
+Werror
+Wextra
 WhizBang
 Wikipedia
 WinNUT
@@ -1555,6 +1559,7 @@ fentonups
 ffff
 fi
 fieldset
+fightwarn
 figlineint
 figoffline
 figonline
