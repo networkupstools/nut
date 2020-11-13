@@ -121,7 +121,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 int shut_synchronise(int upsfd)
 {
 	int try;
-	u_char reply = '\0';
+	unsigned char reply = '\0';
 
 	/* Sync with the UPS according to notification */
 	for (try = 0; try < MAX_TRY; try++) {

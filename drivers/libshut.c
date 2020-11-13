@@ -626,7 +626,7 @@ void setline(int upsfd, int set)
 int shut_synchronise(int upsfd)
 {
 	int retCode = 0;
-	u_char c = SHUT_SYNC_OFF, reply;
+	unsigned char c = SHUT_SYNC_OFF, reply;
 	int try;
 
 	upsdebugx (2, "entering shut_synchronise()");
@@ -672,10 +672,10 @@ int shut_synchronise(int upsfd)
 /*!
  * Compute a SHUT checksum for the packet "buf"
  */
-u_char shut_checksum(const u_char *buf, int bufsize)
+unsigned char shut_checksum(const unsigned char *buf, int bufsize)
 {
 	int i;
-	u_char chk=0;
+	unsigned char chk=0;
 
 	for(i=0; i<bufsize; i++)
 		chk^=buf[i];
@@ -685,14 +685,14 @@ u_char shut_checksum(const u_char *buf, int bufsize)
 }
 
 
-int shut_packet_recv(int upsfd, u_char *Buf, int datalen)
+int shut_packet_recv(int upsfd, unsigned char *Buf, int datalen)
 {
-	u_char   Start[2];
-	u_char   Frame[8];
-	u_char   Chk[1];
-	u_short  Size=8;
-	u_short  Pos=0;
-	u_char   Retry=0;
+	unsigned char   Start[2];
+	unsigned char   Frame[8];
+	unsigned char   Chk[1];
+	unsigned short  Size=8;
+	unsigned short  Pos=0;
+	unsigned char   Retry=0;
 	int recv;
 	/* FIXME: use this
 	 * shut_data_t   sdata; */
@@ -845,7 +845,7 @@ int shut_get_string_simple(int upsfd, int index,
  *********************************************************************/
 
 /**********************************************************************
- * shut_get_descriptor(int desctype, u_char *pkt)
+ * shut_get_descriptor(int desctype, unsigned char *pkt)
  *
  * get descriptor specified by DescType and return it in Buf
  *
@@ -994,7 +994,7 @@ int shut_control_msg(int upsfd, int requesttype, int request,
 int shut_wait_ack(int upsfd)
 {
 	int retCode = -1;
-	u_char c = '\0';
+	unsigned char c = '\0';
 
 	ser_get_char(upsfd, &c, SHUT_TIMEOUT/1000, 0);
 	if (c == SHUT_OK)
