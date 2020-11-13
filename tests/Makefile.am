@@ -34,12 +34,14 @@ CPPUNITTESTSRC = example.cpp nutclienttest.cpp
 cppunittest_SOURCES = $(CPPUNITTESTSRC) cpputest.cpp
 
 else !HAVE_CPPUNIT
+# Just redistribute test source into tarball
 
 EXTRA_DIST += example.cpp cpputest.cpp
 
 endif !HAVE_CPPUNIT
 
 else !HAVE_CXX11
+# Just redistribute test source into tarball
 
 EXTRA_DIST += example.cpp cpputest.cpp
 
