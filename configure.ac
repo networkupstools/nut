@@ -137,7 +137,8 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+AC_CHECK_FUNCS(fabs, [], [], [#include <math.h>])
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)

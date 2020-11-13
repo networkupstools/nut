@@ -29,6 +29,8 @@
 #include "belkin-hid.h"
 #include "usb-common.h"
 
+#include <math.h>     /* for fabs() */
+
 #define BELKIN_HID_VERSION      "Belkin/Liebert HID 0.17"
 
 /* Belkin */
@@ -163,7 +165,7 @@ static const char *liebert_shutdownimm_fun(double value)
 static const char *liebert_config_voltage_fun(double value)
 {
 	if( value < 1 ) {
-		if( abs(value - 1e-7) < 1e-9 ) {
+		if( fabs(value - 1e-7) < 1e-9 ) {
 			liebert_config_voltage_mult = 1e8;
 			liebert_line_voltage_mult = 1e7; /* stomp this in case input voltage was low */
 			upsdebugx(2, "ConfigVoltage = %g -> assuming correction factor = %g",
@@ -181,7 +183,7 @@ static const char *liebert_config_voltage_fun(double value)
 static const char *liebert_line_voltage_fun(double value)
 {
 	if( value < 1 ) {
-		if( abs(value - 1e-7) < 1e-9 ) {
+		if( fabs(value - 1e-7) < 1e-9 ) {
 			liebert_line_voltage_mult = 1e7;
 			upsdebugx(2, "Input/OutputVoltage = %g -> assuming correction factor = %g",
 				value, liebert_line_voltage_mult);
