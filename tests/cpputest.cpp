@@ -21,10 +21,13 @@
 #include <cppunit/CompilerOutputter.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
-
+#include "common.h"
 
 int main(int argc, char* argv[])
 {
+  NUT_UNUSED_VARIABLE(argc);
+  NUT_UNUSED_VARIABLE(argv);
+
   /* Get the top level suite from the registry */
   CppUnit::Test *suite = CppUnit::TestFactoryRegistry::getRegistry().makeTest();
 
