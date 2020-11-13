@@ -400,7 +400,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		upssend ("OFF%s\r", p);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_INFO, "instcmd: unknown command %s", cmdname);
+	upslogx(LOG_INFO, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

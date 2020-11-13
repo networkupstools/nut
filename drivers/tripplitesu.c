@@ -514,7 +514,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		do_command(SET, TEST, "0", NULL);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

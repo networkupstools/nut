@@ -1253,7 +1253,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return (!err ? STAT_INSTCMD_HANDLED : STAT_INSTCMD_FAILED);
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

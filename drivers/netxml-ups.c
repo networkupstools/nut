@@ -446,9 +446,9 @@ static int instcmd(const char *cmdname, const char *extra)
 		ser_send_buf(upsfd, ...);
 		return STAT_INSTCMD_HANDLED;
 	}
-
 */
-	upslogx(LOG_NOTICE, "%s: unknown command [%s]", __func__, cmdname);
+
+	upslogx(LOG_NOTICE, "%s: unknown command [%s] [%s]", __func__, cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
