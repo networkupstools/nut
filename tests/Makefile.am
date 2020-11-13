@@ -1,15 +1,23 @@
 # Network UPS Tools: tests
 
+all: $(TESTS)
+
 EXTRA_DIST = nut-driver-enumerator-test.sh nut-driver-enumerator-test--ups.conf
 
+TESTS = nutlogtest
+
+check_PROGRAMS = $(TESTS)
+
+nutlogtest_SOURCES = nutlogtest.c
+nutlogtest_LDADD = ../common/libcommon.la
+
+### Optional tests which can not be built everywhere
 if HAVE_CXX11
 if HAVE_CPPUNIT
 # Note: per configure script this "SHOULD" also assume
 # that we HAVE_CXX11 - but better have it explicit
 
-TESTS = cppunittest
-
-check_PROGRAMS = $(TESTS)
+TESTS += cppunittest
 
 if WITH_VALGRIND
 check-local: $(check_PROGRAMS)
