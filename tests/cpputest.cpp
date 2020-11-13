@@ -43,8 +43,18 @@ int main(int argc, char* argv[])
                                                        std::cerr ) );
 
   /* Run the tests. */
-  std::cerr << "D: Launching the test run..." << std::endl;
-  bool wasSucessful = runner.run();
+  bool wasSucessful = false;
+  try {
+    std::cerr << "D: Launching the test run..." << std::endl;
+    wasSucessful = runner.run();
+  }
+  catch ( std::invalid_argument &e )  // Test path not resolved
+  {
+    std::cerr  << std::endl
+               << "ERROR: " <<  e.what()
+               << std::endl;
+    wasSucessful = false;
+  }
 
   /* Return error code 1 if the one of test failed. */
   std::cerr << "D: Got to the end of test suite with code " <<
