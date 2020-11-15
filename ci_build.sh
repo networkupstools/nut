@@ -31,7 +31,7 @@ configure_nut() {
     || { RES=$?
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
-        sleep 1
+        sleep 5
         echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
         echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
         exit $RES
