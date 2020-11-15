@@ -19,8 +19,8 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
-#ifndef STATE_H_SEEN
-#define STATE_H_SEEN
+#ifndef NUT_STATE_H_SEEN
+#define NUT_STATE_H_SEEN 1
 
 #include "extstate.h"
 
@@ -77,4 +77,4 @@ st_tree_t *state_tree_find(st_tree_t *node, const char *var);
 /* *INDENT-ON* */
 #endif
 
-#endif /* STATE_H_SEEN */
+#endif /* NUT_STATE_H_SEEN */

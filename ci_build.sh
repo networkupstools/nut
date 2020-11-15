@@ -24,6 +24,28 @@ case "$CI_TRACE" in
         set -x ;;
 esac
 
+configure_nut() {
+    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
+    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
+    $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
+    || { RES=$?
+        echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
+        echo "    (or press Ctrl+C to abort now if running interactively)" >&2
+        sleep 5
+        echo "=========== DUMPING config.log :"; cat config.log || true ; echo "=========== END OF config.log"
+        echo "FATAL: FAILED ($RES) to ./configure ${CONFIG_OPTS[*]}" >&2
+        exit $RES
+       }
+}
+
+build_to_only_catch_errors() {
+    ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
+      $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
+    ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
+      $CI_TIME make VERBOSE=1 all -k ) || return $?
+    return 0
+}
+
 echo "Processing BUILD_TYPE='${BUILD_TYPE}' ..."
 case "$BUILD_TYPE" in
 default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|default-nodoc|default-withdoc|"default-tgt:"*)
@@ -134,7 +156,11 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     CONFIG_OPTS+=("CPPFLAGS=-I${BUILD_PREFIX}/include ${CPPFLAGS}")
     CONFIG_OPTS+=("CXXFLAGS=-I${BUILD_PREFIX}/include ${CXXFLAGS}")
     CONFIG_OPTS+=("LDFLAGS=-L${BUILD_PREFIX}/lib")
-    CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+    if [ -n "$PKG_CONFIG_PATH" ] ; then
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}")
+    else
+        CONFIG_OPTS+=("PKG_CONFIG_PATH=${BUILD_PREFIX}/lib/pkgconfig")
+    fi
     CONFIG_OPTS+=("--prefix=${BUILD_PREFIX}")
     CONFIG_OPTS+=("--sysconfdir=${BUILD_PREFIX}/etc/nut")
     CONFIG_OPTS+=("--with-udev-dir=${BUILD_PREFIX}/etc/udev")
@@ -253,16 +279,14 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
     if [ "$TRAVIS_OS_NAME" = "windows" ] ; then
         $CI_TIME ./autogen.sh || true
     else
-        $CI_TIME ./autogen.sh 2>/dev/null
+        $CI_TIME ./autogen.sh ### 2>/dev/null
     fi
     if [ "$NO_PKG_CONFIG" == "true" ] && [ "$TRAVIS_OS_NAME" = "linux" ] ; then
         echo "NO_PKG_CONFIG==true : BUTCHER pkg-config for this test case" >&2
         sudo dpkg -r --force all pkg-config
     fi
 
-    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
-    echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME ./configure "${CONFIG_OPTS[@]}"
+    configure_nut
 
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
@@ -305,11 +329,9 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             exit $?
             ;;
         "default-all-errors")
-            ( echo "`date`: Starting the parallel build attempt (quietly to build what we can)..."; \
-              $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 ; ) || \
-            ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
-              $CI_TIME make VERBOSE=1 all -k )
-            exit $?
+            RES=0
+            build_to_only_catch_errors || RES=$?
+            exit $RES
             ;;
     esac
 

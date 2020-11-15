@@ -594,7 +594,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 		if(g_snmp_sess.securityLevel != SNMP_SEC_LEVEL_NOAUTH) {
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) authPassword, strlen(authPassword),
+				(unsigned char *) authPassword, strlen(authPassword),
 				g_snmp_sess.securityAuthKey,
 				&g_snmp_sess.securityAuthKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -621,7 +621,7 @@ void nut_snmp_init(const char *type, const char *hostname)
 			g_snmp_sess.securityPrivKeyLen = USM_PRIV_KU_LEN;
 			if (generate_Ku(g_snmp_sess.securityAuthProto,
 				g_snmp_sess.securityAuthProtoLen,
-				(u_char *) privPassword, strlen(privPassword),
+				(unsigned char *) privPassword, strlen(privPassword),
 				g_snmp_sess.securityPrivKey,
 				&g_snmp_sess.securityPrivKeyLen) !=
 				SNMPERR_SUCCESS) {
@@ -807,7 +807,7 @@ static bool_t decode_str(struct snmp_pdu *pdu, char *buf, size_t buf_len, info_l
 			buf_len - 1 : pdu->variables->val_len;
 		/* Test for hexadecimal values */
 		int hex = 0, x;
-		u_char *cp;
+		unsigned char *cp;
 		for(cp = pdu->variables->val.string, x = 0; x < (int)pdu->variables->val_len; x++, cp++) {
 			if (!(isprint(*cp) || isspace(*cp))) {
 				hex = 1;
@@ -1255,13 +1255,14 @@ void su_alarm_set(snmp_info_t *su_info_p, long value)
 		if (info_type[0] == 'L') {
 			/* Extract phase number */
 			item_number = atoi(info_type+1);
+			char alarm_info_value_more[SU_LARGEBUF + 32]; /* can sprintf() SU_LARGEBUF plus markup into here */
 
 			upsdebugx(2, "%s: appending phase L%i", __func__, item_number);
 
 			/* Inject in the alarm string */
-			snprintf(alarm_info_value, sizeof(alarm_info_value),
+			snprintf(alarm_info_value_more, sizeof(alarm_info_value_more),
 				"phase L%i %s", item_number, info_value);
-			info_value = &alarm_info_value[0];
+			info_value = &alarm_info_value_more[0];
 		}
 
 		/* Set the alarm value */
@@ -1477,6 +1478,9 @@ bool_t load_mib2nut(const char *mib)
 	} else {
 		fatalx(EXIT_FAILURE, "No supported device detected");
 	}
+
+	/* Should not get here thanks to fatalx() above, but need to silence a warning */
+	return FALSE;
 }
 
 /* find the OID value matching that INFO_* value */

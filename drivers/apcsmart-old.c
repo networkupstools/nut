@@ -807,6 +807,8 @@ static int sdok(void)
 /* soft hibernate: S - working only when OB, otherwise ignored */
 static int sdcmd_S(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 
 	upsdebugx(1, "Issuing soft hibernate");
@@ -876,6 +878,8 @@ static int sdcmd_ATn(int cnt)
 /* shutdown: K - delayed poweroff */
 static int sdcmd_K(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	upsdebugx(1, "Issuing delayed poweroff");
 
@@ -889,6 +893,8 @@ static int sdcmd_K(int dummy)
 /* shutdown: Z - immediate poweroff */
 static int sdcmd_Z(int dummy)
 {
+	NUT_UNUSED_VARIABLE(dummy);
+
 	ser_flush_in(upsfd, IGNCHARS, nut_debug_level);
 	upsdebugx(1, "Issuing immediate poweroff");
 
@@ -1374,13 +1380,14 @@ static int instcmd(const char *cmdname, const char *extra)
 			ct = &apc_cmdtab[i];
 
 	if (!ct) {
-		upslogx(LOG_WARNING, "instcmd: unknown command [%s]", cmdname);
+		upslogx(LOG_WARNING, "instcmd: unknown command [%s] [%s]",
+			cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
 	if ((ct->flags & APC_PRESENT) == 0) {
-		upslogx(LOG_WARNING, "instcmd: command [%s] is not supported",
-			cmdname);
+		upslogx(LOG_WARNING, "instcmd: command [%s] [%s] is not supported",
+			cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 

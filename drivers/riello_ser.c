@@ -121,11 +121,11 @@ static int char_read (char *bytes, int size, int read_timeout)
  * returns 0 on success, -1 on error, -2 on timeout
  *
  **********************************************************************/
-int serial_read (int read_timeout, u_char *readbuf)
+int serial_read (int read_timeout, unsigned char *readbuf)
 {
-	static u_char cache[512];
-	static u_char *cachep = cache;
-	static u_char *cachee = cache;
+	static unsigned char cache[512];
+	static unsigned char *cachep = cache;
+	static unsigned char *cachee = cache;
 	int recv;
 	*readbuf = '\0';
 
@@ -626,7 +626,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

@@ -71,7 +71,7 @@ device_portname_t device_portname[] = {
 	/*      { "/dev/ttyd%i", "=" }, */
 	/*      { "/dev/ttyf%i", "=" }, */
 	/* FIXME: Mac OS X has no serial port, but maybe ttyUSB? */
-	{ NULL, 0 }
+	{ NULL, 0, 0 }
 };
 
 /* Return 1 if port_name is a full path name to a serial port,

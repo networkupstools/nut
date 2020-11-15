@@ -227,6 +227,9 @@ void net_starttls(nut_ctype_t *client, int numarg, const char **arg)
 	PRFileDesc	*socket;
 #endif /* WITH_OPENSSL | WITH_NSS */
 
+	NUT_UNUSED_VARIABLE(numarg);
+	NUT_UNUSED_VARIABLE(arg);
+
 	if (client->ssl) {
 		send_err(client, NUT_ERR_ALREADY_SSL_MODE);
 		return;

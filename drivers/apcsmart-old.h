@@ -18,6 +18,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_APCSMART_OLD_H_SEEN
+#define NUT_APCSMART_OLD_H_SEEN 1
+
 #include <ctype.h>
 #include <sys/ioctl.h>
 #include "serial.h"
@@ -289,3 +292,5 @@ struct {
 
 	{ NULL,		NULL,			0 },
 };
+
+#endif  /* NUT_APCSMART_OLD_H_SEEN */

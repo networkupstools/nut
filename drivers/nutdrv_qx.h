@@ -194,7 +194,7 @@ typedef enum {
 	OVER,		/* Overload */
 	TRIM,		/* SmartTrim */
 	BOOST,		/* SmartBoost */
-	FSD,		/* Shutdown imminent */
+	FSD 		/* Shutdown imminent */
 } status_bit_t;
 
 #endif	/* NUTDRV_QX_H */

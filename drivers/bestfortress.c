@@ -193,8 +193,9 @@ static int upsrecv(char *buf,size_t bufsize,char ec,const char *ic)
 	                    SER_WAIT_SEC, SER_WAIT_USEC);
 }
 
-static int upsflushin(int f,int verbose,const char *ignset)
+static int upsflushin(int f, int verbose, const char *ignset)
 {
+	NUT_UNUSED_VARIABLE(f);
 	return ser_flush_in(upsfd, ignset, verbose);
 }
 
@@ -399,7 +400,7 @@ static int instcmd (const char *cmdname, const char *extra)
 		upssend ("OFF%s\r", p);
 		return STAT_INSTCMD_HANDLED;
 	}
-	upslogx(LOG_INFO, "instcmd: unknown command %s", cmdname);
+	upslogx(LOG_INFO, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

@@ -137,7 +137,8 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
-AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val)
+AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
+AC_CHECK_FUNCS(fabs, [], [], [#include <math.h>])
 AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
@@ -996,7 +997,30 @@ dnl ----------------------------------------------------------------------
 dnl checks related to --with-dev
 
 dnl We only init libtool there to allow AC_DISABLE_STATIC
+if ( test "${GCC}" = "yes" )
+then
+	dnl # Avoid new compilers' warnings/errors about libtool distro flaws in this test like:
+	dnl #   error: ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]
+	dnl #   {"nm_test_func", (void *) &nm_test_func},
+	dnl # or ones about LTO (-flto -fno-common) as discussed and suggested
+	dnl # in https://www.mail-archive.com/libtool@gnu.org/msg14037.html -
+	dnl # all leading to undefined "global_symbol_pipe" in the generated
+	dnl # libtool script, and resulting in errors like `... | | ...` below :
+	dnl # libtool: link: /usr/bin/nm -B .libs/upsclient.o \
+	dnl #   ../common/.libs/libcommonclient.a |  | /usr/bin/sed 's/.* //' \
+	dnl #   | sort | uniq > .libs/libupsclient.exp
+	dnl # ../libtool: syntax error: `|' unexpected
+
+	CFLAGS_SAVED_NOPEDANTIC="$CFLAGS"
+	AS_CASE(["${CFLAGS}"],[*"-pedantic"*],[CFLAGS="${CFLAGS} -Wno-pedantic"])
+	AS_CASE(["${CFLAGS}"],[*"-Werror"*],[CFLAGS="${CFLAGS} -Wno-error"])
+	AS_CASE(["${CFLAGS}"],[*"-flto"*],[CFLAGS="${CFLAGS} -ffat-lto-objects"])
+fi
 AC_PROG_LIBTOOL
+if ( test "${GCC}" = "yes" )
+then
+	CFLAGS="$CFLAGS_SAVED_NOPEDANTIC"
+fi
 
 dnl ${nut_with_dev}: any value except "yes" or "no" is treated as "auto".
 if test "${nut_with_dev}" != "no"; then

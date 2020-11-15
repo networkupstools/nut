@@ -1,6 +1,3 @@
-#ifndef nut_platform_h
-#define nut_platform_h
-
 /**
  *  \brief  Platform-specific checks
  *
@@ -16,6 +13,9 @@
  *  \author  Vaclav Krpec  <VaclavKrpec@Eaton.com>
  *  \date    2012/10/12
  */
+
+#ifndef NUT_PLATFORM_H_SEEN
+#define NUT_PLATFORM_H_SEEN 1
 
 /*
  * In case doxygen source doc isn't generated
@@ -121,5 +121,5 @@
 	#endif
 #endif
 
-#endif  /* end of #ifndef nut_platform_h */
+#endif  /* NUT_PLATFORM_H_SEEN */
 
