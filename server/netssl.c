@@ -145,6 +145,8 @@ static SECKEYPrivateKey *privKey;
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
+
 	if (retry) {
 		/* Force not inted to retrieve password many times. */
 		return NULL;
@@ -170,6 +172,8 @@ static int ssl_error(PRFileDesc *ssl, int ret)
 	char buffer[256];
 	PRInt32 length;
 	PRErrorCode e;
+	NUT_UNUSED_VARIABLE(ssl);
+	NUT_UNUSED_VARIABLE(ret);
 
 	e = PR_GetError();
 	length = PR_GetErrorText(buffer);
@@ -195,6 +199,8 @@ static SECStatus AuthCertificate(CERTCertDBHandle *arg, PRFileDesc *fd,
 
 static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->addr)?arg->addr:"<unnamed>");
 #ifdef WITH_CLIENT_CERTIFICATE_VALIDATION
@@ -211,6 +217,8 @@ static SECStatus BadCertHandler(nut_ctype_t *arg, PRFileDesc *fd)
 
 static void HandshakeCallback(PRFileDesc *fd, nut_ctype_t *client_data)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_INFO, "SSL handshake done successfully with client %s",
 		client_data->addr);
 }
