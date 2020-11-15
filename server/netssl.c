@@ -35,6 +35,13 @@
 	#include <pk11pub.h>
 	#include <prinit.h>
 	#include <private/pprio.h>
+/* Note: on systems with NSS 3.x the following two lines complain non-fatally:
+ *   /usr/include/mps/key.h:9:9: note: '#pragma message: key.h is deprecated. Please include keyhi.h instead.'
+ *   /usr/include/mps/keyt.h:9:9: note: '#pragma message: keyt.h is deprecated. Please include keythi.h instead.'
+ * If this becomes a warning or error in the future, it can be addressed
+ * with a trick like done elsewhere for best pick of (sys/)types.h support
+ * for the specific build target platform.
+ */
 	#include <key.h>
 	#include <keyt.h>
 	#include <secerr.h>
