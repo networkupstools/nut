@@ -13,8 +13,15 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	CFLAGS_ORIG="${CFLAGS}"
 	LIBS_ORIG="${LIBS}"
 
-	dnl By default seek in PATH
-	NET_SNMP_CONFIG=net-snmp-config
+	dnl By default seek in PATH, but which variant (if several are provided)?
+	AC_CHECK_SIZEOF([void *])
+	AS_CASE(["${ac_cv_sizeof_void_p}"],
+		[4],[NET_SNMP_CONFIG=net-snmp-config-32],
+		[8],[NET_SNMP_CONFIG=net-snmp-config-64]
+		)
+	AS_IF([test -n "${NET_SNMP_CONFIG}" && test -n "`command -v "${NET_SNMP_CONFIG}"`"],
+		[], [NET_SNMP_CONFIG=net-snmp-config])
+
 	AC_ARG_WITH(net-snmp-config,
 		AS_HELP_STRING([@<:@--with-net-snmp-config=/path/to/net-snmp-config@:>@],
 			[path to program that reports Net-SNMP configuration]),

@@ -286,7 +286,9 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
         sudo dpkg -r --force all pkg-config
     fi
 
-    configure_nut
+    if [ "$BUILD_TYPE" != "default-all-errors" ] ; then
+        configure_nut
+    fi
 
     case "$BUILD_TYPE" in
         "default-tgt:"*) # Hook for matrix of custom distchecks primarily
@@ -330,7 +332,26 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             ;;
         "default-all-errors")
             RES=0
-            build_to_only_catch_errors || RES=$?
+            if pkg-config --exists nss && pkg-config --exists openssl ; then
+                # Try builds for both cases as they are ifdef-ed
+
+                echo "=== Building with SSL=openssl..."
+                ( CONFIG_OPTS+=("--with-openssl")
+                  configure_nut
+                  build_to_only_catch_errors ) || RES=$?
+
+                echo "=== Clean the sandbox..."
+                make distclean -k || true
+
+                echo "=== Building with SSL=nss..."
+                ( CONFIG_OPTS+=("--with-nss")
+                  configure_nut
+                  build_to_only_catch_errors ) || RES=$?
+            else
+                # Build what we can configure
+                configure_nut
+                build_to_only_catch_errors || RES=$?
+            fi
             exit $RES
             ;;
     esac

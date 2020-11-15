@@ -199,6 +199,9 @@ static int ssl_error(SSL *ssl, int ret)
 static char *nss_password_callback(PK11SlotInfo *slot, PRBool retry,
 		void *arg)
 {
+	NUT_UNUSED_VARIABLE(retry);
+	NUT_UNUSED_VARIABLE(arg);
+
 	upslogx(LOG_INFO, "Intend to retrieve password for %s / %s: password %sconfigured",
 		PK11_GetSlotName(slot), PK11_GetTokenName(slot), nsscertpasswd?"":"not ");
 	return nsscertpasswd ? PL_strdup(nsscertpasswd) : NULL;
@@ -233,6 +236,10 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 	PRBool checksig, PRBool isServer)
 {
 	UPSCONN_t *ups   = (UPSCONN_t *)SSL_RevealPinArg(fd);
+	NUT_UNUSED_VARIABLE(arg);
+	NUT_UNUSED_VARIABLE(checksig);
+	NUT_UNUSED_VARIABLE(isServer);
+
 	upslogx(LOG_INFO, "Do not intend to authenticate server %s",
 		ups?ups->host:"<unnamed>");
 	return SECSuccess;
@@ -241,6 +248,8 @@ static SECStatus AuthCertificateDontVerify(CERTCertDBHandle *arg, PRFileDesc *fd
 static SECStatus BadCertHandler(UPSCONN_t *arg, PRFileDesc *fd)
 {
 	HOST_CERT_t* cert;
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_WARNING, "Certificate validation failed for %s",
 		(arg&&arg->host)?arg->host:"<unnamed>");
 	/* BadCertHandler is called when the NSS certificate validation is failed.
@@ -288,6 +297,8 @@ static SECStatus GetClientAuthData(UPSCONN_t *arg, PRFileDesc *fd,
 
 static void HandshakeCallback(PRFileDesc *fd, UPSCONN_t *client_data)
 {
+	NUT_UNUSED_VARIABLE(fd);
+
 	upslogx(LOG_INFO, "SSL handshake done successfully with server %s",
 		client_data->host);
 }
