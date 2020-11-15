@@ -75,6 +75,22 @@ if test -z "${nut_have_libnetsnmp_seen}"; then
 	if test "${nut_have_libnetsnmp}" = "yes"; then
 		LIBNETSNMP_CFLAGS="${CFLAGS}"
 		LIBNETSNMP_LIBS="${LIBS}"
+
+	AC_MSG_CHECKING([for defined usmAESPrivProtocol])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+#include <net-snmp/net-snmp-config.h>
+#include <net-snmp/net-snmp-includes.h>
+oid * pProto = usmAESPrivProtocol;
+],
+[]
+		)],
+		[AC_MSG_RESULT([yes])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 1, [Variable or macro by this name is resolvable])
+		],
+		[AC_MSG_RESULT([no])
+		 AC_DEFINE_UNQUOTED(NUT_HAVE_LIBNETSNMP_usmAESPrivProtocol, 0, [Variable or macro by this name is not resolvable])
+		])
+
 	fi
 
 	dnl restore original CFLAGS and LIBS
