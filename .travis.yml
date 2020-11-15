@@ -58,6 +58,8 @@ addons:
     - libxpm-dev
     - libxml2-utils
     - libmodbus-dev
+    - libnss3-dev
+    - libssl-dev
 
 # Common settings for jobs in the matrix built below
 env:
