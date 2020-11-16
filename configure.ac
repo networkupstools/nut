@@ -1467,17 +1467,22 @@ CPLUSPLUS_MAIN='printf("%ld\n", __cplusplus);'
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
     [AC_MSG_RESULT([yes, out of the box])
      have_cxx11=yes],
-    [CXXFLAGS="$CXXFLAGS -std=c++11"
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-        [AC_MSG_RESULT([yes, GCC-style (as C++11)])
-         have_cxx11=yes],
-        [CXXFLAGS="$CXXFLAGS -std=c++0x"
-         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
-            [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
-             have_cxx11=yes],
-            [AC_MSG_RESULT([no])
-             CXXFLAGS="$my_CXXFLAGS"
-             have_cxx11=no])])])
+    [AS_CASE(["${CXXFLAGS}"],
+        [*"-std="*], [
+            AC_MSG_RESULT([no, not with the standard already set in CXXFLAGS='${CXXFLAGS}'])
+            have_cxx11=no,
+        ],[
+            CXXFLAGS="$CXXFLAGS -std=c++11"
+            AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                [AC_MSG_RESULT([yes, GCC-style (as C++11)])
+                 have_cxx11=yes],
+                [CXXFLAGS="$CXXFLAGS -std=c++0x"
+                 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[${CPLUSPLUS_DECL}]], [[${CPLUSPLUS_MAIN}]])],
+                    [AC_MSG_RESULT([yes, GCC-style (as C++0X)])
+                     have_cxx11=yes],
+                    [AC_MSG_RESULT([no])
+                     CXXFLAGS="$my_CXXFLAGS"
+                     have_cxx11=no])])])])
 AM_CONDITIONAL(HAVE_CXX11, test "${have_cxx11}" = "yes")
 AC_LANG_POP([C++])
 unset CPLUSPLUS_MAIN
