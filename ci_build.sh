@@ -43,6 +43,12 @@ build_to_only_catch_errors() {
       $CI_TIME make VERBOSE=0 -k -j8 all >/dev/null 2>&1 && echo "`date`: SUCCESS" ; ) || \
     ( echo "`date`: Starting the sequential build attempt (to list remaining files with errors considered fatal for this build configuration)..."; \
       $CI_TIME make VERBOSE=1 all -k ) || return $?
+
+    echo "`date`: Starting a 'make check' for quick sanity test of the products built with the current compiler and standards"
+    $CI_TIME make VERBOSE=0 check \
+	&& echo "`date`: SUCCESS" \
+    || return $?
+
     return 0
 }
 
