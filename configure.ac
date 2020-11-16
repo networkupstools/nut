@@ -10,6 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 NUT_CHECK_OS
+NUT_STASH_WARNINGS
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -1852,6 +1853,8 @@ AC_SUBST(systemdshutdowndir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
+
+NUT_POP_WARNINGS
 
 AC_OUTPUT([
  clients/Makefile
