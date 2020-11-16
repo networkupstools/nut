@@ -147,10 +147,14 @@ AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
 
 dnl These common routines are not available in strict C standard library
 dnl compilation modes, only in GNU, POSIX or other extension modes:
-AC_MSG_CHECKING([for required C library routines; if something is not
-found, you may need to enable a different standard or extension version.
-You may also have to configure without extreme warning levels since
-autotools tests fail those on their own and assume system lacks stuff.])
+AC_MSG_NOTICE(
+[-----------------------------------------------------------------------
+The next few tests look for required C library routines; if something is
+not found, you may need to enable a different C standard or extension macro
+version. You may also have to configure without extreme warning levels
+since autotools tests fail those on their own and assume system lacks
+stuff (although note we try to not involve standard -W* flags here).
+-----------------------------------------------------------------------])
 AC_CHECK_FUNCS(strcasecmp strncasecmp,
 	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
 dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
