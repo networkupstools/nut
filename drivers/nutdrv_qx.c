@@ -35,7 +35,9 @@
 
 #define DRIVER_VERSION	"0.28"
 
+#include "config.h"
 #include "main.h"
+#include "attribute.h"
 
 #include <math.h>
 
@@ -1538,6 +1540,9 @@ int	setvar(const char *varname, const char *val)
 }
 
 /* Try to shutdown the UPS */
+void	upsdrv_shutdown(void)
+	__attribute__((noreturn));
+
 void	upsdrv_shutdown(void)
 {
 	int		retry;
