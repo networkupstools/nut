@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <poll.h>
+#include <signal.h>
 
 #include "user.h"
 #include "nut_ctype.h"
