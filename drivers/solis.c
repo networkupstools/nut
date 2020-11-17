@@ -687,8 +687,10 @@ static void get_base_info(void) {
 
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
+
 	time(&tmt);
-	now = localtime(&tmt);
+	now = localtime_r(&tmt, &tmbuf);
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
@@ -827,8 +829,10 @@ static void get_update_info(void) {
 	/* time update and programable shutdown block */
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
+
 	time(&tmt);
-	now = localtime(&tmt);
+	now = localtime_r(&tmt, &tmbuf);
 	hourn = now->tm_hour;
 	minn = now->tm_min;
 	weekn = now->tm_wday;
