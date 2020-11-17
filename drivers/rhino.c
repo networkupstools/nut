@@ -532,10 +532,11 @@ static void getbaseinfo(void)
 	int tam, i, j=0;
 	time_t tmt;
 	struct tm *now;
+	struct tm tmbuf;
 	const char *Model;
 
 	time( &tmt );
-	now = localtime( &tmt );
+	now = localtime_r( &tmt, &tmbuf );
 	dian = now->tm_mday;
 	mesn = now->tm_mon+1;
 	anon = now->tm_year+1900;
