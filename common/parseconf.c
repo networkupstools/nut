@@ -110,7 +110,7 @@ static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
 
 static void add_arg_word(PCONF_CTX_t *ctx)
 {
-	int	argpos;
+	size_t	argpos;
 	size_t	wbuflen;
 
 	/* this is where the new value goes */
