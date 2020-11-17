@@ -76,6 +76,8 @@
  *
  */
 
+#include "common.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -86,6 +88,7 @@
 #include <fcntl.h>
 
 #include "parseconf.h"
+#include "attribute.h"
 
 /* possible states */
 
@@ -97,6 +100,9 @@
 #define STATE_COLLECTLITERAL	6
 #define STATE_ENDOFLINE		7
 #define STATE_PARSEERR		8
+
+static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
+	__attribute__((noreturn));
 
 static void pconf_fatal(PCONF_CTX_t *ctx, const char *errtxt)
 {
