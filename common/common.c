@@ -707,7 +707,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
  * with regard to default/preferred bitness (maybe a "32" in the name
  * should also be searched explicitly - again, IFF our build is 32-bit).
  */
-const char * search_paths[] = {
+static const char * search_paths[] = {
 	// Use the library path (and bitness) provided during ./configure first
 	LIBDIR,
 	"/usr"LIBDIR,
