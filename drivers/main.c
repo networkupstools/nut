@@ -20,8 +20,10 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include "common.h"
 #include "main.h"
 #include "dstate.h"
+#include "attribute.h"
 
 	/* data which may be useful to the drivers */
 	int		upsfd = -1;
@@ -77,6 +79,9 @@ void upsdrv_banner (void)
 }
 
 /* power down the attached load immediately */
+static void forceshutdown(void)
+	__attribute__((noreturn));
+
 static void forceshutdown(void)
 {
 	upslogx(LOG_NOTICE, "Initiating UPS shutdown");
