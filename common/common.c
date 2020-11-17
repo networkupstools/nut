@@ -300,7 +300,16 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	assert(len <= size);
 
 	va_start(ap, fmt);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* Note: this code intentionally uses a caller-provided format string */
 	ret = vsnprintf(dst + len, size - len, fmt, ap);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	dst[size] = '\0';
