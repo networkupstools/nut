@@ -28,6 +28,7 @@
 #include "proto.h"
 #include "common.h"
 #include "upsconf.h"
+#include "attribute.h"
 
 typedef struct {
 	char	*upsname;
@@ -329,6 +330,9 @@ static void start_driver(const ups_t *ups)
 		}
 	}
 }
+
+static void help(const char *progname)
+	__attribute__((noreturn));
 
 static void help(const char *progname)
 {
