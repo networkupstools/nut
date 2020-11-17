@@ -524,7 +524,7 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 		}
 
 		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
-			((unsigned char *)buf)[i]);
+			((const unsigned char *)buf)[i]);
 	}
 	upsdebugx(level, "%s", line);
 }
@@ -578,7 +578,7 @@ void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
 	snprintf(line, sizeof(line), "%s", msg);
 
 	for (i=0; i<len; ++i) {
-		ch = ((unsigned char *)buf)[i];
+		ch = ((const unsigned char *)buf)[i];
 
 		if (ch < 0x20)
 			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
