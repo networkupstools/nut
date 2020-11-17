@@ -35,8 +35,8 @@ upsdrv_info_t upsdrv_info = {
 };
 
 /* Powerman functions and variables */
-static pm_err_t query_one(pm_handle_t pm, char *s, int mode);
-static pm_err_t query_all(pm_handle_t pm, int mode);
+static pm_err_t query_one(pm_handle_t arg_pm, char *s, int mode);
+static pm_err_t query_all(pm_handle_t arg_pm, int mode);
 
 pm_handle_t pm;
 char ebuf[64];
@@ -208,7 +208,7 @@ static int reconnect_ups(void)
  * powerman support functions
  ****************************/
 
-static pm_err_t query_one(pm_handle_t pm, char *s, int outletnum)
+static pm_err_t query_one(pm_handle_t arg_pm, char *s, int outletnum)
 {
 	pm_err_t rv;
 	pm_node_state_t ns;
@@ -216,7 +216,7 @@ static pm_err_t query_one(pm_handle_t pm, char *s, int outletnum)
 
 	upsdebugx(1, "entering query_one (%s)", s);
 
-	rv = pm_node_status(pm, s, &ns);
+	rv = pm_node_status(arg_pm, s, &ns);
 	if (rv == PM_ESUCCESS) {
 
 		upsdebugx(3, "updating status");
@@ -229,7 +229,7 @@ static pm_err_t query_one(pm_handle_t pm, char *s, int outletnum)
 	return rv;
 }
 
-static pm_err_t query_all(pm_handle_t pm, int mode)
+static pm_err_t query_all(pm_handle_t arg_pm, int mode)
 {
 	pm_err_t rv;
 	pm_node_iterator_t itr;
@@ -239,7 +239,7 @@ static pm_err_t query_all(pm_handle_t pm, int mode)
 
 	upsdebugx(1, "entering query_all ()");
 
-	rv = pm_node_iterator_create(pm, &itr);
+	rv = pm_node_iterator_create(arg_pm, &itr);
 	if (rv != PM_ESUCCESS)
 		return rv;
 
@@ -247,7 +247,7 @@ static pm_err_t query_all(pm_handle_t pm, int mode)
 
 		/* in WALKMODE_UPDATE, we always call this one for the
 		 * status update... */
-		if ((rv = query_one(pm, s, outletnum)) != PM_ESUCCESS)
+		if ((rv = query_one(arg_pm, s, outletnum)) != PM_ESUCCESS)
 			break;
 		else  {
 			/* set the initial generic properties (ie except status)
