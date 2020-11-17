@@ -326,7 +326,7 @@ static int st_tree_dump_conn(st_tree_t *node, conn_t *conn)
 
 	/* provide any auxiliary data */
 	if (node->aux) {
-		if (!send_to_one(conn, "SETAUX %s %d\n", node->var, node->aux)) {
+		if (!send_to_one(conn, "SETAUX %s %ld\n", node->var, node->aux)) {
 			return 0;
 		}
 	}
@@ -841,7 +841,7 @@ void dstate_setaux(const char *var, int aux)
 	sttmp->aux = aux;
 
 	/* update listeners */
-	send_to_all("SETAUX %s %d\n", var, aux);
+	send_to_all("SETAUX %s %ld\n", var, aux);
 }
 
 const char *dstate_getinfo(const char *var)
