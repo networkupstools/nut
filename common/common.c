@@ -219,7 +219,7 @@ void writepid(const char *name)
 {
 	char	fn[SMALLBUF];
 	FILE	*pidf;
-	int	mask;
+	mode_t	mask;
 
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
