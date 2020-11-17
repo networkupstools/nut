@@ -440,7 +440,7 @@ static cmd_t variables[] = {
 
 static int instcmd (const char *auxcmd, const char *data);
 static int setvar (const char *var, const char *data);
-static void upsc_setstatus(unsigned int status);
+static void upsc_setstatus(unsigned int upsc_status);
 static void upsc_flush_input(void);
 static void upsc_getbaseinfo(void);
 static int upsc_commandlist(void);
@@ -963,8 +963,10 @@ void upsdrv_cleanup(void)
 /*
  * Generate status string from bitfield
  */
-static void upsc_setstatus(unsigned int status)
+static void upsc_setstatus(unsigned int upsc_status)
 {
+	/* Save into global state variable for the driver instance */
+	status = upsc_status;
 
 	/*
 	 * I'll look for all available statuses, even though they might not be
