@@ -46,7 +46,7 @@ unsigned char LAST_DATA[6];
 
 uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
-	uint8_t i;
+	uint16_t i;
 	uint16_t pom, CRC_Word;
 
 	CRC_Word = 0;
