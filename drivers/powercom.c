@@ -665,13 +665,13 @@ static float load_level(void)
 			if (model==525) return raw_data[UPS_LOAD]*110.0/load525[voltage];
 			if (model==625) return raw_data[UPS_LOAD]*110.0/load625[voltage];
 			if (model<2000) return raw_data[UPS_LOAD]*1.13;
-			if (model>=2000) return raw_data[UPS_LOAD]*110.0/load2k[voltage];
+			return raw_data[UPS_LOAD]*110.0/load2k[voltage];
 		} else {
 			if (model==425) return raw_data[UPS_LOAD]*110.0/load425i[voltage];
 			if (model==525) return raw_data[UPS_LOAD]*110.0/load525i[voltage];
 			if (model==625) return raw_data[UPS_LOAD]*110.0/load625i[voltage];
 			if (model<2000) return raw_data[UPS_LOAD]*1.66;
-			if (model>=2000) return raw_data[UPS_LOAD]*110.0/load2ki[voltage];
+			return raw_data[UPS_LOAD]*110.0/load2ki[voltage];
 		}
 	} else if ( !strcmp(types[type].name, "IMP") || !strcmp(types[type].name, "OPTI")) {
 		return raw_data[UPS_LOAD];
