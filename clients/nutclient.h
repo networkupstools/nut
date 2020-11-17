@@ -460,6 +460,7 @@ class Device
 public:
 	~Device();
 	Device(const Device& dev);
+	Device& operator=(const Device& dev);
 
 	/**
 	 * Retrieve the name of the device.
@@ -609,6 +610,7 @@ public:
 	~Variable();
 
 	Variable(const Variable& var);
+	Variable& operator=(const Variable& var);
 
 	/**
 	 * Retrieve variable name.
@@ -688,6 +690,7 @@ public:
 	~Command();
 
 	Command(const Command& cmd);
+	Command& operator=(const Command& cmd);
 
 	/**
 	 * Retrieve command name.

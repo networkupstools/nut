@@ -1084,6 +1084,17 @@ _name(dev._name)
 {
 }
 
+Device& Device::operator=(const Device& dev)
+{
+	// Self assignment?
+	if (this==&dev)
+		return *this;
+
+	_client = dev._client;
+	_name = dev._name;
+	return *this;
+}
+
 Device::~Device()
 {
 }
@@ -1283,6 +1294,17 @@ _name(var._name)
 {
 }
 
+Variable& Variable::operator=(const Variable& var)
+{
+	// Self assignment?
+	if (this==&var)
+		return *this;
+
+	_device = var._device;
+	_name = var._name;
+	return *this;
+}
+
 Variable::~Variable()
 {
 }
@@ -1365,6 +1387,17 @@ Command::Command(const Command& cmd):
 _device(cmd._device),
 _name(cmd._name)
 {
+}
+
+Command& Command::operator=(const Command& cmd)
+{
+	// Self assignment?
+	if (this==&cmd)
+		return *this;
+
+	_device = cmd._device;
+	_name = cmd._name;
+	return *this;
 }
 
 Command::~Command()
