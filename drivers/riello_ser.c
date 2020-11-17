@@ -153,7 +153,7 @@ int serial_read (int read_timeout, unsigned char *readbuf)
 	return -1;
 }
 
-void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
+void riello_serialcomm(uint8_t* arg_bufIn, uint8_t typedev)
 {
 	time_t realt, nowt;
 	uint8_t commb = 0;
@@ -163,7 +163,7 @@ void riello_serialcomm(uint8_t* bufIn, uint8_t typedev)
 		serial_read(1000, &commb);
 		nowt = time(NULL);
 		commbyte = commb;
-		riello_parse_serialport(typedev, bufIn, gpser_error_control);
+		riello_parse_serialport(typedev, arg_bufIn, gpser_error_control);
 
 		if ((nowt - realt) > 4)
 			break;
