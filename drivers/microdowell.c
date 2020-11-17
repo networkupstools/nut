@@ -282,6 +282,7 @@ static int detect_hardware(void)
 	unsigned char *p ;
 	int i, retries ;
 	struct tm *Time ;
+	struct tm tmbuf;
 	time_t lTime ;
 
 	ups.ge_2kVA = 0 ;
@@ -495,7 +496,7 @@ static int detect_hardware(void)
 
 	/* Set internal UPS clock */
 	time(&lTime) ;
-	Time = localtime(&lTime) ;
+	Time = localtime_r(&lTime, &tmbuf);
 
 	OutBuff[0] = CMD_SET_TIMER ;	/* set UPS internal timer */
 	OutBuff[1] = (Time->tm_wday+6) % 7 ;	/* week day (0=monday) */
