@@ -339,7 +339,15 @@ static int send_to_one(conn_t *conn, const char *fmt, ...)
 	char	buf[US_SOCK_BUF_LEN];
 
 	va_start(ap, fmt);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	vsnprintf(buf, sizeof(buf), fmt, ap);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	ret = write(conn->fd, buf, strlen(buf));
