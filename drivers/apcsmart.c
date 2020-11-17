@@ -434,11 +434,12 @@ static void alert_handler(char ch)
  * function is subtly different from generic ser_get_line_alert()
  */
 #define apc_read(b, l, f) apc_read_i(b, l, f, __func__, __LINE__)
-static int apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
+static ssize_t apc_read_i(char *buf, size_t buflen, int flags, const char *fn, unsigned int ln)
 {
 	const char *iset = IGN_CHARS, *aset = "";
 	size_t	count = 0;
-	int	i, ret, sec = 3, usec = 0;
+	ssize_t	i, ret;
+	int	sec = 3, usec = 0;
 	char	temp[APC_LBUF];
 
 	if (upsfd == -1)

@@ -34,41 +34,41 @@ int ser_flush_io(int fd);
 
 int ser_close(int fd, const char *port);
 
-int ser_send_char(int fd, unsigned char ch);
+ssize_t ser_send_char(int fd, unsigned char ch);
 
 /* send the results of the format string with d_usec delay after each char */
-int ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
+ssize_t ser_send_pace(int fd, unsigned long d_usec, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 3, 4)));
 
 /* send the results of the format string with no delay */
-int ser_send(int fd, const char *fmt, ...)
+ssize_t ser_send(int fd, const char *fmt, ...)
 	__attribute__ ((__format__ (__printf__, 2, 3)));
 
 /* send buflen bytes from buf with no delay */
-int ser_send_buf(int fd, const void *buf, size_t buflen);
+ssize_t ser_send_buf(int fd, const void *buf, size_t buflen);
 
 /* send buflen bytes from buf with d_usec delay after each char */
-int ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf, 
+ssize_t ser_send_buf_pace(int fd, unsigned long d_usec, const void *buf, 
 	size_t buflen);
 
-int ser_get_char(int fd, void *ch, long d_sec, long d_usec);
+ssize_t ser_get_char(int fd, void *ch, long d_sec, long d_usec);
 
-int ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec);
+ssize_t ser_get_buf(int fd, void *buf, size_t buflen, long d_sec, long d_usec);
 
 /* keep reading until buflen bytes are received or a timeout occurs */
-int ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec);
+ssize_t ser_get_buf_len(int fd, void *buf, size_t buflen, long d_sec, long d_usec);
 
 /* reads a line up to <endchar>, discarding anything else that may follow,
    with callouts to the handler if anything matches the alertset */
-int ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line_alert(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, const char *alertset, void handler (char ch), 
 	long d_sec, long d_usec);
 
 /* as above, only with no alertset handling (just a wrapper) */
-int ser_get_line(int fd, void *buf, size_t buflen, char endchar,
+ssize_t ser_get_line(int fd, void *buf, size_t buflen, char endchar,
 	const char *ignset, long d_sec, long d_usec);
 
-int ser_flush_in(int fd, const char *ignset, int verbose);
+ssize_t ser_flush_in(int fd, const char *ignset, int verbose);
 
 /* unified failure reporting: call these often */
 void ser_comm_fail(const char *fmt, ...)
