@@ -1073,10 +1073,10 @@ static void mainloop(void)
 	}
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
 {
 	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", progname);
+	printf("usage: %s [OPTIONS]\n", arg_progname);
 
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
