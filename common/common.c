@@ -783,7 +783,7 @@ char * get_libname(const char* base_libname)
 	int index = 0;
 	char *libname_path = NULL;
 	char current_test_path[LARGEBUF];
-	int base_libname_length = strlen(base_libname);
+	size_t base_libname_length = strlen(base_libname);
 
 	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
 	{
