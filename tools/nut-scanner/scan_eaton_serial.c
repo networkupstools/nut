@@ -118,18 +118,22 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 /* Light version of of drivers/libshut.c->shut_synchronise()
  * return 1 if OK, 0 otherwise */
-int shut_synchronise(int upsfd)
+int shut_synchronise(int arg_upsfd)
 {
 	int try;
 	unsigned char reply = '\0';
+	/* FIXME? Should we save "arg_upsfd" into global "upsfd" variable?
+	 * This was previously shadowed by function argument named "upsfd"...
+	 */
+	/* upsfd = arg_upsfd; */
 
 	/* Sync with the UPS according to notification */
 	for (try = 0; try < MAX_TRY; try++) {
-		if ((ser_send_char(upsfd, SHUT_SYNC)) == -1) {
+		if ((ser_send_char(arg_upsfd, SHUT_SYNC)) == -1) {
 			continue;
 		}
 
-		ser_get_char(upsfd, &reply, 1, 0);
+		ser_get_char(arg_upsfd, &reply, 1, 0);
 		if (reply == SHUT_SYNC) {
 			return 1;
 		}
