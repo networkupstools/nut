@@ -200,7 +200,7 @@ static void addchar(PCONF_CTX_t *ctx)
 		ctx->wordptr = &ctx->wordbuf[wbuflen];
 	}
 
-	*ctx->wordptr++ = ctx->ch;
+	*ctx->wordptr++ = (char)ctx->ch;
 	*ctx->wordptr = '\0';
 }
 
