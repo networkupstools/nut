@@ -245,7 +245,8 @@ int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	int	pid, ret;
+	long	pid;
+	int	ret;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
@@ -262,7 +263,7 @@ int sendsignalfn(const char *pidfn, int sig)
 	pid = strtol(buf, (char **)NULL, 10);
 
 	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
+		upslogx(LOG_NOTICE, "Ignoring invalid pid number %ld", pid);
 		fclose(pidf);
 		return -1;
 	}
