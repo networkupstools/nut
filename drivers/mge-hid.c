@@ -362,8 +362,9 @@ static info_lkp_t eaton_charging_info[] = {
 static const char *mge_date_conversion_fun(double value)
 {
 	time_t	sec = value;
+	struct tm	tmbuf;
 
-	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%Y/%m/%d", localtime(&sec)) == 10) {
+	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%Y/%m/%d", localtime_r(&sec, &tmbuf)) == 10) {
 		return mge_scratch_buf;
 	}
 
@@ -374,8 +375,9 @@ static const char *mge_date_conversion_fun(double value)
 static const char *mge_time_conversion_fun(double value)
 {
 	time_t sec = value;
+	struct tm	tmbuf;
 
-	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime(&sec)) == 8) {
+	if (strftime(mge_scratch_buf, sizeof(mge_scratch_buf), "%H:%M:%S", localtime_r(&sec, &tmbuf)) == 8) {
 		return mge_scratch_buf;
 	}
 
