@@ -126,7 +126,7 @@ static void ups_status_set(void);
 static bool_t hid_ups_walk(walkmode_t mode);
 static int reconnect_ups(void);
 static int ups_infoval_set(hid_info_t *item, double value);
-static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen);
+static int callback(hid_dev_handle_t udev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen);
 #ifdef DEBUG
 static double interval(void);
 #endif
@@ -1074,7 +1074,7 @@ static void process_boolean_info(const char *nutvalue)
 	upsdebugx(5, "Warning: %s not in list of known values", nutvalue);
 }
 
-static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf, int rdlen)
+static int callback(hid_dev_handle_t udev, HIDDevice_t *arghd, unsigned char *rdbuf, int rdlen)
 {
 	int i;
 	const char *mfr = NULL, *model = NULL, *serial = NULL;
@@ -1083,6 +1083,9 @@ static int callback(hid_dev_handle_t udev, HIDDevice_t *hd, unsigned char *rdbuf
 #endif
 	upsdebugx(2, "Report Descriptor size = %d", rdlen);
 	upsdebug_hex(3, "Report Descriptor", rdbuf, rdlen);
+
+	/* Save the global "hd" for this driver instance */
+	hd = arghd;
 
 	/* Parse Report Descriptor */
 	Free_ReportDesc(pDesc);
