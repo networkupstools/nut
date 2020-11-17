@@ -724,7 +724,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
  * linked against certain OS-provided libraries for accessing this or that
  * communications media and/or vendor protocol.
  */
-const char * search_paths[] = {
+static const char * search_paths[] = {
 	// Use the library path (and bitness) provided during ./configure first
 	LIBDIR,
 	"/usr"LIBDIR,
