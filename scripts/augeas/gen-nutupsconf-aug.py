@@ -59,11 +59,11 @@ def grep(string,list):
 if __name__ == '__main__':
 
 	rawCount = 0
-	global finalCount
+	finalCount
 	variableNames = []
 	specificVars = ""
-	global inLensContent
-	global finalLensContent
+	inLensContent
+	finalLensContent
 	Exceptionlist = ['../../drivers/main.c', '../../drivers/skel.c']
 	outputFilename = 'nutupsconf.aug.in'
 	templateFilename = 'nutupsconf.aug.tpl'
