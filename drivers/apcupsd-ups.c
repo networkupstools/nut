@@ -16,6 +16,8 @@
 
 */
 
+#include "config.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -24,6 +26,7 @@
 
 #include "main.h"
 #include "apcupsd-ups.h"
+#include "attribute.h"
 
 #define DRIVER_NAME	"apcupsd network client UPS driver"
 #define DRIVER_VERSION	"0.5"
@@ -268,6 +271,9 @@ void upsdrv_updateinfo(void)
 
 	poll_interval = (poll_interval > POLL_INTERVAL_MIN) ? POLL_INTERVAL_MIN : poll_interval;
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {
