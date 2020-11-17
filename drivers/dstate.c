@@ -32,6 +32,7 @@
 #include "dstate.h"
 #include "state.h"
 #include "parseconf.h"
+#include "attribute.h"
 
 	static int	sockfd = -1, stale = 1, alarm_active = 0, ignorelb = 0;
 	static char	*sockfn = NULL;
@@ -43,6 +44,9 @@
 	struct ups_handler	upsh;
 
 /* this may be a frequent stumbling point for new users, so be verbose here */
+static void sock_fail(const char *fn)
+	__attribute__((noreturn));
+
 static void sock_fail(const char *fn)
 {
 	int	sockerr;
