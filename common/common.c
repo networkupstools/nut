@@ -313,7 +313,17 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	va_end(ap);
 
 	dst[size] = '\0';
-	return len + ret;
+
+	/* Note: there is a standards loophole here: strlen() must return size_t
+	 * and printf() family returns a signed int with negatives for errors.
+	 * In theory it can overflow a 64-vs-32 bit range, or signed-vs-unsigned.
+	 * In practice we hope to not have gigabytes-long config strings.
+	 */
+	assert(ret >= 0);
+#ifdef INT_MAX
+	assert ((unsigned long long)len < ((unsigned long long)INT_MAX - ret));
+#endif
+	return (int)len + ret;
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
