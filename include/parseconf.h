@@ -39,7 +39,7 @@ typedef struct {
 	FILE	*f;			/* stream to current file	*/
 	int	state;			/* current parser state		*/
 	int	ch;			/* last character read		*/
-	
+
 	char	**arglist;		/* array of pointers to words	*/
 	size_t	*argsize;		/* list of sizes for realloc	*/
 	size_t	numargs;		/* max usable in arglist	*/

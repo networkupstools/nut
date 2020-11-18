@@ -23,7 +23,7 @@
 #define NUT_ATTRIBUTE_H_SEEN 1
 
 #ifndef __attribute__
-# if __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 8) || __STRICT_ANSI__
+# if ( defined(__GNUC__) && ( __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 8) ) ) || ( defined(__STRICT_ANSI__) && __STRICT_ANSI__ )
 #  define __attribute__(x)
 # endif
 #endif
