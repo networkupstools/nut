@@ -49,4 +49,4 @@ common/.dirstamp
 
 # Debuggers and IDEs
 .gdb_history
-
+/nbproject
