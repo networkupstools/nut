@@ -211,7 +211,16 @@ static int blazer_status(const char *cmd)
 			continue;
 		}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 	}
 
 	if (!val) {
@@ -338,7 +347,16 @@ static int blazer_rating(const char *cmd)
 			continue;
 		}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 	}
 
 	return 0;
