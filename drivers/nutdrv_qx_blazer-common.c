@@ -203,7 +203,15 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 		/* Truncate to minute */
 		ondelay -= (ondelay % 60);
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(value, valuelen, "%d", ondelay);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	} else if (!strcasecmp(item->info_type, "ups.delay.shutdown")) {
 
@@ -216,7 +224,15 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 			offdelay -= (offdelay % 60);
 		}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(value, valuelen, "%d", offdelay);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	} else {
 
@@ -231,6 +247,11 @@ int	blazer_process_setvar(item_t *item, char *value, const size_t valuelen)
 /* Preprocess instant commands */
 int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 {
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	if (!strcasecmp(item->info_type, "shutdown.return")) {
 
 		/* Sn: Shutdown after n minutes and then turn on when mains is back
@@ -302,6 +323,9 @@ int	blazer_process_command(item_t *item, char *value, const size_t valuelen)
 		return -1;
 
 	}
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
