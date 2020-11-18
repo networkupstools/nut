@@ -203,7 +203,15 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 		if ((powpan_command(command) == 2) && (!strcasecmp(powpan_answer, "#0"))) {
 			dstate_setinfo(varname, "%s", val);
