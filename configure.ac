@@ -10,6 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 echo "Network UPS Tools version ${PACKAGE_VERSION}"
 AC_CANONICAL_SYSTEM
 NUT_CHECK_OS
+NUT_STASH_WARNINGS
 AC_CONFIG_HEADER(include/config.h)
 AC_PREFIX_DEFAULT(/usr/local/ups)
 AM_INIT_AUTOMAKE([subdir-objects])
@@ -143,6 +144,30 @@ AC_CHECK_FUNCS(cfsetispeed tcsendbreak)
 AC_CHECK_FUNCS(seteuid setsid getpassphrase)
 AC_CHECK_FUNCS(on_exit strptime setlogmask)
 AC_CHECK_DECLS(LOG_UPTO, [], [], [#include <syslog.h>])
+
+dnl These common routines are not available in strict C standard library
+dnl compilation modes, only in GNU, POSIX or other extension modes:
+AC_MSG_NOTICE(
+[-----------------------------------------------------------------------
+The next few tests look for required C library routines; if something is
+not found, you may need to enable a different C standard or extension macro
+version. You may also have to configure without extreme warning levels
+since autotools tests fail those on their own and assume system lacks
+stuff (although note we try to not involve standard -W* flags here).
+-----------------------------------------------------------------------])
+AC_CHECK_FUNCS(strcasecmp strncasecmp,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding __EXTENSIONS__])])
+dnl These appear with CFLAGS="-std=c99 -D_POSIX_C_SOURCE=200112L":
+AC_CHECK_FUNCS(strtok_r strdup fileno usleep localtime_r sigemptyset sigaction,
+	[], [AC_MSG_WARN([Required C library routine not found; try adding -D_POSIX_C_SOURCE=200112L])])
+
+dnl These routines' arg types differ in strict C standard mode
+dnl from what they use in the modes expected by NUT codebase:
+dnl   bind() :     /usr/include/x86_64-linux-gnu/sys/socket.h:123:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   accept() :   /usr/include/x86_64-linux-gnu/sys/socket.h:243:12: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   connect() :  /usr/include/x86_64-linux-gnu/sys/socket.h:137:12: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'const struct sockaddr *'
+dnl   sendto() :   /usr/include/x86_64-linux-gnu/sys/socket.h:163:16: note: expected '__CONST_SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
+dnl   recvfrom() : /usr/include/x86_64-linux-gnu/bits/socket2.h:64:1: note: expected '__SOCKADDR_ARG {aka union <anonymous>}' but argument is of type 'struct sockaddr *'
 
 AC_MSG_CHECKING([whether ln -sr works])
 dnl We need to relative-symlink some files. Or hardlink. Or copy...
@@ -1852,6 +1877,8 @@ AC_SUBST(systemdshutdowndir)
 AC_SUBST(auglensdir)
 AC_SUBST(hotplugdir)
 AC_SUBST(udevdir)
+
+NUT_POP_WARNINGS
 
 AC_OUTPUT([
  clients/Makefile
