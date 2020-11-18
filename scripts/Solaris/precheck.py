@@ -1,12 +1,25 @@
 #!/usr/bin/env python
 
 import sys
-import commands
+
+if sys.version_info >= ( 2, 6 ):
+    import subprocess
+    p = subprocess.Popen(["uname", "-s"], stdout=subprocess.PIPE)
+    platform = p.communicate()[0]
+    if p.returncode != 0:
+        raise Exception("FAILED to get platform from 'uname -s'!")
+
+    p = subprocess.Popen(["uname", "-p"], stdout=subprocess.PIPE)
+    architecture = p.communicate()[0]
+    if p.returncode != 0:
+        raise Exception("FAILED to get architecture from 'uname -p'!")
+else:
+    import commands
+    platform = commands.getoutput('uname -s')
+    architecture = commands.getoutput('uname -p')
 
 # checkinstall script creation
 
-platform = commands.getoutput('uname -s')
-architecture = commands.getoutput('uname -p')
 
 fp=open("checkinstall","w")
 fp.write("#!/bin/sh\n")
