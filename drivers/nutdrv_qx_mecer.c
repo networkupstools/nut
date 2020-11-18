@@ -215,7 +215,15 @@ static int	voltronic_p98_protocol(item_t *item, char *value, const size_t valuel
 		return -1;
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, "Voltronic Power P98");
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
@@ -260,7 +268,15 @@ static int	mecer_process_test_battery(item_t *item, char *value, const size_t va
 
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->command, buf);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
