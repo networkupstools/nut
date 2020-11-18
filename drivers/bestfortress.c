@@ -168,7 +168,15 @@ static int upssend(const char *fmt,...) {
 	int d_usec = UPSDELAY;
 
 	va_start(ap, fmt);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, ap);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 	va_end(ap);
 
 	if ((ret < 1) || (ret >= (int) sizeof(buf)))
