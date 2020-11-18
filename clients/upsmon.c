@@ -1300,7 +1300,7 @@ static void loadconfig(void)
 /* SIGPIPE handler */
 static void sigpipe(int sig)
 {
-	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing...");
+	upsdebugx(1, "SIGPIPE: dazed and confused, but continuing after signal %i...", sig);
 }
 
 /* SIGQUIT, SIGTERM handler */
@@ -1356,12 +1356,16 @@ static void user_fsd(int sig)
 
 static void set_reload_flag(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	reload_flag = 1;
 }
 
 /* handler for alarm when getupsvarfd times out */
 static void read_timeout(int sig)
 {
+	NUT_UNUSED_VARIABLE(sig);
+
 	/* don't do anything here, just return */
 }
 

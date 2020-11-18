@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_UPSMON_H_SEEN
+#define NUT_UPSMON_H_SEEN 1
+
 /* flags for ups->status */
 
 #define ST_ONLINE      (1 << 0)       /* UPS is on line (OL)                  */
@@ -125,3 +128,5 @@ struct {
 }
 /* *INDENT-ON* */
 #endif
+
+#endif	/* NUT_UPSMON_H_SEEN */

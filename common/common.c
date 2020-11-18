@@ -699,6 +699,14 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
  * note that different OSes can have their pathnames set up differently
  * with regard to default/preferred bitness (maybe a "32" in the name
  * should also be searched explicitly - again, IFF our build is 32-bit).
+ *
+ * General premise for this solution is that some parts of NUT (e.g. the
+ * nut-scanner tool, or DMF feature code) must be pre-built and distributed
+ * in binary packages, but only at run-time it gets to know which third-party
+ * libraries it should use for particular operations. This differs from e.g.
+ * distribution packages which group NUT driver binaries explicitly dynamically
+ * linked against certain OS-provided libraries for accessing this or that
+ * communications media and/or vendor protocol.
  */
 const char * search_paths[] = {
 	// Use the library path (and bitness) provided during ./configure first

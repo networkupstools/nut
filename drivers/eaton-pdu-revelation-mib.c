@@ -55,21 +55,21 @@
 #define AR_OID_OUTLET_STATUS			AR_BASE_OID ".1.2.2.1.3"
 
 static info_lkp_t revelation_outlet_status_info[] = {
-	{ -1, "error" },
-	{ 0, "off" },
-	{ 1, "on" },
-	{ 2, "cycling" }, /* transitional status */
-	{ 0, NULL }
+	{ -1, "error", NULL, NULL },
+	{ 0, "off", NULL, NULL },
+	{ 1, "on", NULL, NULL },
+	{ 2, "cycling", NULL, NULL }, /* transitional status */
+	{ 0, NULL, NULL, NULL }
 };
 
 /* Ugly hack: having the matching OID present means that the outlet is
  * switchable. So, it should not require this value lookup */
 static info_lkp_t revelation_outlet_switchability_info[] = {
-	{ -1, "yes" },
-	{ 0, "yes" },
-	{ 1, "yes" },
-	{ 2, "yes" },
-	{ 0, NULL }
+	{ -1, "yes", NULL, NULL },
+	{ 0, "yes", NULL, NULL },
+	{ 1, "yes", NULL, NULL },
+	{ 2, "yes", NULL, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 #define DO_OFF		"0"
@@ -173,4 +173,4 @@ static snmp_info_t eaton_aphel_revelation_mib[] = {
 };
 
 
-mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_REVELATION_MIB_VERSION, NULL, APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID };
+mib2nut_info_t	aphel_revelation = { "aphel_revelation", EATON_APHEL_REVELATION_MIB_VERSION, NULL, APHEL2_OID_MODEL_NAME, eaton_aphel_revelation_mib, APHEL2_SYSOID, NULL };

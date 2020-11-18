@@ -22,6 +22,8 @@ Makefile.in
 /config.sub
 /config.cache
 /configure
+/conf_nut_report_feature
+/conf??????/
 /cscope.*
 /depcomp
 /INSTALL
@@ -44,3 +46,7 @@ common/.dirstamp
 /nut-*.tar.gz.md5
 /nut-*.tar.gz.sha256
 /nut-*.tar.gz.sig
+
+# Debuggers and IDEs
+.gdb_history
+/nbproject

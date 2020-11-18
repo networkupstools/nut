@@ -22,8 +22,8 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef HIDPARS_H
-#define HIDPARS_H
+#ifndef NUT_HID_PARSER_H_SEEN
+#define NUT_HID_PARSER_H_SEEN
 
 
 #ifdef __cplusplus
@@ -70,4 +70,4 @@ void SetValue(const HIDData_t *pData, unsigned char *Buf, long Value);
 /* *INDENT-ON* */
 #endif /* __cplusplus */
 
-#endif
+#endif	/* NUT_HID_PARSER_H_SEEN */

@@ -1,6 +1,3 @@
-#ifndef NUT_COMMON_H
-#define NUT_COMMON_H
-
 /* common.h - prototypes for the common useful functions
 
    Copyright (C) 2000  Russell Kroll <rkroll@exploits.org>
@@ -19,6 +16,9 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
+
+#ifndef NUT_COMMON_H_SEEN
+#define NUT_COMMON_H_SEEN 1
 
 #include "config.h"		/* must be the first header */
 
@@ -52,6 +52,18 @@ extern "C" {
 #endif
 
 extern const char *UPS_VERSION;
+
+/* Use in code to notify the developers and quiesce the compiler that
+ * (for this codepath) the argument or variable is unused intentionally.
+ * void f(int x) {
+ *   NUT_UNUSED_VARIABLE(x);
+ *   ...
+ * }
+ *
+ * Note that solutions which mark up function arguments or employ this or
+ * that __attribute__ proved not portable enough for wherever NUT builds.
+ */
+#define NUT_UNUSED_VARIABLE(x) (void)(x)
 
 /** @brief Default timeout (in seconds) for network operations, as used by `upsclient` and `nut-scanner`. */
 #define DEFAULT_NETWORK_TIMEOUT		5
@@ -196,4 +208,4 @@ extern int optind;
 /* *INDENT-ON* */
 #endif
 
-#endif /* NUT_COMMON_H */
+#endif /* NUT_COMMON_H_SEEN */
