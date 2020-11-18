@@ -196,7 +196,15 @@ static int	voltronic_qs_protocol(item_t *item, char *value, const size_t valuele
 		return -1;
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, item->value);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
