@@ -152,7 +152,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			return STAT_INSTCMD_HANDLED;
 		}
 
-		upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+		upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 		return STAT_INSTCMD_FAILED;
 	}
 
@@ -175,7 +175,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 			snprintf(command, sizeof(command), "S%02dR%04d\r", offdelay / 60, ondelay);
 		}
 	} else {
-		upslogx(LOG_NOTICE, "%s: command [%s] unknown", __func__, cmdname);
+		upslogx(LOG_NOTICE, "%s: command [%s] [%s] unknown", __func__, cmdname, extra);
 		return STAT_INSTCMD_UNKNOWN;
 	}
 
@@ -183,7 +183,7 @@ static int powpan_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_ERR, "%s: command [%s] failed", __func__, cmdname);
+	upslogx(LOG_ERR, "%s: command [%s] [%s] failed", __func__, cmdname, extra);
 	return STAT_INSTCMD_FAILED;
 }
 

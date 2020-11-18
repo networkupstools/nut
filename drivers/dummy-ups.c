@@ -206,7 +206,7 @@ static int instcmd(const char *cmdname, const char *extra)
 	 * if (mode == MODE_META) => ?
 	 */
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 
@@ -399,6 +399,7 @@ static int is_valid_data(const char* varname)
 static int is_valid_value(const char* varname, const char *value)
 {
 	dummy_info_t *item;
+	NUT_UNUSED_VARIABLE(value);
 
 	if ( (item = find_info(varname)) != NULL)
 	{
@@ -430,6 +431,7 @@ static int parse_data_file(int upsfd)
 	char	*ptr, var_value[MAX_STRING_SIZE];
 	int		value_args = 0, counter;
 	time_t	now;
+	NUT_UNUSED_VARIABLE(upsfd);
 
 	time(&now);
 

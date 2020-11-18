@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef STR_H
-#define STR_H
+#ifndef NUT_STR_H_SEEN
+#define NUT_STR_H_SEEN 1
 
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -126,4 +126,4 @@ int	str_to_double_strict(const char *string, double *number, const int base);
 /* *INDENT-ON* */
 #endif
 
-#endif	/* STR_H */
+#endif	/* NUT_STR_H_SEEN */

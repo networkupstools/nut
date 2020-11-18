@@ -65,6 +65,8 @@ static unsigned int	comm_failures = 0;
 
 static int device_match_func(USBDevice_t *device, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	switch (is_usb_device_supported(richcomm_usb_id, device))
 	{
 	case SUPPORTED:
@@ -176,6 +178,8 @@ static void usb_comm_good(void)
  */
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	if (usb_set_configuration(handle, 1) < 0) {
 		upsdebugx(5, "Can't set USB configuration");
 		return -1;

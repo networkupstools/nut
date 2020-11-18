@@ -181,7 +181,8 @@ int bcd2i (const char *bcdstring, const int bcdlen)
 #define POLL_ALERT "{"
 static void alert_handler(char ch)
 {
-	char buf[256];
+	char buf[SMALLBUF];
+	NUT_UNUSED_VARIABLE(ch);
 
 	/* Received an Inverter status alarm :
 	 * "\r\n{Inverter:     On}\r\n=>"
@@ -198,7 +199,7 @@ time^M^M^JFeb 20, 22:13:32^M^J^M^J=>id^M^JUnit ID "ME3.1K12345"^M^J^M^J=>
 static int execute(const char *cmd, char *result, int resultsize)
 {
 	int ret;
-	char buf[256];
+	char buf[SMALLBUF];
 	unsigned char ch;
 
 	/* Check for the Inverter status alarm if pending :

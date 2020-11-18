@@ -1,5 +1,8 @@
 /* upssched.h - supporting structures */
 
+#ifndef NUT_UPSSCHED_H_SEEN
+#define NUT_UPSSCHED_H_SEEN 1
+
 #include <parseconf.h>
 
 #define SERIALIZE_INIT 1
@@ -25,3 +28,4 @@ typedef struct conn_s {
 /* *INDENT-ON* */
 #endif
 
+#endif	/* NUT_UPSSCHED_H_SEEN */

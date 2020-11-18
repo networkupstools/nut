@@ -1,5 +1,8 @@
 /* upslog.h - table of functions for handling various logging functions */
 
+#ifndef NUT_UPSLOG_H_SEEN
+#define NUT_UPSLOG_H_SEEN 1
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -40,3 +43,4 @@ struct {
 /* *INDENT-ON* */
 #endif
 
+#endif	/* NUT_UPSLOG_H_SEEN */

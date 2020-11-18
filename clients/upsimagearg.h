@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_UPSIMAGEARG_H_SEEN
+#define NUT_UPSIMAGEARG_H_SEEN 1
+
 #ifdef __cplusplus
 /* *INDENT-OFF* */
 extern "C" {
@@ -71,3 +74,4 @@ extern imgvar_t imgvar[];
 /* *INDENT-ON* */
 #endif
 
+#endif	/* NUT_UPSIMAGEARG_H_SEEN */

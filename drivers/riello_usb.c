@@ -251,6 +251,8 @@ static int cypress_command(uint8_t *buffer, uint8_t *buf, uint16_t length, uint1
 
 static void *cypress_subdriver(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	subdriver_command = &cypress_command;
 	return NULL;
 }
@@ -269,6 +271,8 @@ static usb_device_id_t riello_usb_id[] = {
 
 static int device_match_func(USBDevice_t *hd, void *privdata)
 {
+	NUT_UNUSED_VARIABLE(privdata);
+
 	if (subdriver_command) {
 		return 1;
 	}
@@ -302,10 +306,16 @@ static USBDeviceMatcher_t device_matcher = {
  */
 static int driver_callback(usb_dev_handle *handle, USBDevice_t *device, unsigned char *rdbuf, int rdlen)
 {
-	/*if (usb_set_configuration(handle, 1) < 0) {
+	 NUT_UNUSED_VARIABLE(device);
+	 NUT_UNUSED_VARIABLE(rdbuf);
+	 NUT_UNUSED_VARIABLE(rdlen);
+
+/*
+	if (usb_set_configuration(handle, 1) < 0) {
 		upslogx(LOG_WARNING, "Can't set USB configuration: %s", usb_strerror());
 		return -1;
-	} */
+	}
+*/
 
 	if (usb_claim_interface(handle, 0) < 0) {
 		upslogx(LOG_WARNING, "Can't claim USB interface: %s", usb_strerror());
@@ -348,9 +358,11 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	{
 	case -EBUSY:		/* Device or resource busy */
 		fatal_with_errno(EXIT_FAILURE, "Got disconnected by another driver");
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 	case -EPERM:		/* Operation not permitted */
 		fatal_with_errno(EXIT_FAILURE, "Permissions problem");
+		exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
 
 	case -EPIPE:		/* Broken pipe */
 		if (usb_clear_halt(udev, 0x81) == 0) {
@@ -358,16 +370,20 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 			break;
 		}
 #ifdef ETIME
+		goto fallthrough_case_etime;
 	case -ETIME:		/* Timer expired */
+	fallthrough_case_etime:
 #endif
 		if (usb_reset(udev) == 0) {
 			upsdebugx(1, "Device reset handled");
 		}
+		goto fallthrough_case_reconnect;
 	case -ENODEV:		/* No such device */
 	case -EACCES:		/* Permission denied */
 	case -EIO:		/* I/O error */
 	case -ENXIO:		/* No such device or address */
 	case -ENOENT:		/* No such file or directory */
+	fallthrough_case_reconnect:
 		/* Uh oh, got to reconnect! */
 		usb->close(udev);
 		udev = NULL;
@@ -375,7 +391,7 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 
 	case -ETIMEDOUT:	/* Connection timed out */
 		upsdebugx (3, "riello_command err: Resource temporarily unavailable");
-
+		break;
 
 	case -EOVERFLOW:	/* Value too large for defined data type */
 #ifdef EPROTO
@@ -385,7 +401,6 @@ int riello_command(uint8_t *cmd, uint8_t *buf, uint16_t length, uint16_t buflen)
 	default:
 		break;
 	}
-
 
 	return ret;
 }
@@ -734,7 +749,7 @@ int riello_instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

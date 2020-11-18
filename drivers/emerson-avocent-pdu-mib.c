@@ -60,19 +60,19 @@
 #endif
 
 info_lkp_t avocent_outlet_status_info[] = {
-	{ 1, "off" },
-	{ 2, "on" },
-/*	{ 3, "offLocked" },
-	{ 4, "onLocked" },
-	{ 5, "offCycle" },
-	{ 6, "onPendingOff" },
-	{ 7, "offPendingOn" },
-	{ 8, "onPendingCycle" },
-	{ 9, "notSet" },
-	{ 10, "onFixed" },
-	{ 11, "offShutdown" },
-	{ 12, "tripped" },*/
-	{ 0, NULL }
+	{ 1, "off", NULL, NULL },
+	{ 2, "on", NULL, NULL },
+/*	{ 3, "offLocked", NULL, NULL },
+	{ 4, "onLocked", NULL, NULL },
+	{ 5, "offCycle", NULL, NULL },
+	{ 6, "onPendingOff", NULL, NULL },
+	{ 7, "offPendingOn", NULL, NULL },
+	{ 8, "onPendingCycle", NULL, NULL },
+	{ 9, "notSet", NULL, NULL },
+	{ 10, "onFixed", NULL, NULL },
+	{ 11, "offShutdown", NULL, NULL },
+	{ 12, "tripped", NULL, NULL },*/
+	{ 0, NULL, NULL, NULL }
 };
 
 snmp_info_t emerson_avocent_pdu_mib[] = {
@@ -182,4 +182,4 @@ snmp_info_t emerson_avocent_pdu_mib[] = {
 	{ NULL, 0, 0, NULL, NULL, 0, NULL }
 };
 
-mib2nut_info_t	emerson_avocent_pdu = { "emerson_avocent_pdu", EMERSON_AVOCENT_MIB_VERSION, NULL, EMERSON_AVOCENT_OID_MODEL_NAME, emerson_avocent_pdu_mib, EMERSON_AVOCENT_SYSOID };
+mib2nut_info_t	emerson_avocent_pdu = { "emerson_avocent_pdu", EMERSON_AVOCENT_MIB_VERSION, NULL, EMERSON_AVOCENT_OID_MODEL_NAME, emerson_avocent_pdu_mib, EMERSON_AVOCENT_SYSOID, NULL };

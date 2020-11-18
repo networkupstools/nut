@@ -18,6 +18,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_APCUPSD_UPS_H_SEEN
+#define NUT_APCUPSD_UPS_H_SEEN 1
+
 /* from usbhid-ups.h */
 /* --------------------------------------------------------------- */
 /* Struct & data for ups.status processing                         */
@@ -141,3 +144,5 @@ static apcuspd_info_t nut_data[] =
 	{ "NOMAPNT", "ups.power.nominal", 0, 1, "%.0f", DU_FLAG_INIT, NULL },
 	{ NULL, NULL, 0, 0, NULL, DU_FLAG_NONE, NULL }
 };
+
+#endif  /* NUT_APCUPSD_UPS_H_SEEN */

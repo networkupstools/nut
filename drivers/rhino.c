@@ -165,13 +165,13 @@ AutonomyCalc( int ia ) /* all models */
 
 	if( ia )
 	{
-		if( ( BattVoltage == 0 ) )
+		if( BattVoltage == 0 )
 			result = 0;
 		else
 		{
 					calc = ( OutVoltage * OutCurrent )* 1.0 / ( 0.08 * BattVoltage );
 					auton = pow( calc, 1.18 );
-					if( ( auton == 0 ) )
+					if( auton == 0 )
 						result = 0;
 					else
 						{
@@ -302,7 +302,7 @@ ScanReceivePack( void )
 	if( !( SourceFail ) && !( RedeAnterior ) ) /* retorno da rede */
 		RetornoDaRede = true;
 
-	if( !( SourceFail ) == RedeAnterior )
+	if( RedeAnterior == !( SourceFail ) )
 	{
 		RetornoDaRede = false;
 		OcorrenciaDeFalha = false;
@@ -389,7 +389,7 @@ CommReceive(const unsigned char *bufptr, int size)
 {
 	int i, i_end, CheckSum, chk;
 
-	if( ( size==37 ) )
+	if( size == 37 )
 		Waiting = 0;
 
 	printf("CommReceive size = %d waiting = %d\n", size, Waiting );
@@ -681,7 +681,7 @@ static int instcmd(const char *cmdname, const char *extra)
 		return STAT_INSTCMD_HANDLED;
 	}
 
-	upslogx(LOG_NOTICE, "instcmd: unknown command [%s]", cmdname);
+	upslogx(LOG_NOTICE, "instcmd: unknown command [%s] [%s]", cmdname, extra);
 	return STAT_INSTCMD_UNKNOWN;
 }
 

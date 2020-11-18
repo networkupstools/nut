@@ -24,8 +24,8 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef LIBSHUT_H
-#define LIBSHUT_H
+#ifndef NUT_LIBSHUT_H_SEEN
+#define NUT_LIBSHUT_H_SEEN 1
 
 #include "main.h"	/* for subdrv_info_t */
 #include "nut_stdint.h"	/* for uint16_t */
@@ -85,4 +85,4 @@ extern shut_communication_subdriver_t	shut_subdriver;
 					/* Ellipse models */
 #define DEFAULT_NOTIFICATION COMPLETE_NOTIFICATION
 
-#endif /* LIBSHUT_H */
+#endif /* NUT_LIBSHUT_H_SEEN */

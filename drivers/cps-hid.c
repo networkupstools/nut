@@ -49,6 +49,8 @@ static const double battery_voltage_sanity_check = 1.4;
 
 static void *cps_battery_scale(USBDevice_t *device)
 {
+	NUT_UNUSED_VARIABLE(device);
+
 	might_need_battery_scale = 1;
 	return NULL;
 }
@@ -114,7 +116,7 @@ static const char *cps_battvolt_fun(double value)
 }
 
 static info_lkp_t cps_battvolt[] = {
-	{ 0, NULL, &cps_battvolt_fun }
+	{ 0, NULL, &cps_battvolt_fun, NULL }
 };
 
 /* returns statically allocated string - must not use it again before
@@ -130,7 +132,7 @@ static const char *cps_battcharge_fun(double value)
 }
 
 static info_lkp_t cps_battcharge[] = {
-	{ 0, NULL, &cps_battcharge_fun }
+	{ 0, NULL, &cps_battcharge_fun, NULL }
 };
 
 /* --------------------------------------------------------------- */

@@ -26,8 +26,8 @@
  *
  * -------------------------------------------------------------------------- */
 
-#ifndef _LIBHID_H
-#define _LIBHID_H
+#ifndef NUT_LIBHID_H_SEEN
+#define NUT_LIBHID_H_SEEN
 
 #include "config.h"
 
@@ -148,4 +148,4 @@ const char *HIDDataType(const HIDData_t *hiddata);
 void free_report_buffer(reportbuf_t *rbuf);
 reportbuf_t *new_report_buffer(HIDDesc_t *pDesc);
 
-#endif /* _LIBHID_H */
+#endif /* NUT_LIBHID_H_SEEN */

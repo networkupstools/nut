@@ -746,6 +746,8 @@ static void print_rw(const char *upsname, const char *varname)
 {
 	const	char	*tmp;
 
+	printf("<!-- <TR><TD>Device</TD><TD>%s</TD></TR> -->\n", upsname);
+
 	printf("<TR BGCOLOR=\"#60B0B0\" ALIGN=\"CENTER\">\n");
 
 	printf("<TD>");
@@ -1032,6 +1034,8 @@ static void check_conf(void)
 
 int main(int argc, char **argv)
 {
+	NUT_UNUSED_VARIABLE(argc);
+	NUT_UNUSED_VARIABLE(argv);
 	username = password = function = monups = NULL;
 
 	printf("Content-type: text/html\n\n");
@@ -1041,15 +1045,16 @@ int main(int argc, char **argv)
 
 	/* see if there's anything waiting .. the server my not close STDIN properly */
 	if (1) {
-	    fd_set fds;
-	    struct timeval tv;
+		fd_set fds;
+		struct timeval tv;
 
-	    FD_ZERO(&fds);
-	    FD_SET(STDIN_FILENO, &fds);
-	    tv.tv_sec = 0;
-	    tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
-	    if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
-		extractpostargs();
+		FD_ZERO(&fds);
+		FD_SET(STDIN_FILENO, &fds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 250000; /* wait for up to 250ms  for a POST response */
+
+		if ((select(STDIN_FILENO+1, &fds, 0, 0, &tv)) > 0)
+			extractpostargs();
 	}
 	if ((!username) || (!password) || (!function))
 		loginscreen();

@@ -20,8 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef __apcsmart_h__
-#define __apcsmart_h__
+#ifndef NUT_APCSMART_H_SEEN
+#define NUT_APCSMART_H_SEEN 1
 
 #define DRIVER_NAME	"APC Smart protocol driver"
 #define DRIVER_VERSION	"3.1"
@@ -172,4 +172,4 @@
 #define logx(lev, fmt, ...) upslogx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
 #define debx(lev, fmt, ...) upsdebugx(lev, "%s: " fmt, __func__ , ## __VA_ARGS__)
 
-#endif
+#endif  /* NUT_APCSMART_H_SEEN */

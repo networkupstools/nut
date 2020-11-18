@@ -17,6 +17,9 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#ifndef NUT_GENERICUPS_H_SEEN
+#define NUT_GENERICUPS_H_SEEN 1
+
 struct {
 	const	char	*mfr;			/* value for INFO_MFR	*/
 	const	char	*model;			/* value for INFO_MODEL	*/
@@ -270,3 +273,5 @@ struct {
 	  0
 	}
 };
+
+#endif	/* NUT_GENERICUPS_H_SEEN */

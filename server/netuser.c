@@ -67,6 +67,7 @@ void net_login(nut_ctype_t *client, int numarg, const char **arg)
 
 void net_logout(nut_ctype_t *client, int numarg, const char **arg)
 {
+	NUT_UNUSED_VARIABLE(arg);
 	if (numarg != 0) {
 		send_err(client, NUT_ERR_INVALID_ARGUMENT);
 		return;

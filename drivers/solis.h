@@ -36,14 +36,14 @@ typedef int bool_t;
 
 /* autonomy constants */
 
-const static int bext[5] = {14,18,28,18,1};
-const static int nompow[5] = { 1000,1500,2000,3000,1200 };
-const static int inds[6] = { 0,0,1,2,3,4 };
-const static double InVolt_offset = 30.;
+static const int bext[5] = {14,18,28,18,1};
+static const int nompow[5] = { 1000,1500,2000,3000,1200 };
+static const int inds[6] = { 0,0,1,2,3,4 };
+static const double InVolt_offset = 30.;
 #define PACKET_SIZE 25
-const static int packet_size = PACKET_SIZE;
+static const int packet_size = PACKET_SIZE;
 
-const static struct {
+static const struct {
          int maxi;              /* power internals */
          int minc[21];          /* power minimal index */
          int maxc[21];          /* power maximus index */
@@ -206,7 +206,7 @@ const static struct {
  * Solis constants for data ajustment
  * ----------------------------------------------------------- */
 
-const static struct {
+static const struct {
   double m_infreq;
   double m_appp_offset;
   double m_involt193[2];

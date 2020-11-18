@@ -194,6 +194,12 @@ static int getdata(void)
 			return 0;
 		}
 		else if(x<0||x>=(int)sizeof(bfr))
+		/* Note: LGTM.com suggests "Comparison is always false because x >= 0"
+		 * for the line above, probably because ntohs() returns an uint type.
+		 * I am reluctant to fix this one, because googling for headers from
+		 * random OSes showed various types used as the return value (uint16_t,
+		 * unsigned_short, u_short, in_port_t...)
+		 */
 		{
 			upsdebugx(1,"apcupsd communication error");
 			close(p.fd);

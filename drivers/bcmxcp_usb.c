@@ -52,6 +52,7 @@ static int usb_set_powerware(usb_dev_handle *udev, unsigned char type, unsigned 
 }
 
 static void *powerware_ups(USBDevice_t *device) {
+	NUT_UNUSED_VARIABLE(device);
 	usb_set_descriptor = &usb_set_powerware;
 	return NULL;
 }
@@ -59,10 +60,13 @@ static void *powerware_ups(USBDevice_t *device) {
 /* usb_set_descriptor() for Phoenixtec devices */
 static int usb_set_phoenixtec(usb_dev_handle *udev, unsigned char type, unsigned char index, void *buf, int size)
 {
+	NUT_UNUSED_VARIABLE(index);
+	NUT_UNUSED_VARIABLE(type);
 	return usb_control_msg(udev, 0x42, 0x0d, (0x00 << 8) + 0x0, 0, buf, size, 1000);
 }
 
 static void *phoenixtec_ups(USBDevice_t *device) {
+	NUT_UNUSED_VARIABLE(device);
 	usb_set_descriptor = &usb_set_phoenixtec;
 	return NULL;
 }
@@ -466,6 +470,8 @@ usb_dev_handle *nutusb_open(const char *port)
 /* FIXME: this part can go into common... */
 int nutusb_close(usb_dev_handle *dev_h, const char *port)
 {
+	NUT_UNUSED_VARIABLE(port);
+
 	if (dev_h)
 	{
 		usb_release_interface(dev_h, 0);
