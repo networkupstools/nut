@@ -826,7 +826,7 @@ void dstate_delflags(const char *var, const int delflags)
 	dstate_setflags(var, flags);
 }
 
-void dstate_setaux(const char *var, int aux)
+void dstate_setaux(const char *var, long aux)
 {
 	st_tree_t	*sttmp;
 
