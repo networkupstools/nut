@@ -133,9 +133,21 @@ static void process(char *item,char *data)
 				data[(int)nut_data[i].info_len]=0;
 			dstate_setinfo(nut_data[i].info_type,"%s",data);
 		}
-		else dstate_setinfo(nut_data[i].info_type,
-			nut_data[i].default_value,
-			atof(data)*nut_data[i].info_len);
+		else
+		{
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+			/* default_value acts as a format string in this case */
+			dstate_setinfo(nut_data[i].info_type,
+				nut_data[i].default_value,
+				atof(data)*nut_data[i].info_len);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+		}
 		break;
 	}
 }
