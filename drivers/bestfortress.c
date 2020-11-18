@@ -157,7 +157,19 @@ static inline void setinfo_float (const char *key, const char * fmt, const char 
 		len = sizeof(buf)-1;
 	strncpy (buf, s, len);
 	buf[len] = 0;
+
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+	/* FIXME (bitness-dependent?):
+	 *   error: cast from function call of type 'int' to non-matching type 'double' [-Werror,-Wbad-function-cast]
+	 */
 	dstate_setinfo (key, fmt, factor * (double)atoi (buf));
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 static int upssend(const char *fmt,...) {
