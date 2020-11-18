@@ -372,7 +372,15 @@ static int	bestups_process_setvar(item_t *item, char *value, const size_t valuel
 
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->command, val);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
@@ -407,6 +415,12 @@ static int	bestups_process_bbb_status_bit(item_t *item, char *value, const size_
 /* Identify UPS manufacturer */
 static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen)
 {
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
+
 	/* Best Power devices */
 	if (
 		!strcmp(item->value, "AX1") ||
@@ -431,6 +445,10 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 
 	/* Unknown devices */
 	snprintf(value, valuelen, item->dfl, "Unknown");
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 	return 0;
 }
 
@@ -438,6 +456,12 @@ static int	bestups_manufacturer(item_t *item, char *value, const size_t valuelen
 static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 {
 	item_t	*unskip;
+
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 
 	/* Best Power devices */
 
@@ -510,6 +534,10 @@ static int	bestups_model(item_t *item, char *value, const size_t valuelen)
 
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 	return 0;
 }
 
@@ -526,7 +554,15 @@ static int	bestups_batt_runtime(item_t *item, char *value, const size_t valuelen
 	/* Battery runtime is reported by the UPS in minutes, NUT expects seconds */
 	runtime = strtod(item->value, NULL) * 60;
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, runtime);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
@@ -541,7 +577,15 @@ static int	bestups_batt_packs(item_t *item, char *value, const size_t valuelen)
 		return -1;
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, strtol(item->value, NULL, 10));
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	/* Unskip battery.packs setvar */
 	unskip = find_nut_info("battery.packs", QX_FLAG_SETVAR, 0);
@@ -567,7 +611,15 @@ static int	bestups_get_pins_shutdown_mode(item_t *item, char *value, const size_
 
 	pins_shutdown_mode = strtol(item->value, NULL, 10);
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, pins_shutdown_mode);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	/* We were not asked by the user to change the value */
 	if ((item->qxflags & QX_FLAG_NONUT) && !getval(item->info_type))
@@ -683,7 +735,15 @@ static int	bestups_voltage_settings(item_t *item, char *value, const size_t valu
 
 	}
 
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#pragma GCC diagnostic ignored "-Wformat-security"
+#endif
 	snprintf(value, valuelen, item->dfl, val);
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 	return 0;
 }
