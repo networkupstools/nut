@@ -893,7 +893,9 @@ _matrix_fixbugs:
 jobs:
   fast_finish: true
   include:
-  - *_matrix_master
+#  - *_matrix_master
+  - *_matrix_windows_gnustd_nowarn
+  - *_matrix_windows_gnustd_warn
 
 ###################################################################################
 # Note: "env" lines below must exactly describe a matrix option defined above
