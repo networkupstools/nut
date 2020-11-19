@@ -1061,7 +1061,7 @@ before_install:
                 rm -f ccache-3.7.12-windows-64.zip
             popd
         fi
-        export PATH=/C/tools/bin:$PATH
+        export PATH=/C/tools/bin:/C/tools/cygwin/bin:$PATH
         CI_TRACE=true
         CI_TIME=false
         export CI_TRACE CI_TIME
