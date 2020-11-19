@@ -782,6 +782,18 @@ _matrix_windows_gnustd_nowarn:
       - $HOME/.ccache
       - /C/tools
 
+_matrix_windows_gnustd_warn:
+  include: &_matrix_windows_gnustd_warn
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
 _matrix_windows_cstd_nowarn:
   include: &_matrix_windows_cstd_nowarn
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
@@ -885,6 +897,7 @@ _matrix_osx:
 _matrix_allowfail_windows:
   include: &_matrix_allowfail_windows
   - *_matrix_windows_gnustd_nowarn
+  - *_matrix_windows_gnustd_warn
   - *_matrix_windows_cstd_nowarn
   - *_matrix_windows_cstd_warn
 
@@ -905,6 +918,7 @@ _matrix_gnustd_nowarn:
   - *_matrix_osx_gnustd_nowarn
   - *_matrix_linux_gnustd_nowarn
   - *_matrix_freebsd_gnustd_nowarn
+#  -*_matrix_windows_gnustd_nowarn
 
 _matrix_warn:
   include: &_matrix_warn
@@ -913,6 +927,7 @@ _matrix_warn:
   - *_matrix_freebsd_gnustd_warn
   - *_matrix_osx_gnustd_warn
   - *_matrix_osx_cstd_warn
+  - *_matrix_windows_gnustd_warn
   - *_matrix_windows_cstd_warn
 
 # Default "jobs:" matrix should reference at least this for master branches
@@ -1011,6 +1026,7 @@ jobs:
   - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang CXX=clang++
 ### windows
   - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c20" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++20" CC=clang CXX=clang++
