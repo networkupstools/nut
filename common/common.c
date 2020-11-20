@@ -21,6 +21,7 @@
 
 #include <ctype.h>
 #include <syslog.h>
+#include <errno.h>
 #include <pwd.h>
 #include <grp.h>
 #include <dirent.h>
@@ -301,7 +302,11 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	int ret;
 
 	size--;
-	assert(len <= size);
+	if (len > size) {
+		/* Do not truncate existing string */
+		errno = ERANGE;
+		return -1;
+	}
 
 	va_start(ap, fmt);
 #ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
@@ -327,9 +332,14 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	 * In theory it can overflow a 64-vs-32 bit range, or signed-vs-unsigned.
 	 * In practice we hope to not have gigabytes-long config strings.
 	 */
-	assert(ret >= 0);
+	if (ret < 0) {
+		return ret;
+	}
 #ifdef INT_MAX
-	assert ((unsigned long long)len < ((unsigned long long)INT_MAX - (unsigned long long)ret));
+	if ( ( (unsigned long long)len + (unsigned long long)ret ) >= (unsigned long long)INT_MAX ) {
+		errno = ERANGE;
+		return -1;
+	}
 #endif
 	return (int)len + ret;
 }
