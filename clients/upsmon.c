@@ -1671,11 +1671,11 @@ static int check_pdflag(void)
 	return EXIT_SUCCESS;
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
 {
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
-	printf("usage: %s [OPTIONS]\n\n", progname);
+	printf("usage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all master UPSes (use with caution)\n");
