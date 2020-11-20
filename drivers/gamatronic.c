@@ -2,6 +2,8 @@
  *
  * SEC UPS Driver ported to the new NUT API for Gamatronic UPS Usage.
  *
+ * TODO: Replace lots of printf() by upslogx() or upsdebugx() below!
+ *
  * Copyright (C)
  *   2001 John Marley <John.Marley@alcatel.com.au>
  *   2002 Jules Taplin <jules@netsitepro.co.uk>
@@ -52,88 +54,88 @@ upsdrv_info_t upsdrv_info = {
 
 int sec_upsrecv (char *buf)
 {
+	char lenbuf[4];
+	int ret;
 
- char lenbuf[4];
- int  ret;
-
-
-        ser_get_line(upsfd, buf, 140, ENDCHAR, IGNCHARS,SER_WAIT_SEC, SER_WAIT_USEC);
-	if (buf[0] ==  SEC_MSG_STARTCHAR){
-		switch (buf[1]){
-		case  SEC_NAK:
-		return(-1);
-		case  SEC_ACK:
-		return(0);
-		case SEC_DATAMSG:
-		strncpy(lenbuf,buf+2,3);
-		lenbuf[3] = '\0';
-		ret = atoi(lenbuf);
-		if (ret > 0){
-		strcpy(buf,buf+5);
-		return(ret);}
-		else return (-2);
-		default:
-		return(-2);
+	ser_get_line(upsfd, buf, 140, ENDCHAR, IGNCHARS,SER_WAIT_SEC, SER_WAIT_USEC);
+	if (buf[0] ==  SEC_MSG_STARTCHAR) {
+		switch (buf[1]) {
+			case SEC_NAK:
+				return(-1);
+			case SEC_ACK:
+				return(0);
+			case SEC_DATAMSG:
+				strncpy(lenbuf, buf+2, 3);
+				lenbuf[3] = '\0';
+				ret = atoi(lenbuf);
+				if (ret > 0) {
+					strcpy(buf,buf+5);
+					return(ret);
+				}
+				else return (-2);
+			default:
+				return(-2);
 		}
 	}
 	else
-         { return (-2); }
+		return (-2);
 }
 
 int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
 {
-    char msg[140];
-    int ret;
+	char msg[140];
+	int ret;
 
-    memset(msg, 0, sizeof(msg));
+	memset(msg, 0, sizeof(msg));
 
-    /* create the message string */
-    if (*buflen > 0) {
-	snprintf(msg, sizeof(msg), "%c%c%03d%s%s", SEC_MSG_STARTCHAR,
-		mode, (*buflen)+3, command, msgbuf);
-    }
-    else {
-	snprintf(msg, sizeof(msg), "%c%c003%s", SEC_MSG_STARTCHAR,
-		mode, command);
-    }
-    upsdebugx(1, "PC-->UPS: \"%s\"",msg);
-    ret = ser_send(upsfd, "%s", msg);
+	/* create the message string */
+	if (*buflen > 0) {
+		snprintf(msg, sizeof(msg), "%c%c%03d%s%s", SEC_MSG_STARTCHAR,
+			mode, (*buflen)+3, command, msgbuf);
+	}
+	else {
+		snprintf(msg, sizeof(msg), "%c%c003%s", SEC_MSG_STARTCHAR,
+			mode, command);
+	}
+	upsdebugx(1, "PC-->UPS: \"%s\"",msg);
+	ret = ser_send(upsfd, "%s", msg);
 
-    upsdebugx(1, " send returned: %d",ret);
+	upsdebugx(1, " send returned: %d",ret);
 
-    if (ret == -1) return -1;
+	if (ret == -1) return -1;
 
-    ret = sec_upsrecv(msg);
+	ret = sec_upsrecv(msg);
 
+	if (ret < 0) return -1;
 
-    if (ret < 0) return -1;
+	strncpy(msgbuf, msg, ret);
+	upsdebugx(1, "UPS<--PC: \"%s\"",msg);
 
-    strncpy(msgbuf, msg, ret);
-    upsdebugx(1, "UPS<--PC: \"%s\"",msg);
+/*
+	*(msgbuf+ret) = '\0';
+*/
 
-/*    *(msgbuf+ret) = '\0';*/
-
-    *buflen = ret;
-    return ret;
+	*buflen = ret;
+	return ret;
 }
 
 void addquery(const char *cmd, int field, int varnum, int pollflag)
 {
-    int q;
+	int q;
 
-    for (q=0; q<SEC_QUERYLIST_LEN; q++) {
-	if (sec_querylist[q].command == NULL) {
-	    /* command has not been recorded yet */
-	    sec_querylist[q].command = cmd;
-	    sec_querylist[q].pollflag = pollflag;
-	    upsdebugx(1, " Query %d is %s",q,cmd);
+	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
+		if (sec_querylist[q].command == NULL) {
+			/* command has not been recorded yet */
+			sec_querylist[q].command = cmd;
+			sec_querylist[q].pollflag = pollflag;
+			upsdebugx(1, " Query %d is %s",q,cmd);
+		}
+		if (sec_querylist[q].command == cmd) {
+			sec_querylist[q].varnum[field-1] = varnum;
+			upsdebugx(1, " Querying varnum %d",varnum);
+			break;
+		}
 	}
-	if (sec_querylist[q].command == cmd) {
-	    sec_querylist[q].varnum[field-1] = varnum;
-	    upsdebugx(1, " Querying varnum %d",varnum);
-	    break;
-	}
-    }
 }
 
 void sec_setinfo(int varnum, char *value)
@@ -210,74 +212,74 @@ void sec_poll ( int pollflag ) {
 	char retbuf[140],*n,*r;
 
 
-  for (q=0; q<SEC_QUERYLIST_LEN; q++) {
-	if (sec_querylist[q].command == NULL) break;
-        if (sec_querylist[q].pollflag != pollflag) continue;
-	msglen = 0;
- 	sec_cmd(SEC_POLLCMD, sec_querylist[q].command, retbuf, &msglen);
-	r = retbuf;
-        *(r+msglen) = '\0';
-	for (f=0; f<SEC_MAXFIELDS; f++) {
-	    n = strchr(r, ',');
-	   if (n != NULL) *n = '\0';
-           if (sqv(q,f) > 0) {
+	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
+		if (sec_querylist[q].command == NULL) break;
+		if (sec_querylist[q].pollflag != pollflag) continue;
 
-	   if (strcmp(sec_varlist[sqv(q,f)].value, r) != 0  ) {
+		msglen = 0;
+		sec_cmd(SEC_POLLCMD, sec_querylist[q].command, retbuf, &msglen);
+		r = retbuf;
+		*(r+msglen) = '\0';
+		for (f=0; f<SEC_MAXFIELDS; f++) {
+			n = strchr(r, ',');
+			if (n != NULL) *n = '\0';
+			if (sqv(q,f) > 0) {
 
-		    snprintf(sec_varlist[sqv(q,f)].value,
-			sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
+				if (strcmp(sec_varlist[sqv(q,f)].value, r) != 0) {
 
-		    sec_setinfo(sqv(q,f), r);
+					snprintf(sec_varlist[sqv(q,f)].value,
+					sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
+
+					sec_setinfo(sqv(q,f), r);
+				}
+
+				/* If SEC VAR is alarm and its on, add it to the alarm property */
+
+				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
+					alarm_set(sec_varlist[sqv(q,f)].name);
+				}
+
+			}
+
+
+			if (n == NULL) break;
+			r = n+1;
 		}
-
-	/* If SEC VAR is alarm and its on, add it to the alarm property */
-
-	if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
-           alarm_set(sec_varlist[sqv(q,f)].name);  }
-
-	  }
-
-
-	   if (n == NULL) break;
-	   r = n+1;
-	}
 	}
 
- }
+}
 
 void upsdrv_initinfo(void)
 {
-    int msglen, v;
-    char *a,*p,avail_list[300];
+	int msglen, v;
+	char *a,*p,avail_list[300];
 
-    /* find out which variables/commands this UPS supports */
-    msglen = 0;
-    sec_cmd(SEC_POLLCMD, SEC_AVAILP1, avail_list, &msglen);
-    p = avail_list + msglen;
-    if (p != avail_list) *p++ = ',';
-    msglen = 0;
-    sec_cmd(SEC_POLLCMD, SEC_AVAILP2, p, &msglen);
-    *(p+msglen) = '\0';
-
-
-    if (strlen(avail_list) == 0){
-     fatalx(EXIT_FAILURE, "No available variables found!");}
-    a = avail_list;
-   while ((p = strtok(a, ",")) != NULL) {
-    a = NULL;
-    v = atoi(p);
-    /* don't bother adding a write-only variable */
-   if (sec_varlist[v].flags == FLAG_WONLY) continue;
-    addquery(sec_varlist[v].cmd, sec_varlist[v].field, v, sec_varlist[v].poll);
-    }
-
-    /* poll one time values */
-
-   sec_poll(FLAG_POLLONCE);
-
-   printf("UPS: %s %s\n", dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
+	/* find out which variables/commands this UPS supports */
+	msglen = 0;
+	sec_cmd(SEC_POLLCMD, SEC_AVAILP1, avail_list, &msglen);
+	p = avail_list + msglen;
+	if (p != avail_list) *p++ = ',';
+	msglen = 0;
+	sec_cmd(SEC_POLLCMD, SEC_AVAILP2, p, &msglen);
+	*(p+msglen) = '\0';
 
 
+	if (strlen(avail_list) == 0) {
+		fatalx(EXIT_FAILURE, "No available variables found!");
+	}
+	a = avail_list;
+	while ((p = strtok(a, ",")) != NULL) {
+		a = NULL;
+		v = atoi(p);
+		/* don't bother adding a write-only variable */
+		if (sec_varlist[v].flags == FLAG_WONLY) continue;
+		addquery(sec_varlist[v].cmd, sec_varlist[v].field, v, sec_varlist[v].poll);
+	}
+
+	/* poll one time values */
+	sec_poll(FLAG_POLLONCE);
+
+	printf("UPS: %s %s\n", dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
 }
 
 void upsdrv_updateinfo(void)
@@ -340,36 +342,32 @@ void upsdrv_makevartable(void)
 
 void setup_serial(const char *port)
 {
-    char temp[140];
-    int i,ret;
+	char temp[140];
+	int i,ret;
 
+	/* Detect the ups baudrate  */
+	for (i=0; i<5; i++) {
+		ser_set_speed(upsfd, device_path,baud_rates[i].rate);
+		ret = ser_send(upsfd, "^P003MAN");
+		ret = sec_upsrecv(temp);
+		if (ret >= -1) break;
+	}
 
-   /* Detect the ups baudrate  */
-
-
-   for (i=0; i<5; i++) {
-
-        ser_set_speed(upsfd, device_path,baud_rates[i].rate);
-        ret = ser_send(upsfd, "^P003MAN");
-	ret = sec_upsrecv(temp);
-	if (ret >= -1) break;
-
-   }
-    if (i == 5) {
-	printf("Can't talk to UPS on port %s!\n",port);
-	printf("Check the cabling and portname and try again\n");
-	printf("Please note that this driver only support UPS Models with SEC Protocol\n");
-	ser_close(upsfd, device_path);
-	exit (1);
-    }
-    else
-      printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
+	if (i == 5) {
+		printf("Can't talk to UPS on port %s!\n",port);
+		printf("Check the cabling and portname and try again\n");
+		printf("Please note that this driver only support UPS Models with SEC Protocol\n");
+		ser_close(upsfd, device_path);
+		exit (1);
+	}
+	else
+		printf("Connected to UPS on %s baudrate: %d\n",port, baud_rates[i].name);
 }
 
 void upsdrv_initups(void)
 {
-	  upsfd = ser_open(device_path);
-          setup_serial(device_path);
+	upsfd = ser_open(device_path);
+	setup_serial(device_path);
 	/* upsfd = ser_open(device_path); */
 	/* ser_set_speed(upsfd, device_path, B1200); */
 
@@ -400,12 +398,10 @@ void upsdrv_initups(void)
 	/* the upsh handlers can't be done here, as they get initialized
 	 * shortly after upsdrv_initups returns to main.
 	 */
-
-
 }
 
 void upsdrv_cleanup(void)
 {
 	/* free(dynamic_mem); */
-	 ser_close(upsfd, device_path);
+	ser_close(upsfd, device_path);
 }
