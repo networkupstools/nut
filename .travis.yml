@@ -360,6 +360,8 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
       apt:
         packages:
         - *deps_driverlibs
+        - gcc-multilib
+        - g++-multilib
 
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" CC=clang-8 CXX=clang++-8
     os: linux
@@ -377,6 +379,8 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
         - clang-8
         - clang-format-8
         - *deps_driverlibs
+        - gcc-multilib
+        - g++-multilib
 
 # Try s390x builds to check for issues with endianness
 # (it is one current Travis offer with BigEndian CPUs)
