@@ -1207,7 +1207,7 @@ void init_limit(void)
 
 	/* Horn Status: */
 	value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
-	if (value >= 0 && value <= 2) {
+	if (value <= 2) {
 		dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 	}
 
@@ -1523,7 +1523,7 @@ void upsdrv_updateinfo(void)
 	unsigned char answer[PW_ANSWER_MAX_SIZE];
 	unsigned char status, topology;
 	char sValue[128];
-	int iIndex, res,value;
+	int iIndex, res, value;
 	bool_t has_ups_load = FALSE;
 	int batt_status = 0;
 	const char *nutvalue;
@@ -1762,7 +1762,7 @@ void upsdrv_updateinfo(void)
 		/* Horn Status: */
 		value = answer[BCMXCP_EXT_LIMITS_BLOCK_HORN_STATUS];
 
-		if (value >= 0 && value <= 2) {
+		if (value <= 2) {
 			dstate_setinfo("ups.beeper.status", "%s", horn_stat[value]);
 		}
 		/* AAmbient Temperature Upper Alarm Limit  */
