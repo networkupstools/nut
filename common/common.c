@@ -329,7 +329,7 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	 */
 	assert(ret >= 0);
 #ifdef INT_MAX
-	assert ((unsigned long long)len < ((unsigned long long)INT_MAX - ret));
+	assert ((unsigned long long)len < ((unsigned long long)INT_MAX - (unsigned long long)ret));
 #endif
 	return (int)len + ret;
 }
