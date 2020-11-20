@@ -346,6 +346,9 @@ void upsdrv_reconnect(void)
 
 /* USB functions */
 static void nutusb_open_error(const char *port)
+	__attribute__((noreturn));
+
+static void nutusb_open_error(const char *port)
 {
 	printf("Unable to find POWERWARE UPS device on USB bus (%s)\n\n", port);
 
