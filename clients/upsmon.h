@@ -91,7 +91,10 @@ typedef struct {
 /* flags are set to NOTIFY_SYSLOG | NOTIFY_WALL at program init	*/
 /* the user can override with NOTIFYFLAGS in the upsmon.conf	*/
 
-struct {
+/* This is only used in upsmon.c, but might it also have external consumers?..
+ * To move or not to move?..
+ */
+static struct {
 	int	type;
 	const	char	*name;
 	char	*msg;		/* NULL until overridden */
