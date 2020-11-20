@@ -255,6 +255,10 @@ static void do_pickups(const char *currfunc)
 
 static void error_page(const char *next, const char *title,
 	const char *fmt, ...)
+	__attribute__((noreturn));
+
+static void error_page(const char *next, const char *title,
+	const char *fmt, ...)
 {
 	char	msg[SMALLBUF];
 	va_list	ap;
@@ -281,6 +285,9 @@ static void error_page(const char *next, const char *title,
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
+
+static void loginscreen(void)
+	__attribute__((noreturn));
 
 static void loginscreen(void)
 {
@@ -505,6 +512,9 @@ static void send_auth(const char *next)
 		error_page(next, "Can't set password",
 			"Password set failed: %s", upscli_strerror(&ups));
 }
+
+static void docmd(void)
+	__attribute__((noreturn));
 
 static void docmd(void)
 {
@@ -769,6 +779,9 @@ static void print_rw(const char *upsname, const char *varname)
 }
 
 static void showsettings(void)
+	__attribute__((noreturn));
+
+static void showsettings(void)
 {
 	int	ret;
 	unsigned int	numq, numa;
@@ -911,6 +924,9 @@ static int setvar(const char *var, const char *val)
 
 /* turn a form submission of settings into SET commands for upsd */
 static void savesettings(void)
+	__attribute__((noreturn));
+
+static void savesettings(void)
 {
 	int	changed = 0;
 	char	*desc;
@@ -955,6 +971,9 @@ static void savesettings(void)
 	upscli_disconnect(&ups);
 	exit(EXIT_SUCCESS);
 }
+
+static void initial_pickups(void)
+	__attribute__((noreturn));
 
 static void initial_pickups(void)
 {
