@@ -66,8 +66,9 @@
 
 #define FLAG_POLL 0 /* For commands that polled normaly */
 #define FLAG_POLLONCE 1 /* For commands that only polled once */
+
 /* Some baud rates for setup_serial() */
-struct {
+static struct {
     int rate;
     int name;
 } baud_rates[] = {
@@ -95,7 +96,7 @@ typedef struct {
     char value[SEC_MAX_VARSIZE];
 } sec_varlist_t;
 
-sec_varlist_t sec_varlist[] = {
+static sec_varlist_t sec_varlist[] = {
     { "",			"",                          0, "",              0,       0,  0, 0, "" },
     /*setcmd		 name                        unit   cmd        field   size  poll  flags  value */
     { "",			"Awaiting Power ",           1, SEC_ALARMSTAT,  13,       2,  0, FLAG_ALARM, ""},
@@ -196,7 +197,7 @@ sec_varlist_t sec_varlist[] = {
 #define SEC_POLL			1
 #define SEC_POLLONCE		0
 
-struct {
+static struct {
     const char *command;	/* sec command */
     int  varnum[SEC_MAXFIELDS];	/* sec variable number for each field */
     int  pollflag;
