@@ -219,7 +219,7 @@ void writepid(const char *name)
 {
 	char	fn[SMALLBUF];
 	FILE	*pidf;
-	int	mask;
+	mode_t	mask;
 
 	/* use full path if present, else build filename in PIDPATH */
 	if (*name == '/')
@@ -245,7 +245,8 @@ int sendsignalfn(const char *pidfn, int sig)
 {
 	char	buf[SMALLBUF];
 	FILE	*pidf;
-	int	pid, ret;
+	long	pid;
+	int	ret;
 
 	pidf = fopen(pidfn, "r");
 	if (!pidf) {
@@ -262,7 +263,7 @@ int sendsignalfn(const char *pidfn, int sig)
 	pid = strtol(buf, (char **)NULL, 10);
 
 	if (pid < 2) {
-		upslogx(LOG_NOTICE, "Ignoring invalid pid number %d", pid);
+		upslogx(LOG_NOTICE, "Ignoring invalid pid number %ld", pid);
 		fclose(pidf);
 		return -1;
 	}
@@ -303,7 +304,17 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	va_end(ap);
 
 	dst[size] = '\0';
-	return len + ret;
+
+	/* Note: there is a standards loophole here: strlen() must return size_t
+	 * and printf() family returns a signed int with negatives for errors.
+	 * In theory it can overflow a 64-vs-32 bit range, or signed-vs-unsigned.
+	 * In practice we hope to not have gigabytes-long config strings.
+	 */
+	assert(ret >= 0);
+#ifdef INT_MAX
+	assert ((unsigned long long)len < ((unsigned long long)INT_MAX - ret));
+#endif
+	return (int)len + ret;
 }
 
 /* lazy way to send a signal if the program uses the PIDPATH */
@@ -504,7 +515,7 @@ void upsdebug_hex(int level, const char *msg, const void *buf, int len)
 		}
 
 		n = snprintfcat(line, sizeof(line), n ? " %02x" : "%02x",
-			((unsigned char *)buf)[i]);
+			((const unsigned char *)buf)[i]);
 	}
 	upsdebugx(level, "%s", line);
 }
@@ -558,7 +569,7 @@ void upsdebug_ascii(int level, const char *msg, const void *buf, int len)
 	snprintf(line, sizeof(line), "%s", msg);
 
 	for (i=0; i<len; ++i) {
-		ch = ((unsigned char *)buf)[i];
+		ch = ((const unsigned char *)buf)[i];
 
 		if (ch < 0x20)
 			snprintfcat(line, sizeof(line), "%3s ", ascii_symb[ch]);
@@ -704,7 +715,7 @@ int select_write(const int fd, const void *buf, const size_t buflen, const long 
  * linked against certain OS-provided libraries for accessing this or that
  * communications media and/or vendor protocol.
  */
-const char * search_paths[] = {
+static const char * search_paths[] = {
 	// Use the library path (and bitness) provided during ./configure first
 	LIBDIR,
 	"/usr"LIBDIR,
@@ -763,7 +774,7 @@ char * get_libname(const char* base_libname)
 	int index = 0;
 	char *libname_path = NULL;
 	char current_test_path[LARGEBUF];
-	int base_libname_length = strlen(base_libname);
+	size_t base_libname_length = strlen(base_libname);
 
 	for(index = 0 ; (search_paths[index] != NULL) && (libname_path == NULL) ; index++)
 	{

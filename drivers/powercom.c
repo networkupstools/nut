@@ -562,7 +562,9 @@ static float output_voltage(void)
 				tmp=(raw_data[BATTERY_CHARGE]*rdatax)*(raw_data[BATTERY_CHARGE]*rdatax)*
 					(t-raw_data[OUTPUT_VOLTAGE])/t;
 				if (tmp>0)
-					tmp=sqrt(tmp)*rdatay*boostdata-raw_data[UPS_LOAD]*rdataz*boostdata;
+					/* Casts below try to avoid potential multiplication overflow */
+					tmp=(float)( (double)sqrt(tmp)*rdatay*boostdata -
+						(double)raw_data[UPS_LOAD]*rdataz*boostdata );
 			} else {
 				tmp=(raw_data[BATTERY_CHARGE]*rdatax-raw_data[UPS_LOAD]*rdataz)*
 					(raw_data[BATTERY_CHARGE]*rdatax-raw_data[UPS_LOAD]*rdataz)*
