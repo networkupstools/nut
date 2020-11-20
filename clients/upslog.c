@@ -111,6 +111,9 @@ static void setup_signals(void)
 }
 
 static void help(const char *prog)
+	__attribute__((noreturn));
+
+static void help(const char *prog)
 {
 	printf("UPS status logger.\n");
 
