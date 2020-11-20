@@ -415,7 +415,7 @@ void upsdrv_makevartable(void)
 	addvar (VAR_VALUE, "max_load", "rated VA load VA");
 }
 
-struct {
+static struct {
 	const char * val;
 	speed_t speed;
 } speed_table[] = {
