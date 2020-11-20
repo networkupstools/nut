@@ -1170,10 +1170,6 @@ int main(int argc, char **argv)
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
 		switch (i) {
-			case 'h':
-				help(progname);
-				break;
-
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
@@ -1222,6 +1218,7 @@ int main(int argc, char **argv)
 				opt_af = AF_INET6;
 				break;
 
+			case 'h':
 			default:
 				help(progname);
 		}
