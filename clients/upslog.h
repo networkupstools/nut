@@ -23,7 +23,10 @@ static void do_time(const char *arg);
 static void do_var(const char *arg);
 static void do_etime(const char *arg);
 
-struct {
+/* This is only used in upslog.c, but refers to routines declared here...
+ * To move or not to move?..
+ */
+static struct {
 	const	char	*name;
 	void	(*func)(const char *arg);
 }	logcmds[] =
