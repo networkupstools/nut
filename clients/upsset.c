@@ -39,10 +39,10 @@ struct list_t {
 #define HARD_UPSVAR_LIMIT_NUM	64
 #define HARD_UPSVAR_LIMIT_LEN	256
 
-	char	*monups, *username, *password, *function, *upscommand;
+static char	*monups, *username, *password, *function, *upscommand;
 
-	/* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
-	int	magic_string_set = 0;
+/* set once the MAGIC_ENABLE_STRING is found in the upsset.conf */
+static int	magic_string_set = 0;
 
 static	int	port;
 static	char	*upsname, *hostname;
@@ -54,7 +54,7 @@ typedef struct {
 	void	*next;
 }	uvtype_t;
 
-	uvtype_t	*firstuv = NULL;
+static uvtype_t	*firstuv = NULL;
 
 void parsearg(char *var, char *value)
 {
