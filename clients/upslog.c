@@ -179,6 +179,7 @@ static void do_time(const char *arg)
 	unsigned int	i;
 	char	timebuf[SMALLBUF], *format;
 	time_t	tod;
+	struct tm tmbuf;
 
 	format = xstrdup(arg);
 
@@ -188,7 +189,7 @@ static void do_time(const char *arg)
 			format[i] = '%';
 
 	time(&tod);
-	strftime(timebuf, sizeof(timebuf), format, localtime(&tod));
+	strftime(timebuf, sizeof(timebuf), format, localtime_r(&tod, &tmbuf));
 
 	snprintfcat(logbuffer, sizeof(logbuffer), "%s", timebuf);
 
