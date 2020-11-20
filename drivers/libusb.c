@@ -251,7 +251,15 @@ static int libusb_open(usb_dev_handle **udevp, USBDevice_t *curDevice, USBDevice
 					goto next_device;
 				} else if (ret==-1) {
 					fatal_with_errno(EXIT_FAILURE, "matcher");
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 					goto next_device;
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
 				} else if (ret==-2) {
 					upsdebugx(2, "matcher: unspecified error");
 					goto next_device;
