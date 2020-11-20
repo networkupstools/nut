@@ -1756,7 +1756,9 @@ static void start_pipe(void)
 		close(pipefd[1]);
 		runparent(pipefd[0]);
 
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* NOTREACHED */
+#endif
 	}
 
 	close(pipefd[0]);
