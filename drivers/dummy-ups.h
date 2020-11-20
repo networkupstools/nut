@@ -116,7 +116,9 @@ typedef struct {
 /* --------------------------------------------------------------- */
 
 /* FIXME: need to enforce value check with enum or bounds */
-dummy_info_t nut_data[] =
+/* This array is only used from dummy-ups.c (there's a namesake
+ * for apcupsd-ups.c defined elsewhere) */
+static dummy_info_t nut_data[] =
 {
 	/* Essential variables, loaded before parsing the definition file */
 	{ "ups.mfr", ST_FLAG_STRING | ST_FLAG_RW, 32, "Dummy Manufacturer", DU_FLAG_INIT, NULL },
