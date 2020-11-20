@@ -535,7 +535,6 @@ void upsdrv_initinfo(void)
 
 		default:
 			fatal_with_errno(EXIT_FAILURE, "Unknown UPS");
-			break;
 	}
 
 	/* Get the serial number */
