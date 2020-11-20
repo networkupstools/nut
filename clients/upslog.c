@@ -406,7 +406,9 @@ int main(int argc, char **argv)
 		switch(i) {
 			case 'h':
 				help(prog);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 
 			case 's':
 				monhost = optarg;
