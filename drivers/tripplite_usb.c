@@ -735,7 +735,16 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 			break;
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 		case TRIPP_LITE_SMART_3005:
 			snprintf(k_cmd, sizeof(k_cmd)-1, "N%c", 5);
 			ret = send_cmd((unsigned char *)k_cmd, strlen(k_cmd) + 1, (unsigned char *)buf, sizeof buf);
@@ -748,7 +757,16 @@ static int control_outlet(int outlet_id, int state)
 			} else {
 				return 1;
 			}
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunreachable-code-break"
+#pragma GCC diagnostic ignored "-Wunreachable-code"
+#endif
 			break;
+#if defined (__GNUC__) || defined (__clang__)
+#pragma GCC diagnostic pop
+#endif
+
 		default:
 			upslogx(LOG_ERR, "control_outlet unimplemented for protocol %04x", tl_model);
 	}
