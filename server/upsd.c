@@ -1075,6 +1075,9 @@ static void mainloop(void)
 }
 
 static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Network server for UPS data.\n\n");
 	printf("usage: %s [OPTIONS]\n", arg_progname);
