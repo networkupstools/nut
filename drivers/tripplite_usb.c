@@ -506,7 +506,9 @@ void usb_comm_fail(int res, const char *msg)
 		case -EBUSY:
 			upslogx(LOG_WARNING, "%s: Device claimed by another process", msg);
 			fatalx(EXIT_FAILURE, "Terminating: EBUSY");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 			break;
+#endif
 
 		default:
 			upslogx(LOG_WARNING, "%s: Device detached? (error %d: %s)", msg, res, usb_strerror());
