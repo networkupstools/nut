@@ -1942,7 +1942,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 			case 'K':
 				checking_flag = 1;
 				break;
@@ -1964,7 +1966,9 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 		}
 	}
 
