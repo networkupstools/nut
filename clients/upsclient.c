@@ -75,7 +75,7 @@
 #define shutdown_how 2
 #endif
 
-struct {
+static struct {
 	int	flags;
 	const	char	*str;
 } upscli_errlist[] =
