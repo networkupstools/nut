@@ -58,14 +58,13 @@ typedef struct ttype_s {
 	struct ttype_s	*next;
 } ttype_t;
 
-	ttype_t	*thead = NULL;
-	static	conn_t	*connhead = NULL;
-	char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
-	int	verbose = 0;		/* use for debugging */
+static ttype_t	*thead = NULL;
+static conn_t	*connhead = NULL;
+static char	*cmdscript = NULL, *pipefn = NULL, *lockfn = NULL;
+static int	verbose = 0;		/* use for debugging */
 
-
-	/* ups name and notify type (string) as received from upsmon */
-	const	char	*upsname, *notify_type;
+/* ups name and notify type (string) as received from upsmon */
+static const	char	*upsname, *notify_type;
 
 #define PARENT_STARTED		-2
 #define PARENT_UNNECESSARY	-3
