@@ -2,7 +2,7 @@
  *
  * SEC UPS Driver ported to the new NUT API for Gamatronic UPS Usage.
  *
- * Copyright (C) 
+ * Copyright (C)
  *   2001 John Marley <John.Marley@alcatel.com.au>
  *   2002 Jules Taplin <jules@netsitepro.co.uk>
  *   2002 Eric Lawson <elawson@inficad.com>
@@ -24,9 +24,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
- 
+
 #include "main.h"
-#include "serial.h" 
+#include "serial.h"
 #include "gamatronic.h"
 
 #define DRIVER_NAME	"Gamatronic UPS driver"
@@ -45,9 +45,9 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-#define ENDCHAR	'\r'	
-#define IGNCHARS ""
-#define SER_WAIT_SEC    1	/* allow 3.0 sec for ser_get calls */
+#define ENDCHAR	'\r'
+#define IGNCHARS	""
+#define SER_WAIT_SEC	1	/* allow 3.0 sec for ser_get calls */
 #define SER_WAIT_USEC	0
 
 int sec_upsrecv (char *buf)
@@ -55,7 +55,7 @@ int sec_upsrecv (char *buf)
 
  char lenbuf[4];
  int  ret;
-	
+
 
         ser_get_line(upsfd, buf, 140, ENDCHAR, IGNCHARS,SER_WAIT_SEC, SER_WAIT_USEC);
 	if (buf[0] ==  SEC_MSG_STARTCHAR){
@@ -75,8 +75,8 @@ int sec_upsrecv (char *buf)
 		default:
 		return(-2);
 		}
-	}	
-	else 
+	}
+	else
          { return (-2); }
 }
 
@@ -95,10 +95,10 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
     else {
 	snprintf(msg, sizeof(msg), "%c%c003%s", SEC_MSG_STARTCHAR,
 		mode, command);
-    }	
+    }
     upsdebugx(1, "PC-->UPS: \"%s\"",msg);
     ret = ser_send(upsfd, "%s", msg);
-    
+
     upsdebugx(1, " send returned: %d",ret);
 
     if (ret == -1) return -1;
@@ -137,39 +137,39 @@ void addquery(const char *cmd, int field, int varnum, int pollflag)
 }
 
 void sec_setinfo(int varnum, char *value)
-{	
+{
 
 	if (*sec_varlist[varnum].setcmd){/*Not empty*/
-		
+
 		if (sec_varlist[varnum].flags == FLAG_STRING) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%s", value);
 	 	}
 		else if (sec_varlist[varnum].unit == 1) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%s", value);
 		}
-		
+
 		else if (sec_varlist[varnum].flags == FLAG_MULTI) {
-			if (atoi(value) < 0) { 
+			if (atoi(value) < 0) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"0");
 			}
 			else
 			{dstate_setinfo(sec_varlist[varnum].setcmd,"%d", atoi(value) * sec_varlist[varnum].unit);
 			}
 			}
-		else { 
+		else {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%.1f", atof(value) / sec_varlist[varnum].unit);}
-			
+
 		}
-		
+
 }
-	
-	
-	
+
+
+
 void update_pseudovars( void )
 {
-	
+
 	status_init();
-	
+
 	if(strcmp(sec_varlist[9].value,"1")== 0) {
 	status_set("OFF");
 	}
@@ -194,22 +194,22 @@ void update_pseudovars( void )
 	if(strcmp(sec_varlist[22].value,"1")== 0) {
 	status_set("LB");
 	}
-	
+
 	if(strcmp(sec_varlist[19].value,"2")== 0) {
 	status_set("RB");
 	}
-	
+
 	status_commit();
 
 
 }
 
 void sec_poll ( int pollflag ) {
-	
+
 	int msglen,f,q;
 	char retbuf[140],*n,*r;
-  
-	 
+
+
   for (q=0; q<SEC_QUERYLIST_LEN; q++) {
 	if (sec_querylist[q].command == NULL) break;
         if (sec_querylist[q].pollflag != pollflag) continue;
@@ -221,23 +221,23 @@ void sec_poll ( int pollflag ) {
 	    n = strchr(r, ',');
 	   if (n != NULL) *n = '\0';
            if (sqv(q,f) > 0) {
-	     
+
 	   if (strcmp(sec_varlist[sqv(q,f)].value, r) != 0  ) {
 
-		    snprintf(sec_varlist[sqv(q,f)].value, 
+		    snprintf(sec_varlist[sqv(q,f)].value,
 			sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
-                  
+
 		    sec_setinfo(sqv(q,f), r);
 		}
-		
+
 	/* If SEC VAR is alarm and its on, add it to the alarm property */
-	
+
 	if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
            alarm_set(sec_varlist[sqv(q,f)].name);  }
-           
+
 	  }
-	   
-	    
+
+
 	   if (n == NULL) break;
 	   r = n+1;
 	}
@@ -249,7 +249,7 @@ void upsdrv_initinfo(void)
 {
     int msglen, v;
     char *a,*p,avail_list[300];
- 
+
     /* find out which variables/commands this UPS supports */
     msglen = 0;
     sec_cmd(SEC_POLLCMD, SEC_AVAILP1, avail_list, &msglen);
@@ -258,39 +258,39 @@ void upsdrv_initinfo(void)
     msglen = 0;
     sec_cmd(SEC_POLLCMD, SEC_AVAILP2, p, &msglen);
     *(p+msglen) = '\0';
- 
-    
+
+
     if (strlen(avail_list) == 0){
      fatalx(EXIT_FAILURE, "No available variables found!");}
     a = avail_list;
-   while ((p = strtok(a, ",")) != NULL) {  
+   while ((p = strtok(a, ",")) != NULL) {
     a = NULL;
     v = atoi(p);
     /* don't bother adding a write-only variable */
    if (sec_varlist[v].flags == FLAG_WONLY) continue;
     addquery(sec_varlist[v].cmd, sec_varlist[v].field, v, sec_varlist[v].poll);
-    }  
-    
+    }
+
     /* poll one time values */
-    
+
    sec_poll(FLAG_POLLONCE);
-   
+
    printf("UPS: %s %s\n", dstate_getinfo("ups.mfr"), dstate_getinfo("ups.model"));
-    
-    
+
+
 }
 
 void upsdrv_updateinfo(void)
 {
-   
-	
+
+
 	alarm_init();
 	/* poll status values values */
 	sec_poll(FLAG_POLL);
 	alarm_commit();
 	update_pseudovars();
 	dstate_dataok();
-	
+
 }
 
 void upsdrv_shutdown(void)
@@ -342,13 +342,13 @@ void setup_serial(const char *port)
 {
     char temp[140];
     int i,ret;
- 
+
 
    /* Detect the ups baudrate  */
-    
-    
+
+
    for (i=0; i<5; i++) {
-	
+
         ser_set_speed(upsfd, device_path,baud_rates[i].rate);
         ret = ser_send(upsfd, "^P003MAN");
 	ret = sec_upsrecv(temp);
@@ -372,7 +372,7 @@ void upsdrv_initups(void)
           setup_serial(device_path);
 	/* upsfd = ser_open(device_path); */
 	/* ser_set_speed(upsfd, device_path, B1200); */
-   
+
 	/* probe ups type */
 
 	/* to get variables and flags from the command line, use this:
@@ -407,5 +407,5 @@ void upsdrv_initups(void)
 void upsdrv_cleanup(void)
 {
 	/* free(dynamic_mem); */
-	 ser_close(upsfd, device_path); 
+	 ser_close(upsfd, device_path);
 }
