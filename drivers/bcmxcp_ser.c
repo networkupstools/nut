@@ -18,7 +18,7 @@ upsdrv_info_t comm_upsdrv_info = {
 
 #define PW_MAX_BAUD 5
 
-struct pw_baud_rate {
+static struct pw_baud_rate {
 	int rate;
 	int name;
 } pw_baud_rates[] = {
@@ -31,7 +31,7 @@ struct pw_baud_rate {
 	{ 0,  0 }
 };
 
-unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Autorisation command */
+static unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
 static void send_command(unsigned char *command, int command_length)
 {
