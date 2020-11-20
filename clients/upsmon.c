@@ -419,6 +419,9 @@ static void set_pdflag(void)
 
 /* the actual shutdown procedure */
 static void doshutdown(void)
+	__attribute__((noreturn));
+
+static void doshutdown(void)
 {
 	int	ret;
 
@@ -1672,6 +1675,9 @@ static int check_pdflag(void)
 }
 
 static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
@@ -1691,6 +1697,9 @@ static void help(const char *arg_progname)
 
 	exit(EXIT_SUCCESS);
 }
+
+static void runparent(int fd)
+	__attribute__((noreturn));
 
 static void runparent(int fd)
 {
