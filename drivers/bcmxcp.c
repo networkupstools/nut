@@ -164,19 +164,19 @@ static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
 
-const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
-const char *ABMStatus[4] = {"charging", "discharging", "floating", "resting"};
-const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with pending","off with pending","unknown","unknown","failed and closed","failed and open"};
-/* Standard Authorization Block */
-unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
-int nphases = 0;
-int outlet_block_len = 0;
-const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
-const char *horn_stat[3] = {"disabled", "enabled", "muted"};
+static const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
+static const char *ABMStatus[4] = {"charging", "discharging", "floating", "resting"};
+static const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with pending","off with pending","unknown","unknown","failed and closed","failed and open"};
 
+/* Standard Authorization Block */
+static unsigned char AUTHOR[4] = {0xCF, 0x69, 0xE8, 0xD5};
+static int nphases = 0;
+static int outlet_block_len = 0;
+static const char *cpu_name[5] = {"Cont:", "Inve:", "Rect:", "Netw:", "Disp:"};
+static const char *horn_stat[3] = {"disabled", "enabled", "muted"};
 
 /* Battery test results */
-info_lkp_t batt_test_info[] = {
+static info_lkp_t batt_test_info[] = {
 	{ 0, "No test initiated", NULL, NULL },
 	{ 1, "In progress", NULL, NULL },
 	{ 2, "Done and passed", NULL, NULL },
@@ -190,7 +190,7 @@ info_lkp_t batt_test_info[] = {
 };
 
 /* Topology map results */
-info_lkp_t topology_info[] = {
+static info_lkp_t topology_info[] = {
 	{ BCMXCP_TOPOLOGY_OFFLINE_SWITCHER_1P, "Off-line switcher, Single Phase", NULL, NULL },
 	{ BCMXCP_TOPOLOGY_LINEINT_UPS_1P, "Line-Interactive UPS, Single Phase", NULL, NULL },
 	{ BCMXCP_TOPOLOGY_LINEINT_UPS_2P, "Line-Interactive UPS, Two Phase", NULL, NULL },
@@ -215,7 +215,7 @@ info_lkp_t topology_info[] = {
 };
 
 /* Command map results */
-info_lkp_t command_map_info[] = {
+static info_lkp_t command_map_info[] = {
 	{ PW_INIT_BAT_TEST, "test.battery.start", NULL, NULL },
 	{ PW_LOAD_OFF_RESTART, "shutdown.return", NULL, NULL },
 	{ PW_UPS_OFF, "shutdown.stayoff", NULL, NULL },
@@ -225,7 +225,7 @@ info_lkp_t command_map_info[] = {
 };
 
 /* System test capabilities results */
-info_lkp_t system_test_info[] = {
+static info_lkp_t system_test_info[] = {
 	{ PW_SYS_TEST_GENERAL, "test.system.start", NULL, NULL },
 /*	{ PW_SYS_TEST_SCHEDULE_BATTERY_COMMISSION, "test.battery.start.delayed", NULL, NULL }, */
 /*	{ PW_SYS_TEST_ALTERNATE_AC_INPUT, "test.alternate_acinput.start", NULL, NULL }, */
