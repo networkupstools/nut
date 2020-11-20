@@ -139,10 +139,9 @@ void upsdrv_initinfo(void)
 			}
 			/* FIXME: commands and settable variable! */
 			break;
-		default:
 		case MODE_NONE:
+		default:
 			fatalx(EXIT_FAILURE, "no suitable definition found!");
-			break;
 	}
 	upsh.instcmd = instcmd;
 
