@@ -1049,6 +1049,9 @@ before_install:
         export XML_CATALOG_FILES
     fi
   fi
+
+# Please forgive the funny syntax below to dance around
+# both YAML escaping and windows-acceptable shell syntax
 - |-
     if [[ $TRAVIS_OS_NAME == "windows" ]] ; then
         if [[ ! -s C:/tools/cygwin/bin/autoreconf.exe ]] ; then
@@ -1068,7 +1071,14 @@ before_install:
         export PATH=/C/tools/bin:/cygdrive/c/tools/bin:$PATH:/C/tools/cygwin/bin:/cygdrive/c/tools/cygwin/bin
         CI_TRACE=true
         CI_TIME=false
-        export CI_TRACE CI_TIME
+        ( echo "user::rwx"
+          echo "group::r--"
+          echo "mask:rwx"
+          echo "other:r--"
+        ) > /tmp/faclx
+        if ! setfacl -f /tmp/faclx /cygdrive/c/tools/cygwin/*bin/* ; then
+            setfacl -f /tmp/faclx /C/tools/cygwin/*bin/*
+        fi
     fi
 - if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
 
