@@ -1051,8 +1051,12 @@ before_install:
   fi
 - |-
     if [[ $TRAVIS_OS_NAME == "windows" ]] ; then
-        choco install cygwin
-        C:\\tools\\cygwin\\cygwinsetup.exe -q -P make,unzip,automake,autoconf,zip
+        if [[ ! -s C:/tools/cygwin/bin/autoreconf.exe ]] ; then
+            if [[ ! -s C:/tools/cygwin/bin/autoreconf ]] ; then
+                choco install cygwin
+                C:\\tools\\cygwin\\cygwinsetup.exe -q -P make,unzip,automake,autoconf,zip
+            fi
+        fi
         if [[ ! -s C:/tools/bin/ccache.exe ]] ; then
             mkdir -p C:/tools/bin/
             pushd C:/tools/bin/ || exit
