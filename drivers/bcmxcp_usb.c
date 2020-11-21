@@ -195,7 +195,7 @@ int get_answer(unsigned char *data, unsigned char command)
 		}
 
 		if (need_data > 0) /* We need more data */
-		    continue;
+			continue;
 
 		/* Now validate XCP frame */
 		/* Check header */
@@ -204,7 +204,7 @@ int get_answer(unsigned char *data, unsigned char command)
 			/* Sometime we read something wrong. bad cables? bad ports? */
 			my_buf = memchr(my_buf, PW_COMMAND_START_BYTE, bytes_read);
 			if (!my_buf)
-			    return -1;
+				return -1;
 		}
 
 		/* Read block number byte */
@@ -263,9 +263,9 @@ int get_answer(unsigned char *data, unsigned char command)
 		end_length += length;
 		tail = bytes_read - (length + PW_HEADER_SIZE);
 		if (tail > 0)
-		    my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, tail);
+			my_buf = memmove(&buf[0], my_buf + length + PW_HEADER_SIZE, tail);
 		else if (tail == 0)
-		    my_buf = &buf[0];
+			my_buf = &buf[0];
 		bytes_read = tail;
 	}
 
@@ -345,6 +345,9 @@ void upsdrv_reconnect(void)
 }
 
 /* USB functions */
+static void nutusb_open_error(const char *port)
+	__attribute__((noreturn));
+
 static void nutusb_open_error(const char *port)
 {
 	printf("Unable to find POWERWARE UPS device on USB bus (%s)\n\n", port);
@@ -432,7 +435,7 @@ usb_dev_handle *nutusb_open(const char *port)
 			{
 				upsdebugx(1, "Can't reset POWERWARE USB endpoint: %s", usb_strerror());
 				if (dev_claimed)
-				    usb_release_interface(dev_h, 0);
+					usb_release_interface(dev_h, 0);
 				usb_reset(dev_h);
 				sleep(5);	/* Wait reconnect */
 				errout = 1;

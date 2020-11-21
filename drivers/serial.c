@@ -21,6 +21,7 @@
 #include "timehead.h"
 #include "serial.h"
 #include "main.h"
+#include "attribute.h"
 
 #include <grp.h>
 #include <pwd.h>
@@ -35,6 +36,9 @@
 #endif
 
 	static unsigned int	comm_failures = 0;
+
+static void ser_open_error(const char *port)
+	__attribute__((noreturn));
 
 static void ser_open_error(const char *port)
 {

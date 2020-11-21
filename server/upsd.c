@@ -1074,10 +1074,13 @@ static void mainloop(void)
 	}
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Network server for UPS data.\n\n");
-	printf("usage: %s [OPTIONS]\n", progname);
+	printf("usage: %s [OPTIONS]\n", arg_progname);
 
 	printf("\n");
 	printf("  -c <command>	send <command> via signal to background process\n");
@@ -1167,16 +1170,14 @@ int main(int argc, char **argv)
 
 	while ((i = getopt(argc, argv, "+h46p:qr:i:fu:Vc:D")) != -1) {
 		switch (i) {
-			case 'h':
-				help(progname);
-				break;
-
 			case 'p':
 			case 'i':
 				fatalx(EXIT_FAILURE, "Specifying a listening addresses with '-i <address>' and '-p <port>'\n"
 					"is deprecated. Use 'LISTEN <address> [<port>]' in 'upsd.conf' instead.\n"
 					"See 'man 8 upsd.conf' for more information.");
+#ifndef HAVE___ATTRIBUTE__NORETURN
 					exit(EXIT_FAILURE);	/* Should not get here in practice, but compiler is afraid we can fall through */
+#endif
 
 			case 'q':
 				nut_log_level++;
@@ -1217,9 +1218,9 @@ int main(int argc, char **argv)
 				opt_af = AF_INET6;
 				break;
 
+			case 'h':
 			default:
 				help(progname);
-				break;
 		}
 	}
 

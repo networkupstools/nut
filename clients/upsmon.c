@@ -419,6 +419,9 @@ static void set_pdflag(void)
 
 /* the actual shutdown procedure */
 static void doshutdown(void)
+	__attribute__((noreturn));
+
+static void doshutdown(void)
 {
 	int	ret;
 
@@ -1671,11 +1674,14 @@ static int check_pdflag(void)
 	return EXIT_SUCCESS;
 }
 
-static void help(const char *progname)
+static void help(const char *arg_progname)
+	__attribute__((noreturn));
+
+static void help(const char *arg_progname)
 {
 	printf("Monitors UPS servers and may initiate shutdown if necessary.\n\n");
 
-	printf("usage: %s [OPTIONS]\n\n", progname);
+	printf("usage: %s [OPTIONS]\n\n", arg_progname);
 	printf("  -c <cmd>	send command to running process\n");
 	printf("		commands:\n");
 	printf("		 - fsd: shutdown all master UPSes (use with caution)\n");
@@ -1691,6 +1697,9 @@ static void help(const char *progname)
 
 	exit(EXIT_SUCCESS);
 }
+
+static void runparent(int fd)
+	__attribute__((noreturn));
 
 static void runparent(int fd)
 {
@@ -1747,7 +1756,9 @@ static void start_pipe(void)
 		close(pipefd[1]);
 		runparent(pipefd[0]);
 
+#ifndef HAVE___ATTRIBUTE__NORETURN
 		exit(EXIT_FAILURE);	/* NOTREACHED */
+#endif
 	}
 
 	close(pipefd[0]);
@@ -1933,7 +1944,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 			case 'K':
 				checking_flag = 1;
 				break;
@@ -1955,7 +1968,9 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				help(argv[0]);
+#ifndef HAVE___ATTRIBUTE__NORETURN
 				break;
+#endif
 		}
 	}
 

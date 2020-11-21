@@ -808,6 +808,8 @@ void upsdrv_updateinfo(void)
 	dstate_dataok();
 }
 
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {

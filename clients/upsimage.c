@@ -112,6 +112,9 @@ static int get_imgarg(const char *name)
 
 /* write the HTML header then have gd dump the image */
 static void drawimage(gdImagePtr im)
+	__attribute__((noreturn));
+
+static void drawimage(gdImagePtr im)
 {
 	printf("Pragma: no-cache\n");
 	printf("Content-type: image/png\n\n");

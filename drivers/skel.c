@@ -12,7 +12,9 @@
 	* or docs/snmp-subdrivers.txt for SNMP devices
 */
 
+#include "config.h"
 #include "main.h"
+#include "attribute.h"
 
 /* #include "serial.h" */
 
@@ -91,6 +93,9 @@ void upsdrv_updateinfo(void)
 	 * poll_interval = 2;
 	 */
 }
+
+void upsdrv_shutdown(void)
+	__attribute__((noreturn));
 
 void upsdrv_shutdown(void)
 {
