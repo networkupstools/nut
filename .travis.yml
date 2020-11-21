@@ -979,10 +979,4 @@ before_install:
 - if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
 
 # Hand off to generated script for each BUILD_TYPE
-script:
-- |-
-    if [[ $OS_BUILD == "windows" ]]; then
-        powershell -Command "C:\tools\cygwin\bin\bash.exe -c './ci_build.sh'";
-    else
-        ./ci_build.sh
-    fi
+script: ./ci_build.sh
