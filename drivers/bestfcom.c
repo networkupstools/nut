@@ -83,7 +83,7 @@ upsdrv_info_t upsdrv_info = {
 #include <unistd.h>
 
 /* Blob of UPS configuration data from the formatconfig string */
-struct {
+static struct {
 	int valid;			/* set to 1 when this is filled in */
 
 	float  idealbvolts;		/* various interesting battery voltages */
