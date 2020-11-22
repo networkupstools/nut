@@ -660,7 +660,7 @@ static void apc_flush(int flags)
 }
 
 /* apc specific wrappers around set/del info - to handle "packed" variables */
-void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
+static void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 {
 	char name[vt->nlen0], *nidx;
 	int c;
@@ -682,7 +682,7 @@ void apc_dstate_delinfo(apc_vartab_t *vt, int skip)
 	vt->cnt = 0;
 }
 
-void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
+static void apc_dstate_setinfo(apc_vartab_t *vt, const char *upsval)
 {
 	char name[vt->nlen0], *nidx;
 	char temp[strlen(upsval) + 1], *vidx[APC_PACK_MAX], *com, *curr;
