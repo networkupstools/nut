@@ -44,7 +44,7 @@ typedef struct {
 #define STATUS_CHRG		1024	/* charging */
 #define STATUS_DISCHRG		2048	/* discharging */
 
-status_lkp_t status_info[] = {
+static status_lkp_t status_info[] = {
   { "CAL", STATUS_CAL },
   { "TRIM", STATUS_TRIM },
   { "BOOST", STATUS_BOOST },
