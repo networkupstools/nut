@@ -274,11 +274,11 @@ enum status {
 	OFF           = 128U
 };
 
-unsigned int voltages[]={100,110,115,120,0,0,0,200,220,230,240,0,0,0,0,0};
-unsigned int BNTmodels[]={0,400,500,600,800,801,1000,1200,1500,2000,0,0,0,0,0,0};
-unsigned int KINmodels[]={0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000,0};
-unsigned int IMPmodels[]={0,425,525,625,825,1025,1200,1500,2000,0,0,0,0,0,0,0};
-unsigned int OPTImodels[]={0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
+static unsigned int voltages[]	= {100,110,115,120,0,0,0,200,220,230,240,0,0,0,0,0};
+static unsigned int BNTmodels[]	= {0,400,500,600,800,801,1000,1200,1500,2000,0,0,0,0,0,0};
+static unsigned int KINmodels[]	= {0,425,500,525,625,800,1000,1200,1500,1600,2200,2200,2500,3000,5000,0};
+static unsigned int IMPmodels[]	= {0,425,525,625,825,1025,1200,1500,2000,0,0,0,0,0,0,0};
+static unsigned int OPTImodels[]	= {0,0,0,575,0,0,0,0,0,0,0,0,0,0,0,0};
 
 /*
  * local used functions
