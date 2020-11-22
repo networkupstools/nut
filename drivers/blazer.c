@@ -211,13 +211,17 @@ static int blazer_status(const char *cmd)
 			continue;
 		}
 
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		dstate_setinfo(status[i].var, status[i].fmt, status[i].conv(val, NULL));
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 
@@ -347,13 +351,17 @@ static int blazer_rating(const char *cmd)
 			continue;
 		}
 
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		dstate_setinfo(rating[i].var, rating[i].fmt, rating[i].conv(val, NULL));
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 
