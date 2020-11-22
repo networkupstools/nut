@@ -203,13 +203,17 @@ static int powpan_setvar(const char *varname, const char *val)
 			return STAT_SET_HANDLED;
 		}
 
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 		snprintf(command, sizeof(command), vartab[i].set, atoi(val));
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 
