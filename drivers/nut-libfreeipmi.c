@@ -58,18 +58,19 @@
 #define IPMI_FRU_CUSTOM_FIELDS 64
 
 /* FreeIPMI contexts and configuration*/
-ipmi_ctx_t ipmi_ctx = NULL;
-ipmi_monitoring_ctx_t mon_ctx = NULL;
-struct ipmi_monitoring_ipmi_config ipmi_config;
+static ipmi_ctx_t ipmi_ctx = NULL;
+static ipmi_monitoring_ctx_t mon_ctx = NULL;
+static struct ipmi_monitoring_ipmi_config ipmi_config;
 
 /* SDR management API has changed with 1.1.X and later */
 #ifdef HAVE_FREEIPMI_11X_12X
-  ipmi_sdr_ctx_t sdr_ctx = NULL;
-  ipmi_fru_ctx_t fru_ctx = NULL;
+  static ipmi_sdr_ctx_t sdr_ctx = NULL;
+  static ipmi_fru_ctx_t fru_ctx = NULL;
   #define SDR_PARSE_CTX sdr_ctx
   #define NUT_IPMI_SDR_CACHE_DEFAULTS                              IPMI_SDR_CACHE_CREATE_FLAGS_DEFAULT
 #else
-  ipmi_sdr_cache_ctx_t sdr_ctx = NULL;
+  /* NOTE: Maybe declare the vars in lines below also as static? */
+  static ipmi_sdr_cache_ctx_t sdr_ctx = NULL;
   ipmi_sdr_parse_ctx_t sdr_parse_ctx = NULL;
   #define SDR_PARSE_CTX sdr_parse_ctx
   ipmi_fru_parse_ctx_t fru_ctx = NULL;
