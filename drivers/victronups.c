@@ -66,9 +66,9 @@ upsdrv_info_t upsdrv_info = {
 
 #define LENGTH_TEMP 256
 
-int  sdwdelay = 0;  /* shutdown after 0 second */
+static int  sdwdelay = 0;  /* shutdown after 0 second */
 
-char *model_name;
+static char *model_name;
 
 static int start_is_datastale = 1;
 
