@@ -295,7 +295,7 @@ void upsdrv_shutdown(void)
 }
 
 /*
-static int instcmd(const char *cmdname, const char *extra)
+int instcmd(const char *cmdname, const char *extra)
 {
 	if (!strcasecmp(cmdname, "test.battery.stop")) {
 		ser_send_buf(upsfd, ...);
