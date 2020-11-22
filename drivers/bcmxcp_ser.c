@@ -255,7 +255,7 @@ void upsdrv_comm_good()
 	ser_comm_good();
 }
 
-void pw_comm_setup(const char *port)
+static void pw_comm_setup(const char *port)
 {
 	unsigned char command = PW_SET_REQ_ONLY_MODE;
 	unsigned char id_command = PW_ID_BLOCK_REQ;
