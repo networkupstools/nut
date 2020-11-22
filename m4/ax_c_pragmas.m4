@@ -3,10 +3,17 @@ dnl e.g. diagnostics management to keep warnings quiet sometimes
 
 AC_DEFUN([AX_C_PRAGMAS], [
   CFLAGS_SAVED="${CFLAGS}"
-  AS_IF([test "${GCC}" = "yes"],
-    [dnl # This is expected to fail builds with unknown pragma names on GCC or CLANG at least
-     CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning-option"],
-    [CFLAGS="${CFLAGS_SAVED} -Wall -Wextra -Werror"])
+
+  dnl # This is expected to fail builds with unknown pragma names on GCC or CLANG at least
+  AS_IF([test "${CLANG}" = "yes"],
+    [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning-option"],
+    [AS_IF([test "${GCC}" = "yes"],
+dnl ### Despite the docs, this dies with lack of (apparently) support for
+dnl ### -Wunknown-warning(-options) on all GCC versions I tried (v5-v10)
+dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"],
+        [CFLAGS="${CFLAGS_SAVED} -Wall -Wextra -Werror"],
+        [CFLAGS="${CFLAGS_SAVED} -Wall -Wextra -Werror"])
+    ])
 
   AC_CACHE_CHECK([for pragma GCC diagnostic push and pop],
     [ax_cv__pragma__gcc__diags_push_pop],
@@ -82,6 +89,7 @@ AC_DEFUN([AX_C_PRAGMAS], [
     ])
   ])
 
+  dnl ### Sanity check if the CLI options actually work:
   AC_CACHE_CHECK([for pragma BOGUSforTest],
     [ax_cv__pragma__bogus],
     [AC_COMPILE_IFELSE(
@@ -99,6 +107,12 @@ AC_DEFUN([AX_C_PRAGMAS], [
       [ax_cv__pragma__bogus_diag=no]
     )]
   )
+
+  AS_IF([test "${ax_cv__pragma__bogus}" != "no"],
+    [AC_MSG_WARN([A bogus test that was expected to fail did not! ax_cv__pragma__bogus=$ax_cv__pragma__bogus (not 'no')])])
+
+  AS_IF([test "${ax_cv__pragma__bogus_diag}" != "no"],
+    [AC_MSG_WARN([A bogus test that was expected to fail did not! ax_cv__pragma__bogus_diag=$ax_cv__pragma__bogus_diag (not 'no')])])
 
   CFLAGS="${CFLAGS_SAVED}"
 ])

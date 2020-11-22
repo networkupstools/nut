@@ -320,14 +320,16 @@ static int usb_device_open(usb_dev_handle **handlep, USBDevice_t *device, USBDev
 					goto next_device;
 				case -1:
 					fatal_with_errno(EXIT_FAILURE, "matcher");
-#if defined (__GNUC__) || defined (__clang__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunreachable-code-break"
-#pragma GCC diagnostic ignored "-Wunreachable-code"
-#endif
+#ifndef HAVE___ATTRIBUTE__NORETURN
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNR
+EACHABLE_CODE)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunreachable-code"
+# endif
 					goto next_device;
-#if defined (__GNUC__) || defined (__clang__)
-#pragma GCC diagnostic pop
+# if (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_PUSH_POP) && (defined HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_UNREACHABLE_CODE)
+#  pragma GCC diagnostic pop
+# endif
 #endif
 				case -2:
 					upsdebugx(4, "matcher: unspecified error");
