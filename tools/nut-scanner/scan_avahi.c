@@ -86,7 +86,8 @@ static int (*nut_avahi_service_browser_free)(AvahiServiceBrowser *);
 static char * (*nut_avahi_address_snprint)(char *ret_s, size_t length, const AvahiAddress *a);
 static const AvahiPoll* (*nut_avahi_simple_poll_get)(AvahiSimplePoll *s);
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_avahi_library(const char *libname_path);
 int nutscan_load_avahi_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
