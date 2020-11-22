@@ -169,7 +169,7 @@ void riello_parse_rc(uint8_t* buffer, TRielloData* data);
 void riello_parse_sentr(uint8_t* buffer, TRielloData* data);
 
 /* communication functions */
-void riello_init_serial();
+void riello_init_serial(void);
 uint8_t riello_header(uint8_t type, uint8_t a, uint8_t* length);
 uint8_t riello_tail(uint8_t type, uint8_t length);
 uint8_t riello_test_nak(uint8_t type, uint8_t* buffer);
