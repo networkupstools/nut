@@ -203,7 +203,15 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
-                CONFIG_OPTS+=("--with-cgi=yes")
+                if pkg-config --exists libgd ; then
+                    CONFIG_OPTS+=("--with-cgi=yes")
+                else
+                    # Note: CI-wise, our goal IS to test as much as we can
+                    # with this build, so environments should be set up to
+                    # facilitate that as much as feasible. But reality is...
+                    echo "WARNING: Seems libgd is not present, CGI build may be skipped!" >&2
+                    CONFIG_OPTS+=("--with-cgi=auto")
+                fi
             else
                 # No prereq dll and headers on win so far
                 CONFIG_OPTS+=("--with-cgi=auto")
