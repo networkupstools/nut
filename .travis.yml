@@ -806,6 +806,10 @@ _matrix_freebsd:
   include: &_matrix_freebsd
   - *_matrix_freebsd_gnustd_nowarn
 
+_matrix_required_freebsd:
+  include: &_matrix_required_freebsd
+  - *_matrix_freebsd_gnustd_nowarn
+
 _matrix_allowfail_freebsd:
   include: &_matrix_allowfail_freebsd
   - *_matrix_freebsd_gnustd_nowarn
@@ -865,6 +869,7 @@ _matrix_warn:
 _matrix_required:
   include: &_matrix_required
   - *_matrix_required_linux
+  - *_matrix_required_freebsd
   - *_matrix_required_osx
 #  - *_matrix_required_windows
 
@@ -935,8 +940,8 @@ jobs:
   - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Wextra -Werror -std=c++89"
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++89"
 ### FreeBSD
-  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
-  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 ### macosx
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
