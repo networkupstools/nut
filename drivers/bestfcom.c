@@ -162,7 +162,7 @@ void  upsdrv_initinfo (void)
 
 
 /* atoi() without the freebie octal conversion */
-int bcd2i (const char *bcdstring, const int bcdlen)
+static int bcd2i (const char *bcdstring, const int bcdlen)
 {
 	int i, digit, total = 0, factor = 1;
 	for (i = 1; i < bcdlen; i++)
@@ -526,7 +526,7 @@ Version:  8.07
 Released: 08/01/1995
 */
 
-void upsdrv_init_nofc(void)
+static void upsdrv_init_nofc(void)
 {
 	char tmp[256], rstring[1024];
 
@@ -659,7 +659,7 @@ Model: [0,1] => 00 = unk, 01 = Patriot/SPS, 02 = FortressII, 03 = Ferrups, 04 = 
        [2,3] => 00 = LI520, 01 = LI720, 02 = LI1020, 03 = LI1420, 07 = ???
 */
 
-void upsdrv_init_fc(const char *fcstring)
+static void upsdrv_init_fc(const char *fcstring)
 {
 	char tmp[256];
 
