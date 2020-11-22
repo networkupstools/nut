@@ -149,7 +149,7 @@ static void * run_eaton_serial(void *arg)
 
 #endif /* HAVE_PTHREAD */
 
-void show_usage()
+static void show_usage()
 {
 /* NOTE: This code uses `nutscan_avail_*` global vars from nutscan-init.c */
 	puts("nut-scanner : utility for detection of available power devices.\n");
