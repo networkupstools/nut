@@ -138,6 +138,8 @@ AC_C_BIGENDIAN
 AC_C_INLINE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 AC_C_VARARRAYS
+dnl Note: the compiler/pragma/attr methods below are custom for NUT codebase:
+NUT_COMPILER_FAMILY
 AX_C_PRAGMAS
 AX_C___ATTRIBUTE__
 AC_CHECK_FUNCS(flock lockf fcvt fcvtl pow10 round abs_val abs)
