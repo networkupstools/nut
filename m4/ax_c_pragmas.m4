@@ -89,6 +89,7 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
     ])
   ])
 
+  dnl ### Sanity check if the CLI options actually work:
   AC_CACHE_CHECK([for pragma BOGUSforTest],
     [ax_cv__pragma__bogus],
     [AC_COMPILE_IFELSE(
@@ -106,6 +107,12 @@ dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"
       [ax_cv__pragma__bogus_diag=no]
     )]
   )
+
+  AS_IF([test "${ax_cv__pragma__bogus}" != "no"],
+    [AC_MSG_WARN([A bogus test that was expected to fail did not! ax_cv__pragma__bogus=$ax_cv__pragma__bogus (not 'no')])])
+
+  AS_IF([test "${ax_cv__pragma__bogus_diag}" != "no"],
+    [AC_MSG_WARN([A bogus test that was expected to fail did not! ax_cv__pragma__bogus_diag=$ax_cv__pragma__bogus_diag (not 'no')])])
 
   CFLAGS="${CFLAGS_SAVED}"
 ])
