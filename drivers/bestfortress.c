@@ -313,7 +313,7 @@ void upsdrv_updateinfo(void)
 /* all UPS tunable parameters are set with command
    'p%d=%s'
 */
-int setparam (int parameter, int dlen, const char * data)
+static int setparam (int parameter, int dlen, const char * data)
 {
 	char reply[80];
 	upssend ("p%d=%*s\r", parameter, dlen, data);
