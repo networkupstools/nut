@@ -25,9 +25,15 @@ case "$CI_TRACE" in
 esac
 
 configure_nut() {
-    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
+    local CONFIGURE_SCRIPT=./configure
+    if [[ "$TRAVIS_OS_NAME" == "windows" ]] ; then
+        find . -ls
+        CONFIGURE_SCRIPT=./configure.bat
+    fi
+
+    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]}"
     echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
+    $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
     || { RES=$?
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
@@ -46,7 +52,7 @@ build_to_only_catch_errors() {
 
     echo "`date`: Starting a 'make check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME make VERBOSE=0 check \
-	&& echo "`date`: SUCCESS" \
+    && echo "`date`: SUCCESS" \
     || return $?
 
     return 0
@@ -194,7 +200,7 @@ default|default-alldrv|default-all-errors|default-spellcheck|default-shellcheck|
             CONFIG_OPTS+=("--with-doc=skip")
             # Enable as many binaries to build as current worker setup allows
             CONFIG_OPTS+=("--with-all=auto")
-            if [[ "$TRAVIS_OS_NAME" != "windows" ]] ; then
+            if [[ "$TRAVIS_OS_NAME" != "windows" ]] && [[ "$TRAVIS_OS_NAME" != "freebsd" ]] ; then
                 # Currently --with-all implies this, but better be sure to
                 # really build everything we can to be certain it builds:
                 CONFIG_OPTS+=("--with-cgi=yes")

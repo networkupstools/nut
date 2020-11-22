@@ -251,7 +251,7 @@ _matrix_linux_gnustd_nowarn:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc-7 CXX=g++-7
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
     os: linux
     sudo: false
     services:
@@ -451,7 +451,7 @@ _matrix_linux_gnustd_warn_viable:
         packages:
         - *deps_driverlibs
 
-  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc-7 CXX=g++-7
+  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98" CC=gcc-7 CXX=g++-7
     os: linux
     sudo: false
     services:
@@ -589,6 +589,71 @@ _matrix_linux_cstd_warn:
         packages:
         - *deps_driverlibs
 
+_matrix_freebsd_gnustd_nowarn:
+  include: &_matrix_freebsd_gnustd_nowarn
+  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
+    os: freebsd
+    compiler: gcc
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+    os: freebsd
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+    os: freebsd
+    compiler: gcc
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+    os: freebsd
+    compiler: clang
+    cache:
+      directories:
+      - $HOME/.ccache
+
+_matrix_freebsd_gnustd_warn:
+  include: &_matrix_freebsd_gnustd_warn
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+    os: freebsd
+    compiler: gcc
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+    os: freebsd
+    compiler: gcc
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
+    os: freebsd
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
+    os: freebsd
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+
 # Try also a range of platforms for MacOS X builds
 # Inspired by https://github.com/taocpp/operators/blob/master/.travis.yml
 _matrix_osx_gnustd_nowarn:
@@ -717,6 +782,18 @@ _matrix_windows_gnustd_nowarn:
       - $HOME/.ccache
       - /C/tools
 
+_matrix_windows_gnustd_warn:
+  include: &_matrix_windows_gnustd_warn
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
+    os: windows
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/AppData/Local/Temp/chocolatey
+      - $HOME/.ccache
+      - /C/tools
+
 _matrix_windows_cstd_nowarn:
   include: &_matrix_windows_cstd_nowarn
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
@@ -785,6 +862,19 @@ _matrix_linux:
   - *_matrix_required_linux
   - *_matrix_allowfail_linux
 
+_matrix_freebsd:
+  include: &_matrix_freebsd
+  - *_matrix_freebsd_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_warn
+
+_matrix_required_freebsd:
+  include: &_matrix_required_freebsd
+  - *_matrix_freebsd_gnustd_nowarn
+
+_matrix_allowfail_freebsd:
+  include: &_matrix_allowfail_freebsd
+  - *_matrix_freebsd_gnustd_warn
+
 _matrix_allowfail_osx:
   include: &_matrix_allowfail_osx
   - *_matrix_osx_cstd_nowarn
@@ -807,6 +897,7 @@ _matrix_osx:
 _matrix_allowfail_windows:
   include: &_matrix_allowfail_windows
   - *_matrix_windows_gnustd_nowarn
+  - *_matrix_windows_gnustd_warn
   - *_matrix_windows_cstd_nowarn
   - *_matrix_windows_cstd_warn
 
@@ -826,25 +917,31 @@ _matrix_gnustd_nowarn:
   include: &_matrix_gnustd_nowarn
   - *_matrix_osx_gnustd_nowarn
   - *_matrix_linux_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_nowarn
+#  -*_matrix_windows_gnustd_nowarn
 
 _matrix_warn:
   include: &_matrix_warn
   - *_matrix_linux_gnustd_warn
   - *_matrix_linux_cstd_warn
+  - *_matrix_freebsd_gnustd_warn
   - *_matrix_osx_gnustd_warn
   - *_matrix_osx_cstd_warn
+  - *_matrix_windows_gnustd_warn
   - *_matrix_windows_cstd_warn
 
 # Default "jobs:" matrix should reference at least this for master branches
 _matrix_required:
   include: &_matrix_required
   - *_matrix_required_linux
+  - *_matrix_required_freebsd
   - *_matrix_required_osx
 #  - *_matrix_required_windows
 
 _matrix_all:
   include: &_matrix_all
   - *_matrix_linux
+  - *_matrix_freebsd
   - *_matrix_osx
   - *_matrix_windows
 
@@ -856,6 +953,7 @@ _matrix_master:
 ### following items from becoming green:
   - *_matrix_allowfail_linux
   - *_matrix_allowfail_osx
+  - *_matrix_allowfail_freebsd
   - *_matrix_windows
 
 _matrix_fixbugs:
@@ -884,7 +982,7 @@ jobs:
 # Note: "env" lines below must exactly describe a matrix option defined above
   allow_failures:
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
-#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc-7 CXX=g++-7
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++98" CC=gcc-7 CXX=g++-7
 #OK#  - env: NUT_MATRIX_TAG="gnu11-gcc-7-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu11" CXXFLAGS="-std=gnu++11" CC=gcc-7 CXX=g++-7
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-5.0-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang-5.0 CXX=clang++-5.0
@@ -898,7 +996,7 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="cDefault-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic" CXXFLAGS="-Wall -Wextra -Werror"
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99"
   - env: NUT_MATRIX_TAG="c99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -std=c++99"
-#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc-7 CXX=g++-7
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-7-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++98" CC=gcc-7 CXX=g++-7
   - env: NUT_MATRIX_TAG="c99-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang-5.0 CXX=clang++-5.0
   - env: NUT_MATRIX_TAG="c11-clang-5.0-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang-5.0 CXX=clang++-5.0
   - env: NUT_MATRIX_TAG="c11-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -std=c++11"
@@ -906,6 +1004,15 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
   - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Wextra -Werror -std=c++89"
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++89"
+### FreeBSD
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
 ### macosx
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
@@ -919,6 +1026,7 @@ jobs:
   - env: NUT_MATRIX_TAG="c11-clang-xcode7.3-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c11" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++11" CC=clang CXX=clang++
 ### windows
   - env: NUT_MATRIX_TAG="gnu99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-clang-win-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-nowarn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-std=c99" CXXFLAGS="-std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c99-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="c20-clang-win-warn" BUILD_TYPE=default-all-errors CPPFLAGS="-fms-extensions" CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=c20" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=c++20" CC=clang CXX=clang++
@@ -941,10 +1049,17 @@ before_install:
         export XML_CATALOG_FILES
     fi
   fi
+
+# Please forgive the funny syntax below to dance around
+# both YAML escaping and windows-acceptable shell syntax
 - |-
     if [[ $TRAVIS_OS_NAME == "windows" ]] ; then
-        choco install cygwin
-        C:\\tools\\cygwin\\cygwinsetup.exe -q -P make,unzip,automake,autoconf,zip
+        if [[ ! -s C:/tools/cygwin/bin/autoreconf.exe ]] ; then
+            if [[ ! -s C:/tools/cygwin/bin/autoreconf ]] ; then
+                choco install cygwin
+                C:\\tools\\cygwin\\cygwinsetup.exe -q -P make,unzip,automake,autoconf,zip
+            fi
+        fi
         if [[ ! -s C:/tools/bin/ccache.exe ]] ; then
             mkdir -p C:/tools/bin/
             pushd C:/tools/bin/ || exit
@@ -953,18 +1068,19 @@ before_install:
                 rm -f ccache-3.7.12-windows-64.zip
             popd
         fi
-        export PATH=/C/tools/bin:$PATH
+        export PATH=/C/tools/bin:/cygdrive/c/tools/bin:$PATH:/C/tools/cygwin/bin:/cygdrive/c/tools/cygwin/bin
         CI_TRACE=true
         CI_TIME=false
-        export CI_TRACE CI_TIME
+        ( echo "user::rwx"
+          echo "group::r--"
+          echo "mask:rwx"
+          echo "other:r--"
+        ) > /tmp/faclx
+        if ! setfacl -f /tmp/faclx /cygdrive/c/tools/cygwin/*bin/* ; then
+            setfacl -f /tmp/faclx /C/tools/cygwin/*bin/*
+        fi
     fi
 - if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
 
 # Hand off to generated script for each BUILD_TYPE
-script:
-- |-
-    if [[ $OS_BUILD == "windows" ]]; then
-        powershell -Command "C:\tools\cygwin\bin\bash.exe -c './ci_build.sh'";
-    else
-        ./ci_build.sh
-    fi
+script: ./ci_build.sh
