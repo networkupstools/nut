@@ -111,7 +111,7 @@ typedef struct {
 	char		cmd;		/* command character */
 } apc_vartab_t;
 
-apc_vartab_t	apc_vartab[] = {
+static apc_vartab_t	apc_vartab[] = {
 
 	{ "ups.firmware.old",  	0,			'V' },
 	{ "ups.firmware",  	0,			'b' },
@@ -221,7 +221,7 @@ typedef struct {
 	char	cmd;
 } apc_cmdtab_t;
 
-apc_cmdtab_t	apc_cmdtab[] =
+static apc_cmdtab_t	apc_cmdtab[] =
 {
 	{ "load.off",		APC_NASTY|APC_REPEAT,	APC_CMD_OFF       },
 	{ "load.on",		APC_REPEAT,		APC_CMD_ON        },
@@ -249,7 +249,7 @@ apc_cmdtab_t	apc_cmdtab[] =
 
 /* compatibility with hardware that doesn't do APC_CMDSET ('a') */
 
-struct {
+static struct {
 	const	char	*firmware;
 	const	char	*cmdchars;
 	int	flags;
