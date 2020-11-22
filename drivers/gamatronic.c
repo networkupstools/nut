@@ -52,7 +52,7 @@ upsdrv_info_t upsdrv_info = {
 #define SER_WAIT_SEC	1	/* allow 3.0 sec for ser_get calls */
 #define SER_WAIT_USEC	0
 
-int sec_upsrecv (char *buf)
+static int sec_upsrecv (char *buf)
 {
 	char lenbuf[4];
 	int ret;
@@ -81,7 +81,7 @@ int sec_upsrecv (char *buf)
 		return (-2);
 }
 
-int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
+static int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
 {
 	char msg[140];
 	int ret;
@@ -119,7 +119,7 @@ int sec_cmd(const char mode, const char *command, char *msgbuf, int *buflen)
 	return ret;
 }
 
-void addquery(const char *cmd, int field, int varnum, int pollflag)
+static void addquery(const char *cmd, int field, int varnum, int pollflag)
 {
 	int q;
 
@@ -138,7 +138,7 @@ void addquery(const char *cmd, int field, int varnum, int pollflag)
 	}
 }
 
-void sec_setinfo(int varnum, char *value)
+static void sec_setinfo(int varnum, char *value)
 {
 	if (*sec_varlist[varnum].setcmd)
 	{ /*Not empty*/
@@ -162,7 +162,7 @@ void sec_setinfo(int varnum, char *value)
 	}
 }
 
-void update_pseudovars( void )
+static void update_pseudovars( void )
 {
 	status_init();
 
@@ -197,8 +197,7 @@ void update_pseudovars( void )
 	status_commit();
 }
 
-void sec_poll ( int pollflag ) {
-
+static void sec_poll ( int pollflag ) {
 	int msglen,f,q;
 	char retbuf[140],*n,*r;
 
@@ -322,7 +321,7 @@ void upsdrv_makevartable(void)
 	/* addvar(VAR_VALUE, "foo", "Override foo setting"); */
 }
 
-void setup_serial(const char *port)
+static void setup_serial(const char *port)
 {
 	char temp[140];
 	int i,ret;
