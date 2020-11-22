@@ -117,7 +117,7 @@ static const char *ErrMessages[] = {
 /*    */   ""
    } ;
 
-const char *PrintErr(int ErrCode)
+static const char *PrintErr(int ErrCode)
 {
 	int msgIndex = 0 ;
 
@@ -150,7 +150,7 @@ const char *PrintErr(int ErrCode)
 }
 
 
-int CheckErrCode(unsigned char * Buff)
+static int CheckErrCode(unsigned char * Buff)
 {
    auto int Ret ;
 
@@ -189,7 +189,7 @@ int CheckErrCode(unsigned char * Buff)
 }
 
 
-void SendCmdToSerial(unsigned char *Buff, int Len)
+static void SendCmdToSerial(unsigned char *Buff, int Len)
 {
 	int i;
 	unsigned char Tmp[20], Xor ;
@@ -213,7 +213,7 @@ void SendCmdToSerial(unsigned char *Buff, int Len)
 
 
 
-unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetBuffer)
+static unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetBuffer)
 {
 	#define TMP_BUFF_LEN	1024
    unsigned char InpBuff[TMP_BUFF_LEN+1] ;
@@ -274,8 +274,6 @@ unsigned char * CmdSerial(unsigned char *OutBuffer, int Len, unsigned char *RetB
 		}
 	return(NULL) ;	/* There have been errors in the reading of the data */
 }
-
-
 
 static int detect_hardware(void)
 {
