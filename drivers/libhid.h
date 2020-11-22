@@ -89,6 +89,7 @@ typedef struct reportbuf_s {
 
 extern reportbuf_t	*reportbuf;	/* buffer for most recent reports */
 
+extern int max_report_size;
 extern int interrupt_only;
 extern unsigned int interrupt_size;
 
