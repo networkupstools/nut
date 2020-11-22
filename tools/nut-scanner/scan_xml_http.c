@@ -63,7 +63,8 @@ static nutscan_device_t * dev_ret = NULL;
 static pthread_mutex_t dev_mutex;
 #endif
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_neon_library(const char *libname_path);
 int nutscan_load_neon_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
