@@ -44,13 +44,13 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-uint8_t bufOut[BUFFER_SIZE];
-uint8_t bufIn[BUFFER_SIZE];
+static uint8_t bufOut[BUFFER_SIZE];
+static uint8_t bufIn[BUFFER_SIZE];
 
-uint8_t gpser_error_control;
+static uint8_t gpser_error_control;
 
-uint8_t input_monophase;
-uint8_t output_monophase;
+static uint8_t input_monophase;
+static uint8_t output_monophase;
 
 extern uint8_t commbyte;
 extern uint8_t wait_packet;
@@ -59,7 +59,7 @@ extern uint8_t foundbadcrc;
 extern uint8_t buf_ptr_length;
 extern uint8_t requestSENTR;
 
-TRielloData DevData;
+static TRielloData DevData;
 
 static usb_communication_subdriver_t *usb = &usb_subdriver;
 static usb_dev_handle *udev = NULL;
