@@ -43,7 +43,7 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-struct {
+static struct {
 	const	char	*name;
 	void	(*func)(nut_ctype_t *client, int numargs, const char **arg);
 	int	flags;
