@@ -121,7 +121,7 @@ unsigned char calc_checksum(const unsigned char *buf)
 
 /* Light version of of drivers/libshut.c->shut_synchronise()
  * return 1 if OK, 0 otherwise */
-int shut_synchronise(int arg_upsfd)
+static int shut_synchronise(int arg_upsfd)
 {
 	int try;
 	unsigned char reply = '\0';
@@ -148,7 +148,7 @@ int shut_synchronise(int arg_upsfd)
  *   send SYNC token (0x16) and receive the SYNC token back
  *   FIXME: maybe try to get device descriptor?!
  */
-nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
+static nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	int devfd = -1;
@@ -197,7 +197,7 @@ nutscan_device_t * nutscan_scan_eaton_serial_shut(const char* port_name)
  *   Send PW_SET_REQ_ONLY_MODE command (0xA0) and wait for response
  *   [Get ID Block (PW_ID_BLOCK_REQ) (0x31)]
  */
-nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
+static nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	int i, ret, devfd = -1;
@@ -286,7 +286,7 @@ nutscan_device_t * nutscan_scan_eaton_serial_xcp(const char* port_name)
  *   - simply try to get Q1 (status) string
  *   - check its size and first char. which should be '('
  */
-nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
+static nutscan_device_t * nutscan_scan_eaton_serial_q1(const char* port_name)
 {
 	nutscan_device_t * dev = NULL;
 	struct termios tio;
