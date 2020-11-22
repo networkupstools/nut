@@ -54,7 +54,9 @@ upsdrv_info_t upsdrv_info = {
 	{ NULL }
 };
 
-ENT_STRUCT ups ;
+static ENT_STRUCT ups ;
+
+/* common driver routines */
 int instcmd(const char *cmdname, const char *extra);
 int setvar(const char *varname, const char *val);
 
