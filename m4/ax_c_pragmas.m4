@@ -3,10 +3,17 @@ dnl e.g. diagnostics management to keep warnings quiet sometimes
 
 AC_DEFUN([AX_C_PRAGMAS], [
   CFLAGS_SAVED="${CFLAGS}"
-  AS_IF([test "${GCC}" = "yes"],
-    [dnl # This is expected to fail builds with unknown pragma names on GCC or CLANG at least
-     CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning-option"],
-    [CFLAGS="${CFLAGS_SAVED} -Wall -Wextra -Werror"])
+
+  dnl # This is expected to fail builds with unknown pragma names on GCC or CLANG at least
+  AS_IF([test "${CLANG}" = "yes"],
+    [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning-option"],
+    [AS_IF([test "${GCC}" = "yes"],
+dnl ### Despite the docs, this dies with lack of (apparently) support for
+dnl ### -Wunknown-warning(-options) on all GCC versions I tried (v5-v10)
+dnl ###        [CFLAGS="${CFLAGS_SAVED} -Werror=pragmas -Werror=unknown-warning"],
+        [CFLAGS="${CFLAGS_SAVED} -Wall -Wextra -Werror"],
+        [CFLAGS="${CFLAGS_SAVED} -Wall -Wextra -Werror"])
+    ])
 
   AC_CACHE_CHECK([for pragma GCC diagnostic push and pop],
     [ax_cv__pragma__gcc__diags_push_pop],
