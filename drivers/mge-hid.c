@@ -419,19 +419,23 @@ static double mge_time_conversion_nuf(const char *value)
 }
 
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf }
+	{ 0, NULL, mge_date_conversion_fun, mge_date_conversion_nuf },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf }
+	{ 0, NULL, mge_time_conversion_fun, mge_time_conversion_nuf },
+	{ 0, NULL, NULL, NULL }
 };
 #else
 static info_lkp_t mge_date_conversion[] = {
-	{ 0, NULL, mge_date_conversion_fun, NULL }
+	{ 0, NULL, mge_date_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static info_lkp_t mge_time_conversion[] = {
-	{ 0, NULL, mge_time_conversion_fun, NULL }
+	{ 0, NULL, mge_time_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 #endif /* HAVE_STRPTIME */
 
@@ -461,7 +465,8 @@ static const char *mge_battery_voltage_nominal_fun(double value)
 }
 
 static info_lkp_t mge_battery_voltage_nominal[] = {
-	{ 0, NULL, mge_battery_voltage_nominal_fun, NULL }
+	{ 0, NULL, mge_battery_voltage_nominal_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 /* The HID path 'UPS.PowerSummary.Voltage' only reports
@@ -485,7 +490,8 @@ static const char *mge_battery_voltage_fun(double value)
 }
 
 static info_lkp_t mge_battery_voltage[] = {
-	{ 0, NULL, mge_battery_voltage_fun, NULL }
+	{ 0, NULL, mge_battery_voltage_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *mge_powerfactor_conversion_fun(double value)
@@ -495,7 +501,8 @@ static const char *mge_powerfactor_conversion_fun(double value)
 }
 
 static info_lkp_t mge_powerfactor_conversion[] = {
-	{ 0, NULL, mge_powerfactor_conversion_fun, NULL }
+	{ 0, NULL, mge_powerfactor_conversion_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 static const char *mge_battery_capacity_fun(double value)
@@ -505,7 +512,8 @@ static const char *mge_battery_capacity_fun(double value)
 }
 
 static info_lkp_t mge_battery_capacity[] = {
-	{ 0, NULL, mge_battery_capacity_fun, NULL }
+	{ 0, NULL, mge_battery_capacity_fun, NULL },
+	{ 0, NULL, NULL, NULL }
 };
 
 info_lkp_t eaton_enable_disable_info[] = {
