@@ -193,16 +193,20 @@ char ** nutscan_get_serial_ports_list(const char *ports_range)
 		}
 		for( current_port=start_port; current_port <= stop_port;
 				current_port++) {
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 			/* We actually have a format string in the name,
 			 * see the device_portname[] definition above */
 			snprintf(str_tmp, sizeof(str_tmp), cur_device->name,
 					current_port);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 
