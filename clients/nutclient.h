@@ -777,6 +777,12 @@ strarr strarr_alloc(unsigned short count);
  */
 void strarr_free(strarr arr);
 
+/**
+ * Convert C++ types into an array of string.
+ */
+strarr stringvector_to_strarr(const std::vector<std::string>& strset);
+strarr stringset_to_strarr(const std::set<std::string>& strset);
+
 
 /**
  * Nut general client types and functions.
