@@ -229,7 +229,7 @@ static ne_buffer *set_object_serialise_form(object_query_t *handle);
 /* Global vars */
 uint32_t		ups_status = 0;
 static int		timeout = 5;
-int			shutdown_duration = 120;
+static int		shutdown_duration = 120;
 static int		shutdown_timer = 0;
 static time_t		lastheard = 0;
 static subdriver_t	*subdriver = &mge_xml_subdriver;
