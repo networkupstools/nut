@@ -40,10 +40,10 @@
 
 #define ERR_BAD_OPTION	(-1)
 
-const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
+static const char optstring[] = "?ht:s:e:E:c:l:u:W:X:w:x:p:b:B:d:L:CUSMOAm:NPqIVaD";
 
 #ifdef HAVE_GETOPT_LONG
-const struct option longopts[] =
+static const struct option longopts[] =
 	{{ "timeout",required_argument,NULL,'t' },
 	{ "start_ip",required_argument,NULL,'s' },
 	{ "end_ip",required_argument,NULL,'e' },
