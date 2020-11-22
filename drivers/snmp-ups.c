@@ -653,7 +653,7 @@ void nut_snmp_cleanup(void)
 }
 
 /* Free a struct snmp_pdu * returned by nut_snmp_walk */
-void nut_snmp_free(struct snmp_pdu ** array_to_free)
+static void nut_snmp_free(struct snmp_pdu ** array_to_free)
 {
 	struct snmp_pdu ** current_element;
 
@@ -670,7 +670,7 @@ void nut_snmp_free(struct snmp_pdu ** array_to_free)
 }
 
 /* Return a NULL terminated array of snmp_pdu * */
-struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
+static struct snmp_pdu **nut_snmp_walk(const char *OID, int max_iteration)
 {
 	int status;
 	struct snmp_pdu *pdu, *response = NULL;
@@ -1289,7 +1289,7 @@ snmp_info_t *su_find_info(const char *type)
 
 /* Counter match the sysOID using {device,ups}.model OID
  * Return TRUE if this OID can be retrieved, FALSE otherwise */
-bool_t match_model_OID()
+static bool_t match_model_OID()
 {
 	bool_t retCode = FALSE;
 	snmp_info_t *su_info_p, *cur_info_p;
@@ -1339,7 +1339,7 @@ bool_t match_model_OID()
 
 /* Try to find the MIB using sysOID matching.
  * Return a pointer to a mib2nut definition if found, NULL otherwise */
-mib2nut_info_t *match_sysoid()
+static mib2nut_info_t *match_sysoid()
 {
 	char sysOID_buf[LARGEBUF];
 	oid device_sysOID[MAX_OID_LEN];
@@ -1552,7 +1552,7 @@ static void disable_competition(snmp_info_t *entry)
 /* Test if the template is a multiple one, i.e. with a formatting string that
  * contains multiple "%i".
  * Return TRUE if yes (multiple "%i" found), FALSE otherwise */
-bool_t is_multiple_template(const char *OID_template)
+static bool_t is_multiple_template(const char *OID_template)
 {
 	bool_t retCode = FALSE;
 	char *format_char = NULL;
@@ -1579,7 +1579,7 @@ bool_t is_multiple_template(const char *OID_template)
 /* Instantiate an snmp_info_t from a template.
  * Useful for outlet and outlet.group templates.
  * Note: remember to adapt info_type, OID and optionaly dfl */
-snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
+static snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_instance)
 {
 	upsdebugx(1, "%s(%s)", __func__, info_template ? info_template->info_type : "n/a");
 
@@ -1613,7 +1613,7 @@ snmp_info_t *instantiate_info(snmp_info_t *info_template, snmp_info_t *new_insta
 
 /* Free a dynamically allocated snmp_info_t.
  * Useful for outlet and outlet.group templates */
-void free_info(snmp_info_t *su_info_p)
+static void free_info(snmp_info_t *su_info_p)
 {
 	/* sanity check */
 	if (su_info_p == NULL)
@@ -1630,7 +1630,7 @@ void free_info(snmp_info_t *su_info_p)
 
 /* return the base SNMP index (0 or 1) to start template iteration on
  * the MIB, based on a test using a template OID */
-int base_snmp_template_index(const snmp_info_t *su_info_p)
+static int base_snmp_template_index(const snmp_info_t *su_info_p)
 {
 	if (!su_info_p)
 		return -1;
@@ -1750,7 +1750,7 @@ static int guestimate_template_count(snmp_info_t *su_info_p)
 /* Process template definition, instantiate and get data or register
  * command
  * type: outlet, outlet.group, device */
-bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
+static bool_t process_template(int mode, const char* type, snmp_info_t *su_info_p)
 {
 	/* Default to TRUE, and leave to get_and_process_data() to set
 	 * to FALSE when actually getting data from devices, to avoid false
@@ -1961,7 +1961,7 @@ int extract_template_number(int template_type, const char* varname)
 
 /* Extract the id number of a template from a variable name.
  * Example: return '1' for type = 'outlet.1.desc' */
-int extract_template_number_from_snmp_info_t(const char* varname)
+static int extract_template_number_from_snmp_info_t(const char* varname)
 {
 	return extract_template_number(get_template_type(varname), varname);
 }
@@ -2124,7 +2124,7 @@ bool_t daisychain_init()
  * Return 0 if OK, 1 if the caller needs to "continue" the walk loop (i.e.
  * skip the present data)
  */
-int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
+static int process_phase_data(const char* type, long *nb_phases, snmp_info_t *su_info_p)
 {
 	snmp_info_t *tmp_info_p;
 	char tmpOID[SU_INFOSIZE];
@@ -2655,7 +2655,7 @@ bool_t su_ups_get(snmp_info_t *su_info_p)
  *   STAT_SET_INVALID or STAT_SET_UNKNOWN if the command / setting is not supported
  *   STAT_SET_FAILED otherwise
  */
-int su_setOID(int mode, const char *varname, const char *val)
+static int su_setOID(int mode, const char *varname, const char *val)
 {
 	snmp_info_t *su_info_p = NULL;
 	bool_t status;
