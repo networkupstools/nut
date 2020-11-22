@@ -300,14 +300,18 @@ int snprintfcat(char *dst, size_t size, const char *fmt, ...)
 	assert(len <= size);
 
 	va_start(ap, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	/* Note: this code intentionally uses a caller-provided format string */
 	ret = vsnprintf(dst + len, size - len, fmt, ap);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(ap);
@@ -350,13 +354,17 @@ static void vupslog(int priority, const char *fmt, va_list va, int use_strerror)
 	int	ret;
 	char	buf[LARGEBUF];
 
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	ret = vsnprintf(buf, sizeof(buf), fmt, va);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 
@@ -445,13 +453,17 @@ void upslog_with_errno(int priority, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vupslog(priority, fmt, va, 1);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(va);
@@ -463,13 +475,17 @@ void upslogx(int priority, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vupslog(priority, fmt, va, 0);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(va);
@@ -500,13 +516,17 @@ void upsdebug_with_errno(int level, const char *fmt, ...)
 	}
 
 	va_start(va, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vupslog(LOG_DEBUG, fmt, va, 1);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(va);
@@ -533,13 +553,17 @@ void upsdebugx(int level, const char *fmt, ...)
 	}
 
 	va_start(va, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vupslog(LOG_DEBUG, fmt, va, 0);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(va);
@@ -638,13 +662,17 @@ static void vfatal(const char *fmt, va_list va, int use_strerror)
 	if (xbit_test(upslog_flags, UPSLOG_SYSLOG_ON_FATAL))
 		xbit_set(&upslog_flags, UPSLOG_SYSLOG);
 
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vupslog(LOG_ERR, fmt, va, use_strerror);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 }
@@ -654,13 +682,17 @@ void fatal_with_errno(int status, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vfatal(fmt, va, (errno > 0) ? 1 : 0);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(va);
@@ -673,13 +705,17 @@ void fatalx(int status, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic push
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
+#endif
+#ifdef HAVE_PRAGMA_GCC_DIAGNOSTIC_IGNORED_FORMAT_SECURITY
 #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 	vfatal(fmt, va, 0);
-#if defined (__GNUC__) || defined (__clang__)
+#ifdef HAVE_PRAGMAS_FOR_GCC_DIAGNOSTIC_IGNORED_FORMAT_NONLITERAL
 #pragma GCC diagnostic pop
 #endif
 	va_end(va);
