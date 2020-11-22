@@ -286,7 +286,7 @@ static void nut_freeipmi_cleanup(ipmi_fru_parse_ctx_t fru_parse_ctx,
 }
 
 /* Return 1 if supported, 0 otherwise */
-int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
+static int is_ipmi_device_supported(ipmi_ctx_t ipmi_ctx, int ipmi_id)
 {
 	int ret = -1;
 	unsigned int area_type = 0;
