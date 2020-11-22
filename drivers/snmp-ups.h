@@ -285,7 +285,7 @@ extern int input_phases, output_phases, bypass_phases;
 
 /* Common daisychain structure and functions */
 
-bool_t daisychain_init();
+bool_t daisychain_init(void);
 int su_addcmd(snmp_info_t *su_info_p);
 
 /* Structure containing info about each daisychain device, including phases
