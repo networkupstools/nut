@@ -68,7 +68,7 @@ static struct {
 	{ "SET",	net_set,	FLAG_USER	},
 	{ "INSTCMD",	net_instcmd,	FLAG_USER	},
 
-	{ NULL,		(void(*)())(NULL), 0		}
+	{ NULL,		(void(*)(void))(NULL), 0		}
 };
 
 #ifdef __cplusplus
