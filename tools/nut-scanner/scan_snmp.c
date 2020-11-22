@@ -105,7 +105,8 @@ static oid (*nut_usmHMACMD5AuthProtocol);
 static oid (*nut_usmHMACSHA1AuthProtocol);
 static oid (*nut_usmDESPrivProtocol);
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_snmp_library(const char *libname_path);
 int nutscan_load_snmp_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
