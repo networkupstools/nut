@@ -647,7 +647,7 @@ static void client_free(void)
 	}
 }
 
-void driver_free(void)
+static void driver_free(void)
 {
 	upstype_t	*ups, *unext;
 
@@ -696,7 +696,7 @@ static void upsd_cleanup(void)
 	free(handler);
 }
 
-void poll_reload(void)
+static void poll_reload(void)
 {
 	int	ret;
 
