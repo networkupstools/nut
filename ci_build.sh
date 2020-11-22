@@ -52,7 +52,7 @@ build_to_only_catch_errors() {
 
     echo "`date`: Starting a 'make check' for quick sanity test of the products built with the current compiler and standards"
     $CI_TIME make VERBOSE=0 check \
-	&& echo "`date`: SUCCESS" \
+    && echo "`date`: SUCCESS" \
     || return $?
 
     return 0
