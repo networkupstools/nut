@@ -1,6 +1,7 @@
 #include "main.h"
 #include "bcmxcp.h"
 #include "bcmxcp_io.h"
+#include "bcmxcp_ser.h"
 #include "serial.h"
 
 
@@ -18,10 +19,8 @@ upsdrv_info_t comm_upsdrv_info = {
 
 #define PW_MAX_BAUD 5
 
-static struct pw_baud_rate {
-	int rate;
-	int name;
-} pw_baud_rates[] = {
+/* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
+pw_baud_rate_t pw_baud_rates[] = {
 	{ B19200, 19200 },
 	{ B9600,  9600 },
 	{ B4800,  4800 },
@@ -31,7 +30,8 @@ static struct pw_baud_rate {
 	{ 0,  0 }
 };
 
-static unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
+/* NOT static: also used from nut-scanner, so extern'ed via bcmxcp_ser.h */
+unsigned char AUT[4] = {0xCF, 0x69, 0xE8, 0xD5}; /* Authorisation command */
 
 static void send_command(unsigned char *command, int command_length)
 {

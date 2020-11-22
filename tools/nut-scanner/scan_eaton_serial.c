@@ -37,6 +37,7 @@
 #include "nut-scan.h"
 #include "serial.h"
 #include "bcmxcp_io.h"
+#include "bcmxcp_ser.h"
 #include "bcmxcp.h"
 #include "nutscan-serial.h"
 
@@ -48,12 +49,14 @@
 #define SHUT_SYNC 0x16
 #define MAX_TRY   4
 
-/* BCMXCP header */
+/* BCMXCP header defines these externs now: */
+/*
 extern unsigned char AUT[4];
 extern struct pw_baud_rate {
         int rate;
         int name;
 } pw_baud_rates[];
+*/
 
 /* Local list of found devices */
 static nutscan_device_t * dev_ret = NULL;
