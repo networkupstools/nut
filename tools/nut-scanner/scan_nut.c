@@ -52,7 +52,8 @@ struct scan_nut_arg {
 	long timeout;
 };
 
-/* return 0 on error */
+/* return 0 on error; visible externally */
+int nutscan_load_upsclient_library(const char *libname_path);
 int nutscan_load_upsclient_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
