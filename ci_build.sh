@@ -25,9 +25,15 @@ case "$CI_TRACE" in
 esac
 
 configure_nut() {
-    echo "=== CONFIGURING NUT: ./configure ${CONFIG_OPTS[*]}"
+    local CONFIGURE_SCRIPT=./configure
+    if [[ "$TRAVIS_OS_NAME" == "windows" ]] ; then
+        find . -ls
+        CONFIGURE_SCRIPT=./configure.bat
+    fi
+
+    echo "=== CONFIGURING NUT: $CONFIGURE_SCRIPT ${CONFIG_OPTS[*]}"
     echo "=== CC='$CC' CXX='$CXX' CPP='$CPP'"
-    $CI_TIME ./configure "${CONFIG_OPTS[@]}" \
+    $CI_TIME $CONFIGURE_SCRIPT "${CONFIG_OPTS[@]}" \
     || { RES=$?
         echo "FAILED ($RES) to configure nut, will dump config.log in a second to help troubleshoot CI" >&2
         echo "    (or press Ctrl+C to abort now if running interactively)" >&2
