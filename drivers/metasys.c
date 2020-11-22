@@ -38,8 +38,8 @@ upsdrv_info_t upsdrv_info = {
 };
 
 /* Autorestart flag */
-int autorestart = 0;
-int nominal_power = 0;
+static int autorestart = 0;
+static int nominal_power = 0;
 
 /* ups commands */
 #define UPS_INFO 			0x00
