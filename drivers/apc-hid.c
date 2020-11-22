@@ -37,7 +37,7 @@
 #define APC_VENDORID 0x051d
 
 /* Tweaks */
-char * tweak_max_report[] = {
+static char * tweak_max_report[] = {
 	/* Back-UPS ES 700 does NOT overflow. */
 	/* Back-UPS ES 725 does NOT overflow. */
 	/* Back-UPS ES 525 overflows on ReportID 0x0c
@@ -127,7 +127,7 @@ static const char *apc_date_conversion_fun(double value)
 	return buf;
 }
 
-info_lkp_t apc_date_conversion[] = {
+static info_lkp_t apc_date_conversion[] = {
 	{ 0, NULL, apc_date_conversion_fun, NULL }
 };
 
