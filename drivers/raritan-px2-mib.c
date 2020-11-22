@@ -30,7 +30,7 @@
 
 /* info elements */
 /* FIXME: triage between status and alarms, and make it compliant! */
-info_lkp_t raritanpx2_outlet_status_info[] = {
+static info_lkp_t raritanpx2_outlet_status_info[] = {
 	{ -1, "unavailable", NULL, NULL },
 	{  0, "open", NULL, NULL },
 	{  1, "closed", NULL, NULL },
