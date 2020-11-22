@@ -516,7 +516,7 @@ static info_lkp_t mge_battery_capacity[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t eaton_enable_disable_info[] = {
+static info_lkp_t eaton_enable_disable_info[] = {
 	{ 0, "disabled", NULL, NULL },
 	{ 1, "enabled", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -568,7 +568,7 @@ static info_lkp_t mge_short_circuit[] = {
 	{ 0, NULL, NULL, NULL }
 };
 
-info_lkp_t mge_onbatt_info[] = {
+static info_lkp_t mge_onbatt_info[] = {
 	{ 1, "!online", NULL, NULL },
 	{ 0, "online", NULL, NULL },
 	{ 0, NULL, NULL, NULL }
@@ -645,7 +645,7 @@ static double pegasus_yes_no_info_nuf(const char *value)
 		return 0;
 }
 
-info_lkp_t pegasus_yes_no_info[] = {
+static info_lkp_t pegasus_yes_no_info[] = {
 	{ 0, "no", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 1, "yes", pegasus_yes_no_info_fun, pegasus_yes_no_info_nuf },
 	{ 0, NULL, NULL, NULL }
@@ -815,7 +815,7 @@ static const char *eaton_converter_online_fun(double value)
 		return NULL;
 }
 
-info_lkp_t eaton_converter_online_info[] = {
+static info_lkp_t eaton_converter_online_info[] = {
 	{ 0, "dummy", eaton_converter_online_fun, NULL },
 	{ 0, NULL, NULL, NULL }
 };
