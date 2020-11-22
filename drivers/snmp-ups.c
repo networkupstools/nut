@@ -131,20 +131,21 @@ struct snmp_session g_snmp_sess, *g_snmp_sess_p;
 const char *OID_pwr_status;
 int g_pwr_battery;
 int pollfreq; /* polling frequency */
-int quirk_symmetra_threephase = 0;
+static int quirk_symmetra_threephase = 0;
+
 /* Number of device(s): standard is "1", but daisychain means more than 1 */
-long devices_count = 1;
-int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
-bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
-daisychain_info_t **daisychain_info = NULL;
+static long devices_count = 1;
+static int current_device_number = 0;      /* global var to handle daisychain iterations - changed by loops in snmp_ups_walk() and su_addcmd() */
+static bool_t daisychain_enabled = FALSE;  /* global var to handle daisychain iterations */
+static daisychain_info_t **daisychain_info = NULL;
 
 /* pointer to the Snmp2Nut lookup table */
-mib2nut_info_t *mib2nut_info;
+static mib2nut_info_t *mib2nut_info;
 /* FIXME: to be trashed */
-snmp_info_t *snmp_info;
-alarms_info_t *alarms_info;
-const char *mibname;
-const char *mibvers;
+static snmp_info_t *snmp_info;
+static alarms_info_t *alarms_info;
+static const char *mibname;
+static const char *mibvers;
 
 #define DRIVER_NAME	"Generic SNMP UPS driver"
 #define DRIVER_VERSION		"1.12"
@@ -164,16 +165,16 @@ upsdrv_info_t	upsdrv_info = {
 };
 /* FIXME: integrate MIBs info? do the same as for usbhid-ups! */
 
-time_t lastpoll = 0;
+static time_t lastpoll = 0;
 
 /* template OIDs index start with 0 or 1 (estimated stable for a MIB),
  * automatically guessed at the first pass */
-int template_index_base = -1;
+static int template_index_base = -1;
 /* Not that stable in the end... */
-int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
-int outlet_template_index_base = -1;
-int outletgroup_template_index_base = -1;
-int device_template_offset = -1;
+static int device_template_index_base = -1; /* OID index of the 1rst daisychained device */
+static int outlet_template_index_base = -1;
+static int outletgroup_template_index_base = -1;
+static int device_template_offset = -1;
 
 /* sysOID location */
 #define SYSOID_OID	".1.3.6.1.2.1.1.2.0"
