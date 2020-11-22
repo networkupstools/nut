@@ -115,7 +115,8 @@ static void (*nut_ipmi_ctx_destroy) (ipmi_ctx_t ctx);
 /* Internal functions */
 static nutscan_device_t * nutscan_scan_ipmi_device(const char * IPaddr, nutscan_ipmi_t * sec);
 
-/* Return 0 on error */
+/* Return 0 on error; visible externally */
+int nutscan_load_ipmi_library(const char *libname_path);
 int nutscan_load_ipmi_library(const char *libname_path)
 {
 	if( dl_handle != NULL ) {
