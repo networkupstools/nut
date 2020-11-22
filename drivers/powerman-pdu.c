@@ -38,8 +38,8 @@ upsdrv_info_t upsdrv_info = {
 static pm_err_t query_one(pm_handle_t pm, char *s, int mode);
 static pm_err_t query_all(pm_handle_t pm, int mode);
 
-pm_handle_t pm;
-char ebuf[64];
+static pm_handle_t pm;
+static char ebuf[64];
 
 /* modes to snmp_ups_walk. */
 #define WALKMODE_INIT	0
