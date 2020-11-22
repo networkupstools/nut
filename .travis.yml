@@ -605,6 +605,40 @@ _matrix_freebsd_gnustd_nowarn:
       directories:
       - $HOME/.ccache
 
+_matrix_freebsd_gnustd_warn:
+  include: &_matrix_freebsd_gnustd_warn
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+    os: freebsd
+    compiler: gcc
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+    os: freebsd
+    compiler: gcc
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
+    os: freebsd
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
+    os: freebsd
+    compiler: clang
+    if: branch =~ fightwarn
+    cache:
+      directories:
+      - $HOME/.ccache
+
 
 # Try also a range of platforms for MacOS X builds
 # Inspired by https://github.com/taocpp/operators/blob/master/.travis.yml
@@ -812,7 +846,7 @@ _matrix_required_freebsd:
 
 _matrix_allowfail_freebsd:
   include: &_matrix_allowfail_freebsd
-  - *_matrix_freebsd_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_warn
 
 _matrix_allowfail_osx:
   include: &_matrix_allowfail_osx
@@ -861,6 +895,7 @@ _matrix_warn:
   include: &_matrix_warn
   - *_matrix_linux_gnustd_warn
   - *_matrix_linux_cstd_warn
+  - *_matrix_freebsd_gnustd_warn
   - *_matrix_osx_gnustd_warn
   - *_matrix_osx_cstd_warn
   - *_matrix_windows_cstd_warn
@@ -942,6 +977,10 @@ jobs:
 ### FreeBSD
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
+  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
 ### macosx
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-xcode10.2-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
