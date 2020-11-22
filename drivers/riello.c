@@ -32,17 +32,17 @@
 #include "main.h"
 #include "riello.h"
 
-uint8_t foundheader=0;
-uint16_t buf_ptr_length;
+static uint8_t foundheader=0;
+static uint16_t buf_ptr_length;
 
-uint8_t wait_packet = 0;
-uint8_t foundnak = 0;
-uint8_t foundbadcrc = 0;
+static uint8_t wait_packet = 0;
+static uint8_t foundnak = 0;
+static uint8_t foundbadcrc = 0;
 
-uint8_t commbyte;
-uint8_t requestSENTR;
+static uint8_t commbyte;
+static uint8_t requestSENTR;
 
-unsigned char LAST_DATA[6];
+static unsigned char LAST_DATA[6];
 
 uint16_t riello_calc_CRC(uint8_t type, uint8_t *buff, uint16_t size, uint8_t checksum)
 {
