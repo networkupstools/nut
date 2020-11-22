@@ -113,7 +113,7 @@ static struct ipmi_monitoring_ipmi_config ipmi_config;
 static const char* libfreeipmi_getfield (uint8_t language_code,
 	ipmi_fru_field_t *field);
 
-static void libfreeipmi_cleanup();
+static void libfreeipmi_cleanup(void);
 
 static int libfreeipmi_get_psu_info (const void *areabuf,
 	uint8_t area_length, IPMIDevice_t *ipmi_dev);
