@@ -140,77 +140,67 @@ void addquery(const char *cmd, int field, int varnum, int pollflag)
 
 void sec_setinfo(int varnum, char *value)
 {
-
-	if (*sec_varlist[varnum].setcmd){/*Not empty*/
-
+	if (*sec_varlist[varnum].setcmd)
+	{ /*Not empty*/
 		if (sec_varlist[varnum].flags == FLAG_STRING) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%s", value);
 	 	}
 		else if (sec_varlist[varnum].unit == 1) {
 			dstate_setinfo(sec_varlist[varnum].setcmd,"%s", value);
 		}
-
 		else if (sec_varlist[varnum].flags == FLAG_MULTI) {
 			if (atoi(value) < 0) {
-			dstate_setinfo(sec_varlist[varnum].setcmd,"0");
+				dstate_setinfo(sec_varlist[varnum].setcmd,"0");
 			}
-			else
-			{dstate_setinfo(sec_varlist[varnum].setcmd,"%d", atoi(value) * sec_varlist[varnum].unit);
+			else {
+				dstate_setinfo(sec_varlist[varnum].setcmd,"%d", atoi(value) * sec_varlist[varnum].unit);
 			}
-			}
-		else {
-			dstate_setinfo(sec_varlist[varnum].setcmd,"%.1f", atof(value) / sec_varlist[varnum].unit);}
-
 		}
-
+		else {
+			dstate_setinfo(sec_varlist[varnum].setcmd,"%.1f", atof(value) / sec_varlist[varnum].unit);
+		}
+	}
 }
-
-
 
 void update_pseudovars( void )
 {
-
 	status_init();
 
 	if(strcmp(sec_varlist[9].value,"1")== 0) {
-	status_set("OFF");
+		status_set("OFF");
 	}
 	if(strcmp(sec_varlist[76].value,"0")== 0) {
-	status_set("OL");
+		status_set("OL");
 	}
 	if(strcmp(sec_varlist[76].value,"1")== 0) {
-	status_set("OB");
+		status_set("OB");
 	}
 	if(strcmp(sec_varlist[76].value,"2")== 0) {
-	status_set("BYPASS");
+		status_set("BYPASS");
 	}
 	if(strcmp(sec_varlist[76].value,"3")== 0) {
-	status_set("TRIM");
+		status_set("TRIM");
 	}
 	if(strcmp(sec_varlist[76].value,"4")== 0) {
-	status_set("BOOST");
+		status_set("BOOST");
 	}
 	if(strcmp(sec_varlist[10].value,"1")== 0) {
-	status_set("OVER");
+		status_set("OVER");
 	}
 	if(strcmp(sec_varlist[22].value,"1")== 0) {
-	status_set("LB");
+		status_set("LB");
 	}
-
 	if(strcmp(sec_varlist[19].value,"2")== 0) {
-	status_set("RB");
+		status_set("RB");
 	}
 
 	status_commit();
-
-
 }
 
 void sec_poll ( int pollflag ) {
 
 	int msglen,f,q;
 	char retbuf[140],*n,*r;
-
 
 	for (q=0; q<SEC_QUERYLIST_LEN; q++) {
 		if (sec_querylist[q].command == NULL) break;
@@ -223,24 +213,19 @@ void sec_poll ( int pollflag ) {
 		for (f=0; f<SEC_MAXFIELDS; f++) {
 			n = strchr(r, ',');
 			if (n != NULL) *n = '\0';
+
 			if (sqv(q,f) > 0) {
-
 				if (strcmp(sec_varlist[sqv(q,f)].value, r) != 0) {
-
 					snprintf(sec_varlist[sqv(q,f)].value,
-					sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
-
+						sizeof(sec_varlist[sqv(q,f)].value), "%s", r);
 					sec_setinfo(sqv(q,f), r);
 				}
 
-				/* If SEC VAR is alarm and its on, add it to the alarm property */
-
+				/* If SEC VAR is alarm and it's on, add it to the alarm property */
 				if (sec_varlist[sqv(q,f)].flags & FLAG_ALARM && strcmp(r,"1")== 0) {
 					alarm_set(sec_varlist[sqv(q,f)].name);
 				}
-
 			}
-
 
 			if (n == NULL) break;
 			r = n+1;
@@ -284,15 +269,12 @@ void upsdrv_initinfo(void)
 
 void upsdrv_updateinfo(void)
 {
-
-
 	alarm_init();
 	/* poll status values values */
 	sec_poll(FLAG_POLL);
 	alarm_commit();
 	update_pseudovars();
 	dstate_dataok();
-
 }
 
 void upsdrv_shutdown(void)
