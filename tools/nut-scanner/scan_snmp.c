@@ -74,7 +74,7 @@ static nutscan_device_t * dev_ret = NULL;
 #ifdef HAVE_PTHREAD
 static pthread_mutex_t dev_mutex;
 #endif
-long g_usec_timeout ;
+static long g_usec_timeout ;
 
 /* dynamic link library stuff */
 static lt_dlhandle dl_handle = NULL;
@@ -88,7 +88,7 @@ static struct snmp_session * (*nut_snmp_sess_session)(void *handle);
 static void * (*nut_snmp_parse_oid)(const char *input, oid *objid,
 		size_t *objidlen);
 static struct snmp_pdu * (*nut_snmp_pdu_create) (int command );
-netsnmp_variable_list * (*nut_snmp_add_null_var)(netsnmp_pdu *pdu,
+static netsnmp_variable_list * (*nut_snmp_add_null_var)(netsnmp_pdu *pdu,
 			const oid *objid, size_t objidlen);
 static int (*nut_snmp_sess_synch_response) (void *sessp, netsnmp_pdu *pdu,
 			netsnmp_pdu **response);
