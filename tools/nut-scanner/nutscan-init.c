@@ -22,6 +22,7 @@
 */
 
 #include "common.h"
+#include "nutscan-init.h"
 #include <ltdl.h>
 #include <unistd.h>
 #include <stdio.h>
