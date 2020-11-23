@@ -621,7 +621,7 @@ _matrix_freebsd_gnustd_nowarn:
 
 _matrix_freebsd_gnustd_warn:
   include: &_matrix_freebsd_gnustd_warn
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
     os: freebsd
     compiler: gcc
     if: branch =~ fightwarn
@@ -629,7 +629,7 @@ _matrix_freebsd_gnustd_warn:
       directories:
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
     os: freebsd
     compiler: gcc
     if: branch =~ fightwarn
@@ -1009,8 +1009,8 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
-  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
   - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
 ### macosx
