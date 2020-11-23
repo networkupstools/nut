@@ -380,9 +380,9 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
         packages:
         - clang-8
         - clang-format-8
-        - *deps_driverlibs
-        - gcc-multilib
         - g++-multilib
+        - gcc-multilib
+        - *deps_driverlibs
 
 # Try s390x builds to check for issues with endianness
 # (it is one current Travis offer with BigEndian CPUs)
