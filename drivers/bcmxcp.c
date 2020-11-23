@@ -164,7 +164,7 @@ static float calculate_ups_load(const unsigned char *data);
 
 static const char *nut_find_infoval(info_lkp_t *xcp2info, const double value, const bool_t debug_output_nonexisting);
 
-static const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"};
+/* static const char *FreqTol[3] = {"+/-2%", "+/-5%", "+/-7"}; */
 static const char *ABMStatus[4] = {"charging", "discharging", "floating", "resting"};
 static const char *OutletStatus[9] = {"unknown","on/closed","off/open","on with pending","off with pending","unknown","unknown","failed and closed","failed and open"};
 
