@@ -356,6 +356,22 @@ _matrix_linux_gnustd_nowarn_arm_64bit:
         packages:
         - *deps_driverlibs
 
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
+    os: linux
+    arch: arm64
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-9
+        - gcc-9
+        - *deps_driverlibs
+
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
     os: linux
     arch: arm64
@@ -1061,6 +1077,7 @@ jobs:
 
 ### Linux on ARM
   - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
+  - env: NUT_MATRIX_TAG="gnu17-gcc-9-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc-9 CXX=g++-9
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
 
 ### FreeBSD
