@@ -185,10 +185,10 @@ static int shut_get_descriptor(int upsfd, unsigned char type,
 static int shut_get_string_simple(int upsfd, int index,
 			   char *buf, size_t buflen);
 static int libshut_get_report(int upsfd, int ReportId,
-		       unsigned char *raw_buf, int ReportSize );
-static int shut_set_report(int upsfd, int id, unsigned char *pkt, int reportlen);
+			   unsigned char *raw_buf, int ReportSize );
+static int libshut_set_report(int upsfd, int id, unsigned char *pkt, int reportlen);
 static int libshut_get_interrupt(int upsfd, unsigned char *buf,
-			  int bufsize, int timeout);
+			   int bufsize, int timeout);
 static void libshut_close(int upsfd);
 
 /* FIXME */
