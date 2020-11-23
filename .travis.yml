@@ -355,8 +355,6 @@ _matrix_linux_gnustd_nowarn_arm_64bit:
       apt:
         packages:
         - *deps_driverlibs
-        - gcc-multilib
-        - g++-multilib
 
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
     os: linux
@@ -374,8 +372,6 @@ _matrix_linux_gnustd_nowarn_arm_64bit:
         - clang-8
         - clang-format-8
         - *deps_driverlibs
-        - gcc-multilib
-        - g++-multilib
 
 # At this time, anything with strict C standard fails on Linux, even "nowarn" cases:
 _matrix_linux_cstd_nowarn:
