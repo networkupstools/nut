@@ -60,7 +60,7 @@
 /* FreeIPMI contexts and configuration*/
 static ipmi_ctx_t ipmi_ctx = NULL;
 static ipmi_monitoring_ctx_t mon_ctx = NULL;
-static struct ipmi_monitoring_ipmi_config ipmi_config;
+/* static struct ipmi_monitoring_ipmi_config ipmi_config; */
 
 /* SDR management API has changed with 1.1.X and later */
 #ifdef HAVE_FREEIPMI_11X_12X
