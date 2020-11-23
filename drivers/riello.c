@@ -32,15 +32,15 @@
 #include "main.h"
 #include "riello.h"
 
-static uint8_t foundheader=0;
-static uint16_t buf_ptr_length;
+static uint8_t foundheader = 0;
+uint16_t buf_ptr_length;
 
-static uint8_t wait_packet = 0;
-static uint8_t foundnak = 0;
-static uint8_t foundbadcrc = 0;
+uint8_t wait_packet = 0;
+uint8_t foundnak = 0;
+uint8_t foundbadcrc = 0;
 
-static uint8_t commbyte;
-static uint8_t requestSENTR;
+uint8_t commbyte;
+uint8_t requestSENTR;
 
 static unsigned char LAST_DATA[6];
 

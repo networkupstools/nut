@@ -178,4 +178,13 @@ void riello_comm_setup(const char *port);
 
 int get_ups_statuscode(void);
 
+/* Shared global variables for driver subtypes */
+/* extern uint8_t foundheader; */
+extern uint16_t buf_ptr_length;
+extern uint8_t wait_packet;
+extern uint8_t foundnak;
+extern uint8_t foundbadcrc;
+extern uint8_t commbyte;
+extern uint8_t requestSENTR;
+
 #endif /* NUT_RIELLO_H_SEEN */

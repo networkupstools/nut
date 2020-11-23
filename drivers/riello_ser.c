@@ -57,13 +57,6 @@ static uint8_t typeRielloProtocol;
 static uint8_t input_monophase;
 static uint8_t output_monophase;
 
-extern uint8_t commbyte;
-extern uint8_t wait_packet;
-extern uint8_t foundnak;
-extern uint8_t foundbadcrc;
-extern uint8_t buf_ptr_length;
-extern uint8_t requestSENTR;
-
 static TRielloData DevData;
 
 /**********************************************************************
