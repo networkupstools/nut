@@ -999,32 +999,52 @@ typedef int VV_t;	/* voltage */
 
 #define	ACT int
 
-static ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
-static ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
-static ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
-static ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
+/* Declare to keep compiler happy even if some routines below are not used currently */
+ACT	TOGGLE_PRS_ONOFF	();
+ACT	CANCEL_BOOST		();
+ACT	STOP_BATTERY_TEST	();
+ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes);
+ACT	SET_FLOAT_VOLTAGE	(VV_t v);
+ACT	SET_BOOST_VOLTAGE	(VV_t v);
+ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh);
+ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow);
+ACT	SET_DISCONNECT_LEVEL_AND_DELAY	(VV_t level, mm_t delay);
+ACT	RESET_ALARMS		();
+ACT	CHANGE_COMM_PROTOCOL	();
+ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v);
+ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree);
+ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v);
+ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v);
+ACT	SWITCH_TEMP_COMP	(int on);
+ACT	SWITCH_SYM_ALARM	();
+
+/* Implement */
+ACT	TOGGLE_PRS_ONOFF	()		{ return al175_do(0x81, 0x80			Z3);	}
+ACT	CANCEL_BOOST		()		{ return al175_do(0x82, 0x80			Z3);	}
+ACT	STOP_BATTERY_TEST	()		{ return al175_do(0x83, 0x80			Z3);	}
+ACT	START_BATTERY_TEST	(VV_t EndVolt, unsigned Minutes)
 						{ return al175_do(0x83, 0x81, EndVolt, Minutes	Z1);	}
 
-static ACT	SET_FLOAT_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x80, v			Z2);	}
-static ACT	SET_BOOST_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x81, v			Z2);	}
-static ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh)	{ return al175_do(0x87, 0x82, Vhigh		Z2);	}
-static ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow)	{ return al175_do(0x87, 0x83, Vlow		Z2);	}
+ACT	SET_FLOAT_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x80, v			Z2);	}
+ACT	SET_BOOST_VOLTAGE	(VV_t v)	{ return al175_do(0x87, 0x81, v			Z2);	}
+ACT	SET_HIGH_BATTERY_LIMIT	(VV_t Vhigh)	{ return al175_do(0x87, 0x82, Vhigh		Z2);	}
+ACT	SET_LOW_BATTERY_LIMIT	(VV_t Vlow)	{ return al175_do(0x87, 0x83, Vlow		Z2);	}
 
-static ACT	SET_DISCONNECT_LEVEL_AND_DELAY
+ACT	SET_DISCONNECT_LEVEL_AND_DELAY
 				(VV_t level, mm_t delay)
 						{ return al175_do(0x87, 0x84, level, delay	Z1);	}
 
-static ACT	RESET_ALARMS		()		{ return al175_do(0x88, 0x80			Z3);	}
-static ACT	CHANGE_COMM_PROTOCOL	()		{ return al175_do(0x89, 0x80			Z3);	}
-static ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v)	{ return al175_do(0x8a, 0x80, v			Z2);	}
-static ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
+ACT	RESET_ALARMS		()		{ return al175_do(0x88, 0x80			Z3);	}
+ACT	CHANGE_COMM_PROTOCOL	()		{ return al175_do(0x89, 0x80			Z3);	}
+ACT	SET_VOLTAGE_AT_ZERO_T	(VV_t v)	{ return al175_do(0x8a, 0x80, v			Z2);	}
+ACT	SET_SLOPE_AT_ZERO_T	(VV_t mv_per_degree)
 						{ return al175_do(0x8a, 0x81, mv_per_degree	Z2);	}
 
-static ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x82, v			Z2);	}
-static ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x83, v			Z2);	}
-static ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
+ACT	SET_MAX_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x82, v			Z2);	}
+ACT	SET_MIN_TCOMP_VOLTAGE	(VV_t v)	{ return al175_do(0x8a, 0x83, v			Z2);	}
+ACT	SWITCH_TEMP_COMP	(int on)	{ return al175_do(0x8b, 0x80, on		Z2);	}
 
-static ACT	SWITCH_SYM_ALARM	()		{ return al175_do(0x8c, 0x80			Z3);	}
+ACT	SWITCH_SYM_ALARM	()		{ return al175_do(0x8c, 0x80			Z3);	}
 
 
 /**
