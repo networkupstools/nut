@@ -361,7 +361,9 @@ _matrix_linux_gnustd_nowarn_x86_32bit:
         packages:
         - *deps_driverlibs
         - gcc-multilib
-        - g++-multilib
+### Seems this one precludes builds against OpenSSL or Mozilla NSS
+### Needed for C++ build that we skip without C++11 anyway
+#        - g++-multilib
 
   - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-x86-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" CC=clang-8 CXX=clang++-8
     os: linux
