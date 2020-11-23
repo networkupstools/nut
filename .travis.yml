@@ -341,6 +341,77 @@ _matrix_linux_gnustd_nowarn:
         packages:
         - *deps_driverlibs
 
+# Try ARM builds to check for issues with non-x86 CPUs
+_matrix_linux_gnustd_nowarn_arm_32bit:
+  include: &_matrix_linux_gnustd_nowarn_arm_32bit
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32"
+    os: linux
+    arch: arm32
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - gcc-multilib
+        - g++-multilib
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" CC=clang-8 CXX=clang++-8
+    os: linux
+    arch: arm32
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+        - gcc-multilib
+        - g++-multilib
+
+_matrix_linux_gnustd_nowarn_arm_64bit:
+  include: &_matrix_linux_gnustd_nowarn_arm_64bit
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
+    os: linux
+    arch: arm64
+    sudo: false
+    services:
+        - docker
+    compiler: gcc
+    addons:
+      apt:
+        packages:
+        - *deps_driverlibs
+        - gcc-multilib
+        - g++-multilib
+
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+    os: linux
+    arch: arm64
+    dist: xenial
+    sudo: false
+    services:
+        - docker
+    compiler: clang
+    addons:
+      apt:
+        sources:
+        - llvm-toolchain-xenial-8
+        packages:
+        - clang-8
+        - clang-format-8
+        - *deps_driverlibs
+        - gcc-multilib
+        - g++-multilib
+
 # At this time, anything with strict C standard fails on Linux, even "nowarn" cases:
 _matrix_linux_cstd_nowarn:
   include: &_matrix_linux_cstd_nowarn
@@ -855,6 +926,8 @@ _matrix_required_linux:
   - *_matrix_required_linux_pass3_large
   - *_matrix_linux_gnustd_nowarn
   - *_matrix_linux_gnustd_warn_viable
+  - *_matrix_linux_gnustd_nowarn_arm_32bit
+  - *_matrix_linux_gnustd_nowarn_arm_64bit
 
 _matrix_linux_gnustd_warn:
   include: &_matrix_linux_gnustd_warn
@@ -866,6 +939,11 @@ _matrix_allowfail_linux:
   - *_matrix_linux_cstd_nowarn
   - *_matrix_linux_gnustd_warn_fatal
   - *_matrix_linux_cstd_warn
+
+_matrix_linux_arm:
+  include: &_matrix_linux_arm
+  - *_matrix_linux_gnustd_nowarn_arm_32bit
+  - *_matrix_linux_gnustd_nowarn_arm_64bit
 
 _matrix_linux:
   include: &_matrix_linux
@@ -935,6 +1013,8 @@ _matrix_gnustd_nowarn:
   - *_matrix_linux_gnustd_nowarn
   - *_matrix_freebsd_gnustd_nowarn
 #  -*_matrix_windows_gnustd_nowarn
+  - *_matrix_linux_gnustd_nowarn_arm_32bit
+  - *_matrix_linux_gnustd_nowarn_arm_64bit
 
 _matrix_warn:
   include: &_matrix_warn
@@ -1020,6 +1100,13 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu89-gcc-default-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu89" CXXFLAGS="-std=gnu++89"
   - env: NUT_MATRIX_TAG="c89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=c89" CXXFLAGS="-Wall -Wextra -Werror -std=c++89"
   - env: NUT_MATRIX_TAG="gnu89-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu89" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++89"
+
+### Linux on ARM
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99 -m32" CXXFLAGS="-std=gnu++99 -m32" CPPFLAGS="-m32"
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-32bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17 -m32" CXXFLAGS="-std=gnu++17 -m32" CPPFLAGS="-m32" CC=clang-8 CXX=clang++-8
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99"
+  - env: NUT_MATRIX_TAG="gnu17-clang-8-nowarn-ARM-64bit" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang-8 CXX=clang++-8
+
 ### FreeBSD
 #OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
