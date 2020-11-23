@@ -593,6 +593,7 @@ _matrix_freebsd_gnustd_nowarn:
   include: &_matrix_freebsd_gnustd_nowarn
   - env: NUT_MATRIX_TAG="gnu99-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=gcc CXX=g++
     os: freebsd
+    sudo: true
     compiler: gcc
     cache:
       directories:
@@ -600,6 +601,7 @@ _matrix_freebsd_gnustd_nowarn:
 
   - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
     os: freebsd
+    sudo: true
     compiler: clang
     cache:
       directories:
@@ -607,6 +609,7 @@ _matrix_freebsd_gnustd_nowarn:
 
   - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
     os: freebsd
+    sudo: true
     compiler: gcc
     cache:
       directories:
@@ -614,31 +617,37 @@ _matrix_freebsd_gnustd_nowarn:
 
   - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu17" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
     os: freebsd
+    sudo: true
     compiler: clang
     cache:
       directories:
       - $HOME/.ccache
 
-_matrix_freebsd_gnustd_warn:
-  include: &_matrix_freebsd_gnustd_warn
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+_matrix_freebsd_gnustd_warn_viable:
+  include: &_matrix_freebsd_gnustd_warn_viable
+  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
     os: freebsd
+    sudo: true
     compiler: gcc
     if: branch =~ fightwarn
     cache:
       directories:
       - $HOME/.ccache
 
-  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
     os: freebsd
+    sudo: true
     compiler: gcc
     if: branch =~ fightwarn
     cache:
       directories:
       - $HOME/.ccache
 
+_matrix_freebsd_gnustd_warn_fatal:
+  include: &_matrix_freebsd_gnustd_warn_fatal
   - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
     os: freebsd
+    sudo: true
     compiler: clang
     if: branch =~ fightwarn
     cache:
@@ -647,6 +656,7 @@ _matrix_freebsd_gnustd_warn:
 
   - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
     os: freebsd
+    sudo: true
     compiler: clang
     if: branch =~ fightwarn
     cache:
@@ -867,13 +877,19 @@ _matrix_freebsd:
   - *_matrix_freebsd_gnustd_nowarn
   - *_matrix_freebsd_gnustd_warn
 
+_matrix_freebsd_gnustd_warn:
+  include: &_matrix_freebsd_gnustd_warn
+  - *_matrix_freebsd_gnustd_warn_viable
+  - *_matrix_freebsd_gnustd_warn_fatal
+
 _matrix_required_freebsd:
   include: &_matrix_required_freebsd
   - *_matrix_freebsd_gnustd_nowarn
+  - *_matrix_freebsd_gnustd_warn_viable
 
 _matrix_allowfail_freebsd:
   include: &_matrix_allowfail_freebsd
-  - *_matrix_freebsd_gnustd_warn
+  - *_matrix_freebsd_gnustd_warn_fatal
 
 _matrix_allowfail_osx:
   include: &_matrix_allowfail_osx
@@ -1009,8 +1025,8 @@ jobs:
 #OK#  - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++99" CC=clang CXX=clang++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=gcc CXX=g++
 #OK#  - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-nowarn" BUILD_TYPE=default-all-errors CFLAGS="-std=gnu99" CXXFLAGS="-std=gnu++17" CC=clang CXX=clang++
-  - env: NUT_MATRIX_TAG="gnu99-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
-  - env: NUT_MATRIX_TAG="gnu17-gcc-default-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu99-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++99" CC=gcc CXX=g++
+#OK#  - env: NUT_MATRIX_TAG="gnu17-gcc-default-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -std=gnu++17" CC=gcc CXX=g++
   - env: NUT_MATRIX_TAG="gnu99-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu99" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++99" CC=clang CXX=clang++
   - env: NUT_MATRIX_TAG="gnu17-clang-freebsd-warn" BUILD_TYPE=default-all-errors CFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -pedantic -std=gnu17" CXXFLAGS="-Wall -Wextra -Werror -Weverything -Wno-unused-macros -Wno-reserved-id-macro -Wno-padded -std=gnu++17" CC=clang CXX=clang++
 ### macosx
@@ -1080,6 +1096,7 @@ before_install:
             setfacl -f /tmp/faclx /C/tools/cygwin/*bin/*
         fi
     fi
+- if [ "$TRAVIS_OS_NAME" = "freebsd" ] ; then sudo pkg install -y libgd ; fi
 - if [ -n "${NUT_MATRIX_TAG}" ] ; then export CFLAGS CXXFLAGS ; [ -z "$CC" ] || export CC ; [ -z "$CXX" ] || export CXX ; fi
 
 # Hand off to generated script for each BUILD_TYPE
